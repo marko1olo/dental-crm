@@ -109,6 +109,7 @@ const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
   'fetch("/api/imports/smart/local-source-workup"',
   'fetch("/api/imports/smart/local-source-probe"',
   'fetch("/api/imports/smart/migration-autopilot"',
+  'fetch("/api/imports/smart/migration-autopilot/report.csv"',
   'fetch("/api/imports/smart/clinic-public-lookup"',
   'fetch("/api/pricelist/analyze"',
   'fetch("/api/imaging/dicom/folder-workup-plan"',
@@ -248,6 +249,18 @@ const protectedReadRequests = [
       clinic: {
         inn: "1234567890"
       }
+    }
+  },
+  {
+    method: "POST",
+    url: "/api/imports/smart/migration-autopilot/report.csv",
+    payload: {
+      rootPaths: [path.resolve("scripts")],
+      maxDepth: 0,
+      maxFolders: 1,
+      maxFilesPerFolder: 1,
+      maxCandidates: 1,
+      maxProbeCandidates: 1
     }
   },
   {

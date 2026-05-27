@@ -214,6 +214,10 @@ assert(
   "smart import must suggest x-ray image archive manifest route"
 );
 assert(
+  migration.legacySources.every((source) => !source.sourceRef || (source.safeSourceAlias && !/C:\\|\\\\NAS|clinic_2024|IMG0001|Ivan|Petrov/i.test(source.safeSourceAlias))),
+  "smart import legacy sources must expose a safe alias for UI/report handoff instead of raw paths or patient-like names"
+);
+assert(
   migration.lineClassifications.some((line) => line.kind === "imaging" && /IMG0001\.dcm/.test(line.text)),
   "smart import must keep a concrete patient DICOM file as imaging row"
 );
@@ -260,6 +264,11 @@ try {
   const discovery = localSourceDiscovery.json();
   const discoveryKinds = new Set(discovery.candidates.map((candidate) => candidate.sourceKind));
   assert(discovery.scannedFolders >= 3, "local source discovery must scan the synthetic folders");
+  assert(discovery.roots.some((root) => /^local-root:[A-F0-9]{10}$/i.test(root)), "local source discovery must return safe root aliases");
+  assert(
+    discovery.roots.every((root) => !root.includes(tempMigrationRoot) && !/Ivan|Petrov|LegacyDental/i.test(root)),
+    "local source discovery roots must not expose raw local paths or patient-like folder names"
+  );
   assert(discovery.candidates.length >= 4, "local source discovery must find DB, DICOM, RVG, and legacy MIS candidates");
   assert(discoveryKinds.has("firebird_database"), "local source discovery must detect Firebird/InterBase DBs");
   assert(discoveryKinds.has("sqlite_database"), "local source discovery must detect SQLite DBs");
@@ -652,47 +661,48 @@ try {
     "smart import must preserve browser-local manifest refs as migration sources"
   );
 
+  const migrationAutopilotPayload = {
+    rootPaths: [tempMigrationRoot],
+    maxDepth: 4,
+    maxFolders: 80,
+    maxFilesPerFolder: 40,
+    maxCandidates: 12,
+    maxProbeCandidates: 4,
+    knownScannedFolders: 3,
+    knownSources: [
+      {
+        sourceRef: "browser-local:ABCDEF12",
+        safeDisplayName: "Browser manifest #ABCDEF12",
+        sourceKind: "dicom_folder",
+        sourceLabel: "Браузерный manifest",
+        sourceFingerprint: "ABCDEF12",
+        depth: 0,
+        confidence: 0.91,
+        matchedFiles: 10,
+        databaseFiles: 0,
+        dumpFiles: 0,
+        tableFiles: 0,
+        archiveFiles: 0,
+        dicomLikeFiles: 10,
+        imageFiles: 0,
+        hasDicomDir: true,
+        latestModifiedAt: null,
+        reasons: ["browser-local metadata-only manifest"],
+        warnings: ["full local path is intentionally unavailable to the server"],
+        smartImportLine: "legacy source DICOMDIR browser-local:ABCDEF12 files=10 dicom=10 images=0"
+      }
+    ],
+    clinic: {
+      inn: "1234567890",
+      clinicName: "Smile Clinic patient Ivan Petrov +7 900 111-22-33",
+      address: "Samara, Lenina 1"
+    }
+  };
   const migrationAutopilotResponse = await app.inject({
     method: "POST",
     url: "/api/imports/smart/migration-autopilot",
     headers,
-    payload: {
-      rootPaths: [tempMigrationRoot],
-      maxDepth: 4,
-      maxFolders: 80,
-      maxFilesPerFolder: 40,
-      maxCandidates: 12,
-      maxProbeCandidates: 4,
-      knownScannedFolders: 3,
-      knownSources: [
-        {
-          sourceRef: "browser-local:ABCDEF12",
-          safeDisplayName: "Browser manifest #ABCDEF12",
-          sourceKind: "dicom_folder",
-          sourceLabel: "Браузерный manifest",
-          sourceFingerprint: "ABCDEF12",
-          depth: 0,
-          confidence: 0.91,
-          matchedFiles: 10,
-          databaseFiles: 0,
-          dumpFiles: 0,
-          tableFiles: 0,
-          archiveFiles: 0,
-          dicomLikeFiles: 10,
-          imageFiles: 0,
-          hasDicomDir: true,
-          latestModifiedAt: null,
-          reasons: ["browser-local metadata-only manifest"],
-          warnings: ["full local path is intentionally unavailable to the server"],
-          smartImportLine: "legacy source DICOMDIR browser-local:ABCDEF12 files=10 dicom=10 images=0"
-        }
-      ],
-      clinic: {
-        inn: "1234567890",
-        clinicName: "Smile Clinic patient Ivan Petrov +7 900 111-22-33",
-        address: "Samara, Lenina 1"
-      }
-    }
+    payload: migrationAutopilotPayload
   });
   assert(migrationAutopilotResponse.statusCode === 200, `migration autopilot failed: ${migrationAutopilotResponse.statusCode}`);
   const migrationAutopilot = migrationAutopilotResponse.json();
@@ -700,6 +710,10 @@ try {
   assert(migrationAutopilot.discovery.candidateCount >= 4, "migration autopilot must reuse local source discovery");
   assert(migrationAutopilot.discovery.probedCount > 0, "migration autopilot must probe top candidates");
   assert(migrationAutopilot.discovery.roots.includes("browser-local:ABCDEF12"), "migration autopilot must include browser-local known roots");
+  assert(
+    migrationAutopilot.discovery.roots.every((root) => !root.includes(tempMigrationRoot) && !/Ivan|Petrov|LegacyDental/i.test(root)),
+    "migration autopilot discovery roots must be safe aliases, not raw filesystem roots"
+  );
   assert(migrationAutopilot.discovery.scannedFolders >= 3, "migration autopilot must include browser-local scanned folder counts");
   assert(migrationAutopilot.sources.length > 0, "migration autopilot must return ranked migration sources");
   assert(
@@ -755,6 +769,30 @@ try {
     ),
     "migration autopilot must not echo patient identity into public clinic lookup fields or operator packet"
   );
+
+  const migrationAutopilotReportResponse = await app.inject({
+    method: "POST",
+    url: "/api/imports/smart/migration-autopilot/report.csv",
+    headers,
+    payload: migrationAutopilotPayload
+  });
+  assert(migrationAutopilotReportResponse.statusCode === 200, `migration handoff report failed: ${migrationAutopilotReportResponse.statusCode}`);
+  const reportDisposition = String(migrationAutopilotReportResponse.headers["content-disposition"] ?? "");
+  assert(
+    reportDisposition === 'attachment; filename="migration_autopilot_handoff.csv"',
+    "migration handoff report filename must be static and safe"
+  );
+  assert(!/[\r\n]/.test(reportDisposition), "migration handoff report disposition must reject header injection shape");
+  const migrationAutopilotReportCsv = migrationAutopilotReportResponse.body;
+  assert(migrationAutopilotReportCsv.startsWith("\uFEFFsection;"), "migration handoff report must be a BOM-prefixed CSV");
+  assert(migrationAutopilotReportCsv.includes("handoff_checklist"), "migration handoff report must include the handoff checklist");
+  assert(migrationAutopilotReportCsv.includes("clinic_public_lookup_policy"), "migration handoff report must include public lookup policy");
+  assert(migrationAutopilotReportCsv.includes("sourceFingerprint"), "migration handoff report must expose fingerprinted source references");
+  assert(
+    !/Ivan|Petrov|\+7 900|79001112233/.test(migrationAutopilotReportCsv),
+    "migration handoff report must not leak patient identity from clinic lookup input"
+  );
+  assert(!migrationAutopilotReportCsv.includes(tempMigrationRoot), "migration handoff report must not leak raw local roots");
 } finally {
   rmSync(tempMigrationRoot, { recursive: true, force: true });
 }
@@ -832,6 +870,7 @@ assert(migrationReport.statusCode === 200, `smart migration report failed: ${mig
 assert(migrationReport.body.includes("clinic_profile_suggestion"), "smart import report must include clinic suggestions");
 assert(migrationReport.body.includes("public_lookup"), "smart import report must include public lookup rows");
 assert(migrationReport.body.includes("legacy_source"), "smart import report must include legacy source rows");
+assert(!/C:\\Legacy|clinic_2024\.fdb/i.test(migrationReport.body), "smart import report legacy source rows must not leak raw local DB paths");
 
 console.log(
   JSON.stringify({

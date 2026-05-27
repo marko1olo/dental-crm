@@ -34,6 +34,7 @@ requireIn(settingsSource, "const clinicalRuleOwnerRoles: StaffRole[]", "Settings
 requireIn(settingsSource, "recognitionInputReady", "SettingsView must guard empty AI recognition input.");
 requireIn(settingsSource, "smartImportInputReady", "SettingsView must guard empty smart import input.");
 requireIn(settingsSource, "runMigrationAutopilot", "SettingsView must expose one-click migration autopilot.");
+requireIn(settingsSource, "downloadMigrationHandoffReport", "SettingsView must expose migration handoff CSV download.");
 requireIn(settingsSource, "migrationAutopilot", "SettingsView must render migration autopilot results.");
 requireIn(settingsSource, "migrationAutopilot.operatorPacket", "SettingsView must render the migration operator packet.");
 requireIn(settingsSource, "migrationAutopilot.operatorPacket.handoffChecklist", "SettingsView must render the migration handoff checklist.");
@@ -48,7 +49,9 @@ requireIn(settingsSource, "migrationSourceProbe", "SettingsView must render migr
 requireIn(settingsSource, "addMigrationDiscoveryCandidateToSmartImport", "SettingsView must let admins send discovered sources to smart import.");
 requireIn(settingsSource, "lookupClinicPublicProfile", "SettingsView must expose public clinic-profile lookup.");
 requireIn(settingsSource, "clinicPublicLookup", "SettingsView must render public clinic lookup results.");
+requireIn(settingsSource, "source.safeSourceAlias", "SettingsView must show safe legacy source aliases instead of raw sourceRef paths.");
 requireIn(settingsSource, "data-testid=\"run-migration-autopilot\"", "SettingsView must test-tag the migration autopilot action.");
+requireIn(settingsSource, "data-testid=\"download-migration-handoff-report\"", "SettingsView must test-tag the migration handoff CSV action.");
 requireIn(settingsSource, "data-testid=\"migration-autopilot-result\"", "SettingsView must test-tag migration autopilot results.");
 requireIn(settingsSource, "data-testid=\"migration-autopilot-operator-packet\"", "SettingsView must test-tag migration operator packet results.");
 requireIn(settingsSource, "data-testid=\"migration-autopilot-handoff-checklist\"", "SettingsView must test-tag migration handoff checklist results.");

@@ -6504,6 +6504,7 @@ export const smartImportLegacySourceSchema = z.object({
   title: z.string(),
   confidence: z.number().min(0).max(1),
   sourceRef: z.string().nullable(),
+  safeSourceAlias: z.string().nullable(),
   evidence: z.array(z.string()),
   requiredArtifacts: z.array(z.string()),
   recommendedRoute: z.string(),

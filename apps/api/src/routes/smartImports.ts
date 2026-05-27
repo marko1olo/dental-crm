@@ -901,6 +901,22 @@ function migrationFingerprint(value: string) {
   return createHash("sha1").update(stableValue).digest("hex").slice(0, 10);
 }
 
+function safeMigrationDiscoveryRoot(root: string) {
+  const trimmed = root.trim();
+  if (/^(?:browser-local|workstation-profile|workstation-signal|local-root|network-root|remote-root|source-root):[a-f0-9]{8,12}$/i.test(trimmed)) {
+    return trimmed;
+  }
+  const fingerprint = migrationFingerprint(trimmed).toUpperCase();
+  if (trimmed.startsWith("\\\\")) return `network-root:${fingerprint}`;
+  if (/^https?:\/\//i.test(trimmed)) return `remote-root:${fingerprint}`;
+  if (path.isAbsolute(trimmed) || /^[A-Za-z]:[\\/]/.test(trimmed)) return `local-root:${fingerprint}`;
+  return `source-root:${fingerprint}`;
+}
+
+function safeMigrationDiscoveryRoots(roots: string[]) {
+  return uniqueStrings(roots.map((root) => safeMigrationDiscoveryRoot(root)));
+}
+
 function migrationDiscoveryDepth(root: string, folderPath: string) {
   const relative = path.relative(root, folderPath);
   if (!relative || relative === ".") return 0;
@@ -1277,7 +1293,7 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
   return migrationLocalSourceDiscoveryResponseSchema.parse({
     version: "dental-crm-migration-local-discovery-v1",
     generatedAt: new Date().toISOString(),
-    roots,
+    roots: safeMigrationDiscoveryRoots(roots),
     scannedFolders,
     candidates: sortedCandidates,
     warnings: Array.from(warnings),
@@ -3037,7 +3053,9 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
   });
   discovery.warnings.forEach((warning) => warnings.add(warning));
   if (input.knownSources?.length) {
-    warnings.add("ÐÐ²Ñ‚Ð¾Ð¿Ð¸Ð»Ð¾Ñ‚ Ð´Ð¾Ð±Ð°Ð²Ð¸Ð» browser-local manifest Ð¸Ð· ÑÐ²Ð½Ð¾ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½Ð¾Ð¹ Ð¿Ð°Ð¿ÐºÐ¸/Ñ„Ð°Ð¹Ð»Ð¾Ð²; Ð¿Ð¾Ð»Ð½Ñ‹Ð¹ Ð»Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¿ÑƒÑ‚ÑŒ Ð¸ ÑÐ¾Ð´ÐµÑ€Ð¶Ð¸Ð¼Ð¾Ðµ Ñ„Ð°Ð¹Ð»Ð¾Ð² Ð² Ð¿ÑƒÐ±Ð»Ð¸Ñ‡Ð½Ñ‹Ðµ ÑÐµÑ€Ð²Ð¸ÑÑ‹ Ð½Ðµ ÑƒÑ…Ð¾Ð´ÑÑ‚.");
+    warnings.add(
+      "Автопилот добавил browser-local manifest из явно выбранной папки/файлов; полный локальный путь и содержимое файлов в публичные сервисы не уходят."
+    );
   }
 
   const candidatesBySource = new Map<string, MigrationLocalSourceDiscoveryCandidate>();
@@ -3131,7 +3149,7 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
     clinicLookup,
     probedCount
   });
-  const roots = uniqueStrings([...discovery.roots, ...(input.knownSources ?? []).map((candidate) => candidate.sourceRef)]);
+  const roots = safeMigrationDiscoveryRoots([...discovery.roots, ...(input.knownSources ?? []).map((candidate) => candidate.sourceRef)]);
   const scannedFolders = discovery.scannedFolders + (input.knownScannedFolders ?? 0);
 
   return migrationAutopilotResponseSchema.parse({
@@ -3228,6 +3246,25 @@ function legacySourceEvidence(value: string, sourceRef: string | null) {
   if (/1c|1с|\.1cd|мис|инфоклиника|cliniccards|dental4windows|dental\s*pro|ident|stomx/i.test(value)) evidence.add("legacy MIS name");
   if (/\\\\|smb|network share|сетев/i.test(value)) evidence.add("network share");
   return Array.from(evidence);
+}
+
+function safeLegacySourceAlias(kind: SmartImportLegacySource["kind"], sourceRef: string | null) {
+  if (!sourceRef) return null;
+  if (/^(?:browser-local|workstation-profile|workstation-signal):[a-f0-9]{8,12}$/i.test(sourceRef)) return sourceRef;
+  return `${legacySourceTitles[kind]} #${migrationFingerprint(sourceRef).toUpperCase()}`;
+}
+
+function safeLegacySourceEvidence(source: SmartImportLegacySource) {
+  const alias = source.safeSourceAlias ?? (source.sourceRef ? safeLegacySourceAlias(source.kind, source.sourceRef) : null);
+  return source.evidence.map((item) => {
+    if (/^sourceRef=/i.test(item)) return alias ? `sourceRef=${alias}` : "sourceRef=redacted";
+    return item;
+  });
+}
+
+function smartImportReportSourceText(line: SmartImportLineClassification) {
+  if (line.kind !== "legacy_source") return line.text;
+  return "legacy source raw path/name redacted; use the legacy_source alias row for handoff";
 }
 
 function legacySourcePlaybook(kind: SmartImportLegacySource["kind"]): Pick<
@@ -3361,6 +3398,7 @@ function buildLegacySources(lines: SmartImportLineClassification[]): SmartImport
     const kind = detectLegacySourceKind(line.text, sourceRef);
     const playbook = legacySourcePlaybook(kind);
     const evidence = legacySourceEvidence(line.text, sourceRef);
+    const safeSourceAlias = safeLegacySourceAlias(kind, sourceRef);
     const confidence = clampConfidence(line.confidence + Math.min(0.18, evidence.length * 0.03));
     const key = `${kind}:${sourceRef ?? line.text.toLowerCase().slice(0, 80)}`;
     const current = sources.get(key);
@@ -3377,6 +3415,7 @@ function buildLegacySources(lines: SmartImportLineClassification[]): SmartImport
       title: legacySourceTitles[kind],
       confidence,
       sourceRef,
+      safeSourceAlias,
       evidence,
       ...playbook
     });
@@ -3574,7 +3613,7 @@ function buildSmartImportReportCsv(preview: ReturnType<typeof buildSmartImportPr
       "",
       "",
       line.reason,
-      line.text
+      smartImportReportSourceText(line)
     ]);
   });
 
@@ -3652,16 +3691,140 @@ function buildSmartImportReportCsv(preview: ReturnType<typeof buildSmartImportPr
       Math.round(source.confidence * 100),
       source.title,
       source.automationLevel,
-      source.sourceRef,
+      source.safeSourceAlias ?? "",
       source.requiredArtifacts.join(" | "),
       source.privacy,
       source.nextAction,
-      source.evidence.join(" | ")
+      safeLegacySourceEvidence(source).join(" | ")
     ]);
   });
 
   preview.parserNotes.forEach((note, index) => {
     rows.push(["parser_note", index + 1, "info", "", "", "", "", "", "", note, ""]);
+  });
+
+  return rows.map((row) => row.map(csvCell).join(";")).join("\n");
+}
+
+function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildMigrationAutopilot>>) {
+  const rows: Array<Array<string | number | null | undefined>> = [
+    [
+      "section",
+      "order",
+      "owner",
+      "status",
+      "phaseOrKind",
+      "sourceFingerprint",
+      "sourceKind",
+      "title",
+      "detail",
+      "requiredArtifact",
+      "privacy",
+      "doneWhenOrNextAction"
+    ]
+  ];
+
+  rows.push([
+    "summary",
+    1,
+    "system",
+    plan.operatorPacket.overallStatus,
+    "operator_packet",
+    "",
+    "",
+    `score ${Math.round(plan.operatorPacket.score * 100)}%`,
+    `sources ${plan.operatorPacket.totals.sources}; probed ${plan.operatorPacket.totals.probed}; DB ${plan.operatorPacket.totals.databaseSources}; media ${plan.operatorPacket.totals.mediaSources}; workstation ${plan.operatorPacket.totals.workstationHints}; public links ${plan.operatorPacket.totals.publicLookupTargets}`,
+    "safe migration handoff",
+    "No raw local paths, patient identifiers, DICOM pixels, file names, or legacy DB contents in this CSV.",
+    plan.nextAction
+  ]);
+
+  plan.operatorPacket.lanes.forEach((lane, index) => {
+    rows.push([
+      "lane",
+      index + 1,
+      lane.owner,
+      lane.status,
+      lane.id,
+      "",
+      "",
+      lane.title,
+      lane.detail,
+      "",
+      "Lane summary is alias/fingerprint based; raw data stays local.",
+      lane.nextAction
+    ]);
+  });
+
+  plan.operatorPacket.handoffChecklist.forEach((item, index) => {
+    rows.push([
+      "handoff_checklist",
+      index + 1,
+      item.owner,
+      item.status,
+      item.phase,
+      item.sourceFingerprint?.toUpperCase() ?? "",
+      item.sourceKind ?? "",
+      item.title,
+      item.detail,
+      item.requiredArtifact,
+      item.privacy,
+      item.doneWhen
+    ]);
+  });
+
+  plan.sources.forEach((source, index) => {
+    rows.push([
+      "source",
+      index + 1,
+      source.owner,
+      source.readiness.level,
+      source.bridgeKit.kind,
+      source.candidate.sourceFingerprint.toUpperCase(),
+      source.candidate.sourceKind,
+      `${source.candidate.sourceKind} #${source.candidate.sourceFingerprint.toUpperCase()}`,
+      `score ${Math.round(source.score * 100)}%; files ${source.candidate.matchedFiles}; blockers ${source.readiness.blockers.length}; warnings ${source.readiness.warnings.length}`,
+      source.bridgeKit.outputManifest.format,
+      source.bridgeKit.privacyBoundary,
+      source.recommendedAction
+    ]);
+  });
+
+  plan.operatorPacket.firstActions.forEach((action, index) => {
+    rows.push(["first_action", index + 1, "administrator", "needs_admin", "", "", "", action, "", "", "Action text contains no raw paths or patient data.", ""]);
+  });
+
+  rows.push([
+    "clinic_public_lookup_policy",
+    1,
+    "administrator",
+    plan.operatorPacket.onlineLookupPolicy.providerStatus ?? "not_configured",
+    "allowed",
+    "",
+    "",
+    "Allowed public lookup fields",
+    plan.operatorPacket.onlineLookupPolicy.allowed.join(" | "),
+    plan.operatorPacket.onlineLookupPolicy.safeQuery ?? "",
+    "Only clinic requisites may go to public services.",
+    plan.clinicLookup?.nextAction ?? "Run clinic public lookup with INN/OGRN/name/address/license only."
+  ]);
+  rows.push([
+    "clinic_public_lookup_policy",
+    2,
+    "administrator",
+    "blocked",
+    "forbidden",
+    "",
+    "",
+    "Forbidden public lookup fields",
+    plan.operatorPacket.onlineLookupPolicy.forbidden.join(" | "),
+    "",
+    "Patient data, DICOM, local paths, file names, and legacy DB contents must stay out of public APIs.",
+    "Remove forbidden data before any maps/search/API lookup."
+  ]);
+
+  [...plan.privacyWarnings, ...plan.warnings].slice(0, 16).forEach((warning, index) => {
+    rows.push(["warning", index + 1, "system", "review", "", "", "", warning, "", "", "Warning is generated by migration autopilot.", ""]);
   });
 
   return rows.map((row) => row.map(csvCell).join(";")).join("\n");
@@ -3700,6 +3863,17 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     if (!(await requireClinicalReadAccess(request, reply, "migration autopilot"))) return;
     const input = migrationAutopilotRequestSchema.parse(request.body ?? {});
     return buildMigrationAutopilot(input);
+  });
+
+  app.post("/api/imports/smart/migration-autopilot/report.csv", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "migration autopilot report"))) return;
+    const input = migrationAutopilotRequestSchema.parse(request.body ?? {});
+    const plan = await buildMigrationAutopilot(input);
+    const csv = buildMigrationAutopilotReportCsv(plan);
+    return reply
+      .type("text/csv; charset=utf-8")
+      .header("Content-Disposition", 'attachment; filename="migration_autopilot_handoff.csv"')
+      .send(`\uFEFF${csv}`);
   });
 
   app.post("/api/imports/smart/clinic-public-lookup", async (request, reply) => {

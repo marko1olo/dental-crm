@@ -198,6 +198,7 @@ export function SettingsView(props: SettingsViewProps) {
     documentLabels,
     downloadDicomViewerToolStateBundle,
     downloadDicomWorkbenchManifest,
+    downloadMigrationHandoffReport,
     downloadPersistenceExport,
     downloadSmartImportReport,
     downloadTelegramQrSvg,
@@ -256,6 +257,7 @@ export function SettingsView(props: SettingsViewProps) {
     isImportLoading,
     isLocalImagingOrganizing,
     isMigrationAutopilotLoading,
+    isMigrationHandoffReportLoading,
     isMigrationSourceDiscovering,
     isMigrationSourceProbeLoading,
     isMigrationSourceWorkupLoading,
@@ -3302,6 +3304,16 @@ export function SettingsView(props: SettingsViewProps) {
                 <button
                   className="secondary-button"
                   type="button"
+                  onClick={() => void downloadMigrationHandoffReport()}
+                  disabled={isMigrationHandoffReportLoading}
+                  data-testid="download-migration-handoff-report"
+                  aria-busy={isMigrationHandoffReportLoading || undefined}
+                >
+                  <FileText aria-hidden="true" /> {isMigrationHandoffReportLoading ? "Готовлю handoff" : "Handoff CSV"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
                   onClick={() => void pickBrowserMigrationSource()}
                   disabled={isBrowserMigrationScanning}
                   data-testid="pick-browser-migration-source"
@@ -3880,7 +3892,7 @@ export function SettingsView(props: SettingsViewProps) {
                         <span>
                           {source.kind} · {source.automationLevel}
                         </span>
-                        {source.sourceRef ? <span>{source.sourceRef}</span> : null}
+                        {source.safeSourceAlias ? <span>{source.safeSourceAlias}</span> : null}
                         <p>{source.recommendedRoute}</p>
                         <p>Нужно: {source.requiredArtifacts.join(" · ")}</p>
                         <p>{source.privacy}</p>

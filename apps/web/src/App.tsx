@@ -6269,6 +6269,7 @@ export function App() {
   const [isImagingFolderScanning, setIsImagingFolderScanning] = useState(false);
   const [isDicomLocalDiscovering, setIsDicomLocalDiscovering] = useState(false);
   const [isMigrationAutopilotLoading, setIsMigrationAutopilotLoading] = useState(false);
+  const [isMigrationHandoffReportLoading, setIsMigrationHandoffReportLoading] = useState(false);
   const [isMigrationSourceDiscovering, setIsMigrationSourceDiscovering] = useState(false);
   const [isMigrationSourceWorkupLoading, setIsMigrationSourceWorkupLoading] = useState(false);
   const [isMigrationSourceProbeLoading, setIsMigrationSourceProbeLoading] = useState(false);
@@ -10857,7 +10858,7 @@ export function App() {
     }
   }
 
-  async function runMigrationAutopilot() {
+  function migrationAutopilotRequestPayload() {
     const clinicPayload = {
       inn: clinicProfileDraft.inn,
       kpp: clinicProfileDraft.kpp,
@@ -10869,6 +10870,19 @@ export function App() {
     };
     const hasClinicPayload = Object.values(clinicPayload).some((value) => typeof value === "string" && value.trim());
     const knownSources = browserMigrationDiscovery?.candidates.slice(0, 18);
+    return {
+      maxDepth: 5,
+      maxFolders: 1600,
+      maxFilesPerFolder: 160,
+      maxCandidates: 18,
+      maxProbeCandidates: 4,
+      knownSources: knownSources?.length ? knownSources : undefined,
+      knownScannedFolders: browserMigrationDiscovery?.scannedFolders,
+      clinic: hasClinicPayload ? clinicPayload : undefined
+    };
+  }
+
+  async function runMigrationAutopilot() {
     setIsMigrationAutopilotLoading(true);
     setMigrationSourceWorkup(null);
     setMigrationSourceProbe(null);
@@ -10876,16 +10890,7 @@ export function App() {
       const response = await fetch("/api/imports/smart/migration-autopilot", {
         method: "POST",
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          maxDepth: 5,
-          maxFolders: 1600,
-          maxFilesPerFolder: 160,
-          maxCandidates: 18,
-          maxProbeCandidates: 4,
-          knownSources: knownSources?.length ? knownSources : undefined,
-          knownScannedFolders: browserMigrationDiscovery?.scannedFolders,
-          clinic: hasClinicPayload ? clinicPayload : undefined
-        })
+        body: JSON.stringify(migrationAutopilotRequestPayload())
       });
       if (!response.ok) {
         throw new Error(`Автоплан миграции: API ${response.status}`);
@@ -10906,6 +10911,33 @@ export function App() {
       setError(autopilotError instanceof Error ? autopilotError.message : "Автоплан миграции не построен");
     } finally {
       setIsMigrationAutopilotLoading(false);
+    }
+  }
+
+  async function downloadMigrationHandoffReport() {
+    setIsMigrationHandoffReportLoading(true);
+    try {
+      const response = await fetch("/api/imports/smart/migration-autopilot/report.csv", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(migrationAutopilotRequestPayload())
+      });
+      if (!response.ok) {
+        throw new Error(`Handoff-отчет миграции: API ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "migration_autopilot_handoff.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (reportError) {
+      setError(reportError instanceof Error ? reportError.message : "Handoff-отчет миграции не создан");
+    } finally {
+      setIsMigrationHandoffReportLoading(false);
     }
   }
 
@@ -18939,6 +18971,7 @@ export function App() {
               documentLabels={documentLabels}
               downloadDicomViewerToolStateBundle={downloadDicomViewerToolStateBundle}
               downloadDicomWorkbenchManifest={downloadDicomWorkbenchManifest}
+              downloadMigrationHandoffReport={downloadMigrationHandoffReport}
               downloadPersistenceExport={downloadPersistenceExport}
               downloadSmartImportReport={downloadSmartImportReport}
               downloadTelegramQrSvg={downloadTelegramQrSvg}
@@ -18997,6 +19030,7 @@ export function App() {
               isImportLoading={isImportLoading}
               isLocalImagingOrganizing={isLocalImagingOrganizing}
               isMigrationAutopilotLoading={isMigrationAutopilotLoading}
+              isMigrationHandoffReportLoading={isMigrationHandoffReportLoading}
               isMigrationSourceDiscovering={isMigrationSourceDiscovering}
               isMigrationSourceProbeLoading={isMigrationSourceProbeLoading}
               isMigrationSourceWorkupLoading={isMigrationSourceWorkupLoading}
