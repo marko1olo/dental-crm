@@ -6291,6 +6291,7 @@ export function App() {
   const [isSmartImportLoading, setIsSmartImportLoading] = useState(false);
   const [isSmartImportCommitting, setIsSmartImportCommitting] = useState(false);
   const [isSmartReportLoading, setIsSmartReportLoading] = useState(false);
+  const [isSmartSafeReportLoading, setIsSmartSafeReportLoading] = useState(false);
   const [isRecognitionLoading, setIsRecognitionLoading] = useState(false);
   const [isPricelistAnalyzing, setIsPricelistAnalyzing] = useState(false);
   const [isVisitDictating, setIsVisitDictating] = useState(false);
@@ -10855,6 +10856,41 @@ export function App() {
       setError(reportError instanceof Error ? reportError.message : "Отчет импорта не создан");
     } finally {
       setIsSmartReportLoading(false);
+    }
+  }
+
+  async function downloadSmartImportSafeHandoffReport() {
+    if (!smartImportText.trim()) {
+      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед безопасным CSV.");
+      return;
+    }
+    setIsSmartSafeReportLoading(true);
+    try {
+      const response = await fetch("/api/imports/smart/report.safe.csv", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: "smart_mixed_export",
+          mode: smartImportMode,
+          rawText: smartImportText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Безопасный handoff импорта: API ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "smart_import_safe_handoff.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (reportError) {
+      setError(reportError instanceof Error ? reportError.message : "Безопасный handoff импорта не создан");
+    } finally {
+      setIsSmartSafeReportLoading(false);
     }
   }
 
@@ -18973,6 +19009,7 @@ export function App() {
               downloadDicomWorkbenchManifest={downloadDicomWorkbenchManifest}
               downloadMigrationHandoffReport={downloadMigrationHandoffReport}
               downloadPersistenceExport={downloadPersistenceExport}
+              downloadSmartImportSafeHandoffReport={downloadSmartImportSafeHandoffReport}
               downloadSmartImportReport={downloadSmartImportReport}
               downloadTelegramQrSvg={downloadTelegramQrSvg}
               filteredTelegramOutboxItems={filteredTelegramOutboxItems}
@@ -19040,6 +19077,7 @@ export function App() {
               isSmartImportCommitting={isSmartImportCommitting}
               isSmartImportLoading={isSmartImportLoading}
               isSmartReportLoading={isSmartReportLoading}
+              isSmartSafeReportLoading={isSmartSafeReportLoading}
               isTelegramChatLinksLoadingMore={isTelegramChatLinksLoadingMore}
               isTelegramLinkCodesLoadingMore={isTelegramLinkCodesLoadingMore}
               isTelegramLinkCreating={isTelegramLinkCreating}

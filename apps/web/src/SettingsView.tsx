@@ -200,6 +200,7 @@ export function SettingsView(props: SettingsViewProps) {
     downloadDicomWorkbenchManifest,
     downloadMigrationHandoffReport,
     downloadPersistenceExport,
+    downloadSmartImportSafeHandoffReport,
     downloadSmartImportReport,
     downloadTelegramQrSvg,
     filteredTelegramOutboxItems,
@@ -267,6 +268,7 @@ export function SettingsView(props: SettingsViewProps) {
     isSmartImportCommitting,
     isSmartImportLoading,
     isSmartReportLoading,
+    isSmartSafeReportLoading,
     isTelegramChatLinksLoadingMore,
     isTelegramLinkCodesLoadingMore,
     isTelegramLinkCreating,
@@ -3291,6 +3293,16 @@ export function SettingsView(props: SettingsViewProps) {
                 </button>
                 <button className="secondary-button" type="button" onClick={downloadSmartImportReport} disabled={isSmartReportLoading || !smartImportInputReady}>
                   <FileText aria-hidden="true" /> {isSmartReportLoading ? "Готовлю отчет" : "CSV-отчет"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={downloadSmartImportSafeHandoffReport}
+                  disabled={isSmartSafeReportLoading || !smartImportInputReady}
+                  data-testid="download-smart-safe-handoff-report"
+                  title="CSV для администратора, IT или вендора без ФИО, телефонов, дат рождения, локальных путей и имен файлов"
+                >
+                  <ShieldCheck aria-hidden="true" /> {isSmartSafeReportLoading ? "Готовлю safe CSV" : "Safe CSV"}
                 </button>
                 <button
                   className="secondary-button"

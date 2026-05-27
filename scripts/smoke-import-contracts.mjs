@@ -129,6 +129,34 @@ assert(!/[\r\n]/.test(disposition), "smart report Content-Disposition must not c
 assert(!disposition.includes('bad "name"'), "smart report Content-Disposition must not contain raw source names");
 assert(disposition.includes("bad_name_.csv_report.csv"), `smart report filename must be sanitized, got ${disposition}`);
 
+const safeSmartReport = await app.inject({
+  method: "POST",
+  url: "/api/imports/smart/report.safe.csv",
+  headers,
+  payload: {
+    sourceName: '  bad "name"\r\n.csv  ',
+    rawText: [
+      "Ivan Petrov +79001112233 01.02.1980 migration",
+      "C:\\cases\\ivan\\36.dcm cbct 36",
+      "Старая база C:\\Legacy\\clinic_2024.fdb",
+      "Dental clinic Smile Center INN 1234567890 Address: Samara, Lenina 1"
+    ].join("\n")
+  }
+});
+assert(safeSmartReport.statusCode === 200, `safe smart handoff report failed: ${safeSmartReport.statusCode}`);
+assert(
+  safeSmartReport.headers["content-disposition"] === 'attachment; filename="smart_import_safe_handoff.csv"',
+  "safe smart handoff report filename must be static"
+);
+assert(safeSmartReport.body.startsWith("\uFEFFsection;"), "safe smart handoff report must be a BOM-prefixed CSV");
+assert(safeSmartReport.body.includes("patient_row"), "safe smart handoff report must include patient row status without identity");
+assert(safeSmartReport.body.includes("imaging_row"), "safe smart handoff report must include imaging row status without file paths");
+assert(safeSmartReport.body.includes("legacy_source"), "safe smart handoff report must include legacy source aliases");
+assert(
+  !/Ivan|Petrov|\+79001112233|79001112233|01\.02\.1980|C:\\|cases|36\.dcm|clinic_2024\.fdb/i.test(safeSmartReport.body),
+  "safe smart handoff report must not leak patient identity, birth dates, local paths, file names, or raw DB names"
+);
+
 const migrationPreview = await app.inject({
   method: "POST",
   url: "/api/imports/smart/preview",
