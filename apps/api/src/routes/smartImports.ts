@@ -3785,13 +3785,14 @@ function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSm
   });
 
   preview.imagingPreview.rows.forEach((row) => {
+    const safeKind = row.kind ?? "imaging";
     rows.push([
       "imaging_row",
       row.rowNumber,
       row.status,
       "",
-      row.kind,
-      `imaging-row #${smartImportSafeHandoffFingerprint("imaging", row.rowNumber, row.status, row.kind)}`,
+      safeKind,
+      `imaging-row #${smartImportSafeHandoffFingerprint("imaging", row.rowNumber, row.status, safeKind)}`,
       smartImportSafeHandoffWarnings(row.warnings.length),
       "Patient name, local file path, file name, and DICOM/image payload are deliberately omitted from safe handoff.",
       row.status === "ready" ? "Clinic operator can attach this only after internal patient/source verification." : "Prepare metadata-only manifest or manual mapping inside the clinic."
