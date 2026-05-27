@@ -170,6 +170,7 @@ Implemented smart mixed import:
 - `POST /api/imports/smart/preview`
 - `POST /api/imports/smart/commit`
 - `POST /api/imports/smart/report.csv`
+- `POST /api/imports/smart/report.safe.csv`
 - accepts one mixed text source from old MIS exports, Excel copy, RVG folder manifests, OCR text, dictation, old database paths, archive references, PACS/DICOM hints, or network-share notes;
 - classifies each non-empty line as `patient`, `imaging`, `clinic`, `legacy_source`, or `ignored` with confidence and reason;
 - separates clinic requisites/profile facts from patient/imaging rows; suggested clinic fields are never written by smart import commit;
@@ -178,6 +179,7 @@ Implemented smart mixed import:
 - detects legacy source candidates for Firebird/InterBase, Access, SQLite, SQL dumps/backups, CSV/TSV, XLS/XLSX, archives, PACS/DICOMweb, DICOMDIR/CBCT folders, RVG/ОПТГ/photo archives, vendor imaging systems such as Sidexis/Romexis/Vatech/Carestream/Planmeca, old MIS names, and network shares;
 - returns required artifacts and safe next actions per legacy source, so a non-technical clinic user knows whether to bring a DB copy, CSV export, DICOMDIR/folder, PACS endpoint, or read-only network path;
 - returns a migration plan covering old patient DB, CT/RVG/DICOM/photo archive, clinic profile facts, public lookup readiness, and legacy-source staging readiness;
+- exports a separate static-name safe handoff CSV from `report.safe.csv` for admin/IT/vendor work: aggregate patient/imaging row status, clinic public fields, public lookup targets, source aliases, fingerprints, route guidance, and privacy warnings only. It deliberately omits patient names, phones, birth dates, notes, raw source text, local paths, file names, DICOM pixels, and legacy DB names. The older `report.csv` stays an internal clinic report because it includes patient/imaging preview details for operator validation;
 - returns safe public lookup links for Google Maps, Яндекс.Карты, 2ГИС, website search, official ФНС ЕГРЮЛ/ЕГРИП, Rusprofile fallback, and Росздравнадзор license search from clinic name/address/INN/license only; patient names, phones, birth dates, images, legacy DB paths, and DICOM paths are stripped before any public query is prepared;
 - `POST /api/imports/smart/local-source-discovery` scans bounded local roots read-only for old DBs, 1C `.1cd`/`.dt`, SQL Server/Firebird/Access/SQLite, dumps, spreadsheets, archives, DICOMDIR/CBCT folders, RVG/ОПТГ/photo archives, dental 3D models, and known vendor imaging folders; Settings shows safe aliases, fingerprints, counters, and reasons first, then lets an admin send the chosen source into the smart parser;
 - Discovery responses expose scan roots only as `local-root:*`, `network-root:*`, `remote-root:*`, or `browser-local:*` aliases; raw filesystem roots stay server/workstation-local and are not returned to Settings or reports;
