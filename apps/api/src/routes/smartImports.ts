@@ -3706,6 +3706,156 @@ function buildSmartImportReportCsv(preview: ReturnType<typeof buildSmartImportPr
   return rows.map((row) => row.map(csvCell).join(";")).join("\n");
 }
 
+const safeSmartImportClinicFields = new Set([
+  "clinicName",
+  "legalName",
+  "inn",
+  "kpp",
+  "ogrn",
+  "address",
+  "medicalLicenseNumber",
+  "medicalLicenseIssuedAt",
+  "medicalLicenseIssuer"
+]);
+
+function smartImportSafeHandoffWarnings(count: number) {
+  if (count <= 0) return "";
+  return `${count} warning(s); details stay in internal preview`;
+}
+
+function smartImportSafeHandoffFingerprint(section: string, rowNumber: number, status: string, kind = "") {
+  return migrationFingerprint(`${section}:${rowNumber}:${status}:${kind}`).toUpperCase();
+}
+
+function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSmartImportPreview>) {
+  const rows: Array<Array<string | number | null | undefined>> = [
+    [
+      "section",
+      "rowNumber",
+      "status",
+      "confidence",
+      "item",
+      "safeValue",
+      "warnings",
+      "privacy",
+      "nextAction"
+    ]
+  ];
+
+  rows.push([
+    "summary",
+    1,
+    "review",
+    "",
+    "smart_import_safe_handoff",
+    `lines ${preview.totalLines}; patient rows ${preview.patientPreview.totalRows}; imaging rows ${preview.imagingPreview.totalRows}; clinic fields ${
+      preview.clinicSuggestion ? Object.keys(preview.clinicSuggestion.fields).length : 0
+    }; legacy sources ${preview.legacySources.length}`,
+    "",
+    "Safe handoff CSV: no patient names, phones, birth dates, notes, local file paths, file names, DICOM pixels, or raw legacy DB contents.",
+    "Use this file for clinic admin/IT/vendor handoff; use the internal CSV only inside the clinic."
+  ]);
+
+  preview.migrationPlan.steps.forEach((step, index) => {
+    rows.push([
+      "migration_step",
+      index + 1,
+      step.status,
+      "",
+      step.id,
+      step.detail,
+      "",
+      "Migration step uses aggregated counts and route guidance only.",
+      step.nextAction
+    ]);
+  });
+
+  preview.patientPreview.rows.forEach((row) => {
+    rows.push([
+      "patient_row",
+      row.rowNumber,
+      row.status,
+      "",
+      "patient_record",
+      `patient-row #${smartImportSafeHandoffFingerprint("patient", row.rowNumber, row.status)}`,
+      smartImportSafeHandoffWarnings(row.warnings.length),
+      "Patient identity, phone, birth date, and notes are deliberately omitted from safe handoff.",
+      row.status === "ready" ? "Clinic operator can verify this row in internal preview before commit." : "Fix or review this row inside the clinic preview."
+    ]);
+  });
+
+  preview.imagingPreview.rows.forEach((row) => {
+    rows.push([
+      "imaging_row",
+      row.rowNumber,
+      row.status,
+      "",
+      row.kind,
+      `imaging-row #${smartImportSafeHandoffFingerprint("imaging", row.rowNumber, row.status, row.kind)}`,
+      smartImportSafeHandoffWarnings(row.warnings.length),
+      "Patient name, local file path, file name, and DICOM/image payload are deliberately omitted from safe handoff.",
+      row.status === "ready" ? "Clinic operator can attach this only after internal patient/source verification." : "Prepare metadata-only manifest or manual mapping inside the clinic."
+    ]);
+  });
+
+  if (preview.clinicSuggestion) {
+    Object.entries(preview.clinicSuggestion.fields).forEach(([field, value]) => {
+      const safeForPublicLookup = safeSmartImportClinicFields.has(field);
+      rows.push([
+        "clinic_profile_suggestion",
+        preview.clinicSuggestion?.sourceLineNumbers.join(","),
+        safeForPublicLookup ? "review" : "redacted",
+        Math.round(preview.clinicSuggestion?.confidence ?? 0),
+        field,
+        safeForPublicLookup ? String(value ?? "") : "non-public clinic field redacted from handoff",
+        preview.clinicSuggestion?.warnings.length ? "clinic suggestion has internal warnings" : "",
+        safeForPublicLookup
+          ? "Clinic requisites only. Do not mix patient data into public lookup."
+          : "Non-public or ambiguous clinic field stays in internal preview.",
+        safeForPublicLookup ? "Confirm against clinic documents before saving." : "Review inside the clinic profile screen."
+      ]);
+    });
+  }
+
+  preview.publicLookupTargets.forEach((target, index) => {
+    rows.push([
+      "public_lookup",
+      index + 1,
+      "manual",
+      "",
+      target.kind,
+      target.query,
+      "",
+      target.privacy,
+      target.nextAction
+    ]);
+  });
+
+  preview.legacySources.forEach((source, index) => {
+    rows.push([
+      "legacy_source",
+      index + 1,
+      source.automationLevel,
+      Math.round(source.confidence * 100),
+      source.kind,
+      source.safeSourceAlias ?? `legacy-source #${smartImportSafeHandoffFingerprint("legacy", index + 1, source.automationLevel, source.kind)}`,
+      safeLegacySourceEvidence(source).join(" | "),
+      source.privacy,
+      source.nextAction
+    ]);
+  });
+
+  preview.parserNotes.forEach((note, index) => {
+    rows.push(["parser_note", index + 1, "info", "", "safe_policy", note, "", "Parser note contains workflow policy, not raw source rows.", ""]);
+  });
+
+  preview.migrationPlan.privacyWarnings.forEach((warning, index) => {
+    rows.push(["privacy_warning", index + 1, "blocked", "", "policy", warning, "", "Privacy boundary for migration handoff.", ""]);
+  });
+
+  return rows.map((row) => row.map(csvCell).join(";")).join("\n");
+}
+
 function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildMigrationAutopilot>>) {
   const rows: Array<Array<string | number | null | undefined>> = [
     [
@@ -3890,6 +4040,17 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     return reply
       .type("text/csv; charset=utf-8")
       .header("Content-Disposition", `attachment; filename="${safeSmartImportReportFilename(input.sourceName)}"`)
+      .send(`\uFEFF${csv}`);
+  });
+
+  app.post("/api/imports/smart/report.safe.csv", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "safe smart import handoff report"))) return;
+    const input = smartImportRequestSchema.parse(request.body);
+    const preview = buildSmartImportPreview(input);
+    const csv = buildSmartImportSafeHandoffReportCsv(preview);
+    return reply
+      .type("text/csv; charset=utf-8")
+      .header("Content-Disposition", 'attachment; filename="smart_import_safe_handoff.csv"')
       .send(`\uFEFF${csv}`);
   });
 
