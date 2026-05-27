@@ -1,0 +1,675 @@
+import { Plus, ShieldCheck } from "lucide-react";
+import type { ChangeEvent, KeyboardEvent } from "react";
+import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
+
+type AppointmentScheduleDraft = {
+  patientId: string;
+  doctorUserId: string;
+  assistantUserId: string;
+  chairId: string;
+  status: Appointment["status"];
+  startsAt: string;
+  endsAt: string;
+  reason: string;
+  comment: string;
+};
+
+type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
+type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
+
+type ScheduleViewProps = {
+  appointmentLabels: Record<Appointment["status"], string>;
+  appointmentReadinessById: Map<string, AppointmentReadiness>;
+  appointmentReadinessLabels: Record<AppointmentReadiness["state"], string>;
+  appointmentScheduleDirtyIds: Set<string>;
+  appointmentScheduleDraftFromAppointment: (appointment: Appointment) => AppointmentScheduleDraft;
+  appointmentScheduleDrafts: Record<string, AppointmentScheduleDraft>;
+  appointmentScheduleErrors: Record<string, string | null>;
+  appointmentScheduleSaveStates: Record<string, AppointmentScheduleSaveState>;
+  closeAppointmentEditor: (appointmentId: string) => void;
+  createAppointmentFromDraft: () => Promise<boolean>;
+  dashboard: Dashboard;
+  editingAppointmentId: string | null;
+  formatTime: (value: string) => string;
+  fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
+  lockTelegramAdminSession: () => void;
+  newAppointmentDraft: AppointmentScheduleDraft;
+  newAppointmentError: string | null;
+  newAppointmentSaveState: AppointmentScheduleSaveState;
+  normalizedAppointmentStatus: (value: unknown, fallback?: Appointment["status"]) => Appointment["status"];
+  normalizedAppointmentStatusFilter: (value: unknown) => Appointment["status"] | "all";
+  openAppointmentEditor: (appointment: Appointment) => void;
+  patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
+  recommendedActionPriorityLabels: Record<ScheduleSuggestion["priority"], string>;
+  resetNewAppointmentDraft: () => void;
+  saveAppointmentSchedule: (appointmentId: string, options?: { closeEditorOnSave?: boolean }) => Promise<boolean>;
+  scheduleAssistantFilterId: string | null;
+  scheduleChairFilterId: string | null;
+  scheduleDateFilter: string;
+  scheduleDoctorFilterId: string | null;
+  scheduleStatusFilter: Appointment["status"] | "all";
+  setScheduleAssistantFilterId: (value: string | null) => void;
+  setScheduleChairFilterId: (value: string | null) => void;
+  setScheduleDateFilter: (value: string) => void;
+  setScheduleDoctorFilterId: (value: string | null) => void;
+  setScheduleStatusFilter: (value: Appointment["status"] | "all") => void;
+  setTelegramAdminSecretDraft: (value: string) => void;
+  shiftWarnings: Dashboard["shiftIntelligence"]["scheduleWarnings"];
+  sortedAppointments: Appointment[];
+  staffRoleLabels: Record<StaffRole, string>;
+  telegramAdminSecretDraft: string;
+  telegramAdminSecretSession: string;
+  toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
+  unlockTelegramAdminSession: () => void;
+  updateAppointmentScheduleDraft: <K extends keyof AppointmentScheduleDraft>(
+    appointmentId: string,
+    key: K,
+    value: AppointmentScheduleDraft[K]
+  ) => void;
+  updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) => void;
+  visibleScheduleSuggestions: ScheduleSuggestion[];
+};
+
+export function ScheduleView(props: ScheduleViewProps) {
+  const {
+    appointmentLabels,
+    appointmentReadinessById,
+    appointmentReadinessLabels,
+    appointmentScheduleDirtyIds,
+    appointmentScheduleDraftFromAppointment,
+    appointmentScheduleDrafts,
+    appointmentScheduleErrors,
+    appointmentScheduleSaveStates,
+    closeAppointmentEditor,
+    createAppointmentFromDraft,
+    dashboard,
+    editingAppointmentId,
+    formatTime,
+    fromDateTimeLocalValue,
+    lockTelegramAdminSession,
+    newAppointmentDraft,
+    newAppointmentError,
+    newAppointmentSaveState,
+    normalizedAppointmentStatus,
+    normalizedAppointmentStatusFilter,
+    openAppointmentEditor,
+    patientName,
+    recommendedActionPriorityLabels,
+    resetNewAppointmentDraft,
+    saveAppointmentSchedule,
+    scheduleAssistantFilterId,
+    scheduleChairFilterId,
+    scheduleDateFilter,
+    scheduleDoctorFilterId,
+    scheduleStatusFilter,
+    setScheduleAssistantFilterId,
+    setScheduleChairFilterId,
+    setScheduleDateFilter,
+    setScheduleDoctorFilterId,
+    setScheduleStatusFilter,
+    setTelegramAdminSecretDraft,
+    shiftWarnings,
+    sortedAppointments,
+    staffRoleLabels,
+    telegramAdminSecretDraft,
+    telegramAdminSecretSession,
+    toDateTimeLocalValue,
+    unlockTelegramAdminSession,
+    updateAppointmentScheduleDraft,
+    updateNewAppointmentDraft,
+    visibleScheduleSuggestions
+  } = props;
+  const adminSecretReady = telegramAdminSecretDraft.trim().length > 0;
+  const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt);
+  const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt);
+  const newAppointmentMissingSteps = [
+    !newAppointmentDraft.patientId ? "выберите пациента" : null,
+    !newAppointmentDraft.doctorUserId ? "выберите врача" : null,
+    dashboard.clinicSettings.profile.mode !== "solo_doctor" && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
+    !newAppointmentDraft.chairId ? "выберите кресло" : null,
+    !newAppointmentDraft.startsAt.trim() ? "укажите начало приема" : null,
+    newAppointmentDraft.startsAt.trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "проверьте дату начала" : null,
+    !newAppointmentDraft.endsAt.trim() ? "укажите окончание приема" : null,
+    newAppointmentDraft.endsAt.trim() && !Number.isFinite(newAppointmentEndsAtMs) ? "проверьте дату окончания" : null,
+    Number.isFinite(newAppointmentStartsAtMs) && Number.isFinite(newAppointmentEndsAtMs) && newAppointmentEndsAtMs <= newAppointmentStartsAtMs
+      ? "окончание должно быть позже начала"
+      : null
+  ].filter((step): step is string => Boolean(step));
+  const newAppointmentReadyToCreate = newAppointmentMissingSteps.length === 0;
+  const appointmentDraftDateMissingSteps = (draft: AppointmentScheduleDraft) => {
+    const startsAtMs = Date.parse(draft.startsAt);
+    const endsAtMs = Date.parse(draft.endsAt);
+    return [
+      !draft.startsAt.trim() ? "укажите начало приема" : null,
+      draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
+      !draft.endsAt.trim() ? "укажите окончание приема" : null,
+      draft.endsAt.trim() && !Number.isFinite(endsAtMs) ? "проверьте дату окончания приема" : null,
+      Number.isFinite(startsAtMs) && Number.isFinite(endsAtMs) && endsAtMs <= startsAtMs
+        ? "окончание приема должно быть позже начала"
+        : null
+    ].filter((step): step is string => Boolean(step));
+  };
+
+  return (
+          <div className="panel schedule-panel" id="schedule">
+            <div className="panel-heading">
+              <h2>Очередь смены</h2>
+              <button
+                className="text-button"
+                type="button"
+                onClick={() => setScheduleDateFilter(toDateTimeLocalValue(new Date().toISOString(), dashboard.clinicSettings.profile.timezone).slice(0, 10))}
+              >
+                День
+              </button>
+            </div>
+            <div className="schedule-command-grid">
+              <article>
+                <span>Врачи</span>
+                <strong>{dashboard.shiftIntelligence.doctorLoads.length}</strong>
+                <p>
+                  {dashboard.shiftIntelligence.doctorLoads
+                    .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
+                    .join(" · ")}
+                </p>
+              </article>
+              <article>
+                <span>Ассистенты</span>
+                <strong>{dashboard.shiftIntelligence.assistantLoads.length}</strong>
+                <p>
+                  {dashboard.shiftIntelligence.assistantLoads
+                    .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
+                    .join(" · ") || "не назначены"}
+                </p>
+              </article>
+              <article>
+                <span>Кресла</span>
+                <strong>{dashboard.shiftIntelligence.chairLoads.length}</strong>
+                <p>
+                  {dashboard.shiftIntelligence.chairLoads
+                    .map((load: ResourceLoad) => `${load.title} ${load.utilizationPercent}%`)
+                    .join(" · ")}
+                </p>
+              </article>
+              <article>
+                <span>Контроль</span>
+                <strong>{shiftWarnings.length}</strong>
+                <p>{shiftWarnings[0]?.title ?? "нет срочных предупреждений"}</p>
+              </article>
+            </div>
+            <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания">
+              <label>
+                День
+                <input
+                  type="date"
+                  value={scheduleDateFilter}
+                  onChange={(event: TextFieldChangeEvent) => setScheduleDateFilter(event.target.value)}
+                />
+              </label>
+              <label>
+                Врач
+                <select value={scheduleDoctorFilterId ?? ""} onChange={(event: SelectChangeEvent) => setScheduleDoctorFilterId(event.target.value || null)}>
+                  <option value="">Все врачи</option>
+                  {dashboard.clinicSettings.staff
+                    .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+                    .map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.fullName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Ассистент
+                <select value={scheduleAssistantFilterId ?? ""} onChange={(event: SelectChangeEvent) => setScheduleAssistantFilterId(event.target.value || null)}>
+                  <option value="">Все ассистенты</option>
+                  {dashboard.clinicSettings.staff
+                    .filter((member) => member.active && member.role === "assistant")
+                    .map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.fullName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Кресло
+                <select value={scheduleChairFilterId ?? ""} onChange={(event: SelectChangeEvent) => setScheduleChairFilterId(event.target.value || null)}>
+                  <option value="">Все кресла</option>
+                  {dashboard.clinicSettings.chairs
+                    .filter((chair) => chair.active)
+                    .map((chair) => (
+                      <option key={chair.id} value={chair.id}>
+                        {chair.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Статус
+                <select
+                  value={scheduleStatusFilter}
+                  onChange={(event: SelectChangeEvent) => setScheduleStatusFilter(normalizedAppointmentStatusFilter(event.target.value))}
+                >
+                  <option value="all">Все статусы</option>
+                  {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
+                    <option key={status} value={status}>
+                      {appointmentLabels[status]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="schedule-filter-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setScheduleDateFilter(toDateTimeLocalValue(new Date().toISOString(), dashboard.clinicSettings.profile.timezone).slice(0, 10))}
+                >
+                  Сегодня
+                </button>
+                <button
+                  className="text-button"
+                  type="button"
+                  onClick={() => {
+                    setScheduleDateFilter("");
+                    setScheduleDoctorFilterId(null);
+                    setScheduleAssistantFilterId(null);
+                    setScheduleChairFilterId(null);
+                    setScheduleStatusFilter("all");
+                  }}
+                >
+                  Сбросить фильтры
+                </button>
+              </div>
+            </div>
+            <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания">
+              {!telegramAdminSecretSession ? (
+                <>
+                  <label className="form-span-2">
+                    Секрет админ-доступа DENTE для сохранения расписания
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={telegramAdminSecretDraft}
+                      onChange={(event: TextFieldChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
+                      onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                        if (event.key === "Enter" && adminSecretReady) {
+                          event.preventDefault();
+                          unlockTelegramAdminSession();
+                        }
+                      }}
+                      placeholder="если сервер требует x-dente-admin-secret"
+                      aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
+                    />
+                  </label>
+                  {!adminSecretReady ? (
+                    <p className="admin-unlock-guidance form-span-2" id="schedule-admin-unlock-guidance" role="status" aria-live="polite">
+                      Введите секрет администратора клиники, чтобы сохранять расписание и настройки.
+                    </p>
+                  ) : null}
+                  <div className="appointment-editor-actions">
+                    <span className="save-state save-state-idle">Секрет хранится только до перезагрузки страницы.</span>
+                    <button className="secondary-button" type="button" onClick={unlockTelegramAdminSession} disabled={!adminSecretReady}>
+                      <ShieldCheck aria-hidden="true" /> Разблокировать сохранение
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="appointment-editor-actions">
+                  <span className="save-state save-state-saved">Админ-доступ DENTE активен для расписания, настроек и Telegram.</span>
+                  <button className="secondary-button" type="button" onClick={lockTelegramAdminSession}>
+                    Забыть секрет
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="appointment-editor appointment-create-editor" aria-label="Создание записи">
+              <label>
+                Начало
+                <input
+                  type="datetime-local"
+                  value={toDateTimeLocalValue(newAppointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+                  onChange={(event: TextFieldChangeEvent) =>
+                    updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
+                  }
+                />
+              </label>
+              <label>
+                Окончание
+                <input
+                  type="datetime-local"
+                  value={toDateTimeLocalValue(newAppointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+                  onChange={(event: TextFieldChangeEvent) =>
+                    updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
+                  }
+                />
+              </label>
+              <label>
+                Пациент
+                <select value={newAppointmentDraft.patientId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("patientId", event.target.value)}>
+                  <option value="">Выберите пациента</option>
+                  {dashboard.patients
+                    .filter((patient) => patient.status === "active")
+                    .map((patient) => (
+                      <option key={patient.id} value={patient.id}>
+                        {patient.fullName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Врач
+                <select value={newAppointmentDraft.doctorUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("doctorUserId", event.target.value)}>
+                  <option value="">Выберите врача</option>
+                  {dashboard.clinicSettings.staff
+                    .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+                    .map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.fullName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Ассистент
+                <select value={newAppointmentDraft.assistantUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("assistantUserId", event.target.value)}>
+                  <option value="">{dashboard.clinicSettings.profile.mode === "solo_doctor" ? "Не нужен в режиме соло" : "Выберите ассистента"}</option>
+                  {dashboard.clinicSettings.staff
+                    .filter((member) => member.active && member.role === "assistant")
+                    .map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.fullName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Кресло
+                <select value={newAppointmentDraft.chairId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("chairId", event.target.value)}>
+                  <option value="">Выберите кресло</option>
+                  {dashboard.clinicSettings.chairs
+                    .filter((chair) => chair.active)
+                    .map((chair) => (
+                      <option key={chair.id} value={chair.id}>
+                        {chair.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Статус
+                <select value={newAppointmentDraft.status} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("status", normalizedAppointmentStatus(event.target.value))}>
+                  {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
+                    <option key={status} value={status}>
+                      {appointmentLabels[status]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-span-2">
+                Причина записи
+                <input value={newAppointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
+              </label>
+              <label className="form-span-2">
+                Комментарий
+                <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
+              </label>
+              {!newAppointmentReadyToCreate ? (
+                <div className="schedule-create-missing" role="status" aria-live="polite">
+                  <strong>Чтобы создать запись, осталось:</strong>
+                  <ul>
+                    {newAppointmentMissingSteps.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <div className="appointment-editor-actions">
+                {newAppointmentError ? <span className="save-error">{newAppointmentError}</span> : null}
+                <span className={`save-state save-state-${newAppointmentSaveState}`}>
+                  {newAppointmentSaveState === "saving"
+                    ? "Создаю"
+                    : newAppointmentSaveState === "saved"
+                      ? "Запись создана"
+                      : newAppointmentSaveState === "error"
+                        ? "Ошибка создания"
+                        : "Готово к созданию"}
+                </span>
+                <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"}>
+                  Сбросить
+                </button>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => void createAppointmentFromDraft()}
+                  disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
+                  aria-busy={newAppointmentSaveState === "saving" || undefined}
+                >
+                  <Plus aria-hidden="true" /> Создать запись
+                </button>
+              </div>
+            </div>
+            <div className="schedule-suggestion-strip" aria-label="Подсказки расписания">
+              {visibleScheduleSuggestions.map((suggestion) => (
+                <button
+                  className={`schedule-suggestion priority-${suggestion.priority}`}
+                  key={suggestion.id}
+                  type="button"
+                  onClick={() => {
+                    window.location.hash = suggestion.section;
+                  }}
+                >
+                  <span>{recommendedActionPriorityLabels[suggestion.priority]}</span>
+                  <strong>{suggestion.title}</strong>
+                  <p>{suggestion.detail}</p>
+                  <small>{staffRoleLabels[suggestion.ownerRole]} · {suggestion.reason}</small>
+                </button>
+              ))}
+            </div>
+            <div className="timeline">
+              {sortedAppointments.map((appointment) => {
+                const readiness = appointmentReadinessById.get(appointment.id);
+                const appointmentDoctor = dashboard.clinicSettings.staff.find((member) => member.id === appointment.doctorUserId);
+                const appointmentAssistant = appointment.assistantUserId
+                  ? dashboard.clinicSettings.staff.find((member) => member.id === appointment.assistantUserId)
+                  : null;
+                const appointmentChair = dashboard.clinicSettings.chairs.find((chair) => chair.id === appointment.chairId);
+                const appointmentDraft = appointmentScheduleDrafts[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment);
+                const appointmentSaveState = appointmentScheduleSaveStates[appointment.id] ?? "idle";
+                const appointmentSaveError = appointmentScheduleErrors[appointment.id] ?? null;
+                const appointmentDirty = appointmentScheduleDirtyIds.has(appointment.id);
+                const appointmentEditing = editingAppointmentId === appointment.id;
+                const appointmentDateMissingSteps = appointmentDraftDateMissingSteps(appointmentDraft);
+                const appointmentReadyToSave = appointmentDirty && appointmentDateMissingSteps.length === 0;
+                return (
+                  <article className={`appointment-row ${readiness ? `readiness-${readiness.state}` : ""}`} key={appointment.id}>
+                    <time>
+                      {formatTime(appointment.startsAt)}
+                      <span>{formatTime(appointment.endsAt)}</span>
+                    </time>
+                    <div>
+                      <h3>{patientName(dashboard.patients, appointment.patientId)}</h3>
+                      <p>
+                        {appointment.reason} ·{" "}
+                        {appointmentDoctor?.fullName.split(" ")[0] ?? "врач"} ·{" "}
+                        {appointmentAssistant?.fullName.split(" ")[0] ?? "ассистент не назначен"} ·{" "}
+                        {appointmentChair?.name ?? "кресло"}
+                      </p>
+                      {readiness ? (
+                        <div className="appointment-readiness">
+                          <span className={`readiness-pill readiness-${readiness.state}`}>
+                            {appointmentReadinessLabels[readiness.state]} · {readiness.score}%
+                          </span>
+                          <span>{staffRoleLabels[readiness.ownerRole]}</span>
+                          <span>{readiness.nextAction}</span>
+                          {readiness.checks.slice(0, 3).map((check) => (
+                            <span className={check.ready ? "check-ready" : "check-missing"} key={check.key}>
+                              {check.title}
+                            </span>
+                          ))}
+                          {readiness.warnings.slice(0, 2).map((warning) => (
+                            <span className="check-warning" key={warning}>
+                              {warning}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    <span className={`status-pill status-${appointment.status}`}>
+                      {appointmentLabels[appointment.status]}
+                    </span>
+                    <button
+                      className="secondary-button appointment-edit-button"
+                      type="button"
+                      onClick={() => openAppointmentEditor(appointment)}
+                    >
+                      Настроить
+                    </button>
+                    {appointmentEditing ? (
+                      <div className="appointment-editor form-span-2" aria-label="Редактирование записи">
+                        <label>
+                          Начало
+                          <input
+                            type="datetime-local"
+                            value={toDateTimeLocalValue(appointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+                            onChange={(event: TextFieldChangeEvent) =>
+                              updateAppointmentScheduleDraft(
+                                appointment.id,
+                                "startsAt",
+                                fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone)
+                              )
+                            }
+                          />
+                        </label>
+                        <label>
+                          Окончание
+                          <input
+                            type="datetime-local"
+                            value={toDateTimeLocalValue(appointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+                            onChange={(event: TextFieldChangeEvent) =>
+                              updateAppointmentScheduleDraft(
+                                appointment.id,
+                                "endsAt",
+                                fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone)
+                              )
+                            }
+                          />
+                        </label>
+                        <label>
+                          Пациент
+                          <select
+                            value={appointmentDraft.patientId}
+                            onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "patientId", event.target.value)}
+                            disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                          >
+                            <option value="">Не назначен</option>
+                            {dashboard.patients
+                              .filter((patient) => patient.status === "active")
+                              .map((patient) => (
+                                <option key={patient.id} value={patient.id}>
+                                  {patient.fullName}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <label>
+                          Врач
+                          <select value={appointmentDraft.doctorUserId} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "doctorUserId", event.target.value)}>
+                            <option value="">Не назначен</option>
+                            {dashboard.clinicSettings.staff
+                              .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+                              .map((member) => (
+                                <option key={member.id} value={member.id}>
+                                  {member.fullName}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <label>
+                          Ассистент
+                          <select value={appointmentDraft.assistantUserId} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "assistantUserId", event.target.value)}>
+                            <option value="">Не назначен</option>
+                            {dashboard.clinicSettings.staff
+                              .filter((member) => member.active && member.role === "assistant")
+                              .map((member) => (
+                                <option key={member.id} value={member.id}>
+                                  {member.fullName}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <label>
+                          Кресло
+                          <select value={appointmentDraft.chairId} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "chairId", event.target.value)}>
+                            <option value="">Не назначено</option>
+                            {dashboard.clinicSettings.chairs
+                              .filter((chair) => chair.active)
+                              .map((chair) => (
+                                <option key={chair.id} value={chair.id}>
+                                  {chair.name}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <label>
+                          Статус
+                          <select value={appointmentDraft.status} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "status", normalizedAppointmentStatus(event.target.value))}>
+                            {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
+                              <option key={status} value={status}>
+                                {appointmentLabels[status]}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="form-span-2">
+                          Причина
+                          <input value={appointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "reason", event.target.value)} />
+                        </label>
+                        <label className="form-span-2">
+                          Комментарий
+                          <textarea value={appointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "comment", event.target.value)} rows={2} />
+                        </label>
+                        <div className="appointment-editor-actions">
+                          {appointmentSaveError ? <span className="save-error">{appointmentSaveError}</span> : null}
+                          {appointmentDateMissingSteps.length ? (
+                            <div className="schedule-create-missing schedule-save-missing" role="status" aria-live="polite">
+                              <strong>Чтобы сохранить запись, исправьте:</strong>
+                              <ul>
+                                {appointmentDateMissingSteps.map((step) => (
+                                  <li key={step}>{step}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                          <span className={`save-state save-state-${appointmentSaveState}`}>
+                            {appointmentSaveState === "saving"
+                              ? "Сохраняю"
+                              : appointmentSaveState === "saved"
+                                ? "Сохранено"
+                                : appointmentSaveState === "error"
+                                  ? "Ошибка сохранения"
+                                  : "Ждет сохранения"}
+                          </span>
+                          <button className="secondary-button" type="button" disabled={appointmentSaveState === "saving"} onClick={() => closeAppointmentEditor(appointment.id)}>
+                            Закрыть
+                          </button>
+                          <button
+                            className="primary-button"
+                            type="button"
+                            onClick={() => void saveAppointmentSchedule(appointment.id)}
+                            disabled={appointmentSaveState === "saving" || !appointmentReadyToSave}
+                            aria-busy={appointmentSaveState === "saving" || undefined}
+                          >
+                            Сохранить запись
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+
+          );
+}

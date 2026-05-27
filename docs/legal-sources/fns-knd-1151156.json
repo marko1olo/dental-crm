@@ -1,0 +1,55 @@
+{
+  "id": "fns-knd-1151156-ea-7-11-824-2023",
+  "authority": "Federal Tax Service of Russia",
+  "status": "source_pinned_not_submission_ready",
+  "checkedAt": "2026-05-25",
+  "sourcePage": "https://www.nalog.gov.ru/rn77/about_fts/docs/14112883/",
+  "sourcePageUpdatedAt": "2026-05-25",
+  "documentDate": "2023-11-08",
+  "publicationDate": "2023-12-05",
+  "orderNumber": "EA-7-11/824@",
+  "printFormKnd": "1151156",
+  "electronicXmlKnd": "1184043",
+  "xsdVersion": "5.01",
+  "denteBoundary": {
+    "implemented": "HTML/PDF draft, frozen source facts, immutable XML bytes after first export, internal structural preflight",
+    "notImplemented": "official FNS XSD validator, qualified electronic signature, EDO/TKS submission and receipt lifecycle"
+  },
+  "attachments": [
+    {
+      "id": "appendix1_form_pdf",
+      "fileName": "pril1_14112883.pdf",
+      "url": "https://www.nalog.gov.ru/html/sites/www.new.nalog.ru/2023/about_fts/docs_fts/pril1_14112883.pdf",
+      "bytes": 114996,
+      "sha256": "520bee5e688f6dc1da4c8edf109e07409a90fd9791af999a9d551fc7824500d2"
+    },
+    {
+      "id": "appendix2_fill_rules_docx",
+      "fileName": "pril2_14112883.docx",
+      "url": "https://www.nalog.gov.ru/html/sites/www.new.nalog.ru/2023/about_fts/docs_fts/pril2_14112883.docx",
+      "bytes": 32184,
+      "sha256": "32543ac7f100184de3d27d6632b48f77b5c9cd0b2d91db6ed81bd1dfb9aa0938"
+    },
+    {
+      "id": "appendix3_electronic_format_doc",
+      "fileName": "pril3_14112883.doc",
+      "url": "https://www.nalog.gov.ru/html/sites/www.new.nalog.ru/2023/about_fts/docs_fts/pril3_14112883.doc",
+      "bytes": 199680,
+      "sha256": "c850f344d213711dfe40e12a8d3e41c3f9dbf1bab9f07eb080d01ab76d4ae6b9"
+    },
+    {
+      "id": "appendix4_submission_rules_docx",
+      "fileName": "pril4_14112883.docx",
+      "url": "https://www.nalog.gov.ru/html/sites/www.new.nalog.ru/2023/about_fts/docs_fts/pril4_14112883.docx",
+      "bytes": 22687,
+      "sha256": "18ab0c72674998feda85427aa44ee7aaeb81e3f66ff089f816c07b12304db0c7"
+    },
+    {
+      "id": "xsd_schema",
+      "fileName": "UT_SVOPLMEDUSL_1_278_00_05_01_02.xsd",
+      "url": "https://www.nalog.gov.ru/html/sites/www.new.nalog.ru/2023/about_fts/docs_fts/xsd/UT_SVOPLMEDUSL_1_278_00_05_01_02.xsd",
+      "bytes": 24780,
+      "sha256": "c6f4b26841436853add552324a690c8cee0d9f66072d750cb502098839a1ec83"
+    }
+  ]
+}

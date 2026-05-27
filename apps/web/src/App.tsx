@@ -1,0 +1,19351 @@
+import { type CSSProperties, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowRight,
+  AlertTriangle,
+  Bot,
+  Building2,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  Copy,
+  CreditCard,
+  Database,
+  Download,
+  ExternalLink,
+  FileCheck2,
+  FileText,
+  FlipHorizontal,
+  Gauge,
+  History,
+  Image as ImageIcon,
+  MessageSquare,
+  Mic,
+  Phone,
+  Plus,
+  ReceiptText,
+  RefreshCw,
+  RotateCcw,
+  RotateCw,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  UploadCloud,
+  UserCheck,
+  Users,
+  ZoomIn,
+  ZoomOut
+} from "lucide-react";
+import {
+  buildRuleBasedVisitDraftFromTranscript,
+  dashboardSchema,
+  documentAmountSource,
+  documentFactoryGroups,
+  documentKindMetadata,
+  documentSourceStatusLabels,
+  normalizeDentalSpeechTranscript,
+  type AcceptVisitDraftResponse,
+  type AiJobKind,
+  type AiRecognitionJob,
+  type AiRecognitionJobResponse,
+  type AiRecognitionTarget,
+  type Appointment,
+  type ClinicProfile,
+  type ClinicMode,
+  type ClinicalToothRow,
+  type CreateAppointmentInput,
+  type Dashboard,
+  type DentalMaterialKind,
+  type DentalPricelistAnalysisResponse,
+  type DentalRestorationType,
+  type DentalSpecialty,
+  type DenteTelegramBotMode,
+  type DenteTelegramBotStatus,
+  type DenteTelegramChatLinkListResponse,
+  type DenteTelegramChatLinkPublic,
+  type DenteTelegramFeature,
+  type DenteTelegramLinkCodeCreated,
+  type DenteTelegramLinkCodeListResponse,
+  type DenteTelegramLinkCodePublic,
+  type DenteTelegramMessagePreview,
+  type DenteTelegramOutboxResponse,
+  type DenteTelegramOutboxSendDueResponse,
+  type DenteTelegramOutboxSendResponse,
+  type DenteTelegramPostVisitCheckupDelayHoursByTopic,
+  type DenteTelegramPrivacyMode,
+  type DenteTelegramVisualCardKey,
+  type DenteTelegramVisualCardUrls,
+  type DocumentChainSummary,
+  type DocumentAuditFacts,
+  type DocumentIssueSignatureMode,
+  type DocumentVoidReasonCode,
+  type DocumentSourceStatus,
+  type DocumentPayload,
+  type DocumentIngestionResponse,
+  type DocumentIngestionTarget,
+  type ClinicPublicLookupResponse,
+  type GeneratedDocument,
+  type DicomRenderCachePlanResponse,
+  type DicomFirstFramePreviewResponse,
+  type DicomLocalFolderDiscoveryResponse,
+  type DicomSeriesPreviewResponse,
+  type DicomFolderSeriesPreviewResponse,
+  type DicomFolderWorkupPath,
+  type DicomFolderWorkupPlanResponse,
+  type DicomSeriesViewer,
+  type DicomViewerLaunchManifestResponse,
+  type DicomViewerToolStateBundleResponse,
+  type DicomViewerWorkbenchManifestResponse,
+  type DicomWebConnectorCheckResponse,
+  type DicomWorkbenchBundle,
+  type DicomWorkbenchBundleListResponse,
+  type DicomWorkbenchBundleResponse,
+  type DicomWorkstationClientFacts,
+  type DicomWorkstationReadinessResponse,
+  type ImagingFolderScanResponse,
+  type ImagingImportCommitResponse,
+  type ImagingImportPreviewResponse,
+  type ImagingSourceKind,
+  type ImagingStudyKind,
+  type ImagingViewerAnnotation,
+  type ImagingViewerSessionResponse,
+  type ImagingViewerSessionState,
+  type ImagingViewerWindowPreset,
+  type IntegrationCapability,
+  type IntegrationCategory,
+  type IntegrationPresetStatus,
+  type ImportCommitResponse,
+  type IssueDocumentInput,
+  type VoidDocumentInput,
+  type ImportIntakeResponse,
+  type ImportPreviewResponse,
+  type ImportSourceKind,
+  type InstallmentPaymentStatus,
+  type LocalImagingOrganizerResponse,
+  type MigrationAutopilotResponse,
+  type MigrationLocalSourceDiscoveryResponse,
+  type MigrationLocalSourceProbeResponse,
+  type MigrationLocalSourceWorkupResponse,
+  type LocalBridgeReadinessResponse,
+  type LocalBridgeStatus,
+  type LocalBridgeUsePath,
+  type LocalBridgeUsePlansResponse,
+  type LocalImagingOrganizerRecommendedAction,
+  type OutpatientMedicalCard025uPayload,
+  type PaymentMethod,
+  type Patient,
+  type PatientAdministrativeProfile,
+  type PatientIntakePregnancyStatus,
+  type PhotoVideoConsentMaterial,
+  type PostVisitCareTopic,
+  type PricelistSourceKind,
+  type ProcedureSpecificConsentProcedure,
+  type ProtocolTemplate,
+  type ResourceLoad,
+  type ScheduleWarning,
+  type SmartImportCommitResponse,
+  type SmartImportMode,
+  type SmartImportPreviewResponse,
+  type SpeechChunkUploadInput,
+  type SpeechGatewayHealthReport,
+  type SpeechGatewayStatus,
+  type SpeechProviderConnector,
+  type SpeechProviderRuntimeStatus,
+  type SpeechRecordingAssembly,
+  type SpeechRecordingRecoveryList,
+  type SpeechRecordingStrategy,
+  type SpeechTranscriptPolishResponse,
+  type SpeechTranscriptionResponse,
+  type SpeechProvider,
+  type StaffRole,
+  type StaffWorkingHours,
+  type TaxDeductionApplicationDeliveryChannel,
+  type TaxDeductionApplicationForm,
+  type TaxDeductionApplicationRelationship,
+  type TreatmentPlanAcceptanceVariant,
+  type UpdateAppointmentInput,
+  type UpdateClinicProfileInput,
+  type UpdatePatientInput,
+  type UpdatePatientAdministrativeProfileInput,
+  type UiLanguage,
+  type VisitDraftAutosaveResponse,
+  type VisitNoteDraft,
+  type XrayCbctReferralPregnancyStatus,
+  type XrayCbctReferralPriority,
+  type XrayCbctReferralStudyType
+} from "@dental/shared";
+import { AppLoadingState, AppUnlockState } from "./AppBootState";
+import { ClinicalRulePanel } from "./ClinicalRulePanel";
+import {
+  communicationDocumentTaskActionLabels,
+  telegramCareRequestTaskCareTopics,
+  telegramCareRequestWorkflowCareTopics,
+  telegramDocumentRequestTaskDocumentKinds,
+  telegramDocumentRequestWorkflowDocumentKinds
+} from "./communicationTaskData";
+import { imagingConnectorCards, imagingViewerCapabilities, recognitionPresets } from "./settingsStaticData";
+import { postVisitCarePresets } from "./postVisitCareData";
+import { specialtyQuickPhraseLibrary } from "./visitDictationData";
+import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
+import { ActionIcon, appViews, type AppView, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
+
+const FinanceView = lazy(() => import("./FinanceView").then((module) => ({ default: module.FinanceView })));
+const CommunicationsView = lazy(() => import("./CommunicationsView").then((module) => ({ default: module.CommunicationsView })));
+const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ default: module.DocumentsView })));
+const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ default: module.SettingsView })));
+const ScheduleView = lazy(() => import("./ScheduleView").then((module) => ({ default: module.ScheduleView })));
+const PatientsView = lazy(() => import("./PatientsView").then((module) => ({ default: module.PatientsView })));
+
+const appointmentLabels: Record<Appointment["status"], string> = {
+  planned: "План",
+  confirmed: "Подтвержден",
+  arrived: "Пришел",
+  in_treatment: "В кресле",
+  completed: "Готово",
+  cancelled: "Отмена",
+  no_show: "Не пришел"
+};
+
+const documentLabels = Object.fromEntries(
+  Object.entries(documentKindMetadata).map(([kind, metadata]) => [kind, metadata.label])
+) as Record<GeneratedDocument["kind"], string>;
+
+const documentActionLabels = Object.fromEntries(
+  Object.entries(documentKindMetadata).map(([kind, metadata]) => [kind, metadata.actionLabel])
+) as Record<GeneratedDocument["kind"], string>;
+
+const documentSourceStatusClassNames: Record<DocumentSourceStatus, string> = {
+  official_form: "document-source-badge official-form",
+  official_workflow: "document-source-badge official-workflow",
+  clinic_template: "document-source-badge clinic-template",
+  internal_register: "document-source-badge internal-register"
+};
+
+const documentStatusLabels: Record<GeneratedDocument["status"], string> = {
+  draft: "Черновик",
+  issued: "Выдан",
+  voided: "Аннулирован"
+};
+
+const taxPaymentSelectionPayloadDocumentKinds = new Set<GeneratedDocument["kind"]>([
+  "tax_deduction_certificate",
+  "legacy_tax_deduction_certificate",
+  "tax_deduction_registry"
+]);
+const taxPaymentSelectionDocumentKinds = new Set<GeneratedDocument["kind"]>([
+  ...taxPaymentSelectionPayloadDocumentKinds,
+  "tax_deduction_application"
+]);
+
+function paymentTaxYearForUi(payment: Pick<Dashboard["payments"][number], "fiscalReceiptIssuedAt" | "paidAt">): number | null {
+  const sourceDate = payment.fiscalReceiptIssuedAt || payment.paidAt;
+  if (!sourceDate) return null;
+  const explicitYear = /^(\d{4})/.exec(sourceDate)?.[1];
+  if (explicitYear) return Number(explicitYear);
+  const parsedDate = new Date(sourceDate);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getFullYear();
+}
+
+function taxPaymentPayerKeyForUi(
+  payment: Pick<
+    Dashboard["payments"][number],
+    "payerInn" | "payerFullName" | "payerBirthDate" | "payerIdentityDocument" | "payerRelationship"
+  >
+): string {
+  const payerInn = payment.payerInn?.trim();
+  if (payerInn) return `inn:${payerInn}`;
+  const identityParts = [
+    payment.payerFullName?.trim(),
+    payment.payerBirthDate?.trim(),
+    payment.payerIdentityDocument?.trim(),
+    payment.payerRelationship?.trim()
+  ].filter(Boolean);
+  return identityParts.length >= 3 ? `identity:${identityParts.join("|").toLocaleLowerCase("ru-RU")}` : "";
+}
+
+function paymentFiscalReceiptLabelForUi(
+  payment: Pick<Dashboard["payments"][number], "id" | "fiscalReceiptNumber" | "fiscalReceipt">
+): string {
+  const details = payment.fiscalReceipt;
+  const structured = [
+    details?.fn ? `ФН ${details.fn}` : null,
+    details?.fd ? `ФД ${details.fd}` : null,
+    details?.fpd ? `ФПД ${details.fpd}` : null
+  ]
+    .filter(Boolean)
+    .join("; ");
+  return structured || payment.fiscalReceiptNumber?.trim() || payment.id.slice(0, 8);
+}
+
+function clinicalRuleSummaryForUi(
+  evaluations: Dashboard["clinicalRuleEvaluations"],
+  activeRules: number
+): Dashboard["clinicalRuleSummary"] {
+  const unresolved = evaluations.filter((evaluation) => !evaluation.resolved);
+  const requiredServiceIds = new Set(unresolved.flatMap((evaluation) => evaluation.missingRequiredServiceIds));
+  return {
+    activeRules,
+    evaluatedRules: evaluations.length,
+    unresolved: unresolved.length,
+    blockers: unresolved.filter((evaluation) => evaluation.severity === "blocker").length,
+    warnings: unresolved.filter((evaluation) => evaluation.severity === "warning").length,
+    requiredServices: requiredServiceIds.size,
+    coveredRules: evaluations.filter((evaluation) => evaluation.resolved).length
+  };
+}
+
+type DocumentWithChainSummary = {
+  title: string;
+  chainSummary?: DocumentChainSummary | null | undefined;
+};
+
+function completedActContractReferenceForUi(document: DocumentWithChainSummary): string {
+  const payload = document.chainSummary?.paidMedicalServicesContract;
+  if (!payload?.contractNumber) return document.title;
+  const contractDate = payload.contractDate?.trim();
+  return contractDate ? `${payload.contractNumber} от ${contractDate}` : payload.contractNumber;
+}
+
+const serviceCategoryLabels: Record<Dashboard["serviceCatalog"][number]["category"], string> = {
+  consultation: "Консультация",
+  therapy: "Терапия",
+  surgery: "Хирургия",
+  prosthetics: "Ортопедия",
+  orthodontics: "Ортодонтия",
+  periodontology: "Пародонтология",
+  hygiene: "Гигиена",
+  imaging: "Снимки",
+  documents: "Документы",
+  other: "Другое"
+};
+
+const pricelistSourceKindLabels: Record<PricelistSourceKind, string> = {
+  text: "Текст",
+  ocr_text: "OCR",
+  photo_ocr: "Фото",
+  spreadsheet_copy: "Таблица",
+  manual: "Вручную"
+};
+
+const dentalMaterialKindLabels: Record<DentalMaterialKind, string> = {
+  composite: "Композит",
+  glass_ionomer: "СИЦ",
+  sealant: "Герметик",
+  ceramic: "Керамика",
+  zirconia: "Цирконий",
+  lithium_disilicate: "E.max / дисиликат",
+  metal_ceramic: "Металлокерамика",
+  pmma: "PMMA / временные",
+  metal: "Металл",
+  titanium: "Титан",
+  implant_system: "Имплант-система",
+  abutment: "Абатмент",
+  bone_graft: "Костный материал",
+  membrane: "Мембрана",
+  aligner: "Элайнеры",
+  bracket: "Брекеты",
+  fluoride: "Фтор / реминерализация",
+  whitening: "Отбеливание",
+  anesthetic: "Анестетик",
+  imaging: "Снимки",
+  lab: "Лаборатория / скан",
+  other: "Другое",
+  unknown: "Не распознано"
+};
+
+const dentalRestorationTypeLabels: Record<DentalRestorationType, string> = {
+  filling: "Пломба",
+  direct_restoration: "Прямая реставрация",
+  inlay: "Вкладка",
+  onlay: "Накладка",
+  overlay: "Оверлей",
+  veneer: "Винир",
+  crown: "Коронка",
+  bridge: "Мост",
+  implant_crown: "Коронка на импланте",
+  temporary_crown: "Временная коронка",
+  post_core: "Культевая вкладка",
+  denture: "Протез",
+  ortho_appliance: "Ортодонтический аппарат",
+  sealant: "Герметизация",
+  whitening: "Отбеливание",
+  implant: "Имплантация",
+  surgical_guide: "Хирургический шаблон",
+  none: "Без реставрации",
+  unknown: "Не распознано"
+};
+
+const pricelistCrownTypeLabels: Record<string, string> = {
+  "zirconia multilayer": "Цирконий MultiLayer",
+  zirconia: "Цирконий",
+  "lithium disilicate": "E.max / дисиликат лития",
+  "metal ceramic": "Металлокерамика",
+  "temporary PMMA": "Временная PMMA",
+  ceramic: "Керамика",
+  crown: "Коронка"
+};
+
+function pricelistCrownTypeLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return pricelistCrownTypeLabels[value] ?? value;
+}
+
+function pricelistMaterialKindLabel(kind: DentalMaterialKind): string {
+  return dentalMaterialKindLabels[kind] ?? kind;
+}
+
+function pricelistRestorationTypeLabel(type: DentalRestorationType): string | null {
+  if (type === "none" || type === "unknown") return null;
+  return dentalRestorationTypeLabels[type] ?? type;
+}
+
+function pricelistMaterialSummaryText(summary: DentalPricelistAnalysisResponse["summary"][number]): string {
+  const labels = [
+    ...summary.materialKinds.map(pricelistMaterialKindLabel),
+    ...summary.brands
+  ].filter(Boolean).slice(0, 4);
+  return labels.join(", ") || "без материала";
+}
+
+function pricelistItemMaterialText(item: DentalPricelistAnalysisResponse["items"][number]): string {
+  const labels = [
+    item.brand,
+    pricelistCrownTypeLabel(item.crownType),
+    item.materialKind === "unknown" ? null : pricelistMaterialKindLabel(item.materialKind),
+    pricelistRestorationTypeLabel(item.restorationType)
+  ].filter((value): value is string => Boolean(value));
+  return labels.join(" · ") || "материал не распознан";
+}
+
+const pricelistRecognitionServiceGroups = [
+  {
+    title: "Осмотры и диагностика",
+    items: ["консультация", "план лечения", "фотопротокол", "сканирование", "ОПТГ", "КЛКТ", "ТРГ", "RVG"]
+  },
+  {
+    title: "Терапия",
+    items: ["кариес", "пульпит", "периодонтит", "эндодонтия", "коффердам", "канал", "пломба", "реставрация"]
+  },
+  {
+    title: "Ортопедия",
+    items: ["коронка", "винир", "мост", "вкладка", "накладка", "культевая", "протез", "перебазировка"]
+  },
+  {
+    title: "Хирургия и имплантация",
+    items: ["удаление", "ретинированный", "имплант", "абатмент", "формирователь", "синус-лифтинг", "НКР", "шаблон"]
+  },
+  {
+    title: "Ортодонтия",
+    items: ["брекеты", "элайнеры", "ретейнер", "капа", "дуга", "активация", "снятие", "аппарат"]
+  },
+  {
+    title: "Пародонтология и профилактика",
+    items: ["гигиена", "Air Flow", "ультразвук", "кюретаж", "пародонтальная карта", "шинирование", "фтор", "отбеливание"]
+  },
+  {
+    title: "Детский прием",
+    items: ["адаптация", "молочный зуб", "герметизация", "фторирование", "пульпотомия", "серебрение", "удерживатель"]
+  },
+  {
+    title: "Документы и админ",
+    items: ["договор", "акт", "справка для вычета", "рассрочка", "гарантия", "ДМС", "сертификат"]
+  }
+] as const;
+
+const pricelistRecognitionBrandGroups = [
+  {
+    title: "Импланты",
+    items: ["Straumann", "Nobel", "Osstem", "Dentium", "Megagen", "Astra", "BioHorizons", "MIS", "Alpha-Bio", "Neodent"]
+  },
+  {
+    title: "Кость и мембраны",
+    items: ["Geistlich", "Bio-Oss", "Bio-Gide", "Cerabone", "botiss", "OsteoBiol", "Jason", "Symbios"]
+  },
+  {
+    title: "Композиты и СИЦ",
+    items: ["Filtek", "Estelite", "Omnichroma", "Gradia", "Fuji", "Ketac", "Charisma", "Tetric", "Venus", "Voco"]
+  },
+  {
+    title: "Керамика и цирконий",
+    items: ["IPS e.max", "Ivoclar", "Katana", "Prettau", "BruxZir", "Aidite", "Cercon", "ZirCAD", "Lava", "Vita"]
+  },
+  {
+    title: "Ортодонтия",
+    items: ["Damon", "Ormco", "3M", "American Orthodontics", "Forestadent", "Invisalign", "Star Smile", "FlexiLigner"]
+  },
+  {
+    title: "Гигиена и отбеливание",
+    items: ["EMS", "Air Flow", "Vector", "Zoom", "Beyond", "Opalescence", "Amazing White", "Philips"]
+  },
+  {
+    title: "Анестезия и оборудование",
+    items: ["Ultracain", "Ubistesin", "Septanest", "3Shape", "Medit", "Sirona", "Planmeca", "Vatech", "Carestream"]
+  }
+] as const;
+
+const treatmentStatusLabels: Record<Dashboard["treatmentPlanItems"][number]["status"], string> = {
+  proposed: "предложено",
+  approved: "согласовано",
+  in_progress: "в работе",
+  completed: "готово",
+  cancelled: "отменено"
+};
+
+const scenarioStrategyLabels: Record<Dashboard["treatmentPlanScenarios"][number]["strategy"], string> = {
+  urgent: "Срочно",
+  standard: "Стандарт",
+  optimal: "Оптимально",
+  phased: "По этапам",
+  maintenance: "Поддержка"
+};
+
+const scenarioPriorityLabels: Record<Dashboard["treatmentPlanScenarios"][number]["priority"], string> = {
+  budget: "бюджет",
+  balanced: "баланс",
+  clinical: "клинический приоритет"
+};
+
+const clinicalRuleSeverityLabels: Record<Dashboard["clinicalRuleEvaluations"][number]["severity"], string> = {
+  info: "контроль",
+  warning: "предупреждение",
+  blocker: "важно"
+};
+
+const clinicalRuleActionLabels: Record<Dashboard["clinicalRuleEvaluations"][number]["action"], string> = {
+  add_required_service: "добавить услугу",
+  block_service: "проверить риск",
+  show_warning: "показать врачу",
+  schedule_followup: "поставить recall"
+};
+
+const paymentMethodLabels: Record<PaymentMethod, string> = {
+  cash: "Наличные",
+  card: "Карта",
+  bank_transfer: "Перевод",
+  online: "Онлайн",
+  insurance: "ДМС",
+  other: "Другое"
+};
+
+const communicationChannelLabels: Record<Dashboard["communicationTasks"][number]["channel"], string> = {
+  phone: "Звонок",
+  sms: "SMS",
+  whatsapp: "WhatsApp",
+  telegram: "Телеграм",
+  email: "Email",
+  in_person: "В кабинете"
+};
+
+const communicationIntentLabels: Record<Dashboard["communicationTasks"][number]["intent"], string> = {
+  appointment_confirmation: "Подтверждение",
+  payment_reminder: "Оплата",
+  post_visit_instruction: "Инструкция",
+  recall: "Повторный визит",
+  document_ready: "Документы",
+  imaging_review: "Снимок",
+  general: "Связь"
+};
+
+const communicationPriorityLabels: Record<Dashboard["communicationTasks"][number]["priority"], string> = {
+  low: "низкий",
+  normal: "обычный",
+  high: "важно",
+  urgent: "срочно"
+};
+
+const communicationStatusLabels: Record<Dashboard["communicationTasks"][number]["status"], string> = {
+  queued: "в очереди",
+  scheduled: "запланировано",
+  needs_call: "нужен звонок",
+  sent: "отправлено",
+  delivered: "доставлено",
+  completed: "закрыто",
+  skipped: "пропущено",
+  failed: "ошибка"
+};
+
+const moneyDocumentKinds = new Set<GeneratedDocument["kind"]>(
+  Object.entries(documentKindMetadata)
+    .filter(([, metadata]) => metadata.amountSource !== "none")
+    .map(([kind]) => kind as GeneratedDocument["kind"])
+);
+
+const structuredPayloadDocumentKinds = new Set<GeneratedDocument["kind"]>([
+  "paid_medical_services_contract",
+  "completed_works_act",
+  "treatment_cost_estimate",
+  "payment_invoice",
+  "payment_receipt",
+  "installment_payment_schedule",
+  "minor_legal_representative_consent",
+  "warranty_service_memo",
+  "patient_intake_questionnaire",
+  "tax_deduction_application",
+  "tax_deduction_certificate",
+  "legacy_tax_deduction_certificate",
+  "tax_deduction_registry",
+  "anesthesia_consent_log",
+  "prescription_medication_order",
+  "lab_work_order",
+  "photo_video_consent",
+  "xray_cbct_referral",
+  "outpatient_medical_card_025u",
+  "medical_record_extract",
+  "medical_record_copy_request",
+  "post_visit_recommendations",
+  "treatment_plan",
+  "treatment_plan_acceptance",
+  "visit_attendance_certificate",
+  "medical_document_release_receipt",
+  "payment_refund_correction_request",
+  "informed_consent",
+  "procedure_specific_consent_packet",
+  "personal_data_processing_consent",
+  "medical_intervention_refusal"
+]);
+
+const clinicModeLabels: Record<ClinicMode, { title: string; detail: string }> = {
+  solo_doctor: {
+    title: "Отдельный врач",
+    detail: "Минимум экранов, максимум скорости приема, документы и диктовка под рукой."
+  },
+  one_chair: {
+    title: "1 кабинет",
+    detail: "Один поток пациентов, одна смена, простая касса, снимки и вычеты."
+  },
+  small_clinic: {
+    title: "Малая клиника",
+    detail: "Несколько врачей, кресел, администраторы, ассистенты и роли."
+  },
+  network_clinic: {
+    title: "Сеть",
+    detail: "Филиалы, централизованные шаблоны, права, импорт и сквозной аудит."
+  }
+};
+
+const staffRoleLabels: Record<StaffRole, string> = {
+  owner: "Владелец",
+  doctor: "Врач",
+  administrator: "Администратор",
+  assistant: "Ассистент",
+  manager: "Управляющий"
+};
+
+const workloadStateLabels: Record<ResourceLoad["state"], string> = {
+  idle: "пусто",
+  healthy: "норма",
+  tight: "плотно",
+  overbooked: "перегруз"
+};
+
+const warningSeverityLabels: Record<ScheduleWarning["severity"], string> = {
+  info: "контроль",
+  warning: "риск",
+  critical: "важно"
+};
+
+const specialtyLabels: Record<DentalSpecialty, string> = {
+  therapist: "терапия",
+  orthopedist: "ортопедия",
+  surgeon: "хирургия",
+  orthodontist: "ортодонтия",
+  periodontist: "пародонтология",
+  hygienist: "гигиена",
+  pediatric: "детская",
+  implantologist: "имплантация",
+  radiologist: "рентген",
+  universal: "универсально"
+};
+
+const integrationCategoryLabels: Record<IntegrationCategory, string> = {
+  dental_mis: "Старая МИС",
+  spreadsheet: "Таблица",
+  paper_archive: "Бумага/OCR",
+  imaging_system: "Снимки",
+  accounting: "Касса",
+  custom: "Свой формат"
+};
+
+const integrationCapabilityLabels: Record<IntegrationCapability, string> = {
+  patients: "пациенты",
+  appointments: "записи",
+  visits: "ЭМК",
+  documents: "документы",
+  services: "услуги",
+  payments: "оплаты",
+  imaging: "снимки",
+  tax_documents: "вычет",
+  audit: "аудит"
+};
+
+const integrationStatusLabels: Record<IntegrationPresetStatus, string> = {
+  usable_now: "можно сейчас",
+  needs_mapping: "нужна карта полей",
+  planned_connector: "коннектор позже"
+};
+
+const recognitionTargetLabels: Record<AiRecognitionTarget, string> = {
+  visit_note: "ЭМК",
+  patient_import: "импорт пациентов",
+  imaging_summary: "описание снимка",
+  document_draft: "документ"
+};
+
+const speechProviderStatusLabels: Record<SpeechProvider["status"], string> = {
+  usable_without_key: "без ключа",
+  needs_server_key: "ключ на сервере",
+  planned_local: "локальный контур"
+};
+
+const speechProviderModeLabels: Record<SpeechProvider["mode"], string> = {
+  browser_live: "браузерная диктовка",
+  server_upload: "загрузка фрагментов",
+  server_streaming: "поток",
+  local_worker: "офлайн-обработчик"
+};
+
+const speechProviderSelectionLabels: Record<SpeechGatewayStatus["providerSelectionMode"], string> = {
+  disabled: "ожидает ключ",
+  manual: "ручной выбор",
+  auto: "автовыбор",
+  fallback: "резерв"
+};
+
+const speechProviderHealthLabels: Record<string, string> = {
+  ready: "готов",
+  degraded: "ограничен",
+  setup_required: "нужна настройка",
+  planned: "запланирован",
+  offline: "офлайн"
+};
+
+const speechRecordingPathLabels: Record<string, string> = {
+  server_chunked: "серверное STT по фрагментам",
+  browser_live: "браузерная диктовка",
+  offline_queue: "офлайн-очередь",
+  local_transcript_only: "только локальный текст",
+  async_long_recording: "длинная запись в фоне"
+};
+
+const speechRecoveryStateLabels: Record<string, string> = {
+  complete: "готово",
+  quality_review: "проверка качества",
+  missing_chunks: "нет фрагментов",
+  failed_chunks: "ошибка фрагментов",
+  transcript_empty: "пустая расшифровка"
+};
+
+const dicomFolderWorkupPathLabels: Record<DicomFolderWorkupPath, string> = {
+  open_mpr: "открыть MPR",
+  downsampled_mpr: "MPR с пониженным разрешением",
+  external_viewer: "внешний просмотрщик",
+  metadata_only: "только метаданные"
+};
+
+const localBridgeStatusLabels: Record<LocalBridgeStatus, string> = {
+  ready: "готов",
+  not_configured: "не настроен",
+  unreachable: "недоступен",
+  blocked: "заблокирован",
+  misconfigured: "ошибка настройки",
+  planned: "запланирован"
+};
+
+const localBridgeUsePathLabels: Record<LocalBridgeUsePath, string> = {
+  browser_local: "локально в браузере",
+  server_gateway: "серверный шлюз",
+  local_bridge: "локальный мост ПК",
+  cloud_provider: "облачный провайдер",
+  metadata_preview: "предпросмотр метаданных",
+  external_viewer: "внешний просмотрщик",
+  manual_review: "ручная проверка"
+};
+
+function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
+  return Boolean(status?.serverTranscriptionCurrentlyAvailable ?? status?.serverTranscriptionEnabled);
+}
+
+const imagingKindLabels: Record<ImagingStudyKind, string> = {
+  periapical: "Прицельный",
+  bitewing: "Интерпроксимальный",
+  opg: "ОПТГ",
+  ceph: "ТРГ",
+  cbct: "КТ",
+  photo: "Фото",
+  other: "Другое"
+};
+
+const imagingSourceLabels: Record<ImagingSourceKind, string> = {
+  manual_upload: "Файл",
+  dicom_file: "DICOM",
+  dicomweb: "DICOMweb",
+  pacs: "PACS",
+  twain_wia: "TWAIN/WIA",
+  sensor_bridge: "Датчик",
+  folder_watch: "Папка"
+};
+
+const imagingSourceDetails: Record<ImagingSourceKind, string> = {
+  manual_upload: "ручная загрузка файла",
+  dicom_file: "DICOM-файл или серия",
+  dicomweb: "сервер DICOMweb",
+  pacs: "архив PACS",
+  twain_wia: "сканер TWAIN/WIA",
+  sensor_bridge: "мост RVG-датчика",
+  folder_watch: "папка обмена"
+};
+
+const imagingViewerToolLabels: Record<string, string> = {
+  "window/level": "яркость/контраст",
+  invert: "инверсия",
+  rotate: "поворот",
+  zoom: "масштаб",
+  measure: "измерение",
+  compare: "сравнение",
+  landmarks: "цефалометрические точки",
+  MPR: "MPR",
+  axial: "аксиальная",
+  coronal: "корональная",
+  sagittal: "сагиттальная",
+  "panoramic curve": "панорамная дуга",
+  brightness: "яркость",
+  contrast: "контраст"
+};
+
+const dicomQualityModeLabels: Record<string, string> = {
+  survival: "минимальный режим",
+  fast_preview: "быстрый просмотр",
+  balanced: "рабочий режим",
+  quality: "качественный режим",
+  diagnostic: "диагностический режим",
+  overkill: "максимальная детализация"
+};
+
+const dicomTextureStrategyLabels: Record<string, string> = {
+  metadata_only: "только метаданные",
+  thumbnail_stack: "миниатюры срезов",
+  downsampled_stack: "облегченные срезы",
+  full_stack: "полные срезы",
+  gpu_volume: "GPU-объем",
+  external_viewer: "внешний просмотрщик"
+};
+
+const dicomRuntimeTierLabels: Record<string, string> = {
+  low_end: "слабый ПК",
+  standard: "обычный ПК",
+  high_end: "мощный ПК",
+  workstation: "рабочая станция",
+  diagnostic_workstation: "диагностическая станция"
+};
+
+function dicomLabel(labels: Record<string, string>, value: string | null | undefined, fallback: string): string {
+  if (!value) return fallback;
+  return labels[value] ?? value.replaceAll("_", " ");
+}
+
+type ImagingViewerState = {
+  rotationDeg: number;
+  flipHorizontal: boolean;
+  inverted: boolean;
+  brightness: number;
+  contrast: number;
+  zoom: number;
+};
+
+type ImagingViewerPlan = {
+  label: string;
+  mode: "two_d" | "ceph" | "cbct_mpr" | "photo";
+  primaryTools: string[];
+  presets: string[];
+  nextAction: string;
+  warnings: string[];
+};
+
+type MprProjection = DicomSeriesPreviewResponse["series"][number]["mprReadiness"]["projections"][number];
+type MprResourcePolicy = DicomSeriesPreviewResponse["series"][number]["mprReadiness"]["resourcePolicy"];
+type MprWindowPreset = Extract<ImagingViewerWindowPreset, "bone" | "soft_tissue" | "implant" | "custom">;
+type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
+
+const mprProjectionLabels: Record<MprProjection, string> = {
+  axial: "Аксиальная",
+  coronal: "Корональная",
+  sagittal: "Сагиттальная",
+  oblique: "Косая",
+  panoramic_reconstruction: "Панорама",
+  three_d_volume: "3D",
+  mip: "MIP"
+};
+
+const mprWindowPresetLabels: Record<MprWindowPreset, string> = {
+  bone: "Кость",
+  soft_tissue: "Мягкие ткани",
+  implant: "Имплант",
+  custom: "Своя"
+};
+
+const mprResourceTierLabels: Record<MprResourcePolicy["requiredTier"], string> = {
+  low_end: "слабый ПК",
+  standard: "обычный ПК",
+  workstation: "рабочая станция",
+  diagnostic_workstation: "диагностическая станция"
+};
+
+const mprLoadStrategyLabels: Record<MprResourcePolicy["loadStrategy"], string> = {
+  metadata_only: "только метаданные",
+  two_d_stack_stream: "2D-стек",
+  mpr_downsampled: "MPR-предпросмотр",
+  mpr_full: "MPR в полном разрешении",
+  external_handoff: "внешний просмотрщик"
+};
+
+const mprCacheModeLabels: Record<MprResourcePolicy["cacheMode"], string> = {
+  none: "без кэша",
+  metadata_only: "кэш метаданных",
+  bounded_disk: "ограниченный диск",
+  dicomweb_stream: "DICOMweb-поток"
+};
+
+const dicomSeriesViewerLabels: Record<DicomSeriesViewer, string> = {
+  none: "просмотрщик не выбран",
+  two_d_stack: "2D-стек",
+  cbct_mpr: "CBCT/MPR",
+  external_dicom: "внешний DICOM"
+};
+
+const localImagingOrganizerActionLabels: Record<LocalImagingOrganizerRecommendedAction, string> = {
+  open_ct_workup: "открыть разбор CT",
+  review_3d_models: "проверить 3D-модели",
+  mixed_case_workup: "смешанный разбор кейса",
+  manual_review: "ручная проверка"
+};
+
+const localImagingModelRoleLabels: Record<string, string> = {
+  upper_arch: "верхняя челюсть",
+  lower_arch: "нижняя челюсть",
+  bite: "прикус",
+  crown: "коронка",
+  bridge: "мост",
+  implant_guide: "имплантационный шаблон",
+  surgical_guide: "хирургический шаблон",
+  aligner: "элайнер",
+  scan_body: "скан-боди",
+  unknown: "роль не распознана"
+};
+
+const pricelistParserModeLabels: Record<string, string> = {
+  deterministic: "локальный разбор",
+  groq_json: "нейросетевой разбор",
+  deterministic_groq_fallback: "локальный разбор с нейро-проверкой"
+};
+
+const policyAuditEventLabels: Record<string, string> = {
+  "settings.update": "изменение настроек",
+  "roles.update": "изменение ролей",
+  "import.commit": "подтверждение импорта",
+  "document.template.update": "изменение шаблона документа",
+  "visit.sign": "подпись визита",
+  "clinical.override": "клиническое исключение",
+  "document.create": "создание документа",
+  "appointment.update": "изменение записи",
+  "payment.create": "создание оплаты",
+  "communication.complete": "закрытие связи",
+  "patient.update": "изменение пациента",
+  "chair.prepare": "подготовка кресла",
+  "imaging.attach": "прикрепление снимка",
+  "rule.update": "изменение правила",
+  "staff.create": "создание сотрудника",
+  "chair.create": "создание кресла"
+};
+
+const mprToolLabels: Record<string, string> = {
+  window_level: "окно/уровень",
+  pan: "сдвиг",
+  zoom: "масштаб",
+  slice_scroll: "прокрутка срезов",
+  crosshair: "синхронный курсор",
+  rotate_axes: "поворот осей",
+  oblique_planes: "косые плоскости",
+  mpr_3up: "MPR 3 окна",
+  panoramic_curve: "панорамная дуга",
+  measurement: "измерение",
+  reset: "сброс",
+  export_snapshot: "экспорт снимка",
+  external_open: "внешнее открытие"
+};
+
+const dicomWebStatusLabels: Record<DicomWebConnectorCheckResponse["status"], string> = {
+  ready: "готово",
+  auth_required: "нужна авторизация",
+  unreachable: "недоступно",
+  misconfigured: "проверить настройки"
+};
+
+const dicomViewerLaunchModeLabels: Record<DicomViewerLaunchManifestResponse["launchMode"], string> = {
+  dicomweb_url: "OHIF/DICOMweb",
+  local_manifest: "локальный манифест",
+  external_handoff: "внешний просмотрщик",
+  blocked: "заблокировано"
+};
+
+const dicomReadinessCheckLabels: Record<DicomWorkstationReadinessResponse["checks"][number]["status"], string> = {
+  pass: "OK",
+  warn: "Проверить",
+  fail: "Нет"
+};
+
+function viewerWindowPresetForStudy(kind: ImagingStudyKind | null | undefined): ImagingViewerWindowPreset {
+  if (kind === "cbct") return "bone";
+  if (kind === "photo") return "photo";
+  if (kind === "bitewing") return "caries";
+  if (kind === "opg") return "perio";
+  return "endo";
+}
+
+const defaultImagingViewerState: ImagingViewerState = {
+  rotationDeg: 0,
+  flipHorizontal: false,
+  inverted: false,
+  brightness: 1,
+  contrast: 1.08,
+  zoom: 1
+};
+
+const defaultDicomFirstFrameViewerState: ImagingViewerState = {
+  rotationDeg: 0,
+  flipHorizontal: false,
+  inverted: false,
+  brightness: 1,
+  contrast: 1,
+  zoom: 1
+};
+
+type ImagingViewerLocalDraft = {
+  state: ImagingViewerSessionState;
+  annotations: ImagingViewerAnnotation[];
+  clientSavedAt: string;
+  serverSavedAt: string | null;
+};
+
+type ImagingViewerSaveState = "idle" | "local" | "saving" | "saved" | "queued" | "error";
+
+type DicomWorkbenchLocalDraft = {
+  manifest: DicomViewerWorkbenchManifestResponse;
+  clientSavedAt: string;
+  seriesKey: string;
+};
+
+type LocalImagingFolderDraft = {
+  version: 1;
+  folderPath: string;
+  safeDisplayName: string;
+  sourceLabel: string;
+  sourceKind: string;
+  folderFingerprint: string | null;
+  origin: "manual" | "discovery" | "organizer" | "workbench";
+  savedAt: string;
+};
+
+type BrowserFileSystemFileHandle = {
+  kind: "file";
+  name: string;
+  getFile: () => Promise<File>;
+};
+
+type BrowserFileSystemDirectoryHandle = {
+  kind: "directory";
+  name: string;
+  entries: () => AsyncIterable<[string, BrowserFileSystemHandle]>;
+};
+
+type BrowserFileSystemHandle = BrowserFileSystemFileHandle | BrowserFileSystemDirectoryHandle;
+
+type BrowserDirectoryPickerWindow = Window & {
+  showDirectoryPicker?: (options?: { id?: string; mode?: "read" | "readwrite"; startIn?: string }) => Promise<BrowserFileSystemDirectoryHandle>;
+};
+
+type BrowserPickedImagingFolderPreview = {
+  version: 1;
+  safeDisplayName: string;
+  sourceLabel: string;
+  sourceKind: "browser_directory_picker" | "browser_file_input";
+  folderFingerprint: string;
+  rootName: string;
+  scannedFiles: number;
+  scannedFolders: number;
+  dicomLikeFiles: number;
+  archiveFiles: number;
+  modelFiles: number;
+  imageFiles: number;
+  totalBytes: number;
+  createdAt: string;
+  nextAction: string;
+  warnings: string[];
+};
+
+type BrowserPickedImagingScanStats = {
+  rootName: string;
+  sourceKind: BrowserPickedImagingFolderPreview["sourceKind"];
+  scannedFiles: number;
+  scannedFolders: number;
+  dicomLikeFiles: number;
+  archiveFiles: number;
+  modelFiles: number;
+  imageFiles: number;
+  totalBytes: number;
+  warnings: string[];
+};
+
+type BrowserMigrationSourceKind = MigrationLocalSourceDiscoveryResponse["candidates"][number]["sourceKind"];
+
+type BrowserMigrationFileKind = "database" | "dump" | "table" | "archive" | "dicom" | "image" | "model" | "other";
+
+type BrowserMigrationFolderStats = {
+  folderKey: string;
+  folderHint: string;
+  depth: number;
+  databaseFiles: number;
+  dumpFiles: number;
+  tableFiles: number;
+  archiveFiles: number;
+  dicomLikeFiles: number;
+  imageFiles: number;
+  modelFiles: number;
+  hasDicomDir: boolean;
+  latestModifiedAt: string | null;
+  totalBytes: number;
+};
+
+const imagingViewerLocalStoragePrefix = "dental-crm:imaging-viewer:";
+const dicomWorkbenchLocalStorageKey = "dental-crm:dicom-workbench:last";
+const localImagingFolderStorageKey = "dental-crm:local-imaging-folder:last";
+const browserPickedImagingFolderStorageKey = "dental-crm:browser-picked-imaging-folder:last";
+const uiPreferencesStorageKey = "dental-crm:web-ui-preferences:v1";
+const documentPaymentSelectionStorageKey = "dental-crm:document-payment-selection:v1";
+const documentPayloadDraftStorageKey = "dental-crm:document-payload-drafts:v1";
+const documentIssueSignatureStorageKey = "dental-crm:document-issue-signature:v1";
+const uiPreferencesServerPath = "/api/settings/preferences";
+const onboardingStorageKey = "dental-crm:onboarding:v1";
+const clinicProfileEndpoint = "/api/settings/clinic/profile";
+const denteAdminSecretHeaderName = "x-dente-admin-secret";
+const localConvenienceRetentionMs = 30 * 24 * 60 * 60 * 1000;
+const sensitiveLocalDraftRetentionMs = 7 * 24 * 60 * 60 * 1000;
+const speechAudioQueueRetentionMs = 48 * 60 * 60 * 1000;
+
+type DocumentPaymentSelectionEntry = {
+  paymentIds: string[];
+  savedAt: string;
+};
+
+type DocumentPaymentSelectionStore = {
+  version: 1;
+  selections: Record<string, DocumentPaymentSelectionEntry>;
+};
+
+type Outpatient025uDocumentDraftFields = {
+  recordExtractPeriodStart: string;
+  recordExtractPeriodEnd: string;
+  recordExtractSourceVisitIds: string;
+  recordExtractComplaintAndAnamnesis: string;
+  recordExtractObjectiveStatus: string;
+  recordExtractDiagnosis: string;
+  recordExtractTreatmentProvided: string;
+  recordExtractRecommendations: string;
+  recordExtractDoctorFullName: string;
+  outpatient025uMedicalCardNumber: string;
+  outpatient025uOpenedAt: string;
+  outpatient025uPatientSexCode: "1" | "2" | "unknown";
+  outpatient025uCitizenship: string;
+  outpatient025uRegistrationUrbanRuralCode: "1" | "2" | "unknown";
+  outpatient025uStayUrbanRuralCode: "1" | "2" | "unknown";
+  outpatient025uOmsIssuedAt: string;
+  outpatient025uInsurerName: string;
+  outpatient025uSocialSupportCode: string;
+  outpatient025uHealthStatusDisclosureContact: string;
+  outpatient025uEmploymentCode: string;
+  outpatient025uDisabilityGroup: string;
+  outpatient025uWorkOrStudyPlace: string;
+  outpatient025uPalliativeCareNeedCode: string;
+  outpatient025uBloodGroup: string;
+  outpatient025uRhFactor: string;
+  outpatient025uKellK1: string;
+  outpatient025uOtherBloodData: string;
+  outpatient025uAllergyHistory: string;
+  outpatient025uFinalEpicrisis: string;
+};
+
+type DocumentPayloadDraftEntry = {
+  kind: "outpatient_medical_card_025u";
+  patientId: string;
+  visitId: string | null;
+  savedAt: string;
+  fields: Outpatient025uDocumentDraftFields;
+};
+
+type DocumentPayloadDraftStore = {
+  version: 1;
+  drafts: Record<string, DocumentPayloadDraftEntry>;
+};
+
+type DocumentIssueSignatureDraft = {
+  version: 1;
+  mode: DocumentIssueSignatureMode;
+  staffFullName: string;
+  staffRole: string;
+  savedAt: string;
+};
+
+const documentIssueSignatureModeLabels: Record<DocumentIssueSignatureMode, string> = {
+  paper_signed: "Бумажный экземпляр подписан",
+  simple_electronic_signature: "Простая электронная подпись",
+  qualified_electronic_signature: "УКЭП"
+};
+
+const documentVoidReasonLabels: Record<DocumentVoidReasonCode, string> = {
+  draft_error: "Ошибка в черновике",
+  issued_in_error: "Документ выдан с ошибкой",
+  patient_request: "Запрос пациента или представителя",
+  duplicate_document: "Дубль документа",
+  tax_certificate_correction: "Коррекция налоговой справки",
+  medical_release_correction: "Коррекция выдачи меддокументов",
+  payment_correction: "Коррекция оплаты или чека",
+  other: "Другая причина"
+};
+
+function browserGeneratedId(prefix: string): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return `${prefix}-${crypto.randomUUID()}`;
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function currentLocalDateTimeInputValue(): string {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function normalizedDocumentIssueSignatureMode(value: unknown): DocumentIssueSignatureMode {
+  return value === "simple_electronic_signature" || value === "qualified_electronic_signature" || value === "paper_signed"
+    ? value
+    : "paper_signed";
+}
+
+function organizationScopedLocalStorageKey(baseKey: string, organizationId: string | null | undefined): string {
+  const normalizedOrganizationId = organizationId?.trim();
+  return normalizedOrganizationId ? `${baseKey}:${normalizedOrganizationId}` : baseKey;
+}
+
+function normalizedLocalOrganizationId(organizationId: string | null | undefined): string | null {
+  const normalized = organizationId?.trim();
+  return normalized || null;
+}
+
+function localSavedAtFresh(savedAt: string | null | undefined, retentionMs: number, nowMs = Date.now()): boolean {
+  if (!savedAt) return false;
+  const timestamp = Date.parse(savedAt);
+  if (!Number.isFinite(timestamp)) return false;
+  return timestamp <= nowMs + 5 * 60 * 1000 && nowMs - timestamp <= retentionMs;
+}
+
+function documentIssueSignatureLocalKey(organizationId: string | null | undefined): string {
+  return organizationScopedLocalStorageKey(documentIssueSignatureStorageKey, organizationId);
+}
+
+function documentPaymentSelectionLocalKey(organizationId: string | null | undefined): string {
+  return organizationScopedLocalStorageKey(documentPaymentSelectionStorageKey, organizationId);
+}
+
+function documentPayloadDraftLocalKey(organizationId: string | null | undefined): string {
+  return organizationScopedLocalStorageKey(documentPayloadDraftStorageKey, organizationId);
+}
+
+function onboardingLocalKey(organizationId: string | null | undefined): string {
+  return organizationScopedLocalStorageKey(onboardingStorageKey, organizationId);
+}
+
+function loadDocumentIssueSignatureDraft(organizationId: string | null | undefined = null): DocumentIssueSignatureDraft {
+  const fallback: DocumentIssueSignatureDraft = {
+    version: 1,
+    mode: "paper_signed",
+    staffFullName: "",
+    staffRole: "Врач/администратор",
+    savedAt: ""
+  };
+  if (typeof window === "undefined") return fallback;
+  try {
+    const localKey = documentIssueSignatureLocalKey(organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(documentIssueSignatureStorageKey) : null);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<DocumentIssueSignatureDraft>;
+    if (parsed?.version !== 1) return fallback;
+    const savedAt = typeof parsed.savedAt === "string" ? parsed.savedAt : "";
+    if (!localSavedAtFresh(savedAt, localConvenienceRetentionMs)) {
+      window.localStorage.removeItem(localKey);
+      if (organizationId) window.localStorage.removeItem(documentIssueSignatureStorageKey);
+      return fallback;
+    }
+    return {
+      version: 1,
+      mode: normalizedDocumentIssueSignatureMode(parsed.mode),
+      staffFullName: typeof parsed.staffFullName === "string" ? parsed.staffFullName.slice(0, 240) : "",
+      staffRole: typeof parsed.staffRole === "string" && parsed.staffRole.trim() ? parsed.staffRole.slice(0, 120) : "Врач/администратор",
+      savedAt
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveDocumentIssueSignatureDraft(
+  organizationId: string | null | undefined,
+  mode: DocumentIssueSignatureMode,
+  staffFullName: string,
+  staffRole: string
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      documentIssueSignatureLocalKey(organizationId),
+      JSON.stringify({
+        version: 1,
+        mode,
+        staffFullName: staffFullName.trim().slice(0, 240),
+        staffRole: staffRole.trim().slice(0, 120) || "Врач/администратор",
+        savedAt: new Date().toISOString()
+      } satisfies DocumentIssueSignatureDraft)
+    );
+  } catch {
+    // Signature defaults are convenience only; the server still requires explicit attestation on issue.
+  }
+}
+
+function emptyDocumentPaymentSelectionStore(): DocumentPaymentSelectionStore {
+  return { version: 1, selections: {} };
+}
+
+function normalizedDocumentPaymentSelectionIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const paymentIds: string[] = [];
+  const seenPaymentIds = new Set<string>();
+  for (const rawPaymentId of value) {
+    if (typeof rawPaymentId !== "string") continue;
+    const paymentId = rawPaymentId.trim();
+    if (!paymentId || paymentId.length > 120 || seenPaymentIds.has(paymentId)) continue;
+    seenPaymentIds.add(paymentId);
+    paymentIds.push(paymentId);
+    if (paymentIds.length >= 80) break;
+  }
+  return paymentIds;
+}
+
+function loadDocumentPaymentSelectionStore(organizationId: string | null | undefined = null): DocumentPaymentSelectionStore {
+  if (typeof window === "undefined") return emptyDocumentPaymentSelectionStore();
+  try {
+    const localKey = documentPaymentSelectionLocalKey(organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(documentPaymentSelectionStorageKey) : null);
+    if (!raw) return emptyDocumentPaymentSelectionStore();
+    const parsed = JSON.parse(raw) as Partial<DocumentPaymentSelectionStore>;
+    if (parsed?.version !== 1 || !parsed.selections || typeof parsed.selections !== "object") {
+      return emptyDocumentPaymentSelectionStore();
+    }
+    const selections: DocumentPaymentSelectionStore["selections"] = {};
+    let pruned = false;
+    for (const [key, rawEntry] of Object.entries(parsed.selections)) {
+      if (!key || key.length > 260 || !rawEntry || typeof rawEntry !== "object") {
+        pruned = true;
+        continue;
+      }
+      const entry = rawEntry as Partial<DocumentPaymentSelectionEntry>;
+      const savedAt = typeof entry.savedAt === "string" && entry.savedAt ? entry.savedAt : null;
+      if (!savedAt || !localSavedAtFresh(savedAt, localConvenienceRetentionMs)) {
+        pruned = true;
+        continue;
+      }
+      selections[key] = {
+        paymentIds: normalizedDocumentPaymentSelectionIds(entry.paymentIds),
+        savedAt
+      };
+    }
+    if (pruned || organizationId) {
+      if (Object.keys(selections).length) {
+        window.localStorage.setItem(localKey, JSON.stringify({ version: 1, selections } satisfies DocumentPaymentSelectionStore));
+      } else {
+        window.localStorage.removeItem(localKey);
+      }
+      if (organizationId) window.localStorage.removeItem(documentPaymentSelectionStorageKey);
+    }
+    return { version: 1, selections };
+  } catch {
+    return emptyDocumentPaymentSelectionStore();
+  }
+}
+
+function loadDocumentPaymentSelection(organizationId: string | null | undefined, key: string | null): string[] | null {
+  if (!key || typeof window === "undefined") return null;
+  const entry = loadDocumentPaymentSelectionStore(organizationId).selections[key];
+  return entry ? normalizedDocumentPaymentSelectionIds(entry.paymentIds) : null;
+}
+
+function saveDocumentPaymentSelection(
+  organizationId: string | null | undefined,
+  key: string | null,
+  paymentIds: string[]
+): void {
+  if (!key || typeof window === "undefined") return;
+  try {
+    const store = loadDocumentPaymentSelectionStore(organizationId);
+    store.selections[key] = {
+      paymentIds: normalizedDocumentPaymentSelectionIds(paymentIds),
+      savedAt: new Date().toISOString()
+    };
+    const trimmedSelections = Object.fromEntries(
+      Object.entries(store.selections)
+        .sort((left, right) => right[1].savedAt.localeCompare(left[1].savedAt))
+        .slice(0, 80)
+    );
+    window.localStorage.setItem(
+      documentPaymentSelectionLocalKey(organizationId),
+      JSON.stringify({ version: 1, selections: trimmedSelections } satisfies DocumentPaymentSelectionStore)
+    );
+  } catch {
+    // Document payment selection is local operator convenience; failed storage must not block document issue.
+  }
+}
+
+function todayDateInputValue(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dateInputValuePlusDays(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function emptyOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFields {
+  const today = todayDateInputValue();
+  return {
+    recordExtractPeriodStart: today,
+    recordExtractPeriodEnd: today,
+    recordExtractSourceVisitIds: "",
+    recordExtractComplaintAndAnamnesis: "",
+    recordExtractObjectiveStatus: "",
+    recordExtractDiagnosis: "",
+    recordExtractTreatmentProvided: "",
+    recordExtractRecommendations: "",
+    recordExtractDoctorFullName: "",
+    outpatient025uMedicalCardNumber: "",
+    outpatient025uOpenedAt: today,
+    outpatient025uPatientSexCode: "unknown",
+    outpatient025uCitizenship: "",
+    outpatient025uRegistrationUrbanRuralCode: "unknown",
+    outpatient025uStayUrbanRuralCode: "unknown",
+    outpatient025uOmsIssuedAt: "",
+    outpatient025uInsurerName: "",
+    outpatient025uSocialSupportCode: "",
+    outpatient025uHealthStatusDisclosureContact: "",
+    outpatient025uEmploymentCode: "",
+    outpatient025uDisabilityGroup: "",
+    outpatient025uWorkOrStudyPlace: "",
+    outpatient025uPalliativeCareNeedCode: "",
+    outpatient025uBloodGroup: "",
+    outpatient025uRhFactor: "",
+    outpatient025uKellK1: "",
+    outpatient025uOtherBloodData: "",
+    outpatient025uAllergyHistory: "",
+    outpatient025uFinalEpicrisis: ""
+  };
+}
+
+function documentPayloadDraftKey(
+  kind: "outpatient_medical_card_025u",
+  organizationId: string | null | undefined,
+  patientId: string | null,
+  visitId: string | null
+): string | null {
+  const normalizedOrganizationId = organizationId?.trim();
+  if (!normalizedOrganizationId || !patientId) return null;
+  return `${kind}:${normalizedOrganizationId}:${patientId}:${visitId ?? "all-visits"}`;
+}
+
+function emptyDocumentPayloadDraftStore(): DocumentPayloadDraftStore {
+  return { version: 1, drafts: {} };
+}
+
+function normalizedOutpatient025uCode(value: unknown): "1" | "2" | "unknown" {
+  return value === "1" || value === "2" || value === "unknown" ? value : "unknown";
+}
+
+function localDraftString(value: unknown, maxLength = 1200): string {
+  return typeof value === "string" ? value.slice(0, maxLength) : "";
+}
+
+function normalizeOutpatient025uDocumentDraftFields(value: unknown): Outpatient025uDocumentDraftFields | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Partial<Record<keyof Outpatient025uDocumentDraftFields, unknown>>;
+  return {
+    recordExtractPeriodStart: localDraftString(candidate.recordExtractPeriodStart, 40),
+    recordExtractPeriodEnd: localDraftString(candidate.recordExtractPeriodEnd, 40),
+    recordExtractSourceVisitIds: localDraftString(candidate.recordExtractSourceVisitIds, 2400),
+    recordExtractComplaintAndAnamnesis: localDraftString(candidate.recordExtractComplaintAndAnamnesis),
+    recordExtractObjectiveStatus: localDraftString(candidate.recordExtractObjectiveStatus),
+    recordExtractDiagnosis: localDraftString(candidate.recordExtractDiagnosis),
+    recordExtractTreatmentProvided: localDraftString(candidate.recordExtractTreatmentProvided),
+    recordExtractRecommendations: localDraftString(candidate.recordExtractRecommendations),
+    recordExtractDoctorFullName: localDraftString(candidate.recordExtractDoctorFullName, 240),
+    outpatient025uMedicalCardNumber: localDraftString(candidate.outpatient025uMedicalCardNumber, 120),
+    outpatient025uOpenedAt: localDraftString(candidate.outpatient025uOpenedAt, 40),
+    outpatient025uPatientSexCode: normalizedOutpatient025uCode(candidate.outpatient025uPatientSexCode),
+    outpatient025uCitizenship: localDraftString(candidate.outpatient025uCitizenship, 240),
+    outpatient025uRegistrationUrbanRuralCode: normalizedOutpatient025uCode(candidate.outpatient025uRegistrationUrbanRuralCode),
+    outpatient025uStayUrbanRuralCode: normalizedOutpatient025uCode(candidate.outpatient025uStayUrbanRuralCode),
+    outpatient025uOmsIssuedAt: localDraftString(candidate.outpatient025uOmsIssuedAt, 40),
+    outpatient025uInsurerName: localDraftString(candidate.outpatient025uInsurerName, 300),
+    outpatient025uSocialSupportCode: localDraftString(candidate.outpatient025uSocialSupportCode, 120),
+    outpatient025uHealthStatusDisclosureContact: localDraftString(candidate.outpatient025uHealthStatusDisclosureContact, 300),
+    outpatient025uEmploymentCode: localDraftString(candidate.outpatient025uEmploymentCode, 120),
+    outpatient025uDisabilityGroup: localDraftString(candidate.outpatient025uDisabilityGroup, 120),
+    outpatient025uWorkOrStudyPlace: localDraftString(candidate.outpatient025uWorkOrStudyPlace, 300),
+    outpatient025uPalliativeCareNeedCode: localDraftString(candidate.outpatient025uPalliativeCareNeedCode, 120),
+    outpatient025uBloodGroup: localDraftString(candidate.outpatient025uBloodGroup, 80),
+    outpatient025uRhFactor: localDraftString(candidate.outpatient025uRhFactor, 80),
+    outpatient025uKellK1: localDraftString(candidate.outpatient025uKellK1, 80),
+    outpatient025uOtherBloodData: localDraftString(candidate.outpatient025uOtherBloodData),
+    outpatient025uAllergyHistory: localDraftString(candidate.outpatient025uAllergyHistory),
+    outpatient025uFinalEpicrisis: localDraftString(candidate.outpatient025uFinalEpicrisis)
+  };
+}
+
+function loadDocumentPayloadDraftStore(organizationId: string | null | undefined = null): DocumentPayloadDraftStore {
+  if (typeof window === "undefined") return emptyDocumentPayloadDraftStore();
+  try {
+    const localKey = documentPayloadDraftLocalKey(organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(documentPayloadDraftStorageKey) : null);
+    if (!raw) return emptyDocumentPayloadDraftStore();
+    const parsed = JSON.parse(raw) as Partial<DocumentPayloadDraftStore>;
+    if (parsed?.version !== 1 || !parsed.drafts || typeof parsed.drafts !== "object") return emptyDocumentPayloadDraftStore();
+    const drafts: DocumentPayloadDraftStore["drafts"] = {};
+    let pruned = false;
+    for (const [key, rawEntry] of Object.entries(parsed.drafts)) {
+      if (!key || key.length > 320 || !rawEntry || typeof rawEntry !== "object") {
+        pruned = true;
+        continue;
+      }
+      const entry = rawEntry as Partial<DocumentPayloadDraftEntry>;
+      if (entry.kind !== "outpatient_medical_card_025u") {
+        pruned = true;
+        continue;
+      }
+      if (typeof entry.patientId !== "string" || !entry.patientId || typeof entry.savedAt !== "string" || !entry.savedAt) {
+        pruned = true;
+        continue;
+      }
+      if (!localSavedAtFresh(entry.savedAt, sensitiveLocalDraftRetentionMs)) {
+        pruned = true;
+        continue;
+      }
+      const fields = normalizeOutpatient025uDocumentDraftFields(entry.fields);
+      if (!fields) {
+        pruned = true;
+        continue;
+      }
+      drafts[key] = {
+        kind: "outpatient_medical_card_025u",
+        patientId: entry.patientId,
+        visitId: typeof entry.visitId === "string" && entry.visitId ? entry.visitId : null,
+        savedAt: entry.savedAt,
+        fields
+      };
+    }
+    if (pruned || organizationId) {
+      if (Object.keys(drafts).length) {
+        window.localStorage.setItem(localKey, JSON.stringify({ version: 1, drafts } satisfies DocumentPayloadDraftStore));
+      } else {
+        window.localStorage.removeItem(localKey);
+      }
+      if (organizationId) window.localStorage.removeItem(documentPayloadDraftStorageKey);
+    }
+    return { version: 1, drafts };
+  } catch {
+    return emptyDocumentPayloadDraftStore();
+  }
+}
+
+function loadOutpatient025uDocumentDraft(
+  organizationId: string | null | undefined,
+  key: string | null
+): Outpatient025uDocumentDraftFields | null {
+  if (!key || typeof window === "undefined") return null;
+  return loadDocumentPayloadDraftStore(organizationId).drafts[key]?.fields ?? null;
+}
+
+function saveOutpatient025uDocumentDraft(
+  organizationId: string | null | undefined,
+  key: string | null,
+  patientId: string | null,
+  visitId: string | null,
+  fields: Outpatient025uDocumentDraftFields
+): void {
+  if (!key || !patientId || typeof window === "undefined") return;
+  try {
+    const store = loadDocumentPayloadDraftStore(organizationId);
+    store.drafts[key] = {
+      kind: "outpatient_medical_card_025u",
+      patientId,
+      visitId,
+      fields: normalizeOutpatient025uDocumentDraftFields(fields) ?? emptyOutpatient025uDocumentDraftFields(),
+      savedAt: new Date().toISOString()
+    };
+    const trimmedDrafts = Object.fromEntries(
+      Object.entries(store.drafts)
+        .sort((left, right) => right[1].savedAt.localeCompare(left[1].savedAt))
+        .slice(0, 60)
+    );
+    window.localStorage.setItem(
+      documentPayloadDraftLocalKey(organizationId),
+      JSON.stringify({ version: 1, drafts: trimmedDrafts } satisfies DocumentPayloadDraftStore)
+    );
+  } catch {
+    // Payload drafts are recovery data only; document issue still validates all facts server-side.
+  }
+}
+
+function imagingViewerLocalKey(studyId: string, organizationId: string | null | undefined = null): string {
+  const normalizedOrganizationId = organizationId?.trim();
+  return `${imagingViewerLocalStoragePrefix}${normalizedOrganizationId ? `${normalizedOrganizationId}:` : ""}${studyId}`;
+}
+
+function loadLocalImagingViewerDraft(studyId: string | null, organizationId: string | null | undefined = null): ImagingViewerLocalDraft | null {
+  if (!studyId || typeof window === "undefined") return null;
+  try {
+    const localKey = imagingViewerLocalKey(studyId, organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(imagingViewerLocalKey(studyId)) : null);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ImagingViewerLocalDraft;
+    if (!localSavedAtFresh(parsed?.clientSavedAt, sensitiveLocalDraftRetentionMs)) {
+      window.localStorage.removeItem(localKey);
+      if (organizationId) window.localStorage.removeItem(imagingViewerLocalKey(studyId));
+      return null;
+    }
+    return parsed?.state && Array.isArray(parsed.annotations) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function dicomWorkbenchSeriesKey(manifest: DicomViewerWorkbenchManifestResponse): string {
+  return (
+    manifest.toolStateBundle.seriesRef.seriesInstanceUid ??
+    manifest.launchManifest.seriesInstanceUid ??
+    manifest.toolStateBundle.seriesRef.firstFilePath ??
+    manifest.toolStateBundle.seriesRef.sourceName
+  );
+}
+
+function loadLocalDicomWorkbenchDraft(organizationId: string | null | undefined = null): DicomWorkbenchLocalDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const localKey = organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(dicomWorkbenchLocalStorageKey) : null);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DicomWorkbenchLocalDraft;
+    if (parsed?.manifest?.version !== "dental-crm-dicom-workbench-v1") return null;
+    if (!parsed.seriesKey || !parsed.clientSavedAt) return null;
+    if (!localSavedAtFresh(parsed.clientSavedAt, sensitiveLocalDraftRetentionMs)) {
+      window.localStorage.removeItem(localKey);
+      if (organizationId) window.localStorage.removeItem(dicomWorkbenchLocalStorageKey);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function localImagingFolderFingerprint(folderPath: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < folderPath.length; index += 1) {
+    hash ^= folderPath.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0").toUpperCase();
+}
+
+function classifyBrowserImagingFileName(fileName: string): "dicom" | "archive" | "model" | "image" | "other" {
+  const lowerName = fileName.toLowerCase();
+  const extension = lowerName.includes(".") ? lowerName.slice(lowerName.lastIndexOf(".") + 1) : "";
+  if (["dcm", "dicom", "ima"].includes(extension) || lowerName === "dicomdir") return "dicom";
+  if (["zip", "7z", "rar"].includes(extension)) return "archive";
+  if (["stl", "obj", "ply", "glb", "gltf", "3mf"].includes(extension)) return "model";
+  if (["jpg", "jpeg", "png", "tif", "tiff", "bmp", "webp"].includes(extension)) return "image";
+  return "other";
+}
+
+const browserMigrationSourceTitles: Record<BrowserMigrationSourceKind, string> = {
+  mis_database: "Старая МИС или CRM",
+  firebird_database: "Firebird/InterBase база",
+  access_database: "Access MDB/ACCDB база",
+  sqlite_database: "SQLite база",
+  sql_dump: "SQL dump или backup",
+  spreadsheet_export: "Excel/XLSX выгрузка",
+  csv_export: "CSV/TSV выгрузка",
+  archive_export: "Архив выгрузки",
+  pacs_dicom: "PACS/DICOM источник",
+  dicom_folder: "DICOMDIR/КТ папка",
+  xray_image_archive: "Архив RVG/ОПТГ/фото",
+  vendor_imaging_system: "Vendor-система снимков",
+  network_share: "Сетевая папка обмена",
+  unknown_legacy_source: "Неопознанный legacy-источник"
+};
+
+function classifyBrowserMigrationFileName(fileName: string): BrowserMigrationFileKind {
+  const lowerName = fileName.toLowerCase();
+  const extension = lowerName.includes(".") ? lowerName.slice(lowerName.lastIndexOf(".") + 1) : "";
+  if (lowerName === "dicomdir" || ["dcm", "dicom", "ima", "dc3", "acr"].includes(extension)) return "dicom";
+  if (["fdb", "gdb", "mdb", "accdb", "sqlite", "sqlite3", "db", "dbf", "1cd", "mdf", "ldf", "sdf"].includes(extension)) return "database";
+  if (["fbk", "bak", "backup", "dump", "sql", "dt"].includes(extension)) return "dump";
+  if (["csv", "tsv", "xls", "xlsx", "ods", "xml", "json"].includes(extension)) return "table";
+  if (["zip", "7z", "rar", "tar", "gz"].includes(extension)) return "archive";
+  if (["stl", "obj", "ply", "glb", "gltf", "3mf"].includes(extension)) return "model";
+  if (["jpg", "jpeg", "png", "tif", "tiff", "bmp", "webp"].includes(extension)) return "image";
+  return "other";
+}
+
+function browserMigrationFolderHintScore(value: string): number {
+  const normalized = value.toLowerCase();
+  let score = 0;
+  if (/dental|denta|clinic|stom|стом|mis|crm|legacy|migration|миграц|перенос|backup|dump|export|выгруз|стар/.test(normalized)) score += 0.14;
+  if (/инфоклиника|cliniccards|dental4windows|ident|stomx|1c|1с|1cv8|sql|firebird|interbase|access|sqlite/.test(normalized)) score += 0.2;
+  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|durr|dürr|3shape|medit|exocad/.test(normalized)) score += 0.18;
+  if (/dicom|dicomdir|cbct|кт|ккт|rvg|opg|оптг|xray|x-ray|рентген|сним|pacs|orthanc|dcm4chee/.test(normalized)) score += 0.18;
+  return score;
+}
+
+function browserMigrationSourceKindFromStats(stats: BrowserMigrationFolderStats): BrowserMigrationSourceKind {
+  const text = stats.folderHint.toLowerCase();
+  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|3shape|medit|exocad/.test(text)) return "vendor_imaging_system";
+  if (stats.hasDicomDir || stats.dicomLikeFiles > 0 || /dicom|cbct|кт|ккт/.test(text)) return "dicom_folder";
+  if (stats.imageFiles >= 6 || stats.modelFiles > 0 || /rvg|opg|оптг|xray|рентген|сним/.test(text)) return "xray_image_archive";
+  if (/\.fdb|\.gdb|\.fbk|firebird|interbase/.test(text)) return "firebird_database";
+  if (/\.mdb|\.accdb|access/.test(text)) return "access_database";
+  if (/\.sqlite|\.sqlite3|sqlite|\.db\b/.test(text)) return "sqlite_database";
+  if (stats.dumpFiles > 0 || /\.sql|\.dump|\.bak|\.dt|\.mdf|\.ldf|\.sdf|sql server|mssql/.test(text)) return "sql_dump";
+  if (stats.tableFiles > 0) return /\.csv|\.tsv/.test(text) ? "csv_export" : "spreadsheet_export";
+  if (stats.archiveFiles > 0) return "archive_export";
+  if (/1c|1с|1cv8|\.1cd|инфоклиника|cliniccards|dental4windows|ident|stomx|mis|crm/.test(text)) return "mis_database";
+  if (stats.databaseFiles > 0) return "mis_database";
+  return "unknown_legacy_source";
+}
+
+function buildBrowserMigrationDiscovery(input: {
+  rootName: string;
+  sourceLabel: string;
+  scannedFolders: number;
+  scannedFiles: number;
+  folderStats: BrowserMigrationFolderStats[];
+  warnings: string[];
+}): MigrationLocalSourceDiscoveryResponse {
+  const candidates = input.folderStats
+    .map((stats) => {
+      const matchedFiles =
+        stats.databaseFiles +
+        stats.dumpFiles +
+        stats.tableFiles +
+        stats.archiveFiles +
+        stats.dicomLikeFiles +
+        stats.imageFiles +
+        stats.modelFiles;
+      const hintScore = browserMigrationFolderHintScore(stats.folderHint);
+      const confidence = Math.min(
+        1,
+        hintScore +
+          (stats.databaseFiles ? 0.5 : 0) +
+          (stats.dumpFiles ? 0.42 : 0) +
+          (stats.tableFiles ? 0.28 : 0) +
+          (stats.archiveFiles ? 0.2 : 0) +
+          (stats.dicomLikeFiles ? 0.46 : 0) +
+          (stats.hasDicomDir ? 0.24 : 0) +
+          (stats.imageFiles >= 8 ? 0.22 : stats.imageFiles > 0 ? 0.08 : 0) +
+          (stats.modelFiles ? 0.1 : 0)
+      );
+      if (matchedFiles === 0 && hintScore < 0.28) return null;
+      const sourceKind = browserMigrationSourceKindFromStats(stats);
+      const fingerprint = browserPickedFolderFingerprint(`${input.rootName}:${stats.folderKey}:${matchedFiles}:${stats.totalBytes}`);
+      const reasons: string[] = [];
+      if (stats.databaseFiles) reasons.push(`${stats.databaseFiles} файлов старой БД`);
+      if (stats.dumpFiles) reasons.push(`${stats.dumpFiles} backup/dump файлов`);
+      if (stats.tableFiles) reasons.push(`${stats.tableFiles} табличных выгрузок`);
+      if (stats.archiveFiles) reasons.push(`${stats.archiveFiles} архивов`);
+      if (stats.dicomLikeFiles) reasons.push(`${stats.dicomLikeFiles} DICOM/DICOMDIR признаков`);
+      if (stats.imageFiles) reasons.push(`${stats.imageFiles} изображений`);
+      if (stats.modelFiles) reasons.push(`${stats.modelFiles} dental 3D моделей`);
+      if (hintScore > 0) reasons.push("название папки похоже на старую CRM/снимки/миграцию");
+      return {
+        sourceRef: `browser-local:${fingerprint}`,
+        safeDisplayName: `${browserMigrationSourceTitles[sourceKind]} #${fingerprint}`,
+        sourceKind,
+        sourceLabel: input.sourceLabel,
+        sourceFingerprint: fingerprint,
+        depth: stats.depth,
+        confidence: Number(confidence.toFixed(2)),
+        matchedFiles,
+        databaseFiles: stats.databaseFiles,
+        dumpFiles: stats.dumpFiles,
+        tableFiles: stats.tableFiles,
+        archiveFiles: stats.archiveFiles,
+        dicomLikeFiles: stats.dicomLikeFiles,
+        imageFiles: stats.imageFiles + stats.modelFiles,
+        hasDicomDir: stats.hasDicomDir,
+        latestModifiedAt: stats.latestModifiedAt,
+        reasons,
+        warnings: ["Браузерный manifest не содержит полного пути; для staging нужен локальный bridge или ручной путь администратора."],
+        smartImportLine: `legacy source ${browserMigrationSourceTitles[sourceKind]} browser-local:${fingerprint} files=${matchedFiles} db=${stats.databaseFiles} dumps=${stats.dumpFiles} tables=${stats.tableFiles} dicom=${stats.dicomLikeFiles} images=${stats.imageFiles} models=${stats.modelFiles}`
+      };
+    })
+    .filter((candidate): candidate is MigrationLocalSourceDiscoveryResponse["candidates"][number] => Boolean(candidate))
+    .sort(
+      (left, right) =>
+        right.confidence - left.confidence ||
+        right.matchedFiles - left.matchedFiles ||
+        (right.latestModifiedAt ?? "").localeCompare(left.latestModifiedAt ?? "")
+    )
+    .slice(0, 18);
+
+  return {
+    version: "dental-crm-migration-local-discovery-v1",
+    generatedAt: new Date().toISOString(),
+    roots: [`browser-local:${browserPickedFolderFingerprint(`${input.rootName}:${input.scannedFiles}:${input.scannedFolders}`)}`],
+    scannedFolders: input.scannedFolders,
+    candidates,
+    warnings: [
+      ...input.warnings,
+      "Браузерный manifest читает только выбранную папку/файлы и не раскрывает серверу полный локальный путь.",
+      ...(candidates.length ? [] : ["В выбранной папке не найдено старых БД, DICOM, снимков, архивов или выгрузок в пределах лимитов."])
+    ],
+    nextAction: candidates.length
+      ? "Откройте план по найденному browser-local кандидату или отправьте его в умный парсер как безопасный manifest."
+      : "Выберите корень старой МИС/снимков выше уровнем или запустите локальный migration bridge для полного автопоиска по ПК."
+  };
+}
+
+async function browserFileHasDicomMagic(file: File): Promise<boolean> {
+  if (file.size < 132) return false;
+  try {
+    const bytes = new Uint8Array(await file.slice(128, 132).arrayBuffer());
+    return bytes[0] === 0x44 && bytes[1] === 0x49 && bytes[2] === 0x43 && bytes[3] === 0x4d;
+  } catch {
+    return false;
+  }
+}
+
+function browserPickedFolderFingerprint(input: string): string {
+  return localImagingFolderFingerprint(input || "browser-local-imaging-folder");
+}
+
+function saveBrowserPickedImagingFolderPreview(
+  preview: BrowserPickedImagingFolderPreview,
+  organizationId: string | null | undefined = null
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId),
+      JSON.stringify(preview)
+    );
+  } catch {
+    // Browser-picked folder summaries are best-effort and contain no raw local path.
+  }
+}
+
+function loadBrowserPickedImagingFolderPreview(
+  organizationId: string | null | undefined = null
+): BrowserPickedImagingFolderPreview | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const localKey = organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(browserPickedImagingFolderStorageKey) : null);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as BrowserPickedImagingFolderPreview;
+    if (parsed?.version !== 1 || !parsed.folderFingerprint || !parsed.createdAt) return null;
+    if (!localSavedAtFresh(parsed.createdAt, localConvenienceRetentionMs)) {
+      window.localStorage.removeItem(localKey);
+      if (organizationId) window.localStorage.removeItem(browserPickedImagingFolderStorageKey);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function removeBrowserPickedImagingFolderPreview(organizationId: string | null | undefined = null): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId));
+    if (organizationId) window.localStorage.removeItem(browserPickedImagingFolderStorageKey);
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
+function buildBrowserPickedImagingFolderPreview(stats: BrowserPickedImagingScanStats): BrowserPickedImagingFolderPreview {
+  const fingerprint = browserPickedFolderFingerprint(
+    [
+      stats.rootName,
+      stats.scannedFiles,
+      stats.scannedFolders,
+      stats.dicomLikeFiles,
+      stats.archiveFiles,
+      stats.modelFiles,
+      stats.imageFiles,
+      stats.totalBytes
+    ].join(":")
+  );
+  const hasDicom = stats.dicomLikeFiles > 0;
+  const hasModels = stats.modelFiles > 0;
+  const nextAction = hasDicom
+    ? "Найдены файлы DICOM/CT. Для просмотра пикселей используйте серверный или локальный обработчик либо границу OHIF/Cornerstone."
+    : hasModels
+    ? "Найдены стоматологические 3D-модели. До подключения просмотрщика 3D-моделей держим это как метаданные органайзера."
+      : "В ограниченном браузерном сканировании DICOM-похожие файлы не найдены.";
+  return {
+    version: 1,
+    safeDisplayName: `${hasDicom ? "Браузерная CT-папка" : "Браузерная папка снимков"} #${fingerprint}`,
+    sourceLabel: stats.sourceKind === "browser_directory_picker" ? "Выбор папки браузером" : "Выбор файлов браузером",
+    sourceKind: stats.sourceKind,
+    folderFingerprint: fingerprint,
+    rootName: stats.rootName || "Выбранная папка",
+    scannedFiles: stats.scannedFiles,
+    scannedFolders: stats.scannedFolders,
+    dicomLikeFiles: stats.dicomLikeFiles,
+    archiveFiles: stats.archiveFiles,
+    modelFiles: stats.modelFiles,
+    imageFiles: stats.imageFiles,
+    totalBytes: stats.totalBytes,
+    createdAt: new Date().toISOString(),
+    nextAction,
+    warnings: stats.warnings
+  };
+}
+
+function loadLocalImagingFolderDraft(organizationId: string | null | undefined = null): LocalImagingFolderDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const localKey = organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(localImagingFolderStorageKey) : null);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LocalImagingFolderDraft;
+    if (parsed?.version !== 1 || !parsed.folderPath?.trim() || !parsed.savedAt) return null;
+    if (!localSavedAtFresh(parsed.savedAt, localConvenienceRetentionMs)) {
+      window.localStorage.removeItem(localKey);
+      if (organizationId) window.localStorage.removeItem(localImagingFolderStorageKey);
+      return null;
+    }
+    return {
+      ...parsed,
+      safeDisplayName: parsed.safeDisplayName || `Local imaging folder #${localImagingFolderFingerprint(parsed.folderPath)}`,
+      sourceLabel: parsed.sourceLabel || "Это устройство",
+      sourceKind: parsed.sourceKind || "manual",
+      folderFingerprint: parsed.folderFingerprint || localImagingFolderFingerprint(parsed.folderPath),
+      origin: parsed.origin || "manual"
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveLocalImagingFolderDraft(draft: LocalImagingFolderDraft, organizationId: string | null | undefined = null): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId), JSON.stringify(draft));
+  } catch {
+    // Local folder recovery is best-effort and never sent to the server.
+  }
+}
+
+function removeLocalImagingFolderDraft(organizationId: string | null | undefined = null): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(organizationScopedLocalStorageKey(localImagingFolderStorageKey, organizationId));
+    if (organizationId) window.localStorage.removeItem(localImagingFolderStorageKey);
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
+function saveLocalDicomWorkbenchDraft(
+  manifest: DicomViewerWorkbenchManifestResponse,
+  clientSavedAt: string,
+  organizationId: string | null | undefined = null
+): void {
+  if (typeof window === "undefined") return;
+  const draft: DicomWorkbenchLocalDraft = {
+    manifest,
+    clientSavedAt,
+    seriesKey: dicomWorkbenchSeriesKey(manifest)
+  };
+  try {
+    window.localStorage.setItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId), JSON.stringify(draft));
+  } catch {
+    // Local recovery is best-effort. The server can rebuild the bundle from the DICOM manifest.
+  }
+}
+
+function dicomWorkbenchManifestHasRedactedSource(manifest: DicomViewerWorkbenchManifestResponse | null): boolean {
+  if (!manifest) return false;
+  const firstFilePath = manifest.toolStateBundle.seriesRef.firstFilePath ?? "";
+  return (
+    firstFilePath.startsWith("redacted-local-dicom-path:") ||
+    manifest.toolStateBundle.viewports.some((viewport) =>
+      (viewport.referencedImageId ?? "").startsWith("dicomfile:redacted-local-dicom-path:")
+    )
+  );
+}
+
+function removeLocalDicomWorkbenchDraft(organizationId: string | null | undefined = null): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId));
+    if (organizationId) window.localStorage.removeItem(dicomWorkbenchLocalStorageKey);
+  } catch {
+    // ignore unavailable storage
+  }
+}
+
+async function collectDicomWorkstationClientFacts(): Promise<DicomWorkstationClientFacts> {
+  let webgl2Supported = false;
+  let webglVendor: string | null = null;
+  let webglRenderer: string | null = null;
+  let maxTextureSize: number | null = null;
+  let max3dTextureSize: number | null = null;
+  let maxRenderbufferSize: number | null = null;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl2");
+    webgl2Supported = Boolean(gl);
+    if (gl) {
+      maxTextureSize = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || null;
+      max3dTextureSize = Number(gl.getParameter(gl.MAX_3D_TEXTURE_SIZE)) || null;
+      maxRenderbufferSize = Number(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)) || null;
+      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info") as
+        | { UNMASKED_VENDOR_WEBGL: number; UNMASKED_RENDERER_WEBGL: number }
+        | null;
+      if (debugInfo) {
+        webglVendor = String(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) ?? "").slice(0, 180) || null;
+        webglRenderer = String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) ?? "").slice(0, 240) || null;
+      }
+    }
+  } catch {
+    webgl2Supported = false;
+  }
+
+  const navigatorWithMemory = navigator as Navigator & { deviceMemory?: number };
+  let storageQuotaMb: number | null = null;
+  let storageUsageMb: number | null = null;
+  try {
+    const estimate = await navigator.storage?.estimate?.();
+    storageQuotaMb = estimate?.quota ? Math.floor(estimate.quota / 1024 / 1024) : null;
+    storageUsageMb = estimate?.usage ? Math.floor(estimate.usage / 1024 / 1024) : null;
+  } catch {
+    storageQuotaMb = null;
+    storageUsageMb = null;
+  }
+
+  return {
+    deviceMemoryGb: navigatorWithMemory.deviceMemory ?? null,
+    hardwareConcurrency: navigator.hardwareConcurrency || null,
+    webgl2Supported,
+    webglVendor,
+    webglRenderer,
+    maxTextureSize,
+    max3dTextureSize,
+    maxRenderbufferSize,
+    devicePixelRatio: window.devicePixelRatio || null,
+    offscreenCanvasSupported: typeof OffscreenCanvas !== "undefined",
+    webWorkerSupported: typeof Worker !== "undefined",
+    indexedDbSupported: typeof indexedDB !== "undefined",
+    storageQuotaMb,
+    storageUsageMb,
+    online: navigator.onLine,
+    userAgent: navigator.userAgent.slice(0, 300),
+    platform: navigator.platform || null
+  };
+}
+
+function saveLocalImagingViewerDraft(
+  studyId: string,
+  draft: ImagingViewerLocalDraft,
+  organizationId: string | null | undefined = null
+): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.localStorage.setItem(imagingViewerLocalKey(studyId, organizationId), JSON.stringify(draft));
+    return true;
+  } catch {
+    // Viewer state is still saved to server when available; local storage quota errors stay non-blocking.
+    return false;
+  }
+}
+
+const imagingViewerPlans: Record<ImagingStudyKind, ImagingViewerPlan> = {
+  periapical: {
+    label: "RVG / прицельный",
+    mode: "two_d",
+    primaryTools: ["window/level", "invert", "rotate", "zoom", "measure"],
+    presets: ["endo", "caries", "implant"],
+    nextAction: "Смотреть локально; ИИ-описание только как черновик.",
+    warnings: ["Не заменяет диагноз врача.", "Измерения требуют калибровки датчика."]
+  },
+  bitewing: {
+    label: "Интерпроксимальный снимок",
+    mode: "two_d",
+    primaryTools: ["window/level", "invert", "zoom", "compare"],
+    presets: ["caries", "bone"],
+    nextAction: "Смотреть локально; удобно для кариеса и контактов.",
+    warnings: ["Сравнение серий требует одинаковой проекции."]
+  },
+  opg: {
+    label: "ОПТГ / панорама",
+    mode: "two_d",
+    primaryTools: ["window/level", "invert", "rotate", "zoom", "measure"],
+    presets: ["bone", "teeth", "implant"],
+    nextAction: "2D-просмотрщик достаточен для обзора; КТ открывать отдельным MPR-рабочим местом.",
+    warnings: ["Панорама имеет искажения; линейные измерения проверять по КТ."]
+  },
+  ceph: {
+    label: "ТРГ / цефалометрия",
+    mode: "ceph",
+    primaryTools: ["window/level", "rotate", "zoom", "landmarks"],
+    presets: ["soft", "bone", "airway"],
+    nextAction: "Для ортодонтии нужен отдельный цефалометрический анализ с точками и углами.",
+    warnings: ["Точки/углы не должны автозаполняться без проверки врача."]
+  },
+  cbct: {
+    label: "CBCT / КТ",
+    mode: "cbct_mpr",
+    primaryTools: ["MPR", "axial", "coronal", "sagittal", "panoramic curve"],
+    presets: ["bone", "implant", "endo"],
+    nextAction: "Открывать в рабочем месте DICOM/MPR; здесь только быстрый предпросмотр.",
+    warnings: ["Нельзя диагностировать CBCT по одной плоской картинке.", "Нужны DICOM-срезы, кэш и DICOMweb/Cornerstone."]
+  },
+  photo: {
+    label: "Фото",
+    mode: "photo",
+    primaryTools: ["zoom", "rotate", "brightness", "contrast"],
+    presets: ["clinical", "shade", "before/after"],
+    nextAction: "Фото можно использовать для коммуникации и черновиков документов.",
+    warnings: ["Цвет зависит от света и камеры."]
+  },
+  other: {
+    label: "Другое изображение",
+    mode: "two_d",
+    primaryTools: ["zoom", "rotate", "brightness", "contrast"],
+    presets: ["neutral"],
+    nextAction: "Проверить источник и привязку к пациенту перед использованием.",
+    warnings: ["Неизвестный тип требует ручной проверки."]
+  }
+};
+
+const imagingSourceChoices: ImagingSourceKind[] = [
+  "folder_watch",
+  "sensor_bridge",
+  "dicom_file",
+  "dicomweb",
+  "pacs",
+  "twain_wia",
+  "manual_upload"
+];
+
+const smartImportModeLabels: Record<SmartImportMode, { title: string; detail: string }> = {
+  auto: {
+    title: "Авто",
+    detail: "Сам разделит пациентов, снимки и мусор."
+  },
+  mixed: {
+    title: "Смешанный экспорт",
+    detail: "Пациенты + снимки из одной старой программы."
+  },
+  patients: {
+    title: "Только пациенты",
+    detail: "Принудительно отправить строки в базу пациентов."
+  },
+  imaging: {
+    title: "Только снимки",
+    detail: "Принудительно разобрать как RVG/ОПТГ/КТ."
+  }
+};
+
+const importSourceLabels: Record<ImportSourceKind, { title: string; detail: string }> = {
+  csv_text: {
+    title: "CSV / Excel",
+    detail: "Копипаст таблицы, CSV, TSV, точки с запятой."
+  },
+  xlsx_copy: {
+    title: "Excel-вставка",
+    detail: "Строки из Excel или Google Sheets без ручной подготовки."
+  },
+  mis_export: {
+    title: "Экспорт старой МИС",
+    detail: "32top, IDENT, Cliniccards, Open Dental и другие форматы через адаптеры."
+  },
+  image_ocr: {
+    title: "Фото журнала",
+    detail: "OCR/vision распознает фото бумажного журнала, затем показывает предпросмотр."
+  },
+  voice_dictation: {
+    title: "Диктовка",
+    detail: "Надиктовка администратора превращается в строки пациентов."
+  },
+  free_text: {
+    title: "Свободный текст",
+    detail: "Умный разбор: ФИО, телефон, дата рождения, комментарий."
+  }
+};
+
+const ingestionTargetLabels: Record<DocumentIngestionTarget, string> = {
+  smart_import: "Умный импорт",
+  patients: "Пациенты",
+  imaging: "Снимки",
+  pricelist: "Прайс",
+  plain_text: "Текст"
+};
+
+const documentIngestionQualityLabels: Record<DocumentIngestionResponse["quality"]["extractionQuality"], string> = {
+  ready: "Можно открыть предпросмотр",
+  review: "Нужна ручная проверка",
+  ocr_required: "Нужен OCR / vision",
+  unsupported: "Формат не разобран"
+};
+
+const telegramBlockedReasonLabels: Record<string, string> = {
+  missing_patient_portal_base_url: "Не настроена ссылка на портал пациента.",
+  missing_clinic_review_url: "Не настроена ссылка клиники для отзывов.",
+  phi_requires_consent: "Шаблон содержит медданные и требует согласий перед отправкой.",
+  telegram_bot_disabled: "Telegram выключен в настройках клиники.",
+  telegram_bot_token_missing: "На API-сервере не настроен токен Telegram-бота.",
+  encrypted_chat_transport_missing_or_unreadable: "Чат пациента еще не привязан или защищенная ссылка недоступна.",
+  patient_or_staff_not_linked_to_telegram: "Чат еще не связан через QR-код или одноразовую ссылку.",
+  post_visit_recommendation_document_not_issued: "Сначала выпустите безопасную памятку после приема.",
+  telegram_outbox_item_not_found_or_no_longer_open: "Задача уже не доступна для отправки.",
+  telegram_outbox_already_sent: "Это сообщение уже отправлено.",
+  telegram_outbox_not_due_yet: "Время отправки еще не наступило.",
+  telegram_outbox_preview_empty: "В сообщении нет безопасного текста для отправки.",
+  telegram_delivery_processing: "Отправка уже обрабатывается.",
+  telegram_transport_failed: "Telegram не принял сообщение. Проверьте токен, сеть и chat id."
+};
+
+const telegramWarningLabels: Record<string, string> = {
+  idempotent_replay: "Повторная отправка распознана и не продублирована."
+};
+
+const telegramFeatureLabels: Record<DenteTelegramFeature, string> = {
+  appointment_reminders: "Напоминания о приеме",
+  appointment_confirmation: "Подтверждение приема",
+  patient_linking: "QR-привязка пациента",
+  pre_visit_intake: "Анкета перед визитом",
+  document_ready_notice: "Документ готов",
+  tax_document_request: "Запрос налоговой справки",
+  payment_reminders: "Напоминания об оплате",
+  post_visit_instructions: "Памятки после лечения",
+  recalls: "Профилактические приглашения",
+  review_requests: "Просьбы оставить отзыв",
+  staff_daily_digest: "Сводка врачу и администратору",
+  staff_task_alerts: "Служебные задачи",
+  callback_requests: "Запрос обратного звонка",
+  voice_note_intake: "Голосовые обращения",
+  secure_portal_links: "Защищенные ссылки на портал"
+};
+
+const telegramFeatureHelp: Record<DenteTelegramFeature, string> = {
+  appointment_reminders: "Автоматические напоминания до визита без диагноза и деталей лечения.",
+  appointment_confirmation: "Кнопки подтверждения, переноса и связи с администратором.",
+  patient_linking: "Одноразовый код и QR для связи Telegram-чата с карточкой пациента.",
+  pre_visit_intake: "Сбор административных данных до приема через безопасный сценарий.",
+  document_ready_notice: "Уведомление о готовности документа, сам файл остается в DENTE/портале.",
+  tax_document_request: "Статус подготовки налоговых документов без отправки PDF в чат.",
+  payment_reminders: "Аккуратные напоминания о неоплаченных счетах и ссылках на портал.",
+  post_visit_instructions: "Памятки после удаления, имплантации, пломбы, гигиены и других процедур.",
+  recalls: "Возвратные приглашения на осмотр, гигиену и контроль.",
+  review_requests: "Просьба оценить прием с клинической ссылкой на карту или профиль отзывов.",
+  staff_daily_digest: "Сводка расписания и задач для сотрудников без персональных медицинских данных в тексте.",
+  staff_task_alerts: "Служебные уведомления по очереди связи и готовности документов.",
+  callback_requests: "Пациент может попросить звонок, задача попадает в очередь клиники.",
+  voice_note_intake: "Голосовые обращения пока выключаются отдельно из-за риска лишних данных.",
+  secure_portal_links: "Любые чувствительные файлы и подробности уходят только через портал."
+};
+
+const telegramFeatureOptions = Object.keys(telegramFeatureLabels) as DenteTelegramFeature[];
+
+function telegramHumanMessage(value: string | null | undefined): string {
+  if (!value) return "";
+  if (value.startsWith("feature_disabled:")) return "Сценарий выключен в настройках Telegram.";
+  const mapped = telegramBlockedReasonLabels[value] ?? telegramWarningLabels[value];
+  if (mapped) return mapped;
+  if (!/^[a-z0-9_.:-]+$/.test(value)) return value;
+  return telegramBlockedReasonLabels[value] ?? telegramWarningLabels[value] ?? "Нужна проверка настройки Telegram.";
+}
+
+function isTelegramOutboxItemDueForUi(item: Pick<DenteTelegramOutboxResponse["items"][number], "scheduledAt">): boolean {
+  const scheduledAtMs = Date.parse(item.scheduledAt);
+  return !Number.isFinite(scheduledAtMs) || scheduledAtMs <= Date.now();
+}
+
+const documentDetectedKindLabels: Record<string, string> = {
+  archive: "архив",
+  csv: "таблица CSV",
+  docx: "документ Word",
+  html: "HTML",
+  image: "изображение",
+  json: "JSON",
+  legacy_database: "старая БД",
+  legacy_dump: "backup / dump",
+  ods: "таблица ODS",
+  odt: "документ ODT",
+  pdf: "PDF",
+  pptx: "презентация",
+  rtf: "RTF",
+  spreadsheet: "таблица",
+  text: "текст",
+  unknown: "не определено",
+  xlsx: "таблица Excel",
+  xml: "XML",
+  zip: "ZIP-архив"
+};
+
+function documentDetectedKindLabel(kind: string) {
+  return documentDetectedKindLabels[kind] ?? "файл";
+}
+
+const dicomFirstFrameStatusLabels: Record<string, string> = {
+  ready: "готово",
+  unsupported: "не поддерживается",
+  not_found: "не найдено"
+};
+
+const toothRows = [
+  ["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28"],
+  ["48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"]
+] as const;
+
+const toothStateByCode: Record<string, "watch" | "planned" | "done" | "missing"> = {
+  "16": "watch",
+  "26": "done",
+  "36": "planned",
+  "46": "watch",
+  "48": "missing"
+};
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Samara"
+  }).format(new Date(value));
+}
+
+function patientName(patients: Patient[], patientId: string | null) {
+  if (!patientId) return "Новый пациент";
+  return patients.find((patient) => patient.id === patientId)?.fullName ?? "Пациент";
+}
+
+function findPatient(patients: Patient[], patientId: string | null) {
+  if (!patientId) return null;
+  return patients.find((patient) => patient.id === patientId) ?? null;
+}
+
+function money(value: number | null) {
+  return `${(value ?? 0).toLocaleString("ru-RU")} ₽`;
+}
+
+function minutesLabel(value: number) {
+  if (value < 60) return `${value} мин`;
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+  return minutes ? `${hours} ч ${minutes} мин` : `${hours} ч`;
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Samara"
+  }).format(new Date(value));
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    timeZone: "Europe/Samara"
+  }).format(new Date(value));
+}
+
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
+  start: () => void;
+};
+
+type BrowserWindowWithSpeech = Window &
+  typeof globalThis & {
+    SpeechRecognition?: new () => BrowserSpeechRecognition;
+    webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+    webkitAudioContext?: typeof AudioContext;
+  };
+
+type VisitNoteField = "complaint" | "anamnesis" | "objectiveStatus" | "diagnosis" | "treatmentPlan";
+type VisitNoteForm = Record<VisitNoteField, string>;
+
+const visitNoteFieldDefinitions: Array<{ key: VisitNoteField; label: string }> = [
+  { key: "complaint", label: "Жалобы" },
+  { key: "anamnesis", label: "Анамнез" },
+  { key: "objectiveStatus", label: "Объективно" },
+  { key: "diagnosis", label: "Диагноз" },
+  { key: "treatmentPlan", label: "План" }
+];
+
+const visitDraftQualityLabels: Record<NonNullable<VisitNoteDraft["quality"]>["level"], string> = {
+  ready: "Черновик плотный",
+  review: "Нужна проверка",
+  needs_more_dictation: "Нужно дописать"
+};
+
+const speechQualityLabels: Record<SpeechTranscriptionResponse["chunk"]["quality"]["level"], string> = {
+  clear: "чисто",
+  review: "проверить",
+  empty: "пусто",
+  failed: "сбой"
+};
+
+const emptyVisitNoteForm: VisitNoteForm = {
+  complaint: "",
+  anamnesis: "",
+  objectiveStatus: "",
+  diagnosis: "",
+  treatmentPlan: ""
+};
+
+function visitNoteFormFromVisit(visit: Dashboard["activeVisit"]): VisitNoteForm {
+  return {
+    complaint: visit.complaint ?? "",
+    anamnesis: visit.anamnesis ?? "",
+    objectiveStatus: visit.objectiveStatus ?? "",
+    diagnosis: visit.diagnosis ?? "",
+    treatmentPlan: visit.treatmentPlan ?? ""
+  };
+}
+
+function visitNoteFormFromDraft(draft: VisitNoteDraft): VisitNoteForm {
+  return {
+    complaint: draft.complaint ?? "",
+    anamnesis: draft.anamnesis ?? "",
+    objectiveStatus: draft.objectiveStatus ?? "",
+    diagnosis: draft.diagnosis ?? "",
+    treatmentPlan: draft.treatmentPlan ?? ""
+  };
+}
+
+function visitNoteDraftFromForm(form: VisitNoteForm, warnings: string[]): VisitNoteDraft {
+  return {
+    complaint: form.complaint,
+    anamnesis: form.anamnesis,
+    objectiveStatus: form.objectiveStatus,
+    diagnosis: form.diagnosis,
+    treatmentPlan: form.treatmentPlan,
+    warnings
+  };
+}
+
+type VisitLocalDraft = {
+  version: 1;
+  visitId: string;
+  savedAt: string;
+  transcript: string;
+  selectedSpecialty: DentalSpecialty;
+  visitNoteForm: VisitNoteForm;
+};
+
+type PendingVisitSave = {
+  version: 1;
+  id: string;
+  organizationId: string | null;
+  visitId: string;
+  clientMutationId: string;
+  baseRevision: number | null;
+  queuedAt: string;
+  draft: VisitNoteDraft;
+  doctorSummary: string | null;
+  transcript: string;
+  selectedSpecialty: DentalSpecialty;
+};
+
+type PendingSpeechChunk = SpeechChunkUploadInput & {
+  version: 1;
+  id: string;
+  organizationId: string | null;
+  queuedAt: string;
+};
+
+type PersistenceHealth = {
+  enabled: boolean;
+  filePath: string;
+  exists: boolean;
+  version: number | null;
+  savedAt: string | null;
+  checksum: string | null;
+  backupDirectoryPath: string;
+  backupCount: number;
+  latestBackupAt: string | null;
+  latestBackupSizeBytes: number | null;
+  maxBackupCount: number;
+};
+
+type PersistenceBackupCheck = {
+  fileName: string;
+  savedAt: string;
+  sizeBytes: number;
+  fileHash: string | null;
+  checksumVerified: boolean | null;
+  readable: boolean;
+  warning: string | null;
+};
+
+type PersistenceIntegrityReport = {
+  ok: boolean;
+  checkedAt: string;
+  stateFileHash: string | null;
+  checksumVerified: boolean | null;
+  stateCounts: Record<string, number>;
+  backups: PersistenceBackupCheck[];
+  warnings: string[];
+  nextAction: string;
+};
+
+type BrowserContinuityRegistrationState = "unsupported" | "not_registered" | "installing" | "waiting" | "active" | "error";
+
+type BrowserContinuityStatus = {
+  checkedAt: string;
+  serviceWorkerSupported: boolean;
+  serviceWorkerControlled: boolean;
+  serviceWorkerRegistrationState: BrowserContinuityRegistrationState;
+  localStorageWritable: boolean;
+  indexedDbSupported: boolean;
+  cacheStorageSupported: boolean;
+  storagePersisted: boolean | null;
+  storageUsageMb: number | null;
+  storageQuotaMb: number | null;
+  warnings: string[];
+};
+
+function visitLocalDraftKey(visitId: string, organizationId: string | null | undefined = null) {
+  return organizationScopedLocalStorageKey(`dental-crm:visit-draft:${visitId}`, organizationId);
+}
+
+const pendingVisitSaveQueueKey = "dental-crm:pending-visit-saves";
+const pendingSpeechChunkQueueKey = "dental-crm:pending-speech-chunks";
+const speechChunkDbName = "dental-crm-offline";
+const speechChunkDbVersion = 1;
+const speechChunkStoreName = "pendingSpeechChunks";
+const speechLocalStorageFallbackMaxBytes = 4_000_000;
+let speechChunkDbPromise: Promise<IDBDatabase> | null = null;
+
+function pendingVisitSaveQueueLocalKey(organizationId: string | null | undefined = null): string {
+  return organizationScopedLocalStorageKey(pendingVisitSaveQueueKey, organizationId);
+}
+
+function pendingSpeechChunkQueueLocalKey(organizationId: string | null | undefined = null): string {
+  return organizationScopedLocalStorageKey(pendingSpeechChunkQueueKey, organizationId);
+}
+
+function localQueueOrganizationMatches(itemOrganizationId: string | null | undefined, activeOrganizationId: string | null | undefined): boolean {
+  return normalizedLocalOrganizationId(itemOrganizationId) === normalizedLocalOrganizationId(activeOrganizationId);
+}
+
+function browserLocalStorageWritable(): boolean {
+  if (typeof window === "undefined") return false;
+  const probeKey = "dental-crm:storage-probe";
+  try {
+    window.localStorage.setItem(probeKey, "1");
+    window.localStorage.removeItem(probeKey);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function megabytes(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? Math.round((value / 1024 / 1024) * 10) / 10 : null;
+}
+
+function formatMegabytes(value: number | null): string {
+  if (value === null) return "n/a";
+  return `${value.toLocaleString("ru-RU")} MB`;
+}
+
+async function inspectBrowserContinuity(): Promise<BrowserContinuityStatus> {
+  const warnings: string[] = [];
+  const localStorageWritable = browserLocalStorageWritable();
+  const indexedDbSupported = typeof window !== "undefined" && "indexedDB" in window;
+  const cacheStorageSupported = typeof window !== "undefined" && "caches" in window;
+  const serviceWorkerSupported = typeof navigator !== "undefined" && "serviceWorker" in navigator;
+  let serviceWorkerControlled = false;
+  let serviceWorkerRegistrationState: BrowserContinuityRegistrationState = serviceWorkerSupported ? "not_registered" : "unsupported";
+
+  if (serviceWorkerSupported) {
+    try {
+      serviceWorkerControlled = Boolean(navigator.serviceWorker.controller);
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration?.active) serviceWorkerRegistrationState = "active";
+      else if (registration?.waiting) serviceWorkerRegistrationState = "waiting";
+      else if (registration?.installing) serviceWorkerRegistrationState = "installing";
+      else serviceWorkerRegistrationState = "not_registered";
+    } catch {
+      serviceWorkerRegistrationState = "error";
+      warnings.push("Статус service worker недоступен");
+    }
+  }
+
+  let storageUsageMb: number | null = null;
+  let storageQuotaMb: number | null = null;
+  let storagePersisted: boolean | null = null;
+  if (typeof navigator !== "undefined" && navigator.storage) {
+    try {
+      const estimate = await navigator.storage.estimate();
+      storageUsageMb = megabytes(estimate.usage);
+      storageQuotaMb = megabytes(estimate.quota);
+      storagePersisted = typeof navigator.storage.persisted === "function" ? await navigator.storage.persisted() : null;
+    } catch {
+      warnings.push("Оценка хранилища браузера недоступна");
+    }
+  }
+
+  if (!localStorageWritable) warnings.push("Локальное хранилище черновиков недоступно");
+  if (!indexedDbSupported) warnings.push("Очередь аудио в IndexedDB недоступна");
+  if (!cacheStorageSupported) warnings.push("Офлайн-кэш оболочки недоступен");
+  if (storageUsageMb !== null && storageQuotaMb !== null && storageQuotaMb > 0 && storageUsageMb / storageQuotaMb > 0.85) {
+    warnings.push("Квота хранилища браузера почти заполнена");
+  }
+
+  return {
+    checkedAt: new Date().toISOString(),
+    serviceWorkerSupported,
+    serviceWorkerControlled,
+    serviceWorkerRegistrationState,
+    localStorageWritable,
+    indexedDbSupported,
+    cacheStorageSupported,
+    storagePersisted,
+    storageUsageMb,
+    storageQuotaMb,
+    warnings
+  };
+}
+
+function normalizeSpeechAppendText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function appendSpeechTextWithoutDuplicateTail(current: string, next: string, dedupeWindowChars = 600): string {
+  const cleanNext = next.trim();
+  const cleanCurrent = current.trim();
+  if (!cleanNext) return current;
+  if (!cleanCurrent) return cleanNext;
+
+  const currentTail = cleanCurrent.slice(-dedupeWindowChars);
+  const normalizedCurrent = normalizeSpeechAppendText(currentTail);
+  const normalizedNext = normalizeSpeechAppendText(cleanNext);
+  if (!normalizedNext) return current;
+  if (normalizedCurrent.endsWith(normalizedNext) || normalizedCurrent.includes(normalizedNext)) return current;
+
+  const currentWords = normalizedCurrent.split(" ").filter(Boolean);
+  const nextWords = normalizedNext.split(" ").filter(Boolean);
+  const originalNextWords = cleanNext.split(/\s+/).filter(Boolean);
+  const maxOverlap = Math.min(14, currentWords.length, nextWords.length, originalNextWords.length);
+  for (let size = maxOverlap; size >= 3; size -= 1) {
+    const currentSuffix = currentWords.slice(-size).join(" ");
+    const nextPrefix = nextWords.slice(0, size).join(" ");
+    if (currentSuffix === nextPrefix) {
+      const remainingNext = originalNextWords.slice(size).join(" ").trim();
+      return remainingNext ? `${cleanCurrent}\n${remainingNext}` : cleanCurrent;
+    }
+  }
+
+  return `${cleanCurrent}\n${cleanNext}`;
+}
+
+function isDentalSpecialty(value: unknown): value is DentalSpecialty {
+  return typeof value === "string" && value in specialtyLabels;
+}
+
+function telegramQrSvgToDataUrl(svg: string): string {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+type UiPreferences = {
+  version: 1;
+  uiLanguage: UiLanguage;
+  selectedWorkspaceRole: StaffRole;
+  selectedSpecialty: DentalSpecialty;
+  selectedProtocolId: string | null;
+  selectedPatientId: string | null;
+  scheduleDoctorFilterId: string | null;
+  scheduleAssistantFilterId: string | null;
+  scheduleChairFilterId: string | null;
+  scheduleDefaultDoctorUserId: string | null;
+  scheduleDefaultAssistantUserId: string | null;
+  scheduleDefaultChairId: string | null;
+  scheduleStatusFilter: Appointment["status"] | "all";
+  scheduleDateFilter: string;
+  paymentMethod: PaymentMethod;
+  taxDocumentYear: number;
+  selectedDocumentKind: GeneratedDocument["kind"];
+  taxApplicationForm: TaxDeductionApplicationForm;
+  taxApplicationDeliveryChannel: TaxDeductionApplicationDeliveryChannel;
+  paymentReceiptTaxSupportRequested: boolean;
+  documentIssueSignatureMode: DocumentIssueSignatureMode;
+  documentIssueStaffFullName: string;
+  documentIssueStaffRole: string;
+  procedureConsentProcedureType: ProcedureSpecificConsentProcedure;
+  postVisitCareTopic: PostVisitCareTopic;
+  pricelistSourceKind: PricelistSourceKind;
+  usePricelistAi: boolean;
+  recognitionKind: AiJobKind;
+  recognitionTarget: AiRecognitionTarget;
+  importSourceKind: ImportSourceKind;
+  documentIngestionTarget: DocumentIngestionTarget;
+  imagingImportSourceKind: ImagingSourceKind;
+  smartImportMode: SmartImportMode;
+  imagingKindFilter: ImagingStudyKind | "all";
+  dicomWebEndpointUrl: string;
+  ohifBaseUrl: string;
+  telegramBotConfigId: string;
+  telegramLinkSubjectType: TelegramLinkSubjectType;
+  telegramLinkStaffId: string | null;
+  telegramOutboxStatusFilter: TelegramOutboxStatusFilter;
+  telegramOutboxTemplateFilter: TelegramOutboxTemplateFilter;
+  onboardingDismissed: boolean;
+  onboardingDismissedAt: string | null;
+  onboardingStep: OnboardingStep;
+  onboardingDraftMode: boolean;
+  savedAt: string;
+};
+
+type UiPreferencesInput = Omit<UiPreferences, "version" | "savedAt">;
+type TelegramOutboxStatusFilter = DenteTelegramOutboxResponse["items"][number]["deliveryStatus"] | "all" | "due";
+type TelegramOutboxTemplateFilter = DenteTelegramMessagePreview["templateKind"] | "all";
+
+const uiLanguageLabels: Record<UiLanguage, string> = {
+  ru: "Русский"
+};
+
+type UiLanguageOption = { value: UiLanguage; label: string; detail: string };
+
+const defaultUiLanguageOption: UiLanguageOption = {
+  value: "ru",
+  label: uiLanguageLabels.ru,
+  detail: "Русский интерфейс включен сейчас. Выбор сохраняется автоматически и остается до смены языка."
+};
+
+const uiLanguageOptions: UiLanguageOption[] = [defaultUiLanguageOption];
+
+const emptyTelegramVisualCardUrlDrafts = (): DenteTelegramVisualCardUrls => ({
+  mainMenu: null,
+  appointment: null,
+  documents: null,
+  tax: null,
+  billing: null,
+  care: null,
+  review: null,
+  staff: null
+});
+
+const telegramVisualCardFields: Array<{
+  key: DenteTelegramVisualCardKey;
+  label: string;
+  placeholder: string;
+  help: string;
+}> = [
+  {
+    key: "mainMenu",
+    label: "Картинка главного меню",
+    placeholder: "https://.../menu.jpg",
+    help: "Показывается в /start, справке, контактах и безопасных ответах."
+  },
+  {
+    key: "appointment",
+    label: "Картинка записи",
+    placeholder: "https://.../appointment.jpg",
+    help: "Для подтверждений, переносов и напоминаний о приеме."
+  },
+  {
+    key: "documents",
+    label: "Картинка документов",
+    placeholder: "https://.../documents.jpg",
+    help: "Для готовых справок, выписок и запросов пациента."
+  },
+  {
+    key: "tax",
+    label: "Картинка налоговых документов",
+    placeholder: "https://.../tax.jpg",
+    help: "Для статуса справок КНД, заявлений и реестров."
+  },
+  {
+    key: "billing",
+    label: "Картинка оплаты",
+    placeholder: "https://.../payment.jpg",
+    help: "Для напоминаний об оплате и безопасных ссылок на портал."
+  },
+  {
+    key: "care",
+    label: "Картинка памяток",
+    placeholder: "https://.../care.jpg",
+    help: "Для удаления, имплантации, пломбы, гигиены и повторного осмотра."
+  },
+  {
+    key: "review",
+    label: "Картинка отзыва",
+    placeholder: "https://.../review.jpg",
+    help: "Для просьбы оценить клинику и открыть карточку на картах."
+  },
+  {
+    key: "staff",
+    label: "Картинка для сотрудников",
+    placeholder: "https://.../staff.jpg",
+    help: "Для будущих ежедневных дайджестов и задач врачей."
+  }
+];
+
+const telegramPublicUrlSensitiveQueryKeys = new Set([
+  "patient",
+  "patientid",
+  "patient_id",
+  "pid",
+  "fio",
+  "name",
+  "phone",
+  "tel",
+  "email",
+  "inn",
+  "snils",
+  "passport",
+  "visit",
+  "visitid",
+  "visit_id",
+  "appointment",
+  "appointmentid",
+  "appointment_id",
+  "document",
+  "documentid",
+  "document_id",
+  "doc",
+  "diagnosis",
+  "tooth",
+  "treatment",
+  "payment",
+  "receipt",
+  "order",
+  "token",
+  "code"
+]);
+
+const telegramPublicUrlSensitivePathSegments = new Set([
+  "patient",
+  "patients",
+  "person",
+  "people",
+  "visit",
+  "visits",
+  "appointment",
+  "appointments",
+  "document",
+  "documents",
+  "medical-record",
+  "medical-records",
+  "record",
+  "records",
+  "tax",
+  "payment",
+  "payments",
+  "receipt",
+  "receipts",
+  "order",
+  "orders",
+  "token",
+  "code",
+  "passport",
+  "snils",
+  "inn"
+]);
+
+function normalizeTelegramPublicHttpsUrlDraft(fieldLabel: string, value: string | null | undefined): string | null {
+  const raw = value?.trim() ?? "";
+  if (!raw) return null;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error(`${fieldLabel}: укажите полный адрес вида https://...`);
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new Error(`${fieldLabel}: нужна безопасная ссылка https://...`);
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error(`${fieldLabel}: уберите логин и пароль из ссылки.`);
+  }
+
+  const pathSegments = parsed.pathname
+    .split("/")
+    .map((segment) => {
+      try {
+        return decodeURIComponent(segment).trim().toLowerCase();
+      } catch {
+        throw new Error(`${fieldLabel}: исправьте кодировку пути в ссылке.`);
+      }
+    })
+    .filter(Boolean);
+  for (const segment of pathSegments) {
+    const compactDigits = segment.replace(/\D/g, "");
+    if (telegramPublicUrlSensitivePathSegments.has(segment)) {
+      throw new Error(`${fieldLabel}: ссылка должна вести на общую публичную страницу, без patient/visit/document/token в пути.`);
+    }
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(segment)) {
+      throw new Error(`${fieldLabel}: уберите идентификатор пациента, визита или документа из пути.`);
+    }
+    if (compactDigits.length >= 10 || /\b\d{12}\b/.test(segment)) {
+      throw new Error(`${fieldLabel}: уберите телефон, ИНН, СНИЛС или другой личный номер из пути.`);
+    }
+  }
+
+  const sensitiveQueryKeys = Array.from(parsed.searchParams.keys()).filter((key) =>
+    telegramPublicUrlSensitiveQueryKeys.has(key.trim().toLowerCase())
+  );
+  if (sensitiveQueryKeys.length) {
+    throw new Error(`${fieldLabel}: уберите персональные параметры из ссылки: ${sensitiveQueryKeys.join(", ")}.`);
+  }
+  for (const valuePart of parsed.searchParams.values()) {
+    const compactDigits = valuePart.replace(/\D/g, "");
+    if (compactDigits.length >= 10 || /\b\d{12}\b/.test(valuePart)) {
+      throw new Error(`${fieldLabel}: уберите телефон, ИНН, СНИЛС или другой личный номер из параметров.`);
+    }
+  }
+
+  parsed.hash = "";
+  return parsed.toString();
+}
+
+function normalizeTelegramVisualCardUrlDraftsForSave(drafts: DenteTelegramVisualCardUrls): DenteTelegramVisualCardUrls {
+  const fieldLabel = (key: DenteTelegramVisualCardKey) =>
+    telegramVisualCardFields.find((field) => field.key === key)?.label ?? `Картинка Telegram ${key}`;
+  return {
+    mainMenu: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("mainMenu"), drafts.mainMenu),
+    appointment: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("appointment"), drafts.appointment),
+    documents: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("documents"), drafts.documents),
+    tax: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("tax"), drafts.tax),
+    billing: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("billing"), drafts.billing),
+    care: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("care"), drafts.care),
+    review: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("review"), drafts.review),
+    staff: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("staff"), drafts.staff)
+  };
+}
+
+function normalizeTelegramBotUsernameDraft(fieldLabel: string, value: string | null | undefined): string | null {
+  const normalized = value?.trim().replace(/^@/, "") ?? "";
+  if (!normalized) return null;
+  if (!/^[A-Za-z][A-Za-z0-9_]{1,28}[Bb][Oo][Tt]$/.test(normalized)) {
+    throw new Error(
+      `${fieldLabel}: укажите имя Telegram-бота без ссылки, 5-32 символа: латинские буквы, цифры, подчёркивания и окончание bot.`
+    );
+  }
+  return normalized;
+}
+
+type TelegramPostVisitCheckupDelayKey = keyof DenteTelegramPostVisitCheckupDelayHoursByTopic;
+type TelegramPostVisitCheckupDelayDrafts = Record<TelegramPostVisitCheckupDelayKey, string>;
+
+const defaultTelegramPostVisitCheckupDelayHoursByTopic: DenteTelegramPostVisitCheckupDelayHoursByTopic = {
+  extraction: 24,
+  implantation: 24,
+  filling_restoration: 48,
+  endo: 48,
+  surgery: 24,
+  local_anesthesia: 24,
+  hygiene: 72,
+  prosthetics: 48,
+  orthodontics: 72,
+  periodontology: 72,
+  other: 48
+};
+
+const defaultTelegramPostVisitCheckupDelayDrafts: TelegramPostVisitCheckupDelayDrafts = {
+  extraction: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.extraction),
+  implantation: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.implantation),
+  filling_restoration: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.filling_restoration),
+  endo: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.endo),
+  surgery: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.surgery),
+  local_anesthesia: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.local_anesthesia),
+  hygiene: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.hygiene),
+  prosthetics: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.prosthetics),
+  orthodontics: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.orthodontics),
+  periodontology: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.periodontology),
+  other: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.other)
+};
+
+const telegramPostVisitCheckupDelayFields: Array<{
+  key: TelegramPostVisitCheckupDelayKey;
+  label: string;
+  help: string;
+}> = [
+  { key: "extraction", label: "После удаления", help: "Контроль самочувствия после удаления зуба." },
+  { key: "implantation", label: "После имплантации", help: "Контроль после имплантации и хирургического этапа." },
+  { key: "filling_restoration", label: "После пломбы", help: "Проверка завышения пломбы и дискомфорта." },
+  { key: "hygiene", label: "После гигиены", help: "Мягкое напоминание после профессиональной гигиены." },
+  { key: "endo", label: "После эндодонтии", help: "Контроль боли после лечения каналов." },
+  { key: "surgery", label: "После операции", help: "Хирургический контроль без диагноза в тексте." },
+  { key: "local_anesthesia", label: "После анестезии", help: "Короткий контроль после приема с анестезией." },
+  { key: "prosthetics", label: "После протезирования", help: "Проверка адаптации к конструкции." },
+  { key: "orthodontics", label: "После ортодонтии", help: "Контроль адаптации к аппарату или элайнерам." },
+  { key: "periodontology", label: "После пародонтологии", help: "Контроль десен и ухода." },
+  { key: "other", label: "Другое", help: "Запасной срок для общих памяток." }
+];
+
+const onboardingTelegramVisualCardKeys: DenteTelegramVisualCardKey[] = [
+  "mainMenu",
+  "appointment",
+  "documents",
+  "tax",
+  "billing",
+  "care",
+  "review",
+  "staff"
+];
+
+type TelegramFeaturePlan = {
+  productName: string;
+  botUsername: string | null;
+  modes: string[];
+  enabledFeatures: DenteTelegramFeature[];
+  patientSafeActions: string[];
+  staffSafeActions: string[];
+  blockedByDefault: string[];
+};
+
+type TelegramLinkSubjectType = "patient" | "staff";
+
+const telegramModeLabels: Record<DenteTelegramBotMode, string> = {
+  disabled: "выключен",
+  shared_dente_bot: "общий бот DENTE",
+  clinic_owned_bot: "бот клиники"
+};
+
+const telegramModeHints: Record<DenteTelegramBotMode, string> = {
+  disabled: "Telegram не создает новые задачи и не отправляет сообщения.",
+  shared_dente_bot: "Одна защищенная основа DENTE, клиника определяется QR-кодом и связкой пациента.",
+  clinic_owned_bot: "Собственный бот клиники: username сохраняется в DENTE, токен берется только из API-server env."
+};
+
+const telegramPrivacyModeLabels: Record<DenteTelegramPrivacyMode, string> = {
+  no_phi_by_default: "Без медицинских данных в Telegram",
+  limited_admin_only: "Только административные сведения",
+  consented_phi_templates: "Чувствительные шаблоны только по согласию"
+};
+
+const telegramPrivacyModeHints: Record<DenteTelegramPrivacyMode, string> = {
+  no_phi_by_default: "В чат уходят только статусы, время, ссылки и общие памятки.",
+  limited_admin_only: "Разрешены административные статусы без диагноза, снимков и документов.",
+  consented_phi_templates: "Режим для будущих шаблонов с явным согласием пациента и аудитом."
+};
+
+const telegramTemplateLabels: Record<DenteTelegramMessagePreview["templateKind"], string> = {
+  appointment_reminder: "напоминание о приеме",
+  appointment_confirmation: "подтверждение приема",
+  payment_reminder_notice: "напоминание об оплате",
+  document_ready_notice: "документ готов",
+  tax_document_request_status: "статус налоговой справки",
+  callback_request_received: "заявка на звонок",
+  post_visit_instruction_link: "памятка после приема",
+  post_visit_checkup: "контроль после приема",
+  recall_notice: "профилактический recall",
+  review_request: "просьба оставить отзыв",
+  staff_daily_digest: "сводка сотруднику"
+};
+
+const telegramClassificationLabels: Record<DenteTelegramMessagePreview["classification"], string> = {
+  no_phi: "без медтайны",
+  limited_admin: "административное",
+  phi_requires_consent: "медданные только с согласием"
+};
+
+const telegramDeliveryStatusLabels: Record<DenteTelegramOutboxResponse["items"][number]["deliveryStatus"], string> = {
+  ready: "готово",
+  needs_chat_link: "нужно подключить Telegram",
+  blocked_by_policy: "заблокировано политикой",
+  transport_not_ready: "транспорт не готов",
+  disabled: "выключено"
+};
+
+const telegramLinkCodeStatusLabels: Record<DenteTelegramLinkCodePublic["status"], string> = {
+  pending: "ожидает",
+  used: "использован",
+  expired: "истек",
+  revoked: "отозван"
+};
+
+const telegramOutboxStatusFilterOptions: TelegramOutboxStatusFilter[] = [
+  "all",
+  "due",
+  "ready",
+  "needs_chat_link",
+  "transport_not_ready",
+  "blocked_by_policy",
+  "disabled"
+];
+
+const telegramOutboxStatusFilterLabels: Record<TelegramOutboxStatusFilter, string> = {
+  all: "вся очередь",
+  due: "к отправке сейчас",
+  ...telegramDeliveryStatusLabels
+};
+
+const telegramOutboxTemplateFilterOptions: TelegramOutboxTemplateFilter[] = [
+  "all",
+  ...(Object.keys(telegramTemplateLabels) as DenteTelegramMessagePreview["templateKind"][])
+];
+
+const telegramOutboxTemplateFilterLabels: Record<TelegramOutboxTemplateFilter, string> = {
+  all: "все сценарии",
+  ...telegramTemplateLabels
+};
+
+type TelegramInlineButtonPreview = {
+  text: string;
+  target: string;
+  kind: "url" | "callback" | "unknown";
+};
+
+const telegramInlineButtonKindLabels: Record<TelegramInlineButtonPreview["kind"], string> = {
+  url: "ссылка",
+  callback: "действие",
+  unknown: "кнопка"
+};
+
+function telegramInlineButtonRowsFromReplyMarkup(
+  markup: DenteTelegramMessagePreview["replyMarkup"] | DenteTelegramOutboxResponse["items"][number]["replyMarkup"] | null | undefined
+): TelegramInlineButtonPreview[][] {
+  if (!markup || typeof markup !== "object" || Array.isArray(markup)) return [];
+  const rows = (markup as { inline_keyboard?: unknown }).inline_keyboard;
+  if (!Array.isArray(rows)) return [];
+  return rows.flatMap((row) => {
+    if (!Array.isArray(row)) return [];
+    const buttons = row
+      .map((button) => {
+        if (!button || typeof button !== "object" || Array.isArray(button)) return null;
+        const candidate = button as { text?: unknown; url?: unknown; callback_data?: unknown };
+        if (typeof candidate.text !== "string") return null;
+        if (typeof candidate.url === "string") return { text: candidate.text, target: candidate.url, kind: "url" as const };
+        if (typeof candidate.callback_data === "string") {
+          return { text: candidate.text, target: candidate.callback_data, kind: "callback" as const };
+        }
+        return { text: candidate.text, target: "", kind: "unknown" as const };
+      })
+      .filter((button): button is TelegramInlineButtonPreview => Boolean(button));
+    return buttons.length ? [buttons] : [];
+  });
+}
+
+function telegramInlineButtonsFromReplyMarkup(
+  markup: DenteTelegramMessagePreview["replyMarkup"] | DenteTelegramOutboxResponse["items"][number]["replyMarkup"] | null | undefined
+): TelegramInlineButtonPreview[] {
+  return telegramInlineButtonRowsFromReplyMarkup(markup).flat();
+}
+
+function telegramInlineButtonsFromPreview(preview: DenteTelegramMessagePreview): TelegramInlineButtonPreview[] {
+  return telegramInlineButtonsFromReplyMarkup(preview.replyMarkup);
+}
+
+type OnboardingStep = "intro" | "role" | "clinic" | "legal" | "team" | "sources" | "telegram" | "done";
+
+const onboardingStepValues: readonly OnboardingStep[] = [
+  "intro",
+  "role",
+  "clinic",
+  "legal",
+  "team",
+  "sources",
+  "telegram",
+  "done"
+];
+
+type ClinicProfileDraft = {
+  clinicName: string;
+  legalName: string;
+  inn: string;
+  kpp: string;
+  ogrn: string;
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  medicalLicenseNumber: string;
+  medicalLicenseIssuedAt: string;
+  medicalLicenseIssuer: string;
+  bankDetails: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  timezone: string;
+  defaultVisitMinutes: string;
+  workdayStart: string;
+  workdayEnd: string;
+  workingDays: number[];
+  appointmentBufferMinutes: string;
+  egiszEnabled: boolean;
+};
+
+type ClinicProfileSaveState = "idle" | "saving" | "saved" | "error";
+
+type PatientCoreDraft = {
+  fullName: string;
+  birthDate: string;
+  phone: string;
+  email: string;
+  notes: string;
+};
+type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
+
+type PatientAdministrativeProfileDraft = {
+  [K in Exclude<keyof PatientAdministrativeProfile, "preferredAppointmentWeekdays">]: string;
+} & {
+  preferredAppointmentWeekdays: number[];
+};
+type PatientAdministrativeProfileSaveState = "idle" | "saving" | "saved" | "error";
+
+type StaffScheduleDraft = {
+  start: string;
+  end: string;
+  workingDays: number[];
+  perDay: StaffWorkingHours;
+};
+type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
+
+type AppointmentScheduleDraft = {
+  patientId: string;
+  doctorUserId: string;
+  assistantUserId: string;
+  chairId: string;
+  status: Appointment["status"];
+  startsAt: string;
+  endsAt: string;
+  reason: string;
+  comment: string;
+};
+type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
+
+function emptyAppointmentScheduleDraft(): AppointmentScheduleDraft {
+  return {
+    patientId: "",
+    doctorUserId: "",
+    assistantUserId: "",
+    chairId: "",
+    status: "planned",
+    startsAt: "",
+    endsAt: "",
+    reason: "",
+    comment: ""
+  };
+}
+
+type MedicalDocumentReleaseChannel = "paper" | "pdf" | "dicom_archive" | "secure_link" | "physical_media" | "other";
+const medicalDocumentReleaseChannelLabels: Record<MedicalDocumentReleaseChannel, string> = {
+  paper: "Бумага",
+  pdf: "PDF",
+  dicom_archive: "DICOM-архив",
+  secure_link: "Защищенная ссылка",
+  physical_media: "Физический носитель",
+  other: "Иной канал"
+};
+
+type PaymentRefundCorrectionAction =
+  | "full_refund"
+  | "partial_refund"
+  | "payment_transfer"
+  | "receipt_correction"
+  | "payer_details_correction";
+type PaymentRefundCorrectionMethod = "cash" | "card" | "bank_transfer" | "internal_offset" | "no_money_movement";
+const paymentRefundCorrectionActionOptions: readonly PaymentRefundCorrectionAction[] = [
+  "full_refund",
+  "partial_refund",
+  "payment_transfer",
+  "receipt_correction",
+  "payer_details_correction"
+];
+const paymentRefundCorrectionMethodOptions: readonly PaymentRefundCorrectionMethod[] = [
+  "cash",
+  "card",
+  "bank_transfer",
+  "internal_offset",
+  "no_money_movement"
+];
+const treatmentAcceptanceVariantOptions: readonly TreatmentPlanAcceptanceVariant[] = [
+  "urgent",
+  "standard",
+  "optimal",
+  "staged",
+  "maintenance",
+  "other"
+];
+const xrayPriorityOptions: readonly XrayCbctReferralPriority[] = ["routine", "urgent"];
+const outpatient025uDemographicCodeOptions = ["1", "2", "unknown"] as const;
+type Outpatient025uDemographicCode = (typeof outpatient025uDemographicCodeOptions)[number];
+
+const patientIntakePregnancyStatusOptions: Array<{ value: PatientIntakePregnancyStatus; label: string }> = [
+  { value: "not_applicable", label: "Не применимо" },
+  { value: "denied", label: "Со слов пациента нет" },
+  { value: "possible", label: "Возможна беременность" },
+  { value: "confirmed", label: "Беременность подтверждена" },
+  { value: "lactation", label: "Лактация" },
+  { value: "unknown", label: "Не уточнено" }
+];
+
+const taxApplicationRelationshipOptions: Array<{ value: TaxDeductionApplicationRelationship; label: string }> = [
+  { value: "self", label: "Пациент сам" },
+  { value: "spouse", label: "Супруг / супруга" },
+  { value: "parent", label: "Родитель" },
+  { value: "child", label: "Ребенок" },
+  { value: "ward", label: "Подопечный" }
+];
+
+const taxApplicationFormOptions: Array<{ value: TaxDeductionApplicationForm; label: string }> = [
+  { value: "knd_1151156", label: "КНД 1151156, расходы с 2024" },
+  { value: "legacy_2021_2023", label: "Старая справка, оплаты 2021-2023" }
+];
+
+const taxApplicationDeliveryChannelOptions: Array<{ value: TaxDeductionApplicationDeliveryChannel; label: string }> = [
+  { value: "paper", label: "Бумажно в клинике" },
+  { value: "pdf", label: "PDF после подписи" },
+  { value: "secure_link", label: "Защищенная ссылка" },
+  { value: "email", label: "Email" },
+  { value: "portal", label: "Личный кабинет" },
+  { value: "other", label: "Иной канал" }
+];
+
+type ClinicalToothSurface = ClinicalToothRow["surfaces"][number];
+type ClinicalToothStatus = ClinicalToothRow["status"];
+
+const clinicalToothSurfaceAliases: Record<string, ClinicalToothSurface> = {
+  o: "occlusal",
+  окклюзионная: "occlusal",
+  окклюзионно: "occlusal",
+  жевательная: "occlusal",
+  жевательно: "occlusal",
+  m: "mesial",
+  медиальная: "mesial",
+  мезиальная: "mesial",
+  медиально: "mesial",
+  мезиально: "mesial",
+  d: "distal",
+  дистальная: "distal",
+  дистально: "distal",
+  b: "buccal",
+  щечная: "buccal",
+  щечно: "buccal",
+  вестибулярная: "buccal",
+  l: "lingual",
+  язычная: "lingual",
+  язычно: "lingual",
+  p: "palatal",
+  небная: "palatal",
+  небно: "palatal",
+  i: "incisal",
+  режущий: "incisal",
+  "режущий край": "incisal",
+  корень: "root",
+  корневая: "root",
+  root: "root",
+  имплантация: "implant_site",
+  "зона имплантации": "implant_site",
+  "implant site": "implant_site",
+  "не применимо": "not_applicable",
+  нет: "not_applicable",
+  "-": "not_applicable"
+};
+
+const clinicalToothStatusAliases: Record<string, ClinicalToothStatus> = {
+  норма: "sound",
+  "без патологии": "sound",
+  наблюдение: "watch",
+  контроль: "watch",
+  кариес: "caries",
+  caries: "caries",
+  пульпит: "pulpitis_periodontitis",
+  периодонтит: "pulpitis_periodontitis",
+  эндо: "pulpitis_periodontitis",
+  пародонт: "periodontal",
+  пародонтология: "periodontal",
+  отсутствует: "missing",
+  удален: "missing",
+  удаленый: "missing",
+  удаленный: "missing",
+  имплант: "implant",
+  имплантат: "implant",
+  ортопедия: "prosthetic",
+  коронка: "prosthetic",
+  протез: "prosthetic",
+  ортодонтия: "orthodontic",
+  брекеты: "orthodontic",
+  элайнеры: "orthodontic",
+  план: "planned",
+  planned: "planned",
+  запланировано: "planned",
+  выполнено: "completed",
+  completed: "completed",
+  готово: "completed",
+  иное: "other",
+  другое: "other"
+};
+
+const installmentPaymentStatusAliases: Record<string, InstallmentPaymentStatus> = {
+  план: "planned",
+  запланирован: "planned",
+  запланировано: "planned",
+  ожидается: "planned",
+  planned: "planned",
+  оплачен: "paid",
+  оплачено: "paid",
+  paid: "paid",
+  просрочен: "overdue",
+  просрочено: "overdue",
+  просрочка: "overdue",
+  overdue: "overdue",
+  перенесен: "rescheduled",
+  перенесено: "rescheduled",
+  перенос: "rescheduled",
+  rescheduled: "rescheduled",
+  отменен: "cancelled",
+  отменено: "cancelled",
+  отмена: "cancelled",
+  cancelled: "cancelled"
+};
+
+const defaultClinicalToothRowsText =
+  "36 | окклюзионная, дистальная | кариес | кариес дентина 36 зуба по осмотру и снимку | восстановление функции и профилактика осложнений | лечение кариеса и композитная реставрация | прогноз зависит от гигиены и контроля | десна без острого воспаления | | ";
+
+function normalizeTaxApplicationRelationship(value: string | null | undefined): TaxDeductionApplicationRelationship | null {
+  const normalized = value?.trim().toLocaleLowerCase("ru-RU").replaceAll("ё", "е").replace(/[\s_-]+/g, " ") ?? "";
+  if (!normalized) return null;
+  if (["self", "patient", "пациент", "сам пациент", "сама пациентка", "налогоплательщик"].includes(normalized)) return "self";
+  if (["spouse", "husband", "wife", "супруг", "супруга", "муж", "жена"].includes(normalized)) return "spouse";
+  if (["parent", "father", "mother", "родитель", "отец", "мать", "папа", "мама"].includes(normalized)) return "parent";
+  if (["child", "son", "daughter", "ребенок", "сын", "дочь", "усыновленный", "усыновленная"].includes(normalized)) return "child";
+  if (["ward", "подопечный", "подопечная", "опекаемый", "опекаемая"].includes(normalized)) return "ward";
+  return null;
+}
+
+const procedureSpecificConsentProcedureOptions: Array<{ value: ProcedureSpecificConsentProcedure; label: string }> = [
+  { value: "local_anesthesia", label: "Местная анестезия" },
+  { value: "therapy_endo_restoration", label: "Терапия, эндодонтия, реставрация" },
+  { value: "surgery_extraction", label: "Хирургия / удаление" },
+  { value: "implantation_bone_graft", label: "Имплантация / костная пластика" },
+  { value: "prosthetics", label: "Ортопедия" },
+  { value: "orthodontics", label: "Ортодонтия" },
+  { value: "hygiene_whitening", label: "Гигиена / отбеливание" },
+  { value: "periodontology", label: "Пародонтология" },
+  { value: "other", label: "Другая процедура" }
+];
+
+const postVisitCareTopicOptions: Array<{ value: PostVisitCareTopic; label: string }> = [
+  { value: "extraction", label: "Удаление" },
+  { value: "implantation", label: "Имплантация / костная пластика" },
+  { value: "filling_restoration", label: "Пломба / реставрация" },
+  { value: "endo", label: "Эндодонтия" },
+  { value: "surgery", label: "Хирургия" },
+  { value: "local_anesthesia", label: "Местная анестезия" },
+  { value: "hygiene", label: "Профессиональная гигиена" },
+  { value: "prosthetics", label: "Ортопедия" },
+  { value: "orthodontics", label: "Ортодонтия" },
+  { value: "periodontology", label: "Пародонтология" },
+  { value: "other", label: "Другое" }
+];
+
+const xrayStudyTypeOptions: Array<{ value: XrayCbctReferralStudyType; label: string }> = [
+  { value: "rvg", label: "RVG / прицельный" },
+  { value: "opg", label: "ОПТГ" },
+  { value: "cbct", label: "КЛКТ / CBCT" },
+  { value: "trg", label: "ТРГ" },
+  { value: "tmj", label: "ВНЧС" },
+  { value: "sinus", label: "Пазуха" },
+  { value: "photo_protocol", label: "Фотопротокол" },
+  { value: "other", label: "Другое" }
+];
+
+const xrayPregnancyStatusOptions: Array<{ value: XrayCbctReferralPregnancyStatus; label: string }> = [
+  { value: "not_applicable", label: "Не применимо" },
+  { value: "denied", label: "Со слов пациента нет" },
+  { value: "possible", label: "Возможна" },
+  { value: "confirmed", label: "Подтверждена" },
+  { value: "unknown", label: "Не уточнено" }
+];
+
+const photoVideoMaterialOptions: Array<{ value: PhotoVideoConsentMaterial; label: string }> = [
+  { value: "intraoral_photo", label: "Внутриротовые фото" },
+  { value: "face_photo", label: "Фото лица" },
+  { value: "video", label: "Видео" },
+  { value: "xray", label: "Рентген" },
+  { value: "cbct", label: "КТ/CBCT" },
+  { value: "scan", label: "Цифровые сканы" },
+  { value: "other", label: "Иные материалы" }
+];
+
+const defaultUiPreferences: UiPreferences = {
+  version: 1,
+  uiLanguage: "ru",
+  selectedWorkspaceRole: "doctor",
+  selectedSpecialty: "therapist",
+  selectedProtocolId: null,
+  selectedPatientId: null,
+  scheduleDoctorFilterId: null,
+  scheduleAssistantFilterId: null,
+  scheduleChairFilterId: null,
+  scheduleDefaultDoctorUserId: null,
+  scheduleDefaultAssistantUserId: null,
+  scheduleDefaultChairId: null,
+  scheduleStatusFilter: "all",
+  scheduleDateFilter: "",
+  paymentMethod: "card",
+  taxDocumentYear: new Date().getFullYear(),
+  selectedDocumentKind: "patient_intake_questionnaire",
+  taxApplicationForm: "knd_1151156",
+  taxApplicationDeliveryChannel: "paper",
+  paymentReceiptTaxSupportRequested: false,
+  documentIssueSignatureMode: "paper_signed",
+  documentIssueStaffFullName: "",
+  documentIssueStaffRole: "Врач/администратор",
+  procedureConsentProcedureType: "implantation_bone_graft",
+  postVisitCareTopic: "filling_restoration",
+  pricelistSourceKind: "spreadsheet_copy",
+  usePricelistAi: false,
+  recognitionKind: "voice_transcription",
+  recognitionTarget: "visit_note",
+  importSourceKind: "csv_text",
+  documentIngestionTarget: "smart_import",
+  imagingImportSourceKind: "folder_watch",
+  smartImportMode: "auto",
+  imagingKindFilter: "all",
+  dicomWebEndpointUrl: "http://127.0.0.1:8042/dicom-web",
+  ohifBaseUrl: "http://127.0.0.1:3000",
+  telegramBotConfigId: "",
+  telegramLinkSubjectType: "patient",
+  telegramLinkStaffId: null,
+  telegramOutboxStatusFilter: "all",
+  telegramOutboxTemplateFilter: "all",
+  onboardingDismissed: false,
+  onboardingDismissedAt: null,
+  onboardingStep: "intro",
+  onboardingDraftMode: false,
+  savedAt: ""
+};
+
+const aiJobKindPreferenceValues: readonly AiJobKind[] = [
+  "voice_transcription",
+  "visit_note_draft",
+  "image_summary",
+  "document_draft",
+  "paper_ocr"
+];
+
+function isRecordKey<T extends string>(value: unknown, record: Record<T, unknown>): value is T {
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(record, value);
+}
+
+function isOptionValue<T extends string>(value: unknown, options: readonly { value: T }[]): value is T {
+  return typeof value === "string" && options.some((option) => option.value === value);
+}
+
+function isStringUnionValue<T extends string>(value: unknown, allowedValues: readonly T[]): value is T {
+  return typeof value === "string" && allowedValues.some((allowedValue) => allowedValue === value);
+}
+
+function isUiLanguage(value: unknown): value is UiLanguage {
+  return isRecordKey(value, uiLanguageLabels);
+}
+
+function normalizeUiLanguageInput(value: unknown): UiLanguage {
+  return isUiLanguage(value) ? value : "ru";
+}
+
+function isStaffRole(value: unknown): value is StaffRole {
+  return isRecordKey(value, staffRoleLabels);
+}
+
+function isPaymentMethod(value: unknown): value is PaymentMethod {
+  return isRecordKey(value, paymentMethodLabels);
+}
+
+function isPricelistSourceKind(value: unknown): value is PricelistSourceKind {
+  return isRecordKey(value, pricelistSourceKindLabels);
+}
+
+function isAiJobKind(value: unknown): value is AiJobKind {
+  return typeof value === "string" && aiJobKindPreferenceValues.includes(value as AiJobKind);
+}
+
+function isAiRecognitionTarget(value: unknown): value is AiRecognitionTarget {
+  return isRecordKey(value, recognitionTargetLabels);
+}
+
+function isImportSourceKind(value: unknown): value is ImportSourceKind {
+  return isRecordKey(value, importSourceLabels);
+}
+
+function isDocumentIngestionTarget(value: unknown): value is DocumentIngestionTarget {
+  return isRecordKey(value, ingestionTargetLabels);
+}
+
+function isImagingSourceKind(value: unknown): value is ImagingSourceKind {
+  return isRecordKey(value, imagingSourceLabels);
+}
+
+function isSmartImportMode(value: unknown): value is SmartImportMode {
+  return isRecordKey(value, smartImportModeLabels);
+}
+
+function isImagingKindFilter(value: unknown): value is ImagingStudyKind | "all" {
+  return value === "all" || isRecordKey(value, imagingKindLabels);
+}
+
+function isBooleanPreference(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
+function isTaxDocumentYearPreference(value: unknown): value is number {
+  if (!Number.isInteger(value)) return false;
+  const year = value as number;
+  return year >= 2021 && year <= 2100;
+}
+
+function isDocumentKindPreference(value: unknown): value is GeneratedDocument["kind"] {
+  return isRecordKey(value, documentKindMetadata);
+}
+
+function isAppointmentStatusFilterPreference(value: unknown): value is Appointment["status"] | "all" {
+  return value === "all" || isRecordKey(value, appointmentLabels);
+}
+
+function isTaxApplicationFormPreference(value: unknown): value is TaxDeductionApplicationForm {
+  return isOptionValue(value, taxApplicationFormOptions);
+}
+
+function isTaxApplicationDeliveryChannelPreference(value: unknown): value is TaxDeductionApplicationDeliveryChannel {
+  return isOptionValue(value, taxApplicationDeliveryChannelOptions);
+}
+
+function isProcedureSpecificConsentProcedurePreference(value: unknown): value is ProcedureSpecificConsentProcedure {
+  return isOptionValue(value, procedureSpecificConsentProcedureOptions);
+}
+
+function isPostVisitCareTopicPreference(value: unknown): value is PostVisitCareTopic {
+  return isOptionValue(value, postVisitCareTopicOptions);
+}
+
+function isDocumentIssueSignatureModePreference(value: unknown): value is DocumentIssueSignatureMode {
+  return (
+    value === "paper_signed" ||
+    value === "simple_electronic_signature" ||
+    value === "qualified_electronic_signature"
+  );
+}
+
+function isBoundedPreferenceString(value: unknown): value is string {
+  return typeof value === "string" && value.length <= 500;
+}
+
+function isNullablePreferenceString(value: unknown): value is string | null {
+  return value === null || isBoundedPreferenceString(value);
+}
+
+function isOnboardingStepPreference(value: unknown): value is OnboardingStep {
+  return typeof value === "string" && onboardingStepValues.includes(value as OnboardingStep);
+}
+
+function isTelegramLinkSubjectTypePreference(value: unknown): value is TelegramLinkSubjectType {
+  return value === "patient" || value === "staff";
+}
+
+function isTelegramOutboxStatusFilterPreference(value: unknown): value is TelegramOutboxStatusFilter {
+  return typeof value === "string" && telegramOutboxStatusFilterOptions.includes(value as TelegramOutboxStatusFilter);
+}
+
+function isTelegramOutboxTemplateFilterPreference(value: unknown): value is TelegramOutboxTemplateFilter {
+  return typeof value === "string" && telegramOutboxTemplateFilterOptions.includes(value as TelegramOutboxTemplateFilter);
+}
+
+function normalizedAppointmentStatus(value: unknown, fallback: Appointment["status"] = "planned"): Appointment["status"] {
+  return isRecordKey(value, appointmentLabels) ? value : fallback;
+}
+
+function normalizedAppointmentStatusFilter(value: unknown): Appointment["status"] | "all" {
+  return isAppointmentStatusFilterPreference(value) ? value : defaultUiPreferences.scheduleStatusFilter;
+}
+
+function normalizedDocumentKind(value: unknown): GeneratedDocument["kind"] {
+  return isDocumentKindPreference(value) ? value : defaultUiPreferences.selectedDocumentKind;
+}
+
+function normalizedPatientIntakePregnancyStatus(value: unknown): PatientIntakePregnancyStatus {
+  return isOptionValue(value, patientIntakePregnancyStatusOptions) ? value : "unknown";
+}
+
+function normalizedTaxApplicationRelationshipSelect(value: unknown): TaxDeductionApplicationRelationship {
+  return isOptionValue(value, taxApplicationRelationshipOptions) ? value : "self";
+}
+
+function normalizedTaxApplicationForm(value: unknown): TaxDeductionApplicationForm {
+  return isTaxApplicationFormPreference(value) ? value : defaultUiPreferences.taxApplicationForm;
+}
+
+function normalizedTaxApplicationDeliveryChannel(value: unknown): TaxDeductionApplicationDeliveryChannel {
+  return isTaxApplicationDeliveryChannelPreference(value) ? value : defaultUiPreferences.taxApplicationDeliveryChannel;
+}
+
+function normalizedProcedureSpecificConsentProcedure(value: unknown): ProcedureSpecificConsentProcedure {
+  return isProcedureSpecificConsentProcedurePreference(value) ? value : defaultUiPreferences.procedureConsentProcedureType;
+}
+
+function normalizedTreatmentPlanAcceptanceVariant(value: unknown): TreatmentPlanAcceptanceVariant {
+  return isStringUnionValue(value, treatmentAcceptanceVariantOptions) ? value : "standard";
+}
+
+function normalizedPostVisitCareTopic(value: unknown): PostVisitCareTopic {
+  return isPostVisitCareTopicPreference(value) ? value : defaultUiPreferences.postVisitCareTopic;
+}
+
+function normalizedXrayStudyType(value: unknown): XrayCbctReferralStudyType {
+  return isOptionValue(value, xrayStudyTypeOptions) ? value : "cbct";
+}
+
+function normalizedXrayPriority(value: unknown): XrayCbctReferralPriority {
+  return isStringUnionValue(value, xrayPriorityOptions) ? value : "routine";
+}
+
+function normalizedXrayPregnancyStatus(value: unknown): XrayCbctReferralPregnancyStatus {
+  return isOptionValue(value, xrayPregnancyStatusOptions) ? value : "unknown";
+}
+
+function normalizedOutpatient025uDemographicCode(value: unknown): Outpatient025uDemographicCode {
+  return isStringUnionValue(value, outpatient025uDemographicCodeOptions) ? value : "unknown";
+}
+
+function normalizedMedicalDocumentReleaseChannel(value: unknown): MedicalDocumentReleaseChannel {
+  return isRecordKey(value, medicalDocumentReleaseChannelLabels) ? value : "paper";
+}
+
+function normalizedPaymentRefundCorrectionAction(value: unknown): PaymentRefundCorrectionAction {
+  return isStringUnionValue(value, paymentRefundCorrectionActionOptions) ? value : "partial_refund";
+}
+
+function normalizedPaymentRefundCorrectionMethod(value: unknown): PaymentRefundCorrectionMethod {
+  return isStringUnionValue(value, paymentRefundCorrectionMethodOptions) ? value : "card";
+}
+
+function normalizedDocumentVoidReasonCode(value: unknown): DocumentVoidReasonCode {
+  return isRecordKey(value, documentVoidReasonLabels) ? value : "draft_error";
+}
+
+function normalizedClinicalRuleAction(value: unknown): Dashboard["clinicalRules"][number]["action"] {
+  return isRecordKey(value, clinicalRuleActionLabels) ? value : "add_required_service";
+}
+
+function normalizedClinicalRuleSeverity(value: unknown): Dashboard["clinicalRules"][number]["severity"] {
+  return isRecordKey(value, clinicalRuleSeverityLabels) ? value : "warning";
+}
+
+function normalizedStaffRole(value: unknown): StaffRole {
+  return isStaffRole(value) ? value : "doctor";
+}
+
+function normalizedDentalSpecialty(value: unknown): DentalSpecialty {
+  return isDentalSpecialty(value) ? value : "therapist";
+}
+
+function normalizedServiceCategory(value: unknown): Dashboard["serviceCatalog"][number]["category"] {
+  return isRecordKey(value, serviceCategoryLabels) ? value : "therapy";
+}
+
+function normalizedTelegramBotMode(value: unknown): DenteTelegramBotMode {
+  return isRecordKey(value, telegramModeLabels) ? value : "shared_dente_bot";
+}
+
+function normalizedTelegramPrivacyMode(value: unknown): DenteTelegramPrivacyMode {
+  return isRecordKey(value, telegramPrivacyModeLabels) ? value : "no_phi_by_default";
+}
+
+function normalizedTelegramLinkSubjectType(value: unknown): TelegramLinkSubjectType {
+  return isTelegramLinkSubjectTypePreference(value) ? value : "patient";
+}
+
+function normalizedTelegramOutboxStatusFilter(value: unknown): TelegramOutboxStatusFilter {
+  return isTelegramOutboxStatusFilterPreference(value) ? value : "all";
+}
+
+function normalizedTelegramOutboxTemplateFilter(value: unknown): TelegramOutboxTemplateFilter {
+  return isTelegramOutboxTemplateFilterPreference(value) ? value : "all";
+}
+
+function pickUiPreference<T>(
+  source: Record<string, unknown>,
+  key: keyof UiPreferencesInput,
+  fallback: T,
+  isValid: (value: unknown) => value is T
+): T {
+  const value = source[key];
+  return isValid(value) ? value : fallback;
+}
+
+function normalizeUiPreferencesPayload(parsed: unknown): UiPreferences | null {
+  if (!parsed || typeof parsed !== "object" || (parsed as { version?: unknown }).version !== 1) {
+    return null;
+  }
+  const source = parsed as Record<string, unknown>;
+  const legacyIssueSignatureDraft = loadDocumentIssueSignatureDraft();
+  return {
+    version: 1,
+    uiLanguage: pickUiPreference(source, "uiLanguage", defaultUiPreferences.uiLanguage, isUiLanguage),
+    selectedWorkspaceRole: pickUiPreference(source, "selectedWorkspaceRole", defaultUiPreferences.selectedWorkspaceRole, isStaffRole),
+    selectedSpecialty: pickUiPreference(source, "selectedSpecialty", defaultUiPreferences.selectedSpecialty, isDentalSpecialty),
+    selectedProtocolId: pickUiPreference(source, "selectedProtocolId", defaultUiPreferences.selectedProtocolId, isNullablePreferenceString),
+    selectedPatientId: pickUiPreference(source, "selectedPatientId", defaultUiPreferences.selectedPatientId, isNullablePreferenceString),
+    scheduleDoctorFilterId: pickUiPreference(
+      source,
+      "scheduleDoctorFilterId",
+      defaultUiPreferences.scheduleDoctorFilterId,
+      isNullablePreferenceString
+    ),
+    scheduleAssistantFilterId: pickUiPreference(
+      source,
+      "scheduleAssistantFilterId",
+      defaultUiPreferences.scheduleAssistantFilterId,
+      isNullablePreferenceString
+    ),
+    scheduleChairFilterId: pickUiPreference(
+      source,
+      "scheduleChairFilterId",
+      defaultUiPreferences.scheduleChairFilterId,
+      isNullablePreferenceString
+    ),
+    scheduleDefaultDoctorUserId: pickUiPreference(
+      source,
+      "scheduleDefaultDoctorUserId",
+      defaultUiPreferences.scheduleDefaultDoctorUserId,
+      isNullablePreferenceString
+    ),
+    scheduleDefaultAssistantUserId: pickUiPreference(
+      source,
+      "scheduleDefaultAssistantUserId",
+      defaultUiPreferences.scheduleDefaultAssistantUserId,
+      isNullablePreferenceString
+    ),
+    scheduleDefaultChairId: pickUiPreference(
+      source,
+      "scheduleDefaultChairId",
+      defaultUiPreferences.scheduleDefaultChairId,
+      isNullablePreferenceString
+    ),
+    scheduleStatusFilter: pickUiPreference(
+      source,
+      "scheduleStatusFilter",
+      defaultUiPreferences.scheduleStatusFilter,
+      isAppointmentStatusFilterPreference
+    ),
+    scheduleDateFilter: pickUiPreference(
+      source,
+      "scheduleDateFilter",
+      defaultUiPreferences.scheduleDateFilter,
+      isBoundedPreferenceString
+    ),
+    paymentMethod: pickUiPreference(source, "paymentMethod", defaultUiPreferences.paymentMethod, isPaymentMethod),
+    taxDocumentYear: pickUiPreference(source, "taxDocumentYear", defaultUiPreferences.taxDocumentYear, isTaxDocumentYearPreference),
+    selectedDocumentKind: pickUiPreference(
+      source,
+      "selectedDocumentKind",
+      defaultUiPreferences.selectedDocumentKind,
+      isDocumentKindPreference
+    ),
+    taxApplicationForm: pickUiPreference(
+      source,
+      "taxApplicationForm",
+      defaultUiPreferences.taxApplicationForm,
+      isTaxApplicationFormPreference
+    ),
+    taxApplicationDeliveryChannel: pickUiPreference(
+      source,
+      "taxApplicationDeliveryChannel",
+      defaultUiPreferences.taxApplicationDeliveryChannel,
+      isTaxApplicationDeliveryChannelPreference
+    ),
+    paymentReceiptTaxSupportRequested: pickUiPreference(
+      source,
+      "paymentReceiptTaxSupportRequested",
+      defaultUiPreferences.paymentReceiptTaxSupportRequested,
+      isBooleanPreference
+    ),
+    documentIssueSignatureMode: pickUiPreference(
+      source,
+      "documentIssueSignatureMode",
+      legacyIssueSignatureDraft.mode,
+      isDocumentIssueSignatureModePreference
+    ),
+    documentIssueStaffFullName: pickUiPreference(
+      source,
+      "documentIssueStaffFullName",
+      legacyIssueSignatureDraft.staffFullName,
+      isBoundedPreferenceString
+    ).slice(0, 160),
+    documentIssueStaffRole: pickUiPreference(
+      source,
+      "documentIssueStaffRole",
+      legacyIssueSignatureDraft.staffRole,
+      isBoundedPreferenceString
+    ).slice(0, 120) || defaultUiPreferences.documentIssueStaffRole,
+    procedureConsentProcedureType: pickUiPreference(
+      source,
+      "procedureConsentProcedureType",
+      defaultUiPreferences.procedureConsentProcedureType,
+      isProcedureSpecificConsentProcedurePreference
+    ),
+    postVisitCareTopic: pickUiPreference(
+      source,
+      "postVisitCareTopic",
+      defaultUiPreferences.postVisitCareTopic,
+      isPostVisitCareTopicPreference
+    ),
+    pricelistSourceKind: pickUiPreference(
+      source,
+      "pricelistSourceKind",
+      defaultUiPreferences.pricelistSourceKind,
+      isPricelistSourceKind
+    ),
+    usePricelistAi: pickUiPreference(source, "usePricelistAi", defaultUiPreferences.usePricelistAi, isBooleanPreference),
+    recognitionKind: pickUiPreference(source, "recognitionKind", defaultUiPreferences.recognitionKind, isAiJobKind),
+    recognitionTarget: pickUiPreference(source, "recognitionTarget", defaultUiPreferences.recognitionTarget, isAiRecognitionTarget),
+    importSourceKind: pickUiPreference(source, "importSourceKind", defaultUiPreferences.importSourceKind, isImportSourceKind),
+    documentIngestionTarget: pickUiPreference(
+      source,
+      "documentIngestionTarget",
+      defaultUiPreferences.documentIngestionTarget,
+      isDocumentIngestionTarget
+    ),
+    imagingImportSourceKind: pickUiPreference(
+      source,
+      "imagingImportSourceKind",
+      defaultUiPreferences.imagingImportSourceKind,
+      isImagingSourceKind
+    ),
+    smartImportMode: pickUiPreference(source, "smartImportMode", defaultUiPreferences.smartImportMode, isSmartImportMode),
+    imagingKindFilter: pickUiPreference(source, "imagingKindFilter", defaultUiPreferences.imagingKindFilter, isImagingKindFilter),
+    dicomWebEndpointUrl: pickUiPreference(
+      source,
+      "dicomWebEndpointUrl",
+      defaultUiPreferences.dicomWebEndpointUrl,
+      isBoundedPreferenceString
+    ),
+    ohifBaseUrl: pickUiPreference(source, "ohifBaseUrl", defaultUiPreferences.ohifBaseUrl, isBoundedPreferenceString),
+    telegramBotConfigId: pickUiPreference(
+      source,
+      "telegramBotConfigId",
+      defaultUiPreferences.telegramBotConfigId,
+      isBoundedPreferenceString
+    )
+      .trim()
+      .slice(0, 160),
+    telegramLinkSubjectType: pickUiPreference(
+      source,
+      "telegramLinkSubjectType",
+      defaultUiPreferences.telegramLinkSubjectType,
+      isTelegramLinkSubjectTypePreference
+    ),
+    telegramLinkStaffId: pickUiPreference(
+      source,
+      "telegramLinkStaffId",
+      defaultUiPreferences.telegramLinkStaffId,
+      isNullablePreferenceString
+    ),
+    telegramOutboxStatusFilter: pickUiPreference(
+      source,
+      "telegramOutboxStatusFilter",
+      defaultUiPreferences.telegramOutboxStatusFilter,
+      isTelegramOutboxStatusFilterPreference
+    ),
+    telegramOutboxTemplateFilter: pickUiPreference(
+      source,
+      "telegramOutboxTemplateFilter",
+      defaultUiPreferences.telegramOutboxTemplateFilter,
+      isTelegramOutboxTemplateFilterPreference
+    ),
+    onboardingDismissed: pickUiPreference(
+      source,
+      "onboardingDismissed",
+      defaultUiPreferences.onboardingDismissed,
+      isBooleanPreference
+    ),
+    onboardingDismissedAt: pickUiPreference(
+      source,
+      "onboardingDismissedAt",
+      defaultUiPreferences.onboardingDismissedAt,
+      isNullablePreferenceString
+    ),
+    onboardingStep: pickUiPreference(source, "onboardingStep", defaultUiPreferences.onboardingStep, isOnboardingStepPreference),
+    onboardingDraftMode: pickUiPreference(
+      source,
+      "onboardingDraftMode",
+      defaultUiPreferences.onboardingDraftMode,
+      isBooleanPreference
+    ),
+    savedAt: typeof source.savedAt === "string" ? source.savedAt : ""
+  };
+}
+
+function loadUiPreferences(): UiPreferences {
+  if (typeof window === "undefined") return defaultUiPreferences;
+  try {
+    const raw = window.localStorage.getItem(uiPreferencesStorageKey);
+    const preferences = raw ? normalizeUiPreferencesPayload(JSON.parse(raw)) ?? defaultUiPreferences : defaultUiPreferences;
+    return mergeLocalOnboardingDismissal(preferences);
+  } catch {
+    return mergeLocalOnboardingDismissal(defaultUiPreferences);
+  }
+}
+
+function withSavedUiPreferenceTimestamp(preferences: UiPreferencesInput): UiPreferences {
+  return {
+    version: 1,
+    ...preferences,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function persistUiPreferences(preferences: UiPreferences): UiPreferences | null {
+  if (typeof window === "undefined") return null;
+  try {
+    window.localStorage.setItem(uiPreferencesStorageKey, JSON.stringify(preferences));
+    return preferences;
+  } catch {
+    // Preferences are convenience only. Clinical drafts use separate guarded storage.
+    return null;
+  }
+}
+
+function saveUiPreferences(preferences: UiPreferencesInput): UiPreferences | null {
+  return persistUiPreferences(withSavedUiPreferenceTimestamp(preferences));
+}
+
+function denteAdminSecretRequestHeaders(extra: Record<string, string> = {}, adminSecret?: string): Record<string, string> {
+  const secret = adminSecret?.trim();
+  return secret ? { ...extra, [denteAdminSecretHeaderName]: secret } : extra;
+}
+
+async function loadServerUiPreferences(adminSecret?: string): Promise<UiPreferences | null> {
+  const response = await fetch(uiPreferencesServerPath, {
+    headers: denteAdminSecretRequestHeaders({}, adminSecret)
+  });
+  if (!response.ok) return null;
+  const payload = (await response.json()) as { preferences?: unknown };
+  return normalizeUiPreferencesPayload(payload.preferences) ?? null;
+}
+
+async function saveServerUiPreferences(preferences: UiPreferences, adminSecret?: string): Promise<void> {
+  const response = await fetch(uiPreferencesServerPath, {
+    method: "PUT",
+    headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }, adminSecret),
+    body: JSON.stringify(preferences)
+  });
+  if (!response.ok) {
+    throw new Error(`Настройки интерфейса: API ${response.status}`);
+  }
+}
+
+function uiPreferencesSyncErrorMessage(error: unknown): string {
+  const detail = error instanceof Error && error.message ? `: ${error.message}` : "";
+  return `Настройки интерфейса сохранены только на этом устройстве${detail}. Серверная синхронизация повторится автоматически.`;
+}
+
+async function responseErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const payload = (await response.clone().json()) as { error?: unknown; message?: unknown };
+    const detail = typeof payload.message === "string" ? payload.message : typeof payload.error === "string" ? payload.error : null;
+    return detail ? `${fallback}: ${detail}` : `${fallback}: API ${response.status}`;
+  } catch {
+    return `${fallback}: API ${response.status}`;
+  }
+}
+
+function requestFailureMessage(fallback: string, error: unknown): string {
+  const detail = error instanceof Error && error.message ? `: ${error.message}` : "";
+  return `${fallback}: сеть или локальный сервер недоступны${detail}`;
+}
+
+type OnboardingDismissalState = {
+  dismissed: boolean;
+  savedAt: string;
+  draftMode: boolean;
+};
+
+function parseOnboardingDismissalState(raw: string | null): OnboardingDismissalState | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { dismissed?: unknown; savedAt?: unknown; draftMode?: unknown; version?: unknown };
+    if (parsed.version !== 1 || typeof parsed.dismissed !== "boolean") return null;
+    return {
+      dismissed: parsed.dismissed,
+      savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : "",
+      draftMode: typeof parsed.draftMode === "boolean" ? parsed.draftMode : false
+    };
+  } catch {
+    return null;
+  }
+}
+
+function loadOnboardingDismissalState(organizationId: string | null | undefined = null): OnboardingDismissalState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return parseOnboardingDismissalState(window.localStorage.getItem(onboardingLocalKey(organizationId)));
+  } catch {
+    return null;
+  }
+}
+
+function mergeLocalOnboardingDismissal(
+  preferences: UiPreferences,
+  organizationId: string | null | undefined = null
+): UiPreferences {
+  const localDismissal = loadOnboardingDismissalState(organizationId);
+  if (!localDismissal) return preferences;
+  const preferenceDismissedAt = preferences.onboardingDismissedAt ?? preferences.savedAt;
+  if (localDismissal.savedAt && (!preferenceDismissedAt || localDismissal.savedAt > preferenceDismissedAt)) {
+    return {
+      ...preferences,
+      onboardingDismissed: localDismissal.dismissed,
+      onboardingDismissedAt: localDismissal.savedAt,
+      onboardingDraftMode: localDismissal.dismissed ? localDismissal.draftMode : false,
+      onboardingStep: localDismissal.dismissed ? preferences.onboardingStep : "intro",
+      savedAt: localDismissal.savedAt > preferences.savedAt ? localDismissal.savedAt : preferences.savedAt
+    };
+  }
+  return preferences;
+}
+
+function saveOnboardingDismissed(
+  dismissed: boolean,
+  savedAt = new Date().toISOString(),
+  draftMode = false,
+  organizationId: string | null | undefined = null
+): OnboardingDismissalState {
+  const state = { dismissed, savedAt, draftMode: dismissed ? draftMode : false };
+  if (typeof window === "undefined") return state;
+  try {
+    window.localStorage.setItem(
+      onboardingLocalKey(organizationId),
+      JSON.stringify({ version: 1, ...state })
+    );
+  } catch {
+    // Onboarding state is convenience only; real clinic settings are saved server-side.
+  }
+  return state;
+}
+
+const weekdayOptions = [
+  { value: 1, label: "Пн" },
+  { value: 2, label: "Вт" },
+  { value: 3, label: "Ср" },
+  { value: 4, label: "Чт" },
+  { value: 5, label: "Пт" },
+  { value: 6, label: "Сб" },
+  { value: 0, label: "Вс" }
+];
+
+const defaultWorkingDays = [1, 2, 3, 4, 5];
+
+function validClockTime(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function normalizeClockTime(value: string, fallback: string): string {
+  return validClockTime(value) ? value : fallback;
+}
+
+function normalizeWorkingDaysDraft(value: readonly number[] | undefined): number[] {
+  const days = Array.from(new Set((value ?? defaultWorkingDays).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)));
+  return days.length ? days : defaultWorkingDays;
+}
+
+function normalizeOptionalWorkingDaysDraft(value: readonly number[] | undefined): number[] {
+  return Array.from(new Set((value ?? []).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))).sort((left, right) => left - right);
+}
+
+function staffWorkingHoursFromSimpleDraft(startValue: string, endValue: string, workingDayValue: readonly number[] | undefined): StaffWorkingHours {
+  const start = normalizeClockTime(startValue, "09:00");
+  const end = normalizeClockTime(endValue, "18:00");
+  const workingDays = normalizeWorkingDaysDraft(workingDayValue);
+  return Array.from({ length: 7 }, (_, weekday) => ({
+    weekday,
+    enabled: workingDays.includes(weekday),
+    start,
+    end
+  }));
+}
+
+function staffScheduleDraftFromWorkingHours(workingHours: StaffWorkingHours | null | undefined): StaffScheduleDraft {
+  const enabledDays = (workingHours ?? []).filter((day) => day.enabled);
+  const firstEnabledDay = enabledDays[0] ?? workingHours?.[0];
+  const fallbackPerDay = staffWorkingHoursFromSimpleDraft(firstEnabledDay?.start ?? "09:00", firstEnabledDay?.end ?? "18:00", enabledDays.map((day) => day.weekday));
+  const perDay = Array.from({ length: 7 }, (_, weekday) => {
+    const configured = workingHours?.find((day) => day.weekday === weekday);
+    return configured ?? fallbackPerDay[weekday] ?? { weekday, enabled: defaultWorkingDays.includes(weekday), start: "09:00", end: "18:00" };
+  });
+  return {
+    start: firstEnabledDay?.start ?? "09:00",
+    end: firstEnabledDay?.end ?? "18:00",
+    workingDays: normalizeWorkingDaysDraft(enabledDays.map((day) => day.weekday)),
+    perDay
+  };
+}
+
+function appointmentScheduleDraftFromAppointment(appointment: Appointment): AppointmentScheduleDraft {
+  return {
+    patientId: appointment.patientId ?? "",
+    doctorUserId: appointment.doctorUserId ?? "",
+    assistantUserId: appointment.assistantUserId ?? "",
+    chairId: appointment.chairId ?? "",
+    status: appointment.status,
+    startsAt: appointment.startsAt,
+    endsAt: appointment.endsAt,
+    reason: appointment.reason ?? "",
+    comment: appointment.comment ?? ""
+  };
+}
+
+function timeZoneOffsetMinutes(timeZone: string | null | undefined, at: Date): number {
+  if (!timeZone) return -at.getTimezoneOffset();
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "shortOffset",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).formatToParts(at);
+    const value = parts.find((part) => part.type === "timeZoneName")?.value ?? "";
+    if (value === "GMT" || value === "UTC") return 0;
+    const match = /(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?/.exec(value);
+    if (!match) return -at.getTimezoneOffset();
+    const sign = match[1] === "-" ? -1 : 1;
+    return sign * (Number(match[2]) * 60 + Number(match[3] ?? "0"));
+  } catch {
+    return -at.getTimezoneOffset();
+  }
+}
+
+function timeZoneOffsetSuffix(offsetMinutes: number): string {
+  const sign = offsetMinutes < 0 ? "-" : "+";
+  const absolute = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absolute / 60)).padStart(2, "0");
+  const minutes = String(absolute % 60).padStart(2, "0");
+  return `${sign}${hours}:${minutes}`;
+}
+
+function timeZoneDateParts(value: string, timeZone: string | null | undefined): string | null {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  if (!timeZone) return null;
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).formatToParts(parsed);
+    const valueByType = new Map(parts.map((part) => [part.type, part.value]));
+    const hour = valueByType.get("hour") === "24" ? "00" : valueByType.get("hour");
+    const year = valueByType.get("year");
+    const month = valueByType.get("month");
+    const day = valueByType.get("day");
+    const minute = valueByType.get("minute");
+    return year && month && day && hour && minute ? `${year}-${month}-${day}T${hour}:${minute}` : null;
+  } catch {
+    return null;
+  }
+}
+
+function toDateTimeLocalValue(value: string, timeZone?: string | null): string {
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+  const zoned = timeZoneDateParts(value, timeZone);
+  if (zoned) return zoned;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value.slice(0, 16);
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function fromDateTimeLocalValue(value: string, timeZone?: string | null): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(trimmed);
+  if (match && timeZone) {
+    const [, year, month, day, hour, minute] = match;
+    const utcGuess = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute)));
+    let offsetMinutes = timeZoneOffsetMinutes(timeZone, utcGuess);
+    const correctedInstant = new Date(utcGuess.getTime() - offsetMinutes * 60_000);
+    const correctedOffsetMinutes = timeZoneOffsetMinutes(timeZone, correctedInstant);
+    if (correctedOffsetMinutes !== offsetMinutes) offsetMinutes = correctedOffsetMinutes;
+    return `${year}-${month}-${day}T${hour}:${minute}:00${timeZoneOffsetSuffix(offsetMinutes)}`;
+  }
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? trimmed : parsed.toISOString();
+}
+
+function addMinutesToClinicDateTimeLocal(value: string, minutes: number, timeZone: string): string {
+  const iso = fromDateTimeLocalValue(value, timeZone);
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return toDateTimeLocalValue(new Date(parsed.getTime() + minutes * 60_000).toISOString(), timeZone);
+}
+
+function weekdayFromDateInput(value: string): number {
+  const parsed = Date.parse(`${value}T12:00:00Z`);
+  return Number.isNaN(parsed) ? 1 : new Date(parsed).getUTCDay();
+}
+
+function defaultAppointmentStartLocal(profile: ClinicProfile): string {
+  const schedule = profile.scheduleDefaults ?? {
+    workdayStart: "09:00",
+    workdayEnd: "18:00",
+    workingDays: [1, 2, 3, 4, 5],
+    appointmentBufferMinutes: 10
+  };
+  const timezone = profile.timezone || "Europe/Samara";
+  const now = new Date();
+  for (let offset = 0; offset < 21; offset += 1) {
+    const candidateDate = new Date(now.getTime() + offset * 86_400_000);
+    const datePart = toDateTimeLocalValue(candidateDate.toISOString(), timezone).slice(0, 10);
+    if (!schedule.workingDays.includes(weekdayFromDateInput(datePart))) continue;
+    const candidate = `${datePart}T${schedule.workdayStart}`;
+    if (Date.parse(fromDateTimeLocalValue(candidate, timezone)) > now.getTime() + 30 * 60_000) return candidate;
+  }
+  return `${toDateTimeLocalValue(new Date(now.getTime() + 86_400_000).toISOString(), timezone).slice(0, 10)}T${schedule.workdayStart}`;
+}
+
+function newAppointmentDraftFromDashboard(
+  dashboard: Dashboard,
+  preferences: {
+    selectedPatientId?: string | null;
+    selectedSpecialty?: DentalSpecialty;
+    scheduleDefaultDoctorUserId?: string | null;
+    scheduleDefaultAssistantUserId?: string | null;
+    scheduleDefaultChairId?: string | null;
+  } = {}
+): AppointmentScheduleDraft {
+  const profile = dashboard.clinicSettings.profile;
+  const timezone = profile.timezone || "Europe/Samara";
+  const startsAtLocal = defaultAppointmentStartLocal(profile);
+  const endsAtLocal = addMinutesToClinicDateTimeLocal(startsAtLocal, profile.defaultVisitMinutes || 45, timezone);
+  const selectedSpecialty = preferences.selectedSpecialty ?? "universal";
+  const specialtyMatches = (specialties: DentalSpecialty[]) =>
+    selectedSpecialty === "universal" || specialties.includes(selectedSpecialty) || specialties.includes("universal");
+  const savedDoctor = preferences.scheduleDefaultDoctorUserId
+    ? dashboard.clinicSettings.staff.find(
+        (member) =>
+          member.id === preferences.scheduleDefaultDoctorUserId &&
+          member.active &&
+          (member.role === "doctor" || member.role === "owner")
+      )
+    : null;
+  const doctor =
+    savedDoctor ??
+    dashboard.clinicSettings.staff.find(
+      (member) => member.active && (member.role === "doctor" || member.role === "owner") && specialtyMatches(member.specialties)
+    ) ?? dashboard.clinicSettings.staff.find((member) => member.active && (member.role === "doctor" || member.role === "owner"));
+  const savedAssistant =
+    profile.mode === "solo_doctor" || !preferences.scheduleDefaultAssistantUserId
+      ? null
+      : dashboard.clinicSettings.staff.find(
+          (member) => member.id === preferences.scheduleDefaultAssistantUserId && member.active && member.role === "assistant"
+        );
+  const assistant = savedAssistant ?? dashboard.clinicSettings.staff.find((member) => member.active && member.role === "assistant");
+  const savedChair = preferences.scheduleDefaultChairId
+    ? dashboard.clinicSettings.chairs.find((candidate) => candidate.id === preferences.scheduleDefaultChairId && candidate.active)
+    : null;
+  const chair =
+    savedChair ??
+    dashboard.clinicSettings.chairs.find(
+      (candidate) =>
+        candidate.active &&
+        (!candidate.specialization || selectedSpecialty === "universal" || candidate.specialization === selectedSpecialty)
+    ) ?? dashboard.clinicSettings.chairs.find((candidate) => candidate.active);
+  const selectedPatient = preferences.selectedPatientId
+    ? dashboard.patients.find((candidate) => candidate.id === preferences.selectedPatientId && candidate.status === "active")
+    : null;
+  const patient = selectedPatient ?? dashboard.patients.find((candidate) => candidate.status === "active");
+  return {
+    patientId: patient?.id ?? "",
+    doctorUserId: doctor?.id ?? "",
+    assistantUserId: profile.mode === "solo_doctor" ? "" : assistant?.id ?? "",
+    chairId: chair?.id ?? "",
+    status: "planned",
+    startsAt: fromDateTimeLocalValue(startsAtLocal, timezone),
+    endsAt: fromDateTimeLocalValue(endsAtLocal, timezone),
+    reason: "Первичная консультация",
+    comment: ""
+  };
+}
+
+function isValidDateParts(year: number, month: number, day: number): boolean {
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+}
+
+function toDateInputValue(value: string | null | undefined): string {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) return "";
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
+  if (iso && isValidDateParts(Number(iso[1]), Number(iso[2]), Number(iso[3]))) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const ru = /^(\d{2})\.(\d{2})\.(\d{4})/.exec(trimmed);
+  if (ru && isValidDateParts(Number(ru[3]), Number(ru[2]), Number(ru[1]))) return `${ru[3]}-${ru[2]}-${ru[1]}`;
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+}
+
+function isDateInputValue(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  return !!match && isValidDateParts(Number(match[1]), Number(match[2]), Number(match[3]));
+}
+
+function isDateTimeLocalInputValue(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value.trim());
+  if (!match || !isValidDateParts(Number(match[1]), Number(match[2]), Number(match[3]))) return false;
+  const hours = Number(match[4]);
+  const minutes = Number(match[5]);
+  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+}
+
+function nullableAppointmentDraftValue(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function appointmentUpdateInputFromDraft(draft: AppointmentScheduleDraft): UpdateAppointmentInput {
+  return {
+    patientId: draft.patientId || null,
+    doctorUserId: draft.doctorUserId || null,
+    assistantUserId: draft.assistantUserId || null,
+    chairId: draft.chairId || null,
+    status: draft.status,
+    startsAt: draft.startsAt.trim(),
+    endsAt: draft.endsAt.trim(),
+    reason: nullableAppointmentDraftValue(draft.reason),
+    comment: nullableAppointmentDraftValue(draft.comment)
+  };
+}
+
+function appointmentCreateInputFromDraft(draft: AppointmentScheduleDraft): CreateAppointmentInput {
+  return {
+    patientId: draft.patientId,
+    doctorUserId: draft.doctorUserId,
+    assistantUserId: draft.assistantUserId || null,
+    chairId: draft.chairId,
+    status: draft.status,
+    startsAt: draft.startsAt.trim(),
+    endsAt: draft.endsAt.trim(),
+    reason: nullableAppointmentDraftValue(draft.reason),
+    comment: nullableAppointmentDraftValue(draft.comment)
+  };
+}
+
+function appointmentScheduleDraftSignature(draft: AppointmentScheduleDraft): string {
+  return JSON.stringify(appointmentUpdateInputFromDraft(draft));
+}
+
+function appointmentScheduleDateMissingSteps(draft: AppointmentScheduleDraft): string[] {
+  const startsAt = draft.startsAt.trim();
+  const endsAt = draft.endsAt.trim();
+  const startsAtMs = Date.parse(startsAt);
+  const endsAtMs = Date.parse(endsAt);
+  return [
+    !startsAt ? "укажите начало приема" : null,
+    startsAt && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
+    !endsAt ? "укажите окончание приема" : null,
+    endsAt && !Number.isFinite(endsAtMs) ? "проверьте дату окончания приема" : null,
+    Number.isFinite(startsAtMs) && Number.isFinite(endsAtMs) && endsAtMs <= startsAtMs
+      ? "окончание приема должно быть позже начала"
+      : null
+  ].filter((step): step is string => Boolean(step));
+}
+
+function staffWorkingHoursFromDraft(draft: StaffScheduleDraft): StaffWorkingHours {
+  const start = normalizeClockTime(draft.start, "09:00");
+  const end = normalizeClockTime(draft.end, "18:00");
+  const workingDays = normalizeWorkingDaysDraft(draft.workingDays);
+  const perDay = draft.perDay ?? staffWorkingHoursFromSimpleDraft(start, end, workingDays);
+  return Array.from({ length: 7 }, (_, weekday) => ({
+    weekday,
+    enabled: workingDays.includes(weekday),
+    start: normalizeClockTime(perDay[weekday]?.start ?? start, start),
+    end: normalizeClockTime(perDay[weekday]?.end ?? end, end)
+  }));
+}
+
+function staffScheduleDraftSignature(draft: StaffScheduleDraft): string {
+  return JSON.stringify(staffWorkingHoursFromDraft(draft));
+}
+
+function defaultStaffScheduleDraft(): StaffScheduleDraft {
+  return staffScheduleDraftFromWorkingHours(null);
+}
+
+function emptyClinicProfileDraft(): ClinicProfileDraft {
+  return {
+    clinicName: "",
+    legalName: "",
+    inn: "",
+    kpp: "",
+    ogrn: "",
+    address: "",
+    phone: "",
+    email: "",
+    website: "",
+    medicalLicenseNumber: "",
+    medicalLicenseIssuedAt: "",
+    medicalLicenseIssuer: "",
+    bankDetails: "",
+    signatoryName: "",
+    signatoryTitle: "",
+    timezone: "Europe/Samara",
+    defaultVisitMinutes: "45",
+    workdayStart: "09:00",
+    workdayEnd: "18:00",
+    workingDays: defaultWorkingDays,
+    appointmentBufferMinutes: "10",
+    egiszEnabled: false
+  };
+}
+
+function clinicProfileDraftFromProfile(profile: ClinicProfile): ClinicProfileDraft {
+  const schedule = profile.scheduleDefaults ?? {
+    workdayStart: "09:00",
+    workdayEnd: "18:00",
+    workingDays: defaultWorkingDays,
+    appointmentBufferMinutes: 10
+  };
+  return {
+    clinicName: profile.clinicName,
+    legalName: profile.legalName ?? "",
+    inn: profile.inn ?? "",
+    kpp: profile.kpp ?? "",
+    ogrn: profile.ogrn ?? "",
+    address: profile.address ?? "",
+    phone: profile.phone ?? "",
+    email: profile.email ?? "",
+    website: profile.website ?? "",
+    medicalLicenseNumber: profile.medicalLicenseNumber ?? "",
+    medicalLicenseIssuedAt: profile.medicalLicenseIssuedAt ?? "",
+    medicalLicenseIssuer: profile.medicalLicenseIssuer ?? "",
+    bankDetails: profile.bankDetails ?? "",
+    signatoryName: profile.signatoryName ?? "",
+    signatoryTitle: profile.signatoryTitle ?? "",
+    timezone: profile.timezone,
+    defaultVisitMinutes: String(profile.defaultVisitMinutes),
+    workdayStart: schedule.workdayStart,
+    workdayEnd: schedule.workdayEnd,
+    workingDays: normalizeWorkingDaysDraft(schedule.workingDays),
+    appointmentBufferMinutes: String(schedule.appointmentBufferMinutes),
+    egiszEnabled: profile.egiszEnabled
+  };
+}
+
+function nullableClinicDraftValue(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function emptyPatientCoreDraft(): PatientCoreDraft {
+  return {
+    fullName: "",
+    birthDate: "",
+    phone: "",
+    email: "",
+    notes: ""
+  };
+}
+
+function patientCoreDraftFromPatient(patient: Patient | null): PatientCoreDraft {
+  return {
+    fullName: patient?.fullName ?? "",
+    birthDate: patient?.birthDate ?? "",
+    phone: patient?.phone ?? "",
+    email: patient?.email ?? "",
+    notes: patient?.notes ?? ""
+  };
+}
+
+function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeProfileDraft {
+  return {
+    identityDocument: "",
+    taxpayerInn: "",
+    registrationAddress: "",
+    residentialAddress: "",
+    insurancePolicyNumber: "",
+    snils: "",
+    legalRepresentativeFullName: "",
+    legalRepresentativeRelationship: "",
+    legalRepresentativeIdentityDocument: "",
+    legalRepresentativePhone: "",
+    preferredDocumentRecipient: "",
+    preferredAppointmentWeekdays: [],
+    preferredAppointmentStart: "",
+    preferredAppointmentEnd: "",
+    preferredAppointmentNote: "",
+    dataProcessingBasisNote: ""
+  };
+}
+
+function patientAdministrativeProfileDraftFromPatient(patient: Patient | null): PatientAdministrativeProfileDraft {
+  const profile = patient?.administrativeProfile;
+  return {
+    identityDocument: profile?.identityDocument ?? "",
+    taxpayerInn: profile?.taxpayerInn ?? "",
+    registrationAddress: profile?.registrationAddress ?? "",
+    residentialAddress: profile?.residentialAddress ?? "",
+    insurancePolicyNumber: profile?.insurancePolicyNumber ?? "",
+    snils: profile?.snils ?? "",
+    legalRepresentativeFullName: profile?.legalRepresentativeFullName ?? "",
+    legalRepresentativeRelationship: profile?.legalRepresentativeRelationship ?? "",
+    legalRepresentativeIdentityDocument: profile?.legalRepresentativeIdentityDocument ?? "",
+    legalRepresentativePhone: profile?.legalRepresentativePhone ?? "",
+    preferredDocumentRecipient: profile?.preferredDocumentRecipient ?? "",
+    preferredAppointmentWeekdays: normalizeOptionalWorkingDaysDraft(profile?.preferredAppointmentWeekdays ?? []),
+    preferredAppointmentStart: profile?.preferredAppointmentStart ?? "",
+    preferredAppointmentEnd: profile?.preferredAppointmentEnd ?? "",
+    preferredAppointmentNote: profile?.preferredAppointmentNote ?? "",
+    dataProcessingBasisNote: profile?.dataProcessingBasisNote ?? ""
+  };
+}
+
+function nullablePatientDraftValue(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function buildPatientCorePayload(draft: PatientCoreDraft): UpdatePatientInput {
+  return {
+    fullName: draft.fullName.trim(),
+    birthDate: nullablePatientDraftValue(draft.birthDate),
+    phone: nullablePatientDraftValue(draft.phone),
+    email: nullablePatientDraftValue(draft.email),
+    notes: nullablePatientDraftValue(draft.notes)
+  };
+}
+
+function patientCoreDraftSignature(draft: PatientCoreDraft): string {
+  return JSON.stringify(buildPatientCorePayload(draft));
+}
+
+function buildPatientAdministrativeProfilePayload(
+  draft: PatientAdministrativeProfileDraft
+): UpdatePatientAdministrativeProfileInput {
+  return {
+    identityDocument: nullablePatientDraftValue(draft.identityDocument),
+    taxpayerInn: nullablePatientDraftValue(draft.taxpayerInn),
+    registrationAddress: nullablePatientDraftValue(draft.registrationAddress),
+    residentialAddress: nullablePatientDraftValue(draft.residentialAddress),
+    insurancePolicyNumber: nullablePatientDraftValue(draft.insurancePolicyNumber),
+    snils: nullablePatientDraftValue(draft.snils),
+    legalRepresentativeFullName: nullablePatientDraftValue(draft.legalRepresentativeFullName),
+    legalRepresentativeRelationship: nullablePatientDraftValue(draft.legalRepresentativeRelationship),
+    legalRepresentativeIdentityDocument: nullablePatientDraftValue(draft.legalRepresentativeIdentityDocument),
+    legalRepresentativePhone: nullablePatientDraftValue(draft.legalRepresentativePhone),
+    preferredDocumentRecipient: nullablePatientDraftValue(draft.preferredDocumentRecipient),
+    preferredAppointmentWeekdays: draft.preferredAppointmentWeekdays,
+    preferredAppointmentStart: nullablePatientDraftValue(draft.preferredAppointmentStart),
+    preferredAppointmentEnd: nullablePatientDraftValue(draft.preferredAppointmentEnd),
+    preferredAppointmentNote: nullablePatientDraftValue(draft.preferredAppointmentNote),
+    dataProcessingBasisNote: nullablePatientDraftValue(draft.dataProcessingBasisNote)
+  };
+}
+
+function patientAdministrativeProfileDraftSignature(draft: PatientAdministrativeProfileDraft): string {
+  return JSON.stringify(buildPatientAdministrativeProfilePayload(draft));
+}
+
+function patientAdministrativeProfileDraftIssue(draft: PatientAdministrativeProfileDraft): string | null {
+  const inn = draft.taxpayerInn.trim();
+  if (inn && !/^\d{10}$|^\d{12}$/.test(inn)) {
+    return "ИНН можно сохранить только в формате 10 или 12 цифр. Пока это локальный черновик.";
+  }
+  if (draft.preferredAppointmentStart && !draft.preferredAppointmentEnd) {
+    return "Укажите конец удобного времени приема или очистите начало.";
+  }
+  if (!draft.preferredAppointmentStart && draft.preferredAppointmentEnd) {
+    return "Укажите начало удобного времени приема или очистите конец.";
+  }
+  if (draft.preferredAppointmentStart && draft.preferredAppointmentEnd && draft.preferredAppointmentEnd <= draft.preferredAppointmentStart) {
+    return "Конец удобного времени приема должен быть позже начала.";
+  }
+  return null;
+}
+
+function buildClinicProfileUpdatePayload(draft: ClinicProfileDraft): UpdateClinicProfileInput {
+  const defaultVisitMinutes = Number.parseInt(draft.defaultVisitMinutes, 10);
+  const appointmentBufferMinutes = Number.parseInt(draft.appointmentBufferMinutes, 10);
+  return {
+    clinicName: draft.clinicName.trim(),
+    legalName: nullableClinicDraftValue(draft.legalName),
+    inn: nullableClinicDraftValue(draft.inn),
+    kpp: nullableClinicDraftValue(draft.kpp),
+    ogrn: nullableClinicDraftValue(draft.ogrn),
+    address: nullableClinicDraftValue(draft.address),
+    phone: nullableClinicDraftValue(draft.phone),
+    email: nullableClinicDraftValue(draft.email),
+    website: nullableClinicDraftValue(draft.website),
+    medicalLicenseNumber: nullableClinicDraftValue(draft.medicalLicenseNumber),
+    medicalLicenseIssuedAt: nullableClinicDraftValue(draft.medicalLicenseIssuedAt),
+    medicalLicenseIssuer: nullableClinicDraftValue(draft.medicalLicenseIssuer),
+    bankDetails: nullableClinicDraftValue(draft.bankDetails),
+    signatoryName: nullableClinicDraftValue(draft.signatoryName),
+    signatoryTitle: nullableClinicDraftValue(draft.signatoryTitle),
+    timezone: draft.timezone.trim() || "Europe/Samara",
+    defaultVisitMinutes: Number.isFinite(defaultVisitMinutes) ? Math.max(5, Math.min(defaultVisitMinutes, 480)) : 45,
+    scheduleDefaults: {
+      workdayStart: normalizeClockTime(draft.workdayStart, "09:00"),
+      workdayEnd: normalizeClockTime(draft.workdayEnd, "18:00"),
+      workingDays: normalizeWorkingDaysDraft(draft.workingDays),
+      appointmentBufferMinutes: Number.isFinite(appointmentBufferMinutes)
+        ? Math.max(0, Math.min(appointmentBufferMinutes, 180))
+        : 10
+    },
+    egiszEnabled: draft.egiszEnabled
+  };
+}
+
+function clinicProfileDraftSignature(draft: ClinicProfileDraft): string {
+  return JSON.stringify(buildClinicProfileUpdatePayload(draft));
+}
+
+function clinicLegalMissingFields(profile: ClinicProfile): string[] {
+  const required: Array<[string, string | null | undefined]> = [
+    ["Юр. лицо", profile.legalName],
+    ["ИНН", profile.inn],
+    ["Адрес", profile.address],
+    ["Телефон", profile.phone],
+    ["Номер лицензии", profile.medicalLicenseNumber],
+    ["Дата лицензии", profile.medicalLicenseIssuedAt],
+    ["Кем выдана лицензия", profile.medicalLicenseIssuer]
+  ];
+  return required.filter(([, value]) => !value?.trim()).map(([label]) => label);
+}
+
+function clinicLegalReadinessPercent(profile: ClinicProfile): number {
+  const missing = clinicLegalMissingFields(profile).length;
+  return Math.round(((7 - missing) / 7) * 100);
+}
+
+function isVisitNoteForm(value: unknown): value is VisitNoteForm {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<Record<VisitNoteField, unknown>>;
+  return visitNoteFieldDefinitions.every(({ key }) => typeof candidate[key] === "string");
+}
+
+function loadVisitLocalDraft(visitId: string, organizationId: string | null | undefined = null): VisitLocalDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw =
+      window.localStorage.getItem(visitLocalDraftKey(visitId, organizationId)) ??
+      (organizationId ? window.localStorage.getItem(visitLocalDraftKey(visitId)) : null);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<VisitLocalDraft>;
+    if (
+      parsed.version !== 1 ||
+      parsed.visitId !== visitId ||
+      typeof parsed.savedAt !== "string" ||
+      typeof parsed.transcript !== "string" ||
+      !isDentalSpecialty(parsed.selectedSpecialty) ||
+      !isVisitNoteForm(parsed.visitNoteForm)
+    ) {
+      return null;
+    }
+    if (!localSavedAtFresh(parsed.savedAt, sensitiveLocalDraftRetentionMs)) {
+      window.localStorage.removeItem(visitLocalDraftKey(visitId, organizationId));
+      if (organizationId) window.localStorage.removeItem(visitLocalDraftKey(visitId));
+      return null;
+    }
+    return parsed as VisitLocalDraft;
+  } catch {
+    return null;
+  }
+}
+
+function saveVisitLocalDraft(draft: VisitLocalDraft, organizationId: string | null | undefined = null): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(visitLocalDraftKey(draft.visitId, organizationId), JSON.stringify(draft));
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isVisitNoteDraft(value: unknown): value is VisitNoteDraft {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<VisitNoteDraft>;
+  return (
+    isNullableString(candidate.complaint) &&
+    isNullableString(candidate.anamnesis) &&
+    isNullableString(candidate.objectiveStatus) &&
+    isNullableString(candidate.diagnosis) &&
+    isNullableString(candidate.treatmentPlan) &&
+    Array.isArray(candidate.warnings) &&
+    candidate.warnings.every((warning) => typeof warning === "string")
+  );
+}
+
+function parsePendingVisitSaveQueue(
+  raw: string | null,
+  activeOrganizationId: string | null | undefined,
+  legacyOrganizationFallback: string | null | undefined = null
+): PendingVisitSave[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const normalizedFallbackOrganizationId = normalizedLocalOrganizationId(legacyOrganizationFallback);
+    return parsed.flatMap((item): PendingVisitSave[] => {
+      const candidate = item as Partial<PendingVisitSave>;
+      const { id, visitId, queuedAt, draft, doctorSummary, transcript, selectedSpecialty } = candidate;
+      const organizationId = normalizedLocalOrganizationId(candidate.organizationId) ?? normalizedFallbackOrganizationId;
+      if (
+        candidate.version !== 1 ||
+        typeof id !== "string" ||
+        !localQueueOrganizationMatches(organizationId, activeOrganizationId) ||
+        typeof visitId !== "string" ||
+        typeof queuedAt !== "string" ||
+        !localSavedAtFresh(queuedAt, sensitiveLocalDraftRetentionMs) ||
+        !isVisitNoteDraft(draft) ||
+        !isNullableString(doctorSummary) ||
+        typeof transcript !== "string" ||
+        !isDentalSpecialty(selectedSpecialty)
+      ) {
+        return [];
+      }
+      const normalizedBaseRevision =
+        typeof candidate.baseRevision === "number" && Number.isInteger(candidate.baseRevision) ? candidate.baseRevision : null;
+      return [
+        {
+          version: 1,
+          id,
+          organizationId,
+          visitId,
+          clientMutationId: typeof candidate.clientMutationId === "string" ? candidate.clientMutationId : id,
+          baseRevision: normalizedBaseRevision,
+          queuedAt,
+          draft,
+          doctorSummary,
+          transcript,
+          selectedSpecialty
+        }
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function loadPendingVisitSaves(organizationId: string | null | undefined = null): PendingVisitSave[] {
+  if (typeof window === "undefined") return [];
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const localKey = pendingVisitSaveQueueLocalKey(normalizedOrganizationId);
+  const scopedRaw = window.localStorage.getItem(localKey);
+  const legacyRaw = normalizedOrganizationId ? window.localStorage.getItem(pendingVisitSaveQueueKey) : null;
+  const byId = new Map<string, PendingVisitSave>();
+  for (const item of parsePendingVisitSaveQueue(scopedRaw, normalizedOrganizationId)) {
+    byId.set(item.id, item);
+  }
+  for (const item of parsePendingVisitSaveQueue(legacyRaw, normalizedOrganizationId, normalizedOrganizationId)) {
+    byId.set(item.id, item);
+  }
+  const queue = Array.from(byId.values()).sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+  if (normalizedOrganizationId && legacyRaw) {
+    savePendingVisitSaves(queue, normalizedOrganizationId);
+    window.localStorage.removeItem(pendingVisitSaveQueueKey);
+  }
+  return queue;
+}
+
+function savePendingVisitSaves(queue: PendingVisitSave[], organizationId: string | null | undefined = null): void {
+  if (typeof window === "undefined") return;
+  const localKey = pendingVisitSaveQueueLocalKey(organizationId);
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const scopedQueue = queue
+    .map((item) => ({ ...item, organizationId: normalizedLocalOrganizationId(item.organizationId) ?? normalizedOrganizationId }))
+    .filter(
+      (item) =>
+        localQueueOrganizationMatches(item.organizationId, normalizedOrganizationId) &&
+        localSavedAtFresh(item.queuedAt, sensitiveLocalDraftRetentionMs)
+    )
+    .sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+  if (!scopedQueue.length) {
+    window.localStorage.removeItem(localKey);
+    return;
+  }
+  window.localStorage.setItem(localKey, JSON.stringify(scopedQueue));
+}
+
+function isPendingSpeechChunk(value: unknown): value is PendingSpeechChunk {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<PendingSpeechChunk>;
+  return (
+    candidate.version === 1 &&
+    typeof candidate.id === "string" &&
+    typeof candidate.queuedAt === "string" &&
+    typeof candidate.recordingId === "string" &&
+    typeof candidate.chunkIndex === "number" &&
+    Number.isInteger(candidate.chunkIndex) &&
+    typeof candidate.mimeType === "string" &&
+    typeof candidate.language === "string" &&
+    typeof candidate.source === "string" &&
+    (typeof candidate.audioBase64 === "string" || typeof candidate.localTranscript === "string")
+  );
+}
+
+function normalizePendingSpeechChunk(
+  value: unknown,
+  activeOrganizationId: string | null | undefined,
+  legacyOrganizationFallback: string | null | undefined = null
+): PendingSpeechChunk | null {
+  if (!isPendingSpeechChunk(value)) return null;
+  const organizationId = normalizedLocalOrganizationId(value.organizationId) ?? normalizedLocalOrganizationId(legacyOrganizationFallback);
+  if (!localQueueOrganizationMatches(organizationId, activeOrganizationId)) return null;
+  if (!localSavedAtFresh(value.queuedAt, speechAudioQueueRetentionMs)) return null;
+  return { ...value, organizationId };
+}
+
+function sortPendingSpeechChunks(queue: PendingSpeechChunk[]): PendingSpeechChunk[] {
+  return queue.slice().sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+}
+
+function loadPendingSpeechChunksFromLocalStorage(organizationId: string | null | undefined = null): PendingSpeechChunk[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+    const localKey = pendingSpeechChunkQueueLocalKey(normalizedOrganizationId);
+    const scopedRaw = window.localStorage.getItem(localKey);
+    const legacyRaw = normalizedOrganizationId ? window.localStorage.getItem(pendingSpeechChunkQueueKey) : null;
+    const byId = new Map<string, PendingSpeechChunk>();
+    for (const raw of [scopedRaw, legacyRaw]) {
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) continue;
+      for (const item of parsed) {
+        const normalized = normalizePendingSpeechChunk(item, normalizedOrganizationId, raw === legacyRaw ? normalizedOrganizationId : null);
+        if (normalized) byId.set(normalized.id, normalized);
+      }
+    }
+    const queue = sortPendingSpeechChunks(Array.from(byId.values()));
+    if (normalizedOrganizationId && legacyRaw) {
+      savePendingSpeechChunksToLocalStorage(queue, normalizedOrganizationId);
+      window.localStorage.removeItem(pendingSpeechChunkQueueKey);
+    }
+    return queue;
+  } catch {
+    return [];
+  }
+}
+
+function savePendingSpeechChunksToLocalStorage(queue: PendingSpeechChunk[], organizationId: string | null | undefined = null): void {
+  if (typeof window === "undefined") return;
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const localKey = pendingSpeechChunkQueueLocalKey(normalizedOrganizationId);
+  const scopedQueue = sortPendingSpeechChunks(
+    queue
+      .map((item) => ({ ...item, organizationId: normalizedLocalOrganizationId(item.organizationId) ?? normalizedOrganizationId }))
+      .filter(
+        (item) =>
+          localQueueOrganizationMatches(item.organizationId, normalizedOrganizationId) &&
+          localSavedAtFresh(item.queuedAt, speechAudioQueueRetentionMs)
+      )
+  );
+  if (!scopedQueue.length) {
+    window.localStorage.removeItem(localKey);
+    return;
+  }
+  const payload = JSON.stringify(scopedQueue);
+  if (payload.length > speechLocalStorageFallbackMaxBytes) {
+    throw new Error("Локальное хранилище аудио переполнено; для продолжения записи нужен IndexedDB.");
+  }
+  window.localStorage.setItem(localKey, payload);
+}
+
+function speechChunkIndexedDbAvailable(): boolean {
+  return typeof window !== "undefined" && "indexedDB" in window;
+}
+
+function openSpeechChunkDb(): Promise<IDBDatabase> {
+  if (!speechChunkIndexedDbAvailable()) return Promise.reject(new Error("IndexedDB недоступен"));
+  if (speechChunkDbPromise) return speechChunkDbPromise;
+  speechChunkDbPromise = new Promise((resolve, reject) => {
+    const request = window.indexedDB.open(speechChunkDbName, speechChunkDbVersion);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(speechChunkStoreName)) {
+        const store = db.createObjectStore(speechChunkStoreName, { keyPath: "id" });
+        store.createIndex("queuedAt", "queuedAt");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error("IndexedDB не открылся"));
+    request.onblocked = () => reject(new Error("IndexedDB open blocked"));
+  });
+  return speechChunkDbPromise;
+}
+
+async function readPendingSpeechChunksFromIndexedDb(organizationId: string | null | undefined = null): Promise<PendingSpeechChunk[]> {
+  const db = await openSpeechChunkDb();
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const values = await new Promise<unknown[]>((resolve, reject) => {
+    const transaction = db.transaction(speechChunkStoreName, "readonly");
+    const request = transaction.objectStore(speechChunkStoreName).getAll();
+    request.onsuccess = () => {
+      resolve(Array.isArray(request.result) ? request.result : []);
+    };
+    request.onerror = () => reject(request.error ?? new Error("IndexedDB не прочитан"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Транзакция IndexedDB не выполнена"));
+  });
+  const queue: PendingSpeechChunk[] = [];
+  const staleIds: string[] = [];
+  for (const value of values) {
+    const id = value && typeof value === "object" && typeof (value as Partial<PendingSpeechChunk>).id === "string"
+      ? (value as Partial<PendingSpeechChunk>).id
+      : null;
+    const normalized = normalizePendingSpeechChunk(value, normalizedOrganizationId, normalizedOrganizationId);
+    if (normalized) {
+      queue.push(normalized);
+    } else if (id && (!isPendingSpeechChunk(value) || !localSavedAtFresh(value.queuedAt, speechAudioQueueRetentionMs))) {
+      staleIds.push(id);
+    }
+  }
+  if (staleIds.length) {
+    await Promise.allSettled(staleIds.map((id) => deletePendingSpeechChunkFromIndexedDb(id)));
+  }
+  return sortPendingSpeechChunks(queue);
+}
+
+async function savePendingSpeechChunksToIndexedDb(queue: PendingSpeechChunk[], organizationId: string | null | undefined = null): Promise<void> {
+  const db = await openSpeechChunkDb();
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const scopedQueue = sortPendingSpeechChunks(
+    queue
+      .map((item) => ({ ...item, organizationId: normalizedLocalOrganizationId(item.organizationId) ?? normalizedOrganizationId }))
+      .filter(
+        (item) =>
+          localQueueOrganizationMatches(item.organizationId, normalizedOrganizationId) &&
+          localSavedAtFresh(item.queuedAt, speechAudioQueueRetentionMs)
+      )
+  );
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(speechChunkStoreName, "readwrite");
+    const store = transaction.objectStore(speechChunkStoreName);
+    for (const chunk of scopedQueue) {
+      store.put(chunk);
+    }
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Запись в IndexedDB не выполнена"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Запись в IndexedDB отменена"));
+  });
+}
+
+async function putPendingSpeechChunkToIndexedDb(chunk: PendingSpeechChunk): Promise<void> {
+  const db = await openSpeechChunkDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(speechChunkStoreName, "readwrite");
+    transaction.objectStore(speechChunkStoreName).put(chunk);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Обновление IndexedDB не выполнено"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Обновление IndexedDB отменено"));
+  });
+}
+
+async function deletePendingSpeechChunkFromIndexedDb(id: string): Promise<void> {
+  const db = await openSpeechChunkDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(speechChunkStoreName, "readwrite");
+    transaction.objectStore(speechChunkStoreName).delete(id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Удаление из IndexedDB не выполнено"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Удаление из IndexedDB отменено"));
+  });
+}
+
+async function migrateSpeechChunksFromLocalStorage(organizationId: string | null | undefined = null): Promise<void> {
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const legacyQueue = loadPendingSpeechChunksFromLocalStorage(normalizedOrganizationId);
+  if (!legacyQueue.length || !speechChunkIndexedDbAvailable()) return;
+  const existing = await readPendingSpeechChunksFromIndexedDb(normalizedOrganizationId).catch(() => []);
+  const byId = new Map<string, PendingSpeechChunk>();
+  for (const chunk of [...existing, ...legacyQueue]) {
+    byId.set(chunk.id, chunk);
+  }
+  await savePendingSpeechChunksToIndexedDb(sortPendingSpeechChunks(Array.from(byId.values())), normalizedOrganizationId);
+  window.localStorage.removeItem(pendingSpeechChunkQueueLocalKey(normalizedOrganizationId));
+  if (normalizedOrganizationId) window.localStorage.removeItem(pendingSpeechChunkQueueKey);
+}
+
+async function loadPendingSpeechChunks(organizationId: string | null | undefined = null): Promise<PendingSpeechChunk[]> {
+  if (!speechChunkIndexedDbAvailable()) return loadPendingSpeechChunksFromLocalStorage(organizationId);
+  try {
+    await migrateSpeechChunksFromLocalStorage(organizationId);
+    return await readPendingSpeechChunksFromIndexedDb(organizationId);
+  } catch {
+    return loadPendingSpeechChunksFromLocalStorage(organizationId);
+  }
+}
+
+function createLocalQueueId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function queuePendingSpeechChunk(
+  chunk: SpeechChunkUploadInput,
+  organizationId: string | null | undefined = null
+): Promise<PendingSpeechChunk | null> {
+  if (typeof window === "undefined") return null;
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const queued: PendingSpeechChunk = {
+    ...chunk,
+    version: 1,
+    id: createLocalQueueId(),
+    organizationId: normalizedOrganizationId,
+    queuedAt: new Date().toISOString()
+  };
+  if (speechChunkIndexedDbAvailable()) {
+    try {
+      await migrateSpeechChunksFromLocalStorage(normalizedOrganizationId);
+      await putPendingSpeechChunkToIndexedDb(queued);
+      window.localStorage.removeItem(pendingSpeechChunkQueueLocalKey(normalizedOrganizationId));
+      if (normalizedOrganizationId) window.localStorage.removeItem(pendingSpeechChunkQueueKey);
+      return queued;
+    } catch {
+      // Fall through to the small legacy fallback. It may reject instead of silently dropping audio.
+    }
+  }
+  try {
+    await savePendingSpeechChunksToLocalStorage([...loadPendingSpeechChunksFromLocalStorage(normalizedOrganizationId), queued], normalizedOrganizationId);
+    return queued;
+  } catch {
+    return null;
+  }
+}
+
+async function removePendingSpeechChunkById(id: string, organizationId: string | null | undefined = null): Promise<void> {
+  if (speechChunkIndexedDbAvailable()) {
+    try {
+      await deletePendingSpeechChunkFromIndexedDb(id);
+      return;
+    } catch {
+      // Legacy fallback below keeps retry cleanup working when IndexedDB is unavailable mid-session.
+    }
+  }
+  savePendingSpeechChunksToLocalStorage(loadPendingSpeechChunksFromLocalStorage(organizationId).filter((chunk) => chunk.id !== id), organizationId);
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Аудиофрагмент не удалось прочитать"));
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      resolve(result.split(",")[1] ?? "");
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+type PricelistImageMimeType = "image/jpeg" | "image/png" | "image/webp";
+
+const pricelistImageMimeTypes: PricelistImageMimeType[] = ["image/jpeg", "image/png", "image/webp"];
+const maxPricelistImageBase64Chars = 3_800_000;
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Снимок не удалось прочитать"));
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Снимок не удалось распознать"));
+    image.src = dataUrl;
+  });
+}
+
+async function preparePricelistImage(file: File): Promise<{
+  base64: string;
+  mimeType: PricelistImageMimeType;
+  note: string;
+}> {
+  if (!pricelistImageMimeTypes.includes(file.type as PricelistImageMimeType)) {
+    throw new Error("Поддерживаются JPEG, PNG или WebP.");
+  }
+
+  const dataUrl = await readFileAsDataUrl(file);
+  const image = await loadImageFromDataUrl(dataUrl);
+  const originalLongestSide = Math.max(image.naturalWidth, image.naturalHeight);
+  const outputMimeType: PricelistImageMimeType = "image/jpeg";
+
+  for (const maxSide of [1600, 1200, 900, 720]) {
+    const scale = Math.min(1, maxSide / originalLongestSide);
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas недоступен для сжатия изображения.");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    for (const quality of [0.82, 0.72, 0.62]) {
+      const compressed = canvas.toDataURL(outputMimeType, quality);
+      const base64 = compressed.split(",")[1] ?? "";
+      if (base64.length <= maxPricelistImageBase64Chars) {
+        const megapixels = ((width * height) / 1_000_000).toFixed(1);
+        return {
+          base64,
+          mimeType: outputMimeType,
+          note: `Фото подготовлено: ${width}x${height}, ${megapixels} Мп, JPEG ${Math.round(quality * 100)}%.`
+        };
+      }
+    }
+  }
+
+  throw new Error("Фото прайса слишком большое даже после сжатия. Нужен более четкий фрагмент страницы.");
+}
+
+function queuePendingVisitSave(
+  save: Omit<PendingVisitSave, "version" | "id" | "queuedAt" | "organizationId">,
+  organizationId: string | null | undefined = null
+): PendingVisitSave {
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const queued: PendingVisitSave = {
+    ...save,
+    version: 1,
+    id: createLocalQueueId(),
+    organizationId: normalizedOrganizationId,
+    queuedAt: new Date().toISOString()
+  };
+  const existing = loadPendingVisitSaves(normalizedOrganizationId);
+  const withoutSameVisit = existing.filter((item) => item.visitId !== queued.visitId);
+  savePendingVisitSaves([...withoutSameVisit, queued], normalizedOrganizationId);
+  return queued;
+}
+
+function latestPendingVisitSaveAt(queue: PendingVisitSave[]): string | null {
+  const latest = queue[queue.length - 1];
+  return latest?.queuedAt ?? null;
+}
+
+function visitSaveReceiptText(receipt: AcceptVisitDraftResponse["saveReceipt"]): string {
+  if (receipt.status === "duplicate") {
+    return `Повторная отправка распознана: дубль не создан, серверная версия ${receipt.serverRevision}.`;
+  }
+  if (receipt.warning) {
+    return `${receipt.warning} Серверная версия ${receipt.serverRevision}.`;
+  }
+  return `Сервер подтвердил сохранение ${formatTime(receipt.savedAt)}, версия карты ${receipt.serverRevision}.`;
+}
+
+function buildOfflineVisitDraftFromTranscript(transcript: string, specialty: DentalSpecialty): VisitNoteDraft {
+  return buildRuleBasedVisitDraftFromTranscript(transcript, specialty, {
+    sourceLabel: "Офлайн-парсер"
+  });
+}
+
+function normalizePersistenceHealth(payload: unknown): PersistenceHealth | null {
+  if (!payload || typeof payload !== "object") return null;
+  const persistence = (payload as { persistence?: Partial<PersistenceHealth> }).persistence;
+  if (!persistence || typeof persistence !== "object") return null;
+
+  return {
+    enabled: persistence.enabled === true,
+    filePath: typeof persistence.filePath === "string" ? persistence.filePath : "",
+    exists: persistence.exists === true,
+    version: typeof persistence.version === "number" ? persistence.version : null,
+    savedAt: typeof persistence.savedAt === "string" ? persistence.savedAt : null,
+    checksum: typeof persistence.checksum === "string" ? persistence.checksum : null,
+    backupDirectoryPath: typeof persistence.backupDirectoryPath === "string" ? persistence.backupDirectoryPath : "",
+    backupCount: typeof persistence.backupCount === "number" ? persistence.backupCount : 0,
+    latestBackupAt: typeof persistence.latestBackupAt === "string" ? persistence.latestBackupAt : null,
+    latestBackupSizeBytes: typeof persistence.latestBackupSizeBytes === "number" ? persistence.latestBackupSizeBytes : null,
+    maxBackupCount: typeof persistence.maxBackupCount === "number" ? persistence.maxBackupCount : 0
+  };
+}
+
+type DenteTelegramPortalSection = "home" | "documents" | "tax" | "billing" | "care" | "schedule";
+
+type DenteTelegramHandoffTarget = {
+  section: DenteTelegramPortalSection;
+  view: AppView;
+  hash: AppView;
+  title: string;
+  detail: string;
+  documentKind?: GeneratedDocument["kind"];
+};
+
+const denteTelegramHandoffTargets: Record<DenteTelegramPortalSection, DenteTelegramHandoffTarget> = {
+  home: {
+    section: "home",
+    view: "shift",
+    hash: "shift",
+    title: "Главная DENTE",
+    detail: "Открыт стартовый экран клиники: ближайшие приемы, готовность команды, быстрые действия и рабочие настройки."
+  },
+  documents: {
+    section: "documents",
+    view: "documents",
+    hash: "documents",
+    title: "Документы",
+    detail: "Открыт раздел договоров, согласий, справок и архивов.",
+    documentKind: "patient_intake_questionnaire"
+  },
+  tax: {
+    section: "tax",
+    view: "documents",
+    hash: "documents",
+    title: "Налоговые документы",
+    detail: "Открыт раздел КНД 1151156, заявлений, справок и фискальных оплат.",
+    documentKind: "tax_deduction_certificate"
+  },
+  billing: {
+    section: "billing",
+    view: "finance",
+    hash: "finance",
+    title: "Оплаты",
+    detail: "Открыт раздел оплат, чеков, счетов и налоговых реквизитов."
+  },
+  care: {
+    section: "care",
+    view: "communications",
+    hash: "communications",
+    title: "Связь и памятки",
+    detail: "Открыта очередь связи: запросы памяток, инструкции после приема и задачи администратора."
+  },
+  schedule: {
+    section: "schedule",
+    view: "schedule",
+    hash: "schedule",
+    title: "Расписание",
+    detail: "Открыта очередь записей, фильтры врачей, ассистентов и кресел сохранены."
+  }
+};
+
+function isDenteTelegramPortalSection(value: string | null): value is DenteTelegramPortalSection {
+  return Boolean(value && Object.prototype.hasOwnProperty.call(denteTelegramHandoffTargets, value));
+}
+
+function readDenteTelegramHandoffTarget(): DenteTelegramHandoffTarget | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("dente_source") !== "telegram") return null;
+    const section = url.searchParams.get("dente_section");
+    return isDenteTelegramPortalSection(section) ? denteTelegramHandoffTargets[section] : null;
+  } catch {
+    return null;
+  }
+}
+
+function stripDenteTelegramHandoffQuery(target: DenteTelegramHandoffTarget): void {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = `#${target.hash}`;
+  window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
+}
+
+const workspaceScopeLabels: Record<Dashboard["clinicSettings"]["workspaceProfiles"][number]["scope"], string> = {
+  personal: "лично",
+  clinic: "клиника",
+  branch: "филиал",
+  network: "сеть"
+};
+
+const patientInsightRiskLabels: Record<Dashboard["patientInsights"][number]["riskLevel"], string> = {
+  low: "спокойно",
+  watch: "контроль",
+  high: "срочно"
+};
+
+const recommendedActionPriorityLabels: Record<Dashboard["recommendedActions"][number]["priority"], string> = {
+  routine: "план",
+  important: "важно",
+  urgent: "срочно"
+};
+
+const appointmentReadinessLabels: Record<Dashboard["appointmentReadiness"][number]["state"], string> = {
+  ready: "готово",
+  needs_attention: "проверить",
+  blocked: "важно"
+};
+
+const settingsTabs = [
+  { id: "clinic", title: "Клиника" },
+  { id: "access", title: "Доступы" },
+  { id: "telegram", title: "ТГ-бот" },
+  { id: "protocols", title: "Протоколы" },
+  { id: "rules", title: "Правила" },
+  { id: "prices", title: "Прайс" },
+  { id: "sources", title: "Источники" },
+  { id: "ai", title: "ИИ" },
+  { id: "imports", title: "Импорт" },
+  { id: "audit", title: "Аудит" }
+] as const;
+type SettingsTab = (typeof settingsTabs)[number]["id"];
+
+const onboardingSteps: Array<{ id: OnboardingStep; title: string; detail: string }> = [
+  { id: "intro", title: "Знакомство", detail: "что где лежит" },
+  { id: "role", title: "Роль", detail: "врач и специализация" },
+  { id: "clinic", title: "Клиника", detail: "режим и контакты" },
+  { id: "legal", title: "Документы", detail: "юрданные и лицензия" },
+  { id: "team", title: "Команда", detail: "сотрудники и кресла" },
+  { id: "sources", title: "Импорт", detail: "прайс, снимки, голос" },
+  { id: "telegram", title: "ТГ-бот", detail: "бот, QR и отзывы" },
+  { id: "done", title: "Готово", detail: "проверка перед работой" }
+];
+
+const roleFocusOrder: StaffRole[] = ["doctor", "administrator", "assistant", "manager", "owner"];
+
+const speechProviderConnectorLabels: Record<SpeechProviderConnector, string> = {
+  client_only: "браузер",
+  server_wired: "сервер",
+  server_cataloged: "каталог",
+  local_bridge: "локальный мост",
+  local_planned: "локально"
+};
+
+function viewFromHash(): AppView {
+  if (typeof window === "undefined") return "shift";
+  const telegramHandoffTarget = readDenteTelegramHandoffTarget();
+  if (telegramHandoffTarget) return telegramHandoffTarget.view;
+  const hash = window.location.hash.replace("#", "");
+  const view = hash.split("/")[0];
+  return appViews.includes(view as AppView) ? (view as AppView) : "shift";
+}
+
+function settingsTabFromHash(): SettingsTab {
+  if (typeof window === "undefined") return "clinic";
+  const [, tab] = window.location.hash.replace("#", "").split("/");
+  return settingsTabs.some((item) => item.id === tab) ? (tab as SettingsTab) : "clinic";
+}
+
+export function App() {
+  const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
+  const initialTelegramHandoffTargetRef = useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
+  const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
+  const uiPreferencesServerReadyRef = useRef(false);
+  const uiPreferencesHydratedRef = useRef(false);
+  const pendingUiPreferencesSyncRef = useRef<UiPreferences | null>(null);
+  const uiPreferencesSyncInFlightRef = useRef(false);
+  const uiPreferencesRetryTimerRef = useRef<number | null>(null);
+  const newAppointmentDraftUserEditedRef = useRef(false);
+  const clinicProfileDraftHydratedRef = useRef(false);
+  const clinicProfileDraftRef = useRef<ClinicProfileDraft>(emptyClinicProfileDraft());
+  const patientCoreDraftRef = useRef<PatientCoreDraft>(emptyPatientCoreDraft());
+  const releaseSourceRequestAutofillRef = useRef<string | null>(null);
+  const taxPaymentSelectionHydratedKeyRef = useRef<string | null>(null);
+  const paymentReceiptSelectionHydratedKeyRef = useRef<string | null>(null);
+  const outpatient025uDraftHydratedKeyRef = useRef<string | null>(null);
+  const initialDocumentIssueSignatureDraftRef = useRef<DocumentIssueSignatureDraft | null>(null);
+  const documentIssueSignatureHydratedOrganizationIdRef = useRef<string | null>(null);
+  const onboardingDismissalHydratedOrganizationIdRef = useRef<string | null>(null);
+  const localImagingRecoveryHydratedOrganizationIdRef = useRef<string | null>(null);
+  if (initialUiPreferencesRef.current === null) {
+    initialUiPreferencesRef.current = loadUiPreferences();
+  }
+  if (initialDocumentIssueSignatureDraftRef.current === null) {
+    initialDocumentIssueSignatureDraftRef.current = loadDocumentIssueSignatureDraft();
+  }
+  const initialUiPreferences = initialUiPreferencesRef.current ?? defaultUiPreferences;
+  const initialDocumentIssueSignatureDraft = initialDocumentIssueSignatureDraftRef.current ?? loadDocumentIssueSignatureDraft();
+  const initialTelegramHandoffTarget = initialTelegramHandoffTargetRef.current;
+  const initialRecognitionText =
+    recognitionPresets.find(
+      (preset) => preset.kind === initialUiPreferences.recognitionKind && preset.target === initialUiPreferences.recognitionTarget
+    )?.text ??
+    recognitionPresets[0]?.text ??
+    "";
+  const [uiPreferencesHydrated, setUiPreferencesHydrated] = useState(false);
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [accessUnlockRequired, setAccessUnlockRequired] = useState(false);
+  const [accessUnlockMessage, setAccessUnlockMessage] = useState("");
+  const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
+  const activeOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>(initialUiPreferences.uiLanguage);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(initialUiPreferences.onboardingDismissed);
+  const [onboardingDismissedAt, setOnboardingDismissedAt] = useState<string | null>(initialUiPreferences.onboardingDismissedAt);
+  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>(initialUiPreferences.onboardingStep);
+  const [onboardingDraftMode, setOnboardingDraftMode] = useState(initialUiPreferences.onboardingDraftMode);
+  const [clinicProfileDraft, setClinicProfileDraft] = useState<ClinicProfileDraft>(emptyClinicProfileDraft);
+  const [clinicProfileSaveState, setClinicProfileSaveState] = useState<ClinicProfileSaveState>("idle");
+  const [clinicProfileDirty, setClinicProfileDirty] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(initialUiPreferences.selectedPatientId);
+  const [patientCoreDraft, setPatientCoreDraft] = useState<PatientCoreDraft>(emptyPatientCoreDraft);
+  const [patientCoreSaveState, setPatientCoreSaveState] = useState<PatientCoreSaveState>("idle");
+  const [patientCoreDirty, setPatientCoreDirty] = useState(false);
+  const [patientAdministrativeProfileDraft, setPatientAdministrativeProfileDraft] =
+    useState<PatientAdministrativeProfileDraft>(emptyPatientAdministrativeProfileDraft);
+  const [patientAdministrativeProfileSaveState, setPatientAdministrativeProfileSaveState] =
+    useState<PatientAdministrativeProfileSaveState>("idle");
+  const [patientAdministrativeProfileDirty, setPatientAdministrativeProfileDirty] = useState(false);
+  const [currentView, setCurrentView] = useState<AppView>(() => viewFromHash());
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>(() => settingsTabFromHash());
+  const [onboardingGuideExpanded, setOnboardingGuideExpanded] = useState(() => currentView === "settings" && settingsTab === "clinic");
+  const [selectedWorkspaceRole, setSelectedWorkspaceRole] = useState<StaffRole>(initialUiPreferences.selectedWorkspaceRole);
+  const [scheduleDoctorFilterId, setScheduleDoctorFilterId] = useState<string | null>(initialUiPreferences.scheduleDoctorFilterId);
+  const [scheduleAssistantFilterId, setScheduleAssistantFilterId] = useState<string | null>(initialUiPreferences.scheduleAssistantFilterId);
+  const [scheduleChairFilterId, setScheduleChairFilterId] = useState<string | null>(initialUiPreferences.scheduleChairFilterId);
+  const [scheduleDefaultDoctorUserId, setScheduleDefaultDoctorUserId] = useState<string | null>(
+    initialUiPreferences.scheduleDefaultDoctorUserId
+  );
+  const [scheduleDefaultAssistantUserId, setScheduleDefaultAssistantUserId] = useState<string | null>(
+    initialUiPreferences.scheduleDefaultAssistantUserId
+  );
+  const [scheduleDefaultChairId, setScheduleDefaultChairId] = useState<string | null>(initialUiPreferences.scheduleDefaultChairId);
+  const [scheduleStatusFilter, setScheduleStatusFilter] = useState<Appointment["status"] | "all">(initialUiPreferences.scheduleStatusFilter);
+  const [scheduleDateFilter, setScheduleDateFilter] = useState(initialUiPreferences.scheduleDateFilter);
+  const [telegramHandoffNotice, setTelegramHandoffNotice] = useState<DenteTelegramHandoffTarget | null>(null);
+  const [query, setQuery] = useState("");
+  const [newPatientName, setNewPatientName] = useState("");
+  const [newPatientPhone, setNewPatientPhone] = useState("");
+  const [newPatientBirthDate, setNewPatientBirthDate] = useState("");
+  const [isPatientCreating, setIsPatientCreating] = useState(false);
+  const [newStaffName, setNewStaffName] = useState("");
+  const [newStaffRole, setNewStaffRole] = useState<StaffRole>("doctor");
+  const [newStaffSpecialty, setNewStaffSpecialty] = useState<DentalSpecialty>("therapist");
+  const [staffScheduleDrafts, setStaffScheduleDrafts] = useState<Record<string, StaffScheduleDraft>>({});
+  const [staffScheduleSavingId, setStaffScheduleSavingId] = useState<string | null>(null);
+  const [staffScheduleDirtyIds, setStaffScheduleDirtyIds] = useState<Set<string>>(() => new Set());
+  const [staffScheduleSaveStates, setStaffScheduleSaveStates] = useState<Record<string, StaffScheduleSaveState>>({});
+  const [chairScheduleDrafts, setChairScheduleDrafts] = useState<Record<string, StaffScheduleDraft>>({});
+  const [chairScheduleSavingId, setChairScheduleSavingId] = useState<string | null>(null);
+  const [chairScheduleDirtyIds, setChairScheduleDirtyIds] = useState<Set<string>>(() => new Set());
+  const [chairScheduleSaveStates, setChairScheduleSaveStates] = useState<Record<string, StaffScheduleSaveState>>({});
+  const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
+  const [appointmentScheduleDrafts, setAppointmentScheduleDrafts] = useState<Record<string, AppointmentScheduleDraft>>({});
+  const [appointmentScheduleDirtyIds, setAppointmentScheduleDirtyIds] = useState<Set<string>>(() => new Set());
+  const [appointmentScheduleSaveStates, setAppointmentScheduleSaveStates] = useState<Record<string, AppointmentScheduleSaveState>>({});
+  const [appointmentScheduleErrors, setAppointmentScheduleErrors] = useState<Record<string, string | null>>({});
+  const [newAppointmentDraft, setNewAppointmentDraft] = useState<AppointmentScheduleDraft>(emptyAppointmentScheduleDraft);
+  const [newAppointmentSaveState, setNewAppointmentSaveState] = useState<AppointmentScheduleSaveState>("idle");
+  const [newAppointmentError, setNewAppointmentError] = useState<string | null>(null);
+  const [newChairName, setNewChairName] = useState("");
+  const [newChairHasXraySensor, setNewChairHasXraySensor] = useState(true);
+  const [newChairHasMicroscope, setNewChairHasMicroscope] = useState(false);
+  const [newChairHasSurgeryKit, setNewChairHasSurgeryKit] = useState(false);
+  const [newRuleTitle, setNewRuleTitle] = useState("Кариес требует снимок и изоляцию");
+  const [newRuleAction, setNewRuleAction] = useState<Dashboard["clinicalRules"][number]["action"]>("add_required_service");
+  const [newRuleSeverity, setNewRuleSeverity] = useState<Dashboard["clinicalRules"][number]["severity"]>("warning");
+  const [newRuleOwnerRole, setNewRuleOwnerRole] = useState<Dashboard["clinicalRules"][number]["ownerRole"]>("doctor");
+  const [newRuleSpecialty, setNewRuleSpecialty] = useState<DentalSpecialty>("therapist");
+  const [newRuleCategory, setNewRuleCategory] = useState<Dashboard["serviceCatalog"][number]["category"]>("therapy");
+  const [newRuleTriggerServiceId, setNewRuleTriggerServiceId] = useState("svc-therapy-caries");
+  const [newRuleRequiredServiceId, setNewRuleRequiredServiceId] = useState("svc-therapy-cofferdam");
+  const [newRuleCompletedServiceId, setNewRuleCompletedServiceId] = useState("svc-therapy-caries");
+  const [newRuleBlockedServiceId, setNewRuleBlockedServiceId] = useState("svc-prosthetics-crown");
+  const [newRuleWarningText, setNewRuleWarningText] = useState("Проверьте обязательные условия до закрытия приема.");
+  const [newRulePatientText, setNewRulePatientText] = useState("Это правило снижает риск повторного лечения и объясняет пациенту необходимость этапа.");
+  const [paymentAmount, setPaymentAmount] = useState("3800");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialUiPreferences.paymentMethod);
+  const [paymentFiscalReceiptNumber, setPaymentFiscalReceiptNumber] = useState("");
+  const [paymentFiscalReceiptIssuedAt, setPaymentFiscalReceiptIssuedAt] = useState("");
+  const [paymentFiscalFn, setPaymentFiscalFn] = useState("");
+  const [paymentFiscalFd, setPaymentFiscalFd] = useState("");
+  const [paymentFiscalFpd, setPaymentFiscalFpd] = useState("");
+  const [paymentFiscalCashierName, setPaymentFiscalCashierName] = useState("");
+  const [paymentFiscalReceiptUrl, setPaymentFiscalReceiptUrl] = useState("");
+  const [paymentPayerFullName, setPaymentPayerFullName] = useState("");
+  const [paymentPayerInn, setPaymentPayerInn] = useState("");
+  const [paymentPayerBirthDate, setPaymentPayerBirthDate] = useState("");
+  const [paymentPayerIdentityDocument, setPaymentPayerIdentityDocument] = useState("");
+  const [paymentPayerRelationship, setPaymentPayerRelationship] = useState("пациент");
+  const [paymentTaxDeductionCode, setPaymentTaxDeductionCode] = useState<"" | "1" | "2">("");
+  const [paymentFeedback, setPaymentFeedback] = useState("");
+  const [taxDocumentYear, setTaxDocumentYear] = useState(initialUiPreferences.taxDocumentYear);
+  const [selectedDocumentKind, setSelectedDocumentKind] = useState<GeneratedDocument["kind"]>(
+    initialTelegramHandoffTarget?.documentKind ?? initialUiPreferences.selectedDocumentKind
+  );
+  const [documentIssueConfirmationId, setDocumentIssueConfirmationId] = useState<string | null>(null);
+  const [documentIssueSignatureMode, setDocumentIssueSignatureMode] = useState<DocumentIssueSignatureMode>(
+    initialUiPreferences.documentIssueSignatureMode
+  );
+  const [documentIssueSignedAt, setDocumentIssueSignedAt] = useState(currentLocalDateTimeInputValue);
+  const [documentIssueRecipientFullName, setDocumentIssueRecipientFullName] = useState("");
+  const [documentIssueRecipientRole, setDocumentIssueRecipientRole] = useState("пациент/законный представитель");
+  const [documentIssueStaffFullName, setDocumentIssueStaffFullName] = useState(
+    initialUiPreferences.documentIssueStaffFullName || initialDocumentIssueSignatureDraft.staffFullName
+  );
+  const [documentIssueStaffRole, setDocumentIssueStaffRole] = useState(
+    initialUiPreferences.documentIssueStaffRole || initialDocumentIssueSignatureDraft.staffRole
+  );
+  const [documentIssueNote, setDocumentIssueNote] = useState("");
+  const [documentIssueIdentityChecked, setDocumentIssueIdentityChecked] = useState(false);
+  const [documentIssueDocumentOpenedAndChecked, setDocumentIssueDocumentOpenedAndChecked] = useState(false);
+  const [documentIssueRecipientSigned, setDocumentIssueRecipientSigned] = useState(false);
+  const [documentIssueClinicSigned, setDocumentIssueClinicSigned] = useState(false);
+  const [documentVoidConfirmationId, setDocumentVoidConfirmationId] = useState<string | null>(null);
+  const [documentVoidReasonCode, setDocumentVoidReasonCode] = useState<DocumentVoidReasonCode>("draft_error");
+  const [documentVoidReasonText, setDocumentVoidReasonText] = useState("");
+  const [documentVoidStaffFullName, setDocumentVoidStaffFullName] = useState(
+    initialUiPreferences.documentIssueStaffFullName || initialDocumentIssueSignatureDraft.staffFullName
+  );
+  const [documentVoidStaffRole, setDocumentVoidStaffRole] = useState(
+    initialUiPreferences.documentIssueStaffRole || initialDocumentIssueSignatureDraft.staffRole
+  );
+  const [documentVoidCorrectionDocumentId, setDocumentVoidCorrectionDocumentId] = useState("");
+  const [documentVoidReplacementRequired, setDocumentVoidReplacementRequired] = useState(false);
+  const [documentVoidPatientOrPayerNotified, setDocumentVoidPatientOrPayerNotified] = useState(false);
+  const [documentVoidArchivePreserved, setDocumentVoidArchivePreserved] = useState(false);
+  const [documentVoidStatusReviewed, setDocumentVoidStatusReviewed] = useState(false);
+  const [documentAuditFacts, setDocumentAuditFacts] = useState<DocumentAuditFacts | null>(null);
+  const [documentAuditFactsLoadingId, setDocumentAuditFactsLoadingId] = useState<string | null>(null);
+  const [documentCreateSavingKind, setDocumentCreateSavingKind] = useState<GeneratedDocument["kind"] | null>(null);
+  const [documentStatusSavingId, setDocumentStatusSavingId] = useState<string | null>(null);
+  const [taxDocumentPayerInn, setTaxDocumentPayerInn] = useState("");
+  const [selectedTaxPaymentIds, setSelectedTaxPaymentIds] = useState<string[]>([]);
+  const [selectedPaymentReceiptIds, setSelectedPaymentReceiptIds] = useState<string[]>([]);
+  const [taxApplicationTaxpayerFullName, setTaxApplicationTaxpayerFullName] = useState("");
+  const [taxApplicationTaxpayerInn, setTaxApplicationTaxpayerInn] = useState("");
+  const [taxApplicationTaxpayerBirthDate, setTaxApplicationTaxpayerBirthDate] = useState("");
+  const [taxApplicationTaxpayerIdentityDocument, setTaxApplicationTaxpayerIdentityDocument] = useState("");
+  const [taxApplicationRelationship, setTaxApplicationRelationship] = useState<TaxDeductionApplicationRelationship>("self");
+  const [taxApplicationForm, setTaxApplicationForm] = useState<TaxDeductionApplicationForm>(initialUiPreferences.taxApplicationForm);
+  const [taxApplicationDeliveryChannel, setTaxApplicationDeliveryChannel] =
+    useState<TaxDeductionApplicationDeliveryChannel>(initialUiPreferences.taxApplicationDeliveryChannel);
+  const [taxApplicationContact, setTaxApplicationContact] = useState("");
+  const [taxApplicationAuthorityDocument, setTaxApplicationAuthorityDocument] = useState("");
+  const [taxApplicationRequestedAt, setTaxApplicationRequestedAt] = useState(() => toDateTimeLocalValue(new Date().toISOString()));
+  const [taxApplicationDuplicateWarningAccepted, setTaxApplicationDuplicateWarningAccepted] = useState(false);
+  const [intakeChiefComplaint, setIntakeChiefComplaint] = useState("");
+  const [intakeAllergyStatus, setIntakeAllergyStatus] = useState("Аллергии и нежелательные реакции со слов пациента не отмечены.");
+  const [intakeCurrentMedications, setIntakeCurrentMedications] = useState("Постоянные препараты со слов пациента не принимает.");
+  const [intakeChronicConditions, setIntakeChronicConditions] = useState("Хронические заболевания со слов пациента отрицает.");
+  const [intakePregnancyStatus, setIntakePregnancyStatus] = useState<PatientIntakePregnancyStatus>("unknown");
+  const [intakeAnticoagulants, setIntakeAnticoagulants] = useState(
+    "Антикоагулянты и препараты, влияющие на кровотечение, со слов пациента не принимает."
+  );
+  const [intakeInfectiousRiskNotes, setIntakeInfectiousRiskNotes] = useState("Инфекционные риски со слов пациента не заявлены.");
+  const [intakeCardioEndocrineNotes, setIntakeCardioEndocrineNotes] = useState(
+    "Сердечно-сосудистые, эндокринные и иные системные риски требуют уточнения врачом перед вмешательством."
+  );
+  const [intakeEmergencyContact, setIntakeEmergencyContact] = useState("");
+  const [intakeAdditionalNotes, setIntakeAdditionalNotes] = useState("");
+  const [intakeAccuracyConfirmed, setIntakeAccuracyConfirmed] = useState(false);
+  const [informedConsentIntervention, setInformedConsentIntervention] = useState("Стоматологическое вмешательство по согласованному плану");
+  const [informedConsentToothOrArea, setInformedConsentToothOrArea] = useState("");
+  const [informedConsentDiagnosisOrIndication, setInformedConsentDiagnosisOrIndication] = useState("");
+  const [informedConsentExpectedBenefit, setInformedConsentExpectedBenefit] = useState(
+    "снижение боли, восстановление функции, профилактика осложнений и сохранение стоматологического здоровья"
+  );
+  const [informedConsentAnesthesia, setInformedConsentAnesthesia] = useState("местная анестезия по показаниям");
+  const [informedConsentMaterialNotes, setInformedConsentMaterialNotes] = useState("");
+  const [informedConsentTrustedContact, setInformedConsentTrustedContact] = useState("не разрешаю сообщать медицинские сведения третьим лицам");
+  const [informedConsentRisks, setInformedConsentRisks] = useState(
+    "боль, отек, кровотечение или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного приема или изменения плана лечения\nограниченный прогноз при исходном состоянии зубов и тканей"
+  );
+  const [informedConsentAlternatives, setInformedConsentAlternatives] = useState(
+    "отложить вмешательство и наблюдать состояние\nполучить второе мнение\nвыбрать альтернативный метод лечения при наличии показаний\nотказаться от вмешательства с фиксацией возможных последствий"
+  );
+  const [informedConsentAftercare, setInformedConsentAftercare] = useState(
+    "соблюдать рекомендации врача и режим приема препаратов\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при нарастающей боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок"
+  );
+  const [informedConsentDoctorFullName, setInformedConsentDoctorFullName] = useState("");
+  const [informedConsentConfirmedAt, setInformedConsentConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [informedConsentQuestionsAnswered, setInformedConsentQuestionsAnswered] = useState(false);
+  const [informedConsentRisksUnderstood, setInformedConsentRisksUnderstood] = useState(false);
+  const [informedConsentWithdrawUnderstood, setInformedConsentWithdrawUnderstood] = useState(false);
+  const [procedureConsentProcedureType, setProcedureConsentProcedureType] =
+    useState<ProcedureSpecificConsentProcedure>(initialUiPreferences.procedureConsentProcedureType);
+  const [procedureConsentProcedureName, setProcedureConsentProcedureName] = useState("Лечение зуба по согласованному плану");
+  const [procedureConsentToothOrArea, setProcedureConsentToothOrArea] = useState("");
+  const [procedureConsentDiagnosisOrIndication, setProcedureConsentDiagnosisOrIndication] = useState("");
+  const [procedureConsentAnesthesia, setProcedureConsentAnesthesia] = useState("местная анестезия по показаниям");
+  const [procedureConsentMaterials, setProcedureConsentMaterials] = useState("");
+  const [procedureConsentPatientRiskFactors, setProcedureConsentPatientRiskFactors] = useState(
+    "аллергии, постоянные препараты и хронические заболевания уточнены перед процедурой\nбеременность, антикоагулянты и инфекционные риски уточнены перед процедурой"
+  );
+  const [procedureConsentSpecificRisks, setProcedureConsentSpecificRisks] = useState(
+    "боль, отек, кровоточивость или временный дискомфорт\nнеобходимость повторного приема, коррекции или изменения плана\nаллергическая реакция на препараты или материалы"
+  );
+  const [procedureConsentAlternatives, setProcedureConsentAlternatives] = useState(
+    "отложить процедуру и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от процедуры с фиксацией возможных последствий"
+  );
+  const [procedureConsentAftercare, setProcedureConsentAftercare] = useState(
+    "соблюдать рекомендации врача после процедуры\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок"
+  );
+  const [procedureConsentDoctorFullName, setProcedureConsentDoctorFullName] = useState("");
+  const [procedureConsentConfirmedAt, setProcedureConsentConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [procedureConsentLocalFormAttached, setProcedureConsentLocalFormAttached] = useState(false);
+  const [procedureConsentQuestionsAnswered, setProcedureConsentQuestionsAnswered] = useState(false);
+  const [procedureConsentExactProcedureConfirmed, setProcedureConsentExactProcedureConfirmed] = useState(false);
+  const [procedureConsentRisksUnderstood, setProcedureConsentRisksUnderstood] = useState(false);
+  const [paidContractNumber, setPaidContractNumber] = useState("");
+  const [paidContractDate, setPaidContractDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
+  const [paidContractServiceStart, setPaidContractServiceStart] = useState("");
+  const [paidContractServiceEnd, setPaidContractServiceEnd] = useState("до полного оказания согласованных услуг или подписания акта");
+  const [paidContractCustomerFullName, setPaidContractCustomerFullName] = useState("");
+  const [paidContractRepresentativeFullName, setPaidContractRepresentativeFullName] = useState("");
+  const [paidContractCareReason, setPaidContractCareReason] = useState("");
+  const [paidContractServiceScope, setPaidContractServiceScope] = useState("");
+  const [paidContractTotalRub, setPaidContractTotalRub] = useState("");
+  const [paidContractPaymentTerms, setPaidContractPaymentTerms] = useState("оплата до или в день оказания услуги с выдачей кассового чека");
+  const [paidContractPriceChangeRules, setPaidContractPriceChangeRules] = useState("изменение объема, состава или стоимости платных услуг оформляется до оказания дополнительным соглашением или новым договором");
+  const [paidContractFreeCareNotice, setPaidContractFreeCareNotice] = useState("пациенту разъяснена возможность получения медицинской помощи в рамках программы государственных гарантий при наличии оснований и маршрутизации");
+  const [paidContractRecommendationWarning, setPaidContractRecommendationWarning] = useState("несоблюдение назначений, режима лечения и рекомендаций врача может снизить качество услуги, изменить сроки лечения или отрицательно сказаться на состоянии здоровья");
+  const [paidContractRefundTerms, setPaidContractRefundTerms] = useState("при отказе пациента от услуг оплачиваются фактически понесенные исполнителем расходы и фактически оказанные услуги; возврат оформляется по кассовым и бухгалтерским правилам клиники");
+  const [paidContractWarrantyTerms, setPaidContractWarrantyTerms] = useState("гарантийные и претензионные условия действуют по локальным правилам клиники, медицинским показаниям и при соблюдении рекомендаций врача");
+  const [paidContractDoctorFullName, setPaidContractDoctorFullName] = useState("");
+  const [paidContractSignedAt, setPaidContractSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [paidContractClinicInfoConfirmed, setPaidContractClinicInfoConfirmed] = useState(false);
+  const [paidContractServiceListConfirmed, setPaidContractServiceListConfirmed] = useState(false);
+  const [paidContractPaidBasisConfirmed, setPaidContractPaidBasisConfirmed] = useState(false);
+  const [paidContractWrittenChangesConfirmed, setPaidContractWrittenChangesConfirmed] = useState(false);
+  const [completedActNumber, setCompletedActNumber] = useState("");
+  const [completedActDate, setCompletedActDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
+  const [completedActContractNumber, setCompletedActContractNumber] = useState("");
+  const [completedActLinkedContractDocumentId, setCompletedActLinkedContractDocumentId] = useState("");
+  const [completedActServicePeriodStart, setCompletedActServicePeriodStart] = useState("");
+  const [completedActServicePeriodEnd, setCompletedActServicePeriodEnd] = useState("");
+  const [completedActDoctorFullName, setCompletedActDoctorFullName] = useState("");
+  const [completedActServicesSummary, setCompletedActServicesSummary] = useState("");
+  const [completedActTotalRub, setCompletedActTotalRub] = useState("");
+  const [completedActPaidRub, setCompletedActPaidRub] = useState("");
+  const [completedActFiscalReceipts, setCompletedActFiscalReceipts] = useState("");
+  const [completedActPatientClaims, setCompletedActPatientClaims] = useState("");
+  const [completedActLinkedContract, setCompletedActLinkedContract] = useState(false);
+  const [completedActFinalScopeConfirmed, setCompletedActFinalScopeConfirmed] = useState(false);
+  const [completedActFiscalReceiptsVerified, setCompletedActFiscalReceiptsVerified] = useState(false);
+  const [completedActAccepted, setCompletedActAccepted] = useState(false);
+  const [treatmentEstimateNumber, setTreatmentEstimateNumber] = useState("");
+  const [treatmentEstimateDate, setTreatmentEstimateDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
+  const [treatmentEstimatePatientOrPayerFullName, setTreatmentEstimatePatientOrPayerFullName] = useState("");
+  const [treatmentEstimateTreatmentBasis, setTreatmentEstimateTreatmentBasis] = useState("");
+  const [treatmentEstimateTotalRub, setTreatmentEstimateTotalRub] = useState("");
+  const [treatmentEstimateValidUntil, setTreatmentEstimateValidUntil] = useState("");
+  const [treatmentEstimatePriceChangeRules, setTreatmentEstimatePriceChangeRules] = useState(
+    "при изменении диагноза, объема вмешательства, материалов, лабораторного этапа или клинических условий стоимость согласуется до оказания дополнительных услуг"
+  );
+  const [treatmentEstimateExcludedItems, setTreatmentEstimateExcludedItems] = useState(
+    "услуги, не указанные в строках сметы\nдополнительная диагностика и лабораторные этапы при новых показаниях\nэкстренная помощь и лечение осложнений, не связанных с текущим планом"
+  );
+  const [treatmentEstimatePaymentMilestoneNotes, setTreatmentEstimatePaymentMilestoneNotes] = useState(
+    "оплата по этапам лечения или до оказания услуги; после фактической оплаты выдается кассовый чек"
+  );
+  const [treatmentEstimateDoctorFullName, setTreatmentEstimateDoctorFullName] = useState("");
+  const [treatmentEstimateAdminFullName, setTreatmentEstimateAdminFullName] = useState("");
+  const [treatmentEstimateSignedAt, setTreatmentEstimateSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [treatmentEstimatePreliminaryConfirmed, setTreatmentEstimatePreliminaryConfirmed] = useState(false);
+  const [treatmentEstimateScopeConfirmed, setTreatmentEstimateScopeConfirmed] = useState(false);
+  const [treatmentEstimateFiscalNoticeConfirmed, setTreatmentEstimateFiscalNoticeConfirmed] = useState(false);
+  const [treatmentEstimateChangeRulesConfirmed, setTreatmentEstimateChangeRulesConfirmed] = useState(false);
+  const [paymentInvoiceNumber, setPaymentInvoiceNumber] = useState("");
+  const [paymentInvoiceDate, setPaymentInvoiceDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
+  const [paymentInvoicePayerFullName, setPaymentInvoicePayerFullName] = useState("");
+  const [paymentInvoicePayerPhone, setPaymentInvoicePayerPhone] = useState("");
+  const [paymentInvoicePayerEmail, setPaymentInvoicePayerEmail] = useState("");
+  const [paymentInvoicePurpose, setPaymentInvoicePurpose] = useState("оплата стоматологических услуг по согласованному плану лечения");
+  const [paymentInvoiceDueDate, setPaymentInvoiceDueDate] = useState(() => dateInputValuePlusDays(7));
+  const [paymentInvoicePaymentTerms, setPaymentInvoicePaymentTerms] = useState("оплата до или в день оказания услуги; после оплаты выдается кассовый чек");
+  const [paymentInvoiceBankDetails, setPaymentInvoiceBankDetails] = useState("");
+  const [paymentInvoiceQrPayload, setPaymentInvoiceQrPayload] = useState("");
+  const [paymentInvoiceCashlessAllowed, setPaymentInvoiceCashlessAllowed] = useState(true);
+  const [paymentInvoiceCashDeskAllowed, setPaymentInvoiceCashDeskAllowed] = useState(true);
+  const [paymentInvoiceRequisitesVerified, setPaymentInvoiceRequisitesVerified] = useState(false);
+  const [paymentInvoiceServiceScopeConfirmed, setPaymentInvoiceServiceScopeConfirmed] = useState(false);
+  const [paymentInvoiceFiscalNoticeConfirmed, setPaymentInvoiceFiscalNoticeConfirmed] = useState(false);
+  const [paymentReceiptNumber, setPaymentReceiptNumber] = useState("");
+  const [paymentReceiptDate, setPaymentReceiptDate] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [paymentReceiptPayerFullName, setPaymentReceiptPayerFullName] = useState("");
+  const [paymentReceiptPayerBirthDate, setPaymentReceiptPayerBirthDate] = useState("");
+  const [paymentReceiptPayerInn, setPaymentReceiptPayerInn] = useState("");
+  const [paymentReceiptPayerIdentityDocument, setPaymentReceiptPayerIdentityDocument] = useState("");
+  const [paymentReceiptPayerRelationship, setPaymentReceiptPayerRelationship] = useState("");
+  const [paymentReceiptTaxSupportRequested, setPaymentReceiptTaxSupportRequested] = useState(
+    initialUiPreferences.paymentReceiptTaxSupportRequested
+  );
+  const [paymentReceiptPurpose, setPaymentReceiptPurpose] = useState("оплата стоматологических услуг по выбранным фискальным чекам");
+  const [paymentReceiptIssuedBy, setPaymentReceiptIssuedBy] = useState("");
+  const [paymentReceiptPaymentsVerified, setPaymentReceiptPaymentsVerified] = useState(false);
+  const [paymentReceiptPayerVerified, setPaymentReceiptPayerVerified] = useState(false);
+  const [paymentReceiptFiscalNoticeConfirmed, setPaymentReceiptFiscalNoticeConfirmed] = useState(false);
+  const [installmentScheduleNumber, setInstallmentScheduleNumber] = useState("");
+  const [installmentScheduleDate, setInstallmentScheduleDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
+  const [installmentScheduleBaseDocumentTitle, setInstallmentScheduleBaseDocumentTitle] = useState("");
+  const [installmentSchedulePayerFullName, setInstallmentSchedulePayerFullName] = useState("");
+  const [installmentScheduleTotalRub, setInstallmentScheduleTotalRub] = useState("");
+  const [installmentSchedulePrepaidRub, setInstallmentSchedulePrepaidRub] = useState("");
+  const [installmentScheduleRows, setInstallmentScheduleRows] = useState(
+    () => `Первый платеж | ${dateInputValuePlusDays(7)} | 0 | запланировано\nФинальный платеж | ${dateInputValuePlusDays(21)} | 0 | запланировано`
+  );
+  const [installmentScheduleLatePolicy, setInstallmentScheduleLatePolicy] = useState("при переносе срока администратор фиксирует контакт с пациентом, новый срок и основание переноса до наступления просрочки");
+  const [installmentSchedulePaymentMethodNotes, setInstallmentSchedulePaymentMethodNotes] = useState("оплата в кассе клиники, по ссылке или безналично с выдачей кассового чека после оплаты");
+  const [installmentScheduleResponsibleFullName, setInstallmentScheduleResponsibleFullName] = useState("");
+  const [installmentScheduleAccepted, setInstallmentScheduleAccepted] = useState(false);
+  const [installmentScheduleFiscalNoticeConfirmed, setInstallmentScheduleFiscalNoticeConfirmed] = useState(false);
+  const [installmentScheduleWrittenChangesConfirmed, setInstallmentScheduleWrittenChangesConfirmed] = useState(false);
+  const [minorRepresentativeFullName, setMinorRepresentativeFullName] = useState("");
+  const [minorRepresentativeRelationship, setMinorRepresentativeRelationship] = useState("");
+  const [minorRepresentativeIdentityDocument, setMinorRepresentativeIdentityDocument] = useState("");
+  const [minorRepresentativeAuthorityDocument, setMinorRepresentativeAuthorityDocument] = useState("");
+  const [minorRepresentativePhone, setMinorRepresentativePhone] = useState("");
+  const [minorConsentPatientFullName, setMinorConsentPatientFullName] = useState("");
+  const [minorConsentPatientBirthDate, setMinorConsentPatientBirthDate] = useState("");
+  const [minorConsentInterventionScope, setMinorConsentInterventionScope] = useState("");
+  const [minorConsentDiagnosisOrIndication, setMinorConsentDiagnosisOrIndication] = useState("");
+  const [minorConsentRisks, setMinorConsentRisks] = useState(
+    "боль, отек, кровоточивость или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного визита или изменения плана лечения"
+  );
+  const [minorConsentAlternatives, setMinorConsentAlternatives] = useState(
+    "отложить вмешательство и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от вмешательства с фиксацией рисков"
+  );
+  const [minorConsentDoctorFullName, setMinorConsentDoctorFullName] = useState("");
+  const [minorConsentSignedAt, setMinorConsentSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [minorConsentIdentityVerified, setMinorConsentIdentityVerified] = useState(false);
+  const [minorConsentAuthorityVerified, setMinorConsentAuthorityVerified] = useState(false);
+  const [minorConsentExplained, setMinorConsentExplained] = useState(false);
+  const [minorConsentStored, setMinorConsentStored] = useState(false);
+  const [minorConsentAgeExplanation, setMinorConsentAgeExplanation] = useState(false);
+  const [warrantyServiceOrWorkName, setWarrantyServiceOrWorkName] = useState("");
+  const [warrantyCompletedAt, setWarrantyCompletedAt] = useState("");
+  const [warrantyTeethOrArea, setWarrantyTeethOrArea] = useState("");
+  const [warrantyMaterialsOrSystems, setWarrantyMaterialsOrSystems] = useState("");
+  const [warrantyPeriod, setWarrantyPeriod] = useState("по локальному гарантийному положению клиники и виду выполненной работы");
+  const [warrantyControlVisitSchedule, setWarrantyControlVisitSchedule] = useState("контрольный осмотр по назначению врача; профессиональная гигиена по индивидуальному графику");
+  const [warrantyPatientObligations, setWarrantyPatientObligations] = useState(
+    "соблюдать рекомендации врача и режим после лечения\nприходить на контрольные визиты в согласованные сроки\nподдерживать домашнюю гигиену и профессиональную гигиену\nне выполнять самостоятельную коррекцию конструкции или реставрации"
+  );
+  const [warrantyExcludedRiskFactors, setWarrantyExcludedRiskFactors] = useState(
+    "травма, перегрузка, бруксизм или вредные привычки\nновые заболевания или отказ от рекомендованного лечения\nнарушение графика контрольных визитов\nсамостоятельное вмешательство или лечение в другой клинике без согласования"
+  );
+  const [warrantyUrgentContactReasons, setWarrantyUrgentContactReasons] = useState(
+    "острая боль или нарастающий отек\nподвижность, скол или выпадение конструкции\nкровотечение, температура или аллергическая реакция\nнарушение прикуса или невозможность пользоваться конструкцией"
+  );
+  const [warrantyLinkedActOrContract, setWarrantyLinkedActOrContract] = useState("");
+  const [warrantyDoctorFullName, setWarrantyDoctorFullName] = useState("");
+  const [warrantyIssuedAt, setWarrantyIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [warrantyPolicyApplied, setWarrantyPolicyApplied] = useState(false);
+  const [warrantyAftercareReceived, setWarrantyAftercareReceived] = useState(false);
+  const [warrantyControlVisitsUnderstood, setWarrantyControlVisitsUnderstood] = useState(false);
+  const [clinicalToothRowsText, setClinicalToothRowsText] = useState(defaultClinicalToothRowsText);
+  const [treatmentPlanClinicalReason, setTreatmentPlanClinicalReason] = useState("");
+  const [treatmentPlanDiagnosisSummary, setTreatmentPlanDiagnosisSummary] = useState("");
+  const [treatmentPlanTeethOrArea, setTreatmentPlanTeethOrArea] = useState("");
+  const [treatmentPlanGoals, setTreatmentPlanGoals] = useState("устранить жалобы пациента\nвосстановить функцию и герметичность\nснизить риск осложнений и повторного обращения");
+  const [treatmentPlanStages, setTreatmentPlanStages] = useState(
+    "Диагностика и подготовка | осмотр, снимки, фото-протокол, согласование объема | до начала лечения | уточнить диагноз и ограничения | 0\nОсновной этап | услуги по выбранному плану лечения | по расписанию клиники | объем корректируется по клинической ситуации | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | оценка результата и гигиены | 0"
+  );
+  const [treatmentPlanEstimatedTotalRub, setTreatmentPlanEstimatedTotalRub] = useState("");
+  const [treatmentPlanAlternatives, setTreatmentPlanAlternatives] = useState(
+    "наблюдение без активного лечения\nальтернативный материал или метод лечения\nпоэтапное лечение с переносом части работ\nполучение второго мнения\nотказ от лечения с фиксацией рисков"
+  );
+  const [treatmentPlanRisks, setTreatmentPlanRisks] = useState(
+    "изменение плана при новых клинических данных или снимках\nнеобходимость дополнительного визита, консультации или смежного специалиста\nизменение стоимости при изменении объема, материалов или сроков\nограниченный прогноз при исходном состоянии зубов и тканей"
+  );
+  const [treatmentPlanPrognosis, setTreatmentPlanPrognosis] = useState(
+    "прогноз зависит от исходного состояния зубов, тканей, гигиены, выполнения рекомендаций и явки на контрольные визиты"
+  );
+  const [treatmentPlanControlPlan, setTreatmentPlanControlPlan] = useState("контрольный осмотр после завершения этапа и далее по индивидуальному графику");
+  const [treatmentPlanDoctorFullName, setTreatmentPlanDoctorFullName] = useState("");
+  const [treatmentPlanPlannedAt, setTreatmentPlanPlannedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [treatmentPlanQuestionsAnswered, setTreatmentPlanQuestionsAnswered] = useState(false);
+  const [treatmentPlanSeparateConsentAcknowledged, setTreatmentPlanSeparateConsentAcknowledged] = useState(false);
+  const [treatmentPlanNewApprovalAcknowledged, setTreatmentPlanNewApprovalAcknowledged] = useState(false);
+  const [treatmentAcceptanceVariant, setTreatmentAcceptanceVariant] = useState<TreatmentPlanAcceptanceVariant>("standard");
+  const [treatmentAcceptanceClinicalGoal, setTreatmentAcceptanceClinicalGoal] = useState("санация, восстановление функции и профилактика осложнений");
+  const [treatmentAcceptanceDiagnosisSummary, setTreatmentAcceptanceDiagnosisSummary] = useState("");
+  const [treatmentAcceptanceTeethOrArea, setTreatmentAcceptanceTeethOrArea] = useState("");
+  const [treatmentAcceptanceStages, setTreatmentAcceptanceStages] = useState(
+    "Диагностика и подготовка | осмотр, снимки, фотопротокол, согласование объема | до начала лечения | 0\nОсновной этап лечения | услуги по выбранному плану лечения | по расписанию клиники | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | 0"
+  );
+  const [treatmentAcceptanceEstimatedTotalRub, setTreatmentAcceptanceEstimatedTotalRub] = useState("");
+  const [treatmentAcceptanceEstimateValidUntil, setTreatmentAcceptanceEstimateValidUntil] = useState("");
+  const [treatmentAcceptancePaymentTerms, setTreatmentAcceptancePaymentTerms] = useState("оплата по кассовому чеку до или в день оказания услуг; рассрочка или кредит оформляются отдельным соглашением");
+  const [treatmentAcceptanceRejectedAlternatives, setTreatmentAcceptanceRejectedAlternatives] = useState(
+    "наблюдение без активного лечения\nперенос лечения\nальтернативный материал или конструкция\nполучение второго мнения"
+  );
+  const [treatmentAcceptanceRisks, setTreatmentAcceptanceRisks] = useState(
+    "изменение плана при новых клинических данных или снимках\nизменение стоимости при изменении объема, материалов или сроков\nнеобходимость дополнительных визитов, коррекции или смежного специалиста\nограниченный прогноз при исходном состоянии зубов и тканей"
+  );
+  const [treatmentAcceptanceWarrantyTerms, setTreatmentAcceptanceWarrantyTerms] = useState(
+    "контрольные визиты обязательны; гарантийные условия действуют в пределах выбранного плана, соблюдения рекомендаций, гигиены и сроков контрольных посещений"
+  );
+  const [treatmentAcceptanceDoctorFullName, setTreatmentAcceptanceDoctorFullName] = useState("");
+  const [treatmentAcceptanceAcceptedAt, setTreatmentAcceptanceAcceptedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [treatmentAcceptanceQuestionsAnswered, setTreatmentAcceptanceQuestionsAnswered] = useState(false);
+  const [treatmentAcceptanceAlternativesUnderstood, setTreatmentAcceptanceAlternativesUnderstood] = useState(false);
+  const [treatmentAcceptanceCostChangeUnderstood, setTreatmentAcceptanceCostChangeUnderstood] = useState(false);
+  const [treatmentAcceptanceRevisionAcknowledged, setTreatmentAcceptanceRevisionAcknowledged] = useState(false);
+  const [postVisitCareTopic, setPostVisitCareTopic] = useState<PostVisitCareTopic>(initialUiPreferences.postVisitCareTopic);
+  const [postVisitProcedureName, setPostVisitProcedureName] = useState(postVisitCarePresets.filling_restoration.procedureName);
+  const [postVisitToothOrArea, setPostVisitToothOrArea] = useState("");
+  const [postVisitPerformedAt, setPostVisitPerformedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [postVisitDoctorFullName, setPostVisitDoctorFullName] = useState("");
+  const [postVisitManualEdited, setPostVisitManualEdited] = useState(false);
+  const [postVisitPresetFeedback, setPostVisitPresetFeedback] = useState("");
+  const [postVisitAllowedAfter, setPostVisitAllowedAfter] = useState(postVisitCarePresets.filling_restoration.allowedAfter);
+  const [postVisitRestrictions, setPostVisitRestrictions] = useState(postVisitCarePresets.filling_restoration.temporaryRestrictions);
+  const [postVisitMedicationAndRinsePlan, setPostVisitMedicationAndRinsePlan] = useState(postVisitCarePresets.filling_restoration.medicationAndRinsePlan);
+  const [postVisitHygieneInstructions, setPostVisitHygieneInstructions] = useState(postVisitCarePresets.filling_restoration.hygieneInstructions);
+  const [postVisitNutritionInstructions, setPostVisitNutritionInstructions] = useState(postVisitCarePresets.filling_restoration.nutritionInstructions);
+  const [postVisitUrgentWarningSigns, setPostVisitUrgentWarningSigns] = useState(postVisitCarePresets.filling_restoration.urgentWarningSigns);
+  const [postVisitFollowUpAt, setPostVisitFollowUpAt] = useState(postVisitCarePresets.filling_restoration.plannedFollowUpAt);
+  const [postVisitClinicContactInstruction, setPostVisitClinicContactInstruction] = useState("связаться с клиникой по телефону или через Telegram-бот DENTE");
+  const [postVisitTelegramSummary, setPostVisitTelegramSummary] = useState(postVisitCarePresets.filling_restoration.telegramSummary);
+  const [postVisitPrintedCopyReceived, setPostVisitPrintedCopyReceived] = useState(false);
+  const [postVisitUrgentSignsUnderstood, setPostVisitUrgentSignsUnderstood] = useState(false);
+  const [postVisitTelegramSafe, setPostVisitTelegramSafe] = useState(false);
+  const [anesthesiaMethod, setAnesthesiaMethod] = useState("Инфильтрационная / проводниковая");
+  const [anesthesiaAnesthetic, setAnesthesiaAnesthetic] = useState("Артикаин 4%");
+  const [anesthesiaVasoconstrictor, setAnesthesiaVasoconstrictor] = useState("1:100000");
+  const [anesthesiaZone, setAnesthesiaZone] = useState("");
+  const [anesthesiaAllergyStatus, setAnesthesiaAllergyStatus] = useState("Аллергия на местные анестетики со слов пациента не отмечена.");
+  const [anesthesiaRestrictionNotes, setAnesthesiaRestrictionNotes] = useState("");
+  const [anesthesiaDoseTime, setAnesthesiaDoseTime] = useState(() =>
+    new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+  );
+  const [anesthesiaDoseMl, setAnesthesiaDoseMl] = useState("1.7");
+  const [anesthesiaReaction, setAnesthesiaReaction] = useState("Без особенностей");
+  const [anesthesiaRisksExplained, setAnesthesiaRisksExplained] = useState(false);
+  const [anesthesiaAllergyRestrictionsChecked, setAnesthesiaAllergyRestrictionsChecked] = useState(false);
+  const [anesthesiaConsentConfirmed, setAnesthesiaConsentConfirmed] = useState(false);
+  const [prescriptionMedication, setPrescriptionMedication] = useState("");
+  const [prescriptionDosage, setPrescriptionDosage] = useState("");
+  const [prescriptionInstructions, setPrescriptionInstructions] = useState("");
+  const [prescriptionDuration, setPrescriptionDuration] = useState("");
+  const [prescriptionSafetyNotes, setPrescriptionSafetyNotes] = useState(
+    "Проверить аллергоанамнез до выдачи.\nОбъяснить режим приема, ограничения и действия при нежелательной реакции."
+  );
+  const [prescriptionUrgentContactReason, setPrescriptionUrgentContactReason] = useState(
+    "Связаться с клиникой при отеке, сыпи, нарастающей боли, кровотечении или температуре."
+  );
+  const [labWorkType, setLabWorkType] = useState("");
+  const [labTeethOrArea, setLabTeethOrArea] = useState("");
+  const [labMaterial, setLabMaterial] = useState("");
+  const [labShade, setLabShade] = useState("");
+  const [labSource, setLabSource] = useState("");
+  const [labDeadline, setLabDeadline] = useState("");
+  const [labTechnicianNotes, setLabTechnicianNotes] = useState("");
+  const [photoVideoLabTransferAllowed, setPhotoVideoLabTransferAllowed] = useState(true);
+  const [photoVideoColleagueConsultationAllowed, setPhotoVideoColleagueConsultationAllowed] = useState(true);
+  const [photoVideoEducationUseAllowed, setPhotoVideoEducationUseAllowed] = useState(false);
+  const [photoVideoMarketingUseAllowed, setPhotoVideoMarketingUseAllowed] = useState(false);
+  const [photoVideoRecognizablePublicationAllowed, setPhotoVideoRecognizablePublicationAllowed] = useState(false);
+  const [photoVideoClinicalRecordUseConfirmed, setPhotoVideoClinicalRecordUseConfirmed] = useState(false);
+  const [photoVideoAnonymizationConfirmed, setPhotoVideoAnonymizationConfirmed] = useState(false);
+  const [photoVideoMaterials, setPhotoVideoMaterials] = useState<PhotoVideoConsentMaterial[]>([
+    "intraoral_photo",
+    "xray",
+    "scan"
+  ]);
+  const [photoVideoRevocationChannel, setPhotoVideoRevocationChannel] = useState(
+    "письменное заявление в клинике или защищенное обращение через портал пациента"
+  );
+  const [photoVideoScopeNotes, setPhotoVideoScopeNotes] = useState("");
+  const [xrayStudyType, setXrayStudyType] = useState<XrayCbctReferralStudyType>("cbct");
+  const [xrayArea, setXrayArea] = useState("");
+  const [xrayClinicalQuestion, setXrayClinicalQuestion] = useState("");
+  const [xrayIndication, setXrayIndication] = useState("");
+  const [xrayPregnancyStatus, setXrayPregnancyStatus] = useState<XrayCbctReferralPregnancyStatus>("unknown");
+  const [xraySafetyNotes, setXraySafetyNotes] = useState(
+    "Перед исследованием уточнить беременность, ограничения и необходимость средств защиты."
+  );
+  const [xrayPriority, setXrayPriority] = useState<XrayCbctReferralPriority>("routine");
+  const [xrayIncludeDicomExport, setXrayIncludeDicomExport] = useState(true);
+  const [xrayIncludeRadiologistReport, setXrayIncludeRadiologistReport] = useState(true);
+  const [xrayRequestedBy, setXrayRequestedBy] = useState("");
+  const [xrayRecipientClinic, setXrayRecipientClinic] = useState("");
+  const [xrayDueDate, setXrayDueDate] = useState("");
+  const [recordExtractPeriodStart, setRecordExtractPeriodStart] = useState(() => new Date().toISOString().slice(0, 10));
+  const [recordExtractPeriodEnd, setRecordExtractPeriodEnd] = useState(() => new Date().toISOString().slice(0, 10));
+  const [recordExtractSourceVisitIds, setRecordExtractSourceVisitIds] = useState("");
+  const [recordExtractComplaintAndAnamnesis, setRecordExtractComplaintAndAnamnesis] = useState("");
+  const [recordExtractObjectiveStatus, setRecordExtractObjectiveStatus] = useState("");
+  const [recordExtractDiagnosis, setRecordExtractDiagnosis] = useState("");
+  const [recordExtractTreatmentProvided, setRecordExtractTreatmentProvided] = useState("");
+  const [recordExtractRecommendations, setRecordExtractRecommendations] = useState("");
+  const [recordExtractDoctorFullName, setRecordExtractDoctorFullName] = useState("");
+  const [recordExtractRecipientFullName, setRecordExtractRecipientFullName] = useState("");
+  const [recordExtractRecipientAuthority, setRecordExtractRecipientAuthority] = useState("пациент лично");
+  const [recordExtractIssuedAt, setRecordExtractIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [recordExtractPreparedFromSignedRecords, setRecordExtractPreparedFromSignedRecords] = useState(false);
+  const [recordExtractThirdPartyDataChecked, setRecordExtractThirdPartyDataChecked] = useState(false);
+  const [outpatient025uMedicalCardNumber, setOutpatient025uMedicalCardNumber] = useState("");
+  const [outpatient025uOpenedAt, setOutpatient025uOpenedAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [outpatient025uPatientSexCode, setOutpatient025uPatientSexCode] = useState<"1" | "2" | "unknown">("unknown");
+  const [outpatient025uCitizenship, setOutpatient025uCitizenship] = useState("");
+  const [outpatient025uRegistrationUrbanRuralCode, setOutpatient025uRegistrationUrbanRuralCode] = useState<"1" | "2" | "unknown">("unknown");
+  const [outpatient025uStayUrbanRuralCode, setOutpatient025uStayUrbanRuralCode] = useState<"1" | "2" | "unknown">("unknown");
+  const [outpatient025uOmsIssuedAt, setOutpatient025uOmsIssuedAt] = useState("");
+  const [outpatient025uInsurerName, setOutpatient025uInsurerName] = useState("");
+  const [outpatient025uSocialSupportCode, setOutpatient025uSocialSupportCode] = useState("");
+  const [outpatient025uHealthStatusDisclosureContact, setOutpatient025uHealthStatusDisclosureContact] = useState("");
+  const [outpatient025uEmploymentCode, setOutpatient025uEmploymentCode] = useState("");
+  const [outpatient025uDisabilityGroup, setOutpatient025uDisabilityGroup] = useState("");
+  const [outpatient025uWorkOrStudyPlace, setOutpatient025uWorkOrStudyPlace] = useState("");
+  const [outpatient025uPalliativeCareNeedCode, setOutpatient025uPalliativeCareNeedCode] = useState("");
+  const [outpatient025uBloodGroup, setOutpatient025uBloodGroup] = useState("");
+  const [outpatient025uRhFactor, setOutpatient025uRhFactor] = useState("");
+  const [outpatient025uKellK1, setOutpatient025uKellK1] = useState("");
+  const [outpatient025uOtherBloodData, setOutpatient025uOtherBloodData] = useState("");
+  const [outpatient025uAllergyHistory, setOutpatient025uAllergyHistory] = useState("");
+  const [outpatient025uFinalEpicrisis, setOutpatient025uFinalEpicrisis] = useState("");
+  const [outpatient025uOfficialForm274nChecked, setOutpatient025uOfficialForm274nChecked] = useState(false);
+  const [outpatient025uThirdPartyDataChecked, setOutpatient025uThirdPartyDataChecked] = useState(false);
+  const [copyRequestDocumentTypes, setCopyRequestDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или DICOM-архив");
+  const [copyRequestPeriodStart, setCopyRequestPeriodStart] = useState("");
+  const [copyRequestPeriodEnd, setCopyRequestPeriodEnd] = useState("");
+  const [copyRequestFormat, setCopyRequestFormat] = useState<MedicalDocumentReleaseChannel>("pdf");
+  const [copyRequestRecipientFullName, setCopyRequestRecipientFullName] = useState("");
+  const [copyRequestRecipientIdentityDocument, setCopyRequestRecipientIdentityDocument] = useState("");
+  const [copyRequestRecipientAuthority, setCopyRequestRecipientAuthority] = useState("пациент лично");
+  const [copyRequestRepresentativeAuthorityDocument, setCopyRequestRepresentativeAuthorityDocument] = useState("");
+  const [copyRequestRequestedAt, setCopyRequestRequestedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [copyRequestContactForDelivery, setCopyRequestContactForDelivery] = useState("");
+  const [copyRequestSpecialInstructions, setCopyRequestSpecialInstructions] = useState("");
+  const [copyRequestIncludeDicomSourceData, setCopyRequestIncludeDicomSourceData] = useState(true);
+  const [copyRequestIdentityVerified, setCopyRequestIdentityVerified] = useState(false);
+  const [copyRequestThirdPartyDataChecked, setCopyRequestThirdPartyDataChecked] = useState(false);
+  const [attendanceStartedAt, setAttendanceStartedAt] = useState("");
+  const [attendanceEndedAt, setAttendanceEndedAt] = useState("");
+  const [attendancePurpose, setAttendancePurpose] = useState("для предъявления по месту требования");
+  const [attendanceRecipientOrganization, setAttendanceRecipientOrganization] = useState("");
+  const [attendanceIssuedAt, setAttendanceIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [attendanceSignedByFullName, setAttendanceSignedByFullName] = useState("");
+  const [attendanceSignedByRole, setAttendanceSignedByRole] = useState("врач/администратор");
+  const [attendanceDiagnosisDisclosureExcluded, setAttendanceDiagnosisDisclosureExcluded] = useState(false);
+  const [attendanceNotSickLeaveAcknowledged, setAttendanceNotSickLeaveAcknowledged] = useState(false);
+  const [releaseRecipientFullName, setReleaseRecipientFullName] = useState("");
+  const [releaseRecipientIdentityDocument, setReleaseRecipientIdentityDocument] = useState("");
+  const [releaseRecipientAuthority, setReleaseRecipientAuthority] = useState("пациент лично");
+  const [releaseSourceRequestDocumentId, setReleaseSourceRequestDocumentId] = useState("");
+  const [releaseChannel, setReleaseChannel] = useState<MedicalDocumentReleaseChannel>("paper");
+  const [releaseDocumentTypes, setReleaseDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или DICOM-архив");
+  const [releasePeriodStart, setReleasePeriodStart] = useState("");
+  const [releasePeriodEnd, setReleasePeriodEnd] = useState("");
+  const [releaseDeliveredAt, setReleaseDeliveredAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [releaseAccessExpiresAt, setReleaseAccessExpiresAt] = useState("");
+  const [releaseProtectionNote, setReleaseProtectionNote] = useState(
+    "личность получателя проверена, лишние данные третьих лиц исключены"
+  );
+  const [releaseThirdPartyDataChecked, setReleaseThirdPartyDataChecked] = useState(false);
+  const [refundAction, setRefundAction] = useState<PaymentRefundCorrectionAction>("partial_refund");
+  const [refundAmountRub, setRefundAmountRub] = useState("3800");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState<PaymentRefundCorrectionMethod>("card");
+  const [refundRecipientFullName, setRefundRecipientFullName] = useState("");
+  const [refundRecipientIdentityDocument, setRefundRecipientIdentityDocument] = useState("");
+  const [refundBankDetails, setRefundBankDetails] = useState("");
+  const [refundSelectedPaymentId, setRefundSelectedPaymentId] = useState("");
+  const [refundOriginalFiscalReceiptNumber, setRefundOriginalFiscalReceiptNumber] = useState("");
+  const [refundCorrectionFiscalReceiptNumber, setRefundCorrectionFiscalReceiptNumber] = useState("");
+  const [refundAccountantDecision, setRefundAccountantDecision] = useState("");
+  const [personalDataPurposes, setPersonalDataPurposes] = useState(
+    "оказание стоматологической медицинской помощи\nведение медицинской карты и медицинской документации\nрасчеты, договоры, акты и налоговые документы\nуведомления о визитах, рекомендациях и готовности документов"
+  );
+  const [personalDataCategories, setPersonalDataCategories] = useState(
+    "ФИО, дата рождения, телефон, email и адреса\nпаспортные данные, ИНН, СНИЛС, полис ОМС или ДМС\nсведения о здоровье, диагнозы, снимки, планы лечения и назначения\nплатежные документы, договоры, акты и налоговые заявления"
+  );
+  const [personalDataActions, setPersonalDataActions] = useState(
+    "сбор\nзапись\nсистематизация\nхранение\nуточнение\nиспользование\nпередача по законному основанию\nобезличивание\nудаление после окончания срока хранения"
+  );
+  const [personalDataTransferRules, setPersonalDataTransferRules] = useState(
+    "Передача возможна только зуботехническим лабораториям, платежным и фискальным сервисам, страховым организациям, ИТ-подрядчикам с договором конфиденциальности, государственным органам по закону и пациентскому порталу по защищенному каналу."
+  );
+  const [personalDataCrossBorderAllowed, setPersonalDataCrossBorderAllowed] = useState(false);
+  const [personalDataAutomatedDecisionAllowed, setPersonalDataAutomatedDecisionAllowed] = useState(false);
+  const [personalDataRetentionPeriod, setPersonalDataRetentionPeriod] = useState(
+    "в течение срока оказания помощи и обязательного срока хранения медицинской и бухгалтерской документации"
+  );
+  const [personalDataRevocationChannel, setPersonalDataRevocationChannel] = useState(
+    "письменное заявление в клинике или защищенное обращение через портал пациента"
+  );
+  const [personalDataConsentGivenAt, setPersonalDataConsentGivenAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [personalDataVoluntaryConsentConfirmed, setPersonalDataVoluntaryConsentConfirmed] = useState(false);
+  const [personalDataMedicalProcessingAcknowledged, setPersonalDataMedicalProcessingAcknowledged] = useState(false);
+  const [refusalIntervention, setRefusalIntervention] = useState("");
+  const [refusalClinicalIndication, setRefusalClinicalIndication] = useState("");
+  const [refusalPatientReason, setRefusalPatientReason] = useState("");
+  const [refusalExplainedRisks, setRefusalExplainedRisks] = useState(
+    "усиление боли\nраспространение инфекции\nпотеря возможности сохранить зуб или ткани\nнеобходимость экстренного обращения при ухудшении"
+  );
+  const [refusalAlternatives, setRefusalAlternatives] = useState(
+    "повторная консультация\nобезболивание и контроль состояния\nвторое мнение профильного врача\nобращение в дежурную стоматологию при ухудшении"
+  );
+  const [refusalUrgentWarningSigns, setRefusalUrgentWarningSigns] = useState(
+    "отек лица или шеи\nтемпература\nзатруднение глотания или дыхания\nкровотечение\nнарастающая боль"
+  );
+  const [refusalDoctorFullName, setRefusalDoctorFullName] = useState("");
+  const [refusalConfirmedAt, setRefusalConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
+  const [refusalConsequencesUnderstood, setRefusalConsequencesUnderstood] = useState(false);
+  const [refusalSecondOpinionOffered, setRefusalSecondOpinionOffered] = useState(false);
+  const [refusalEmergencyCareExplained, setRefusalEmergencyCareExplained] = useState(false);
+  const [communicationNote, setCommunicationNote] = useState("Пациенту передана информация, задача закрыта.");
+  const [selectedSpecialty, setSelectedSpecialty] = useState<DentalSpecialty>(initialUiPreferences.selectedSpecialty);
+  const [selectedProtocolId, setSelectedProtocolId] = useState<string | null>(initialUiPreferences.selectedProtocolId);
+  const [transcript, setTranscript] = useState(
+    "Пациент жалуется на боль при накусывании. Объективно кариозная полость 36. План лечение под анестезией, реставрация."
+  );
+  const [clearedTranscriptSnapshot, setClearedTranscriptSnapshot] = useState<string | null>(null);
+  const [importText, setImportText] = useState(
+    "ФИО;Телефон;Дата рождения;Комментарий\nИванова Марина Сергеевна;+7 927 111-22-33;21.04.1988;уже есть в базе\nНовый Пациент;+7 927 333-44-55;12.02.1991;перенос из старой МИС\nБез Телефона;;05.08.1975;нужно уточнить контакт"
+  );
+  const [imagingImportText, setImagingImportText] = useState(
+    "ФИО;Телефон;Тип;Зуб;Дата;Файл;Источник\nИванова Марина Сергеевна;+7 927 111-22-33;RVG;36;12.05.2026;C:\\Images\\ivanova_36.dcm;мост RVG-датчика\nИванова Марина Сергеевна;+7 927 111-22-33;ТРГ;;10.05.2026;C:\\Images\\ivanova_ceph.ima;экспорт Sidexis\nПетров Алексей Николаевич;+7 927 555-19-40;ОПТГ;;10.05.2026;C:\\Images\\petrov_opg.jpg;экспорт ОПТГ"
+  );
+  const [smartImportText, setSmartImportText] = useState(
+    "Новый Пациент Снимков +7 927 444-55-66 12.02.1991 перенос из старой МИС\nНовый Пациент Снимков +7 927 444-55-66 RVG 36 12.05.2026 C:\\Images\\new_patient_36.dcm\nИванова Марина Сергеевна +7 927 111-22-33 ОПТГ 10.05.2026 C:\\Images\\ivanova_opg.png\nслужебная строка без полезных данных"
+  );
+  const [pricelistText, setPricelistText] = useState(
+    "Коронка циркониевая MultiLayer 35 000 руб\nКоронка IPS e.max 32 000 руб\nВинир керамический E.max 38 000 руб\nРеставрация композитная Filtek 9 500 руб\nЛечение канала 1 канал 6 800 руб\nИмплантация Straumann BLX 85 000 руб\nАбатмент индивидуальный циркониевый 28 000 руб\nСинус-лифтинг открытый 55 000 руб\nПрофессиональная гигиена Air Flow EMS 6 000 руб\nЭлайнеры Star Smile 160 000 руб"
+  );
+  const [pricelistSourceKind, setPricelistSourceKind] = useState<PricelistSourceKind>(initialUiPreferences.pricelistSourceKind);
+  const [usePricelistAi, setUsePricelistAi] = useState(initialUiPreferences.usePricelistAi);
+  const [pricelistAnalysis, setPricelistAnalysis] = useState<DentalPricelistAnalysisResponse | null>(null);
+  const [pricelistImageBase64, setPricelistImageBase64] = useState<string | null>(null);
+  const [pricelistImageMimeType, setPricelistImageMimeType] = useState<PricelistImageMimeType>("image/jpeg");
+  const [pricelistImageName, setPricelistImageName] = useState<string | null>(null);
+  const [pricelistImageNote, setPricelistImageNote] = useState<string | null>(null);
+  const [recognitionKind, setRecognitionKind] = useState<AiJobKind>(initialUiPreferences.recognitionKind);
+  const [recognitionTarget, setRecognitionTarget] = useState<AiRecognitionTarget>(initialUiPreferences.recognitionTarget);
+  const [recognitionText, setRecognitionText] = useState(initialRecognitionText);
+  const [importSourceKind, setImportSourceKind] = useState<ImportSourceKind>(initialUiPreferences.importSourceKind);
+  const [documentIngestionTarget, setDocumentIngestionTarget] = useState<DocumentIngestionTarget>(
+    initialUiPreferences.documentIngestionTarget
+  );
+  const [documentIngestion, setDocumentIngestion] = useState<DocumentIngestionResponse | null>(null);
+  const [imagingImportSourceKind, setImagingImportSourceKind] = useState<ImagingSourceKind>(
+    initialUiPreferences.imagingImportSourceKind
+  );
+  const [smartImportMode, setSmartImportMode] = useState<SmartImportMode>(initialUiPreferences.smartImportMode);
+  const [localImagingFolderDraft, setLocalImagingFolderDraft] = useState<LocalImagingFolderDraft | null>(() =>
+    loadLocalImagingFolderDraft()
+  );
+  const [imagingFolderPath, setImagingFolderPath] = useState(() => localImagingFolderDraft?.folderPath ?? "C:\\Images");
+  const [browserPickedImagingFolder, setBrowserPickedImagingFolder] = useState<BrowserPickedImagingFolderPreview | null>(() =>
+    loadBrowserPickedImagingFolderPreview()
+  );
+  const [browserMigrationDiscovery, setBrowserMigrationDiscovery] = useState<MigrationLocalSourceDiscoveryResponse | null>(null);
+  const [browserDirectoryPickerAvailable, setBrowserDirectoryPickerAvailable] = useState(() =>
+    typeof window !== "undefined" && typeof (window as BrowserDirectoryPickerWindow).showDirectoryPicker === "function"
+  );
+  const [importIntake, setImportIntake] = useState<ImportIntakeResponse | null>(null);
+  const [importPreview, setImportPreview] = useState<ImportPreviewResponse | null>(null);
+  const [importCommit, setImportCommit] = useState<ImportCommitResponse | null>(null);
+  const [imagingImportPreview, setImagingImportPreview] = useState<ImagingImportPreviewResponse | null>(null);
+  const [imagingImportCommit, setImagingImportCommit] = useState<ImagingImportCommitResponse | null>(null);
+  const [imagingFolderScan, setImagingFolderScan] = useState<ImagingFolderScanResponse | null>(null);
+  const [dicomLocalFolderDiscovery, setDicomLocalFolderDiscovery] = useState<DicomLocalFolderDiscoveryResponse | null>(null);
+  const [migrationAutopilot, setMigrationAutopilot] = useState<MigrationAutopilotResponse | null>(null);
+  const [migrationSourceDiscovery, setMigrationSourceDiscovery] = useState<MigrationLocalSourceDiscoveryResponse | null>(null);
+  const [migrationSourceWorkup, setMigrationSourceWorkup] = useState<MigrationLocalSourceWorkupResponse | null>(null);
+  const [migrationSourceProbe, setMigrationSourceProbe] = useState<MigrationLocalSourceProbeResponse | null>(null);
+  const [clinicPublicLookup, setClinicPublicLookup] = useState<ClinicPublicLookupResponse | null>(null);
+  const [localImagingOrganizer, setLocalImagingOrganizer] = useState<LocalImagingOrganizerResponse | null>(null);
+  const [dicomSeriesPreview, setDicomSeriesPreview] = useState<DicomSeriesPreviewResponse | null>(null);
+  const [dicomFolderSeriesScan, setDicomFolderSeriesScan] = useState<DicomFolderSeriesPreviewResponse | null>(null);
+  const [dicomFolderWorkupPlan, setDicomFolderWorkupPlan] = useState<DicomFolderWorkupPlanResponse | null>(null);
+  const [dicomFirstFramePreview, setDicomFirstFramePreview] = useState<DicomFirstFramePreviewResponse | null>(null);
+  const [dicomFirstFrameViewerState, setDicomFirstFrameViewerState] = useState<ImagingViewerState>(
+    defaultDicomFirstFrameViewerState
+  );
+  const [dicomWebEndpointUrl, setDicomWebEndpointUrl] = useState(initialUiPreferences.dicomWebEndpointUrl);
+  const [ohifBaseUrl, setOhifBaseUrl] = useState(initialUiPreferences.ohifBaseUrl);
+  const [dicomWebCheck, setDicomWebCheck] = useState<DicomWebConnectorCheckResponse | null>(null);
+  const [dicomViewerLaunchManifest, setDicomViewerLaunchManifest] = useState<DicomViewerLaunchManifestResponse | null>(null);
+  const [dicomViewerToolStateBundle, setDicomViewerToolStateBundle] = useState<DicomViewerToolStateBundleResponse | null>(null);
+  const [dicomViewerWorkbenchManifest, setDicomViewerWorkbenchManifest] = useState<DicomViewerWorkbenchManifestResponse | null>(null);
+  const [dicomWorkbenchLocalSavedAt, setDicomWorkbenchLocalSavedAt] = useState<string | null>(null);
+  const [dicomWorkbenchServerBundle, setDicomWorkbenchServerBundle] = useState<DicomWorkbenchBundle | null>(null);
+  const [dicomWorkbenchServerBundles, setDicomWorkbenchServerBundles] = useState<DicomWorkbenchBundle[]>([]);
+  const [dicomWorkstationReadiness, setDicomWorkstationReadiness] = useState<DicomWorkstationReadinessResponse | null>(null);
+  const [dicomRenderCachePlan, setDicomRenderCachePlan] = useState<DicomRenderCachePlanResponse | null>(null);
+  const [selectedImagingStudyId, setSelectedImagingStudyId] = useState<string | null>(null);
+  const [imagingKindFilter, setImagingKindFilter] = useState<ImagingStudyKind | "all">(initialUiPreferences.imagingKindFilter);
+  const [imagingViewerState, setImagingViewerState] = useState<ImagingViewerState>(defaultImagingViewerState);
+  const [imagingViewerAnnotations, setImagingViewerAnnotations] = useState<ImagingViewerAnnotation[]>([]);
+  const [imagingViewerNote, setImagingViewerNote] = useState("");
+  const [imagingViewerSession, setImagingViewerSession] = useState<ImagingViewerSessionResponse["session"] | null>(null);
+  const [imagingViewerSaveState, setImagingViewerSaveState] = useState<ImagingViewerSaveState>("idle");
+  const [imagingViewerLocalSavedAt, setImagingViewerLocalSavedAt] = useState<string | null>(null);
+  const [imagingViewerSaveError, setImagingViewerSaveError] = useState<string | null>(null);
+  const [imagingViewerSessionReady, setImagingViewerSessionReady] = useState(false);
+  const [mprProjection, setMprProjection] = useState<MprProjection>("axial");
+  const [mprAxisDeg, setMprAxisDeg] = useState(0);
+  const [mprSlabMm, setMprSlabMm] = useState(1);
+  const [mprWindowPreset, setMprWindowPreset] = useState<MprWindowPreset>("bone");
+  const [mprCrosshairEnabled, setMprCrosshairEnabled] = useState(true);
+  const [mprLinkedPlanesEnabled, setMprLinkedPlanesEnabled] = useState(true);
+  const [smartImportPreview, setSmartImportPreview] = useState<SmartImportPreviewResponse | null>(null);
+  const [smartImportCommit, setSmartImportCommit] = useState<SmartImportCommitResponse | null>(null);
+  const [recognitionJob, setRecognitionJob] = useState<AiRecognitionJob | null>(null);
+  const [draft, setDraft] = useState<VisitNoteDraft | null>(null);
+  const [visitNoteForm, setVisitNoteForm] = useState<VisitNoteForm>(emptyVisitNoteForm);
+  const [localAutosaveReady, setLocalAutosaveReady] = useState(false);
+  const [lastLocalSavedAt, setLastLocalSavedAt] = useState<string | null>(null);
+  const [lastServerDraftSavedAt, setLastServerDraftSavedAt] = useState<string | null>(null);
+  const [serverDraftSyncState, setServerDraftSyncState] = useState<"idle" | "saving" | "saved" | "queued" | "error">("idle");
+  const [localDraftWasRestored, setLocalDraftWasRestored] = useState(false);
+  const [pendingVisitSaveCount, setPendingVisitSaveCount] = useState(() => loadPendingVisitSaves(activeOrganizationId).length);
+  const [lastPendingVisitSaveAt, setLastPendingVisitSaveAt] = useState<string | null>(() => {
+    const pending = loadPendingVisitSaves(activeOrganizationId);
+    return latestPendingVisitSaveAt(pending);
+  });
+  const [lastVisitSaveReceipt, setLastVisitSaveReceipt] = useState<AcceptVisitDraftResponse["saveReceipt"] | null>(null);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
+  const [speechGatewayStatus, setSpeechGatewayStatus] = useState<SpeechGatewayStatus | null>(null);
+  const [speechGatewayHealthReport, setSpeechGatewayHealthReport] = useState<SpeechGatewayHealthReport | null>(null);
+  const [speechProviderRuntimeStatuses, setSpeechProviderRuntimeStatuses] = useState<SpeechProviderRuntimeStatus[]>([]);
+  const [speechRecordingStrategy, setSpeechRecordingStrategy] = useState<SpeechRecordingStrategy | null>(null);
+  const [speechRecordingRecovery, setSpeechRecordingRecovery] = useState<SpeechRecordingRecoveryList | null>(null);
+  const [pendingSpeechChunkCount, setPendingSpeechChunkCount] = useState(() => loadPendingSpeechChunksFromLocalStorage(activeOrganizationId).length);
+  const [speechStatusNote, setSpeechStatusNote] = useState<string | null>(null);
+  const [speechLastQuality, setSpeechLastQuality] = useState<SpeechTranscriptionResponse["chunk"]["quality"] | null>(null);
+  const [browserContinuity, setBrowserContinuity] = useState<BrowserContinuityStatus | null>(null);
+  const [localBridgeReadiness, setLocalBridgeReadiness] = useState<LocalBridgeReadinessResponse | null>(null);
+  const [localBridgeUsePlans, setLocalBridgeUsePlans] = useState<LocalBridgeUsePlansResponse | null>(null);
+  const [isDraftLoading, setIsDraftLoading] = useState(false);
+  const [isDraftAccepting, setIsDraftAccepting] = useState(false);
+  const [isPendingVisitSyncing, setIsPendingVisitSyncing] = useState(false);
+  const [isImportDictating, setIsImportDictating] = useState(false);
+  const [isImportLoading, setIsImportLoading] = useState(false);
+  const [isDocumentIngesting, setIsDocumentIngesting] = useState(false);
+  const [isImportCommitting, setIsImportCommitting] = useState(false);
+  const [isImagingImportLoading, setIsImagingImportLoading] = useState(false);
+  const [isImagingImportCommitting, setIsImagingImportCommitting] = useState(false);
+  const [imagingCreateSavingKind, setImagingCreateSavingKind] = useState<ImagingStudyKind | null>(null);
+  const [isImagingFolderScanning, setIsImagingFolderScanning] = useState(false);
+  const [isDicomLocalDiscovering, setIsDicomLocalDiscovering] = useState(false);
+  const [isMigrationAutopilotLoading, setIsMigrationAutopilotLoading] = useState(false);
+  const [isMigrationSourceDiscovering, setIsMigrationSourceDiscovering] = useState(false);
+  const [isMigrationSourceWorkupLoading, setIsMigrationSourceWorkupLoading] = useState(false);
+  const [isMigrationSourceProbeLoading, setIsMigrationSourceProbeLoading] = useState(false);
+  const [isClinicPublicLookupLoading, setIsClinicPublicLookupLoading] = useState(false);
+  const [isLocalImagingOrganizing, setIsLocalImagingOrganizing] = useState(false);
+  const [isDicomSeriesPreviewLoading, setIsDicomSeriesPreviewLoading] = useState(false);
+  const [isDicomWebChecking, setIsDicomWebChecking] = useState(false);
+  const [isDicomManifestBuilding, setIsDicomManifestBuilding] = useState(false);
+  const [isDicomToolStateBuilding, setIsDicomToolStateBuilding] = useState(false);
+  const [isDicomWorkbenchBuilding, setIsDicomWorkbenchBuilding] = useState(false);
+  const [isDicomWorkbenchServerSaving, setIsDicomWorkbenchServerSaving] = useState(false);
+  const [isDicomWorkbenchReconnecting, setIsDicomWorkbenchReconnecting] = useState(false);
+  const [isDicomWorkstationChecking, setIsDicomWorkstationChecking] = useState(false);
+  const [isDicomRenderCachePlanning, setIsDicomRenderCachePlanning] = useState(false);
+  const [isDicomFolderWorkupPlanning, setIsDicomFolderWorkupPlanning] = useState(false);
+  const [isDicomFirstFramePreviewing, setIsDicomFirstFramePreviewing] = useState(false);
+  const [isBrowserImagingFolderPicking, setIsBrowserImagingFolderPicking] = useState(false);
+  const [isBrowserMigrationScanning, setIsBrowserMigrationScanning] = useState(false);
+  const [isSmartImportLoading, setIsSmartImportLoading] = useState(false);
+  const [isSmartImportCommitting, setIsSmartImportCommitting] = useState(false);
+  const [isSmartReportLoading, setIsSmartReportLoading] = useState(false);
+  const [isRecognitionLoading, setIsRecognitionLoading] = useState(false);
+  const [isPricelistAnalyzing, setIsPricelistAnalyzing] = useState(false);
+  const [isVisitDictating, setIsVisitDictating] = useState(false);
+  const [isServerVoiceRecording, setIsServerVoiceRecording] = useState(false);
+  const [isTranscriptPolishing, setIsTranscriptPolishing] = useState(false);
+  const [isPaymentSaving, setIsPaymentSaving] = useState(false);
+  const [communicationSavingTaskId, setCommunicationSavingTaskId] = useState<string | null>(null);
+  const [isClinicalRuleSaving, setIsClinicalRuleSaving] = useState(false);
+  const [persistenceHealth, setPersistenceHealth] = useState<PersistenceHealth | null>(null);
+  const [persistenceIntegrity, setPersistenceIntegrity] = useState<PersistenceIntegrityReport | null>(null);
+  const [isPersistenceExporting, setIsPersistenceExporting] = useState(false);
+  const [telegramStatus, setTelegramStatus] = useState<DenteTelegramBotStatus | null>(null);
+  const [telegramFeaturePlan, setTelegramFeaturePlan] = useState<TelegramFeaturePlan | null>(null);
+  const [telegramOutbox, setTelegramOutbox] = useState<DenteTelegramOutboxResponse | null>(null);
+  const [telegramOutboxStatusFilter, setTelegramOutboxStatusFilter] = useState<TelegramOutboxStatusFilter>(
+    initialUiPreferences.telegramOutboxStatusFilter
+  );
+  const [telegramOutboxTemplateFilter, setTelegramOutboxTemplateFilter] = useState<TelegramOutboxTemplateFilter>(
+    initialUiPreferences.telegramOutboxTemplateFilter
+  );
+  const [telegramLinkCodes, setTelegramLinkCodes] = useState<DenteTelegramLinkCodePublic[]>([]);
+  const [telegramChatLinks, setTelegramChatLinks] = useState<DenteTelegramChatLinkPublic[]>([]);
+  const [telegramLinkCodeLedger, setTelegramLinkCodeLedger] = useState<DenteTelegramLinkCodeListResponse | null>(null);
+  const [telegramChatLinkLedger, setTelegramChatLinkLedger] = useState<DenteTelegramChatLinkListResponse | null>(null);
+  const [telegramLinkSubjectType, setTelegramLinkSubjectType] = useState<TelegramLinkSubjectType>(
+    initialUiPreferences.telegramLinkSubjectType
+  );
+  const [telegramLinkStaffId, setTelegramLinkStaffId] = useState(initialUiPreferences.telegramLinkStaffId ?? "");
+  const [telegramLinkCode, setTelegramLinkCode] = useState<DenteTelegramLinkCodeCreated | null>(null);
+  const [telegramLinkActionState, setTelegramLinkActionState] = useState<string | null>(null);
+  const [telegramPreview, setTelegramPreview] = useState<DenteTelegramMessagePreview | null>(null);
+  const [telegramModeDraft, setTelegramModeDraft] = useState<DenteTelegramBotMode>("shared_dente_bot");
+  const [telegramBotUsernameDraft, setTelegramBotUsernameDraft] = useState("");
+  const [telegramOwnBotUsernameDraft, setTelegramOwnBotUsernameDraft] = useState("");
+  const [telegramBotConfigId, setTelegramBotConfigId] = useState(initialUiPreferences.telegramBotConfigId);
+  const [telegramWebhookBaseUrlDraft, setTelegramWebhookBaseUrlDraft] = useState("");
+  const [telegramPatientPortalBaseUrlDraft, setTelegramPatientPortalBaseUrlDraft] = useState("");
+  const [telegramWelcomeImageUrlDraft, setTelegramWelcomeImageUrlDraft] = useState("");
+  const [telegramVisualCardUrlDrafts, setTelegramVisualCardUrlDrafts] = useState<DenteTelegramVisualCardUrls>(emptyTelegramVisualCardUrlDrafts);
+  const [telegramReviewUrlDraft, setTelegramReviewUrlDraft] = useState("");
+  const [telegramMapsUrlDraft, setTelegramMapsUrlDraft] = useState("");
+  const [telegramEnabledFeaturesDraft, setTelegramEnabledFeaturesDraft] = useState<DenteTelegramFeature[]>([]);
+  const [telegramTokenTtlDraft, setTelegramTokenTtlDraft] = useState("15");
+  const [telegramReminderLeadTimesDraft, setTelegramReminderLeadTimesDraft] = useState("24");
+  const [telegramReviewRequestDelayDraft, setTelegramReviewRequestDelayDraft] = useState("2");
+  const [telegramPostVisitCheckupDelayDrafts, setTelegramPostVisitCheckupDelayDrafts] = useState<TelegramPostVisitCheckupDelayDrafts>(
+    defaultTelegramPostVisitCheckupDelayDrafts
+  );
+  const [telegramAllowVoiceIntakeDraft, setTelegramAllowVoiceIntakeDraft] = useState(false);
+  const [telegramStaffEscalationChannelDraft, setTelegramStaffEscalationChannelDraft] = useState("");
+  const [telegramPrivacyModeDraft, setTelegramPrivacyModeDraft] = useState<DenteTelegramPrivacyMode>("no_phi_by_default");
+  const [telegramSettingsDirty, setTelegramSettingsDirty] = useState(false);
+  const [telegramSettingsSaveState, setTelegramSettingsSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [telegramSettingsSaveError, setTelegramSettingsSaveError] = useState<string | null>(null);
+  const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("");
+  const [telegramAdminSecretSession, setTelegramAdminSecretSession] = useState("");
+  const [isTelegramLoading, setIsTelegramLoading] = useState(false);
+  const [isTelegramLinkCreating, setIsTelegramLinkCreating] = useState(false);
+  const [isTelegramSettingsSaving, setIsTelegramSettingsSaving] = useState(false);
+  const [isTelegramSendingDue, setIsTelegramSendingDue] = useState(false);
+  const [isTelegramOutboxLoadingMore, setIsTelegramOutboxLoadingMore] = useState(false);
+  const [isTelegramLinkCodesLoadingMore, setIsTelegramLinkCodesLoadingMore] = useState(false);
+  const [isTelegramChatLinksLoadingMore, setIsTelegramChatLinksLoadingMore] = useState(false);
+  const [telegramSendingItemId, setTelegramSendingItemId] = useState<string | null>(null);
+  const [telegramRevokingLinkId, setTelegramRevokingLinkId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [uiPreferencesSyncError, setUiPreferencesSyncError] = useState<string | null>(null);
+  const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
+  const browserMigrationInputRef = useRef<HTMLInputElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const speechAudioContextRef = useRef<AudioContext | null>(null);
+  const speechAnalyserRef = useRef<AnalyserNode | null>(null);
+  const speechMonitorTimerRef = useRef<number | null>(null);
+  const speechRecordingIdRef = useRef<string | null>(null);
+  const speechChunkIndexRef = useRef(0);
+  const speechSegmentStartedAtRef = useRef(0);
+  const speechLastSoundAtRef = useRef(0);
+  const speechPendingChunkDurationMsRef = useRef<number | null>(null);
+  const speechUploadPromisesRef = useRef<Set<Promise<void>>>(new Set());
+  const appliedSpeechChunkKeysRef = useRef<Set<string>>(new Set());
+  const lastServerDraftSignatureRef = useRef<string | null>(null);
+  const visitDraftUserEditedRef = useRef(false);
+  const patientAdministrativeProfileDraftRef = useRef<PatientAdministrativeProfileDraft>(emptyPatientAdministrativeProfileDraft());
+  const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
+  const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
+  const appointmentScheduleDraftsRef = useRef<Record<string, AppointmentScheduleDraft>>({});
+  const imagingViewerSaveTimerRef = useRef<number | null>(null);
+
+  function markTelegramSettingsDirty() {
+    setTelegramSettingsDirty(true);
+    setTelegramSettingsSaveState("idle");
+    setTelegramSettingsSaveError(null);
+  }
+
+  function updateTelegramVisualCardUrlDraft(key: DenteTelegramVisualCardKey, value: string) {
+    setTelegramVisualCardUrlDrafts((current) => ({
+      ...current,
+      [key]: value.trim() ? value : null
+    }));
+    markTelegramSettingsDirty();
+  }
+
+  function toggleTelegramFeature(feature: DenteTelegramFeature) {
+    setTelegramEnabledFeaturesDraft((current) =>
+      current.includes(feature) ? current.filter((item) => item !== feature) : [...current, feature]
+    );
+    if (feature === "voice_note_intake" && !telegramEnabledFeaturesDraft.includes(feature)) {
+      setTelegramAllowVoiceIntakeDraft(true);
+    }
+    markTelegramSettingsDirty();
+  }
+
+  function parseTelegramLinkTtlMinutes() {
+    const parsed = Number.parseInt(telegramTokenTtlDraft, 10);
+    if (!Number.isFinite(parsed)) return 15;
+    return Math.min(1440, Math.max(5, parsed));
+  }
+
+  function parseTelegramReminderLeadTimesHours(): number[] {
+    const values = telegramReminderLeadTimesDraft
+      .split(/[,\s;]+/)
+      .map((item) => Number.parseInt(item, 10))
+      .filter((item) => Number.isFinite(item) && item >= 1 && item <= 168);
+    const unique = [...new Set(values)].sort((left, right) => right - left).slice(0, 6);
+    return unique.length ? unique : [24];
+  }
+
+  function parseTelegramReviewRequestDelayHours(): number {
+    const parsed = Number.parseInt(telegramReviewRequestDelayDraft, 10);
+    if (!Number.isFinite(parsed)) return 2;
+    return Math.min(720, Math.max(1, parsed));
+  }
+
+  function parseTelegramPostVisitCheckupDelayHours(): DenteTelegramPostVisitCheckupDelayHoursByTopic {
+    const values = { ...defaultTelegramPostVisitCheckupDelayHoursByTopic };
+    for (const field of telegramPostVisitCheckupDelayFields) {
+      const parsed = Number.parseInt(telegramPostVisitCheckupDelayDrafts[field.key], 10);
+      values[field.key] = Number.isFinite(parsed) ? Math.max(1, Math.min(720, parsed)) : defaultTelegramPostVisitCheckupDelayHoursByTopic[field.key];
+    }
+    return values;
+  }
+
+  function normalizeTelegramPostVisitCheckupDelayDrafts(values: DenteTelegramPostVisitCheckupDelayHoursByTopic): TelegramPostVisitCheckupDelayDrafts {
+    const normalized = { ...defaultTelegramPostVisitCheckupDelayDrafts };
+    for (const field of telegramPostVisitCheckupDelayFields) {
+      normalized[field.key] = String(values[field.key] ?? defaultTelegramPostVisitCheckupDelayDrafts[field.key]);
+    }
+    return normalized;
+  }
+
+  function updateTelegramPostVisitCheckupDelayDraft(key: TelegramPostVisitCheckupDelayKey, value: string) {
+    setTelegramPostVisitCheckupDelayDrafts((current) => ({
+      ...current,
+      [key]: value
+    }));
+    markTelegramSettingsDirty();
+  }
+
+  function telegramFeatureLabel(value: DenteTelegramFeature | string) {
+    return telegramFeatureLabels[value as DenteTelegramFeature] ?? telegramHumanMessage(value);
+  }
+
+  function telegramControlPlaneHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
+    return denteAdminSecretRequestHeaders(extra, adminSecretOverride ?? telegramAdminSecretSession);
+  }
+
+  function denteClinicalMutationHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
+    return telegramControlPlaneHeaders(extra, adminSecretOverride);
+  }
+
+  function denteClinicalReadHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
+    return telegramControlPlaneHeaders(extra, adminSecretOverride);
+  }
+
+  function revokeObjectUrlIfNeeded(url: string): void {
+    if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+  }
+
+  function revokeObjectUrlMap(urls: Record<string, string>): void {
+    Object.values(urls).forEach(revokeObjectUrlIfNeeded);
+  }
+
+  function unlockTelegramAdminSession() {
+    const secret = telegramAdminSecretDraft.trim();
+    if (!secret) {
+      setError("Введите секрет админ-доступа DENTE, если он включен на API-сервере.");
+      return;
+    }
+    setTelegramAdminSecretSession(secret);
+    setTelegramAdminSecretDraft("");
+    setError(null);
+    setAccessUnlockRequired(false);
+    setAccessUnlockMessage("");
+    void loadDashboard({ adminSecret: secret })
+      .then(() => loadTelegramControlPlane({ adminSecret: secret }))
+      .catch((loadError: unknown) => {
+        setTelegramAdminSecretSession("");
+        setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить данные DENTE");
+      });
+  }
+
+  function lockTelegramAdminSession() {
+    setTelegramAdminSecretSession("");
+    setTelegramAdminSecretDraft("");
+    setDashboard(null);
+    void loadDashboard().catch((loadError: unknown) => {
+      setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить данные DENTE");
+    });
+  }
+
+  async function loadDashboard(options: { adminSecret?: string } = {}) {
+    const response = await fetch("/api/dashboard", {
+      cache: "no-store",
+      headers: denteClinicalReadHeaders({}, options.adminSecret)
+    });
+    if (!response.ok) {
+      const message = await responseErrorMessage(response, "Данные клиники не загружены");
+      if (response.status === 403 || response.status === 503) {
+        setAccessUnlockRequired(true);
+        setAccessUnlockMessage(message);
+        setDashboard(null);
+      }
+      throw new Error(message);
+    }
+    const payload = await response.json();
+    setDashboard(dashboardSchema.parse(payload));
+    setAccessUnlockRequired(false);
+    setAccessUnlockMessage("");
+    void loadPersistenceHealth({ silent: true });
+    void refreshSpeechRuntime({ silent: true });
+  }
+
+  function updateClinicProfileDraft<K extends keyof ClinicProfileDraft>(key: K, value: ClinicProfileDraft[K]) {
+    setClinicProfileDraft((current) => ({ ...current, [key]: value }));
+    setClinicProfileDirty(true);
+    setClinicProfileSaveState("idle");
+  }
+
+  function updatePatientCoreDraft<K extends keyof PatientCoreDraft>(key: K, value: PatientCoreDraft[K]) {
+    setPatientCoreDraft((current) => ({ ...current, [key]: value }));
+    setPatientCoreDirty(true);
+    setPatientCoreSaveState("idle");
+  }
+
+  function updatePatientAdministrativeProfileDraft<K extends keyof PatientAdministrativeProfileDraft>(
+    key: K,
+    value: PatientAdministrativeProfileDraft[K]
+  ) {
+    setPatientAdministrativeProfileDraft((current) => ({ ...current, [key]: value }));
+    setPatientAdministrativeProfileDirty(true);
+    setPatientAdministrativeProfileSaveState("idle");
+  }
+
+  function toggleClinicWorkingDay(day: number) {
+    setClinicProfileDraft((current) => {
+      const nextDays = current.workingDays.includes(day)
+        ? current.workingDays.filter((item) => item !== day)
+        : [...current.workingDays, day];
+      return { ...current, workingDays: normalizeWorkingDaysDraft(nextDays) };
+    });
+    setClinicProfileDirty(true);
+    setClinicProfileSaveState("idle");
+  }
+
+  function markStaffScheduleDirty(staffId: string) {
+    setStaffScheduleDirtyIds((current) => {
+      const next = new Set(current);
+      next.add(staffId);
+      return next;
+    });
+    setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "idle" }));
+  }
+
+  function markChairScheduleDirty(chairId: string) {
+    setChairScheduleDirtyIds((current) => {
+      const next = new Set(current);
+      next.add(chairId);
+      return next;
+    });
+    setChairScheduleSaveStates((current) => ({ ...current, [chairId]: "idle" }));
+  }
+
+  function updateStaffScheduleDraft(staffId: string, patch: Partial<StaffScheduleDraft>) {
+    setStaffScheduleDrafts((current) => {
+      const base = current[staffId] ?? defaultStaffScheduleDraft();
+      const nextWorkingDays = normalizeWorkingDaysDraft(patch.workingDays ?? base.workingDays);
+      const nextStart = patch.start ?? base.start;
+      const nextEnd = patch.end ?? base.end;
+      const perDay = base.perDay.map((day) => ({
+        ...day,
+        enabled: nextWorkingDays.includes(day.weekday),
+        start: patch.start && nextWorkingDays.includes(day.weekday) ? nextStart : day.start,
+        end: patch.end && nextWorkingDays.includes(day.weekday) ? nextEnd : day.end
+      }));
+      return {
+        ...current,
+        [staffId]: {
+          ...base,
+          ...patch,
+          start: nextStart,
+          end: nextEnd,
+          workingDays: nextWorkingDays,
+          perDay
+        }
+      };
+    });
+    markStaffScheduleDirty(staffId);
+  }
+
+  function updateChairScheduleDraft(chairId: string, patch: Partial<StaffScheduleDraft>) {
+    setChairScheduleDrafts((current) => {
+      const base = current[chairId] ?? defaultStaffScheduleDraft();
+      const nextWorkingDays = normalizeWorkingDaysDraft(patch.workingDays ?? base.workingDays);
+      const nextStart = patch.start ?? base.start;
+      const nextEnd = patch.end ?? base.end;
+      const perDay = base.perDay.map((day) => ({
+        ...day,
+        enabled: nextWorkingDays.includes(day.weekday),
+        start: patch.start && nextWorkingDays.includes(day.weekday) ? nextStart : day.start,
+        end: patch.end && nextWorkingDays.includes(day.weekday) ? nextEnd : day.end
+      }));
+      return {
+        ...current,
+        [chairId]: {
+          ...base,
+          ...patch,
+          start: nextStart,
+          end: nextEnd,
+          workingDays: nextWorkingDays,
+          perDay
+        }
+      };
+    });
+    markChairScheduleDirty(chairId);
+  }
+
+  function toggleStaffWorkingDay(staffId: string, day: number) {
+    const currentDraft = staffScheduleDrafts[staffId] ?? defaultStaffScheduleDraft();
+    const workingDays = currentDraft.workingDays.includes(day)
+      ? currentDraft.workingDays.filter((item) => item !== day)
+      : [...currentDraft.workingDays, day];
+    updateStaffScheduleDraft(staffId, { workingDays: normalizeWorkingDaysDraft(workingDays) });
+  }
+
+  function toggleChairWorkingDay(chairId: string, day: number) {
+    const currentDraft = chairScheduleDrafts[chairId] ?? defaultStaffScheduleDraft();
+    const workingDays = currentDraft.workingDays.includes(day)
+      ? currentDraft.workingDays.filter((item) => item !== day)
+      : [...currentDraft.workingDays, day];
+    updateChairScheduleDraft(chairId, { workingDays: normalizeWorkingDaysDraft(workingDays) });
+  }
+
+  function updateStaffScheduleDay(staffId: string, weekday: number, patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>) {
+    setStaffScheduleDrafts((current) => {
+      const base = current[staffId] ?? defaultStaffScheduleDraft();
+      return {
+        ...current,
+        [staffId]: {
+          ...base,
+          perDay: base.perDay.map((day) => (day.weekday === weekday ? { ...day, ...patch } : day))
+        }
+      };
+    });
+    markStaffScheduleDirty(staffId);
+  }
+
+  function updateChairScheduleDay(chairId: string, weekday: number, patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>) {
+    setChairScheduleDrafts((current) => {
+      const base = current[chairId] ?? defaultStaffScheduleDraft();
+      return {
+        ...current,
+        [chairId]: {
+          ...base,
+          perDay: base.perDay.map((day) => (day.weekday === weekday ? { ...day, ...patch } : day))
+        }
+      };
+    });
+    markChairScheduleDirty(chairId);
+  }
+
+  function openAppointmentEditor(appointment: Appointment) {
+    setEditingAppointmentId(appointment.id);
+    setAppointmentScheduleDrafts((current) => ({
+      ...current,
+      [appointment.id]: current[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment)
+    }));
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointment.id]: "idle" }));
+    setAppointmentScheduleErrors((current) => ({ ...current, [appointment.id]: null }));
+  }
+
+  function markAppointmentScheduleDirty(appointmentId: string) {
+    setAppointmentScheduleDirtyIds((current) => {
+      const next = new Set(current);
+      next.add(appointmentId);
+      return next;
+    });
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "idle" }));
+    setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
+  }
+
+  function updateAppointmentScheduleDraft<K extends keyof AppointmentScheduleDraft>(
+    appointmentId: string,
+    key: K,
+    value: AppointmentScheduleDraft[K]
+  ) {
+    const sourceAppointment = dashboard?.appointments.find((appointment) => appointment.id === appointmentId);
+    setAppointmentScheduleDrafts((current) => ({
+      ...current,
+      [appointmentId]: {
+        ...(current[appointmentId] ?? (sourceAppointment ? appointmentScheduleDraftFromAppointment(sourceAppointment) : {})),
+        [key]: value
+      } as AppointmentScheduleDraft
+    }));
+    markAppointmentScheduleDirty(appointmentId);
+  }
+
+  function newAppointmentPreferenceDefaults() {
+    return {
+      selectedPatientId,
+      selectedSpecialty,
+      scheduleDefaultDoctorUserId,
+      scheduleDefaultAssistantUserId,
+      scheduleDefaultChairId
+    };
+  }
+
+  function reconcileDashboardScopedUiSelections() {
+    if (!dashboard) return;
+    const activePatientIds = new Set(dashboard.patients.filter((patient) => patient.status === "active").map((patient) => patient.id));
+    const firstActivePatientId = dashboard.patients.find((patient) => patient.status === "active")?.id ?? null;
+    const doctorIds = new Set(
+      dashboard.clinicSettings.staff
+        .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+        .map((member) => member.id)
+    );
+    const assistantIds = new Set(
+      dashboard.clinicSettings.staff.filter((member) => member.active && member.role === "assistant").map((member) => member.id)
+    );
+    const staffIds = new Set(dashboard.clinicSettings.staff.filter((member) => member.active).map((member) => member.id));
+    const chairIds = new Set(dashboard.clinicSettings.chairs.filter((chair) => chair.active).map((chair) => chair.id));
+    const protocolIds = new Set(dashboard.protocolTemplates.map((template) => template.id));
+
+    if (selectedPatientId && !activePatientIds.has(selectedPatientId)) setSelectedPatientId(firstActivePatientId);
+    if (selectedProtocolId && !protocolIds.has(selectedProtocolId)) setSelectedProtocolId(null);
+    if (scheduleDoctorFilterId && !doctorIds.has(scheduleDoctorFilterId)) setScheduleDoctorFilterId(null);
+    if (scheduleAssistantFilterId && !assistantIds.has(scheduleAssistantFilterId)) setScheduleAssistantFilterId(null);
+    if (scheduleChairFilterId && !chairIds.has(scheduleChairFilterId)) setScheduleChairFilterId(null);
+    if (scheduleDefaultDoctorUserId && !doctorIds.has(scheduleDefaultDoctorUserId)) setScheduleDefaultDoctorUserId(null);
+    if (scheduleDefaultAssistantUserId && !assistantIds.has(scheduleDefaultAssistantUserId)) setScheduleDefaultAssistantUserId(null);
+    if (scheduleDefaultChairId && !chairIds.has(scheduleDefaultChairId)) setScheduleDefaultChairId(null);
+    if (telegramLinkStaffId && !staffIds.has(telegramLinkStaffId)) setTelegramLinkStaffId("");
+  }
+
+  function updateNewAppointmentDraft<K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) {
+    newAppointmentDraftUserEditedRef.current = true;
+    setNewAppointmentDraft((current) => ({ ...current, [key]: value }));
+    if (key === "patientId" && typeof value === "string") setSelectedPatientId(value || null);
+    if (key === "doctorUserId" && typeof value === "string") setScheduleDefaultDoctorUserId(value || null);
+    if (key === "assistantUserId" && typeof value === "string") setScheduleDefaultAssistantUserId(value || null);
+    if (key === "chairId" && typeof value === "string") setScheduleDefaultChairId(value || null);
+    setNewAppointmentSaveState("idle");
+    setNewAppointmentError(null);
+  }
+
+  function resetNewAppointmentDraft() {
+    if (!dashboard) return;
+    newAppointmentDraftUserEditedRef.current = false;
+    setNewAppointmentDraft(newAppointmentDraftFromDashboard(dashboard, newAppointmentPreferenceDefaults()));
+    setNewAppointmentSaveState("idle");
+    setNewAppointmentError(null);
+  }
+
+  function closeAppointmentEditor(appointmentId: string) {
+    setEditingAppointmentId((current) => (current === appointmentId ? null : current));
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "idle" }));
+    setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
+  }
+
+  async function saveClinicProfileFromDraft(): Promise<boolean> {
+    const payload = buildClinicProfileUpdatePayload(clinicProfileDraft);
+    const expectedSignature = clinicProfileDraftSignature(clinicProfileDraft);
+    if (!payload.clinicName?.trim()) {
+      setError("Укажите рабочее название клиники.");
+      setClinicProfileSaveState("error");
+      return false;
+    }
+    setClinicProfileSaveState("saving");
+    try {
+      const response = await fetch(clinicProfileEndpoint, {
+        method: "PUT",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Профиль клиники не сохранен"));
+      const clinicSettings = (await response.json()) as Dashboard["clinicSettings"];
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              clinicName: clinicSettings.profile.clinicName,
+              clinicSettings
+            }
+          : current
+      );
+      const latestMatchesSaved = clinicProfileDraftSignature(clinicProfileDraftRef.current) === expectedSignature;
+      if (latestMatchesSaved) {
+        setClinicProfileDraft(clinicProfileDraftFromProfile(clinicSettings.profile));
+        setClinicProfileDirty(false);
+      }
+      setClinicProfileSaveState(latestMatchesSaved ? "saved" : "idle");
+      setError(null);
+      return true;
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : "Запись не сохранена";
+      setClinicProfileSaveState("error");
+      setError(message);
+      setError(saveError instanceof Error ? saveError.message : "Профиль клиники не сохранен");
+      return false;
+    }
+  }
+
+  async function saveClinicProfileIfDirty(): Promise<boolean> {
+    if (!clinicProfileDirty) return true;
+    return saveClinicProfileFromDraft();
+  }
+
+  async function savePatientCore(): Promise<boolean> {
+    if (patientCoreSaveState === "saving") {
+      setError("Дождитесь завершения сохранения карточки пациента.");
+      return false;
+    }
+    if (!selectedPatient) {
+      setError("Выберите пациента перед сохранением карточки.");
+      return false;
+    }
+    if (!patientCoreDirty) return true;
+    const payload = buildPatientCorePayload(patientCoreDraft);
+    const expectedSignature = patientCoreDraftSignature(patientCoreDraft);
+    if (!payload.fullName?.trim()) {
+      setPatientCoreSaveState("error");
+      setError("ФИО пациента обязательно для расписания, документов и связи.");
+      return false;
+    }
+    setPatientCoreSaveState("saving");
+    try {
+      const response = await fetch(`/api/patients/${selectedPatient.id}`, {
+        method: "PUT",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Карточка пациента не сохранена"));
+      const savedPatient = (await response.json()) as Patient;
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              patients: current.patients.map((patient) => (patient.id === savedPatient.id ? savedPatient : patient))
+            }
+          : current
+      );
+      setSelectedPatientId(savedPatient.id);
+      const latestMatchesSaved = patientCoreDraftSignature(patientCoreDraftRef.current) === expectedSignature;
+      if (latestMatchesSaved) {
+        setPatientCoreDraft(patientCoreDraftFromPatient(savedPatient));
+        setPatientCoreDirty(false);
+      }
+      setPatientCoreSaveState(latestMatchesSaved ? "saved" : "idle");
+      setError(null);
+      return true;
+    } catch (saveError) {
+      setPatientCoreSaveState("error");
+      setError(saveError instanceof Error ? saveError.message : "Карточка пациента не сохранена");
+      return false;
+    }
+  }
+
+  async function savePatientAdministrativeProfile() {
+    if (patientAdministrativeProfileSaveState === "saving") {
+      setError("Дождитесь завершения сохранения реквизитов пациента.");
+      return false;
+    }
+    if (!selectedPatient) {
+      setError("Выберите пациента перед сохранением реквизитов.");
+      return false;
+    }
+    if (!patientAdministrativeProfileDirty) return true;
+    if (patientAdministrativeProfileValidationMessage) {
+      setPatientAdministrativeProfileSaveState("error");
+      setError(patientAdministrativeProfileValidationMessage);
+      return false;
+    }
+    const expectedSignature = patientAdministrativeProfileDraftSignature(patientAdministrativeProfileDraft);
+    setPatientAdministrativeProfileSaveState("saving");
+    try {
+      const response = await fetch(`/api/patients/${selectedPatient.id}/administrative-profile`, {
+        method: "PUT",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(buildPatientAdministrativeProfilePayload(patientAdministrativeProfileDraft))
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Данные пациента не сохранены"));
+      const savedPatient = (await response.json()) as Patient;
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              patients: current.patients.map((patient) => (patient.id === savedPatient.id ? savedPatient : patient))
+            }
+          : current
+      );
+      const latestDraft = patientAdministrativeProfileDraftRef.current;
+      const latestMatchesSaved = patientAdministrativeProfileDraftSignature(latestDraft) === expectedSignature;
+      if (latestMatchesSaved) {
+        setPatientAdministrativeProfileDraft(patientAdministrativeProfileDraftFromPatient(savedPatient));
+        setPatientAdministrativeProfileDirty(false);
+      }
+      setPatientAdministrativeProfileSaveState(latestMatchesSaved ? "saved" : "idle");
+      setError(null);
+      return true;
+    } catch (saveError) {
+      setPatientAdministrativeProfileSaveState("error");
+      setError(saveError instanceof Error ? saveError.message : "Данные пациента не сохранены");
+      return false;
+    }
+  }
+
+  function buildOnboardingFirstAppointmentIssues(): string[] {
+    const issues: string[] = [];
+    const requiredClinicDraftFields: Array<[string, string]> = [
+      ["название клиники", clinicProfileDraft.clinicName],
+      ["телефон клиники", clinicProfileDraft.phone],
+      ["часовой пояс", clinicProfileDraft.timezone]
+    ];
+    for (const [label, value] of requiredClinicDraftFields) {
+      if (!value.trim()) issues.push(label);
+    }
+    const activeStaff = dashboard?.clinicSettings.staff.filter((member) => member.active) ?? [];
+    const activeDoctors = activeStaff.filter((member) => member.role === "doctor" || member.role === "owner");
+    const activeAssistants = activeStaff.filter((member) => member.role === "assistant");
+    const activeChairs = dashboard?.clinicSettings.chairs.filter((chair) => chair.active) ?? [];
+    if (!activeDoctors.length) issues.push("врач для первого приема");
+    if (!activeDoctors.some((member) => member.canSignMedicalRecords)) issues.push("врач с правом подписи ЭМК");
+    if (!activeChairs.length) issues.push("кресло / кабинет");
+    if (dashboard?.clinicSettings.profile.mode !== "solo_doctor" && !activeAssistants.length) issues.push("ассистент");
+    const activeAppointmentReadiness = dashboard?.activeVisit.appointmentId
+      ? dashboard.appointmentReadiness.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
+      : null;
+    const activeAppointmentBlockingChecks =
+      activeAppointmentReadiness?.checks.filter(
+        (check) => (check.key === "team" || check.key === "schedule") && !check.ready
+      ) ?? [];
+    for (const check of activeAppointmentBlockingChecks) {
+      issues.push(`${check.title.toLocaleLowerCase("ru-RU")}: ${check.detail}`);
+    }
+    return issues;
+  }
+
+  function buildOnboardingDocumentReadinessIssues(): string[] {
+    const issues: string[] = [];
+    const requiredDocumentDraftFields: Array<[string, string]> = [
+      ["юридическое наименование", clinicProfileDraft.legalName],
+      ["ИНН", clinicProfileDraft.inn],
+      ["адрес", clinicProfileDraft.address],
+      ["номер медицинской лицензии", clinicProfileDraft.medicalLicenseNumber],
+      ["дата медицинской лицензии", clinicProfileDraft.medicalLicenseIssuedAt],
+      ["орган, выдавший лицензию", clinicProfileDraft.medicalLicenseIssuer]
+    ];
+    for (const [label, value] of requiredDocumentDraftFields) {
+      if (!value.trim()) issues.push(label);
+    }
+    return issues;
+  }
+
+  function buildOnboardingReadinessIssues(): string[] {
+    return [...buildOnboardingFirstAppointmentIssues(), ...buildOnboardingDocumentReadinessIssues()];
+  }
+
+  function buildOnboardingTelegramRecommendations(): string[] {
+    const recommendations: string[] = [];
+    if (telegramModeDraft === "disabled") recommendations.push("включить режим Telegram");
+    if (!telegramBotUsernameDraft.trim() && !telegramOwnBotUsernameDraft.trim()) recommendations.push("указать имя Telegram-бота");
+    if (!telegramPatientPortalBaseUrlDraft.trim()) recommendations.push("добавить адрес портала пациента");
+    if (!telegramReviewUrlDraft.trim()) recommendations.push("добавить ссылку для оценки клиники");
+    if (!telegramMapsUrlDraft.trim()) recommendations.push("добавить ссылку на карточку клиники на картах");
+    return recommendations;
+  }
+
+  function focusOnboardingIssue(issues: string[]): void {
+    if (issues.some((issue) => ["врач для первого приема", "врач с правом подписи ЭМК", "кресло / кабинет", "ассистент"].includes(issue))) {
+      setOnboardingStep("team");
+      return;
+    }
+    if (issues.some((issue) => ["название клиники", "телефон клиники", "часовой пояс"].includes(issue))) {
+      setOnboardingStep("clinic");
+      return;
+    }
+    if (issues.some((issue) => ["юридическое наименование", "ИНН", "адрес", "номер медицинской лицензии", "дата медицинской лицензии", "орган, выдавший лицензию"].includes(issue))) {
+      setOnboardingStep("legal");
+      return;
+    }
+    if (issues.some((issue) => issue.includes("Telegram") || issue.includes("бот") || issue.includes("портал") || issue.includes("оценки") || issue.includes("картах"))) {
+      setOnboardingStep("telegram");
+    }
+  }
+
+  function assertOnboardingReadyForFinish(): boolean {
+    const issues = buildOnboardingFirstAppointmentIssues();
+    if (!issues.length) return true;
+    focusOnboardingIssue(issues);
+    setError(`Перед первым рабочим экраном заполните: ${issues.join(", ")}.`);
+    return false;
+  }
+
+  function currentUiPreferencesInput(): UiPreferencesInput {
+    return {
+      uiLanguage,
+      selectedWorkspaceRole,
+      selectedSpecialty,
+      selectedProtocolId,
+      selectedPatientId,
+      scheduleDoctorFilterId,
+      scheduleAssistantFilterId,
+      scheduleChairFilterId,
+      scheduleDefaultDoctorUserId,
+      scheduleDefaultAssistantUserId,
+      scheduleDefaultChairId,
+      scheduleStatusFilter,
+      scheduleDateFilter,
+      paymentMethod,
+      taxDocumentYear,
+      selectedDocumentKind,
+      taxApplicationForm,
+      taxApplicationDeliveryChannel,
+      paymentReceiptTaxSupportRequested,
+      documentIssueSignatureMode,
+      documentIssueStaffFullName,
+      documentIssueStaffRole,
+      procedureConsentProcedureType,
+      postVisitCareTopic,
+      pricelistSourceKind,
+      usePricelistAi,
+      recognitionKind,
+      recognitionTarget,
+      importSourceKind,
+      documentIngestionTarget,
+      imagingImportSourceKind,
+      smartImportMode,
+      imagingKindFilter,
+      dicomWebEndpointUrl,
+      ohifBaseUrl,
+      telegramBotConfigId: telegramBotConfigId.trim(),
+      telegramLinkSubjectType,
+      telegramLinkStaffId: telegramLinkStaffId || null,
+      telegramOutboxStatusFilter,
+      telegramOutboxTemplateFilter,
+      onboardingDismissed,
+      onboardingDismissedAt,
+      onboardingStep,
+      onboardingDraftMode
+    };
+  }
+
+  function clearUiPreferencesRetryTimer(): void {
+    if (typeof window === "undefined" || uiPreferencesRetryTimerRef.current === null) return;
+    window.clearTimeout(uiPreferencesRetryTimerRef.current);
+    uiPreferencesRetryTimerRef.current = null;
+  }
+
+  function queueUiPreferencesServerSync(preferences: UiPreferences, options: { delayMs?: number } = {}): void {
+    pendingUiPreferencesSyncRef.current = preferences;
+    if (
+      !telegramAdminSecretSession.trim() ||
+      !uiPreferencesServerReadyRef.current ||
+      uiPreferencesSyncInFlightRef.current ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+    clearUiPreferencesRetryTimer();
+    uiPreferencesRetryTimerRef.current = window.setTimeout(() => {
+      uiPreferencesRetryTimerRef.current = null;
+      void flushPendingUiPreferencesServerSync();
+    }, options.delayMs ?? 600);
+  }
+
+  async function flushPendingUiPreferencesServerSync(): Promise<void> {
+    if (!telegramAdminSecretSession.trim() || !uiPreferencesServerReadyRef.current || uiPreferencesSyncInFlightRef.current) return;
+    const preferences = pendingUiPreferencesSyncRef.current;
+    if (!preferences) return;
+    pendingUiPreferencesSyncRef.current = null;
+    uiPreferencesSyncInFlightRef.current = true;
+    try {
+      await saveServerUiPreferences(preferences, telegramAdminSecretSession);
+      if (!pendingUiPreferencesSyncRef.current) setUiPreferencesSyncError(null);
+    } catch (preferencesError) {
+      if (!pendingUiPreferencesSyncRef.current) pendingUiPreferencesSyncRef.current = preferences;
+      setUiPreferencesSyncError(uiPreferencesSyncErrorMessage(preferencesError));
+    } finally {
+      uiPreferencesSyncInFlightRef.current = false;
+      const pending = pendingUiPreferencesSyncRef.current;
+      if (pending) queueUiPreferencesServerSync(pending, { delayMs: pending.savedAt === preferences.savedAt ? 5000 : 0 });
+    }
+  }
+
+  async function dismissOnboarding() {
+    if (!assertOnboardingReadyForFinish()) return;
+    if (!(await saveClinicProfileIfDirty())) return;
+    if (!(await saveOnboardingSchedulesIfDirty())) return;
+    if (telegramSettingsDirty && !(await saveTelegramSettings())) return;
+    const previousPreferencesInput = currentUiPreferencesInput();
+    const dismissalSavedAt = new Date().toISOString();
+    const savedPreferences: UiPreferences = {
+      version: 1,
+      ...previousPreferencesInput,
+      onboardingDismissed: true,
+      onboardingDismissedAt: dismissalSavedAt,
+      onboardingDraftMode: false,
+      savedAt: dismissalSavedAt
+    };
+    if (uiPreferencesServerReadyRef.current) {
+      try {
+        await saveServerUiPreferences(savedPreferences, telegramAdminSecretSession);
+        pendingUiPreferencesSyncRef.current = null;
+        setUiPreferencesSyncError(null);
+      } catch (preferencesError) {
+        const message = uiPreferencesSyncErrorMessage(preferencesError);
+        pendingUiPreferencesSyncRef.current = null;
+        setUiPreferencesSyncError(message);
+        setError(message);
+        return;
+      }
+    }
+    if (!persistUiPreferences(savedPreferences)) {
+      const message = "Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.";
+      setUiPreferencesSyncError(message);
+      setError(message);
+      return;
+    }
+    const dismissal = saveOnboardingDismissed(
+      true,
+      dismissalSavedAt,
+      false,
+      dashboard?.clinicSettings.profile.organizationId ?? null
+    );
+    setOnboardingDismissed(true);
+    setOnboardingDismissedAt(dismissal.savedAt);
+    setOnboardingDraftMode(false);
+  }
+
+  async function continueOnboardingInDraftMode(targetView?: AppView) {
+    if (!(await saveClinicProfileIfDirty())) return;
+    if (!(await saveOnboardingSchedulesIfDirty())) return;
+    if (onboardingStep === "telegram" && telegramSettingsDirty && !(await saveTelegramSettings())) return;
+    const dismissalSavedAt = new Date().toISOString();
+    const savedPreferences: UiPreferences = {
+      version: 1,
+      ...currentUiPreferencesInput(),
+      onboardingDismissed: true,
+      onboardingDismissedAt: dismissalSavedAt,
+      onboardingDraftMode: true,
+      savedAt: dismissalSavedAt
+    };
+    if (!persistUiPreferences(savedPreferences)) {
+      const message = "Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.";
+      setUiPreferencesSyncError(message);
+      setError(message);
+      return;
+    }
+    if (uiPreferencesServerReadyRef.current) {
+      try {
+        await saveServerUiPreferences(savedPreferences, telegramAdminSecretSession);
+        setUiPreferencesSyncError(null);
+      } catch (preferencesError) {
+        queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 });
+        setUiPreferencesSyncError(uiPreferencesSyncErrorMessage(preferencesError));
+      }
+    }
+    const dismissal = saveOnboardingDismissed(
+      true,
+      dismissalSavedAt,
+      true,
+      dashboard?.clinicSettings.profile.organizationId ?? null
+    );
+    setOnboardingDismissed(true);
+    setOnboardingDismissedAt(dismissal.savedAt);
+    setOnboardingDraftMode(true);
+    if (targetView && typeof window !== "undefined") {
+      window.location.hash = targetView;
+    }
+  }
+
+  async function moveOnboardingTo(step: OnboardingStep) {
+    if (step === "done" && !assertOnboardingReadyForFinish()) return;
+    if (!(await saveClinicProfileIfDirty())) return;
+    if (!(await saveOnboardingSchedulesIfDirty())) return;
+    if (onboardingStep === "telegram" && telegramSettingsDirty && !(await saveTelegramSettings())) return;
+    setOnboardingStep(step);
+  }
+
+  async function saveOnboardingSchedulesIfDirty(): Promise<boolean> {
+    if (!dashboard) return true;
+    const dirtyStaffIds = Array.from(staffScheduleDirtyIds).filter((staffId) => staffScheduleSaveStates[staffId] !== "saving");
+    const dirtyChairIds = Array.from(chairScheduleDirtyIds).filter((chairId) => chairScheduleSaveStates[chairId] !== "saving");
+    if (!dirtyStaffIds.length && !dirtyChairIds.length) return true;
+    for (const staffId of dirtyStaffIds) {
+      if (!(await saveStaffSchedule(staffId))) return false;
+    }
+    for (const chairId of dirtyChairIds) {
+      if (!(await saveChairSchedule(chairId))) return false;
+    }
+    return true;
+  }
+
+  function reopenOnboarding() {
+    const dismissal = saveOnboardingDismissed(
+      false,
+      new Date().toISOString(),
+      false,
+      dashboard?.clinicSettings.profile.organizationId ?? null
+    );
+    setOnboardingDismissed(false);
+    setOnboardingDismissedAt(dismissal.savedAt);
+    setOnboardingStep("intro");
+    setOnboardingDraftMode(false);
+    setOnboardingGuideExpanded(true);
+    setCurrentView("settings");
+    setSettingsTab("clinic");
+    window.location.hash = "settings/clinic";
+  }
+
+  function openOnboardingGuide(step?: OnboardingStep) {
+    if (step) setOnboardingStep(step);
+    setOnboardingGuideExpanded(true);
+    setCurrentView("settings");
+    setSettingsTab("clinic");
+    window.location.hash = "settings/clinic";
+  }
+
+  async function loadPersistenceHealth(options: { silent?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/health", { cache: "no-store" });
+      if (!response.ok) throw new Error(`Проверка сервера: API ${response.status}`);
+      setPersistenceHealth(normalizePersistenceHealth(await response.json()));
+    } catch (healthError) {
+      if (!options.silent) {
+        setError(healthError instanceof Error ? `Статус сохранности недоступен: ${healthError.message}` : "Статус сохранности недоступен");
+      }
+    }
+  }
+
+  async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/system/persistence/verify", { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) throw new Error(`Проверка сохранения: API ${response.status}`);
+      const report = (await response.json()) as PersistenceIntegrityReport & { meta?: PersistenceHealth };
+      setPersistenceIntegrity(report);
+      if (report.meta) setPersistenceHealth(report.meta);
+    } catch (verifyError) {
+      if (!options.silent) {
+        setError(verifyError instanceof Error ? `Проверка резервной копии не выполнена: ${verifyError.message}` : "Проверка резервной копии не выполнена");
+      }
+    }
+  }
+
+  async function downloadPersistenceExport() {
+    if (isPersistenceExporting) {
+      setError("Дождитесь завершения текущего экспорта резервной копии.");
+      return;
+    }
+    setIsPersistenceExporting(true);
+    try {
+      const response = await fetch("/api/system/persistence/export", { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) throw new Error(`Экспорт сохраненных данных: API ${response.status}`);
+      const blob = await response.blob();
+      if (blob.size === 0) throw new Error("Сервер вернул пустой файл резервной копии.");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `dental-crm-state-${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "")}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      await loadPersistenceIntegrity({ silent: true });
+      setError(null);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? `Экспорт резервной копии не выполнен: ${exportError.message}` : "Экспорт резервной копии не выполнен");
+    } finally {
+      setIsPersistenceExporting(false);
+    }
+  }
+
+  async function refreshBrowserContinuity(options: { silent?: boolean } = {}) {
+    try {
+      setBrowserContinuity(await inspectBrowserContinuity());
+    } catch (continuityError) {
+      if (!options.silent) {
+        setError(
+          continuityError instanceof Error
+            ? `Проверка сохранности браузера не выполнена: ${continuityError.message}`
+            : "Проверка сохранности браузера не выполнена"
+        );
+      }
+    }
+  }
+
+  async function loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/system/local-bridges/readiness", { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) throw new Error(`Готовность локального моста: API ${response.status}`);
+      setLocalBridgeReadiness((await response.json()) as LocalBridgeReadinessResponse);
+    } catch (bridgeError) {
+      if (!options.silent) {
+        setError(bridgeError instanceof Error ? `Готовность локального моста не проверена: ${bridgeError.message}` : "Готовность локального моста не проверена");
+      }
+    }
+  }
+
+  async function loadLocalBridgeUsePlans(options: { silent?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/system/local-bridges/use-plans", { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) throw new Error(`План локального моста: API ${response.status}`);
+      const payload = (await response.json()) as LocalBridgeUsePlansResponse;
+      setLocalBridgeUsePlans(payload);
+      setLocalBridgeReadiness(payload.readiness);
+    } catch (planError) {
+      if (!options.silent) {
+        setError(planError instanceof Error ? `План локального моста недоступен: ${planError.message}` : "План локального моста недоступен");
+      }
+    }
+  }
+
+  async function requestBrowserStoragePersistence() {
+    if (typeof navigator === "undefined" || !navigator.storage || typeof navigator.storage.persist !== "function") {
+      setError("Постоянное хранилище браузера недоступно на этом устройстве.");
+      return;
+    }
+    try {
+      const granted = await navigator.storage.persist();
+      await refreshBrowserContinuity({ silent: true });
+      if (!granted) {
+        setError("Браузер не выдал постоянное хранилище. Локальные черновики работают, но устройство может очистить кэш при нехватке места.");
+      }
+    } catch (storageError) {
+      setError(storageError instanceof Error ? `Запрос постоянного хранилища не выполнен: ${storageError.message}` : "Запрос постоянного хранилища не выполнен");
+    }
+  }
+
+  async function loadSpeechGatewayStatus(options: { silent?: boolean } = {}): Promise<SpeechGatewayStatus | null> {
+    try {
+      const response = await fetch("/api/speech/status", { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) throw new Error(`Статус распознавания речи: API ${response.status}`);
+      const status = (await response.json()) as SpeechGatewayStatus;
+      setSpeechGatewayStatus(status);
+      return status;
+    } catch (speechError) {
+      if (!options.silent) {
+        setError(speechError instanceof Error ? `Шлюз распознавания речи недоступен: ${speechError.message}` : "Шлюз распознавания речи недоступен");
+      }
+      return null;
+    }
+  }
+
+  async function loadSpeechGatewayHealthReport(options: { silent?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/speech/gateway-health", { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) throw new Error(`Проверка шлюза распознавания речи: API ${response.status}`);
+      setSpeechGatewayHealthReport((await response.json()) as SpeechGatewayHealthReport);
+    } catch (speechHealthError) {
+      if (!options.silent) {
+        setError(
+          speechHealthError instanceof Error
+            ? `Проверка STT gateway недоступна: ${speechHealthError.message}`
+            : "Проверка STT gateway недоступна"
+        );
+      }
+    }
+  }
+
+  async function loadSpeechProviderRuntimeStatuses(options: { silent?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/speech/providers/runtime", { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) throw new Error(`Провайдеры распознавания речи: API ${response.status}`);
+      setSpeechProviderRuntimeStatuses((await response.json()) as SpeechProviderRuntimeStatus[]);
+    } catch (speechRuntimeError) {
+      if (!options.silent) {
+        setError(
+          speechRuntimeError instanceof Error
+            ? `STT provider runtime недоступен: ${speechRuntimeError.message}`
+            : "STT provider runtime недоступен"
+        );
+      }
+    }
+  }
+
+  async function loadSpeechRecordingStrategy(options: { silent?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/speech/recording-strategy", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          expectedDurationMs: 180_000,
+          networkState: isOnline ? "online" : "offline",
+          privacyMode: "cloud_allowed",
+          specialty: selectedSpecialty,
+          source: "visit"
+        })
+      });
+      if (!response.ok) throw new Error(`Стратегия записи речи: API ${response.status}`);
+      setSpeechRecordingStrategy((await response.json()) as SpeechRecordingStrategy);
+    } catch (speechStrategyError) {
+      if (!options.silent) {
+        setError(
+          speechStrategyError instanceof Error
+            ? `STT strategy недоступна: ${speechStrategyError.message}`
+            : "STT strategy недоступна"
+        );
+      }
+    }
+  }
+
+  async function loadSpeechRecordingRecovery(options: { silent?: boolean } = {}) {
+    try {
+      const params = new URLSearchParams({ limit: "5" });
+      if (dashboard?.activeVisit.id) params.set("visitId", dashboard.activeVisit.id);
+      if (dashboard?.activeVisit.patientId) params.set("patientId", dashboard.activeVisit.patientId);
+      const response = await fetch(`/api/speech/recordings/recovery?${params.toString()}`, {
+        cache: "no-store",
+        headers: denteClinicalReadHeaders()
+      });
+      if (!response.ok) throw new Error(`Восстановление речевых записей: API ${response.status}`);
+      setSpeechRecordingRecovery((await response.json()) as SpeechRecordingRecoveryList);
+    } catch (speechRecoveryError) {
+      if (!options.silent) {
+        setError(
+          speechRecoveryError instanceof Error
+            ? `STT recovery недоступен: ${speechRecoveryError.message}`
+            : "STT recovery недоступен"
+        );
+      }
+    }
+  }
+
+  async function refreshSpeechRuntime(options: { silent?: boolean } = {}) {
+    await Promise.all([
+      loadSpeechGatewayStatus(options),
+      loadSpeechGatewayHealthReport(options),
+      loadSpeechProviderRuntimeStatuses(options),
+      loadSpeechRecordingStrategy(options),
+      loadSpeechRecordingRecovery(options)
+    ]);
+  }
+
+  function refreshPendingVisitSaveState() {
+    const pending = loadPendingVisitSaves(activeOrganizationId);
+    setPendingVisitSaveCount(pending.length);
+    setLastPendingVisitSaveAt(latestPendingVisitSaveAt(pending));
+  }
+
+  async function refreshPendingSpeechChunkState() {
+    setPendingSpeechChunkCount((await loadPendingSpeechChunks(activeOrganizationId)).length);
+  }
+
+  function applyAcceptedVisitResponse(result: AcceptVisitDraftResponse) {
+    setDashboard((current) =>
+      current
+        ? {
+            ...current,
+            activeVisit: result.visit,
+            visitCloseChecklist: result.visitCloseChecklist
+          }
+        : current
+    );
+    setDraft(null);
+    setVisitNoteForm(visitNoteFormFromVisit(result.visit));
+    setLastVisitSaveReceipt(result.saveReceipt);
+    if (result.saveReceipt.warning) {
+      setError(result.saveReceipt.warning);
+    }
+  }
+
+  async function submitAcceptedVisitDraft(
+    visitId: string,
+    draftToAccept: VisitNoteDraft,
+    doctorSummary: string | null,
+    options: { clientMutationId?: string | null; baseRevision?: number | null; clientSavedAt?: string | null } = {}
+  ) {
+    const response = await fetch(`/api/visits/${visitId}/draft/accept`, {
+      method: "POST",
+      headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        draft: draftToAccept,
+        doctorSummary,
+        clientMutationId: options.clientMutationId ?? null,
+        baseRevision: options.baseRevision ?? null,
+        clientSavedAt: options.clientSavedAt ?? new Date().toISOString()
+      })
+    });
+    if (!response.ok) {
+      throw new Error(`Принятие приема: API ${response.status}`);
+    }
+    return (await response.json()) as AcceptVisitDraftResponse;
+  }
+
+  function visitDraftSignature(nextTranscript: string, nextSpecialty: DentalSpecialty, nextForm: VisitNoteForm) {
+    return JSON.stringify([nextTranscript, nextSpecialty, nextForm]);
+  }
+
+  async function loadServerVisitDraft(visitId: string): Promise<VisitDraftAutosaveResponse> {
+    const response = await fetch(`/api/visits/${visitId}/draft/autosave`, {
+      cache: "no-store",
+      headers: denteClinicalReadHeaders()
+    });
+    if (!response.ok) throw new Error(`Автосохранение приема: API ${response.status}`);
+    return (await response.json()) as VisitDraftAutosaveResponse;
+  }
+
+  async function syncVisitDraftAutosave(clientSavedAt: string, options: { silent?: boolean } = {}) {
+    if (!dashboard) return;
+    const signature = visitDraftSignature(transcript, selectedSpecialty, visitNoteForm);
+    if (lastServerDraftSignatureRef.current === signature) return;
+    if (!transcript.trim() && !hasVisitNoteFormText) return;
+
+    if (!isOnline) {
+      setServerDraftSyncState("queued");
+      return;
+    }
+
+    setServerDraftSyncState("saving");
+    try {
+      const response = await fetch(`/api/visits/${dashboard.activeVisit.id}/draft/autosave`, {
+        method: "PUT",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          patientId: dashboard.activeVisit.patientId,
+          selectedSpecialty,
+          transcript,
+          draft: visitNoteDraftFromForm(visitNoteForm, [
+            "Серверный снимок автосохранения. Перед принятием черновика ЭМК врач все равно проверяет текст."
+          ]),
+          baseRevision: dashboard.activeVisit.revision ?? null,
+          clientDraftId: `visit-draft-${dashboard.activeVisit.id}`,
+          clientSavedAt
+        })
+      });
+      if (!response.ok) throw new Error(`Автосохранение приема: API ${response.status}`);
+      const result = (await response.json()) as VisitDraftAutosaveResponse;
+      lastServerDraftSignatureRef.current = signature;
+      setLastServerDraftSavedAt(result.serverDraft?.serverSavedAt ?? clientSavedAt);
+      setServerDraftSyncState("saved");
+    } catch (syncError) {
+      setServerDraftSyncState("error");
+      if (!options.silent) {
+        setError(syncError instanceof Error ? `Серверный черновик не сохранен: ${syncError.message}` : "Серверный черновик не сохранен");
+      }
+    }
+  }
+
+  async function flushPendingVisitSaves(options: { silent?: boolean } = {}) {
+    if (isPendingVisitSyncing) return;
+    const pending = loadPendingVisitSaves(activeOrganizationId);
+    if (!pending.length) {
+      refreshPendingVisitSaveState();
+      return;
+    }
+
+    setIsPendingVisitSyncing(true);
+    let remaining = pending;
+    try {
+      for (const item of pending) {
+        const result = await submitAcceptedVisitDraft(item.visitId, item.draft, item.doctorSummary, {
+          clientMutationId: item.clientMutationId,
+          baseRevision: item.baseRevision,
+          clientSavedAt: item.queuedAt
+        });
+        remaining = remaining.filter((candidate) => candidate.id !== item.id);
+        savePendingVisitSaves(remaining, activeOrganizationId);
+        if (dashboard?.activeVisit.id === result.visit.id) {
+          applyAcceptedVisitResponse(result);
+        }
+      }
+      refreshPendingVisitSaveState();
+    } catch (syncError) {
+      savePendingVisitSaves(remaining, activeOrganizationId);
+      refreshPendingVisitSaveState();
+      if (!options.silent) {
+        setError(syncError instanceof Error ? `Сервер пока не принял очередь: ${syncError.message}` : "Сервер пока не принял очередь");
+      }
+    } finally {
+      setIsPendingVisitSyncing(false);
+    }
+  }
+
+  async function submitSpeechChunk(input: SpeechChunkUploadInput): Promise<SpeechTranscriptionResponse> {
+    const response = await fetch("/api/speech/transcribe-chunk", {
+      method: "POST",
+      headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(input)
+    });
+    const payload = (await response.json()) as SpeechTranscriptionResponse;
+    if (payload.chunk?.status === "needs_provider_key" && !payload.chunk.transcript.trim()) {
+      throw new Error("Серверное STT сейчас недоступно; аудио осталось в локальной очереди.");
+    }
+    if (!response.ok) {
+      throw new Error(`Распознавание речи: API ${response.status}`);
+    }
+    return payload;
+  }
+
+  function speechChunkApplyKey(result: SpeechTranscriptionResponse): string {
+    return `${result.chunk.recordingId}:${result.chunk.chunkIndex}`;
+  }
+
+  function speechTranscriptionMatchesActiveVisit(result: SpeechTranscriptionResponse): boolean {
+    if (result.chunk.source !== "visit" || !result.chunk.visitId || !dashboard?.activeVisit.id) return true;
+    return result.chunk.visitId === dashboard.activeVisit.id;
+  }
+
+  function applySpeechTranscription(result: SpeechTranscriptionResponse) {
+    setSpeechGatewayStatus(result.gateway);
+    void loadSpeechRecordingRecovery({ silent: true });
+    const applyKey = speechChunkApplyKey(result);
+    if (appliedSpeechChunkKeysRef.current.has(applyKey)) {
+      setSpeechStatusNote(`Фрагмент ${result.chunk.chunkIndex + 1} уже учтен, дубль не добавлен.`);
+      return;
+    }
+    if (!speechTranscriptionMatchesActiveVisit(result)) {
+      setSpeechStatusNote("STT-фрагмент синхронизирован, но относится к другому приему и не добавлен в текущую карту.");
+      return;
+    }
+    const text = result.chunk.transcript.trim();
+    const quality = result.chunk.quality;
+    setSpeechLastQuality(quality);
+    const qualitySuffix = quality.level === "clear" ? "" : ` · ${speechQualityLabels[quality.level]}`;
+    if (text) {
+      appliedSpeechChunkKeysRef.current.add(applyKey);
+      appendVisitDictationText(text);
+      setSpeechStatusNote(
+        result.chunk.status === "transcribed"
+          ? `${result.chunk.providerLabel}: фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}`
+          : `Сохранен фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}: ${quality.nextAction}`
+      );
+      return;
+    }
+    setSpeechStatusNote(`${speechQualityLabels[quality.level]}: ${quality.nextAction}`);
+  }
+
+  async function assembleSpeechRecording(recordingId: string, options: { silent?: boolean } = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (dashboard?.activeVisit.id) params.set("visitId", dashboard.activeVisit.id);
+      if (dashboard?.activeVisit.patientId) params.set("patientId", dashboard.activeVisit.patientId);
+      const scopedQuery = params.toString();
+      const response = await fetch(
+        `/api/speech/recordings/${encodeURIComponent(recordingId)}/assemble${scopedQuery ? `?${scopedQuery}` : ""}`,
+        {
+        cache: "no-store",
+        headers: denteClinicalReadHeaders()
+        }
+      );
+      if (!response.ok) throw new Error(`Сборка речевой записи: API ${response.status}`);
+      const assembly = (await response.json()) as SpeechRecordingAssembly;
+      const assembledTranscript = assembly.transcript.trim();
+      if (assembledTranscript) {
+        visitDraftUserEditedRef.current = true;
+        setTranscript((current) => {
+          const normalizedCurrent = current.replace(/\s+/g, " ").trim();
+          const normalizedAssembled = assembledTranscript.replace(/\s+/g, " ").trim();
+          if (!normalizedAssembled || normalizedCurrent.includes(normalizedAssembled)) return current;
+          return [current.trim(), assembledTranscript].filter(Boolean).join("\n");
+        });
+      }
+      if (!options.silent || assembly.missingChunkIndexes.length || assembly.warnings.length) {
+        const missing = assembly.missingChunkIndexes.length ? ` · пропуски ${assembly.missingChunkIndexes.join(", ")}` : "";
+        setSpeechStatusNote(`Запись собрана: ${assembly.chunkCount} фрагм.${missing}`);
+      }
+      void loadSpeechRecordingRecovery({ silent: true });
+      return assembly;
+    } catch (assemblyError) {
+      if (!options.silent) {
+        setError(assemblyError instanceof Error ? `Не удалось собрать STT-запись: ${assemblyError.message}` : "Не удалось собрать STT-запись");
+      }
+      return null;
+    }
+  }
+
+  function trackSpeechUpload(upload: Promise<void>) {
+    speechUploadPromisesRef.current.add(upload);
+    upload.finally(() => speechUploadPromisesRef.current.delete(upload)).catch(() => undefined);
+  }
+
+  async function waitForSpeechUploads() {
+    const pendingUploads = Array.from(speechUploadPromisesRef.current);
+    if (pendingUploads.length) {
+      await Promise.allSettled(pendingUploads);
+    }
+  }
+
+  async function finalizeSpeechRecording(recordingId: string) {
+    await waitForSpeechUploads();
+    await flushPendingSpeechChunks({ silent: true });
+    await assembleSpeechRecording(recordingId, { silent: true });
+  }
+
+  async function flushPendingSpeechChunks(options: { silent?: boolean } = {}) {
+    const queue = await loadPendingSpeechChunks(activeOrganizationId);
+    if (!queue.length) {
+      await refreshPendingSpeechChunkState();
+      return;
+    }
+
+    if (!isOnline) {
+      await refreshPendingSpeechChunkState();
+      if (!options.silent) {
+        setSpeechStatusNote(`STT очередь сохранена локально: ${queue.length} фрагм., отправка после подключения.`);
+      }
+      return;
+    }
+
+    const currentGateway = (await loadSpeechGatewayStatus({ silent: true })) ?? speechGatewayStatus;
+    const hasAudioWaitingForServer = queue.some((item) => Boolean(item.audioBase64?.trim()) && !item.localTranscript?.trim());
+    if (hasAudioWaitingForServer && !speechGatewayCanUpload(currentGateway)) {
+      await refreshPendingSpeechChunkState();
+      if (!options.silent) {
+        setSpeechStatusNote(`STT очередь сохранена: ${queue.length} фрагм. Серверный провайдер еще не готов, аудио не удалено.`);
+      }
+      return;
+    }
+
+    const flushedRecordingIds = new Set<string>();
+    try {
+      for (const item of queue) {
+        const result = await submitSpeechChunk(item);
+        applySpeechTranscription(result);
+        await removePendingSpeechChunkById(item.id, activeOrganizationId);
+        if (speechTranscriptionMatchesActiveVisit(result)) flushedRecordingIds.add(item.recordingId);
+        await refreshPendingSpeechChunkState();
+      }
+      for (const recordingId of flushedRecordingIds) {
+        await assembleSpeechRecording(recordingId, { silent: true });
+      }
+    } catch (syncError) {
+      await refreshPendingSpeechChunkState();
+      if (!options.silent) {
+        setError(syncError instanceof Error ? `STT очередь пока не отправлена: ${syncError.message}` : "STT очередь пока не отправлена");
+      }
+    }
+  }
+
+  function applyUiPreferences(preferences: UiPreferences) {
+    setUiLanguage(preferences.uiLanguage);
+    setSelectedWorkspaceRole(preferences.selectedWorkspaceRole);
+    setSelectedSpecialty(preferences.selectedSpecialty);
+    setSelectedProtocolId(preferences.selectedProtocolId);
+    setSelectedPatientId(preferences.selectedPatientId);
+    setScheduleDoctorFilterId(preferences.scheduleDoctorFilterId);
+    setScheduleAssistantFilterId(preferences.scheduleAssistantFilterId);
+    setScheduleChairFilterId(preferences.scheduleChairFilterId);
+    setScheduleDefaultDoctorUserId(preferences.scheduleDefaultDoctorUserId);
+    setScheduleDefaultAssistantUserId(preferences.scheduleDefaultAssistantUserId);
+    setScheduleDefaultChairId(preferences.scheduleDefaultChairId);
+    setScheduleStatusFilter(preferences.scheduleStatusFilter);
+    setScheduleDateFilter(preferences.scheduleDateFilter);
+    setOnboardingDismissed(preferences.onboardingDismissed);
+    setOnboardingDismissedAt(preferences.onboardingDismissedAt ?? null);
+    setOnboardingStep(preferences.onboardingStep);
+    setOnboardingDraftMode(preferences.onboardingDraftMode);
+    setPaymentMethod(preferences.paymentMethod);
+    setTaxDocumentYear(preferences.taxDocumentYear);
+    setSelectedDocumentKind(preferences.selectedDocumentKind);
+    setTaxApplicationForm(preferences.taxApplicationForm);
+    setTaxApplicationDeliveryChannel(preferences.taxApplicationDeliveryChannel);
+    setPaymentReceiptTaxSupportRequested(preferences.paymentReceiptTaxSupportRequested);
+    setDocumentIssueSignatureMode(preferences.documentIssueSignatureMode);
+    setDocumentIssueStaffFullName(preferences.documentIssueStaffFullName);
+    setDocumentIssueStaffRole(preferences.documentIssueStaffRole);
+    setProcedureConsentProcedureType(preferences.procedureConsentProcedureType);
+    setPostVisitCareTopic(preferences.postVisitCareTopic);
+    setPricelistSourceKind(preferences.pricelistSourceKind);
+    setUsePricelistAi(preferences.usePricelistAi);
+    setRecognitionKind(preferences.recognitionKind);
+    setRecognitionTarget(preferences.recognitionTarget);
+    setImportSourceKind(preferences.importSourceKind);
+    setDocumentIngestionTarget(preferences.documentIngestionTarget);
+    setImagingImportSourceKind(preferences.imagingImportSourceKind);
+    setSmartImportMode(preferences.smartImportMode);
+    setImagingKindFilter(preferences.imagingKindFilter);
+    setDicomWebEndpointUrl(preferences.dicomWebEndpointUrl);
+    setOhifBaseUrl(preferences.ohifBaseUrl);
+    setTelegramBotConfigId(preferences.telegramBotConfigId);
+    setTelegramLinkSubjectType(preferences.telegramLinkSubjectType);
+    setTelegramLinkStaffId(preferences.telegramLinkStaffId ?? "");
+    setTelegramOutboxStatusFilter(preferences.telegramOutboxStatusFilter);
+    setTelegramOutboxTemplateFilter(preferences.telegramOutboxTemplateFilter);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    const preferencesAccessSecret = telegramAdminSecretSession.trim();
+    if (!preferencesAccessSecret) {
+      uiPreferencesServerReadyRef.current = false;
+      uiPreferencesHydratedRef.current = true;
+      setUiPreferencesHydrated(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+    loadServerUiPreferences(preferencesAccessSecret)
+      .then(async (serverPreferences) => {
+        if (cancelled) return;
+        const localPreferences = loadUiPreferences();
+        if (
+          serverPreferences &&
+          (!localPreferences.savedAt || (serverPreferences.savedAt && serverPreferences.savedAt > localPreferences.savedAt))
+        ) {
+          applyUiPreferences(serverPreferences);
+          window.localStorage.setItem(uiPreferencesStorageKey, JSON.stringify(serverPreferences));
+          setUiPreferencesSyncError(null);
+        } else if (!serverPreferences && localPreferences.savedAt) {
+          await saveServerUiPreferences(localPreferences, preferencesAccessSecret);
+          if (!cancelled) setUiPreferencesSyncError(null);
+        }
+      })
+      .catch((preferencesError) => {
+        if (!cancelled) {
+          setUiPreferencesSyncError(uiPreferencesSyncErrorMessage(preferencesError));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          uiPreferencesServerReadyRef.current = true;
+          uiPreferencesHydratedRef.current = true;
+          setUiPreferencesHydrated(true);
+          const pendingPreferences = pendingUiPreferencesSyncRef.current;
+          if (pendingPreferences) queueUiPreferencesServerSync(pendingPreferences, { delayMs: 0 });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [telegramAdminSecretSession]);
+
+  useEffect(() => {
+    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim() ?? "";
+    if (!uiPreferencesHydrated || !organizationId || documentIssueSignatureHydratedOrganizationIdRef.current === organizationId) return;
+    documentIssueSignatureHydratedOrganizationIdRef.current = organizationId;
+    const scopedDraft = loadDocumentIssueSignatureDraft(organizationId);
+    if (!scopedDraft.savedAt) return;
+    const savedPreferences = loadUiPreferences();
+    if (savedPreferences.savedAt && scopedDraft.savedAt < savedPreferences.savedAt) return;
+    setDocumentIssueSignatureMode(scopedDraft.mode);
+    setDocumentIssueStaffFullName(scopedDraft.staffFullName);
+    setDocumentIssueStaffRole(scopedDraft.staffRole);
+  }, [dashboard?.clinicSettings.profile.organizationId, uiPreferencesHydrated]);
+
+  useEffect(() => {
+    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim() ?? "";
+    if (!uiPreferencesHydrated || !organizationId || onboardingDismissalHydratedOrganizationIdRef.current === organizationId) return;
+    onboardingDismissalHydratedOrganizationIdRef.current = organizationId;
+    const scopedDismissal = loadOnboardingDismissalState(organizationId);
+    if (!scopedDismissal?.savedAt) return;
+    const preferenceDismissedAt = onboardingDismissedAt ?? loadUiPreferences().savedAt;
+    if (preferenceDismissedAt && scopedDismissal.savedAt < preferenceDismissedAt) return;
+    setOnboardingDismissed(scopedDismissal.dismissed);
+    setOnboardingDismissedAt(scopedDismissal.savedAt);
+    setOnboardingDraftMode(scopedDismissal.dismissed ? scopedDismissal.draftMode : false);
+    if (!scopedDismissal.dismissed) setOnboardingStep("intro");
+  }, [dashboard?.clinicSettings.profile.organizationId, onboardingDismissedAt, uiPreferencesHydrated]);
+
+  useEffect(() => {
+    if (!uiPreferencesHydrated) return undefined;
+    const savedPreferences = saveUiPreferences({
+      uiLanguage,
+      selectedWorkspaceRole,
+      selectedSpecialty,
+      selectedProtocolId,
+      selectedPatientId,
+      scheduleDoctorFilterId,
+      scheduleAssistantFilterId,
+      scheduleChairFilterId,
+      scheduleDefaultDoctorUserId,
+      scheduleDefaultAssistantUserId,
+      scheduleDefaultChairId,
+      scheduleStatusFilter,
+      scheduleDateFilter,
+      paymentMethod,
+      taxDocumentYear,
+      selectedDocumentKind,
+      taxApplicationForm,
+      taxApplicationDeliveryChannel,
+      paymentReceiptTaxSupportRequested,
+      documentIssueSignatureMode,
+      documentIssueStaffFullName,
+      documentIssueStaffRole,
+      procedureConsentProcedureType,
+      postVisitCareTopic,
+      pricelistSourceKind,
+      usePricelistAi,
+      recognitionKind,
+      recognitionTarget,
+      importSourceKind,
+      documentIngestionTarget,
+      imagingImportSourceKind,
+      smartImportMode,
+      imagingKindFilter,
+      dicomWebEndpointUrl,
+      ohifBaseUrl,
+      telegramBotConfigId: telegramBotConfigId.trim(),
+      telegramLinkSubjectType,
+      telegramLinkStaffId: telegramLinkStaffId || null,
+      telegramOutboxStatusFilter,
+      telegramOutboxTemplateFilter,
+      onboardingDismissed,
+      onboardingDismissedAt,
+      onboardingStep,
+      onboardingDraftMode
+    });
+    if (!savedPreferences) {
+      setUiPreferencesSyncError("Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.");
+      return undefined;
+    }
+    queueUiPreferencesServerSync(savedPreferences, { delayMs: 600 });
+    return undefined;
+  }, [
+    selectedWorkspaceRole,
+    uiLanguage,
+    selectedSpecialty,
+    selectedProtocolId,
+    selectedPatientId,
+    scheduleDoctorFilterId,
+    scheduleAssistantFilterId,
+    scheduleChairFilterId,
+    scheduleDefaultDoctorUserId,
+    scheduleDefaultAssistantUserId,
+    scheduleDefaultChairId,
+    scheduleStatusFilter,
+    scheduleDateFilter,
+    paymentMethod,
+    taxDocumentYear,
+    selectedDocumentKind,
+    taxApplicationForm,
+    taxApplicationDeliveryChannel,
+    paymentReceiptTaxSupportRequested,
+    documentIssueSignatureMode,
+    documentIssueStaffFullName,
+    documentIssueStaffRole,
+    procedureConsentProcedureType,
+    postVisitCareTopic,
+    pricelistSourceKind,
+    usePricelistAi,
+    recognitionKind,
+    recognitionTarget,
+    importSourceKind,
+    documentIngestionTarget,
+    imagingImportSourceKind,
+    smartImportMode,
+    imagingKindFilter,
+    dicomWebEndpointUrl,
+    ohifBaseUrl,
+    telegramBotConfigId,
+    telegramLinkSubjectType,
+    telegramLinkStaffId,
+    telegramOutboxStatusFilter,
+    telegramOutboxTemplateFilter,
+    onboardingDismissed,
+    onboardingDismissedAt,
+    onboardingStep,
+    onboardingDraftMode,
+    uiPreferencesHydrated
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const retryPendingUiPreferences = () => {
+      const pendingPreferences = pendingUiPreferencesSyncRef.current ?? loadUiPreferences();
+      if (pendingPreferences) queueUiPreferencesServerSync(pendingPreferences, { delayMs: 0 });
+    };
+    window.addEventListener("online", retryPendingUiPreferences);
+    return () => {
+      window.removeEventListener("online", retryPendingUiPreferences);
+      clearUiPreferencesRetryTimer();
+    };
+  }, []);
+
+  useEffect(() => {
+    loadDashboard().catch((loadError: unknown) => {
+      setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить данные");
+    });
+  }, []);
+
+  const imagingPreviewSignature = dashboard?.imagingStudies.map((study) => `${study.id}:${study.previewUrl}`).join("|") ?? "";
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (!dashboard?.imagingStudies.length) {
+      setImagingPreviewObjectUrls((current) => {
+        revokeObjectUrlMap(current);
+        return {};
+      });
+      return undefined;
+    }
+
+    let cancelled = false;
+    const abortController = new AbortController();
+    const createdUrls: string[] = [];
+    void Promise.all(
+      dashboard.imagingStudies.map(async (study): Promise<[string, string] | null> => {
+        if (!study.previewUrl.startsWith("/api/")) return [study.id, study.previewUrl];
+        const response = await fetch(study.previewUrl, {
+          cache: "no-store",
+          headers: denteClinicalReadHeaders(),
+          signal: abortController.signal
+        });
+        if (!response.ok) return null;
+        const blobUrl = URL.createObjectURL(await response.blob());
+        if (cancelled) {
+          revokeObjectUrlIfNeeded(blobUrl);
+          return null;
+        }
+        createdUrls.push(blobUrl);
+        return [study.id, blobUrl];
+      })
+    )
+      .then((entries) => {
+        if (cancelled) {
+          createdUrls.forEach(revokeObjectUrlIfNeeded);
+          return;
+        }
+        const next = Object.fromEntries(entries.filter((entry): entry is [string, string] => Boolean(entry)));
+        const nextUrls = new Set(Object.values(next));
+        setImagingPreviewObjectUrls((current) => {
+          Object.values(current).forEach((url) => {
+            if (!nextUrls.has(url)) revokeObjectUrlIfNeeded(url);
+          });
+          return next;
+        });
+      })
+      .catch(() => {
+        createdUrls.forEach(revokeObjectUrlIfNeeded);
+        if (!cancelled) {
+          setImagingPreviewObjectUrls((current) => {
+            revokeObjectUrlMap(current);
+            return {};
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+      createdUrls.forEach(revokeObjectUrlIfNeeded);
+    };
+  }, [imagingPreviewSignature, telegramAdminSecretSession]);
+
+  useEffect(() => {
+    const settings = telegramStatus?.settings;
+    if (!settings || telegramSettingsDirty) return;
+    setTelegramModeDraft(settings.mode);
+    setTelegramBotUsernameDraft(settings.botUsername ?? "");
+    setTelegramOwnBotUsernameDraft(settings.ownBotUsername ?? "");
+    setTelegramWebhookBaseUrlDraft(settings.webhookBaseUrl ?? "");
+    setTelegramPatientPortalBaseUrlDraft(settings.patientPortalBaseUrl ?? "");
+    setTelegramWelcomeImageUrlDraft(settings.welcomeImageUrl ?? "");
+    setTelegramVisualCardUrlDrafts({
+      ...emptyTelegramVisualCardUrlDrafts(),
+      ...(settings.visualCardUrls ?? {})
+    });
+    setTelegramReviewUrlDraft(settings.clinicReviewUrl ?? "");
+    setTelegramMapsUrlDraft(settings.clinicMapsUrl ?? "");
+    setTelegramEnabledFeaturesDraft(settings.enabledFeatures);
+    setTelegramTokenTtlDraft(String(settings.patientLinkTokenTtlMinutes));
+    setTelegramReminderLeadTimesDraft((settings.appointmentReminderLeadTimesHours?.length ? settings.appointmentReminderLeadTimesHours : [24]).join(", "));
+    setTelegramReviewRequestDelayDraft(String(settings.reviewRequestDelayHours ?? 2));
+    setTelegramPostVisitCheckupDelayDrafts(
+      normalizeTelegramPostVisitCheckupDelayDrafts(
+        settings.postVisitCheckupDelayHoursByTopic ?? defaultTelegramPostVisitCheckupDelayHoursByTopic
+      )
+    );
+    setTelegramAllowVoiceIntakeDraft(settings.allowVoiceIntake);
+    setTelegramStaffEscalationChannelDraft(settings.staffEscalationChannel ?? "");
+    setTelegramPrivacyModeDraft(settings.privacyMode);
+    setTelegramSettingsSaveState("idle");
+    setTelegramSettingsSaveError(null);
+  }, [telegramStatus?.settings.updatedAt, telegramSettingsDirty]);
+
+  useEffect(() => {
+    if (!telegramSettingsDirty || !telegramStatus?.settings) return;
+    const timeout = window.setTimeout(() => {
+      void saveTelegramSettings({ silent: true });
+    }, 900);
+    return () => window.clearTimeout(timeout);
+  }, [
+    telegramSettingsDirty,
+    telegramModeDraft,
+    telegramBotUsernameDraft,
+    telegramOwnBotUsernameDraft,
+    telegramWebhookBaseUrlDraft,
+    telegramPatientPortalBaseUrlDraft,
+    telegramWelcomeImageUrlDraft,
+    telegramVisualCardUrlDrafts,
+    telegramReviewUrlDraft,
+    telegramMapsUrlDraft,
+    telegramEnabledFeaturesDraft,
+    telegramTokenTtlDraft,
+    telegramReminderLeadTimesDraft,
+    telegramReviewRequestDelayDraft,
+    telegramPostVisitCheckupDelayDrafts,
+    telegramAllowVoiceIntakeDraft,
+    telegramStaffEscalationChannelDraft,
+    telegramPrivacyModeDraft,
+    telegramStatus?.settings
+  ]);
+
+  useEffect(() => {
+    if (!dashboard?.clinicSettings.profile || clinicProfileDraftHydratedRef.current) return;
+    setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard.clinicSettings.profile));
+    setClinicProfileDirty(false);
+    clinicProfileDraftHydratedRef.current = true;
+  }, [dashboard]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    setStaffScheduleDrafts((current) => {
+      const next: Record<string, StaffScheduleDraft> = {};
+      dashboard.clinicSettings.staff.forEach((member) => {
+        next[member.id] = current[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
+      });
+      return next;
+    });
+  }, [dashboard]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    setChairScheduleDrafts((current) => {
+      const next: Record<string, StaffScheduleDraft> = {};
+      dashboard.clinicSettings.chairs.forEach((chair) => {
+        next[chair.id] = current[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
+      });
+      return next;
+    });
+  }, [dashboard]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    setAppointmentScheduleDrafts((current) => {
+      const next: Record<string, AppointmentScheduleDraft> = {};
+      dashboard.appointments.forEach((appointment) => {
+        next[appointment.id] = current[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment);
+      });
+      return next;
+    });
+  }, [dashboard]);
+
+  useEffect(() => {
+    reconcileDashboardScopedUiSelections();
+  }, [
+    dashboard,
+    scheduleAssistantFilterId,
+    scheduleChairFilterId,
+    scheduleDefaultAssistantUserId,
+    scheduleDefaultChairId,
+    scheduleDefaultDoctorUserId,
+    scheduleDoctorFilterId,
+    selectedProtocolId,
+    selectedPatientId,
+    telegramLinkStaffId
+  ]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    if (newAppointmentDraftUserEditedRef.current) return;
+    setNewAppointmentDraft(newAppointmentDraftFromDashboard(dashboard, newAppointmentPreferenceDefaults()));
+  }, [dashboard, selectedPatientId, selectedSpecialty, scheduleDefaultAssistantUserId, scheduleDefaultChairId, scheduleDefaultDoctorUserId]);
+
+  useEffect(() => {
+    staffScheduleDraftsRef.current = staffScheduleDrafts;
+  }, [staffScheduleDrafts]);
+
+  useEffect(() => {
+    chairScheduleDraftsRef.current = chairScheduleDrafts;
+  }, [chairScheduleDrafts]);
+
+  useEffect(() => {
+    appointmentScheduleDraftsRef.current = appointmentScheduleDrafts;
+  }, [appointmentScheduleDrafts]);
+
+  useEffect(() => {
+    if (!dashboard || staffScheduleDirtyIds.size === 0) return undefined;
+    const dirtyStaffIds = Array.from(staffScheduleDirtyIds).filter((staffId) => staffScheduleSaveStates[staffId] !== "saving");
+    if (!dirtyStaffIds.length) return undefined;
+    const staffRetryingErrors = dirtyStaffIds.some((staffId) => staffScheduleSaveStates[staffId] === "error");
+    const saveTimer = window.setTimeout(() => {
+      dirtyStaffIds.forEach((staffId) => void saveStaffSchedule(staffId));
+    }, staffRetryingErrors ? 5000 : 1200);
+    return () => window.clearTimeout(saveTimer);
+  }, [dashboard, staffScheduleDirtyIds, staffScheduleDrafts, staffScheduleSaveStates]);
+
+  useEffect(() => {
+    if (!dashboard || chairScheduleDirtyIds.size === 0) return undefined;
+    const dirtyChairIds = Array.from(chairScheduleDirtyIds).filter((chairId) => chairScheduleSaveStates[chairId] !== "saving");
+    if (!dirtyChairIds.length) return undefined;
+    const chairRetryingErrors = dirtyChairIds.some((chairId) => chairScheduleSaveStates[chairId] === "error");
+    const saveTimer = window.setTimeout(() => {
+      dirtyChairIds.forEach((chairId) => void saveChairSchedule(chairId));
+    }, chairRetryingErrors ? 5000 : 1200);
+    return () => window.clearTimeout(saveTimer);
+  }, [dashboard, chairScheduleDirtyIds, chairScheduleDrafts, chairScheduleSaveStates]);
+
+  useEffect(() => {
+    if (!dashboard || appointmentScheduleDirtyIds.size === 0) return undefined;
+    const dirtyAppointmentIds = Array.from(appointmentScheduleDirtyIds).filter(
+      (appointmentId) => appointmentScheduleSaveStates[appointmentId] !== "saving"
+    );
+    if (!dirtyAppointmentIds.length) return undefined;
+    const appointmentRetryingErrors = dirtyAppointmentIds.some(
+      (appointmentId) => appointmentScheduleSaveStates[appointmentId] === "error"
+    );
+    const saveTimer = window.setTimeout(() => {
+      dirtyAppointmentIds.forEach((appointmentId) => void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false }));
+    }, appointmentRetryingErrors ? 5000 : 1200);
+    return () => window.clearTimeout(saveTimer);
+  }, [dashboard, appointmentScheduleDirtyIds, appointmentScheduleDrafts, appointmentScheduleSaveStates]);
+
+  useEffect(() => {
+    if (!dashboard || typeof window === "undefined") return undefined;
+    const retryScheduleAutosaves = () => {
+      Array.from(staffScheduleDirtyIds).forEach((staffId) => {
+        if (staffScheduleSaveStates[staffId] !== "saving") {
+          void saveStaffSchedule(staffId);
+        }
+      });
+      Array.from(chairScheduleDirtyIds).forEach((chairId) => {
+        if (chairScheduleSaveStates[chairId] !== "saving") {
+          void saveChairSchedule(chairId);
+        }
+      });
+      Array.from(appointmentScheduleDirtyIds).forEach((appointmentId) => {
+        if (appointmentScheduleSaveStates[appointmentId] !== "saving") {
+          void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false });
+        }
+      });
+    };
+    window.addEventListener("online", retryScheduleAutosaves);
+    return () => window.removeEventListener("online", retryScheduleAutosaves);
+  }, [
+    dashboard,
+    staffScheduleDirtyIds,
+    staffScheduleSaveStates,
+    chairScheduleDirtyIds,
+    chairScheduleSaveStates,
+    appointmentScheduleDirtyIds,
+    appointmentScheduleSaveStates
+  ]);
+
+  useEffect(() => {
+    if (!dashboard || !clinicProfileDirty || clinicProfileSaveState === "saving" || !clinicProfileDraft.clinicName.trim()) {
+      return undefined;
+    }
+    const saveTimer = window.setTimeout(() => {
+      void saveClinicProfileFromDraft();
+    }, 1400);
+    return () => window.clearTimeout(saveTimer);
+  }, [clinicProfileDraft, clinicProfileDirty, clinicProfileSaveState, dashboard]);
+
+  useEffect(() => {
+    setNewStaffSpecialty(selectedSpecialty);
+  }, [selectedSpecialty]);
+
+  useEffect(() => {
+    setBrowserDirectoryPickerAvailable(
+      typeof window !== "undefined" && typeof (window as BrowserDirectoryPickerWindow).showDirectoryPicker === "function"
+    );
+    const input = browserDirectoryInputRef.current;
+    if (input) {
+      input.setAttribute("webkitdirectory", "");
+      input.setAttribute("directory", "");
+    }
+    const migrationInput = browserMigrationInputRef.current;
+    if (migrationInput) {
+      migrationInput.setAttribute("webkitdirectory", "");
+      migrationInput.setAttribute("directory", "");
+    }
+  }, []);
+
+  useEffect(() => {
+    const recovered = loadLocalDicomWorkbenchDraft(activeOrganizationId);
+    if (recovered) {
+      applyDicomWorkbenchManifest(recovered.manifest);
+      setDicomWorkbenchLocalSavedAt(recovered.clientSavedAt);
+    }
+    void loadDicomWorkbenchBundles({ silent: true, restoreLatest: !recovered });
+  }, [activeOrganizationId]);
+
+  useEffect(() => {
+    const organizationId = activeOrganizationId?.trim() ?? "";
+    if (!organizationId || localImagingRecoveryHydratedOrganizationIdRef.current === organizationId) return;
+    localImagingRecoveryHydratedOrganizationIdRef.current = organizationId;
+    const localFolderDraft = loadLocalImagingFolderDraft(organizationId);
+    setLocalImagingFolderDraft(localFolderDraft);
+    setImagingFolderPath(localFolderDraft?.folderPath ?? "C:\\Images");
+    setBrowserPickedImagingFolder(loadBrowserPickedImagingFolderPreview(organizationId));
+  }, [activeOrganizationId]);
+
+  useEffect(() => {
+    if (currentView === "settings" && settingsTab === "audit") {
+      void loadPersistenceHealth({ silent: true });
+      void loadPersistenceIntegrity({ silent: true });
+      void refreshBrowserContinuity({ silent: true });
+      void loadLocalBridgeUsePlans({ silent: true });
+    }
+  }, [currentView, settingsTab]);
+
+  useEffect(() => {
+    if ((currentView === "settings" && settingsTab === "telegram") || (!onboardingDismissed && onboardingStep === "telegram")) {
+      void loadTelegramControlPlane({ silent: true });
+    }
+  }, [
+    currentView,
+    settingsTab,
+    onboardingDismissed,
+    onboardingStep,
+    telegramOutboxStatusFilter,
+    telegramOutboxTemplateFilter,
+    telegramModeDraft,
+    telegramBotConfigId,
+    dashboard?.clinicSettings.profile.organizationId
+  ]);
+
+  useEffect(() => {
+    if (currentView === "settings") {
+      setOnboardingGuideExpanded(settingsTab === "clinic");
+      activeSettingsTabButtonRef.current?.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+    } else {
+      setOnboardingGuideExpanded(false);
+    }
+  }, [currentView, settingsTab]);
+
+  useEffect(() => {
+    const syncView = () => {
+      const nextView = viewFromHash();
+      setCurrentView(nextView);
+      if (nextView === "settings") {
+        setSettingsTab(settingsTabFromHash());
+      }
+    };
+    syncView();
+    window.addEventListener("hashchange", syncView);
+    return () => window.removeEventListener("hashchange", syncView);
+  }, []);
+
+  useEffect(() => {
+    const telegramHandoffTarget = initialTelegramHandoffTargetRef.current ?? readDenteTelegramHandoffTarget();
+    if (!telegramHandoffTarget) return;
+    setTelegramHandoffNotice(telegramHandoffTarget);
+    stripDenteTelegramHandoffQuery(telegramHandoffTarget);
+  }, []);
+
+  useEffect(() => {
+    if (!uiPreferencesHydrated) return;
+    const telegramHandoffTarget = initialTelegramHandoffTargetRef.current ?? readDenteTelegramHandoffTarget();
+    if (!telegramHandoffTarget) return;
+    setCurrentView(telegramHandoffTarget.view);
+    if (telegramHandoffTarget.documentKind) {
+      setSelectedDocumentKind(telegramHandoffTarget.documentKind);
+    }
+    setTelegramHandoffNotice(telegramHandoffTarget);
+    stripDenteTelegramHandoffQuery(telegramHandoffTarget);
+  }, [uiPreferencesHydrated]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      const status = await inspectBrowserContinuity();
+      if (!cancelled) setBrowserContinuity(status);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const onControllerChange = () => void refresh();
+    void refresh();
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    navigator.serviceWorker?.addEventListener("controllerchange", onControllerChange);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+      navigator.serviceWorker?.removeEventListener("controllerchange", onControllerChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    refreshPendingVisitSaveState();
+    void refreshPendingSpeechChunkState();
+    const markOnline = () => {
+      setIsOnline(true);
+      void flushPendingVisitSaves({ silent: true });
+      void flushPendingSpeechChunks({ silent: true });
+      if (lastLocalSavedAt) void syncVisitDraftAutosave(lastLocalSavedAt, { silent: true });
+    };
+    const markOffline = () => setIsOnline(false);
+    const refreshFromStorage = () => {
+      refreshPendingVisitSaveState();
+      void refreshPendingSpeechChunkState();
+    };
+    window.addEventListener("online", markOnline);
+    window.addEventListener("offline", markOffline);
+    window.addEventListener("storage", refreshFromStorage);
+    const syncTimer = window.setTimeout(() => {
+      void flushPendingVisitSaves({ silent: true });
+      void flushPendingSpeechChunks({ silent: true });
+    }, 700);
+    return () => {
+      window.removeEventListener("online", markOnline);
+      window.removeEventListener("offline", markOffline);
+      window.removeEventListener("storage", refreshFromStorage);
+      window.clearTimeout(syncTimer);
+    };
+  }, [activeOrganizationId, dashboard?.activeVisit.id, lastLocalSavedAt]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    void loadSpeechRecordingStrategy({ silent: true });
+  }, [dashboard?.activeVisit.id, isOnline, selectedSpecialty]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    let cancelled = false;
+    visitDraftUserEditedRef.current = false;
+    setLocalAutosaveReady(false);
+    const savedDraft = loadVisitLocalDraft(dashboard.activeVisit.id, activeOrganizationId);
+    const serverUpdatedAt = Date.parse(dashboard.activeVisit.updatedAt);
+    const savedAt = savedDraft ? Date.parse(savedDraft.savedAt) : Number.NaN;
+
+    if (savedDraft && Number.isFinite(savedAt) && savedAt > serverUpdatedAt) {
+      setTranscript(savedDraft.transcript);
+      setSelectedSpecialty(savedDraft.selectedSpecialty);
+      setVisitNoteForm(savedDraft.visitNoteForm);
+      setLastLocalSavedAt(savedDraft.savedAt);
+      setLocalDraftWasRestored(true);
+    } else {
+      const defaultSpecialty = inferDashboardVisitSpecialty(dashboard);
+      setSelectedSpecialty((current) => (current === "therapist" || current === "universal" ? defaultSpecialty : current));
+      setVisitNoteForm(visitNoteFormFromVisit(dashboard.activeVisit));
+      setLastLocalSavedAt(null);
+      setLocalDraftWasRestored(false);
+    }
+
+    const restoreServerDraft = async () => {
+      try {
+        const result = await loadServerVisitDraft(dashboard.activeVisit.id);
+        if (cancelled || !result.serverDraft) return;
+        if (visitDraftUserEditedRef.current) {
+          setLastServerDraftSavedAt(result.serverDraft.serverSavedAt);
+          return;
+        }
+        const serverDraftAt = Date.parse(result.serverDraft.serverSavedAt);
+        const localDraftAt = Number.isFinite(savedAt) ? savedAt : 0;
+        const activeVisitAt = Number.isFinite(serverUpdatedAt) ? serverUpdatedAt : 0;
+        if (Number.isFinite(serverDraftAt) && serverDraftAt > Math.max(localDraftAt, activeVisitAt)) {
+          setTranscript(result.serverDraft.transcript);
+          setSelectedSpecialty(result.serverDraft.selectedSpecialty);
+          setVisitNoteForm(visitNoteFormFromDraft(result.serverDraft.draft));
+          setLastServerDraftSavedAt(result.serverDraft.serverSavedAt);
+          setLocalDraftWasRestored(true);
+          lastServerDraftSignatureRef.current = visitDraftSignature(
+            result.serverDraft.transcript,
+            result.serverDraft.selectedSpecialty,
+            visitNoteFormFromDraft(result.serverDraft.draft)
+          );
+        } else {
+          setLastServerDraftSavedAt(result.serverDraft.serverSavedAt);
+        }
+      } catch {
+        if (!cancelled) setServerDraftSyncState("queued");
+      } finally {
+        if (!cancelled) setLocalAutosaveReady(true);
+      }
+    };
+
+    void restoreServerDraft();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganizationId, dashboard?.activeVisit.id, dashboard?.activeVisit.updatedAt]);
+
+  useEffect(() => {
+    if (!dashboard || !localAutosaveReady) return;
+    const savedAt = new Date().toISOString();
+    const timeout = window.setTimeout(() => {
+      saveVisitLocalDraft(
+        {
+          version: 1,
+          visitId: dashboard.activeVisit.id,
+          savedAt,
+          transcript,
+          selectedSpecialty,
+          visitNoteForm
+        },
+        activeOrganizationId
+      );
+      setLastLocalSavedAt(savedAt);
+      setLocalDraftWasRestored(false);
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [activeOrganizationId, dashboard?.activeVisit.id, localAutosaveReady, selectedSpecialty, transcript, visitNoteForm]);
+
+  useEffect(() => {
+    if (!dashboard || !localAutosaveReady || !lastLocalSavedAt) return;
+    const timeout = window.setTimeout(() => {
+      void syncVisitDraftAutosave(lastLocalSavedAt, { silent: true });
+    }, 1600);
+    return () => window.clearTimeout(timeout);
+  }, [dashboard?.activeVisit.id, isOnline, lastLocalSavedAt, localAutosaveReady, selectedSpecialty, transcript, visitNoteForm]);
+
+  const sortedAppointments = useMemo(() => {
+    if (!dashboard) return [];
+    return dashboard.appointments
+      .filter((appointment) => {
+        if (scheduleDoctorFilterId && appointment.doctorUserId !== scheduleDoctorFilterId) return false;
+        if (scheduleAssistantFilterId && appointment.assistantUserId !== scheduleAssistantFilterId) return false;
+        if (scheduleChairFilterId && appointment.chairId !== scheduleChairFilterId) return false;
+        if (scheduleStatusFilter !== "all" && appointment.status !== scheduleStatusFilter) return false;
+        if (scheduleDateFilter) {
+          const localAppointmentDate = toDateTimeLocalValue(appointment.startsAt, dashboard.clinicSettings.profile.timezone).slice(0, 10);
+          if (localAppointmentDate !== scheduleDateFilter) return false;
+        }
+        return true;
+      })
+      .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+  }, [dashboard, scheduleAssistantFilterId, scheduleChairFilterId, scheduleDateFilter, scheduleDoctorFilterId, scheduleStatusFilter]);
+
+  const activePatient = useMemo(() => {
+    if (!dashboard) return null;
+    return (
+      findPatient(dashboard.patients, dashboard.activeVisit.patientId) ??
+      dashboard.patients.find((patient) => patient.status === "active") ??
+      null
+    );
+  }, [dashboard]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    setSelectedPatientId((current) =>
+      current && dashboard.patients.some((patient) => patient.id === current)
+        ? current
+        : activePatient?.id ?? null
+    );
+  }, [activePatient?.id, dashboard?.patients.length]);
+
+  const selectedPatient = useMemo(() => {
+    if (!dashboard) return null;
+    return (
+      (selectedPatientId ? findPatient(dashboard.patients, selectedPatientId) : null) ??
+      activePatient
+    );
+  }, [activePatient, dashboard, selectedPatientId]);
+  const documentPatient = selectedPatient ?? activePatient;
+  const documentPatientMatchesActiveVisit = Boolean(documentPatient && dashboard?.activeVisit.patientId === documentPatient.id);
+  const paymentPatientContextReady = Boolean(documentPatient && documentPatientMatchesActiveVisit);
+  const paymentPatientContextMessage = !documentPatient
+    ? "Выберите пациента текущего приема перед записью оплаты."
+    : !documentPatientMatchesActiveVisit
+      ? `Сейчас выбран пациент ${documentPatient.fullName}, но активный прием открыт для другого пациента. Переключите активный прием перед записью оплаты.`
+      : "";
+
+  useEffect(() => {
+    setPaymentFeedback("");
+    setPaymentPayerFullName("");
+    setPaymentPayerInn("");
+    setPaymentPayerBirthDate("");
+    setPaymentPayerIdentityDocument("");
+    setPaymentPayerRelationship("пациент");
+    setPaymentTaxDeductionCode("");
+  }, [documentPatient?.id]);
+
+  useEffect(() => {
+    setPatientCoreDraft(patientCoreDraftFromPatient(selectedPatient));
+    setPatientCoreSaveState("idle");
+    setPatientCoreDirty(false);
+  }, [selectedPatient?.id, selectedPatient?.updatedAt]);
+
+  useEffect(() => {
+    setPatientAdministrativeProfileDraft(patientAdministrativeProfileDraftFromPatient(selectedPatient));
+    setPatientAdministrativeProfileSaveState("idle");
+    setPatientAdministrativeProfileDirty(false);
+  }, [selectedPatient?.id, selectedPatient?.updatedAt]);
+
+  useEffect(() => {
+    clinicProfileDraftRef.current = clinicProfileDraft;
+  }, [clinicProfileDraft]);
+
+  useEffect(() => {
+    patientCoreDraftRef.current = patientCoreDraft;
+  }, [patientCoreDraft]);
+
+  useEffect(() => {
+    patientAdministrativeProfileDraftRef.current = patientAdministrativeProfileDraft;
+  }, [patientAdministrativeProfileDraft]);
+
+  const patientAdministrativeProfileValidationMessage = useMemo(
+    () => patientAdministrativeProfileDraftIssue(patientAdministrativeProfileDraft),
+    [patientAdministrativeProfileDraft]
+  );
+
+  useEffect(() => {
+    if (
+      !selectedPatient ||
+      !patientAdministrativeProfileDirty ||
+      patientAdministrativeProfileSaveState === "saving" ||
+      patientAdministrativeProfileValidationMessage
+    ) {
+      return undefined;
+    }
+    const saveTimer = window.setTimeout(() => {
+      void savePatientAdministrativeProfile();
+    }, 1400);
+    return () => window.clearTimeout(saveTimer);
+  }, [
+    selectedPatient?.id,
+    patientAdministrativeProfileDirty,
+    patientAdministrativeProfileDraft,
+    patientAdministrativeProfileSaveState,
+    patientAdministrativeProfileValidationMessage
+  ]);
+
+  const activeAppointment = useMemo(() => {
+    if (!dashboard) return null;
+    return dashboard.appointments.find((appointment) => appointment.id === dashboard.activeVisit.appointmentId) ?? null;
+  }, [dashboard]);
+
+  const activeDoctor = useMemo(() => {
+    if (!dashboard || !activeAppointment) return null;
+    return dashboard.clinicSettings.staff.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
+  }, [activeAppointment, dashboard]);
+
+  const telegramLinkStaffOptions = useMemo(
+    () => dashboard?.clinicSettings.staff.filter((member) => member.active) ?? [],
+    [dashboard]
+  );
+
+  const filteredTelegramOutboxItems = useMemo(() => {
+    const items = telegramOutbox?.items ?? [];
+    return items.filter((item) => {
+      if (telegramOutboxStatusFilter === "due") {
+        if (item.deliveryStatus !== "ready" || !isTelegramOutboxItemDueForUi(item)) return false;
+      } else if (telegramOutboxStatusFilter !== "all" && item.deliveryStatus !== telegramOutboxStatusFilter) {
+        return false;
+      }
+      if (telegramOutboxTemplateFilter !== "all" && item.templateKind !== telegramOutboxTemplateFilter) return false;
+      return true;
+    });
+  }, [telegramOutbox, telegramOutboxStatusFilter, telegramOutboxTemplateFilter]);
+
+  const visibleTelegramOutboxItems = filteredTelegramOutboxItems;
+  const hiddenTelegramOutboxItemCount = Math.max(
+    0,
+    (telegramOutbox?.filteredCount ?? filteredTelegramOutboxItems.length) - visibleTelegramOutboxItems.length
+  );
+
+  useEffect(() => {
+    if (!dashboard) return;
+    if (telegramLinkStaffId && telegramLinkStaffOptions.some((member) => member.id === telegramLinkStaffId)) return;
+    setTelegramLinkStaffId(telegramLinkStaffOptions[0]?.id ?? "");
+  }, [dashboard, telegramLinkStaffId, telegramLinkStaffOptions]);
+
+  const telegramLinkTargetKey = `${telegramLinkSubjectType}:${telegramLinkSubjectType === "patient" ? activePatient?.id ?? "" : telegramLinkStaffId || ""}:${telegramModeDraft}:${telegramBotConfigId.trim()}`;
+  const previousTelegramLinkTargetKeyRef = useRef(telegramLinkTargetKey);
+
+  useEffect(() => {
+    if (previousTelegramLinkTargetKeyRef.current === telegramLinkTargetKey) return;
+    previousTelegramLinkTargetKeyRef.current = telegramLinkTargetKey;
+    if (!telegramLinkCode && !telegramLinkActionState) return;
+    setTelegramLinkCode(null);
+    setTelegramLinkActionState(null);
+  }, [telegramLinkActionState, telegramLinkCode, telegramLinkTargetKey]);
+
+  function telegramSubjectName(subjectType: DenteTelegramChatLinkPublic["subjectType"], subjectId: string): string {
+    if (subjectType === "patient") {
+      return dashboard?.patients.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
+    }
+    return dashboard?.clinicSettings.staff.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
+  }
+
+  const activeChair = useMemo(() => {
+    if (!dashboard || !activeAppointment) return null;
+    return dashboard.clinicSettings.chairs.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
+  }, [activeAppointment, dashboard]);
+
+  const patientInsightById = useMemo(() => {
+    if (!dashboard) return new Map<string, Dashboard["patientInsights"][number]>();
+    return new Map(dashboard.patientInsights.map((insight) => [insight.patientId, insight]));
+  }, [dashboard]);
+
+  const activePatientInsight = activePatient ? patientInsightById.get(activePatient.id) ?? null : null;
+  const activePatientCallablePhone = activePatient?.phone?.trim().replace(/[^\d+]/g, "") ?? "";
+  const activePatientHasCallablePhone = activePatientCallablePhone.length >= 5;
+
+  const appointmentReadinessById = useMemo(() => {
+    if (!dashboard) return new Map<string, Dashboard["appointmentReadiness"][number]>();
+    return new Map(dashboard.appointmentReadiness.map((readiness) => [readiness.appointmentId, readiness]));
+  }, [dashboard]);
+
+  const filteredPatients = useMemo(() => {
+    if (!dashboard) return [];
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return dashboard.patients;
+    return dashboard.patients.filter((patient) => {
+      return `${patient.fullName} ${patient.phone ?? ""}`.toLowerCase().includes(normalizedQuery);
+    });
+  }, [dashboard, query]);
+
+  const activeDocuments = useMemo(() => {
+    if (!dashboard || !documentPatient) return [];
+    return dashboard.documents.filter(
+      (document) =>
+        document.patientId === documentPatient.id &&
+        (!documentPatientMatchesActiveVisit || document.visitId === null || document.visitId === dashboard.activeVisit.id)
+    );
+  }, [dashboard, documentPatient?.id, documentPatientMatchesActiveVisit]);
+
+  const activeUsableDocuments = useMemo(() => {
+    return activeDocuments.filter((document) => document.status !== "voided");
+  }, [activeDocuments]);
+
+  const documentIssueConfirmation = useMemo(() => {
+    if (!documentIssueConfirmationId) return null;
+    return activeDocuments.find((document) => document.id === documentIssueConfirmationId && document.status === "draft") ?? null;
+  }, [activeDocuments, documentIssueConfirmationId]);
+
+  const documentVoidConfirmation = useMemo(() => {
+    if (!documentVoidConfirmationId) return null;
+    return activeDocuments.find((document) => document.id === documentVoidConfirmationId && document.status !== "voided") ?? null;
+  }, [activeDocuments, documentVoidConfirmationId]);
+
+  const documentIssueAttestationReady = useMemo(() => {
+    return Boolean(
+      documentIssueConfirmation &&
+        documentIssueSignedAt.trim() &&
+        documentIssueRecipientFullName.trim() &&
+        documentIssueRecipientRole.trim() &&
+        documentIssueStaffFullName.trim() &&
+        documentIssueStaffRole.trim() &&
+        documentIssueIdentityChecked &&
+        documentIssueDocumentOpenedAndChecked &&
+        documentIssueRecipientSigned &&
+        documentIssueClinicSigned
+    );
+  }, [
+    documentIssueClinicSigned,
+    documentIssueConfirmation,
+    documentIssueDocumentOpenedAndChecked,
+    documentIssueIdentityChecked,
+    documentIssueRecipientFullName,
+    documentIssueRecipientRole,
+    documentIssueRecipientSigned,
+    documentIssueSignedAt,
+    documentIssueStaffFullName,
+    documentIssueStaffRole
+  ]);
+
+  const documentVoidReady = useMemo(() => {
+    return Boolean(
+      documentVoidConfirmation &&
+        documentVoidReasonText.trim().length >= 12 &&
+        documentVoidStaffFullName.trim() &&
+        documentVoidStaffRole.trim() &&
+        documentVoidArchivePreserved &&
+        documentVoidStatusReviewed
+    );
+  }, [
+    documentVoidArchivePreserved,
+    documentVoidConfirmation,
+    documentVoidReasonText,
+    documentVoidStaffFullName,
+    documentVoidStaffRole,
+    documentVoidStatusReviewed
+  ]);
+
+  useEffect(() => {
+    saveDocumentIssueSignatureDraft(
+      dashboard?.clinicSettings.profile.organizationId ?? null,
+      documentIssueSignatureMode,
+      documentIssueStaffFullName,
+      documentIssueStaffRole
+    );
+  }, [dashboard?.clinicSettings.profile.organizationId, documentIssueSignatureMode, documentIssueStaffFullName, documentIssueStaffRole]);
+
+  const activeIssuedPaidContracts = useMemo(() => {
+    return activeDocuments
+      .filter((document) => document.kind === "paid_medical_services_contract" && document.status === "issued" && document.visitId !== null)
+      .sort((left, right) => (right.issuedAt ?? "").localeCompare(left.issuedAt ?? ""));
+  }, [activeDocuments]);
+
+  const selectedCompletedActContractDocumentId = useMemo(() => {
+    if (activeIssuedPaidContracts.some((document) => document.id === completedActLinkedContractDocumentId)) {
+      return completedActLinkedContractDocumentId;
+    }
+    return activeIssuedPaidContracts.length === 1 ? activeIssuedPaidContracts[0]?.id ?? "" : "";
+  }, [activeIssuedPaidContracts, completedActLinkedContractDocumentId]);
+
+  useEffect(() => {
+    if (completedActContractNumber.trim() || !selectedCompletedActContractDocumentId) return;
+    const contract = activeIssuedPaidContracts.find((document) => document.id === selectedCompletedActContractDocumentId);
+    if (contract) setCompletedActContractNumber(completedActContractReferenceForUi(contract));
+  }, [activeIssuedPaidContracts, completedActContractNumber, selectedCompletedActContractDocumentId]);
+
+  const issuedMedicalCopyRequestDocuments = useMemo(() => {
+    return activeUsableDocuments
+      .filter((document) => document.kind === "medical_record_copy_request" && document.status === "issued")
+      .sort((left, right) => (right.issuedAt ?? "").localeCompare(left.issuedAt ?? ""));
+  }, [activeUsableDocuments]);
+
+  const selectedReleaseSourceRequestDocumentId = useMemo(() => {
+    if (issuedMedicalCopyRequestDocuments.some((document) => document.id === releaseSourceRequestDocumentId)) {
+      return releaseSourceRequestDocumentId;
+    }
+    return issuedMedicalCopyRequestDocuments.length === 1 ? issuedMedicalCopyRequestDocuments[0]?.id ?? "" : "";
+  }, [issuedMedicalCopyRequestDocuments, releaseSourceRequestDocumentId]);
+
+  useEffect(() => {
+    if (!selectedReleaseSourceRequestDocumentId) {
+      releaseSourceRequestAutofillRef.current = null;
+      return;
+    }
+    if (releaseSourceRequestAutofillRef.current === selectedReleaseSourceRequestDocumentId) return;
+    const sourceDocument = issuedMedicalCopyRequestDocuments.find((document) => document.id === selectedReleaseSourceRequestDocumentId);
+    const request = sourceDocument?.chainSummary?.medicalRecordCopyRequest;
+    if (!request) return;
+
+    releaseSourceRequestAutofillRef.current = selectedReleaseSourceRequestDocumentId;
+    setReleaseSourceRequestDocumentId(selectedReleaseSourceRequestDocumentId);
+    setReleaseRecipientFullName(request.recipientFullName);
+    setReleaseRecipientIdentityDocument(request.recipientIdentityDocument);
+    setReleaseRecipientAuthority(request.recipientAuthority);
+    setReleaseChannel(request.requestedFormat);
+    setReleaseDocumentTypes(request.requestedDocumentTypes.join("\n"));
+    setReleasePeriodStart(request.periodStart ?? "");
+    setReleasePeriodEnd(request.periodEnd ?? "");
+    setReleaseProtectionNote(
+      `Выдача по запросу ${sourceDocument.title}; канал: ${medicalDocumentReleaseChannelLabels[request.requestedFormat]}. Личность получателя проверена, лишние данные третьих лиц исключаются перед передачей.`
+    );
+  }, [issuedMedicalCopyRequestDocuments, selectedReleaseSourceRequestDocumentId]);
+
+  const activeTreatmentPlanItems = useMemo(() => {
+    if (!dashboard || !documentPatient) return [];
+    return dashboard.treatmentPlanItems.filter((item) => item.patientId === documentPatient.id);
+  }, [dashboard, documentPatient?.id]);
+
+  const inferredTreatmentArea = useMemo(() => {
+    const toothCodes = activeTreatmentPlanItems
+      .filter((item) => item.status !== "cancelled")
+      .map((item) => item.toothCode?.trim())
+      .filter((toothCode): toothCode is string => Boolean(toothCode));
+    return Array.from(new Set(toothCodes)).slice(0, 6).join(", ");
+  }, [activeTreatmentPlanItems]);
+
+  const activeTreatmentPlanScenarios = useMemo(() => {
+    if (!dashboard || !documentPatient) return [];
+    return dashboard.treatmentPlanScenarios.filter((scenario) => scenario.patientId === documentPatient.id);
+  }, [dashboard, documentPatient?.id]);
+
+  const activeVisitClinicalRuleEvaluations = useMemo(() => {
+    if (!dashboard) return [];
+    const severityRank = { blocker: 0, warning: 1, info: 2 } as const;
+    return dashboard.clinicalRuleEvaluations
+      .filter((evaluation) => evaluation.patientId === dashboard.activeVisit.patientId)
+      .sort((left, right) => Number(left.resolved) - Number(right.resolved) || severityRank[left.severity] - severityRank[right.severity]);
+  }, [dashboard]);
+
+  const patientClinicalRuleEvaluations = useMemo(() => {
+    if (!dashboard || !documentPatient) return [];
+    const severityRank = { blocker: 0, warning: 1, info: 2 } as const;
+    return dashboard.clinicalRuleEvaluations
+      .filter((evaluation) => evaluation.patientId === documentPatient.id)
+      .sort((left, right) => Number(left.resolved) - Number(right.resolved) || severityRank[left.severity] - severityRank[right.severity]);
+  }, [dashboard, documentPatient?.id]);
+
+  const activeVisitClinicalRuleSummary = useMemo(
+    () => clinicalRuleSummaryForUi(activeVisitClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules ?? 0),
+    [activeVisitClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules]
+  );
+
+  const patientClinicalRuleSummary = useMemo(
+    () => clinicalRuleSummaryForUi(patientClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules ?? 0),
+    [patientClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules]
+  );
+
+  const activePayments = useMemo(() => {
+    if (!dashboard || !documentPatient) return [];
+    return dashboard.payments.filter((payment) => payment.patientId === documentPatient.id);
+  }, [dashboard, documentPatient?.id]);
+
+  const patientBillingSummary = useMemo<Dashboard["billingSummary"]>(() => {
+    if (!dashboard || !documentPatient) return {
+      totalPlannedRub: 0,
+      totalDiscountRub: 0,
+      totalPaidRub: 0,
+      totalDueRub: 0,
+      taxDeductionEligibleRub: 0,
+      draftDocumentAmountRub: 0,
+      openTreatmentItems: 0,
+      unpaidDocuments: 0
+    };
+    const activePlanItems = activeTreatmentPlanItems.filter((item) => item.status !== "cancelled");
+    const treatmentLineTotal = (item: (typeof activePlanItems)[number]) => Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
+    const totalPlannedRub = activePlanItems.reduce((total, item) => total + treatmentLineTotal(item), 0);
+    const totalDiscountRub = activePlanItems.reduce((total, item) => total + item.discountRub, 0);
+    const totalPaidRub = activePayments.filter((payment) => payment.status === "paid").reduce((total, payment) => total + payment.amountRub, 0);
+    const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
+      const service = dashboard.serviceCatalog.find((candidate) => candidate.id === item.serviceId);
+      return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
+    }, 0);
+    const draftDocumentAmountRub = activeUsableDocuments
+      .filter((document) => document.status === "draft")
+      .reduce((total, document) => total + (document.totalAmountRub ?? 0), 0);
+    const unpaidDocuments = activeUsableDocuments.filter(
+      (document) =>
+        document.status === "draft" &&
+        (document.totalAmountRub ?? 0) > 0 &&
+        !activePayments.some((payment) => payment.status === "paid" && payment.documentId === document.id)
+    ).length;
+    return {
+      totalPlannedRub,
+      totalDiscountRub,
+      totalPaidRub,
+      totalDueRub: Math.max(0, totalPlannedRub - totalPaidRub),
+      taxDeductionEligibleRub,
+      draftDocumentAmountRub,
+      openTreatmentItems: activePlanItems.filter((item) => item.status !== "completed").length,
+      unpaidDocuments
+    };
+  }, [activePayments, activeTreatmentPlanItems, activeUsableDocuments, dashboard, documentPatient?.id]);
+  const documentLocalPersistenceOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
+
+  const taxDocumentPayerOptions = useMemo(() => {
+    const optionsByKey = new Map<string, { key: string; inn: string; label: string; amountRub: number; paymentCount: number }>();
+    for (const payment of activePayments) {
+      const paymentTaxYear = paymentTaxYearForUi(payment);
+      if (payment.status !== "paid" || paymentTaxYear !== taxDocumentYear) continue;
+      const payerKey = taxPaymentPayerKeyForUi(payment);
+      if (!payerKey) continue;
+      const payerInn = payment.payerInn?.trim() || "";
+      const payerName = payment.payerFullName?.trim() || "Плательщик";
+      const payerRelationship = payment.payerRelationship?.trim();
+      const payerIdentity = payment.payerIdentityDocument?.trim();
+      const existing = optionsByKey.get(payerKey);
+      if (existing) {
+        existing.amountRub += payment.amountRub;
+        existing.paymentCount += 1;
+        continue;
+      }
+      optionsByKey.set(payerKey, {
+        key: payerKey,
+        inn: payerInn,
+        label: payerInn
+          ? `${payerName} · ИНН ${payerInn}${payerRelationship ? ` · ${payerRelationship}` : ""}`
+          : `${payerName} · документ ${payerIdentity || "без ИНН"}${payerRelationship ? ` · ${payerRelationship}` : ""}`,
+        amountRub: payment.amountRub,
+        paymentCount: 1
+      });
+    }
+    return Array.from(optionsByKey.values()).sort((left, right) => right.amountRub - left.amountRub || left.label.localeCompare(right.label, "ru"));
+  }, [activePayments, taxDocumentYear]);
+
+  const selectedTaxDocumentPayerKey = useMemo(() => {
+    if (taxDocumentPayerOptions.some((option) => option.key === taxDocumentPayerInn)) return taxDocumentPayerInn;
+    return taxDocumentPayerOptions.length === 1 ? taxDocumentPayerOptions[0]?.key ?? "" : "";
+  }, [taxDocumentPayerInn, taxDocumentPayerOptions]);
+  const selectedTaxDocumentPayerOption = useMemo(
+    () => taxDocumentPayerOptions.find((option) => option.key === selectedTaxDocumentPayerKey) ?? null,
+    [selectedTaxDocumentPayerKey, taxDocumentPayerOptions]
+  );
+  const selectedTaxDocumentPayerInn = selectedTaxDocumentPayerOption?.inn ?? "";
+
+  const selectedDocumentUsesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(selectedDocumentKind);
+  const selectedDocumentMetadata = documentKindMetadata[selectedDocumentKind];
+  const eligibleTaxPayments = useMemo(() => {
+    return activePayments
+      .filter(
+        (payment) =>
+          payment.status === "paid" &&
+          payment.amountRub > 0 &&
+          paymentTaxYearForUi(payment) === taxDocumentYear &&
+          (!selectedTaxDocumentPayerKey || taxPaymentPayerKeyForUi(payment) === selectedTaxDocumentPayerKey)
+      )
+      .sort((left, right) => (right.fiscalReceiptIssuedAt || right.paidAt || "").localeCompare(left.fiscalReceiptIssuedAt || left.paidAt || ""));
+  }, [activePayments, selectedTaxDocumentPayerKey, taxDocumentYear]);
+  const eligibleTaxPaymentIdsKey = eligibleTaxPayments.map((payment) => payment.id).join("|");
+  const selectedTaxPaymentIdSet = useMemo(() => new Set(selectedTaxPaymentIds), [selectedTaxPaymentIds]);
+  const selectedEligibleTaxPayments = useMemo(
+    () => eligibleTaxPayments.filter((payment) => selectedTaxPaymentIdSet.has(payment.id)),
+    [eligibleTaxPayments, selectedTaxPaymentIdSet]
+  );
+  const selectedTaxPaymentTotalRub = selectedEligibleTaxPayments.reduce((total, payment) => total + payment.amountRub, 0);
+  function selectedTaxPaymentIdsForCurrentDocument(): string[] {
+    const eligibleTaxPaymentIdSet = new Set(eligibleTaxPayments.map((payment) => payment.id));
+    return selectedTaxPaymentIds.filter((paymentId) => eligibleTaxPaymentIdSet.has(paymentId));
+  }
+
+  function selectAllEligibleTaxPaymentsForCurrentDocument(): void {
+    const eligiblePaymentIds = eligibleTaxPayments.map((payment) => payment.id);
+    setSelectedTaxPaymentIds(eligiblePaymentIds);
+  }
+  const selectedDocumentUsesPaymentReceiptSelection = selectedDocumentKind === "payment_receipt";
+  const eligiblePaymentReceiptPayments = useMemo(() => {
+    return activePayments
+      .filter(
+        (payment) =>
+          payment.status === "paid" &&
+          payment.amountRub > 0 &&
+          (!dashboard?.activeVisit.id || payment.visitId === dashboard.activeVisit.id)
+      )
+      .sort((left, right) => (right.fiscalReceiptIssuedAt || right.paidAt || "").localeCompare(left.fiscalReceiptIssuedAt || left.paidAt || ""));
+  }, [activePayments, dashboard?.activeVisit.id]);
+  const eligiblePaymentReceiptIdsKey = eligiblePaymentReceiptPayments.map((payment) => payment.id).join("|");
+  const selectedPaymentReceiptIdSet = useMemo(() => new Set(selectedPaymentReceiptIds), [selectedPaymentReceiptIds]);
+  const selectedPaymentReceiptPayments = useMemo(
+    () => eligiblePaymentReceiptPayments.filter((payment) => selectedPaymentReceiptIdSet.has(payment.id)),
+    [eligiblePaymentReceiptPayments, selectedPaymentReceiptIdSet]
+  );
+  const selectedPaymentReceiptTotalRub = selectedPaymentReceiptPayments.reduce((total, payment) => total + payment.amountRub, 0);
+  const eligibleRefundCorrectionPayments = useMemo(() => {
+    return activePayments
+      .filter(
+        (payment) =>
+          payment.status === "paid" &&
+          payment.amountRub > 0 &&
+          payment.fiscalReceiptNumber?.trim() &&
+          (!dashboard?.activeVisit.id || payment.visitId === dashboard.activeVisit.id)
+      )
+      .sort((left, right) => (right.fiscalReceiptIssuedAt || right.paidAt || "").localeCompare(left.fiscalReceiptIssuedAt || left.paidAt || ""));
+  }, [activePayments, dashboard?.activeVisit.id]);
+  const selectedRefundCorrectionPayment = useMemo(
+    () => eligibleRefundCorrectionPayments.find((payment) => payment.id === refundSelectedPaymentId) ?? null,
+    [eligibleRefundCorrectionPayments, refundSelectedPaymentId]
+  );
+  const taxPaymentSelectionPersistenceKey = useMemo(() => {
+    if (!documentPatient) return null;
+    const organizationId = documentLocalPersistenceOrganizationId ?? "clinic";
+    const payerKey = selectedTaxDocumentPayerKey || "all-payers";
+    return `tax:${organizationId}:${documentPatient.id}:${taxDocumentYear}:${payerKey}`;
+  }, [documentLocalPersistenceOrganizationId, documentPatient?.id, selectedTaxDocumentPayerKey, taxDocumentYear]);
+  const paymentReceiptSelectionPersistenceKey = useMemo(() => {
+    if (!documentPatient) return null;
+    const organizationId = documentLocalPersistenceOrganizationId ?? "clinic";
+    return `receipt:${organizationId}:${documentPatient.id}:${dashboard?.activeVisit.id ?? "all-visits"}`;
+  }, [dashboard?.activeVisit.id, documentLocalPersistenceOrganizationId, documentPatient?.id]);
+
+  function selectRefundOriginalPayment(paymentId: string): void {
+    setRefundSelectedPaymentId(paymentId);
+    const payment = eligibleRefundCorrectionPayments.find((candidate) => candidate.id === paymentId);
+    if (!payment) return;
+    setRefundOriginalFiscalReceiptNumber(payment.fiscalReceiptNumber?.trim() || "");
+    const currentAmountRub = Number(refundAmountRub.replace(/[^\d]/g, ""));
+    if (!Number.isFinite(currentAmountRub) || currentAmountRub <= 0 || currentAmountRub > payment.amountRub) {
+      setRefundAmountRub(String(payment.amountRub));
+    }
+    if (!refundRecipientFullName.trim() && payment.payerFullName?.trim()) {
+      setRefundRecipientFullName(payment.payerFullName.trim());
+    }
+    if (!refundRecipientIdentityDocument.trim() && payment.payerIdentityDocument?.trim()) {
+      setRefundRecipientIdentityDocument(payment.payerIdentityDocument.trim());
+    }
+  }
+
+  useEffect(() => {
+    if (!refundSelectedPaymentId) return;
+    if (eligibleRefundCorrectionPayments.some((payment) => payment.id === refundSelectedPaymentId)) return;
+    setRefundSelectedPaymentId("");
+  }, [eligibleRefundCorrectionPayments, refundSelectedPaymentId]);
+  const outpatient025uDraftVisitId = documentPatientMatchesActiveVisit ? dashboard?.activeVisit.id ?? null : null;
+  const outpatient025uDraftPersistenceKey = useMemo(
+    () =>
+      documentPayloadDraftKey(
+        "outpatient_medical_card_025u",
+        documentLocalPersistenceOrganizationId,
+        documentPatient?.id ?? null,
+        outpatient025uDraftVisitId
+      ),
+    [documentLocalPersistenceOrganizationId, documentPatient?.id, outpatient025uDraftVisitId]
+  );
+
+  function currentOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFields {
+    return {
+      recordExtractPeriodStart,
+      recordExtractPeriodEnd,
+      recordExtractSourceVisitIds,
+      recordExtractComplaintAndAnamnesis,
+      recordExtractObjectiveStatus,
+      recordExtractDiagnosis,
+      recordExtractTreatmentProvided,
+      recordExtractRecommendations,
+      recordExtractDoctorFullName,
+      outpatient025uMedicalCardNumber,
+      outpatient025uOpenedAt,
+      outpatient025uPatientSexCode,
+      outpatient025uCitizenship,
+      outpatient025uRegistrationUrbanRuralCode,
+      outpatient025uStayUrbanRuralCode,
+      outpatient025uOmsIssuedAt,
+      outpatient025uInsurerName,
+      outpatient025uSocialSupportCode,
+      outpatient025uHealthStatusDisclosureContact,
+      outpatient025uEmploymentCode,
+      outpatient025uDisabilityGroup,
+      outpatient025uWorkOrStudyPlace,
+      outpatient025uPalliativeCareNeedCode,
+      outpatient025uBloodGroup,
+      outpatient025uRhFactor,
+      outpatient025uKellK1,
+      outpatient025uOtherBloodData,
+      outpatient025uAllergyHistory,
+      outpatient025uFinalEpicrisis
+    };
+  }
+
+  function applyOutpatient025uDocumentDraftFields(fields: Outpatient025uDocumentDraftFields): void {
+    setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
+    setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
+    setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
+    setRecordExtractComplaintAndAnamnesis(fields.recordExtractComplaintAndAnamnesis);
+    setRecordExtractObjectiveStatus(fields.recordExtractObjectiveStatus);
+    setRecordExtractDiagnosis(fields.recordExtractDiagnosis);
+    setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
+    setRecordExtractRecommendations(fields.recordExtractRecommendations);
+    setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
+    setOutpatient025uMedicalCardNumber(fields.outpatient025uMedicalCardNumber);
+    setOutpatient025uOpenedAt(fields.outpatient025uOpenedAt);
+    setOutpatient025uPatientSexCode(fields.outpatient025uPatientSexCode);
+    setOutpatient025uCitizenship(fields.outpatient025uCitizenship);
+    setOutpatient025uRegistrationUrbanRuralCode(fields.outpatient025uRegistrationUrbanRuralCode);
+    setOutpatient025uStayUrbanRuralCode(fields.outpatient025uStayUrbanRuralCode);
+    setOutpatient025uOmsIssuedAt(fields.outpatient025uOmsIssuedAt);
+    setOutpatient025uInsurerName(fields.outpatient025uInsurerName);
+    setOutpatient025uSocialSupportCode(fields.outpatient025uSocialSupportCode);
+    setOutpatient025uHealthStatusDisclosureContact(fields.outpatient025uHealthStatusDisclosureContact);
+    setOutpatient025uEmploymentCode(fields.outpatient025uEmploymentCode);
+    setOutpatient025uDisabilityGroup(fields.outpatient025uDisabilityGroup);
+    setOutpatient025uWorkOrStudyPlace(fields.outpatient025uWorkOrStudyPlace);
+    setOutpatient025uPalliativeCareNeedCode(fields.outpatient025uPalliativeCareNeedCode);
+    setOutpatient025uBloodGroup(fields.outpatient025uBloodGroup);
+    setOutpatient025uRhFactor(fields.outpatient025uRhFactor);
+    setOutpatient025uKellK1(fields.outpatient025uKellK1);
+    setOutpatient025uOtherBloodData(fields.outpatient025uOtherBloodData);
+    setOutpatient025uAllergyHistory(fields.outpatient025uAllergyHistory);
+    setOutpatient025uFinalEpicrisis(fields.outpatient025uFinalEpicrisis);
+    setRecordExtractPreparedFromSignedRecords(false);
+    setOutpatient025uOfficialForm274nChecked(false);
+    setOutpatient025uThirdPartyDataChecked(false);
+  }
+
+  const selectedTaxApplicationPayment = useMemo(() => {
+    if (!selectedTaxDocumentPayerKey) return null;
+    return (
+      activePayments.find(
+        (payment) =>
+          payment.status === "paid" &&
+          taxPaymentPayerKeyForUi(payment) === selectedTaxDocumentPayerKey &&
+          paymentTaxYearForUi(payment) === taxDocumentYear
+      ) ?? null
+    );
+  }, [activePayments, selectedTaxDocumentPayerKey, taxDocumentYear]);
+
+  useEffect(() => {
+    if (taxDocumentYear < 2024 && taxApplicationForm !== "legacy_2021_2023") {
+      setTaxApplicationForm("legacy_2021_2023");
+      return;
+    }
+    if (taxDocumentYear >= 2024 && taxApplicationForm === "legacy_2021_2023") {
+      setTaxApplicationForm("knd_1151156");
+    }
+  }, [taxDocumentYear, taxApplicationForm]);
+
+  useEffect(() => {
+    if (!selectedDocumentUsesTaxPaymentSelection || !taxPaymentSelectionPersistenceKey) {
+      taxPaymentSelectionHydratedKeyRef.current = null;
+      return;
+    }
+    const eligibleTaxPaymentIdSet = new Set(eligibleTaxPayments.map((payment) => payment.id));
+    const storedPaymentIds = loadDocumentPaymentSelection(documentLocalPersistenceOrganizationId, taxPaymentSelectionPersistenceKey);
+    const nextPaymentIds = (storedPaymentIds ?? []).filter((paymentId) => eligibleTaxPaymentIdSet.has(paymentId));
+    setSelectedTaxPaymentIds(nextPaymentIds);
+    taxPaymentSelectionHydratedKeyRef.current = taxPaymentSelectionPersistenceKey;
+  }, [documentLocalPersistenceOrganizationId, eligibleTaxPaymentIdsKey, selectedDocumentUsesTaxPaymentSelection, taxPaymentSelectionPersistenceKey]);
+
+  useEffect(() => {
+    if (!selectedDocumentUsesTaxPaymentSelection || !taxPaymentSelectionPersistenceKey) return;
+    if (taxPaymentSelectionHydratedKeyRef.current !== taxPaymentSelectionPersistenceKey) return;
+    saveDocumentPaymentSelection(
+      documentLocalPersistenceOrganizationId,
+      taxPaymentSelectionPersistenceKey,
+      selectedTaxPaymentIdsForCurrentDocument()
+    );
+  }, [
+    documentLocalPersistenceOrganizationId,
+    eligibleTaxPaymentIdsKey,
+    selectedDocumentUsesTaxPaymentSelection,
+    selectedTaxPaymentIds,
+    taxPaymentSelectionPersistenceKey
+  ]);
+
+  useEffect(() => {
+    if (!selectedDocumentUsesPaymentReceiptSelection || !paymentReceiptSelectionPersistenceKey) {
+      paymentReceiptSelectionHydratedKeyRef.current = null;
+      return;
+    }
+    const eligiblePaymentReceiptIdSet = new Set(eligiblePaymentReceiptPayments.map((payment) => payment.id));
+    const storedPaymentIds = loadDocumentPaymentSelection(documentLocalPersistenceOrganizationId, paymentReceiptSelectionPersistenceKey);
+    const defaultPaymentIds = eligiblePaymentReceiptPayments.map((payment) => payment.id);
+    const nextPaymentIds = (storedPaymentIds ?? defaultPaymentIds).filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId));
+    setSelectedPaymentReceiptIds(nextPaymentIds);
+    paymentReceiptSelectionHydratedKeyRef.current = paymentReceiptSelectionPersistenceKey;
+  }, [
+    documentLocalPersistenceOrganizationId,
+    eligiblePaymentReceiptIdsKey,
+    selectedDocumentUsesPaymentReceiptSelection,
+    paymentReceiptSelectionPersistenceKey
+  ]);
+
+  useEffect(() => {
+    if (!selectedDocumentUsesPaymentReceiptSelection || !paymentReceiptSelectionPersistenceKey) return;
+    if (paymentReceiptSelectionHydratedKeyRef.current !== paymentReceiptSelectionPersistenceKey) return;
+    const eligiblePaymentReceiptIdSet = new Set(eligiblePaymentReceiptPayments.map((payment) => payment.id));
+    saveDocumentPaymentSelection(
+      documentLocalPersistenceOrganizationId,
+      paymentReceiptSelectionPersistenceKey,
+      selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
+    );
+  }, [
+    documentLocalPersistenceOrganizationId,
+    eligiblePaymentReceiptIdsKey,
+    paymentReceiptSelectionPersistenceKey,
+    selectedDocumentUsesPaymentReceiptSelection,
+    selectedPaymentReceiptIds
+  ]);
+
+  useEffect(() => {
+    if (selectedDocumentKind !== "outpatient_medical_card_025u" || !outpatient025uDraftPersistenceKey) {
+      outpatient025uDraftHydratedKeyRef.current = null;
+      return;
+    }
+    const storedDraft = loadOutpatient025uDocumentDraft(documentLocalPersistenceOrganizationId, outpatient025uDraftPersistenceKey);
+    applyOutpatient025uDocumentDraftFields(storedDraft ?? emptyOutpatient025uDocumentDraftFields());
+    outpatient025uDraftHydratedKeyRef.current = outpatient025uDraftPersistenceKey;
+  }, [documentLocalPersistenceOrganizationId, outpatient025uDraftPersistenceKey, selectedDocumentKind]);
+
+  useEffect(() => {
+    if (selectedDocumentKind !== "outpatient_medical_card_025u" || !documentPatient?.id || !outpatient025uDraftPersistenceKey) return;
+    if (outpatient025uDraftHydratedKeyRef.current !== outpatient025uDraftPersistenceKey) return;
+    saveOutpatient025uDocumentDraft(
+      documentLocalPersistenceOrganizationId,
+      outpatient025uDraftPersistenceKey,
+      documentPatient.id,
+      outpatient025uDraftVisitId,
+      currentOutpatient025uDocumentDraftFields()
+    );
+  }, [
+    documentPatient?.id,
+    documentLocalPersistenceOrganizationId,
+    outpatient025uDraftPersistenceKey,
+    outpatient025uDraftVisitId,
+    outpatient025uMedicalCardNumber,
+    outpatient025uOpenedAt,
+    outpatient025uPatientSexCode,
+    outpatient025uCitizenship,
+    outpatient025uRegistrationUrbanRuralCode,
+    outpatient025uStayUrbanRuralCode,
+    outpatient025uOmsIssuedAt,
+    outpatient025uInsurerName,
+    outpatient025uSocialSupportCode,
+    outpatient025uHealthStatusDisclosureContact,
+    outpatient025uEmploymentCode,
+    outpatient025uDisabilityGroup,
+    outpatient025uWorkOrStudyPlace,
+    outpatient025uPalliativeCareNeedCode,
+    outpatient025uBloodGroup,
+    outpatient025uRhFactor,
+    outpatient025uKellK1,
+    outpatient025uOtherBloodData,
+    outpatient025uAllergyHistory,
+    outpatient025uFinalEpicrisis,
+    recordExtractPeriodStart,
+    recordExtractPeriodEnd,
+    recordExtractSourceVisitIds,
+    recordExtractComplaintAndAnamnesis,
+    recordExtractObjectiveStatus,
+    recordExtractDiagnosis,
+    recordExtractTreatmentProvided,
+    recordExtractRecommendations,
+    recordExtractDoctorFullName,
+    selectedDocumentKind
+  ]);
+
+  useEffect(() => {
+    if (!documentPatient) return;
+    const administrativeProfile = documentPatient.administrativeProfile;
+    setTaxApplicationTaxpayerFullName(documentPatient.fullName);
+    setTaxApplicationTaxpayerInn(administrativeProfile?.taxpayerInn?.trim() || "");
+    setTaxApplicationTaxpayerBirthDate(toDateInputValue(documentPatient.birthDate));
+    setTaxApplicationTaxpayerIdentityDocument(administrativeProfile?.identityDocument?.trim() || "");
+    setTaxApplicationRelationship("self");
+    setTaxApplicationContact(administrativeProfile?.preferredDocumentRecipient?.trim() || documentPatient.phone || documentPatient.email || documentPatient.fullName);
+    setTaxApplicationAuthorityDocument("");
+    setTaxApplicationRequestedAt(toDateTimeLocalValue(new Date().toISOString()));
+  }, [documentPatient?.id]);
+
+  useEffect(() => {
+    if (!selectedTaxApplicationPayment) return;
+    setTaxApplicationTaxpayerFullName(selectedTaxApplicationPayment.payerFullName?.trim() || documentPatient?.fullName || "");
+    setTaxApplicationTaxpayerInn(selectedTaxApplicationPayment.payerInn?.trim() || documentPatient?.administrativeProfile?.taxpayerInn?.trim() || "");
+    setTaxApplicationTaxpayerBirthDate(toDateInputValue(selectedTaxApplicationPayment.payerBirthDate?.trim() || documentPatient?.birthDate || ""));
+    setTaxApplicationTaxpayerIdentityDocument(
+      selectedTaxApplicationPayment.payerIdentityDocument?.trim() || documentPatient?.administrativeProfile?.identityDocument?.trim() || ""
+    );
+    setTaxApplicationRelationship(normalizeTaxApplicationRelationship(selectedTaxApplicationPayment.payerRelationship) ?? "self");
+  }, [documentPatient, selectedTaxApplicationPayment]);
+
+  useEffect(() => {
+    if (!inferredTreatmentArea) return;
+    if (!anesthesiaZone.trim()) {
+      setAnesthesiaZone(inferredTreatmentArea);
+    }
+    if (!labTeethOrArea.trim()) {
+      setLabTeethOrArea(inferredTreatmentArea);
+    }
+  }, [anesthesiaZone, inferredTreatmentArea, labTeethOrArea]);
+
+  const activeCommunicationTasks = useMemo(() => {
+    if (!dashboard) return [];
+    return dashboard.communicationTasks.filter((task) => task.patientId === dashboard.activeVisit.patientId);
+  }, [dashboard]);
+
+  const sortedCommunicationTasks = useMemo(() => {
+    if (!dashboard) return [];
+    return [...dashboard.communicationTasks].sort((left, right) => {
+      const priorityRank = { urgent: 0, high: 1, normal: 2, low: 3 } as const;
+      return priorityRank[left.priority] - priorityRank[right.priority] || left.dueAt.localeCompare(right.dueAt);
+    });
+  }, [dashboard]);
+
+  const activeImagingStudies = useMemo(() => {
+    if (!dashboard) return [];
+    return dashboard.imagingStudies
+      .filter((study) => study.patientId === dashboard.activeVisit.patientId)
+      .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
+  }, [dashboard]);
+
+  const imagingKindOptions = useMemo(
+    () => Array.from(new Set(activeImagingStudies.map((study) => study.kind))),
+    [activeImagingStudies]
+  );
+  const visibleImagingStudies = useMemo(
+    () =>
+      imagingKindFilter === "all"
+        ? activeImagingStudies
+        : activeImagingStudies.filter((study) => study.kind === imagingKindFilter),
+    [activeImagingStudies, imagingKindFilter]
+  );
+  const latestImagingStudy = visibleImagingStudies[0] ?? null;
+  const selectedImagingStudy =
+    visibleImagingStudies.find((study) => study.id === selectedImagingStudyId) ?? latestImagingStudy;
+  const selectedImagingViewerPlan = selectedImagingStudy ? imagingViewerPlans[selectedImagingStudy.kind] : null;
+  const imagingViewerImageStyle: CSSProperties = {
+    filter: `brightness(${imagingViewerState.brightness}) contrast(${imagingViewerState.contrast}) invert(${
+      imagingViewerState.inverted ? 1 : 0
+    })`,
+    transform: `rotate(${imagingViewerState.rotationDeg}deg) scaleX(${imagingViewerState.flipHorizontal ? -1 : 1}) scale(${
+      imagingViewerState.zoom
+    })`
+  };
+  const dicomFirstFrameImageStyle: CSSProperties = {
+    filter: `brightness(${dicomFirstFrameViewerState.brightness}) contrast(${dicomFirstFrameViewerState.contrast}) invert(${
+      dicomFirstFrameViewerState.inverted ? 1 : 0
+    })`,
+    transform: `rotate(${dicomFirstFrameViewerState.rotationDeg}deg) scaleX(${
+      dicomFirstFrameViewerState.flipHorizontal ? -1 : 1
+    }) scale(${dicomFirstFrameViewerState.zoom})`
+  };
+  const currentImagingViewerSessionState = useMemo<ImagingViewerSessionState>(
+    () => ({
+      mode: selectedImagingViewerPlan?.mode === "cbct_mpr" ? "mpr" : selectedImagingViewerPlan?.mode === "photo" ? "photo" : "two_d",
+      activeTool: "window_level",
+      windowPreset: selectedImagingStudy?.kind === "cbct" ? mprWindowPreset : viewerWindowPresetForStudy(selectedImagingStudy?.kind),
+      windowCenter: null,
+      windowWidth: null,
+      brightness: imagingViewerState.brightness,
+      contrast: imagingViewerState.contrast,
+      inverted: imagingViewerState.inverted,
+      rotationDeg: imagingViewerState.rotationDeg,
+      flipHorizontal: imagingViewerState.flipHorizontal,
+      zoom: imagingViewerState.zoom,
+      panX: 0,
+      panY: 0,
+      sliceIndex: null,
+      projection: selectedImagingStudy?.kind === "cbct" ? mprProjection : null,
+      axisDeg: mprAxisDeg,
+      slabMm: mprSlabMm,
+      crosshair: mprCrosshairEnabled,
+      linkedPlanes: mprLinkedPlanesEnabled
+    }),
+    [
+      imagingViewerState,
+      mprAxisDeg,
+      mprCrosshairEnabled,
+      mprLinkedPlanesEnabled,
+      mprProjection,
+      mprSlabMm,
+      mprWindowPreset,
+      selectedImagingStudy?.kind,
+      selectedImagingViewerPlan?.mode
+    ]
+  );
+  const cbctWorkbenchSeries =
+    dicomSeriesPreview?.series.find((series) => series.mprReadiness.volumeCandidate) ??
+    dicomSeriesPreview?.series.find((series) => series.recommendedViewer === "cbct_mpr") ??
+    null;
+  const latestDicomWorkbenchServerBundle = dicomWorkbenchServerBundles[0] ?? null;
+  const dicomWorkbenchSourceIsRedacted = dicomWorkbenchManifestHasRedactedSource(dicomViewerWorkbenchManifest);
+  const cbctWorkbenchProjections = useMemo<MprProjection[]>(
+    () =>
+      cbctWorkbenchSeries?.mprReadiness.projections.length
+        ? cbctWorkbenchSeries.mprReadiness.projections
+        : ["axial", "coronal", "sagittal"],
+    [cbctWorkbenchSeries]
+  );
+  const cbctWorkbenchTools = useMemo(() => cbctWorkbenchSeries?.mprReadiness.tools ?? [], [cbctWorkbenchSeries]);
+  const cbctWorkbenchPlanes = useMemo<CbctWorkbenchPlane[]>(
+    () => [
+      { key: "axial", title: "Аксиальная", detail: "Срез сверху-вниз" },
+      { key: "coronal", title: "Корональная", detail: "Фронтальная плоскость" },
+      { key: "sagittal", title: "Сагиттальная", detail: "Боковая плоскость" },
+      {
+        key: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "panoramic_reconstruction" : "oblique",
+        title: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Панорама" : "Косая",
+        detail: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Кривая из CBCT" : "Наклонная плоскость"
+      }
+    ],
+    [cbctWorkbenchSeries]
+  );
+
+  useEffect(() => {
+    if (!activeImagingStudies.length) {
+      setSelectedImagingStudyId(null);
+      return;
+    }
+    if (!selectedImagingStudyId || visibleImagingStudies.every((study) => study.id !== selectedImagingStudyId)) {
+      setSelectedImagingStudyId(visibleImagingStudies[0]?.id ?? null);
+    }
+  }, [activeImagingStudies, imagingKindFilter, selectedImagingStudyId, visibleImagingStudies]);
+
+  useEffect(() => {
+    if (!cbctWorkbenchProjections.includes(mprProjection)) {
+      setMprProjection(cbctWorkbenchProjections[0] ?? "axial");
+    }
+  }, [cbctWorkbenchProjections, mprProjection]);
+
+  function applyImagingViewerSessionState(sessionState: ImagingViewerSessionState, annotations: ImagingViewerAnnotation[]) {
+    setImagingViewerState({
+      rotationDeg: sessionState.rotationDeg,
+      flipHorizontal: sessionState.flipHorizontal,
+      inverted: sessionState.inverted,
+      brightness: sessionState.brightness,
+      contrast: sessionState.contrast,
+      zoom: sessionState.zoom
+    });
+    if (sessionState.projection) setMprProjection(sessionState.projection);
+    setMprAxisDeg(sessionState.axisDeg);
+    setMprSlabMm(sessionState.slabMm);
+    if (sessionState.windowPreset === "bone" || sessionState.windowPreset === "soft_tissue" || sessionState.windowPreset === "implant" || sessionState.windowPreset === "custom") {
+      setMprWindowPreset(sessionState.windowPreset);
+    }
+    setMprCrosshairEnabled(sessionState.crosshair);
+    setMprLinkedPlanesEnabled(sessionState.linkedPlanes);
+    setImagingViewerAnnotations(annotations);
+  }
+
+  async function loadImagingViewerSessionForStudy(studyId: string) {
+    setImagingViewerSessionReady(false);
+    setImagingViewerSaveState("idle");
+    setImagingViewerSaveError(null);
+    const localDraft = loadLocalImagingViewerDraft(studyId, activeOrganizationId);
+    if (localDraft) {
+      applyImagingViewerSessionState(localDraft.state, localDraft.annotations);
+      setImagingViewerLocalSavedAt(localDraft.clientSavedAt);
+      setImagingViewerSaveState("local");
+    } else {
+      setImagingViewerState(defaultImagingViewerState);
+      setImagingViewerAnnotations([]);
+      setImagingViewerNote("");
+      setImagingViewerLocalSavedAt(null);
+    }
+
+    try {
+      const response = await fetch(`/api/imaging/studies/${studyId}/viewer-session`, {
+        cache: "no-store",
+        headers: denteClinicalReadHeaders()
+      });
+      if (!response.ok) throw new Error(`Сессия просмотра снимка: API ${response.status}`);
+      const payload = (await response.json()) as ImagingViewerSessionResponse;
+      setImagingViewerSession(payload.session);
+      const localIsNewer =
+        localDraft?.clientSavedAt && new Date(localDraft.clientSavedAt).getTime() > new Date(payload.session.updatedAt).getTime();
+      if (!localIsNewer) {
+        applyImagingViewerSessionState(payload.session.state, payload.session.annotations);
+        const localSaved = saveLocalImagingViewerDraft(
+          studyId,
+          {
+            state: payload.session.state,
+            annotations: payload.session.annotations,
+            clientSavedAt: payload.session.clientSavedAt ?? payload.session.updatedAt,
+            serverSavedAt: payload.session.serverSavedAt
+          },
+          activeOrganizationId
+        );
+        if (localSaved) setImagingViewerLocalSavedAt(payload.session.clientSavedAt ?? payload.session.updatedAt);
+        setImagingViewerSaveState("saved");
+      }
+    } catch {
+      setImagingViewerSaveError(localDraft ? "Сервер недоступен; локальный черновик просмотрщика сохранен." : "Сессия просмотрщика недоступна.");
+      setImagingViewerSaveState(localDraft ? "queued" : "error");
+    } finally {
+      setImagingViewerSessionReady(true);
+    }
+  }
+
+  async function saveCurrentImagingViewerSession(clientSavedAt: string) {
+    if (!selectedImagingStudy) return;
+    if (!isOnline) {
+      setImagingViewerSaveError("Офлайн: локальный черновик просмотрщика сохранен до появления сети на рабочей станции.");
+      setImagingViewerSaveState("queued");
+      return;
+    }
+    setImagingViewerSaveState("saving");
+    setImagingViewerSaveError(null);
+    try {
+      const response = await fetch(`/api/imaging/studies/${selectedImagingStudy.id}/viewer-session`, {
+        method: "PUT",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          patientId: selectedImagingStudy.patientId,
+          visitId: selectedImagingStudy.visitId,
+          state: currentImagingViewerSessionState,
+          annotations: imagingViewerAnnotations,
+          clientSavedAt
+        })
+      });
+      if (!response.ok) throw new Error(`Сессия просмотра снимка: API ${response.status}`);
+      const payload = (await response.json()) as ImagingViewerSessionResponse;
+      setImagingViewerSession(payload.session);
+      const localSaved = saveLocalImagingViewerDraft(
+        selectedImagingStudy.id,
+        {
+          state: payload.session.state,
+          annotations: payload.session.annotations,
+          clientSavedAt: payload.session.clientSavedAt ?? clientSavedAt,
+          serverSavedAt: payload.session.serverSavedAt
+        },
+        activeOrganizationId
+      );
+      if (localSaved) setImagingViewerLocalSavedAt(payload.session.clientSavedAt ?? clientSavedAt);
+      setImagingViewerSaveState("saved");
+    } catch {
+      setImagingViewerSaveError("Серверное сохранение не выполнено; локальный черновик просмотра сохранен.");
+      setImagingViewerSaveState("queued");
+    }
+  }
+
+  function retryImagingViewerSessionSave() {
+    if (!selectedImagingStudy?.id) {
+      setError("Выберите снимок перед повторным сохранением просмотра.");
+      return;
+    }
+    if (!imagingViewerSessionReady) {
+      setError("Дождитесь загрузки сессии просмотра снимка перед повторным сохранением.");
+      return;
+    }
+    const clientSavedAt = imagingViewerLocalSavedAt ?? new Date().toISOString();
+    void saveCurrentImagingViewerSession(clientSavedAt);
+  }
+
+  function addImagingViewerNoteAnnotation() {
+    if (!selectedImagingStudy) {
+      setError("Выберите снимок перед добавлением заметки.");
+      return;
+    }
+    if (!imagingViewerSessionReady) {
+      setError("Дождитесь загрузки сессии просмотра снимка перед добавлением заметки.");
+      return;
+    }
+    const cleanNote = imagingViewerNoteText;
+    if (!cleanNote) {
+      setError("Введите текст заметки перед добавлением к снимку.");
+      return;
+    }
+    const now = new Date().toISOString();
+    const annotation: ImagingViewerAnnotation = {
+      id: browserGeneratedId("annotation"),
+      type: "note",
+      label: cleanNote.slice(0, 80),
+      toothCode: selectedImagingStudy.toothCode,
+      points: [],
+      measurementValue: null,
+      unit: null,
+      note: cleanNote,
+      createdByUserId: null,
+      createdAt: now,
+      updatedAt: now
+    };
+    setImagingViewerAnnotations((items) => [annotation, ...items].slice(0, 200));
+    setImagingViewerNote("");
+    setError(null);
+  }
+
+  useEffect(() => {
+    if (!selectedImagingStudy?.id) {
+      setImagingViewerSession(null);
+      setImagingViewerSessionReady(false);
+      setImagingViewerAnnotations([]);
+      return;
+    }
+    void loadImagingViewerSessionForStudy(selectedImagingStudy.id);
+  }, [activeOrganizationId, selectedImagingStudy?.id]);
+
+  useEffect(() => {
+    if (!selectedImagingStudy?.id || !imagingViewerSessionReady) return;
+    const clientSavedAt = new Date().toISOString();
+    const localSaved = saveLocalImagingViewerDraft(
+      selectedImagingStudy.id,
+      {
+        state: currentImagingViewerSessionState,
+        annotations: imagingViewerAnnotations,
+        clientSavedAt,
+        serverSavedAt: imagingViewerSession?.serverSavedAt ?? null
+      },
+      activeOrganizationId
+    );
+    if (localSaved) {
+      setImagingViewerLocalSavedAt(clientSavedAt);
+      setImagingViewerSaveError(null);
+      setImagingViewerSaveState("local");
+    } else {
+      setImagingViewerSaveError("Браузер отклонил локальное сохранение черновика просмотрщика; держите вкладку открытой до завершения серверной записи.");
+      setImagingViewerSaveState("error");
+    }
+    if (imagingViewerSaveTimerRef.current) window.clearTimeout(imagingViewerSaveTimerRef.current);
+    imagingViewerSaveTimerRef.current = window.setTimeout(() => {
+      void saveCurrentImagingViewerSession(clientSavedAt);
+    }, 900);
+    return () => {
+      if (imagingViewerSaveTimerRef.current) window.clearTimeout(imagingViewerSaveTimerRef.current);
+    };
+  }, [activeOrganizationId, currentImagingViewerSessionState, imagingViewerAnnotations, imagingViewerSessionReady, selectedImagingStudy?.id]);
+
+  useEffect(() => {
+    if (!isOnline || imagingViewerSaveState !== "queued" || !selectedImagingStudy?.id || !imagingViewerSessionReady) return;
+    const retryTimer = window.setTimeout(() => {
+      retryImagingViewerSessionSave();
+    }, 1200);
+    return () => window.clearTimeout(retryTimer);
+  }, [imagingViewerSaveState, imagingViewerSessionReady, isOnline, selectedImagingStudy?.id]);
+
+  const specialtiesWithTemplates = useMemo(() => {
+    if (!dashboard) return [];
+    return Array.from(new Set(dashboard.protocolTemplates.map((template) => template.specialty)));
+  }, [dashboard]);
+
+  const visibleVisitSpecialtyFocusOptions = useMemo(() => {
+    const visibleSpecialties = new Set<DentalSpecialty>();
+    const reasonSpecialty = inferSpecialtyFromText(activeAppointment?.reason);
+
+    activeDoctor?.specialties.forEach((specialty) => visibleSpecialties.add(specialty));
+    if (activeChair?.specialization) visibleSpecialties.add(activeChair.specialization);
+    if (reasonSpecialty) visibleSpecialties.add(reasonSpecialty);
+    visibleSpecialties.add(selectedSpecialty);
+    visibleSpecialties.add("universal");
+
+    return visitSpecialtyFocusOptions.filter(
+      (option) => specialtiesWithTemplates.includes(option.specialty) && visibleSpecialties.has(option.specialty)
+    );
+  }, [activeAppointment?.reason, activeChair?.specialization, activeDoctor, selectedSpecialty, specialtiesWithTemplates]);
+
+  const specialtyProtocolTemplates = useMemo(() => {
+    if (!dashboard) return [];
+    return dashboard.protocolTemplates.filter((template) => template.specialty === selectedSpecialty);
+  }, [dashboard, selectedSpecialty]);
+
+  const selectedProtocolTemplate = useMemo(() => {
+    return specialtyProtocolTemplates.find((template) => template.id === selectedProtocolId) ?? specialtyProtocolTemplates[0] ?? null;
+  }, [selectedProtocolId, specialtyProtocolTemplates]);
+
+  useEffect(() => {
+    if (!selectedProtocolId) return;
+    if (specialtyProtocolTemplates.some((template) => template.id === selectedProtocolId)) return;
+    setSelectedProtocolId(null);
+  }, [selectedProtocolId, specialtyProtocolTemplates]);
+
+  const dictationQuickPhrases = useMemo(() => {
+    const visitReason = activeAppointment?.reason ?? selectedProtocolTemplate?.visitReason ?? "осмотр";
+    const specialtyPhrases = specialtyQuickPhraseLibrary[selectedSpecialty] ?? specialtyQuickPhraseLibrary.universal;
+    return [
+      { label: "Повод", text: `Повод приема: ${visitReason}.` },
+      ...specialtyPhrases
+    ];
+  }, [activeAppointment?.reason, selectedProtocolTemplate?.visitReason, selectedSpecialty]);
+
+  const taxDocuments =
+    dashboard?.documents.filter((document) => documentKindMetadata[document.kind].group === "tax") ?? [];
+  const shiftWarnings = dashboard?.shiftIntelligence.scheduleWarnings ?? [];
+  const allResourceLoads = dashboard
+    ? [...dashboard.shiftIntelligence.doctorLoads, ...dashboard.shiftIntelligence.assistantLoads, ...dashboard.shiftIntelligence.chairLoads]
+    : [];
+  const mostLoadedResource = allResourceLoads.slice().sort((left, right) => right.utilizationPercent - left.utilizationPercent)[0] ?? null;
+
+  const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
+  const visitWarnings = visitCloseChecklist?.items.filter((item) => !item.ready) ?? [];
+  const primaryVisitWarning = visitWarnings.find((item) => item.blocking) ?? visitWarnings[0] ?? null;
+  const speechProviderRuntimeById = useMemo(
+    () => new Map(speechProviderRuntimeStatuses.map((provider) => [provider.providerId, provider])),
+    [speechProviderRuntimeStatuses]
+  );
+  const speechProviderHealthById = useMemo(
+    () => new Map((speechGatewayHealthReport?.providers ?? []).map((provider) => [provider.providerId, provider])),
+    [speechGatewayHealthReport]
+  );
+  const activeSpeechProviderHealth = useMemo(() => {
+    if (!speechGatewayHealthReport) return null;
+    return speechGatewayHealthReport.providers.find((provider) => provider.providerId === speechGatewayHealthReport.activeProviderId) ?? null;
+  }, [speechGatewayHealthReport]);
+  const savedVisitNoteForm = useMemo(() => (dashboard ? visitNoteFormFromVisit(dashboard.activeVisit) : emptyVisitNoteForm), [dashboard]);
+  const isVisitNoteDirty = visitNoteFieldDefinitions.some(({ key }) => visitNoteForm[key] !== savedVisitNoteForm[key]);
+  const hasVisitNoteFormText = visitNoteFieldDefinitions.some(({ key }) => visitNoteForm[key].trim().length > 0);
+  const hasVisitTranscriptText = transcript.trim().length > 0;
+  const visitDraftBuildMissingSteps = [
+    !activePatient ? "выберите пациента" : null,
+    !hasVisitTranscriptText ? "добавьте текст диктовки или нажмите голосовую запись" : null
+  ].filter((step): step is string => Boolean(step));
+  const visitDraftReadyToBuild = visitDraftBuildMissingSteps.length === 0;
+  const visitNoteAcceptMissingSteps = [
+    !hasVisitNoteFormText ? "заполните хотя бы одно поле ЭМК или соберите черновик из диктовки" : null,
+    !draft && !isVisitNoteDirty ? "внесите правку в ЭМК или подготовьте новый черновик" : null
+  ].filter((step): step is string => Boolean(step));
+  const visitNoteReadyToAccept = visitNoteAcceptMissingSteps.length === 0;
+  const visitNoteActionLabel = isDraftAccepting ? "Сохраняю" : draft ? "Принять" : isVisitNoteDirty ? "Сохранить" : "Сохранено";
+  const visitNoteStatusLabel = draft ? "черновик готов" : isVisitNoteDirty ? "есть правки" : "сохранено";
+  const speechRecoveryIssueCount =
+    speechRecordingRecovery?.recordings.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
+  const speechRecoveryQualityIssueCount =
+    speechRecordingRecovery?.recordings.reduce(
+      (total, recording) =>
+        total + recording.qualityCounts.review + recording.qualityCounts.empty + recording.qualityCounts.failed,
+      0
+    ) ?? 0;
+  const currentSpeechQualityIssue =
+    speechLastQuality && speechLastQuality.level !== "clear" ? speechLastQuality : null;
+  const speechUploadReady = speechGatewayCanUpload(speechGatewayStatus);
+  const speechSafetyValue = pendingSpeechChunkCount
+    ? `${pendingSpeechChunkCount} аудио`
+    : currentSpeechQualityIssue
+      ? speechQualityLabels[currentSpeechQualityIssue.level]
+      : speechUploadReady && isOnline
+        ? "STT готов"
+        : "локально";
+  const speechSafetyDetail = pendingSpeechChunkCount
+    ? "аудио сохранено и уйдет позже"
+    : currentSpeechQualityIssue
+      ? currentSpeechQualityIssue.nextAction
+      : speechUploadReady && isOnline
+        ? `${speechGatewayStatus?.providerLabel ?? "STT"}, чанки защищены`
+        : "диктовка не блокируется без сети";
+  const speechSafetyState =
+    pendingSpeechChunkCount || currentSpeechQualityIssue || !isOnline || !speechUploadReady
+      ? "warn"
+      : "ready";
+  const browserContinuityCritical =
+    browserContinuity !== null && (!browserContinuity.localStorageWritable || !browserContinuity.indexedDbSupported);
+  const browserContinuityValue = !browserContinuity
+    ? "проверка"
+    : browserContinuityCritical
+      ? "ограничено"
+      : isOnline
+        ? "онлайн"
+        : "офлайн";
+  const browserContinuityDetail = !browserContinuity
+    ? "проверяю локальное хранилище"
+    : browserContinuityCritical
+      ? browserContinuity.warnings.slice(0, 2).join(", ") || "локальная защита ограничена"
+      : `${browserContinuity.localStorageWritable ? "черновики ок" : "черновики выкл."} · ${
+          browserContinuity.indexedDbSupported ? "очередь аудио ок" : "очередь аудио выкл."
+        }`;
+  const browserContinuityState = !browserContinuity ? "busy" : browserContinuityCritical ? "warn" : "ready";
+  const browserCanRequestPersistentStorage =
+    typeof navigator !== "undefined" && Boolean(navigator.storage) && typeof navigator.storage.persist === "function";
+  const browserContinuityChecks = [
+    {
+      label: "Локальные черновики",
+      value: browserContinuity?.localStorageWritable ? "ок" : browserContinuity ? "выкл." : "проверка",
+      detail: lastLocalSavedAt ? `последнее ${formatTime(lastLocalSavedAt)}` : "проверка автосохранения"
+    },
+    {
+      label: "Очередь аудио",
+      value: browserContinuity?.indexedDbSupported ? "ок" : browserContinuity ? "выкл." : "проверка",
+      detail: pendingSpeechChunkCount ? `фрагментов в очереди: ${pendingSpeechChunkCount}` : "очередь IndexedDB"
+    },
+    {
+      label: "PWA-оболочка",
+      value: browserContinuity?.serviceWorkerRegistrationState ?? "проверка",
+      detail: browserContinuity?.serviceWorkerControlled ? "активна" : "не управляет текущей вкладкой"
+    },
+    {
+      label: "Кэш",
+      value: browserContinuity?.cacheStorageSupported ? "ок" : browserContinuity ? "выкл." : "проверка",
+      detail: browserContinuity?.storagePersisted === true ? "постоянное хранилище" : "хранилище под управлением браузера"
+    },
+    {
+      label: "Квота",
+      value: formatMegabytes(browserContinuity?.storageUsageMb ?? null),
+      detail: browserContinuity?.storageQuotaMb != null ? `из ${formatMegabytes(browserContinuity.storageQuotaMb)}` : "оценка недоступна"
+    },
+    {
+      label: "Синхронизация",
+      value: isOnline ? "онлайн" : "офлайн",
+      detail: pendingVisitSaveCount ? `в очереди сохранений приема: ${pendingVisitSaveCount}` : "серверная очередь пуста"
+    }
+  ];
+  const localBridgeStatusState =
+    !localBridgeReadiness
+      ? "busy"
+      : localBridgeReadiness.readyCount > 0
+        ? "ready"
+        : localBridgeReadiness.configuredCount > 0
+          ? "warn"
+          : "busy";
+  const localBridgeStatusValue = !localBridgeReadiness
+    ? "проверка"
+    : localBridgeReadiness.readyCount
+      ? `готово ${localBridgeReadiness.readyCount}/${localBridgeReadiness.bridges.length}`
+      : localBridgeReadiness.configuredCount
+        ? "настроено"
+        : "не задано";
+  const visitSafetyCards: Array<{ key: string; label: string; value: string; detail: string; state: "ready" | "warn" | "busy" }> = [
+    {
+      key: "local",
+      label: "Локально",
+      value: lastLocalSavedAt ? formatTime(lastLocalSavedAt) : localAutosaveReady ? "включено" : "загрузка",
+      detail: localDraftWasRestored ? "черновик восстановлен на этом устройстве" : "автосохранение на этом устройстве",
+      state: lastLocalSavedAt || localAutosaveReady ? "ready" : "busy"
+    },
+    {
+      key: "server",
+      label: "Сервер",
+      value:
+        serverDraftSyncState === "saving"
+          ? "сохраняет"
+          : serverDraftSyncState === "saved" && lastServerDraftSavedAt
+            ? formatTime(lastServerDraftSavedAt)
+            : serverDraftSyncState === "queued" || serverDraftSyncState === "error"
+              ? "повторит"
+              : "готов",
+      detail: pendingVisitSaveCount ? `${pendingVisitSaveCount} сохранение ожидает синхронизацию` : "серверный черновик включен",
+      state: serverDraftSyncState === "saving" ? "busy" : pendingVisitSaveCount || serverDraftSyncState === "queued" || serverDraftSyncState === "error" ? "warn" : "ready"
+    },
+    {
+      key: "browser",
+      label: "Устройство",
+      value: browserContinuityValue,
+      detail: browserContinuityDetail,
+      state: browserContinuityState
+    },
+    {
+      key: "stt",
+      label: "Голос",
+      value: speechSafetyValue,
+      detail: speechSafetyDetail,
+      state: speechSafetyState
+    },
+    {
+      key: "recovery",
+      label: "Recovery",
+      value: speechRecoveryIssueCount ? "проверить" : speechRecordingRecovery ? "чисто" : "скоро",
+      detail: speechRecoveryQualityIssueCount
+        ? `${speechRecoveryQualityIssueCount} фрагм. STT на проверку`
+        : speechRecoveryIssueCount
+          ? `${speechRecoveryIssueCount} запись требует внимания`
+          : "потерь диктовки не видно",
+      state: speechRecoveryIssueCount ? "warn" : speechRecordingRecovery ? "ready" : "busy"
+    }
+  ];
+
+  function scrollToVisitArea(selector: string) {
+    window.location.hash = "visit";
+    window.requestAnimationFrame(() => {
+      document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  function appendToTranscript(text: string) {
+    visitDraftUserEditedRef.current = true;
+    setClearedTranscriptSnapshot(null);
+    setTranscript((current) =>
+      appendSpeechTextWithoutDuplicateTail(current, text, speechGatewayStatus?.chunkingPolicy.dedupeWindowChars ?? 600)
+    );
+  }
+
+  function updateVisitNoteField(field: VisitNoteField, value: string) {
+    visitDraftUserEditedRef.current = true;
+    setVisitNoteForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function buildOfflineDraft() {
+    if (!hasVisitTranscriptText) {
+      setError("Добавьте текст диктовки перед локальным разбором.");
+      return;
+    }
+    visitDraftUserEditedRef.current = true;
+    const fallbackDraft = buildOfflineVisitDraftFromTranscript(transcript, selectedSpecialty);
+    setDraft(fallbackDraft);
+    setVisitNoteForm(visitNoteFormFromDraft(fallbackDraft));
+    scrollToVisitArea(".visit-note-panel");
+  }
+
+  function openVisitWarningAction() {
+    if (!primaryVisitWarning) {
+      scrollToVisitArea(".close-checklist");
+      return;
+    }
+    if (primaryVisitWarning.section === "visit") {
+      if (primaryVisitWarning.id === "ai-draft-review") {
+        scrollToVisitArea(".ai-draft");
+        return;
+      }
+      if (primaryVisitWarning.id === "clinical-rules") {
+        const warningPanel = document.querySelector(".clinical-rule-panel-compact");
+        if (warningPanel instanceof HTMLDetailsElement) {
+          warningPanel.open = true;
+        }
+        scrollToVisitArea(".clinical-rule-panel");
+        return;
+      }
+      scrollToVisitArea(".close-checklist");
+      return;
+    }
+    window.location.hash = primaryVisitWarning.section;
+  }
+
+  function openScheduleWarning(warning: ScheduleWarning) {
+    if (warning.actionLabel.toLowerCase().includes("связ")) {
+      window.location.hash = "communications";
+      return;
+    }
+    if (warning.actionLabel.toLowerCase().includes("оплат")) {
+      window.location.hash = "finance";
+      return;
+    }
+    if (warning.actionLabel.toLowerCase().includes("документ")) {
+      window.location.hash = "documents";
+      return;
+    }
+    if (warning.actionLabel.toLowerCase().includes("роль")) {
+      window.location.hash = "settings";
+      setSettingsTab("clinic");
+      return;
+    }
+    if (warning.actionLabel.toLowerCase().includes("пациент")) {
+      window.location.hash = "patients";
+      return;
+    }
+    window.location.hash = "visit";
+  }
+
+  async function createPatient() {
+    if (isPatientCreating) {
+      setError("Дождитесь завершения создания карточки пациента.");
+      return;
+    }
+    const fullName = newPatientName.trim();
+    if (!fullName) {
+      setError("Укажите ФИО пациента перед созданием карточки.");
+      return;
+    }
+    const payload = {
+      fullName,
+      phone: nullablePatientDraftValue(newPatientPhone),
+      birthDate: nullablePatientDraftValue(newPatientBirthDate)
+    };
+    setIsPatientCreating(true);
+    try {
+    const response = await fetch("/api/patients", {
+      method: "POST",
+      headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      setError(await responseErrorMessage(response, "Пациент не создан"));
+      return;
+    }
+    const patient = (await response.json()) as Patient;
+    setNewPatientName("");
+    setNewPatientPhone("");
+    setNewPatientBirthDate("");
+    setSelectedPatientId(patient.id);
+    setQuery(patient.fullName);
+    setDashboard((current) =>
+      current
+        ? {
+            ...current,
+            patients: [patient, ...current.patients.filter((entry) => entry.id !== patient.id)]
+          }
+        : current
+    );
+    setError(null);
+    } catch (patientError) {
+      setError(patientError instanceof Error ? `Пациент не создан: ${patientError.message}` : "Пациент не создан");
+    } finally {
+      setIsPatientCreating(false);
+    }
+  }
+
+  async function changeClinicMode(mode: ClinicMode) {
+    if (!(await saveClinicProfileIfDirty())) return;
+    try {
+    const response = await fetch("/api/settings/clinic/mode", {
+      method: "POST",
+      headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ mode })
+    });
+    if (response.ok) {
+      const clinicSettings = (await response.json()) as Dashboard["clinicSettings"];
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              clinicName: clinicSettings.profile.clinicName,
+              clinicSettings
+            }
+          : current
+      );
+      setClinicProfileDraft(clinicProfileDraftFromProfile(clinicSettings.profile));
+      setClinicProfileDirty(false);
+      setClinicProfileSaveState("saved");
+      return;
+    }
+    if (!response.ok) {
+      setError(await responseErrorMessage(response, "Режим клиники не сохранен"));
+      return;
+    }
+    await loadDashboard();
+    } catch (modeError) {
+      setError(modeError instanceof Error ? `Режим клиники не сохранен: ${modeError.message}` : "Режим клиники не сохранен");
+    }
+  }
+
+  async function addStaffMember(role: StaffRole) {
+    const fullName = newStaffName.trim();
+    if (!fullName) {
+      setError("Введите ФИО сотрудника перед добавлением в команду.");
+      return;
+    }
+    if (!(await saveClinicProfileIfDirty())) return;
+    try {
+    const response = await fetch("/api/settings/staff", {
+      method: "POST",
+      headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        fullName,
+        role,
+        specialties: role === "doctor" || role === "assistant" ? [newStaffSpecialty] : ["universal"],
+        workingHours: staffWorkingHoursFromSimpleDraft(
+          clinicProfileDraft.workdayStart,
+          clinicProfileDraft.workdayEnd,
+          clinicProfileDraft.workingDays
+        )
+      })
+    });
+    if (!response.ok) {
+      setError(await responseErrorMessage(response, "Сотрудник не добавлен"));
+      return;
+    }
+    setNewStaffName("");
+    setNewStaffRole("doctor");
+    setNewStaffSpecialty(selectedSpecialty);
+    await loadDashboard();
+    } catch (staffError) {
+      setError(staffError instanceof Error ? `Сотрудник не добавлен: ${staffError.message}` : "Сотрудник не добавлен");
+    }
+  }
+
+  async function saveStaffSchedule(staffId: string): Promise<boolean> {
+    const draft = staffScheduleDrafts[staffId];
+    if (!draft) return false;
+    const expectedSignature = staffScheduleDraftSignature(draft);
+    setStaffScheduleSavingId(staffId);
+    setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "saving" }));
+    try {
+      const response = await fetch(`/api/settings/staff/${staffId}/working-hours`, {
+        method: "PUT",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ workingHours: staffWorkingHoursFromDraft(draft) })
+      });
+      if (!response.ok) {
+        setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "error" }));
+        setError(await responseErrorMessage(response, "Расписание сотрудника не сохранено"));
+        return false;
+      }
+      const latestDraft = staffScheduleDraftsRef.current[staffId];
+      const latestMatchesSaved = latestDraft ? staffScheduleDraftSignature(latestDraft) === expectedSignature : true;
+      if (latestMatchesSaved) {
+        setStaffScheduleDirtyIds((current) => {
+          const next = new Set(current);
+          next.delete(staffId);
+          return next;
+        });
+      }
+      setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: latestMatchesSaved ? "saved" : "idle" }));
+      await loadDashboard();
+      return true;
+    } catch (scheduleSaveError) {
+      setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "error" }));
+      setError(scheduleSaveError instanceof Error ? scheduleSaveError.message : "Расписание сотрудника не сохранено");
+      return false;
+    } finally {
+      setStaffScheduleSavingId(null);
+    }
+  }
+
+  async function saveChairSchedule(chairId: string): Promise<boolean> {
+    const draft = chairScheduleDrafts[chairId];
+    if (!draft) return false;
+    const expectedSignature = staffScheduleDraftSignature(draft);
+    setChairScheduleSavingId(chairId);
+    setChairScheduleSaveStates((current) => ({ ...current, [chairId]: "saving" }));
+    try {
+      const response = await fetch(`/api/settings/chairs/${chairId}/working-hours`, {
+        method: "PUT",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ workingHours: staffWorkingHoursFromDraft(draft) })
+      });
+      if (!response.ok) {
+        setChairScheduleSaveStates((current) => ({ ...current, [chairId]: "error" }));
+        setError(await responseErrorMessage(response, "Расписание кресла не сохранено"));
+        return false;
+      }
+      const latestDraft = chairScheduleDraftsRef.current[chairId];
+      const latestMatchesSaved = latestDraft ? staffScheduleDraftSignature(latestDraft) === expectedSignature : true;
+      if (latestMatchesSaved) {
+        setChairScheduleDirtyIds((current) => {
+          const next = new Set(current);
+          next.delete(chairId);
+          return next;
+        });
+      }
+      setChairScheduleSaveStates((current) => ({ ...current, [chairId]: latestMatchesSaved ? "saved" : "idle" }));
+      await loadDashboard();
+      return true;
+    } catch (scheduleSaveError) {
+      setChairScheduleSaveStates((current) => ({ ...current, [chairId]: "error" }));
+      setError(scheduleSaveError instanceof Error ? scheduleSaveError.message : "Расписание кресла не сохранено");
+      return false;
+    } finally {
+      setChairScheduleSavingId(null);
+    }
+  }
+
+  async function saveAppointmentSchedule(
+    appointmentId: string,
+    options: { closeEditorOnSave?: boolean } = {}
+  ): Promise<boolean> {
+    if (appointmentScheduleSaveStates[appointmentId] === "saving") {
+      setError("Дождитесь завершения текущего сохранения записи.");
+      return false;
+    }
+    const draft = appointmentScheduleDrafts[appointmentId];
+    if (!draft) {
+      const message = "Откройте запись в расписании перед сохранением.";
+      setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
+      setError(message);
+      return false;
+    }
+    const dateMissingSteps = appointmentScheduleDateMissingSteps(draft);
+    if (dateMissingSteps.length) {
+      const message = `Перед сохранением записи: ${dateMissingSteps.join("; ")}.`;
+      setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
+      setError(message);
+      return false;
+    }
+    const expectedSignature = appointmentScheduleDraftSignature(draft);
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "saving" }));
+    setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
+    try {
+      const response = await fetch(`/api/appointments/${appointmentId}`, {
+        method: "PATCH",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(appointmentUpdateInputFromDraft(draft))
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не сохранена"));
+      const payload = await response.json();
+      const nextDashboard = dashboardSchema.parse(payload);
+      setDashboard(nextDashboard);
+      const savedAppointment = nextDashboard.appointments.find((appointment) => appointment.id === appointmentId);
+      const latestDraft = appointmentScheduleDraftsRef.current[appointmentId];
+      const latestMatchesSaved = latestDraft ? appointmentScheduleDraftSignature(latestDraft) === expectedSignature : true;
+      if (savedAppointment && latestMatchesSaved) {
+        setAppointmentScheduleDrafts((current) => ({
+          ...current,
+          [appointmentId]: appointmentScheduleDraftFromAppointment(savedAppointment)
+        }));
+      }
+      if (latestMatchesSaved) {
+        setAppointmentScheduleDirtyIds((current) => {
+          const next = new Set(current);
+          next.delete(appointmentId);
+          return next;
+        });
+      }
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: latestMatchesSaved ? "saved" : "idle" }));
+      if (latestMatchesSaved && options.closeEditorOnSave !== false) setEditingAppointmentId(null);
+      setError(null);
+      return true;
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : "Запись не сохранена";
+      setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
+      setError(saveError instanceof Error ? saveError.message : "Запись не сохранена");
+      return false;
+    }
+  }
+
+  function newAppointmentMissingFields(draft: AppointmentScheduleDraft): string[] {
+    const missing: string[] = [];
+    if (!draft.patientId) missing.push("выберите пациента");
+    if (!draft.doctorUserId) missing.push("выберите врача");
+    if (dashboard?.clinicSettings.profile.mode !== "solo_doctor" && !draft.assistantUserId) missing.push("выберите ассистента");
+    if (!draft.chairId) missing.push("выберите кресло");
+    missing.push(...appointmentScheduleDateMissingSteps(draft));
+    return missing;
+  }
+
+  async function createAppointmentFromDraft(): Promise<boolean> {
+    if (!dashboard) {
+      setError("Данные клиники еще не загружены. Повторите создание записи после загрузки рабочего экрана.");
+      return false;
+    }
+    if (newAppointmentSaveState === "saving") {
+      setError("Дождитесь завершения текущего создания записи.");
+      return false;
+    }
+    const missing = newAppointmentMissingFields(newAppointmentDraft);
+    if (missing.length) {
+      const message = `Перед созданием записи: ${missing.join("; ")}.`;
+      setNewAppointmentError(message);
+      setNewAppointmentSaveState("error");
+      setError(message);
+      return false;
+    }
+    setNewAppointmentSaveState("saving");
+    setNewAppointmentError(null);
+    const previousIds = new Set(dashboard.appointments.map((appointment) => appointment.id));
+    try {
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(appointmentCreateInputFromDraft(newAppointmentDraft))
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не создана"));
+      const payload = await response.json();
+      const nextDashboard = dashboardSchema.parse(payload);
+      const createdAppointment = nextDashboard.appointments.find((appointment) => !previousIds.has(appointment.id)) ?? null;
+      const nextDraftPreferences = {
+        selectedPatientId: newAppointmentDraft.patientId || selectedPatientId,
+        selectedSpecialty,
+        scheduleDefaultDoctorUserId: newAppointmentDraft.doctorUserId || null,
+        scheduleDefaultAssistantUserId: newAppointmentDraft.assistantUserId || null,
+        scheduleDefaultChairId: newAppointmentDraft.chairId || null
+      };
+      setSelectedPatientId(nextDraftPreferences.selectedPatientId ?? null);
+      setScheduleDefaultDoctorUserId(nextDraftPreferences.scheduleDefaultDoctorUserId);
+      setScheduleDefaultAssistantUserId(nextDraftPreferences.scheduleDefaultAssistantUserId);
+      setScheduleDefaultChairId(nextDraftPreferences.scheduleDefaultChairId);
+      setDashboard(nextDashboard);
+      newAppointmentDraftUserEditedRef.current = false;
+      setNewAppointmentDraft(newAppointmentDraftFromDashboard(nextDashboard, nextDraftPreferences));
+      setNewAppointmentSaveState("saved");
+      if (createdAppointment) {
+        setAppointmentScheduleDrafts((current) => ({
+          ...current,
+          [createdAppointment.id]: appointmentScheduleDraftFromAppointment(createdAppointment)
+        }));
+        setEditingAppointmentId(createdAppointment.id);
+      }
+      setError(null);
+      return true;
+    } catch (createError) {
+      const message = createError instanceof Error ? createError.message : "Запись не создана";
+      setNewAppointmentError(message);
+      setNewAppointmentSaveState("error");
+      setError(message);
+      return false;
+    }
+  }
+
+  async function addChair() {
+    const name = newChairName.trim();
+    if (!name) {
+      setError("Введите название кресла или кабинета перед добавлением.");
+      return;
+    }
+    if (!(await saveClinicProfileIfDirty())) return;
+    try {
+    const response = await fetch("/api/settings/chairs", {
+      method: "POST",
+      headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        name,
+        room: name,
+        specialization: selectedSpecialty,
+        hasXraySensor: newChairHasXraySensor,
+        hasMicroscope: newChairHasMicroscope,
+        hasSurgeryKit: newChairHasSurgeryKit,
+        workingHours: staffWorkingHoursFromSimpleDraft(
+          clinicProfileDraft.workdayStart,
+          clinicProfileDraft.workdayEnd,
+          clinicProfileDraft.workingDays
+        )
+      })
+    });
+    if (!response.ok) {
+      setError(await responseErrorMessage(response, "Кресло не добавлено"));
+      return;
+    }
+    setNewChairName("");
+    setNewChairHasXraySensor(true);
+    setNewChairHasMicroscope(false);
+    setNewChairHasSurgeryKit(false);
+    await loadDashboard();
+    } catch (chairError) {
+      setError(chairError instanceof Error ? `Кресло не добавлено: ${chairError.message}` : "Кресло не добавлено");
+    }
+  }
+
+  function chooseRecognitionPreset(preset: (typeof recognitionPresets)[number]) {
+    setRecognitionKind(preset.kind);
+    setRecognitionTarget(preset.target);
+    setRecognitionText(preset.text);
+    setRecognitionJob(null);
+  }
+
+  async function runRecognitionJob() {
+    if (!recognitionText.trim()) {
+      setError("Вставьте текст, OCR или диктовку перед распознаванием.");
+      return;
+    }
+    setIsRecognitionLoading(true);
+    try {
+      const response = await fetch("/api/ai/recognition-jobs", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          kind: recognitionKind,
+          target: recognitionTarget,
+          inputText: recognitionText,
+          sourceLabel: `settings_${recognitionKind}`,
+          patientId: activePatient?.id ?? null
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`ИИ-распознавание: API ${response.status}`);
+      }
+      const result = (await response.json()) as AiRecognitionJobResponse;
+      setRecognitionJob(result.job);
+      await loadDashboard();
+    } catch (recognitionError) {
+      setError(recognitionError instanceof Error ? recognitionError.message : "ИИ-распознавание не подготовлено");
+    } finally {
+      setIsRecognitionLoading(false);
+    }
+  }
+
+  async function analyzePricelist() {
+    if (!pricelistText.trim() && !pricelistImageBase64) {
+      setError("Вставьте прайс-лист или загрузите фото прайса перед разбором.");
+      return;
+    }
+    setIsPricelistAnalyzing(true);
+    try {
+      const response = await fetch("/api/pricelist/analyze", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: "clinic-pricelist",
+          sourceKind: pricelistImageBase64 ? "photo_ocr" : pricelistSourceKind,
+          rawText: pricelistText,
+          imageBase64: pricelistImageBase64 ?? undefined,
+          imageMimeType: pricelistImageMimeType,
+          preferredSpecialty: selectedSpecialty,
+          useServerAi: usePricelistAi || Boolean(pricelistImageBase64)
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Разбор прайса: API ${response.status}`);
+      }
+      setPricelistAnalysis((await response.json()) as DentalPricelistAnalysisResponse);
+    } catch (priceError) {
+      setError(priceError instanceof Error ? priceError.message : "Прайс не разобран");
+    } finally {
+      setIsPricelistAnalyzing(false);
+    }
+  }
+
+  async function attachPricelistImage(file: File | undefined) {
+    if (!file) return;
+    try {
+      setIsPricelistAnalyzing(true);
+      const prepared = await preparePricelistImage(file);
+      setPricelistImageBase64(prepared.base64);
+      setPricelistImageMimeType(prepared.mimeType);
+      setPricelistImageName(file.name);
+      setPricelistImageNote(prepared.note);
+      setPricelistSourceKind("photo_ocr");
+      setUsePricelistAi(true);
+      setPricelistAnalysis(null);
+    } catch (imageError) {
+      setError(imageError instanceof Error ? imageError.message : "Фото прайса не подготовлено");
+    } finally {
+      setIsPricelistAnalyzing(false);
+    }
+  }
+
+  function clearPricelistImage() {
+    setPricelistImageBase64(null);
+    setPricelistImageName(null);
+    setPricelistImageNote(null);
+    setPricelistAnalysis(null);
+  }
+
+  async function ingestImportFile(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Файл больше 8 МБ. Для больших архивов нужен серверный пакетный импорт или OCR-обработчик.");
+      return;
+    }
+    setIsDocumentIngesting(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const response = await fetch("/api/ingestion/extract", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type || null,
+          fileBase64: dataUrl.split(",")[1] ?? "",
+          target: documentIngestionTarget
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Разбор файла: API ${response.status}`);
+      }
+      const result = (await response.json()) as DocumentIngestionResponse;
+      setDocumentIngestion(result);
+      const extractedText = result.extractedText || result.textPreview;
+      if (extractedText) {
+        setSmartImportText(extractedText);
+        setSmartImportPreview(null);
+        setSmartImportCommit(null);
+      }
+
+      if (documentIngestionTarget === "patients") {
+        if (extractedText) setImportText(extractedText);
+        setImportPreview(null);
+        setImportCommit(null);
+        setImportIntake(null);
+      }
+      if (documentIngestionTarget === "imaging") {
+        if (extractedText) setImagingImportText(extractedText);
+        setImagingImportPreview(null);
+        setImagingImportCommit(null);
+      }
+      if (documentIngestionTarget === "pricelist") {
+        if (result.detectedKind === "image") {
+          const prepared = await preparePricelistImage(file);
+          setPricelistImageBase64(prepared.base64);
+          setPricelistImageMimeType(prepared.mimeType);
+          setPricelistImageName(file.name);
+          setPricelistImageNote(`${prepared.note} Получено через общий импорт файлов.`);
+          setPricelistSourceKind("photo_ocr");
+          setUsePricelistAi(true);
+        } else {
+          clearPricelistImage();
+        }
+        setPricelistText(extractedText);
+        setPricelistAnalysis(null);
+        setSettingsTab("prices");
+        window.location.hash = "settings/prices";
+      }
+    } catch (ingestionError) {
+      setError(ingestionError instanceof Error ? ingestionError.message : "Файл не разобран");
+    } finally {
+      setIsDocumentIngesting(false);
+    }
+  }
+
+  function sendRecognitionResultToImport() {
+    if (!recognitionJob) return;
+    if (recognitionJob.target === "patient_import") {
+      setImportSourceKind(recognitionJob.kind === "paper_ocr" ? "image_ocr" : "voice_dictation");
+      setImportText(recognitionJob.resultText);
+      setImportPreview(null);
+      setImportCommit(null);
+      setImportIntake(null);
+    }
+    if (recognitionJob.target === "visit_note") {
+      visitDraftUserEditedRef.current = true;
+      setTranscript(recognitionJob.resultText);
+    }
+  }
+
+  function applyProtocolTemplate(template: ProtocolTemplate) {
+    visitDraftUserEditedRef.current = true;
+    setSelectedSpecialty(template.specialty);
+    setSelectedProtocolId(template.id);
+    setTranscript(
+      [
+        `${template.visitReason}.`,
+        `Жалобы: ${template.complaintPrompt}`,
+        `Объективно: ${template.objectiveTemplate}`,
+        `Диагнозы к проверке: ${template.diagnosisHints.join("; ")}`,
+        `План: ${template.treatmentPlanTemplate}`,
+        `Документы: ${template.requiredDocuments.map((kind) => documentLabels[kind]).join(", ")}.`,
+        `Снимки: ${template.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}.`
+      ].join("\n")
+    );
+  }
+
+  async function polishTranscript() {
+    if (!hasVisitTranscriptText) {
+      setError("Перед очисткой диктовки: добавьте текст диктовки или нажмите голосовую запись.");
+      return;
+    }
+    visitDraftUserEditedRef.current = true;
+    setIsTranscriptPolishing(true);
+    try {
+      const response = await fetch("/api/speech/polish-transcript", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          transcript,
+          specialty: selectedSpecialty,
+          source: "voice"
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Очистка диктовки: API ${response.status}`);
+      }
+      const result = (await response.json()) as SpeechTranscriptPolishResponse;
+      setTranscript(result.normalizedTranscript);
+      setDraft(result.draft);
+      setVisitNoteForm(visitNoteFormFromDraft(result.draft));
+      const polishLabel =
+        result.polishMode === "deterministic_neural"
+          ? `ИИ-полировка ${result.modelName ?? ""}`.trim()
+          : "локальный парсер правил";
+      setSpeechStatusNote(
+        result.changedPhrases.length
+          ? `Текст очищен (${polishLabel}): ${result.changedPhrases.slice(0, 4).join(", ")}`
+          : `Текст проверен (${polishLabel}): факты не добавлялись.`
+      );
+    } catch (polishError) {
+      const local = normalizeDentalSpeechTranscript(transcript, selectedSpecialty);
+      const localDraft = buildRuleBasedVisitDraftFromTranscript(local.normalizedText, selectedSpecialty, {
+        sourceLabel: "Локальный speech-polish"
+      });
+      setTranscript(local.normalizedText);
+      setDraft(localDraft);
+      setVisitNoteForm(visitNoteFormFromDraft(localDraft));
+      setSpeechStatusNote("Текст очищен локальным парсером без сервера.");
+      if (polishError instanceof Error) {
+        setError(`Серверная очистка недоступна: ${polishError.message}. Использован локальный парсер.`);
+      }
+    } finally {
+      setIsTranscriptPolishing(false);
+    }
+  }
+
+  async function buildDraft() {
+    if (!dashboard || !activePatient || !hasVisitTranscriptText) {
+      const missingSteps = [
+        !dashboard ? "дождитесь загрузки приема" : null,
+        ...visitDraftBuildMissingSteps
+      ].filter((step): step is string => Boolean(step));
+      setError(`Перед сборкой черновика: ${missingSteps.join(", ")}.`);
+      return;
+    }
+    visitDraftUserEditedRef.current = true;
+    setIsDraftLoading(true);
+    try {
+      const response = await fetch("/api/ai/visit-note-draft", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          patientId: activePatient.id,
+          transcript,
+          specialty: selectedSpecialty,
+          source: "voice"
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`ИИ-подготовка записи: API ${response.status}`);
+      }
+      const result = (await response.json()) as VisitNoteDraft;
+      setDraft(result);
+      setVisitNoteForm(visitNoteFormFromDraft(result));
+      scrollToVisitArea(".visit-note-panel");
+    } catch (draftError) {
+      const fallbackDraft = buildOfflineVisitDraftFromTranscript(transcript, selectedSpecialty);
+      setDraft(fallbackDraft);
+      setVisitNoteForm(visitNoteFormFromDraft(fallbackDraft));
+      scrollToVisitArea(".visit-note-panel");
+      setError(
+        draftError instanceof Error
+          ? `Серверный черновик недоступен: ${draftError.message}. Включен офлайн-парсер.`
+          : "Серверный черновик недоступен. Включен офлайн-парсер."
+      );
+    } finally {
+      setIsDraftLoading(false);
+    }
+  }
+
+  async function acceptDraftToVisit() {
+    if (!dashboard) {
+      setError("Данные приема еще не загружены. Повторите сохранение после загрузки рабочего экрана.");
+      return;
+    }
+    if (!visitNoteReadyToAccept) {
+      setError(`Перед сохранением приема: ${visitNoteAcceptMissingSteps.join(", ")}.`);
+      return;
+    }
+    setIsDraftAccepting(true);
+    const acceptedDraft = visitNoteDraftFromForm(
+      visitNoteForm,
+      draft?.warnings ?? ["Правки внесены врачом вручную. Подпись приема остается отдельным действием."]
+    );
+    const doctorSummary = acceptedDraft.warnings.join(" ");
+    const clientMutationId = createLocalQueueId();
+    const baseRevision = dashboard.activeVisit.revision ?? null;
+    try {
+      const result = await submitAcceptedVisitDraft(dashboard.activeVisit.id, acceptedDraft, doctorSummary, {
+        clientMutationId,
+        baseRevision,
+        clientSavedAt: new Date().toISOString()
+      });
+      applyAcceptedVisitResponse(result);
+      scrollToVisitArea(".visit-fields");
+    } catch (acceptError) {
+      const queued = queuePendingVisitSave({
+        visitId: dashboard.activeVisit.id,
+        clientMutationId,
+        baseRevision,
+        draft: acceptedDraft,
+        doctorSummary,
+        transcript,
+        selectedSpecialty
+      }, activeOrganizationId);
+      refreshPendingVisitSaveState();
+      const optimisticVisit = {
+        ...dashboard.activeVisit,
+        complaint: acceptedDraft.complaint,
+        anamnesis: acceptedDraft.anamnesis,
+        objectiveStatus: acceptedDraft.objectiveStatus,
+        diagnosis: acceptedDraft.diagnosis,
+        treatmentPlan: acceptedDraft.treatmentPlan,
+        doctorSummary: doctorSummary || "Черновик ЭМК принят врачом локально и ожидает синхронизацию.",
+        updatedAt: queued.queuedAt
+      };
+      setDashboard((current) => (current ? { ...current, activeVisit: optimisticVisit } : current));
+      setDraft(null);
+      setVisitNoteForm(visitNoteFormFromVisit(optimisticVisit));
+      scrollToVisitArea(".visit-fields");
+      setError(
+        acceptError instanceof Error
+          ? `Серверное сохранение недоступно: ${acceptError.message}. Прием сохранен локально и поставлен в очередь.`
+          : "Серверное сохранение недоступно. Прием сохранен локально и поставлен в очередь."
+      );
+    } finally {
+      setIsDraftAccepting(false);
+    }
+  }
+
+  async function previewImport() {
+    if (!importText.trim()) {
+      setError("Вставьте список пациентов, OCR журнала или надиктуйте импорт перед проверкой.");
+      return;
+    }
+    setIsImportLoading(true);
+    try {
+      const response = await fetch("/api/imports/patients/intake", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: importSourceKind,
+          sourceKind: importSourceKind,
+          rawText: importText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Проверка импорта: API ${response.status}`);
+      }
+      const result = (await response.json()) as ImportIntakeResponse;
+      setImportIntake(result);
+      setImportPreview(result.preview);
+      setImportText(result.normalizedText);
+      setImportCommit(null);
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Импорт не проверен");
+    } finally {
+      setIsImportLoading(false);
+    }
+  }
+
+  async function commitImport() {
+    if (isImportCommitting) {
+      setError("Дождитесь завершения текущей записи импорта пациентов.");
+      return;
+    }
+    if (!importText.trim()) {
+      setError("Вставьте список пациентов, OCR журнала или надиктуйте импорт перед записью.");
+      return;
+    }
+    if (!importPreview) {
+      setError("Сначала проверьте импорт пациентов, чтобы увидеть готовые и проблемные строки.");
+      return;
+    }
+    if (importPreview.readyRows === 0) {
+      setError("В импорте пациентов нет готовых строк. Исправьте предупреждения и повторите проверку.");
+      return;
+    }
+    setIsImportCommitting(true);
+    try {
+      const response = await fetch("/api/imports/patients/commit", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: importSourceKind,
+          sourceKind: importSourceKind,
+          rawText: importText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Запись импорта: API ${response.status}`);
+      }
+      const result = (await response.json()) as ImportCommitResponse;
+      setImportCommit(result);
+      setImportPreview(result.preview);
+      await loadDashboard();
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Импорт не записан");
+    } finally {
+      setIsImportCommitting(false);
+    }
+  }
+
+  async function previewSmartImport() {
+    if (!smartImportText.trim()) {
+      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед разбором.");
+      return;
+    }
+    setIsSmartImportLoading(true);
+    try {
+      const response = await fetch("/api/imports/smart/preview", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: "smart_mixed_export",
+          mode: smartImportMode,
+          rawText: smartImportText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Умный импорт: API ${response.status}`);
+      }
+      setSmartImportPreview((await response.json()) as SmartImportPreviewResponse);
+      setSmartImportCommit(null);
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Умный импорт не проверен");
+    } finally {
+      setIsSmartImportLoading(false);
+    }
+  }
+
+  async function commitSmartImport() {
+    if (isSmartImportCommitting) {
+      setError("Дождитесь завершения текущей записи умного импорта.");
+      return;
+    }
+    if (!smartImportText.trim()) {
+      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед записью.");
+      return;
+    }
+    if (!smartImportPreview) {
+      setError("Сначала разберите умный импорт, чтобы увидеть готовые строки и пропуски.");
+      return;
+    }
+    if (smartImportPreview.patientPreview.readyRows === 0 && smartImportPreview.imagingPreview.readyRows === 0) {
+      setError("В умном импорте нет готовых пациентов или снимков. Исправьте строки и повторите разбор.");
+      return;
+    }
+    setIsSmartImportCommitting(true);
+    try {
+      const response = await fetch("/api/imports/smart/commit", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: "smart_mixed_export",
+          mode: smartImportMode,
+          rawText: smartImportText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Запись умного импорта: API ${response.status}`);
+      }
+      const result = (await response.json()) as SmartImportCommitResponse;
+      setSmartImportCommit(result);
+      setSmartImportPreview(result.preview);
+      await loadDashboard();
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Умный импорт не записан");
+    } finally {
+      setIsSmartImportCommitting(false);
+    }
+  }
+
+  async function downloadSmartImportReport() {
+    if (!smartImportText.trim()) {
+      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед CSV-отчетом.");
+      return;
+    }
+    setIsSmartReportLoading(true);
+    try {
+      const response = await fetch("/api/imports/smart/report.csv", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: "smart_mixed_export",
+          mode: smartImportMode,
+          rawText: smartImportText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Отчет умного импорта: API ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "smart_import_report.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (reportError) {
+      setError(reportError instanceof Error ? reportError.message : "Отчет импорта не создан");
+    } finally {
+      setIsSmartReportLoading(false);
+    }
+  }
+
+  async function runMigrationAutopilot() {
+    const clinicPayload = {
+      inn: clinicProfileDraft.inn,
+      kpp: clinicProfileDraft.kpp,
+      ogrn: clinicProfileDraft.ogrn,
+      clinicName: clinicProfileDraft.clinicName,
+      legalName: clinicProfileDraft.legalName,
+      address: clinicProfileDraft.address,
+      medicalLicenseNumber: clinicProfileDraft.medicalLicenseNumber
+    };
+    const hasClinicPayload = Object.values(clinicPayload).some((value) => typeof value === "string" && value.trim());
+    const knownSources = browserMigrationDiscovery?.candidates.slice(0, 18);
+    setIsMigrationAutopilotLoading(true);
+    setMigrationSourceWorkup(null);
+    setMigrationSourceProbe(null);
+    try {
+      const response = await fetch("/api/imports/smart/migration-autopilot", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          maxDepth: 5,
+          maxFolders: 1600,
+          maxFilesPerFolder: 160,
+          maxCandidates: 18,
+          maxProbeCandidates: 4,
+          knownSources: knownSources?.length ? knownSources : undefined,
+          knownScannedFolders: browserMigrationDiscovery?.scannedFolders,
+          clinic: hasClinicPayload ? clinicPayload : undefined
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Автоплан миграции: API ${response.status}`);
+      }
+      const result = (await response.json()) as MigrationAutopilotResponse;
+      setMigrationAutopilot(result);
+      setMigrationSourceDiscovery({
+        version: "dental-crm-migration-local-discovery-v1",
+        generatedAt: result.generatedAt,
+        roots: result.discovery.roots,
+        scannedFolders: result.discovery.scannedFolders,
+        candidates: result.sources.map((source) => source.candidate),
+        warnings: result.warnings,
+        nextAction: result.nextAction
+      });
+      if (result.clinicLookup) setClinicPublicLookup(result.clinicLookup);
+    } catch (autopilotError) {
+      setError(autopilotError instanceof Error ? autopilotError.message : "Автоплан миграции не построен");
+    } finally {
+      setIsMigrationAutopilotLoading(false);
+    }
+  }
+
+  async function discoverMigrationSources() {
+    setIsMigrationSourceDiscovering(true);
+    setBrowserMigrationDiscovery(null);
+    setMigrationAutopilot(null);
+    setMigrationSourceWorkup(null);
+    setMigrationSourceProbe(null);
+    try {
+      const response = await fetch("/api/imports/smart/local-source-discovery", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          maxDepth: 5,
+          maxFolders: 1600,
+          maxFilesPerFolder: 160,
+          maxCandidates: 18
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Поиск старых источников: API ${response.status}`);
+      }
+      const result = (await response.json()) as MigrationLocalSourceDiscoveryResponse;
+      setMigrationSourceDiscovery(result);
+    } catch (discoveryError) {
+      setError(discoveryError instanceof Error ? discoveryError.message : "Поиск старых источников не выполнен");
+    } finally {
+      setIsMigrationSourceDiscovering(false);
+    }
+  }
+
+  function addMigrationDiscoveryCandidateToSmartImport(candidate: MigrationLocalSourceDiscoveryResponse["candidates"][number]) {
+    setSmartImportMode("auto");
+    setSmartImportText((current) => [current.trim(), candidate.smartImportLine].filter(Boolean).join("\n"));
+    setSmartImportPreview(null);
+    setSmartImportCommit(null);
+  }
+
+  async function planMigrationDiscoveryCandidate(candidate: MigrationLocalSourceDiscoveryResponse["candidates"][number]) {
+    setIsMigrationSourceWorkupLoading(true);
+    try {
+      const response = await fetch("/api/imports/smart/local-source-workup", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceRef: candidate.sourceRef,
+          sourceKind: candidate.sourceKind,
+          safeDisplayName: candidate.safeDisplayName
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`План источника миграции: API ${response.status}`);
+      }
+      setMigrationSourceWorkup((await response.json()) as MigrationLocalSourceWorkupResponse);
+    } catch (workupError) {
+      setError(workupError instanceof Error ? workupError.message : "План источника миграции не построен");
+    } finally {
+      setIsMigrationSourceWorkupLoading(false);
+    }
+  }
+
+  async function probeMigrationDiscoveryCandidate(candidate: MigrationLocalSourceDiscoveryResponse["candidates"][number]) {
+    setIsMigrationSourceProbeLoading(true);
+    try {
+      const response = await fetch("/api/imports/smart/local-source-probe", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceRef: candidate.sourceRef,
+          sourceKind: candidate.sourceKind,
+          safeDisplayName: candidate.safeDisplayName,
+          maxDepth: 2,
+          maxFolders: 120,
+          maxFiles: 600,
+          maxSampleArtifacts: 18,
+          readHeaderBytes: 4096
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Проба источника миграции: API ${response.status}`);
+      }
+      setMigrationSourceProbe((await response.json()) as MigrationLocalSourceProbeResponse);
+    } catch (probeError) {
+      setError(probeError instanceof Error ? probeError.message : "Проба источника миграции не выполнена");
+    } finally {
+      setIsMigrationSourceProbeLoading(false);
+    }
+  }
+
+  async function lookupClinicPublicProfile() {
+    const payload = {
+      inn: clinicProfileDraft.inn,
+      kpp: clinicProfileDraft.kpp,
+      ogrn: clinicProfileDraft.ogrn,
+      clinicName: clinicProfileDraft.clinicName,
+      legalName: clinicProfileDraft.legalName,
+      address: clinicProfileDraft.address,
+      medicalLicenseNumber: clinicProfileDraft.medicalLicenseNumber
+    };
+    if (!Object.values(payload).some((value) => typeof value === "string" && value.trim())) {
+      setError("Для поиска реквизитов клиники укажите ИНН, ОГРН, название, адрес или номер лицензии.");
+      return;
+    }
+    setIsClinicPublicLookupLoading(true);
+    try {
+      const response = await fetch("/api/imports/smart/clinic-public-lookup", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        throw new Error(`Публичный поиск клиники: API ${response.status}`);
+      }
+      setClinicPublicLookup((await response.json()) as ClinicPublicLookupResponse);
+    } catch (lookupError) {
+      setError(lookupError instanceof Error ? lookupError.message : "Публичный поиск клиники не выполнен");
+    } finally {
+      setIsClinicPublicLookupLoading(false);
+    }
+  }
+
+  async function previewImagingImport() {
+    if (!imagingImportText.trim()) {
+      setError("Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ перед проверкой.");
+      return;
+    }
+    setIsImagingImportLoading(true);
+    try {
+      const response = await fetch("/api/imaging/imports/preview", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: imagingImportSourceKind,
+          sourceKind: imagingImportSourceKind,
+          rawText: imagingImportText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Проверка импорта снимков: API ${response.status}`);
+      }
+      setImagingImportPreview((await response.json()) as ImagingImportPreviewResponse);
+      setImagingImportCommit(null);
+      setDicomSeriesPreview(null);
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Импорт снимков не проверен");
+    } finally {
+      setIsImagingImportLoading(false);
+    }
+  }
+
+  function stageLocalImagingFolderRecovery(
+    folderPath: string,
+    metadata: Partial<Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">> = {}
+  ) {
+    const cleanFolderPath = folderPath.trim();
+    if (!cleanFolderPath || cleanFolderPath === "C:\\Images") {
+      removeLocalImagingFolderDraft(activeOrganizationId);
+      setLocalImagingFolderDraft(null);
+      return null;
+    }
+    const fingerprint = (metadata.folderFingerprint ?? localImagingFolderFingerprint(cleanFolderPath)).toUpperCase();
+    const draft: LocalImagingFolderDraft = {
+      version: 1,
+      folderPath: cleanFolderPath,
+      safeDisplayName: metadata.safeDisplayName ?? `Локальная папка снимков #${fingerprint}`,
+      sourceLabel: metadata.sourceLabel ?? "Ручной выбор локальной папки",
+      sourceKind: metadata.sourceKind ?? "manual",
+      folderFingerprint: fingerprint,
+      origin: metadata.origin ?? "manual",
+      savedAt: new Date().toISOString()
+    };
+    saveLocalImagingFolderDraft(draft, activeOrganizationId);
+    setLocalImagingFolderDraft(draft);
+    return draft;
+  }
+
+  function rememberLocalImagingFolder(
+    folderPath: string,
+    metadata: Partial<Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">> = {}
+  ) {
+    const draft = stageLocalImagingFolderRecovery(folderPath, metadata);
+    if (draft) setImagingFolderPath(draft.folderPath);
+    return draft;
+  }
+
+  function clearLocalImagingFolderRecovery() {
+    removeLocalImagingFolderDraft(activeOrganizationId);
+    setLocalImagingFolderDraft(null);
+    setImagingFolderPath("C:\\Images");
+    setImagingFolderScan(null);
+    setDicomFolderSeriesScan(null);
+    setDicomFolderWorkupPlan(null);
+    setDicomFirstFramePreview(null);
+    setDicomLocalFolderDiscovery(null);
+    setLocalImagingOrganizer(null);
+  }
+
+  function applyBrowserPickedImagingFolderPreview(preview: BrowserPickedImagingFolderPreview) {
+    saveBrowserPickedImagingFolderPreview(preview, activeOrganizationId);
+    setBrowserPickedImagingFolder(preview);
+    setDicomLocalFolderDiscovery(null);
+    setLocalImagingOrganizer(null);
+    setDicomFolderSeriesScan(null);
+    setDicomFolderWorkupPlan(null);
+    setDicomFirstFramePreview(null);
+    setImagingFolderScan(null);
+  }
+
+  function clearBrowserPickedImagingFolderPreview() {
+    removeBrowserPickedImagingFolderPreview(activeOrganizationId);
+    setBrowserPickedImagingFolder(null);
+  }
+
+  function browserMigrationStatsFor(
+    statsByFolder: Map<string, BrowserMigrationFolderStats>,
+    folderKey: string,
+    folderHint: string,
+    depth: number
+  ) {
+    const existing = statsByFolder.get(folderKey);
+    if (existing) return existing;
+    const stats: BrowserMigrationFolderStats = {
+      folderKey,
+      folderHint,
+      depth,
+      databaseFiles: 0,
+      dumpFiles: 0,
+      tableFiles: 0,
+      archiveFiles: 0,
+      dicomLikeFiles: 0,
+      imageFiles: 0,
+      modelFiles: 0,
+      hasDicomDir: /\bdicomdir\b/i.test(folderHint),
+      latestModifiedAt: null,
+      totalBytes: 0
+    };
+    statsByFolder.set(folderKey, stats);
+    return stats;
+  }
+
+  async function addBrowserMigrationFileToStats(input: {
+    stats: BrowserMigrationFolderStats;
+    file: File;
+    fileName: string;
+    allowMagicRead: boolean;
+  }) {
+    let kind = classifyBrowserMigrationFileName(input.fileName);
+    if (kind === "other" && input.allowMagicRead && (await browserFileHasDicomMagic(input.file))) kind = "dicom";
+    input.stats.totalBytes += input.file.size;
+    const modifiedAt = input.file.lastModified ? new Date(input.file.lastModified).toISOString() : null;
+    if (modifiedAt && (!input.stats.latestModifiedAt || modifiedAt > input.stats.latestModifiedAt)) input.stats.latestModifiedAt = modifiedAt;
+    if (input.fileName.toLowerCase() === "dicomdir") input.stats.hasDicomDir = true;
+    if (kind === "database") input.stats.databaseFiles += 1;
+    else if (kind === "dump") input.stats.dumpFiles += 1;
+    else if (kind === "table") input.stats.tableFiles += 1;
+    else if (kind === "archive") input.stats.archiveFiles += 1;
+    else if (kind === "dicom") input.stats.dicomLikeFiles += 1;
+    else if (kind === "image") input.stats.imageFiles += 1;
+    else if (kind === "model") input.stats.modelFiles += 1;
+  }
+
+  function applyBrowserMigrationDiscovery(discovery: MigrationLocalSourceDiscoveryResponse) {
+    setBrowserMigrationDiscovery(discovery);
+    setMigrationSourceDiscovery(discovery);
+    setMigrationAutopilot(null);
+    setMigrationSourceWorkup(null);
+    setMigrationSourceProbe(null);
+  }
+
+  async function scanBrowserMigrationDirectoryHandle(
+    directoryHandle: BrowserFileSystemDirectoryHandle
+  ): Promise<MigrationLocalSourceDiscoveryResponse> {
+    const warnings: string[] = [];
+    const statsByFolder = new Map<string, BrowserMigrationFolderStats>();
+    const maxFiles = 1200;
+    const maxFolders = 320;
+    const maxMagicReads = 220;
+    let scannedFiles = 0;
+    let scannedFolders = 0;
+    let magicReads = 0;
+    const stack: Array<{ handle: BrowserFileSystemDirectoryHandle; key: string; hint: string; depth: number }> = [
+      { handle: directoryHandle, key: "root", hint: directoryHandle.name, depth: 0 }
+    ];
+
+    while (stack.length > 0 && scannedFolders < maxFolders && scannedFiles < maxFiles) {
+      const current = stack.pop();
+      if (!current) break;
+      scannedFolders += 1;
+      browserMigrationStatsFor(statsByFolder, current.key, current.hint, current.depth);
+      try {
+        for await (const [entryName, handle] of current.handle.entries()) {
+          if (handle.kind === "directory") {
+            if (scannedFolders + stack.length < maxFolders) {
+              stack.push({
+                handle,
+                key: `${current.key}/${entryName}`,
+                hint: `${current.hint} ${entryName}`,
+                depth: current.depth + 1
+              });
+            }
+            continue;
+          }
+          if (scannedFiles >= maxFiles) break;
+          scannedFiles += 1;
+          const file = await handle.getFile();
+          const stats = browserMigrationStatsFor(statsByFolder, current.key, `${current.hint} ${entryName}`, current.depth);
+          const allowMagicRead = magicReads < maxMagicReads;
+          if (allowMagicRead) magicReads += 1;
+          await addBrowserMigrationFileToStats({ stats, file, fileName: entryName, allowMagicRead });
+        }
+      } catch {
+        warnings.push("Одну выбранную в браузере подпапку не удалось прочитать; она пропущена.");
+      }
+    }
+
+    if (scannedFiles >= maxFiles) warnings.push(`Браузерный manifest ограничен ${maxFiles} файлами для отзывчивости интерфейса.`);
+    if (scannedFolders >= maxFolders) warnings.push(`Браузерный manifest ограничен ${maxFolders} папками для отзывчивости интерфейса.`);
+    return buildBrowserMigrationDiscovery({
+      rootName: directoryHandle.name || "browser-selected-folder",
+      sourceLabel: "Браузерный manifest папки",
+      scannedFolders,
+      scannedFiles,
+      folderStats: Array.from(statsByFolder.values()),
+      warnings
+    });
+  }
+
+  async function scanBrowserMigrationFileList(fileList: FileList): Promise<MigrationLocalSourceDiscoveryResponse> {
+    const warnings: string[] = [];
+    const files = Array.from(fileList);
+    const statsByFolder = new Map<string, BrowserMigrationFolderStats>();
+    const maxFiles = 1200;
+    const maxMagicReads = 220;
+    let scannedFiles = 0;
+    let magicReads = 0;
+    const folders = new Set<string>();
+
+    for (const file of files.slice(0, maxFiles)) {
+      scannedFiles += 1;
+      const relativePath = file.webkitRelativePath || file.name;
+      const parts = relativePath.split(/[\\/]+/).filter(Boolean);
+      const folderParts = parts.slice(0, -1);
+      const folderKey = folderParts.join("/") || "root";
+      const folderHint = folderParts.concat(file.name).join(" ");
+      folders.add(folderKey);
+      const stats = browserMigrationStatsFor(statsByFolder, folderKey, folderHint, Math.max(0, folderParts.length - 1));
+      const allowMagicRead = magicReads < maxMagicReads;
+      if (allowMagicRead) magicReads += 1;
+      await addBrowserMigrationFileToStats({ stats, file, fileName: file.name, allowMagicRead });
+    }
+
+    if (files.length > maxFiles) warnings.push(`Браузерный manifest ограничен ${maxFiles} файлами для отзывчивости интерфейса.`);
+    return buildBrowserMigrationDiscovery({
+      rootName: "browser-selected-files",
+      sourceLabel: "Браузерный manifest файлов",
+      scannedFolders: Math.max(1, folders.size),
+      scannedFiles,
+      folderStats: Array.from(statsByFolder.values()),
+      warnings
+    });
+  }
+
+  async function pickBrowserMigrationSource() {
+    setIsBrowserMigrationScanning(true);
+    try {
+      const picker = (window as BrowserDirectoryPickerWindow).showDirectoryPicker;
+      if (typeof picker === "function") {
+        const directoryHandle = await picker({ id: "dental-crm-legacy-migration", mode: "read" });
+        applyBrowserMigrationDiscovery(await scanBrowserMigrationDirectoryHandle(directoryHandle));
+        return;
+      }
+      browserMigrationInputRef.current?.click();
+    } catch (pickerError) {
+      if (pickerError instanceof DOMException && pickerError.name === "AbortError") return;
+      setError(pickerError instanceof Error ? pickerError.message : "Браузер не открыл выбор старой БД/папки снимков");
+    } finally {
+      setIsBrowserMigrationScanning(false);
+    }
+  }
+
+  async function handleBrowserMigrationInputChange(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    setIsBrowserMigrationScanning(true);
+    try {
+      applyBrowserMigrationDiscovery(await scanBrowserMigrationFileList(fileList));
+    } catch (pickerError) {
+      setError(pickerError instanceof Error ? pickerError.message : "Браузер не разобрал выбранные legacy-файлы");
+    } finally {
+      setIsBrowserMigrationScanning(false);
+      if (browserMigrationInputRef.current) browserMigrationInputRef.current.value = "";
+    }
+  }
+
+  async function scanBrowserDirectoryHandle(
+    directoryHandle: BrowserFileSystemDirectoryHandle
+  ): Promise<BrowserPickedImagingFolderPreview> {
+    const warnings: string[] = [];
+    const maxFiles = 900;
+    const maxFolders = 260;
+    const maxMagicReads = 180;
+    let scannedFiles = 0;
+    let scannedFolders = 0;
+    let dicomLikeFiles = 0;
+    let archiveFiles = 0;
+    let modelFiles = 0;
+    let imageFiles = 0;
+    let totalBytes = 0;
+    let magicReads = 0;
+    const stack: BrowserFileSystemDirectoryHandle[] = [directoryHandle];
+
+    while (stack.length > 0 && scannedFolders < maxFolders && scannedFiles < maxFiles) {
+      const current = stack.pop();
+      if (!current) break;
+      scannedFolders += 1;
+      try {
+        for await (const [, handle] of current.entries()) {
+          if (handle.kind === "directory") {
+            if (scannedFolders + stack.length < maxFolders) stack.push(handle);
+            continue;
+          }
+          if (scannedFiles >= maxFiles) break;
+          scannedFiles += 1;
+          const file = await handle.getFile();
+          totalBytes += file.size;
+          let kind = classifyBrowserImagingFileName(handle.name);
+          if (kind === "other" && magicReads < maxMagicReads) {
+            magicReads += 1;
+            if (await browserFileHasDicomMagic(file)) kind = "dicom";
+          }
+          if (kind === "dicom") dicomLikeFiles += 1;
+          else if (kind === "archive") archiveFiles += 1;
+          else if (kind === "model") modelFiles += 1;
+          else if (kind === "image") imageFiles += 1;
+        }
+      } catch {
+        warnings.push("Одну выбранную в браузере подпапку не удалось прочитать, она пропущена.");
+      }
+    }
+
+    if (scannedFiles >= maxFiles) warnings.push(`Браузерное сканирование ограничено ${maxFiles} файлами для отзывчивости интерфейса.`);
+    if (scannedFolders >= maxFolders) warnings.push(`Браузерное сканирование ограничено ${maxFolders} папками для отзывчивости интерфейса.`);
+    warnings.push("Выбор папки в браузере не раскрывает полный локальный путь; серверному разбору DICOM все еще нужен путь серверного или локального обработчика.");
+
+    return buildBrowserPickedImagingFolderPreview({
+      rootName: "Выбранная папка браузера",
+      sourceKind: "browser_directory_picker",
+      scannedFiles,
+      scannedFolders,
+      dicomLikeFiles,
+      archiveFiles,
+      modelFiles,
+      imageFiles,
+      totalBytes,
+      warnings
+    });
+  }
+
+  async function scanBrowserFileList(fileList: FileList): Promise<BrowserPickedImagingFolderPreview> {
+    const warnings: string[] = [];
+    const files = Array.from(fileList);
+    const maxFiles = 900;
+    const maxMagicReads = 180;
+    const folders = new Set<string>();
+    let scannedFiles = 0;
+    let dicomLikeFiles = 0;
+    let archiveFiles = 0;
+    let modelFiles = 0;
+    let imageFiles = 0;
+    let totalBytes = 0;
+    let magicReads = 0;
+
+    for (const file of files.slice(0, maxFiles)) {
+      scannedFiles += 1;
+      totalBytes += file.size;
+      const relativePath = file.webkitRelativePath || file.name;
+      const parts = relativePath.split(/[\\/]+/).filter(Boolean);
+      for (let index = 0; index < Math.max(1, parts.length - 1); index += 1) {
+        folders.add(parts.slice(0, index + 1).join("/"));
+      }
+      let kind = classifyBrowserImagingFileName(file.name);
+      if (kind === "other" && magicReads < maxMagicReads) {
+        magicReads += 1;
+        if (await browserFileHasDicomMagic(file)) kind = "dicom";
+      }
+      if (kind === "dicom") dicomLikeFiles += 1;
+      else if (kind === "archive") archiveFiles += 1;
+      else if (kind === "model") modelFiles += 1;
+      else if (kind === "image") imageFiles += 1;
+    }
+
+    if (files.length > maxFiles) warnings.push(`Браузерное сканирование ограничено ${maxFiles} файлами для отзывчивости интерфейса.`);
+    warnings.push("Запасной выбор файлов может разобрать локальные файлы, но CRM пока не может надежно хранить браузерные файловые дескрипторы.");
+
+    return buildBrowserPickedImagingFolderPreview({
+      rootName: "Выбранные файлы браузера",
+      sourceKind: "browser_file_input",
+      scannedFiles,
+      scannedFolders: Math.max(1, folders.size),
+      dicomLikeFiles,
+      archiveFiles,
+      modelFiles,
+      imageFiles,
+      totalBytes,
+      warnings
+    });
+  }
+
+  async function pickBrowserImagingFolder() {
+    setIsBrowserImagingFolderPicking(true);
+    try {
+      const picker = (window as BrowserDirectoryPickerWindow).showDirectoryPicker;
+      if (typeof picker === "function") {
+        const directoryHandle = await picker({ id: "dental-crm-local-imaging", mode: "read" });
+        const preview = await scanBrowserDirectoryHandle(directoryHandle);
+        applyBrowserPickedImagingFolderPreview(preview);
+        return;
+      }
+      browserDirectoryInputRef.current?.click();
+    } catch (pickerError) {
+      if (pickerError instanceof DOMException && pickerError.name === "AbortError") return;
+      setError(pickerError instanceof Error ? pickerError.message : "Браузер не открыл выбор папки");
+    } finally {
+      setIsBrowserImagingFolderPicking(false);
+    }
+  }
+
+  async function handleBrowserDirectoryInputChange(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    setIsBrowserImagingFolderPicking(true);
+    try {
+      const preview = await scanBrowserFileList(fileList);
+      applyBrowserPickedImagingFolderPreview(preview);
+    } catch (pickerError) {
+      setError(pickerError instanceof Error ? pickerError.message : "Браузер не открыл выбор файлов");
+    } finally {
+      setIsBrowserImagingFolderPicking(false);
+      if (browserDirectoryInputRef.current) browserDirectoryInputRef.current.value = "";
+    }
+  }
+
+  async function discoverDicomFolders() {
+    setIsDicomLocalDiscovering(true);
+    try {
+      const response = await fetch("/api/imaging/dicom/local-folder-discovery", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          maxDepth: 6,
+          maxFolders: 1200,
+          maxFilesPerFolder: 160,
+          minDicomFiles: 2,
+          maxCandidates: 12
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Поиск DICOM: API ${response.status}`);
+      }
+      const result = (await response.json()) as DicomLocalFolderDiscoveryResponse;
+      setDicomLocalFolderDiscovery(result);
+      setDicomFolderSeriesScan(null);
+      setDicomFolderWorkupPlan(null);
+      setDicomFirstFramePreview(null);
+      setImagingFolderScan(null);
+      setLocalImagingOrganizer(null);
+    } catch (discoveryError) {
+      setError(discoveryError instanceof Error ? discoveryError.message : "Поиск папок DICOM не выполнен");
+    } finally {
+      setIsDicomLocalDiscovering(false);
+    }
+  }
+
+  async function organizeLocalImagingSources() {
+    setIsLocalImagingOrganizing(true);
+    try {
+      const candidateRoot = imagingFolderPath.trim();
+      const useSpecificRoot = candidateRoot.length > 0 && candidateRoot !== "C:\\Images";
+      if (useSpecificRoot) rememberLocalImagingFolder(candidateRoot, { origin: "manual" });
+      const response = await fetch("/api/imaging/local-organizer/scan-preview", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          rootPaths: useSpecificRoot ? [candidateRoot] : undefined,
+          maxDepth: 6,
+          maxFolders: 1400,
+          maxFilesPerFolder: 220,
+          maxCandidates: 14,
+          includeDentalModels: true,
+          includeDicom: true
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Локальный организатор снимков: API ${response.status}`);
+      }
+      const result = (await response.json()) as LocalImagingOrganizerResponse;
+      setLocalImagingOrganizer(result);
+      setDicomFolderSeriesScan(null);
+      setDicomFolderWorkupPlan(null);
+      setDicomFirstFramePreview(null);
+      setImagingFolderScan(null);
+      setDicomLocalFolderDiscovery(null);
+    } catch (organizerError) {
+      setError(organizerError instanceof Error ? organizerError.message : "Локальный организатор снимков не выполнен");
+    } finally {
+      setIsLocalImagingOrganizing(false);
+    }
+  }
+
+  async function scanImagingFolder() {
+    const folderPath = imagingFolderPath.trim();
+    if (!folderPath) return;
+    rememberLocalImagingFolder(folderPath, { origin: "manual" });
+    setIsImagingFolderScanning(true);
+    try {
+      const response = await fetch("/api/imaging/folders/scan-preview", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          folderPath,
+          recursive: true,
+          sourceName: "folder_watch"
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Сканирование папки: API ${response.status}`);
+      }
+      const result = (await response.json()) as ImagingFolderScanResponse;
+      setImagingFolderScan(result);
+      setDicomFolderSeriesScan(null);
+      setDicomFolderWorkupPlan(null);
+      setImagingImportSourceKind("folder_watch");
+      setImagingImportText(result.rawText || imagingImportText);
+      setImagingImportPreview(result.preview);
+      setImagingImportCommit(null);
+      setDicomSeriesPreview(null);
+    } catch (scanError) {
+      setError(scanError instanceof Error ? scanError.message : "Папка снимков не просканирована");
+    } finally {
+      setIsImagingFolderScanning(false);
+    }
+  }
+
+  async function scanDicomFolderSeries() {
+    const folderPath = imagingFolderPath.trim();
+    if (!folderPath) return;
+    rememberLocalImagingFolder(folderPath, { origin: "manual" });
+    setIsImagingFolderScanning(true);
+    try {
+      const response = await fetch("/api/imaging/dicom/folder-series-preview", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          folderPath,
+          recursive: true,
+          sourceName: "dicom_folder_headers"
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Метаданные папки DICOM: API ${response.status}`);
+      }
+      const result = (await response.json()) as DicomFolderSeriesPreviewResponse;
+      setDicomFolderSeriesScan(result);
+      setDicomFolderWorkupPlan(null);
+      setImagingImportSourceKind("dicom_file");
+      setImagingImportText(result.rawText || imagingImportText);
+      setDicomSeriesPreview(result.preview);
+      setDicomViewerLaunchManifest(null);
+      setDicomViewerToolStateBundle(null);
+      setDicomViewerWorkbenchManifest(null);
+      setDicomWorkbenchLocalSavedAt(null);
+      setDicomWorkstationReadiness(null);
+      setDicomRenderCachePlan(null);
+      setImagingImportPreview(null);
+      setImagingImportCommit(null);
+    } catch (scanError) {
+      setError(scanError instanceof Error ? scanError.message : "Метаданные DICOM папки не прочитаны");
+    } finally {
+      setIsImagingFolderScanning(false);
+    }
+  }
+
+  async function previewDicomFirstFrame(
+    folderPath = imagingFolderPath.trim(),
+    metadata: Partial<Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">> = { origin: "manual" }
+  ) {
+    const cleanFolderPath = folderPath.trim();
+    if (!cleanFolderPath) return;
+    rememberLocalImagingFolder(cleanFolderPath, metadata);
+    setIsDicomFirstFramePreviewing(true);
+    setError(null);
+    setDicomFirstFrameViewerState(defaultDicomFirstFrameViewerState);
+    try {
+      const response = await fetch("/api/imaging/dicom/first-frame-preview", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          folderPath: cleanFolderPath,
+          recursive: true,
+          maxFiles: 160,
+          maxFileBytes: 64 * 1024 * 1024,
+          maxPreviewEdge: 512
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Первый срез DICOM: API ${response.status}`);
+      }
+      setDicomFirstFramePreview((await response.json()) as DicomFirstFramePreviewResponse);
+    } catch (previewError) {
+      setError(previewError instanceof Error ? previewError.message : "Первый срез DICOM не показан");
+    } finally {
+      setIsDicomFirstFramePreviewing(false);
+    }
+  }
+
+  async function fetchDicomFolderWorkup(
+    folderPath: string,
+    sourceName: string
+  ): Promise<{ client: DicomWorkstationClientFacts; result: DicomFolderWorkupPlanResponse }> {
+    const client = await collectDicomWorkstationClientFacts();
+    const response = await fetch("/api/imaging/dicom/folder-workup-plan", {
+      method: "POST",
+      headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        folderPath,
+        recursive: true,
+        sourceName,
+        client,
+        viewerState: currentImagingViewerSessionState
+      })
+    });
+    if (!response.ok) {
+      throw new Error(`План папки DICOM: API ${response.status}`);
+    }
+    return {
+      client,
+      result: (await response.json()) as DicomFolderWorkupPlanResponse
+    };
+  }
+
+  function selectPreferredDicomWorkupPlan(result: DicomFolderWorkupPlanResponse) {
+    return (
+      result.plans.find((plan) => plan.recommendedPath === "open_mpr") ??
+      result.plans.find((plan) => plan.recommendedPath === "downsampled_mpr") ??
+      result.plans.find((plan) => plan.series.mprReadiness.volumeCandidate) ??
+      result.plans.find((plan) => plan.recommendedPath === "external_viewer") ??
+      result.plans[0] ??
+      null
+    );
+  }
+
+  function applyDicomFolderWorkupResult(result: DicomFolderWorkupPlanResponse) {
+    const firstPlan = selectPreferredDicomWorkupPlan(result);
+    setDicomFolderWorkupPlan(result);
+    setDicomFolderSeriesScan(result.folder);
+    setImagingImportSourceKind("dicom_file");
+    setImagingImportText(result.folder.rawText || imagingImportText);
+    setDicomSeriesPreview(result.folder.preview);
+    setDicomViewerLaunchManifest(null);
+    setDicomViewerToolStateBundle(null);
+    setDicomViewerWorkbenchManifest(null);
+    setDicomWorkbenchLocalSavedAt(null);
+    setDicomWorkstationReadiness(firstPlan?.readiness ?? null);
+    setDicomRenderCachePlan(firstPlan?.renderCachePlan ?? null);
+    setDicomFirstFramePreview(null);
+    setImagingImportPreview(null);
+    setImagingImportCommit(null);
+  }
+
+  async function buildDicomFolderWorkupPlan() {
+    const folderPath = imagingFolderPath.trim();
+    if (!folderPath) return;
+    rememberLocalImagingFolder(folderPath, { origin: "manual" });
+    setIsDicomFolderWorkupPlanning(true);
+    try {
+      const { result } = await fetchDicomFolderWorkup(folderPath, "dicom_folder_workup");
+      applyDicomFolderWorkupResult(result);
+    } catch (workupError) {
+      setError(workupError instanceof Error ? workupError.message : "План папки DICOM не подготовлен");
+    } finally {
+      setIsDicomFolderWorkupPlanning(false);
+    }
+  }
+
+  async function prepareDicomWorkbenchFromFolder(
+    folderPath: string,
+    sourceName = "dicom_local_quick_workbench",
+    metadata: Partial<Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">> = {}
+  ) {
+    const cleanFolderPath = folderPath.trim();
+    if (!cleanFolderPath) return;
+    setIsDicomFolderWorkupPlanning(true);
+    setIsDicomWorkbenchBuilding(true);
+    setError(null);
+    try {
+      const { client, result } = await fetchDicomFolderWorkup(cleanFolderPath, sourceName);
+      const selectedPlan = selectPreferredDicomWorkupPlan(result);
+      if (!selectedPlan) {
+        throw new Error("В этой папке не найдена пригодная серия DICOM/CBCT.");
+      }
+
+      const manifestResponse = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          viewerKind: "cornerstone3d",
+          target: "cornerstone3d",
+          series: selectedPlan.series,
+          client,
+          connector: dicomWebCheck,
+          viewerState: currentImagingViewerSessionState,
+          annotations: imagingViewerAnnotations,
+          dicomWebBaseUrl: dicomWebEndpointUrl.trim() || null,
+          ohifBaseUrl: ohifBaseUrl.trim() || null,
+          allowExternalHandoff: true
+        })
+      });
+      if (!manifestResponse.ok) {
+        throw new Error(`Рабочее место DICOM: API ${manifestResponse.status}`);
+      }
+
+      const manifest = (await manifestResponse.json()) as DicomViewerWorkbenchManifestResponse;
+      const clientSavedAt = new Date().toISOString();
+      saveLocalDicomWorkbenchDraft(manifest, clientSavedAt, activeOrganizationId);
+      rememberLocalImagingFolder(cleanFolderPath, { ...metadata, origin: metadata.origin ?? "workbench" });
+      applyDicomFolderWorkupResult(result);
+      applyDicomWorkbenchManifest(manifest);
+      setDicomWorkbenchLocalSavedAt(clientSavedAt);
+      setDicomWorkbenchServerBundle(null);
+      await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true });
+    } catch (workbenchError) {
+      setError(workbenchError instanceof Error ? workbenchError.message : "Рабочее место DICOM не подготовлено");
+    } finally {
+      setIsDicomFolderWorkupPlanning(false);
+      setIsDicomWorkbenchBuilding(false);
+    }
+  }
+
+  async function previewDicomSeries() {
+    if (!imagingImportText.trim()) {
+      setError("Вставьте строки DICOM/снимков или выберите пример КТ/ОПТГ/ТРГ перед группировкой серий.");
+      return;
+    }
+    setIsDicomSeriesPreviewLoading(true);
+    try {
+      const response = await fetch("/api/imaging/dicom/series-preview", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: imagingImportSourceKind,
+          sourceKind: imagingImportSourceKind === "folder_watch" ? "dicom_file" : imagingImportSourceKind,
+          rawText: imagingImportText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Серии DICOM: API ${response.status}`);
+      }
+      setDicomSeriesPreview((await response.json()) as DicomSeriesPreviewResponse);
+      setDicomViewerLaunchManifest(null);
+      setDicomViewerToolStateBundle(null);
+      setDicomViewerWorkbenchManifest(null);
+      setDicomWorkbenchLocalSavedAt(null);
+      setDicomWorkstationReadiness(null);
+      setDicomRenderCachePlan(null);
+      setDicomFolderWorkupPlan(null);
+    } catch (seriesError) {
+      setError(seriesError instanceof Error ? seriesError.message : "DICOM серии не разобраны");
+    } finally {
+      setIsDicomSeriesPreviewLoading(false);
+    }
+  }
+
+  async function checkDicomWebConnector() {
+    if (!dicomWebEndpointUrl.trim()) {
+      setError("Укажите корень DICOMweb перед проверкой архива.");
+      return;
+    }
+    setIsDicomWebChecking(true);
+    try {
+      const response = await fetch("/api/imaging/dicomweb/check", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          endpointUrl: dicomWebEndpointUrl.trim(),
+          authMode: "reverse_proxy",
+          studyInstanceUid: cbctWorkbenchSeries?.studyInstanceUid ?? null,
+          seriesInstanceUid: cbctWorkbenchSeries?.seriesInstanceUid ?? null,
+          timeoutMs: 5000
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Проверка DICOMweb: API ${response.status}`);
+      }
+      setDicomWebCheck((await response.json()) as DicomWebConnectorCheckResponse);
+      setDicomViewerWorkbenchManifest(null);
+      setDicomWorkbenchLocalSavedAt(null);
+      setDicomWorkstationReadiness(null);
+    } catch (checkError) {
+      setError(checkError instanceof Error ? checkError.message : "Проверка DICOMweb не выполнена");
+    } finally {
+      setIsDicomWebChecking(false);
+    }
+  }
+
+  async function buildDicomViewerWorkbenchManifest() {
+    if (!cbctWorkbenchSeries) {
+      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию.");
+      return;
+    }
+    setIsDicomWorkbenchBuilding(true);
+    try {
+      const client = await collectDicomWorkstationClientFacts();
+      const response = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          viewerKind: "cornerstone3d",
+          target: "cornerstone3d",
+          series: cbctWorkbenchSeries,
+          client,
+          connector: dicomWebCheck,
+          viewerState: currentImagingViewerSessionState,
+          annotations: imagingViewerAnnotations,
+          dicomWebBaseUrl: dicomWebEndpointUrl.trim() || null,
+          ohifBaseUrl: ohifBaseUrl.trim() || null,
+          allowExternalHandoff: true
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Рабочее место DICOM: API ${response.status}`);
+      }
+      const result = (await response.json()) as DicomViewerWorkbenchManifestResponse;
+      const clientSavedAt = new Date().toISOString();
+      saveLocalDicomWorkbenchDraft(result, clientSavedAt, activeOrganizationId);
+      applyDicomWorkbenchManifest(result);
+      setDicomWorkbenchLocalSavedAt(clientSavedAt);
+      setDicomWorkbenchServerBundle(null);
+      await saveDicomWorkbenchBundleToServer(result, clientSavedAt, { silent: true });
+    } catch (workbenchError) {
+      setError(workbenchError instanceof Error ? workbenchError.message : "Пакет рабочего места DICOM не создан");
+    } finally {
+      setIsDicomWorkbenchBuilding(false);
+    }
+  }
+
+  async function buildDicomViewerLaunchManifest() {
+    if (!cbctWorkbenchSeries) {
+      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию для OHIF.");
+      return;
+    }
+    setIsDicomManifestBuilding(true);
+    try {
+      const response = await fetch("/api/imaging/dicom/viewer-launch-manifest", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          viewerKind: "ohif",
+          series: cbctWorkbenchSeries,
+          viewerState: currentImagingViewerSessionState,
+          annotations: imagingViewerAnnotations,
+          dicomWebBaseUrl: dicomWebEndpointUrl.trim() || null,
+          ohifBaseUrl: ohifBaseUrl.trim() || null,
+          allowExternalHandoff: true
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Манифест просмотра DICOM: API ${response.status}`);
+      }
+      setDicomViewerWorkbenchManifest(null);
+      setDicomWorkbenchLocalSavedAt(null);
+      setDicomViewerLaunchManifest((await response.json()) as DicomViewerLaunchManifestResponse);
+    } catch (manifestError) {
+      setError(manifestError instanceof Error ? manifestError.message : "Манифест просмотра DICOM не создан");
+    } finally {
+      setIsDicomManifestBuilding(false);
+    }
+  }
+
+  async function buildDicomViewerToolStateBundle() {
+    if (!cbctWorkbenchSeries) {
+      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию для экспорта состояния.");
+      return;
+    }
+    setIsDicomToolStateBuilding(true);
+    try {
+      const response = await fetch("/api/imaging/dicom/viewer-tool-state", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          target: "cornerstone3d",
+          viewerKind: "cornerstone3d",
+          series: cbctWorkbenchSeries,
+          viewerState: currentImagingViewerSessionState,
+          annotations: imagingViewerAnnotations,
+          renderPlan: dicomWorkstationReadiness?.renderPlan ?? null
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Состояние инструментов DICOM: API ${response.status}`);
+      }
+      setDicomViewerWorkbenchManifest(null);
+      setDicomWorkbenchLocalSavedAt(null);
+      setDicomViewerToolStateBundle((await response.json()) as DicomViewerToolStateBundleResponse);
+    } catch (toolStateError) {
+      setError(toolStateError instanceof Error ? toolStateError.message : "Состояние инструментов DICOM не экспортировано");
+    } finally {
+      setIsDicomToolStateBuilding(false);
+    }
+  }
+
+  function downloadDicomViewerToolStateBundle() {
+    if (!dicomViewerToolStateBundle) {
+      setError("Сначала соберите состояние инструментов DICOM-просмотрщика, затем скачайте JSON.");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(dicomViewerToolStateBundle, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const seriesPart = dicomViewerToolStateBundle.seriesRef.seriesInstanceUid?.slice(-10) ?? "series";
+    link.href = url;
+    link.download = `dicom_tool_state_${seriesPart}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setError(null);
+  }
+
+  function downloadDicomWorkbenchManifest() {
+    if (!dicomViewerWorkbenchManifest) {
+      setError("Сначала соберите рабочий набор CBCT/MPR, затем скачайте JSON.");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(dicomViewerWorkbenchManifest, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const seriesPart = dicomWorkbenchSeriesKey(dicomViewerWorkbenchManifest).slice(-24).replace(/[^a-zA-Z0-9._-]+/g, "-") || "series";
+    link.href = url;
+    link.download = `dicom_workbench_${seriesPart}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setError(null);
+  }
+
+  function clearDicomWorkbenchRecovery() {
+    removeLocalDicomWorkbenchDraft(activeOrganizationId);
+    setDicomWorkbenchLocalSavedAt(null);
+  }
+
+  function applyDicomWorkbenchManifest(manifest: DicomViewerWorkbenchManifestResponse) {
+    setDicomViewerWorkbenchManifest(manifest);
+    setDicomWorkstationReadiness(manifest.readiness);
+    setDicomRenderCachePlan(manifest.renderCachePlan);
+    setDicomViewerLaunchManifest(manifest.launchManifest);
+    setDicomViewerToolStateBundle(manifest.toolStateBundle);
+  }
+
+  function restoreDicomWorkbenchServerBundle(bundle: DicomWorkbenchBundle) {
+    applyDicomWorkbenchManifest(bundle.manifest);
+    setDicomWorkbenchServerBundle(bundle);
+  }
+
+  async function loadDicomWorkbenchBundles(options: { silent?: boolean; restoreLatest?: boolean } = {}) {
+    try {
+      const response = await fetch("/api/imaging/dicom/workbench-bundles?limit=6", { headers: denteClinicalReadHeaders() });
+      if (!response.ok) {
+        throw new Error(`Список серверных пакетов DICOM: API ${response.status}`);
+      }
+      const result = (await response.json()) as DicomWorkbenchBundleListResponse;
+      setDicomWorkbenchServerBundles(result.bundles);
+      const latest = result.bundles[0] ?? null;
+      if (latest && options.restoreLatest) {
+        restoreDicomWorkbenchServerBundle(latest);
+      }
+    } catch (bundleError) {
+      if (!options.silent) {
+        setError(bundleError instanceof Error ? bundleError.message : "Список серверных пакетов DICOM не загружен");
+      }
+    }
+  }
+
+  async function saveDicomWorkbenchBundleToServer(
+    manifest: DicomViewerWorkbenchManifestResponse | null = dicomViewerWorkbenchManifest,
+    clientSavedAt: string | null = dicomWorkbenchLocalSavedAt,
+    options: { silent?: boolean } = {}
+  ) {
+    if (!manifest) return null;
+    setIsDicomWorkbenchServerSaving(true);
+    try {
+      const response = await fetch("/api/imaging/dicom/workbench-bundles", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          manifest,
+          clientSavedAt
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Сохранение серверного пакета DICOM: API ${response.status}`);
+      }
+      const result = (await response.json()) as DicomWorkbenchBundleResponse;
+      setDicomWorkbenchServerBundle(result.bundle);
+      setDicomWorkbenchServerBundles((bundles) => [
+        result.bundle,
+        ...bundles.filter((bundle) => bundle.id !== result.bundle.id && bundle.seriesKey !== result.bundle.seriesKey)
+      ].slice(0, 6));
+      return result.bundle;
+    } catch (saveError) {
+      if (!options.silent) {
+        setError(saveError instanceof Error ? saveError.message : "Серверный пакет DICOM не сохранен");
+      }
+      return null;
+    } finally {
+      setIsDicomWorkbenchServerSaving(false);
+    }
+  }
+
+  async function reconnectDicomWorkbenchFromCurrentFolder() {
+    if (!imagingFolderPath.trim()) {
+      setError("Укажите локальную папку DICOM перед переподключением рабочего места.");
+      return;
+    }
+    const targetStudyUid =
+      dicomViewerWorkbenchManifest?.toolStateBundle.seriesRef.studyInstanceUid ??
+      dicomWorkbenchServerBundle?.studyInstanceUid ??
+      latestDicomWorkbenchServerBundle?.studyInstanceUid ??
+      null;
+    const targetSeriesUid =
+      dicomViewerWorkbenchManifest?.toolStateBundle.seriesRef.seriesInstanceUid ??
+      dicomWorkbenchServerBundle?.seriesInstanceUid ??
+      latestDicomWorkbenchServerBundle?.seriesInstanceUid ??
+      null;
+    setIsDicomWorkbenchReconnecting(true);
+    try {
+      const client = await collectDicomWorkstationClientFacts();
+      const workupResponse = await fetch("/api/imaging/dicom/folder-workup-plan", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          folderPath: imagingFolderPath,
+          recursive: true,
+          sourceName: "dicom_reconnected_folder",
+          client,
+          viewerState: currentImagingViewerSessionState
+        })
+      });
+      if (!workupResponse.ok) {
+        throw new Error(`Переподключение DICOM: API ${workupResponse.status}`);
+      }
+      const workup = (await workupResponse.json()) as DicomFolderWorkupPlanResponse;
+      const matchedPlan =
+        workup.plans.find(
+          (plan) =>
+            (!targetStudyUid || plan.series.studyInstanceUid === targetStudyUid) &&
+            (!targetSeriesUid || plan.series.seriesInstanceUid === targetSeriesUid)
+        ) ??
+        workup.plans.find((plan) => plan.series.mprReadiness.volumeCandidate) ??
+        workup.plans[0] ??
+        null;
+      if (!matchedPlan) {
+        throw new Error("Переподключение DICOM не нашло пригодную КТ-серию в текущей папке.");
+      }
+
+      const manifestResponse = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          viewerKind: "cornerstone3d",
+          target: "cornerstone3d",
+          series: matchedPlan.series,
+          client,
+          connector: dicomWebCheck,
+          viewerState: currentImagingViewerSessionState,
+          annotations: imagingViewerAnnotations,
+          dicomWebBaseUrl: dicomWebEndpointUrl.trim() || null,
+          ohifBaseUrl: ohifBaseUrl.trim() || null,
+          allowExternalHandoff: true
+        })
+      });
+      if (!manifestResponse.ok) {
+        throw new Error(`Манифест переподключения DICOM: API ${manifestResponse.status}`);
+      }
+      const manifest = (await manifestResponse.json()) as DicomViewerWorkbenchManifestResponse;
+      const clientSavedAt = new Date().toISOString();
+      saveLocalDicomWorkbenchDraft(manifest, clientSavedAt, activeOrganizationId);
+      setDicomFolderWorkupPlan(workup);
+      setDicomFolderSeriesScan(workup.folder);
+      setDicomSeriesPreview(workup.folder.preview);
+      applyDicomWorkbenchManifest(manifest);
+      setDicomWorkbenchLocalSavedAt(clientSavedAt);
+      setDicomWorkbenchServerBundle(null);
+      await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true });
+    } catch (reconnectError) {
+      setError(reconnectError instanceof Error ? reconnectError.message : "Источник DICOM не переподключен");
+    } finally {
+      setIsDicomWorkbenchReconnecting(false);
+    }
+  }
+
+  async function checkDicomWorkstationReadiness() {
+    if (!cbctWorkbenchSeries) {
+      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию.");
+      return;
+    }
+    setIsDicomWorkstationChecking(true);
+    try {
+      const client = await collectDicomWorkstationClientFacts();
+      const response = await fetch("/api/imaging/dicom/workstation-readiness", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          series: cbctWorkbenchSeries,
+          client,
+          connector: dicomWebCheck
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Готовность станции DICOM: API ${response.status}`);
+      }
+      setDicomWorkstationReadiness((await response.json()) as DicomWorkstationReadinessResponse);
+      setDicomViewerWorkbenchManifest(null);
+      setDicomWorkbenchLocalSavedAt(null);
+      setDicomRenderCachePlan(null);
+    } catch (readinessError) {
+      setError(readinessError instanceof Error ? readinessError.message : "Готовность станции DICOM не проверена");
+    } finally {
+      setIsDicomWorkstationChecking(false);
+    }
+  }
+
+  async function buildDicomRenderCachePlan() {
+    if (!cbctWorkbenchSeries || !dicomWorkstationReadiness) {
+      const missingSteps = [
+        !cbctWorkbenchSeries ? "выберите готовую КТ/CBCT-серию" : null,
+        !dicomWorkstationReadiness ? "сначала проверьте этот ПК" : null
+      ].filter((step): step is string => Boolean(step));
+      setError(`Перед планом быстрой загрузки DICOM: ${missingSteps.join(", ")}.`);
+      return;
+    }
+    setIsDicomRenderCachePlanning(true);
+    try {
+      const response = await fetch("/api/imaging/dicom/render-cache-plan", {
+        method: "POST",
+        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          series: cbctWorkbenchSeries,
+          renderPlan: dicomWorkstationReadiness.renderPlan,
+          viewerState: currentImagingViewerSessionState
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`План кэша DICOM: API ${response.status}`);
+      }
+      setDicomViewerWorkbenchManifest(null);
+      setDicomWorkbenchLocalSavedAt(null);
+      setDicomRenderCachePlan((await response.json()) as DicomRenderCachePlanResponse);
+    } catch (cachePlanError) {
+      setError(cachePlanError instanceof Error ? cachePlanError.message : "План кэша DICOM не построен");
+    } finally {
+      setIsDicomRenderCachePlanning(false);
+    }
+  }
+
+  async function commitImagingImport() {
+    if (isImagingImportCommitting) {
+      setError("Дождитесь завершения текущей привязки снимков.");
+      return;
+    }
+    if (!imagingImportText.trim()) {
+      setError("Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ перед привязкой.");
+      return;
+    }
+    if (!imagingImportPreview) {
+      setError("Сначала проверьте импорт снимков, чтобы увидеть готовые и проблемные строки.");
+      return;
+    }
+    if (imagingImportPreview.readyRows === 0) {
+      setError("В импорте снимков нет готовых строк. Исправьте предупреждения и повторите проверку.");
+      return;
+    }
+    setIsImagingImportCommitting(true);
+    try {
+      const response = await fetch("/api/imaging/imports/commit", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          sourceName: imagingImportSourceKind,
+          sourceKind: imagingImportSourceKind,
+          rawText: imagingImportText
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Запись импорта снимков: API ${response.status}`);
+      }
+      const result = (await response.json()) as ImagingImportCommitResponse;
+      setImagingImportCommit(result);
+      setImagingImportPreview(result.preview);
+      await loadDashboard();
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : "Снимки не записаны");
+    } finally {
+      setIsImagingImportCommitting(false);
+    }
+  }
+
+  function appendVisitDictationText(value: string) {
+    const cleanValue = value.trim();
+    if (!cleanValue) return;
+    visitDraftUserEditedRef.current = true;
+    setClearedTranscriptSnapshot(null);
+    setTranscript((current) =>
+      appendSpeechTextWithoutDuplicateTail(current, cleanValue, speechGatewayStatus?.chunkingPolicy.dedupeWindowChars ?? 600)
+    );
+    setDraft(null);
+  }
+
+  function clearTranscriptWithUndo() {
+    const previousTranscript = transcript;
+    if (!previousTranscript.trim()) {
+      setSpeechStatusNote("Диктовка уже пустая. Нечего очищать.");
+      return;
+    }
+    visitDraftUserEditedRef.current = true;
+    setClearedTranscriptSnapshot(previousTranscript);
+    setTranscript("");
+    setSpeechStatusNote("Диктовка очищена. Можно сразу вернуть текст кнопкой «Вернуть».");
+  }
+
+  function undoTranscriptClear() {
+    if (!clearedTranscriptSnapshot) {
+      setSpeechStatusNote("Нет очищенной диктовки для восстановления.");
+      return;
+    }
+    visitDraftUserEditedRef.current = true;
+    setTranscript(clearedTranscriptSnapshot);
+    setClearedTranscriptSnapshot(null);
+    setSpeechStatusNote("Диктовка восстановлена из локального черновика.");
+  }
+
+  function startVisitDictation() {
+    if (isVisitDictating) {
+      setError("Дождитесь завершения текущей браузерной диктовки.");
+      return;
+    }
+    const speechWindow = window as BrowserWindowWithSpeech;
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setError("Браузерная диктовка недоступна. Текст можно печатать вручную, локальный черновик все равно сохранится.");
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.lang = "ru-RU";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcriptText = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join(" ");
+      appendVisitDictationText(transcriptText);
+    };
+    recognition.onerror = () => {
+      setError("Диктовка не распознана. Продолжайте печатать, текущий черновик не потерян.");
+      setIsVisitDictating(false);
+    };
+    recognition.onend = () => setIsVisitDictating(false);
+    setError(null);
+    setIsVisitDictating(true);
+    try {
+      recognition.start();
+    } catch {
+      setIsVisitDictating(false);
+      setError("Браузер не смог запустить микрофон. Текст можно продолжить вручную.");
+    }
+  }
+
+  function preferredSpeechMimeType(): string {
+    const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"];
+    return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
+  }
+
+  async function uploadSpeechBlob(blob: Blob) {
+    if (!dashboard || blob.size === 0) return;
+    const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
+    if (blob.size > maxChunkBytes) {
+      setSpeechStatusNote(
+        `STT: аудио-фрагмент ${Math.round(blob.size / 1024 / 1024)} MB больше лимита ${Math.round(
+          maxChunkBytes / 1024 / 1024
+        )} MB; запись продолжается, уменьшите длительность чанка или используйте локальный мост.`
+      );
+      return;
+    }
+    const audioBase64 = await blobToBase64(blob);
+    const chunkIndex = speechChunkIndexRef.current;
+    speechChunkIndexRef.current += 1;
+    const durationMs = speechPendingChunkDurationMsRef.current ?? speechGatewayStatus?.recommendedChunkMs ?? 15_000;
+    speechPendingChunkDurationMsRef.current = null;
+    const chunk: SpeechChunkUploadInput = {
+      recordingId: speechRecordingIdRef.current ?? createLocalQueueId(),
+      chunkIndex,
+      mimeType: blob.type || "audio/webm",
+      audioBase64,
+      durationMs,
+      language: "ru",
+      source: "visit",
+      patientId: dashboard.activeVisit.patientId,
+      visitId: dashboard.activeVisit.id,
+      specialty: selectedSpecialty,
+      clientRecordedAt: new Date().toISOString()
+    };
+    const queuedBeforeUpload = await queuePendingSpeechChunk(chunk, activeOrganizationId);
+    await refreshPendingSpeechChunkState();
+
+    if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
+      setSpeechStatusNote(
+        queuedBeforeUpload
+          ? `Фрагмент ${chunkIndex + 1} сохранен локально; STT отправится, когда сервер будет готов.`
+          : `Фрагмент ${chunkIndex + 1} не сохранен: локальная очередь недоступна.`
+      );
+      return;
+    }
+
+    try {
+      const result = await submitSpeechChunk(chunk);
+      applySpeechTranscription(result);
+      if (queuedBeforeUpload) {
+        await removePendingSpeechChunkById(queuedBeforeUpload.id, activeOrganizationId);
+        await refreshPendingSpeechChunkState();
+      }
+    } catch (speechError) {
+      const queued = queuedBeforeUpload ?? (await queuePendingSpeechChunk(chunk, activeOrganizationId));
+      await refreshPendingSpeechChunkState();
+      setSpeechStatusNote(
+        queued
+          ? `Фрагмент ${chunkIndex + 1} сохранен локально и уйдет на сервер позже.`
+          : `Фрагмент ${chunkIndex + 1} не отправлен: ${speechError instanceof Error ? speechError.message : "ошибка STT"}.`
+      );
+    }
+  }
+
+  function stopSpeechMonitor() {
+    if (speechMonitorTimerRef.current !== null) {
+      window.clearInterval(speechMonitorTimerRef.current);
+      speechMonitorTimerRef.current = null;
+    }
+    speechAudioContextRef.current?.close().catch(() => undefined);
+    speechAudioContextRef.current = null;
+    speechAnalyserRef.current = null;
+  }
+
+  function requestSpeechChunk(reason: "silence" | "max_time" | "manual") {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== "recording") return;
+    try {
+      const now = Date.now();
+      const durationMs = Math.max(250, Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000));
+      speechPendingChunkDurationMsRef.current = durationMs;
+      recorder.requestData();
+      speechSegmentStartedAtRef.current = now;
+      speechLastSoundAtRef.current = now;
+      if (reason !== "manual") {
+        setSpeechStatusNote(reason === "silence" ? "STT: фрагмент отправлен после паузы." : "STT: фрагмент отправлен по лимиту времени.");
+      }
+    } catch {
+      setSpeechStatusNote("STT: браузер не отдал аудио-фрагмент, запись продолжается.");
+    }
+  }
+
+  function startSpeechMonitor(stream: MediaStream, recorder: MediaRecorder, status: SpeechGatewayStatus | null) {
+    stopSpeechMonitor();
+    const audioWindow = window as BrowserWindowWithSpeech;
+    const AudioContextClass = window.AudioContext ?? audioWindow.webkitAudioContext;
+    const providerLabel = status?.providerLabel ?? "Локальная запись";
+    const chunkingPolicy = status?.chunkingPolicy ?? {
+      strategy: "time_and_silence" as const,
+      minChunkMs: 10_000,
+      maxChunkMs: 25_000,
+      silenceMs: 900,
+      rmsThreshold: 0.015,
+      monitorIntervalMs: 250,
+      overlapMs: 500,
+      dedupeWindowChars: 600
+    };
+    const recommendedChunkMs = status?.recommendedChunkMs ?? 15_000;
+    if (!AudioContextClass) {
+      recorder.start(recommendedChunkMs);
+      setSpeechStatusNote(`${providerLabel}: запись идет по таймеру, Web Audio недоступен.`);
+      return;
+    }
+
+    try {
+      const audioContext = new AudioContextClass();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.25;
+      source.connect(analyser);
+      speechAudioContextRef.current = audioContext;
+      speechAnalyserRef.current = analyser;
+      speechSegmentStartedAtRef.current = Date.now();
+      speechLastSoundAtRef.current = Date.now();
+      recorder.start(Math.max(1000, Math.min(recommendedChunkMs, chunkingPolicy.maxChunkMs)));
+      const samples = new Uint8Array(analyser.fftSize);
+      speechMonitorTimerRef.current = window.setInterval(() => {
+        analyser.getByteTimeDomainData(samples);
+        let sumSquares = 0;
+        for (const sample of samples) {
+          const centered = (sample - 128) / 128;
+          sumSquares += centered * centered;
+        }
+        const rms = Math.sqrt(sumSquares / samples.length);
+        const now = Date.now();
+        const segmentAgeMs = now - speechSegmentStartedAtRef.current;
+        if (rms >= chunkingPolicy.rmsThreshold) {
+          speechLastSoundAtRef.current = now;
+        }
+        const silentForMs = now - speechLastSoundAtRef.current;
+        if (segmentAgeMs >= chunkingPolicy.maxChunkMs) {
+          requestSpeechChunk("max_time");
+          return;
+        }
+        if (segmentAgeMs >= chunkingPolicy.minChunkMs && silentForMs >= chunkingPolicy.silenceMs) {
+          requestSpeechChunk("silence");
+        }
+      }, chunkingPolicy.monitorIntervalMs);
+      setSpeechStatusNote(
+        `${providerLabel}: умные фрагменты ${Math.round(chunkingPolicy.minChunkMs / 1000)}-${Math.round(
+          chunkingPolicy.maxChunkMs / 1000
+        )} сек., пауза ${chunkingPolicy.silenceMs} мс.`
+      );
+    } catch {
+      stopSpeechMonitor();
+      recorder.start(recommendedChunkMs);
+      setSpeechStatusNote(`${providerLabel}: запись идет по таймеру, умное деление недоступно.`);
+    }
+  }
+
+  async function startServerVoiceRecording() {
+    if (!dashboard) {
+      setError("Данные приема еще не загружены. Повторите запись после загрузки рабочего экрана.");
+      return;
+    }
+    if (isServerVoiceRecording || mediaRecorderRef.current?.state === "recording") {
+      setError("Запись уже идет. Нажмите «Стоп запись», чтобы завершить текущий фрагмент.");
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Запись аудио недоступна в этом браузере. Текст можно печатать вручную, локальный черновик сохранится.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = preferredSpeechMimeType();
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaStreamRef.current = stream;
+      mediaRecorderRef.current = recorder;
+      speechRecordingIdRef.current = createLocalQueueId();
+      speechChunkIndexRef.current = 0;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0 && !speechPendingChunkDurationMsRef.current) {
+          const now = Date.now();
+          speechPendingChunkDurationMsRef.current = Math.max(
+            250,
+            Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
+          );
+          speechSegmentStartedAtRef.current = now;
+          speechLastSoundAtRef.current = now;
+        }
+        if (event.data.size > 0) {
+          trackSpeechUpload(uploadSpeechBlob(event.data));
+        }
+      };
+      recorder.onstop = () => {
+        const recordingId = speechRecordingIdRef.current;
+        stopSpeechMonitor();
+        stream.getTracks().forEach((track) => track.stop());
+        mediaRecorderRef.current = null;
+        mediaStreamRef.current = null;
+        setIsServerVoiceRecording(false);
+        if (recordingId) {
+          void finalizeSpeechRecording(recordingId);
+        }
+      };
+      startSpeechMonitor(stream, recorder, speechGatewayStatus);
+      setError(null);
+      if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
+        setSpeechStatusNote(
+          isOnline
+            ? "Запись идет в локальную очередь: серверный STT пока не готов, аудио не отправляется."
+            : "Запись идет в локальную очередь: офлайн, аудио отправится после подключения."
+        );
+      }
+      setIsServerVoiceRecording(true);
+    } catch (recordingError) {
+      setIsServerVoiceRecording(false);
+      setError(recordingError instanceof Error ? `Микрофон недоступен: ${recordingError.message}` : "Микрофон недоступен");
+    }
+  }
+
+  function stopServerVoiceRecording() {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      speechPendingChunkDurationMsRef.current = Math.max(250, Date.now() - speechSegmentStartedAtRef.current);
+      recorder.requestData();
+      recorder.stop();
+      return;
+    }
+    const recordingId = speechRecordingIdRef.current;
+    if (!recordingId && !mediaStreamRef.current && !isServerVoiceRecording) {
+      setSpeechStatusNote("Активной записи диктовки нет.");
+      return;
+    }
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    stopSpeechMonitor();
+    mediaStreamRef.current = null;
+    mediaRecorderRef.current = null;
+    setIsServerVoiceRecording(false);
+    if (recordingId) {
+      void finalizeSpeechRecording(recordingId);
+    }
+  }
+
+  function startImportDictation() {
+    if (isImportDictating) {
+      setError("Дождитесь завершения текущей диктовки импорта.");
+      return;
+    }
+    const speechWindow = window as BrowserWindowWithSpeech;
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setImportSourceKind("voice_dictation");
+      setImportText((current) =>
+        `${current}\n\nДиктовка недоступна в этом браузере. Вставь распознанный текст сюда: Иванов Иван, телефон +7 900 000-00-00, дата рождения 01.01.1980.`
+      );
+      setError("Браузерная диктовка импорта недоступна. Вставьте список пациентов вручную или загрузите OCR.");
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.lang = "ru-RU";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcriptText = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join(" ");
+      setImportSourceKind("voice_dictation");
+      setImportText((current) => `${current.trim()}\n${transcriptText}`.trim());
+      setImportPreview(null);
+      setImportCommit(null);
+    };
+    recognition.onerror = () => {
+      setImportSourceKind("voice_dictation");
+      setIsImportDictating(false);
+      setError("Диктовка импорта не распознана. Вставьте список вручную или загрузите OCR.");
+    };
+    recognition.onend = () => setIsImportDictating(false);
+    setError(null);
+    setIsImportDictating(true);
+    try {
+      recognition.start();
+    } catch {
+      setIsImportDictating(false);
+      setError("Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.");
+    }
+  }
+
+  async function createClinicalRuleFromSettings() {
+    if (!dashboard) {
+      setError("Данные клиники еще не загружены. Повторите создание правила после загрузки настроек.");
+      return;
+    }
+    if (isClinicalRuleSaving) {
+      setError("Дождитесь завершения текущей записи клинического правила.");
+      return;
+    }
+    if (!newRuleTitle.trim() || !newRuleWarningText.trim() || !newRulePatientText.trim()) {
+      setError("Клиническое правило должно иметь название, предупреждение и объяснение для пациента.");
+      return;
+    }
+
+    setIsClinicalRuleSaving(true);
+    try {
+      const response = await fetch("/api/clinical/rules", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          title: newRuleTitle.trim(),
+          category: newRuleCategory,
+          specialty: newRuleSpecialty,
+          action: newRuleAction,
+          severity: newRuleSeverity,
+          ownerRole: newRuleOwnerRole,
+          triggerServiceIds: [newRuleTriggerServiceId],
+          requiredServiceIds: newRuleAction === "add_required_service" ? [newRuleRequiredServiceId] : [],
+          requiresCompletedServiceIds: newRuleAction === "block_service" ? [newRuleCompletedServiceId] : [],
+          blockedServiceIds: newRuleAction === "block_service" ? [newRuleBlockedServiceId] : [],
+          condition: "Настроено в библиотеке правил клиники.",
+          warningText: newRuleWarningText.trim(),
+          patientText: newRulePatientText.trim(),
+          active: true
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`Клиническое правило: API ${response.status}`);
+      }
+      await loadDashboard();
+    } catch (ruleError) {
+      setError(ruleError instanceof Error ? ruleError.message : "Клиническое правило не сохранено");
+    } finally {
+      setIsClinicalRuleSaving(false);
+    }
+  }
+
+  async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
+    if (isClinicalRuleSaving) {
+      setError("Дождитесь завершения текущей записи клинического правила.");
+      return;
+    }
+    setIsClinicalRuleSaving(true);
+    try {
+      const response = await fetch(`/api/clinical/rules/${rule.id}`, {
+        method: "PATCH",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ active: !rule.active })
+      });
+      if (!response.ok) {
+        throw new Error(`Обновление клинического правила: API ${response.status}`);
+      }
+      await loadDashboard();
+    } catch (ruleError) {
+      setError(ruleError instanceof Error ? ruleError.message : "Клиническое правило не обновлено");
+    } finally {
+      setIsClinicalRuleSaving(false);
+    }
+  }
+
+  function requiredDocumentField(value: string, label: string): string | null {
+    return value.trim() ? null : `Заполните поле: ${label}.`;
+  }
+
+  function confirmedDocumentLiteral(value: boolean, label: string): true {
+    if (!value) {
+      throw new Error(`Не подтверждено обязательное условие документа: ${label}.`);
+    }
+    return true;
+  }
+
+  function documentTextLines(value: string): string[] {
+    return value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  function compactDocumentText(...values: Array<string | null | undefined>): string {
+    return values
+      .map((value) => value?.trim() ?? "")
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  function treatmentAcceptanceStageRows() {
+    return documentTextLines(treatmentAcceptanceStages).map((line, index) => {
+      const [stageName, plannedServices, plannedTiming, amount] = line.split("|").map((part) => part.trim());
+      const parsedAmount = amount ? Number(amount.replace(/[^\d]/g, "")) : Number.NaN;
+      return {
+        stageName: stageName || `Этап ${index + 1}`,
+        plannedServices: plannedServices || "объем лечения по выбранному плану",
+        plannedTiming: plannedTiming || "по расписанию клиники",
+        estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null
+      };
+    });
+  }
+
+  function treatmentAcceptancePlannedTotalRub(): number {
+    return (
+      activeTreatmentPlanItems
+        .filter((item) => item.status !== "cancelled")
+        .filter((item) => !dashboard?.activeVisit.id || item.visitId === dashboard.activeVisit.id)
+        .reduce((total, item) => total + Math.max(0, item.unitPriceRub * item.quantity - item.discountRub), 0) || 0
+    );
+  }
+
+  function treatmentAcceptanceTotalRubValue(): number {
+    const manual = Number(treatmentAcceptanceEstimatedTotalRub.replace(/[^\d]/g, ""));
+    return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+  }
+
+  function treatmentPlanStageRows() {
+    return documentTextLines(treatmentPlanStages).map((line, index) => {
+      const [stageName, plannedServices, plannedTiming, clinicalNotes, amount] = line.split("|").map((part) => part.trim());
+      const parsedAmount = amount ? Number(amount.replace(/[^\d]/g, "")) : Number.NaN;
+      return {
+        stageName: stageName || `Этап ${index + 1}`,
+        plannedServices: plannedServices || "объем лечения по клиническому плану",
+        plannedTiming: plannedTiming || "по расписанию клиники",
+        clinicalNotes: clinicalNotes || null,
+        estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null
+      };
+    });
+  }
+
+  function treatmentPlanTotalRubValue(): number {
+    const manual = Number(treatmentPlanEstimatedTotalRub.replace(/[^\d]/g, ""));
+    return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+  }
+
+  function treatmentPlanClinicalReasonValue(): string {
+    return treatmentPlanClinicalReason.trim() || dashboard?.activeVisit.complaint?.trim() || "плановое стоматологическое лечение по результатам осмотра";
+  }
+
+  function treatmentPlanDiagnosisSummaryValue(): string {
+    return treatmentPlanDiagnosisSummary.trim() || dashboard?.activeVisit.diagnosis?.trim() || dashboard?.activeVisit.complaint?.trim() || "";
+  }
+
+  function treatmentPlanTeethOrAreaValue(): string {
+    return treatmentPlanTeethOrArea.trim() || inferredTreatmentArea || "";
+  }
+
+  function normalizeClinicalToothAlias(value: string): string {
+    return value
+      .trim()
+      .toLocaleLowerCase("ru-RU")
+      .replaceAll("ё", "е")
+      .replace(/[.]+/g, "")
+      .replace(/\s+/g, " ");
+  }
+
+  function clinicalToothSurfacesValue(value: string): ClinicalToothSurface[] {
+    const surfaces = value
+      .split(/[,+;/]+/)
+      .map((part) => clinicalToothSurfaceAliases[normalizeClinicalToothAlias(part)])
+      .filter((surface): surface is ClinicalToothSurface => Boolean(surface));
+    return surfaces.length ? Array.from(new Set(surfaces)) : ["not_applicable"];
+  }
+
+  function clinicalToothStatusValue(value: string): ClinicalToothStatus {
+    return clinicalToothStatusAliases[normalizeClinicalToothAlias(value)] ?? "planned";
+  }
+
+  function clinicalToothRowsValue(): ClinicalToothRow[] {
+    const fallbackArea =
+      procedureConsentToothOrArea.trim() ||
+      treatmentPlanTeethOrAreaValue() ||
+      treatmentAcceptanceTeethOrArea.trim() ||
+      inferredTreatmentArea ||
+      "область лечения";
+    const fallbackFinding =
+      procedureConsentDiagnosisOrIndication.trim() ||
+      treatmentPlanDiagnosisSummaryValue() ||
+      treatmentAcceptanceDiagnosisSummary.trim() ||
+      recordExtractDiagnosisValue() ||
+      "клиническая находка требует уточнения врачом";
+    const fallbackIndication =
+      treatmentPlanClinicalReasonValue() || recordExtractComplaintAndAnamnesisValue() || "медицинское показание к лечению";
+    const fallbackAction =
+      dashboard?.activeVisit.treatmentPlan?.trim() || procedureConsentProcedureName.trim() || treatmentAcceptanceClinicalGoal.trim() || "согласованное стоматологическое лечение";
+
+    return documentTextLines(clinicalToothRowsText).map((line, index) => {
+      const [
+        toothOrArea,
+        surfaces,
+        status,
+        diagnosisOrFinding,
+        indication,
+        plannedAction,
+        prognosis,
+        periodontalStatus,
+        implantOrProstheticNotes,
+        orthodonticNotes
+      ] = line.split("|").map((part) => part.trim());
+
+      return {
+        toothOrArea: toothOrArea || fallbackArea || `зона ${index + 1}`,
+        surfaces: clinicalToothSurfacesValue(surfaces || ""),
+        status: clinicalToothStatusValue(status || ""),
+        diagnosisOrFinding: diagnosisOrFinding || fallbackFinding,
+        indication: indication || fallbackIndication,
+        plannedAction: plannedAction || fallbackAction,
+        prognosis: prognosis || null,
+        periodontalStatus: periodontalStatus || null,
+        implantOrProstheticNotes: implantOrProstheticNotes || null,
+        orthodonticNotes: orthodonticNotes || null
+      };
+    });
+  }
+
+  function treatmentPlanDoctorFullNameValue(): string {
+    return treatmentPlanDoctorFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function activePaidPaymentsForVisit() {
+    return activePayments.filter((payment) => payment.status === "paid" && (!dashboard?.activeVisit.id || payment.visitId === dashboard.activeVisit.id));
+  }
+
+  function paidContractTotalRubValue(): number {
+    const manual = Number(paidContractTotalRub.replace(/[^\d]/g, ""));
+    return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+  }
+
+  function paidContractCustomerFullNameValue(): string {
+    return paidContractCustomerFullName.trim() || documentPatient?.fullName || "";
+  }
+
+  function paidContractCareReasonValue(): string {
+    return paidContractCareReason.trim() || dashboard?.activeVisit.complaint?.trim() || "плановое стоматологическое лечение по результатам осмотра";
+  }
+
+  function paidContractServiceScopeValue(): string {
+    return paidContractServiceScope.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || dashboard?.activeVisit.doctorSummary?.trim() || "";
+  }
+
+  function paidContractDoctorFullNameValue(): string {
+    return paidContractDoctorFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function completedActPaidRubValue(): number {
+    const manual = Number(completedActPaidRub.replace(/[^\d]/g, ""));
+    if (manual > 0) return manual;
+    return activePaidPaymentsForVisit().reduce((total, payment) => total + payment.amountRub, 0);
+  }
+
+  function completedActTotalRubValue(): number {
+    const manual = Number(completedActTotalRub.replace(/[^\d]/g, ""));
+    return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+  }
+
+  function completedActFiscalReceiptLines(): string[] {
+    const manual = documentTextLines(completedActFiscalReceipts);
+    if (manual.length) return manual;
+    return activePaidPaymentsForVisit()
+      .map((payment) => payment.fiscalReceiptNumber?.trim())
+      .filter((value): value is string => Boolean(value));
+  }
+
+  function completedActServicesSummaryValue(): string {
+    return completedActServicesSummary.trim() || dashboard?.activeVisit.doctorSummary?.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || "";
+  }
+
+  function completedActDoctorFullNameValue(): string {
+    return completedActDoctorFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function plannedServiceLinesForFinancialPayload() {
+    return activeTreatmentPlanItems
+      .filter((item) => item.status !== "cancelled")
+      .filter((item) => !dashboard?.activeVisit.id || item.visitId === dashboard.activeVisit.id)
+      .map((item) => {
+        const service = dashboard?.serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+        const totalRub = Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
+        return {
+          serviceName: service?.title ?? item.serviceId,
+          toothOrArea: item.toothCode ? `зуб ${item.toothCode}` : null,
+          quantity: item.quantity,
+          unitPriceRub: item.unitPriceRub,
+          discountRub: item.discountRub,
+          totalRub
+        };
+      });
+  }
+
+  function treatmentEstimatePatientOrPayerFullNameValue(): string {
+    return treatmentEstimatePatientOrPayerFullName.trim() || documentPatient?.fullName || "";
+  }
+
+  function treatmentEstimateTreatmentBasisValue(): string {
+    return (
+      treatmentEstimateTreatmentBasis.trim() ||
+      compactDocumentText(dashboard?.activeVisit.diagnosis, dashboard?.activeVisit.complaint, dashboard?.activeVisit.treatmentPlan) ||
+      "плановое стоматологическое лечение по результатам осмотра"
+    );
+  }
+
+  function treatmentEstimateTotalRubValue(): number {
+    const manual = Number(treatmentEstimateTotalRub.replace(/[^\d]/g, ""));
+    return manual > 0 ? manual : paymentInvoiceTotalRubValue();
+  }
+
+  function treatmentEstimateDoctorFullNameValue(): string {
+    return treatmentEstimateDoctorFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function paymentInvoiceTotalRubValue(): number {
+    return plannedServiceLinesForFinancialPayload().reduce((total, line) => total + line.totalRub, 0) || treatmentAcceptancePlannedTotalRub();
+  }
+
+  function paymentInvoicePayerFullNameValue(): string {
+    return paymentInvoicePayerFullName.trim() || documentPatient?.fullName || "";
+  }
+
+  function paymentInvoiceBankDetailsValue(): string {
+    return paymentInvoiceBankDetails.trim() || dashboard?.clinicSettings.profile.bankDetails?.trim() || "";
+  }
+
+  function firstPaymentReceiptPayment() {
+    return selectedPaymentReceiptPayments[0] ?? null;
+  }
+
+  function paymentReceiptPayerFullNameValue(): string {
+    return paymentReceiptPayerFullName.trim() || firstPaymentReceiptPayment()?.payerFullName?.trim() || "";
+  }
+
+  function paymentReceiptPayerBirthDateValue(): string {
+    return paymentReceiptPayerBirthDate.trim() || firstPaymentReceiptPayment()?.payerBirthDate?.trim() || "";
+  }
+
+  function paymentReceiptPayerInnValue(): string {
+    return paymentReceiptPayerInn.trim() || firstPaymentReceiptPayment()?.payerInn?.trim() || "";
+  }
+
+  function paymentReceiptPayerIdentityDocumentValue(): string {
+    return (
+      paymentReceiptPayerIdentityDocument.trim() ||
+      firstPaymentReceiptPayment()?.payerIdentityDocument?.trim() ||
+      ""
+    );
+  }
+
+  function paymentReceiptPayerRelationshipValue(): string {
+    return paymentReceiptPayerRelationship.trim() || firstPaymentReceiptPayment()?.payerRelationship?.trim() || "пациент";
+  }
+
+  function paymentReceiptIssuedByValue(): string {
+    return paymentReceiptIssuedBy.trim() || activeDoctor?.fullName || "Администратор клиники";
+  }
+
+  function paymentReceiptFiscalReceiptLines(): string[] {
+    return selectedPaymentReceiptPayments
+      .map((payment) => payment.fiscalReceiptNumber?.trim())
+      .filter((value): value is string => Boolean(value));
+  }
+
+  function installmentScheduleTotalRubValue(): number {
+    const manual = Number(installmentScheduleTotalRub.replace(/[^\d]/g, ""));
+    return manual > 0 ? manual : treatmentAcceptancePlannedTotalRub();
+  }
+
+  function installmentSchedulePrepaidRubValue(): number {
+    const manual = Number(installmentSchedulePrepaidRub.replace(/[^\d]/g, ""));
+    if (manual > 0) return manual;
+    return activePaidPaymentsForVisit().reduce((total, payment) => total + payment.amountRub, 0);
+  }
+
+  function installmentScheduleRemainingRubValue(): number {
+    return Math.max(0, installmentScheduleTotalRubValue() - installmentSchedulePrepaidRubValue());
+  }
+
+  function installmentScheduleInstallmentRows() {
+    const rows = documentTextLines(installmentScheduleRows).map((line, index) => {
+      const [label, dueDate, amount, status] = line.split("|").map((part) => part.trim());
+      const parsedAmount = amount ? Number(amount.replace(/[^\d]/g, "")) : Number.NaN;
+      const parsedStatus = installmentPaymentStatusAliases[status?.toLocaleLowerCase("ru-RU").replaceAll("ё", "е") ?? ""] ?? "planned";
+      return {
+        label: label || `Платеж ${index + 1}`,
+        dueDate: dueDate || dateInputValuePlusDays(index === 0 ? 7 : 21),
+        amountRub: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0,
+        status: parsedStatus
+      };
+    });
+    if (rows.some((row) => row.amountRub > 0)) return rows.filter((row) => row.amountRub > 0);
+    const remaining = installmentScheduleRemainingRubValue();
+    if (remaining <= 0) return [];
+    const firstPart = Math.ceil(remaining / 2);
+    const secondPart = remaining - firstPart;
+    return [
+      { label: "Первый платеж", dueDate: dateInputValuePlusDays(7), amountRub: firstPart, status: "planned" as const },
+      ...(secondPart > 0 ? [{ label: "Финальный платеж", dueDate: dateInputValuePlusDays(21), amountRub: secondPart, status: "planned" as const }] : [])
+    ];
+  }
+
+  function installmentScheduleBaseDocumentTitleValue(): string {
+    return installmentScheduleBaseDocumentTitle.trim() || activeUsableDocuments.find((document) => document.kind === "paid_medical_services_contract")?.title || "договор или план лечения DENTE";
+  }
+
+  function installmentSchedulePayerFullNameValue(): string {
+    return installmentSchedulePayerFullName.trim() || documentPatient?.fullName || "";
+  }
+
+  function installmentScheduleResponsibleFullNameValue(): string {
+    return installmentScheduleResponsibleFullName.trim() || activeDoctor?.fullName || "Администратор клиники";
+  }
+
+  function minorRepresentativeFullNameValue(): string {
+    return minorRepresentativeFullName.trim() || documentPatient?.administrativeProfile?.legalRepresentativeFullName?.trim() || "";
+  }
+
+  function minorRepresentativeRelationshipValue(): string {
+    return minorRepresentativeRelationship.trim() || documentPatient?.administrativeProfile?.legalRepresentativeRelationship?.trim() || "";
+  }
+
+  function minorRepresentativeIdentityDocumentValue(): string {
+    return (
+      minorRepresentativeIdentityDocument.trim() ||
+      documentPatient?.administrativeProfile?.legalRepresentativeIdentityDocument?.trim() ||
+      ""
+    );
+  }
+
+  function minorRepresentativePhoneValue(): string {
+    return minorRepresentativePhone.trim() || documentPatient?.administrativeProfile?.legalRepresentativePhone?.trim() || "";
+  }
+
+  function minorConsentPatientFullNameValue(): string {
+    return minorConsentPatientFullName.trim() || documentPatient?.fullName || "";
+  }
+
+  function minorConsentPatientBirthDateValue(): string {
+    return minorConsentPatientBirthDate.trim() || documentPatient?.birthDate || "";
+  }
+
+  function minorConsentInterventionScopeValue(): string {
+    return minorConsentInterventionScope.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || "стоматологическое вмешательство по согласованному плану";
+  }
+
+  function minorConsentDiagnosisOrIndicationValue(): string {
+    return minorConsentDiagnosisOrIndication.trim() || dashboard?.activeVisit.diagnosis?.trim() || dashboard?.activeVisit.complaint?.trim() || "";
+  }
+
+  function minorConsentDoctorFullNameValue(): string {
+    return minorConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function warrantyServiceOrWorkNameValue(): string {
+    return warrantyServiceOrWorkName.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || dashboard?.activeVisit.doctorSummary?.trim() || "";
+  }
+
+  function warrantyTeethOrAreaValue(): string {
+    return warrantyTeethOrArea.trim() || inferredTreatmentArea || "область лечения по визиту";
+  }
+
+  function warrantyLinkedActOrContractValue(): string {
+    return (
+      warrantyLinkedActOrContract.trim() ||
+      activeUsableDocuments.find((document) => document.kind === "completed_works_act" || document.kind === "paid_medical_services_contract")?.title ||
+      "акт выполненных работ или договор DENTE"
+    );
+  }
+
+  function warrantyDoctorFullNameValue(): string {
+    return warrantyDoctorFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function postVisitProcedureNameValue(): string {
+    return postVisitProcedureName.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || "Рекомендации после стоматологического приема";
+  }
+
+  function postVisitToothOrAreaValue(): string {
+    return postVisitToothOrArea.trim() || inferredTreatmentArea || "область лечения по записи приема";
+  }
+
+  function postVisitDoctorFullNameValue(): string {
+    return postVisitDoctorFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function applyPostVisitCarePreset(topic: PostVisitCareTopic, options: { force?: boolean } = {}) {
+    const topicLabel = postVisitCareTopicOptions.find((option) => option.value === topic)?.label ?? "выбранной темы";
+    if (postVisitManualEdited && !options.force) {
+      setPostVisitPresetFeedback(
+        `Тема "${topicLabel}" выбрана. Текст не перезаписан, потому что есть ручные правки. Нажмите "Подставить памятку для темы", если нужно заменить поля.`
+      );
+      return;
+    }
+    const preset = postVisitCarePresets[topic];
+    setPostVisitProcedureName(preset.procedureName);
+    setPostVisitAllowedAfter(preset.allowedAfter);
+    setPostVisitRestrictions(preset.temporaryRestrictions);
+    setPostVisitMedicationAndRinsePlan(preset.medicationAndRinsePlan);
+    setPostVisitHygieneInstructions(preset.hygieneInstructions);
+    setPostVisitNutritionInstructions(preset.nutritionInstructions);
+    setPostVisitUrgentWarningSigns(preset.urgentWarningSigns);
+    setPostVisitFollowUpAt(preset.plannedFollowUpAt);
+    setPostVisitTelegramSummary(preset.telegramSummary);
+    setPostVisitPrintedCopyReceived(false);
+    setPostVisitUrgentSignsUnderstood(false);
+    setPostVisitTelegramSafe(false);
+    setPostVisitManualEdited(false);
+    setPostVisitPresetFeedback(options.force ? `Памятка для темы "${topicLabel}" подставлена, ручные правки сброшены.` : "");
+  }
+
+  function changePostVisitCareTopic(topic: PostVisitCareTopic) {
+    setPostVisitCareTopic(topic);
+    applyPostVisitCarePreset(topic);
+  }
+
+  function markPostVisitManualEdited() {
+    setPostVisitManualEdited(true);
+    setPostVisitPresetFeedback("");
+  }
+
+  function recordExtractComplaintAndAnamnesisValue(): string {
+    return recordExtractComplaintAndAnamnesis.trim() || compactDocumentText(dashboard?.activeVisit.complaint, dashboard?.activeVisit.anamnesis);
+  }
+
+  function recordExtractObjectiveStatusValue(): string {
+    return recordExtractObjectiveStatus.trim() || dashboard?.activeVisit.objectiveStatus?.trim() || "";
+  }
+
+  function recordExtractDiagnosisValue(): string {
+    return recordExtractDiagnosis.trim() || dashboard?.activeVisit.diagnosis?.trim() || "";
+  }
+
+  function recordExtractTreatmentProvidedValue(): string {
+    return recordExtractTreatmentProvided.trim() || compactDocumentText(dashboard?.activeVisit.doctorSummary, dashboard?.activeVisit.treatmentPlan);
+  }
+
+  function outpatient025uMedicalCardNumberValue(): string {
+    const explicitNumber = outpatient025uMedicalCardNumber.trim();
+    if (explicitNumber) return explicitNumber;
+    const patientToken = documentPatient?.id.slice(0, 8).toUpperCase() ?? "PATIENT";
+    return `DENTE-${new Date().getFullYear()}-${patientToken}`;
+  }
+
+  function outpatient025uSourceVisitIdsValue(): string[] {
+    const sourceVisitIds = documentTextLines(recordExtractSourceVisitIds);
+    if (sourceVisitIds.length) return sourceVisitIds;
+    return dashboard?.activeVisit.id ? [dashboard.activeVisit.id] : [];
+  }
+
+  function outpatient025uLicenseValue(): string | null {
+    const value = compactDocumentText(
+      clinicProfileDraft.medicalLicenseNumber,
+      clinicProfileDraft.medicalLicenseIssuedAt,
+      clinicProfileDraft.medicalLicenseIssuer
+    );
+    return value || null;
+  }
+
+  function outpatient025uDoctorValue(): { fullName: string; position: string; specialty: string } {
+    return {
+      fullName: recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "",
+      position: "врач-стоматолог",
+      specialty: activeDoctor?.specialties[0] ?? "стоматология"
+    };
+  }
+
+  function outpatient025uVisitDateValue(): string {
+    return recordExtractPeriodEnd.trim() || toDateInputValue(activeAppointment?.startsAt) || new Date().toISOString().slice(0, 10);
+  }
+
+  function outpatient025uPayloadValue(): OutpatientMedicalCard025uPayload {
+    const patientProfile = documentPatient?.administrativeProfile;
+    const doctor = outpatient025uDoctorValue();
+    const sourceVisitIds = outpatient025uSourceVisitIdsValue();
+    const visitDate = outpatient025uVisitDateValue();
+    const complaintsAndAnamnesis = recordExtractComplaintAndAnamnesisValue();
+    const treatmentProvided = recordExtractTreatmentProvidedValue();
+    return {
+      formNumber: "025/у",
+      sourceOrderReference: "Приказ Минздрава России от 13.05.2025 N 274н",
+      medicalOrganizationName: clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim(),
+      medicalOrganizationAddress: clinicProfileDraft.address.trim() || null,
+      medicalOrganizationOgrnOrOgrnip: clinicProfileDraft.ogrn.trim() || null,
+      medicalOrganizationLicense: outpatient025uLicenseValue(),
+      medicalCardNumber: outpatient025uMedicalCardNumberValue(),
+      openedAt: outpatient025uOpenedAt.trim(),
+      periodStart: recordExtractPeriodStart.trim(),
+      periodEnd: recordExtractPeriodEnd.trim(),
+      sourceVisitIds,
+      patientFullName: documentPatient?.fullName ?? "",
+      patientBirthDate: toDateInputValue(documentPatient?.birthDate) || null,
+      patientSexCode: outpatient025uPatientSexCode,
+      citizenship: outpatient025uCitizenship.trim() || null,
+      identityDocument: patientProfile?.identityDocument?.trim() || null,
+      identityDocumentSeries: null,
+      identityDocumentNumber: null,
+      patientPhone: documentPatient?.phone?.trim() || null,
+      patientEmail: documentPatient?.email?.trim() || null,
+      registrationAddress: patientProfile?.registrationAddress?.trim() || null,
+      registrationUrbanRuralCode: outpatient025uRegistrationUrbanRuralCode,
+      stayAddress: patientProfile?.residentialAddress?.trim() || null,
+      stayUrbanRuralCode: outpatient025uStayUrbanRuralCode,
+      omsPolicy: patientProfile?.insurancePolicyNumber?.trim() || null,
+      omsIssuedAt: outpatient025uOmsIssuedAt.trim() || null,
+      insurerName: outpatient025uInsurerName.trim() || null,
+      snils: patientProfile?.snils?.trim() || null,
+      socialSupportCode: outpatient025uSocialSupportCode.trim() || null,
+      healthStatusDisclosureContact: outpatient025uHealthStatusDisclosureContact.trim() || null,
+      employmentCode: outpatient025uEmploymentCode.trim() || null,
+      disabilityGroup: outpatient025uDisabilityGroup.trim() || null,
+      workOrStudyPlace: outpatient025uWorkOrStudyPlace.trim() || null,
+      palliativeCareNeedCode: outpatient025uPalliativeCareNeedCode.trim() || null,
+      bloodGroup: outpatient025uBloodGroup.trim() || null,
+      rhFactor: outpatient025uRhFactor.trim() || null,
+      kellK1: outpatient025uKellK1.trim() || null,
+      otherBloodData: outpatient025uOtherBloodData.trim() || null,
+      allergyHistory: outpatient025uAllergyHistory.trim() || null,
+      chronicDispensaryRegister: [],
+      finalDiagnoses: [
+        {
+          date: visitDate,
+          diagnosis: recordExtractDiagnosisValue(),
+          icd10Code: null,
+          firstOrRepeat: "unknown",
+          doctorFullName: doctor.fullName,
+          doctorPosition: doctor.position,
+          doctorSpecialty: doctor.specialty
+        }
+      ],
+      specialistVisitRecords: [
+        {
+          sourceVisitId: sourceVisitIds[0] ?? "",
+          visitDate,
+          location: clinicProfileDraft.clinicName.trim() || null,
+          doctorFullName: doctor.fullName,
+          doctorPosition: doctor.position,
+          doctorSpecialty: doctor.specialty,
+          firstOrRepeat: "unknown",
+          complaints: complaintsAndAnamnesis,
+          anamnesis: complaintsAndAnamnesis,
+          objectiveData: recordExtractObjectiveStatusValue(),
+          primaryDiagnosis: recordExtractDiagnosisValue(),
+          primaryDiagnosisIcd10: null,
+          complications: null,
+          comorbidities: null,
+          externalCause: null,
+          healthGroup: null,
+          dispensaryObservation: null,
+          orders: recordExtractRecommendations.trim() || treatmentProvided,
+          treatmentProvided,
+          medicinesAndPhysiotherapy: null,
+          sickLeaveOrCertificate: null,
+          preferentialPrescriptions: null,
+          informedConsentOrRefusal: "согласия и отказы проверены по подписанной медицинской записи DENTE",
+          clinicalToothRows: clinicalToothRowsValue()
+        }
+      ],
+      dynamicObservationRecords: [],
+      stageEpicrisisRecords: [],
+      departmentHeadConsultations: [],
+      medicalCommissionRecords: [],
+      dispensaryObservationEntries: [],
+      hospitalizationRows: [],
+      ambulatorySurgeryRows: [],
+      xrayDoseRows: [],
+      functionalResults: [],
+      laboratoryResults: [],
+      finalEpicrisis: outpatient025uFinalEpicrisis.trim() || null,
+      preparedFromSignedMedicalRecords: confirmedDocumentLiteral(
+        recordExtractPreparedFromSignedRecords,
+        "карта 025/у собрана из подписанных медицинских записей"
+      ),
+      officialForm274nChecked: confirmedDocumentLiteral(
+        outpatient025uOfficialForm274nChecked,
+        "структура карты 025/у сверена с приказом Минздрава N 274н"
+      ),
+      thirdPartyDataChecked: confirmedDocumentLiteral(outpatient025uThirdPartyDataChecked, "данные третьих лиц для карты 025/у проверены")
+    };
+  }
+
+  function attendanceStartedAtValue(): string {
+    return attendanceStartedAt.trim() || (activeAppointment?.startsAt ? formatDateTime(activeAppointment.startsAt) : "");
+  }
+
+  function attendanceEndedAtValue(): string {
+    return attendanceEndedAt.trim() || (activeAppointment?.endsAt ? formatDateTime(activeAppointment.endsAt) : "");
+  }
+
+  function attendanceSignedByValue(): string {
+    return attendanceSignedByFullName.trim() || activeDoctor?.fullName || "";
+  }
+
+  function togglePhotoVideoMaterial(material: PhotoVideoConsentMaterial) {
+    setPhotoVideoMaterials((current) =>
+      current.includes(material) ? current.filter((item) => item !== material) : [...current, material]
+    );
+  }
+
+  function validateDocumentPayloadForKind(kind: GeneratedDocument["kind"]): string | null {
+    if (!structuredPayloadDocumentKinds.has(kind)) return null;
+    if (kind === "paid_medical_services_contract") {
+      return (
+        requiredDocumentField(paidContractNumber, "договор, номер") ??
+        requiredDocumentField(paidContractDate, "договор, дата") ??
+        requiredDocumentField(paidContractServiceStart, "договор, начало оказания услуг") ??
+        requiredDocumentField(paidContractServiceEnd, "договор, окончание или условие завершения") ??
+        requiredDocumentField(paidContractCustomerFullNameValue(), "договор, заказчик") ??
+        requiredDocumentField(paidContractCareReasonValue(), "договор, основание обращения") ??
+        requiredDocumentField(paidContractServiceScopeValue(), "договор, состав услуг") ??
+        (paidContractTotalRubValue() > 0 ? null : "Укажите ориентировочную стоимость договора.") ??
+        requiredDocumentField(paidContractPaymentTerms, "договор, порядок оплаты") ??
+        requiredDocumentField(paidContractPriceChangeRules, "договор, изменение цены и объема") ??
+        requiredDocumentField(paidContractFreeCareNotice, "договор, уведомление о бесплатной помощи") ??
+        requiredDocumentField(paidContractRecommendationWarning, "договор, предупреждение о рекомендациях врача") ??
+        requiredDocumentField(paidContractRefundTerms, "договор, отказ и возврат") ??
+        requiredDocumentField(paidContractWarrantyTerms, "договор, гарантия и претензии") ??
+        requiredDocumentField(paidContractDoctorFullNameValue(), "договор, врач") ??
+        requiredDocumentField(paidContractSignedAt, "договор, дата подписания") ??
+        (paidContractClinicInfoConfirmed ? null : "Подтвердите, что пациент получил сведения о клинике и лицензии.") ??
+        (paidContractServiceListConfirmed ? null : "Подтвердите, что пациент получил перечень услуг и стоимость.") ??
+        (paidContractPaidBasisConfirmed ? null : "Подтвердите, что пациент понимает платную основу услуг.") ??
+        (paidContractWrittenChangesConfirmed ? null : "Подтвердите, что изменения договора оформляются письменно.")
+      );
+    }
+    if (kind === "completed_works_act") {
+      return (
+        requiredDocumentField(completedActNumber, "акт, номер") ??
+        requiredDocumentField(completedActDate, "акт, дата") ??
+        requiredDocumentField(completedActContractNumber, "акт, договор") ??
+        (selectedCompletedActContractDocumentId ? null : "Выберите конкретный уже выданный договор для акта.") ??
+        requiredDocumentField(completedActServicePeriodStart, "акт, начало периода оказания") ??
+        requiredDocumentField(completedActServicePeriodEnd, "акт, окончание периода оказания") ??
+        requiredDocumentField(completedActDoctorFullNameValue(), "акт, врач-исполнитель") ??
+        requiredDocumentField(completedActServicesSummaryValue(), "акт, состав работ") ??
+        (completedActTotalRubValue() > 0 ? null : "Укажите сумму по акту.") ??
+        (completedActPaidRubValue() > 0 ? null : "Для акта нужна фактическая оплаченная сумма.") ??
+        (completedActFiscalReceiptLines().length ? null : "Добавьте номера фискальных чеков по акту.") ??
+        (completedActLinkedContract ? null : "Подтвердите связь акта с подписанным договором.") ??
+        (completedActFinalScopeConfirmed ? null : "Подтвердите финальный состав работ.") ??
+        (completedActFiscalReceiptsVerified ? null : "Подтвердите проверку фискальных чеков.") ??
+        (completedActAccepted ? null : "Подтвердите приемку работ пациентом.")
+      );
+    }
+    if (kind === "treatment_cost_estimate") {
+      const serviceLines = plannedServiceLinesForFinancialPayload();
+      return (
+        requiredDocumentField(treatmentEstimateNumber, "смета, номер") ??
+        requiredDocumentField(treatmentEstimateDate, "смета, дата") ??
+        requiredDocumentField(treatmentEstimatePatientOrPayerFullNameValue(), "смета, пациент или плательщик") ??
+        requiredDocumentField(treatmentEstimateTreatmentBasisValue(), "смета, основание лечения") ??
+        (serviceLines.length ? null : "Для сметы нужен состав услуг из плана лечения.") ??
+        (treatmentEstimateTotalRubValue() > 0 ? null : "Укажите итоговую сумму сметы.") ??
+        requiredDocumentField(treatmentEstimateValidUntil, "смета, срок действия") ??
+        requiredDocumentField(treatmentEstimatePriceChangeRules, "смета, правила изменения цены") ??
+        (documentTextLines(treatmentEstimateExcludedItems).length ? null : "Укажите, что не входит в текущую смету.") ??
+        requiredDocumentField(treatmentEstimatePaymentMilestoneNotes, "смета, условия оплаты") ??
+        requiredDocumentField(treatmentEstimateDoctorFullNameValue(), "смета, ответственный врач") ??
+        requiredDocumentField(treatmentEstimateSignedAt, "смета, дата ознакомления") ??
+        (treatmentEstimatePreliminaryConfirmed ? null : "Подтвердите предварительный характер сметы.") ??
+        (treatmentEstimateScopeConfirmed ? null : "Подтвердите соответствие состава услуг плану лечения.") ??
+        (treatmentEstimateFiscalNoticeConfirmed ? null : "Подтвердите, что смета не заменяет договор, акт и кассовый чек.") ??
+        (treatmentEstimateChangeRulesConfirmed ? null : "Подтвердите правило обновления сметы при изменениях.")
+      );
+    }
+    if (kind === "payment_invoice") {
+      const serviceLines = plannedServiceLinesForFinancialPayload();
+      return (
+        requiredDocumentField(paymentInvoiceNumber, "счет, номер") ??
+        requiredDocumentField(paymentInvoiceDate, "счет, дата") ??
+        requiredDocumentField(paymentInvoicePayerFullNameValue(), "счет, плательщик") ??
+        requiredDocumentField(paymentInvoicePurpose, "счет, назначение платежа") ??
+        (serviceLines.length ? null : "Для счета нужен состав услуг из плана лечения.") ??
+        (paymentInvoiceTotalRubValue() > 0 ? null : "Укажите сумму счета.") ??
+        requiredDocumentField(paymentInvoiceDueDate, "счет, срок оплаты") ??
+        requiredDocumentField(paymentInvoicePaymentTerms, "счет, условия оплаты") ??
+        requiredDocumentField(paymentInvoiceBankDetailsValue(), "счет, реквизиты клиники") ??
+        (paymentInvoiceCashlessAllowed || paymentInvoiceCashDeskAllowed ? null : "Выберите хотя бы один способ оплаты.") ??
+        (paymentInvoiceRequisitesVerified ? null : "Подтвердите проверку реквизитов клиники.") ??
+        (paymentInvoiceServiceScopeConfirmed ? null : "Подтвердите состав услуг счета.") ??
+        (paymentInvoiceFiscalNoticeConfirmed ? null : "Подтвердите предупреждение: счет не заменяет кассовый чек.")
+      );
+    }
+    if (kind === "payment_receipt") {
+      return (
+        requiredDocumentField(paymentReceiptNumber, "квитанция, номер") ??
+        requiredDocumentField(paymentReceiptDate, "квитанция, дата") ??
+        (selectedPaymentReceiptPayments.length ? null : "Выберите оплаченные платежи для квитанции.") ??
+        (selectedPaymentReceiptTotalRub > 0 ? null : "Сумма выбранных платежей должна быть больше нуля.") ??
+        requiredDocumentField(paymentReceiptPayerFullNameValue(), "квитанция, ФИО плательщика") ??
+        (paymentReceiptTaxSupportRequested
+          ? requiredDocumentField(paymentReceiptPayerBirthDateValue(), "квитанция, дата рождения плательщика") ??
+            requiredDocumentField(paymentReceiptPayerRelationshipValue(), "квитанция, связь плательщика с пациентом") ??
+            (paymentReceiptPayerInnValue().replace(/\D+/g, "").length === 12 || paymentReceiptPayerIdentityDocumentValue().trim()
+              ? null
+              : "Для налоговой квитанции укажите 12-значный ИНН плательщика или документ плательщика.")
+          : null) ??
+        requiredDocumentField(paymentReceiptPurpose, "квитанция, назначение оплаты") ??
+        (paymentReceiptFiscalReceiptLines().length === selectedPaymentReceiptPayments.length
+          ? null
+          : "У каждого выбранного платежа должен быть номер фискального чека.") ??
+        (selectedPaymentReceiptPayments.every((payment) => Boolean(payment.fiscalReceiptIssuedAt?.trim()))
+          ? null
+          : "У каждого выбранного платежа должна быть дата фискального чека.") ??
+        requiredDocumentField(paymentReceiptIssuedByValue(), "квитанция, кто выдал") ??
+        (paymentReceiptPaymentsVerified ? null : "Подтвердите сверку выбранных платежей и фискальных чеков.") ??
+        (paymentReceiptPayerVerified ? null : "Подтвердите проверку данных плательщика.") ??
+        (paymentReceiptFiscalNoticeConfirmed ? null : "Подтвердите, что квитанция не заменяет кассовый чек.")
+      );
+    }
+    if (kind === "installment_payment_schedule") {
+      const installments = installmentScheduleInstallmentRows();
+      return (
+        requiredDocumentField(installmentScheduleNumber, "график, номер") ??
+        requiredDocumentField(installmentScheduleDate, "график, дата") ??
+        requiredDocumentField(installmentScheduleBaseDocumentTitleValue(), "график, основание") ??
+        requiredDocumentField(installmentSchedulePayerFullNameValue(), "график, плательщик") ??
+        (installmentScheduleTotalRubValue() > 0 ? null : "Укажите общую сумму графика.") ??
+        (installmentScheduleRemainingRubValue() >= 0 ? null : "Остаток по графику не может быть отрицательным.") ??
+        (installments.length ? null : "Добавьте платежи графика или укажите остаток к оплате.") ??
+        requiredDocumentField(installmentScheduleLatePolicy, "график, правила просрочки") ??
+        requiredDocumentField(installmentSchedulePaymentMethodNotes, "график, способы оплаты") ??
+        requiredDocumentField(installmentScheduleResponsibleFullNameValue(), "график, ответственный") ??
+        (installmentScheduleAccepted ? null : "Подтвердите принятие графика пациентом.") ??
+        (installmentScheduleFiscalNoticeConfirmed ? null : "Подтвердите, что график не заменяет кассовый чек.") ??
+        (installmentScheduleWrittenChangesConfirmed ? null : "Подтвердите письменное оформление изменений графика.")
+      );
+    }
+    if (kind === "minor_legal_representative_consent") {
+      return (
+        requiredDocumentField(minorRepresentativeFullNameValue(), "представитель, ФИО") ??
+        requiredDocumentField(minorRepresentativeRelationshipValue(), "представитель, родство или статус") ??
+        requiredDocumentField(minorRepresentativeIdentityDocumentValue(), "представитель, документ личности") ??
+        requiredDocumentField(minorRepresentativeAuthorityDocument, "представитель, основание полномочий") ??
+        requiredDocumentField(minorConsentPatientFullNameValue(), "несовершеннолетний, ФИО") ??
+        requiredDocumentField(minorConsentPatientBirthDateValue(), "несовершеннолетний, дата рождения") ??
+        requiredDocumentField(minorConsentInterventionScopeValue(), "согласие, вмешательство") ??
+        requiredDocumentField(minorConsentDiagnosisOrIndicationValue(), "согласие, диагноз или показание") ??
+        (documentTextLines(minorConsentRisks).length ? null : "Добавьте разъясненные риски для представителя.") ??
+        (documentTextLines(minorConsentAlternatives).length ? null : "Добавьте альтернативы лечения для представителя.") ??
+        requiredDocumentField(minorConsentDoctorFullNameValue(), "согласие, врач") ??
+        requiredDocumentField(minorConsentSignedAt, "согласие, дата и время") ??
+        (minorConsentIdentityVerified ? null : "Подтвердите проверку личности представителя.") ??
+        (minorConsentAuthorityVerified ? null : "Подтвердите полномочия представителя.") ??
+        (minorConsentExplained ? null : "Подтвердите разъяснение вмешательства, рисков и альтернатив.") ??
+        (minorConsentStored ? null : "Подтвердите хранение согласия в медкарте.") ??
+        (minorConsentAgeExplanation ? null : "Подтвердите объяснение ребенку по возрасту и состоянию.")
+      );
+    }
+    if (kind === "warranty_service_memo") {
+      return (
+        requiredDocumentField(warrantyServiceOrWorkNameValue(), "гарантия, работа или услуга") ??
+        requiredDocumentField(warrantyCompletedAt, "гарантия, дата завершения") ??
+        requiredDocumentField(warrantyTeethOrAreaValue(), "гарантия, зубы или область") ??
+        requiredDocumentField(warrantyMaterialsOrSystems, "гарантия, материалы или системы") ??
+        requiredDocumentField(warrantyPeriod, "гарантия, срок и условия") ??
+        requiredDocumentField(warrantyControlVisitSchedule, "гарантия, контрольные визиты") ??
+        (documentTextLines(warrantyPatientObligations).length ? null : "Добавьте обязанности пациента для сохранения гарантии.") ??
+        (documentTextLines(warrantyExcludedRiskFactors).length ? null : "Добавьте условия, требующие отдельной оценки.") ??
+        (documentTextLines(warrantyUrgentContactReasons).length ? null : "Добавьте признаки для срочной связи с клиникой.") ??
+        requiredDocumentField(warrantyLinkedActOrContractValue(), "гарантия, связанный акт или договор") ??
+        requiredDocumentField(warrantyDoctorFullNameValue(), "гарантия, врач") ??
+        requiredDocumentField(warrantyIssuedAt, "гарантия, дата выдачи") ??
+        (warrantyPolicyApplied ? null : "Подтвердите применение локального гарантийного положения.") ??
+        (warrantyAftercareReceived ? null : "Подтвердите выдачу рекомендаций после лечения.") ??
+        (warrantyControlVisitsUnderstood ? null : "Подтвердите понимание контрольных визитов пациентом.")
+      );
+    }
+    if (kind === "patient_intake_questionnaire") {
+      return (
+        requiredDocumentField(intakeChiefComplaint, "анкета, жалоба или цель визита") ??
+        requiredDocumentField(intakeAllergyStatus, "анкета, аллергии") ??
+        requiredDocumentField(intakeCurrentMedications, "анкета, постоянные препараты") ??
+        requiredDocumentField(intakeChronicConditions, "анкета, хронические заболевания") ??
+        requiredDocumentField(intakeAnticoagulants, "анкета, антикоагулянты") ??
+        requiredDocumentField(intakeInfectiousRiskNotes, "анкета, инфекционные риски") ??
+        requiredDocumentField(intakeCardioEndocrineNotes, "анкета, системные риски") ??
+        (intakeAccuracyConfirmed ? null : "Пациент должен подтвердить достоверность анкеты перед созданием документа.")
+      );
+    }
+    if (kind === "tax_deduction_application") {
+      const normalizedInn = taxApplicationTaxpayerInn.replace(/[^\d]/g, "");
+      return (
+        requiredDocumentField(taxApplicationTaxpayerFullName, "налоговое заявление, заявитель") ??
+        (taxApplicationForm === "legacy_2021_2023" && normalizedInn.length !== 10 && normalizedInn.length !== 12
+          ? "Для старой налоговой справки укажите 10- или 12-значный ИНН заявителя."
+          : null) ??
+        (normalizedInn && normalizedInn.length !== 10 && normalizedInn.length !== 12
+          ? "ИНН заявителя должен содержать 10 или 12 цифр."
+          : null) ??
+        (taxApplicationForm === "knd_1151156" && normalizedInn && normalizedInn.length !== 12
+          ? "Для КНД 1151156 ИНН физического лица должен быть 12-значным. Если ИНН нет, оставьте поле пустым и заполните документ заявителя."
+          : null) ??
+        (isDateInputValue(taxApplicationTaxpayerBirthDate)
+          ? null
+          : "Укажите дату рождения заявителя в формате календарной даты.") ??
+        requiredDocumentField(taxApplicationTaxpayerIdentityDocument, "налоговое заявление, документ заявителя") ??
+        (taxApplicationRelationship === "self" || taxApplicationAuthorityDocument.trim()
+          ? null
+          : "Для заявления представителя укажите документ, подтверждающий полномочия.") ??
+        requiredDocumentField(taxApplicationContact, "налоговое заявление, контакт или канал выдачи") ??
+        (isDateTimeLocalInputValue(taxApplicationRequestedAt) ? null : "Укажите дату и время заявления через календарь.") ??
+        (taxApplicationDuplicateWarningAccepted
+          ? null
+          : "Подтвердите, что администратор проверит отсутствие повторной справки по тем же расходам.")
+      );
+    }
+    if (kind === "informed_consent") {
+      const effectiveArea = informedConsentToothOrArea.trim() || inferredTreatmentArea || "";
+      const effectiveIndication = informedConsentDiagnosisOrIndication.trim() || dashboard?.activeVisit.complaint || "";
+      const effectiveDoctor = informedConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
+      return (
+        requiredDocumentField(informedConsentIntervention, "информированное согласие, вмешательство") ??
+        requiredDocumentField(effectiveArea, "информированное согласие, область или зубы") ??
+        requiredDocumentField(effectiveIndication, "информированное согласие, диагноз или показание") ??
+        requiredDocumentField(informedConsentExpectedBenefit, "информированное согласие, ожидаемая польза") ??
+        (documentTextLines(informedConsentRisks).length ? null : "Добавьте разъясненные риски для информированного согласия.") ??
+        (documentTextLines(informedConsentAlternatives).length ? null : "Добавьте альтернативы лечения для информированного согласия.") ??
+        (documentTextLines(informedConsentAftercare).length ? null : "Добавьте рекомендации после вмешательства для информированного согласия.") ??
+        requiredDocumentField(effectiveDoctor, "информированное согласие, врач") ??
+        requiredDocumentField(informedConsentConfirmedAt, "информированное согласие, дата подтверждения") ??
+        (informedConsentQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы перед согласием.") ??
+        (informedConsentRisksUnderstood ? null : "Подтвердите, что пациент понял риски, ограничения и прогноз.") ??
+        (informedConsentWithdrawUnderstood ? null : "Подтвердите, что пациенту объяснено право отказаться до вмешательства.")
+      );
+    }
+    if (kind === "procedure_specific_consent_packet") {
+      const effectiveArea = procedureConsentToothOrArea.trim() || inferredTreatmentArea || "";
+      const effectiveIndication = procedureConsentDiagnosisOrIndication.trim() || dashboard?.activeVisit.complaint || "";
+      const effectiveDoctor = procedureConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
+      return (
+        requiredDocumentField(procedureConsentProcedureName, "процедурное согласие, процедура") ??
+        requiredDocumentField(effectiveArea, "процедурное согласие, область или зубы") ??
+        requiredDocumentField(effectiveIndication, "процедурное согласие, показание") ??
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        (documentTextLines(procedureConsentPatientRiskFactors).length
+          ? null
+          : "Добавьте персональные факторы риска пациента для процедурного согласия.") ??
+        (documentTextLines(procedureConsentSpecificRisks).length
+          ? null
+          : "Добавьте процедурные риски для процедурного согласия.") ??
+        (documentTextLines(procedureConsentAlternatives).length
+          ? null
+          : "Добавьте альтернативы лечения для процедурного согласия.") ??
+        (documentTextLines(procedureConsentAftercare).length
+          ? null
+          : "Добавьте ограничения и рекомендации после процедуры.") ??
+        requiredDocumentField(effectiveDoctor, "процедурное согласие, врач") ??
+        requiredDocumentField(procedureConsentConfirmedAt, "процедурное согласие, дата подтверждения") ??
+        (procedureConsentQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы по процедуре.") ??
+        (procedureConsentExactProcedureConfirmed ? null : "Подтвердите, что пациенту названа конкретная процедура, зона и объем.") ??
+        (procedureConsentRisksUnderstood ? null : "Подтвердите, что пациент понял процедурные риски и ограничения.")
+      );
+    }
+    if (kind === "treatment_plan") {
+      return (
+        requiredDocumentField(treatmentPlanClinicalReasonValue(), "план лечения, повод обращения") ??
+        requiredDocumentField(treatmentPlanDiagnosisSummaryValue(), "план лечения, диагноз или клиническое основание") ??
+        requiredDocumentField(treatmentPlanTeethOrAreaValue(), "план лечения, зубы или область") ??
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        (documentTextLines(treatmentPlanGoals).length ? null : "Добавьте цели лечения.") ??
+        (treatmentPlanStageRows().length ? null : "Добавьте этапы плана лечения.") ??
+        (treatmentPlanTotalRubValue() > 0 ? null : "Укажите ориентировочную стоимость плана лечения.") ??
+        (documentTextLines(treatmentPlanAlternatives).length ? null : "Добавьте альтернативы плана лечения.") ??
+        (documentTextLines(treatmentPlanRisks).length ? null : "Добавьте риски и ограничения плана лечения.") ??
+        requiredDocumentField(treatmentPlanPrognosis, "план лечения, прогноз и ограничения") ??
+        requiredDocumentField(treatmentPlanControlPlan, "план лечения, контроль") ??
+        requiredDocumentField(treatmentPlanDoctorFullNameValue(), "план лечения, врач") ??
+        requiredDocumentField(treatmentPlanPlannedAt, "план лечения, дата") ??
+        (treatmentPlanQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы.") ??
+        (treatmentPlanSeparateConsentAcknowledged ? null : "Подтвердите, что план не заменяет отдельное согласие.") ??
+        (treatmentPlanNewApprovalAcknowledged ? null : "Подтвердите, что изменение плана требует нового согласования.")
+      );
+    }
+    if (kind === "treatment_plan_acceptance") {
+      return (
+        requiredDocumentField(treatmentAcceptanceClinicalGoal, "согласование плана, клиническая цель") ??
+        requiredDocumentField(treatmentAcceptanceDiagnosisSummary.trim() || dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "", "согласование плана, диагноз или основание") ??
+        requiredDocumentField(treatmentAcceptanceTeethOrArea.trim() || inferredTreatmentArea || "", "согласование плана, зубы или область") ??
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        (treatmentAcceptanceStageRows().length ? null : "Добавьте этапы согласованного плана лечения.") ??
+        (treatmentAcceptanceTotalRubValue() > 0 ? null : "Укажите ориентировочную стоимость согласованного плана.") ??
+        requiredDocumentField(treatmentAcceptanceEstimateValidUntil, "согласование плана, срок действия сметы") ??
+        requiredDocumentField(treatmentAcceptancePaymentTerms, "согласование плана, условия оплаты") ??
+        (documentTextLines(treatmentAcceptanceRejectedAlternatives).length ? null : "Добавьте отклоненные или отложенные альтернативы.") ??
+        (documentTextLines(treatmentAcceptanceRisks).length ? null : "Добавьте риски и ограничения плана.") ??
+        requiredDocumentField(treatmentAcceptanceWarrantyTerms, "согласование плана, гарантия и контроль") ??
+        requiredDocumentField(treatmentAcceptanceDoctorFullName.trim() || activeDoctor?.fullName || "", "согласование плана, врач") ??
+        requiredDocumentField(treatmentAcceptanceAcceptedAt, "согласование плана, дата") ??
+        (treatmentAcceptanceQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы.") ??
+        (treatmentAcceptanceAlternativesUnderstood ? null : "Подтвердите, что пациент понимает альтернативы.") ??
+        (treatmentAcceptanceCostChangeUnderstood ? null : "Подтвердите, что пациент понимает возможность изменения стоимости.") ??
+        (treatmentAcceptanceRevisionAcknowledged ? null : "Подтвердите, что существенное изменение плана требует нового согласования.")
+      );
+    }
+    if (kind === "post_visit_recommendations") {
+      return (
+        requiredDocumentField(postVisitProcedureNameValue(), "рекомендации после приема, процедура") ??
+        requiredDocumentField(postVisitToothOrAreaValue(), "рекомендации после приема, область") ??
+        requiredDocumentField(postVisitPerformedAt, "рекомендации после приема, дата приема") ??
+        requiredDocumentField(postVisitDoctorFullNameValue(), "рекомендации после приема, врач") ??
+        (documentTextLines(postVisitAllowedAfter).length ? null : "Добавьте, когда пациенту можно пить, есть и возвращаться к нагрузке.") ??
+        (documentTextLines(postVisitRestrictions).length ? null : "Добавьте временные ограничения после приема.") ??
+        (documentTextLines(postVisitMedicationAndRinsePlan).length ? null : "Добавьте назначения, полоскания или явно укажите, что назначений нет.") ??
+        (documentTextLines(postVisitHygieneInstructions).length ? null : "Добавьте правила гигиены после приема.") ??
+        (documentTextLines(postVisitNutritionInstructions).length ? null : "Добавьте рекомендации по питанию.") ??
+        (documentTextLines(postVisitUrgentWarningSigns).length ? null : "Добавьте тревожные признаки для срочной связи с клиникой.") ??
+        requiredDocumentField(postVisitClinicContactInstruction, "рекомендации после приема, контакт клиники") ??
+        requiredDocumentField(postVisitTelegramSummary, "рекомендации после приема, краткий текст для Telegram") ??
+        (postVisitPrintedCopyReceived ? null : "Подтвердите, что пациент получил рекомендации.") ??
+        (postVisitUrgentSignsUnderstood ? null : "Подтвердите, что пациент понимает тревожные признаки.") ??
+        (postVisitTelegramSafe ? null : "Подтвердите, что текст безопасен для Telegram и не содержит лишних медицинских подробностей.")
+      );
+    }
+    if (kind === "anesthesia_consent_log") {
+      return (
+        requiredDocumentField(anesthesiaMethod, "анестезия, метод") ??
+        requiredDocumentField(anesthesiaAnesthetic, "анестезия, препарат") ??
+        requiredDocumentField(anesthesiaZone, "анестезия, зона") ??
+        requiredDocumentField(anesthesiaAllergyStatus, "анестезия, аллергоанамнез") ??
+        requiredDocumentField(anesthesiaDoseTime, "анестезия, время введения") ??
+        requiredDocumentField(anesthesiaDoseMl, "анестезия, доза") ??
+        (anesthesiaRisksExplained ? null : "Подтвердите, что пациенту объяснены риски и ограничения анестезии.") ??
+        (anesthesiaAllergyRestrictionsChecked ? null : "Подтвердите, что аллергии, лекарства и ограничения проверены до введения.") ??
+        (anesthesiaConsentConfirmed ? null : "Подтвердите согласие пациента на выбранную местную анестезию.")
+      );
+    }
+    if (kind === "prescription_medication_order") {
+      return (
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        requiredDocumentField(prescriptionMedication, "назначение, препарат") ??
+        requiredDocumentField(prescriptionDosage, "назначение, дозировка") ??
+        requiredDocumentField(prescriptionInstructions, "назначение, режим приема") ??
+        requiredDocumentField(prescriptionDuration, "назначение, длительность") ??
+        (documentTextLines(prescriptionSafetyNotes).length ? null : "Добавьте хотя бы одну памятку безопасности для назначения.") ??
+        requiredDocumentField(prescriptionUrgentContactReason, "назначение, когда срочно связаться")
+      );
+    }
+    if (kind === "lab_work_order") {
+      return (
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        requiredDocumentField(labWorkType, "лаборатория, вид работы") ??
+        requiredDocumentField(labTeethOrArea, "лаборатория, зубы или зона") ??
+        requiredDocumentField(labMaterial, "лаборатория, материал") ??
+        requiredDocumentField(labShade, "лаборатория, цвет") ??
+        requiredDocumentField(labSource, "лаборатория, источник данных") ??
+        requiredDocumentField(labDeadline, "лаборатория, срок")
+      );
+    }
+    if (kind === "photo_video_consent") {
+      return (
+        (photoVideoMaterials.length ? null : "Отметьте хотя бы один тип фото, видео или снимков.") ??
+        (photoVideoClinicalRecordUseConfirmed ? null : "Подтвердите, что фото, видео и снимки вносятся в медицинскую карту пациента.") ??
+        (photoVideoAnonymizationConfirmed ? null : "Подтвердите, что внешнее использование возможно только после обезличивания, кроме отдельно разрешенной узнаваемой публикации.") ??
+        requiredDocumentField(photoVideoRevocationChannel, "фото/видео, порядок отзыва согласия") ??
+        (photoVideoRecognizablePublicationAllowed && !photoVideoMarketingUseAllowed && !photoVideoEducationUseAllowed
+          ? "Публикация узнаваемых материалов возможна только вместе с отдельным разрешением на обучение или маркетинг."
+          : null)
+      );
+    }
+    if (kind === "xray_cbct_referral") {
+      return (
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        requiredDocumentField(xrayArea, "снимок, область") ??
+        requiredDocumentField(xrayClinicalQuestion, "снимок, клинический вопрос") ??
+        requiredDocumentField(xrayIndication, "снимок, показание") ??
+        requiredDocumentField(xraySafetyNotes, "снимок, ограничения и защита") ??
+        requiredDocumentField(xrayRequestedBy.trim() || activeDoctor?.fullName || "", "снимок, назначивший врач")
+      );
+    }
+    if (kind === "outpatient_medical_card_025u") {
+      return (
+        requiredDocumentField(clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim(), "карта 025/у, медорганизация") ??
+        requiredDocumentField(outpatient025uMedicalCardNumberValue(), "карта 025/у, номер медицинской карты") ??
+        requiredDocumentField(outpatient025uOpenedAt, "карта 025/у, дата открытия") ??
+        requiredDocumentField(recordExtractPeriodStart, "карта 025/у, период с") ??
+        requiredDocumentField(recordExtractPeriodEnd, "карта 025/у, период по") ??
+        (outpatient025uSourceVisitIdsValue().length ? null : "Добавьте источник подписанной медицинской записи для карты 025/у.") ??
+        requiredDocumentField(documentPatient?.fullName ?? "", "карта 025/у, пациент") ??
+        requiredDocumentField(recordExtractComplaintAndAnamnesisValue(), "карта 025/у, жалобы и анамнез") ??
+        requiredDocumentField(recordExtractObjectiveStatusValue(), "карта 025/у, объективный статус") ??
+        requiredDocumentField(recordExtractDiagnosisValue(), "карта 025/у, диагноз") ??
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам для карты 025/у.") ??
+        requiredDocumentField(recordExtractTreatmentProvidedValue(), "карта 025/у, проведенное лечение") ??
+        requiredDocumentField(recordExtractRecommendations, "карта 025/у, назначения и рекомендации") ??
+        requiredDocumentField(recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "", "карта 025/у, врач") ??
+        (recordExtractPreparedFromSignedRecords ? null : "Подтвердите, что карта 025/у собрана из подписанных медицинских записей.") ??
+        (outpatient025uOfficialForm274nChecked ? null : "Подтвердите сверку карты 025/у с приказом Минздрава N 274н.") ??
+        (outpatient025uThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц для карты 025/у исключены.")
+      );
+    }
+    if (kind === "medical_record_extract") {
+      const sourceVisitIds = documentTextLines(recordExtractSourceVisitIds);
+      return (
+        requiredDocumentField(recordExtractPeriodStart, "выписка, период с") ??
+        requiredDocumentField(recordExtractPeriodEnd, "выписка, период по") ??
+        (sourceVisitIds.length || dashboard?.activeVisit.id ? null : "Добавьте источник медицинской записи для выписки.") ??
+        requiredDocumentField(recordExtractComplaintAndAnamnesisValue(), "выписка, жалобы и анамнез") ??
+        requiredDocumentField(recordExtractObjectiveStatusValue(), "выписка, объективный статус") ??
+        requiredDocumentField(recordExtractDiagnosisValue(), "выписка, диагноз") ??
+        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        requiredDocumentField(recordExtractTreatmentProvidedValue(), "выписка, проведенное лечение") ??
+        requiredDocumentField(recordExtractRecommendations, "выписка, рекомендации") ??
+        requiredDocumentField(recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "", "выписка, врач") ??
+        requiredDocumentField(recordExtractRecipientFullName.trim() || documentPatient?.fullName || "", "выписка, получатель") ??
+        requiredDocumentField(recordExtractRecipientAuthority, "выписка, основание выдачи") ??
+        requiredDocumentField(recordExtractIssuedAt, "выписка, дата") ??
+        (recordExtractPreparedFromSignedRecords ? null : "Подтвердите, что выписка собрана из подписанных медицинских записей.") ??
+        (recordExtractThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц исключены.")
+      );
+    }
+    if (kind === "medical_record_copy_request") {
+      return (
+        (documentTextLines(copyRequestDocumentTypes).length ? null : "Добавьте состав запрошенных медицинских документов.") ??
+        requiredDocumentField(copyRequestRecipientFullName.trim() || documentPatient?.fullName || "", "запрос копий, получатель") ??
+        requiredDocumentField(copyRequestRecipientIdentityDocument, "запрос копий, документ получателя") ??
+        requiredDocumentField(copyRequestRecipientAuthority, "запрос копий, основание полномочий") ??
+        requiredDocumentField(copyRequestRequestedAt, "запрос копий, дата запроса") ??
+        requiredDocumentField(copyRequestContactForDelivery, "запрос копий, контакт и канал выдачи") ??
+        (copyRequestIdentityVerified ? null : "Подтвердите проверку личности получателя.") ??
+        (copyRequestThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц будут исключены.")
+      );
+    }
+    if (kind === "visit_attendance_certificate") {
+      return (
+        requiredDocumentField(attendanceStartedAtValue(), "справка о посещении, начало приема") ??
+        requiredDocumentField(attendanceEndedAtValue(), "справка о посещении, окончание приема") ??
+        requiredDocumentField(attendancePurpose, "справка о посещении, цель выдачи") ??
+        requiredDocumentField(attendanceIssuedAt, "справка о посещении, дата выдачи") ??
+        requiredDocumentField(attendanceSignedByValue(), "справка о посещении, подписант") ??
+        requiredDocumentField(attendanceSignedByRole, "справка о посещении, должность подписанта") ??
+        (attendanceDiagnosisDisclosureExcluded ? null : "Подтвердите, что диагноз и план лечения не раскрываются в справке.") ??
+        (attendanceNotSickLeaveAcknowledged ? null : "Подтвердите, что справка не заменяет листок нетрудоспособности.")
+      );
+    }
+    if (kind === "medical_document_release_receipt") {
+      return (
+        requiredDocumentField(selectedReleaseSourceRequestDocumentId, "выдача документов, выданный запрос на копии") ??
+        requiredDocumentField(releaseRecipientFullName, "выдача документов, получатель") ??
+        requiredDocumentField(releaseRecipientIdentityDocument, "выдача документов, документ получателя") ??
+        requiredDocumentField(releaseRecipientAuthority, "выдача документов, основание полномочий") ??
+        (documentTextLines(releaseDocumentTypes).length ? null : "Добавьте состав выдаваемых медицинских документов.") ??
+        requiredDocumentField(releaseDeliveredAt, "выдача документов, дата и время") ??
+        requiredDocumentField(releaseProtectionNote, "выдача документов, защита передачи") ??
+        (releaseThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц исключены.")
+      );
+    }
+    if (kind === "payment_refund_correction_request") {
+      const requestedAmount = Number(refundAmountRub.replace(/[^\d]/g, ""));
+      return (
+        requiredDocumentField(refundSelectedPaymentId, "возврат/коррекция, исходный платеж") ??
+        (requestedAmount > 0 ? null : "Укажите сумму возврата или коррекции больше нуля.") ??
+        requiredDocumentField(refundReason, "возврат/коррекция, основание") ??
+        requiredDocumentField(refundRecipientFullName, "возврат/коррекция, получатель") ??
+        requiredDocumentField(refundRecipientIdentityDocument, "возврат/коррекция, документ получателя") ??
+        requiredDocumentField(refundOriginalFiscalReceiptNumber, "возврат/коррекция, исходный фискальный чек") ??
+        requiredDocumentField(refundAccountantDecision, "возврат/коррекция, решение ответственного")
+      );
+    }
+    if (kind === "personal_data_processing_consent") {
+      const operatorName = clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim();
+      const operatorInn = clinicProfileDraft.inn.replace(/[^\d]/g, "");
+      return (
+        requiredDocumentField(operatorName, "ПДн, оператор клиники") ??
+        (operatorInn.length === 10 || operatorInn.length === 12 ? null : "ИНН оператора ПДн должен содержать 10 или 12 цифр.") ??
+        requiredDocumentField(clinicProfileDraft.address, "ПДн, адрес оператора") ??
+        (documentTextLines(personalDataPurposes).length ? null : "Добавьте цели обработки персональных данных.") ??
+        (documentTextLines(personalDataCategories).length ? null : "Добавьте категории персональных данных.") ??
+        (documentTextLines(personalDataActions).length ? null : "Добавьте действия с персональными данными.") ??
+        requiredDocumentField(personalDataTransferRules, "ПДн, правила передачи третьим лицам") ??
+        requiredDocumentField(personalDataRetentionPeriod, "ПДн, срок хранения") ??
+        requiredDocumentField(personalDataRevocationChannel, "ПДн, порядок отзыва") ??
+        requiredDocumentField(personalDataConsentGivenAt, "ПДн, дата согласия") ??
+        (personalDataVoluntaryConsentConfirmed ? null : "Подтвердите добровольное согласие пациента на обработку ПДн.") ??
+        (personalDataMedicalProcessingAcknowledged ? null : "Подтвердите, что пациент понимает обработку медицинских данных.")
+      );
+    }
+    if (kind === "medical_intervention_refusal") {
+      return (
+        requiredDocumentField(refusalIntervention, "отказ, вмешательство") ??
+        requiredDocumentField(refusalClinicalIndication, "отказ, клиническое показание") ??
+        (documentTextLines(refusalExplainedRisks).length ? null : "Добавьте разъясненные риски отказа.") ??
+        (documentTextLines(refusalAlternatives).length ? null : "Добавьте предложенные альтернативы.") ??
+        (documentTextLines(refusalUrgentWarningSigns).length ? null : "Добавьте тревожные признаки для срочного обращения.") ??
+        requiredDocumentField(refusalDoctorFullName.trim() || activeDoctor?.fullName || "", "отказ, врач") ??
+        requiredDocumentField(refusalConfirmedAt, "отказ, дата подтверждения") ??
+        (refusalConsequencesUnderstood ? null : "Подтвердите, что пациент понял последствия отказа.") ??
+        (refusalSecondOpinionOffered ? null : "Подтвердите, что пациенту предложено второе мнение или альтернатива.") ??
+        (refusalEmergencyCareExplained ? null : "Подтвердите, что пациенту объяснено, когда нужна экстренная помощь.")
+      );
+    }
+    return null;
+  }
+
+  function documentPayloadForKind(kind: GeneratedDocument["kind"]): DocumentPayload | null {
+    if (kind === "paid_medical_services_contract") {
+      return {
+        paidMedicalServicesContract: {
+          contractNumber: paidContractNumber.trim(),
+          contractDate: paidContractDate.trim(),
+          serviceStart: paidContractServiceStart.trim(),
+          serviceEndOrCondition: paidContractServiceEnd.trim(),
+          customerFullName: paidContractCustomerFullNameValue(),
+          representativeFullName: paidContractRepresentativeFullName.trim() || null,
+          plannedCareReason: paidContractCareReasonValue(),
+          serviceScopeSummary: paidContractServiceScopeValue(),
+          estimatedTotalRub: paidContractTotalRubValue(),
+          paymentTerms: paidContractPaymentTerms.trim(),
+          priceChangeRules: paidContractPriceChangeRules.trim(),
+          freeCareAvailabilityNotice: paidContractFreeCareNotice.trim(),
+          medicalRecommendationWarning: paidContractRecommendationWarning.trim(),
+          refusalAndRefundTerms: paidContractRefundTerms.trim(),
+          warrantyAndClaimsTerms: paidContractWarrantyTerms.trim(),
+          doctorFullName: paidContractDoctorFullNameValue(),
+          signedAt: paidContractSignedAt.trim(),
+          patientReceivedClinicInfo: confirmedDocumentLiteral(paidContractClinicInfoConfirmed, "информация о клинике получена"),
+          patientReceivedPriceAndServiceList: confirmedDocumentLiteral(paidContractServiceListConfirmed, "перечень услуг и цены получены"),
+          patientUnderstandsPaidBasis: confirmedDocumentLiteral(paidContractPaidBasisConfirmed, "платная основа понятна"),
+          changesRequireWrittenAgreement: confirmedDocumentLiteral(paidContractWrittenChangesConfirmed, "изменения оформляются письменно")
+        }
+      };
+    }
+    if (kind === "completed_works_act") {
+      return {
+        completedWorksAct: {
+          actNumber: completedActNumber.trim(),
+          actDate: completedActDate.trim(),
+          contractNumber: completedActContractNumber.trim(),
+          linkedContractDocumentId: selectedCompletedActContractDocumentId,
+          servicePeriodStart: completedActServicePeriodStart.trim(),
+          servicePeriodEnd: completedActServicePeriodEnd.trim(),
+          doctorFullName: completedActDoctorFullNameValue(),
+          acceptedServicesSummary: completedActServicesSummaryValue(),
+          totalByActRub: completedActTotalRubValue(),
+          paidRub: completedActPaidRubValue(),
+          fiscalReceiptNumbers: completedActFiscalReceiptLines(),
+          patientClaimsText: completedActPatientClaims.trim() || null,
+          linkedToSignedContract: confirmedDocumentLiteral(completedActLinkedContract, "акт связан с подписанным договором"),
+          finalServiceScopeConfirmed: confirmedDocumentLiteral(completedActFinalScopeConfirmed, "итоговый объем услуг подтвержден"),
+          fiscalReceiptsVerified: confirmedDocumentLiteral(completedActFiscalReceiptsVerified, "фискальные чеки проверены"),
+          patientAcceptedWorks: confirmedDocumentLiteral(completedActAccepted, "пациент принял работы")
+        }
+      };
+    }
+    if (kind === "treatment_cost_estimate") {
+      return {
+        treatmentCostEstimate: {
+          estimateNumber: treatmentEstimateNumber.trim(),
+          estimateDate: treatmentEstimateDate.trim(),
+          patientOrPayerFullName: treatmentEstimatePatientOrPayerFullNameValue(),
+          treatmentBasis: treatmentEstimateTreatmentBasisValue(),
+          serviceLines: plannedServiceLinesForFinancialPayload(),
+          totalAmountRub: treatmentEstimateTotalRubValue(),
+          estimateValidUntil: treatmentEstimateValidUntil.trim(),
+          priceChangeRules: treatmentEstimatePriceChangeRules.trim(),
+          excludedItems: documentTextLines(treatmentEstimateExcludedItems),
+          paymentMilestoneNotes: treatmentEstimatePaymentMilestoneNotes.trim(),
+          responsibleDoctorFullName: treatmentEstimateDoctorFullNameValue(),
+          responsibleAdminFullName: treatmentEstimateAdminFullName.trim() || null,
+          signedAt: treatmentEstimateSignedAt.trim(),
+          patientUnderstandsPreliminaryEstimate: confirmedDocumentLiteral(treatmentEstimatePreliminaryConfirmed, "предварительный характер сметы понятен"),
+          serviceScopeMatchesTreatmentPlan: confirmedDocumentLiteral(treatmentEstimateScopeConfirmed, "объем сметы соответствует плану"),
+          estimateDoesNotReplaceContractOrFiscalReceipt: confirmedDocumentLiteral(treatmentEstimateFiscalNoticeConfirmed, "смета не заменяет договор и чек"),
+          changesRequireUpdatedEstimate: confirmedDocumentLiteral(treatmentEstimateChangeRulesConfirmed, "изменения требуют обновления сметы")
+        }
+      };
+    }
+    if (kind === "payment_invoice") {
+      return {
+        paymentInvoice: {
+          invoiceNumber: paymentInvoiceNumber.trim(),
+          invoiceDate: paymentInvoiceDate.trim(),
+          payerFullName: paymentInvoicePayerFullNameValue(),
+          payerPhone: paymentInvoicePayerPhone.trim() || null,
+          payerEmail: paymentInvoicePayerEmail.trim() || null,
+          paymentPurpose: paymentInvoicePurpose.trim(),
+          serviceLines: plannedServiceLinesForFinancialPayload(),
+          totalAmountRub: paymentInvoiceTotalRubValue(),
+          dueDate: paymentInvoiceDueDate.trim(),
+          paymentTerms: paymentInvoicePaymentTerms.trim(),
+          clinicBankDetails: paymentInvoiceBankDetailsValue(),
+          cashlessPaymentAllowed: paymentInvoiceCashlessAllowed,
+          cashDeskPaymentAllowed: paymentInvoiceCashDeskAllowed,
+          qrPaymentPayload: paymentInvoiceQrPayload.trim() || null,
+          clinicRequisitesVerified: confirmedDocumentLiteral(paymentInvoiceRequisitesVerified, "реквизиты клиники проверены"),
+          serviceScopeConfirmed: confirmedDocumentLiteral(paymentInvoiceServiceScopeConfirmed, "объем услуги в счете подтвержден"),
+          payerInformedInvoiceIsNotFiscalReceipt: confirmedDocumentLiteral(paymentInvoiceFiscalNoticeConfirmed, "плательщик понимает, что счет не является чеком")
+        }
+      };
+    }
+    if (kind === "payment_receipt") {
+      return {
+        paymentReceipt: {
+          receiptNumber: paymentReceiptNumber.trim(),
+          receiptDate: paymentReceiptDate.trim(),
+          selectedPaymentIds: selectedPaymentReceiptPayments.map((payment) => payment.id),
+          totalPaidRub: selectedPaymentReceiptTotalRub,
+          payerFullName: paymentReceiptPayerFullNameValue(),
+          taxSupportRequested: paymentReceiptTaxSupportRequested,
+          payerBirthDate: paymentReceiptTaxSupportRequested ? paymentReceiptPayerBirthDateValue() : null,
+          payerInn: paymentReceiptTaxSupportRequested ? paymentReceiptPayerInnValue() || null : null,
+          payerIdentityDocument: paymentReceiptTaxSupportRequested ? paymentReceiptPayerIdentityDocumentValue() || null : null,
+          payerRelationship: paymentReceiptTaxSupportRequested ? paymentReceiptPayerRelationshipValue() : null,
+          paymentPurpose: paymentReceiptPurpose.trim(),
+          fiscalReceiptNumbers: paymentReceiptFiscalReceiptLines(),
+          issuedByFullName: paymentReceiptIssuedByValue(),
+          paymentAndFiscalDataVerified: confirmedDocumentLiteral(paymentReceiptPaymentsVerified, "платежи и фискальные чеки сверены"),
+          payerIdentityVerified: confirmedDocumentLiteral(paymentReceiptPayerVerified, "данные плательщика проверены"),
+          receiptDoesNotReplaceFiscalReceipt: confirmedDocumentLiteral(paymentReceiptFiscalNoticeConfirmed, "квитанция не заменяет кассовый чек")
+        }
+      };
+    }
+    if (kind === "installment_payment_schedule") {
+      return {
+        installmentPaymentSchedule: {
+          scheduleNumber: installmentScheduleNumber.trim(),
+          scheduleDate: installmentScheduleDate.trim(),
+          baseDocumentTitle: installmentScheduleBaseDocumentTitleValue(),
+          payerFullName: installmentSchedulePayerFullNameValue(),
+          totalAmountRub: installmentScheduleTotalRubValue(),
+          prepaidAmountRub: installmentSchedulePrepaidRubValue(),
+          remainingAmountRub: installmentScheduleRemainingRubValue(),
+          installments: installmentScheduleInstallmentRows(),
+          latePaymentPolicy: installmentScheduleLatePolicy.trim(),
+          paymentMethodNotes: installmentSchedulePaymentMethodNotes.trim(),
+          responsibleStaffFullName: installmentScheduleResponsibleFullNameValue(),
+          patientAcceptedSchedule: confirmedDocumentLiteral(installmentScheduleAccepted, "график платежей принят"),
+          scheduleDoesNotReplaceFiscalReceipt: confirmedDocumentLiteral(installmentScheduleFiscalNoticeConfirmed, "график не заменяет кассовый чек"),
+          changesRequireWrittenAgreement: confirmedDocumentLiteral(installmentScheduleWrittenChangesConfirmed, "изменения графика оформляются письменно")
+        }
+      };
+    }
+    if (kind === "minor_legal_representative_consent") {
+      return {
+        minorLegalRepresentativeConsent: {
+          representativeFullName: minorRepresentativeFullNameValue(),
+          representativeRelationship: minorRepresentativeRelationshipValue(),
+          representativeIdentityDocument: minorRepresentativeIdentityDocumentValue(),
+          authorityDocument: minorRepresentativeAuthorityDocument.trim(),
+          representativePhone: minorRepresentativePhoneValue() || null,
+          minorFullName: minorConsentPatientFullNameValue(),
+          minorBirthDate: minorConsentPatientBirthDateValue(),
+          interventionScope: minorConsentInterventionScopeValue(),
+          diagnosisOrIndication: minorConsentDiagnosisOrIndicationValue(),
+          explainedRisks: documentTextLines(minorConsentRisks),
+          alternativesExplained: documentTextLines(minorConsentAlternatives),
+          doctorFullName: minorConsentDoctorFullNameValue(),
+          signedAt: minorConsentSignedAt.trim(),
+          representativeIdentityVerified: confirmedDocumentLiteral(minorConsentIdentityVerified, "личность представителя проверена"),
+          representativeAuthorityVerified: confirmedDocumentLiteral(minorConsentAuthorityVerified, "полномочия представителя проверены"),
+          informedConsentExplained: confirmedDocumentLiteral(minorConsentExplained, "информированное согласие разъяснено"),
+          medicalRecordConsentStored: confirmedDocumentLiteral(minorConsentStored, "согласие сохранено в медкарте"),
+          ageAppropriateExplanationGiven: confirmedDocumentLiteral(minorConsentAgeExplanation, "ребенку дано объяснение по возрасту")
+        }
+      };
+    }
+    if (kind === "warranty_service_memo") {
+      return {
+        warrantyServiceMemo: {
+          serviceOrWorkName: warrantyServiceOrWorkNameValue(),
+          completedAt: warrantyCompletedAt.trim(),
+          teethOrArea: warrantyTeethOrAreaValue(),
+          materialsOrSystems: warrantyMaterialsOrSystems.trim(),
+          warrantyPeriod: warrantyPeriod.trim(),
+          controlVisitSchedule: warrantyControlVisitSchedule.trim(),
+          patientObligations: documentTextLines(warrantyPatientObligations),
+          excludedRiskFactors: documentTextLines(warrantyExcludedRiskFactors),
+          urgentContactReasons: documentTextLines(warrantyUrgentContactReasons),
+          linkedActOrContract: warrantyLinkedActOrContractValue(),
+          doctorFullName: warrantyDoctorFullNameValue(),
+          issuedAt: warrantyIssuedAt.trim(),
+          localWarrantyPolicyApplied: confirmedDocumentLiteral(warrantyPolicyApplied, "локальное гарантийное положение применено"),
+          patientReceivedAftercare: confirmedDocumentLiteral(warrantyAftercareReceived, "пациент получил рекомендации"),
+          patientUnderstandsControlVisits: confirmedDocumentLiteral(warrantyControlVisitsUnderstood, "контрольные визиты понятны")
+        }
+      };
+    }
+    if (kind === "patient_intake_questionnaire") {
+      return {
+        patientIntakeQuestionnaire: {
+          chiefComplaint: intakeChiefComplaint.trim(),
+          allergyStatus: intakeAllergyStatus.trim(),
+          currentMedications: intakeCurrentMedications.trim(),
+          chronicConditions: intakeChronicConditions.trim(),
+          pregnancyStatus: intakePregnancyStatus,
+          anticoagulants: intakeAnticoagulants.trim(),
+          infectiousRiskNotes: intakeInfectiousRiskNotes.trim(),
+          cardioEndocrineNotes: intakeCardioEndocrineNotes.trim(),
+          emergencyContact: intakeEmergencyContact.trim() || null,
+          additionalNotes: intakeAdditionalNotes.trim() || null,
+          accuracyConfirmed: confirmedDocumentLiteral(intakeAccuracyConfirmed, "пациент подтвердил достоверность анкеты")
+        }
+      };
+    }
+    if (kind === "tax_deduction_application") {
+      return {
+        taxDeductionApplication: {
+          taxpayerFullName: taxApplicationTaxpayerFullName.trim(),
+          taxpayerInn: taxApplicationTaxpayerInn.replace(/[^\d]/g, ""),
+          taxpayerBirthDate: taxApplicationTaxpayerBirthDate.trim(),
+          taxpayerIdentityDocument: taxApplicationTaxpayerIdentityDocument.trim(),
+          relationshipToPatient: taxApplicationRelationship,
+          requestedTaxYear: taxDocumentYear,
+          requestedForm: taxApplicationForm,
+          selectedPaymentIds: selectedTaxPaymentIdsForCurrentDocument(),
+          deliveryChannel: taxApplicationDeliveryChannel,
+          contactForReadyDocument: taxApplicationContact.trim(),
+          applicantAuthorityDocument: taxApplicationAuthorityDocument.trim() || null,
+          requestedAt: fromDateTimeLocalValue(taxApplicationRequestedAt),
+          duplicateWarningAccepted: confirmedDocumentLiteral(taxApplicationDuplicateWarningAccepted, "проверка дублей налоговой справки подтверждена")
+        }
+      };
+    }
+    if (kind === "informed_consent") {
+      return {
+        informedConsent: {
+          intervention: informedConsentIntervention.trim(),
+          toothOrArea: informedConsentToothOrArea.trim() || inferredTreatmentArea || "",
+          diagnosisOrIndication: informedConsentDiagnosisOrIndication.trim() || dashboard?.activeVisit.complaint || "",
+          expectedBenefit: informedConsentExpectedBenefit.trim(),
+          plannedAnesthesia: informedConsentAnesthesia.trim() || null,
+          materialOrMedicationNotes: informedConsentMaterialNotes.trim() || null,
+          trustedContactForMedicalInfo: informedConsentTrustedContact.trim() || null,
+          explainedRisks: documentTextLines(informedConsentRisks),
+          alternatives: documentTextLines(informedConsentAlternatives),
+          aftercareRequirements: documentTextLines(informedConsentAftercare),
+          doctorFullName: informedConsentDoctorFullName.trim() || activeDoctor?.fullName || "",
+          consentConfirmedAt: informedConsentConfirmedAt.trim(),
+          patientQuestionsAnswered: confirmedDocumentLiteral(informedConsentQuestionsAnswered, "вопросы пациента по информированному согласию закрыты"),
+          patientUnderstandsRisks: confirmedDocumentLiteral(informedConsentRisksUnderstood, "риски информированного согласия понятны"),
+          patientMayWithdrawBeforeIntervention: confirmedDocumentLiteral(informedConsentWithdrawUnderstood, "право отказаться до вмешательства объяснено")
+        }
+      };
+    }
+    if (kind === "procedure_specific_consent_packet") {
+      return {
+        procedureSpecificConsent: {
+          procedureType: procedureConsentProcedureType,
+          procedureName: procedureConsentProcedureName.trim(),
+          toothOrArea: procedureConsentToothOrArea.trim() || inferredTreatmentArea || "",
+          diagnosisOrIndication: procedureConsentDiagnosisOrIndication.trim() || dashboard?.activeVisit.complaint || "",
+          clinicalToothRows: clinicalToothRowsValue(),
+          plannedAnesthesia: procedureConsentAnesthesia.trim() || null,
+          materialsAndSystems: procedureConsentMaterials.trim() || null,
+          patientSpecificRiskFactors: documentTextLines(procedureConsentPatientRiskFactors),
+          procedureSpecificRisks: documentTextLines(procedureConsentSpecificRisks),
+          alternatives: documentTextLines(procedureConsentAlternatives),
+          aftercareAndLimits: documentTextLines(procedureConsentAftercare),
+          doctorFullName: procedureConsentDoctorFullName.trim() || activeDoctor?.fullName || "",
+          consentConfirmedAt: procedureConsentConfirmedAt.trim(),
+          localClinicFormAttached: procedureConsentLocalFormAttached,
+          patientQuestionsAnswered: confirmedDocumentLiteral(procedureConsentQuestionsAnswered, "вопросы пациента по процедуре закрыты"),
+          exactProcedureConfirmed: confirmedDocumentLiteral(procedureConsentExactProcedureConfirmed, "процедура, зона и объем подтверждены"),
+          patientUnderstandsSpecificRisks: confirmedDocumentLiteral(procedureConsentRisksUnderstood, "процедурные риски понятны")
+        }
+      };
+    }
+    if (kind === "treatment_plan") {
+      return {
+        treatmentPlan: {
+          clinicalReason: treatmentPlanClinicalReasonValue(),
+          diagnosisSummary: treatmentPlanDiagnosisSummaryValue(),
+          teethOrArea: treatmentPlanTeethOrAreaValue(),
+          clinicalToothRows: clinicalToothRowsValue(),
+          treatmentGoals: documentTextLines(treatmentPlanGoals),
+          plannedStages: treatmentPlanStageRows(),
+          estimatedTotalRub: treatmentPlanTotalRubValue(),
+          alternatives: documentTextLines(treatmentPlanAlternatives),
+          risksAndLimitations: documentTextLines(treatmentPlanRisks),
+          prognosisAndLimits: treatmentPlanPrognosis.trim(),
+          controlPlan: treatmentPlanControlPlan.trim(),
+          doctorFullName: treatmentPlanDoctorFullNameValue(),
+          plannedAt: treatmentPlanPlannedAt.trim(),
+          patientQuestionsAnswered: confirmedDocumentLiteral(treatmentPlanQuestionsAnswered, "вопросы пациента по плану лечения закрыты"),
+          planRequiresSeparateConsent: confirmedDocumentLiteral(treatmentPlanSeparateConsentAcknowledged, "план не заменяет отдельное согласие"),
+          planRequiresNewApprovalOnChange: confirmedDocumentLiteral(treatmentPlanNewApprovalAcknowledged, "изменение плана требует нового согласования")
+        }
+      };
+    }
+    if (kind === "treatment_plan_acceptance") {
+      return {
+        treatmentPlanAcceptance: {
+          selectedVariant: treatmentAcceptanceVariant,
+          clinicalGoal: treatmentAcceptanceClinicalGoal.trim(),
+          diagnosisSummary: treatmentAcceptanceDiagnosisSummary.trim() || dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "",
+          teethOrArea: treatmentAcceptanceTeethOrArea.trim() || inferredTreatmentArea || "",
+          clinicalToothRows: clinicalToothRowsValue(),
+          acceptedStages: treatmentAcceptanceStageRows(),
+          estimatedTotalRub: treatmentAcceptanceTotalRubValue(),
+          estimateValidUntil: treatmentAcceptanceEstimateValidUntil.trim(),
+          paymentTerms: treatmentAcceptancePaymentTerms.trim(),
+          rejectedAlternatives: documentTextLines(treatmentAcceptanceRejectedAlternatives),
+          risksAndLimitations: documentTextLines(treatmentAcceptanceRisks),
+          warrantyAndControlTerms: treatmentAcceptanceWarrantyTerms.trim(),
+          doctorFullName: treatmentAcceptanceDoctorFullName.trim() || activeDoctor?.fullName || "",
+          acceptedAt: treatmentAcceptanceAcceptedAt.trim(),
+          patientQuestionsAnswered: confirmedDocumentLiteral(treatmentAcceptanceQuestionsAnswered, "вопросы пациента по согласованию плана закрыты"),
+          patientUnderstandsAlternatives: confirmedDocumentLiteral(treatmentAcceptanceAlternativesUnderstood, "альтернативы плана понятны"),
+          patientUnderstandsCostMayChange: confirmedDocumentLiteral(treatmentAcceptanceCostChangeUnderstood, "изменение стоимости понятно"),
+          revisionRequiresNewApproval: confirmedDocumentLiteral(treatmentAcceptanceRevisionAcknowledged, "пересмотр плана требует нового согласования")
+        }
+      };
+    }
+    if (kind === "post_visit_recommendations") {
+      return {
+        postVisitRecommendations: {
+          careTopic: postVisitCareTopic,
+          procedureName: postVisitProcedureNameValue(),
+          toothOrArea: postVisitToothOrAreaValue(),
+          performedAt: postVisitPerformedAt.trim(),
+          doctorFullName: postVisitDoctorFullNameValue(),
+          allowedAfter: documentTextLines(postVisitAllowedAfter),
+          temporaryRestrictions: documentTextLines(postVisitRestrictions),
+          medicationAndRinsePlan: documentTextLines(postVisitMedicationAndRinsePlan),
+          hygieneInstructions: documentTextLines(postVisitHygieneInstructions),
+          nutritionInstructions: documentTextLines(postVisitNutritionInstructions),
+          urgentWarningSigns: documentTextLines(postVisitUrgentWarningSigns),
+          plannedFollowUpAt: postVisitFollowUpAt.trim() || null,
+          clinicContactInstruction: postVisitClinicContactInstruction.trim(),
+          telegramSummary: postVisitTelegramSummary.trim(),
+          patientReceivedPrintedCopy: confirmedDocumentLiteral(postVisitPrintedCopyReceived, "пациент получил памятку"),
+          patientUnderstandsUrgentSigns: confirmedDocumentLiteral(postVisitUrgentSignsUnderstood, "тревожные признаки понятны"),
+          safeForTelegramSending: confirmedDocumentLiteral(postVisitTelegramSafe, "Telegram-текст безопасен")
+        }
+      };
+    }
+    if (kind === "anesthesia_consent_log") {
+      return {
+        anesthesiaConsentLog: {
+          method: anesthesiaMethod.trim(),
+          anesthetic: anesthesiaAnesthetic.trim(),
+          vasoconstrictor: anesthesiaVasoconstrictor.trim() || null,
+          plannedZone: anesthesiaZone.trim(),
+          allergyStatus: anesthesiaAllergyStatus.trim(),
+          restrictionNotes: anesthesiaRestrictionNotes.trim() || null,
+          doseRows: [
+            {
+              time: anesthesiaDoseTime.trim(),
+              medication: [anesthesiaAnesthetic.trim(), anesthesiaVasoconstrictor.trim()].filter(Boolean).join(", "),
+              doseMl: anesthesiaDoseMl.trim(),
+              zone: anesthesiaZone.trim(),
+              reaction: anesthesiaReaction.trim() || null
+            }
+          ],
+          patientAnesthesiaRisksExplained: confirmedDocumentLiteral(anesthesiaRisksExplained, "риски анестезии разъяснены"),
+          allergyAndRestrictionStatusChecked: confirmedDocumentLiteral(anesthesiaAllergyRestrictionsChecked, "аллергии и ограничения проверены"),
+          patientConfirmedAnesthesiaConsent: confirmedDocumentLiteral(anesthesiaConsentConfirmed, "согласие на местную анестезию подтверждено")
+        }
+      };
+    }
+    if (kind === "prescription_medication_order") {
+      return {
+        prescriptionMedicationOrder: {
+          clinicalToothRows: clinicalToothRowsValue(),
+          medications: [
+            {
+              medication: prescriptionMedication.trim(),
+              dosage: prescriptionDosage.trim(),
+              instructions: prescriptionInstructions.trim(),
+              duration: prescriptionDuration.trim()
+            }
+          ],
+          safetyNotes: documentTextLines(prescriptionSafetyNotes),
+          urgentContactReason: prescriptionUrgentContactReason.trim()
+        }
+      };
+    }
+    if (kind === "lab_work_order") {
+      return {
+        labWorkOrder: {
+          clinicalToothRows: clinicalToothRowsValue(),
+          workType: labWorkType.trim(),
+          teethOrArea: labTeethOrArea.trim(),
+          material: labMaterial.trim(),
+          shade: labShade.trim(),
+          source: labSource.trim(),
+          deadline: labDeadline.trim(),
+          technicianNotes: labTechnicianNotes.trim() || null
+        }
+      };
+    }
+    if (kind === "photo_video_consent") {
+      return {
+        photoVideoConsent: {
+          clinicalRecordUse: confirmedDocumentLiteral(photoVideoClinicalRecordUseConfirmed, "использование фото, видео и снимков в медицинской карте подтверждено"),
+          labTransferAllowed: photoVideoLabTransferAllowed,
+          colleagueConsultationAllowed: photoVideoColleagueConsultationAllowed,
+          educationUseAllowed: photoVideoEducationUseAllowed,
+          marketingUseAllowed: photoVideoMarketingUseAllowed,
+          recognizablePublicationAllowed: photoVideoRecognizablePublicationAllowed,
+          materials: photoVideoMaterials,
+          anonymizationRequired: confirmedDocumentLiteral(photoVideoAnonymizationConfirmed, "обезличивание внешнего использования подтверждено"),
+          revocationChannel: photoVideoRevocationChannel.trim(),
+          scopeNotes: photoVideoScopeNotes.trim() || null
+        }
+      };
+    }
+    if (kind === "xray_cbct_referral") {
+      return {
+        xrayCbctReferral: {
+          studyType: xrayStudyType,
+          clinicalToothRows: clinicalToothRowsValue(),
+          area: xrayArea.trim(),
+          clinicalQuestion: xrayClinicalQuestion.trim(),
+          indication: xrayIndication.trim(),
+          pregnancyStatus: xrayPregnancyStatus,
+          safetyNotes: xraySafetyNotes.trim(),
+          priority: xrayPriority,
+          includeDicomExport: xrayIncludeDicomExport,
+          includeRadiologistReport: xrayIncludeRadiologistReport,
+          requestedBy: xrayRequestedBy.trim() || activeDoctor?.fullName || "лечащий врач",
+          recipientClinic: xrayRecipientClinic.trim() || null,
+          dueDate: xrayDueDate.trim() || null
+        }
+      };
+    }
+    if (kind === "outpatient_medical_card_025u") {
+      return {
+        outpatientMedicalCard025u: outpatient025uPayloadValue()
+      };
+    }
+    if (kind === "medical_record_extract") {
+      const sourceVisitIds = documentTextLines(recordExtractSourceVisitIds);
+      return {
+        medicalRecordExtract: {
+          periodStart: recordExtractPeriodStart.trim(),
+          periodEnd: recordExtractPeriodEnd.trim(),
+          sourceVisitIds: sourceVisitIds.length ? sourceVisitIds : [dashboard?.activeVisit.id ?? "текущий визит"],
+          complaintAndAnamnesis: recordExtractComplaintAndAnamnesisValue(),
+          objectiveStatus: recordExtractObjectiveStatusValue(),
+          diagnosis: recordExtractDiagnosisValue(),
+          clinicalToothRows: clinicalToothRowsValue(),
+          treatmentProvided: recordExtractTreatmentProvidedValue(),
+          recommendations: recordExtractRecommendations.trim(),
+          doctorFullName: recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "",
+          recipientFullName: recordExtractRecipientFullName.trim() || documentPatient?.fullName || "",
+          recipientAuthority: recordExtractRecipientAuthority.trim(),
+          issuedAt: recordExtractIssuedAt.trim(),
+          preparedFromSignedMedicalRecords: confirmedDocumentLiteral(recordExtractPreparedFromSignedRecords, "выписка подготовлена из подписанных записей"),
+          thirdPartyDataChecked: confirmedDocumentLiteral(recordExtractThirdPartyDataChecked, "данные третьих лиц проверены")
+        }
+      };
+    }
+    if (kind === "medical_record_copy_request") {
+      return {
+        medicalRecordCopyRequest: {
+          requestedDocumentTypes: documentTextLines(copyRequestDocumentTypes),
+          periodStart: copyRequestPeriodStart.trim() || null,
+          periodEnd: copyRequestPeriodEnd.trim() || null,
+          requestedFormat: copyRequestFormat,
+          recipientFullName: copyRequestRecipientFullName.trim() || documentPatient?.fullName || "",
+          recipientIdentityDocument: copyRequestRecipientIdentityDocument.trim(),
+          recipientAuthority: copyRequestRecipientAuthority.trim(),
+          representativeAuthorityDocument: copyRequestRepresentativeAuthorityDocument.trim() || null,
+          requestedAt: copyRequestRequestedAt.trim(),
+          contactForDelivery: copyRequestContactForDelivery.trim(),
+          specialInstructions: copyRequestSpecialInstructions.trim() || null,
+          includeDicomSourceData: copyRequestIncludeDicomSourceData,
+          identityVerified: confirmedDocumentLiteral(copyRequestIdentityVerified, "личность получателя запроса проверена"),
+          thirdPartyDataExclusionAcknowledged: confirmedDocumentLiteral(copyRequestThirdPartyDataChecked, "исключение данных третьих лиц подтверждено")
+        }
+      };
+    }
+    if (kind === "visit_attendance_certificate") {
+      return {
+        visitAttendanceCertificate: {
+          attendedAtStart: attendanceStartedAtValue(),
+          attendedAtEnd: attendanceEndedAtValue(),
+          purpose: attendancePurpose.trim(),
+          recipientOrganization: attendanceRecipientOrganization.trim() || null,
+          issuedAt: attendanceIssuedAt.trim(),
+          signedByFullName: attendanceSignedByValue(),
+          signedByRole: attendanceSignedByRole.trim(),
+          diagnosisDisclosureExcluded: confirmedDocumentLiteral(attendanceDiagnosisDisclosureExcluded, "диагноз не раскрывается в справке посещения"),
+          notSickLeaveAcknowledged: confirmedDocumentLiteral(attendanceNotSickLeaveAcknowledged, "справка не заменяет больничный")
+        }
+      };
+    }
+    if (kind === "medical_document_release_receipt") {
+      return {
+        medicalDocumentReleaseReceipt: {
+          sourceRequestDocumentId: selectedReleaseSourceRequestDocumentId,
+          recipientFullName: releaseRecipientFullName.trim(),
+          recipientIdentityDocument: releaseRecipientIdentityDocument.trim(),
+          recipientAuthority: releaseRecipientAuthority.trim(),
+          releaseChannel,
+          documentTypes: documentTextLines(releaseDocumentTypes),
+          periodStart: releasePeriodStart.trim() || null,
+          periodEnd: releasePeriodEnd.trim() || null,
+          deliveredAt: releaseDeliveredAt.trim(),
+          accessExpiresAt: releaseAccessExpiresAt.trim() || null,
+          deliveryProtectionNote: releaseProtectionNote.trim(),
+          thirdPartyDataChecked: confirmedDocumentLiteral(releaseThirdPartyDataChecked, "лишние данные третьих лиц исключены")
+        }
+      };
+    }
+    if (kind === "payment_refund_correction_request") {
+      return {
+        paymentRefundCorrection: {
+          action: refundAction,
+          selectedPaymentIds: refundSelectedPaymentId ? [refundSelectedPaymentId] : [],
+          amountRub: Number(refundAmountRub.replace(/[^\d]/g, "")),
+          reason: refundReason.trim(),
+          refundMethod,
+          recipientFullName: refundRecipientFullName.trim(),
+          recipientIdentityDocument: refundRecipientIdentityDocument.trim(),
+          bankDetails: refundBankDetails.trim() || null,
+          originalFiscalReceiptNumber: refundOriginalFiscalReceiptNumber.trim(),
+          correctionFiscalReceiptNumber: refundCorrectionFiscalReceiptNumber.trim() || null,
+          accountantDecision: refundAccountantDecision.trim()
+        }
+      };
+    }
+    if (kind === "personal_data_processing_consent") {
+      return {
+        personalDataProcessingConsent: {
+          operatorLegalName: clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim(),
+          operatorInn: clinicProfileDraft.inn.replace(/[^\d]/g, ""),
+          operatorAddress: clinicProfileDraft.address.trim(),
+          processingPurposes: documentTextLines(personalDataPurposes),
+          personalDataCategories: documentTextLines(personalDataCategories),
+          processingActions: documentTextLines(personalDataActions),
+          thirdPartyTransferRules: personalDataTransferRules.trim(),
+          crossBorderTransferAllowed: personalDataCrossBorderAllowed,
+          automatedDecisionMakingAllowed: personalDataAutomatedDecisionAllowed,
+          retentionPeriod: personalDataRetentionPeriod.trim(),
+          revocationChannel: personalDataRevocationChannel.trim(),
+          consentGivenAt: personalDataConsentGivenAt.trim(),
+          patientConfirmedVoluntaryConsent: confirmedDocumentLiteral(personalDataVoluntaryConsentConfirmed, "добровольное согласие на ПДн подтверждено"),
+          medicalDataProcessingAcknowledged: confirmedDocumentLiteral(personalDataMedicalProcessingAcknowledged, "обработка медицинских данных понятна")
+        }
+      };
+    }
+    if (kind === "medical_intervention_refusal") {
+      return {
+        medicalInterventionRefusal: {
+          refusedIntervention: refusalIntervention.trim(),
+          clinicalIndication: refusalClinicalIndication.trim(),
+          patientReason: refusalPatientReason.trim() || null,
+          explainedRisks: documentTextLines(refusalExplainedRisks),
+          alternativesOffered: documentTextLines(refusalAlternatives),
+          urgentWarningSigns: documentTextLines(refusalUrgentWarningSigns),
+          doctorFullName: refusalDoctorFullName.trim() || activeDoctor?.fullName || "",
+          refusalConfirmedAt: refusalConfirmedAt.trim(),
+          patientUnderstandsConsequences: confirmedDocumentLiteral(refusalConsequencesUnderstood, "последствия отказа понятны"),
+          secondOpinionOffered: confirmedDocumentLiteral(refusalSecondOpinionOffered, "второе мнение или альтернатива предложены"),
+          emergencyCareExplained: confirmedDocumentLiteral(refusalEmergencyCareExplained, "экстренная помощь объяснена")
+        }
+      };
+    }
+    return null;
+  }
+
+  function renderClinicalToothRowsEditor() {
+    return (
+      <label>
+        Клинические строки по зубам и сегментам
+        <textarea value={clinicalToothRowsText} onChange={(event) => setClinicalToothRowsText(event.target.value)} rows={5} />
+        <small>
+          Формат строки: зуб/сегмент | поверхности | статус | диагноз/находка | показание | действие | прогноз | пародонт | имплант/ортопедия |
+          ортодонтия
+        </small>
+      </label>
+    );
+  }
+
+  async function createDocument(kind: GeneratedDocument["kind"]) {
+    if (documentCreateSavingKind) {
+      setError("Дождитесь завершения текущего создания документа.");
+      return;
+    }
+    if (!documentPatient || !dashboard) {
+      setError("Выберите пациента перед созданием документа.");
+      return;
+    }
+    const amountSource = documentAmountSource(kind);
+    const metadata = documentKindMetadata[kind];
+    const isTaxDocument = metadata.group === "tax";
+    const payloadError = validateDocumentPayloadForKind(kind);
+    if (payloadError) {
+      setError(payloadError);
+      return;
+    }
+    const documentPayload = documentPayloadForKind(kind);
+    if ((kind === "tax_deduction_certificate" || kind === "tax_deduction_registry") && taxDocumentYear < 2024) {
+      setError("КНД 1151156 подходит только для оплат с 2024 года. Для 2021-2023 выберите старую справку.");
+      return;
+    }
+    if (kind === "legacy_tax_deduction_certificate" && (taxDocumentYear < 2021 || taxDocumentYear > 2023)) {
+      setError("Старая налоговая справка подходит только для оплат 2021-2023. Для 2024+ выберите КНД 1151156.");
+      return;
+    }
+    const selectedTaxPayerInn = isTaxDocument ? selectedTaxDocumentPayerInn : "";
+    if (isTaxDocument && taxDocumentPayerOptions.length > 1 && !selectedTaxDocumentPayerKey) {
+      setError("Выберите плательщика для КНД 1151156. Разные налогоплательщики должны идти отдельными справками.");
+      return;
+    }
+    const usesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(kind);
+    const requiresTaxPaymentSelection = taxPaymentSelectionPayloadDocumentKinds.has(kind);
+    const selectedTaxPaymentIdsForDocument = usesTaxPaymentSelection
+      ? selectedTaxPaymentIdsForCurrentDocument()
+      : [];
+    const requiresPaymentReceiptSelection = kind === "payment_receipt";
+    const eligiblePaymentReceiptIdSet = new Set(eligiblePaymentReceiptPayments.map((payment) => payment.id));
+    const selectedPaymentReceiptIdsForDocument = requiresPaymentReceiptSelection
+      ? selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
+      : [];
+    if (requiresTaxPaymentSelection && selectedTaxPaymentIdsForDocument.length === 0) {
+      setError("Выберите фискальные чеки для налогового документа. DENTE больше не подставляет все оплаты за год автоматически.");
+      return;
+    }
+    if (requiresPaymentReceiptSelection && selectedPaymentReceiptIdsForDocument.length === 0) {
+      setError("Выберите оплаченные платежи для платежной квитанции. DENTE не подставляет все оплаты скрыто.");
+      return;
+    }
+    const linkActiveVisit =
+      metadata.requiresVisit || metadata.group === "payment" || (metadata.group !== "tax" && metadata.amountSource !== "none");
+    if (linkActiveVisit && !documentPatientMatchesActiveVisit) {
+      setError(
+        `Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому DENTE не создаст документ с чужим visitId. Откройте нужный прием или выберите документ без привязки к визиту.`
+      );
+      return;
+    }
+    const plannedAmount =
+      activeTreatmentPlanItems
+        .filter((item) => item.status !== "cancelled")
+        .filter((item) => !dashboard.activeVisit.id || item.visitId === dashboard.activeVisit.id)
+        .reduce((total, item) => total + Math.max(0, item.unitPriceRub * item.quantity - item.discountRub), 0) || null;
+    const paidAmount =
+      activePayments
+        .filter((payment) => payment.status === "paid")
+        .filter((payment) => {
+          if (requiresPaymentReceiptSelection) return selectedPaymentReceiptIdsForDocument.includes(payment.id);
+          if (kind === "payment_refund_correction_request" && documentPayload?.paymentRefundCorrection) {
+            return documentPayload.paymentRefundCorrection.selectedPaymentIds.includes(payment.id);
+          }
+          if (metadata.group !== "tax") return payment.visitId === dashboard.activeVisit.id;
+          if (requiresTaxPaymentSelection) return selectedTaxPaymentIdsForDocument.includes(payment.id);
+          return (
+            paymentTaxYearForUi(payment) === taxDocumentYear &&
+            (!selectedTaxDocumentPayerKey || taxPaymentPayerKeyForUi(payment) === selectedTaxDocumentPayerKey)
+          );
+        })
+        .reduce((total, payment) => total + payment.amountRub, 0) || null;
+    if (amountSource === "paid" && !paidAmount) {
+      setError(
+        metadata.group === "tax"
+          ? `Для налогового документа нужна фактическая оплата за ${taxDocumentYear} год. План лечения и оплаты других лет не подходят.`
+          : "Для этого документа нужна фактическая оплата. План лечения или примерная сумма не подходят."
+      );
+      return;
+    }
+    if (
+      kind === "payment_refund_correction_request" &&
+      documentPayload?.paymentRefundCorrection &&
+      paidAmount &&
+      documentPayload.paymentRefundCorrection.amountRub > paidAmount
+    ) {
+      setError("Сумма возврата или коррекции не может превышать фактическую оплату по выбранному визиту.");
+      return;
+    }
+    const totalAmountRub = amountSource === "paid" ? paidAmount : amountSource === "planned" ? plannedAmount : null;
+    const payloadForDocument = taxPaymentSelectionPayloadDocumentKinds.has(kind)
+      ? { ...(documentPayload ?? {}), taxPaymentSelection: { selectedPaymentIds: selectedTaxPaymentIdsForDocument } }
+      : documentPayload;
+    setDocumentCreateSavingKind(kind);
+    try {
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          patientId: documentPatient.id,
+          visitId: linkActiveVisit ? dashboard.activeVisit.id : null,
+          kind,
+          taxYear: isTaxDocument ? taxDocumentYear : null,
+          taxPayerInn: isTaxDocument ? selectedTaxPayerInn || null : null,
+          payload: payloadForDocument,
+          title: isTaxDocument ? `${metadata.title} за ${taxDocumentYear} год` : undefined,
+          totalAmountRub: moneyDocumentKinds.has(kind) ? totalAmountRub : null
+        })
+      });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Документ не создан"));
+        return;
+      }
+      try {
+        await loadDashboard();
+        setError(null);
+      } catch (error) {
+        setError(requestFailureMessage("Документ создан, но список документов не перезагружен", error));
+      }
+    } catch (error) {
+      setError(requestFailureMessage("Документ не создан", error));
+    } finally {
+      setDocumentCreateSavingKind(null);
+    }
+  }
+
+  async function updateDocumentStatus(documentId: string, action: "issue" | "void", payload?: unknown): Promise<boolean> {
+    if (documentStatusSavingId) {
+      setError("Дождитесь завершения текущего действия с документом.");
+      return false;
+    }
+    setDocumentStatusSavingId(documentId);
+    try {
+      const headers = denteClinicalMutationHeaders(payload ? { "Content-Type": "application/json" } : {});
+      const response = await fetch(`/api/documents/${documentId}/${action}`, {
+        method: "POST",
+        headers,
+        ...(payload
+          ? {
+              body: JSON.stringify(payload)
+            }
+          : {})
+      });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Статус документа не обновлен"));
+        return false;
+      }
+      setDocumentAuditFacts(null);
+      try {
+        await loadDashboard();
+        setError(null);
+      } catch (error) {
+        setError(requestFailureMessage("Статус документа обновлен, но список документов не перезагружен", error));
+      }
+      return true;
+    } catch (error) {
+      setError(requestFailureMessage("Статус документа не обновлен", error));
+      return false;
+    } finally {
+      setDocumentStatusSavingId(null);
+    }
+  }
+
+  function requestDocumentIssue(document: GeneratedDocument) {
+    if (!dashboard) {
+      setError("Данные клиники еще не загружены. Повторите выдачу документа после загрузки рабочего экрана.");
+      return;
+    }
+    if (document.status !== "draft") {
+      setError("Выдать можно только черновик документа.");
+      return;
+    }
+    setDocumentIssueSignedAt(currentLocalDateTimeInputValue());
+    setDocumentIssueRecipientFullName(patientName(dashboard.patients, document.patientId));
+    setDocumentIssueRecipientRole("пациент/законный представитель");
+    if (!documentIssueStaffFullName.trim() && activeDoctor?.fullName) {
+      setDocumentIssueStaffFullName(activeDoctor.fullName);
+    }
+    if (!documentIssueStaffRole.trim()) {
+      setDocumentIssueStaffRole(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Врач/администратор");
+    }
+    setDocumentIssueNote("");
+    setDocumentIssueIdentityChecked(false);
+    setDocumentIssueDocumentOpenedAndChecked(false);
+    setDocumentIssueRecipientSigned(false);
+    setDocumentIssueClinicSigned(false);
+    setDocumentIssueConfirmationId(document.id);
+  }
+
+  async function confirmDocumentIssue() {
+    const documentId = documentIssueConfirmation?.id;
+    if (!documentId) {
+      setError("Выберите черновик документа для выдачи.");
+      return;
+    }
+    if (!documentIssueAttestationReady) {
+      setError("Перед выдачей отметьте проверку личности, просмотр документа и подписи пациента/клиники.");
+      return;
+    }
+    const payload = {
+      signatureAttestation: {
+        mode: documentIssueSignatureMode,
+        signedAt: documentIssueSignedAt.trim().replace("T", " "),
+        recipientFullName: documentIssueRecipientFullName.trim(),
+        recipientRole: documentIssueRecipientRole.trim(),
+        staffFullName: documentIssueStaffFullName.trim(),
+        staffRole: documentIssueStaffRole.trim(),
+        identityChecked: true,
+        documentOpenedAndChecked: true,
+        recipientSigned: true,
+        clinicRepresentativeSigned: true,
+        note: documentIssueNote.trim() || null
+      }
+    } satisfies IssueDocumentInput;
+    saveDocumentIssueSignatureDraft(
+      dashboard?.clinicSettings.profile.organizationId ?? null,
+      documentIssueSignatureMode,
+      documentIssueStaffFullName,
+      documentIssueStaffRole
+    );
+    const updated = await updateDocumentStatus(documentId, "issue", payload);
+    if (updated) {
+      setDocumentIssueConfirmationId(null);
+    }
+  }
+
+  function requestDocumentVoid(document: GeneratedDocument) {
+    if (document.status === "voided") {
+      setError("Документ уже аннулирован.");
+      return;
+    }
+    setDocumentVoidReasonCode(document.status === "issued" ? "issued_in_error" : "draft_error");
+    setDocumentVoidReasonText("");
+    if (!documentVoidStaffFullName.trim() && activeDoctor?.fullName) {
+      setDocumentVoidStaffFullName(activeDoctor.fullName);
+    }
+    if (!documentVoidStaffRole.trim()) {
+      setDocumentVoidStaffRole(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Врач/администратор");
+    }
+    setDocumentVoidCorrectionDocumentId("");
+    setDocumentVoidReplacementRequired(document.status === "issued");
+    setDocumentVoidPatientOrPayerNotified(false);
+    setDocumentVoidArchivePreserved(false);
+    setDocumentVoidStatusReviewed(false);
+    setDocumentVoidConfirmationId(document.id);
+  }
+
+  async function confirmDocumentVoid() {
+    const documentId = documentVoidConfirmation?.id;
+    if (!documentId) {
+      setError("Выберите документ для аннулирования.");
+      return;
+    }
+    if (!documentVoidReady) {
+      setError("Перед аннулированием укажите причину, ответственного сотрудника, сохранение архива и проверку статуса.");
+      return;
+    }
+    const payload = {
+      voidAttestation: {
+        reasonCode: documentVoidReasonCode,
+        reasonText: documentVoidReasonText.trim(),
+        voidedAt: currentLocalDateTimeInputValue().replace("T", " "),
+        staffFullName: documentVoidStaffFullName.trim(),
+        staffRole: documentVoidStaffRole.trim(),
+        correctionDocumentId: documentVoidCorrectionDocumentId.trim() || null,
+        replacementRequired: documentVoidReplacementRequired,
+        patientOrPayerNotified: documentVoidPatientOrPayerNotified,
+        archivePreserved: true,
+        statusReviewed: true
+      }
+    } satisfies VoidDocumentInput;
+    const updated = await updateDocumentStatus(documentId, "void", payload);
+    if (updated) {
+      setDocumentVoidConfirmationId(null);
+    }
+  }
+
+  async function downloadTaxDocumentXml(documentId: string) {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/tax-xml`, { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "XML ФНС не выгружен"));
+        return;
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const quotedFileName = /filename="([^"]+)"/.exec(disposition)?.[1];
+      const fileName = quotedFileName?.trim() || `dente-tax-${documentId}.xml`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setError(null);
+    } catch (error) {
+      setError(requestFailureMessage("XML ФНС не выгружен", error));
+    }
+  }
+
+  async function loadDocumentAuditFacts(documentId: string) {
+    setDocumentAuditFactsLoadingId(documentId);
+    try {
+      const response = await fetch(`/api/documents/${documentId}/audit-facts`, { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Паспорт выдачи не загружен"));
+        return;
+      }
+      setDocumentAuditFacts((await response.json()) as DocumentAuditFacts);
+      setError(null);
+    } catch (error) {
+      setError(requestFailureMessage("Паспорт выдачи не загружен", error));
+    } finally {
+      setDocumentAuditFactsLoadingId(null);
+    }
+  }
+
+  async function downloadIssuedDocumentHtml(documentId: string) {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/html?download=1`, { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Архивный HTML не скачан"));
+        return;
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const quotedFileName = /filename="([^"]+)"/.exec(disposition)?.[1];
+      const fileName = quotedFileName?.trim() || `dente-document-${documentId}.html`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setError(null);
+    } catch (error) {
+      setError(requestFailureMessage("Архивный HTML не скачан", error));
+    }
+  }
+
+  async function openIssuedDocumentHtml(documentId: string) {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/html`, { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "HTML документа не открыт"));
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        setError("Браузер заблокировал новое окно документа. Разрешите всплывающее окно для DENTE.");
+      } else {
+        setError(null);
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      setError(requestFailureMessage("HTML документа не открыт", error));
+    }
+  }
+
+  async function downloadIssuedDocumentPdf(documentId: string) {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/pdf`, { cache: "no-store", headers: denteClinicalReadHeaders() });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "PDF не сформирован"));
+        return;
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const quotedFileName = /filename="([^"]+)"/.exec(disposition)?.[1];
+      const fileName = quotedFileName?.trim() || `dente-document-${documentId}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setError(null);
+    } catch (error) {
+      setError(requestFailureMessage("PDF не сформирован", error));
+    }
+  }
+
+  async function recordPayment() {
+    setPaymentFeedback("");
+    if (isPaymentSaving) {
+      setError("Дождитесь завершения текущей записи оплаты.");
+      return;
+    }
+    if (!documentPatient || !dashboard) {
+      setError("Выберите пациента и активный прием перед записью оплаты.");
+      return;
+    }
+    if (!documentPatientMatchesActiveVisit) {
+      setError(paymentPatientContextMessage || "Оплата не записана: выбранный пациент не совпадает с активным приемом.");
+      return;
+    }
+    const amountRub = Number(paymentAmount.replace(/[^\d]/g, ""));
+    if (!Number.isFinite(amountRub) || amountRub <= 0) {
+      setError("Сумма оплаты должна быть больше нуля");
+      return;
+    }
+    const paymentPayerName = paymentPayerFullName.trim();
+    const explicitPayerInn = paymentPayerInn.trim();
+    const explicitPayerBirthDate = paymentPayerBirthDate.trim();
+    const explicitPayerIdentityDocument = paymentPayerIdentityDocument.trim();
+    const paymentPayerRelation = paymentPayerRelationship.trim();
+    const explicitFiscalFn = paymentFiscalFn.trim();
+    const explicitFiscalFd = paymentFiscalFd.trim();
+    const explicitFiscalFpd = paymentFiscalFpd.trim();
+    const explicitFiscalReceiptUrl = paymentFiscalReceiptUrl.trim();
+    const taxReadyPaymentRequested = paymentTaxDeductionCode === "1" || paymentTaxDeductionCode === "2";
+    if (taxReadyPaymentRequested) {
+      const missingTaxFields = [
+        [paymentFiscalReceiptIssuedAt.trim(), "дата фискального чека"],
+        [explicitFiscalFn, "ФН"],
+        [explicitFiscalFd, "ФД"],
+        [explicitFiscalFpd, "ФПД"],
+        [paymentPayerName, "ФИО плательщика"],
+        [explicitPayerBirthDate, "дата рождения плательщика"],
+        [explicitPayerIdentityDocument, "документ плательщика"],
+        [paymentPayerRelation, "родство плательщика"]
+      ]
+        .filter(([value]) => !value)
+        .map(([, label]) => label);
+      if (missingTaxFields.length) {
+        setError(`Для налоговой оплаты заполните явно: ${missingTaxFields.join(", ")}. Данные из карточки пациента не подставляются автоматически.`);
+        return;
+      }
+    }
+    if (explicitFiscalReceiptUrl && !/^https?:\/\/\S+$/i.test(explicitFiscalReceiptUrl)) {
+      setError("Ссылка ОФД должна начинаться с http:// или https://");
+      return;
+    }
+    const patientIsPayer =
+      (!paymentPayerName || paymentPayerName === documentPatient.fullName) &&
+      (!paymentPayerRelation || paymentPayerRelation.toLocaleLowerCase("ru-RU") === "пациент");
+    const administrativePayerInn = patientIsPayer ? documentPatient.administrativeProfile?.taxpayerInn?.trim() ?? "" : "";
+    const administrativePayerDocument = patientIsPayer ? documentPatient.administrativeProfile?.identityDocument?.trim() ?? "" : "";
+    const normalizedPayerInn = taxReadyPaymentRequested ? explicitPayerInn : explicitPayerInn || administrativePayerInn;
+    if (normalizedPayerInn && !/^\d{10}$|^\d{12}$/.test(normalizedPayerInn)) {
+      setError("ИНН плательщика должен содержать 10 или 12 цифр");
+      return;
+    }
+    setIsPaymentSaving(true);
+    try {
+      const documentForPayment =
+        activeUsableDocuments.find(
+          (document) =>
+            documentKindMetadata[document.kind].group === "payment" &&
+            document.visitId === dashboard.activeVisit.id &&
+            (document.totalAmountRub ?? 0) > 0
+        ) ?? null;
+      const response = await fetch("/api/billing/payments", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          patientId: documentPatient.id,
+          visitId: dashboard.activeVisit.id,
+          documentId: documentForPayment?.id ?? null,
+          amountRub,
+          method: paymentMethod,
+          fiscalReceiptNumber: paymentFiscalReceiptNumber.trim() || null,
+          fiscalReceiptIssuedAt: paymentFiscalReceiptIssuedAt.trim() || null,
+          fiscalReceiptUrl: explicitFiscalReceiptUrl || null,
+          fiscalReceipt: {
+            fn: explicitFiscalFn || null,
+            fd: explicitFiscalFd || null,
+            fpd: explicitFiscalFpd || null,
+            cashierName: paymentFiscalCashierName.trim() || null,
+            receiptUrl: explicitFiscalReceiptUrl || null,
+            operationType: "income"
+          },
+          payerFullName: taxReadyPaymentRequested ? paymentPayerName : paymentPayerName || documentPatient.fullName,
+          payerInn: normalizedPayerInn || null,
+          payerBirthDate: taxReadyPaymentRequested ? explicitPayerBirthDate : explicitPayerBirthDate || documentPatient.birthDate,
+          payerIdentityDocument: taxReadyPaymentRequested
+            ? explicitPayerIdentityDocument
+            : explicitPayerIdentityDocument || administrativePayerDocument || null,
+          payerRelationship: taxReadyPaymentRequested ? paymentPayerRelation : paymentPayerRelation || "пациент",
+          taxDeductionCode: paymentTaxDeductionCode || null,
+          note: "Оплата из рабочего экрана CRM"
+        })
+      });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Оплата не записана"));
+        return;
+      }
+      setPaymentAmount("");
+      setPaymentFiscalReceiptNumber("");
+      setPaymentFiscalReceiptIssuedAt("");
+      setPaymentFiscalFn("");
+      setPaymentFiscalFd("");
+      setPaymentFiscalFpd("");
+      setPaymentFiscalCashierName("");
+      setPaymentFiscalReceiptUrl("");
+      setPaymentPayerFullName("");
+      setPaymentPayerInn("");
+      setPaymentPayerBirthDate("");
+      setPaymentPayerIdentityDocument("");
+      setPaymentPayerRelationship("пациент");
+      setPaymentTaxDeductionCode("");
+      await loadDashboard();
+      setPaymentFeedback(`Оплата ${money(amountRub)} записана для ${documentPatient.fullName}. Фискальные и налоговые поля очищены для следующего платежа.`);
+      setError(null);
+    } catch (paymentError) {
+      setError(paymentError instanceof Error ? paymentError.message : "Оплата не записана");
+    } finally {
+      setIsPaymentSaving(false);
+    }
+  }
+
+  function documentKindsForCommunicationTask(task: Dashboard["communicationTasks"][number]): readonly GeneratedDocument["kind"][] {
+    const workflowCareTopic = task.workflowCode ? telegramCareRequestWorkflowCareTopics[task.workflowCode] : null;
+    if (workflowCareTopic) return ["post_visit_recommendations"];
+    const workflowDocumentKinds = task.workflowCode ? telegramDocumentRequestWorkflowDocumentKinds[task.workflowCode] : null;
+    if (workflowDocumentKinds) return workflowDocumentKinds;
+    if (telegramCareRequestTaskCareTopics[task.title]) return ["post_visit_recommendations"];
+    return telegramDocumentRequestTaskDocumentKinds[task.title] ?? [];
+  }
+
+  function openCommunicationTaskDocumentWorkflow(
+    task: Dashboard["communicationTasks"][number],
+    kind: GeneratedDocument["kind"]
+  ) {
+    const careTopic =
+      (task.workflowCode ? telegramCareRequestWorkflowCareTopics[task.workflowCode] : null) ??
+      telegramCareRequestTaskCareTopics[task.title] ??
+      null;
+    setSelectedDocumentKind(kind);
+    setSelectedPatientId(task.patientId);
+    if (kind === "post_visit_recommendations" && careTopic) {
+      changePostVisitCareTopic(careTopic);
+    }
+    setCurrentView("documents");
+    window.location.hash = "documents";
+    if (dashboard && task.patientId !== dashboard.activeVisit.patientId) {
+      const taskPatientName = patientName(dashboard.patients, task.patientId);
+      setError(
+        `Открыта форма «${documentLabels[kind]}» для заявки пациента ${taskPatientName}. Перед выпуском документа переключите активный прием на этого пациента, чтобы не создать документ по текущему визиту.`
+      );
+    }
+  }
+
+  async function completeCommunicationTask(taskId: string) {
+    if (communicationSavingTaskId) {
+      setError("Дождитесь завершения текущего закрытия задачи связи.");
+      return;
+    }
+    setCommunicationSavingTaskId(taskId);
+    try {
+      const response = await fetch("/api/communications/tasks/complete", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          taskId,
+          note: communicationNote.trim() || "Задача связи закрыта."
+        })
+      });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Задача связи не закрыта"));
+        return;
+      }
+      await loadDashboard();
+      setError(null);
+    } catch (communicationError) {
+      setError(communicationError instanceof Error ? communicationError.message : "Задача связи не закрыта");
+    } finally {
+      setCommunicationSavingTaskId(null);
+    }
+  }
+
+  function telegramOutboxRequestParams(cursor?: string | null): URLSearchParams {
+    const params = new URLSearchParams();
+    params.set("limit", "80");
+    if (cursor) params.set("cursor", cursor);
+    if (telegramOutboxStatusFilter !== "all") params.set("status", telegramOutboxStatusFilter);
+    if (telegramOutboxTemplateFilter !== "all") params.set("templateKind", telegramOutboxTemplateFilter);
+    appendTelegramRuntimeScopeParams(params);
+    return params;
+  }
+
+  function appendTelegramRuntimeScopeParams(params: URLSearchParams): URLSearchParams {
+    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim();
+    const botConfigId = telegramBotConfigId.trim();
+    if (telegramModeDraft === "clinic_owned_bot" && organizationId && botConfigId) {
+      params.set("organizationId", organizationId);
+      params.set("botConfigId", botConfigId);
+    }
+    return params;
+  }
+
+  function telegramOutboxActionQueryString(): string {
+    const params = appendTelegramRuntimeScopeParams(new URLSearchParams());
+    const query = params.toString();
+    return query ? `?${query}` : "";
+  }
+
+  function telegramLinkCodeLedgerRequestParams(cursor?: string | null): URLSearchParams {
+    const params = new URLSearchParams();
+    params.set("limit", "8");
+    if (cursor) params.set("cursor", cursor);
+    appendTelegramRuntimeScopeParams(params);
+    return params;
+  }
+
+  function telegramChatLinkLedgerRequestParams(cursor?: string | null): URLSearchParams {
+    const params = new URLSearchParams();
+    params.set("limit", "8");
+    if (cursor) params.set("cursor", cursor);
+    appendTelegramRuntimeScopeParams(params);
+    return params;
+  }
+
+  function telegramStatusEndpoint(): string {
+    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim();
+    const botConfigId = telegramBotConfigId.trim();
+    if (telegramModeDraft === "clinic_owned_bot" && organizationId && botConfigId) {
+      return `/api/telegram/status/${encodeURIComponent(organizationId)}/${encodeURIComponent(botConfigId)}`;
+    }
+    return "/api/telegram/status";
+  }
+
+  async function loadTelegramControlPlane(options: { silent?: boolean; adminSecret?: string } = {}) {
+    if (!options.silent) setIsTelegramLoading(true);
+    try {
+      const headers = telegramControlPlaneHeaders({}, options.adminSecret);
+      const outboxParams = telegramOutboxRequestParams();
+      const linkCodeParams = telegramLinkCodeLedgerRequestParams();
+      const chatLinkParams = telegramChatLinkLedgerRequestParams();
+      const [statusResponse, featurePlanResponse, outboxResponse, linkCodesResponse, chatLinksResponse] = await Promise.all([
+        fetch(telegramStatusEndpoint(), { cache: "no-store", headers }),
+        fetch("/api/telegram/feature-plan", { cache: "no-store", headers }),
+        fetch(`/api/telegram/outbox?${outboxParams.toString()}`, { cache: "no-store", headers }),
+        fetch(`/api/telegram/link-codes?${linkCodeParams.toString()}`, { cache: "no-store", headers }),
+        fetch(`/api/telegram/chat-links?${chatLinkParams.toString()}`, { cache: "no-store", headers })
+      ]);
+      if (!statusResponse.ok) throw new Error(await responseErrorMessage(statusResponse, "Статус Telegram"));
+      if (!featurePlanResponse.ok) throw new Error(await responseErrorMessage(featurePlanResponse, "План Telegram"));
+      if (!outboxResponse.ok) throw new Error(await responseErrorMessage(outboxResponse, "Очередь Telegram"));
+      if (!linkCodesResponse.ok) throw new Error(await responseErrorMessage(linkCodesResponse, "Коды Telegram"));
+      if (!chatLinksResponse.ok) throw new Error(await responseErrorMessage(chatLinksResponse, "Связанные Telegram-чаты"));
+      setTelegramStatus((await statusResponse.json()) as DenteTelegramBotStatus);
+      setTelegramFeaturePlan((await featurePlanResponse.json()) as TelegramFeaturePlan);
+      setTelegramOutbox((await outboxResponse.json()) as DenteTelegramOutboxResponse);
+      const nextLinkCodeLedger = (await linkCodesResponse.json()) as DenteTelegramLinkCodeListResponse;
+      const nextChatLinkLedger = (await chatLinksResponse.json()) as DenteTelegramChatLinkListResponse;
+      setTelegramLinkCodeLedger(nextLinkCodeLedger);
+      setTelegramChatLinkLedger(nextChatLinkLedger);
+      setTelegramLinkCodes(nextLinkCodeLedger.linkCodes);
+      setTelegramChatLinks(nextChatLinkLedger.chatLinks);
+    } catch (telegramError) {
+      if (!options.silent) {
+        setError(telegramError instanceof Error ? telegramError.message : "Панель управления Telegram недоступна");
+      }
+    } finally {
+      if (!options.silent) setIsTelegramLoading(false);
+    }
+  }
+
+  async function loadMoreTelegramOutbox() {
+    if (!telegramOutbox?.nextCursor || isTelegramOutboxLoadingMore) return;
+    setIsTelegramOutboxLoadingMore(true);
+    try {
+      const headers = telegramControlPlaneHeaders({}, telegramAdminSecretSession || telegramAdminSecretDraft);
+      const outboxParams = telegramOutboxRequestParams(telegramOutbox.nextCursor);
+      const response = await fetch(`/api/telegram/outbox?${outboxParams.toString()}`, { cache: "no-store", headers });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Очередь Telegram"));
+      const nextPage = (await response.json()) as DenteTelegramOutboxResponse;
+      setTelegramOutbox((current) => {
+        if (!current) return nextPage;
+        const knownIds = new Set(current.items.map((item) => item.id));
+        return {
+          ...nextPage,
+          items: [...current.items, ...nextPage.items.filter((item) => !knownIds.has(item.id))]
+        };
+      });
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Очередь Telegram не загрузилась");
+    } finally {
+      setIsTelegramOutboxLoadingMore(false);
+    }
+  }
+
+  async function loadMoreTelegramLinkCodes() {
+    if (!telegramLinkCodeLedger?.nextCursor || isTelegramLinkCodesLoadingMore) return;
+    setIsTelegramLinkCodesLoadingMore(true);
+    try {
+      const headers = telegramControlPlaneHeaders({}, telegramAdminSecretSession || telegramAdminSecretDraft);
+      const params = telegramLinkCodeLedgerRequestParams(telegramLinkCodeLedger.nextCursor);
+      const response = await fetch(`/api/telegram/link-codes?${params.toString()}`, { cache: "no-store", headers });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Коды Telegram"));
+      const nextPage = (await response.json()) as DenteTelegramLinkCodeListResponse;
+      const knownIds = new Set(telegramLinkCodes.map((code) => code.id));
+      const linkCodes = [...telegramLinkCodes, ...nextPage.linkCodes.filter((code) => !knownIds.has(code.id))];
+      setTelegramLinkCodes(linkCodes);
+      setTelegramLinkCodeLedger({ ...nextPage, linkCodes });
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Коды Telegram не загрузились");
+    } finally {
+      setIsTelegramLinkCodesLoadingMore(false);
+    }
+  }
+
+  async function loadMoreTelegramChatLinks() {
+    if (!telegramChatLinkLedger?.nextCursor || isTelegramChatLinksLoadingMore) return;
+    setIsTelegramChatLinksLoadingMore(true);
+    try {
+      const headers = telegramControlPlaneHeaders({}, telegramAdminSecretSession || telegramAdminSecretDraft);
+      const params = telegramChatLinkLedgerRequestParams(telegramChatLinkLedger.nextCursor);
+      const response = await fetch(`/api/telegram/chat-links?${params.toString()}`, { cache: "no-store", headers });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Связанные Telegram-чаты"));
+      const nextPage = (await response.json()) as DenteTelegramChatLinkListResponse;
+      const knownIds = new Set(telegramChatLinks.map((link) => link.id));
+      const chatLinks = [...telegramChatLinks, ...nextPage.chatLinks.filter((link) => !knownIds.has(link.id))];
+      setTelegramChatLinks(chatLinks);
+      setTelegramChatLinkLedger({ ...nextPage, chatLinks });
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Связанные Telegram-чаты не загрузились");
+    } finally {
+      setIsTelegramChatLinksLoadingMore(false);
+    }
+  }
+
+  async function createTelegramLinkCode() {
+    if (isTelegramLinkCreating) {
+      setError("Дождитесь завершения текущего создания Telegram-кода.");
+      return;
+    }
+    if (!dashboard) {
+      setError("Данные клиники еще не загружены. Повторите создание Telegram-кода после загрузки рабочего экрана.");
+      return;
+    }
+    const subjectId = telegramLinkSubjectType === "patient" ? activePatient?.id : telegramLinkStaffId;
+    if (!subjectId) {
+      setError(
+        telegramLinkSubjectType === "patient"
+          ? "Выберите активного пациента для Telegram-кода."
+          : "Выберите сотрудника для Telegram-кода."
+      );
+      return;
+    }
+    setIsTelegramLinkCreating(true);
+    setTelegramLinkActionState(null);
+    try {
+      const response = await fetch("/api/telegram/link-codes", {
+        method: "POST",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          organizationId: dashboard.clinicSettings.profile.organizationId,
+          subjectType: telegramLinkSubjectType,
+          subjectId,
+          clinicId: dashboard.clinicSettings.profile.organizationId,
+          botConfigId: telegramModeDraft === "clinic_owned_bot" ? telegramBotConfigId.trim() || undefined : undefined,
+          ttlMinutes: parseTelegramLinkTtlMinutes(),
+          createdByUserId: activeDoctor?.id ?? null
+        })
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Telegram-код не создан"));
+      setTelegramLinkCode((await response.json()) as DenteTelegramLinkCodeCreated);
+      await loadTelegramControlPlane({ silent: true });
+      setError(null);
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Telegram-код не создан");
+    } finally {
+      setIsTelegramLinkCreating(false);
+    }
+  }
+
+  async function copyTelegramTextToClipboard(value: string | null | undefined, label: string) {
+    const text = value?.trim();
+    if (!text) {
+      const message = `${label} пустой. Сначала создайте новый Telegram-код или проверьте настройки бота.`;
+      setTelegramLinkActionState(message);
+      setError(message);
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "true");
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        document.body.removeChild(area);
+      }
+      setTelegramLinkActionState(`${label} скопирован`);
+      setError(null);
+    } catch {
+      setTelegramLinkActionState(null);
+      setError(`${label} не скопирован. Откройте ссылку или выделите код вручную.`);
+    }
+  }
+
+  function downloadTelegramQrSvg() {
+    if (!telegramLinkCode?.qrSvg) {
+      const message = "QR-код недоступен. Используйте текстовый код или создайте новый Telegram-код.";
+      setTelegramLinkActionState(message);
+      setError(message);
+      return;
+    }
+    const blob = new Blob([telegramLinkCode.qrSvg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dente-telegram-qr-${telegramLinkCode.codeLast4}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setTelegramLinkActionState("QR-код скачан");
+    setError(null);
+  }
+
+  async function revokeTelegramChatLink(linkId: string) {
+    if (telegramRevokingLinkId) {
+      setError("Дождитесь завершения текущего отзыва Telegram-связки.");
+      return;
+    }
+    setTelegramRevokingLinkId(linkId);
+    try {
+      const response = await fetch(`/api/telegram/chat-links/${encodeURIComponent(linkId)}/revoke${telegramOutboxActionQueryString()}`, {
+        method: "POST",
+        headers: telegramControlPlaneHeaders()
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Связка Telegram не отозвана"));
+      await loadTelegramControlPlane({ silent: true });
+      setError(null);
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Связка Telegram не отозвана");
+    } finally {
+      setTelegramRevokingLinkId(null);
+    }
+  }
+
+  async function previewTelegramTemplate(templateKind: DenteTelegramMessagePreview["templateKind"]) {
+    const isStaffPreview = templateKind === "staff_daily_digest";
+    const staffId = telegramLinkStaffId || telegramLinkStaffOptions[0]?.id || "";
+    if (!isStaffPreview && !activePatient) {
+      setError("Выберите активного пациента перед предпросмотром Telegram-сообщения.");
+      return;
+    }
+    if (isStaffPreview && !staffId) {
+      setError("Выберите сотрудника перед предпросмотром Telegram-дайджеста.");
+      return;
+    }
+    setIsTelegramLoading(true);
+    try {
+      const response = await fetch(`/api/telegram/messages/preview${telegramOutboxActionQueryString()}`, {
+        method: "POST",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          templateKind,
+          patientId: isStaffPreview ? undefined : activePatient?.id,
+          staffId: isStaffPreview ? staffId : undefined,
+          appointmentId: isStaffPreview ? undefined : activeAppointment?.id,
+          includePhi: false
+        })
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Предпросмотр Telegram не создан"));
+      setTelegramPreview((await response.json()) as DenteTelegramMessagePreview);
+      setError(null);
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Предпросмотр Telegram не создан");
+    } finally {
+      setIsTelegramLoading(false);
+    }
+  }
+
+  async function saveTelegramSettings(options: { silent?: boolean } = {}): Promise<boolean> {
+    if (telegramPrivacyModeDraft === "consented_phi_templates") {
+      const message = "Чувствительные Telegram-шаблоны заблокированы до отдельного согласия пациента, аудита и серверной политики PHI.";
+      setTelegramSettingsSaveState("error");
+      setTelegramSettingsSaveError(message);
+      if (!options.silent) setError(message);
+      return false;
+    }
+    const patientLinkTokenTtlMinutes = parseTelegramLinkTtlMinutes();
+    if (String(patientLinkTokenTtlMinutes) !== telegramTokenTtlDraft) {
+      setTelegramTokenTtlDraft(String(patientLinkTokenTtlMinutes));
+    }
+    const appointmentReminderLeadTimesHours = parseTelegramReminderLeadTimesHours();
+    const normalizedReminderLeadTimes = appointmentReminderLeadTimesHours.join(", ");
+    if (normalizedReminderLeadTimes !== telegramReminderLeadTimesDraft) {
+      setTelegramReminderLeadTimesDraft(normalizedReminderLeadTimes);
+    }
+    const reviewRequestDelayHours = parseTelegramReviewRequestDelayHours();
+    if (String(reviewRequestDelayHours) !== telegramReviewRequestDelayDraft) {
+      setTelegramReviewRequestDelayDraft(String(reviewRequestDelayHours));
+    }
+    const postVisitCheckupDelayHoursByTopic = parseTelegramPostVisitCheckupDelayHours();
+    const normalizedPostVisitCheckupDelayDrafts = normalizeTelegramPostVisitCheckupDelayDrafts(postVisitCheckupDelayHoursByTopic);
+    if (JSON.stringify(normalizedPostVisitCheckupDelayDrafts) !== JSON.stringify(telegramPostVisitCheckupDelayDrafts)) {
+      setTelegramPostVisitCheckupDelayDrafts(normalizedPostVisitCheckupDelayDrafts);
+    }
+    let botUsername: string | null;
+    let ownBotUsername: string | null;
+    let webhookBaseUrl: string | null;
+    let patientPortalBaseUrl: string | null;
+    let welcomeImageUrl: string | null;
+    let visualCardUrls: DenteTelegramVisualCardUrls;
+    let clinicReviewUrl: string | null;
+    let clinicMapsUrl: string | null;
+    try {
+      botUsername = normalizeTelegramBotUsernameDraft("Бот DENTE", telegramBotUsernameDraft);
+      ownBotUsername = normalizeTelegramBotUsernameDraft("Бот клиники", telegramOwnBotUsernameDraft);
+      webhookBaseUrl = normalizeTelegramPublicHttpsUrlDraft("Webhook Telegram", telegramWebhookBaseUrlDraft);
+      patientPortalBaseUrl = normalizeTelegramPublicHttpsUrlDraft("Портал пациента", telegramPatientPortalBaseUrlDraft);
+      welcomeImageUrl = normalizeTelegramPublicHttpsUrlDraft("Картинка приветствия", telegramWelcomeImageUrlDraft);
+      visualCardUrls = normalizeTelegramVisualCardUrlDraftsForSave(telegramVisualCardUrlDrafts);
+      clinicReviewUrl = normalizeTelegramPublicHttpsUrlDraft("Ссылка на отзыв", telegramReviewUrlDraft);
+      clinicMapsUrl = normalizeTelegramPublicHttpsUrlDraft("Ссылка на карту", telegramMapsUrlDraft);
+    } catch (urlError) {
+      const message = urlError instanceof Error ? urlError.message : "Проверьте Telegram-настройки перед сохранением.";
+      setTelegramSettingsSaveState("error");
+      setTelegramSettingsSaveError(message);
+      if (!options.silent) setError(message);
+      return false;
+    }
+    if ((botUsername ?? "") !== telegramBotUsernameDraft.trim().replace(/^@/, "")) setTelegramBotUsernameDraft(botUsername ?? "");
+    if ((ownBotUsername ?? "") !== telegramOwnBotUsernameDraft.trim().replace(/^@/, "")) {
+      setTelegramOwnBotUsernameDraft(ownBotUsername ?? "");
+    }
+    if ((webhookBaseUrl ?? "") !== telegramWebhookBaseUrlDraft.trim()) setTelegramWebhookBaseUrlDraft(webhookBaseUrl ?? "");
+    if ((patientPortalBaseUrl ?? "") !== telegramPatientPortalBaseUrlDraft.trim()) setTelegramPatientPortalBaseUrlDraft(patientPortalBaseUrl ?? "");
+    if ((welcomeImageUrl ?? "") !== telegramWelcomeImageUrlDraft.trim()) setTelegramWelcomeImageUrlDraft(welcomeImageUrl ?? "");
+    if (JSON.stringify(visualCardUrls) !== JSON.stringify(telegramVisualCardUrlDrafts)) setTelegramVisualCardUrlDrafts(visualCardUrls);
+    if ((clinicReviewUrl ?? "") !== telegramReviewUrlDraft.trim()) setTelegramReviewUrlDraft(clinicReviewUrl ?? "");
+    if ((clinicMapsUrl ?? "") !== telegramMapsUrlDraft.trim()) setTelegramMapsUrlDraft(clinicMapsUrl ?? "");
+    setIsTelegramSettingsSaving(true);
+    setTelegramSettingsSaveState("saving");
+    setTelegramSettingsSaveError(null);
+    try {
+      const response = await fetch("/api/settings/telegram", {
+        method: "PUT",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          mode: telegramModeDraft,
+          botUsername,
+          ownBotUsername,
+          webhookBaseUrl,
+          patientPortalBaseUrl,
+          welcomeImageUrl,
+          visualCardUrls,
+          clinicReviewUrl,
+          clinicMapsUrl,
+          enabledFeatures: telegramEnabledFeaturesDraft,
+          patientLinkTokenTtlMinutes,
+          appointmentReminderLeadTimesHours,
+          reviewRequestDelayHours,
+          postVisitCheckupDelayHoursByTopic,
+          allowVoiceIntake: telegramAllowVoiceIntakeDraft,
+          staffEscalationChannel: telegramStaffEscalationChannelDraft.trim() || null,
+          privacyMode: telegramPrivacyModeDraft
+        })
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Настройки Telegram не сохранены"));
+      setTelegramStatus((await response.json()) as DenteTelegramBotStatus);
+      setTelegramSettingsDirty(false);
+      setTelegramSettingsSaveState("saved");
+      await loadTelegramControlPlane({ silent: true });
+      setError(null);
+      return true;
+    } catch (telegramError) {
+      const message = telegramError instanceof Error ? telegramError.message : "Настройки Telegram не сохранены";
+      setTelegramSettingsSaveState("error");
+      setTelegramSettingsSaveError(message);
+      if (!options.silent) setError(message);
+      return false;
+    } finally {
+      setIsTelegramSettingsSaving(false);
+    }
+  }
+
+  async function sendTelegramOutboxItem(itemId: string) {
+    if (telegramSendingItemId || isTelegramSendingDue) {
+      setError("Дождитесь завершения текущей отправки Telegram.");
+      return;
+    }
+    setTelegramSendingItemId(itemId);
+    try {
+      const mutationId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `telegram-send-${Date.now()}`;
+      const response = await fetch(`/api/telegram/outbox/${encodeURIComponent(itemId)}/send${telegramOutboxActionQueryString()}`, {
+        method: "POST",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          dryRun: false,
+          clientMutationId: mutationId
+        })
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Сообщение Telegram не отправлено"));
+      const result = (await response.json()) as DenteTelegramOutboxSendResponse;
+      if (result.status === "blocked" || result.status === "failed") {
+        const warning = result.warnings[0] ? telegramHumanMessage(result.warnings[0]) : "";
+        const reason = telegramHumanMessage(result.blockedReason) || warning;
+        setError(`Отправка Telegram заблокирована${reason ? `: ${reason}` : ""}`);
+        await loadTelegramControlPlane({ silent: true });
+        return;
+      }
+      setError(null);
+      await loadTelegramControlPlane({ silent: true });
+      if (result.status === "sent") await loadDashboard();
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Сообщение Telegram не отправлено");
+    } finally {
+      setTelegramSendingItemId(null);
+    }
+  }
+
+  async function sendDueTelegramOutbox() {
+    if (isTelegramSendingDue || telegramSendingItemId) {
+      setError("Дождитесь завершения текущей отправки Telegram.");
+      return;
+    }
+    if (!telegramOutbox?.dueCount) {
+      setError("Telegram: готовых сообщений к отправке нет.");
+      return;
+    }
+    setIsTelegramSendingDue(true);
+    try {
+      const response = await fetch(`/api/telegram/outbox/send-due${telegramOutboxActionQueryString()}`, {
+        method: "POST",
+        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ dryRun: false, limit: 25 })
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Готовые Telegram-сообщения не отправлены"));
+      const result = (await response.json()) as DenteTelegramOutboxSendDueResponse;
+      await loadTelegramControlPlane({ silent: true });
+      if (result.sentCount > 0) await loadDashboard();
+      setError(result.sentCount > 0 ? `Telegram: отправлено ${result.sentCount}, проверено ${result.attemptedCount}.` : "Telegram: готовых сообщений к отправке нет.");
+    } catch (telegramError) {
+      setError(telegramError instanceof Error ? telegramError.message : "Готовые Telegram-сообщения не отправлены");
+    } finally {
+      setIsTelegramSendingDue(false);
+    }
+  }
+
+  async function createImagingStudy(kind: ImagingStudyKind) {
+    if (imagingCreateSavingKind) {
+      setError("Дождитесь завершения текущего добавления снимка.");
+      return;
+    }
+    if (!activePatient || !dashboard) {
+      setError("Выберите пациента и активный прием перед добавлением снимка.");
+      return;
+    }
+    const titles: Record<ImagingStudyKind, string> = {
+      periapical: "Прицельный 36",
+      bitewing: "Интерпроксимальный контроль",
+      opg: "ОПТГ",
+      ceph: "ТРГ боковая",
+      cbct: "КТ / CBCT",
+      photo: "Фото полости рта",
+      other: "Снимок"
+    };
+    setImagingCreateSavingKind(kind);
+    try {
+      const response = await fetch("/api/imaging/studies", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          patientId: activePatient.id,
+          visitId: dashboard.activeVisit.id,
+          kind,
+          title: titles[kind],
+          toothCode: kind === "periapical" ? "36" : null,
+          region: kind === "opg" || kind === "cbct" ? "обе челюсти" : kind === "ceph" ? "профиль черепа" : "текущий прием",
+          sourceKind: kind === "cbct" || kind === "opg" || kind === "ceph" ? "dicom_file" : "sensor_bridge",
+          sourceName: kind === "cbct" || kind === "opg" || kind === "ceph" ? "Импорт DICOM" : "Мост RVG-датчика",
+          aiSummary: "Черновик: снимок добавлен в карту. Описание требует проверки врача."
+        })
+      });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Снимок не добавлен"));
+        return;
+      }
+      const createdStudy = (await response.json()) as { id?: string; kind?: ImagingStudyKind };
+      await loadDashboard();
+      if (createdStudy.kind) setImagingKindFilter(createdStudy.kind);
+      if (createdStudy.id) setSelectedImagingStudyId(createdStudy.id);
+      setError(null);
+    } catch (imagingError) {
+      setError(imagingError instanceof Error ? imagingError.message : "Снимок не добавлен");
+    } finally {
+      setImagingCreateSavingKind(null);
+    }
+  }
+
+  const imagingViewerSaveTitle: Record<ImagingViewerSaveState, string> = {
+    idle: "Сессия просмотра",
+    local: "Локальный черновик сохранен",
+    saving: "Сохраняю просмотр",
+    saved: "Просмотр сохранен",
+    queued: isOnline ? "Повтор серверного сохранения в очереди" : "Офлайн-черновик сохранен",
+    error: "Сохранение требует проверки"
+  };
+  const imagingViewerSaveDetail = [
+    `${imagingViewerAnnotations.length} заметок`,
+    imagingViewerLocalSavedAt ? `локально ${formatTime(imagingViewerLocalSavedAt)}` : "локально ожидает",
+    imagingViewerSession?.serverSavedAt ? `сервер ${formatTime(imagingViewerSession.serverSavedAt)}` : "сервер ожидает",
+    imagingViewerSaveError
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const canRetryImagingViewerSave =
+    imagingViewerSessionReady && Boolean(selectedImagingStudy?.id) && (imagingViewerSaveState === "queued" || imagingViewerSaveState === "error");
+  const imagingViewerNoteText = imagingViewerNote.trim();
+  const imagingViewerNoteReady = imagingViewerNoteText.length > 0;
+  const imagingPreviewSource = (study: Dashboard["imagingStudies"][number]) => imagingPreviewObjectUrls[study.id] ?? study.previewUrl;
+  const imagingViewerHref = (study: Dashboard["imagingStudies"][number]) => imagingPreviewObjectUrls[study.id] ?? study.viewerUrl ?? study.previewUrl;
+
+  if (accessUnlockRequired && !dashboard) {
+    return (
+      <AppUnlockState
+        accessMessage={accessUnlockMessage}
+        adminSecretDraft={telegramAdminSecretDraft}
+        onAdminSecretChange={setTelegramAdminSecretDraft}
+        onUnlock={unlockTelegramAdminSession}
+      />
+    );
+  }
+
+  if (error && !dashboard) {
+    return <AppLoadingState message={`API недоступен: ${error}`} />;
+  }
+
+  if (!dashboard || !activePatient) {
+    return <AppLoadingState message="Загрузка рабочей смены" />;
+  }
+
+  const activeWorkspaceProfile =
+    dashboard.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard.clinicSettings.profile.mode) ??
+    dashboard.clinicSettings.workspaceProfiles[0];
+  const activeRolePolicy =
+    dashboard.clinicSettings.roleAccessPolicies.find((policy) => policy.role === selectedWorkspaceRole) ??
+    dashboard.clinicSettings.roleAccessPolicies.find((policy) => policy.role === "doctor") ??
+    dashboard.clinicSettings.roleAccessPolicies[0];
+  const activeQueueRole: StaffRole = selectedWorkspaceRole === "owner" ? "manager" : selectedWorkspaceRole;
+  const activeRoleQueue =
+    dashboard.shiftIntelligence.roleQueues.find((queue) => queue.role === activeQueueRole) ?? dashboard.shiftIntelligence.roleQueues[0];
+  const activeRoleWritableSections = activeRolePolicy?.canWrite ?? [];
+  const activeRoleRestrictedSections = activeRolePolicy?.restricted ?? [];
+  const roleRecommendedActions = dashboard.recommendedActions.filter(
+    (action) => action.role === selectedWorkspaceRole || (selectedWorkspaceRole === "owner" && action.role === "manager")
+  );
+  const visibleRecommendedActions = (roleRecommendedActions.length ? roleRecommendedActions : dashboard.recommendedActions).slice(0, 4);
+  const roleScheduleSuggestions = dashboard.scheduleSuggestions.filter(
+    (suggestion) => suggestion.ownerRole === selectedWorkspaceRole || (selectedWorkspaceRole === "owner" && suggestion.ownerRole === "manager")
+  );
+  const visibleScheduleSuggestions = (roleScheduleSuggestions.length ? roleScheduleSuggestions : dashboard.scheduleSuggestions).slice(0, 3);
+  const legalMissingFields = clinicLegalMissingFields(dashboard.clinicSettings.profile);
+  const legalReadinessPercent = clinicLegalReadinessPercent(dashboard.clinicSettings.profile);
+  const onboardingFirstAppointmentIssues = buildOnboardingFirstAppointmentIssues();
+  const onboardingDocumentReadinessIssues = buildOnboardingDocumentReadinessIssues();
+  const onboardingBlockingIssues = onboardingFirstAppointmentIssues;
+  const onboardingTelegramRecommendations = buildOnboardingTelegramRecommendations();
+  const onboardingReadyToFinish = onboardingFirstAppointmentIssues.length === 0;
+  const onboardingDocumentsReady = onboardingDocumentReadinessIssues.length === 0;
+  const newStaffReadyToCreate = newStaffName.trim().length > 0;
+  const newChairReadyToCreate = newChairName.trim().length > 0;
+  const currentOnboardingIndex = Math.max(0, onboardingSteps.findIndex((step) => step.id === onboardingStep));
+  const previousOnboardingStep = currentOnboardingIndex > 0 ? onboardingSteps[currentOnboardingIndex - 1] : null;
+  const nextOnboardingStep = currentOnboardingIndex < onboardingSteps.length - 1 ? onboardingSteps[currentOnboardingIndex + 1] : null;
+  const showFullOnboardingGuide = !onboardingDismissed && currentView === "settings" && settingsTab === "clinic" && onboardingGuideExpanded;
+  const selectedUiLanguageOption = uiLanguageOptions.find((option) => option.value === uiLanguage) ?? defaultUiLanguageOption;
+  const showAdministrationTopActions =
+    currentView === "settings" ||
+    selectedWorkspaceRole === "administrator" ||
+    selectedWorkspaceRole === "manager" ||
+    selectedWorkspaceRole === "owner";
+  const showDoctorVisitShortcut = selectedWorkspaceRole === "doctor" && currentView !== "visit";
+
+  const serviceTitle = (serviceId: string) => dashboard.serviceCatalog.find((service) => service.id === serviceId)?.title ?? serviceId;
+  const goToVisitDictation = () => {
+    window.location.hash = "visit";
+    const openDictation = () => {
+      scrollToVisitArea(".dictation-box");
+      document.querySelector<HTMLTextAreaElement>(".dictation-box textarea")?.focus({ preventScroll: true });
+    };
+    window.setTimeout(openDictation, 0);
+    window.setTimeout(openDictation, 120);
+  };
+
+  return (
+    <main className="app-shell">
+      <WorkspaceSidebar currentView={currentView} />
+
+      <section className={`workspace view-${currentView}`}>
+        <WorkspaceTopbar
+          clinicName={dashboard.clinicName}
+          onGoToDictation={goToVisitDictation}
+          onGoToSchedule={() => {
+            window.location.hash = "schedule";
+          }}
+          onGoToVisit={() => {
+            window.location.hash = "visit";
+          }}
+          onReopenOnboarding={reopenOnboarding}
+          onRoleChange={setSelectedWorkspaceRole}
+          roleFocusOrder={roleFocusOrder}
+          selectedWorkspaceRole={selectedWorkspaceRole}
+          showAdministrationTopActions={showAdministrationTopActions}
+          showDoctorVisitShortcut={showDoctorVisitShortcut}
+          staffRoleLabels={staffRoleLabels}
+          todayIso={dashboard.todayIso}
+        />
+
+        {error ? (
+          <section className="app-notice" role="status" aria-live="polite">
+            <AlertTriangle aria-hidden="true" />
+            <p>{error}</p>
+            <button className="secondary-button" type="button" onClick={() => setError(null)}>
+              Понятно
+            </button>
+          </section>
+        ) : null}
+
+        {!error && uiPreferencesSyncError ? (
+          <section className="app-notice" role="status" aria-live="polite">
+            <AlertTriangle aria-hidden="true" />
+            <p>{uiPreferencesSyncError}</p>
+            <button className="secondary-button" type="button" onClick={() => setUiPreferencesSyncError(null)}>
+              Понятно
+            </button>
+          </section>
+        ) : null}
+
+        {!error && !uiPreferencesSyncError && telegramHandoffNotice ? (
+          <section className="app-notice telegram-handoff-notice" role="status" aria-live="polite">
+            <Bot aria-hidden="true" />
+            <p>
+              Открыто из Telegram: <strong>{telegramHandoffNotice.title}</strong>. {telegramHandoffNotice.detail} Ссылка не содержит
+              пациента, документ, запись или оплату.
+            </p>
+            <button className="secondary-button" type="button" onClick={() => setTelegramHandoffNotice(null)}>
+              Понятно
+            </button>
+          </section>
+        ) : null}
+
+        {!onboardingDismissed && !showFullOnboardingGuide ? (
+          <section className="onboarding-compact-strip" aria-label="Первичная настройка клиники">
+            <div>
+              <strong>Можно начать прием без мастера</strong>
+              <span>
+                Документы предупредят о реквизитах позже. Сейчас важнее открыть пациента, диктовку и расписание.
+              </span>
+            </div>
+            <span className="onboarding-compact-score">
+              {currentOnboardingIndex + 1}/{onboardingSteps.length} · документы {legalReadinessPercent}%
+            </span>
+            <button className="primary-button" type="button" onClick={() => void continueOnboardingInDraftMode("visit")}>
+              <ClipboardCheck aria-hidden="true" /> Прием
+            </button>
+            <button className="secondary-button" type="button" onClick={() => openOnboardingGuide()}>
+              <ShieldCheck aria-hidden="true" /> Настроить
+            </button>
+          </section>
+        ) : null}
+
+        {showFullOnboardingGuide ? (
+          <section className="onboarding-shell" aria-label="Первичная настройка клиники">
+            <div className="onboarding-head">
+              <div>
+                <p className="eyebrow">Первое открытие</p>
+                <h2>Настройка новой клиники и рабочего места врача</h2>
+                <p>
+                  Можно начать прием сразу. Юридические поля, импорт и Telegram остаются в настройке и не мешают диктовке,
+                  расписанию и карточке пациента.
+                </p>
+              </div>
+              <div className="onboarding-score">
+                <span>{currentOnboardingIndex + 1}/{onboardingSteps.length}</span>
+                <strong>{legalReadinessPercent}%</strong>
+                <small>готовность документов</small>
+              </div>
+            </div>
+
+            <div className="onboarding-fast-start" aria-label="Быстрый старт работы">
+              <div>
+                <strong>Рабочий вход без мастера</strong>
+                <span>
+                  Черновики приема сохраняются. Документы и налоговые формы сами покажут, каких реквизитов не хватает.
+                </span>
+              </div>
+              <button className="primary-button" type="button" onClick={() => void continueOnboardingInDraftMode("visit")}>
+                <ClipboardCheck aria-hidden="true" /> Открыть прием
+              </button>
+              <button className="secondary-button" type="button" onClick={() => void continueOnboardingInDraftMode("schedule")}>
+                <CalendarDays aria-hidden="true" /> Расписание
+              </button>
+              <button className="secondary-button" type="button" onClick={() => void moveOnboardingTo("legal")}>
+                <ShieldCheck aria-hidden="true" /> Реквизиты
+              </button>
+            </div>
+
+            <div className="onboarding-step-list" aria-label="Шаги знакомства">
+              {onboardingSteps.map((step, index) => (
+                <button
+                  className={step.id === onboardingStep ? "active" : index < currentOnboardingIndex ? "done" : ""}
+                  key={step.id}
+                  type="button"
+                  disabled={step.id === "done" && !onboardingReadyToFinish}
+                  onClick={() => void moveOnboardingTo(step.id)}
+                >
+                  <span>{index + 1}</span>
+                  <strong>{step.title}</strong>
+                  <small>{step.detail}</small>
+                </button>
+              ))}
+            </div>
+
+            {onboardingStep === "intro" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Короткая карта приложения</h3>
+                  <p>
+                    Смена показывает очередь и срочные действия. Прием хранит черновики локально и на сервере. Документы
+                    генерируются из проверенных данных пациента, оплаты и лицензии клиники.
+                  </p>
+                </div>
+                <div className="onboarding-source-grid">
+                  <span>Прием: протоколы, голос, офлайн-черновик</span>
+                  <span>Документы: пациент, оплата, налоговая</span>
+                  <span>Импорт: прайс, старые базы, DICOM</span>
+                  <span>Настройки: роль, кабинет, юридический профиль</span>
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingStep === "role" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Кто сейчас работает</h3>
+                  <p>Выбор роли и специализации сохраняется как настройка рабочего места и не подмешивает чужие разделы.</p>
+                </div>
+                <div className="onboarding-form-grid">
+                  <div className="role-picker form-span-2" aria-label="Роль нового сотрудника">
+                    {roleFocusOrder.map((role) => (
+                      <button
+                        className={selectedWorkspaceRole === role ? "active" : ""}
+                        key={role}
+                        type="button"
+                        onClick={() => setSelectedWorkspaceRole(role)}
+                      >
+                        {staffRoleLabels[role]}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="specialty-strip form-span-2" aria-label="Специализация врача">
+                    {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
+                      <button
+                        className={selectedSpecialty === specialty ? "active" : ""}
+                        key={specialty}
+                        type="button"
+                        onClick={() => setSelectedSpecialty(specialty)}
+                      >
+                        {specialtyLabels[specialty]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingStep === "clinic" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Режим и базовые контакты</h3>
+                  <p>Режим меняет первый экран, очереди ролей и подсказки без ручной перенастройки интерфейса.</p>
+                </div>
+                <div className="mode-grid form-span-2" aria-label="Режим клиники">
+                  {(Object.keys(clinicModeLabels) as ClinicMode[]).map((mode) => (
+                    <button
+                      className={`mode-card ${dashboard.clinicSettings.profile.mode === mode ? "active" : ""}`}
+                      key={mode}
+                      type="button"
+                      onClick={() => changeClinicMode(mode)}
+                    >
+                      <strong>{clinicModeLabels[mode].title}</strong>
+                      <span>{clinicModeLabels[mode].detail}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="onboarding-form-grid">
+                  <label>
+                    Название клиники
+                    <input value={clinicProfileDraft.clinicName} onChange={(event) => updateClinicProfileDraft("clinicName", event.target.value)} />
+                  </label>
+                  <label>
+                    Телефон
+                    <input value={clinicProfileDraft.phone} onChange={(event) => updateClinicProfileDraft("phone", event.target.value)} />
+                  </label>
+                  <label>
+                    Часовой пояс
+                    <input value={clinicProfileDraft.timezone} onChange={(event) => updateClinicProfileDraft("timezone", event.target.value)} />
+                  </label>
+                  <label>
+                    Язык интерфейса
+                    <select value={uiLanguage} onChange={(event) => setUiLanguage(normalizeUiLanguageInput(event.target.value))}>
+                      {uiLanguageOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <small className="field-note">{selectedUiLanguageOption.detail}</small>
+                  </label>
+                  <label>
+                    Минут на визит
+                    <input
+                      inputMode="numeric"
+                      value={clinicProfileDraft.defaultVisitMinutes}
+                      onChange={(event) => updateClinicProfileDraft("defaultVisitMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
+                    />
+                  </label>
+                  <label>
+                    Начало смены
+                    <input type="time" value={clinicProfileDraft.workdayStart} onChange={(event) => updateClinicProfileDraft("workdayStart", event.target.value)} />
+                  </label>
+                  <label>
+                    Конец смены
+                    <input type="time" value={clinicProfileDraft.workdayEnd} onChange={(event) => updateClinicProfileDraft("workdayEnd", event.target.value)} />
+                  </label>
+                  <label>
+                    Буфер, мин
+                    <input
+                      inputMode="numeric"
+                      value={clinicProfileDraft.appointmentBufferMinutes}
+                      onChange={(event) => updateClinicProfileDraft("appointmentBufferMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
+                    />
+                  </label>
+                  <div className="weekday-toggle-row form-span-2" role="group" aria-label="Рабочие дни клиники">
+                    <span>Рабочие дни</span>
+                    {weekdayOptions.map((day) => (
+                      <button
+                        className={clinicProfileDraft.workingDays.includes(day.value) ? "active" : ""}
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleClinicWorkingDay(day.value)}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingStep === "legal" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Юридические данные для договоров и налоговых справок</h3>
+                  <p>
+                    Без этих полей приложение не должно выдавать финальные договоры, акты и налоговые документы как готовые.
+                  </p>
+                </div>
+                <div className="onboarding-form-grid">
+                  <label>
+                    Юридическое лицо
+                    <input value={clinicProfileDraft.legalName} onChange={(event) => updateClinicProfileDraft("legalName", event.target.value)} />
+                  </label>
+                  <label>
+                    ИНН
+                    <input value={clinicProfileDraft.inn} onChange={(event) => updateClinicProfileDraft("inn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))} />
+                  </label>
+                  <label>
+                    КПП
+                    <input value={clinicProfileDraft.kpp} onChange={(event) => updateClinicProfileDraft("kpp", event.target.value.replace(/[^\d]/g, "").slice(0, 9))} />
+                  </label>
+                  <label>
+                    ОГРН / ОГРНИП
+                    <input value={clinicProfileDraft.ogrn} onChange={(event) => updateClinicProfileDraft("ogrn", event.target.value.replace(/[^\d]/g, "").slice(0, 15))} />
+                  </label>
+                  <label className="form-span-2">
+                    Адрес
+                    <input value={clinicProfileDraft.address} onChange={(event) => updateClinicProfileDraft("address", event.target.value)} />
+                  </label>
+                  <label>
+                    Номер лицензии
+                    <input value={clinicProfileDraft.medicalLicenseNumber} onChange={(event) => updateClinicProfileDraft("medicalLicenseNumber", event.target.value)} />
+                  </label>
+                  <label>
+                    Дата лицензии
+                    <input value={clinicProfileDraft.medicalLicenseIssuedAt} onChange={(event) => updateClinicProfileDraft("medicalLicenseIssuedAt", event.target.value)} />
+                  </label>
+                  <label className="form-span-2">
+                    Кем выдана лицензия
+                    <input value={clinicProfileDraft.medicalLicenseIssuer} onChange={(event) => updateClinicProfileDraft("medicalLicenseIssuer", event.target.value)} />
+                  </label>
+                </div>
+                <div className="clinic-legal-summary">
+                  <strong>{legalReadinessPercent}%</strong>
+                  <span>{legalMissingFields.length ? `Не хватает: ${legalMissingFields.join(", ")}` : "Минимальные поля заполнены"}</span>
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingStep === "team" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Команда и кабинет</h3>
+                  <p>Сотрудники и кресла сразу попадают в серверное состояние, аудит и расписание.</p>
+                </div>
+                <div className="onboarding-form-grid">
+                  <label>
+                    Новый сотрудник
+                    <input value={newStaffName} onChange={(event) => setNewStaffName(event.target.value)} />
+                  </label>
+                  <div className="role-picker form-span-2" aria-label="Роль нового сотрудника">
+                    {(["doctor", "administrator", "assistant", "manager"] as StaffRole[]).map((role) => (
+                      <button
+                        className={newStaffRole === role ? "active" : ""}
+                        key={role}
+                        type="button"
+                        onClick={() => setNewStaffRole(role)}
+                      >
+                        {staffRoleLabels[role]}
+                      </button>
+                    ))}
+                  </div>
+                  {newStaffRole === "doctor" || newStaffRole === "assistant" ? (
+                    <div className="specialty-strip staff-specialty-picker form-span-2" aria-label="Специальность нового сотрудника">
+                      {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
+                        <button
+                          className={newStaffSpecialty === specialty ? "active" : ""}
+                          key={specialty}
+                          type="button"
+                          onClick={() => setNewStaffSpecialty(specialty)}
+                        >
+                          {specialtyLabels[specialty]}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <button className="secondary-button" type="button" onClick={() => addStaffMember(newStaffRole)} disabled={!newStaffReadyToCreate}>
+                    <Plus aria-hidden="true" /> Добавить сотрудника
+                  </button>
+                  {!newStaffReadyToCreate ? (
+                    <p className="quick-create-guidance form-span-2" role="status" aria-live="polite">
+                      Введите ФИО сотрудника, затем выберите роль.
+                    </p>
+                  ) : null}
+                  <label>
+                    Кресло / кабинет
+                    <input value={newChairName} onChange={(event) => setNewChairName(event.target.value)} />
+                  </label>
+                  <button className="secondary-button" type="button" onClick={addChair} disabled={!newChairReadyToCreate}>
+                    <Plus aria-hidden="true" /> Добавить кресло
+                  </button>
+                  {!newChairReadyToCreate ? (
+                    <p className="quick-create-guidance form-span-2" role="status" aria-live="polite">
+                      Введите понятное название кресла или кабинета.
+                    </p>
+                  ) : null}
+                </div>
+                <div className="onboarding-schedule-grid form-span-2" aria-label="Расписание команды при первом запуске">
+                  <div className="onboarding-schedule-section">
+                    <div>
+                      <h4>Расписание команды</h4>
+                      <p>Сразу задайте рабочие дни и часы. Изменения автосохраняются и остаются выбранными, пока вы их не поменяете.</p>
+                    </div>
+                    <div className="staff-list">
+                      {dashboard.clinicSettings.staff
+                        .filter((member) => member.role === "doctor" || member.role === "assistant")
+                        .map((member) => {
+                          const scheduleDraft = staffScheduleDrafts[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
+                          const scheduleSaveState = staffScheduleSaveStates[member.id] ?? "saved";
+                          const scheduleDirty = staffScheduleDirtyIds.has(member.id);
+                          const scheduleSaving = staffScheduleSavingId === member.id || scheduleSaveState === "saving";
+                          const scheduleSaveLabel = scheduleSaving
+                            ? "Автосохранение"
+                            : scheduleSaveState === "error"
+                              ? "Не сохранено"
+                              : scheduleDirty
+                                ? "Ждет автосохранения"
+                                : "Сохранено";
+                          return (
+                            <div className="staff-row onboarding-schedule-row" key={`onboarding-staff-schedule-${member.id}`}>
+                              <span style={{ background: member.color }} />
+                              <div>
+                                <strong>{member.fullName}</strong>
+                                <p>
+                                  {staffRoleLabels[member.role]} · {member.specialties.map((item) => specialtyLabels[item]).join(", ")}
+                                </p>
+                              </div>
+                              <div className="staff-schedule-editor onboarding-compact-schedule-editor">
+                                <label>
+                                  С
+                                  <input
+                                    aria-label={`Начало смены: ${member.fullName}`}
+                                    type="time"
+                                    value={scheduleDraft.start}
+                                    onChange={(event) => updateStaffScheduleDraft(member.id, { start: event.target.value })}
+                                  />
+                                </label>
+                                <label>
+                                  До
+                                  <input
+                                    aria-label={`Конец смены: ${member.fullName}`}
+                                    type="time"
+                                    value={scheduleDraft.end}
+                                    onChange={(event) => updateStaffScheduleDraft(member.id, { end: event.target.value })}
+                                  />
+                                </label>
+                                <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни сотрудника: ${member.fullName}`}>
+                                  {weekdayOptions.map((day) => (
+                                    <button
+                                      className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
+                                      key={day.value}
+                                      type="button"
+                                      onClick={() => toggleStaffWorkingDay(member.id, day.value)}
+                                    >
+                                      {day.label}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="staff-schedule-actions">
+                                  <span className={`save-state save-state-${scheduleSaveState}`}>{scheduleSaveLabel}</span>
+                                  <button
+                                    className="secondary-button compact-button"
+                                    type="button"
+                                    onClick={() => void saveStaffSchedule(member.id)}
+                                    disabled={scheduleSaving}
+                                  >
+                                    {scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                  <div className="onboarding-schedule-section">
+                    <div>
+                      <h4>Расписание кресел</h4>
+                      <p>Кабинет может работать иначе, чем врач. Это сразу учитывается в записи и конфликтных слотах.</p>
+                    </div>
+                    <div className="staff-list">
+                      {dashboard.clinicSettings.chairs
+                        .filter((chair) => chair.active)
+                        .map((chair) => {
+                          const scheduleDraft = chairScheduleDrafts[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
+                          const scheduleSaveState = chairScheduleSaveStates[chair.id] ?? "saved";
+                          const scheduleDirty = chairScheduleDirtyIds.has(chair.id);
+                          const scheduleSaving = chairScheduleSavingId === chair.id || scheduleSaveState === "saving";
+                          const scheduleSaveLabel = scheduleSaving
+                            ? "Автосохранение"
+                            : scheduleSaveState === "error"
+                              ? "Не сохранено"
+                              : scheduleDirty
+                                ? "Ждет автосохранения"
+                                : "Сохранено";
+                          return (
+                            <div className="staff-row onboarding-schedule-row" key={`onboarding-chair-schedule-${chair.id}`}>
+                              <CalendarDays aria-hidden="true" />
+                              <div>
+                                <strong>{chair.name}</strong>
+                                <p>{chair.specialization ? specialtyLabels[chair.specialization] : "универсально"}</p>
+                              </div>
+                              <div className="staff-schedule-editor onboarding-compact-schedule-editor">
+                                <label>
+                                  С
+                                  <input
+                                    aria-label={`Начало работы кресла: ${chair.name}`}
+                                    type="time"
+                                    value={scheduleDraft.start}
+                                    onChange={(event) => updateChairScheduleDraft(chair.id, { start: event.target.value })}
+                                  />
+                                </label>
+                                <label>
+                                  До
+                                  <input
+                                    aria-label={`Конец работы кресла: ${chair.name}`}
+                                    type="time"
+                                    value={scheduleDraft.end}
+                                    onChange={(event) => updateChairScheduleDraft(chair.id, { end: event.target.value })}
+                                  />
+                                </label>
+                                <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни кресла: ${chair.name}`}>
+                                  {weekdayOptions.map((day) => (
+                                    <button
+                                      className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
+                                      key={day.value}
+                                      type="button"
+                                      onClick={() => toggleChairWorkingDay(chair.id, day.value)}
+                                    >
+                                      {day.label}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="staff-schedule-actions">
+                                  <span className={`save-state save-state-${scheduleSaveState}`}>{scheduleSaveLabel}</span>
+                                  <button
+                                    className="secondary-button compact-button"
+                                    type="button"
+                                    onClick={() => void saveChairSchedule(chair.id)}
+                                    disabled={scheduleSaving}
+                                  >
+                                    {scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingStep === "sources" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Источники данных</h3>
+                  <p>
+                    Выберите рабочие источники один раз. DENTE сохранит эти настройки автоматически и будет использовать их в прайсах,
+                    переносе пациентов, документах, снимках и DICOM/OHIF, пока клиника сама их не поменяет.
+                  </p>
+                </div>
+
+                <div className="onboarding-source-config" aria-label="Быстрая настройка источников данных">
+                  <section className="onboarding-source-section">
+                    <div>
+                      <strong>Прайс клиники</strong>
+                      <span>Откуда администратор чаще всего заносит цены и материалы.</span>
+                    </div>
+                    <div className="onboarding-source-choice-row" aria-label="Источник прайса">
+                      {(Object.keys(pricelistSourceKindLabels) as PricelistSourceKind[]).map((kind) => (
+                        <button
+                          className={pricelistSourceKind === kind ? "active" : ""}
+                          key={kind}
+                          type="button"
+                          onClick={() => {
+                            setPricelistSourceKind(kind);
+                            if (kind !== "photo_ocr") clearPricelistImage();
+                            setPricelistAnalysis(null);
+                          }}
+                        >
+                          {pricelistSourceKindLabels[kind]}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="onboarding-source-section">
+                    <div>
+                      <strong>Перенос пациентов</strong>
+                      <span>Основной формат старой базы или бумажного журнала.</span>
+                    </div>
+                    <div className="onboarding-source-choice-row" aria-label="Источник переноса пациентов">
+                      {(Object.keys(importSourceLabels) as ImportSourceKind[]).map((kind) => (
+                        <button
+                          className={importSourceKind === kind ? "active" : ""}
+                          key={kind}
+                          type="button"
+                          onClick={() => {
+                            setImportSourceKind(kind);
+                            setImportPreview(null);
+                            setImportCommit(null);
+                          }}
+                        >
+                          {importSourceLabels[kind].title}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="onboarding-source-section">
+                    <div>
+                      <strong>Смешанная выгрузка</strong>
+                      <span>Как разбирать файл, где вместе пациенты, снимки и служебные строки.</span>
+                    </div>
+                    <div className="onboarding-source-choice-row" aria-label="Режим смешанного импорта">
+                      {(Object.keys(smartImportModeLabels) as SmartImportMode[]).map((mode) => (
+                        <button
+                          className={smartImportMode === mode ? "active" : ""}
+                          key={mode}
+                          type="button"
+                          onClick={() => {
+                            setSmartImportMode(mode);
+                            setSmartImportPreview(null);
+                            setSmartImportCommit(null);
+                          }}
+                        >
+                          {smartImportModeLabels[mode].title}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="onboarding-source-section">
+                    <div>
+                      <strong>Документы и файлы</strong>
+                      <span>Куда по умолчанию отправлять распознанный PDF, XLSX, DOCX, ZIP или фото.</span>
+                    </div>
+                    <div className="onboarding-source-choice-row" aria-label="Маршрут распознанных документов">
+                      {(Object.keys(ingestionTargetLabels) as DocumentIngestionTarget[]).map((target) => (
+                        <button
+                          className={documentIngestionTarget === target ? "active" : ""}
+                          key={target}
+                          type="button"
+                          onClick={() => setDocumentIngestionTarget(target)}
+                        >
+                          {ingestionTargetLabels[target]}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="onboarding-source-section onboarding-source-section-wide">
+                    <div>
+                      <strong>Снимки и DICOM</strong>
+                      <span>Основной поток RVG, ОПТГ, КТ, PACS, DICOMweb или локальных папок.</span>
+                    </div>
+                    <div className="onboarding-source-choice-row" aria-label="Источник снимков">
+                      {imagingSourceChoices.map((kind) => (
+                        <button
+                          className={imagingImportSourceKind === kind ? "active" : ""}
+                          key={kind}
+                          type="button"
+                          onClick={() => {
+                            setImagingImportSourceKind(kind);
+                            setImagingImportPreview(null);
+                            setImagingImportCommit(null);
+                            setDicomSeriesPreview(null);
+                          }}
+                        >
+                          {imagingSourceLabels[kind]}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="onboarding-source-section onboarding-source-section-wide">
+                    <div>
+                      <strong>DICOMweb и OHIF</strong>
+                      <span>Адреса просмотрщика сохраняются вместе с остальными настройками источников.</span>
+                    </div>
+                    <div className="onboarding-source-url-grid">
+                      <label>
+                        Корень DICOMweb
+                        <input
+                          value={dicomWebEndpointUrl}
+                          onChange={(event) => {
+                            setDicomWebEndpointUrl(event.target.value);
+                            setDicomWebCheck(null);
+                            setDicomViewerLaunchManifest(null);
+                            setDicomViewerToolStateBundle(null);
+                            setDicomViewerWorkbenchManifest(null);
+                          }}
+                          placeholder="http://127.0.0.1:8042/dicom-web"
+                        />
+                      </label>
+                      <label>
+                        Корень OHIF
+                        <input
+                          value={ohifBaseUrl}
+                          onChange={(event) => {
+                            setOhifBaseUrl(event.target.value);
+                            setDicomViewerLaunchManifest(null);
+                            setDicomViewerWorkbenchManifest(null);
+                          }}
+                          placeholder="http://127.0.0.1:3000"
+                        />
+                      </label>
+                    </div>
+                  </section>
+                </div>
+
+                <div className="onboarding-source-grid">
+                  <span>Автосохранено: прайс, импорт, документы, снимки, DICOMweb и OHIF</span>
+                  <button type="button" onClick={() => { setSettingsTab("prices"); window.location.hash = "settings/prices"; }}>Открыть прайс</button>
+                  <button type="button" onClick={() => { setSettingsTab("imports"); window.location.hash = "settings/imports"; }}>Открыть перенос</button>
+                  <button type="button" onClick={() => { setSettingsTab("sources"); window.location.hash = "settings/sources"; }}>Открыть снимки</button>
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingStep === "telegram" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Telegram, QR и связь с пациентами</h3>
+                  <p>
+                    Настройте безопасный бот DENTE сразу при первом запуске: QR-привязка пациента, напоминания, памятки после лечения,
+                    отзывы и ссылки на портал сохраняются автоматически и применяются ко всей клинике.
+                  </p>
+                </div>
+                <div className="onboarding-telegram-status">
+                  <span>
+                    Бот
+                    <strong>{telegramStatus?.botUsername ? `@${telegramStatus.botUsername.replace(/^@/, "")}` : "не загружен"}</strong>
+                  </span>
+                  <span>
+                    Транспорт
+                    <strong>{telegramStatus?.webhookReady ? "готов" : "нужна проверка"}</strong>
+                  </span>
+                  <span>
+                    QR-коды
+                    <strong>{telegramStatus?.pendingLinkCodeCount ?? 0} ожидают</strong>
+                  </span>
+                  <span>
+                    Чаты
+                    <strong>{telegramStatus?.activeChatLinkCount ?? 0} связаны</strong>
+                  </span>
+                </div>
+                <div className="onboarding-form-grid">
+                  <label>
+                    Имя общего бота в Telegram
+                    <input
+                      value={telegramBotUsernameDraft}
+                      placeholder="dentecrm_bot"
+                      onChange={(event) => {
+                        setTelegramBotUsernameDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Портал пациента
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://portal.example"
+                      value={telegramPatientPortalBaseUrlDraft}
+                      onChange={(event) => {
+                        setTelegramPatientPortalBaseUrlDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Картинка приветствия
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://.../welcome.jpg"
+                      value={telegramWelcomeImageUrlDraft}
+                      onChange={(event) => {
+                        setTelegramWelcomeImageUrlDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Ссылка на отзыв
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://..."
+                      value={telegramReviewUrlDraft}
+                      onChange={(event) => {
+                        setTelegramReviewUrlDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Ссылка на карту
+                    <input
+                      type="url"
+                      inputMode="url"
+                      placeholder="https://..."
+                      value={telegramMapsUrlDraft}
+                      onChange={(event) => {
+                        setTelegramMapsUrlDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Срок QR-кода, минут
+                    <input
+                      type="number"
+                      min={5}
+                      max={1440}
+                      step={5}
+                      value={telegramTokenTtlDraft}
+                      onChange={(event) => {
+                        setTelegramTokenTtlDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Напоминания до приема, часы
+                    <input
+                      inputMode="text"
+                      placeholder="24, 2"
+                      value={telegramReminderLeadTimesDraft}
+                      onChange={(event) => {
+                        setTelegramReminderLeadTimesDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                    <small>Напоминания до приема в часах: от 1 до 168, максимум 6 значений.</small>
+                  </label>
+                  <label>
+                    Просьба оценить клинику, часы после визита
+                    <input
+                      type="number"
+                      min={1}
+                      max={720}
+                      step={1}
+                      value={telegramReviewRequestDelayDraft}
+                      onChange={(event) => {
+                        setTelegramReviewRequestDelayDraft(event.target.value);
+                        markTelegramSettingsDirty();
+                      }}
+                    />
+                    <small>Клиника сама выбирает момент просьбы оставить отзыв: от 1 до 720 часов после закрытого визита или оплаты.</small>
+                  </label>
+                  <fieldset className="telegram-checkup-delay-fields full">
+                    <legend>Контроль после лечения</legend>
+                    <small>Через сколько часов Telegram спросит пациента о самочувствии после выданной безопасной памятки.</small>
+                    {telegramPostVisitCheckupDelayFields.map((field) => (
+                      <label key={field.key}>
+                        {field.label}
+                        <input
+                          type="number"
+                          min={1}
+                          max={720}
+                          step={1}
+                          value={telegramPostVisitCheckupDelayDrafts[field.key]}
+                          onChange={(event) => updateTelegramPostVisitCheckupDelayDraft(field.key, event.target.value)}
+                        />
+                        <small>{field.help}</small>
+                      </label>
+                    ))}
+                  </fieldset>
+                  <label>
+                    Секрет админ-доступа DENTE
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={telegramAdminSecretDraft}
+                      onChange={(event) => setTelegramAdminSecretDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          unlockTelegramAdminSession();
+                        }
+                      }}
+                      placeholder="если задан DENTE_SETTINGS_ADMIN_SECRET или DENTE_TELEGRAM_ADMIN_SECRET / DENTE_CLINICAL_ADMIN_SECRET"
+                    />
+                    <small>{telegramAdminSecretSession ? "Разблокировано до перезагрузки страницы." : "Секрет не сохраняется в браузере."}</small>
+                  </label>
+                  <button className="secondary-button" type="button" onClick={unlockTelegramAdminSession}>
+                    <ShieldCheck aria-hidden="true" /> Разблокировать
+                  </button>
+                  <label>
+                    Приватность
+                    <select
+                      value={telegramPrivacyModeDraft}
+                      onChange={(event) => {
+                        setTelegramPrivacyModeDraft(normalizedTelegramPrivacyMode(event.target.value));
+                        markTelegramSettingsDirty();
+                      }}
+                    >
+                      <option value="no_phi_by_default">{telegramPrivacyModeLabels.no_phi_by_default}</option>
+                      <option value="limited_admin_only">{telegramPrivacyModeLabels.limited_admin_only}</option>
+                      <option value="consented_phi_templates" disabled>
+                        {telegramPrivacyModeLabels.consented_phi_templates} (после аудита)
+                      </option>
+                    </select>
+                  </label>
+                </div>
+                <div className="onboarding-feature-list" aria-label="Быстрые сценарии Telegram">
+                  <div className="onboarding-telegram-visual-cards">
+                    {telegramVisualCardFields
+                      .filter((field) => onboardingTelegramVisualCardKeys.includes(field.key))
+                      .map((field) => (
+                        <label key={field.key}>
+                          {field.label}
+                          <input
+                            type="url"
+                            inputMode="url"
+                            placeholder={field.placeholder}
+                            value={telegramVisualCardUrlDrafts[field.key] ?? ""}
+                            onChange={(event) => updateTelegramVisualCardUrlDraft(field.key, event.target.value)}
+                          />
+                          <small>{field.help} Если поле пустое, используется картинка приветствия.</small>
+                        </label>
+                      ))}
+                  </div>
+                  {telegramFeatureOptions
+                    .filter((feature) =>
+                      [
+                        "patient_linking",
+                        "appointment_reminders",
+                        "appointment_confirmation",
+                        "document_ready_notice",
+                        "tax_document_request",
+                        "payment_reminders",
+                        "post_visit_instructions",
+                        "recalls",
+                        "review_requests",
+                        "callback_requests",
+                        "secure_portal_links",
+                        "staff_task_alerts",
+                        "staff_daily_digest"
+                      ].includes(feature)
+                    )
+                    .map((feature) => (
+                      <label className={telegramEnabledFeaturesDraft.includes(feature) ? "active" : ""} key={feature}>
+                        <input
+                          type="checkbox"
+                          checked={telegramEnabledFeaturesDraft.includes(feature)}
+                          onChange={() => toggleTelegramFeature(feature)}
+                        />
+                        <span>{telegramFeatureLabel(feature)}</span>
+                      </label>
+                    ))}
+                </div>
+                <div className="onboarding-inline-actions">
+                  <button className="secondary-button" type="button" onClick={() => void saveTelegramSettings()} disabled={isTelegramSettingsSaving}>
+                    <ShieldCheck aria-hidden="true" /> {isTelegramSettingsSaving ? "Сохраняю" : "Сохранить Telegram"}
+                  </button>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => {
+                      setSettingsTab("telegram");
+                      window.location.hash = "settings/telegram";
+                    }}
+                  >
+                    <Bot aria-hidden="true" /> Открыть полную панель
+                  </button>
+                  <span className={`telegram-save-state save-${telegramSettingsSaveState}`}>
+                    {telegramSettingsSaveState === "saving"
+                      ? "Автосохранение..."
+                      : telegramSettingsSaveState === "saved"
+                        ? "Telegram сохранен."
+                        : telegramSettingsSaveState === "error"
+                          ? telegramSettingsSaveError ?? "Telegram не сохранен."
+                          : telegramSettingsDirty
+                            ? "Изменения будут сохранены автоматически."
+                            : "Конфигурация Telegram сохранена."}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
+            {onboardingStep === "done" ? (
+              <div className="onboarding-panel">
+                <div>
+                  <h3>Проверка перед работой</h3>
+                  <p>
+                    Профиль клиники: {legalReadinessPercent}%. Команда: {dashboard.clinicSettings.staff.length}. Кабинеты:{" "}
+                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "готов к безопасной отправке" : "нужна настройка транспорта"}. Документы:{" "}
+                    {documentFactoryGroups.reduce((total, group) => total + group.kinds.length, 0)} шаблонов.
+                  </p>
+                </div>
+                <div className="onboarding-readiness-grid">
+                  <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
+                  <span>{staffRoleLabels[selectedWorkspaceRole]}</span>
+                  <span>{specialtyLabels[selectedSpecialty]}</span>
+                  <span>{telegramEnabledFeaturesDraft.length} Telegram-сценариев включено</span>
+                  <span>{onboardingDocumentsReady ? "документы готовы к выдаче" : "документы требуют реквизитов"}</span>
+                </div>
+                {!onboardingReadyToFinish ? (
+                  <p className="onboarding-blocker">До завершения нужно заполнить: {onboardingBlockingIssues.join(", ")}.</p>
+                ) : null}
+                {!onboardingDocumentsReady ? (
+                  <p className="onboarding-blocker onboarding-advisory">
+                    Первый рабочий экран можно открыть сейчас. Для договоров, актов и налоговых форм позже заполните:{" "}
+                    {onboardingDocumentReadinessIssues.join(", ")}.
+                  </p>
+                ) : null}
+                {onboardingTelegramRecommendations.length ? (
+                  <p className="onboarding-blocker onboarding-advisory">
+                    Telegram можно включить позже: {onboardingTelegramRecommendations.join(", ")}.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="onboarding-actions">
+              <button className="secondary-button" type="button" onClick={dismissOnboarding} disabled={!onboardingReadyToFinish}>
+                Скрыть
+              </button>
+              {!onboardingReadyToFinish ? (
+                <button className="secondary-button" type="button" onClick={() => void continueOnboardingInDraftMode()}>
+                  Продолжить в черновике
+                </button>
+              ) : null}
+              <button className="secondary-button" type="button" onClick={() => void saveClinicProfileFromDraft()} disabled={clinicProfileSaveState === "saving"}>
+                <ShieldCheck aria-hidden="true" /> {clinicProfileSaveState === "saving" ? "Сохраняю" : "Сохранить профиль"}
+              </button>
+              {previousOnboardingStep ? (
+                <button className="secondary-button" type="button" onClick={() => void moveOnboardingTo(previousOnboardingStep.id)}>
+                  Назад
+                </button>
+              ) : null}
+              {nextOnboardingStep ? (
+                <button className="primary-button" type="button" onClick={() => void moveOnboardingTo(nextOnboardingStep.id)} disabled={nextOnboardingStep.id === "done" && !onboardingReadyToFinish}>
+                  Дальше <ArrowRight aria-hidden="true" />
+                </button>
+              ) : (
+                <button className="primary-button" type="button" onClick={dismissOnboarding} disabled={!onboardingReadyToFinish}>
+                  Завершить настройку
+                </button>
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {onboardingDismissed && onboardingDraftMode && !onboardingReadyToFinish ? (
+          <section className="onboarding-draft-strip" aria-label="Первичная настройка в черновике">
+            <div>
+              <strong>Первичная настройка не завершена</strong>
+              <span>Можно работать в черновике, но перед выдачей документов заполните: {onboardingBlockingIssues.join(", ")}.</span>
+            </div>
+            <button className="secondary-button" type="button" onClick={reopenOnboarding}>
+              Вернуться к настройке
+            </button>
+          </section>
+        ) : null}
+
+        {onboardingDismissed && onboardingReadyToFinish && !onboardingDocumentsReady ? (
+          <section className="onboarding-draft-strip" aria-label="Документы требуют реквизитов">
+            <div>
+              <strong>Документы требуют реквизитов</strong>
+              <span>Для договоров, актов и налоговых форм заполните: {onboardingDocumentReadinessIssues.join(", ")}.</span>
+            </div>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setCurrentView("settings");
+                setSettingsTab("clinic");
+                window.location.hash = "settings/clinic";
+              }}
+            >
+              Заполнить реквизиты
+            </button>
+          </section>
+        ) : null}
+
+        {currentView === "shift" ? (
+        <>
+        <section className="shift-hero" id="shift">
+          <div className="now-card">
+            <p className="eyebrow">Сейчас в работе</p>
+            <div className="patient-hero">
+              <div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
+              <div>
+                <h2>{activePatient.fullName}</h2>
+                <p>{activePatient.phone ?? "телефон не указан"}</p>
+              </div>
+            </div>
+            <div className="hero-actions">
+              <button className="primary-button" type="button" onClick={() => { window.location.hash = "visit"; }}>
+                <ClipboardCheck aria-hidden="true" /> Открыть прием
+              </button>
+              <button className="secondary-button" type="button" onClick={() => { window.location.hash = "imaging"; }}>
+                <ImageIcon aria-hidden="true" /> Снимки
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                aria-describedby={!activePatientHasCallablePhone ? "shift-call-guidance" : undefined}
+                disabled={!activePatientHasCallablePhone}
+                title={activePatientHasCallablePhone ? "Позвонить пациенту" : "В карточке пациента нет телефона"}
+                onClick={() => {
+                  if (!activePatientHasCallablePhone) {
+                    setError("В карточке пациента нет телефона. Добавьте номер в разделе «Пациенты», чтобы позвонить.");
+                    return;
+                  }
+                  window.location.href = `tel:${activePatientCallablePhone}`;
+                }}
+              >
+                <Phone aria-hidden="true" /> Позвонить
+              </button>
+            </div>
+            {!activePatientHasCallablePhone ? (
+              <p className="hero-call-guidance" id="shift-call-guidance" role="status" aria-live="polite">
+                В карточке пациента нет телефона. Откройте «Пациенты» и добавьте номер, чтобы кнопка звонка стала активной.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="next-actions" aria-label="Следующие действия">
+            {visibleRecommendedActions.map((action) => (
+              <button
+                className={`action-tile priority-${action.priority}`}
+                key={action.id}
+                type="button"
+                onClick={() => {
+                  window.location.hash = action.section;
+                }}
+              >
+                <ActionIcon section={action.section} />
+                <div>
+                  <span>{action.metricLabel}</span>
+                  <p>{action.title}</p>
+                  <small>
+                    {recommendedActionPriorityLabels[action.priority]} · {action.detail}
+                  </small>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="care-path" aria-label="Путь приема">
+          {["Запись", "ЭМК", "Оплата", "Документы"].map((step, index) => (
+            <div className={`path-step ${index <= 1 ? "done" : ""}`} key={step}>
+              <span>{index + 1}</span>
+              <p>{step}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="role-focus-strip" aria-label="Фокус текущей роли">
+          <div>
+            <UserCheck aria-hidden="true" />
+            <div>
+              <p className="eyebrow">Фокус: {staffRoleLabels[selectedWorkspaceRole]}</p>
+              <h2>{activeRoleQueue?.title ?? activeRolePolicy?.title ?? "Рабочая очередь"}</h2>
+              <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor[0] ?? "Открыть смену и проверить очередь"}</p>
+            </div>
+          </div>
+          <div className="role-focus-meta" aria-label="Доступы текущей роли">
+            <span>{activeRoleQueue?.openItems ?? 0} открыто</span>
+            {activeRolePolicy ? <span>Старт: {viewLabels[activeRolePolicy.defaultSection]}</span> : null}
+            {activeRoleWritableSections.slice(0, 3).map((section) => (
+              <span key={section}>пишет: {viewLabels[section]}</span>
+            ))}
+            {activeRoleRestrictedSections[0] ? <span>ограничено: {viewLabels[activeRoleRestrictedSections[0]]}</span> : null}
+          </div>
+        </section>
+
+        <section className="shift-intelligence" aria-label="Операционный контроль смены">
+          <article className="mode-fit-card">
+            <div className="mode-fit-head">
+              <Building2 aria-hidden="true" />
+              <div>
+                <p className="eyebrow">Режим клиники</p>
+                <h2>{dashboard.shiftIntelligence.modeFit.title}</h2>
+              </div>
+              <strong>{dashboard.shiftIntelligence.modeFit.fitScore}%</strong>
+            </div>
+            <p>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep}</p>
+            <div className="mode-fit-list">
+              {(dashboard.shiftIntelligence.modeFit.blockers.length
+                ? dashboard.shiftIntelligence.modeFit.blockers
+                : dashboard.shiftIntelligence.modeFit.upgrades
+              ).map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          </article>
+
+          <article className="mode-fit-card resource-focus-card">
+            <div className="mode-fit-head">
+              <Gauge aria-hidden="true" />
+              <div>
+                <p className="eyebrow">Загрузка</p>
+                <h2>{mostLoadedResource?.title ?? "Нет ресурсов"}</h2>
+              </div>
+              <strong>{mostLoadedResource ? `${mostLoadedResource.utilizationPercent}%` : "0%"}</strong>
+            </div>
+            {mostLoadedResource ? (
+              <>
+                <p>
+                  {minutesLabel(mostLoadedResource.bookedMinutes)} · {mostLoadedResource.appointmentCount} записей ·{" "}
+                  {workloadStateLabels[mostLoadedResource.state]}
+                </p>
+                <div className="load-meter" aria-label={`Загрузка ${mostLoadedResource.utilizationPercent}%`}>
+                  <span style={{ width: `${Math.min(100, mostLoadedResource.utilizationPercent)}%` }} />
+                </div>
+                <div className="mode-fit-list">
+                  {mostLoadedResource.flags.slice(0, 3).map((flag) => (
+                    <span key={flag}>{flag}</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p>Врачей и кресел пока нет в настройках.</p>
+            )}
+          </article>
+
+          <div className="role-queue-grid">
+            {dashboard.shiftIntelligence.roleQueues.map((queue) => (
+              <article className={`role-queue-card ${queue.role === activeQueueRole ? "active" : ""}`} key={queue.role}>
+                <div>
+                  <UserCheck aria-hidden="true" />
+                  <span>{staffRoleLabels[queue.role]}</span>
+                </div>
+                <h3>{queue.title}</h3>
+                <p>{queue.nextAction}</p>
+                <strong>{queue.openItems}</strong>
+                <small>{queue.blockedBy[0] ?? queue.automationHint}</small>
+              </article>
+            ))}
+          </div>
+
+          <div className="shift-warning-list">
+            {shiftWarnings.slice(0, 4).map((warning) => (
+              <article className={`shift-warning warning-${warning.severity}`} key={warning.id}>
+                <AlertTriangle aria-hidden="true" />
+                <div>
+                  <span>{warningSeverityLabels[warning.severity]} · {staffRoleLabels[warning.ownerRole]}</span>
+                  <h3>{warning.title}</h3>
+                  <p>{warning.detail}</p>
+                </div>
+                <button className="text-button" type="button" onClick={() => openScheduleWarning(warning)}>
+                  {warning.actionLabel}
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+        </>
+        ) : null}
+
+        {["shift", "patients"].includes(currentView) ? (
+        <section className="patient-cockpit" aria-label="Карточка пациента">
+          <div className="patient-summary-card">
+            <p className="eyebrow">Карточка пациента</p>
+            <h2>{activePatient.fullName}</h2>
+            <div className="patient-facts">
+              <span>{activePatient.birthDate ?? "дата рождения не указана"}</span>
+              <span>{activePatient.phone ?? "телефон не указан"}</span>
+              <span>{activePatient.notes ?? "без критических заметок"}</span>
+            </div>
+            {activePatientInsight ? (
+              <div className={`patient-insight-panel risk-${activePatientInsight.riskLevel}`}>
+                <div className="patient-insight-head">
+                  <span>{patientInsightRiskLabels[activePatientInsight.riskLevel]}</span>
+                  <strong>{activePatientInsight.nextBestAction}</strong>
+                </div>
+                <div className="patient-insight-meta">
+                  <span>{activePatientInsight.balanceDueRub ? `остаток ${money(activePatientInsight.balanceDueRub)}` : "оплата спокойна"}</span>
+                  <span>{activePatientInsight.openTasks} задач связи</span>
+                  <span>{activePatientInsight.missingDocumentKinds.length} документов</span>
+                  {activePatientInsight.recallDueAt ? <span>recall {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
+                </div>
+                <p>{activePatientInsight.riskReasons.slice(0, 2).join(" · ")}</p>
+              </div>
+            ) : null}
+          </div>
+          <div className="patient-feature-grid">
+            <article>
+              <History aria-hidden="true" />
+              <div>
+                <h3>История</h3>
+                <p>Приемы, диагнозы, зубная карта, файлы и решения врача в одном месте.</p>
+              </div>
+            </article>
+            <article>
+              <FileText aria-hidden="true" />
+              <div>
+                <h3>Документы</h3>
+                <p>{activeUsableDocuments.length} документа по текущему лечению, включая договор и акт.</p>
+              </div>
+            </article>
+            <article>
+              <CreditCard aria-hidden="true" />
+              <div>
+                <h3>Оплаты</h3>
+                <p>
+                  Оплачено {money(dashboard.billingSummary.totalPaidRub)}, остаток {money(dashboard.billingSummary.totalDueRub)}.
+                </p>
+              </div>
+            </article>
+            <article>
+              <MessageSquare aria-hidden="true" />
+              <div>
+                <h3>Связь</h3>
+                <p>{activeCommunicationTasks.length} задач: подтверждения, долги, инструкции и повторные визиты.</p>
+              </div>
+            </article>
+            <article>
+              <ImageIcon aria-hidden="true" />
+              <div>
+                <h3>Снимки</h3>
+                <p>{activeImagingStudies.length} снимка: прицельные, ОПТГ, ТРГ, КТ и фото без поиска по папкам.</p>
+                <button className="text-button feature-link" type="button" onClick={() => { window.location.hash = "imaging"; }}>
+                  Открыть просмотрщик
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+        ) : null}
+
+        {currentView === "imaging" ? (
+        <section className="imaging-panel" id="imaging" aria-label="Снимки пациента">
+          <div className="imaging-copy">
+            <div>
+              <p className="eyebrow">Снимки пациента</p>
+              <h2>Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте</h2>
+            </div>
+            <div className="imaging-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => createImagingStudy("periapical")}
+                disabled={Boolean(imagingCreateSavingKind)}
+              >
+                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "periapical" ? "Добавляю" : "Прицельный"}
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => createImagingStudy("opg")}
+                disabled={Boolean(imagingCreateSavingKind)}
+              >
+                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "opg" ? "Добавляю" : "ОПТГ"}
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => createImagingStudy("ceph")}
+                disabled={Boolean(imagingCreateSavingKind)}
+              >
+                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "ceph" ? "Добавляю" : "ТРГ"}
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => createImagingStudy("cbct")}
+                disabled={Boolean(imagingCreateSavingKind)}
+              >
+                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "cbct" ? "Добавляю" : "КТ"}
+              </button>
+            </div>
+          </div>
+
+          <div className="imaging-patient-strip" aria-label="Контекст снимков">
+            <article>
+              <span>Пациент</span>
+              <strong>{activePatient.fullName}</strong>
+              <small>{activeAppointment?.reason ?? "текущий прием"}</small>
+            </article>
+            <article>
+              <span>В ленте</span>
+              <strong>{activeImagingStudies.length}</strong>
+              <small>локально и на сервере, без удаления сырья</small>
+            </article>
+            <article>
+              <span>Режим</span>
+              <strong>{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
+              <small>{selectedImagingViewerPlan?.warnings[0] ?? "ИИ только помогает, решение остается за врачом"}</small>
+            </article>
+          </div>
+
+          <div className="imaging-kind-filter" aria-label="Фильтр типа снимка">
+            <button className={imagingKindFilter === "all" ? "active" : ""} type="button" onClick={() => setImagingKindFilter("all")}>
+              Все
+            </button>
+            {imagingKindOptions.map((kind) => (
+              <button
+                className={imagingKindFilter === kind ? "active" : ""}
+                key={kind}
+                type="button"
+                onClick={() => setImagingKindFilter(kind)}
+              >
+                {imagingKindLabels[kind]}
+              </button>
+            ))}
+          </div>
+
+          <div className="imaging-layout">
+            <article className="imaging-viewer">
+              {selectedImagingStudy ? (
+                <>
+                  <div className="imaging-viewer-stage">
+                    <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title} style={imagingViewerImageStyle} />
+                    <div className="imaging-viewer-meta">
+                      <strong>{selectedImagingStudy.title}</strong>
+                      <span>
+                        {imagingKindLabels[selectedImagingStudy.kind]} · {selectedImagingStudy.toothCode ?? selectedImagingStudy.region}
+                      </span>
+                      <p>{selectedImagingStudy.aiSummary}</p>
+                    </div>
+                  </div>
+
+                  {selectedImagingViewerPlan ? (
+                    <div className={`imaging-viewer-plan viewer-plan-${selectedImagingViewerPlan.mode}`}>
+                      <div>
+                        <strong>{selectedImagingViewerPlan.label}</strong>
+                        <span>{selectedImagingViewerPlan.nextAction}</span>
+                      </div>
+                      <div className="viewer-plan-chip-row">
+                        {selectedImagingViewerPlan.primaryTools.slice(0, 5).map((tool) => (
+                          <span key={tool}>{imagingViewerToolLabels[tool] ?? "инструмент просмотра"}</span>
+                        ))}
+                      </div>
+                      {selectedImagingViewerPlan.warnings[0] ? <small>{selectedImagingViewerPlan.warnings[0]}</small> : null}
+                    </div>
+                  ) : null}
+
+                  <div className="imaging-viewer-toolbar" aria-label="Настройки рентген-снимка">
+                    <div className="imaging-viewer-tools">
+                      <button
+                        className="viewer-tool-button"
+                        type="button"
+                        title="Повернуть влево"
+                        aria-label="Повернуть снимок влево"
+                        onClick={() => setImagingViewerState((state) => ({ ...state, rotationDeg: state.rotationDeg - 90 }))}
+                      >
+                        <RotateCcw aria-hidden="true" />
+                      </button>
+                      <button
+                        className="viewer-tool-button"
+                        type="button"
+                        title="Повернуть вправо"
+                        aria-label="Повернуть снимок вправо"
+                        onClick={() => setImagingViewerState((state) => ({ ...state, rotationDeg: state.rotationDeg + 90 }))}
+                      >
+                        <RotateCw aria-hidden="true" />
+                      </button>
+                      <button
+                        className={`viewer-tool-button ${imagingViewerState.flipHorizontal ? "active" : ""}`}
+                        type="button"
+                        title="Зеркально"
+                        aria-label="Зеркально отразить снимок"
+                        onClick={() => setImagingViewerState((state) => ({ ...state, flipHorizontal: !state.flipHorizontal }))}
+                      >
+                        <FlipHorizontal aria-hidden="true" />
+                      </button>
+                      <button
+                        className={`viewer-tool-button ${imagingViewerState.inverted ? "active" : ""}`}
+                        type="button"
+                        title="Инверсия"
+                        aria-label="Инвертировать снимок"
+                        onClick={() => setImagingViewerState((state) => ({ ...state, inverted: !state.inverted }))}
+                      >
+                        ±
+                      </button>
+                      <button
+                        className="viewer-tool-button"
+                        type="button"
+                        title="Уменьшить"
+                        aria-label="Уменьшить снимок"
+                        onClick={() => setImagingViewerState((state) => ({ ...state, zoom: Math.max(0.75, state.zoom - 0.1) }))}
+                      >
+                        <ZoomOut aria-hidden="true" />
+                      </button>
+                      <button
+                        className="viewer-tool-button"
+                        type="button"
+                        title="Увеличить"
+                        aria-label="Увеличить снимок"
+                        onClick={() => setImagingViewerState((state) => ({ ...state, zoom: Math.min(1.8, state.zoom + 0.1) }))}
+                      >
+                        <ZoomIn aria-hidden="true" />
+                      </button>
+                      <button
+                        className="viewer-tool-button"
+                        type="button"
+                        title="Сбросить"
+                        aria-label="Сбросить настройки снимка"
+                        onClick={() => setImagingViewerState(defaultImagingViewerState)}
+                      >
+                        <RefreshCw aria-hidden="true" />
+                      </button>
+                    </div>
+                    <div className="viewer-slider-grid">
+                      <label>
+                        Яркость
+                        <input
+                          min="0.65"
+                          max="1.45"
+                          step="0.05"
+                          type="range"
+                          value={imagingViewerState.brightness}
+                          onChange={(event) => setImagingViewerState((state) => ({ ...state, brightness: Number(event.target.value) }))}
+                        />
+                      </label>
+                      <label>
+                        Контраст
+                        <input
+                          min="0.75"
+                          max="1.85"
+                          step="0.05"
+                          type="range"
+                          value={imagingViewerState.contrast}
+                          onChange={(event) => setImagingViewerState((state) => ({ ...state, contrast: Number(event.target.value) }))}
+                        />
+                      </label>
+                    </div>
+                    <div className={`viewer-session-strip viewer-save-state-${imagingViewerSaveState}`} aria-label="Автосохранение сеанса просмотра снимка">
+                      <div>
+                        <strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
+                        <span>{imagingViewerSaveDetail}</span>
+                      </div>
+                      <input
+                        aria-label="Заметка к снимку"
+                        value={imagingViewerNote}
+                        onChange={(event) => setImagingViewerNote(event.target.value)}
+                        placeholder="Заметка к снимку"
+                      />
+                      <div className="viewer-session-actions">
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          onClick={addImagingViewerNoteAnnotation}
+                          disabled={!imagingViewerNoteReady || !imagingViewerSessionReady}
+                        >
+                          <Plus aria-hidden="true" /> Заметка
+                        </button>
+                        {canRetryImagingViewerSave ? (
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={retryImagingViewerSessionSave}
+                            disabled={!isOnline}
+                          >
+                            <RefreshCw aria-hidden="true" /> Повторить
+                          </button>
+                        ) : null}
+                      </div>
+                      {!imagingViewerSessionReady ? (
+                        <p className="viewer-note-missing" role="status" aria-live="polite">
+                          Дождитесь загрузки просмотра, чтобы прикрепить заметку к снимку.
+                        </p>
+                      ) : !imagingViewerNoteReady ? (
+                        <p className="viewer-note-missing" role="status" aria-live="polite">
+                          Напишите текст заметки, чтобы прикрепить ее к снимку.
+                        </p>
+                      ) : null}
+                    </div>
+                    {imagingViewerAnnotations.length ? (
+                      <div className="viewer-annotation-list" aria-label="Сохраненные заметки к снимкам">
+                        {imagingViewerAnnotations.slice(0, 3).map((annotation) => (
+                          <article key={annotation.id}>
+                            <strong>{annotation.label}</strong>
+                            <span>
+                              {annotation.toothCode ?? selectedImagingStudy.region ?? "study"} · {formatShortDate(annotation.updatedAt)}
+                            </span>
+                          </article>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <div className="imaging-empty">
+                  <ImageIcon aria-hidden="true" />
+                  <p>Снимков по текущему пациенту пока нет.</p>
+                </div>
+              )}
+            </article>
+
+            <div className="imaging-list">
+              {visibleImagingStudies.map((study) => (
+                <article
+                  className={`imaging-row imaging-${study.status} ${selectedImagingStudy?.id === study.id ? "active" : ""}`}
+                  key={study.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedImagingStudyId(study.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedImagingStudyId(study.id);
+                    }
+                  }}
+                >
+                  <img src={imagingPreviewSource(study)} alt="" />
+                  <div>
+                    <h3>{study.title}</h3>
+                    <p>
+                      {imagingKindLabels[study.kind]} · {study.toothCode ?? study.region ?? "область не указана"} ·{" "}
+                      {formatShortDate(study.capturedAt)}
+                    </p>
+                    <span>{imagingSourceLabels[study.sourceKind]} · {study.sourceName}</span>
+                  </div>
+                  <a className="doc-link" href={imagingViewerHref(study)} target="_blank" rel="noreferrer">
+                    Открыть
+                  </a>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          {selectedImagingStudy?.kind === "cbct" ? (
+            <section className="clinical-mpr-panel" aria-label="Управление CBCT MPR">
+              <div className="clinical-mpr-head">
+                <div>
+                  <p className="eyebrow">Рабочее место CBCT</p>
+                  <h3>3 плоскости, косой срез, панорама и внешний DICOM-просмотрщик</h3>
+                  <small>
+                    Основной прием не блокируется: если серия тяжелая, CRM оставляет предпросмотр и предлагает внешний просмотрщик или обработчик объема.
+                  </small>
+                </div>
+                <a className="secondary-button" href={imagingViewerHref(selectedImagingStudy)} target="_blank" rel="noreferrer">
+                  <ExternalLink aria-hidden="true" /> DICOM-просмотрщик
+                </a>
+              </div>
+              <div className="clinical-mpr-summary-grid" aria-label="Краткий статус CBCT">
+                <article>
+                  <strong>{selectedImagingViewerPlan?.mode === "cbct_mpr" ? "Маршрут MPR" : "Быстрый предпросмотр"}</strong>
+                  <span>{selectedImagingViewerPlan?.nextAction ?? "Откройте DICOM-просмотрщик, когда нужен 3D-разбор."}</span>
+                </article>
+                <article>
+                  <strong>
+                    {dicomViewerWorkbenchManifest
+                      ? `готовность загрузки ${dicomViewerWorkbenchManifest.readiness.readinessScore}%`
+                      : "Рабочее место опционально"}
+                  </strong>
+                  <span>
+                    {dicomViewerWorkbenchManifest
+                      ? `${dicomLabel(dicomQualityModeLabels, dicomViewerWorkbenchManifest.renderCachePlan.qualityMode, "режим качества")} / ${dicomLabel(
+                          dicomTextureStrategyLabels,
+                          dicomViewerWorkbenchManifest.renderCachePlan.textureStrategy,
+                          "стратегия текстур"
+                        )}`
+                      : "Соберите CT-пакет в настройках источников; карточка приема останется легкой."}
+                  </span>
+                </article>
+                <article>
+                  <strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
+                  <span>{imagingViewerAnnotations.length} заметок; пиксели остаются в просмотрщике или исходной папке.</span>
+                </article>
+              </div>
+              <details className="clinical-mpr-advanced">
+                <summary>
+                  <span>Управление MPR</span>
+                  <small>Открывается только для CT-разбора; обычный прием остается без лишних панелей.</small>
+                </summary>
+              <div className="clinical-mpr-grid">
+                <div className="mpr-plane-grid">
+                  {cbctWorkbenchPlanes.map((plane) => (
+                    <button
+                      className={`mpr-plane ${mprProjection === plane.key ? "active" : ""}`}
+                      key={plane.key}
+                      type="button"
+                      onClick={() => setMprProjection(plane.key)}
+                    >
+                      <strong>{plane.title}</strong>
+                      <span>{plane.detail}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mpr-control-panel">
+                  <div className="mpr-toggle-row">
+                    {cbctWorkbenchProjections.map((projection) => (
+                      <button
+                        className={mprProjection === projection ? "active" : ""}
+                        key={projection}
+                        type="button"
+                        onClick={() => setMprProjection(projection)}
+                      >
+                        {mprProjectionLabels[projection]}
+                      </button>
+                    ))}
+                  </div>
+                  <label>
+                    Угол оси: {mprAxisDeg}°
+                    <input min="-45" max="45" step="1" type="range" value={mprAxisDeg} onChange={(event) => setMprAxisDeg(Number(event.target.value))} />
+                  </label>
+                  <label>
+                    Slab: {mprSlabMm} мм
+                    <input min="1" max="30" step="1" type="range" value={mprSlabMm} onChange={(event) => setMprSlabMm(Number(event.target.value))} />
+                  </label>
+                  <div className="mpr-toggle-row">
+                    {(Object.keys(mprWindowPresetLabels) as MprWindowPreset[]).map((preset) => (
+                      <button
+                        className={mprWindowPreset === preset ? "active" : ""}
+                        key={preset}
+                        type="button"
+                        onClick={() => setMprWindowPreset(preset)}
+                      >
+                        {mprWindowPresetLabels[preset]}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mpr-check-row">
+                    <label>
+                      <input checked={mprCrosshairEnabled} type="checkbox" onChange={(event) => setMprCrosshairEnabled(event.target.checked)} />
+                      Синхронный курсор
+                    </label>
+                    <label>
+                      <input checked={mprLinkedPlanesEnabled} type="checkbox" onChange={(event) => setMprLinkedPlanesEnabled(event.target.checked)} />
+                      Связанные плоскости
+                    </label>
+                  </div>
+                </div>
+              </div>
+              </details>
+              <div className="clinical-mpr-safety">
+                <span>{selectedImagingViewerPlan?.nextAction ?? "Подготовить DICOM серию к MPR."}</span>
+                <span>{cbctWorkbenchSeries?.mprReadiness.resourcePolicy.nextAction ?? "Метаданные DICOM пока не загружены: используем безопасный предпросмотр и внешний просмотрщик."}</span>
+                <span>ИИ-описание не является диагнозом; врач подтверждает все выводы.</span>
+              </div>
+            </section>
+          ) : null}
+        </section>
+        ) : null}
+
+        {["schedule", "patients", "visit", "documents", "finance", "communications"].includes(currentView) ? (
+        <section className="work-grid page-grid">
+          {currentView === "schedule" ? (
+          <Suspense
+            fallback={
+              <div className="panel schedule-panel" id="schedule" aria-busy="true">
+                <div className="panel-heading">
+                  <h2>Расписание</h2>
+                  <span className="status-pill status-planned">загрузка</span>
+                </div>
+              </div>
+            }
+          >
+            <ScheduleView
+              appointmentLabels={appointmentLabels}
+              appointmentReadinessById={appointmentReadinessById}
+              appointmentReadinessLabels={appointmentReadinessLabels}
+              appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
+              appointmentScheduleDraftFromAppointment={appointmentScheduleDraftFromAppointment}
+              appointmentScheduleDrafts={appointmentScheduleDrafts}
+              appointmentScheduleErrors={appointmentScheduleErrors}
+              appointmentScheduleSaveStates={appointmentScheduleSaveStates}
+              closeAppointmentEditor={closeAppointmentEditor}
+              createAppointmentFromDraft={createAppointmentFromDraft}
+              dashboard={dashboard}
+              editingAppointmentId={editingAppointmentId}
+              formatTime={formatTime}
+              fromDateTimeLocalValue={fromDateTimeLocalValue}
+              lockTelegramAdminSession={lockTelegramAdminSession}
+              newAppointmentDraft={newAppointmentDraft}
+              newAppointmentError={newAppointmentError}
+              newAppointmentSaveState={newAppointmentSaveState}
+              normalizedAppointmentStatus={normalizedAppointmentStatus}
+              normalizedAppointmentStatusFilter={normalizedAppointmentStatusFilter}
+              openAppointmentEditor={openAppointmentEditor}
+              patientName={patientName}
+              recommendedActionPriorityLabels={recommendedActionPriorityLabels}
+              resetNewAppointmentDraft={resetNewAppointmentDraft}
+              saveAppointmentSchedule={saveAppointmentSchedule}
+              scheduleAssistantFilterId={scheduleAssistantFilterId}
+              scheduleChairFilterId={scheduleChairFilterId}
+              scheduleDateFilter={scheduleDateFilter}
+              scheduleDoctorFilterId={scheduleDoctorFilterId}
+              scheduleStatusFilter={scheduleStatusFilter}
+              setScheduleAssistantFilterId={setScheduleAssistantFilterId}
+              setScheduleChairFilterId={setScheduleChairFilterId}
+              setScheduleDateFilter={setScheduleDateFilter}
+              setScheduleDoctorFilterId={setScheduleDoctorFilterId}
+              setScheduleStatusFilter={setScheduleStatusFilter}
+              setTelegramAdminSecretDraft={setTelegramAdminSecretDraft}
+              shiftWarnings={shiftWarnings}
+              sortedAppointments={sortedAppointments}
+              staffRoleLabels={staffRoleLabels}
+              telegramAdminSecretDraft={telegramAdminSecretDraft}
+              telegramAdminSecretSession={telegramAdminSecretSession}
+              toDateTimeLocalValue={toDateTimeLocalValue}
+              unlockTelegramAdminSession={unlockTelegramAdminSession}
+              updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
+              updateNewAppointmentDraft={updateNewAppointmentDraft}
+              visibleScheduleSuggestions={visibleScheduleSuggestions}
+            />
+          </Suspense>
+          ) : null}
+
+          {currentView === "patients" ? (
+          <Suspense
+            fallback={
+              <div className="panel patients-panel" id="patients" aria-busy="true">
+                <div className="panel-heading">
+                  <h2>Быстрый поиск</h2>
+                  <span className="status-pill status-planned">загрузка</span>
+                </div>
+              </div>
+            }
+          >
+            <PatientsView
+              createPatient={createPatient}
+              filteredPatients={filteredPatients}
+              isPatientCreating={isPatientCreating}
+              money={money}
+              newPatientBirthDate={newPatientBirthDate}
+              newPatientName={newPatientName}
+              newPatientPhone={newPatientPhone}
+              normalizeOptionalWorkingDaysDraft={normalizeOptionalWorkingDaysDraft}
+              patientAdministrativeProfileDirty={patientAdministrativeProfileDirty}
+              patientAdministrativeProfileDraft={patientAdministrativeProfileDraft}
+              patientAdministrativeProfileSaveState={patientAdministrativeProfileSaveState}
+              patientAdministrativeProfileValidationMessage={patientAdministrativeProfileValidationMessage}
+              patientCoreDirty={patientCoreDirty}
+              patientCoreDraft={patientCoreDraft}
+              patientCoreSaveState={patientCoreSaveState}
+              patientInsightById={patientInsightById}
+              patientInsightRiskLabels={patientInsightRiskLabels}
+              query={query}
+              savePatientAdministrativeProfile={savePatientAdministrativeProfile}
+              savePatientCore={savePatientCore}
+              selectedPatient={selectedPatient}
+              setNewPatientBirthDate={setNewPatientBirthDate}
+              setNewPatientName={setNewPatientName}
+              setNewPatientPhone={setNewPatientPhone}
+              setQuery={setQuery}
+              setSelectedPatientId={setSelectedPatientId}
+              updatePatientAdministrativeProfileDraft={updatePatientAdministrativeProfileDraft}
+              updatePatientCoreDraft={updatePatientCoreDraft}
+              weekdayOptions={weekdayOptions}
+            />
+          </Suspense>
+
+          ) : null}
+
+          {currentView === "visit" ? (
+          <div className="panel visit-panel" id="visit">
+            <div className="panel-heading">
+              <h2>Текущий прием</h2>
+              <span className="status-pill status-in_treatment">Черновик</span>
+            </div>
+
+            <section className="visit-focus-bar" aria-label="Быстрый фокус приема">
+              <div className="visit-focus-patient">
+                <div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
+                <div>
+                  <p className="eyebrow">Пациент сейчас</p>
+                  <h3>{activePatient.fullName}</h3>
+                  <p>
+                    {activeAppointment?.reason ?? "прием"} · {activePatient.phone ?? "телефон не указан"}
+                  </p>
+                </div>
+              </div>
+              <div className="visit-focus-status">
+                <span className={visitWarnings.length ? "" : "ready"}>
+                  {visitWarnings.length ? `${visitWarnings.length} предупр.` : "спокойно"}
+                </span>
+                <strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
+                <p>
+                  {visitCloseChecklist ? `${visitCloseChecklist.score}% готовности` : "статус закрытия не рассчитан"} ·{" "}
+                  предупреждения не останавливают прием · {activeImagingStudies.length} снимка · {activeUsableDocuments.length} документа
+                </p>
+              </div>
+              <div className="visit-focus-actions">
+                <button className="primary-button" type="button" onClick={() => scrollToVisitArea(".dictation-box")}>
+                  <Mic aria-hidden="true" /> Диктовка
+                </button>
+                <button className="secondary-button" type="button" onClick={openVisitWarningAction}>
+                  <AlertTriangle aria-hidden="true" /> Риски
+                </button>
+              </div>
+            </section>
+
+            <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки">
+              {visitSafetyCards.map((item) => (
+                <article className={`safety-${item.state}`} key={item.key}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
+            </section>
+
+            <section className="specialty-focus-bar" aria-label="Фокус специальности приема">
+              <div>
+                <p className="eyebrow">Фокус врача</p>
+                <h3>{specialtyLabels[selectedSpecialty]}</h3>
+                <p>{activeDoctor?.fullName.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"}</p>
+              </div>
+              <div className="specialty-focus-options">
+                {visibleVisitSpecialtyFocusOptions.map((option) => (
+                  <button
+                    className={selectedSpecialty === option.specialty ? "active" : ""}
+                    type="button"
+                    key={option.specialty}
+                    onClick={() => {
+                      setSelectedSpecialty(option.specialty);
+                      setSelectedProtocolId(null);
+                    }}
+                  >
+                    <strong>{option.title}</strong>
+                    <span>{option.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <div className="dictation-box">
+              <div className="dictation-header">
+                <Mic aria-hidden="true" />
+                <div>
+                  <h3>Диктовка врача</h3>
+                  <p>
+                    Черновик, требует подтверждения врача.{" "}
+                    {lastLocalSavedAt ? `Локально сохранено ${formatTime(lastLocalSavedAt)}.` : "Локальное автосохранение включено."}
+                    {localDraftWasRestored ? " Восстановлен локальный черновик." : ""}
+                    {!isOnline ? " Офлайн: сервер синхронизируется позже." : ""}
+                    {pendingVisitSaveCount
+                      ? ` Сервер ожидает ${pendingVisitSaveCount} сохранение${lastPendingVisitSaveAt ? ` с ${formatTime(lastPendingVisitSaveAt)}` : ""}.`
+                      : ""}
+                    {pendingSpeechChunkCount ? ` STT ожидает ${pendingSpeechChunkCount} аудио-фрагм.` : ""}
+                    {lastServerDraftSavedAt && serverDraftSyncState === "saved" ? ` Серверный черновик ${formatTime(lastServerDraftSavedAt)}.` : ""}
+                    {serverDraftSyncState === "saving" ? " Сервер сохраняет черновик." : ""}
+                    {serverDraftSyncState === "queued" || serverDraftSyncState === "error" ? " Серверный черновик повторит синхронизацию." : ""}
+                    {speechStatusNote ? ` ${speechStatusNote}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">
+                {dictationQuickPhrases.map((phrase) => (
+                  <button type="button" key={phrase.label} onClick={() => appendToTranscript(phrase.text)}>
+                    {phrase.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                aria-label="Текст диктовки"
+                value={transcript}
+                onChange={(event) => {
+                  visitDraftUserEditedRef.current = true;
+                  setTranscript(event.target.value);
+                  if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
+                }}
+              />
+              <div className="dictation-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={clearTranscriptWithUndo}
+                  disabled={!hasVisitTranscriptText}
+                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                >
+                  Очистить
+                </button>
+                {clearedTranscriptSnapshot ? (
+                  <button className="secondary-button" type="button" onClick={undoTranscriptClear}>
+                    Вернуть
+                  </button>
+                ) : null}
+                <button className="secondary-button" type="button" onClick={startVisitDictation} disabled={isVisitDictating}>
+                  <Mic aria-hidden="true" /> {isVisitDictating ? "Слушаю" : "Голос"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
+                  title={
+                    speechUploadReady && isOnline
+                      ? `${speechGatewayStatus?.providerLabel ?? "STT"}: запись чанками`
+                      : "Аудио сохранится локально и уйдет в STT, когда сервер будет готов"
+                  }
+                >
+                  <Mic aria-hidden="true" />{" "}
+                  {isServerVoiceRecording
+                    ? "Стоп запись"
+                    : speechUploadReady && isOnline
+                      ? "Сервер STT"
+                      : "Запись локально"}
+                </button>
+                {pendingSpeechChunkCount ? (
+                  <button className="secondary-button" type="button" onClick={() => flushPendingSpeechChunks({ silent: false })}>
+                    Отправить STT
+                  </button>
+                ) : null}
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={polishTranscript}
+                  disabled={!hasVisitTranscriptText || isTranscriptPolishing}
+                  title={
+                    speechGatewayStatus?.polishPolicy.neuralEnabled
+                      ? `Осторожная ИИ-полировка: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
+                      : "Локальная очистка терминов, секций и номеров зубов без ИИ"
+                  }
+                >
+                  <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить STT"}
+                </button>
+                <button className="secondary-button" type="button" onClick={buildOfflineDraft} disabled={!hasVisitTranscriptText}>
+                  Локальный разбор
+                </button>
+                <button className="primary-button" type="button" onClick={buildDraft} disabled={isDraftLoading || !visitDraftReadyToBuild}>
+                  <Bot aria-hidden="true" /> {isDraftLoading ? "Собираю" : "Собрать черновик"}
+                </button>
+                {!hasVisitTranscriptText ? (
+                  <div className="dictation-action-guidance" id="dictation-clear-guidance" role="status" aria-live="polite">
+                    В диктовке пока нет текста: нажмите «Голос», «Сервер STT» или впишите текст вручную.
+                  </div>
+                ) : null}
+                {!visitDraftReadyToBuild ? (
+                  <div className="visit-draft-missing" role="status" aria-live="polite">
+                    <strong>Чтобы собрать черновик, осталось:</strong>
+                    <ul>
+                      {visitDraftBuildMissingSteps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <section className="visit-note-panel" aria-label="Черновик электронной медицинской карты">
+              <div className="visit-note-head">
+                <div>
+                  <p className="eyebrow">ЭМК после диктовки</p>
+                  <h3>{draft ? "Проверьте черновик" : isVisitNoteDirty ? "Проверьте правки" : "Структура приема"}</h3>
+                </div>
+                <span className={draft || isVisitNoteDirty ? "ready" : ""}>{visitNoteStatusLabel}</span>
+              </div>
+              <div className="visit-fields">
+                {visitNoteFieldDefinitions.map((field) => (
+                  <label key={field.key}>
+                    {field.label}
+                    <textarea value={visitNoteForm[field.key]} onChange={(event) => updateVisitNoteField(field.key, event.target.value)} />
+                  </label>
+                ))}
+              </div>
+
+              {draft?.quality ? (
+                <div className={`visit-draft-quality quality-${draft.quality.level}`}>
+                  <div>
+                    <strong>{visitDraftQualityLabels[draft.quality.level]}</strong>
+                    <span>{Math.round(draft.quality.confidence * 100)}% · {specialtyLabels[draft.quality.specialty]}</span>
+                  </div>
+                  <p>{draft.quality.nextAction}</p>
+                  <div className="visit-draft-signal-row">
+                    {draft.quality.detectedToothCodes.slice(0, 6).map((toothCode) => (
+                      <span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
+                    ))}
+                    {draft.quality.signals.slice(0, 7).map((signal) => (
+                      <span key={signal}>{signal}</span>
+                    ))}
+                    {draft.quality.missingCriticalFields.slice(0, 5).map((field) => (
+                      <small key={field}>проверить: {field}</small>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="ai-draft">
+                <ShieldCheck aria-hidden="true" />
+                <p>
+                  {draft
+                    ? draft.warnings.join(" ")
+                    : isVisitNoteDirty
+                      ? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
+                      : pendingVisitSaveCount
+                        ? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
+                        : lastVisitSaveReceipt
+                          ? visitSaveReceiptText(lastVisitSaveReceipt)
+                          : dashboard.activeVisit.doctorSummary}
+                </p>
+                {pendingVisitSaveCount ? (
+                  <button className="secondary-button" type="button" onClick={() => flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>
+                    {isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
+                  </button>
+                ) : null}
+                <button className="primary-button" type="button" onClick={acceptDraftToVisit} disabled={!visitNoteReadyToAccept || isDraftAccepting}>
+                  <Check aria-hidden="true" /> {visitNoteActionLabel}
+                </button>
+                {!visitNoteReadyToAccept ? (
+                  <div className="visit-note-missing" role="status" aria-live="polite">
+                    <strong>Чтобы сохранить запись приема, осталось:</strong>
+                    <ul>
+                      {visitNoteAcceptMissingSteps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <details className="protocol-library" aria-label="Шаблоны приема по специальности">
+              <summary className="protocol-summary">
+                <div>
+                  <h3>Шаблон приема</h3>
+                  <p>{selectedProtocolTemplate?.title ?? "Выберите специальность и шаблон"}</p>
+                </div>
+                <span>{selectedProtocolTemplate ? specialtyLabels[selectedProtocolTemplate.specialty] : dashboard.protocolTemplates.length}</span>
+              </summary>
+              <div className="protocol-head">
+                <div>
+                  <h3>Шаблон приема</h3>
+                  <p>Выбор специальности меняет протокол, снимки, документы и предупреждения.</p>
+                </div>
+                <span>{dashboard.protocolTemplates.length}</span>
+              </div>
+              <div className="specialty-strip">
+                {specialtiesWithTemplates.map((specialty) => (
+                  <button
+                    className={selectedSpecialty === specialty ? "active" : ""}
+                    key={specialty}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSpecialty(specialty);
+                      setSelectedProtocolId(null);
+                    }}
+                  >
+                    {specialtyLabels[specialty]}
+                  </button>
+                ))}
+              </div>
+              {selectedProtocolTemplate ? (
+                <article className="protocol-card">
+                  <div>
+                    <strong>{selectedProtocolTemplate.title}</strong>
+                    <p>
+                      {selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
+                      {selectedProtocolTemplate.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}
+                    </p>
+                  </div>
+                  <div className="protocol-template-list">
+                    {specialtyProtocolTemplates.map((template) => (
+                      <button
+                        className={selectedProtocolTemplate.id === template.id ? "active" : ""}
+                        key={template.id}
+                        type="button"
+                        onClick={() => setSelectedProtocolId(template.id)}
+                      >
+                        {template.visitReason}
+                      </button>
+                    ))}
+                  </div>
+                  <ul>
+                    {selectedProtocolTemplate.safetyWarnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                  <button className="secondary-button" type="button" onClick={() => applyProtocolTemplate(selectedProtocolTemplate)}>
+                    <ClipboardCheck aria-hidden="true" /> Заполнить диктовку
+                  </button>
+                </article>
+              ) : null}
+            </details>
+
+            <ClinicalRulePanel
+              actionLabels={clinicalRuleActionLabels}
+              context="visit"
+              evaluations={activeVisitClinicalRuleEvaluations}
+              serviceTitle={serviceTitle}
+              severityLabels={clinicalRuleSeverityLabels}
+              staffRoleLabels={staffRoleLabels}
+              summary={activeVisitClinicalRuleSummary}
+            />
+
+            <div className="tooth-map" aria-label="Зубная карта">
+              <div className="tooth-map-head">
+                <div>
+                  <h3>Зубная карта</h3>
+                  <p>Визуальный контекст вместо поиска по строкам.</p>
+                </div>
+                <span>FDI</span>
+              </div>
+              {toothRows.map((row, rowIndex) => (
+                <div className="tooth-row" key={rowIndex === 0 ? "upper" : "lower"}>
+                  {row.map((code) => (
+                    <span className={`tooth tooth-${toothStateByCode[code] ?? "idle"}`} key={code}>
+                      <span>{code}</span>
+                    </span>
+                  ))}
+                </div>
+              ))}
+              <div className="tooth-legend">
+                <span className="legend-planned">36 лечение</span>
+                <span className="legend-watch">16/46 наблюдать</span>
+                <span className="legend-done">26 готово</span>
+                <span className="legend-missing">48 нет</span>
+              </div>
+            </div>
+
+            {visitCloseChecklist ? (
+              <div className="close-checklist" aria-label="Предупреждения перед закрытием приема">
+                <div className="close-checklist-head">
+                  <div>
+                    <h3>Закрытие приема</h3>
+                    <p>{primaryVisitWarning?.actionLabel ?? visitCloseChecklist.nextAction}</p>
+                  </div>
+                  <span className={visitCloseChecklist.readyToSign ? "ready" : ""}>
+                    {visitCloseChecklist.readyToSign ? "готово" : `${visitCloseChecklist.score}%`}
+                  </span>
+                </div>
+                {visitCloseChecklist.items.map((task) => (
+                  <button
+                    className={`close-task ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
+                    key={task.id}
+                    type="button"
+                    onClick={() => {
+                      window.location.hash = task.section;
+                    }}
+                  >
+                    <CheckCircle2 aria-hidden="true" />
+                    <div>
+                      <strong>{task.title}</strong>
+                      <p>{task.detail}</p>
+                      <small>{staffRoleLabels[task.ownerRole]} · {task.actionLabel}</small>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          ) : null}
+
+          {currentView === "documents" ? (
+            <Suspense
+              fallback={
+                <div className="panel documents-panel" id="documents" aria-busy="true">
+                  <div className="panel-heading">
+                    <h2>Документы и согласия</h2>
+                    <span className="status-pill status-planned">загрузка</span>
+                  </div>
+                </div>
+              }
+            >
+              <DocumentsView
+                activeAppointment={activeAppointment}
+                activeDoctor={activeDoctor}
+                activeDocuments={activeDocuments}
+                activeIssuedPaidContracts={activeIssuedPaidContracts}
+                activePatient={activePatient}
+                activeUsableDocuments={activeUsableDocuments}
+                anesthesiaAllergyRestrictionsChecked={anesthesiaAllergyRestrictionsChecked}
+                anesthesiaAllergyStatus={anesthesiaAllergyStatus}
+                anesthesiaAnesthetic={anesthesiaAnesthetic}
+                anesthesiaConsentConfirmed={anesthesiaConsentConfirmed}
+                anesthesiaDoseMl={anesthesiaDoseMl}
+                anesthesiaDoseTime={anesthesiaDoseTime}
+                anesthesiaMethod={anesthesiaMethod}
+                anesthesiaReaction={anesthesiaReaction}
+                anesthesiaRestrictionNotes={anesthesiaRestrictionNotes}
+                anesthesiaRisksExplained={anesthesiaRisksExplained}
+                anesthesiaVasoconstrictor={anesthesiaVasoconstrictor}
+                anesthesiaZone={anesthesiaZone}
+                applyPostVisitCarePreset={applyPostVisitCarePreset}
+                attendanceDiagnosisDisclosureExcluded={attendanceDiagnosisDisclosureExcluded}
+                attendanceEndedAt={attendanceEndedAt}
+                attendanceIssuedAt={attendanceIssuedAt}
+                attendanceNotSickLeaveAcknowledged={attendanceNotSickLeaveAcknowledged}
+                attendancePurpose={attendancePurpose}
+                attendanceRecipientOrganization={attendanceRecipientOrganization}
+                attendanceSignedByFullName={attendanceSignedByFullName}
+                attendanceSignedByRole={attendanceSignedByRole}
+                attendanceStartedAt={attendanceStartedAt}
+                changePostVisitCareTopic={changePostVisitCareTopic}
+                clinicProfileDraft={clinicProfileDraft}
+                compactDocumentText={compactDocumentText}
+                completedActAccepted={completedActAccepted}
+                completedActContractNumber={completedActContractNumber}
+                completedActContractReferenceForUi={completedActContractReferenceForUi}
+                completedActDate={completedActDate}
+                completedActDoctorFullName={completedActDoctorFullName}
+                completedActFinalScopeConfirmed={completedActFinalScopeConfirmed}
+                completedActFiscalReceiptLines={completedActFiscalReceiptLines}
+                completedActFiscalReceipts={completedActFiscalReceipts}
+                completedActFiscalReceiptsVerified={completedActFiscalReceiptsVerified}
+                completedActLinkedContract={completedActLinkedContract}
+                completedActNumber={completedActNumber}
+                completedActPaidRub={completedActPaidRub}
+                completedActPaidRubValue={completedActPaidRubValue}
+                completedActPatientClaims={completedActPatientClaims}
+                completedActServicePeriodEnd={completedActServicePeriodEnd}
+                completedActServicePeriodStart={completedActServicePeriodStart}
+                completedActServicesSummary={completedActServicesSummary}
+                completedActTotalRub={completedActTotalRub}
+                confirmDocumentIssue={confirmDocumentIssue}
+                confirmDocumentVoid={confirmDocumentVoid}
+                copyRequestContactForDelivery={copyRequestContactForDelivery}
+                copyRequestDocumentTypes={copyRequestDocumentTypes}
+                copyRequestFormat={copyRequestFormat}
+                copyRequestIdentityVerified={copyRequestIdentityVerified}
+                copyRequestIncludeDicomSourceData={copyRequestIncludeDicomSourceData}
+                copyRequestPeriodEnd={copyRequestPeriodEnd}
+                copyRequestPeriodStart={copyRequestPeriodStart}
+                copyRequestRecipientAuthority={copyRequestRecipientAuthority}
+                copyRequestRecipientFullName={copyRequestRecipientFullName}
+                copyRequestRecipientIdentityDocument={copyRequestRecipientIdentityDocument}
+                copyRequestRepresentativeAuthorityDocument={copyRequestRepresentativeAuthorityDocument}
+                copyRequestRequestedAt={copyRequestRequestedAt}
+                copyRequestSpecialInstructions={copyRequestSpecialInstructions}
+                copyRequestThirdPartyDataChecked={copyRequestThirdPartyDataChecked}
+                createDocument={createDocument}
+                dashboard={dashboard}
+                documentActionLabels={documentActionLabels}
+                documentAuditFacts={documentAuditFacts}
+                documentAuditFactsLoadingId={documentAuditFactsLoadingId}
+                documentCreateSavingKind={documentCreateSavingKind}
+                documentIssueAttestationReady={documentIssueAttestationReady}
+                documentIssueClinicSigned={documentIssueClinicSigned}
+                documentIssueConfirmation={documentIssueConfirmation}
+                documentIssueDocumentOpenedAndChecked={documentIssueDocumentOpenedAndChecked}
+                documentIssueIdentityChecked={documentIssueIdentityChecked}
+                documentIssueNote={documentIssueNote}
+                documentIssueRecipientFullName={documentIssueRecipientFullName}
+                documentIssueRecipientRole={documentIssueRecipientRole}
+                documentIssueRecipientSigned={documentIssueRecipientSigned}
+                documentIssueSignatureMode={documentIssueSignatureMode}
+                documentIssueSignatureModeLabels={documentIssueSignatureModeLabels}
+                documentIssueSignedAt={documentIssueSignedAt}
+                documentIssueStaffFullName={documentIssueStaffFullName}
+                documentIssueStaffRole={documentIssueStaffRole}
+                documentLabels={documentLabels}
+                documentPatient={documentPatient}
+                documentSourceStatusClassNames={documentSourceStatusClassNames}
+                documentStatusSavingId={documentStatusSavingId}
+                documentStatusLabels={documentStatusLabels}
+                documentVoidArchivePreserved={documentVoidArchivePreserved}
+                documentVoidConfirmation={documentVoidConfirmation}
+                documentVoidCorrectionDocumentId={documentVoidCorrectionDocumentId}
+                documentVoidPatientOrPayerNotified={documentVoidPatientOrPayerNotified}
+                documentVoidReady={documentVoidReady}
+                documentVoidReasonCode={documentVoidReasonCode}
+                documentVoidReasonLabels={documentVoidReasonLabels}
+                documentVoidReasonText={documentVoidReasonText}
+                documentVoidReplacementRequired={documentVoidReplacementRequired}
+                documentVoidStaffFullName={documentVoidStaffFullName}
+                documentVoidStaffRole={documentVoidStaffRole}
+                documentVoidStatusReviewed={documentVoidStatusReviewed}
+                downloadIssuedDocumentHtml={downloadIssuedDocumentHtml}
+                downloadIssuedDocumentPdf={downloadIssuedDocumentPdf}
+                downloadTaxDocumentXml={downloadTaxDocumentXml}
+                eligiblePaymentReceiptPayments={eligiblePaymentReceiptPayments}
+                eligibleRefundCorrectionPayments={eligibleRefundCorrectionPayments}
+                eligibleTaxPayments={eligibleTaxPayments}
+                formatDateTime={formatDateTime}
+                formatShortDate={formatShortDate}
+                inferredTreatmentArea={inferredTreatmentArea}
+                informedConsentAftercare={informedConsentAftercare}
+                informedConsentAlternatives={informedConsentAlternatives}
+                informedConsentAnesthesia={informedConsentAnesthesia}
+                informedConsentConfirmedAt={informedConsentConfirmedAt}
+                informedConsentDiagnosisOrIndication={informedConsentDiagnosisOrIndication}
+                informedConsentDoctorFullName={informedConsentDoctorFullName}
+                informedConsentExpectedBenefit={informedConsentExpectedBenefit}
+                informedConsentIntervention={informedConsentIntervention}
+                informedConsentMaterialNotes={informedConsentMaterialNotes}
+                informedConsentQuestionsAnswered={informedConsentQuestionsAnswered}
+                informedConsentRisks={informedConsentRisks}
+                informedConsentRisksUnderstood={informedConsentRisksUnderstood}
+                informedConsentToothOrArea={informedConsentToothOrArea}
+                informedConsentTrustedContact={informedConsentTrustedContact}
+                informedConsentWithdrawUnderstood={informedConsentWithdrawUnderstood}
+                installmentScheduleAccepted={installmentScheduleAccepted}
+                installmentScheduleBaseDocumentTitle={installmentScheduleBaseDocumentTitle}
+                installmentScheduleBaseDocumentTitleValue={installmentScheduleBaseDocumentTitleValue}
+                installmentScheduleDate={installmentScheduleDate}
+                installmentScheduleFiscalNoticeConfirmed={installmentScheduleFiscalNoticeConfirmed}
+                installmentScheduleInstallmentRows={installmentScheduleInstallmentRows}
+                installmentScheduleLatePolicy={installmentScheduleLatePolicy}
+                installmentScheduleNumber={installmentScheduleNumber}
+                installmentSchedulePayerFullName={installmentSchedulePayerFullName}
+                installmentSchedulePaymentMethodNotes={installmentSchedulePaymentMethodNotes}
+                installmentSchedulePrepaidRub={installmentSchedulePrepaidRub}
+                installmentSchedulePrepaidRubValue={installmentSchedulePrepaidRubValue}
+                installmentScheduleRemainingRubValue={installmentScheduleRemainingRubValue}
+                installmentScheduleResponsibleFullName={installmentScheduleResponsibleFullName}
+                installmentScheduleRows={installmentScheduleRows}
+                installmentScheduleTotalRub={installmentScheduleTotalRub}
+                installmentScheduleTotalRubValue={installmentScheduleTotalRubValue}
+                installmentScheduleWrittenChangesConfirmed={installmentScheduleWrittenChangesConfirmed}
+                intakeAccuracyConfirmed={intakeAccuracyConfirmed}
+                intakeAdditionalNotes={intakeAdditionalNotes}
+                intakeAllergyStatus={intakeAllergyStatus}
+                intakeAnticoagulants={intakeAnticoagulants}
+                intakeCardioEndocrineNotes={intakeCardioEndocrineNotes}
+                intakeChiefComplaint={intakeChiefComplaint}
+                intakeChronicConditions={intakeChronicConditions}
+                intakeCurrentMedications={intakeCurrentMedications}
+                intakeEmergencyContact={intakeEmergencyContact}
+                intakeInfectiousRiskNotes={intakeInfectiousRiskNotes}
+                intakePregnancyStatus={intakePregnancyStatus}
+                issuedMedicalCopyRequestDocuments={issuedMedicalCopyRequestDocuments}
+                labDeadline={labDeadline}
+                labMaterial={labMaterial}
+                labShade={labShade}
+                labSource={labSource}
+                labTechnicianNotes={labTechnicianNotes}
+                labTeethOrArea={labTeethOrArea}
+                labWorkType={labWorkType}
+                loadDocumentAuditFacts={loadDocumentAuditFacts}
+                markPostVisitManualEdited={markPostVisitManualEdited}
+                medicalDocumentReleaseChannelLabels={medicalDocumentReleaseChannelLabels}
+                minorConsentAgeExplanation={minorConsentAgeExplanation}
+                minorConsentAlternatives={minorConsentAlternatives}
+                minorConsentAuthorityVerified={minorConsentAuthorityVerified}
+                minorConsentDiagnosisOrIndication={minorConsentDiagnosisOrIndication}
+                minorConsentDiagnosisOrIndicationValue={minorConsentDiagnosisOrIndicationValue}
+                minorConsentDoctorFullName={minorConsentDoctorFullName}
+                minorConsentExplained={minorConsentExplained}
+                minorConsentIdentityVerified={minorConsentIdentityVerified}
+                minorConsentInterventionScope={minorConsentInterventionScope}
+                minorConsentInterventionScopeValue={minorConsentInterventionScopeValue}
+                minorConsentPatientBirthDate={minorConsentPatientBirthDate}
+                minorConsentPatientBirthDateValue={minorConsentPatientBirthDateValue}
+                minorConsentPatientFullName={minorConsentPatientFullName}
+                minorConsentPatientFullNameValue={minorConsentPatientFullNameValue}
+                minorConsentRisks={minorConsentRisks}
+                minorConsentSignedAt={minorConsentSignedAt}
+                minorConsentStored={minorConsentStored}
+                minorRepresentativeAuthorityDocument={minorRepresentativeAuthorityDocument}
+                minorRepresentativeFullName={minorRepresentativeFullName}
+                minorRepresentativeFullNameValue={minorRepresentativeFullNameValue}
+                minorRepresentativeIdentityDocument={minorRepresentativeIdentityDocument}
+                minorRepresentativeIdentityDocumentValue={minorRepresentativeIdentityDocumentValue}
+                minorRepresentativePhone={minorRepresentativePhone}
+                minorRepresentativePhoneValue={minorRepresentativePhoneValue}
+                minorRepresentativeRelationship={minorRepresentativeRelationship}
+                minorRepresentativeRelationshipValue={minorRepresentativeRelationshipValue}
+                money={money}
+                normalizedDocumentIssueSignatureMode={normalizedDocumentIssueSignatureMode}
+                normalizedDocumentKind={normalizedDocumentKind}
+                normalizedDocumentVoidReasonCode={normalizedDocumentVoidReasonCode}
+                normalizedMedicalDocumentReleaseChannel={normalizedMedicalDocumentReleaseChannel}
+                normalizedOutpatient025uDemographicCode={normalizedOutpatient025uDemographicCode}
+                normalizedPatientIntakePregnancyStatus={normalizedPatientIntakePregnancyStatus}
+                normalizedPaymentRefundCorrectionAction={normalizedPaymentRefundCorrectionAction}
+                normalizedPaymentRefundCorrectionMethod={normalizedPaymentRefundCorrectionMethod}
+                normalizedPostVisitCareTopic={normalizedPostVisitCareTopic}
+                normalizedProcedureSpecificConsentProcedure={normalizedProcedureSpecificConsentProcedure}
+                normalizedTaxApplicationDeliveryChannel={normalizedTaxApplicationDeliveryChannel}
+                normalizedTaxApplicationForm={normalizedTaxApplicationForm}
+                normalizedTaxApplicationRelationshipSelect={normalizedTaxApplicationRelationshipSelect}
+                normalizedTreatmentPlanAcceptanceVariant={normalizedTreatmentPlanAcceptanceVariant}
+                normalizedXrayPregnancyStatus={normalizedXrayPregnancyStatus}
+                normalizedXrayPriority={normalizedXrayPriority}
+                normalizedXrayStudyType={normalizedXrayStudyType}
+                openIssuedDocumentHtml={openIssuedDocumentHtml}
+                outpatient025uAllergyHistory={outpatient025uAllergyHistory}
+                outpatient025uBloodGroup={outpatient025uBloodGroup}
+                outpatient025uCitizenship={outpatient025uCitizenship}
+                outpatient025uDisabilityGroup={outpatient025uDisabilityGroup}
+                outpatient025uEmploymentCode={outpatient025uEmploymentCode}
+                outpatient025uFinalEpicrisis={outpatient025uFinalEpicrisis}
+                outpatient025uHealthStatusDisclosureContact={outpatient025uHealthStatusDisclosureContact}
+                outpatient025uInsurerName={outpatient025uInsurerName}
+                outpatient025uKellK1={outpatient025uKellK1}
+                outpatient025uMedicalCardNumber={outpatient025uMedicalCardNumber}
+                outpatient025uMedicalCardNumberValue={outpatient025uMedicalCardNumberValue}
+                outpatient025uOfficialForm274nChecked={outpatient025uOfficialForm274nChecked}
+                outpatient025uOmsIssuedAt={outpatient025uOmsIssuedAt}
+                outpatient025uOpenedAt={outpatient025uOpenedAt}
+                outpatient025uOtherBloodData={outpatient025uOtherBloodData}
+                outpatient025uPalliativeCareNeedCode={outpatient025uPalliativeCareNeedCode}
+                outpatient025uPatientSexCode={outpatient025uPatientSexCode}
+                outpatient025uRegistrationUrbanRuralCode={outpatient025uRegistrationUrbanRuralCode}
+                outpatient025uRhFactor={outpatient025uRhFactor}
+                outpatient025uSocialSupportCode={outpatient025uSocialSupportCode}
+                outpatient025uStayUrbanRuralCode={outpatient025uStayUrbanRuralCode}
+                outpatient025uThirdPartyDataChecked={outpatient025uThirdPartyDataChecked}
+                outpatient025uWorkOrStudyPlace={outpatient025uWorkOrStudyPlace}
+                paidContractCareReason={paidContractCareReason}
+                paidContractClinicInfoConfirmed={paidContractClinicInfoConfirmed}
+                paidContractCustomerFullName={paidContractCustomerFullName}
+                paidContractDate={paidContractDate}
+                paidContractDoctorFullName={paidContractDoctorFullName}
+                paidContractFreeCareNotice={paidContractFreeCareNotice}
+                paidContractNumber={paidContractNumber}
+                paidContractPaidBasisConfirmed={paidContractPaidBasisConfirmed}
+                paidContractPaymentTerms={paidContractPaymentTerms}
+                paidContractPriceChangeRules={paidContractPriceChangeRules}
+                paidContractRecommendationWarning={paidContractRecommendationWarning}
+                paidContractRefundTerms={paidContractRefundTerms}
+                paidContractRepresentativeFullName={paidContractRepresentativeFullName}
+                paidContractServiceEnd={paidContractServiceEnd}
+                paidContractServiceListConfirmed={paidContractServiceListConfirmed}
+                paidContractServiceScope={paidContractServiceScope}
+                paidContractServiceStart={paidContractServiceStart}
+                paidContractSignedAt={paidContractSignedAt}
+                paidContractTotalRub={paidContractTotalRub}
+                paidContractTotalRubValue={paidContractTotalRubValue}
+                paidContractWarrantyTerms={paidContractWarrantyTerms}
+                paidContractWrittenChangesConfirmed={paidContractWrittenChangesConfirmed}
+                patientIntakePregnancyStatusOptions={patientIntakePregnancyStatusOptions}
+                patientName={patientName}
+                paymentFiscalReceiptLabelForUi={paymentFiscalReceiptLabelForUi}
+                paymentFiscalReceiptNumber={paymentFiscalReceiptNumber}
+                paymentInvoiceBankDetails={paymentInvoiceBankDetails}
+                paymentInvoiceCashDeskAllowed={paymentInvoiceCashDeskAllowed}
+                paymentInvoiceCashlessAllowed={paymentInvoiceCashlessAllowed}
+                paymentInvoiceDate={paymentInvoiceDate}
+                paymentInvoiceDueDate={paymentInvoiceDueDate}
+                paymentInvoiceFiscalNoticeConfirmed={paymentInvoiceFiscalNoticeConfirmed}
+                paymentInvoiceNumber={paymentInvoiceNumber}
+                paymentInvoicePayerEmail={paymentInvoicePayerEmail}
+                paymentInvoicePayerFullName={paymentInvoicePayerFullName}
+                paymentInvoicePayerPhone={paymentInvoicePayerPhone}
+                paymentInvoicePaymentTerms={paymentInvoicePaymentTerms}
+                paymentInvoicePurpose={paymentInvoicePurpose}
+                paymentInvoiceQrPayload={paymentInvoiceQrPayload}
+                paymentInvoiceRequisitesVerified={paymentInvoiceRequisitesVerified}
+                paymentInvoiceServiceScopeConfirmed={paymentInvoiceServiceScopeConfirmed}
+                paymentInvoiceTotalRubValue={paymentInvoiceTotalRubValue}
+                paymentPayerFullName={paymentPayerFullName}
+                paymentPayerIdentityDocument={paymentPayerIdentityDocument}
+                paymentReceiptDate={paymentReceiptDate}
+                paymentReceiptFiscalNoticeConfirmed={paymentReceiptFiscalNoticeConfirmed}
+                paymentReceiptFiscalReceiptLines={paymentReceiptFiscalReceiptLines}
+                paymentReceiptIssuedBy={paymentReceiptIssuedBy}
+                paymentReceiptIssuedByValue={paymentReceiptIssuedByValue}
+                paymentReceiptNumber={paymentReceiptNumber}
+                paymentReceiptPayerBirthDate={paymentReceiptPayerBirthDate}
+                paymentReceiptPayerBirthDateValue={paymentReceiptPayerBirthDateValue}
+                paymentReceiptPayerFullName={paymentReceiptPayerFullName}
+                paymentReceiptPayerFullNameValue={paymentReceiptPayerFullNameValue}
+                paymentReceiptPayerIdentityDocument={paymentReceiptPayerIdentityDocument}
+                paymentReceiptPayerIdentityDocumentValue={paymentReceiptPayerIdentityDocumentValue}
+                paymentReceiptPayerInn={paymentReceiptPayerInn}
+                paymentReceiptPayerInnValue={paymentReceiptPayerInnValue}
+                paymentReceiptPayerRelationship={paymentReceiptPayerRelationship}
+                paymentReceiptPayerRelationshipValue={paymentReceiptPayerRelationshipValue}
+                paymentReceiptPayerVerified={paymentReceiptPayerVerified}
+                paymentReceiptPaymentsVerified={paymentReceiptPaymentsVerified}
+                paymentReceiptPurpose={paymentReceiptPurpose}
+                paymentReceiptTaxSupportRequested={paymentReceiptTaxSupportRequested}
+                personalDataActions={personalDataActions}
+                personalDataAutomatedDecisionAllowed={personalDataAutomatedDecisionAllowed}
+                personalDataCategories={personalDataCategories}
+                personalDataConsentGivenAt={personalDataConsentGivenAt}
+                personalDataCrossBorderAllowed={personalDataCrossBorderAllowed}
+                personalDataMedicalProcessingAcknowledged={personalDataMedicalProcessingAcknowledged}
+                personalDataPurposes={personalDataPurposes}
+                personalDataRetentionPeriod={personalDataRetentionPeriod}
+                personalDataRevocationChannel={personalDataRevocationChannel}
+                personalDataTransferRules={personalDataTransferRules}
+                personalDataVoluntaryConsentConfirmed={personalDataVoluntaryConsentConfirmed}
+                photoVideoAnonymizationConfirmed={photoVideoAnonymizationConfirmed}
+                photoVideoClinicalRecordUseConfirmed={photoVideoClinicalRecordUseConfirmed}
+                photoVideoColleagueConsultationAllowed={photoVideoColleagueConsultationAllowed}
+                photoVideoEducationUseAllowed={photoVideoEducationUseAllowed}
+                photoVideoLabTransferAllowed={photoVideoLabTransferAllowed}
+                photoVideoMarketingUseAllowed={photoVideoMarketingUseAllowed}
+                photoVideoMaterialOptions={photoVideoMaterialOptions}
+                photoVideoMaterials={photoVideoMaterials}
+                photoVideoRecognizablePublicationAllowed={photoVideoRecognizablePublicationAllowed}
+                photoVideoRevocationChannel={photoVideoRevocationChannel}
+                photoVideoScopeNotes={photoVideoScopeNotes}
+                plannedServiceLinesForFinancialPayload={plannedServiceLinesForFinancialPayload}
+                postVisitAllowedAfter={postVisitAllowedAfter}
+                postVisitCareTopic={postVisitCareTopic}
+                postVisitCareTopicOptions={postVisitCareTopicOptions}
+                postVisitClinicContactInstruction={postVisitClinicContactInstruction}
+                postVisitDoctorFullName={postVisitDoctorFullName}
+                postVisitFollowUpAt={postVisitFollowUpAt}
+                postVisitHygieneInstructions={postVisitHygieneInstructions}
+                postVisitManualEdited={postVisitManualEdited}
+                postVisitMedicationAndRinsePlan={postVisitMedicationAndRinsePlan}
+                postVisitNutritionInstructions={postVisitNutritionInstructions}
+                postVisitPerformedAt={postVisitPerformedAt}
+                postVisitPresetFeedback={postVisitPresetFeedback}
+                postVisitPrintedCopyReceived={postVisitPrintedCopyReceived}
+                postVisitProcedureName={postVisitProcedureName}
+                postVisitRestrictions={postVisitRestrictions}
+                postVisitTelegramSafe={postVisitTelegramSafe}
+                postVisitTelegramSummary={postVisitTelegramSummary}
+                postVisitToothOrArea={postVisitToothOrArea}
+                postVisitUrgentSignsUnderstood={postVisitUrgentSignsUnderstood}
+                postVisitUrgentWarningSigns={postVisitUrgentWarningSigns}
+                prescriptionDosage={prescriptionDosage}
+                prescriptionDuration={prescriptionDuration}
+                prescriptionInstructions={prescriptionInstructions}
+                prescriptionMedication={prescriptionMedication}
+                prescriptionSafetyNotes={prescriptionSafetyNotes}
+                prescriptionUrgentContactReason={prescriptionUrgentContactReason}
+                procedureConsentAftercare={procedureConsentAftercare}
+                procedureConsentAlternatives={procedureConsentAlternatives}
+                procedureConsentAnesthesia={procedureConsentAnesthesia}
+                procedureConsentConfirmedAt={procedureConsentConfirmedAt}
+                procedureConsentDiagnosisOrIndication={procedureConsentDiagnosisOrIndication}
+                procedureConsentDoctorFullName={procedureConsentDoctorFullName}
+                procedureConsentExactProcedureConfirmed={procedureConsentExactProcedureConfirmed}
+                procedureConsentLocalFormAttached={procedureConsentLocalFormAttached}
+                procedureConsentMaterials={procedureConsentMaterials}
+                procedureConsentPatientRiskFactors={procedureConsentPatientRiskFactors}
+                procedureConsentProcedureName={procedureConsentProcedureName}
+                procedureConsentProcedureType={procedureConsentProcedureType}
+                procedureConsentQuestionsAnswered={procedureConsentQuestionsAnswered}
+                procedureConsentRisksUnderstood={procedureConsentRisksUnderstood}
+                procedureConsentSpecificRisks={procedureConsentSpecificRisks}
+                procedureConsentToothOrArea={procedureConsentToothOrArea}
+                procedureSpecificConsentProcedureOptions={procedureSpecificConsentProcedureOptions}
+                recordExtractComplaintAndAnamnesis={recordExtractComplaintAndAnamnesis}
+                recordExtractDiagnosis={recordExtractDiagnosis}
+                recordExtractDoctorFullName={recordExtractDoctorFullName}
+                recordExtractIssuedAt={recordExtractIssuedAt}
+                recordExtractObjectiveStatus={recordExtractObjectiveStatus}
+                recordExtractPeriodEnd={recordExtractPeriodEnd}
+                recordExtractPeriodStart={recordExtractPeriodStart}
+                recordExtractPreparedFromSignedRecords={recordExtractPreparedFromSignedRecords}
+                recordExtractRecipientAuthority={recordExtractRecipientAuthority}
+                recordExtractRecipientFullName={recordExtractRecipientFullName}
+                recordExtractRecommendations={recordExtractRecommendations}
+                recordExtractSourceVisitIds={recordExtractSourceVisitIds}
+                recordExtractThirdPartyDataChecked={recordExtractThirdPartyDataChecked}
+                recordExtractTreatmentProvided={recordExtractTreatmentProvided}
+                refundAccountantDecision={refundAccountantDecision}
+                refundAction={refundAction}
+                refundAmountRub={refundAmountRub}
+                refundBankDetails={refundBankDetails}
+                refundCorrectionFiscalReceiptNumber={refundCorrectionFiscalReceiptNumber}
+                refundMethod={refundMethod}
+                refundOriginalFiscalReceiptNumber={refundOriginalFiscalReceiptNumber}
+                refundReason={refundReason}
+                refundRecipientFullName={refundRecipientFullName}
+                refundRecipientIdentityDocument={refundRecipientIdentityDocument}
+                refundSelectedPaymentId={refundSelectedPaymentId}
+                refusalAlternatives={refusalAlternatives}
+                refusalClinicalIndication={refusalClinicalIndication}
+                refusalConfirmedAt={refusalConfirmedAt}
+                refusalConsequencesUnderstood={refusalConsequencesUnderstood}
+                refusalDoctorFullName={refusalDoctorFullName}
+                refusalEmergencyCareExplained={refusalEmergencyCareExplained}
+                refusalExplainedRisks={refusalExplainedRisks}
+                refusalIntervention={refusalIntervention}
+                refusalPatientReason={refusalPatientReason}
+                refusalSecondOpinionOffered={refusalSecondOpinionOffered}
+                refusalUrgentWarningSigns={refusalUrgentWarningSigns}
+                releaseAccessExpiresAt={releaseAccessExpiresAt}
+                releaseChannel={releaseChannel}
+                releaseDeliveredAt={releaseDeliveredAt}
+                releaseDocumentTypes={releaseDocumentTypes}
+                releasePeriodEnd={releasePeriodEnd}
+                releasePeriodStart={releasePeriodStart}
+                releaseProtectionNote={releaseProtectionNote}
+                releaseRecipientAuthority={releaseRecipientAuthority}
+                releaseRecipientFullName={releaseRecipientFullName}
+                releaseRecipientIdentityDocument={releaseRecipientIdentityDocument}
+                releaseThirdPartyDataChecked={releaseThirdPartyDataChecked}
+                renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
+                requestDocumentIssue={requestDocumentIssue}
+                requestDocumentVoid={requestDocumentVoid}
+                selectAllEligibleTaxPaymentsForCurrentDocument={selectAllEligibleTaxPaymentsForCurrentDocument}
+                selectedCompletedActContractDocumentId={selectedCompletedActContractDocumentId}
+                selectedDocumentKind={selectedDocumentKind}
+                selectedDocumentMetadata={selectedDocumentMetadata}
+                selectedDocumentUsesTaxPaymentSelection={selectedDocumentUsesTaxPaymentSelection}
+                selectedEligibleTaxPayments={selectedEligibleTaxPayments}
+                selectedPaymentReceiptIdSet={selectedPaymentReceiptIdSet}
+                selectedPaymentReceiptPayments={selectedPaymentReceiptPayments}
+                selectedPaymentReceiptTotalRub={selectedPaymentReceiptTotalRub}
+                selectedRefundCorrectionPayment={selectedRefundCorrectionPayment}
+                selectedReleaseSourceRequestDocumentId={selectedReleaseSourceRequestDocumentId}
+                selectedTaxDocumentPayerKey={selectedTaxDocumentPayerKey}
+                selectedTaxPaymentIdSet={selectedTaxPaymentIdSet}
+                selectedTaxPaymentTotalRub={selectedTaxPaymentTotalRub}
+                selectRefundOriginalPayment={selectRefundOriginalPayment}
+                setAnesthesiaAllergyRestrictionsChecked={setAnesthesiaAllergyRestrictionsChecked}
+                setAnesthesiaAllergyStatus={setAnesthesiaAllergyStatus}
+                setAnesthesiaAnesthetic={setAnesthesiaAnesthetic}
+                setAnesthesiaConsentConfirmed={setAnesthesiaConsentConfirmed}
+                setAnesthesiaDoseMl={setAnesthesiaDoseMl}
+                setAnesthesiaDoseTime={setAnesthesiaDoseTime}
+                setAnesthesiaMethod={setAnesthesiaMethod}
+                setAnesthesiaReaction={setAnesthesiaReaction}
+                setAnesthesiaRestrictionNotes={setAnesthesiaRestrictionNotes}
+                setAnesthesiaRisksExplained={setAnesthesiaRisksExplained}
+                setAnesthesiaVasoconstrictor={setAnesthesiaVasoconstrictor}
+                setAnesthesiaZone={setAnesthesiaZone}
+                setAttendanceDiagnosisDisclosureExcluded={setAttendanceDiagnosisDisclosureExcluded}
+                setAttendanceEndedAt={setAttendanceEndedAt}
+                setAttendanceIssuedAt={setAttendanceIssuedAt}
+                setAttendanceNotSickLeaveAcknowledged={setAttendanceNotSickLeaveAcknowledged}
+                setAttendancePurpose={setAttendancePurpose}
+                setAttendanceRecipientOrganization={setAttendanceRecipientOrganization}
+                setAttendanceSignedByFullName={setAttendanceSignedByFullName}
+                setAttendanceSignedByRole={setAttendanceSignedByRole}
+                setAttendanceStartedAt={setAttendanceStartedAt}
+                setCompletedActAccepted={setCompletedActAccepted}
+                setCompletedActContractNumber={setCompletedActContractNumber}
+                setCompletedActDate={setCompletedActDate}
+                setCompletedActDoctorFullName={setCompletedActDoctorFullName}
+                setCompletedActFinalScopeConfirmed={setCompletedActFinalScopeConfirmed}
+                setCompletedActFiscalReceipts={setCompletedActFiscalReceipts}
+                setCompletedActFiscalReceiptsVerified={setCompletedActFiscalReceiptsVerified}
+                setCompletedActLinkedContract={setCompletedActLinkedContract}
+                setCompletedActLinkedContractDocumentId={setCompletedActLinkedContractDocumentId}
+                setCompletedActNumber={setCompletedActNumber}
+                setCompletedActPaidRub={setCompletedActPaidRub}
+                setCompletedActPatientClaims={setCompletedActPatientClaims}
+                setCompletedActServicePeriodEnd={setCompletedActServicePeriodEnd}
+                setCompletedActServicePeriodStart={setCompletedActServicePeriodStart}
+                setCompletedActServicesSummary={setCompletedActServicesSummary}
+                setCompletedActTotalRub={setCompletedActTotalRub}
+                setCopyRequestContactForDelivery={setCopyRequestContactForDelivery}
+                setCopyRequestDocumentTypes={setCopyRequestDocumentTypes}
+                setCopyRequestFormat={setCopyRequestFormat}
+                setCopyRequestIdentityVerified={setCopyRequestIdentityVerified}
+                setCopyRequestIncludeDicomSourceData={setCopyRequestIncludeDicomSourceData}
+                setCopyRequestPeriodEnd={setCopyRequestPeriodEnd}
+                setCopyRequestPeriodStart={setCopyRequestPeriodStart}
+                setCopyRequestRecipientAuthority={setCopyRequestRecipientAuthority}
+                setCopyRequestRecipientFullName={setCopyRequestRecipientFullName}
+                setCopyRequestRecipientIdentityDocument={setCopyRequestRecipientIdentityDocument}
+                setCopyRequestRepresentativeAuthorityDocument={setCopyRequestRepresentativeAuthorityDocument}
+                setCopyRequestRequestedAt={setCopyRequestRequestedAt}
+                setCopyRequestSpecialInstructions={setCopyRequestSpecialInstructions}
+                setCopyRequestThirdPartyDataChecked={setCopyRequestThirdPartyDataChecked}
+                setDocumentAuditFacts={setDocumentAuditFacts}
+                setDocumentIssueClinicSigned={setDocumentIssueClinicSigned}
+                setDocumentIssueConfirmationId={setDocumentIssueConfirmationId}
+                setDocumentIssueDocumentOpenedAndChecked={setDocumentIssueDocumentOpenedAndChecked}
+                setDocumentIssueIdentityChecked={setDocumentIssueIdentityChecked}
+                setDocumentIssueNote={setDocumentIssueNote}
+                setDocumentIssueRecipientFullName={setDocumentIssueRecipientFullName}
+                setDocumentIssueRecipientRole={setDocumentIssueRecipientRole}
+                setDocumentIssueRecipientSigned={setDocumentIssueRecipientSigned}
+                setDocumentIssueSignatureMode={setDocumentIssueSignatureMode}
+                setDocumentIssueSignedAt={setDocumentIssueSignedAt}
+                setDocumentIssueStaffFullName={setDocumentIssueStaffFullName}
+                setDocumentIssueStaffRole={setDocumentIssueStaffRole}
+                setDocumentVoidArchivePreserved={setDocumentVoidArchivePreserved}
+                setDocumentVoidConfirmationId={setDocumentVoidConfirmationId}
+                setDocumentVoidCorrectionDocumentId={setDocumentVoidCorrectionDocumentId}
+                setDocumentVoidPatientOrPayerNotified={setDocumentVoidPatientOrPayerNotified}
+                setDocumentVoidReasonCode={setDocumentVoidReasonCode}
+                setDocumentVoidReasonText={setDocumentVoidReasonText}
+                setDocumentVoidReplacementRequired={setDocumentVoidReplacementRequired}
+                setDocumentVoidStaffFullName={setDocumentVoidStaffFullName}
+                setDocumentVoidStaffRole={setDocumentVoidStaffRole}
+                setDocumentVoidStatusReviewed={setDocumentVoidStatusReviewed}
+                setInformedConsentAftercare={setInformedConsentAftercare}
+                setInformedConsentAlternatives={setInformedConsentAlternatives}
+                setInformedConsentAnesthesia={setInformedConsentAnesthesia}
+                setInformedConsentConfirmedAt={setInformedConsentConfirmedAt}
+                setInformedConsentDiagnosisOrIndication={setInformedConsentDiagnosisOrIndication}
+                setInformedConsentDoctorFullName={setInformedConsentDoctorFullName}
+                setInformedConsentExpectedBenefit={setInformedConsentExpectedBenefit}
+                setInformedConsentIntervention={setInformedConsentIntervention}
+                setInformedConsentMaterialNotes={setInformedConsentMaterialNotes}
+                setInformedConsentQuestionsAnswered={setInformedConsentQuestionsAnswered}
+                setInformedConsentRisks={setInformedConsentRisks}
+                setInformedConsentRisksUnderstood={setInformedConsentRisksUnderstood}
+                setInformedConsentToothOrArea={setInformedConsentToothOrArea}
+                setInformedConsentTrustedContact={setInformedConsentTrustedContact}
+                setInformedConsentWithdrawUnderstood={setInformedConsentWithdrawUnderstood}
+                setInstallmentScheduleAccepted={setInstallmentScheduleAccepted}
+                setInstallmentScheduleBaseDocumentTitle={setInstallmentScheduleBaseDocumentTitle}
+                setInstallmentScheduleDate={setInstallmentScheduleDate}
+                setInstallmentScheduleFiscalNoticeConfirmed={setInstallmentScheduleFiscalNoticeConfirmed}
+                setInstallmentScheduleLatePolicy={setInstallmentScheduleLatePolicy}
+                setInstallmentScheduleNumber={setInstallmentScheduleNumber}
+                setInstallmentSchedulePayerFullName={setInstallmentSchedulePayerFullName}
+                setInstallmentSchedulePaymentMethodNotes={setInstallmentSchedulePaymentMethodNotes}
+                setInstallmentSchedulePrepaidRub={setInstallmentSchedulePrepaidRub}
+                setInstallmentScheduleResponsibleFullName={setInstallmentScheduleResponsibleFullName}
+                setInstallmentScheduleRows={setInstallmentScheduleRows}
+                setInstallmentScheduleTotalRub={setInstallmentScheduleTotalRub}
+                setInstallmentScheduleWrittenChangesConfirmed={setInstallmentScheduleWrittenChangesConfirmed}
+                setIntakeAccuracyConfirmed={setIntakeAccuracyConfirmed}
+                setIntakeAdditionalNotes={setIntakeAdditionalNotes}
+                setIntakeAllergyStatus={setIntakeAllergyStatus}
+                setIntakeAnticoagulants={setIntakeAnticoagulants}
+                setIntakeCardioEndocrineNotes={setIntakeCardioEndocrineNotes}
+                setIntakeChiefComplaint={setIntakeChiefComplaint}
+                setIntakeChronicConditions={setIntakeChronicConditions}
+                setIntakeCurrentMedications={setIntakeCurrentMedications}
+                setIntakeEmergencyContact={setIntakeEmergencyContact}
+                setIntakeInfectiousRiskNotes={setIntakeInfectiousRiskNotes}
+                setIntakePregnancyStatus={setIntakePregnancyStatus}
+                setLabDeadline={setLabDeadline}
+                setLabMaterial={setLabMaterial}
+                setLabShade={setLabShade}
+                setLabSource={setLabSource}
+                setLabTechnicianNotes={setLabTechnicianNotes}
+                setLabTeethOrArea={setLabTeethOrArea}
+                setLabWorkType={setLabWorkType}
+                setMinorConsentAgeExplanation={setMinorConsentAgeExplanation}
+                setMinorConsentAlternatives={setMinorConsentAlternatives}
+                setMinorConsentAuthorityVerified={setMinorConsentAuthorityVerified}
+                setMinorConsentDiagnosisOrIndication={setMinorConsentDiagnosisOrIndication}
+                setMinorConsentDoctorFullName={setMinorConsentDoctorFullName}
+                setMinorConsentExplained={setMinorConsentExplained}
+                setMinorConsentIdentityVerified={setMinorConsentIdentityVerified}
+                setMinorConsentInterventionScope={setMinorConsentInterventionScope}
+                setMinorConsentPatientBirthDate={setMinorConsentPatientBirthDate}
+                setMinorConsentPatientFullName={setMinorConsentPatientFullName}
+                setMinorConsentRisks={setMinorConsentRisks}
+                setMinorConsentSignedAt={setMinorConsentSignedAt}
+                setMinorConsentStored={setMinorConsentStored}
+                setMinorRepresentativeAuthorityDocument={setMinorRepresentativeAuthorityDocument}
+                setMinorRepresentativeFullName={setMinorRepresentativeFullName}
+                setMinorRepresentativeIdentityDocument={setMinorRepresentativeIdentityDocument}
+                setMinorRepresentativePhone={setMinorRepresentativePhone}
+                setMinorRepresentativeRelationship={setMinorRepresentativeRelationship}
+                setOutpatient025uAllergyHistory={setOutpatient025uAllergyHistory}
+                setOutpatient025uBloodGroup={setOutpatient025uBloodGroup}
+                setOutpatient025uCitizenship={setOutpatient025uCitizenship}
+                setOutpatient025uDisabilityGroup={setOutpatient025uDisabilityGroup}
+                setOutpatient025uEmploymentCode={setOutpatient025uEmploymentCode}
+                setOutpatient025uFinalEpicrisis={setOutpatient025uFinalEpicrisis}
+                setOutpatient025uHealthStatusDisclosureContact={setOutpatient025uHealthStatusDisclosureContact}
+                setOutpatient025uInsurerName={setOutpatient025uInsurerName}
+                setOutpatient025uKellK1={setOutpatient025uKellK1}
+                setOutpatient025uMedicalCardNumber={setOutpatient025uMedicalCardNumber}
+                setOutpatient025uOfficialForm274nChecked={setOutpatient025uOfficialForm274nChecked}
+                setOutpatient025uOmsIssuedAt={setOutpatient025uOmsIssuedAt}
+                setOutpatient025uOpenedAt={setOutpatient025uOpenedAt}
+                setOutpatient025uOtherBloodData={setOutpatient025uOtherBloodData}
+                setOutpatient025uPalliativeCareNeedCode={setOutpatient025uPalliativeCareNeedCode}
+                setOutpatient025uPatientSexCode={setOutpatient025uPatientSexCode}
+                setOutpatient025uRegistrationUrbanRuralCode={setOutpatient025uRegistrationUrbanRuralCode}
+                setOutpatient025uRhFactor={setOutpatient025uRhFactor}
+                setOutpatient025uSocialSupportCode={setOutpatient025uSocialSupportCode}
+                setOutpatient025uStayUrbanRuralCode={setOutpatient025uStayUrbanRuralCode}
+                setOutpatient025uThirdPartyDataChecked={setOutpatient025uThirdPartyDataChecked}
+                setOutpatient025uWorkOrStudyPlace={setOutpatient025uWorkOrStudyPlace}
+                setPaidContractCareReason={setPaidContractCareReason}
+                setPaidContractClinicInfoConfirmed={setPaidContractClinicInfoConfirmed}
+                setPaidContractCustomerFullName={setPaidContractCustomerFullName}
+                setPaidContractDate={setPaidContractDate}
+                setPaidContractDoctorFullName={setPaidContractDoctorFullName}
+                setPaidContractFreeCareNotice={setPaidContractFreeCareNotice}
+                setPaidContractNumber={setPaidContractNumber}
+                setPaidContractPaidBasisConfirmed={setPaidContractPaidBasisConfirmed}
+                setPaidContractPaymentTerms={setPaidContractPaymentTerms}
+                setPaidContractPriceChangeRules={setPaidContractPriceChangeRules}
+                setPaidContractRecommendationWarning={setPaidContractRecommendationWarning}
+                setPaidContractRefundTerms={setPaidContractRefundTerms}
+                setPaidContractRepresentativeFullName={setPaidContractRepresentativeFullName}
+                setPaidContractServiceEnd={setPaidContractServiceEnd}
+                setPaidContractServiceListConfirmed={setPaidContractServiceListConfirmed}
+                setPaidContractServiceScope={setPaidContractServiceScope}
+                setPaidContractServiceStart={setPaidContractServiceStart}
+                setPaidContractSignedAt={setPaidContractSignedAt}
+                setPaidContractTotalRub={setPaidContractTotalRub}
+                setPaidContractWarrantyTerms={setPaidContractWarrantyTerms}
+                setPaidContractWrittenChangesConfirmed={setPaidContractWrittenChangesConfirmed}
+                setPaymentInvoiceBankDetails={setPaymentInvoiceBankDetails}
+                setPaymentInvoiceCashDeskAllowed={setPaymentInvoiceCashDeskAllowed}
+                setPaymentInvoiceCashlessAllowed={setPaymentInvoiceCashlessAllowed}
+                setPaymentInvoiceDate={setPaymentInvoiceDate}
+                setPaymentInvoiceDueDate={setPaymentInvoiceDueDate}
+                setPaymentInvoiceFiscalNoticeConfirmed={setPaymentInvoiceFiscalNoticeConfirmed}
+                setPaymentInvoiceNumber={setPaymentInvoiceNumber}
+                setPaymentInvoicePayerEmail={setPaymentInvoicePayerEmail}
+                setPaymentInvoicePayerFullName={setPaymentInvoicePayerFullName}
+                setPaymentInvoicePayerPhone={setPaymentInvoicePayerPhone}
+                setPaymentInvoicePaymentTerms={setPaymentInvoicePaymentTerms}
+                setPaymentInvoicePurpose={setPaymentInvoicePurpose}
+                setPaymentInvoiceQrPayload={setPaymentInvoiceQrPayload}
+                setPaymentInvoiceRequisitesVerified={setPaymentInvoiceRequisitesVerified}
+                setPaymentInvoiceServiceScopeConfirmed={setPaymentInvoiceServiceScopeConfirmed}
+                setPaymentReceiptDate={setPaymentReceiptDate}
+                setPaymentReceiptFiscalNoticeConfirmed={setPaymentReceiptFiscalNoticeConfirmed}
+                setPaymentReceiptIssuedBy={setPaymentReceiptIssuedBy}
+                setPaymentReceiptNumber={setPaymentReceiptNumber}
+                setPaymentReceiptPayerBirthDate={setPaymentReceiptPayerBirthDate}
+                setPaymentReceiptPayerFullName={setPaymentReceiptPayerFullName}
+                setPaymentReceiptPayerIdentityDocument={setPaymentReceiptPayerIdentityDocument}
+                setPaymentReceiptPayerInn={setPaymentReceiptPayerInn}
+                setPaymentReceiptPayerRelationship={setPaymentReceiptPayerRelationship}
+                setPaymentReceiptPayerVerified={setPaymentReceiptPayerVerified}
+                setPaymentReceiptPaymentsVerified={setPaymentReceiptPaymentsVerified}
+                setPaymentReceiptPurpose={setPaymentReceiptPurpose}
+                setPaymentReceiptTaxSupportRequested={setPaymentReceiptTaxSupportRequested}
+                setPersonalDataActions={setPersonalDataActions}
+                setPersonalDataAutomatedDecisionAllowed={setPersonalDataAutomatedDecisionAllowed}
+                setPersonalDataCategories={setPersonalDataCategories}
+                setPersonalDataConsentGivenAt={setPersonalDataConsentGivenAt}
+                setPersonalDataCrossBorderAllowed={setPersonalDataCrossBorderAllowed}
+                setPersonalDataMedicalProcessingAcknowledged={setPersonalDataMedicalProcessingAcknowledged}
+                setPersonalDataPurposes={setPersonalDataPurposes}
+                setPersonalDataRetentionPeriod={setPersonalDataRetentionPeriod}
+                setPersonalDataRevocationChannel={setPersonalDataRevocationChannel}
+                setPersonalDataTransferRules={setPersonalDataTransferRules}
+                setPersonalDataVoluntaryConsentConfirmed={setPersonalDataVoluntaryConsentConfirmed}
+                setPhotoVideoAnonymizationConfirmed={setPhotoVideoAnonymizationConfirmed}
+                setPhotoVideoClinicalRecordUseConfirmed={setPhotoVideoClinicalRecordUseConfirmed}
+                setPhotoVideoColleagueConsultationAllowed={setPhotoVideoColleagueConsultationAllowed}
+                setPhotoVideoEducationUseAllowed={setPhotoVideoEducationUseAllowed}
+                setPhotoVideoLabTransferAllowed={setPhotoVideoLabTransferAllowed}
+                setPhotoVideoMarketingUseAllowed={setPhotoVideoMarketingUseAllowed}
+                setPhotoVideoRecognizablePublicationAllowed={setPhotoVideoRecognizablePublicationAllowed}
+                setPhotoVideoRevocationChannel={setPhotoVideoRevocationChannel}
+                setPhotoVideoScopeNotes={setPhotoVideoScopeNotes}
+                setPostVisitAllowedAfter={setPostVisitAllowedAfter}
+                setPostVisitClinicContactInstruction={setPostVisitClinicContactInstruction}
+                setPostVisitDoctorFullName={setPostVisitDoctorFullName}
+                setPostVisitFollowUpAt={setPostVisitFollowUpAt}
+                setPostVisitHygieneInstructions={setPostVisitHygieneInstructions}
+                setPostVisitMedicationAndRinsePlan={setPostVisitMedicationAndRinsePlan}
+                setPostVisitNutritionInstructions={setPostVisitNutritionInstructions}
+                setPostVisitPerformedAt={setPostVisitPerformedAt}
+                setPostVisitPrintedCopyReceived={setPostVisitPrintedCopyReceived}
+                setPostVisitProcedureName={setPostVisitProcedureName}
+                setPostVisitRestrictions={setPostVisitRestrictions}
+                setPostVisitTelegramSafe={setPostVisitTelegramSafe}
+                setPostVisitTelegramSummary={setPostVisitTelegramSummary}
+                setPostVisitToothOrArea={setPostVisitToothOrArea}
+                setPostVisitUrgentSignsUnderstood={setPostVisitUrgentSignsUnderstood}
+                setPostVisitUrgentWarningSigns={setPostVisitUrgentWarningSigns}
+                setPrescriptionDosage={setPrescriptionDosage}
+                setPrescriptionDuration={setPrescriptionDuration}
+                setPrescriptionInstructions={setPrescriptionInstructions}
+                setPrescriptionMedication={setPrescriptionMedication}
+                setPrescriptionSafetyNotes={setPrescriptionSafetyNotes}
+                setPrescriptionUrgentContactReason={setPrescriptionUrgentContactReason}
+                setProcedureConsentAftercare={setProcedureConsentAftercare}
+                setProcedureConsentAlternatives={setProcedureConsentAlternatives}
+                setProcedureConsentAnesthesia={setProcedureConsentAnesthesia}
+                setProcedureConsentConfirmedAt={setProcedureConsentConfirmedAt}
+                setProcedureConsentDiagnosisOrIndication={setProcedureConsentDiagnosisOrIndication}
+                setProcedureConsentDoctorFullName={setProcedureConsentDoctorFullName}
+                setProcedureConsentExactProcedureConfirmed={setProcedureConsentExactProcedureConfirmed}
+                setProcedureConsentLocalFormAttached={setProcedureConsentLocalFormAttached}
+                setProcedureConsentMaterials={setProcedureConsentMaterials}
+                setProcedureConsentPatientRiskFactors={setProcedureConsentPatientRiskFactors}
+                setProcedureConsentProcedureName={setProcedureConsentProcedureName}
+                setProcedureConsentProcedureType={setProcedureConsentProcedureType}
+                setProcedureConsentQuestionsAnswered={setProcedureConsentQuestionsAnswered}
+                setProcedureConsentRisksUnderstood={setProcedureConsentRisksUnderstood}
+                setProcedureConsentSpecificRisks={setProcedureConsentSpecificRisks}
+                setProcedureConsentToothOrArea={setProcedureConsentToothOrArea}
+                setRecordExtractComplaintAndAnamnesis={setRecordExtractComplaintAndAnamnesis}
+                setRecordExtractDiagnosis={setRecordExtractDiagnosis}
+                setRecordExtractDoctorFullName={setRecordExtractDoctorFullName}
+                setRecordExtractIssuedAt={setRecordExtractIssuedAt}
+                setRecordExtractObjectiveStatus={setRecordExtractObjectiveStatus}
+                setRecordExtractPeriodEnd={setRecordExtractPeriodEnd}
+                setRecordExtractPeriodStart={setRecordExtractPeriodStart}
+                setRecordExtractPreparedFromSignedRecords={setRecordExtractPreparedFromSignedRecords}
+                setRecordExtractRecipientAuthority={setRecordExtractRecipientAuthority}
+                setRecordExtractRecipientFullName={setRecordExtractRecipientFullName}
+                setRecordExtractRecommendations={setRecordExtractRecommendations}
+                setRecordExtractSourceVisitIds={setRecordExtractSourceVisitIds}
+                setRecordExtractThirdPartyDataChecked={setRecordExtractThirdPartyDataChecked}
+                setRecordExtractTreatmentProvided={setRecordExtractTreatmentProvided}
+                setRefundAccountantDecision={setRefundAccountantDecision}
+                setRefundAction={setRefundAction}
+                setRefundAmountRub={setRefundAmountRub}
+                setRefundBankDetails={setRefundBankDetails}
+                setRefundCorrectionFiscalReceiptNumber={setRefundCorrectionFiscalReceiptNumber}
+                setRefundMethod={setRefundMethod}
+                setRefundOriginalFiscalReceiptNumber={setRefundOriginalFiscalReceiptNumber}
+                setRefundReason={setRefundReason}
+                setRefundRecipientFullName={setRefundRecipientFullName}
+                setRefundRecipientIdentityDocument={setRefundRecipientIdentityDocument}
+                setRefusalAlternatives={setRefusalAlternatives}
+                setRefusalClinicalIndication={setRefusalClinicalIndication}
+                setRefusalConfirmedAt={setRefusalConfirmedAt}
+                setRefusalConsequencesUnderstood={setRefusalConsequencesUnderstood}
+                setRefusalDoctorFullName={setRefusalDoctorFullName}
+                setRefusalEmergencyCareExplained={setRefusalEmergencyCareExplained}
+                setRefusalExplainedRisks={setRefusalExplainedRisks}
+                setRefusalIntervention={setRefusalIntervention}
+                setRefusalPatientReason={setRefusalPatientReason}
+                setRefusalSecondOpinionOffered={setRefusalSecondOpinionOffered}
+                setRefusalUrgentWarningSigns={setRefusalUrgentWarningSigns}
+                setReleaseAccessExpiresAt={setReleaseAccessExpiresAt}
+                setReleaseChannel={setReleaseChannel}
+                setReleaseDeliveredAt={setReleaseDeliveredAt}
+                setReleaseDocumentTypes={setReleaseDocumentTypes}
+                setReleasePeriodEnd={setReleasePeriodEnd}
+                setReleasePeriodStart={setReleasePeriodStart}
+                setReleaseProtectionNote={setReleaseProtectionNote}
+                setReleaseRecipientAuthority={setReleaseRecipientAuthority}
+                setReleaseRecipientFullName={setReleaseRecipientFullName}
+                setReleaseRecipientIdentityDocument={setReleaseRecipientIdentityDocument}
+                setReleaseSourceRequestDocumentId={setReleaseSourceRequestDocumentId}
+                setReleaseThirdPartyDataChecked={setReleaseThirdPartyDataChecked}
+                setSelectedDocumentKind={setSelectedDocumentKind}
+                setSelectedPaymentReceiptIds={setSelectedPaymentReceiptIds}
+                setSelectedTaxPaymentIds={setSelectedTaxPaymentIds}
+                setTaxApplicationAuthorityDocument={setTaxApplicationAuthorityDocument}
+                setTaxApplicationContact={setTaxApplicationContact}
+                setTaxApplicationDeliveryChannel={setTaxApplicationDeliveryChannel}
+                setTaxApplicationDuplicateWarningAccepted={setTaxApplicationDuplicateWarningAccepted}
+                setTaxApplicationForm={setTaxApplicationForm}
+                setTaxApplicationRelationship={setTaxApplicationRelationship}
+                setTaxApplicationRequestedAt={setTaxApplicationRequestedAt}
+                setTaxApplicationTaxpayerBirthDate={setTaxApplicationTaxpayerBirthDate}
+                setTaxApplicationTaxpayerFullName={setTaxApplicationTaxpayerFullName}
+                setTaxApplicationTaxpayerIdentityDocument={setTaxApplicationTaxpayerIdentityDocument}
+                setTaxApplicationTaxpayerInn={setTaxApplicationTaxpayerInn}
+                setTaxDocumentPayerInn={setTaxDocumentPayerInn}
+                setTaxDocumentYear={setTaxDocumentYear}
+                setTreatmentAcceptanceAcceptedAt={setTreatmentAcceptanceAcceptedAt}
+                setTreatmentAcceptanceAlternativesUnderstood={setTreatmentAcceptanceAlternativesUnderstood}
+                setTreatmentAcceptanceClinicalGoal={setTreatmentAcceptanceClinicalGoal}
+                setTreatmentAcceptanceCostChangeUnderstood={setTreatmentAcceptanceCostChangeUnderstood}
+                setTreatmentAcceptanceDiagnosisSummary={setTreatmentAcceptanceDiagnosisSummary}
+                setTreatmentAcceptanceDoctorFullName={setTreatmentAcceptanceDoctorFullName}
+                setTreatmentAcceptanceEstimatedTotalRub={setTreatmentAcceptanceEstimatedTotalRub}
+                setTreatmentAcceptanceEstimateValidUntil={setTreatmentAcceptanceEstimateValidUntil}
+                setTreatmentAcceptancePaymentTerms={setTreatmentAcceptancePaymentTerms}
+                setTreatmentAcceptanceQuestionsAnswered={setTreatmentAcceptanceQuestionsAnswered}
+                setTreatmentAcceptanceRejectedAlternatives={setTreatmentAcceptanceRejectedAlternatives}
+                setTreatmentAcceptanceRevisionAcknowledged={setTreatmentAcceptanceRevisionAcknowledged}
+                setTreatmentAcceptanceRisks={setTreatmentAcceptanceRisks}
+                setTreatmentAcceptanceStages={setTreatmentAcceptanceStages}
+                setTreatmentAcceptanceTeethOrArea={setTreatmentAcceptanceTeethOrArea}
+                setTreatmentAcceptanceVariant={setTreatmentAcceptanceVariant}
+                setTreatmentAcceptanceWarrantyTerms={setTreatmentAcceptanceWarrantyTerms}
+                setTreatmentEstimateAdminFullName={setTreatmentEstimateAdminFullName}
+                setTreatmentEstimateChangeRulesConfirmed={setTreatmentEstimateChangeRulesConfirmed}
+                setTreatmentEstimateDate={setTreatmentEstimateDate}
+                setTreatmentEstimateDoctorFullName={setTreatmentEstimateDoctorFullName}
+                setTreatmentEstimateExcludedItems={setTreatmentEstimateExcludedItems}
+                setTreatmentEstimateFiscalNoticeConfirmed={setTreatmentEstimateFiscalNoticeConfirmed}
+                setTreatmentEstimateNumber={setTreatmentEstimateNumber}
+                setTreatmentEstimatePatientOrPayerFullName={setTreatmentEstimatePatientOrPayerFullName}
+                setTreatmentEstimatePaymentMilestoneNotes={setTreatmentEstimatePaymentMilestoneNotes}
+                setTreatmentEstimatePreliminaryConfirmed={setTreatmentEstimatePreliminaryConfirmed}
+                setTreatmentEstimatePriceChangeRules={setTreatmentEstimatePriceChangeRules}
+                setTreatmentEstimateScopeConfirmed={setTreatmentEstimateScopeConfirmed}
+                setTreatmentEstimateSignedAt={setTreatmentEstimateSignedAt}
+                setTreatmentEstimateTotalRub={setTreatmentEstimateTotalRub}
+                setTreatmentEstimateTreatmentBasis={setTreatmentEstimateTreatmentBasis}
+                setTreatmentEstimateValidUntil={setTreatmentEstimateValidUntil}
+                setTreatmentPlanAlternatives={setTreatmentPlanAlternatives}
+                setTreatmentPlanClinicalReason={setTreatmentPlanClinicalReason}
+                setTreatmentPlanControlPlan={setTreatmentPlanControlPlan}
+                setTreatmentPlanDiagnosisSummary={setTreatmentPlanDiagnosisSummary}
+                setTreatmentPlanDoctorFullName={setTreatmentPlanDoctorFullName}
+                setTreatmentPlanEstimatedTotalRub={setTreatmentPlanEstimatedTotalRub}
+                setTreatmentPlanGoals={setTreatmentPlanGoals}
+                setTreatmentPlanNewApprovalAcknowledged={setTreatmentPlanNewApprovalAcknowledged}
+                setTreatmentPlanPlannedAt={setTreatmentPlanPlannedAt}
+                setTreatmentPlanPrognosis={setTreatmentPlanPrognosis}
+                setTreatmentPlanQuestionsAnswered={setTreatmentPlanQuestionsAnswered}
+                setTreatmentPlanRisks={setTreatmentPlanRisks}
+                setTreatmentPlanSeparateConsentAcknowledged={setTreatmentPlanSeparateConsentAcknowledged}
+                setTreatmentPlanStages={setTreatmentPlanStages}
+                setTreatmentPlanTeethOrArea={setTreatmentPlanTeethOrArea}
+                setWarrantyAftercareReceived={setWarrantyAftercareReceived}
+                setWarrantyCompletedAt={setWarrantyCompletedAt}
+                setWarrantyControlVisitSchedule={setWarrantyControlVisitSchedule}
+                setWarrantyControlVisitsUnderstood={setWarrantyControlVisitsUnderstood}
+                setWarrantyDoctorFullName={setWarrantyDoctorFullName}
+                setWarrantyExcludedRiskFactors={setWarrantyExcludedRiskFactors}
+                setWarrantyIssuedAt={setWarrantyIssuedAt}
+                setWarrantyLinkedActOrContract={setWarrantyLinkedActOrContract}
+                setWarrantyMaterialsOrSystems={setWarrantyMaterialsOrSystems}
+                setWarrantyPatientObligations={setWarrantyPatientObligations}
+                setWarrantyPeriod={setWarrantyPeriod}
+                setWarrantyPolicyApplied={setWarrantyPolicyApplied}
+                setWarrantyServiceOrWorkName={setWarrantyServiceOrWorkName}
+                setWarrantyTeethOrArea={setWarrantyTeethOrArea}
+                setWarrantyUrgentContactReasons={setWarrantyUrgentContactReasons}
+                setXrayArea={setXrayArea}
+                setXrayClinicalQuestion={setXrayClinicalQuestion}
+                setXrayDueDate={setXrayDueDate}
+                setXrayIncludeDicomExport={setXrayIncludeDicomExport}
+                setXrayIncludeRadiologistReport={setXrayIncludeRadiologistReport}
+                setXrayIndication={setXrayIndication}
+                setXrayPregnancyStatus={setXrayPregnancyStatus}
+                setXrayPriority={setXrayPriority}
+                setXrayRecipientClinic={setXrayRecipientClinic}
+                setXrayRequestedBy={setXrayRequestedBy}
+                setXraySafetyNotes={setXraySafetyNotes}
+                setXrayStudyType={setXrayStudyType}
+                structuredPayloadDocumentKinds={structuredPayloadDocumentKinds}
+                taxApplicationAuthorityDocument={taxApplicationAuthorityDocument}
+                taxApplicationContact={taxApplicationContact}
+                taxApplicationDeliveryChannel={taxApplicationDeliveryChannel}
+                taxApplicationDeliveryChannelOptions={taxApplicationDeliveryChannelOptions}
+                taxApplicationDuplicateWarningAccepted={taxApplicationDuplicateWarningAccepted}
+                taxApplicationForm={taxApplicationForm}
+                taxApplicationFormOptions={taxApplicationFormOptions}
+                taxApplicationRelationship={taxApplicationRelationship}
+                taxApplicationRelationshipOptions={taxApplicationRelationshipOptions}
+                taxApplicationRequestedAt={taxApplicationRequestedAt}
+                taxApplicationTaxpayerBirthDate={taxApplicationTaxpayerBirthDate}
+                taxApplicationTaxpayerFullName={taxApplicationTaxpayerFullName}
+                taxApplicationTaxpayerIdentityDocument={taxApplicationTaxpayerIdentityDocument}
+                taxApplicationTaxpayerInn={taxApplicationTaxpayerInn}
+                taxDocumentPayerOptions={taxDocumentPayerOptions}
+                taxDocumentYear={taxDocumentYear}
+                togglePhotoVideoMaterial={togglePhotoVideoMaterial}
+                treatmentAcceptanceAcceptedAt={treatmentAcceptanceAcceptedAt}
+                treatmentAcceptanceAlternativesUnderstood={treatmentAcceptanceAlternativesUnderstood}
+                treatmentAcceptanceClinicalGoal={treatmentAcceptanceClinicalGoal}
+                treatmentAcceptanceCostChangeUnderstood={treatmentAcceptanceCostChangeUnderstood}
+                treatmentAcceptanceDiagnosisSummary={treatmentAcceptanceDiagnosisSummary}
+                treatmentAcceptanceDoctorFullName={treatmentAcceptanceDoctorFullName}
+                treatmentAcceptanceEstimatedTotalRub={treatmentAcceptanceEstimatedTotalRub}
+                treatmentAcceptanceEstimateValidUntil={treatmentAcceptanceEstimateValidUntil}
+                treatmentAcceptancePaymentTerms={treatmentAcceptancePaymentTerms}
+                treatmentAcceptancePlannedTotalRub={treatmentAcceptancePlannedTotalRub}
+                treatmentAcceptanceQuestionsAnswered={treatmentAcceptanceQuestionsAnswered}
+                treatmentAcceptanceRejectedAlternatives={treatmentAcceptanceRejectedAlternatives}
+                treatmentAcceptanceRevisionAcknowledged={treatmentAcceptanceRevisionAcknowledged}
+                treatmentAcceptanceRisks={treatmentAcceptanceRisks}
+                treatmentAcceptanceStages={treatmentAcceptanceStages}
+                treatmentAcceptanceTeethOrArea={treatmentAcceptanceTeethOrArea}
+                treatmentAcceptanceVariant={treatmentAcceptanceVariant}
+                treatmentAcceptanceWarrantyTerms={treatmentAcceptanceWarrantyTerms}
+                treatmentEstimateAdminFullName={treatmentEstimateAdminFullName}
+                treatmentEstimateChangeRulesConfirmed={treatmentEstimateChangeRulesConfirmed}
+                treatmentEstimateDate={treatmentEstimateDate}
+                treatmentEstimateDoctorFullName={treatmentEstimateDoctorFullName}
+                treatmentEstimateExcludedItems={treatmentEstimateExcludedItems}
+                treatmentEstimateFiscalNoticeConfirmed={treatmentEstimateFiscalNoticeConfirmed}
+                treatmentEstimateNumber={treatmentEstimateNumber}
+                treatmentEstimatePatientOrPayerFullName={treatmentEstimatePatientOrPayerFullName}
+                treatmentEstimatePatientOrPayerFullNameValue={treatmentEstimatePatientOrPayerFullNameValue}
+                treatmentEstimatePaymentMilestoneNotes={treatmentEstimatePaymentMilestoneNotes}
+                treatmentEstimatePreliminaryConfirmed={treatmentEstimatePreliminaryConfirmed}
+                treatmentEstimatePriceChangeRules={treatmentEstimatePriceChangeRules}
+                treatmentEstimateScopeConfirmed={treatmentEstimateScopeConfirmed}
+                treatmentEstimateSignedAt={treatmentEstimateSignedAt}
+                treatmentEstimateTotalRub={treatmentEstimateTotalRub}
+                treatmentEstimateTotalRubValue={treatmentEstimateTotalRubValue}
+                treatmentEstimateTreatmentBasis={treatmentEstimateTreatmentBasis}
+                treatmentEstimateTreatmentBasisValue={treatmentEstimateTreatmentBasisValue}
+                treatmentEstimateValidUntil={treatmentEstimateValidUntil}
+                treatmentPlanAlternatives={treatmentPlanAlternatives}
+                treatmentPlanClinicalReason={treatmentPlanClinicalReason}
+                treatmentPlanControlPlan={treatmentPlanControlPlan}
+                treatmentPlanDiagnosisSummary={treatmentPlanDiagnosisSummary}
+                treatmentPlanDoctorFullName={treatmentPlanDoctorFullName}
+                treatmentPlanEstimatedTotalRub={treatmentPlanEstimatedTotalRub}
+                treatmentPlanGoals={treatmentPlanGoals}
+                treatmentPlanNewApprovalAcknowledged={treatmentPlanNewApprovalAcknowledged}
+                treatmentPlanPlannedAt={treatmentPlanPlannedAt}
+                treatmentPlanPrognosis={treatmentPlanPrognosis}
+                treatmentPlanQuestionsAnswered={treatmentPlanQuestionsAnswered}
+                treatmentPlanRisks={treatmentPlanRisks}
+                treatmentPlanSeparateConsentAcknowledged={treatmentPlanSeparateConsentAcknowledged}
+                treatmentPlanStages={treatmentPlanStages}
+                treatmentPlanTeethOrArea={treatmentPlanTeethOrArea}
+                warrantyAftercareReceived={warrantyAftercareReceived}
+                warrantyCompletedAt={warrantyCompletedAt}
+                warrantyControlVisitSchedule={warrantyControlVisitSchedule}
+                warrantyControlVisitsUnderstood={warrantyControlVisitsUnderstood}
+                warrantyDoctorFullName={warrantyDoctorFullName}
+                warrantyExcludedRiskFactors={warrantyExcludedRiskFactors}
+                warrantyIssuedAt={warrantyIssuedAt}
+                warrantyLinkedActOrContract={warrantyLinkedActOrContract}
+                warrantyLinkedActOrContractValue={warrantyLinkedActOrContractValue}
+                warrantyMaterialsOrSystems={warrantyMaterialsOrSystems}
+                warrantyPatientObligations={warrantyPatientObligations}
+                warrantyPeriod={warrantyPeriod}
+                warrantyPolicyApplied={warrantyPolicyApplied}
+                warrantyServiceOrWorkName={warrantyServiceOrWorkName}
+                warrantyServiceOrWorkNameValue={warrantyServiceOrWorkNameValue}
+                warrantyTeethOrArea={warrantyTeethOrArea}
+                warrantyTeethOrAreaValue={warrantyTeethOrAreaValue}
+                warrantyUrgentContactReasons={warrantyUrgentContactReasons}
+                xrayArea={xrayArea}
+                xrayClinicalQuestion={xrayClinicalQuestion}
+                xrayDueDate={xrayDueDate}
+                xrayIncludeDicomExport={xrayIncludeDicomExport}
+                xrayIncludeRadiologistReport={xrayIncludeRadiologistReport}
+                xrayIndication={xrayIndication}
+                xrayPregnancyStatus={xrayPregnancyStatus}
+                xrayPregnancyStatusOptions={xrayPregnancyStatusOptions}
+                xrayPriority={xrayPriority}
+                xrayRecipientClinic={xrayRecipientClinic}
+                xrayRequestedBy={xrayRequestedBy}
+                xraySafetyNotes={xraySafetyNotes}
+                xrayStudyType={xrayStudyType}
+                xrayStudyTypeOptions={xrayStudyTypeOptions}
+              />
+            </Suspense>
+          ) : null}
+
+          {currentView === "finance" ? (
+            <Suspense
+              fallback={
+                <div className="panel finance-panel" id="finance" aria-busy="true">
+                  <div className="panel-heading">
+                    <h2>Оплаты, план лечения и вычет</h2>
+                    <span className="status-pill status-planned">загрузка</span>
+                  </div>
+                </div>
+              }
+            >
+              <FinanceView
+                activePayments={activePayments}
+                activeTreatmentPlanItems={activeTreatmentPlanItems}
+                activeTreatmentPlanScenarios={activeTreatmentPlanScenarios}
+                billingSummary={patientBillingSummary}
+                clinicalRuleEvaluations={patientClinicalRuleEvaluations}
+                clinicalRuleActionLabels={clinicalRuleActionLabels}
+                clinicalRuleSeverityLabels={clinicalRuleSeverityLabels}
+                clinicalRuleSummary={patientClinicalRuleSummary}
+                dashboard={dashboard}
+                documentPatient={documentPatient}
+                formatDateTime={formatDateTime}
+                isPaymentSaving={isPaymentSaving}
+                money={money}
+                onGoToDocuments={() => {
+                  window.location.hash = "documents";
+                }}
+                onRecordPayment={recordPayment}
+                paymentAmount={paymentAmount}
+                paymentFeedback={paymentFeedback}
+                paymentFiscalCashierName={paymentFiscalCashierName}
+                paymentFiscalFd={paymentFiscalFd}
+                paymentFiscalFn={paymentFiscalFn}
+                paymentFiscalFpd={paymentFiscalFpd}
+                paymentFiscalReceiptIssuedAt={paymentFiscalReceiptIssuedAt}
+                paymentFiscalReceiptLabel={paymentFiscalReceiptLabelForUi}
+                paymentFiscalReceiptNumber={paymentFiscalReceiptNumber}
+                paymentFiscalReceiptUrl={paymentFiscalReceiptUrl}
+                paymentMethod={paymentMethod}
+                paymentMethodLabels={paymentMethodLabels}
+                paymentPatientContextMessage={paymentPatientContextMessage}
+                paymentPatientContextReady={paymentPatientContextReady}
+                paymentPayerBirthDate={paymentPayerBirthDate}
+                paymentPayerFullName={paymentPayerFullName}
+                paymentPayerIdentityDocument={paymentPayerIdentityDocument}
+                paymentPayerInn={paymentPayerInn}
+                paymentPayerRelationship={paymentPayerRelationship}
+                paymentTaxDeductionCode={paymentTaxDeductionCode}
+                scenarioPriorityLabels={scenarioPriorityLabels}
+                scenarioStrategyLabels={scenarioStrategyLabels}
+                serviceCategoryLabels={serviceCategoryLabels}
+                serviceTitle={serviceTitle}
+                setPaymentAmount={setPaymentAmount}
+                setPaymentFiscalCashierName={setPaymentFiscalCashierName}
+                setPaymentFiscalFd={setPaymentFiscalFd}
+                setPaymentFiscalFn={setPaymentFiscalFn}
+                setPaymentFiscalFpd={setPaymentFiscalFpd}
+                setPaymentFiscalReceiptIssuedAt={setPaymentFiscalReceiptIssuedAt}
+                setPaymentFiscalReceiptNumber={setPaymentFiscalReceiptNumber}
+                setPaymentFiscalReceiptUrl={setPaymentFiscalReceiptUrl}
+                setPaymentMethod={setPaymentMethod}
+                setPaymentPayerBirthDate={setPaymentPayerBirthDate}
+                setPaymentPayerFullName={setPaymentPayerFullName}
+                setPaymentPayerIdentityDocument={setPaymentPayerIdentityDocument}
+                setPaymentPayerInn={setPaymentPayerInn}
+                setPaymentPayerRelationship={setPaymentPayerRelationship}
+                setPaymentTaxDeductionCode={setPaymentTaxDeductionCode}
+                staffRoleLabels={staffRoleLabels}
+                treatmentStatusLabels={treatmentStatusLabels}
+              />
+            </Suspense>
+          ) : null}
+
+          {currentView === "communications" ? (
+            <Suspense
+              fallback={
+                <div className="panel communications-panel" id="communications" aria-busy="true">
+                  <div className="panel-heading">
+                    <h2>Связь с пациентами</h2>
+                    <span className="status-pill status-planned">загрузка</span>
+                  </div>
+                </div>
+              }
+            >
+              <CommunicationsView
+                communicationChannelLabels={communicationChannelLabels}
+                communicationDocumentTaskActionLabels={communicationDocumentTaskActionLabels}
+                communicationIntentLabels={communicationIntentLabels}
+                communicationNote={communicationNote}
+                communicationPriorityLabels={communicationPriorityLabels}
+                communicationStatusLabels={communicationStatusLabels}
+                completeCommunicationTask={completeCommunicationTask}
+                dashboard={dashboard}
+                documentKindsForCommunicationTask={documentKindsForCommunicationTask}
+                documentLabels={documentLabels}
+                formatDateTime={formatDateTime}
+                communicationSavingTaskId={communicationSavingTaskId}
+                onCommunicationNoteChange={setCommunicationNote}
+                onGoToSchedule={() => {
+                  window.location.hash = "schedule";
+                }}
+                openCommunicationTaskDocumentWorkflow={openCommunicationTaskDocumentWorkflow}
+                sortedCommunicationTasks={sortedCommunicationTasks}
+                staffRoleLabels={staffRoleLabels}
+              />
+            </Suspense>
+          ) : null}
+        </section>
+        ) : null}
+
+        {["documents", "finance", "communications", "settings"].includes(currentView) ? (
+        <section className="compliance-bar" aria-label="Контроль">
+          <ShieldCheck aria-hidden="true" />
+          {dashboard.complianceWarnings.map((warning) => (
+            <p key={warning}>{warning}</p>
+          ))}
+        </section>
+        ) : null}
+
+        {currentView === "settings" ? (
+          <Suspense
+            fallback={
+              <section className="settings-zone" id="settings" aria-busy="true">
+                <div className="panel-heading settings-heading">
+                  <h2>Настройки</h2>
+                  <span className="status-pill status-planned">загрузка</span>
+                </div>
+              </section>
+            }
+          >
+            <SettingsView
+              activePatient={activePatient}
+              activeSettingsTabButtonRef={activeSettingsTabButtonRef}
+              activeSpeechProviderHealth={activeSpeechProviderHealth}
+              activeWorkspaceProfile={activeWorkspaceProfile}
+              addChair={addChair}
+              addStaffMember={addStaffMember}
+              analyzePricelist={analyzePricelist}
+              applyProtocolTemplate={applyProtocolTemplate}
+              attachPricelistImage={attachPricelistImage}
+              browserCanRequestPersistentStorage={browserCanRequestPersistentStorage}
+              browserContinuity={browserContinuity}
+              browserContinuityChecks={browserContinuityChecks}
+              browserContinuityState={browserContinuityState}
+              browserContinuityValue={browserContinuityValue}
+              browserDirectoryInputRef={browserDirectoryInputRef}
+              browserDirectoryPickerAvailable={browserDirectoryPickerAvailable}
+              browserMigrationDiscovery={browserMigrationDiscovery}
+              browserMigrationInputRef={browserMigrationInputRef}
+              browserPickedImagingFolder={browserPickedImagingFolder}
+              buildDicomFolderWorkupPlan={buildDicomFolderWorkupPlan}
+              buildDicomRenderCachePlan={buildDicomRenderCachePlan}
+              buildDicomViewerLaunchManifest={buildDicomViewerLaunchManifest}
+              buildDicomViewerToolStateBundle={buildDicomViewerToolStateBundle}
+              buildDicomViewerWorkbenchManifest={buildDicomViewerWorkbenchManifest}
+              cbctWorkbenchPlanes={cbctWorkbenchPlanes}
+              cbctWorkbenchProjections={cbctWorkbenchProjections}
+              cbctWorkbenchSeries={cbctWorkbenchSeries}
+              cbctWorkbenchTools={cbctWorkbenchTools}
+              chairScheduleDirtyIds={chairScheduleDirtyIds}
+              chairScheduleDrafts={chairScheduleDrafts}
+              chairScheduleSaveStates={chairScheduleSaveStates}
+              chairScheduleSavingId={chairScheduleSavingId}
+              changeClinicMode={changeClinicMode}
+              checkDicomWebConnector={checkDicomWebConnector}
+              checkDicomWorkstationReadiness={checkDicomWorkstationReadiness}
+              chooseRecognitionPreset={chooseRecognitionPreset}
+              clearBrowserPickedImagingFolderPreview={clearBrowserPickedImagingFolderPreview}
+              clearDicomWorkbenchRecovery={clearDicomWorkbenchRecovery}
+              clearLocalImagingFolderRecovery={clearLocalImagingFolderRecovery}
+              clearPricelistImage={clearPricelistImage}
+              clinicalRuleActionLabels={clinicalRuleActionLabels}
+              clinicalRuleSeverityLabels={clinicalRuleSeverityLabels}
+              clinicModeLabels={clinicModeLabels}
+              clinicProfileDraft={clinicProfileDraft}
+              clinicProfileSaveState={clinicProfileSaveState}
+              commitImagingImport={commitImagingImport}
+              commitImport={commitImport}
+              commitSmartImport={commitSmartImport}
+              copyTelegramTextToClipboard={copyTelegramTextToClipboard}
+              createClinicalRuleFromSettings={createClinicalRuleFromSettings}
+              createTelegramLinkCode={createTelegramLinkCode}
+              dashboard={dashboard}
+              defaultDicomFirstFrameViewerState={defaultDicomFirstFrameViewerState}
+              dentalMaterialKindLabels={dentalMaterialKindLabels}
+              dentalRestorationTypeLabels={dentalRestorationTypeLabels}
+              dicomFirstFrameImageStyle={dicomFirstFrameImageStyle}
+              dicomFirstFramePreview={dicomFirstFramePreview}
+              dicomFirstFrameStatusLabels={dicomFirstFrameStatusLabels}
+              dicomFirstFrameViewerState={dicomFirstFrameViewerState}
+              dicomFolderSeriesScan={dicomFolderSeriesScan}
+              dicomFolderWorkupPathLabels={dicomFolderWorkupPathLabels}
+              dicomFolderWorkupPlan={dicomFolderWorkupPlan}
+              dicomLabel={dicomLabel}
+              dicomLocalFolderDiscovery={dicomLocalFolderDiscovery}
+              dicomQualityModeLabels={dicomQualityModeLabels}
+              dicomReadinessCheckLabels={dicomReadinessCheckLabels}
+              dicomRenderCachePlan={dicomRenderCachePlan}
+              dicomRuntimeTierLabels={dicomRuntimeTierLabels}
+              dicomSeriesPreview={dicomSeriesPreview}
+              dicomSeriesViewerLabels={dicomSeriesViewerLabels}
+              dicomTextureStrategyLabels={dicomTextureStrategyLabels}
+              dicomViewerLaunchManifest={dicomViewerLaunchManifest}
+              dicomViewerLaunchModeLabels={dicomViewerLaunchModeLabels}
+              dicomViewerToolStateBundle={dicomViewerToolStateBundle}
+              dicomViewerWorkbenchManifest={dicomViewerWorkbenchManifest}
+              dicomWebCheck={dicomWebCheck}
+              dicomWebEndpointUrl={dicomWebEndpointUrl}
+              dicomWebStatusLabels={dicomWebStatusLabels}
+              dicomWorkbenchLocalSavedAt={dicomWorkbenchLocalSavedAt}
+              dicomWorkbenchServerBundle={dicomWorkbenchServerBundle}
+              dicomWorkbenchSourceIsRedacted={dicomWorkbenchSourceIsRedacted}
+              dicomWorkstationReadiness={dicomWorkstationReadiness}
+              discoverMigrationSources={discoverMigrationSources}
+              discoverDicomFolders={discoverDicomFolders}
+              documentDetectedKindLabel={documentDetectedKindLabel}
+              documentIngestion={documentIngestion}
+              documentIngestionQualityLabels={documentIngestionQualityLabels}
+              documentIngestionTarget={documentIngestionTarget}
+              documentLabels={documentLabels}
+              downloadDicomViewerToolStateBundle={downloadDicomViewerToolStateBundle}
+              downloadDicomWorkbenchManifest={downloadDicomWorkbenchManifest}
+              downloadPersistenceExport={downloadPersistenceExport}
+              downloadSmartImportReport={downloadSmartImportReport}
+              downloadTelegramQrSvg={downloadTelegramQrSvg}
+              filteredTelegramOutboxItems={filteredTelegramOutboxItems}
+              formatDateTime={formatDateTime}
+              formatMegabytes={formatMegabytes}
+              formatTime={formatTime}
+              handleBrowserDirectoryInputChange={handleBrowserDirectoryInputChange}
+              handleBrowserMigrationInputChange={handleBrowserMigrationInputChange}
+              hiddenTelegramOutboxItemCount={hiddenTelegramOutboxItemCount}
+              imagingConnectorCards={imagingConnectorCards}
+              imagingFolderPath={imagingFolderPath}
+              imagingFolderScan={imagingFolderScan}
+              imagingImportCommit={imagingImportCommit}
+              imagingImportPreview={imagingImportPreview}
+              imagingImportSourceKind={imagingImportSourceKind}
+              imagingImportText={imagingImportText}
+              imagingKindLabels={imagingKindLabels}
+              imagingSourceChoices={imagingSourceChoices}
+              imagingSourceDetails={imagingSourceDetails}
+              imagingSourceLabels={imagingSourceLabels}
+              imagingViewerCapabilities={imagingViewerCapabilities}
+              importCommit={importCommit}
+              importIntake={importIntake}
+              importPreview={importPreview}
+              importSourceKind={importSourceKind}
+              importSourceLabels={importSourceLabels}
+              importText={importText}
+              ingestImportFile={ingestImportFile}
+              ingestionTargetLabels={ingestionTargetLabels}
+              integrationCapabilityLabels={integrationCapabilityLabels}
+              integrationCategoryLabels={integrationCategoryLabels}
+              integrationStatusLabels={integrationStatusLabels}
+              isBrowserImagingFolderPicking={isBrowserImagingFolderPicking}
+              isBrowserMigrationScanning={isBrowserMigrationScanning}
+              isClinicalRuleSaving={isClinicalRuleSaving}
+              isDicomFirstFramePreviewing={isDicomFirstFramePreviewing}
+              isDicomFolderWorkupPlanning={isDicomFolderWorkupPlanning}
+              isDicomLocalDiscovering={isDicomLocalDiscovering}
+              isDicomManifestBuilding={isDicomManifestBuilding}
+              isDicomRenderCachePlanning={isDicomRenderCachePlanning}
+              isDicomSeriesPreviewLoading={isDicomSeriesPreviewLoading}
+              isDicomToolStateBuilding={isDicomToolStateBuilding}
+              isDicomWebChecking={isDicomWebChecking}
+              isDicomWorkbenchBuilding={isDicomWorkbenchBuilding}
+              isDicomWorkbenchReconnecting={isDicomWorkbenchReconnecting}
+              isDicomWorkbenchServerSaving={isDicomWorkbenchServerSaving}
+              isDicomWorkstationChecking={isDicomWorkstationChecking}
+              isDocumentIngesting={isDocumentIngesting}
+              isClinicPublicLookupLoading={isClinicPublicLookupLoading}
+              isImagingFolderScanning={isImagingFolderScanning}
+              isImagingImportCommitting={isImagingImportCommitting}
+              isImagingImportLoading={isImagingImportLoading}
+              isImportCommitting={isImportCommitting}
+              isImportDictating={isImportDictating}
+              isImportLoading={isImportLoading}
+              isLocalImagingOrganizing={isLocalImagingOrganizing}
+              isMigrationAutopilotLoading={isMigrationAutopilotLoading}
+              isMigrationSourceDiscovering={isMigrationSourceDiscovering}
+              isMigrationSourceProbeLoading={isMigrationSourceProbeLoading}
+              isMigrationSourceWorkupLoading={isMigrationSourceWorkupLoading}
+              isPersistenceExporting={isPersistenceExporting}
+              isPricelistAnalyzing={isPricelistAnalyzing}
+              isRecognitionLoading={isRecognitionLoading}
+              isSmartImportCommitting={isSmartImportCommitting}
+              isSmartImportLoading={isSmartImportLoading}
+              isSmartReportLoading={isSmartReportLoading}
+              isTelegramChatLinksLoadingMore={isTelegramChatLinksLoadingMore}
+              isTelegramLinkCodesLoadingMore={isTelegramLinkCodesLoadingMore}
+              isTelegramLinkCreating={isTelegramLinkCreating}
+              isTelegramLoading={isTelegramLoading}
+              isTelegramOutboxItemDueForUi={isTelegramOutboxItemDueForUi}
+              isTelegramOutboxLoadingMore={isTelegramOutboxLoadingMore}
+              isTelegramSendingDue={isTelegramSendingDue}
+              isTelegramSettingsSaving={isTelegramSettingsSaving}
+              latestDicomWorkbenchServerBundle={latestDicomWorkbenchServerBundle}
+              legalMissingFields={legalMissingFields}
+              legalReadinessPercent={legalReadinessPercent}
+              loadLocalBridgeUsePlans={loadLocalBridgeUsePlans}
+              loadMoreTelegramChatLinks={loadMoreTelegramChatLinks}
+              loadMoreTelegramLinkCodes={loadMoreTelegramLinkCodes}
+              loadMoreTelegramOutbox={loadMoreTelegramOutbox}
+              loadPersistenceHealth={loadPersistenceHealth}
+              loadPersistenceIntegrity={loadPersistenceIntegrity}
+              loadTelegramControlPlane={loadTelegramControlPlane}
+              localBridgeReadiness={localBridgeReadiness}
+              localBridgeStatusLabels={localBridgeStatusLabels}
+              localBridgeStatusState={localBridgeStatusState}
+              localBridgeStatusValue={localBridgeStatusValue}
+              localBridgeUsePathLabels={localBridgeUsePathLabels}
+              localBridgeUsePlans={localBridgeUsePlans}
+              localImagingFolderDraft={localImagingFolderDraft}
+              localImagingModelRoleLabels={localImagingModelRoleLabels}
+              localImagingOrganizer={localImagingOrganizer}
+              localImagingOrganizerActionLabels={localImagingOrganizerActionLabels}
+              lookupClinicPublicProfile={lookupClinicPublicProfile}
+              lockTelegramAdminSession={lockTelegramAdminSession}
+              markTelegramSettingsDirty={markTelegramSettingsDirty}
+              megabytes={megabytes}
+              migrationAutopilot={migrationAutopilot}
+              migrationSourceDiscovery={migrationSourceDiscovery}
+              migrationSourceProbe={migrationSourceProbe}
+              migrationSourceWorkup={migrationSourceWorkup}
+              mprAxisDeg={mprAxisDeg}
+              mprCacheModeLabels={mprCacheModeLabels}
+              mprCrosshairEnabled={mprCrosshairEnabled}
+              mprLinkedPlanesEnabled={mprLinkedPlanesEnabled}
+              mprLoadStrategyLabels={mprLoadStrategyLabels}
+              mprProjection={mprProjection}
+              mprProjectionLabels={mprProjectionLabels}
+              mprResourceTierLabels={mprResourceTierLabels}
+              mprSlabMm={mprSlabMm}
+              mprToolLabels={mprToolLabels}
+              mprWindowPreset={mprWindowPreset}
+              mprWindowPresetLabels={mprWindowPresetLabels}
+              newChairHasMicroscope={newChairHasMicroscope}
+              newChairHasSurgeryKit={newChairHasSurgeryKit}
+              newChairHasXraySensor={newChairHasXraySensor}
+              newChairName={newChairName}
+              newRuleAction={newRuleAction}
+              newRuleBlockedServiceId={newRuleBlockedServiceId}
+              newRuleCategory={newRuleCategory}
+              newRuleCompletedServiceId={newRuleCompletedServiceId}
+              newRuleOwnerRole={newRuleOwnerRole}
+              newRulePatientText={newRulePatientText}
+              newRuleRequiredServiceId={newRuleRequiredServiceId}
+              newRuleSeverity={newRuleSeverity}
+              newRuleSpecialty={newRuleSpecialty}
+              newRuleTitle={newRuleTitle}
+              newRuleTriggerServiceId={newRuleTriggerServiceId}
+              newRuleWarningText={newRuleWarningText}
+              newStaffName={newStaffName}
+              newStaffRole={newStaffRole}
+              newStaffSpecialty={newStaffSpecialty}
+              normalizedClinicalRuleAction={normalizedClinicalRuleAction}
+              normalizedClinicalRuleSeverity={normalizedClinicalRuleSeverity}
+              normalizedDentalSpecialty={normalizedDentalSpecialty}
+              normalizedServiceCategory={normalizedServiceCategory}
+              normalizedStaffRole={normalizedStaffRole}
+              normalizedTelegramBotMode={normalizedTelegramBotMode}
+              normalizedTelegramLinkSubjectType={normalizedTelegramLinkSubjectType}
+              normalizedTelegramOutboxStatusFilter={normalizedTelegramOutboxStatusFilter}
+              normalizedTelegramOutboxTemplateFilter={normalizedTelegramOutboxTemplateFilter}
+              normalizedTelegramPrivacyMode={normalizedTelegramPrivacyMode}
+              normalizeUiLanguageInput={normalizeUiLanguageInput}
+              ohifBaseUrl={ohifBaseUrl}
+              organizeLocalImagingSources={organizeLocalImagingSources}
+              persistenceHealth={persistenceHealth}
+              persistenceIntegrity={persistenceIntegrity}
+              pickBrowserImagingFolder={pickBrowserImagingFolder}
+              pickBrowserMigrationSource={pickBrowserMigrationSource}
+              policyAuditEventLabels={policyAuditEventLabels}
+              prepareDicomWorkbenchFromFolder={prepareDicomWorkbenchFromFolder}
+              previewDicomFirstFrame={previewDicomFirstFrame}
+              previewDicomSeries={previewDicomSeries}
+              planMigrationDiscoveryCandidate={planMigrationDiscoveryCandidate}
+              probeMigrationDiscoveryCandidate={probeMigrationDiscoveryCandidate}
+              runMigrationAutopilot={runMigrationAutopilot}
+              previewImagingImport={previewImagingImport}
+              previewImport={previewImport}
+              previewSmartImport={previewSmartImport}
+              previewTelegramTemplate={previewTelegramTemplate}
+              pricelistAnalysis={pricelistAnalysis}
+              pricelistImageBase64={pricelistImageBase64}
+              pricelistImageName={pricelistImageName}
+              pricelistImageNote={pricelistImageNote}
+              pricelistItemMaterialText={pricelistItemMaterialText}
+              pricelistMaterialSummaryText={pricelistMaterialSummaryText}
+              pricelistParserModeLabels={pricelistParserModeLabels}
+              pricelistRecognitionBrandGroups={pricelistRecognitionBrandGroups}
+              pricelistRecognitionServiceGroups={pricelistRecognitionServiceGroups}
+              pricelistSourceKind={pricelistSourceKind}
+              pricelistSourceKindLabels={pricelistSourceKindLabels}
+              pricelistText={pricelistText}
+              recognitionJob={recognitionJob}
+              recognitionKind={recognitionKind}
+              recognitionPresets={recognitionPresets}
+              recognitionTarget={recognitionTarget}
+              recognitionTargetLabels={recognitionTargetLabels}
+              recognitionText={recognitionText}
+              reconnectDicomWorkbenchFromCurrentFolder={reconnectDicomWorkbenchFromCurrentFolder}
+              refreshBrowserContinuity={refreshBrowserContinuity}
+              refreshSpeechRuntime={refreshSpeechRuntime}
+              clinicPublicLookup={clinicPublicLookup}
+              addMigrationDiscoveryCandidateToSmartImport={addMigrationDiscoveryCandidateToSmartImport}
+              rememberLocalImagingFolder={rememberLocalImagingFolder}
+              reopenOnboarding={reopenOnboarding}
+              requestBrowserStoragePersistence={requestBrowserStoragePersistence}
+              restoreDicomWorkbenchServerBundle={restoreDicomWorkbenchServerBundle}
+              revokeTelegramChatLink={revokeTelegramChatLink}
+              runRecognitionJob={runRecognitionJob}
+              saveChairSchedule={saveChairSchedule}
+              saveClinicProfileFromDraft={saveClinicProfileFromDraft}
+              saveDicomWorkbenchBundleToServer={saveDicomWorkbenchBundleToServer}
+              saveStaffSchedule={saveStaffSchedule}
+              saveTelegramSettings={saveTelegramSettings}
+              scanDicomFolderSeries={scanDicomFolderSeries}
+              scanImagingFolder={scanImagingFolder}
+              selectedUiLanguageOption={selectedUiLanguageOption}
+              sendDueTelegramOutbox={sendDueTelegramOutbox}
+              sendRecognitionResultToImport={sendRecognitionResultToImport}
+              sendTelegramOutboxItem={sendTelegramOutboxItem}
+              serviceCategoryLabels={serviceCategoryLabels}
+              serviceTitle={serviceTitle}
+              setDicomFirstFramePreview={setDicomFirstFramePreview}
+              setDicomFirstFrameViewerState={setDicomFirstFrameViewerState}
+              setDicomFolderSeriesScan={setDicomFolderSeriesScan}
+              setDicomFolderWorkupPlan={setDicomFolderWorkupPlan}
+              setDicomLocalFolderDiscovery={setDicomLocalFolderDiscovery}
+              setDicomRenderCachePlan={setDicomRenderCachePlan}
+              setDicomSeriesPreview={setDicomSeriesPreview}
+              setDicomViewerLaunchManifest={setDicomViewerLaunchManifest}
+              setDicomViewerToolStateBundle={setDicomViewerToolStateBundle}
+              setDicomViewerWorkbenchManifest={setDicomViewerWorkbenchManifest}
+              setDicomWebCheck={setDicomWebCheck}
+              setDicomWebEndpointUrl={setDicomWebEndpointUrl}
+              setDicomWorkbenchLocalSavedAt={setDicomWorkbenchLocalSavedAt}
+              setDicomWorkstationReadiness={setDicomWorkstationReadiness}
+              setDocumentIngestionTarget={setDocumentIngestionTarget}
+              setImagingFolderPath={setImagingFolderPath}
+              setImagingFolderScan={setImagingFolderScan}
+              setImagingImportCommit={setImagingImportCommit}
+              setImagingImportPreview={setImagingImportPreview}
+              setImagingImportSourceKind={setImagingImportSourceKind}
+              setImagingImportText={setImagingImportText}
+              setImportCommit={setImportCommit}
+              setImportIntake={setImportIntake}
+              setImportPreview={setImportPreview}
+              setImportSourceKind={setImportSourceKind}
+              setImportText={setImportText}
+              setLocalImagingOrganizer={setLocalImagingOrganizer}
+              setMprAxisDeg={setMprAxisDeg}
+              setMprCrosshairEnabled={setMprCrosshairEnabled}
+              setMprLinkedPlanesEnabled={setMprLinkedPlanesEnabled}
+              setMprProjection={setMprProjection}
+              setMprSlabMm={setMprSlabMm}
+              setMprWindowPreset={setMprWindowPreset}
+              setNewChairHasMicroscope={setNewChairHasMicroscope}
+              setNewChairHasSurgeryKit={setNewChairHasSurgeryKit}
+              setNewChairHasXraySensor={setNewChairHasXraySensor}
+              setNewChairName={setNewChairName}
+              setNewRuleAction={setNewRuleAction}
+              setNewRuleBlockedServiceId={setNewRuleBlockedServiceId}
+              setNewRuleCategory={setNewRuleCategory}
+              setNewRuleCompletedServiceId={setNewRuleCompletedServiceId}
+              setNewRuleOwnerRole={setNewRuleOwnerRole}
+              setNewRulePatientText={setNewRulePatientText}
+              setNewRuleRequiredServiceId={setNewRuleRequiredServiceId}
+              setNewRuleSeverity={setNewRuleSeverity}
+              setNewRuleSpecialty={setNewRuleSpecialty}
+              setNewRuleTitle={setNewRuleTitle}
+              setNewRuleTriggerServiceId={setNewRuleTriggerServiceId}
+              setNewRuleWarningText={setNewRuleWarningText}
+              setNewStaffName={setNewStaffName}
+              setNewStaffRole={setNewStaffRole}
+              setNewStaffSpecialty={setNewStaffSpecialty}
+              setOhifBaseUrl={setOhifBaseUrl}
+              setPricelistAnalysis={setPricelistAnalysis}
+              setPricelistSourceKind={setPricelistSourceKind}
+              setPricelistText={setPricelistText}
+              setRecognitionJob={setRecognitionJob}
+              setRecognitionText={setRecognitionText}
+              setSettingsTab={setSettingsTab}
+              setSmartImportCommit={setSmartImportCommit}
+              setSmartImportMode={setSmartImportMode}
+              setSmartImportPreview={setSmartImportPreview}
+              setSmartImportText={setSmartImportText}
+              setTelegramAdminSecretDraft={setTelegramAdminSecretDraft}
+              setTelegramAllowVoiceIntakeDraft={setTelegramAllowVoiceIntakeDraft}
+              setTelegramBotConfigId={setTelegramBotConfigId}
+              setTelegramBotUsernameDraft={setTelegramBotUsernameDraft}
+              setTelegramEnabledFeaturesDraft={setTelegramEnabledFeaturesDraft}
+              setTelegramLinkActionState={setTelegramLinkActionState}
+              setTelegramLinkCode={setTelegramLinkCode}
+              setTelegramLinkStaffId={setTelegramLinkStaffId}
+              setTelegramLinkSubjectType={setTelegramLinkSubjectType}
+              setTelegramMapsUrlDraft={setTelegramMapsUrlDraft}
+              setTelegramModeDraft={setTelegramModeDraft}
+              setTelegramOutboxStatusFilter={setTelegramOutboxStatusFilter}
+              setTelegramOutboxTemplateFilter={setTelegramOutboxTemplateFilter}
+              setTelegramOwnBotUsernameDraft={setTelegramOwnBotUsernameDraft}
+              setTelegramPatientPortalBaseUrlDraft={setTelegramPatientPortalBaseUrlDraft}
+              setTelegramPrivacyModeDraft={setTelegramPrivacyModeDraft}
+              setTelegramReminderLeadTimesDraft={setTelegramReminderLeadTimesDraft}
+              setTelegramReviewRequestDelayDraft={setTelegramReviewRequestDelayDraft}
+              setTelegramReviewUrlDraft={setTelegramReviewUrlDraft}
+              setTelegramStaffEscalationChannelDraft={setTelegramStaffEscalationChannelDraft}
+              setTelegramTokenTtlDraft={setTelegramTokenTtlDraft}
+              setTelegramWebhookBaseUrlDraft={setTelegramWebhookBaseUrlDraft}
+              setTelegramWelcomeImageUrlDraft={setTelegramWelcomeImageUrlDraft}
+              settingsTab={settingsTab}
+              settingsTabs={settingsTabs}
+              setUiLanguage={setUiLanguage}
+              setUsePricelistAi={setUsePricelistAi}
+              smartImportCommit={smartImportCommit}
+              smartImportMode={smartImportMode}
+              smartImportModeLabels={smartImportModeLabels}
+              smartImportPreview={smartImportPreview}
+              smartImportText={smartImportText}
+              specialtyLabels={specialtyLabels}
+              speechGatewayCanUpload={speechGatewayCanUpload}
+              speechGatewayHealthReport={speechGatewayHealthReport}
+              speechGatewayStatus={speechGatewayStatus}
+              speechProviderConnectorLabels={speechProviderConnectorLabels}
+              speechProviderHealthById={speechProviderHealthById}
+              speechProviderHealthLabels={speechProviderHealthLabels}
+              speechProviderModeLabels={speechProviderModeLabels}
+              speechProviderRuntimeById={speechProviderRuntimeById}
+              speechProviderSelectionLabels={speechProviderSelectionLabels}
+              speechProviderStatusLabels={speechProviderStatusLabels}
+              speechRecordingPathLabels={speechRecordingPathLabels}
+              speechRecordingRecovery={speechRecordingRecovery}
+              speechRecordingStrategy={speechRecordingStrategy}
+              speechRecoveryStateLabels={speechRecoveryStateLabels}
+              staffRoleLabels={staffRoleLabels}
+              staffScheduleDirtyIds={staffScheduleDirtyIds}
+              staffScheduleDraftFromWorkingHours={staffScheduleDraftFromWorkingHours}
+              staffScheduleDrafts={staffScheduleDrafts}
+              staffScheduleSaveStates={staffScheduleSaveStates}
+              staffScheduleSavingId={staffScheduleSavingId}
+              stageLocalImagingFolderRecovery={stageLocalImagingFolderRecovery}
+              startImportDictation={startImportDictation}
+              telegramAdminSecretDraft={telegramAdminSecretDraft}
+              telegramAdminSecretSession={telegramAdminSecretSession}
+              telegramAllowVoiceIntakeDraft={telegramAllowVoiceIntakeDraft}
+              telegramBotConfigId={telegramBotConfigId}
+              telegramBotUsernameDraft={telegramBotUsernameDraft}
+              telegramChatLinkLedger={telegramChatLinkLedger}
+              telegramChatLinks={telegramChatLinks}
+              telegramClassificationLabels={telegramClassificationLabels}
+              telegramDeliveryStatusLabels={telegramDeliveryStatusLabels}
+              telegramEnabledFeaturesDraft={telegramEnabledFeaturesDraft}
+              telegramFeatureHelp={telegramFeatureHelp}
+              telegramFeatureLabel={telegramFeatureLabel}
+              telegramFeatureOptions={telegramFeatureOptions}
+              telegramFeaturePlan={telegramFeaturePlan}
+              telegramHumanMessage={telegramHumanMessage}
+              telegramInlineButtonKindLabels={telegramInlineButtonKindLabels}
+              telegramInlineButtonRowsFromReplyMarkup={telegramInlineButtonRowsFromReplyMarkup}
+              telegramLinkActionState={telegramLinkActionState}
+              telegramLinkCode={telegramLinkCode}
+              telegramLinkCodeLedger={telegramLinkCodeLedger}
+              telegramLinkCodes={telegramLinkCodes}
+              telegramLinkCodeStatusLabels={telegramLinkCodeStatusLabels}
+              telegramLinkStaffId={telegramLinkStaffId}
+              telegramLinkStaffOptions={telegramLinkStaffOptions}
+              telegramLinkSubjectType={telegramLinkSubjectType}
+              telegramMapsUrlDraft={telegramMapsUrlDraft}
+              telegramModeDraft={telegramModeDraft}
+              telegramModeHints={telegramModeHints}
+              telegramModeLabels={telegramModeLabels}
+              telegramOutbox={telegramOutbox}
+              telegramOutboxStatusFilter={telegramOutboxStatusFilter}
+              telegramOutboxStatusFilterLabels={telegramOutboxStatusFilterLabels}
+              telegramOutboxStatusFilterOptions={telegramOutboxStatusFilterOptions}
+              telegramOutboxTemplateFilter={telegramOutboxTemplateFilter}
+              telegramOutboxTemplateFilterLabels={telegramOutboxTemplateFilterLabels}
+              telegramOutboxTemplateFilterOptions={telegramOutboxTemplateFilterOptions}
+              telegramOwnBotUsernameDraft={telegramOwnBotUsernameDraft}
+              telegramPatientPortalBaseUrlDraft={telegramPatientPortalBaseUrlDraft}
+              telegramPostVisitCheckupDelayDrafts={telegramPostVisitCheckupDelayDrafts}
+              telegramPostVisitCheckupDelayFields={telegramPostVisitCheckupDelayFields}
+              telegramPreview={telegramPreview}
+              telegramPrivacyModeDraft={telegramPrivacyModeDraft}
+              telegramPrivacyModeHints={telegramPrivacyModeHints}
+              telegramPrivacyModeLabels={telegramPrivacyModeLabels}
+              telegramQrSvgToDataUrl={telegramQrSvgToDataUrl}
+              telegramReminderLeadTimesDraft={telegramReminderLeadTimesDraft}
+              telegramReviewRequestDelayDraft={telegramReviewRequestDelayDraft}
+              telegramReviewUrlDraft={telegramReviewUrlDraft}
+              telegramRevokingLinkId={telegramRevokingLinkId}
+              telegramSendingItemId={telegramSendingItemId}
+              telegramSettingsDirty={telegramSettingsDirty}
+              telegramSettingsSaveError={telegramSettingsSaveError}
+              telegramSettingsSaveState={telegramSettingsSaveState}
+              telegramStaffEscalationChannelDraft={telegramStaffEscalationChannelDraft}
+              telegramStatus={telegramStatus}
+              telegramSubjectName={telegramSubjectName}
+              telegramTemplateLabels={telegramTemplateLabels}
+              telegramTokenTtlDraft={telegramTokenTtlDraft}
+              telegramVisualCardFields={telegramVisualCardFields}
+              telegramVisualCardUrlDrafts={telegramVisualCardUrlDrafts}
+              telegramWebhookBaseUrlDraft={telegramWebhookBaseUrlDraft}
+              telegramWelcomeImageUrlDraft={telegramWelcomeImageUrlDraft}
+              toggleChairWorkingDay={toggleChairWorkingDay}
+              toggleClinicalRule={toggleClinicalRule}
+              toggleClinicWorkingDay={toggleClinicWorkingDay}
+              toggleStaffWorkingDay={toggleStaffWorkingDay}
+              toggleTelegramFeature={toggleTelegramFeature}
+              uiLanguage={uiLanguage}
+              uiLanguageOptions={uiLanguageOptions}
+              unlockTelegramAdminSession={unlockTelegramAdminSession}
+              updateChairScheduleDay={updateChairScheduleDay}
+              updateChairScheduleDraft={updateChairScheduleDraft}
+              updateClinicProfileDraft={updateClinicProfileDraft}
+              updateStaffScheduleDay={updateStaffScheduleDay}
+              updateStaffScheduleDraft={updateStaffScheduleDraft}
+              updateTelegramPostVisitCheckupDelayDraft={updateTelegramPostVisitCheckupDelayDraft}
+              updateTelegramVisualCardUrlDraft={updateTelegramVisualCardUrlDraft}
+              usePricelistAi={usePricelistAi}
+              visibleTelegramOutboxItems={visibleTelegramOutboxItems}
+              weekdayOptions={weekdayOptions}
+              workspaceScopeLabels={workspaceScopeLabels}
+            />
+          </Suspense>
+        ) : null}
+      </section>
+    </main>
+  );
+}

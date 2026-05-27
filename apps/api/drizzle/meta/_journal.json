@@ -1,0 +1,174 @@
+{
+    "version":  "7",
+    "dialect":  "postgresql",
+    "entries":  [
+                    {
+                        "idx":  0,
+                        "version":  "7",
+                        "when":  1778612832179,
+                        "tag":  "0000_gifted_masked_marvel",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  1,
+                        "version":  "7",
+                        "when":  1778619639654,
+                        "tag":  "0001_rare_cable",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  2,
+                        "version":  "7",
+                        "when":  1778626892962,
+                        "tag":  "0002_striped_ultimo",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  3,
+                        "version":  "7",
+                        "when":  1778874147408,
+                        "tag":  "0003_ceph_imaging_kind",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  4,
+                        "version":  "7",
+                        "when":  1779062400000,
+                        "tag":  "0004_document_catalog_hardening",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  5,
+                        "version":  "7",
+                        "when":  1779062500000,
+                        "tag":  "0005_document_tax_year",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  6,
+                        "version":  "7",
+                        "when":  1779062600000,
+                        "tag":  "0006_document_snapshot_and_fiscal_fields",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  7,
+                        "version":  "7",
+                        "when":  1779062700000,
+                        "tag":  "0007_clinic_legal_and_payer_identity",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  8,
+                        "version":  "7",
+                        "when":  1779062800000,
+                        "tag":  "0008_document_payload_storage",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  9,
+                        "version":  "7",
+                        "when":  1779062900000,
+                        "tag":  "0009_patient_administrative_profile",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  10,
+                        "version":  "7",
+                        "when":  1779063000000,
+                        "tag":  "0010_appointment_assistant_resource",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  11,
+                        "version":  "7",
+                        "when":  1779063100000,
+                        "tag":  "0011_document_tax_payment_snapshot",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  12,
+                        "version":  "7",
+                        "when":  1779063200000,
+                        "tag":  "0012_payments_runtime_contract",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  13,
+                        "version":  "7",
+                        "when":  1779063300000,
+                        "tag":  "0013_communication_telegram_runtime_tables",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  14,
+                        "version":  "7",
+                        "when":  1779063400000,
+                        "tag":  "0014_payment_structured_fiscal_receipt",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  15,
+                        "version":  "7",
+                        "when":  1779063500000,
+                        "tag":  "0015_telegram_welcome_image",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  16,
+                        "version":  "7",
+                        "when":  1779063600000,
+                        "tag":  "0016_communication_task_workflow_code",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  17,
+                        "version":  "7",
+                        "when":  1779063700000,
+                        "tag":  "0017_document_issue_attestation_and_release_journal",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  18,
+                        "version":  "7",
+                        "when":  1779063800000,
+                        "tag":  "0018_document_void_attestation",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  19,
+                        "version":  "7",
+                        "when":  1779063900000,
+                        "tag":  "0019_document_tax_xml_snapshot",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  20,
+                        "version":  "7",
+                        "when":  1779064000000,
+                        "tag":  "0020_outpatient_medical_card_025u",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  21,
+                        "version":  "7",
+                        "when":  1779064100000,
+                        "tag":  "0021_telegram_visual_cards",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  22,
+                        "version":  "7",
+                        "when":  1779064200000,
+                        "tag":  "0022_telegram_post_visit_checkup_delays",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  23,
+                        "version":  "7",
+                        "when":  1779064300000,
+                        "tag":  "0023_telegram_review_request_delay",
+                        "breakpoints":  true
+                    }
+                ]
+}

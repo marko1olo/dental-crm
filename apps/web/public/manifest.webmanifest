@@ -1,0 +1,19 @@
+{
+  "name": "Dental CRM",
+  "short_name": "DentalCRM",
+  "description": "Рабочее место стоматологической клиники с оффлайн-черновиками и синхронизацией.",
+  "start_url": "/#shift",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f5ef",
+  "theme_color": "#0f766e",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

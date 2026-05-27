@@ -1,0 +1,187 @@
+import fs from "node:fs";
+
+const sources = {
+  "apps/api/src/routes/system.ts": fs.readFileSync("apps/api/src/routes/system.ts", "utf8"),
+  "apps/api/src/speech/gateway.ts": fs.readFileSync("apps/api/src/speech/gateway.ts", "utf8"),
+  "apps/api/src/routes/imaging.ts": fs.readFileSync("apps/api/src/routes/imaging.ts", "utf8")
+};
+
+const requiredSnippets = [
+  "работа врача не блокируется",
+  "проверка доступности вернула HTTP",
+  "аудио в очереди остается локально",
+  "Откройте отдельное MPR-рабочее место",
+  "Безопасная цель просмотра пока недоступна",
+  "Целевая область просмотра недоступна",
+  "Поиск остановлен на maxFolders",
+  "Готовые строки можно позже провести через воркер",
+  "Проверка QIDO не удалась",
+  "Коннектор умеет искать",
+  "Откройте OHIF/Cornerstone через DICOMweb",
+  "Передача во внешний просмотрщик",
+  "Класс рабочей станции",
+  "Выбранная локальная папка",
+  "В разборе папки нет открываемых серий",
+  "Запустите локальный OCR-обработчик",
+  "изображения документов остаются в локальном OCR-мосте",
+  "передача в диагностический просмотрщик",
+  "Запустите OHIF/Cornerstone поверх DICOMweb",
+  "Проверка доступности моста прошла",
+  "Проверка доступности вернула HTTP",
+  "Держите OCR-мост в админском контуре",
+  "Распознавание фото прайс-листа",
+  "Сейчас используйте скопированные таблицы или текст",
+  "Локальная диктовка Whisper.cpp",
+  "офлайн-распознавание диктовки",
+  "офлайн-диктовка и резерв для команд",
+  "OHIF / внешний DICOM-просмотрщик",
+  "Локальный STT-мост не готов",
+  "Диктовка приема",
+  "Записать без блокировки приема",
+  "Печатный текст и браузерная диктовка добавляются в один автосохраняемый черновик",
+  "OCR документов и PDF",
+  "Сначала извлечь локальный текст",
+  "Запустить локальный OCR-мост",
+  "Использовать серверный Groq Vision",
+  "Классифицировать через Groq JSON",
+  "Сжать изображение в браузере",
+  "Использовать детерминированный разбор таблицы",
+  "Импорт снимков",
+  "Передать тяжелый DICOM-архив обработчику",
+  "Использовать встроенный разбор метаданных",
+  "Подтвердить только готовые строки",
+  "резервная цепочка",
+  "Использован локальный мост Vosk",
+  "серверных переменных",
+  "Пакет стоматологических подсказок для STT отключен",
+  "прямой серверный коннектор пока не включен",
+  "прямое серверное распознавание пока не включено в текущий шлюз",
+  "Локальный текст сохранен, врач может продолжать без блокировки"
+];
+
+const forbiddenSnippets = [
+  "Start the local bridge or keep using cloud/server/manual fallback",
+  "Use ready local bridges for heavy/offline work",
+  "Configured bridges are not reachable",
+  "health probe returned HTTP",
+  "queued audio stays local",
+  "local bridge URL is configured",
+  "Open dedicated MPR workbench with downsampled first pass",
+  "No safe viewer target is available yet",
+  "No target viewport is available",
+  "Discovery stopped at maxFolders",
+  "No DICOM-like folders were found in the selected roots",
+  "Ready rows can later be committed",
+  "QIDO probe failed",
+  "Connector can search",
+  "Open OHIF/Cornerstone against DICOMweb",
+  "External viewer handoff",
+  "Index metadata",
+  "Workstation tier",
+  "Selected local folder",
+  "Folder workup has no openable series",
+  "Create a CT/MPR workbench bundle",
+  "Cannot read DICOM folder",
+  "metadata scan reads first",
+  "No direct DICOM/IMA files were found",
+  "PixelData was not found",
+  "Keep metadata preview",
+  "Use a dedicated DICOM viewer",
+  "ZIP archive not found",
+  "ZIP central directory not found",
+  "Run a local OCR worker",
+  "Run OHIF/Cornerstone",
+  "Keep OCR bridge admin-only",
+  "Use Groq vision as the strongest current photo price-list lane",
+  "Use local OCR first",
+  "Use copied tables/text now",
+  "No local STT bridge is ready",
+  "Visit dictation",
+  "Capture without blocking",
+  "Keep audio/text queued",
+  "Typed text and browser speech append",
+  "PDF / document OCR",
+  "Extract local text first",
+  "Run local OCR bridge",
+  "Use server-side Groq vision",
+  "Mark OCR required",
+  "Compress image in browser",
+  "The web client reduces photo payload",
+  "Classify with Groq JSON prompt",
+  "Read text with local OCR",
+  "Use deterministic table parser",
+  "CBCT / MPR viewing",
+  "Imaging import",
+  "Delegate heavy DICOM archive work",
+  "Use built-in metadata parser",
+  "Heavy DICOM archives still need external extraction",
+  "Use local DICOM bridge for heavy import preparation",
+  "Use existing read-only previews now",
+  "fallback-цепочка",
+  "fallback-цепочки",
+  "Local Whisper bridge URL is not configured",
+  "Local Vosk bridge URL is not configured",
+  "Local Vosk bridge used",
+  "Local Vosk bridge returned no text",
+  "браузер/server/manual fallback",
+  "локальный transcript",
+  "видимый transcript",
+  "серверный transcript",
+  "transcript нужно проверить",
+  "Сохранен браузерный/локальный transcript",
+  "chunks; временно",
+  "серверных chunks",
+  "server env",
+  "прямой серверный transcription",
+  "MVP-шлюз",
+  "MVP-коннектор",
+  "не вернул transcript",
+  "во временном cooldown",
+  "prompt pack",
+  "direct server transcription",
+  "is cataloged but not wired",
+  "is missing server env",
+  "Price-list photo recognition",
+  "offline PDF/photo/table OCR",
+  "document images stay in the local OCR bridge",
+  "diagnostic viewer handoff",
+  "viewer owns diagnostic pixels",
+  "full DICOMweb viewer outside the doctor charting surface",
+  "Bridge health endpoint is reachable",
+  "Health endpoint returned HTTP",
+  "Use a localhost/private bridge URL",
+  "Remote bridge probing is disabled",
+  "security review"
+];
+
+const joined = Object.values(sources).join("\n");
+const missing = requiredSnippets.filter((snippet) => !joined.includes(snippet));
+const forbidden = forbiddenSnippets.filter((snippet) => joined.includes(snippet));
+
+if (missing.length || forbidden.length) {
+  console.error(
+    JSON.stringify(
+      {
+        ok: false,
+        missing,
+        forbidden,
+        reason: "Doctor-visible API fallback messages must use Russian fallback text."
+      },
+      null,
+      2
+    )
+  );
+  process.exit(1);
+}
+
+console.log(
+  JSON.stringify(
+    {
+      ok: true,
+      checked: Object.keys(sources),
+      requiredSnippets: requiredSnippets.length
+    },
+    null,
+    2
+  )
+);
