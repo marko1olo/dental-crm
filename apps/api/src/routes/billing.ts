@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
-import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput } from "@dental/shared";
+import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput, type Payment } from "@dental/shared";
 import { createPayment, documents, findPaymentByClientMutationId, findVisitById, patients } from "../sampleData.js";
 import { requireClinicalMutationAccess } from "../accessGuard.js";
 
@@ -19,6 +19,86 @@ function sendBillingPaymentScopeError(reply: FastifyReply, statusCode: 404 | 409
   });
 }
 
+function cleanPaymentText(value: string | null | undefined): string | null {
+  const clean = value?.trim();
+  return clean ? clean : null;
+}
+
+function normalizedFiscalReceipt(input: CreatePaymentInput["fiscalReceipt"]): Payment["fiscalReceipt"] {
+  if (!input) return null;
+  const fn = cleanPaymentText(input.fn);
+  const fd = cleanPaymentText(input.fd);
+  const fpd = cleanPaymentText(input.fpd);
+  const cashierName = cleanPaymentText(input.cashierName);
+  const receiptUrl = cleanPaymentText(input.receiptUrl);
+  if (!fn && !fd && !fpd && !cashierName && !receiptUrl) return null;
+  return {
+    fn,
+    fd,
+    fpd,
+    cashierName,
+    receiptUrl,
+    operationType: input.operationType ?? "income"
+  };
+}
+
+function fiscalReceiptLabel(fiscalReceipt: Payment["fiscalReceipt"]): string | null {
+  if (!fiscalReceipt) return null;
+  const parts = [
+    fiscalReceipt.fn ? `ФН ${fiscalReceipt.fn}` : null,
+    fiscalReceipt.fd ? `ФД ${fiscalReceipt.fd}` : null,
+    fiscalReceipt.fpd ? `ФПД ${fiscalReceipt.fpd}` : null
+  ].filter(Boolean);
+  return parts.length ? parts.join("; ") : null;
+}
+
+function paymentRetrySignatureFromInput(input: CreatePaymentInput) {
+  const fiscalReceipt = normalizedFiscalReceipt(input.fiscalReceipt);
+  return {
+    patientId: input.patientId,
+    visitId: input.visitId ?? null,
+    documentId: input.documentId ?? null,
+    amountRub: input.amountRub,
+    method: input.method,
+    fiscalReceiptNumber: cleanPaymentText(input.fiscalReceiptNumber) ?? fiscalReceiptLabel(fiscalReceipt),
+    fiscalReceiptIssuedAt: cleanPaymentText(input.fiscalReceiptIssuedAt),
+    fiscalReceiptUrl: cleanPaymentText(input.fiscalReceiptUrl) ?? cleanPaymentText(fiscalReceipt?.receiptUrl),
+    fiscalReceipt,
+    payerFullName: cleanPaymentText(input.payerFullName),
+    payerInn: cleanPaymentText(input.payerInn),
+    payerBirthDate: cleanPaymentText(input.payerBirthDate),
+    payerIdentityDocument: cleanPaymentText(input.payerIdentityDocument),
+    payerRelationship: cleanPaymentText(input.payerRelationship),
+    taxDeductionCode: input.taxDeductionCode ?? null,
+    note: input.note ?? null
+  };
+}
+
+function paymentRetrySignatureFromPayment(payment: Payment) {
+  return {
+    patientId: payment.patientId,
+    visitId: payment.visitId ?? null,
+    documentId: payment.documentId ?? null,
+    amountRub: payment.amountRub,
+    method: payment.method,
+    fiscalReceiptNumber: payment.fiscalReceiptNumber ?? null,
+    fiscalReceiptIssuedAt: payment.fiscalReceiptIssuedAt ?? null,
+    fiscalReceiptUrl: payment.fiscalReceiptUrl ?? null,
+    fiscalReceipt: payment.fiscalReceipt ?? null,
+    payerFullName: payment.payerFullName ?? null,
+    payerInn: payment.payerInn ?? null,
+    payerBirthDate: payment.payerBirthDate ?? null,
+    payerIdentityDocument: payment.payerIdentityDocument ?? null,
+    payerRelationship: payment.payerRelationship ?? null,
+    taxDeductionCode: payment.taxDeductionCode ?? null,
+    note: payment.note ?? null
+  };
+}
+
+function paymentRetryMatchesExisting(existingPayment: Payment, input: CreatePaymentInput): boolean {
+  return JSON.stringify(paymentRetrySignatureFromPayment(existingPayment)) === JSON.stringify(paymentRetrySignatureFromInput(input));
+}
+
 export async function registerBillingRoutes(app: FastifyInstance) {
   app.post("/api/billing/payments", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "billing payment create"))) return;
@@ -31,7 +111,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
     }
     const input: CreatePaymentInput = parsedInput.data;
     const existingPayment = findPaymentByClientMutationId(input.clientMutationId);
-    if (existingPayment) {
+    if (existingPayment && existingPayment.patientId) {
       if (existingPayment.patientId !== input.patientId) {
         return sendBillingPaymentScopeError(reply, 409, "Клиентская операция уже относится к другой оплате.");
       }
