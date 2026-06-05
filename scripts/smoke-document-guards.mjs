@@ -635,7 +635,7 @@ const outpatientMedicalCard025uPayload = {
 };
 const medicalRecordCopyRequestPayload = {
   medicalRecordCopyRequest: {
-    requestedDocumentTypes: ["Выписка из медицинской карты", "DICOM-архив КТ"],
+    requestedDocumentTypes: ["Выписка из медицинской карты", "Архив исходных снимков КТ"],
     periodStart: "2026-05-01",
     periodEnd: "2026-05-20",
     requestedFormat: "dicom_archive",
@@ -645,7 +645,7 @@ const medicalRecordCopyRequestPayload = {
     representativeAuthorityDocument: null,
     requestedAt: "20.05.2026 10:07",
     contactForDelivery: "+7 900 000-00-00, защищенный портал",
-    specialInstructions: "выдать исходные DICOM-файлы при наличии",
+    specialInstructions: "выдать исходные файлы снимков при наличии",
     includeDicomSourceData: true,
     identityVerified: true,
     thirdPartyDataExclusionAcknowledged: true

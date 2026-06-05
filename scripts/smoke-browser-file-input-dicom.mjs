@@ -1,13 +1,18 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:net";
 import os from "node:os";
 import path from "node:path";
 
 const targetUrl = process.argv[2] ?? "http://127.0.0.1:5173/#settings/sources";
 const width = Number(process.env.SMOKE_WIDTH ?? 390);
 const height = Number(process.env.SMOKE_HEIGHT ?? 900);
-const port = Number(process.env.SMOKE_CDP_PORT ?? 9324);
+const configuredPort = process.env.SMOKE_CDP_PORT ? Number(process.env.SMOKE_CDP_PORT) : null;
+const port = configuredPort ?? (await findFreePort());
+if (!Number.isInteger(port) || port <= 0 || port > 65_535) {
+  throw new Error(`Invalid SMOKE_CDP_PORT: ${process.env.SMOKE_CDP_PORT ?? port}`);
+}
 const screenshotPath =
   process.env.SMOKE_SCREENSHOT_PATH ?? "docs/screenshots/browser-file-input-dicom-magic-mobile-current.png";
 const inputSelector = "[data-testid='browser-local-imaging-folder-input']";
@@ -33,6 +38,18 @@ if (!browserPath) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function findFreePort() {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const selectedPort = typeof address === "object" && address ? address.port : 0;
+      server.close(() => resolve(selectedPort));
+    });
+  });
 }
 
 async function fetchJson(url, attempts = 40) {
@@ -103,7 +120,7 @@ async function createFixtureFiles() {
 }
 
 async function cleanup(browser) {
-  browser.kill();
+  if (!browser.killed) browser.kill();
   await Promise.race([new Promise((resolve) => browser.once("exit", resolve)), sleep(2_000)]);
   await rm(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
   await rm(fixtureDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
@@ -111,23 +128,42 @@ async function cleanup(browser) {
 
 await mkdir(profileDir, { recursive: true });
 const files = await createFixtureFiles();
+let browserStderr = "";
 const browser = spawn(
   browserPath,
   [
     "--headless=new",
     "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--disable-extensions",
     "--no-first-run",
     "--no-default-browser-check",
+    "--remote-allow-origins=*",
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profileDir}`,
     `--window-size=${width},${height}`,
     targetUrl
   ],
-  { stdio: "ignore" }
+  { stdio: ["ignore", "ignore", "pipe"] }
 );
+browser.stderr?.on("data", (chunk) => {
+  browserStderr = `${browserStderr}${chunk.toString("utf8")}`.slice(-4_000);
+});
 
 try {
-  const targets = await fetchJson(`http://127.0.0.1:${port}/json/list`);
+  const browserExitFailure = new Promise((_, reject) => {
+    browser.once("exit", (code, signal) => {
+      const stderrTail = browserStderr.trim();
+      reject(
+        new Error(
+          `Browser exited before CDP became ready (code=${code ?? "null"}, signal=${signal ?? "null"})${
+            stderrTail ? `: ${stderrTail.slice(-1_000)}` : ""
+          }`
+        )
+      );
+    });
+  });
+  const targets = await Promise.race([fetchJson(`http://127.0.0.1:${port}/json/list`, 100), browserExitFailure]);
   const pageTarget = targets.find((target) => target.type === "page") ?? targets[0];
   if (!pageTarget?.webSocketDebuggerUrl) throw new Error("No page CDP target found");
 
@@ -148,45 +184,120 @@ try {
     await sleep(250);
   }
 
-  const documentNode = await cdp.send("DOM.getDocument", { depth: 1 });
-  const inputNode = await cdp.send("DOM.querySelector", {
-    nodeId: documentNode.root.nodeId,
-    selector: inputSelector
-  });
-  if (!inputNode.nodeId) throw new Error("Browser local imaging file input was not found.");
+  let inputNode = { nodeId: 0 };
+  let routeSnapshot = null;
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    routeSnapshot = await cdp.send("Runtime.evaluate", {
+      expression: `(() => {
+        const input = document.querySelector(${JSON.stringify(inputSelector)});
+        return {
+          readyState: document.readyState,
+          hash: location.hash,
+          hasShell: Boolean(document.querySelector(".app-shell")),
+          hasSettings: Boolean(document.querySelector("#settings")),
+          hasInput: Boolean(input),
+          bodyText: document.body.innerText.slice(0, 500)
+        };
+      })()`,
+      returnByValue: true
+    });
+    if (routeSnapshot.result.value?.hasInput) {
+      const documentNode = await cdp.send("DOM.getDocument", { depth: 1 });
+      inputNode = await cdp.send("DOM.querySelector", {
+        nodeId: documentNode.root.nodeId,
+        selector: inputSelector
+      });
+      if (inputNode.nodeId) break;
+    }
+    await sleep(250);
+  }
+  if (!inputNode.nodeId) {
+    throw new Error(`Browser local imaging file input was not found: ${JSON.stringify(routeSnapshot?.result.value ?? null)}`);
+  }
+
+  async function queryInputNode() {
+    const documentNode = await cdp.send("DOM.getDocument", { depth: 1 });
+    return cdp.send("DOM.querySelector", {
+      nodeId: documentNode.root.nodeId,
+      selector: inputSelector
+    });
+  }
 
   async function readInputState() {
     return cdp.send("Runtime.evaluate", {
       expression: `(() => {
       const input = document.querySelector(${JSON.stringify(inputSelector)});
       if (!input) return { hasInput: false, filesLength: -1 };
+      const filesLength = input.files ? input.files.length : -1;
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
-      return { hasInput: true, filesLength: input.files ? input.files.length : -1 };
+      return { hasInput: true, filesLength };
     })()`,
       returnByValue: true
     });
   }
 
-  await cdp.send("DOM.setFileInputFiles", { nodeId: inputNode.nodeId, files });
-  let inputState = await readInputState();
-  if (inputState.result.value?.filesLength !== files.length) {
+  async function removeDirectoryModeAttributes() {
     await cdp.send("Runtime.evaluate", {
       expression: `(() => {
-        const input = document.querySelector(${JSON.stringify(inputSelector)});
-        if (!input) return false;
-        input.removeAttribute("webkitdirectory");
-        input.removeAttribute("directory");
-        return true;
-      })()`,
+      const input = document.querySelector(${JSON.stringify(inputSelector)});
+      if (!input) return false;
+      input.removeAttribute("webkitdirectory");
+      input.removeAttribute("directory");
+      return true;
+    })()`,
       returnByValue: true
     });
-    await cdp.send("DOM.setFileInputFiles", { nodeId: inputNode.nodeId, files });
+  }
+
+  async function exposeInputForCdpUpload() {
+    await cdp.send("Runtime.evaluate", {
+      expression: `(() => {
+      const input = document.querySelector(${JSON.stringify(inputSelector)});
+      if (!input) return false;
+      input.hidden = false;
+      input.removeAttribute("hidden");
+      input.removeAttribute("tabindex");
+      input.style.position = "fixed";
+      input.style.left = "0";
+      input.style.top = "0";
+      input.style.width = "1px";
+      input.style.height = "1px";
+      input.style.opacity = "0.01";
+      return true;
+    })()`,
+      returnByValue: true
+    });
+  }
+
+  async function setFilesOnInputNode(nodeId) {
+    const description = await cdp.send("DOM.describeNode", { nodeId });
+    const backendNodeId = description.node?.backendNodeId;
+    if (backendNodeId) {
+      await cdp.send("DOM.setFileInputFiles", { backendNodeId, files });
+      return;
+    }
+    await cdp.send("DOM.setFileInputFiles", { nodeId, files });
+  }
+
+  let inputState = await readInputState();
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    if (inputState.result.value?.filesLength === files.length) break;
+    await exposeInputForCdpUpload();
+    if (attempt > 0) await removeDirectoryModeAttributes();
+    inputNode = await queryInputNode();
+    if (!inputNode.nodeId) {
+      await sleep(250);
+      inputState = await readInputState();
+      continue;
+    }
+    await setFilesOnInputNode(inputNode.nodeId);
+    await sleep(150);
     inputState = await readInputState();
   }
 
-  if (!inputState.result.value?.hasInput || inputState.result.value.filesLength !== files.length) {
-    throw new Error(`File input did not receive all synthetic files: ${JSON.stringify(inputState.result.value)}`);
+  if (!inputState.result.value?.hasInput) {
+    throw new Error(`Browser local imaging file input disappeared before upload: ${JSON.stringify(inputState.result.value)}`);
   }
 
   for (let attempt = 0; attempt < 50; attempt += 1) {
@@ -248,6 +359,12 @@ try {
   if (result.stored?.archiveFiles !== 1) throw new Error("Archive fixture was not counted.");
   if (result.stored?.modelFiles !== 1) throw new Error("Dental 3D model fixture was not counted.");
   if (result.stored?.imageFiles !== 1) throw new Error("Image fixture was not counted.");
+  if (!result.visibleText.includes("<0,1 МБ")) {
+    throw new Error("Small non-empty DICOM/browser folder size must not be shown as 0 МБ.");
+  }
+  if (/\n0 МБ(?:\n|$)/.test(result.visibleText)) {
+    throw new Error("Small non-empty DICOM/browser folder size was shown as 0 МБ.");
+  }
 
   if (screenshotPath) {
     const outputPath = path.resolve(screenshotPath);

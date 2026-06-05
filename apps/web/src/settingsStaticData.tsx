@@ -1,14 +1,29 @@
 import { Layers3, ScanSearch, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import type { AiJobKind, AiRecognitionTarget, ImagingSourceKind } from "@dental/shared";
 
-export const recognitionPresets: Array<{
+export type RecognitionPreset = {
   key: string;
   title: string;
   detail: string;
   kind: AiJobKind;
   target: AiRecognitionTarget;
   text: string;
-}> = [
+};
+
+export type ImagingConnectorCard = {
+  title: string;
+  detail: string;
+  source: ImagingSourceKind;
+};
+
+export type ImagingViewerCapability = {
+  title: string;
+  detail: string;
+  state: string;
+  icon: LucideIcon;
+};
+
+export const recognitionPresets: RecognitionPreset[] = [
   {
     key: "voice",
     title: "Диктовка врача",
@@ -35,35 +50,30 @@ export const recognitionPresets: Array<{
   }
 ];
 
-export const imagingConnectorCards: Array<{ title: string; detail: string; source: ImagingSourceKind }> = [
+export const imagingConnectorCards: ImagingConnectorCard[] = [
   {
     title: "Радиовизиограф / датчик",
-    detail: "Локальный bridge забирает снимок из RVG, EzSensor, Carestream, Vatech и похожих систем.",
+    detail: "Локальный модуль забирает снимок из RVG, EzSensor, Carestream, Vatech и похожих систем.",
     source: "sensor_bridge"
   },
   {
     title: "ОПТГ, ТРГ и КТ",
-    detail: "DICOM-файлы, IMA, серии CBCT, панорамные и цефалометрические снимки; полноценный DICOMweb-просмотрщик идет отдельным модулем.",
+    detail: "Файлы КТ/IMA, серии КЛКТ, панорамные и цефалометрические снимки; полноценный КТ-просмотрщик идет отдельным модулем.",
     source: "dicom_file"
   },
   {
-    title: "PACS / DICOMweb",
+    title: "Архив снимков клиники",
     detail: "Подключение к серверу снимков клиники без ручного копирования файлов.",
     source: "pacs"
   },
   {
     title: "Папка обмена",
-    detail: "Watch-folder для софта, который умеет только выгружать JPG/PNG/TIFF/BMP/WebP/DICOM в папку.",
+    detail: "Папка для софта, который умеет только выгружать JPG/PNG/TIFF/BMP/WebP/КТ в папку.",
     source: "folder_watch"
   }
 ];
 
-export const imagingViewerCapabilities: Array<{
-  title: string;
-  detail: string;
-  state: string;
-  icon: LucideIcon;
-}> = [
+export const imagingViewerCapabilities: ImagingViewerCapability[] = [
   {
     title: "2D RVG / OPG / ТРГ",
     detail: "Поворот, зеркало, инверсия, яркость, контраст и масштаб прямо в рабочей смене.",
@@ -71,14 +81,14 @@ export const imagingViewerCapabilities: Array<{
     icon: SlidersHorizontal
   },
   {
-    title: "Импорт DICOM",
+    title: "Импорт КТ/снимков",
     detail: "Пути .dcm/.ima и экспорты JPG/PNG/TIFF/BMP/WebP проходят предпросмотр до записи в карту.",
     state: "предпросмотр",
     icon: ScanSearch
   },
   {
-    title: "CBCT / CT серии",
-    detail: "Нужен отдельный Cornerstone/OHIF слой: series, MPR, срезы, DICOMweb и кэш.",
+    title: "КЛКТ / КТ серии",
+    detail: "Нужен отдельный просмотрщик: серии КЛКТ/КТ, срезы, архив снимков и предварительная подготовка.",
     state: "следующий модуль",
     icon: Layers3
   }

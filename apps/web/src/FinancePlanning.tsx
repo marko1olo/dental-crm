@@ -18,6 +18,7 @@ type FinancePlanningOverviewProps = {
   activePaymentsCount: number;
   billingSummary: Dashboard["billingSummary"];
   money: MoneyFormatter;
+  onGoToVisit: () => void;
   priorityLabels: Record<TreatmentPlanScenario["priority"], string>;
   scenarios: TreatmentPlanScenario[];
   strategyLabels: Record<TreatmentPlanScenario["strategy"], string>;
@@ -26,6 +27,7 @@ type FinancePlanningOverviewProps = {
 type ServiceCatalogStripProps = {
   categoryLabels: Record<ServiceCatalogItem["category"], string>;
   money: MoneyFormatter;
+  onGoToPrices: () => void;
   services: ServiceCatalogItem[];
 };
 
@@ -33,6 +35,7 @@ export function FinancePlanningOverview({
   activePaymentsCount,
   billingSummary,
   money,
+  onGoToVisit,
   priorityLabels,
   scenarios,
   strategyLabels
@@ -101,6 +104,9 @@ export function FinancePlanningOverview({
           <article className="finance-empty-state">
             <ClipboardList aria-hidden="true" />
             <p>Вариантов плана пока нет. Добавьте услуги в план лечения, чтобы пациенту было проще выбрать бюджетный, стандартный или клинический сценарий.</p>
+            <button className="text-button" type="button" onClick={onGoToVisit}>
+              Открыть прием
+            </button>
           </article>
         )}
       </section>
@@ -108,7 +114,7 @@ export function FinancePlanningOverview({
   );
 }
 
-export function ServiceCatalogStrip({ categoryLabels, money, services }: ServiceCatalogStripProps) {
+export function ServiceCatalogStrip({ categoryLabels, money, onGoToPrices, services }: ServiceCatalogStripProps) {
   const visibleServices = services.slice(0, 6);
 
   return (
@@ -127,6 +133,9 @@ export function ServiceCatalogStrip({ categoryLabels, money, services }: Service
         <article className="finance-empty-state">
           <ClipboardList aria-hidden="true" />
           <p>Каталог услуг пуст. Заполните прайс в настройках, чтобы план лечения и оплаты не требовали ручных сумм.</p>
+          <button className="text-button" type="button" onClick={onGoToPrices}>
+            Открыть прайс
+          </button>
         </article>
       )}
     </div>

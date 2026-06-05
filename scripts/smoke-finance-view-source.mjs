@@ -18,6 +18,8 @@ requireIn(appSource, 'lazy(() => import("./FinanceView")', "App.tsx must lazy-lo
 requireIn(appSource, "<Suspense", "App.tsx must wrap lazy FinanceView in Suspense");
 requireIn(appSource, 'aria-busy="true"', "Finance fallback must expose busy state");
 requireIn(appSource, "<FinanceView", "App.tsx must render the lazy finance boundary");
+requireIn(appSource, 'window.location.hash = "settings/prices"', "Finance empty catalog action must open the price-list settings");
+requireIn(appSource, 'window.location.hash = "visit"', "Finance empty plan action must open the visit workspace");
 requireIn(appSource, "const patientBillingSummary = useMemo<Dashboard[\"billingSummary\"]>", "App.tsx must derive a patient-scoped finance summary");
 requireIn(appSource, "billingSummary={patientBillingSummary}", "App.tsx must pass patient-scoped finance summary to FinanceView");
 requireIn(appSource, "const patientClinicalRuleEvaluations = useMemo", "App.tsx must derive patient-scoped clinical rule evaluations for finance");
@@ -46,6 +48,9 @@ forbidIn(financeViewSource, "summary={dashboard.clinicalRuleSummary}", "FinanceV
 requireIn(financeViewSource, "<PaymentCapture", "FinanceView must compose payment capture");
 requireIn(financeViewSource, "<FinanceLedger", "FinanceView must compose ledger");
 requireIn(financeViewSource, "<ServiceCatalogStrip", "FinanceView must compose service catalog");
+requireIn(financeViewSource, 'document.getElementById("payment-capture")', "FinanceView must support a direct jump back to payment capture");
+requireIn(viteSource, 'const apiProxyTarget = process.env.DENTAL_API_PROXY_TARGET ?? "http://127.0.0.1:4100"', "Vite dev proxy must be configurable for parallel smoke ports");
+requireIn(viteSource, '"/api": apiProxyTarget', "Vite dev proxy must use the configurable API target");
 forbidIn(viteSource, 'normalizedId.endsWith("/apps/web/src/FinanceView.tsx") && return "workspace"', "FinanceView must not be forced into workspace chunk");
 
 if (missing.length > 0) {

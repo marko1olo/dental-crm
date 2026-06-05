@@ -57,19 +57,34 @@ const emptyPatientText = "ФИО;Телефон;Дата рождения;Ком
 const imagePathPattern =
   /(?:[A-Za-zА-Яа-яЁё]:[\\/][^\s;|,]+|\\\\[^\s;|,]+|\/[^\s;|,]+|\b[^\s;|,]+\.(?:dcm|dicom|ima|dc3|acr|jpg|jpeg|png|tif|tiff|bmp|webp|stl|obj|ply|glb|gltf|3mf)\b)/i;
 const imagingKeywordPattern =
-  /rvg|rv[sx]|прицел|прицельн|opg|оптг|ортопан|панорам|trg|трг|ceph|цеф|телерентг|cbct|кт|ккт|dicom|dicomweb|pacs|orthanc|dcm4chee|twain|wia|sensor|ezsensor|carestream|vatech|sidexis|romexis|ondemand|invivo|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|3shape|medit|exocad|blue\s*sky|снимок|рентген|томограф/i;
+  /rvg|rv[sx]|прицел|прицельн|opg|оптг|ортопан|панорам|trg|трг|ceph|цеф|телерентг|cbct|кт|ккт|dicom|dicomweb|pacs|orthanc|dcm4chee|twain|wia|sensor|ezsensor|carestream|vatech|sidexis|romexis|ondemand|invivo|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|dexis|kavo|gendex|acteon|sopro|sopix|pspix|x[-\s]?mind|3shape|medit|exocad|blue\s*sky|снимок|рентген|томограф/i;
 const patientKeywordPattern = /фио|пациент|клиент|телефон|номер|дата рождения|д\.р\.|др|birth|patient|phone|mobile/i;
 const clinicKeywordPattern =
   /клиник|стоматолог|dental|dent|clinic|инн|inn|кпп|kpp|огрн|ogrn|лиценз|license|адрес|address|сайт|website|www\.|https?:\/\/|email|e-mail|почта|банк|бик|р\/с|расчетн|корр/i;
 const legacySourceKeywordPattern =
-  /стар(?:ая|ой)?\s+(?:баз|мис|crm)|legacy|migration|миграц|перенос|выгруз|экспорт|backup|dump|restore|sql|sqlite|firebird|interbase|access|mdb|accdb|dbf|foxpro|paradox|1c|1с|\.1cd|\.dt|mdf|sdf|fbk|мис|инфоклиника|cliniccards|dental4windows|dental\s*pro|ident|stomx|пакс|pacs|orthanc|dcm4chee|dicomweb|qido|wado|ae\s*title|сетев(?:ая|ой)\s+папк|network\s+share|smb|\\\\/i;
+  /стар(?:ая|ой)?\s+(?:баз|мис|crm)|legacy|migration|миграц|перенос|выгруз|экспорт|backup|dump|restore|sql|sqlite|firebird|interbase|access|mdb|accdb|dbf|dbase|foxpro|clipper|paradox|1c|1с|\.1cd|\.dt|mdf|sdf|fbk|ibk|gbk|мис|инфоклиника|infodent|инфодент|дента\s*офис|denta\s*office|cliniccards|dental4windows|dental\s*pro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|ident|stomx|i[-\s]?stom|ай\s*стом|q[-\s]?stoma|кью\s*стома|бит\.?\s*стоматолог|bit\.?\s*stomatolog|mac\s*dent|stom\s*box|medangel|медангел|medialog|медиалог|arnica|арника|пакс|pacs|orthanc|dcm4chee|dicomweb|qido|wado|ae\s*title|сетев(?:ая|ой)\s+папк|network\s+share|smb|\\\\/i;
+const legacySourceSupplementalKeywordPattern =
+  /open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz|dentrix|eaglesoft|patterson|softdent|practice\s*works|curve\s*dental|denticon|tab32|dolphin\s*(?:imaging|management)|morita|i[-\s]?dixel|idixel|veraview|new\s*tom|newtom|\bnnt\b|myray|cefla|owandy|quick\s*vision|quickvision/i;
+const legacyMisTextPattern =
+  /1c|1с|\.1cd\b|мис|инфоклиника|infoclinica|infodent|инфодент|дента\s*офис|denta\s*office|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental4windows|dental\s*pro|dentpro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|medangel|медангел|medialog|медиалог|arnica|арника|sycret\s*dent|secret\s*dent|адента|adenta|dent\s*crm\s*24|dentcrm24|dent\.crm24|клиентикс|clientix|klientix|2v.*(?:стоматолог|dental)|future\s*it\s*dent|futureitdent|32\s*top|32top|medods|медодс|dental\s*tap|dentaltap|(?:^|[\\/])ident(?:[\\/]|$)|\bident\b|stomx|stom\s*x|стомx|стомикс|i[-\s]?stom|ай\s*стом|q[-\s]?stoma|кью\s*стома|бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог|mac\s*dent|macdent|stom\s*box|stombox|open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz|dentrix|eaglesoft|patterson|softdent|practice\s*works|curve\s*dental|denticon|tab32|dolphin\s*(?:imaging|management)|legacy|старая\s+баз/i;
 const legacyDatabasePathPattern =
-  /(?:[A-Za-zА-Яа-яЁё]:[\\/][^;|\n]+?|\\\\[^;|\n]+?|\/[^;|\n]+?)\.(?:fdb|gdb|fbk|mdb|accdb|db|sqlite|sqlite3|dbf|1cd|dt|mdf|ldf|sdf|bak|sql|dump|backup|csv|tsv|xls|xlsx|ods|xml|json|zip|7z|rar|tar|gz)\b|\b[^\s;|,]+\.(?:fdb|gdb|fbk|mdb|accdb|db|sqlite|sqlite3|dbf|1cd|dt|mdf|ldf|sdf|bak|sql|dump|backup|csv|tsv|xls|xlsx|ods|xml|json|zip|7z|rar|tar|gz)\b/i;
+  /(?:[A-Za-zА-Яа-яЁё]:[\\/][^;|\n]+?|\\\\[^;|\n]+?|\/[^;|\n]+?)\.(?:fdb|gdb|fbk|ib|ibk|gbk|mdb|accdb|db|sqlite|sqlite3|dbf|dbt|fpt|cdx|idx|ntx|ndx|mdx|1cd|dt|mdf|ldf|sdf|bak|sql|dump|backup|csv|tsv|xls|xlsx|xlsm|xlsb|ods|xml|json|zip|7z|rar|tar|gz)\b|\b[^\s;|,]+\.(?:fdb|gdb|fbk|ib|ibk|gbk|mdb|accdb|db|sqlite|sqlite3|dbf|dbt|fpt|cdx|idx|ntx|ndx|mdx|1cd|dt|mdf|ldf|sdf|bak|sql|dump|backup|csv|tsv|xls|xlsx|xlsm|xlsb|ods|xml|json|zip|7z|rar|tar|gz)\b/i;
 const imagingSourceFolderPattern =
-  /\bDICOMDIR\b|(?:sidexis|romexis|dtx|ondemand|invivo|ezdent|cliniview|clini\s*view|dbswin|vistasoft|carestream|vatech|planmeca|morita|galileos|kavo|orthophos|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|quickvision|weasis|ohif|radiant|dicom|cbct|кт|ккт|rvg|opg|оптг|рентген|снимк|томограф)\b.*(?:folder|папк|каталог|archive|архив|export|выгруз|root|share|шара|источник|source|backup|old|стар)|(?:folder|папк|каталог|archive|архив|export|выгруз|root|share|шара|источник|source|backup|old|стар)\b.*(?:sidexis|romexis|dtx|ondemand|invivo|ezdent|cliniview|clini\s*view|dbswin|vistasoft|carestream|vatech|planmeca|morita|galileos|kavo|orthophos|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|quickvision|dicom|cbct|кт|ккт|rvg|opg|оптг|рентген|снимк|томограф)|\\\\[^;|\n]*(?:dicom|cbct|rvg|opg|xray|x-ray|кт|ккт|рентген|снимк)[^;|\n]*/i;
+  /\bDICOMDIR\b|(?:sidexis|romexis|dtx|ondemand|invivo|ezdent|cliniview|clini\s*view|dbswin|vistasoft|carestream|vatech|planmeca|morita|galileos|kavo|dexis|gendex|orthophos|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|quickvision|acteon|sopro|sopix|pspix|x[-\s]?mind|weasis|ohif|radiant|dicom|cbct|кт|ккт|rvg|opg|оптг|рентген|снимк|томограф)\b.*(?:folder|папк|каталог|archive|архив|export|выгруз|root|share|шара|источник|source|backup|old|стар)|(?:folder|папк|каталог|archive|архив|export|выгруз|root|share|шара|источник|source|backup|old|стар)\b.*(?:sidexis|romexis|dtx|ondemand|invivo|ezdent|cliniview|clini\s*view|dbswin|vistasoft|carestream|vatech|planmeca|morita|galileos|kavo|dexis|gendex|orthophos|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|quickvision|acteon|sopro|sopix|pspix|x[-\s]?mind|dicom|cbct|кт|ккт|rvg|opg|оптг|рентген|снимк|томограф)|\\\\[^;|\n]*(?:dicom|cbct|rvg|opg|xray|x-ray|кт|ккт|рентген|снимк)[^;|\n]*/i;
 const imagingVendorPattern =
-  /sidexis|romexis|dtx|ondemand|invivo|ezdent|cliniview|clini\s*view|dbswin|vistasoft|carestream|vatech|planmeca|morita|galileos|kavo|orthophos|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|quickvision|sopro|suni|schick|apixia|medit|3shape|exocad|blue\s*sky/i;
+  /sidexis|romexis|dtx|ondemand|invivo|ezdent|cliniview|clini\s*view|dbswin|vistasoft|carestream|vatech|planmeca|morita|galileos|kavo|dexis|gendex|orthophos|digora|soredex|trophy|visiodent|durr|dürr|orangedental|myray|newtom|quickvision|acteon|sopro|sopix|pspix|x[-\s]?mind|suni|schick|apixia|medit|3shape|exocad|blue\s*sky/i;
 const headerOnlyPattern = /^(?:фио|пациент|patient|phone|телефон|тип|файл|путь|source|источник|дата|зуб|модальность|modality|studyinstanceuid|seriesinstanceuid|sopinstanceuid|instance|series|study|birth|dob|комментарий|notes)(?:[;,\t| ]+(?:фио|пациент|patient|phone|телефон|тип|файл|путь|source|источник|дата|зуб|модальность|modality|studyinstanceuid|seriesinstanceuid|sopinstanceuid|instance|series|study|birth|dob|комментарий|notes))*$/i;
+const imagingVendorSupplementalPattern = /i[-\s]?dixel|idixel|veraview|new\s*tom|\bnnt\b|cefla|owandy|quick\s*vision/i;
+const migrationClinicDataContainerPattern =
+  /(?:стомат|клиник|dental|denta|dent|stom|clinic|mis|crm|пациент|patient|1c|1с|миграц|migration|стар|old|legacy).*(?:backup|backups|export|exports|archive|архив|arhiv|выгруз|vygruz|data|db|database|base|баз|baza|dump)|(?:backup|backups|export|exports|archive|архив|arhiv|выгруз|vygruz|data|db|database|base|баз|baza|dump).*(?:стомат|клиник|dental|denta|dent|stom|clinic|mis|crm|пациент|patient|1c|1с|миграц|migration|стар|old|legacy)|(?:база\s*пациент|пациенты|картотек|стоматолог(?:ия|ическая)?|архив\s*клиник|старая\s*(?:база|мис|crm)|выгрузк[аи]?|снимки|рентген|оптг|ккт|(?:^|[\\/\s_-])кт(?:$|[\\/\s_-])|xray|x-ray|cbct|opg|patient\s*db|patients|clinic\s*(?:db|backup|archive)|old\s*(?:db|database|crm))/i;
+
+function migrationClinicDataContainerHint(folderPath: string) {
+  const folderName = path.basename(folderPath);
+  const parentName = path.basename(path.dirname(folderPath));
+  const localName = parentName && parentName !== folderName ? `${parentName}/${folderName}` : folderName;
+  return migrationClinicDataContainerPattern.test(localName);
+}
+
 const migrationDiscoverySkipDirectoryNames = new Set([
   ".git",
   ".hg",
@@ -88,9 +103,36 @@ const migrationDiscoverySkipDirectoryNames = new Set([
   "appdata",
   "application data"
 ]);
-const migrationDatabaseExtensions = new Set([".fdb", ".gdb", ".fbk", ".mdb", ".accdb", ".sqlite", ".sqlite3", ".db", ".dbf", ".1cd", ".mdf", ".ldf", ".sdf"]);
-const migrationDumpExtensions = new Set([".bak", ".backup", ".dump", ".sql", ".dt"]);
-const migrationTableExtensions = new Set([".csv", ".tsv", ".xls", ".xlsx", ".ods", ".xml", ".json"]);
+const migrationDatabaseExtensions = new Set([
+  ".fdb",
+  ".gdb",
+  ".fbk",
+  ".ib",
+  ".mdb",
+  ".accdb",
+  ".sqlite",
+  ".sqlite3",
+  ".db",
+  ".dbf",
+  ".dbt",
+  ".fpt",
+  ".cdx",
+  ".idx",
+  ".ntx",
+  ".ndx",
+  ".mdx",
+  ".1cd",
+  ".mdf",
+  ".ldf",
+  ".sdf",
+  ".myd",
+  ".myi",
+  ".frm",
+  ".ibd",
+  ".px"
+]);
+const migrationDumpExtensions = new Set([".bak", ".backup", ".dump", ".sql", ".psql", ".pgsql", ".dt", ".ibk", ".gbk"]);
+const migrationTableExtensions = new Set([".csv", ".tsv", ".xls", ".xlsx", ".xlsm", ".xlsb", ".ods", ".xml", ".json"]);
 const migrationArchiveExtensions = new Set([".zip", ".7z", ".rar", ".tar", ".gz"]);
 const migrationImageExtensions = new Set([".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp", ".stl", ".obj", ".ply", ".glb", ".gltf", ".3mf"]);
 const migrationDicomExtensions = new Set([".dcm", ".dicom", ".ima", ".dc3", ".acr"]);
@@ -103,27 +145,62 @@ const migrationWorkstationProfiles: Array<{
 }> = [
   { label: "1C/1Cv8", kind: "mis_database", pattern: /(?:^|[\\/])(?:1c|1cv8|1с)(?:[\\/]|$)|\.1cd\b|\.dt\b/i, reason: "папка или файл 1C/1Cv8" },
   { label: "Инфоклиника", kind: "mis_database", pattern: /инфоклиника|infoclinica|info\s*clinic/i, reason: "похоже на Инфоклинику" },
+  { label: "ИНФОДЕНТ/Denta Office", kind: "mis_database", pattern: /infodent|инфодент|дента\s*офис|denta\s*office/i, reason: "похоже на ИНФОДЕНТ/Denta Office" },
   { label: "Cliniccards", kind: "mis_database", pattern: /clinic\s*cards|cliniccards/i, reason: "похоже на Cliniccards" },
   { label: "Dental4Windows", kind: "mis_database", pattern: /dental\s*4\s*windows|d4w/i, reason: "похоже на Dental4Windows" },
   { label: "Dental Pro", kind: "mis_database", pattern: /dental\s*pro|dentpro/i, reason: "похоже на Dental Pro" },
+  { label: "Sycret Dent", kind: "mis_database", pattern: /sycret\s*dent|secret\s*dent|сикрет\s*дент/i, reason: "похоже на Sycret Dent" },
+  { label: "Адента Профессионал", kind: "mis_database", pattern: /адента|adenta/i, reason: "похоже на Адента" },
+  { label: "DentCRM24/Dent.CRM24", kind: "mis_database", pattern: /dent\s*crm\s*24|dentcrm24|dent\.crm24/i, reason: "похоже на DentCRM24/Dent.CRM24" },
+  { label: "Клиентикс Улыбка", kind: "mis_database", pattern: /клиентикс|clientix|klientix|ulybka|улыбка/i, reason: "похоже на Клиентикс Улыбка" },
+  { label: "2V: Стоматология", kind: "mis_database", pattern: /(?:^|[\\/])2v(?:[\\/]|$)|2v.*стоматолог|2v.*dental/i, reason: "похоже на 2V: Стоматология" },
+  { label: "Future IT Dent", kind: "mis_database", pattern: /future\s*it\s*dent|futureitdent|фьючер\s*ит\s*дент/i, reason: "похоже на Future IT Dent" },
+  { label: "32top", kind: "mis_database", pattern: /32\s*top|32top/i, reason: "похоже на 32top" },
+  { label: "MEDODS", kind: "mis_database", pattern: /medods|медодс/i, reason: "похоже на MEDODS" },
+  { label: "DentalTap", kind: "mis_database", pattern: /dental\s*tap|dentaltap/i, reason: "похоже на DentalTap" },
+  { label: "DentalSoft/Denta", kind: "mis_database", pattern: /dental\s*soft|dentasoft|(?:^|[\\/])denta(?:[\\/]|$)|дента\b/i, reason: "похоже на DentalSoft/Denta" },
+  { label: "Clinic365/Dental Cloud", kind: "mis_database", pattern: /clinic\s*365|clinic365|dental\s*cloud/i, reason: "похоже на Clinic365/Dental Cloud" },
+  { label: "MedAngel/Medialog/Arnica", kind: "mis_database", pattern: /medangel|медангел|medialog|медиалог|arnica|арника/i, reason: "похоже на медицинскую МИС с dental-картами" },
   { label: "IDENT/StomX", kind: "mis_database", pattern: /(?:^|[\\/])ident(?:[\\/]|$)|stomx|stom\s*x|стомx|стомикс/i, reason: "похоже на IDENT/StomX" },
-  { label: "Firebird/InterBase", kind: "firebird_database", pattern: /firebird|interbase|\.fdb\b|\.gdb\b|\.fbk\b/i, reason: "Firebird/InterBase база или backup" },
+  { label: "iStom", kind: "mis_database", pattern: /(?:^|[\\/])i[-\s]?stom(?:[\\/]|$)|i[-\s]?stom|ай\s*стом/i, reason: "похоже на iStom" },
+  { label: "QStoma", kind: "mis_database", pattern: /q[-\s]?stoma|кью\s*стома/i, reason: "похоже на QStoma" },
+  {
+    label: "БИТ.Стоматология",
+    kind: "mis_database",
+    pattern: /бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог/i,
+    reason: "похоже на БИТ.Стоматология"
+  },
+  { label: "MacDent", kind: "mis_database", pattern: /mac\s*dent|macdent/i, reason: "похоже на MacDent" },
+  { label: "Stombox", kind: "mis_database", pattern: /stom\s*box|stombox/i, reason: "похоже на Stombox" },
+  { label: "Firebird/InterBase", kind: "firebird_database", pattern: /firebird|interbase|\.fdb\b|\.gdb\b|\.fbk\b|\.ib\b|\.ibk\b|\.gbk\b/i, reason: "похоже на серверную базу старой программы или резервную копию" },
   { label: "Microsoft Access", kind: "access_database", pattern: /(?:^|[\\/])access(?:[\\/]|$)|\.mdb\b|\.accdb\b/i, reason: "Access MDB/ACCDB" },
-  { label: "SQL Server", kind: "sql_dump", pattern: /sql\s*server|mssql|\.mdf\b|\.ldf\b|\.bak\b/i, reason: "SQL Server data/log/backup" },
+  { label: "Open Dental/OpenDentImages", kind: "mis_database", pattern: /open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz/i, reason: "похоже на Open Dental/OpenDentImages" },
+  { label: "Dentrix/Eaglesoft/Patterson", kind: "mis_database", pattern: /dentrix|eaglesoft|patterson/i, reason: "похоже на Dentrix/Eaglesoft/Patterson" },
+  { label: "SoftDent/PracticeWorks", kind: "mis_database", pattern: /softdent|practice\s*works/i, reason: "похоже на SoftDent/PracticeWorks" },
+  { label: "Curve Dental/Denticon/tab32", kind: "mis_database", pattern: /curve\s*dental|denticon|tab32/i, reason: "похоже на Curve Dental/Denticon/tab32" },
+  { label: "Dolphin Management", kind: "mis_database", pattern: /dolphin\s*management/i, reason: "похоже на Dolphin Management" },
+  { label: "DBF/FoxPro/Clipper", kind: "mis_database", pattern: /dbf|dbase|foxpro|visual\s*foxpro|clipper|paradox|\.dbf\b|\.dbt\b|\.fpt\b|\.cdx\b|\.idx\b|\.ntx\b|\.ndx\b|\.mdx\b/i, reason: "похоже на файловую базу DBF/FoxPro/Clipper" },
+  { label: "Morita/i-Dixel", kind: "vendor_imaging_system", pattern: /morita|i[-\s]?dixel|idixel|veraview/i, reason: "похоже на программу снимков Morita/i-Dixel" },
+  { label: "NewTom/NNT/MyRay", kind: "vendor_imaging_system", pattern: /new\s*tom|newtom|\bnnt\b|myray|cefla/i, reason: "похоже на программу КЛКТ NewTom/NNT/MyRay" },
+  { label: "Owandy/QuickVision", kind: "vendor_imaging_system", pattern: /owandy|quick\s*vision|quickvision/i, reason: "похоже на программу снимков Owandy/QuickVision" },
+  { label: "DEXIS/KaVo/Gendex", kind: "vendor_imaging_system", pattern: /\bdexis\b|kavo|ka\s*vo|gendex/i, reason: "похоже на программу снимков DEXIS/KaVo/Gendex" },
+  { label: "Acteon/SOPRO/SOPIX/PSPIX/X-Mind", kind: "vendor_imaging_system", pattern: /acteon|sopro|sopix|pspix|x[-\s]?mind/i, reason: "похоже на программу снимков Acteon/SOPRO/SOPIX/PSPIX/X-Mind" },
+  { label: "SQL Server", kind: "sql_dump", pattern: /sql\s*server|mssql|\.mdf\b|\.ldf\b|\.bak\b/i, reason: "SQL Server файл данных или резервная копия" },
   { label: "SQLite", kind: "sqlite_database", pattern: /sqlite|\.sqlite3?\b|\.db\b/i, reason: "SQLite/DB файл" },
-  { label: "Sidexis/Sirona", kind: "vendor_imaging_system", pattern: /sidexis|sirona|orthophos|galileos/i, reason: "похоже на Sidexis/Sirona imaging" },
-  { label: "Romexis/Planmeca", kind: "vendor_imaging_system", pattern: /romexis|planmeca/i, reason: "похоже на Romexis/Planmeca imaging" },
-  { label: "Vatech/EzDent", kind: "vendor_imaging_system", pattern: /vatech|ezdent|ez\s*dent|ez3d/i, reason: "похоже на Vatech/EzDent imaging" },
-  { label: "Carestream/Kodak", kind: "vendor_imaging_system", pattern: /carestream|kodak/i, reason: "похоже на Carestream/Kodak imaging" },
-  { label: "OnDemand3D", kind: "vendor_imaging_system", pattern: /ondemand|on\s*demand\s*3d/i, reason: "похоже на OnDemand3D imaging" },
-  { label: "Invivo", kind: "vendor_imaging_system", pattern: /invivo/i, reason: "похоже на Invivo imaging" },
-  { label: "Cliniview", kind: "vendor_imaging_system", pattern: /cliniview|clini\s*view/i, reason: "похоже на Cliniview imaging" },
-  { label: "DBSWIN/VistaSoft", kind: "vendor_imaging_system", pattern: /dbswin|vistasoft|durr|dürr/i, reason: "похоже на DBSWIN/VistaSoft imaging" },
-  { label: "Digora/Soredex", kind: "vendor_imaging_system", pattern: /digora|soredex/i, reason: "похоже на Digora/Soredex imaging" },
-  { label: "Trophy/Visiodent", kind: "vendor_imaging_system", pattern: /trophy|visiodent/i, reason: "похоже на Trophy/Visiodent imaging" },
-  { label: "DTX Studio", kind: "vendor_imaging_system", pattern: /dtx\s*studio|nobel\s*biocare/i, reason: "похоже на DTX Studio imaging" },
+  { label: "Sidexis/Sirona", kind: "vendor_imaging_system", pattern: /sidexis|sirona|orthophos|galileos/i, reason: "похоже на программу снимков Sidexis/Sirona" },
+  { label: "Romexis/Planmeca", kind: "vendor_imaging_system", pattern: /romexis|planmeca/i, reason: "похоже на программу снимков Romexis/Planmeca" },
+  { label: "Vatech/EzDent", kind: "vendor_imaging_system", pattern: /vatech|ezdent|ez\s*dent|ez3d/i, reason: "похоже на программу снимков Vatech/EzDent" },
+  { label: "Carestream/Kodak", kind: "vendor_imaging_system", pattern: /carestream|kodak/i, reason: "похоже на программу снимков Carestream/Kodak" },
+  { label: "OnDemand3D", kind: "vendor_imaging_system", pattern: /ondemand|on\s*demand\s*3d/i, reason: "похоже на программу снимков OnDemand3D" },
+  { label: "Invivo", kind: "vendor_imaging_system", pattern: /invivo/i, reason: "похоже на программу снимков Invivo" },
+  { label: "Cliniview", kind: "vendor_imaging_system", pattern: /cliniview|clini\s*view/i, reason: "похоже на программу снимков Cliniview" },
+  { label: "DBSWIN/VistaSoft", kind: "vendor_imaging_system", pattern: /dbswin|vistasoft|durr|dürr/i, reason: "похоже на программу снимков DBSWIN/VistaSoft" },
+  { label: "Digora/Soredex", kind: "vendor_imaging_system", pattern: /digora|soredex/i, reason: "похоже на программу снимков Digora/Soredex" },
+  { label: "Trophy/Visiodent", kind: "vendor_imaging_system", pattern: /trophy|visiodent/i, reason: "похоже на программу снимков Trophy/Visiodent" },
+  { label: "Mediadent/VixWin/Sopro/Schick", kind: "vendor_imaging_system", pattern: /mediadent|vixwin|sopro|schick/i, reason: "похоже на программу RVG-снимков Mediadent/VixWin/Sopro/Schick" },
+  { label: "DTX Studio", kind: "vendor_imaging_system", pattern: /dtx\s*studio|nobel\s*biocare/i, reason: "похоже на программу снимков DTX Studio" },
   { label: "3Shape/Medit/exocad", kind: "vendor_imaging_system", pattern: /3shape|medit|exocad/i, reason: "похоже на CAD/CAM/сканер" },
-  { label: "DICOM/PACS", kind: "dicom_folder", pattern: /dicom|dicomdir|pacs|orthanc|dcm4chee|qido|wado|cbct|кт|ккт/i, reason: "DICOM/PACS/КТ признаки" },
+  { label: "КТ/архив снимков", kind: "dicom_folder", pattern: /dicom|dicomdir|pacs|orthanc|dcm4chee|qido|wado|cbct|кт|ккт/i, reason: "признаки КТ/архива снимков" },
   { label: "RVG/OPG/XRay", kind: "xray_image_archive", pattern: /rvg|opg|оптг|xray|x-ray|рентген|снимк|радиовизиограф/i, reason: "похоже на архив RVG/ОПТГ/рентгена" }
 ];
 
@@ -138,71 +215,145 @@ const migrationVendorGuidanceCatalog: Array<{
     label: "Romexis/Planmeca",
     pattern: /romexis|planmeca/i,
     requiredArtifacts: [
-      "Romexis/Planmeca: открыть штатный export DICOM/DICOMDIR для КТ/ОПТГ и CSV/XML списка исследований, если доступен",
-      "Romexis/Planmeca: найти data/storage path через настройки программы или администратора, не по пациентским именам"
+      "Romexis/Planmeca: открыть штатную выгрузку КТ/ОПТГ и табличный список исследований, если доступен",
+      "Romexis/Planmeca: найти папку хранения через настройки программы или администратора, не по пациентским именам"
     ],
-    recommendedRoute: "Для Romexis/Planmeca сначала просить DICOMDIR/export, затем строить metadata preview; внутреннюю БД трогать только через read-only bridge.",
-    nextAction: "Открыть Romexis/Planmeca, сделать DICOMDIR export контрольного пациента и проверить manifest в CRM."
+    recommendedRoute: "Для Romexis/Planmeca сначала просить штатную выгрузку снимков, затем строить предпросмотр метаданных; внутреннюю базу трогать только через локальный модуль только для чтения.",
+    nextAction: "Открыть Romexis/Planmeca, сделать выгрузку снимков контрольного пациента и проверить список в CRM."
   },
   {
     label: "Sidexis/Sirona",
     pattern: /sidexis|sirona|orthophos|galileos/i,
     requiredArtifacts: [
-      "Sidexis/Sirona: штатный DICOM export или DICOMDIR, плюс список пациентов/исследований из программы",
+      "Sidexis/Sirona: штатная выгрузка снимков или папка исследования, плюс список пациентов/исследований из программы",
       "Sidexis/Sirona: путь к хранилищу искать через настройки/служебную учетку, не переносить файлы вслепую"
     ],
-    recommendedRoute: "Для Sidexis/Sirona предпочтителен DICOM export; прямой разбор storage только read-only и только до preview.",
-    nextAction: "Сделать Sidexis/Sirona DICOM export, затем прогнать DICOM workup и сверку 10 карт."
+    recommendedRoute: "Для Sidexis/Sirona предпочтительна штатная выгрузка снимков; прямой разбор хранилища только для чтения и только до предпросмотра.",
+    nextAction: "Сделать Sidexis/Sirona выгрузку снимков, затем прогнать проверку снимков и сверку 10 карт."
   },
   {
     label: "Vatech/EzDent",
     pattern: /vatech|ezdent|ez\s*dent|ez3d/i,
     requiredArtifacts: [
-      "Vatech/EzDent: DICOM/DICOMDIR export из EzDent/Ez3D или папка хранения снимков с manifest",
+      "Vatech/EzDent: выгрузка снимков из EzDent/Ez3D или папка хранения снимков со списком",
       "Vatech/EzDent: отдельно выгрузить patient/study list, если программа умеет экспорт таблицы"
     ],
-    recommendedRoute: "Для Vatech/EzDent строить imaging manifest из DICOM/export, patient matching только через preview.",
-    nextAction: "В EzDent/Ez3D экспортировать DICOMDIR и проверить, что Study/Series metadata читается без пиксельного импорта."
+    recommendedRoute: "Для Vatech/EzDent строить список снимков из штатной выгрузки, сопоставление пациента только через предпросмотр.",
+    nextAction: "В EzDent/Ez3D экспортировать папку исследования и проверить, что исследование/серии читаются без загрузки тяжелых данных."
   },
   {
     label: "Carestream/Kodak",
     pattern: /carestream|kodak/i,
     requiredArtifacts: [
-      "Carestream/Kodak: DICOM export или vendor archive export, плюс список исследований",
-      "Carestream/Kodak: если export закрыт, нужен read-only bridge к storage, без записи в старую систему"
+      "Carestream/Kodak: выгрузка снимков или архивная выгрузка программы, плюс список исследований",
+      "Carestream/Kodak: если штатная выгрузка закрыта, нужен локальный модуль только для чтения к хранилищу, без записи в старую систему"
     ],
-    recommendedRoute: "Для Carestream/Kodak сначала vendor export, затем DICOM/image manifest preview.",
-    nextAction: "Снять один контрольный Carestream/Kodak export и открыть план DICOM/imaging workup."
+    recommendedRoute: "Для Carestream/Kodak сначала штатная выгрузка программы, затем предпросмотр списка снимков.",
+    nextAction: "Снять одну контрольную Carestream/Kodak выгрузку и открыть план проверки снимков."
+  },
+  {
+    label: "Morita/i-Dixel",
+    pattern: /morita|i[-\s]?dixel|idixel|veraview/i,
+    requiredArtifacts: [
+      "Morita/i-Dixel: штатная выгрузка для КТ/ОПТГ/RVG или копия папки хранения только для чтения",
+      "Morita/i-Dixel: список исследований экспортировать отдельно, если программа умеет табличную выгрузку; пути и снимки не отправлять в публичный поиск"
+    ],
+    recommendedRoute: "Для Morita/i-Dixel сначала использовать штатную выгрузку снимков, затем предпросмотр метаданных и ручную сверку пациента; прямой разбор хранилища только для чтения.",
+    nextAction: "Открыть i-Dixel/Morita, снять выгрузку контрольного исследования и прогнать проверку снимков."
+  },
+  {
+    label: "NewTom/NNT/MyRay",
+    pattern: /new\s*tom|newtom|\bnnt\b|myray|cefla/i,
+    requiredArtifacts: [
+      "NewTom/NNT/MyRay: выгрузка КЛКТ или архивная выгрузка программы со списком",
+      "NewTom/NNT/MyRay: если найден только установленный клиент, нужна выгрузка или папка данных, а не импорт ярлыка"
+    ],
+    recommendedRoute: "Для NewTom/NNT/MyRay вести миграцию через штатную выгрузку снимков; локальные пути хранения использовать только как подсказку для администратора.",
+    nextAction: "Сделать выгрузку снимков из NNT/NewTom/MyRay и проверить метаданные исследования/серии в CRM."
+  },
+  {
+    label: "Owandy/QuickVision",
+    pattern: /owandy|quick\s*vision|quickvision/i,
+    requiredArtifacts: [
+      "Owandy/QuickVision: выгрузка снимков или папка снимков с локальным списком",
+      "Owandy/QuickVision: RVG/OPG файлы сверять через предпросмотр до привязки к карте"
+    ],
+    recommendedRoute: "Для Owandy/QuickVision сначала искать штатную выгрузку и только потом локальную проверку папки только для чтения.",
+    nextAction: "Открыть QuickVision/Owandy, выгрузить пакет снимков/RVG и запустить проверку источника снимков."
+  },
+  {
+    label: "DEXIS/KaVo/Gendex",
+    pattern: /\bdexis\b|kavo|ka\s*vo|gendex/i,
+    requiredArtifacts: [
+      "DEXIS/KaVo/Gendex: штатная выгрузка снимков или папка хранения снимков только для чтения",
+      "DEXIS/KaVo/Gendex: список исследований/пациентов экспортировать отдельно, если программа дает табличную выгрузку"
+    ],
+    recommendedRoute:
+      "Для DEXIS/KaVo/Gendex сначала искать официальную выгрузку снимков; прямое чтение хранения использовать только для чтения и только для предпросмотра метаданных.",
+    nextAction: "Открыть DEXIS/KaVo/Gendex, снять выгрузку контрольного исследования и проверить снимки."
+  },
+  {
+    label: "Acteon/SOPRO/SOPIX/PSPIX/X-Mind",
+    pattern: /acteon|sopro|sopix|pspix|x[-\s]?mind/i,
+    requiredArtifacts: [
+      "Acteon/SOPRO/SOPIX/PSPIX/X-Mind: выгрузка снимков или папка снимков программы со списком",
+      "Acteon/SOPRO/SOPIX/PSPIX/X-Mind: RVG/OPG привязки проверять через предпросмотр снимков, не автоматической записью"
+    ],
+    recommendedRoute:
+      "Для Acteon/SOPRO/SOPIX/PSPIX/X-Mind строить список снимков, затем ручную сверку спорных совпадений пациента.",
+    nextAction: "Снять выгрузку снимков из Acteon/SOPRO/SOPIX/PSPIX и открыть предпросмотр проверки снимков."
+  },
+  {
+    label: "Open Dental/Dentrix/Eaglesoft",
+    pattern: /open\s*dental|opendental|dentrix|eaglesoft|patterson/i,
+    requiredArtifacts: [
+      "Open Dental/Dentrix/Eaglesoft: штатная выгрузка пациентов, визитов, услуг, оплат и расписания",
+      "Open Dental/Dentrix/Eaglesoft: если доступна только база, нужна отдельная копия или резервная копия и локальный разбор с контрольными итогами до предпросмотра"
+    ],
+    recommendedRoute: "Для Open Dental/Dentrix/Eaglesoft сначала использовать штатную выгрузку, затем локальный разбор копии базы; прямая запись из старой базы запрещена.",
+    nextAction: "Найти выгрузку или резервную копию Open Dental/Dentrix/Eaglesoft и прогнать черновой предпросмотр с контрольными итогами."
   },
   {
     label: "1C/1Cv8",
     pattern: /(?:^|[\\/])(?:1c|1cv8|1с)(?:[\\/]|$)|\.1cd\b|\.dt\b/i,
     requiredArtifacts: [
       "1C/1Cv8: штатная выгрузка `.dt` или копия `.1cd`, снятая при закрытой базе или через администратора",
-      "1C/1Cv8: желательно получить CSV/Excel выгрузки пациентов, услуг, оплат и визитов из интерфейса"
+      "1C/1Cv8: желательно получить табличные выгрузки пациентов, услуг, оплат и визитов из интерфейса"
     ],
-    recommendedRoute: "Для 1C сначала штатный export/backup, затем локальный bridge в CSV manifest; прямой commit из `.1cd` запрещен.",
-    nextAction: "Попросить администратора 1C снять `.dt`/CSV выгрузки и прогнать staging preview."
+    recommendedRoute: "Для 1C сначала штатная выгрузка или резервная копия, затем локальный модуль формирует табличный список; прямая запись из `.1cd` запрещена.",
+    nextAction: "Попросить администратора 1C снять `.dt` или табличные выгрузки и прогнать черновой предпросмотр."
   },
   {
     label: "Firebird/InterBase",
-    pattern: /firebird|interbase|\.fdb\b|\.gdb\b|\.fbk\b/i,
+    pattern: /firebird|interbase|\.fdb\b|\.gdb\b|\.fbk\b|\.ib\b|\.ibk\b|\.gbk\b/i,
     requiredArtifacts: [
-      "Firebird/InterBase: `.fbk` backup предпочтительнее живого `.fdb/.gdb`",
-      "Firebird/InterBase: нужны read-only credentials или offline copy, чтобы bridge не трогал рабочую МИС"
+      "Firebird/InterBase: `.fbk/.ibk/.gbk` резервная копия предпочтительнее рабочей `.fdb/.gdb/.ib`",
+      "Firebird/InterBase: нужны доступ только для чтения или отдельная копия, чтобы разбор не трогал рабочую МИС"
     ],
-    recommendedRoute: "Для Firebird/InterBase использовать offline backup/copy и bridge в CSV manifest с контрольными totals.",
-    nextAction: "Снять `.fbk` или копию базы, затем открыть DB staging bridge и preview."
+    recommendedRoute: "Для Firebird/InterBase использовать отдельную резервную копию или копию базы, затем локальный модуль собирает табличный список с контрольными итогами.",
+    nextAction: "Снять `.fbk/.ibk/.gbk` или копию базы, затем открыть локальный разбор базы и предпросмотр."
   },
   {
-    label: "Инфоклиника/Cliniccards/Dental4Windows/Dental Pro/IDENT",
-    pattern: /инфоклиника|infoclinica|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental\s*pro|dentpro|(?:^|[\\/])ident(?:[\\/]|$)|stomx|stom\s*x|стомx|стомикс/i,
+    label: "DBF/FoxPro/Clipper",
+    pattern: /dbf|dbase|foxpro|visual\s*foxpro|clipper|paradox|\.dbf\b|\.dbt\b|\.fpt\b|\.cdx\b|\.idx\b|\.ntx\b|\.ndx\b|\.mdx\b/i,
     requiredArtifacts: [
-      "Старая МИС: сначала искать штатный export пациентов/визитов/оплат/услуг в CSV/XLSX/XML",
-      "Старая МИС: если export неполный, нужен offline DB backup и локальный bridge, не прямой commit"
+      "DBF/FoxPro/Clipper: копировать всю папку данных, не один `.dbf`; соседние memo/index файлы `.dbt/.fpt/.cdx/.idx/.ntx/.ndx/.mdx` должны идти вместе с таблицами",
+      "DBF/FoxPro/Clipper: зафиксировать OEM/Windows-кодировку и выгрузить пациентов, визиты, услуги, оплаты и ссылки на снимки через локальный модуль только для чтения"
     ],
-    recommendedRoute: "Для старой МИС сначала штатные табличные выгрузки, потом DB bridge только на копии.",
-    nextAction: "Открыть старую МИС, найти export/backup, затем прогнать smart import preview на первых строках."
+    recommendedRoute:
+      "Для DBF/FoxPro/Clipper использовать отдельную копию всей папки, затем локальный разбор в табличный черновик с контрольными итогами; не писать обратно в старые таблицы.",
+    nextAction: "Выбрать всю папку данных DBF/FoxPro, запустить проверку источника и построить предпросмотр импорта из чернового списка."
+  },
+  {
+    label: "Инфоклиника/ИНФОДЕНТ/Denta Office/Cliniccards/Dental4Windows/Dental Pro/DentalSoft/Clinic365/Dental Cloud/MedAngel/Medialog/Arnica/Sycret Dent/Адента/DentCRM24/Клиентикс/2V/Future IT Dent/32top/MEDODS/DentalTap/IDENT/iStom/QStoma/БИТ.Стоматология/MacDent/Stombox",
+    pattern:
+      /инфоклиника|infoclinica|infodent|инфодент|дента\s*офис|denta\s*office|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental\s*pro|dentpro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|medangel|медангел|medialog|медиалог|arnica|арника|sycret\s*dent|secret\s*dent|адента|adenta|dent\s*crm\s*24|dentcrm24|dent\.crm24|клиентикс|clientix|klientix|2v.*(?:стоматолог|dental)|future\s*it\s*dent|futureitdent|32\s*top|32top|medods|медодс|dental\s*tap|dentaltap|(?:^|[\\/])ident(?:[\\/]|$)|stomx|stom\s*x|стомx|стомикс|i[-\s]?stom|ай\s*стом|q[-\s]?stoma|кью\s*стома|бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог|mac\s*dent|macdent|stom\s*box|stombox/i,
+    requiredArtifacts: [
+      "Старая МИС: сначала искать штатную табличную выгрузку пациентов, визитов, оплат и услуг",
+      "Старая МИС: если выгрузка неполная, нужна отдельная резервная копия базы и локальный модуль, не прямая запись"
+    ],
+    recommendedRoute: "Для старой МИС сначала штатные табличные выгрузки, потом локальный разбор только на копии.",
+    nextAction: "Открыть старую МИС, найти выгрузку или резервную копию, затем прогнать предпросмотр импорта на первых строках."
   }
 ];
 
@@ -262,20 +413,26 @@ function classifyLine(line: string, lineNumber: number, mode: SmartImportMode): 
 
   const hasImagePath = imagePathPattern.test(text);
   const hasImagingKeyword = imagingKeywordPattern.test(text);
-  const hasLegacySourceKeyword = legacySourceKeywordPattern.test(text);
+  const hasLegacyMisName = legacyMisTextPattern.test(text);
+  const hasLegacySourceKeyword = legacySourceKeywordPattern.test(text) || legacySourceSupplementalKeywordPattern.test(text) || hasLegacyMisName;
   const hasLegacyDatabasePath = legacyDatabasePathPattern.test(text);
   const hasImagingSourceFolder = imagingSourceFolderPattern.test(text);
-  const hasImagingVendor = imagingVendorPattern.test(text);
+  const hasImagingVendor = imagingVendorPattern.test(text) || imagingVendorSupplementalPattern.test(text);
+  const hasSmartPreviewSourceRef = /\b(?:browser-local|smart-preview|workstation-profile|workstation-signal|migration-source):[a-f0-9]{8,12}\b/i.test(text);
+  const hasClinicLegalEntity = /\b(?:ООО|ОАО|ПАО|АО|ИП)\b/i.test(text);
+  const hasClinicLicenseKeyword = /лиценз|license/i.test(text);
+  const hasImagingPathForScoring =
+    hasImagePath && !(hasClinicLicenseKeyword && !/\.(?:dcm|dicom|ima|dc3|acr|jpg|jpeg|png|tif|tiff|bmp|webp)\b/i.test(text));
 
-  if (hasImagePath) {
+  if (hasImagingPathForScoring) {
     imagingScore += 0.48;
     reasons.push("найден путь к файлу снимка");
   }
   if (hasImagingKeyword) {
     imagingScore += 0.34;
-    reasons.push("найдены RVG/ОПТГ/КТ/DICOM признаки");
+    reasons.push("найдены RVG/ОПТГ/КТ признаки");
   }
-  if ((hasImagePath || hasImagingKeyword) && /\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/.test(text)) {
+  if ((hasImagingPathForScoring || hasImagingKeyword) && /\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/.test(text)) {
     imagingScore += 0.1;
     reasons.push("найден FDI номер зуба");
   }
@@ -304,9 +461,13 @@ function classifyLine(line: string, lineNumber: number, mode: SmartImportMode): 
     clinicScore += 0.16;
     reasons.push("найден адрес клиники");
   }
-  if (/лиценз|license/i.test(text)) {
-    clinicScore += 0.2;
+  if (hasClinicLicenseKeyword) {
+    clinicScore += 0.5;
     reasons.push("найдена лицензия клиники");
+  }
+  if (hasClinicLegalEntity && hasRequisites(text)) {
+    clinicScore += 0.3;
+    reasons.push("найдена строка юрлица с реквизитами");
   }
   if (/клиник|стоматолог|dental|dent|clinic/i.test(text) && hasLikelyName(text)) {
     clinicScore += 0.08;
@@ -326,29 +487,37 @@ function classifyLine(line: string, lineNumber: number, mode: SmartImportMode): 
   }
   if (hasLegacySourceKeyword) {
     legacySourceScore += 0.32;
-    reasons.push("найдены признаки старой МИС/БД/PACS или выгрузки");
+    reasons.push("найдены признаки старой МИС, базы, архива снимков или выгрузки");
+  }
+  if (hasLegacyMisName) {
+    legacySourceScore += 0.24;
+    reasons.push("найдено название старой стоматологической МИС");
+  }
+  if (hasSmartPreviewSourceRef) {
+    legacySourceScore += 0.46;
+    reasons.push("найден источник из автоплана предпросмотра");
   }
   if (hasImagingSourceFolder) {
     legacySourceScore += 0.48;
-    reasons.push("найден источник архива снимков или DICOM-папка");
+    reasons.push("найден источник архива снимков или папка КТ");
   }
   if (hasImagingVendor) {
     legacySourceScore += 0.18;
-    reasons.push("найдена vendor-система снимков");
+    reasons.push("найдена старая программа снимков");
   }
   if (hasImagingSourceFolder && hasImagingVendor) {
     legacySourceScore += 0.18;
-    reasons.push("vendor-система указана как папка/экспорт, а не одиночный снимок");
+    reasons.push("старая программа снимков указана как папка или выгрузка, а не одиночный снимок");
   }
   if (/pacs|orthanc|dcm4chee|dicomweb|qido|wado|пакс/i.test(text) && !/\.(?:dcm|dicom|ima)\b/i.test(text)) {
     legacySourceScore += 0.44;
-    reasons.push("найден PACS/DICOMweb источник без конкретного файла снимка");
+    reasons.push("найден источник архива снимков без конкретного файла снимка");
   }
-  if (/\.fdb|\.gdb|\.mdb|\.accdb|\.sqlite|\.sqlite3|\.dbf|\.bak|\.sql|\.dump/i.test(text)) {
+  if (/\.fdb|\.gdb|\.fbk|\.ib\b|\.ibk\b|\.gbk\b|\.mdb|\.accdb|\.sqlite|\.sqlite3|\.dbf|\.dbt|\.fpt|\.cdx|\.idx|\.ntx|\.ndx|\.mdx|\.bak|\.sql|\.dump|foxpro|clipper|paradox/i.test(text)) {
     legacySourceScore += 0.2;
-    reasons.push("найден формат старой базы или SQL-бэкапа");
+    reasons.push("найден формат старой базы или резервной копии");
   }
-  if (/\.csv|\.tsv|\.xls|\.xlsx|выгруз|экспорт/i.test(text) && /(пациент|patient|клиент|visit|визит|payment|оплат|услуг|service)/i.test(text)) {
+  if (/\.csv|\.tsv|\.xls|\.xlsx|\.xlsm|\.xlsb|выгруз|экспорт/i.test(text) && /(пациент|patient|клиент|visit|визит|payment|оплат|услуг|service)/i.test(text)) {
     legacySourceScore += 0.12;
     reasons.push("строка похожа на экспорт таблиц старой системы");
   }
@@ -360,7 +529,7 @@ function classifyLine(line: string, lineNumber: number, mode: SmartImportMode): 
     return { lineNumber, kind: "imaging", confidence: clampConfidence(Math.max(imagingScore, 0.65)), reason: "Режим: только снимки", text };
   }
 
-  if (clinicScore >= 0.42 && clinicScore >= imagingScore && clinicScore >= patientScore * 0.9) {
+  if (clinicScore >= 0.42 && clinicScore >= imagingScore && clinicScore >= patientScore * 0.9 && !(legacySourceScore >= 0.42 && legacySourceScore > clinicScore)) {
     return {
       lineNumber,
       kind: "clinic",
@@ -370,7 +539,7 @@ function classifyLine(line: string, lineNumber: number, mode: SmartImportMode): 
     };
   }
 
-  if (legacySourceScore >= 0.42 && legacySourceScore >= imagingScore * 0.85 && legacySourceScore >= patientScore) {
+  if (legacySourceScore >= 0.42 && (hasSmartPreviewSourceRef || (legacySourceScore >= imagingScore * 0.85 && legacySourceScore >= patientScore))) {
     return {
       lineNumber,
       kind: "legacy_source",
@@ -410,6 +579,15 @@ function cleanExtractedValue(value: string) {
     .trim();
 }
 
+function stripClinicFieldTail(value: string) {
+  return cleanExtractedValue(
+    value.replace(
+      /(?:^|[\s;|,])(?:инн|inn|кпп|kpp|огрн|ogrn|адрес|address|местонахождение|тел(?:ефон)?|phone|mobile|email|e-mail|почта|сайт|website|www\.|https?:\/\/|лиценз[^\s:=-]*|license|пациент|patient|клиент|client|фио|full\s*name|дата рождения|д\.р\.|dob|birth)(?=$|[\s:;|,=№#.-]).*$/i,
+      ""
+    )
+  );
+}
+
 function firstMatch(value: string, pattern: RegExp) {
   const match = value.match(pattern);
   return cleanExtractedValue(match?.[1] ?? "");
@@ -437,8 +615,8 @@ function extractWebsite(value: string) {
 }
 
 function extractClinicName(value: string) {
-  const legal = value.match(/\b(?:ООО|ОАО|ПАО|АО)\s+["«]?[A-Za-zА-Яа-яЁё0-9 ._-]+["»]?|\bИП\s+[A-Za-zА-Яа-яЁё -]+/i)?.[0];
-  if (legal) return cleanExtractedValue(legal);
+  const legal = value.match(/(?:^|[\s;|,])((?:ООО|ОАО|ПАО|АО)\s+["«]?[A-Za-zА-Яа-яЁё0-9 ._-]+["»]?|ИП\s+[A-Za-zА-Яа-яЁё -]+)/i)?.[1];
+  if (legal) return stripClinicFieldTail(legal);
   if (!/клиник|стоматолог|dental|dent|clinic/i.test(value)) return null;
   const withoutLabels = value
     .replace(/(?:название|клиника|clinic name|name)\s*[:=-]/i, " ")
@@ -453,7 +631,7 @@ function extractAddress(value: string) {
   return (
     cleanExtractedValue(
       raw.replace(
-        /\b(?:инн|inn|кпп|kpp|огрн|ogrn|тел|phone|mobile|email|e-mail|сайт|website|пациент|patient|клиент|client|фио|full\s*name|дата рождения|dob|birth)\b.*$/i,
+        /(?:^|[\s;|,])(?:инн|inn|кпп|kpp|огрн|ogrn|тел(?:ефон)?|phone|mobile|email|e-mail|почта|сайт|website|пациент|patient|клиент|client|фио|full\s*name|дата рождения|dob|birth)(?=$|[\s:;|,=№#.-]).*$/i,
         ""
       )
     ) || null
@@ -517,14 +695,16 @@ function buildClinicProfileSuggestion(lines: SmartImportLineClassification[]): S
     addClinicField(fields, warnings, "medicalLicenseNumber", licenseNumber, line.lineNumber);
     addClinicField(fields, warnings, "medicalLicenseIssuedAt", licenseDate, line.lineNumber);
     if (clinicName) {
-      const key = /^(?:ООО|ОАО|ПАО|АО|ИП)\b/i.test(clinicName) ? "legalName" : "clinicName";
+      const key = /^(?:ООО|ОАО|ПАО|АО|ИП)(?:\s|$)/i.test(clinicName) ? "legalName" : "clinicName";
       addClinicField(fields, warnings, key, clinicName, line.lineNumber);
     }
     if (/банк|бик|р\/с|расчетн|корр/i.test(text)) {
       bankLines.push(cleanExtractedValue(text));
     }
     if (/кем выдан|выдан[ао]?|issuer/i.test(text)) {
-      const issuer = text.replace(/.*(?:кем выдан[ао]?|выдан[ао]?|issuer)\s*[:=-]?\s*/i, "");
+      const issuer = text
+        .replace(/.*(?:кем выдан[ао]?|выдан[ао]?|issuer)\s*[:=-]?\s*/i, "")
+        .replace(/^\d{1,2}[./-]\d{1,2}[./-]\d{4}\s*/i, "");
       addClinicField(fields, warnings, "medicalLicenseIssuer", issuer, line.lineNumber);
     }
   });
@@ -554,20 +734,23 @@ function publicLookupSafeQuery(value: string) {
     return digits;
   }
   return value
-    .replace(/\b(?:пациент|patient|клиент|client|фио|full\s*name|дата рождения|д\.р\.|dob|birth)\b.*$/i, " ")
-    .replace(/\b(?:инн|inn|кпп|kpp|огрн|ogrn)\b\s*\d[\d\s-]{7,17}\d/gi, " ")
+    .replace(
+      /(?:^|[\s;|,])(?:пациент|patient|клиент|client|фио|full\s*name|дата рождения|д\.р\.|dob|birth)(?=$|[\s:;|,=№#.-]).*$/i,
+      " "
+    )
+    .replace(/(?:^|[\s;|,])(?:инн|inn|кпп|kpp|огрн|ogrn)(?=$|[\s:;|,=№#.-])\s*\d[\d\s-]{7,17}\d/gi, " ")
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, " ")
     .replace(/(?:\+7|7|8)?[\s(.-]*\d{3}[\s). -]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}/g, " ")
     .replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/g, " ")
     .replace(
-      /(?:[A-Za-zА-Яа-яЁё]:[\\/][^\s;|,]+|\\\\[^\s;|,]+|\/[^\s;|,]+|\b[^\s;|,]+\.(?:dcm|dicom|ima|jpg|jpeg|png|tif|tiff|bmp|webp|fdb|gdb|mdb|accdb|db|sqlite|sqlite3|dbf|bak|sql|dump|backup|zip|7z|rar)\b)/gi,
+      /(?:[A-Za-zА-Яа-яЁё]:[\\/][^\s;|,]+|\\\\[^\s;|,]+|\/[^\s;|,]+|\b[^\s;|,]+\.(?:dcm|dicom|ima|jpg|jpeg|png|tif|tiff|bmp|webp|fdb|gdb|mdb|accdb|db|sqlite|sqlite3|dbf|dbt|fpt|cdx|idx|ntx|ndx|mdx|bak|sql|dump|backup|zip|7z|rar)\b)/gi,
       " "
     )
     .replace(
-      /\b(?:studyinstanceuid|seriesinstanceuid|sopinstanceuid|dicomdir|dicomweb|pacs|orthanc|dcm4chee|qido|wado|rvg|cbct|кт|ккт)\b[^\s;|,]*/gi,
+      /(?:^|[^\p{L}\p{N}])(?:studyinstanceuid|seriesinstanceuid|sopinstanceuid|dicomdir|dicomweb|pacs|orthanc|dcm4chee|qido|qido-rs|wado|wado-rs|rvg|opg|cbct|xray|x-ray|кт|ккт|клкт|оптг|трг|рентген[а-яё]*|сним(?:ок|ки|к[а-яё]*)|исследовани[а-яё]*|серия|study|series)(?=$|[^\p{L}\p{N}])(?:[^\s;|,]*)?/giu,
       " "
     )
-    .replace(/[;|,\t]+/g, " ")
+    .replace(/[;|\t]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 180)
@@ -577,6 +760,15 @@ function publicLookupSafeQuery(value: string) {
 function publicLookupDigits(value: string | null | undefined, allowedLengths: number[]) {
   const digits = value?.replace(/\D/g, "") ?? "";
   return allowedLengths.includes(digits.length) ? digits : "";
+}
+
+function publicLookupLabeledDigits(values: Array<string | null | undefined>, labelPattern: RegExp, allowedLengths: number[]) {
+  for (const value of values) {
+    if (!value) continue;
+    const digits = firstValidDigits(value, labelPattern, allowedLengths);
+    if (digits) return digits;
+  }
+  return "";
 }
 
 function buildClinicSuggestionFromFields(fields: UpdateClinicProfileInput): SmartImportClinicProfileSuggestion | null {
@@ -590,6 +782,32 @@ function buildClinicSuggestionFromFields(fields: UpdateClinicProfileInput): Smar
     sourceLineNumbers: [1],
     warnings: []
   };
+}
+
+function buildManualClinicPublicLookupSuggestion(fields: UpdateClinicProfileInput): ClinicPublicLookupSuggestion | null {
+  const suggestion = buildClinicSuggestionFromFields(fields);
+  if (!suggestion) return null;
+  return {
+    source: "manual_public_targets",
+    confidence: Math.min(0.74, suggestion.confidence),
+    fields: suggestion.fields,
+    warnings: [
+      "Это очищенные реквизиты из введенных данных клиники. Перед сохранением сверить с ФНС, лицензией или документами клиники.",
+      ...suggestion.warnings
+    ].slice(0, 4)
+  };
+}
+
+function uniqueClinicPublicLookupSuggestions(suggestions: ClinicPublicLookupSuggestion[]) {
+  const seen = new Set<string>();
+  const result: ClinicPublicLookupSuggestion[] = [];
+  for (const suggestion of suggestions) {
+    const key = JSON.stringify(Object.entries(suggestion.fields).sort(([left], [right]) => left.localeCompare(right)));
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(suggestion);
+  }
+  return result.slice(0, 5);
 }
 
 function addPublicLookupTarget(
@@ -615,8 +833,8 @@ function buildPublicLookupTargets(
       rawClinicLines.find((line) => line.length >= 3 && clinicKeywordPattern.test(line))
     : "";
   const query = clinicQuery || fallbackQuery || "";
-  const inn = fields.inn?.trim();
-  const licenseQuery = fields.medicalLicenseNumber?.trim() || inn || query;
+  const registryQuery = fields.inn?.trim() || fields.ogrn?.trim() || "";
+  const licenseQuery = fields.medicalLicenseNumber?.trim() || registryQuery || query;
   const targets: SmartImportPublicLookupTarget[] = [];
 
   if (query) {
@@ -633,7 +851,7 @@ function buildPublicLookupTargets(
       title: "Яндекс.Карты: карточка клиники",
       query,
       url: `https://yandex.ru/maps/?text=${encoded(query)}`,
-      privacy: "Только название и адрес клиники; пациентские данные и DICOM не вставлять.",
+      privacy: "Только название и адрес клиники; пациентские данные и снимки не вставлять.",
       nextAction: "Проверить карточку, часы, телефон, сайт и совпадение адреса."
     });
     addPublicLookupTarget(targets, {
@@ -661,21 +879,21 @@ function buildPublicLookupTargets(
       nextAction: "Сверить сайт, бренд, телефон и адрес с карточками на картах."
     });
   }
-  if (inn) {
+  if (registryQuery) {
     addPublicLookupTarget(targets, {
       kind: "company_registry",
-      title: "ФНС ЕГРЮЛ/ЕГРИП: юрлицо по ИНН",
-      query: inn,
+      title: "ФНС ЕГРЮЛ/ЕГРИП: юрлицо по ИНН или ОГРН",
+      query: registryQuery,
       url: "https://egrul.nalog.ru/index.html",
       privacy: "Проверять только ИНН/ОГРН/юрлицо; без пациентских выгрузок.",
-      nextAction: "Вставить ИНН в официальный поиск ФНС и сверить наименование, ОГРН, КПП и юридический адрес."
+      nextAction: "Вставить ИНН или ОГРН в официальный поиск ФНС и сверить наименование, ОГРН, КПП и юридический адрес."
     });
     addPublicLookupTarget(targets, {
       kind: "company_registry",
-      title: "Rusprofile: быстрый дубль по ИНН",
-      query: inn,
-      url: `https://www.rusprofile.ru/search?query=${encoded(inn)}`,
-      privacy: "Проверять только ИНН/юрлицо; без пациентских выгрузок.",
+      title: "Rusprofile: быстрый дубль по ИНН или ОГРН",
+      query: registryQuery,
+      url: `https://www.rusprofile.ru/search?query=${encoded(registryQuery)}`,
+      privacy: "Проверять только ИНН/ОГРН/юрлицо; без пациентских выгрузок.",
       nextAction: "Сверить наименование, ОГРН, КПП и юридический адрес."
     });
   }
@@ -696,19 +914,37 @@ function dadataToken() {
   return process.env.DENTAL_DADATA_API_KEY?.trim() || process.env.DADATA_API_KEY?.trim() || "";
 }
 
-function mapDadataPartySuggestion(item: any): ClinicPublicLookupSuggestion | null {
-  const data = item?.data ?? {};
+type DadataObject = Record<string, unknown>;
+
+function dadataObject(value: unknown): DadataObject | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as DadataObject) : null;
+}
+
+function dadataString(source: DadataObject | null, key: string): string {
+  const value = source?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function dadataNestedObject(source: DadataObject | null, key: string): DadataObject | null {
+  return dadataObject(source?.[key]);
+}
+
+function mapDadataPartySuggestion(item: unknown): ClinicPublicLookupSuggestion | null {
+  const suggestion = dadataObject(item);
+  const data = dadataNestedObject(suggestion, "data");
+  const name = dadataNestedObject(data, "name");
+  const addressData = dadataNestedObject(data, "address");
   const fields: UpdateClinicProfileInput = {};
-  const inn = publicLookupDigits(data.inn, [10, 12]);
-  const kpp = publicLookupDigits(data.kpp, [9]);
-  const ogrn = publicLookupDigits(data.ogrn, [13, 15]);
+  const inn = publicLookupDigits(dadataString(data, "inn"), [10, 12]);
+  const kpp = publicLookupDigits(dadataString(data, "kpp"), [9]);
+  const ogrn = publicLookupDigits(dadataString(data, "ogrn"), [13, 15]);
   if (inn) fields.inn = inn;
   if (kpp) fields.kpp = kpp;
   if (ogrn) fields.ogrn = ogrn;
-  const legalName = data.name?.short_with_opf || data.name?.full_with_opf || item?.value || "";
-  if (typeof legalName === "string" && legalName.trim()) fields.legalName = cleanExtractedValue(legalName);
-  const address = data.address?.unrestricted_value || data.address?.value || "";
-  if (typeof address === "string" && address.trim()) fields.address = cleanExtractedValue(address);
+  const legalName = dadataString(name, "short_with_opf") || dadataString(name, "full_with_opf") || dadataString(suggestion, "value");
+  if (legalName.trim()) fields.legalName = cleanExtractedValue(legalName);
+  const address = dadataString(addressData, "unrestricted_value") || dadataString(addressData, "value");
+  if (address.trim()) fields.address = cleanExtractedValue(address);
   if (!Object.keys(fields).length) return null;
   return {
     source: "dadata",
@@ -729,11 +965,11 @@ async function fetchDadataClinicSuggestions(input: ClinicPublicLookupRequest, sa
     return {
       status: "not_configured",
       suggestions: [],
-      warnings: ["DENTAL_DADATA_API_KEY/DADATA_API_KEY не задан: API-добор реквизитов выключен, доступны только безопасные публичные ссылки."]
+      warnings: ["Ключ сервиса реквизитов для серверного поиска не настроен; доступны безопасные публичные ссылки для ручной сверки."]
     };
   }
 
-  const exactQuery = publicLookupDigits(input.inn, [10, 12]) || publicLookupDigits(input.ogrn, [13, 15]);
+  const exactQuery = publicLookupDigits(input.inn, [10, 12]) || publicLookupDigits(input.ogrn, [13, 15]) || publicLookupDigits(safeQuery, [10, 12, 13, 15]);
   const endpoint = exactQuery
     ? "https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party"
     : "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party";
@@ -753,64 +989,208 @@ async function fetchDadataClinicSuggestions(input: ClinicPublicLookupRequest, sa
       return {
         status: "error",
         suggestions: [],
-        warnings: [`DaData lookup returned HTTP ${response.status}; реквизиты не подставлены автоматически.`]
+        warnings: [`Сервис реквизитов вернул ответ ${response.status}; реквизиты не подставлены автоматически.`]
       };
     }
-    const payload = (await response.json()) as any;
-    const suggestions = Array.isArray(payload?.suggestions)
-      ? payload.suggestions.map(mapDadataPartySuggestion).filter(Boolean).slice(0, 5)
-      : [];
+    const payload = (await response.json()) as unknown;
+    const rawSuggestions = dadataObject(payload)?.suggestions;
+    const suggestions = (Array.isArray(rawSuggestions) ? rawSuggestions : [])
+      .map(mapDadataPartySuggestion)
+      .filter((suggestion): suggestion is ClinicPublicLookupSuggestion => Boolean(suggestion))
+      .slice(0, 5);
     return {
       status: "ready",
       suggestions,
-      warnings: suggestions.length ? [] : ["DaData не вернул организаций по безопасному запросу."]
+      warnings: suggestions.length ? [] : ["Сервис реквизитов не вернул организаций по безопасному запросу."]
     };
-  } catch (error) {
+  } catch {
     return {
       status: "error",
       suggestions: [],
-      warnings: [error instanceof Error ? `DaData lookup failed: ${error.message}` : "DaData lookup failed."]
+      warnings: ["Поиск реквизитов временно недоступен; используйте подготовленные публичные ссылки для ручной сверки."]
     };
   }
 }
 
 async function buildClinicPublicLookup(input: ClinicPublicLookupRequest) {
+  const rawLookupValues = [
+    input.inn,
+    input.kpp,
+    input.ogrn,
+    input.legalName,
+    input.clinicName,
+    input.address,
+    input.medicalLicenseNumber
+  ];
   const fields: UpdateClinicProfileInput = {
-    inn: publicLookupDigits(input.inn, [10, 12]) || undefined,
-    kpp: publicLookupDigits(input.kpp, [9]) || undefined,
-    ogrn: publicLookupDigits(input.ogrn, [13, 15]) || undefined,
+    inn: publicLookupDigits(input.inn, [10, 12]) || publicLookupLabeledDigits(rawLookupValues, /(?:инн|inn)\D*(\d[\d\s-]{8,14}\d)/i, [10, 12]) || undefined,
+    kpp: publicLookupDigits(input.kpp, [9]) || publicLookupLabeledDigits(rawLookupValues, /(?:кпп|kpp)\D*(\d[\d\s-]{7,11}\d)/i, [9]) || undefined,
+    ogrn: publicLookupDigits(input.ogrn, [13, 15]) || publicLookupLabeledDigits(rawLookupValues, /(?:огрн|ogrn)\D*(\d[\d\s-]{11,17}\d)/i, [13, 15]) || undefined,
     clinicName: publicLookupSafeQuery(input.clinicName ?? "") || undefined,
     legalName: publicLookupSafeQuery(input.legalName ?? "") || undefined,
     address: publicLookupSafeQuery(input.address ?? "") || undefined,
     medicalLicenseNumber: publicLookupSafeQuery(input.medicalLicenseNumber ?? "") || undefined
   };
   const suggestion = buildClinicSuggestionFromFields(fields);
-  const publicLookupTargets = buildPublicLookupTargets(suggestion, [fields.legalName, fields.clinicName, fields.address, fields.inn].filter(Boolean).join("\n"));
+  const publicLookupTargets = buildPublicLookupTargets(
+    suggestion,
+    [fields.legalName, fields.clinicName, fields.address, fields.inn, fields.ogrn, fields.kpp].filter(Boolean).join("\n")
+  );
   const safeQuery =
     fields.inn ||
     fields.ogrn ||
+    fields.kpp ||
     publicLookupSafeQuery([fields.legalName, fields.clinicName, fields.address].filter(Boolean).join(" "));
   const providerResult = await fetchDadataClinicSuggestions(input, safeQuery);
+  const manualSuggestion = buildManualClinicPublicLookupSuggestion(fields);
+  const suggestions = uniqueClinicPublicLookupSuggestions([...providerResult.suggestions, manualSuggestion].filter(Boolean) as ClinicPublicLookupSuggestion[]);
   return clinicPublicLookupResponseSchema.parse({
     version: "dental-crm-clinic-public-lookup-v1",
     generatedAt: new Date().toISOString(),
     providerStatus: providerResult.status,
-    provider: "dadata_findById_or_suggest_when_token_configured",
+    provider: "server_requisites_lookup_when_configured",
     safeQuery,
-    suggestions: providerResult.suggestions,
+    suggestions,
     publicLookupTargets,
     warnings: [
       ...providerResult.warnings,
       "Запрос публичного профиля клиники принимает только ИНН/ОГРН/КПП/название/адрес/лицензию. Пациентов, телефоны пациентов и снимки сюда не отправлять."
     ],
-    nextAction: providerResult.suggestions.length
+    nextAction: suggestions.length
       ? "Сверить найденные реквизиты с ФНС/документами и перенести в профиль клиники."
-      : "Открыть публичные ссылки или настроить DENTAL_DADATA_API_KEY для API-подстановки реквизитов."
+      : "Открыть публичные ссылки или настроить ключ сервиса реквизитов в серверных настройках для автоподстановки."
   });
 }
 
+function migrationConfiguredRootsEnv(name: string) {
+  return process.env[name]?.split(/[;|]/).map((root) => root.trim()).filter(Boolean) ?? [];
+}
+
+function migrationRootExists(root: string) {
+  try {
+    return existsSync(root);
+  } catch {
+    return false;
+  }
+}
+
+function migrationAvailableWindowsDriveRoots() {
+  if (os.platform() !== "win32") return [] as string[];
+  const roots: string[] = [];
+  for (let code = "D".charCodeAt(0); code <= "Z".charCodeAt(0); code += 1) {
+    const root = `${String.fromCharCode(code)}:\\`;
+    if (migrationRootExists(root)) roots.push(root);
+  }
+  return roots;
+}
+
+function migrationDriveDataRoots(driveRoots: string[]) {
+  const folderHints = [
+    "Dental",
+    "Denta",
+    "Stomatology",
+    "Stomatologia",
+    "Стоматология",
+    "Клиника",
+    "Пациенты",
+    "База пациентов",
+    "Старая база",
+    "Старая МИС",
+    "Архив клиники",
+    "Выгрузка",
+    "Выгрузки",
+    "DICOM",
+    "PACS",
+    "Images",
+    "XRay",
+    "X-Ray",
+    "CBCT",
+    "КЛКТ",
+    "ОПТГ",
+    "Pano",
+    "Panoramic",
+    "Radiology",
+    "Orthanc",
+    "dcm4chee",
+    "КТ",
+    "Снимки",
+    "Рентген",
+    "Backup",
+    "Export",
+    "1C",
+    "1Cv8",
+    "Sidexis",
+    "Romexis",
+    "Planmeca",
+    "Vatech",
+    "Carestream",
+    "Morita",
+    "i-Dixel",
+    "NewTom",
+    "NNT",
+    "MyRay",
+    "Owandy",
+    "QuickVision",
+    "DEXIS",
+    "KaVo",
+    "Gendex",
+    "Acteon",
+    "SOPRO",
+    "SOPIX",
+    "PSPIX",
+    "X-Mind",
+    "Infoclinica",
+    "Infodent",
+    "ИНФОДЕНТ",
+    "Denta Office",
+    "ClinicCards",
+    "DentalSoft",
+    "Sycret Dent",
+    "Secret Dent",
+    "Адента",
+    "Adenta",
+    "DentCRM24",
+    "Dent.CRM24",
+    "Клиентикс",
+    "Clientix",
+    "Клиентикс Улыбка",
+    "2V",
+    "2V Stomatology",
+    "Future IT Dent",
+    "FutureITDent",
+    "32top",
+    "MEDODS",
+    "DentalTap",
+    "iStom",
+    "IStom",
+    "АйСтом",
+    "QStoma",
+    "Q Stoma",
+    "БИТ.Стоматология",
+    "BIT.Stomatology",
+    "MacDent",
+    "Stombox",
+    "OpenDental",
+    "Open Dental",
+    "OpenDentImages",
+    "OpenDentImages AtoZ",
+    "AtoZ",
+    "Dentrix",
+    "Eaglesoft",
+    "Patterson",
+    "SoftDent",
+    "PracticeWorks",
+    "Curve Dental",
+    "Denticon",
+    "tab32",
+    "Dolphin Management",
+    "Dolphin Imaging"
+  ];
+  return driveRoots.flatMap((root) => [root, ...folderHints.map((folder) => path.join(root, folder))]);
+}
+
 function migrationDiscoveryDefaultRoots() {
-  const configured = process.env.DENTAL_MIGRATION_DISCOVERY_ROOTS?.split(/[;|]/).map((root) => root.trim()).filter(Boolean) ?? [];
+  const configured = [...migrationConfiguredRootsEnv("DENTAL_MIGRATION_DISCOVERY_ROOTS"), ...migrationConfiguredRootsEnv("DENTAL_MIGRATION_NETWORK_ROOTS")];
   const home = os.homedir();
   const programData = process.env.ProgramData || "C:\\ProgramData";
   const programFiles = process.env.ProgramFiles || "C:\\Program Files";
@@ -822,6 +1202,134 @@ function migrationDiscoveryDefaultRoots() {
   const publicDesktop = path.join(publicRoot, "Desktop");
   const userStartMenu = path.join(roamingAppData, "Microsoft", "Windows", "Start Menu", "Programs");
   const commonStartMenu = path.join(programData, "Microsoft", "Windows", "Start Menu", "Programs");
+  const knownMigrationAppFolders = [
+    "Sidexis",
+    "Sirona",
+    "Romexis",
+    "Planmeca",
+    "Vatech",
+    "EzDent-i",
+    "EzDent",
+    "Ez3D",
+    "Carestream",
+    "Kodak",
+    "CS Imaging",
+    "OnDemand3D",
+    "Invivo",
+    "Cliniview",
+    "DBSWIN",
+    "VistaSoft",
+    "Digora",
+    "Soredex",
+    "Trophy",
+    "Visiodent",
+    "DTX Studio Clinic",
+    "Mediadent",
+    "VixWin",
+    "Sopro",
+    "Schick",
+    "Morita",
+    "J Morita",
+    "i-Dixel",
+    "iDixel",
+    "Veraview",
+    "NewTom",
+    "NNT",
+    "MyRay",
+    "Cefla",
+    "Owandy",
+    "QuickVision",
+    "DEXIS",
+    "KaVo",
+    "Gendex",
+    "Acteon",
+    "SOPRO",
+    "SOPIX",
+    "PSPIX",
+    "X-Mind",
+    "Dental",
+    "Stomatology",
+    "Stomatologia",
+    "Стоматология",
+    "Клиника",
+    "Пациенты",
+    "База пациентов",
+    "Старая база",
+    "Старая МИС",
+    "Архив клиники",
+    "Выгрузка",
+    "Снимки",
+    "Рентген",
+    "КЛКТ",
+    "ОПТГ",
+    "DentalSoft",
+    "Denta",
+    "Clinic365",
+    "DentalCloud",
+    "Sycret Dent",
+    "Secret Dent",
+    "Адента",
+    "Adenta",
+    "DentCRM24",
+    "Dent.CRM24",
+    "Клиентикс",
+    "Clientix",
+    "Клиентикс Улыбка",
+    "2V",
+    "2V Stomatology",
+    "Future IT Dent",
+    "FutureITDent",
+    "32top",
+    "MEDODS",
+    "DentalTap",
+    "IDENT",
+    "StomX",
+    "iStom",
+    "IStom",
+    "АйСтом",
+    "QStoma",
+    "Q Stoma",
+    "БИТ.Стоматология",
+    "BIT.Stomatology",
+    "1C-Бит.Стоматология",
+    "MacDent",
+    "Stombox",
+    "Infoclinica",
+    "Infodent",
+    "Denta Office",
+    "ClinicCards",
+    "Dental4Windows",
+    "OpenDental",
+    "Open Dental",
+    "OpenDentImages",
+    "OpenDentImages AtoZ",
+    "AtoZ",
+    "Dentrix",
+    "Eaglesoft",
+    "Patterson",
+    "SoftDent",
+    "PracticeWorks",
+    "Curve Dental",
+    "Denticon",
+    "tab32",
+    "Dolphin Management",
+    "Dolphin Imaging",
+    "MedAngel",
+    "Medialog",
+    "Arnica",
+    "3Shape",
+    "Medit",
+    "Exocad"
+  ];
+  const knownMigrationAppRoots = knownMigrationAppFolders.flatMap((folder) => [
+    path.join("C:\\", folder),
+    path.join(programData, folder),
+    path.join(localAppData, folder),
+    path.join(roamingAppData, folder),
+    path.join(programFiles, folder),
+    path.join(programFilesX86, folder)
+  ]);
+  const driveRoots = migrationAvailableWindowsDriveRoots();
   const roots = [
     ...configured,
     path.join(home, "Downloads"),
@@ -836,17 +1344,76 @@ function migrationDiscoveryDefaultRoots() {
     commonStartMenu,
     "C:\\Dental",
     "C:\\Denta",
+    "C:\\Stomatology",
+    "C:\\Стоматология",
+    "C:\\Клиника",
+    "C:\\Пациенты",
+    "C:\\База пациентов",
+    "C:\\Старая база",
+    "C:\\Старая МИС",
+    "C:\\Архив клиники",
+    "C:\\Выгрузка",
+    "C:\\Снимки",
+    "C:\\Рентген",
+    "C:\\КЛКТ",
+    "C:\\ОПТГ",
     "C:\\Images",
     "C:\\XRay",
     "C:\\Sidexis",
     "C:\\Romexis",
+    "C:\\Morita",
+    "C:\\i-Dixel",
+    "C:\\NewTom",
+    "C:\\NNT",
+    "C:\\MyRay",
+    "C:\\Owandy",
+    "C:\\QuickVision",
+    "C:\\DEXIS",
+    "C:\\KaVo",
+    "C:\\Gendex",
+    "C:\\Acteon",
+    "C:\\SOPRO",
+    "C:\\SOPIX",
+    "C:\\PSPIX",
+    "C:\\X-Mind",
     "C:\\1C",
     "C:\\1Cv8",
     "C:\\Stom",
     "C:\\Stomatology",
     "C:\\Infoclinica",
+    "C:\\Infodent",
+    "C:\\DentaOffice",
     "C:\\ClinicCards",
     "C:\\Dental4Windows",
+    "C:\\Sycret Dent",
+    "C:\\Adenta",
+    "C:\\DentCRM24",
+    "C:\\Clientix",
+    "C:\\2V",
+    "C:\\Future IT Dent",
+    "C:\\32top",
+    "C:\\MEDODS",
+    "C:\\DentalTap",
+    "C:\\iStom",
+    "C:\\QStoma",
+    "C:\\BIT.Stomatology",
+    "C:\\MacDent",
+    "C:\\Stombox",
+    "C:\\OpenDental",
+    "C:\\Open Dental",
+    "C:\\OpenDentImages",
+    "C:\\OpenDentImages AtoZ",
+    "C:\\AtoZ",
+    "C:\\Dentrix",
+    "C:\\Eaglesoft",
+    "C:\\Patterson",
+    "C:\\SoftDent",
+    "C:\\PracticeWorks",
+    "C:\\Curve Dental",
+    "C:\\Denticon",
+    "C:\\tab32",
+    "C:\\Dolphin Management",
+    "C:\\Dolphin Imaging",
     "C:\\DICOM",
     "C:\\PACS",
     programData,
@@ -857,6 +1424,14 @@ function migrationDiscoveryDefaultRoots() {
     path.join(programData, "Vatech"),
     path.join(programData, "Carestream"),
     path.join(programData, "Planmeca"),
+    path.join(programData, "DEXIS"),
+    path.join(programData, "KaVo"),
+    path.join(programData, "Gendex"),
+    path.join(programData, "Acteon"),
+    path.join(programData, "SOPRO"),
+    path.join(programData, "SOPIX"),
+    path.join(programData, "PSPIX"),
+    path.join(programData, "X-Mind"),
     path.join(programData, "Dental"),
     path.join(programData, "Microsoft", "SQL Server"),
     path.join(programData, "Firebird"),
@@ -868,6 +1443,14 @@ function migrationDiscoveryDefaultRoots() {
     path.join(localAppData, "Vatech"),
     path.join(localAppData, "Carestream"),
     path.join(localAppData, "Planmeca"),
+    path.join(localAppData, "DEXIS"),
+    path.join(localAppData, "KaVo"),
+    path.join(localAppData, "Gendex"),
+    path.join(localAppData, "Acteon"),
+    path.join(localAppData, "SOPRO"),
+    path.join(localAppData, "SOPIX"),
+    path.join(localAppData, "PSPIX"),
+    path.join(localAppData, "X-Mind"),
     path.join(roamingAppData, "Dental"),
     path.join(roamingAppData, "1C"),
     path.join(roamingAppData, "1Cv8"),
@@ -876,26 +1459,57 @@ function migrationDiscoveryDefaultRoots() {
     path.join(roamingAppData, "Vatech"),
     path.join(roamingAppData, "Carestream"),
     path.join(roamingAppData, "Planmeca"),
+    path.join(roamingAppData, "DEXIS"),
+    path.join(roamingAppData, "KaVo"),
+    path.join(roamingAppData, "Gendex"),
+    path.join(roamingAppData, "Acteon"),
+    path.join(roamingAppData, "SOPRO"),
+    path.join(roamingAppData, "SOPIX"),
+    path.join(roamingAppData, "PSPIX"),
+    path.join(roamingAppData, "X-Mind"),
     path.join(programFiles, "Sidexis"),
     path.join(programFiles, "Romexis"),
     path.join(programFiles, "Vatech"),
     path.join(programFiles, "Carestream"),
     path.join(programFiles, "Planmeca"),
+    path.join(programFiles, "DEXIS"),
+    path.join(programFiles, "KaVo"),
+    path.join(programFiles, "Gendex"),
+    path.join(programFiles, "Acteon"),
+    path.join(programFiles, "SOPRO"),
+    path.join(programFiles, "SOPIX"),
+    path.join(programFiles, "PSPIX"),
+    path.join(programFiles, "X-Mind"),
     path.join(programFiles, "Dental"),
     path.join(programFilesX86, "Sidexis"),
     path.join(programFilesX86, "Romexis"),
     path.join(programFilesX86, "Vatech"),
     path.join(programFilesX86, "Carestream"),
     path.join(programFilesX86, "Planmeca"),
+    path.join(programFilesX86, "DEXIS"),
+    path.join(programFilesX86, "KaVo"),
+    path.join(programFilesX86, "Gendex"),
+    path.join(programFilesX86, "Acteon"),
+    path.join(programFilesX86, "SOPRO"),
+    path.join(programFilesX86, "SOPIX"),
+    path.join(programFilesX86, "PSPIX"),
+    path.join(programFilesX86, "X-Mind"),
     path.join(programFilesX86, "Dental"),
+    ...knownMigrationAppRoots,
+    ...migrationDriveDataRoots(driveRoots),
     "D:\\"
   ];
-  return Array.from(new Set(roots.map((root) => path.resolve(root)).filter((root) => existsSync(root))));
+  return Array.from(new Set(roots.map((root) => path.resolve(root)).filter((root) => migrationRootExists(root))));
 }
 
 function migrationFingerprint(value: string) {
   const stableValue =
-    /^https?:\/\//i.test(value) || value.startsWith("\\\\") || /^browser-local:/i.test(value) || /^workstation-profile:/i.test(value) || /^workstation-signal:/i.test(value)
+    /^https?:\/\//i.test(value) ||
+    value.startsWith("\\\\") ||
+    /^browser-local:/i.test(value) ||
+    /^smart-preview:/i.test(value) ||
+    /^workstation-profile:/i.test(value) ||
+    /^workstation-signal:/i.test(value)
       ? value
       : path.resolve(value);
   return createHash("sha1").update(stableValue).digest("hex").slice(0, 10);
@@ -903,7 +1517,7 @@ function migrationFingerprint(value: string) {
 
 function safeMigrationDiscoveryRoot(root: string) {
   const trimmed = root.trim();
-  if (/^(?:browser-local|workstation-profile|workstation-signal|local-root|network-root|remote-root|source-root):[a-f0-9]{8,12}$/i.test(trimmed)) {
+  if (/^(?:browser-local|smart-preview|workstation-profile|workstation-signal|migration-source|local-root|network-root|remote-root|source-root):[a-f0-9]{8,12}$/i.test(trimmed)) {
     return trimmed;
   }
   const fingerprint = migrationFingerprint(trimmed).toUpperCase();
@@ -917,6 +1531,59 @@ function safeMigrationDiscoveryRoots(roots: string[]) {
   return uniqueStrings(roots.map((root) => safeMigrationDiscoveryRoot(root)));
 }
 
+type MigrationSourceRoute = {
+  sourceRef: string;
+  sourceKind: SmartImportLegacySource["kind"];
+  safeDisplayName: string;
+  sourceFingerprint: string;
+  createdAtMs: number;
+};
+
+const migrationSourceRouteStore = new Map<string, MigrationSourceRoute>();
+
+function isMigrationPublicSourceToken(sourceRef: string) {
+  return /^(?:browser-local|smart-preview|workstation-profile|workstation-signal):[a-f0-9]{8,12}$/i.test(sourceRef);
+}
+
+function isMigrationSourceRouteToken(sourceRef: string) {
+  return /^migration-source:[a-f0-9]{8,12}$/i.test(sourceRef);
+}
+
+function registerMigrationSourceRoute(sourceRef: string, sourceKind: SmartImportLegacySource["kind"], safeDisplayName: string) {
+  if (isMigrationPublicSourceToken(sourceRef)) return sourceRef;
+  const sourceFingerprint = migrationFingerprint(sourceRef);
+  const token = `migration-source:${sourceFingerprint.toUpperCase()}`;
+  migrationSourceRouteStore.set(token.toLowerCase(), {
+    sourceRef,
+    sourceKind,
+    safeDisplayName,
+    sourceFingerprint,
+    createdAtMs: Date.now()
+  });
+  return token;
+}
+
+function resolveMigrationSourceRoute(sourceRef: string) {
+  const trimmed = sourceRef.trim();
+  if (!isMigrationSourceRouteToken(trimmed)) {
+    return {
+      requestedSourceRef: trimmed,
+      sourceRef: trimmed,
+      routeToken: null as string | null,
+      routeExpired: false,
+      route: null as MigrationSourceRoute | null
+    };
+  }
+  const route = migrationSourceRouteStore.get(trimmed.toLowerCase()) ?? null;
+  return {
+    requestedSourceRef: trimmed,
+    sourceRef: route?.sourceRef ?? trimmed,
+    routeToken: trimmed,
+    routeExpired: !route,
+    route
+  };
+}
+
 function migrationDiscoveryDepth(root: string, folderPath: string) {
   const relative = path.relative(root, folderPath);
   if (!relative || relative === ".") return 0;
@@ -926,10 +1593,11 @@ function migrationDiscoveryDepth(root: string, folderPath: string) {
 function migrationFolderHintScore(folderPath: string) {
   const normalized = folderPath.toLowerCase();
   let score = 0;
-  if (/стомат|dental|denta|clinic|mis|crm|legacy|migration|миграц|перенос|backup|dump|export|выгруз|стар(?:ая|ой)?/.test(normalized)) score += 0.14;
-  if (/инфоклиника|cliniccards|dental4windows|dental\s*pro|ident|stomx|1c|1с|1cd|sql\s*server|firebird|interbase|access/.test(normalized)) score += 0.2;
+  if (/стомат|стоматология|dental|denta|clinic|клиник|mis|crm|legacy|migration|миграц|перенос|backup|dump|export|выгруз|стар(?:ая|ой)?|база\s*пациент|пациенты|картотек|архив\s*клиник/.test(normalized)) score += 0.14;
+  if (migrationClinicDataContainerHint(folderPath)) score += 0.16;
+  if (legacyMisTextPattern.test(normalized) || /sql\s*server|firebird|interbase|access/.test(normalized)) score += 0.2;
   if (imagingVendorPattern.test(normalized)) score += 0.18;
-  if (/dicom|dicomdir|cbct|кт|ккт|rvg|opg|оптг|xray|x-ray|рентген|снимк|pacs/.test(normalized)) score += 0.18;
+  if (/dicom|dicomdir|cbct|кт|ккт|rvg|opg|оптг|xray|x-ray|рентген|снимк|pacs|orthanc|dcm4chee|radiology|pano|panoramic/.test(normalized)) score += 0.18;
   const profileMatches = migrationWorkstationProfileMatches(folderPath);
   if (profileMatches.length) score += Math.min(0.34, profileMatches.length * 0.16);
   return score;
@@ -947,8 +1615,32 @@ function migrationDirectoryPriority(folderPath: string) {
   const profileMatches = migrationWorkstationProfileMatches(folderPath);
   const hintScore = migrationFolderHintScore(folderPath);
   if (profileMatches.length >= 2 || hintScore >= 0.34) return 2;
-  if (profileMatches.length || hintScore >= 0.18) return 1;
+  if (profileMatches.length || hintScore >= 0.14) return 1;
   return 0;
+}
+
+function migrationDiscoveryEntryPriority(
+  entry: { name: string | Buffer; isDirectory(): boolean; isFile(): boolean },
+  folderPath: string
+) {
+  const entryName = entry.name.toString();
+  const fullPath = path.join(folderPath, entryName);
+  if (entry.isDirectory()) {
+    const directoryPriority = migrationDirectoryPriority(fullPath);
+    return 20 + directoryPriority * 35 + Math.round(migrationFolderHintScore(fullPath) * 20);
+  }
+  if (!entry.isFile()) return 0;
+  const extension = path.extname(entryName).toLowerCase();
+  let priority = 0;
+  if (/^DICOMDIR$/i.test(entryName)) priority += 100;
+  if (migrationDatabaseExtensions.has(extension)) priority += 92;
+  if (migrationDumpExtensions.has(extension)) priority += 84;
+  if (migrationDicomExtensions.has(extension)) priority += 78;
+  if (migrationTableExtensions.has(extension)) priority += 58;
+  if (migrationArchiveExtensions.has(extension)) priority += 44;
+  if (migrationImageExtensions.has(extension)) priority += 24;
+  if (migrationWorkstationProfileMatches(fullPath).length) priority += 20;
+  return priority;
 }
 
 function migrationSourceKindFromCounts(input: {
@@ -965,18 +1657,25 @@ function migrationSourceKindFromCounts(input: {
   const text = `${input.folderPath} ${input.firstMatchPath}`.toLowerCase();
   const profileKind = migrationWorkstationProfileMatches(text)[0]?.kind;
   if (profileKind === "vendor_imaging_system") return "vendor_imaging_system";
-  if (imagingVendorPattern.test(text)) return "vendor_imaging_system";
+  if (imagingVendorPattern.test(text) || imagingVendorSupplementalPattern.test(text)) return "vendor_imaging_system";
   if (input.hasDicomDir || input.dicomLikeFiles > 0 || /dicom|cbct|кт|ккт/.test(text)) return "dicom_folder";
   if (input.imageFiles > 8 || /rvg|opg|оптг|xray|x-ray|рентген|снимк|фото/.test(text)) return "xray_image_archive";
-  if (/\.fdb\b|\.gdb\b|\.fbk\b|firebird|interbase/.test(text)) return "firebird_database";
+  if (/\.fdb\b|\.gdb\b|\.fbk\b|\.ib\b|\.ibk\b|\.gbk\b|firebird|interbase/.test(text)) return "firebird_database";
   if (/\.mdb\b|\.accdb\b|access\b/.test(text)) return "access_database";
+  if (/\.dbf\b|\.dbt\b|\.fpt\b|\.cdx\b|\.idx\b|\.ntx\b|\.ndx\b|\.mdx\b|dbase|foxpro|visual\s*foxpro|clipper|paradox/.test(text)) return "mis_database";
   if (/\.sqlite\b|\.sqlite3\b|sqlite|\.db\b/.test(text)) return "sqlite_database";
+  if (/mysql|mariadb|postgres|postgresql|pgsql|psql|\.myd\b|\.myi\b|\.frm\b|\.ibd\b/.test(text)) return "mis_database";
   if (input.dumpFiles > 0 || /\.sql\b|\.dump\b|\.bak\b|\.dt\b|\.mdf\b|\.ldf\b|\.sdf\b|postgres|mysql|mssql|sql\s*server/.test(text)) return "sql_dump";
   if (input.tableFiles > 0) return input.firstMatchPath.toLowerCase().endsWith(".csv") || input.firstMatchPath.toLowerCase().endsWith(".tsv") ? "csv_export" : "spreadsheet_export";
   if (input.archiveFiles > 0) return "archive_export";
   if (profileKind) return profileKind;
-  if (/инфоклиника|cliniccards|dental4windows|dental\s*pro|ident|stomx|1c|1с|\.1cd\b|mis|crm/.test(text)) return "mis_database";
+  if (legacySourceSupplementalKeywordPattern.test(text) || legacyMisTextPattern.test(text)) return "mis_database";
   return "unknown_legacy_source";
+}
+
+function migrationDbfFolderSourceRequired(folderPath: string, firstMatchPath: string) {
+  const text = `${folderPath} ${firstMatchPath}`.toLowerCase();
+  return /\.dbf\b|\.dbt\b|\.fpt\b|\.cdx\b|\.idx\b|\.ntx\b|\.ndx\b|\.mdx\b|dbase|foxpro|visual\s*foxpro|clipper|paradox/.test(text);
 }
 
 function migrationSafeAlias(kind: SmartImportLegacySource["kind"], sourceRef: string) {
@@ -992,12 +1691,13 @@ function shouldSkipMigrationDiscoveryDirectory(directoryName: string) {
 }
 
 type MigrationWorkstationSignalCandidate = {
-  channel: "configured" | "process" | "service" | "installed_app";
+  channel: "configured" | "process" | "service" | "installed_app" | "shortcut";
   value: string;
   profiles: (typeof migrationWorkstationProfiles)[number][];
 };
 
 function migrationWorkstationSignalChannelTitle(channel: MigrationWorkstationSignalCandidate["channel"]) {
+  if (channel === "shortcut") return "ярлык ОС";
   if (channel === "installed_app") return "установленная программа";
   if (channel === "process") return "процесс ОС";
   if (channel === "service") return "служба ОС";
@@ -1013,19 +1713,24 @@ function normalizeMigrationSignalValues(value: string | undefined) {
 }
 
 async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>) {
-  if (os.platform() !== "win32") return [] as Array<{ channel: "process" | "service" | "installed_app"; value: string }>;
+  if (os.platform() !== "win32") return [] as Array<{ channel: "process" | "service" | "installed_app" | "shortcut"; value: string }>;
   const script = [
     "$ErrorActionPreference='SilentlyContinue'",
-    "$rx='sidexis|sirona|romexis|planmeca|vatech|ezdent|carestream|kodak|ondemand|invivo|cliniview|dbswin|vistasoft|digora|soredex|trophy|visiodent|dtx|3shape|medit|exocad|firebird|interbase|sqlite|mssql|sql|1cv8|1c|cliniccards|dental|ident|stomx|dicom|pacs|rvg|xray'",
-    "$processes = Get-Process | Select-Object -First 500 -ExpandProperty ProcessName | Where-Object { $_ -match $rx }",
-    "$services = Get-Service | Select-Object -First 1000 -Property Name,DisplayName | Where-Object { ([string]$_.Name + ' ' + [string]$_.DisplayName) -match $rx }",
+    "$rx='sidexis|sirona|romexis|planmeca|vatech|ezdent|carestream|kodak|morita|idixel|i-dixel|veraview|newtom|new tom|nnt|myray|cefla|owandy|quickvision|quick vision|dexis|kavo|ka vo|gendex|acteon|sopro|sopix|pspix|x-mind|x mind|ondemand|invivo|cliniview|dbswin|vistasoft|digora|soredex|trophy|visiodent|mediadent|vixwin|sopro|schick|dtx|3shape|medit|exocad|firebird|interbase|sqlite|mssql|sql|dbf|dbase|foxpro|clipper|paradox|1cv8|1c|cliniccards|dental|stomatology|opendental|open dental|dentrix|eaglesoft|patterson|infoclinica|infodent|dentasoft|clinic365|sycret|secret dent|adenta|dentcrm24|clientix|klientix|medods|dentaltap|istom|qstoma|macdent|stombox|medangel|medialog|arnica|ident|stomx|dicom|pacs|rvg|xray|cbct|opg'",
+    "$processes = Get-Process | Select-Object -First 500 -Property ProcessName,Path | ForEach-Object { ([string]$_.ProcessName + ' || ' + [string]$_.Path) } | Where-Object { $_ -match $rx }",
+    "$services = Get-CimInstance Win32_Service | Select-Object -First 1000 -Property Name,DisplayName,PathName | ForEach-Object { ([string]$_.Name + ' || ' + [string]$_.DisplayName + ' || ' + [string]$_.PathName) } | Where-Object { $_ -match $rx }",
     "$uninstallPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*')",
-    "$apps = foreach ($p in $uninstallPaths) { Get-ItemProperty -Path $p | Select-Object -First 800 -ExpandProperty DisplayName }",
+    "$apps = foreach ($p in $uninstallPaths) { Get-ItemProperty -Path $p | Select-Object -First 800 -Property DisplayName,InstallLocation,InstallSource,DisplayIcon | ForEach-Object { ([string]$_.DisplayName + ' || ' + [string]$_.InstallLocation + ' || ' + [string]$_.InstallSource + ' || ' + [string]$_.DisplayIcon) } }",
     "$apps = $apps | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160",
+    "$shortcutRoots = @([Environment]::GetFolderPath('Desktop'),[Environment]::GetFolderPath('CommonDesktopDirectory'),[Environment]::GetFolderPath('StartMenu'),[Environment]::GetFolderPath('CommonStartMenu'))",
+    "$shell = New-Object -ComObject WScript.Shell",
+    "$shortcuts = foreach ($root in $shortcutRoots) { if ($root -and (Test-Path $root)) { Get-ChildItem -Path $root -Filter *.lnk -Recurse -ErrorAction SilentlyContinue | Select-Object -First 400 | ForEach-Object { $lnk = $shell.CreateShortcut($_.FullName); ([string]$_.Name + ' || ' + [string]$lnk.TargetPath + ' || ' + [string]$lnk.Arguments + ' || ' + [string]$lnk.WorkingDirectory) } } }",
+    "$shortcuts = $shortcuts | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160",
     "$rows = @()",
     "foreach ($p in $processes) { if ($p) { $rows += [pscustomobject]@{ channel='process'; value=[string]$p } } }",
-    "foreach ($s in $services) { if ($s.Name) { $rows += [pscustomobject]@{ channel='service'; value=([string]$s.Name + ' ' + [string]$s.DisplayName) } } }",
+    "foreach ($s in $services) { if ($s) { $rows += [pscustomobject]@{ channel='service'; value=[string]$s } } }",
     "foreach ($a in $apps) { if ($a) { $rows += [pscustomobject]@{ channel='installed_app'; value=[string]$a } } }",
+    "foreach ($l in $shortcuts) { if ($l) { $rows += [pscustomobject]@{ channel='shortcut'; value=[string]$l } } }",
     "$rows | ConvertTo-Json -Compress"
   ].join("; ");
   try {
@@ -1039,12 +1744,19 @@ async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>
     const rows = Array.isArray(parsed) ? parsed : [parsed];
     return rows
       .map((row) => ({
-        channel: row?.channel === "service" ? ("service" as const) : row?.channel === "installed_app" ? ("installed_app" as const) : ("process" as const),
+        channel:
+          row?.channel === "service"
+            ? ("service" as const)
+            : row?.channel === "installed_app"
+              ? ("installed_app" as const)
+              : row?.channel === "shortcut"
+                ? ("shortcut" as const)
+                : ("process" as const),
         value: String(row?.value ?? "").trim()
       }))
       .filter((row) => row.value.length >= 3);
   } catch {
-    warnings.add("Системные сигналы рабочей станции не прочитаны: discovery продолжил поиск по папкам/shortcuts без PowerShell-снимка процессов, служб и установленных программ.");
+    warnings.add("Системные сигналы рабочей станции не прочитаны: поиск продолжился по доступным папкам и ярлыкам без списка процессов, служб и установленных программ.");
     return [];
   }
 }
@@ -1059,8 +1771,12 @@ async function collectMigrationWorkstationSignals(input: MigrationLocalSourceDis
     channel: "installed_app" as const,
     value
   }));
+  const configuredShortcuts = normalizeMigrationSignalValues(process.env.DENTAL_MIGRATION_WORKSTATION_SHORTCUTS).map((value) => ({
+    channel: "shortcut" as const,
+    value
+  }));
   const systemSignals = await readWindowsMigrationWorkstationSignalValues(warnings);
-  const signals = [...configuredSignals, ...configuredInstalledApps, ...systemSignals];
+  const signals = [...configuredSignals, ...configuredInstalledApps, ...configuredShortcuts, ...systemSignals];
   const unique = new Map<string, MigrationWorkstationSignalCandidate>();
   for (const signal of signals) {
     const profiles = migrationWorkstationProfileMatches(signal.value);
@@ -1076,13 +1792,272 @@ async function collectMigrationWorkstationSignals(input: MigrationLocalSourceDis
   return Array.from(unique.values());
 }
 
+function migrationIsTooBroadDerivedRoot(root: string) {
+  const normalized = path.resolve(root).toLowerCase();
+  const parsed = path.parse(normalized);
+  if (normalized === parsed.root.toLowerCase()) return true;
+  const broadNames = new Set(["program files", "program files (x86)", "windows", "users", "documents and settings", "appdata"]);
+  return broadNames.has(path.basename(normalized));
+}
+
+function migrationExistingDirectory(value: string) {
+  try {
+    const resolved = path.resolve(value);
+    const stat = statSync(resolved);
+    if (stat.isDirectory()) return resolved;
+    if (stat.isFile()) return path.dirname(resolved);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function migrationSignalPathFragments(value: string) {
+  const fragments = new Set<string>();
+  const parts = value
+    .split(/\s+\|\|\s+/)
+    .map((part) => part.trim().replace(/^["']|["']$/g, ""))
+    .filter(Boolean);
+  for (const part of parts) {
+    const executable = part.match(/([A-Za-zА-Яа-яЁё]:[\\/][^|"\r\n]+?\.(?:exe|bat|cmd|lnk|appref-ms|msc|dll|db|sqlite|fdb|gdb|fbk|ib|ibk|gbk|mdb|accdb|dbf|dbt|fpt|cdx|idx|ntx|ndx|mdx|1cd|dt|bak|dcm|dicom|ima))/i)?.[1];
+    if (executable) fragments.add(executable.trim());
+    const absolute = part.match(/^([A-Za-zА-Яа-яЁё]:[\\/][^|"\r\n]+|\\\\[^|"\r\n]+)/i)?.[1];
+    if (absolute) fragments.add(absolute.trim());
+  }
+  if (!fragments.size) {
+    const executable = value.match(/([A-Za-zА-Яа-яЁё]:[\\/][^|"\r\n]+?\.(?:exe|bat|cmd|lnk|appref-ms|msc|dll|db|sqlite|fdb|gdb|fbk|ib|ibk|gbk|mdb|accdb|dbf|dbt|fpt|cdx|idx|ntx|ndx|mdx|1cd|dt|bak|dcm|dicom|ima))/i)?.[1];
+    if (executable) fragments.add(executable.trim());
+  }
+  return Array.from(fragments);
+}
+
+function migrationNearbyDataRoots(baseDirectory: string) {
+  const nearbyNames = [
+    "Data",
+    "DB",
+    "Database",
+    "Bases",
+    "Base",
+    "Backup",
+    "Backups",
+    "Export",
+    "Exports",
+    "Archive",
+    "Storage",
+    "Old",
+    "Legacy",
+    "Migration",
+    "Stomatology",
+    "Stomatologia",
+    "Patients",
+    "PatientDB",
+    "ClinicDB",
+    "Images",
+    "DICOM",
+    "PACS",
+    "XRay",
+    "X-Ray",
+    "CBCT",
+    "RVG",
+    "OPG",
+    "Pano",
+    "Panoramic",
+    "Radiology",
+    "Orthanc",
+    "dcm4chee",
+    "КЛКТ",
+    "ОПТГ",
+    "Снимки",
+    "Рентген",
+    "Пациенты",
+    "Картотека",
+    "База",
+    "База пациентов",
+    "Старая база",
+    "Старая МИС",
+    "Архив",
+    "Архив клиники",
+    "Выгрузка"
+  ];
+  const parent = path.dirname(baseDirectory);
+  return [
+    baseDirectory,
+    ...nearbyNames.map((name) => path.join(baseDirectory, name)),
+    ...(parent && parent !== baseDirectory ? [parent, ...nearbyNames.map((name) => path.join(parent, name))] : [])
+  ];
+}
+
+function migrationProfileRelativeDataRoots(profile: (typeof migrationWorkstationProfiles)[number]) {
+  if (/romexis|planmeca/i.test(profile.label)) {
+    return ["Planmeca", "Romexis", path.join("Planmeca", "Romexis"), path.join("Planmeca", "RomexisData"), "RomexisData"];
+  }
+  if (/sidexis|sirona/i.test(profile.label)) {
+    return ["Sirona", "Sidexis", path.join("Sirona", "Sidexis"), path.join("Sirona", "SIDEXIS"), "SIDEXIS"];
+  }
+  if (/vatech|ezdent/i.test(profile.label)) {
+    return ["Vatech", "EzDent", "EzDent-i", "Ez3D", path.join("Vatech", "EzDent-i"), path.join("Vatech", "Ez3D")];
+  }
+  if (/carestream|kodak/i.test(profile.label)) {
+    return ["Carestream", "Kodak", "CS Imaging", path.join("Carestream", "CS Imaging")];
+  }
+  if (/morita|i-dixel/i.test(profile.label)) {
+    return ["Morita", "J Morita", "i-Dixel", "iDixel", "Veraview", path.join("J Morita", "i-Dixel"), path.join("Morita", "i-Dixel")];
+  }
+  if (/newtom|nnt|myray/i.test(profile.label)) {
+    return ["NewTom", "NNT", "MyRay", "Cefla", path.join("Cefla", "NewTom"), path.join("Cefla", "NNT"), path.join("MyRay", "Data")];
+  }
+  if (/owandy|quickvision/i.test(profile.label)) {
+    return ["Owandy", "QuickVision", path.join("Owandy", "QuickVision")];
+  }
+  if (/dexis|kavo|gendex/i.test(profile.label)) {
+    return ["DEXIS", "KaVo", "Gendex", path.join("DEXIS", "Data"), path.join("KaVo", "Data"), path.join("Gendex", "Images")];
+  }
+  if (/acteon|sopro|sopix|pspix|x-mind/i.test(profile.label)) {
+    return [
+      "Acteon",
+      "SOPRO",
+      "SOPIX",
+      "PSPIX",
+      "X-Mind",
+      path.join("Acteon", "Imaging"),
+      path.join("SOPRO", "Images"),
+      path.join("PSPIX", "Data")
+    ];
+  }
+  if (/cliniccards/i.test(profile.label)) return ["Cliniccards", "ClinicCards"];
+  if (/dental4windows/i.test(profile.label)) return ["Dental4Windows", "D4W"];
+  if (/sycret|secret/i.test(profile.label)) return ["Sycret Dent", "Secret Dent", "SycretDent", path.join("Sycret Dent", "Data")];
+  if (/адента|adenta/i.test(profile.label)) return ["Адента", "Adenta", "Adenta Professional", path.join("Adenta", "Data")];
+  if (/dent\.?crm24|dentcrm24/i.test(profile.label)) return ["DentCRM24", "Dent.CRM24", path.join("DentCRM24", "Data")];
+  if (/клиентикс|clientix|klientix/i.test(profile.label)) return ["Клиентикс", "Clientix", "Клиентикс Улыбка", path.join("Clientix", "Data")];
+  if (/2v/i.test(profile.label)) return ["2V", "2V Stomatology", "2V-Стоматология", path.join("2V", "Data")];
+  if (/future\s*it/i.test(profile.label)) return ["Future IT Dent", "FutureITDent", path.join("Future IT Dent", "Data")];
+  if (/32top/i.test(profile.label)) return ["32top", "32 top", path.join("32top", "Data")];
+  if (/medods/i.test(profile.label)) return ["MEDODS", "Medods", path.join("MEDODS", "Data")];
+  if (/dentaltap/i.test(profile.label)) return ["DentalTap", "Dental Tap", path.join("DentalTap", "Data")];
+  if (/open dental|opendentimages|dentrix|eaglesoft|patterson|softdent|practiceworks|curve dental|denticon|tab32|dolphin/i.test(profile.label)) {
+    return [
+      "OpenDental",
+      "Open Dental",
+      "OpenDentImages",
+      "OpenDentImages AtoZ",
+      "AtoZ",
+      "Dentrix",
+      "Dentrix Common",
+      "Eaglesoft",
+      "Patterson",
+      "SoftDent",
+      "PracticeWorks",
+      "Curve Dental",
+      "Denticon",
+      "tab32",
+      "Dolphin Management",
+      "Dolphin Imaging"
+    ];
+  }
+  if (/infodent|инфодент|denta office/i.test(profile.label)) return ["Infodent", "ИНФОДЕНТ", "Denta Office", "DentaOffice"];
+  if (/infoclinica|инфоклиника/i.test(profile.label)) return ["Infoclinica", "InfoClinic", "Инфоклиника"];
+  if (/istom|iStom|ай\s*стом/i.test(profile.label)) return ["iStom", "IStom", "АйСтом", path.join("iStom", "Data")];
+  if (/qstoma|кью\s*стома/i.test(profile.label)) return ["QStoma", "Q Stoma", "КьюСтома", path.join("QStoma", "Data")];
+  if (/бит\.?\s*стоматолог|bit\.?\s*stomatolog/i.test(profile.label)) {
+    return ["БИТ.Стоматология", "BIT.Stomatology", "1C-Бит.Стоматология", path.join("1C", "БИТ.Стоматология")];
+  }
+  if (/macdent|mac\s*dent/i.test(profile.label)) return ["MacDent", path.join("MacDent", "Data")];
+  if (/stombox|stom\s*box/i.test(profile.label)) return ["Stombox", "StomBox", path.join("Stombox", "Data")];
+  if (/1c|1cv8/i.test(profile.label)) return ["1C", "1Cv8", "1cv8"];
+  if (/ident|stomx/i.test(profile.label)) return ["IDENT", "StomX", "Ident"];
+  if (/firebird|interbase/i.test(profile.label)) return ["Firebird", "InterBase"];
+  if (/3shape|medit|exocad/i.test(profile.label)) return ["3Shape", "Medit", "Exocad"];
+  return profile.label
+    .split(/[\/|]/)
+    .map((part) => part.trim())
+    .filter((part) => part.length >= 3 && part.length <= 40);
+}
+
+function migrationProfileDataRootBases() {
+  const home = os.homedir();
+  const programData = process.env.ProgramData || "C:\\ProgramData";
+  const localAppData = process.env.LOCALAPPDATA || path.join(home, "AppData", "Local");
+  const roamingAppData = process.env.APPDATA || path.join(home, "AppData", "Roaming");
+  const publicRoot = process.env.PUBLIC || path.join(path.parse(home).root || "C:\\", "Users", "Public");
+  return [
+    programData,
+    localAppData,
+    roamingAppData,
+    path.join(home, "Documents"),
+    path.join(home, "Desktop"),
+    path.join(home, "Downloads"),
+    path.join(home, "Pictures"),
+    path.join(publicRoot, "Documents"),
+    path.join(publicRoot, "Desktop")
+  ];
+}
+
+function migrationRootsFromWorkstationProfiles(profiles: (typeof migrationWorkstationProfiles)[number][]) {
+  const roots: string[] = [];
+  for (const profile of profiles) {
+    for (const relativeRoot of migrationProfileRelativeDataRoots(profile)) {
+      for (const baseRoot of migrationProfileDataRootBases()) {
+        const root = path.join(baseRoot, relativeRoot);
+        if (!migrationIsTooBroadDerivedRoot(root) && migrationRootExists(root)) roots.push(root);
+      }
+    }
+  }
+  return uniqueStrings(roots).slice(0, 80);
+}
+
+function migrationRootsFromWorkstationSignals(signals: MigrationWorkstationSignalCandidate[]) {
+  const roots: string[] = [];
+  for (const signal of signals) {
+    roots.push(...migrationRootsFromWorkstationProfiles(signal.profiles));
+    for (const fragment of migrationSignalPathFragments(signal.value)) {
+      const directory = migrationExistingDirectory(fragment);
+      if (!directory || migrationIsTooBroadDerivedRoot(directory)) continue;
+      for (const root of migrationNearbyDataRoots(directory)) {
+        if (!migrationIsTooBroadDerivedRoot(root) && migrationRootExists(root)) roots.push(root);
+      }
+    }
+  }
+  return uniqueStrings(roots).slice(0, 80);
+}
+
+async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
+  if (os.platform() !== "win32") return [] as string[];
+  const script = [
+    "$ErrorActionPreference='SilentlyContinue'",
+    "$rows = Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { [pscustomobject]@{ root=[string]$_.Root; displayRoot=[string]$_.DisplayRoot } }",
+    "$rows | ConvertTo-Json -Compress"
+  ].join("; ");
+  try {
+    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script], {
+      timeout: 1600,
+      maxBuffer: 80 * 1024,
+      windowsHide: true
+    });
+    if (!stdout.trim()) return [];
+    const parsed = JSON.parse(stdout);
+    const rows = Array.isArray(parsed) ? parsed : [parsed];
+    const roots: string[] = [];
+    for (const row of rows) {
+      const root = String(row?.root ?? "").trim();
+      const displayRoot = String(row?.displayRoot ?? "").trim();
+      if (/^[D-Z]:\\$/i.test(root)) roots.push(root);
+      if (displayRoot.startsWith("\\\\")) roots.push(displayRoot);
+    }
+    return uniqueStrings(roots).filter((root) => migrationRootExists(root)).slice(0, 32);
+  } catch {
+    warnings.add("Сетевые и внешние диски не удалось прочитать автоматически: поиск продолжился по доступным папкам и вручную указанным корням.");
+    return [];
+  }
+}
+
 function migrationCandidateFromWorkstationSignal(signal: MigrationWorkstationSignalCandidate): MigrationLocalSourceDiscoveryCandidate | null {
   const primaryProfile = signal.profiles[0];
   if (!primaryProfile) return null;
   const sourceRef = `workstation-signal:${migrationFingerprint(`${signal.channel}:${signal.value}`)}`;
   const reasons = [
     `${primaryProfile.label}: ${primaryProfile.reason}`,
-    `${migrationWorkstationSignalChannelTitle(signal.channel)} похож на установленную старую CRM/снимки/БД`
+    `${migrationWorkstationSignalChannelTitle(signal.channel)} похож на установленную старую CRM, снимки или базу`
   ];
   signal.profiles.slice(1, 3).forEach((profile) => reasons.push(`${profile.label}: ${profile.reason}`));
   return {
@@ -1104,18 +2079,22 @@ function migrationCandidateFromWorkstationSignal(signal: MigrationWorkstationSig
     latestModifiedAt: null,
     reasons,
     warnings: [
-      "Найден системный след старой программы без файлов данных: нужен штатный export, backup, data-folder или read-only bridge.",
-      "Discovery не возвращает имя процесса/службы/установленной программы, командную строку, локальные пути, пациентов или DICOM."
+      "Найден системный след старой программы без файлов данных: нужна штатная выгрузка, резервная копия, папка данных или локальный модуль только для чтения.",
+      "Автопоиск не раскрывает имя процесса, службы, установленной программы, ярлыка, командную строку, локальные пути, пациентов или снимки."
     ],
     smartImportLine: `${legacySourceTitles[primaryProfile.kind]} ${sourceRef}`
   };
 }
 
 async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscoveryRequest) {
-  const roots = (input.rootPaths?.length ? input.rootPaths : migrationDiscoveryDefaultRoots())
-    .map((root) => path.resolve(root))
-    .filter((root, index, all) => existsSync(root) && all.indexOf(root) === index);
   const warnings = new Set<string>();
+  const workstationSignals = await collectMigrationWorkstationSignals(input, warnings);
+  const workstationSignalRoots = migrationRootsFromWorkstationSignals(workstationSignals);
+  const baseRoots = input.rootPaths?.length ? input.rootPaths : migrationDiscoveryDefaultRoots();
+  const mappedRoots = input.rootPaths?.length ? [] : await readWindowsMigrationMappedRoots(warnings);
+  const roots = [...workstationSignalRoots, ...baseRoots, ...migrationDriveDataRoots(mappedRoots)]
+    .map((root) => path.resolve(root))
+    .filter((root, index, all) => migrationRootExists(root) && all.indexOf(root) === index);
   const candidates: MigrationLocalSourceDiscoveryCandidate[] = [];
   const visited = new Set<string>();
   const queue = roots.map((root) => ({ root, folderPath: root, depth: 0 }));
@@ -1151,7 +2130,12 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
     const folderWarnings = new Set<string>();
     const fileProfileMatches = new Map<string, (typeof migrationWorkstationProfiles)[number]>();
 
-    for (const entry of entries) {
+    const orderedEntries = [...entries].sort(
+      (left, right) =>
+        migrationDiscoveryEntryPriority(right, item.folderPath) - migrationDiscoveryEntryPriority(left, item.folderPath) ||
+        left.name.toString().localeCompare(right.name.toString())
+    );
+    for (const entry of orderedEntries) {
       const entryName = entry.name.toString();
       const fullPath = path.join(item.folderPath, entryName);
       if (entry.isDirectory()) {
@@ -1159,7 +2143,7 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
         const nextDepth = item.depth + 1;
         if (nextDepth <= input.maxDepth) {
           const nextItem = { root: item.root, folderPath: fullPath, depth: nextDepth };
-          if (migrationDirectoryPriority(fullPath) > 0) queue.unshift(nextItem);
+          if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
           else queue.push(nextItem);
         }
         continue;
@@ -1200,6 +2184,7 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
     }
 
     const hintScore = migrationFolderHintScore(item.folderPath);
+    const hasGenericDataContainerHint = migrationClinicDataContainerHint(item.folderPath);
     const profileMatches = Array.from(
       new Map(
         [...migrationWorkstationProfileMatches(`${item.folderPath} ${firstMatchPath}`), ...fileProfileMatches.values()].map((profile) => [profile.label, profile])
@@ -1220,14 +2205,14 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
     const isCandidate = matchedFiles > 0 ? confidence >= 0.24 : hintScore >= 0.28 || profileMatches.length > 0;
     if (!isCandidate) continue;
     const profileOnly = matchedFiles === 0 && profileMatches.length > 0;
-    const sourceRef =
+    const rawSourceRef =
       firstMatchPath ||
       (profileOnly && firstProfileEvidencePath
         ? `workstation-profile:${migrationFingerprint(firstProfileEvidencePath)}`
         : item.folderPath);
-    const sourceKind = migrationSourceKindFromCounts({
+    const detectedSourceKind = migrationSourceKindFromCounts({
       folderPath: item.folderPath,
-      firstMatchPath: firstMatchPath || firstProfileEvidencePath || sourceRef,
+      firstMatchPath: firstMatchPath || firstProfileEvidencePath || rawSourceRef,
       databaseFiles,
       dumpFiles,
       tableFiles,
@@ -1236,23 +2221,37 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
       imageFiles,
       hasDicomDir
     });
+    const sourceKind =
+      matchedFiles === 0 && hasGenericDataContainerHint && !profileMatches.length
+        ? ("unknown_legacy_source" as const)
+        : detectedSourceKind;
+    const shouldUseFolderSource =
+      sourceKind === "mis_database" && firstMatchPath ? migrationDbfFolderSourceRequired(item.folderPath, firstMatchPath) : false;
+    const sourceRef = shouldUseFolderSource ? item.folderPath : rawSourceRef;
     const reasons: string[] = [];
-    if (databaseFiles) reasons.push(`${databaseFiles} файлов старой БД`);
-    if (dumpFiles) reasons.push(`${dumpFiles} backup/dump файлов`);
+    if (databaseFiles) reasons.push(`${databaseFiles} файлов старой базы`);
+    if (dumpFiles) reasons.push(`${dumpFiles} файлов резервной копии`);
     if (tableFiles) reasons.push(`${tableFiles} табличных выгрузок`);
     if (archiveFiles) reasons.push(`${archiveFiles} архивов`);
-    if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} DICOM/DICOMDIR признаков`);
+    if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} признаков КТ/снимков`);
     if (imageFiles) reasons.push(`${imageFiles} изображений`);
     if (hintScore > 0) reasons.push("имя папки похоже на старую CRM/снимки/миграцию");
+    if (hasGenericDataContainerHint) reasons.push("имя папки похоже на контейнер резервных копий, выгрузок или данных клиники");
+    if (shouldUseFolderSource) reasons.push("DBF/FoxPro нужно переносить всей папкой, чтобы не потерять memo и index файлы");
     profileMatches.slice(0, 3).forEach((profile) => reasons.push(`${profile.label}: ${profile.reason}`));
+    if (!matchedFiles && hasGenericDataContainerHint) {
+      folderWarnings.add("Папка похожа на контейнер старой клиники, но на этом уровне нет явных баз, таблиц или снимков: откройте план, увеличьте глубину или выберите вложенную папку с данными, выгрузкой или резервной копией.");
+    }
     if (!matchedFiles && profileMatches.length) {
-      folderWarnings.add("Найден след старой системы без явных файлов БД/снимков на этом уровне: нужен read-only bridge, export или более глубокий rootPath.");
+      folderWarnings.add("Найден след старой системы без явных файлов базы или снимков на этом уровне: нужен локальный модуль только для чтения, штатная выгрузка или более глубокая корневая папка.");
     }
     const isProfileToken = sourceRef.startsWith("workstation-profile:");
     const primaryProfile = profileMatches[0] ?? null;
+    const safeDisplayName = primaryProfile ? migrationProfileSafeAlias(primaryProfile.label, sourceKind, sourceRef) : migrationSafeAlias(sourceKind, sourceRef);
+    const sourceRouteRef = registerMigrationSourceRoute(sourceRef, sourceKind, safeDisplayName);
     candidates.push({
-      sourceRef,
-      safeDisplayName: primaryProfile ? migrationProfileSafeAlias(primaryProfile.label, sourceKind, sourceRef) : migrationSafeAlias(sourceKind, sourceRef),
+      sourceRef: sourceRouteRef,
+      safeDisplayName,
       sourceKind,
       sourceLabel: isProfileToken ? "След установленной системы" : sourceRef === item.folderPath ? (profileMatches.length ? "Папка профиля старой системы" : "Папка-кандидат") : "Файл-кандидат",
       sourceFingerprint: migrationFingerprint(sourceRef),
@@ -1269,18 +2268,17 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
       latestModifiedAt,
       reasons,
       warnings: Array.from(folderWarnings),
-      smartImportLine: `${legacySourceTitles[sourceKind]} ${sourceRef}`
+      smartImportLine: `${legacySourceTitles[sourceKind]} ${sourceRouteRef}`
     });
   }
 
-  if (queue.length) warnings.add(`Поиск остановлен на maxFolders=${input.maxFolders}. Можно сузить rootPaths или увеличить лимит.`);
-  const workstationSignals = await collectMigrationWorkstationSignals(input, warnings);
+  if (queue.length) warnings.add(`Поиск остановлен после ${input.maxFolders} папок. Выберите папку ближе к старой программе или увеличьте лимит проверки.`);
   for (const signal of workstationSignals) {
     const candidate = migrationCandidateFromWorkstationSignal(signal);
     if (candidate) candidates.push(candidate);
   }
   if (!roots.length) warnings.add("Нет доступных корневых папок для миграционного поиска.");
-  if (!candidates.length) warnings.add("Старые БД, выгрузки, архивы или папки снимков не найдены в выбранных корнях.");
+  if (!candidates.length) warnings.add("Старые базы, выгрузки, архивы или папки снимков не найдены в выбранных корнях.");
   const sortedCandidates = candidates
     .sort(
       (left, right) =>
@@ -1298,7 +2296,7 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
     candidates: sortedCandidates,
     warnings: Array.from(warnings),
     nextAction: sortedCandidates.length
-      ? "Добавьте найденные источники в умный парсер. CRM построит staging-plan и preview до любой записи."
+      ? "Добавьте найденные источники в умный парсер. CRM построит черновой план и предпросмотр до любой записи."
       : "Укажите корневую папку вручную или подключите внешний диск со старой МИС/снимками."
   });
 }
@@ -1319,21 +2317,21 @@ function migrationWorkupExtractableEntities(kind: SmartImportLegacySource["kind"
 }
 
 function migrationWorkupHandoffs(kind: SmartImportLegacySource["kind"]) {
-  const privacy = "Передавать только локальный путь/manifest в защищенный API CRM; публичные карты/поиск не получают пациентов, файлы БД или DICOM.";
+  const privacy = "Передавать только локальный путь или список в CRM; публичные карты и поиск не получают пациентов, файлы старой базы или снимки.";
   if (kind === "dicom_folder" || kind === "pacs_dicom" || kind === "vendor_imaging_system") {
     return [
       {
-        title: "DICOM metadata workup",
+        title: "Проверка метаданных снимков",
         method: "POST" as const,
         endpoint: "/api/imaging/dicom/folder-workup-plan",
-        payloadHint: "folderPath + recursive + workstation client facts; pixel data stays local until selected",
+        payloadHint: "папка, режим обхода и сведения рабочей станции; тяжелые данные остаются локально до выбора серии",
         privacy
       },
       {
-        title: "Imaging manifest preview",
+        title: "Предпросмотр списка снимков",
         method: "POST" as const,
         endpoint: "/api/imaging/imports/preview",
-        payloadHint: "metadata rows after DICOM/header scan",
+        payloadHint: "строки метаданных после чтения заголовков снимков",
         privacy
       }
     ];
@@ -1341,17 +2339,17 @@ function migrationWorkupHandoffs(kind: SmartImportLegacySource["kind"]) {
   if (kind === "xray_image_archive") {
     return [
       {
-        title: "Folder manifest preview",
+        title: "Предпросмотр списка папки",
         method: "POST" as const,
         endpoint: "/api/imaging/folders/scan-preview",
-        payloadHint: "folderPath + sourceName; original images stay in place",
+        payloadHint: "папка и название источника; оригиналы снимков остаются на месте",
         privacy
       },
       {
-        title: "Imaging import preview",
+        title: "Предпросмотр импорта снимков",
         method: "POST" as const,
         endpoint: "/api/imaging/imports/preview",
-        payloadHint: "generated image manifest with patient/date/modality hints",
+        payloadHint: "собранный список снимков с подсказками пациента, даты и типа",
         privacy
       }
     ];
@@ -1359,27 +2357,27 @@ function migrationWorkupHandoffs(kind: SmartImportLegacySource["kind"]) {
   if (kind === "csv_export" || kind === "spreadsheet_export" || kind === "archive_export") {
     return [
       {
-        title: "Document/table extractor",
+        title: "Разбор документов и таблиц",
         method: "POST" as const,
         endpoint: "/api/ingestion/extract",
-        payloadHint: "file upload or extracted text, then route to smart import/patients/imaging/prices",
+        payloadHint: "файл или извлеченный текст, затем маршрут в импорт, пациентов, снимки или прайс",
         privacy
       },
       {
-        title: "Smart import preview",
+        title: "Предпросмотр импорта",
         method: "POST" as const,
         endpoint: "/api/imports/smart/preview",
-        payloadHint: "normalized text/manifest from extracted tables",
+        payloadHint: "нормализованный текст или список из извлеченных таблиц",
         privacy
       }
     ];
   }
   return [
     {
-      title: "Read-only local bridge staging",
+      title: "Локальный черновой разбор только для чтения",
       method: "POST" as const,
       endpoint: "/api/imports/smart/preview",
-      payloadHint: "CSV/manifest produced by local DB bridge; direct DB parsing is not run in browser",
+      payloadHint: "табличный список из локального модуля базы; браузер не разбирает базу напрямую",
       privacy
     }
   ];
@@ -1393,22 +2391,22 @@ function migrationWorkupSteps(kind: SmartImportLegacySource["kind"], sourceExist
         id: "metadata_scan",
         title: "Снять список исследований",
         status: firstStatus,
-        detail: "Прочитать DICOMDIR/заголовки и сгруппировать Study/Series без загрузки пикселей.",
-        actionLabel: "Метаданные DICOM"
+        detail: "Прочитать список снимков и сгруппировать исследования/серии без загрузки тяжелых данных.",
+        actionLabel: "Метаданные снимков"
       },
       {
         id: "patient_match",
         title: "Сопоставить пациентов",
         status: "manual" as const,
-        detail: "Сверить ФИО/телефон/дату вручную, потому что DICOM PatientName часто грязный или пустой.",
+        detail: "Сверить ФИО/телефон/дату вручную, потому что имя пациента в старых снимках часто грязное или пустое.",
         actionLabel: "Сверить совпадения"
       },
       {
         id: "viewer_workup",
-        title: "Подготовить CT/MPR",
+        title: "Подготовить КЛКТ/КТ-срезы",
         status: "needs_bridge" as const,
-        detail: "Для КТ подготовить workbench manifest; исходные пиксели остаются в локальной папке/вьюере.",
-        actionLabel: "План CT"
+        detail: "Для КЛКТ подготовить список серий для просмотра; исходные файлы остаются в локальной папке или в старом просмотрщике.",
+        actionLabel: "План КЛКТ"
       }
     ];
   }
@@ -1416,7 +2414,7 @@ function migrationWorkupSteps(kind: SmartImportLegacySource["kind"], sourceExist
     return [
       {
         id: "manifest",
-        title: "Собрать manifest снимков",
+        title: "Собрать список снимков",
         status: firstStatus,
         detail: "Найти RVG/ОПТГ/TRG/фото и извлечь дату/тип/пациента из имени файла или соседней таблицы.",
         actionLabel: "Сканировать папку"
@@ -1426,7 +2424,7 @@ function migrationWorkupSteps(kind: SmartImportLegacySource["kind"], sourceExist
         title: "Проверить неподтвержденные снимки",
         status: "manual" as const,
         detail: "Не привязывать снимки с сомнительным совпадением автоматически.",
-        actionLabel: "Открыть preview"
+        actionLabel: "Открыть предпросмотр"
       }
     ];
   }
@@ -1436,7 +2434,7 @@ function migrationWorkupSteps(kind: SmartImportLegacySource["kind"], sourceExist
         id: "extract",
         title: "Извлечь таблицы и текст",
         status: firstStatus,
-        detail: "Разобрать файл/архив в staging text, не записывая строки в базу.",
+        detail: "Разобрать файл/архив в черновой текст, не записывая строки в базу.",
         actionLabel: "Извлечь"
       },
       {
@@ -1444,7 +2442,7 @@ function migrationWorkupSteps(kind: SmartImportLegacySource["kind"], sourceExist
         title: "Показать предпросмотр",
         status: "ready" as const,
         detail: "Разделить пациентов, снимки, реквизиты клиники и мусорные строки.",
-        actionLabel: "Умный preview"
+        actionLabel: "Умный предпросмотр"
       }
     ];
   }
@@ -1453,21 +2451,21 @@ function migrationWorkupSteps(kind: SmartImportLegacySource["kind"], sourceExist
       id: "copy_snapshot",
       title: "Снять копию старой базы",
       status: sourceExists ? ("ready" as const) : ("manual" as const),
-      detail: "Работать с копией/backup, не с живой базой старой МИС.",
-      actionLabel: "Копия БД"
+      detail: "Работать с копией или резервной копией, не с живой базой старой МИС.",
+      actionLabel: "Копия базы"
     },
     {
       id: "local_bridge",
-      title: "Прогнать локальный staging bridge",
+      title: "Прогнать локальный черновой разбор",
       status: "needs_bridge" as const,
-      detail: "Извлечь таблицы пациентов/визитов/оплат/медиа-ссылок в CSV manifest для preview.",
-      actionLabel: "Staging bridge"
+      detail: "Извлечь таблицы пациентов, визитов, оплат и ссылок на снимки в табличный список для предпросмотра.",
+      actionLabel: "Локальный разбор"
     },
     {
       id: "control_sample",
       title: "Сверить 10 контрольных карт",
       status: "manual" as const,
-      detail: "До массового commit сравнить старую и новую карту по пациентам, визитам, оплатам и снимкам.",
+      detail: "До массовой записи сравнить старую и новую карту по пациентам, визитам, оплатам и снимкам.",
       actionLabel: "Контроль"
     }
   ];
@@ -1501,6 +2499,7 @@ function buildMigrationReadiness(input: {
   counts?: ReturnType<typeof emptyMigrationProbeCounts>;
   scannedFiles?: number;
   isBrowserManifest?: boolean;
+  isSmartPreviewSource?: boolean;
   isWorkstationProfile?: boolean;
   isUrl?: boolean;
   nextAction?: string;
@@ -1527,8 +2526,8 @@ function buildMigrationReadiness(input: {
         title: "Источник недоступен",
         status: "blocked",
         owner: "administrator",
-        detail: "CRM видит только alias/описание. Пока диск, сетевая папка, backup или export не подключены, preview строить нельзя.",
-        nextAction: "Подключить носитель, открыть read-only шару или выбрать фактическую data-папку/backup и повторить probe."
+        detail: "CRM видит только краткое описание источника. Пока диск, сетевая папка, резервная копия или выгрузка не подключены, предпросмотр строить нельзя.",
+        nextAction: "Подключить носитель, открыть сетевую папку только для чтения или выбрать фактическую папку данных либо резервной копии и повторить проверку."
       })
     );
   } else if (input.isWorkstationProfile) {
@@ -1538,19 +2537,30 @@ function buildMigrationReadiness(input: {
         title: "Найден только след старой программы",
         status: "blocked",
         owner: "administrator",
-        detail: "Shortcut/папка программы доказывает наличие старой системы, но не дает таблицы, DICOMDIR или backup.",
-        nextAction: input.nextAction ?? "Открыть старую программу, сделать штатный export или выбрать ее data-папку."
+        detail: "Ярлык или папка программы доказывает наличие старой системы, но не дает таблицы, выгрузку снимков или резервную копию.",
+        nextAction: input.nextAction ?? "Открыть старую программу, сделать штатную выгрузку или выбрать ее папку данных."
+      })
+    );
+  } else if (input.isSmartPreviewSource) {
+    warnings.push(
+      migrationReadinessItem({
+        id: "smart_preview_needs_real_source",
+        title: "Источник найден в тексте",
+        status: "warning",
+        owner: "administrator",
+        detail: "CRM распознала старую базу, КТ/снимки или выгрузку во вставленном тексте. Для реального переноса нужно выбрать фактический файл, папку, выгрузку или локальный модуль.",
+        nextAction: input.nextAction ?? "Открыть план, затем выбрать фактический источник или подготовить штатную выгрузку либо резервную копию."
       })
     );
   } else if (input.isBrowserManifest) {
     warnings.push(
       migrationReadinessItem({
         id: "browser_manifest_boundary",
-        title: "Manifest выбран в браузере",
+        title: "Список выбран в браузере",
         status: "warning",
         owner: "administrator",
         detail: "Сервер не хранит полный локальный путь и не сможет сам перечитать файлы после перезапуска.",
-        nextAction: "Для staging держать выбор папки активным, повторить выбор или подключить локальный bridge."
+        nextAction: "Для чернового разбора держать выбор папки активным, повторить выбор или подключить локальный модуль."
       })
     );
   } else {
@@ -1560,8 +2570,8 @@ function buildMigrationReadiness(input: {
         title: "Источник выбран",
         status: "ready",
         owner: "system",
-        detail: input.sourceIsDirectory ? "Есть доступная папка-источник." : `${input.sourceLabel} доступен для bounded probe/staging.`,
-        nextAction: "Использовать только read-only preview до подтверждения контрольной выборки."
+        detail: input.sourceIsDirectory ? "Есть доступная папка-источник." : `${input.sourceLabel} доступен для ограниченной проверки и чернового разбора.`,
+        nextAction: "Использовать только предпросмотр до подтверждения контрольной выборки."
       })
     );
   }
@@ -1570,24 +2580,24 @@ function buildMigrationReadiness(input: {
     blockers.push(
       migrationReadinessItem({
         id: hasNeedsExportAdapter ? "database_export_required" : "database_bridge_required",
-        title: hasNeedsExportAdapter ? "Нужен штатный export/backup" : "Нужен локальный staging bridge",
+        title: hasNeedsExportAdapter ? "Нужна штатная выгрузка или резервная копия" : "Нужен локальный черновой разбор",
         status: "blocked",
         owner: "administrator",
-        detail: "БД старой МИС нельзя коммитить напрямую. Нужна offline-копия или backup, затем нормализованный CSV/manifest для preview.",
+        detail: "Базу старой МИС нельзя переносить напрямую. Нужна отдельная копия или резервная копия, затем нормализованный табличный список для предпросмотра.",
         nextAction: hasNeedsExportAdapter
-          ? "Снять штатный export/backup старой системы и прогнать его через локальный bridge."
-          : "Прогнать read-only bridge на копии базы и открыть smart preview."
+          ? "Снять штатную выгрузку или резервную копию старой системы и прогнать ее через локальный модуль."
+          : "Прогнать локальный модуль только для чтения на копии базы и открыть предпросмотр импорта."
       })
     );
   } else if (input.sourceKind === "vendor_imaging_system" && !hasBuiltInAdapter) {
     blockers.push(
       migrationReadinessItem({
-        id: "vendor_export_required",
-        title: "Нужен export снимков",
+      id: "vendor_export_required",
+      title: "Нужна выгрузка снимков",
         status: "blocked",
         owner: "administrator",
-        detail: "Для vendor-системы нужен DICOM/DICOMDIR, папка хранения или manifest исследований. След программы сам по себе не переносит снимки.",
-        nextAction: input.nextAction ?? "Сделать DICOMDIR/export в старой программе и повторить probe."
+        detail: "Для программы снимков нужна штатная выгрузка, папка хранения или список исследований. След программы сам по себе не переносит снимки.",
+        nextAction: input.nextAction ?? "Сделать выгрузку снимков в старой программе и повторить проверку."
       })
     );
   } else if (input.automationLevel === "needs_file_upload") {
@@ -1597,19 +2607,19 @@ function buildMigrationReadiness(input: {
         title: "Нужен файл выгрузки",
         status: "blocked",
         owner: "administrator",
-        detail: "Архив/выгрузка должна быть выбрана явно и разобрана в staging, не поверх рабочей базы.",
-        nextAction: "Выбрать файл выгрузки или распаковать архив в отдельную read-only staging-папку."
+        detail: "Архив/выгрузка должна быть выбрана явно и разобрана в черновик, не поверх рабочей базы.",
+        nextAction: "Выбрать файл выгрузки или распаковать архив в отдельную папку только для чтения."
       })
     );
   } else if (hasNeedsBridgeAdapter || input.automationLevel === "needs_local_bridge") {
     warnings.push(
       migrationReadinessItem({
-        id: "bridge_needed_before_commit",
-        title: "Нужен bridge перед записью",
+        id: "local_module_needed_before_commit",
+        title: "Нужен локальный модуль перед записью",
         status: "warning",
         owner: "administrator",
-        detail: "Preview можно готовить только через manifest/staging route; массовая запись из исходных файлов запрещена.",
-        nextAction: adapters.find((adapter) => adapter.status === "needs_local_bridge")?.nextAction ?? "Построить staging manifest и открыть preview."
+        detail: "Предпросмотр можно готовить только через список или черновой маршрут; массовая запись из исходных файлов запрещена.",
+        nextAction: adapters.find((adapter) => adapter.status === "needs_local_bridge")?.nextAction ?? "Построить черновой список и открыть предпросмотр."
       })
     );
   } else if (hasManualAdapter || input.automationLevel === "manual_review") {
@@ -1627,11 +2637,11 @@ function buildMigrationReadiness(input: {
     ready.push(
       migrationReadinessItem({
         id: "preview_route_ready",
-        title: "Есть route для preview",
+        title: "Есть путь к предпросмотру",
         status: "ready",
         owner: "system",
-        detail: "Источник можно вести в metadata/table preview без немедленной записи в базу CRM.",
-        nextAction: adapters[0]?.nextAction ?? input.nextAction ?? "Открыть preview и проверить первые строки/исследования."
+        detail: "Источник можно вести в предпросмотр метаданных/таблиц без немедленной записи в базу CRM.",
+        nextAction: adapters[0]?.nextAction ?? input.nextAction ?? "Открыть предпросмотр и проверить первые строки/исследования."
       })
     );
   }
@@ -1643,19 +2653,19 @@ function buildMigrationReadiness(input: {
         title: "Инвентаризация выполнена",
         status: "ready",
         owner: "system",
-        detail: `Probe увидел ${inventoryCount || input.scannedFiles || 0} артефактов без раскрытия сырых путей в UI.`,
-        nextAction: "Использовать safe alias и artifact samples для выбора staging route."
+        detail: `Проверка увидела ${inventoryCount || input.scannedFiles || 0} артефактов без раскрытия сырых путей в UI.`,
+        nextAction: "Использовать краткое имя и образцы артефактов для выбора маршрута чернового разбора."
       })
     );
-  } else if (input.sourceExists && !input.isWorkstationProfile && !input.isUrl) {
+  } else if (input.sourceExists && !input.isWorkstationProfile && !input.isSmartPreviewSource && !input.isUrl) {
     warnings.push(
       migrationReadinessItem({
         id: "inventory_not_confirmed",
         title: "Состав источника еще не подтвержден",
         status: "warning",
         owner: "administrator",
-        detail: "План построен по типу источника; для уверенности нужен probe или явный manifest.",
-        nextAction: "Запустить read-only probe с лимитами по папкам и файлам."
+        detail: "План построен по типу источника; для уверенности нужна проверка или явный список файлов.",
+        nextAction: "Запустить проверку только для чтения с лимитами по папкам и файлам."
       })
     );
   }
@@ -1667,17 +2677,17 @@ function buildMigrationReadiness(input: {
       status: "warning",
       owner: "doctor",
       detail: "Перед массовой записью врач сверяет 10-20 карт: ФИО, даты, визиты, оплаты, документы и снимки.",
-      nextAction: "После preview открыть контрольную выборку и запретить commit до подтверждения."
+      nextAction: "После предпросмотра открыть контрольную выборку и запретить массовую запись до подтверждения."
     })
   );
   ready.push(
-    migrationReadinessItem({
-      id: "public_lookup_scope",
-      title: "Публичный lookup ограничен реквизитами",
-      status: "ready",
-      owner: "system",
-      detail: "Онлайн-поиск работает только с ИНН/ОГРН/КПП/названием/адресом/лицензией клиники, без пациентов и файлов.",
-      nextAction: "Не отправлять пациентские строки, DICOM, БД и локальные пути в public lookup."
+      migrationReadinessItem({
+        id: "public_lookup_scope",
+        title: "Онлайн-поиск ограничен реквизитами",
+        status: "ready",
+        owner: "system",
+        detail: "Онлайн-поиск работает только с ИНН/ОГРН/КПП/названием/адресом/лицензией клиники, без пациентов и файлов.",
+        nextAction: "Не отправлять пациентские строки, снимки, базы и локальные пути в онлайн-поиск реквизитов."
     })
   );
 
@@ -1690,7 +2700,7 @@ function buildMigrationReadiness(input: {
     ? "blocked"
     : finalBlockers.some((item) => item.id.includes("export") || item.id.includes("profile") || item.id.includes("file_upload"))
       ? "needs_export"
-      : finalBlockers.length || hasNeedsBridgeAdapter || input.automationLevel === "needs_local_bridge" || input.isBrowserManifest
+      : finalBlockers.length || hasNeedsBridgeAdapter || input.automationLevel === "needs_local_bridge" || input.isBrowserManifest || input.isSmartPreviewSource
         ? "needs_bridge"
         : hasManualAdapter || input.automationLevel === "manual_review"
           ? "manual_review"
@@ -1701,7 +2711,7 @@ function buildMigrationReadiness(input: {
     blockers: finalBlockers,
     warnings: finalWarnings,
     ready: finalReady,
-    nextAction: finalBlockers[0]?.nextAction ?? finalWarnings[0]?.nextAction ?? finalReady[0]?.nextAction ?? input.nextAction ?? "Открыть staging preview."
+    nextAction: finalBlockers[0]?.nextAction ?? finalWarnings[0]?.nextAction ?? finalReady[0]?.nextAction ?? input.nextAction ?? "Открыть черновой предпросмотр."
   };
 }
 
@@ -1712,7 +2722,7 @@ function migrationBridgeAction(input: MigrationBridgeKitAction): MigrationBridge
 function migrationBridgeOutputManifest(kind: SmartImportLegacySource["kind"], endpoint: string): MigrationBridgeKit["outputManifest"] {
   if (migrationSourceKindIsImaging(kind)) {
     return {
-      format: "metadata CSV/JSON manifest",
+      format: "список метаданных снимков",
       endpoint,
       requiredColumns: ["source_id", "modality", "study_date_or_file_date", "safe_artifact_id"],
       optionalColumns: ["patient_hint", "tooth", "study_uid", "series_uid", "file_alias", "notes"],
@@ -1721,7 +2731,7 @@ function migrationBridgeOutputManifest(kind: SmartImportLegacySource["kind"], en
   }
   if (migrationSourceKindIsDatabase(kind)) {
     return {
-      format: "staging CSV/JSON manifest",
+      format: "табличный список чернового импорта",
       endpoint,
       requiredColumns: ["legacy_patient_id", "patient_name", "source_table", "source_row_hash"],
       optionalColumns: ["phone", "birth_date", "visit_date", "service_code", "payment_amount", "media_alias"],
@@ -1730,7 +2740,7 @@ function migrationBridgeOutputManifest(kind: SmartImportLegacySource["kind"], en
   }
   if (migrationSourceKindIsTableLike(kind)) {
     return {
-      format: "uploaded table/text staging",
+      format: "загруженная таблица или черновой текст",
       endpoint,
       requiredColumns: ["row_number", "raw_text_or_cells", "source_alias"],
       optionalColumns: ["patient_name", "phone", "birth_date", "visit_date", "amount", "document_hint"],
@@ -1738,7 +2748,7 @@ function migrationBridgeOutputManifest(kind: SmartImportLegacySource["kind"], en
     };
   }
   return {
-    format: "manual CSV/JSON manifest",
+    format: "ручной список для предпросмотра",
     endpoint,
     requiredColumns: ["source_alias", "raw_text_or_note", "operator_label"],
     optionalColumns: ["patient_hint", "date_hint", "artifact_type", "comment"],
@@ -1755,27 +2765,28 @@ function buildMigrationBridgeKit(input: {
   adapters?: MigrationProbeAdapter[];
   handoffs?: ReturnType<typeof migrationWorkupHandoffs>;
   isBrowserManifest?: boolean;
+  isSmartPreviewSource?: boolean;
   isWorkstationProfile?: boolean;
   isUrl?: boolean;
 }): MigrationBridgeKit {
   const handoffEndpoint = input.handoffs?.[0]?.endpoint ?? "/api/imports/smart/preview";
   const commonPrivacy =
-    "Пациенты, телефоны, DICOM, снимки, файлы БД, пароли и сырые локальные пути остаются в локальном staging. Публичный lookup получает только реквизиты клиники.";
+    "Пациенты, телефоны, снимки, файлы базы, пароли и сырые локальные пути остаются в локальном черновике. Публичный поиск получает только реквизиты клиники.";
   const doctorControl = migrationBridgeAction({
     id: "doctor_control_sample",
     owner: "doctor",
     title: "Сверить контрольные карты",
-    detail: "После preview открыть 10-20 карт и проверить ФИО, даты, визиты, оплаты, документы и снимки до массовой записи.",
-    safety: "Без подтверждения врача массовый commit остается запрещенным.",
+    detail: "После предпросмотра открыть 10-20 карт и проверить ФИО, даты, визиты, оплаты, документы и снимки до массовой записи.",
+    safety: "Без подтверждения врача массовая запись остается запрещенной.",
     doneWhen: "Контрольная выборка отмечена как совпавшая или спорные строки отправлены на ручной разбор."
   });
   const publicScope = migrationBridgeAction({
     id: "public_lookup_scope",
     owner: "system",
-    title: "Не смешивать clinic lookup и пациентов",
-    detail: "Онлайн API/карты используются только для ИНН, ОГРН, КПП, названия, адреса и лицензии клиники.",
-    safety: "Пациентские строки и локальные источники не попадают в public query.",
-    doneWhen: "Все public lookup targets построены из sanitized clinic fields."
+    title: "Не смешивать поиск реквизитов и пациентов",
+    detail: "Онлайн-поиск и карты используются только для ИНН, ОГРН, КПП, названия, адреса и лицензии клиники.",
+    safety: "Пациентские строки и локальные источники не попадают в онлайн-поиск.",
+    doneWhen: "Все онлайн-запросы построены только из полей реквизитов клиники."
   });
   const baseStatus: MigrationBridgeKit["status"] = input.readiness.level === "blocked"
     ? "blocked"
@@ -1790,89 +2801,113 @@ function buildMigrationBridgeKit(input: {
   if (input.isBrowserManifest) {
     return {
       kind: "browser_manifest_bridge",
-      title: "Browser-local manifest bridge",
+      title: "Выбранная в браузере папка",
       status: "needs_admin",
-      requiredTools: ["Повторный выбор папки/файлов в браузере", "Локальный bridge для долговременного staging", "Smart import preview"],
+      requiredTools: ["Повторный выбор папки/файлов в браузере", "Локальный модуль для долговременного чернового разбора", "Предпросмотр импорта"],
       parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
       adminActions: [
         migrationBridgeAction({
           id: "keep_browser_handle",
           owner: "administrator",
           title: "Сохранить доступ к выбранной папке",
-          detail: "Браузерный manifest содержит счетчики и fingerprint, но не дает серверу долговременно читать файлы.",
+          detail: "Браузерный список содержит счетчики и номер источника, но не дает серверу долговременно читать файлы.",
           safety: "CRM не сохраняет сырые пути и содержимое файлов без явного выбора.",
-          doneWhen: "Админ повторно выбрал папку или поднял локальный bridge для staging."
+          doneWhen: "Админ повторно выбрал папку или поднял локальный модуль для чернового разбора."
         })
       ],
       doctorActions: [doctorControl],
       outputManifest: migrationBridgeOutputManifest(input.sourceKind, handoffEndpoint),
       privacyBoundary: commonPrivacy,
-      nextAction: "Повторить выбор источника или подключить локальный bridge, затем открыть preview."
+      nextAction: "Повторить выбор источника или подключить локальный модуль, затем открыть предпросмотр."
+    };
+  }
+
+  if (input.isSmartPreviewSource) {
+    return {
+      kind: "manual_manifest",
+      title: "Источник миграции из текста",
+      status: "needs_admin",
+       requiredTools: ["Фактический файл, папка или выгрузка", "Локальный модуль для старой базы или снимков", "Предпросмотр импорта"],
+      parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
+      adminActions: [
+        migrationBridgeAction({
+          id: "attach_real_source",
+          owner: "administrator",
+          title: "Подтвердить реальный источник",
+          detail: "Текстовая вставка уже подсказала тип источника. Теперь нужно выбрать сам файл, папку, штатную выгрузку или локальный модуль только для чтения, чтобы не искать формат вручную.",
+          safety: "План использует внутренний номер; фактические файлы остаются в локальном черновом разборе до предпросмотра.",
+          doneWhen: "Источник выбран явно или подготовлена выгрузка либо резервная копия, после чего открыт предпросмотр."
+        })
+      ],
+      doctorActions: [doctorControl],
+      outputManifest: migrationBridgeOutputManifest(input.sourceKind, handoffEndpoint),
+      privacyBoundary: commonPrivacy,
+      nextAction: "Подтвердить фактический файл, папку или выгрузку для найденного в тексте источника и открыть предпросмотр."
     };
   }
 
   if (migrationSourceKindIsDatabase(input.sourceKind)) {
     const toolByKind: Record<string, string> = {
-      firebird_database: "Firebird gbak/isql или vendor export только на копии",
-      access_database: "Microsoft ACE/ODBC read-only bridge или CSV export из Access",
-      sqlite_database: "sqlite3 read-only dump/query bridge",
-      sql_dump: "Нативный restore/export в staging, не в рабочую CRM",
-      mis_database: "Vendor export или offline DB bridge по копии старой МИС"
+      firebird_database: "Штатная выгрузка или локальный разбор копии серверной базы",
+      access_database: "Табличная выгрузка или локальный разбор копии настольной базы",
+      sqlite_database: "Локальный разбор копии базы программы",
+      sql_dump: "Восстановление копии в черновой список, не в рабочую CRM",
+      mis_database: "Штатная выгрузка или локальный разбор копии старой МИС"
     };
     return {
       kind: "local_db_bridge",
-      title: `${legacySourceTitles[input.sourceKind]} bridge kit`,
+      title: `${legacySourceTitles[input.sourceKind]}: локальный разбор`,
       status: input.isWorkstationProfile ? "needs_export" : baseStatus,
-      requiredTools: [toolByKind[input.sourceKind] ?? "Read-only DB bridge", "Offline backup/copy", "CSV/JSON staging manifest", "Smart import preview"],
+      requiredTools: [toolByKind[input.sourceKind] ?? "Локальный разбор базы только для чтения", "Копия или резервная копия старой базы", "Табличный черновик для предпросмотра", "Предпросмотр импорта"],
       parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
       adminActions: [
         migrationBridgeAction({
           id: "offline_copy",
           owner: "administrator",
-          title: "Снять offline copy/backup",
-          detail: "Работать с копией старой БД или штатным backup/export, не с живой рабочей базой клиники.",
-          safety: "Bridge не пишет в старую МИС и не хранит пароль в отчете.",
-          doneWhen: "Есть копия/backup и known source fingerprint, live DB connection не используется."
+          title: "Снять копию или резервную копию",
+          detail: "Работать с копией старой базы или штатной резервной копией/выгрузкой, не с живой рабочей базой клиники.",
+          safety: "Локальный модуль не пишет в старую МИС и не хранит пароль в отчете.",
+          doneWhen: "Есть копия или резервная копия и внутренний номер источника; подключение к живой базе не используется."
         }),
         migrationBridgeAction({
           id: "emit_staging_manifest",
           owner: "system",
-          title: "Собрать staging manifest",
-          detail: "Извлечь пациентов, визиты, оплаты, документы, услуги и media aliases в нормализованные CSV/JSON строки.",
-          safety: "Commit запрещен до preview; исходные DB-файлы не отправляются в публичные сервисы.",
-          doneWhen: "Manifest содержит source_row_hash и контрольные totals по таблицам."
+          title: "Собрать черновой список",
+          detail: "Извлечь пациентов, визиты, оплаты, документы, услуги и номера снимков в нормализованный табличный черновик.",
+          safety: "Запись запрещена до предпросмотра; исходные файлы базы не отправляются в публичные сервисы.",
+          doneWhen: "Список содержит контроль строки и контрольные итоги по таблицам."
         })
       ],
       doctorActions: [doctorControl],
       outputManifest: migrationBridgeOutputManifest(input.sourceKind, "/api/imports/smart/preview"),
       privacyBoundary: commonPrivacy,
-      nextAction: input.isWorkstationProfile ? "Найти реальную data-папку/backup старой МИС, затем прогнать DB bridge." : "Снять backup/copy и прогнать local DB bridge в smart preview."
+      nextAction: input.isWorkstationProfile ? "Найти реальную папку данных или резервную копию старой МИС, затем прогнать локальный разбор базы." : "Снять копию/резервную копию и прогнать локальный разбор базы в предпросмотр импорта."
     };
   }
 
   if (input.sourceKind === "vendor_imaging_system" || input.sourceKind === "dicom_folder" || input.sourceKind === "pacs_dicom") {
     return {
       kind: "dicom_export",
-      title: `${legacySourceTitles[input.sourceKind]} export kit`,
+      title: `${legacySourceTitles[input.sourceKind]}: выгрузка снимков`,
       status: input.isWorkstationProfile ? "needs_export" : baseStatus,
-      requiredTools: ["Штатный DICOM/DICOMDIR export", "DICOM folder workup", "Study/Series metadata preview", "Ручная сверка пациента"],
+      requiredTools: ["Штатная выгрузка снимков", "Проверка папки снимков", "Предпросмотр исследования/серии", "Ручная сверка пациента"],
       parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
       adminActions: [
         migrationBridgeAction({
           id: "export_dicomdir",
           owner: "administrator",
-          title: "Получить DICOMDIR или папку исследования",
-          detail: "Открыть старую imaging-систему и сделать штатный export, либо выбрать read-only storage/data folder.",
-          safety: "Пиксели не копируются в CRM до явного выбора исследования.",
-          doneWhen: "Есть DICOMDIR/папка, Study/Series headers читаются в workup."
+          title: "Получить папку исследования или выгрузку снимков",
+          detail: "Открыть старую программу снимков и сделать штатную выгрузку, либо выбрать папку хранения только для чтения.",
+          safety: "Тяжелые данные снимков не копируются в CRM до явного выбора исследования.",
+          doneWhen: "Есть папка исследования/выгрузка, метаданные исследования/серии читаются в проверке."
         }),
         migrationBridgeAction({
           id: "metadata_workup",
           owner: "system",
-          title: "Построить metadata-only manifest",
-          detail: "Сгруппировать Study/Series UID, modality, даты и patient hints без публикации путей и без public lookup.",
+          title: "Построить список метаданных",
+          detail: "Сгруппировать внутренние коды исследования/серии, тип снимка, даты и подсказки пациента без публикации путей и без публичного поиска.",
           safety: "Пациентские совпадения остаются неподтвержденными до ручной проверки.",
-          doneWhen: "В preview видны серии, modality и safe artifact ids."
+          doneWhen: "В предпросмотре видны серии, тип снимка и внутренние номера файлов."
         })
       ],
       doctorActions: [doctorControl],
@@ -1885,121 +2920,134 @@ function buildMigrationBridgeKit(input: {
   if (input.sourceKind === "xray_image_archive") {
     return {
       kind: "image_manifest",
-      title: "RVG/OPG/photo manifest kit",
+      title: "RVG/ОПТГ/фото: список снимков",
       status: baseStatus,
-      requiredTools: ["Read-only folder scan", "Image manifest builder", "Imaging import preview"],
+      requiredTools: ["Сканирование папки только для чтения", "Сборка списка снимков", "Предпросмотр импорта снимков"],
       parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
       adminActions: [
         migrationBridgeAction({
           id: "scan_images",
           owner: "assistant",
-          title: "Собрать manifest снимков",
-          detail: "Сканировать папку read-only и извлечь дату, тип снимка и patient hints из имени файла/соседних таблиц.",
+          title: "Собрать список снимков",
+          detail: "Сканировать папку только для чтения и извлечь дату, тип снимка и подсказки пациента из имени файла или соседних таблиц.",
           safety: "Не переименовывать оригиналы и не привязывать сомнительные совпадения автоматически.",
-          doneWhen: "Preview показывает safe aliases и список неподтвержденных привязок."
+          doneWhen: "Предпросмотр показывает внутренние номера и список неподтвержденных привязок."
         })
       ],
       doctorActions: [doctorControl],
       outputManifest: migrationBridgeOutputManifest(input.sourceKind, handoffEndpoint),
       privacyBoundary: commonPrivacy,
-      nextAction: "Собрать image manifest и открыть preview спорных совпадений."
+      nextAction: "Собрать список снимков и открыть предпросмотр спорных совпадений."
     };
   }
 
   if (input.sourceKind === "network_share") {
     return {
       kind: "network_share_bridge",
-      title: "Read-only network share bridge",
+      title: "Сетевая папка только для чтения",
       status: baseStatus,
-      requiredTools: ["Read-only SMB/UNC credentials", "Bounded folder scan", "Staging manifest"],
+      requiredTools: ["Доступ SMB/UNC только для чтения", "Ограниченное сканирование папки", "Черновой список"],
       parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
       adminActions: [
         migrationBridgeAction({
           id: "mount_read_only_share",
           owner: "administrator",
-          title: "Подключить шару только на чтение",
-          detail: "Дать CRM/bridge доступ к конкретной сетевой папке, не ко всему серверу.",
+          title: "Подключить сетевую папку только на чтение",
+          detail: "Дать CRM или локальному модулю доступ к конкретной сетевой папке, не ко всему серверу.",
           safety: "Сканирование ограничено лимитами folders/files и не пишет в сетевой источник.",
-          doneWhen: "Probe видит bounded inventory и safe artifact samples."
+          doneWhen: "Проверка видит ограниченный инвентарь и примеры внутренних номеров файлов."
         })
       ],
       doctorActions: [doctorControl],
       outputManifest: migrationBridgeOutputManifest(input.sourceKind, handoffEndpoint),
       privacyBoundary: commonPrivacy,
-      nextAction: "Подключить read-only UNC/SMB путь и запустить probe."
+      nextAction: "Подключить UNC/SMB путь только для чтения и запустить проверку."
     };
   }
 
   if (migrationSourceKindIsTableLike(input.sourceKind)) {
     return {
       kind: "file_upload",
-      title: "Table/archive import kit",
+      title: "Табличная выгрузка: разбор",
       status: baseStatus,
-      requiredTools: ["Document/table extractor", "Smart import preview", "CSV diagnostic report"],
+      requiredTools: ["Разбор документов/таблиц", "Предпросмотр импорта", "Отчет диагностики"],
       parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
       adminActions: [
         migrationBridgeAction({
           id: "extract_table",
           owner: "administrator",
-          title: "Извлечь таблицы в staging",
+          title: "Извлечь таблицы в черновик",
           detail: "Загрузить файл/архив или вставить первые строки, затем разделить пациентов, оплаты, услуги, документы и мусор.",
-          safety: "Запись возможна только после preview; clinic lookup строится отдельно от patient rows.",
-          doneWhen: "Preview показывает классификацию строк и готовые/спорные записи."
+          safety: "Запись возможна только после предпросмотра; реквизиты клиники ищутся отдельно от строк пациентов.",
+          doneWhen: "Предпросмотр показывает классификацию строк и готовые/спорные записи."
         })
       ],
       doctorActions: [doctorControl],
       outputManifest: migrationBridgeOutputManifest(input.sourceKind, handoffEndpoint),
       privacyBoundary: commonPrivacy,
-      nextAction: "Открыть extractor/smart preview для табличной выгрузки."
+      nextAction: "Открыть разбор документов и предпросмотр для табличной выгрузки."
     };
   }
 
   return {
     kind: "manual_manifest",
-    title: "Manual migration manifest kit",
+    title: "Ручной пакет миграции",
     status: "manual",
-    requiredTools: ["Ручной CSV/JSON manifest", "Smart import preview", "Контрольная выборка"],
+      requiredTools: ["Ручной список для предпросмотра", "Предпросмотр импорта", "Контрольная выборка"],
     parserTargets: Array.from(migrationWorkupExtractableEntities(input.sourceKind)),
     adminActions: [
       migrationBridgeAction({
         id: "identify_format",
         owner: "administrator",
         title: "Опознать формат источника",
-        detail: "Выбрать конкретный файл, папку или export вместо общего описания старой системы.",
-        safety: "Не импортировать вслепую и не отправлять пациентские примеры в public lookup.",
-        doneWhen: "Источник переведен в один из явных маршрутов: DB, table, DICOM, image folder, archive."
+        detail: "Выбрать конкретный файл, папку или выгрузку вместо общего описания старой системы.",
+          safety: "Не импортировать вслепую и не отправлять пациентские примеры в онлайн-поиск реквизитов.",
+          doneWhen: "Источник переведен в один из явных маршрутов: база, таблица, папка снимков или архив."
       })
     ],
     doctorActions: [doctorControl, publicScope],
     outputManifest: migrationBridgeOutputManifest(input.sourceKind, "/api/imports/smart/preview"),
     privacyBoundary: commonPrivacy,
-    nextAction: "Уточнить формат источника и повторить workup/probe."
+    nextAction: "Уточнить формат источника и повторить план/проверку."
   };
 }
 
 function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupRequest) {
-  const sourceRef = input.sourceRef.trim();
+  const routeRef = resolveMigrationSourceRoute(input.sourceRef);
+  const sourceRef = routeRef.sourceRef;
   const isUrl = /^https?:\/\//i.test(sourceRef);
   const isBrowserManifest = /^browser-local:[a-f0-9]{8,12}$/i.test(sourceRef);
+  const isSmartPreviewSource = /^smart-preview:[a-f0-9]{8,12}$/i.test(sourceRef);
   const isWorkstationProfile = /^workstation-profile:[a-f0-9]{8,12}$/i.test(sourceRef);
   const isWorkstationSignal = /^workstation-signal:[a-f0-9]{8,12}$/i.test(sourceRef);
   const isWorkstationTrace = isWorkstationProfile || isWorkstationSignal;
-  const normalizedSourceRef = isUrl || sourceRef.startsWith("\\\\") || isBrowserManifest || isWorkstationTrace ? sourceRef : path.resolve(sourceRef);
-  const inferredKind = input.sourceKind ?? detectLegacySourceKind(normalizedSourceRef, normalizedSourceRef);
+  const isBrowserLikeManifest = isBrowserManifest || isSmartPreviewSource;
+  const normalizedSourceRef = isUrl || sourceRef.startsWith("\\\\") || isBrowserLikeManifest || isWorkstationTrace || routeRef.routeExpired ? sourceRef : path.resolve(sourceRef);
+  const inferredKind = input.sourceKind ?? routeRef.route?.sourceKind ?? detectLegacySourceKind(normalizedSourceRef, normalizedSourceRef);
   const playbook = legacySourcePlaybook(inferredKind);
-  const vendorGuidance = migrationVendorGuidanceMatches(`${input.safeDisplayName ?? ""} ${normalizedSourceRef}`).slice(0, 2);
-  let sourceExists = isUrl || isBrowserManifest || isWorkstationTrace;
+  const safeDisplayName = input.safeDisplayName?.trim() || routeRef.route?.safeDisplayName || migrationSafeAlias(inferredKind, normalizedSourceRef);
+  const vendorGuidance = migrationVendorGuidanceMatches(`${safeDisplayName} ${routeRef.routeExpired ? "" : normalizedSourceRef}`).slice(0, 2);
+  let sourceExists = !routeRef.routeExpired && (isUrl || isBrowserLikeManifest || isWorkstationTrace);
   let sourceIsDirectory = false;
-  let fileExtension: string | null = isUrl || isBrowserManifest || isWorkstationTrace ? null : path.extname(normalizedSourceRef).toLowerCase() || null;
+  let fileExtension: string | null = isUrl || isBrowserLikeManifest || isWorkstationTrace ? null : path.extname(normalizedSourceRef).toLowerCase() || null;
   const warnings: string[] = [];
 
+  if (routeRef.routeExpired) {
+    warnings.push("Внутренний номер источника устарел или был создан в другой серверной сессии: повторите автопоиск или выбор папки, чтобы получить новый номер.");
+    fileExtension = null;
+  } else if (routeRef.routeToken) {
+    warnings.push("Источник передан через внутренний номер: сырой локальный путь не возвращается в браузер и отчеты.");
+  }
+
   if (isBrowserManifest) {
-    warnings.push("Источник пришел как браузерный manifest: полный локальный путь серверу недоступен. Для реального staging нужен локальный bridge, повторный выбор папки или ручной путь администратора.");
+    warnings.push("Источник пришел как браузерный список: полный локальный путь серверу недоступен. Для реального чернового разбора нужен локальный модуль, повторный выбор папки или ручной путь администратора.");
+  } else if (isSmartPreviewSource) {
+    warnings.push("Источник пришел из текста/Excel/OCR: CRM уже поняла тип, но для чернового разбора нужен фактический файл, папка, выгрузка или локальный модуль.");
   } else if (isWorkstationProfile) {
-    warnings.push("Источник пришел как след установленной системы: это подсказка с рабочей станции, а не сама база. Для миграции нужен read-only bridge, штатный export, backup или выбор data-папки.");
+    warnings.push("Источник пришел как след установленной системы: это подсказка с рабочей станции, а не сама база. Для миграции нужен локальный модуль только для чтения, штатная выгрузка, резервная копия или выбор папки данных.");
   } else if (isWorkstationSignal) {
-    warnings.push("Источник пришел как системный след рабочей станции: процесс/служба/настроенный сигнал распознан, но это не база и не папка снимков. Нужен export, backup, data-folder или read-only bridge.");
-  } else if (!isUrl) {
+    warnings.push("Источник пришел как системный след рабочей станции: процесс, служба или настроенный сигнал распознан, но это не база и не папка снимков. Нужна выгрузка, резервная копия, папка данных или локальный модуль только для чтения.");
+  } else if (!routeRef.routeExpired && !isUrl) {
     try {
       const stat = statSync(normalizedSourceRef);
       sourceExists = true;
@@ -2012,9 +3060,11 @@ function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupReques
   }
 
   const sourceLabel = isUrl
-    ? "Сетевой endpoint"
+    ? "Сетевой адрес"
     : isBrowserManifest
-      ? "Браузерный manifest"
+      ? "Браузерный список"
+      : isSmartPreviewSource
+        ? "Строка предпросмотра"
       : isWorkstationProfile
         ? "След установленной системы"
         : isWorkstationSignal
@@ -2024,8 +3074,8 @@ function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupReques
             : sourceExists
               ? "Локальный файл"
               : "Путь или источник";
-  const safeDisplayName = input.safeDisplayName?.trim() || migrationSafeAlias(inferredKind, normalizedSourceRef);
-  const smartImportLine = `${legacySourceTitles[inferredKind]} ${normalizedSourceRef}`;
+  const smartImportLineSourceRef = routeRef.routeToken ?? (isMigrationPublicSourceToken(normalizedSourceRef) ? normalizedSourceRef : registerMigrationSourceRoute(normalizedSourceRef, inferredKind, safeDisplayName));
+  const smartImportLine = `${legacySourceTitles[inferredKind]} ${smartImportLineSourceRef}`;
   const requiredArtifacts = uniqueStrings([...playbook.requiredArtifacts, ...vendorGuidance.flatMap((guidance) => guidance.requiredArtifacts)]);
   const recommendedRoute = uniqueStrings([playbook.recommendedRoute, ...vendorGuidance.map((guidance) => guidance.recommendedRoute)]).join(" ");
   const nextAction = vendorGuidance[0]?.nextAction ?? playbook.nextAction;
@@ -2039,7 +3089,8 @@ function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupReques
     automationLevel: playbook.automationLevel,
     requiredArtifacts,
     handoffs,
-    isBrowserManifest,
+    isBrowserManifest: isBrowserLikeManifest,
+    isSmartPreviewSource,
     isWorkstationProfile: isWorkstationTrace,
     isUrl,
     nextAction
@@ -2052,11 +3103,12 @@ function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupReques
     readiness,
     handoffs,
     isBrowserManifest,
+    isSmartPreviewSource,
     isWorkstationProfile: isWorkstationTrace,
     isUrl
   });
   if (vendorGuidance.length) {
-    warnings.push(`Профиль ${vendorGuidance.map((guidance) => guidance.label).join(" / ")} распознан: добавлены vendor-specific подсказки export/data-folder/bridge.`);
+    warnings.push(`Профиль ${vendorGuidance.map((guidance) => guidance.label).join(" / ")} распознан: добавлены подсказки по штатной выгрузке, папке данных и локальному модулю.`);
   }
 
   return migrationLocalSourceWorkupResponseSchema.parse({
@@ -2080,7 +3132,7 @@ function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupReques
     warnings,
     privacyWarnings: [
       playbook.privacy,
-      "Публичный lookup клиники получает только ИНН/ОГРН/название/адрес/лицензию, а не пациентские строки и не пути к БД/снимкам."
+      "Публичный поиск клиники получает только ИНН/ОГРН/название/адрес/лицензию, а не пациентские строки и не пути к базе или снимкам."
     ],
     smartImportLine,
     nextAction
@@ -2089,10 +3141,28 @@ function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupReques
 
 const migrationProbeVendorMatchers: Array<[string, RegExp]> = [
   ["Инфоклиника", /инфоклиника|infoclinica|info\s*clinic/i],
+  ["ИНФОДЕНТ/Denta Office", /infodent|инфодент|дента\s*офис|denta\s*office/i],
   ["Cliniccards", /clinic\s*cards|cliniccards/i],
   ["Dental4Windows", /dental\s*4\s*windows|d4w/i],
   ["Dental Pro", /dental\s*pro|dentpro/i],
+  ["DentalSoft/Denta", /dental\s*soft|dentasoft|(?:^|[\\/])denta(?:[\\/]|$)|дента\b/i],
+  ["Clinic365/Dental Cloud", /clinic\s*365|clinic365|dental\s*cloud/i],
+  ["MedAngel/Medialog/Arnica", /medangel|медангел|medialog|медиалог|arnica|арника/i],
+  ["Sycret Dent", /sycret\s*dent|secret\s*dent|сикрет\s*дент/i],
+  ["Адента Профессионал", /адента|adenta/i],
+  ["DentCRM24/Dent.CRM24", /dent\s*crm\s*24|dentcrm24|dent\.crm24/i],
+  ["Клиентикс Улыбка", /клиентикс|clientix|klientix|ulybka|улыбка/i],
+  ["2V: Стоматология", /(?:^|[\\/])2v(?:[\\/]|$)|2v.*стоматолог|2v.*dental/i],
+  ["Future IT Dent", /future\s*it\s*dent|futureitdent|фьючер\s*ит\s*дент/i],
+  ["32top", /32\s*top|32top/i],
+  ["MEDODS", /medods|медодс/i],
+  ["DentalTap", /dental\s*tap|dentaltap/i],
   ["IDENT/StomX", /(?:^|[\\/])ident(?:[\\/]|$)|stomx|stom\s*x|стомx|стомикс/i],
+  ["iStom", /(?:^|[\\/])i[-\s]?stom(?:[\\/]|$)|i[-\s]?stom|ай\s*стом/i],
+  ["QStoma", /q[-\s]?stoma|кью\s*стома/i],
+  ["БИТ.Стоматология", /бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог/i],
+  ["MacDent", /mac\s*dent|macdent/i],
+  ["Stombox", /stom\s*box|stombox/i],
   ["Sidexis", /sidexis/i],
   ["Romexis", /romexis|planmeca/i],
   ["Carestream", /carestream|kodak/i],
@@ -2100,28 +3170,28 @@ const migrationProbeVendorMatchers: Array<[string, RegExp]> = [
   ["OnDemand3D", /ondemand/i],
   ["Invivo", /invivo/i],
   ["Cliniview", /cliniview|clini\s*view/i],
-  ["DBSWIN/VistaSoft", /dbswin|vistasoft|durr|dürr|dÃ¼rr/i],
+  ["DBSWIN/VistaSoft", /dbswin|vistasoft|durr|dürr|duerr/i],
   ["Digora/Soredex", /digora|soredex/i],
   ["Trophy/Visiodent", /trophy|visiodent/i],
   ["3Shape/Medit", /3shape|medit/i],
   ["1C", /(?:^|[\\/])1c|1cv8|1с|\.1cd\b|\.dt\b/i],
-  ["Firebird/InterBase", /firebird|interbase|\.fdb\b|\.gdb\b|\.fbk\b/i],
+  ["Firebird/InterBase", /firebird|interbase|\.fdb\b|\.gdb\b|\.fbk\b|\.ib\b|\.ibk\b|\.gbk\b/i],
   ["Access", /access|\.mdb\b|\.accdb\b/i],
   ["SQL Server", /sql\s*server|mssql|\.mdf\b|\.ldf\b|\.bak\b/i],
   ["SQLite", /sqlite|\.sqlite3?\b|\.db\b/i],
-  ["DBF/FoxPro", /dbf|foxpro|\.dbf\b/i]
+  ["DBF/FoxPro/Clipper", /dbf|dbase|foxpro|visual\s*foxpro|clipper|paradox|\.dbf\b|\.dbt\b|\.fpt\b|\.cdx\b|\.idx\b|\.ntx\b|\.ndx\b|\.mdx\b/i]
 ];
 
 const migrationProbeArtifactKindTitles: Record<MigrationProbeArtifactKind, string> = {
-  database: "Database artifact",
-  dump: "Dump artifact",
-  table: "Table artifact",
-  archive: "Archive artifact",
-  dicom: "DICOM artifact",
-  image: "Image artifact",
-  model: "3D model artifact",
-  folder: "Folder artifact",
-  unknown: "Unknown artifact"
+  database: "Файл старой базы",
+  dump: "Резервная копия старой базы",
+  table: "Табличная выгрузка",
+  archive: "Архив",
+  dicom: "Файл КТ/снимков",
+  image: "Снимок",
+  model: "3D модель",
+  folder: "Папка",
+  unknown: "Неизвестный артефакт"
 };
 
 function uniqueStrings(values: string[]) {
@@ -2159,23 +3229,26 @@ function migrationProbeFormatSignals(filePath: string, header: Buffer, kind: Mig
   const utf8 = header.toString("utf8");
   const signals: string[] = [];
 
-  if (extension) signals.push(`extension ${extension}`);
-  if (/^DICOMDIR$/i.test(name)) signals.push("DICOMDIR index");
-  if (header.length >= 132 && header.subarray(128, 132).toString("latin1") === "DICM") signals.push("DICOM preamble");
-  if (latin.startsWith("SQLite format 3\u0000")) signals.push("SQLite header");
-  if (latin.startsWith("PK\u0003\u0004")) signals.push("ZIP/OpenXML container");
-  if (/Standard (?:Jet|ACE) DB/i.test(latin)) signals.push("Microsoft Access header");
-  if (extension === ".fdb" || extension === ".gdb") signals.push("Firebird/InterBase database extension");
-  if (extension === ".fbk") signals.push("Firebird backup extension");
-  if (extension === ".1cd") signals.push("1C database extension");
-  if (extension === ".dt") signals.push("1C export extension");
-  if (extension === ".mdf" || extension === ".ldf") signals.push("SQL Server data/log extension");
-  if (extension === ".sdf") signals.push("SQL Server Compact extension");
-  if (extension === ".dbf") signals.push("DBF/FoxPro extension");
-  if (extension === ".sql" || /^\s*(?:create|insert|copy|backup|restore|set)\s+/i.test(utf8)) signals.push("SQL text dump");
-  if (extension === ".xlsx" || extension === ".xlsm" || extension === ".docx" || extension === ".pptx") signals.push("Office OpenXML extension");
-  if (kind === "model") signals.push("dental CAD/CAM 3D model");
-  if (kind === "image") signals.push("2D image/radiography candidate");
+  if (extension) signals.push(`расширение ${extension}`);
+  if (/^DICOMDIR$/i.test(name)) signals.push("служебный каталог снимков");
+  if (header.length >= 132 && header.subarray(128, 132).toString("latin1") === "DICM") signals.push("сигнатура файла снимков");
+  if (latin.startsWith("SQLite format 3\u0000")) signals.push("локальная база программы");
+  if (latin.startsWith("PK\u0003\u0004")) signals.push("архив или Office-файл");
+  if (/Standard (?:Jet|ACE) DB/i.test(latin)) signals.push("Microsoft Access база");
+  if (extension === ".fdb" || extension === ".gdb" || extension === ".ib") signals.push("серверная база старой программы");
+  if (extension === ".fbk" || extension === ".ibk" || extension === ".gbk") signals.push("резервная копия серверной базы");
+  if (extension === ".1cd") signals.push("1C база");
+  if (extension === ".dt") signals.push("1C выгрузка");
+  if (extension === ".mdf" || extension === ".ldf") signals.push("SQL Server файлы данных");
+  if (extension === ".sdf") signals.push("SQL Server Compact база");
+  if (extension === ".dbf") signals.push("DBF/FoxPro таблица");
+  if (extension === ".dbt" || extension === ".fpt" || extension === ".cdx" || extension === ".idx" || extension === ".ntx" || extension === ".ndx" || extension === ".mdx") {
+    signals.push("DBF/FoxPro сопутствующий файл");
+  }
+  if (extension === ".sql" || /^\s*(?:create|insert|copy|backup|restore|set)\s+/i.test(utf8)) signals.push("SQL текстовая выгрузка");
+  if (extension === ".xlsx" || extension === ".xlsm" || extension === ".xlsb" || extension === ".docx" || extension === ".pptx") signals.push("Office таблица/документ");
+  if (kind === "model") signals.push("Стоматологическая 3D-модель");
+  if (kind === "image") signals.push("2D снимок или фото");
   return uniqueStrings(signals);
 }
 
@@ -2238,7 +3311,7 @@ function migrationProbeAdapters(input: {
   counts: ReturnType<typeof emptyMigrationProbeCounts>;
   formatSignals: string[];
 }): MigrationProbeAdapter[] {
-  const privacy = "Работать read-only: старые БД, пациентские строки, DICOM и снимки не уходят в публичные карты, поиск или LLM.";
+  const privacy = "Работать только для чтения: старые базы, пациентские строки и снимки не уходят в публичные карты, поиск или LLM.";
   if (!input.sourceExists) {
     return [
       {
@@ -2247,9 +3320,9 @@ function migrationProbeAdapters(input: {
         status: "blocked",
         confidence: 0.98,
         input: "alias/fingerprint",
-        output: "нет staging до подключения диска/шары",
+        output: "нет чернового списка до подключения диска/сетевой папки",
         privacy,
-        nextAction: "Подключить внешний диск, сетевую папку или открыть доступ с машины администратора, затем повторить probe."
+        nextAction: "Подключить внешний диск, сетевую папку или открыть доступ с машины администратора, затем повторить проверку."
       }
     ];
   }
@@ -2258,62 +3331,62 @@ function migrationProbeAdapters(input: {
   if (input.counts.dicom > 0 || input.sourceKind === "dicom_folder" || input.sourceKind === "vendor_imaging_system" || input.sourceKind === "pacs_dicom") {
     adapters.push({
       id: "dicom_folder_workup",
-      title: "DICOM/CBCT workup",
+      title: "Проверка КЛКТ/КТ",
       status: "built_in",
       confidence: 0.9,
-      input: "DICOMDIR/Study/Series headers or PACS endpoint",
-      output: "DICOM series manifest + viewer/workbench plan",
+      input: "папка исследования/серии или адрес архива снимков",
+      output: "список серий снимков и план просмотра",
       privacy,
-      nextAction: "Передать папку в DICOM folder workup; пиксели остаются локально до явного выбора исследования."
+      nextAction: "Передать папку в проверку снимков; тяжелые данные остаются локально до явного выбора исследования."
     });
   }
   if (input.counts.images > 0 || input.sourceKind === "xray_image_archive") {
     adapters.push({
       id: "xray_folder_manifest",
-      title: "RVG/ОПТГ/photo manifest",
+      title: "Список RVG/ОПТГ/фото",
       status: "built_in",
       confidence: 0.78,
-      input: "папка снимков или image manifest",
-      output: "imaging import preview",
+      input: "папка снимков или список изображений",
+      output: "предпросмотр импорта снимков",
       privacy,
-      nextAction: "Собрать manifest снимков и вручную подтвердить спорные совпадения пациентов."
+      nextAction: "Собрать список снимков и вручную подтвердить спорные совпадения пациентов."
     });
   }
   if (input.counts.tables > 0 || input.counts.archives > 0 || input.sourceKind === "csv_export" || input.sourceKind === "spreadsheet_export" || input.sourceKind === "archive_export") {
     adapters.push({
       id: "document_table_extractor",
-      title: "Table/document extractor",
+      title: "Разбор таблиц и документов",
       status: "built_in",
       confidence: 0.76,
-      input: "CSV/TSV/JSON/XML/XLSX/ODS/ZIP/OpenXML",
-      output: "normalized text/table rows -> smart import preview",
+      input: "таблицы, документы, архивы или извлеченный текст",
+      output: "нормализованный текст и таблицы для предпросмотра импорта",
       privacy,
-      nextAction: "Извлечь таблицы в staging text; запись разрешать только после preview."
+      nextAction: "Извлечь таблицы в черновой текст; запись разрешать только после предпросмотра."
     });
   }
   if (input.counts.databases > 0 || input.counts.dumps > 0 || ["firebird_database", "access_database", "sqlite_database", "sql_dump", "mis_database"].includes(input.sourceKind)) {
-    const needsExport = input.formatSignals.some((signal) => /1C|SQL Server data\/log|Access/.test(signal));
+    const needsExport = input.formatSignals.some((signal) => /1C|SQL Server.*данн|Access/i.test(signal));
     adapters.push({
       id: "legacy_db_staging_bridge",
-      title: "Legacy DB staging bridge",
+      title: "Локальный разбор старой базы",
       status: needsExport ? "needs_export" : "needs_local_bridge",
       confidence: 0.84,
-      input: "offline DB copy/backup + optional read-only credentials",
-      output: "patients/visits/payments/documents/media CSV manifest",
+      input: "отдельная копия базы или резервная копия плюс доступ только для чтения при необходимости",
+      output: "табличный список пациентов, визитов, оплат, документов и снимков",
       privacy,
       nextAction: needsExport
-        ? "Сначала получить штатный export/backup старой системы, затем прогнать локальный bridge."
-        : "Прогнать локальный migration bridge на копии базы; прямой commit из старой БД запрещен."
+        ? "Сначала получить штатную выгрузку или резервную копию старой системы, затем прогнать локальный модуль."
+        : "Прогнать локальный модуль миграции на копии базы; прямая запись из старой базы запрещена."
     });
   }
   if (!adapters.length) {
     adapters.push({
       id: "manual_manifest",
-      title: "Manual staging manifest",
+      title: "Ручной список для проверки",
       status: "manual",
       confidence: 0.52,
       input: "неизвестный источник",
-      output: "ручной CSV/manifest для preview",
+      output: "ручной табличный список для предпросмотра",
       privacy,
       nextAction: "Попросить администратора выбрать конкретный файл экспорта или папку снимков; не импортировать вслепую."
     });
@@ -2351,39 +3424,50 @@ async function inspectMigrationProbeFile(input: {
 }
 
 async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRequest) {
-  const sourceRef = input.sourceRef.trim();
+  const routeRef = resolveMigrationSourceRoute(input.sourceRef);
+  const sourceRef = routeRef.sourceRef;
   const isUrl = /^https?:\/\//i.test(sourceRef);
   const isBrowserManifest = /^browser-local:[a-f0-9]{8,12}$/i.test(sourceRef);
+  const isSmartPreviewSource = /^smart-preview:[a-f0-9]{8,12}$/i.test(sourceRef);
   const isWorkstationProfile = /^workstation-profile:[a-f0-9]{8,12}$/i.test(sourceRef);
   const isWorkstationSignal = /^workstation-signal:[a-f0-9]{8,12}$/i.test(sourceRef);
   const isWorkstationTrace = isWorkstationProfile || isWorkstationSignal;
-  const normalizedSourceRef = isUrl || sourceRef.startsWith("\\\\") || isBrowserManifest || isWorkstationTrace ? sourceRef : path.resolve(sourceRef);
-  const inferredKind = input.sourceKind ?? detectLegacySourceKind(normalizedSourceRef, normalizedSourceRef);
+  const isBrowserLikeManifest = isBrowserManifest || isSmartPreviewSource;
+  const normalizedSourceRef = isUrl || sourceRef.startsWith("\\\\") || isBrowserLikeManifest || isWorkstationTrace || routeRef.routeExpired ? sourceRef : path.resolve(sourceRef);
+  const inferredKind = input.sourceKind ?? routeRef.route?.sourceKind ?? detectLegacySourceKind(normalizedSourceRef, normalizedSourceRef);
   const playbook = legacySourcePlaybook(inferredKind);
   const sourceFingerprint = migrationFingerprint(normalizedSourceRef);
-  const safeDisplayName = input.safeDisplayName?.trim() || migrationSafeAlias(inferredKind, normalizedSourceRef);
-  const vendorGuidance = migrationVendorGuidanceMatches(`${safeDisplayName} ${normalizedSourceRef}`).slice(0, 2);
+  const safeDisplayName = input.safeDisplayName?.trim() || routeRef.route?.safeDisplayName || migrationSafeAlias(inferredKind, normalizedSourceRef);
+  const vendorGuidance = migrationVendorGuidanceMatches(`${safeDisplayName} ${routeRef.routeExpired ? "" : normalizedSourceRef}`).slice(0, 2);
   const counts = emptyMigrationProbeCounts();
   const warnings = new Set<string>();
   const formatSignals = new Set<string>();
   const artifactSamples: MigrationProbeArtifact[] = [];
-  const vendorInputs: string[] = [normalizedSourceRef];
-  let sourceExists = isUrl || isBrowserManifest || isWorkstationTrace;
+  const vendorInputs: string[] = routeRef.routeExpired ? [safeDisplayName] : [normalizedSourceRef];
+  let sourceExists = !routeRef.routeExpired && (isUrl || isBrowserLikeManifest || isWorkstationTrace);
   let sourceIsDirectory = false;
   let sourceByteSize: number | null = null;
   let latestModifiedAt: string | null = null;
   let scannedFolders = 0;
   let scannedFiles = 0;
 
+  if (routeRef.routeExpired) {
+    warnings.add("Внутренний номер источника устарел или был создан в другой серверной сессии: повторите автопоиск или выбор папки, чтобы получить новый номер.");
+  } else if (routeRef.routeToken) {
+    warnings.add("Источник передан через внутренний номер: сырой локальный путь не возвращается в браузер и отчеты.");
+  }
+
   if (isBrowserManifest) {
-    warnings.add("Браузерный manifest не раскрывает серверу полный путь и не дает читать файлы повторно; probe строит adapter-plan по типу источника и safe fingerprint.");
+    warnings.add("Браузерный список не раскрывает серверу полный путь и не дает читать файлы повторно; проверка строит план разбора по типу источника и внутреннему отпечатку.");
+  } else if (isSmartPreviewSource) {
+    warnings.add("Источник получен из текста/Excel/OCR; проверка строит план разбора по распознанному типу, а не сканирует файловую систему.");
   } else if (isWorkstationProfile) {
-    warnings.add("След установленной системы не является путем к данным; probe строит adapter-plan по типу старого приложения и safe fingerprint.");
+    warnings.add("След установленной системы не является путем к данным; проверка строит план разбора по типу старого приложения и внутреннему отпечатку.");
   } else if (isWorkstationSignal) {
-    warnings.add("Системный след рабочей станции не является путем к данным; probe строит adapter-plan по профилю старой программы и safe fingerprint.");
+    warnings.add("Системный след рабочей станции не является путем к данным; проверка строит план разбора по профилю старой программы и внутреннему отпечатку.");
   } else if (isUrl) {
-    warnings.add("Сетевой endpoint не сканируется как локальный диск; probe строит только adapter-plan.");
-  } else {
+    warnings.add("Сетевой адрес не сканируется как локальный диск; проверка строит только план разбора.");
+  } else if (!routeRef.routeExpired) {
     try {
       const stat = statSync(normalizedSourceRef);
       sourceExists = true;
@@ -2392,11 +3476,11 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
       latestModifiedAt = stat.mtime.toISOString();
     } catch {
       sourceExists = false;
-      warnings.add("Источник сейчас недоступен; подключите диск/сетевую папку и повторите probe.");
+      warnings.add("Источник сейчас недоступен; подключите диск/сетевую папку и повторите проверку.");
     }
   }
 
-  if (sourceExists && !isUrl && !isBrowserManifest && !isWorkstationTrace && !sourceIsDirectory) {
+  if (sourceExists && !isUrl && !isBrowserLikeManifest && !isWorkstationTrace && !sourceIsDirectory) {
     scannedFiles = 1;
     await inspectMigrationProbeFile({
       filePath: normalizedSourceRef,
@@ -2410,7 +3494,7 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
     });
   }
 
-  if (sourceExists && !isUrl && !isBrowserManifest && !isWorkstationTrace && sourceIsDirectory) {
+  if (sourceExists && !isUrl && !isBrowserLikeManifest && !isWorkstationTrace && sourceIsDirectory) {
     const queue = [{ folderPath: normalizedSourceRef, depth: 0 }];
     const visited = new Set<string>();
     while (queue.length && scannedFolders < input.maxFolders && scannedFiles < input.maxFiles) {
@@ -2425,24 +3509,31 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
       try {
         entries = await readdir(current.folderPath, { withFileTypes: true });
       } catch {
-        warnings.add("Одну подпапку probe не удалось прочитать; она пропущена.");
+        warnings.add("Одну подпапку проверки не удалось прочитать; она пропущена.");
         continue;
       }
 
-      for (const entry of entries) {
+      const orderedEntries = [...entries].sort(
+        (left, right) =>
+          migrationDiscoveryEntryPriority(right, current.folderPath) - migrationDiscoveryEntryPriority(left, current.folderPath) ||
+          left.name.toString().localeCompare(right.name.toString())
+      );
+      for (const entry of orderedEntries) {
         const entryName = entry.name.toString();
         const fullPath = path.join(current.folderPath, entryName);
         vendorInputs.push(entryName);
         if (entry.isDirectory()) {
           if (shouldSkipMigrationDiscoveryDirectory(entryName)) continue;
           if (current.depth < input.maxDepth && queue.length + scannedFolders < input.maxFolders) {
-            queue.push({ folderPath: fullPath, depth: current.depth + 1 });
+            const nextItem = { folderPath: fullPath, depth: current.depth + 1 };
+            if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
+            else queue.push(nextItem);
           }
           continue;
         }
         if (!entry.isFile()) continue;
         if (scannedFiles >= input.maxFiles) {
-          warnings.add(`Probe остановлен на maxFiles=${input.maxFiles}; сузьте папку для более точной инвентаризации.`);
+          warnings.add(`Проверка источника остановлена после ${input.maxFiles} файлов; выберите папку ближе к старой программе для более точной инвентаризации.`);
           break;
         }
         scannedFiles += 1;
@@ -2464,12 +3555,12 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
         });
       }
     }
-    if (queue.length) warnings.add(`Probe остановлен на maxFolders=${input.maxFolders}; сузьте папку для более точной инвентаризации.`);
+    if (queue.length) warnings.add(`Проверка источника остановлена после ${input.maxFolders} папок; выберите папку ближе к старой программе для более точной инвентаризации.`);
   }
 
   const formatSignalList = uniqueStrings(Array.from(formatSignals));
   vendorGuidance.forEach((guidance) => {
-    formatSignalList.push(`workstation profile ${guidance.label}`);
+    formatSignalList.push(`профиль старой программы ${guidance.label}`);
     warnings.add(`Профиль ${guidance.label}: ${guidance.nextAction}`);
   });
   const adapters = migrationProbeAdapters({
@@ -2479,9 +3570,11 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
     formatSignals: formatSignalList
   });
   const sourceLabel = isUrl
-    ? "Сетевой endpoint"
+    ? "Сетевой адрес"
     : isBrowserManifest
-      ? "Браузерный manifest"
+      ? "Браузерный список"
+      : isSmartPreviewSource
+        ? "Строка предпросмотра"
       : isWorkstationProfile
         ? "След установленной системы"
         : isWorkstationSignal
@@ -2503,7 +3596,8 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
     handoffs,
     counts,
     scannedFiles,
-    isBrowserManifest,
+    isBrowserManifest: isBrowserLikeManifest,
+    isSmartPreviewSource,
     isWorkstationProfile: isWorkstationTrace,
     isUrl,
     nextAction: bestAdapter?.nextAction ?? playbook.nextAction
@@ -2517,6 +3611,7 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
     adapters,
     handoffs,
     isBrowserManifest,
+    isSmartPreviewSource,
     isWorkstationProfile: isWorkstationTrace,
     isUrl
   });
@@ -2543,7 +3638,7 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
     warnings: Array.from(warnings),
     privacyWarnings: [
       playbook.privacy,
-      "Probe читает только bounded inventory и заголовки; публичный lookup клиники не получает пациентов, DICOM, файлы БД или локальные пути."
+      "Проверка читает только ограниченный список и заголовки; публичный поиск клиники не получает пациентов, снимки, файлы базы или локальные пути."
     ],
     recommendedRoute: bestAdapter ? `${bestAdapter.title}: ${bestAdapter.output}` : playbook.recommendedRoute,
     readiness,
@@ -2628,6 +3723,7 @@ function migrationAutopilotReadiness(
   const playbook = legacySourcePlaybook(candidate.sourceKind);
   const sourceRef = candidate.sourceRef;
   const isBrowserManifest = /^browser-local:[a-f0-9]{8,12}$/i.test(sourceRef);
+  const isSmartPreviewSource = /^smart-preview:[a-f0-9]{8,12}$/i.test(sourceRef);
   const isWorkstationProfile = /^workstation-profile:[a-f0-9]{8,12}$/i.test(sourceRef);
   return buildMigrationReadiness({
     sourceKind: candidate.sourceKind,
@@ -2649,6 +3745,7 @@ function migrationAutopilotReadiness(
     },
     scannedFiles: candidate.matchedFiles,
     isBrowserManifest,
+    isSmartPreviewSource,
     isWorkstationProfile: isWorkstationProfile || /^workstation-signal:[a-f0-9]{8,12}$/i.test(sourceRef),
     isUrl: /^https?:\/\//i.test(sourceRef),
     nextAction: playbook.nextAction
@@ -2670,6 +3767,7 @@ function migrationAutopilotBridgeKit(
     readiness,
     handoffs: migrationWorkupHandoffs(candidate.sourceKind),
     isBrowserManifest: /^browser-local:[a-f0-9]{8,12}$/i.test(sourceRef),
+    isSmartPreviewSource: /^smart-preview:[a-f0-9]{8,12}$/i.test(sourceRef),
     isWorkstationProfile: /^workstation-profile:[a-f0-9]{8,12}$/i.test(sourceRef) || /^workstation-signal:[a-f0-9]{8,12}$/i.test(sourceRef),
     isUrl: /^https?:\/\//i.test(sourceRef)
   });
@@ -2682,16 +3780,16 @@ function migrationAutopilotRecommendedAction(
   const bestAdapter = probe?.adapters[0];
   if (bestAdapter?.nextAction) return bestAdapter.nextAction;
   if (candidate.databaseFiles > 0 || candidate.dumpFiles > 0 || ["firebird_database", "access_database", "sqlite_database", "sql_dump", "mis_database"].includes(candidate.sourceKind)) {
-    return "Сделать копию/backup старой базы и прогнать локальный staging bridge; прямой commit из старой БД запрещен.";
+    return "Сделать копию или резервную копию старой базы и прогнать локальный черновой разбор; прямая запись из старой базы запрещена.";
   }
   if (candidate.dicomLikeFiles > 0 || candidate.hasDicomDir || ["dicom_folder", "vendor_imaging_system", "pacs_dicom"].includes(candidate.sourceKind)) {
-    return "Передать источник в DICOM workup: сначала Study/Series metadata, затем ручная сверка пациента перед привязкой снимков.";
+    return "Передать источник в проверку снимков: сначала метаданные исследования/серии, затем ручная сверка пациента перед привязкой снимков.";
   }
   if (candidate.imageFiles > 0 || candidate.sourceKind === "xray_image_archive") {
-    return "Собрать manifest RVG/ОПТГ/фото и показать preview неподтвержденных совпадений пациенту/администратору.";
+    return "Собрать список RVG/ОПТГ/фото и показать предпросмотр неподтвержденных совпадений пациенту/администратору.";
   }
   if (candidate.tableFiles > 0 || candidate.archiveFiles > 0 || ["csv_export", "spreadsheet_export", "archive_export"].includes(candidate.sourceKind)) {
-    return "Извлечь таблицы/архив в staging text и отправить в умный preview без записи в базу.";
+    return "Извлечь таблицы/архив в черновой текст и отправить в умный предпросмотр без записи в базу.";
   }
   return "Оставить как низкоприоритетный источник и попросить администратора выбрать конкретный файл/папку.";
 }
@@ -2718,8 +3816,8 @@ function migrationAutopilotSteps(input: {
     steps.push({
       order: steps.length + 1,
       owner: "administrator",
-      title: "Снять read-only копию старой базы",
-      detail: "Работать только с backup/snapshot. Старую рабочую МИС не блокировать и не писать в нее из Dental CRM.",
+      title: "Снять копию старой базы только для чтения",
+      detail: "Работать только с резервной копией или снимком состояния. Старую рабочую МИС не блокировать и не писать в нее из Dental CRM.",
       blocking: true
     });
   }
@@ -2736,8 +3834,8 @@ function migrationAutopilotSteps(input: {
     steps.push({
       order: steps.length + 1,
       owner: "assistant",
-      title: "Собрать manifest снимков",
-      detail: "DICOM/RVG/ОПТГ сначала проходят metadata preview; спорные совпадения пациента остаются неподтвержденными.",
+      title: "Собрать список снимков",
+      detail: "КТ/RVG/ОПТГ сначала проходят предпросмотр метаданных; спорные совпадения пациента остаются неподтвержденными.",
       blocking: false
     });
   }
@@ -2745,8 +3843,8 @@ function migrationAutopilotSteps(input: {
     {
       order: steps.length + 1,
       owner: "system",
-      title: "Построить staging preview",
-      detail: "Нормализовать пациентов, визиты, оплаты, документы, услуги и ссылки на медиа в preview без commit.",
+      title: "Построить черновой предпросмотр",
+      detail: "Нормализовать пациентов, визиты, оплаты, документы, услуги и ссылки на медиа в предпросмотр без массовой записи.",
       blocking: true
     },
     {
@@ -2824,12 +3922,12 @@ function buildMigrationHandoffChecklist(input: {
       : "manual_review",
     title: "Сверить реквизиты клиники",
     detail: input.clinicLookup
-      ? `Безопасный запрос ${input.clinicLookup.safeQuery || "не построен"}; публичных ссылок ${input.clinicLookup.publicLookupTargets.length}; API-подсказок ${input.clinicLookup.suggestions.length}.`
-      : "Заполнить ИНН, ОГРН, название, адрес или номер лицензии, затем повторить public lookup.",
+      ? `Безопасный запрос ${input.clinicLookup.safeQuery || "не построен"}; публичных ссылок ${input.clinicLookup.publicLookupTargets.length}; подсказок сервиса ${input.clinicLookup.suggestions.length}.`
+      : "Заполнить ИНН, ОГРН, название, адрес или номер лицензии, затем повторить поиск реквизитов.",
     requiredArtifact: "ИНН/ОГРН/КПП/название/адрес/лицензия клиники",
     sourceFingerprint: null,
     sourceKind: null,
-    privacy: "Только публичные реквизиты клиники; пациенты, телефоны пациентов, снимки, диагнозы и старые БД запрещены.",
+    privacy: "Только публичные реквизиты клиники; пациенты, телефоны пациентов, снимки, диагнозы и старые базы запрещены.",
     doneWhen: "Профиль клиники заполнен и реквизиты сверены с ФНС/лицензией/документами клиники.",
     blocking: false
   });
@@ -2863,10 +3961,10 @@ function buildMigrationHandoffChecklist(input: {
         status: source.readiness.level === "ready_for_preview" ? "needs_admin" : status,
         title: `${doctorAction.title} · ${source.candidate.sourceKind} #${sourceId}`,
         detail: doctorAction.detail,
-        requiredArtifact: "контрольная выборка 10-20 карт после staging preview",
+        requiredArtifact: "контрольная выборка 10-20 карт после чернового предпросмотра",
         sourceFingerprint: source.candidate.sourceFingerprint,
         sourceKind: source.candidate.sourceKind,
-        privacy: doctorAction.safety || "Врач видит только staging preview внутри CRM; публичные сервисы не получают пациентов или снимки.",
+        privacy: doctorAction.safety || "Врач видит только черновой предпросмотр внутри CRM; публичные сервисы не получают пациентов или снимки.",
         doneWhen: doctorAction.doneWhen,
         blocking: true
       });
@@ -2878,19 +3976,265 @@ function buildMigrationHandoffChecklist(input: {
     phase: "staging_preview",
     owner: "system",
     status: input.sources.length ? migrationPacketStatusFromSources(input.sources) : "empty",
-    title: "Построить staging preview",
+    title: "Построить черновой предпросмотр",
     detail: input.sources.length
-      ? "После export/bridge CRM строит preview пациентов, визитов, оплат, документов, услуг и ссылок на снимки без commit."
-      : "Сначала нужен хотя бы один источник миграции: старая БД, выгрузка, DICOM/RVG папка, browser manifest или workstation hint.",
-    requiredArtifact: "staging manifest из bridge/export/workup",
+      ? "После выгрузки или локального разбора CRM строит предпросмотр пациентов, визитов, оплат, документов, услуг и ссылок на снимки без массовой записи."
+      : "Сначала нужен хотя бы один источник миграции: старая база, выгрузка, папка КТ/RVG, браузерный список или след установленной программы.",
+    requiredArtifact: "черновой список из локального разбора, выгрузки или проверки",
     sourceFingerprint: null,
     sourceKind: null,
-    privacy: "Preview остается внутри CRM; массовая запись и публичный поиск не получают raw legacy data.",
-    doneWhen: "Preview построен, счетчики строк/снимков/документов понятны, ошибки вынесены в review.",
+    privacy: "Предпросмотр остается внутри CRM; массовая запись и публичный поиск не получают сырые данные старой системы.",
+    doneWhen: "Предпросмотр построен, счетчики строк/снимков/документов понятны, ошибки вынесены в проверку.",
     blocking: true
   });
 
   return items.slice(0, 14);
+}
+
+function buildMigrationOperatorScript(input: {
+  sources: MigrationAutopilotSource[];
+  clinicLookup: ClinicPublicLookupResponse | null;
+}): MigrationAutopilotOperatorPacket["operatorScript"] {
+  const sources = input.sources;
+  const steps: MigrationAutopilotOperatorPacket["operatorScript"]["steps"] = [];
+  const addStep = (step: MigrationAutopilotOperatorPacket["operatorScript"]["steps"][number]) => {
+    if (steps.some((existing) => existing.id === step.id)) return;
+    steps.push(step);
+  };
+  const topSource = sources[0] ?? null;
+  const smartPreviewSources = sources.filter((source) => /^smart-preview:[a-f0-9]{8,12}$/i.test(source.candidate.sourceRef));
+  const topSourceIsSmartPreview = Boolean(topSource && /^smart-preview:[a-f0-9]{8,12}$/i.test(topSource.candidate.sourceRef));
+  const topDatabaseSource =
+    sources.find((source) => ["firebird_database", "access_database", "sqlite_database", "sql_dump", "mis_database"].includes(source.candidate.sourceKind)) ?? null;
+  const topMediaSource =
+    sources.find((source) => ["dicom_folder", "pacs_dicom", "vendor_imaging_system", "xray_image_archive"].includes(source.candidate.sourceKind)) ?? null;
+  const topTableSource = sources.find((source) => ["csv_export", "spreadsheet_export", "archive_export"].includes(source.candidate.sourceKind)) ?? null;
+  const previewSource = sources.find((source) => source.readiness.level === "ready_for_preview") ?? topTableSource ?? topDatabaseSource ?? topMediaSource ?? topSource;
+
+  if (!sources.length) {
+    addStep({
+      id: "admin-discover-sources",
+      owner: "administrator",
+      title: "Запустите автопоиск старых баз и снимков на этом ПК",
+      buttonLabel: "Найти на ПК + план",
+      detail: "CRM проверит типовые папки старых МИС, следы установленных программ, диски и сетевые корни в пределах лимитов сканирования, затем сразу соберет автоплан по найденным кандидатам.",
+      action: "discover_sources",
+      sourceFingerprint: null,
+      sourceKind: null,
+      estimatedMinutes: 3,
+      blocking: true
+    });
+    addStep({
+      id: "admin-pick-source",
+      owner: "administrator",
+      title: "Если автопоиск не помог, выберите папку старой программы или диск",
+      buttonLabel: "Папка/диск",
+      detail: "Выберите корень диска, папку старой МИС, КТ/RVG-архив или сетевую папку. CRM сама построит список и кандидатов.",
+      action: "pick_source",
+      sourceFingerprint: null,
+      sourceKind: null,
+      estimatedMinutes: 5,
+      blocking: true
+    });
+  }
+
+  if (topSource) {
+    addStep({
+      id: `admin-open-plan-${topSource.candidate.sourceFingerprint}`,
+      owner: "administrator",
+      title: "Откройте план по самому вероятному источнику",
+      buttonLabel: "План переноса",
+      detail: `${topSource.candidate.safeDisplayName}: ${topSource.recommendedAction}`,
+      action: "open_plan",
+      sourceFingerprint: topSource.candidate.sourceFingerprint,
+      sourceKind: topSource.candidate.sourceKind,
+      estimatedMinutes: 2,
+      blocking: true
+    });
+    addStep({
+      id: `admin-run-probe-${topSource.candidate.sourceFingerprint}`,
+      owner: "administrator",
+      title: "Проверьте источник перед переносом",
+      buttonLabel: topSourceIsSmartPreview ? "Подтвердить источник" : "Проверить источник",
+      detail: topSourceIsSmartPreview
+        ? "CRM проверит распознанный тип из текста/OCR и покажет, какой реальный файл, папка, выгрузка или локальный модуль нужен дальше."
+        : "CRM посчитает типы файлов, заголовки и подходящий маршрут, чтобы администратор не выбирал перенос вручную.",
+      action: "open_probe",
+      sourceFingerprint: topSource.candidate.sourceFingerprint,
+      sourceKind: topSource.candidate.sourceKind,
+      estimatedMinutes: topSource.candidate.matchedFiles > 500 ? 8 : 3,
+      blocking: true
+    });
+  }
+
+  if (topDatabaseSource) {
+    addStep({
+      id: `admin-db-export-${topDatabaseSource.candidate.sourceFingerprint}`,
+      owner: "administrator",
+      title: "Подготовьте копию старой базы или штатный экспорт",
+      buttonLabel: "Подготовить выгрузку",
+      detail: `${topDatabaseSource.candidate.safeDisplayName}: нужна копия базы или штатная выгрузка, затем предпросмотр пациентов, визитов, оплат и услуг.`,
+      action: "prepare_export",
+      sourceFingerprint: topDatabaseSource.candidate.sourceFingerprint,
+      sourceKind: topDatabaseSource.candidate.sourceKind,
+      estimatedMinutes: 25,
+      blocking: true
+    });
+  } else if (topTableSource) {
+    addStep({
+      id: `admin-table-parser-${topTableSource.candidate.sourceFingerprint}`,
+      owner: "administrator",
+      title: "Разберите таблицу или архив",
+      buttonLabel: "Разобрать таблицу",
+      detail: `${topTableSource.candidate.safeDisplayName}: таблицу проще сразу открыть в предпросмотре, затем исправить спорные строки.`,
+      action: "add_to_parser",
+      sourceFingerprint: topTableSource.candidate.sourceFingerprint,
+      sourceKind: topTableSource.candidate.sourceKind,
+      estimatedMinutes: 5,
+      blocking: false
+    });
+  }
+
+  if (topMediaSource) {
+    addStep({
+      id: `assistant-media-export-${topMediaSource.candidate.sourceFingerprint}`,
+      owner: "assistant",
+      title: "Подготовьте список снимков или штатную выгрузку",
+      buttonLabel: "Подготовить снимки",
+      detail: `${topMediaSource.candidate.safeDisplayName}: сначала список исследований/файлов, затем сверка пациента и только потом привязка в карту.`,
+      action: "prepare_export",
+      sourceFingerprint: topMediaSource.candidate.sourceFingerprint,
+      sourceKind: topMediaSource.candidate.sourceKind,
+      estimatedMinutes: 20,
+      blocking: false
+    });
+  }
+
+  addStep({
+    id: "admin-clinic-requisites",
+    owner: "administrator",
+    title: input.clinicLookup ? "Сверьте реквизиты клиники" : "Заполните ИНН или название клиники",
+    buttonLabel: input.clinicLookup ? "Сверить" : "Реквизиты",
+    detail: input.clinicLookup
+      ? input.clinicLookup.nextAction
+      : "Это нужно для документов, договоров, налоговых справок и публичного профиля клиники; пациентские данные здесь не нужны.",
+    action: "run_clinic_lookup",
+    sourceFingerprint: null,
+    sourceKind: null,
+    estimatedMinutes: input.clinicLookup?.suggestions.length ? 3 : 7,
+    blocking: false
+  });
+
+  if (sources.length) {
+    addStep({
+      id: `system-build-preview-${previewSource?.candidate.sourceFingerprint ?? "all"}`,
+      owner: "system",
+      title: "Постройте предпросмотр перед записью",
+      buttonLabel: "Предпросмотр",
+      detail: previewSource
+        ? `${previewSource.candidate.safeDisplayName}: CRM соберет предпросмотр из найденных источников, чтобы сразу увидеть маршрут переноса.`
+        : "После выгрузки или подключения CRM должна показать счетчики пациентов, визитов, оплат, документов и снимков до массовой записи.",
+      action: "build_preview",
+      sourceFingerprint: previewSource?.candidate.sourceFingerprint ?? null,
+      sourceKind: previewSource?.candidate.sourceKind ?? null,
+      estimatedMinutes: 5,
+      blocking: true
+    });
+
+    addStep({
+      id: "doctor-control-sample",
+      owner: "doctor",
+      title: "Врач проверяет только контрольные карты",
+      buttonLabel: "Проверка",
+      detail: "Не заставляйте врача искать папки. Его задача: открыть 10-20 перенесенных карт и подтвердить, что визиты, диагнозы, оплаты, документы и снимки попали верно.",
+      action: "doctor_review",
+      sourceFingerprint: null,
+      sourceKind: null,
+      estimatedMinutes: 20,
+      blocking: true
+    });
+  }
+
+  const visibleSteps = steps.slice(0, 7);
+  return {
+    title: "Что делать сейчас",
+    headline: sources.length
+      ? smartPreviewSources.length
+        ? `Текст/OCR подсказал ${smartPreviewSources.length} источн.: откройте план, подтвердите реальный файл/папку/выгрузку, затем предпросмотр.`
+        : `Начните с ${topSource?.candidate.safeDisplayName ?? "верхнего источника"}: план, проверка, затем выгрузка/предпросмотр.`
+      : "Выберите папку или диск старой системы, дальше CRM сама соберет кандидатов.",
+    totalEstimatedMinutes: visibleSteps.reduce((sum, step) => sum + step.estimatedMinutes, 0),
+    steps: visibleSteps
+  };
+}
+
+function migrationSourceCanStartDryRunPreview(source: MigrationAutopilotSource) {
+  const candidate = source.candidate;
+  const tableLikeSource = ["csv_export", "spreadsheet_export", "archive_export"].includes(candidate.sourceKind);
+  const mediaManifestSource = ["dicom_folder", "pacs_dicom", "xray_image_archive"].includes(candidate.sourceKind);
+  const hasReadableMaterial =
+    candidate.tableFiles + candidate.archiveFiles + candidate.dicomLikeFiles + candidate.imageFiles + candidate.matchedFiles > 0;
+  return (
+    source.readiness.level === "ready_for_preview" ||
+    source.bridgeKit.status === "ready" ||
+    tableLikeSource ||
+    (mediaManifestSource && hasReadableMaterial) ||
+    /^smart-preview:[a-f0-9]{8,12}$/i.test(candidate.sourceRef)
+  );
+}
+
+function buildMigrationDryRunSummary(input: {
+  sources: MigrationAutopilotSource[];
+  totals: MigrationAutopilotOperatorPacket["totals"];
+  operatorScript: MigrationAutopilotOperatorPacket["operatorScript"];
+}): MigrationAutopilotOperatorPacket["dryRun"] {
+  const previewableSources = input.sources.filter(migrationSourceCanStartDryRunPreview).length;
+  const adminBlockedSources = input.sources.filter(
+    (source) =>
+      source.owner === "administrator" &&
+      (source.readiness.blockers.length > 0 || ["blocked", "needs_bridge", "needs_export"].includes(source.readiness.level) || source.bridgeKit.status !== "ready")
+  ).length;
+  const doctorReviewRequiredSources = input.sources.filter((source) => {
+    const parserTargets = new Set(source.bridgeKit.parserTargets);
+    return (
+      parserTargets.has("patients") ||
+      parserTargets.has("imaging") ||
+      parserTargets.has("dicom_series") ||
+      source.riskFlags.includes("review_patient_media_matching")
+    );
+  }).length;
+  const primaryStep =
+    input.operatorScript.steps.find((step) => step.blocking && step.owner !== "doctor" && step.action !== "manual") ??
+    input.operatorScript.steps.find((step) => step.owner !== "doctor" && step.action !== "manual") ??
+    input.operatorScript.steps[0] ??
+    null;
+  const estimatedClinicDowntimeMinutes = input.sources.length
+    ? Math.min(
+        60,
+        (input.totals.blocked > 0 ? 20 : 0) +
+          (input.totals.needsExport > 0 ? 15 : 0) +
+          (input.totals.needsBridge > 0 ? 10 : 0) +
+          (previewableSources ? 0 : input.totals.databaseSources > 0 ? 10 : 0)
+      )
+    : 0;
+  const fastestRoute = !input.sources.length
+    ? "Запустить поиск на ПК или выбрать корень старой системы; после находки CRM построит план."
+    : previewableSources > 0
+      ? `Сразу открыть предпросмотр по ${previewableSources} источникам; параллельно закрыть ${adminBlockedSources} действий администратора.`
+      : input.totals.needsExport > 0
+        ? "Сначала штатная выгрузка или резервная копия из старой системы, затем предпросмотр без массовой записи."
+        : input.totals.needsBridge > 0
+          ? "Сначала локальное подключение или копия старой базы, затем предпросмотр."
+          : "Открыть план верхнего источника и перевести его в предпросмотр.";
+  return {
+    previewableSources,
+    adminBlockedSources,
+    doctorReviewRequiredSources,
+    estimatedOperatorMinutes: input.operatorScript.totalEstimatedMinutes,
+    estimatedClinicDowntimeMinutes,
+    fastestRoute,
+    nextBestAction: primaryStep ? `${primaryStep.buttonLabel}: ${primaryStep.title}` : "Запустить автопоиск или выбрать папку старой системы."
+  };
 }
 
 function buildMigrationOperatorPacket(input: {
@@ -2916,6 +4260,11 @@ function buildMigrationOperatorPacket(input: {
   );
   const workstationSources = sources.filter((source) => /^workstation-(?:profile|signal):[a-f0-9]{8,12}$/i.test(source.candidate.sourceRef));
   const browserManifestSources = sources.filter((source) => /^browser-local:[a-f0-9]{8,12}$/i.test(source.candidate.sourceRef));
+  const smartPreviewSources = sources.filter((source) => /^smart-preview:[a-f0-9]{8,12}$/i.test(source.candidate.sourceRef));
+  const smartPreviewDatabaseSources = smartPreviewSources.filter((source) => databaseSources.includes(source));
+  const smartPreviewTableSources = smartPreviewSources.filter((source) => tableSources.includes(source));
+  const smartPreviewMediaSources = smartPreviewSources.filter((source) => mediaSources.includes(source));
+  const smartPreviewStructuredSources = smartPreviewDatabaseSources.length + smartPreviewTableSources.length;
   const parserTargets = new Set(sources.flatMap((source) => source.bridgeKit.parserTargets));
   const totals = {
     sources: sources.length,
@@ -2930,6 +4279,7 @@ function buildMigrationOperatorPacket(input: {
     tableSources: tableSources.length,
     workstationHints: workstationSources.length,
     browserManifests: browserManifestSources.length,
+    smartPreviewSources: smartPreviewSources.length,
     publicLookupTargets: input.clinicLookup?.publicLookupTargets.length ?? 0,
     clinicSuggestions: input.clinicLookup?.suggestions.length ?? 0
   };
@@ -2948,42 +4298,50 @@ function buildMigrationOperatorPacket(input: {
         : "manual_review",
       score: input.clinicLookup ? (input.clinicLookup.suggestions.length ? 0.85 : input.clinicLookup.publicLookupTargets.length ? 0.48 : 0.18) : 0,
       detail: input.clinicLookup
-        ? `Безопасный запрос: ${input.clinicLookup.safeQuery || "нет"}; ссылок ${input.clinicLookup.publicLookupTargets.length}; API-подсказок ${input.clinicLookup.suggestions.length}.`
-        : "Публичный lookup не запускался: нужен ИНН, ОГРН, название, адрес или номер лицензии клиники.",
+        ? `Безопасный запрос: ${input.clinicLookup.safeQuery || "нет"}; ссылок ${input.clinicLookup.publicLookupTargets.length}; подсказок сервиса ${input.clinicLookup.suggestions.length}.`
+        : "Публичный поиск реквизитов не запускался: нужен ИНН, ОГРН, название, адрес или номер лицензии клиники.",
       nextAction: input.clinicLookup?.nextAction ?? "Заполнить хотя бы название/ИНН клиники и запустить автоплан или кнопку реквизитов."
     },
     {
       id: "legacy-sources",
-      title: "Старые БД и выгрузки",
+      title: "Старые базы и выгрузки",
       owner: "administrator",
       status: migrationPacketLaneStatusFromSubset(databaseSources.length ? databaseSources : tableSources, sources.length ? "manual_review" : "empty"),
       score: databaseSources.length || tableSources.length ? Number(((databaseSources.length + tableSources.length) / Math.max(1, sources.length)).toFixed(2)) : 0,
-      detail: `БД/dump ${databaseSources.length}; таблицы/архивы ${tableSources.length}; browser manifests ${browserManifestSources.length}.`,
+      detail: `Базы и резервные копии ${databaseSources.length}; таблицы/архивы ${tableSources.length}; из текста/OCR ${smartPreviewStructuredSources}; браузерные списки ${browserManifestSources.length}.`,
       nextAction: databaseSources.length
-        ? "Работать только с read-only копией/backup старой БД, затем строить staging preview."
+        ? smartPreviewDatabaseSources.length
+          ? "По текстовым подсказкам подтвердить реальный файл, резервную копию или выгрузку старой базы, затем строить черновой предпросмотр."
+          : "Работать только с копией или резервной копией старой базы только для чтения, затем строить черновой предпросмотр."
         : tableSources.length
-          ? "Открыть план по таблицам/архивам и прогнать preview без записи в базу."
-          : "Подключить диск/сетевую папку старой МИС или выбрать папку через browser manifest."
+          ? smartPreviewTableSources.length
+            ? "По текстовым подсказкам подтвердить реальную таблицу, архив или выгрузку и прогнать предпросмотр без записи в базу."
+            : "Открыть план по таблицам/архивам и прогнать предпросмотр без записи в базу."
+          : smartPreviewStructuredSources
+            ? "Открыть план по найденным в тексте источникам и подтвердить фактический файл, папку, выгрузку или локальный модуль."
+            : "Подключить диск/сетевую папку старой МИС или выбрать папку через браузерный список."
     },
     {
       id: "imaging",
-      title: "КТ, DICOM, рентген и фото",
+      title: "КТ, рентген и фото",
       owner: "assistant",
       status: migrationPacketLaneStatusFromSubset(mediaSources, sources.length ? "manual_review" : "empty"),
       score: mediaSources.length ? Number((mediaSources.length / Math.max(1, sources.length)).toFixed(2)) : 0,
-      detail: `Источников снимков ${mediaSources.length}; системных следов ${workstationSources.length}; DICOM/RVG требуют manifest и сверку пациента.`,
+      detail: `Источников снимков ${mediaSources.length}; из текста/OCR ${smartPreviewMediaSources.length}; системных следов ${workstationSources.length}; КТ/RVG требуют список файлов и сверку пациента.`,
       nextAction: mediaSources.length
-        ? "Для vendor-систем сначала сделать штатный DICOMDIR/export, затем metadata preview и ручную сверку совпадений."
-        : "Найти DICOMDIR/RVG/OPG/CBCT папку или след установленной imaging-системы."
+        ? smartPreviewMediaSources.length
+          ? "По текстовой подсказке подтвердить реальную RVG/КЛКТ папку или штатную выгрузку снимков, затем предпросмотр метаданных и сверку совпадений."
+          : "Для программ снимков сначала сделать штатную выгрузку снимков, затем предпросмотр метаданных и ручную сверку совпадений."
+        : "Найти RVG/OPG/КЛКТ папку или след установленной программы снимков."
     },
     {
       id: "bridge-export",
-      title: "Bridge/export пакет",
+      title: "Пакет выгрузки и локального разбора",
       owner: "administrator",
       status: overallStatus,
       score: migrationPacketScore(sources, input.clinicLookup),
-      detail: `Готово ${totals.readyForPreview}; нужен bridge ${totals.needsBridge}; нужен export ${totals.needsExport}; ручной разбор ${totals.manualReview}; блокеры ${totals.blocked}.`,
-      nextAction: sources[0]?.bridgeKit.nextAction ?? "Сначала найти источник миграции, затем выбрать plan/probe."
+      detail: `Готово ${totals.readyForPreview}; нужен локальный модуль ${totals.needsBridge}; нужна выгрузка ${totals.needsExport}; ручной разбор ${totals.manualReview}; блокеры ${totals.blocked}.`,
+      nextAction: sources[0]?.bridgeKit.nextAction ?? "Сначала найти источник миграции, затем открыть план или проверку."
     },
     {
       id: "doctor-control",
@@ -2991,24 +4349,29 @@ function buildMigrationOperatorPacket(input: {
       owner: "doctor",
       status: sources.length ? "needs_admin" : "empty",
       score: sources.length ? 0.35 : 0,
-      detail: "Врач не ищет файлы и не настраивает bridge: он проверяет контрольную выборку карт и спорные привязки снимков.",
-      nextAction: "После staging preview дать врачу 10-20 карт для проверки диагнозов, визитов, оплат, документов и снимков."
+      detail: "Врач не ищет файлы и не настраивает локальный модуль: он проверяет контрольную выборку карт и спорные привязки снимков.",
+      nextAction: "После чернового предпросмотра дать врачу 10-20 карт для проверки диагнозов, визитов, оплат, документов и снимков."
     }
   ];
   const firstActions = uniqueStrings(
     [
       sources.length ? sources[0]?.recommendedAction : "Подключить внешний диск, сетевую папку или выбрать папку старой МИС/снимков через кнопку Папка/диск.",
       input.clinicLookup?.suggestions.length
-        ? "Сверить API-подсказки реквизитов с ФНС/документами клиники перед сохранением."
+        ? "Сверить подсказки реквизитов с ФНС/документами клиники перед сохранением."
         : input.clinicLookup?.publicLookupTargets.length
           ? "Открыть публичные ссылки по клинике; пациентские данные туда не вводить."
-          : "Заполнить ИНН/ОГРН/название клиники для публичного lookup.",
+          : "Заполнить ИНН/ОГРН/название клиники для публичного поиска реквизитов.",
+      smartPreviewSources.length
+        ? `Из текста/OCR найдено ${smartPreviewSources.length} источн.: подтвердить фактический файл, папку, выгрузку или локальный модуль вместо ручного поиска формата.`
+        : null,
       sources[0]?.bridgeKit.adminActions[0]?.detail,
-      mediaSources.length ? "Для КТ/рентгена сначала собрать DICOM/RVG manifest, затем подтверждать пациента в CRM." : null,
-      databaseSources.length ? "Старую БД читать только с копии/backup; прямой commit из legacy запрещен." : null,
-      "Массовую запись делать только после staging preview и контрольной выборки врача."
+      mediaSources.length ? "Для КЛКТ/рентгена сначала собрать список КТ/RVG, затем подтверждать пациента в CRM." : null,
+      databaseSources.length ? "Старую базу читать только с копии или резервной копии; прямая запись из старой системы запрещена." : null,
+      "Массовую запись делать только после чернового предпросмотра и контрольной выборки врача."
     ].filter((item): item is string => Boolean(item && item.trim()))
   ).slice(0, 6);
+  const operatorScript = buildMigrationOperatorScript({ sources, clinicLookup: input.clinicLookup });
+  const dryRun = buildMigrationDryRunSummary({ sources, totals, operatorScript });
 
   return {
     overallStatus,
@@ -3021,27 +4384,111 @@ function buildMigrationOperatorPacket(input: {
       serviceCatalog: parserTargets.has("service_catalog"),
       payments: parserTargets.has("payments"),
       workstationHints: workstationSources.length > 0,
-      browserManifests: browserManifestSources.length > 0
+      browserManifests: browserManifestSources.length > 0,
+      smartPreviewSources: smartPreviewSources.length > 0
     },
     totals,
+    dryRun,
     lanes,
     handoffChecklist: buildMigrationHandoffChecklist({ sources, clinicLookup: input.clinicLookup }),
     firstActions,
+    operatorScript,
     onlineLookupPolicy: {
       allowed: ["ИНН", "ОГРН", "КПП", "название клиники", "юридическое название", "адрес клиники", "номер лицензии"],
-      forbidden: ["ФИО пациента", "телефон пациента", "дата рождения", "диагноз", "DICOM/КТ/рентген", "локальный путь", "имя файла", "старая база данных"],
+      forbidden: ["ФИО пациента", "телефон пациента", "дата рождения", "диагноз", "КТ/рентген", "локальный путь", "имя файла", "старая база данных"],
       safeQuery: input.clinicLookup?.safeQuery || null,
       providerStatus: input.clinicLookup?.providerStatus ?? null
     }
   };
 }
 
+function uniqueByMigrationCandidateKey(
+  candidates: MigrationLocalSourceDiscoveryCandidate[],
+  keyOf: (candidate: MigrationLocalSourceDiscoveryCandidate) => string
+) {
+  const unique = new Map<string, MigrationLocalSourceDiscoveryCandidate>();
+  for (const candidate of candidates) {
+    const key = keyOf(candidate);
+    if (!unique.has(key)) unique.set(key, candidate);
+  }
+  return Array.from(unique.values());
+}
+
+function migrationSmartPreviewSourceRef(source: SmartImportLegacySource, index: number) {
+  const safeExistingRef =
+    source.sourceRef && /^(?:browser-local|smart-preview|workstation-profile|workstation-signal|migration-source):[a-f0-9]{8,12}$/i.test(source.sourceRef)
+      ? source.sourceRef
+      : null;
+  if (safeExistingRef) return safeExistingRef;
+  const seed = JSON.stringify({
+    index,
+    kind: source.kind,
+    title: source.title,
+    alias: source.safeSourceAlias,
+    evidence: safeLegacySourceEvidence(source),
+    route: source.recommendedRoute
+  });
+  return `smart-preview:${createHash("sha1").update(seed).digest("hex").slice(0, 10).toUpperCase()}`;
+}
+
+function migrationCandidateFromSmartLegacySource(source: SmartImportLegacySource, index: number): MigrationLocalSourceDiscoveryCandidate {
+  const sourceRef = migrationSmartPreviewSourceRef(source, index);
+  const sourceFingerprint = migrationFingerprint(sourceRef).toUpperCase();
+  const evidence = safeLegacySourceEvidence(source);
+  const isDatabase = migrationSourceKindIsDatabase(source.kind) && source.kind !== "sql_dump";
+  const isDump = source.kind === "sql_dump";
+  const isTable = source.kind === "spreadsheet_export" || source.kind === "csv_export";
+  const isArchive = source.kind === "archive_export";
+  const isDicom = source.kind === "dicom_folder" || source.kind === "pacs_dicom" || source.kind === "vendor_imaging_system";
+  const isImage = source.kind === "xray_image_archive";
+  return {
+    sourceRef,
+    safeDisplayName: source.safeSourceAlias ?? `${source.title} #${sourceFingerprint}`,
+    sourceKind: source.kind,
+    sourceLabel: "Строка предпросмотра",
+    sourceFingerprint,
+    depth: 0,
+    confidence: source.confidence,
+    matchedFiles: 1,
+    databaseFiles: isDatabase ? 1 : 0,
+    dumpFiles: isDump ? 1 : 0,
+    tableFiles: isTable ? 1 : 0,
+    archiveFiles: isArchive ? 1 : 0,
+    dicomLikeFiles: isDicom ? 1 : 0,
+    imageFiles: isImage ? 1 : 0,
+    hasDicomDir: source.kind === "dicom_folder" || evidence.some((item) => /dicomdir/i.test(item)),
+    latestModifiedAt: null,
+    reasons: uniqueStrings(["источник найден во вставленном тексте/Excel/OCR", ...evidence]).slice(0, 6),
+    warnings: ["Для переноса нужен фактический файл, папка, выгрузка или локальный модуль; текстовая строка используется как подсказка маршрута."],
+    smartImportLine: `${legacySourceTitles[source.kind]} ${sourceRef}`
+  };
+}
+
+function clinicLookupInputFromSmartImport(suggestion: SmartImportClinicProfileSuggestion | null): ClinicPublicLookupRequest | null {
+  const fields = suggestion?.fields;
+  if (!fields) return null;
+  const clinicText = (value: string | null | undefined) => value?.trim() || undefined;
+  const payload: ClinicPublicLookupRequest = {
+    inn: clinicText(fields.inn),
+    kpp: clinicText(fields.kpp),
+    ogrn: clinicText(fields.ogrn),
+    clinicName: clinicText(fields.clinicName),
+    legalName: clinicText(fields.legalName),
+    address: clinicText(fields.address),
+    medicalLicenseNumber: clinicText(fields.medicalLicenseNumber)
+  };
+  return [payload.inn, payload.ogrn, payload.clinicName, payload.legalName, payload.address, payload.medicalLicenseNumber].some((item) => item && item.trim()) ? payload : null;
+}
+
 async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
   const warnings = new Set<string>();
   const privacyWarnings = new Set<string>([
-    "Автопилот сканирует только локальные источники и bounded-заголовки; старые БД, DICOM, снимки и локальные пути не отправляются в публичный поиск.",
+    "Автопилот сканирует только локальные источники и ограниченные заголовки; старые базы, снимки и локальные пути не отправляются в публичный поиск.",
     "Онлайн-поиск разрешен только для реквизитов клиники: ИНН, ОГРН, КПП, название, адрес, лицензия."
   ]);
+  const smartImportPreview = input.smartImport ? buildSmartImportPreview(input.smartImport) : null;
+  const smartImportKnownSources = (smartImportPreview?.legacySources ?? []).slice(0, 24).map(migrationCandidateFromSmartLegacySource);
+  const explicitKnownSources = [...(input.knownSources ?? []), ...smartImportKnownSources];
   const discovery = await discoverLocalMigrationSources({
     rootPaths: input.rootPaths,
     maxDepth: input.maxDepth,
@@ -3054,28 +4501,38 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
   discovery.warnings.forEach((warning) => warnings.add(warning));
   if (input.knownSources?.length) {
     warnings.add(
-      "Автопилот добавил browser-local manifest из явно выбранной папки/файлов; полный локальный путь и содержимое файлов в публичные сервисы не уходят."
+      "Автопилот добавил браузерный список из явно выбранной папки/файлов; полный локальный путь и содержимое файлов в публичные сервисы не уходят."
     );
   }
+  if (smartImportKnownSources.length) {
+    warnings.add("Автопилот добавил источники из текста/Excel/OCR как кандидаты предпросмотра: администратор видит маршрут, но не обязан вручную вспоминать формат старой системы.");
+  }
 
+  const candidateKey = (candidate: MigrationLocalSourceDiscoveryCandidate) => `${candidate.sourceRef.toLowerCase()}|${candidate.sourceKind}`;
+  const knownCandidateKeys = new Set(explicitKnownSources.map((candidate) => candidateKey(candidate)));
   const candidatesBySource = new Map<string, MigrationLocalSourceDiscoveryCandidate>();
-  for (const candidate of [...(input.knownSources ?? []), ...discovery.candidates]) {
-    const key = `${candidate.sourceRef.toLowerCase()}|${candidate.sourceKind}`;
+  for (const candidate of [...explicitKnownSources, ...discovery.candidates]) {
+    const key = candidateKey(candidate);
     const existing = candidatesBySource.get(key);
     if (!existing || candidate.confidence > existing.confidence || candidate.matchedFiles > existing.matchedFiles) {
       candidatesBySource.set(key, candidate);
     }
   }
-  const candidates = Array.from(candidatesBySource.values())
-    .sort(
-      (left, right) =>
-        right.confidence - left.confidence ||
-        right.matchedFiles - left.matchedFiles ||
-        right.databaseFiles + right.dumpFiles + right.dicomLikeFiles + right.imageFiles - (left.databaseFiles + left.dumpFiles + left.dicomLikeFiles + left.imageFiles)
-    )
-    .slice(0, input.maxCandidates);
+  const sortedCandidates = Array.from(candidatesBySource.values()).sort(
+    (left, right) =>
+      right.confidence - left.confidence ||
+      right.matchedFiles - left.matchedFiles ||
+      right.databaseFiles + right.dumpFiles + right.dicomLikeFiles + right.imageFiles - (left.databaseFiles + left.dumpFiles + left.dicomLikeFiles + left.imageFiles)
+  );
+  const candidates = uniqueByMigrationCandidateKey(
+    [...sortedCandidates.filter((candidate) => knownCandidateKeys.has(candidateKey(candidate))), ...sortedCandidates],
+    candidateKey
+  ).slice(0, input.maxCandidates);
 
-  const probedCandidates = candidates.slice(0, Math.min(input.maxProbeCandidates, candidates.length));
+  const probedCandidates = uniqueByMigrationCandidateKey(
+    [...candidates.filter((candidate) => knownCandidateKeys.has(candidateKey(candidate))), ...candidates],
+    candidateKey
+  ).slice(0, Math.min(input.maxProbeCandidates, candidates.length));
   const sources: MigrationAutopilotSource[] = [];
   for (const candidate of probedCandidates) {
     let probe: MigrationLocalSourceProbeResponse | null = null;
@@ -3092,8 +4549,8 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
       });
       probe.warnings.forEach((warning) => warnings.add(warning));
       probe.privacyWarnings.forEach((warning) => privacyWarnings.add(warning));
-    } catch (error) {
-      warnings.add(error instanceof Error ? `Probe failed for ${candidate.safeDisplayName}: ${error.message}` : `Probe failed for ${candidate.safeDisplayName}.`);
+    } catch {
+      warnings.add(`Источник ${candidate.safeDisplayName} найден, но быстрая проверка не завершилась. Откройте план источника или выберите папку вручную.`);
     }
     const score = migrationAutopilotScore(candidate, probe);
     const readiness = migrationAutopilotReadiness(candidate, probe);
@@ -3127,8 +4584,9 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
   }
 
   let clinicLookup: Awaited<ReturnType<typeof buildClinicPublicLookup>> | null = null;
-  if (input.clinic) {
-    clinicLookup = await buildClinicPublicLookup(input.clinic);
+  const clinicLookupInput = input.clinic ?? clinicLookupInputFromSmartImport(smartImportPreview?.clinicSuggestion ?? null);
+  if (clinicLookupInput) {
+    clinicLookup = await buildClinicPublicLookup(clinicLookupInput);
     clinicLookup.warnings.forEach((warning) => warnings.add(warning));
   }
 
@@ -3149,7 +4607,7 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
     clinicLookup,
     probedCount
   });
-  const roots = safeMigrationDiscoveryRoots([...discovery.roots, ...(input.knownSources ?? []).map((candidate) => candidate.sourceRef)]);
+  const roots = safeMigrationDiscoveryRoots([...discovery.roots, ...explicitKnownSources.map((candidate) => candidate.sourceRef)]);
   const scannedFolders = discovery.scannedFolders + (input.knownScannedFolders ?? 0);
 
   return migrationAutopilotResponseSchema.parse({
@@ -3168,16 +4626,18 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
     warnings: Array.from(warnings),
     privacyWarnings: Array.from(privacyWarnings),
     nextAction: sortedSources.length
-      ? "Начать с источников critical/high: открыть план, затем пробу, затем staging preview. Массовая запись только после контрольной выборки."
-      : "Подключить внешний диск/сетевую папку или указать rootPaths старой МИС вручную; автопилот не нашел пригодный источник."
+      ? "Начать с источников critical/high: открыть план, затем проверку, затем черновой предпросмотр. Массовая запись только после контрольной выборки."
+      : "Подключить внешний диск, сетевую папку или выбрать корневую папку старой программы вручную; автоплан не нашел пригодный источник."
   });
 }
 
 function extractLegacySourceRef(value: string) {
   return (
     value.match(/\bbrowser-local:[a-f0-9]{8,12}\b/i)?.[0] ??
+    value.match(/\bsmart-preview:[a-f0-9]{8,12}\b/i)?.[0] ??
     value.match(/\bworkstation-profile:[a-f0-9]{8,12}\b/i)?.[0] ??
     value.match(/\bworkstation-signal:[a-f0-9]{8,12}\b/i)?.[0] ??
+    value.match(/\bmigration-source:[a-f0-9]{8,12}\b/i)?.[0] ??
     value.match(legacyDatabasePathPattern)?.[0]?.trim() ??
     value.match(/https?:\/\/[^\s,;|]+/i)?.[0] ??
     value.match(/(?:[A-Za-zА-Яа-яЁё]:[\\/][^;|\n]+|\\\\[^;|\n]+|\/[^;|\n]+)(?:[\\/]DICOMDIR\b)?/i)?.[0]?.trim() ??
@@ -3188,25 +4648,33 @@ function extractLegacySourceRef(value: string) {
 
 function detectLegacySourceKind(value: string, sourceRef: string | null): SmartImportLegacySource["kind"] {
   const text = `${value} ${sourceRef ?? ""}`.toLowerCase();
+  if (/старая серверная база программы/.test(text)) return "firebird_database";
+  if (/старая настольная база/.test(text)) return "access_database";
+  if (/локальная база программы/.test(text)) return "sqlite_database";
+  if (/резервная копия старой базы/.test(text)) return "sql_dump";
   if (/pacs|orthanc|dcm4chee|dicomweb|qido|wado|ae\s*title|dicom\s*server|пакс/.test(text)) return "pacs_dicom";
   if (/\bdicomdir\b|dicom\s*(?:folder|папк|каталог)|(?:folder|папк|каталог|root|share|шара|archive|архив|export|выгруз).*(?:dicom|cbct|кт|ккт)/.test(text)) {
     return "dicom_folder";
   }
-  if (imagingVendorPattern.test(text)) {
+  if (imagingVendorPattern.test(text) || imagingVendorSupplementalPattern.test(text)) {
     return "vendor_imaging_system";
   }
   if (/(?:rvg|opg|оптг|рентген|снимк|xray|x-ray|photo|фото).*(?:folder|папк|каталог|archive|архив|export|выгруз|root|share|шара)|(?:folder|папк|каталог|archive|архив|export|выгруз|root|share|шара).*(?:rvg|opg|оптг|рентген|снимк|xray|x-ray|photo|фото)/.test(text)) {
     return "xray_image_archive";
   }
   if (/\\\\|smb|network\s+share|сетев(?:ая|ой)\s+папк/.test(text)) return "network_share";
-  if (/\.fdb\b|\.gdb\b|\.fbk\b|firebird|interbase/.test(text)) return "firebird_database";
+  if (/\.fdb\b|\.gdb\b|\.fbk\b|\.ib\b|\.ibk\b|\.gbk\b|firebird|interbase/.test(text)) return "firebird_database";
   if (/\.mdb\b|\.accdb\b|access\b/.test(text)) return "access_database";
+  if (/\.dbf\b|\.dbt\b|\.fpt\b|\.cdx\b|\.idx\b|\.ntx\b|\.ndx\b|\.mdx\b|dbase|foxpro|visual\s*foxpro|clipper|paradox/.test(text)) return "mis_database";
   if (/\.sqlite\b|\.sqlite3\b|sqlite|(?:^|[\\/])[^\\/]+\.(?:db)\b/.test(text)) return "sqlite_database";
   if (/\.sql\b|\.dump\b|\.bak\b|\.dt\b|\.mdf\b|\.ldf\b|\.sdf\b|postgres|postgresql|mysql|mssql|sql\s*server/.test(text)) return "sql_dump";
-  if (/\.xlsx\b|\.xls\b|\.ods\b|excel|таблиц/.test(text)) return "spreadsheet_export";
+  if (/\.xlsx\b|\.xlsm\b|\.xlsb\b|\.xls\b|\.ods\b|excel|таблиц/.test(text)) return "spreadsheet_export";
   if (/\.csv\b|\.tsv\b|\.json\b|\.xml\b/.test(text)) return "csv_export";
   if (/\.zip\b|\.7z\b|\.rar\b|\.tar\b|\.gz\b|архив/.test(text)) return "archive_export";
-  if (/1c|1с|\.1cd\b|мис|инфоклиника|cliniccards|dental4windows|dental\s*pro|ident|stomx|legacy|старая\s+баз/.test(text)) {
+  if (/open\s*dental|opendental|dentrix|eaglesoft|patterson/i.test(text)) {
+    return "mis_database";
+  }
+  if (legacyMisTextPattern.test(text)) {
     return "mis_database";
   }
   return "unknown_legacy_source";
@@ -3214,43 +4682,45 @@ function detectLegacySourceKind(value: string, sourceRef: string | null): SmartI
 
 const legacySourceTitles: Record<SmartImportLegacySource["kind"], string> = {
   mis_database: "Старая МИС или CRM",
-  firebird_database: "Firebird/InterBase база",
-  access_database: "Access MDB/ACCDB база",
-  sqlite_database: "SQLite база",
-  sql_dump: "SQL dump или backup",
-  spreadsheet_export: "Excel/XLSX выгрузка",
-  csv_export: "CSV/TSV выгрузка",
+  firebird_database: "Старая серверная база программы",
+  access_database: "Старая настольная база",
+  sqlite_database: "Локальная база программы",
+  sql_dump: "Резервная копия старой базы",
+  spreadsheet_export: "Табличная выгрузка",
+  csv_export: "табличная выгрузка",
   archive_export: "Архив выгрузки",
-  pacs_dicom: "PACS/DICOM источник",
-  dicom_folder: "DICOMDIR/КТ папка",
+  pacs_dicom: "Архив снимков клиники",
+  dicom_folder: "Папка КЛКТ/снимков",
   xray_image_archive: "Архив RVG/ОПТГ/фото",
-  vendor_imaging_system: "Vendor-система снимков",
+  vendor_imaging_system: "Программа снимков",
   network_share: "Сетевая папка обмена",
-  unknown_legacy_source: "Неопознанный legacy-источник"
+  unknown_legacy_source: "Неопознанный источник старой системы"
 };
 
 function legacySourceEvidence(value: string, sourceRef: string | null) {
   const evidence = new Set<string>();
   if (sourceRef) evidence.add(`sourceRef=${sourceRef}`);
-  if (/\.fdb|\.gdb|\.fbk|firebird|interbase/i.test(value)) evidence.add("Firebird/InterBase");
+  if (/\.fdb|\.gdb|\.fbk|\.ib\b|\.ibk\b|\.gbk\b|firebird|interbase/i.test(value)) evidence.add("Firebird/InterBase");
   if (/\.mdb|\.accdb|access/i.test(value)) evidence.add("Access");
-  if (/\.sqlite|\.sqlite3|sqlite|\.db\b/i.test(value)) evidence.add("SQLite/DB file");
-  if (/\.1cd|\.dt|1c|1с/i.test(value)) evidence.add("1C database/export");
-  if (/\.sql|\.dump|\.bak|\.mdf|\.ldf|\.sdf|postgres|mysql|mssql|sql server/i.test(value)) evidence.add("SQL backup/dump");
-  if (/\.csv|\.tsv|\.xls|\.xlsx|\.ods|\.xml|\.json|excel/i.test(value)) evidence.add("table export");
-  if (/\.zip|\.7z|\.rar|\.tar|\.gz|архив/i.test(value)) evidence.add("archive");
-  if (/pacs|orthanc|dcm4chee|dicomweb|qido|wado|пакс/i.test(value)) evidence.add("PACS/DICOM");
-  if (/\bDICOMDIR\b|dicom\s*(?:folder|папк|каталог)|cbct|кт|ккт/i.test(value)) evidence.add("DICOM/CBCT folder");
-  if (/rvg|opg|оптг|рентген|xray|x-ray|снимк|фото/i.test(value)) evidence.add("x-ray/photo archive");
-  if (imagingVendorPattern.test(value)) evidence.add("imaging vendor system");
-  if (/1c|1с|\.1cd|мис|инфоклиника|cliniccards|dental4windows|dental\s*pro|ident|stomx/i.test(value)) evidence.add("legacy MIS name");
-  if (/\\\\|smb|network share|сетев/i.test(value)) evidence.add("network share");
+  if (/\.dbf|\.dbt|\.fpt|\.cdx|\.idx|\.ntx|\.ndx|\.mdx|dbase|foxpro|visual\s*foxpro|clipper|paradox/i.test(value)) evidence.add("DBF/FoxPro/Clipper");
+  if (/\.sqlite|\.sqlite3|sqlite|\.db\b/i.test(value)) evidence.add("SQLite/DB файл");
+  if (/\.1cd|\.dt|1c|1с/i.test(value)) evidence.add("1C база/выгрузка");
+  if (/\.sql|\.dump|\.bak|\.mdf|\.ldf|\.sdf|postgres|mysql|mssql|sql server/i.test(value)) evidence.add("SQL резервная копия");
+  if (/\.csv|\.tsv|\.xls|\.xlsx|\.xlsm|\.xlsb|\.ods|\.xml|\.json|excel/i.test(value)) evidence.add("табличная выгрузка");
+  if (/\.zip|\.7z|\.rar|\.tar|\.gz|архив/i.test(value)) evidence.add("архив");
+  if (/pacs|orthanc|dcm4chee|dicomweb|qido|wado|пакс/i.test(value)) evidence.add("архив снимков");
+  if (/\bDICOMDIR\b|dicom\s*(?:folder|папк|каталог)|cbct|кт|ккт/i.test(value)) evidence.add("КЛКТ/КТ папка");
+  if (/rvg|opg|оптг|рентген|xray|x-ray|снимк|фото/i.test(value)) evidence.add("архив рентгена/фото");
+  if (imagingVendorPattern.test(value) || imagingVendorSupplementalPattern.test(value)) evidence.add("программа снимков");
+  if (/open\s*dental|opendental|dentrix|eaglesoft|patterson/i.test(value)) evidence.add("старая стоматологическая программа");
+  if (legacyMisTextPattern.test(value)) evidence.add("старая МИС");
+  if (/\\\\|smb|network share|сетев/i.test(value)) evidence.add("сетевая папка");
   return Array.from(evidence);
 }
 
 function safeLegacySourceAlias(kind: SmartImportLegacySource["kind"], sourceRef: string | null) {
   if (!sourceRef) return null;
-  if (/^(?:browser-local|workstation-profile|workstation-signal):[a-f0-9]{8,12}$/i.test(sourceRef)) return sourceRef;
+  if (/^(?:browser-local|workstation-profile|workstation-signal|migration-source):[a-f0-9]{8,12}$/i.test(sourceRef)) return sourceRef;
   return `${legacySourceTitles[kind]} #${migrationFingerprint(sourceRef).toUpperCase()}`;
 }
 
@@ -3264,14 +4734,14 @@ function safeLegacySourceEvidence(source: SmartImportLegacySource) {
 
 function smartImportReportSourceText(line: SmartImportLineClassification) {
   if (line.kind !== "legacy_source") return line.text;
-  return "legacy source raw path/name redacted; use the legacy_source alias row for handoff";
+  return "сырой путь или название старого источника скрыты; используйте строку-псевдоним источника для передачи";
 }
 
 function legacySourcePlaybook(kind: SmartImportLegacySource["kind"]): Pick<
   SmartImportLegacySource,
   "requiredArtifacts" | "recommendedRoute" | "automationLevel" | "privacy" | "nextAction"
 > {
-  const privacy = "Работать локально или через read-only bridge; не отправлять базу пациентов, DICOM и телефоны в карты, поиск или LLM.";
+  const privacy = "Работать локально или через модуль только для чтения; не отправлять базу пациентов, снимки и телефоны в карты, поиск или публичные сервисы.";
   if (kind === "csv_export" || kind === "spreadsheet_export") {
     return {
       requiredArtifacts: [
@@ -3279,7 +4749,7 @@ function legacySourcePlaybook(kind: SmartImportLegacySource["kind"]): Pick<
         "Отдельные таблицы визитов/оплат/услуг, если есть",
         "Кодировка файла и разделитель колонок"
       ],
-      recommendedRoute: "Загрузить или вставить через document ingestion, затем открыть smart import preview.",
+      recommendedRoute: "Загрузить или вставить через разбор документов, затем открыть предпросмотр импорта.",
       automationLevel: "ready_for_preview",
       privacy,
       nextAction: "Вставить первые строки выгрузки или загрузить файл; готовые строки можно записывать после предпросмотра."
@@ -3288,67 +4758,67 @@ function legacySourcePlaybook(kind: SmartImportLegacySource["kind"]): Pick<
   if (kind === "pacs_dicom") {
     return {
       requiredArtifacts: [
-        "DICOMDIR, папка исследования или DICOMweb QIDO/WADO endpoint",
+        "Папка исследования или адрес архива снимков",
         "Права только на чтение",
         "Идентификаторы пациента/исследования для сопоставления"
       ],
-      recommendedRoute: "Использовать DICOM folder workup или DICOMweb connector; сначала metadata-only, пиксели не копировать в CRM без выбора серии.",
+      recommendedRoute: "Использовать проверку папки снимков или подключение архива снимков; сначала список серии, тяжелые данные не копировать в CRM без выбора серии.",
       automationLevel: "needs_local_bridge",
       privacy,
-      nextAction: "Проверить endpoint/папку, получить список серий и привязать только подтвержденные исследования."
+      nextAction: "Проверить адрес или папку, получить список серий и привязать только подтвержденные исследования."
     };
   }
   if (kind === "dicom_folder") {
     return {
       requiredArtifacts: [
-        "DICOMDIR или корневая папка исследования/экспорта КТ",
-        "Read-only доступ к папке, без перемещения оригиналов",
+        "Корневая папка исследования/экспорта КТ",
+        "Доступ к папке только для чтения, без перемещения оригиналов",
         "Лимит сканирования и список поддерживаемых расширений"
       ],
-      recommendedRoute: "Запустить metadata-only DICOM folder discovery/workup: сначала manifest, Study/Series UID, modality, даты и patient hints; пиксели не грузить до выбора серии.",
+      recommendedRoute: "Запустить проверку папки снимков: сначала список серии, внутренние коды исследования/серии, тип снимка, даты и подсказки пациента; тяжелые данные не грузить до выбора серии.",
       automationLevel: "needs_local_bridge",
       privacy,
-      nextAction: "Подключить папку как read-only источник и построить metadata-only список исследований для сверки."
+      nextAction: "Подключить папку как источник только для чтения и построить список исследований для сверки."
     };
   }
   if (kind === "vendor_imaging_system") {
     return {
       requiredArtifacts: [
         "Название и версия программы снимков",
-        "Экспорт DICOM/DICOMDIR или папка хранения",
-        "Если есть: CSV/XML manifest пациентов/исследований",
+        "Штатная выгрузка снимков или папка хранения",
+        "Если есть: табличный список пациентов и исследований",
         "Пароль/учетка только на чтение, если экспорт требует входа"
       ],
-      recommendedRoute: "Сначала использовать родной export в DICOM/DICOMDIR/CSV; прямой разбор внутренней БД vendor-системы только через локальный bridge и preview.",
+      recommendedRoute: "Сначала использовать штатную выгрузку снимков или табличный список; прямой разбор внутренней базы программы снимков только через локальный модуль и предпросмотр.",
       automationLevel: "needs_local_bridge",
       privacy,
-      nextAction: "Выбрать самый безопасный экспорт: DICOMDIR для КТ/ОПТГ, CSV manifest для сопоставления пациентов, затем smart preview."
+      nextAction: "Выбрать самый быстрый доступный экспорт: папка КЛКТ/ОПТГ, табличный список для сопоставления пациентов, затем предпросмотр импорта."
     };
   }
   if (kind === "xray_image_archive") {
     return {
       requiredArtifacts: [
         "Папка или архив RVG/ОПТГ/TRG/фото",
-        "Правило именования файлов или соседний CSV со связью пациент-файл",
-        "Read-only доступ; оригиналы не переименовывать"
+        "Правило именования файлов или соседняя таблица связи пациент-файл",
+        "Доступ только для чтения; оригиналы не переименовывать"
       ],
-      recommendedRoute: "Построить imaging manifest по путям, датам, modality hints и patient hints; запись делать только после preview и ручного сопоставления.",
+      recommendedRoute: "Построить список снимков по путям, датам, типам снимков и подсказкам пациента; запись делать только после предпросмотра и ручного сопоставления.",
       automationLevel: "needs_local_bridge",
       privacy,
-      nextAction: "Сканировать папку в manifest, показать неподтвержденные совпадения отдельно и не копировать тяжелые файлы до выбора."
+      nextAction: "Сканировать папку в список, показать неподтвержденные совпадения отдельно и не копировать тяжелые файлы до выбора."
     };
   }
   if (kind === "archive_export") {
     return {
       requiredArtifacts: [
-        "Оригинальный архив ZIP/7z/RAR без распаковки поверх рабочей базы",
+        "Оригинальный архив без распаковки поверх рабочей базы",
         "Пароль от архива, если есть",
         "Описание, что внутри: пациенты, оплаты, снимки, документы"
       ],
-      recommendedRoute: "Открывать архив как staging source: сначала список файлов и извлеченный текст, затем маршруты patients/imaging/documents.",
+      recommendedRoute: "Открывать архив как источник для чернового разбора: сначала список файлов и извлеченный текст, затем маршруты пациентов, снимков и документов.",
       automationLevel: "needs_file_upload",
       privacy,
-      nextAction: "Загрузить архив в ingestion или распаковать в отдельную read-only папку для сканирования."
+      nextAction: "Загрузить архив в разбор документов или распаковать в отдельную папку только для чтения."
     };
   }
   if (kind === "network_share") {
@@ -3358,24 +4828,24 @@ function legacySourcePlaybook(kind: SmartImportLegacySource["kind"]): Pick<
         "Пользователь с правами только на чтение",
         "Лимит сканирования и список подпапок, которые нельзя трогать"
       ],
-      recommendedRoute: "Подключить read-only bridge и построить manifest; не копировать все подряд.",
+      recommendedRoute: "Подключить локальный модуль только для чтения и построить список; не копировать все подряд.",
       automationLevel: "needs_local_bridge",
       privacy,
-      nextAction: "Дать путь к папке и запустить ограниченный scan; CRM должна показать manifest до записи."
+      nextAction: "Дать путь к папке и запустить ограниченное сканирование; CRM должна показать список до записи."
     };
   }
   if (kind === "firebird_database" || kind === "access_database" || kind === "sqlite_database" || kind === "sql_dump" || kind === "mis_database") {
     return {
       requiredArtifacts: [
-        "Копия базы или backup, снятый при выключенной старой программе",
+        "Копия базы или резервная копия, снятая при выключенной старой программе",
         "Версия старой МИС и пароль/пользователь только на чтение, если нужен",
         "Словарь таблиц или хотя бы скрин списка пациентов/визитов",
         "Контрольная выгрузка 10 пациентов для сверки после импорта"
       ],
-      recommendedRoute: "Сначала offline staging parser: извлечь пациентов/контакты/визиты/оплаты/медиа-ссылки в CSV manifest, затем прогнать smart preview.",
+      recommendedRoute: "Сначала локальный черновой разбор: извлечь пациентов, контакты, визиты, оплаты и ссылки на снимки в табличный список, затем прогнать предпросмотр импорта.",
       automationLevel: "needs_local_bridge",
       privacy,
-      nextAction: "Не подключаться к живой базе старой МИС. Снять копию, разобрать ее в staging и сверить первые 10 карт."
+      nextAction: "Не подключаться к живой базе старой МИС. Снять копию, разобрать ее локально и сверить первые 10 карт."
     };
   }
   return {
@@ -3384,10 +4854,10 @@ function legacySourcePlaybook(kind: SmartImportLegacySource["kind"]): Pick<
       "Пример 5-10 строк без лишних персональных данных, если можно",
       "Путь к файлу/папке или безопасная копия"
     ],
-    recommendedRoute: "Сначала ручная идентификация источника, затем выбор parser route.",
+    recommendedRoute: "Сначала ручная идентификация источника, затем выбор маршрута разбора.",
     automationLevel: "manual_review",
     privacy,
-    nextAction: "Уточнить формат: БД, таблица, архив, PACS или папка снимков."
+    nextAction: "Уточнить формат: база, таблица, архив, архив снимков или папка снимков."
   };
 }
 
@@ -3456,10 +4926,10 @@ function buildMigrationPlan(input: {
         ? `Найдено источников: ${input.legacySources.length}. ${
             input.legacySources.map((source) => legacySourceTitles[source.kind]).join(", ")
           }.`
-        : "Пути к старым БД, архивам, CSV/XLSX, PACS или сетевым папкам не найдены.",
+        : "Пути к старым базам, таблицам, архивам снимков или сетевым папкам не найдены.",
       nextAction: input.legacySources.length
-        ? "Подготовить указанные артефакты и запускать только read-only staging/preview."
-        : "Указать, откуда мигрировать: файл БД, CSV/XLSX, архив, DICOM/PACS или папка снимков."
+        ? "Подготовить указанные артефакты и запускать только черновой разбор только для чтения."
+        : "Указать, откуда мигрировать: файл базы, таблица, архив, архив снимков или папка снимков."
     },
     {
       id: "legacy_patients",
@@ -3470,18 +4940,18 @@ function buildMigrationPlan(input: {
         : "Строки пациентов не распознаны.",
       nextAction: input.patientReadyRows
         ? "Записать только готовые строки, предупреждения исправить отдельно."
-        : "Вставить CSV/XLSX-copy или OCR списка пациентов."
+        : "Вставить таблицу, выгрузку из старой программы или OCR списка пациентов."
     },
     {
       id: "legacy_imaging",
-      title: "КТ, DICOM, RVG, ОПТГ и фото",
+      title: "КТ, RVG, ОПТГ и фото",
       status: input.imagingRows ? (input.imagingReadyRows ? "ready" : "review") : "manual",
       detail: input.imagingRows
         ? `Строк снимков: ${input.imagingRows}, готово к привязке: ${input.imagingReadyRows}.`
         : "Снимки не распознаны в этом входе.",
       nextAction: input.imagingReadyRows
-        ? "Привязать готовые строки; тяжелые CT оставить metadata-only до выбора папки."
-        : "Добавить манифест, папку или экспорт PACS/DICOM."
+        ? "Привязать готовые строки; тяжелые КЛКТ оставить только как метаданные до выбора папки."
+        : "Добавить список, папку или выгрузку снимков."
     },
     {
       id: "public_lookup",
@@ -3507,8 +4977,8 @@ function buildMigrationPlan(input: {
     steps,
     privacyWarnings: [
       "Публичный поиск должен использовать только название, ИНН, адрес и сайт клиники.",
-      "ФИО, телефоны, даты рождения, снимки и DICOM не отправляются в карты/поисковики.",
-      "Старые БД и архивы разбираются только как staging/read-only источник; автоматическая запись разрешена только после preview."
+      "ФИО, телефоны, даты рождения и снимки не отправляются в карты/поисковики.",
+      "Старые базы и архивы разбираются только как черновой источник только для чтения; автоматическая запись разрешена только после предпросмотра."
     ],
     nextAction:
       input.clinicSuggestion || input.patientReadyRows || input.imagingReadyRows || input.legacySources.length
@@ -3567,12 +5037,12 @@ function buildSmartImportPreview(input: { sourceName: string; rawText: string; m
     migrationPlan,
     lineClassifications: classifications.filter((line) => line.text.trim()),
     parserNotes: [
-      "Smart parser separates mixed exports into patient rows and imaging rows before any write.",
-      "Clinic profile facts are suggested separately and never written by smart import commit.",
-      "Legacy database, PACS, archive, network-share and spreadsheet sources become staging candidates before any parser touches live data.",
-      "Public lookup links use only clinic name/address/INN; patient data must stay out of maps/search.",
-      "Commit order is patients first, imaging second, so images from the same export can attach to newly created patients.",
-      "Warnings and blocked rows remain outside the database until a user fixes mapping or source data."
+      "Умный парсер разделяет смешанную выгрузку на строки пациентов и строки снимков до любой записи.",
+      "Факты профиля клиники предлагаются отдельно и не записываются автоматом.",
+      "Старая база, архив снимков, архив, сетевая папка и таблицы сначала становятся черновыми кандидатами.",
+      "Публичные ссылки используют только название, адрес и ИНН клиники; пациентские данные не уходят в карты или поиск.",
+      "Порядок записи: сначала пациенты, затем снимки, чтобы снимки из той же выгрузки могли привязаться к созданным картам.",
+      "Предупреждения и заблокированные строки остаются вне базы, пока пользователь не исправит сопоставление или исходные данные."
     ]
   });
 }
@@ -3752,8 +5222,8 @@ function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSm
       preview.clinicSuggestion ? Object.keys(preview.clinicSuggestion.fields).length : 0
     }; legacy sources ${preview.legacySources.length}`,
     "",
-    "Safe handoff CSV: no patient names, phones, birth dates, notes, local file paths, file names, DICOM pixels, or raw legacy DB contents.",
-    "Use this file for clinic admin/IT/vendor handoff; use the internal CSV only inside the clinic."
+    "Табличный отчет для передачи: без ФИО, телефонов, дат рождения, заметок, локальных путей, имен файлов, тяжелых данных снимков и содержимого старых баз.",
+    "Этот файл можно дать администратору, IT или поставщику; внутренний отчет использовать только внутри клиники."
   ]);
 
   preview.migrationPlan.steps.forEach((step, index) => {
@@ -3765,7 +5235,7 @@ function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSm
       step.id,
       step.detail,
       "",
-      "Migration step uses aggregated counts and route guidance only.",
+      "Шаг миграции содержит только агрегированные счетчики и маршрут разбора.",
       step.nextAction
     ]);
   });
@@ -3779,8 +5249,8 @@ function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSm
       "patient_record",
       `patient-row #${smartImportSafeHandoffFingerprint("patient", row.rowNumber, row.status)}`,
       smartImportSafeHandoffWarnings(row.warnings.length),
-      "Patient identity, phone, birth date, and notes are deliberately omitted from safe handoff.",
-      row.status === "ready" ? "Clinic operator can verify this row in internal preview before commit." : "Fix or review this row inside the clinic preview."
+      "ФИО, телефон, дата рождения и заметки пациента намеренно скрыты из передаваемого файла.",
+      row.status === "ready" ? "Оператор клиники проверяет эту строку во внутреннем предпросмотре до записи." : "Исправить или проверить строку во внутреннем предпросмотре клиники."
     ]);
   });
 
@@ -3794,8 +5264,8 @@ function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSm
       safeKind,
       `imaging-row #${smartImportSafeHandoffFingerprint("imaging", row.rowNumber, row.status, safeKind)}`,
       smartImportSafeHandoffWarnings(row.warnings.length),
-      "Patient name, local file path, file name, and DICOM/image payload are deliberately omitted from safe handoff.",
-      row.status === "ready" ? "Clinic operator can attach this only after internal patient/source verification." : "Prepare metadata-only manifest or manual mapping inside the clinic."
+      "ФИО пациента, локальный путь, имя файла и содержимое снимка намеренно скрыты из передаваемого файла.",
+      row.status === "ready" ? "Оператор клиники привязывает это только после внутренней проверки пациента и источника." : "Подготовить список метаданных или ручное сопоставление внутри клиники."
     ]);
   });
 
@@ -3808,12 +5278,12 @@ function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSm
         safeForPublicLookup ? "review" : "redacted",
         Math.round(preview.clinicSuggestion?.confidence ?? 0),
         field,
-        safeForPublicLookup ? String(value ?? "") : "non-public clinic field redacted from handoff",
-        preview.clinicSuggestion?.warnings.length ? "clinic suggestion has internal warnings" : "",
+        safeForPublicLookup ? String(value ?? "") : "непубличное поле клиники скрыто из передаваемого файла",
+        preview.clinicSuggestion?.warnings.length ? "у подсказки клиники есть внутренние предупреждения" : "",
         safeForPublicLookup
-          ? "Clinic requisites only. Do not mix patient data into public lookup."
-          : "Non-public or ambiguous clinic field stays in internal preview.",
-        safeForPublicLookup ? "Confirm against clinic documents before saving." : "Review inside the clinic profile screen."
+          ? "Только реквизиты клиники. Не смешивать пациентские данные с публичным поиском."
+          : "Непубличное или неоднозначное поле клиники остается во внутреннем предпросмотре.",
+        safeForPublicLookup ? "Сверить с документами клиники перед сохранением." : "Проверить на экране профиля клиники."
       ]);
     });
   }
@@ -3847,11 +5317,11 @@ function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSm
   });
 
   preview.parserNotes.forEach((note, index) => {
-    rows.push(["parser_note", index + 1, "info", "", "safe_policy", note, "", "Parser note contains workflow policy, not raw source rows.", ""]);
+    rows.push(["parser_note", index + 1, "info", "", "safe_policy", note, "", "Заметка парсера содержит правило процесса, а не сырые строки источника.", ""]);
   });
 
   preview.migrationPlan.privacyWarnings.forEach((warning, index) => {
-    rows.push(["privacy_warning", index + 1, "blocked", "", "policy", warning, "", "Privacy boundary for migration handoff.", ""]);
+    rows.push(["privacy_warning", index + 1, "blocked", "", "policy", warning, "", "Граница передаваемого миграционного файла.", ""]);
   });
 
   return rows.map((row) => row.map(csvCell).join(";")).join("\n");
@@ -3883,11 +5353,26 @@ function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildM
     "operator_packet",
     "",
     "",
-    `score ${Math.round(plan.operatorPacket.score * 100)}%`,
-    `sources ${plan.operatorPacket.totals.sources}; probed ${plan.operatorPacket.totals.probed}; DB ${plan.operatorPacket.totals.databaseSources}; media ${plan.operatorPacket.totals.mediaSources}; workstation ${plan.operatorPacket.totals.workstationHints}; public links ${plan.operatorPacket.totals.publicLookupTargets}`,
-    "safe migration handoff",
-    "No raw local paths, patient identifiers, DICOM pixels, file names, or legacy DB contents in this CSV.",
+    `готовность ${Math.round(plan.operatorPacket.score * 100)}%`,
+    `источников ${plan.operatorPacket.totals.sources}; проверено ${plan.operatorPacket.totals.probed}; старых баз ${plan.operatorPacket.totals.databaseSources}; снимков ${plan.operatorPacket.totals.mediaSources}; подсказок из текста/OCR ${plan.operatorPacket.totals.smartPreviewSources}; следов ПК ${plan.operatorPacket.totals.workstationHints}; публичных ссылок ${plan.operatorPacket.totals.publicLookupTargets}`,
+    "безопасная сводка миграции",
+    "В этом табличном отчете нет сырых локальных путей, идентификаторов пациентов, тяжелых данных снимков, имен файлов и содержимого старых баз.",
     plan.nextAction
+  ]);
+
+  rows.push([
+    "dry_run",
+    1,
+    "administrator",
+    plan.operatorPacket.overallStatus,
+    "effort",
+    "",
+    "",
+    `оператор ${plan.operatorPacket.dryRun.estimatedOperatorMinutes} мин; простой клиники ${plan.operatorPacket.dryRun.estimatedClinicDowntimeMinutes} мин`,
+    `готово к предпросмотру ${plan.operatorPacket.dryRun.previewableSources}; действий администратора ${plan.operatorPacket.dryRun.adminBlockedSources}; проверок врача ${plan.operatorPacket.dryRun.doctorReviewRequiredSources}`,
+    plan.operatorPacket.dryRun.fastestRoute,
+    "Черновой расчет содержит только агрегированные счетчики и текст маршрута.",
+    plan.operatorPacket.dryRun.nextBestAction
   ]);
 
   plan.operatorPacket.lanes.forEach((lane, index) => {
@@ -3902,7 +5387,7 @@ function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildM
       lane.title,
       lane.detail,
       "",
-      "Lane summary is alias/fingerprint based; raw data stays local.",
+      "Сводка направления построена по краткому имени и отпечатку; сырые данные остаются локально.",
       lane.nextAction
     ]);
   });
@@ -3934,7 +5419,7 @@ function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildM
       source.candidate.sourceFingerprint.toUpperCase(),
       source.candidate.sourceKind,
       `${source.candidate.sourceKind} #${source.candidate.sourceFingerprint.toUpperCase()}`,
-      `score ${Math.round(source.score * 100)}%; files ${source.candidate.matchedFiles}; blockers ${source.readiness.blockers.length}; warnings ${source.readiness.warnings.length}`,
+      `готовность ${Math.round(source.score * 100)}%; файлов ${source.candidate.matchedFiles}; блокеров ${source.readiness.blockers.length}; предупреждений ${source.readiness.warnings.length}`,
       source.bridgeKit.outputManifest.format,
       source.bridgeKit.privacyBoundary,
       source.recommendedAction
@@ -3942,7 +5427,24 @@ function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildM
   });
 
   plan.operatorPacket.firstActions.forEach((action, index) => {
-    rows.push(["first_action", index + 1, "administrator", "needs_admin", "", "", "", action, "", "", "Action text contains no raw paths or patient data.", ""]);
+    rows.push(["first_action", index + 1, "administrator", "needs_admin", "", "", "", action, "", "", "Текст действия не содержит сырых путей или пациентских данных.", ""]);
+  });
+
+  plan.operatorPacket.operatorScript.steps.forEach((step, index) => {
+    rows.push([
+      "operator_script",
+      index + 1,
+      step.owner,
+      step.blocking ? "needs_admin" : "manual_review",
+      step.action,
+      step.sourceFingerprint?.toUpperCase() ?? "",
+      step.sourceKind ?? "",
+      step.title,
+      step.detail,
+      `${step.buttonLabel}; оценка ${step.estimatedMinutes} мин`,
+      "Сценарий написан для администратора, ассистента и врача, без инженерного жаргона.",
+      step.blocking ? "Выполнить до массовой записи." : "Можно выполнять параллельно."
+    ]);
   });
 
   rows.push([
@@ -3953,11 +5455,11 @@ function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildM
     "allowed",
     "",
     "",
-    "Allowed public lookup fields",
+    "Разрешенные поля онлайн-поиска",
     plan.operatorPacket.onlineLookupPolicy.allowed.join(" | "),
     plan.operatorPacket.onlineLookupPolicy.safeQuery ?? "",
-    "Only clinic requisites may go to public services.",
-    plan.clinicLookup?.nextAction ?? "Run clinic public lookup with INN/OGRN/name/address/license only."
+    "В публичные сервисы отправляются только реквизиты клиники.",
+    plan.clinicLookup?.nextAction ?? "Запустите поиск реквизитов по ИНН, ОГРН, названию, адресу или лицензии клиники."
   ]);
   rows.push([
     "clinic_public_lookup_policy",
@@ -3967,58 +5469,117 @@ function buildMigrationAutopilotReportCsv(plan: Awaited<ReturnType<typeof buildM
     "forbidden",
     "",
     "",
-    "Forbidden public lookup fields",
+    "Запрещено для онлайн-поиска",
     plan.operatorPacket.onlineLookupPolicy.forbidden.join(" | "),
     "",
-    "Patient data, DICOM, local paths, file names, and legacy DB contents must stay out of public APIs.",
-    "Remove forbidden data before any maps/search/API lookup."
+    "Пациентские данные, снимки, локальные пути, имена файлов и содержимое старых баз не должны уходить в публичные сервисы.",
+    "Уберите эти данные перед поиском в картах, поиске или внешних сервисах."
   ]);
 
   [...plan.privacyWarnings, ...plan.warnings].slice(0, 16).forEach((warning, index) => {
-    rows.push(["warning", index + 1, "system", "review", "", "", "", warning, "", "", "Warning is generated by migration autopilot.", ""]);
+    rows.push(["warning", index + 1, "system", "review", "", "", "", warning, "", "", "Предупреждение сформировано автопилотом миграции.", ""]);
   });
 
   return rows.map((row) => row.map(csvCell).join(";")).join("\n");
 }
 
 function safeSmartImportReportFilename(sourceName: string) {
-  return `${sourceName.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80) || "smart_import"}_report.csv`;
+  const baseName = sourceName
+    .replace(/\.[A-Za-z0-9]{1,8}$/i, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "_")
+    .replace(/\.+/g, "_")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 80);
+  const safeBaseName = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(baseName) ? "smart_import" : baseName || "smart_import";
+  return `${safeBaseName}_report.csv`;
+}
+
+type SmartImportPayloadSchema<T> = {
+  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+};
+
+function parseSmartImportPayload<T>(schema: SmartImportPayloadSchema<T>, value: unknown, message: string) {
+  const parsed = schema.safeParse(value);
+  if (parsed.success) return { ok: true as const, data: parsed.data };
+  return {
+    ok: false as const,
+    response: {
+      error: "SmartImportValidationError",
+      message
+    }
+  };
 }
 
 export async function registerSmartImportRoutes(app: FastifyInstance) {
   app.post("/api/imports/smart/preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "smart import preview"))) return;
-    const input = smartImportRequestSchema.parse(request.body);
+    const parsed = parseSmartImportPayload(
+      smartImportRequestSchema,
+      request.body,
+      "Умный импорт не проверен: передайте непустой текст, таблицу или описание источника до 120000 символов."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildSmartImportPreview(input);
   });
 
   app.post("/api/imports/smart/local-source-discovery", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "migration local source discovery"))) return;
-    const input = migrationLocalSourceDiscoveryRequestSchema.parse(request.body ?? {});
+    const parsed = parseSmartImportPayload(
+      migrationLocalSourceDiscoveryRequestSchema,
+      request.body ?? {},
+      "Поиск старых источников не запущен: проверьте корни поиска и лимиты обхода."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return discoverLocalMigrationSources(input);
   });
 
   app.post("/api/imports/smart/local-source-workup", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "migration local source workup"))) return;
-    const input = migrationLocalSourceWorkupRequestSchema.parse(request.body);
+    const parsed = parseSmartImportPayload(
+      migrationLocalSourceWorkupRequestSchema,
+      request.body,
+      "План источника не построен: выберите источник из последнего поиска или безопасный код browser-local."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildMigrationLocalSourceWorkup(input);
   });
 
   app.post("/api/imports/smart/local-source-probe", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "migration local source probe"))) return;
-    const input = migrationLocalSourceProbeRequestSchema.parse(request.body);
+    const parsed = parseSmartImportPayload(
+      migrationLocalSourceProbeRequestSchema,
+      request.body,
+      "Проверка источника не выполнена: выберите источник из последнего поиска или безопасный код browser-local."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildMigrationLocalSourceProbe(input);
   });
 
   app.post("/api/imports/smart/migration-autopilot", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "migration autopilot"))) return;
-    const input = migrationAutopilotRequestSchema.parse(request.body ?? {});
+    const parsed = parseSmartImportPayload(
+      migrationAutopilotRequestSchema,
+      request.body ?? {},
+      "Автоплан миграции не построен: проверьте входные данные источников, клиники и лимиты поиска."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildMigrationAutopilot(input);
   });
 
   app.post("/api/imports/smart/migration-autopilot/report.csv", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "migration autopilot report"))) return;
-    const input = migrationAutopilotRequestSchema.parse(request.body ?? {});
+    const parsed = parseSmartImportPayload(
+      migrationAutopilotRequestSchema,
+      request.body ?? {},
+      "Отчет миграции не создан: проверьте входные данные источников, клиники и лимиты поиска."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     const plan = await buildMigrationAutopilot(input);
     const csv = buildMigrationAutopilotReportCsv(plan);
     return reply
@@ -4029,13 +5590,25 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
   app.post("/api/imports/smart/clinic-public-lookup", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "clinic public lookup"))) return;
-    const input = clinicPublicLookupRequestSchema.parse(request.body);
+    const parsed = parseSmartImportPayload(
+      clinicPublicLookupRequestSchema,
+      request.body,
+      "Поиск реквизитов не выполнен: передайте ИНН, ОГРН, КПП, название, адрес или лицензию клиники."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildClinicPublicLookup(input);
   });
 
   app.post("/api/imports/smart/report.csv", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "smart import report"))) return;
-    const input = smartImportRequestSchema.parse(request.body);
+    const parsed = parseSmartImportPayload(
+      smartImportRequestSchema,
+      request.body,
+      "Отчет умного импорта не создан: передайте непустой текст, таблицу или описание источника."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     const preview = buildSmartImportPreview(input);
     const csv = buildSmartImportReportCsv(preview);
     return reply
@@ -4046,7 +5619,13 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
   app.post("/api/imports/smart/report.safe.csv", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "safe smart import handoff report"))) return;
-    const input = smartImportRequestSchema.parse(request.body);
+    const parsed = parseSmartImportPayload(
+      smartImportRequestSchema,
+      request.body,
+      "Безопасный отчет умного импорта не создан: передайте непустой текст, таблицу или описание источника."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     const preview = buildSmartImportPreview(input);
     const csv = buildSmartImportSafeHandoffReportCsv(preview);
     return reply
@@ -4057,7 +5636,13 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 
   app.post("/api/imports/smart/commit", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "smart import commit"))) return;
-    const input = smartImportRequestSchema.parse(request.body);
+    const parsed = parseSmartImportPayload(
+      smartImportRequestSchema,
+      request.body,
+      "Умный импорт не записан: повторно передайте ту же непустую выгрузку перед записью."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     const preview = buildSmartImportPreview(input);
     const patientCommit =
       preview.patientPreview.totalRows > 0

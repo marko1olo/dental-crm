@@ -2,6 +2,7 @@ import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { FinanceLedger } from "./FinanceLedger";
 import { FinancePlanningOverview, ServiceCatalogStrip } from "./FinancePlanning";
+import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
@@ -26,6 +27,8 @@ type FinanceViewProps = {
   isPaymentSaving: boolean;
   money: (value: number | null) => string;
   onGoToDocuments: () => void;
+  onGoToPrices: () => void;
+  onGoToVisit: () => void;
   onRecordPayment: () => void;
   paymentAmount: string;
   paymentFeedback: string;
@@ -85,6 +88,8 @@ export function FinanceView({
   isPaymentSaving,
   money,
   onGoToDocuments,
+  onGoToPrices,
+  onGoToVisit,
   onRecordPayment,
   paymentAmount,
   paymentFeedback,
@@ -128,6 +133,13 @@ export function FinanceView({
   staffRoleLabels,
   treatmentStatusLabels
 }: FinanceViewProps) {
+  const focusPaymentCapture = () => {
+    const amountInput = document.getElementById("payment-amount-input") as HTMLInputElement | null;
+    const paymentCapture = document.getElementById("payment-capture");
+    motionSafeScrollIntoView(amountInput ?? paymentCapture, { block: "center" });
+    amountInput?.focus({ preventScroll: true });
+  };
+
   return (
     <div className="panel finance-panel" id="finance">
       <div className="panel-heading">
@@ -146,6 +158,7 @@ export function FinanceView({
         activePaymentsCount={activePayments.length}
         billingSummary={billingSummary}
         money={money}
+        onGoToVisit={onGoToVisit}
         priorityLabels={scenarioPriorityLabels}
         scenarios={activeTreatmentPlanScenarios}
         strategyLabels={scenarioStrategyLabels}
@@ -208,8 +221,11 @@ export function FinanceView({
 
       <FinanceLedger
         categoryLabels={serviceCategoryLabels}
+        documents={dashboard.documents}
         formatDateTime={formatDateTime}
         money={money}
+        onFocusPaymentCapture={focusPaymentCapture}
+        onGoToVisit={onGoToVisit}
         paymentFiscalReceiptLabel={paymentFiscalReceiptLabel}
         paymentMethodLabels={paymentMethodLabels}
         payments={activePayments}
@@ -218,7 +234,7 @@ export function FinanceView({
         treatmentStatusLabels={treatmentStatusLabels}
       />
 
-      <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} services={dashboard.serviceCatalog} />
+      <ServiceCatalogStrip categoryLabels={serviceCategoryLabels} money={money} onGoToPrices={onGoToPrices} services={dashboard.serviceCatalog} />
     </div>
   );
 }

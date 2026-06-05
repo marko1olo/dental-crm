@@ -44,6 +44,8 @@ assert(patientsSource.includes("patientCoreReadyToSave"), "patient core save but
 assert(patientsSource.includes("patientAdministrativeProfileReadyToSave"), "patient requisites save button must use a readiness guard");
 
 const organizationId = "11111111-1111-4111-8111-111111111111";
+const representativeValidationMessage =
+  "Данные представителя не сохранены: если указаны телефон, документ или получатель представителя, заполните ФИО и основание представительства.";
 const profilePayload = {
   identityDocument: "паспорт РФ 3600 123456",
   taxpayerInn: "123456789012",
@@ -84,6 +86,28 @@ try {
   assert(listResponse.statusCode === 200, `patient list failed: ${listResponse.statusCode} ${listResponse.body}`);
   const patient = JSON.parse(listResponse.body)[0];
   assert(patient?.id, "expected seeded patient");
+
+  const incompleteRepresentativeResponse = await app.inject({
+    method: "PUT",
+    url: `/api/patients/${patient.id}/administrative-profile`,
+    payload: { legalRepresentativePhone: "+7 900 000-00-01" }
+  });
+  assert(
+    incompleteRepresentativeResponse.statusCode === 400,
+    `incomplete representative profile must be blocked: ${incompleteRepresentativeResponse.statusCode} ${incompleteRepresentativeResponse.body}`
+  );
+  const incompleteRepresentativeBody = JSON.parse(incompleteRepresentativeResponse.body);
+  assert(incompleteRepresentativeBody.error === "PatientValidationError", "incomplete representative block must use stable validation code");
+  assert(
+    incompleteRepresentativeBody.message === representativeValidationMessage,
+    "incomplete representative block must return operator-safe Russian guidance"
+  );
+  assert(
+    !/ZodError|issues|path|patientId|legalRepresentativePhone|undefined|null|request\.body|safeParse/i.test(
+      incompleteRepresentativeResponse.body
+    ),
+    `incomplete representative response leaked parser or route detail: ${incompleteRepresentativeResponse.body}`
+  );
 
   const coreUpdateResponse = await app.inject({
     method: "PUT",

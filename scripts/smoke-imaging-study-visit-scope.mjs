@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,6 +8,7 @@ process.env.DENTAL_STATE_PERSISTENCE = "off";
 const routePath = path.resolve("apps/api/dist/routes/imaging.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
+const imagingRouteSource = readFileSync("apps/api/src/routes/imaging.ts", "utf8");
 
 if (!existsSync(routePath) || !existsSync(sampleDataPath) || !existsSync(sharedPath)) {
   throw new Error("Build API first: npm run build");
@@ -21,6 +22,28 @@ const { createImagingStudySchema, imagingImportPreviewRequestSchema } = await im
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+assert(imagingRouteSource.includes("ImagingStudyNotFound"), "imaging route must keep a stable missing-study error code");
+assert(imagingRouteSource.includes("ImagingStudyScopeError"), "imaging route must keep a stable study scope error code");
+assert(
+  !imagingRouteSource.includes('error: "Imaging study not found"') &&
+    !imagingRouteSource.includes('error: "Study not found"') &&
+    !/send\(\{\s*error:\s*"(?:Пациент не найден|Прием не найден|Снимок нельзя)/u.test(imagingRouteSource),
+  "imaging route must not put human study/scope copy directly into the error field"
+);
+
+function assertImagingError(response, expectedStatusCode, expectedError, expectedText, label) {
+  assert(response.statusCode === expectedStatusCode, `${label} status mismatch: ${response.statusCode}`);
+  const body = response.json();
+  assert(body.error === expectedError, `${label} error code mismatch: ${response.body}`);
+  assert(typeof body.message === "string" && body.message.includes(expectedText), `${label} message mismatch: ${response.body}`);
+  assert(
+    !/patientId|visitId|studyId|request\.body|request\.params|safeParse|undefined|null|issues|ZodError|Study not found|Imaging study not found/i.test(
+      response.body
+    ),
+    `${label} leaked imaging route internals: ${response.body}`
+  );
 }
 
 const app = Fastify({ logger: false });
@@ -76,10 +99,17 @@ const wrongPatientVisitResponse = await app.inject({
     visitId: activeVisit.id
   }
 });
-assert(
-  wrongPatientVisitResponse.statusCode === 409,
-  `imaging create must reject a visit from another patient, got ${wrongPatientVisitResponse.statusCode}`
-);
+assertImagingError(wrongPatientVisitResponse, 409, "ImagingStudyScopeError", "другого пациента", "wrong-patient imaging visit");
+
+const missingPatientResponse = await app.inject({
+  method: "POST",
+  url: "/api/imaging/studies",
+  payload: {
+    ...basePayload,
+    patientId: "22222222-2222-4222-8222-222222222222"
+  }
+});
+assertImagingError(missingPatientResponse, 404, "ImagingStudyScopeError", "Пациент для снимка не найден", "unknown imaging patient");
 
 const missingVisitResponse = await app.inject({
   method: "POST",
@@ -90,7 +120,19 @@ const missingVisitResponse = await app.inject({
     visitId: "11111111-1111-4111-8111-111111111111"
   }
 });
-assert(missingVisitResponse.statusCode === 404, `imaging create must reject an unknown visit, got ${missingVisitResponse.statusCode}`);
+assertImagingError(missingVisitResponse, 404, "ImagingStudyScopeError", "Прием для снимка не найден", "unknown imaging visit");
+
+const missingViewerSessionResponse = await app.inject({
+  method: "GET",
+  url: "/api/imaging/studies/33333333-3333-4333-8333-333333333333/viewer-session"
+});
+assertImagingError(missingViewerSessionResponse, 404, "ImagingStudyNotFound", "Снимок не найден", "unknown viewer session study");
+
+const missingPreviewResponse = await app.inject({
+  method: "GET",
+  url: "/api/imaging/studies/33333333-3333-4333-8333-333333333333/preview.svg"
+});
+assertImagingError(missingPreviewResponse, 404, "ImagingStudyNotFound", "Снимок не найден", "unknown preview study");
 
 const validVisitResponse = await app.inject({
   method: "POST",

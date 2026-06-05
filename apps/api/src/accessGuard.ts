@@ -4,12 +4,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 export const denteAdminSecretHeader = "x-dente-admin-secret";
 
 export function configuredClinicalAccessSecret(): string | null {
-  return (
-    process.env.DENTE_CLINICAL_ADMIN_SECRET?.trim() ||
-    process.env.DENTE_SETTINGS_ADMIN_SECRET?.trim() ||
-    process.env.DENTE_TELEGRAM_ADMIN_SECRET?.trim() ||
-    null
-  );
+  return process.env.DENTE_CLINICAL_ADMIN_SECRET?.trim() || null;
 }
 
 export function configuredClinicalMutationSecret(): string | null {
@@ -42,8 +37,7 @@ export async function requireClinicalMutationAccess(
     if (clinicalMutationsUnguardedAllowed()) return true;
     reply.code(503).send({
       error: "ClinicalAdminSecretMissing",
-      message:
-        "DENTE_CLINICAL_ADMIN_SECRET, DENTE_SETTINGS_ADMIN_SECRET or DENTE_TELEGRAM_ADMIN_SECRET is required for protected Dental CRM mutations.",
+      message: "На сервере не задан секрет администратора клиники для изменения защищенных данных.",
       protectedArea
     });
     return false;
@@ -57,7 +51,7 @@ export async function requireClinicalMutationAccess(
 
   reply.code(403).send({
     error: "ClinicalAdminSecretRequired",
-    message: "A valid x-dente-admin-secret is required for protected Dental CRM mutations.",
+    message: "Нужен действующий секрет администратора клиники для изменения защищенных данных.",
     protectedArea
   });
   return false;
@@ -73,8 +67,7 @@ export async function requireClinicalReadAccess(
     if (clinicalReadsUnguardedAllowed()) return true;
     reply.code(503).send({
       error: "ClinicalReadSecretMissing",
-      message:
-        "DENTE_CLINICAL_ADMIN_SECRET, DENTE_SETTINGS_ADMIN_SECRET or DENTE_TELEGRAM_ADMIN_SECRET is required for protected Dental CRM reads.",
+      message: "На сервере не задан секрет администратора клиники для просмотра защищенных данных.",
       protectedArea
     });
     return false;
@@ -88,7 +81,7 @@ export async function requireClinicalReadAccess(
 
   reply.code(403).send({
     error: "ClinicalReadSecretRequired",
-    message: "A valid x-dente-admin-secret is required for protected Dental CRM reads.",
+    message: "Нужен действующий секрет администратора клиники для просмотра защищенных данных.",
     protectedArea
   });
   return false;

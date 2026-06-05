@@ -9,21 +9,29 @@ if (!existsSync(analyzerPath)) {
 
 const appSource = readFileSync(path.resolve("apps/web/src/App.tsx"), "utf8");
 const settingsViewSource = readFileSync(path.resolve("apps/web/src/SettingsView.tsx"), "utf8");
-const uiSource = `${appSource}\n${settingsViewSource}`;
+const pricelistUiMetaSource = readFileSync(path.resolve("apps/web/src/pricelistUiMeta.ts"), "utf8");
+const uiSource = `${appSource}\n${settingsViewSource}\n${pricelistUiMetaSource}`;
 const requiredUiSnippets = [
   "pricelistCrownTypeLabels",
   "pricelistMaterialSummaryText",
   "pricelistItemMaterialText",
+  "pricelistWarningsText",
   "pricelistMaterialKindLabel",
   "pricelistRestorationTypeLabel",
+  "technicalPricelistWarningPattern",
+  "Нейро-проверка прайса недоступна",
+  "Требуется ручная проверка прайса",
   "QR-код скачан",
-  "Скачать QR"
+  "Скачать QR",
+  "Нейро-проверка {typedPricelistAnalysis.aiVision.used ?"
 ];
 const forbiddenUiSnippets = [
   "[...item.materialKinds, ...item.brands].slice(0, 4).join(\", \")",
   "[item.brand, item.crownType, item.materialKind, item.restorationType].filter(Boolean).join(\" · \")",
+  "item.warnings.join(\", \")",
   "QR SVG скачан",
-  "> QR SVG"
+  "> QR SVG",
+  "Groq {typedPricelistAnalysis.aiVision"
 ];
 
 for (const snippet of requiredUiSnippets) {
@@ -32,6 +40,13 @@ for (const snippet of requiredUiSnippets) {
 
 for (const snippet of forbiddenUiSnippets) {
   if (uiSource.includes(snippet)) throw new Error(`Raw internal pricelist/QR UI text leaked: ${snippet}`);
+}
+
+if (
+  settingsViewSource.includes(`typedPricelistAnalysis.warnings.map((warning) => (
+                      <span key={warning}>{warning}</span>`)
+) {
+  throw new Error("Raw internal pricelist warning code leaked in Settings price-list result.");
 }
 
 process.env.GROQ_API_KEY = "";
@@ -123,6 +138,9 @@ const invalidImage = await analyzePricelist({
 });
 
 if (invalidImage.aiVision.used) throw new Error("Groq should not be used for invalid image payload.");
+if (invalidImage.aiVision.reason.includes("Groq")) {
+  throw new Error("Pricelist UI-facing AI reason must not expose provider branding.");
+}
 if (!invalidImage.warnings.includes("image_payload_invalid")) throw new Error("Missing invalid image warning.");
 if (!invalidImage.warnings.includes("groq_skipped_invalid_image_payload")) {
   throw new Error("Missing Groq skip warning for invalid image payload.");

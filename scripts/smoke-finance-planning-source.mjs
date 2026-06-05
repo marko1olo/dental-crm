@@ -23,6 +23,8 @@ forbidIn(appSource, "<ServiceCatalogStrip", "App.tsx must not render service cat
 requireIn(financeViewSource, "<FinancePlanningOverview", "FinanceView must delegate finance summary and scenarios");
 requireIn(financeViewSource, "<ServiceCatalogStrip", "FinanceView must delegate service catalog strip");
 requireIn(financeViewSource, "billingSummary={billingSummary}", "FinanceView must pass patient-scoped finance totals into planning overview");
+requireIn(financeViewSource, "onGoToVisit={onGoToVisit}", "FinanceView must give empty plan states a direct route to the visit");
+requireIn(financeViewSource, "onGoToPrices={onGoToPrices}", "FinanceView must give empty catalog states a direct route to prices");
 forbidIn(financeViewSource, "billingSummary={dashboard.billingSummary}", "FinanceView must not pass global finance totals into patient planning overview");
 requireIn(financeViewSource, "activePaymentsCount={activePayments.length}", "FinanceView must pass active payment count");
 requireIn(financeViewSource, "scenarios={activeTreatmentPlanScenarios}", "FinanceView must pass patient-specific plan scenarios");
@@ -38,9 +40,12 @@ requireIn(financeSource, 'className="service-catalog-strip"', "FinancePlanning m
 requireIn(financeSource, 'className="finance-empty-state"', "FinancePlanning must show explicit empty states");
 requireIn(financeSource, "Вариантов плана пока нет", "FinancePlanning must explain missing plan scenarios");
 requireIn(financeSource, "Каталог услуг пуст", "FinancePlanning must explain missing catalog data");
+requireIn(financeSource, "onClick={onGoToVisit}", "Empty plan scenarios must have a direct visit action");
+requireIn(financeSource, "onClick={onGoToPrices}", "Empty service catalog must have a direct price-list action");
 requireIn(financeSource, "services.slice(0, 6)", "Service catalog strip must stay compact");
 
 requireIn(cssSource, ".finance-empty-state", "CSS must style finance empty state");
+requireIn(cssSource, ".finance-empty-state .text-button", "CSS must keep finance empty-state actions aligned");
 
 if (missing.length > 0) {
   console.error("Finance planning source smoke failed:");

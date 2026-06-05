@@ -536,7 +536,7 @@ export const documentKindSourceMetadata = {
     sourceStatus: "official_workflow",
     sourceAuthority: "Минздрав России",
     sourceReference: "Приказ N 560н, правила проведения рентгенологических исследований",
-    sourceNote: "Направление DENTE фиксирует клинический вопрос, область, показание, ограничения, DICOM/отчет и передачу результата.",
+    sourceNote: "Направление DENTE фиксирует клинический вопрос, область, показание, ограничения, архив снимков/отчет и передачу результата.",
     sourceCheckedAt: documentSourceCheckedAt
   },
   lab_work_order: {
@@ -868,6 +868,15 @@ export type CommunicationStatus = z.infer<typeof communicationStatusSchema>;
 export const communicationPrioritySchema = z.enum(["low", "normal", "high", "urgent"]);
 export type CommunicationPriority = z.infer<typeof communicationPrioritySchema>;
 
+export const communicationTaskOutcomeSchema = z.enum([
+  "no_answer",
+  "callback_requested",
+  "reschedule_requested",
+  "promised_payment",
+  "document_pickup"
+]);
+export type CommunicationTaskOutcome = z.infer<typeof communicationTaskOutcomeSchema>;
+
 export const integrationCategorySchema = z.enum([
   "dental_mis",
   "spreadsheet",
@@ -938,7 +947,7 @@ export const speechProviderSchema = z.object({
   strengths: z.array(z.string()),
   limits: z.array(z.string()),
   costNote: z.string(),
-  envVars: z.array(z.string()),
+  setupSettingsCount: z.number().int().nonnegative(),
   sourceUrl: z.string().url()
 });
 export type SpeechProvider = z.infer<typeof speechProviderSchema>;
@@ -1015,8 +1024,8 @@ export const speechProviderRuntimeStatusSchema = z.object({
   canTranscribeChunks: z.boolean(),
   configured: z.boolean(),
   keyPool: speechKeyPoolSchema,
-  acceptedEnvVars: z.array(z.string()),
-  missingEnvVars: z.array(z.string()),
+  acceptedSettingsCount: z.number().int().nonnegative(),
+  missingSettingsCount: z.number().int().nonnegative(),
   recommendedUse: z.string(),
   nextStep: z.string(),
   warnings: z.array(z.string())
@@ -1176,9 +1185,9 @@ export const speechTranscriptionChunkSchema = z.object({
     charCount: 0,
     durationMs: null,
     bytesPerSecond: null,
-    providerWarnings: ["У старого STT-фрагмента нет метаданных качества."],
+    providerWarnings: ["У старого фрагмента распознавания нет метаданных качества."],
     signals: ["legacy_chunk"],
-    nextAction: "Проверьте старый STT-фрагмент перед переносом в карту."
+    nextAction: "Проверьте старый фрагмент распознавания перед переносом в карту."
   }),
   warnings: z.array(z.string()),
   clientRecordedAt: z.string().nullable(),
@@ -1892,6 +1901,7 @@ export const paymentSchema = z.object({
   fiscalReceiptIssuedAt: z.string().nullable().optional(),
   fiscalReceiptUrl: z.string().nullable().optional(),
   fiscalReceipt: fiscalReceiptDetailsSchema.nullable().optional(),
+  clientMutationId: z.string().nullable().optional(),
   payerFullName: z.string().nullable().optional(),
   payerInn: z.string().nullable().optional(),
   payerBirthDate: z.string().nullable().optional(),
@@ -1943,6 +1953,7 @@ export const communicationTaskSchema = z.object({
   title: z.string(),
   body: z.string(),
   workflowCode: communicationTaskWorkflowCodeSchema.nullable().optional(),
+  lastOutcome: communicationTaskOutcomeSchema.nullable().optional(),
   lastEventAt: z.string().nullable(),
   createdAt: z.string()
 });
@@ -2306,6 +2317,7 @@ export const denteTelegramOutboxSendResponseSchema = z.object({
   telegramMessageId: z.number().int().nonnegative().nullable(),
   clientMutationId: z.string().nullable(),
   warnings: z.array(z.string()),
+  retryAfterSeconds: z.number().int().nonnegative().nullable().default(null),
   blockedReason: z.string().nullable()
 });
 export type DenteTelegramOutboxSendResponse = z.infer<typeof denteTelegramOutboxSendResponseSchema>;
@@ -3074,6 +3086,16 @@ const birthDateInputSchema = z
     message: "Дата рождения должна быть реальной датой не позже сегодняшнего дня в формате ГГГГ-ММ-ДД или ДД.ММ.ГГГГ."
   })
   .transform((value) => (value ? normalizeDateOnlyString(value) ?? value : value))
+  .nullable()
+  .optional();
+
+const patientPhoneInputSchema = z
+  .string()
+  .trim()
+  .max(80)
+  .refine((value) => !value || value.replace(/\D/g, "").length >= 5, {
+    message: "Телефон пациента должен содержать не меньше 5 цифр или быть пустым."
+  })
   .nullable()
   .optional();
 
@@ -4141,7 +4163,7 @@ export type Dashboard = z.infer<typeof dashboardSchema>;
 export const createPatientSchema = z.object({
   fullName: z.string().trim().min(1).max(240),
   birthDate: birthDateInputSchema,
-  phone: z.string().trim().max(80).nullable().optional(),
+  phone: patientPhoneInputSchema,
   email: z.string().trim().email().nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
   administrativeProfile: patientAdministrativeProfileSchema.nullable().optional()
@@ -4151,7 +4173,7 @@ export type CreatePatientInput = z.infer<typeof createPatientSchema>;
 export const updatePatientSchema = z.object({
   fullName: z.string().trim().min(1).max(240).optional(),
   birthDate: birthDateInputSchema,
-  phone: z.string().trim().max(80).nullable().optional(),
+  phone: patientPhoneInputSchema,
   email: z.string().trim().email().nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional()
 });
@@ -4294,6 +4316,7 @@ export const createPaymentSchema = z
     fiscalReceiptIssuedAt: strictFiscalReceiptIssuedAtSchema.nullable().optional(),
     fiscalReceiptUrl: fiscalReceiptUrlSchema.nullable().optional(),
     fiscalReceipt: fiscalReceiptDetailsSchema.nullable().optional(),
+    clientMutationId: z.string().trim().min(1).max(120).nullable().optional(),
     payerFullName: z.string().trim().max(240).nullable().optional(),
     payerInn: z.string().trim().regex(/^\d{10}$|^\d{12}$/).nullable().optional(),
     payerBirthDate: birthDateInputSchema,
@@ -4364,6 +4387,7 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 
 export const completeCommunicationTaskSchema = z.object({
   taskId: z.string().uuid(),
+  outcome: communicationTaskOutcomeSchema.optional(),
   note: z.string().trim().min(1).max(1000).optional()
 });
 export type CompleteCommunicationTaskInput = z.infer<typeof completeCommunicationTaskSchema>;
@@ -4435,7 +4459,9 @@ export const imagingFolderScanRequestSchema = z.object({
   folderPath: z.string().min(1),
   recursive: z.boolean().default(true),
   sourceName: z.string().min(1).default("folder_scan"),
-  maxFiles: z.number().int().positive().max(5000).default(500)
+  maxFiles: z.number().int().positive().max(5000).default(500),
+  maxFolders: z.number().int().positive().max(3000).default(900),
+  maxEntriesPerFolder: z.number().int().positive().max(10000).default(2000)
 });
 export type ImagingFolderScanRequest = z.infer<typeof imagingFolderScanRequestSchema>;
 
@@ -4475,6 +4501,15 @@ export const dicomMprToolSchema = z.enum([
   "mpr_3up",
   "panoramic_curve",
   "measurement",
+  "measure_distance",
+  "measure_angle",
+  "area_roi",
+  "volume_roi",
+  "implant_axis",
+  "implant_library",
+  "nerve_canal",
+  "bone_density_probe",
+  "surgical_guide",
   "reset",
   "export_snapshot",
   "external_open"
@@ -4544,6 +4579,11 @@ export const dicomSeriesPreviewRowSchema = z.object({
   studyDescription: z.string().nullable(),
   seriesDescription: z.string().nullable(),
   instanceNumber: z.number().int().nonnegative().nullable(),
+  imageRows: z.number().int().positive().nullable(),
+  imageColumns: z.number().int().positive().nullable(),
+  bitsAllocated: z.number().int().positive().nullable(),
+  samplesPerPixel: z.number().int().positive().nullable(),
+  estimatedPixelBytes: z.number().int().nonnegative().nullable(),
   capturedAt: z.string().nullable(),
   filePath: z.string().nullable(),
   sourceKind: imagingSourceKindSchema,
@@ -4565,6 +4605,11 @@ export const dicomSeriesPreviewGroupSchema = z.object({
   seriesDescription: z.string().nullable(),
   capturedAt: z.string().nullable(),
   fileCount: z.number().int().nonnegative(),
+  imageRows: z.number().int().positive().nullable(),
+  imageColumns: z.number().int().positive().nullable(),
+  bitsAllocated: z.number().int().positive().nullable(),
+  samplesPerPixel: z.number().int().positive().nullable(),
+  estimatedPixelBytes: z.number().int().nonnegative().nullable(),
   firstFilePath: z.string().nullable(),
   sourceKind: imagingSourceKindSchema,
   sourceName: z.string(),
@@ -4594,6 +4639,8 @@ export const dicomFolderSeriesPreviewRequestSchema = z.object({
   recursive: z.boolean().default(true),
   sourceName: z.string().min(1).default("dicom_folder_headers"),
   maxFiles: z.number().int().positive().max(5000).default(800),
+  maxFolders: z.number().int().positive().max(3000).default(900),
+  maxEntriesPerFolder: z.number().int().positive().max(10000).default(2000),
   maxHeaderBytes: z.number().int().positive().max(1024 * 1024).default(256 * 1024)
 });
 export type DicomFolderSeriesPreviewRequest = z.infer<typeof dicomFolderSeriesPreviewRequestSchema>;
@@ -4614,8 +4661,11 @@ export const dicomFirstFramePreviewRequestSchema = z.object({
   folderPath: z.string().min(1),
   recursive: z.boolean().default(true),
   maxFiles: z.number().int().positive().max(500).default(80),
+  maxFolders: z.number().int().positive().max(3000).default(900),
+  maxEntriesPerFolder: z.number().int().positive().max(10000).default(2000),
   maxFileBytes: z.number().int().positive().max(256 * 1024 * 1024).default(64 * 1024 * 1024),
-  maxPreviewEdge: z.number().int().min(128).max(1024).default(512)
+  maxPreviewEdge: z.number().int().min(128).max(1024).default(512),
+  preferredFileIndex: z.number().int().nonnegative().optional()
 });
 export type DicomFirstFramePreviewRequest = z.infer<typeof dicomFirstFramePreviewRequestSchema>;
 
@@ -4629,6 +4679,8 @@ export const dicomFirstFramePreviewResponseSchema = z.object({
   status: dicomFirstFramePreviewStatusSchema,
   sourceFileName: z.string().nullable(),
   sourceFileIndex: z.number().int().nonnegative().nullable(),
+  requestedFileIndex: z.number().int().nonnegative().nullable(),
+  selectableFileCount: z.number().int().nonnegative(),
   transferSyntaxUid: z.string().nullable(),
   photometricInterpretation: z.string().nullable(),
   width: z.number().int().positive().nullable(),
@@ -4693,6 +4745,10 @@ export type DentalModelFileFormat = z.infer<typeof dentalModelFileFormatSchema>;
 export const dentalModelFileRoleSchema = z.enum([
   "upper_arch",
   "lower_arch",
+  "skull_surface",
+  "maxilla_surface",
+  "mandible_surface",
+  "ct_bone_surface",
   "bite",
   "crown",
   "bridge",
@@ -4714,6 +4770,78 @@ export const dentalModelFileCandidateSchema = z.object({
   warnings: z.array(z.string())
 });
 export type DentalModelFileCandidate = z.infer<typeof dentalModelFileCandidateSchema>;
+
+export const dentalModelWorkbenchLoadTargetSchema = z.enum(["metadata_only", "external_model_viewer", "local_bridge"]);
+export type DentalModelWorkbenchLoadTarget = z.infer<typeof dentalModelWorkbenchLoadTargetSchema>;
+
+export const dentalModelWorkbenchPairingHintSchema = z.enum(["same_folder_ct_series", "model_only_folder", "unknown"]);
+export type DentalModelWorkbenchPairingHint = z.infer<typeof dentalModelWorkbenchPairingHintSchema>;
+
+export const ctSurfaceModelSourceKindSchema = z.enum(["imported_surface_file", "external_local_bridge", "manual_contour", "unknown"]);
+export type CtSurfaceModelSourceKind = z.infer<typeof ctSurfaceModelSourceKindSchema>;
+
+export const ctSurfaceModelReadinessSchema = z.enum(["metadata_only", "pending_local_bridge", "ready_external", "blocked"]);
+export type CtSurfaceModelReadiness = z.infer<typeof ctSurfaceModelReadinessSchema>;
+
+export const ctSurfaceModelRegistrationStatusSchema = z.enum(["same_folder_inferred", "registered", "unregistered", "unknown"]);
+export type CtSurfaceModelRegistrationStatus = z.infer<typeof ctSurfaceModelRegistrationStatusSchema>;
+
+export const ctSurfaceModelSourceSeriesRefSchema = z.object({
+  folderFingerprint: z.string(),
+  pairingHint: dentalModelWorkbenchPairingHintSchema,
+  studyInstanceUid: z.string().nullable(),
+  seriesInstanceUid: z.string().nullable()
+});
+export type CtSurfaceModelSourceSeriesRef = z.infer<typeof ctSurfaceModelSourceSeriesRefSchema>;
+
+export const ctSurfaceModelManifestSchema = z.object({
+  role: dentalModelFileRoleSchema,
+  format: dentalModelFileFormatSchema,
+  sourceKind: ctSurfaceModelSourceKindSchema,
+  sourceSeriesRef: ctSurfaceModelSourceSeriesRefSchema.nullable(),
+  frameOfReferenceUid: z.string().nullable(),
+  registrationStatus: ctSurfaceModelRegistrationStatusSchema,
+  readiness: ctSurfaceModelReadinessSchema,
+  loadTarget: dentalModelWorkbenchLoadTargetSchema,
+  sizeMb: z.number().int().nonnegative(),
+  checksum: z.string().nullable(),
+  meshStats: z.object({
+    vertices: z.number().int().nonnegative().nullable(),
+    triangles: z.number().int().nonnegative().nullable(),
+    decimation: z.string().nullable()
+  }).nullable(),
+  containsMeshGeometry: z.literal(false),
+  warnings: z.array(z.string()),
+  nextAction: z.string()
+});
+export type CtSurfaceModelManifest = z.infer<typeof ctSurfaceModelManifestSchema>;
+
+export const dentalModelWorkbenchItemSchema = z.object({
+  fileName: z.string(),
+  format: dentalModelFileFormatSchema,
+  role: dentalModelFileRoleSchema,
+  sizeBytes: z.number().int().nonnegative(),
+  sizeMb: z.number().int().nonnegative(),
+  loadTarget: dentalModelWorkbenchLoadTargetSchema,
+  pairingHint: dentalModelWorkbenchPairingHintSchema,
+  ctSurfaceManifest: ctSurfaceModelManifestSchema.nullable(),
+  warnings: z.array(z.string()),
+  nextAction: z.string()
+});
+export type DentalModelWorkbenchItem = z.infer<typeof dentalModelWorkbenchItemSchema>;
+
+export const dentalModelWorkbenchManifestSchema = z.object({
+  version: z.literal("dental-crm-model-workbench-v1"),
+  folderFingerprint: z.string(),
+  totalModels: z.number().int().nonnegative(),
+  ctSurfaceModels: z.number().int().nonnegative(),
+  largestModelMb: z.number().int().nonnegative(),
+  recommendedTarget: dentalModelWorkbenchLoadTargetSchema,
+  items: z.array(dentalModelWorkbenchItemSchema),
+  warnings: z.array(z.string()),
+  nextAction: z.string()
+});
+export type DentalModelWorkbenchManifest = z.infer<typeof dentalModelWorkbenchManifestSchema>;
 
 export const localImagingOrganizerRequestSchema = z.object({
   rootPaths: z.array(z.string().min(1)).max(12).optional(),
@@ -4752,6 +4880,7 @@ export const localImagingOrganizerCaseSchema = z.object({
   combinedConfidence: z.number().min(0).max(1),
   recommendedAction: localImagingOrganizerRecommendedActionSchema,
   modelCandidates: z.array(dentalModelFileCandidateSchema),
+  modelWorkbenchManifest: dentalModelWorkbenchManifestSchema,
   reasons: z.array(z.string()),
   warnings: z.array(z.string())
 });
@@ -4826,10 +4955,15 @@ export const imagingViewerToolSchema = z.enum([
   "invert",
   "measure_distance",
   "measure_angle",
+  "measure_area",
+  "measure_volume",
   "note",
   "implant_axis",
+  "implant_library",
   "nerve_canal",
   "panoramic_curve",
+  "bone_density_probe",
+  "surgical_guide",
   "reset"
 ]);
 export type ImagingViewerTool = z.infer<typeof imagingViewerToolSchema>;
@@ -4839,12 +4973,19 @@ export const imagingViewerAnnotationTypeSchema = z.enum([
   "distance",
   "angle",
   "roi",
+  "area_roi",
+  "volume_roi",
   "implant_axis",
   "nerve_canal",
   "panoramic_curve",
+  "bone_density_probe",
+  "surgical_guide",
   "landmark"
 ]);
 export type ImagingViewerAnnotationType = z.infer<typeof imagingViewerAnnotationTypeSchema>;
+
+export const imagingViewerAnnotationSemanticRoleSchema = z.enum(["ridge_width", "bone_height", "clearance", "generic"]);
+export type ImagingViewerAnnotationSemanticRole = z.infer<typeof imagingViewerAnnotationSemanticRoleSchema>;
 
 export const imagingViewerPointSchema = z.object({
   x: z.number(),
@@ -4854,9 +4995,22 @@ export const imagingViewerPointSchema = z.object({
 });
 export type ImagingViewerPoint = z.infer<typeof imagingViewerPointSchema>;
 
+export const imagingViewerImplantPlanSchema = z.object({
+  itemId: z.string().min(1).max(120),
+  system: z.string().min(1).max(120),
+  line: z.string().min(1).max(160),
+  diameterMm: z.number().positive().max(20),
+  lengthMm: z.number().positive().max(80),
+  platform: z.string().min(1).max(120),
+  indication: z.string().max(300),
+  selectedAt: z.string().nullable().default(null)
+});
+export type ImagingViewerImplantPlan = z.infer<typeof imagingViewerImplantPlanSchema>;
+
 export const imagingViewerSessionStateSchema = z.object({
   mode: imagingViewerModeSchema,
   activeTool: imagingViewerToolSchema,
+  activeQuickActionId: z.string().min(1).max(120).nullable().default(null),
   windowPreset: imagingViewerWindowPresetSchema,
   windowCenter: z.number().nullable(),
   windowWidth: z.number().positive().nullable(),
@@ -4868,12 +5022,13 @@ export const imagingViewerSessionStateSchema = z.object({
   zoom: z.number().min(0.1).max(10),
   panX: z.number(),
   panY: z.number(),
-  sliceIndex: z.number().int().nonnegative().nullable(),
+  sliceIndex: z.number().int().nonnegative().nullable().default(null),
   projection: dicomMprProjectionSchema.nullable(),
   axisDeg: z.number().min(-180).max(180),
   slabMm: z.number().positive().max(100),
   crosshair: z.boolean(),
-  linkedPlanes: z.boolean()
+  linkedPlanes: z.boolean(),
+  implantPlan: imagingViewerImplantPlanSchema.nullable().default(null)
 });
 export type ImagingViewerSessionState = z.infer<typeof imagingViewerSessionStateSchema>;
 
@@ -4885,6 +5040,7 @@ export const imagingViewerAnnotationSchema = z.object({
   points: z.array(imagingViewerPointSchema).max(64),
   measurementValue: z.number().nullable(),
   unit: z.string().max(20).nullable(),
+  semanticRole: imagingViewerAnnotationSemanticRoleSchema.nullable().optional(),
   note: z.string().max(1000).nullable(),
   createdByUserId: z.string().uuid().nullable(),
   createdAt: z.string(),
@@ -5016,6 +5172,7 @@ export const dicomViewerViewportStateSchema = z.object({
   projection: dicomMprProjectionSchema.nullable(),
   volumeId: z.string().nullable(),
   referencedImageId: z.string().nullable(),
+  sliceIndex: z.number().int().nonnegative().nullable().default(null),
   windowPreset: imagingViewerWindowPresetSchema,
   windowCenter: z.number().nullable(),
   windowWidth: z.number().positive().nullable(),
@@ -5042,6 +5199,7 @@ export const dicomViewerToolStateAnnotationSchema = z.object({
   targetTool: dicomViewerTargetToolSchema,
   type: imagingViewerAnnotationTypeSchema,
   label: z.string(),
+  semanticRole: imagingViewerAnnotationSemanticRoleSchema.nullable().optional(),
   toothCode: z.string().nullable(),
   note: z.string().nullable(),
   viewportId: z.string(),
@@ -5057,6 +5215,45 @@ export const dicomViewerToolStateAnnotationSchema = z.object({
   warnings: z.array(z.string())
 });
 export type DicomViewerToolStateAnnotation = z.infer<typeof dicomViewerToolStateAnnotationSchema>;
+
+export const dicomViewerPlanningTaskKindSchema = z.enum([
+  "panoramic_reconstruction",
+  "cross_section_curve",
+  "distance_measurement",
+  "angle_measurement",
+  "area_roi",
+  "volume_roi",
+  "implant_axis",
+  "implant_library",
+  "nerve_canal",
+  "bone_density_probe",
+  "surgical_guide"
+]);
+export type DicomViewerPlanningTaskKind = z.infer<typeof dicomViewerPlanningTaskKindSchema>;
+
+export const dicomViewerPlanningTaskSchema = z.object({
+  id: z.string(),
+  kind: dicomViewerPlanningTaskKindSchema,
+  title: z.string(),
+  targetTool: dicomViewerTargetToolSchema,
+  projection: dicomMprProjectionSchema.nullable(),
+  windowPreset: imagingViewerWindowPresetSchema,
+  slabMm: z.number().positive().max(100),
+  axisDeg: z.number().min(-180).max(180),
+  requiresVolume: z.boolean(),
+  status: z.enum(["active", "ready", "blocked"]),
+  outputUnit: z.string().max(40).nullable(),
+  implantPlan: imagingViewerImplantPlanSchema.nullable().default(null),
+  reason: z.string(),
+  warnings: z.array(z.string())
+});
+export type DicomViewerPlanningTask = z.infer<typeof dicomViewerPlanningTaskSchema>;
+
+export const dicomClientRuntimeSurfaceSchema = z.enum(["mobile_web", "tablet_web", "desktop_web", "desktop_app", "unknown"]);
+export type DicomClientRuntimeSurface = z.infer<typeof dicomClientRuntimeSurfaceSchema>;
+
+export const dicomDirectoryHandlePersistenceSchema = z.enum(["unsupported", "session_only", "persisted_handle"]);
+export type DicomDirectoryHandlePersistence = z.infer<typeof dicomDirectoryHandlePersistenceSchema>;
 
 export const dicomWorkstationClientFactsSchema = z.object({
   deviceMemoryGb: z.number().positive().nullable(),
@@ -5074,10 +5271,41 @@ export const dicomWorkstationClientFactsSchema = z.object({
   storageQuotaMb: z.number().int().nonnegative().nullable(),
   storageUsageMb: z.number().int().nonnegative().nullable(),
   online: z.boolean(),
+  runtimeSurfaceHint: dicomClientRuntimeSurfaceSchema.optional(),
+  desktopShellBridgeSupported: z.boolean().optional(),
+  directoryPickerSupported: z.boolean().optional(),
+  directoryHandlePersistence: dicomDirectoryHandlePersistenceSchema.optional(),
   userAgent: z.string().max(300).nullable().optional(),
   platform: z.string().max(120).nullable().optional()
 });
 export type DicomWorkstationClientFacts = z.infer<typeof dicomWorkstationClientFactsSchema>;
+
+export const dicomClientNetworkModeSchema = z.enum(["online", "offline_local", "offline_remote_blocked"]);
+export type DicomClientNetworkMode = z.infer<typeof dicomClientNetworkModeSchema>;
+
+export const dicomClientExecutionLaneSchema = z.enum([
+  "metadata_only",
+  "external_or_local_viewer",
+  "browser_preview",
+  "browser_mpr",
+  "desktop_app_mpr"
+]);
+export type DicomClientExecutionLane = z.infer<typeof dicomClientExecutionLaneSchema>;
+
+export const dicomClientRuntimeProfileSchema = z.object({
+  surface: dicomClientRuntimeSurfaceSchema,
+  networkMode: dicomClientNetworkModeSchema,
+  executionLane: dicomClientExecutionLaneSchema,
+  mobileConstrained: z.boolean(),
+  desktopAppPreferred: z.boolean(),
+  canUseLocalFiles: z.boolean(),
+  canUseRemoteArchive: z.boolean(),
+  canUseBrowserMpr: z.boolean(),
+  label: z.string(),
+  nextAction: z.string(),
+  warnings: z.array(z.string())
+});
+export type DicomClientRuntimeProfile = z.infer<typeof dicomClientRuntimeProfileSchema>;
 
 export const dicomWorkstationReadinessCheckSchema = z.object({
   id: z.string(),
@@ -5090,6 +5318,16 @@ export type DicomWorkstationReadinessCheck = z.infer<typeof dicomWorkstationRead
 
 export const dicomGpuClassSchema = z.enum(["none", "integrated_low", "integrated_ok", "discrete_ok", "diagnostic"]);
 export type DicomGpuClass = z.infer<typeof dicomGpuClassSchema>;
+
+export const dicomRenderMemoryBudgetClassSchema = z.enum(["minimum", "constrained", "standard", "workstation", "diagnostic"]);
+export type DicomRenderMemoryBudgetClass = z.infer<typeof dicomRenderMemoryBudgetClassSchema>;
+
+export const dicomDiagnosticPixelPolicySchema = z.enum([
+  "metadata_only_no_pixels",
+  "browser_preview_not_diagnostic",
+  "desktop_app_or_external_review"
+]);
+export type DicomDiagnosticPixelPolicy = z.infer<typeof dicomDiagnosticPixelPolicySchema>;
 
 export const dicomRenderTextureStrategySchema = z.enum([
   "metadata_only",
@@ -5118,6 +5356,10 @@ export const dicomGpuRenderPlanSchema = z.object({
   maxTextureEdge: z.number().int().positive().nullable(),
   max3dTextureEdge: z.number().int().positive().nullable(),
   estimatedGpuMemoryMb: z.number().int().nonnegative(),
+  memoryBudgetClass: dicomRenderMemoryBudgetClassSchema.default("standard"),
+  hardwareQualityWeight: z.number().min(0).max(1).default(0.5),
+  progressiveSliceWindowCap: z.number().int().positive().default(32),
+  diagnosticPixelPolicy: dicomDiagnosticPixelPolicySchema.default("browser_preview_not_diagnostic"),
   useWebWorker: z.boolean(),
   useOffscreenCanvas: z.boolean(),
   interactionBudgetMs: z.number().int().positive(),
@@ -5164,6 +5406,71 @@ export const dicomRenderCacheTaskSchema = z.object({
 });
 export type DicomRenderCacheTask = z.infer<typeof dicomRenderCacheTaskSchema>;
 
+export const dicomRenderInteractionPhaseSchema = z.object({
+  id: z.enum(["external_review", "first_visible_slice", "interactive_navigation", "idle_refine"]),
+  label: z.string(),
+  trigger: z.string(),
+  targetFrameMs: z.number().int().positive(),
+  downsampleFactor: z.number().int().positive(),
+  maxResidentSlices: z.number().int().positive(),
+  workerCount: z.number().int().nonnegative(),
+  nextAction: z.string()
+});
+export type DicomRenderInteractionPhase = z.infer<typeof dicomRenderInteractionPhaseSchema>;
+
+export const dicomProgressiveLoadStageKindSchema = z.enum([
+  "metadata_only",
+  "external_handoff",
+  "seed_slices",
+  "interleaved_decimation",
+  "active_window",
+  "adjacent_window",
+  "idle_refine"
+]);
+export type DicomProgressiveLoadStageKind = z.infer<typeof dicomProgressiveLoadStageKindSchema>;
+
+export const dicomProgressiveLoadRequestPatternSchema = z.enum([
+  "none",
+  "center_first",
+  "interleaved",
+  "active_window",
+  "adjacent_window",
+  "idle_full"
+]);
+export type DicomProgressiveLoadRequestPattern = z.infer<typeof dicomProgressiveLoadRequestPatternSchema>;
+
+export const dicomProgressiveLoadCornerstoneRequestTypeSchema = z.enum([
+  "none",
+  "thumbnail",
+  "interaction",
+  "prefetch",
+  "compute",
+  "external"
+]);
+export type DicomProgressiveLoadCornerstoneRequestType = z.infer<typeof dicomProgressiveLoadCornerstoneRequestTypeSchema>;
+
+export const dicomProgressiveLoadStageSchema = z.object({
+  id: z.string(),
+  kind: dicomProgressiveLoadStageKindSchema,
+  label: z.string(),
+  priority: dicomRenderCachePrioritySchema,
+  target: dicomRenderCacheTargetSchema,
+  requestPattern: dicomProgressiveLoadRequestPatternSchema,
+  cornerstoneRequestType: dicomProgressiveLoadCornerstoneRequestTypeSchema,
+  cancelGroupId: z.string().nullable(),
+  requiresStageIds: z.array(z.string()),
+  sliceStart: z.number().int().nonnegative().nullable(),
+  sliceEnd: z.number().int().nonnegative().nullable(),
+  sliceOrder: z.array(z.number().int().nonnegative()).max(256),
+  decimationFactor: z.number().int().positive(),
+  offset: z.number().int().nonnegative(),
+  maxResidentSlices: z.number().int().positive(),
+  budgetMs: z.number().int().positive(),
+  blocking: z.boolean(),
+  nextAction: z.string()
+});
+export type DicomProgressiveLoadStage = z.infer<typeof dicomProgressiveLoadStageSchema>;
+
 export const dicomRenderCachePlanRequestSchema = z.object({
   series: dicomSeriesPreviewGroupSchema,
   renderPlan: dicomGpuRenderPlanSchema,
@@ -5176,6 +5483,10 @@ export const dicomRenderCachePlanResponseSchema = z.object({
   generatedAt: z.string(),
   textureStrategy: dicomRenderTextureStrategySchema,
   qualityMode: dicomRenderQualityModeSchema,
+  memoryBudgetClass: dicomRenderMemoryBudgetClassSchema,
+  hardwareQualityWeight: z.number().min(0).max(1),
+  progressiveSliceWindowCap: z.number().int().positive(),
+  diagnosticPixelPolicy: dicomDiagnosticPixelPolicySchema,
   activeSliceIndex: z.number().int().nonnegative(),
   centerSliceIndex: z.number().int().nonnegative(),
   firstWindowStart: z.number().int().nonnegative(),
@@ -5191,6 +5502,8 @@ export const dicomRenderCachePlanResponseSchema = z.object({
   shouldPersistToIndexedDb: z.boolean(),
   firstPaintBudgetMs: z.number().int().positive(),
   interactionBudgetMs: z.number().int().positive(),
+  interactionPhases: z.array(dicomRenderInteractionPhaseSchema),
+  progressiveStages: z.array(dicomProgressiveLoadStageSchema),
   tasks: z.array(dicomRenderCacheTaskSchema),
   warnings: z.array(z.string()),
   nextAction: z.string()
@@ -5236,6 +5549,9 @@ export const dicomViewerToolStateBundleResponseSchema = z.object({
   viewports: z.array(dicomViewerViewportStateSchema),
   tools: z.array(dicomViewerToolConfigSchema),
   annotations: z.array(dicomViewerToolStateAnnotationSchema),
+  planningTasks: z.array(dicomViewerPlanningTaskSchema),
+  activeQuickActionId: z.string().min(1).max(120).nullable().default(null),
+  implantPlan: imagingViewerImplantPlanSchema.nullable().default(null),
   resourcePolicy: dicomMprResourcePolicySchema,
   renderPlan: dicomGpuRenderPlanSchema.nullable(),
   exportHints: z.array(z.string()),
@@ -5255,6 +5571,7 @@ export const dicomWorkstationReadinessResponseSchema = z.object({
   detectedTier: dicomMprResourceTierSchema,
   requiredTier: dicomMprResourceTierSchema,
   effectiveLoadStrategy: dicomMprLoadStrategySchema,
+  runtimeProfile: dicomClientRuntimeProfileSchema,
   readinessScore: z.number().int().min(0).max(100),
   canOpenInBrowser: z.boolean(),
   shouldUseExternalViewer: z.boolean(),
@@ -5345,6 +5662,8 @@ export const dicomFolderWorkupPlanRequestSchema = z.object({
   recursive: z.boolean().default(true),
   sourceName: z.string().min(1).default("dicom_folder_workup"),
   maxFiles: z.number().int().positive().max(5000).default(800),
+  maxFolders: z.number().int().positive().max(3000).default(900),
+  maxEntriesPerFolder: z.number().int().positive().max(10000).default(2000),
   maxHeaderBytes: z.number().int().positive().max(1024 * 1024).default(256 * 1024),
   client: dicomWorkstationClientFactsSchema,
   viewerState: imagingViewerSessionStateSchema.nullable().optional()
@@ -5400,7 +5719,7 @@ export const localBridgeReadinessItemSchema = z.object({
   configured: z.boolean(),
   reachable: z.boolean(),
   urlRedacted: z.string().nullable(),
-  acceptedEnvVars: z.array(z.string()),
+  setupSettingsCount: z.number().int().nonnegative(),
   latencyMs: z.number().int().nonnegative().nullable(),
   role: z.string(),
   workload: z.string(),
@@ -6077,7 +6396,7 @@ export function buildRuleBasedVisitDraftFromTranscript(
     .filter(Boolean);
   const profile = visitDraftParserProfiles[specialty] ?? visitDraftParserProfiles.universal;
   const toothCodes = extractToothCodes(text);
-  const sourceLabel = options.sourceLabel ?? "Rule-parser";
+  const sourceLabel = options.sourceLabel ?? "Локальный разбор диктовки";
   const complaintLine = findRuleParserLine(lines, [...commonComplaintTokens, ...profile.complaintTokens], ["жалобы", "жалоба", "повод"]);
   const anamnesisLine = findRuleParserLine(
     lines,
@@ -6148,7 +6467,7 @@ export function buildRuleBasedVisitDraftFromTranscript(
       planSignal
     }),
     warnings: [
-      `${sourceLabel}: черновик собран по specialty-профилю и ключевым словам, без финального медицинского решения.`,
+      `${sourceLabel}: черновик собран по профилю специальности и ключевым словам; это не финальное медицинское решение.`,
       ...normalization.warnings,
       "Диагноз, план, противопоказания, документы и подпись подтверждает врач.",
       `Фокус приема: ${ruleParserSpecialtyLabels[specialty]}.`,
@@ -6827,8 +7146,8 @@ export const clinicPublicLookupRequestSchema = z
     medicalLicenseNumber: z.string().trim().max(120).optional()
   })
   .refine(
-    (value) => [value.inn, value.ogrn, value.clinicName, value.legalName, value.address, value.medicalLicenseNumber].some((item) => item && item.trim()),
-    "Provide clinic INN, OGRN, name, address, or medical license number"
+    (value) => [value.inn, value.kpp, value.ogrn, value.clinicName, value.legalName, value.address, value.medicalLicenseNumber].some((item) => item && item.trim()),
+    "Укажите ИНН, КПП, ОГРН, название, адрес или номер медицинской лицензии клиники."
   );
 export type ClinicPublicLookupRequest = z.infer<typeof clinicPublicLookupRequestSchema>;
 
@@ -6864,6 +7183,7 @@ export const migrationAutopilotRequestSchema = z.object({
   maxWorkstationSignals: z.number().int().nonnegative().max(80).default(24),
   knownSources: z.array(migrationLocalSourceDiscoveryCandidateSchema).max(80).optional(),
   knownScannedFolders: z.number().int().nonnegative().max(5000).optional(),
+  smartImport: smartImportRequestSchema.optional(),
   clinic: clinicPublicLookupRequestSchema.optional()
 });
 export type MigrationAutopilotRequest = z.infer<typeof migrationAutopilotRequestSchema>;
@@ -6937,6 +7257,53 @@ export const migrationAutopilotHandoffChecklistItemSchema = z.object({
 });
 export type MigrationAutopilotHandoffChecklistItem = z.infer<typeof migrationAutopilotHandoffChecklistItemSchema>;
 
+export const migrationAutopilotOperatorScriptActionSchema = z.enum([
+  "discover_sources",
+  "pick_source",
+  "open_plan",
+  "open_probe",
+  "add_to_parser",
+  "prepare_export",
+  "run_clinic_lookup",
+  "build_preview",
+  "doctor_review",
+  "manual"
+]);
+export type MigrationAutopilotOperatorScriptAction = z.infer<typeof migrationAutopilotOperatorScriptActionSchema>;
+
+export const migrationAutopilotOperatorScriptStepSchema = z.object({
+  id: z.string(),
+  owner: z.enum(["administrator", "doctor", "assistant", "system"]),
+  title: z.string(),
+  buttonLabel: z.string(),
+  detail: z.string(),
+  action: migrationAutopilotOperatorScriptActionSchema,
+  sourceFingerprint: z.string().nullable(),
+  sourceKind: smartImportLegacySourceKindSchema.nullable(),
+  estimatedMinutes: z.number().int().nonnegative(),
+  blocking: z.boolean()
+});
+export type MigrationAutopilotOperatorScriptStep = z.infer<typeof migrationAutopilotOperatorScriptStepSchema>;
+
+export const migrationAutopilotOperatorScriptSchema = z.object({
+  title: z.string(),
+  headline: z.string(),
+  totalEstimatedMinutes: z.number().int().nonnegative(),
+  steps: z.array(migrationAutopilotOperatorScriptStepSchema)
+});
+export type MigrationAutopilotOperatorScript = z.infer<typeof migrationAutopilotOperatorScriptSchema>;
+
+export const migrationAutopilotDryRunSummarySchema = z.object({
+  previewableSources: z.number().int().nonnegative(),
+  adminBlockedSources: z.number().int().nonnegative(),
+  doctorReviewRequiredSources: z.number().int().nonnegative(),
+  estimatedOperatorMinutes: z.number().int().nonnegative(),
+  estimatedClinicDowntimeMinutes: z.number().int().nonnegative(),
+  fastestRoute: z.string(),
+  nextBestAction: z.string()
+});
+export type MigrationAutopilotDryRunSummary = z.infer<typeof migrationAutopilotDryRunSummarySchema>;
+
 export const migrationAutopilotOperatorPacketSchema = z.object({
   overallStatus: migrationAutopilotPacketStatusSchema,
   score: z.number().min(0).max(1),
@@ -6948,7 +7315,8 @@ export const migrationAutopilotOperatorPacketSchema = z.object({
     serviceCatalog: z.boolean(),
     payments: z.boolean(),
     workstationHints: z.boolean(),
-    browserManifests: z.boolean()
+    browserManifests: z.boolean(),
+    smartPreviewSources: z.boolean()
   }),
   totals: z.object({
     sources: z.number().int().nonnegative(),
@@ -6963,12 +7331,15 @@ export const migrationAutopilotOperatorPacketSchema = z.object({
     tableSources: z.number().int().nonnegative(),
     workstationHints: z.number().int().nonnegative(),
     browserManifests: z.number().int().nonnegative(),
+    smartPreviewSources: z.number().int().nonnegative(),
     publicLookupTargets: z.number().int().nonnegative(),
     clinicSuggestions: z.number().int().nonnegative()
   }),
+  dryRun: migrationAutopilotDryRunSummarySchema,
   lanes: z.array(migrationAutopilotPacketLaneSchema),
   handoffChecklist: z.array(migrationAutopilotHandoffChecklistItemSchema),
   firstActions: z.array(z.string()),
+  operatorScript: migrationAutopilotOperatorScriptSchema,
   onlineLookupPolicy: z.object({
     allowed: z.array(z.string()),
     forbidden: z.array(z.string()),

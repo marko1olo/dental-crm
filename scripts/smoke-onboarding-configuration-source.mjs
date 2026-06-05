@@ -1,8 +1,10 @@
 import { readFile } from "node:fs/promises";
 
 const appSource = await readFile("apps/web/src/App.tsx", "utf8");
+const workspaceStaticOptionsSource = await readFile("apps/web/src/workspaceStaticOptions.ts", "utf8");
 const webSource = [
   appSource,
+  workspaceStaticOptionsSource,
   await readFile("apps/web/src/SettingsView.tsx", "utf8"),
   await readFile("apps/web/src/ScheduleView.tsx", "utf8")
 ].join("\n");
@@ -103,22 +105,23 @@ assert(appSource.includes('onboardingStep === "telegram"'), "onboarding Telegram
 assert(appSource.includes("telegramPatientPortalBaseUrlDraft"), "onboarding Telegram must collect patient portal URL");
 assert(appSource.includes("telegramReviewUrlDraft"), "onboarding Telegram must collect review URL");
 assert(appSource.includes("telegramMapsUrlDraft"), "onboarding Telegram must collect maps URL");
+assert(appSource.includes('from "./workspaceStaticOptions"'), "onboarding Telegram must use shared static Telegram option tables");
 assert(
   appSource.includes(
     'const onboardingTelegramVisualCardKeys: DenteTelegramVisualCardKey[] = [\n  "mainMenu",\n  "appointment",\n  "documents",\n  "tax",\n  "billing",\n  "care",\n  "review",\n  "staff"\n];'
   ),
   "onboarding Telegram must expose every visual card URL, including tax, billing and staff"
 );
-assert(appSource.includes("Картинка налоговых документов"), "onboarding Telegram must expose tax document visual card");
-assert(appSource.includes("Картинка оплаты"), "onboarding Telegram must expose billing/payment visual card");
-assert(appSource.includes("Картинка для сотрудников"), "onboarding Telegram must expose staff visual card");
+assert(workspaceStaticOptionsSource.includes("Картинка налоговых документов"), "onboarding Telegram must expose tax document visual card");
+assert(workspaceStaticOptionsSource.includes("Картинка оплаты"), "onboarding Telegram must expose billing/payment visual card");
+assert(workspaceStaticOptionsSource.includes("Картинка для сотрудников"), "onboarding Telegram must expose staff visual card");
 assert(
   !appSource.includes("telegramPostVisitCheckupDelayFields.slice(0, 4)"),
   "onboarding Telegram must not hide extended post-visit checkup topics"
 );
-assert(appSource.includes("После эндодонтии"), "onboarding Telegram must expose endodontic checkup delay");
-assert(appSource.includes("После ортодонтии"), "onboarding Telegram must expose orthodontic checkup delay");
-assert(appSource.includes("После пародонтологии"), "onboarding Telegram must expose periodontology checkup delay");
+assert(workspaceStaticOptionsSource.includes("После эндодонтии"), "onboarding Telegram must expose endodontic checkup delay");
+assert(workspaceStaticOptionsSource.includes("После ортодонтии"), "onboarding Telegram must expose orthodontic checkup delay");
+assert(workspaceStaticOptionsSource.includes("После пародонтологии"), "onboarding Telegram must expose periodontology checkup delay");
 assert(appSource.includes('"payment_reminders"'), "onboarding Telegram must expose payment reminder toggle");
 assert(appSource.includes('"recalls"'), "onboarding Telegram must expose recall toggle");
 assert(appSource.includes('"callback_requests"'), "onboarding Telegram must expose callback request toggle");
@@ -126,8 +129,9 @@ assert(appSource.includes('"staff_daily_digest"'), "onboarding Telegram must exp
 assert(appSource.includes("saveTelegramSettings()"), "onboarding Telegram must reuse the persistent Telegram settings save");
 assert(appSource.includes("onboardingStep === \"telegram\" && telegramSettingsDirty"), "leaving Telegram onboarding must save dirty settings");
 assert(appSource.includes("!onboardingDismissed && onboardingStep === \"telegram\""), "Telegram control plane must load inside onboarding");
-assert(appSource.includes("DENTE_SETTINGS_ADMIN_SECRET или DENTE_TELEGRAM_ADMIN_SECRET"), "settings admin secret must be visible as a global DENTE unlock, not Telegram-only");
-assert(appSource.includes("Секрет админ-доступа DENTE"), "admin secret label must be generic for clinic settings and Telegram");
+assert(appSource.includes("если защищенные настройки включены на сервере клиники"), "settings admin unlock must be described in operator language, not env names.");
+assert(!appSource.includes("DENTE_SETTINGS_ADMIN_SECRET или DENTE_TELEGRAM_ADMIN_SECRET"), "onboarding unlock must not expose server env names to operators.");
+assert(appSource.includes("Секрет администратора клиники"), "admin secret label must be generic for clinic settings and Telegram");
 assert(!appSource.includes("Введите секрет админ-панели Telegram"), "empty admin secret error must not be Telegram-only");
 assert(!appSource.includes("Доступ к управлению Telegram"), "settings unlock panel must not be labeled as Telegram-only");
 assert(appSource.includes("buildOnboardingReadinessIssues"), "onboarding must still expose combined setup readiness");
@@ -145,6 +149,14 @@ assert(appSource.includes("Первый рабочий экран можно о�
 assert(appSource.includes("Документы требуют реквизитов"), "post-onboarding legal document blocker banner must remain visible");
 assert(appSource.includes("assertOnboardingReadyForFinish"), "onboarding finish must be guarded by readiness checks");
 assert(appSource.includes("disabled={!onboardingReadyToFinish}"), "onboarding finish/hide controls must be disabled until required data is filled");
+assert(appSource.includes('const onboardingFinishGuidanceId = "onboarding-finish-guidance"'), "onboarding finish blockers must use one stable guidance id");
+assert(appSource.includes("id={onboardingFinishGuidanceId}"), "onboarding finish blocker guidance must be addressable");
+assert(
+  appSource.includes("aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}") &&
+    appSource.includes("aria-describedby={nextOnboardingStep.id === \"done\" && !onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}") &&
+    appSource.includes("aria-describedby={step.id === \"done\" && !onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}"),
+  "disabled onboarding finish controls must point to the blocker guidance"
+);
 assert(appSource.includes("onboardingDraftMode"), "onboarding must persist explicit draft mode when setup is postponed");
 assert(appSource.includes("draftMode: typeof parsed.draftMode"), "onboarding fallback storage must preserve explicit draft mode");
 assert(appSource.includes("JSON.stringify({ version: 1, ...state })"), "onboarding fallback storage must persist one complete dismissal state");
@@ -188,7 +200,7 @@ assert(
   "first-run boot guard must remain explicit and readable"
 );
 assert(
-  dismissOnboardingBody.includes("await saveServerUiPreferences(savedPreferences, telegramAdminSecretSession)"),
+  dismissOnboardingBody.includes("await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession)"),
   "onboarding dismissal must synchronously persist server UI preferences"
 );
 assert(
@@ -241,6 +253,15 @@ assert(webSource.includes("saveChairSchedule"), "chair schedule editor must save
 assert(webSource.includes("/api/settings/chairs/${chairId}/working-hours"), "chair schedule editor must use chair working-hours API");
 assert(webSource.includes("Рабочие дни кресла"), "chair schedule editor must expose readable Russian day controls");
 assert(addChairBody.includes("workingHours: staffWorkingHoursFromSimpleDraft"), "new chairs must inherit clinic working hours");
+assert(appSource.includes('const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance"'), "onboarding staff creation guidance must use a stable id");
+assert(appSource.includes('const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance"'), "onboarding chair creation guidance must use a stable id");
+assert(appSource.includes("id={onboardingStaffCreateGuidanceId}"), "onboarding staff quick-create guidance must be addressable");
+assert(appSource.includes("id={onboardingChairCreateGuidanceId}"), "onboarding chair quick-create guidance must be addressable");
+assert(
+  appSource.includes("aria-describedby={!newStaffReadyToCreate ? onboardingStaffCreateGuidanceId : undefined}") &&
+    appSource.includes("aria-describedby={!newChairReadyToCreate ? onboardingChairCreateGuidanceId : undefined}"),
+  "onboarding quick-create buttons must point to their missing-field guidance"
+);
 
 assert(teamOnboardingSource.includes("onboarding-schedule-grid"), "team onboarding must expose compact schedule setup");
 assert(teamOnboardingSource.includes("onboarding-compact-schedule-editor"), "team onboarding schedule must use the compact editor");
@@ -264,13 +285,17 @@ assert(sourcesOnboardingSource.includes("setImagingImportSourceKind(kind)"), "so
 assert(sourcesOnboardingSource.includes("setDicomWebEndpointUrl(event.target.value)"), "sources onboarding must persist DICOMweb endpoint");
 assert(sourcesOnboardingSource.includes("setOhifBaseUrl(event.target.value)"), "sources onboarding must persist OHIF endpoint");
 assert(
-  sourcesOnboardingSource.includes("Автосохранено: прайс, импорт, документы, снимки, DICOMweb и OHIF"),
+  sourcesOnboardingSource.includes("Автосохранено: прайс, импорт, документы, снимки, архив и внешний просмотр"),
   "sources onboarding must explain autosave coverage"
 );
+assert(sourcesOnboardingSource.includes("Архив снимков и внешний просмотр"), "sources onboarding must describe DICOMweb/OHIF in operator language");
+assert(!sourcesOnboardingSource.includes("DICOMweb и OHIF"), "sources onboarding must not expose protocol names as the section title");
+assert(!sourcesOnboardingSource.includes("Корень DICOMweb"), "sources onboarding must not expose DICOMweb root jargon");
+assert(!sourcesOnboardingSource.includes("Корень OHIF"), "sources onboarding must not expose OHIF root jargon");
 assert(sourcesOnboardingSource.includes("Прайс клиники"), "sources onboarding pricelist card must be readable Russian");
 assert(sourcesOnboardingSource.includes("Перенос пациентов"), "sources onboarding patient migration card must be readable Russian");
 assert(sourcesOnboardingSource.includes("Документы и файлы"), "sources onboarding document route card must be readable Russian");
-assert(sourcesOnboardingSource.includes("Снимки и DICOM"), "sources onboarding imaging card must be readable Russian");
+assert(sourcesOnboardingSource.includes("Снимки и КТ"), "sources onboarding imaging card must be readable Russian");
 
 console.log(
   JSON.stringify({

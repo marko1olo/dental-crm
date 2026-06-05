@@ -40,22 +40,66 @@ requireIn(appSource, "Активной записи диктовки нет.", "
 requireIn(appSource, "visitDraftBuildMissingSteps", "Visit workflow must explain why draft generation is blocked.");
 requireIn(appSource, "visit-draft-missing", "Visit workflow must render draft missing-field guidance.");
 requireIn(appSource, "disabled={isDraftLoading || !visitDraftReadyToBuild}", "Visit draft generation must be blocked until dictation is ready.");
+requireIn(appSource, 'aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}', "Visit draft generation button must point to missing-step guidance.");
+requireIn(appSource, 'id="visit-draft-missing"', "Visit draft missing-step guidance must be addressable.");
 requireIn(appSource, "disabled={!hasVisitTranscriptText || isTranscriptPolishing}", "Visit transcript polish must share the readiness guard.");
+requireIn(appSource, 'aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}', "Visit transcript actions must point to empty-dictation guidance.");
 requireIn(appSource, "disabled={!hasVisitTranscriptText}", "Visit offline parser must share the readiness guard.");
 requireIn(appSource, "Добавьте текст диктовки перед локальным разбором.", "Visit offline parser must fail visibly when invoked without dictation.");
 requireIn(appSource, "Перед очисткой диктовки:", "Visit transcript polish must fail visibly when invoked without dictation.");
 requireIn(appSource, "Перед сборкой черновика:", "Visit draft generation handler must fail visibly when invoked while blocked.");
 requireIn(appSource, "visitDraftUserEditedRef", "Late server draft restore must not overwrite doctor edits.");
 requireIn(appSource, "if (visitDraftUserEditedRef.current)", "Visit restore must check user edits before applying server draft.");
+requireIn(appSource, "visitDraftSignalLabels", "Visit draft quality signals must have doctor-readable labels.");
+requireIn(appSource, "visitDraftMissingFieldLabels", "Visit draft missing fields must have doctor-readable labels.");
+requireIn(appSource, "{visitDraftSignalLabel(signal)}", "Visit draft quality signals must not render raw internal ids.");
+requireIn(appSource, "{visitDraftMissingFieldLabel(field)}", "Visit draft missing fields must not render raw internal ids.");
+requireIn(appSource, 'sourceLabel: "Локальный разбор диктовки"', "Visit offline draft source must use doctor-readable wording.");
+requireIn(appSource, 'sourceLabel: "Локальная очистка диктовки"', "Visit local polish fallback source must use doctor-readable wording.");
+requireIn(appSource, "локальная проверка правил", "Visit local polish mode label must use doctor-readable wording.");
+requireIn(appSource, "Текст очищен локальным разбором без сервера.", "Visit local polish fallback status must not expose parser jargon.");
+requireIn(appSource, "Использован локальный разбор.", "Visit local polish fallback error must not expose parser jargon.");
+requireIn(appSource, "Включен офлайн-разбор.", "Visit offline draft fallback error must not expose parser jargon.");
+requireIn(appSource, "aiJobKindLabels", "Settings recognition source labels must be derived from human-readable job labels.");
+forbidIn(appSource, "<span key={signal}>{signal}</span>", "Visit draft quality signals must not expose raw internal ids.");
+forbidIn(appSource, "<small key={field}>проверить: {field}</small>", "Visit draft missing fields must not expose raw internal ids.");
+forbidIn(appSource, 'sourceLabel: "Офлайн-парсер"', "Visit offline draft source must not expose parser jargon.");
+forbidIn(appSource, "локальный парсер правил", "Visit local polish mode label must not expose parser jargon.");
+forbidIn(appSource, "Текст очищен локальным парсером без сервера.", "Visit local polish fallback status must not expose parser jargon.");
+forbidIn(appSource, "Использован локальный парсер.", "Visit local polish fallback error must not expose parser jargon.");
+forbidIn(appSource, "Включен офлайн-парсер.", "Visit offline draft fallback error must not expose parser jargon.");
+forbidIn(appSource, 'sourceLabel: "Локальный speech-polish"', "Visit local polish fallback must not expose implementation jargon.");
+forbidIn(appSource, "sourceLabel: `settings_${recognitionKind}`", "Settings recognition source must not expose raw enum ids.");
+forbidIn(appSource, "recall {formatShortDate(activePatientInsight.recallDueAt)}", "Patient cockpit must not expose English recall wording.");
 requireIn(appSource, "visitNoteAcceptMissingSteps", "Visit note save action must explain why accepting is blocked.");
 requireIn(appSource, "visitNoteReadyToAccept", "Visit note save action must use a named readiness guard.");
 requireIn(appSource, "visit-note-missing", "Visit note save guidance must render missing steps.");
 requireIn(appSource, "disabled={!visitNoteReadyToAccept || isDraftAccepting}", "Visit note save button must be blocked until EMK is ready.");
+requireIn(appSource, 'aria-describedby={!visitNoteReadyToAccept ? "visit-note-missing" : undefined}', "Visit note save button must point to missing-step guidance.");
+requireIn(appSource, 'id="visit-note-missing"', "Visit note missing-step guidance must be addressable.");
 requireIn(appSource, "Данные приема еще не загружены. Повторите сохранение после загрузки рабочего экрана.", "Visit note save handler must fail visibly while dashboard data is missing.");
 requireIn(appSource, "Перед сохранением приема:", "Visit note save handler must fail visibly if invoked while blocked.");
+requireIn(appSource, "visitWorkflowSteps", "Visit workflow must expose a simple doctor-facing progress model.");
+requireIn(appSource, "visitPrimaryAction", "Visit workflow must compute a single next action for non-technical doctors.");
+requireIn(appSource, "повторный визит {formatShortDate(activePatientInsight.recallDueAt)}", "Patient cockpit recall date must use Russian wording.");
+requireIn(appSource, 'data-testid="visit-next-step-panel"', "Visit workflow must render the single next-step panel.");
+requireIn(appSource, 'data-testid="visit-primary-action"', "Visit workflow must render a wired primary next action.");
+requireIn(appSource, 'data-testid="visit-progress-strip"', "Visit workflow must render the visit progress strip.");
+requireIn(appSource, "Распознать на сервере", "Visit voice action must use human wording instead of STT jargon.");
+requireIn(appSource, 'label: "Работа без сети"', "Visit safety device checks must use clinician-readable offline wording.");
+requireIn(appSource, "аудио сохранится для отправки позже", "Visit safety device checks must describe queued audio without IndexedDB jargon.");
+requireIn(appSource, "эта вкладка готова к работе без сети", "Visit safety device checks must describe offline readiness without service worker jargon.");
+forbidIn(appSource, "Сервер STT", "Visit workflow must not expose STT jargon in the main doctor screen.");
+forbidIn(appSource, "Отправить STT", "Visit workflow must not expose STT jargon in queued audio actions.");
+forbidIn(appSource, "Очистить STT", "Visit workflow must not expose STT jargon in transcript cleanup.");
+forbidIn(appSource, 'label: "PWA-оболочка"', "Visit safety device checks must not expose PWA jargon.");
+forbidIn(appSource, "очередь IndexedDB", "Visit safety device checks must not expose IndexedDB jargon.");
+forbidIn(appSource, "service worker", "Visit safety device checks must not expose service worker jargon.");
 requireIn(cssSource, ".visit-note-missing", "Visit note save guidance must be styled.");
 requireIn(cssSource, ".hero-call-guidance", "Shift missing-phone guidance must be styled.");
 requireIn(cssSource, ".dictation-action-guidance", "Visit empty-dictation guidance must be styled.");
+requireIn(cssSource, ".visit-next-step", "Visit next-step panel must be styled.");
+requireIn(cssSource, ".visit-progress-strip", "Visit progress strip must be styled.");
 
 console.log(
   JSON.stringify(
@@ -68,7 +112,8 @@ console.log(
       draftBuildExplainsMissingSteps: true,
       dictationNoOpsExplainState: true,
       lateRestoreGuarded: true,
-      visitNoteAcceptExplainsMissingSteps: true
+      visitNoteAcceptExplainsMissingSteps: true,
+      visitNextStepPanel: true
     },
     null,
     2

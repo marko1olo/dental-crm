@@ -95,7 +95,7 @@ export function buildDentalSttPrompt(input: {
     `${sourceHint(input.source ?? "visit")} Стоматологический контекст распознавания речи.`,
     "Расшифруй дословно на языке речи, обычно русском. Не суммируй, не ставь диагноз, не достраивай и не добавляй факты.",
     "Сохраняй номера зубов, неопределенность, бренды, материалы, латинские названия и сокращения.",
-    `Terms: ${terms.join(", ")}.`
+    `Термины: ${terms.join(", ")}.`
   ].join(" ");
   return trimPrompt(prompt, maxPromptChars());
 }
@@ -104,10 +104,10 @@ export function getDentalSttPromptPolicy(): SpeechSttPromptPolicy {
   const terms = uniqueTerms([...baseTerms, ...customTerms()]);
   const promptPreview =
     buildDentalSttPrompt({ providerId: "groq_whisper", specialty: "universal", source: "visit" }) ??
-    "Dental prompt pack is disabled.";
+    "Стоматологический словарь распознавания выключен.";
   const warnings: string[] = [];
-  if (!promptEnabled()) warnings.push("DENTAL_STT_DENTAL_PROMPT disables provider prompt context.");
-  if (customTerms().length) warnings.push("Custom clinic terms are appended from DENTAL_STT_CUSTOM_TERMS.");
+  if (!promptEnabled()) warnings.push("Стоматологический словарь распознавания выключен в серверных настройках.");
+  if (customTerms().length) warnings.push("К стандартному словарю распознавания добавлены термины клиники из серверных настроек.");
 
   return {
     enabled: promptEnabled(),

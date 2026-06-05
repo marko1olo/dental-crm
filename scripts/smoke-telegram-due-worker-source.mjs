@@ -17,7 +17,7 @@ const requiredTelegramSnippets = [
   "DENTE_TELEGRAM_OUTBOX_WORKER_DRY_RUN",
   "DENTE_TELEGRAM_OUTBOX_WORKER_RUN_ON_START",
   "setTimeout",
-  "retry_after_seconds",
+  "retryAfterSeconds",
   "executeDenteTelegramOutboxDueBatch(input, runtimeResult.runtime)",
   "clientMutationId?.startsWith(\"due-\")"
 ];

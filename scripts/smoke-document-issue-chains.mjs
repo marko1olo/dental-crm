@@ -27,6 +27,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function documentErrorText(response) {
+  const body = response.json();
+  return String(body.message ?? body.error ?? "");
+}
+
 const sha256Pattern = /^[a-f0-9]{64}$/;
 
 function assertReleaseJournalHash(document, label) {
@@ -149,7 +154,7 @@ try {
     url: `/api/documents/${wrongLinkedActResponse.json().id}/issue`
   });
   assert(wrongLinkedActIssueResponse.statusCode === 409, "act without exact issued contract link must be blocked");
-  const wrongLinkedActIssueError = String(wrongLinkedActIssueResponse.json().error);
+  const wrongLinkedActIssueError = documentErrorText(wrongLinkedActIssueResponse);
   assert(wrongLinkedActIssueError.includes("договор"), `act contract block must mention contract: ${wrongLinkedActIssueError}`);
 
   const linkedActResponse = await app.inject({
@@ -214,11 +219,11 @@ try {
     releaseWithoutRequestResponse.statusCode === 409,
     `release receipt without copy request must be blocked: ${releaseWithoutRequestResponse.statusCode}`
   );
-  assert(String(releaseWithoutRequestResponse.json().error).includes("запрос"), "release receipt block must explain missing copy request");
+  assert(documentErrorText(releaseWithoutRequestResponse).includes("запрос"), "release receipt block must explain missing copy request");
 
   const copyRequestPayload = {
     medicalRecordCopyRequest: {
-      requestedDocumentTypes: ["Выписка из медицинской карты", "Копия снимков или DICOM-архив"],
+      requestedDocumentTypes: ["Выписка из медицинской карты", "Копия снимков или архив исходных снимков"],
       periodStart: "2026-05-01",
       periodEnd: "2026-05-20",
       requestedFormat: "pdf",
@@ -265,7 +270,7 @@ try {
     `copy request with invalid dates must be blocked: ${invalidCopyRequestDateIssueResponse.statusCode}`
   );
   assert(
-    String(invalidCopyRequestDateIssueResponse.json().error).toLowerCase().includes("дат"),
+    documentErrorText(invalidCopyRequestDateIssueResponse).toLowerCase().includes("дат"),
     "copy request invalid-date block must mention dates"
   );
 
@@ -326,7 +331,7 @@ try {
     `release receipt with invalid dates must be blocked: ${releaseWithInvalidDateIssueResponse.statusCode}`
   );
   assert(
-    String(releaseWithInvalidDateIssueResponse.json().error).toLowerCase().includes("дат"),
+    documentErrorText(releaseWithInvalidDateIssueResponse).toLowerCase().includes("дат"),
     "release receipt invalid-date block must mention dates"
   );
 
@@ -657,7 +662,7 @@ try {
     draftSourceCardIssueResponse.statusCode === 409,
     `025/u from unsigned source visit must be blocked: ${draftSourceCardIssueResponse.statusCode}`
   );
-  assert(String(draftSourceCardIssueResponse.json().error).includes("подпис"), "025/u block must require signed source visits");
+  assert(documentErrorText(draftSourceCardIssueResponse).includes("подпис"), "025/u block must require signed source visits");
 
   const draftSourceExtractResponse = await app.inject({
     method: "POST",
@@ -696,7 +701,7 @@ try {
     draftSourceExtractIssueResponse.statusCode === 409,
     `extract from unsigned source visit must be blocked: ${draftSourceExtractIssueResponse.statusCode}`
   );
-  assert(String(draftSourceExtractIssueResponse.json().error).includes("подпис"), "extract block must require signed source visits");
+  assert(documentErrorText(draftSourceExtractIssueResponse).includes("подпис"), "extract block must require signed source visits");
 
   activeVisit.status = "signed";
   const validSignedSourceCardResponse = await app.inject({
@@ -798,7 +803,7 @@ try {
     `extract with invalid dates must be blocked: ${invalidDateExtractIssueResponse.statusCode}`
   );
   assert(
-    String(invalidDateExtractIssueResponse.json().error).toLowerCase().includes("дат"),
+    documentErrorText(invalidDateExtractIssueResponse).toLowerCase().includes("дат"),
     "extract invalid-date block must mention dates"
   );
 
@@ -821,7 +826,7 @@ try {
     invalidDateCardIssueResponse.statusCode === 409,
     `025/u with invalid dates must be blocked: ${invalidDateCardIssueResponse.statusCode}`
   );
-  assert(String(invalidDateCardIssueResponse.json().error).toLowerCase().includes("дат"), "025/u invalid-date block must mention dates");
+  assert(documentErrorText(invalidDateCardIssueResponse).toLowerCase().includes("дат"), "025/u invalid-date block must mention dates");
 
   const reversedPeriodExtractResponse = await app.inject({
     method: "POST",
@@ -849,7 +854,7 @@ try {
     reversedPeriodExtractIssueResponse.statusCode === 409,
     `extract with reversed period must be blocked: ${reversedPeriodExtractIssueResponse.statusCode}`
   );
-  assert(String(reversedPeriodExtractIssueResponse.json().error).toLowerCase().includes("период"), "extract reversed-period block must mention period");
+  assert(documentErrorText(reversedPeriodExtractIssueResponse).toLowerCase().includes("период"), "extract reversed-period block must mention period");
 
   const reversedPeriodCardResponse = await app.inject({
     method: "POST",
@@ -870,7 +875,7 @@ try {
     reversedPeriodCardIssueResponse.statusCode === 409,
     `025/u with reversed period must be blocked: ${reversedPeriodCardIssueResponse.statusCode}`
   );
-  assert(String(reversedPeriodCardIssueResponse.json().error).toLowerCase().includes("период"), "025/u reversed-period block must mention period");
+  assert(documentErrorText(reversedPeriodCardIssueResponse).toLowerCase().includes("период"), "025/u reversed-period block must mention period");
 
   const outsidePeriodExtractResponse = await app.inject({
     method: "POST",
@@ -898,7 +903,7 @@ try {
     outsidePeriodExtractIssueResponse.statusCode === 409,
     `extract with source visit outside period must be blocked: ${outsidePeriodExtractIssueResponse.statusCode}`
   );
-  assert(String(outsidePeriodExtractIssueResponse.json().error).toLowerCase().includes("период"), "extract outside-period block must mention period");
+  assert(documentErrorText(outsidePeriodExtractIssueResponse).toLowerCase().includes("период"), "extract outside-period block must mention period");
 
   const outsidePeriodCardResponse = await app.inject({
     method: "POST",
@@ -919,7 +924,7 @@ try {
     outsidePeriodCardIssueResponse.statusCode === 409,
     `025/u with source visit outside period must be blocked: ${outsidePeriodCardIssueResponse.statusCode}`
   );
-  assert(String(outsidePeriodCardIssueResponse.json().error).toLowerCase().includes("период"), "025/u outside-period block must mention period");
+  assert(documentErrorText(outsidePeriodCardIssueResponse).toLowerCase().includes("период"), "025/u outside-period block must mention period");
 
   const extractResponse = await app.inject({
     method: "POST",
@@ -955,7 +960,7 @@ try {
     url: `/api/documents/${extractResponse.json().id}/issue`
   });
   assert(extractIssueResponse.statusCode === 409, `extract with invalid source visits must be blocked: ${extractIssueResponse.statusCode}`);
-  assert(String(extractIssueResponse.json().error).includes("исходных приемов"), "extract block must explain invalid source visits");
+  assert(documentErrorText(extractIssueResponse).includes("исходных приемов"), "extract block must explain invalid source visits");
 
   console.log(
     JSON.stringify({

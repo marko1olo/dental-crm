@@ -390,7 +390,7 @@ function documentPayloadBlockReason(document: GeneratedDocument): string | null 
     return "Для выдачи журнала анестезии нужны структурированные данные: метод, препарат, зона, аллергостатус и дозы.";
   }
   if (document.kind === "prescription_medication_order" && !document.payload?.prescriptionMedicationOrder) {
-    return "Для выдачи назначения препаратов нужны структурированные данные: препарат, дозировка, режим, срок и памятка безопасности.";
+    return "Для выдачи назначения препаратов нужны структурированные данные: препарат, дозировка, режим, срок и памятка пациенту.";
   }
   if (document.kind === "prescription_medication_order" && !hasClinicalToothRows(document.payload?.prescriptionMedicationOrder)) {
     return "Для выдачи назначения препаратов нужны клинические строки по зубам или сегментам: зуб/область, поверхности, статус, диагноз/находка, показание и действие.";
@@ -523,7 +523,7 @@ function releaseMaterialKindLabel(kind: NonNullable<GeneratedDocument["releaseJo
   if (kind === "original") return "оригинал";
   if (kind === "copy") return "копия";
   if (kind === "extract") return "выписка";
-  if (kind === "dicom_archive") return "DICOM-архив";
+  if (kind === "dicom_archive") return "архив исходных снимков";
   if (kind === "mixed") return "смешанный комплект";
   return "иное";
 }
@@ -531,7 +531,7 @@ function releaseMaterialKindLabel(kind: NonNullable<GeneratedDocument["releaseJo
 function releaseDeliveryMethodLabel(method: NonNullable<GeneratedDocument["releaseJournalEntry"]>["deliveryMethod"]) {
   if (method === "paper") return "бумага";
   if (method === "pdf") return "PDF";
-  if (method === "dicom_archive") return "DICOM-архив";
+  if (method === "dicom_archive") return "архив исходных снимков";
   if (method === "secure_link") return "защищенная ссылка";
   if (method === "physical_media") return "физический носитель";
   return "иной канал";
@@ -2102,7 +2102,7 @@ function photoVideoConsent(document: GeneratedDocument) {
       face_photo: "фото лица",
       video: "видео",
       xray: "рентген-снимки",
-      cbct: "КТ/CBCT",
+      cbct: "КЛКТ/КТ",
       scan: "цифровые сканы",
       other: "иные материалы"
     };
@@ -2475,7 +2475,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
   if (payload) {
     return `<h2>Рекомендации после приема</h2>
     <div class="notice">
-      Памятка подготовлена по фактически выполненному приему. Для Telegram используется краткий безопасный текст без диагноза, если пациент подключен к боту и дал согласие на уведомления.
+      Памятка подготовлена по фактически выполненному приему. Для Telegram используется краткий текст без диагноза, если пациент подключен к боту и дал согласие на уведомления.
     </div>
     <table>
       ${row("Блок рекомендаций", postVisitCareTopicLabel(payload.careTopic))}
@@ -2771,7 +2771,7 @@ function structuredMedicalRecordCopyRequest(document: GeneratedDocument, patient
   const formatLabels: Record<MedicalRecordCopyRequestPayload["requestedFormat"], string> = {
     paper: "бумажная копия",
     pdf: "PDF",
-    dicom_archive: "DICOM-архив",
+    dicom_archive: "архив исходных снимков",
     secure_link: "защищенная ссылка",
     physical_media: "физический носитель",
     other: "иной согласованный формат"
@@ -2796,12 +2796,12 @@ function structuredMedicalRecordCopyRequest(document: GeneratedDocument, patient
       ${row("Дата запроса", payload.requestedAt)}
       ${row("Контакт и канал выдачи", payload.contactForDelivery)}
       ${payload.specialInstructions ? row("Особые указания", payload.specialInstructions) : ""}
-      ${row("Исходные DICOM-данные", payload.includeDicomSourceData ? "запрошены при наличии в архиве" : "не запрошены")}
+      ${row("Исходные файлы снимков", payload.includeDicomSourceData ? "запрошены при наличии в архиве" : "не запрошены")}
     </table>
     ${checkList([
       "личность получателя проверена до выдачи",
       "объем выдачи соответствует запросу и не содержит лишних данных третьих лиц",
-      "DICOM/КТ выдаются как медицинские файлы, а не как скриншоты, если пациент запросил исходные данные",
+      "КТ и рентген выдаются как исходные медицинские файлы, а не как скриншоты, если пациент запросил исходные данные",
       "факт выдачи нужно закрыть распиской о передаче медицинских документов"
     ])}
     ${signatureBlock(signatureParty("Заявитель/получатель", payload.recipientFullName), "Ответственный сотрудник")}`;
@@ -2815,14 +2815,14 @@ function medicalRecordCopyRequest(patient: Patient) {
       ${patientRegistrationAddress(patient) ? row("Адрес регистрации", patientRegistrationAddress(patient) ?? "") : ""}
       ${row("Что выдать", "выписка / копия карты / снимки / КТ / финансовые документы / иное")}
       ${row("Период", "с __________ по __________")}
-      ${row("Формат", "бумага / PDF / DICOM / архив / защищенная ссылка при наличии процесса")}
+      ${row("Формат", "бумага / PDF / архив исходных снимков / защищенная ссылка при наличии процесса")}
       ${row("Получатель", documentRecipientLine(patient))}
       ${row("Основание представителя", representativeIdentityLine(patient))}
     </table>
     ${checkList([
       "личность получателя проверена",
       "объем выдачи согласован с врачом/администратором и не содержит лишних данных третьих лиц",
-      "DICOM/КТ выдаются как медицинские файлы, а не как скриншоты, если пациент запросил исходные данные",
+      "КТ и рентген выдаются как исходные медицинские файлы, а не как скриншоты, если пациент запросил исходные данные",
       "факт выдачи и канал передачи записаны в журнале клиники"
     ])}
     ${signatureBlock("Заявитель/получатель", "Ответственный сотрудник")}`;
@@ -2834,7 +2834,7 @@ function medicalDocumentReleaseReceipt(document: GeneratedDocument, patient: Pat
     const releaseChannelLabels: Record<string, string> = {
       paper: "бумажная выдача",
       pdf: "PDF",
-      dicom_archive: "DICOM-архив",
+      dicom_archive: "архив исходных снимков",
       secure_link: "защищенная ссылка",
       physical_media: "физический носитель",
       other: "иной канал"
@@ -2861,7 +2861,7 @@ function medicalDocumentReleaseReceipt(document: GeneratedDocument, patient: Pat
       ${checkList([
         "личность получателя и основание выдачи проверены",
         "состав выдачи совпадает с запросом пациента или законного представителя",
-        "при передаче DICOM/КТ/снимков проверена целостность архива и носителя",
+        "при передаче КТ/рентгена/снимков проверена целостность архива и носителя",
         "в журнале клиники сохранен факт выдачи, канал передачи и ответственный сотрудник"
       ])}
       ${signatureBlock("Получатель", "Администратор/ответственный сотрудник")}`;
@@ -2872,14 +2872,14 @@ function medicalDocumentReleaseReceipt(document: GeneratedDocument, patient: Pat
       ${patientIdentityDocument(patient) ? row("Документ пациента", patientIdentityDocument(patient) ?? "") : ""}
       ${row("Получатель", documentRecipientLine(patient))}
       ${row("Документ получателя", representativeIdentityLine(patient))}
-      ${row("Канал выдачи", "лично / бумага / PDF / DICOM-архив / защищенная ссылка / иной носитель")}
+      ${row("Канал выдачи", "лично / бумага / PDF / архив исходных снимков / защищенная ссылка / иной носитель")}
       ${row("Дата и время выдачи", "____.__.____ ____:____")}
     </table>
     <h2>Что выдано</h2>
     ${checkList([
       "выписка из медицинской карты",
       "копии медицинской документации за указанный период",
-      "рентген/ОПТГ/ТРГ/КЛКТ: исходные DICOM-файлы или архив, если они запрошены",
+      "рентген/ОПТГ/ТРГ/КЛКТ: исходные файлы снимков или архив, если они запрошены",
       "финансовые документы: договор, акт, чек/квитанция, налоговая справка при наличии",
       "иное: ____________________"
     ])}
@@ -2899,7 +2899,7 @@ function xrayCbctReferral(document: GeneratedDocument) {
     const studyTypeLabels: Record<string, string> = {
       rvg: "RVG / прицельный снимок",
       opg: "ОПТГ",
-      cbct: "КЛКТ / CBCT",
+      cbct: "КЛКТ / КТ",
       trg: "ТРГ",
       tmj: "ВНЧС",
       sinus: "гайморова пазуха",
@@ -2930,11 +2930,11 @@ function xrayCbctReferral(document: GeneratedDocument) {
         ${row("Показание", payload.indication)}
         ${row("Срочность", priorityLabels[payload.priority] ?? payload.priority)}
         ${row("Беременность/ограничения", pregnancyStatusLabels[payload.pregnancyStatus] ?? payload.pregnancyStatus)}
-        ${row("Комментарий по безопасности", payload.safetyNotes)}
+        ${row("Комментарий по ограничениям", payload.safetyNotes)}
         ${row("Куда направить", payload.recipientClinic ?? "по маршруту клиники")}
         ${row("Срок", payload.dueDate ?? "по записи пациента")}
         ${row("Назначил", payload.requestedBy)}
-        ${row("Передача результата", [payload.includeRadiologistReport ? "описание врача-рентгенолога" : null, payload.includeDicomExport ? "DICOM-экспорт" : null].filter(Boolean).join(", ") || "снимок/отчет в карту пациента")}
+        ${row("Передача результата", [payload.includeRadiologistReport ? "описание врача-рентгенолога" : null, payload.includeDicomExport ? "исходные файлы снимков" : null].filter(Boolean).join(", ") || "снимок/отчет в карту пациента")}
       </table>
       ${checkList([
         "пациенту объяснена цель исследования и связь с планом лечения",

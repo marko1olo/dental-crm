@@ -615,7 +615,7 @@ export function analyzePricelistDeterministic(
     parserMode,
     warnings,
     aiUsed: false,
-    aiReason: request.useServerAi ? "Groq not used; deterministic parser returned a safe result." : "Server AI disabled.",
+    aiReason: request.useServerAi ? "Нейро-проверка не запускалась: локальный разбор уже дал безопасный черновик." : "Нейро-проверка выключена.",
     modelName: null
   });
 }
@@ -804,7 +804,7 @@ export async function analyzePricelist(request: DentalPricelistAnalysisRequest):
       parserMode: "groq_json",
       warnings: request.imageBase64 ? ["photo_ocr_requires_visual_review"] : [],
       aiUsed: true,
-      aiReason: "Groq vision/text JSON extraction was used and validated by the server schema.",
+      aiReason: "Серверная нейро-проверка разобрала текст или фото; результат проверен схемой перед показом.",
       modelName
     });
   } catch (error) {

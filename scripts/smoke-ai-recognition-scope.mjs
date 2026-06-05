@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -18,10 +18,40 @@ const Fastify = requireFromApi("fastify");
 const { registerAiRoutes } = await import(pathToFileURL(routePath).href);
 const { activeVisit, aiRecognitionJobs, imagingStudies, patients } = await import(pathToFileURL(sampleDataPath).href);
 const { createAiRecognitionJobSchema, visitNoteDraftRequestSchema } = await import(pathToFileURL(sharedPath).href);
+const aiRouteSource = readFileSync("apps/api/src/routes/ai.ts", "utf8");
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+function assertDoesNotLeakInternals(text, label) {
+  assert(
+    !/ZodError|issues|path|safeParse|request\.(body|query|params)|patientId|imagingStudyId|inputText|sourceLabel|transcript|specialty|undefined|null|schema|parser/i.test(
+      text
+    ),
+    `${label} leaked route/schema/parser internals: ${text}`
+  );
+}
+
+function assertScopeResponse(response, label, expectedStatus, expectedError, expectedMessagePart) {
+  assert(response.statusCode === expectedStatus, `${label} status ${response.statusCode}: ${response.body}`);
+  const body = response.json();
+  assert(body.error === expectedError, `${label} must return ${expectedError}, got ${response.body}`);
+  assert(
+    typeof body.message === "string" && body.message.includes(expectedMessagePart),
+    `${label} must return operator-readable message, got ${response.body}`
+  );
+  assertDoesNotLeakInternals(response.body, label);
+}
+
+assert(aiRouteSource.includes("AiRecognitionScopeError"), "AI route must expose stable recognition scope code");
+assert(aiRouteSource.includes("VisitNoteDraftScopeError"), "AI route must expose stable visit-draft scope code");
+assert(
+  !aiRouteSource.includes('send({ error: "Пациент не найден" })') &&
+    !aiRouteSource.includes('send({ error: "Снимок не найден" })') &&
+    !aiRouteSource.includes("AI-черновик снимка нельзя привязать к другому пациенту"),
+  "AI route must not put human operator copy directly in the public error field"
+);
 
 const app = Fastify({ logger: false });
 await registerAiRoutes(app);
@@ -134,6 +164,8 @@ const invalidPayloadResponse = await app.inject({
   }
 });
 assert(invalidPayloadResponse.statusCode === 400, `AI job invalid payload must return 400, got ${invalidPayloadResponse.statusCode}`);
+assert(invalidPayloadResponse.json().error === "AiRecognitionValidationError", "AI job invalid payload must keep validation error code");
+assertDoesNotLeakInternals(invalidPayloadResponse.body, "AI job invalid payload");
 
 const missingPatientResponse = await app.inject({
   method: "POST",
@@ -143,7 +175,13 @@ const missingPatientResponse = await app.inject({
     patientId: "11111111-1111-4111-8111-111111111111"
   }
 });
-assert(missingPatientResponse.statusCode === 404, `AI job must reject unknown patient, got ${missingPatientResponse.statusCode}`);
+assertScopeResponse(
+  missingPatientResponse,
+  "AI job unknown patient",
+  404,
+  "AiRecognitionScopeError",
+  "Пациент не найден"
+);
 
 const missingStudyResponse = await app.inject({
   method: "POST",
@@ -153,7 +191,13 @@ const missingStudyResponse = await app.inject({
     imagingStudyId: "11111111-1111-4111-8111-111111111111"
   }
 });
-assert(missingStudyResponse.statusCode === 404, `AI job must reject unknown imaging study, got ${missingStudyResponse.statusCode}`);
+assertScopeResponse(
+  missingStudyResponse,
+  "AI job unknown imaging study",
+  404,
+  "AiRecognitionScopeError",
+  "Снимок не найден"
+);
 
 const wrongPatientStudyResponse = await app.inject({
   method: "POST",
@@ -164,9 +208,30 @@ const wrongPatientStudyResponse = await app.inject({
     imagingStudyId: activePatientStudy.id
   }
 });
-assert(
-  wrongPatientStudyResponse.statusCode === 409,
-  `AI job must reject imaging study linked to another patient, got ${wrongPatientStudyResponse.statusCode}`
+assertScopeResponse(
+  wrongPatientStudyResponse,
+  "AI job wrong patient imaging study",
+  409,
+  "AiRecognitionScopeError",
+  "Снимок привязан к другому пациенту"
+);
+
+const missingVisitDraftPatientResponse = await app.inject({
+  method: "POST",
+  url: "/api/ai/visit-note-draft",
+  payload: {
+    patientId: "11111111-1111-4111-8111-111111111111",
+    transcript: "Жалобы на боль при накусывании.",
+    specialty: "therapist",
+    source: "voice"
+  }
+});
+assertScopeResponse(
+  missingVisitDraftPatientResponse,
+  "AI visit note draft unknown patient",
+  404,
+  "VisitNoteDraftScopeError",
+  "Пациент не найден"
 );
 
 const inheritedPatientResponse = await app.inject({

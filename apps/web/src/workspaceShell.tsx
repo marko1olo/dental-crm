@@ -33,6 +33,20 @@ export const viewLabels: Record<AppView, string> = {
   settings: "Настройки"
 };
 
+export const viewHints: Record<AppView, string> = {
+  shift: "что делать сейчас",
+  schedule: "очередь, врачи и кресла",
+  patients: "карточки и контакты",
+  imaging: "рентген, КЛКТ и КТ",
+  visit: "прием и диктовка",
+  documents: "договоры и справки",
+  finance: "оплаты и долги",
+  communications: "сообщения и задачи",
+  settings: "клиника, импорт и доступы"
+};
+
+type WorkspaceViewIntentHandler = (view: AppView) => void;
+
 function SidebarIcon({ section }: { section: AppView }) {
   if (section === "schedule") return <CalendarDays aria-hidden="true" />;
   if (section === "patients") return <Users aria-hidden="true" />;
@@ -57,7 +71,13 @@ export function ActionIcon({ section }: { section: AppView }) {
   return <Sparkles aria-hidden="true" />;
 }
 
-export function WorkspaceSidebar({ currentView }: { currentView: AppView }) {
+export function WorkspaceSidebar({
+  currentView,
+  onViewIntent
+}: {
+  currentView: AppView;
+  onViewIntent?: WorkspaceViewIntentHandler;
+}) {
   return (
     <aside className="sidebar" aria-label="Навигация">
       <div className="brand-mark">
@@ -66,8 +86,22 @@ export function WorkspaceSidebar({ currentView }: { currentView: AppView }) {
       </div>
       <nav>
         {appViews.map((view) => (
-          <a className={`nav-item ${currentView === view ? "active" : ""}`} href={`#${view}`} key={view}>
-            <SidebarIcon section={view} /> <span className="nav-label">{viewLabels[view]}</span>
+          <a
+            className={`nav-item ${currentView === view ? "active" : ""}`}
+            href={`#${view}`}
+            key={view}
+            aria-current={currentView === view ? "page" : undefined}
+            aria-label={`${viewLabels[view]}: ${viewHints[view]}`}
+            title={`${viewLabels[view]}: ${viewHints[view]}`}
+            onPointerEnter={() => onViewIntent?.(view)}
+            onFocus={() => onViewIntent?.(view)}
+            onTouchStart={() => onViewIntent?.(view)}
+          >
+            <SidebarIcon section={view} />
+            <span className="nav-copy">
+              <span className="nav-label">{viewLabels[view]}</span>
+              <small>{viewHints[view]}</small>
+            </span>
           </a>
         ))}
       </nav>
@@ -82,6 +116,7 @@ type WorkspaceTopbarProps = {
   onGoToVisit: () => void;
   onReopenOnboarding: () => void;
   onRoleChange: (role: StaffRole) => void;
+  onViewIntent?: WorkspaceViewIntentHandler;
   roleFocusOrder: StaffRole[];
   selectedWorkspaceRole: StaffRole;
   showAdministrationTopActions: boolean;
@@ -97,6 +132,7 @@ export function WorkspaceTopbar({
   onGoToVisit,
   onReopenOnboarding,
   onRoleChange,
+  onViewIntent,
   roleFocusOrder,
   selectedWorkspaceRole,
   showAdministrationTopActions,
@@ -120,6 +156,8 @@ export function WorkspaceTopbar({
                 className={selectedWorkspaceRole === role ? "active" : ""}
                 key={role}
                 type="button"
+                aria-pressed={selectedWorkspaceRole === role}
+                aria-label={`Рабочий режим: ${staffRoleLabels[role]}`}
                 onClick={(event) => {
                   onRoleChange(role);
                   event.currentTarget.closest("details")?.removeAttribute("open");
@@ -133,7 +171,15 @@ export function WorkspaceTopbar({
       </div>
       <div className="top-actions">
         {showAdministrationTopActions ? (
-          <a className="icon-button" href="#settings" title="Настройки импорта и экспорта">
+          <a
+            className="icon-button"
+            href="#settings"
+            title="Настройки импорта и экспорта"
+            aria-label="Настройки импорта и экспорта"
+            onPointerEnter={() => onViewIntent?.("settings")}
+            onFocus={() => onViewIntent?.("settings")}
+            onTouchStart={() => onViewIntent?.("settings")}
+          >
             <Database aria-hidden="true" />
           </a>
         ) : null}
@@ -156,7 +202,14 @@ export function WorkspaceTopbar({
         >
           <Mic aria-hidden="true" />
         </button>
-        <button className="primary-button" type="button" onClick={onGoToSchedule}>
+        <button
+          className="primary-button"
+          type="button"
+          onPointerEnter={() => onViewIntent?.("schedule")}
+          onFocus={() => onViewIntent?.("schedule")}
+          onTouchStart={() => onViewIntent?.("schedule")}
+          onClick={onGoToSchedule}
+        >
           <Plus aria-hidden="true" /> Запись
         </button>
       </div>

@@ -163,6 +163,24 @@ assert(chairResponse.statusCode === 201, `valid settings admin secret must allow
 await app.close();
 
 delete process.env.DENTE_SETTINGS_ADMIN_SECRET;
+process.env.DENTE_TELEGRAM_ADMIN_SECRET = "synthetic-telegram-only-secret";
+process.env.NODE_ENV = "production";
+delete process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS;
+
+const telegramOnlyApp = createApp();
+await registerSettingsRoutes(telegramOnlyApp);
+const telegramOnlySettingsResponse = await telegramOnlyApp.inject({
+  method: "GET",
+  url: "/api/settings/clinic",
+  headers: { "x-dente-admin-secret": process.env.DENTE_TELEGRAM_ADMIN_SECRET }
+});
+assert(
+  telegramOnlySettingsResponse.statusCode === 503,
+  `Telegram-only admin secret must not unlock settings routes: ${telegramOnlySettingsResponse.statusCode}`
+);
+await telegramOnlyApp.close();
+delete process.env.DENTE_TELEGRAM_ADMIN_SECRET;
+
 process.env.NODE_ENV = "production";
 delete process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS;
 

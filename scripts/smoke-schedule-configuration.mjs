@@ -30,6 +30,54 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+const scheduleRouteSource = fs.readFileSync("apps/api/src/routes/schedule.ts", "utf8");
+assert(scheduleRouteSource.includes("appointmentRejectionResponse("), "schedule route must classify mutation failures before responding");
+assert(scheduleRouteSource.includes("resource_overlap"), "schedule route must expose bounded rejection reasons");
+assert(!scheduleRouteSource.includes("message: error instanceof Error ? error.message"), "schedule route must not forward domain error.message as public message");
+assert(!scheduleRouteSource.includes("const message = error instanceof Error ? error.message"), "schedule route must not branch public status on raw error.message");
+
+const forbiddenScheduleRejectionTerms =
+  /ZodError|issues|path|request\.body|safeParse|patientId|doctorUserId|assistantUserId|chairId|startsAt|endsAt|appointmentId|undefined|null|Запись вне расписания [^"]*:/i;
+const forbiddenSettingsRejectionTerms =
+  /ZodError|issues|path|request\.body|safeParse|staffId|chairId|workingHours|undefined|null|Нельзя сократить/i;
+
+function assertScheduleMutationRejection(response, label, expectedStatusCode, expectedCode, expectedReason, expectedMessageNeedle) {
+  assert(response.statusCode === expectedStatusCode, `${label} status mismatch: ${response.statusCode} ${response.body}`);
+  const payload = response.json();
+  assert(payload.code === expectedCode, `${label} code mismatch: ${response.body}`);
+  assert(payload.reason === expectedReason, `${label} reason mismatch: ${response.body}`);
+  assert(
+    typeof payload.message === "string" && payload.message.includes(expectedMessageNeedle),
+    `${label} readable bounded message mismatch: ${response.body}`
+  );
+  assert(!Object.hasOwn(payload, "error"), `${label} must not expose machine code as error field`);
+  assert(!forbiddenScheduleRejectionTerms.test(response.body), `${label} leaked raw schedule/schema detail: ${response.body}`);
+}
+
+function assertScheduleValidationRejection(response, label, expectedMessageNeedle) {
+  assert(response.statusCode === 400, `${label} status mismatch: ${response.statusCode} ${response.body}`);
+  const payload = response.json();
+  assert(payload.code === "AppointmentValidationError", `${label} code mismatch: ${response.body}`);
+  assert(typeof payload.message === "string" && payload.message.includes(expectedMessageNeedle), `${label} message mismatch: ${response.body}`);
+  assert(!Object.hasOwn(payload, "issues"), `${label} must not expose zod issues`);
+  assert(!Object.hasOwn(payload, "error"), `${label} must not expose machine code as error field`);
+  assert(!forbiddenScheduleRejectionTerms.test(response.body), `${label} leaked raw schedule/schema detail: ${response.body}`);
+}
+
+function assertSettingsMutationRejection(response, label, expectedStatusCode, expectedError, expectedReason, expectedMessageNeedle) {
+  assert(response.statusCode === expectedStatusCode, `${label} status mismatch: ${response.statusCode} ${response.body}`);
+  const payload = response.json();
+  assert(payload.error === expectedError, `${label} error code mismatch: ${response.body}`);
+  assert(payload.reason === expectedReason, `${label} reason mismatch: ${response.body}`);
+  assert(
+    typeof payload.message === "string" && payload.message.includes(expectedMessageNeedle),
+    `${label} readable bounded message mismatch: ${response.body}`
+  );
+  assert(!Object.hasOwn(payload, "issues"), `${label} must not expose zod issues`);
+  assert(payload.error !== payload.message, `${label} must not place operator copy in error`);
+  assert(!forbiddenSettingsRejectionTerms.test(response.body), `${label} leaked raw settings/schema detail: ${response.body}`);
+}
+
 function weekdayInTimeZone(date, timeZone) {
   const weekday = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(date);
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekday);
@@ -196,10 +244,10 @@ const invalidCalendarCreateResponse = await app.inject({
     reason: "Smoke: invalid calendar date must not normalize"
   }
 });
-assert(invalidCalendarCreateResponse.statusCode === 400, "appointment create must reject non-existent calendar dates before scheduling");
-assert(
-  invalidCalendarCreateResponse.json().issues?.some((issue) => issue.path?.includes("startsAt")),
-  "invalid calendar create response must point at startsAt"
+assertScheduleValidationRejection(
+  invalidCalendarCreateResponse,
+  "appointment create invalid calendar date",
+  "Запись не создана"
 );
 
 const invalidHourUpdateResponse = await app.inject({
@@ -210,10 +258,10 @@ const invalidHourUpdateResponse = await app.inject({
     endsAt: smokeAt(smokeWednesdayDate, "00:30")
   }
 });
-assert(invalidHourUpdateResponse.statusCode === 400, "appointment update must reject 24:00 normalization before merging existing schedule");
-assert(
-  invalidHourUpdateResponse.json().issues?.some((issue) => issue.path?.includes("startsAt")),
-  "invalid hour update response must point at startsAt"
+assertScheduleValidationRejection(
+  invalidHourUpdateResponse,
+  "appointment update invalid hour",
+  "Запись не обновлена"
 );
 
 const futureClinicBlockerId = "66666666-6666-4666-8666-666666666666";
@@ -240,13 +288,13 @@ const blockedClinicNarrowingResponse = await app.inject({
     scheduleDefaults
   }
 });
-assert(
-  blockedClinicNarrowingResponse.statusCode === 409,
-  `clinic schedule narrowing must block active future appointments: ${blockedClinicNarrowingResponse.statusCode}`
-);
-assert(
-  String(blockedClinicNarrowingResponse.json().error).includes("активная запись"),
-  "clinic schedule narrowing error must name active appointment conflict"
+assertSettingsMutationRejection(
+  blockedClinicNarrowingResponse,
+  "clinic schedule narrowing",
+  409,
+  "ClinicProfileMutationRejected",
+  "active_schedule_conflict",
+  "активные записи"
 );
 const futureClinicBlockerIndex = appointments.findIndex((appointment) => appointment.id === futureClinicBlockerId);
 if (futureClinicBlockerIndex >= 0) appointments.splice(futureClinicBlockerIndex, 1);
@@ -322,11 +370,7 @@ const blockedChairAppointmentResponse = await app.inject({
     reason: "Smoke: кабинет закрыт"
   }
 });
-assert(blockedChairAppointmentResponse.statusCode === 409, "appointment outside chair hours must be rejected");
-assert(
-  String(blockedChairAppointmentResponse.json().message).includes("расписания кресла"),
-  "chair schedule rejection must be readable"
-);
+assertScheduleMutationRejection(blockedChairAppointmentResponse, "appointment outside chair hours", 409, "AppointmentCreateRejected", "outside_operational_hours", "расписание");
 const allowedChairAppointmentResponse = await app.inject({
   method: "POST",
   url: "/api/appointments",
@@ -601,20 +645,16 @@ const invalidAppointmentTimeResponse = await app.inject({
 });
 assert(invalidAppointmentTimeResponse.statusCode === 409, "merged appointment time validation must reject start after existing end");
 const invalidAppointmentTimePayload = invalidAppointmentTimeResponse.json();
-assert(
-  invalidAppointmentTimePayload.code === "AppointmentUpdateRejected",
-  "schedule rejection must expose machine code in code field"
-);
-assert(
-  !Object.hasOwn(invalidAppointmentTimePayload, "error"),
-  "schedule rejection must not expose machine code as user-facing error"
-);
-assert(
-  typeof invalidAppointmentTimePayload.message === "string" &&
-    invalidAppointmentTimePayload.message.length > 0 &&
-    invalidAppointmentTimePayload.message !== "AppointmentUpdateRejected",
-  "schedule rejection must expose a readable message"
-);
+assertScheduleMutationRejection(invalidAppointmentTimeResponse, "merged appointment time validation", 409, "AppointmentUpdateRejected", "time_invalid", "окончания");
+
+const missingAppointmentUpdateResponse = await app.inject({
+  method: "PATCH",
+  url: "/api/appointments/11111111-1111-4111-8111-111111111111",
+  payload: {
+    reason: "Smoke missing appointment update"
+  }
+});
+assertScheduleMutationRejection(missingAppointmentUpdateResponse, "missing appointment update", 404, "AppointmentNotFound", "appointment_not_found", "Запись не найдена");
 
 const activeAppointmentPatientChangeResponse = await app.inject({
   method: "PATCH",
@@ -623,7 +663,7 @@ const activeAppointmentPatientChangeResponse = await app.inject({
     patientId: "e221bd35-55eb-4ad4-9c10-8770df08d6fb"
   }
 });
-assert(activeAppointmentPatientChangeResponse.statusCode === 409, "active visit appointment patient reassignment must be rejected");
+assertScheduleMutationRejection(activeAppointmentPatientChangeResponse, "active visit appointment patient reassignment", 409, "AppointmentUpdateRejected", "active_visit_locked", "открыт прием");
 
 const expandedScheduleDefaults = {
   workdayStart: "09:00",
@@ -707,15 +747,7 @@ const overlappingCreateAppointmentResponse = await app.inject({
     reason: "Smoke: пересечение новой записи"
   }
 });
-assert(overlappingCreateAppointmentResponse.statusCode === 409, "appointment create must reject overlaps");
-assert(
-  overlappingCreateAppointmentResponse.json().code === "AppointmentCreateRejected",
-  "appointment create rejection must expose machine code"
-);
-assert(
-  String(overlappingCreateAppointmentResponse.json().message ?? "").includes("пациента"),
-  "appointment overlap rejection must treat the patient as a hard schedule resource"
-);
+assertScheduleMutationRejection(overlappingCreateAppointmentResponse, "appointment create overlap", 409, "AppointmentCreateRejected", "resource_overlap", "занято");
 
 const patientPreferenceWarningResponse = await app.inject({
   method: "POST",
@@ -760,11 +792,7 @@ const missingAssistantNonSoloResponse = await app.inject({
     endsAt: smokeAt(smokeTuesdayDate, "12:30")
   }
 });
-assert(missingAssistantNonSoloResponse.statusCode === 409, "non-solo clinic must reject active future appointment without assistant");
-assert(
-  String(missingAssistantNonSoloResponse.json().message).includes("ассистент"),
-  "missing assistant rejection must be readable"
-);
+assertScheduleMutationRejection(missingAssistantNonSoloResponse, "non-solo missing assistant", 409, "AppointmentUpdateRejected", "resource_missing", "ассистент");
 
 const soloModeResponse = await app.inject({
   method: "POST",
@@ -816,13 +844,13 @@ const blockedStaffNarrowingResponse = await app.inject({
     }))
   }
 });
-assert(
-  blockedStaffNarrowingResponse.statusCode === 409,
-  `staff schedule narrowing must block active future appointments with 409: ${blockedStaffNarrowingResponse.statusCode}`
-);
-assert(
-  String(blockedStaffNarrowingResponse.json().error).includes("активная запись"),
-  "staff schedule narrowing error must name active appointment conflict"
+assertSettingsMutationRejection(
+  blockedStaffNarrowingResponse,
+  "staff schedule narrowing",
+  409,
+  "StaffScheduleRejected",
+  "active_schedule_conflict",
+  "активная запись"
 );
 
 const blockedChairNarrowingResponse = await app.inject({
@@ -837,13 +865,13 @@ const blockedChairNarrowingResponse = await app.inject({
     }))
   }
 });
-assert(
-  blockedChairNarrowingResponse.statusCode === 409,
-  `chair schedule narrowing must block active future appointments with 409: ${blockedChairNarrowingResponse.statusCode}`
-);
-assert(
-  String(blockedChairNarrowingResponse.json().error).includes("активная запись"),
-  "chair schedule narrowing error must name active appointment conflict"
+assertSettingsMutationRejection(
+  blockedChairNarrowingResponse,
+  "chair schedule narrowing",
+  409,
+  "ChairScheduleRejected",
+  "active_schedule_conflict",
+  "активная запись"
 );
 
 const overlappingFutureAppointmentResponse = await app.inject({
@@ -853,10 +881,11 @@ const overlappingFutureAppointmentResponse = await app.inject({
     status: "confirmed",
     startsAt: smokeAt(smokeTuesdayDate, "10:15"),
     endsAt: smokeAt(smokeTuesdayDate, "10:45"),
-    chairId: updatedAppointment.chairId
+    chairId: updatedAppointment.chairId,
+    assistantUserId: assistant.id
   }
 });
-assert(overlappingFutureAppointmentResponse.statusCode === 409, "future appointment overlap must be rejected");
+assertScheduleMutationRejection(overlappingFutureAppointmentResponse, "future appointment overlap", 409, "AppointmentUpdateRejected", "resource_overlap", "занято");
 
 const outsideFutureAppointmentResponse = await app.inject({
   method: "PATCH",
@@ -864,10 +893,11 @@ const outsideFutureAppointmentResponse = await app.inject({
   payload: {
     status: "confirmed",
     startsAt: smokeAt(smokeTuesdayDate, "13:30"),
-    endsAt: smokeAt(smokeTuesdayDate, "14:00")
+    endsAt: smokeAt(smokeTuesdayDate, "14:00"),
+    assistantUserId: assistant.id
   }
 });
-assert(outsideFutureAppointmentResponse.statusCode === 409, "future appointment outside clinic/staff hours must be rejected");
+assertScheduleMutationRejection(outsideFutureAppointmentResponse, "future appointment outside clinic/staff hours", 409, "AppointmentUpdateRejected", "outside_operational_hours", "расписание");
 
 const dashboardAfterExpandedSchedule = buildDashboard();
 const missingAssistantReadiness = dashboardAfterExpandedSchedule.appointmentReadiness.find(

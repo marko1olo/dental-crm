@@ -18,8 +18,9 @@ delete process.env.DENTAL_STATE_PERSISTENCE;
 const routePath = path.resolve("apps/api/dist/routes/settings.js");
 const scheduleRoutePath = path.resolve("apps/api/dist/routes/schedule.js");
 const patientRoutePath = path.resolve("apps/api/dist/routes/patients.js");
+const persistentStatePath = path.resolve("apps/api/dist/persistentState.js");
 
-if (!existsSync(routePath) || !existsSync(scheduleRoutePath) || !existsSync(patientRoutePath)) {
+if (!existsSync(routePath) || !existsSync(scheduleRoutePath) || !existsSync(patientRoutePath) || !existsSync(persistentStatePath)) {
   throw new Error("Build API first: npm run build");
 }
 
@@ -28,6 +29,7 @@ const Fastify = requireFromApi("fastify");
 const { registerSettingsRoutes } = await import(pathToFileURL(routePath).href);
 const { registerScheduleRoutes } = await import(pathToFileURL(scheduleRoutePath).href);
 const { registerPatientRoutes } = await import(pathToFileURL(patientRoutePath).href);
+const { getPersistentStateIntegrityReport, buildPersistentStateExport } = await import(pathToFileURL(persistentStatePath).href);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -601,6 +603,23 @@ try {
   assert(legacyReloaded.dicomWebEndpointUrl === "http://127.0.0.1:8042/dicom-web", "legacy DICOMweb URL default mismatch");
   assert(legacyReloaded.ohifBaseUrl === "http://127.0.0.1:3000", "legacy OHIF URL default mismatch");
   assert(Number.isFinite(Date.parse(legacyReloaded.savedAt)), "legacy savedAt default missing");
+
+  writeFileSync(stateFilePath, "{ invalid dental state json", "utf8");
+  const brokenIntegrity = getPersistentStateIntegrityReport();
+  const brokenExport = buildPersistentStateExport();
+  const brokenIntegrityText = JSON.stringify({ brokenIntegrity, brokenExport });
+  assert(
+    brokenIntegrity.warnings.some((warning) => warning.includes("Файл состояния не читается")),
+    "broken persistence state must return an operator-readable warning"
+  );
+  assert(
+    brokenExport.error?.includes("Файл состояния не читается"),
+    "broken persistence export must return an operator-readable error"
+  );
+  assert(
+    !/Unexpected token|SyntaxError|state_file_parse_failed|state_file_unreadable|JSON\.parse/i.test(brokenIntegrityText),
+    "broken persistence state must not expose parser errors or internal diagnostics"
+  );
 
   console.log(JSON.stringify({ ok: true, stateFileExists: true, clinicName: reloaded.clinicName, reloadMode: reloaded.reloadMode }));
 } finally {

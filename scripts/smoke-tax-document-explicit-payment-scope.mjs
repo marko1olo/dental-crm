@@ -27,6 +27,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function documentErrorText(response) {
+  const body = response.json();
+  return String(body.message ?? body.error ?? "");
+}
+
 const app = Fastify({ logger: false });
 
 try {
@@ -69,9 +74,9 @@ try {
     }
   });
   assert(missingSelectionResponse.statusCode === 409, `tax certificate without selected payments must be 409, got ${missingSelectionResponse.statusCode}`);
+  const missingSelectionError = documentErrorText(missingSelectionResponse);
   assert(
-    String(missingSelectionResponse.json().error).includes("явно") ||
-      String(missingSelectionResponse.json().error).includes("фискальные"),
+    missingSelectionError.includes("явно") || missingSelectionError.includes("фискальные"),
     "missing selection block must explain explicit fiscal receipt selection"
   );
 

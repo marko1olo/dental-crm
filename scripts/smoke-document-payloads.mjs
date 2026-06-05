@@ -487,7 +487,7 @@ const payload = documentPayloadSchema.parse({
     recipientIdentityDocument: "паспорт 36 00 123456",
     recipientAuthority: "пациент лично",
     releaseChannel: "dicom_archive",
-    documentTypes: ["Выписка из медицинской карты", "DICOM-архив КТ"],
+    documentTypes: ["Выписка из медицинской карты", "Архив исходных снимков КТ"],
     periodStart: "2026-05-01",
     periodEnd: "2026-05-18",
     deliveredAt: "18.05.2026 12:00",
@@ -513,7 +513,7 @@ const payload = documentPayloadSchema.parse({
     thirdPartyDataChecked: true
   },
   medicalRecordCopyRequest: {
-    requestedDocumentTypes: ["Выписка из медицинской карты", "DICOM-архив КТ"],
+    requestedDocumentTypes: ["Выписка из медицинской карты", "Архив исходных снимков КТ"],
     periodStart: "2026-05-01",
     periodEnd: "2026-05-18",
     requestedFormat: "dicom_archive",
@@ -523,7 +523,7 @@ const payload = documentPayloadSchema.parse({
     representativeAuthorityDocument: null,
     requestedAt: "18.05.2026 12:10",
     contactForDelivery: "+7 900 000-00-00, защищенный портал",
-    specialInstructions: "подготовить исходные DICOM-файлы при наличии",
+    specialInstructions: "подготовить исходные файлы снимков при наличии",
     includeDicomSourceData: true,
     identityVerified: true,
     thirdPartyDataExclusionAcknowledged: true
@@ -932,18 +932,18 @@ const cases = [
     fragments: [
       "Направление на рентген/КЛКТ",
       "Клиническая привязка направления",
-      "КЛКТ / CBCT",
+      "КЛКТ / КТ",
       "36 зуб, нижняя челюсть слева",
       "нижнечелюстного канала",
       "окклюзионная",
-      "DICOM-экспорт"
+      "исходные файлы снимков"
     ],
     missingReason: "структурированные данные"
   },
   {
     kind: "medical_document_release_receipt",
     payload: { medicalDocumentReleaseReceipt: payload.medicalDocumentReleaseReceipt },
-    fragments: ["Расписка о выдаче медицинской документации", "DICOM-архив КТ", "пациент лично", "лишние данные третьих лиц исключены"],
+    fragments: ["Расписка о выдаче медицинской документации", "Архив исходных снимков КТ", "пациент лично", "лишние данные третьих лиц исключены"],
     missingReason: "структурированные данные"
   },
   {
@@ -976,7 +976,7 @@ const cases = [
   {
     kind: "medical_record_copy_request",
     payload: { medicalRecordCopyRequest: payload.medicalRecordCopyRequest },
-    fragments: ["Запрос на копии медицинской документации", "DICOM-архив КТ", "защищенный портал", "исходные DICOM-файлы"],
+    fragments: ["Запрос на копии медицинской документации", "Архив исходных снимков КТ", "защищенный портал", "исходные файлы снимков"],
     missingReason: "структурированные данные"
   },
   {

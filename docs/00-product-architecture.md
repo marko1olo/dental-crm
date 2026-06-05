@@ -138,6 +138,7 @@ MVP must support one small dental cabinet with laptop + phones:
 - payment reminders tied to open balances and documents;
 - post-visit instructions tied to visits and assistants;
 - recall tasks for follow-up visits;
+- completion requires a narrow outcome (`no answer`, `callback`, `reschedule`, `promised payment`, or `document pickup`) so staff cannot close communication tasks as generic done;
 - reusable channel templates for phone, SMS, WhatsApp, Telegram, email, and in-person instructions;
 - communication events for audit and handoff between administrator, assistant, doctor, and manager.
 
@@ -284,6 +285,11 @@ Prototype persistence rule:
 - current prototype writes a SHA-256 checksum and rotates local JSON backups before overwrite;
 - Settings -> Audit exposes save timestamp, checksum presence, backup count, latest backup timestamp, backup readability/checksum verification, and emergency JSON export;
 - `/api/system/persistence/verify` and `/api/system/persistence/export` are owner/admin continuity tools for MVP testing only; they are not a substitute for authenticated tenant backups or a restore workflow;
+- `/api/health` is a public liveness endpoint only and must not expose persistence, backup, state-file, checksum, or local path metadata; Settings/Audit reads those details through the guarded persistence verify route;
+- access secrets are domain-scoped even in the prototype: `DENTE_CLINICAL_ADMIN_SECRET` is the only fallback for clinical patients, documents, imaging, speech, imports, and emergency state export; `DENTE_SCHEDULE_ADMIN_SECRET` unlocks appointment mutations; `DENTE_SETTINGS_ADMIN_SECRET` unlocks settings routes; `DENTE_TELEGRAM_ADMIN_SECRET` unlocks Telegram control-plane routes. A deployment may set the same value deliberately, but the API must not silently promote a Telegram/settings/schedule secret into another domain;
+- the web app mirrors this boundary with separate in-memory sessions and password-input drafts for clinical, schedule, settings, and Telegram secrets. A successful clinical/global unlock can seed all four domains for a one-secret deployment; fixed Schedule, Settings, and Telegram panels pass their target access domain explicitly, update only that domain, clear only the relevant draft, and do not reload or clear clinical dashboard state;
+- Telegram control-plane validation keeps internal error codes for contracts but translates URL and signed-button failure details into operator-readable Russian messages before they reach the browser. Raw validation reason tokens and callback secret env names are not user-facing copy;
+- Telegram outbound delivery keeps stable machine block reasons for contracts but translates transport failures into Russian operator warnings/messages before they reach the browser or audit UI. Rate-limit delay is carried as structured `retryAfterSeconds`, not as a raw warning token;
 - PostgreSQL tenant storage, backups, restore, migrations, and real auth remain mandatory before clinic deployment.
 
 ## UX Rules
@@ -374,6 +380,14 @@ Communication rule:
 - each task has patient, role owner, channel, intent, status, priority, due time, body, and optional appointment/visit/document links;
 - completing a task creates a communication event and audit entry;
 - message templates can prefill text, but sending final medical advice still needs clinic-controlled wording and human review.
+
+Operator-facing API error rule:
+- browser-visible API errors must keep stable machine codes in `code`/`error` fields where needed, but `message`, `warnings`, and `nextAction` must be clinic-readable;
+- raw env keys, header names, URL parser text, fetch/AbortError text, spawn exception text, browser headless labels, and internal validation reason tokens belong in server logs/tests/docs, not operator copy;
+- global API validation fallback must never return zod `issues`, schema paths, DTO field names, or parser tokens; route-owned validation copy is preferred, and the global fallback is the last safety boundary for missed direct parses;
+- the API server module exposes an app factory for runtime smokes and integration tests; the HTTP listener and Telegram due worker start only through the entry point path;
+- persistence/readiness reports must translate missing, unreadable, and checksum-failed state files into operator actions; JSON parser text and bounded diagnostic codes are not browser-visible warning copy;
+- Settings/Audit can say "server settings", "local module", "browser for document printing", or "tax-office code"; it must not train clinic staff to memorize deployment variable names.
 
 For older doctors:
 - no hidden critical actions;

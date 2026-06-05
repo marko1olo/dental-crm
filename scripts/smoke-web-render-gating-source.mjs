@@ -15,6 +15,7 @@ const requiredSnippets = [
   '{currentView === "finance" ? (',
   '{currentView === "communications" ? (',
   '{["documents", "finance", "communications", "settings"].includes(currentView) ? (',
+  '<details className="compliance-bar" aria-label="Контроль">',
   '{currentView === "settings" ? ('
 ];
 
@@ -27,7 +28,7 @@ const requiredSettingsTabSnippets = [
   '{settingsTab === "prices" ? (\n          <section className="pricelist-studio"',
   '{settingsTab === "sources" ? (\n          <section className="connector-grid"',
   '{settingsTab === "sources" ? (\n          <section className="dicom-capability-panel"',
-  '{settingsTab === "sources" && dicomViewerToolStateBundle ? (\n            <section className="dicom-toolstate-result"',
+  '{settingsTab === "sources" && typedDicomViewerToolStateBundle ? (\n            <section className="dicom-toolstate-result"',
   '{settingsTab === "sources" ? (\n          <section className="integration-presets"',
   '{settingsTab === "ai" ? (\n          <section className="recognition-lab"',
   '{settingsTab === "imports" ? (\n          <section className="import-studio smart-import-studio"',
@@ -59,13 +60,13 @@ const forbiddenSettingsTabSnippets = [
   'hidden={settingsTab !== "imports" && settingsTab !== "sources"}',
   'className="clinic-config" aria-label="Аккаунт клиники и команда" hidden=',
   'className="access-settings" aria-label="Доступы, рабочие профили и роли" hidden=',
-  'className="telegram-settings" aria-label="Telegram DENTE" hidden=',
+  'className="telegram-settings" aria-label="Telegram-бот клиники" hidden=',
   'className="protocol-settings" aria-label="Библиотека клинических протоколов" hidden=',
   'className="rule-studio" aria-label="Редактор клинических правил" hidden=',
   'className="pricelist-studio" aria-label="Разбор прайс-листа клиники" hidden=',
   'className="connector-grid" aria-label="Интеграции снимков" hidden=',
-  'className="dicom-capability-panel" aria-label="Рентген и DICOM-просмотрщик" hidden=',
-  'className="dicom-toolstate-result" aria-label="Пакет состояния инструментов DICOM-просмотрщика" hidden=',
+  'className="dicom-capability-panel" aria-label="Рентген и КТ-просмотрщик" hidden=',
+  'className="dicom-toolstate-result" aria-label="Состояние инструментов КТ-просмотрщика" hidden=',
   'className="integration-presets" aria-label="Пресеты миграции и внешних систем" hidden=',
   'className="recognition-lab" aria-label="ИИ-распознавание диктовки, журнала и снимков" hidden=',
   'className="import-studio smart-import-studio" aria-label="Умный разбор смешанной выгрузки" hidden=',
@@ -74,14 +75,25 @@ const forbiddenSettingsTabSnippets = [
   'className="import-studio" aria-label="Миграция из старой программы" hidden='
 ];
 
+function countOccurrences(source, snippet) {
+  return source.split(snippet).length - 1;
+}
+
 const missingRequired = requiredSnippets.filter((snippet) => !appSource.includes(snippet));
 const missingSettingsTabs = requiredSettingsTabSnippets.filter((snippet) => !settingsSource.includes(snippet));
 const forbiddenPresent = forbiddenSnippets.filter((snippet) => appSource.includes(snippet));
 const forbiddenSettingsTabsPresent = forbiddenSettingsTabSnippets.filter(
   (snippet) => appSource.includes(snippet) || settingsSource.includes(snippet)
 );
+const appNoticeAlertCount = countOccurrences(appSource, '<section className="app-notice" role="alert" aria-live="assertive">');
 
-if (missingRequired.length || missingSettingsTabs.length || forbiddenPresent.length || forbiddenSettingsTabsPresent.length) {
+if (
+  missingRequired.length ||
+  missingSettingsTabs.length ||
+  forbiddenPresent.length ||
+  forbiddenSettingsTabsPresent.length ||
+  appNoticeAlertCount < 2
+) {
   console.error(
     JSON.stringify(
       {
@@ -89,7 +101,8 @@ if (missingRequired.length || missingSettingsTabs.length || forbiddenPresent.len
         missingRequired,
         missingSettingsTabs,
         forbiddenPresent,
-        forbiddenSettingsTabsPresent
+        forbiddenSettingsTabsPresent,
+        appNoticeAlertCount
       },
       null,
       2
@@ -103,7 +116,8 @@ console.log(
     {
       ok: true,
       gatedTopLevelSections: requiredSnippets.length,
-      gatedSettingsSections: requiredSettingsTabSnippets.length
+      gatedSettingsSections: requiredSettingsTabSnippets.length,
+      appNoticeAlerts: appNoticeAlertCount
     },
     null,
     2

@@ -39,6 +39,7 @@ import type {
   CommunicationEvent,
   CommunicationSummary,
   CommunicationTask,
+  CommunicationTaskOutcome,
   CommunicationTemplate,
   CompleteCommunicationTaskInput,
   CreateAiRecognitionJobInput,
@@ -838,7 +839,7 @@ export const communicationTemplates: CommunicationTemplate[] = [
   {
     id: "tpl-post-visit",
     organizationId,
-    title: "DENTE: безопасная ссылка на памятку после приема",
+    title: "DENTE: ссылка на памятку после приема",
     channel: "telegram",
     intent: "post_visit_instruction",
     audienceRole: "assistant",
@@ -873,8 +874,8 @@ export const communicationTasks: CommunicationTask[] = [
     status: "queued",
     priority: "high",
     dueAt: "2026-05-12T10:20:00+04:00",
-    title: "Отправить безопасную ссылку на памятку после приема",
-    body: "Памятка после приема готова в защищенном портале DENTE. Не включать диагноз, номера зубов, снимки и детали лечения в Telegram.",
+    title: "Отправить ссылку на памятку после приема",
+    body: "Памятка после приема готова в защищенном портале клиники. Не включать диагноз, номера зубов, снимки и детали лечения в Telegram.",
     lastEventAt: null,
     createdAt: nowIso
   },
@@ -979,7 +980,7 @@ export const imagingStudies: ImagingStudy[] = [
     region: "нижняя челюсть слева",
     capturedAt: "2026-05-12T08:42:00+04:00",
     sourceKind: "sensor_bridge",
-    sourceName: "RVG sensor bridge",
+    sourceName: "RVG-датчик",
     status: "available",
     aiSummary: "Черновик: область 36, контроль кариозной полости. Требует проверки врача.",
     previewUrl: "/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg",
@@ -996,7 +997,7 @@ export const imagingStudies: ImagingStudy[] = [
     region: "обе челюсти",
     capturedAt: "2026-05-10T15:20:00+04:00",
     sourceKind: "dicom_file",
-    sourceName: "OPG DICOM import",
+    sourceName: "Импорт ОПТГ/снимков",
     status: "needs_review",
     aiSummary: "Черновик: панорамный обзор, проверить 36/46 и ретинированные восьмые зубы.",
     previewUrl: "/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg",
@@ -1013,7 +1014,7 @@ export const imagingStudies: ImagingStudy[] = [
     region: "профиль черепа",
     capturedAt: "2026-05-10T15:24:00+04:00",
     sourceKind: "dicom_file",
-    sourceName: "Ceph DICOM import",
+    sourceName: "Импорт ТРГ/снимков",
     status: "needs_review",
     aiSummary: "Черновик: телерентгенограмма добавлена для ортодонтического анализа. Разметку и вывод проверяет врач.",
     previewUrl: "/api/imaging/studies/e0d93a8c-5f3b-49d6-bc21-0b5ab45eb6fa/preview.svg",
@@ -1030,9 +1031,9 @@ export const imagingStudies: ImagingStudy[] = [
     region: "нижняя челюсть справа",
     capturedAt: "2026-05-09T11:30:00+04:00",
     sourceKind: "pacs",
-    sourceName: "PACS / DICOMweb",
+    sourceName: "Архив снимков клиники",
     status: "available",
-    aiSummary: "Черновик: КТ-серия подключена, полноценный 3D viewer будет отдельным модулем.",
+    aiSummary: "Черновик: КЛКТ/КТ-серия подключена, полноценный 3D-просмотрщик будет отдельным модулем.",
     previewUrl: "/api/imaging/studies/eb7bc26d-70df-4996-89db-ccbb910f82d0/preview.svg",
     viewerUrl: "/api/imaging/studies/eb7bc26d-70df-4996-89db-ccbb910f82d0/preview.svg"
   }
@@ -2748,7 +2749,7 @@ const protocolTemplateSeeds: Array<Omit<ProtocolTemplate, "updatedAt">> = [
     treatmentPlanTemplate: "Передать врачу как описание/черновик, отметить ограничения и необходимость клинической корреляции.",
     requiredDocuments: ["completed_works_act"],
     suggestedImaging: ["periapical", "opg", "cbct"],
-    safetyWarnings: ["AI-описание снимка не равно диагнозу.", "CBCT серии требуют viewer и метаданных."]
+    safetyWarnings: ["AI-описание снимка не равно диагнозу.", "КЛКТ/КТ-серии требуют просмотрщик и метаданные."]
   }
 ];
 
@@ -2826,7 +2827,7 @@ export const integrationPresets: IntegrationPreset[] = [
     vendor: "Open Dental",
     category: "dental_mis",
     status: "planned_connector",
-    supportedInputs: ["CSV", "database dump через адаптер", "image folder manifest"],
+    supportedInputs: ["CSV", "выгрузка базы через адаптер", "список папки снимков"],
     capabilities: ["patients", "appointments", "visits", "services", "payments", "imaging"],
     migrationNotes: [
       "Требуется нормализация терминов, кодов услуг и русских документов.",
@@ -2844,7 +2845,7 @@ export const integrationPresets: IntegrationPreset[] = [
     capabilities: ["patients", "appointments", "services", "payments"],
     migrationNotes: [
       "Колонки распознаются по русским и английским заголовкам, затем показываются дубли и предупреждения.",
-      "Это самый безопасный старт для маленького кабинета без старой МИС."
+      "Это самый простой старт для маленького кабинета без старой МИС."
     ],
     riskLevel: "low"
   },
@@ -2865,28 +2866,28 @@ export const integrationPresets: IntegrationPreset[] = [
   {
     id: "preset-imaging-folder",
     title: "RVG / ОПТГ / КТ папка обмена",
-    vendor: "DICOM/JPG/PNG folder",
+    vendor: "папка КТ/JPG/PNG",
     category: "imaging_system",
     status: "usable_now",
-    supportedInputs: ["DICOM", "JPG", "PNG", "TIFF", "BMP", "CSV manifest", "серверная папка"],
+    supportedInputs: ["КТ/серии", "JPG", "PNG", "TIFF", "BMP", "CSV список", "серверная папка"],
     capabilities: ["imaging", "patients", "audit"],
     migrationNotes: [
-      "Сканирование папки read-only: файлы сначала превращаются в preview-строки, затем привязываются к пациентам.",
+      "Сканирование папки идет только на чтение: файлы сначала превращаются в проверяемые строки, затем привязываются к пациентам.",
       "Пути с пробелами и Windows-диски сохраняются без разрезания строки."
     ],
     riskLevel: "low"
   },
   {
     id: "preset-pacs-dicomweb",
-    title: "PACS / DICOMweb",
-    vendor: "PACS server",
+    title: "Архив снимков клиники",
+    vendor: "сервер снимков",
     category: "imaging_system",
     status: "planned_connector",
-    supportedInputs: ["DICOMweb", "PACS query", "study UID", "series UID"],
+    supportedInputs: ["адрес архива снимков", "поиск серий", "код исследования", "код серии"],
     capabilities: ["imaging", "patients", "audit"],
     migrationNotes: [
       "Будущий коннектор должен забирать исследования по пациенту без копирования файлов руками.",
-      "CBCT и серии нельзя превращать в одну картинку: нужен viewer/метаданные и врачебная проверка."
+      "КЛКТ/КТ и серии нельзя превращать в одну картинку: нужен просмотрщик, метаданные и врачебная проверка."
     ],
     riskLevel: "medium"
   },
@@ -2914,7 +2915,7 @@ export const speechProviders: SpeechProvider[] = [
     mode: "browser_live",
     recommendedFor: ["быстрый старт", "нулевая нагрузка на сервер", "черновик администратора"],
     strengths: [
-      "не требует серверного ключа",
+      "не требует серверного подключения",
       "может подставлять текст сразу в черновик",
       "подходит как первый слой, если браузер поддерживает ru-RU"
     ],
@@ -2923,8 +2924,8 @@ export const speechProviders: SpeechProvider[] = [
       "нельзя считать медицински надежным единственным источником",
       "в офлайне работает только при наличии локальной поддержки браузера"
     ],
-    costNote: "Без API-ключа и оплаты сервера; фактическая доступность зависит от браузера.",
-    envVars: [],
+    costNote: "Без серверного подключения и оплаты сервера; фактическая доступность зависит от браузера.",
+    setupSettingsCount: 0,
     sourceUrl: "https://developer.mozilla.org/docs/Web/API/Web_Speech_API"
   },
   {
@@ -2932,19 +2933,19 @@ export const speechProviders: SpeechProvider[] = [
     title: "Groq Whisper",
     status: "needs_server_key",
     mode: "server_upload",
-    recommendedFor: ["первый облачный STT", "быстрая диктовка врача", "русский и смешанная речь"],
+    recommendedFor: ["первое облачное распознавание", "быстрая диктовка врача", "русский и смешанная речь"],
     strengths: [
-      "OpenAI-compatible audio endpoint",
+      "совместимый серверный прием аудиофрагментов",
       "быстрые Whisper large-v3 / large-v3-turbo модели",
       "поддерживает word/segment timestamps для контроля качества"
     ],
     limits: [
-      "ключ должен жить только на API-сервере",
-      "аудио уходит внешнему провайдеру",
-      "длинные записи нужно резать на безопасные фрагменты"
+      "серверный доступ должен оставаться только на сервере клиники",
+      "аудио уходит во внешний серверный контур",
+      "длинные записи нужно резать на короткие фрагменты"
     ],
-    costNote: "Есть бесплатный старт GroqCloud; docs указывают лимит загрузки 25MB на free tier для STT.",
-    envVars: ["GROQ_API_KEYS", "GROQ_API_KEY", "DENTAL_SPEECH_PROVIDER=groq"],
+    costNote: "Есть бесплатный старт GroqCloud; официальные документы указывают лимит загрузки 25MB на бесплатном уровне для распознавания речи.",
+    setupSettingsCount: 3,
     sourceUrl: "https://console.groq.com/docs/speech-to-text"
   },
   {
@@ -2964,7 +2965,7 @@ export const speechProviders: SpeechProvider[] = [
       "raw transcript должен храниться рядом с правленным черновиком"
     ],
     costNote: "Не бесплатный основной контур; полезен, если OpenAI worker уже используется для аккуратной правки.",
-    envVars: ["OPENAI_API_KEYS", "OPENAI_API_KEY", "DENTAL_SPEECH_PROVIDER=openai"],
+    setupSettingsCount: 3,
     sourceUrl: "https://platform.openai.com/docs/guides/speech-to-text"
   },
   {
@@ -2974,17 +2975,17 @@ export const speechProviders: SpeechProvider[] = [
     mode: "server_streaming",
     recommendedFor: ["почти realtime", "помощник у кресла", "сетевые клиники"],
     strengths: [
-      "есть streaming и pre-recorded STT",
+      "есть потоковое распознавание и обработка готовых записей",
       "подходит для живых подсказок и агентских сценариев",
       "поддерживает функции вроде smart formatting и diarization"
     ],
     limits: [
       "для русского нужно сверять актуальную модель и язык",
-      "сложнее MVP, чем chunk upload",
+      "сложнее первого запуска, чем отправка короткими фрагментами",
       "нужен отдельный контроль соединений и ретраев"
     ],
     costNote: "Официальная pricing-страница показывает free credit для старта, затем pay-as-you-go.",
-    envVars: ["DEEPGRAM_API_KEYS", "DEEPGRAM_API_KEY", "DENTAL_SPEECH_PROVIDER=deepgram"],
+    setupSettingsCount: 3,
     sourceUrl: "https://developers.deepgram.com/docs/stt/getting-started"
   },
   {
@@ -3004,7 +3005,7 @@ export const speechProviders: SpeechProvider[] = [
       "медицинская приватность требует отдельного договора и настроек"
     ],
     costNote: "Есть free/start credits по официальным страницам; перед продакшеном проверить текущие лимиты аккаунта.",
-    envVars: ["ASSEMBLYAI_API_KEYS", "ASSEMBLYAI_API_KEY", "DENTAL_SPEECH_PROVIDER=assemblyai"],
+    setupSettingsCount: 3,
     sourceUrl: "https://www.assemblyai.com/docs/"
   },
   {
@@ -3012,10 +3013,10 @@ export const speechProviders: SpeechProvider[] = [
     title: "Cloudflare Workers AI Whisper",
     status: "needs_server_key",
     mode: "server_upload",
-    recommendedFor: ["edge-proxy", "легкий сервер", "экспериментальный дешёвый контур"],
+    recommendedFor: ["легкий пограничный шлюз", "легкий сервер", "экспериментальный дешёвый контур"],
     strengths: [
       "Whisper доступен как Workers AI model",
-      "можно вынести STT ближе к пользователю",
+      "можно вынести распознавание ближе к пользователю",
       "подходит для отдельного edge-шлюза без нагрузки на основной API"
     ],
     limits: [
@@ -3024,7 +3025,7 @@ export const speechProviders: SpeechProvider[] = [
       "не заменяет локальный офлайн-контур"
     ],
     costNote: "Стоимость и квоты зависят от Cloudflare Workers AI аккаунта; выгодно как edge-шлюз, не как офлайн.",
-    envVars: ["CLOUDFLARE_API_TOKENS", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "DENTAL_SPEECH_PROVIDER=cloudflare"],
+    setupSettingsCount: 4,
     sourceUrl: "https://developers.cloudflare.com/workers-ai/models/whisper"
   },
   {
@@ -3040,11 +3041,11 @@ export const speechProviders: SpeechProvider[] = [
     ],
     limits: [
       "нужны Azure Speech resource, регион, ключ и юридическая проверка обработки медданных",
-      "прямой коннектор не включен в MVP-шлюз, сначала используем каталог и policy",
+      "прямое подключение не включено в текущий шлюз, сначала используем каталог и правила выбора",
       "для врача не должен появляться отдельный выбор Azure на приеме"
     ],
     costNote: "Microsoft указывает free audio hours для Speech-to-Text; перед production нужно проверить регион, F0 quotas и договор.",
-    envVars: ["AZURE_SPEECH_KEYS", "AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION", "DENTAL_SPEECH_PROVIDER=azure"],
+    setupSettingsCount: 4,
     sourceUrl: "https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/"
   },
   {
@@ -3054,17 +3055,17 @@ export const speechProviders: SpeechProvider[] = [
     mode: "server_upload",
     recommendedFor: ["free quota проверка", "Google Workspace клиники", "длинная дорожная карта"],
     strengths: [
-      "официальный STT API с большим количеством языков и моделей",
+      "официальный API распознавания речи с большим количеством языков и моделей",
       "документация указывает бесплатную квоту при включенном billing",
       "может быть полезен для клиник, уже сидящих на Google Cloud"
     ],
     limits: [
       "нужен billing/project/service account, ключи не должны попадать в клиент",
-      "прямой коннектор не включен в MVP-шлюз",
+      "прямое подключение не включено в текущий шлюз",
       "медицинская приватность и регион обработки требуют отдельного решения"
     ],
     costNote: "Google pricing показывает free quota для начальных минут, затем поминутную оплату и возможные доп. расходы GCS.",
-    envVars: ["GOOGLE_API_KEYS", "GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_API_KEY", "DENTAL_SPEECH_PROVIDER=google"],
+    setupSettingsCount: 4,
     sourceUrl: "https://cloud.google.com/speech-to-text/pricing"
   },
   {
@@ -3072,19 +3073,19 @@ export const speechProviders: SpeechProvider[] = [
     title: "Hugging Face ASR / Inference Providers",
     status: "needs_server_key",
     mode: "server_upload",
-    recommendedFor: ["эксперименты", "open-source модели", "быстрое сравнение ASR"],
+    recommendedFor: ["эксперименты", "open-source модели", "быстрое сравнение распознавания"],
     strengths: [
-      "единый доступ к множеству speech-to-text моделей и провайдеров",
-      "удобно сравнивать open-source ASR без собственного GPU на старте",
+      "единый доступ к множеству моделей распознавания речи и вычислительных контуров",
+      "удобно сравнивать open-source распознавание без собственного GPU на старте",
       "может стать research-контуром для выбора локальной модели"
     ],
     limits: [
-      "качество, лимиты и стоимость зависят от выбранного inference provider",
+      "качество, лимиты и стоимость зависят от выбранного вычислительного контура",
       "не медицинский контур по умолчанию, нужна проверка приватности и хранения",
       "для production лучше вынести в отдельный server worker с явными лимитами"
     ],
-    costNote: "Есть free/community пути и платные inference providers; использовать как research, не как единственный медицинский STT.",
-    envVars: ["HUGGINGFACE_API_TOKENS", "HUGGINGFACE_API_TOKEN", "HF_TOKEN", "DENTAL_SPEECH_PROVIDER=huggingface"],
+    costNote: "Есть бесплатные/community пути и платные вычислительные контуры; использовать как research, не как единственный медицинский контур распознавания.",
+    setupSettingsCount: 4,
     sourceUrl: "https://huggingface.co/docs/inference-providers/index"
   },
   {
@@ -3100,11 +3101,11 @@ export const speechProviders: SpeechProvider[] = [
     ],
     limits: [
       "поведение офлайна и приватность зависят от ОС, языка, устройства и установленных моделей",
-      "нужна отдельная native-реализация, браузерный MVP ее не заменяет",
+      "нужна отдельная мобильная реализация, браузерный прототип ее не заменяет",
       "для ЭМК все равно нужен deterministic parser, raw transcript и врачебная проверка"
     ],
-    costNote: "Без нашего STT API-счета; реальная доступность зависит от iOS/Android и политики устройства.",
-    envVars: [],
+    costNote: "Без нашего API-счета распознавания; реальная доступность зависит от iOS/Android и политики устройства.",
+    setupSettingsCount: 0,
     sourceUrl: "https://developer.android.com/reference/android/speech/SpeechRecognizer"
   },
   {
@@ -3112,19 +3113,19 @@ export const speechProviders: SpeechProvider[] = [
     title: "Local Whisper.cpp",
     status: "planned_local",
     mode: "local_worker",
-    recommendedFor: ["офлайн-кабинет", "desktop/mobile shell", "максимальная приватность"],
+    recommendedFor: ["офлайн-кабинет", "настольное или мобильное приложение", "максимальная приватность"],
     strengths: [
       "работает локально без отправки аудио в облако",
       "есть tiny/base/small/medium/large модели под разные устройства",
-      "подходит для будущего Tauri/Electron/нативного bridge"
+      "подходит для будущего настольного или мобильного модуля"
     ],
     limits: [
-      "для чистого браузерного MVP тяжелее по памяти и установке",
+      "для чистого браузерного прототипа тяжелее по памяти и установке",
       "качество зависит от модели и железа",
       "нужен отдельный installer/model manager"
     ],
-    costNote: "Open-source без API-оплаты; платим установкой, моделью, CPU/GPU и поддержкой локального bridge.",
-    envVars: [],
+    costNote: "Open-source без API-оплаты; платим установкой, моделью, CPU/GPU и поддержкой локального модуля.",
+    setupSettingsCount: 0,
     sourceUrl: "https://github.com/ggml-org/whisper.cpp"
   },
   {
@@ -3135,7 +3136,7 @@ export const speechProviders: SpeechProvider[] = [
     recommendedFor: ["офлайн-команды", "дешевые устройства", "локальный сервер клиники"],
     strengths: [
       "offline toolkit с Node/Python/Java/C# bindings",
-      "малые модели и streaming API",
+      "малые модели и потоковый API",
       "подходит для команд и регулярных фраз без облака"
     ],
     limits: [
@@ -3144,7 +3145,7 @@ export const speechProviders: SpeechProvider[] = [
       "медицинские термины требуют кастомного словаря"
     ],
     costNote: "Open-source/offline без API-оплаты; хорош для команд и дешевого локального сервера.",
-    envVars: [],
+    setupSettingsCount: 0,
     sourceUrl: "https://github.com/alphacep/vosk-api"
   }
 ];
@@ -3349,6 +3350,7 @@ function cloneDicomWorkbenchManifestForServerStorage(
   clone.toolStateBundle.warnings = redactDicomWarningList(clone.toolStateBundle.warnings);
   clone.toolStateBundle.annotations = clone.toolStateBundle.annotations.map((annotation) => ({
     ...annotation,
+    referencedImageId: redactDicomReferenceId(annotation.referencedImageId),
     warnings: redactDicomWarningList(annotation.warnings)
   }));
   return clone;
@@ -3365,7 +3367,7 @@ function sanitizeDicomWorkbenchBundleForServerStorage(bundle: DicomWorkbenchBund
     warnings: Array.from(
       new Set([
         ...redactDicomWarningList(bundle.warnings),
-        "Серверный пакет скрывает локальные пути DICOM; перед загрузкой пикселей переподключите папку или устройство на рабочей станции."
+        "Серверный пакет скрывает локальные пути снимков; перед загрузкой пикселей переподключите папку или устройство на рабочей станции."
       ])
     ).slice(0, 16)
   };
@@ -4176,7 +4178,7 @@ function normalizeDenteTelegramLedgerOptions<TStatus extends string>(
 
 export function createDenteTelegramLinkCode(input: CreateDenteTelegramLinkCodeInput & { botUsername?: string | null }): DenteTelegramLinkCodeCreated {
   if (!telegramChatEncryptionReady()) {
-    throw new Error("DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY не настроен; одноразовые коды Telegram нельзя выпускать без шифрования chat ref.");
+    throw new Error("Защищенная связка Telegram-чата не настроена; одноразовые коды Telegram нельзя выпускать.");
   }
   const organizationId = input.organizationId?.trim() || denteTelegramBotSettings.organizationId;
   validateDenteTelegramSubject(input.subjectType, input.subjectId, organizationId);
@@ -4729,7 +4731,7 @@ export function renderDenteTelegramMessagePreview(
       templateKind: "review_request",
       classification: "no_phi",
       allowedByDefault: true,
-      text: `DENTE: спасибо за визит в ${clinicName}. Ниже безопасная ссылка, чтобы оценить клинику.`,
+      text: `DENTE: спасибо за визит в ${clinicName}. Ниже ссылка, чтобы оценить клинику.`,
       variablesUsed: ["clinicName", ...(reviewUrl ? ["clinicReviewUrl"] : []), ...(mapsUrl ? ["clinicMapsUrl"] : [])],
       warnings: [
         baseWarning,
@@ -4750,7 +4752,7 @@ export function renderDenteTelegramMessagePreview(
     warnings: appointmentCallbackUnavailable
       ? [
           ...preview.warnings,
-          "Подписанные Telegram-кнопки приема отключены: настройте DENTE_TELEGRAM_CALLBACK_SECRET или DENTE_TELEGRAM_WEBHOOK_SECRET."
+          "Подписанные Telegram-кнопки приема отключены: включите секрет подписанных кнопок в серверных настройках."
         ]
       : preview.warnings,
     replyMarkup: preview.allowedByDefault ? telegramReplyMarkupFor(input.templateKind, input.appointmentId ?? null, settings) : null,
@@ -4816,7 +4818,7 @@ function denteTelegramAppointmentCallbackSignature(
 ): string {
   const secret = denteTelegramCallbackSecret();
   if (!secret) {
-    throw new Error("DENTE_TELEGRAM_CALLBACK_SECRET или DENTE_TELEGRAM_WEBHOOK_SECRET нужен для подписанных Telegram-кнопок приема.");
+    throw new Error("Подписанные Telegram-кнопки приема отключены: включите секрет подписанных кнопок в серверных настройках.");
   }
   const scoped = normalizeDenteTelegramAppointmentCallbackScope(scope);
   return createHmac("sha256", secret)
@@ -4844,7 +4846,7 @@ export function buildDenteTelegramAppointmentCallbackData(
   scope?: DenteTelegramAppointmentCallbackScope
 ): string {
   if (!denteTelegramAppointmentCallbacksReady()) {
-    throw new Error("telegram_appointment_callback_secret_missing");
+    throw new Error("Подписанные Telegram-кнопки приема отключены: включите секрет подписанных кнопок в серверных настройках.");
   }
   const actionCode = denteTelegramAppointmentCallbackCodes[action];
   const compactAppointmentId = appointmentId.replace(/-/g, "").toLowerCase();
@@ -4957,7 +4959,7 @@ function ensureTelegramCallbackCommunicationTask(input: {
     body:
       input.action === "reschedule"
         ? "Пациент нажал кнопку переноса в Telegram. Свяжитесь с пациентом и предложите новое время без передачи медданных в Telegram."
-        : "Пациент нажал кнопку обратного звонка в Telegram. Свяжитесь с пациентом через безопасный канал клиники.",
+        : "Пациент нажал кнопку обратного звонка в Telegram. Свяжитесь с пациентом через канал клиники.",
     workflowCode:
       input.action === "reschedule" ? "telegram_appointment_reschedule_request" : "telegram_appointment_call_request",
     lastEventAt: input.now,
@@ -5270,7 +5272,7 @@ const denteTelegramDocumentRequestTopics: Record<
     workflowCode: "telegram_medical_document_request",
     taskTitle: "Пациент запросил медицинские документы",
     taskBody:
-      "Пациент запросил медицинские документы в Telegram. В DENTE проверьте личность, полномочия получателя и подготовьте выписку, копии, расписку выдачи или DICOM/КЛКТ без передачи медданных в Telegram.",
+      "Пациент запросил медицинские документы в Telegram. В DENTE проверьте личность, полномочия получателя и подготовьте выписку, копии, расписку выдачи или КТ/снимки без передачи медданных в Telegram.",
     inboundCreatedMessage: "Telegram: пациент запросил медицинские документы.",
     inboundRepeatedMessage: "Telegram: пациент повторно запросил медицинские документы.",
     responseCreatedText:
@@ -5421,8 +5423,8 @@ export function createDenteTelegramDocumentRequest(
     entityId: patient.id,
     action: duplicate ? requestTopic.auditRepeatedAction : requestTopic.auditCreatedAction,
     reason: duplicate
-      ? "Пациент повторно отправил безопасный запрос документов в Telegram."
-      : "Пациент отправил безопасный запрос документов в Telegram."
+      ? "Пациент повторно отправил запрос документов в Telegram."
+      : "Пациент отправил запрос документов в Telegram."
   });
   persistMutableState();
 
@@ -5827,8 +5829,8 @@ export function createDenteTelegramCareRequest(
     entityId: patient.id,
     action: duplicate ? requestTopic.auditRepeatedAction : requestTopic.auditCreatedAction,
     reason: duplicate
-      ? "Пациент повторно нажал безопасную кнопку персональной памятки в Telegram."
-      : "Пациент нажал безопасную кнопку персональной памятки в Telegram."
+      ? "Пациент повторно нажал кнопку персональной памятки в Telegram."
+      : "Пациент нажал кнопку персональной памятки в Telegram."
   });
   persistMutableState();
 
@@ -6041,7 +6043,7 @@ export function createDenteTelegramContactRequest(
       priority: "normal",
       dueAt: now,
       title: "Пациент просит связаться",
-      body: "Пациент нажал кнопку связи в Telegram. Свяжитесь через безопасный канал клиники, не передавайте медданные в Telegram.",
+      body: "Пациент нажал кнопку связи в Telegram. Свяжитесь через канал клиники, не передавайте медданные в Telegram.",
       workflowCode: "telegram_contact_request",
       lastEventAt: now,
       createdAt: now
@@ -6072,15 +6074,15 @@ export function createDenteTelegramContactRequest(
     entityId: patient.id,
     action: duplicate ? "telegram_contact_request_repeated" : "telegram_contact_request_created",
     reason: duplicate
-      ? "Пациент повторно нажал безопасную кнопку связи в Telegram."
-      : "Пациент нажал безопасную кнопку связи в Telegram."
+      ? "Пациент повторно нажал кнопку связи в Telegram."
+      : "Пациент нажал кнопку связи в Telegram."
   });
   persistMutableState();
 
   return {
     text: duplicate
       ? "Запрос уже есть в очереди администратора DENTE. Мы подняли его наверх и обновили время обращения."
-      : "Запрос принят. Администратор клиники увидит задачу в DENTE и свяжется с вами через безопасный канал.",
+      : "Запрос принят. Администратор клиники увидит задачу в DENTE и свяжется с вами через канал клиники.",
     linked: true,
     subjectType: "patient",
     taskId: task.id,
@@ -6217,10 +6219,10 @@ function buildDenteTelegramOutboxItem(input: {
   }
 
   if (!chatTransportReady && chatLink) {
-    warnings.push("Чат привязан, но отправка недоступна до настройки DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY и повторной привязки пользователя.");
+    warnings.push("Чат привязан, но отправка недоступна до настройки защищенной серверной связки и повторной привязки пользователя.");
   }
   if (blockedReason === "post_visit_recommendation_document_not_issued") {
-    warnings.push("Сначала выпустите документ 'Рекомендации после приема' с безопасной Telegram-ссылкой, затем отправляйте памятку пациенту.");
+    warnings.push("Сначала выпустите документ 'Рекомендации после приема' с Telegram-текстом, затем отправляйте памятку пациенту.");
   }
 
   return {
@@ -7058,7 +7060,7 @@ export function prepareDenteTelegramOutboxDelivery(
       statusCode: 409,
       item,
       blockedReason: "encrypted_chat_transport_missing_or_unreadable",
-      warnings: [...item.warnings, "Повторно привяжите чат после настройки DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY."]
+      warnings: [...item.warnings, "Повторно привяжите чат после настройки защищенной серверной связки."]
     };
   }
 
@@ -7308,9 +7310,9 @@ export function buildDenteTelegramOutbox(
   const nextOffset = safeOffset + items.length;
   const nextCursor = nextOffset < filteredItems.length ? String(nextOffset) : null;
 
-  if (!runtime.botTokenConfigured) warnings.push("DENTE_TELEGRAM_BOT_TOKEN нужен для реальной исходящей доставки Telegram.");
+  if (!runtime.botTokenConfigured) warnings.push("Подключите бота Telegram в серверных настройках для реальной отправки сообщений.");
   if (!telegramChatEncryptionKey()) {
-    warnings.push("DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY нужен перед хранением обратимых ссылок на Telegram-чат.");
+    warnings.push("Настройте защищенную серверную связку перед хранением обратимых ссылок на Telegram-чат.");
   }
   if (!settings.patientPortalBaseUrl) {
     warnings.push("patientPortalBaseUrl нужен для ссылок на готовые документы, памятки после приема и профилактические приглашения.");
@@ -8128,7 +8130,7 @@ function buildRecognitionOutput(input: CreateAiRecognitionJobInput) {
       confidence: hasDate ? 0.68 : 0.58,
       warnings: [
         "AI не ставит диагноз по снимку и не заменяет врача.",
-        "Для CBCT/серий нужен viewer и метаданные, а не только текстовое описание."
+        "Для КЛКТ/КТ-серий нужен просмотрщик и метаданные, а не только текстовое описание."
       ],
       suggestedNextStep: "Прикрепить как черновик описания снимка и запросить проверку врача."
     };
@@ -8238,7 +8240,7 @@ function speechChunkQuality(chunk: SpeechTranscriptionChunk): SpeechTranscriptio
     bytesPerSecond: chunk.durationMs ? Math.round((chunk.byteLength / (chunk.durationMs / 1000)) * 10) / 10 : null,
     providerWarnings: chunk.warnings.slice(0, 8),
     signals: ["legacy_chunk"],
-    nextAction: "Проверьте старый STT-фрагмент: он сохранен до появления quality metadata."
+    nextAction: "Проверьте старый фрагмент распознавания: он сохранен до появления метаданных качества."
   };
 }
 
@@ -8494,7 +8496,7 @@ export function recordSpeechTranscriptionChunk(
         createdAt: existing.createdAt,
         warnings: uniqueStrings([
           ...input.warnings,
-          `Повторное распознавание улучшило STT-фрагмент: ${existing.status}/${speechChunkQuality(existing).level} -> ${input.status}/${input.quality.level}.`
+          `Повторное распознавание улучшило аудиофрагмент: ${existing.status}/${speechChunkQuality(existing).level} -> ${input.status}/${input.quality.level}.`
         ]).slice(0, 12)
       };
       speechTranscriptionChunks.splice(existingIndex, 1, chunk);
@@ -8954,10 +8956,17 @@ function assertPaidPaymentFiscalReceiptOperation(input: CreatePaymentInput): voi
   }
 }
 
+export function findPaymentByClientMutationId(clientMutationId: string | null | undefined): Payment | null {
+  const normalizedClientMutationId = clientMutationId?.trim();
+  if (!normalizedClientMutationId) return null;
+  return payments.find((payment) => payment.clientMutationId === normalizedClientMutationId) ?? null;
+}
+
 export function createPayment(input: CreatePaymentInput): Payment {
   const createdAt = new Date().toISOString();
   assertPaidPaymentFiscalReceiptOperation(input);
   const fiscalReceipt = normalizeFiscalReceiptDetails(input.fiscalReceipt);
+  const clientMutationId = input.clientMutationId?.trim() || null;
   const payment: Payment = {
     id: randomUUID(),
     organizationId,
@@ -8973,6 +8982,7 @@ export function createPayment(input: CreatePaymentInput): Payment {
     fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt?.trim() || null,
     fiscalReceiptUrl: input.fiscalReceiptUrl?.trim() || fiscalReceipt?.receiptUrl?.trim() || null,
     fiscalReceipt,
+    clientMutationId,
     payerFullName: input.payerFullName?.trim() || null,
     payerInn: input.payerInn?.trim() || null,
     payerBirthDate: normalizeDateOnlyInput(input.payerBirthDate, "Дата рождения плательщика"),
@@ -8986,10 +8996,23 @@ export function createPayment(input: CreatePaymentInput): Payment {
     entityType: "payment",
     entityId: payment.id,
     action: "payment_recorded",
-    reason: `Оплата ${payment.amountRub.toLocaleString("ru-RU")} ₽ записана из рабочего экрана.`
+    reason: [
+      `Оплата ${payment.amountRub.toLocaleString("ru-RU")} ₽ записана из рабочего экрана.`,
+      clientMutationId ? `Клиентская операция ${clientMutationId}.` : null
+    ]
+      .filter(Boolean)
+      .join(" ")
   });
   return payment;
 }
+
+const communicationTaskOutcomeLabels: Record<CommunicationTaskOutcome, string> = {
+  no_answer: "нет ответа",
+  callback_requested: "нужен обратный звонок",
+  reschedule_requested: "нужен перенос записи",
+  promised_payment: "пациент обещал оплату",
+  document_pickup: "документы готовы к выдаче/получению"
+};
 
 export function completeCommunicationTask(input: CompleteCommunicationTaskInput): CommunicationTask {
   const task = communicationTasks.find((item) => item.id === input.taskId);
@@ -9000,7 +9023,11 @@ export function completeCommunicationTask(input: CompleteCommunicationTaskInput)
     return task;
   }
   const completedAt = new Date().toISOString();
+  const outcomeLabel = input.outcome ? communicationTaskOutcomeLabels[input.outcome] : null;
+  const completionMessage = input.note ?? `Задача связи закрыта: ${task.title}`;
+  const eventMessage = outcomeLabel ? `Исход: ${outcomeLabel}. ${completionMessage}` : completionMessage;
   task.status = "completed";
+  task.lastOutcome = input.outcome ?? null;
   task.lastEventAt = completedAt;
   communicationEvents.unshift({
     id: randomUUID(),
@@ -9011,14 +9038,14 @@ export function completeCommunicationTask(input: CompleteCommunicationTaskInput)
     channel: task.channel,
     direction: "outbound",
     status: "completed",
-    message: input.note ?? `Задача связи закрыта: ${task.title}`,
+    message: eventMessage,
     createdAt: completedAt
   });
   recordAuditEvent({
     entityType: "communication_task",
     entityId: task.id,
     action: "communication_completed",
-    reason: input.note ?? task.title
+    reason: outcomeLabel ? `${outcomeLabel}: ${input.note ?? task.title}` : input.note ?? task.title
   });
   return task;
 }
@@ -9027,8 +9054,8 @@ const imagingKindTitles: Record<ImagingStudyKind, string> = {
   periapical: "Прицельный снимок",
   bitewing: "Интерпроксимальный снимок",
   opg: "ОПТГ",
-  ceph: "ТРГ / Ceph",
-  cbct: "КТ / CBCT",
+  ceph: "ТРГ / цефалометрия",
+  cbct: "КЛКТ / КТ",
   photo: "Фото",
   other: "Снимок"
 };
@@ -9043,6 +9070,7 @@ function defaultViewerStateForStudy(study: ImagingStudy): ImagingViewerSessionSt
   return {
     mode: viewerModeForImagingKind(study.kind),
     activeTool: "window_level",
+    activeQuickActionId: null,
     windowPreset: study.kind === "cbct" ? "bone" : study.kind === "photo" ? "photo" : "endo",
     windowCenter: null,
     windowWidth: null,
@@ -9059,7 +9087,8 @@ function defaultViewerStateForStudy(study: ImagingStudy): ImagingViewerSessionSt
     axisDeg: 0,
     slabMm: 1,
     crosshair: study.kind === "cbct",
-    linkedPlanes: study.kind === "cbct"
+    linkedPlanes: study.kind === "cbct",
+    implantPlan: null
   };
 }
 
@@ -9097,9 +9126,9 @@ export function getOrCreateImagingViewerSession(studyId: string): ImagingViewerS
     createdAt: now,
     updatedAt: now,
     warnings: [
-      "Состояние просмотра сохраняется отдельно от исходного снимка; пиксели не изменяются.",
+      "Состояние просмотра сохраняется отдельно от исходного снимка; исходный снимок не изменяется.",
       study.kind === "cbct"
-        ? "Настройки CBCT/MPR являются навигацией врача, а не подписанным рентгенологическим заключением."
+        ? "Настройки КЛКТ/КТ-срезов являются навигацией врача, а не подписанным рентгенологическим заключением."
         : "2D-измерения требуют калибровки сенсора перед клиническим применением."
     ]
   };
@@ -9118,11 +9147,11 @@ export function saveImagingViewerSession(studyId: string, input: SaveImagingView
   const previous = existingIndex >= 0 ? imagingViewerSessions[existingIndex] : null;
   const annotations = normalizeViewerAnnotations(input.annotations ?? []);
   const warnings = [
-    "Состояние просмотра сохраняется отдельно от исходного снимка; пиксели не изменяются.",
+    "Состояние просмотра сохраняется отдельно от исходного снимка; исходный снимок не изменяется.",
     study.kind === "cbct"
-      ? "Настройки CBCT/MPR являются навигацией врача, а не подписанным рентгенологическим заключением."
+      ? "Настройки КЛКТ/КТ-срезов являются навигацией врача, а не подписанным рентгенологическим заключением."
       : "2D-измерения требуют калибровки сенсора перед клиническим применением.",
-    input.state.mode === "mpr" && study.kind !== "cbct" ? "MPR доступен только для CBCT/CT-серий; это исследование остается 2D-просмотром." : null,
+    input.state.mode === "mpr" && study.kind !== "cbct" ? "КТ-срезы доступны только для КЛКТ/КТ-серий; это исследование остается 2D-просмотром." : null,
     annotations.length >= 200 ? "Достигнут лимит разметки; архивируйте старые отметки перед добавлением новых." : null
   ].filter((warning): warning is string => Boolean(warning));
   const session: ImagingViewerSession = {
@@ -9173,18 +9202,26 @@ function dicomWorkbenchSeriesKeyFromManifest(manifest: DicomViewerWorkbenchManif
 
 function dicomWorkbenchWarnings(manifest: DicomViewerWorkbenchManifestResponse): string[] {
   return uniqueStrings([
-    "Серверный пакет хранит только метаданные, состояние просмотрщика, разметку и план запуска/кэша; исходные DICOM-пиксели остаются в PACS, локальной папке или устройстве.",
-    "Серверный пакет скрывает локальные пути DICOM; перед загрузкой пикселей переподключите папку или устройство на рабочей станции.",
-    "Пакет CT/MPR является восстанавливаемым состоянием рабочего места, а не подписанным заключением рентгенолога.",
+    "Серверный пакет хранит только метаданные, состояние просмотрщика, разметку и план запуска/предварительной подготовки; исходные снимки остаются в архиве снимков, локальной папке или устройстве.",
+    "Серверный пакет скрывает локальные пути снимков; перед открытием серии переподключите папку или устройство на рабочей станции.",
+    "Пакет КЛКТ/КТ-срезов является восстанавливаемым состоянием рабочего места, а не подписанным заключением рентгенолога.",
     manifest.readiness.shouldUseExternalViewer
-      ? "Тяжелую CBCT-серию на этой станции нужно передать в OHIF или настольный DICOM-просмотрщик; CRM хранит восстанавливаемое состояние."
+      ? "Тяжелую КЛКТ/КТ-серию на этой станции нужно передать во внешний или настольный КТ-просмотрщик; CRM хранит восстанавливаемое состояние."
       : "",
     manifest.readiness.canOpenInBrowser
       ? ""
-      : "Браузер пока не может безопасно открыть всю серию; сохраните метаданные и используйте внешний просмотрщик.",
+      : "Браузер пока не может открыть всю серию целиком; сохраните метаданные и используйте внешний просмотр.",
     ...manifest.warnings
   ]).slice(0, 16);
 }
+
+const dicomRenderTextureStrategyAuditLabels: Record<DicomViewerWorkbenchManifestResponse["renderCachePlan"]["textureStrategy"], string> = {
+  metadata_only: "только список серии",
+  stack_2d_textures: "послойный 2D-просмотр",
+  single_3d_texture: "объемный просмотр",
+  bricked_3d_textures: "объемный просмотр по частям",
+  external_viewer: "внешний просмотр"
+};
 
 export function saveDicomWorkbenchBundle(input: SaveDicomWorkbenchBundleRequest): DicomWorkbenchBundle {
   const now = new Date().toISOString();
@@ -9219,7 +9256,7 @@ export function saveDicomWorkbenchBundle(input: SaveDicomWorkbenchBundleRequest)
     entityType: "dicom_workbench_bundle",
     entityId: bundle.id,
     action: previous ? "dicom_workbench_bundle_updated" : "dicom_workbench_bundle_saved",
-    reason: `${bundle.sourceName}: ${manifest.readiness.readinessScore}% readiness, ${manifest.renderCachePlan.textureStrategy}, no pixels stored.`
+    reason: `${bundle.sourceName}: готовность ${manifest.readiness.readinessScore}%, режим ${dicomRenderTextureStrategyAuditLabels[manifest.renderCachePlan.textureStrategy]}, снимки не копировались в пакет.`
   });
   return bundle;
 }

@@ -328,7 +328,7 @@ export function buildKnd1151156Xml(
 
   const taxOfficeCode = requireTaxOfficeCode(context.taxOfficeCode);
   if (!taxOfficeCode) {
-    return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 настройте DENTE_FNS_TAX_OFFICE_CODE: 4-значный код налогового органа." };
+    return { ok: false, statusCode: 409, error: "Для XML КНД 1151156 укажите в серверных настройках 4-значный код налогового органа." };
   }
 
   const clinic = clinicXml(context.clinicProfile);

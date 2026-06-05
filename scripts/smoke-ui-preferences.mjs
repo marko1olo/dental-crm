@@ -399,8 +399,8 @@ for (const [label, block] of [
   ["staff schedule", staffScheduleBlock],
   ["chair create", chairCreateBlock]
 ]) {
-  if (!block.includes('telegramControlPlaneHeaders({ "Content-Type": "application/json" })')) {
-    fail(`Settings mutation must send the DENTE admin secret header when configured: ${label}.`);
+  if (!block.includes('settingsAccessHeaders({ "Content-Type": "application/json" })')) {
+    fail(`Settings mutation must send the settings admin secret header when configured: ${label}.`);
   }
 }
 
@@ -428,7 +428,7 @@ if (
   !appSource.includes("denteAdminSecretRequestHeaders") ||
   !saveServerPreferencesBlock.includes("denteAdminSecretRequestHeaders") ||
   !appSource.includes("loadServerUiPreferences(preferencesAccessSecret)") ||
-  !appSource.includes("!telegramAdminSecretSession.trim()")
+  !appSource.includes("!settingsAdminSecretSession.trim()")
 ) {
   fail("Server UI preference sync must use the unlocked admin/read secret and stay local-only before unlock.");
 }

@@ -15,6 +15,7 @@ import {
   recordProviderKeySuccess,
   sanitizeProviderErrorMessage,
   selectProviderKey,
+  SpeechProviderRequestError,
   shouldTryNextProviderKey
 } from "./keyPool.js";
 
@@ -51,9 +52,9 @@ type NeuralPolishPayload = {
 
 const polishProviderLabels: Record<SpeechPolishProvider, string> = {
   none: "Только локальный парсер правил",
-  openai: "ИИ-очистка через OpenAI-compatible API",
-  groq: "ИИ-очистка через Groq OpenAI-compatible API",
-  custom: "ИИ-очистка через custom OpenAI-compatible API"
+  openai: "серверная очистка диктовки",
+  groq: "быстрая серверная очистка диктовки",
+  custom: "очистка диктовки через сервер клиники"
 };
 
 function booleanFromEnv(value: string | undefined): boolean {
@@ -99,6 +100,21 @@ function modelForProvider(provider: SpeechPolishProvider): string | null {
   return null;
 }
 
+function speechPolishFailureReason(error: unknown): string {
+  if (error instanceof SpeechProviderRequestError) {
+    if (error.timedOut) return "серверная очистка не ответила вовремя";
+    if (error.rateLimited || error.statusCode === 429) return "серверная очистка временно ограничила запросы";
+    if (error.statusCode === 401 || error.statusCode === 403) return "серверный доступ к очистке отклонен";
+    if (error.statusCode && error.statusCode >= 500) return "у сервиса очистки временный сбой";
+    if (error.statusCode) return "сервис очистки отклонил запрос";
+  }
+  const message = sanitizeProviderErrorMessage(error instanceof Error ? error.message : String(error ?? "")).toLowerCase();
+  if (/fetch failed|network|econnreset|econnrefused|etimedout|timeout|socket|terminated|temporar|dns|enotfound/.test(message)) {
+    return "нет устойчивого соединения с сервисом очистки";
+  }
+  return "серверная очистка не вернула готовый текст";
+}
+
 function createSpeechPolishConfig(): SpeechPolishConfig {
   const requested = booleanFromEnv(process.env.DENTAL_SPEECH_NEURAL_POLISH);
   const provider = selectedPolishProvider();
@@ -112,20 +128,20 @@ function createSpeechPolishConfig(): SpeechPolishConfig {
   const warnings: string[] = [];
 
   if (!requested) {
-    warnings.push("ИИ-очистка диктовки отключена; работает детерминированный стоматологический парсер.");
+    warnings.push("Дополнительная очистка диктовки отключена; работает локальный стоматологический разбор.");
   } else if (provider === "none" || !baseUrl || !modelName) {
-    warnings.push("ИИ-очистка диктовки запрошена, но провайдер, base URL или модель не настроены.");
+    warnings.push("Дополнительная очистка диктовки запрошена, но серверный маршрут не настроен полностью.");
   } else if (!hasKey) {
     warnings.push(
       keyPool && keyPool.configuredKeyCount > 0
-        ? "ИИ-очистка диктовки запрошена, но все ключи провайдера временно охлаждаются."
-        : "ИИ-очистка диктовки запрошена, но серверный API-ключ не настроен."
+        ? "Дополнительная очистка диктовки запрошена, но все серверные доступы временно на паузе."
+        : "Дополнительная очистка диктовки запрошена, но серверный доступ не настроен."
     );
   } else if (explicitApiKey) {
-    warnings.push("ИИ-очистка диктовки использует отдельный серверный ключ; пул ключей провайдера не раскрывается браузеру.");
+    warnings.push("Дополнительная очистка диктовки использует отдельный серверный доступ; браузеру он не показывается.");
   } else if (keyPool && keyPool.rotationEnabled) {
     warnings.push(
-      `Ротация ключей ИИ-очистки активна: доступно ${keyPool.availableKeyCount}/${keyPool.configuredKeyCount} ключей.`
+      `Резерв серверной очистки диктовки активен: доступно ${keyPool.availableKeyCount}/${keyPool.configuredKeyCount} маршрутов.`
     );
   }
 
@@ -181,7 +197,7 @@ function safeParseJsonObject(text: string): NeuralPolishPayload {
     return parseJsonObject(text);
   } catch {
     const match = text.match(/\{[\s\S]*\}/);
-    if (!match?.[0]) throw new Error("ИИ-очистка диктовки не вернула JSON.");
+    if (!match?.[0]) throw new Error("Дополнительная очистка диктовки вернула нечитаемый структурированный ответ.");
     return parseJsonObject(match[0]);
   }
 }
@@ -214,26 +230,26 @@ function safetyCheckNeuralPolish(source: string, result: string): { ok: boolean;
   const resultLength = result.trim().length;
 
   if (!result.trim()) {
-    return { ok: false, warnings: ["ИИ-очистка диктовки вернула пустой текст."] };
+    return { ok: false, warnings: ["Дополнительная очистка диктовки вернула пустой текст."] };
   }
   if (sourceLength > 80 && resultLength < sourceLength * 0.45) {
-    return { ok: false, warnings: ["ИИ-очистка диктовки удалила слишком много текста; сохранен детерминированный вариант."] };
+    return { ok: false, warnings: ["Дополнительная очистка диктовки удалила слишком много текста; сохранен локальный вариант."] };
   }
   if (resultLength > Math.max(sourceLength * 1.7, sourceLength + 600)) {
-    return { ok: false, warnings: ["ИИ-очистка диктовки слишком расширила текст; сохранен детерминированный вариант."] };
+    return { ok: false, warnings: ["Дополнительная очистка диктовки слишком расширила текст; сохранен локальный вариант."] };
   }
 
   const addedTeeth = addedTokens(extractToothCodes(source), extractToothCodes(result));
   if (addedTeeth.length) {
-    return { ok: false, warnings: [`ИИ-очистка диктовки добавила номера зубов ${addedTeeth.join(", ")}; сохранен детерминированный вариант.`] };
+    return { ok: false, warnings: [`Дополнительная очистка диктовки добавила номера зубов ${addedTeeth.join(", ")}; сохранен локальный вариант.`] };
   }
 
   const addedDiagnoses = addedTokens(extractDiagnosisCodes(source), extractDiagnosisCodes(result));
   if (addedDiagnoses.length) {
-    return { ok: false, warnings: [`ИИ-очистка диктовки добавила коды диагноза ${addedDiagnoses.join(", ")}; сохранен детерминированный вариант.`] };
+    return { ok: false, warnings: [`Дополнительная очистка диктовки добавила коды диагноза ${addedDiagnoses.join(", ")}; сохранен локальный вариант.`] };
   }
 
-  warnings.push("ИИ-очистка диктовки принята после проверок длины, зубов и диагнозов; проверка врачом все равно обязательна.");
+  warnings.push("Дополнительная очистка диктовки принята после проверок длины, зубов и диагнозов; проверка врачом все равно обязательна.");
   return { ok: true, warnings };
 }
 
@@ -244,7 +260,7 @@ async function callOpenAiCompatiblePolish(input: {
   apiKey: string;
 }): Promise<{ normalizedTranscript: string; warnings: string[] }> {
   if (!input.config.baseUrl || !input.config.modelName) {
-    throw new Error("ИИ-очистка диктовки не настроена.");
+    throw new Error("Дополнительная очистка диктовки не настроена.");
   }
 
   const requestBody = {
@@ -289,7 +305,7 @@ async function callOpenAiCompatiblePolish(input: {
   const content = contentToString(payload.choices?.[0]?.message?.content);
   const parsed = safeParseJsonObject(content);
   if (typeof parsed.normalizedTranscript !== "string") {
-    throw new Error("JSON ИИ-очистки диктовки не содержит normalizedTranscript.");
+    throw new Error("Дополнительная очистка диктовки вернула ответ без готового текста.");
   }
 
   return {
@@ -309,7 +325,7 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
 
   const keyProviderId = input.config.keyProviderId;
   if (!keyProviderId) {
-    throw new Error("Пул ключей провайдера ИИ-очистки диктовки не настроен.");
+    throw new Error("Резерв серверной очистки диктовки не настроен.");
   }
 
   const triedFingerprints = new Set<string>();
@@ -328,7 +344,7 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
       });
       recordProviderKeySuccess(keyProviderId, keyCandidate);
       if (attempt > 0) {
-        result.warnings.push(`ИИ-очистка диктовки восстановилась после попытки ротации ключа ${attempt + 1}.`);
+        result.warnings.push(`Дополнительная очистка диктовки восстановилась после резервной попытки ${attempt + 1}.`);
       }
       return result;
     } catch (error) {
@@ -339,9 +355,12 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
   }
 
   const summary = getProviderKeyPoolSummary(keyProviderId);
-  const detail = lastError instanceof Error ? sanitizeProviderErrorMessage(lastError.message) : "все ключи провайдера временно охлаждаются";
+  const detail = lastError ? speechPolishFailureReason(lastError) : "все серверные доступы временно на паузе";
+  if (lastError instanceof SpeechProviderRequestError) {
+    throw lastError;
+  }
   throw new Error(
-    `${input.config.providerLabel}: сбой после ${triedFingerprints.size}/${maxAttempts} попыток ключа; доступно ${summary.availableKeyCount}/${summary.configuredKeyCount} ключей. ${detail}`
+    `${input.config.providerLabel}: сбой после ${triedFingerprints.size}/${maxAttempts} попыток; доступно ${summary.availableKeyCount}/${summary.configuredKeyCount} серверных маршрутов. ${detail}`
   );
 }
 
@@ -357,7 +376,7 @@ export async function polishSpeechTranscript(
   const config = createSpeechPolishConfig();
   if (config.neuralEnabled) {
     if (normalizedTranscript.length > config.maxTranscriptChars) {
-      neuralWarnings.push("ИИ-очистка диктовки пропущена: расшифровка длиннее настроенного лимита.");
+      neuralWarnings.push("Дополнительная очистка диктовки пропущена: расшифровка длиннее настроенного лимита.");
     } else {
       try {
         const neural = await callOpenAiCompatiblePolishWithKeyRotation({
@@ -373,8 +392,8 @@ export async function polishSpeechTranscript(
           modelName = config.modelName;
         }
       } catch (error) {
-        const message = sanitizeProviderErrorMessage(error instanceof Error ? error.message : "unknown error");
-        neuralWarnings.push(`ИИ-очистка диктовки не выполнена; сохранен детерминированный текст: ${message}`);
+        const message = speechPolishFailureReason(error);
+        neuralWarnings.push(`Дополнительная очистка диктовки не выполнена; сохранен локальный текст: ${message}`);
       }
     }
   }

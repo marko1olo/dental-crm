@@ -105,12 +105,12 @@ console.log(JSON.stringify(result));
 
 if (response.detectedKind !== "zip") throw new Error(`Expected zip, got ${response.detectedKind}`);
 if (response.extractedFiles.length !== 3) throw new Error(`Expected 3 extracted entries, got ${response.extractedFiles.length}`);
-if (!response.extractedFiles.every((file) => file.fileName.startsWith("Archive entry #"))) {
+if (!response.extractedFiles.every((file) => file.fileName.startsWith("Файл архива #"))) {
   throw new Error("Archive entries were not redacted to safe labels.");
 }
 if (forbidden.length) throw new Error(`Raw archive names leaked: ${forbidden.join(", ")}`);
-if (!response.parserNotes.some((note) => note.includes("redacted"))) {
-  throw new Error("Expected parser note about archive entry redaction.");
+if (!response.parserNotes.some((note) => note.includes("Имена файлов внутри архива скрыты"))) {
+  throw new Error("Expected Russian parser note about archive entry redaction.");
 }
 
 const legacyDb = extractDocument({
@@ -124,7 +124,14 @@ const legacyForbidden = ["Пациенты", "Иванова", "старый"].f
 
 if (legacyDb.detectedKind !== "legacy_database") throw new Error(`Expected legacy_database, got ${legacyDb.detectedKind}`);
 if (legacyForbidden.length) throw new Error(`Legacy DB raw filename leaked: ${legacyForbidden.join(", ")}`);
-if (!legacyDb.extractedText.includes("Legacy migration source")) throw new Error("Legacy DB must become a staging manifest.");
+if (!legacyDb.extractedText.includes("Источник старой базы")) throw new Error("Legacy DB must become a clinic-readable staging manifest.");
+if (legacyDb.extractedText.includes("Legacy migration source")) throw new Error("Legacy DB manifest must not expose English migration source jargon.");
+if (legacyDb.extractedText.includes("staging parser")) throw new Error("Legacy DB manifest must not expose staging parser jargon.");
+if (legacyDb.extractedText.includes("офлайн-копию")) throw new Error("Legacy DB manifest must not expose offline-copy jargon.");
+if (legacyDb.quality.signals.includes("legacy_database_input")) throw new Error("Legacy DB quality signals must not expose internal signal ids.");
+if (!legacyDb.quality.signals.includes("старая база")) throw new Error("Legacy DB quality signals must use clinic-readable wording.");
+if (legacyDb.quality.nextAction.includes("манифест")) throw new Error("Legacy DB next action must use clinic-readable list wording.");
+if (legacyDb.quality.nextAction.includes("старой БД")) throw new Error("Legacy DB next action must not expose DB abbreviations.");
 if (legacyDb.extractedText.includes("not-a-real-firebird")) throw new Error("Legacy DB binary content must not be decoded into extracted text.");
 if (!legacyDb.warnings.includes("legacy_source_staging_manifest_only")) throw new Error("Legacy DB must warn about staging-only handling.");
 if (!legacyDb.routes.some((route) => route.target === "smart_import" && route.enabled)) throw new Error("Legacy DB must route to smart import preview.");

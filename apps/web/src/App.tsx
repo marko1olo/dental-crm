@@ -1,4 +1,13 @@
-import { type CSSProperties, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   ArrowRight,
   AlertTriangle,
@@ -57,9 +66,7 @@ import {
   type ClinicalToothRow,
   type CreateAppointmentInput,
   type Dashboard,
-  type DentalMaterialKind,
   type DentalPricelistAnalysisResponse,
-  type DentalRestorationType,
   type DentalSpecialty,
   type DenteTelegramBotMode,
   type DenteTelegramBotStatus,
@@ -86,15 +93,16 @@ import {
   type DocumentIngestionResponse,
   type DocumentIngestionTarget,
   type ClinicPublicLookupResponse,
+  type CommunicationTaskOutcome,
   type GeneratedDocument,
   type DicomRenderCachePlanResponse,
   type DicomFirstFramePreviewResponse,
   type DicomLocalFolderDiscoveryResponse,
+  type DicomSeriesPreviewGroup,
   type DicomSeriesPreviewResponse,
   type DicomFolderSeriesPreviewResponse,
   type DicomFolderWorkupPath,
   type DicomFolderWorkupPlanResponse,
-  type DicomSeriesViewer,
   type DicomViewerLaunchManifestResponse,
   type DicomViewerToolStateBundleResponse,
   type DicomViewerWorkbenchManifestResponse,
@@ -110,8 +118,10 @@ import {
   type ImagingSourceKind,
   type ImagingStudyKind,
   type ImagingViewerAnnotation,
+  type ImagingViewerImplantPlan,
   type ImagingViewerSessionResponse,
   type ImagingViewerSessionState,
+  type ImagingViewerTool,
   type ImagingViewerWindowPreset,
   type IntegrationCapability,
   type IntegrationCategory,
@@ -132,7 +142,6 @@ import {
   type LocalBridgeStatus,
   type LocalBridgeUsePath,
   type LocalBridgeUsePlansResponse,
-  type LocalImagingOrganizerRecommendedAction,
   type OutpatientMedicalCard025uPayload,
   type PaymentMethod,
   type Patient,
@@ -177,6 +186,13 @@ import {
   type XrayCbctReferralStudyType
 } from "@dental/shared";
 import { AppLoadingState, AppUnlockState } from "./AppBootState";
+import {
+  browserContinuityRegistrationLabels,
+  formatByteSize,
+  formatMegabytes,
+  inspectBrowserContinuity,
+  type BrowserContinuityStatus
+} from "./browserContinuity";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import {
   communicationDocumentTaskActionLabels,
@@ -186,11 +202,167 @@ import {
   telegramDocumentRequestWorkflowDocumentKinds
 } from "./communicationTaskData";
 import { imagingConnectorCards, imagingViewerCapabilities, recognitionPresets } from "./settingsStaticData";
+import { motionSafeScrollIntoView } from "./motionPreference";
+import { normalizeRubAmountInput, rubAmountInputMissingStep } from "./rubAmountInput";
+import {
+  imagingCaptureDistanceMs,
+  imagingComparisonReason,
+  imagingComparisonScore,
+  type ImagingStudyRow
+} from "./imagingComparison";
+import {
+  dicomLabel,
+  dicomDiagnosticPixelPolicyLabels,
+  dicomExecutionLaneLabels,
+  dicomGpuClassLabels,
+  dicomQualityModeLabels,
+  dicomReadinessCheckLabels,
+  dicomRenderMemoryBudgetClassLabels,
+  dicomRuntimeTierLabels,
+  dicomSeriesViewerLabels,
+  dicomTextureStrategyLabels,
+  dicomViewerLaunchModeLabels,
+  dicomWebStatusLabels,
+  imagingKindLabels,
+  imagingSourceDetails,
+  imagingSourceLabels,
+  imagingViewerToolLabels,
+  localImagingModelRoleLabels,
+  localImagingOrganizerActionLabels,
+  mprAxisPresetDeg,
+  mprCacheModeLabels,
+  mprClinicalPresets,
+  mprLoadStrategyLabels,
+  mprProjectionLabels,
+  mprProjectionOrientationLabels,
+  mprResourceTierLabels,
+  mprSlabPresetMm,
+  mprToolLabels,
+  mprSeriesRequiredProjectionLabel,
+  mprUnavailableProjectionLabel,
+  mprWindowPresetLabels,
+  policyAuditEventLabels,
+  pricelistParserModeLabels,
+  type MprClinicalPreset,
+  type MprProjection,
+  type MprWindowPreset
+} from "./imagingUiLabels";
+import { type CtPlanningArtifactCommand } from "./ctPlanningArtifactCommands";
+import {
+  CtPlanningToolsPanel,
+  findCtPlanningQuickActionForArtifactCommand,
+  type CtImplantLibraryItem,
+  type CtPlanningQuickAction
+} from "./ctPlanningTools";
+import {
+  clampMprAxisDeg,
+  clampMprSliceIndex,
+  clampMprSlabMm,
+  formatSignedMprStep,
+  formatMprAxisAngleBadge,
+  formatMprAxisDirectionLabel,
+  formatMprAxisRangeValue,
+  formatMprAxisVisualizerLabel,
+  formatMprSliceBadge,
+  formatMprSliceRangeValue,
+  formatMprSlabBadge,
+  formatMprSlabRangeValue,
+  buildMprAxisGuidance,
+  mprAxisBounds,
+  mprAxisNudgeDeg,
+  mprProjectionCompassLabels,
+  mprSliceFraction,
+  mprSliceIndexFromFraction,
+  mprSliceNudgeSteps,
+  mprSlicePresetFractions,
+  mprSlabBounds,
+  mprSlabNudgeMm,
+  resolveMprKeyboardAdjustment
+} from "./mprControlMath";
+import {
+  buildMprClinicalChecklist,
+  buildMprOperatorSummary,
+  buildMprWorkbenchSummary,
+  describeMprClinicalPresetProjectionFallback,
+  findNearestMprClinicalPreset,
+  mprClinicalNextAction,
+  resolveMprClinicalPresetProjection
+} from "./mprClinicalStatus";
 import { postVisitCarePresets } from "./postVisitCareData";
+import {
+  dentalMaterialKindLabels,
+  dentalRestorationTypeLabels,
+  pricelistItemMaterialText,
+  pricelistMaterialSummaryText,
+  pricelistRecognitionBrandGroups,
+  pricelistRecognitionServiceGroups,
+  pricelistSourceKindLabels,
+  pricelistWarningsText
+} from "./pricelistUiMeta";
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
 import { ActionIcon, appViews, type AppView, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
+import { preloadWorkspaceView, scheduleIdleWorkspacePreload } from "./workspacePreload";
+import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
+import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
+import {
+  defaultTelegramPostVisitCheckupDelayDrafts,
+  defaultTelegramPostVisitCheckupDelayHoursByTopic,
+  postVisitCareTopicOptions,
+  telegramFeatureHelp,
+  telegramFeatureLabels,
+  telegramFeatureOptions,
+  telegramPostVisitCheckupDelayFields,
+  telegramVisualCardFields,
+  type TelegramPostVisitCheckupDelayDrafts,
+  type TelegramPostVisitCheckupDelayKey
+} from "./workspaceStaticOptions";
 
+import {
+  appointmentLabels,
+  clinicalRuleActionLabels,
+  clinicalRuleSeverityLabels,
+  clinicalRuleSummaryForUi,
+  clinicModeLabels,
+  communicationChannelLabels,
+  communicationIntentLabels,
+  communicationPriorityLabels,
+  communicationStatusLabels,
+  completedActContractReferenceForUi,
+  dicomFolderWorkupPathLabels,
+  documentActionLabels,
+  documentLabels,
+  documentSourceStatusClassNames,
+  documentStatusLabels,
+  integrationCapabilityLabels,
+  integrationCategoryLabels,
+  integrationStatusLabels,
+  localBridgeStatusLabels,
+  localBridgeUsePathLabels,
+  moneyDocumentKinds,
+  paymentFiscalReceiptLabelForUi,
+  paymentMethodLabels,
+  paymentTaxYearForUi,
+  recognitionTargetLabels,
+  scenarioPriorityLabels,
+  scenarioStrategyLabels,
+  serviceCategoryLabels,
+  specialtyLabels,
+  speechProviderHealthLabels,
+  speechProviderModeLabels,
+  speechProviderSelectionLabels,
+  speechProviderStatusLabels,
+  speechRecordingPathLabels,
+  speechRecoveryStateLabels,
+  staffRoleLabels,
+  structuredPayloadDocumentKinds,
+  taxPaymentPayerKeyForUi,
+  taxPaymentSelectionDocumentKinds,
+  taxPaymentSelectionPayloadDocumentKinds,
+  treatmentStatusLabels,
+  warningSeverityLabels,
+  workloadStateLabels
+} from "./workspaceUiLabels";
 const FinanceView = lazy(() => import("./FinanceView").then((module) => ({ default: module.FinanceView })));
 const CommunicationsView = lazy(() => import("./CommunicationsView").then((module) => ({ default: module.CommunicationsView })));
 const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ default: module.DocumentsView })));
@@ -198,651 +370,8 @@ const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ def
 const ScheduleView = lazy(() => import("./ScheduleView").then((module) => ({ default: module.ScheduleView })));
 const PatientsView = lazy(() => import("./PatientsView").then((module) => ({ default: module.PatientsView })));
 
-const appointmentLabels: Record<Appointment["status"], string> = {
-  planned: "План",
-  confirmed: "Подтвержден",
-  arrived: "Пришел",
-  in_treatment: "В кресле",
-  completed: "Готово",
-  cancelled: "Отмена",
-  no_show: "Не пришел"
-};
-
-const documentLabels = Object.fromEntries(
-  Object.entries(documentKindMetadata).map(([kind, metadata]) => [kind, metadata.label])
-) as Record<GeneratedDocument["kind"], string>;
-
-const documentActionLabels = Object.fromEntries(
-  Object.entries(documentKindMetadata).map(([kind, metadata]) => [kind, metadata.actionLabel])
-) as Record<GeneratedDocument["kind"], string>;
-
-const documentSourceStatusClassNames: Record<DocumentSourceStatus, string> = {
-  official_form: "document-source-badge official-form",
-  official_workflow: "document-source-badge official-workflow",
-  clinic_template: "document-source-badge clinic-template",
-  internal_register: "document-source-badge internal-register"
-};
-
-const documentStatusLabels: Record<GeneratedDocument["status"], string> = {
-  draft: "Черновик",
-  issued: "Выдан",
-  voided: "Аннулирован"
-};
-
-const taxPaymentSelectionPayloadDocumentKinds = new Set<GeneratedDocument["kind"]>([
-  "tax_deduction_certificate",
-  "legacy_tax_deduction_certificate",
-  "tax_deduction_registry"
-]);
-const taxPaymentSelectionDocumentKinds = new Set<GeneratedDocument["kind"]>([
-  ...taxPaymentSelectionPayloadDocumentKinds,
-  "tax_deduction_application"
-]);
-
-function paymentTaxYearForUi(payment: Pick<Dashboard["payments"][number], "fiscalReceiptIssuedAt" | "paidAt">): number | null {
-  const sourceDate = payment.fiscalReceiptIssuedAt || payment.paidAt;
-  if (!sourceDate) return null;
-  const explicitYear = /^(\d{4})/.exec(sourceDate)?.[1];
-  if (explicitYear) return Number(explicitYear);
-  const parsedDate = new Date(sourceDate);
-  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getFullYear();
-}
-
-function taxPaymentPayerKeyForUi(
-  payment: Pick<
-    Dashboard["payments"][number],
-    "payerInn" | "payerFullName" | "payerBirthDate" | "payerIdentityDocument" | "payerRelationship"
-  >
-): string {
-  const payerInn = payment.payerInn?.trim();
-  if (payerInn) return `inn:${payerInn}`;
-  const identityParts = [
-    payment.payerFullName?.trim(),
-    payment.payerBirthDate?.trim(),
-    payment.payerIdentityDocument?.trim(),
-    payment.payerRelationship?.trim()
-  ].filter(Boolean);
-  return identityParts.length >= 3 ? `identity:${identityParts.join("|").toLocaleLowerCase("ru-RU")}` : "";
-}
-
-function paymentFiscalReceiptLabelForUi(
-  payment: Pick<Dashboard["payments"][number], "id" | "fiscalReceiptNumber" | "fiscalReceipt">
-): string {
-  const details = payment.fiscalReceipt;
-  const structured = [
-    details?.fn ? `ФН ${details.fn}` : null,
-    details?.fd ? `ФД ${details.fd}` : null,
-    details?.fpd ? `ФПД ${details.fpd}` : null
-  ]
-    .filter(Boolean)
-    .join("; ");
-  return structured || payment.fiscalReceiptNumber?.trim() || payment.id.slice(0, 8);
-}
-
-function clinicalRuleSummaryForUi(
-  evaluations: Dashboard["clinicalRuleEvaluations"],
-  activeRules: number
-): Dashboard["clinicalRuleSummary"] {
-  const unresolved = evaluations.filter((evaluation) => !evaluation.resolved);
-  const requiredServiceIds = new Set(unresolved.flatMap((evaluation) => evaluation.missingRequiredServiceIds));
-  return {
-    activeRules,
-    evaluatedRules: evaluations.length,
-    unresolved: unresolved.length,
-    blockers: unresolved.filter((evaluation) => evaluation.severity === "blocker").length,
-    warnings: unresolved.filter((evaluation) => evaluation.severity === "warning").length,
-    requiredServices: requiredServiceIds.size,
-    coveredRules: evaluations.filter((evaluation) => evaluation.resolved).length
-  };
-}
-
-type DocumentWithChainSummary = {
-  title: string;
-  chainSummary?: DocumentChainSummary | null | undefined;
-};
-
-function completedActContractReferenceForUi(document: DocumentWithChainSummary): string {
-  const payload = document.chainSummary?.paidMedicalServicesContract;
-  if (!payload?.contractNumber) return document.title;
-  const contractDate = payload.contractDate?.trim();
-  return contractDate ? `${payload.contractNumber} от ${contractDate}` : payload.contractNumber;
-}
-
-const serviceCategoryLabels: Record<Dashboard["serviceCatalog"][number]["category"], string> = {
-  consultation: "Консультация",
-  therapy: "Терапия",
-  surgery: "Хирургия",
-  prosthetics: "Ортопедия",
-  orthodontics: "Ортодонтия",
-  periodontology: "Пародонтология",
-  hygiene: "Гигиена",
-  imaging: "Снимки",
-  documents: "Документы",
-  other: "Другое"
-};
-
-const pricelistSourceKindLabels: Record<PricelistSourceKind, string> = {
-  text: "Текст",
-  ocr_text: "OCR",
-  photo_ocr: "Фото",
-  spreadsheet_copy: "Таблица",
-  manual: "Вручную"
-};
-
-const dentalMaterialKindLabels: Record<DentalMaterialKind, string> = {
-  composite: "Композит",
-  glass_ionomer: "СИЦ",
-  sealant: "Герметик",
-  ceramic: "Керамика",
-  zirconia: "Цирконий",
-  lithium_disilicate: "E.max / дисиликат",
-  metal_ceramic: "Металлокерамика",
-  pmma: "PMMA / временные",
-  metal: "Металл",
-  titanium: "Титан",
-  implant_system: "Имплант-система",
-  abutment: "Абатмент",
-  bone_graft: "Костный материал",
-  membrane: "Мембрана",
-  aligner: "Элайнеры",
-  bracket: "Брекеты",
-  fluoride: "Фтор / реминерализация",
-  whitening: "Отбеливание",
-  anesthetic: "Анестетик",
-  imaging: "Снимки",
-  lab: "Лаборатория / скан",
-  other: "Другое",
-  unknown: "Не распознано"
-};
-
-const dentalRestorationTypeLabels: Record<DentalRestorationType, string> = {
-  filling: "Пломба",
-  direct_restoration: "Прямая реставрация",
-  inlay: "Вкладка",
-  onlay: "Накладка",
-  overlay: "Оверлей",
-  veneer: "Винир",
-  crown: "Коронка",
-  bridge: "Мост",
-  implant_crown: "Коронка на импланте",
-  temporary_crown: "Временная коронка",
-  post_core: "Культевая вкладка",
-  denture: "Протез",
-  ortho_appliance: "Ортодонтический аппарат",
-  sealant: "Герметизация",
-  whitening: "Отбеливание",
-  implant: "Имплантация",
-  surgical_guide: "Хирургический шаблон",
-  none: "Без реставрации",
-  unknown: "Не распознано"
-};
-
-const pricelistCrownTypeLabels: Record<string, string> = {
-  "zirconia multilayer": "Цирконий MultiLayer",
-  zirconia: "Цирконий",
-  "lithium disilicate": "E.max / дисиликат лития",
-  "metal ceramic": "Металлокерамика",
-  "temporary PMMA": "Временная PMMA",
-  ceramic: "Керамика",
-  crown: "Коронка"
-};
-
-function pricelistCrownTypeLabel(value: string | null | undefined): string | null {
-  if (!value) return null;
-  return pricelistCrownTypeLabels[value] ?? value;
-}
-
-function pricelistMaterialKindLabel(kind: DentalMaterialKind): string {
-  return dentalMaterialKindLabels[kind] ?? kind;
-}
-
-function pricelistRestorationTypeLabel(type: DentalRestorationType): string | null {
-  if (type === "none" || type === "unknown") return null;
-  return dentalRestorationTypeLabels[type] ?? type;
-}
-
-function pricelistMaterialSummaryText(summary: DentalPricelistAnalysisResponse["summary"][number]): string {
-  const labels = [
-    ...summary.materialKinds.map(pricelistMaterialKindLabel),
-    ...summary.brands
-  ].filter(Boolean).slice(0, 4);
-  return labels.join(", ") || "без материала";
-}
-
-function pricelistItemMaterialText(item: DentalPricelistAnalysisResponse["items"][number]): string {
-  const labels = [
-    item.brand,
-    pricelistCrownTypeLabel(item.crownType),
-    item.materialKind === "unknown" ? null : pricelistMaterialKindLabel(item.materialKind),
-    pricelistRestorationTypeLabel(item.restorationType)
-  ].filter((value): value is string => Boolean(value));
-  return labels.join(" · ") || "материал не распознан";
-}
-
-const pricelistRecognitionServiceGroups = [
-  {
-    title: "Осмотры и диагностика",
-    items: ["консультация", "план лечения", "фотопротокол", "сканирование", "ОПТГ", "КЛКТ", "ТРГ", "RVG"]
-  },
-  {
-    title: "Терапия",
-    items: ["кариес", "пульпит", "периодонтит", "эндодонтия", "коффердам", "канал", "пломба", "реставрация"]
-  },
-  {
-    title: "Ортопедия",
-    items: ["коронка", "винир", "мост", "вкладка", "накладка", "культевая", "протез", "перебазировка"]
-  },
-  {
-    title: "Хирургия и имплантация",
-    items: ["удаление", "ретинированный", "имплант", "абатмент", "формирователь", "синус-лифтинг", "НКР", "шаблон"]
-  },
-  {
-    title: "Ортодонтия",
-    items: ["брекеты", "элайнеры", "ретейнер", "капа", "дуга", "активация", "снятие", "аппарат"]
-  },
-  {
-    title: "Пародонтология и профилактика",
-    items: ["гигиена", "Air Flow", "ультразвук", "кюретаж", "пародонтальная карта", "шинирование", "фтор", "отбеливание"]
-  },
-  {
-    title: "Детский прием",
-    items: ["адаптация", "молочный зуб", "герметизация", "фторирование", "пульпотомия", "серебрение", "удерживатель"]
-  },
-  {
-    title: "Документы и админ",
-    items: ["договор", "акт", "справка для вычета", "рассрочка", "гарантия", "ДМС", "сертификат"]
-  }
-] as const;
-
-const pricelistRecognitionBrandGroups = [
-  {
-    title: "Импланты",
-    items: ["Straumann", "Nobel", "Osstem", "Dentium", "Megagen", "Astra", "BioHorizons", "MIS", "Alpha-Bio", "Neodent"]
-  },
-  {
-    title: "Кость и мембраны",
-    items: ["Geistlich", "Bio-Oss", "Bio-Gide", "Cerabone", "botiss", "OsteoBiol", "Jason", "Symbios"]
-  },
-  {
-    title: "Композиты и СИЦ",
-    items: ["Filtek", "Estelite", "Omnichroma", "Gradia", "Fuji", "Ketac", "Charisma", "Tetric", "Venus", "Voco"]
-  },
-  {
-    title: "Керамика и цирконий",
-    items: ["IPS e.max", "Ivoclar", "Katana", "Prettau", "BruxZir", "Aidite", "Cercon", "ZirCAD", "Lava", "Vita"]
-  },
-  {
-    title: "Ортодонтия",
-    items: ["Damon", "Ormco", "3M", "American Orthodontics", "Forestadent", "Invisalign", "Star Smile", "FlexiLigner"]
-  },
-  {
-    title: "Гигиена и отбеливание",
-    items: ["EMS", "Air Flow", "Vector", "Zoom", "Beyond", "Opalescence", "Amazing White", "Philips"]
-  },
-  {
-    title: "Анестезия и оборудование",
-    items: ["Ultracain", "Ubistesin", "Septanest", "3Shape", "Medit", "Sirona", "Planmeca", "Vatech", "Carestream"]
-  }
-] as const;
-
-const treatmentStatusLabels: Record<Dashboard["treatmentPlanItems"][number]["status"], string> = {
-  proposed: "предложено",
-  approved: "согласовано",
-  in_progress: "в работе",
-  completed: "готово",
-  cancelled: "отменено"
-};
-
-const scenarioStrategyLabels: Record<Dashboard["treatmentPlanScenarios"][number]["strategy"], string> = {
-  urgent: "Срочно",
-  standard: "Стандарт",
-  optimal: "Оптимально",
-  phased: "По этапам",
-  maintenance: "Поддержка"
-};
-
-const scenarioPriorityLabels: Record<Dashboard["treatmentPlanScenarios"][number]["priority"], string> = {
-  budget: "бюджет",
-  balanced: "баланс",
-  clinical: "клинический приоритет"
-};
-
-const clinicalRuleSeverityLabels: Record<Dashboard["clinicalRuleEvaluations"][number]["severity"], string> = {
-  info: "контроль",
-  warning: "предупреждение",
-  blocker: "важно"
-};
-
-const clinicalRuleActionLabels: Record<Dashboard["clinicalRuleEvaluations"][number]["action"], string> = {
-  add_required_service: "добавить услугу",
-  block_service: "проверить риск",
-  show_warning: "показать врачу",
-  schedule_followup: "поставить recall"
-};
-
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  cash: "Наличные",
-  card: "Карта",
-  bank_transfer: "Перевод",
-  online: "Онлайн",
-  insurance: "ДМС",
-  other: "Другое"
-};
-
-const communicationChannelLabels: Record<Dashboard["communicationTasks"][number]["channel"], string> = {
-  phone: "Звонок",
-  sms: "SMS",
-  whatsapp: "WhatsApp",
-  telegram: "Телеграм",
-  email: "Email",
-  in_person: "В кабинете"
-};
-
-const communicationIntentLabels: Record<Dashboard["communicationTasks"][number]["intent"], string> = {
-  appointment_confirmation: "Подтверждение",
-  payment_reminder: "Оплата",
-  post_visit_instruction: "Инструкция",
-  recall: "Повторный визит",
-  document_ready: "Документы",
-  imaging_review: "Снимок",
-  general: "Связь"
-};
-
-const communicationPriorityLabels: Record<Dashboard["communicationTasks"][number]["priority"], string> = {
-  low: "низкий",
-  normal: "обычный",
-  high: "важно",
-  urgent: "срочно"
-};
-
-const communicationStatusLabels: Record<Dashboard["communicationTasks"][number]["status"], string> = {
-  queued: "в очереди",
-  scheduled: "запланировано",
-  needs_call: "нужен звонок",
-  sent: "отправлено",
-  delivered: "доставлено",
-  completed: "закрыто",
-  skipped: "пропущено",
-  failed: "ошибка"
-};
-
-const moneyDocumentKinds = new Set<GeneratedDocument["kind"]>(
-  Object.entries(documentKindMetadata)
-    .filter(([, metadata]) => metadata.amountSource !== "none")
-    .map(([kind]) => kind as GeneratedDocument["kind"])
-);
-
-const structuredPayloadDocumentKinds = new Set<GeneratedDocument["kind"]>([
-  "paid_medical_services_contract",
-  "completed_works_act",
-  "treatment_cost_estimate",
-  "payment_invoice",
-  "payment_receipt",
-  "installment_payment_schedule",
-  "minor_legal_representative_consent",
-  "warranty_service_memo",
-  "patient_intake_questionnaire",
-  "tax_deduction_application",
-  "tax_deduction_certificate",
-  "legacy_tax_deduction_certificate",
-  "tax_deduction_registry",
-  "anesthesia_consent_log",
-  "prescription_medication_order",
-  "lab_work_order",
-  "photo_video_consent",
-  "xray_cbct_referral",
-  "outpatient_medical_card_025u",
-  "medical_record_extract",
-  "medical_record_copy_request",
-  "post_visit_recommendations",
-  "treatment_plan",
-  "treatment_plan_acceptance",
-  "visit_attendance_certificate",
-  "medical_document_release_receipt",
-  "payment_refund_correction_request",
-  "informed_consent",
-  "procedure_specific_consent_packet",
-  "personal_data_processing_consent",
-  "medical_intervention_refusal"
-]);
-
-const clinicModeLabels: Record<ClinicMode, { title: string; detail: string }> = {
-  solo_doctor: {
-    title: "Отдельный врач",
-    detail: "Минимум экранов, максимум скорости приема, документы и диктовка под рукой."
-  },
-  one_chair: {
-    title: "1 кабинет",
-    detail: "Один поток пациентов, одна смена, простая касса, снимки и вычеты."
-  },
-  small_clinic: {
-    title: "Малая клиника",
-    detail: "Несколько врачей, кресел, администраторы, ассистенты и роли."
-  },
-  network_clinic: {
-    title: "Сеть",
-    detail: "Филиалы, централизованные шаблоны, права, импорт и сквозной аудит."
-  }
-};
-
-const staffRoleLabels: Record<StaffRole, string> = {
-  owner: "Владелец",
-  doctor: "Врач",
-  administrator: "Администратор",
-  assistant: "Ассистент",
-  manager: "Управляющий"
-};
-
-const workloadStateLabels: Record<ResourceLoad["state"], string> = {
-  idle: "пусто",
-  healthy: "норма",
-  tight: "плотно",
-  overbooked: "перегруз"
-};
-
-const warningSeverityLabels: Record<ScheduleWarning["severity"], string> = {
-  info: "контроль",
-  warning: "риск",
-  critical: "важно"
-};
-
-const specialtyLabels: Record<DentalSpecialty, string> = {
-  therapist: "терапия",
-  orthopedist: "ортопедия",
-  surgeon: "хирургия",
-  orthodontist: "ортодонтия",
-  periodontist: "пародонтология",
-  hygienist: "гигиена",
-  pediatric: "детская",
-  implantologist: "имплантация",
-  radiologist: "рентген",
-  universal: "универсально"
-};
-
-const integrationCategoryLabels: Record<IntegrationCategory, string> = {
-  dental_mis: "Старая МИС",
-  spreadsheet: "Таблица",
-  paper_archive: "Бумага/OCR",
-  imaging_system: "Снимки",
-  accounting: "Касса",
-  custom: "Свой формат"
-};
-
-const integrationCapabilityLabels: Record<IntegrationCapability, string> = {
-  patients: "пациенты",
-  appointments: "записи",
-  visits: "ЭМК",
-  documents: "документы",
-  services: "услуги",
-  payments: "оплаты",
-  imaging: "снимки",
-  tax_documents: "вычет",
-  audit: "аудит"
-};
-
-const integrationStatusLabels: Record<IntegrationPresetStatus, string> = {
-  usable_now: "можно сейчас",
-  needs_mapping: "нужна карта полей",
-  planned_connector: "коннектор позже"
-};
-
-const recognitionTargetLabels: Record<AiRecognitionTarget, string> = {
-  visit_note: "ЭМК",
-  patient_import: "импорт пациентов",
-  imaging_summary: "описание снимка",
-  document_draft: "документ"
-};
-
-const speechProviderStatusLabels: Record<SpeechProvider["status"], string> = {
-  usable_without_key: "без ключа",
-  needs_server_key: "ключ на сервере",
-  planned_local: "локальный контур"
-};
-
-const speechProviderModeLabels: Record<SpeechProvider["mode"], string> = {
-  browser_live: "браузерная диктовка",
-  server_upload: "загрузка фрагментов",
-  server_streaming: "поток",
-  local_worker: "офлайн-обработчик"
-};
-
-const speechProviderSelectionLabels: Record<SpeechGatewayStatus["providerSelectionMode"], string> = {
-  disabled: "ожидает ключ",
-  manual: "ручной выбор",
-  auto: "автовыбор",
-  fallback: "резерв"
-};
-
-const speechProviderHealthLabels: Record<string, string> = {
-  ready: "готов",
-  degraded: "ограничен",
-  setup_required: "нужна настройка",
-  planned: "запланирован",
-  offline: "офлайн"
-};
-
-const speechRecordingPathLabels: Record<string, string> = {
-  server_chunked: "серверное STT по фрагментам",
-  browser_live: "браузерная диктовка",
-  offline_queue: "офлайн-очередь",
-  local_transcript_only: "только локальный текст",
-  async_long_recording: "длинная запись в фоне"
-};
-
-const speechRecoveryStateLabels: Record<string, string> = {
-  complete: "готово",
-  quality_review: "проверка качества",
-  missing_chunks: "нет фрагментов",
-  failed_chunks: "ошибка фрагментов",
-  transcript_empty: "пустая расшифровка"
-};
-
-const dicomFolderWorkupPathLabels: Record<DicomFolderWorkupPath, string> = {
-  open_mpr: "открыть MPR",
-  downsampled_mpr: "MPR с пониженным разрешением",
-  external_viewer: "внешний просмотрщик",
-  metadata_only: "только метаданные"
-};
-
-const localBridgeStatusLabels: Record<LocalBridgeStatus, string> = {
-  ready: "готов",
-  not_configured: "не настроен",
-  unreachable: "недоступен",
-  blocked: "заблокирован",
-  misconfigured: "ошибка настройки",
-  planned: "запланирован"
-};
-
-const localBridgeUsePathLabels: Record<LocalBridgeUsePath, string> = {
-  browser_local: "локально в браузере",
-  server_gateway: "серверный шлюз",
-  local_bridge: "локальный мост ПК",
-  cloud_provider: "облачный провайдер",
-  metadata_preview: "предпросмотр метаданных",
-  external_viewer: "внешний просмотрщик",
-  manual_review: "ручная проверка"
-};
-
 function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
   return Boolean(status?.serverTranscriptionCurrentlyAvailable ?? status?.serverTranscriptionEnabled);
-}
-
-const imagingKindLabels: Record<ImagingStudyKind, string> = {
-  periapical: "Прицельный",
-  bitewing: "Интерпроксимальный",
-  opg: "ОПТГ",
-  ceph: "ТРГ",
-  cbct: "КТ",
-  photo: "Фото",
-  other: "Другое"
-};
-
-const imagingSourceLabels: Record<ImagingSourceKind, string> = {
-  manual_upload: "Файл",
-  dicom_file: "DICOM",
-  dicomweb: "DICOMweb",
-  pacs: "PACS",
-  twain_wia: "TWAIN/WIA",
-  sensor_bridge: "Датчик",
-  folder_watch: "Папка"
-};
-
-const imagingSourceDetails: Record<ImagingSourceKind, string> = {
-  manual_upload: "ручная загрузка файла",
-  dicom_file: "DICOM-файл или серия",
-  dicomweb: "сервер DICOMweb",
-  pacs: "архив PACS",
-  twain_wia: "сканер TWAIN/WIA",
-  sensor_bridge: "мост RVG-датчика",
-  folder_watch: "папка обмена"
-};
-
-const imagingViewerToolLabels: Record<string, string> = {
-  "window/level": "яркость/контраст",
-  invert: "инверсия",
-  rotate: "поворот",
-  zoom: "масштаб",
-  measure: "измерение",
-  compare: "сравнение",
-  landmarks: "цефалометрические точки",
-  MPR: "MPR",
-  axial: "аксиальная",
-  coronal: "корональная",
-  sagittal: "сагиттальная",
-  "panoramic curve": "панорамная дуга",
-  brightness: "яркость",
-  contrast: "контраст"
-};
-
-const dicomQualityModeLabels: Record<string, string> = {
-  survival: "минимальный режим",
-  fast_preview: "быстрый просмотр",
-  balanced: "рабочий режим",
-  quality: "качественный режим",
-  diagnostic: "диагностический режим",
-  overkill: "максимальная детализация"
-};
-
-const dicomTextureStrategyLabels: Record<string, string> = {
-  metadata_only: "только метаданные",
-  thumbnail_stack: "миниатюры срезов",
-  downsampled_stack: "облегченные срезы",
-  full_stack: "полные срезы",
-  gpu_volume: "GPU-объем",
-  external_viewer: "внешний просмотрщик"
-};
-
-const dicomRuntimeTierLabels: Record<string, string> = {
-  low_end: "слабый ПК",
-  standard: "обычный ПК",
-  high_end: "мощный ПК",
-  workstation: "рабочая станция",
-  diagnostic_workstation: "диагностическая станция"
-};
-
-function dicomLabel(labels: Record<string, string>, value: string | null | undefined, fallback: string): string {
-  if (!value) return fallback;
-  return labels[value] ?? value.replaceAll("_", " ");
 }
 
 type ImagingViewerState = {
@@ -863,136 +392,11 @@ type ImagingViewerPlan = {
   warnings: string[];
 };
 
-type MprProjection = DicomSeriesPreviewResponse["series"][number]["mprReadiness"]["projections"][number];
-type MprResourcePolicy = DicomSeriesPreviewResponse["series"][number]["mprReadiness"]["resourcePolicy"];
-type MprWindowPreset = Extract<ImagingViewerWindowPreset, "bone" | "soft_tissue" | "implant" | "custom">;
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
-
-const mprProjectionLabels: Record<MprProjection, string> = {
-  axial: "Аксиальная",
-  coronal: "Корональная",
-  sagittal: "Сагиттальная",
-  oblique: "Косая",
-  panoramic_reconstruction: "Панорама",
-  three_d_volume: "3D",
-  mip: "MIP"
-};
-
-const mprWindowPresetLabels: Record<MprWindowPreset, string> = {
-  bone: "Кость",
-  soft_tissue: "Мягкие ткани",
-  implant: "Имплант",
-  custom: "Своя"
-};
-
-const mprResourceTierLabels: Record<MprResourcePolicy["requiredTier"], string> = {
-  low_end: "слабый ПК",
-  standard: "обычный ПК",
-  workstation: "рабочая станция",
-  diagnostic_workstation: "диагностическая станция"
-};
-
-const mprLoadStrategyLabels: Record<MprResourcePolicy["loadStrategy"], string> = {
-  metadata_only: "только метаданные",
-  two_d_stack_stream: "2D-стек",
-  mpr_downsampled: "MPR-предпросмотр",
-  mpr_full: "MPR в полном разрешении",
-  external_handoff: "внешний просмотрщик"
-};
-
-const mprCacheModeLabels: Record<MprResourcePolicy["cacheMode"], string> = {
-  none: "без кэша",
-  metadata_only: "кэш метаданных",
-  bounded_disk: "ограниченный диск",
-  dicomweb_stream: "DICOMweb-поток"
-};
-
-const dicomSeriesViewerLabels: Record<DicomSeriesViewer, string> = {
-  none: "просмотрщик не выбран",
-  two_d_stack: "2D-стек",
-  cbct_mpr: "CBCT/MPR",
-  external_dicom: "внешний DICOM"
-};
-
-const localImagingOrganizerActionLabels: Record<LocalImagingOrganizerRecommendedAction, string> = {
-  open_ct_workup: "открыть разбор CT",
-  review_3d_models: "проверить 3D-модели",
-  mixed_case_workup: "смешанный разбор кейса",
-  manual_review: "ручная проверка"
-};
-
-const localImagingModelRoleLabels: Record<string, string> = {
-  upper_arch: "верхняя челюсть",
-  lower_arch: "нижняя челюсть",
-  bite: "прикус",
-  crown: "коронка",
-  bridge: "мост",
-  implant_guide: "имплантационный шаблон",
-  surgical_guide: "хирургический шаблон",
-  aligner: "элайнер",
-  scan_body: "скан-боди",
-  unknown: "роль не распознана"
-};
-
-const pricelistParserModeLabels: Record<string, string> = {
-  deterministic: "локальный разбор",
-  groq_json: "нейросетевой разбор",
-  deterministic_groq_fallback: "локальный разбор с нейро-проверкой"
-};
-
-const policyAuditEventLabels: Record<string, string> = {
-  "settings.update": "изменение настроек",
-  "roles.update": "изменение ролей",
-  "import.commit": "подтверждение импорта",
-  "document.template.update": "изменение шаблона документа",
-  "visit.sign": "подпись визита",
-  "clinical.override": "клиническое исключение",
-  "document.create": "создание документа",
-  "appointment.update": "изменение записи",
-  "payment.create": "создание оплаты",
-  "communication.complete": "закрытие связи",
-  "patient.update": "изменение пациента",
-  "chair.prepare": "подготовка кресла",
-  "imaging.attach": "прикрепление снимка",
-  "rule.update": "изменение правила",
-  "staff.create": "создание сотрудника",
-  "chair.create": "создание кресла"
-};
-
-const mprToolLabels: Record<string, string> = {
-  window_level: "окно/уровень",
-  pan: "сдвиг",
-  zoom: "масштаб",
-  slice_scroll: "прокрутка срезов",
-  crosshair: "синхронный курсор",
-  rotate_axes: "поворот осей",
-  oblique_planes: "косые плоскости",
-  mpr_3up: "MPR 3 окна",
-  panoramic_curve: "панорамная дуга",
-  measurement: "измерение",
-  reset: "сброс",
-  export_snapshot: "экспорт снимка",
-  external_open: "внешнее открытие"
-};
-
-const dicomWebStatusLabels: Record<DicomWebConnectorCheckResponse["status"], string> = {
-  ready: "готово",
-  auth_required: "нужна авторизация",
-  unreachable: "недоступно",
-  misconfigured: "проверить настройки"
-};
-
-const dicomViewerLaunchModeLabels: Record<DicomViewerLaunchManifestResponse["launchMode"], string> = {
-  dicomweb_url: "OHIF/DICOMweb",
-  local_manifest: "локальный манифест",
-  external_handoff: "внешний просмотрщик",
-  blocked: "заблокировано"
-};
-
-const dicomReadinessCheckLabels: Record<DicomWorkstationReadinessResponse["checks"][number]["status"], string> = {
-  pass: "OK",
-  warn: "Проверить",
-  fail: "Нет"
+type MprAxisVisualizerStyle = CSSProperties & {
+  "--mpr-axis-deg": string;
+  "--mpr-slab-width": string;
+  "--mpr-slice-position": string;
 };
 
 function viewerWindowPresetForStudy(kind: ImagingStudyKind | null | undefined): ImagingViewerWindowPreset {
@@ -1036,6 +440,33 @@ type DicomWorkbenchLocalDraft = {
   seriesKey: string;
 };
 
+type DicomWorkbenchIndexedDbDraft = DicomWorkbenchLocalDraft & {
+  storageKey: string;
+  organizationId: string | null;
+};
+
+type MprWorkbenchState = {
+  projection: MprProjection;
+  axisDeg: number;
+  slabMm: number;
+  sliceIndex: number;
+  windowPreset: MprWindowPreset;
+  crosshair: boolean;
+  linkedPlanes: boolean;
+};
+
+type MprWorkbenchLocalDraft = {
+  version: 1;
+  seriesKey: string;
+  state: MprWorkbenchState;
+  clientSavedAt: string;
+};
+
+type MprWorkbenchIndexedDbDraft = MprWorkbenchLocalDraft & {
+  storageKey: string;
+  organizationId: string | null;
+};
+
 type LocalImagingFolderDraft = {
   version: 1;
   folderPath: string;
@@ -1045,6 +476,18 @@ type LocalImagingFolderDraft = {
   folderFingerprint: string | null;
   origin: "manual" | "discovery" | "organizer" | "workbench";
   savedAt: string;
+};
+
+type DicomFirstFramePreviewMetadata = Partial<Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">>;
+
+type DicomFirstFramePreviewRequestContext = {
+  folderPath: string;
+  metadata: DicomFirstFramePreviewMetadata;
+};
+
+type DicomFirstFramePreviewOptions = {
+  preferredFileIndex?: number;
+  resetViewer?: boolean;
 };
 
 type BrowserFileSystemFileHandle = {
@@ -1063,6 +506,13 @@ type BrowserFileSystemHandle = BrowserFileSystemFileHandle | BrowserFileSystemDi
 
 type BrowserDirectoryPickerWindow = Window & {
   showDirectoryPicker?: (options?: { id?: string; mode?: "read" | "readwrite"; startIn?: string }) => Promise<BrowserFileSystemDirectoryHandle>;
+};
+
+type DentalDesktopRuntimeWindow = BrowserDirectoryPickerWindow & {
+  dentalCrmDesktop?: { dicomBridge?: unknown; localFileBridge?: unknown };
+  __DENTAL_CRM_DESKTOP__?: unknown;
+  __TAURI__?: unknown;
+  electronAPI?: unknown;
 };
 
 type BrowserPickedImagingFolderPreview = {
@@ -1097,6 +547,38 @@ type BrowserPickedImagingScanStats = {
   warnings: string[];
 };
 
+type BrowserImagingScanPhase = "scanning" | "done" | "cancelled";
+
+type BrowserImagingScanProgress = BrowserPickedImagingScanStats & {
+  phase: BrowserImagingScanPhase;
+  currentItem: string | null;
+  startedAt: string;
+  updatedAt: string;
+  elapsedMs: number;
+  processedUnits: number;
+  fileLimit: number;
+  folderLimit: number;
+  magicReadLimit: number;
+};
+
+type BrowserImagingScanOptions = {
+  signal?: AbortSignal;
+  startedAt: string;
+  onProgress?: (progress: BrowserImagingScanProgress) => void;
+};
+
+type LocalDicomOperationOptions = {
+  signal?: AbortSignal;
+};
+
+type BrowserImagingScanRuntime = {
+  startedAt: string;
+  startedAtMs: number;
+  processedUnits: number;
+  lastYieldAtMs: number;
+  lastProgressAtMs: number;
+};
+
 type BrowserMigrationSourceKind = MigrationLocalSourceDiscoveryResponse["candidates"][number]["sourceKind"];
 
 type BrowserMigrationFileKind = "database" | "dump" | "table" | "archive" | "dicom" | "image" | "model" | "other";
@@ -1117,10 +599,71 @@ type BrowserMigrationFolderStats = {
   totalBytes: number;
 };
 
+type BrowserMigrationScanStats = {
+  rootName: string;
+  sourceKind: "browser_directory_picker" | "browser_file_input";
+  scannedFiles: number;
+  scannedFolders: number;
+  databaseFiles: number;
+  dumpFiles: number;
+  tableFiles: number;
+  archiveFiles: number;
+  dicomLikeFiles: number;
+  imageFiles: number;
+  modelFiles: number;
+  totalBytes: number;
+  warnings: string[];
+};
+
+type BrowserMigrationScanPhase = "scanning" | "done" | "cancelled";
+
+type BrowserMigrationScanProgress = BrowserMigrationScanStats & {
+  phase: BrowserMigrationScanPhase;
+  currentItem: string | null;
+  startedAt: string;
+  updatedAt: string;
+  elapsedMs: number;
+  processedUnits: number;
+  fileLimit: number;
+  folderLimit: number;
+  magicReadLimit: number;
+};
+
+type BrowserMigrationScanOptions = {
+  signal?: AbortSignal;
+  startedAt: string;
+  onProgress?: (progress: BrowserMigrationScanProgress) => void;
+};
+
+type BrowserMigrationScanRuntime = {
+  startedAt: string;
+  startedAtMs: number;
+  processedUnits: number;
+  lastYieldAtMs: number;
+  lastProgressAtMs: number;
+};
+
 const imagingViewerLocalStoragePrefix = "dental-crm:imaging-viewer:";
 const dicomWorkbenchLocalStorageKey = "dental-crm:dicom-workbench:last";
+const mprWorkbenchLocalStoragePrefix = "dental-crm:ct-mpr-workbench:";
 const localImagingFolderStorageKey = "dental-crm:local-imaging-folder:last";
 const browserPickedImagingFolderStorageKey = "dental-crm:browser-picked-imaging-folder:last";
+const browserMigrationScanFileLimit = 1200;
+const browserMigrationScanFolderLimit = 320;
+const browserMigrationScanDirectoryEntryLimit = 1600;
+const browserMigrationScanMagicReadLimit = 220;
+const browserMigrationScanYieldEveryUnits = 24;
+const browserMigrationScanYieldEveryMs = 20;
+const browserMigrationScanProgressEveryUnits = 12;
+const browserMigrationScanProgressEveryMs = 96;
+const browserImagingScanFileLimit = 900;
+const browserImagingScanFolderLimit = 260;
+const browserImagingScanDirectoryEntryLimit = 1600;
+const browserImagingScanMagicReadLimit = 180;
+const browserImagingScanYieldEveryUnits = 24;
+const browserImagingScanYieldEveryMs = 20;
+const browserImagingScanProgressEveryUnits = 12;
+const browserImagingScanProgressEveryMs = 96;
 const uiPreferencesStorageKey = "dental-crm:web-ui-preferences:v1";
 const documentPaymentSelectionStorageKey = "dental-crm:document-payment-selection:v1";
 const documentPayloadDraftStorageKey = "dental-crm:document-payload-drafts:v1";
@@ -1153,6 +696,7 @@ type Outpatient025uDocumentDraftFields = {
   recordExtractTreatmentProvided: string;
   recordExtractRecommendations: string;
   recordExtractDoctorFullName: string;
+  recordExtractPreparedFromSignedRecords: boolean;
   outpatient025uMedicalCardNumber: string;
   outpatient025uOpenedAt: string;
   outpatient025uPatientSexCode: "1" | "2" | "unknown";
@@ -1173,14 +717,33 @@ type Outpatient025uDocumentDraftFields = {
   outpatient025uOtherBloodData: string;
   outpatient025uAllergyHistory: string;
   outpatient025uFinalEpicrisis: string;
+  outpatient025uOfficialForm274nChecked: boolean;
+  outpatient025uThirdPartyDataChecked: boolean;
+};
+
+type MedicalRecordExtractDocumentDraftFields = {
+  recordExtractPeriodStart: string;
+  recordExtractPeriodEnd: string;
+  recordExtractSourceVisitIds: string;
+  recordExtractComplaintAndAnamnesis: string;
+  recordExtractObjectiveStatus: string;
+  recordExtractDiagnosis: string;
+  recordExtractTreatmentProvided: string;
+  recordExtractRecommendations: string;
+  recordExtractDoctorFullName: string;
+  recordExtractRecipientFullName: string;
+  recordExtractRecipientAuthority: string;
+  recordExtractIssuedAt: string;
+  recordExtractPreparedFromSignedRecords: boolean;
+  recordExtractThirdPartyDataChecked: boolean;
 };
 
 type DocumentPayloadDraftEntry = {
-  kind: "outpatient_medical_card_025u";
+  kind: "outpatient_medical_card_025u" | "medical_record_extract";
   patientId: string;
   visitId: string | null;
   savedAt: string;
-  fields: Outpatient025uDocumentDraftFields;
+  fields: Outpatient025uDocumentDraftFields | MedicalRecordExtractDocumentDraftFields;
 };
 
 type DocumentPayloadDraftStore = {
@@ -1438,6 +1001,7 @@ function emptyOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFi
     recordExtractTreatmentProvided: "",
     recordExtractRecommendations: "",
     recordExtractDoctorFullName: "",
+    recordExtractPreparedFromSignedRecords: false,
     outpatient025uMedicalCardNumber: "",
     outpatient025uOpenedAt: today,
     outpatient025uPatientSexCode: "unknown",
@@ -1457,12 +1021,14 @@ function emptyOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFi
     outpatient025uKellK1: "",
     outpatient025uOtherBloodData: "",
     outpatient025uAllergyHistory: "",
-    outpatient025uFinalEpicrisis: ""
+    outpatient025uFinalEpicrisis: "",
+    outpatient025uOfficialForm274nChecked: false,
+    outpatient025uThirdPartyDataChecked: false
   };
 }
 
 function documentPayloadDraftKey(
-  kind: "outpatient_medical_card_025u",
+  kind: "outpatient_medical_card_025u" | "medical_record_extract",
   organizationId: string | null | undefined,
   patientId: string | null,
   visitId: string | null
@@ -1497,6 +1063,7 @@ function normalizeOutpatient025uDocumentDraftFields(value: unknown): Outpatient0
     recordExtractTreatmentProvided: localDraftString(candidate.recordExtractTreatmentProvided),
     recordExtractRecommendations: localDraftString(candidate.recordExtractRecommendations),
     recordExtractDoctorFullName: localDraftString(candidate.recordExtractDoctorFullName, 240),
+    recordExtractPreparedFromSignedRecords: candidate.recordExtractPreparedFromSignedRecords === true,
     outpatient025uMedicalCardNumber: localDraftString(candidate.outpatient025uMedicalCardNumber, 120),
     outpatient025uOpenedAt: localDraftString(candidate.outpatient025uOpenedAt, 40),
     outpatient025uPatientSexCode: normalizedOutpatient025uCode(candidate.outpatient025uPatientSexCode),
@@ -1516,7 +1083,50 @@ function normalizeOutpatient025uDocumentDraftFields(value: unknown): Outpatient0
     outpatient025uKellK1: localDraftString(candidate.outpatient025uKellK1, 80),
     outpatient025uOtherBloodData: localDraftString(candidate.outpatient025uOtherBloodData),
     outpatient025uAllergyHistory: localDraftString(candidate.outpatient025uAllergyHistory),
-    outpatient025uFinalEpicrisis: localDraftString(candidate.outpatient025uFinalEpicrisis)
+    outpatient025uFinalEpicrisis: localDraftString(candidate.outpatient025uFinalEpicrisis),
+    outpatient025uOfficialForm274nChecked: candidate.outpatient025uOfficialForm274nChecked === true,
+    outpatient025uThirdPartyDataChecked: candidate.outpatient025uThirdPartyDataChecked === true
+  };
+}
+
+function emptyMedicalRecordExtractDocumentDraftFields(): MedicalRecordExtractDocumentDraftFields {
+  const today = todayDateInputValue();
+  return {
+    recordExtractPeriodStart: today,
+    recordExtractPeriodEnd: today,
+    recordExtractSourceVisitIds: "",
+    recordExtractComplaintAndAnamnesis: "",
+    recordExtractObjectiveStatus: "",
+    recordExtractDiagnosis: "",
+    recordExtractTreatmentProvided: "",
+    recordExtractRecommendations: "",
+    recordExtractDoctorFullName: "",
+    recordExtractRecipientFullName: "",
+    recordExtractRecipientAuthority: "пациент лично",
+    recordExtractIssuedAt: new Date().toLocaleString("ru-RU"),
+    recordExtractPreparedFromSignedRecords: false,
+    recordExtractThirdPartyDataChecked: false
+  };
+}
+
+function normalizeMedicalRecordExtractDocumentDraftFields(value: unknown): MedicalRecordExtractDocumentDraftFields | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Partial<Record<keyof MedicalRecordExtractDocumentDraftFields, unknown>>;
+  return {
+    recordExtractPeriodStart: localDraftString(candidate.recordExtractPeriodStart, 40),
+    recordExtractPeriodEnd: localDraftString(candidate.recordExtractPeriodEnd, 40),
+    recordExtractSourceVisitIds: localDraftString(candidate.recordExtractSourceVisitIds, 2400),
+    recordExtractComplaintAndAnamnesis: localDraftString(candidate.recordExtractComplaintAndAnamnesis),
+    recordExtractObjectiveStatus: localDraftString(candidate.recordExtractObjectiveStatus),
+    recordExtractDiagnosis: localDraftString(candidate.recordExtractDiagnosis),
+    recordExtractTreatmentProvided: localDraftString(candidate.recordExtractTreatmentProvided),
+    recordExtractRecommendations: localDraftString(candidate.recordExtractRecommendations),
+    recordExtractDoctorFullName: localDraftString(candidate.recordExtractDoctorFullName, 240),
+    recordExtractRecipientFullName: localDraftString(candidate.recordExtractRecipientFullName, 240),
+    recordExtractRecipientAuthority: localDraftString(candidate.recordExtractRecipientAuthority, 240) || "пациент лично",
+    recordExtractIssuedAt: localDraftString(candidate.recordExtractIssuedAt, 80),
+    recordExtractPreparedFromSignedRecords: candidate.recordExtractPreparedFromSignedRecords === true,
+    recordExtractThirdPartyDataChecked: candidate.recordExtractThirdPartyDataChecked === true
   };
 }
 
@@ -1538,7 +1148,7 @@ function loadDocumentPayloadDraftStore(organizationId: string | null | undefined
         continue;
       }
       const entry = rawEntry as Partial<DocumentPayloadDraftEntry>;
-      if (entry.kind !== "outpatient_medical_card_025u") {
+      if (entry.kind !== "outpatient_medical_card_025u" && entry.kind !== "medical_record_extract") {
         pruned = true;
         continue;
       }
@@ -1550,13 +1160,16 @@ function loadDocumentPayloadDraftStore(organizationId: string | null | undefined
         pruned = true;
         continue;
       }
-      const fields = normalizeOutpatient025uDocumentDraftFields(entry.fields);
+      const fields =
+        entry.kind === "outpatient_medical_card_025u"
+          ? normalizeOutpatient025uDocumentDraftFields(entry.fields)
+          : normalizeMedicalRecordExtractDocumentDraftFields(entry.fields);
       if (!fields) {
         pruned = true;
         continue;
       }
       drafts[key] = {
-        kind: "outpatient_medical_card_025u",
+        kind: entry.kind,
         patientId: entry.patientId,
         visitId: typeof entry.visitId === "string" && entry.visitId ? entry.visitId : null,
         savedAt: entry.savedAt,
@@ -1582,7 +1195,8 @@ function loadOutpatient025uDocumentDraft(
   key: string | null
 ): Outpatient025uDocumentDraftFields | null {
   if (!key || typeof window === "undefined") return null;
-  return loadDocumentPayloadDraftStore(organizationId).drafts[key]?.fields ?? null;
+  const draft = loadDocumentPayloadDraftStore(organizationId).drafts[key];
+  return draft?.kind === "outpatient_medical_card_025u" ? (draft.fields as Outpatient025uDocumentDraftFields) : null;
 }
 
 function saveOutpatient025uDocumentDraft(
@@ -1600,6 +1214,46 @@ function saveOutpatient025uDocumentDraft(
       patientId,
       visitId,
       fields: normalizeOutpatient025uDocumentDraftFields(fields) ?? emptyOutpatient025uDocumentDraftFields(),
+      savedAt: new Date().toISOString()
+    };
+    const trimmedDrafts = Object.fromEntries(
+      Object.entries(store.drafts)
+        .sort((left, right) => right[1].savedAt.localeCompare(left[1].savedAt))
+        .slice(0, 60)
+    );
+    window.localStorage.setItem(
+      documentPayloadDraftLocalKey(organizationId),
+      JSON.stringify({ version: 1, drafts: trimmedDrafts } satisfies DocumentPayloadDraftStore)
+    );
+  } catch {
+    // Payload drafts are recovery data only; document issue still validates all facts server-side.
+  }
+}
+
+function loadMedicalRecordExtractDocumentDraft(
+  organizationId: string | null | undefined,
+  key: string | null
+): MedicalRecordExtractDocumentDraftFields | null {
+  if (!key || typeof window === "undefined") return null;
+  const draft = loadDocumentPayloadDraftStore(organizationId).drafts[key];
+  return draft?.kind === "medical_record_extract" ? (draft.fields as MedicalRecordExtractDocumentDraftFields) : null;
+}
+
+function saveMedicalRecordExtractDocumentDraft(
+  organizationId: string | null | undefined,
+  key: string | null,
+  patientId: string | null,
+  visitId: string | null,
+  fields: MedicalRecordExtractDocumentDraftFields
+): void {
+  if (!key || !patientId || typeof window === "undefined") return;
+  try {
+    const store = loadDocumentPayloadDraftStore(organizationId);
+    store.drafts[key] = {
+      kind: "medical_record_extract",
+      patientId,
+      visitId,
+      fields: normalizeMedicalRecordExtractDocumentDraftFields(fields) ?? emptyMedicalRecordExtractDocumentDraftFields(),
       savedAt: new Date().toISOString()
     };
     const trimmedDrafts = Object.fromEntries(
@@ -1650,7 +1304,41 @@ function dicomWorkbenchSeriesKey(manifest: DicomViewerWorkbenchManifestResponse)
   );
 }
 
-function loadLocalDicomWorkbenchDraft(organizationId: string | null | undefined = null): DicomWorkbenchLocalDraft | null {
+function offlineDraftOrganizationKey(organizationId: string | null | undefined = null): string {
+  return normalizedLocalOrganizationId(organizationId) ?? "default";
+}
+
+function dicomWorkbenchIndexedDbKey(organizationId: string | null | undefined = null): string {
+  return `dicom-workbench:${offlineDraftOrganizationKey(organizationId)}`;
+}
+
+function mprWorkbenchIndexedDbKey(seriesKey: string, organizationId: string | null | undefined = null): string {
+  return `mpr-workbench:${offlineDraftOrganizationKey(organizationId)}:${seriesKey}`;
+}
+
+function normalizeLocalDicomWorkbenchDraft(value: unknown): DicomWorkbenchLocalDraft | null {
+  if (!value || typeof value !== "object") return null;
+  const parsed = value as Partial<DicomWorkbenchLocalDraft>;
+  if (parsed?.manifest?.version !== "dental-crm-dicom-workbench-v1") return null;
+  if (typeof parsed.seriesKey !== "string" || typeof parsed.clientSavedAt !== "string") return null;
+  if (!localSavedAtFresh(parsed.clientSavedAt, sensitiveLocalDraftRetentionMs)) return null;
+  return {
+    manifest: parsed.manifest,
+    seriesKey: parsed.seriesKey,
+    clientSavedAt: parsed.clientSavedAt
+  };
+}
+
+function newerDicomWorkbenchDraft(
+  left: DicomWorkbenchLocalDraft | null,
+  right: DicomWorkbenchLocalDraft | null
+): DicomWorkbenchLocalDraft | null {
+  if (!left) return right;
+  if (!right) return left;
+  return Date.parse(right.clientSavedAt) > Date.parse(left.clientSavedAt) ? right : left;
+}
+
+function loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId: string | null | undefined = null): DicomWorkbenchLocalDraft | null {
   if (typeof window === "undefined") return null;
   try {
     const localKey = organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId);
@@ -1658,10 +1346,8 @@ function loadLocalDicomWorkbenchDraft(organizationId: string | null | undefined 
       window.localStorage.getItem(localKey) ??
       (organizationId ? window.localStorage.getItem(dicomWorkbenchLocalStorageKey) : null);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as DicomWorkbenchLocalDraft;
-    if (parsed?.manifest?.version !== "dental-crm-dicom-workbench-v1") return null;
-    if (!parsed.seriesKey || !parsed.clientSavedAt) return null;
-    if (!localSavedAtFresh(parsed.clientSavedAt, sensitiveLocalDraftRetentionMs)) {
+    const parsed = normalizeLocalDicomWorkbenchDraft(JSON.parse(raw));
+    if (!parsed) {
       window.localStorage.removeItem(localKey);
       if (organizationId) window.localStorage.removeItem(dicomWorkbenchLocalStorageKey);
       return null;
@@ -1672,6 +1358,113 @@ function loadLocalDicomWorkbenchDraft(organizationId: string | null | undefined 
   }
 }
 
+function mprWorkbenchSeriesKey(series: DicomSeriesPreviewGroup | null): string | null {
+  if (!series) return null;
+  const identity = [
+    series.seriesInstanceUid,
+    series.studyInstanceUid,
+    series.id,
+    series.sourceName,
+    series.seriesDescription,
+    series.studyDescription,
+    series.capturedAt
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join("|");
+  if (!identity) return null;
+  return localImagingFolderFingerprint(`${series.sourceKind}:${identity}:${series.fileCount}`);
+}
+
+function mprWorkbenchLocalKey(seriesKey: string, organizationId: string | null | undefined = null): string {
+  const normalizedOrganizationId = organizationId?.trim();
+  return `${mprWorkbenchLocalStoragePrefix}${normalizedOrganizationId ? `${normalizedOrganizationId}:` : ""}${seriesKey}`;
+}
+
+function isMprProjection(value: unknown): value is MprProjection {
+  return (
+    value === "axial" ||
+    value === "coronal" ||
+    value === "sagittal" ||
+    value === "oblique" ||
+    value === "panoramic_reconstruction" ||
+    value === "three_d_volume" ||
+    value === "mip"
+  );
+}
+
+function isMprWindowPreset(value: unknown): value is MprWindowPreset {
+  return value === "bone" || value === "soft_tissue" || value === "implant" || value === "custom";
+}
+
+function resolveMprWorkbenchProjection(value: unknown, availableProjections: MprProjection[]): MprProjection {
+  const projection = isMprProjection(value) ? value : null;
+  if (projection && availableProjections.includes(projection)) return projection;
+  if (availableProjections.includes("axial")) return "axial";
+  return availableProjections[0] ?? "axial";
+}
+
+function normalizeMprWorkbenchState(value: unknown): MprWorkbenchState | null {
+  if (!value || typeof value !== "object") return null;
+  const source = value as Partial<MprWorkbenchState>;
+  if (!isMprProjection(source.projection) || !isMprWindowPreset(source.windowPreset)) return null;
+  const axisDeg = Number(source.axisDeg);
+  const slabMm = Number(source.slabMm);
+  const sliceIndex = Number(source.sliceIndex ?? 0);
+  if (!Number.isFinite(axisDeg) || !Number.isFinite(slabMm) || !Number.isFinite(sliceIndex)) return null;
+  return {
+    projection: source.projection,
+    axisDeg: clampMprAxisDeg(axisDeg),
+    slabMm: clampMprSlabMm(slabMm),
+    sliceIndex: clampMprSliceIndex(sliceIndex, 100000),
+    windowPreset: source.windowPreset,
+    crosshair: source.crosshair !== false,
+    linkedPlanes: source.linkedPlanes !== false
+  };
+}
+
+function loadLocalMprWorkbenchDraftFromLocalStorage(
+  seriesKey: string | null,
+  organizationId: string | null | undefined = null
+): MprWorkbenchLocalDraft | null {
+  if (!seriesKey || typeof window === "undefined") return null;
+  try {
+    const localKey = mprWorkbenchLocalKey(seriesKey, organizationId);
+    const raw =
+      window.localStorage.getItem(localKey) ??
+      (organizationId ? window.localStorage.getItem(mprWorkbenchLocalKey(seriesKey)) : null);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as MprWorkbenchLocalDraft;
+    if (parsed?.version !== 1 || parsed.seriesKey !== seriesKey || !parsed.clientSavedAt) return null;
+    if (!localSavedAtFresh(parsed.clientSavedAt, sensitiveLocalDraftRetentionMs)) {
+      window.localStorage.removeItem(localKey);
+      if (organizationId) window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey));
+      return null;
+    }
+    const state = normalizeMprWorkbenchState(parsed.state);
+    return state ? { ...parsed, state } : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLocalMprWorkbenchDraftToLocalStorage(
+  seriesKey: string,
+  state: MprWorkbenchState,
+  clientSavedAt: string,
+  organizationId: string | null | undefined = null
+): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.localStorage.setItem(
+      mprWorkbenchLocalKey(seriesKey, organizationId),
+      JSON.stringify({ version: 1, seriesKey, state, clientSavedAt } satisfies MprWorkbenchLocalDraft)
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function localImagingFolderFingerprint(folderPath: string): string {
   let hash = 2166136261;
   for (let index = 0; index < folderPath.length; index += 1) {
@@ -1679,6 +1472,88 @@ function localImagingFolderFingerprint(folderPath: string): string {
     hash = Math.imul(hash, 16777619);
   }
   return (hash >>> 0).toString(16).padStart(8, "0").toUpperCase();
+}
+
+const dicomDownloadRedactionWarning =
+  "Скачанный пакет скрывает локальные пути снимков; перед загрузкой пикселей переподключите папку или устройство на рабочей станции.";
+
+function uniqueDicomDownloadWarnings(warnings: string[]): string[] {
+  return Array.from(new Set(warnings.map((warning) => warning.trim()).filter(Boolean)));
+}
+
+function isLocalDicomDownloadPath(value: string): boolean {
+  const input = value.trim();
+  if (!input || input.startsWith("redacted-local-dicom-path:")) return false;
+  if (/^(?:https?|blob|data):/i.test(input)) return false;
+  if (/^[A-Za-z]:[\\/]/.test(input) || input.startsWith("\\\\")) return true;
+  if (/^\/(?:Users|Volumes|home|mnt|media|var|tmp|srv|opt|data|storage|dicom|pacs)(?:\/|$)/i.test(input)) return true;
+  if (input.includes("::")) return true;
+  return /^[^:?#]+[\\/][^:?#]+/.test(input) && !input.startsWith("/");
+}
+
+function redactedLocalDicomDownloadPath(value: string | null): string | null {
+  if (!value) return null;
+  if (!isLocalDicomDownloadPath(value)) return value;
+  return `redacted-local-dicom-path:${localImagingFolderFingerprint(value)}`;
+}
+
+function redactedDicomDownloadReferenceId(value: string | null): string | null {
+  if (!value) return null;
+  const prefix = "dicomfile:";
+  if (value.toLowerCase().startsWith(prefix)) {
+    return `${prefix}${redactedLocalDicomDownloadPath(value.slice(prefix.length)) ?? value.slice(prefix.length)}`;
+  }
+  return redactedLocalDicomDownloadPath(value);
+}
+
+function redactDicomDownloadText(value: string): string {
+  return value
+    .replace(/dicomfile:([A-Za-z]:[\\/][^\s\r\n]+)/gi, (_match, filePath: string) => {
+      return `dicomfile:${redactedLocalDicomDownloadPath(filePath) ?? filePath}`;
+    })
+    .replace(/[A-Za-z]:[\\/][^\r\n]*(?=:\s|$)/g, (match) => redactedLocalDicomDownloadPath(match) ?? match)
+    .replace(/\\\\[^\r\n]*(?=:\s|$)/g, (match) => redactedLocalDicomDownloadPath(match) ?? match);
+}
+
+function redactedDicomDownloadWarnings(warnings: string[]): string[] {
+  return uniqueDicomDownloadWarnings(warnings.map((warning) => redactDicomDownloadText(warning)));
+}
+
+function redactedDicomViewerToolStateBundleForDownload(
+  bundle: DicomViewerToolStateBundleResponse
+): DicomViewerToolStateBundleResponse {
+  const clone = JSON.parse(JSON.stringify(bundle)) as DicomViewerToolStateBundleResponse;
+  clone.seriesRef.firstFilePath = redactedLocalDicomDownloadPath(clone.seriesRef.firstFilePath);
+  clone.viewports = clone.viewports.map((viewport) => ({
+    ...viewport,
+    referencedImageId: redactedDicomDownloadReferenceId(viewport.referencedImageId)
+  }));
+  clone.annotations = clone.annotations.map((annotation) => ({
+    ...annotation,
+    referencedImageId: redactedDicomDownloadReferenceId(annotation.referencedImageId),
+    warnings: redactedDicomDownloadWarnings(annotation.warnings)
+  }));
+  clone.warnings = uniqueDicomDownloadWarnings([
+    ...redactedDicomDownloadWarnings(clone.warnings),
+    dicomDownloadRedactionWarning
+  ]).slice(0, 16);
+  return clone;
+}
+
+function redactedDicomWorkbenchManifestForDownload(
+  manifest: DicomViewerWorkbenchManifestResponse
+): DicomViewerWorkbenchManifestResponse {
+  const clone = JSON.parse(JSON.stringify(manifest)) as DicomViewerWorkbenchManifestResponse;
+  clone.toolStateBundle = redactedDicomViewerToolStateBundleForDownload(clone.toolStateBundle);
+  clone.launchManifest.viewerUrl = redactedLocalDicomDownloadPath(clone.launchManifest.viewerUrl);
+  clone.warnings = uniqueDicomDownloadWarnings([
+    ...redactedDicomDownloadWarnings(clone.warnings),
+    dicomDownloadRedactionWarning
+  ]).slice(0, 16);
+  clone.readiness.warnings = redactedDicomDownloadWarnings(clone.readiness.warnings);
+  clone.renderCachePlan.warnings = redactedDicomDownloadWarnings(clone.renderCachePlan.warnings);
+  clone.launchManifest.warnings = redactedDicomDownloadWarnings(clone.launchManifest.warnings);
+  return clone;
 }
 
 function classifyBrowserImagingFileName(fileName: string): "dicom" | "archive" | "model" | "image" | "other" {
@@ -1693,28 +1568,34 @@ function classifyBrowserImagingFileName(fileName: string): "dicom" | "archive" |
 
 const browserMigrationSourceTitles: Record<BrowserMigrationSourceKind, string> = {
   mis_database: "Старая МИС или CRM",
-  firebird_database: "Firebird/InterBase база",
-  access_database: "Access MDB/ACCDB база",
-  sqlite_database: "SQLite база",
-  sql_dump: "SQL dump или backup",
-  spreadsheet_export: "Excel/XLSX выгрузка",
-  csv_export: "CSV/TSV выгрузка",
+  firebird_database: "Старая серверная база программы",
+  access_database: "Старая настольная база",
+  sqlite_database: "Локальная база программы",
+  sql_dump: "Резервная копия старой базы",
+  spreadsheet_export: "Табличная выгрузка",
+  csv_export: "табличная выгрузка",
   archive_export: "Архив выгрузки",
-  pacs_dicom: "PACS/DICOM источник",
-  dicom_folder: "DICOMDIR/КТ папка",
+  pacs_dicom: "архив снимков",
+  dicom_folder: "папка КЛКТ/КТ",
   xray_image_archive: "Архив RVG/ОПТГ/фото",
-  vendor_imaging_system: "Vendor-система снимков",
+  vendor_imaging_system: "Программа снимков",
   network_share: "Сетевая папка обмена",
-  unknown_legacy_source: "Неопознанный legacy-источник"
+  unknown_legacy_source: "Неопознанный источник старой системы"
 };
+
+const browserLegacyMisTextPattern =
+  /1c|1с|\.1cd\b|мис|инфоклиника|infoclinica|infodent|инфодент|дента\s*офис|denta\s*office|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental4windows|dental\s*pro|dentpro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|medangel|медангел|medialog|медиалог|arnica|арника|sycret\s*dent|secret\s*dent|адента|adenta|dent\s*crm\s*24|dentcrm24|dent\.crm24|клиентикс|clientix|klientix|2v.*(?:стоматолог|dental)|future\s*it\s*dent|futureitdent|32\s*top|32top|medods|медодс|dental\s*tap|dentaltap|(?:^|[\\/])ident(?:[\\/]|$)|\bident\b|stomx|stom\s*x|стомx|стомикс|i[-\s]?stom|ай\s*стом|q[-\s]?stoma|кью\s*стома|бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог|mac\s*dent|macdent|stom\s*box|stombox|open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz|dentrix|eaglesoft|patterson|softdent|practice\s*works|curve\s*dental|denticon|tab32|dolphin\s*(?:imaging|management)|legacy|старая\s+баз/i;
 
 function classifyBrowserMigrationFileName(fileName: string): BrowserMigrationFileKind {
   const lowerName = fileName.toLowerCase();
   const extension = lowerName.includes(".") ? lowerName.slice(lowerName.lastIndexOf(".") + 1) : "";
   if (lowerName === "dicomdir" || ["dcm", "dicom", "ima", "dc3", "acr"].includes(extension)) return "dicom";
-  if (["fdb", "gdb", "mdb", "accdb", "sqlite", "sqlite3", "db", "dbf", "1cd", "mdf", "ldf", "sdf"].includes(extension)) return "database";
-  if (["fbk", "bak", "backup", "dump", "sql", "dt"].includes(extension)) return "dump";
-  if (["csv", "tsv", "xls", "xlsx", "ods", "xml", "json"].includes(extension)) return "table";
+  if (
+    ["fdb", "gdb", "ib", "mdb", "accdb", "sqlite", "sqlite3", "db", "dbf", "dbt", "fpt", "cdx", "idx", "ntx", "ndx", "mdx", "1cd", "mdf", "ldf", "sdf", "myd", "myi", "frm", "ibd"].includes(extension)
+  )
+    return "database";
+  if (["fbk", "ibk", "gbk", "bak", "backup", "dump", "sql", "psql", "pgsql", "dt"].includes(extension)) return "dump";
+  if (["csv", "tsv", "xls", "xlsx", "xlsm", "xlsb", "ods", "xml", "json"].includes(extension)) return "table";
   if (["zip", "7z", "rar", "tar", "gz"].includes(extension)) return "archive";
   if (["stl", "obj", "ply", "glb", "gltf", "3mf"].includes(extension)) return "model";
   if (["jpg", "jpeg", "png", "tif", "tiff", "bmp", "webp"].includes(extension)) return "image";
@@ -1725,24 +1606,26 @@ function browserMigrationFolderHintScore(value: string): number {
   const normalized = value.toLowerCase();
   let score = 0;
   if (/dental|denta|clinic|stom|стом|mis|crm|legacy|migration|миграц|перенос|backup|dump|export|выгруз|стар/.test(normalized)) score += 0.14;
-  if (/инфоклиника|cliniccards|dental4windows|ident|stomx|1c|1с|1cv8|sql|firebird|interbase|access|sqlite/.test(normalized)) score += 0.2;
-  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|durr|dürr|3shape|medit|exocad/.test(normalized)) score += 0.18;
+  if (browserLegacyMisTextPattern.test(normalized) || /sql|firebird|interbase|access|sqlite/.test(normalized)) score += 0.2;
+  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|durr|dürr|morita|i[-\s]?dixel|newtom|\bnnt\b|myray|owandy|quick\s*vision|quickvision|dexis|kavo|gendex|acteon|sopro|sopix|pspix|x[-\s]?mind|dolphin|3shape|medit|exocad/.test(normalized)) score += 0.18;
   if (/dicom|dicomdir|cbct|кт|ккт|rvg|opg|оптг|xray|x-ray|рентген|сним|pacs|orthanc|dcm4chee/.test(normalized)) score += 0.18;
   return score;
 }
 
 function browserMigrationSourceKindFromStats(stats: BrowserMigrationFolderStats): BrowserMigrationSourceKind {
   const text = stats.folderHint.toLowerCase();
-  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|3shape|medit|exocad/.test(text)) return "vendor_imaging_system";
+  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|morita|i[-\s]?dixel|newtom|\bnnt\b|myray|owandy|quick\s*vision|quickvision|dexis|kavo|gendex|acteon|sopro|sopix|pspix|x[-\s]?mind|dolphin|3shape|medit|exocad/.test(text)) return "vendor_imaging_system";
   if (stats.hasDicomDir || stats.dicomLikeFiles > 0 || /dicom|cbct|кт|ккт/.test(text)) return "dicom_folder";
   if (stats.imageFiles >= 6 || stats.modelFiles > 0 || /rvg|opg|оптг|xray|рентген|сним/.test(text)) return "xray_image_archive";
-  if (/\.fdb|\.gdb|\.fbk|firebird|interbase/.test(text)) return "firebird_database";
+  if (/\.fdb|\.gdb|\.fbk|\.ib\b|\.ibk|\.gbk|firebird|interbase/.test(text)) return "firebird_database";
   if (/\.mdb|\.accdb|access/.test(text)) return "access_database";
+  if (/\.dbf|\.dbt|\.fpt|\.cdx|\.idx|\.ntx|\.ndx|\.mdx|dbase|foxpro|clipper|paradox/.test(text)) return "mis_database";
   if (/\.sqlite|\.sqlite3|sqlite|\.db\b/.test(text)) return "sqlite_database";
+  if (/mysql|mariadb|postgres|postgresql|pgsql|psql|\.myd|\.myi|\.frm|\.ibd/.test(text)) return "mis_database";
   if (stats.dumpFiles > 0 || /\.sql|\.dump|\.bak|\.dt|\.mdf|\.ldf|\.sdf|sql server|mssql/.test(text)) return "sql_dump";
   if (stats.tableFiles > 0) return /\.csv|\.tsv/.test(text) ? "csv_export" : "spreadsheet_export";
   if (stats.archiveFiles > 0) return "archive_export";
-  if (/1c|1с|1cv8|\.1cd|инфоклиника|cliniccards|dental4windows|ident|stomx|mis|crm/.test(text)) return "mis_database";
+  if (browserLegacyMisTextPattern.test(text)) return "mis_database";
   if (stats.databaseFiles > 0) return "mis_database";
   return "unknown_legacy_source";
 }
@@ -1782,13 +1665,13 @@ function buildBrowserMigrationDiscovery(input: {
       const sourceKind = browserMigrationSourceKindFromStats(stats);
       const fingerprint = browserPickedFolderFingerprint(`${input.rootName}:${stats.folderKey}:${matchedFiles}:${stats.totalBytes}`);
       const reasons: string[] = [];
-      if (stats.databaseFiles) reasons.push(`${stats.databaseFiles} файлов старой БД`);
-      if (stats.dumpFiles) reasons.push(`${stats.dumpFiles} backup/dump файлов`);
+      if (stats.databaseFiles) reasons.push(`${stats.databaseFiles} файлов старой базы`);
+      if (stats.dumpFiles) reasons.push(`${stats.dumpFiles} файлов резервной копии`);
       if (stats.tableFiles) reasons.push(`${stats.tableFiles} табличных выгрузок`);
       if (stats.archiveFiles) reasons.push(`${stats.archiveFiles} архивов`);
-      if (stats.dicomLikeFiles) reasons.push(`${stats.dicomLikeFiles} DICOM/DICOMDIR признаков`);
+      if (stats.dicomLikeFiles) reasons.push(`${stats.dicomLikeFiles} признаков снимков или серий КТ`);
       if (stats.imageFiles) reasons.push(`${stats.imageFiles} изображений`);
-      if (stats.modelFiles) reasons.push(`${stats.modelFiles} dental 3D моделей`);
+      if (stats.modelFiles) reasons.push(`${stats.modelFiles} 3D-моделей зубов`);
       if (hintScore > 0) reasons.push("название папки похоже на старую CRM/снимки/миграцию");
       return {
         sourceRef: `browser-local:${fingerprint}`,
@@ -1808,8 +1691,8 @@ function buildBrowserMigrationDiscovery(input: {
         hasDicomDir: stats.hasDicomDir,
         latestModifiedAt: stats.latestModifiedAt,
         reasons,
-        warnings: ["Браузерный manifest не содержит полного пути; для staging нужен локальный bridge или ручной путь администратора."],
-        smartImportLine: `legacy source ${browserMigrationSourceTitles[sourceKind]} browser-local:${fingerprint} files=${matchedFiles} db=${stats.databaseFiles} dumps=${stats.dumpFiles} tables=${stats.tableFiles} dicom=${stats.dicomLikeFiles} images=${stats.imageFiles} models=${stats.modelFiles}`
+        warnings: ["Выбранная через браузер папка не дает полного пути; для автоматического переноса нужен локальный модуль или ручной путь администратора."],
+        smartImportLine: `Источник старой системы: ${browserMigrationSourceTitles[sourceKind]}; код источника browser-local:${fingerprint}; файлов=${matchedFiles}; старых баз=${stats.databaseFiles}; копий=${stats.dumpFiles}; таблиц=${stats.tableFiles}; КТ/снимков=${stats.dicomLikeFiles}; изображений=${stats.imageFiles}; моделей=${stats.modelFiles}`
       };
     })
     .filter((candidate): candidate is MigrationLocalSourceDiscoveryResponse["candidates"][number] => Boolean(candidate))
@@ -1829,12 +1712,12 @@ function buildBrowserMigrationDiscovery(input: {
     candidates,
     warnings: [
       ...input.warnings,
-      "Браузерный manifest читает только выбранную папку/файлы и не раскрывает серверу полный локальный путь.",
-      ...(candidates.length ? [] : ["В выбранной папке не найдено старых БД, DICOM, снимков, архивов или выгрузок в пределах лимитов."])
+      "Браузерный список читает только выбранную папку/файлы и не раскрывает серверу полный локальный путь.",
+      ...(candidates.length ? [] : ["В выбранной папке не найдено старых баз, снимков, архивов или выгрузок в пределах лимитов."])
     ],
     nextAction: candidates.length
-      ? "Откройте план по найденному browser-local кандидату или отправьте его в умный парсер как безопасный manifest."
-      : "Выберите корень старой МИС/снимков выше уровнем или запустите локальный migration bridge для полного автопоиска по ПК."
+      ? "Откройте план по найденному кандидату из браузера или отправьте его в умный разбор как список найденных файлов."
+      : "Выберите корень старой МИС/снимков выше уровнем или запустите локальный модуль миграции для полного автопоиска по ПК."
   };
 }
 
@@ -1846,6 +1729,199 @@ async function browserFileHasDicomMagic(file: File): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function browserImagingScanNowMs(): number {
+  return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+}
+
+function createBrowserImagingScanRuntime(startedAt: string): BrowserImagingScanRuntime {
+  const now = browserImagingScanNowMs();
+  return {
+    startedAt,
+    startedAtMs: now,
+    processedUnits: 0,
+    lastYieldAtMs: now,
+    lastProgressAtMs: now
+  };
+}
+
+function browserImagingScanElapsedFromIso(startedAt: string, updatedAt: string): number {
+  const start = Date.parse(startedAt);
+  const end = Date.parse(updatedAt);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return 0;
+  return end - start;
+}
+
+function throwIfBrowserImagingScanAborted(signal?: AbortSignal): void {
+  if (!signal?.aborted) return;
+  const error = new Error("Browser imaging scan cancelled");
+  error.name = "AbortError";
+  throw error;
+}
+
+function isBrowserImagingScanAbortError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    String((error as { name?: unknown }).name) === "AbortError"
+  );
+}
+
+async function browserImagingScanYield(): Promise<void> {
+  const scheduler = (globalThis as typeof globalThis & { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (typeof scheduler?.yield === "function") {
+    await scheduler.yield();
+    return;
+  }
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
+
+function browserImagingScanProgressFromStats(
+  stats: BrowserPickedImagingScanStats,
+  runtime: BrowserImagingScanRuntime,
+  phase: BrowserImagingScanPhase,
+  currentItem: string | null
+): BrowserImagingScanProgress {
+  const now = browserImagingScanNowMs();
+  return {
+    ...stats,
+    warnings: [...stats.warnings],
+    phase,
+    currentItem,
+    startedAt: runtime.startedAt,
+    updatedAt: new Date().toISOString(),
+    elapsedMs: Math.max(0, Math.round(now - runtime.startedAtMs)),
+    processedUnits: runtime.processedUnits,
+    fileLimit: browserImagingScanFileLimit,
+    folderLimit: browserImagingScanFolderLimit,
+    magicReadLimit: browserImagingScanMagicReadLimit
+  };
+}
+
+function publishBrowserImagingScanProgress(
+  stats: BrowserPickedImagingScanStats,
+  options: BrowserImagingScanOptions,
+  runtime: BrowserImagingScanRuntime,
+  currentItem: string | null,
+  phase: BrowserImagingScanPhase = "scanning",
+  force = false
+): void {
+  if (!options.onProgress) return;
+  const now = browserImagingScanNowMs();
+  const shouldPublish =
+    force ||
+    runtime.processedUnits % browserImagingScanProgressEveryUnits === 0 ||
+    now - runtime.lastProgressAtMs >= browserImagingScanProgressEveryMs;
+  if (!shouldPublish) return;
+  runtime.lastProgressAtMs = now;
+  options.onProgress(browserImagingScanProgressFromStats(stats, runtime, phase, currentItem));
+}
+
+async function maybeYieldBrowserImagingScan(runtime: BrowserImagingScanRuntime, signal?: AbortSignal): Promise<void> {
+  throwIfBrowserImagingScanAborted(signal);
+  const now = browserImagingScanNowMs();
+  const shouldYield =
+    runtime.processedUnits % browserImagingScanYieldEveryUnits === 0 || now - runtime.lastYieldAtMs >= browserImagingScanYieldEveryMs;
+  if (!shouldYield) return;
+  runtime.lastYieldAtMs = now;
+  await browserImagingScanYield();
+  throwIfBrowserImagingScanAborted(signal);
+}
+
+function createBrowserMigrationScanRuntime(startedAt: string): BrowserMigrationScanRuntime {
+  const now = browserImagingScanNowMs();
+  return {
+    startedAt,
+    startedAtMs: now,
+    processedUnits: 0,
+    lastYieldAtMs: now,
+    lastProgressAtMs: now
+  };
+}
+
+function throwIfBrowserMigrationScanAborted(signal?: AbortSignal): void {
+  if (!signal?.aborted) return;
+  const error = new Error("Browser migration scan cancelled");
+  error.name = "AbortError";
+  throw error;
+}
+
+function isBrowserMigrationScanAbortError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    String((error as { name?: unknown }).name) === "AbortError"
+  );
+}
+
+function browserMigrationScanProgressFromStats(
+  stats: BrowserMigrationScanStats,
+  runtime: BrowserMigrationScanRuntime,
+  phase: BrowserMigrationScanPhase,
+  currentItem: string | null
+): BrowserMigrationScanProgress {
+  const now = browserImagingScanNowMs();
+  return {
+    ...stats,
+    warnings: [...stats.warnings],
+    phase,
+    currentItem,
+    startedAt: runtime.startedAt,
+    updatedAt: new Date().toISOString(),
+    elapsedMs: Math.max(0, Math.round(now - runtime.startedAtMs)),
+    processedUnits: runtime.processedUnits,
+    fileLimit: browserMigrationScanFileLimit,
+    folderLimit: browserMigrationScanFolderLimit,
+    magicReadLimit: browserMigrationScanMagicReadLimit
+  };
+}
+
+function publishBrowserMigrationScanProgress(
+  stats: BrowserMigrationScanStats,
+  options: BrowserMigrationScanOptions,
+  runtime: BrowserMigrationScanRuntime,
+  currentItem: string | null,
+  phase: BrowserMigrationScanPhase = "scanning",
+  force = false
+): void {
+  if (!options.onProgress) return;
+  const now = browserImagingScanNowMs();
+  const shouldPublish =
+    force ||
+    runtime.processedUnits % browserMigrationScanProgressEveryUnits === 0 ||
+    now - runtime.lastProgressAtMs >= browserMigrationScanProgressEveryMs;
+  if (!shouldPublish) return;
+  runtime.lastProgressAtMs = now;
+  options.onProgress(browserMigrationScanProgressFromStats(stats, runtime, phase, currentItem));
+}
+
+async function maybeYieldBrowserMigrationScan(runtime: BrowserMigrationScanRuntime, signal?: AbortSignal): Promise<void> {
+  throwIfBrowserMigrationScanAborted(signal);
+  const now = browserImagingScanNowMs();
+  const shouldYield =
+    runtime.processedUnits % browserMigrationScanYieldEveryUnits === 0 || now - runtime.lastYieldAtMs >= browserMigrationScanYieldEveryMs;
+  if (!shouldYield) return;
+  runtime.lastYieldAtMs = now;
+  await browserImagingScanYield();
+  throwIfBrowserMigrationScanAborted(signal);
+}
+
+function addBrowserMigrationKindToScanStats(
+  stats: BrowserMigrationScanStats,
+  kind: BrowserMigrationFileKind,
+  fileSize: number
+): void {
+  stats.totalBytes += fileSize;
+  if (kind === "database") stats.databaseFiles += 1;
+  else if (kind === "dump") stats.dumpFiles += 1;
+  else if (kind === "table") stats.tableFiles += 1;
+  else if (kind === "archive") stats.archiveFiles += 1;
+  else if (kind === "dicom") stats.dicomLikeFiles += 1;
+  else if (kind === "image") stats.imageFiles += 1;
+  else if (kind === "model") stats.modelFiles += 1;
 }
 
 function browserPickedFolderFingerprint(input: string): string {
@@ -1916,13 +1992,13 @@ function buildBrowserPickedImagingFolderPreview(stats: BrowserPickedImagingScanS
   const hasDicom = stats.dicomLikeFiles > 0;
   const hasModels = stats.modelFiles > 0;
   const nextAction = hasDicom
-    ? "Найдены файлы DICOM/CT. Для просмотра пикселей используйте серверный или локальный обработчик либо границу OHIF/Cornerstone."
+    ? "Найдены файлы КТ/снимков. Для тяжелой КТ откройте эту же папку в локальном модуле клиники или в полноценном просмотрщике КТ."
     : hasModels
     ? "Найдены стоматологические 3D-модели. До подключения просмотрщика 3D-моделей держим это как метаданные органайзера."
-      : "В ограниченном браузерном сканировании DICOM-похожие файлы не найдены.";
+      : "В ограниченном браузерном сканировании файлы снимков не найдены.";
   return {
     version: 1,
-    safeDisplayName: `${hasDicom ? "Браузерная CT-папка" : "Браузерная папка снимков"} #${fingerprint}`,
+    safeDisplayName: `${hasDicom ? "Браузерная КТ-папка" : "Браузерная папка снимков"} #${fingerprint}`,
     sourceLabel: stats.sourceKind === "browser_directory_picker" ? "Выбор папки браузером" : "Выбор файлов браузером",
     sourceKind: stats.sourceKind,
     folderFingerprint: fingerprint,
@@ -1957,7 +2033,7 @@ function loadLocalImagingFolderDraft(organizationId: string | null | undefined =
     }
     return {
       ...parsed,
-      safeDisplayName: parsed.safeDisplayName || `Local imaging folder #${localImagingFolderFingerprint(parsed.folderPath)}`,
+      safeDisplayName: parsed.safeDisplayName || `Локальная папка снимков #${localImagingFolderFingerprint(parsed.folderPath)}`,
       sourceLabel: parsed.sourceLabel || "Это устройство",
       sourceKind: parsed.sourceKind || "manual",
       folderFingerprint: parsed.folderFingerprint || localImagingFolderFingerprint(parsed.folderPath),
@@ -1987,22 +2063,28 @@ function removeLocalImagingFolderDraft(organizationId: string | null | undefined
   }
 }
 
-function saveLocalDicomWorkbenchDraft(
+function saveLocalDicomWorkbenchDraftToLocalStorage(
+  draft: DicomWorkbenchLocalDraft,
+  organizationId: string | null | undefined = null
+): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.localStorage.setItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId), JSON.stringify(draft));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function createLocalDicomWorkbenchDraft(
   manifest: DicomViewerWorkbenchManifestResponse,
   clientSavedAt: string,
-  organizationId: string | null | undefined = null
-): void {
-  if (typeof window === "undefined") return;
-  const draft: DicomWorkbenchLocalDraft = {
+): DicomWorkbenchLocalDraft {
+  return {
     manifest,
     clientSavedAt,
     seriesKey: dicomWorkbenchSeriesKey(manifest)
   };
-  try {
-    window.localStorage.setItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId), JSON.stringify(draft));
-  } catch {
-    // Local recovery is best-effort. The server can rebuild the bundle from the DICOM manifest.
-  }
 }
 
 function dicomWorkbenchManifestHasRedactedSource(manifest: DicomViewerWorkbenchManifestResponse | null): boolean {
@@ -2016,7 +2098,7 @@ function dicomWorkbenchManifestHasRedactedSource(manifest: DicomViewerWorkbenchM
   );
 }
 
-function removeLocalDicomWorkbenchDraft(organizationId: string | null | undefined = null): void {
+function removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId: string | null | undefined = null): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(organizationScopedLocalStorageKey(dicomWorkbenchLocalStorageKey, organizationId));
@@ -2024,6 +2106,28 @@ function removeLocalDicomWorkbenchDraft(organizationId: string | null | undefine
   } catch {
     // ignore unavailable storage
   }
+}
+
+function hasDentalDesktopShellBridge(): boolean {
+  if (typeof window === "undefined") return false;
+  const runtimeWindow = window as DentalDesktopRuntimeWindow;
+  return Boolean(
+    runtimeWindow.dentalCrmDesktop?.dicomBridge ||
+      runtimeWindow.dentalCrmDesktop?.localFileBridge ||
+      runtimeWindow.__DENTAL_CRM_DESKTOP__ ||
+      runtimeWindow.__TAURI__ ||
+      runtimeWindow.electronAPI
+  );
+}
+
+function detectDicomRuntimeSurfaceHint(): DicomWorkstationClientFacts["runtimeSurfaceHint"] {
+  if (typeof navigator === "undefined") return "unknown";
+  if (hasDentalDesktopShellBridge()) return "desktop_app";
+  const text = `${navigator.platform || ""} ${navigator.userAgent || ""}`.toLowerCase();
+  if (/ipad|tablet/.test(text)) return "tablet_web";
+  if (/android|iphone|ipod|mobile|phone/.test(text)) return "mobile_web";
+  if (/win|mac|linux|x11|desktop/.test(text)) return "desktop_web";
+  return "unknown";
 }
 
 async function collectDicomWorkstationClientFacts(): Promise<DicomWorkstationClientFacts> {
@@ -2065,6 +2169,10 @@ async function collectDicomWorkstationClientFacts(): Promise<DicomWorkstationCli
     storageUsageMb = null;
   }
 
+  const directoryPickerSupported =
+    typeof window !== "undefined" && typeof (window as BrowserDirectoryPickerWindow).showDirectoryPicker === "function";
+  const desktopShellBridgeSupported = hasDentalDesktopShellBridge();
+
   return {
     deviceMemoryGb: navigatorWithMemory.deviceMemory ?? null,
     hardwareConcurrency: navigator.hardwareConcurrency || null,
@@ -2081,6 +2189,10 @@ async function collectDicomWorkstationClientFacts(): Promise<DicomWorkstationCli
     storageQuotaMb,
     storageUsageMb,
     online: navigator.onLine,
+    runtimeSurfaceHint: detectDicomRuntimeSurfaceHint(),
+    desktopShellBridgeSupported,
+    directoryPickerSupported,
+    directoryHandlePersistence: directoryPickerSupported ? "session_only" : "unsupported",
     userAgent: navigator.userAgent.slice(0, 300),
     platform: navigator.platform || null
   };
@@ -2099,6 +2211,19 @@ function saveLocalImagingViewerDraft(
     // Viewer state is still saved to server when available; local storage quota errors stay non-blocking.
     return false;
   }
+}
+
+function ctImplantPlanFromLibraryItem(implant: CtImplantLibraryItem): ImagingViewerImplantPlan {
+  return {
+    itemId: implant.id,
+    system: implant.system,
+    line: implant.line,
+    diameterMm: implant.diameterMm,
+    lengthMm: implant.lengthMm,
+    platform: implant.platform,
+    indication: implant.indication,
+    selectedAt: new Date().toISOString()
+  };
 }
 
 const imagingViewerPlans: Record<ImagingStudyKind, ImagingViewerPlan> = {
@@ -2123,7 +2248,7 @@ const imagingViewerPlans: Record<ImagingStudyKind, ImagingViewerPlan> = {
     mode: "two_d",
     primaryTools: ["window/level", "invert", "rotate", "zoom", "measure"],
     presets: ["bone", "teeth", "implant"],
-    nextAction: "2D-просмотрщик достаточен для обзора; КТ открывать отдельным MPR-рабочим местом.",
+    nextAction: "2D-просмотрщик достаточен для обзора; КТ открывать отдельным рабочим местом срезов.",
     warnings: ["Панорама имеет искажения; линейные измерения проверять по КТ."]
   },
   ceph: {
@@ -2135,12 +2260,12 @@ const imagingViewerPlans: Record<ImagingStudyKind, ImagingViewerPlan> = {
     warnings: ["Точки/углы не должны автозаполняться без проверки врача."]
   },
   cbct: {
-    label: "CBCT / КТ",
+    label: "КЛКТ / КТ",
     mode: "cbct_mpr",
     primaryTools: ["MPR", "axial", "coronal", "sagittal", "panoramic curve"],
     presets: ["bone", "implant", "endo"],
-    nextAction: "Открывать в рабочем месте DICOM/MPR; здесь только быстрый предпросмотр.",
-    warnings: ["Нельзя диагностировать CBCT по одной плоской картинке.", "Нужны DICOM-срезы, кэш и DICOMweb/Cornerstone."]
+    nextAction: "Открывать в просмотре КЛКТ/КТ-срезов; здесь только быстрый предпросмотр.",
+    warnings: ["Нельзя диагностировать КЛКТ по одной плоской картинке.", "Нужны срезы серии, предварительная подготовка и полноценный просмотрщик КТ."]
   },
   photo: {
     label: "Фото",
@@ -2191,8 +2316,8 @@ const smartImportModeLabels: Record<SmartImportMode, { title: string; detail: st
 
 const importSourceLabels: Record<ImportSourceKind, { title: string; detail: string }> = {
   csv_text: {
-    title: "CSV / Excel",
-    detail: "Копипаст таблицы, CSV, TSV, точки с запятой."
+    title: "Таблица / Excel",
+    detail: "Копипаст таблицы или списка с разделителями."
   },
   xlsx_copy: {
     title: "Excel-вставка",
@@ -2236,59 +2361,21 @@ const telegramBlockedReasonLabels: Record<string, string> = {
   missing_clinic_review_url: "Не настроена ссылка клиники для отзывов.",
   phi_requires_consent: "Шаблон содержит медданные и требует согласий перед отправкой.",
   telegram_bot_disabled: "Telegram выключен в настройках клиники.",
-  telegram_bot_token_missing: "На API-сервере не настроен токен Telegram-бота.",
+  telegram_bot_token_missing: "В серверных настройках клиники не подключен бот Telegram.",
   encrypted_chat_transport_missing_or_unreadable: "Чат пациента еще не привязан или защищенная ссылка недоступна.",
   patient_or_staff_not_linked_to_telegram: "Чат еще не связан через QR-код или одноразовую ссылку.",
-  post_visit_recommendation_document_not_issued: "Сначала выпустите безопасную памятку после приема.",
+  post_visit_recommendation_document_not_issued: "Сначала выпустите памятку после приема.",
   telegram_outbox_item_not_found_or_no_longer_open: "Задача уже не доступна для отправки.",
   telegram_outbox_already_sent: "Это сообщение уже отправлено.",
   telegram_outbox_not_due_yet: "Время отправки еще не наступило.",
-  telegram_outbox_preview_empty: "В сообщении нет безопасного текста для отправки.",
+  telegram_outbox_preview_empty: "В сообщении нет текста для отправки.",
   telegram_delivery_processing: "Отправка уже обрабатывается.",
-  telegram_transport_failed: "Telegram не принял сообщение. Проверьте токен, сеть и chat id."
+  telegram_transport_failed: "Telegram не принял сообщение. Проверьте подключение бота, сеть и связанный чат."
 };
 
 const telegramWarningLabels: Record<string, string> = {
   idempotent_replay: "Повторная отправка распознана и не продублирована."
 };
-
-const telegramFeatureLabels: Record<DenteTelegramFeature, string> = {
-  appointment_reminders: "Напоминания о приеме",
-  appointment_confirmation: "Подтверждение приема",
-  patient_linking: "QR-привязка пациента",
-  pre_visit_intake: "Анкета перед визитом",
-  document_ready_notice: "Документ готов",
-  tax_document_request: "Запрос налоговой справки",
-  payment_reminders: "Напоминания об оплате",
-  post_visit_instructions: "Памятки после лечения",
-  recalls: "Профилактические приглашения",
-  review_requests: "Просьбы оставить отзыв",
-  staff_daily_digest: "Сводка врачу и администратору",
-  staff_task_alerts: "Служебные задачи",
-  callback_requests: "Запрос обратного звонка",
-  voice_note_intake: "Голосовые обращения",
-  secure_portal_links: "Защищенные ссылки на портал"
-};
-
-const telegramFeatureHelp: Record<DenteTelegramFeature, string> = {
-  appointment_reminders: "Автоматические напоминания до визита без диагноза и деталей лечения.",
-  appointment_confirmation: "Кнопки подтверждения, переноса и связи с администратором.",
-  patient_linking: "Одноразовый код и QR для связи Telegram-чата с карточкой пациента.",
-  pre_visit_intake: "Сбор административных данных до приема через безопасный сценарий.",
-  document_ready_notice: "Уведомление о готовности документа, сам файл остается в DENTE/портале.",
-  tax_document_request: "Статус подготовки налоговых документов без отправки PDF в чат.",
-  payment_reminders: "Аккуратные напоминания о неоплаченных счетах и ссылках на портал.",
-  post_visit_instructions: "Памятки после удаления, имплантации, пломбы, гигиены и других процедур.",
-  recalls: "Возвратные приглашения на осмотр, гигиену и контроль.",
-  review_requests: "Просьба оценить прием с клинической ссылкой на карту или профиль отзывов.",
-  staff_daily_digest: "Сводка расписания и задач для сотрудников без персональных медицинских данных в тексте.",
-  staff_task_alerts: "Служебные уведомления по очереди связи и готовности документов.",
-  callback_requests: "Пациент может попросить звонок, задача попадает в очередь клиники.",
-  voice_note_intake: "Голосовые обращения пока выключаются отдельно из-за риска лишних данных.",
-  secure_portal_links: "Любые чувствительные файлы и подробности уходят только через портал."
-};
-
-const telegramFeatureOptions = Object.keys(telegramFeatureLabels) as DenteTelegramFeature[];
 
 function telegramHumanMessage(value: string | null | undefined): string {
   if (!value) return "";
@@ -2306,24 +2393,24 @@ function isTelegramOutboxItemDueForUi(item: Pick<DenteTelegramOutboxResponse["it
 
 const documentDetectedKindLabels: Record<string, string> = {
   archive: "архив",
-  csv: "таблица CSV",
+  csv: "таблица",
   docx: "документ Word",
-  html: "HTML",
+  html: "веб-страница",
   image: "изображение",
-  json: "JSON",
-  legacy_database: "старая БД",
-  legacy_dump: "backup / dump",
-  ods: "таблица ODS",
-  odt: "документ ODT",
+  json: "структурированный текст",
+  legacy_database: "старая база",
+  legacy_dump: "резервная копия старой базы",
+  ods: "таблица",
+  odt: "документ",
   pdf: "PDF",
   pptx: "презентация",
-  rtf: "RTF",
+  rtf: "текстовый документ",
   spreadsheet: "таблица",
   text: "текст",
   unknown: "не определено",
   xlsx: "таблица Excel",
-  xml: "XML",
-  zip: "ZIP-архив"
+  xml: "структурированный текст",
+  zip: "архив"
 };
 
 function documentDetectedKindLabel(kind: string) {
@@ -2430,6 +2517,36 @@ const visitDraftQualityLabels: Record<NonNullable<VisitNoteDraft["quality"]>["le
   review: "Нужна проверка",
   needs_more_dictation: "Нужно дописать"
 };
+
+const visitDraftSignalLabels: Record<string, string> = {
+  complaint_detected: "жалобы есть",
+  anamnesis_detected: "анамнез есть",
+  objective_detected: "осмотр есть",
+  diagnosis_mentioned: "диагноз есть",
+  plan_detected: "план есть",
+  tooth_codes_detected: "зуб указан",
+  imaging_mentioned: "снимки упомянуты",
+  consent_mentioned: "согласие упомянуто",
+  medical_risk_mentioned: "есть медриск",
+  procedure_mentioned: "процедура упомянута"
+};
+
+const visitDraftMissingFieldLabels: Record<string, string> = {
+  complaint: "жалобы",
+  anamnesis: "анамнез",
+  objective_status: "объективный статус",
+  diagnosis_review: "диагноз",
+  treatment_plan: "план лечения",
+  tooth_or_region: "зуб или область"
+};
+
+function visitDraftSignalLabel(signal: string) {
+  return visitDraftSignalLabels[signal] ?? signal.replace(/_/g, " ");
+}
+
+function visitDraftMissingFieldLabel(field: string) {
+  return visitDraftMissingFieldLabels[field] ?? field.replace(/_/g, " ");
+}
 
 const speechQualityLabels: Record<SpeechTranscriptionResponse["chunk"]["quality"]["level"], string> = {
   clear: "чисто",
@@ -2542,22 +2659,6 @@ type PersistenceIntegrityReport = {
   nextAction: string;
 };
 
-type BrowserContinuityRegistrationState = "unsupported" | "not_registered" | "installing" | "waiting" | "active" | "error";
-
-type BrowserContinuityStatus = {
-  checkedAt: string;
-  serviceWorkerSupported: boolean;
-  serviceWorkerControlled: boolean;
-  serviceWorkerRegistrationState: BrowserContinuityRegistrationState;
-  localStorageWritable: boolean;
-  indexedDbSupported: boolean;
-  cacheStorageSupported: boolean;
-  storagePersisted: boolean | null;
-  storageUsageMb: number | null;
-  storageQuotaMb: number | null;
-  warnings: string[];
-};
-
 function visitLocalDraftKey(visitId: string, organizationId: string | null | undefined = null) {
   return organizationScopedLocalStorageKey(`dental-crm:visit-draft:${visitId}`, organizationId);
 }
@@ -2565,9 +2666,18 @@ function visitLocalDraftKey(visitId: string, organizationId: string | null | und
 const pendingVisitSaveQueueKey = "dental-crm:pending-visit-saves";
 const pendingSpeechChunkQueueKey = "dental-crm:pending-speech-chunks";
 const speechChunkDbName = "dental-crm-offline";
-const speechChunkDbVersion = 1;
+const speechChunkDbVersion = 4;
+const pendingVisitSaveStoreName = "pendingVisitSaves";
+const dicomWorkbenchDraftStoreName = "dicomWorkbenchDrafts";
+const mprWorkbenchDraftStoreName = "mprWorkbenchDrafts";
 const speechChunkStoreName = "pendingSpeechChunks";
 const speechLocalStorageFallbackMaxBytes = 4_000_000;
+const requiredSpeechChunkDbStoreNames = [
+  pendingVisitSaveStoreName,
+  dicomWorkbenchDraftStoreName,
+  mprWorkbenchDraftStoreName,
+  speechChunkStoreName
+] as const;
 let speechChunkDbPromise: Promise<IDBDatabase> | null = null;
 
 function pendingVisitSaveQueueLocalKey(organizationId: string | null | undefined = null): string {
@@ -2580,86 +2690,6 @@ function pendingSpeechChunkQueueLocalKey(organizationId: string | null | undefin
 
 function localQueueOrganizationMatches(itemOrganizationId: string | null | undefined, activeOrganizationId: string | null | undefined): boolean {
   return normalizedLocalOrganizationId(itemOrganizationId) === normalizedLocalOrganizationId(activeOrganizationId);
-}
-
-function browserLocalStorageWritable(): boolean {
-  if (typeof window === "undefined") return false;
-  const probeKey = "dental-crm:storage-probe";
-  try {
-    window.localStorage.setItem(probeKey, "1");
-    window.localStorage.removeItem(probeKey);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function megabytes(value: number | null | undefined): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? Math.round((value / 1024 / 1024) * 10) / 10 : null;
-}
-
-function formatMegabytes(value: number | null): string {
-  if (value === null) return "n/a";
-  return `${value.toLocaleString("ru-RU")} MB`;
-}
-
-async function inspectBrowserContinuity(): Promise<BrowserContinuityStatus> {
-  const warnings: string[] = [];
-  const localStorageWritable = browserLocalStorageWritable();
-  const indexedDbSupported = typeof window !== "undefined" && "indexedDB" in window;
-  const cacheStorageSupported = typeof window !== "undefined" && "caches" in window;
-  const serviceWorkerSupported = typeof navigator !== "undefined" && "serviceWorker" in navigator;
-  let serviceWorkerControlled = false;
-  let serviceWorkerRegistrationState: BrowserContinuityRegistrationState = serviceWorkerSupported ? "not_registered" : "unsupported";
-
-  if (serviceWorkerSupported) {
-    try {
-      serviceWorkerControlled = Boolean(navigator.serviceWorker.controller);
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (registration?.active) serviceWorkerRegistrationState = "active";
-      else if (registration?.waiting) serviceWorkerRegistrationState = "waiting";
-      else if (registration?.installing) serviceWorkerRegistrationState = "installing";
-      else serviceWorkerRegistrationState = "not_registered";
-    } catch {
-      serviceWorkerRegistrationState = "error";
-      warnings.push("Статус service worker недоступен");
-    }
-  }
-
-  let storageUsageMb: number | null = null;
-  let storageQuotaMb: number | null = null;
-  let storagePersisted: boolean | null = null;
-  if (typeof navigator !== "undefined" && navigator.storage) {
-    try {
-      const estimate = await navigator.storage.estimate();
-      storageUsageMb = megabytes(estimate.usage);
-      storageQuotaMb = megabytes(estimate.quota);
-      storagePersisted = typeof navigator.storage.persisted === "function" ? await navigator.storage.persisted() : null;
-    } catch {
-      warnings.push("Оценка хранилища браузера недоступна");
-    }
-  }
-
-  if (!localStorageWritable) warnings.push("Локальное хранилище черновиков недоступно");
-  if (!indexedDbSupported) warnings.push("Очередь аудио в IndexedDB недоступна");
-  if (!cacheStorageSupported) warnings.push("Офлайн-кэш оболочки недоступен");
-  if (storageUsageMb !== null && storageQuotaMb !== null && storageQuotaMb > 0 && storageUsageMb / storageQuotaMb > 0.85) {
-    warnings.push("Квота хранилища браузера почти заполнена");
-  }
-
-  return {
-    checkedAt: new Date().toISOString(),
-    serviceWorkerSupported,
-    serviceWorkerControlled,
-    serviceWorkerRegistrationState,
-    localStorageWritable,
-    indexedDbSupported,
-    cacheStorageSupported,
-    storagePersisted,
-    storageUsageMb,
-    storageQuotaMb,
-    warnings
-  };
 }
 
 function normalizeSpeechAppendText(value: string): string {
@@ -2785,62 +2815,6 @@ const emptyTelegramVisualCardUrlDrafts = (): DenteTelegramVisualCardUrls => ({
   staff: null
 });
 
-const telegramVisualCardFields: Array<{
-  key: DenteTelegramVisualCardKey;
-  label: string;
-  placeholder: string;
-  help: string;
-}> = [
-  {
-    key: "mainMenu",
-    label: "Картинка главного меню",
-    placeholder: "https://.../menu.jpg",
-    help: "Показывается в /start, справке, контактах и безопасных ответах."
-  },
-  {
-    key: "appointment",
-    label: "Картинка записи",
-    placeholder: "https://.../appointment.jpg",
-    help: "Для подтверждений, переносов и напоминаний о приеме."
-  },
-  {
-    key: "documents",
-    label: "Картинка документов",
-    placeholder: "https://.../documents.jpg",
-    help: "Для готовых справок, выписок и запросов пациента."
-  },
-  {
-    key: "tax",
-    label: "Картинка налоговых документов",
-    placeholder: "https://.../tax.jpg",
-    help: "Для статуса справок КНД, заявлений и реестров."
-  },
-  {
-    key: "billing",
-    label: "Картинка оплаты",
-    placeholder: "https://.../payment.jpg",
-    help: "Для напоминаний об оплате и безопасных ссылок на портал."
-  },
-  {
-    key: "care",
-    label: "Картинка памяток",
-    placeholder: "https://.../care.jpg",
-    help: "Для удаления, имплантации, пломбы, гигиены и повторного осмотра."
-  },
-  {
-    key: "review",
-    label: "Картинка отзыва",
-    placeholder: "https://.../review.jpg",
-    help: "Для просьбы оценить клинику и открыть карточку на картах."
-  },
-  {
-    key: "staff",
-    label: "Картинка для сотрудников",
-    placeholder: "https://.../staff.jpg",
-    help: "Для будущих ежедневных дайджестов и задач врачей."
-  }
-];
-
 const telegramPublicUrlSensitiveQueryKeys = new Set([
   "patient",
   "patientid",
@@ -2915,7 +2889,7 @@ function normalizeTelegramPublicHttpsUrlDraft(fieldLabel: string, value: string 
   }
 
   if (parsed.protocol !== "https:") {
-    throw new Error(`${fieldLabel}: нужна безопасная ссылка https://...`);
+    throw new Error(`${fieldLabel}: нужна ссылка https://...`);
   }
   if (parsed.username || parsed.password) {
     throw new Error(`${fieldLabel}: уберите логин и пароль из ссылки.`);
@@ -2926,7 +2900,8 @@ function normalizeTelegramPublicHttpsUrlDraft(fieldLabel: string, value: string 
     .map((segment) => {
       try {
         return decodeURIComponent(segment).trim().toLowerCase();
-      } catch {
+      } catch (scanError) {
+        if (isBrowserMigrationScanAbortError(scanError)) throw scanError;
         throw new Error(`${fieldLabel}: исправьте кодировку пути в ссылке.`);
       }
     })
@@ -2987,55 +2962,6 @@ function normalizeTelegramBotUsernameDraft(fieldLabel: string, value: string | n
   return normalized;
 }
 
-type TelegramPostVisitCheckupDelayKey = keyof DenteTelegramPostVisitCheckupDelayHoursByTopic;
-type TelegramPostVisitCheckupDelayDrafts = Record<TelegramPostVisitCheckupDelayKey, string>;
-
-const defaultTelegramPostVisitCheckupDelayHoursByTopic: DenteTelegramPostVisitCheckupDelayHoursByTopic = {
-  extraction: 24,
-  implantation: 24,
-  filling_restoration: 48,
-  endo: 48,
-  surgery: 24,
-  local_anesthesia: 24,
-  hygiene: 72,
-  prosthetics: 48,
-  orthodontics: 72,
-  periodontology: 72,
-  other: 48
-};
-
-const defaultTelegramPostVisitCheckupDelayDrafts: TelegramPostVisitCheckupDelayDrafts = {
-  extraction: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.extraction),
-  implantation: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.implantation),
-  filling_restoration: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.filling_restoration),
-  endo: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.endo),
-  surgery: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.surgery),
-  local_anesthesia: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.local_anesthesia),
-  hygiene: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.hygiene),
-  prosthetics: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.prosthetics),
-  orthodontics: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.orthodontics),
-  periodontology: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.periodontology),
-  other: String(defaultTelegramPostVisitCheckupDelayHoursByTopic.other)
-};
-
-const telegramPostVisitCheckupDelayFields: Array<{
-  key: TelegramPostVisitCheckupDelayKey;
-  label: string;
-  help: string;
-}> = [
-  { key: "extraction", label: "После удаления", help: "Контроль самочувствия после удаления зуба." },
-  { key: "implantation", label: "После имплантации", help: "Контроль после имплантации и хирургического этапа." },
-  { key: "filling_restoration", label: "После пломбы", help: "Проверка завышения пломбы и дискомфорта." },
-  { key: "hygiene", label: "После гигиены", help: "Мягкое напоминание после профессиональной гигиены." },
-  { key: "endo", label: "После эндодонтии", help: "Контроль боли после лечения каналов." },
-  { key: "surgery", label: "После операции", help: "Хирургический контроль без диагноза в тексте." },
-  { key: "local_anesthesia", label: "После анестезии", help: "Короткий контроль после приема с анестезией." },
-  { key: "prosthetics", label: "После протезирования", help: "Проверка адаптации к конструкции." },
-  { key: "orthodontics", label: "После ортодонтии", help: "Контроль адаптации к аппарату или элайнерам." },
-  { key: "periodontology", label: "После пародонтологии", help: "Контроль десен и ухода." },
-  { key: "other", label: "Другое", help: "Запасной срок для общих памяток." }
-];
-
 const onboardingTelegramVisualCardKeys: DenteTelegramVisualCardKey[] = [
   "mainMenu",
   "appointment",
@@ -3061,14 +2987,14 @@ type TelegramLinkSubjectType = "patient" | "staff";
 
 const telegramModeLabels: Record<DenteTelegramBotMode, string> = {
   disabled: "выключен",
-  shared_dente_bot: "общий бот DENTE",
+  shared_dente_bot: "общий бот платформы",
   clinic_owned_bot: "бот клиники"
 };
 
 const telegramModeHints: Record<DenteTelegramBotMode, string> = {
   disabled: "Telegram не создает новые задачи и не отправляет сообщения.",
-  shared_dente_bot: "Одна защищенная основа DENTE, клиника определяется QR-кодом и связкой пациента.",
-  clinic_owned_bot: "Собственный бот клиники: username сохраняется в DENTE, токен берется только из API-server env."
+  shared_dente_bot: "Одна общая основа: клиника определяется QR-кодом и связкой пациента.",
+  clinic_owned_bot: "Собственный бот клиники: имя сохраняется в настройках, секрет бота хранится в серверных настройках клиники."
 };
 
 const telegramPrivacyModeLabels: Record<DenteTelegramPrivacyMode, string> = {
@@ -3107,7 +3033,7 @@ const telegramDeliveryStatusLabels: Record<DenteTelegramOutboxResponse["items"][
   ready: "готово",
   needs_chat_link: "нужно подключить Telegram",
   blocked_by_policy: "заблокировано политикой",
-  transport_not_ready: "транспорт не готов",
+  transport_not_ready: "отправка не готова",
   disabled: "выключено"
 };
 
@@ -3285,7 +3211,7 @@ type MedicalDocumentReleaseChannel = "paper" | "pdf" | "dicom_archive" | "secure
 const medicalDocumentReleaseChannelLabels: Record<MedicalDocumentReleaseChannel, string> = {
   paper: "Бумага",
   pdf: "PDF",
-  dicom_archive: "DICOM-архив",
+  dicom_archive: "архив снимков",
   secure_link: "Защищенная ссылка",
   physical_media: "Физический носитель",
   other: "Иной канал"
@@ -3479,24 +3405,10 @@ const procedureSpecificConsentProcedureOptions: Array<{ value: ProcedureSpecific
   { value: "other", label: "Другая процедура" }
 ];
 
-const postVisitCareTopicOptions: Array<{ value: PostVisitCareTopic; label: string }> = [
-  { value: "extraction", label: "Удаление" },
-  { value: "implantation", label: "Имплантация / костная пластика" },
-  { value: "filling_restoration", label: "Пломба / реставрация" },
-  { value: "endo", label: "Эндодонтия" },
-  { value: "surgery", label: "Хирургия" },
-  { value: "local_anesthesia", label: "Местная анестезия" },
-  { value: "hygiene", label: "Профессиональная гигиена" },
-  { value: "prosthetics", label: "Ортопедия" },
-  { value: "orthodontics", label: "Ортодонтия" },
-  { value: "periodontology", label: "Пародонтология" },
-  { value: "other", label: "Другое" }
-];
-
 const xrayStudyTypeOptions: Array<{ value: XrayCbctReferralStudyType; label: string }> = [
   { value: "rvg", label: "RVG / прицельный" },
   { value: "opg", label: "ОПТГ" },
-  { value: "cbct", label: "КЛКТ / CBCT" },
+  { value: "cbct", label: "КЛКТ / КТ" },
   { value: "trg", label: "ТРГ" },
   { value: "tmj", label: "ВНЧС" },
   { value: "sinus", label: "Пазуха" },
@@ -3517,7 +3429,7 @@ const photoVideoMaterialOptions: Array<{ value: PhotoVideoConsentMaterial; label
   { value: "face_photo", label: "Фото лица" },
   { value: "video", label: "Видео" },
   { value: "xray", label: "Рентген" },
-  { value: "cbct", label: "КТ/CBCT" },
+  { value: "cbct", label: "КЛКТ/КТ" },
   { value: "scan", label: "Цифровые сканы" },
   { value: "other", label: "Иные материалы" }
 ];
@@ -3578,6 +3490,14 @@ const aiJobKindPreferenceValues: readonly AiJobKind[] = [
   "document_draft",
   "paper_ocr"
 ];
+
+const aiJobKindLabels: Record<AiJobKind, string> = {
+  voice_transcription: "диктовка врача",
+  visit_note_draft: "черновик приема",
+  image_summary: "описание снимка",
+  document_draft: "черновик документа",
+  paper_ocr: "разбор бумажного журнала"
+};
 
 function isRecordKey<T extends string>(value: unknown, record: Record<T, unknown>): value is T {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(record, value);
@@ -4085,28 +4005,84 @@ async function saveServerUiPreferences(preferences: UiPreferences, adminSecret?:
     body: JSON.stringify(preferences)
   });
   if (!response.ok) {
-    throw new Error(`Настройки интерфейса: API ${response.status}`);
+    throw new Error(await responseErrorMessage(response, "Настройки интерфейса не сохранены"));
   }
 }
 
-function uiPreferencesSyncErrorMessage(error: unknown): string {
-  const detail = error instanceof Error && error.message ? `: ${error.message}` : "";
-  return `Настройки интерфейса сохранены только на этом устройстве${detail}. Серверная синхронизация повторится автоматически.`;
+function uiPreferencesSyncErrorMessage(_error: unknown): string {
+  return "Настройки интерфейса сохранены только на этом устройстве. Серверная синхронизация повторится автоматически.";
+}
+
+function responseStatusFailureLabel(response: Response): string {
+  if (response.status === 0) return "нет ответа сервера";
+  if (response.status === 400) return "сервер не принял данные";
+  if (response.status === 401 || response.status === 403) return "нет доступа к действию";
+  if (response.status === 404) return "нужный маршрут не найден";
+  if (response.status === 409) return "данные уже изменились, обновите экран";
+  if (response.status === 413) return "файл или запрос слишком большой";
+  if (response.status === 422) return "данные не прошли проверку";
+  if (response.status === 429) return "слишком много запросов, повторите позже";
+  if (response.status >= 500) return "сервер не смог выполнить действие";
+  return `сервер вернул код ${response.status}`;
 }
 
 async function responseErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
     const payload = (await response.clone().json()) as { error?: unknown; message?: unknown };
     const detail = typeof payload.message === "string" ? payload.message : typeof payload.error === "string" ? payload.error : null;
-    return detail ? `${fallback}: ${detail}` : `${fallback}: API ${response.status}`;
+    const operatorDetail = operatorReadableErrorDetail(detail);
+    return operatorDetail ? `${fallback}: ${operatorDetail}` : `${fallback}: ${responseStatusFailureLabel(response)}`;
   } catch {
-    return `${fallback}: API ${response.status}`;
+    return `${fallback}: ${responseStatusFailureLabel(response)}`;
   }
 }
 
-function requestFailureMessage(fallback: string, error: unknown): string {
-  const detail = error instanceof Error && error.message ? `: ${error.message}` : "";
-  return `${fallback}: сеть или локальный сервер недоступны${detail}`;
+class WorkflowResponseError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "WorkflowResponseError";
+    this.status = status;
+  }
+}
+
+function acceptedVisitSaveFailureIsRetryable(error: unknown): boolean {
+  if (!(error instanceof WorkflowResponseError)) return true;
+  return error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500;
+}
+
+function requestFailureMessage(fallback: string, _error: unknown): string {
+  return `${fallback}: сеть или локальный сервер недоступны. Повторите действие или проверьте подключение к серверу клиники.`;
+}
+
+const technicalWorkflowFailurePattern =
+  /\b(TypeError|DOMException|SyntaxError|ReferenceError|Failed to fetch|NetworkError|Load failed|fetch|JSON|ENOENT|EACCES|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EPIPE|stack|undefined|null|NaN|[A-Z][A-Z0-9_]{5,})\b|\/api\/|https?:\/\/|[A-Za-z]:\\|\\\\[^\\]+\\|\/(Users|home|var|tmp)\//i;
+
+function operatorReadableErrorDetail(detail: string | null): string | null {
+  const message = detail?.trim() ?? "";
+  if (!message) return null;
+  if (!/[А-Яа-яЁё]/.test(message)) return null;
+  if (technicalWorkflowFailurePattern.test(message)) return null;
+  return message;
+}
+
+function operatorReadableErrorDetailFromUnknown(error: unknown): string | null {
+  return operatorReadableErrorDetail(error instanceof Error ? error.message : null);
+}
+
+function operatorWorkflowFailureMessage(fallback: string, error: unknown): string {
+  const message = operatorReadableErrorDetailFromUnknown(error);
+  if (message) return message;
+  return requestFailureMessage(fallback, error);
+}
+
+function browserLocalSourceErrorMessage(fallback: string, _error: unknown): string {
+  return `${fallback}. Проверьте, что браузеру разрешено читать выбранный источник, или выберите файлы вручную.`;
+}
+
+function browserCapabilityFailureMessage(fallback: string, _error: unknown): string {
+  return `${fallback}. Проверьте разрешения браузера и повторите действие; если устройство занято другой программой, закройте ее.`;
 }
 
 type OnboardingDismissalState = {
@@ -4513,6 +4489,16 @@ function appointmentScheduleDateMissingSteps(draft: AppointmentScheduleDraft): s
   ].filter((step): step is string => Boolean(step));
 }
 
+function appointmentScheduleMissingFields(draft: AppointmentScheduleDraft, clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined): string[] {
+  const missing: string[] = [];
+  if (!draft.patientId) missing.push("выберите пациента");
+  if (!draft.doctorUserId) missing.push("выберите врача");
+  if (clinicMode !== "solo_doctor" && !draft.assistantUserId) missing.push("выберите ассистента");
+  if (!draft.chairId) missing.push("выберите кресло");
+  missing.push(...appointmentScheduleDateMissingSteps(draft));
+  return missing;
+}
+
 function staffWorkingHoursFromDraft(draft: StaffScheduleDraft): StaffWorkingHours {
   const start = normalizeClockTime(draft.start, "09:00");
   const end = normalizeClockTime(draft.end, "18:00");
@@ -4847,49 +4833,61 @@ function parsePendingVisitSaveQueue(
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    const normalizedFallbackOrganizationId = normalizedLocalOrganizationId(legacyOrganizationFallback);
     return parsed.flatMap((item): PendingVisitSave[] => {
-      const candidate = item as Partial<PendingVisitSave>;
-      const { id, visitId, queuedAt, draft, doctorSummary, transcript, selectedSpecialty } = candidate;
-      const organizationId = normalizedLocalOrganizationId(candidate.organizationId) ?? normalizedFallbackOrganizationId;
-      if (
-        candidate.version !== 1 ||
-        typeof id !== "string" ||
-        !localQueueOrganizationMatches(organizationId, activeOrganizationId) ||
-        typeof visitId !== "string" ||
-        typeof queuedAt !== "string" ||
-        !localSavedAtFresh(queuedAt, sensitiveLocalDraftRetentionMs) ||
-        !isVisitNoteDraft(draft) ||
-        !isNullableString(doctorSummary) ||
-        typeof transcript !== "string" ||
-        !isDentalSpecialty(selectedSpecialty)
-      ) {
-        return [];
-      }
-      const normalizedBaseRevision =
-        typeof candidate.baseRevision === "number" && Number.isInteger(candidate.baseRevision) ? candidate.baseRevision : null;
-      return [
-        {
-          version: 1,
-          id,
-          organizationId,
-          visitId,
-          clientMutationId: typeof candidate.clientMutationId === "string" ? candidate.clientMutationId : id,
-          baseRevision: normalizedBaseRevision,
-          queuedAt,
-          draft,
-          doctorSummary,
-          transcript,
-          selectedSpecialty
-        }
-      ];
+      const normalized = normalizePendingVisitSave(item, activeOrganizationId, legacyOrganizationFallback);
+      return normalized ? [normalized] : [];
     });
   } catch {
     return [];
   }
 }
 
-function loadPendingVisitSaves(organizationId: string | null | undefined = null): PendingVisitSave[] {
+function normalizePendingVisitSave(
+  value: unknown,
+  activeOrganizationId: string | null | undefined,
+  legacyOrganizationFallback: string | null | undefined = null
+): PendingVisitSave | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Partial<PendingVisitSave>;
+  const { id, visitId, queuedAt, draft, doctorSummary, transcript, selectedSpecialty } = candidate;
+  const organizationId =
+    normalizedLocalOrganizationId(candidate.organizationId) ?? normalizedLocalOrganizationId(legacyOrganizationFallback);
+  if (
+    candidate.version !== 1 ||
+    typeof id !== "string" ||
+    !localQueueOrganizationMatches(organizationId, activeOrganizationId) ||
+    typeof visitId !== "string" ||
+    typeof queuedAt !== "string" ||
+    !localSavedAtFresh(queuedAt, sensitiveLocalDraftRetentionMs) ||
+    !isVisitNoteDraft(draft) ||
+    !isNullableString(doctorSummary) ||
+    typeof transcript !== "string" ||
+    !isDentalSpecialty(selectedSpecialty)
+  ) {
+    return null;
+  }
+  const normalizedBaseRevision =
+    typeof candidate.baseRevision === "number" && Number.isInteger(candidate.baseRevision) ? candidate.baseRevision : null;
+  return {
+    version: 1,
+    id,
+    organizationId,
+    visitId,
+    clientMutationId: typeof candidate.clientMutationId === "string" ? candidate.clientMutationId : id,
+    baseRevision: normalizedBaseRevision,
+    queuedAt,
+    draft,
+    doctorSummary,
+    transcript,
+    selectedSpecialty
+  };
+}
+
+function sortPendingVisitSaves(queue: PendingVisitSave[]): PendingVisitSave[] {
+  return queue.slice().sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+}
+
+function loadPendingVisitSavesFromLocalStorage(organizationId: string | null | undefined = null): PendingVisitSave[] {
   if (typeof window === "undefined") return [];
   const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
   const localKey = pendingVisitSaveQueueLocalKey(normalizedOrganizationId);
@@ -4902,26 +4900,27 @@ function loadPendingVisitSaves(organizationId: string | null | undefined = null)
   for (const item of parsePendingVisitSaveQueue(legacyRaw, normalizedOrganizationId, normalizedOrganizationId)) {
     byId.set(item.id, item);
   }
-  const queue = Array.from(byId.values()).sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+  const queue = sortPendingVisitSaves(Array.from(byId.values()));
   if (normalizedOrganizationId && legacyRaw) {
-    savePendingVisitSaves(queue, normalizedOrganizationId);
+    savePendingVisitSavesToLocalStorage(queue, normalizedOrganizationId);
     window.localStorage.removeItem(pendingVisitSaveQueueKey);
   }
   return queue;
 }
 
-function savePendingVisitSaves(queue: PendingVisitSave[], organizationId: string | null | undefined = null): void {
+function savePendingVisitSavesToLocalStorage(queue: PendingVisitSave[], organizationId: string | null | undefined = null): void {
   if (typeof window === "undefined") return;
   const localKey = pendingVisitSaveQueueLocalKey(organizationId);
   const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
-  const scopedQueue = queue
-    .map((item) => ({ ...item, organizationId: normalizedLocalOrganizationId(item.organizationId) ?? normalizedOrganizationId }))
-    .filter(
-      (item) =>
-        localQueueOrganizationMatches(item.organizationId, normalizedOrganizationId) &&
-        localSavedAtFresh(item.queuedAt, sensitiveLocalDraftRetentionMs)
-    )
-    .sort((left, right) => left.queuedAt.localeCompare(right.queuedAt));
+  const scopedQueue = sortPendingVisitSaves(
+    queue
+      .map((item) => ({ ...item, organizationId: normalizedLocalOrganizationId(item.organizationId) ?? normalizedOrganizationId }))
+      .filter(
+        (item) =>
+          localQueueOrganizationMatches(item.organizationId, normalizedOrganizationId) &&
+          localSavedAtFresh(item.queuedAt, sensitiveLocalDraftRetentionMs)
+      )
+  );
   if (!scopedQueue.length) {
     window.localStorage.removeItem(localKey);
     return;
@@ -5009,7 +5008,7 @@ function savePendingSpeechChunksToLocalStorage(queue: PendingSpeechChunk[], orga
   }
   const payload = JSON.stringify(scopedQueue);
   if (payload.length > speechLocalStorageFallbackMaxBytes) {
-    throw new Error("Локальное хранилище аудио переполнено; для продолжения записи нужен IndexedDB.");
+    throw new Error("Память для аудио на этом устройстве переполнена; освободите место или отправьте текущую запись.");
   }
   window.localStorage.setItem(localKey, payload);
 }
@@ -5018,23 +5017,411 @@ function speechChunkIndexedDbAvailable(): boolean {
   return typeof window !== "undefined" && "indexedDB" in window;
 }
 
+function pendingVisitSaveIndexedDbAvailable(): boolean {
+  return speechChunkIndexedDbAvailable();
+}
+
+function assertSpeechChunkDbStores(db: IDBDatabase): void {
+  const missingStores = requiredSpeechChunkDbStoreNames.filter((storeName) => !db.objectStoreNames.contains(storeName));
+  if (missingStores.length) {
+    throw new Error(`Offline IndexedDB schema is missing stores: ${missingStores.join(", ")}`);
+  }
+}
+
 function openSpeechChunkDb(): Promise<IDBDatabase> {
-  if (!speechChunkIndexedDbAvailable()) return Promise.reject(new Error("IndexedDB недоступен"));
+  if (!speechChunkIndexedDbAvailable()) return Promise.reject(new Error("Браузер не дает сохранить аудио для отправки позже"));
   if (speechChunkDbPromise) return speechChunkDbPromise;
   speechChunkDbPromise = new Promise((resolve, reject) => {
     const request = window.indexedDB.open(speechChunkDbName, speechChunkDbVersion);
     request.onupgradeneeded = () => {
       const db = request.result;
+      if (!db.objectStoreNames.contains(pendingVisitSaveStoreName)) {
+        const store = db.createObjectStore(pendingVisitSaveStoreName, { keyPath: "id" });
+        store.createIndex("queuedAt", "queuedAt");
+        store.createIndex("organizationId", "organizationId");
+        store.createIndex("visitId", "visitId");
+      }
+      if (!db.objectStoreNames.contains(dicomWorkbenchDraftStoreName)) {
+        const store = db.createObjectStore(dicomWorkbenchDraftStoreName, { keyPath: "storageKey" });
+        store.createIndex("organizationId", "organizationId");
+        store.createIndex("seriesKey", "seriesKey");
+        store.createIndex("clientSavedAt", "clientSavedAt");
+      }
+      if (!db.objectStoreNames.contains(mprWorkbenchDraftStoreName)) {
+        const store = db.createObjectStore(mprWorkbenchDraftStoreName, { keyPath: "storageKey" });
+        store.createIndex("organizationId", "organizationId");
+        store.createIndex("seriesKey", "seriesKey");
+        store.createIndex("clientSavedAt", "clientSavedAt");
+      }
       if (!db.objectStoreNames.contains(speechChunkStoreName)) {
         const store = db.createObjectStore(speechChunkStoreName, { keyPath: "id" });
         store.createIndex("queuedAt", "queuedAt");
       }
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("IndexedDB не открылся"));
-    request.onblocked = () => reject(new Error("IndexedDB open blocked"));
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => db.close();
+      try {
+        assertSpeechChunkDbStores(db);
+        resolve(db);
+      } catch (error) {
+        db.close();
+        speechChunkDbPromise = null;
+        reject(error instanceof Error ? error : new Error("Offline IndexedDB schema is incomplete"));
+      }
+    };
+    request.onerror = () => {
+      speechChunkDbPromise = null;
+      reject(request.error ?? new Error("Хранилище аудио не открылось"));
+    };
+    request.onblocked = () => {
+      speechChunkDbPromise = null;
+      reject(new Error("Хранилище аудио заблокировано другой вкладкой"));
+    };
   });
   return speechChunkDbPromise;
+}
+
+async function readLocalDicomWorkbenchDraftFromIndexedDb(
+  organizationId: string | null | undefined = null
+): Promise<DicomWorkbenchLocalDraft | null> {
+  const db = await openSpeechChunkDb();
+  const key = dicomWorkbenchIndexedDbKey(organizationId);
+  const record = await new Promise<unknown>((resolve, reject) => {
+    const transaction = db.transaction(dicomWorkbenchDraftStoreName, "readonly");
+    const request = transaction.objectStore(dicomWorkbenchDraftStoreName).get(key);
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => reject(request.error ?? new Error("Local DICOM workbench draft read failed"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local DICOM workbench draft transaction failed"));
+  });
+  const normalized = normalizeLocalDicomWorkbenchDraft(record);
+  if (!normalized && record && typeof record === "object") {
+    await deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId).catch(() => undefined);
+  }
+  return normalized;
+}
+
+async function saveLocalDicomWorkbenchDraftToIndexedDb(
+  draft: DicomWorkbenchLocalDraft,
+  organizationId: string | null | undefined = null
+): Promise<void> {
+  const db = await openSpeechChunkDb();
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const record: DicomWorkbenchIndexedDbDraft = {
+    ...draft,
+    storageKey: dicomWorkbenchIndexedDbKey(normalizedOrganizationId),
+    organizationId: normalizedOrganizationId
+  };
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(dicomWorkbenchDraftStoreName, "readwrite");
+    transaction.objectStore(dicomWorkbenchDraftStoreName).put(record);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local DICOM workbench draft save failed"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Local DICOM workbench draft save aborted"));
+  });
+}
+
+async function deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId: string | null | undefined = null): Promise<void> {
+  const db = await openSpeechChunkDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(dicomWorkbenchDraftStoreName, "readwrite");
+    transaction.objectStore(dicomWorkbenchDraftStoreName).delete(dicomWorkbenchIndexedDbKey(organizationId));
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local DICOM workbench draft delete failed"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Local DICOM workbench draft delete aborted"));
+  });
+}
+
+async function migrateLocalDicomWorkbenchDraftFromLocalStorage(organizationId: string | null | undefined = null): Promise<void> {
+  if (!speechChunkIndexedDbAvailable()) return;
+  const legacyDraft = loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+  if (!legacyDraft) return;
+  const existing = await readLocalDicomWorkbenchDraftFromIndexedDb(organizationId).catch(() => null);
+  const draft = newerDicomWorkbenchDraft(existing, legacyDraft);
+  if (!draft) return;
+  await saveLocalDicomWorkbenchDraftToIndexedDb(draft, organizationId);
+  removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+}
+
+async function loadLocalDicomWorkbenchDraft(
+  organizationId: string | null | undefined = null
+): Promise<DicomWorkbenchLocalDraft | null> {
+  if (!speechChunkIndexedDbAvailable()) return loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+  try {
+    await migrateLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+    return await readLocalDicomWorkbenchDraftFromIndexedDb(organizationId);
+  } catch {
+    return loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+  }
+}
+
+async function saveLocalDicomWorkbenchDraft(
+  manifest: DicomViewerWorkbenchManifestResponse,
+  clientSavedAt: string,
+  organizationId: string | null | undefined = null
+): Promise<boolean> {
+  const draft = createLocalDicomWorkbenchDraft(manifest, clientSavedAt);
+  if (speechChunkIndexedDbAvailable()) {
+    try {
+      await saveLocalDicomWorkbenchDraftToIndexedDb(draft, organizationId);
+      removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+      return true;
+    } catch {
+      // Keep local CT workbench recovery available on restricted browsers.
+    }
+  }
+  return saveLocalDicomWorkbenchDraftToLocalStorage(draft, organizationId);
+}
+
+async function removeLocalDicomWorkbenchDraft(organizationId: string | null | undefined = null): Promise<void> {
+  if (speechChunkIndexedDbAvailable()) {
+    await deleteLocalDicomWorkbenchDraftFromIndexedDb(organizationId).catch(() => undefined);
+  }
+  removeLocalDicomWorkbenchDraftFromLocalStorage(organizationId);
+}
+
+function normalizeMprWorkbenchDraft(value: unknown, seriesKey: string): MprWorkbenchLocalDraft | null {
+  if (!value || typeof value !== "object") return null;
+  const parsed = value as Partial<MprWorkbenchLocalDraft>;
+  if (parsed?.version !== 1 || parsed.seriesKey !== seriesKey || typeof parsed.clientSavedAt !== "string") return null;
+  if (!localSavedAtFresh(parsed.clientSavedAt, sensitiveLocalDraftRetentionMs)) return null;
+  const state = normalizeMprWorkbenchState(parsed.state);
+  return state ? { version: 1, seriesKey, state, clientSavedAt: parsed.clientSavedAt } : null;
+}
+
+async function readLocalMprWorkbenchDraftFromIndexedDb(
+  seriesKey: string,
+  organizationId: string | null | undefined = null
+): Promise<MprWorkbenchLocalDraft | null> {
+  const db = await openSpeechChunkDb();
+  const key = mprWorkbenchIndexedDbKey(seriesKey, organizationId);
+  const record = await new Promise<unknown>((resolve, reject) => {
+    const transaction = db.transaction(mprWorkbenchDraftStoreName, "readonly");
+    const request = transaction.objectStore(mprWorkbenchDraftStoreName).get(key);
+    request.onsuccess = () => resolve(request.result ?? null);
+    request.onerror = () => reject(request.error ?? new Error("Local MPR workbench draft read failed"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local MPR workbench draft transaction failed"));
+  });
+  const normalized = normalizeMprWorkbenchDraft(record, seriesKey);
+  if (!normalized && record && typeof record === "object") {
+    await deleteLocalMprWorkbenchDraftFromIndexedDb(seriesKey, organizationId).catch(() => undefined);
+  }
+  return normalized;
+}
+
+async function saveLocalMprWorkbenchDraftToIndexedDb(
+  seriesKey: string,
+  state: MprWorkbenchState,
+  clientSavedAt: string,
+  organizationId: string | null | undefined = null
+): Promise<void> {
+  const db = await openSpeechChunkDb();
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const record: MprWorkbenchIndexedDbDraft = {
+    version: 1,
+    seriesKey,
+    state,
+    clientSavedAt,
+    storageKey: mprWorkbenchIndexedDbKey(seriesKey, normalizedOrganizationId),
+    organizationId: normalizedOrganizationId
+  };
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(mprWorkbenchDraftStoreName, "readwrite");
+    transaction.objectStore(mprWorkbenchDraftStoreName).put(record);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local MPR workbench draft save failed"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Local MPR workbench draft save aborted"));
+  });
+}
+
+async function deleteLocalMprWorkbenchDraftFromIndexedDb(
+  seriesKey: string,
+  organizationId: string | null | undefined = null
+): Promise<void> {
+  const db = await openSpeechChunkDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(mprWorkbenchDraftStoreName, "readwrite");
+    transaction.objectStore(mprWorkbenchDraftStoreName).delete(mprWorkbenchIndexedDbKey(seriesKey, organizationId));
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local MPR workbench draft delete failed"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Local MPR workbench draft delete aborted"));
+  });
+}
+
+async function migrateLocalMprWorkbenchDraftFromLocalStorage(
+  seriesKey: string,
+  organizationId: string | null | undefined = null
+): Promise<void> {
+  if (!speechChunkIndexedDbAvailable()) return;
+  const legacyDraft = loadLocalMprWorkbenchDraftFromLocalStorage(seriesKey, organizationId);
+  if (!legacyDraft) return;
+  const existing = await readLocalMprWorkbenchDraftFromIndexedDb(seriesKey, organizationId).catch(() => null);
+  const draft =
+    existing && Date.parse(existing.clientSavedAt) >= Date.parse(legacyDraft.clientSavedAt) ? existing : legacyDraft;
+  await saveLocalMprWorkbenchDraftToIndexedDb(seriesKey, draft.state, draft.clientSavedAt, organizationId);
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey, organizationId));
+    if (organizationId) window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey));
+  }
+}
+
+async function loadLocalMprWorkbenchDraft(
+  seriesKey: string | null,
+  organizationId: string | null | undefined = null
+): Promise<MprWorkbenchLocalDraft | null> {
+  if (!seriesKey) return null;
+  if (!speechChunkIndexedDbAvailable()) return loadLocalMprWorkbenchDraftFromLocalStorage(seriesKey, organizationId);
+  try {
+    await migrateLocalMprWorkbenchDraftFromLocalStorage(seriesKey, organizationId);
+    return await readLocalMprWorkbenchDraftFromIndexedDb(seriesKey, organizationId);
+  } catch {
+    return loadLocalMprWorkbenchDraftFromLocalStorage(seriesKey, organizationId);
+  }
+}
+
+async function saveLocalMprWorkbenchDraft(
+  seriesKey: string,
+  state: MprWorkbenchState,
+  clientSavedAt: string,
+  organizationId: string | null | undefined = null
+): Promise<boolean> {
+  if (speechChunkIndexedDbAvailable()) {
+    try {
+      await saveLocalMprWorkbenchDraftToIndexedDb(seriesKey, state, clientSavedAt, organizationId);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey, organizationId));
+        if (organizationId) window.localStorage.removeItem(mprWorkbenchLocalKey(seriesKey));
+      }
+      return true;
+    } catch {
+      // Keep MPR recovery available on restricted browsers.
+    }
+  }
+  return saveLocalMprWorkbenchDraftToLocalStorage(seriesKey, state, clientSavedAt, organizationId);
+}
+
+async function readPendingVisitSavesFromIndexedDb(organizationId: string | null | undefined = null): Promise<PendingVisitSave[]> {
+  const db = await openSpeechChunkDb();
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const values = await new Promise<unknown[]>((resolve, reject) => {
+    const transaction = db.transaction(pendingVisitSaveStoreName, "readonly");
+    const request = transaction.objectStore(pendingVisitSaveStoreName).getAll();
+    request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+    request.onerror = () => reject(request.error ?? new Error("Local visit queue read failed"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local visit queue transaction failed"));
+  });
+  const queue: PendingVisitSave[] = [];
+  const staleIds: string[] = [];
+  for (const value of values) {
+    const candidate = value && typeof value === "object" ? (value as Partial<PendingVisitSave>) : {};
+    const normalized = normalizePendingVisitSave(value, normalizedOrganizationId, normalizedOrganizationId);
+    if (normalized) {
+      queue.push(normalized);
+    } else if (typeof candidate.id === "string") {
+      const itemOrganizationId = normalizedLocalOrganizationId(candidate.organizationId) ?? normalizedOrganizationId;
+      const stale =
+        typeof candidate.queuedAt === "string" && !localSavedAtFresh(candidate.queuedAt, sensitiveLocalDraftRetentionMs);
+      const malformedActiveRecord = localQueueOrganizationMatches(itemOrganizationId, normalizedOrganizationId);
+      if (stale || malformedActiveRecord) {
+        staleIds.push(candidate.id);
+      }
+    }
+  }
+  if (staleIds.length) {
+    await Promise.allSettled(staleIds.map((id) => deletePendingVisitSaveFromIndexedDb(id)));
+  }
+  return sortPendingVisitSaves(queue);
+}
+
+async function savePendingVisitSavesToIndexedDb(
+  queue: PendingVisitSave[],
+  organizationId: string | null | undefined = null
+): Promise<void> {
+  const db = await openSpeechChunkDb();
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const scopedQueue = sortPendingVisitSaves(
+    queue
+      .map((item) => ({ ...item, organizationId: normalizedLocalOrganizationId(item.organizationId) ?? normalizedOrganizationId }))
+      .filter(
+        (item) =>
+          localQueueOrganizationMatches(item.organizationId, normalizedOrganizationId) &&
+          localSavedAtFresh(item.queuedAt, sensitiveLocalDraftRetentionMs)
+      )
+  );
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(pendingVisitSaveStoreName, "readwrite");
+    const store = transaction.objectStore(pendingVisitSaveStoreName);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const existing = Array.isArray(request.result) ? request.result : [];
+      for (const value of existing) {
+        const candidate = value && typeof value === "object" ? (value as Partial<PendingVisitSave>) : {};
+        const itemOrganizationId = normalizedLocalOrganizationId(candidate.organizationId) ?? normalizedOrganizationId;
+        const stale =
+          typeof candidate.queuedAt === "string" && !localSavedAtFresh(candidate.queuedAt, sensitiveLocalDraftRetentionMs);
+        if (typeof candidate.id === "string" && (localQueueOrganizationMatches(itemOrganizationId, normalizedOrganizationId) || stale)) {
+          store.delete(candidate.id);
+        }
+      }
+      for (const item of scopedQueue) {
+        store.put(item);
+      }
+    };
+    request.onerror = () => reject(request.error ?? new Error("Local visit queue read failed"));
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local visit queue save failed"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Local visit queue save aborted"));
+  });
+}
+
+async function deletePendingVisitSaveFromIndexedDb(id: string): Promise<void> {
+  const db = await openSpeechChunkDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(pendingVisitSaveStoreName, "readwrite");
+    transaction.objectStore(pendingVisitSaveStoreName).delete(id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("Local visit queue delete failed"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Local visit queue delete aborted"));
+  });
+}
+
+async function migratePendingVisitSavesFromLocalStorage(organizationId: string | null | undefined = null): Promise<void> {
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  const legacyQueue = loadPendingVisitSavesFromLocalStorage(normalizedOrganizationId);
+  if (!legacyQueue.length || !pendingVisitSaveIndexedDbAvailable()) return;
+  const existing = await readPendingVisitSavesFromIndexedDb(normalizedOrganizationId).catch(() => []);
+  const byId = new Map<string, PendingVisitSave>();
+  for (const item of [...existing, ...legacyQueue]) {
+    byId.set(item.id, item);
+  }
+  await savePendingVisitSavesToIndexedDb(sortPendingVisitSaves(Array.from(byId.values())), normalizedOrganizationId);
+  window.localStorage.removeItem(pendingVisitSaveQueueLocalKey(normalizedOrganizationId));
+  if (normalizedOrganizationId) window.localStorage.removeItem(pendingVisitSaveQueueKey);
+}
+
+async function loadPendingVisitSaves(organizationId: string | null | undefined = null): Promise<PendingVisitSave[]> {
+  if (!pendingVisitSaveIndexedDbAvailable()) return loadPendingVisitSavesFromLocalStorage(organizationId);
+  try {
+    await migratePendingVisitSavesFromLocalStorage(organizationId);
+    return await readPendingVisitSavesFromIndexedDb(organizationId);
+  } catch {
+    return loadPendingVisitSavesFromLocalStorage(organizationId);
+  }
+}
+
+async function savePendingVisitSaves(queue: PendingVisitSave[], organizationId: string | null | undefined = null): Promise<void> {
+  const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
+  if (pendingVisitSaveIndexedDbAvailable()) {
+    try {
+      await savePendingVisitSavesToIndexedDb(queue, normalizedOrganizationId);
+      window.localStorage.removeItem(pendingVisitSaveQueueLocalKey(normalizedOrganizationId));
+      if (normalizedOrganizationId) window.localStorage.removeItem(pendingVisitSaveQueueKey);
+      return;
+    } catch {
+      // Keep accepted visits retryable on restricted browsers.
+    }
+  }
+  savePendingVisitSavesToLocalStorage(queue, normalizedOrganizationId);
 }
 
 async function readPendingSpeechChunksFromIndexedDb(organizationId: string | null | undefined = null): Promise<PendingSpeechChunk[]> {
@@ -5046,8 +5433,8 @@ async function readPendingSpeechChunksFromIndexedDb(organizationId: string | nul
     request.onsuccess = () => {
       resolve(Array.isArray(request.result) ? request.result : []);
     };
-    request.onerror = () => reject(request.error ?? new Error("IndexedDB не прочитан"));
-    transaction.onerror = () => reject(transaction.error ?? new Error("Транзакция IndexedDB не выполнена"));
+    request.onerror = () => reject(request.error ?? new Error("Хранилище аудио не прочитано"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Операция с хранилищем аудио не выполнена"));
   });
   const queue: PendingSpeechChunk[] = [];
   const staleIds: string[] = [];
@@ -5087,8 +5474,8 @@ async function savePendingSpeechChunksToIndexedDb(queue: PendingSpeechChunk[], o
       store.put(chunk);
     }
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Запись в IndexedDB не выполнена"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Запись в IndexedDB отменена"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Аудио не сохранено в локальное хранилище"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Сохранение аудио отменено браузером"));
   });
 }
 
@@ -5098,8 +5485,8 @@ async function putPendingSpeechChunkToIndexedDb(chunk: PendingSpeechChunk): Prom
     const transaction = db.transaction(speechChunkStoreName, "readwrite");
     transaction.objectStore(speechChunkStoreName).put(chunk);
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Обновление IndexedDB не выполнено"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Обновление IndexedDB отменено"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Очередь аудио не обновлена"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Обновление очереди аудио отменено браузером"));
   });
 }
 
@@ -5109,8 +5496,8 @@ async function deletePendingSpeechChunkFromIndexedDb(id: string): Promise<void> 
     const transaction = db.transaction(speechChunkStoreName, "readwrite");
     transaction.objectStore(speechChunkStoreName).delete(id);
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Удаление из IndexedDB не выполнено"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Удаление из IndexedDB отменено"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("Аудио не удалено из локальной очереди"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("Удаление аудио из очереди отменено браузером"));
   });
 }
 
@@ -5181,7 +5568,7 @@ async function removePendingSpeechChunkById(id: string, organizationId: string |
       await deletePendingSpeechChunkFromIndexedDb(id);
       return;
     } catch {
-      // Legacy fallback below keeps retry cleanup working when IndexedDB is unavailable mid-session.
+      // Legacy fallback below keeps retry cleanup working when browser audio storage is unavailable mid-session.
     }
   }
   savePendingSpeechChunksToLocalStorage(loadPendingSpeechChunksFromLocalStorage(organizationId).filter((chunk) => chunk.id !== id), organizationId);
@@ -5266,10 +5653,10 @@ async function preparePricelistImage(file: File): Promise<{
   throw new Error("Фото прайса слишком большое даже после сжатия. Нужен более четкий фрагмент страницы.");
 }
 
-function queuePendingVisitSave(
+async function queuePendingVisitSave(
   save: Omit<PendingVisitSave, "version" | "id" | "queuedAt" | "organizationId">,
   organizationId: string | null | undefined = null
-): PendingVisitSave {
+): Promise<PendingVisitSave> {
   const normalizedOrganizationId = normalizedLocalOrganizationId(organizationId);
   const queued: PendingVisitSave = {
     ...save,
@@ -5278,9 +5665,9 @@ function queuePendingVisitSave(
     organizationId: normalizedOrganizationId,
     queuedAt: new Date().toISOString()
   };
-  const existing = loadPendingVisitSaves(normalizedOrganizationId);
+  const existing = await loadPendingVisitSaves(normalizedOrganizationId);
   const withoutSameVisit = existing.filter((item) => item.visitId !== queued.visitId);
-  savePendingVisitSaves([...withoutSameVisit, queued], normalizedOrganizationId);
+  await savePendingVisitSaves([...withoutSameVisit, queued], normalizedOrganizationId);
   return queued;
 }
 
@@ -5301,13 +5688,13 @@ function visitSaveReceiptText(receipt: AcceptVisitDraftResponse["saveReceipt"]):
 
 function buildOfflineVisitDraftFromTranscript(transcript: string, specialty: DentalSpecialty): VisitNoteDraft {
   return buildRuleBasedVisitDraftFromTranscript(transcript, specialty, {
-    sourceLabel: "Офлайн-парсер"
+    sourceLabel: "Локальный разбор диктовки"
   });
 }
 
 function normalizePersistenceHealth(payload: unknown): PersistenceHealth | null {
   if (!payload || typeof payload !== "object") return null;
-  const persistence = (payload as { persistence?: Partial<PersistenceHealth> }).persistence;
+  const persistence = (payload as { meta?: Partial<PersistenceHealth>; persistence?: Partial<PersistenceHealth> }).meta ?? (payload as { persistence?: Partial<PersistenceHealth> }).persistence;
   if (!persistence || typeof persistence !== "object") return null;
 
   return {
@@ -5341,7 +5728,7 @@ const denteTelegramHandoffTargets: Record<DenteTelegramPortalSection, DenteTeleg
     section: "home",
     view: "shift",
     hash: "shift",
-    title: "Главная DENTE",
+    title: "Рабочий стол клиники",
     detail: "Открыт стартовый экран клиники: ближайшие приемы, готовность команды, быстрые действия и рабочие настройки."
   },
   documents: {
@@ -5445,6 +5832,8 @@ const settingsTabs = [
   { id: "audit", title: "Аудит" }
 ] as const;
 type SettingsTab = (typeof settingsTabs)[number]["id"];
+type AdminSecretSessionDomain = "clinical" | "settings" | "schedule" | "telegram";
+type AdminSecretUnlockDomain = AdminSecretSessionDomain | "all";
 
 const onboardingSteps: Array<{ id: OnboardingStep; title: string; detail: string }> = [
   { id: "intro", title: "Знакомство", detail: "что где лежит" },
@@ -5463,7 +5852,7 @@ const speechProviderConnectorLabels: Record<SpeechProviderConnector, string> = {
   client_only: "браузер",
   server_wired: "сервер",
   server_cataloged: "каталог",
-  local_bridge: "локальный мост",
+  local_bridge: "локальный модуль",
   local_planned: "локально"
 };
 
@@ -5499,6 +5888,7 @@ export function App() {
   const taxPaymentSelectionHydratedKeyRef = useRef<string | null>(null);
   const paymentReceiptSelectionHydratedKeyRef = useRef<string | null>(null);
   const outpatient025uDraftHydratedKeyRef = useRef<string | null>(null);
+  const medicalRecordExtractDraftHydratedKeyRef = useRef<string | null>(null);
   const initialDocumentIssueSignatureDraftRef = useRef<DocumentIssueSignatureDraft | null>(null);
   const documentIssueSignatureHydratedOrganizationIdRef = useRef<string | null>(null);
   const onboardingDismissalHydratedOrganizationIdRef = useRef<string | null>(null);
@@ -5942,7 +6332,7 @@ export function App() {
   const [postVisitNutritionInstructions, setPostVisitNutritionInstructions] = useState(postVisitCarePresets.filling_restoration.nutritionInstructions);
   const [postVisitUrgentWarningSigns, setPostVisitUrgentWarningSigns] = useState(postVisitCarePresets.filling_restoration.urgentWarningSigns);
   const [postVisitFollowUpAt, setPostVisitFollowUpAt] = useState(postVisitCarePresets.filling_restoration.plannedFollowUpAt);
-  const [postVisitClinicContactInstruction, setPostVisitClinicContactInstruction] = useState("связаться с клиникой по телефону или через Telegram-бот DENTE");
+  const [postVisitClinicContactInstruction, setPostVisitClinicContactInstruction] = useState("связаться с клиникой по телефону или через Telegram-бот клиники");
   const [postVisitTelegramSummary, setPostVisitTelegramSummary] = useState(postVisitCarePresets.filling_restoration.telegramSummary);
   const [postVisitPrintedCopyReceived, setPostVisitPrintedCopyReceived] = useState(false);
   const [postVisitUrgentSignsUnderstood, setPostVisitUrgentSignsUnderstood] = useState(false);
@@ -6044,7 +6434,7 @@ export function App() {
   const [outpatient025uFinalEpicrisis, setOutpatient025uFinalEpicrisis] = useState("");
   const [outpatient025uOfficialForm274nChecked, setOutpatient025uOfficialForm274nChecked] = useState(false);
   const [outpatient025uThirdPartyDataChecked, setOutpatient025uThirdPartyDataChecked] = useState(false);
-  const [copyRequestDocumentTypes, setCopyRequestDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или DICOM-архив");
+  const [copyRequestDocumentTypes, setCopyRequestDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или КТ-архив");
   const [copyRequestPeriodStart, setCopyRequestPeriodStart] = useState("");
   const [copyRequestPeriodEnd, setCopyRequestPeriodEnd] = useState("");
   const [copyRequestFormat, setCopyRequestFormat] = useState<MedicalDocumentReleaseChannel>("pdf");
@@ -6072,7 +6462,7 @@ export function App() {
   const [releaseRecipientAuthority, setReleaseRecipientAuthority] = useState("пациент лично");
   const [releaseSourceRequestDocumentId, setReleaseSourceRequestDocumentId] = useState("");
   const [releaseChannel, setReleaseChannel] = useState<MedicalDocumentReleaseChannel>("paper");
-  const [releaseDocumentTypes, setReleaseDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или DICOM-архив");
+  const [releaseDocumentTypes, setReleaseDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или КТ-архив");
   const [releasePeriodStart, setReleasePeriodStart] = useState("");
   const [releasePeriodEnd, setReleasePeriodEnd] = useState("");
   const [releaseDeliveredAt, setReleaseDeliveredAt] = useState(() => new Date().toLocaleString("ru-RU"));
@@ -6143,7 +6533,7 @@ export function App() {
     "ФИО;Телефон;Дата рождения;Комментарий\nИванова Марина Сергеевна;+7 927 111-22-33;21.04.1988;уже есть в базе\nНовый Пациент;+7 927 333-44-55;12.02.1991;перенос из старой МИС\nБез Телефона;;05.08.1975;нужно уточнить контакт"
   );
   const [imagingImportText, setImagingImportText] = useState(
-    "ФИО;Телефон;Тип;Зуб;Дата;Файл;Источник\nИванова Марина Сергеевна;+7 927 111-22-33;RVG;36;12.05.2026;C:\\Images\\ivanova_36.dcm;мост RVG-датчика\nИванова Марина Сергеевна;+7 927 111-22-33;ТРГ;;10.05.2026;C:\\Images\\ivanova_ceph.ima;экспорт Sidexis\nПетров Алексей Николаевич;+7 927 555-19-40;ОПТГ;;10.05.2026;C:\\Images\\petrov_opg.jpg;экспорт ОПТГ"
+    "ФИО;Телефон;Тип;Зуб;Дата;Файл;Источник\nИванова Марина Сергеевна;+7 927 111-22-33;RVG;36;12.05.2026;C:\\Images\\ivanova_36.dcm;локальный RVG-датчик\nИванова Марина Сергеевна;+7 927 111-22-33;ТРГ;;10.05.2026;C:\\Images\\ivanova_ceph.ima;экспорт Sidexis\nПетров Алексей Николаевич;+7 927 555-19-40;ОПТГ;;10.05.2026;C:\\Images\\petrov_opg.jpg;экспорт ОПТГ"
   );
   const [smartImportText, setSmartImportText] = useState(
     "Новый Пациент Снимков +7 927 444-55-66 12.02.1991 перенос из старой МИС\nНовый Пациент Снимков +7 927 444-55-66 RVG 36 12.05.2026 C:\\Images\\new_patient_36.dcm\nИванова Марина Сергеевна +7 927 111-22-33 ОПТГ 10.05.2026 C:\\Images\\ivanova_opg.png\nслужебная строка без полезных данных"
@@ -6177,7 +6567,9 @@ export function App() {
   const [browserPickedImagingFolder, setBrowserPickedImagingFolder] = useState<BrowserPickedImagingFolderPreview | null>(() =>
     loadBrowserPickedImagingFolderPreview()
   );
+  const [browserImagingScanProgress, setBrowserImagingScanProgress] = useState<BrowserImagingScanProgress | null>(null);
   const [browserMigrationDiscovery, setBrowserMigrationDiscovery] = useState<MigrationLocalSourceDiscoveryResponse | null>(null);
+  const [browserMigrationScanProgress, setBrowserMigrationScanProgress] = useState<BrowserMigrationScanProgress | null>(null);
   const [browserDirectoryPickerAvailable, setBrowserDirectoryPickerAvailable] = useState(() =>
     typeof window !== "undefined" && typeof (window as BrowserDirectoryPickerWindow).showDirectoryPicker === "function"
   );
@@ -6198,6 +6590,8 @@ export function App() {
   const [dicomFolderSeriesScan, setDicomFolderSeriesScan] = useState<DicomFolderSeriesPreviewResponse | null>(null);
   const [dicomFolderWorkupPlan, setDicomFolderWorkupPlan] = useState<DicomFolderWorkupPlanResponse | null>(null);
   const [dicomFirstFramePreview, setDicomFirstFramePreview] = useState<DicomFirstFramePreviewResponse | null>(null);
+  const [dicomFirstFramePreviewRequest, setDicomFirstFramePreviewRequest] =
+    useState<DicomFirstFramePreviewRequestContext | null>(null);
   const [dicomFirstFrameViewerState, setDicomFirstFrameViewerState] = useState<ImagingViewerState>(
     defaultDicomFirstFrameViewerState
   );
@@ -6215,6 +6609,9 @@ export function App() {
   const [selectedImagingStudyId, setSelectedImagingStudyId] = useState<string | null>(null);
   const [imagingKindFilter, setImagingKindFilter] = useState<ImagingStudyKind | "all">(initialUiPreferences.imagingKindFilter);
   const [imagingViewerState, setImagingViewerState] = useState<ImagingViewerState>(defaultImagingViewerState);
+  const [imagingViewerActiveTool, setImagingViewerActiveTool] = useState<ImagingViewerTool>("window_level");
+  const [ctPlanningActiveQuickActionId, setCtPlanningActiveQuickActionId] = useState<string | null>(null);
+  const [ctPlanningImplantPlan, setCtPlanningImplantPlan] = useState<ImagingViewerImplantPlan | null>(null);
   const [imagingViewerAnnotations, setImagingViewerAnnotations] = useState<ImagingViewerAnnotation[]>([]);
   const [imagingViewerNote, setImagingViewerNote] = useState("");
   const [imagingViewerSession, setImagingViewerSession] = useState<ImagingViewerSessionResponse["session"] | null>(null);
@@ -6225,9 +6622,12 @@ export function App() {
   const [mprProjection, setMprProjection] = useState<MprProjection>("axial");
   const [mprAxisDeg, setMprAxisDeg] = useState(0);
   const [mprSlabMm, setMprSlabMm] = useState(1);
+  const [mprSliceIndex, setMprSliceIndex] = useState(0);
   const [mprWindowPreset, setMprWindowPreset] = useState<MprWindowPreset>("bone");
   const [mprCrosshairEnabled, setMprCrosshairEnabled] = useState(true);
   const [mprLinkedPlanesEnabled, setMprLinkedPlanesEnabled] = useState(true);
+  const [mprWorkbenchLocalSavedAt, setMprWorkbenchLocalSavedAt] = useState<string | null>(null);
+  const [mprWorkbenchDraftRestored, setMprWorkbenchDraftRestored] = useState(false);
   const [smartImportPreview, setSmartImportPreview] = useState<SmartImportPreviewResponse | null>(null);
   const [smartImportCommit, setSmartImportCommit] = useState<SmartImportCommitResponse | null>(null);
   const [recognitionJob, setRecognitionJob] = useState<AiRecognitionJob | null>(null);
@@ -6238,11 +6638,8 @@ export function App() {
   const [lastServerDraftSavedAt, setLastServerDraftSavedAt] = useState<string | null>(null);
   const [serverDraftSyncState, setServerDraftSyncState] = useState<"idle" | "saving" | "saved" | "queued" | "error">("idle");
   const [localDraftWasRestored, setLocalDraftWasRestored] = useState(false);
-  const [pendingVisitSaveCount, setPendingVisitSaveCount] = useState(() => loadPendingVisitSaves(activeOrganizationId).length);
-  const [lastPendingVisitSaveAt, setLastPendingVisitSaveAt] = useState<string | null>(() => {
-    const pending = loadPendingVisitSaves(activeOrganizationId);
-    return latestPendingVisitSaveAt(pending);
-  });
+  const [pendingVisitSaveCount, setPendingVisitSaveCount] = useState(0);
+  const [lastPendingVisitSaveAt, setLastPendingVisitSaveAt] = useState<string | null>(null);
   const [lastVisitSaveReceipt, setLastVisitSaveReceipt] = useState<AcceptVisitDraftResponse["saveReceipt"] | null>(null);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
   const [speechGatewayStatus, setSpeechGatewayStatus] = useState<SpeechGatewayStatus | null>(null);
@@ -6346,7 +6743,13 @@ export function App() {
   const [telegramSettingsDirty, setTelegramSettingsDirty] = useState(false);
   const [telegramSettingsSaveState, setTelegramSettingsSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [telegramSettingsSaveError, setTelegramSettingsSaveError] = useState<string | null>(null);
+  const [clinicalAdminSecretDraft, setClinicalAdminSecretDraft] = useState("");
+  const [settingsAdminSecretDraft, setSettingsAdminSecretDraft] = useState("");
+  const [scheduleAdminSecretDraft, setScheduleAdminSecretDraft] = useState("");
   const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("");
+  const [clinicalAdminSecretSession, setClinicalAdminSecretSession] = useState("");
+  const [settingsAdminSecretSession, setSettingsAdminSecretSession] = useState("");
+  const [scheduleAdminSecretSession, setScheduleAdminSecretSession] = useState("");
   const [telegramAdminSecretSession, setTelegramAdminSecretSession] = useState("");
   const [isTelegramLoading, setIsTelegramLoading] = useState(false);
   const [isTelegramLinkCreating, setIsTelegramLinkCreating] = useState(false);
@@ -6361,6 +6764,10 @@ export function App() {
   const [uiPreferencesSyncError, setUiPreferencesSyncError] = useState<string | null>(null);
   const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
   const browserMigrationInputRef = useRef<HTMLInputElement | null>(null);
+  const browserImagingScanAbortRef = useRef<AbortController | null>(null);
+  const browserMigrationScanAbortRef = useRef<AbortController | null>(null);
+  const localDicomOperationAbortRef = useRef<AbortController | null>(null);
+  const [isLocalDicomOperationActive, setIsLocalDicomOperationActive] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const speechAudioContextRef = useRef<AudioContext | null>(null);
@@ -6380,6 +6787,7 @@ export function App() {
   const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
   const appointmentScheduleDraftsRef = useRef<Record<string, AppointmentScheduleDraft>>({});
   const imagingViewerSaveTimerRef = useRef<number | null>(null);
+  const mprWorkbenchSaveTimerRef = useRef<number | null>(null);
 
   function markTelegramSettingsDirty() {
     setTelegramSettingsDirty(true);
@@ -6455,16 +6863,66 @@ export function App() {
     return telegramFeatureLabels[value as DenteTelegramFeature] ?? telegramHumanMessage(value);
   }
 
+  function rememberAdminSecret(secret: string, domain: AdminSecretUnlockDomain) {
+    const normalized = secret.trim();
+    if (!normalized) return;
+    if (domain === "all" || domain === "clinical") setClinicalAdminSecretSession(normalized);
+    if (domain === "all" || domain === "settings") setSettingsAdminSecretSession(normalized);
+    if (domain === "all" || domain === "schedule") setScheduleAdminSecretSession(normalized);
+    if (domain === "all" || domain === "telegram") setTelegramAdminSecretSession(normalized);
+  }
+
+  function forgetAdminSecret(domain: AdminSecretUnlockDomain) {
+    if (domain === "all" || domain === "clinical") setClinicalAdminSecretSession("");
+    if (domain === "all" || domain === "settings") setSettingsAdminSecretSession("");
+    if (domain === "all" || domain === "schedule") setScheduleAdminSecretSession("");
+    if (domain === "all" || domain === "telegram") setTelegramAdminSecretSession("");
+  }
+
+  function currentAdminSecretUnlockDomain(): AdminSecretUnlockDomain {
+    if (accessUnlockRequired || !dashboard) return "all";
+    if (currentView === "schedule") return "schedule";
+    if (currentView === "settings") return settingsTab === "telegram" ? "telegram" : "settings";
+    if (onboardingStep === "telegram") return "telegram";
+    return "clinical";
+  }
+
+  function resolvedAdminSecretUnlockDomain(domainOverride?: AdminSecretUnlockDomain): AdminSecretUnlockDomain {
+    return domainOverride ?? currentAdminSecretUnlockDomain();
+  }
+
+  function adminSecretDraftForDomain(domain: AdminSecretUnlockDomain): string {
+    if (domain === "settings") return settingsAdminSecretDraft;
+    if (domain === "schedule") return scheduleAdminSecretDraft;
+    if (domain === "telegram") return telegramAdminSecretDraft;
+    return clinicalAdminSecretDraft;
+  }
+
+  function clearAdminSecretDraft(domain: AdminSecretUnlockDomain) {
+    if (domain === "all" || domain === "clinical") setClinicalAdminSecretDraft("");
+    if (domain === "all" || domain === "settings") setSettingsAdminSecretDraft("");
+    if (domain === "all" || domain === "schedule") setScheduleAdminSecretDraft("");
+    if (domain === "all" || domain === "telegram") setTelegramAdminSecretDraft("");
+  }
+
   function telegramControlPlaneHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
     return denteAdminSecretRequestHeaders(extra, adminSecretOverride ?? telegramAdminSecretSession);
   }
 
+  function settingsAccessHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
+    return denteAdminSecretRequestHeaders(extra, adminSecretOverride ?? settingsAdminSecretSession);
+  }
+
+  function scheduleMutationHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
+    return denteAdminSecretRequestHeaders(extra, adminSecretOverride ?? scheduleAdminSecretSession);
+  }
+
   function denteClinicalMutationHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
-    return telegramControlPlaneHeaders(extra, adminSecretOverride);
+    return denteAdminSecretRequestHeaders(extra, adminSecretOverride ?? clinicalAdminSecretSession);
   }
 
   function denteClinicalReadHeaders(extra: Record<string, string> = {}, adminSecretOverride?: string): Record<string, string> {
-    return telegramControlPlaneHeaders(extra, adminSecretOverride);
+    return denteAdminSecretRequestHeaders(extra, adminSecretOverride ?? clinicalAdminSecretSession);
   }
 
   function revokeObjectUrlIfNeeded(url: string): void {
@@ -6475,31 +6933,41 @@ export function App() {
     Object.values(urls).forEach(revokeObjectUrlIfNeeded);
   }
 
-  function unlockTelegramAdminSession() {
-    const secret = telegramAdminSecretDraft.trim();
+  function unlockTelegramAdminSession(domainOverride?: AdminSecretUnlockDomain) {
+    const domain = resolvedAdminSecretUnlockDomain(domainOverride);
+    const secret = adminSecretDraftForDomain(domain).trim();
     if (!secret) {
-      setError("Введите секрет админ-доступа DENTE, если он включен на API-сервере.");
+      setError("Введите секрет администратора клиники, если он включен в серверных настройках клиники.");
       return;
     }
-    setTelegramAdminSecretSession(secret);
-    setTelegramAdminSecretDraft("");
+    rememberAdminSecret(secret, domain);
+    clearAdminSecretDraft(domain);
     setError(null);
+    if (domain === "settings" || domain === "schedule") return;
+    if (domain === "telegram") {
+      void loadTelegramControlPlane({ adminSecret: secret });
+      return;
+    }
     setAccessUnlockRequired(false);
     setAccessUnlockMessage("");
     void loadDashboard({ adminSecret: secret })
-      .then(() => loadTelegramControlPlane({ adminSecret: secret }))
+      .then(() => {
+        if (domain === "all") void loadTelegramControlPlane({ adminSecret: secret, silent: true });
+      })
       .catch((loadError: unknown) => {
-        setTelegramAdminSecretSession("");
-        setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить данные DENTE");
+        forgetAdminSecret(domain);
+        setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
       });
   }
 
-  function lockTelegramAdminSession() {
-    setTelegramAdminSecretSession("");
-    setTelegramAdminSecretDraft("");
+  function lockTelegramAdminSession(domainOverride?: AdminSecretUnlockDomain) {
+    const domain = resolvedAdminSecretUnlockDomain(domainOverride);
+    forgetAdminSecret(domain);
+    clearAdminSecretDraft(domain);
+    if (domain === "settings" || domain === "schedule" || domain === "telegram") return;
     setDashboard(null);
     void loadDashboard().catch((loadError: unknown) => {
-      setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить данные DENTE");
+      setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
     });
   }
 
@@ -6521,7 +6989,7 @@ export function App() {
     setDashboard(dashboardSchema.parse(payload));
     setAccessUnlockRequired(false);
     setAccessUnlockMessage("");
-    void loadPersistenceHealth({ silent: true });
+    void loadPersistenceHealth({ silent: true, adminSecret: options.adminSecret });
     void refreshSpeechRuntime({ silent: true });
   }
 
@@ -6783,7 +7251,7 @@ export function App() {
     try {
       const response = await fetch(clinicProfileEndpoint, {
         method: "PUT",
-        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload)
       });
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Профиль клиники не сохранен"));
@@ -6806,10 +7274,9 @@ export function App() {
       setError(null);
       return true;
     } catch (saveError) {
-      const message = saveError instanceof Error ? saveError.message : "Запись не сохранена";
+      const message = operatorWorkflowFailureMessage("Профиль клиники не сохранен", saveError);
       setClinicProfileSaveState("error");
       setError(message);
-      setError(saveError instanceof Error ? saveError.message : "Профиль клиники не сохранен");
       return false;
     }
   }
@@ -6864,7 +7331,7 @@ export function App() {
       return true;
     } catch (saveError) {
       setPatientCoreSaveState("error");
-      setError(saveError instanceof Error ? saveError.message : "Карточка пациента не сохранена");
+      setError(operatorWorkflowFailureMessage("Карточка пациента не сохранена", saveError));
       return false;
     }
   }
@@ -6913,7 +7380,7 @@ export function App() {
       return true;
     } catch (saveError) {
       setPatientAdministrativeProfileSaveState("error");
-      setError(saveError instanceof Error ? saveError.message : "Данные пациента не сохранены");
+      setError(operatorWorkflowFailureMessage("Данные пациента не сохранены", saveError));
       return false;
     }
   }
@@ -7063,7 +7530,7 @@ export function App() {
   function queueUiPreferencesServerSync(preferences: UiPreferences, options: { delayMs?: number } = {}): void {
     pendingUiPreferencesSyncRef.current = preferences;
     if (
-      !telegramAdminSecretSession.trim() ||
+      !settingsAdminSecretSession.trim() ||
       !uiPreferencesServerReadyRef.current ||
       uiPreferencesSyncInFlightRef.current ||
       typeof window === "undefined"
@@ -7078,13 +7545,13 @@ export function App() {
   }
 
   async function flushPendingUiPreferencesServerSync(): Promise<void> {
-    if (!telegramAdminSecretSession.trim() || !uiPreferencesServerReadyRef.current || uiPreferencesSyncInFlightRef.current) return;
+    if (!settingsAdminSecretSession.trim() || !uiPreferencesServerReadyRef.current || uiPreferencesSyncInFlightRef.current) return;
     const preferences = pendingUiPreferencesSyncRef.current;
     if (!preferences) return;
     pendingUiPreferencesSyncRef.current = null;
     uiPreferencesSyncInFlightRef.current = true;
     try {
-      await saveServerUiPreferences(preferences, telegramAdminSecretSession);
+      await saveServerUiPreferences(preferences, settingsAdminSecretSession);
       if (!pendingUiPreferencesSyncRef.current) setUiPreferencesSyncError(null);
     } catch (preferencesError) {
       if (!pendingUiPreferencesSyncRef.current) pendingUiPreferencesSyncRef.current = preferences;
@@ -7113,7 +7580,7 @@ export function App() {
     };
     if (uiPreferencesServerReadyRef.current) {
       try {
-        await saveServerUiPreferences(savedPreferences, telegramAdminSecretSession);
+        await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession);
         pendingUiPreferencesSyncRef.current = null;
         setUiPreferencesSyncError(null);
       } catch (preferencesError) {
@@ -7162,7 +7629,7 @@ export function App() {
     }
     if (uiPreferencesServerReadyRef.current) {
       try {
-        await saveServerUiPreferences(savedPreferences, telegramAdminSecretSession);
+        await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession);
         setUiPreferencesSyncError(null);
       } catch (preferencesError) {
         queueUiPreferencesServerSync(savedPreferences, { delayMs: 5000 });
@@ -7230,14 +7697,19 @@ export function App() {
     window.location.hash = "settings/clinic";
   }
 
-  async function loadPersistenceHealth(options: { silent?: boolean } = {}) {
+  async function loadPersistenceHealth(options: { silent?: boolean; adminSecret?: string | undefined } = {}) {
     try {
-      const response = await fetch("/api/health", { cache: "no-store" });
-      if (!response.ok) throw new Error(`Проверка сервера: API ${response.status}`);
-      setPersistenceHealth(normalizePersistenceHealth(await response.json()));
+      const response = await fetch("/api/system/persistence/verify", {
+        cache: "no-store",
+        headers: denteClinicalReadHeaders({}, options.adminSecret)
+      });
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Проверка сервера не выполнена"));
+      const report = (await response.json()) as PersistenceIntegrityReport & { meta?: PersistenceHealth };
+      setPersistenceIntegrity(report);
+      setPersistenceHealth(normalizePersistenceHealth(report));
     } catch (healthError) {
       if (!options.silent) {
-        setError(healthError instanceof Error ? `Статус сохранности недоступен: ${healthError.message}` : "Статус сохранности недоступен");
+        setError(operatorWorkflowFailureMessage("Статус сохранности недоступен", healthError));
       }
     }
   }
@@ -7245,13 +7717,13 @@ export function App() {
   async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/system/persistence/verify", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(`Проверка сохранения: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Проверка резервной копии не выполнена"));
       const report = (await response.json()) as PersistenceIntegrityReport & { meta?: PersistenceHealth };
       setPersistenceIntegrity(report);
       if (report.meta) setPersistenceHealth(report.meta);
     } catch (verifyError) {
       if (!options.silent) {
-        setError(verifyError instanceof Error ? `Проверка резервной копии не выполнена: ${verifyError.message}` : "Проверка резервной копии не выполнена");
+        setError(operatorWorkflowFailureMessage("Проверка резервной копии не выполнена", verifyError));
       }
     }
   }
@@ -7264,7 +7736,7 @@ export function App() {
     setIsPersistenceExporting(true);
     try {
       const response = await fetch("/api/system/persistence/export", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(`Экспорт сохраненных данных: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Экспорт резервной копии не выполнен"));
       const blob = await response.blob();
       if (blob.size === 0) throw new Error("Сервер вернул пустой файл резервной копии.");
       const url = URL.createObjectURL(blob);
@@ -7278,7 +7750,7 @@ export function App() {
       await loadPersistenceIntegrity({ silent: true });
       setError(null);
     } catch (exportError) {
-      setError(exportError instanceof Error ? `Экспорт резервной копии не выполнен: ${exportError.message}` : "Экспорт резервной копии не выполнен");
+      setError(operatorWorkflowFailureMessage("Экспорт резервной копии не выполнен", exportError));
     } finally {
       setIsPersistenceExporting(false);
     }
@@ -7289,11 +7761,7 @@ export function App() {
       setBrowserContinuity(await inspectBrowserContinuity());
     } catch (continuityError) {
       if (!options.silent) {
-        setError(
-          continuityError instanceof Error
-            ? `Проверка сохранности браузера не выполнена: ${continuityError.message}`
-            : "Проверка сохранности браузера не выполнена"
-        );
+        setError(browserCapabilityFailureMessage("Проверка сохранности браузера не выполнена", continuityError));
       }
     }
   }
@@ -7301,11 +7769,11 @@ export function App() {
   async function loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/system/local-bridges/readiness", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(`Готовность локального моста: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Готовность локального модуля не проверена"));
       setLocalBridgeReadiness((await response.json()) as LocalBridgeReadinessResponse);
     } catch (bridgeError) {
       if (!options.silent) {
-        setError(bridgeError instanceof Error ? `Готовность локального моста не проверена: ${bridgeError.message}` : "Готовность локального моста не проверена");
+        setError(operatorWorkflowFailureMessage("Готовность локального модуля не проверена", bridgeError));
       }
     }
   }
@@ -7313,13 +7781,13 @@ export function App() {
   async function loadLocalBridgeUsePlans(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/system/local-bridges/use-plans", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(`План локального моста: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "План локального модуля недоступен"));
       const payload = (await response.json()) as LocalBridgeUsePlansResponse;
       setLocalBridgeUsePlans(payload);
       setLocalBridgeReadiness(payload.readiness);
     } catch (planError) {
       if (!options.silent) {
-        setError(planError instanceof Error ? `План локального моста недоступен: ${planError.message}` : "План локального моста недоступен");
+        setError(operatorWorkflowFailureMessage("План локального модуля недоступен", planError));
       }
     }
   }
@@ -7333,23 +7801,23 @@ export function App() {
       const granted = await navigator.storage.persist();
       await refreshBrowserContinuity({ silent: true });
       if (!granted) {
-        setError("Браузер не выдал постоянное хранилище. Локальные черновики работают, но устройство может очистить кэш при нехватке места.");
+        setError("Браузер не выдал постоянное хранилище. Локальные черновики работают, но устройство может очистить локальное хранилище при нехватке места.");
       }
     } catch (storageError) {
-      setError(storageError instanceof Error ? `Запрос постоянного хранилища не выполнен: ${storageError.message}` : "Запрос постоянного хранилища не выполнен");
+      setError(browserCapabilityFailureMessage("Запрос постоянного хранилища не выполнен", storageError));
     }
   }
 
   async function loadSpeechGatewayStatus(options: { silent?: boolean } = {}): Promise<SpeechGatewayStatus | null> {
     try {
       const response = await fetch("/api/speech/status", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(`Статус распознавания речи: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Состояние распознавания недоступно"));
       const status = (await response.json()) as SpeechGatewayStatus;
       setSpeechGatewayStatus(status);
       return status;
     } catch (speechError) {
       if (!options.silent) {
-        setError(speechError instanceof Error ? `Шлюз распознавания речи недоступен: ${speechError.message}` : "Шлюз распознавания речи недоступен");
+        setError(operatorWorkflowFailureMessage("Шлюз распознавания речи недоступен", speechError));
       }
       return null;
     }
@@ -7358,15 +7826,11 @@ export function App() {
   async function loadSpeechGatewayHealthReport(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/speech/gateway-health", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(`Проверка шлюза распознавания речи: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Проверка распознавания недоступна"));
       setSpeechGatewayHealthReport((await response.json()) as SpeechGatewayHealthReport);
     } catch (speechHealthError) {
       if (!options.silent) {
-        setError(
-          speechHealthError instanceof Error
-            ? `Проверка STT gateway недоступна: ${speechHealthError.message}`
-            : "Проверка STT gateway недоступна"
-        );
+        setError(operatorWorkflowFailureMessage("Проверка распознавания недоступна", speechHealthError));
       }
     }
   }
@@ -7374,15 +7838,11 @@ export function App() {
   async function loadSpeechProviderRuntimeStatuses(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/speech/providers/runtime", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(`Провайдеры распознавания речи: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Провайдеры распознавания недоступны"));
       setSpeechProviderRuntimeStatuses((await response.json()) as SpeechProviderRuntimeStatus[]);
     } catch (speechRuntimeError) {
       if (!options.silent) {
-        setError(
-          speechRuntimeError instanceof Error
-            ? `STT provider runtime недоступен: ${speechRuntimeError.message}`
-            : "STT provider runtime недоступен"
-        );
+        setError(operatorWorkflowFailureMessage("Провайдер распознавания недоступен", speechRuntimeError));
       }
     }
   }
@@ -7400,37 +7860,33 @@ export function App() {
           source: "visit"
         })
       });
-      if (!response.ok) throw new Error(`Стратегия записи речи: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Стратегия распознавания недоступна"));
       setSpeechRecordingStrategy((await response.json()) as SpeechRecordingStrategy);
     } catch (speechStrategyError) {
       if (!options.silent) {
-        setError(
-          speechStrategyError instanceof Error
-            ? `STT strategy недоступна: ${speechStrategyError.message}`
-            : "STT strategy недоступна"
-        );
+        setError(operatorWorkflowFailureMessage("Стратегия распознавания недоступна", speechStrategyError));
       }
     }
   }
 
   async function loadSpeechRecordingRecovery(options: { silent?: boolean } = {}) {
     try {
+      if (!dashboard?.activeVisit.id || !dashboard.activeVisit.patientId) {
+        setSpeechRecordingRecovery(null);
+        return;
+      }
       const params = new URLSearchParams({ limit: "5" });
-      if (dashboard?.activeVisit.id) params.set("visitId", dashboard.activeVisit.id);
-      if (dashboard?.activeVisit.patientId) params.set("patientId", dashboard.activeVisit.patientId);
+      params.set("visitId", dashboard.activeVisit.id);
+      params.set("patientId", dashboard.activeVisit.patientId);
       const response = await fetch(`/api/speech/recordings/recovery?${params.toString()}`, {
         cache: "no-store",
         headers: denteClinicalReadHeaders()
       });
-      if (!response.ok) throw new Error(`Восстановление речевых записей: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Восстановление диктовки недоступно"));
       setSpeechRecordingRecovery((await response.json()) as SpeechRecordingRecoveryList);
     } catch (speechRecoveryError) {
       if (!options.silent) {
-        setError(
-          speechRecoveryError instanceof Error
-            ? `STT recovery недоступен: ${speechRecoveryError.message}`
-            : "STT recovery недоступен"
-        );
+        setError(operatorWorkflowFailureMessage("Восстановление диктовки недоступно", speechRecoveryError));
       }
     }
   }
@@ -7445,8 +7901,8 @@ export function App() {
     ]);
   }
 
-  function refreshPendingVisitSaveState() {
-    const pending = loadPendingVisitSaves(activeOrganizationId);
+  async function refreshPendingVisitSaveState() {
+    const pending = await loadPendingVisitSaves(activeOrganizationId);
     setPendingVisitSaveCount(pending.length);
     setLastPendingVisitSaveAt(latestPendingVisitSaveAt(pending));
   }
@@ -7491,7 +7947,7 @@ export function App() {
       })
     });
     if (!response.ok) {
-      throw new Error(`Принятие приема: API ${response.status}`);
+      throw new WorkflowResponseError(await responseErrorMessage(response, "Прием не принят"), response.status);
     }
     return (await response.json()) as AcceptVisitDraftResponse;
   }
@@ -7505,7 +7961,7 @@ export function App() {
       cache: "no-store",
       headers: denteClinicalReadHeaders()
     });
-    if (!response.ok) throw new Error(`Автосохранение приема: API ${response.status}`);
+    if (!response.ok) throw new Error(await responseErrorMessage(response, "Серверный черновик не загружен"));
     return (await response.json()) as VisitDraftAutosaveResponse;
   }
 
@@ -7537,7 +7993,7 @@ export function App() {
           clientSavedAt
         })
       });
-      if (!response.ok) throw new Error(`Автосохранение приема: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Серверный черновик не сохранен"));
       const result = (await response.json()) as VisitDraftAutosaveResponse;
       lastServerDraftSignatureRef.current = signature;
       setLastServerDraftSavedAt(result.serverDraft?.serverSavedAt ?? clientSavedAt);
@@ -7545,16 +8001,16 @@ export function App() {
     } catch (syncError) {
       setServerDraftSyncState("error");
       if (!options.silent) {
-        setError(syncError instanceof Error ? `Серверный черновик не сохранен: ${syncError.message}` : "Серверный черновик не сохранен");
+        setError(operatorWorkflowFailureMessage("Серверный черновик не сохранен", syncError));
       }
     }
   }
 
   async function flushPendingVisitSaves(options: { silent?: boolean } = {}) {
     if (isPendingVisitSyncing) return;
-    const pending = loadPendingVisitSaves(activeOrganizationId);
+    const pending = await loadPendingVisitSaves(activeOrganizationId);
     if (!pending.length) {
-      refreshPendingVisitSaveState();
+      await refreshPendingVisitSaveState();
       return;
     }
 
@@ -7568,17 +8024,17 @@ export function App() {
           clientSavedAt: item.queuedAt
         });
         remaining = remaining.filter((candidate) => candidate.id !== item.id);
-        savePendingVisitSaves(remaining, activeOrganizationId);
+        await savePendingVisitSaves(remaining, activeOrganizationId);
         if (dashboard?.activeVisit.id === result.visit.id) {
           applyAcceptedVisitResponse(result);
         }
       }
-      refreshPendingVisitSaveState();
+      await refreshPendingVisitSaveState();
     } catch (syncError) {
-      savePendingVisitSaves(remaining, activeOrganizationId);
-      refreshPendingVisitSaveState();
+      await savePendingVisitSaves(remaining, activeOrganizationId);
+      await refreshPendingVisitSaveState();
       if (!options.silent) {
-        setError(syncError instanceof Error ? `Сервер пока не принял очередь: ${syncError.message}` : "Сервер пока не принял очередь");
+        setError(operatorWorkflowFailureMessage("Сервер пока не принял очередь", syncError));
       }
     } finally {
       setIsPendingVisitSyncing(false);
@@ -7591,12 +8047,14 @@ export function App() {
       headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(input)
     });
-    const payload = (await response.json()) as SpeechTranscriptionResponse;
+    const payload = (await response.json()) as SpeechTranscriptionResponse & { error?: unknown; message?: unknown };
     if (payload.chunk?.status === "needs_provider_key" && !payload.chunk.transcript.trim()) {
-      throw new Error("Серверное STT сейчас недоступно; аудио осталось в локальной очереди.");
+      throw new Error("Серверное распознавание сейчас недоступно; аудио осталось в локальной очереди.");
     }
     if (!response.ok) {
-      throw new Error(`Распознавание речи: API ${response.status}`);
+      const rawDetail = typeof payload.message === "string" ? payload.message : typeof payload.error === "string" ? payload.error : null;
+      const detail = operatorReadableErrorDetail(rawDetail) ?? responseStatusFailureLabel(response);
+      throw new Error(`Распознавание речи не выполнено: ${detail}`);
     }
     return payload;
   }
@@ -7619,7 +8077,7 @@ export function App() {
       return;
     }
     if (!speechTranscriptionMatchesActiveVisit(result)) {
-      setSpeechStatusNote("STT-фрагмент синхронизирован, но относится к другому приему и не добавлен в текущую карту.");
+      setSpeechStatusNote("Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.");
       return;
     }
     const text = result.chunk.transcript.trim();
@@ -7652,7 +8110,7 @@ export function App() {
         headers: denteClinicalReadHeaders()
         }
       );
-      if (!response.ok) throw new Error(`Сборка речевой записи: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись распознавания не собрана"));
       const assembly = (await response.json()) as SpeechRecordingAssembly;
       const assembledTranscript = assembly.transcript.trim();
       if (assembledTranscript) {
@@ -7672,7 +8130,7 @@ export function App() {
       return assembly;
     } catch (assemblyError) {
       if (!options.silent) {
-        setError(assemblyError instanceof Error ? `Не удалось собрать STT-запись: ${assemblyError.message}` : "Не удалось собрать STT-запись");
+        setError(operatorWorkflowFailureMessage("Не удалось собрать запись распознавания", assemblyError));
       }
       return null;
     }
@@ -7706,17 +8164,17 @@ export function App() {
     if (!isOnline) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
-        setSpeechStatusNote(`STT очередь сохранена локально: ${queue.length} фрагм., отправка после подключения.`);
+        setSpeechStatusNote(`Очередь распознавания сохранена локально: ${queue.length} фрагм., отправка после подключения.`);
       }
       return;
     }
 
     const currentGateway = (await loadSpeechGatewayStatus({ silent: true })) ?? speechGatewayStatus;
-    const hasAudioWaitingForServer = queue.some((item) => Boolean(item.audioBase64?.trim()) && !item.localTranscript?.trim());
+    const hasAudioWaitingForServer = queue.some((item) => Boolean(item.audioBase64?.trim()));
     if (hasAudioWaitingForServer && !speechGatewayCanUpload(currentGateway)) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
-        setSpeechStatusNote(`STT очередь сохранена: ${queue.length} фрагм. Серверный провайдер еще не готов, аудио не удалено.`);
+        setSpeechStatusNote(`Очередь распознавания сохранена: ${queue.length} фрагм. Серверное распознавание еще не готово, аудио не удалено.`);
       }
       return;
     }
@@ -7736,7 +8194,7 @@ export function App() {
     } catch (syncError) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
-        setError(syncError instanceof Error ? `STT очередь пока не отправлена: ${syncError.message}` : "STT очередь пока не отправлена");
+        setError(operatorWorkflowFailureMessage("Очередь распознавания пока не отправлена", syncError));
       }
     }
   }
@@ -7790,7 +8248,7 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
-    const preferencesAccessSecret = telegramAdminSecretSession.trim();
+    const preferencesAccessSecret = settingsAdminSecretSession.trim();
     if (!preferencesAccessSecret) {
       uiPreferencesServerReadyRef.current = false;
       uiPreferencesHydratedRef.current = true;
@@ -7832,7 +8290,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [telegramAdminSecretSession]);
+  }, [settingsAdminSecretSession]);
 
   useEffect(() => {
     const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim() ?? "";
@@ -7978,14 +8436,45 @@ export function App() {
 
   useEffect(() => {
     loadDashboard().catch((loadError: unknown) => {
-      setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить данные");
+      setError(operatorWorkflowFailureMessage("Не удалось загрузить данные", loadError));
     });
   }, []);
 
-  const imagingPreviewSignature = dashboard?.imagingStudies.map((study) => `${study.id}:${study.previewUrl}`).join("|") ?? "";
+  const imagingPreviewWorkset = useMemo(() => {
+    if (currentView !== "imaging" || !dashboard?.imagingStudies.length) return [];
+    const activeStudies = dashboard.imagingStudies
+      .filter((study) => study.patientId === dashboard.activeVisit.patientId)
+      .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
+    const visibleStudies =
+      imagingKindFilter === "all" ? activeStudies : activeStudies.filter((study) => study.kind === imagingKindFilter);
+    const selectedStudy = visibleStudies.find((study) => study.id === selectedImagingStudyId) ?? visibleStudies[0] ?? null;
+    const comparisonStudies = selectedStudy
+      ? activeStudies
+          .filter((study) => study.id !== selectedStudy.id)
+          .map((study) => ({
+            study,
+            score: imagingComparisonScore(selectedStudy, study)
+          }))
+          .sort(
+            (left, right) =>
+              right.score - left.score ||
+              imagingCaptureDistanceMs(selectedStudy.capturedAt, left.study.capturedAt) -
+                imagingCaptureDistanceMs(selectedStudy.capturedAt, right.study.capturedAt) ||
+              right.study.capturedAt.localeCompare(left.study.capturedAt)
+          )
+          .slice(0, 4)
+          .map((item) => item.study)
+      : [];
+    const workset = new Map<string, Dashboard["imagingStudies"][number]>();
+    [selectedStudy, ...comparisonStudies, ...visibleStudies].forEach((study) => {
+      if (study) workset.set(study.id, study);
+    });
+    return Array.from(workset.values());
+  }, [currentView, dashboard, imagingKindFilter, selectedImagingStudyId]);
+  const imagingPreviewSignature = imagingPreviewWorkset.map((study) => `${study.id}:${study.previewUrl}`).join("|");
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    if (!dashboard?.imagingStudies.length) {
+    if (!imagingPreviewWorkset.length) {
       setImagingPreviewObjectUrls((current) => {
         revokeObjectUrlMap(current);
         return {};
@@ -7997,7 +8486,7 @@ export function App() {
     const abortController = new AbortController();
     const createdUrls: string[] = [];
     void Promise.all(
-      dashboard.imagingStudies.map(async (study): Promise<[string, string] | null> => {
+      imagingPreviewWorkset.map(async (study): Promise<[string, string] | null> => {
         if (!study.previewUrl.startsWith("/api/")) return [study.id, study.previewUrl];
         const response = await fetch(study.previewUrl, {
           cache: "no-store",
@@ -8043,7 +8532,7 @@ export function App() {
       abortController.abort();
       createdUrls.forEach(revokeObjectUrlIfNeeded);
     };
-  }, [imagingPreviewSignature, telegramAdminSecretSession]);
+  }, [imagingPreviewSignature, imagingPreviewWorkset, clinicalAdminSecretSession]);
 
   useEffect(() => {
     const settings = telegramStatus?.settings;
@@ -8276,12 +8765,20 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const recovered = loadLocalDicomWorkbenchDraft(activeOrganizationId);
-    if (recovered) {
-      applyDicomWorkbenchManifest(recovered.manifest);
-      setDicomWorkbenchLocalSavedAt(recovered.clientSavedAt);
-    }
-    void loadDicomWorkbenchBundles({ silent: true, restoreLatest: !recovered });
+    let cancelled = false;
+    const restore = async () => {
+      const recovered = await loadLocalDicomWorkbenchDraft(activeOrganizationId);
+      if (cancelled) return;
+      if (recovered) {
+        applyDicomWorkbenchManifest(recovered.manifest);
+        setDicomWorkbenchLocalSavedAt(recovered.clientSavedAt);
+      }
+      void loadDicomWorkbenchBundles({ silent: true, restoreLatest: !recovered });
+    };
+    void restore();
+    return () => {
+      cancelled = true;
+    };
   }, [activeOrganizationId]);
 
   useEffect(() => {
@@ -8297,7 +8794,6 @@ export function App() {
   useEffect(() => {
     if (currentView === "settings" && settingsTab === "audit") {
       void loadPersistenceHealth({ silent: true });
-      void loadPersistenceIntegrity({ silent: true });
       void refreshBrowserContinuity({ silent: true });
       void loadLocalBridgeUsePlans({ silent: true });
     }
@@ -8340,6 +8836,8 @@ export function App() {
     window.addEventListener("hashchange", syncView);
     return () => window.removeEventListener("hashchange", syncView);
   }, []);
+
+  useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
   useEffect(() => {
     const telegramHandoffTarget = initialTelegramHandoffTargetRef.current ?? readDenteTelegramHandoffTarget();
@@ -8385,7 +8883,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    refreshPendingVisitSaveState();
+    void refreshPendingVisitSaveState();
     void refreshPendingSpeechChunkState();
     const markOnline = () => {
       setIsOnline(true);
@@ -8395,7 +8893,7 @@ export function App() {
     };
     const markOffline = () => setIsOnline(false);
     const refreshFromStorage = () => {
-      refreshPendingVisitSaveState();
+      void refreshPendingVisitSaveState();
       void refreshPendingSpeechChunkState();
     };
     window.addEventListener("online", markOnline);
@@ -9047,8 +9545,8 @@ export function App() {
     const payment = eligibleRefundCorrectionPayments.find((candidate) => candidate.id === paymentId);
     if (!payment) return;
     setRefundOriginalFiscalReceiptNumber(payment.fiscalReceiptNumber?.trim() || "");
-    const currentAmountRub = Number(refundAmountRub.replace(/[^\d]/g, ""));
-    if (!Number.isFinite(currentAmountRub) || currentAmountRub <= 0 || currentAmountRub > payment.amountRub) {
+    const currentAmountRub = normalizeRubAmountInput(refundAmountRub);
+    if (currentAmountRub === null || currentAmountRub <= 0 || currentAmountRub > payment.amountRub) {
       setRefundAmountRub(String(payment.amountRub));
     }
     if (!refundRecipientFullName.trim() && payment.payerFullName?.trim()) {
@@ -9065,6 +9563,7 @@ export function App() {
     setRefundSelectedPaymentId("");
   }, [eligibleRefundCorrectionPayments, refundSelectedPaymentId]);
   const outpatient025uDraftVisitId = documentPatientMatchesActiveVisit ? dashboard?.activeVisit.id ?? null : null;
+  const medicalRecordExtractDraftVisitId = documentPatientMatchesActiveVisit ? dashboard?.activeVisit.id ?? null : null;
   const outpatient025uDraftPersistenceKey = useMemo(
     () =>
       documentPayloadDraftKey(
@@ -9074,6 +9573,16 @@ export function App() {
         outpatient025uDraftVisitId
       ),
     [documentLocalPersistenceOrganizationId, documentPatient?.id, outpatient025uDraftVisitId]
+  );
+  const medicalRecordExtractDraftPersistenceKey = useMemo(
+    () =>
+      documentPayloadDraftKey(
+        "medical_record_extract",
+        documentLocalPersistenceOrganizationId,
+        documentPatient?.id ?? null,
+        medicalRecordExtractDraftVisitId
+      ),
+    [documentLocalPersistenceOrganizationId, documentPatient?.id, medicalRecordExtractDraftVisitId]
   );
 
   function currentOutpatient025uDocumentDraftFields(): Outpatient025uDocumentDraftFields {
@@ -9087,6 +9596,7 @@ export function App() {
       recordExtractTreatmentProvided,
       recordExtractRecommendations,
       recordExtractDoctorFullName,
+      recordExtractPreparedFromSignedRecords,
       outpatient025uMedicalCardNumber,
       outpatient025uOpenedAt,
       outpatient025uPatientSexCode,
@@ -9106,7 +9616,9 @@ export function App() {
       outpatient025uKellK1,
       outpatient025uOtherBloodData,
       outpatient025uAllergyHistory,
-      outpatient025uFinalEpicrisis
+      outpatient025uFinalEpicrisis,
+      outpatient025uOfficialForm274nChecked,
+      outpatient025uThirdPartyDataChecked
     };
   }
 
@@ -9120,6 +9632,7 @@ export function App() {
     setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
     setRecordExtractRecommendations(fields.recordExtractRecommendations);
     setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
+    setRecordExtractPreparedFromSignedRecords(fields.recordExtractPreparedFromSignedRecords);
     setOutpatient025uMedicalCardNumber(fields.outpatient025uMedicalCardNumber);
     setOutpatient025uOpenedAt(fields.outpatient025uOpenedAt);
     setOutpatient025uPatientSexCode(fields.outpatient025uPatientSexCode);
@@ -9140,9 +9653,44 @@ export function App() {
     setOutpatient025uOtherBloodData(fields.outpatient025uOtherBloodData);
     setOutpatient025uAllergyHistory(fields.outpatient025uAllergyHistory);
     setOutpatient025uFinalEpicrisis(fields.outpatient025uFinalEpicrisis);
-    setRecordExtractPreparedFromSignedRecords(false);
-    setOutpatient025uOfficialForm274nChecked(false);
-    setOutpatient025uThirdPartyDataChecked(false);
+    setOutpatient025uOfficialForm274nChecked(fields.outpatient025uOfficialForm274nChecked);
+    setOutpatient025uThirdPartyDataChecked(fields.outpatient025uThirdPartyDataChecked);
+  }
+
+  function currentMedicalRecordExtractDocumentDraftFields(): MedicalRecordExtractDocumentDraftFields {
+    return {
+      recordExtractPeriodStart,
+      recordExtractPeriodEnd,
+      recordExtractSourceVisitIds,
+      recordExtractComplaintAndAnamnesis,
+      recordExtractObjectiveStatus,
+      recordExtractDiagnosis,
+      recordExtractTreatmentProvided,
+      recordExtractRecommendations,
+      recordExtractDoctorFullName,
+      recordExtractRecipientFullName,
+      recordExtractRecipientAuthority,
+      recordExtractIssuedAt,
+      recordExtractPreparedFromSignedRecords,
+      recordExtractThirdPartyDataChecked
+    };
+  }
+
+  function applyMedicalRecordExtractDocumentDraftFields(fields: MedicalRecordExtractDocumentDraftFields): void {
+    setRecordExtractPeriodStart(fields.recordExtractPeriodStart);
+    setRecordExtractPeriodEnd(fields.recordExtractPeriodEnd);
+    setRecordExtractSourceVisitIds(fields.recordExtractSourceVisitIds);
+    setRecordExtractComplaintAndAnamnesis(fields.recordExtractComplaintAndAnamnesis);
+    setRecordExtractObjectiveStatus(fields.recordExtractObjectiveStatus);
+    setRecordExtractDiagnosis(fields.recordExtractDiagnosis);
+    setRecordExtractTreatmentProvided(fields.recordExtractTreatmentProvided);
+    setRecordExtractRecommendations(fields.recordExtractRecommendations);
+    setRecordExtractDoctorFullName(fields.recordExtractDoctorFullName);
+    setRecordExtractRecipientFullName(fields.recordExtractRecipientFullName);
+    setRecordExtractRecipientAuthority(fields.recordExtractRecipientAuthority);
+    setRecordExtractIssuedAt(fields.recordExtractIssuedAt);
+    setRecordExtractPreparedFromSignedRecords(fields.recordExtractPreparedFromSignedRecords);
+    setRecordExtractThirdPartyDataChecked(fields.recordExtractThirdPartyDataChecked);
   }
 
   const selectedTaxApplicationPayment = useMemo(() => {
@@ -9284,6 +9832,54 @@ export function App() {
     recordExtractTreatmentProvided,
     recordExtractRecommendations,
     recordExtractDoctorFullName,
+    recordExtractPreparedFromSignedRecords,
+    outpatient025uOfficialForm274nChecked,
+    outpatient025uThirdPartyDataChecked,
+    selectedDocumentKind
+  ]);
+
+  useEffect(() => {
+    if (selectedDocumentKind !== "medical_record_extract" || !medicalRecordExtractDraftPersistenceKey) {
+      medicalRecordExtractDraftHydratedKeyRef.current = null;
+      return;
+    }
+    const storedDraft = loadMedicalRecordExtractDocumentDraft(
+      documentLocalPersistenceOrganizationId,
+      medicalRecordExtractDraftPersistenceKey
+    );
+    applyMedicalRecordExtractDocumentDraftFields(storedDraft ?? emptyMedicalRecordExtractDocumentDraftFields());
+    medicalRecordExtractDraftHydratedKeyRef.current = medicalRecordExtractDraftPersistenceKey;
+  }, [documentLocalPersistenceOrganizationId, medicalRecordExtractDraftPersistenceKey, selectedDocumentKind]);
+
+  useEffect(() => {
+    if (selectedDocumentKind !== "medical_record_extract" || !documentPatient?.id || !medicalRecordExtractDraftPersistenceKey) return;
+    if (medicalRecordExtractDraftHydratedKeyRef.current !== medicalRecordExtractDraftPersistenceKey) return;
+    saveMedicalRecordExtractDocumentDraft(
+      documentLocalPersistenceOrganizationId,
+      medicalRecordExtractDraftPersistenceKey,
+      documentPatient.id,
+      medicalRecordExtractDraftVisitId,
+      currentMedicalRecordExtractDocumentDraftFields()
+    );
+  }, [
+    documentPatient?.id,
+    documentLocalPersistenceOrganizationId,
+    medicalRecordExtractDraftPersistenceKey,
+    medicalRecordExtractDraftVisitId,
+    recordExtractPeriodStart,
+    recordExtractPeriodEnd,
+    recordExtractSourceVisitIds,
+    recordExtractComplaintAndAnamnesis,
+    recordExtractObjectiveStatus,
+    recordExtractDiagnosis,
+    recordExtractTreatmentProvided,
+    recordExtractRecommendations,
+    recordExtractDoctorFullName,
+    recordExtractRecipientFullName,
+    recordExtractRecipientAuthority,
+    recordExtractIssuedAt,
+    recordExtractPreparedFromSignedRecords,
+    recordExtractThirdPartyDataChecked,
     selectedDocumentKind
   ]);
 
@@ -9355,6 +9951,24 @@ export function App() {
   const latestImagingStudy = visibleImagingStudies[0] ?? null;
   const selectedImagingStudy =
     visibleImagingStudies.find((study) => study.id === selectedImagingStudyId) ?? latestImagingStudy;
+  const imagingComparisonCandidates = useMemo(() => {
+    if (!selectedImagingStudy) return [];
+    return activeImagingStudies
+      .filter((study) => study.id !== selectedImagingStudy.id)
+      .map((study) => ({
+        study,
+        score: imagingComparisonScore(selectedImagingStudy, study),
+        reason: imagingComparisonReason(selectedImagingStudy, study, (kind) => imagingKindLabels[kind])
+      }))
+      .sort(
+        (left, right) =>
+          right.score - left.score ||
+          imagingCaptureDistanceMs(selectedImagingStudy.capturedAt, left.study.capturedAt) -
+            imagingCaptureDistanceMs(selectedImagingStudy.capturedAt, right.study.capturedAt) ||
+          right.study.capturedAt.localeCompare(left.study.capturedAt)
+      )
+      .slice(0, 4);
+  }, [activeImagingStudies, selectedImagingStudy]);
   const selectedImagingViewerPlan = selectedImagingStudy ? imagingViewerPlans[selectedImagingStudy.kind] : null;
   const imagingViewerImageStyle: CSSProperties = {
     filter: `brightness(${imagingViewerState.brightness}) contrast(${imagingViewerState.contrast}) invert(${
@@ -9372,10 +9986,17 @@ export function App() {
       dicomFirstFrameViewerState.flipHorizontal ? -1 : 1
     }) scale(${dicomFirstFrameViewerState.zoom})`
   };
+  const cbctWorkbenchSeries =
+    dicomSeriesPreview?.series.find((series) => series.mprReadiness.volumeCandidate) ??
+    dicomSeriesPreview?.series.find((series) => series.recommendedViewer === "cbct_mpr") ??
+    null;
+  const mprSliceMaxIndex = Math.max(0, (cbctWorkbenchSeries?.fileCount ?? 1) - 1);
+  const mprSafeSliceIndex = clampMprSliceIndex(mprSliceIndex, mprSliceMaxIndex);
   const currentImagingViewerSessionState = useMemo<ImagingViewerSessionState>(
     () => ({
       mode: selectedImagingViewerPlan?.mode === "cbct_mpr" ? "mpr" : selectedImagingViewerPlan?.mode === "photo" ? "photo" : "two_d",
-      activeTool: "window_level",
+      activeTool: imagingViewerActiveTool,
+      activeQuickActionId: ctPlanningActiveQuickActionId,
       windowPreset: selectedImagingStudy?.kind === "cbct" ? mprWindowPreset : viewerWindowPresetForStudy(selectedImagingStudy?.kind),
       windowCenter: null,
       windowWidth: null,
@@ -9387,29 +10008,55 @@ export function App() {
       zoom: imagingViewerState.zoom,
       panX: 0,
       panY: 0,
-      sliceIndex: null,
+      sliceIndex: selectedImagingStudy?.kind === "cbct" ? mprSafeSliceIndex : null,
       projection: selectedImagingStudy?.kind === "cbct" ? mprProjection : null,
       axisDeg: mprAxisDeg,
       slabMm: mprSlabMm,
       crosshair: mprCrosshairEnabled,
-      linkedPlanes: mprLinkedPlanesEnabled
+      linkedPlanes: mprLinkedPlanesEnabled,
+      implantPlan: ctPlanningImplantPlan
     }),
     [
+      ctPlanningActiveQuickActionId,
+      ctPlanningImplantPlan,
+      imagingViewerActiveTool,
       imagingViewerState,
       mprAxisDeg,
       mprCrosshairEnabled,
       mprLinkedPlanesEnabled,
       mprProjection,
+      mprSafeSliceIndex,
       mprSlabMm,
       mprWindowPreset,
       selectedImagingStudy?.kind,
       selectedImagingViewerPlan?.mode
     ]
   );
-  const cbctWorkbenchSeries =
-    dicomSeriesPreview?.series.find((series) => series.mprReadiness.volumeCandidate) ??
-    dicomSeriesPreview?.series.find((series) => series.recommendedViewer === "cbct_mpr") ??
-    null;
+  const ctPlanningAnnotationRefs = useMemo(
+    () =>
+      imagingViewerAnnotations.map((annotation) => ({
+        id: annotation.id,
+        type: annotation.type,
+        label: annotation.label,
+        semanticRole: annotation.semanticRole ?? null,
+        note: annotation.note,
+        pointCount: annotation.points.length
+      })),
+    [imagingViewerAnnotations]
+  );
+  const currentMprWorkbenchState = useMemo<MprWorkbenchState>(
+    () => ({
+      projection: mprProjection,
+      axisDeg: mprAxisDeg,
+      slabMm: mprSlabMm,
+      sliceIndex: mprSafeSliceIndex,
+      windowPreset: mprWindowPreset,
+      crosshair: mprCrosshairEnabled,
+      linkedPlanes: mprLinkedPlanesEnabled
+    }),
+    [mprAxisDeg, mprCrosshairEnabled, mprLinkedPlanesEnabled, mprProjection, mprSafeSliceIndex, mprSlabMm, mprWindowPreset]
+  );
+  const cbctWorkbenchSeriesKey = useMemo(() => mprWorkbenchSeriesKey(cbctWorkbenchSeries), [cbctWorkbenchSeries]);
   const latestDicomWorkbenchServerBundle = dicomWorkbenchServerBundles[0] ?? null;
   const dicomWorkbenchSourceIsRedacted = dicomWorkbenchManifestHasRedactedSource(dicomViewerWorkbenchManifest);
   const cbctWorkbenchProjections = useMemo<MprProjection[]>(
@@ -9428,11 +10075,236 @@ export function App() {
       {
         key: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "panoramic_reconstruction" : "oblique",
         title: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Панорама" : "Косая",
-        detail: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Кривая из CBCT" : "Наклонная плоскость"
+        detail: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Кривая из КЛКТ" : "Наклонная плоскость"
       }
     ],
     [cbctWorkbenchSeries]
   );
+  const mprControlsReady = Boolean(cbctWorkbenchSeries?.mprReadiness.canOpenMpr);
+  const mprControlsAutoOpen = selectedImagingStudy?.kind === "cbct" || selectedImagingViewerPlan?.mode === "cbct_mpr" || mprControlsReady;
+  const mprCenterSliceIndex = Math.floor(mprSliceMaxIndex / 2);
+  const mprAxisDirectionLabel = formatMprAxisDirectionLabel({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+  const mprAxisAngleBadge = formatMprAxisAngleBadge(mprAxisDeg, mprControlsReady);
+  const mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
+  const mprSliceBadge = formatMprSliceBadge({ canOpenMpr: mprControlsReady, sliceIndex: mprSafeSliceIndex, maxIndex: mprSliceMaxIndex });
+  const mprSlabVisualWidth = `${Math.min(86, Math.max(18, 14 + mprSlabMm * 2.2))}%`;
+  const mprSlicePositionPercent = mprSliceMaxIndex > 0 ? `${(mprSafeSliceIndex / mprSliceMaxIndex) * 100}%` : "50%";
+  const mprCurrentSliceFraction = mprSliceFraction(mprSafeSliceIndex, mprSliceMaxIndex);
+  const mprSliceLabel = mprControlsReady ? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}` : "срез включится после КЛКТ/КТ-серии";
+  const mprAxisRangeValue = formatMprAxisRangeValue({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+  const mprSlabRangeValue = formatMprSlabRangeValue({ canOpenMpr: mprControlsReady, slabMm: mprSlabMm });
+  const mprSliceRangeValue = formatMprSliceRangeValue({
+    canOpenMpr: mprControlsReady,
+    sliceIndex: mprSafeSliceIndex,
+    maxIndex: mprSliceMaxIndex
+  });
+  const mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
+    "--mpr-axis-deg": `${mprAxisDeg}deg`,
+    "--mpr-slab-width": mprSlabVisualWidth,
+    "--mpr-slice-position": mprSlicePositionPercent
+  };
+  const mprActiveProjectionLabel = mprProjectionLabels[mprProjection] ?? mprProjection;
+  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection] ?? "плоскость просмотра";
+  const mprProjectionCompass = mprProjectionCompassLabels(mprProjection);
+  const mprAxisGuidance = buildMprAxisGuidance({
+    canOpenMpr: mprControlsReady,
+    axisDeg: mprAxisDeg,
+    slabMm: mprSlabMm,
+    sliceFraction: mprCurrentSliceFraction
+  });
+  const mprNearestClinicalPreset = findNearestMprClinicalPreset(
+    {
+      canOpenMpr: mprControlsReady,
+      projection: mprProjection,
+      availableProjections: cbctWorkbenchProjections,
+      axisDeg: mprAxisDeg,
+      slabMm: mprSlabMm,
+      sliceFraction: mprCurrentSliceFraction,
+      windowPreset: mprWindowPreset,
+      crosshair: mprCrosshairEnabled,
+      linkedPlanes: mprLinkedPlanesEnabled
+    },
+    mprClinicalPresets
+  );
+  const mprClinicalInput = {
+    hasSeries: Boolean(cbctWorkbenchSeries),
+    canOpenMpr: mprControlsReady,
+    hasWorkbenchManifest: Boolean(dicomViewerWorkbenchManifest),
+    hasWorkstationReadiness: Boolean(dicomWorkstationReadiness),
+    protocolExact: mprNearestClinicalPreset.exact,
+    protocolCanApply: mprNearestClinicalPreset.deltas.length > 0,
+    protocolLabel: mprNearestClinicalPreset.label,
+    projectionLabel: mprActiveProjectionLabel,
+    axisLabel: mprAxisDirectionLabel,
+    slabMm: mprSlabMm,
+    sliceLabel: mprSliceLabel,
+    windowLabel: mprWindowPresetLabels[mprWindowPreset] ?? mprWindowPreset,
+    crosshair: mprCrosshairEnabled,
+    linkedPlanes: mprLinkedPlanesEnabled
+  };
+  const mprWorkbenchSummaryText = buildMprWorkbenchSummary(mprClinicalInput);
+  const mprOperatorSummaryCards = buildMprOperatorSummary({
+    ...mprClinicalInput,
+    protocolDeltas: mprNearestClinicalPreset.deltas
+  });
+  const mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({
+    canOpenMpr: mprControlsReady,
+    workbenchSummary: mprWorkbenchSummaryText,
+    compassSummary: mprProjectionCompass.summary,
+    guidanceSummary: mprAxisGuidance.summary
+  });
+  const mprClinicalChecklist = buildMprClinicalChecklist(mprClinicalInput);
+  const mprClinicalNextStep = mprClinicalNextAction(mprClinicalChecklist);
+  const mprClinicalPresetButtonClass = (preset: MprClinicalPreset) =>
+    [
+      "mpr-clinical-preset",
+      mprNearestClinicalPreset.title === preset.title ? "nearest" : "",
+      mprNearestClinicalPreset.exact && mprNearestClinicalPreset.title === preset.title ? "active" : ""
+    ]
+      .filter(Boolean)
+      .join(" ");
+  const applyDefaultMprWorkbenchState = () => {
+    const defaultProjection = cbctWorkbenchProjections.includes("axial") ? "axial" : cbctWorkbenchProjections[0] ?? "axial";
+    setMprProjection(defaultProjection);
+    setMprAxisDeg(0);
+    setMprSlabMm(1);
+    setMprSliceIndex(mprCenterSliceIndex);
+    setMprWindowPreset("bone");
+    setMprCrosshairEnabled(true);
+    setMprLinkedPlanesEnabled(true);
+  };
+  const resetMprControls = applyDefaultMprWorkbenchState;
+  const applyMprClinicalPreset = (preset: MprClinicalPreset) => {
+    const projection = resolveMprClinicalPresetProjection(preset.projection, cbctWorkbenchProjections);
+    setMprProjection(projection);
+    setMprAxisDeg(clampMprAxisDeg(preset.axisDeg));
+    setMprSlabMm(clampMprSlabMm(preset.slabMm));
+    setMprSliceIndex(mprSliceIndexFromFraction(preset.sliceFraction, mprSliceMaxIndex));
+    setMprWindowPreset(preset.windowPreset);
+    setMprCrosshairEnabled(preset.crosshair);
+    setMprLinkedPlanesEnabled(preset.linkedPlanes);
+  };
+  const applyCtPlanningQuickAction = (action: CtPlanningQuickAction) => {
+    if (action.requiresVolume && !mprControlsReady) return;
+    const projection = resolveMprClinicalPresetProjection(action.projection, cbctWorkbenchProjections);
+    setCtPlanningActiveQuickActionId(action.id);
+    setImagingViewerActiveTool(action.tool);
+    setMprProjection(projection);
+    setMprAxisDeg(clampMprAxisDeg(action.axisDeg));
+    setMprSlabMm(clampMprSlabMm(action.slabMm));
+    setMprSliceIndex(mprSliceIndexFromFraction(action.sliceFraction, mprSliceMaxIndex));
+    setMprWindowPreset(action.windowPreset);
+    setMprCrosshairEnabled(true);
+    setMprLinkedPlanesEnabled(true);
+  };
+  const createCtPlanningArtifact = (command: CtPlanningArtifactCommand) => {
+    if (!selectedImagingStudy) {
+      setError("Выберите КТ-снимок перед созданием разметки.");
+      return;
+    }
+    if (!imagingViewerSessionReady) {
+      setError("Дождитесь загрузки сессии просмотра снимка перед созданием КТ-разметки.");
+      return;
+    }
+    if (command.requiresVolume && !mprControlsReady) {
+      setError("Для этой КТ-разметки нужна готовая КЛКТ/КТ-серия.");
+      return;
+    }
+    if (command.requiresImplant && !ctPlanningImplantPlan) {
+      setError("Сначала выберите имплант из библиотеки, затем создайте ось или шаблон.");
+      return;
+    }
+    const matchingQuickAction = findCtPlanningQuickActionForArtifactCommand(command);
+    if (matchingQuickAction) {
+      applyCtPlanningQuickAction(matchingQuickAction);
+    } else {
+      setCtPlanningActiveQuickActionId(null);
+      setImagingViewerActiveTool(command.tool);
+      setMprProjection(resolveMprClinicalPresetProjection(command.projection, cbctWorkbenchProjections));
+    }
+    const now = new Date().toISOString();
+    const projection = resolveMprClinicalPresetProjection(command.projection, cbctWorkbenchProjections);
+    const annotation: ImagingViewerAnnotation = {
+      id: browserGeneratedId(`ct-${command.annotationType}`),
+      type: command.annotationType,
+      label: command.title,
+      semanticRole: command.semanticRole ?? null,
+      toothCode: selectedImagingStudy.toothCode,
+      points: [],
+      measurementValue: null,
+      unit: command.unit,
+      note: [
+        `Черновик КТ-разметки: ${command.detail}`,
+        `Плоскость: ${mprProjectionLabels[projection] ?? projection}`,
+        `Срез: ${mprSafeSliceIndex + 1}/${mprSliceMaxIndex + 1}`,
+        `Слой: ${mprSlabMm} мм`,
+        ctPlanningImplantPlan ? `Имплант: ${ctPlanningImplantPlan.diameterMm} x ${ctPlanningImplantPlan.lengthMm} мм` : ""
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      createdByUserId: null,
+      createdAt: now,
+      updatedAt: now
+    };
+    setImagingViewerAnnotations((items) => [annotation, ...items].slice(0, 200));
+    setError(null);
+  };
+  const selectCtPlanningImplant = (implant: CtImplantLibraryItem) => {
+    setCtPlanningImplantPlan(ctImplantPlanFromLibraryItem(implant));
+    setCtPlanningActiveQuickActionId("implant_library");
+    setImagingViewerActiveTool("implant_library");
+    if (mprControlsReady) {
+      setMprWindowPreset("implant");
+      setMprCrosshairEnabled(true);
+      setMprLinkedPlanesEnabled(true);
+    }
+  };
+  const applyNearestMprClinicalPreset = () => {
+    const preset = mprClinicalPresets.find((candidate) => candidate.title === mprNearestClinicalPreset.title);
+    if (preset) applyMprClinicalPreset(preset);
+  };
+  const handleMprKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!mprControlsReady) return;
+    const adjustment = resolveMprKeyboardAdjustment({
+      key: event.key,
+      shiftKey: event.shiftKey,
+      axisDeg: mprAxisDeg,
+      slabMm: mprSlabMm,
+      sliceIndex: mprSafeSliceIndex,
+      maxIndex: mprSliceMaxIndex
+    });
+    if (!adjustment) return;
+    event.preventDefault();
+    if (adjustment.kind === "axis") setMprAxisDeg(adjustment.value);
+    if (adjustment.kind === "slab") setMprSlabMm(adjustment.value);
+    if (adjustment.kind === "slice") setMprSliceIndex(adjustment.value);
+  };
+  const applyMprWorkbenchState = (state: MprWorkbenchState) => {
+    const projection = resolveMprWorkbenchProjection(state.projection, cbctWorkbenchProjections);
+    setMprProjection(projection);
+    setMprAxisDeg(clampMprAxisDeg(state.axisDeg ?? 0));
+    setMprSlabMm(clampMprSlabMm(state.slabMm ?? 1));
+    setMprSliceIndex(clampMprSliceIndex(state.sliceIndex, mprSliceMaxIndex));
+    setMprWindowPreset(state.windowPreset);
+    setMprCrosshairEnabled(state.crosshair);
+    setMprLinkedPlanesEnabled(state.linkedPlanes);
+  };
+
+  async function restoreMprWorkbenchLocalDraft() {
+    if (!cbctWorkbenchSeriesKey) {
+      setError("Сначала выберите готовую КЛКТ/КТ-серию, чтобы вернуть последний вид КТ-срезов.");
+      return;
+    }
+    const draft = await loadLocalMprWorkbenchDraft(cbctWorkbenchSeriesKey, activeOrganizationId);
+    if (!draft) {
+      setError("Для этой КЛКТ/КТ-серии еще нет сохраненного вида КТ-срезов.");
+      return;
+    }
+    applyMprWorkbenchState(draft.state);
+    setMprWorkbenchLocalSavedAt(draft.clientSavedAt);
+    setMprWorkbenchDraftRestored(true);
+    setError(null);
+  }
 
   useEffect(() => {
     if (!activeImagingStudies.length) {
@@ -9446,11 +10318,63 @@ export function App() {
 
   useEffect(() => {
     if (!cbctWorkbenchProjections.includes(mprProjection)) {
-      setMprProjection(cbctWorkbenchProjections[0] ?? "axial");
+      setMprProjection(resolveMprWorkbenchProjection(mprProjection, cbctWorkbenchProjections));
     }
   }, [cbctWorkbenchProjections, mprProjection]);
 
+  useEffect(() => {
+    setMprSliceIndex((value) => clampMprSliceIndex(value, mprSliceMaxIndex));
+  }, [mprSliceMaxIndex]);
+
+  useEffect(() => {
+    if (!cbctWorkbenchSeriesKey || !mprControlsReady) {
+      setMprWorkbenchLocalSavedAt(null);
+      setMprWorkbenchDraftRestored(false);
+      return;
+    }
+    let cancelled = false;
+    const restore = async () => {
+      const draft = await loadLocalMprWorkbenchDraft(cbctWorkbenchSeriesKey, activeOrganizationId);
+      if (cancelled) return;
+      if (!draft) {
+        applyDefaultMprWorkbenchState();
+        setMprWorkbenchLocalSavedAt(null);
+        setMprWorkbenchDraftRestored(false);
+        return;
+      }
+      applyMprWorkbenchState(draft.state);
+      setMprWorkbenchLocalSavedAt(draft.clientSavedAt);
+      setMprWorkbenchDraftRestored(true);
+    };
+    void restore();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganizationId, cbctWorkbenchProjections, cbctWorkbenchSeriesKey, mprControlsReady]);
+
+  useEffect(() => {
+    if (!cbctWorkbenchSeriesKey || !mprControlsReady) return;
+    if (mprWorkbenchSaveTimerRef.current) window.clearTimeout(mprWorkbenchSaveTimerRef.current);
+    const clientSavedAt = new Date().toISOString();
+    mprWorkbenchSaveTimerRef.current = window.setTimeout(() => {
+      void saveLocalMprWorkbenchDraft(
+        cbctWorkbenchSeriesKey,
+        currentMprWorkbenchState,
+        clientSavedAt,
+        activeOrganizationId
+      ).then((saved) => {
+        if (saved) setMprWorkbenchLocalSavedAt(clientSavedAt);
+      });
+    }, 350);
+    return () => {
+      if (mprWorkbenchSaveTimerRef.current) window.clearTimeout(mprWorkbenchSaveTimerRef.current);
+    };
+  }, [activeOrganizationId, cbctWorkbenchSeriesKey, currentMprWorkbenchState, mprControlsReady]);
+
   function applyImagingViewerSessionState(sessionState: ImagingViewerSessionState, annotations: ImagingViewerAnnotation[]) {
+    setImagingViewerActiveTool(sessionState.activeTool);
+    setCtPlanningActiveQuickActionId(sessionState.activeQuickActionId ?? null);
+    setCtPlanningImplantPlan(sessionState.implantPlan ?? null);
     setImagingViewerState({
       rotationDeg: sessionState.rotationDeg,
       flipHorizontal: sessionState.flipHorizontal,
@@ -9459,9 +10383,10 @@ export function App() {
       contrast: sessionState.contrast,
       zoom: sessionState.zoom
     });
-    if (sessionState.projection) setMprProjection(sessionState.projection);
-    setMprAxisDeg(sessionState.axisDeg);
-    setMprSlabMm(sessionState.slabMm);
+    setMprProjection(resolveMprWorkbenchProjection(sessionState.projection, cbctWorkbenchProjections));
+    setMprAxisDeg(clampMprAxisDeg(sessionState.axisDeg ?? 0));
+    setMprSlabMm(clampMprSlabMm(sessionState.slabMm ?? 1));
+    setMprSliceIndex(clampMprSliceIndex(sessionState.sliceIndex ?? 0, mprSliceMaxIndex));
     if (sessionState.windowPreset === "bone" || sessionState.windowPreset === "soft_tissue" || sessionState.windowPreset === "implant" || sessionState.windowPreset === "custom") {
       setMprWindowPreset(sessionState.windowPreset);
     }
@@ -9481,6 +10406,9 @@ export function App() {
       setImagingViewerSaveState("local");
     } else {
       setImagingViewerState(defaultImagingViewerState);
+      setImagingViewerActiveTool("window_level");
+      setCtPlanningActiveQuickActionId(null);
+      setCtPlanningImplantPlan(null);
       setImagingViewerAnnotations([]);
       setImagingViewerNote("");
       setImagingViewerLocalSavedAt(null);
@@ -9491,7 +10419,7 @@ export function App() {
         cache: "no-store",
         headers: denteClinicalReadHeaders()
       });
-      if (!response.ok) throw new Error(`Сессия просмотра снимка: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Сессия просмотрщика не загружена"));
       const payload = (await response.json()) as ImagingViewerSessionResponse;
       setImagingViewerSession(payload.session);
       const localIsNewer =
@@ -9540,7 +10468,7 @@ export function App() {
           clientSavedAt
         })
       });
-      if (!response.ok) throw new Error(`Сессия просмотра снимка: API ${response.status}`);
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Сессия просмотрщика не сохранена"));
       const payload = (await response.json()) as ImagingViewerSessionResponse;
       setImagingViewerSession(payload.session);
       const localSaved = saveLocalImagingViewerDraft(
@@ -9738,6 +10666,83 @@ export function App() {
   const visitNoteReadyToAccept = visitNoteAcceptMissingSteps.length === 0;
   const visitNoteActionLabel = isDraftAccepting ? "Сохраняю" : draft ? "Принять" : isVisitNoteDirty ? "Сохранить" : "Сохранено";
   const visitNoteStatusLabel = draft ? "черновик готов" : isVisitNoteDirty ? "есть правки" : "сохранено";
+  const visitHasSavedNote = hasVisitNoteFormText && !draft && !isVisitNoteDirty;
+  const visitWorkflowSteps: Array<{
+    key: string;
+    label: string;
+    detail: string;
+    state: "ready" | "active" | "locked";
+  }> = [
+    {
+      key: "dictation",
+      label: "Диктовка",
+      detail: hasVisitTranscriptText ? "текст есть" : "начните голосом или текстом",
+      state: hasVisitTranscriptText ? "ready" : "active"
+    },
+    {
+      key: "draft",
+      label: "Черновик",
+      detail: draft ? "проверьте результат" : isVisitNoteDirty ? "есть ручные правки" : "соберите из диктовки",
+      state: draft || isVisitNoteDirty ? "ready" : hasVisitTranscriptText ? "active" : "locked"
+    },
+    {
+      key: "emk",
+      label: "ЭМК",
+      detail: visitHasSavedNote ? "запись сохранена" : visitNoteReadyToAccept ? "осталось подтвердить" : "ждет черновик",
+      state: visitHasSavedNote ? "ready" : visitNoteReadyToAccept ? "active" : "locked"
+    },
+    {
+      key: "close",
+      label: "Закрытие",
+      detail: visitCloseChecklist?.readyToSign ? "готово" : primaryVisitWarning?.title ?? "проверка в конце",
+      state: visitCloseChecklist?.readyToSign ? "ready" : visitHasSavedNote ? "active" : "locked"
+    }
+  ];
+  const visitPrimaryAction:
+    | {
+        kind: "dictation" | "draft" | "save" | "review" | "close";
+        label: string;
+        detail: string;
+        disabled?: boolean;
+        onClick: () => void;
+      }
+    = !hasVisitTranscriptText
+    ? {
+        kind: "dictation",
+        label: isVisitDictating ? "Слушаю" : "Начать диктовку",
+        detail: "Можно сразу говорить. Если микрофон не откроется, поле диктовки остается доступным для текста.",
+        disabled: isVisitDictating,
+        onClick: startVisitDictation
+      }
+    : !draft && !isVisitNoteDirty
+      ? {
+          kind: "draft",
+          label: isDraftLoading ? "Собираю" : "Собрать черновик",
+          detail: "Система разложит диктовку по полям ЭМК, врач потом проверит и сохранит.",
+          disabled: isDraftLoading || !visitDraftReadyToBuild,
+          onClick: () => void buildDraft()
+        }
+      : !visitHasSavedNote
+        ? {
+            kind: "save",
+            label: visitNoteActionLabel,
+            detail: "Проверьте поля ЭМК и сохраните запись приема.",
+            disabled: !visitNoteReadyToAccept || isDraftAccepting,
+            onClick: () => void acceptDraftToVisit()
+          }
+        : primaryVisitWarning
+          ? {
+              kind: "review",
+              label: primaryVisitWarning.actionLabel,
+              detail: primaryVisitWarning.detail,
+              onClick: openVisitWarningAction
+            }
+          : {
+              kind: "close",
+              label: "Проверить закрытие",
+              detail: visitCloseChecklist?.nextAction ?? "Финальная проверка оплаты, документов и подписи приема.",
+              onClick: () => scrollToVisitArea(".close-checklist")
+            };
   const speechRecoveryIssueCount =
     speechRecordingRecovery?.recordings.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
   const speechRecoveryQualityIssueCount =
@@ -9749,20 +10754,37 @@ export function App() {
   const currentSpeechQualityIssue =
     speechLastQuality && speechLastQuality.level !== "clear" ? speechLastQuality : null;
   const speechUploadReady = speechGatewayCanUpload(speechGatewayStatus);
+  const speechRecognitionReady = speechUploadReady && isOnline;
+  const speechGatewayActiveProviderIsLocal =
+    speechGatewayStatus?.providerId === "local_whisper" || speechGatewayStatus?.providerId === "vosk_local";
+  const emptyDictationVoiceActionLabel = speechRecognitionReady
+    ? speechGatewayActiveProviderIsLocal
+      ? "Распознать локально"
+      : "Распознать на сервере"
+    : "Сохранить в очередь";
+  const pendingSpeechFlushActionLabel = speechRecognitionReady ? "Отправить звук" : "Проверить очередь";
+  const pendingSpeechFlushActionTitle =
+    speechRecognitionReady
+      ? "Отправить сохраненные аудиофрагменты на распознавание."
+      : "Проверить готовность распознавания. Аудио останется в локальной очереди, пока источник недоступен.";
   const speechSafetyValue = pendingSpeechChunkCount
     ? `${pendingSpeechChunkCount} аудио`
     : currentSpeechQualityIssue
       ? speechQualityLabels[currentSpeechQualityIssue.level]
-      : speechUploadReady && isOnline
-        ? "STT готов"
-        : "локально";
+      : speechRecognitionReady
+        ? speechGatewayActiveProviderIsLocal
+          ? "локальный модуль готов"
+          : "распознавание готово"
+        : "очередь локально";
   const speechSafetyDetail = pendingSpeechChunkCount
     ? "аудио сохранено и уйдет позже"
     : currentSpeechQualityIssue
       ? currentSpeechQualityIssue.nextAction
-      : speechUploadReady && isOnline
-        ? `${speechGatewayStatus?.providerLabel ?? "STT"}, чанки защищены`
-        : "диктовка не блокируется без сети";
+      : speechRecognitionReady
+        ? speechGatewayActiveProviderIsLocal
+          ? `${speechGatewayStatus?.providerLabel ?? "локальный модуль"}, фрагменты уходят в локальный модуль`
+          : `${speechGatewayStatus?.providerLabel ?? "распознавание"}, звук отправляется частями`
+        : "аудио хранится локально до готового источника";
   const speechSafetyState =
     pendingSpeechChunkCount || currentSpeechQualityIssue || !isOnline || !speechUploadReady
       ? "warn"
@@ -9795,22 +10817,46 @@ export function App() {
     {
       label: "Очередь аудио",
       value: browserContinuity?.indexedDbSupported ? "ок" : browserContinuity ? "выкл." : "проверка",
-      detail: pendingSpeechChunkCount ? `фрагментов в очереди: ${pendingSpeechChunkCount}` : "очередь IndexedDB"
+      detail: pendingSpeechChunkCount ? `фрагментов в очереди: ${pendingSpeechChunkCount}` : "аудио сохранится для отправки позже"
     },
     {
-      label: "PWA-оболочка",
-      value: browserContinuity?.serviceWorkerRegistrationState ?? "проверка",
-      detail: browserContinuity?.serviceWorkerControlled ? "активна" : "не управляет текущей вкладкой"
+      label: "Выбор локальной КТ",
+      value: browserContinuity?.directoryPickerSupported ? "папка" : browserContinuity?.filePickerSupported ? "файлы" : browserContinuity ? "ограничено" : "проверка",
+      detail: browserContinuity?.directoryPickerSupported
+        ? "доступ к папке только после выбора пользователем; CRM не сохраняет тяжелые данные снимков"
+        : browserContinuity?.filePickerSupported
+          ? "можно выбрать файлы вручную; постоянный доступ к папке не сохраняется"
+          : "используйте серверный путь, настольный модуль или внешний просмотр"
     },
     {
-      label: "Кэш",
+      label: "OPFS браузера",
+      value: browserContinuity?.opfsSupported ? "доступно" : browserContinuity ? "нет" : "проверка",
+      detail: browserContinuity?.opfsSupported
+        ? "синхронный файловый доступ только в worker; диагностическое хранение в CRM отключено"
+        : "текущее восстановление КТ не требует OPFS"
+    },
+    {
+      label: "Граница КТ-хранилища",
+      value: browserContinuity?.browserCtOfflineStorageBoundary.mode === "metadata_only" ? "метаданные" : browserContinuity ? "ограничено" : "проверка",
+      detail:
+        browserContinuity?.browserCtOfflineStorageBoundary.mode === "metadata_only"
+          ? "локально сохраняются план открытия, состояние и пометки; тяжелые данные снимков и 3D-моделей остаются во внешнем просмотре"
+          : "локальное восстановление КТ не подтверждено"
+    },
+    {
+      label: "Работа без сети",
+      value: browserContinuity ? browserContinuityRegistrationLabels[browserContinuity.serviceWorkerRegistrationState] : "проверка",
+      detail: browserContinuity?.serviceWorkerControlled ? "эта вкладка готова к работе без сети" : "обновите вкладку после включения офлайн-режима"
+    },
+    {
+      label: "Память для офлайна",
       value: browserContinuity?.cacheStorageSupported ? "ок" : browserContinuity ? "выкл." : "проверка",
-      detail: browserContinuity?.storagePersisted === true ? "постоянное хранилище" : "хранилище под управлением браузера"
+      detail: browserContinuity?.storagePersisted === true ? "браузер не должен очищать черновики сам" : "браузер может очистить при нехватке места"
     },
     {
-      label: "Квота",
+      label: "Место",
       value: formatMegabytes(browserContinuity?.storageUsageMb ?? null),
-      detail: browserContinuity?.storageQuotaMb != null ? `из ${formatMegabytes(browserContinuity.storageQuotaMb)}` : "оценка недоступна"
+      detail: browserContinuity?.storageQuotaMb != null ? `лимит ${formatMegabytes(browserContinuity.storageQuotaMb)}` : "оценка недоступна"
     },
     {
       label: "Синхронизация",
@@ -9871,10 +10917,10 @@ export function App() {
     },
     {
       key: "recovery",
-      label: "Recovery",
+      label: "Восстановление",
       value: speechRecoveryIssueCount ? "проверить" : speechRecordingRecovery ? "чисто" : "скоро",
       detail: speechRecoveryQualityIssueCount
-        ? `${speechRecoveryQualityIssueCount} фрагм. STT на проверку`
+        ? `${speechRecoveryQualityIssueCount} фрагм. распознавания на проверку`
         : speechRecoveryIssueCount
           ? `${speechRecoveryIssueCount} запись требует внимания`
           : "потерь диктовки не видно",
@@ -9885,7 +10931,7 @@ export function App() {
   function scrollToVisitArea(selector: string) {
     window.location.hash = "visit";
     window.requestAnimationFrame(() => {
-      document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      motionSafeScrollIntoView(document.querySelector(selector), { block: "start" });
     });
   }
 
@@ -10005,7 +11051,7 @@ export function App() {
     );
     setError(null);
     } catch (patientError) {
-      setError(patientError instanceof Error ? `Пациент не создан: ${patientError.message}` : "Пациент не создан");
+      setError(operatorWorkflowFailureMessage("Пациент не создан", patientError));
     } finally {
       setIsPatientCreating(false);
     }
@@ -10016,7 +11062,7 @@ export function App() {
     try {
     const response = await fetch("/api/settings/clinic/mode", {
       method: "POST",
-      headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+      headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ mode })
     });
     if (response.ok) {
@@ -10041,7 +11087,7 @@ export function App() {
     }
     await loadDashboard();
     } catch (modeError) {
-      setError(modeError instanceof Error ? `Режим клиники не сохранен: ${modeError.message}` : "Режим клиники не сохранен");
+      setError(operatorWorkflowFailureMessage("Режим клиники не сохранен", modeError));
     }
   }
 
@@ -10055,7 +11101,7 @@ export function App() {
     try {
     const response = await fetch("/api/settings/staff", {
       method: "POST",
-      headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+      headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         fullName,
         role,
@@ -10076,7 +11122,7 @@ export function App() {
     setNewStaffSpecialty(selectedSpecialty);
     await loadDashboard();
     } catch (staffError) {
-      setError(staffError instanceof Error ? `Сотрудник не добавлен: ${staffError.message}` : "Сотрудник не добавлен");
+      setError(operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError));
     }
   }
 
@@ -10089,7 +11135,7 @@ export function App() {
     try {
       const response = await fetch(`/api/settings/staff/${staffId}/working-hours`, {
         method: "PUT",
-        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ workingHours: staffWorkingHoursFromDraft(draft) })
       });
       if (!response.ok) {
@@ -10111,7 +11157,7 @@ export function App() {
       return true;
     } catch (scheduleSaveError) {
       setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "error" }));
-      setError(scheduleSaveError instanceof Error ? scheduleSaveError.message : "Расписание сотрудника не сохранено");
+      setError(operatorWorkflowFailureMessage("Расписание сотрудника не сохранено", scheduleSaveError));
       return false;
     } finally {
       setStaffScheduleSavingId(null);
@@ -10127,7 +11173,7 @@ export function App() {
     try {
       const response = await fetch(`/api/settings/chairs/${chairId}/working-hours`, {
         method: "PUT",
-        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ workingHours: staffWorkingHoursFromDraft(draft) })
       });
       if (!response.ok) {
@@ -10149,7 +11195,7 @@ export function App() {
       return true;
     } catch (scheduleSaveError) {
       setChairScheduleSaveStates((current) => ({ ...current, [chairId]: "error" }));
-      setError(scheduleSaveError instanceof Error ? scheduleSaveError.message : "Расписание кресла не сохранено");
+      setError(operatorWorkflowFailureMessage("Расписание кресла не сохранено", scheduleSaveError));
       return false;
     } finally {
       setChairScheduleSavingId(null);
@@ -10172,9 +11218,9 @@ export function App() {
       setError(message);
       return false;
     }
-    const dateMissingSteps = appointmentScheduleDateMissingSteps(draft);
-    if (dateMissingSteps.length) {
-      const message = `Перед сохранением записи: ${dateMissingSteps.join("; ")}.`;
+    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);
+    if (missing.length) {
+      const message = `Перед сохранением записи: ${missing.join("; ")}.`;
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
       setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
       setError(message);
@@ -10186,7 +11232,7 @@ export function App() {
     try {
       const response = await fetch(`/api/appointments/${appointmentId}`, {
         method: "PATCH",
-        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        headers: scheduleMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(appointmentUpdateInputFromDraft(draft))
       });
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не сохранена"));
@@ -10214,22 +11260,16 @@ export function App() {
       setError(null);
       return true;
     } catch (saveError) {
-      const message = saveError instanceof Error ? saveError.message : "Запись не сохранена";
+      const message = operatorWorkflowFailureMessage("Запись не сохранена", saveError);
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
       setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
-      setError(saveError instanceof Error ? saveError.message : "Запись не сохранена");
+      setError(message);
       return false;
     }
   }
 
   function newAppointmentMissingFields(draft: AppointmentScheduleDraft): string[] {
-    const missing: string[] = [];
-    if (!draft.patientId) missing.push("выберите пациента");
-    if (!draft.doctorUserId) missing.push("выберите врача");
-    if (dashboard?.clinicSettings.profile.mode !== "solo_doctor" && !draft.assistantUserId) missing.push("выберите ассистента");
-    if (!draft.chairId) missing.push("выберите кресло");
-    missing.push(...appointmentScheduleDateMissingSteps(draft));
-    return missing;
+    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);
   }
 
   async function createAppointmentFromDraft(): Promise<boolean> {
@@ -10255,7 +11295,7 @@ export function App() {
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
-        headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+        headers: scheduleMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(appointmentCreateInputFromDraft(newAppointmentDraft))
       });
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не создана"));
@@ -10287,7 +11327,7 @@ export function App() {
       setError(null);
       return true;
     } catch (createError) {
-      const message = createError instanceof Error ? createError.message : "Запись не создана";
+      const message = operatorWorkflowFailureMessage("Запись не создана", createError);
       setNewAppointmentError(message);
       setNewAppointmentSaveState("error");
       setError(message);
@@ -10305,7 +11345,7 @@ export function App() {
     try {
     const response = await fetch("/api/settings/chairs", {
       method: "POST",
-      headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
+      headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         name,
         room: name,
@@ -10330,7 +11370,7 @@ export function App() {
     setNewChairHasSurgeryKit(false);
     await loadDashboard();
     } catch (chairError) {
-      setError(chairError instanceof Error ? `Кресло не добавлено: ${chairError.message}` : "Кресло не добавлено");
+      setError(operatorWorkflowFailureMessage("Кресло не добавлено", chairError));
     }
   }
 
@@ -10355,18 +11395,18 @@ export function App() {
           kind: recognitionKind,
           target: recognitionTarget,
           inputText: recognitionText,
-          sourceLabel: `settings_${recognitionKind}`,
+          sourceLabel: `Настройки: ${aiJobKindLabels[recognitionKind]}`,
           patientId: activePatient?.id ?? null
         })
       });
       if (!response.ok) {
-        throw new Error(`ИИ-распознавание: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Распознавание не подготовлено"));
       }
       const result = (await response.json()) as AiRecognitionJobResponse;
       setRecognitionJob(result.job);
       await loadDashboard();
     } catch (recognitionError) {
-      setError(recognitionError instanceof Error ? recognitionError.message : "ИИ-распознавание не подготовлено");
+      setError(operatorWorkflowFailureMessage("Распознавание не подготовлено", recognitionError));
     } finally {
       setIsRecognitionLoading(false);
     }
@@ -10393,11 +11433,11 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Разбор прайса: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Прайс не разобран"));
       }
       setPricelistAnalysis((await response.json()) as DentalPricelistAnalysisResponse);
     } catch (priceError) {
-      setError(priceError instanceof Error ? priceError.message : "Прайс не разобран");
+      setError(operatorWorkflowFailureMessage("Прайс не разобран", priceError));
     } finally {
       setIsPricelistAnalyzing(false);
     }
@@ -10416,7 +11456,7 @@ export function App() {
       setUsePricelistAi(true);
       setPricelistAnalysis(null);
     } catch (imageError) {
-      setError(imageError instanceof Error ? imageError.message : "Фото прайса не подготовлено");
+      setError(operatorWorkflowFailureMessage("Фото прайса не подготовлено", imageError));
     } finally {
       setIsPricelistAnalyzing(false);
     }
@@ -10432,7 +11472,7 @@ export function App() {
   async function ingestImportFile(file: File | undefined) {
     if (!file) return;
     if (file.size > 8 * 1024 * 1024) {
-      setError("Файл больше 8 МБ. Для больших архивов нужен серверный пакетный импорт или OCR-обработчик.");
+      setError("Файл больше 8 МБ. Для больших архивов нужен пакетный импорт на сервере или распознавание через локальный модуль клиники.");
       return;
     }
     setIsDocumentIngesting(true);
@@ -10449,7 +11489,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Разбор файла: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Файл не разобран"));
       }
       const result = (await response.json()) as DocumentIngestionResponse;
       setDocumentIngestion(result);
@@ -10489,7 +11529,7 @@ export function App() {
         window.location.hash = "settings/prices";
       }
     } catch (ingestionError) {
-      setError(ingestionError instanceof Error ? ingestionError.message : "Файл не разобран");
+      setError(operatorWorkflowFailureMessage("Файл не разобран", ingestionError));
     } finally {
       setIsDocumentIngesting(false);
     }
@@ -10545,7 +11585,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Очистка диктовки: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Серверная очистка диктовки недоступна"));
       }
       const result = (await response.json()) as SpeechTranscriptPolishResponse;
       setTranscript(result.normalizedTranscript);
@@ -10554,7 +11594,7 @@ export function App() {
       const polishLabel =
         result.polishMode === "deterministic_neural"
           ? `ИИ-полировка ${result.modelName ?? ""}`.trim()
-          : "локальный парсер правил";
+          : "локальная проверка правил";
       setSpeechStatusNote(
         result.changedPhrases.length
           ? `Текст очищен (${polishLabel}): ${result.changedPhrases.slice(0, 4).join(", ")}`
@@ -10563,14 +11603,14 @@ export function App() {
     } catch (polishError) {
       const local = normalizeDentalSpeechTranscript(transcript, selectedSpecialty);
       const localDraft = buildRuleBasedVisitDraftFromTranscript(local.normalizedText, selectedSpecialty, {
-        sourceLabel: "Локальный speech-polish"
+        sourceLabel: "Локальная очистка диктовки"
       });
       setTranscript(local.normalizedText);
       setDraft(localDraft);
       setVisitNoteForm(visitNoteFormFromDraft(localDraft));
-      setSpeechStatusNote("Текст очищен локальным парсером без сервера.");
+      setSpeechStatusNote("Текст очищен локальным разбором без сервера.");
       if (polishError instanceof Error) {
-        setError(`Серверная очистка недоступна: ${polishError.message}. Использован локальный парсер.`);
+        setError(`${operatorWorkflowFailureMessage("Серверная очистка недоступна", polishError)} Использован локальный разбор.`);
       }
     } finally {
       setIsTranscriptPolishing(false);
@@ -10600,7 +11640,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`ИИ-подготовка записи: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Серверный черновик недоступен"));
       }
       const result = (await response.json()) as VisitNoteDraft;
       setDraft(result);
@@ -10611,11 +11651,7 @@ export function App() {
       setDraft(fallbackDraft);
       setVisitNoteForm(visitNoteFormFromDraft(fallbackDraft));
       scrollToVisitArea(".visit-note-panel");
-      setError(
-        draftError instanceof Error
-          ? `Серверный черновик недоступен: ${draftError.message}. Включен офлайн-парсер.`
-          : "Серверный черновик недоступен. Включен офлайн-парсер."
-      );
+      setError(`${operatorWorkflowFailureMessage("Серверный черновик недоступен", draftError)} Включен офлайн-разбор.`);
     } finally {
       setIsDraftLoading(false);
     }
@@ -10647,7 +11683,11 @@ export function App() {
       applyAcceptedVisitResponse(result);
       scrollToVisitArea(".visit-fields");
     } catch (acceptError) {
-      const queued = queuePendingVisitSave({
+      if (!acceptedVisitSaveFailureIsRetryable(acceptError)) {
+        setError(operatorWorkflowFailureMessage("Прием не принят", acceptError));
+        return;
+      }
+      const queued = await queuePendingVisitSave({
         visitId: dashboard.activeVisit.id,
         clientMutationId,
         baseRevision,
@@ -10656,7 +11696,7 @@ export function App() {
         transcript,
         selectedSpecialty
       }, activeOrganizationId);
-      refreshPendingVisitSaveState();
+      await refreshPendingVisitSaveState();
       const optimisticVisit = {
         ...dashboard.activeVisit,
         complaint: acceptedDraft.complaint,
@@ -10671,11 +11711,7 @@ export function App() {
       setDraft(null);
       setVisitNoteForm(visitNoteFormFromVisit(optimisticVisit));
       scrollToVisitArea(".visit-fields");
-      setError(
-        acceptError instanceof Error
-          ? `Серверное сохранение недоступно: ${acceptError.message}. Прием сохранен локально и поставлен в очередь.`
-          : "Серверное сохранение недоступно. Прием сохранен локально и поставлен в очередь."
-      );
+      setError(`${operatorWorkflowFailureMessage("Серверное сохранение недоступно", acceptError)} Прием сохранен локально и поставлен в очередь.`);
     } finally {
       setIsDraftAccepting(false);
     }
@@ -10698,7 +11734,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Проверка импорта: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Импорт не проверен"));
       }
       const result = (await response.json()) as ImportIntakeResponse;
       setImportIntake(result);
@@ -10706,7 +11742,7 @@ export function App() {
       setImportText(result.normalizedText);
       setImportCommit(null);
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Импорт не проверен");
+      setError(operatorWorkflowFailureMessage("Импорт не проверен", importError));
     } finally {
       setIsImportLoading(false);
     }
@@ -10741,21 +11777,22 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Запись импорта: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Импорт не записан"));
       }
       const result = (await response.json()) as ImportCommitResponse;
       setImportCommit(result);
       setImportPreview(result.preview);
       await loadDashboard();
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Импорт не записан");
+      setError(operatorWorkflowFailureMessage("Импорт не записан", importError));
     } finally {
       setIsImportCommitting(false);
     }
   }
 
-  async function previewSmartImport() {
-    if (!smartImportText.trim()) {
+  async function previewSmartImportText(rawText: string, mode: SmartImportMode) {
+    const cleanText = rawText.trim();
+    if (!cleanText) {
       setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед разбором.");
       return;
     }
@@ -10766,20 +11803,24 @@ export function App() {
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           sourceName: "smart_mixed_export",
-          mode: smartImportMode,
-          rawText: smartImportText
+          mode,
+          rawText: cleanText
         })
       });
       if (!response.ok) {
-        throw new Error(`Умный импорт: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Умный импорт не проверен"));
       }
       setSmartImportPreview((await response.json()) as SmartImportPreviewResponse);
       setSmartImportCommit(null);
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Умный импорт не проверен");
+      setError(operatorWorkflowFailureMessage("Умный импорт не проверен", importError));
     } finally {
       setIsSmartImportLoading(false);
     }
+  }
+
+  async function previewSmartImport() {
+    await previewSmartImportText(smartImportText, smartImportMode);
   }
 
   async function commitSmartImport() {
@@ -10811,14 +11852,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Запись умного импорта: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Умный импорт не записан"));
       }
       const result = (await response.json()) as SmartImportCommitResponse;
       setSmartImportCommit(result);
       setSmartImportPreview(result.preview);
       await loadDashboard();
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Умный импорт не записан");
+      setError(operatorWorkflowFailureMessage("Умный импорт не записан", importError));
     } finally {
       setIsSmartImportCommitting(false);
     }
@@ -10826,7 +11867,7 @@ export function App() {
 
   async function downloadSmartImportReport() {
     if (!smartImportText.trim()) {
-      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед CSV-отчетом.");
+      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед отчетом проверки.");
       return;
     }
     setIsSmartReportLoading(true);
@@ -10841,7 +11882,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Отчет умного импорта: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Отчет импорта не создан"));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -10853,7 +11894,7 @@ export function App() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (reportError) {
-      setError(reportError instanceof Error ? reportError.message : "Отчет импорта не создан");
+      setError(operatorWorkflowFailureMessage("Отчет импорта не создан", reportError));
     } finally {
       setIsSmartReportLoading(false);
     }
@@ -10861,7 +11902,7 @@ export function App() {
 
   async function downloadSmartImportSafeHandoffReport() {
     if (!smartImportText.trim()) {
-      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед безопасным CSV.");
+      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед отчетом переноса.");
       return;
     }
     setIsSmartSafeReportLoading(true);
@@ -10876,25 +11917,32 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Безопасный handoff импорта: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Отчет переноса по импорту не создан"));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "smart_import_safe_handoff.csv";
+      link.download = "otchet_perenosa_importa.csv";
       document.body.append(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
     } catch (reportError) {
-      setError(reportError instanceof Error ? reportError.message : "Безопасный handoff импорта не создан");
+      setError(operatorWorkflowFailureMessage("Отчет переноса по импорту не создан", reportError));
     } finally {
       setIsSmartSafeReportLoading(false);
     }
   }
 
-  function migrationAutopilotRequestPayload() {
+  function activeMigrationDiscoveryForAutopilot() {
+    return migrationSourceDiscovery ?? browserMigrationDiscovery;
+  }
+
+  function migrationAutopilotRequestPayload(
+    knownDiscovery: MigrationLocalSourceDiscoveryResponse | null = activeMigrationDiscoveryForAutopilot(),
+    options: { includeSmartImportText?: boolean } = {}
+  ) {
     const clinicPayload = {
       inn: clinicProfileDraft.inn,
       kpp: clinicProfileDraft.kpp,
@@ -10905,7 +11953,8 @@ export function App() {
       medicalLicenseNumber: clinicProfileDraft.medicalLicenseNumber
     };
     const hasClinicPayload = Object.values(clinicPayload).some((value) => typeof value === "string" && value.trim());
-    const knownSources = browserMigrationDiscovery?.candidates.slice(0, 18);
+    const knownSources = knownDiscovery?.candidates.slice(0, 18);
+    const includeSmartImportText = options.includeSmartImportText ?? (!knownDiscovery && Boolean(smartImportText.trim()));
     return {
       maxDepth: 5,
       maxFolders: 1600,
@@ -10913,12 +11962,22 @@ export function App() {
       maxCandidates: 18,
       maxProbeCandidates: 4,
       knownSources: knownSources?.length ? knownSources : undefined,
-      knownScannedFolders: browserMigrationDiscovery?.scannedFolders,
+      knownScannedFolders: knownDiscovery?.scannedFolders,
+      smartImport: includeSmartImportText && smartImportText.trim()
+        ? {
+            sourceName: "migration_text_autopilot",
+            rawText: smartImportText,
+            mode: smartImportMode
+          }
+        : undefined,
       clinic: hasClinicPayload ? clinicPayload : undefined
     };
   }
 
-  async function runMigrationAutopilot() {
+  async function runMigrationAutopilot(
+    knownDiscovery: MigrationLocalSourceDiscoveryResponse | null = activeMigrationDiscoveryForAutopilot(),
+    options: { includeSmartImportText?: boolean } = {}
+  ) {
     setIsMigrationAutopilotLoading(true);
     setMigrationSourceWorkup(null);
     setMigrationSourceProbe(null);
@@ -10926,10 +11985,10 @@ export function App() {
       const response = await fetch("/api/imports/smart/migration-autopilot", {
         method: "POST",
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(migrationAutopilotRequestPayload())
+        body: JSON.stringify(migrationAutopilotRequestPayload(knownDiscovery, options))
       });
       if (!response.ok) {
-        throw new Error(`Автоплан миграции: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Автоплан миграции не построен"));
       }
       const result = (await response.json()) as MigrationAutopilotResponse;
       setMigrationAutopilot(result);
@@ -10944,34 +12003,39 @@ export function App() {
       });
       if (result.clinicLookup) setClinicPublicLookup(result.clinicLookup);
     } catch (autopilotError) {
-      setError(autopilotError instanceof Error ? autopilotError.message : "Автоплан миграции не построен");
+      setError(operatorWorkflowFailureMessage("Автоплан миграции не построен", autopilotError));
     } finally {
       setIsMigrationAutopilotLoading(false);
     }
   }
 
   async function downloadMigrationHandoffReport() {
+    const knownDiscovery = activeMigrationDiscoveryForAutopilot();
+    if (!migrationAutopilot && !knownDiscovery && !smartImportText.trim()) {
+      setError("Сначала запустите автоплан миграции, выберите папку/диск или вставьте текст выгрузки для плана переноса.");
+      return;
+    }
     setIsMigrationHandoffReportLoading(true);
     try {
       const response = await fetch("/api/imports/smart/migration-autopilot/report.csv", {
         method: "POST",
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(migrationAutopilotRequestPayload())
+        body: JSON.stringify(migrationAutopilotRequestPayload(knownDiscovery, { includeSmartImportText: Boolean(smartImportText.trim()) }))
       });
       if (!response.ok) {
-        throw new Error(`Handoff-отчет миграции: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "План миграции не создан"));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "migration_autopilot_handoff.csv";
+      link.download = "plan_perenosa_migracii.csv";
       document.body.append(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
     } catch (reportError) {
-      setError(reportError instanceof Error ? reportError.message : "Handoff-отчет миграции не создан");
+      setError(operatorWorkflowFailureMessage("План миграции не создан", reportError));
     } finally {
       setIsMigrationHandoffReportLoading(false);
     }
@@ -10995,12 +12059,13 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Поиск старых источников: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Поиск старых источников не выполнен"));
       }
       const result = (await response.json()) as MigrationLocalSourceDiscoveryResponse;
       setMigrationSourceDiscovery(result);
+      await runMigrationAutopilot(result);
     } catch (discoveryError) {
-      setError(discoveryError instanceof Error ? discoveryError.message : "Поиск старых источников не выполнен");
+      setError(operatorWorkflowFailureMessage("Поиск старых источников не выполнен", discoveryError));
     } finally {
       setIsMigrationSourceDiscovering(false);
     }
@@ -11011,6 +12076,63 @@ export function App() {
     setSmartImportText((current) => [current.trim(), candidate.smartImportLine].filter(Boolean).join("\n"));
     setSmartImportPreview(null);
     setSmartImportCommit(null);
+  }
+
+  function migrationCandidateCanPreview(candidate: MigrationLocalSourceDiscoveryResponse["candidates"][number]) {
+    const materialCount =
+      candidate.matchedFiles +
+      candidate.databaseFiles +
+      candidate.dumpFiles +
+      candidate.tableFiles +
+      candidate.archiveFiles +
+      candidate.dicomLikeFiles +
+      candidate.imageFiles;
+    return materialCount > 0 || candidate.sourceRef.startsWith("browser-local:") || candidate.sourceRef.startsWith("smart-preview:");
+  }
+
+  async function previewMigrationDiscoveryCandidate(candidate: MigrationLocalSourceDiscoveryResponse["candidates"][number]) {
+    if (!migrationCandidateCanPreview(candidate)) {
+      setError("У найденного источника пока нет файлов для предпросмотра. Откройте план переноса или проверку источника.");
+      return;
+    }
+    if (!candidate.smartImportLine.trim()) {
+      setError("У найденного источника нет строки для умного предпросмотра. Откройте план или повторите поиск.");
+      return;
+    }
+    setSmartImportMode("auto");
+    setSmartImportText(candidate.smartImportLine);
+    setSmartImportCommit(null);
+    await previewSmartImportText(candidate.smartImportLine, "auto");
+  }
+
+  async function previewMigrationAutopilotSources(sourceFingerprint?: string | null) {
+    const sources = migrationAutopilot?.sources ?? [];
+    const selectedSources = sourceFingerprint ? sources.filter((source) => source.candidate.sourceFingerprint === sourceFingerprint) : [];
+    if (sourceFingerprint && !selectedSources.length) {
+      setError("Источник из автоплана уже не найден. Обновите автоплан или выберите источник из текущего списка.");
+      return;
+    }
+    const previewSources = selectedSources.length
+      ? selectedSources.filter((source) => migrationCandidateCanPreview(source.candidate))
+      : sources.filter((source) => source.readiness.level === "ready_for_preview" || migrationCandidateCanPreview(source.candidate));
+    if (selectedSources.length && !previewSources.length) {
+      setError("У выбранного источника пока нет файлов для предпросмотра. Откройте план переноса или проверку источника.");
+      return;
+    }
+    const sourceLines = Array.from(
+      new Set(previewSources.slice(0, 12).map((source) => source.candidate.smartImportLine).filter(Boolean))
+    );
+
+    if (!sourceLines.length) {
+      setError("Автоплан пока не дал строк для предпросмотра. Сначала запустите поиск на ПК или выберите папку/диск старой системы.");
+      return;
+    }
+
+    const rawText = sourceLines.join("\n");
+    setSmartImportMode("auto");
+    setSmartImportText(rawText);
+    setSmartImportCommit(null);
+    await previewSmartImportText(rawText, "auto");
   }
 
   async function planMigrationDiscoveryCandidate(candidate: MigrationLocalSourceDiscoveryResponse["candidates"][number]) {
@@ -11026,11 +12148,11 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`План источника миграции: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "План переноса источника не построен"));
       }
       setMigrationSourceWorkup((await response.json()) as MigrationLocalSourceWorkupResponse);
     } catch (workupError) {
-      setError(workupError instanceof Error ? workupError.message : "План источника миграции не построен");
+      setError(operatorWorkflowFailureMessage("План переноса источника не построен", workupError));
     } finally {
       setIsMigrationSourceWorkupLoading(false);
     }
@@ -11054,11 +12176,11 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Проба источника миграции: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Проверка источника не выполнена"));
       }
       setMigrationSourceProbe((await response.json()) as MigrationLocalSourceProbeResponse);
     } catch (probeError) {
-      setError(probeError instanceof Error ? probeError.message : "Проба источника миграции не выполнена");
+      setError(operatorWorkflowFailureMessage("Проверка источника не выполнена", probeError));
     } finally {
       setIsMigrationSourceProbeLoading(false);
     }
@@ -11086,11 +12208,11 @@ export function App() {
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
-        throw new Error(`Публичный поиск клиники: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Публичный поиск клиники не выполнен"));
       }
       setClinicPublicLookup((await response.json()) as ClinicPublicLookupResponse);
     } catch (lookupError) {
-      setError(lookupError instanceof Error ? lookupError.message : "Публичный поиск клиники не выполнен");
+      setError(operatorWorkflowFailureMessage("Публичный поиск клиники не выполнен", lookupError));
     } finally {
       setIsClinicPublicLookupLoading(false);
     }
@@ -11113,13 +12235,13 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Проверка импорта снимков: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Импорт снимков не проверен"));
       }
       setImagingImportPreview((await response.json()) as ImagingImportPreviewResponse);
       setImagingImportCommit(null);
       setDicomSeriesPreview(null);
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Импорт снимков не проверен");
+      setError(operatorWorkflowFailureMessage("Импорт снимков не проверен", importError));
     } finally {
       setIsImagingImportLoading(false);
     }
@@ -11186,6 +12308,111 @@ export function App() {
   function clearBrowserPickedImagingFolderPreview() {
     removeBrowserPickedImagingFolderPreview(activeOrganizationId);
     setBrowserPickedImagingFolder(null);
+    setBrowserImagingScanProgress(null);
+  }
+
+  function cancelBrowserImagingFolderScan() {
+    browserImagingScanAbortRef.current?.abort();
+  }
+
+  function startLocalDicomOperation() {
+    localDicomOperationAbortRef.current?.abort();
+    const controller = new AbortController();
+    localDicomOperationAbortRef.current = controller;
+    setIsLocalDicomOperationActive(true);
+    return controller;
+  }
+
+  function finishLocalDicomOperation(controller: AbortController) {
+    if (localDicomOperationAbortRef.current !== controller) return;
+    localDicomOperationAbortRef.current = null;
+    setIsLocalDicomOperationActive(false);
+  }
+
+  function cancelLocalDicomOperation() {
+    localDicomOperationAbortRef.current?.abort();
+  }
+
+  function isLocalDicomOperationAbortError(error: unknown) {
+    return isBrowserImagingScanAbortError(error);
+  }
+
+  async function runBrowserImagingFolderScan(input: {
+    rootName: string;
+    sourceKind: BrowserPickedImagingFolderPreview["sourceKind"];
+    currentItem: string;
+    errorMessage: string;
+    scan: (options: BrowserImagingScanOptions) => Promise<BrowserPickedImagingFolderPreview>;
+  }) {
+    browserImagingScanAbortRef.current?.abort();
+    const controller = new AbortController();
+    browserImagingScanAbortRef.current = controller;
+    const startedAt = new Date().toISOString();
+    const runtime = createBrowserImagingScanRuntime(startedAt);
+    const initialStats: BrowserPickedImagingScanStats = {
+      rootName: input.rootName,
+      sourceKind: input.sourceKind,
+      scannedFiles: 0,
+      scannedFolders: 0,
+      dicomLikeFiles: 0,
+      archiveFiles: 0,
+      modelFiles: 0,
+      imageFiles: 0,
+      totalBytes: 0,
+      warnings: []
+    };
+    setIsBrowserImagingFolderPicking(true);
+    setBrowserImagingScanProgress(browserImagingScanProgressFromStats(initialStats, runtime, "scanning", input.currentItem));
+    try {
+      const preview = await input.scan({
+        signal: controller.signal,
+        startedAt,
+        onProgress: setBrowserImagingScanProgress
+      });
+      if (controller.signal.aborted) return;
+      setBrowserImagingScanProgress(
+        browserImagingScanProgressFromStats(
+          {
+            rootName: preview.rootName,
+            sourceKind: preview.sourceKind,
+            scannedFiles: preview.scannedFiles,
+            scannedFolders: preview.scannedFolders,
+            dicomLikeFiles: preview.dicomLikeFiles,
+            archiveFiles: preview.archiveFiles,
+            modelFiles: preview.modelFiles,
+            imageFiles: preview.imageFiles,
+            totalBytes: preview.totalBytes,
+            warnings: preview.warnings
+          },
+          runtime,
+          "done",
+          null
+        )
+      );
+      applyBrowserPickedImagingFolderPreview(preview);
+    } catch (scanError) {
+      if (isBrowserImagingScanAbortError(scanError)) {
+        setBrowserImagingScanProgress((current) =>
+          current
+            ? (() => {
+                const updatedAt = new Date().toISOString();
+                return {
+                  ...current,
+                  phase: "cancelled",
+                  currentItem: null,
+                  updatedAt,
+                  elapsedMs: browserImagingScanElapsedFromIso(current.startedAt, updatedAt)
+                };
+              })()
+            : null
+        );
+        return;
+      }
+      setError(browserLocalSourceErrorMessage(input.errorMessage, scanError));
+    } finally {
+      if (browserImagingScanAbortRef.current === controller) browserImagingScanAbortRef.current = null;
+      setIsBrowserImagingFolderPicking(false);
+    }
   }
 
   function browserMigrationStatsFor(
@@ -11220,9 +12447,14 @@ export function App() {
     file: File;
     fileName: string;
     allowMagicRead: boolean;
-  }) {
+    signal?: AbortSignal | undefined;
+  }): Promise<BrowserMigrationFileKind> {
     let kind = classifyBrowserMigrationFileName(input.fileName);
-    if (kind === "other" && input.allowMagicRead && (await browserFileHasDicomMagic(input.file))) kind = "dicom";
+    if (kind === "other" && input.allowMagicRead) {
+      throwIfBrowserMigrationScanAborted(input.signal);
+      if (await browserFileHasDicomMagic(input.file)) kind = "dicom";
+      throwIfBrowserMigrationScanAborted(input.signal);
+    }
     input.stats.totalBytes += input.file.size;
     const modifiedAt = input.file.lastModified ? new Date(input.file.lastModified).toISOString() : null;
     if (modifiedAt && (!input.stats.latestModifiedAt || modifiedAt > input.stats.latestModifiedAt)) input.stats.latestModifiedAt = modifiedAt;
@@ -11234,6 +12466,7 @@ export function App() {
     else if (kind === "dicom") input.stats.dicomLikeFiles += 1;
     else if (kind === "image") input.stats.imageFiles += 1;
     else if (kind === "model") input.stats.modelFiles += 1;
+    return kind;
   }
 
   function applyBrowserMigrationDiscovery(discovery: MigrationLocalSourceDiscoveryResponse) {
@@ -11244,30 +12477,125 @@ export function App() {
     setMigrationSourceProbe(null);
   }
 
+  function cancelBrowserMigrationScan() {
+    browserMigrationScanAbortRef.current?.abort();
+  }
+
+  async function runBrowserMigrationSourceScan(input: {
+    rootName: string;
+    sourceKind: BrowserMigrationScanStats["sourceKind"];
+    currentItem: string;
+    errorMessage: string;
+    scan: (options: BrowserMigrationScanOptions) => Promise<MigrationLocalSourceDiscoveryResponse>;
+  }): Promise<void> {
+    browserMigrationScanAbortRef.current?.abort();
+    const controller = new AbortController();
+    browserMigrationScanAbortRef.current = controller;
+    const startedAt = new Date().toISOString();
+    const runtime = createBrowserMigrationScanRuntime(startedAt);
+    const initialStats: BrowserMigrationScanStats = {
+      rootName: input.rootName,
+      sourceKind: input.sourceKind,
+      scannedFiles: 0,
+      scannedFolders: 0,
+      databaseFiles: 0,
+      dumpFiles: 0,
+      tableFiles: 0,
+      archiveFiles: 0,
+      dicomLikeFiles: 0,
+      imageFiles: 0,
+      modelFiles: 0,
+      totalBytes: 0,
+      warnings: []
+    };
+    setIsBrowserMigrationScanning(true);
+    setBrowserMigrationScanProgress(browserMigrationScanProgressFromStats(initialStats, runtime, "scanning", input.currentItem));
+    try {
+      const discovery = await input.scan({
+        signal: controller.signal,
+        startedAt,
+        onProgress: setBrowserMigrationScanProgress
+      });
+      if (controller.signal.aborted) return;
+      applyBrowserMigrationDiscovery(discovery);
+      await runMigrationAutopilot(discovery);
+    } catch (scanError) {
+      if (isBrowserMigrationScanAbortError(scanError)) {
+        setBrowserMigrationScanProgress((current) =>
+          current
+            ? (() => {
+                const updatedAt = new Date().toISOString();
+                return {
+                  ...current,
+                  phase: "cancelled",
+                  currentItem: null,
+                  updatedAt,
+                  elapsedMs: browserImagingScanElapsedFromIso(current.startedAt, updatedAt)
+                };
+              })()
+            : null
+        );
+        return;
+      }
+      setError(browserLocalSourceErrorMessage(input.errorMessage, scanError));
+    } finally {
+      if (browserMigrationScanAbortRef.current === controller) browserMigrationScanAbortRef.current = null;
+      setIsBrowserMigrationScanning(false);
+    }
+  }
+
   async function scanBrowserMigrationDirectoryHandle(
-    directoryHandle: BrowserFileSystemDirectoryHandle
+    directoryHandle: BrowserFileSystemDirectoryHandle,
+    options: BrowserMigrationScanOptions
   ): Promise<MigrationLocalSourceDiscoveryResponse> {
+    const runtime = createBrowserMigrationScanRuntime(options.startedAt);
     const warnings: string[] = [];
     const statsByFolder = new Map<string, BrowserMigrationFolderStats>();
-    const maxFiles = 1200;
-    const maxFolders = 320;
-    const maxMagicReads = 220;
     let scannedFiles = 0;
     let scannedFolders = 0;
     let magicReads = 0;
+    const progressStats: BrowserMigrationScanStats = {
+      rootName: directoryHandle.name || "browser-selected-folder",
+      sourceKind: "browser_directory_picker",
+      scannedFiles: 0,
+      scannedFolders: 0,
+      databaseFiles: 0,
+      dumpFiles: 0,
+      tableFiles: 0,
+      archiveFiles: 0,
+      dicomLikeFiles: 0,
+      imageFiles: 0,
+      modelFiles: 0,
+      totalBytes: 0,
+      warnings
+    };
     const stack: Array<{ handle: BrowserFileSystemDirectoryHandle; key: string; hint: string; depth: number }> = [
       { handle: directoryHandle, key: "root", hint: directoryHandle.name, depth: 0 }
     ];
 
-    while (stack.length > 0 && scannedFolders < maxFolders && scannedFiles < maxFiles) {
+    publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка выбранной папки", "scanning", true);
+
+    while (stack.length > 0 && scannedFolders < browserMigrationScanFolderLimit && scannedFiles < browserMigrationScanFileLimit) {
+      throwIfBrowserMigrationScanAborted(options.signal);
       const current = stack.pop();
       if (!current) break;
       scannedFolders += 1;
+      progressStats.scannedFolders = scannedFolders;
+      runtime.processedUnits += 1;
       browserMigrationStatsFor(statsByFolder, current.key, current.hint, current.depth);
+      publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка подпапок старой системы");
+      await maybeYieldBrowserMigrationScan(runtime, options.signal);
       try {
+        let inspectedDirectoryEntries = 0;
         for await (const [entryName, handle] of current.handle.entries()) {
+          throwIfBrowserMigrationScanAborted(options.signal);
+          inspectedDirectoryEntries += 1;
+          if (inspectedDirectoryEntries > browserMigrationScanDirectoryEntryLimit) {
+            warnings.push(`Браузерный список ограничил одну папку ${browserMigrationScanDirectoryEntryLimit} элементами для отзывчивости интерфейса.`);
+            break;
+          }
           if (handle.kind === "directory") {
-            if (scannedFolders + stack.length < maxFolders) {
+            if (scannedFolders + stack.length < browserMigrationScanFolderLimit) {
               stack.push({
                 handle,
                 key: `${current.key}/${entryName}`,
@@ -11277,24 +12605,38 @@ export function App() {
             }
             continue;
           }
-          if (scannedFiles >= maxFiles) break;
+          if (scannedFiles >= browserMigrationScanFileLimit) break;
           scannedFiles += 1;
+          progressStats.scannedFiles = scannedFiles;
           const file = await handle.getFile();
+          throwIfBrowserMigrationScanAborted(options.signal);
           const stats = browserMigrationStatsFor(statsByFolder, current.key, `${current.hint} ${entryName}`, current.depth);
-          const allowMagicRead = magicReads < maxMagicReads;
+          const allowMagicRead = magicReads < browserMigrationScanMagicReadLimit;
           if (allowMagicRead) magicReads += 1;
-          await addBrowserMigrationFileToStats({ stats, file, fileName: entryName, allowMagicRead });
+          const kind = await addBrowserMigrationFileToStats({
+            stats,
+            file,
+            fileName: entryName,
+            allowMagicRead,
+            ...(options.signal ? { signal: options.signal } : {})
+          });
+          addBrowserMigrationKindToScanStats(progressStats, kind, file.size);
+          runtime.processedUnits += 1;
+          publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка старых баз, выгрузок и снимков");
+          await maybeYieldBrowserMigrationScan(runtime, options.signal);
         }
-      } catch {
+      } catch (scanError) {
+        if (isBrowserMigrationScanAbortError(scanError)) throw scanError;
         warnings.push("Одну выбранную в браузере подпапку не удалось прочитать; она пропущена.");
       }
     }
 
-    if (scannedFiles >= maxFiles) warnings.push(`Браузерный manifest ограничен ${maxFiles} файлами для отзывчивости интерфейса.`);
-    if (scannedFolders >= maxFolders) warnings.push(`Браузерный manifest ограничен ${maxFolders} папками для отзывчивости интерфейса.`);
+    if (scannedFiles >= browserMigrationScanFileLimit) warnings.push(`Браузерный список ограничен ${browserMigrationScanFileLimit} файлами для отзывчивости интерфейса.`);
+    if (scannedFolders >= browserMigrationScanFolderLimit) warnings.push(`Браузерный список ограничен ${browserMigrationScanFolderLimit} папками для отзывчивости интерфейса.`);
+    publishBrowserMigrationScanProgress(progressStats, options, runtime, null, "done", true);
     return buildBrowserMigrationDiscovery({
       rootName: directoryHandle.name || "browser-selected-folder",
-      sourceLabel: "Браузерный manifest папки",
+      sourceLabel: "Браузерный список папки",
       scannedFolders,
       scannedFiles,
       folderStats: Array.from(statsByFolder.values()),
@@ -11302,18 +12644,39 @@ export function App() {
     });
   }
 
-  async function scanBrowserMigrationFileList(fileList: FileList): Promise<MigrationLocalSourceDiscoveryResponse> {
+  async function scanBrowserMigrationFileList(fileList: FileList, options: BrowserMigrationScanOptions): Promise<MigrationLocalSourceDiscoveryResponse> {
+    const runtime = createBrowserMigrationScanRuntime(options.startedAt);
     const warnings: string[] = [];
-    const files = Array.from(fileList);
     const statsByFolder = new Map<string, BrowserMigrationFolderStats>();
-    const maxFiles = 1200;
-    const maxMagicReads = 220;
+    const selectedFileCount = fileList.length;
+    const scanCount = Math.min(selectedFileCount, browserMigrationScanFileLimit);
     let scannedFiles = 0;
     let magicReads = 0;
     const folders = new Set<string>();
+    const progressStats: BrowserMigrationScanStats = {
+      rootName: "browser-selected-files",
+      sourceKind: "browser_file_input",
+      scannedFiles: 0,
+      scannedFolders: 1,
+      databaseFiles: 0,
+      dumpFiles: 0,
+      tableFiles: 0,
+      archiveFiles: 0,
+      dicomLikeFiles: 0,
+      imageFiles: 0,
+      modelFiles: 0,
+      totalBytes: 0,
+      warnings
+    };
 
-    for (const file of files.slice(0, maxFiles)) {
+    publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка выбранных файлов", "scanning", true);
+
+    for (let fileIndex = 0; fileIndex < scanCount; fileIndex += 1) {
+      throwIfBrowserMigrationScanAborted(options.signal);
+      const file = fileList.item(fileIndex);
+      if (!file) continue;
       scannedFiles += 1;
+      progressStats.scannedFiles = scannedFiles;
       const relativePath = file.webkitRelativePath || file.name;
       const parts = relativePath.split(/[\\/]+/).filter(Boolean);
       const folderParts = parts.slice(0, -1);
@@ -11321,15 +12684,27 @@ export function App() {
       const folderHint = folderParts.concat(file.name).join(" ");
       folders.add(folderKey);
       const stats = browserMigrationStatsFor(statsByFolder, folderKey, folderHint, Math.max(0, folderParts.length - 1));
-      const allowMagicRead = magicReads < maxMagicReads;
+      progressStats.scannedFolders = Math.max(1, folders.size);
+      const allowMagicRead = magicReads < browserMigrationScanMagicReadLimit;
       if (allowMagicRead) magicReads += 1;
-      await addBrowserMigrationFileToStats({ stats, file, fileName: file.name, allowMagicRead });
+      const kind = await addBrowserMigrationFileToStats({
+        stats,
+        file,
+        fileName: file.name,
+        allowMagicRead,
+        ...(options.signal ? { signal: options.signal } : {})
+      });
+      addBrowserMigrationKindToScanStats(progressStats, kind, file.size);
+      runtime.processedUnits += 1;
+      publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка старых баз, выгрузок и снимков");
+      await maybeYieldBrowserMigrationScan(runtime, options.signal);
     }
 
-    if (files.length > maxFiles) warnings.push(`Браузерный manifest ограничен ${maxFiles} файлами для отзывчивости интерфейса.`);
+    if (selectedFileCount > browserMigrationScanFileLimit) warnings.push(`Браузерный список ограничен ${browserMigrationScanFileLimit} файлами для отзывчивости интерфейса.`);
+    publishBrowserMigrationScanProgress(progressStats, options, runtime, null, "done", true);
     return buildBrowserMigrationDiscovery({
       rootName: "browser-selected-files",
-      sourceLabel: "Браузерный manifest файлов",
+      sourceLabel: "Браузерный список файлов",
       scannedFolders: Math.max(1, folders.size),
       scannedFiles,
       folderStats: Array.from(statsByFolder.values()),
@@ -11343,13 +12718,19 @@ export function App() {
       const picker = (window as BrowserDirectoryPickerWindow).showDirectoryPicker;
       if (typeof picker === "function") {
         const directoryHandle = await picker({ id: "dental-crm-legacy-migration", mode: "read" });
-        applyBrowserMigrationDiscovery(await scanBrowserMigrationDirectoryHandle(directoryHandle));
+        await runBrowserMigrationSourceScan({
+          rootName: directoryHandle.name || "browser-selected-folder",
+          sourceKind: "browser_directory_picker",
+          currentItem: "проверка выбранной папки",
+          errorMessage: "Браузер не открыл выбор старой базы или папки снимков",
+          scan: (options) => scanBrowserMigrationDirectoryHandle(directoryHandle, options)
+        });
         return;
       }
       browserMigrationInputRef.current?.click();
     } catch (pickerError) {
       if (pickerError instanceof DOMException && pickerError.name === "AbortError") return;
-      setError(pickerError instanceof Error ? pickerError.message : "Браузер не открыл выбор старой БД/папки снимков");
+      setError(browserLocalSourceErrorMessage("Браузер не открыл выбор старой базы или папки снимков", pickerError));
     } finally {
       setIsBrowserMigrationScanning(false);
     }
@@ -11359,9 +12740,15 @@ export function App() {
     if (!fileList || fileList.length === 0) return;
     setIsBrowserMigrationScanning(true);
     try {
-      applyBrowserMigrationDiscovery(await scanBrowserMigrationFileList(fileList));
+      await runBrowserMigrationSourceScan({
+        rootName: "browser-selected-files",
+        sourceKind: "browser_file_input",
+        currentItem: "проверка выбранных файлов",
+        errorMessage: "Браузер не разобрал выбранные файлы старой системы",
+        scan: (options) => scanBrowserMigrationFileList(fileList, options)
+      });
     } catch (pickerError) {
-      setError(pickerError instanceof Error ? pickerError.message : "Браузер не разобрал выбранные legacy-файлы");
+      setError(browserLocalSourceErrorMessage("Браузер не разобрал выбранные файлы старой системы", pickerError));
     } finally {
       setIsBrowserMigrationScanning(false);
       if (browserMigrationInputRef.current) browserMigrationInputRef.current.value = "";
@@ -11369,117 +12756,139 @@ export function App() {
   }
 
   async function scanBrowserDirectoryHandle(
-    directoryHandle: BrowserFileSystemDirectoryHandle
+    directoryHandle: BrowserFileSystemDirectoryHandle,
+    options: BrowserImagingScanOptions
   ): Promise<BrowserPickedImagingFolderPreview> {
-    const warnings: string[] = [];
-    const maxFiles = 900;
-    const maxFolders = 260;
-    const maxMagicReads = 180;
-    let scannedFiles = 0;
-    let scannedFolders = 0;
-    let dicomLikeFiles = 0;
-    let archiveFiles = 0;
-    let modelFiles = 0;
-    let imageFiles = 0;
-    let totalBytes = 0;
+    const runtime = createBrowserImagingScanRuntime(options.startedAt);
+    const stats: BrowserPickedImagingScanStats = {
+      rootName: "Выбранная папка браузера",
+      sourceKind: "browser_directory_picker",
+      scannedFiles: 0,
+      scannedFolders: 0,
+      dicomLikeFiles: 0,
+      archiveFiles: 0,
+      modelFiles: 0,
+      imageFiles: 0,
+      totalBytes: 0,
+      warnings: []
+    };
     let magicReads = 0;
     const stack: BrowserFileSystemDirectoryHandle[] = [directoryHandle];
 
-    while (stack.length > 0 && scannedFolders < maxFolders && scannedFiles < maxFiles) {
+    publishBrowserImagingScanProgress(stats, options, runtime, "проверка выбранной папки", "scanning", true);
+
+    while (stack.length > 0 && stats.scannedFolders < browserImagingScanFolderLimit && stats.scannedFiles < browserImagingScanFileLimit) {
+      throwIfBrowserImagingScanAborted(options.signal);
       const current = stack.pop();
       if (!current) break;
-      scannedFolders += 1;
+      stats.scannedFolders += 1;
+      runtime.processedUnits += 1;
+      publishBrowserImagingScanProgress(stats, options, runtime, "проверка подпапок");
+      await maybeYieldBrowserImagingScan(runtime, options.signal);
       try {
+        let inspectedDirectoryEntries = 0;
         for await (const [, handle] of current.entries()) {
+          throwIfBrowserImagingScanAborted(options.signal);
+          inspectedDirectoryEntries += 1;
+          if (inspectedDirectoryEntries > browserImagingScanDirectoryEntryLimit) {
+            stats.warnings.push(`Браузерное сканирование ограничило одну папку ${browserImagingScanDirectoryEntryLimit} элементами для отзывчивости интерфейса.`);
+            break;
+          }
           if (handle.kind === "directory") {
-            if (scannedFolders + stack.length < maxFolders) stack.push(handle);
+            if (stats.scannedFolders + stack.length < browserImagingScanFolderLimit) stack.push(handle);
             continue;
           }
-          if (scannedFiles >= maxFiles) break;
-          scannedFiles += 1;
+          if (stats.scannedFiles >= browserImagingScanFileLimit) break;
+          stats.scannedFiles += 1;
           const file = await handle.getFile();
-          totalBytes += file.size;
+          stats.totalBytes += file.size;
           let kind = classifyBrowserImagingFileName(handle.name);
-          if (kind === "other" && magicReads < maxMagicReads) {
+          if (kind === "other" && magicReads < browserImagingScanMagicReadLimit) {
             magicReads += 1;
             if (await browserFileHasDicomMagic(file)) kind = "dicom";
           }
-          if (kind === "dicom") dicomLikeFiles += 1;
-          else if (kind === "archive") archiveFiles += 1;
-          else if (kind === "model") modelFiles += 1;
-          else if (kind === "image") imageFiles += 1;
+          throwIfBrowserImagingScanAborted(options.signal);
+          if (kind === "dicom") stats.dicomLikeFiles += 1;
+          else if (kind === "archive") stats.archiveFiles += 1;
+          else if (kind === "model") stats.modelFiles += 1;
+          else if (kind === "image") stats.imageFiles += 1;
+          runtime.processedUnits += 1;
+          publishBrowserImagingScanProgress(stats, options, runtime, "проверка файлов КТ и 3D");
+          await maybeYieldBrowserImagingScan(runtime, options.signal);
         }
-      } catch {
-        warnings.push("Одну выбранную в браузере подпапку не удалось прочитать, она пропущена.");
+      } catch (scanError) {
+        if (isBrowserImagingScanAbortError(scanError)) throw scanError;
+        stats.warnings.push("Одну выбранную в браузере подпапку не удалось прочитать, она пропущена.");
       }
     }
 
-    if (scannedFiles >= maxFiles) warnings.push(`Браузерное сканирование ограничено ${maxFiles} файлами для отзывчивости интерфейса.`);
-    if (scannedFolders >= maxFolders) warnings.push(`Браузерное сканирование ограничено ${maxFolders} папками для отзывчивости интерфейса.`);
-    warnings.push("Выбор папки в браузере не раскрывает полный локальный путь; серверному разбору DICOM все еще нужен путь серверного или локального обработчика.");
+    if (stats.scannedFiles >= browserImagingScanFileLimit) {
+      stats.warnings.push(`Браузерное сканирование ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`);
+    }
+    if (stats.scannedFolders >= browserImagingScanFolderLimit) {
+      stats.warnings.push(`Браузерное сканирование ограничено ${browserImagingScanFolderLimit} папками для отзывчивости интерфейса.`);
+    }
+    stats.warnings.push("Браузер проверил выбранную папку без передачи полного пути. Для полноценного открытия тяжелой КТ выберите эту же папку в локальном модуле клиники или укажите путь на рабочем ПК.");
+    publishBrowserImagingScanProgress(stats, options, runtime, null, "done", true);
 
-    return buildBrowserPickedImagingFolderPreview({
-      rootName: "Выбранная папка браузера",
-      sourceKind: "browser_directory_picker",
-      scannedFiles,
-      scannedFolders,
-      dicomLikeFiles,
-      archiveFiles,
-      modelFiles,
-      imageFiles,
-      totalBytes,
-      warnings
-    });
+    return buildBrowserPickedImagingFolderPreview(stats);
   }
 
-  async function scanBrowserFileList(fileList: FileList): Promise<BrowserPickedImagingFolderPreview> {
-    const warnings: string[] = [];
-    const files = Array.from(fileList);
-    const maxFiles = 900;
-    const maxMagicReads = 180;
+  async function scanBrowserFileList(fileList: FileList, options: BrowserImagingScanOptions): Promise<BrowserPickedImagingFolderPreview> {
+    const runtime = createBrowserImagingScanRuntime(options.startedAt);
     const folders = new Set<string>();
-    let scannedFiles = 0;
-    let dicomLikeFiles = 0;
-    let archiveFiles = 0;
-    let modelFiles = 0;
-    let imageFiles = 0;
-    let totalBytes = 0;
+    const selectedFileCount = fileList.length;
+    const scanCount = Math.min(selectedFileCount, browserImagingScanFileLimit);
     let magicReads = 0;
+    const stats: BrowserPickedImagingScanStats = {
+      rootName: "Выбранные файлы браузера",
+      sourceKind: "browser_file_input",
+      scannedFiles: 0,
+      scannedFolders: 1,
+      dicomLikeFiles: 0,
+      archiveFiles: 0,
+      modelFiles: 0,
+      imageFiles: 0,
+      totalBytes: 0,
+      warnings: []
+    };
 
-    for (const file of files.slice(0, maxFiles)) {
-      scannedFiles += 1;
-      totalBytes += file.size;
+    publishBrowserImagingScanProgress(stats, options, runtime, "проверка выбранных файлов", "scanning", true);
+
+    for (let fileIndex = 0; fileIndex < scanCount; fileIndex += 1) {
+      const file = fileList.item(fileIndex);
+      if (!file) continue;
+      throwIfBrowserImagingScanAborted(options.signal);
+      stats.scannedFiles += 1;
+      stats.totalBytes += file.size;
       const relativePath = file.webkitRelativePath || file.name;
       const parts = relativePath.split(/[\\/]+/).filter(Boolean);
       for (let index = 0; index < Math.max(1, parts.length - 1); index += 1) {
         folders.add(parts.slice(0, index + 1).join("/"));
       }
+      stats.scannedFolders = Math.max(1, folders.size);
       let kind = classifyBrowserImagingFileName(file.name);
-      if (kind === "other" && magicReads < maxMagicReads) {
+      if (kind === "other" && magicReads < browserImagingScanMagicReadLimit) {
         magicReads += 1;
         if (await browserFileHasDicomMagic(file)) kind = "dicom";
       }
-      if (kind === "dicom") dicomLikeFiles += 1;
-      else if (kind === "archive") archiveFiles += 1;
-      else if (kind === "model") modelFiles += 1;
-      else if (kind === "image") imageFiles += 1;
+      throwIfBrowserImagingScanAborted(options.signal);
+      if (kind === "dicom") stats.dicomLikeFiles += 1;
+      else if (kind === "archive") stats.archiveFiles += 1;
+      else if (kind === "model") stats.modelFiles += 1;
+      else if (kind === "image") stats.imageFiles += 1;
+      runtime.processedUnits += 1;
+      publishBrowserImagingScanProgress(stats, options, runtime, "проверка файлов КТ и 3D");
+      await maybeYieldBrowserImagingScan(runtime, options.signal);
     }
 
-    if (files.length > maxFiles) warnings.push(`Браузерное сканирование ограничено ${maxFiles} файлами для отзывчивости интерфейса.`);
-    warnings.push("Запасной выбор файлов может разобрать локальные файлы, но CRM пока не может надежно хранить браузерные файловые дескрипторы.");
+    if (selectedFileCount > browserImagingScanFileLimit) {
+      stats.warnings.push(`Браузерное сканирование ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`);
+    }
+    stats.warnings.push("Файлы выбраны через запасной режим браузера. После обновления страницы их нужно выбрать заново; для постоянной привязки лучше выбрать папку или локальный модуль клиники.");
+    publishBrowserImagingScanProgress(stats, options, runtime, null, "done", true);
 
-    return buildBrowserPickedImagingFolderPreview({
-      rootName: "Выбранные файлы браузера",
-      sourceKind: "browser_file_input",
-      scannedFiles,
-      scannedFolders: Math.max(1, folders.size),
-      dicomLikeFiles,
-      archiveFiles,
-      modelFiles,
-      imageFiles,
-      totalBytes,
-      warnings
-    });
+    return buildBrowserPickedImagingFolderPreview(stats);
   }
 
   async function pickBrowserImagingFolder() {
@@ -11488,14 +12897,19 @@ export function App() {
       const picker = (window as BrowserDirectoryPickerWindow).showDirectoryPicker;
       if (typeof picker === "function") {
         const directoryHandle = await picker({ id: "dental-crm-local-imaging", mode: "read" });
-        const preview = await scanBrowserDirectoryHandle(directoryHandle);
-        applyBrowserPickedImagingFolderPreview(preview);
+        await runBrowserImagingFolderScan({
+          rootName: "Выбранная папка браузера",
+          sourceKind: "browser_directory_picker",
+          currentItem: "проверка выбранной папки",
+          errorMessage: "Браузер не открыл выбор папки снимков",
+          scan: (options) => scanBrowserDirectoryHandle(directoryHandle, options)
+        });
         return;
       }
       browserDirectoryInputRef.current?.click();
     } catch (pickerError) {
       if (pickerError instanceof DOMException && pickerError.name === "AbortError") return;
-      setError(pickerError instanceof Error ? pickerError.message : "Браузер не открыл выбор папки");
+      setError(browserLocalSourceErrorMessage("Браузер не открыл выбор папки снимков", pickerError));
     } finally {
       setIsBrowserImagingFolderPicking(false);
     }
@@ -11505,10 +12919,15 @@ export function App() {
     if (!fileList || fileList.length === 0) return;
     setIsBrowserImagingFolderPicking(true);
     try {
-      const preview = await scanBrowserFileList(fileList);
-      applyBrowserPickedImagingFolderPreview(preview);
+      await runBrowserImagingFolderScan({
+        rootName: "Выбранные файлы браузера",
+        sourceKind: "browser_file_input",
+        currentItem: "проверка выбранных файлов",
+        errorMessage: "Браузер не открыл выбор файлов снимков",
+        scan: (options) => scanBrowserFileList(fileList, options)
+      });
     } catch (pickerError) {
-      setError(pickerError instanceof Error ? pickerError.message : "Браузер не открыл выбор файлов");
+      setError(browserLocalSourceErrorMessage("Браузер не открыл выбор файлов снимков", pickerError));
     } finally {
       setIsBrowserImagingFolderPicking(false);
       if (browserDirectoryInputRef.current) browserDirectoryInputRef.current.value = "";
@@ -11516,10 +12935,12 @@ export function App() {
   }
 
   async function discoverDicomFolders() {
+    const controller = startLocalDicomOperation();
     setIsDicomLocalDiscovering(true);
     try {
       const response = await fetch("/api/imaging/dicom/local-folder-discovery", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           maxDepth: 6,
@@ -11530,7 +12951,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Поиск DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Поиск папок со снимками не выполнен"));
       }
       const result = (await response.json()) as DicomLocalFolderDiscoveryResponse;
       setDicomLocalFolderDiscovery(result);
@@ -11540,13 +12961,16 @@ export function App() {
       setImagingFolderScan(null);
       setLocalImagingOrganizer(null);
     } catch (discoveryError) {
-      setError(discoveryError instanceof Error ? discoveryError.message : "Поиск папок DICOM не выполнен");
+      if (isLocalDicomOperationAbortError(discoveryError)) return;
+      setError(operatorWorkflowFailureMessage("Поиск папок со снимками не выполнен", discoveryError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomLocalDiscovering(false);
     }
   }
 
   async function organizeLocalImagingSources() {
+    const controller = startLocalDicomOperation();
     setIsLocalImagingOrganizing(true);
     try {
       const candidateRoot = imagingFolderPath.trim();
@@ -11554,6 +12978,7 @@ export function App() {
       if (useSpecificRoot) rememberLocalImagingFolder(candidateRoot, { origin: "manual" });
       const response = await fetch("/api/imaging/local-organizer/scan-preview", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           rootPaths: useSpecificRoot ? [candidateRoot] : undefined,
@@ -11566,7 +12991,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Локальный организатор снимков: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Локальный организатор снимков не выполнен"));
       }
       const result = (await response.json()) as LocalImagingOrganizerResponse;
       setLocalImagingOrganizer(result);
@@ -11576,20 +13001,27 @@ export function App() {
       setImagingFolderScan(null);
       setDicomLocalFolderDiscovery(null);
     } catch (organizerError) {
-      setError(organizerError instanceof Error ? organizerError.message : "Локальный организатор снимков не выполнен");
+      if (isLocalDicomOperationAbortError(organizerError)) return;
+      setError(operatorWorkflowFailureMessage("Локальный организатор снимков не выполнен", organizerError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsLocalImagingOrganizing(false);
     }
   }
 
   async function scanImagingFolder() {
     const folderPath = imagingFolderPath.trim();
-    if (!folderPath) return;
+    if (!folderPath) {
+      setError("Укажите путь к папке снимков перед сканированием.");
+      return;
+    }
     rememberLocalImagingFolder(folderPath, { origin: "manual" });
+    const controller = startLocalDicomOperation();
     setIsImagingFolderScanning(true);
     try {
       const response = await fetch("/api/imaging/folders/scan-preview", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           folderPath,
@@ -11598,7 +13030,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Сканирование папки: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Папка снимков не просканирована"));
       }
       const result = (await response.json()) as ImagingFolderScanResponse;
       setImagingFolderScan(result);
@@ -11610,20 +13042,27 @@ export function App() {
       setImagingImportCommit(null);
       setDicomSeriesPreview(null);
     } catch (scanError) {
-      setError(scanError instanceof Error ? scanError.message : "Папка снимков не просканирована");
+      if (isLocalDicomOperationAbortError(scanError)) return;
+      setError(operatorWorkflowFailureMessage("Папка снимков не просканирована", scanError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsImagingFolderScanning(false);
     }
   }
 
   async function scanDicomFolderSeries() {
     const folderPath = imagingFolderPath.trim();
-    if (!folderPath) return;
+    if (!folderPath) {
+      setError("Укажите путь к локальной папке со снимками перед чтением метаданных.");
+      return;
+    }
     rememberLocalImagingFolder(folderPath, { origin: "manual" });
+    const controller = startLocalDicomOperation();
     setIsImagingFolderScanning(true);
     try {
       const response = await fetch("/api/imaging/dicom/folder-series-preview", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           folderPath,
@@ -11632,7 +13071,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Метаданные папки DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Метаданные папки снимков не прочитаны"));
       }
       const result = (await response.json()) as DicomFolderSeriesPreviewResponse;
       setDicomFolderSeriesScan(result);
@@ -11649,52 +13088,78 @@ export function App() {
       setImagingImportPreview(null);
       setImagingImportCommit(null);
     } catch (scanError) {
-      setError(scanError instanceof Error ? scanError.message : "Метаданные DICOM папки не прочитаны");
+      if (isLocalDicomOperationAbortError(scanError)) return;
+      setError(operatorWorkflowFailureMessage("Метаданные папки снимков не прочитаны", scanError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsImagingFolderScanning(false);
     }
   }
 
   async function previewDicomFirstFrame(
     folderPath = imagingFolderPath.trim(),
-    metadata: Partial<Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">> = { origin: "manual" }
+    metadata: DicomFirstFramePreviewMetadata = { origin: "manual" },
+    options: DicomFirstFramePreviewOptions = {}
   ) {
     const cleanFolderPath = folderPath.trim();
-    if (!cleanFolderPath) return;
+    if (!cleanFolderPath) {
+      setError("Укажите путь к локальной папке со снимками перед предпросмотром первого среза.");
+      return;
+    }
     rememberLocalImagingFolder(cleanFolderPath, metadata);
+    setDicomFirstFramePreviewRequest({ folderPath: cleanFolderPath, metadata });
+    const controller = startLocalDicomOperation();
     setIsDicomFirstFramePreviewing(true);
     setError(null);
-    setDicomFirstFrameViewerState(defaultDicomFirstFrameViewerState);
+    if (options.resetViewer !== false) {
+      setDicomFirstFrameViewerState(defaultDicomFirstFrameViewerState);
+    }
     try {
       const response = await fetch("/api/imaging/dicom/first-frame-preview", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           folderPath: cleanFolderPath,
           recursive: true,
           maxFiles: 160,
           maxFileBytes: 64 * 1024 * 1024,
-          maxPreviewEdge: 512
+          maxPreviewEdge: 512,
+          ...(typeof options.preferredFileIndex === "number" ? { preferredFileIndex: options.preferredFileIndex } : {})
         })
       });
       if (!response.ok) {
-        throw new Error(`Первый срез DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Первый срез снимков не показан"));
       }
       setDicomFirstFramePreview((await response.json()) as DicomFirstFramePreviewResponse);
     } catch (previewError) {
-      setError(previewError instanceof Error ? previewError.message : "Первый срез DICOM не показан");
+      if (isLocalDicomOperationAbortError(previewError)) return;
+      setError(operatorWorkflowFailureMessage("Первый срез снимков не показан", previewError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomFirstFramePreviewing(false);
     }
   }
 
+  async function previewDicomFirstFrameSlice(preferredFileIndex: number) {
+    if (!dicomFirstFramePreviewRequest) return;
+    const maxIndex = Math.max(0, (dicomFirstFramePreview?.selectableFileCount ?? 1) - 1);
+    const nextIndex = Math.min(maxIndex, Math.max(0, Math.round(preferredFileIndex)));
+    await previewDicomFirstFrame(dicomFirstFramePreviewRequest.folderPath, dicomFirstFramePreviewRequest.metadata, {
+      preferredFileIndex: nextIndex,
+      resetViewer: false
+    });
+  }
+
   async function fetchDicomFolderWorkup(
     folderPath: string,
-    sourceName: string
+    sourceName: string,
+    options: LocalDicomOperationOptions = {}
   ): Promise<{ client: DicomWorkstationClientFacts; result: DicomFolderWorkupPlanResponse }> {
     const client = await collectDicomWorkstationClientFacts();
     const response = await fetch("/api/imaging/dicom/folder-workup-plan", {
       method: "POST",
+      signal: options.signal ?? null,
       headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         folderPath,
@@ -11705,7 +13170,7 @@ export function App() {
       })
     });
     if (!response.ok) {
-      throw new Error(`План папки DICOM: API ${response.status}`);
+      throw new Error(await responseErrorMessage(response, "План папки снимков не подготовлен"));
     }
     return {
       client,
@@ -11744,15 +13209,21 @@ export function App() {
 
   async function buildDicomFolderWorkupPlan() {
     const folderPath = imagingFolderPath.trim();
-    if (!folderPath) return;
+    if (!folderPath) {
+      setError("Укажите путь к локальной папке со снимками перед подготовкой плана.");
+      return;
+    }
     rememberLocalImagingFolder(folderPath, { origin: "manual" });
+    const controller = startLocalDicomOperation();
     setIsDicomFolderWorkupPlanning(true);
     try {
-      const { result } = await fetchDicomFolderWorkup(folderPath, "dicom_folder_workup");
+      const { result } = await fetchDicomFolderWorkup(folderPath, "dicom_folder_workup", { signal: controller.signal });
       applyDicomFolderWorkupResult(result);
     } catch (workupError) {
-      setError(workupError instanceof Error ? workupError.message : "План папки DICOM не подготовлен");
+      if (isLocalDicomOperationAbortError(workupError)) return;
+      setError(operatorWorkflowFailureMessage("План папки снимков не подготовлен", workupError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomFolderWorkupPlanning(false);
     }
   }
@@ -11763,19 +13234,24 @@ export function App() {
     metadata: Partial<Omit<LocalImagingFolderDraft, "version" | "folderPath" | "savedAt">> = {}
   ) {
     const cleanFolderPath = folderPath.trim();
-    if (!cleanFolderPath) return;
+    if (!cleanFolderPath) {
+      setError("Укажите путь к локальной папке со снимками перед подготовкой КТ-просмотра.");
+      return;
+    }
+    const controller = startLocalDicomOperation();
     setIsDicomFolderWorkupPlanning(true);
     setIsDicomWorkbenchBuilding(true);
     setError(null);
     try {
-      const { client, result } = await fetchDicomFolderWorkup(cleanFolderPath, sourceName);
+      const { client, result } = await fetchDicomFolderWorkup(cleanFolderPath, sourceName, { signal: controller.signal });
       const selectedPlan = selectPreferredDicomWorkupPlan(result);
       if (!selectedPlan) {
-        throw new Error("В этой папке не найдена пригодная серия DICOM/CBCT.");
+        throw new Error("В этой папке не найдена пригодная серия КЛКТ/КТ.");
       }
 
       const manifestResponse = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           viewerKind: "cornerstone3d",
@@ -11791,21 +13267,23 @@ export function App() {
         })
       });
       if (!manifestResponse.ok) {
-        throw new Error(`Рабочее место DICOM: API ${manifestResponse.status}`);
+        throw new Error(await responseErrorMessage(manifestResponse, "Просмотр КЛКТ/КТ не подготовлен"));
       }
 
       const manifest = (await manifestResponse.json()) as DicomViewerWorkbenchManifestResponse;
       const clientSavedAt = new Date().toISOString();
-      saveLocalDicomWorkbenchDraft(manifest, clientSavedAt, activeOrganizationId);
+      const savedLocally = await saveLocalDicomWorkbenchDraft(manifest, clientSavedAt, activeOrganizationId);
       rememberLocalImagingFolder(cleanFolderPath, { ...metadata, origin: metadata.origin ?? "workbench" });
       applyDicomFolderWorkupResult(result);
       applyDicomWorkbenchManifest(manifest);
-      setDicomWorkbenchLocalSavedAt(clientSavedAt);
+      setDicomWorkbenchLocalSavedAt(savedLocally ? clientSavedAt : null);
       setDicomWorkbenchServerBundle(null);
-      await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true });
+      await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true, signal: controller.signal });
     } catch (workbenchError) {
-      setError(workbenchError instanceof Error ? workbenchError.message : "Рабочее место DICOM не подготовлено");
+      if (isLocalDicomOperationAbortError(workbenchError)) return;
+      setError(operatorWorkflowFailureMessage("Просмотр КЛКТ/КТ не подготовлен", workbenchError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomFolderWorkupPlanning(false);
       setIsDicomWorkbenchBuilding(false);
     }
@@ -11813,13 +13291,15 @@ export function App() {
 
   async function previewDicomSeries() {
     if (!imagingImportText.trim()) {
-      setError("Вставьте строки DICOM/снимков или выберите пример КТ/ОПТГ/ТРГ перед группировкой серий.");
+      setError("Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ перед группировкой серий.");
       return;
     }
+    const controller = startLocalDicomOperation();
     setIsDicomSeriesPreviewLoading(true);
     try {
       const response = await fetch("/api/imaging/dicom/series-preview", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           sourceName: imagingImportSourceKind,
@@ -11828,7 +13308,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Серии DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Серии снимков не разобраны"));
       }
       setDicomSeriesPreview((await response.json()) as DicomSeriesPreviewResponse);
       setDicomViewerLaunchManifest(null);
@@ -11839,22 +13319,26 @@ export function App() {
       setDicomRenderCachePlan(null);
       setDicomFolderWorkupPlan(null);
     } catch (seriesError) {
-      setError(seriesError instanceof Error ? seriesError.message : "DICOM серии не разобраны");
+      if (isLocalDicomOperationAbortError(seriesError)) return;
+      setError(operatorWorkflowFailureMessage("Серии снимков не разобраны", seriesError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomSeriesPreviewLoading(false);
     }
   }
 
   async function checkDicomWebConnector() {
     if (!dicomWebEndpointUrl.trim()) {
-      setError("Укажите корень DICOMweb перед проверкой архива.");
+      setError("Укажите адрес архива снимков перед проверкой.");
       return;
     }
+    const controller = startLocalDicomOperation();
     setIsDicomWebChecking(true);
     try {
       const response = await fetch("/api/imaging/dicomweb/check", {
         method: "POST",
-        headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+        signal: controller.signal,
+        headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           endpointUrl: dicomWebEndpointUrl.trim(),
           authMode: "reverse_proxy",
@@ -11864,29 +13348,33 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Проверка DICOMweb: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Проверка архива снимков не выполнена"));
       }
       setDicomWebCheck((await response.json()) as DicomWebConnectorCheckResponse);
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomWorkstationReadiness(null);
     } catch (checkError) {
-      setError(checkError instanceof Error ? checkError.message : "Проверка DICOMweb не выполнена");
+      if (isLocalDicomOperationAbortError(checkError)) return;
+      setError(operatorWorkflowFailureMessage("Проверка архива снимков не выполнена", checkError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomWebChecking(false);
     }
   }
 
   async function buildDicomViewerWorkbenchManifest() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию.");
+      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию.");
       return;
     }
+    const controller = startLocalDicomOperation();
     setIsDicomWorkbenchBuilding(true);
     try {
       const client = await collectDicomWorkstationClientFacts();
       const response = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           viewerKind: "cornerstone3d",
@@ -11902,31 +13390,35 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Рабочее место DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Просмотр КЛКТ/КТ не подготовлен"));
       }
       const result = (await response.json()) as DicomViewerWorkbenchManifestResponse;
       const clientSavedAt = new Date().toISOString();
-      saveLocalDicomWorkbenchDraft(result, clientSavedAt, activeOrganizationId);
+      const savedLocally = await saveLocalDicomWorkbenchDraft(result, clientSavedAt, activeOrganizationId);
       applyDicomWorkbenchManifest(result);
-      setDicomWorkbenchLocalSavedAt(clientSavedAt);
+      setDicomWorkbenchLocalSavedAt(savedLocally ? clientSavedAt : null);
       setDicomWorkbenchServerBundle(null);
-      await saveDicomWorkbenchBundleToServer(result, clientSavedAt, { silent: true });
+      await saveDicomWorkbenchBundleToServer(result, clientSavedAt, { silent: true, signal: controller.signal });
     } catch (workbenchError) {
-      setError(workbenchError instanceof Error ? workbenchError.message : "Пакет рабочего места DICOM не создан");
+      if (isLocalDicomOperationAbortError(workbenchError)) return;
+      setError(operatorWorkflowFailureMessage("Просмотр КЛКТ/КТ не подготовлен", workbenchError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomWorkbenchBuilding(false);
     }
   }
 
   async function buildDicomViewerLaunchManifest() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию для OHIF.");
+      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию для внешнего просмотра.");
       return;
     }
+    const controller = startLocalDicomOperation();
     setIsDicomManifestBuilding(true);
     try {
       const response = await fetch("/api/imaging/dicom/viewer-launch-manifest", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           viewerKind: "ohif",
@@ -11939,27 +13431,31 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Манифест просмотра DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "План открытия снимков не создан"));
       }
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomViewerLaunchManifest((await response.json()) as DicomViewerLaunchManifestResponse);
     } catch (manifestError) {
-      setError(manifestError instanceof Error ? manifestError.message : "Манифест просмотра DICOM не создан");
+      if (isLocalDicomOperationAbortError(manifestError)) return;
+      setError(operatorWorkflowFailureMessage("План открытия снимков не создан", manifestError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomManifestBuilding(false);
     }
   }
 
   async function buildDicomViewerToolStateBundle() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию для экспорта состояния.");
+      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию для экспорта состояния.");
       return;
     }
+    const controller = startLocalDicomOperation();
     setIsDicomToolStateBuilding(true);
     try {
       const response = await fetch("/api/imaging/dicom/viewer-tool-state", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           target: "cornerstone3d",
@@ -11971,56 +13467,66 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Состояние инструментов DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Состояние просмотра снимков не собрано"));
       }
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomViewerToolStateBundle((await response.json()) as DicomViewerToolStateBundleResponse);
     } catch (toolStateError) {
-      setError(toolStateError instanceof Error ? toolStateError.message : "Состояние инструментов DICOM не экспортировано");
+      if (isLocalDicomOperationAbortError(toolStateError)) return;
+      setError(operatorWorkflowFailureMessage("Состояние просмотра снимков не собрано", toolStateError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomToolStateBuilding(false);
     }
   }
 
   function downloadDicomViewerToolStateBundle() {
     if (!dicomViewerToolStateBundle) {
-      setError("Сначала соберите состояние инструментов DICOM-просмотрщика, затем скачайте JSON.");
+      setError("Сначала соберите состояние просмотра снимков, затем скачайте файл состояния.");
       return;
     }
-    const blob = new Blob([JSON.stringify(dicomViewerToolStateBundle, null, 2)], { type: "application/json" });
+    const safeBundle = redactedDicomViewerToolStateBundleForDownload(dicomViewerToolStateBundle);
+    const blob = new Blob([JSON.stringify(safeBundle, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const seriesPart = dicomViewerToolStateBundle.seriesRef.seriesInstanceUid?.slice(-10) ?? "series";
-    link.href = url;
-    link.download = `dicom_tool_state_${seriesPart}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    const seriesPart = safeBundle.seriesRef.seriesInstanceUid?.slice(-10) ?? "series";
+    try {
+      link.href = url;
+      link.download = `dicom_tool_state_${seriesPart}.json`;
+      document.body.append(link);
+      link.click();
+    } finally {
+      link.remove();
+      revokeObjectUrlIfNeeded(url);
+    }
     setError(null);
   }
 
   function downloadDicomWorkbenchManifest() {
     if (!dicomViewerWorkbenchManifest) {
-      setError("Сначала соберите рабочий набор CBCT/MPR, затем скачайте JSON.");
+      setError("Сначала соберите рабочий набор КЛКТ/КТ-срезов, затем скачайте файл состояния.");
       return;
     }
-    const blob = new Blob([JSON.stringify(dicomViewerWorkbenchManifest, null, 2)], { type: "application/json" });
+    const safeManifest = redactedDicomWorkbenchManifestForDownload(dicomViewerWorkbenchManifest);
+    const blob = new Blob([JSON.stringify(safeManifest, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const seriesPart = dicomWorkbenchSeriesKey(dicomViewerWorkbenchManifest).slice(-24).replace(/[^a-zA-Z0-9._-]+/g, "-") || "series";
-    link.href = url;
-    link.download = `dicom_workbench_${seriesPart}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    const seriesPart = dicomWorkbenchSeriesKey(safeManifest).slice(-24).replace(/[^a-zA-Z0-9._-]+/g, "-") || "series";
+    try {
+      link.href = url;
+      link.download = `dicom_workbench_${seriesPart}.json`;
+      document.body.append(link);
+      link.click();
+    } finally {
+      link.remove();
+      revokeObjectUrlIfNeeded(url);
+    }
     setError(null);
   }
 
   function clearDicomWorkbenchRecovery() {
-    removeLocalDicomWorkbenchDraft(activeOrganizationId);
+    void removeLocalDicomWorkbenchDraft(activeOrganizationId);
     setDicomWorkbenchLocalSavedAt(null);
   }
 
@@ -12041,7 +13547,7 @@ export function App() {
     try {
       const response = await fetch("/api/imaging/dicom/workbench-bundles?limit=6", { headers: denteClinicalReadHeaders() });
       if (!response.ok) {
-        throw new Error(`Список серверных пакетов DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Список сохраненных наборов просмотра не загружен"));
       }
       const result = (await response.json()) as DicomWorkbenchBundleListResponse;
       setDicomWorkbenchServerBundles(result.bundles);
@@ -12051,7 +13557,7 @@ export function App() {
       }
     } catch (bundleError) {
       if (!options.silent) {
-        setError(bundleError instanceof Error ? bundleError.message : "Список серверных пакетов DICOM не загружен");
+        setError(operatorWorkflowFailureMessage("Список сохраненных наборов просмотра не загружен", bundleError));
       }
     }
   }
@@ -12059,13 +13565,14 @@ export function App() {
   async function saveDicomWorkbenchBundleToServer(
     manifest: DicomViewerWorkbenchManifestResponse | null = dicomViewerWorkbenchManifest,
     clientSavedAt: string | null = dicomWorkbenchLocalSavedAt,
-    options: { silent?: boolean } = {}
+    options: { silent?: boolean; signal?: AbortSignal } = {}
   ) {
     if (!manifest) return null;
     setIsDicomWorkbenchServerSaving(true);
     try {
       const response = await fetch("/api/imaging/dicom/workbench-bundles", {
         method: "POST",
+        signal: options.signal ?? null,
         headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           manifest,
@@ -12073,7 +13580,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Сохранение серверного пакета DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Набор просмотра КЛКТ/КТ-срезов не сохранен"));
       }
       const result = (await response.json()) as DicomWorkbenchBundleResponse;
       setDicomWorkbenchServerBundle(result.bundle);
@@ -12083,8 +13590,9 @@ export function App() {
       ].slice(0, 6));
       return result.bundle;
     } catch (saveError) {
+      if (isLocalDicomOperationAbortError(saveError)) return null;
       if (!options.silent) {
-        setError(saveError instanceof Error ? saveError.message : "Серверный пакет DICOM не сохранен");
+        setError(operatorWorkflowFailureMessage("Набор просмотра КЛКТ/КТ-срезов не сохранен", saveError));
       }
       return null;
     } finally {
@@ -12094,7 +13602,7 @@ export function App() {
 
   async function reconnectDicomWorkbenchFromCurrentFolder() {
     if (!imagingFolderPath.trim()) {
-      setError("Укажите локальную папку DICOM перед переподключением рабочего места.");
+      setError("Укажите локальную папку со снимками перед переподключением просмотра.");
       return;
     }
     const targetStudyUid =
@@ -12107,11 +13615,13 @@ export function App() {
       dicomWorkbenchServerBundle?.seriesInstanceUid ??
       latestDicomWorkbenchServerBundle?.seriesInstanceUid ??
       null;
+    const controller = startLocalDicomOperation();
     setIsDicomWorkbenchReconnecting(true);
     try {
       const client = await collectDicomWorkstationClientFacts();
       const workupResponse = await fetch("/api/imaging/dicom/folder-workup-plan", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           folderPath: imagingFolderPath,
@@ -12122,7 +13632,7 @@ export function App() {
         })
       });
       if (!workupResponse.ok) {
-        throw new Error(`Переподключение DICOM: API ${workupResponse.status}`);
+        throw new Error(await responseErrorMessage(workupResponse, "Источник снимков не переподключен"));
       }
       const workup = (await workupResponse.json()) as DicomFolderWorkupPlanResponse;
       const matchedPlan =
@@ -12135,11 +13645,12 @@ export function App() {
         workup.plans[0] ??
         null;
       if (!matchedPlan) {
-        throw new Error("Переподключение DICOM не нашло пригодную КТ-серию в текущей папке.");
+        throw new Error("Переподключение снимков не нашло пригодную КТ-серию в текущей папке.");
       }
 
       const manifestResponse = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           viewerKind: "cornerstone3d",
@@ -12155,35 +13666,39 @@ export function App() {
         })
       });
       if (!manifestResponse.ok) {
-        throw new Error(`Манифест переподключения DICOM: API ${manifestResponse.status}`);
+        throw new Error(await responseErrorMessage(manifestResponse, "План переподключения снимков не создан"));
       }
       const manifest = (await manifestResponse.json()) as DicomViewerWorkbenchManifestResponse;
       const clientSavedAt = new Date().toISOString();
-      saveLocalDicomWorkbenchDraft(manifest, clientSavedAt, activeOrganizationId);
+      const savedLocally = await saveLocalDicomWorkbenchDraft(manifest, clientSavedAt, activeOrganizationId);
       setDicomFolderWorkupPlan(workup);
       setDicomFolderSeriesScan(workup.folder);
       setDicomSeriesPreview(workup.folder.preview);
       applyDicomWorkbenchManifest(manifest);
-      setDicomWorkbenchLocalSavedAt(clientSavedAt);
+      setDicomWorkbenchLocalSavedAt(savedLocally ? clientSavedAt : null);
       setDicomWorkbenchServerBundle(null);
-      await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true });
+      await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true, signal: controller.signal });
     } catch (reconnectError) {
-      setError(reconnectError instanceof Error ? reconnectError.message : "Источник DICOM не переподключен");
+      if (isLocalDicomOperationAbortError(reconnectError)) return;
+      setError(operatorWorkflowFailureMessage("Источник снимков не переподключен", reconnectError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomWorkbenchReconnecting(false);
     }
   }
 
   async function checkDicomWorkstationReadiness() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии DICOM и выберите готовую КТ/CBCT-серию.");
+      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию.");
       return;
     }
+    const controller = startLocalDicomOperation();
     setIsDicomWorkstationChecking(true);
     try {
       const client = await collectDicomWorkstationClientFacts();
       const response = await fetch("/api/imaging/dicom/workstation-readiness", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           series: cbctWorkbenchSeries,
@@ -12192,15 +13707,17 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Готовность станции DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Готовность станции просмотра не проверена"));
       }
       setDicomWorkstationReadiness((await response.json()) as DicomWorkstationReadinessResponse);
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomRenderCachePlan(null);
     } catch (readinessError) {
-      setError(readinessError instanceof Error ? readinessError.message : "Готовность станции DICOM не проверена");
+      if (isLocalDicomOperationAbortError(readinessError)) return;
+      setError(operatorWorkflowFailureMessage("Готовность станции просмотра не проверена", readinessError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomWorkstationChecking(false);
     }
   }
@@ -12208,16 +13725,18 @@ export function App() {
   async function buildDicomRenderCachePlan() {
     if (!cbctWorkbenchSeries || !dicomWorkstationReadiness) {
       const missingSteps = [
-        !cbctWorkbenchSeries ? "выберите готовую КТ/CBCT-серию" : null,
+        !cbctWorkbenchSeries ? "выберите готовую КЛКТ/КТ-серию" : null,
         !dicomWorkstationReadiness ? "сначала проверьте этот ПК" : null
       ].filter((step): step is string => Boolean(step));
-      setError(`Перед планом быстрой загрузки DICOM: ${missingSteps.join(", ")}.`);
+      setError(`Перед планом быстрой загрузки снимков: ${missingSteps.join(", ")}.`);
       return;
     }
+    const controller = startLocalDicomOperation();
     setIsDicomRenderCachePlanning(true);
     try {
       const response = await fetch("/api/imaging/dicom/render-cache-plan", {
         method: "POST",
+        signal: controller.signal,
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           series: cbctWorkbenchSeries,
@@ -12226,14 +13745,16 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`План кэша DICOM: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "План быстрой загрузки снимков не построен"));
       }
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomRenderCachePlan((await response.json()) as DicomRenderCachePlanResponse);
     } catch (cachePlanError) {
-      setError(cachePlanError instanceof Error ? cachePlanError.message : "План кэша DICOM не построен");
+      if (isLocalDicomOperationAbortError(cachePlanError)) return;
+      setError(operatorWorkflowFailureMessage("План быстрой загрузки снимков не построен", cachePlanError));
     } finally {
+      finishLocalDicomOperation(controller);
       setIsDicomRenderCachePlanning(false);
     }
   }
@@ -12267,14 +13788,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Запись импорта снимков: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Импорт снимков не записан"));
       }
       const result = (await response.json()) as ImagingImportCommitResponse;
       setImagingImportCommit(result);
       setImagingImportPreview(result.preview);
       await loadDashboard();
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Снимки не записаны");
+      setError(operatorWorkflowFailureMessage("Снимки не записаны", importError));
     } finally {
       setIsImagingImportCommitting(false);
     }
@@ -12361,9 +13882,9 @@ export function App() {
     const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
     if (blob.size > maxChunkBytes) {
       setSpeechStatusNote(
-        `STT: аудио-фрагмент ${Math.round(blob.size / 1024 / 1024)} MB больше лимита ${Math.round(
+        `Распознавание: аудио-фрагмент ${Math.round(blob.size / 1024 / 1024)} МБ больше лимита ${Math.round(
           maxChunkBytes / 1024 / 1024
-        )} MB; запись продолжается, уменьшите длительность чанка или используйте локальный мост.`
+        )} МБ; запись продолжается, уменьшите длительность чанка или используйте локальный модуль.`
       );
       return;
     }
@@ -12391,7 +13912,7 @@ export function App() {
     if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
       setSpeechStatusNote(
         queuedBeforeUpload
-          ? `Фрагмент ${chunkIndex + 1} сохранен локально; STT отправится, когда сервер будет готов.`
+          ? `Фрагмент ${chunkIndex + 1} сохранен локально; распознавание отправится, когда источник будет готов.`
           : `Фрагмент ${chunkIndex + 1} не сохранен: локальная очередь недоступна.`
       );
       return;
@@ -12410,7 +13931,9 @@ export function App() {
       setSpeechStatusNote(
         queued
           ? `Фрагмент ${chunkIndex + 1} сохранен локально и уйдет на сервер позже.`
-          : `Фрагмент ${chunkIndex + 1} не отправлен: ${speechError instanceof Error ? speechError.message : "ошибка STT"}.`
+          : `Фрагмент ${chunkIndex + 1} не отправлен: ${
+              operatorReadableErrorDetailFromUnknown(speechError) ?? "повторите запись или проверьте подключение к серверу клиники"
+            }.`
       );
     }
   }
@@ -12436,10 +13959,10 @@ export function App() {
       speechSegmentStartedAtRef.current = now;
       speechLastSoundAtRef.current = now;
       if (reason !== "manual") {
-        setSpeechStatusNote(reason === "silence" ? "STT: фрагмент отправлен после паузы." : "STT: фрагмент отправлен по лимиту времени.");
+        setSpeechStatusNote(reason === "silence" ? "Фрагмент отправлен после паузы." : "Фрагмент отправлен по лимиту времени.");
       }
     } catch {
-      setSpeechStatusNote("STT: браузер не отдал аудио-фрагмент, запись продолжается.");
+      setSpeechStatusNote("Браузер не отдал аудио-фрагмент, запись продолжается.");
     }
   }
 
@@ -12564,14 +14087,14 @@ export function App() {
       if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
         setSpeechStatusNote(
           isOnline
-            ? "Запись идет в локальную очередь: серверный STT пока не готов, аудио не отправляется."
+            ? "Запись идет в локальную очередь: серверное распознавание пока не готово, аудио не отправляется."
             : "Запись идет в локальную очередь: офлайн, аудио отправится после подключения."
         );
       }
       setIsServerVoiceRecording(true);
     } catch (recordingError) {
       setIsServerVoiceRecording(false);
-      setError(recordingError instanceof Error ? `Микрофон недоступен: ${recordingError.message}` : "Микрофон недоступен");
+      setError(browserCapabilityFailureMessage("Микрофон недоступен", recordingError));
     }
   }
 
@@ -12679,11 +14202,11 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(`Клиническое правило: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Клиническое правило не сохранено"));
       }
       await loadDashboard();
     } catch (ruleError) {
-      setError(ruleError instanceof Error ? ruleError.message : "Клиническое правило не сохранено");
+      setError(operatorWorkflowFailureMessage("Клиническое правило не сохранено", ruleError));
     } finally {
       setIsClinicalRuleSaving(false);
     }
@@ -12702,11 +14225,11 @@ export function App() {
         body: JSON.stringify({ active: !rule.active })
       });
       if (!response.ok) {
-        throw new Error(`Обновление клинического правила: API ${response.status}`);
+        throw new Error(await responseErrorMessage(response, "Клиническое правило не обновлено"));
       }
       await loadDashboard();
     } catch (ruleError) {
-      setError(ruleError instanceof Error ? ruleError.message : "Клиническое правило не обновлено");
+      setError(operatorWorkflowFailureMessage("Клиническое правило не обновлено", ruleError));
     } finally {
       setIsClinicalRuleSaving(false);
     }
@@ -13047,7 +14570,7 @@ export function App() {
   }
 
   function installmentScheduleBaseDocumentTitleValue(): string {
-    return installmentScheduleBaseDocumentTitle.trim() || activeUsableDocuments.find((document) => document.kind === "paid_medical_services_contract")?.title || "договор или план лечения DENTE";
+    return installmentScheduleBaseDocumentTitle.trim() || activeUsableDocuments.find((document) => document.kind === "paid_medical_services_contract")?.title || "договор или план лечения клиники";
   }
 
   function installmentSchedulePayerFullNameValue(): string {
@@ -13110,7 +14633,7 @@ export function App() {
     return (
       warrantyLinkedActOrContract.trim() ||
       activeUsableDocuments.find((document) => document.kind === "completed_works_act" || document.kind === "paid_medical_services_contract")?.title ||
-      "акт выполненных работ или договор DENTE"
+      "акт выполненных работ или договор клиники"
     );
   }
 
@@ -13298,7 +14821,7 @@ export function App() {
           medicinesAndPhysiotherapy: null,
           sickLeaveOrCertificate: null,
           preferentialPrescriptions: null,
-          informedConsentOrRefusal: "согласия и отказы проверены по подписанной медицинской записи DENTE",
+          informedConsentOrRefusal: "согласия и отказы проверены по подписанной медицинской записи клиники",
           clinicalToothRows: clinicalToothRowsValue()
         }
       ],
@@ -13678,7 +15201,7 @@ export function App() {
         requiredDocumentField(prescriptionDosage, "назначение, дозировка") ??
         requiredDocumentField(prescriptionInstructions, "назначение, режим приема") ??
         requiredDocumentField(prescriptionDuration, "назначение, длительность") ??
-        (documentTextLines(prescriptionSafetyNotes).length ? null : "Добавьте хотя бы одну памятку безопасности для назначения.") ??
+        (documentTextLines(prescriptionSafetyNotes).length ? null : "Добавьте хотя бы одну памятку пациенту для назначения.") ??
         requiredDocumentField(prescriptionUrgentContactReason, "назначение, когда срочно связаться")
       );
     }
@@ -13792,10 +15315,16 @@ export function App() {
       );
     }
     if (kind === "payment_refund_correction_request") {
-      const requestedAmount = Number(refundAmountRub.replace(/[^\d]/g, ""));
+      const requestedAmount = normalizeRubAmountInput(refundAmountRub);
       return (
         requiredDocumentField(refundSelectedPaymentId, "возврат/коррекция, исходный платеж") ??
-        (requestedAmount > 0 ? null : "Укажите сумму возврата или коррекции больше нуля.") ??
+        (requestedAmount !== null && requestedAmount > 0
+          ? null
+          : rubAmountInputMissingStep(
+              refundAmountRub,
+              "Укажите сумму возврата или коррекции больше нуля.",
+              "Укажите сумму возврата или коррекции целыми рублями без копеек."
+            )) ??
         requiredDocumentField(refundReason, "возврат/коррекция, основание") ??
         requiredDocumentField(refundRecipientFullName, "возврат/коррекция, получатель") ??
         requiredDocumentField(refundRecipientIdentityDocument, "возврат/коррекция, документ получателя") ??
@@ -14166,7 +15695,7 @@ export function App() {
           telegramSummary: postVisitTelegramSummary.trim(),
           patientReceivedPrintedCopy: confirmedDocumentLiteral(postVisitPrintedCopyReceived, "пациент получил памятку"),
           patientUnderstandsUrgentSigns: confirmedDocumentLiteral(postVisitUrgentSignsUnderstood, "тревожные признаки понятны"),
-          safeForTelegramSending: confirmedDocumentLiteral(postVisitTelegramSafe, "Telegram-текст безопасен")
+          safeForTelegramSending: confirmedDocumentLiteral(postVisitTelegramSafe, "Telegram-текст проверен")
         }
       };
     }
@@ -14345,7 +15874,7 @@ export function App() {
         paymentRefundCorrection: {
           action: refundAction,
           selectedPaymentIds: refundSelectedPaymentId ? [refundSelectedPaymentId] : [],
-          amountRub: Number(refundAmountRub.replace(/[^\d]/g, "")),
+          amountRub: normalizeRubAmountInput(refundAmountRub) ?? 0,
           reason: refundReason.trim(),
           refundMethod,
           recipientFullName: refundRecipientFullName.trim(),
@@ -14452,18 +15981,18 @@ export function App() {
       ? selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
       : [];
     if (requiresTaxPaymentSelection && selectedTaxPaymentIdsForDocument.length === 0) {
-      setError("Выберите фискальные чеки для налогового документа. DENTE больше не подставляет все оплаты за год автоматически.");
+      setError("Выберите фискальные чеки для налогового документа. Система больше не подставляет все оплаты за год автоматически.");
       return;
     }
     if (requiresPaymentReceiptSelection && selectedPaymentReceiptIdsForDocument.length === 0) {
-      setError("Выберите оплаченные платежи для платежной квитанции. DENTE не подставляет все оплаты скрыто.");
+      setError("Выберите оплаченные платежи для платежной квитанции. Система не подставляет все оплаты скрыто.");
       return;
     }
     const linkActiveVisit =
       metadata.requiresVisit || metadata.group === "payment" || (metadata.group !== "tax" && metadata.amountSource !== "none");
     if (linkActiveVisit && !documentPatientMatchesActiveVisit) {
       setError(
-        `Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому DENTE не создаст документ с чужим visitId. Откройте нужный прием или выберите документ без привязки к визиту.`
+        `Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`
       );
       return;
     }
@@ -14736,9 +16265,17 @@ export function App() {
     }
   }
 
-  async function downloadIssuedDocumentHtml(documentId: string) {
+  function issuedDocumentHtmlPreviewUrl(documentId: string): string {
+    return `/api/documents/${encodeURIComponent(documentId)}/html`;
+  }
+
+  function issuedDocumentHtmlDownloadUrl(documentId: string): string {
+    return `${issuedDocumentHtmlPreviewUrl(documentId)}?download=1`;
+  }
+
+  async function downloadIssuedDocumentHtml(documentId: string, options: { preserveError?: boolean } = {}) {
     try {
-      const response = await fetch(`/api/documents/${documentId}/html?download=1`, { cache: "no-store", headers: denteClinicalReadHeaders() });
+      const response = await fetch(issuedDocumentHtmlDownloadUrl(documentId), { cache: "no-store", headers: denteClinicalReadHeaders() });
       if (!response.ok) {
         setError(await responseErrorMessage(response, "Архивный HTML не скачан"));
         return;
@@ -14756,7 +16293,7 @@ export function App() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      setError(null);
+      if (!options.preserveError) setError(null);
     } catch (error) {
       setError(requestFailureMessage("Архивный HTML не скачан", error));
     }
@@ -14764,21 +16301,25 @@ export function App() {
 
   async function openIssuedDocumentHtml(documentId: string) {
     try {
-      const response = await fetch(`/api/documents/${documentId}/html`, { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) {
-        setError(await responseErrorMessage(response, "HTML документа не открыт"));
+      const previewUrl = issuedDocumentHtmlPreviewUrl(documentId);
+      if (clinicalAdminSecretSession.trim()) {
+        setError(
+          "HTML-предпросмотр в новом окне не может передать секрет администратора клиники. CRM запускает защищенное скачивание архивного HTML."
+        );
+        await downloadIssuedDocumentHtml(documentId, { preserveError: true });
         return;
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const opened = window.open(url, "_blank", "noopener,noreferrer");
-      if (!opened) {
-        setError("Браузер заблокировал новое окно документа. Разрешите всплывающее окно для DENTE.");
-      } else {
+      const opened = window.open(previewUrl, "_blank", "noopener,noreferrer");
+      if (opened) {
         setError(null);
+        return;
       }
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+
+      setError(
+        "Браузер заблокировал новое окно документа. CRM запускает скачивание архивного HTML; если мобильный браузер его отклонит, нажмите \"Скачать HTML\" в строке документа."
+      );
+      await downloadIssuedDocumentHtml(documentId, { preserveError: true });
     } catch (error) {
       setError(requestFailureMessage("HTML документа не открыт", error));
     }
@@ -14824,9 +16365,10 @@ export function App() {
       setError(paymentPatientContextMessage || "Оплата не записана: выбранный пациент не совпадает с активным приемом.");
       return;
     }
-    const amountRub = Number(paymentAmount.replace(/[^\d]/g, ""));
-    if (!Number.isFinite(amountRub) || amountRub <= 0) {
-      setError("Сумма оплаты должна быть больше нуля");
+    const amountRub = normalizeRubAmountInput(paymentAmount);
+    const amountMissingStep = rubAmountInputMissingStep(paymentAmount);
+    if (amountMissingStep || amountRub === null) {
+      setError(`Сумма оплаты: ${amountMissingStep ?? "укажите сумму больше нуля"}.`);
       return;
     }
     const paymentPayerName = paymentPayerFullName.trim();
@@ -14877,9 +16419,11 @@ export function App() {
         activeUsableDocuments.find(
           (document) =>
             documentKindMetadata[document.kind].group === "payment" &&
+            document.kind !== "payment_refund_correction_request" &&
             document.visitId === dashboard.activeVisit.id &&
             (document.totalAmountRub ?? 0) > 0
         ) ?? null;
+      const paymentClientMutationId = browserGeneratedId("payment");
       const response = await fetch("/api/billing/payments", {
         method: "POST",
         headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
@@ -14887,6 +16431,7 @@ export function App() {
           patientId: documentPatient.id,
           visitId: dashboard.activeVisit.id,
           documentId: documentForPayment?.id ?? null,
+          clientMutationId: paymentClientMutationId,
           amountRub,
           method: paymentMethod,
           fiscalReceiptNumber: paymentFiscalReceiptNumber.trim() || null,
@@ -14933,7 +16478,7 @@ export function App() {
       setPaymentFeedback(`Оплата ${money(amountRub)} записана для ${documentPatient.fullName}. Фискальные и налоговые поля очищены для следующего платежа.`);
       setError(null);
     } catch (paymentError) {
-      setError(paymentError instanceof Error ? paymentError.message : "Оплата не записана");
+      setError(operatorWorkflowFailureMessage("Оплата не записана", paymentError));
     } finally {
       setIsPaymentSaving(false);
     }
@@ -14971,9 +16516,13 @@ export function App() {
     }
   }
 
-  async function completeCommunicationTask(taskId: string) {
+  async function completeCommunicationTask(taskId: string, outcome: CommunicationTaskOutcome) {
     if (communicationSavingTaskId) {
       setError("Дождитесь завершения текущего закрытия задачи связи.");
+      return;
+    }
+    if (!outcome) {
+      setError("Выберите исход задачи связи: нет ответа, перезвонить, перенос, обещал оплату или выдача документов.");
       return;
     }
     setCommunicationSavingTaskId(taskId);
@@ -14983,6 +16532,7 @@ export function App() {
         headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           taskId,
+          outcome,
           note: communicationNote.trim() || "Задача связи закрыта."
         })
       });
@@ -14993,7 +16543,7 @@ export function App() {
       await loadDashboard();
       setError(null);
     } catch (communicationError) {
-      setError(communicationError instanceof Error ? communicationError.message : "Задача связи не закрыта");
+      setError(operatorWorkflowFailureMessage("Задача связи не закрыта", communicationError));
     } finally {
       setCommunicationSavingTaskId(null);
     }
@@ -15080,7 +16630,7 @@ export function App() {
       setTelegramChatLinks(nextChatLinkLedger.chatLinks);
     } catch (telegramError) {
       if (!options.silent) {
-        setError(telegramError instanceof Error ? telegramError.message : "Панель управления Telegram недоступна");
+        setError(operatorWorkflowFailureMessage("Панель управления Telegram недоступна", telegramError));
       }
     } finally {
       if (!options.silent) setIsTelegramLoading(false);
@@ -15105,7 +16655,7 @@ export function App() {
         };
       });
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Очередь Telegram не загрузилась");
+      setError(operatorWorkflowFailureMessage("Очередь Telegram не загрузилась", telegramError));
     } finally {
       setIsTelegramOutboxLoadingMore(false);
     }
@@ -15125,7 +16675,7 @@ export function App() {
       setTelegramLinkCodes(linkCodes);
       setTelegramLinkCodeLedger({ ...nextPage, linkCodes });
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Коды Telegram не загрузились");
+      setError(operatorWorkflowFailureMessage("Коды Telegram не загрузились", telegramError));
     } finally {
       setIsTelegramLinkCodesLoadingMore(false);
     }
@@ -15145,7 +16695,7 @@ export function App() {
       setTelegramChatLinks(chatLinks);
       setTelegramChatLinkLedger({ ...nextPage, chatLinks });
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Связанные Telegram-чаты не загрузились");
+      setError(operatorWorkflowFailureMessage("Связанные Telegram-чаты не загрузились", telegramError));
     } finally {
       setIsTelegramChatLinksLoadingMore(false);
     }
@@ -15190,7 +16740,7 @@ export function App() {
       await loadTelegramControlPlane({ silent: true });
       setError(null);
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Telegram-код не создан");
+      setError(operatorWorkflowFailureMessage("Telegram-код не создан", telegramError));
     } finally {
       setIsTelegramLinkCreating(false);
     }
@@ -15261,7 +16811,7 @@ export function App() {
       await loadTelegramControlPlane({ silent: true });
       setError(null);
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Связка Telegram не отозвана");
+      setError(operatorWorkflowFailureMessage("Связка Telegram не отозвана", telegramError));
     } finally {
       setTelegramRevokingLinkId(null);
     }
@@ -15295,7 +16845,7 @@ export function App() {
       setTelegramPreview((await response.json()) as DenteTelegramMessagePreview);
       setError(null);
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Предпросмотр Telegram не создан");
+      setError(operatorWorkflowFailureMessage("Предпросмотр Telegram не создан", telegramError));
     } finally {
       setIsTelegramLoading(false);
     }
@@ -15336,16 +16886,16 @@ export function App() {
     let clinicReviewUrl: string | null;
     let clinicMapsUrl: string | null;
     try {
-      botUsername = normalizeTelegramBotUsernameDraft("Бот DENTE", telegramBotUsernameDraft);
+      botUsername = normalizeTelegramBotUsernameDraft("Общий бот", telegramBotUsernameDraft);
       ownBotUsername = normalizeTelegramBotUsernameDraft("Бот клиники", telegramOwnBotUsernameDraft);
-      webhookBaseUrl = normalizeTelegramPublicHttpsUrlDraft("Webhook Telegram", telegramWebhookBaseUrlDraft);
+      webhookBaseUrl = normalizeTelegramPublicHttpsUrlDraft("Адрес приема сообщений Telegram", telegramWebhookBaseUrlDraft);
       patientPortalBaseUrl = normalizeTelegramPublicHttpsUrlDraft("Портал пациента", telegramPatientPortalBaseUrlDraft);
       welcomeImageUrl = normalizeTelegramPublicHttpsUrlDraft("Картинка приветствия", telegramWelcomeImageUrlDraft);
       visualCardUrls = normalizeTelegramVisualCardUrlDraftsForSave(telegramVisualCardUrlDrafts);
       clinicReviewUrl = normalizeTelegramPublicHttpsUrlDraft("Ссылка на отзыв", telegramReviewUrlDraft);
       clinicMapsUrl = normalizeTelegramPublicHttpsUrlDraft("Ссылка на карту", telegramMapsUrlDraft);
     } catch (urlError) {
-      const message = urlError instanceof Error ? urlError.message : "Проверьте Telegram-настройки перед сохранением.";
+      const message = operatorReadableErrorDetailFromUnknown(urlError) ?? "Проверьте Telegram-настройки перед сохранением.";
       setTelegramSettingsSaveState("error");
       setTelegramSettingsSaveError(message);
       if (!options.silent) setError(message);
@@ -15396,7 +16946,7 @@ export function App() {
       setError(null);
       return true;
     } catch (telegramError) {
-      const message = telegramError instanceof Error ? telegramError.message : "Настройки Telegram не сохранены";
+      const message = operatorWorkflowFailureMessage("Настройки Telegram не сохранены", telegramError);
       setTelegramSettingsSaveState("error");
       setTelegramSettingsSaveError(message);
       if (!options.silent) setError(message);
@@ -15438,7 +16988,7 @@ export function App() {
       await loadTelegramControlPlane({ silent: true });
       if (result.status === "sent") await loadDashboard();
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Сообщение Telegram не отправлено");
+      setError(operatorWorkflowFailureMessage("Сообщение Telegram не отправлено", telegramError));
     } finally {
       setTelegramSendingItemId(null);
     }
@@ -15466,7 +17016,7 @@ export function App() {
       if (result.sentCount > 0) await loadDashboard();
       setError(result.sentCount > 0 ? `Telegram: отправлено ${result.sentCount}, проверено ${result.attemptedCount}.` : "Telegram: готовых сообщений к отправке нет.");
     } catch (telegramError) {
-      setError(telegramError instanceof Error ? telegramError.message : "Готовые Telegram-сообщения не отправлены");
+      setError(operatorWorkflowFailureMessage("Готовые Telegram-сообщения не отправлены", telegramError));
     } finally {
       setIsTelegramSendingDue(false);
     }
@@ -15486,7 +17036,7 @@ export function App() {
       bitewing: "Интерпроксимальный контроль",
       opg: "ОПТГ",
       ceph: "ТРГ боковая",
-      cbct: "КТ / CBCT",
+      cbct: "КЛКТ / КТ",
       photo: "Фото полости рта",
       other: "Снимок"
     };
@@ -15503,7 +17053,7 @@ export function App() {
           toothCode: kind === "periapical" ? "36" : null,
           region: kind === "opg" || kind === "cbct" ? "обе челюсти" : kind === "ceph" ? "профиль черепа" : "текущий прием",
           sourceKind: kind === "cbct" || kind === "opg" || kind === "ceph" ? "dicom_file" : "sensor_bridge",
-          sourceName: kind === "cbct" || kind === "opg" || kind === "ceph" ? "Импорт DICOM" : "Мост RVG-датчика",
+          sourceName: kind === "cbct" || kind === "opg" || kind === "ceph" ? "Импорт КТ/снимков" : "Локальный RVG-датчик",
           aiSummary: "Черновик: снимок добавлен в карту. Описание требует проверки врача."
         })
       });
@@ -15517,7 +17067,7 @@ export function App() {
       if (createdStudy.id) setSelectedImagingStudyId(createdStudy.id);
       setError(null);
     } catch (imagingError) {
-      setError(imagingError instanceof Error ? imagingError.message : "Снимок не добавлен");
+      setError(operatorWorkflowFailureMessage("Снимок не добавлен", imagingError));
     } finally {
       setImagingCreateSavingKind(null);
     }
@@ -15532,7 +17082,7 @@ export function App() {
     error: "Сохранение требует проверки"
   };
   const imagingViewerSaveDetail = [
-    `${imagingViewerAnnotations.length} заметок`,
+    `${imagingViewerAnnotations.length} разметок`,
     imagingViewerLocalSavedAt ? `локально ${formatTime(imagingViewerLocalSavedAt)}` : "локально ожидает",
     imagingViewerSession?.serverSavedAt ? `сервер ${formatTime(imagingViewerSession.serverSavedAt)}` : "сервер ожидает",
     imagingViewerSaveError
@@ -15543,6 +17093,8 @@ export function App() {
     imagingViewerSessionReady && Boolean(selectedImagingStudy?.id) && (imagingViewerSaveState === "queued" || imagingViewerSaveState === "error");
   const imagingViewerNoteText = imagingViewerNote.trim();
   const imagingViewerNoteReady = imagingViewerNoteText.length > 0;
+  const imagingViewerNoteMissingId = "imaging-viewer-note-missing";
+  const imagingViewerRetryMissingId = "imaging-viewer-retry-missing";
   const imagingPreviewSource = (study: Dashboard["imagingStudies"][number]) => imagingPreviewObjectUrls[study.id] ?? study.previewUrl;
   const imagingViewerHref = (study: Dashboard["imagingStudies"][number]) => imagingPreviewObjectUrls[study.id] ?? study.viewerUrl ?? study.previewUrl;
 
@@ -15550,15 +17102,26 @@ export function App() {
     return (
       <AppUnlockState
         accessMessage={accessUnlockMessage}
-        adminSecretDraft={telegramAdminSecretDraft}
-        onAdminSecretChange={setTelegramAdminSecretDraft}
-        onUnlock={unlockTelegramAdminSession}
+        adminSecretDraft={clinicalAdminSecretDraft}
+        onAdminSecretChange={setClinicalAdminSecretDraft}
+        onUnlock={() => unlockTelegramAdminSession("all")}
       />
     );
   }
 
   if (error && !dashboard) {
-    return <AppLoadingState message={`API недоступен: ${error}`} />;
+    return (
+      <AppLoadingState
+        message={`Рабочий сервер недоступен: ${error}`}
+        actionLabel="Повторить загрузку"
+        onAction={() => {
+          setError(null);
+          void loadDashboard().catch((loadError: unknown) => {
+            setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
+          });
+        }}
+      />
+    );
   }
 
   if (!dashboard || !activePatient) {
@@ -15568,6 +17131,7 @@ export function App() {
   const activeWorkspaceProfile =
     dashboard.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard.clinicSettings.profile.mode) ??
     dashboard.clinicSettings.workspaceProfiles[0];
+  const settingsAdminSecretDomain: AdminSecretUnlockDomain = settingsTab === "telegram" ? "telegram" : "settings";
   const activeRolePolicy =
     dashboard.clinicSettings.roleAccessPolicies.find((policy) => policy.role === selectedWorkspaceRole) ??
     dashboard.clinicSettings.roleAccessPolicies.find((policy) => policy.role === "doctor") ??
@@ -15595,6 +17159,9 @@ export function App() {
   const onboardingDocumentsReady = onboardingDocumentReadinessIssues.length === 0;
   const newStaffReadyToCreate = newStaffName.trim().length > 0;
   const newChairReadyToCreate = newChairName.trim().length > 0;
+  const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance";
+  const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance";
+  const onboardingFinishGuidanceId = "onboarding-finish-guidance";
   const currentOnboardingIndex = Math.max(0, onboardingSteps.findIndex((step) => step.id === onboardingStep));
   const previousOnboardingStep = currentOnboardingIndex > 0 ? onboardingSteps[currentOnboardingIndex - 1] : null;
   const nextOnboardingStep = currentOnboardingIndex < onboardingSteps.length - 1 ? onboardingSteps[currentOnboardingIndex + 1] : null;
@@ -15617,12 +17184,14 @@ export function App() {
     window.setTimeout(openDictation, 0);
     window.setTimeout(openDictation, 120);
   };
-
   return (
     <main className="app-shell">
-      <WorkspaceSidebar currentView={currentView} />
+      <a className="skip-link" href="#workspace-content">
+        Перейти к рабочей области
+      </a>
+      <WorkspaceSidebar currentView={currentView} onViewIntent={preloadWorkspaceView} />
 
-      <section className={`workspace view-${currentView}`}>
+      <section className={`workspace view-${currentView}`} id="workspace-content" tabIndex={-1} aria-label="Рабочая область">
         <WorkspaceTopbar
           clinicName={dashboard.clinicName}
           onGoToDictation={goToVisitDictation}
@@ -15634,6 +17203,7 @@ export function App() {
           }}
           onReopenOnboarding={reopenOnboarding}
           onRoleChange={setSelectedWorkspaceRole}
+          onViewIntent={preloadWorkspaceView}
           roleFocusOrder={roleFocusOrder}
           selectedWorkspaceRole={selectedWorkspaceRole}
           showAdministrationTopActions={showAdministrationTopActions}
@@ -15642,8 +17212,20 @@ export function App() {
           todayIso={dashboard.todayIso}
         />
 
+        <WorkspaceContinuityStrip
+          browserContinuityCritical={browserContinuityCritical}
+          browserWarnings={browserContinuity?.warnings ?? []}
+          isOnline={isOnline}
+          isPendingVisitSyncing={isPendingVisitSyncing}
+          onCheckDevice={() => void refreshBrowserContinuity({ silent: false })}
+          onFlushSpeech={() => void flushPendingSpeechChunks({ silent: false })}
+          onFlushVisit={() => void flushPendingVisitSaves({ silent: false })}
+          pendingSpeechChunkCount={pendingSpeechChunkCount}
+          pendingVisitSaveCount={pendingVisitSaveCount}
+        />
+
         {error ? (
-          <section className="app-notice" role="status" aria-live="polite">
+          <section className="app-notice" role="alert" aria-live="assertive">
             <AlertTriangle aria-hidden="true" />
             <p>{error}</p>
             <button className="secondary-button" type="button" onClick={() => setError(null)}>
@@ -15653,7 +17235,7 @@ export function App() {
         ) : null}
 
         {!error && uiPreferencesSyncError ? (
-          <section className="app-notice" role="status" aria-live="polite">
+          <section className="app-notice" role="alert" aria-live="assertive">
             <AlertTriangle aria-hidden="true" />
             <p>{uiPreferencesSyncError}</p>
             <button className="secondary-button" type="button" onClick={() => setUiPreferencesSyncError(null)}>
@@ -15737,6 +17319,9 @@ export function App() {
                   className={step.id === onboardingStep ? "active" : index < currentOnboardingIndex ? "done" : ""}
                   key={step.id}
                   type="button"
+                  aria-current={step.id === onboardingStep ? "step" : undefined}
+                  aria-pressed={step.id === onboardingStep}
+                  aria-describedby={step.id === "done" && !onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
                   disabled={step.id === "done" && !onboardingReadyToFinish}
                   onClick={() => void moveOnboardingTo(step.id)}
                 >
@@ -15759,7 +17344,7 @@ export function App() {
                 <div className="onboarding-source-grid">
                   <span>Прием: протоколы, голос, офлайн-черновик</span>
                   <span>Документы: пациент, оплата, налоговая</span>
-                  <span>Импорт: прайс, старые базы, DICOM</span>
+                  <span>Импорт: прайс, старые базы, снимки</span>
                   <span>Настройки: роль, кабинет, юридический профиль</span>
                 </div>
               </div>
@@ -15778,6 +17363,7 @@ export function App() {
                         className={selectedWorkspaceRole === role ? "active" : ""}
                         key={role}
                         type="button"
+                        aria-pressed={selectedWorkspaceRole === role}
                         onClick={() => setSelectedWorkspaceRole(role)}
                       >
                         {staffRoleLabels[role]}
@@ -15790,6 +17376,7 @@ export function App() {
                         className={selectedSpecialty === specialty ? "active" : ""}
                         key={specialty}
                         type="button"
+                        aria-pressed={selectedSpecialty === specialty}
                         onClick={() => setSelectedSpecialty(specialty)}
                       >
                         {specialtyLabels[specialty]}
@@ -15812,6 +17399,7 @@ export function App() {
                       className={`mode-card ${dashboard.clinicSettings.profile.mode === mode ? "active" : ""}`}
                       key={mode}
                       type="button"
+                      aria-pressed={dashboard.clinicSettings.profile.mode === mode}
                       onClick={() => changeClinicMode(mode)}
                     >
                       <strong>{clinicModeLabels[mode].title}</strong>
@@ -15874,6 +17462,7 @@ export function App() {
                         className={clinicProfileDraft.workingDays.includes(day.value) ? "active" : ""}
                         key={day.value}
                         type="button"
+                        aria-pressed={clinicProfileDraft.workingDays.includes(day.value)}
                         onClick={() => toggleClinicWorkingDay(day.value)}
                       >
                         {day.label}
@@ -15950,6 +17539,7 @@ export function App() {
                         className={newStaffRole === role ? "active" : ""}
                         key={role}
                         type="button"
+                        aria-pressed={newStaffRole === role}
                         onClick={() => setNewStaffRole(role)}
                       >
                         {staffRoleLabels[role]}
@@ -15963,6 +17553,7 @@ export function App() {
                           className={newStaffSpecialty === specialty ? "active" : ""}
                           key={specialty}
                           type="button"
+                          aria-pressed={newStaffSpecialty === specialty}
                           onClick={() => setNewStaffSpecialty(specialty)}
                         >
                           {specialtyLabels[specialty]}
@@ -15970,11 +17561,17 @@ export function App() {
                       ))}
                     </div>
                   ) : null}
-                  <button className="secondary-button" type="button" onClick={() => addStaffMember(newStaffRole)} disabled={!newStaffReadyToCreate}>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => addStaffMember(newStaffRole)}
+                    aria-describedby={!newStaffReadyToCreate ? onboardingStaffCreateGuidanceId : undefined}
+                    disabled={!newStaffReadyToCreate}
+                  >
                     <Plus aria-hidden="true" /> Добавить сотрудника
                   </button>
                   {!newStaffReadyToCreate ? (
-                    <p className="quick-create-guidance form-span-2" role="status" aria-live="polite">
+                    <p className="quick-create-guidance form-span-2" id={onboardingStaffCreateGuidanceId} role="status" aria-live="polite">
                       Введите ФИО сотрудника, затем выберите роль.
                     </p>
                   ) : null}
@@ -15982,11 +17579,17 @@ export function App() {
                     Кресло / кабинет
                     <input value={newChairName} onChange={(event) => setNewChairName(event.target.value)} />
                   </label>
-                  <button className="secondary-button" type="button" onClick={addChair} disabled={!newChairReadyToCreate}>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={addChair}
+                    aria-describedby={!newChairReadyToCreate ? onboardingChairCreateGuidanceId : undefined}
+                    disabled={!newChairReadyToCreate}
+                  >
                     <Plus aria-hidden="true" /> Добавить кресло
                   </button>
                   {!newChairReadyToCreate ? (
-                    <p className="quick-create-guidance form-span-2" role="status" aria-live="polite">
+                    <p className="quick-create-guidance form-span-2" id={onboardingChairCreateGuidanceId} role="status" aria-live="polite">
                       Введите понятное название кресла или кабинета.
                     </p>
                   ) : null}
@@ -16046,6 +17649,7 @@ export function App() {
                                       className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
                                       key={day.value}
                                       type="button"
+                                      aria-pressed={scheduleDraft.workingDays.includes(day.value)}
                                       onClick={() => toggleStaffWorkingDay(member.id, day.value)}
                                     >
                                       {day.label}
@@ -16121,6 +17725,7 @@ export function App() {
                                       className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
                                       key={day.value}
                                       type="button"
+                                      aria-pressed={scheduleDraft.workingDays.includes(day.value)}
                                       onClick={() => toggleChairWorkingDay(chair.id, day.value)}
                                     >
                                       {day.label}
@@ -16153,8 +17758,8 @@ export function App() {
                 <div>
                   <h3>Источники данных</h3>
                   <p>
-                    Выберите рабочие источники один раз. DENTE сохранит эти настройки автоматически и будет использовать их в прайсах,
-                    переносе пациентов, документах, снимках и DICOM/OHIF, пока клиника сама их не поменяет.
+                    Выберите рабочие источники один раз. Система сохранит эти настройки автоматически и будет использовать их в прайсах,
+                    переносе пациентов, документах, снимках и внешнем просмотре КТ, пока клиника сама их не поменяет.
                   </p>
                 </div>
 
@@ -16170,6 +17775,7 @@ export function App() {
                           className={pricelistSourceKind === kind ? "active" : ""}
                           key={kind}
                           type="button"
+                          aria-pressed={pricelistSourceKind === kind}
                           onClick={() => {
                             setPricelistSourceKind(kind);
                             if (kind !== "photo_ocr") clearPricelistImage();
@@ -16193,6 +17799,7 @@ export function App() {
                           className={importSourceKind === kind ? "active" : ""}
                           key={kind}
                           type="button"
+                          aria-pressed={importSourceKind === kind}
                           onClick={() => {
                             setImportSourceKind(kind);
                             setImportPreview(null);
@@ -16216,6 +17823,7 @@ export function App() {
                           className={smartImportMode === mode ? "active" : ""}
                           key={mode}
                           type="button"
+                          aria-pressed={smartImportMode === mode}
                           onClick={() => {
                             setSmartImportMode(mode);
                             setSmartImportPreview(null);
@@ -16231,7 +17839,7 @@ export function App() {
                   <section className="onboarding-source-section">
                     <div>
                       <strong>Документы и файлы</strong>
-                      <span>Куда по умолчанию отправлять распознанный PDF, XLSX, DOCX, ZIP или фото.</span>
+                      <span>Куда по умолчанию отправлять распознанный документ, таблицу, архив или фото.</span>
                     </div>
                     <div className="onboarding-source-choice-row" aria-label="Маршрут распознанных документов">
                       {(Object.keys(ingestionTargetLabels) as DocumentIngestionTarget[]).map((target) => (
@@ -16239,6 +17847,7 @@ export function App() {
                           className={documentIngestionTarget === target ? "active" : ""}
                           key={target}
                           type="button"
+                          aria-pressed={documentIngestionTarget === target}
                           onClick={() => setDocumentIngestionTarget(target)}
                         >
                           {ingestionTargetLabels[target]}
@@ -16249,8 +17858,8 @@ export function App() {
 
                   <section className="onboarding-source-section onboarding-source-section-wide">
                     <div>
-                      <strong>Снимки и DICOM</strong>
-                      <span>Основной поток RVG, ОПТГ, КТ, PACS, DICOMweb или локальных папок.</span>
+                      <strong>Снимки и КТ</strong>
+                      <span>Основной поток RVG, ОПТГ, КТ, архива снимков или локальных папок.</span>
                     </div>
                     <div className="onboarding-source-choice-row" aria-label="Источник снимков">
                       {imagingSourceChoices.map((kind) => (
@@ -16258,6 +17867,7 @@ export function App() {
                           className={imagingImportSourceKind === kind ? "active" : ""}
                           key={kind}
                           type="button"
+                          aria-pressed={imagingImportSourceKind === kind}
                           onClick={() => {
                             setImagingImportSourceKind(kind);
                             setImagingImportPreview(null);
@@ -16273,12 +17883,12 @@ export function App() {
 
                   <section className="onboarding-source-section onboarding-source-section-wide">
                     <div>
-                      <strong>DICOMweb и OHIF</strong>
+                      <strong>Архив снимков и внешний просмотр</strong>
                       <span>Адреса просмотрщика сохраняются вместе с остальными настройками источников.</span>
                     </div>
                     <div className="onboarding-source-url-grid">
                       <label>
-                        Корень DICOMweb
+                        Адрес архива снимков
                         <input
                           value={dicomWebEndpointUrl}
                           onChange={(event) => {
@@ -16292,7 +17902,7 @@ export function App() {
                         />
                       </label>
                       <label>
-                        Корень OHIF
+                        Адрес внешнего просмотра
                         <input
                           value={ohifBaseUrl}
                           onChange={(event) => {
@@ -16308,7 +17918,7 @@ export function App() {
                 </div>
 
                 <div className="onboarding-source-grid">
-                  <span>Автосохранено: прайс, импорт, документы, снимки, DICOMweb и OHIF</span>
+                  <span>Автосохранено: прайс, импорт, документы, снимки, архив и внешний просмотр</span>
                   <button type="button" onClick={() => { setSettingsTab("prices"); window.location.hash = "settings/prices"; }}>Открыть прайс</button>
                   <button type="button" onClick={() => { setSettingsTab("imports"); window.location.hash = "settings/imports"; }}>Открыть перенос</button>
                   <button type="button" onClick={() => { setSettingsTab("sources"); window.location.hash = "settings/sources"; }}>Открыть снимки</button>
@@ -16321,7 +17931,7 @@ export function App() {
                 <div>
                   <h3>Telegram, QR и связь с пациентами</h3>
                   <p>
-                    Настройте безопасный бот DENTE сразу при первом запуске: QR-привязка пациента, напоминания, памятки после лечения,
+                    Настройте Telegram-бот сразу при первом запуске: QR-привязка пациента, напоминания, памятки после лечения,
                     отзывы и ссылки на портал сохраняются автоматически и применяются ко всей клинике.
                   </p>
                 </div>
@@ -16451,7 +18061,7 @@ export function App() {
                   </label>
                   <fieldset className="telegram-checkup-delay-fields full">
                     <legend>Контроль после лечения</legend>
-                    <small>Через сколько часов Telegram спросит пациента о самочувствии после выданной безопасной памятки.</small>
+                    <small>Через сколько часов Telegram спросит пациента о самочувствии после выданной памятки.</small>
                     {telegramPostVisitCheckupDelayFields.map((field) => (
                       <label key={field.key}>
                         {field.label}
@@ -16468,7 +18078,7 @@ export function App() {
                     ))}
                   </fieldset>
                   <label>
-                    Секрет админ-доступа DENTE
+                    Секрет администратора клиники
                     <input
                       type="password"
                       autoComplete="current-password"
@@ -16477,14 +18087,14 @@ export function App() {
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
                           event.preventDefault();
-                          unlockTelegramAdminSession();
+                          unlockTelegramAdminSession("telegram");
                         }
                       }}
-                      placeholder="если задан DENTE_SETTINGS_ADMIN_SECRET или DENTE_TELEGRAM_ADMIN_SECRET / DENTE_CLINICAL_ADMIN_SECRET"
+                      placeholder="если защищенные настройки включены на сервере клиники"
                     />
                     <small>{telegramAdminSecretSession ? "Разблокировано до перезагрузки страницы." : "Секрет не сохраняется в браузере."}</small>
                   </label>
-                  <button className="secondary-button" type="button" onClick={unlockTelegramAdminSession}>
+                  <button className="secondary-button" type="button" onClick={() => unlockTelegramAdminSession("telegram")}>
                     <ShieldCheck aria-hidden="true" /> Разблокировать
                   </button>
                   <label>
@@ -16586,7 +18196,7 @@ export function App() {
                   <h3>Проверка перед работой</h3>
                   <p>
                     Профиль клиники: {legalReadinessPercent}%. Команда: {dashboard.clinicSettings.staff.length}. Кабинеты:{" "}
-                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "готов к безопасной отправке" : "нужна настройка транспорта"}. Документы:{" "}
+                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
                     {documentFactoryGroups.reduce((total, group) => total + group.kinds.length, 0)} шаблонов.
                   </p>
                 </div>
@@ -16614,8 +18224,20 @@ export function App() {
               </div>
             ) : null}
 
+            {!onboardingReadyToFinish ? (
+              <p className="onboarding-blocker onboarding-action-guidance" id={onboardingFinishGuidanceId} role="status" aria-live="polite">
+                Чтобы завершить настройку, заполните: {onboardingBlockingIssues.join(", ")}.
+              </p>
+            ) : null}
+
             <div className="onboarding-actions">
-              <button className="secondary-button" type="button" onClick={dismissOnboarding} disabled={!onboardingReadyToFinish}>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={dismissOnboarding}
+                aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
+                disabled={!onboardingReadyToFinish}
+              >
                 Скрыть
               </button>
               {!onboardingReadyToFinish ? (
@@ -16632,11 +18254,23 @@ export function App() {
                 </button>
               ) : null}
               {nextOnboardingStep ? (
-                <button className="primary-button" type="button" onClick={() => void moveOnboardingTo(nextOnboardingStep.id)} disabled={nextOnboardingStep.id === "done" && !onboardingReadyToFinish}>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => void moveOnboardingTo(nextOnboardingStep.id)}
+                  aria-describedby={nextOnboardingStep.id === "done" && !onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
+                  disabled={nextOnboardingStep.id === "done" && !onboardingReadyToFinish}
+                >
                   Дальше <ArrowRight aria-hidden="true" />
                 </button>
               ) : (
-                <button className="primary-button" type="button" onClick={dismissOnboarding} disabled={!onboardingReadyToFinish}>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={dismissOnboarding}
+                  aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
+                  disabled={!onboardingReadyToFinish}
+                >
                   Завершить настройку
                 </button>
               )}
@@ -16874,7 +18508,7 @@ export function App() {
                   <span>{activePatientInsight.balanceDueRub ? `остаток ${money(activePatientInsight.balanceDueRub)}` : "оплата спокойна"}</span>
                   <span>{activePatientInsight.openTasks} задач связи</span>
                   <span>{activePatientInsight.missingDocumentKinds.length} документов</span>
-                  {activePatientInsight.recallDueAt ? <span>recall {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
+                  {activePatientInsight.recallDueAt ? <span>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
                 </div>
                 <p>{activePatientInsight.riskReasons.slice(0, 2).join(" · ")}</p>
               </div>
@@ -16987,7 +18621,7 @@ export function App() {
           </div>
 
           <div className="imaging-kind-filter" aria-label="Фильтр типа снимка">
-            <button className={imagingKindFilter === "all" ? "active" : ""} type="button" onClick={() => setImagingKindFilter("all")}>
+            <button className={imagingKindFilter === "all" ? "active" : ""} type="button" aria-pressed={imagingKindFilter === "all"} onClick={() => setImagingKindFilter("all")}>
               Все
             </button>
             {imagingKindOptions.map((kind) => (
@@ -16995,6 +18629,7 @@ export function App() {
                 className={imagingKindFilter === kind ? "active" : ""}
                 key={kind}
                 type="button"
+                aria-pressed={imagingKindFilter === kind}
                 onClick={() => setImagingKindFilter(kind)}
               >
                 {imagingKindLabels[kind]}
@@ -17007,7 +18642,12 @@ export function App() {
               {selectedImagingStudy ? (
                 <>
                   <div className="imaging-viewer-stage">
-                    <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title} style={imagingViewerImageStyle} />
+                    <img
+                      src={imagingPreviewSource(selectedImagingStudy)}
+                      alt={selectedImagingStudy.title}
+                      decoding="async"
+                      style={imagingViewerImageStyle}
+                    />
                     <div className="imaging-viewer-meta">
                       <strong>{selectedImagingStudy.title}</strong>
                       <span>
@@ -17029,6 +18669,33 @@ export function App() {
                         ))}
                       </div>
                       {selectedImagingViewerPlan.warnings[0] ? <small>{selectedImagingViewerPlan.warnings[0]}</small> : null}
+                    </div>
+                  ) : null}
+
+                  {imagingComparisonCandidates.length ? (
+                    <div className="imaging-compare-strip" data-testid="imaging-compare-strip" aria-label="Быстрое сравнение снимков пациента">
+                      <div className="imaging-compare-head">
+                        <strong>Сравнить с</strong>
+                        <span>ближайшие по зубу, области, типу или дате</span>
+                      </div>
+                      <div className="imaging-compare-list">
+                        {imagingComparisonCandidates.map(({ study, reason }) => (
+                          <button
+                            key={study.id}
+                            type="button"
+                            onClick={() => {
+                              if (imagingKindFilter !== "all" && imagingKindFilter !== study.kind) setImagingKindFilter("all");
+                              setSelectedImagingStudyId(study.id);
+                            }}
+                          >
+                            <img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
+                            <span>
+                              <strong>{imagingKindLabels[study.kind]}</strong>
+                              <small>{formatShortDate(study.capturedAt)} · {reason}</small>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
 
@@ -17057,6 +18724,7 @@ export function App() {
                         type="button"
                         title="Зеркально"
                         aria-label="Зеркально отразить снимок"
+                        aria-pressed={imagingViewerState.flipHorizontal}
                         onClick={() => setImagingViewerState((state) => ({ ...state, flipHorizontal: !state.flipHorizontal }))}
                       >
                         <FlipHorizontal aria-hidden="true" />
@@ -17066,6 +18734,7 @@ export function App() {
                         type="button"
                         title="Инверсия"
                         aria-label="Инвертировать снимок"
+                        aria-pressed={imagingViewerState.inverted}
                         onClick={() => setImagingViewerState((state) => ({ ...state, inverted: !state.inverted }))}
                       >
                         ±
@@ -17093,7 +18762,12 @@ export function App() {
                         type="button"
                         title="Сбросить"
                         aria-label="Сбросить настройки снимка"
-                        onClick={() => setImagingViewerState(defaultImagingViewerState)}
+                        onClick={() => {
+                          setImagingViewerState(defaultImagingViewerState);
+                          setImagingViewerActiveTool("window_level");
+                          setCtPlanningActiveQuickActionId(null);
+                          setCtPlanningImplantPlan(null);
+                        }}
                       >
                         <RefreshCw aria-hidden="true" />
                       </button>
@@ -17138,6 +18812,7 @@ export function App() {
                           className="secondary-button"
                           type="button"
                           onClick={addImagingViewerNoteAnnotation}
+                          aria-describedby={!imagingViewerNoteReady || !imagingViewerSessionReady ? imagingViewerNoteMissingId : undefined}
                           disabled={!imagingViewerNoteReady || !imagingViewerSessionReady}
                         >
                           <Plus aria-hidden="true" /> Заметка
@@ -17147,6 +18822,7 @@ export function App() {
                             className="secondary-button"
                             type="button"
                             onClick={retryImagingViewerSessionSave}
+                            aria-describedby={!isOnline ? imagingViewerRetryMissingId : undefined}
                             disabled={!isOnline}
                           >
                             <RefreshCw aria-hidden="true" /> Повторить
@@ -17154,17 +18830,22 @@ export function App() {
                         ) : null}
                       </div>
                       {!imagingViewerSessionReady ? (
-                        <p className="viewer-note-missing" role="status" aria-live="polite">
+                        <p className="viewer-note-missing" id={imagingViewerNoteMissingId} role="status" aria-live="polite">
                           Дождитесь загрузки просмотра, чтобы прикрепить заметку к снимку.
                         </p>
                       ) : !imagingViewerNoteReady ? (
-                        <p className="viewer-note-missing" role="status" aria-live="polite">
+                        <p className="viewer-note-missing" id={imagingViewerNoteMissingId} role="status" aria-live="polite">
                           Напишите текст заметки, чтобы прикрепить ее к снимку.
+                        </p>
+                      ) : null}
+                      {canRetryImagingViewerSave && !isOnline ? (
+                        <p className="viewer-note-missing" id={imagingViewerRetryMissingId} role="status" aria-live="polite">
+                          Повторная отправка просмотра станет доступна после подключения к сети.
                         </p>
                       ) : null}
                     </div>
                     {imagingViewerAnnotations.length ? (
-                      <div className="viewer-annotation-list" aria-label="Сохраненные заметки к снимкам">
+                      <div className="viewer-annotation-list" aria-label="Сохраненные разметки к снимкам">
                         {imagingViewerAnnotations.slice(0, 3).map((annotation) => (
                           <article key={annotation.id}>
                             <strong>{annotation.label}</strong>
@@ -17190,17 +18871,8 @@ export function App() {
                 <article
                   className={`imaging-row imaging-${study.status} ${selectedImagingStudy?.id === study.id ? "active" : ""}`}
                   key={study.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedImagingStudyId(study.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setSelectedImagingStudyId(study.id);
-                    }
-                  }}
                 >
-                  <img src={imagingPreviewSource(study)} alt="" />
+                  <img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
                   <div>
                     <h3>{study.title}</h3>
                     <p>
@@ -17209,32 +18881,58 @@ export function App() {
                     </p>
                     <span>{imagingSourceLabels[study.sourceKind]} · {study.sourceName}</span>
                   </div>
-                  <a className="doc-link" href={imagingViewerHref(study)} target="_blank" rel="noreferrer">
-                    Открыть
-                  </a>
+                  <div className="imaging-row-actions">
+                    <button
+                      className="text-button imaging-row-select"
+                      type="button"
+                      onClick={() => setSelectedImagingStudyId(study.id)}
+                      aria-pressed={selectedImagingStudy?.id === study.id}
+                      aria-label={`Выбрать снимок: ${study.title}, ${formatShortDate(study.capturedAt)}`}
+                      title={`Выбрать снимок: ${study.title}`}
+                    >
+                      {selectedImagingStudy?.id === study.id ? "Выбрано" : "Выбрать"}
+                    </button>
+                    <a
+                      className="doc-link"
+                      href={imagingViewerHref(study)}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label={`Открыть просмотрщик снимка: ${study.title}, ${formatShortDate(study.capturedAt)}`}
+                      title={`Открыть просмотрщик снимка: ${study.title}`}
+                    >
+                      Открыть
+                    </a>
+                  </div>
                 </article>
               ))}
             </div>
           </div>
 
           {selectedImagingStudy?.kind === "cbct" ? (
-            <section className="clinical-mpr-panel" aria-label="Управление CBCT MPR">
+            <section className="clinical-mpr-panel" aria-label="Управление КЛКТ и КТ-срезами">
               <div className="clinical-mpr-head">
                 <div>
-                  <p className="eyebrow">Рабочее место CBCT</p>
-                  <h3>3 плоскости, косой срез, панорама и внешний DICOM-просмотрщик</h3>
+                  <p className="eyebrow">Рабочее место КЛКТ</p>
+                  <h3>3 плоскости, косой срез, панорама и внешний КТ-просмотрщик</h3>
                   <small>
-                    Основной прием не блокируется: если серия тяжелая, CRM оставляет предпросмотр и предлагает внешний просмотрщик или обработчик объема.
+                    Основной прием не блокируется: если серия тяжелая, CRM оставляет предпросмотр и предлагает внешний просмотр или локальный модуль объема.
                   </small>
                 </div>
-                <a className="secondary-button" href={imagingViewerHref(selectedImagingStudy)} target="_blank" rel="noreferrer">
-                  <ExternalLink aria-hidden="true" /> DICOM-просмотрщик
+                <a
+                  className="secondary-button"
+                  href={imagingViewerHref(selectedImagingStudy)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  aria-label={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy.title}`}
+                  title={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy.title}`}
+                >
+                  <ExternalLink aria-hidden="true" /> КТ-просмотрщик
                 </a>
               </div>
-              <div className="clinical-mpr-summary-grid" aria-label="Краткий статус CBCT">
+              <div className="clinical-mpr-summary-grid" aria-label="Краткий статус КЛКТ">
                 <article>
-                  <strong>{selectedImagingViewerPlan?.mode === "cbct_mpr" ? "Маршрут MPR" : "Быстрый предпросмотр"}</strong>
-                  <span>{selectedImagingViewerPlan?.nextAction ?? "Откройте DICOM-просмотрщик, когда нужен 3D-разбор."}</span>
+                  <strong>{selectedImagingViewerPlan?.mode === "cbct_mpr" ? "Маршрут КТ-срезов" : "Быстрый предпросмотр"}</strong>
+                  <span>{selectedImagingViewerPlan?.nextAction ?? "Откройте КТ-просмотрщик, когда нужен 3D-разбор."}</span>
                 </article>
                 <article>
                   <strong>
@@ -17244,37 +18942,149 @@ export function App() {
                   </strong>
                   <span>
                     {dicomViewerWorkbenchManifest
-                      ? `${dicomLabel(dicomQualityModeLabels, dicomViewerWorkbenchManifest.renderCachePlan.qualityMode, "режим качества")} / ${dicomLabel(
+                        ? `${dicomLabel(dicomQualityModeLabels, dicomViewerWorkbenchManifest.renderCachePlan.qualityMode, "режим качества")} / ${dicomLabel(
                           dicomTextureStrategyLabels,
                           dicomViewerWorkbenchManifest.renderCachePlan.textureStrategy,
-                          "стратегия текстур"
+                          "план загрузки"
                         )}`
-                      : "Соберите CT-пакет в настройках источников; карточка приема останется легкой."}
+                      : "Соберите КТ-пакет в настройках источников; карточка приема останется легкой."}
                   </span>
                 </article>
                 <article>
                   <strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
-                  <span>{imagingViewerAnnotations.length} заметок; пиксели остаются в просмотрщике или исходной папке.</span>
+                  <span>{imagingViewerAnnotations.length} разметок; исходные снимки остаются в просмотрщике или исходной папке.</span>
                 </article>
               </div>
-              <details className="clinical-mpr-advanced">
+              <div className="mpr-clinical-roadmap" data-testid="ct-mpr-clinical-roadmap" aria-label="Клиническая готовность КТ-срезов">
+                <div className="mpr-clinical-roadmap-head">
+                  <strong>Карта КТ-срезов</strong>
+                  <span>{mprClinicalNextStep}</span>
+                </div>
+                <div className="mpr-clinical-roadmap-steps">
+                  {mprClinicalChecklist.map((item) => (
+                    <article className={`mpr-clinical-step status-${item.status}`} key={item.id}>
+                      <strong>{item.title}</strong>
+                      <span>{item.detail}</span>
+                    </article>
+                  ))}
+                </div>
+              </div>
+              <div className="mpr-operator-summary" data-testid="ct-mpr-operator-summary" aria-label="Быстрая сводка настройки КТ-срезов">
+                {mprOperatorSummaryCards.map((card) => (
+                  <article className={`tone-${card.tone}`} key={card.id}>
+                    <span>{card.title}</span>
+                    <strong>{card.value}</strong>
+                    <p>{card.detail}</p>
+                  </article>
+                ))}
+              </div>
+              <CtPlanningToolsPanel
+                canPlan={mprControlsReady}
+                activeTool={imagingViewerActiveTool}
+                activeQuickActionId={ctPlanningActiveQuickActionId}
+                onActivateTool={applyCtPlanningQuickAction}
+                selectedImplantId={ctPlanningImplantPlan?.itemId ?? null}
+                selectedImplantPlan={ctPlanningImplantPlan}
+                onSelectImplant={selectCtPlanningImplant}
+                localAnnotations={imagingViewerAnnotations}
+                annotationRefs={ctPlanningAnnotationRefs}
+                onCreateArtifact={createCtPlanningArtifact}
+                toolStateBundle={dicomViewerWorkbenchManifest?.toolStateBundle ?? dicomViewerToolStateBundle}
+              />
+              <details className="clinical-mpr-advanced" open={mprControlsAutoOpen}>
                 <summary>
-                  <span>Управление MPR</span>
-                  <small>Открывается только для CT-разбора; обычный прием остается без лишних панелей.</small>
+                  <span>Управление КТ-срезами</span>
+                  <small>Открывается только для КТ-разбора; обычный прием остается без лишних панелей.</small>
                 </summary>
               <div className="clinical-mpr-grid">
                 <div className="mpr-plane-grid">
-                  {cbctWorkbenchPlanes.map((plane) => (
-                    <button
-                      className={`mpr-plane ${mprProjection === plane.key ? "active" : ""}`}
-                      key={plane.key}
-                      type="button"
-                      onClick={() => setMprProjection(plane.key)}
-                    >
-                      <strong>{plane.title}</strong>
-                      <span>{plane.detail}</span>
-                    </button>
-                  ))}
+                  {cbctWorkbenchPlanes.map((plane) => {
+                    const planeSupported = cbctWorkbenchProjections.includes(plane.key);
+                    const planeAvailable = mprControlsReady && planeSupported;
+                    const planeUnavailableReason = !mprControlsReady
+                      ? mprSeriesRequiredProjectionLabel
+                      : planeSupported
+                        ? ""
+                        : mprUnavailableProjectionLabel;
+                    return (
+                      <button
+                        className={`mpr-plane ${mprProjection === plane.key ? "active" : ""}`}
+                        key={plane.key}
+                        type="button"
+                        onClick={() => setMprProjection(plane.key)}
+                        disabled={!planeAvailable}
+                        aria-pressed={mprProjection === plane.key}
+                        aria-label={`${plane.title}: ${plane.detail}${planeUnavailableReason ? `; ${planeUnavailableReason}` : ""}`}
+                      >
+                        <strong>{plane.title}</strong>
+                        <span>{plane.detail}</span>
+                        {planeUnavailableReason ? <small className="mpr-plane-unavailable">{planeUnavailableReason}</small> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div
+                  className={`mpr-axis-visualizer ${mprControlsReady ? "" : "disabled"}`}
+                  data-testid="ct-mpr-axis-visualizer"
+                  style={mprAxisVisualizerStyle}
+                  role="img"
+                  aria-label={mprAxisVisualizerLabel}
+                  aria-describedby="ct-mpr-keyboard-help"
+                  aria-disabled={!mprControlsReady}
+                  aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown PageUp PageDown Home End"
+                  tabIndex={mprControlsReady ? 0 : -1}
+                  onKeyDown={handleMprKeyboardNavigation}
+                >
+                  <span className="visually-hidden" id="ct-mpr-keyboard-help">
+                    Стрелки влево и вправо меняют угол оси, стрелки вверх и вниз меняют срез, PageUp и PageDown меняют толщину слоя, Home и End переходят к началу и концу серии.
+                  </span>
+                  <div className="mpr-axis-board" aria-hidden="true">
+                    <span className="mpr-axis-label mpr-axis-label-top">{mprProjectionCompass.top}</span>
+                    <span className="mpr-axis-label mpr-axis-label-right">{mprProjectionCompass.right}</span>
+                    <span className="mpr-axis-label mpr-axis-label-bottom">{mprProjectionCompass.bottom}</span>
+                    <span className="mpr-axis-label mpr-axis-label-left">{mprProjectionCompass.left}</span>
+                    <span className="mpr-axis-slab" />
+                    <span className="mpr-axis-slice-marker" />
+                    <span className="mpr-axis-line mpr-axis-line-primary" />
+                    <span className="mpr-axis-line mpr-axis-line-secondary" />
+                    <span className={`mpr-axis-crosshair ${mprCrosshairEnabled ? "active" : ""}`} />
+                    <span className="mpr-axis-angle-badge">{mprAxisAngleBadge}</span>
+                    <span className="mpr-axis-slab-badge">{mprSlabBadge}</span>
+                    <span className="mpr-axis-slice-badge">{mprSliceBadge}</span>
+                  </div>
+                  <div className="mpr-axis-facts">
+                    <strong>{mprActiveProjectionLabel}</strong>
+                    <span>{mprActiveProjectionOrientation}</span>
+                    <span>{mprProjectionCompass.summary}</span>
+                    <span>{mprAxisDirectionLabel}</span>
+                    <span>слой {mprSlabMm} мм</span>
+                    <span>{mprSliceLabel}</span>
+                    <div className="mpr-axis-guidance" data-testid="ct-mpr-axis-guidance">
+                      <span>{mprAxisGuidance.tiltLabel}</span>
+                      <span>{mprAxisGuidance.slabLabel}</span>
+                      <span>{mprAxisGuidance.sliceLabel}</span>
+                    </div>
+                    <small className="mpr-workbench-summary" data-testid="ct-mpr-workbench-summary" aria-live="polite">
+                      {mprWorkbenchSummaryText}
+                    </small>
+                    <small>
+                      {mprControlsReady
+                        ? `${mprLinkedPlanesEnabled ? "плоскости связаны" : "плоскости отдельно"} · ${mprCrosshairEnabled ? "курсор включен" : "курсор скрыт"}`
+                        : "сначала откройте готовую КЛКТ/КТ-серию"}
+                    </small>
+                    <div className={`mpr-preset-fit ${mprNearestClinicalPreset.exact ? "exact" : ""}`} data-testid="ct-mpr-preset-fit">
+                      <span>{mprNearestClinicalPreset.label}</span>
+                      <button
+                        type="button"
+                        onClick={applyNearestMprClinicalPreset}
+                        disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}
+                        aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
+                        title={`Подогнать под протокол: ${mprNearestClinicalPreset.label}`}
+                      >
+                        Подогнать
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div className="mpr-control-panel">
                   <div className="mpr-toggle-row">
@@ -17284,6 +19094,8 @@ export function App() {
                         key={projection}
                         type="button"
                         onClick={() => setMprProjection(projection)}
+                        disabled={!mprControlsReady}
+                        aria-pressed={mprProjection === projection}
                       >
                         {mprProjectionLabels[projection]}
                       </button>
@@ -17291,12 +19103,211 @@ export function App() {
                   </div>
                   <label>
                     Угол оси: {mprAxisDeg}°
-                    <input min="-45" max="45" step="1" type="range" value={mprAxisDeg} onChange={(event) => setMprAxisDeg(Number(event.target.value))} />
+                    <input
+                      aria-valuetext={mprAxisRangeValue}
+                      disabled={!mprControlsReady}
+                      min={mprAxisBounds.min}
+                      max={mprAxisBounds.max}
+                      step="1"
+                      type="range"
+                      value={mprAxisDeg}
+                      onChange={(event) => setMprAxisDeg(clampMprAxisDeg(Number(event.target.value)))}
+                    />
                   </label>
+                  <div className="mpr-stepper-row" data-testid="ct-mpr-axis-nudge" aria-label="Точная правка угла КТ-срезов">
+                    {mprAxisNudgeDeg.map((delta) => (
+                      <button
+                        key={delta}
+                        type="button"
+                        onClick={() => setMprAxisDeg(clampMprAxisDeg(mprAxisDeg + delta))}
+                        disabled={!mprControlsReady}
+                        aria-label={`Изменить угол оси КТ-среза на ${formatSignedMprStep(delta, "°")}`}
+                      >
+                        {formatSignedMprStep(delta, "°")}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mpr-preset-row" aria-label="Быстрые углы КТ-срезов">
+                    {mprAxisPresetDeg.map((angle) => (
+                      <button
+                        className={mprAxisDeg === angle ? "active" : ""}
+                        key={angle}
+                        type="button"
+                        onClick={() => setMprAxisDeg(angle)}
+                        disabled={!mprControlsReady}
+                        aria-pressed={mprAxisDeg === angle}
+                        aria-label={`Установить угол оси КТ-срезов ${angle > 0 ? `+${angle}` : angle}°`}
+                      >
+                        {angle > 0 ? `+${angle}°` : `${angle}°`}
+                      </button>
+                    ))}
+                  </div>
                   <label>
-                    Slab: {mprSlabMm} мм
-                    <input min="1" max="30" step="1" type="range" value={mprSlabMm} onChange={(event) => setMprSlabMm(Number(event.target.value))} />
+                    Толщина слоя: {mprSlabMm} мм
+                    <input
+                      aria-valuetext={mprSlabRangeValue}
+                      disabled={!mprControlsReady}
+                      min={mprSlabBounds.min}
+                      max={mprSlabBounds.max}
+                      step="1"
+                      type="range"
+                      value={mprSlabMm}
+                      onChange={(event) => setMprSlabMm(clampMprSlabMm(Number(event.target.value)))}
+                    />
                   </label>
+                  <div className="mpr-stepper-row" data-testid="ct-mpr-slab-nudge" aria-label="Точная правка толщины слоя КТ-срезов">
+                    {mprSlabNudgeMm.map((delta) => (
+                      <button
+                        key={delta}
+                        type="button"
+                        onClick={() => setMprSlabMm(clampMprSlabMm(mprSlabMm + delta))}
+                        disabled={!mprControlsReady}
+                        aria-label={`Изменить толщину слоя КТ-срезов на ${formatSignedMprStep(delta, " мм")}`}
+                      >
+                        {formatSignedMprStep(delta, " мм")}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mpr-preset-row" aria-label="Быстрая толщина слоя КТ-срезов">
+                    {mprSlabPresetMm.map((slab) => (
+                      <button
+                        className={mprSlabMm === slab ? "active" : ""}
+                        key={slab}
+                        type="button"
+                        onClick={() => setMprSlabMm(slab)}
+                        disabled={!mprControlsReady}
+                        aria-pressed={mprSlabMm === slab}
+                        aria-label={`Установить толщину слоя КТ-срезов ${slab} мм`}
+                      >
+                        {slab} мм
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => setMprAxisDeg(0)} disabled={!mprControlsReady} aria-pressed={mprAxisDeg === 0} aria-label="Вернуть ось КТ-срезов к 0°">
+                      <RotateCcw aria-hidden="true" /> ось 0°
+                    </button>
+                  </div>
+                  <label>
+                    Положение среза: {mprSliceLabel}
+                    <input
+                      disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
+                      min="0"
+                      max={mprSliceMaxIndex}
+                      step="1"
+                      type="range"
+                      value={mprSafeSliceIndex}
+                      aria-valuetext={mprSliceRangeValue}
+                      onChange={(event) => setMprSliceIndex(clampMprSliceIndex(Number(event.target.value), mprSliceMaxIndex))}
+                    />
+                  </label>
+                  <div className="mpr-manual-grid" data-testid="ct-mpr-manual-inputs" aria-label="Точные числовые настройки КТ-срезов">
+                    <label>
+                      Угол, °
+                      <input
+                        disabled={!mprControlsReady}
+                        inputMode="numeric"
+                        max={mprAxisBounds.max}
+                        min={mprAxisBounds.min}
+                        step="1"
+                        type="number"
+                        value={mprAxisDeg}
+                        onChange={(event) => setMprAxisDeg(clampMprAxisDeg(Number(event.target.value)))}
+                      />
+                    </label>
+                    <label>
+                      Слой, мм
+                      <input
+                        disabled={!mprControlsReady}
+                        inputMode="numeric"
+                        max={mprSlabBounds.max}
+                        min={mprSlabBounds.min}
+                        step="1"
+                        type="number"
+                        value={mprSlabMm}
+                        onChange={(event) => setMprSlabMm(clampMprSlabMm(Number(event.target.value)))}
+                      />
+                    </label>
+                    <label>
+                      Срез
+                      <input
+                        disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
+                        inputMode="numeric"
+                        max={mprSliceMaxIndex + 1}
+                        min="1"
+                        step="1"
+                        type="number"
+                        value={mprSafeSliceIndex + 1}
+                        onChange={(event) => setMprSliceIndex(clampMprSliceIndex(Number(event.target.value) - 1, mprSliceMaxIndex))}
+                      />
+                    </label>
+                  </div>
+                  <div className="mpr-stepper-row" data-testid="ct-mpr-slice-nudge" aria-label="Точная навигация по КТ-срезам">
+                    {mprSliceNudgeSteps.map((delta) => (
+                      <button
+                        key={delta}
+                        type="button"
+                        onClick={() => setMprSliceIndex(clampMprSliceIndex(mprSafeSliceIndex + delta, mprSliceMaxIndex))}
+                        disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
+                        aria-label={`Перейти по КТ-срезам на ${formatSignedMprStep(delta, " срез")}`}
+                      >
+                        {formatSignedMprStep(delta, " срез")}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mpr-preset-row" aria-label="Опорные КТ-срезы">
+                    {mprSlicePresetFractions.map((preset) => {
+                      const targetIndex = mprSliceIndexFromFraction(preset.fraction, mprSliceMaxIndex);
+                      return (
+                        <button
+                          className={mprSafeSliceIndex === targetIndex ? "active" : ""}
+                          key={preset.id}
+                          type="button"
+                          onClick={() => setMprSliceIndex(targetIndex)}
+                          disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
+                          aria-pressed={mprSafeSliceIndex === targetIndex}
+                          aria-label={`Перейти на опорный КТ-срез: ${preset.label}`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button className="mpr-reset-button" type="button" onClick={resetMprControls} disabled={!mprControlsReady}>
+                    <RefreshCw aria-hidden="true" /> Сбросить КТ-срезы
+                  </button>
+                  <div className="mpr-memory-strip" data-testid="ct-mpr-memory-strip">
+                    <div>
+                      <strong>{mprWorkbenchLocalSavedAt ? `Последний вид ${formatTime(mprWorkbenchLocalSavedAt)}` : "Последний вид появится после настройки"}</strong>
+                      <span>
+                        {mprWorkbenchDraftRestored
+                          ? "Серия открыта с сохраненными осями, окном и толщиной слоя."
+                          : "Ось, толщина слоя, окно, курсор и связанные плоскости запоминаются для этой КТ-серии."}
+                      </span>
+                    </div>
+                    <button type="button" onClick={restoreMprWorkbenchLocalDraft} disabled={!mprControlsReady || !mprWorkbenchLocalSavedAt}>
+                      <History aria-hidden="true" /> Вернуть вид
+                    </button>
+                  </div>
+                  <div className="mpr-clinical-preset-grid" data-testid="ct-mpr-clinical-presets" aria-label="Клинические протоколы КТ-срезов">
+                    {mprClinicalPresets.map((preset) => {
+                      const projectionFallbackNote = mprControlsReady
+                        ? describeMprClinicalPresetProjectionFallback(preset.projection, cbctWorkbenchProjections, mprProjectionLabels)
+                        : null;
+                      return (
+                        <button
+                          className={mprClinicalPresetButtonClass(preset)}
+                          key={preset.id}
+                          type="button"
+                          onClick={() => applyMprClinicalPreset(preset)}
+                          aria-current={mprNearestClinicalPreset.exact && mprNearestClinicalPreset.title === preset.title ? "true" : undefined}
+                          disabled={!mprControlsReady}
+                        >
+                          <strong>{preset.title}</strong>
+                          <span>{preset.detail}</span>
+                          {projectionFallbackNote ? <small>{projectionFallbackNote}</small> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <div className="mpr-toggle-row">
                     {(Object.keys(mprWindowPresetLabels) as MprWindowPreset[]).map((preset) => (
                       <button
@@ -17304,6 +19315,8 @@ export function App() {
                         key={preset}
                         type="button"
                         onClick={() => setMprWindowPreset(preset)}
+                        disabled={!mprControlsReady}
+                        aria-pressed={mprWindowPreset === preset}
                       >
                         {mprWindowPresetLabels[preset]}
                       </button>
@@ -17311,20 +19324,25 @@ export function App() {
                   </div>
                   <div className="mpr-check-row">
                     <label>
-                      <input checked={mprCrosshairEnabled} type="checkbox" onChange={(event) => setMprCrosshairEnabled(event.target.checked)} />
+                      <input checked={mprCrosshairEnabled} disabled={!mprControlsReady} type="checkbox" onChange={(event) => setMprCrosshairEnabled(event.target.checked)} />
                       Синхронный курсор
                     </label>
                     <label>
-                      <input checked={mprLinkedPlanesEnabled} type="checkbox" onChange={(event) => setMprLinkedPlanesEnabled(event.target.checked)} />
+                      <input checked={mprLinkedPlanesEnabled} disabled={!mprControlsReady} type="checkbox" onChange={(event) => setMprLinkedPlanesEnabled(event.target.checked)} />
                       Связанные плоскости
                     </label>
                   </div>
+                  {!mprControlsReady ? (
+                    <p className="mpr-control-disabled-note" role="status">
+                      Сначала откройте готовую КЛКТ/КТ-серию. После этого включатся оси, толщина слоя и связанные плоскости.
+                    </p>
+                  ) : null}
                 </div>
               </div>
               </details>
               <div className="clinical-mpr-safety">
-                <span>{selectedImagingViewerPlan?.nextAction ?? "Подготовить DICOM серию к MPR."}</span>
-                <span>{cbctWorkbenchSeries?.mprReadiness.resourcePolicy.nextAction ?? "Метаданные DICOM пока не загружены: используем безопасный предпросмотр и внешний просмотрщик."}</span>
+                <span>{selectedImagingViewerPlan?.nextAction ?? "Подготовить серию КЛКТ/КТ к просмотру срезов."}</span>
+                <span>{cbctWorkbenchSeries?.mprReadiness.resourcePolicy.nextAction ?? "Метаданные серии пока не загружены: сначала открываем предпросмотр и внешний просмотр."}</span>
                 <span>ИИ-описание не является диагнозом; врач подтверждает все выводы.</span>
               </div>
             </section>
@@ -17335,110 +19353,114 @@ export function App() {
         {["schedule", "patients", "visit", "documents", "finance", "communications"].includes(currentView) ? (
         <section className="work-grid page-grid">
           {currentView === "schedule" ? (
-          <Suspense
-            fallback={
-              <div className="panel schedule-panel" id="schedule" aria-busy="true">
-                <div className="panel-heading">
-                  <h2>Расписание</h2>
-                  <span className="status-pill status-planned">загрузка</span>
+          <WorkspaceRouteErrorBoundary view="schedule" label={viewLabels.schedule} panelClassName="panel schedule-panel" panelId="schedule">
+            <Suspense
+              fallback={
+                <div className="panel schedule-panel" id="schedule" aria-busy="true">
+                  <div className="panel-heading">
+                    <h2>Расписание</h2>
+                    <span className="status-pill status-planned">загрузка</span>
+                  </div>
                 </div>
-              </div>
-            }
-          >
-            <ScheduleView
-              appointmentLabels={appointmentLabels}
-              appointmentReadinessById={appointmentReadinessById}
-              appointmentReadinessLabels={appointmentReadinessLabels}
-              appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
-              appointmentScheduleDraftFromAppointment={appointmentScheduleDraftFromAppointment}
-              appointmentScheduleDrafts={appointmentScheduleDrafts}
-              appointmentScheduleErrors={appointmentScheduleErrors}
-              appointmentScheduleSaveStates={appointmentScheduleSaveStates}
-              closeAppointmentEditor={closeAppointmentEditor}
-              createAppointmentFromDraft={createAppointmentFromDraft}
-              dashboard={dashboard}
-              editingAppointmentId={editingAppointmentId}
-              formatTime={formatTime}
-              fromDateTimeLocalValue={fromDateTimeLocalValue}
-              lockTelegramAdminSession={lockTelegramAdminSession}
-              newAppointmentDraft={newAppointmentDraft}
-              newAppointmentError={newAppointmentError}
-              newAppointmentSaveState={newAppointmentSaveState}
-              normalizedAppointmentStatus={normalizedAppointmentStatus}
-              normalizedAppointmentStatusFilter={normalizedAppointmentStatusFilter}
-              openAppointmentEditor={openAppointmentEditor}
-              patientName={patientName}
-              recommendedActionPriorityLabels={recommendedActionPriorityLabels}
-              resetNewAppointmentDraft={resetNewAppointmentDraft}
-              saveAppointmentSchedule={saveAppointmentSchedule}
-              scheduleAssistantFilterId={scheduleAssistantFilterId}
-              scheduleChairFilterId={scheduleChairFilterId}
-              scheduleDateFilter={scheduleDateFilter}
-              scheduleDoctorFilterId={scheduleDoctorFilterId}
-              scheduleStatusFilter={scheduleStatusFilter}
-              setScheduleAssistantFilterId={setScheduleAssistantFilterId}
-              setScheduleChairFilterId={setScheduleChairFilterId}
-              setScheduleDateFilter={setScheduleDateFilter}
-              setScheduleDoctorFilterId={setScheduleDoctorFilterId}
-              setScheduleStatusFilter={setScheduleStatusFilter}
-              setTelegramAdminSecretDraft={setTelegramAdminSecretDraft}
-              shiftWarnings={shiftWarnings}
-              sortedAppointments={sortedAppointments}
-              staffRoleLabels={staffRoleLabels}
-              telegramAdminSecretDraft={telegramAdminSecretDraft}
-              telegramAdminSecretSession={telegramAdminSecretSession}
-              toDateTimeLocalValue={toDateTimeLocalValue}
-              unlockTelegramAdminSession={unlockTelegramAdminSession}
-              updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
-              updateNewAppointmentDraft={updateNewAppointmentDraft}
-              visibleScheduleSuggestions={visibleScheduleSuggestions}
-            />
-          </Suspense>
+              }
+            >
+              <ScheduleView
+                appointmentLabels={appointmentLabels}
+                appointmentReadinessById={appointmentReadinessById}
+                appointmentReadinessLabels={appointmentReadinessLabels}
+                appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
+                appointmentScheduleDraftFromAppointment={appointmentScheduleDraftFromAppointment}
+                appointmentScheduleDrafts={appointmentScheduleDrafts}
+                appointmentScheduleErrors={appointmentScheduleErrors}
+                appointmentScheduleSaveStates={appointmentScheduleSaveStates}
+                closeAppointmentEditor={closeAppointmentEditor}
+                createAppointmentFromDraft={createAppointmentFromDraft}
+                dashboard={dashboard}
+                editingAppointmentId={editingAppointmentId}
+                formatTime={formatTime}
+                fromDateTimeLocalValue={fromDateTimeLocalValue}
+                lockScheduleAdminSession={() => lockTelegramAdminSession("schedule")}
+                newAppointmentDraft={newAppointmentDraft}
+                newAppointmentError={newAppointmentError}
+                newAppointmentSaveState={newAppointmentSaveState}
+                normalizedAppointmentStatus={normalizedAppointmentStatus}
+                normalizedAppointmentStatusFilter={normalizedAppointmentStatusFilter}
+                openAppointmentEditor={openAppointmentEditor}
+                patientName={patientName}
+                recommendedActionPriorityLabels={recommendedActionPriorityLabels}
+                resetNewAppointmentDraft={resetNewAppointmentDraft}
+                saveAppointmentSchedule={saveAppointmentSchedule}
+                scheduleAssistantFilterId={scheduleAssistantFilterId}
+                scheduleChairFilterId={scheduleChairFilterId}
+                scheduleDateFilter={scheduleDateFilter}
+                scheduleDoctorFilterId={scheduleDoctorFilterId}
+                scheduleStatusFilter={scheduleStatusFilter}
+                setScheduleAssistantFilterId={setScheduleAssistantFilterId}
+                setScheduleChairFilterId={setScheduleChairFilterId}
+                setScheduleDateFilter={setScheduleDateFilter}
+                setScheduleDoctorFilterId={setScheduleDoctorFilterId}
+                setScheduleStatusFilter={setScheduleStatusFilter}
+                setScheduleAdminSecretDraft={setScheduleAdminSecretDraft}
+                shiftWarnings={shiftWarnings}
+                sortedAppointments={sortedAppointments}
+                staffRoleLabels={staffRoleLabels}
+                scheduleAdminSecretDraft={scheduleAdminSecretDraft}
+                scheduleAdminSecretSession={scheduleAdminSecretSession}
+                toDateTimeLocalValue={toDateTimeLocalValue}
+                unlockScheduleAdminSession={() => unlockTelegramAdminSession("schedule")}
+                updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
+                updateNewAppointmentDraft={updateNewAppointmentDraft}
+                visibleScheduleSuggestions={visibleScheduleSuggestions}
+              />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
           ) : null}
 
           {currentView === "patients" ? (
-          <Suspense
-            fallback={
-              <div className="panel patients-panel" id="patients" aria-busy="true">
-                <div className="panel-heading">
-                  <h2>Быстрый поиск</h2>
-                  <span className="status-pill status-planned">загрузка</span>
+          <WorkspaceRouteErrorBoundary view="patients" label={viewLabels.patients} panelClassName="panel patients-panel" panelId="patients">
+            <Suspense
+              fallback={
+                <div className="panel patients-panel" id="patients" aria-busy="true">
+                  <div className="panel-heading">
+                    <h2>Быстрый поиск</h2>
+                    <span className="status-pill status-planned">загрузка</span>
+                  </div>
                 </div>
-              </div>
-            }
-          >
-            <PatientsView
-              createPatient={createPatient}
-              filteredPatients={filteredPatients}
-              isPatientCreating={isPatientCreating}
-              money={money}
-              newPatientBirthDate={newPatientBirthDate}
-              newPatientName={newPatientName}
-              newPatientPhone={newPatientPhone}
-              normalizeOptionalWorkingDaysDraft={normalizeOptionalWorkingDaysDraft}
-              patientAdministrativeProfileDirty={patientAdministrativeProfileDirty}
-              patientAdministrativeProfileDraft={patientAdministrativeProfileDraft}
-              patientAdministrativeProfileSaveState={patientAdministrativeProfileSaveState}
-              patientAdministrativeProfileValidationMessage={patientAdministrativeProfileValidationMessage}
-              patientCoreDirty={patientCoreDirty}
-              patientCoreDraft={patientCoreDraft}
-              patientCoreSaveState={patientCoreSaveState}
-              patientInsightById={patientInsightById}
-              patientInsightRiskLabels={patientInsightRiskLabels}
-              query={query}
-              savePatientAdministrativeProfile={savePatientAdministrativeProfile}
-              savePatientCore={savePatientCore}
-              selectedPatient={selectedPatient}
-              setNewPatientBirthDate={setNewPatientBirthDate}
-              setNewPatientName={setNewPatientName}
-              setNewPatientPhone={setNewPatientPhone}
-              setQuery={setQuery}
-              setSelectedPatientId={setSelectedPatientId}
-              updatePatientAdministrativeProfileDraft={updatePatientAdministrativeProfileDraft}
-              updatePatientCoreDraft={updatePatientCoreDraft}
-              weekdayOptions={weekdayOptions}
-            />
-          </Suspense>
+              }
+            >
+              <PatientsView
+                createPatient={createPatient}
+                filteredPatients={filteredPatients}
+                isPatientCreating={isPatientCreating}
+                money={money}
+                newPatientBirthDate={newPatientBirthDate}
+                newPatientName={newPatientName}
+                newPatientPhone={newPatientPhone}
+                normalizeOptionalWorkingDaysDraft={normalizeOptionalWorkingDaysDraft}
+                patientAdministrativeProfileDirty={patientAdministrativeProfileDirty}
+                patientAdministrativeProfileDraft={patientAdministrativeProfileDraft}
+                patientAdministrativeProfileSaveState={patientAdministrativeProfileSaveState}
+                patientAdministrativeProfileValidationMessage={patientAdministrativeProfileValidationMessage}
+                patientCoreDirty={patientCoreDirty}
+                patientCoreDraft={patientCoreDraft}
+                patientCoreSaveState={patientCoreSaveState}
+                patientInsightById={patientInsightById}
+                patientInsightRiskLabels={patientInsightRiskLabels}
+                query={query}
+                savePatientAdministrativeProfile={savePatientAdministrativeProfile}
+                savePatientCore={savePatientCore}
+                selectedPatient={selectedPatient}
+                setNewPatientBirthDate={setNewPatientBirthDate}
+                setNewPatientName={setNewPatientName}
+                setNewPatientPhone={setNewPatientPhone}
+                setQuery={setQuery}
+                setSelectedPatientId={setSelectedPatientId}
+                updatePatientAdministrativeProfileDraft={updatePatientAdministrativeProfileDraft}
+                updatePatientCoreDraft={updatePatientCoreDraft}
+                weekdayOptions={weekdayOptions}
+              />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
 
           ) : null}
 
@@ -17480,6 +19502,41 @@ export function App() {
               </div>
             </section>
 
+            <section className="visit-next-step" data-testid="visit-next-step-panel" aria-label="Следующий шаг приема">
+              <div className="visit-next-step-main">
+                <div>
+                  <p className="eyebrow">Сейчас сделать</p>
+                  <h3>{visitPrimaryAction.label}</h3>
+                  <p id="visit-primary-action-detail">{visitPrimaryAction.detail}</p>
+                </div>
+                <button
+                  className="primary-button visit-primary-action"
+                  type="button"
+                  onClick={visitPrimaryAction.onClick}
+                  disabled={visitPrimaryAction.disabled}
+                  aria-describedby="visit-primary-action-detail"
+                  data-testid="visit-primary-action"
+                >
+                  {visitPrimaryAction.kind === "dictation" ? <Mic aria-hidden="true" /> : null}
+                  {visitPrimaryAction.kind === "draft" ? <Bot aria-hidden="true" /> : null}
+                  {visitPrimaryAction.kind === "save" || visitPrimaryAction.kind === "close" ? <Check aria-hidden="true" /> : null}
+                  {visitPrimaryAction.kind === "review" ? <AlertTriangle aria-hidden="true" /> : null}
+                  {visitPrimaryAction.label}
+                </button>
+              </div>
+              <div className="visit-progress-strip" data-testid="visit-progress-strip" aria-label="Прогресс приема">
+                {visitWorkflowSteps.map((step, index) => (
+                  <article className={`visit-progress-step step-${step.state}`} key={step.key}>
+                    <span>{index + 1}</span>
+                    <div>
+                      <strong>{step.label}</strong>
+                      <p>{step.detail}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
             <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки">
               {visitSafetyCards.map((item) => (
                 <article className={`safety-${item.state}`} key={item.key}>
@@ -17502,6 +19559,7 @@ export function App() {
                     className={selectedSpecialty === option.specialty ? "active" : ""}
                     type="button"
                     key={option.specialty}
+                    aria-pressed={selectedSpecialty === option.specialty}
                     onClick={() => {
                       setSelectedSpecialty(option.specialty);
                       setSelectedProtocolId(null);
@@ -17527,7 +19585,7 @@ export function App() {
                     {pendingVisitSaveCount
                       ? ` Сервер ожидает ${pendingVisitSaveCount} сохранение${lastPendingVisitSaveAt ? ` с ${formatTime(lastPendingVisitSaveAt)}` : ""}.`
                       : ""}
-                    {pendingSpeechChunkCount ? ` STT ожидает ${pendingSpeechChunkCount} аудио-фрагм.` : ""}
+                    {pendingSpeechChunkCount ? ` Распознавание ждет ${pendingSpeechChunkCount} аудио-фрагм.` : ""}
                     {lastServerDraftSavedAt && serverDraftSyncState === "saved" ? ` Серверный черновик ${formatTime(lastServerDraftSavedAt)}.` : ""}
                     {serverDraftSyncState === "saving" ? " Сервер сохраняет черновик." : ""}
                     {serverDraftSyncState === "queued" || serverDraftSyncState === "error" ? " Серверный черновик повторит синхронизацию." : ""}
@@ -17574,21 +19632,26 @@ export function App() {
                   type="button"
                   onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
                   title={
-                    speechUploadReady && isOnline
-                      ? `${speechGatewayStatus?.providerLabel ?? "STT"}: запись чанками`
-                      : "Аудио сохранится локально и уйдет в STT, когда сервер будет готов"
+                    speechRecognitionReady
+                      ? speechGatewayActiveProviderIsLocal
+                        ? `${speechGatewayStatus?.providerLabel ?? "локальный модуль"}: запись частями в локальный модуль`
+                        : `${speechGatewayStatus?.providerLabel ?? "распознавание"}: запись частями`
+                      : "Аудио сохранится локально и уйдет на распознавание, когда источник будет готов"
                   }
                 >
                   <Mic aria-hidden="true" />{" "}
                   {isServerVoiceRecording
                     ? "Стоп запись"
-                    : speechUploadReady && isOnline
-                      ? "Сервер STT"
-                      : "Запись локально"}
+                    : emptyDictationVoiceActionLabel}
                 </button>
                 {pendingSpeechChunkCount ? (
-                  <button className="secondary-button" type="button" onClick={() => flushPendingSpeechChunks({ silent: false })}>
-                    Отправить STT
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => flushPendingSpeechChunks({ silent: false })}
+                    title={pendingSpeechFlushActionTitle}
+                  >
+                    {pendingSpeechFlushActionLabel}
                   </button>
                 ) : null}
                 <button
@@ -17596,27 +19659,40 @@ export function App() {
                   type="button"
                   onClick={polishTranscript}
                   disabled={!hasVisitTranscriptText || isTranscriptPolishing}
+                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
                   title={
                     speechGatewayStatus?.polishPolicy.neuralEnabled
-                      ? `Осторожная ИИ-полировка: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
-                      : "Локальная очистка терминов, секций и номеров зубов без ИИ"
+                      ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
+                      : "Локальная очистка терминов, секций и номеров зубов"
                   }
                 >
-                  <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить STT"}
+                  <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить текст"}
                 </button>
-                <button className="secondary-button" type="button" onClick={buildOfflineDraft} disabled={!hasVisitTranscriptText}>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={buildOfflineDraft}
+                  disabled={!hasVisitTranscriptText}
+                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                >
                   Локальный разбор
                 </button>
-                <button className="primary-button" type="button" onClick={buildDraft} disabled={isDraftLoading || !visitDraftReadyToBuild}>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={buildDraft}
+                  disabled={isDraftLoading || !visitDraftReadyToBuild}
+                  aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
+                >
                   <Bot aria-hidden="true" /> {isDraftLoading ? "Собираю" : "Собрать черновик"}
                 </button>
                 {!hasVisitTranscriptText ? (
                   <div className="dictation-action-guidance" id="dictation-clear-guidance" role="status" aria-live="polite">
-                    В диктовке пока нет текста: нажмите «Голос», «Сервер STT» или впишите текст вручную.
+                    В диктовке пока нет текста: нажмите «Голос», «{emptyDictationVoiceActionLabel}» или впишите текст вручную.
                   </div>
                 ) : null}
                 {!visitDraftReadyToBuild ? (
-                  <div className="visit-draft-missing" role="status" aria-live="polite">
+                  <div className="visit-draft-missing" id="visit-draft-missing" role="status" aria-live="polite">
                     <strong>Чтобы собрать черновик, осталось:</strong>
                     <ul>
                       {visitDraftBuildMissingSteps.map((step) => (
@@ -17657,10 +19733,10 @@ export function App() {
                       <span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
                     ))}
                     {draft.quality.signals.slice(0, 7).map((signal) => (
-                      <span key={signal}>{signal}</span>
+                      <span key={signal}>{visitDraftSignalLabel(signal)}</span>
                     ))}
                     {draft.quality.missingCriticalFields.slice(0, 5).map((field) => (
-                      <small key={field}>проверить: {field}</small>
+                      <small key={field}>проверить: {visitDraftMissingFieldLabel(field)}</small>
                     ))}
                   </div>
                 </div>
@@ -17680,15 +19756,21 @@ export function App() {
                           : dashboard.activeVisit.doctorSummary}
                 </p>
                 {pendingVisitSaveCount ? (
-                  <button className="secondary-button" type="button" onClick={() => flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>
+                  <button className="secondary-button" type="button" onClick={() => void flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>
                     {isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
                   </button>
                 ) : null}
-                <button className="primary-button" type="button" onClick={acceptDraftToVisit} disabled={!visitNoteReadyToAccept || isDraftAccepting}>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={acceptDraftToVisit}
+                  disabled={!visitNoteReadyToAccept || isDraftAccepting}
+                  aria-describedby={!visitNoteReadyToAccept ? "visit-note-missing" : undefined}
+                >
                   <Check aria-hidden="true" /> {visitNoteActionLabel}
                 </button>
                 {!visitNoteReadyToAccept ? (
-                  <div className="visit-note-missing" role="status" aria-live="polite">
+                  <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite">
                     <strong>Чтобы сохранить запись приема, осталось:</strong>
                     <ul>
                       {visitNoteAcceptMissingSteps.map((step) => (
@@ -17721,6 +19803,7 @@ export function App() {
                     className={selectedSpecialty === specialty ? "active" : ""}
                     key={specialty}
                     type="button"
+                    aria-pressed={selectedSpecialty === specialty}
                     onClick={() => {
                       setSelectedSpecialty(specialty);
                       setSelectedProtocolId(null);
@@ -17745,6 +19828,7 @@ export function App() {
                         className={selectedProtocolTemplate.id === template.id ? "active" : ""}
                         key={template.id}
                         type="button"
+                        aria-pressed={selectedProtocolTemplate.id === template.id}
                         onClick={() => setSelectedProtocolId(template.id)}
                       >
                         {template.visitReason}
@@ -17833,6 +19917,7 @@ export function App() {
           ) : null}
 
           {currentView === "documents" ? (
+            <WorkspaceRouteErrorBoundary view="documents" label={viewLabels.documents} panelClassName="panel documents-panel" panelId="documents">
             <Suspense
               fallback={
                 <div className="panel documents-panel" id="documents" aria-busy="true">
@@ -18782,9 +20867,11 @@ export function App() {
                 xrayStudyTypeOptions={xrayStudyTypeOptions}
               />
             </Suspense>
+            </WorkspaceRouteErrorBoundary>
           ) : null}
 
           {currentView === "finance" ? (
+            <WorkspaceRouteErrorBoundary view="finance" label={viewLabels.finance} panelClassName="panel finance-panel" panelId="finance">
             <Suspense
               fallback={
                 <div className="panel finance-panel" id="finance" aria-busy="true">
@@ -18811,6 +20898,13 @@ export function App() {
                 money={money}
                 onGoToDocuments={() => {
                   window.location.hash = "documents";
+                }}
+                onGoToPrices={() => {
+                  setSettingsTab("prices");
+                  window.location.hash = "settings/prices";
+                }}
+                onGoToVisit={() => {
+                  window.location.hash = "visit";
                 }}
                 onRecordPayment={recordPayment}
                 paymentAmount={paymentAmount}
@@ -18856,9 +20950,11 @@ export function App() {
                 treatmentStatusLabels={treatmentStatusLabels}
               />
             </Suspense>
+            </WorkspaceRouteErrorBoundary>
           ) : null}
 
           {currentView === "communications" ? (
+            <WorkspaceRouteErrorBoundary view="communications" label={viewLabels.communications} panelClassName="panel communications-panel" panelId="communications">
             <Suspense
               fallback={
                 <div className="panel communications-panel" id="communications" aria-busy="true">
@@ -18891,20 +20987,27 @@ export function App() {
                 staffRoleLabels={staffRoleLabels}
               />
             </Suspense>
+            </WorkspaceRouteErrorBoundary>
           ) : null}
         </section>
         ) : null}
 
         {["documents", "finance", "communications", "settings"].includes(currentView) ? (
-        <section className="compliance-bar" aria-label="Контроль">
-          <ShieldCheck aria-hidden="true" />
-          {dashboard.complianceWarnings.map((warning) => (
-            <p key={warning}>{warning}</p>
-          ))}
-        </section>
+        <details className="compliance-bar" aria-label="Контроль">
+          <summary>
+            <ShieldCheck aria-hidden="true" />
+            <span>Служебные ограничения</span>
+          </summary>
+          <div>
+            {dashboard.complianceWarnings.map((warning) => (
+              <p key={warning}>{warning}</p>
+            ))}
+          </div>
+        </details>
         ) : null}
 
         {currentView === "settings" ? (
+          <WorkspaceRouteErrorBoundary view="settings" label={viewLabels.settings} panelClassName="settings-zone" panelId="settings">
           <Suspense
             fallback={
               <section className="settings-zone" id="settings" aria-busy="true">
@@ -18932,7 +21035,9 @@ export function App() {
               browserContinuityValue={browserContinuityValue}
               browserDirectoryInputRef={browserDirectoryInputRef}
               browserDirectoryPickerAvailable={browserDirectoryPickerAvailable}
+              browserImagingScanProgress={browserImagingScanProgress}
               browserMigrationDiscovery={browserMigrationDiscovery}
+              browserMigrationScanProgress={browserMigrationScanProgress}
               browserMigrationInputRef={browserMigrationInputRef}
               browserPickedImagingFolder={browserPickedImagingFolder}
               buildDicomFolderWorkupPlan={buildDicomFolderWorkupPlan}
@@ -18952,6 +21057,8 @@ export function App() {
               checkDicomWebConnector={checkDicomWebConnector}
               checkDicomWorkstationReadiness={checkDicomWorkstationReadiness}
               chooseRecognitionPreset={chooseRecognitionPreset}
+              cancelBrowserImagingFolderScan={cancelBrowserImagingFolderScan}
+              cancelBrowserMigrationScan={cancelBrowserMigrationScan}
               clearBrowserPickedImagingFolderPreview={clearBrowserPickedImagingFolderPreview}
               clearDicomWorkbenchRecovery={clearDicomWorkbenchRecovery}
               clearLocalImagingFolderRecovery={clearLocalImagingFolderRecovery}
@@ -18978,10 +21085,14 @@ export function App() {
               dicomFolderSeriesScan={dicomFolderSeriesScan}
               dicomFolderWorkupPathLabels={dicomFolderWorkupPathLabels}
               dicomFolderWorkupPlan={dicomFolderWorkupPlan}
+              dicomDiagnosticPixelPolicyLabels={dicomDiagnosticPixelPolicyLabels}
+              dicomExecutionLaneLabels={dicomExecutionLaneLabels}
+              dicomGpuClassLabels={dicomGpuClassLabels}
               dicomLabel={dicomLabel}
               dicomLocalFolderDiscovery={dicomLocalFolderDiscovery}
               dicomQualityModeLabels={dicomQualityModeLabels}
               dicomReadinessCheckLabels={dicomReadinessCheckLabels}
+              dicomRenderMemoryBudgetClassLabels={dicomRenderMemoryBudgetClassLabels}
               dicomRenderCachePlan={dicomRenderCachePlan}
               dicomRuntimeTierLabels={dicomRuntimeTierLabels}
               dicomSeriesPreview={dicomSeriesPreview}
@@ -19013,6 +21124,7 @@ export function App() {
               downloadSmartImportReport={downloadSmartImportReport}
               downloadTelegramQrSvg={downloadTelegramQrSvg}
               filteredTelegramOutboxItems={filteredTelegramOutboxItems}
+              formatByteSize={formatByteSize}
               formatDateTime={formatDateTime}
               formatMegabytes={formatMegabytes}
               formatTime={formatTime}
@@ -19027,6 +21139,9 @@ export function App() {
               imagingImportSourceKind={imagingImportSourceKind}
               imagingImportText={imagingImportText}
               imagingKindLabels={imagingKindLabels}
+              ctPlanningImplantPlan={ctPlanningImplantPlan}
+              ctPlanningActiveQuickActionId={ctPlanningActiveQuickActionId}
+              imagingViewerActiveTool={imagingViewerActiveTool}
               imagingSourceChoices={imagingSourceChoices}
               imagingSourceDetails={imagingSourceDetails}
               imagingSourceLabels={imagingSourceLabels}
@@ -19060,6 +21175,7 @@ export function App() {
               isDocumentIngesting={isDocumentIngesting}
               isClinicPublicLookupLoading={isClinicPublicLookupLoading}
               isImagingFolderScanning={isImagingFolderScanning}
+              isLocalDicomOperationActive={isLocalDicomOperationActive}
               isImagingImportCommitting={isImagingImportCommitting}
               isImagingImportLoading={isImagingImportLoading}
               isImportCommitting={isImportCommitting}
@@ -19106,10 +21222,10 @@ export function App() {
               localImagingModelRoleLabels={localImagingModelRoleLabels}
               localImagingOrganizer={localImagingOrganizer}
               localImagingOrganizerActionLabels={localImagingOrganizerActionLabels}
+              cancelLocalDicomOperation={cancelLocalDicomOperation}
               lookupClinicPublicProfile={lookupClinicPublicProfile}
-              lockTelegramAdminSession={lockTelegramAdminSession}
+              lockTelegramAdminSession={() => lockTelegramAdminSession(settingsAdminSecretDomain)}
               markTelegramSettingsDirty={markTelegramSettingsDirty}
-              megabytes={megabytes}
               migrationAutopilot={migrationAutopilot}
               migrationSourceDiscovery={migrationSourceDiscovery}
               migrationSourceProbe={migrationSourceProbe}
@@ -19122,8 +21238,11 @@ export function App() {
               mprProjection={mprProjection}
               mprProjectionLabels={mprProjectionLabels}
               mprResourceTierLabels={mprResourceTierLabels}
+              mprSliceIndex={mprSliceIndex}
               mprSlabMm={mprSlabMm}
               mprToolLabels={mprToolLabels}
+              mprWorkbenchDraftRestored={mprWorkbenchDraftRestored}
+              mprWorkbenchLocalSavedAt={mprWorkbenchLocalSavedAt}
               mprWindowPreset={mprWindowPreset}
               mprWindowPresetLabels={mprWindowPresetLabels}
               newChairHasMicroscope={newChairHasMicroscope}
@@ -19165,8 +21284,11 @@ export function App() {
               policyAuditEventLabels={policyAuditEventLabels}
               prepareDicomWorkbenchFromFolder={prepareDicomWorkbenchFromFolder}
               previewDicomFirstFrame={previewDicomFirstFrame}
+              previewDicomFirstFrameSlice={previewDicomFirstFrameSlice}
               previewDicomSeries={previewDicomSeries}
               planMigrationDiscoveryCandidate={planMigrationDiscoveryCandidate}
+              previewMigrationDiscoveryCandidate={previewMigrationDiscoveryCandidate}
+              previewMigrationAutopilotSources={previewMigrationAutopilotSources}
               probeMigrationDiscoveryCandidate={probeMigrationDiscoveryCandidate}
               runMigrationAutopilot={runMigrationAutopilot}
               previewImagingImport={previewImagingImport}
@@ -19179,6 +21301,7 @@ export function App() {
               pricelistImageNote={pricelistImageNote}
               pricelistItemMaterialText={pricelistItemMaterialText}
               pricelistMaterialSummaryText={pricelistMaterialSummaryText}
+              pricelistWarningsText={pricelistWarningsText}
               pricelistParserModeLabels={pricelistParserModeLabels}
               pricelistRecognitionBrandGroups={pricelistRecognitionBrandGroups}
               pricelistRecognitionServiceGroups={pricelistRecognitionServiceGroups}
@@ -19200,6 +21323,7 @@ export function App() {
               reopenOnboarding={reopenOnboarding}
               requestBrowserStoragePersistence={requestBrowserStoragePersistence}
               restoreDicomWorkbenchServerBundle={restoreDicomWorkbenchServerBundle}
+              restoreMprWorkbenchLocalDraft={restoreMprWorkbenchLocalDraft}
               revokeTelegramChatLink={revokeTelegramChatLink}
               runRecognitionJob={runRecognitionJob}
               saveChairSchedule={saveChairSchedule}
@@ -19236,6 +21360,9 @@ export function App() {
               setImagingImportPreview={setImagingImportPreview}
               setImagingImportSourceKind={setImagingImportSourceKind}
               setImagingImportText={setImagingImportText}
+              selectCtPlanningImplant={selectCtPlanningImplant}
+              setImagingViewerActiveTool={setImagingViewerActiveTool}
+              setCtPlanningActiveQuickActionId={setCtPlanningActiveQuickActionId}
               setImportCommit={setImportCommit}
               setImportIntake={setImportIntake}
               setImportPreview={setImportPreview}
@@ -19246,6 +21373,7 @@ export function App() {
               setMprCrosshairEnabled={setMprCrosshairEnabled}
               setMprLinkedPlanesEnabled={setMprLinkedPlanesEnabled}
               setMprProjection={setMprProjection}
+              setMprSliceIndex={setMprSliceIndex}
               setMprSlabMm={setMprSlabMm}
               setMprWindowPreset={setMprWindowPreset}
               setNewChairHasMicroscope={setNewChairHasMicroscope}
@@ -19278,7 +21406,9 @@ export function App() {
               setSmartImportMode={setSmartImportMode}
               setSmartImportPreview={setSmartImportPreview}
               setSmartImportText={setSmartImportText}
-              setTelegramAdminSecretDraft={setTelegramAdminSecretDraft}
+              setTelegramAdminSecretDraft={
+                settingsAdminSecretDomain === "telegram" ? setTelegramAdminSecretDraft : setSettingsAdminSecretDraft
+              }
               setTelegramAllowVoiceIntakeDraft={setTelegramAllowVoiceIntakeDraft}
               setTelegramBotConfigId={setTelegramBotConfigId}
               setTelegramBotUsernameDraft={setTelegramBotUsernameDraft}
@@ -19333,8 +21463,8 @@ export function App() {
               staffScheduleSavingId={staffScheduleSavingId}
               stageLocalImagingFolderRecovery={stageLocalImagingFolderRecovery}
               startImportDictation={startImportDictation}
-              telegramAdminSecretDraft={telegramAdminSecretDraft}
-              telegramAdminSecretSession={telegramAdminSecretSession}
+              telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdminSecretDraft : settingsAdminSecretDraft}
+              telegramAdminSecretSession={settingsAdminSecretDomain === "telegram" ? telegramAdminSecretSession : settingsAdminSecretSession}
               telegramAllowVoiceIntakeDraft={telegramAllowVoiceIntakeDraft}
               telegramBotConfigId={telegramBotConfigId}
               telegramBotUsernameDraft={telegramBotUsernameDraft}
@@ -19402,7 +21532,7 @@ export function App() {
               toggleTelegramFeature={toggleTelegramFeature}
               uiLanguage={uiLanguage}
               uiLanguageOptions={uiLanguageOptions}
-              unlockTelegramAdminSession={unlockTelegramAdminSession}
+              unlockTelegramAdminSession={() => unlockTelegramAdminSession(settingsAdminSecretDomain)}
               updateChairScheduleDay={updateChairScheduleDay}
               updateChairScheduleDraft={updateChairScheduleDraft}
               updateClinicProfileDraft={updateClinicProfileDraft}
@@ -19416,6 +21546,7 @@ export function App() {
               workspaceScopeLabels={workspaceScopeLabels}
             />
           </Suspense>
+          </WorkspaceRouteErrorBoundary>
         ) : null}
       </section>
     </main>

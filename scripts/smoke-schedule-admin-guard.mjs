@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -20,6 +20,20 @@ const { registerScheduleRoutes } = await import(pathToFileURL(routePath).href);
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+const scheduleRouteSource = readFileSync("apps/api/src/routes/schedule.ts", "utf8");
+const configuredSecretFunction = scheduleRouteSource.match(
+  /function configuredScheduleAdminSecret\(\): string \| null \{[\s\S]*?\n\}/
+)?.[0] ?? "";
+assert(configuredSecretFunction.includes("DENTE_SCHEDULE_ADMIN_SECRET"), "schedule guard must read DENTE_SCHEDULE_ADMIN_SECRET");
+assert(
+  !configuredSecretFunction.includes("DENTE_SETTINGS_ADMIN_SECRET"),
+  "schedule guard must not accept settings admin secret fallback"
+);
+assert(
+  !configuredSecretFunction.includes("DENTE_TELEGRAM_ADMIN_SECRET"),
+  "schedule guard must not accept Telegram admin secret fallback"
+);
 
 const app = Fastify({ logger: false });
 await registerScheduleRoutes(app);
@@ -64,8 +78,40 @@ const createWithoutSecretResponse = await app.inject({
 });
 assert(createWithoutSecretResponse.statusCode === 403, "missing schedule secret must block appointment creation");
 
+delete process.env.DENTE_SCHEDULE_ADMIN_SECRET;
+process.env.DENTE_SETTINGS_ADMIN_SECRET = "synthetic-settings-only-secret";
+
+const settingsOnlyResponse = await app.inject({
+  ...request,
+  headers: { "x-dente-admin-secret": process.env.DENTE_SETTINGS_ADMIN_SECRET }
+});
+assert(
+  settingsOnlyResponse.statusCode === 503,
+  `settings-only secret must not unlock schedule mutation: ${settingsOnlyResponse.statusCode}`
+);
+assert(settingsOnlyResponse.json().error === "ScheduleAdminSecretMissing", "settings-only schedule error mismatch");
+
+delete process.env.DENTE_SETTINGS_ADMIN_SECRET;
+process.env.DENTE_TELEGRAM_ADMIN_SECRET = "synthetic-telegram-only-secret";
+
+const telegramOnlyResponse = await app.inject({
+  ...request,
+  headers: { "x-dente-admin-secret": process.env.DENTE_TELEGRAM_ADMIN_SECRET }
+});
+assert(
+  telegramOnlyResponse.statusCode === 503,
+  `Telegram-only secret must not unlock schedule mutation: ${telegramOnlyResponse.statusCode}`
+);
+assert(telegramOnlyResponse.json().error === "ScheduleAdminSecretMissing", "Telegram-only schedule error mismatch");
+
 await app.close();
 
-delete process.env.DENTE_SCHEDULE_ADMIN_SECRET;
+delete process.env.DENTE_TELEGRAM_ADMIN_SECRET;
 
-console.log(JSON.stringify({ ok: true, scheduleAdminGuard: true }, null, 2));
+console.log(
+  JSON.stringify(
+    { ok: true, scheduleAdminGuard: true, domainScopedSecret: true, productionFailsClosed: true },
+    null,
+    2
+  )
+);
