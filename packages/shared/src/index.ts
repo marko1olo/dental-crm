@@ -5917,6 +5917,7 @@ type VisitDraftParserProfile = {
 const commonComplaintTokens = [
   "жалоб",
   "беспоко",
+  "отмечает",
   "боль",
   "ноет",
   "ноч",
@@ -5945,6 +5946,14 @@ const commonObjectiveTokens = [
   "инфильтр",
   "карман",
   "рецесс",
+  "поддеснев",
+  "наддеснев",
+  "окклюз",
+  "мезиаль",
+  "дисталь",
+  "вестибуляр",
+  "оральн",
+  "пришееч",
   "снимок",
   "рентген",
   "кт",
@@ -5975,8 +5984,10 @@ const commonDiagnosisTokens = [
 const commonPlanTokens = [
   "план",
   "леч",
+  "показан",
   "проведен",
   "выполн",
+  "сделан",
   "назнач",
   "анест",
   "изоляц",
@@ -6008,10 +6019,32 @@ const visitDraftParserProfiles: Record<DentalSpecialty, VisitDraftParserProfile>
       "эод",
       "холод",
       "периапик",
+      "окклюз",
+      "мезиаль",
+      "дисталь",
+      "вестибуляр",
+      "оральн",
+      "пришееч",
       "коффердам"
     ],
     diagnosisTokens: ["k02", "k04", "кариес", "пульп", "периодонтит", "периапик"],
-    planTokens: ["анест", "изоляц", "коффердам", "препар", "адгезив", "рестав", "эндодонт", "ирригац", "канал", "пломб"],
+    planTokens: [
+      "анест",
+      "изоляц",
+      "коффердам",
+      "препар",
+      "адгезив",
+      "рестав",
+      "эндодонт",
+      "рабочая длина",
+      "апекслокатор",
+      "гуттаперч",
+      "силер",
+      "ирригац",
+      "канал",
+      "пломб",
+      "временная пломба"
+    ],
     objectiveFallback: "Объективно уточнить зуб, полость/реставрацию, перкуссию, зондирование, реакцию на холод и данные снимка.",
     diagnosisFallback: null,
     planFallback: "План: уточнить диагноз, согласовать анестезию, изоляцию, лечение кариеса/эндо и контроль окклюзии.",
@@ -6156,6 +6189,16 @@ function dentalTermPattern(source: string): RegExp {
 }
 
 const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
+  [
+    /(?<![0-9A-Za-zА-Яа-яЁё])((?:зуб(?:а|е|ом)?|област(?:ь|и)|fdi)\s+)([1-4])\s*[\.,]\s*([1-8])(?![0-9A-Za-zА-Яа-яЁё])/gi,
+    "$1$2$3",
+    "номер зуба FDI"
+  ],
+  [
+    /(?<![0-9A-Za-zА-Яа-яЁё])([1-4])\s*[\.,]\s*([1-8])(\s+(?:зуб|зуба|зубе|зубом))(?![0-9A-Za-zА-Яа-яЁё])/gi,
+    "$1$2$3",
+    "номер зуба FDI"
+  ],
   [dentalTermPattern(String.raw`к\s*л\s*к\s*т`), "КЛКТ", "КЛКТ"],
   [dentalTermPattern(String.raw`клкт`), "КЛКТ", "КЛКТ"],
   [dentalTermPattern(String.raw`конусно[-\s]*лучев(?:ая|ой|ую)\s+компьютерн(?:ая|ой|ую)\s+томограф(?:ия|ию)`), "КЛКТ", "КЛКТ"],
@@ -6168,6 +6211,7 @@ const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [dentalTermPattern(String.raw`си\s*би\s*си\s*ти|cbct`), "CBCT", "CBCT"],
   [dentalTermPattern(String.raw`(?:кофердам|кофедам|кофирдам|коффердамм)(?:ом|а|е)?`), "коффердам", "коффердам"],
   [dentalTermPattern(String.raw`раббер\s*дам(?:ом|а|е)?`), "коффердам", "коффердам"],
+  [dentalTermPattern(String.raw`раббердам(?:ом|а|е)?`), "коффердам", "коффердам"],
   [dentalTermPattern(String.raw`эйр\s*флоу|айр\s*флоу|air\s*flow|airflow`), "Air Flow", "Air Flow"],
   [dentalTermPattern(String.raw`(?:пульпид|пульпед)(?:а|ом|е)?`), "пульпит", "пульпит"],
   [dentalTermPattern(String.raw`(?:периодантит|переодонтит)(?:а|ом|е)?`), "периодонтит", "периодонтит"],
@@ -6179,6 +6223,14 @@ const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [dentalTermPattern(String.raw`палпац(?:ия|ии)|пальпацыя`), "пальпация", "пальпация"],
   [dentalTermPattern(String.raw`адгизивн(?:ый|ого|ом|ая|ую)`), "адгезивный", "адгезивный"],
   [dentalTermPattern(String.raw`рестоврац(?:ия|ии|ию)`), "реставрация", "реставрация"],
+  [dentalTermPattern(String.raw`оклюзионн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "окклюзионн$1", "окклюзионная поверхность"],
+  [dentalTermPattern(String.raw`медиальн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "мезиальн$1", "мезиальная поверхность"],
+  [dentalTermPattern(String.raw`при\s+шеечн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "пришеечн$1", "пришеечная область"],
+  [dentalTermPattern(String.raw`апек\s*локатор`), "апекслокатор", "апекслокатор"],
+  [dentalTermPattern(String.raw`рабоч(?:ая|ей|ую)\s+длин(?:а|ы|у)`), "рабочая длина", "рабочая длина"],
+  [dentalTermPattern(String.raw`гут[ао]\s*перч(?:а|и|у|ей)?`), "гуттаперча", "гуттаперча"],
+  [dentalTermPattern(String.raw`силлер(?:а|ом|е)?`), "силер", "силер"],
+  [dentalTermPattern(String.raw`времен(?:ная|ной|ную)\s+пломб(?:а|ы|у|ой)?`), "временная пломба", "временная пломба"],
   [dentalTermPattern(String.raw`ирригац(?:ия|ии|ию)|иригац(?:ия|ии|ию)`), "ирригация", "ирригация"],
   [dentalTermPattern(String.raw`пломбиров(?:ание|ания)|пламбиров(?:ание|ания)`), "пломбирование", "пломбирование"],
   [dentalTermPattern(String.raw`переапикальн(?:ый|ого|ом)?|периапекальн(?:ый|ого|ом)?`), "периапикальный", "периапикальный"],
@@ -6187,6 +6239,41 @@ const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [dentalTermPattern(String.raw`инфильтрационн(?:ая|ой|ую)|инфилтрационн(?:ая|ой|ую)`), "инфильтрационная", "инфильтрационная анестезия"],
   [dentalTermPattern(String.raw`проводников(?:ая|ой|ую)`), "проводниковая", "проводниковая анестезия"],
   [dentalTermPattern(String.raw`ортопантомограмма|ортопантомограмму`), "ОПТГ", "ОПТГ"]
+];
+
+const spokenToothOrdinalMap: Array<[RegExp, string]> = [
+  [dentalTermPattern(String.raw`одиннадцат(?:ый|ого|ому|ым|ом)?`), "11"],
+  [dentalTermPattern(String.raw`двенадцат(?:ый|ого|ому|ым|ом)?`), "12"],
+  [dentalTermPattern(String.raw`тринадцат(?:ый|ого|ому|ым|ом)?`), "13"],
+  [dentalTermPattern(String.raw`четырнадцат(?:ый|ого|ому|ым|ом)?`), "14"],
+  [dentalTermPattern(String.raw`пятнадцат(?:ый|ого|ому|ым|ом)?`), "15"],
+  [dentalTermPattern(String.raw`шестнадцат(?:ый|ого|ому|ым|ом)?`), "16"],
+  [dentalTermPattern(String.raw`семнадцат(?:ый|ого|ому|ым|ом)?`), "17"],
+  [dentalTermPattern(String.raw`восемнадцат(?:ый|ого|ому|ым|ом)?`), "18"],
+  [dentalTermPattern(String.raw`двадцать\s+перв(?:ый|ого|ому|ым|ом)?`), "21"],
+  [dentalTermPattern(String.raw`двадцать\s+втор(?:ой|ого|ому|ым|ом)?`), "22"],
+  [dentalTermPattern(String.raw`двадцать\s+трет(?:ий|ьего|ьему|ьим|ьем)?`), "23"],
+  [dentalTermPattern(String.raw`двадцать\s+четверт(?:ый|ого|ому|ым|ом)?`), "24"],
+  [dentalTermPattern(String.raw`двадцать\s+пят(?:ый|ого|ому|ым|ом)?`), "25"],
+  [dentalTermPattern(String.raw`двадцать\s+шест(?:ой|ого|ому|ым|ом)?`), "26"],
+  [dentalTermPattern(String.raw`двадцать\s+седьм(?:ой|ого|ому|ым|ом)?`), "27"],
+  [dentalTermPattern(String.raw`двадцать\s+восьм(?:ой|ого|ому|ым|ом)?`), "28"],
+  [dentalTermPattern(String.raw`тридцать\s+перв(?:ый|ого|ому|ым|ом)?`), "31"],
+  [dentalTermPattern(String.raw`тридцать\s+втор(?:ой|ого|ому|ым|ом)?`), "32"],
+  [dentalTermPattern(String.raw`тридцать\s+трет(?:ий|ьего|ьему|ьим|ьем)?`), "33"],
+  [dentalTermPattern(String.raw`тридцать\s+четверт(?:ый|ого|ому|ым|ом)?`), "34"],
+  [dentalTermPattern(String.raw`тридцать\s+пят(?:ый|ого|ому|ым|ом)?`), "35"],
+  [dentalTermPattern(String.raw`тридцать\s+шест(?:ой|ого|ому|ым|ом)?`), "36"],
+  [dentalTermPattern(String.raw`тридцать\s+седьм(?:ой|ого|ому|ым|ом)?`), "37"],
+  [dentalTermPattern(String.raw`тридцать\s+восьм(?:ой|ого|ому|ым|ом)?`), "38"],
+  [dentalTermPattern(String.raw`сорок\s+перв(?:ый|ого|ому|ым|ом)?`), "41"],
+  [dentalTermPattern(String.raw`сорок\s+втор(?:ой|ого|ому|ым|ом)?`), "42"],
+  [dentalTermPattern(String.raw`сорок\s+трет(?:ий|ьего|ьему|ьим|ьем)?`), "43"],
+  [dentalTermPattern(String.raw`сорок\s+четверт(?:ый|ого|ому|ым|ом)?`), "44"],
+  [dentalTermPattern(String.raw`сорок\s+пят(?:ый|ого|ому|ым|ом)?`), "45"],
+  [dentalTermPattern(String.raw`сорок\s+шест(?:ой|ого|ому|ым|ом)?`), "46"],
+  [dentalTermPattern(String.raw`сорок\s+седьм(?:ой|ого|ому|ым|ом)?`), "47"],
+  [dentalTermPattern(String.raw`сорок\s+восьм(?:ой|ого|ому|ым|ом)?`), "48"]
 ];
 
 const spokenToothPhraseMap: Array<[string, string]> = [
@@ -6345,15 +6432,16 @@ function normalizeSpeechSections(text: string): string {
   return text
     .replace(/\s+(жалоб(?:ы|а)?\s*[:\-])/gi, "\n$1")
     .replace(/\s+((?:пациент\s+)?жалуется\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:пациент\s+)?отмечает\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:беспокоит|беспокоят)\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(анамнез\s*[:\-])/gi, "\n$1")
     .replace(/\s+(со слов\s*[:\-])/gi, "\n$1")
-    .replace(/\s+((?:из\s+анамнеза|со\s+слов\s+пациента)\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:из\s+анамнеза|со\s+слов\s+пациента|ранее\s+лечен|ранее\s+лечилась|после\s+лечения)\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(объективно\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:осмотр|при\s+осмотре|на\s+снимке|рентгенологически)\s*[:\-]?)/gi, "\n$1")
-    .replace(/\s+((?:предварительный\s+)?диагноз\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:предварительный\s+)?диагноз\s*[:\-]?|предварительно\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(план\s*[:\-]?)/gi, "\n$1")
-    .replace(/\s+((?:лечение|проведено|выполнено|назначено|рекомендовано)\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:лечение|показано|проведено|выполнено|сделано|назначено|рекомендовано)\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(рекомендации\s*[:\-]?)/gi, "\n$1")
     .replace(/\n{3,}/g, "\n\n");
 }
@@ -6377,6 +6465,10 @@ export function normalizeDentalSpeechTranscript(
 
   for (const [phrase, replacement, label] of dentalSpeechPhraseMap) {
     normalizedText = applyTrackedPhraseReplacement(normalizedText, phrase, replacement, label, changedPhrases);
+  }
+
+  for (const [pattern, replacement] of spokenToothOrdinalMap) {
+    normalizedText = applyTrackedReplacement(normalizedText, pattern, replacement, `номер зуба -> ${replacement}`, changedPhrases);
   }
 
   for (const [pattern, replacement] of spokenToothNumberMap) {
@@ -6426,15 +6518,35 @@ function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
-const complaintSectionPrefixes = ["жалобы", "жалоба", "повод", "пациент жалуется", "жалуется", "беспокоит", "беспокоят"];
-const anamnesisSectionPrefixes = ["анамнез", "из анамнеза", "со слов", "со слов пациента"];
+const complaintSectionPrefixes = [
+  "жалобы",
+  "жалоба",
+  "повод",
+  "пациент жалуется",
+  "жалуется",
+  "пациент отмечает",
+  "отмечает",
+  "беспокоит",
+  "беспокоят"
+];
+const anamnesisSectionPrefixes = [
+  "анамнез",
+  "из анамнеза",
+  "со слов",
+  "со слов пациента",
+  "ранее лечен",
+  "ранее лечилась",
+  "после лечения"
+];
 const objectiveSectionPrefixes = ["объективно", "объективный статус", "осмотр", "при осмотре", "на снимке", "рентгенологически"];
-const diagnosisSectionPrefixes = ["диагноз", "предварительный диагноз", "клинический диагноз"];
+const diagnosisSectionPrefixes = ["диагноз", "предварительный диагноз", "клинический диагноз", "предварительно"];
 const planSectionPrefixes = [
   "план",
   "лечение",
+  "показано",
   "проведено",
   "выполнено",
+  "сделано",
   "рекомендации",
   "рекомендовано",
   "назначения",
@@ -6451,7 +6563,7 @@ const allSectionPrefixes = [
 function cleanRuleParserLine(value: string): string {
   return value
     .replace(
-      /^(жалобы|жалоба|повод|пациент жалуется|жалуется|беспокоит|беспокоят|анамнез|из анамнеза|со слов|со слов пациента|объективно|объективный статус|осмотр|при осмотре|на снимке|рентгенологически|диагноз|предварительный диагноз|клинический диагноз|план|лечение|проведено|выполнено|рекомендации|рекомендовано|назначения|назначено)\s*[:\-]?\s*/i,
+      /^(жалобы|жалоба|повод|пациент жалуется|жалуется|пациент отмечает|отмечает|беспокоит|беспокоят|анамнез|из анамнеза|со слов|со слов пациента|ранее лечен|ранее лечилась|после лечения|объективно|объективный статус|осмотр|при осмотре|на снимке|рентгенологически|диагноз|предварительный диагноз|клинический диагноз|предварительно|план|лечение|показано|проведено|выполнено|сделано|рекомендации|рекомендовано|назначения|назначено)\s*[:\-]?\s*/i,
       ""
     )
     .trim();
@@ -6473,7 +6585,6 @@ function findRuleParserLines(lines: string[], tokens: string[], sectionPrefixes:
   const sectionLines = sectionPrefixes.length
     ? lines.filter((item) => lineStartsWithSection(item, sectionPrefixes)).map(cleanRuleParserLine).filter(Boolean)
     : [];
-  if (sectionLines.length) return uniqueStrings(sectionLines).slice(0, limit).join(". ");
 
   const excludedPrefixes = allSectionPrefixes.filter((prefix) => !sectionPrefixes.includes(prefix));
   const matchedLines = lines
@@ -6481,7 +6592,8 @@ function findRuleParserLines(lines: string[], tokens: string[], sectionPrefixes:
     .filter((item) => includesAnyText(item.toLowerCase(), tokens))
     .map(cleanRuleParserLine)
     .filter(Boolean);
-  return matchedLines.length ? uniqueStrings(matchedLines).slice(0, limit).join(". ") : null;
+  const mergedLines = uniqueStrings([...sectionLines, ...matchedLines]).slice(0, limit);
+  return mergedLines.length ? mergedLines.join(". ") : null;
 }
 
 function extractToothCodes(text: string): string[] {
@@ -6519,7 +6631,28 @@ function buildVisitDraftQuality(input: {
   if (includesAnyText(lower, ["кт", "клкт", "cbct", "оптг", "rvg", "трг", "снимок", "рентген"])) signals.push("imaging_mentioned");
   if (includesAnyText(lower, ["соглас", "договор", "информирован"])) signals.push("consent_mentioned");
   if (includesAnyText(lower, ["аллерг", "антикоаг", "диабет", "беремен", "давлен"])) signals.push("medical_risk_mentioned");
-  if (includesAnyText(lower, ["анест", "коффердам", "препар", "адгезив", "рестав", "ирригац", "пломбир", "удал", "имплан", "корон", "брекет", "air flow", "канал"])) {
+  if (
+    includesAnyText(lower, [
+      "анест",
+      "коффердам",
+      "препар",
+      "адгезив",
+      "рестав",
+      "рабочая длина",
+      "апекслокатор",
+      "гуттаперч",
+      "силер",
+      "ирригац",
+      "пломбир",
+      "временная пломба",
+      "удал",
+      "имплан",
+      "корон",
+      "брекет",
+      "air flow",
+      "канал"
+    ])
+  ) {
     signals.push("procedure_mentioned");
   }
 
@@ -6574,7 +6707,21 @@ export function buildRuleBasedVisitDraftFromTranscript(
   const complaintLine = findRuleParserLines(lines, [...commonComplaintTokens, ...profile.complaintTokens], complaintSectionPrefixes);
   const anamnesisLine = findRuleParserLines(
     lines,
-    ["анамнез", "со слов", "аллерг", "принимает", "курен", "диабет", "недел", "месяц", "беремен", "антикоаг"],
+    [
+      "анамнез",
+      "со слов",
+      "ранее",
+      "после лечения",
+      "в течение",
+      "аллерг",
+      "принимает",
+      "курен",
+      "диабет",
+      "недел",
+      "месяц",
+      "беремен",
+      "антикоаг"
+    ],
     anamnesisSectionPrefixes
   );
   const objectiveLine = findRuleParserLines(lines, [...commonObjectiveTokens, ...profile.objectiveTokens], objectiveSectionPrefixes);
@@ -6589,6 +6736,11 @@ export function buildRuleBasedVisitDraftFromTranscript(
     "рестав",
     "ирригац",
     "пломбир",
+    "рабочая длина",
+    "апекслокатор",
+    "гуттаперч",
+    "силер",
+    "временная пломба",
     "удал",
     "чистк",
     "имплан",
