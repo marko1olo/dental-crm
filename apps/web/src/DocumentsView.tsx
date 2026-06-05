@@ -6,12 +6,43 @@ import {
   type DocumentKind,
   type DocumentKindMetadata,
   type DocumentSourceStatus,
-  type GeneratedDocument
+  type GeneratedDocument,
+  type PatientIntakePregnancyStatus,
+  type Payment,
+  type PhotoVideoConsentMaterial,
+  type PostVisitCareTopic,
+  type ProcedureSpecificConsentProcedure,
+  type TaxDeductionApplicationDeliveryChannel,
+  type TaxDeductionApplicationForm,
+  type TaxDeductionApplicationRelationship,
+  type XrayCbctReferralPregnancyStatus,
+  type XrayCbctReferralStudyType
 } from "@dental/shared";
 
 type MedicalDocumentReleaseChannel = "paper" | "pdf" | "dicom_archive" | "secure_link" | "physical_media" | "other";
+type DocumentSelectOption<T extends string> = { value: T; label: string };
+type TaxDocumentPayerOption = { key: string; inn: string; label: string; amountRub: number; paymentCount: number };
+type MedicalCopyRequestSourceDocument = GeneratedDocument & {
+  chainSummary?: {
+    medicalRecordCopyRequest?: {
+      requestedDocumentTypes?: string[];
+      recipientFullName?: string;
+      requestedFormat?: MedicalDocumentReleaseChannel;
+    } | null;
+  } | null;
+};
 
 type DocumentsViewProps = Record<string, any>;
+
+function humanizeDocumentAuditText(value: string): string {
+  return value
+    .replace(/Официальная XSD-валидация/gi, "Официальная проверка формата ФНС")
+    .replace(/XSD-валидация/gi, "проверка формата ФНС")
+    .replace(/\bXSD\b/g, "формат ФНС")
+    .replace(/КЭП/g, "электронная подпись")
+    .replace(/ЭДО\/ТКС/g, "оператор отправки")
+    .replace(/\bXML\b/g, "электронный файл");
+}
 
 export function DocumentsView(props: DocumentsViewProps) {
   const documentKindMetadata = sharedDocumentKindMetadata as Record<DocumentKind, DocumentKindMetadata>;
@@ -974,10 +1005,66 @@ export function DocumentsView(props: DocumentsViewProps) {
     !documentVoidArchivePreserved ? "подтвердите сохранение архивной копии" : null,
     !documentVoidStatusReviewed ? "подтвердите проверку медицинских и налоговых последствий" : null
   ].filter((step): step is string => Boolean(step));
+  const typedActiveDocuments = activeDocuments as GeneratedDocument[];
+  const typedActiveIssuedPaidContracts = activeIssuedPaidContracts as GeneratedDocument[];
+  const typedEligiblePaymentReceiptPayments = eligiblePaymentReceiptPayments as Payment[];
+  const typedEligibleRefundCorrectionPayments = eligibleRefundCorrectionPayments as Payment[];
+  const typedEligibleTaxPayments = eligibleTaxPayments as Payment[];
+  const typedIssuedMedicalCopyRequestDocuments = issuedMedicalCopyRequestDocuments as MedicalCopyRequestSourceDocument[];
+  const typedPatientIntakePregnancyStatusOptions = patientIntakePregnancyStatusOptions as Array<DocumentSelectOption<PatientIntakePregnancyStatus>>;
+  const typedPhotoVideoMaterialOptions = photoVideoMaterialOptions as Array<DocumentSelectOption<PhotoVideoConsentMaterial>>;
+  const typedPostVisitCareTopicOptions = postVisitCareTopicOptions as Array<DocumentSelectOption<PostVisitCareTopic>>;
+  const typedProcedureSpecificConsentProcedureOptions = procedureSpecificConsentProcedureOptions as Array<DocumentSelectOption<ProcedureSpecificConsentProcedure>>;
+  const typedTaxApplicationDeliveryChannelOptions = taxApplicationDeliveryChannelOptions as Array<DocumentSelectOption<TaxDeductionApplicationDeliveryChannel>>;
+  const typedTaxApplicationFormOptions = taxApplicationFormOptions as Array<DocumentSelectOption<TaxDeductionApplicationForm>>;
+  const typedTaxApplicationRelationshipOptions = taxApplicationRelationshipOptions as Array<DocumentSelectOption<TaxDeductionApplicationRelationship>>;
+  const typedTaxDocumentPayerOptions = taxDocumentPayerOptions as TaxDocumentPayerOption[];
+  const typedXrayPregnancyStatusOptions = xrayPregnancyStatusOptions as Array<DocumentSelectOption<XrayCbctReferralPregnancyStatus>>;
+  const typedXrayStudyTypeOptions = xrayStudyTypeOptions as Array<DocumentSelectOption<XrayCbctReferralStudyType>>;
   const typedSelectedDocumentMetadata = selectedDocumentMetadata as DocumentKindMetadata;
   const isSelectedDocumentCreating = documentCreateSavingKind === selectedDocumentKind;
   const documentIssueSaving = Boolean(documentIssueConfirmation && documentStatusSavingId === documentIssueConfirmation.id);
   const documentVoidSaving = Boolean(documentVoidConfirmation && documentStatusSavingId === documentVoidConfirmation.id);
+  const latestDocumentOpenGuidanceId = "document-open-latest-guidance";
+  const selectedDocumentCreateGuidanceId = "document-create-selected-guidance";
+  const documentIssueMissingGuidanceId = "document-issue-missing-guidance";
+  const documentVoidMissingGuidanceId = "document-void-missing-guidance";
+  const selectedDocumentNeedsPayload = structuredPayloadDocumentKinds.has(selectedDocumentKind);
+  function releaseSourceRequestOptionLabel(document: MedicalCopyRequestSourceDocument): string {
+    const request = document.chainSummary?.medicalRecordCopyRequest;
+    const requestedDocuments = (request?.requestedDocumentTypes ?? [])
+      .map((type) => type.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(", ");
+    return [
+      document.title,
+      document.issuedAt ? formatShortDate(document.issuedAt) : null,
+      request?.recipientFullName?.trim() || null,
+      request?.requestedFormat ? medicalDocumentReleaseChannelLabels[request.requestedFormat] : null,
+      requestedDocuments || null
+    ]
+      .filter((part): part is string => Boolean(part))
+      .join(" · ");
+  }
+
+  function documentRowLifecycleGuidance(document: GeneratedDocument): string {
+    const sourceLabel = documentSourceStatusLabels[documentKindMetadata[document.kind].sourceStatus];
+    const hasIssuedArchive = Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
+    if (document.status === "draft") {
+      return `Черновик: Открыть показывает предварительный HTML. Паспорт покажет источник, блокеры и доступные действия. Архивные HTML/PDF появятся только после проверки и выдачи. Источник: ${sourceLabel}.`;
+    }
+    if (document.status === "issued" && hasIssuedArchive) {
+      return `Выдано: Открыть и Скачать используют сохраненный архив. Паспорт показывает подпись, контрольную метку, журнал выдачи и блокеры PDF/ФНС. Аннулирование потребует причину и подтверждение архива. Источник: ${sourceLabel}.`;
+    }
+    if (document.status === "issued") {
+      return `Выдано без контрольной метки архива: откройте Паспорт и проверьте блокеры скачивания перед передачей пациенту. Источник: ${sourceLabel}.`;
+    }
+    if (document.status === "voided" && hasIssuedArchive) {
+      return `Аннулировано: Открыть и Скачать остаются архивной копией. Причина аннулирования, сотрудник и последствия находятся в Паспорте выдачи. Источник: ${sourceLabel}.`;
+    }
+    return `Аннулировано: архив недоступен без контрольной метки. Паспорт показывает причину и оставшиеся ограничения. Источник: ${sourceLabel}.`;
+  }
 
   return (
           <div className="panel documents-panel" id="documents">
@@ -987,6 +1074,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                 className="text-button"
                 type="button"
                 disabled={!activeUsableDocuments[0]}
+                aria-describedby={!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined}
+                title={!activeUsableDocuments[0] ? "Сначала создайте или выдайте документ" : undefined}
                 onClick={() => {
                   if (!activeUsableDocuments[0]) return;
                   void openIssuedDocumentHtml(activeUsableDocuments[0].id);
@@ -995,6 +1084,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                 Открыть последний
               </button>
             </div>
+            {!activeUsableDocuments[0] ? (
+              <p className="document-open-guidance" id={latestDocumentOpenGuidanceId} role="status" aria-live="polite">
+                Последних документов пока нет. Выберите форму ниже и создайте документ для пациента.
+              </p>
+            ) : null}
             <div className="document-factory" aria-label="Быстро создать документ">
               <label className="document-factory-tax-year">
                 Налоговый год
@@ -1013,7 +1107,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                 />
                 <span>КНД 1151156 с 2024 года; старая справка для 2021-2023</span>
               </label>
-              {taxDocumentPayerOptions.length ? (
+              {typedTaxDocumentPayerOptions.length ? (
                 <label className="document-factory-tax-payer">
                   Плательщик для КНД
                   <select
@@ -1022,8 +1116,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                       setTaxDocumentPayerInn(event.target.value);
                     }}
                   >
-                    {taxDocumentPayerOptions.length > 1 ? <option value="">Выберите плательщика</option> : null}
-                    {taxDocumentPayerOptions.map((option: any) => (
+                    {typedTaxDocumentPayerOptions.length > 1 ? <option value="">Выберите плательщика</option> : null}
+                    {typedTaxDocumentPayerOptions.map((option) => (
                       <option key={option.key} value={option.key}>
                         {option.label} · {money(option.amountRub)}
                       </option>
@@ -1038,7 +1132,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <div>
                       <strong>Фискальные чеки для заявления и справки</strong>
                       <span>
-                        Выбрано {selectedEligibleTaxPayments.length} из {eligibleTaxPayments.length} · {money(selectedTaxPaymentTotalRub)}
+                        Выбрано {selectedEligibleTaxPayments.length} из {typedEligibleTaxPayments.length} · {money(selectedTaxPaymentTotalRub)}
                       </span>
                     </div>
                     <div>
@@ -1050,9 +1144,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                       </button>
                     </div>
                   </div>
-                  {eligibleTaxPayments.length ? (
+                  {typedEligibleTaxPayments.length ? (
                     <div className="tax-payment-selection-list">
-                      {eligibleTaxPayments.map((payment: any) => {
+                      {typedEligibleTaxPayments.map((payment) => {
                         const paymentDate = payment.fiscalReceiptIssuedAt || payment.paidAt;
                         const receiptLabel = payment.fiscalReceiptNumber?.trim() || payment.id.slice(0, 8);
                         const payerLabel = payment.payerFullName?.trim() || "плательщик не указан";
@@ -1107,16 +1201,22 @@ export function DocumentsView(props: DocumentsViewProps) {
                     ))}
                   </select>
                 </label>
-                <span>
-                  {structuredPayloadDocumentKinds.has(selectedDocumentKind)
+                <span id={selectedDocumentCreateGuidanceId}>
+                  {selectedDocumentNeedsPayload
                     ? "Заполните форму ниже. Выбранный документ сохраняется в настройках."
                     : "Можно создать сразу. Выбор сохранится для следующего открытия."}
                 </span>
+                {selectedDocumentNeedsPayload ? (
+                  <small className="document-create-guidance" role="status" aria-live="polite">
+                    Перед созданием CRM проверит обязательные поля этой формы. Если чего-то не хватает, исправьте блок ниже и нажмите снова.
+                  </small>
+                ) : null}
                 <button
                   className="primary-button"
                   type="button"
                   disabled={Boolean(documentCreateSavingKind)}
                   aria-busy={isSelectedDocumentCreating || undefined}
+                  aria-describedby={selectedDocumentCreateGuidanceId}
                   onClick={() => void createDocument(selectedDocumentKind)}
                 >
                   <FileText aria-hidden="true" /> {isSelectedDocumentCreating ? "Создаю документ" : "Создать выбранный документ"}
@@ -1136,7 +1236,15 @@ export function DocumentsView(props: DocumentsViewProps) {
                 {typedSelectedDocumentMetadata.sourceUrls.length ? (
                   <div className="document-source-links" aria-label="Официальные источники формы">
                     {typedSelectedDocumentMetadata.sourceUrls.map((url: string, index: number) => (
-                      <a className="doc-link" href={url} key={url} target="_blank" rel="noreferrer">
+                      <a
+                        className="doc-link"
+                        href={url}
+                        key={url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        aria-label={`Открыть официальный источник формы ${index + 1} в новой вкладке`}
+                        title={`Открыть официальный источник формы ${index + 1} в новой вкладке`}
+                      >
                         Источник {index + 1}
                       </a>
                     ))}
@@ -1277,12 +1385,12 @@ export function DocumentsView(props: DocumentsViewProps) {
                       value={selectedCompletedActContractDocumentId}
                       onChange={(event) => {
                         setCompletedActLinkedContractDocumentId(event.target.value);
-                        const contract = activeIssuedPaidContracts.find((document: any) => document.id === event.target.value);
+                        const contract = typedActiveIssuedPaidContracts.find((document) => document.id === event.target.value);
                         if (contract && !completedActContractNumber.trim()) setCompletedActContractNumber(completedActContractReferenceForUi(contract));
                       }}
                     >
-                      {activeIssuedPaidContracts.length === 1 ? null : <option value="">Выберите договор</option>}
-                      {activeIssuedPaidContracts.map((document: any) => (
+                      {typedActiveIssuedPaidContracts.length === 1 ? null : <option value="">Выберите договор</option>}
+                      {typedActiveIssuedPaidContracts.map((document) => (
                         <option key={document.id} value={document.id}>
                           {completedActContractReferenceForUi(document)}
                         </option>
@@ -1526,7 +1634,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </label>
                   <label>
                     QR/платежная строка
-                    <textarea value={paymentInvoiceQrPayload} onChange={(event) => setPaymentInvoiceQrPayload(event.target.value)} placeholder="необязательно: payload СБП или платежная ссылка" rows={2} />
+                    <textarea value={paymentInvoiceQrPayload} onChange={(event) => setPaymentInvoiceQrPayload(event.target.value)} placeholder="необязательно: данные СБП или платежная ссылка" rows={2} />
                   </label>
                   <p className="small">
                     Сумма из плана лечения: {money(paymentInvoiceTotalRubValue())}. Строк услуг: {plannedServiceLinesForFinancialPayload().length}.
@@ -1575,11 +1683,11 @@ export function DocumentsView(props: DocumentsViewProps) {
                       <div>
                         <strong>Оплаты и фискальные чеки</strong>
                         <span>
-                          Выбрано {selectedPaymentReceiptPayments.length} из {eligiblePaymentReceiptPayments.length} · {money(selectedPaymentReceiptTotalRub)}
+                          Выбрано {selectedPaymentReceiptPayments.length} из {typedEligiblePaymentReceiptPayments.length} · {money(selectedPaymentReceiptTotalRub)}
                         </span>
                       </div>
                       <div>
-                        <button type="button" className="text-button" onClick={() => setSelectedPaymentReceiptIds(eligiblePaymentReceiptPayments.map((payment: any) => payment.id))}>
+                        <button type="button" className="text-button" onClick={() => setSelectedPaymentReceiptIds(typedEligiblePaymentReceiptPayments.map((payment) => payment.id))}>
                           Все
                         </button>
                         <button type="button" className="text-button" onClick={() => setSelectedPaymentReceiptIds([])}>
@@ -1587,9 +1695,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                         </button>
                       </div>
                     </div>
-                    {eligiblePaymentReceiptPayments.length ? (
+                    {typedEligiblePaymentReceiptPayments.length ? (
                       <div className="tax-payment-selection-list">
-                        {eligiblePaymentReceiptPayments.map((payment: any) => {
+                        {typedEligiblePaymentReceiptPayments.map((payment) => {
                           const paymentDate = payment.fiscalReceiptIssuedAt || payment.paidAt;
                           const receiptLabel = paymentFiscalReceiptLabelForUi(payment);
                           const payerLabel = payment.payerFullName?.trim() || "плательщик не указан";
@@ -1964,7 +2072,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         value={intakePregnancyStatus}
                         onChange={(event) => setIntakePregnancyStatus(normalizedPatientIntakePregnancyStatus(event.target.value))}
                       >
-                        {patientIntakePregnancyStatusOptions.map((option: any) => (
+                        {typedPatientIntakePregnancyStatusOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -2063,7 +2171,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                           if (nextRelationship === "self") setTaxApplicationAuthorityDocument("");
                         }}
                       >
-                        {taxApplicationRelationshipOptions.map((option: any) => (
+                        {typedTaxApplicationRelationshipOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -2073,7 +2181,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <label>
                       Форма
                       <select value={taxApplicationForm} onChange={(event) => setTaxApplicationForm(normalizedTaxApplicationForm(event.target.value))}>
-                        {taxApplicationFormOptions.map((option: any) => (
+                        {typedTaxApplicationFormOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -2088,7 +2196,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         value={taxApplicationDeliveryChannel}
                         onChange={(event) => setTaxApplicationDeliveryChannel(normalizedTaxApplicationDeliveryChannel(event.target.value))}
                       >
-                        {taxApplicationDeliveryChannelOptions.map((option: any) => (
+                        {typedTaxApplicationDeliveryChannelOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -2234,7 +2342,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         value={procedureConsentProcedureType}
                         onChange={(event) => setProcedureConsentProcedureType(normalizedProcedureSpecificConsentProcedure(event.target.value))}
                       >
-                        {procedureSpecificConsentProcedureOptions.map((option: any) => (
+                        {typedProcedureSpecificConsentProcedureOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -2572,13 +2680,13 @@ export function DocumentsView(props: DocumentsViewProps) {
                   <article className="document-payload-card">
                   <div>
                     <h3>Рекомендации после приема</h3>
-                    <p>Структурированная памятка для пациента и короткий безопасный текст для Telegram-бота DENTE.</p>
+                    <p>Структурированная памятка для пациента и короткий текст для Telegram-бота клиники.</p>
                   </div>
                   <div className="document-payload-row">
                     <label>
                       Блок
                       <select value={postVisitCareTopic} onChange={(event) => changePostVisitCareTopic(normalizedPostVisitCareTopic(event.target.value))}>
-                        {postVisitCareTopicOptions.map((option: any) => (
+                        {typedPostVisitCareTopicOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -2612,7 +2720,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     >
                       {postVisitPresetFeedback ? postVisitPresetFeedback : postVisitManualEdited
                         ? "Ручные правки сохранены; смена темы не перезапишет текст без этой кнопки."
-                        : "Тема автоматически подставляет готовые ограничения, уход, питание, тревожные признаки и безопасный Telegram-текст."}
+                        : "Тема автоматически подставляет готовые ограничения, уход, питание, тревожные признаки и короткий Telegram-текст."}
                     </small>
                   </div>
                   <label>
@@ -2845,7 +2953,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   <article className="document-payload-card">
                   <div>
                     <h3>Назначение препаратов</h3>
-                    <p>Один безопасный блок без свободной догадки в документе.</p>
+                    <p>Один понятный блок назначения без догадок в документе.</p>
                   </div>
                   {renderClinicalToothRowsEditor()}
                   <label>
@@ -2865,7 +2973,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input value={prescriptionDuration} onChange={(event) => setPrescriptionDuration(event.target.value)} />
                   </label>
                   <label>
-                    Памятка безопасности
+                    Памятка пациенту
                     <textarea value={prescriptionSafetyNotes} onChange={(event) => setPrescriptionSafetyNotes(event.target.value)} rows={3} />
                   </label>
                   <label>
@@ -2924,7 +3032,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Отдельные разрешения: карта, лаборатория, консилиум, обучение, маркетинг и узнаваемая публикация.</p>
                   </div>
                   <div className="document-payload-row">
-                    {photoVideoMaterialOptions.map((option: any) => (
+                    {typedPhotoVideoMaterialOptions.map((option) => (
                       <label className="document-payload-checkbox" key={option.value}>
                         <input
                           checked={photoVideoMaterials.includes(option.value)}
@@ -3016,7 +3124,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   <label>
                     Вид исследования
                     <select value={xrayStudyType} onChange={(event) => setXrayStudyType(normalizedXrayStudyType(event.target.value))}>
-                      {xrayStudyTypeOptions.map((option: any) => (
+                      {typedXrayStudyTypeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -3059,7 +3167,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         value={xrayPregnancyStatus}
                         onChange={(event) => setXrayPregnancyStatus(normalizedXrayPregnancyStatus(event.target.value))}
                       >
-                        {xrayPregnancyStatusOptions.map((option: any) => (
+                        {typedXrayPregnancyStatusOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -3078,7 +3186,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                         type="checkbox"
                         onChange={(event) => setXrayIncludeDicomExport(event.target.checked)}
                       />
-                      Нужен DICOM-экспорт
+                      Нужны исходные файлы снимков
                     </label>
                     <label className="document-payload-checkbox">
                       <input
@@ -3146,7 +3254,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractSourceVisitIds}
                       onChange={(event) => setRecordExtractSourceVisitIds(event.target.value)}
-                      placeholder={dashboard?.activeVisit.id ?? "ID подписанных визитов, по одному в строке"}
+                      placeholder={dashboard?.activeVisit.id ?? "метки подписанных визитов, по одной в строке"}
                       rows={2}
                     />
                   </label>
@@ -3389,7 +3497,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={recordExtractSourceVisitIds}
                       onChange={(event) => setRecordExtractSourceVisitIds(event.target.value)}
-                      placeholder={dashboard?.activeVisit.id ?? "ID визитов или номера записей, по одному в строке"}
+                      placeholder={dashboard?.activeVisit.id ?? "метки визитов или номера записей, по одной в строке"}
                       rows={2}
                     />
                   </label>
@@ -3568,7 +3676,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <textarea
                       value={copyRequestSpecialInstructions}
                       onChange={(event) => setCopyRequestSpecialInstructions(event.target.value)}
-                      placeholder="например: выдать исходные DICOM-файлы, подготовить архив, передать только лично"
+                      placeholder="например: выдать исходные файлы снимков, подготовить архив, передать только лично"
                       rows={2}
                     />
                   </label>
@@ -3578,7 +3686,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                       type="checkbox"
                       onChange={(event) => setCopyRequestIncludeDicomSourceData(event.target.checked)}
                     />
-                    Если есть КТ/снимки, запросить исходные DICOM-данные
+                    Если есть КТ/снимки, запросить исходные файлы снимков
                   </label>
                   <label className="document-payload-checkbox">
                     <input
@@ -3685,14 +3793,14 @@ export function DocumentsView(props: DocumentsViewProps) {
                       onChange={(event) => setReleaseSourceRequestDocumentId(event.target.value)}
                     >
                       <option value="">Выберите выданный запрос на копии</option>
-                      {issuedMedicalCopyRequestDocuments.map((document: any) => (
+                      {typedIssuedMedicalCopyRequestDocuments.map((document) => (
                         <option key={document.id} value={document.id}>
-                          {document.title} · {document.issuedAt ? new Date(document.issuedAt).toLocaleString("ru-RU") : "выдан"} · {document.id.slice(0, 8)}
+                          {releaseSourceRequestOptionLabel(document)}
                         </option>
                       ))}
                     </select>
                     <small>
-                      Сначала создайте и выдайте документ «Запрос на копии медицинской документации». Расписка будет привязана к нему по ID.
+                      Сначала создайте и выдайте документ «Запрос на копии медицинской документации». Расписка будет привязана к выбранному запросу.
                     </small>
                   </label>
                   <label>
@@ -3966,7 +4074,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     Исходный платеж
                     <select value={refundSelectedPaymentId} onChange={(event) => selectRefundOriginalPayment(event.target.value)}>
                       <option value="">Выберите оплату с фискальным чеком</option>
-                      {eligibleRefundCorrectionPayments.map((payment: any) => (
+                      {typedEligibleRefundCorrectionPayments.map((payment) => (
                         <option key={payment.id} value={payment.id}>
                           {`${money(payment.amountRub)} · ${paymentFiscalReceiptLabelForUi(payment)} · ${
                             payment.fiscalReceiptIssuedAt || payment.paidAt || "дата не указана"
@@ -4023,7 +4131,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input
                       value={refundOriginalFiscalReceiptNumber}
                       onChange={(event) => setRefundOriginalFiscalReceiptNumber(event.target.value)}
-                      placeholder={paymentFiscalReceiptNumber || "ФН/ФД/ФП"}
+                      placeholder={paymentFiscalReceiptNumber || "номер чека или данные фискального чека"}
                     />
                   </label>
                   <label>
@@ -4186,7 +4294,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </label>
                 </div>
                 {!documentIssueAttestationReady && documentIssueMissingSteps.length ? (
-                  <div className="document-confirmation-missing" role="status" aria-live="polite">
+                  <div className="document-confirmation-missing" id={documentIssueMissingGuidanceId} role="status" aria-live="polite">
                     <strong>Чтобы выдать документ, осталось:</strong>
                     <ul>
                       {documentIssueMissingSteps.map((step) => (
@@ -4204,6 +4312,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     type="button"
                     disabled={!documentIssueAttestationReady || documentIssueSaving}
                     aria-busy={documentIssueSaving || undefined}
+                    aria-describedby={!documentIssueAttestationReady ? documentIssueMissingGuidanceId : undefined}
                     onClick={() => void confirmDocumentIssue()}
                   >
                     {documentIssueSaving ? "Выдаю документ" : "Выдать после проверки"}
@@ -4260,9 +4369,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                       onChange={(event) => setDocumentVoidCorrectionDocumentId(event.target.value)}
                     >
                       <option value="">Не выбран</option>
-                      {activeUsableDocuments
-                        .filter((document: any) => document.id !== documentVoidConfirmation.id)
-                        .map((document: any) => (
+                      {(activeUsableDocuments as GeneratedDocument[])
+                        .filter((document) => document.id !== documentVoidConfirmation.id)
+                        .map((document) => (
                           <option key={document.id} value={document.id}>
                             {documentLabels[document.kind]} · {documentStatusLabels[document.status]}
                           </option>
@@ -4313,7 +4422,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </label>
                 </div>
                 {!documentVoidReady && documentVoidMissingSteps.length ? (
-                  <div className="document-confirmation-missing" role="status" aria-live="polite">
+                  <div className="document-confirmation-missing" id={documentVoidMissingGuidanceId} role="status" aria-live="polite">
                     <strong>Чтобы аннулировать документ, осталось:</strong>
                     <ul>
                       {documentVoidMissingSteps.map((step) => (
@@ -4331,6 +4440,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     type="button"
                     disabled={!documentVoidReady || documentVoidSaving}
                     aria-busy={documentVoidSaving || undefined}
+                    aria-describedby={!documentVoidReady ? documentVoidMissingGuidanceId : undefined}
                     onClick={() => void confirmDocumentVoid()}
                   >
                     {documentVoidSaving ? "Аннулирую документ" : "Аннулировать с причиной"}
@@ -4356,7 +4466,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                 </div>
                 <div className="document-audit-facts-grid">
                   <div>
-                    <span>sha256</span>
+                    <span>Контрольная метка</span>
                     <code>{documentAuditFacts.snapshotSha256 ? documentAuditFacts.snapshotSha256.slice(0, 16) : "нет"}</code>
                   </div>
                   <div>
@@ -4368,7 +4478,15 @@ export function DocumentsView(props: DocumentsViewProps) {
                     {documentAuditFacts.sourceUrls.length ? (
                       <div className="document-source-links" aria-label="Официальные источники паспорта документа">
                         {documentAuditFacts.sourceUrls.map((url: string, index: number) => (
-                          <a className="doc-link" href={url} key={url} target="_blank" rel="noreferrer">
+                          <a
+                            className="doc-link"
+                            href={url}
+                            key={url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            aria-label={`Открыть официальный источник паспорта документа ${index + 1} в новой вкладке`}
+                            title={`Открыть официальный источник паспорта документа ${index + 1} в новой вкладке`}
+                          >
                             Источник {index + 1}
                           </a>
                         ))}
@@ -4382,28 +4500,28 @@ export function DocumentsView(props: DocumentsViewProps) {
                     </strong>
                     <small>
                       {documentAuditFacts.canExportPdf ? "PDF формируется из архивного HTML" : "PDF доступен только после выдачи"} ·{" "}
-                      {documentAuditFacts.canExportFnsXml ? "черновик XML КНД доступен после выдачи" : "XML ФНС недоступен для этой записи"}
+                      {documentAuditFacts.canExportFnsXml ? "черновой файл для ФНС доступен после выдачи" : "файл для ФНС недоступен для этой записи"}
                     </small>
                   </div>
                   {documentAuditFacts.taxXmlSourceSnapshotSha256 ? (
                     <div>
-                      <span>XML ФНС</span>
+                      <span>Файл для ФНС</span>
                       <strong>
-                        {documentAuditFacts.taxXmlSnapshotSha256 ? "черновик XML заархивирован" : "снимок фактов готов, нужна XSD/КЭП/ЭДО проверка"}
+                        {documentAuditFacts.taxXmlSnapshotSha256 ? "черновой файл заархивирован" : "факты готовы, нужна проверка формата, подпись и отправка"}
                       </strong>
                       <small>
                         факты: <code>{documentAuditFacts.taxXmlSourceSnapshotSha256.slice(0, 16)}</code>
                       </small>
                       {documentAuditFacts.taxXmlSnapshotSha256 ? (
                         <small>
-                          XML: <code>{documentAuditFacts.taxXmlSnapshotSha256.slice(0, 16)}</code>
+                          файл: <code>{documentAuditFacts.taxXmlSnapshotSha256.slice(0, 16)}</code>
                           {documentAuditFacts.taxXmlSnapshotCreatedAt
                             ? ` · ${formatShortDate(documentAuditFacts.taxXmlSnapshotCreatedAt)}`
                             : ""}
                         </small>
                       ) : null}
                       {documentAuditFacts.taxXmlOfficialValidationNote ? (
-                        <small>{documentAuditFacts.taxXmlOfficialValidationNote}</small>
+                        <small>{humanizeDocumentAuditText(documentAuditFacts.taxXmlOfficialValidationNote)}</small>
                       ) : null}
                     </div>
                   ) : null}
@@ -4417,7 +4535,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <small>
                       {documentAuditFacts.signatureAttestation
                         ? `${documentAuditFacts.signatureAttestation.recipientFullName} · ${documentAuditFacts.signatureAttestation.staffFullName}`
-                        : "PDF/XML заблокированы до фиксации получения"}
+                        : "PDF и файл ФНС заблокированы до фиксации получения"}
                     </small>
                   </div>
                   {documentAuditFacts.voidAttestation ? (
@@ -4441,7 +4559,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                       </small>
                       {documentAuditFacts.releaseJournalEntry.sourceSnapshotSha256 ? (
                         <small>
-                          sha256: <code>{documentAuditFacts.releaseJournalEntry.sourceSnapshotSha256}</code>
+                          контрольная метка архива: <code>{documentAuditFacts.releaseJournalEntry.sourceSnapshotSha256.slice(0, 16)}</code>
                         </small>
                       ) : null}
                     </div>
@@ -4485,60 +4603,124 @@ export function DocumentsView(props: DocumentsViewProps) {
               </section>
             ) : null}
             <div className="document-list">
-              {activeDocuments.map((document: GeneratedDocument) => (
-                <article className="document-row" key={document.id}>
-                  <CheckCircle2 aria-hidden="true" />
-                  <div>
-                    <h3>{documentActionLabels[document.kind]}</h3>
-                    <p>
-                      {documentLabels[document.kind]} · {documentStatusLabels[document.status]}
-                      <span className={documentSourceStatusClassNames[documentKindMetadata[document.kind].sourceStatus]}>
-                        {documentSourceStatusLabels[documentKindMetadata[document.kind].sourceStatus]}
-                      </span>
-                      {document.taxYear ? ` · ${document.taxYear}` : ""}
-                      {document.issuedAt ? ` ${formatShortDate(document.issuedAt)}` : ""} · {money(document.totalAmountRub)}
-                    </p>
-                  </div>
-                  <div className="document-actions">
-                    <button className="doc-link" type="button" onClick={() => void openIssuedDocumentHtml(document.id)}>
-                      Открыть
-                    </button>
-                    <button
-                      className="doc-link"
-                      type="button"
-                      onClick={() => void loadDocumentAuditFacts(document.id)}
-                      disabled={documentAuditFactsLoadingId === document.id}
-                    >
-                      {documentAuditFactsLoadingId === document.id ? "Гружу" : "Паспорт"}
-                    </button>
-                    {(document.status === "issued" || document.status === "voided") && document.issuedSnapshotSha256 ? (
-                      <button className="doc-link" type="button" onClick={() => void downloadIssuedDocumentHtml(document.id)}>
-                        Скачать HTML
+              {typedActiveDocuments.map((document) => {
+                const documentActionLabel = documentActionLabels[document.kind];
+                const documentKindLabel = documentLabels[document.kind];
+                const documentTaxYearContext = document.taxYear ? `, ${document.taxYear}` : "";
+                const documentActionContext = `${documentActionLabel}: ${documentKindLabel}${documentTaxYearContext}`;
+                const documentAuditLoading = documentAuditFactsLoadingId === document.id;
+                const documentStatusSaving = documentStatusSavingId === document.id;
+                const documentLifecycleGuidanceId = `document-lifecycle-guidance-${document.id}`;
+                const documentLifecycleGuidance = documentRowLifecycleGuidance(document);
+                const documentArchiveAvailable =
+                  (document.status === "issued" || document.status === "voided") &&
+                  Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
+                return (
+                  <article className="document-row" key={document.id}>
+                    <CheckCircle2 aria-hidden="true" />
+                    <div>
+                      <h3>{documentActionLabel}</h3>
+                      <p>
+                        {documentKindLabel} · {documentStatusLabels[document.status]}
+                        <span className={documentSourceStatusClassNames[documentKindMetadata[document.kind].sourceStatus]}>
+                          {documentSourceStatusLabels[documentKindMetadata[document.kind].sourceStatus]}
+                        </span>
+                        {document.taxYear ? ` · ${document.taxYear}` : ""}
+                        {document.issuedAt ? ` ${formatShortDate(document.issuedAt)}` : ""} · {money(document.totalAmountRub)}
+                      </p>
+                      <small className="document-row-guidance" id={documentLifecycleGuidanceId}>
+                        {documentLifecycleGuidance}
+                      </small>
+                    </div>
+                    <div className="document-actions" aria-label={`Действия с документом: ${documentActionContext}`}>
+                      <button
+                        className="doc-link"
+                        type="button"
+                        onClick={() => void openIssuedDocumentHtml(document.id)}
+                        aria-describedby={documentLifecycleGuidanceId}
+                        aria-label={`Открыть HTML документа: ${documentActionContext}`}
+                        title={`Открыть HTML документа: ${documentActionContext}`}
+                      >
+                        Открыть
                       </button>
-                    ) : null}
-                    {(document.status === "issued" || document.status === "voided") && document.issuedSnapshotSha256 ? (
-                      <button className="doc-link" type="button" onClick={() => void downloadIssuedDocumentPdf(document.id)}>
-                        Скачать PDF
+                      <button
+                        className="doc-link"
+                        type="button"
+                        onClick={() => void loadDocumentAuditFacts(document.id)}
+                        disabled={documentAuditLoading}
+                        aria-busy={documentAuditLoading || undefined}
+                        aria-describedby={documentLifecycleGuidanceId}
+                        aria-label={`Открыть паспорт выдачи: ${documentActionContext}`}
+                        title={`Открыть паспорт выдачи: ${documentActionContext}`}
+                      >
+                        {documentAuditLoading ? "Гружу" : "Паспорт"}
                       </button>
-                    ) : null}
-                    {document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
-                      <button className="doc-link" type="button" onClick={() => void downloadTaxDocumentXml(document.id)}>
-                        Черновик XML КНД
-                      </button>
-                    ) : null}
-                    {document.status === "draft" ? (
-                      <button className="doc-link" type="button" disabled={documentStatusSavingId === document.id} onClick={() => requestDocumentIssue(document)}>
-                        Проверить и выдать
-                      </button>
-                    ) : null}
-                    {document.status !== "voided" ? (
-                      <button className="text-button" type="button" disabled={documentStatusSavingId === document.id} onClick={() => requestDocumentVoid(document)}>
-                        Аннулировать
-                      </button>
-                    ) : null}
-                  </div>
-                </article>
-              ))}
+                      {documentArchiveAvailable ? (
+                        <button
+                          className="doc-link"
+                          type="button"
+                          onClick={() => void downloadIssuedDocumentHtml(document.id)}
+                          aria-describedby={documentLifecycleGuidanceId}
+                          aria-label={`Скачать HTML документа: ${documentActionContext}`}
+                          title={`Скачать HTML документа: ${documentActionContext}`}
+                        >
+                          Скачать HTML
+                        </button>
+                      ) : null}
+                      {documentArchiveAvailable ? (
+                        <button
+                          className="doc-link"
+                          type="button"
+                          onClick={() => void downloadIssuedDocumentPdf(document.id)}
+                          aria-describedby={documentLifecycleGuidanceId}
+                          aria-label={`Скачать PDF документа: ${documentActionContext}`}
+                          title={`Скачать PDF документа: ${documentActionContext}`}
+                        >
+                          Скачать PDF
+                        </button>
+                      ) : null}
+                      {document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
+                        <button
+                          className="doc-link"
+                          type="button"
+                          onClick={() => void downloadTaxDocumentXml(document.id)}
+                          aria-describedby={documentLifecycleGuidanceId}
+                          aria-label={`Скачать черновой файл ФНС: ${documentActionContext}`}
+                          title={`Скачать черновой файл ФНС: ${documentActionContext}`}
+                        >
+                          Черновой файл ФНС
+                        </button>
+                      ) : null}
+                      {document.status === "draft" ? (
+                        <button
+                          className="doc-link"
+                          type="button"
+                          disabled={documentStatusSaving}
+                          onClick={() => requestDocumentIssue(document)}
+                          aria-describedby={documentLifecycleGuidanceId}
+                          aria-label={`Проверить и выдать документ: ${documentActionContext}`}
+                          title={`Проверить и выдать документ: ${documentActionContext}`}
+                        >
+                          Проверить и выдать
+                        </button>
+                      ) : null}
+                      {document.status !== "voided" ? (
+                        <button
+                          className="text-button"
+                          type="button"
+                          disabled={documentStatusSaving}
+                          onClick={() => requestDocumentVoid(document)}
+                          aria-describedby={documentLifecycleGuidanceId}
+                          aria-label={`Аннулировать документ: ${documentActionContext}`}
+                          title={`Аннулировать документ: ${documentActionContext}`}
+                        >
+                          Аннулировать
+                        </button>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </div>
 

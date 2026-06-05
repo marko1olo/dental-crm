@@ -56,6 +56,22 @@ const headerAliases: Record<string, keyof Pick<ImportPreviewRow, "fullName" | "p
   "коммент": "notes"
 };
 
+type ImportPayloadSchema<T> = {
+  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+};
+
+function parseImportPayload<T>(schema: ImportPayloadSchema<T>, value: unknown, message: string) {
+  const parsed = schema.safeParse(value);
+  if (parsed.success) return { ok: true as const, data: parsed.data };
+  return {
+    ok: false as const,
+    response: {
+      error: "ImportValidationError",
+      message
+    }
+  };
+}
+
 function detectDelimiter(headerLine: string) {
   const candidates = [";", ",", "\t"];
   return candidates
@@ -186,7 +202,7 @@ export function buildPatientImportIntake(input: ImportPreviewRequest): ImportInt
   const normalizedText = normalizeImportText(input);
   const notes = [
     "Сначала выполняется распознавание полей, затем preview. Запись в базу только после подтверждения.",
-    "Поддержаны CSV, TSV, Excel-copy, свободный текст, OCR-текст с фото журнала и надиктовка."
+    "Поддержаны табличные выгрузки, вставка из Excel, свободный текст, OCR-текст с фото журнала и надиктовка."
   ];
   if (input.sourceKind === "image_ocr") {
     notes.push("Фото журнала должно проходить OCR/vision worker; этот endpoint принимает распознанный текст и нормализует его.");
@@ -303,19 +319,37 @@ export function buildPatientImportPreview(input: ImportPreviewRequest): ImportPr
 export async function registerImportRoutes(app: FastifyInstance) {
   app.post("/api/imports/patients/intake", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "patient import intake"))) return;
-    const input = importIntakeRequestSchema.parse(request.body);
+    const parsed = parseImportPayload(
+      importIntakeRequestSchema,
+      request.body,
+      "Импорт пациентов не проверен: передайте текст, таблицу или распознанную диктовку с названием источника."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildPatientImportIntake(input);
   });
 
   app.post("/api/imports/patients/preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "patient import preview"))) return;
-    const input = importPreviewRequestSchema.parse(request.body);
+    const parsed = parseImportPayload(
+      importPreviewRequestSchema,
+      request.body,
+      "Предпросмотр импорта пациентов не построен: передайте непустой текст или табличную выгрузку до 120000 символов."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildPatientImportPreview(input);
   });
 
   app.post("/api/imports/patients/commit", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "patient import commit"))) return;
-    const input = importCommitRequestSchema.parse(request.body);
+    const parsed = parseImportPayload(
+      importCommitRequestSchema,
+      request.body,
+      "Импорт пациентов не выполнен: повторно передайте ту же непустую выгрузку перед записью."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return commitPatientImport(input);
   });
 }

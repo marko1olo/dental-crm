@@ -69,6 +69,13 @@ type PersistedDentalState = {
 };
 
 type PersistedDentalStateCore = Omit<PersistedDentalState, "checksum">;
+type PersistedPayloadReadError = "state_file_missing" | "state_file_unreadable";
+type PersistenceIntegrityWarning =
+  | "persistence_disabled"
+  | "state_file_missing"
+  | "state_file_unreadable"
+  | "state_checksum_mismatch"
+  | "backup_integrity_warning";
 
 function persistenceEnabled(): boolean {
   return process.env.DENTAL_STATE_PERSISTENCE !== "off";
@@ -161,12 +168,24 @@ function checksumVerified(payload: Partial<PersistedDentalState> | null | undefi
   );
 }
 
-function readPersistedPayload(filePath: string): { payload: Partial<PersistedDentalState> | null; error: string | null } {
+function persistenceWarningText(warning: PersistenceIntegrityWarning): string {
+  if (warning === "persistence_disabled") return "Серверное сохранение состояния выключено; перед миграцией включите сохранение или скачайте ручной экспорт.";
+  if (warning === "state_file_missing") return "Файл состояния еще не создан; выполните рабочее изменение и повторите проверку резервной копии.";
+  if (warning === "state_file_unreadable") return "Файл состояния не читается; используйте последнюю читаемую резервную копию и проверьте права сервера.";
+  if (warning === "state_checksum_mismatch") return "Контрольная сумма файла состояния не совпала; скачайте экспорт и проверьте последнюю резервную копию.";
+  return "Одна из последних резервных копий не прошла проверку; не удаляйте архивы до читаемого экспорта.";
+}
+
+function compactPersistenceWarnings(warnings: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(warnings.filter((warning): warning is string => Boolean(warning))));
+}
+
+function readPersistedPayload(filePath: string): { payload: Partial<PersistedDentalState> | null; error: PersistedPayloadReadError | null } {
   if (!existsSync(filePath)) return { payload: null, error: "state_file_missing" };
   try {
     return { payload: JSON.parse(readFileSync(filePath, "utf8")) as Partial<PersistedDentalState>, error: null };
-  } catch (error) {
-    return { payload: null, error: error instanceof Error ? error.message : "state_file_parse_failed" };
+  } catch {
+    return { payload: null, error: "state_file_unreadable" };
   }
 }
 
@@ -272,16 +291,17 @@ export function getPersistentStateIntegrityReport(limit = 8) {
       fileHash: rawFileHash(backup.filePath),
       checksumVerified: checksumVerified(backupPayload.payload),
       readable: !backupPayload.error,
-      warning: backupPayload.error
+      warning: backupPayload.error ? persistenceWarningText(backupPayload.error) : null
     };
   });
-  const warnings = [
+  const warningCodes: Array<PersistenceIntegrityWarning | null> = [
     !meta.enabled ? "persistence_disabled" : null,
     !meta.exists ? "state_file_missing" : null,
     error,
     checksumOk === false ? "state_checksum_mismatch" : null,
     backups.some((backup) => backup.readable === false || backup.checksumVerified === false) ? "backup_integrity_warning" : null
-  ].filter((warning): warning is string => Boolean(warning));
+  ];
+  const warnings = compactPersistenceWarnings(warningCodes.map((warning) => (warning ? persistenceWarningText(warning) : null)));
 
   return {
     ok: meta.enabled && meta.exists && checksumOk !== false && warnings.length === 0,
@@ -294,8 +314,8 @@ export function getPersistentStateIntegrityReport(limit = 8) {
     warnings,
     nextAction:
       warnings.length === 0
-        ? "State file and recent backups are readable. Download an export before destructive migrations."
-        : "Review warnings before import, migration, or deployment. Do not delete backups until a readable export exists."
+        ? "Файл состояния и последние резервные копии читаются. Перед миграцией скачайте контрольный экспорт."
+        : "Проверьте предупреждения перед импортом, миграцией или обновлением. Не удаляйте резервные копии, пока нет читаемого экспорта."
   };
 }
 
@@ -307,7 +327,7 @@ export function buildPersistentStateExport() {
     exportKind: "dental-crm-prototype-state",
     exportVersion: 1,
     integrity: getPersistentStateIntegrityReport(12),
-    error,
+    error: error ? persistenceWarningText(error) : null,
     payload
   };
 }

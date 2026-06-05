@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,6 +21,28 @@ const { activeVisit, visitDraftAutosaves } = await import(pathToFileURL(sampleDa
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+const visitRouteSource = readFileSync("apps/api/src/routes/visits.ts", "utf8");
+assert(!visitRouteSource.includes("const message = error instanceof Error ? error.message"), "visit route must not forward raw domain error.message");
+assert(!visitRouteSource.includes('send({ error: "VisitDraftMutationRejected", message })'), "visit route must not expose raw closed-visit text");
+assert(visitRouteSource.includes("visitDraftDomainMessage("), "visit route must keep private domain message classifier");
+
+const forbiddenVisitMutationTerms =
+  /ZodError|issues|path|request\.body|safeParse|visitId|patientId|selectedSpecialty|transcript|baseRevision|clientDraftId|clientSavedAt|doctorSummary|clientMutationId|complaint|anamnesis|objectiveStatus|diagnosis|treatmentPlan|warnings|undefined|null|Визит не найден|Прием уже закрыт или аннулирован/i;
+
+function assertVisitMutationRejection(response, label, expectedStatusCode, expectedError, expectedReason, expectedMessage) {
+  assert(
+    response.statusCode === expectedStatusCode,
+    `${label} must return ${expectedStatusCode}: ${response.statusCode} ${response.body}`
+  );
+  const payload = response.json();
+  assert(payload.error === expectedError, `${label} error code mismatch: ${response.body}`);
+  assert(payload.reason === expectedReason, `${label} reason mismatch: ${response.body}`);
+  assert(payload.message === expectedMessage, `${label} message mismatch: ${response.body}`);
+  assert(payload.error !== payload.message, `${label} must not place operator copy in error`);
+  assert(!Object.hasOwn(payload, "issues"), `${label} must not expose zod issues`);
+  assert(!forbiddenVisitMutationTerms.test(response.body), `${label} leaked raw visit/schema detail: ${response.body}`);
 }
 
 const app = Fastify({ logger: false });
@@ -86,11 +108,14 @@ for (const closedStatus of ["signed", "voided"]) {
       clientDraftId: `smoke-blocked-${closedStatus}`
     }
   });
-  assert(
-    closedAutosaveResponse.statusCode === 409,
-    `${closedStatus} visit autosave must be rejected: ${closedAutosaveResponse.statusCode} ${closedAutosaveResponse.body}`
+  assertVisitMutationRejection(
+    closedAutosaveResponse,
+    `${closedStatus} visit autosave`,
+    409,
+    "VisitDraftMutationRejected",
+    "visit_closed",
+    "Черновик приема не сохранен: этот прием уже недоступен для изменений."
   );
-  assert(closedAutosaveResponse.json().error === "VisitDraftMutationRejected", `${closedStatus} autosave rejection code mismatch`);
   assert(visitDraftAutosaves.length === draftCountAfterOpenAutosave, `${closedStatus} autosave rejection must not add a draft`);
 
   const closedAcceptResponse = await app.inject({
@@ -105,11 +130,14 @@ for (const closedStatus of ["signed", "voided"]) {
       clientSavedAt: new Date().toISOString()
     }
   });
-  assert(
-    closedAcceptResponse.statusCode === 409,
-    `${closedStatus} visit accept must be rejected: ${closedAcceptResponse.statusCode} ${closedAcceptResponse.body}`
+  assertVisitMutationRejection(
+    closedAcceptResponse,
+    `${closedStatus} visit accept`,
+    409,
+    "VisitDraftMutationRejected",
+    "visit_closed",
+    "Черновик приема не принят: этот прием уже недоступен для изменений."
   );
-  assert(closedAcceptResponse.json().error === "VisitDraftMutationRejected", `${closedStatus} accept rejection code mismatch`);
   assert(activeVisit.complaint === originalComplaint, `${closedStatus} accept rejection must not mutate signed clinical complaint`);
   assert(activeVisit.revision === originalRevision, `${closedStatus} accept rejection must not advance visit revision`);
 }
@@ -122,7 +150,14 @@ const unknownVisitResponse = await app.inject({
   payload: autosavePayload
 });
 assert(unknownVisitResponse.statusCode === 404, `unknown visit autosave must be 404: ${unknownVisitResponse.statusCode} ${unknownVisitResponse.body}`);
-assert(unknownVisitResponse.json().error === "VisitNotFound", "unknown visit rejection code mismatch");
+assertVisitMutationRejection(
+  unknownVisitResponse,
+  "unknown visit autosave",
+  404,
+  "VisitNotFound",
+  "visit_not_found",
+  "Прием не найден. Обновите рабочий экран и выберите актуальный прием."
+);
 
 activeVisit.status = originalStatus;
 activeVisit.complaint = originalComplaint;

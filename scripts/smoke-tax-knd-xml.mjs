@@ -29,6 +29,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function documentErrorText(response) {
+  const body = response.json();
+  return String(body.message ?? body.error ?? "");
+}
+
 function assertNoMojibake(value, label) {
   assert(!/[ÐÑ]/.test(String(value)), `${label} contains mojibake`);
 }
@@ -37,21 +42,23 @@ const appSource = [readFileSync("apps/web/src/App.tsx", "utf8"), readFileSync("a
 const documentRoutesSource = readFileSync("apps/api/src/routes/documents.ts", "utf8");
 const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 const taxXmlSource = readFileSync("apps/api/src/documents/taxXml.ts", "utf8");
-assert(appSource.includes("черновик XML заархивирован"), "document passport UI must expose immutable FNS XML draft snapshot status");
+assert(appSource.includes("черновой файл заархивирован"), "document passport UI must expose immutable FNS draft file snapshot status");
 assert(
-  appSource.includes("снимок фактов готов, нужна XSD/КЭП/ЭДО проверка"),
-  "document passport UI must show that tax XML source facts still need external validation/signing/submission"
+  appSource.includes("факты готовы, нужна проверка формата, подпись и отправка"),
+  "document passport UI must show that tax electronic file source facts still need external validation/signing/submission"
 );
 assert(
-  appSource.includes("черновик XML КНД доступен после выдачи"),
-  "document passport UI must describe KND XML availability as a draft, not an official ready package"
+  appSource.includes("черновой файл для ФНС доступен после выдачи"),
+  "document passport UI must describe KND file availability as a draft, not an official ready package"
 );
 assert(!appSource.includes('"XML КНД доступен после выдачи"'), "document passport UI must not call KND XML ready without the draft boundary");
-assert(appSource.includes("taxXmlOfficialValidationNote"), "document passport UI must render official tax XML validation boundary note");
+assert(appSource.includes("humanizeDocumentAuditText(documentAuditFacts.taxXmlOfficialValidationNote)"), "document passport UI must render official tax XML validation boundary note through humanized copy");
+assert(appSource.includes("Официальная проверка формата ФНС"), "Documents UI must translate XSD jargon for administrators");
+assert(appSource.includes("электронная подпись"), "Documents UI must translate KEP jargon for administrators");
 assert(appSource.includes("taxXmlSourceSnapshotSha256"), "document passport UI must show tax XML source snapshot hash");
 assert(appSource.includes("taxXmlSnapshotSha256"), "document passport UI must show tax XML byte snapshot hash");
 assert(appSource.includes('/api/documents/${documentId}/tax-xml'), "Documents UI must call the guarded FNS XML export endpoint");
-assert(appSource.includes("Черновик XML КНД"), "Documents UI must label KND XML in Russian as a draft that still needs validation/signing");
+assert(appSource.includes("Черновой файл ФНС"), "Documents UI must label KND export in Russian as a draft that still needs validation/signing");
 assert(!appSource.includes("XML draft КНД"), "Documents UI must not expose English fallback in the KND XML button");
 assert(
   appSource.includes('document.kind === "tax_deduction_certificate" && document.status === "issued"'),
@@ -111,7 +118,7 @@ try {
     url: `/api/documents/${certificate.id}/tax-xml`
   });
   assert(draftXmlResponse.statusCode === 409, `draft tax XML must be blocked: ${draftXmlResponse.statusCode}`);
-  assert(String(draftXmlResponse.json().error).includes("после выдачи"), "draft tax XML block must require issued certificate");
+  assert(documentErrorText(draftXmlResponse).includes("после выдачи"), "draft tax XML block must require issued certificate");
   assertNoMojibake(draftXmlResponse.body, "draft tax XML response");
 
   const missingApplicationIssueResponse = await app.inject({
@@ -123,7 +130,7 @@ try {
     `tax certificate issue without application must be blocked: ${missingApplicationIssueResponse.statusCode}`
   );
   assert(
-    String(missingApplicationIssueResponse.json().error).includes("заявление"),
+    documentErrorText(missingApplicationIssueResponse).includes("заявление"),
     "tax certificate issue block must explain missing taxpayer application"
   );
   assertNoMojibake(missingApplicationIssueResponse.body, "missing application issue response");
@@ -314,7 +321,7 @@ try {
     url: `/api/documents/${spouseCertificateResponse.json().id}/issue`
   });
   assert(spouseIssueResponse.statusCode === 409, "non-self KND certificate must require patient tax identity before issue");
-  assert(String(spouseIssueResponse.json().error).includes("ИНН пациента"), "non-self KND block must explain missing patient INN");
+  assert(documentErrorText(spouseIssueResponse).includes("ИНН пациента"), "non-self KND block must explain missing patient INN");
   assertNoMojibake(spouseIssueResponse.body, "non-self missing patient INN issue response");
 
   const activePatient = patients.find((patient) => patient.id === activeVisit.patientId);
@@ -431,7 +438,7 @@ try {
     }
   });
   assert(mismatchedApplicationResponse.statusCode === 409, "tax application with mismatched document/payload year must be blocked");
-  assert(String(mismatchedApplicationResponse.json().error).includes("не совпадает"), "tax application mismatch must explain year mismatch");
+  assert(documentErrorText(mismatchedApplicationResponse).includes("не совпадает"), "tax application mismatch must explain year mismatch");
   assertNoMojibake(mismatchedApplicationResponse.body, "mismatched tax application response");
 
   const applicationCreateResponse = await app.inject({
@@ -506,7 +513,14 @@ try {
     url: `/api/documents/${certificate.id}/tax-xml`
   });
   assert(missingTaxOfficeResponse.statusCode === 409, `tax XML without tax office code must be blocked: ${missingTaxOfficeResponse.statusCode}`);
-  assert(String(missingTaxOfficeResponse.json().error).includes("DENTE_FNS_TAX_OFFICE_CODE"), "tax XML block must explain missing FNS tax office code");
+  assert(
+    documentErrorText(missingTaxOfficeResponse).includes("4-значный код налогового органа"),
+    "tax XML block must explain missing FNS tax office code"
+  );
+  assert(
+    !documentErrorText(missingTaxOfficeResponse).includes("DENTE_FNS_TAX_OFFICE_CODE"),
+    "tax XML block must not expose the server env key as user-facing copy"
+  );
   assertNoMojibake(missingTaxOfficeResponse.body, "missing tax office response");
 
   process.env.DENTE_FNS_TAX_OFFICE_CODE = "6310";

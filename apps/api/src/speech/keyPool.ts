@@ -449,7 +449,7 @@ export async function fetchWithProviderTimeout(
     return await fetch(input, { ...init, signal: controller.signal });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new SpeechProviderRequestError(`Provider timeout after ${timeoutMs} ms`, {
+      throw new SpeechProviderRequestError(`Источник распознавания не ответил за ${Math.round(timeoutMs / 1000)} сек.`, {
         retryable: true,
         timedOut: true
       });

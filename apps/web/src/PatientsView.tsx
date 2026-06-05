@@ -93,7 +93,13 @@ export function PatientsView(props: PatientsViewProps) {
   } = props;
 
   const patientNameReady = newPatientName.trim().length > 0;
-  const patientCreateReady = patientNameReady && !isPatientCreating;
+  const patientCreatePhoneIssue = newPatientPhone.trim().length > 0 && newPatientPhone.replace(/\D/g, "").length < 5;
+  const patientCreateReady = patientNameReady && !patientCreatePhoneIssue && !isPatientCreating;
+  const patientCreateGuidance = !patientNameReady
+    ? "Укажите ФИО пациента. Телефон и дату рождения можно добавить позже."
+    : patientCreatePhoneIssue
+      ? "Телефон пациента слишком короткий. Исправьте номер или очистите поле."
+      : null;
   const patientCoreNameMissing = patientCoreDraft.fullName.trim().length === 0;
   const patientCoreReadyToSave =
     Boolean(selectedPatient) && patientCoreDirty && patientCoreSaveState !== "saving" && !patientCoreNameMissing;
@@ -102,6 +108,26 @@ export function PatientsView(props: PatientsViewProps) {
     patientAdministrativeProfileDirty &&
     patientAdministrativeProfileSaveState !== "saving" &&
     !patientAdministrativeProfileValidationMessage;
+  const patientCoreSaveGuidanceId = "patient-core-save-guidance";
+  const patientAdministrativeSaveGuidanceId = "patient-admin-save-guidance";
+  const patientCoreSaveGuidance = !selectedPatient
+    ? "Выберите пациента перед сохранением карточки."
+    : patientCoreNameMissing
+      ? "ФИО пациента обязательно для расписания, документов и связи."
+      : patientCoreSaveState === "saving"
+        ? "Карточка пациента уже сохраняется."
+        : !patientCoreDirty
+          ? "В карточке пациента нет новых изменений."
+          : null;
+  const patientAdministrativeSaveGuidance = !selectedPatient
+    ? "Выберите пациента перед сохранением реквизитов."
+    : patientAdministrativeProfileValidationMessage
+      ? patientAdministrativeProfileValidationMessage
+      : patientAdministrativeProfileSaveState === "saving"
+        ? "Реквизиты пациента уже сохраняются."
+        : !patientAdministrativeProfileDirty
+          ? "В реквизитах пациента нет новых изменений."
+          : null;
 
   return (
           <div className="panel patients-panel" id="patients">
@@ -111,6 +137,8 @@ export function PatientsView(props: PatientsViewProps) {
                 <Search aria-hidden="true" />
                 <input
                   aria-label="Поиск пациента"
+                  type="search"
+                  autoComplete="off"
                   value={query}
                   onChange={(event: TextFieldChangeEvent) => setQuery(event.target.value)}
                   placeholder="ФИО или телефон"
@@ -120,12 +148,16 @@ export function PatientsView(props: PatientsViewProps) {
             <div className="quick-create">
               <input
                 aria-label="ФИО нового пациента"
+                autoComplete="name"
                 value={newPatientName}
                 onChange={(event: TextFieldChangeEvent) => setNewPatientName(event.target.value)}
                 placeholder="Новый пациент"
               />
               <input
                 aria-label="Телефон нового пациента"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={newPatientPhone}
                 onChange={(event: TextFieldChangeEvent) => setNewPatientPhone(event.target.value)}
                 placeholder="+7 телефон"
@@ -133,6 +165,7 @@ export function PatientsView(props: PatientsViewProps) {
               <input
                 aria-label="Дата рождения нового пациента"
                 type="date"
+                autoComplete="bday"
                 value={newPatientBirthDate}
                 onChange={(event: TextFieldChangeEvent) => setNewPatientBirthDate(event.target.value)}
               />
@@ -141,16 +174,16 @@ export function PatientsView(props: PatientsViewProps) {
                 type="button"
                 title="Создать пациента"
                 onClick={createPatient}
-                aria-describedby={!patientNameReady ? "patient-create-guidance" : undefined}
+                aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}
                 disabled={!patientCreateReady}
                 aria-busy={isPatientCreating || undefined}
               >
                 <Plus aria-hidden="true" /> Создать
               </button>
             </div>
-            {!patientNameReady ? (
+            {patientCreateGuidance ? (
               <p className="quick-create-guidance" id="patient-create-guidance" role="status" aria-live="polite">
-                Укажите ФИО пациента. Телефон и дату рождения можно добавить позже.
+                {patientCreateGuidance}
               </p>
             ) : null}
             <div className="patient-list">
@@ -165,16 +198,17 @@ export function PatientsView(props: PatientsViewProps) {
                       {insight ? (
                         <div className="patient-row-meta">
                           <span>{patientInsightRiskLabels[insight.riskLevel]}</span>
-                          <span>{insight.nextBestAction}</span>
+                          <strong className="patient-next-action">{insight.nextBestAction}</strong>
                           {insight.balanceDueRub ? <span>{money(insight.balanceDueRub)}</span> : null}
                         </div>
                       ) : null}
                     </div>
                     <button
+                      aria-label={`Открыть карточку пациента: ${patient.fullName}`}
                       aria-pressed={patientIsSelected}
                       className="round-link"
                       type="button"
-                      title="Открыть пациента"
+                      title={`Открыть карточку пациента: ${patient.fullName}`}
                       onClick={() => setSelectedPatientId(patient.id)}
                     >
                       <ArrowRight aria-hidden="true" />
@@ -214,6 +248,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label className="form-span-2">
                   ФИО пациента
                   <input
+                    autoComplete="name"
                     value={patientCoreDraft.fullName}
                     onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("fullName", event.target.value)}
                     placeholder="Фамилия Имя Отчество"
@@ -223,6 +258,7 @@ export function PatientsView(props: PatientsViewProps) {
                   Дата рождения
                   <input
                     type="date"
+                    autoComplete="bday"
                     value={patientCoreDraft.birthDate}
                     onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("birthDate", event.target.value)}
                   />
@@ -230,6 +266,9 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Телефон
                   <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={patientCoreDraft.phone}
                     onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("phone", event.target.value)}
                     placeholder="+7..."
@@ -239,6 +278,7 @@ export function PatientsView(props: PatientsViewProps) {
                   Email
                   <input
                     type="email"
+                    autoComplete="email"
                     value={patientCoreDraft.email}
                     onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("email", event.target.value)}
                     placeholder="patient@example.ru"
@@ -260,15 +300,16 @@ export function PatientsView(props: PatientsViewProps) {
                   className="primary-button"
                   type="button"
                   onClick={savePatientCore}
-                  aria-describedby={!patientCoreReadyToSave ? "patient-core-save-guidance" : undefined}
+                  aria-busy={patientCoreSaveState === "saving" || undefined}
+                  aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
                   disabled={!patientCoreReadyToSave}
                 >
                   <UserCheck aria-hidden="true" /> Сохранить карточку
                 </button>
               </div>
-              {!patientCoreReadyToSave && (patientCoreNameMissing || !selectedPatient) ? (
-                <p className="patient-save-guidance" id="patient-core-save-guidance" role="status" aria-live="polite">
-                  {selectedPatient ? "ФИО пациента обязательно для расписания, документов и связи." : "Выберите пациента перед сохранением карточки."}
+              {patientCoreSaveGuidance ? (
+                <p className="patient-save-guidance" id={patientCoreSaveGuidanceId} role="status" aria-live="polite">
+                  {patientCoreSaveGuidance}
                 </p>
               ) : null}
               <div className="panel-heading compact-heading patient-doc-heading">
@@ -295,6 +336,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Документ пациента
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.identityDocument}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("identityDocument", event.target.value)}
                     placeholder="паспорт РФ 0000 000000"
@@ -304,6 +346,8 @@ export function PatientsView(props: PatientsViewProps) {
                   ИНН пациента
                   <input
                     inputMode="numeric"
+                    autoComplete="off"
+                    pattern="[0-9]*"
                     value={patientAdministrativeProfileDraft.taxpayerInn}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("taxpayerInn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))}
                     placeholder="10 или 12 цифр"
@@ -312,6 +356,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Адрес регистрации
                   <input
+                    autoComplete="street-address"
                     value={patientAdministrativeProfileDraft.registrationAddress}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("registrationAddress", event.target.value)}
                     placeholder="индекс, город, улица, дом"
@@ -320,6 +365,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Адрес проживания
                   <input
+                    autoComplete="street-address"
                     value={patientAdministrativeProfileDraft.residentialAddress}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("residentialAddress", event.target.value)}
                     placeholder="если отличается"
@@ -328,6 +374,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Полис / ДМС
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.insurancePolicyNumber}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("insurancePolicyNumber", event.target.value)}
                     placeholder="номер при наличии"
@@ -336,6 +383,9 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   СНИЛС
                   <input
+                    inputMode="numeric"
+                    autoComplete="off"
+                    pattern="[0-9 -]*"
                     value={patientAdministrativeProfileDraft.snils}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("snils", event.target.value)}
                     placeholder="000-000-000 00"
@@ -344,6 +394,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Законный представитель
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.legalRepresentativeFullName}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeFullName", event.target.value)}
                     placeholder="ФИО представителя"
@@ -352,6 +403,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Основание
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.legalRepresentativeRelationship}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeRelationship", event.target.value)}
                     placeholder="родитель, опекун, доверенность"
@@ -360,6 +412,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Документ представителя
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativeIdentityDocument", event.target.value)}
                     placeholder="паспорт / доверенность"
@@ -368,6 +421,9 @@ export function PatientsView(props: PatientsViewProps) {
                 <label>
                   Телефон представителя
                   <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={patientAdministrativeProfileDraft.legalRepresentativePhone}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("legalRepresentativePhone", event.target.value)}
                     placeholder="+7..."
@@ -376,6 +432,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label className="form-span-2">
                   Кому выдавать документы
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.preferredDocumentRecipient}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredDocumentRecipient", event.target.value)}
                     placeholder="пациенту / представителю / доверенному лицу"
@@ -384,22 +441,26 @@ export function PatientsView(props: PatientsViewProps) {
                 <div className="form-span-2 patient-appointment-preferences">
                   <span>Удобные дни записи</span>
                   <div className="weekday-toggle-row" role="group" aria-label="Удобные дни записи пациента">
-                    {weekdayOptions.map((day) => (
-                      <button
-                        className={patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value) ? "active" : ""}
-                        key={`patient-weekday-${day.value}`}
-                        type="button"
-                        onClick={() => {
-                          const currentDays = patientAdministrativeProfileDraft.preferredAppointmentWeekdays;
-                          const nextDays = currentDays.includes(day.value)
-                            ? currentDays.filter((item) => item !== day.value)
-                            : [...currentDays, day.value];
-                          updatePatientAdministrativeProfileDraft("preferredAppointmentWeekdays", normalizeOptionalWorkingDaysDraft(nextDays));
-                        }}
-                      >
-                        {day.label}
-                      </button>
-                    ))}
+                    {weekdayOptions.map((day) => {
+                      const weekdaySelected = patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(day.value);
+                      return (
+                        <button
+                          aria-pressed={weekdaySelected}
+                          className={weekdaySelected ? "active" : ""}
+                          key={`patient-weekday-${day.value}`}
+                          type="button"
+                          onClick={() => {
+                            const currentDays = patientAdministrativeProfileDraft.preferredAppointmentWeekdays;
+                            const nextDays = weekdaySelected
+                              ? currentDays.filter((item) => item !== day.value)
+                              : [...currentDays, day.value];
+                            updatePatientAdministrativeProfileDraft("preferredAppointmentWeekdays", normalizeOptionalWorkingDaysDraft(nextDays));
+                          }}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <label>
@@ -421,6 +482,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label className="form-span-2">
                   Комментарий к записи
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.preferredAppointmentNote}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("preferredAppointmentNote", event.target.value)}
                     placeholder="например: только утро, не звонить после 19:00, нужен сопровождающий"
@@ -429,6 +491,7 @@ export function PatientsView(props: PatientsViewProps) {
                 <label className="form-span-2">
                   Основание обработки ПДн
                   <input
+                    autoComplete="off"
                     value={patientAdministrativeProfileDraft.dataProcessingBasisNote}
                     onChange={(event: TextFieldChangeEvent) => updatePatientAdministrativeProfileDraft("dataProcessingBasisNote", event.target.value)}
                     placeholder="согласие пациента, представитель, договор, иной законный контекст"
@@ -441,15 +504,16 @@ export function PatientsView(props: PatientsViewProps) {
                   className="primary-button"
                   type="button"
                   onClick={savePatientAdministrativeProfile}
-                  aria-describedby={!patientAdministrativeProfileReadyToSave ? "patient-admin-save-guidance" : undefined}
+                  aria-busy={patientAdministrativeProfileSaveState === "saving" || undefined}
+                  aria-describedby={patientAdministrativeSaveGuidance ? patientAdministrativeSaveGuidanceId : undefined}
                   disabled={!patientAdministrativeProfileReadyToSave}
                 >
                   <ShieldCheck aria-hidden="true" /> Сохранить для документов
                 </button>
               </div>
-              {!patientAdministrativeProfileReadyToSave && !selectedPatient ? (
-                <p className="patient-save-guidance" id="patient-admin-save-guidance" role="status" aria-live="polite">
-                  Выберите пациента перед сохранением реквизитов.
+              {patientAdministrativeSaveGuidance ? (
+                <p className="patient-save-guidance" id={patientAdministrativeSaveGuidanceId} role="status" aria-live="polite">
+                  {patientAdministrativeSaveGuidance}
                 </p>
               ) : null}
             </section>

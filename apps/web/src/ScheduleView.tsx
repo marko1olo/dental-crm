@@ -1,6 +1,7 @@
 import { Plus, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
+import { motionSafeScrollIntoView } from "./motionPreference";
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -17,6 +18,7 @@ type AppointmentScheduleDraft = {
 type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
+const activeVisitLockedAppointmentStatuses = new Set<Appointment["status"]>(["completed", "cancelled", "no_show"]);
 
 type ScheduleViewProps = {
   appointmentLabels: Record<Appointment["status"], string>;
@@ -33,7 +35,7 @@ type ScheduleViewProps = {
   editingAppointmentId: string | null;
   formatTime: (value: string) => string;
   fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-  lockTelegramAdminSession: () => void;
+  lockScheduleAdminSession: () => void;
   newAppointmentDraft: AppointmentScheduleDraft;
   newAppointmentError: string | null;
   newAppointmentSaveState: AppointmentScheduleSaveState;
@@ -54,14 +56,14 @@ type ScheduleViewProps = {
   setScheduleDateFilter: (value: string) => void;
   setScheduleDoctorFilterId: (value: string | null) => void;
   setScheduleStatusFilter: (value: Appointment["status"] | "all") => void;
-  setTelegramAdminSecretDraft: (value: string) => void;
+  setScheduleAdminSecretDraft: (value: string) => void;
   shiftWarnings: Dashboard["shiftIntelligence"]["scheduleWarnings"];
   sortedAppointments: Appointment[];
   staffRoleLabels: Record<StaffRole, string>;
-  telegramAdminSecretDraft: string;
-  telegramAdminSecretSession: string;
+  scheduleAdminSecretDraft: string;
+  scheduleAdminSecretSession: string;
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-  unlockTelegramAdminSession: () => void;
+  unlockScheduleAdminSession: () => void;
   updateAppointmentScheduleDraft: <K extends keyof AppointmentScheduleDraft>(
     appointmentId: string,
     key: K,
@@ -87,7 +89,7 @@ export function ScheduleView(props: ScheduleViewProps) {
     editingAppointmentId,
     formatTime,
     fromDateTimeLocalValue,
-    lockTelegramAdminSession,
+    lockScheduleAdminSession,
     newAppointmentDraft,
     newAppointmentError,
     newAppointmentSaveState,
@@ -108,19 +110,19 @@ export function ScheduleView(props: ScheduleViewProps) {
     setScheduleDateFilter,
     setScheduleDoctorFilterId,
     setScheduleStatusFilter,
-    setTelegramAdminSecretDraft,
+    setScheduleAdminSecretDraft,
     shiftWarnings,
     sortedAppointments,
     staffRoleLabels,
-    telegramAdminSecretDraft,
-    telegramAdminSecretSession,
+    scheduleAdminSecretDraft,
+    scheduleAdminSecretSession,
     toDateTimeLocalValue,
-    unlockTelegramAdminSession,
+    unlockScheduleAdminSession,
     updateAppointmentScheduleDraft,
     updateNewAppointmentDraft,
     visibleScheduleSuggestions
   } = props;
-  const adminSecretReady = telegramAdminSecretDraft.trim().length > 0;
+  const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
   const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt);
   const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt);
   const newAppointmentMissingSteps = [
@@ -137,10 +139,14 @@ export function ScheduleView(props: ScheduleViewProps) {
       : null
   ].filter((step): step is string => Boolean(step));
   const newAppointmentReadyToCreate = newAppointmentMissingSteps.length === 0;
-  const appointmentDraftDateMissingSteps = (draft: AppointmentScheduleDraft) => {
+  const appointmentDraftMissingSteps = (draft: AppointmentScheduleDraft) => {
     const startsAtMs = Date.parse(draft.startsAt);
     const endsAtMs = Date.parse(draft.endsAt);
     return [
+      !draft.patientId ? "выберите пациента" : null,
+      !draft.doctorUserId ? "выберите врача" : null,
+      dashboard.clinicSettings.profile.mode !== "solo_doctor" && !draft.assistantUserId ? "выберите ассистента" : null,
+      !draft.chairId ? "выберите кресло" : null,
       !draft.startsAt.trim() ? "укажите начало приема" : null,
       draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
       !draft.endsAt.trim() ? "укажите окончание приема" : null,
@@ -150,6 +156,75 @@ export function ScheduleView(props: ScheduleViewProps) {
         : null
     ].filter((step): step is string => Boolean(step));
   };
+  const todayScheduleDate = () => toDateTimeLocalValue(new Date().toISOString(), dashboard.clinicSettings.profile.timezone).slice(0, 10);
+  const resetScheduleFilters = () => {
+    setScheduleDateFilter("");
+    setScheduleDoctorFilterId(null);
+    setScheduleAssistantFilterId(null);
+    setScheduleChairFilterId(null);
+    setScheduleStatusFilter("all");
+  };
+  const focusNewAppointmentEditor = () => {
+    const editor = document.querySelector<HTMLElement>(".appointment-create-editor");
+    motionSafeScrollIntoView(editor, { block: "center" });
+    editor?.querySelector<HTMLElement>("select, input, textarea, button")?.focus({ preventScroll: true });
+  };
+  const openScheduleSuggestion = (section: string) => {
+    window.location.hash = section;
+    const sectionId = section.replace(/^#/, "");
+    window.requestAnimationFrame(() => {
+      motionSafeScrollIntoView(document.getElementById(sectionId), { block: "start" });
+    });
+  };
+  const highestUtilizationLoad = (loads: ResourceLoad[]) =>
+    loads.reduce<ResourceLoad | null>((highestLoad, load) => {
+      if (!highestLoad || load.utilizationPercent > highestLoad.utilizationPercent) return load;
+      return highestLoad;
+    }, null);
+  const busiestDoctorLoad = highestUtilizationLoad(dashboard.shiftIntelligence.doctorLoads);
+  const busiestChairLoad = highestUtilizationLoad(dashboard.shiftIntelligence.chairLoads);
+  const activeScheduleFilterCount = [
+    scheduleDateFilter.trim(),
+    scheduleDoctorFilterId,
+    scheduleAssistantFilterId,
+    scheduleChairFilterId,
+    scheduleStatusFilter !== "all" ? scheduleStatusFilter : null
+  ].filter((value): value is string => Boolean(value)).length;
+  const scheduleFilteredSummary = [
+    sortedAppointments.length ? `видно записей: ${sortedAppointments.length}` : "записи скрыты фильтрами",
+    activeScheduleFilterCount ? `фильтров: ${activeScheduleFilterCount}` : "фильтры не ограничивают",
+    shiftWarnings.length ? `предупреждений: ${shiftWarnings.length}` : "срочных предупреждений нет"
+  ].join(" · ");
+  const scheduleLoadSummaryCards = [
+    {
+      id: "doctor",
+      title: "Самый загруженный врач",
+      value: busiestDoctorLoad ? `${busiestDoctorLoad.utilizationPercent}%` : "нет загрузки",
+      detail: busiestDoctorLoad
+        ? `${busiestDoctorLoad.title}: ${busiestDoctorLoad.appointmentCount} записей, ${busiestDoctorLoad.bookedMinutes} мин.`
+        : "смена не заполнена"
+    },
+    {
+      id: "chair",
+      title: "Самое занятое кресло",
+      value: busiestChairLoad ? `${busiestChairLoad.utilizationPercent}%` : "нет загрузки",
+      detail: busiestChairLoad
+        ? `${busiestChairLoad.title}: ${busiestChairLoad.appointmentCount} записей, ${busiestChairLoad.nextFreeAt ? `свободно с ${formatTime(busiestChairLoad.nextFreeAt)}` : "окон нет"}`
+        : "кресла не загружены"
+    },
+    {
+      id: "visible",
+      title: "На экране",
+      value: `${sortedAppointments.length}`,
+      detail: activeScheduleFilterCount ? `активных фильтров: ${activeScheduleFilterCount}` : "показана вся очередь"
+    },
+    {
+      id: "control",
+      title: "Контроль",
+      value: shiftWarnings.length ? `${shiftWarnings.length}` : "0",
+      detail: shiftWarnings[0]?.title ?? "нет срочных предупреждений"
+    }
+  ];
 
   return (
           <div className="panel schedule-panel" id="schedule">
@@ -158,7 +233,7 @@ export function ScheduleView(props: ScheduleViewProps) {
               <button
                 className="text-button"
                 type="button"
-                onClick={() => setScheduleDateFilter(toDateTimeLocalValue(new Date().toISOString(), dashboard.clinicSettings.profile.timezone).slice(0, 10))}
+                onClick={() => setScheduleDateFilter(todayScheduleDate())}
               >
                 День
               </button>
@@ -197,6 +272,23 @@ export function ScheduleView(props: ScheduleViewProps) {
                 <p>{shiftWarnings[0]?.title ?? "нет срочных предупреждений"}</p>
               </article>
             </div>
+            <section
+              className="schedule-shift-summary"
+              data-testid="schedule-shift-summary"
+              aria-label="Короткая сводка смены"
+              aria-live="polite"
+            >
+              <strong>{scheduleFilteredSummary}</strong>
+              <div className="schedule-shift-summary-grid">
+                {scheduleLoadSummaryCards.map((card) => (
+                  <article key={card.id}>
+                    <span>{card.title}</span>
+                    <strong>{card.value}</strong>
+                    <p>{card.detail}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
             <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания">
               <label>
                 День
@@ -263,61 +355,59 @@ export function ScheduleView(props: ScheduleViewProps) {
                 <button
                   className="secondary-button"
                   type="button"
-                  onClick={() => setScheduleDateFilter(toDateTimeLocalValue(new Date().toISOString(), dashboard.clinicSettings.profile.timezone).slice(0, 10))}
+                  onClick={() => setScheduleDateFilter(todayScheduleDate())}
                 >
                   Сегодня
                 </button>
-                <button
-                  className="text-button"
-                  type="button"
-                  onClick={() => {
-                    setScheduleDateFilter("");
-                    setScheduleDoctorFilterId(null);
-                    setScheduleAssistantFilterId(null);
-                    setScheduleChairFilterId(null);
-                    setScheduleStatusFilter("all");
-                  }}
-                >
+                <button className="text-button" type="button" onClick={resetScheduleFilters}>
                   Сбросить фильтры
                 </button>
               </div>
             </div>
             <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания">
-              {!telegramAdminSecretSession ? (
+              {!scheduleAdminSecretSession ? (
                 <>
                   <label className="form-span-2">
-                    Секрет админ-доступа DENTE для сохранения расписания
+                    Секрет администратора клиники для сохранения расписания
                     <input
                       type="password"
                       autoComplete="current-password"
-                      value={telegramAdminSecretDraft}
-                      onChange={(event: TextFieldChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
+                      value={scheduleAdminSecretDraft}
+                      onChange={(event: TextFieldChangeEvent) => setScheduleAdminSecretDraft(event.target.value)}
                       onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                        if (event.key === "Enter" && adminSecretReady) {
-                          event.preventDefault();
-                          unlockTelegramAdminSession();
-                        }
-                      }}
-                      placeholder="если сервер требует x-dente-admin-secret"
+                      if (event.key === "Enter" && adminSecretReady) {
+                        event.preventDefault();
+                        unlockScheduleAdminSession();
+                      }
+                    }}
+                      placeholder="введите секрет администратора"
                       aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
                     />
                   </label>
                   {!adminSecretReady ? (
                     <p className="admin-unlock-guidance form-span-2" id="schedule-admin-unlock-guidance" role="status" aria-live="polite">
-                      Введите секрет администратора клиники, чтобы сохранять расписание и настройки.
+                      Введите секрет администратора клиники, чтобы сохранять расписание.
                     </p>
                   ) : null}
                   <div className="appointment-editor-actions">
                     <span className="save-state save-state-idle">Секрет хранится только до перезагрузки страницы.</span>
-                    <button className="secondary-button" type="button" onClick={unlockTelegramAdminSession} disabled={!adminSecretReady}>
+                    <span className="save-state save-state-idle">Этот секрет относится только к расписанию. Он не разблокирует настройки клиники, Telegram или клинические данные.</span>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={unlockScheduleAdminSession}
+                      aria-describedby={!adminSecretReady ? "schedule-admin-unlock-guidance" : undefined}
+                      disabled={!adminSecretReady}
+                    >
                       <ShieldCheck aria-hidden="true" /> Разблокировать сохранение
                     </button>
                   </div>
                 </>
               ) : (
                 <div className="appointment-editor-actions">
-                  <span className="save-state save-state-saved">Админ-доступ DENTE активен для расписания, настроек и Telegram.</span>
-                  <button className="secondary-button" type="button" onClick={lockTelegramAdminSession}>
+                  <span className="save-state save-state-saved">Админ-доступ активен для расписания.</span>
+                  <span className="save-state save-state-idle">Настройки, Telegram и клинические данные остаются отдельными зонами доступа.</span>
+                  <button className="secondary-button" type="button" onClick={lockScheduleAdminSession}>
                     Забыть секрет
                   </button>
                 </div>
@@ -415,7 +505,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                 <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
               </label>
               {!newAppointmentReadyToCreate ? (
-                <div className="schedule-create-missing" role="status" aria-live="polite">
+                <div className="schedule-create-missing" id="new-appointment-create-missing" role="status" aria-live="polite">
                   <strong>Чтобы создать запись, осталось:</strong>
                   <ul>
                     {newAppointmentMissingSteps.map((step) => (
@@ -444,6 +534,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                   onClick={() => void createAppointmentFromDraft()}
                   disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
                   aria-busy={newAppointmentSaveState === "saving" || undefined}
+                  aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
                 >
                   <Plus aria-hidden="true" /> Создать запись
                 </button>
@@ -455,9 +546,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                   className={`schedule-suggestion priority-${suggestion.priority}`}
                   key={suggestion.id}
                   type="button"
-                  onClick={() => {
-                    window.location.hash = suggestion.section;
-                  }}
+                  onClick={() => openScheduleSuggestion(suggestion.section)}
                 >
                   <span>{recommendedActionPriorityLabels[suggestion.priority]}</span>
                   <strong>{suggestion.title}</strong>
@@ -479,8 +568,18 @@ export function ScheduleView(props: ScheduleViewProps) {
                 const appointmentSaveError = appointmentScheduleErrors[appointment.id] ?? null;
                 const appointmentDirty = appointmentScheduleDirtyIds.has(appointment.id);
                 const appointmentEditing = editingAppointmentId === appointment.id;
-                const appointmentDateMissingSteps = appointmentDraftDateMissingSteps(appointmentDraft);
-                const appointmentReadyToSave = appointmentDirty && appointmentDateMissingSteps.length === 0;
+                const appointmentHasOpenVisit = appointment.id === dashboard.activeVisit.appointmentId && dashboard.activeVisit.status === "draft";
+                const appointmentActiveVisitStatusLocked =
+                  appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses.has(appointmentDraft.status);
+                const appointmentMissingSteps = [
+                  ...appointmentDraftMissingSteps(appointmentDraft),
+                  ...(appointmentActiveVisitStatusLocked ? ["закройте прием перед закрывающим статусом записи"] : [])
+                ];
+                const appointmentReadyToSave = appointmentDirty && appointmentMissingSteps.length === 0;
+                const appointmentSaveMissingId = `appointment-save-missing-${appointment.id}`;
+                const appointmentEditorId = `appointment-editor-${appointment.id}`;
+                const appointmentHandoffNoteId = `appointment-handoff-note-${appointment.id}`;
+                const appointmentPatientName = patientName(dashboard.patients, appointment.patientId);
                 return (
                   <article className={`appointment-row ${readiness ? `readiness-${readiness.state}` : ""}`} key={appointment.id}>
                     <time>
@@ -488,7 +587,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                       <span>{formatTime(appointment.endsAt)}</span>
                     </time>
                     <div>
-                      <h3>{patientName(dashboard.patients, appointment.patientId)}</h3>
+                      <h3>{appointmentPatientName}</h3>
                       <p>
                         {appointment.reason} ·{" "}
                         {appointmentDoctor?.fullName.split(" ")[0] ?? "врач"} ·{" "}
@@ -512,7 +611,13 @@ export function ScheduleView(props: ScheduleViewProps) {
                               {warning}
                             </span>
                           ))}
+                          {appointmentHasOpenVisit ? <span className="handoff-lock">Открыт прием: пациент закреплен</span> : null}
                         </div>
+                      ) : null}
+                      {appointmentHasOpenVisit ? (
+                        <p className="appointment-handoff-note" id={appointmentHandoffNoteId}>
+                          Пациент и закрывающий статус этой записи меняются только после закрытия приема.
+                        </p>
                       ) : null}
                     </div>
                     <span className={`status-pill status-${appointment.status}`}>
@@ -522,11 +627,15 @@ export function ScheduleView(props: ScheduleViewProps) {
                       className="secondary-button appointment-edit-button"
                       type="button"
                       onClick={() => openAppointmentEditor(appointment)}
+                      aria-expanded={appointmentEditing}
+                      aria-controls={appointmentEditorId}
+                      aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
+                      title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
                     >
                       Настроить
                     </button>
                     {appointmentEditing ? (
-                      <div className="appointment-editor form-span-2" aria-label="Редактирование записи">
+                      <div className="appointment-editor form-span-2" id={appointmentEditorId} aria-label={`Редактирование записи: ${appointmentPatientName}`}>
                         <label>
                           Начало
                           <input
@@ -561,6 +670,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                             value={appointmentDraft.patientId}
                             onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "patientId", event.target.value)}
                             disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                            aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}
                           >
                             <option value="">Не назначен</option>
                             {dashboard.patients
@@ -615,7 +725,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                           Статус
                           <select value={appointmentDraft.status} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "status", normalizedAppointmentStatus(event.target.value))}>
                             {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
-                              <option key={status} value={status}>
+                              <option key={status} value={status} disabled={appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses.has(status)}>
                                 {appointmentLabels[status]}
                               </option>
                             ))}
@@ -631,11 +741,11 @@ export function ScheduleView(props: ScheduleViewProps) {
                         </label>
                         <div className="appointment-editor-actions">
                           {appointmentSaveError ? <span className="save-error">{appointmentSaveError}</span> : null}
-                          {appointmentDateMissingSteps.length ? (
-                            <div className="schedule-create-missing schedule-save-missing" role="status" aria-live="polite">
+                          {appointmentMissingSteps.length ? (
+                            <div className="schedule-create-missing schedule-save-missing" id={appointmentSaveMissingId} role="status" aria-live="polite">
                               <strong>Чтобы сохранить запись, исправьте:</strong>
                               <ul>
-                                {appointmentDateMissingSteps.map((step) => (
+                                {appointmentMissingSteps.map((step) => (
                                   <li key={step}>{step}</li>
                                 ))}
                               </ul>
@@ -659,6 +769,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                             onClick={() => void saveAppointmentSchedule(appointment.id)}
                             disabled={appointmentSaveState === "saving" || !appointmentReadyToSave}
                             aria-busy={appointmentSaveState === "saving" || undefined}
+                            aria-describedby={!appointmentReadyToSave && appointmentMissingSteps.length ? appointmentSaveMissingId : undefined}
                           >
                             Сохранить запись
                           </button>
@@ -668,6 +779,27 @@ export function ScheduleView(props: ScheduleViewProps) {
                   </article>
                 );
               })}
+              {sortedAppointments.length === 0 ? (
+                <article className="schedule-empty-state" data-testid="schedule-empty-state" aria-label="Пустое расписание">
+                  <div>
+                    <strong>Нет записей по выбранным фильтрам</strong>
+                    <p role="status" aria-live="polite">
+                      Расписание не сломалось: выберите сегодняшний день, сбросьте фильтры или сразу откройте форму новой записи.
+                    </p>
+                  </div>
+                  <div className="schedule-empty-actions">
+                    <button className="secondary-button" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
+                      Сегодня
+                    </button>
+                    <button className="text-button" type="button" onClick={resetScheduleFilters}>
+                      Сбросить фильтры
+                    </button>
+                    <button className="primary-button" type="button" onClick={focusNewAppointmentEditor}>
+                      <Plus aria-hidden="true" /> Новая запись
+                    </button>
+                  </div>
+                </article>
+              ) : null}
             </div>
           </div>
 

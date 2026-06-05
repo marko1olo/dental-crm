@@ -44,7 +44,6 @@ const guardedSources = [
   ["apps/api/src/routes/smartImports.ts", 1],
   ["apps/api/src/routes/ai.ts", 1],
   ["apps/api/src/routes/speech.ts", 2],
-  ["apps/api/src/routes/settings.ts", 1],
   ["apps/api/src/routes/ingestion.ts", 1],
   ["apps/api/src/routes/imaging.ts", 4],
   ["apps/api/src/routes/clinical.ts", 2],
@@ -57,11 +56,10 @@ const guardedReadSources = [
   ["apps/api/src/routes/visits.ts", 1],
   ["apps/api/src/routes/ai.ts", 2],
   ["apps/api/src/routes/speech.ts", 7],
-  ["apps/api/src/routes/settings.ts", 2],
   ["apps/api/src/routes/imports.ts", 2],
   ["apps/api/src/routes/smartImports.ts", 7],
   ["apps/api/src/routes/pricelist.ts", 1],
-  ["apps/api/src/routes/imaging.ts", 18],
+  ["apps/api/src/routes/imaging.ts", 17],
   ["apps/api/src/routes/documents.ts", 4],
   ["apps/api/src/routes/system.ts", 4],
   ["apps/api/src/routes/clinical.ts", 1]
@@ -120,10 +118,87 @@ const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
 });
 
 const serverSource = readFileSync("apps/api/src/server.ts", "utf8");
-assert(serverSource.includes("publicPersistentStateMeta"), "public health endpoint must use redacted persistence metadata");
+const accessGuardSource = readFileSync("apps/api/src/accessGuard.ts", "utf8");
 assert(
-  !serverSource.includes("persistence: getPersistentStateMeta()"),
-  "public health endpoint must not expose raw state file paths/checksums"
+    appSource.includes("function settingsAccessHeaders") &&
+    appSource.includes("function scheduleMutationHeaders") &&
+    appSource.includes("function resolvedAdminSecretUnlockDomain(domainOverride?: AdminSecretUnlockDomain)") &&
+    appSource.includes("function adminSecretDraftForDomain(domain: AdminSecretUnlockDomain): string") &&
+    appSource.includes("function clearAdminSecretDraft(domain: AdminSecretUnlockDomain)") &&
+    appSource.includes("adminSecretOverride ?? clinicalAdminSecretSession") &&
+    appSource.includes("adminSecretOverride ?? settingsAdminSecretSession") &&
+    appSource.includes("adminSecretOverride ?? scheduleAdminSecretSession") &&
+    appSource.includes("adminSecretOverride ?? telegramAdminSecretSession"),
+  "web app must keep clinical/settings/schedule/Telegram admin-secret sessions separated"
+);
+assert(
+  appSource.includes('const [clinicalAdminSecretDraft, setClinicalAdminSecretDraft] = useState("")') &&
+    appSource.includes('const [settingsAdminSecretDraft, setSettingsAdminSecretDraft] = useState("")') &&
+    appSource.includes('const [scheduleAdminSecretDraft, setScheduleAdminSecretDraft] = useState("")') &&
+    appSource.includes('const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("")') &&
+    appSource.includes("const secret = adminSecretDraftForDomain(domain).trim()") &&
+    appSource.includes("clearAdminSecretDraft(domain)") &&
+    appSource.includes("adminSecretDraft={clinicalAdminSecretDraft}") &&
+    appSource.includes("onAdminSecretChange={setClinicalAdminSecretDraft}") &&
+    appSource.includes("setScheduleAdminSecretDraft={setScheduleAdminSecretDraft}") &&
+    appSource.includes("scheduleAdminSecretDraft={scheduleAdminSecretDraft}") &&
+    /setTelegramAdminSecretDraft=\{\s*settingsAdminSecretDomain === "telegram"\s*\?\s*setTelegramAdminSecretDraft\s*:\s*setSettingsAdminSecretDraft\s*\}/.test(appSource) &&
+    /telegramAdminSecretDraft=\{\s*settingsAdminSecretDomain === "telegram"\s*\?\s*telegramAdminSecretDraft\s*:\s*settingsAdminSecretDraft\s*\}/.test(appSource),
+  "web admin-secret drafts must be separated by clinical/settings/schedule/Telegram domain"
+);
+assert(
+  !appSource.includes("const secret = telegramAdminSecretDraft.trim()"),
+  "admin unlock must not read one shared Telegram-named draft for every domain"
+);
+assert(
+  appSource.includes('onUnlock={() => unlockTelegramAdminSession("all")}') &&
+    appSource.includes('unlockScheduleAdminSession={() => unlockTelegramAdminSession("schedule")}') &&
+    appSource.includes('lockScheduleAdminSession={() => lockTelegramAdminSession("schedule")}') &&
+    appSource.includes('unlockTelegramAdminSession={() => unlockTelegramAdminSession(settingsAdminSecretDomain)}') &&
+    appSource.includes('lockTelegramAdminSession={() => lockTelegramAdminSession(settingsAdminSecretDomain)}') &&
+    appSource.includes('unlockTelegramAdminSession("telegram")'),
+  "fixed web admin-secret panels must pass an explicit access domain instead of relying on ambient route state"
+);
+assert(
+  !appSource.includes('settingsTab === "telegram" || onboardingStep === "telegram"'),
+  "settings unlock routing must not let a retained onboarding step override the active settings tab"
+);
+assert(
+  !/function denteClinical(?:Read|Mutation)Headers[^{]*\{[^}]*telegramControlPlaneHeaders/.test(appSource),
+  "clinical web headers must not route through Telegram control-plane headers"
+);
+assert(
+  appSource.includes('headers: settingsAccessHeaders({ "Content-Type": "application/json" })') &&
+    appSource.includes('headers: scheduleMutationHeaders({ "Content-Type": "application/json" })'),
+  "settings and schedule web mutations must use their domain admin-secret headers"
+);
+assert(
+  /fetch\("\/api\/imaging\/dicomweb\/check",\s*\{[\s\S]*headers: settingsAccessHeaders\(\{ "Content-Type": "application\/json" \}\)/.test(appSource),
+  "DICOMweb connector checks are settings-admin work and must use settings access headers"
+);
+assert(
+  !/function configuredClinicalAccessSecret\(\)[\s\S]*DENTE_SETTINGS_ADMIN_SECRET/.test(accessGuardSource),
+  "clinical access guard must not accept settings admin secret fallback"
+);
+assert(
+  !/function configuredClinicalAccessSecret\(\)[\s\S]*DENTE_TELEGRAM_ADMIN_SECRET/.test(accessGuardSource),
+  "clinical access guard must not accept Telegram admin secret fallback"
+);
+assert(
+  !serverSource.includes("publicPersistentStateMeta"),
+  "public health endpoint must not expose persistence metadata helpers"
+);
+assert(
+  !serverSource.includes("persistence:"),
+  "public health endpoint must not expose persistence metadata"
+);
+assert(
+  !appSource.includes('fetch("/api/health"'),
+  "web persistence audit must not read backup metadata from public health"
+);
+assert(
+  appSource.includes('fetch("/api/system/persistence/verify",'),
+  "web persistence audit must read backup metadata from the guarded verify endpoint"
 );
 assert(serverSource.includes('contentType.includes("text/html")'), "server CSP must distinguish printable HTML documents from JSON APIs");
 assert(serverSource.includes("style-src 'unsafe-inline'"), "document HTML CSP must allow renderer inline styles");
@@ -199,8 +274,6 @@ const protectedReadRequests = [
   { method: "GET", url: "/api/speech/status" },
   { method: "GET", url: "/api/speech/gateway-health" },
   { method: "GET", url: "/api/speech/providers/runtime" },
-  { method: "GET", url: "/api/settings/clinic" },
-  { method: "GET", url: "/api/settings/preferences" },
   {
     method: "POST",
     url: "/api/speech/recording-strategy",
@@ -288,7 +361,6 @@ const protectedReadRequests = [
   { method: "POST", url: "/api/pricelist/analyze", payload: {} },
   { method: "POST", url: "/api/imaging/imports/preview", payload: {} },
   { method: "POST", url: "/api/imaging/dicom/series-preview", payload: {} },
-  { method: "POST", url: "/api/imaging/dicomweb/check", payload: {} },
   { method: "POST", url: "/api/imaging/dicom/viewer-launch-manifest", payload: {} },
   { method: "POST", url: "/api/imaging/dicom/viewer-tool-state", payload: {} },
   { method: "POST", url: "/api/imaging/dicom/render-cache-plan", payload: {} },
@@ -349,6 +421,28 @@ for (const request of protectedReadRequests) {
   );
 }
 
+process.env.DENTAL_LOCAL_WHISPER_URL = "not a valid local bridge url";
+const localBridgeReadinessResponse = await app.inject({
+  method: "GET",
+  url: "/api/system/local-bridges/readiness",
+  headers: { "x-dente-admin-secret": process.env.DENTE_CLINICAL_ADMIN_SECRET }
+});
+delete process.env.DENTAL_LOCAL_WHISPER_URL;
+assert(
+  localBridgeReadinessResponse.statusCode === 200,
+  `local bridge readiness malformed URL smoke must pass guard: ${localBridgeReadinessResponse.statusCode}`
+);
+const localBridgeReadinessBody = localBridgeReadinessResponse.json();
+const localBridgeReadinessText = JSON.stringify(localBridgeReadinessBody);
+assert(
+  localBridgeReadinessText.includes("Адрес локального модуля не читается. Проверьте URL в серверных настройках."),
+  "local bridge malformed URL warning must be operator-readable"
+);
+assert(
+  !/(Invalid URL|TypeError|AbortError|ECONNREFUSED|ECONNRESET|fetch failed)/i.test(localBridgeReadinessText),
+  "local bridge readiness must not expose raw parser or network exception text"
+);
+
 const protectedRequests = [
   { method: "POST", url: "/api/patients", payload: {} },
   { method: "PUT", url: "/api/patients/11111111-1111-4111-8111-111111111111", payload: {} },
@@ -359,7 +453,6 @@ const protectedRequests = [
   { method: "POST", url: "/api/documents", payload: {} },
   { method: "POST", url: "/api/documents/11111111-1111-4111-8111-111111111111/issue", payload: {} },
   { method: "POST", url: "/api/documents/11111111-1111-4111-8111-111111111111/void", payload: {} },
-  { method: "PUT", url: "/api/settings/preferences", payload: {} },
   { method: "POST", url: "/api/imports/patients/commit", payload: {} },
   { method: "POST", url: "/api/imports/smart/commit", payload: {} },
   { method: "POST", url: "/api/ai/recognition-jobs", payload: {} },
@@ -408,13 +501,39 @@ delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS;
 delete process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
 
 const failClosedResponse = await app.inject(protectedRequests[0]);
-assert(failClosedResponse.statusCode === 503, `production without clinical/settings/telegram secret must fail closed: ${failClosedResponse.statusCode}`);
+assert(failClosedResponse.statusCode === 503, `production without clinical secret must fail closed: ${failClosedResponse.statusCode}`);
 
 const failClosedReadResponse = await app.inject(protectedReadRequests[0]);
 assert(
   failClosedReadResponse.statusCode === 503,
-  `production without clinical/settings/telegram secret must fail closed for reads: ${failClosedReadResponse.statusCode}`
+  `production without clinical secret must fail closed for reads: ${failClosedReadResponse.statusCode}`
 );
+
+process.env.DENTE_SETTINGS_ADMIN_SECRET = "synthetic-settings-only-secret";
+const settingsOnlyMutationResponse = await app.inject(protectedRequests[0]);
+assert(
+  settingsOnlyMutationResponse.statusCode === 503,
+  `settings-only secret must not unlock clinical mutation routes: ${settingsOnlyMutationResponse.statusCode}`
+);
+const settingsOnlyReadResponse = await app.inject(protectedReadRequests[0]);
+assert(
+  settingsOnlyReadResponse.statusCode === 503,
+  `settings-only secret must not unlock clinical read routes: ${settingsOnlyReadResponse.statusCode}`
+);
+delete process.env.DENTE_SETTINGS_ADMIN_SECRET;
+
+process.env.DENTE_TELEGRAM_ADMIN_SECRET = "synthetic-telegram-only-secret";
+const telegramOnlyMutationResponse = await app.inject(protectedRequests[0]);
+assert(
+  telegramOnlyMutationResponse.statusCode === 503,
+  `Telegram-only secret must not unlock clinical mutation routes: ${telegramOnlyMutationResponse.statusCode}`
+);
+const telegramOnlyReadResponse = await app.inject(protectedReadRequests[0]);
+assert(
+  telegramOnlyReadResponse.statusCode === 503,
+  `Telegram-only secret must not unlock clinical read routes: ${telegramOnlyReadResponse.statusCode}`
+);
+delete process.env.DENTE_TELEGRAM_ADMIN_SECRET;
 
 process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 const explicitEscapeResponse = await app.inject(protectedRequests[0]);

@@ -216,6 +216,34 @@ assert(
   `issued document without snapshot hash must fail integrity check, got ${missingHashHtmlResponse.statusCode}`
 );
 
+const originalSnapshotCreatedAt = issuedReceipt.issuedSnapshotCreatedAt;
+issuedReceipt.issuedSnapshotCreatedAt = null;
+const missingSnapshotCreatedAtAuditResponse = await app.inject({
+  method: "GET",
+  url: `/api/documents/${receiptDocument.id}/audit-facts`
+});
+assert(
+  missingSnapshotCreatedAtAuditResponse.statusCode === 200,
+  `issued document without snapshot created-at audit facts failed: ${missingSnapshotCreatedAtAuditResponse.statusCode}`
+);
+assert(
+  missingSnapshotCreatedAtAuditResponse.json().immutableSnapshotReady === false,
+  "issued document without snapshot created-at must not report immutable archive readiness"
+);
+assert(
+  missingSnapshotCreatedAtAuditResponse.json().canDownloadHtml === false,
+  "issued document without snapshot created-at must not expose HTML archive download"
+);
+const missingSnapshotCreatedAtHtmlResponse = await app.inject({
+  method: "GET",
+  url: `/api/documents/${receiptDocument.id}/html`
+});
+issuedReceipt.issuedSnapshotCreatedAt = originalSnapshotCreatedAt;
+assert(
+  missingSnapshotCreatedAtHtmlResponse.statusCode === 409,
+  `issued document without snapshot created-at must fail integrity check, got ${missingSnapshotCreatedAtHtmlResponse.statusCode}`
+);
+
 const voidIssuedReceiptWithoutReasonResponse = await app.inject({
   method: "POST",
   url: `/api/documents/${receiptDocument.id}/void`

@@ -27,6 +27,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function documentErrorText(response) {
+  const body = response.json();
+  return String(body.message ?? body.error ?? "");
+}
+
 function voidAttestation(overrides = {}) {
   return {
     reasonCode: "tax_certificate_correction",
@@ -85,7 +90,7 @@ try {
     `tax certificate without issued application must be blocked: ${issueWithoutApplicationResponse.statusCode}`
   );
   assert(
-    String(issueWithoutApplicationResponse.json().error).includes("заявление"),
+    documentErrorText(issueWithoutApplicationResponse).includes("заявление"),
     "tax certificate block must explain missing taxpayer application"
   );
 
@@ -147,7 +152,7 @@ try {
   });
   assert(duplicateIssueResponse.statusCode === 409, `duplicate certificate issue must be blocked, got ${duplicateIssueResponse.statusCode}`);
   assert(
-    String(duplicateIssueResponse.json().error).includes("налоговый год"),
+    documentErrorText(duplicateIssueResponse).includes("налоговый год"),
     "duplicate certificate issue must explain annual taxpayer scope"
   );
 
@@ -240,7 +245,7 @@ try {
     `new fiscal payment for the same annual taxpayer scope must be blocked: ${thirdIssueResponse.statusCode} ${thirdIssueResponse.body}`
   );
   assert(
-    String(thirdIssueResponse.json().error).includes("налоговый год"),
+    documentErrorText(thirdIssueResponse).includes("налоговый год"),
     "new payment duplicate block must explain annual taxpayer scope"
   );
   const thirdDocument = documents.find((document) => document.id === thirdCreateResponse.json().id);

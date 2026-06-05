@@ -31,7 +31,7 @@ for (const snippet of helperSnippets) {
 }
 
 const saveSnippets = [
-  'normalizeTelegramPublicHttpsUrlDraft("Webhook Telegram", telegramWebhookBaseUrlDraft)',
+  'normalizeTelegramPublicHttpsUrlDraft("Адрес приема сообщений Telegram", telegramWebhookBaseUrlDraft)',
   'normalizeTelegramPublicHttpsUrlDraft("Портал пациента", telegramPatientPortalBaseUrlDraft)',
   'normalizeTelegramPublicHttpsUrlDraft("Картинка приветствия", telegramWelcomeImageUrlDraft)',
   "normalizeTelegramVisualCardUrlDraftsForSave(telegramVisualCardUrlDrafts)",

@@ -4,11 +4,15 @@ import type { Dashboard } from "@dental/shared";
 type TreatmentPlanItem = Dashboard["treatmentPlanItems"][number];
 type Payment = Dashboard["payments"][number];
 type ServiceCatalogItem = Dashboard["serviceCatalog"][number];
+type BillingDocument = Dashboard["documents"][number];
 
 type FinanceLedgerProps = {
   categoryLabels: Record<ServiceCatalogItem["category"], string>;
+  documents: BillingDocument[];
   formatDateTime: (value: string) => string;
   money: (value: number | null) => string;
+  onFocusPaymentCapture: () => void;
+  onGoToVisit: () => void;
   paymentFiscalReceiptLabel: (payment: Pick<Payment, "id" | "fiscalReceiptNumber" | "fiscalReceipt">) => string;
   paymentMethodLabels: Record<Payment["method"], string>;
   payments: Payment[];
@@ -19,8 +23,11 @@ type FinanceLedgerProps = {
 
 export function FinanceLedger({
   categoryLabels,
+  documents,
   formatDateTime,
   money,
+  onFocusPaymentCapture,
+  onGoToVisit,
   paymentFiscalReceiptLabel,
   paymentMethodLabels,
   payments,
@@ -57,6 +64,9 @@ export function FinanceLedger({
           <article className="finance-empty-state">
             <ClipboardList aria-hidden="true" />
             <p>План лечения для текущего пациента пуст. Добавьте услугу из приема или прайса, чтобы сумма, документы и оплата считались без ручного пересчета.</p>
+            <button className="text-button" type="button" onClick={onGoToVisit}>
+              Открыть прием
+            </button>
           </article>
         )}
       </section>
@@ -72,6 +82,11 @@ export function FinanceLedger({
               <CreditCard aria-hidden="true" />
               <div>
                 <h3>{paymentMethodLabels[payment.method]}</h3>
+                <p className="finance-payment-link">
+                  {payment.documentId
+                    ? `Документ: ${documents.find((document) => document.id === payment.documentId)?.title ?? "документ не найден"}`
+                    : "Документ оплаты не привязан"}
+                </p>
                 <p>
                   {payment.paidAt ? formatDateTime(payment.paidAt) : "ожидает оплаты"} · чек {paymentFiscalReceiptLabel(payment)} · код{" "}
                   {payment.taxDeductionCode ?? "не выбран"} · {payment.note ?? "без примечания"}
@@ -84,6 +99,9 @@ export function FinanceLedger({
           <article className="finance-empty-state">
             <CreditCard aria-hidden="true" />
             <p>Платежей по текущему пациенту пока нет. Примите оплату выше, и она появится здесь с чеком, кодом вычета и примечанием.</p>
+            <button className="text-button" type="button" onClick={onFocusPaymentCapture}>
+              К оплате
+            </button>
           </article>
         )}
       </section>

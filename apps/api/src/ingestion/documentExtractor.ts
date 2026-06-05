@@ -117,25 +117,29 @@ function detectKind(fileName: string, mimeType: string | null | undefined, buffe
 
 function legacyFileFormatLabel(fileName: string, kind: DocumentIngestionKind) {
   const ext = extensionOf(fileName);
-  if (ext === "fdb" || ext === "gdb") return "Firebird/InterBase";
-  if (ext === "mdb" || ext === "accdb") return "Access";
-  if (ext === "sqlite" || ext === "sqlite3" || ext === "db") return "SQLite";
-  if (ext === "dbf") return "DBF/FoxPro";
-  if (ext === "sql") return "SQL dump";
-  if (ext === "bak" || ext === "dump" || ext === "backup") return "database backup";
-  return kind === "legacy_database" ? "legacy database" : "legacy dump";
+  if (ext === "fdb" || ext === "gdb") return "база Firebird/InterBase";
+  if (ext === "mdb" || ext === "accdb") return "база Access";
+  if (ext === "sqlite" || ext === "sqlite3" || ext === "db") return "база SQLite";
+  if (ext === "dbf") return "таблица DBF/FoxPro";
+  if (ext === "sql") return "SQL-дамп";
+  if (ext === "bak" || ext === "dump" || ext === "backup") return "резервная копия базы";
+  return kind === "legacy_database" ? "старая база" : "резервная копия старой базы";
+}
+
+function legacyKindLabel(kind: DocumentIngestionKind) {
+  return kind === "legacy_database" ? "старая база" : "резервная копия старой базы";
 }
 
 function legacyStagingManifest(input: { fileName: string; kind: DocumentIngestionKind; byteSize: number }) {
-  const safeLabel = safeFileLabel(input.fileName, "Legacy source");
+  const safeLabel = safeFileLabel(input.fileName, "Источник миграции");
   const formatLabel = legacyFileFormatLabel(input.fileName, input.kind);
   return [
-    `Legacy migration source: ${formatLabel} ${safeLabel}`,
-    `Legacy source kind: ${input.kind}`,
-    `Legacy source byteSize: ${input.byteSize}`,
-    "Legacy source route: read-only local staging parser -> CSV manifest -> smart import preview",
-    "Legacy source required artifacts: offline copy, old MIS version, read-only credentials if needed, table dictionary, 10 patient control sample",
-    "Legacy source privacy: do not send this file, patient names, phones, birth dates, or DICOM pixels to maps/search/LLM"
+    `Источник старой базы: ${formatLabel} ${safeLabel}`,
+    `Тип источника: ${legacyKindLabel(input.kind)}`,
+    `Размер источника: ${input.byteSize} байт`,
+    "Маршрут переноса: локальный модуль только для чтения -> проверочный список таблиц -> предварительный просмотр умного импорта",
+    "Что подготовить: отдельную копию или резервную копию, версию старой МИС, учетку только для чтения при необходимости, словарь таблиц, 10 контрольных карт пациентов",
+    "Ограничение: файл базы, имена, телефоны, даты рождения и пиксели снимков не отправляются во внешние поисковые сервисы"
   ].join("\n");
 }
 
@@ -224,7 +228,7 @@ function readZipEntries(buffer: Buffer): { entries: ZipEntry[]; warnings: string
     const name = buffer.subarray(cursor + 46, cursor + 46 + fileNameLength).toString("utf8").replace(/\\/g, "/");
 
     if (buffer.readUInt32LE(localOffset) !== 0x04034b50) {
-        warnings.push(`zip_local_header_missing:${safeFileLabel(name, "Archive entry")}`);
+        warnings.push(`zip_local_header_missing:${safeFileLabel(name, "Файл архива")}`);
       cursor += 46 + fileNameLength + extraLength + commentLength;
       continue;
     }
@@ -239,10 +243,10 @@ function readZipEntries(buffer: Buffer): { entries: ZipEntry[]; warnings: string
       } else if (method === 8) {
         entries.push({ name, data: inflateRawSync(compressed) });
       } else {
-        warnings.push(`zip_unsupported_compression:${safeFileLabel(name, "Archive entry")}:${method}`);
+        warnings.push(`zip_unsupported_compression:${safeFileLabel(name, "Файл архива")}:${method}`);
       }
     } catch {
-      warnings.push(`zip_entry_inflate_failed:${safeFileLabel(name, "Archive entry")}`);
+      warnings.push(`zip_entry_inflate_failed:${safeFileLabel(name, "Файл архива")}`);
     }
 
     cursor += 46 + fileNameLength + extraLength + commentLength;
@@ -268,7 +272,7 @@ function extractDocx(buffer: Buffer): ExtractedDocument {
     text: parts.join("\n\n"),
     tableCount,
     warnings: zip.warnings,
-    parserNotes: ["DOCX parsed through built-in OpenXML ZIP extractor."]
+    parserNotes: ["DOCX разобран встроенным извлечением текста из OpenXML ZIP."]
   };
 }
 
@@ -313,7 +317,7 @@ function extractXlsx(buffer: Buffer): ExtractedDocument {
     text: sheetTexts.filter(Boolean).join("\n\n"),
     tableCount: sheets.length,
     warnings: zip.warnings,
-    parserNotes: ["XLSX parsed through built-in OpenXML ZIP extractor; formulas are not evaluated."]
+    parserNotes: ["XLSX разобран встроенным извлечением таблиц из OpenXML ZIP; формулы не вычисляются."]
   };
 }
 
@@ -324,7 +328,7 @@ function extractPptx(buffer: Buffer): ExtractedDocument {
     text: parts.join("\n\n"),
     tableCount: 0,
     warnings: zip.warnings,
-    parserNotes: ["PPTX parsed through built-in slide XML extractor."]
+    parserNotes: ["PPTX разобран встроенным извлечением текста слайдов."]
   };
 }
 
@@ -337,7 +341,7 @@ function extractOpenDocument(buffer: Buffer, kind: "odt" | "ods" | "odp"): Extra
     text,
     tableCount,
     warnings: zip.warnings,
-    parserNotes: [`${kind.toUpperCase()} parsed through built-in OpenDocument ZIP extractor.`]
+    parserNotes: [`${kind.toUpperCase()} разобран встроенным извлечением текста из OpenDocument ZIP.`]
   };
 }
 
@@ -395,7 +399,7 @@ function extractPdf(buffer: Buffer): ExtractedDocument {
     text,
     tableCount: 0,
     warnings,
-    parserNotes: ["PDF uses built-in best-effort text extraction. Scanned PDFs still need OCR/vision."]
+    parserNotes: ["PDF разобран встроенным извлечением текста; сканы все равно требуют распознавания изображения."]
   };
 }
 
@@ -453,10 +457,10 @@ function extractByKind(kind: DocumentIngestionKind, buffer: Buffer): ExtractedDo
 function extractZipArchive(buffer: Buffer, archiveName: string): ExtractedDocument & { extractedFiles: ExtractedArchiveFile[] } {
   const zip = readZipEntries(buffer);
   const warnings = [...zip.warnings];
-  const safeArchiveName = safeFileLabel(archiveName, "Archive");
+  const safeArchiveName = safeFileLabel(archiveName, "Архив");
   const parserNotes = [
-    "ZIP archive parsed read-only; supported text/table files are extracted, binary imaging files become manifest references.",
-    "Archive entry names are redacted to safe labels before returning the preview."
+    "ZIP-архив разобран только для чтения; текст и таблицы извлечены, бинарные снимки показаны как строки списка файлов.",
+    "Имена файлов внутри архива скрыты безопасными метками перед показом предпросмотра."
   ];
   const extractedFiles: ExtractedArchiveFile[] = [];
   const textParts: string[] = [];
@@ -472,7 +476,7 @@ function extractZipArchive(buffer: Buffer, archiveName: string): ExtractedDocume
     }
 
     const kind = detectKind(entry.name, null, entry.data);
-    const safeEntryName = safeFileLabel(entry.name, "Archive entry");
+    const safeEntryName = safeFileLabel(entry.name, "Файл архива");
     if (kind === "zip") {
       warnings.push(`zip_nested_archive_skipped:${safeEntryName}`);
       extractedFiles.push({
@@ -539,28 +543,28 @@ function hasAnyHint(text: string, hints: string[]): boolean {
 function collectSignals(kind: DocumentIngestionKind, text: string, warnings: string[]): string[] {
   const signals: string[] = [];
   const normalized = text.toLowerCase();
-  if (kind === "zip") signals.push("archive_container");
-  if (kind === "image") signals.push("image_input");
-  if (kind === "pdf") signals.push("pdf_input");
-  if (kind === "legacy_database") signals.push("legacy_database_input");
-  if (kind === "legacy_dump") signals.push("legacy_dump_input");
-  if (warnings.includes("pdf_text_not_extracted_may_be_scanned")) signals.push("scanned_pdf_possible");
-  if (looksTabular(text)) signals.push("table_like");
-  if (/[А-Яа-яЁё]/.test(text)) signals.push("russian_text");
-  if (/\+?\d[\d\s\-()]{8,}\d/.test(text)) signals.push("phone_like");
-  if (/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/.test(text)) signals.push("date_like");
+  if (kind === "zip") signals.push("архив");
+  if (kind === "image") signals.push("изображение");
+  if (kind === "pdf") signals.push("PDF");
+  if (kind === "legacy_database") signals.push("старая база");
+  if (kind === "legacy_dump") signals.push("резервная копия старой базы");
+  if (warnings.includes("pdf_text_not_extracted_may_be_scanned")) signals.push("PDF может быть сканом");
+  if (looksTabular(text)) signals.push("похоже на таблицу");
+  if (/[А-Яа-яЁё]/.test(text)) signals.push("русский текст");
+  if (/\+?\d[\d\s\-()]{8,}\d/.test(text)) signals.push("похож на телефон");
+  if (/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/.test(text)) signals.push("похоже на дату");
   const hasDentalServiceSignal = /(?:корон|имплант|реставрац|брекет|элайн|гигиен|канал|пломб|винир|абатмент|мембран|костн)/i.test(text);
   if (/(?:руб|₽|р\.|price|стоимость)/i.test(text) || (hasDentalServiceSignal && /\b\d{3,7}\b/.test(text))) {
-    signals.push("price_like");
+    signals.push("похоже на цену");
   }
-  if (/\b(?:rvg|opg|cbct|dicom|dcm|jpg|png)\b|(?:оптг|кт|трг|рентген|сним)/i.test(text)) signals.push("imaging_like");
-  if (hasDentalServiceSignal) signals.push("dental_service_like");
-  if (/(?:договор|акт|соглас|справк|вычет|паспорт|полис)/i.test(text)) signals.push("document_like");
+  if (/\b(?:rvg|opg|cbct|dicom|dcm|jpg|png)\b|(?:оптг|кт|трг|рентген|сним)/i.test(text)) signals.push("похоже на снимки");
+  if (hasDentalServiceSignal) signals.push("похоже на услуги");
+  if (/(?:договор|акт|соглас|справк|вычет|паспорт|полис)/i.test(text)) signals.push("похоже на документ");
   if (normalized.includes(".xlsx") || normalized.includes(".csv") || normalized.includes(".docx") || normalized.includes(".pdf")) {
-    signals.push("file_reference_like");
+    signals.push("есть ссылки на файлы");
   }
   if (/legacy|migration|старая|мис|backup|dump|firebird|access|sqlite|pacs|dicomweb/i.test(text)) {
-    signals.push("migration_source_like");
+    signals.push("похоже на источник миграции");
   }
   return Array.from(new Set(signals));
 }
@@ -604,7 +608,7 @@ function routesFor(kind: DocumentIngestionKind, text: string, target: DocumentIn
       endpoint: "/api/imports/smart/preview",
       enabled: hasText,
       reason: legacySource
-        ? "Старая БД или backup превращены в staging-manifest; запись возможна только после read-only разбора и preview."
+        ? "Старая база или резервная копия превращены в проверочный список; запись возможна только после локального разбора только для чтения и предварительного просмотра."
         : hasText
           ? "Может разделить смешанные строки пациентов и снимков перед записью."
           : "Текст пока не извлечен."
@@ -615,7 +619,7 @@ function routesFor(kind: DocumentIngestionKind, text: string, target: DocumentIn
       endpoint: "/api/imports/patients/intake",
       enabled: hasText && !legacySource,
       reason: legacySource
-        ? "Старую БД нельзя напрямую писать как пациентов; сначала нужен staging parser."
+        ? "Старую базу нельзя напрямую писать как пациентов; сначала нужен локальный разбор только для чтения."
         : tabular
           ? "Похоже на таблицу или экспорт."
           : "Свободный текст можно нормализовать в строки пациентов."
@@ -626,7 +630,7 @@ function routesFor(kind: DocumentIngestionKind, text: string, target: DocumentIn
       endpoint: "/api/imaging/imports/preview",
       enabled: hasText && hasImagingHint && !legacySource,
       reason: legacySource
-        ? "Сначала извлечь media paths из старой БД в manifest; не сканировать бинарную БД как снимки."
+        ? "Сначала извлечь пути к снимкам из старой базы в проверочный список; не сканировать бинарную базу как снимки."
         : "Доступно, когда найдены пути к файлам или признаки снимков."
     },
     {
@@ -648,8 +652,8 @@ function routesFor(kind: DocumentIngestionKind, text: string, target: DocumentIn
     routes.forEach((route) => {
       route.enabled = target === "pricelist" && route.target === "pricelist";
       route.reason = route.enabled
-        ? "Изображение будет сохранено для OCR/vision-разбора прайса."
-        : "Для изображения сначала нужен OCR/vision: используйте фото прайса или поток AI-распознавания.";
+        ? "Изображение будет сохранено для распознавания прайса."
+        : "Для изображения сначала нужно распознавание: используйте фото прайса или поток AI-анализа.";
     });
   }
   if (legacySource) {
@@ -681,7 +685,7 @@ function qualityFor(
       suggestedTarget: "smart_import",
       signals,
       nextAction:
-        "Открыть smart import preview по staging-manifest. Реальные таблицы старой БД разбирать только локальным read-only bridge, затем сверить 10 контрольных карт."
+        "Открыть предварительный просмотр умного импорта по проверочному списку. Реальные таблицы старой базы разбирать только локальным модулем только для чтения, затем сверить 10 контрольных карт."
     };
   }
 
@@ -691,7 +695,7 @@ function qualityFor(
       confidence: 0.72,
       suggestedTarget: "pricelist",
       signals,
-      nextAction: "Сохраните сжатое изображение и запустите OCR/vision-предпросмотр прайса; не записывайте данные без проверки JSON."
+      nextAction: "Сохраните сжатое изображение и запустите распознавание прайса; не записывайте данные без проверки структуры."
     };
   }
 
@@ -701,7 +705,7 @@ function qualityFor(
       confidence: 0.64,
       suggestedTarget,
       signals,
-      nextAction: "Сначала запустите OCR/vision; локальный extractor не может безопасно прочитать файл как структурированный текст."
+      nextAction: "Сначала запустите распознавание изображения; локальный извлекатель не может прочитать файл как структурированный текст."
     };
   }
 
@@ -711,7 +715,7 @@ function qualityFor(
       confidence: 0.2,
       suggestedTarget,
       signals,
-      nextAction: "Конвертируйте файл или используйте OCR/vision перед импортом. Из этого результата ничего нельзя записывать."
+      nextAction: "Конвертируйте файл или используйте распознавание изображения перед импортом. Из этого результата ничего нельзя записывать."
     };
   }
 
@@ -760,12 +764,12 @@ export function extractDocument(input: DocumentIngestionRequest): DocumentIngest
       parserNotes.push(...extracted.parserNotes);
     } else if (kind === "image") {
       warnings.push("image_requires_ocr_or_vision");
-      parserNotes.push("Binary image received; use OCR/vision flow before text import.");
+      parserNotes.push("Получено изображение; перед текстовым импортом нужен поток распознавания изображения.");
     } else if (kind === "legacy_database" || kind === "legacy_dump") {
       text = legacyStagingManifest({ fileName: input.fileName, kind, byteSize: buffer.length });
       warnings.push("legacy_source_staging_manifest_only");
-      parserNotes.push("Legacy database/dump received; binary content was not decoded or returned.");
-      parserNotes.push("Use a local read-only staging parser to export patients, visits, payments, and media references into reviewable manifests.");
+      parserNotes.push("Получена старая база или резервная копия; бинарное содержимое не расшифровывалось и не возвращалось.");
+      parserNotes.push("Используйте локальный модуль только для чтения, чтобы выгрузить пациентов, визиты, платежи и ссылки на снимки в проверяемые списки.");
     } else {
       text = decodeText(buffer);
       warnings.push("unknown_format_decoded_as_text");
@@ -782,7 +786,7 @@ export function extractDocument(input: DocumentIngestionRequest): DocumentIngest
   const routes = routesFor(kind, text, input.target);
 
   return documentIngestionResponseSchema.parse({
-    fileName: safeFileLabel(input.fileName, "Source file"),
+    fileName: safeFileLabel(input.fileName, "Файл"),
     mimeType: input.mimeType ?? null,
     detectedKind: kind,
     byteSize: buffer.length,

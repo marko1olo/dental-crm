@@ -99,10 +99,20 @@ assert(
   englishValidationHits.length === 0,
   `english validation text leaked from shared schemas: ${englishValidationHits.slice(0, 5).join(", ")}`
 );
-assert(serverSource.includes("localizeZodIssueMessage"), "API must localize generic Zod validation messages");
+assert(serverSource.includes("publicValidationErrorMessage"), "API must keep bounded generic validation fallback copy.");
+assert(serverSource.includes("createDenteApiApp"), "API server must expose an app factory for runtime error-boundary proof.");
+assert(!serverSource.includes("issues: error.issues"), "API global validation fallback must not return raw zod issue arrays.");
+assert(!serverSource.includes("localizeZodIssueMessage"), "API global validation fallback must not map zod issue details into public payloads.");
+assert(serverSource.includes("apiTechnicalErrorPattern"), "API catch-all error handler must filter technical exception text.");
+assert(serverSource.includes("publicApiErrorMessage"), "API catch-all error handler must keep only operator-readable domain messages.");
+assert(!serverSource.includes("reply.send(error);"), "API catch-all error handler must not send raw Error objects.");
+assert(
+  serverSource.includes("Сервер не выполнил действие. Повторите позже или обратитесь к администратору клиники."),
+  "API catch-all error handler must expose a readable recovery message for technical failures."
+);
 const englishApiMessageHits =
   userFacingApiSources.match(
-    /"[^"]*(Telegram bot username|Telegram preview|Telegram link code clinic scope|Visit not found|Communication task not found|Clinical rule not found|visitId or patientId is required|Image files need|MPR mode is reserved|DICOMweb base URL is required|WebGL2 is required|IndexedDB is required|Staff member not found|Server bundle stores metadata|Clinic legal\/contact\/profile fields were updated)[^"]*"/g
+    /"[^"]*(Telegram bot username|Telegram preview|Telegram link code clinic scope|Visit not found|Communication task not found|Clinical rule not found|visitId or patientId is required|Image files need|MPR mode is reserved|DICOMweb base URL is required|WebGL2 is required|IndexedDB is required|Staff member not found|Server bundle stores metadata|Clinic legal\/contact\/profile fields were updated|CRM stores the CT surface route|Archive or unknown surface format is metadata-only|Send this CT surface|Open this surface in an external model viewer|Keep this surface as metadata)[^"]*"/g
   ) ?? [];
 assert(englishApiMessageHits.length === 0, `english API user-facing text leaked: ${englishApiMessageHits.slice(0, 5).join(", ")}`);
 const englishUiMessageHits = ['"Undo"', ">Undo<", "кнопкой Undo", "local undo"].filter((snippet) => appSource.includes(snippet));

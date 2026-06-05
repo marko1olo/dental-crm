@@ -70,6 +70,17 @@ function documentAttachmentFileName(document: GeneratedDocument, extension: "htm
   return `dente-${document.kind}-${document.id}.${extension}`;
 }
 
+function documentRequiresIssuedArchive(document: GeneratedDocument): boolean {
+  return document.status === "issued" || (document.status === "voided" && Boolean(document.issuedAt));
+}
+
+function documentHasIssuedArchiveMetadata(document: GeneratedDocument): boolean {
+  return Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
+}
+
+const issuedArchiveIntegrityError =
+  "Архивная копия выданного документа отсутствует или не прошла проверку целостности.";
+
 function pdfBrowserCandidates(): string[] {
   return [
     process.env.DENTE_PDF_BROWSER_BIN,
@@ -110,7 +121,7 @@ async function renderIssuedHtmlToPdf(html: string): Promise<{ ok: true; pdf: Buf
   if (!browserPath) {
     return {
       ok: false,
-      error: "PDF-экспорт недоступен: на сервере не найден Chromium/Edge. Укажите DENTE_PDF_BROWSER_BIN."
+      error: "PDF-экспорт недоступен: на сервере клиники не найден браузер для печати документов. Укажите путь к браузеру в серверных настройках."
     };
   }
 
@@ -178,25 +189,25 @@ async function renderIssuedHtmlToPdf(html: string): Promise<{ ok: true; pdf: Buf
       const pdf = await readValidPdfFile(pdfPath);
       if (pdf) return { ok: true, pdf };
       if (result.error) {
-        lastFailure = `PDF-экспорт не запустил браузер (${attempt.label}): ${result.error.message}`;
+        lastFailure = "PDF-экспорт не запустил браузер документов. Проверьте путь к браузеру в серверных настройках.";
         continue;
       }
       if (result.timedOut) {
-        lastFailure = `PDF-экспорт не завершился за ${Math.round(timeoutMs / 1000)} секунд (${attempt.label}).`;
+        lastFailure = `PDF-экспорт не завершился за ${Math.round(timeoutMs / 1000)} секунд. Проверьте, что браузер документов запускается на сервере клиники.`;
         continue;
       }
       if (result.code !== 0) {
-        lastFailure = `PDF-экспорт завершился с кодом ${result.code ?? "unknown"} (${attempt.label}).`;
+        lastFailure = "PDF-экспорт завершился с ошибкой браузера документов. Проверьте установку браузера на сервере клиники.";
         continue;
       }
-      lastFailure = `PDF-экспорт вернул поврежденный файл (${attempt.label}).`;
+      lastFailure = "PDF-экспорт вернул поврежденный файл. Повторите выгрузку или проверьте сервер печати документов.";
     }
 
     return { ok: false, error: lastFailure };
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "PDF-экспорт завершился неизвестной ошибкой."
+      error: "PDF-экспорт не завершился. Проверьте права на временную папку сервера и браузер для печати документов."
     };
   } finally {
     await rm(workDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
@@ -737,8 +748,35 @@ function documentRenderContext() {
   return { clinicProfile, payments, serviceCatalog, treatmentPlanItems };
 }
 
-function apiError(message: string) {
-  return { error: repairMojibakeText(message) };
+function apiError(message: string, error = "DocumentOperationRejected") {
+  return {
+    error,
+    message: repairMojibakeText(message)
+  };
+}
+
+const documentCreateValidationMessage =
+  "Документ не создан: выберите пациента, тип документа и заполните обязательные поля формы.";
+const documentIssueValidationMessage =
+  "Документ не выдан: подтвердите подпись или получение, проверку личности и ответственного сотрудника.";
+const documentVoidValidationMessage =
+  "Документ не аннулирован: укажите причину, ответственного сотрудника, архив и проверку статуса.";
+
+function objectRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function documentCreateValidationMessageForRequest(body: unknown): string {
+  const input = objectRecord(body);
+  const payload = objectRecord(input?.payload);
+  const application = objectRecord(payload?.taxDeductionApplication);
+  const taxpayerInn = typeof application?.taxpayerInn === "string" ? application.taxpayerInn.replace(/\D+/g, "") : "";
+
+  if (application?.requestedForm === "knd_1151156" && taxpayerInn.length > 0 && taxpayerInn.length !== 12) {
+    return "Документ не создан: для заявления на КНД 1151156 нужен 12-значный ИНН физического лица.";
+  }
+
+  return documentCreateValidationMessage;
 }
 
 function configuredTaxOfficeCode(): string | null {
@@ -799,20 +837,16 @@ function buildDocumentAuditFacts(document: GeneratedDocument, patient: (typeof p
   const renderContext = documentRenderContext();
   const issueBlockReason =
     document.status === "draft" ? documentIssueBlockReason(document, patient, renderContext) ?? documentIssueChainBlockReason(document) : null;
+  const issuedArchiveRequired = documentRequiresIssuedArchive(document);
   const issuedSnapshot = readIssuedDocumentSnapshot(document);
-  const immutableSnapshotReady = Boolean(
-    issuedSnapshot &&
-      document.issuedSnapshotSha256 &&
-      document.issuedSnapshotCreatedAt &&
-      (document.status === "issued" || (document.status === "voided" && Boolean(document.issuedAt)))
-  );
+  const immutableSnapshotReady = Boolean(issuedSnapshot && documentHasIssuedArchiveMetadata(document) && issuedArchiveRequired);
   const hasIssueSignatureAttestation = Boolean(document.signatureAttestation);
   const blockers = [
     issueBlockReason,
-    document.status === "issued" && !immutableSnapshotReady
+    issuedArchiveRequired && !immutableSnapshotReady
       ? "Архивная HTML-копия выданного документа отсутствует или не прошла проверку sha256."
       : null,
-    (document.status === "issued" || (document.status === "voided" && Boolean(document.issuedAt))) && !hasIssueSignatureAttestation
+    issuedArchiveRequired && !hasIssueSignatureAttestation
       ? "Для PDF/XML выгрузки нужна отметка подписания и получения документа."
       : null
   ]
@@ -896,7 +930,7 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
     if (!parsedInput.success) {
       return reply.code(400).send({
         error: "DocumentValidationFailed",
-        message: repairMojibakeText(parsedInput.error.issues[0]?.message ?? "Документ содержит некорректные данные.")
+        message: repairMojibakeText(documentCreateValidationMessageForRequest(request.body))
       });
     }
     const input = repairMojibakeDeep(parsedInput.data);
@@ -980,10 +1014,7 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
     if (!parsedIssueInput.success) {
       return reply.code(400).send({
         error: "DocumentIssueValidationFailed",
-        message: repairMojibakeText(
-          parsedIssueInput.error.issues[0]?.message ??
-            "Перед выдачей подтвердите подпись/получение документа, проверку личности и ответственное лицо клиники."
-        )
+        message: repairMojibakeText(documentIssueValidationMessage)
       });
     }
 
@@ -1031,10 +1062,7 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
     if (!parsedVoidInput.success) {
       return reply.code(400).send({
         error: "DocumentVoidValidationFailed",
-        message: repairMojibakeText(
-          parsedVoidInput.error.issues[0]?.message ??
-            "Перед аннулированием укажите причину, ответственного сотрудника, сохранение архива и проверку статуса."
-        )
+        message: repairMojibakeText(documentVoidValidationMessage)
       });
     }
 
@@ -1202,11 +1230,15 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
     if (!document) {
       return reply.code(404).send(apiError("Документ не найден"));
     }
-    if (!(document.status === "issued" || (document.status === "voided" && Boolean(document.issuedAt)))) {
+    if (!documentRequiresIssuedArchive(document)) {
       return reply.code(409).send(apiError("PDF можно выгрузить только из выданной архивной HTML-копии."));
     }
     if (!document.signatureAttestation) {
       return reply.code(409).send(apiError("PDF нельзя выгрузить без отметки подписания и получения выданного документа."));
+    }
+
+    if (!documentHasIssuedArchiveMetadata(document)) {
+      return reply.code(409).send(apiError(issuedArchiveIntegrityError));
     }
 
     const issuedSnapshot = readIssuedDocumentSnapshot(document);
@@ -1239,7 +1271,10 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
     }
 
     const issuedSnapshot = readIssuedDocumentSnapshot(document);
-    if (document.status === "issued" || (document.status === "voided" && Boolean(document.issuedAt))) {
+    if (documentRequiresIssuedArchive(document)) {
+      if (!documentHasIssuedArchiveMetadata(document)) {
+        return reply.code(409).send(apiError(issuedArchiveIntegrityError));
+      }
       if (!issuedSnapshot) {
         return reply.code(409).send(apiError("Архивная копия выданного документа отсутствует или не прошла проверку целостности."));
       }

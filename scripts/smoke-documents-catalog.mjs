@@ -349,7 +349,7 @@ const outpatientMedicalCard025uPayload = {
 
 const medicalRecordCopyRequestPayload = {
   medicalRecordCopyRequest: {
-    requestedDocumentTypes: ["Выписка из медицинской карты", "DICOM-архив КТ"],
+    requestedDocumentTypes: ["Выписка из медицинской карты", "Архив исходных снимков КТ"],
     periodStart: "2026-05-01",
     periodEnd: "2026-05-18",
     requestedFormat: "dicom_archive",
@@ -359,7 +359,7 @@ const medicalRecordCopyRequestPayload = {
     representativeAuthorityDocument: null,
     requestedAt: "2026-05-18 13:56",
     contactForDelivery: "+7 900 000-00-00, защищенный портал",
-    specialInstructions: "подготовить исходные DICOM-файлы при наличии",
+    specialInstructions: "подготовить исходные файлы снимков при наличии",
     includeDicomSourceData: true,
     identityVerified: true,
     thirdPartyDataExclusionAcknowledged: true
@@ -774,8 +774,8 @@ const requiredFragments = new Map([
   ["medical_intervention_refusal", ["Отказ от медицинского вмешательства", "Удаление зуба 36", "Предложенные альтернативы"]],
   ["treatment_plan", ["Клинический план лечения", "Планируемые этапы", "отдельное информированное согласие"]],
   ["personal_data_processing_consent", ["персональных данных", clinicProfile.legalName, "оказание стоматологической медицинской помощи", "Передача допускается только"]],
-  ["medical_record_copy_request", ["копии медицинской документации", "DICOM"]],
-  ["medical_document_release_receipt", ["Расписка о выдаче", "DICOM-архив"]],
+  ["medical_record_copy_request", ["копии медицинской документации", "архив исходных снимков"]],
+  ["medical_document_release_receipt", ["Расписка о выдаче", "архив исходных снимков"]],
   ["xray_cbct_referral", ["КЛКТ", "Беременность/ограничения"]],
   ["treatment_plan_acceptance", ["Согласование плана лечения", "Отклоненные или отложенные альтернативы"]],
   ["anesthesia_consent_log", ["Журнал введения", "Анестетик"]],

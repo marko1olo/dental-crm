@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import {
   aiRecognitionJobResponseSchema,
   aiRecognitionJobSchema,
@@ -9,6 +9,31 @@ import {
 import { buildVisitDraftFromTranscript } from "../ai/visitDraft.js";
 import { createAiRecognitionJob, imagingStudies, listAiRecognitionJobs, patients } from "../sampleData.js";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+
+const aiRecognitionValidationMessage =
+  "AI-задача не создана: выберите пациента или снимок и тип черновика.";
+const visitNoteDraftValidationMessage =
+  "Черновик приема не собран: передайте текст диктовки и специальность врача.";
+const aiRecognitionPatientMissingMessage =
+  "Пациент не найден. Выберите пациента из актуальной карты.";
+const aiRecognitionStudyMissingMessage =
+  "Снимок не найден. Выберите снимок из карты пациента.";
+const aiRecognitionStudyPatientMismatchMessage =
+  "Снимок привязан к другому пациенту. Проверьте карту перед созданием AI-черновика.";
+
+function sendAiRecognitionScopeError(reply: FastifyReply, statusCode: 404 | 409, message: string) {
+  return reply.code(statusCode).send({
+    error: "AiRecognitionScopeError",
+    message
+  });
+}
+
+function sendVisitNoteDraftScopeError(reply: FastifyReply, statusCode: 404, message: string) {
+  return reply.code(statusCode).send({
+    error: "VisitNoteDraftScopeError",
+    message
+  });
+}
 
 export async function registerAiRoutes(app: FastifyInstance) {
   app.get("/api/ai/recognition-jobs", async (request, reply) => {
@@ -21,21 +46,21 @@ export async function registerAiRoutes(app: FastifyInstance) {
     const parsedInput = createAiRecognitionJobSchema.safeParse(request.body);
     if (!parsedInput.success) {
       return reply.code(400).send({
-        error: "ValidationError",
-        message: parsedInput.error.issues.map((issue) => issue.message).join(" ")
+        error: "AiRecognitionValidationError",
+        message: aiRecognitionValidationMessage
       });
     }
     const input = parsedInput.data;
     const patient = input.patientId ? patients.find((candidate) => candidate.id === input.patientId) : null;
     if (input.patientId && !patient) {
-      return reply.code(404).send({ error: "Пациент не найден" });
+      return sendAiRecognitionScopeError(reply, 404, aiRecognitionPatientMissingMessage);
     }
     const imagingStudy = input.imagingStudyId ? imagingStudies.find((candidate) => candidate.id === input.imagingStudyId) : null;
     if (input.imagingStudyId && !imagingStudy) {
-      return reply.code(404).send({ error: "Снимок не найден" });
+      return sendAiRecognitionScopeError(reply, 404, aiRecognitionStudyMissingMessage);
     }
     if (patient && imagingStudy && imagingStudy.patientId !== patient.id) {
-      return reply.code(409).send({ error: "AI-черновик снимка нельзя привязать к другому пациенту" });
+      return sendAiRecognitionScopeError(reply, 409, aiRecognitionStudyPatientMismatchMessage);
     }
     const job = createAiRecognitionJob({
       ...input,
@@ -49,14 +74,14 @@ export async function registerAiRoutes(app: FastifyInstance) {
     const parsedInput = visitNoteDraftRequestSchema.safeParse(request.body);
     if (!parsedInput.success) {
       return reply.code(400).send({
-        error: "ValidationError",
-        message: parsedInput.error.issues.map((issue) => issue.message).join(" ")
+        error: "VisitNoteDraftValidationError",
+        message: visitNoteDraftValidationMessage
       });
     }
     const input = parsedInput.data;
     const patient = patients.find((candidate) => candidate.id === input.patientId);
     if (!patient) {
-      return reply.code(404).send({ error: "Пациент не найден" });
+      return sendVisitNoteDraftScopeError(reply, 404, aiRecognitionPatientMissingMessage);
     }
 
     return visitNoteDraftSchema.parse(buildVisitDraftFromTranscript(input.transcript, input.specialty));

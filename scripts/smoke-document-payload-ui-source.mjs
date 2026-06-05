@@ -5,7 +5,8 @@ const source = [
   fs.readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
   fs.readFileSync("apps/web/src/CommunicationsView.tsx", "utf8"),
   fs.readFileSync("apps/web/src/communicationTaskData.ts", "utf8"),
-  fs.readFileSync("apps/web/src/postVisitCareData.ts", "utf8")
+  fs.readFileSync("apps/web/src/postVisitCareData.ts", "utf8"),
+  fs.readFileSync("apps/web/src/workspaceUiLabels.ts", "utf8")
 ].join("\n");
 
 const requiredSnippets = [
@@ -78,11 +79,16 @@ const requiredSnippets = [
   "document-source-links",
   "typedSelectedDocumentMetadata.sourceUrls.map",
   "documentAuditFacts.sourceUrls.map",
+  "Контрольная метка",
   "Официальные источники формы",
   "Официальные источники паспорта документа",
   "document-factory-kind-button",
   "documentKindMetadata[document.kind].sourceStatus",
   "Создать выбранный документ",
+  "selectedDocumentCreateGuidanceId",
+  "selectedDocumentNeedsPayload",
+  "aria-describedby={selectedDocumentCreateGuidanceId}",
+  "Перед созданием CRM проверит обязательные поля этой формы",
   "documentAuditFacts",
   "documentAuditFactsLoadingId",
   "documentIssueSignatureStorageKey",
@@ -109,7 +115,7 @@ const requiredSnippets = [
   "sourceSnapshotSha256",
   "loadDocumentAuditFacts(document.id)",
   "/api/documents/${documentId}/audit-facts",
-  "/api/documents/${documentId}/html?download=1",
+  "issuedDocumentHtmlDownloadUrl(documentId)",
   "/api/documents/${documentId}/pdf",
   "downloadIssuedDocumentHtml(document.id)",
   "downloadIssuedDocumentPdf(document.id)",
@@ -194,6 +200,7 @@ const requiredSnippets = [
   "copyRequestDocumentTypes",
   "copyRequestIdentityVerified",
   "postVisitRecommendations",
+  "Telegram-бота клиники",
   "postVisitCareTopicOptions",
   "postVisitCarePresets",
   "applyPostVisitCarePreset",
@@ -217,12 +224,16 @@ const requiredSnippets = [
   "issuedMedicalCopyRequestDocuments",
   "releaseSourceRequestAutofillRef",
   "chainSummary?.medicalRecordCopyRequest",
+  "метки подписанных визитов, по одной в строке",
+  "метки визитов или номера записей, по одной в строке",
+  "Расписка будет привязана к выбранному запросу.",
   "setReleaseRecipientFullName(request.recipientFullName)",
   "setReleaseRecipientIdentityDocument(request.recipientIdentityDocument)",
   "setReleaseChannel(request.requestedFormat)",
   "setReleaseDocumentTypes(request.requestedDocumentTypes.join(\"\\n\"))",
   "releaseRecipientFullName",
   "refundOriginalFiscalReceiptNumber",
+  "номер чека или данные фискального чека",
   "refundAccountantDecision",
   "personalDataProcessingConsent",
   "personalDataPurposes",
@@ -255,6 +266,7 @@ const requiredSnippets = [
   "paymentInvoice",
   "paymentInvoiceNumber",
   "paymentInvoiceFiscalNoticeConfirmed",
+  "необязательно: данные СБП или платежная ссылка",
   "paymentReceipt",
   "selectedPaymentReceiptIds",
   "documentPaymentSelectionStorageKey",
@@ -264,17 +276,48 @@ const requiredSnippets = [
   "documentPayloadDraftStorageKey",
   "documentPayloadDraftLocalKey",
   "type Outpatient025uDocumentDraftFields",
+  "type MedicalRecordExtractDocumentDraftFields",
+  "recordExtractPreparedFromSignedRecords: boolean;",
+  "recordExtractRecipientFullName: string;",
+  "recordExtractRecipientAuthority: string;",
+  "recordExtractIssuedAt: string;",
+  "recordExtractThirdPartyDataChecked: boolean;",
+  "outpatient025uOfficialForm274nChecked: boolean;",
+  "outpatient025uThirdPartyDataChecked: boolean;",
+  "recordExtractPreparedFromSignedRecords: candidate.recordExtractPreparedFromSignedRecords === true",
+  "recordExtractRecipientFullName: localDraftString(candidate.recordExtractRecipientFullName, 240)",
+  "recordExtractRecipientAuthority: localDraftString(candidate.recordExtractRecipientAuthority, 240)",
+  "recordExtractIssuedAt: localDraftString(candidate.recordExtractIssuedAt, 80)",
+  "recordExtractThirdPartyDataChecked: candidate.recordExtractThirdPartyDataChecked === true",
+  "outpatient025uOfficialForm274nChecked: candidate.outpatient025uOfficialForm274nChecked === true",
+  "outpatient025uThirdPartyDataChecked: candidate.outpatient025uThirdPartyDataChecked === true",
   "documentPayloadDraftKey(\n        \"outpatient_medical_card_025u\",\n        documentLocalPersistenceOrganizationId",
+  "documentPayloadDraftKey(\n        \"medical_record_extract\",\n        documentLocalPersistenceOrganizationId",
   "loadOutpatient025uDocumentDraft(",
   "saveOutpatient025uDocumentDraft(",
+  "loadMedicalRecordExtractDocumentDraft(",
+  "saveMedicalRecordExtractDocumentDraft(",
   "loadDocumentPaymentSelection(documentLocalPersistenceOrganizationId, taxPaymentSelectionPersistenceKey)",
   "saveDocumentPaymentSelection(\n      documentLocalPersistenceOrganizationId,",
   "loadOutpatient025uDocumentDraft(documentLocalPersistenceOrganizationId, outpatient025uDraftPersistenceKey)",
   "saveOutpatient025uDocumentDraft(\n      documentLocalPersistenceOrganizationId,",
+  "loadMedicalRecordExtractDocumentDraft(\n      documentLocalPersistenceOrganizationId,",
+  "saveMedicalRecordExtractDocumentDraft(\n      documentLocalPersistenceOrganizationId,",
   "outpatient025uDraftPersistenceKey",
   "outpatient025uDraftHydratedKeyRef",
+  "medicalRecordExtractDraftPersistenceKey",
+  "medicalRecordExtractDraftHydratedKeyRef",
   "applyOutpatient025uDocumentDraftFields(",
   "currentOutpatient025uDocumentDraftFields()",
+  "applyMedicalRecordExtractDocumentDraftFields(",
+  "currentMedicalRecordExtractDocumentDraftFields()",
+  "setRecordExtractPreparedFromSignedRecords(fields.recordExtractPreparedFromSignedRecords)",
+  "setRecordExtractRecipientFullName(fields.recordExtractRecipientFullName)",
+  "setRecordExtractRecipientAuthority(fields.recordExtractRecipientAuthority)",
+  "setRecordExtractIssuedAt(fields.recordExtractIssuedAt)",
+  "setRecordExtractThirdPartyDataChecked(fields.recordExtractThirdPartyDataChecked)",
+  "setOutpatient025uOfficialForm274nChecked(fields.outpatient025uOfficialForm274nChecked)",
+  "setOutpatient025uThirdPartyDataChecked(fields.outpatient025uThirdPartyDataChecked)",
   "taxPaymentSelectionPersistenceKey",
   "paymentReceiptSelectionPersistenceKey",
   "taxPaymentSelectionHydratedKeyRef",
@@ -383,6 +426,10 @@ if (source.includes("loadOutpatient025uDocumentDraft(outpatient025uDraftPersiste
     source.includes("saveOutpatient025uDocumentDraft(outpatient025uDraftPersistenceKey")) {
   missing.push("025/u payload drafts must pass clinic organization id into load/save");
 }
+if (source.includes("loadMedicalRecordExtractDocumentDraft(medicalRecordExtractDraftPersistenceKey)") ||
+    source.includes("saveMedicalRecordExtractDocumentDraft(medicalRecordExtractDraftPersistenceKey")) {
+  missing.push("medical record extract payload drafts must pass clinic organization id into load/save");
+}
 if (source.includes("window.localStorage.setItem(\n      documentPaymentSelectionStorageKey") ||
     source.includes("window.localStorage.setItem(\n      documentPayloadDraftStorageKey")) {
   missing.push("document local recovery stores must write to clinic-scoped localStorage keys");
@@ -398,6 +445,27 @@ if (source.includes('updateDocumentStatus(document.id, "void")')) {
 }
 if (!source.includes("satisfies VoidDocumentInput")) {
   missing.push("document void UI must submit shared VoidDocumentInput payload");
+}
+if (source.includes("payload СБП")) {
+  missing.push("payment invoice QR field must use staff-facing wording, not raw payload jargon");
+}
+if (source.includes("Telegram-бота DENTE")) {
+  missing.push("post-visit recommendation helper must use clinic-facing wording, not internal DENTE wording");
+}
+if (source.includes("ID подписанных визитов, по одному в строке")) {
+  missing.push("medical record extract must not ask administrators for internal visit IDs");
+}
+if (source.includes("ID визитов или номера записей, по одному в строке")) {
+  missing.push("medical copy request must not ask administrators for internal visit IDs");
+}
+if (source.includes("привязана к нему по ID")) {
+  missing.push("medical release receipt must not explain source request binding through internal IDs");
+}
+if (source.includes('paymentFiscalReceiptNumber || "ФН/ФД/ФП"')) {
+  missing.push("refund correction receipt placeholder must not expose unexplained fiscal abbreviations");
+}
+if (source.includes("<span>sha256</span>")) {
+  missing.push("document audit passport must use operator wording instead of raw hash labels");
 }
 
 if (!source.includes("documentPayloadSchema") && !source.includes("DocumentPayload")) {

@@ -22,6 +22,18 @@ for (const file of files) {
       offenders.push({ file, line, tag: tag.replace(/\s+/g, " ").slice(0, 180) });
     }
   }
+
+  const externalLinkPattern = /<a\b[^>]*target="_blank"[^>]*>/g;
+  while ((match = externalLinkPattern.exec(source))) {
+    const tag = match[0];
+    const relMatch = tag.match(/\brel="([^"]*)"/);
+    const relTokens = new Set((relMatch?.[1] ?? "").split(/\s+/).filter(Boolean));
+    const hasContext = /\baria-label=|\btitle=/.test(tag);
+    if (!relTokens.has("noopener") || !relTokens.has("noreferrer") || !hasContext) {
+      const line = source.slice(0, match.index).split(/\n/).length;
+      offenders.push({ file, line, tag: tag.replace(/\s+/g, " ").slice(0, 180) });
+    }
+  }
 }
 
 if (offenders.length) {

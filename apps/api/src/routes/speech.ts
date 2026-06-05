@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import {
   speechChunkUploadSchema,
   speechGatewayHealthReportSchema,
@@ -23,6 +23,7 @@ import {
   patients
 } from "../sampleData.js";
 import {
+  SpeechChunkPayloadError,
   buildSpeechRecordingStrategy,
   getSpeechGatewayHealthReport,
   getSpeechGatewayStatus,
@@ -39,13 +40,66 @@ type SpeechScopeInput = {
   source?: SpeechChunkUploadInput["source"] | null | undefined;
 };
 
+type SpeechPayloadSchema<T> = {
+  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+};
+
 type SpeechScopeValidation =
   | { ok: true; patientId: string | null; visitId: string | null }
-  | { ok: false; statusCode: 400 | 404 | 409; error: string };
+  | { ok: false; statusCode: 400 | 404 | 409; error: "SpeechClinicalScopeError"; message: string };
+type SpeechChunkRejectionReason = "audio_rejected" | "chunk_conflict";
+
+const speechStrategyValidationMessage =
+  "Стратегия записи не рассчитана: проверьте длительность, режим сети, приватность, специальность и источник диктовки.";
+const speechChunkValidationMessage =
+  "Фрагмент диктовки не принят: передайте запись, номер фрагмента, аудио или локальную расшифровку и клинический контекст.";
+const speechChunkAudioRejectedMessage =
+  "Аудиофрагмент не принят: запись повреждена. Повторите запись или сохраните текстовый черновик.";
+const speechChunkConflictMessage =
+  "Фрагмент диктовки не принят: очередь уже содержит фрагмент другой записи. Обновите очередь диктовки и повторите отправку.";
+
+function parseSpeechPayload<T>(
+  schema: SpeechPayloadSchema<T>,
+  value: unknown,
+  error: string,
+  message: string,
+  reply: FastifyReply
+): T | null {
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) {
+    reply.code(400).send({ error, message });
+    return null;
+  }
+  return parsed.data;
+}
 
 function normalizeScopeId(value: string | null | undefined): string | null {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+function speechScopeFailure(statusCode: 400 | 404 | 409, message: string): SpeechScopeValidation {
+  return { ok: false, statusCode, error: "SpeechClinicalScopeError", message };
+}
+
+function sendSpeechScopeValidationError(reply: FastifyReply, scopeValidation: Extract<SpeechScopeValidation, { ok: false }>) {
+  return reply.code(scopeValidation.statusCode).send({
+    error: scopeValidation.error,
+    message: scopeValidation.message
+  });
+}
+
+function sendSpeechChunkRejection(
+  reply: FastifyReply,
+  statusCode: number,
+  reason: SpeechChunkRejectionReason,
+  message: string
+) {
+  return reply.code(statusCode).send({
+    error: "SpeechChunkRejected",
+    reason,
+    message
+  });
 }
 
 function validateSpeechClinicalScope(
@@ -56,27 +110,27 @@ function validateSpeechClinicalScope(
   const requestedVisitId = normalizeScopeId(input.visitId);
 
   if (options.requirePatientOrVisit && !requestedPatientId && !requestedVisitId) {
-    return { ok: false, statusCode: 400, error: "Нужно передать visitId или patientId" };
+    return speechScopeFailure(400, "Укажите пациента или прием для диктовки.");
   }
   if (input.source === "visit" && !requestedVisitId) {
-    return { ok: false, statusCode: 400, error: "Для диктовки приема нужен visitId" };
+    return speechScopeFailure(400, "Для диктовки приема выберите активный прием.");
   }
 
   const patient = requestedPatientId ? patients.find((candidate) => candidate.id === requestedPatientId) : null;
   if (requestedPatientId && !patient) {
-    return { ok: false, statusCode: 404, error: "Пациент не найден" };
+    return speechScopeFailure(404, "Пациент для диктовки не найден.");
   }
 
   const visit = requestedVisitId ? findVisitById(requestedVisitId) : null;
   if (requestedVisitId && !visit) {
-    return { ok: false, statusCode: 404, error: "Прием не найден" };
+    return speechScopeFailure(404, "Прием для диктовки не найден.");
   }
 
   if (visit && patient && visit.patientId !== patient.id) {
-    return { ok: false, statusCode: 409, error: "Речевая запись приема не принадлежит выбранному пациенту" };
+    return speechScopeFailure(409, "Диктовка приема относится к другому пациенту.");
   }
   if (visit && patient && visit.organizationId !== patient.organizationId) {
-    return { ok: false, statusCode: 409, error: "Речевая запись приема не принадлежит выбранной клинике" };
+    return speechScopeFailure(409, "Диктовка приема относится к другой клинике.");
   }
 
   return {
@@ -104,7 +158,14 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
 
   app.post("/api/speech/recording-strategy", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "speech recording strategy"))) return;
-    const input = speechRecordingStrategyRequestSchema.parse(request.body);
+    const input = parseSpeechPayload(
+      speechRecordingStrategyRequestSchema,
+      request.body,
+      "SpeechStrategyValidationError",
+      speechStrategyValidationMessage,
+      reply
+    );
+    if (!input) return;
     return speechRecordingStrategySchema.parse(buildSpeechRecordingStrategy(input));
   });
 
@@ -118,7 +179,7 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
       { patientId: query.patientId, visitId: query.visitId },
       { requirePatientOrVisit: true }
     );
-    if (!scopeValidation.ok) return reply.code(scopeValidation.statusCode).send({ error: scopeValidation.error });
+    if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
     const scope: Parameters<typeof listSpeechTranscriptionChunks>[1] = {};
     if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
@@ -133,7 +194,7 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
       { patientId: query.patientId, visitId: query.visitId },
       { requirePatientOrVisit: true }
     );
-    if (!scopeValidation.ok) return reply.code(scopeValidation.statusCode).send({ error: scopeValidation.error });
+    if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
     const filters: { visitId?: string | null; patientId?: string | null; limit?: number | null } = {};
     if (scopeValidation.visitId) filters.visitId = scopeValidation.visitId;
@@ -150,7 +211,7 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
       { patientId: query.patientId, visitId: query.visitId },
       { requirePatientOrVisit: true }
     );
-    if (!scopeValidation.ok) return reply.code(scopeValidation.statusCode).send({ error: scopeValidation.error });
+    if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
 
     const scope: Parameters<typeof assembleSpeechRecording>[1] = {};
     if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
@@ -165,9 +226,16 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       if (!(await requireClinicalMutationAccess(request, reply, "speech chunk transcribe"))) return;
-      const input = speechChunkUploadSchema.parse(request.body);
+      const input = parseSpeechPayload(
+        speechChunkUploadSchema,
+        request.body,
+        "SpeechChunkValidationError",
+        speechChunkValidationMessage,
+        reply
+      );
+      if (!input) return;
       const scopeValidation = validateSpeechClinicalScope(input);
-      if (!scopeValidation.ok) return reply.code(scopeValidation.statusCode).send({ error: scopeValidation.error });
+      if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
       const scopedInput: SpeechChunkUploadInput = {
         ...input,
         patientId: scopeValidation.patientId,
@@ -178,8 +246,11 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
         const result = await transcribeSpeechChunk(scopedInput);
         return reply.code(result.chunk.status === "failed" ? 503 : 201).send(speechTranscriptionResponseSchema.parse(result));
       } catch (error) {
+        if (error instanceof SpeechChunkPayloadError) {
+          return sendSpeechChunkRejection(reply, error.statusCode, "audio_rejected", speechChunkAudioRejectedMessage);
+        }
         if (error instanceof SpeechChunkIdentityConflictError) {
-          return reply.code(409).send({ message: error.message });
+          return sendSpeechChunkRejection(reply, error.statusCode, "chunk_conflict", speechChunkConflictMessage);
         }
         throw error;
       }
@@ -192,7 +263,8 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
     if (!parsedInput.success) {
       return reply.code(400).send({
         error: "ValidationError",
-        message: parsedInput.error.issues.map((issue) => issue.message).join(" ")
+        message:
+          "Некорректный текст для очистки диктовки. Передайте непустую расшифровку до 80 000 символов и специальность приема."
       });
     }
     const input = parsedInput.data;

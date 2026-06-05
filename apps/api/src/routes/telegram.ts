@@ -67,7 +67,7 @@ import type {
   DenteTelegramLinkCodeListStatusFilter
 } from "../sampleData.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
-import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage } from "../telegramTransport.js";
+import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage, type TelegramTransportResult } from "../telegramTransport.js";
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -86,6 +86,7 @@ type TelegramRouteBodySchema<T> = {
 type TelegramRouteBodyParseResult<T> =
   | { ok: true; value: T }
   | { ok: false; message: string };
+type TelegramTransportFailure = Extract<TelegramTransportResult, { ok: false }>;
 type TelegramChatInfo = {
   id: string;
   type: string | null;
@@ -200,6 +201,187 @@ function sendTelegramValidationError(reply: FastifyReply, error = "TelegramValid
     error,
     message: "Некорректный запрос Telegram. Проверьте обязательные поля и типы значений."
   });
+}
+
+const telegramSettingsFieldLabels: Record<string, string> = {
+  botUsername: "Имя Telegram-бота",
+  webhookBaseUrl: "Адрес приема сообщений Telegram",
+  patientPortalBaseUrl: "Ссылка на портал пациента",
+  welcomeImageUrl: "Картинка приветствия",
+  clinicReviewUrl: "Ссылка для отзывов",
+  clinicMapsUrl: "Ссылка на карту клиники",
+  "visualCardUrls.mainMenu": "Карточка главного меню",
+  "visualCardUrls.appointment": "Карточка записи",
+  "visualCardUrls.documents": "Карточка документов",
+  "visualCardUrls.tax": "Карточка налоговых документов",
+  "visualCardUrls.billing": "Карточка оплаты",
+  "visualCardUrls.care": "Карточка памятки",
+  "visualCardUrls.review": "Карточка отзыва"
+};
+
+const telegramSettingsReasonLabels: Record<string, string> = {
+  invalid_url: "укажите полный адрес вида https://...",
+  https_required: "нужна HTTPS-ссылка.",
+  credentials_not_allowed: "уберите логин и пароль из ссылки.",
+  invalid_path_encoding: "исправьте кодировку пути в ссылке.",
+  patient_identifying_path_not_allowed: "ссылка должна вести на общую публичную страницу без пациента, приема, документа, оплаты или токена.",
+  patient_identifying_path_value_not_allowed: "уберите из пути идентификаторы пациента, документа, телефона или личного номера.",
+  patient_identifying_query_not_allowed: "уберите персональные параметры из ссылки.",
+  patient_identifying_query_value_not_allowed: "уберите телефон, ИНН, СНИЛС или другой личный номер из параметров."
+};
+
+function telegramSettingsFieldLabel(fieldName: string): string {
+  const normalized = fieldName.trim();
+  return telegramSettingsFieldLabels[normalized] ?? telegramSettingsFieldLabels[normalized.replace(/\[(\w+)\]/g, ".$1")] ?? "Поле Telegram";
+}
+
+function readableTelegramSettingsValidationMessage(error: unknown): string {
+  const rawMessage = error instanceof Error ? repairMojibakeText(error.message).trim() : "";
+  if (!rawMessage) return "Настройки Telegram не сохранены. Проверьте поля формы.";
+  if (rawMessage.includes("DENTE_TELEGRAM_CALLBACK_SECRET") || rawMessage.includes("DENTE_TELEGRAM_WEBHOOK_SECRET")) {
+    return "Подписанные кнопки приема отключены; включите секрет подписанных кнопок в серверных настройках.";
+  }
+  const rawReason = telegramSettingsReasonLabels[rawMessage];
+  if (rawReason) return rawReason;
+
+  const technicalMatch = rawMessage.match(/^([^:]+):\s*([a-z0-9_]+)(?::.*)?$/);
+  if (technicalMatch) {
+    const fieldLabel = telegramSettingsFieldLabel(technicalMatch[1] ?? "");
+    const reason = telegramSettingsReasonLabels[technicalMatch[2] ?? ""];
+    if (reason) return `${fieldLabel}: ${reason}`;
+  }
+  return "Настройки Telegram не сохранены. Проверьте поля формы и публичные ссылки.";
+}
+
+function readableTelegramSettingsSchemaMessage(error: unknown): string {
+  const issues = Array.isArray((error as { issues?: unknown }).issues)
+    ? ((error as { issues: Array<{ path?: unknown[]; message?: unknown }> }).issues)
+    : [];
+  const firstIssue = issues[0];
+  if (!firstIssue) return "Настройки Telegram не сохранены. Проверьте поля формы.";
+
+  const fieldName = Array.isArray(firstIssue.path) ? firstIssue.path.map((part) => String(part)).join(".") : "";
+  const fieldLabel = telegramSettingsFieldLabel(fieldName);
+  const message = typeof firstIssue.message === "string" ? repairMojibakeText(firstIssue.message).trim() : "";
+  const looksTechnical = /invalid|required|expected|string|number|boolean|uuid|literal|received/i.test(message);
+  if (message && !looksTechnical) return `${fieldLabel}: ${message}`;
+  return `${fieldLabel}: проверьте значение поля.`;
+}
+
+type TelegramLinkCodeRejection = {
+  error: "TelegramChatEncryptionKeyMissing" | "TelegramLinkCodeScopeInvalid";
+  reason: "chat_encryption_missing" | "link_code_scope_invalid";
+  message: string;
+};
+
+type TelegramMessagePreviewRejectionReason =
+  | "patient_not_found"
+  | "appointment_not_found"
+  | "document_not_found"
+  | "task_not_found"
+  | "preview_unavailable";
+
+const telegramLinkCodeEncryptionMissingMessage =
+  "Код привязки Telegram не выпущен: включите защищенную привязку Telegram-чата в серверных настройках.";
+const telegramLinkCodeScopeInvalidMessage =
+  "Код привязки Telegram не выпущен: выберите активного пациента или сотрудника текущей клиники.";
+const telegramPreviewPatientNotFoundMessage =
+  "Предпросмотр Telegram не подготовлен: выберите актуального пациента.";
+const telegramPreviewAppointmentNotFoundMessage =
+  "Предпросмотр Telegram не подготовлен: выберите актуальную запись.";
+const telegramPreviewDocumentNotFoundMessage =
+  "Предпросмотр Telegram не подготовлен: выберите актуальный документ.";
+const telegramPreviewTaskNotFoundMessage =
+  "Предпросмотр Telegram не подготовлен: выберите актуальную задачу коммуникации.";
+const telegramPreviewUnavailableMessage =
+  "Предпросмотр Telegram не подготовлен: проверьте шаблон, клинику и связанные записи.";
+const telegramChatLinkNotFoundMessage =
+  "Привязка Telegram-чата не отозвана: связь не найдена или уже недоступна для выбранного бота.";
+
+function telegramLinkCodeRejection(error: unknown): TelegramLinkCodeRejection {
+  const message = error instanceof Error ? repairMojibakeText(error.message) : "";
+  if (message.includes("DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY") || message.includes("Защищенная связка Telegram-чата")) {
+    return {
+      error: "TelegramChatEncryptionKeyMissing",
+      reason: "chat_encryption_missing",
+      message: telegramLinkCodeEncryptionMissingMessage
+    };
+  }
+  if (message.includes("активному пациенту") || message.includes("активному сотруднику")) {
+    return {
+      error: "TelegramLinkCodeScopeInvalid",
+      reason: "link_code_scope_invalid",
+      message
+    };
+  }
+  return {
+    error: "TelegramLinkCodeScopeInvalid",
+    reason: "link_code_scope_invalid",
+    message: telegramLinkCodeScopeInvalidMessage
+  };
+}
+
+function telegramMessagePreviewRejection(error: unknown): { reason: TelegramMessagePreviewRejectionReason; message: string } {
+  const message = error instanceof Error ? repairMojibakeText(error.message) : "";
+  if (message.includes("Пациент для предпросмотра Telegram не найден")) {
+    return { reason: "patient_not_found", message: telegramPreviewPatientNotFoundMessage };
+  }
+  if (message.includes("Запись для предпросмотра Telegram не найдена")) {
+    return { reason: "appointment_not_found", message: telegramPreviewAppointmentNotFoundMessage };
+  }
+  if (message.includes("Документ для предпросмотра Telegram не найден")) {
+    return { reason: "document_not_found", message: telegramPreviewDocumentNotFoundMessage };
+  }
+  if (message.includes("Задача коммуникации для предпросмотра Telegram не найдена")) {
+    return { reason: "task_not_found", message: telegramPreviewTaskNotFoundMessage };
+  }
+  return { reason: "preview_unavailable", message: telegramPreviewUnavailableMessage };
+}
+
+const telegramTransportFailureLabels: Record<TelegramTransportFailure["errorClass"], string> = {
+  rate_limited: "Telegram временно ограничил частоту отправки",
+  auth: "токен бота не принят Telegram",
+  chat_blocked: "чат недоступен или пользователь заблокировал бота",
+  bad_request: "Telegram отклонил формат сообщения",
+  timeout: "Telegram не ответил за отведенное время",
+  network: "нет устойчивого соединения с Telegram",
+  server: "сервис Telegram временно недоступен",
+  unknown: "причина не определена"
+};
+
+function telegramRetryAfterSeconds(result: TelegramTransportFailure): number | null {
+  return typeof result.retryAfterSeconds === "number" && Number.isFinite(result.retryAfterSeconds) && result.retryAfterSeconds >= 0
+    ? Math.trunc(result.retryAfterSeconds)
+    : null;
+}
+
+function telegramRetryAfterSuffix(result: TelegramTransportFailure): string {
+  const retryAfterSeconds = telegramRetryAfterSeconds(result);
+  return retryAfterSeconds !== null ? ` Повторите отправку через ${retryAfterSeconds} с.` : "";
+}
+
+function telegramTransportFailureText(result: TelegramTransportFailure, scope: string): string {
+  return `${scope}: ${telegramTransportFailureLabels[result.errorClass]}.${telegramRetryAfterSuffix(result)}`;
+}
+
+function telegramPhotoFallbackWarning(result: TelegramTransportFailure): string {
+  return telegramTransportFailureText(result, "Фото не принято Telegram; отправлен текстовый вариант");
+}
+
+function telegramPhotoCaptionSplitTextWarning(result: TelegramTransportFailure): string {
+  return telegramTransportFailureText(result, "Фото принято, но полный текст под ним не отправлен");
+}
+
+function telegramOutboxTransportFailureWarning(result: TelegramTransportFailure): string {
+  return telegramTransportFailureText(result, "Telegram не принял сообщение");
+}
+
+function telegramCallbackTransportFailureWarning(result: TelegramTransportFailure): string {
+  return telegramTransportFailureText(result, "Ответ на Telegram-кнопку не отправлен");
+}
+
+function telegramWebhookReplyFailureWarning(result: TelegramTransportFailure): string {
+  return telegramTransportFailureText(result, "Ответ Telegram не отправлен");
 }
 
 function outboxDeliveryClaimKey(outboxItemId: string, clientMutationId: string): string {
@@ -359,7 +541,8 @@ async function executeTelegramOutboxSend(
   if (replay && !(replay.status === "failed" && clientMutationId?.startsWith("due-"))) {
     const body = denteTelegramOutboxSendResponseSchema.parse({
       ...replay,
-      warnings: [...replay.warnings, "idempotent_replay"]
+      warnings: [...replay.warnings, "idempotent_replay"],
+      retryAfterSeconds: null
     });
     return { statusCode: replay.status === "failed" ? 502 : replay.status === "blocked" ? 409 : 200, body };
   }
@@ -389,6 +572,7 @@ async function executeTelegramOutboxSend(
         telegramMessageId: null,
         clientMutationId,
         warnings: prepared.warnings,
+        retryAfterSeconds: null,
         blockedReason: prepared.blockedReason
       })
     };
@@ -405,6 +589,7 @@ async function executeTelegramOutboxSend(
         telegramMessageId: null,
         clientMutationId: null,
         warnings: [...prepared.warnings, "client_mutation_id_required"],
+        retryAfterSeconds: null,
         blockedReason: "client_mutation_id_required"
       })
     };
@@ -421,6 +606,7 @@ async function executeTelegramOutboxSend(
         telegramMessageId: null,
         clientMutationId,
         warnings: prepared.warnings,
+        retryAfterSeconds: null,
         blockedReason: "telegram_bot_token_missing"
       })
     };
@@ -437,6 +623,7 @@ async function executeTelegramOutboxSend(
         telegramMessageId: null,
         clientMutationId,
         warnings: prepared.warnings,
+        retryAfterSeconds: null,
         blockedReason: null
       })
     };
@@ -452,7 +639,8 @@ async function executeTelegramOutboxSend(
   if (durableReplay) {
     const body = denteTelegramOutboxSendResponseSchema.parse({
       ...durableReplay,
-      warnings: [...durableReplay.warnings, "idempotent_replay"]
+      warnings: [...durableReplay.warnings, "idempotent_replay"],
+      retryAfterSeconds: null
     });
     return { statusCode: durableReplay.status === "failed" ? 502 : durableReplay.status === "blocked" ? 409 : 200, body };
   }
@@ -467,6 +655,7 @@ async function executeTelegramOutboxSend(
         telegramMessageId: null,
         clientMutationId: deliveryClientMutationId,
         warnings: [...prepared.warnings, "telegram_delivery_in_progress"],
+        retryAfterSeconds: null,
         blockedReason: "telegram_delivery_in_progress"
       })
     };
@@ -499,11 +688,10 @@ async function executeTelegramOutboxSend(
           timeoutMs: configuredSendTimeoutMs()
         });
         if (textTransport.ok) return textTransport;
-        deliveryWarnings.push(`telegram_photo_caption_split_text_${textTransport.errorClass ?? "unknown"}`);
+        deliveryWarnings.push(telegramPhotoCaptionSplitTextWarning(textTransport));
         return textTransport;
       }
-      deliveryWarnings.push(`telegram_photo_fallback_${photoTransport.errorClass ?? "unknown"}`);
-      if (photoTransport.retryAfterSeconds !== null) deliveryWarnings.push(`photo_retry_after_seconds:${photoTransport.retryAfterSeconds}`);
+      deliveryWarnings.push(telegramPhotoFallbackWarning(photoTransport));
     }
     return sendTelegramTextMessage({
       botToken: token,
@@ -517,15 +705,13 @@ async function executeTelegramOutboxSend(
   });
 
   if (!transport.ok) {
-    const warnings = [
-      ...deliveryWarnings,
-      `telegram_transport_${transport.errorClass ?? "unknown"}`,
-      transport.retryAfterSeconds !== null ? `retry_after_seconds:${transport.retryAfterSeconds}` : null
-    ].filter((warning): warning is string => Boolean(warning));
+    const retryAfterSeconds = telegramRetryAfterSeconds(transport);
+    const transportWarning = telegramOutboxTransportFailureWarning(transport);
+    const warnings = [...deliveryWarnings, transportWarning];
     const delivery = recordDenteTelegramOutboxDelivery({
       item: prepared.item,
       status: "failed",
-      message: `telegram_transport_${transport.errorClass ?? "unknown"}`,
+      message: transportWarning,
       clientMutationId: deliveryClientMutationId,
       warnings,
       blockedReason: "telegram_transport_failed"
@@ -540,6 +726,7 @@ async function executeTelegramOutboxSend(
         telegramMessageId: null,
         clientMutationId: deliveryClientMutationId,
         warnings,
+        retryAfterSeconds,
         blockedReason: "telegram_transport_failed"
       })
     };
@@ -562,11 +749,12 @@ async function executeTelegramOutboxSend(
       outboxItem: prepared.item,
       taskId: delivery.taskId,
       eventId: delivery.eventId,
-        telegramMessageId: transport.telegramMessageId,
-        clientMutationId: deliveryClientMutationId,
-        warnings: deliveryWarnings,
-        blockedReason: null
-      })
+      telegramMessageId: transport.telegramMessageId,
+      clientMutationId: deliveryClientMutationId,
+      warnings: deliveryWarnings,
+      retryAfterSeconds: null,
+      blockedReason: null
+    })
   };
 }
 
@@ -652,10 +840,11 @@ function parseTelegramWorkerInt(value: string | undefined, fallback: number, min
 function retryAfterDelayMs(response: DenteTelegramOutboxSendDueResponse): number | null {
   let retryAfterSeconds = 0;
   for (const entry of response.results) {
-    const warnings = "warnings" in entry.result ? entry.result.warnings : [];
-    for (const warning of warnings) {
-      const match = /retry_after_seconds:(\d+)/.exec(warning);
-      if (match) retryAfterSeconds = Math.max(retryAfterSeconds, Number(match[1]));
+    if ("retryAfterSeconds" in entry.result) {
+      const retryAfter = entry.result.retryAfterSeconds;
+      if (typeof retryAfter === "number" && Number.isFinite(retryAfter)) {
+        retryAfterSeconds = Math.max(retryAfterSeconds, retryAfter);
+      }
     }
   }
   return retryAfterSeconds > 0 ? retryAfterSeconds * 1000 : null;
@@ -1074,7 +1263,7 @@ async function requireTelegramControlPlaneAccess(request: FastifyRequest, reply:
     }
     return reply.code(503).send({
       error: "TelegramAdminSecretMissing",
-      message: "DENTE_TELEGRAM_ADMIN_SECRET обязателен для Telegram control-plane. Для локального стенда можно явно включить DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE=1."
+      message: "На сервере не задан секрет администратора для управления Telegram. Для локального стенда можно явно включить режим без проверки в серверных настройках."
     });
   }
   const providedSecret = request.headers[denteAdminSecretHeader];
@@ -1082,7 +1271,7 @@ async function requireTelegramControlPlaneAccess(request: FastifyRequest, reply:
   if (!timingSafeSecretEqual(typeof normalizedProvidedSecret === "string" ? normalizedProvidedSecret : null, adminSecret)) {
     return reply.code(403).send({
       error: "TelegramAdminSecretRequired",
-      message: "Для управления Telegram в DENTE нужен действующий x-dente-admin-secret."
+      message: "Для управления Telegram нужен действующий секрет администратора клиники."
     });
   }
 }
@@ -1841,16 +2030,16 @@ function buildStatus(requestedOrganizationId: string | null = null, requestedBot
   const nextActions: string[] = [];
 
   if (settings.mode !== "disabled" && !runtime.tokenConfigured && settings.mode !== "clinic_owned_bot") {
-    warnings.push("DENTE_TELEGRAM_BOT_TOKEN не настроен на API-сервере.");
-    nextActions.push("Укажите DENTE_TELEGRAM_BOT_TOKEN в server env; не добавляйте токены в клиентский код и документацию.");
+    warnings.push("Бот Telegram не подключен в серверных настройках DENTE.");
+    nextActions.push("Подключите секрет бота в серверных настройках клиники; не храните его в браузере, документации или клиентском коде.");
   }
   if (settings.mode !== "disabled" && !runtime.webhookSecretConfigured) {
-    warnings.push("DENTE_TELEGRAM_WEBHOOK_SECRET отсутствует; production webhook должен отклонять неподписанные Telegram update.");
-    nextActions.push("Сгенерируйте случайный webhook secret и передайте его в Telegram setWebhook secret_token.");
+    warnings.push("Защита вебхука Telegram не включена; входящие события должны приниматься только с серверным секретом.");
+    nextActions.push("Сгенерируйте секрет вебхука и подключите его в серверных настройках Telegram.");
   }
   if (settings.mode === "clinic_owned_bot" && !runtime.clinicOwnedBotReady) {
-    warnings.push("Режим бота клиники включен, но не готов: нужны username и токен бота клиники на API-сервере.");
-    nextActions.push("Укажите ownBotUsername и env DENTE_TELEGRAM_OWN_BOT_TOKEN/DENTE_TELEGRAM_CLINIC_BOT_TOKEN или DENTE_TELEGRAM_CLINIC_BOTS_JSON.");
+    warnings.push("Собственный бот клиники включен, но не готов: добавьте имя бота и его секрет в серверные настройки.");
+    nextActions.push("Проверьте имя собственного бота и серверную запись с его секретом для выбранной клиники.");
   }
   if (settings.privacyMode !== "no_phi_by_default") {
     warnings.push("Telegram-шаблоны с медданными требуют авторизацию, согласия и tenant-policy до production.");
@@ -1885,13 +2074,13 @@ function buildFeaturePlan(settings: DenteTelegramBotSettings) {
     botUsername: configuredBotUsername(settings),
     modes: [
       "shared_dente_bot: общий платформенный бот, клиника определяется по одноразовому коду",
-      "clinic_owned_bot: собственный бот клиники; username в настройках, токен только в API-server env"
+      "clinic_owned_bot: собственный бот клиники; имя в настройках, секрет только в серверной конфигурации"
     ],
     enabledFeatures: settings.enabledFeatures,
     releaseReadyLayers: [
       "linking: одноразовые QR/deep-link коды",
       "outbox: безопасная очередь напоминаний с причинами блокировки",
-      "transport: нужен серверный токен и зашифрованная ссылка на чат",
+      "transport: отправка идет только через подключенного бота и защищенную связку чата",
       "audit: webhook-события и коммуникации остаются в DENTE"
     ],
     patientSafeActions: [
@@ -1952,7 +2141,7 @@ async function sendWebhookSuggestedReply(
   });
 
   if (result.ok) return null;
-  return `Ответ Telegram не отправлен: ${result.errorClass ?? "unknown"}.`;
+  return telegramWebhookReplyFailureWarning(result);
 }
 
 async function handleWebhook(
@@ -2088,9 +2277,9 @@ async function handleWebhook(
   }
   if (linkResult && !linkResult.ok) {
     if (linkResult.reason === "chat_encryption_key_missing") {
-      warnings.push("DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY не настроен; одноразовый код Telegram не был использован.");
+      warnings.push("Защищенная связка Telegram-чата не настроена; одноразовый код Telegram не был использован.");
     } else if (linkResult.reason === "missing_chat_transport" || linkResult.reason === "chat_encryption_failed") {
-      warnings.push("Telegram chat id не удалось безопасно зашифровать; одноразовый код Telegram не был использован.");
+      warnings.push("Чат Telegram не удалось сохранить в защищенной связке; одноразовый код Telegram не был использован.");
     } else {
       warnings.push("Одноразовый код Telegram неверный, истек, уже использован или отозван.");
     }
@@ -2163,7 +2352,7 @@ async function handleWebhook(
       text: appointmentCallbackResult.handled ? appointmentCallbackResult.callbackAnswerText : "DENTE: безопасный ответ отправлен.",
       timeoutMs: Math.min(configuredSendTimeoutMs(), 5000)
     });
-    if (!callbackAnswer.ok) warnings.push(`Ответ на Telegram-кнопку не отправлен: ${callbackAnswer.errorClass ?? "unknown"}.`);
+    if (!callbackAnswer.ok) warnings.push(telegramCallbackTransportFailureWarning(callbackAnswer));
   }
 
   const replyWarning = suppressPublicChatReply ? null : await sendWebhookSuggestedReply(chatId, suggestedReply, runtime.botToken);
@@ -2239,21 +2428,22 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
   app.get("/api/settings/telegram", telegramControlPlaneRouteOptions, async () => buildStatus());
 
   app.put("/api/settings/telegram", telegramControlPlaneRouteOptions, async (request, reply) => {
-    let input: UpdateDenteTelegramBotSettingsInput;
-    try {
-      input = updateDenteTelegramBotSettingsSchema.parse(request.body);
-    } catch (settingsError) {
+    const parsedInput = parseTelegramRouteBody(updateDenteTelegramBotSettingsSchema, request.body);
+    if (!parsedInput.ok) {
+      const schemaResult = updateDenteTelegramBotSettingsSchema.safeParse(request.body);
+      const issueCount = schemaResult.success ? 0 : schemaResult.error.issues.length;
       return reply.code(400).send({
         error: "TelegramSettingsValidationFailed",
-        message: settingsError instanceof Error ? settingsError.message : "telegram_settings_invalid"
+        message: schemaResult.success || issueCount !== 1 ? parsedInput.message : readableTelegramSettingsSchemaMessage(schemaResult.error)
       });
     }
+    const input: UpdateDenteTelegramBotSettingsInput = parsedInput.value;
     try {
       updateDenteTelegramBotSettings(input);
     } catch (settingsError) {
       return reply.code(400).send({
         error: "TelegramSettingsValidationFailed",
-        message: settingsError instanceof Error ? settingsError.message : "telegram_settings_invalid"
+        message: readableTelegramSettingsValidationMessage(settingsError)
       });
     }
     return buildStatus();
@@ -2336,10 +2526,11 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
         botUsername: runtime.botUsername
       });
     } catch (linkCodeError) {
-      const message = linkCodeError instanceof Error ? repairMojibakeText(linkCodeError.message) : "telegram_link_code_scope_invalid";
+      const rejection = telegramLinkCodeRejection(linkCodeError);
       return reply.code(409).send({
-        error: message.includes("DENTE_TELEGRAM_CHAT_ENCRYPTION_KEY") ? "TelegramChatEncryptionKeyMissing" : "TelegramLinkCodeScopeInvalid",
-        message
+        error: rejection.error,
+        reason: rejection.reason,
+        message: rejection.message
       });
     }
   });
@@ -2393,7 +2584,10 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
       botConfigId: runtime.botConfigId
     });
     if (!revoked) {
-      return reply.code(404).send({ error: "TelegramChatLinkNotFound" });
+      return reply.code(404).send({
+        error: "TelegramChatLinkNotFound",
+        message: telegramChatLinkNotFoundMessage
+      });
     }
     return denteTelegramChatLinkPublicSchema.parse(revoked);
   });
@@ -2412,11 +2606,8 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
     try {
       return renderDenteTelegramMessagePreview(input, runtimeResult.runtime.context.settings);
     } catch (previewError) {
-      const message =
-        previewError instanceof Error && previewError.message.trim()
-          ? repairMojibakeText(previewError.message)
-          : "Не удалось подготовить предпросмотр Telegram.";
-      return reply.code(404).send({ error: "TelegramMessagePreviewNotFound", message });
+      const rejection = telegramMessagePreviewRejection(previewError);
+      return reply.code(404).send({ error: "TelegramMessagePreviewNotFound", reason: rejection.reason, message: rejection.message });
     }
   });
 

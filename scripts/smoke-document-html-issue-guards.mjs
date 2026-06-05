@@ -19,6 +19,15 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function documentErrorText(body) {
+  return String(body.message ?? body.error ?? "");
+}
+
+function assertDocumentOperationError(body, label) {
+  assert(body.error === "DocumentOperationRejected", `${label} must return stable machine error: ${JSON.stringify(body)}`);
+  assert(!/[А-Яа-яЁё]/.test(String(body.error)), `${label} machine error must not contain Russian copy`);
+}
+
 const app = Fastify({ logger: false });
 app.setErrorHandler((error, _request, reply) => {
   if (error?.name === "ZodError" && Array.isArray(error.issues)) {
@@ -38,9 +47,10 @@ try {
     `structured document without payload must not render printable HTML: ${missingPayloadHtmlResponse.statusCode}`
   );
   const missingPayloadHtmlBody = missingPayloadHtmlResponse.json();
+  assertDocumentOperationError(missingPayloadHtmlBody, "blocked printable HTML response");
+  const missingPayloadHtmlMessage = documentErrorText(missingPayloadHtmlBody);
   assert(
-    String(missingPayloadHtmlBody.error).includes("Печатная форма недоступна") &&
-      String(missingPayloadHtmlBody.error).includes("структурированные данные"),
+    missingPayloadHtmlMessage.includes("Печатная форма недоступна") && missingPayloadHtmlMessage.includes("структурированные данные"),
     "blocked printable HTML response must explain missing structured payload"
   );
 
@@ -49,6 +59,9 @@ try {
     url: "/api/documents/00000000-0000-0000-0000-000000000000/html"
   });
   assert(missingDocumentHtmlResponse.statusCode === 404, "missing document HTML must still return 404");
+  const missingDocumentHtmlBody = missingDocumentHtmlResponse.json();
+  assertDocumentOperationError(missingDocumentHtmlBody, "missing document HTML response");
+  assert(documentErrorText(missingDocumentHtmlBody) === "Документ не найден", "missing document HTML response must keep operator message");
 
   console.log(
     JSON.stringify({

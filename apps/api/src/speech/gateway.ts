@@ -39,6 +39,15 @@ type ProviderTranscript = {
   warnings: string[];
 };
 
+export class SpeechChunkPayloadError extends Error {
+  readonly statusCode = 400;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "SpeechChunkPayloadError";
+  }
+}
+
 const wiredServerProviders: SpeechProviderKind[] = [
   "groq_whisper",
   "openai_transcribe",
@@ -69,8 +78,8 @@ const providerLabels: Record<SpeechGatewayProvider, string> = {
   cloudflare_whisper: "Cloudflare Workers AI Whisper",
   azure_speech: "Azure AI Speech",
   google_speech: "Google Cloud Speech-to-Text",
-  huggingface_asr: "Hugging Face ASR",
-  mobile_native_speech: "Mobile native speech",
+  huggingface_asr: "Hugging Face распознавание",
+  mobile_native_speech: "Мобильная диктовка",
   local_whisper: "Локальный Whisper.cpp",
   vosk_local: "Vosk Local"
 };
@@ -106,18 +115,23 @@ function isLocalSpeechProvider(providerId: SpeechGatewayProvider): boolean {
   return providerId !== "none" && localSpeechProviders.includes(providerId as SpeechProviderKind);
 }
 
-function publicSpeechProviderFailure(providerLabel: string, error: unknown): string {
-  let code = "provider_error";
+function speechProviderFailureReason(error: unknown): string {
   if (error instanceof SpeechProviderRequestError) {
-    if (error.timedOut) {
-      code = "timeout";
-    } else if (error.rateLimited) {
-      code = "rate_limited";
-    } else if (error.statusCode) {
-      code = `http_${error.statusCode}`;
-    }
+    if (error.timedOut) return "источник распознавания не ответил вовремя";
+    if (error.rateLimited || error.statusCode === 429) return "источник временно ограничил запросы";
+    if (error.statusCode === 401 || error.statusCode === 403) return "серверный доступ к источнику отклонен";
+    if (error.statusCode && error.statusCode >= 500) return "у источника временный сбой";
+    if (error.statusCode) return "источник отклонил аудиофрагмент";
   }
-  return `${providerLabel} недоступен (${code}); локальный черновик и очередь повтора сохранены.`;
+  const message = sanitizeProviderErrorMessage(error instanceof Error ? error.message : String(error ?? "")).toLowerCase();
+  if (/fetch failed|network|econnreset|econnrefused|etimedout|timeout|socket|terminated|temporar|dns|enotfound/.test(message)) {
+    return "нет устойчивого соединения с источником распознавания";
+  }
+  return "источник распознавания не вернул готовый текст";
+}
+
+function publicSpeechProviderFailure(providerLabel: string, error: unknown): string {
+  return `${providerLabel}: ${speechProviderFailureReason(error)}; локальный черновик и очередь повтора сохранены.`;
 }
 
 function providerConnector(providerId: SpeechGatewayProvider): SpeechProviderRuntimeStatus["connector"] {
@@ -297,11 +311,11 @@ function normalizeSpeechChunkTimings(input: {
   const recommendedChunkMs = Math.min(Math.max(input.recommendedChunkMs, minChunkMs), maxChunkMs);
 
   if (input.providerId === "groq_whisper" && (rawMin < providerFloor || input.recommendedChunkMs < providerFloor)) {
-    input.warnings.push("Для Groq STT включен минимум 10 секунд на фрагмент, чтобы не тратить короткие запросы впустую.");
+    input.warnings.push("Для Groq распознавания включен минимум 10 секунд на фрагмент, чтобы не тратить короткие запросы впустую.");
   }
   if (input.recommendedChunkMs !== recommendedChunkMs || rawMin !== minChunkMs || rawMax !== maxChunkMs) {
     input.warnings.push(
-      `Длительность STT-фрагментов нормализована до ${Math.round(minChunkMs / 1000)}-${Math.round(maxChunkMs / 1000)} сек.; рекомендовано ${Math.round(
+      `Длительность аудиофрагментов нормализована до ${Math.round(minChunkMs / 1000)}-${Math.round(maxChunkMs / 1000)} сек.; рекомендовано ${Math.round(
         recommendedChunkMs / 1000
       )} сек.`
     );
@@ -330,7 +344,7 @@ async function runLocalSpeechBridgeProbe(providerId: SpeechGatewayProvider): Pro
     state.checkedAt = Date.now();
     state.latencyMs = null;
     state.urlRedacted = null;
-    state.warning = `${providerLabels[providerId]} health URL is missing or outside the allowed localhost/private LAN boundary.`;
+    state.warning = `${providerLabels[providerId]}: адрес проверки не настроен или находится вне localhost/частной сети.`;
     return;
   }
 
@@ -351,13 +365,17 @@ async function runLocalSpeechBridgeProbe(providerId: SpeechGatewayProvider): Pro
       state.warning = null;
     } else {
       state.status = "unreachable";
-      state.warning = `${providerLabels[providerId]}: проверка доступности вернула HTTP ${response.status}; аудио в очереди остается локально.`;
+      state.warning = `${providerLabels[providerId]}: локальный модуль не подтвердил готовность; аудио в очереди остается локально.`;
     }
   } catch (error) {
     state.status = "unreachable";
     state.checkedAt = Date.now();
     state.latencyMs = null;
-    state.warning = `${providerLabels[providerId]}: проверка доступности не выполнена (${sanitizeProviderErrorMessage(error instanceof Error ? error.message : String(error ?? ""))}); аудио в очереди остается локально.`;
+    const probeReason =
+      error instanceof Error && error.name === "AbortError"
+        ? "локальный модуль не ответил вовремя"
+        : "локальный модуль недоступен по локальной сети";
+    state.warning = `${providerLabels[providerId]}: ${probeReason}; аудио в очереди остается локально.`;
   } finally {
     clearTimeout(timeout);
   }
@@ -374,7 +392,11 @@ function primeLocalSpeechBridgeProbe(providerId: SpeechGatewayProvider): LocalSp
       state.status = "unreachable";
       state.checkedAt = Date.now();
       state.latencyMs = null;
-      state.warning = `${providerLabels[providerId]}: проверка доступности не выполнена (${sanitizeProviderErrorMessage(error instanceof Error ? error.message : String(error ?? ""))}); аудио в очереди остается локально.`;
+      const probeReason =
+        error instanceof Error && error.name === "AbortError"
+          ? "локальный модуль не ответил вовремя"
+          : "локальный модуль недоступен по локальной сети";
+      state.warning = `${providerLabels[providerId]}: ${probeReason}; аудио в очереди остается локально.`;
     })
     .finally(() => {
       state.pending = null;
@@ -394,12 +416,12 @@ function localSpeechBridgeProbeWarning(providerId: SpeechGatewayProvider): strin
   const urlSuffix = state.urlRedacted ? ` (${state.urlRedacted})` : "";
   if (state.status === "ready") {
     const latency = state.latencyMs !== null ? `, проверка ${state.latencyMs} мс` : "";
-    return `${providerLabels[providerId]}: локальный мост доступен${latency}; фрагменты остаются на localhost или в частной сети.`;
+    return `${providerLabels[providerId]}: локальный модуль доступен${latency}; фрагменты остаются на localhost или в частной сети.`;
   }
   if (state.pending || state.status === "unknown") {
-    return `${providerLabels[providerId]}: URL локального моста настроен, проверка доступности еще идет${urlSuffix}; аудио в очереди остается локально до готовности моста.`;
+    return `${providerLabels[providerId]}: адрес локального модуля настроен, проверка доступности еще идет${urlSuffix}; аудио в очереди остается локально до готовности модуля.`;
   }
-  return `${state.warning ?? `${providerLabels[providerId]}: локальный мост недоступен`}${urlSuffix}`;
+  return `${state.warning ?? `${providerLabels[providerId]}: локальный модуль недоступен`}${urlSuffix}`;
 }
 
 function localSpeechApiKey(providerId: SpeechGatewayProvider): string | null {
@@ -485,8 +507,8 @@ function resolveSpeechProvider(): {
       fallbackProviderIds,
       warnings,
       nextSetupStep: isLocalSpeechProvider(requestedProviderId)
-        ? `${providerLabels[requestedProviderId]}: URL локального моста настроен; перед отправкой аудио из очереди проверка доступности должна показать готовность.`
-        : `${providerLabels[requestedProviderId]} готов: серверный ключ найден, резервная цепочка ${fallbackProviderIds.map((providerId) => providerLabels[providerId]).join(" -> ")}.`
+        ? `${providerLabels[requestedProviderId]}: локальный модуль указан в серверных настройках; перед отправкой аудио из очереди проверка доступности должна показать готовность.`
+        : `${providerLabels[requestedProviderId]} готов: источник распознавания подключен, резервная цепочка ${fallbackProviderIds.map((providerId) => providerLabels[providerId]).join(" -> ")}.`
     };
   }
 
@@ -495,7 +517,7 @@ function resolveSpeechProvider(): {
     const fallbackProviderIds = configuredProviderIds.slice(0, fallbackLimit());
     const providerSelectionMode = requestedProviderId === "none" ? "auto" : "fallback";
     if (requestedProviderId === "none") {
-      warnings.push(`${providerLabels[providerId]} выбран автоматически, потому что серверный ключ уже есть в env.`);
+      warnings.push(`${providerLabels[providerId]} выбран автоматически, потому что источник распознавания уже есть в серверных настройках.`);
     } else {
       warnings.push(`${providerLabels[requestedProviderId]} сейчас не может принимать аудиофрагменты; временно используется ${providerLabels[providerId]}.`);
     }
@@ -506,20 +528,20 @@ function resolveSpeechProvider(): {
       configuredProviderIds,
       fallbackProviderIds,
       warnings,
-      nextSetupStep: `Активен ${providerLabels[providerId]}. Для ручного выбора задайте DENTAL_SPEECH_PROVIDER, для первого пилота достаточно GROQ_API_KEY.`
+      nextSetupStep: `Активен ${providerLabels[providerId]}. Для ручного выбора откройте серверные настройки распознавания; для первого пилота достаточно одного подключенного облачного источника.`
     };
   }
 
   const nextSetupStep =
     requestedProviderId === "none"
-      ? "Для серверного STT добавьте GROQ_API_KEY и DENTAL_SPEECH_PROVIDER=groq. Пока врач может печатать, использовать браузерную диктовку и офлайн-парсер."
+      ? "Для серверного распознавания подключите один облачный источник в серверных настройках. Пока врач может печатать, использовать браузерную диктовку и офлайн-парсер."
       : isWiredServerProvider(requestedProviderId) && requestedKeyPresent && providerConfigMissingEnvVars(requestedProviderId).length
-        ? `${providerLabels[requestedProviderId]}: пул ключей есть, но не хватает серверных переменных ${providerConfigMissingEnvVars(requestedProviderId).join(", ")}.`
+        ? `${providerLabels[requestedProviderId]}: источник найден, но не хватает серверных настроек: ${providerConfigMissingEnvVars(requestedProviderId).length}.`
       : isLocalSpeechProvider(requestedProviderId)
-        ? `${providerLabels[requestedProviderId]} требует URL локального/private LAN моста: ${providerConfigMissingEnvVars(requestedProviderId).join(", ")}.`
+        ? `${providerLabels[requestedProviderId]} требует адрес локального модуля в серверных настройках: ${Math.max(1, providerConfigMissingEnvVars(requestedProviderId).length)} пункт.`
       : requestedKeyPresent && !isWiredServerProvider(requestedProviderId)
-        ? `${providerLabels[requestedProviderId]} есть в каталоге, но прямой серверный коннектор пока не включен; для рабочего STT добавьте GROQ_API_KEY или OPENAI_API_KEY.`
-        : `Для ${providerLabels[requestedProviderId]} нужен серверный ключ в env. Ключ нельзя класть в клиент или репозиторий.`;
+        ? `${providerLabels[requestedProviderId]} есть в каталоге, но прямой серверный коннектор пока не включен; для рабочего распознавания подключите поддерживаемый облачный источник.`
+        : `Для ${providerLabels[requestedProviderId]} нужен серверный ключ в серверных настройках. До подключения врач может использовать браузерную диктовку или печатный черновик.`;
 
   return {
     providerId: requestedProviderId,
@@ -561,32 +583,32 @@ export function getSpeechGatewayStatus(): SpeechGatewayStatus {
   });
 
   if (providerId === "none") {
-    warnings.push("Серверный STT не настроен: врач может печатать, использовать браузерную диктовку и офлайн-парсер.");
+    warnings.push("Серверное распознавание не настроено: врач может печатать, использовать браузерную диктовку и офлайн-парсер.");
   } else if (providerId === "browser_speech") {
-    warnings.push("Браузерная диктовка работает без серверного ключа и не проходит через /api/speech/transcribe-chunk.");
+    warnings.push("Браузерная диктовка работает без серверного подключения и не отправляет аудио на сервер.");
   } else if (isLocalSpeechProvider(providerId) && providerReady) {
     const localProbeWarning = localSpeechBridgeProbeWarning(providerId);
     if (localProbeWarning) warnings.push(localProbeWarning);
   } else if (isLocalSpeechProvider(providerId)) {
-    warnings.push(`${providerLabels[providerId]} требует URL локального HTTP-моста в серверных переменных перед офлайн-распознаванием фрагментов.`);
+    warnings.push(`${providerLabels[providerId]} требует адрес локального модуля в серверных настройках перед офлайн-распознаванием фрагментов.`);
   } else if (!keyConfigured) {
-    warnings.push(`Для ${providerLabels[providerId]} нужен серверный ключ в env. Ключ нельзя класть в клиент или репозиторий.`);
+    warnings.push(`Для ${providerLabels[providerId]} нужен серверный доступ в настройках распознавания. До подключения врач может использовать локальный черновик.`);
   }
 
   if (keyConfigured && missingConfigEnvVars.length) {
-    warnings.push(`${providerLabels[providerId]} имеет пул ключей, но не хватает серверных переменных: ${missingConfigEnvVars.join(", ")}.`);
+    warnings.push(`${providerLabels[providerId]} подключен частично: не хватает серверных настроек (${missingConfigEnvVars.length}).`);
   }
 
   if (providerReady && !serverTranscriptionCurrentlyAvailable) {
-    warnings.push("Серверное STT настроено, но сейчас нет доступного резервного провайдера; аудио остается в локальной очереди до появления ключа или локального моста.");
+    warnings.push("Серверное распознавание настроено, но сейчас нет доступного резервного источника; аудио остается в локальной очереди до восстановления серверного доступа или локального модуля.");
   }
 
   if (keyConfigured && keyPool.rotationEnabled) {
     warnings.push(
-      `Ротация STT-ключей активна: доступно ${keyPool.availableKeyCount}/${keyPool.configuredKeyCount}, лимит повторов ${keyPool.maxAttemptsPerProvider}.`
+      `Резервное переключение распознавания активно: доступно ${keyPool.availableKeyCount}/${keyPool.configuredKeyCount}, лимит повторов ${keyPool.maxAttemptsPerProvider}.`
     );
   } else if (keyConfigured && !isLocalSpeechProvider(providerId) && keyPool.availableKeyCount === 0) {
-    warnings.push("Все STT-ключи выбранного провайдера на временной паузе из-за лимитов; локальный черновик остается доступен.");
+    warnings.push("Выбранный источник распознавания временно на паузе из-за лимитов; локальный черновик остается доступен.");
   }
 
   if (["azure_speech", "google_speech", "huggingface_asr", "mobile_native_speech"].includes(providerId)) {
@@ -651,19 +673,19 @@ export function getSpeechProviderRuntimeStatuses(): SpeechProviderRuntimeStatus[
     const warnings: string[] = [];
 
     if (connector === "server_wired" && keyPool.configuredKeyCount > 1) {
-      warnings.push(`Ротация ключей включена: ${keyPool.availableKeyCount}/${keyPool.configuredKeyCount} доступно.`);
+      warnings.push(`Резервное переключение включено: ${keyPool.availableKeyCount}/${keyPool.configuredKeyCount} доступно.`);
     }
     if (connector === "server_wired" && keyPool.configuredKeyCount > 0 && keyPool.availableKeyCount === 0) {
-      warnings.push("Все ключи провайдера на временной паузе из-за лимитов; врач продолжит через локальный текст и очередь.");
+      warnings.push("Все ключи источника распознавания на временной паузе из-за лимитов; врач продолжит через локальный текст и очередь.");
     }
     if (connector === "server_wired" && keyPool.configuredKeyCount > 0 && missingConfigEnvVars.length) {
-      warnings.push(`Server env неполный: ${missingConfigEnvVars.join(", ")} нужен до приема аудиофрагментов этим провайдером.`);
+      warnings.push(`Серверные настройки распознавания неполные: не хватает пунктов (${missingConfigEnvVars.length}) до приема аудиофрагментов этим маршрутом.`);
     }
     if (connector === "server_cataloged" && keyPool.configuredKeyCount > 0) {
       warnings.push("Ключ найден, но прямой серверный коннектор пока не включен в текущий шлюз.");
     }
     if (connector === "local_planned") {
-      warnings.push("Нужен отдельный desktop/mobile bridge; браузерный API не должен получать локальные модели или секреты.");
+      warnings.push("Нужен отдельный desktop/mobile модуль; браузерный интерфейс не должен получать локальные модели.");
     }
     if (connector === "local_bridge" && configured) {
       const localProbeWarning = localSpeechBridgeProbeWarning(providerId);
@@ -674,20 +696,20 @@ export function getSpeechProviderRuntimeStatuses(): SpeechProviderRuntimeStatus[
       provider.status === "usable_without_key"
         ? "Можно использовать сразу как быстрый ввод, но врач всё равно проверяет текст."
         : connector === "local_bridge" && localBridgeCurrentlyReady
-          ? `${providerLabels[providerId]}: локальный мост готов; API может отправлять фрагменты без облачных STT-ключей.`
+          ? `${providerLabels[providerId]}: локальный модуль готов; сервер может отправлять фрагменты без облачного распознавания.`
         : connector === "local_bridge" && configured
-          ? `${providerLabels[providerId]} URL настроен, но проверка доступности не готова; держите аудио в локальном восстановлении и запустите или исправьте мост.`
+          ? `${providerLabels[providerId]} указан, но проверка доступности не готова; держите аудио в локальном восстановлении и запустите или исправьте локальный модуль.`
         : connector === "local_bridge"
-          ? `Добавьте env локального моста: ${missingEnvVars.join(", ")}. До этого врач может печатать или использовать браузерную диктовку.`
+          ? `Заполните серверные настройки локального модуля (${Math.max(1, missingEnvVars.length)}). До этого врач может печатать или использовать браузерную диктовку.`
         : connector === "server_wired" && configured
           ? `${providerLabels[providerId]} готов для серверных аудиофрагментов; повторов ${keyPool.maxAttemptsPerProvider}, ожидание ответа ${Math.round(keyPool.timeoutMs / 1000)} c.`
           : connector === "server_wired" && missingEnvVars.length
-            ? `Добавьте серверные переменные: ${missingEnvVars.join(", ")}. До этого врач может печатать или использовать браузерную диктовку.`
+            ? `Заполните серверные настройки распознавания (${missingEnvVars.length}). До этого врач может печатать или использовать браузерную диктовку.`
           : connector === "server_wired"
-            ? `Добавьте один из env: ${acceptedEnvVars.join(", ")}. До этого врач печатает или использует браузерную диктовку.`
+            ? `Подключите один серверный источник распознавания. До этого врач печатает или использует браузерную диктовку.`
             : connector === "server_cataloged"
-              ? `Провайдер оставлен как админский вариант; для включения нужен отдельный коннектор и проверка тарифов/данных.`
-              : "Запланировать локальный мост после стабилизации server STT и offline-parser.";
+              ? `Источник распознавания оставлен как админский вариант; для включения нужен отдельный маршрут и проверка тарифов/данных.`
+              : "Запланировать локальный модуль после стабилизации серверного распознавания и офлайн-парсера.";
 
     return {
       providerId,
@@ -697,9 +719,9 @@ export function getSpeechProviderRuntimeStatuses(): SpeechProviderRuntimeStatus[
       canTranscribeChunks,
       configured,
       keyPool,
-      acceptedEnvVars,
-      missingEnvVars,
-      recommendedUse: provider.recommendedFor[0] ?? "админский выбор провайдера",
+      acceptedSettingsCount: acceptedEnvVars.length,
+      missingSettingsCount: missingEnvVars.length,
+      recommendedUse: provider.recommendedFor[0] ?? "админский выбор источника распознавания",
       nextStep,
       warnings
     };
@@ -740,7 +762,7 @@ export function getSpeechGatewayHealthReport(): SpeechGatewayHealthReport {
       warnings.push("Все настроенные ключи на временной паузе из-за лимитов; прием сохраняет локальный черновик и очередь повтора без блокировки врача.");
     }
     if (fallbackRank !== null && fallbackRank > 0) {
-      warnings.push(`Резервный провайдер в очереди N ${fallbackRank + 1}; используется только после ошибки или паузы из-за лимитов у более ранних провайдеров.`);
+      warnings.push(`Резервный источник распознавания в очереди N ${fallbackRank + 1}; используется только после ошибки или паузы из-за лимитов у более ранних источников.`);
     }
 
     return {
@@ -770,15 +792,15 @@ export function getSpeechGatewayHealthReport(): SpeechGatewayHealthReport {
   const warnings = [...gateway.warnings];
 
   if (gateway.serverTranscriptionEnabled && !gateway.serverTranscriptionCurrentlyAvailable) {
-    warnings.push("Сейчас нет доступного STT-провайдера; фрагменты остаются восстанавливаемыми и не блокируют врача.");
+    warnings.push("Сейчас нет доступного источника распознавания; фрагменты остаются восстанавливаемыми и не блокируют врача.");
   } else if (gateway.serverTranscriptionEnabled && !isLocalSpeechProvider(gateway.providerId) && gateway.keyPool.availableKeyCount === 0) {
-    warnings.push("У активного STT-провайдера сейчас нет доступного ключа; перед повтором врача будут проверены резервные провайдеры.");
+    warnings.push("Активный источник распознавания сейчас недоступен; перед повтором будут проверены резервные источники.");
   }
   if (gateway.serverTranscriptionEnabled && !isLocalSpeechProvider(gateway.providerId) && gateway.fallbackProviderIds.length < 2) {
-    warnings.push("Настроен только один STT-провайдер; добавьте второй провайдер для устойчивого резервирования.");
+    warnings.push("Настроен только один источник распознавания; добавьте второй источник для устойчивого резервирования.");
   }
   if (!gateway.promptPolicy.enabled) {
-    warnings.push("Пакет стоматологических подсказок для STT отключен; распознавание материалов, номеров зубов и процедур будет хуже.");
+    warnings.push("Пакет стоматологических подсказок для распознавания отключен; материалы, номера зубов и процедуры будут распознаваться хуже.");
   }
   if (!gateway.polishPolicy.deterministicEnabled) {
     warnings.push("Детерминированный стоматологический парсер отключен; для работы без интернета его лучше держать включенным.");
@@ -787,11 +809,11 @@ export function getSpeechGatewayHealthReport(): SpeechGatewayHealthReport {
   const activeLocalBridgeReady = isLocalSpeechProvider(gateway.providerId) && gateway.serverTranscriptionCurrentlyAvailable;
   const nextAction =
     activeLocalBridgeReady
-      ? `${gateway.providerLabel}: локальный мост готов; фрагменты остаются на localhost/private LAN, облачные STT-ключи не нужны.`
-      : gateway.serverTranscriptionCurrentlyAvailable
-      ? `${gateway.providerLabel}: в резервной цепочке есть доступный STT-путь, активных ключей ${gateway.keyPool.availableKeyCount}/${gateway.keyPool.configuredKeyCount}, провайдеров ${gateway.fallbackProviderIds.length}.`
+      ? `${gateway.providerLabel}: локальный модуль готов; фрагменты остаются на localhost/private LAN, облачное распознавание не нужно.`
+    : gateway.serverTranscriptionCurrentlyAvailable
+      ? `${gateway.providerLabel}: в резервной цепочке есть доступный путь распознавания, доступных маршрутов ${gateway.keyPool.availableKeyCount}/${gateway.keyPool.configuredKeyCount}, источников ${gateway.fallbackProviderIds.length}.`
       : totals.configured > 0 && totals.available === 0
-        ? "Все настроенные STT-ключи на временной паузе из-за лимитов; держите браузерную или локальную диктовку активной и повторите очередь позже."
+        ? "Все настроенные серверные маршруты распознавания на временной паузе из-за лимитов; держите браузерную или локальную диктовку активной и повторите очередь позже."
         : gateway.nextSetupStep;
 
   return {
@@ -839,12 +861,12 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
       maxChunkBytes: gateway.maxChunkBytes,
       reason: "Режим приватности запрещает облачную отправку; держите текст локально и запускайте детерминированный стоматологический парсер.",
       steps: [
-        "Используйте браузерную/native диктовку, когда она доступна.",
+        "Используйте браузерную или мобильную диктовку, когда она доступна.",
         "Автосохраняйте текст локально после каждого изменения.",
         "Запускайте детерминированный профильный парсер до создания черновика ЭМК.",
         "Синхронизируйте только проверенный текст, когда клиника разрешает серверное хранение."
       ],
-      warnings: ["Облачное STT и нейронная полировка отключены в локальном режиме."]
+      warnings: ["Облачное распознавание и нейронная полировка отключены в локальном режиме."]
     };
   }
 
@@ -869,7 +891,7 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
         "Используйте детерминированный парсер для немедленной очистки черновика.",
         "После появления сети отправьте очередь и соберите серверный текст."
       ],
-      warnings: ["Внешнее STT и нейронная полировка отложены до восстановления связи."]
+      warnings: ["Внешнее распознавание и нейронная полировка отложены до восстановления связи."]
     };
   }
 
@@ -887,12 +909,12 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
       maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
       estimatedChunkCount,
       maxChunkBytes: gateway.maxChunkBytes,
-      reason: "Серверный STT-провайдер не готов; браузерная диктовка и печать остаются самым безопасным режимом.",
+      reason: "Серверный источник распознавания не готов; браузерная диктовка и печать остаются самым быстрым режимом.",
       steps: [
         "Добавляйте распознанный браузером текст в автосохраняемое поле диктовки.",
         "Разрешайте ручной ввод в любой момент.",
         "Запускайте детерминированную очистку до черновика ЭМК.",
-        "Показывайте настройку провайдера только в настройках, не на экране лечения."
+        "Показывайте выбор источника распознавания только в настройках, не на экране лечения."
       ],
       warnings: gateway.warnings
     };
@@ -912,12 +934,12 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
       maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
       estimatedChunkCount,
       maxChunkBytes: gateway.maxChunkBytes,
-      reason: "Серверное STT настроено, но текущие провайдеры/ключи недоступны; записывайте локально и повторяйте без блокировки приема.",
+      reason: "Серверное распознавание настроено, но текущие источники или ключи недоступны; записывайте локально и повторяйте без блокировки приема.",
       steps: [
         "Сохраняйте каждый аудиофрагмент в IndexedDB до любой попытки отправки.",
-        "Не отправляйте аудиофрагменты, пока в резервной STT-цепочке нет доступного провайдера.",
+        "Не отправляйте аудиофрагменты, пока в резервной цепочке распознавания нет доступного источника.",
         "Держите видимый текст редактируемым и автосохраненным локально.",
-        "Отправьте локальную очередь и соберите запись, когда появится ключ или локальный мост."
+        "Отправьте локальную очередь и соберите запись, когда появится ключ или локальный модуль."
       ],
       warnings: gateway.warnings
     };
@@ -927,17 +949,17 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
     warnings.push("Длинные записи нужно делить на фрагменты или переносить в async-задачу; не загружайте один большой файл всего приема.");
   }
   if (gateway.keyPool.coolingDownKeyCount > 0) {
-    warnings.push(`${gateway.keyPool.coolingDownKeyCount} STT-ключ(а) на временной паузе из-за лимитов; повтор возьмет доступные ключи по ротации.`);
+    warnings.push(`${gateway.keyPool.coolingDownKeyCount} ключ(а) распознавания на временной паузе из-за лимитов; повтор возьмет доступные ключи по резервному переключению.`);
   }
   if (gateway.providerId === "groq_whisper" && gateway.chunkingPolicy.minChunkMs < 10_000) {
-    warnings.push("Groq STT не должен получать слишком короткие фрагменты: короткие запросы могут расходовать минимальную длительность впустую.");
+    warnings.push("Groq распознавание не должно получать слишком короткие фрагменты: короткие запросы могут расходовать минимальную длительность впустую.");
   }
 
   steps.push(
     `Записывайте фрагменты около ${Math.round(gateway.recommendedChunkMs / 1000)} секунд с отсечкой тишины и жестким максимумом ${Math.round(gateway.chunkingPolicy.maxChunkMs / 1000)} секунд.`,
-    `Убирайте дубли текста на границе фрагментов в последних ${gateway.chunkingPolicy.dedupeWindowChars} символах; ${gateway.chunkingPolicy.overlapMs} мс зарезервированы как будущий pre-roll для native/mobile рекордеров.`,
+    `Убирайте дубли текста на границе фрагментов в последних ${gateway.chunkingPolicy.dedupeWindowChars} символах; ${gateway.chunkingPolicy.overlapMs} мс зарезервированы как будущий предзахват для мобильных и настольных рекордеров.`,
     "Сохраняйте каждый ожидающий аудиофрагмент в IndexedDB до отправки.",
-    "Отправляйте фрагменты только через API-сервер; никогда не раскрывайте ключи провайдеров в браузере.",
+    "Отправляйте фрагменты только через сервер приложения; никогда не раскрывайте ключи источников распознавания в браузере.",
     "Собирайте сохраненные фрагменты по recordingId после остановки или повтора очереди.",
     "Сначала запускайте детерминированный стоматологический парсер; нейронная полировка может менять только формулировки и не должна добавлять факты."
   );
@@ -956,8 +978,8 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
     estimatedChunkCount,
     maxChunkBytes: gateway.maxChunkBytes,
     reason: longRecording
-      ? "Серверное STT настроено, но длинное аудио требует асинхронного безопасного потока."
-      : "Серверное STT настроено; фрагментированная загрузка балансирует качество, лимиты провайдера и локальное восстановление.",
+      ? "Серверное распознавание настроено, но длинное аудио требует асинхронного потока."
+      : "Серверное распознавание настроено; фрагментированная загрузка балансирует качество, лимиты источника и локальное восстановление.",
     steps,
     warnings
   };
@@ -970,13 +992,23 @@ export function speechJsonBodyLimitBytes(): number {
 function decodeBase64Audio(value: string | undefined, maxChunkBytes: number): Buffer {
   if (!value?.trim()) return Buffer.alloc(0);
   if (!/^[A-Za-z0-9+/=]+$/.test(value)) {
-    throw new Error("Audio payload is not valid base64");
+    throw new SpeechChunkPayloadError(
+      "Аудиофрагмент поврежден или передан не как файл записи. Повторите запись либо оставьте текстовый черновик."
+    );
   }
   const buffer = Buffer.from(value, "base64");
   if (buffer.byteLength > maxChunkBytes) {
-    throw new Error(`Audio chunk is too large: ${buffer.byteLength} bytes, max ${maxChunkBytes}`);
+    throw new SpeechChunkPayloadError(
+      `Аудиофрагмент слишком большой для текущих настроек (${Math.ceil(buffer.byteLength / 1024 / 1024)} МБ из ${Math.ceil(
+        maxChunkBytes / 1024 / 1024
+      )} МБ). Запишите короче или дождитесь отправки очереди.`
+    );
   }
   return buffer;
+}
+
+function publicProviderFailureReason(error: unknown): string {
+  return speechProviderFailureReason(error);
 }
 
 function fileNameForMime(mimeType: string): string {
@@ -1049,13 +1081,22 @@ function buildSpeechTranscriptionQuality(input: {
         : uniqueSignals.length
           ? "review"
           : "clear";
+  const emptyNextAction = uniqueSignals.includes("tiny_audio_payload")
+    ? "CRM получила почти пустой аудиофрагмент. Проверьте выбранный микрофон, говорите ближе и повторите запись."
+    : providerWarnings.some((warning) => /тишин|пуст/i.test(warning))
+      ? "Похоже, в фрагменте была тишина или голос был слишком далеко. Проверьте микрофон и повторите фразу."
+      : durationMs !== null && durationMs > 6000
+        ? "Запись длинная, но слов нет. Проверьте, выбран ли правильный микрофон, и повторите фразу ближе к нему."
+        : "Повторите фразу ближе к микрофону или допечатайте текст вручную.";
   const nextAction =
     level === "clear"
       ? "Можно использовать как черновик; врач подтверждает смысл перед сохранением."
       : level === "review"
-        ? `Проверьте фрагмент ${input.providerLabel}: STT сохранил текст, но есть признаки риска.`
+        ? `Проверьте фрагмент ${input.providerLabel}: распознавание сохранило текст, но есть признаки риска.`
         : level === "empty"
-          ? "Не блокировать прием: повторите фразу, оставьте локальный текст или допечатайте вручную."
+          ? `Не блокировать прием: ${emptyNextAction}`
+          : !normalizedTranscript
+            ? `Не блокировать прием: ${emptyNextAction}`
           : "Не блокировать прием: фрагмент сохранен в аудио/recovery, используйте локальный текст или повторите отправку.";
 
   return {
@@ -1124,8 +1165,14 @@ async function transcribeOpenAiCompatible(input: {
     payload.segments?.filter(
       (segment) => typeof segment.compression_ratio === "number" && segment.compression_ratio > 2.4
     ).length ?? 0;
-  if (noSpeechSegments) segmentWarnings.push(`${noSpeechSegments} segment(s) have high no_speech probability.`);
-  if (compressedSegments) segmentWarnings.push(`${compressedSegments} segment(s) look over-compressed/repetitive.`);
+  if (noSpeechSegments) {
+    segmentWarnings.push(`${noSpeechSegments} фрагмент(ов) похожи на тишину; проверьте, не попал ли в запись пустой участок.`);
+  }
+  if (compressedSegments) {
+    segmentWarnings.push(
+      `${compressedSegments} фрагмент(ов) похожи на сжатый или повторяющийся звук; проверьте текст перед сохранением.`
+    );
+  }
 
   return {
     text: typeof payload.text === "string" ? payload.text.trim() : "",
@@ -1222,7 +1269,9 @@ async function transcribeLocalWhisperBridge(input: {
 }): Promise<ProviderTranscript> {
   const endpoint = localSpeechTranscribeUrl("local_whisper");
   if (!endpoint) {
-    throw new Error("URL локального моста Whisper не настроен или находится вне localhost/частной сети.");
+    throw new Error(
+      "Локальный модуль Whisper.cpp не настроен: укажите адрес локального модуля в серверных настройках клиники."
+    );
   }
 
   const result = await transcribeOpenAiCompatible({
@@ -1235,7 +1284,9 @@ async function transcribeLocalWhisperBridge(input: {
     responseFormat: "verbose_json",
     timeoutMs: localSpeechTimeoutMs()
   });
-  result.warnings.push("Использован локальный Whisper-мост; текст нужно проверить, потому что точность зависит от размера и настроек локальной модели.");
+  result.warnings.push(
+    "Использован локальный модуль Whisper.cpp; текст нужно проверить, потому что точность зависит от размера и настроек локальной модели."
+  );
   return result;
 }
 
@@ -1248,7 +1299,7 @@ async function transcribeLocalVoskBridge(input: {
 }): Promise<ProviderTranscript> {
   const endpoint = localSpeechTranscribeUrl("vosk_local");
   if (!endpoint) {
-    throw new Error("URL локального моста Vosk не настроен или находится вне localhost/частной сети.");
+    throw new Error("Локальный модуль Vosk не настроен: укажите адрес локального модуля в серверных настройках клиники.");
   }
 
   const form = new FormData();
@@ -1280,8 +1331,8 @@ async function transcribeLocalVoskBridge(input: {
     text,
     confidence: confidenceFromVoskPayload(payload),
     warnings: text
-      ? ["Использован локальный мост Vosk; пунктуацию и стоматологические термины нужно проверить перед подписанием."]
-      : ["Локальный мост Vosk не вернул текст; оставьте печатный локальный черновик как восстановление."]
+      ? ["Использован локальный модуль Vosk; пунктуацию и стоматологические термины нужно проверить перед подписанием."]
+      : ["Локальный модуль Vosk не вернул текст; оставьте печатный локальный черновик как восстановление."]
   };
 }
 
@@ -1385,11 +1436,11 @@ async function transcribeAssemblyAi(input: {
       };
     }
     if (pollPayload.status === "error") {
-      throw new Error(pollPayload.error ?? "AssemblyAI transcription failed");
+      throw new Error("AssemblyAI не вернул готовый текст; локальный черновик сохранен, повторите отправку позже.");
     }
   }
 
-  throw new Error("AssemblyAI transcription timeout; keep chunk shorter or use async job flow");
+  throw new Error("AssemblyAI не успел обработать фрагмент. Укоротите запись или отправьте позже; локальный черновик сохранен.");
 }
 
 async function transcribeCloudflareWhisper(input: {
@@ -1399,7 +1450,9 @@ async function transcribeCloudflareWhisper(input: {
 }): Promise<ProviderTranscript> {
   const accountId = cloudflareAccountId();
   if (!accountId) {
-    throw new Error("CLOUDFLARE_ACCOUNT_ID is required for Cloudflare Workers AI Whisper");
+    throw new Error(
+      "Cloudflare Workers AI Whisper не настроен полностью: заполните недостающий пункт в серверных настройках распознавания."
+    );
   }
 
   const model = (process.env.CLOUDFLARE_WHISPER_MODEL ?? "@cf/openai/whisper").trim();
@@ -1456,11 +1509,13 @@ async function transcribeWithProvider(input: {
   }
 
   if (!providerKeyCount(input.providerId)) {
-    throw new Error(`Provider key is not configured for ${providerLabels[input.providerId]}`);
+    throw new Error(
+      `Для ${providerLabels[input.providerId]} не настроен серверный доступ. До подключения врач может использовать локальный текст или браузерную диктовку.`
+    );
   }
   const missingConfigEnvVars = providerConfigMissingEnvVars(input.providerId);
   if (missingConfigEnvVars.length) {
-    throw new Error(`${providerLabels[input.providerId]}: не хватает серверных переменных ${missingConfigEnvVars.join(", ")}`);
+    throw new Error(`${providerLabels[input.providerId]}: не хватает серверных настроек (${missingConfigEnvVars.length})`);
   }
 
   const triedFingerprints = new Set<string>();
@@ -1526,12 +1581,14 @@ async function transcribeWithProvider(input: {
           mimeType: input.mimeType
         });
       } else {
-        throw new Error(`${providerLabels[input.providerId]} есть в каталоге, но прямое серверное распознавание еще не подключено`);
+        throw new Error(
+          `${providerLabels[input.providerId]} есть в каталоге, но прямое серверное распознавание пока не включено. Выберите подключенный источник или браузерную диктовку.`
+        );
       }
 
       recordProviderKeySuccess(input.providerId, keyCandidate);
       if (attempt > 0) {
-        result.warnings.push(`${providerLabels[input.providerId]} восстановился после попытки ротации ключа N ${attempt + 1}.`);
+        result.warnings.push(`${providerLabels[input.providerId]} восстановился после резервной попытки N ${attempt + 1}.`);
       }
       return result;
     } catch (error) {
@@ -1542,9 +1599,12 @@ async function transcribeWithProvider(input: {
   }
 
   const summary = getProviderKeyPoolSummary(input.providerId);
-  const detail = lastError instanceof Error ? sanitizeProviderErrorMessage(lastError.message) : "all provider keys are cooling down";
+  const detail = publicProviderFailureReason(lastError);
+  if (lastError instanceof SpeechProviderRequestError) {
+    throw lastError;
+  }
   throw new Error(
-    `${providerLabels[input.providerId]} failed after ${triedFingerprints.size}/${maxAttempts} key attempts; ${summary.availableKeyCount}/${summary.configuredKeyCount} keys available. ${detail}`
+    `${providerLabels[input.providerId]} не распознал фрагмент после ${triedFingerprints.size}/${maxAttempts} попыток; доступных маршрутов ${summary.availableKeyCount}/${summary.configuredKeyCount}. ${detail}. Локальный черновик и очередь повтора сохранены.`
   );
 }
 
@@ -1562,18 +1622,18 @@ export async function transcribeSpeechChunk(input: SpeechChunkUploadInput): Prom
   if (!audio.byteLength && localTranscript) {
     transcript = localTranscript;
     responseStatus = "fallback_text";
-    warnings.push("Сохранен браузерный или локальный текст без отправки аудио провайдеру.");
+    warnings.push("Сохранен браузерный или локальный текст без отправки аудио во внешний контур.");
   } else if (!gateway.serverTranscriptionEnabled) {
     transcript = localTranscript;
     responseStatus = "needs_provider_key";
     warnings.push(...gateway.warnings);
-    if (!transcript) warnings.push("Аудио принято, но серверный STT не запущен без ключа провайдера.");
+    if (!transcript) warnings.push("Аудио принято, но серверное распознавание не запущено без доступного источника.");
   } else if (!gateway.serverTranscriptionCurrentlyAvailable) {
     transcript = localTranscript;
     responseStatus = localTranscript ? "fallback_text" : "needs_provider_key";
     warnings.push(...gateway.warnings);
     warnings.push(
-      "Аудио не отправлено: сейчас нет STT-ключа или доступного локального моста; сохраните клиентскую очередь аудио и повторите позже."
+      "Аудио не отправлено: сейчас нет доступного источника распознавания или локального модуля; сохраните клиентскую очередь аудио и повторите позже."
     );
   } else {
     const providerAttempts = gateway.fallbackProviderIds.length ? gateway.fallbackProviderIds : [gateway.providerId];
@@ -1613,7 +1673,7 @@ export async function transcribeSpeechChunk(input: SpeechChunkUploadInput): Prom
       if (localTranscript) {
         warnings.push("Локальный текст сохранен, врач может продолжать без блокировки.");
       } else {
-        warnings.push("Ни один STT-провайдер из резервной цепочки не вернул текст.");
+        warnings.push("Ни один источник распознавания из резервной цепочки не вернул текст.");
       }
     }
   }

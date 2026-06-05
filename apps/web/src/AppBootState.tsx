@@ -1,12 +1,23 @@
 import { type FormEvent } from "react";
-import { ShieldCheck, Stethoscope } from "lucide-react";
+import { RefreshCw, ShieldCheck, Stethoscope } from "lucide-react";
 
-export function AppLoadingState({ message }: { message: string }) {
+type AppLoadingStateProps = {
+  actionLabel?: string;
+  message: string;
+  onAction?: () => void;
+};
+
+export function AppLoadingState({ actionLabel, message, onAction }: AppLoadingStateProps) {
   return (
-    <main className="boot-state">
+    <main className="boot-state" aria-busy={onAction ? undefined : "true"}>
       <Stethoscope aria-hidden="true" />
       <h1>DENTE</h1>
       <p>{message}</p>
+      {onAction ? (
+        <button className="secondary-button boot-retry-button" type="button" onClick={onAction}>
+          <RefreshCw aria-hidden="true" /> {actionLabel ?? "Повторить"}
+        </button>
+      ) : null}
     </main>
   );
 }
@@ -34,15 +45,15 @@ export function AppUnlockState({ accessMessage, adminSecretDraft, onAdminSecretC
       <form className="boot-unlock-form" onSubmit={submitUnlock}>
         <div>
           <strong>Нужен доступ к данным клиники</strong>
-          <p>{accessMessage || "Сервер защищает медицинские данные. Введите x-dente-admin-secret для этой сессии."}</p>
+          <p>{accessMessage || "Сервер защищает медицинские данные. Введите секрет администратора для этой сессии."}</p>
         </div>
         <input
           type="password"
           autoComplete="current-password"
           value={adminSecretDraft}
           onChange={(event) => onAdminSecretChange(event.target.value)}
-          placeholder="x-dente-admin-secret"
-          aria-label="Секрет доступа DENTE"
+          placeholder="введите секрет администратора"
+          aria-label="Секрет доступа к данным клиники"
           aria-describedby={!secretReady ? "boot-unlock-guidance" : undefined}
         />
         {!secretReady ? (

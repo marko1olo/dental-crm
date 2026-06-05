@@ -35,7 +35,9 @@ const result = {
   strategyChunkMs: strategy.chunkMs,
   estimatedChunkCount: strategy.estimatedChunkCount,
   warnings: status.warnings.filter(
-    (warning) => warning.includes("Для Groq STT включен минимум") || warning.includes("Длительность STT-фрагментов")
+    (warning) =>
+      warning.includes("Для Groq распознавания включен минимум") ||
+      warning.includes("Длительность аудиофрагментов")
   )
 };
 
@@ -46,6 +48,6 @@ if (result.minChunkMs < 10_000) throw new Error(`Groq min chunk was not enforced
 if (result.recommendedChunkMs < 10_000) throw new Error(`Groq recommended chunk was not enforced: ${result.recommendedChunkMs}`);
 if (result.maxChunkMs < result.minChunkMs) throw new Error(`Chunk max below min: ${result.maxChunkMs} < ${result.minChunkMs}`);
 if (result.strategyChunkMs < 10_000) throw new Error(`Strategy chunk stayed too small: ${result.strategyChunkMs}`);
-if (!result.warnings.some((warning) => warning.includes("Для Groq STT включен минимум"))) {
+if (!result.warnings.some((warning) => warning.includes("Для Groq распознавания включен минимум"))) {
   throw new Error("Expected public Groq chunk-floor warning in Russian.");
 }

@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -9,6 +9,7 @@ process.env.DENTE_CLINICAL_ADMIN_SECRET = "synthetic-speech-scope-secret";
 const routePath = path.resolve("apps/api/dist/routes/speech.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
+const dentalPromptSource = readFileSync("apps/api/src/speech/dentalPrompt.ts", "utf8");
 
 if (!existsSync(routePath) || !existsSync(sampleDataPath) || !existsSync(sharedPath)) {
   throw new Error("Build API first: npm run build");
@@ -18,10 +19,37 @@ const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
 const { registerSpeechRoutes } = await import(pathToFileURL(routePath).href);
 const { activeVisit, patients, speechTranscriptionChunks } = await import(pathToFileURL(sampleDataPath).href);
-const { speechTranscriptPolishRequestSchema, visitNoteDraftRequestSchema } = await import(pathToFileURL(sharedPath).href);
+const { buildRuleBasedVisitDraftFromTranscript, speechTranscriptPolishRequestSchema, visitNoteDraftRequestSchema } = await import(
+  pathToFileURL(sharedPath).href
+);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+function assertSpeechScopeError(response, expectedStatusCode, expectedText, label) {
+  assert(response.statusCode === expectedStatusCode, `${label} status mismatch: ${response.statusCode}`);
+  const body = response.json();
+  assert(body.error === "SpeechClinicalScopeError", `${label} error code mismatch: ${response.body}`);
+  assert(typeof body.message === "string" && body.message.includes(expectedText), `${label} message mismatch: ${response.body}`);
+  assert(
+    !/visitId|patientId|SpeechScope|scopeValidation|request\.query|undefined|null/i.test(response.body),
+    `${label} leaked route/scope internals: ${response.body}`
+  );
+}
+
+function assertSpeechChunkRejected(response, expectedStatusCode, expectedReason, expectedText, label) {
+  assert(response.statusCode === expectedStatusCode, `${label} status mismatch: ${response.statusCode}`);
+  const body = response.json();
+  assert(body.error === "SpeechChunkRejected", `${label} error code mismatch: ${response.body}`);
+  assert(body.reason === expectedReason, `${label} reason mismatch: ${response.body}`);
+  assert(typeof body.message === "string" && body.message.includes(expectedText), `${label} message mismatch: ${response.body}`);
+  assert(
+    !/SpeechChunkPayloadError|SpeechChunkIdentityConflictError|retry identity|audioBase64|recordingId|chunkIndex|mimeType|base64|bytes|max|request\.body|undefined|null|issues|path/i.test(
+      response.body
+    ),
+    `${label} leaked transport/domain internals: ${response.body}`
+  );
 }
 
 const schemaPatientId = "11111111-1111-4111-8111-111111111111";
@@ -48,6 +76,36 @@ assert(
 assert(
   speechTranscriptPolishRequestSchema.parse({ transcript: "  pain 36  " }).transcript === "pain 36",
   "speech polish transcript contract must trim text"
+);
+assert(
+  dentalPromptSource.includes("Стоматологический словарь распознавания выключен в серверных настройках.") &&
+  dentalPromptSource.includes("К стандартному словарю распознавания добавлены термины клиники из серверных настроек.") &&
+  dentalPromptSource.includes("Стоматологический словарь распознавания выключен.") &&
+  dentalPromptSource.includes("Термины: ${terms.join"),
+  "speech prompt warnings must be readable for clinic staff"
+);
+assert(
+  !dentalPromptSource.includes("DENTAL_STT_DENTAL_PROMPT disables provider prompt context") &&
+    !dentalPromptSource.includes("Dental prompt pack is disabled.") &&
+    !dentalPromptSource.includes("Terms: ${terms.join") &&
+    !/warnings\.push\([^)]*DENTAL_STT_/s.test(dentalPromptSource),
+  "speech prompt warnings must not expose env variable names"
+);
+
+const localDraft = buildRuleBasedVisitDraftFromTranscript(
+  "Жалобы на боль при накусывании. Осмотр 36. План лечение под анестезией.",
+  "therapist"
+);
+const localDraftWarningText = localDraft.warnings.join(" ");
+assert(
+  localDraftWarningText.includes("Локальный разбор диктовки") &&
+    localDraftWarningText.includes("профилю специальности") &&
+    localDraftWarningText.includes("не финальное медицинское решение"),
+  "rule-based visit draft warnings must be readable for a doctor"
+);
+assert(
+  !/Rule-parser|specialty-профилю|speech-polish|Офлайн-парсер|settings_/i.test(localDraftWarningText),
+  "rule-based visit draft warnings must not expose parser/source jargon"
 );
 
 const app = Fastify({ logger: false });
@@ -111,7 +169,7 @@ const missingVisitResponse = await app.inject({
     patientId: activePatient.id
   }
 });
-assert(missingVisitResponse.statusCode === 400, `visit dictation must require visitId, got ${missingVisitResponse.statusCode}`);
+assertSpeechScopeError(missingVisitResponse, 400, "выберите активный прием", "visit dictation missing visit scope");
 
 const unknownPatientResponse = await app.inject({
   method: "POST",
@@ -123,7 +181,7 @@ const unknownPatientResponse = await app.inject({
     visitId: activeVisit.id
   }
 });
-assert(unknownPatientResponse.statusCode === 404, `speech chunk must reject unknown patient, got ${unknownPatientResponse.statusCode}`);
+assertSpeechScopeError(unknownPatientResponse, 404, "Пациент для диктовки не найден", "speech chunk unknown patient");
 
 const unknownVisitResponse = await app.inject({
   method: "POST",
@@ -135,7 +193,7 @@ const unknownVisitResponse = await app.inject({
     visitId: "11111111-1111-4111-8111-111111111111"
   }
 });
-assert(unknownVisitResponse.statusCode === 404, `speech chunk must reject unknown visit, got ${unknownVisitResponse.statusCode}`);
+assertSpeechScopeError(unknownVisitResponse, 404, "Прием для диктовки не найден", "speech chunk unknown visit");
 
 const wrongPatientVisitResponse = await app.inject({
   method: "POST",
@@ -147,9 +205,30 @@ const wrongPatientVisitResponse = await app.inject({
     visitId: activeVisit.id
   }
 });
+assertSpeechScopeError(wrongPatientVisitResponse, 409, "другому пациенту", "speech chunk mismatched patient");
+
+const invalidAudioResponse = await app.inject({
+  method: "POST",
+  url: "/api/speech/transcribe-chunk",
+  headers,
+  payload: {
+    ...basePayload,
+    chunkIndex: 1,
+    localTranscript: "",
+    audioBase64: "not-valid-base64!!!",
+    visitId: activeVisit.id
+  }
+});
 assert(
-  wrongPatientVisitResponse.statusCode === 409,
-  `speech chunk must reject visit from another patient, got ${wrongPatientVisitResponse.statusCode}`
+  invalidAudioResponse.statusCode === 400,
+  `invalid speech audio must return 400, got ${invalidAudioResponse.statusCode}`
+);
+assertSpeechChunkRejected(
+  invalidAudioResponse,
+  400,
+  "audio_rejected",
+  "Повторите запись",
+  "invalid speech audio rejection"
 );
 
 const validVisitResponse = await app.inject({
@@ -166,12 +245,32 @@ const validChunk = validVisitResponse.json().chunk;
 assert(validChunk.patientId === activePatient.id, "speech chunk must inherit patient from visit");
 assert(validChunk.visitId === activeVisit.id, "speech chunk visit mismatch");
 
+const identityConflictResponse = await app.inject({
+  method: "POST",
+  url: "/api/speech/transcribe-chunk",
+  headers,
+  payload: {
+    ...basePayload,
+    chunkIndex: 2,
+    source: "import",
+    patientId: activePatient.id,
+    visitId: null
+  }
+});
+assertSpeechChunkRejected(
+  identityConflictResponse,
+  409,
+  "chunk_conflict",
+  "Обновите очередь диктовки",
+  "speech chunk retry identity conflict"
+);
+
 const chunksWithoutScopeResponse = await app.inject({
   method: "GET",
   url: `/api/speech/chunks?recordingId=${encodeURIComponent(recordingId)}`,
   headers
 });
-assert(chunksWithoutScopeResponse.statusCode === 400, `speech chunks read must require clinical scope, got ${chunksWithoutScopeResponse.statusCode}`);
+assertSpeechScopeError(chunksWithoutScopeResponse, 400, "Укажите пациента или прием", "speech chunks missing scope");
 
 const chunksWithVisitResponse = await app.inject({
   method: "GET",
@@ -186,20 +285,14 @@ const recoveryWrongScopeResponse = await app.inject({
   url: `/api/speech/recordings/recovery?visitId=${encodeURIComponent(activeVisit.id)}&patientId=${encodeURIComponent(otherPatient.id)}`,
   headers
 });
-assert(
-  recoveryWrongScopeResponse.statusCode === 409,
-  `speech recovery must reject mismatched visit/patient, got ${recoveryWrongScopeResponse.statusCode}`
-);
+assertSpeechScopeError(recoveryWrongScopeResponse, 409, "другому пациенту", "speech recovery mismatched patient");
 
 const assembleWrongScopeResponse = await app.inject({
   method: "GET",
   url: `/api/speech/recordings/${encodeURIComponent(recordingId)}/assemble?visitId=${encodeURIComponent(activeVisit.id)}&patientId=${encodeURIComponent(otherPatient.id)}`,
   headers
 });
-assert(
-  assembleWrongScopeResponse.statusCode === 409,
-  `speech assemble must reject mismatched visit/patient, got ${assembleWrongScopeResponse.statusCode}`
-);
+assertSpeechScopeError(assembleWrongScopeResponse, 409, "другому пациенту", "speech assemble mismatched patient");
 
 console.log(
   JSON.stringify({

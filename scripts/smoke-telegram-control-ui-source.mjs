@@ -35,6 +35,49 @@ for (const [label, source] of [
   if (secretPattern.test(source)) missing.push(`${label} contains a Telegram bot token`);
 }
 
+for (const forbiddenCopy of [
+  "На API-сервере не настроен токен Telegram-бота.",
+  "Проверьте токен, сеть и chat id.",
+  "токен берется только из API-server env",
+  "если он включен на API-сервере",
+  "<span>Токен</span>",
+  "В браузер и ответы API секрет не возвращается.",
+  "серверном токене и зашифрованном transport-ref",
+  "ID конфигурации бота клиники",
+  "Webhook HTTPS",
+  "<span>Вебхук</span>",
+  "секрет вебхука",
+  "нужен секрет вебхука",
+  "настройка транспорта",
+  "транспорт не готов",
+  "Webhook Telegram"
+]) {
+  if (clientUiSource.includes(forbiddenCopy)) {
+    missing.push(`Telegram UI still exposes operator-hostile technical copy: ${forbiddenCopy}`);
+  }
+}
+
+for (const readableCopy of [
+  "В серверных настройках клиники не подключен бот Telegram.",
+  "Проверьте подключение бота, сеть и связанный чат.",
+  "секрет бота хранится в серверных настройках клиники",
+  "если он включен в серверных настройках клиники",
+  "<span>Бот клиники</span>",
+  "Секрет бота хранится в серверных настройках и не показывается в приложении.",
+  "подключенном боте и защищенной серверной связке",
+  "Профиль бота клиники",
+  "Адрес приема сообщений Telegram",
+  "защита входящих сообщений включена",
+  "нужно включить защиту входящих сообщений",
+  "Публичный HTTPS-адрес CRM, который Telegram сможет открыть для входящих сообщений.",
+  "отправка не готова",
+  "нужна настройка отправки"
+]) {
+  if (!clientUiSource.includes(readableCopy)) {
+    missing.push(`Telegram UI missing readable operator copy: ${readableCopy}`);
+  }
+}
+
 for (const forbiddenCast of [
   "setTelegramModeDraft(event.target.value as DenteTelegramBotMode)",
   "setTelegramPrivacyModeDraft(event.target.value as DenteTelegramPrivacyMode)",
@@ -60,7 +103,7 @@ const appSnippets = [
   "/api/telegram/status/${encodeURIComponent(organizationId)}/${encodeURIComponent(botConfigId)}",
   "telegramBotConfigId",
   "setTelegramBotConfigId",
-  "ID конфигурации бота клиники",
+  "Профиль бота клиники",
   'fetch("/api/telegram/feature-plan"',
   "telegramOutboxRequestParams",
   "appendTelegramRuntimeScopeParams",
@@ -104,7 +147,10 @@ const appSnippets = [
   "telegramOutbox",
   "telegramOutbox?.dueCount",
   "telegramOutbox?.filteredCount",
-  "telegramOutbox.totalCount",
+  "typedTelegramOutbox.totalCount",
+  "const telegramOutboxRemainingCount = typedTelegramOutbox",
+  "typedTelegramOutbox.filteredCount - typedVisibleTelegramOutboxItems.length",
+  "telegramOutboxRemainingCount > 0 || typedTelegramOutbox?.nextCursor",
   "telegramOutbox?.nextCursor",
   "telegramOutboxStatusFilter",
   "telegramOutboxTemplateFilter",
@@ -196,8 +242,8 @@ const appSnippets = [
   "telegramInlineButtonsFromReplyMarkup",
   "telegramInlineButtonRowsFromReplyMarkup",
   "telegramInlineButtonKindLabels",
-  "telegramInlineButtonRowsFromReplyMarkup(telegramPreview.replyMarkup)",
-  "telegramInlineButtonRowsFromReplyMarkup(item.replyMarkup)",
+  "getTypedTelegramInlineButtonRows(typedTelegramPreview.replyMarkup)",
+  "getTypedTelegramInlineButtonRows(item.replyMarkup)",
   "telegramLinkCodeStatusLabels",
   "telegramLinkSubjectType: TelegramLinkSubjectType",
   "telegramLinkStaffId: string | null",
@@ -217,7 +263,7 @@ const appSnippets = [
   "telegram-link-actions",
   "telegram-link-action-state",
   "telegramHumanMessage(item.blockedReason)",
-  "item.warnings.map((warning: any) => telegramHumanMessage(warning)).filter(Boolean)",
+  "item.warnings.map((warning) => telegramHumanMessage(warning)).filter(Boolean)",
   "telegram-inline-button-row",
   "telegram-outbox-buttons",
   "telegram-outbox-notes",
@@ -407,7 +453,11 @@ const telegramRouteSnippets = [
   "reviewRequestDelayHoursFromEnvConfig",
   "postVisitCheckupDelayHoursByTopic",
   "prepared.photoUrl",
-  "telegram_photo_fallback_",
+  "telegramPhotoFallbackWarning",
+  "telegramOutboxTransportFailureWarning",
+  "telegramWebhookReplyFailureWarning",
+  "telegramCallbackTransportFailureWarning",
+  "retryAfterSeconds",
   "buildDenteTelegramLinkedScheduleReply",
   "scheduleReply.replyMarkup",
   "handleDenteTelegramAppointmentCallback",
@@ -456,6 +506,9 @@ const telegramRouteSnippets = [
   '"/api/telegram/status/:organizationId"',
   '"/api/telegram/status/:organizationId/:botConfigId"',
   '"/api/telegram/webhook/:organizationId/:botConfigId"',
+  "readableTelegramSettingsValidationMessage(settingsError)",
+  "telegramSettingsReasonLabels",
+  "Подписанные кнопки приема отключены; включите секрет подписанных кнопок в серверных настройках.",
   "dente:schedule",
   "dente:documents",
   "dente:tax",
@@ -479,7 +532,8 @@ const telegramRouteSnippets = [
   "telegramOutboxDeliveryClaims",
   "client_mutation_id_required",
   "telegram_delivery_in_progress",
-  "repairMojibakeText(prepared.text)"
+  "repairMojibakeText(prepared.text)",
+  "включите секрет подписанных кнопок в серверных настройках"
 ];
 const telegramTransportSnippets = [
   "https://api.telegram.org/bot",
@@ -568,6 +622,46 @@ if (clientUiSource.includes('telegramWarningLabels[value] ?? value.replaceAll("_
 }
 if (!clientUiSource.includes('if (!/^[a-z0-9_.:-]+$/.test(value)) return value;')) {
   missing.push("Telegram human fallback must show already human-readable API warnings");
+}
+
+for (const rawTelegramSettingsMessage of [
+  "message: settingsError instanceof Error ? settingsError.message : \"telegram_settings_invalid\"",
+  "telegram_appointment_callback_secret_missing",
+  "DENTE_TELEGRAM_CALLBACK_SECRET или DENTE_TELEGRAM_WEBHOOK_SECRET нужен",
+  "настройте DENTE_TELEGRAM_CALLBACK_SECRET или DENTE_TELEGRAM_WEBHOOK_SECRET"
+]) {
+  if (apiSource.includes(rawTelegramSettingsMessage) || telegramRoutesSource.includes(rawTelegramSettingsMessage)) {
+    missing.push(`Telegram server can expose raw settings/callback copy: ${rawTelegramSettingsMessage}`);
+  }
+}
+
+for (const rawTelegramTransportWarning of [
+  "telegram_photo_caption_split_text_",
+  "telegram_photo_fallback_",
+  "photo_retry_after_seconds:",
+  "telegram_transport_${",
+  "retry_after_seconds:",
+  "Ответ Telegram не отправлен: ${result.errorClass",
+  "Ответ на Telegram-кнопку не отправлен: ${callbackAnswer.errorClass"
+]) {
+  if (telegramRoutesSource.includes(rawTelegramTransportWarning)) {
+    missing.push(`Telegram server can expose raw transport copy: ${rawTelegramTransportWarning}`);
+  }
+}
+
+for (const rawSettingsReason of [
+  "invalid_url",
+  "https_required",
+  "credentials_not_allowed",
+  "invalid_path_encoding",
+  "patient_identifying_path_not_allowed",
+  "patient_identifying_path_value_not_allowed",
+  "patient_identifying_query_not_allowed",
+  "patient_identifying_query_value_not_allowed"
+]) {
+  if (!telegramRoutesSource.includes(`${rawSettingsReason}:`)) {
+    missing.push(`Telegram settings validation humanizer missing ${rawSettingsReason}`);
+  }
 }
 
 if (/localStorage\.[gs]etItem\([^)]*telegramAdminSecret/i.test(clientUiSource)) {

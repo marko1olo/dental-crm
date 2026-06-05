@@ -1,13 +1,16 @@
-import { createHash } from "node:crypto";
-import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from "node:fs";
-import { readdir } from "node:fs/promises";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { once } from "node:events";
+import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
+import { opendir, readdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { deflateSync, inflateRawSync } from "node:zlib";
-import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { setImmediate as yieldImmediate } from "node:timers/promises";
+import { createInflateRaw, deflateSync } from "node:zlib";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { denteAdminSecretHeader, requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 import {
   createImagingStudySchema,
+  type CtSurfaceModelManifest,
   dicomFirstFramePreviewRequestSchema,
   dicomFirstFramePreviewResponseSchema,
   dicomFolderWorkupPlanRequestSchema,
@@ -58,6 +61,7 @@ import {
   type DicomViewerTargetTool,
   type DicomViewerToolConfig,
   type DicomViewerToolMode,
+  type DicomViewerPlanningTask,
   type DicomViewerToolStateAnnotation,
   type DicomViewerToolStateBundleRequest,
   type DicomViewerWorkbenchManifestRequest,
@@ -66,14 +70,19 @@ import {
   type DicomWebAuthMode,
   type DicomWebConnectorCheckRequest,
   type DicomWebConnectorStatus,
+  type DicomClientRuntimeProfile,
   type DicomGpuRenderPlan,
+  type DicomProgressiveLoadStage,
   type DicomRenderCachePlanRequest,
+  type DicomRenderInteractionPhase,
   type DicomRenderCacheTask,
   type DicomWorkstationReadinessCheck,
   type DicomWorkstationReadinessRequest,
   type DentalModelFileCandidate,
   type DentalModelFileFormat,
   type DentalModelFileRole,
+  type DentalModelWorkbenchLoadTarget,
+  type DentalModelWorkbenchPairingHint,
   type ImagingImportPreviewRow,
   type ImagingSourceKind,
   type ImagingStudyKind,
@@ -96,11 +105,160 @@ const kindLabels = {
   periapical: "Прицельный",
   bitewing: "Интерпроксимальный снимок",
   opg: "ОПТГ",
-  ceph: "ТРГ / Ceph",
-  cbct: "КТ / CBCT",
+  ceph: "ТРГ / цефалометрия",
+  cbct: "КЛКТ / КТ",
   photo: "Фото",
   other: "Снимок"
 } as const;
+
+type ImagingPayloadSchema<T> = {
+  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+};
+
+function parseImagingPayload<T>(schema: ImagingPayloadSchema<T>, value: unknown, message: string) {
+  const parsed = schema.safeParse(value);
+  if (parsed.success) return { ok: true as const, data: parsed.data };
+  return {
+    ok: false as const,
+    response: {
+      error: "ImagingValidationError",
+      message
+    }
+  };
+}
+
+function configuredDicomWebSettingsSecret(): string | null {
+  return process.env.DENTE_SETTINGS_ADMIN_SECRET?.trim() || null;
+}
+
+function dicomWebSettingsUnguardedAllowed(): boolean {
+  return process.env.NODE_ENV !== "production" || process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS === "1";
+}
+
+function timingSafeDicomWebSecretEqual(providedSecret: string | null, expectedSecret: string): boolean {
+  if (!providedSecret) return false;
+  const providedBuffer = Buffer.from(providedSecret);
+  const expectedBuffer = Buffer.from(expectedSecret);
+  if (providedBuffer.length !== expectedBuffer.length) return false;
+  return timingSafeEqual(providedBuffer, expectedBuffer);
+}
+
+async function requireDicomWebSettingsAccess(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
+  const adminSecret = configuredDicomWebSettingsSecret();
+  if (!adminSecret) {
+    if (dicomWebSettingsUnguardedAllowed()) return true;
+    reply.code(503).send({
+      error: "DicomWebSettingsAdminSecretMissing",
+      message: "На сервере не задан секрет администратора клиники для проверки архива снимков."
+    });
+    return false;
+  }
+
+  const providedSecret = request.headers[denteAdminSecretHeader];
+  const normalizedProvidedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
+  if (timingSafeDicomWebSecretEqual(typeof normalizedProvidedSecret === "string" ? normalizedProvidedSecret : null, adminSecret)) {
+    return true;
+  }
+
+  reply.code(403).send({
+    error: "DicomWebSettingsAdminSecretRequired",
+    message: "Для проверки архива снимков нужен действующий секрет администратора клиники."
+  });
+  return false;
+}
+
+type ApiDicomScanOptions = {
+  signal?: AbortSignal;
+};
+
+type ApiDicomFolderTraversalLimits = {
+  maxFolders?: number;
+  maxEntriesPerFolder?: number;
+};
+
+type ApiDicomScanYieldState = {
+  units: number;
+  lastYieldAtMs: number;
+};
+
+const apiDicomScanYieldEveryUnits = 64;
+const apiDicomScanYieldEveryMs = 20;
+const apiDicomDefaultMaxFolders = 900;
+const apiDicomDefaultMaxEntriesPerFolder = 2000;
+const apiDicomScanAbortErrorName = "AbortError";
+const apiDicomScanAbortMessage =
+  "Сканирование локальных снимков остановлено: клиент закрыл запрос или отменил действие.";
+
+function createApiDicomScanYieldState(): ApiDicomScanYieldState {
+  return { units: 0, lastYieldAtMs: Date.now() };
+}
+
+function createImagingRequestAbortSignal(request: FastifyRequest): AbortSignal {
+  const controller = new AbortController();
+  request.raw.once("close", () => {
+    if (request.raw.aborted) controller.abort();
+  });
+  return controller.signal;
+}
+
+function throwIfApiDicomScanAborted(signal?: AbortSignal) {
+  if (!signal?.aborted) return;
+  const error = new Error(apiDicomScanAbortMessage);
+  error.name = apiDicomScanAbortErrorName;
+  throw error;
+}
+
+function isApiDicomScanAbortError(error: unknown) {
+  return error instanceof Error && error.name === apiDicomScanAbortErrorName;
+}
+
+async function maybeYieldApiDicomScan(state: ApiDicomScanYieldState, signal?: AbortSignal) {
+  throwIfApiDicomScanAborted(signal);
+  state.units += 1;
+  const now = Date.now();
+  if (state.units % apiDicomScanYieldEveryUnits !== 0 && now - state.lastYieldAtMs < apiDicomScanYieldEveryMs) return;
+  state.lastYieldAtMs = now;
+  await yieldImmediate(undefined, { signal });
+  throwIfApiDicomScanAborted(signal);
+}
+
+function sendImagingScanCancelled(reply: FastifyReply) {
+  return reply.code(499).send({
+    error: "ImagingScanCancelled",
+    message: "Сканирование локальных снимков остановлено. Повторите действие с более узкой папкой или меньшим лимитом."
+  });
+}
+
+async function runAbortableImagingScan<T>(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  operation: (options: ApiDicomScanOptions) => Promise<T>
+) {
+  const signal = createImagingRequestAbortSignal(request);
+  try {
+    return await operation({ signal });
+  } catch (error) {
+    if (isApiDicomScanAbortError(error)) return sendImagingScanCancelled(reply);
+    throw error;
+  }
+}
+
+const imagingStudyNotFoundError = "ImagingStudyNotFound" as const;
+const imagingStudyScopeError = "ImagingStudyScopeError" as const;
+
+function sendImagingStudyNotFound(reply: FastifyReply) {
+  return reply.code(404).send({
+    error: imagingStudyNotFoundError,
+    message: "Снимок не найден."
+  });
+}
+
+function sendImagingStudyScopeError(reply: FastifyReply, statusCode: 404 | 409, message: string) {
+  return reply.code(statusCode).send({
+    error: imagingStudyScopeError,
+    message
+  });
+}
 
 const headerAliases: Record<string, keyof Pick<ImagingImportPreviewRow, "patientName" | "phone" | "kind" | "title" | "toothCode" | "region" | "capturedAt" | "filePath" | "sourceName">> = {
   fio: "patientName",
@@ -166,9 +324,13 @@ const imagingFileExtensions = new Set([
 const dicomPixelFileExtensions = new Set([".dcm", ".dicom", ".ima"]);
 const dentalModelFileExtensions = new Set([".stl", ".obj", ".ply", ".glb", ".gltf", ".3mf"]);
 const zipEntryPreviewLimit = 1500;
-const zipPreviewByteLimit = 250 * 1024 * 1024;
 const dicomZipMetadataEntryLimit = 500;
-const dicomZipEntryByteLimit = 32 * 1024 * 1024;
+const zipEntryMetadataCompressedReadLimit = 8 * 1024 * 1024;
+const zipEntryMetadataChunkBytes = 64 * 1024;
+const zipEocdSearchWindowBytes = 65_557;
+const zipCentralDirectoryReadLimit = 8 * 1024 * 1024;
+const dicomFirstFrameHeaderReadLimit = 8 * 1024 * 1024;
+const dicomFirstFramePixelReadLimit = 32 * 1024 * 1024;
 const dicomDiscoverySkipDirectoryNames = new Set([
   ".cache",
   ".codex",
@@ -196,7 +358,11 @@ const dicomMetadataTags = new Set([
   "00100010",
   "0020000d",
   "0020000e",
-  "00200013"
+  "00200013",
+  "00280002",
+  "00280010",
+  "00280011",
+  "00280100"
 ]);
 
 type DicomHeaderMetadata = {
@@ -208,6 +374,11 @@ type DicomHeaderMetadata = {
   studyDescription: string | null;
   seriesDescription: string | null;
   instanceNumber: number | null;
+  imageRows: number | null;
+  imageColumns: number | null;
+  bitsAllocated: number | null;
+  samplesPerPixel: number | null;
+  estimatedPixelBytes: number | null;
   capturedAt: string | null;
   tagsRead: number;
   transferSyntaxUid: string | null;
@@ -223,6 +394,12 @@ type ZipCentralDirectoryEntry = {
   encrypted: boolean;
 };
 
+type ZipCentralDirectoryDetailedResult = {
+  entries: ZipCentralDirectoryEntry[];
+  warnings: string[];
+  descriptor: number | null;
+};
+
 type DicomManifestField =
   | "patientName"
   | "phone"
@@ -234,6 +411,11 @@ type DicomManifestField =
   | "studyDescription"
   | "seriesDescription"
   | "instanceNumber"
+  | "imageRows"
+  | "imageColumns"
+  | "bitsAllocated"
+  | "samplesPerPixel"
+  | "estimatedPixelBytes"
   | "capturedAt"
   | "filePath"
   | "sourceName";
@@ -248,11 +430,14 @@ const dicomHeaderAliases: Record<string, DicomManifestField> = {
   "0010 0010": "patientName",
   "(0010,0010)": "patientName",
   "фио": "patientName",
+  "фио пациента": "patientName",
+  "имя пациента": "patientName",
   "пациент": "patientName",
   phone: "phone",
   tel: "phone",
   telephone: "phone",
   "телефон": "phone",
+  "номер телефона": "phone",
   modality: "modality",
   "модальность": "modality",
   "0008 0060": "modality",
@@ -260,40 +445,94 @@ const dicomHeaderAliases: Record<string, DicomManifestField> = {
   type: "kind",
   kind: "kind",
   "тип": "kind",
+  "тип исследования": "kind",
   "вид": "kind",
+  "вид исследования": "kind",
   studyuid: "studyInstanceUid",
   "study uid": "studyInstanceUid",
   studyinstanceuid: "studyInstanceUid",
   "study instance uid": "studyInstanceUid",
+  "uid исследования": "studyInstanceUid",
+  "ид исследования": "studyInstanceUid",
+  "идентификатор исследования": "studyInstanceUid",
+  "код исследования": "studyInstanceUid",
+  "кодисследования": "studyInstanceUid",
   "0020 000d": "studyInstanceUid",
   "(0020,000d)": "studyInstanceUid",
   seriesuid: "seriesInstanceUid",
   "series uid": "seriesInstanceUid",
   seriesinstanceuid: "seriesInstanceUid",
   "series instance uid": "seriesInstanceUid",
+  "uid серии": "seriesInstanceUid",
+  "ид серии": "seriesInstanceUid",
+  "идентификатор серии": "seriesInstanceUid",
+  "код серии": "seriesInstanceUid",
+  "кодсерии": "seriesInstanceUid",
   "0020 000e": "seriesInstanceUid",
   "(0020,000e)": "seriesInstanceUid",
   sopuid: "sopInstanceUid",
   sopinstanceuid: "sopInstanceUid",
   "sop instance uid": "sopInstanceUid",
+  "код снимка": "sopInstanceUid",
+  "кодснимка": "sopInstanceUid",
   "0008 0018": "sopInstanceUid",
   "(0008,0018)": "sopInstanceUid",
   study: "studyDescription",
   studydescription: "studyDescription",
   "study description": "studyDescription",
+  "исследование": "studyDescription",
+  "описание исследования": "studyDescription",
+  "название исследования": "studyDescription",
   "0008 1030": "studyDescription",
   "(0008,1030)": "studyDescription",
   series: "seriesDescription",
   seriesdescription: "seriesDescription",
   "series description": "seriesDescription",
+  "серия": "seriesDescription",
+  "описание серии": "seriesDescription",
+  "название серии": "seriesDescription",
+  "описаниесерии": "seriesDescription",
   "0008 103e": "seriesDescription",
   "(0008,103e)": "seriesDescription",
   instance: "instanceNumber",
   instancenumber: "instanceNumber",
   "instance number": "instanceNumber",
+  "номер среза": "instanceNumber",
+  "номерсреза": "instanceNumber",
+  "номер изображения": "instanceNumber",
+  "номер экземпляра": "instanceNumber",
   "0020 0013": "instanceNumber",
   "(0020,0013)": "instanceNumber",
   slice: "instanceNumber",
+  rows: "imageRows",
+  row: "imageRows",
+  imagerows: "imageRows",
+  "image rows": "imageRows",
+  "0028 0010": "imageRows",
+  "(0028,0010)": "imageRows",
+  columns: "imageColumns",
+  column: "imageColumns",
+  cols: "imageColumns",
+  imagecolumns: "imageColumns",
+  "image columns": "imageColumns",
+  "0028 0011": "imageColumns",
+  "(0028,0011)": "imageColumns",
+  bitsallocated: "bitsAllocated",
+  "bits allocated": "bitsAllocated",
+  bitdepth: "bitsAllocated",
+  "bit depth": "bitsAllocated",
+  "0028 0100": "bitsAllocated",
+  "(0028,0100)": "bitsAllocated",
+  samplesperpixel: "samplesPerPixel",
+  "samples per pixel": "samplesPerPixel",
+  samples: "samplesPerPixel",
+  "0028 0002": "samplesPerPixel",
+  "(0028,0002)": "samplesPerPixel",
+  estimatedpixelbytes: "estimatedPixelBytes",
+  "estimated pixel bytes": "estimatedPixelBytes",
+  pixelbytes: "estimatedPixelBytes",
+  "pixel bytes": "estimatedPixelBytes",
+  "срез": "instanceNumber",
   date: "capturedAt",
   captured: "capturedAt",
   studydate: "capturedAt",
@@ -301,14 +540,20 @@ const dicomHeaderAliases: Record<string, DicomManifestField> = {
   "0008 0020": "capturedAt",
   "(0008,0020)": "capturedAt",
   "дата": "capturedAt",
+  "дата исследования": "capturedAt",
+  "дата снимка": "capturedAt",
   file: "filePath",
   path: "filePath",
   filepath: "filePath",
   "file path": "filePath",
   "файл": "filePath",
   "путь": "filePath",
+  "путь к файлу": "filePath",
+  "локальный путь": "filePath",
+  "dicom файл": "filePath",
   source: "sourceName",
-  "источник": "sourceName"
+  "источник": "sourceName",
+  "название источника": "sourceName"
 };
 
 function normalizeHeader(value: string) {
@@ -455,6 +700,12 @@ function parseInstanceNumber(value: string | null | undefined) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function parsePositiveInteger(value: string | null | undefined) {
+  if (!value) return null;
+  const parsed = Number(value.trim());
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 function extractDicomFieldValue(line: string, labels: string[]) {
   for (const label of labels) {
     const pattern = new RegExp(`${label}\\s*[:=]\\s*([^;|,]+)`, "i");
@@ -586,8 +837,8 @@ export function parseImagingManifest(input: { sourceName: string; sourceKind: Im
     blockedRows: rows.filter((row) => row.status === "blocked").length,
     rows,
     parserNotes: [
-      "Парсер манифеста поддерживает CSV/TSV/текст с разделителем |, пути DICOM/IMA, экспорты JPG/PNG/TIFF/BMP/WebP, подсказки RVG и синонимы ОПТГ/ТРГ/CBCT/прицельного снимка.",
-      "Готовые строки можно позже провести через воркер: он скопирует файлы, рассчитает хэши и привяжет их к картам пациентов."
+      "Парсер списка поддерживает CSV/TSV/текст с разделителем |, пути к КТ/снимкам, экспорты JPG/PNG/TIFF/BMP/WebP, подсказки RVG и синонимы ОПТГ/ТРГ/КЛКТ/прицельного снимка.",
+      "Готовые строки можно позже провести через локальный обработчик: он скопирует файлы, рассчитает хэши и привяжет их к картам пациентов."
     ]
   });
 }
@@ -644,21 +895,47 @@ function previewSvg(study: (typeof imagingStudies)[number]) {
 </svg>`;
 }
 
-async function collectImagingFiles(root: string, recursive: boolean, maxFiles: number) {
+async function collectImagingFiles(
+  root: string,
+  recursive: boolean,
+  maxFiles: number,
+  options: ApiDicomScanOptions = {},
+  limits: ApiDicomFolderTraversalLimits = {}
+) {
   const files: string[] = [];
   const warnings: string[] = [];
   const queue = [path.resolve(root)];
+  const maxFolders = Math.max(1, Math.floor(limits.maxFolders ?? apiDicomDefaultMaxFolders));
+  const maxEntriesPerFolder = Math.max(1, Math.floor(limits.maxEntriesPerFolder ?? apiDicomDefaultMaxEntriesPerFolder));
+  const yieldState = createApiDicomScanYieldState();
+  let queueIndex = 0;
+  let foldersScanned = 0;
+  let folderQueueLimitHit = false;
 
-  while (queue.length && files.length < maxFiles) {
-    const current = queue.shift();
+  while (queueIndex < queue.length && files.length < maxFiles && foldersScanned < maxFolders) {
+    await maybeYieldApiDicomScan(yieldState, options.signal);
+    const current = queue[queueIndex];
+    queueIndex += 1;
     if (!current) break;
+    foldersScanned += 1;
     try {
-      const entries = await readdir(current, { withFileTypes: true });
-      for (const entry of entries) {
+      let entriesInspected = 0;
+      const directory = await opendir(current);
+      for await (const entry of directory) {
+        await maybeYieldApiDicomScan(yieldState, options.signal);
+        entriesInspected += 1;
+        if (entriesInspected > maxEntriesPerFolder) {
+          warnings.push(`Проверка папки ограничена ${maxEntriesPerFolder} элементами: ${current}`);
+          break;
+        }
         const entryName = entry.name.toString();
         const fullPath = path.join(current, entryName);
         if (entry.isDirectory()) {
-          if (recursive) queue.push(fullPath);
+          if (recursive) {
+            const queuedFolders = queue.length - queueIndex;
+            if (foldersScanned + queuedFolders < maxFolders) queue.push(fullPath);
+            else folderQueueLimitHit = true;
+          }
           continue;
         }
         if (!entry.isFile()) continue;
@@ -669,10 +946,14 @@ async function collectImagingFiles(root: string, recursive: boolean, maxFiles: n
           break;
         }
       }
-    } catch {
+    } catch (error) {
+      if (isApiDicomScanAbortError(error)) throw error;
       warnings.push(`Не удалось прочитать папку: ${current}`);
       continue;
     }
+  }
+  if (foldersScanned >= maxFolders || folderQueueLimitHit || queueIndex < queue.length) {
+    warnings.push(`Сканирование папок остановлено на лимите ${maxFolders}.`);
   }
 
   return { files, warnings };
@@ -725,69 +1006,109 @@ function buildFolderScanManifest(files: string[]) {
   return ["patient;type;tooth;date;file;source", ...rows].join("\n");
 }
 
-async function collectDicomHeaderFiles(root: string, recursive: boolean, maxFiles: number) {
+async function collectDicomHeaderFiles(
+  root: string,
+  recursive: boolean,
+  maxFiles: number,
+  options: ApiDicomScanOptions = {},
+  limits: ApiDicomFolderTraversalLimits = {}
+) {
   const files: string[] = [];
   const warnings: string[] = [];
   const queue = [path.resolve(root)];
+  const maxFolders = Math.max(1, Math.floor(limits.maxFolders ?? apiDicomDefaultMaxFolders));
+  const maxEntriesPerFolder = Math.max(1, Math.floor(limits.maxEntriesPerFolder ?? apiDicomDefaultMaxEntriesPerFolder));
+  const yieldState = createApiDicomScanYieldState();
+  let queueIndex = 0;
+  let foldersScanned = 0;
+  let folderQueueLimitHit = false;
 
-  while (queue.length && files.length < maxFiles) {
-    const current = queue.shift();
+  while (queueIndex < queue.length && files.length < maxFiles && foldersScanned < maxFolders) {
+    await maybeYieldApiDicomScan(yieldState, options.signal);
+    const current = queue[queueIndex];
+    queueIndex += 1;
     if (!current) break;
+    foldersScanned += 1;
     try {
-      const entries = await readdir(current, { withFileTypes: true });
-      for (const entry of entries) {
+      let entriesInspected = 0;
+      const directory = await opendir(current);
+      for await (const entry of directory) {
+        await maybeYieldApiDicomScan(yieldState, options.signal);
+        entriesInspected += 1;
+        if (entriesInspected > maxEntriesPerFolder) {
+          warnings.push(`Проверка папки снимков ограничена ${maxEntriesPerFolder} элементами: ${current}`);
+          break;
+        }
         const entryName = entry.name.toString();
         const fullPath = path.join(current, entryName);
         if (entry.isDirectory()) {
-          if (recursive) queue.push(fullPath);
+          if (recursive) {
+            const queuedFolders = queue.length - queueIndex;
+            if (foldersScanned + queuedFolders < maxFolders) queue.push(fullPath);
+            else folderQueueLimitHit = true;
+          }
           continue;
         }
         if (!entry.isFile()) continue;
         if (!isDicomHeaderCandidatePath(fullPath)) continue;
         files.push(fullPath);
         if (files.length >= maxFiles) {
-          warnings.push(`Сканирование DICOM-метаданных остановлено на maxFiles=${maxFiles}.`);
+          warnings.push(`Сканирование метаданных снимков остановлено на лимите ${maxFiles} файлов.`);
           break;
         }
       }
-    } catch {
-      warnings.push(`Не удалось прочитать DICOM-папку: ${current}`);
+    } catch (error) {
+      if (isApiDicomScanAbortError(error)) throw error;
+      warnings.push(`Не удалось прочитать папку снимков: ${current}`);
     }
+  }
+  if (foldersScanned >= maxFolders || folderQueueLimitHit || queueIndex < queue.length) {
+    warnings.push(`Сканирование папок снимков остановлено на лимите ${maxFolders}.`);
   }
 
   return { files, warnings };
 }
 
-function buildDicomHeaderManifest(input: { files: string[]; sourceName: string; maxHeaderBytes: number }) {
+async function buildDicomHeaderManifest(
+  input: { files: string[]; sourceName: string; maxHeaderBytes: number },
+  options: ApiDicomScanOptions = {}
+) {
   const rows: string[] = [];
   const warnings: string[] = [];
   let filesParsed = 0;
+  const yieldState = createApiDicomScanYieldState();
 
   for (const filePath of input.files) {
+    await maybeYieldApiDicomScan(yieldState, options.signal);
     if (isZipArchivePath(filePath)) {
       const zip = readZipCentralDirectoryDetailed(filePath);
       warnings.push(...zip.warnings.map((warning) => `${filePath}: ${warning}`));
-      if (!zip.buffer) continue;
+      if (zip.descriptor === null) continue;
       const dicomEntries = zip.entries.filter((entry) => isDicomLikeEntry(entry.name));
-      if (!dicomEntries.length) {
-        warnings.push(`${filePath}: в ZIP не найдены DICOM-похожие записи для чтения метаданных.`);
-        continue;
-      }
-      if (dicomEntries.length > dicomZipMetadataEntryLimit) {
-        warnings.push(`${filePath}: сканирование метаданных читает только первые ${dicomZipMetadataEntryLimit}/${dicomEntries.length} DICOM-записей.`);
-      }
-
-      for (const entry of dicomEntries.slice(0, dicomZipMetadataEntryLimit)) {
-        const prefix = zipEntryPrefix(zip.buffer, entry, input.maxHeaderBytes);
-        if (!prefix.buffer) {
-          if (prefix.warning) warnings.push(`${filePath}: ${prefix.warning}`);
+      try {
+        if (!dicomEntries.length) {
+          warnings.push(`${filePath}: в ZIP не найдены записи снимков для чтения метаданных.`);
           continue;
         }
-        const virtualPath = `${filePath}::${entry.name}`;
-        const metadata = parseDicomHeader(prefix.buffer);
-        filesParsed += 1;
-        warnings.push(...metadata.warnings.map((warning) => `${virtualPath}: ${warning}`));
-        rows.push(dicomMetadataManifestRow(virtualPath, metadata, input.sourceName));
+        if (dicomEntries.length > dicomZipMetadataEntryLimit) {
+          warnings.push(`${filePath}: сканирование метаданных читает только первые ${dicomZipMetadataEntryLimit}/${dicomEntries.length} записей снимков.`);
+        }
+
+        for (const entry of dicomEntries.slice(0, dicomZipMetadataEntryLimit)) {
+          await maybeYieldApiDicomScan(yieldState, options.signal);
+          const prefix = await zipEntryPrefix(zip.descriptor, entry, input.maxHeaderBytes);
+          if (!prefix.buffer) {
+            if (prefix.warning) warnings.push(`${filePath}: ${prefix.warning}`);
+            continue;
+          }
+          const virtualPath = `${filePath}::${entry.name}`;
+          const metadata = parseDicomHeader(prefix.buffer);
+          filesParsed += 1;
+          warnings.push(...metadata.warnings.map((warning) => `${virtualPath}: ${warning}`));
+          rows.push(dicomMetadataManifestRow(virtualPath, metadata, input.sourceName));
+        }
+      } finally {
+        closeSync(zip.descriptor);
       }
       continue;
     }
@@ -798,8 +1119,9 @@ function buildDicomHeaderManifest(input: { files: string[]; sourceName: string; 
       filesParsed += 1;
       warnings.push(...metadata.warnings.map((warning) => `${filePath}: ${warning}`));
       rows.push(dicomMetadataManifestRow(filePath, metadata, input.sourceName));
-    } catch {
-      warnings.push(`${filePath}: не удалось прочитать DICOM-заголовок.`);
+    } catch (error) {
+      if (isApiDicomScanAbortError(error)) throw error;
+      warnings.push(`${filePath}: не удалось прочитать метаданные снимка.`);
     }
   }
 
@@ -813,7 +1135,14 @@ function buildDicomHeaderManifest(input: { files: string[]; sourceName: string; 
 
 function isDicomArchivePath(filePath: string | null): boolean {
   if (!filePath) return false;
+  if (filePath.includes("::")) return false;
   return dicomArchiveExtensions.has(path.extname(filePath.split("::")[0] ?? filePath).toLowerCase());
+}
+
+function isDicomArchiveVirtualEntryPath(filePath: string | null): boolean {
+  if (!filePath?.includes("::")) return false;
+  const archivePath = filePath.split("::")[0] ?? "";
+  return dicomArchiveExtensions.has(path.extname(archivePath).toLowerCase());
 }
 
 function isZipArchivePath(filePath: string | null): boolean {
@@ -897,6 +1226,11 @@ function emptyDicomHeaderMetadata(warnings: string[] = []): DicomHeaderMetadata 
     studyDescription: null,
     seriesDescription: null,
     instanceNumber: null,
+    imageRows: null,
+    imageColumns: null,
+    bitsAllocated: null,
+    samplesPerPixel: null,
+    estimatedPixelBytes: null,
     capturedAt: null,
     tagsRead: 0,
     transferSyntaxUid: null,
@@ -904,25 +1238,54 @@ function emptyDicomHeaderMetadata(warnings: string[] = []): DicomHeaderMetadata 
   };
 }
 
+function parseDicomUnsignedInt(valueBuffer: Buffer) {
+  const text = cleanDicomText(valueBuffer);
+  if (text) {
+    const parsedText = Number.parseInt(text, 10);
+    if (Number.isInteger(parsedText) && parsedText > 0) return parsedText;
+  }
+  if (valueBuffer.length >= 2) {
+    const parsedBinary = valueBuffer.readUInt16LE(0);
+    if (parsedBinary > 0) return parsedBinary;
+  }
+  return null;
+}
+
+function updateDicomEstimatedPixelBytes(metadata: DicomHeaderMetadata) {
+  if (!metadata.imageRows || !metadata.imageColumns || !metadata.bitsAllocated) {
+    metadata.estimatedPixelBytes = null;
+    return;
+  }
+  const samples = metadata.samplesPerPixel ?? 1;
+  const bytesPerSample = Math.max(1, Math.ceil(metadata.bitsAllocated / 8));
+  metadata.estimatedPixelBytes = metadata.imageRows * metadata.imageColumns * samples * bytesPerSample;
+}
+
 function assignDicomHeaderValue(metadata: DicomHeaderMetadata, tagKey: string, valueBuffer: Buffer) {
   const value = cleanDicomText(valueBuffer);
-  if (!value) return;
 
-  if (tagKey === "00100010") metadata.patientName = value;
-  else if (tagKey === "00080060") metadata.modality = normalizeModality(value);
-  else if (tagKey === "0020000d") metadata.studyInstanceUid = normalizeDicomUid(value);
-  else if (tagKey === "0020000e") metadata.seriesInstanceUid = normalizeDicomUid(value);
-  else if (tagKey === "00080018") metadata.sopInstanceUid = normalizeDicomUid(value);
-  else if (tagKey === "00081030") metadata.studyDescription = value;
-  else if (tagKey === "0008103e") metadata.seriesDescription = value;
-  else if (tagKey === "00200013") metadata.instanceNumber = parseInstanceNumber(value);
-  else if (tagKey === "00080022" || (tagKey === "00080020" && !metadata.capturedAt)) {
-    metadata.capturedAt = normalizeDicomDate(value);
+  if (tagKey === "00280010") metadata.imageRows = parseDicomUnsignedInt(valueBuffer);
+  else if (tagKey === "00280011") metadata.imageColumns = parseDicomUnsignedInt(valueBuffer);
+  else if (tagKey === "00280100") metadata.bitsAllocated = parseDicomUnsignedInt(valueBuffer);
+  else if (tagKey === "00280002") metadata.samplesPerPixel = parseDicomUnsignedInt(valueBuffer);
+  else if (value) {
+    if (tagKey === "00100010") metadata.patientName = value;
+    else if (tagKey === "00080060") metadata.modality = normalizeModality(value);
+    else if (tagKey === "0020000d") metadata.studyInstanceUid = normalizeDicomUid(value);
+    else if (tagKey === "0020000e") metadata.seriesInstanceUid = normalizeDicomUid(value);
+    else if (tagKey === "00080018") metadata.sopInstanceUid = normalizeDicomUid(value);
+    else if (tagKey === "00081030") metadata.studyDescription = value;
+    else if (tagKey === "0008103e") metadata.seriesDescription = value;
+    else if (tagKey === "00200013") metadata.instanceNumber = parseInstanceNumber(value);
+    else if (tagKey === "00080022" || (tagKey === "00080020" && !metadata.capturedAt)) {
+      metadata.capturedAt = normalizeDicomDate(value);
+    }
   }
+  updateDicomEstimatedPixelBytes(metadata);
 }
 
 function parseDicomHeader(buffer: Buffer): DicomHeaderMetadata {
-  if (buffer.length < 12) return emptyDicomHeaderMetadata(["DICOM header too small to parse."]);
+  if (buffer.length < 12) return emptyDicomHeaderMetadata(["Заголовок снимка слишком короткий для разбора."]);
 
   const metadata = emptyDicomHeaderMetadata();
   let cursor = buffer.length >= 132 && buffer.subarray(128, 132).toString("latin1") === "DICM" ? 132 : 0;
@@ -956,7 +1319,7 @@ function parseDicomHeader(buffer: Buffer): DicomHeaderMetadata {
     }
 
     if (valueLength === 0xffffffff) {
-      metadata.warnings.push(`DICOM-элемент ${tagKey} с неопределенной длиной пропущен.`);
+      metadata.warnings.push(`Элемент метаданных снимка ${tagKey} с неопределенной длиной пропущен.`);
       break;
     }
     if (valueLength < 0 || valueOffset + valueLength > buffer.length) break;
@@ -981,7 +1344,7 @@ function parseDicomHeader(buffer: Buffer): DicomHeaderMetadata {
     if (cursor >= buffer.length) break;
   }
 
-  if (!metadata.tagsRead) metadata.warnings.push("В доступной части заголовка не найдены известные DICOM-теги метаданных.");
+  if (!metadata.tagsRead) metadata.warnings.push("В доступной части заголовка не найдены известные метаданные снимка.");
   return metadata;
 }
 
@@ -1025,6 +1388,8 @@ function emptyDicomFirstFramePreview(input: {
   status: "unsupported" | "not_found";
   warnings: string[];
   nextAction: string;
+  requestedFileIndex?: number | null;
+  selectableFileCount?: number;
 }): DicomFirstFramePreviewResponse {
   return dicomFirstFramePreviewResponseSchema.parse({
     version: "dental-crm-dicom-first-frame-preview-v1",
@@ -1033,6 +1398,8 @@ function emptyDicomFirstFramePreview(input: {
     status: input.status,
     sourceFileName: null,
     sourceFileIndex: null,
+    requestedFileIndex: input.requestedFileIndex ?? null,
+    selectableFileCount: input.selectableFileCount ?? 0,
     transferSyntaxUid: null,
     photometricInterpretation: null,
     width: null,
@@ -1187,8 +1554,8 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
           imageDataUrl: null,
           width: null,
           height: null,
-          warnings: [...warnings, "Инкапсулированный или неопределенной длины PixelData не поддерживается легким предпросмотром."],
-          nextAction: "Используйте OHIF/Cornerstone или настольный DICOM-просмотрщик для сжатых/инкапсулированных КТ-пикселей."
+          warnings: [...warnings, "Сжатый формат снимка не поддерживается быстрым предпросмотром."],
+          nextAction: "Откройте снимок через внешний КТ-модуль или локальный обработчик."
         };
       }
       pixelDataOffset = valueOffset;
@@ -1197,7 +1564,7 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     }
 
     if (valueLength === 0xffffffff) {
-      warnings.push(`DICOM-элемент ${tagKey} с неопределенной длиной пропущен.`);
+      warnings.push(`Элемент метаданных снимка ${tagKey} с неопределенной длиной пропущен.`);
       break;
     }
     if (valueLength < 0 || valueOffset + valueLength > buffer.length) break;
@@ -1240,8 +1607,8 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
       imageDataUrl: null,
       width: null,
       height: null,
-      warnings: [...warnings, "PixelData не найден в ограниченном предпросмотре DICOM-файла."],
-      nextAction: "Оставьте предпросмотр метаданных или используйте отдельный DICOM-просмотрщик."
+      warnings: [...warnings, "Кадр снимка не найден в быстром предпросмотре."],
+      nextAction: "Оставьте список серии или используйте отдельный КТ-просмотрщик."
     };
   }
 
@@ -1260,14 +1627,14 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
       imageDataUrl: null,
       width: null,
       height: null,
-      warnings: [...warnings, `Transfer syntax ${transferSyntaxUid ?? "unknown"} не поддерживается легким предпросмотром.`],
-      nextAction: "Используйте OHIF/Cornerstone или настольный DICOM-просмотрщик для сжатых или big-endian DICOM-пикселей."
+      warnings: [...warnings, "Формат файла снимка не поддерживается быстрым предпросмотром."],
+      nextAction: "Откройте снимок через внешний КТ-модуль или локальный обработчик для этого формата."
     };
   }
 
   const normalizedPhotometric = photometricInterpretation ?? "MONOCHROME2";
   if (!rows || !columns || rows <= 0 || columns <= 0 || rows > 8192 || columns > 8192) {
-    warnings.push("Rows/Columns отсутствуют или превышают лимит легкого предпросмотра.");
+    warnings.push("Размер кадра не указан или слишком велик для быстрого предпросмотра.");
   }
   if (!rows || !columns || rows <= 0 || columns <= 0 || rows > 8192 || columns > 8192) {
     return {
@@ -1285,7 +1652,7 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
       width: null,
       height: null,
       warnings,
-      nextAction: "Используйте отдельный DICOM-просмотрщик для такой геометрии изображения."
+      nextAction: "Откройте отдельный КТ-просмотрщик для такого размера изображения."
     };
   }
   if ((samplesPerPixel ?? 1) !== 1 || !["MONOCHROME1", "MONOCHROME2"].includes(normalizedPhotometric)) {
@@ -1303,8 +1670,8 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
       imageDataUrl: null,
       width: null,
       height: null,
-      warnings: [...warnings, "Легкий предпросмотр поддерживает только одноканальные MONOCHROME1/MONOCHROME2 DICOM."],
-      nextAction: "Используйте полный рабочий стол снимков для RGB, УЗИ, secondary capture или сжатых изображений."
+      warnings: [...warnings, "Быстрый предпросмотр открывает только серые стоматологические снимки."],
+      nextAction: "Откройте этот файл в полном просмотрщике: формат нестандартный для быстрого предпросмотра."
     };
   }
   if (bitsAllocated !== 8 && bitsAllocated !== 16) {
@@ -1322,8 +1689,8 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
       imageDataUrl: null,
       width: null,
       height: null,
-      warnings: [...warnings, `BitsAllocated=${bitsAllocated ?? "unknown"} не поддерживается легким предпросмотром.`],
-      nextAction: "Используйте полный рабочий стол снимков для этого формата пикселей."
+      warnings: [...warnings, "Глубина изображения не поддерживается быстрым предпросмотром."],
+      nextAction: "Откройте этот файл в полном просмотрщике снимков."
     };
   }
 
@@ -1344,8 +1711,8 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
       imageDataUrl: null,
       width: null,
       height: null,
-      warnings: [...warnings, "PixelData короче ожидаемого размера первого кадра."],
-      nextAction: "Используйте полный DICOM-просмотрщик; легкий предпросмотр не может безопасно декодировать этот кадр."
+      warnings: [...warnings, "Данные первого кадра короче ожидаемого размера."],
+      nextAction: "Откройте полный КТ-просмотрщик: быстрый предпросмотр не может открыть этот кадр."
     };
   }
 
@@ -1420,11 +1787,11 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     center = (minValue + maxValue) / 2;
     window = Math.max(1, maxValue - minValue);
     rendered = renderPreview(center, window);
-    warnings.push("DICOM-окно дало низкоконтрастный предпросмотр; использовано min/max окно по выборке.");
+    warnings.push("Окно снимка дало низкоконтрастный предпросмотр; использовано min/max окно по выборке.");
   }
 
   if (scale < 1) warnings.push(`Предпросмотр уменьшен с ${columns}x${rows} до ${width}x${height}.`);
-  if (!windowCenter || !windowWidth) warnings.push("Window center/width отсутствовал; предпросмотр использовал min/max окно по выборке.");
+  if (!windowCenter || !windowWidth) warnings.push("Окно яркости/контраста отсутствовало; предпросмотр использовал min/max окно по выборке.");
 
   return {
     status: "ready",
@@ -1443,7 +1810,7 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     previewGrayRange: rendered.grayMax - rendered.grayMin,
     previewGrayMean: rendered.grayMean,
     warnings,
-    nextAction: "Используйте это только как быстрый ориентировочный предпросмотр; для диагностики нужен DICOM/MPR рабочий стол."
+    nextAction: "Используйте это только как быстрый ориентировочный предпросмотр; для диагностики нужен просмотрщик КТ-срезов."
   };
 }
 
@@ -1451,6 +1818,8 @@ function dicomFirstFrameReadyResponse(input: {
   sourceFileIndex: number;
   parsed: DicomFirstFramePixelParse;
   warnings: string[];
+  requestedFileIndex?: number | null;
+  selectableFileCount: number;
 }): DicomFirstFramePreviewResponse {
   return dicomFirstFramePreviewResponseSchema.parse({
     version: "dental-crm-dicom-first-frame-preview-v1",
@@ -1459,6 +1828,8 @@ function dicomFirstFrameReadyResponse(input: {
     status: "ready",
     sourceFileName: `dicom-frame-candidate-${input.sourceFileIndex + 1}`,
     sourceFileIndex: input.sourceFileIndex,
+    requestedFileIndex: input.requestedFileIndex ?? null,
+    selectableFileCount: input.selectableFileCount,
     transferSyntaxUid: input.parsed.transferSyntaxUid,
     photometricInterpretation: input.parsed.photometricInterpretation,
     width: input.parsed.width,
@@ -1476,16 +1847,86 @@ function dicomFirstFrameReadyResponse(input: {
   });
 }
 
+function locateLittleEndianPixelData(buffer: Buffer): { valueOffset: number; valueLength: number } | null {
+  const pixelTag = Buffer.from([0xe0, 0x7f, 0x10, 0x00]);
+  let cursor = buffer.indexOf(pixelTag);
+  while (cursor >= 0 && cursor + 8 <= buffer.length) {
+    const vr = buffer.subarray(cursor + 4, cursor + 6).toString("latin1");
+    const explicitLongVr = ["OB", "OD", "OF", "OL", "OV", "OW", "SQ", "UC", "UR", "UT", "UN"].includes(vr);
+    if (explicitLongVr && cursor + 12 <= buffer.length) {
+      const valueLength = buffer.readUInt32LE(cursor + 8);
+      if (valueLength !== 0xffffffff) return { valueOffset: cursor + 12, valueLength };
+      return null;
+    }
+    const explicitShortVr = /^[A-Z]{2}$/.test(vr);
+    if (explicitShortVr && cursor + 8 <= buffer.length) {
+      const valueLength = buffer.readUInt16LE(cursor + 6);
+      return { valueOffset: cursor + 8, valueLength };
+    }
+    const valueLength = buffer.readUInt32LE(cursor + 4);
+    if (valueLength !== 0xffffffff) return { valueOffset: cursor + 8, valueLength };
+    return null;
+  }
+  return null;
+}
+
+function readDicomFirstFramePreviewBuffer(filePath: string, maxFileBytes: number): { buffer: Buffer | null; warnings: string[] } {
+  const warnings: string[] = [];
+  const stats = statSync(filePath);
+  const descriptor = openSync(filePath, "r");
+  try {
+    const prefixLength = Math.min(stats.size, maxFileBytes, dicomFirstFrameHeaderReadLimit);
+    const prefix = readExactFileRange(descriptor, 0, prefixLength);
+    if (!prefix.buffer) {
+      return { buffer: null, warnings: [`first_frame_header_read_failed:${prefix.warning ?? "unknown"}`] };
+    }
+    const pixelData = locateLittleEndianPixelData(prefix.buffer);
+    if (!pixelData) {
+      warnings.push("Pixel Data was not found inside the bounded first-frame header window.");
+      return { buffer: prefix.buffer, warnings };
+    }
+    const metadata = parseDicomHeader(prefix.buffer);
+    const estimatedFrameBytes =
+      metadata.imageRows && metadata.imageColumns && metadata.bitsAllocated
+        ? metadata.imageRows * metadata.imageColumns * (metadata.samplesPerPixel ?? 1) * Math.max(1, Math.ceil(metadata.bitsAllocated / 8))
+        : Math.min(pixelData.valueLength, dicomFirstFramePixelReadLimit);
+    const frameBytes = Math.min(pixelData.valueLength, estimatedFrameBytes, dicomFirstFramePixelReadLimit);
+    const requiredBytes = pixelData.valueOffset + frameBytes;
+    if (requiredBytes > maxFileBytes) {
+      return { buffer: null, warnings: ["first_frame_preview_byte_limit_exceeded"] };
+    }
+    if (requiredBytes > stats.size) {
+      return { buffer: null, warnings: ["first_frame_pixel_range_out_of_bounds"] };
+    }
+    if (requiredBytes <= prefix.buffer.length) return { buffer: prefix.buffer.subarray(0, requiredBytes), warnings };
+    const boundedFrame = readExactFileRange(descriptor, 0, requiredBytes);
+    if (!boundedFrame.buffer) {
+      return { buffer: null, warnings: [`first_frame_range_read_failed:${boundedFrame.warning ?? "unknown"}`] };
+    }
+    return { buffer: boundedFrame.buffer, warnings };
+  } finally {
+    closeSync(descriptor);
+  }
+}
+
 async function buildDicomFirstFramePreview(input: {
   folderPath: string;
   recursive: boolean;
   maxFiles: number;
+  maxFolders: number;
+  maxEntriesPerFolder: number;
   maxFileBytes: number;
   maxPreviewEdge: number;
-}): Promise<DicomFirstFramePreviewResponse> {
-  const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles);
+  preferredFileIndex?: number | undefined;
+}, options: ApiDicomScanOptions = {}): Promise<DicomFirstFramePreviewResponse> {
+  const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles, options, {
+    maxFolders: input.maxFolders,
+    maxEntriesPerFolder: input.maxEntriesPerFolder
+  });
   const files = scan.files.filter((filePath) => !isZipArchivePath(filePath) && isDicomPixelPath(filePath));
   const warnings = [...scan.warnings];
+  const requestedFileIndex = input.preferredFileIndex ?? null;
+  const yieldState = createApiDicomScanYieldState();
   let bestReady:
     | {
         sourceFileIndex: number;
@@ -1498,21 +1939,38 @@ async function buildDicomFirstFramePreview(input: {
     return emptyDicomFirstFramePreview({
       folderPath: input.folderPath,
       status: "not_found",
-      warnings: [...warnings, "Для предпросмотра первого кадра не найдены прямые DICOM/IMA-файлы."],
-      nextAction: "Запустите DICOM-разбор или распакуйте архивы перед запросом пиксельного предпросмотра."
+      warnings: [...warnings, "Для предпросмотра первого кадра не найдены прямые файлы снимков."],
+      nextAction: "Запустите разбор снимков или распакуйте архивы перед запросом быстрого предпросмотра.",
+      requestedFileIndex
     });
   }
 
-  for (let index = 0; index < files.length; index += 1) {
+  const preferredTargetIndex =
+    typeof input.preferredFileIndex === "number" ? Math.min(files.length - 1, input.preferredFileIndex) : null;
+  const candidateIndexes =
+    preferredTargetIndex === null
+      ? files.map((_, index) => index)
+      : files
+          .map((_, index) => index)
+          .sort((left, right) => Math.abs(left - preferredTargetIndex) - Math.abs(right - preferredTargetIndex) || left - right);
+  if (preferredTargetIndex !== null && requestedFileIndex !== null && preferredTargetIndex !== requestedFileIndex) {
+    warnings.push(`Запрошенный срез снимков ${requestedFileIndex + 1} выше доступного диапазона; выбран ближайший доступный кандидат.`);
+  }
+
+  for (const index of candidateIndexes) {
+    await maybeYieldApiDicomScan(yieldState, options.signal);
     const filePath = files[index];
     if (!filePath) continue;
     const stats = statSync(filePath);
     if (stats.size > input.maxFileBytes) {
-      warnings.push("DICOM-файл выше байтового лимита легкого предпросмотра пропущен.");
+      warnings.push("Файл снимка выше байтового лимита легкого предпросмотра пропущен.");
       continue;
     }
     try {
-      const parsed = parseDicomFirstFramePixel(readFileSync(filePath), input.maxPreviewEdge);
+      const previewBuffer = readDicomFirstFramePreviewBuffer(filePath, input.maxFileBytes);
+      warnings.push(...previewBuffer.warnings);
+      if (!previewBuffer.buffer) continue;
+      const parsed = parseDicomFirstFramePixel(previewBuffer.buffer, input.maxPreviewEdge);
       if (parsed.status !== "ready") {
         warnings.push(...parsed.warnings);
         continue;
@@ -1524,16 +1982,34 @@ async function buildDicomFirstFramePreview(input: {
       if (!bestReady || score > bestReady.score) {
         bestReady = { sourceFileIndex: index, parsed, score };
       }
+      if (preferredTargetIndex !== null) {
+        return dicomFirstFrameReadyResponse({
+          sourceFileIndex: index,
+          parsed,
+          warnings: [
+            ...warnings,
+            ...parsed.warnings,
+            ...(index === preferredTargetIndex
+              ? []
+              : [`Запрошенный срез снимков ${preferredTargetIndex + 1} не декодирован; показан ближайший читаемый срез ${index + 1}.`])
+          ],
+          requestedFileIndex,
+          selectableFileCount: files.length
+        });
+      }
       if (grayRange >= 32 && meanBalance >= 4) {
         return dicomFirstFrameReadyResponse({
           sourceFileIndex: index,
           parsed,
-          warnings: [...warnings, ...parsed.warnings]
+          warnings: [...warnings, ...parsed.warnings],
+          requestedFileIndex,
+          selectableFileCount: files.length
         });
       }
-      warnings.push("Технически читаемый, но визуально пустой кандидат DICOM-предпросмотра пропущен.");
-    } catch {
-      warnings.push("DICOM-файл не удалось декодировать легким парсером предпросмотра.");
+      warnings.push("Технически читаемый, но визуально пустой кандидат предпросмотра снимка пропущен.");
+    } catch (error) {
+      if (isApiDicomScanAbortError(error)) throw error;
+      warnings.push("Файл снимка не удалось декодировать легким парсером предпросмотра.");
     }
   }
 
@@ -1544,8 +2020,10 @@ async function buildDicomFirstFramePreview(input: {
       warnings: [
         ...warnings,
         ...bestReady.parsed.warnings,
-        "В ограниченном сканировании найдены только низкоконтрастные кандидаты DICOM-предпросмотра."
-      ]
+        "В ограниченном сканировании найдены только низкоконтрастные кандидаты предпросмотра снимка."
+      ],
+      requestedFileIndex,
+      selectableFileCount: files.length
     });
   }
 
@@ -1553,7 +2031,9 @@ async function buildDicomFirstFramePreview(input: {
     folderPath: input.folderPath,
     status: "unsupported",
     warnings,
-    nextAction: "Не удалось показать ни один несжатый MONOCHROME DICOM-кадр; используйте OHIF/Cornerstone или настольный DICOM-просмотрщик."
+    nextAction: "Не удалось показать ни один читаемый первый срез; используйте внешний КТ-модуль или локальный обработчик.",
+    requestedFileIndex,
+    selectableFileCount: files.length
   });
 }
 
@@ -1573,6 +2053,11 @@ function dicomMetadataManifestRow(filePath: string, metadata: DicomHeaderMetadat
     metadata.studyDescription,
     metadata.seriesDescription,
     metadata.instanceNumber === null ? null : String(metadata.instanceNumber),
+    metadata.imageRows === null ? null : String(metadata.imageRows),
+    metadata.imageColumns === null ? null : String(metadata.imageColumns),
+    metadata.bitsAllocated === null ? null : String(metadata.bitsAllocated),
+    metadata.samplesPerPixel === null ? null : String(metadata.samplesPerPixel),
+    metadata.estimatedPixelBytes === null ? null : String(metadata.estimatedPixelBytes),
     metadata.capturedAt ?? fallback.date,
     filePath,
     sourceName
@@ -1590,29 +2075,53 @@ function dicomMetadataManifestHeader() {
     "StudyDescription",
     "SeriesDescription",
     "InstanceNumber",
+    "Rows",
+    "Columns",
+    "BitDepth",
+    "SamplesPerPixel",
+    "EstimatedPixelBytes",
     "date",
     "file",
     "source"
   ].join(";");
 }
 
-function readZipCentralDirectoryDetailed(filePath: string): { entries: ZipCentralDirectoryEntry[]; warnings: string[]; buffer: Buffer | null } {
+function readExactFileRange(
+  descriptor: number,
+  position: number,
+  length: number
+): { buffer: Buffer | null; warning: string | null } {
+  if (!Number.isSafeInteger(position) || !Number.isSafeInteger(length) || position < 0 || length < 0) {
+    return { buffer: null, warning: "invalid_file_range" };
+  }
+  const buffer = Buffer.alloc(length);
+  let bytesRead = 0;
+  while (bytesRead < length) {
+    const chunk = readSync(descriptor, buffer, bytesRead, length - bytesRead, position + bytesRead);
+    if (chunk <= 0) break;
+    bytesRead += chunk;
+  }
+  if (bytesRead !== length) return { buffer: null, warning: "file_range_truncated" };
+  return { buffer, warning: null };
+}
+
+function readZipCentralDirectoryDetailed(filePath: string): ZipCentralDirectoryDetailedResult {
   const warnings: string[] = [];
   if (!existsSync(filePath)) {
-    return { entries: [], warnings: ["ZIP-архив не найден на этом сервере; предпросмотр использует только путь к архиву."], buffer: null };
+    return { entries: [], warnings: ["ZIP-архив не найден на этом сервере; предпросмотр использует только путь к архиву."], descriptor: null };
   }
 
   const stats = statSync(filePath);
-  if (stats.size > zipPreviewByteLimit) {
-    return {
-      entries: [],
-      warnings: [`ZIP-архив занимает ${Math.round(stats.size / 1024 / 1024)} МБ; предпросмотр метаданных ограничен.`],
-      buffer: null
-    };
+  const descriptor = openSync(filePath, "r");
+  const tailLength = Math.min(stats.size, zipEocdSearchWindowBytes);
+  const tail = readExactFileRange(descriptor, stats.size - tailLength, tailLength);
+  if (!tail.buffer) {
+    closeSync(descriptor);
+    return { entries: [], warnings: [`ZIP-tail read failed:${tail.warning ?? "unknown"}`], descriptor: null };
   }
 
-  const buffer = readFileSync(filePath);
-  const searchStart = Math.max(0, buffer.length - 65_557);
+  const buffer = tail.buffer;
+  const searchStart = 0;
   let eocdOffset = -1;
   for (let offset = buffer.length - 22; offset >= searchStart; offset -= 1) {
     if (buffer.readUInt32LE(offset) === 0x06054b50) {
@@ -1621,131 +2130,179 @@ function readZipCentralDirectoryDetailed(filePath: string): { entries: ZipCentra
     }
   }
   if (eocdOffset < 0) {
-    return { entries: [], warnings: ["Центральный каталог ZIP не найден; архив может быть зашифрован, разделен на части или не поддерживаться."], buffer: null };
+    closeSync(descriptor);
+    return { entries: [], warnings: ["Центральный каталог ZIP не найден; архив может быть зашифрован, разделен на части или не поддерживаться."], descriptor: null };
   }
 
   const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
+  const diskNumber = buffer.readUInt16LE(eocdOffset + 4);
+  const centralDirectoryDisk = buffer.readUInt16LE(eocdOffset + 6);
+  const diskEntries = buffer.readUInt16LE(eocdOffset + 8);
+  const centralDirectorySize = buffer.readUInt32LE(eocdOffset + 12);
   const centralDirectoryOffset = buffer.readUInt32LE(eocdOffset + 16);
-  if (totalEntries === 0xffff || centralDirectoryOffset === 0xffffffff) {
+  if (diskNumber !== 0 || centralDirectoryDisk !== 0 || diskEntries !== totalEntries) {
+    closeSync(descriptor);
+    return { entries: [], warnings: ["Обнаружен split/multi-disk ZIP-архив; предпросмотр метаданных работает только с цельным локальным ZIP."], descriptor: null };
+  }
+  if (totalEntries === 0xffff || centralDirectorySize === 0xffffffff || centralDirectoryOffset === 0xffffffff) {
+    closeSync(descriptor);
     return {
       entries: [],
       warnings: ["Обнаружен ZIP64-архив; этот предпросмотр пропускает раскрытие центрального каталога ZIP64."],
-      buffer: null
+      descriptor: null
     };
+  }
+  if (centralDirectorySize > zipCentralDirectoryReadLimit) {
+    closeSync(descriptor);
+    return {
+      entries: [],
+      warnings: [`Центральный каталог ZIP занимает ${Math.round(centralDirectorySize / 1024 / 1024)} МБ; предпросмотр метаданных ограничен.`],
+      descriptor: null
+    };
+  }
+  if (centralDirectoryOffset + centralDirectorySize > stats.size) {
+    closeSync(descriptor);
+    return { entries: [], warnings: ["Центральный каталог ZIP выходит за границы архива; архив не раскрыт."], descriptor: null };
+  }
+  const centralDirectory = readExactFileRange(descriptor, centralDirectoryOffset, centralDirectorySize);
+  if (!centralDirectory.buffer) {
+    closeSync(descriptor);
+    return { entries: [], warnings: [`ZIP central-directory read failed:${centralDirectory.warning ?? "unknown"}`], descriptor: null };
   }
 
   const entries: ZipCentralDirectoryEntry[] = [];
-  let cursor = centralDirectoryOffset;
-  while (cursor + 46 <= buffer.length && entries.length < Math.min(totalEntries, zipEntryPreviewLimit)) {
-    if (buffer.readUInt32LE(cursor) !== 0x02014b50) break;
-    const flags = buffer.readUInt16LE(cursor + 8);
-    const compressionMethod = buffer.readUInt16LE(cursor + 10);
-    const compressedSize = buffer.readUInt32LE(cursor + 20);
-    const uncompressedSize = buffer.readUInt32LE(cursor + 24);
-    const fileNameLength = buffer.readUInt16LE(cursor + 28);
-    const extraLength = buffer.readUInt16LE(cursor + 30);
-    const commentLength = buffer.readUInt16LE(cursor + 32);
-    const localHeaderOffset = buffer.readUInt32LE(cursor + 42);
+  let cursor = 0;
+  const directoryBuffer = centralDirectory.buffer;
+  while (cursor + 46 <= directoryBuffer.length && entries.length < Math.min(totalEntries, zipEntryPreviewLimit)) {
+    if (directoryBuffer.readUInt32LE(cursor) !== 0x02014b50) break;
+    const flags = directoryBuffer.readUInt16LE(cursor + 8);
+    const compressionMethod = directoryBuffer.readUInt16LE(cursor + 10);
+    const compressedSize = directoryBuffer.readUInt32LE(cursor + 20);
+    const uncompressedSize = directoryBuffer.readUInt32LE(cursor + 24);
+    const fileNameLength = directoryBuffer.readUInt16LE(cursor + 28);
+    const extraLength = directoryBuffer.readUInt16LE(cursor + 30);
+    const commentLength = directoryBuffer.readUInt16LE(cursor + 32);
+    const localHeaderOffset = directoryBuffer.readUInt32LE(cursor + 42);
     const fileNameStart = cursor + 46;
     const fileNameEnd = fileNameStart + fileNameLength;
-    if (fileNameEnd > buffer.length) break;
-    entries.push({
-      name: buffer.toString("utf8", fileNameStart, fileNameEnd),
-      compressionMethod,
-      compressedSize,
-      uncompressedSize,
-      localHeaderOffset,
-      encrypted: Boolean(flags & 1)
-    });
+    if (fileNameEnd > directoryBuffer.length) break;
+    const name = directoryBuffer.toString("utf8", fileNameStart, fileNameEnd);
+    if (compressedSize === 0xffffffff || uncompressedSize === 0xffffffff || localHeaderOffset === 0xffffffff) {
+      warnings.push(`zip64_entry_skipped:${name}`);
+    } else if (localHeaderOffset + 30 > stats.size || localHeaderOffset + compressedSize > stats.size) {
+      warnings.push(`zip_entry_out_of_bounds:${name}`);
+    } else {
+      entries.push({
+        name,
+        compressionMethod,
+        compressedSize,
+        uncompressedSize,
+        localHeaderOffset,
+        encrypted: Boolean(flags & 1)
+      });
+    }
     cursor = fileNameEnd + extraLength + commentLength;
   }
 
   if (totalEntries > entries.length) warnings.push(`ZIP-предпросмотр вернул ${entries.length}/${totalEntries} записей центрального каталога.`);
-  return { entries, warnings, buffer };
+  return { entries, warnings, descriptor };
 }
 
-function zipEntryPrefix(archiveBuffer: Buffer, entry: ZipCentralDirectoryEntry, maxHeaderBytes: number): { buffer: Buffer | null; warning: string | null } {
+async function inflateZipEntryPrefix(
+  descriptor: number,
+  entry: ZipCentralDirectoryEntry,
+  dataStart: number,
+  maxHeaderBytes: number
+): Promise<{ buffer: Buffer | null; warning: string | null }> {
+  return new Promise((resolve) => {
+    const inflater = createInflateRaw();
+    const chunks: Buffer[] = [];
+    let outputBytes = 0;
+    let settled = false;
+    const finish = (result: { buffer: Buffer | null; warning: string | null }) => {
+      if (settled) return;
+      settled = true;
+      inflater.removeAllListeners();
+      inflater.destroy();
+      resolve(result);
+    };
+
+    inflater.on("data", (chunk: Buffer) => {
+      if (settled) return;
+      const remainingOutput = maxHeaderBytes - outputBytes;
+      if (remainingOutput > 0) {
+        const slice = chunk.length > remainingOutput ? chunk.subarray(0, remainingOutput) : chunk;
+        chunks.push(slice);
+        outputBytes += slice.length;
+      }
+      if (outputBytes >= maxHeaderBytes) {
+        finish({ buffer: Buffer.concat(chunks, outputBytes), warning: null });
+      }
+    });
+    inflater.on("error", () => finish({ buffer: null, warning: `zip_entry_inflate_failed:${entry.name}` }));
+    inflater.on("end", () => finish({ buffer: Buffer.concat(chunks, outputBytes), warning: null }));
+
+    void (async () => {
+      let position = dataStart;
+      let compressedRemaining = entry.compressedSize;
+      let budgetRemaining = Math.min(entry.compressedSize, zipEntryMetadataCompressedReadLimit);
+      while (!settled && compressedRemaining > 0 && budgetRemaining > 0) {
+        const chunkLength = Math.min(zipEntryMetadataChunkBytes, compressedRemaining, budgetRemaining);
+        const chunk = readExactFileRange(descriptor, position, chunkLength);
+        if (!chunk.buffer) {
+          finish({ buffer: null, warning: `zip_entry_truncated:${entry.name}:${chunk.warning ?? "unknown"}` });
+          return;
+        }
+        position += chunkLength;
+        compressedRemaining -= chunkLength;
+        budgetRemaining -= chunkLength;
+        try {
+          if (!inflater.write(chunk.buffer)) await once(inflater, "drain");
+        } catch {
+          if (!settled) finish({ buffer: null, warning: `zip_entry_inflate_failed:${entry.name}` });
+          return;
+        }
+      }
+      if (settled) return;
+      if (compressedRemaining > 0 && budgetRemaining <= 0) {
+        finish({ buffer: null, warning: `zip_entry_header_inflate_budget_exceeded:${entry.name}` });
+        return;
+      }
+      inflater.end();
+    })();
+  });
+}
+
+async function zipEntryPrefix(descriptor: number, entry: ZipCentralDirectoryEntry, maxHeaderBytes: number): Promise<{ buffer: Buffer | null; warning: string | null }> {
   if (entry.encrypted) return { buffer: null, warning: `zip_encrypted_entry_skipped:${entry.name}` };
-  if (entry.uncompressedSize > dicomZipEntryByteLimit || entry.compressedSize > dicomZipEntryByteLimit) {
-    return { buffer: null, warning: `zip_entry_too_large_for_metadata:${entry.name}` };
-  }
   const offset = entry.localHeaderOffset;
-  if (offset + 30 > archiveBuffer.length || archiveBuffer.readUInt32LE(offset) !== 0x04034b50) {
+  const header = readExactFileRange(descriptor, offset, 30);
+  if (!header.buffer) return { buffer: null, warning: `zip_local_header_read_failed:${entry.name}:${header.warning ?? "unknown"}` };
+  if (header.buffer.readUInt32LE(0) !== 0x04034b50) {
     return { buffer: null, warning: `zip_local_header_missing:${entry.name}` };
   }
 
-  const fileNameLength = archiveBuffer.readUInt16LE(offset + 26);
-  const extraLength = archiveBuffer.readUInt16LE(offset + 28);
+  const fileNameLength = header.buffer.readUInt16LE(26);
+  const extraLength = header.buffer.readUInt16LE(28);
   const dataStart = offset + 30 + fileNameLength + extraLength;
-  const dataEnd = dataStart + entry.compressedSize;
-  if (dataEnd > archiveBuffer.length) return { buffer: null, warning: `zip_entry_truncated:${entry.name}` };
-
-  const compressed = archiveBuffer.subarray(dataStart, dataEnd);
   if (entry.compressionMethod === 0) {
-    return { buffer: compressed.subarray(0, maxHeaderBytes), warning: null };
+    const prefixLength = Math.min(entry.uncompressedSize, maxHeaderBytes);
+    return readExactFileRange(descriptor, dataStart, prefixLength);
   }
   if (entry.compressionMethod === 8) {
-    try {
-      return { buffer: inflateRawSync(compressed).subarray(0, maxHeaderBytes), warning: null };
-    } catch {
-      return { buffer: null, warning: `zip_entry_inflate_failed:${entry.name}` };
-    }
+    return inflateZipEntryPrefix(descriptor, entry, dataStart, maxHeaderBytes);
   }
 
   return { buffer: null, warning: `zip_unsupported_compression:${entry.name}:${entry.compressionMethod}` };
 }
 
 function readZipCentralDirectory(filePath: string): { entries: string[]; warnings: string[] } {
-  const warnings: string[] = [];
-  if (!existsSync(filePath)) {
-    return { entries: [], warnings: ["ZIP-архив не найден на этом сервере; предпросмотр использует только путь к архиву."] };
-  }
-
-  const stats = statSync(filePath);
-  if (stats.size > zipPreviewByteLimit) {
-    return {
-      entries: [],
-      warnings: [`ZIP-архив занимает ${Math.round(stats.size / 1024 / 1024)} МБ; предпросмотр центрального каталога ограничен.`]
-    };
-  }
-
-  const buffer = readFileSync(filePath);
-  const searchStart = Math.max(0, buffer.length - 65_557);
-  let eocdOffset = -1;
-  for (let offset = buffer.length - 22; offset >= searchStart; offset -= 1) {
-    if (buffer.readUInt32LE(offset) === 0x06054b50) {
-      eocdOffset = offset;
-      break;
-    }
-  }
-  if (eocdOffset < 0) {
-    return { entries: [], warnings: ["Центральный каталог ZIP не найден; архив может быть зашифрован, разделен на части или не поддерживаться."] };
-  }
-
-  const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
-  const centralDirectoryOffset = buffer.readUInt32LE(eocdOffset + 16);
-  if (totalEntries === 0xffff || centralDirectoryOffset === 0xffffffff) {
-    warnings.push("Обнаружен ZIP64-архив; этот предпросмотр пропускает раскрытие центрального каталога ZIP64.");
-    return { entries: [], warnings };
-  }
-
-  const entries: string[] = [];
-  let cursor = centralDirectoryOffset;
-  while (cursor + 46 <= buffer.length && entries.length < Math.min(totalEntries, zipEntryPreviewLimit)) {
-    if (buffer.readUInt32LE(cursor) !== 0x02014b50) break;
-    const fileNameLength = buffer.readUInt16LE(cursor + 28);
-    const extraLength = buffer.readUInt16LE(cursor + 30);
-    const commentLength = buffer.readUInt16LE(cursor + 32);
-    const fileNameStart = cursor + 46;
-    const fileNameEnd = fileNameStart + fileNameLength;
-    if (fileNameEnd > buffer.length) break;
-    const entryName = buffer.toString("utf8", fileNameStart, fileNameEnd);
-    entries.push(entryName);
-    cursor = fileNameEnd + extraLength + commentLength;
-  }
-
-  if (totalEntries > entries.length) warnings.push(`ZIP-предпросмотр вернул ${entries.length}/${totalEntries} записей центрального каталога.`);
-  return { entries, warnings };
+  const detailed = readZipCentralDirectoryDetailed(filePath);
+  if (detailed.descriptor !== null) closeSync(detailed.descriptor);
+  return {
+    entries: detailed.entries.map((entry) => entry.name),
+    warnings: detailed.warnings
+  };
 }
 
 function expandDicomArchiveManifestLines(lines: string[]): { lines: string[]; notes: string[] } {
@@ -1771,11 +2328,11 @@ function expandDicomArchiveManifestLines(lines: string[]): { lines: string[]; no
     const dicomEntries = zip.entries.filter(isDicomLikeEntry);
     if (!dicomEntries.length) {
       expandedLines.push(line);
-      notes.push(`${archivePath}: в центральном каталоге ZIP не найдены DICOM-похожие записи.`);
+    notes.push(`${archivePath}: в центральном каталоге ZIP не найдены записи снимков.`);
       continue;
     }
 
-    notes.push(`${archivePath}: раскрыто ${Math.min(dicomEntries.length, zipEntryPreviewLimit)} DICOM-похожих ZIP-записей для предпросмотра серии.`);
+    notes.push(`${archivePath}: раскрыто ${Math.min(dicomEntries.length, zipEntryPreviewLimit)} записей снимков для предпросмотра серии.`);
     for (const entry of dicomEntries.slice(0, zipEntryPreviewLimit)) {
       const virtualPath = `${archivePath}::${entry}`;
       expandedLines.push(filePath && line.includes(filePath) ? line.replace(filePath, virtualPath) : `${line};${virtualPath}`);
@@ -1804,7 +2361,11 @@ function recommendedViewerFor(input: { kind: ImagingStudyKind | null; modality: 
   return "two_d_stack";
 }
 
-function estimateDicomSeriesMemoryMb(fileCount: number) {
+function estimateDicomSeriesMemoryMb(input: { fileCount: number; estimatedPixelBytes: number | null }) {
+  if (input.estimatedPixelBytes && input.estimatedPixelBytes > 0) {
+    return Math.max(16, Math.ceil((input.estimatedPixelBytes / 1024 / 1024) * 1.35));
+  }
+  const fileCount = input.fileCount;
   if (fileCount <= 0) return 0;
   return Math.max(16, Math.ceil(fileCount * 1.35));
 }
@@ -1814,12 +2375,17 @@ function buildMprResourcePolicy(input: {
   canOpenMpr: boolean;
   canBuildPanoramic: boolean;
   fileCount: number;
+  estimatedPixelBytes: number | null;
   sourceKind: ImagingSourceKind;
   firstFilePath: string | null;
 }): DicomMprReadiness["resourcePolicy"] {
-  const estimatedMemoryMb = estimateDicomSeriesMemoryMb(input.fileCount);
+  const estimatedMemoryMb = estimateDicomSeriesMemoryMb({
+    fileCount: input.fileCount,
+    estimatedPixelBytes: input.estimatedPixelBytes
+  });
   const dicomwebStream = input.sourceKind === "pacs" || input.sourceKind === "dicomweb";
   const archiveSource = isDicomArchivePath(input.firstFilePath);
+  const archiveVirtualSource = isDicomArchiveVirtualEntryPath(input.firstFilePath);
   const hugeStack = input.fileCount > 450 || estimatedMemoryMb > 640;
   const requiredTier: DicomMprReadiness["resourcePolicy"]["requiredTier"] =
     !input.volumeCandidate
@@ -1829,7 +2395,9 @@ function buildMprResourcePolicy(input: {
         : input.fileCount <= 220
           ? "workstation"
           : "diagnostic_workstation";
-  const loadStrategy: DicomMprReadiness["resourcePolicy"]["loadStrategy"] = !input.volumeCandidate
+  const loadStrategy: DicomMprReadiness["resourcePolicy"]["loadStrategy"] = archiveVirtualSource
+    ? "external_handoff"
+    : !input.volumeCandidate
     ? input.fileCount > 1
       ? "two_d_stack_stream"
       : "metadata_only"
@@ -1841,32 +2409,35 @@ function buildMprResourcePolicy(input: {
   const maxClientSlices = requiredTier === "diagnostic_workstation" ? 450 : requiredTier === "workstation" ? 300 : 160;
   const cacheMode: DicomMprReadiness["resourcePolicy"]["cacheMode"] = dicomwebStream
     ? "dicomweb_stream"
-    : input.canOpenMpr
+    : archiveVirtualSource
+      ? "metadata_only"
+      : input.canOpenMpr
       ? "bounded_disk"
       : input.fileCount > 1
         ? "metadata_only"
         : "none";
   const safetyCaps = [
-    "Загружайте метаданные и миниатюры до пиксельных данных.",
+    "Загружайте список серии и миниатюры до тяжелых данных снимков.",
     `Ограничьте первичную загрузку браузера ${maxClientSlices} срезами; для большего объема требуется явное открытие рабочего места.`,
-    "Не включайте тяжелые CBCT-инструменты в стандартный поток приема врача."
+    "Не включайте тяжелые КЛКТ-инструменты в стандартный поток приема врача."
   ];
 
-  if (dicomwebStream) safetyCaps.push("Передавайте через DICOMweb с кешем; не копируйте полное PACS-исследование в состояние браузера.");
-  if (archiveSource) safetyCaps.push("Распакуйте архивы в серверном или локальном воркере до загрузки viewer; не разбирайте большие ZIP в оболочке CRM.");
-  if (hugeStack) safetyCaps.push("Для очень больших CBCT-стеков используйте внешний viewer или отдельный воркер объема.");
+  if (dicomwebStream) safetyCaps.push("Передавайте срезы через архив снимков с кешем; не копируйте полное исследование в состояние браузера.");
+  if (archiveSource) safetyCaps.push("Распакуйте архивы в серверном или локальном обработчике до загрузки просмотра; не разбирайте большие ZIP в оболочке CRM.");
+  if (archiveVirtualSource) safetyCaps.push("Записи внутри ZIP доступны как метаданные; для КТ-срезов нужен распакованный локальный набор или внешний просмотр.");
+  if (hugeStack) safetyCaps.push("Для очень больших КЛКТ/КТ-стеков используйте внешний просмотр или отдельный обработчик объема.");
   if (!input.canBuildPanoramic && input.volumeCandidate) safetyCaps.push("Панорамная реконструкция отключена, пока не хватает срезов.");
 
   const nextAction =
     loadStrategy === "external_handoff"
-      ? "Используйте внешний DICOM-viewer или отдельный воркер объема; CRM остается в режиме предпросмотра и восстановления."
+      ? "Используйте внешний КТ-модуль или отдельный обработчик объема; CRM остается в режиме предпросмотра и восстановления."
       : loadStrategy === "mpr_downsampled"
-        ? "Откройте отдельное MPR-рабочее место с первым проходом в пониженном качестве, затем повышайте качество на мощной станции."
+        ? "Откройте отдельное рабочее место КТ-срезов с первым проходом в пониженном качестве, затем повышайте качество на мощной станции."
         : loadStrategy === "mpr_full"
-          ? "Откройте отдельное MPR-рабочее место со связанными плоскостями, оконными пресетами, измерениями и экспортом снимков."
+          ? "Откройте отдельное рабочее место КТ-срезов со связанными плоскостями, оконными пресетами, измерениями и экспортом снимков."
           : loadStrategy === "two_d_stack_stream"
-            ? "Используйте легкий просмотрщик стека с window/level, масштабом и прокруткой срезов."
-            : "Показывайте только метаданные, пока не выбрана пригодная DICOM-серия.";
+            ? "Используйте легкий просмотрщик стека с яркостью/контрастом, масштабом и прокруткой срезов."
+            : "Показывайте только метаданные, пока не выбрана пригодная серия снимков.";
 
   return {
     requiredTier,
@@ -1885,6 +2456,7 @@ function buildMprReadiness(input: {
   kind: ImagingStudyKind | null;
   modality: string | null;
   fileCount: number;
+  estimatedPixelBytes: number | null;
   firstFilePath: string | null;
   sourceKind: ImagingSourceKind;
   hasStudySeriesUid: boolean;
@@ -1893,29 +2465,34 @@ function buildMprReadiness(input: {
   const modality = input.modality?.toUpperCase() ?? null;
   const volumeCandidate = input.kind === "cbct" || modality === "CT" || modality === "CBCT" || modality === "MR";
   const archiveSource = isDicomArchivePath(input.firstFilePath);
+  const archiveVirtualSource = isDicomArchiveVirtualEntryPath(input.firstFilePath);
   const archiveExpanded = Boolean(input.firstFilePath?.includes("::"));
   const blockers: string[] = [];
   const warnings: string[] = [];
 
-  if (!volumeCandidate) blockers.push("Серия не распознана как объемные данные CBCT/CT.");
-  if (!input.firstFilePath) blockers.push("Нет доступного локального или DICOMweb-пути к файлу.");
-  if (input.fileCount < minSliceCount) blockers.push(`Для MPR нужно минимум ${minSliceCount} срезов/файлов в этом предпросмотре.`);
+  if (!volumeCandidate) blockers.push("Серия не распознана как объемные данные КЛКТ/КТ.");
+  if (!input.firstFilePath) blockers.push("Нет доступного локального файла или архива снимков.");
+  if (input.fileCount < minSliceCount) blockers.push(`Для просмотра КТ-срезов нужно минимум ${minSliceCount} срезов/файлов в этом предпросмотре.`);
   if (archiveSource && !archiveExpanded) {
-    blockers.push("Обнаружен путь к архиву, но DICOM-записи еще не раскрыты.");
+    blockers.push("Обнаружен путь к архиву, но записи снимков еще не раскрыты.");
   }
-  if (!input.hasStudySeriesUid) warnings.push("Study/Series UID отсутствует; группировка по папке является временным fallback.");
-  if (volumeCandidate && input.fileCount < 40) warnings.push("Панорамная реконструкция CBCT может потребовать более полного стека срезов.");
+  if (archiveVirtualSource) {
+    blockers.push("Записи ZIP распознаны, но пиксели еще не доступны как локальный набор КТ-срезов.");
+  }
+  if (!input.hasStudySeriesUid) warnings.push("Идентификаторы исследования/серии отсутствуют; группировка по папке временная.");
+  if (archiveVirtualSource) warnings.push("ZIP-серия остается в режиме метаданных и передачи до распаковки или подключения локального обработчика.");
+  if (volumeCandidate && input.fileCount < 40) warnings.push("Панорамная реконструкция КЛКТ может потребовать более полного стека срезов.");
   if (input.sourceKind === "pacs" || input.sourceKind === "dicomweb") {
-    warnings.push("DICOMweb/PACS-просмотрщик должен стримить срезы с кешем, а не копировать все пиксели в состояние браузера.");
+    warnings.push("Архив снимков должен передавать срезы с кешем, а не копировать весь объем в состояние браузера.");
   }
 
-  const canOpenMpr = volumeCandidate && input.fileCount >= minSliceCount && Boolean(input.firstFilePath) && !blockers.length;
+  const canOpenMpr = volumeCandidate && input.fileCount >= minSliceCount && Boolean(input.firstFilePath) && !archiveVirtualSource && !blockers.length;
   const canBuildPanoramic = canOpenMpr && input.kind === "cbct" && input.fileCount >= 40;
   const recommendedLayout: DicomMprReadiness["recommendedLayout"] = canOpenMpr
     ? input.fileCount >= 40
       ? "mpr_4up"
       : "mpr_3up"
-    : input.sourceKind === "pacs" || input.sourceKind === "dicomweb"
+    : archiveVirtualSource || input.sourceKind === "pacs" || input.sourceKind === "dicomweb"
       ? "external_only"
       : input.fileCount > 1
         ? "two_d_stack"
@@ -1924,9 +2501,10 @@ function buildMprReadiness(input: {
   const panoramicProjections: DicomMprReadiness["projections"] = canBuildPanoramic
     ? ["panoramic_reconstruction", "three_d_volume", "mip"]
     : [];
-  const panoramicTools: DicomMprReadiness["tools"] = canBuildPanoramic
-    ? ["panoramic_curve", "measurement", "export_snapshot"]
-    : ["measurement"];
+  const volumePlanningTools: DicomMprReadiness["tools"] = canOpenMpr
+    ? ["measurement", "measure_distance", "measure_angle", "area_roi", "volume_roi", "implant_axis", "implant_library", "nerve_canal", "bone_density_probe", "surgical_guide"]
+    : ["measurement", "measure_distance", "measure_angle", "implant_library"];
+  const panoramicTools: DicomMprReadiness["tools"] = canBuildPanoramic ? ["panoramic_curve", "export_snapshot"] : [];
 
   const projections: DicomMprReadiness["projections"] = canOpenMpr
     ? [
@@ -1936,6 +2514,8 @@ function buildMprReadiness(input: {
         "oblique",
         ...panoramicProjections
       ]
+    : archiveVirtualSource
+      ? []
     : input.fileCount > 1
       ? ["axial"]
       : [];
@@ -1949,28 +2529,34 @@ function buildMprReadiness(input: {
         "rotate_axes",
         "oblique_planes",
         "mpr_3up",
+        ...volumePlanningTools,
         ...panoramicTools,
         "reset",
         "external_open"
       ]
+    : archiveVirtualSource
+      ? ["external_open"]
     : input.fileCount > 1
       ? ["window_level", "pan", "zoom", "slice_scroll", "reset", "external_open"]
       : ["window_level", "pan", "zoom", "reset", "external_open"];
 
   const nextAction = canOpenMpr
     ? canBuildPanoramic
-      ? "Готово для CBCT MPR-рабочего стола: 3 проекции, косые оси, панорамная кривая, измерения и внешний DICOM-handoff."
-      : "Готово для 3-плоскостного MPR-предпросмотра; для панорамной реконструкции нужен более полный CBCT-стек."
+      ? "Готово для просмотра КЛКТ/КТ-срезов: 3 проекции, косые оси, панорамная кривая, измерения и внешний КТ-модуль."
+      : "Готово для 3-плоскостного предпросмотра КТ-срезов; для панорамной реконструкции нужен более полный КЛКТ/КТ-стек."
+    : archiveVirtualSource
+      ? "Распакуйте ZIP или подключите локальный обработчик, чтобы открыть пиксели КТ-срезов; CRM сохраняет метаданные и пакет передачи."
     : archiveSource && !archiveExpanded
-      ? "Распакуйте ZIP/DICOMDIR или раскройте записи архива перед открытием MPR."
+      ? "Распакуйте ZIP или раскройте записи архива перед открытием КТ-срезов."
       : input.fileCount > 1
-        ? "Используйте 2D-предпросмотр стека или подключите загрузчик объема Cornerstone/OHIF после извлечения метаданных."
-        : "Добавьте больше DICOM-срезов или используйте 2D-просмотрщик.";
+        ? "Используйте 2D-предпросмотр стека или подключите локальный загрузчик объема после извлечения метаданных."
+        : "Добавьте больше срезов серии или используйте 2D-просмотрщик.";
   const resourcePolicy = buildMprResourcePolicy({
     volumeCandidate,
     canOpenMpr,
     canBuildPanoramic,
     fileCount: input.fileCount,
+    estimatedPixelBytes: input.estimatedPixelBytes,
     sourceKind: input.sourceKind,
     firstFilePath: input.firstFilePath
   });
@@ -2015,17 +2601,29 @@ function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
     const firstFilePath = seriesRows.find((row) => row.filePath)?.filePath ?? null;
     const sourceKind = first?.sourceKind ?? "dicom_file";
     const sourceName = first?.sourceName ?? "dicom_series";
+    const imageRows = seriesRows.find((row) => row.imageRows)?.imageRows ?? null;
+    const imageColumns = seriesRows.find((row) => row.imageColumns)?.imageColumns ?? null;
+    const bitsAllocated = seriesRows.find((row) => row.bitsAllocated)?.bitsAllocated ?? null;
+    const samplesPerPixel = seriesRows.find((row) => row.samplesPerPixel)?.samplesPerPixel ?? null;
+    const rowPixelBytes = seriesRows.reduce((total, row) => total + (row.estimatedPixelBytes ?? 0), 0);
+    const estimatedPixelBytes =
+      rowPixelBytes > 0
+        ? rowPixelBytes
+        : imageRows && imageColumns && bitsAllocated
+          ? imageRows * imageColumns * (samplesPerPixel ?? 1) * Math.max(1, Math.ceil(bitsAllocated / 8)) * seriesRows.length
+          : null;
     const warnings = new Set<string>();
     seriesRows.flatMap((row) => row.warnings).forEach((warning) => warnings.add(warning));
-    if (!studyInstanceUid || !seriesInstanceUid) warnings.add("Нет Study/Series UID: серия сгруппирована по папке или описанию");
+    if (!studyInstanceUid || !seriesInstanceUid) warnings.add("Нет кодов исследования/серии: серия сгруппирована по папке или описанию");
     if (!patientId) warnings.add("Пациент не сопоставлен: перед записью нужен ручной матчинг");
     if (!kind) warnings.add("Тип исследования не распознан");
-    if (kind === "cbct" && seriesRows.length < 8) warnings.add("Для CBCT/MPR мало срезов: проверьте полный экспорт серии");
+    if (kind === "cbct" && seriesRows.length < 8) warnings.add("Для КЛКТ/КТ-срезов мало срезов: проверьте полный экспорт серии");
     const blocked = !kind || !firstFilePath;
     const mprReadiness = buildMprReadiness({
       kind,
       modality,
       fileCount: seriesRows.length,
+      estimatedPixelBytes,
       firstFilePath,
       sourceKind,
       hasStudySeriesUid: Boolean(studyInstanceUid && seriesInstanceUid)
@@ -2052,6 +2650,11 @@ function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
       seriesDescription,
       capturedAt,
       fileCount: seriesRows.length,
+      imageRows,
+      imageColumns,
+      bitsAllocated,
+      samplesPerPixel,
+      estimatedPixelBytes,
       firstFilePath,
       sourceKind,
       sourceName,
@@ -2072,9 +2675,18 @@ function parseDicomManifestLine(line: string, rowNumber: number, sourceKind: Ima
   const studyDescription = extractDicomFieldValue(line, ["StudyDescription", "Study Description", "Study", "0008,1030", "\\(0008,1030\\)"]);
   const seriesDescription = extractDicomFieldValue(line, ["SeriesDescription", "Series Description", "Series", "0008,103E", "\\(0008,103E\\)"]);
   const instanceNumber = parseInstanceNumber(extractDicomFieldValue(line, ["InstanceNumber", "Instance Number", "Instance", "Slice", "0020,0013", "\\(0020,0013\\)"]) ?? base.filePath);
+  const imageRows = parsePositiveInteger(extractDicomFieldValue(line, ["Rows", "ImageRows", "Image Rows", "0028,0010", "\\(0028,0010\\)"]));
+  const imageColumns = parsePositiveInteger(extractDicomFieldValue(line, ["Columns", "ImageColumns", "Image Columns", "Cols", "0028,0011", "\\(0028,0011\\)"]));
+  const bitsAllocated = parsePositiveInteger(extractDicomFieldValue(line, ["Bits Allocated", "BitDepth", "0028,0100", "\\(0028,0100\\)"]));
+  const samplesPerPixel = parsePositiveInteger(extractDicomFieldValue(line, ["SamplesPerPixel", "Samples Per Pixel", "Samples", "0028,0002", "\\(0028,0002\\)"]));
+  const estimatedPixelBytes =
+    parsePositiveInteger(extractDicomFieldValue(line, ["EstimatedPixelBytes", "Estimated Pixel Bytes", "PixelBytes"])) ??
+    (imageRows && imageColumns && bitsAllocated
+      ? imageRows * imageColumns * (samplesPerPixel ?? 1) * Math.max(1, Math.ceil(bitsAllocated / 8))
+      : null);
   const kind = base.kind ?? modalityToKind(modality, `${line} ${studyDescription ?? ""} ${seriesDescription ?? ""}`);
   const warnings = [...base.warnings];
-  if (!studyInstanceUid || !seriesInstanceUid) warnings.push("Study/Series UID не найден, используем папку как временную группу");
+  if (!studyInstanceUid || !seriesInstanceUid) warnings.push("Коды исследования/серии не найдены, используем папку как временную группу");
   const blocked = !base.filePath || !kind;
   return {
     rowNumber,
@@ -2089,6 +2701,11 @@ function parseDicomManifestLine(line: string, rowNumber: number, sourceKind: Ima
     studyDescription,
     seriesDescription,
     instanceNumber,
+    imageRows,
+    imageColumns,
+    bitsAllocated,
+    samplesPerPixel,
+    estimatedPixelBytes,
     capturedAt: base.capturedAt,
     filePath: base.filePath,
     sourceKind: detectSourceKind(base.filePath ?? line, sourceKind),
@@ -2116,7 +2733,7 @@ export function parseDicomSeriesManifest(input: { sourceName: string; sourceKind
       blockedSeries: 0,
       rows: [],
       series: [],
-      parserNotes: ["Нет строк DICOM manifest для разбора."]
+      parserNotes: ["Нет строк списка снимков для разбора."]
     });
   }
 
@@ -2140,6 +2757,15 @@ export function parseDicomSeriesManifest(input: { sourceName: string; sourceKind
       else if (field === "modality") draft.modality = normalizeModality(value);
       else if (field === "capturedAt") draft.capturedAt = normalizeDate(value);
       else if (field === "instanceNumber") draft.instanceNumber = parseInstanceNumber(value);
+      else if (
+        field === "imageRows" ||
+        field === "imageColumns" ||
+        field === "bitsAllocated" ||
+        field === "samplesPerPixel" ||
+        field === "estimatedPixelBytes"
+      ) {
+        draft[field] = parsePositiveInteger(value);
+      }
       else if (field === "studyInstanceUid" || field === "seriesInstanceUid" || field === "sopInstanceUid") {
         draft[field] = normalizeDicomUid(value);
       } else draft[field] = value as never;
@@ -2155,8 +2781,8 @@ export function parseDicomSeriesManifest(input: { sourceName: string; sourceKind
     const warnings: string[] = [];
     if (!patient) warnings.push("Пациент не найден, нужно сопоставление");
     if (!kind) warnings.push("Тип исследования не распознан");
-    if (!filePath) warnings.push("Нет пути к DICOM/снимку");
-    if (!draft.studyInstanceUid || !draft.seriesInstanceUid) warnings.push("Study/Series UID не найден, используем папку как временную группу");
+    if (!filePath) warnings.push("Нет пути к снимку");
+    if (!draft.studyInstanceUid || !draft.seriesInstanceUid) warnings.push("Коды исследования/серии не найдены, используем папку как временную группу");
     const blocked = !filePath || !kind;
     return {
       rowNumber: draft.rowNumber ?? index + 2,
@@ -2171,6 +2797,16 @@ export function parseDicomSeriesManifest(input: { sourceName: string; sourceKind
       studyDescription: draft.studyDescription ?? lineFallback.studyDescription,
       seriesDescription: draft.seriesDescription ?? lineFallback.seriesDescription,
       instanceNumber: draft.instanceNumber ?? lineFallback.instanceNumber,
+      imageRows: draft.imageRows ?? lineFallback.imageRows,
+      imageColumns: draft.imageColumns ?? lineFallback.imageColumns,
+      bitsAllocated: draft.bitsAllocated ?? lineFallback.bitsAllocated,
+      samplesPerPixel: draft.samplesPerPixel ?? lineFallback.samplesPerPixel,
+      estimatedPixelBytes:
+        draft.estimatedPixelBytes ??
+        lineFallback.estimatedPixelBytes ??
+        (draft.imageRows && draft.imageColumns && draft.bitsAllocated
+          ? draft.imageRows * draft.imageColumns * (draft.samplesPerPixel ?? 1) * Math.max(1, Math.ceil(draft.bitsAllocated / 8))
+          : null),
       capturedAt: draft.capturedAt ?? lineFallback.capturedAt,
       filePath,
       sourceKind: detectSourceKind(filePath ?? draft.sourceName ?? "", input.sourceKind),
@@ -2193,8 +2829,8 @@ export function parseDicomSeriesManifest(input: { sourceName: string; sourceKind
     series,
     parserNotes: [
       ...archiveExpansion.notes,
-      "Предпросмотр серий DICOM группирует StudyInstanceUID/SeriesInstanceUID, если они есть, иначе использует группировку по папкам.",
-      "Пиксельные данные здесь не хранятся; для CBCT/MPR нужен отдельный модуль Cornerstone/OHIF.",
+      "Предпросмотр серий снимков группирует по кодам исследования/серии, если они есть, иначе использует группировку по папкам.",
+      "Тяжелые данные снимков здесь не хранятся; для КЛКТ/КТ-срезов нужен отдельный локальный обработчик или внешний просмотр.",
       "Строки без совпадения пациента остаются предупреждениями и не блокируют работу клиники."
     ]
   });
@@ -2236,17 +2872,17 @@ function dicomWebAuthHeaders(authMode: DicomWebAuthMode) {
   if (authMode === "bearer") {
     const token = process.env.DICOMWEB_BEARER_TOKEN?.trim();
     if (token) headers.Authorization = `Bearer ${token}`;
-    else warnings.push("DICOMWEB_BEARER_TOKEN не настроен; запрос будет отправлен без bearer-учетных данных.");
+    else warnings.push("Серверный токен архива снимков не настроен; запрос будет отправлен без учетных данных архива.");
   }
 
   if (authMode === "basic") {
     const basic = process.env.DICOMWEB_BASIC_AUTH?.trim();
     if (basic) headers.Authorization = basic.startsWith("Basic ") ? basic : `Basic ${Buffer.from(basic).toString("base64")}`;
-    else warnings.push("DICOMWEB_BASIC_AUTH не настроен; запрос будет отправлен без basic-учетных данных.");
+    else warnings.push("Серверная авторизация архива снимков не настроена; запрос будет отправлен без учетных данных архива.");
   }
 
   if (authMode === "reverse_proxy") {
-    warnings.push("Выбрана авторизация reverse proxy: CRM ожидает, что PACS-авторизация обрабатывается вне этого запроса.");
+    warnings.push("Выбран серверный доступ через клиническую сеть: CRM ожидает, что авторизация архива обрабатывается вне этого запроса.");
   }
 
   return { headers, warnings };
@@ -2277,9 +2913,9 @@ async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
       signal: abortController.signal
     });
     httpStatus = response.status;
-  } catch (error) {
+  } catch {
     fetchError = true;
-    warnings.push(error instanceof Error ? `Проверка QIDO не удалась: ${error.message}` : "Проверка QIDO не удалась.");
+    warnings.push("Проверка архива снимков не завершилась; проверьте адрес архива и доступ с сервера клиники.");
   } finally {
     clearTimeout(timeout);
   }
@@ -2290,21 +2926,21 @@ async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
   const canRetrieve = canSearch && Boolean(input.studyInstanceUid && input.seriesInstanceUid);
   const storeConfigured = status !== "unreachable" && Boolean(stowBaseUrl);
 
-  if (status === "auth_required") warnings.push("DICOMweb endpoint ответил, но требует учетные данные или proxy-авторизацию.");
-  if (status === "misconfigured") warnings.push("DICOMweb endpoint не вернул пригодный ответ QIDO-RS.");
-  if (!input.studyInstanceUid || !input.seriesInstanceUid) warnings.push("Конкретный Study/Series UID не передан; готовность получения серии не подтверждена.");
-  warnings.push("STOW-RS upload здесь не проверяется, потому что отправка тестового DICOM-объекта изменила бы состояние PACS.");
+  if (status === "auth_required") warnings.push("Архив снимков ответил, но требует учетные данные или proxy-авторизацию.");
+  if (status === "misconfigured") warnings.push("Архив снимков не вернул пригодный ответ поиска серий.");
+  if (!input.studyInstanceUid || !input.seriesInstanceUid) warnings.push("Коды исследования/серии не переданы; готовность получения серии не подтверждена.");
+  warnings.push("Проверка загрузки снимков здесь не выполняется, потому что отправка тестового объекта изменила бы состояние архива.");
 
   const nextAction =
     status === "ready"
       ? canRetrieve
-        ? "Подключите этот DICOMweb-корень к OHIF/Cornerstone и стримьте срезы по Study/Series UID."
-        : "Коннектор умеет искать. Выберите Study/Series UID перед открытием диагностического просмотрщика."
+        ? "Подключите этот архив снимков к внешнему просмотру и передавайте срезы по кодам исследования/серии."
+        : "Архив умеет искать. Выберите исследование/серию перед открытием диагностического просмотрщика."
       : status === "auth_required"
-        ? "Настройте proxy, bearer или basic-учетные данные на сервере; не кладите PACS-секреты в состояние браузера."
+        ? "Настройте серверный доступ к архиву снимков; не храните учетные данные архива в браузере."
         : status === "unreachable"
-          ? "Проверьте PACS/Orthanc host, VPN, firewall и доступность DICOMweb-плагина."
-          : "Проверьте путь endpoint. В Orthanc DICOMweb часто доступен под /dicom-web/studies.";
+          ? "Проверьте сервер архива снимков, VPN, сетевые правила и доступность модуля архива."
+          : "Проверьте сетевой путь архива снимков и правильный адрес сервиса исследований.";
 
   return dicomWebConnectorCheckResponseSchema.parse({
     endpointOrigin: new URL(input.endpointUrl).origin,
@@ -2335,6 +2971,7 @@ function viewerDataSourceKind(input: {
   firstFilePath: string | null;
 }): DicomViewerDataSourceKind {
   if (input.launchMode === "dicomweb_url" && input.dicomWebBaseUrl) return "dicomweb";
+  if (input.launchMode === "local_manifest" && isDicomArchiveVirtualEntryPath(input.firstFilePath)) return "external_viewer";
   if (input.launchMode === "local_manifest" && input.firstFilePath) return "local_files";
   if (input.launchMode === "external_handoff") return "external_viewer";
   return "none";
@@ -2346,15 +2983,19 @@ function buildDicomViewerLaunchManifest(input: DicomViewerLaunchManifestRequest)
   const seriesInstanceUid = series.seriesInstanceUid;
   const warnings = new Set<string>(series.warnings);
   const hasDicomWeb = Boolean(input.dicomWebBaseUrl && studyInstanceUid);
-  const hasLocalFiles = Boolean(series.firstFilePath);
+  const hasVirtualArchiveEntries = isDicomArchiveVirtualEntryPath(series.firstFilePath);
+  const hasLocalFiles = Boolean(series.firstFilePath) && !hasVirtualArchiveEntries;
   const canUseOhif = input.viewerKind === "ohif" && Boolean(input.ohifBaseUrl) && hasDicomWeb;
   const canUseCornerstoneLocal = input.viewerKind === "cornerstone3d" && hasLocalFiles;
   let launchMode: DicomViewerLaunchMode = "blocked";
   let viewerUrl: string | null = null;
 
-  if (!studyInstanceUid || !seriesInstanceUid) warnings.add("Study/Series UID отсутствует; диагностический запуск DICOMweb требует стабильные идентификаторы.");
+  if (!studyInstanceUid || !seriesInstanceUid) warnings.add("Идентификаторы исследования/серии отсутствуют; диагностический запуск требует стабильные идентификаторы.");
   if (series.mprReadiness.resourcePolicy.loadStrategy === "external_handoff") {
     warnings.add("Политика ресурсов предпочитает внешний или отдельный просмотрщик для такого размера стека.");
+  }
+  if (hasVirtualArchiveEntries) {
+    warnings.add("ZIP-серия раскрыта как список снимков, но для запуска просмотра нужен распакованный локальный набор или внешний обработчик.");
   }
 
   if (canUseOhif && studyInstanceUid && input.ohifBaseUrl) {
@@ -2362,16 +3003,16 @@ function buildDicomViewerLaunchManifest(input: DicomViewerLaunchManifestRequest)
     viewerUrl = buildOhifViewerUrl(input.ohifBaseUrl, studyInstanceUid);
   } else if (canUseCornerstoneLocal) {
     launchMode = "local_manifest";
-  } else if (input.allowExternalHandoff && (input.externalViewerPath || hasLocalFiles || hasDicomWeb)) {
+  } else if (input.allowExternalHandoff && (input.externalViewerPath || hasLocalFiles || hasVirtualArchiveEntries || hasDicomWeb)) {
     launchMode = "external_handoff";
     viewerUrl = input.externalViewerPath ?? null;
   } else {
     warnings.add("Безопасная цель просмотра пока недоступна.");
   }
 
-  if (launchMode === "dicomweb_url" && !input.dicomWebBaseUrl) warnings.add("Для запуска OHIF/DICOMweb нужен базовый URL DICOMweb.");
+  if (launchMode === "dicomweb_url" && !input.dicomWebBaseUrl) warnings.add("Для запуска внешнего просмотра нужен адрес архива снимков.");
   if (launchMode === "local_manifest" && series.mprReadiness.volumeCandidate) {
-    warnings.add("Режим локального манифеста только передает контракт; пиксели объема должен загружать отдельный воркер или viewer.");
+    warnings.add("Локальный план только готовит открытие серии; тяжелые данные загружает отдельный обработчик или просмотрщик.");
   }
 
   const dataSourceKind = viewerDataSourceKind({
@@ -2392,12 +3033,12 @@ function buildDicomViewerLaunchManifest(input: DicomViewerLaunchManifestRequest)
 
   const nextAction =
     launchMode === "dicomweb_url"
-      ? "Откройте OHIF/Cornerstone через DICOMweb; CRM остается слоем метаданных, заметок и восстановления."
+      ? "Откройте внешний просмотр через архив снимков; CRM остается слоем метаданных, заметок и восстановления."
       : launchMode === "local_manifest"
-        ? "Передайте локальный манифест серии отдельному Cornerstone worker перед загрузкой пикселей."
+        ? "Откройте локальный план серии через обработчик перед загрузкой тяжелых данных."
         : launchMode === "external_handoff"
-          ? "Откройте настроенный внешний просмотрщик и сохраняйте аннотации/состояние просмотра в CRM."
-          : "Исправьте DICOMweb или локальные идентификаторы пути перед запуском просмотрщика.";
+          ? "Откройте настроенный внешний просмотр и сохраняйте аннотации/состояние просмотра в CRM."
+          : "Исправьте подключение архива снимков или локальные идентификаторы пути перед запуском просмотрщика.";
 
   return dicomViewerLaunchManifestResponseSchema.parse({
     viewerKind: input.viewerKind,
@@ -2452,12 +3093,21 @@ function targetToolForCrmTool(tool: DicomViewerToolConfig["crmTool"]): DicomView
       return "LengthTool";
     case "measure_angle":
       return "AngleTool";
+    case "measure_area":
+      return "PlanarFreehandROITool";
+    case "measure_volume":
+      return "SplineROITool";
+    case "bone_density_probe":
+      return "ProbeTool";
     case "note":
       return "ArrowAnnotateTool";
     case "implant_axis":
       return "BidirectionalTool";
+    case "implant_library":
+      return "ArrowAnnotateTool";
     case "nerve_canal":
     case "panoramic_curve":
+    case "surgical_guide":
       return "SplineROITool";
     case "window_level":
     case "invert":
@@ -2475,11 +3125,17 @@ function targetToolForAnnotation(annotation: DicomViewerToolStateBundleRequest["
       return "AngleTool";
     case "roi":
       return "RectangleROITool";
+    case "area_roi":
+      return "PlanarFreehandROITool";
+    case "volume_roi":
+      return "SplineROITool";
     case "implant_axis":
       return "BidirectionalTool";
     case "nerve_canal":
     case "panoramic_curve":
+    case "surgical_guide":
       return "SplineROITool";
+    case "bone_density_probe":
     case "landmark":
       return "ProbeTool";
     case "note":
@@ -2493,26 +3149,51 @@ function toolModeForCrmTool(
   activeTool: DicomViewerToolConfig["crmTool"] | undefined,
   series: DicomSeriesPreviewGroup
 ): DicomViewerToolMode {
-  if (activeTool === tool) return "active";
-  if (!series.mprReadiness.volumeCandidate && (tool === "implant_axis" || tool === "nerve_canal" || tool === "panoramic_curve")) {
+  const lacksUsableVolume = !series.mprReadiness.volumeCandidate || !series.mprReadiness.canOpenMpr;
+  if (
+    lacksUsableVolume &&
+    (
+      tool === "implant_axis" ||
+      tool === "nerve_canal" ||
+      tool === "panoramic_curve" ||
+      tool === "measure_area" ||
+      tool === "measure_volume" ||
+      tool === "bone_density_probe" ||
+      tool === "surgical_guide"
+    )
+  ) {
     return "disabled";
   }
-  if (tool === "measure_distance" || tool === "measure_angle" || tool === "note") return "passive";
+  if (activeTool === tool) return "active";
+  if (
+    tool === "measure_distance" ||
+    tool === "measure_angle" ||
+    tool === "measure_area" ||
+    tool === "measure_volume" ||
+    tool === "bone_density_probe" ||
+    tool === "implant_library" ||
+    tool === "note"
+  ) return "passive";
   return "enabled";
 }
 
 function buildToolConfigs(input: DicomViewerToolStateBundleRequest): DicomViewerToolConfig[] {
   const tools: Array<Pick<DicomViewerToolConfig, "crmTool" | "shortcut" | "reason">> = [
-    { crmTool: "window_level", shortcut: "W", reason: "Базовый инструмент радиологической навигации." },
-    { crmTool: "pan", shortcut: "Space", reason: "Перемещает область просмотра без изменения исходных пикселей." },
-    { crmTool: "zoom", shortcut: "Z", reason: "Увеличивает локальную деталь, сохраняя состояние CRM." },
-    { crmTool: "measure_distance", shortcut: "D", reason: "Измерение расстояния сопоставляется с LengthTool." },
-    { crmTool: "measure_angle", shortcut: "A", reason: "Измерение угла сопоставляется с AngleTool." },
-    { crmTool: "note", shortcut: "N", reason: "Заметки врача сопоставляются с выносками-аннотациями." },
-    { crmTool: "implant_axis", shortcut: "I", reason: "Подсказка планирования импланта сопоставляется с двунаправленной осью." },
-    { crmTool: "nerve_canal", shortcut: null, reason: "Трассировка нервного канала сопоставляется со сплайном или полилинией." },
-    { crmTool: "panoramic_curve", shortcut: null, reason: "Панорамная кривая CBCT сопоставляется со сплайном или полилинией." },
-    { crmTool: "reset", shortcut: "R", reason: "Сброс остается командой просмотрщика, а не сохраненными исходными данными." }
+    { crmTool: "window_level", shortcut: "W", reason: "Настраивает яркость и контраст снимка." },
+    { crmTool: "pan", shortcut: "Space", reason: "Перемещает область просмотра без изменения исходного снимка." },
+    { crmTool: "zoom", shortcut: "Z", reason: "Увеличивает локальную деталь и сохраняет состояние просмотра." },
+    { crmTool: "measure_distance", shortcut: "D", reason: "Включает измерение расстояния на снимке." },
+    { crmTool: "measure_angle", shortcut: "A", reason: "Включает измерение угла на снимке." },
+    { crmTool: "measure_area", shortcut: null, reason: "Дает контур площади на срезе: дефект, окно синус-лифтинга или ROI." },
+    { crmTool: "measure_volume", shortcut: null, reason: "Дает объемный ROI для пазухи, графта, дефекта или дыхательных путей." },
+    { crmTool: "note", shortcut: "N", reason: "Добавляет врачебную заметку к выбранной области." },
+    { crmTool: "implant_axis", shortcut: "I", reason: "Помогает отметить предполагаемую ось импланта." },
+    { crmTool: "implant_library", shortcut: null, reason: "Переносит в план выбранный типоразмер импланта." },
+    { crmTool: "nerve_canal", shortcut: null, reason: "Помогает вручную провести канал нижнечелюстного нерва." },
+    { crmTool: "panoramic_curve", shortcut: null, reason: "Помогает построить панорамную кривую по КЛКТ." },
+    { crmTool: "bone_density_probe", shortcut: null, reason: "Показывает ориентир плотности кости в точке планирования." },
+    { crmTool: "surgical_guide", shortcut: null, reason: "Фиксирует требования к хирургическому шаблону и втулке." },
+    { crmTool: "reset", shortcut: "R", reason: "Возвращает вид к исходному состоянию без изменения снимка." }
   ];
 
   return tools.map((tool) => ({
@@ -2530,22 +3211,25 @@ function buildDicomViewerViewports(input: DicomViewerToolStateBundleRequest): Di
   const series = input.series;
   const viewerState = input.viewerState;
   const volumeId = cornerstoneVolumeIdForSeries(series);
+  const canOpenVolume = series.mprReadiness.volumeCandidate && series.mprReadiness.canOpenMpr;
+  const canReferenceLocalPixels = series.firstFilePath ? isDicomPixelPath(series.firstFilePath) : false;
   const projections: DicomViewerViewportState["projection"][] = series.mprReadiness.volumeCandidate
-    ? series.mprReadiness.projections.length
+    ? canOpenVolume && series.mprReadiness.projections.length
       ? series.mprReadiness.projections
-      : ["axial", "coronal", "sagittal"]
+      : [viewerState?.projection ?? null]
     : [viewerState?.projection ?? null];
 
   return projections.map((projection, index) => ({
     viewportId: projection ? `crm-${projection}` : "crm-stack",
-    viewportType: series.mprReadiness.volumeCandidate
+    viewportType: canOpenVolume
       ? projection === "panoramic_reconstruction" || projection === "mip"
         ? "derived"
         : "volume"
       : "stack",
     projection,
-    volumeId: series.mprReadiness.volumeCandidate ? volumeId : null,
-    referencedImageId: series.firstFilePath && index === 0 ? `dicomfile:${series.firstFilePath}` : null,
+    volumeId: canOpenVolume ? volumeId : null,
+    referencedImageId: canReferenceLocalPixels && index === 0 ? `dicomfile:${series.firstFilePath}` : null,
+    sliceIndex: viewerState?.sliceIndex ?? null,
     windowPreset: viewerState?.windowPreset ?? (series.kind === "cbct" ? "bone" : "endo"),
     windowCenter: viewerState?.windowCenter ?? null,
     windowWidth: viewerState?.windowWidth ?? null,
@@ -2553,8 +3237,8 @@ function buildDicomViewerViewports(input: DicomViewerToolStateBundleRequest): Di
     rotationDeg: viewerState?.rotationDeg ?? 0,
     slabMm: viewerState?.slabMm ?? 1,
     axisDeg: viewerState?.axisDeg ?? 0,
-    crosshair: viewerState?.crosshair ?? series.mprReadiness.volumeCandidate,
-    linkedPlanes: viewerState?.linkedPlanes ?? series.mprReadiness.volumeCandidate
+    crosshair: viewerState?.crosshair ?? canOpenVolume,
+    linkedPlanes: viewerState?.linkedPlanes ?? canOpenVolume
   }));
 }
 
@@ -2588,6 +3272,7 @@ function buildToolStateAnnotation(
     targetTool: targetToolForAnnotation(annotation),
     type: annotation.type,
     label: annotation.label,
+    semanticRole: annotation.semanticRole ?? null,
     toothCode: annotation.toothCode,
     note: annotation.note,
     viewportId: viewport?.viewportId ?? "crm-stack",
@@ -2609,6 +3294,232 @@ function buildToolStateAnnotation(
   };
 }
 
+function planningTaskKindForQuickActionId(
+  quickActionId: string | null | undefined
+): DicomViewerPlanningTask["kind"] | null {
+  if (quickActionId === "opg_curve") return "panoramic_reconstruction";
+  if (quickActionId === "ridge_ruler") return "distance_measurement";
+  if (quickActionId === "implant_axis") return "implant_axis";
+  if (quickActionId === "area_roi") return "area_roi";
+  if (quickActionId === "volume_roi") return "volume_roi";
+  if (quickActionId === "implant_library") return "implant_library";
+  if (quickActionId === "nerve_canal") return "nerve_canal";
+  if (quickActionId === "density_probe") return "bone_density_probe";
+  if (quickActionId === "surgical_guide") return "surgical_guide";
+  return null;
+}
+
+function buildDicomViewerPlanningTasks(input: DicomViewerToolStateBundleRequest): DicomViewerPlanningTask[] {
+  const series = input.series;
+  const viewerState = input.viewerState;
+  const canOpenVolume = series.mprReadiness.canOpenMpr && series.mprReadiness.volumeCandidate;
+  const canBuildPanoramic = series.mprReadiness.canBuildPanoramic;
+  const activeProjection = viewerState?.projection ?? (series.mprReadiness.projections[0] ?? "axial");
+  const activeWindowPreset = viewerState?.windowPreset ?? (series.kind === "cbct" ? "bone" : "endo");
+  const slabMm = viewerState?.slabMm ?? 1;
+  const axisDeg = viewerState?.axisDeg ?? 0;
+  const implantPlan = viewerState?.implantPlan ?? null;
+  const activeQuickActionTaskKind = planningTaskKindForQuickActionId(viewerState?.activeQuickActionId ?? null);
+
+  const taskDefinitions: Array<{
+    kind: DicomViewerPlanningTask["kind"];
+    title: string;
+    crmTool: DicomViewerToolConfig["crmTool"];
+    projection: DicomViewerPlanningTask["projection"];
+    windowPreset: DicomViewerPlanningTask["windowPreset"];
+    slabMm: number;
+    axisDeg: number;
+    requiresVolume: boolean;
+    requiresPanoramic: boolean;
+    outputUnit: string | null;
+    reason: string;
+  }> = [
+    {
+      kind: "panoramic_reconstruction",
+      title: "ОПТГ-реконструкция",
+      crmTool: "panoramic_curve",
+      projection: "panoramic_reconstruction",
+      windowPreset: "bone",
+      slabMm: Math.max(3, slabMm),
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: true,
+      outputUnit: "panorama",
+      reason: "Построить дугу зубного ряда и панорамный слой перед планированием имплантации."
+    },
+    {
+      kind: "cross_section_curve",
+      title: "Серия поперечных срезов",
+      crmTool: "panoramic_curve",
+      projection: "oblique",
+      windowPreset: "bone",
+      slabMm: Math.max(1, slabMm),
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: false,
+      outputUnit: "curve_points",
+      reason: "Связать поперечные срезы с выбранной дугой и косой плоскостью."
+    },
+    {
+      kind: "distance_measurement",
+      title: "Линейная линейка",
+      crmTool: "measure_distance",
+      projection: activeProjection,
+      windowPreset: activeWindowPreset,
+      slabMm,
+      axisDeg,
+      requiresVolume: false,
+      requiresPanoramic: false,
+      outputUnit: "mm",
+      reason: "Сохранить измерение длины для просмотра или передачи во внешний модуль."
+    },
+    {
+      kind: "angle_measurement",
+      title: "Измерение угла",
+      crmTool: "measure_angle",
+      projection: activeProjection,
+      windowPreset: activeWindowPreset,
+      slabMm,
+      axisDeg,
+      requiresVolume: false,
+      requiresPanoramic: false,
+      outputUnit: "deg",
+      reason: "Сохранить ось и угол наклона для восстановления в просмотре."
+    },
+    {
+      kind: "area_roi",
+      title: "Контур площади",
+      crmTool: "measure_area",
+      projection: activeProjection,
+      windowPreset: activeWindowPreset,
+      slabMm,
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: false,
+      outputUnit: "mm2",
+      reason: "Отметить область синус-лифта, дефекта, дыхательных путей или костной пластики."
+    },
+    {
+      kind: "volume_roi",
+      title: "Контур объема",
+      crmTool: "measure_volume",
+      projection: "three_d_volume",
+      windowPreset: "bone",
+      slabMm: Math.max(1, slabMm),
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: false,
+      outputUnit: "mm3",
+      reason: "Сохранить объемную область для дефекта, синуса, дыхательных путей или пластики."
+    },
+    {
+      kind: "implant_axis",
+      title: "Ось импланта",
+      crmTool: "implant_axis",
+      projection: "oblique",
+      windowPreset: "implant",
+      slabMm: Math.max(1, slabMm),
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: false,
+      outputUnit: "deg/mm",
+      reason: "Восстановить ось импланта по выбранной косой плоскости и толщине слоя."
+    },
+    {
+      kind: "implant_library",
+      title: "Размер импланта",
+      crmTool: "implant_library",
+      projection: activeProjection,
+      windowPreset: "implant",
+      slabMm,
+      axisDeg,
+      requiresVolume: false,
+      requiresPanoramic: false,
+      outputUnit: "diameter_length",
+      reason: "Передать выбранный диаметр и длину без передачи тяжелых файлов снимков."
+    },
+    {
+      kind: "nerve_canal",
+      title: "Канал нижнечелюстного нерва",
+      crmTool: "nerve_canal",
+      projection: canBuildPanoramic ? "panoramic_reconstruction" : "oblique",
+      windowPreset: "bone",
+      slabMm: Math.max(1, slabMm),
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: false,
+      outputUnit: "mm_clearance",
+      reason: "Сохранить трассировку канала для проверки отступа от импланта."
+    },
+    {
+      kind: "bone_density_probe",
+      title: "Проверка плотности кости",
+      crmTool: "bone_density_probe",
+      projection: activeProjection,
+      windowPreset: "implant",
+      slabMm,
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: false,
+      outputUnit: "HU",
+      reason: "Сохранить точку проверки плотности там, где калибровка снимка это допускает."
+    },
+    {
+      kind: "surgical_guide",
+      title: "Маршрут хирургического шаблона",
+      crmTool: "surgical_guide",
+      projection: "three_d_volume",
+      windowPreset: "implant",
+      slabMm: Math.max(1, slabMm),
+      axisDeg,
+      requiresVolume: true,
+      requiresPanoramic: false,
+      outputUnit: "sleeve_axis",
+      reason: "Сохранить втулку шаблона, ось импланта и цель экспорта без передачи снимков."
+    }
+  ];
+
+  return taskDefinitions.map((task) => {
+    const warnings: string[] = [];
+    if (task.requiresVolume && !canOpenVolume) {
+      warnings.push("Объемная серия еще не готова; сохраните задачу как метаданные до выбора полной КЛКТ/КТ-серии.");
+    }
+    if (task.requiresPanoramic && !canBuildPanoramic) {
+      warnings.push("Для ОПТГ-реконструкции нужна более полная КЛКТ/КТ-серия.");
+    }
+    if ((task.kind === "implant_axis" || task.kind === "surgical_guide") && !implantPlan) {
+      warnings.push("Сначала выберите размер импланта для проверки оси и шаблона.");
+    }
+
+    const blocked = warnings.length > 0;
+    const activeByClinicalScenario = activeQuickActionTaskKind
+      ? task.kind === activeQuickActionTaskKind
+      : viewerState?.activeTool === task.crmTool;
+    const status: DicomViewerPlanningTask["status"] = blocked
+      ? "blocked"
+      : activeByClinicalScenario
+        ? "active"
+        : "ready";
+
+    return {
+      id: `ct-plan-${task.kind}`,
+      kind: task.kind,
+      title: task.title,
+      targetTool: targetToolForCrmTool(task.crmTool),
+      projection: task.projection,
+      windowPreset: task.windowPreset,
+      slabMm: task.slabMm,
+      axisDeg: task.axisDeg,
+      requiresVolume: task.requiresVolume,
+      status,
+      outputUnit: task.outputUnit,
+      implantPlan,
+      reason: task.reason,
+      warnings
+    };
+  });
+}
+
 function buildDicomViewerToolStateBundle(input: DicomViewerToolStateBundleRequest) {
   const series = input.series;
   const warnings = new Set<string>(series.warnings);
@@ -2621,13 +3532,13 @@ function buildDicomViewerToolStateBundle(input: DicomViewerToolStateBundleReques
   const annotations = input.annotations.map((annotation) => buildToolStateAnnotation(annotation, viewports));
 
   if (!series.studyInstanceUid || !series.seriesInstanceUid) {
-    warnings.add("Study/Series UID отсутствует; адаптер должен привязать локальные файлы по пути из манифеста.");
+    warnings.add("Коды исследования/серии отсутствуют; адаптер должен привязать локальные файлы по пути из списка.");
   }
   if (!series.mprReadiness.canOpenMpr && series.mprReadiness.volumeCandidate) {
-    warnings.add("Серия похожа на объемную, но еще не готова к MPR; держите аннотации как метаданные до выбора полной серии.");
+    warnings.add("Серия похожа на объемную, но еще не готова к просмотру КТ-срезов; держите аннотации как метаданные до выбора полной серии.");
   }
   if (input.renderPlan?.textureStrategy === "external_viewer") {
-    warnings.add("GPU-план рендера выбрал внешний просмотрщик; используйте этот пакет только как handoff метаданных/аннотаций.");
+    warnings.add("План загрузки выбрал внешний просмотр; используйте этот файл только для передачи метаданных и аннотаций.");
   }
   annotations.forEach((annotation) => annotation.warnings.forEach((warning) => warnings.add(warning)));
 
@@ -2642,12 +3553,12 @@ function buildDicomViewerToolStateBundle(input: DicomViewerToolStateBundleReques
 
   const nextAction =
     target === "cornerstone3d"
-      ? "Сначала загрузите series/displaySet, затем примените группу инструментов, состояние viewport и аннотации CRM."
+      ? "Сначала загрузите серию снимков, затем примените инструменты просмотра и аннотации CRM."
       : target === "ohif"
-        ? "Подключите это как measurement/viewport sidecar после того, как OHIF разрешит display set."
+        ? "Подключите это как файл измерений и окон просмотра после открытия серии во внешнем просмотре."
         : target === "external_viewer"
-          ? "Передайте этот JSON рядом с запуском внешнего просмотрщика; CRM остается слоем восстановления."
-          : "Используйте этот пакет как стабильный JSON-контракт для будущего адаптера просмотрщика.";
+          ? "Передайте этот файл рядом с запуском внешнего просмотра; CRM остается слоем восстановления."
+          : "Используйте этот файл как стабильный контракт для будущего адаптера просмотрщика.";
 
   return dicomViewerToolStateBundleResponseSchema.parse({
     version: "dental-crm-dicom-tool-state-v1",
@@ -2678,13 +3589,16 @@ function buildDicomViewerToolStateBundle(input: DicomViewerToolStateBundleReques
     viewports,
     tools: buildToolConfigs(input),
     annotations,
+    planningTasks: buildDicomViewerPlanningTasks(input),
+    activeQuickActionId: input.viewerState?.activeQuickActionId ?? null,
+    implantPlan: input.viewerState?.implantPlan ?? null,
     resourcePolicy: series.mprReadiness.resourcePolicy,
     renderPlan: input.renderPlan ?? null,
     exportHints: [
-      "Пакет содержит только состояние просмотрщика и метаданные разметки; DICOM-пиксели в него не попадают.",
-      "Применяйте после QIDO/WADO или локального manifest resolution, когда уже есть imageIds/displaySets.",
+      "Пакет содержит только состояние просмотрщика и метаданные разметки; тяжелые данные снимков в него не попадают.",
+      "Применяйте после поиска в архиве или локального разрешения плана, когда уже есть идентификаторы изображений.",
       "Измерения остаются черновой разметкой просмотрщика, пока врач не проверит калибровку и не подпишет запись.",
-      "Сохраняйте сеанс просмотрщика в CRM локально/на сервере, чтобы внешний просмотрщик не потерял работу."
+      "Сохраняйте сеанс просмотра в CRM локально/на сервере, чтобы внешний просмотр не потерял состояние."
     ],
     warnings: Array.from(warnings),
     nextAction
@@ -2697,6 +3611,123 @@ const mprTierRank: Record<DicomMprReadiness["resourcePolicy"]["requiredTier"], n
   workstation: 2,
   diagnostic_workstation: 3
 };
+
+function isRemoteDicomSource(series: Pick<DicomSeriesPreviewGroup, "sourceKind">) {
+  return series.sourceKind === "dicomweb" || series.sourceKind === "pacs";
+}
+
+function hasExplicitDicomDesktopBridge(client: DicomWorkstationReadinessRequest["client"]): boolean {
+  return client.desktopShellBridgeSupported === true;
+}
+
+function detectDicomClientRuntimeSurface(client: DicomWorkstationReadinessRequest["client"]): DicomClientRuntimeProfile["surface"] {
+  if (client.runtimeSurfaceHint === "desktop_app") {
+    return hasExplicitDicomDesktopBridge(client) ? "desktop_app" : "desktop_web";
+  }
+  if (
+    client.runtimeSurfaceHint === "mobile_web" ||
+    client.runtimeSurfaceHint === "tablet_web" ||
+    client.runtimeSurfaceHint === "desktop_web"
+  ) {
+    return client.runtimeSurfaceHint;
+  }
+  const text = `${client.platform ?? ""} ${client.userAgent ?? ""}`.toLowerCase();
+  if (/ipad|tablet/.test(text)) return "tablet_web";
+  if (/android|iphone|ipod|mobile|phone/.test(text)) return "mobile_web";
+  if (/win|mac|linux|x11|desktop|electron|tauri|neutralino|dental-crm-desktop|desktop app|desktop-app/.test(text)) return "desktop_web";
+  return "unknown";
+}
+
+function buildDicomClientRuntimeProfile(input: {
+  series: DicomSeriesPreviewGroup;
+  client: DicomWorkstationReadinessRequest["client"];
+}): DicomClientRuntimeProfile {
+  const { series, client } = input;
+  const surface = detectDicomClientRuntimeSurface(client);
+  const remoteSource = isRemoteDicomSource(series);
+  const hasVirtualArchiveEntries = isDicomArchiveVirtualEntryPath(series.firstFilePath);
+  const mobileConstrained = surface === "mobile_web" || surface === "tablet_web";
+  const desktopAppPreferred = surface === "desktop_app";
+  const networkMode: DicomClientRuntimeProfile["networkMode"] = client.online
+    ? "online"
+    : remoteSource
+      ? "offline_remote_blocked"
+      : "offline_local";
+  const canUseLocalFiles = !remoteSource && !hasVirtualArchiveEntries && Boolean(series.firstFilePath || series.sourceKind === "dicom_file");
+  const canUseRemoteArchive = remoteSource && client.online;
+  const canUseBrowserMpr =
+    !mobileConstrained &&
+    networkMode !== "offline_remote_blocked" &&
+    client.webgl2Supported &&
+    client.indexedDbSupported &&
+    series.mprReadiness.canOpenMpr;
+  const executionLane: DicomClientRuntimeProfile["executionLane"] =
+    networkMode === "offline_remote_blocked" || !series.mprReadiness.canOpenMpr
+      ? "metadata_only"
+      : mobileConstrained
+        ? "browser_preview"
+        : desktopAppPreferred
+          ? "desktop_app_mpr"
+          : canUseBrowserMpr
+            ? "browser_mpr"
+            : "external_or_local_viewer";
+  const warnings: string[] = [];
+  if (mobileConstrained) {
+    warnings.push("Телефон или планшет остается маршрутом карточки, заметок и первого ориентира; тяжелый КТ-объем открывайте на ПК или в настольном модуле.");
+  }
+  if (networkMode === "offline_remote_blocked") {
+    warnings.push("Архив снимков требует сеть; офлайн доступен только для сохраненного состояния, заметок и метаданных.");
+  }
+  if (hasVirtualArchiveEntries) {
+    warnings.push("ZIP-серия пока не является локальным набором пикселей; откройте ее через внешний обработчик или распакуйте перед КТ-срезами.");
+  }
+  if (desktopAppPreferred && canUseLocalFiles) {
+    warnings.push("Настольный режим может держать локальную папку и внешний просмотр рядом с CRM без отправки тяжелых данных снимков в браузер.");
+  }
+
+  const label =
+    surface === "desktop_app"
+      ? "настольное приложение"
+      : surface === "desktop_web"
+        ? "ПК-браузер"
+        : surface === "mobile_web"
+          ? "телефон"
+          : surface === "tablet_web"
+            ? "планшет"
+            : "неизвестное устройство";
+  const nextAction =
+    executionLane === "desktop_app_mpr"
+      ? "Открывайте КТ через настольный модуль или внешний просмотр, CRM хранит состояние и пакет передачи."
+      : executionLane === "browser_mpr"
+        ? "Можно готовить отдельное рабочее место КТ-срезов в браузере с ограничениями по памяти и фазам загрузки."
+        : executionLane === "browser_preview"
+          ? "На телефоне держите карточку, заметки, первый срез и передачу; полный объем переносите на ПК."
+          : executionLane === "metadata_only"
+            ? "Оставайтесь в метаданных и восстановлении состояния, пока локальная серия или сеть архива не доступны."
+            : "Используйте внешний или локальный просмотр, CRM остается слоем состояния и аннотаций.";
+
+  return {
+    surface,
+    networkMode,
+    executionLane,
+    mobileConstrained,
+    desktopAppPreferred,
+    canUseLocalFiles,
+    canUseRemoteArchive,
+    canUseBrowserMpr,
+    label,
+    nextAction,
+    warnings
+  };
+}
+
+function describeDicomExecutionLaneForOperator(lane: DicomClientRuntimeProfile["executionLane"]) {
+  if (lane === "desktop_app_mpr") return "настольный КТ-модуль";
+  if (lane === "browser_mpr") return "КТ-срезы в браузере";
+  if (lane === "browser_preview") return "легкий просмотр в браузере";
+  if (lane === "metadata_only") return "только метаданные";
+  return "внешний или локальный просмотр";
+}
 
 function detectWorkstationTier(input: DicomWorkstationReadinessRequest["client"]): DicomMprReadiness["resourcePolicy"]["requiredTier"] {
   const memory = input.deviceMemoryGb ?? 0;
@@ -2723,8 +3754,12 @@ function readinessCheck(input: DicomWorkstationReadinessCheck): DicomWorkstation
 }
 
 function estimateGpuMemoryMb(series: DicomSeriesPreviewGroup) {
-  const sliceEstimateMb = 0.72; // 512x512x16-bit plus GPU/upload overhead; metadata lacks exact rows/columns.
-  return Math.max(16, Math.ceil(series.fileCount * sliceEstimateMb * (series.mprReadiness.canBuildPanoramic ? 1.25 : 1)));
+  const pixelMb =
+    series.estimatedPixelBytes && series.estimatedPixelBytes > 0
+      ? series.estimatedPixelBytes / 1024 / 1024
+      : series.fileCount * 0.72;
+  const planningOverhead = series.mprReadiness.canBuildPanoramic ? 1.25 : 1;
+  return Math.max(16, Math.ceil(pixelMb * planningOverhead * 1.35));
 }
 
 function detectGpuClass(client: DicomWorkstationReadinessRequest["client"]): DicomGpuRenderPlan["gpuClass"] {
@@ -2740,6 +3775,102 @@ function detectGpuClass(client: DicomWorkstationReadinessRequest["client"]): Dic
   return "integrated_low";
 }
 
+function policyRatio(value: number | null | undefined, min: number, max: number) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return 0;
+  if (max <= min) return 0;
+  return clampNumber((value - min) / (max - min), 0, 1);
+}
+
+function roundedPolicyWeight(value: number) {
+  return Math.round(clampNumber(value, 0, 1) * 100) / 100;
+}
+
+function freeClientStorageMb(client: DicomWorkstationReadinessRequest["client"]) {
+  if (client.storageQuotaMb === null || client.storageUsageMb === null) return null;
+  return Math.max(0, client.storageQuotaMb - client.storageUsageMb);
+}
+
+function detectRenderMemoryBudgetClass(input: {
+  client: DicomWorkstationReadinessRequest["client"];
+  runtimeProfile: DicomClientRuntimeProfile;
+  gpuClass: DicomGpuRenderPlan["gpuClass"];
+}): DicomGpuRenderPlan["memoryBudgetClass"] {
+  const { client, runtimeProfile, gpuClass } = input;
+  const memory = client.deviceMemoryGb ?? 0;
+  const cores = client.hardwareConcurrency ?? 0;
+  if (!client.webgl2Supported || gpuClass === "none" || memory < 3 || cores < 2) return "minimum";
+  if (runtimeProfile.mobileConstrained || memory < 6 || cores < 4 || gpuClass === "integrated_low") return "constrained";
+  if (runtimeProfile.executionLane === "desktop_app_mpr" && gpuClass === "diagnostic" && memory >= 16 && cores >= 8) return "diagnostic";
+  if (memory >= 8 && cores >= 4 && (gpuClass === "integrated_ok" || gpuClass === "discrete_ok" || gpuClass === "diagnostic")) {
+    return "workstation";
+  }
+  return "standard";
+}
+
+function buildDicomRenderHardwarePolicy(input: {
+  series: DicomSeriesPreviewGroup;
+  client: DicomWorkstationReadinessRequest["client"];
+  runtimeProfile: DicomClientRuntimeProfile;
+  gpuClass: DicomGpuRenderPlan["gpuClass"];
+  pixelAccessBlocked: boolean;
+}): Pick<DicomGpuRenderPlan, "memoryBudgetClass" | "hardwareQualityWeight" | "progressiveSliceWindowCap"> {
+  const { series, client, runtimeProfile, gpuClass, pixelAccessBlocked } = input;
+  const memoryBudgetClass = detectRenderMemoryBudgetClass({ client, runtimeProfile, gpuClass });
+  const graphicsWeight: Record<DicomGpuRenderPlan["gpuClass"], number> = {
+    none: 0,
+    integrated_low: 0.18,
+    integrated_ok: 0.42,
+    discrete_ok: 0.72,
+    diagnostic: 1
+  };
+  const workerWeight = client.webWorkerSupported ? (client.offscreenCanvasSupported ? 1 : 0.65) : 0;
+  const storageMb = freeClientStorageMb(client);
+  const storageWeight = storageMb === null ? 0.4 : policyRatio(storageMb, 512, 4096);
+  const rawWeight =
+    policyRatio(client.deviceMemoryGb, 2, 16) * 0.36 +
+    graphicsWeight[gpuClass] * 0.28 +
+    policyRatio(client.hardwareConcurrency, 2, 8) * 0.18 +
+    storageWeight * 0.1 +
+    workerWeight * 0.08;
+  const surfaceCap = runtimeProfile.mobileConstrained
+    ? 0.34
+    : runtimeProfile.executionLane === "browser_mpr"
+      ? 0.82
+      : 1;
+  const hardwareQualityWeight = roundedPolicyWeight(Math.min(rawWeight, surfaceCap));
+  const classCap: Record<DicomGpuRenderPlan["memoryBudgetClass"], number> = {
+    minimum: 8,
+    constrained: 24,
+    standard: 64,
+    workstation: 128,
+    diagnostic: 224
+  };
+  const weightedCap = 8 + Math.round(hardwareQualityWeight * 216);
+  let progressiveSliceWindowCap = Math.min(classCap[memoryBudgetClass], weightedCap);
+  if (!client.webWorkerSupported) progressiveSliceWindowCap = Math.min(progressiveSliceWindowCap, 24);
+  else if (!client.offscreenCanvasSupported) progressiveSliceWindowCap = Math.min(progressiveSliceWindowCap, 64);
+  if (runtimeProfile.mobileConstrained) progressiveSliceWindowCap = Math.min(progressiveSliceWindowCap, 8);
+  if (pixelAccessBlocked) progressiveSliceWindowCap = 1;
+  progressiveSliceWindowCap = Math.max(1, Math.min(progressiveSliceWindowCap, series.mprReadiness.resourcePolicy.maxClientSlices));
+
+  return {
+    memoryBudgetClass,
+    hardwareQualityWeight,
+    progressiveSliceWindowCap
+  };
+}
+
+function diagnosticPixelPolicyFor(input: {
+  runtimeProfile: DicomClientRuntimeProfile;
+  textureStrategy: DicomGpuRenderPlan["textureStrategy"];
+}): DicomGpuRenderPlan["diagnosticPixelPolicy"] {
+  if (input.textureStrategy === "metadata_only") return "metadata_only_no_pixels";
+  if (input.runtimeProfile.executionLane === "browser_mpr" || input.runtimeProfile.executionLane === "browser_preview") {
+    return "browser_preview_not_diagnostic";
+  }
+  return "desktop_app_or_external_review";
+}
+
 function buildGpuRenderPlan(input: {
   series: DicomSeriesPreviewGroup;
   client: DicomWorkstationReadinessRequest["client"];
@@ -2747,41 +3878,63 @@ function buildGpuRenderPlan(input: {
   tierOk: boolean;
 }): DicomGpuRenderPlan {
   const { series, client, connectorReady, tierOk } = input;
+  const runtimeProfile = buildDicomClientRuntimeProfile({ series, client });
   const gpuClass = detectGpuClass(client);
   const estimatedGpuMemoryMb = estimateGpuMemoryMb(series);
   const maxTextureEdge = client.maxTextureSize ?? null;
   const max3dTextureEdge = client.max3dTextureSize ?? null;
   const warnings = new Set<string>();
-  const sourceNeedsNetwork = series.sourceKind === "dicomweb" || series.sourceKind === "pacs";
+  const sourceNeedsNetwork = isRemoteDicomSource(series);
+  const forceMetadataOnly = runtimeProfile.networkMode === "offline_remote_blocked";
   const forceExternal =
-    gpuClass === "none" ||
-    !client.indexedDbSupported ||
-    (sourceNeedsNetwork && !connectorReady) ||
-    series.mprReadiness.resourcePolicy.loadStrategy === "external_handoff";
+    !forceMetadataOnly &&
+    (gpuClass === "none" ||
+      !client.indexedDbSupported ||
+      runtimeProfile.mobileConstrained ||
+      (sourceNeedsNetwork && !connectorReady) ||
+      series.mprReadiness.resourcePolicy.loadStrategy === "external_handoff");
+  const hardwarePolicy = buildDicomRenderHardwarePolicy({
+    series,
+    client,
+    runtimeProfile,
+    gpuClass,
+    pixelAccessBlocked: forceMetadataOnly || forceExternal || !series.mprReadiness.canOpenMpr
+  });
 
-  if (gpuClass === "none") warnings.add("WebGL2 недоступен: GPU MPR не может работать в этом браузере.");
-  if (!client.indexedDbSupported) warnings.add("IndexedDB недоступен: восстановимый кеш/состояние небезопасны.");
-  if (sourceNeedsNetwork && !connectorReady) warnings.add("DICOMweb/PACS не готов, поэтому стриминг срезов небезопасен.");
-  if ((max3dTextureEdge ?? 0) > 0 && (max3dTextureEdge ?? 0) < 512) warnings.add("GPU сообщает слишком маленький лимит 3D-текстуры.");
+  runtimeProfile.warnings.forEach((warning) => warnings.add(warning));
+  if (gpuClass === "none") warnings.add("Графика браузера недоступна: КТ-срезы не могут работать в этом браузере.");
+  if (!client.indexedDbSupported) warnings.add("Локальное хранилище браузера недоступно: восстановление просмотра не будет надежным.");
+  if (sourceNeedsNetwork && !connectorReady) warnings.add("Архив снимков не готов, поэтому потоковая передача срезов недоступна.");
+  if ((max3dTextureEdge ?? 0) > 0 && (max3dTextureEdge ?? 0) < 512) warnings.add("Браузер сообщает слишком маленький лимит для объемного просмотра.");
+  if (runtimeProfile.executionLane === "browser_mpr") {
+    warnings.add("Браузерный режим КТ остается планировочным предпросмотром; диагностический пиксельный просмотр и CAD требуют внешнего или настольного модуля.");
+  }
 
   const canSingleTexture =
+    !forceMetadataOnly &&
     !forceExternal &&
+    !runtimeProfile.mobileConstrained &&
     series.fileCount <= 220 &&
+    series.fileCount <= hardwarePolicy.progressiveSliceWindowCap &&
     (max3dTextureEdge ?? 0) >= 512 &&
     gpuClass !== "integrated_low";
   const shouldBrick =
+    !forceMetadataOnly &&
     !forceExternal &&
+    !runtimeProfile.mobileConstrained &&
     !canSingleTexture &&
     (max3dTextureEdge ?? 0) >= 512 &&
     series.fileCount <= series.mprReadiness.resourcePolicy.maxClientSlices;
 
-  const textureStrategy: DicomGpuRenderPlan["textureStrategy"] = forceExternal
+  const textureStrategy: DicomGpuRenderPlan["textureStrategy"] = forceMetadataOnly
+    ? "metadata_only"
+    : forceExternal
     ? "external_viewer"
     : canSingleTexture
       ? "single_3d_texture"
       : shouldBrick
         ? "bricked_3d_textures"
-        : series.fileCount > 1
+        : runtimeProfile.mobileConstrained || series.fileCount > 1
           ? "stack_2d_textures"
           : "metadata_only";
 
@@ -2790,9 +3943,12 @@ function buildGpuRenderPlan(input: {
       ? "external"
       : textureStrategy === "metadata_only"
         ? "metadata_only"
-        : gpuClass === "diagnostic" && tierOk && series.mprReadiness.resourcePolicy.loadStrategy === "mpr_full"
+        : runtimeProfile.executionLane === "desktop_app_mpr" &&
+            gpuClass === "diagnostic" &&
+            tierOk &&
+            series.mprReadiness.resourcePolicy.loadStrategy === "mpr_full"
           ? "diagnostic_full"
-          : gpuClass === "integrated_low" || !tierOk
+        : runtimeProfile.mobileConstrained || gpuClass === "integrated_low" || !tierOk
             ? "interactive_low"
             : "balanced_mpr";
 
@@ -2805,36 +3961,49 @@ function buildGpuRenderPlan(input: {
           : 1
         : qualityMode === "interactive_low"
           ? 3
-          : 1;
-  const targetSliceBatch =
+          : runtimeProfile.mobileConstrained
+            ? 4
+            : 1;
+  const rawTargetSliceBatch =
     textureStrategy === "external_viewer"
       ? 1
+      : textureStrategy === "metadata_only"
+        ? 1
       : textureStrategy === "single_3d_texture"
         ? Math.min(series.fileCount, 220)
-        : textureStrategy === "bricked_3d_textures"
+      : textureStrategy === "bricked_3d_textures"
           ? 48
-          : Math.min(24, Math.max(8, series.fileCount));
+          : runtimeProfile.mobileConstrained
+            ? Math.min(8, Math.max(1, series.fileCount))
+            : Math.min(24, Math.max(8, series.fileCount));
+  const targetSliceBatch = Math.max(1, Math.min(rawTargetSliceBatch, hardwarePolicy.progressiveSliceWindowCap));
+  if (targetSliceBatch < rawTargetSliceBatch) {
+    warnings.add(`Политика памяти ограничила первое окно КТ до ${targetSliceBatch} срезов из ${rawTargetSliceBatch}.`);
+  }
   const useOffscreenCanvas = Boolean(client.offscreenCanvasSupported && client.webWorkerSupported && textureStrategy !== "external_viewer");
   const useWebWorker = Boolean(client.webWorkerSupported && textureStrategy !== "external_viewer");
   const interactionBudgetMs = qualityMode === "diagnostic_full" ? 12 : qualityMode === "balanced_mpr" ? 16 : 24;
+  const diagnosticPixelPolicy = diagnosticPixelPolicyFor({ runtimeProfile, textureStrategy });
   const firstPaintStrategy =
     textureStrategy === "external_viewer"
-      ? "Открыть внешний или OHIF-просмотрщик; CRM остается в режиме метаданных и заметок."
+      ? "Открыть внешний КТ-модуль; CRM остается в режиме метаданных и заметок."
+      : textureStrategy === "metadata_only"
+        ? "Остаться в метаданных и восстановлении состояния; пиксели недоступны для текущего режима."
       : textureStrategy === "single_3d_texture"
-        ? "Передать метаданные и первый аксиальный стек, затем поднять одну общую 3D-текстуру для связанного MPR."
+        ? "Передать список серии и первый аксиальный стек, затем подготовить общий 3D-объем для связанных КТ-срезов."
         : textureStrategy === "bricked_3d_textures"
           ? "Сначала загрузить центральный фрагмент низкого разрешения, затем подгружать соседние фрагменты при прокрутке."
           : textureStrategy === "stack_2d_textures"
-            ? "Использовать легкий 2D-стек, пока отдельный обработчик объема недоступен."
+            ? "Использовать легкий послойный 2D-просмотр, пока отдельный обработчик объема недоступен."
             : "Остаться в режиме метаданных.";
 
   const nextAction =
     qualityMode === "external"
-      ? "Используйте внешний/OHIF handoff; не загружайте полные объемные текстуры в оболочку CRM."
+      ? "Используйте внешний КТ-модуль; не загружайте полный объем внутрь CRM."
       : qualityMode === "diagnostic_full"
-        ? "Используйте общую GPU-текстуру объема со связанными axial/coronal/sagittal плоскостями и повышением до полного разрешения."
+        ? "Используйте общий объем со связанными аксиальной, корональной и сагиттальной плоскостями и повышением до полного разрешения."
         : qualityMode === "balanced_mpr"
-          ? "Сначала используйте MPR с пониженным разрешением, затем разрешайте полное качество по запросу."
+          ? "Сначала используйте КТ-срезы с пониженным разрешением, затем разрешайте полное качество по запросу."
           : qualityMode === "interactive_low"
             ? "Держите первый показ быстрым: понижайте разрешение, ограничивайте срезы и повышайте качество только по запросу."
             : "Оставайтесь в режиме метаданных, пока не выбрана пригодная серия или рабочая станция.";
@@ -2848,6 +4017,8 @@ function buildGpuRenderPlan(input: {
     maxTextureEdge,
     max3dTextureEdge,
     estimatedGpuMemoryMb,
+    ...hardwarePolicy,
+    diagnosticPixelPolicy,
     useWebWorker,
     useOffscreenCanvas,
     interactionBudgetMs,
@@ -2859,12 +4030,6 @@ function buildGpuRenderPlan(input: {
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
-}
-
-function sliceMemoryEstimateMb(series: DicomSeriesPreviewGroup, renderPlan: DicomGpuRenderPlan) {
-  const baseSliceMb = 0.72;
-  const downsampleDivisor = Math.max(1, renderPlan.downsampleFactor * renderPlan.downsampleFactor);
-  return Math.max(1, Math.ceil((baseSliceMb * Math.max(1, series.fileCount)) / downsampleDivisor));
 }
 
 function taskMemoryForRange(start: number | null, end: number | null, perSliceMb: number) {
@@ -2889,6 +4054,384 @@ function renderTask(input: {
   return input;
 }
 
+function buildDicomRenderInteractionPhases(input: {
+  fileCount: number;
+  renderPlan: DicomGpuRenderPlan;
+  firstBatch: number;
+  maxResidentSlices: number;
+  workerCount: number;
+}): DicomRenderInteractionPhase[] {
+  const { fileCount, renderPlan, firstBatch, maxResidentSlices, workerCount } = input;
+  if (renderPlan.textureStrategy === "external_viewer" || renderPlan.textureStrategy === "metadata_only") {
+    const metadataOnly = renderPlan.textureStrategy === "metadata_only";
+    return [
+      {
+        id: "external_review",
+        label: metadataOnly ? "только метаданные" : "внешний просмотр",
+        trigger: metadataOnly ? "пиксели недоступны для текущего режима" : "серия тяжелее или слабее текущего браузера",
+        targetFrameMs: 100,
+        downsampleFactor: 1,
+        maxResidentSlices: 1,
+        workerCount: 0,
+        nextAction: metadataOnly
+          ? "Сохранить состояние, заметки и серию метаданных; пиксели открыть только после сети, локальной папки или настольного модуля."
+          : "Открыть снимки через внешний КТ-модуль; CRM сохраняет состояние, заметки и пакет передачи."
+      }
+    ];
+  }
+
+  const movementDownsample =
+    renderPlan.qualityMode === "diagnostic_full"
+      ? fileCount > 160
+        ? 2
+        : 1
+      : renderPlan.qualityMode === "balanced_mpr"
+        ? Math.max(renderPlan.downsampleFactor, fileCount > 120 ? 2 : 1)
+        : renderPlan.qualityMode === "interactive_low"
+          ? Math.max(renderPlan.downsampleFactor, 3)
+          : renderPlan.downsampleFactor;
+  const idleDownsample =
+    renderPlan.qualityMode === "interactive_low" ? Math.max(2, renderPlan.downsampleFactor - 1) : renderPlan.downsampleFactor;
+  const firstVisibleSlices = Math.max(1, Math.min(firstBatch, renderPlan.qualityMode === "diagnostic_full" ? 12 : 8));
+  const interactiveResidentSlices =
+    renderPlan.textureStrategy === "single_3d_texture"
+      ? Math.min(maxResidentSlices, fileCount)
+      : Math.max(firstBatch, Math.min(maxResidentSlices, firstBatch * 2));
+
+  return [
+    {
+      id: "first_visible_slice",
+      label: "первый видимый срез",
+      trigger: "открытие серии или переход к другому пациенту",
+      targetFrameMs: Math.min(renderPlan.interactionBudgetMs, 16),
+      downsampleFactor: movementDownsample,
+      maxResidentSlices: firstVisibleSlices,
+      workerCount: Math.min(workerCount, 1),
+      nextAction: "Показать один активный срез до подготовки соседнего окна, чтобы карточка приема не зависла."
+    },
+    {
+      id: "interactive_navigation",
+      label: "быстрая прокрутка",
+      trigger: "движение среза, оси, масштаба или окна плотности",
+      targetFrameMs: renderPlan.interactionBudgetMs,
+      downsampleFactor: movementDownsample,
+      maxResidentSlices: interactiveResidentSlices,
+      workerCount,
+      nextAction: "Во время движения держать облегченное качество и видимый диапазон; уточнение запускать только после паузы."
+    },
+    {
+      id: "idle_refine",
+      label: "уточнение в паузе",
+      trigger: "врач остановил прокрутку или выбрал клинический пресет",
+      targetFrameMs: renderPlan.qualityMode === "diagnostic_full" ? 12 : renderPlan.qualityMode === "balanced_mpr" ? 16 : 24,
+      downsampleFactor: idleDownsample,
+      maxResidentSlices,
+      workerCount,
+      nextAction: "После паузы повышать качество текущего окна, затем соседние срезы; не блокировать основной прием."
+    }
+  ];
+}
+
+function progressiveStage(input: {
+  id: string;
+  kind: DicomProgressiveLoadStage["kind"];
+  label: string;
+  priority: DicomProgressiveLoadStage["priority"];
+  target: DicomProgressiveLoadStage["target"];
+  requestPattern: DicomProgressiveLoadStage["requestPattern"];
+  cornerstoneRequestType?: DicomProgressiveLoadStage["cornerstoneRequestType"];
+  cancelGroupId?: string | null;
+  requiresStageIds?: string[];
+  sliceStart: number | null;
+  sliceEnd: number | null;
+  sliceOrder?: number[];
+  decimationFactor: number;
+  offset: number;
+  maxResidentSlices: number;
+  budgetMs: number;
+  blocking: boolean;
+  nextAction: string;
+}): DicomProgressiveLoadStage {
+  return {
+    ...input,
+    cornerstoneRequestType: input.cornerstoneRequestType ?? "none",
+    cancelGroupId: input.cancelGroupId ?? null,
+    requiresStageIds: input.requiresStageIds ?? [],
+    sliceOrder: input.sliceOrder ?? []
+  };
+}
+
+function boundedSliceOrder(values: number[], fileCount: number, maxItems = 96) {
+  const seen = new Set<number>();
+  const result: number[] = [];
+  for (const value of values) {
+    const slice = clampNumber(Math.round(value), 0, Math.max(0, fileCount - 1));
+    if (seen.has(slice)) continue;
+    seen.add(slice);
+    result.push(slice);
+    if (result.length >= maxItems) break;
+  }
+  return result;
+}
+
+function interleavedSliceOrder(fileCount: number, decimationFactor: number, offset: number, maxItems = 128) {
+  const values: number[] = [];
+  for (let index = offset; index < fileCount; index += decimationFactor) values.push(index);
+  return boundedSliceOrder(values, fileCount, maxItems);
+}
+
+function windowSliceOrder(start: number, end: number, activeSliceIndex: number, fileCount: number, maxItems = 128) {
+  const values = [activeSliceIndex];
+  for (let distance = 1; values.length < Math.max(1, end - start + 1); distance += 1) {
+    const left = activeSliceIndex - distance;
+    const right = activeSliceIndex + distance;
+    if (left >= start) values.push(left);
+    if (right <= end) values.push(right);
+    if (left < start && right > end) break;
+  }
+  return boundedSliceOrder(values, fileCount, maxItems);
+}
+
+function chooseDicomAdjacentWindow(input: {
+  fileCount: number;
+  activeSliceIndex: number;
+  firstWindowStart: number;
+  firstWindowEnd: number;
+  firstBatch: number;
+}): { start: number; end: number } | null {
+  const { fileCount, activeSliceIndex, firstWindowStart, firstWindowEnd, firstBatch } = input;
+  const maxIndex = Math.max(0, fileCount - 1);
+  const candidates: Array<{ side: "before" | "after"; start: number; end: number; length: number; edgeDistance: number }> = [];
+  const beforeEnd = firstWindowStart - 1;
+  if (beforeEnd >= 0) {
+    const start = Math.max(0, beforeEnd - firstBatch + 1);
+    candidates.push({
+      side: "before",
+      start,
+      end: beforeEnd,
+      length: beforeEnd - start + 1,
+      edgeDistance: Math.abs(activeSliceIndex - beforeEnd)
+    });
+  }
+  const afterStart = firstWindowEnd + 1;
+  if (afterStart <= maxIndex) {
+    const end = Math.min(maxIndex, afterStart + firstBatch - 1);
+    candidates.push({
+      side: "after",
+      start: afterStart,
+      end,
+      length: end - afterStart + 1,
+      edgeDistance: Math.abs(afterStart - activeSliceIndex)
+    });
+  }
+  if (!candidates.length) return null;
+
+  const leftEdgeDistance = activeSliceIndex - firstWindowStart;
+  const rightEdgeDistance = firstWindowEnd - activeSliceIndex;
+  const preferredSide = rightEdgeDistance < leftEdgeDistance ? "after" : leftEdgeDistance < rightEdgeDistance ? "before" : "after";
+  candidates.sort((left, right) => {
+    if (left.edgeDistance !== right.edgeDistance) return left.edgeDistance - right.edgeDistance;
+    if (left.side === preferredSide && right.side !== preferredSide) return -1;
+    if (right.side === preferredSide && left.side !== preferredSide) return 1;
+    if (left.length !== right.length) return right.length - left.length;
+    return left.side === "after" ? -1 : 1;
+  });
+
+  const selected = candidates[0];
+  return selected ? { start: selected.start, end: selected.end } : null;
+}
+
+function buildDicomProgressiveLoadStages(input: {
+  fileCount: number;
+  activeSliceIndex: number;
+  firstWindowStart: number;
+  firstWindowEnd: number;
+  firstBatch: number;
+  maxResidentSlices: number;
+  workerCount: number;
+  canUseWorker: boolean;
+  renderPlan: DicomGpuRenderPlan;
+}): DicomProgressiveLoadStage[] {
+  const { fileCount, activeSliceIndex, firstWindowStart, firstWindowEnd, firstBatch, maxResidentSlices, workerCount, canUseWorker, renderPlan } = input;
+  if (renderPlan.textureStrategy === "external_viewer") {
+    return [
+      progressiveStage({
+        id: "external-handoff",
+        kind: "external_handoff",
+        label: "передача во внешний просмотр",
+        priority: "blocking",
+        target: "external_viewer",
+        requestPattern: "none",
+        cornerstoneRequestType: "external",
+        cancelGroupId: "external-handoff",
+        sliceStart: null,
+        sliceEnd: null,
+        decimationFactor: 1,
+        offset: 0,
+        maxResidentSlices: 1,
+        budgetMs: 100,
+        blocking: true,
+        nextAction: "Не планировать браузерную загрузку пикселей; передать серию, состояние и разметки во внешний или настольный просмотр."
+      })
+    ];
+  }
+  if (renderPlan.textureStrategy === "metadata_only") {
+    return [
+      progressiveStage({
+        id: "metadata-only",
+        kind: "metadata_only",
+        label: "только метаданные",
+        priority: "blocking",
+        target: "main_thread",
+        requestPattern: "none",
+        cornerstoneRequestType: "none",
+        cancelGroupId: "metadata-only",
+        sliceStart: null,
+        sliceEnd: null,
+        decimationFactor: 1,
+        offset: 0,
+        maxResidentSlices: 1,
+        budgetMs: 80,
+        blocking: true,
+        nextAction: "Не запускать декодирование, пока пиксели недоступны; хранить состояние, заметки и индекс серии."
+      })
+    ];
+  }
+
+  const baseDecimation =
+    renderPlan.qualityMode === "diagnostic_full"
+      ? fileCount > 180
+        ? 4
+        : 2
+      : renderPlan.qualityMode === "balanced_mpr"
+        ? fileCount > 120
+          ? 4
+          : 2
+        : Math.max(4, renderPlan.downsampleFactor * 2);
+  const interleavedDecimation = clampNumber(baseDecimation, 2, 8);
+  const interleavedOffset = activeSliceIndex % interleavedDecimation;
+  const activeWindowResident = Math.max(1, Math.min(maxResidentSlices, firstWindowEnd - firstWindowStart + 1));
+  const seedOrder = boundedSliceOrder([activeSliceIndex, 0, fileCount - 1, Math.floor((fileCount - 1) / 2)], fileCount, 4);
+  const interleavedOrder = interleavedSliceOrder(fileCount, interleavedDecimation, interleavedOffset, 128);
+  const activeOrder = windowSliceOrder(firstWindowStart, firstWindowEnd, activeSliceIndex, fileCount, 128);
+  const stages: DicomProgressiveLoadStage[] = [
+    progressiveStage({
+      id: "seed-orientation-slices",
+      kind: "seed_slices",
+      label: "опорные срезы",
+      priority: "blocking",
+      target: canUseWorker ? "web_worker" : "main_thread",
+      requestPattern: "center_first",
+      cornerstoneRequestType: "thumbnail",
+      cancelGroupId: "ct-seed-slices",
+      sliceStart: activeSliceIndex,
+      sliceEnd: activeSliceIndex,
+      sliceOrder: seedOrder,
+      decimationFactor: 1,
+      offset: activeSliceIndex,
+      maxResidentSlices: Math.min(3, fileCount),
+      budgetMs: Math.min(180, Math.max(80, renderPlan.interactionBudgetMs * 8)),
+      blocking: true,
+      nextAction: "Сначала показать активный, первый и последний ориентир, чтобы врач видел положение серии до тяжелой загрузки."
+    }),
+    progressiveStage({
+      id: "interleaved-low-resolution-volume",
+      kind: "interleaved_decimation",
+      label: "редкая сетка объема",
+      priority: "interactive",
+      target: canUseWorker ? "web_worker" : "main_thread",
+      requestPattern: "interleaved",
+      cornerstoneRequestType: "interaction",
+      cancelGroupId: "ct-interleaved-volume",
+      requiresStageIds: ["seed-orientation-slices"],
+      sliceStart: 0,
+      sliceEnd: fileCount - 1,
+      sliceOrder: interleavedOrder,
+      decimationFactor: interleavedDecimation,
+      offset: interleavedOffset,
+      maxResidentSlices: Math.min(maxResidentSlices, Math.max(1, Math.ceil(fileCount / interleavedDecimation))),
+      budgetMs: renderPlan.qualityMode === "diagnostic_full" ? 650 : renderPlan.qualityMode === "balanced_mpr" ? 520 : 360,
+      blocking: false,
+      nextAction: "Собирать грубый объем через каждый N-й срез; недостающие срезы уточнять только после интерактивного окна."
+    }),
+    progressiveStage({
+      id: "active-scroll-window",
+      kind: "active_window",
+      label: "активное окно прокрутки",
+      priority: "interactive",
+      target: renderPlan.textureStrategy === "single_3d_texture" ? "gpu" : canUseWorker ? "web_worker" : "main_thread",
+      requestPattern: "active_window",
+      cornerstoneRequestType: "interaction",
+      cancelGroupId: "ct-active-window",
+      requiresStageIds: ["seed-orientation-slices"],
+      sliceStart: firstWindowStart,
+      sliceEnd: firstWindowEnd,
+      sliceOrder: activeOrder,
+      decimationFactor: Math.max(1, renderPlan.downsampleFactor),
+      offset: 0,
+      maxResidentSlices: activeWindowResident,
+      budgetMs: Math.max(220, Math.ceil(firstBatch * 14 / Math.max(1, workerCount))),
+      blocking: false,
+      nextAction: "Держать в памяти только видимый диапазон и соседний запас; качество повышать после остановки прокрутки."
+    })
+  ];
+
+  const adjacentWindow = chooseDicomAdjacentWindow({ fileCount, activeSliceIndex, firstWindowStart, firstWindowEnd, firstBatch });
+  if (adjacentWindow) {
+    const adjacentStart = adjacentWindow.start;
+    const adjacentEnd = adjacentWindow.end;
+    const adjacentAnchor = Math.floor((adjacentStart + adjacentEnd) / 2);
+    const adjacentOrder = windowSliceOrder(adjacentStart, adjacentEnd, adjacentAnchor, fileCount, 128);
+    stages.push(
+      progressiveStage({
+        id: "adjacent-scroll-window",
+        kind: "adjacent_window",
+        label: "соседнее окно",
+        priority: "prefetch",
+        target: canUseWorker ? "web_worker" : "main_thread",
+        requestPattern: "adjacent_window",
+        cornerstoneRequestType: "prefetch",
+        cancelGroupId: "ct-adjacent-window",
+        requiresStageIds: ["active-scroll-window"],
+        sliceStart: adjacentStart,
+        sliceEnd: adjacentEnd,
+        sliceOrder: adjacentOrder,
+        decimationFactor: Math.max(1, renderPlan.downsampleFactor),
+        offset: 0,
+        maxResidentSlices: Math.max(1, Math.min(maxResidentSlices, adjacentEnd - adjacentStart + 1)),
+        budgetMs: Math.max(260, Math.ceil(firstBatch * 16 / Math.max(1, workerCount))),
+        blocking: false,
+        nextAction: "Подгружать соседний диапазон только после готовности активного окна; не вытеснять текущие срезы."
+      })
+    );
+  }
+
+  stages.push(
+    progressiveStage({
+      id: "idle-full-resolution-refine",
+      kind: "idle_refine",
+      label: "уточнение в паузе",
+      priority: renderPlan.qualityMode === "interactive_low" ? "deferred" : "background",
+      target: renderPlan.useOffscreenCanvas ? "offscreen_canvas" : canUseWorker ? "web_worker" : "main_thread",
+      requestPattern: "idle_full",
+      cornerstoneRequestType: "compute",
+      cancelGroupId: "ct-idle-refine",
+      requiresStageIds: ["active-scroll-window"],
+      sliceStart: firstWindowStart,
+      sliceEnd: firstWindowEnd,
+      sliceOrder: activeOrder,
+      decimationFactor: renderPlan.qualityMode === "interactive_low" ? Math.max(2, renderPlan.downsampleFactor) : 1,
+      offset: 0,
+      maxResidentSlices: activeWindowResident,
+      budgetMs: renderPlan.qualityMode === "diagnostic_full" ? 900 : renderPlan.qualityMode === "balanced_mpr" ? 700 : 500,
+      blocking: false,
+      nextAction: "После паузы уточнять только текущее окно; полный объем не должен блокировать карточку приема."
+    })
+  );
+
+  return stages;
+}
+
 function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
   const { series, renderPlan } = input;
   const warnings = new Set<string>();
@@ -2896,22 +4439,28 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
   const centerSliceIndex = Math.floor((fileCount - 1) / 2);
   const requestedSlice = input.viewerState?.sliceIndex ?? centerSliceIndex;
   const activeSliceIndex = clampNumber(requestedSlice, 0, fileCount - 1);
-  const firstBatch = clampNumber(renderPlan.targetSliceBatch, 1, Math.max(1, series.mprReadiness.resourcePolicy.maxClientSlices));
-  const halfWindow = Math.floor(firstBatch / 2);
-  const firstWindowStart = clampNumber(activeSliceIndex - halfWindow, 0, Math.max(0, fileCount - 1));
-  const firstWindowEnd = clampNumber(firstWindowStart + firstBatch - 1, firstWindowStart, Math.max(0, fileCount - 1));
+  const firstBatch = clampNumber(
+    Math.min(renderPlan.targetSliceBatch, renderPlan.progressiveSliceWindowCap),
+    1,
+    Math.max(1, series.mprReadiness.resourcePolicy.maxClientSlices)
+  );
+  const firstWindowSize = Math.min(firstBatch, fileCount);
+  const halfWindow = Math.floor(firstWindowSize / 2);
+  const firstWindowStart = clampNumber(activeSliceIndex - halfWindow, 0, Math.max(0, fileCount - firstWindowSize));
+  const firstWindowEnd = clampNumber(firstWindowStart + firstWindowSize - 1, firstWindowStart, Math.max(0, fileCount - 1));
   const totalBatches = Math.max(1, Math.ceil(fileCount / firstBatch));
-  const perSliceMb = Math.max(1, Math.ceil(estimateGpuMemoryMb(series) / fileCount / Math.max(1, renderPlan.downsampleFactor)));
+  const downsampleDivisor = Math.max(1, renderPlan.downsampleFactor * renderPlan.downsampleFactor);
+  const perSliceMb = Math.max(1, Math.ceil(estimateGpuMemoryMb(series) / fileCount / downsampleDivisor));
   const firstWindowMemoryMb = taskMemoryForRange(firstWindowStart, firstWindowEnd, perSliceMb);
   const canUseWorker = renderPlan.useWebWorker && renderPlan.textureStrategy !== "external_viewer";
   const workerCount =
-    renderPlan.qualityMode === "diagnostic_full"
-      ? 3
-      : renderPlan.qualityMode === "balanced_mpr"
-        ? 2
-        : canUseWorker
-          ? 1
-          : 0;
+    !canUseWorker
+      ? 0
+      : renderPlan.qualityMode === "diagnostic_full"
+        ? 3
+        : renderPlan.qualityMode === "balanced_mpr"
+          ? 2
+          : 1;
   const decodeConcurrency = workerCount > 0 ? Math.min(workerCount, renderPlan.qualityMode === "diagnostic_full" ? 3 : 2) : 1;
   const uploadConcurrency =
     renderPlan.textureStrategy === "single_3d_texture"
@@ -2921,13 +4470,14 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
         : renderPlan.textureStrategy === "stack_2d_textures"
           ? 1
           : 1;
+  const residentSliceCap = Math.max(1, Math.min(fileCount, renderPlan.progressiveSliceWindowCap));
   const maxResidentSlices =
     renderPlan.textureStrategy === "single_3d_texture"
-      ? Math.min(fileCount, firstBatch)
+      ? Math.min(residentSliceCap, firstBatch)
       : renderPlan.textureStrategy === "bricked_3d_textures"
-        ? Math.min(fileCount, Math.max(firstBatch * 3, 96))
+        ? Math.min(residentSliceCap, Math.max(firstBatch * 3, 96))
         : renderPlan.textureStrategy === "stack_2d_textures"
-          ? Math.min(fileCount, Math.max(firstBatch * 2, 32))
+          ? Math.min(residentSliceCap, Math.max(firstBatch * 2, 32))
           : 1;
   const cpuMemoryBudgetMb = Math.max(32, Math.ceil(firstWindowMemoryMb * (workerCount > 1 ? 2.2 : 1.4)));
   const gpuMemoryBudgetMb =
@@ -2936,6 +4486,15 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
       : Math.max(16, Math.min(renderPlan.estimatedGpuMemoryMb, Math.ceil(maxResidentSlices * perSliceMb * 1.4)));
   const shouldPersistToIndexedDb =
     series.mprReadiness.resourcePolicy.cacheMode === "bounded_disk" || series.mprReadiness.resourcePolicy.cacheMode === "dicomweb_stream";
+  if (!canUseWorker && renderPlan.textureStrategy !== "external_viewer" && renderPlan.textureStrategy !== "metadata_only") {
+    warnings.add("Фоновая подготовка КТ-срезов недоступна: план снижает параллельность и оставляет короткие порции работы.");
+  }
+  if (renderPlan.progressiveSliceWindowCap < renderPlan.targetSliceBatch) {
+    warnings.add(`Окно прогрессивной загрузки ограничено политикой памяти: ${renderPlan.progressiveSliceWindowCap} срезов за фазу.`);
+  }
+  if (renderPlan.diagnosticPixelPolicy === "browser_preview_not_diagnostic") {
+    warnings.add("Браузерный КТ-план не является диагностическим пиксельным рендером; CAD/диагностика должны идти через внешний или настольный модуль.");
+  }
   const firstPaintBudgetMs =
     renderPlan.qualityMode === "diagnostic_full"
       ? 1400
@@ -2944,6 +4503,24 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
         : renderPlan.qualityMode === "interactive_low"
           ? 650
           : 300;
+  const interactionPhases = buildDicomRenderInteractionPhases({
+    fileCount,
+    renderPlan,
+    firstBatch,
+    maxResidentSlices,
+    workerCount
+  });
+  const progressiveStages = buildDicomProgressiveLoadStages({
+    fileCount,
+    activeSliceIndex,
+    firstWindowStart,
+    firstWindowEnd,
+    firstBatch,
+    maxResidentSlices,
+    workerCount,
+    canUseWorker,
+    renderPlan
+  });
   const tasks: DicomRenderCacheTask[] = [];
 
   if (renderPlan.textureStrategy === "external_viewer") {
@@ -2959,11 +4536,29 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
         estimatedMemoryMb: 0,
         budgetMs: 100,
         blocking: true,
-        label: "Передача во внешний просмотрщик",
-        nextAction: "Откройте OHIF/настольный просмотрщик; CRM хранит только метаданные, состояние и аннотации."
+        label: "Передача во внешний просмотр",
+        nextAction: "Откройте внешний или настольный просмотрщик; CRM хранит только метаданные, состояние и аннотации."
       })
     );
-    warnings.add("Кеш рендера браузера отключен, потому что GPU-план выбрал передачу во внешний просмотрщик.");
+    warnings.add("Быстрая загрузка браузера отключена, потому что план выбрал передачу во внешний просмотр.");
+  } else if (renderPlan.textureStrategy === "metadata_only") {
+    tasks.push(
+      renderTask({
+        id: "metadata-only-index",
+        kind: "metadata_index",
+        target: "main_thread",
+        priority: "blocking",
+        sliceStart: null,
+        sliceEnd: null,
+        projection: null,
+        estimatedMemoryMb: 1,
+        budgetMs: 80,
+        blocking: true,
+        label: "Сохранить метаданные серии",
+        nextAction: "Не планируйте декодирование или загрузку текстур, пока нет сети архива, локальной папки или настольного модуля."
+      })
+    );
+    warnings.add("Пиксели серии недоступны для текущего режима; CRM хранит только метаданные, заметки и восстановление состояния.");
   } else {
     tasks.push(
       renderTask({
@@ -2978,7 +4573,7 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
         budgetMs: 80,
         blocking: true,
         label: "Индексировать метаданные",
-        nextAction: "Отсортируйте срезы по InstanceNumber/ImagePosition перед декодированием пикселей."
+        nextAction: "Отсортируйте срезы по номеру и положению в серии перед открытием первого окна."
       }),
       renderTask({
         id: "thumbnail-first",
@@ -2992,7 +4587,7 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
         budgetMs: Math.min(180, firstPaintBudgetMs),
         blocking: true,
         label: "Первый видимый срез",
-        nextAction: "Покажите активный/центральный срез до готовности полного MPR-кеша."
+        nextAction: "Покажите активный/центральный срез до готовности полного плана КТ-срезов."
       }),
       renderTask({
         id: "decode-first-window",
@@ -3019,14 +4614,16 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
         estimatedMemoryMb: firstWindowMemoryMb,
         budgetMs: Math.max(renderPlan.interactionBudgetMs, Math.ceil(firstBatch * 10 / uploadConcurrency)),
         blocking: false,
-        label: "Загрузить первое GPU-окно",
-        nextAction: "Держите интерактивность кадра в бюджете, пока текстуры повышаются в качестве."
+        label: "Подготовить первое окно объема",
+        nextAction: "Сохраняйте отзывчивость просмотра, пока качество повышается."
       })
     );
 
     if (renderPlan.textureStrategy === "bricked_3d_textures") {
-      const nextStart = clampNumber(firstWindowEnd + 1, 0, fileCount - 1);
-      const nextEnd = clampNumber(nextStart + firstBatch - 1, nextStart, fileCount - 1);
+      const adjacentWindow = chooseDicomAdjacentWindow({ fileCount, activeSliceIndex, firstWindowStart, firstWindowEnd, firstBatch });
+      if (adjacentWindow) {
+        const nextStart = adjacentWindow.start;
+        const nextEnd = adjacentWindow.end;
       tasks.push(
         renderTask({
           id: "build-adjacent-brick",
@@ -3039,10 +4636,11 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
           estimatedMemoryMb: taskMemoryForRange(nextStart, nextEnd, perSliceMb),
           budgetMs: Math.max(320, Math.ceil(firstBatch * 14 / uploadConcurrency)),
           blocking: false,
-          label: "Соседний фрагмент текстуры",
+          label: "Соседний фрагмент объема",
           nextAction: "Подгружайте следующий фрагмент только после того, как первое окно стало интерактивным."
         })
       );
+      }
     }
 
     if (series.mprReadiness.canOpenMpr) {
@@ -3058,8 +4656,8 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
           estimatedMemoryMb: Math.max(4, Math.ceil(firstWindowMemoryMb * 0.35)),
           budgetMs: Math.max(260, renderPlan.interactionBudgetMs * 12),
           blocking: false,
-          label: "Связанные MPR-плоскости",
-          nextAction: "Постройте axial/coronal/sagittal предпросмотры из первого декодированного окна."
+          label: "Связанные плоскости КТ-срезов",
+          nextAction: "Постройте аксиальный, корональный и сагиттальный предпросмотры из первого подготовленного окна."
         })
       );
     }
@@ -3097,7 +4695,7 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
           budgetMs: 120,
           blocking: false,
           label: "Сохранить ограниченный индекс кеша",
-          nextAction: "Сохраняйте только метаданные, контрольные суммы и ограниченные ссылки кеша, а не неограниченные копии пикселей."
+          nextAction: "Сохраняйте только список серии, контрольные суммы и ограниченные ссылки кеша, а не тяжелые данные снимков."
         })
       );
     }
@@ -3108,9 +4706,9 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
 
   const nextAction =
     renderPlan.textureStrategy === "external_viewer"
-      ? "Используйте внешний просмотрщик; CRM хранит восстановление состояния и аннотаций."
+      ? "Используйте внешний просмотр; CRM хранит восстановление состояния и аннотаций."
       : renderPlan.qualityMode === "diagnostic_full"
-        ? "Начните с активного среза, затем поднимите полную текстуру объема, сохраняя отзывчивый связанный MPR."
+        ? "Начните с активного среза, затем подготовьте полный объем, сохраняя отзывчивые связанные КТ-срезы."
         : renderPlan.qualityMode === "balanced_mpr"
           ? "Декодируйте первое окно срезов, затем подгружайте соседние диапазоны по мере прокрутки врачом."
           : "Держите первый показ малым: один срез, одно видимое окно, пониженный кеш, явное повышение качества.";
@@ -3120,6 +4718,10 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
     generatedAt: new Date().toISOString(),
     textureStrategy: renderPlan.textureStrategy,
     qualityMode: renderPlan.qualityMode,
+    memoryBudgetClass: renderPlan.memoryBudgetClass,
+    hardwareQualityWeight: renderPlan.hardwareQualityWeight,
+    progressiveSliceWindowCap: renderPlan.progressiveSliceWindowCap,
+    diagnosticPixelPolicy: renderPlan.diagnosticPixelPolicy,
     activeSliceIndex,
     centerSliceIndex,
     firstWindowStart,
@@ -3135,6 +4737,8 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
     shouldPersistToIndexedDb,
     firstPaintBudgetMs,
     interactionBudgetMs: renderPlan.interactionBudgetMs,
+    interactionPhases,
+    progressiveStages,
     tasks,
     warnings: Array.from(warnings),
     nextAction
@@ -3145,7 +4749,9 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
   const series = input.series;
   const client = input.client;
   const resourcePolicy = series.mprReadiness.resourcePolicy;
-  const detectedTier = detectWorkstationTier(client);
+  const runtimeProfile = buildDicomClientRuntimeProfile({ series, client });
+  const hardwareTier = detectWorkstationTier(client);
+  const detectedTier = runtimeProfile.mobileConstrained ? "low_end" : hardwareTier;
   const warnings = new Set<string>();
   const checks: DicomWorkstationReadinessCheck[] = [];
   const freeStorageMb =
@@ -3156,31 +4762,40 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
   const tierOk = mprTierRank[detectedTier] >= mprTierRank[resourcePolicy.requiredTier];
   checks.push(
     readinessCheck({
+      id: "runtime",
+      label: "Режим запуска",
+      status: runtimeProfile.networkMode === "offline_remote_blocked" ? "fail" : runtimeProfile.mobileConstrained ? "warn" : "pass",
+      detail: `${runtimeProfile.label}; ${describeDicomExecutionLaneForOperator(runtimeProfile.executionLane)}.`,
+      nextAction: runtimeProfile.nextAction
+    })
+  );
+  checks.push(
+    readinessCheck({
       id: "tier",
       label: "Класс рабочей станции",
       status: tierOk ? "pass" : "warn",
       detail: `Обнаружено ${detectedTier}; для выбранной стратегии загрузки требуется ${resourcePolicy.requiredTier}.`,
-      nextAction: tierOk ? "Браузерный просмотрщик может следовать выбранной политике ресурсов." : "Используйте предпросмотр в пониженном разрешении или внешний просмотрщик для этой станции."
+      nextAction: tierOk ? "Браузерный просмотрщик может следовать выбранной политике ресурсов." : "Используйте предпросмотр в пониженном разрешении или внешний просмотр для этой станции."
     })
   );
 
   checks.push(
     readinessCheck({
       id: "webgl2",
-      label: "WebGL2",
+      label: "Графика браузера",
       status: client.webgl2Supported ? "pass" : "fail",
-      detail: client.webgl2Supported ? "WebGL2 доступен для GPU-рендера стека/объема." : "WebGL2 недоступен.",
-      nextAction: client.webgl2Supported ? "Оставьте рендер просмотрщика на отдельном рабочем столе." : "Используйте внешний DICOM-просмотрщик или другую рабочую станцию."
+      detail: client.webgl2Supported ? "Браузерная графика доступна для просмотра стека/объема." : "Браузерная графика недоступна.",
+      nextAction: client.webgl2Supported ? "Оставьте рендер просмотра на отдельном рабочем столе." : "Используйте внешний КТ-модуль или другую рабочую станцию."
     })
   );
 
   checks.push(
     readinessCheck({
       id: "indexeddb",
-      label: "IndexedDB",
+      label: "Локальное хранилище",
       status: client.indexedDbSupported ? "pass" : "fail",
-      detail: client.indexedDbSupported ? "Локальное хранилище кеша/восстановления доступно." : "IndexedDB недоступен.",
-      nextAction: client.indexedDbSupported ? "Кешируйте метаданные и состояние просмотрщика локально до работы с пикселями." : "Не полагайтесь на кеш браузера; используйте передачу во внешний просмотрщик."
+      detail: client.indexedDbSupported ? "Локальное хранилище кеша/восстановления доступно." : "Локальное хранилище браузера недоступно.",
+      nextAction: client.indexedDbSupported ? "Сохраняйте список серии и состояние просмотрщика локально до открытия тяжелых данных." : "Не полагайтесь на кеш браузера; используйте передачу во внешний просмотр."
     })
   );
 
@@ -3210,22 +4825,23 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
       status: connectorReady ? "pass" : input.connector ? "warn" : "fail",
       detail:
         series.sourceKind === "dicomweb" || series.sourceKind === "pacs"
-          ? `Источник DICOMweb/PACS: ${input.connector?.status ?? "не проверен"}.`
-          : `Путь локального/source-манифеста: ${series.firstFilePath ? "доступен" : "отсутствует"}.`,
+          ? `Архив снимков: ${input.connector?.status ?? "не проверен"}.`
+          : `Путь локального списка снимков: ${series.firstFilePath ? "доступен" : "отсутствует"}.`,
       nextAction: connectorReady
-        ? "Продолжайте через передачу манифеста."
-        : "Проверьте DICOMweb/PACS перед открытием диагностического просмотрщика."
+        ? "Продолжайте через подготовку плана открытия."
+        : "Проверьте архив снимков перед открытием диагностического просмотрщика."
     })
   );
 
   if (!client.online && (series.sourceKind === "dicomweb" || series.sourceKind === "pacs")) {
-    warnings.add("Источник PACS/DICOMweb требует сеть; offline-режим должен оставаться только с метаданными.");
+    warnings.add("Источник архива снимков требует сеть; офлайн-режим должен оставаться только с метаданными.");
   }
+  runtimeProfile.warnings.forEach((warning) => warnings.add(warning));
   if (!series.mprReadiness.canOpenMpr) series.mprReadiness.blockers.forEach((blocker) => warnings.add(blocker));
-  if (!tierOk) warnings.add("Текущая рабочая станция ниже рекомендованного класса для выбранной политики ресурсов CBCT.");
-  if (!client.webgl2Supported) warnings.add("Для диагностического 3D-просмотра в браузере нужен WebGL2.");
-  if (!client.indexedDbSupported) warnings.add("Для восстанавливаемого локального состояния и кеша просмотра нужен IndexedDB.");
-  if (!connectorReady) warnings.add("DICOMweb/PACS-коннектор не готов к стримингу срезов.");
+  if (!tierOk) warnings.add("Текущая рабочая станция ниже рекомендованного класса для выбранной политики ресурсов КЛКТ.");
+  if (!client.webgl2Supported) warnings.add("Для диагностического 3D-просмотра в браузере нужна поддержка современной браузерной графики.");
+  if (!client.indexedDbSupported) warnings.add("Для восстановления просмотра нужно доступное локальное хранилище браузера.");
+  if (!connectorReady) warnings.add("Архив снимков не готов к передаче срезов.");
 
   const renderPlan = buildGpuRenderPlan({
     series,
@@ -3234,15 +4850,33 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
     tierOk
   });
   renderPlan.warnings.forEach((warning) => warnings.add(warning));
+  const memoryPolicyWarn =
+    renderPlan.memoryBudgetClass === "minimum" ||
+    renderPlan.memoryBudgetClass === "constrained" ||
+    renderPlan.diagnosticPixelPolicy === "browser_preview_not_diagnostic";
+  checks.push(
+    readinessCheck({
+      id: "ct_memory_policy",
+      label: "Память и пиксельная политика КТ",
+      status: memoryPolicyWarn ? "warn" : "pass",
+      detail: `Класс памяти ${renderPlan.memoryBudgetClass}; вес ${renderPlan.hardwareQualityWeight}; окно ${renderPlan.progressiveSliceWindowCap} срезов; политика ${renderPlan.diagnosticPixelPolicy}.`,
+      nextAction:
+        renderPlan.diagnosticPixelPolicy === "browser_preview_not_diagnostic"
+          ? "Оставьте браузерный КТ как предпросмотр и планирование; диагностический просмотр открывайте во внешнем или настольном модуле."
+          : "Следуйте ограничению окна срезов и не расширяйте кэш сверх политики памяти текущей станции."
+    })
+  );
 
   const failCount = checks.filter((check) => check.status === "fail").length;
   const warnCount = checks.filter((check) => check.status === "warn").length;
   const readinessScore = Math.max(0, Math.min(100, 100 - failCount * 30 - warnCount * 14));
   const shouldUseExternalViewer =
     renderPlan.textureStrategy === "external_viewer" ||
+    renderPlan.textureStrategy === "metadata_only" ||
     resourcePolicy.loadStrategy === "external_handoff" ||
     failCount > 0 ||
     !connectorReady ||
+    runtimeProfile.mobileConstrained ||
     (!tierOk && resourcePolicy.requiredTier !== "low_end");
   const effectiveLoadStrategy: DicomMprReadiness["resourcePolicy"]["loadStrategy"] = shouldUseExternalViewer
     ? "external_handoff"
@@ -3252,22 +4886,26 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
   const canOpenInBrowser =
     !shouldUseExternalViewer &&
     series.mprReadiness.canOpenMpr &&
+    runtimeProfile.canUseBrowserMpr &&
     client.webgl2Supported &&
     client.indexedDbSupported &&
     connectorReady;
 
   const nextAction = canOpenInBrowser
     ? effectiveLoadStrategy === "mpr_downsampled"
-      ? "Откройте отдельный MPR-рабочий стол в режиме первого прохода с пониженным разрешением; повышайте качество только по запросу."
-      : "Откройте отдельный MPR-рабочий стол; CRM остается слоем состояния, заметок и восстановления."
+      ? "Откройте отдельное рабочее место КТ-срезов в режиме первого прохода с пониженным разрешением; повышайте качество только по запросу."
+      : "Откройте отдельное рабочее место КТ-срезов; CRM остается слоем состояния, заметок и восстановления."
+    : renderPlan.textureStrategy === "metadata_only"
+      ? "Оставайтесь в метаданных и восстановлении состояния, пока не появится сеть архива, локальная папка или настольный модуль."
     : shouldUseExternalViewer
-      ? "Используйте внешний/OHIF handoff и держите исходные пиксели вне оболочки CRM."
-      : "Оставайтесь в предпросмотре метаданных/2D, пока недостающие проверки не закрыты.";
+      ? "Используйте внешний просмотр и держите тяжелые данные снимков вне оболочки CRM."
+      : "Оставайтесь в списке серии/2D-предпросмотре, пока недостающие проверки не закрыты.";
 
   return dicomWorkstationReadinessResponseSchema.parse({
     detectedTier,
     requiredTier: resourcePolicy.requiredTier,
     effectiveLoadStrategy,
+    runtimeProfile,
     readinessScore,
     canOpenInBrowser,
     shouldUseExternalViewer,
@@ -3315,10 +4953,10 @@ function buildDicomViewerWorkbenchManifest(input: DicomViewerWorkbenchManifestRe
   ]);
 
   const nextAction = readiness.canOpenInBrowser
-    ? "Откройте отдельный CT/MPR-рабочий стол с этим пакетом; сначала загрузите активный срез, затем повышайте качество кеша."
+    ? "Откройте отдельный просмотр КЛКТ/КТ-срезов с этим набором; сначала загрузите активный срез, затем повышайте качество кеша."
     : readiness.shouldUseExternalViewer || launchManifest.launchMode === "external_handoff"
-      ? "Используйте OHIF/настольный DICOM-просмотрщик; CRM сохраняет метаданные, состояние и аннотации для восстановления."
-      : "Оставайтесь в режиме метаданных, пока не исправлены DICOM-идентификаторы, GPU, хранилище или проверки коннектора.";
+      ? "Используйте внешний или настольный КТ-просмотрщик; CRM сохраняет метаданные, состояние и аннотации для восстановления."
+      : "Оставайтесь в списке серии, пока не исправлены коды серии, локальное хранилище или проверки подключения.";
 
   return dicomViewerWorkbenchManifestResponseSchema.parse({
     version: "dental-crm-dicom-workbench-v1",
@@ -3389,7 +5027,7 @@ function shouldSkipDicomDiscoveryDirectory(directoryName: string) {
   return dicomDiscoverySkipDirectoryNames.has(directoryName.toLowerCase());
 }
 
-async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest) {
+async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest, options: ApiDicomScanOptions = {}) {
   const fromManualRoot = Boolean(input.rootPaths?.length);
   const roots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
     .map((root) => path.resolve(root))
@@ -3399,8 +5037,10 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
   const visited = new Set<string>();
   const queue = roots.map((root) => ({ root, folderPath: root, depth: 0 }));
   let scannedFolders = 0;
+  const yieldState = createApiDicomScanYieldState();
 
   while (queue.length && scannedFolders < input.maxFolders) {
+    await maybeYieldApiDicomScan(yieldState, options.signal);
     const item = queue.shift();
     if (!item) break;
     const currentKey = item.folderPath.toLowerCase();
@@ -3411,9 +5051,10 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
     let entries;
     try {
       entries = await readdir(item.folderPath, { withFileTypes: true });
-    } catch {
+    } catch (error) {
+      if (isApiDicomScanAbortError(error)) throw error;
       const source = classifyLocalImagingSource(item.root, item.folderPath, fromManualRoot);
-      warnings.add(`Cannot read one discovery folder under ${source.sourceLabel}.`);
+      warnings.add(`Одна папка в разделе «${source.sourceLabel}» недоступна для чтения. Поиск продолжен по остальным папкам.`);
       continue;
     }
 
@@ -3427,6 +5068,7 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
     const folderWarnings = new Set<string>();
 
     for (const entry of entries) {
+      await maybeYieldApiDicomScan(yieldState, options.signal);
       const entryName = entry.name.toString();
       const fullPath = path.join(item.folderPath, entryName);
       if (entry.isDirectory()) {
@@ -3465,10 +5107,10 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
     }
 
     const reasons: string[] = [];
-    if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} DICOM-похожих файлов`);
-    if (hasDicomDir) reasons.push("найден DICOMDIR");
+    if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} файлов снимков`);
+    if (hasDicomDir) reasons.push("найден служебный каталог снимков");
     if (archivesFound) reasons.push(`${archivesFound} архивов`);
-    if (folderHintScore(item.folderPath) > 0) reasons.push("имя папки похоже на стоматологический/DICOM-экспорт");
+    if (folderHintScore(item.folderPath) > 0) reasons.push("имя папки похоже на стоматологический экспорт снимков");
 
     const confidence = Math.min(
       1,
@@ -3490,7 +5132,7 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
       candidates.push({
         folderPath: item.folderPath,
         displayName: path.basename(item.folderPath) || item.folderPath,
-        safeDisplayName: safeLocalImagingAlias("Local CT candidate", item.folderPath),
+        safeDisplayName: safeLocalImagingAlias("Кандидат КТ", item.folderPath),
         sourceLabel: source.sourceLabel,
         sourceKind: source.sourceKind,
         folderFingerprint: fingerprintLocalPath(item.folderPath),
@@ -3510,7 +5152,7 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
 
   if (queue.length) warnings.add(`Поиск остановлен на maxFolders=${input.maxFolders}. Сузьте корневые папки или увеличьте лимит.`);
   if (!roots.length) warnings.add("Нет доступных для чтения корневых папок поиска.");
-  if (!candidates.length) warnings.add("В выбранных корневых папках не найдены папки, похожие на DICOM.");
+  if (!candidates.length) warnings.add("В выбранных корневых папках не найдены папки, похожие на КТ/снимки.");
 
   const sortedCandidates = candidates
     .sort(
@@ -3523,8 +5165,8 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
     .slice(0, input.maxCandidates);
 
   const nextAction = sortedCandidates[0]
-    ? "Выберите папку-кандидат, затем запустите DICOM-разбор. Поиск читает только имена папок и малые заголовки, пиксели не загружает."
-    : "Вставьте известный путь к папке CT/DICOM или настройте DENTAL_DICOM_DISCOVERY_ROOTS.";
+    ? "Выберите папку-кандидат, затем запустите разбор снимков. Поиск читает только имена папок и малые заголовки, тяжелые данные не загружает."
+    : "Вставьте известный путь к папке КЛКТ/снимков или настройте корни поиска снимков в серверных настройках.";
 
   return dicomLocalFolderDiscoveryResponseSchema.parse({
     version: "dental-crm-dicom-local-discovery-v1",
@@ -3553,8 +5195,21 @@ function detectDentalModelFormat(fileName: string): DentalModelFileFormat {
   return "unknown";
 }
 
+function detectDentalSurfaceModelRole(text: string): DentalModelFileRole | null {
+  const surfaceHint = /surface|bone|skull|cranium|cranial|segmentation|segmented|mesh|volumetric|ct\s*model|cbct|klkt|череп|кость|костн|сегментац/.test(text);
+  if (/skull|cranium|cranial|череп/.test(text)) return "skull_surface";
+  if (surfaceHint && /maxilla|maxillary|upper jaw|u[ _-]?jaw|верхн|верхняя/.test(text)) return "maxilla_surface";
+  if (surfaceHint && /mandible|mandibular|lower jaw|l[ _-]?jaw|нижн|нижняя/.test(text)) return "mandible_surface";
+  if (/ct\s*bone|cbct\s*bone|klkt\s*bone|bone\s*surface|surface\s*bone|segmented\s*bone|bone\s*segmentation|костн|кость/.test(text)) {
+    return "ct_bone_surface";
+  }
+  return null;
+}
+
 function detectDentalModelRole(fileName: string, folderPath: string): DentalModelFileRole {
   const fromText = (text: string): DentalModelFileRole | null => {
+    const surfaceRole = detectDentalSurfaceModelRole(text);
+    if (surfaceRole) return surfaceRole;
     if (/scan\s*body|scanbody|scan-body|transfer|abutment scan/.test(text)) return "scan_body";
     if (/upper|maxilla|maxillary|verk+h|up\b|u[ _-]?jaw/.test(text)) return "upper_arch";
     if (/lower|mandible|mandibular|niz|low\b|l[ _-]?jaw/.test(text)) return "lower_arch";
@@ -3588,7 +5243,7 @@ function hasDentalModelArchiveHint(fileName: string, folderPath: string) {
 
 function hasDentalModelFileHint(fileName: string, folderPath: string) {
   const text = normalizeOrganizerText(`${folderPath} ${fileName}`);
-  return /upper|lower|maxilla|maxillary|mandible|mandibular|u[ _-]?jaw|l[ _-]?jaw|bite|occlusion|occlusal|crown|bridge|veneer|inlay|onlay|implant|guide|sleeve|aligner|tray|scanbody|scan body|abutment|intraoral|ios|exocad|3shape|medit|cerec|dental|tooth|teeth|orthodont|surgical/.test(text);
+  return /skull|cranium|cranial|surface|bone|segmentation|segmented|upper|lower|maxilla|maxillary|mandible|mandibular|u[ _-]?jaw|l[ _-]?jaw|bite|occlusion|occlusal|crown|bridge|veneer|inlay|onlay|implant|guide|sleeve|aligner|tray|scanbody|scan body|abutment|intraoral|ios|exocad|3shape|medit|cerec|dental|tooth|teeth|orthodont|surgical|череп|кость|костн|сегментац/.test(text);
 }
 
 function scoreDentalModelFile(fileName: string, folderPath: string) {
@@ -3598,15 +5253,15 @@ function scoreDentalModelFile(fileName: string, folderPath: string) {
   const text = normalizeOrganizerText(`${folderPath} ${fileName}`);
   let score = format === "zip_archive" ? 0.32 : 0.5;
   if (role !== "unknown") score += 0.22;
-  if (/intraoral|ios|scan|cad|cam|exocad|3shape|medit|cerec|mesh|model|stl|implant|guide/.test(text)) score += 0.18;
-  if (/upper|lower|maxilla|mandible|crown|bridge|aligner|bite|scanbody|scan body/.test(text)) score += 0.1;
+  if (/intraoral|ios|scan|cad|cam|exocad|3shape|medit|cerec|mesh|model|stl|implant|guide|surface|segmentation/.test(text)) score += 0.18;
+  if (/upper|lower|maxilla|mandible|skull|bone|crown|bridge|aligner|bite|scanbody|scan body/.test(text)) score += 0.1;
   return Math.min(1, Number(score.toFixed(2)));
 }
 
 function organizerFolderHintScore(folderPath: string) {
   const normalized = normalizeOrganizerText(folderPath);
   let score = folderHintScore(folderPath);
-  if (/intraoral|ios|exocad|3shape|medit|cerec|implant|guide|aligner|scanbody|crown|bridge|maxilla|mandible|dental|tooth|teeth|orthodont|surgical/.test(normalized)) score += 0.2;
+  if (/intraoral|ios|exocad|3shape|medit|cerec|implant|guide|aligner|scanbody|crown|bridge|maxilla|mandible|skull|bone|surface|segmentation|dental|tooth|teeth|orthodont|surgical/.test(normalized)) score += 0.2;
   if (/patient|case|study|export|clinic|lab|laboratory/.test(normalized)) score += 0.05;
   return Math.min(0.35, Number(score.toFixed(2)));
 }
@@ -3638,7 +5293,146 @@ function recommendLocalImagingAction(caseCandidate: {
   return "manual_review";
 }
 
-async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) {
+function isCtSurfaceModelRole(role: DentalModelFileRole) {
+  return role === "skull_surface" || role === "maxilla_surface" || role === "mandible_surface" || role === "ct_bone_surface";
+}
+
+function buildCtSurfaceModelManifest(input: {
+  model: DentalModelFileCandidate;
+  folderFingerprint: string;
+  pairingHint: DentalModelWorkbenchPairingHint;
+  loadTarget: DentalModelWorkbenchLoadTarget;
+  sizeMb: number;
+}): CtSurfaceModelManifest | null {
+  if (!isCtSurfaceModelRole(input.model.role)) return null;
+  const archiveOrUnknown = input.model.format === "zip_archive" || input.model.format === "unknown";
+  const readiness: CtSurfaceModelManifest["readiness"] = archiveOrUnknown
+    ? "metadata_only"
+    : input.loadTarget === "local_bridge"
+      ? "pending_local_bridge"
+      : input.loadTarget === "external_model_viewer"
+        ? "ready_external"
+        : "blocked";
+  const warnings = [...input.model.warnings];
+  warnings.push("CRM хранит только связь КТ-поверхности и статус проверки; геометрия сетки остается в локальном 3D-мосте или внешнем просмотрщике моделей.");
+  if (archiveOrUnknown) {
+    warnings.push("Архив или неизвестный формат поверхности хранится только как метаданные, пока локальный мост не проверит сетку.");
+  }
+  return {
+    role: input.model.role,
+    format: input.model.format,
+    sourceKind: archiveOrUnknown ? "unknown" : "imported_surface_file",
+    sourceSeriesRef: {
+      folderFingerprint: input.folderFingerprint,
+      pairingHint: input.pairingHint,
+      studyInstanceUid: null,
+      seriesInstanceUid: null
+    },
+    frameOfReferenceUid: null,
+    registrationStatus: input.pairingHint === "same_folder_ct_series" ? "same_folder_inferred" : "unknown",
+    readiness,
+    loadTarget: input.loadTarget,
+    sizeMb: input.sizeMb,
+    checksum: null,
+    meshStats: null,
+    containsMeshGeometry: false,
+    warnings,
+    nextAction:
+      readiness === "pending_local_bridge"
+        ? "Передайте эту КТ-поверхность в локальный 3D-мост для регистрации, статистики сетки и клинической проверки; CRM не хранит payload сетки."
+        : readiness === "ready_external"
+          ? "Откройте эту поверхность во внешнем просмотрщике моделей; CRM оставит слой пациента, связи с КТ и заметок."
+          : "Оставьте эту поверхность как метаданные, пока локальный мост не проверит архив, формат и регистрацию с КТ."
+  };
+}
+
+function chooseDentalModelWorkbenchTarget(model: DentalModelFileCandidate): DentalModelWorkbenchLoadTarget {
+  if (model.format === "unknown" || model.format === "zip_archive") return "metadata_only";
+  if (isCtSurfaceModelRole(model.role)) return "local_bridge";
+  if (model.sizeBytes >= 80 * 1024 * 1024) return "local_bridge";
+  return "external_model_viewer";
+}
+
+function buildDentalModelWorkbenchManifest(input: {
+  folderFingerprint: string;
+  dicomLikeFiles: number;
+  modelCandidates: DentalModelFileCandidate[];
+}) {
+  const warnings = new Set<string>();
+  const items = input.modelCandidates.map((model) => {
+    const loadTarget = chooseDentalModelWorkbenchTarget(model);
+    const sizeMb = Math.ceil(model.sizeBytes / 1024 / 1024);
+    const itemWarnings = [...model.warnings];
+    if (isCtSurfaceModelRole(model.role)) {
+      itemWarnings.push("КТ-поверхность требует локальный 3D-модуль или внешний просмотр; CRM не загружает сетку в карточку приема.");
+    }
+    if (loadTarget === "metadata_only") {
+      itemWarnings.push("Файл остается записью органайзера до разбора формата во внешнем или локальном модуле.");
+    }
+    if (sizeMb >= 80) {
+      itemWarnings.push("Крупная сетка должна открываться локально; браузерная карточка хранит только маршрут и метаданные.");
+    }
+    itemWarnings.forEach((warning) => warnings.add(warning));
+    const pairingHint: DentalModelWorkbenchPairingHint = input.dicomLikeFiles > 0 ? "same_folder_ct_series" : "model_only_folder";
+    const ctSurfaceManifest = buildCtSurfaceModelManifest({
+      model: { ...model, warnings: itemWarnings },
+      folderFingerprint: input.folderFingerprint,
+      pairingHint,
+      loadTarget,
+      sizeMb
+    });
+    const nextAction =
+      loadTarget === "local_bridge"
+        ? "Передайте модель локальному 3D-модулю рядом с КТ-серией; CRM хранит роль, размер и связь с папкой."
+        : loadTarget === "external_model_viewer"
+          ? "Откройте модель во внешнем 3D-просмотре и держите CRM как слой пациента, заметок и маршрута."
+          : "Сохраните модель как метаданные органайзера, пока внешний модуль не подтвердит формат.";
+    return {
+      fileName: model.fileName,
+      format: model.format,
+      role: model.role,
+      sizeBytes: model.sizeBytes,
+      sizeMb,
+      loadTarget,
+      pairingHint,
+      ctSurfaceManifest,
+      warnings: itemWarnings,
+      nextAction
+    };
+  });
+  const targetRank: Record<DentalModelWorkbenchLoadTarget, number> = {
+    metadata_only: 0,
+    external_model_viewer: 1,
+    local_bridge: 2
+  };
+  const recommendedTarget = items.reduce<DentalModelWorkbenchLoadTarget>(
+    (target, item) => (targetRank[item.loadTarget] > targetRank[target] ? item.loadTarget : target),
+    "metadata_only"
+  );
+  const ctSurfaceModels = items.filter((item) => isCtSurfaceModelRole(item.role)).length;
+  const largestModelMb = items.reduce((largest, item) => Math.max(largest, item.sizeMb), 0);
+  const nextAction =
+    items.length === 0
+      ? "3D-модели не найдены; оставайтесь в маршруте снимков."
+      : recommendedTarget === "local_bridge"
+        ? "Для КТ-поверхностей и крупных сеток используйте локальный 3D-модуль; CRM хранит no-mesh маршрут."
+        : recommendedTarget === "external_model_viewer"
+          ? "Используйте внешний 3D-просмотр и связывайте модель с КТ-кейсом по метке папки."
+          : "Держите модели как метаданные, пока формат или архив не разобран внешним модулем.";
+  return {
+    version: "dental-crm-model-workbench-v1" as const,
+    folderFingerprint: input.folderFingerprint,
+    totalModels: items.length,
+    ctSurfaceModels,
+    largestModelMb,
+    recommendedTarget,
+    items,
+    warnings: Array.from(warnings),
+    nextAction
+  };
+}
+
+async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest, options: ApiDicomScanOptions = {}) {
   const fromManualRoot = Boolean(input.rootPaths?.length);
   const roots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
     .map((root) => path.resolve(root))
@@ -3648,8 +5442,10 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
   const visited = new Set<string>();
   const queue = roots.map((root) => ({ root, folderPath: root, depth: 0 }));
   let scannedFolders = 0;
+  const yieldState = createApiDicomScanYieldState();
 
   while (queue.length && scannedFolders < input.maxFolders) {
+    await maybeYieldApiDicomScan(yieldState, options.signal);
     const item = queue.shift();
     if (!item) break;
     const currentKey = item.folderPath.toLowerCase();
@@ -3660,9 +5456,10 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
     let entries;
     try {
       entries = await readdir(item.folderPath, { withFileTypes: true });
-    } catch {
+    } catch (error) {
+      if (isApiDicomScanAbortError(error)) throw error;
       const source = classifyLocalImagingSource(item.root, item.folderPath, fromManualRoot);
-      warnings.add(`Cannot read one organizer folder under ${source.sourceLabel}.`);
+      warnings.add(`Одна папка в разделе «${source.sourceLabel}» недоступна для чтения. Органайзер продолжил проверку остальных папок.`);
       continue;
     }
 
@@ -3677,6 +5474,7 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
     const folderHasDicomHint = folderHintScore(item.folderPath) > 0;
 
     for (const entry of entries) {
+      await maybeYieldApiDicomScan(yieldState, options.signal);
       const entryName = entry.name.toString();
       const fullPath = path.join(item.folderPath, entryName);
       if (entry.isDirectory()) {
@@ -3732,7 +5530,7 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
           confidence,
           warnings:
             sizeBytes > 250 * 1024 * 1024
-              ? ["Крупная сетка/архив: предпросмотр должен оставаться только с метаданными, пока не подключен локальный 3D-worker."]
+              ? ["Крупная сетка/архив: предпросмотр должен оставаться только с метаданными, пока не подключен локальный 3D-обработчик."]
               : []
         });
       } else {
@@ -3762,7 +5560,7 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
     if (dicomLikeFiles === 0 && archiveFiles === 0 && modelFiles > 0 && isLikelySoftwareResourceFolder(item.folderPath)) continue;
 
     const reasons: string[] = [];
-    if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} DICOM-похожих файлов`);
+    if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} файлов снимков`);
     if (modelFiles) reasons.push(`${modelFiles} кандидатов стоматологических 3D-моделей`);
     if (archiveFiles) reasons.push(`${archiveFiles} архивных файлов`);
     if (imageFiles >= 8) reasons.push(`${imageFiles} файлов изображений`);
@@ -3779,13 +5577,22 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
     }
 
     const source = classifyLocalImagingSource(item.root, item.folderPath, fromManualRoot);
+    const folderFingerprint = fingerprintLocalPath(item.folderPath);
+    const sortedModelCandidates = modelCandidates
+      .sort((left, right) => right.confidence - left.confidence || right.sizeBytes - left.sizeBytes)
+      .slice(0, 8);
+    const modelWorkbenchManifest = buildDentalModelWorkbenchManifest({
+      folderFingerprint,
+      dicomLikeFiles,
+      modelCandidates: sortedModelCandidates
+    });
     cases.push({
       id: buildOrganizerCaseId(item.folderPath),
       displayName: path.basename(item.folderPath) || item.folderPath,
-      safeDisplayName: safeLocalImagingAlias("Local imaging case", item.folderPath),
+      safeDisplayName: safeLocalImagingAlias("Кейс снимков", item.folderPath),
       sourceLabel: source.sourceLabel,
       sourceKind: source.sourceKind,
-      folderFingerprint: fingerprintLocalPath(item.folderPath),
+      folderFingerprint,
       folderPath: item.folderPath,
       latestModifiedAt,
       dicomLikeFiles,
@@ -3796,9 +5603,8 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
       modelConfidence: Number(modelConfidence.toFixed(2)),
       combinedConfidence: Number(combinedConfidence.toFixed(2)),
       recommendedAction,
-      modelCandidates: modelCandidates
-        .sort((left, right) => right.confidence - left.confidence || right.sizeBytes - left.sizeBytes)
-        .slice(0, 8),
+      modelCandidates: sortedModelCandidates,
+      modelWorkbenchManifest,
       reasons,
       warnings: Array.from(folderWarnings)
     });
@@ -3817,16 +5623,16 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest) 
     )
     .slice(0, input.maxCandidates);
 
-  if (!sortedCases.length) warnings.add("В выбранных корнях не найдены кандидаты КТ/DICOM или стоматологических 3D-моделей.");
+  if (!sortedCases.length) warnings.add("В выбранных корнях не найдены кандидаты КТ/снимков или стоматологических 3D-моделей.");
 
   const best = sortedCases[0] ?? null;
   const nextAction = best
     ? best.recommendedAction === "review_3d_models"
-      ? "Откройте лучшую папку как 3D-кейс; держите меши локально, пока не подключен отдельный 3D-просмотрщик/worker."
+      ? "Откройте лучшую папку как 3D-кейс; держите сетки локально, пока не подключен отдельный 3D-просмотрщик/обработчик."
       : best.recommendedAction === "mixed_case_workup"
-        ? "Используйте лучшую папку для DICOM-разбора и проверьте связанные 3D-модели как вложения только с метаданными."
-        : "Используйте лучшую папку для DICOM-разбора; пиксели держите локально и сохраняйте только контракт рабочего стола."
-    : "Укажите известную папку КТ/DICOM/моделей или настройте DENTAL_DICOM_DISCOVERY_ROOTS.";
+        ? "Используйте лучшую папку для разбора снимков и проверьте связанные 3D-модели как вложения только с метаданными."
+        : "Используйте лучшую папку для разбора снимков; тяжелые данные держите локально и сохраняйте только план просмотра."
+    : "Укажите известную папку КТ/снимков/моделей или настройте корни поиска в серверных настройках.";
 
   return localImagingOrganizerResponseSchema.parse({
     version: "dental-crm-local-imaging-organizer-v1",
@@ -3844,14 +5650,22 @@ async function buildDicomFolderSeriesPreview(input: {
   recursive: boolean;
   sourceName: string;
   maxFiles: number;
+  maxFolders: number;
+  maxEntriesPerFolder: number;
   maxHeaderBytes: number;
-}) {
-  const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles);
-  const manifest = buildDicomHeaderManifest({
-    files: scan.files,
-    sourceName: input.sourceName,
-    maxHeaderBytes: input.maxHeaderBytes
+}, options: ApiDicomScanOptions = {}) {
+  const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles, options, {
+    maxFolders: input.maxFolders,
+    maxEntriesPerFolder: input.maxEntriesPerFolder
   });
+  const manifest = await buildDicomHeaderManifest(
+    {
+      files: scan.files,
+      sourceName: input.sourceName,
+      maxHeaderBytes: input.maxHeaderBytes
+    },
+    options
+  );
   const preview = parseDicomSeriesManifest({
     sourceName: input.sourceName,
     sourceKind: "dicom_file",
@@ -3874,6 +5688,9 @@ function recommendDicomFolderWorkupPath(
   readiness: ReturnType<typeof buildDicomWorkstationReadiness>,
   series: DicomSeriesPreviewGroup
 ): DicomFolderWorkupPath {
+  if (readiness.renderPlan.textureStrategy === "metadata_only" || readiness.runtimeProfile.executionLane === "metadata_only") {
+    return "metadata_only";
+  }
   if (
     readiness.canOpenInBrowser &&
     (readiness.effectiveLoadStrategy === "mpr_downsampled" ||
@@ -3890,18 +5707,18 @@ function recommendDicomFolderWorkupPath(
 function nextDicomFolderAction(pathKind: DicomFolderWorkupPath) {
   switch (pathKind) {
     case "open_mpr":
-      return "Откройте отдельный MPR-рабочий стол; экран приема оставьте только для заметок и состояния.";
+      return "Откройте отдельное рабочее место КТ-срезов; экран приема оставьте только для заметок и состояния.";
     case "downsampled_mpr":
-      return "Откройте MPR с первым проходом в пониженном разрешении, затем разрешайте полное качество только по запросу врача.";
+      return "Откройте КТ-срезы с первым проходом в пониженном разрешении, затем разрешайте полное качество только по запросу врача.";
     case "external_viewer":
-      return "Используйте OHIF/настольный DICOM-просмотрщик; CRM хранит метаданные, восстановление и аннотации.";
+      return "Используйте внешний или настольный КТ-просмотрщик; CRM хранит метаданные, восстановление и аннотации.";
     default:
       return "Оставьте предпросмотр только с метаданными и попросите администратора выбрать более подходящую станцию или источник.";
   }
 }
 
-async function buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest) {
-  const folder = await buildDicomFolderSeriesPreview(input);
+async function buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest, options: ApiDicomScanOptions = {}) {
+  const folder = await buildDicomFolderSeriesPreview(input, options);
   const warnings = new Set<string>(folder.warnings);
   const eligibleSeries = folder.preview.series.filter((series) => series.status !== "blocked").slice(0, 12);
 
@@ -3909,7 +5726,7 @@ async function buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest) {
     warnings.add("Планируются только первые 12 незаблокированных серий, чтобы разбор папки оставался быстрым и ограниченным.");
   }
   if (!eligibleSeries.length) {
-    warnings.add("В выбранной папке не найдены пригодные DICOM-серии.");
+    warnings.add("В выбранной папке не найдены пригодные серии снимков.");
   }
 
   const plans = eligibleSeries.map((series) => {
@@ -3961,55 +5778,109 @@ async function buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest) {
 export async function registerImagingRoutes(app: FastifyInstance) {
   app.post("/api/imaging/imports/preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "imaging import preview"))) return;
-    const input = imagingImportPreviewRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      imagingImportPreviewRequestSchema,
+      request.body,
+      "Предпросмотр снимков не построен: передайте непустой текст или таблицу источника снимков."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return parseImagingManifest(input);
   });
 
   app.post("/api/imaging/dicom/series-preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom series preview"))) return;
-    const input = dicomSeriesPreviewRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      dicomSeriesPreviewRequestSchema,
+      request.body,
+      "Предпросмотр DICOM-серии не построен: передайте непустой список метаданных серии."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return parseDicomSeriesManifest(input);
   });
 
   app.post("/api/imaging/dicomweb/check", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "dicomweb check"))) return;
-    const input = dicomWebConnectorCheckRequestSchema.parse(request.body);
+    if (!(await requireDicomWebSettingsAccess(request, reply))) return;
+    const parsed = parseImagingPayload(
+      dicomWebConnectorCheckRequestSchema,
+      request.body,
+      "Проверка DICOMweb не выполнена: передайте корректный адрес сервиса и параметры доступа."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return checkDicomWebConnector(input);
   });
 
   app.post("/api/imaging/dicom/viewer-launch-manifest", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom viewer launch manifest"))) return;
-    const input = dicomViewerLaunchManifestRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      dicomViewerLaunchManifestRequestSchema,
+      request.body,
+      "Пакет открытия просмотра не построен: передайте выбранную серию и состояние просмотра."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildDicomViewerLaunchManifest(input);
   });
 
   app.post("/api/imaging/dicom/viewer-tool-state", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom viewer tool state"))) return;
-    const input = dicomViewerToolStateBundleRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      dicomViewerToolStateBundleRequestSchema,
+      request.body,
+      "Пакет инструментов просмотра не построен: передайте выбранную серию, состояние и разметку."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildDicomViewerToolStateBundle(input);
   });
 
   app.post("/api/imaging/dicom/render-cache-plan", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom render cache plan"))) return;
-    const input = dicomRenderCachePlanRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      dicomRenderCachePlanRequestSchema,
+      request.body,
+      "План кэша просмотра не построен: передайте серию и план мощности устройства."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildDicomRenderCachePlan(input);
   });
 
   app.post("/api/imaging/dicom/workstation-readiness", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom workstation readiness"))) return;
-    const input = dicomWorkstationReadinessRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      dicomWorkstationReadinessRequestSchema,
+      request.body,
+      "Проверка готовности рабочего места не выполнена: передайте серию и сведения об устройстве."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildDicomWorkstationReadiness(input);
   });
 
   app.post("/api/imaging/dicom/viewer-workbench-manifest", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom viewer workbench manifest"))) return;
-    const input = dicomViewerWorkbenchManifestRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      dicomViewerWorkbenchManifestRequestSchema,
+      request.body,
+      "Рабочий пакет просмотра не построен: передайте серию, устройство и состояние просмотра."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return buildDicomViewerWorkbenchManifest(input);
   });
 
   app.post("/api/imaging/dicom/workbench-bundles", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "dicom workbench bundle save"))) return;
-    const input = saveDicomWorkbenchBundleRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      saveDicomWorkbenchBundleRequestSchema,
+      request.body,
+      "Набор просмотра не сохранен: передайте сформированный рабочий пакет просмотра."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     const bundle = saveDicomWorkbenchBundle(input);
     return reply.code(201).send(dicomWorkbenchBundleResponseSchema.parse({ bundle, warnings: bundle.warnings }));
   });
@@ -4025,66 +5896,113 @@ export async function registerImagingRoutes(app: FastifyInstance) {
       generatedAt: new Date().toISOString(),
       warnings: [],
       nextAction: bundles.length
-        ? "Восстановите последний пакет CT/MPR-рабочего стола, затем перед диагностикой заново подключите локальные пиксели или DICOMweb."
-        : "Создайте пакет CT/MPR-рабочего стола из DICOM-папки или DICOMweb-серии."
+        ? "Восстановите последний набор КЛКТ/КТ-срезов, затем перед диагностикой заново подключите локальные снимки или архив снимков."
+        : "Создайте набор КЛКТ/КТ-срезов из папки снимков или серии архива снимков."
     });
   });
 
   app.post("/api/imaging/dicom/local-folder-discovery", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom local folder discovery"))) return;
-    const input = dicomLocalFolderDiscoveryRequestSchema.parse(request.body);
-    return discoverLocalDicomFolders(input);
+    const parsed = parseImagingPayload(
+      dicomLocalFolderDiscoveryRequestSchema,
+      request.body,
+      "Поиск папок снимков не запущен: проверьте корни поиска и лимиты обхода."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
+    return runAbortableImagingScan(request, reply, (options) => discoverLocalDicomFolders(input, options));
   });
 
   app.post("/api/imaging/local-organizer/scan-preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "local imaging organizer preview"))) return;
-    const input = localImagingOrganizerRequestSchema.parse(request.body);
-    return organizeLocalImagingSources(input);
+    const parsed = parseImagingPayload(
+      localImagingOrganizerRequestSchema,
+      request.body,
+      "Разбор локальных снимков не запущен: проверьте корни поиска и лимиты обхода."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
+    return runAbortableImagingScan(request, reply, (options) => organizeLocalImagingSources(input, options));
   });
 
   app.post("/api/imaging/dicom/folder-series-preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom folder series preview"))) return;
-    const input = dicomFolderSeriesPreviewRequestSchema.parse(request.body);
-    return buildDicomFolderSeriesPreview(input);
+    const parsed = parseImagingPayload(
+      dicomFolderSeriesPreviewRequestSchema,
+      request.body,
+      "Предпросмотр папки DICOM не построен: выберите папку снимков и безопасные лимиты чтения."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
+    return runAbortableImagingScan(request, reply, (options) => buildDicomFolderSeriesPreview(input, options));
   });
 
   app.post("/api/imaging/dicom/first-frame-preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom first frame preview"))) return;
-    const input = dicomFirstFramePreviewRequestSchema.parse(request.body);
-    return buildDicomFirstFramePreview(input);
+    const parsed = parseImagingPayload(
+      dicomFirstFramePreviewRequestSchema,
+      request.body,
+      "Первый кадр DICOM не построен: выберите папку снимков и безопасные лимиты чтения."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
+    return runAbortableImagingScan(request, reply, (options) => buildDicomFirstFramePreview(input, options));
   });
 
   app.post("/api/imaging/dicom/folder-workup-plan", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "dicom folder workup plan"))) return;
-    const input = dicomFolderWorkupPlanRequestSchema.parse(request.body);
-    return buildDicomFolderWorkupPlan(input);
+    const parsed = parseImagingPayload(
+      dicomFolderWorkupPlanRequestSchema,
+      request.body,
+      "План работы с папкой DICOM не построен: выберите папку снимков и передайте сведения об устройстве."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
+    return runAbortableImagingScan(request, reply, (options) => buildDicomFolderWorkupPlan(input, options));
   });
 
   app.post("/api/imaging/imports/commit", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "imaging import commit"))) return;
-    const input = imagingImportPreviewRequestSchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      imagingImportPreviewRequestSchema,
+      request.body,
+      "Импорт снимков не выполнен: повторно передайте ту же непустую выгрузку перед записью."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     return commitImagingImport(input);
   });
 
   app.post("/api/imaging/folders/scan-preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "imaging folder scan preview"))) return;
-    const input = imagingFolderScanRequestSchema.parse(request.body);
-    const scan = await collectImagingFiles(input.folderPath, input.recursive, input.maxFiles);
-    const rawText = buildFolderScanManifest(scan.files);
-    const preview = parseImagingManifest({
-      sourceName: input.sourceName,
-      sourceKind: "folder_watch",
-      rawText
-    });
+    const parsed = parseImagingPayload(
+      imagingFolderScanRequestSchema,
+      request.body,
+      "Сканирование папки снимков не запущено: выберите папку и безопасные лимиты чтения."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
+    return runAbortableImagingScan(request, reply, async (options) => {
+      const scan = await collectImagingFiles(input.folderPath, input.recursive, input.maxFiles, options, {
+        maxFolders: input.maxFolders,
+        maxEntriesPerFolder: input.maxEntriesPerFolder
+      });
+      const rawText = buildFolderScanManifest(scan.files);
+      const preview = parseImagingManifest({
+        sourceName: input.sourceName,
+        sourceKind: "folder_watch",
+        rawText
+      });
 
-    return imagingFolderScanResponseSchema.parse({
-      folderPath: path.resolve(input.folderPath),
-      recursive: input.recursive,
-      filesFound: scan.files.length,
-      filesReturned: scan.files.length,
-      rawText,
-      preview,
-      warnings: scan.warnings
+      return imagingFolderScanResponseSchema.parse({
+        folderPath: path.resolve(input.folderPath),
+        recursive: input.recursive,
+        filesFound: scan.files.length,
+        filesReturned: scan.files.length,
+        rawText,
+        preview,
+        warnings: scan.warnings
+      });
     });
   });
 
@@ -4099,7 +6017,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     if (!(await requireClinicalReadAccess(request, reply, "imaging viewer session read"))) return;
     const { id } = request.params as { id: string };
     const study = imagingStudies.find((candidate) => candidate.id === id);
-    if (!study) return reply.code(404).send({ error: "Imaging study not found" });
+    if (!study) return sendImagingStudyNotFound(reply);
     const session = getOrCreateImagingViewerSession(id);
     return imagingViewerSessionResponseSchema.parse({
       session,
@@ -4111,8 +6029,14 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     if (!(await requireClinicalMutationAccess(request, reply, "imaging viewer session save"))) return;
     const { id } = request.params as { id: string };
     const study = imagingStudies.find((candidate) => candidate.id === id);
-    if (!study) return reply.code(404).send({ error: "Imaging study not found" });
-    const input = saveImagingViewerSessionRequestSchema.parse(request.body);
+    if (!study) return sendImagingStudyNotFound(reply);
+    const parsed = parseImagingPayload(
+      saveImagingViewerSessionRequestSchema,
+      request.body,
+      "Сеанс просмотра снимка не сохранен: передайте состояние просмотра и разметку."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     const session = saveImagingViewerSession(id, input);
     return reply.code(200).send(
       imagingViewerSessionResponseSchema.parse({
@@ -4124,21 +6048,27 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 
   app.post("/api/imaging/studies", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "imaging study create"))) return;
-    const input = createImagingStudySchema.parse(request.body);
+    const parsed = parseImagingPayload(
+      createImagingStudySchema,
+      request.body,
+      "Снимок не создан: выберите пациента, вид снимка и название."
+    );
+    if (!parsed.ok) return reply.code(400).send(parsed.response);
+    const input = parsed.data;
     const patient = patients.find((candidate) => candidate.id === input.patientId);
     if (!patient) {
-      return reply.code(404).send({ error: "Пациент не найден" });
+      return sendImagingStudyScopeError(reply, 404, "Пациент для снимка не найден.");
     }
     if (input.visitId) {
       const visit = findVisitById(input.visitId);
       if (!visit) {
-        return reply.code(404).send({ error: "Прием не найден" });
+        return sendImagingStudyScopeError(reply, 404, "Прием для снимка не найден.");
       }
       if (visit.patientId !== input.patientId) {
-        return reply.code(409).send({ error: "Снимок нельзя привязать к приему другого пациента" });
+        return sendImagingStudyScopeError(reply, 409, "Снимок относится к приему другого пациента.");
       }
       if (visit.organizationId !== patient.organizationId) {
-        return reply.code(409).send({ error: "Снимок нельзя привязать к приему другой клиники" });
+        return sendImagingStudyScopeError(reply, 409, "Снимок относится к приему другой клиники.");
       }
     }
     const study = createImagingStudy({
@@ -4163,7 +6093,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const study = imagingStudies.find((candidate) => candidate.id === id);
     if (!study) {
-      return reply.code(404).send({ error: "Study not found" });
+      return sendImagingStudyNotFound(reply);
     }
     return reply.type("image/svg+xml; charset=utf-8").send(previewSvg(study));
   });
