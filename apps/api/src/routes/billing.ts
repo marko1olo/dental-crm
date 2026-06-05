@@ -90,6 +90,16 @@ export async function registerBillingRoutes(app: FastifyInstance) {
         );
       }
     }
+    if (existingPayment) {
+      if (existingPayment.patientId !== paymentInput.patientId || !paymentRetryMatchesExisting(existingPayment, paymentInput)) {
+        return sendBillingPaymentScopeError(
+          reply,
+          409,
+          "Клиентская операция уже записала другую оплату. Повтор должен совпадать по сумме, счету, чеку, плательщику и коду вычета."
+        );
+      }
+      return reply.code(200).send(paymentSchema.parse(existingPayment));
+    }
     const payment = createPayment(paymentInput);
     return reply.code(201).send(paymentSchema.parse(payment));
   });

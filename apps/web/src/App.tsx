@@ -17668,6 +17668,10 @@ export function App() {
       setError("Р’С‹Р±РµСЂРёС‚Рµ РёСЃС…РѕРґ Р·Р°РґР°С‡Рё СЃРІСЏР·Рё: РЅРµС‚ РѕС‚РІРµС‚Р°, РїРµСЂРµР·РІРѕРЅРёС‚СЊ, РїРµСЂРµРЅРѕСЃ, РѕР±РµС‰Р°Р» РѕРїР»Р°С‚Сѓ РёР»Рё РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ.");
       return;
     }
+    if (!outcome) {
+      setError("Выберите исход задачи связи: нет ответа, перезвонить, перенос, обещал оплату или выдача документов.");
+      return;
+    }
     setCommunicationSavingTaskId(taskId);
     try {
       const response = await fetch("/api/communications/tasks/complete", {
