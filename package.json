@@ -118,6 +118,7 @@
     "smoke:speech-recorder-resilience-source": "node scripts/smoke-speech-recorder-resilience-source.mjs",
     "smoke:speech-final-ready-status-source": "node scripts/smoke-speech-final-ready-status-source.mjs",
     "smoke:speech-clinical-scope": "node scripts/smoke-speech-clinical-scope.mjs",
+    "smoke:speech-russian-dental-draft": "node scripts/smoke-speech-russian-dental-draft.mjs",
     "smoke:speech-groq-chunk-floor": "node scripts/smoke-speech-groq-chunk-floor.mjs",
     "smoke:speech-provider-errors": "node scripts/smoke-speech-provider-errors.mjs",
     "smoke:speech-route-validation": "node scripts/smoke-speech-route-validation.mjs",

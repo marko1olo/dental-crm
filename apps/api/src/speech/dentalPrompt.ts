@@ -6,22 +6,65 @@ import type {
 } from "@dental/shared";
 import { numberFromEnv } from "./keyPool.js";
 
-const promptVersion = "dental-stt-prompt-v2-2026-05-16";
+const promptVersion = "dental-stt-prompt-v3-2026-06-06";
 const promptProviders: SpeechProviderKind[] = ["groq_whisper", "openai_transcribe"];
 
 const baseTerms = [
   "FDI 11-48",
+  "зуб 11",
+  "зуб 36",
+  "зуб 46",
+  "один один = 11",
+  "три шесть = 36",
+  "четыре шесть = 46",
   "RVG",
+  "РВГ",
   "OPG",
+  "ОПТГ",
   "CBCT",
+  "КЛКТ",
+  "КТ",
   "TRG",
+  "ТРГ",
+  "жалобы",
+  "анамнез",
+  "объективно",
+  "диагноз",
+  "план лечения",
+  "боль при накусывании",
+  "самопроизвольная боль",
+  "ночная боль",
+  "реакция на холодное",
+  "реакция на горячее",
+  "перкуссия",
+  "зондирование",
+  "пальпация",
+  "слизистая",
+  "кариозная полость",
+  "пародонтальный карман",
+  "подвижность зуба",
+  "кровоточивость",
+  "зубной налет",
+  "зубной камень",
   "cofferdam",
+  "коффердам",
+  "анестезия",
+  "инфильтрационная анестезия",
+  "проводниковая анестезия",
+  "адгезивный протокол",
+  "композитная реставрация",
+  "эндодонтическое лечение",
+  "ирригация каналов",
+  "пломбирование каналов",
   "Air Flow",
   "E.max",
+  "диоксид циркония",
   "zirconia",
   "metal-ceramic",
+  "металлокерамика",
   "PMMA",
   "veneer",
+  "винир",
   "inlay",
   "onlay",
   "overlay",
@@ -37,16 +80,107 @@ const baseTerms = [
 ];
 
 const specialtyTerms: Record<DentalSpecialty, string[]> = {
-  therapist: ["caries", "pulpitis", "periodontitis", "canal", "restoration", "composite", "rubber dam"],
-  orthopedist: ["crown", "bridge", "veneer", "lithium disilicate", "zirconia", "post core", "temporary crown"],
-  surgeon: ["extraction", "suture", "incision", "cystectomy", "alveolitis", "hemostasis", "PRF"],
-  orthodontist: ["braces", "aligner", "retainer", "occlusion", "archwire", "Damon", "Invisalign"],
-  periodontist: ["periodontal pocket", "curettage", "splinting", "flap surgery", "gingiva"],
-  hygienist: ["scaling", "polishing", "fluoride", "remineralization", "biofilm"],
-  pediatric: ["primary tooth", "pulpotomy", "sealant", "adaptation", "silver diamine fluoride"],
-  implantologist: ["implant", "abutment", "healing cap", "sinus-lift", "bone graft", "guided surgery"],
-  radiologist: ["periapical", "bitewing", "OPG", "CBCT", "MPR", "panoramic reconstruction"],
-  universal: ["exam", "complaint", "anamnesis", "objective status", "diagnosis candidate", "treatment plan"]
+  therapist: [
+    "кариес",
+    "кариес дентина",
+    "пульпит",
+    "периодонтит",
+    "канал",
+    "устье канала",
+    "рабочая длина",
+    "реставрация",
+    "композит",
+    "коффердам",
+    "caries",
+    "pulpitis",
+    "periodontitis"
+  ],
+  orthopedist: [
+    "коронка",
+    "мостовидный протез",
+    "винир",
+    "вкладка",
+    "накладка",
+    "культевая вкладка",
+    "временная коронка",
+    "прикус",
+    "окклюзия",
+    "lithium disilicate",
+    "zirconia"
+  ],
+  surgeon: [
+    "удаление",
+    "разрез",
+    "кюретаж",
+    "шов",
+    "гемостаз",
+    "альвеолит",
+    "периостит",
+    "абсцесс",
+    "ретинированный зуб",
+    "дистопированный зуб",
+    "PRF"
+  ],
+  orthodontist: [
+    "брекеты",
+    "элайнеры",
+    "ретейнер",
+    "окклюзия",
+    "скученность",
+    "диастема",
+    "трема",
+    "класс Энгля",
+    "Damon",
+    "Invisalign"
+  ],
+  periodontist: [
+    "пародонтальный карман",
+    "кюретаж",
+    "шинирование",
+    "рецессия",
+    "фуркация",
+    "гингива",
+    "пародонтит",
+    "мукозит"
+  ],
+  hygienist: [
+    "скейлинг",
+    "полировка",
+    "фторирование",
+    "реминерализация",
+    "биопленка",
+    "индекс гигиены",
+    "пигментированный налет"
+  ],
+  pediatric: [
+    "молочный зуб",
+    "пульпотомия",
+    "герметизация фиссур",
+    "адаптация",
+    "серебрение",
+    "аппликационная анестезия"
+  ],
+  implantologist: [
+    "имплантат",
+    "абатмент",
+    "формирователь десны",
+    "синус-лифтинг",
+    "костная пластика",
+    "навигационная хирургия",
+    "хирургический шаблон"
+  ],
+  radiologist: [
+    "периапикальный очаг",
+    "bitewing",
+    "ОПТГ",
+    "КЛКТ",
+    "MPR",
+    "панорамная реконструкция",
+    "резорбция",
+    "киста",
+    "гранулема"
+  ],
+  universal: ["осмотр", "жалобы", "анамнез", "объективный статус", "диагноз со слов врача", "план лечения"]
 };
 
 function promptEnabled(): boolean {
@@ -55,7 +189,7 @@ function promptEnabled(): boolean {
 }
 
 function maxPromptChars(): number {
-  return Math.max(220, Math.min(numberFromEnv("DENTAL_STT_PROMPT_MAX_CHARS", 840), 1200));
+  return Math.max(220, Math.min(numberFromEnv("DENTAL_STT_PROMPT_MAX_CHARS", 1100), 1800));
 }
 
 function customTerms(): string[] {
@@ -90,11 +224,13 @@ export function buildDentalSttPrompt(input: {
 }): string | null {
   if (!promptEnabled() || !promptProviders.includes(input.providerId)) return null;
   const specialty = input.specialty ?? "universal";
-  const terms = uniqueTerms([...baseTerms, ...specialtyTerms[specialty], ...customTerms()]).slice(0, 42);
+  const terms = uniqueTerms([...baseTerms, ...specialtyTerms[specialty], ...customTerms()]).slice(0, 72);
   const prompt = [
     `${sourceHint(input.source ?? "visit")} Стоматологический контекст распознавания речи.`,
-    "Расшифруй дословно на языке речи, обычно русском. Не суммируй, не ставь диагноз, не достраивай и не добавляй факты.",
-    "Сохраняй номера зубов, неопределенность, бренды, материалы, латинские названия и сокращения.",
+    "Расшифруй дословно на русском, если врач говорит по-русски. Не суммируй, не ставь диагноз, не достраивай и не добавляй факты.",
+    "Если слышна стоматологическая фраза, выбирай более вероятный стоматологический термин: коффердам, перкуссия, зондирование, кариес, пульпит, периодонтит, RVG, ОПТГ, КЛКТ.",
+    "Сохраняй номера зубов FDI 11-48. Если врач говорит 'три шесть', 'сорок шестой' или 'один один', записывай номер зуба как 36, 46 или 11.",
+    "Сохраняй неопределенность, бренды, материалы, латинские названия и сокращения.",
     `Термины: ${terms.join(", ")}.`
   ].join(" ");
   return trimPrompt(prompt, maxPromptChars());
