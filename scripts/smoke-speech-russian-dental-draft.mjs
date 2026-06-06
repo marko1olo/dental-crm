@@ -99,6 +99,58 @@ includesText(scopedDraft.diagnosis, "кариес эмали", "scoped diagnosis
 includesText(scopedDraft.treatmentPlan, "герметизация", "scoped treatment plan field");
 includesText(scopedDraft.treatmentPlan, "СИЦ", "scoped treatment plan field");
 
+const shorthandTranscript = [
+  "Без жалоб.",
+  "Статус локалис зуб 15, пламба несостоятельна, холодовая проба отрицательная.",
+  "Ди эс кариес дентина 15.",
+  "Сделано матрица, клин, финишная обработка и полеровка."
+].join(" ");
+const shorthandDraft = buildRuleBasedVisitDraftFromTranscript(shorthandTranscript, "therapist");
+const shorthandNormalized = normalizeDentalSpeechTranscript(shorthandTranscript, "therapist");
+
+includesText(shorthandNormalized.normalizedText, "status localis", "shorthand normalized transcript");
+includesText(shorthandNormalized.normalizedText, "пломба", "shorthand normalized transcript");
+includesText(shorthandNormalized.normalizedText, "холодовая проба", "shorthand normalized transcript");
+includesText(shorthandNormalized.normalizedText, "DS", "shorthand normalized transcript");
+includesText(shorthandNormalized.normalizedText, "финирование", "shorthand normalized transcript");
+includesText(shorthandNormalized.normalizedText, "полировка", "shorthand normalized transcript");
+includesText(shorthandDraft.complaint, "нет", "shorthand complaint field");
+includesText(shorthandDraft.objectiveStatus, "пломба", "shorthand objective field");
+includesText(shorthandDraft.objectiveStatus, "холодовая проба", "shorthand objective field");
+includesText(shorthandDraft.diagnosis, "кариес дентина", "shorthand diagnosis field");
+includesText(shorthandDraft.treatmentPlan, "матрица", "shorthand treatment plan field");
+includesText(shorthandDraft.treatmentPlan, "клин", "shorthand treatment plan field");
+includesText(shorthandDraft.treatmentPlan, "финирование", "shorthand treatment plan field");
+includesText(shorthandDraft.treatmentPlan, "полировка", "shorthand treatment plan field");
+assert(shorthandDraft.quality?.signals.includes("procedure_mentioned"), "quality must detect matrix and finishing as procedure");
+
+const restorationTranscript = [
+  "Жалобы застревание пищи между зубами 16 и 17.",
+  "Объективно апрокс имальная поверхность зуб 16, контактный пунт нарушен, прикус проверен артикуляционной бумагой.",
+  "DS кариес дентина 16.",
+  "Проведено инфилтрационная анастезия одна карпула ультракаина, восстановлен контактный пункт, коррекция оклюзии, шлифовка и полеровка."
+].join(" ");
+const restorationDraft = buildRuleBasedVisitDraftFromTranscript(restorationTranscript, "therapist");
+const restorationNormalized = normalizeDentalSpeechTranscript(restorationTranscript, "therapist");
+
+includesText(restorationNormalized.normalizedText, "апроксимальная", "restoration normalized transcript");
+includesText(restorationNormalized.normalizedText, "контактный пункт", "restoration normalized transcript");
+includesText(restorationNormalized.normalizedText, "инфильтрационная", "restoration normalized transcript");
+includesText(restorationNormalized.normalizedText, "анестезия", "restoration normalized transcript");
+includesText(restorationNormalized.normalizedText, "карпула", "restoration normalized transcript");
+includesText(restorationNormalized.normalizedText, "коррекция окклюзии", "restoration normalized transcript");
+includesText(restorationNormalized.normalizedText, "шлифовка", "restoration normalized transcript");
+includesText(restorationNormalized.normalizedText, "полировка", "restoration normalized transcript");
+includesText(restorationDraft.complaint, "застревание пищи", "restoration complaint field");
+includesText(restorationDraft.objectiveStatus, "апроксимальная", "restoration objective field");
+includesText(restorationDraft.objectiveStatus, "контактный пункт", "restoration objective field");
+includesText(restorationDraft.diagnosis, "кариес дентина", "restoration diagnosis field");
+includesText(restorationDraft.treatmentPlan, "инфильтрационная", "restoration treatment plan field");
+includesText(restorationDraft.treatmentPlan, "коррекция окклюзии", "restoration treatment plan field");
+includesText(restorationDraft.treatmentPlan, "шлифовка", "restoration treatment plan field");
+includesText(restorationDraft.treatmentPlan, "полировка", "restoration treatment plan field");
+assert(restorationDraft.quality?.signals.includes("procedure_mentioned"), "quality must detect restoration procedure");
+
 console.log(
   JSON.stringify({
     ok: true,

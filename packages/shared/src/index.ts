@@ -5916,6 +5916,8 @@ type VisitDraftParserProfile = {
 
 const commonComplaintTokens = [
   "жалоб",
+  "без жалоб",
+  "отрицает",
   "беспоко",
   "отмечает",
   "боль",
@@ -5940,6 +5942,10 @@ const commonComplaintTokens = [
 ];
 const commonObjectiveTokens = [
   "объектив",
+  "status",
+  "статус",
+  "localis",
+  "praesens",
   "осмотр",
   "слизист",
   "зонд",
@@ -5955,6 +5961,8 @@ const commonObjectiveTokens = [
   "окклюз",
   "мезиаль",
   "дисталь",
+  "апроксим",
+  "контакт",
   "вестибуляр",
   "оральн",
   "пришееч",
@@ -5964,6 +5972,8 @@ const commonObjectiveTokens = [
   "гермет",
   "снимок",
   "рентген",
+  "визиограф",
+  "прицельн",
   "кт",
   "клкт",
   "оптг",
@@ -5973,6 +5983,9 @@ const commonObjectiveTokens = [
 ];
 const commonDiagnosisTokens = [
   "диагноз",
+  "ds",
+  "dx",
+  "d/s",
   "k02",
   "k04",
   "k05",
@@ -6000,6 +6013,18 @@ const commonPlanTokens = [
   "анест",
   "изоляц",
   "коффердам",
+  "матриц",
+  "клин",
+  "финир",
+  "полиров",
+  "шлиф",
+  "коррекц",
+  "контакт",
+  "артикуляц",
+  "карпул",
+  "ультракаин",
+  "септанест",
+  "убистезин",
   "препар",
   "адгезив",
   "рестав",
@@ -6034,6 +6059,8 @@ const visitDraftParserProfiles: Record<DentalSpecialty, VisitDraftParserProfile>
       "окклюз",
       "мезиаль",
       "дисталь",
+      "апроксим",
+      "контакт",
       "вестибуляр",
       "оральн",
       "пришееч",
@@ -6043,11 +6070,23 @@ const visitDraftParserProfiles: Record<DentalSpecialty, VisitDraftParserProfile>
       "гермет",
       "коффердам"
     ],
-    diagnosisTokens: ["k02", "k04", "кариес", "пульп", "периодонтит", "периапик"],
+    diagnosisTokens: ["ds", "dx", "d/s", "k02", "k04", "кариес", "пульп", "периодонтит", "периапик"],
     planTokens: [
       "анест",
       "изоляц",
       "коффердам",
+      "матриц",
+      "клин",
+      "финир",
+      "полиров",
+      "шлиф",
+      "коррекц",
+      "контакт",
+      "артикуляц",
+      "карпул",
+      "ультракаин",
+      "септанест",
+      "убистезин",
       "препар",
       "адгезив",
       "рестав",
@@ -6231,6 +6270,8 @@ const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [dentalTermPattern(String.raw`оптг`), "ОПТГ", "ОПТГ"],
   [dentalTermPattern(String.raw`р\s*в\s*г|эр\s*вэ\s*гэ|рвг`), "RVG", "RVG"],
   [dentalTermPattern(String.raw`э\s*о\s*д|е\s*о\s*д|эод|еод`), "ЭОД", "ЭОД"],
+  [dentalTermPattern(String.raw`д\s*с|ди\s*эс|ds|d\/s`), "DS", "DS"],
+  [dentalTermPattern(String.raw`д\s*икс|ди\s*икс|dx`), "Dx", "Dx"],
   [dentalTermPattern(String.raw`си\s*би\s*си\s*ти|cbct`), "CBCT", "CBCT"],
   [dentalTermPattern(String.raw`(?:кофердам|кофедам|кофирдам|коффердамм)(?:ом|а|е)?`), "коффердам", "коффердам"],
   [dentalTermPattern(String.raw`раббер\s*дам(?:ом|а|е)?`), "коффердам", "коффердам"],
@@ -6246,6 +6287,13 @@ const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [dentalTermPattern(String.raw`палпац(?:ия|ии)|пальпацыя`), "пальпация", "пальпация"],
   [dentalTermPattern(String.raw`адгизивн(?:ый|ого|ом|ая|ую)`), "адгезивный", "адгезивный"],
   [dentalTermPattern(String.raw`рестоврац(?:ия|ии|ию)`), "реставрация", "реставрация"],
+  [dentalTermPattern(String.raw`пламб(?:а|ы|у|ой|е)?`), "пломба", "пломба"],
+  [dentalTermPattern(String.raw`матриц(?:а|ы|у|ей|е)?`), "матрица", "матрица"],
+  [dentalTermPattern(String.raw`клин(?:а|ом|е)?`), "клин", "клин"],
+  [dentalTermPattern(String.raw`финиров(?:ание|ания)|финишн(?:ая|ой|ую)\s+обработк(?:а|и|у)`), "финирование", "финирование"],
+  [dentalTermPattern(String.raw`полеровк(?:а|и|у)|полировк(?:а|и|у)`), "полировка", "полировка"],
+  [dentalTermPattern(String.raw`холодов(?:ая|ой|ую)\s+проб(?:а|ы|у)|термо\s*проб(?:а|ы|у)|термопроб(?:а|ы|у)`), "холодовая проба", "холодовая проба"],
+  [dentalTermPattern(String.raw`визиограф(?:ия|ии|ию)|прицельн(?:ый|ого|ом|ая|ую)\s+сним(?:ок|ка)`), "прицельный снимок", "прицельный снимок"],
   [dentalTermPattern(String.raw`и\s*р\s*о\s*п\s*з|иропз`), "ИРОПЗ", "ИРОПЗ"],
   [dentalTermPattern(String.raw`к\s*п\s*у|кпу`), "КПУ", "КПУ"],
   [dentalTermPattern(String.raw`с\s*и\s*ц|сиц`), "СИЦ", "СИЦ"],
@@ -6256,14 +6304,22 @@ const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [dentalTermPattern(String.raw`мастер\s*штифт(?:а|ом|е)?`), "мастер-штифт", "мастер-штифт"],
   [dentalTermPattern(String.raw`оклюзионн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "окклюзионн$1", "окклюзионная поверхность"],
   [dentalTermPattern(String.raw`медиальн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "мезиальн$1", "мезиальная поверхность"],
+  [dentalTermPattern(String.raw`апрокс\s*имальн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?|апроксималн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "апроксимальн$1$2", "апроксимальная поверхность"],
+  [dentalTermPattern(String.raw`контактн(?:ый|ого|ом|ая|ую|ой)?\s+пун[кт](?:а|ом|е)?`), "контактный пункт", "контактный пункт"],
   [dentalTermPattern(String.raw`при\s+шеечн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "пришеечн$1", "пришеечная область"],
   [dentalTermPattern(String.raw`апек\s*локатор`), "апекслокатор", "апекслокатор"],
   [dentalTermPattern(String.raw`рабоч(?:ая|ей|ую)\s+длин(?:а|ы|у)`), "рабочая длина", "рабочая длина"],
   [dentalTermPattern(String.raw`гут[ао]\s*перч(?:а|и|у|ей)?`), "гуттаперча", "гуттаперча"],
   [dentalTermPattern(String.raw`силлер(?:а|ом|е)?`), "силер", "силер"],
   [dentalTermPattern(String.raw`времен(?:ная|ной|ную)\s+пломб(?:а|ы|у|ой)?`), "временная пломба", "временная пломба"],
+  [dentalTermPattern(String.raw`статус\s+пр[еэ]з[еэ]нс|status\s+praesens`), "status praesens", "status praesens"],
+  [dentalTermPattern(String.raw`статус\s+локалис|status\s+localis`), "status localis", "status localis"],
   [dentalTermPattern(String.raw`ирригац(?:ия|ии|ию)|иригац(?:ия|ии|ию)`), "ирригация", "ирригация"],
   [dentalTermPattern(String.raw`пломбиров(?:ание|ания)|пламбиров(?:ание|ания)`), "пломбирование", "пломбирование"],
+  [dentalTermPattern(String.raw`шлифовк(?:а|и|у|ой)|пришлифовк(?:а|и|у|ой)`), "шлифовка", "шлифовка"],
+  [dentalTermPattern(String.raw`коррекц(?:ия|ии|ию)\s+окклюз(?:ии|ия|ию)|корекц(?:ия|ии|ию)\s+оклюз(?:ии|ия|ию)`), "коррекция окклюзии", "коррекция окклюзии"],
+  [dentalTermPattern(String.raw`артикуляционн(?:ая|ой|ую)\s+бумаг(?:а|и|у|ой)`), "артикуляционная бумага", "артикуляционная бумага"],
+  [dentalTermPattern(String.raw`карпул(?:а|ы|у|ой|е)?`), "карпула", "карпула"],
   [dentalTermPattern(String.raw`переапикальн(?:ый|ого|ом)?|периапекальн(?:ый|ого|ом)?`), "периапикальный", "периапикальный"],
   [dentalTermPattern(String.raw`обьективно|объективна`), "объективно", "объективно"],
   [dentalTermPattern(String.raw`анастезия|анистезия|анестезея`), "анестезия", "анестезия"],
@@ -6390,6 +6446,10 @@ const dentalSpeechPhraseMap: Array<[string, string, string]> = [
   ["е о д", "ЭОД", "ЭОД"],
   ["эод", "ЭОД", "ЭОД"],
   ["еод", "ЭОД", "ЭОД"],
+  ["ди эс", "DS", "DS"],
+  ["д с", "DS", "DS"],
+  ["ди икс", "Dx", "Dx"],
+  ["д икс", "Dx", "Dx"],
   ["си би си ти", "CBCT", "CBCT"],
   ["cbct", "CBCT", "CBCT"],
   ["кофердам", "коффердам", "коффердам"],
@@ -6415,6 +6475,14 @@ const dentalSpeechPhraseMap: Array<[string, string, string]> = [
   ["пальпацыя", "пальпация", "пальпация"],
   ["адгизивный протокол", "адгезивный протокол", "адгезивный протокол"],
   ["рестоврация", "реставрация", "реставрация"],
+  ["пламба", "пломба", "пломба"],
+  ["холодовая проба", "холодовая проба", "холодовая проба"],
+  ["термо проба", "холодовая проба", "холодовая проба"],
+  ["визиография", "прицельный снимок", "прицельный снимок"],
+  ["апрокс имальная", "апроксимальная", "апроксимальная поверхность"],
+  ["апроксималная", "апроксимальная", "апроксимальная поверхность"],
+  ["контактный пунт", "контактный пункт", "контактный пункт"],
+  ["контактный пукнт", "контактный пункт", "контактный пункт"],
   ["и р о п з", "ИРОПЗ", "ИРОПЗ"],
   ["иропз", "ИРОПЗ", "ИРОПЗ"],
   ["к п у", "КПУ", "КПУ"],
@@ -6424,6 +6492,11 @@ const dentalSpeechPhraseMap: Array<[string, string, string]> = [
   ["фесура", "фиссура", "фиссура"],
   ["гермитизация", "герметизация", "герметизация"],
   ["мастер штифт", "мастер-штифт", "мастер-штифт"],
+  ["финишная обработка", "финирование", "финирование"],
+  ["полеровка", "полировка", "полировка"],
+  ["корекция оклюзии", "коррекция окклюзии", "коррекция окклюзии"],
+  ["коррекция оклюзии", "коррекция окклюзии", "коррекция окклюзии"],
+  ["пришлифовка", "шлифовка", "шлифовка"],
   ["иригация", "ирригация", "ирригация"],
   ["пломбировка каналов", "пломбирование каналов", "пломбирование каналов"],
   ["диоксид циркония", "диоксид циркония", "диоксид циркония"],
@@ -6446,6 +6519,8 @@ const dentalSpeechPhraseMap: Array<[string, string, string]> = [
   ["три шейп", "3Shape", "3Shape"],
   ["обьективно", "объективно", "объективно"],
   ["объективна", "объективно", "объективно"],
+  ["статус презенс", "status praesens", "status praesens"],
+  ["статус локалис", "status localis", "status localis"],
   ["анастезия", "анестезия", "анестезия"],
   ["анистезия", "анестезия", "анестезия"],
   ["ортопантомограмма", "ОПТГ", "ОПТГ"],
@@ -6470,7 +6545,8 @@ function applyTrackedPhraseReplacement(text: string, phrase: string, replacement
 
 function normalizeSpeechSections(text: string): string {
   return text
-    .replace(/\s+(жалоб(?:ы|а)?\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:без\s+жалоб|жалобы\s+отрицает)\s*[:\-]?)/gi, "\n$1")
+    .replace(/(?<!без)\s+(жалоб(?:ы|а)?(?!\s+отрицает)\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:пациент\s+)?жалуется\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:пациент\s+)?отмечает\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:беспокоит|беспокоят)\s*[:\-]?)/gi, "\n$1")
@@ -6478,8 +6554,9 @@ function normalizeSpeechSections(text: string): string {
     .replace(/\s+(со слов\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:из\s+анамнеза|со\s+слов\s+пациента|ранее\s+лечен|ранее\s+лечилась|после\s+лечения)\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(объективно\s*[:\-]?)/gi, "\n$1")
-    .replace(/\s+((?:осмотр|при\s+осмотре|на\s+снимке|рентгенологически)\s*[:\-]?)/gi, "\n$1")
-    .replace(/\s+((?:предварительный\s+)?диагноз\s*[:\-]?|предварительно\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:status\s+praesens|status\s+localis|осмотр|при\s+осмотре|на\s+снимке|рентгенологически)\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:DS|Dx|D\/S)\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+((?:ds|dx|d\/s|предварительный\s+)?диагноз\s*[:\-]?|предварительно\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(план\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:лечение|показано|проведено|выполнено|сделано|назначено|рекомендовано)\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(рекомендации\s*[:\-]?)/gi, "\n$1")
@@ -6561,6 +6638,8 @@ function uniqueStrings(values: string[]): string[] {
 const complaintSectionPrefixes = [
   "жалобы",
   "жалоба",
+  "без жалоб",
+  "жалобы отрицает",
   "повод",
   "пациент жалуется",
   "жалуется",
@@ -6578,8 +6657,17 @@ const anamnesisSectionPrefixes = [
   "ранее лечилась",
   "после лечения"
 ];
-const objectiveSectionPrefixes = ["объективно", "объективный статус", "осмотр", "при осмотре", "на снимке", "рентгенологически"];
-const diagnosisSectionPrefixes = ["диагноз", "предварительный диагноз", "клинический диагноз", "предварительно"];
+const objectiveSectionPrefixes = [
+  "объективно",
+  "объективный статус",
+  "status praesens",
+  "status localis",
+  "осмотр",
+  "при осмотре",
+  "на снимке",
+  "рентгенологически"
+];
+const diagnosisSectionPrefixes = ["диагноз", "предварительный диагноз", "клинический диагноз", "предварительно", "DS", "Dx", "D/S"];
 const planSectionPrefixes = [
   "план",
   "лечение",
@@ -6601,9 +6689,11 @@ const allSectionPrefixes = [
 ];
 
 function cleanRuleParserLine(value: string): string {
+  const trimmed = value.trim();
+  if (/^(?:без\s+жалоб|жалобы\s+отрицает)\s*[:\-.]?$/i.test(trimmed)) return "нет";
   return value
     .replace(
-      /^(жалобы|жалоба|повод|пациент жалуется|жалуется|пациент отмечает|отмечает|беспокоит|беспокоят|анамнез|из анамнеза|со слов|со слов пациента|ранее лечен|ранее лечилась|после лечения|объективно|объективный статус|осмотр|при осмотре|на снимке|рентгенологически|диагноз|предварительный диагноз|клинический диагноз|предварительно|план|лечение|показано|проведено|выполнено|сделано|рекомендации|рекомендовано|назначения|назначено)\s*[:\-]?\s*/i,
+      /^(жалобы|жалоба|без жалоб|жалобы отрицает|повод|пациент жалуется|жалуется|пациент отмечает|отмечает|беспокоит|беспокоят|анамнез|из анамнеза|со слов|со слов пациента|ранее лечен|ранее лечилась|после лечения|объективно|объективный статус|status praesens|status localis|осмотр|при осмотре|на снимке|рентгенологически|диагноз|предварительный диагноз|клинический диагноз|предварительно|DS|Dx|D\/S|план|лечение|показано|проведено|выполнено|сделано|рекомендации|рекомендовано|назначения|назначено)\s*[:\-.]?\s*/i,
       ""
     )
     .trim();
@@ -6612,13 +6702,29 @@ function cleanRuleParserLine(value: string): string {
 function lineStartsWithSection(value: string, sectionPrefixes: string[]): boolean {
   const lower = value.toLowerCase().trim();
   return sectionPrefixes.some(
-    (prefix) =>
-      lower === prefix ||
-      lower.startsWith(`${prefix}:`) ||
-      lower.startsWith(`${prefix} -`) ||
-      lower.startsWith(`${prefix}-`) ||
-      lower.startsWith(`${prefix} `)
+    (prefix) => {
+      const normalizedPrefix = prefix.toLowerCase();
+      return (
+        lower === normalizedPrefix ||
+        lower.startsWith(`${normalizedPrefix}:`) ||
+        lower.startsWith(`${normalizedPrefix}.`) ||
+        lower.startsWith(`${normalizedPrefix},`) ||
+        lower.startsWith(`${normalizedPrefix};`) ||
+        lower.startsWith(`${normalizedPrefix} -`) ||
+        lower.startsWith(`${normalizedPrefix}-`) ||
+        lower.startsWith(`${normalizedPrefix} `)
+      );
+    }
   );
+}
+
+function cleanFallbackComplaintLine(context: RuleParserContext): string | null {
+  const firstLine = context.allLines[0] ?? null;
+  if (!firstLine) return null;
+  if (lineStartsWithSection(firstLine, complaintSectionPrefixes) || includesAnyText(firstLine.toLowerCase(), ["без жалоб", "жалобы отрицает"])) {
+    return cleanRuleParserLine(firstLine) || firstLine;
+  }
+  return firstLine;
 }
 
 type RuleParserContext = {
@@ -6722,6 +6828,22 @@ function buildVisitDraftQuality(input: {
       "силер",
       "ирригац",
       "пломбир",
+      "пломб",
+      "матриц",
+      "клин",
+      "финир",
+      "полиров",
+      "шлиф",
+      "коррекц",
+      "контакт",
+      "артикуляц",
+      "карпул",
+      "ультракаин",
+      "септанест",
+      "убистезин",
+      "сиц",
+      "mta",
+      "гермет",
       "временная пломба",
       "удал",
       "имплан",
@@ -6812,6 +6934,22 @@ export function buildRuleBasedVisitDraftFromTranscript(
     "рестав",
     "ирригац",
     "пломбир",
+    "пломб",
+    "матриц",
+    "клин",
+    "финир",
+    "полиров",
+    "шлиф",
+    "коррекц",
+    "контакт",
+    "артикуляц",
+    "карпул",
+    "ультракаин",
+    "септанест",
+    "убистезин",
+    "сиц",
+    "mta",
+    "гермет",
     "рабочая длина",
     "апекслокатор",
     "гуттаперч",
@@ -6839,7 +6977,7 @@ export function buildRuleBasedVisitDraftFromTranscript(
 
   const complaint =
     complaintLine ??
-    parserContext.allLines[0] ??
+    cleanFallbackComplaintLine(parserContext) ??
     (text || "Жалобы не распознаны, уточнить у пациента.");
   const anamnesis =
     anamnesisLine ??
