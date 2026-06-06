@@ -194,6 +194,28 @@ includesText(anamnesisSurfaceDraft.treatmentPlan, "МОД", "anamnesis surface t
 assert(anamnesisSurfaceDraft.quality?.signals.includes("anamnesis_detected"), "quality must detect anamnesis");
 assert(anamnesisSurfaceDraft.quality?.signals.includes("procedure_mentioned"), "quality must detect MOD restoration procedure");
 
+const codeAndPlanTranscript = [
+  "Жалобы реакция на сладкое зуб один четыре.",
+  "Объективно зуб 14, кариозная полость, зондирование болезненное.",
+  "Диагноз МКБ ка ноль два точка один кариес дентина зуб 14.",
+  "Выполнена инфильтрационная анестезия.",
+  "Проведены препарирование и адгезивный протокол.",
+  "Назначены рекомендации контроль при боли."
+].join(" ");
+const codeAndPlanDraft = buildRuleBasedVisitDraftFromTranscript(codeAndPlanTranscript, "therapist");
+const codeAndPlanNormalized = normalizeDentalSpeechTranscript(codeAndPlanTranscript, "therapist");
+
+includesText(codeAndPlanNormalized.normalizedText, "K02.1", "code and plan normalized transcript");
+includesText(codeAndPlanNormalized.normalizedText, "МКБ-10", "code and plan normalized transcript");
+includesText(codeAndPlanDraft.complaint, "зуб 14", "code and plan complaint field");
+includesText(codeAndPlanDraft.objectiveStatus, "зуб 14", "code and plan objective field");
+includesText(codeAndPlanDraft.diagnosis, "K02.1", "code and plan diagnosis field");
+includesText(codeAndPlanDraft.treatmentPlan, "инфильтрационная", "code and plan treatment plan field");
+includesText(codeAndPlanDraft.treatmentPlan, "препарирование", "code and plan treatment plan field");
+includesText(codeAndPlanDraft.treatmentPlan, "контроль при боли", "code and plan treatment plan field");
+assert(codeAndPlanDraft.quality?.signals.includes("plan_detected"), "quality must detect morphological plan sections");
+assert(codeAndPlanDraft.quality?.signals.includes("procedure_mentioned"), "quality must detect morphological procedure sections");
+
 console.log(
   JSON.stringify({
     ok: true,
