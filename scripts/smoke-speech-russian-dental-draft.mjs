@@ -151,6 +151,25 @@ includesText(restorationDraft.treatmentPlan, "шлифовка", "restoration tr
 includesText(restorationDraft.treatmentPlan, "полировка", "restoration treatment plan field");
 assert(restorationDraft.quality?.signals.includes("procedure_mentioned"), "quality must detect restoration procedure");
 
+const anatomicToothTranscript = [
+  "Жалобы боль при накусывании на нижней левой шестерке.",
+  "Объективно верхняя правая шестерка старая пломба без краевого прилегания, нижняя левая шестерка перкуссия болезненная.",
+  "DS периодонтит нижней левой шестерки.",
+  "План эндодонтическое лечение нижней левой шестерки, контроль прицельный снимок."
+].join(" ");
+const anatomicToothDraft = buildRuleBasedVisitDraftFromTranscript(anatomicToothTranscript, "therapist");
+const anatomicToothNormalized = normalizeDentalSpeechTranscript(anatomicToothTranscript, "therapist");
+
+includesText(anatomicToothNormalized.normalizedText, "зуб 36", "anatomic tooth normalized transcript");
+includesText(anatomicToothNormalized.normalizedText, "зуб 16", "anatomic tooth normalized transcript");
+includesText(anatomicToothDraft.complaint, "зуб 36", "anatomic tooth complaint field");
+includesText(anatomicToothDraft.objectiveStatus, "зуб 16", "anatomic tooth objective field");
+includesText(anatomicToothDraft.objectiveStatus, "зуб 36", "anatomic tooth objective field");
+includesText(anatomicToothDraft.diagnosis, "периодонтит зуб 36", "anatomic tooth diagnosis field");
+includesText(anatomicToothDraft.treatmentPlan, "зуб 36", "anatomic tooth treatment plan field");
+assert(anatomicToothDraft.quality?.detectedToothCodes.includes("36"), "quality must detect anatomical FDI 36");
+assert(anatomicToothDraft.quality?.detectedToothCodes.includes("16"), "quality must detect anatomical FDI 16");
+
 console.log(
   JSON.stringify({
     ok: true,

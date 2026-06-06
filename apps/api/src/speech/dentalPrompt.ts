@@ -6,7 +6,7 @@ import type {
 } from "@dental/shared";
 import { numberFromEnv } from "./keyPool.js";
 
-const promptVersion = "dental-stt-prompt-v7-2026-06-06";
+const promptVersion = "dental-stt-prompt-v8-2026-06-06";
 const promptProviders: SpeechProviderKind[] = ["groq_whisper", "openai_transcribe"];
 
 const baseTerms = [
@@ -20,6 +20,10 @@ const baseTerms = [
   "зуб 3.6 = зуб 36",
   "четыре шесть = 46",
   "сорок шестого = 46",
+  "верхняя правая шестерка = зуб 16",
+  "верхняя левая шестерка = зуб 26",
+  "нижняя левая шестерка = зуб 36",
+  "нижняя правая шестерка = зуб 46",
   "RVG",
   "РВГ",
   "OPG",
@@ -270,6 +274,12 @@ function uniqueTerms(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
 
+function promptTermsForSpecialty(specialty: DentalSpecialty): string[] {
+  const criticalBaseTerms = baseTerms.slice(0, 40);
+  const specialtyList = specialtyTerms[specialty] ?? specialtyTerms.universal;
+  return uniqueTerms([...criticalBaseTerms, ...specialtyList, ...customTerms(), ...baseTerms.slice(40)]).slice(0, 72);
+}
+
 function sourceHint(source: SpeechTranscriptionSource): string {
   if (source === "visit") return "Диктовка приема у кресла.";
   if (source === "import") return "Административная диктовка для импорта.";
@@ -290,13 +300,13 @@ export function buildDentalSttPrompt(input: {
 }): string | null {
   if (!promptEnabled() || !promptProviders.includes(input.providerId)) return null;
   const specialty = input.specialty ?? "universal";
-  const terms = uniqueTerms([...baseTerms, ...specialtyTerms[specialty], ...customTerms()]).slice(0, 72);
+  const terms = promptTermsForSpecialty(specialty);
   const prompt = [
     `${sourceHint(input.source ?? "visit")} Стоматологический контекст распознавания речи.`,
     "Расшифруй дословно на русском, если врач говорит по-русски. Не суммируй, не ставь диагноз, не достраивай и не добавляй факты.",
     "Если слышна стоматологическая фраза, выбирай более вероятный стоматологический термин: коффердам, перкуссия, зондирование, кариес, пульпит, периодонтит, RVG, ОПТГ, КЛКТ.",
     "Сохраняй клинические заголовки и сокращения: Жалобы, Анамнез, Объективно, Status praesens, DS, Dx, D/S, Проведено, Рекомендации.",
-    "Сохраняй номера зубов FDI 11-48. Если врач говорит 'три шесть', 'сорок шестой' или 'один один', записывай номер зуба как 36, 46 или 11.",
+    "Сохраняй номера зубов FDI 11-48. Если врач говорит 'три шесть', 'сорок шестой', 'один один' или 'нижняя левая шестерка', записывай номер зуба как 36, 46, 11 или 36.",
     "Сохраняй неопределенность, бренды, материалы, латинские названия и сокращения.",
     `Термины: ${terms.join(", ")}.`
   ].join(" ");

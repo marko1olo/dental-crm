@@ -6250,6 +6250,36 @@ function dentalTermPattern(source: string): RegExp {
   return new RegExp(`(?<![0-9A-Za-zА-Яа-яЁё])(?:${source})(?![0-9A-Za-zА-Яа-яЁё])`, "gi");
 }
 
+const spokenAnatomicToothQuadrants = [
+  { archPattern: String.raw`верхн(?:яя|ей|юю|ий|его|ем)?`, sidePattern: String.raw`прав(?:ая|ой|ую|ый|ого|ом)?`, quadrant: "1" },
+  { archPattern: String.raw`верхн(?:яя|ей|юю|ий|его|ем)?`, sidePattern: String.raw`лев(?:ая|ой|ую|ый|ого|ом)?`, quadrant: "2" },
+  { archPattern: String.raw`нижн(?:яя|ей|юю|ий|его|ем)?`, sidePattern: String.raw`лев(?:ая|ой|ую|ый|ого|ом)?`, quadrant: "3" },
+  { archPattern: String.raw`нижн(?:яя|ей|юю|ий|его|ем)?`, sidePattern: String.raw`прав(?:ая|ой|ую|ый|ого|ом)?`, quadrant: "4" }
+];
+
+const spokenAnatomicToothPositions: Array<[string, string]> = [
+  ["1", String.raw`единиц(?:а|ы|у|ей|е)?|перв(?:ый|ого|ому|ым|ом)?`],
+  ["2", String.raw`двойк(?:а|и|у|ой|е)?|двоечк(?:а|и|у|ой|е)?|втор(?:ой|ого|ому|ым|ом)?`],
+  ["3", String.raw`тройк(?:а|и|у|ой|е)?|клык(?:а|ом|е)?|трет(?:ий|ьего|ьему|ьим|ьем)?`],
+  ["4", String.raw`четверк(?:а|и|у|ой|е)?|четверочк(?:а|и|у|ой|е)?|четверт(?:ый|ого|ому|ым|ом)?`],
+  ["5", String.raw`пятерк(?:а|и|у|ой|е)?|пятерочк(?:а|и|у|ой|е)?|пят(?:ый|ого|ому|ым|ом)?`],
+  ["6", String.raw`шестер(ка|ки|ку|кой|ке)?|шест(?:ой|ого|ому|ым|ом)?`],
+  ["7", String.raw`семерк(?:а|и|у|ой|е)?|седьм(?:ой|ого|ому|ым|ом)?`],
+  ["8", String.raw`восьмерк(?:а|и|у|ой|е)?|восьм(?:ой|ого|ому|ым|ом)?`]
+];
+
+const spokenAnatomicToothMap: Array<[RegExp, string]> = spokenAnatomicToothQuadrants.flatMap(
+  ({ archPattern, sidePattern, quadrant }) =>
+    spokenAnatomicToothPositions.flatMap(([position, positionPattern]) => {
+      const replacement = `зуб ${quadrant}${position}`;
+      return [
+        [dentalTermPattern(String.raw`${archPattern}\s+${sidePattern}\s+(?:${positionPattern})`), replacement],
+        [dentalTermPattern(String.raw`${sidePattern}\s+${archPattern}\s+(?:${positionPattern})`), replacement],
+        [dentalTermPattern(String.raw`(?:${positionPattern})\s+${archPattern}\s+${sidePattern}`), replacement]
+      ] as Array<[RegExp, string]>;
+    })
+);
+
 const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [
     /(?<![0-9A-Za-zА-Яа-яЁё])((?:зуб(?:а|е|ом)?|област(?:ь|и)|fdi)\s+)([1-4])\s*[\.,]\s*([1-8])(?![0-9A-Za-zА-Яа-яЁё])/gi,
@@ -6578,6 +6608,10 @@ export function normalizeDentalSpeechTranscript(
 
   for (const [phrase, replacement] of spokenToothPhraseMap) {
     normalizedText = applyTrackedPhraseReplacement(normalizedText, phrase, replacement, `номер зуба -> ${replacement}`, changedPhrases);
+  }
+
+  for (const [pattern, replacement] of spokenAnatomicToothMap) {
+    normalizedText = applyTrackedReplacement(normalizedText, pattern, replacement, `анатомическое название зуба -> ${replacement.replace("зуб ", "")}`, changedPhrases);
   }
 
   for (const [phrase, replacement, label] of dentalSpeechPhraseMap) {
