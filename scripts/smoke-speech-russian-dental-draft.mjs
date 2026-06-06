@@ -170,6 +170,30 @@ includesText(anatomicToothDraft.treatmentPlan, "зуб 36", "anatomic tooth trea
 assert(anatomicToothDraft.quality?.detectedToothCodes.includes("36"), "quality must detect anatomical FDI 36");
 assert(anatomicToothDraft.quality?.detectedToothCodes.includes("16"), "quality must detect anatomical FDI 16");
 
+const anamnesisSurfaceTranscript = [
+  "Жалобы нет.",
+  "Аллергию отрицает. Соматически здоров. Препараты не принимает.",
+  "Объективно зуб два шесть, м о д полость, второго класса по блеку, зондирование болезненное.",
+  "Диагноз кариес дентина зуб 26.",
+  "Проведено изоляция коффердам, матрица, клин, восстановлена мезиально окклюзиально дистальная поверхность."
+].join(" ");
+const anamnesisSurfaceDraft = buildRuleBasedVisitDraftFromTranscript(anamnesisSurfaceTranscript, "therapist");
+const anamnesisSurfaceNormalized = normalizeDentalSpeechTranscript(anamnesisSurfaceTranscript, "therapist");
+
+includesText(anamnesisSurfaceNormalized.normalizedText, "зуб 26", "anamnesis surface normalized transcript");
+includesText(anamnesisSurfaceNormalized.normalizedText, "МОД", "anamnesis surface normalized transcript");
+includesText(anamnesisSurfaceNormalized.normalizedText, "II класс по Блэку", "anamnesis surface normalized transcript");
+includesText(anamnesisSurfaceDraft.complaint, "нет", "anamnesis surface complaint field");
+assert(!anamnesisSurfaceDraft.complaint.toLowerCase().includes("аллерг"), "anamnesis must not be copied into complaint");
+includesText(anamnesisSurfaceDraft.anamnesis, "отрицает", "anamnesis surface anamnesis field");
+includesText(anamnesisSurfaceDraft.anamnesis, "не принимает", "anamnesis surface anamnesis field");
+includesText(anamnesisSurfaceDraft.objectiveStatus, "МОД", "anamnesis surface objective field");
+includesText(anamnesisSurfaceDraft.objectiveStatus, "II класс по Блэку", "anamnesis surface objective field");
+includesText(anamnesisSurfaceDraft.diagnosis, "кариес дентина", "anamnesis surface diagnosis field");
+includesText(anamnesisSurfaceDraft.treatmentPlan, "МОД", "anamnesis surface treatment plan field");
+assert(anamnesisSurfaceDraft.quality?.signals.includes("anamnesis_detected"), "quality must detect anamnesis");
+assert(anamnesisSurfaceDraft.quality?.signals.includes("procedure_mentioned"), "quality must detect MOD restoration procedure");
+
 console.log(
   JSON.stringify({
     ok: true,

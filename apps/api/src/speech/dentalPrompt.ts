@@ -6,7 +6,7 @@ import type {
 } from "@dental/shared";
 import { numberFromEnv } from "./keyPool.js";
 
-const promptVersion = "dental-stt-prompt-v8-2026-06-06";
+const promptVersion = "dental-stt-prompt-v9-2026-06-06";
 const promptProviders: SpeechProviderKind[] = ["groq_whisper", "openai_transcribe"];
 
 const baseTerms = [
@@ -37,6 +37,10 @@ const baseTerms = [
   "без жалоб",
   "жалобы отрицает",
   "анамнез",
+  "аллергологический анамнез",
+  "аллергию отрицает",
+  "соматически здоров",
+  "препараты не принимает",
   "объективно",
   "status praesens",
   "status localis",
@@ -66,6 +70,13 @@ const baseTerms = [
   "фиссура",
   "герметизация фиссур",
   "окклюзионная поверхность",
+  "МОД",
+  "МО",
+  "ОД",
+  "мезиально-окклюзиально-дистальная поверхность",
+  "мезиально-окклюзиальная поверхность",
+  "дистально-окклюзиальная поверхность",
+  "II класс по Блэку",
   "мезиальная поверхность",
   "дистальная поверхность",
   "вестибулярная поверхность",
@@ -156,6 +167,10 @@ const specialtyTerms: Record<DentalSpecialty, string[]> = {
     "финирование",
     "полировка",
     "контактный пункт",
+    "МОД",
+    "МО",
+    "ОД",
+    "II класс по Блэку",
     "шлифовка",
     "коррекция окклюзии",
     "реставрация",
