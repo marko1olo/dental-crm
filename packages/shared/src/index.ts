@@ -5923,8 +5923,12 @@ const commonComplaintTokens = [
   "ноч",
   "самопроиз",
   "накусыв",
+  "ирради",
   "холод",
   "горяч",
+  "сладк",
+  "кисл",
+  "застрев",
   "чувств",
   "эстет",
   "скуч",
@@ -5954,6 +5958,10 @@ const commonObjectiveTokens = [
   "вестибуляр",
   "оральн",
   "пришееч",
+  "иропз",
+  "кпу",
+  "фиссур",
+  "гермет",
   "снимок",
   "рентген",
   "кт",
@@ -5997,6 +6005,10 @@ const commonPlanTokens = [
   "рестав",
   "ирригац",
   "пломбир",
+  "стеклоиономер",
+  "сиц",
+  "mta",
+  "гермет",
   "удал",
   "контроль",
   "рекоменд",
@@ -6025,6 +6037,10 @@ const visitDraftParserProfiles: Record<DentalSpecialty, VisitDraftParserProfile>
       "вестибуляр",
       "оральн",
       "пришееч",
+      "иропз",
+      "кпу",
+      "фиссур",
+      "гермет",
       "коффердам"
     ],
     diagnosisTokens: ["k02", "k04", "кариес", "пульп", "периодонтит", "периапик"],
@@ -6038,8 +6054,15 @@ const visitDraftParserProfiles: Record<DentalSpecialty, VisitDraftParserProfile>
       "эндодонт",
       "рабочая длина",
       "апекслокатор",
+      "мастер-штифт",
       "гуттаперч",
       "силер",
+      "латеральная конденсация",
+      "вертикальная конденсация",
+      "стеклоиономер",
+      "сиц",
+      "mta",
+      "гермет",
       "ирригац",
       "канал",
       "пломб",
@@ -6223,6 +6246,14 @@ const dentalSpeechReplacementMap: Array<[RegExp, string, string]> = [
   [dentalTermPattern(String.raw`палпац(?:ия|ии)|пальпацыя`), "пальпация", "пальпация"],
   [dentalTermPattern(String.raw`адгизивн(?:ый|ого|ом|ая|ую)`), "адгезивный", "адгезивный"],
   [dentalTermPattern(String.raw`рестоврац(?:ия|ии|ию)`), "реставрация", "реставрация"],
+  [dentalTermPattern(String.raw`и\s*р\s*о\s*п\s*з|иропз`), "ИРОПЗ", "ИРОПЗ"],
+  [dentalTermPattern(String.raw`к\s*п\s*у|кпу`), "КПУ", "КПУ"],
+  [dentalTermPattern(String.raw`с\s*и\s*ц|сиц`), "СИЦ", "СИЦ"],
+  [dentalTermPattern(String.raw`м\s*т\s*а|mta`), "MTA", "MTA"],
+  [dentalTermPattern(String.raw`стекло\s*иономерн(ый|ого|ом|ая|ую)?`), "стеклоиономерн$1", "стеклоиономерный цемент"],
+  [dentalTermPattern(String.raw`фесур(?:а|ы|у|ой)?|фиссур(?:а|ы|у|ой)?`), "фиссура", "фиссура"],
+  [dentalTermPattern(String.raw`гермитизац(?:ия|ии|ию)|герметизац(?:ия|ии|ию)`), "герметизация", "герметизация"],
+  [dentalTermPattern(String.raw`мастер\s*штифт(?:а|ом|е)?`), "мастер-штифт", "мастер-штифт"],
   [dentalTermPattern(String.raw`оклюзионн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "окклюзионн$1", "окклюзионная поверхность"],
   [dentalTermPattern(String.raw`медиальн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "мезиальн$1", "мезиальная поверхность"],
   [dentalTermPattern(String.raw`при\s+шеечн(ая|ой|ую|ые|ых|ым|ыми|ый|ого|ом)?`), "пришеечн$1", "пришеечная область"],
@@ -6384,6 +6415,15 @@ const dentalSpeechPhraseMap: Array<[string, string, string]> = [
   ["пальпацыя", "пальпация", "пальпация"],
   ["адгизивный протокол", "адгезивный протокол", "адгезивный протокол"],
   ["рестоврация", "реставрация", "реставрация"],
+  ["и р о п з", "ИРОПЗ", "ИРОПЗ"],
+  ["иропз", "ИРОПЗ", "ИРОПЗ"],
+  ["к п у", "КПУ", "КПУ"],
+  ["с и ц", "СИЦ", "СИЦ"],
+  ["стекло иономерный", "стеклоиономерный", "стеклоиономерный цемент"],
+  ["м т а", "MTA", "MTA"],
+  ["фесура", "фиссура", "фиссура"],
+  ["гермитизация", "герметизация", "герметизация"],
+  ["мастер штифт", "мастер-штифт", "мастер-штифт"],
   ["иригация", "ирригация", "ирригация"],
   ["пломбировка каналов", "пломбирование каналов", "пломбирование каналов"],
   ["диоксид циркония", "диоксид циркония", "диоксид циркония"],
@@ -6430,12 +6470,12 @@ function applyTrackedPhraseReplacement(text: string, phrase: string, replacement
 
 function normalizeSpeechSections(text: string): string {
   return text
-    .replace(/\s+(жалоб(?:ы|а)?\s*[:\-])/gi, "\n$1")
+    .replace(/\s+(жалоб(?:ы|а)?\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:пациент\s+)?жалуется\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:пациент\s+)?отмечает\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:беспокоит|беспокоят)\s*[:\-]?)/gi, "\n$1")
-    .replace(/\s+(анамнез\s*[:\-])/gi, "\n$1")
-    .replace(/\s+(со слов\s*[:\-])/gi, "\n$1")
+    .replace(/\s+(анамнез\s*[:\-]?)/gi, "\n$1")
+    .replace(/\s+(со слов\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:из\s+анамнеза|со\s+слов\s+пациента|ранее\s+лечен|ранее\s+лечилась|после\s+лечения)\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+(объективно\s*[:\-]?)/gi, "\n$1")
     .replace(/\s+((?:осмотр|при\s+осмотре|на\s+снимке|рентгенологически)\s*[:\-]?)/gi, "\n$1")
@@ -6581,18 +6621,56 @@ function lineStartsWithSection(value: string, sectionPrefixes: string[]): boolea
   );
 }
 
-function findRuleParserLines(lines: string[], tokens: string[], sectionPrefixes: string[] = [], limit = 3): string | null {
-  const sectionLines = sectionPrefixes.length
-    ? lines.filter((item) => lineStartsWithSection(item, sectionPrefixes)).map(cleanRuleParserLine).filter(Boolean)
+type RuleParserContext = {
+  allLines: string[];
+  unscopedLines: string[];
+  sectionBlocks: string[];
+};
+
+function splitRuleParserSentences(value: string): string[] {
+  return value
+    .split(/[.;]+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function buildRuleParserContext(text: string): RuleParserContext {
+  const sectionBlocks = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const unscopedLines = sectionBlocks
+    .filter((line) => !lineStartsWithSection(line, allSectionPrefixes))
+    .flatMap(splitRuleParserSentences);
+
+  return {
+    allLines: text
+      .split(/[\n.;]+/)
+      .map((line) => line.trim())
+      .filter(Boolean),
+    unscopedLines,
+    sectionBlocks
+  };
+}
+
+function findRuleParserLines(
+  context: RuleParserContext,
+  tokens: string[],
+  sectionPrefixes: string[] = [],
+  limit = 4
+): string | null {
+  const sectionBlocks = sectionPrefixes.length
+    ? context.sectionBlocks.filter((item) => lineStartsWithSection(item, sectionPrefixes)).map(cleanRuleParserLine).filter(Boolean)
     : [];
+  const searchLines = sectionBlocks.length ? context.unscopedLines : context.allLines;
 
   const excludedPrefixes = allSectionPrefixes.filter((prefix) => !sectionPrefixes.includes(prefix));
-  const matchedLines = lines
+  const matchedLines = searchLines
     .filter((item) => !lineStartsWithSection(item, excludedPrefixes))
     .filter((item) => includesAnyText(item.toLowerCase(), tokens))
     .map(cleanRuleParserLine)
     .filter(Boolean);
-  const mergedLines = uniqueStrings([...sectionLines, ...matchedLines]).slice(0, limit);
+  const mergedLines = uniqueStrings([...sectionBlocks, ...matchedLines]).slice(0, limit);
   return mergedLines.length ? mergedLines.join(". ") : null;
 }
 
@@ -6697,16 +6775,13 @@ export function buildRuleBasedVisitDraftFromTranscript(
   const normalization = normalizeDentalSpeechTranscript(transcript, specialty);
   const text = normalization.normalizedText.trim();
   const lower = text.toLowerCase();
-  const lines = text
-    .split(/[\n.;]+/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const parserContext = buildRuleParserContext(text);
   const profile = visitDraftParserProfiles[specialty] ?? visitDraftParserProfiles.universal;
   const toothCodes = extractToothCodes(text);
   const sourceLabel = options.sourceLabel ?? "Локальный разбор диктовки";
-  const complaintLine = findRuleParserLines(lines, [...commonComplaintTokens, ...profile.complaintTokens], complaintSectionPrefixes);
+  const complaintLine = findRuleParserLines(parserContext, [...commonComplaintTokens, ...profile.complaintTokens], complaintSectionPrefixes, 4);
   const anamnesisLine = findRuleParserLines(
-    lines,
+    parserContext,
     [
       "анамнез",
       "со слов",
@@ -6722,11 +6797,12 @@ export function buildRuleBasedVisitDraftFromTranscript(
       "беремен",
       "антикоаг"
     ],
-    anamnesisSectionPrefixes
+    anamnesisSectionPrefixes,
+    4
   );
-  const objectiveLine = findRuleParserLines(lines, [...commonObjectiveTokens, ...profile.objectiveTokens], objectiveSectionPrefixes);
-  const diagnosisLine = findRuleParserLines(lines, [...commonDiagnosisTokens, ...profile.diagnosisTokens], diagnosisSectionPrefixes);
-  const planLine = findRuleParserLines(lines, [...commonPlanTokens, ...profile.planTokens], planSectionPrefixes);
+  const objectiveLine = findRuleParserLines(parserContext, [...commonObjectiveTokens, ...profile.objectiveTokens], objectiveSectionPrefixes, 6);
+  const diagnosisLine = findRuleParserLines(parserContext, [...commonDiagnosisTokens, ...profile.diagnosisTokens], diagnosisSectionPrefixes, 4);
+  const planLine = findRuleParserLines(parserContext, [...commonPlanTokens, ...profile.planTokens], planSectionPrefixes, 6);
   const planSignal = includesAnyText(lower, [
     "леч",
     "анест",
@@ -6763,7 +6839,7 @@ export function buildRuleBasedVisitDraftFromTranscript(
 
   const complaint =
     complaintLine ??
-    lines[0] ??
+    parserContext.allLines[0] ??
     (text || "Жалобы не распознаны, уточнить у пациента.");
   const anamnesis =
     anamnesisLine ??

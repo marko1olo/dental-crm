@@ -76,6 +76,29 @@ assert(draft.quality?.signals.includes("imaging_mentioned"), "quality must detec
 assert(draft.quality?.signals.includes("procedure_mentioned"), "quality must detect procedure mention");
 assert(draft.quality?.signals.includes("plan_detected"), "quality must detect plan");
 
+const scopedTranscript = [
+  "Жалобы: нет.",
+  "Объективно зуб 24, реакция на холод положительная.",
+  "Цвет по шкале A2, ИРОПЗ 0.5, фесура пигментирована.",
+  "Диагноз кариес эмали 24.",
+  "Проведено гермитизация фиссур, с и ц как подкладка."
+].join(" ");
+const scopedDraft = buildRuleBasedVisitDraftFromTranscript(scopedTranscript, "therapist");
+const scopedNormalized = normalizeDentalSpeechTranscript(scopedTranscript, "therapist");
+
+includesText(scopedNormalized.normalizedText, "ИРОПЗ", "scoped normalized transcript");
+includesText(scopedNormalized.normalizedText, "фиссура", "scoped normalized transcript");
+includesText(scopedNormalized.normalizedText, "герметизация", "scoped normalized transcript");
+includesText(scopedNormalized.normalizedText, "СИЦ", "scoped normalized transcript");
+includesText(scopedDraft.complaint, "нет", "scoped complaint field");
+assert(!scopedDraft.complaint.toLowerCase().includes("холод"), "objective cold reaction must not be copied into complaint");
+includesText(scopedDraft.objectiveStatus, "реакция на холод", "scoped objective field");
+includesText(scopedDraft.objectiveStatus, "цвет по шкале A2", "scoped objective field");
+includesText(scopedDraft.objectiveStatus, "ИРОПЗ", "scoped objective field");
+includesText(scopedDraft.diagnosis, "кариес эмали", "scoped diagnosis field");
+includesText(scopedDraft.treatmentPlan, "герметизация", "scoped treatment plan field");
+includesText(scopedDraft.treatmentPlan, "СИЦ", "scoped treatment plan field");
+
 console.log(
   JSON.stringify({
     ok: true,
