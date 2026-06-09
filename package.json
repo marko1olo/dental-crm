@@ -124,7 +124,8 @@
     "smoke:speech-route-validation": "node scripts/smoke-speech-route-validation.mjs",
     "smoke:speech-key-rotation": "node scripts/smoke-speech-key-rotation.mjs",
     "db:generate": "npm run db:generate -w @dental/api",
-    "db:migrate": "npm run db:migrate -w @dental/api"
+    "db:migrate": "npm run db:migrate -w @dental/api",
+    "smoke:persistent-state-save": "node scripts/smoke-persistent-state-save.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
