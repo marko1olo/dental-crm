@@ -84,6 +84,6 @@ export async function registerAiRoutes(app: FastifyInstance) {
       return sendVisitNoteDraftScopeError(reply, 404, aiRecognitionPatientMissingMessage);
     }
 
-    return visitNoteDraftSchema.parse(buildVisitDraftFromTranscript(input.transcript, input.specialty));
+    return visitNoteDraftSchema.parse(await buildVisitDraftFromTranscript(input.transcript, input.specialty));
   });
 }
