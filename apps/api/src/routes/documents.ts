@@ -96,8 +96,25 @@ function pdfBrowserCandidates(): string[] {
   ].filter((candidate): candidate is string => Boolean(candidate));
 }
 
+const allowedPdfBrowserExecutables = new Set([
+  "msedge.exe",
+  "microsoft edge",
+  "google chrome",
+  "microsoft-edge",
+  "google-chrome",
+  "chromium",
+  "chromium-browser",
+  "chrome.exe",
+  "chrome"
+]);
+
+function isSafeBrowserPath(candidate: string): boolean {
+  const basename = candidate.split(/[\/]/).pop()?.toLowerCase();
+  return basename ? allowedPdfBrowserExecutables.has(basename) : false;
+}
+
 function findPdfBrowserPath(): string | null {
-  return pdfBrowserCandidates().find((candidate) => existsSync(candidate)) ?? null;
+  return pdfBrowserCandidates().find((candidate) => isSafeBrowserPath(candidate) && existsSync(candidate)) ?? null;
 }
 
 function configuredPdfExportTimeoutMs(): number {
