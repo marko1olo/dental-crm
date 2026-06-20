@@ -77,9 +77,17 @@ export function MarketingView({ clinicName }: { clinicName: string }) {
   const [reviewText, setReviewText] = useState("");
   const [tone, setTone] = useState<ReviewTone>("positive");
   const [generatedReply, setGeneratedReply] = useState("");
-  const [phone, setPhone] = useState("+7 (800) 000-00-00");
+  const [phone, setPhone] = useState(() => {
+    return localStorage.getItem("dental_crm_mkt_phone") || "+7 (800) 000-00-00";
+  });
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">("reviews");
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPhone(val);
+    localStorage.setItem("dental_crm_mkt_phone", val);
+  };
 
   const handleGenerate = () => {
     if (!reviewText.trim()) return;
@@ -205,7 +213,7 @@ export function MarketingView({ clinicName }: { clinicName: string }) {
                 id="mkt-phone"
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange}
                 placeholder="+7 (000) 000-00-00"
               />
             </div>
