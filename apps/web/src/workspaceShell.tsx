@@ -74,6 +74,14 @@ export function ActionIcon({ section }: { section: AppView }) {
   return <Sparkles aria-hidden="true" />;
 }
 
+export function getFilteredAppViews(role: StaffRole): AppView[] {
+  if (role === "doctor") return ["shift", "schedule", "patients", "imaging", "visit", "documents", "communications"];
+  if (role === "administrator") return ["schedule", "patients", "imaging", "documents", "finance", "communications", "settings"];
+  if (role === "owner" || role === "manager") return ["schedule", "finance", "communications", "settings", "marketing", "patients"];
+  if (role === "assistant") return ["shift", "schedule", "patients", "communications"];
+  return Array.from(appViews);
+}
+
 export function WorkspaceSidebar({
   currentView,
   onViewIntent,
@@ -83,13 +91,7 @@ export function WorkspaceSidebar({
   onViewIntent?: WorkspaceViewIntentHandler;
   role: StaffRole;
 }) {
-  const allowedViews = (view: AppView): boolean => {
-    if (role === "doctor") return ["shift", "schedule", "patients", "imaging", "visit", "documents", "communications"].includes(view);
-    if (role === "administrator") return ["schedule", "patients", "imaging", "documents", "finance", "communications", "settings"].includes(view);
-    if (role === "owner" || role === "manager") return ["schedule", "finance", "communications", "settings", "marketing", "patients"].includes(view);
-    if (role === "assistant") return ["shift", "schedule", "patients", "communications"].includes(view);
-    return true;
-  };
+  const allowedViews = getFilteredAppViews(role);
 
   return (
     <aside className="sidebar" aria-label="Навигация">
@@ -99,7 +101,7 @@ export function WorkspaceSidebar({
       </div>
       <nav>
         {appViews.map((view) =>
-          allowedViews(view) ? (
+          allowedViews.includes(view) ? (
             <a
               className={`nav-item ${currentView === view ? "active" : ""}`}
               href={`#${view}`}

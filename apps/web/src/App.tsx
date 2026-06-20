@@ -301,7 +301,7 @@ import {
 } from "./pricelistUiMeta";
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
-import { ActionIcon, appViews, type AppView, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
+import { ActionIcon, appViews, type AppView, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
 import { preloadWorkspaceView, scheduleIdleWorkspacePreload } from "./workspacePreload";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
@@ -8837,6 +8837,14 @@ export function App() {
     window.addEventListener("hashchange", syncView);
     return () => window.removeEventListener("hashchange", syncView);
   }, []);
+
+  useEffect(() => {
+    const allowedViews = getFilteredAppViews(selectedWorkspaceRole);
+    if (!allowedViews.includes(currentView)) {
+      setCurrentView("shift");
+      window.location.hash = "shift";
+    }
+  }, [selectedWorkspaceRole, currentView]);
 
   useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
