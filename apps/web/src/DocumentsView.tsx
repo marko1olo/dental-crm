@@ -143,7 +143,6 @@ export function DocumentsView(props: DocumentsViewProps) {
     requestDocumentVoid,
     selectAllEligibleTaxPaymentsForCurrentDocument,
     selectedCompletedActContractDocumentId,
-    selectedDocumentKind,
     selectedDocumentMetadata,
     selectedDocumentUsesTaxPaymentSelection,
     selectedEligibleTaxPayments,
@@ -157,14 +156,11 @@ export function DocumentsView(props: DocumentsViewProps) {
     selectedTaxPaymentTotalRub,
     selectRefundOriginalPayment,
     setReleaseProtectionNote,
-    setSelectedDocumentKind,
-    setTaxDocumentYear,
     structuredPayloadDocumentKinds,
     taxApplicationDeliveryChannelOptions,
     taxApplicationFormOptions,
     taxApplicationRelationshipOptions,
     taxDocumentPayerOptions,
-    taxDocumentYear,
     togglePhotoVideoMaterial,
     treatmentAcceptancePlannedTotalRub,
     treatmentEstimatePatientOrPayerFullNameValue,
@@ -380,7 +376,13 @@ export function DocumentsView(props: DocumentsViewProps) {
     setReleaseRecipientFullName,
     setReleaseRecipientIdentityDocument,
     setReleaseSourceRequestDocumentId,
-    setReleaseThirdPartyDataChecked
+    setReleaseThirdPartyDataChecked,
+    taxDocumentYear,
+    setTaxDocumentYear,
+    selectedDocumentKind,
+    setSelectedDocumentKind,
+    isDocumentIngesting,
+    setIsDocumentIngesting,
   } = useDocumentStore();
   const {
     

@@ -1,0 +1,448 @@
+          <div className="panel visit-panel" id="visit">
+            <div className="panel-heading">
+              <h2>Текущий прием</h2>
+              <span className="status-pill status-in_treatment">Черновик</span>
+            </div>
+
+            <section className="visit-focus-bar" aria-label="Быстрый фокус приема">
+              <div className="visit-focus-patient">
+                <div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
+                <div>
+                  <p className="eyebrow">Пациент сейчас</p>
+                  <h3>{activePatient.fullName}</h3>
+                  <p>
+                    {activeAppointment?.reason ?? "прием"} · {activePatient.phone ?? "телефон не указан"}
+                  </p>
+                </div>
+              </div>
+              <div className="visit-focus-status">
+                <span className={visitWarnings.length ? "" : "ready"}>
+                  {visitWarnings.length ? `${visitWarnings.length} предупр.` : "спокойно"}
+                </span>
+                <strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
+                <p>
+                  {visitCloseChecklist ? `${visitCloseChecklist.score}% готовности` : "статус закрытия не рассчитан"} ·{" "}
+                  предупреждения не останавливают прием · {activeImagingStudies.length} снимка · {activeUsableDocuments.length} документа
+                </p>
+              </div>
+              <div className="visit-focus-actions">
+                <button className="primary-button" type="button" onClick={() => scrollToVisitArea(".dictation-box")}>
+                  <Mic aria-hidden="true" /> Диктовка
+                </button>
+                <button className="secondary-button" type="button" onClick={openVisitWarningAction}>
+                  <AlertTriangle aria-hidden="true" /> Риски
+                </button>
+              </div>
+            </section>
+
+            <section className="visit-next-step" data-testid="visit-next-step-panel" aria-label="Следующий шаг приема">
+              <div className="visit-next-step-main">
+                <div>
+                  <p className="eyebrow">Сейчас сделать</p>
+                  <h3>{visitPrimaryAction.label}</h3>
+                  <p id="visit-primary-action-detail">{visitPrimaryAction.detail}</p>
+                </div>
+                <button
+                  className="primary-button visit-primary-action"
+                  type="button"
+                  onClick={visitPrimaryAction.onClick}
+                  disabled={visitPrimaryAction.disabled}
+                  aria-describedby="visit-primary-action-detail"
+                  data-testid="visit-primary-action"
+                >
+                  {visitPrimaryAction.kind === "dictation" ? <Mic aria-hidden="true" /> : null}
+                  {visitPrimaryAction.kind === "draft" ? <Bot aria-hidden="true" /> : null}
+                  {visitPrimaryAction.kind === "save" || visitPrimaryAction.kind === "close" ? <Check aria-hidden="true" /> : null}
+                  {visitPrimaryAction.kind === "review" ? <AlertTriangle aria-hidden="true" /> : null}
+                  {visitPrimaryAction.label}
+                </button>
+              </div>
+              <div className="visit-progress-strip" data-testid="visit-progress-strip" aria-label="Прогресс приема">
+                {visitWorkflowSteps.map((step, index) => (
+                  <article className={`visit-progress-step step-${step.state}`} key={step.key}>
+                    <span>{index + 1}</span>
+                    <div>
+                      <strong>{step.label}</strong>
+                      <p>{step.detail}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки">
+              {visitSafetyCards.map((item) => (
+                <article className={`safety-${item.state}`} key={item.key}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                  <p>{item.detail}</p>
+                </article>
+              ))}
+            </section>
+
+            <section className="specialty-focus-bar" aria-label="Фокус специальности приема">
+              <div>
+                <p className="eyebrow">Фокус врача</p>
+                <h3>{specialtyLabels[selectedSpecialty]}</h3>
+                <p>{activeDoctor?.fullName.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"}</p>
+              </div>
+              <div className="specialty-focus-options">
+                {visibleVisitSpecialtyFocusOptions.map((option) => (
+                  <button
+                    className={selectedSpecialty === option.specialty ? "active" : ""}
+                    type="button"
+                    key={option.specialty}
+                    aria-pressed={selectedSpecialty === option.specialty}
+                    onClick={() => {
+                      setSelectedSpecialty(option.specialty);
+                      setSelectedProtocolId(null);
+                    }}
+                  >
+                    <strong>{option.title}</strong>
+                    <span>{option.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <div className="dictation-box">
+              <div className="dictation-header">
+                <Mic aria-hidden="true" />
+                <div>
+                  <h3>Диктовка врача</h3>
+                  <p>
+                    Черновик, требует подтверждения врача.{" "}
+                    {lastLocalSavedAt ? `Локально сохранено ${formatTime(lastLocalSavedAt)}.` : "Локальное автосохранение включено."}
+                    {localDraftWasRestored ? " Восстановлен локальный черновик." : ""}
+                    {!isOnline ? " Офлайн: сервер синхронизируется позже." : ""}
+                    {pendingVisitSaveCount
+                      ? ` Сервер ожидает ${pendingVisitSaveCount} сохранение${lastPendingVisitSaveAt ? ` с ${formatTime(lastPendingVisitSaveAt)}` : ""}.`
+                      : ""}
+                    {pendingSpeechChunkCount ? ` Распознавание ждет ${pendingSpeechChunkCount} аудио-фрагм.` : ""}
+                    {lastServerDraftSavedAt && serverDraftSyncState === "saved" ? ` Серверный черновик ${formatTime(lastServerDraftSavedAt)}.` : ""}
+                    {serverDraftSyncState === "saving" ? " Сервер сохраняет черновик." : ""}
+                    {serverDraftSyncState === "queued" || serverDraftSyncState === "error" ? " Серверный черновик повторит синхронизацию." : ""}
+                    {speechStatusNote ? ` ${speechStatusNote}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">
+                {dictationQuickPhrases.map((phrase) => (
+                  <button type="button" key={phrase.label} onClick={() => appendToTranscript(phrase.text)}>
+                    {phrase.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                aria-label="Текст диктовки"
+                value={transcript}
+                onChange={(event) => {
+                  visitDraftUserEditedRef.current = true;
+                  setTranscript(event.target.value);
+                  if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
+                }}
+              />
+              <div className="dictation-actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={clearTranscriptWithUndo}
+                  disabled={!hasVisitTranscriptText}
+                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                >
+                  Очистить
+                </button>
+                {clearedTranscriptSnapshot ? (
+                  <button className="secondary-button" type="button" onClick={undoTranscriptClear}>
+                    Вернуть
+                  </button>
+                ) : null}
+                <button className="secondary-button" type="button" onClick={startVisitDictation} disabled={isVisitDictating}>
+                  <Mic aria-hidden="true" /> {isVisitDictating ? "Слушаю" : "Голос"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
+                  title={
+                    speechRecognitionReady
+                      ? speechGatewayActiveProviderIsLocal
+                        ? `${speechGatewayStatus?.providerLabel ?? "локальный модуль"}: запись частями в локальный модуль`
+                        : `${speechGatewayStatus?.providerLabel ?? "распознавание"}: запись частями`
+                      : "Аудио сохранится локально и уйдет на распознавание, когда источник будет готов"
+                  }
+                >
+                  <Mic aria-hidden="true" />{" "}
+                  {isServerVoiceRecording
+                    ? "Стоп запись"
+                    : emptyDictationVoiceActionLabel}
+                </button>
+                {pendingSpeechChunkCount ? (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => flushPendingSpeechChunks({ silent: false })}
+                    title={pendingSpeechFlushActionTitle}
+                  >
+                    {pendingSpeechFlushActionLabel}
+                  </button>
+                ) : null}
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={polishTranscript}
+                  disabled={!hasVisitTranscriptText || isTranscriptPolishing}
+                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                  title={
+                    speechGatewayStatus?.polishPolicy.neuralEnabled
+                      ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
+                      : "Локальная очистка терминов, секций и номеров зубов"
+                  }
+                >
+                  <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить текст"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={buildOfflineDraft}
+                  disabled={!hasVisitTranscriptText}
+                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                >
+                  Локальный разбор
+                </button>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={buildDraft}
+                  disabled={isDraftLoading || !visitDraftReadyToBuild}
+                  aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
+                >
+                  <Bot aria-hidden="true" /> {isDraftLoading ? "Собираю" : "Собрать черновик"}
+                </button>
+                {!hasVisitTranscriptText ? (
+                  <div className="dictation-action-guidance" id="dictation-clear-guidance" role="status" aria-live="polite">
+                    В диктовке пока нет текста: нажмите «Голос», «{emptyDictationVoiceActionLabel}» или впишите текст вручную.
+                  </div>
+                ) : null}
+                {!visitDraftReadyToBuild ? (
+                  <div className="visit-draft-missing" id="visit-draft-missing" role="status" aria-live="polite">
+                    <strong>Чтобы собрать черновик, осталось:</strong>
+                    <ul>
+                      {visitDraftBuildMissingSteps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <section className="visit-note-panel" aria-label="Черновик электронной медицинской карты">
+              <div className="visit-note-head">
+                <div>
+                  <p className="eyebrow">ЭМК после диктовки</p>
+                  <h3>{draft ? "Проверьте черновик" : isVisitNoteDirty ? "Проверьте правки" : "Структура приема"}</h3>
+                </div>
+                <span className={draft || isVisitNoteDirty ? "ready" : ""}>{visitNoteStatusLabel}</span>
+              </div>
+              <div className="visit-fields">
+                {visitNoteFieldDefinitions.map((field) => (
+                  <label key={field.key}>
+                    {field.label}
+                    <textarea value={visitNoteForm[field.key]} onChange={(event) => updateVisitNoteField(field.key, event.target.value)} />
+                  </label>
+                ))}
+              </div>
+
+              {draft?.quality ? (
+                <div className={`visit-draft-quality quality-${draft.quality.level}`}>
+                  <div>
+                    <strong>{visitDraftQualityLabels[draft.quality.level]}</strong>
+                    <span>{Math.round(draft.quality.confidence * 100)}% · {specialtyLabels[draft.quality.specialty]}</span>
+                  </div>
+                  <p>{draft.quality.nextAction}</p>
+                  <div className="visit-draft-signal-row">
+                    {draft.quality.detectedToothCodes.slice(0, 6).map((toothCode) => (
+                      <span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
+                    ))}
+                    {draft.quality.signals.slice(0, 7).map((signal) => (
+                      <span key={signal}>{visitDraftSignalLabel(signal)}</span>
+                    ))}
+                    {draft.quality.missingCriticalFields.slice(0, 5).map((field) => (
+                      <small key={field}>проверить: {visitDraftMissingFieldLabel(field)}</small>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="ai-draft">
+                <ShieldCheck aria-hidden="true" />
+                <p>
+                  {draft
+                    ? draft.warnings.join(" ")
+                    : isVisitNoteDirty
+                      ? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
+                      : pendingVisitSaveCount
+                        ? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
+                        : lastVisitSaveReceipt
+                          ? visitSaveReceiptText(lastVisitSaveReceipt)
+                          : dashboard.activeVisit.doctorSummary}
+                </p>
+                {pendingVisitSaveCount ? (
+                  <button className="secondary-button" type="button" onClick={() => void flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>
+                    {isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
+                  </button>
+                ) : null}
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={acceptDraftToVisit}
+                  disabled={!visitNoteReadyToAccept || isDraftAccepting}
+                  aria-describedby={!visitNoteReadyToAccept ? "visit-note-missing" : undefined}
+                >
+                  <Check aria-hidden="true" /> {visitNoteActionLabel}
+                </button>
+                {!visitNoteReadyToAccept ? (
+                  <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite">
+                    <strong>Чтобы сохранить запись приема, осталось:</strong>
+                    <ul>
+                      {visitNoteAcceptMissingSteps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <details className="protocol-library" aria-label="Шаблоны приема по специальности">
+              <summary className="protocol-summary">
+                <div>
+                  <h3>Шаблон приема</h3>
+                  <p>{selectedProtocolTemplate?.title ?? "Выберите специальность и шаблон"}</p>
+                </div>
+                <span>{selectedProtocolTemplate ? specialtyLabels[selectedProtocolTemplate.specialty] : dashboard.protocolTemplates.length}</span>
+              </summary>
+              <div className="protocol-head">
+                <div>
+                  <h3>Шаблон приема</h3>
+                  <p>Выбор специальности меняет протокол, снимки, документы и предупреждения.</p>
+                </div>
+                <span>{dashboard.protocolTemplates.length}</span>
+              </div>
+              <div className="specialty-strip">
+                {specialtiesWithTemplates.map((specialty) => (
+                  <button
+                    className={selectedSpecialty === specialty ? "active" : ""}
+                    key={specialty}
+                    type="button"
+                    aria-pressed={selectedSpecialty === specialty}
+                    onClick={() => {
+                      setSelectedSpecialty(specialty);
+                      setSelectedProtocolId(null);
+                    }}
+                  >
+                    {specialtyLabels[specialty]}
+                  </button>
+                ))}
+              </div>
+              {selectedProtocolTemplate ? (
+                <article className="protocol-card">
+                  <div>
+                    <strong>{selectedProtocolTemplate.title}</strong>
+                    <p>
+                      {selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
+                      {selectedProtocolTemplate.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}
+                    </p>
+                  </div>
+                  <div className="protocol-template-list">
+                    {specialtyProtocolTemplates.map((template) => (
+                      <button
+                        className={selectedProtocolTemplate.id === template.id ? "active" : ""}
+                        key={template.id}
+                        type="button"
+                        aria-pressed={selectedProtocolTemplate.id === template.id}
+                        onClick={() => setSelectedProtocolId(template.id)}
+                      >
+                        {template.visitReason}
+                      </button>
+                    ))}
+                  </div>
+                  <ul>
+                    {selectedProtocolTemplate.safetyWarnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                  <button className="secondary-button" type="button" onClick={() => applyProtocolTemplate(selectedProtocolTemplate)}>
+                    <ClipboardCheck aria-hidden="true" /> Заполнить диктовку
+                  </button>
+                </article>
+              ) : null}
+            </details>
+
+            <ClinicalRulePanel
+              actionLabels={clinicalRuleActionLabels}
+              context="visit"
+              evaluations={activeVisitClinicalRuleEvaluations}
+              serviceTitle={serviceTitle}
+              severityLabels={clinicalRuleSeverityLabels}
+              staffRoleLabels={staffRoleLabels}
+              summary={activeVisitClinicalRuleSummary}
+            />
+
+            <div className="tooth-map" aria-label="Зубная карта">
+              <div className="tooth-map-head">
+                <div>
+                  <h3>Зубная карта</h3>
+                  <p>Визуальный контекст вместо поиска по строкам.</p>
+                </div>
+                <span>FDI</span>
+              </div>
+              {toothRows.map((row, rowIndex) => (
+                <div className="tooth-row" key={rowIndex === 0 ? "upper" : "lower"}>
+                  {row.map((code) => (
+                    <span className={`tooth tooth-${toothStateByCode[code] ?? "idle"}`} key={code}>
+                      <span>{code}</span>
+                    </span>
+                  ))}
+                </div>
+              ))}
+              <div className="tooth-legend">
+                <span className="legend-planned">36 лечение</span>
+                <span className="legend-watch">16/46 наблюдать</span>
+                <span className="legend-done">26 готово</span>
+                <span className="legend-missing">48 нет</span>
+              </div>
+            </div>
+
+            {visitCloseChecklist ? (
+              <div className="close-checklist" aria-label="Предупреждения перед закрытием приема">
+                <div className="close-checklist-head">
+                  <div>
+                    <h3>Закрытие приема</h3>
+                    <p>{primaryVisitWarning?.actionLabel ?? visitCloseChecklist.nextAction}</p>
+                  </div>
+                  <span className={visitCloseChecklist.readyToSign ? "ready" : ""}>
+                    {visitCloseChecklist.readyToSign ? "готово" : `${visitCloseChecklist.score}%`}
+                  </span>
+                </div>
+                {visitCloseChecklist.items.map((task) => (
+                  <button
+                    className={`close-task ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
+                    key={task.id}
+                    type="button"
+                    onClick={() => {
+                      window.location.hash = task.section;
+                    }}
+                  >
+                    <CheckCircle2 aria-hidden="true" />
+                    <div>
+                      <strong>{task.title}</strong>
+                      <p>{task.detail}</p>
+                      <small>{staffRoleLabels[task.ownerRole]} · {task.actionLabel}</small>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>

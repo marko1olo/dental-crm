@@ -1,4 +1,5 @@
 import { useSettingsStore } from "./store/settingsStore";
+import { useScheduleStore } from "./store/scheduleStore";
 import { Plus, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
@@ -25,11 +26,7 @@ type ScheduleViewProps = {
   appointmentLabels: Record<Appointment["status"], string>;
   appointmentReadinessById: Map<string, AppointmentReadiness>;
   appointmentReadinessLabels: Record<AppointmentReadiness["state"], string>;
-  appointmentScheduleDirtyIds: Set<string>;
   appointmentScheduleDraftFromAppointment: (appointment: Appointment) => AppointmentScheduleDraft;
-  appointmentScheduleDrafts: Record<string, AppointmentScheduleDraft>;
-  appointmentScheduleErrors: Record<string, string | null>;
-  appointmentScheduleSaveStates: Record<string, AppointmentScheduleSaveState>;
   closeAppointmentEditor: (appointmentId: string) => void;
   createAppointmentFromDraft: () => Promise<boolean>;
   dashboard: Dashboard;
@@ -37,9 +34,7 @@ type ScheduleViewProps = {
   formatTime: (value: string) => string;
   fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
   lockScheduleAdminSession: () => void;
-  newAppointmentDraft: AppointmentScheduleDraft;
   newAppointmentError: string | null;
-  newAppointmentSaveState: AppointmentScheduleSaveState;
   normalizedAppointmentStatus: (value: unknown, fallback?: Appointment["status"]) => Appointment["status"];
   normalizedAppointmentStatusFilter: (value: unknown) => Appointment["status"] | "all";
   openAppointmentEditor: (appointment: Appointment) => void;
@@ -47,16 +42,6 @@ type ScheduleViewProps = {
   recommendedActionPriorityLabels: Record<ScheduleSuggestion["priority"], string>;
   resetNewAppointmentDraft: () => void;
   saveAppointmentSchedule: (appointmentId: string, options?: { closeEditorOnSave?: boolean }) => Promise<boolean>;
-  scheduleAssistantFilterId: string | null;
-  scheduleChairFilterId: string | null;
-  scheduleDateFilter: string;
-  scheduleDoctorFilterId: string | null;
-  scheduleStatusFilter: Appointment["status"] | "all";
-  setScheduleAssistantFilterId: (value: string | null) => void;
-  setScheduleChairFilterId: (value: string | null) => void;
-  setScheduleDateFilter: (value: string) => void;
-  setScheduleDoctorFilterId: (value: string | null) => void;
-  setScheduleStatusFilter: (value: Appointment["status"] | "all") => void;
   
   shiftWarnings: Dashboard["shiftIntelligence"]["scheduleWarnings"];
   sortedAppointments: Appointment[];
@@ -76,14 +61,56 @@ type ScheduleViewProps = {
 
 export function ScheduleView(props: ScheduleViewProps) {
   const {
+    scheduleDoctorFilterId,
+    scheduleAssistantFilterId,
+    scheduleChairFilterId,
+    scheduleDefaultDoctorUserId,
+    scheduleDefaultAssistantUserId,
+    scheduleDefaultChairId,
+    scheduleStatusFilter,
+    scheduleDateFilter,
+    staffScheduleDrafts,
+    staffScheduleSavingId,
+    staffScheduleDirtyIds,
+    staffScheduleSaveStates,
+    chairScheduleDrafts,
+    chairScheduleSavingId,
+    chairScheduleDirtyIds,
+    chairScheduleSaveStates,
+    appointmentScheduleDrafts,
+    appointmentScheduleDirtyIds,
+    appointmentScheduleSaveStates,
+    appointmentScheduleErrors,
+    newAppointmentDraft,
+    newAppointmentSaveState,
+    setScheduleDoctorFilterId,
+    setScheduleAssistantFilterId,
+    setScheduleChairFilterId,
+    setScheduleDefaultDoctorUserId,
+    setScheduleDefaultAssistantUserId,
+    setScheduleDefaultChairId,
+    setScheduleStatusFilter,
+    setScheduleDateFilter,
+    setStaffScheduleDrafts,
+    setStaffScheduleSavingId,
+    setStaffScheduleDirtyIds,
+    setStaffScheduleSaveStates,
+    setChairScheduleDrafts,
+    setChairScheduleSavingId,
+    setChairScheduleDirtyIds,
+    setChairScheduleSaveStates,
+    setAppointmentScheduleDrafts,
+    setAppointmentScheduleDirtyIds,
+    setAppointmentScheduleSaveStates,
+    setAppointmentScheduleErrors,
+    setNewAppointmentDraft,
+    setNewAppointmentSaveState
+  } = useScheduleStore();
+  const {
     appointmentLabels,
     appointmentReadinessById,
     appointmentReadinessLabels,
-    appointmentScheduleDirtyIds,
     appointmentScheduleDraftFromAppointment,
-    appointmentScheduleDrafts,
-    appointmentScheduleErrors,
-    appointmentScheduleSaveStates,
     closeAppointmentEditor,
     createAppointmentFromDraft,
     dashboard,
@@ -91,9 +118,7 @@ export function ScheduleView(props: ScheduleViewProps) {
     formatTime,
     fromDateTimeLocalValue,
     lockScheduleAdminSession,
-    newAppointmentDraft,
     newAppointmentError,
-    newAppointmentSaveState,
     normalizedAppointmentStatus,
     normalizedAppointmentStatusFilter,
     openAppointmentEditor,
@@ -101,16 +126,6 @@ export function ScheduleView(props: ScheduleViewProps) {
     recommendedActionPriorityLabels,
     resetNewAppointmentDraft,
     saveAppointmentSchedule,
-    scheduleAssistantFilterId,
-    scheduleChairFilterId,
-    scheduleDateFilter,
-    scheduleDoctorFilterId,
-    scheduleStatusFilter,
-    setScheduleAssistantFilterId,
-    setScheduleChairFilterId,
-    setScheduleDateFilter,
-    setScheduleDoctorFilterId,
-    setScheduleStatusFilter,
     shiftWarnings,
     sortedAppointments,
     staffRoleLabels,
@@ -185,9 +200,6 @@ export function ScheduleView(props: ScheduleViewProps) {
   const busiestChairLoad = highestUtilizationLoad(dashboard.shiftIntelligence.chairLoads);
   const activeScheduleFilterCount = [
     scheduleDateFilter.trim(),
-    scheduleDoctorFilterId,
-    scheduleAssistantFilterId,
-    scheduleChairFilterId,
     scheduleStatusFilter !== "all" ? scheduleStatusFilter : null
   ].filter((value): value is string => Boolean(value)).length;
   const scheduleFilteredSummary = [

@@ -1,11 +1,6 @@
 
 import { useDocumentStore } from "./store/documentStore";
-import { useImagingStore } from "./store/imagingStore";
-import { useVisitStore } from "./store/visitStore";
-import { usePatientStore } from "./store/patientStore";
-import { useScheduleStore } from "./store/scheduleStore";
-import { useSettingsStore } from "./store/settingsStore";
-import { useDocumentStore as _unused } from "./store/documentStore";
+import { useMainStore } from "./store/mainStore";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -918,78 +913,6 @@ import {
 } from "./AppHelpers";
 
 export function App() {
-  const {
-    selectedPatientId,
-    patientCoreDraft,
-    patientCoreSaveState,
-    patientCoreDirty,
-    patientAdministrativeProfileDraft,
-    patientAdministrativeProfileSaveState,
-    patientAdministrativeProfileDirty,
-    newPatientName,
-    newPatientPhone,
-    newPatientBirthDate,
-    isPatientCreating,
-    newRulePatientText,
-    setSelectedPatientId,
-    setPatientCoreDraft,
-    setPatientCoreSaveState,
-    setPatientCoreDirty,
-    setPatientAdministrativeProfileDraft,
-    setPatientAdministrativeProfileSaveState,
-    setPatientAdministrativeProfileDirty,
-    setNewPatientName,
-    setNewPatientPhone,
-    setNewPatientBirthDate,
-    setIsPatientCreating,
-    setNewRulePatientText
-  } = usePatientStore();
-  const {
-    scheduleDoctorFilterId,
-    setScheduleDoctorFilterId,
-    scheduleAssistantFilterId,
-    setScheduleAssistantFilterId,
-    scheduleChairFilterId,
-    setScheduleChairFilterId,
-    scheduleDefaultDoctorUserId,
-    setScheduleDefaultDoctorUserId,
-    scheduleDefaultAssistantUserId,
-    setScheduleDefaultAssistantUserId,
-    scheduleDefaultChairId,
-    setScheduleDefaultChairId,
-    scheduleStatusFilter,
-    setScheduleStatusFilter,
-    scheduleDateFilter,
-    setScheduleDateFilter,
-    staffScheduleDrafts,
-    setStaffScheduleDrafts,
-    staffScheduleSavingId,
-    setStaffScheduleSavingId,
-    staffScheduleDirtyIds,
-    setStaffScheduleDirtyIds,
-    staffScheduleSaveStates,
-    setStaffScheduleSaveStates,
-    chairScheduleDrafts,
-    setChairScheduleDrafts,
-    chairScheduleSavingId,
-    setChairScheduleSavingId,
-    chairScheduleDirtyIds,
-    setChairScheduleDirtyIds,
-    chairScheduleSaveStates,
-    setChairScheduleSaveStates,
-    appointmentScheduleDrafts,
-    setAppointmentScheduleDrafts,
-    appointmentScheduleDirtyIds,
-    setAppointmentScheduleDirtyIds,
-    appointmentScheduleSaveStates,
-    setAppointmentScheduleSaveStates,
-    appointmentScheduleErrors,
-    setAppointmentScheduleErrors,
-    newAppointmentDraft,
-    setNewAppointmentDraft,
-    newAppointmentSaveState,
-    setNewAppointmentSaveState
-  } = useScheduleStore();
   const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
   const initialTelegramHandoffTargetRef = useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
   const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
@@ -1026,224 +949,19 @@ export function App() {
     )?.text ??
     recognitionPresets[0]?.text ??
     "";
-  const [uiPreferencesHydrated, setUiPreferencesHydrated] = useState(false);
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [accessUnlockRequired, setAccessUnlockRequired] = useState(false);
-  const [accessUnlockMessage, setAccessUnlockMessage] = useState("");
-  const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
+          const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
   const activeOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
-  const [uiLanguage, setUiLanguage] = useState<UiLanguage>(initialUiPreferences.uiLanguage);
-  const [clinicProfileDraft, setClinicProfileDraft] = useState<ClinicProfileDraft>(emptyClinicProfileDraft);
-  const [clinicProfileSaveState, setClinicProfileSaveState] = useState<ClinicProfileSaveState>("idle");
-  const [clinicProfileDirty, setClinicProfileDirty] = useState(false);
-  const [currentView, setCurrentView] = useState<AppView>(() => viewFromHash());
-  const [settingsTab, setSettingsTab] = useState<SettingsTab>(() => settingsTabFromHash());
-  const [selectedWorkspaceRole, setSelectedWorkspaceRole] = useState<StaffRole>(initialUiPreferences.selectedWorkspaceRole);
-  
-  
-  
-  
-  
-  
-  
-  
-  const [query, setQuery] = useState("");
-  const [newStaffName, setNewStaffName] = useState("");
-  const [newStaffRole, setNewStaffRole] = useState<StaffRole>("doctor");
-  const [newStaffSpecialty, setNewStaffSpecialty] = useState<DentalSpecialty>("therapist");
-  
-  
-  
-  
-  
-  
-  
-  
-  const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
-  
-  
-  
-  
-  
-  
-  const [newAppointmentError, setNewAppointmentError] = useState<string | null>(null);
-  const [newChairName, setNewChairName] = useState("");
-  const [newChairHasXraySensor, setNewChairHasXraySensor] = useState(true);
-  const [newChairHasMicroscope, setNewChairHasMicroscope] = useState(false);
-  const [newChairHasSurgeryKit, setNewChairHasSurgeryKit] = useState(false);
-  const [newRuleTitle, setNewRuleTitle] = useState("Кариес требует снимок и изоляцию");
-  const [newRuleAction, setNewRuleAction] = useState<Dashboard["clinicalRules"][number]["action"]>("add_required_service");
-  const [newRuleSeverity, setNewRuleSeverity] = useState<Dashboard["clinicalRules"][number]["severity"]>("warning");
-  const [newRuleOwnerRole, setNewRuleOwnerRole] = useState<Dashboard["clinicalRules"][number]["ownerRole"]>("doctor");
-  const [newRuleSpecialty, setNewRuleSpecialty] = useState<DentalSpecialty>("therapist");
-  const [newRuleCategory, setNewRuleCategory] = useState<Dashboard["serviceCatalog"][number]["category"]>("therapy");
-  const [newRuleTriggerServiceId, setNewRuleTriggerServiceId] = useState("svc-therapy-caries");
-  const [newRuleRequiredServiceId, setNewRuleRequiredServiceId] = useState("svc-therapy-cofferdam");
-  const [newRuleCompletedServiceId, setNewRuleCompletedServiceId] = useState("svc-therapy-caries");
-  const [newRuleBlockedServiceId, setNewRuleBlockedServiceId] = useState("svc-prosthetics-crown");
-  const [newRuleWarningText, setNewRuleWarningText] = useState("Проверьте обязательные условия до закрытия приема.");
-      const {
-    imagingImportText,
-    setImagingImportText,
-    imagingImportSourceKind,
-    setImagingImportSourceKind,
-    localImagingFolderDraft,
-    setLocalImagingFolderDraft,
-    imagingFolderPath,
-    setImagingFolderPath,
-    browserPickedImagingFolder,
-    setBrowserPickedImagingFolder,
-    browserImagingScanProgress,
-    setBrowserImagingScanProgress,
-    browserDirectoryPickerAvailable,
-    setBrowserDirectoryPickerAvailable,
-    imagingImportPreview,
-    setImagingImportPreview,
-    imagingImportCommit,
-    setImagingImportCommit,
-    imagingFolderScan,
-    setImagingFolderScan,
-    dicomLocalFolderDiscovery,
-    setDicomLocalFolderDiscovery,
-    localImagingOrganizer,
-    setLocalImagingOrganizer,
-    dicomSeriesPreview,
-    setDicomSeriesPreview,
-    dicomFolderSeriesScan,
-    setDicomFolderSeriesScan,
-    dicomFolderWorkupPlan,
-    setDicomFolderWorkupPlan,
-    dicomFirstFramePreview,
-    setDicomFirstFramePreview,
-    dicomFirstFrameViewerState,
-    setDicomFirstFrameViewerState,
-    dicomWebEndpointUrl,
-    setDicomWebEndpointUrl,
-    dicomWebCheck,
-    setDicomWebCheck,
-    dicomViewerLaunchManifest,
-    setDicomViewerLaunchManifest,
-    dicomViewerToolStateBundle,
-    setDicomViewerToolStateBundle,
-    dicomViewerWorkbenchManifest,
-    setDicomViewerWorkbenchManifest,
-    dicomWorkbenchLocalSavedAt,
-    setDicomWorkbenchLocalSavedAt,
-    dicomWorkbenchServerBundle,
-    setDicomWorkbenchServerBundle,
-    dicomWorkbenchServerBundles,
-    setDicomWorkbenchServerBundles,
-    dicomWorkstationReadiness,
-    setDicomWorkstationReadiness,
-    dicomRenderCachePlan,
-    setDicomRenderCachePlan,
-    selectedImagingStudyId,
-    setSelectedImagingStudyId,
-    imagingKindFilter,
-    setImagingKindFilter,
-    imagingViewerState,
-    setImagingViewerState,
-    imagingViewerActiveTool,
-    setImagingViewerActiveTool,
-    ctPlanningActiveQuickActionId,
-    setCtPlanningActiveQuickActionId,
-    ctPlanningImplantPlan,
-    setCtPlanningImplantPlan,
-    imagingViewerAnnotations,
-    setImagingViewerAnnotations,
-    imagingViewerNote,
-    setImagingViewerNote,
-    imagingViewerSession,
-    setImagingViewerSession,
-    imagingViewerSaveState,
-    setImagingViewerSaveState,
-    imagingViewerLocalSavedAt,
-    setImagingViewerLocalSavedAt,
-    imagingViewerSaveError,
-    setImagingViewerSaveError,
-    imagingViewerSessionReady,
-    setImagingViewerSessionReady,
-    mprProjection,
-    setMprProjection,
-    mprAxisDeg,
-    setMprAxisDeg,
-    mprSlabMm,
-    setMprSlabMm,
-    mprSliceIndex,
-    setMprSliceIndex,
-    mprWindowPreset,
-    setMprWindowPreset,
-    mprCrosshairEnabled,
-    setMprCrosshairEnabled,
-    mprLinkedPlanesEnabled,
-    setMprLinkedPlanesEnabled,
-    mprWorkbenchLocalSavedAt,
-    setMprWorkbenchLocalSavedAt,
-    mprWorkbenchDraftRestored,
-    setMprWorkbenchDraftRestored,
-    isImagingImportLoading,
-    setIsImagingImportLoading,
-    isImagingImportCommitting,
-    setIsImagingImportCommitting,
-    imagingCreateSavingKind,
-    setImagingCreateSavingKind,
-    isImagingFolderScanning,
-    setIsImagingFolderScanning,
-    isDicomLocalDiscovering,
-    setIsDicomLocalDiscovering,
-    isLocalImagingOrganizing,
-    setIsLocalImagingOrganizing,
-    isDicomSeriesPreviewLoading,
-    setIsDicomSeriesPreviewLoading,
-    isDicomWebChecking,
-    setIsDicomWebChecking,
-    isDicomManifestBuilding,
-    setIsDicomManifestBuilding,
-    isDicomToolStateBuilding,
-    setIsDicomToolStateBuilding,
-    isDicomWorkbenchBuilding,
-    setIsDicomWorkbenchBuilding,
-    isDicomWorkbenchServerSaving,
-    setIsDicomWorkbenchServerSaving,
-    isDicomWorkbenchReconnecting,
-    setIsDicomWorkbenchReconnecting,
-    isDicomWorkstationChecking,
-    setIsDicomWorkstationChecking,
-    isDicomRenderCachePlanning,
-    setIsDicomRenderCachePlanning,
-    isDicomFolderWorkupPlanning,
-    setIsDicomFolderWorkupPlanning,
-    isDicomFirstFramePreviewing,
-    setIsDicomFirstFramePreviewing,
-    isBrowserImagingFolderPicking,
-    setIsBrowserImagingFolderPicking,
-    isLocalDicomOperationActive,
-    setIsLocalDicomOperationActive
-  } = useImagingStore();
-
-  const {
-    selectedSpecialty, setSelectedSpecialty,
-    selectedProtocolId, setSelectedProtocolId,
-    clearedTranscriptSnapshot, setClearedTranscriptSnapshot,
-    transcript, setTranscript,
-    draft, setDraft,
-    visitNoteForm, setVisitNoteForm,
-    lastServerDraftSavedAt, setLastServerDraftSavedAt,
-    serverDraftSyncState, setServerDraftSyncState,
-    localDraftWasRestored, setLocalDraftWasRestored,
-    pendingVisitSaveCount, setPendingVisitSaveCount,
-    lastPendingVisitSaveAt, setLastPendingVisitSaveAt,
-    lastVisitSaveReceipt, setLastVisitSaveReceipt,
-    speechLastQuality, setSpeechLastQuality,
-    isDraftLoading, setIsDraftLoading,
-    isDraftAccepting, setIsDraftAccepting,
-    isPendingVisitSyncing, setIsPendingVisitSyncing,
-    isVisitDictating, setIsVisitDictating,
-    isTranscriptPolishing, setIsTranscriptPolishing,
-    lastServerDraftSignatureRef, visitDraftUserEditedRef
-  } = useVisitStore();
-
-  const {
+                                                                          const [staffScheduleDrafts, setStaffScheduleDrafts] = useState<Record<string, StaffScheduleDraft>>({});
+    const [staffScheduleDirtyIds, setStaffScheduleDirtyIds] = useState<Set<string>>(() => new Set());
+  const [staffScheduleSaveStates, setStaffScheduleSaveStates] = useState<Record<string, StaffScheduleSaveState>>({});
+  const [chairScheduleDrafts, setChairScheduleDrafts] = useState<Record<string, StaffScheduleDraft>>({});
+    const [chairScheduleDirtyIds, setChairScheduleDirtyIds] = useState<Set<string>>(() => new Set());
+  const [chairScheduleSaveStates, setChairScheduleSaveStates] = useState<Record<string, StaffScheduleSaveState>>({});
+    const [appointmentScheduleDrafts, setAppointmentScheduleDrafts] = useState<Record<string, AppointmentScheduleDraft>>({});
+  const [appointmentScheduleDirtyIds, setAppointmentScheduleDirtyIds] = useState<Set<string>>(() => new Set());
+  const [appointmentScheduleSaveStates, setAppointmentScheduleSaveStates] = useState<Record<string, AppointmentScheduleSaveState>>({});
+  const [appointmentScheduleErrors, setAppointmentScheduleErrors] = useState<Record<string, string | null>>({});
+                                                                                                                              const {
     documentCreateSavingKind,
     setDocumentCreateSavingKind,
     documentStatusSavingId,
@@ -1859,521 +1577,15 @@ export function App() {
     outpatient025uSocialSupportCode,
     setOutpatient025uSocialSupportCode,
     outpatient025uHealthStatusDisclosureContact,
-    setOutpatient025uHealthStatusDisclosureContact,
-      outpatient025uEmploymentCode,
-    setOutpatient025uEmploymentCode,
-    outpatient025uDisabilityGroup,
-    setOutpatient025uDisabilityGroup,
-    outpatient025uWorkOrStudyPlace,
-    setOutpatient025uWorkOrStudyPlace,
-    outpatient025uPalliativeCareNeedCode,
-    setOutpatient025uPalliativeCareNeedCode,
-    outpatient025uBloodGroup,
-    setOutpatient025uBloodGroup,
-    outpatient025uRhFactor,
-    setOutpatient025uRhFactor,
-    outpatient025uKellK1,
-    setOutpatient025uKellK1,
-    outpatient025uOtherBloodData,
-    setOutpatient025uOtherBloodData,
-    outpatient025uAllergyHistory,
-    setOutpatient025uAllergyHistory,
-    outpatient025uFinalEpicrisis,
-    setOutpatient025uFinalEpicrisis,
-    outpatient025uOfficialForm274nChecked,
-    setOutpatient025uOfficialForm274nChecked,
-    outpatient025uThirdPartyDataChecked,
-    setOutpatient025uThirdPartyDataChecked,
-    copyRequestDocumentTypes,
-    setCopyRequestDocumentTypes,
-    copyRequestPeriodStart,
-    setCopyRequestPeriodStart,
-    copyRequestPeriodEnd,
-    setCopyRequestPeriodEnd,
-    copyRequestFormat,
-    setCopyRequestFormat,
-    copyRequestRecipientFullName,
-    setCopyRequestRecipientFullName,
-    copyRequestRecipientIdentityDocument,
-    setCopyRequestRecipientIdentityDocument,
-    copyRequestRecipientAuthority,
-    setCopyRequestRecipientAuthority,
-    copyRequestRepresentativeAuthorityDocument,
-    setCopyRequestRepresentativeAuthorityDocument,
-    copyRequestRequestedAt,
-    setCopyRequestRequestedAt,
-    copyRequestContactForDelivery,
-    setCopyRequestContactForDelivery,
-    copyRequestSpecialInstructions,
-    setCopyRequestSpecialInstructions,
-    copyRequestIncludeDicomSourceData,
-    setCopyRequestIncludeDicomSourceData,
-    copyRequestIdentityVerified,
-    setCopyRequestIdentityVerified,
-    copyRequestThirdPartyDataChecked,
-    setCopyRequestThirdPartyDataChecked,
-    attendanceStartedAt,
-    setAttendanceStartedAt,
-    attendanceEndedAt,
-    setAttendanceEndedAt,
-    attendancePurpose,
-    setAttendancePurpose,
-    attendanceRecipientOrganization,
-    setAttendanceRecipientOrganization,
-    attendanceIssuedAt,
-    setAttendanceIssuedAt,
-    attendanceSignedByFullName,
-    setAttendanceSignedByFullName,
-    attendanceSignedByRole,
-    setAttendanceSignedByRole,
-    attendanceDiagnosisDisclosureExcluded,
-    setAttendanceDiagnosisDisclosureExcluded,
-    attendanceNotSickLeaveAcknowledged,
-    setAttendanceNotSickLeaveAcknowledged,
-    releaseRecipientFullName,
-    setReleaseRecipientFullName,
-    releaseRecipientIdentityDocument,
-    setReleaseRecipientIdentityDocument,
-    releaseRecipientAuthority,
-    setReleaseRecipientAuthority,
-    releaseSourceRequestDocumentId,
-    setReleaseSourceRequestDocumentId,
-    releaseChannel,
-    setReleaseChannel,
-    releaseDocumentTypes,
-    setReleaseDocumentTypes,
-    releasePeriodStart,
-    setReleasePeriodStart,
-    releasePeriodEnd,
-    setReleasePeriodEnd,
-    releaseDeliveredAt,
-    setReleaseDeliveredAt,
-    releaseAccessExpiresAt,
-    setReleaseAccessExpiresAt,
-    releaseThirdPartyDataChecked,
-    setReleaseThirdPartyDataChecked,
-    refundAction,
-    setRefundAction,
-    refundAmountRub,
-    setRefundAmountRub,
-    refundReason,
-    setRefundReason,
-    refundMethod,
-    setRefundMethod,
-    refundRecipientFullName,
-    setRefundRecipientFullName,
-    refundRecipientIdentityDocument,
-    setRefundRecipientIdentityDocument,
-    refundBankDetails,
-    setRefundBankDetails,
-    refundSelectedPaymentId,
-    setRefundSelectedPaymentId,
-    refundOriginalFiscalReceiptNumber,
-    setRefundOriginalFiscalReceiptNumber,
-    refundCorrectionFiscalReceiptNumber,
-    setRefundCorrectionFiscalReceiptNumber,
-    refundAccountantDecision,
-    setRefundAccountantDecision,
-    personalDataCrossBorderAllowed,
-    setPersonalDataCrossBorderAllowed,
-    personalDataAutomatedDecisionAllowed,
-    setPersonalDataAutomatedDecisionAllowed,
-    personalDataConsentGivenAt,
-    setPersonalDataConsentGivenAt,
-    personalDataVoluntaryConsentConfirmed,
-    setPersonalDataVoluntaryConsentConfirmed,
-    personalDataMedicalProcessingAcknowledged,
-    setPersonalDataMedicalProcessingAcknowledged,
-    refusalIntervention,
-    setRefusalIntervention,
-    refusalClinicalIndication,
-    setRefusalClinicalIndication,
-    refusalPatientReason,
-    setRefusalPatientReason,
-    refusalDoctorFullName,
-    setRefusalDoctorFullName,
-    refusalConfirmedAt,
-    setRefusalConfirmedAt,
-    refusalConsequencesUnderstood,
-    setRefusalConsequencesUnderstood,
-    refusalSecondOpinionOffered,
-    setRefusalSecondOpinionOffered,
-    refusalEmergencyCareExplained,
-    setRefusalEmergencyCareExplained,
-      paymentAmount,
-    setPaymentAmount,
-    paymentMethod,
-    setPaymentMethod,
-    paymentFiscalReceiptNumber,
-    setPaymentFiscalReceiptNumber,
-    paymentFiscalReceiptIssuedAt,
-    setPaymentFiscalReceiptIssuedAt,
-    paymentFiscalFn,
-    setPaymentFiscalFn,
-    paymentFiscalFd,
-    setPaymentFiscalFd,
-    paymentFiscalFpd,
-    setPaymentFiscalFpd,
-    paymentFiscalCashierName,
-    setPaymentFiscalCashierName,
-    paymentFiscalReceiptUrl,
-    setPaymentFiscalReceiptUrl,
-    paymentPayerFullName,
-    setPaymentPayerFullName,
-    paymentPayerInn,
-    setPaymentPayerInn,
-    paymentPayerBirthDate,
-    setPaymentPayerBirthDate,
-    paymentPayerIdentityDocument,
-    setPaymentPayerIdentityDocument,
-    paymentPayerRelationship,
-    setPaymentPayerRelationship,
-    paymentTaxDeductionCode,
-    setPaymentTaxDeductionCode,
-    paymentFeedback,
-    setPaymentFeedback,
-    documentIssueConfirmationId,
-    setDocumentIssueConfirmationId,
-    documentIssueSignatureMode,
-    setDocumentIssueSignatureMode,
-    documentIssueSignedAt,
-    setDocumentIssueSignedAt,
-    documentIssueRecipientFullName,
-    setDocumentIssueRecipientFullName,
-    documentIssueRecipientRole,
-    setDocumentIssueRecipientRole,
-    documentIssueStaffFullName,
-    setDocumentIssueStaffFullName,
-    documentIssueStaffRole,
-    setDocumentIssueStaffRole,
-    documentIssueNote,
-    setDocumentIssueNote,
-    documentIssueIdentityChecked,
-    setDocumentIssueIdentityChecked,
-    documentIssueDocumentOpenedAndChecked,
-    setDocumentIssueDocumentOpenedAndChecked,
-    documentIssueRecipientSigned,
-    setDocumentIssueRecipientSigned,
-    documentIssueClinicSigned,
-    setDocumentIssueClinicSigned,
-    documentVoidConfirmationId,
-    setDocumentVoidConfirmationId,
-    documentVoidReasonCode,
-    setDocumentVoidReasonCode,
-    documentVoidReasonText,
-    setDocumentVoidReasonText,
-    documentVoidStaffFullName,
-    setDocumentVoidStaffFullName,
-    documentVoidStaffRole,
-    setDocumentVoidStaffRole,
-    documentVoidCorrectionDocumentId,
-    setDocumentVoidCorrectionDocumentId,
-    documentVoidReplacementRequired,
-    setDocumentVoidReplacementRequired,
-    documentVoidPatientOrPayerNotified,
-    setDocumentVoidPatientOrPayerNotified,
-    documentVoidArchivePreserved,
-    setDocumentVoidArchivePreserved,
-    documentVoidStatusReviewed,
-    setDocumentVoidStatusReviewed,
-    documentAuditFacts,
-    setDocumentAuditFacts,
-    documentAuditFactsLoadingId,
-    setDocumentAuditFactsLoadingId,
-    personalDataPurposes,
-    setPersonalDataPurposes,
-    personalDataCategories,
-    setPersonalDataCategories,
-    personalDataActions,
-    setPersonalDataActions,
-    personalDataTransferRules,
-    setPersonalDataTransferRules,
-    personalDataRetentionPeriod,
-    setPersonalDataRetentionPeriod,
-    personalDataRevocationChannel,
-    setPersonalDataRevocationChannel,
-    refusalExplainedRisks,
-    setRefusalExplainedRisks,
-    refusalAlternatives,
-    setRefusalAlternatives,
-    refusalUrgentWarningSigns,
-    setRefusalUrgentWarningSigns,
-    documentIngestionTarget,
-    setDocumentIngestionTarget,
-    documentIngestion,
-    setDocumentIngestion,
-    taxDocumentYear,
-    setTaxDocumentYear,
-    selectedDocumentKind,
-    setSelectedDocumentKind,
-    isDocumentIngesting,
-    setIsDocumentIngesting,
+    setOutpatient025uHealthStatusDisclosureContact
   } = useDocumentStore();
-  const {
-    onboardingDismissed,
-    setOnboardingDismissed,
-    onboardingDismissedAt,
-    setOnboardingDismissedAt,
-    onboardingStep,
-    setOnboardingStep,
-    onboardingDraftMode,
-    setOnboardingDraftMode,
-    onboardingGuideExpanded,
-    setOnboardingGuideExpanded,
-    telegramHandoffNotice,
-    setTelegramHandoffNotice,
-    telegramStatus,
-    setTelegramStatus,
-    telegramFeaturePlan,
-    setTelegramFeaturePlan,
-    telegramOutbox,
-    setTelegramOutbox,
-    telegramOutboxStatusFilter,
-    setTelegramOutboxStatusFilter,
-    telegramOutboxTemplateFilter,
-    setTelegramOutboxTemplateFilter,
-    telegramLinkCodes,
-    setTelegramLinkCodes,
-    telegramChatLinks,
-    setTelegramChatLinks,
-    telegramLinkCodeLedger,
-    setTelegramLinkCodeLedger,
-    telegramChatLinkLedger,
-    setTelegramChatLinkLedger,
-    telegramLinkSubjectType,
-    setTelegramLinkSubjectType,
-    telegramLinkStaffId,
-    setTelegramLinkStaffId,
-    telegramLinkCode,
-    setTelegramLinkCode,
-    telegramLinkActionState,
-    setTelegramLinkActionState,
-    telegramPreview,
-    setTelegramPreview,
-    telegramModeDraft,
-    setTelegramModeDraft,
-    telegramBotUsernameDraft,
-    setTelegramBotUsernameDraft,
-    telegramOwnBotUsernameDraft,
-    setTelegramOwnBotUsernameDraft,
-    telegramBotConfigId,
-    setTelegramBotConfigId,
-    telegramWebhookBaseUrlDraft,
-    setTelegramWebhookBaseUrlDraft,
-    telegramPatientPortalBaseUrlDraft,
-    setTelegramPatientPortalBaseUrlDraft,
-    telegramWelcomeImageUrlDraft,
-    setTelegramWelcomeImageUrlDraft,
-    telegramVisualCardUrlDrafts,
-    setTelegramVisualCardUrlDrafts,
-    telegramReviewUrlDraft,
-    setTelegramReviewUrlDraft,
-    telegramMapsUrlDraft,
-    setTelegramMapsUrlDraft,
-    telegramEnabledFeaturesDraft,
-    setTelegramEnabledFeaturesDraft,
-    telegramTokenTtlDraft,
-    setTelegramTokenTtlDraft,
-    telegramReminderLeadTimesDraft,
-    setTelegramReminderLeadTimesDraft,
-    telegramReviewRequestDelayDraft,
-    setTelegramReviewRequestDelayDraft,
-    telegramPostVisitCheckupDelayDrafts,
-    setTelegramPostVisitCheckupDelayDrafts,
-    telegramAllowVoiceIntakeDraft,
-    setTelegramAllowVoiceIntakeDraft,
-    telegramStaffEscalationChannelDraft,
-    setTelegramStaffEscalationChannelDraft,
-    telegramPrivacyModeDraft,
-    setTelegramPrivacyModeDraft,
-    telegramSettingsDirty,
-    setTelegramSettingsDirty,
-    telegramSettingsSaveState,
-    setTelegramSettingsSaveState,
-    telegramSettingsSaveError,
-    setTelegramSettingsSaveError,
-    clinicalAdminSecretDraft,
-    setClinicalAdminSecretDraft,
-    settingsAdminSecretDraft,
-    setSettingsAdminSecretDraft,
-    scheduleAdminSecretDraft,
-    setScheduleAdminSecretDraft,
-    telegramAdminSecretDraft,
-    setTelegramAdminSecretDraft,
-    clinicalAdminSecretSession,
-    setClinicalAdminSecretSession,
-    settingsAdminSecretSession,
-    setSettingsAdminSecretSession,
-    scheduleAdminSecretSession,
-    setScheduleAdminSecretSession,
-    telegramAdminSecretSession,
-    setTelegramAdminSecretSession,
-    telegramSendingItemId,
-    setTelegramSendingItemId,
-    telegramRevokingLinkId,
-    setTelegramRevokingLinkId
-  } = useSettingsStore();
-
-  const [releaseProtectionNote, setReleaseProtectionNote] = useState(
-    "личность получателя проверена, лишние данные третьих лиц исключены"
-  );
-  const [communicationNote, setCommunicationNote] = useState("Пациенту передана информация, задача закрыта.");
-  const [importText, setImportText] = useState(
-    "ФИО;Телефон;Дата рождения;Комментарий\nИванова Марина Сергеевна;+7 927 111-22-33;21.04.1988;уже есть в базе\nНовый Пациент;+7 927 333-44-55;12.02.1991;перенос из старой МИС\nБез Телефона;;05.08.1975;нужно уточнить контакт"
-  );
-  
-  const [smartImportText, setSmartImportText] = useState(
-    "Новый Пациент Снимков +7 927 444-55-66 12.02.1991 перенос из старой МИС\nНовый Пациент Снимков +7 927 444-55-66 RVG 36 12.05.2026 C:\\Images\\new_patient_36.dcm\nИванова Марина Сергеевна +7 927 111-22-33 ОПТГ 10.05.2026 C:\\Images\\ivanova_opg.png\nслужебная строка без полезных данных"
-  );
-  const [pricelistText, setPricelistText] = useState(
-    "Коронка циркониевая MultiLayer 35 000 руб\nКоронка IPS e.max 32 000 руб\nВинир керамический E.max 38 000 руб\nРеставрация композитная Filtek 9 500 руб\nЛечение канала 1 канал 6 800 руб\nИмплантация Straumann BLX 85 000 руб\nАбатмент индивидуальный циркониевый 28 000 руб\nСинус-лифтинг открытый 55 000 руб\nПрофессиональная гигиена Air Flow EMS 6 000 руб\nЭлайнеры Star Smile 160 000 руб"
-  );
-  const [pricelistSourceKind, setPricelistSourceKind] = useState<PricelistSourceKind>(initialUiPreferences.pricelistSourceKind);
-  const [usePricelistAi, setUsePricelistAi] = useState(initialUiPreferences.usePricelistAi);
-  const [pricelistAnalysis, setPricelistAnalysis] = useState<DentalPricelistAnalysisResponse | null>(null);
-  const [pricelistImageBase64, setPricelistImageBase64] = useState<string | null>(null);
-  const [pricelistImageMimeType, setPricelistImageMimeType] = useState<PricelistImageMimeType>("image/jpeg");
-  const [pricelistImageName, setPricelistImageName] = useState<string | null>(null);
-  const [pricelistImageNote, setPricelistImageNote] = useState<string | null>(null);
-  const [recognitionKind, setRecognitionKind] = useState<AiJobKind>(initialUiPreferences.recognitionKind);
-  const [recognitionTarget, setRecognitionTarget] = useState<AiRecognitionTarget>(initialUiPreferences.recognitionTarget);
-  const [recognitionText, setRecognitionText] = useState(initialRecognitionText);
-  const [importSourceKind, setImportSourceKind] = useState<ImportSourceKind>(initialUiPreferences.importSourceKind);
-  
-  const [smartImportMode, setSmartImportMode] = useState<SmartImportMode>(initialUiPreferences.smartImportMode);
-  
-  
-  
-  
-  const [browserMigrationDiscovery, setBrowserMigrationDiscovery] = useState<MigrationLocalSourceDiscoveryResponse | null>(null);
-  const [browserMigrationScanProgress, setBrowserMigrationScanProgress] = useState<BrowserMigrationScanProgress | null>(null);
-  
-  const [importIntake, setImportIntake] = useState<ImportIntakeResponse | null>(null);
-  const [importPreview, setImportPreview] = useState<ImportPreviewResponse | null>(null);
-  const [importCommit, setImportCommit] = useState<ImportCommitResponse | null>(null);
-  
-  
-  
-  
-  const [migrationAutopilot, setMigrationAutopilot] = useState<MigrationAutopilotResponse | null>(null);
-  const [migrationSourceDiscovery, setMigrationSourceDiscovery] = useState<MigrationLocalSourceDiscoveryResponse | null>(null);
-  const [migrationSourceWorkup, setMigrationSourceWorkup] = useState<MigrationLocalSourceWorkupResponse | null>(null);
-  const [migrationSourceProbe, setMigrationSourceProbe] = useState<MigrationLocalSourceProbeResponse | null>(null);
-  const [clinicPublicLookup, setClinicPublicLookup] = useState<ClinicPublicLookupResponse | null>(null);
-  
-  
-  
-  
-  
-  const [dicomFirstFramePreviewRequest, setDicomFirstFramePreviewRequest] =
-    useState<DicomFirstFramePreviewRequestContext | null>(null);
-  
-  
-  const [ohifBaseUrl, setOhifBaseUrl] = useState(initialUiPreferences.ohifBaseUrl);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const [smartImportPreview, setSmartImportPreview] = useState<SmartImportPreviewResponse | null>(null);
-  const [smartImportCommit, setSmartImportCommit] = useState<SmartImportCommitResponse | null>(null);
-  const [recognitionJob, setRecognitionJob] = useState<AiRecognitionJob | null>(null);
-  const [localAutosaveReady, setLocalAutosaveReady] = useState(false);
-  const [lastLocalSavedAt, setLastLocalSavedAt] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
-  const [speechGatewayStatus, setSpeechGatewayStatus] = useState<SpeechGatewayStatus | null>(null);
-  const [speechGatewayHealthReport, setSpeechGatewayHealthReport] = useState<SpeechGatewayHealthReport | null>(null);
-  const [speechProviderRuntimeStatuses, setSpeechProviderRuntimeStatuses] = useState<SpeechProviderRuntimeStatus[]>([]);
-  const [speechRecordingStrategy, setSpeechRecordingStrategy] = useState<SpeechRecordingStrategy | null>(null);
-  const [speechRecordingRecovery, setSpeechRecordingRecovery] = useState<SpeechRecordingRecoveryList | null>(null);
-  const [pendingSpeechChunkCount, setPendingSpeechChunkCount] = useState(() => loadPendingSpeechChunksFromLocalStorage(activeOrganizationId).length);
-  const [speechStatusNote, setSpeechStatusNote] = useState<string | null>(null);
-  const [browserContinuity, setBrowserContinuity] = useState<BrowserContinuityStatus | null>(null);
-  const [localBridgeReadiness, setLocalBridgeReadiness] = useState<LocalBridgeReadinessResponse | null>(null);
-  const [localBridgeUsePlans, setLocalBridgeUsePlans] = useState<LocalBridgeUsePlansResponse | null>(null);
-  const [isImportDictating, setIsImportDictating] = useState(false);
-  const [isImportLoading, setIsImportLoading] = useState(false);
-  const [isImportCommitting, setIsImportCommitting] = useState(false);
-  
-  
-  
-  
-  
-  const [isMigrationAutopilotLoading, setIsMigrationAutopilotLoading] = useState(false);
-  const [isMigrationHandoffReportLoading, setIsMigrationHandoffReportLoading] = useState(false);
-  const [isMigrationSourceDiscovering, setIsMigrationSourceDiscovering] = useState(false);
-  const [isMigrationSourceWorkupLoading, setIsMigrationSourceWorkupLoading] = useState(false);
-  const [isMigrationSourceProbeLoading, setIsMigrationSourceProbeLoading] = useState(false);
-  const [isClinicPublicLookupLoading, setIsClinicPublicLookupLoading] = useState(false);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const [isBrowserMigrationScanning, setIsBrowserMigrationScanning] = useState(false);
-  const [isSmartImportLoading, setIsSmartImportLoading] = useState(false);
-  const [isSmartImportCommitting, setIsSmartImportCommitting] = useState(false);
-  const [isSmartReportLoading, setIsSmartReportLoading] = useState(false);
-  const [isSmartSafeReportLoading, setIsSmartSafeReportLoading] = useState(false);
-  const [isRecognitionLoading, setIsRecognitionLoading] = useState(false);
-  const [isPricelistAnalyzing, setIsPricelistAnalyzing] = useState(false);
-  const [isServerVoiceRecording, setIsServerVoiceRecording] = useState(false);
-  const [isPaymentSaving, setIsPaymentSaving] = useState(false);
-  const [communicationSavingTaskId, setCommunicationSavingTaskId] = useState<string | null>(null);
-  const [isClinicalRuleSaving, setIsClinicalRuleSaving] = useState(false);
-  const [persistenceHealth, setPersistenceHealth] = useState<PersistenceHealth | null>(null);
-  const [persistenceIntegrity, setPersistenceIntegrity] = useState<PersistenceIntegrityReport | null>(null);
-  const [isPersistenceExporting, setIsPersistenceExporting] = useState(false);
-  const [isTelegramLoading, setIsTelegramLoading] = useState(false);
-  const [isTelegramLinkCreating, setIsTelegramLinkCreating] = useState(false);
-  const [isTelegramSettingsSaving, setIsTelegramSettingsSaving] = useState(false);
-  const [isTelegramSendingDue, setIsTelegramSendingDue] = useState(false);
-  const [isTelegramOutboxLoadingMore, setIsTelegramOutboxLoadingMore] = useState(false);
-  const [isTelegramLinkCodesLoadingMore, setIsTelegramLinkCodesLoadingMore] = useState(false);
-  const [isTelegramChatLinksLoadingMore, setIsTelegramChatLinksLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [uiPreferencesSyncError, setUiPreferencesSyncError] = useState<string | null>(null);
-  const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
+                                                                                                                                                                                                                                                                                                                                                                              const [pendingSpeechChunkCount, setPendingSpeechChunkCount] = useState(() => loadPendingSpeechChunksFromLocalStorage(activeOrganizationId).length);
+                                                                                                                                                                                                                      const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
   const browserMigrationInputRef = useRef<HTMLInputElement | null>(null);
   const browserImagingScanAbortRef = useRef<AbortController | null>(null);
   const browserMigrationScanAbortRef = useRef<AbortController | null>(null);
   const localDicomOperationAbortRef = useRef<AbortController | null>(null);
-  
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const speechAudioContextRef = useRef<AudioContext | null>(null);
   const speechAnalyserRef = useRef<AnalyserNode | null>(null);
@@ -2385,6 +1597,8 @@ export function App() {
   const speechPendingChunkDurationMsRef = useRef<number | null>(null);
   const speechUploadPromisesRef = useRef<Set<Promise<void>>>(new Set());
   const appliedSpeechChunkKeysRef = useRef<Set<string>>(new Set());
+  const lastServerDraftSignatureRef = useRef<string | null>(null);
+  const visitDraftUserEditedRef = useRef(false);
   const patientAdministrativeProfileDraftRef = useRef<PatientAdministrativeProfileDraft>(emptyPatientAdministrativeProfileDraft());
   const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
   const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
@@ -2603,7 +1817,7 @@ export function App() {
   }
 
   function updatePatientCoreDraft<K extends keyof PatientCoreDraft>(key: K, value: PatientCoreDraft[K]) {
-    setPatientCoreDraft((current: any) => ({ ...current, [key]: value }));
+    setPatientCoreDraft((current) => ({ ...current, [key]: value }));
     setPatientCoreDirty(true);
     setPatientCoreSaveState("idle");
   }
@@ -2612,7 +1826,7 @@ export function App() {
     key: K,
     value: PatientAdministrativeProfileDraft[K]
   ) {
-    setPatientAdministrativeProfileDraft((current: any) => ({ ...current, [key]: value }));
+    setPatientAdministrativeProfileDraft((current) => ({ ...current, [key]: value }));
     setPatientAdministrativeProfileDirty(true);
     setPatientAdministrativeProfileSaveState("idle");
   }
@@ -2634,7 +1848,7 @@ export function App() {
       next.add(staffId);
       return next;
     });
-    setStaffScheduleSaveStates((current: any) => ({ ...current, [staffId]: "idle" }));
+    setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "idle" }));
   }
 
   function markChairScheduleDirty(chairId: string) {
@@ -2647,12 +1861,12 @@ export function App() {
   }
 
   function updateStaffScheduleDraft(staffId: string, patch: Partial<StaffScheduleDraft>) {
-    setStaffScheduleDrafts((current: any) => {
+    setStaffScheduleDrafts((current) => {
       const base = current[staffId] ?? defaultStaffScheduleDraft();
       const nextWorkingDays = normalizeWorkingDaysDraft(patch.workingDays ?? base.workingDays);
       const nextStart = patch.start ?? base.start;
       const nextEnd = patch.end ?? base.end;
-      const perDay = base.perDay.map((day: any) => ({
+      const perDay = base.perDay.map((day) => ({
         ...day,
         enabled: nextWorkingDays.includes(day.weekday),
         start: patch.start && nextWorkingDays.includes(day.weekday) ? nextStart : day.start,
@@ -2674,12 +1888,12 @@ export function App() {
   }
 
   function updateChairScheduleDraft(chairId: string, patch: Partial<StaffScheduleDraft>) {
-    setChairScheduleDrafts((current: any) => {
+    setChairScheduleDrafts((current) => {
       const base = current[chairId] ?? defaultStaffScheduleDraft();
       const nextWorkingDays = normalizeWorkingDaysDraft(patch.workingDays ?? base.workingDays);
       const nextStart = patch.start ?? base.start;
       const nextEnd = patch.end ?? base.end;
-      const perDay = base.perDay.map((day: any) => ({
+      const perDay = base.perDay.map((day) => ({
         ...day,
         enabled: nextWorkingDays.includes(day.weekday),
         start: patch.start && nextWorkingDays.includes(day.weekday) ? nextStart : day.start,
@@ -2717,13 +1931,13 @@ export function App() {
   }
 
   function updateStaffScheduleDay(staffId: string, weekday: number, patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>) {
-    setStaffScheduleDrafts((current: any) => {
+    setStaffScheduleDrafts((current) => {
       const base = current[staffId] ?? defaultStaffScheduleDraft();
       return {
         ...current,
         [staffId]: {
           ...base,
-          perDay: base.perDay.map((day: any) => (day.weekday === weekday ? { ...day, ...patch } : day))
+          perDay: base.perDay.map((day) => (day.weekday === weekday ? { ...day, ...patch } : day))
         }
       };
     });
@@ -2731,13 +1945,13 @@ export function App() {
   }
 
   function updateChairScheduleDay(chairId: string, weekday: number, patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>) {
-    setChairScheduleDrafts((current: any) => {
+    setChairScheduleDrafts((current) => {
       const base = current[chairId] ?? defaultStaffScheduleDraft();
       return {
         ...current,
         [chairId]: {
           ...base,
-          perDay: base.perDay.map((day: any) => (day.weekday === weekday ? { ...day, ...patch } : day))
+          perDay: base.perDay.map((day) => (day.weekday === weekday ? { ...day, ...patch } : day))
         }
       };
     });
@@ -2746,11 +1960,11 @@ export function App() {
 
   function openAppointmentEditor(appointment: Appointment) {
     setEditingAppointmentId(appointment.id);
-    setAppointmentScheduleDrafts((current: any) => ({
+    setAppointmentScheduleDrafts((current) => ({
       ...current,
       [appointment.id]: current[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment)
     }));
-    setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointment.id]: "idle" }));
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointment.id]: "idle" }));
     setAppointmentScheduleErrors((current) => ({ ...current, [appointment.id]: null }));
   }
 
@@ -2760,7 +1974,7 @@ export function App() {
       next.add(appointmentId);
       return next;
     });
-    setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "idle" }));
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "idle" }));
     setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
   }
 
@@ -2770,7 +1984,7 @@ export function App() {
     value: AppointmentScheduleDraft[K]
   ) {
     const sourceAppointment = dashboard?.appointments.find((appointment) => appointment.id === appointmentId);
-    setAppointmentScheduleDrafts((current: any) => ({
+    setAppointmentScheduleDrafts((current) => ({
       ...current,
       [appointmentId]: {
         ...(current[appointmentId] ?? (sourceAppointment ? appointmentScheduleDraftFromAppointment(sourceAppointment) : {})),
@@ -2838,7 +2052,7 @@ export function App() {
 
   function closeAppointmentEditor(appointmentId: string) {
     setEditingAppointmentId((current) => (current === appointmentId ? null : current));
-    setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "idle" }));
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "idle" }));
     setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
   }
 
@@ -3718,7 +2932,7 @@ export function App() {
       const assembledTranscript = assembly.transcript.trim();
       if (assembledTranscript) {
         visitDraftUserEditedRef.current = true;
-        setTranscript((current: any) => {
+        setTranscript((current) => {
           const normalizedCurrent = current.replace(/\s+/g, " ").trim();
           const normalizedAssembled = assembledTranscript.replace(/\s+/g, " ").trim();
           if (!normalizedAssembled || normalizedCurrent.includes(normalizedAssembled)) return current;
@@ -4205,7 +3419,7 @@ export function App() {
 
   useEffect(() => {
     if (!dashboard) return;
-    setStaffScheduleDrafts((current: any) => {
+    setStaffScheduleDrafts((current) => {
       const next: Record<string, StaffScheduleDraft> = {};
       dashboard.clinicSettings.staff.forEach((member) => {
         next[member.id] = current[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
@@ -4216,7 +3430,7 @@ export function App() {
 
   useEffect(() => {
     if (!dashboard) return;
-    setChairScheduleDrafts((current: any) => {
+    setChairScheduleDrafts((current) => {
       const next: Record<string, StaffScheduleDraft> = {};
       dashboard.clinicSettings.chairs.forEach((chair) => {
         next[chair.id] = current[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
@@ -4227,7 +3441,7 @@ export function App() {
 
   useEffect(() => {
     if (!dashboard) return;
-    setAppointmentScheduleDrafts((current: any) => {
+    setAppointmentScheduleDrafts((current) => {
       const next: Record<string, AppointmentScheduleDraft> = {};
       dashboard.appointments.forEach((appointment) => {
         next[appointment.id] = current[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment);
@@ -4645,7 +3859,7 @@ export function App() {
 
   useEffect(() => {
     if (!dashboard) return;
-    setSelectedPatientId((current: any) =>
+    setSelectedPatientId((current) =>
       current && dashboard.patients.some((patient) => patient.id === current)
         ? current
         : activePatient?.id ?? null
@@ -5714,8 +4928,8 @@ export function App() {
     "--mpr-slab-width": mprSlabVisualWidth,
     "--mpr-slice-position": mprSlicePositionPercent
   };
-  const mprActiveProjectionLabel = mprProjectionLabels[mprProjection as MprProjection] ?? mprProjection;
-  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection as MprProjection] ?? "плоскость просмотра";
+  const mprActiveProjectionLabel = mprProjectionLabels[mprProjection] ?? mprProjection;
+  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection] ?? "плоскость просмотра";
   const mprProjectionCompass = mprProjectionCompassLabels(mprProjection);
   const mprAxisGuidance = buildMprAxisGuidance({
     canOpenMpr: mprControlsReady,
@@ -5749,7 +4963,7 @@ export function App() {
     axisLabel: mprAxisDirectionLabel,
     slabMm: mprSlabMm,
     sliceLabel: mprSliceLabel,
-    windowLabel: mprWindowPresetLabels[mprWindowPreset as MprWindowPreset] ?? mprWindowPreset,
+    windowLabel: mprWindowPresetLabels[mprWindowPreset] ?? mprWindowPreset,
     crosshair: mprCrosshairEnabled,
     linkedPlanes: mprLinkedPlanesEnabled
   };
@@ -5934,7 +5148,7 @@ export function App() {
   }, [cbctWorkbenchProjections, mprProjection]);
 
   useEffect(() => {
-    setMprSliceIndex((value: any) => clampMprSliceIndex(value, mprSliceMaxIndex));
+    setMprSliceIndex((value) => clampMprSliceIndex(value, mprSliceMaxIndex));
   }, [mprSliceMaxIndex]);
 
   useEffect(() => {
@@ -6549,7 +5763,7 @@ export function App() {
   function appendToTranscript(text: string) {
     visitDraftUserEditedRef.current = true;
     setClearedTranscriptSnapshot(null);
-    setTranscript((current: any) =>
+    setTranscript((current) =>
       appendSpeechTextWithoutDuplicateTail(current, text, speechGatewayStatus?.chunkingPolicy.dedupeWindowChars ?? 600)
     );
   }
@@ -6742,7 +5956,7 @@ export function App() {
     if (!draft) return false;
     const expectedSignature = staffScheduleDraftSignature(draft);
     setStaffScheduleSavingId(staffId);
-    setStaffScheduleSaveStates((current: any) => ({ ...current, [staffId]: "saving" }));
+    setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "saving" }));
     try {
       const response = await fetch(`/api/settings/staff/${staffId}/working-hours`, {
         method: "PUT",
@@ -6750,7 +5964,7 @@ export function App() {
         body: JSON.stringify({ workingHours: staffWorkingHoursFromDraft(draft) })
       });
       if (!response.ok) {
-        setStaffScheduleSaveStates((current: any) => ({ ...current, [staffId]: "error" }));
+        setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "error" }));
         setError(await responseErrorMessage(response, "Расписание сотрудника не сохранено"));
         return false;
       }
@@ -6763,11 +5977,11 @@ export function App() {
           return next;
         });
       }
-      setStaffScheduleSaveStates((current: any) => ({ ...current, [staffId]: latestMatchesSaved ? "saved" : "idle" }));
+      setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: latestMatchesSaved ? "saved" : "idle" }));
       await loadDashboard();
       return true;
     } catch (scheduleSaveError) {
-      setStaffScheduleSaveStates((current: any) => ({ ...current, [staffId]: "error" }));
+      setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "error" }));
       setError(operatorWorkflowFailureMessage("Расписание сотрудника не сохранено", scheduleSaveError));
       return false;
     } finally {
@@ -6825,7 +6039,7 @@ export function App() {
     if (!draft) {
       const message = "Откройте запись в расписании перед сохранением.";
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
-      setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "error" }));
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
       setError(message);
       return false;
     }
@@ -6833,12 +6047,12 @@ export function App() {
     if (missing.length) {
       const message = `Перед сохранением записи: ${missing.join("; ")}.`;
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
-      setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "error" }));
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
       setError(message);
       return false;
     }
     const expectedSignature = appointmentScheduleDraftSignature(draft);
-    setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "saving" }));
+    setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "saving" }));
     setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: null }));
     try {
       const response = await fetch(`/api/appointments/${appointmentId}`, {
@@ -6854,7 +6068,7 @@ export function App() {
       const latestDraft = appointmentScheduleDraftsRef.current[appointmentId];
       const latestMatchesSaved = latestDraft ? appointmentScheduleDraftSignature(latestDraft) === expectedSignature : true;
       if (savedAppointment && latestMatchesSaved) {
-        setAppointmentScheduleDrafts((current: any) => ({
+        setAppointmentScheduleDrafts((current) => ({
           ...current,
           [appointmentId]: appointmentScheduleDraftFromAppointment(savedAppointment)
         }));
@@ -6866,14 +6080,14 @@ export function App() {
           return next;
         });
       }
-      setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: latestMatchesSaved ? "saved" : "idle" }));
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: latestMatchesSaved ? "saved" : "idle" }));
       if (latestMatchesSaved && options.closeEditorOnSave !== false) setEditingAppointmentId(null);
       setError(null);
       return true;
     } catch (saveError) {
       const message = operatorWorkflowFailureMessage("Запись не сохранена", saveError);
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
-      setAppointmentScheduleSaveStates((current: any) => ({ ...current, [appointmentId]: "error" }));
+      setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
       setError(message);
       return false;
     }
@@ -6929,7 +6143,7 @@ export function App() {
       setNewAppointmentDraft(newAppointmentDraftFromDashboard(nextDashboard, nextDraftPreferences));
       setNewAppointmentSaveState("saved");
       if (createdAppointment) {
-        setAppointmentScheduleDrafts((current: any) => ({
+        setAppointmentScheduleDrafts((current) => ({
           ...current,
           [createdAppointment.id]: appointmentScheduleDraftFromAppointment(createdAppointment)
         }));
@@ -8003,7 +7217,7 @@ export function App() {
       applyBrowserPickedImagingFolderPreview(preview);
     } catch (scanError) {
       if (isBrowserImagingScanAbortError(scanError)) {
-        setBrowserImagingScanProgress((current: any) =>
+        setBrowserImagingScanProgress((current) =>
           current
             ? (() => {
                 const updatedAt = new Date().toISOString();
@@ -9417,7 +8631,7 @@ export function App() {
     if (!cleanValue) return;
     visitDraftUserEditedRef.current = true;
     setClearedTranscriptSnapshot(null);
-    setTranscript((current: any) =>
+    setTranscript((current) =>
       appendSpeechTextWithoutDuplicateTail(current, cleanValue, speechGatewayStatus?.chunkingPolicy.dedupeWindowChars ?? 600)
     );
     setDraft(null);
@@ -13068,7 +12282,7 @@ export function App() {
                   </label>
                   <div className="weekday-toggle-row form-span-2" role="group" aria-label="Рабочие дни клиники">
                     <span>Рабочие дни</span>
-                    {weekdayOptions.map((day: any) => (
+                    {weekdayOptions.map((day) => (
                       <button
                         className={clinicProfileDraft.workingDays.includes(day.value) ? "active" : ""}
                         key={day.value}
@@ -13255,7 +12469,7 @@ export function App() {
                                   />
                                 </label>
                                 <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни сотрудника: ${member.fullName}`}>
-                                  {weekdayOptions.map((day: any) => (
+                                  {weekdayOptions.map((day) => (
                                     <button
                                       className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
                                       key={day.value}
@@ -13331,7 +12545,7 @@ export function App() {
                                   />
                                 </label>
                                 <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни кресла: ${chair.name}`}>
-                                  {weekdayOptions.map((day: any) => (
+                                  {weekdayOptions.map((day) => (
                                     <button
                                       className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
                                       key={day.value}
@@ -14124,7 +13338,11 @@ export function App() {
                 appointmentLabels={appointmentLabels}
                 appointmentReadinessById={appointmentReadinessById}
                 appointmentReadinessLabels={appointmentReadinessLabels}
+                appointmentScheduleDirtyIds={appointmentScheduleDirtyIds}
                 appointmentScheduleDraftFromAppointment={appointmentScheduleDraftFromAppointment}
+                appointmentScheduleDrafts={appointmentScheduleDrafts}
+                appointmentScheduleErrors={appointmentScheduleErrors}
+                appointmentScheduleSaveStates={appointmentScheduleSaveStates}
                 closeAppointmentEditor={closeAppointmentEditor}
                 createAppointmentFromDraft={createAppointmentFromDraft}
                 dashboard={dashboard}
@@ -14132,7 +13350,9 @@ export function App() {
                 formatTime={formatTime}
                 fromDateTimeLocalValue={fromDateTimeLocalValue}
                 lockScheduleAdminSession={() => lockTelegramAdminSession("schedule")}
+                newAppointmentDraft={newAppointmentDraft}
                 newAppointmentError={newAppointmentError}
+                newAppointmentSaveState={newAppointmentSaveState}
                 normalizedAppointmentStatus={normalizedAppointmentStatus}
                 normalizedAppointmentStatusFilter={normalizedAppointmentStatusFilter}
                 openAppointmentEditor={openAppointmentEditor}
@@ -14140,7 +13360,17 @@ export function App() {
                 recommendedActionPriorityLabels={recommendedActionPriorityLabels}
                 resetNewAppointmentDraft={resetNewAppointmentDraft}
                 saveAppointmentSchedule={saveAppointmentSchedule}
-                
+                scheduleAssistantFilterId={scheduleAssistantFilterId}
+                scheduleChairFilterId={scheduleChairFilterId}
+                scheduleDateFilter={scheduleDateFilter}
+                scheduleDoctorFilterId={scheduleDoctorFilterId}
+                scheduleStatusFilter={scheduleStatusFilter}
+                setScheduleAssistantFilterId={setScheduleAssistantFilterId}
+                setScheduleChairFilterId={setScheduleChairFilterId}
+                setScheduleDateFilter={setScheduleDateFilter}
+                setScheduleDoctorFilterId={setScheduleDoctorFilterId}
+                setScheduleStatusFilter={setScheduleStatusFilter}
+                setScheduleAdminSecretDraft={setScheduleAdminSecretDraft}
                 shiftWarnings={shiftWarnings}
                 sortedAppointments={sortedAppointments}
                 staffRoleLabels={staffRoleLabels}
@@ -14171,16 +13401,30 @@ export function App() {
               <PatientsView
                 createPatient={createPatient}
                 filteredPatients={filteredPatients}
+                isPatientCreating={isPatientCreating}
                 money={money}
+                newPatientBirthDate={newPatientBirthDate}
+                newPatientName={newPatientName}
+                newPatientPhone={newPatientPhone}
                 normalizeOptionalWorkingDaysDraft={normalizeOptionalWorkingDaysDraft}
+                patientAdministrativeProfileDirty={patientAdministrativeProfileDirty}
+                patientAdministrativeProfileDraft={patientAdministrativeProfileDraft}
+                patientAdministrativeProfileSaveState={patientAdministrativeProfileSaveState}
                 patientAdministrativeProfileValidationMessage={patientAdministrativeProfileValidationMessage}
+                patientCoreDirty={patientCoreDirty}
+                patientCoreDraft={patientCoreDraft}
+                patientCoreSaveState={patientCoreSaveState}
                 patientInsightById={patientInsightById}
                 patientInsightRiskLabels={patientInsightRiskLabels}
                 query={query}
                 savePatientAdministrativeProfile={savePatientAdministrativeProfile}
                 savePatientCore={savePatientCore}
                 selectedPatient={selectedPatient}
+                setNewPatientBirthDate={setNewPatientBirthDate}
+                setNewPatientName={setNewPatientName}
+                setNewPatientPhone={setNewPatientPhone}
                 setQuery={setQuery}
+                setSelectedPatientId={setSelectedPatientId}
                 updatePatientAdministrativeProfileDraft={updatePatientAdministrativeProfileDraft}
                 updatePatientCoreDraft={updatePatientCoreDraft}
                 weekdayOptions={weekdayOptions}
@@ -14325,28 +13569,102 @@ export function App() {
                 activeIssuedPaidContracts={activeIssuedPaidContracts}
                 activePatient={activePatient}
                 activeUsableDocuments={activeUsableDocuments}
+                anesthesiaAllergyRestrictionsChecked={anesthesiaAllergyRestrictionsChecked}
+                anesthesiaAllergyStatus={anesthesiaAllergyStatus}
+                anesthesiaAnesthetic={anesthesiaAnesthetic}
+                anesthesiaConsentConfirmed={anesthesiaConsentConfirmed}
+                anesthesiaDoseMl={anesthesiaDoseMl}
+                anesthesiaDoseTime={anesthesiaDoseTime}
+                anesthesiaMethod={anesthesiaMethod}
+                anesthesiaReaction={anesthesiaReaction}
+                anesthesiaRestrictionNotes={anesthesiaRestrictionNotes}
+                anesthesiaRisksExplained={anesthesiaRisksExplained}
+                anesthesiaVasoconstrictor={anesthesiaVasoconstrictor}
+                anesthesiaZone={anesthesiaZone}
                 applyPostVisitCarePreset={applyPostVisitCarePreset}
+                attendanceDiagnosisDisclosureExcluded={attendanceDiagnosisDisclosureExcluded}
+                attendanceEndedAt={attendanceEndedAt}
+                attendanceIssuedAt={attendanceIssuedAt}
+                attendanceNotSickLeaveAcknowledged={attendanceNotSickLeaveAcknowledged}
+                attendancePurpose={attendancePurpose}
+                attendanceRecipientOrganization={attendanceRecipientOrganization}
+                attendanceSignedByFullName={attendanceSignedByFullName}
+                attendanceSignedByRole={attendanceSignedByRole}
+                attendanceStartedAt={attendanceStartedAt}
                 changePostVisitCareTopic={changePostVisitCareTopic}
                 clinicProfileDraft={clinicProfileDraft}
                 compactDocumentText={compactDocumentText}
+                completedActAccepted={completedActAccepted}
+                completedActContractNumber={completedActContractNumber}
                 completedActContractReferenceForUi={completedActContractReferenceForUi}
+                completedActDate={completedActDate}
+                completedActDoctorFullName={completedActDoctorFullName}
+                completedActFinalScopeConfirmed={completedActFinalScopeConfirmed}
                 completedActFiscalReceiptLines={completedActFiscalReceiptLines}
+                completedActFiscalReceipts={completedActFiscalReceipts}
+                completedActFiscalReceiptsVerified={completedActFiscalReceiptsVerified}
+                completedActLinkedContract={completedActLinkedContract}
+                completedActNumber={completedActNumber}
+                completedActPaidRub={completedActPaidRub}
                 completedActPaidRubValue={completedActPaidRubValue}
+                completedActPatientClaims={completedActPatientClaims}
+                completedActServicePeriodEnd={completedActServicePeriodEnd}
+                completedActServicePeriodStart={completedActServicePeriodStart}
+                completedActServicesSummary={completedActServicesSummary}
+                completedActTotalRub={completedActTotalRub}
                 confirmDocumentIssue={confirmDocumentIssue}
                 confirmDocumentVoid={confirmDocumentVoid}
+                copyRequestContactForDelivery={copyRequestContactForDelivery}
+                copyRequestDocumentTypes={copyRequestDocumentTypes}
+                copyRequestFormat={copyRequestFormat}
+                copyRequestIdentityVerified={copyRequestIdentityVerified}
+                copyRequestIncludeDicomSourceData={copyRequestIncludeDicomSourceData}
+                copyRequestPeriodEnd={copyRequestPeriodEnd}
+                copyRequestPeriodStart={copyRequestPeriodStart}
+                copyRequestRecipientAuthority={copyRequestRecipientAuthority}
+                copyRequestRecipientFullName={copyRequestRecipientFullName}
+                copyRequestRecipientIdentityDocument={copyRequestRecipientIdentityDocument}
+                copyRequestRepresentativeAuthorityDocument={copyRequestRepresentativeAuthorityDocument}
+                copyRequestRequestedAt={copyRequestRequestedAt}
+                copyRequestSpecialInstructions={copyRequestSpecialInstructions}
+                copyRequestThirdPartyDataChecked={copyRequestThirdPartyDataChecked}
                 createDocument={createDocument}
                 dashboard={dashboard}
                 documentActionLabels={documentActionLabels}
+                documentAuditFacts={documentAuditFacts}
+                documentAuditFactsLoadingId={documentAuditFactsLoadingId}
+                documentCreateSavingKind={documentCreateSavingKind}
                 documentIssueAttestationReady={documentIssueAttestationReady}
+                documentIssueClinicSigned={documentIssueClinicSigned}
                 documentIssueConfirmation={documentIssueConfirmation}
+                documentIssueDocumentOpenedAndChecked={documentIssueDocumentOpenedAndChecked}
+                documentIssueIdentityChecked={documentIssueIdentityChecked}
+                documentIssueNote={documentIssueNote}
+                documentIssueRecipientFullName={documentIssueRecipientFullName}
+                documentIssueRecipientRole={documentIssueRecipientRole}
+                documentIssueRecipientSigned={documentIssueRecipientSigned}
+                documentIssueSignatureMode={documentIssueSignatureMode}
                 documentIssueSignatureModeLabels={documentIssueSignatureModeLabels}
+                documentIssueSignedAt={documentIssueSignedAt}
+                documentIssueStaffFullName={documentIssueStaffFullName}
+                documentIssueStaffRole={documentIssueStaffRole}
                 documentLabels={documentLabels}
                 documentPatient={documentPatient}
                 documentSourceStatusClassNames={documentSourceStatusClassNames}
+                documentStatusSavingId={documentStatusSavingId}
                 documentStatusLabels={documentStatusLabels}
+                documentVoidArchivePreserved={documentVoidArchivePreserved}
                 documentVoidConfirmation={documentVoidConfirmation}
+                documentVoidCorrectionDocumentId={documentVoidCorrectionDocumentId}
+                documentVoidPatientOrPayerNotified={documentVoidPatientOrPayerNotified}
                 documentVoidReady={documentVoidReady}
+                documentVoidReasonCode={documentVoidReasonCode}
                 documentVoidReasonLabels={documentVoidReasonLabels}
+                documentVoidReasonText={documentVoidReasonText}
+                documentVoidReplacementRequired={documentVoidReplacementRequired}
+                documentVoidStaffFullName={documentVoidStaffFullName}
+                documentVoidStaffRole={documentVoidStaffRole}
+                documentVoidStatusReviewed={documentVoidStatusReviewed}
                 downloadIssuedDocumentHtml={downloadIssuedDocumentHtml}
                 downloadIssuedDocumentPdf={downloadIssuedDocumentPdf}
                 downloadTaxDocumentXml={downloadTaxDocumentXml}
@@ -14356,22 +13674,86 @@ export function App() {
                 formatDateTime={formatDateTime}
                 formatShortDate={formatShortDate}
                 inferredTreatmentArea={inferredTreatmentArea}
+                informedConsentAftercare={informedConsentAftercare}
+                informedConsentAlternatives={informedConsentAlternatives}
+                informedConsentAnesthesia={informedConsentAnesthesia}
+                informedConsentConfirmedAt={informedConsentConfirmedAt}
+                informedConsentDiagnosisOrIndication={informedConsentDiagnosisOrIndication}
+                informedConsentDoctorFullName={informedConsentDoctorFullName}
+                informedConsentExpectedBenefit={informedConsentExpectedBenefit}
+                informedConsentIntervention={informedConsentIntervention}
+                informedConsentMaterialNotes={informedConsentMaterialNotes}
+                informedConsentQuestionsAnswered={informedConsentQuestionsAnswered}
+                informedConsentRisks={informedConsentRisks}
+                informedConsentRisksUnderstood={informedConsentRisksUnderstood}
+                informedConsentToothOrArea={informedConsentToothOrArea}
+                informedConsentTrustedContact={informedConsentTrustedContact}
+                informedConsentWithdrawUnderstood={informedConsentWithdrawUnderstood}
+                installmentScheduleAccepted={installmentScheduleAccepted}
+                installmentScheduleBaseDocumentTitle={installmentScheduleBaseDocumentTitle}
                 installmentScheduleBaseDocumentTitleValue={installmentScheduleBaseDocumentTitleValue}
+                installmentScheduleDate={installmentScheduleDate}
+                installmentScheduleFiscalNoticeConfirmed={installmentScheduleFiscalNoticeConfirmed}
                 installmentScheduleInstallmentRows={installmentScheduleInstallmentRows}
+                installmentScheduleLatePolicy={installmentScheduleLatePolicy}
+                installmentScheduleNumber={installmentScheduleNumber}
+                installmentSchedulePayerFullName={installmentSchedulePayerFullName}
+                installmentSchedulePaymentMethodNotes={installmentSchedulePaymentMethodNotes}
+                installmentSchedulePrepaidRub={installmentSchedulePrepaidRub}
                 installmentSchedulePrepaidRubValue={installmentSchedulePrepaidRubValue}
                 installmentScheduleRemainingRubValue={installmentScheduleRemainingRubValue}
+                installmentScheduleResponsibleFullName={installmentScheduleResponsibleFullName}
+                installmentScheduleRows={installmentScheduleRows}
+                installmentScheduleTotalRub={installmentScheduleTotalRub}
                 installmentScheduleTotalRubValue={installmentScheduleTotalRubValue}
+                installmentScheduleWrittenChangesConfirmed={installmentScheduleWrittenChangesConfirmed}
+                intakeAccuracyConfirmed={intakeAccuracyConfirmed}
+                intakeAdditionalNotes={intakeAdditionalNotes}
+                intakeAllergyStatus={intakeAllergyStatus}
+                intakeAnticoagulants={intakeAnticoagulants}
+                intakeCardioEndocrineNotes={intakeCardioEndocrineNotes}
+                intakeChiefComplaint={intakeChiefComplaint}
+                intakeChronicConditions={intakeChronicConditions}
+                intakeCurrentMedications={intakeCurrentMedications}
+                intakeEmergencyContact={intakeEmergencyContact}
+                intakeInfectiousRiskNotes={intakeInfectiousRiskNotes}
+                intakePregnancyStatus={intakePregnancyStatus}
                 issuedMedicalCopyRequestDocuments={issuedMedicalCopyRequestDocuments}
+                labDeadline={labDeadline}
+                labMaterial={labMaterial}
+                labShade={labShade}
+                labSource={labSource}
+                labTechnicianNotes={labTechnicianNotes}
+                labTeethOrArea={labTeethOrArea}
+                labWorkType={labWorkType}
                 loadDocumentAuditFacts={loadDocumentAuditFacts}
                 markPostVisitManualEdited={markPostVisitManualEdited}
                 medicalDocumentReleaseChannelLabels={medicalDocumentReleaseChannelLabels}
+                minorConsentAgeExplanation={minorConsentAgeExplanation}
+                minorConsentAlternatives={minorConsentAlternatives}
+                minorConsentAuthorityVerified={minorConsentAuthorityVerified}
+                minorConsentDiagnosisOrIndication={minorConsentDiagnosisOrIndication}
                 minorConsentDiagnosisOrIndicationValue={minorConsentDiagnosisOrIndicationValue}
+                minorConsentDoctorFullName={minorConsentDoctorFullName}
+                minorConsentExplained={minorConsentExplained}
+                minorConsentIdentityVerified={minorConsentIdentityVerified}
+                minorConsentInterventionScope={minorConsentInterventionScope}
                 minorConsentInterventionScopeValue={minorConsentInterventionScopeValue}
+                minorConsentPatientBirthDate={minorConsentPatientBirthDate}
                 minorConsentPatientBirthDateValue={minorConsentPatientBirthDateValue}
+                minorConsentPatientFullName={minorConsentPatientFullName}
                 minorConsentPatientFullNameValue={minorConsentPatientFullNameValue}
+                minorConsentRisks={minorConsentRisks}
+                minorConsentSignedAt={minorConsentSignedAt}
+                minorConsentStored={minorConsentStored}
+                minorRepresentativeAuthorityDocument={minorRepresentativeAuthorityDocument}
+                minorRepresentativeFullName={minorRepresentativeFullName}
                 minorRepresentativeFullNameValue={minorRepresentativeFullNameValue}
+                minorRepresentativeIdentityDocument={minorRepresentativeIdentityDocument}
                 minorRepresentativeIdentityDocumentValue={minorRepresentativeIdentityDocumentValue}
+                minorRepresentativePhone={minorRepresentativePhone}
                 minorRepresentativePhoneValue={minorRepresentativePhoneValue}
+                minorRepresentativeRelationship={minorRepresentativeRelationship}
                 minorRepresentativeRelationshipValue={minorRepresentativeRelationshipValue}
                 money={money}
                 normalizedDocumentIssueSignatureMode={normalizedDocumentIssueSignatureMode}
@@ -14392,29 +13774,212 @@ export function App() {
                 normalizedXrayPriority={normalizedXrayPriority}
                 normalizedXrayStudyType={normalizedXrayStudyType}
                 openIssuedDocumentHtml={openIssuedDocumentHtml}
+                outpatient025uAllergyHistory={outpatient025uAllergyHistory}
+                outpatient025uBloodGroup={outpatient025uBloodGroup}
+                outpatient025uCitizenship={outpatient025uCitizenship}
+                outpatient025uDisabilityGroup={outpatient025uDisabilityGroup}
+                outpatient025uEmploymentCode={outpatient025uEmploymentCode}
+                outpatient025uFinalEpicrisis={outpatient025uFinalEpicrisis}
+                outpatient025uHealthStatusDisclosureContact={outpatient025uHealthStatusDisclosureContact}
+                outpatient025uInsurerName={outpatient025uInsurerName}
+                outpatient025uKellK1={outpatient025uKellK1}
+                outpatient025uMedicalCardNumber={outpatient025uMedicalCardNumber}
                 outpatient025uMedicalCardNumberValue={outpatient025uMedicalCardNumberValue}
+                outpatient025uOfficialForm274nChecked={outpatient025uOfficialForm274nChecked}
+                outpatient025uOmsIssuedAt={outpatient025uOmsIssuedAt}
+                outpatient025uOpenedAt={outpatient025uOpenedAt}
+                outpatient025uOtherBloodData={outpatient025uOtherBloodData}
+                outpatient025uPalliativeCareNeedCode={outpatient025uPalliativeCareNeedCode}
+                outpatient025uPatientSexCode={outpatient025uPatientSexCode}
+                outpatient025uRegistrationUrbanRuralCode={outpatient025uRegistrationUrbanRuralCode}
+                outpatient025uRhFactor={outpatient025uRhFactor}
+                outpatient025uSocialSupportCode={outpatient025uSocialSupportCode}
+                outpatient025uStayUrbanRuralCode={outpatient025uStayUrbanRuralCode}
+                outpatient025uThirdPartyDataChecked={outpatient025uThirdPartyDataChecked}
+                outpatient025uWorkOrStudyPlace={outpatient025uWorkOrStudyPlace}
+                paidContractCareReason={paidContractCareReason}
+                paidContractClinicInfoConfirmed={paidContractClinicInfoConfirmed}
+                paidContractCustomerFullName={paidContractCustomerFullName}
+                paidContractDate={paidContractDate}
+                paidContractDoctorFullName={paidContractDoctorFullName}
+                paidContractFreeCareNotice={paidContractFreeCareNotice}
+                paidContractNumber={paidContractNumber}
+                paidContractPaidBasisConfirmed={paidContractPaidBasisConfirmed}
+                paidContractPaymentTerms={paidContractPaymentTerms}
+                paidContractPriceChangeRules={paidContractPriceChangeRules}
+                paidContractRecommendationWarning={paidContractRecommendationWarning}
+                paidContractRefundTerms={paidContractRefundTerms}
+                paidContractRepresentativeFullName={paidContractRepresentativeFullName}
+                paidContractServiceEnd={paidContractServiceEnd}
+                paidContractServiceListConfirmed={paidContractServiceListConfirmed}
+                paidContractServiceScope={paidContractServiceScope}
+                paidContractServiceStart={paidContractServiceStart}
+                paidContractSignedAt={paidContractSignedAt}
+                paidContractTotalRub={paidContractTotalRub}
                 paidContractTotalRubValue={paidContractTotalRubValue}
+                paidContractWarrantyTerms={paidContractWarrantyTerms}
+                paidContractWrittenChangesConfirmed={paidContractWrittenChangesConfirmed}
                 patientIntakePregnancyStatusOptions={patientIntakePregnancyStatusOptions}
                 patientName={patientName}
                 paymentFiscalReceiptLabelForUi={paymentFiscalReceiptLabelForUi}
+                paymentFiscalReceiptNumber={paymentFiscalReceiptNumber}
+                paymentInvoiceBankDetails={paymentInvoiceBankDetails}
+                paymentInvoiceCashDeskAllowed={paymentInvoiceCashDeskAllowed}
+                paymentInvoiceCashlessAllowed={paymentInvoiceCashlessAllowed}
+                paymentInvoiceDate={paymentInvoiceDate}
+                paymentInvoiceDueDate={paymentInvoiceDueDate}
+                paymentInvoiceFiscalNoticeConfirmed={paymentInvoiceFiscalNoticeConfirmed}
+                paymentInvoiceNumber={paymentInvoiceNumber}
+                paymentInvoicePayerEmail={paymentInvoicePayerEmail}
+                paymentInvoicePayerFullName={paymentInvoicePayerFullName}
+                paymentInvoicePayerPhone={paymentInvoicePayerPhone}
+                paymentInvoicePaymentTerms={paymentInvoicePaymentTerms}
+                paymentInvoicePurpose={paymentInvoicePurpose}
+                paymentInvoiceQrPayload={paymentInvoiceQrPayload}
+                paymentInvoiceRequisitesVerified={paymentInvoiceRequisitesVerified}
+                paymentInvoiceServiceScopeConfirmed={paymentInvoiceServiceScopeConfirmed}
                 paymentInvoiceTotalRubValue={paymentInvoiceTotalRubValue}
+                paymentPayerFullName={paymentPayerFullName}
+                paymentPayerIdentityDocument={paymentPayerIdentityDocument}
+                paymentReceiptDate={paymentReceiptDate}
+                paymentReceiptFiscalNoticeConfirmed={paymentReceiptFiscalNoticeConfirmed}
                 paymentReceiptFiscalReceiptLines={paymentReceiptFiscalReceiptLines}
+                paymentReceiptIssuedBy={paymentReceiptIssuedBy}
                 paymentReceiptIssuedByValue={paymentReceiptIssuedByValue}
+                paymentReceiptNumber={paymentReceiptNumber}
+                paymentReceiptPayerBirthDate={paymentReceiptPayerBirthDate}
                 paymentReceiptPayerBirthDateValue={paymentReceiptPayerBirthDateValue}
+                paymentReceiptPayerFullName={paymentReceiptPayerFullName}
                 paymentReceiptPayerFullNameValue={paymentReceiptPayerFullNameValue}
+                paymentReceiptPayerIdentityDocument={paymentReceiptPayerIdentityDocument}
                 paymentReceiptPayerIdentityDocumentValue={paymentReceiptPayerIdentityDocumentValue}
+                paymentReceiptPayerInn={paymentReceiptPayerInn}
                 paymentReceiptPayerInnValue={paymentReceiptPayerInnValue}
+                paymentReceiptPayerRelationship={paymentReceiptPayerRelationship}
                 paymentReceiptPayerRelationshipValue={paymentReceiptPayerRelationshipValue}
+                paymentReceiptPayerVerified={paymentReceiptPayerVerified}
+                paymentReceiptPaymentsVerified={paymentReceiptPaymentsVerified}
+                paymentReceiptPurpose={paymentReceiptPurpose}
+                paymentReceiptTaxSupportRequested={paymentReceiptTaxSupportRequested}
+                personalDataActions={personalDataActions}
+                personalDataAutomatedDecisionAllowed={personalDataAutomatedDecisionAllowed}
+                personalDataCategories={personalDataCategories}
+                personalDataConsentGivenAt={personalDataConsentGivenAt}
+                personalDataCrossBorderAllowed={personalDataCrossBorderAllowed}
+                personalDataMedicalProcessingAcknowledged={personalDataMedicalProcessingAcknowledged}
+                personalDataPurposes={personalDataPurposes}
+                personalDataRetentionPeriod={personalDataRetentionPeriod}
+                personalDataRevocationChannel={personalDataRevocationChannel}
+                personalDataTransferRules={personalDataTransferRules}
+                personalDataVoluntaryConsentConfirmed={personalDataVoluntaryConsentConfirmed}
+                photoVideoAnonymizationConfirmed={photoVideoAnonymizationConfirmed}
+                photoVideoClinicalRecordUseConfirmed={photoVideoClinicalRecordUseConfirmed}
+                photoVideoColleagueConsultationAllowed={photoVideoColleagueConsultationAllowed}
+                photoVideoEducationUseAllowed={photoVideoEducationUseAllowed}
+                photoVideoLabTransferAllowed={photoVideoLabTransferAllowed}
+                photoVideoMarketingUseAllowed={photoVideoMarketingUseAllowed}
                 photoVideoMaterialOptions={photoVideoMaterialOptions}
+                photoVideoMaterials={photoVideoMaterials}
+                photoVideoRecognizablePublicationAllowed={photoVideoRecognizablePublicationAllowed}
+                photoVideoRevocationChannel={photoVideoRevocationChannel}
+                photoVideoScopeNotes={photoVideoScopeNotes}
                 plannedServiceLinesForFinancialPayload={plannedServiceLinesForFinancialPayload}
+                postVisitAllowedAfter={postVisitAllowedAfter}
+                postVisitCareTopic={postVisitCareTopic}
                 postVisitCareTopicOptions={postVisitCareTopicOptions}
+                postVisitClinicContactInstruction={postVisitClinicContactInstruction}
+                postVisitDoctorFullName={postVisitDoctorFullName}
+                postVisitFollowUpAt={postVisitFollowUpAt}
+                postVisitHygieneInstructions={postVisitHygieneInstructions}
+                postVisitManualEdited={postVisitManualEdited}
+                postVisitMedicationAndRinsePlan={postVisitMedicationAndRinsePlan}
+                postVisitNutritionInstructions={postVisitNutritionInstructions}
+                postVisitPerformedAt={postVisitPerformedAt}
+                postVisitPresetFeedback={postVisitPresetFeedback}
+                postVisitPrintedCopyReceived={postVisitPrintedCopyReceived}
+                postVisitProcedureName={postVisitProcedureName}
+                postVisitRestrictions={postVisitRestrictions}
+                postVisitTelegramSafe={postVisitTelegramSafe}
+                postVisitTelegramSummary={postVisitTelegramSummary}
+                postVisitToothOrArea={postVisitToothOrArea}
+                postVisitUrgentSignsUnderstood={postVisitUrgentSignsUnderstood}
+                postVisitUrgentWarningSigns={postVisitUrgentWarningSigns}
+                prescriptionDosage={prescriptionDosage}
+                prescriptionDuration={prescriptionDuration}
+                prescriptionInstructions={prescriptionInstructions}
+                prescriptionMedication={prescriptionMedication}
+                prescriptionSafetyNotes={prescriptionSafetyNotes}
+                prescriptionUrgentContactReason={prescriptionUrgentContactReason}
+                procedureConsentAftercare={procedureConsentAftercare}
+                procedureConsentAlternatives={procedureConsentAlternatives}
+                procedureConsentAnesthesia={procedureConsentAnesthesia}
+                procedureConsentConfirmedAt={procedureConsentConfirmedAt}
+                procedureConsentDiagnosisOrIndication={procedureConsentDiagnosisOrIndication}
+                procedureConsentDoctorFullName={procedureConsentDoctorFullName}
+                procedureConsentExactProcedureConfirmed={procedureConsentExactProcedureConfirmed}
+                procedureConsentLocalFormAttached={procedureConsentLocalFormAttached}
+                procedureConsentMaterials={procedureConsentMaterials}
+                procedureConsentPatientRiskFactors={procedureConsentPatientRiskFactors}
+                procedureConsentProcedureName={procedureConsentProcedureName}
+                procedureConsentProcedureType={procedureConsentProcedureType}
+                procedureConsentQuestionsAnswered={procedureConsentQuestionsAnswered}
+                procedureConsentRisksUnderstood={procedureConsentRisksUnderstood}
+                procedureConsentSpecificRisks={procedureConsentSpecificRisks}
+                procedureConsentToothOrArea={procedureConsentToothOrArea}
                 procedureSpecificConsentProcedureOptions={procedureSpecificConsentProcedureOptions}
+                recordExtractComplaintAndAnamnesis={recordExtractComplaintAndAnamnesis}
+                recordExtractDiagnosis={recordExtractDiagnosis}
+                recordExtractDoctorFullName={recordExtractDoctorFullName}
+                recordExtractIssuedAt={recordExtractIssuedAt}
+                recordExtractObjectiveStatus={recordExtractObjectiveStatus}
+                recordExtractPeriodEnd={recordExtractPeriodEnd}
+                recordExtractPeriodStart={recordExtractPeriodStart}
+                recordExtractPreparedFromSignedRecords={recordExtractPreparedFromSignedRecords}
+                recordExtractRecipientAuthority={recordExtractRecipientAuthority}
+                recordExtractRecipientFullName={recordExtractRecipientFullName}
+                recordExtractRecommendations={recordExtractRecommendations}
+                recordExtractSourceVisitIds={recordExtractSourceVisitIds}
+                recordExtractThirdPartyDataChecked={recordExtractThirdPartyDataChecked}
+                recordExtractTreatmentProvided={recordExtractTreatmentProvided}
+                refundAccountantDecision={refundAccountantDecision}
+                refundAction={refundAction}
+                refundAmountRub={refundAmountRub}
+                refundBankDetails={refundBankDetails}
+                refundCorrectionFiscalReceiptNumber={refundCorrectionFiscalReceiptNumber}
+                refundMethod={refundMethod}
+                refundOriginalFiscalReceiptNumber={refundOriginalFiscalReceiptNumber}
+                refundReason={refundReason}
+                refundRecipientFullName={refundRecipientFullName}
+                refundRecipientIdentityDocument={refundRecipientIdentityDocument}
+                refundSelectedPaymentId={refundSelectedPaymentId}
+                refusalAlternatives={refusalAlternatives}
+                refusalClinicalIndication={refusalClinicalIndication}
+                refusalConfirmedAt={refusalConfirmedAt}
+                refusalConsequencesUnderstood={refusalConsequencesUnderstood}
+                refusalDoctorFullName={refusalDoctorFullName}
+                refusalEmergencyCareExplained={refusalEmergencyCareExplained}
+                refusalExplainedRisks={refusalExplainedRisks}
+                refusalIntervention={refusalIntervention}
+                refusalPatientReason={refusalPatientReason}
+                refusalSecondOpinionOffered={refusalSecondOpinionOffered}
+                refusalUrgentWarningSigns={refusalUrgentWarningSigns}
+                releaseAccessExpiresAt={releaseAccessExpiresAt}
+                releaseChannel={releaseChannel}
+                releaseDeliveredAt={releaseDeliveredAt}
+                releaseDocumentTypes={releaseDocumentTypes}
+                releasePeriodEnd={releasePeriodEnd}
+                releasePeriodStart={releasePeriodStart}
                 releaseProtectionNote={releaseProtectionNote}
+                releaseRecipientAuthority={releaseRecipientAuthority}
+                releaseRecipientFullName={releaseRecipientFullName}
+                releaseRecipientIdentityDocument={releaseRecipientIdentityDocument}
+                releaseThirdPartyDataChecked={releaseThirdPartyDataChecked}
                 renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
                 requestDocumentIssue={requestDocumentIssue}
                 requestDocumentVoid={requestDocumentVoid}
                 selectAllEligibleTaxPaymentsForCurrentDocument={selectAllEligibleTaxPaymentsForCurrentDocument}
                 selectedCompletedActContractDocumentId={selectedCompletedActContractDocumentId}
+                selectedDocumentKind={selectedDocumentKind}
                 selectedDocumentMetadata={selectedDocumentMetadata}
                 selectedDocumentUsesTaxPaymentSelection={selectedDocumentUsesTaxPaymentSelection}
                 selectedEligibleTaxPayments={selectedEligibleTaxPayments}
@@ -14427,21 +13992,512 @@ export function App() {
                 selectedTaxPaymentIdSet={selectedTaxPaymentIdSet}
                 selectedTaxPaymentTotalRub={selectedTaxPaymentTotalRub}
                 selectRefundOriginalPayment={selectRefundOriginalPayment}
+                setAnesthesiaAllergyRestrictionsChecked={setAnesthesiaAllergyRestrictionsChecked}
+                setAnesthesiaAllergyStatus={setAnesthesiaAllergyStatus}
+                setAnesthesiaAnesthetic={setAnesthesiaAnesthetic}
+                setAnesthesiaConsentConfirmed={setAnesthesiaConsentConfirmed}
+                setAnesthesiaDoseMl={setAnesthesiaDoseMl}
+                setAnesthesiaDoseTime={setAnesthesiaDoseTime}
+                setAnesthesiaMethod={setAnesthesiaMethod}
+                setAnesthesiaReaction={setAnesthesiaReaction}
+                setAnesthesiaRestrictionNotes={setAnesthesiaRestrictionNotes}
+                setAnesthesiaRisksExplained={setAnesthesiaRisksExplained}
+                setAnesthesiaVasoconstrictor={setAnesthesiaVasoconstrictor}
+                setAnesthesiaZone={setAnesthesiaZone}
+                setAttendanceDiagnosisDisclosureExcluded={setAttendanceDiagnosisDisclosureExcluded}
+                setAttendanceEndedAt={setAttendanceEndedAt}
+                setAttendanceIssuedAt={setAttendanceIssuedAt}
+                setAttendanceNotSickLeaveAcknowledged={setAttendanceNotSickLeaveAcknowledged}
+                setAttendancePurpose={setAttendancePurpose}
+                setAttendanceRecipientOrganization={setAttendanceRecipientOrganization}
+                setAttendanceSignedByFullName={setAttendanceSignedByFullName}
+                setAttendanceSignedByRole={setAttendanceSignedByRole}
+                setAttendanceStartedAt={setAttendanceStartedAt}
+                setCompletedActAccepted={setCompletedActAccepted}
+                setCompletedActContractNumber={setCompletedActContractNumber}
+                setCompletedActDate={setCompletedActDate}
+                setCompletedActDoctorFullName={setCompletedActDoctorFullName}
+                setCompletedActFinalScopeConfirmed={setCompletedActFinalScopeConfirmed}
+                setCompletedActFiscalReceipts={setCompletedActFiscalReceipts}
+                setCompletedActFiscalReceiptsVerified={setCompletedActFiscalReceiptsVerified}
+                setCompletedActLinkedContract={setCompletedActLinkedContract}
+                setCompletedActLinkedContractDocumentId={setCompletedActLinkedContractDocumentId}
+                setCompletedActNumber={setCompletedActNumber}
+                setCompletedActPaidRub={setCompletedActPaidRub}
+                setCompletedActPatientClaims={setCompletedActPatientClaims}
+                setCompletedActServicePeriodEnd={setCompletedActServicePeriodEnd}
+                setCompletedActServicePeriodStart={setCompletedActServicePeriodStart}
+                setCompletedActServicesSummary={setCompletedActServicesSummary}
+                setCompletedActTotalRub={setCompletedActTotalRub}
+                setCopyRequestContactForDelivery={setCopyRequestContactForDelivery}
+                setCopyRequestDocumentTypes={setCopyRequestDocumentTypes}
+                setCopyRequestFormat={setCopyRequestFormat}
+                setCopyRequestIdentityVerified={setCopyRequestIdentityVerified}
+                setCopyRequestIncludeDicomSourceData={setCopyRequestIncludeDicomSourceData}
+                setCopyRequestPeriodEnd={setCopyRequestPeriodEnd}
+                setCopyRequestPeriodStart={setCopyRequestPeriodStart}
+                setCopyRequestRecipientAuthority={setCopyRequestRecipientAuthority}
+                setCopyRequestRecipientFullName={setCopyRequestRecipientFullName}
+                setCopyRequestRecipientIdentityDocument={setCopyRequestRecipientIdentityDocument}
+                setCopyRequestRepresentativeAuthorityDocument={setCopyRequestRepresentativeAuthorityDocument}
+                setCopyRequestRequestedAt={setCopyRequestRequestedAt}
+                setCopyRequestSpecialInstructions={setCopyRequestSpecialInstructions}
+                setCopyRequestThirdPartyDataChecked={setCopyRequestThirdPartyDataChecked}
+                setDocumentAuditFacts={setDocumentAuditFacts}
+                setDocumentIssueClinicSigned={setDocumentIssueClinicSigned}
+                setDocumentIssueConfirmationId={setDocumentIssueConfirmationId}
+                setDocumentIssueDocumentOpenedAndChecked={setDocumentIssueDocumentOpenedAndChecked}
+                setDocumentIssueIdentityChecked={setDocumentIssueIdentityChecked}
+                setDocumentIssueNote={setDocumentIssueNote}
+                setDocumentIssueRecipientFullName={setDocumentIssueRecipientFullName}
+                setDocumentIssueRecipientRole={setDocumentIssueRecipientRole}
+                setDocumentIssueRecipientSigned={setDocumentIssueRecipientSigned}
+                setDocumentIssueSignatureMode={setDocumentIssueSignatureMode}
+                setDocumentIssueSignedAt={setDocumentIssueSignedAt}
+                setDocumentIssueStaffFullName={setDocumentIssueStaffFullName}
+                setDocumentIssueStaffRole={setDocumentIssueStaffRole}
+                setDocumentVoidArchivePreserved={setDocumentVoidArchivePreserved}
+                setDocumentVoidConfirmationId={setDocumentVoidConfirmationId}
+                setDocumentVoidCorrectionDocumentId={setDocumentVoidCorrectionDocumentId}
+                setDocumentVoidPatientOrPayerNotified={setDocumentVoidPatientOrPayerNotified}
+                setDocumentVoidReasonCode={setDocumentVoidReasonCode}
+                setDocumentVoidReasonText={setDocumentVoidReasonText}
+                setDocumentVoidReplacementRequired={setDocumentVoidReplacementRequired}
+                setDocumentVoidStaffFullName={setDocumentVoidStaffFullName}
+                setDocumentVoidStaffRole={setDocumentVoidStaffRole}
+                setDocumentVoidStatusReviewed={setDocumentVoidStatusReviewed}
+                setInformedConsentAftercare={setInformedConsentAftercare}
+                setInformedConsentAlternatives={setInformedConsentAlternatives}
+                setInformedConsentAnesthesia={setInformedConsentAnesthesia}
+                setInformedConsentConfirmedAt={setInformedConsentConfirmedAt}
+                setInformedConsentDiagnosisOrIndication={setInformedConsentDiagnosisOrIndication}
+                setInformedConsentDoctorFullName={setInformedConsentDoctorFullName}
+                setInformedConsentExpectedBenefit={setInformedConsentExpectedBenefit}
+                setInformedConsentIntervention={setInformedConsentIntervention}
+                setInformedConsentMaterialNotes={setInformedConsentMaterialNotes}
+                setInformedConsentQuestionsAnswered={setInformedConsentQuestionsAnswered}
+                setInformedConsentRisks={setInformedConsentRisks}
+                setInformedConsentRisksUnderstood={setInformedConsentRisksUnderstood}
+                setInformedConsentToothOrArea={setInformedConsentToothOrArea}
+                setInformedConsentTrustedContact={setInformedConsentTrustedContact}
+                setInformedConsentWithdrawUnderstood={setInformedConsentWithdrawUnderstood}
+                setInstallmentScheduleAccepted={setInstallmentScheduleAccepted}
+                setInstallmentScheduleBaseDocumentTitle={setInstallmentScheduleBaseDocumentTitle}
+                setInstallmentScheduleDate={setInstallmentScheduleDate}
+                setInstallmentScheduleFiscalNoticeConfirmed={setInstallmentScheduleFiscalNoticeConfirmed}
+                setInstallmentScheduleLatePolicy={setInstallmentScheduleLatePolicy}
+                setInstallmentScheduleNumber={setInstallmentScheduleNumber}
+                setInstallmentSchedulePayerFullName={setInstallmentSchedulePayerFullName}
+                setInstallmentSchedulePaymentMethodNotes={setInstallmentSchedulePaymentMethodNotes}
+                setInstallmentSchedulePrepaidRub={setInstallmentSchedulePrepaidRub}
+                setInstallmentScheduleResponsibleFullName={setInstallmentScheduleResponsibleFullName}
+                setInstallmentScheduleRows={setInstallmentScheduleRows}
+                setInstallmentScheduleTotalRub={setInstallmentScheduleTotalRub}
+                setInstallmentScheduleWrittenChangesConfirmed={setInstallmentScheduleWrittenChangesConfirmed}
+                setIntakeAccuracyConfirmed={setIntakeAccuracyConfirmed}
+                setIntakeAdditionalNotes={setIntakeAdditionalNotes}
+                setIntakeAllergyStatus={setIntakeAllergyStatus}
+                setIntakeAnticoagulants={setIntakeAnticoagulants}
+                setIntakeCardioEndocrineNotes={setIntakeCardioEndocrineNotes}
+                setIntakeChiefComplaint={setIntakeChiefComplaint}
+                setIntakeChronicConditions={setIntakeChronicConditions}
+                setIntakeCurrentMedications={setIntakeCurrentMedications}
+                setIntakeEmergencyContact={setIntakeEmergencyContact}
+                setIntakeInfectiousRiskNotes={setIntakeInfectiousRiskNotes}
+                setIntakePregnancyStatus={setIntakePregnancyStatus}
+                setLabDeadline={setLabDeadline}
+                setLabMaterial={setLabMaterial}
+                setLabShade={setLabShade}
+                setLabSource={setLabSource}
+                setLabTechnicianNotes={setLabTechnicianNotes}
+                setLabTeethOrArea={setLabTeethOrArea}
+                setLabWorkType={setLabWorkType}
+                setMinorConsentAgeExplanation={setMinorConsentAgeExplanation}
+                setMinorConsentAlternatives={setMinorConsentAlternatives}
+                setMinorConsentAuthorityVerified={setMinorConsentAuthorityVerified}
+                setMinorConsentDiagnosisOrIndication={setMinorConsentDiagnosisOrIndication}
+                setMinorConsentDoctorFullName={setMinorConsentDoctorFullName}
+                setMinorConsentExplained={setMinorConsentExplained}
+                setMinorConsentIdentityVerified={setMinorConsentIdentityVerified}
+                setMinorConsentInterventionScope={setMinorConsentInterventionScope}
+                setMinorConsentPatientBirthDate={setMinorConsentPatientBirthDate}
+                setMinorConsentPatientFullName={setMinorConsentPatientFullName}
+                setMinorConsentRisks={setMinorConsentRisks}
+                setMinorConsentSignedAt={setMinorConsentSignedAt}
+                setMinorConsentStored={setMinorConsentStored}
+                setMinorRepresentativeAuthorityDocument={setMinorRepresentativeAuthorityDocument}
+                setMinorRepresentativeFullName={setMinorRepresentativeFullName}
+                setMinorRepresentativeIdentityDocument={setMinorRepresentativeIdentityDocument}
+                setMinorRepresentativePhone={setMinorRepresentativePhone}
+                setMinorRepresentativeRelationship={setMinorRepresentativeRelationship}
+                setOutpatient025uAllergyHistory={setOutpatient025uAllergyHistory}
+                setOutpatient025uBloodGroup={setOutpatient025uBloodGroup}
+                setOutpatient025uCitizenship={setOutpatient025uCitizenship}
+                setOutpatient025uDisabilityGroup={setOutpatient025uDisabilityGroup}
+                setOutpatient025uEmploymentCode={setOutpatient025uEmploymentCode}
+                setOutpatient025uFinalEpicrisis={setOutpatient025uFinalEpicrisis}
+                setOutpatient025uHealthStatusDisclosureContact={setOutpatient025uHealthStatusDisclosureContact}
+                setOutpatient025uInsurerName={setOutpatient025uInsurerName}
+                setOutpatient025uKellK1={setOutpatient025uKellK1}
+                setOutpatient025uMedicalCardNumber={setOutpatient025uMedicalCardNumber}
+                setOutpatient025uOfficialForm274nChecked={setOutpatient025uOfficialForm274nChecked}
+                setOutpatient025uOmsIssuedAt={setOutpatient025uOmsIssuedAt}
+                setOutpatient025uOpenedAt={setOutpatient025uOpenedAt}
+                setOutpatient025uOtherBloodData={setOutpatient025uOtherBloodData}
+                setOutpatient025uPalliativeCareNeedCode={setOutpatient025uPalliativeCareNeedCode}
+                setOutpatient025uPatientSexCode={setOutpatient025uPatientSexCode}
+                setOutpatient025uRegistrationUrbanRuralCode={setOutpatient025uRegistrationUrbanRuralCode}
+                setOutpatient025uRhFactor={setOutpatient025uRhFactor}
+                setOutpatient025uSocialSupportCode={setOutpatient025uSocialSupportCode}
+                setOutpatient025uStayUrbanRuralCode={setOutpatient025uStayUrbanRuralCode}
+                setOutpatient025uThirdPartyDataChecked={setOutpatient025uThirdPartyDataChecked}
+                setOutpatient025uWorkOrStudyPlace={setOutpatient025uWorkOrStudyPlace}
+                setPaidContractCareReason={setPaidContractCareReason}
+                setPaidContractClinicInfoConfirmed={setPaidContractClinicInfoConfirmed}
+                setPaidContractCustomerFullName={setPaidContractCustomerFullName}
+                setPaidContractDate={setPaidContractDate}
+                setPaidContractDoctorFullName={setPaidContractDoctorFullName}
+                setPaidContractFreeCareNotice={setPaidContractFreeCareNotice}
+                setPaidContractNumber={setPaidContractNumber}
+                setPaidContractPaidBasisConfirmed={setPaidContractPaidBasisConfirmed}
+                setPaidContractPaymentTerms={setPaidContractPaymentTerms}
+                setPaidContractPriceChangeRules={setPaidContractPriceChangeRules}
+                setPaidContractRecommendationWarning={setPaidContractRecommendationWarning}
+                setPaidContractRefundTerms={setPaidContractRefundTerms}
+                setPaidContractRepresentativeFullName={setPaidContractRepresentativeFullName}
+                setPaidContractServiceEnd={setPaidContractServiceEnd}
+                setPaidContractServiceListConfirmed={setPaidContractServiceListConfirmed}
+                setPaidContractServiceScope={setPaidContractServiceScope}
+                setPaidContractServiceStart={setPaidContractServiceStart}
+                setPaidContractSignedAt={setPaidContractSignedAt}
+                setPaidContractTotalRub={setPaidContractTotalRub}
+                setPaidContractWarrantyTerms={setPaidContractWarrantyTerms}
+                setPaidContractWrittenChangesConfirmed={setPaidContractWrittenChangesConfirmed}
+                setPaymentInvoiceBankDetails={setPaymentInvoiceBankDetails}
+                setPaymentInvoiceCashDeskAllowed={setPaymentInvoiceCashDeskAllowed}
+                setPaymentInvoiceCashlessAllowed={setPaymentInvoiceCashlessAllowed}
+                setPaymentInvoiceDate={setPaymentInvoiceDate}
+                setPaymentInvoiceDueDate={setPaymentInvoiceDueDate}
+                setPaymentInvoiceFiscalNoticeConfirmed={setPaymentInvoiceFiscalNoticeConfirmed}
+                setPaymentInvoiceNumber={setPaymentInvoiceNumber}
+                setPaymentInvoicePayerEmail={setPaymentInvoicePayerEmail}
+                setPaymentInvoicePayerFullName={setPaymentInvoicePayerFullName}
+                setPaymentInvoicePayerPhone={setPaymentInvoicePayerPhone}
+                setPaymentInvoicePaymentTerms={setPaymentInvoicePaymentTerms}
+                setPaymentInvoicePurpose={setPaymentInvoicePurpose}
+                setPaymentInvoiceQrPayload={setPaymentInvoiceQrPayload}
+                setPaymentInvoiceRequisitesVerified={setPaymentInvoiceRequisitesVerified}
+                setPaymentInvoiceServiceScopeConfirmed={setPaymentInvoiceServiceScopeConfirmed}
+                setPaymentReceiptDate={setPaymentReceiptDate}
+                setPaymentReceiptFiscalNoticeConfirmed={setPaymentReceiptFiscalNoticeConfirmed}
+                setPaymentReceiptIssuedBy={setPaymentReceiptIssuedBy}
+                setPaymentReceiptNumber={setPaymentReceiptNumber}
+                setPaymentReceiptPayerBirthDate={setPaymentReceiptPayerBirthDate}
+                setPaymentReceiptPayerFullName={setPaymentReceiptPayerFullName}
+                setPaymentReceiptPayerIdentityDocument={setPaymentReceiptPayerIdentityDocument}
+                setPaymentReceiptPayerInn={setPaymentReceiptPayerInn}
+                setPaymentReceiptPayerRelationship={setPaymentReceiptPayerRelationship}
+                setPaymentReceiptPayerVerified={setPaymentReceiptPayerVerified}
+                setPaymentReceiptPaymentsVerified={setPaymentReceiptPaymentsVerified}
+                setPaymentReceiptPurpose={setPaymentReceiptPurpose}
+                setPaymentReceiptTaxSupportRequested={setPaymentReceiptTaxSupportRequested}
+                setPersonalDataActions={setPersonalDataActions}
+                setPersonalDataAutomatedDecisionAllowed={setPersonalDataAutomatedDecisionAllowed}
+                setPersonalDataCategories={setPersonalDataCategories}
+                setPersonalDataConsentGivenAt={setPersonalDataConsentGivenAt}
+                setPersonalDataCrossBorderAllowed={setPersonalDataCrossBorderAllowed}
+                setPersonalDataMedicalProcessingAcknowledged={setPersonalDataMedicalProcessingAcknowledged}
+                setPersonalDataPurposes={setPersonalDataPurposes}
+                setPersonalDataRetentionPeriod={setPersonalDataRetentionPeriod}
+                setPersonalDataRevocationChannel={setPersonalDataRevocationChannel}
+                setPersonalDataTransferRules={setPersonalDataTransferRules}
+                setPersonalDataVoluntaryConsentConfirmed={setPersonalDataVoluntaryConsentConfirmed}
+                setPhotoVideoAnonymizationConfirmed={setPhotoVideoAnonymizationConfirmed}
+                setPhotoVideoClinicalRecordUseConfirmed={setPhotoVideoClinicalRecordUseConfirmed}
+                setPhotoVideoColleagueConsultationAllowed={setPhotoVideoColleagueConsultationAllowed}
+                setPhotoVideoEducationUseAllowed={setPhotoVideoEducationUseAllowed}
+                setPhotoVideoLabTransferAllowed={setPhotoVideoLabTransferAllowed}
+                setPhotoVideoMarketingUseAllowed={setPhotoVideoMarketingUseAllowed}
+                setPhotoVideoRecognizablePublicationAllowed={setPhotoVideoRecognizablePublicationAllowed}
+                setPhotoVideoRevocationChannel={setPhotoVideoRevocationChannel}
+                setPhotoVideoScopeNotes={setPhotoVideoScopeNotes}
+                setPostVisitAllowedAfter={setPostVisitAllowedAfter}
+                setPostVisitClinicContactInstruction={setPostVisitClinicContactInstruction}
+                setPostVisitDoctorFullName={setPostVisitDoctorFullName}
+                setPostVisitFollowUpAt={setPostVisitFollowUpAt}
+                setPostVisitHygieneInstructions={setPostVisitHygieneInstructions}
+                setPostVisitMedicationAndRinsePlan={setPostVisitMedicationAndRinsePlan}
+                setPostVisitNutritionInstructions={setPostVisitNutritionInstructions}
+                setPostVisitPerformedAt={setPostVisitPerformedAt}
+                setPostVisitPrintedCopyReceived={setPostVisitPrintedCopyReceived}
+                setPostVisitProcedureName={setPostVisitProcedureName}
+                setPostVisitRestrictions={setPostVisitRestrictions}
+                setPostVisitTelegramSafe={setPostVisitTelegramSafe}
+                setPostVisitTelegramSummary={setPostVisitTelegramSummary}
+                setPostVisitToothOrArea={setPostVisitToothOrArea}
+                setPostVisitUrgentSignsUnderstood={setPostVisitUrgentSignsUnderstood}
+                setPostVisitUrgentWarningSigns={setPostVisitUrgentWarningSigns}
+                setPrescriptionDosage={setPrescriptionDosage}
+                setPrescriptionDuration={setPrescriptionDuration}
+                setPrescriptionInstructions={setPrescriptionInstructions}
+                setPrescriptionMedication={setPrescriptionMedication}
+                setPrescriptionSafetyNotes={setPrescriptionSafetyNotes}
+                setPrescriptionUrgentContactReason={setPrescriptionUrgentContactReason}
+                setProcedureConsentAftercare={setProcedureConsentAftercare}
+                setProcedureConsentAlternatives={setProcedureConsentAlternatives}
+                setProcedureConsentAnesthesia={setProcedureConsentAnesthesia}
+                setProcedureConsentConfirmedAt={setProcedureConsentConfirmedAt}
+                setProcedureConsentDiagnosisOrIndication={setProcedureConsentDiagnosisOrIndication}
+                setProcedureConsentDoctorFullName={setProcedureConsentDoctorFullName}
+                setProcedureConsentExactProcedureConfirmed={setProcedureConsentExactProcedureConfirmed}
+                setProcedureConsentLocalFormAttached={setProcedureConsentLocalFormAttached}
+                setProcedureConsentMaterials={setProcedureConsentMaterials}
+                setProcedureConsentPatientRiskFactors={setProcedureConsentPatientRiskFactors}
+                setProcedureConsentProcedureName={setProcedureConsentProcedureName}
+                setProcedureConsentProcedureType={setProcedureConsentProcedureType}
+                setProcedureConsentQuestionsAnswered={setProcedureConsentQuestionsAnswered}
+                setProcedureConsentRisksUnderstood={setProcedureConsentRisksUnderstood}
+                setProcedureConsentSpecificRisks={setProcedureConsentSpecificRisks}
+                setProcedureConsentToothOrArea={setProcedureConsentToothOrArea}
+                setRecordExtractComplaintAndAnamnesis={setRecordExtractComplaintAndAnamnesis}
+                setRecordExtractDiagnosis={setRecordExtractDiagnosis}
+                setRecordExtractDoctorFullName={setRecordExtractDoctorFullName}
+                setRecordExtractIssuedAt={setRecordExtractIssuedAt}
+                setRecordExtractObjectiveStatus={setRecordExtractObjectiveStatus}
+                setRecordExtractPeriodEnd={setRecordExtractPeriodEnd}
+                setRecordExtractPeriodStart={setRecordExtractPeriodStart}
+                setRecordExtractPreparedFromSignedRecords={setRecordExtractPreparedFromSignedRecords}
+                setRecordExtractRecipientAuthority={setRecordExtractRecipientAuthority}
+                setRecordExtractRecipientFullName={setRecordExtractRecipientFullName}
+                setRecordExtractRecommendations={setRecordExtractRecommendations}
+                setRecordExtractSourceVisitIds={setRecordExtractSourceVisitIds}
+                setRecordExtractThirdPartyDataChecked={setRecordExtractThirdPartyDataChecked}
+                setRecordExtractTreatmentProvided={setRecordExtractTreatmentProvided}
+                setRefundAccountantDecision={setRefundAccountantDecision}
+                setRefundAction={setRefundAction}
+                setRefundAmountRub={setRefundAmountRub}
+                setRefundBankDetails={setRefundBankDetails}
+                setRefundCorrectionFiscalReceiptNumber={setRefundCorrectionFiscalReceiptNumber}
+                setRefundMethod={setRefundMethod}
+                setRefundOriginalFiscalReceiptNumber={setRefundOriginalFiscalReceiptNumber}
+                setRefundReason={setRefundReason}
+                setRefundRecipientFullName={setRefundRecipientFullName}
+                setRefundRecipientIdentityDocument={setRefundRecipientIdentityDocument}
+                setRefusalAlternatives={setRefusalAlternatives}
+                setRefusalClinicalIndication={setRefusalClinicalIndication}
+                setRefusalConfirmedAt={setRefusalConfirmedAt}
+                setRefusalConsequencesUnderstood={setRefusalConsequencesUnderstood}
+                setRefusalDoctorFullName={setRefusalDoctorFullName}
+                setRefusalEmergencyCareExplained={setRefusalEmergencyCareExplained}
+                setRefusalExplainedRisks={setRefusalExplainedRisks}
+                setRefusalIntervention={setRefusalIntervention}
+                setRefusalPatientReason={setRefusalPatientReason}
+                setRefusalSecondOpinionOffered={setRefusalSecondOpinionOffered}
+                setRefusalUrgentWarningSigns={setRefusalUrgentWarningSigns}
+                setReleaseAccessExpiresAt={setReleaseAccessExpiresAt}
+                setReleaseChannel={setReleaseChannel}
+                setReleaseDeliveredAt={setReleaseDeliveredAt}
+                setReleaseDocumentTypes={setReleaseDocumentTypes}
+                setReleasePeriodEnd={setReleasePeriodEnd}
+                setReleasePeriodStart={setReleasePeriodStart}
                 setReleaseProtectionNote={setReleaseProtectionNote}
+                setReleaseRecipientAuthority={setReleaseRecipientAuthority}
+                setReleaseRecipientFullName={setReleaseRecipientFullName}
+                setReleaseRecipientIdentityDocument={setReleaseRecipientIdentityDocument}
+                setReleaseSourceRequestDocumentId={setReleaseSourceRequestDocumentId}
+                setReleaseThirdPartyDataChecked={setReleaseThirdPartyDataChecked}
+                setSelectedDocumentKind={setSelectedDocumentKind}
+                setSelectedPaymentReceiptIds={setSelectedPaymentReceiptIds}
+                setSelectedTaxPaymentIds={setSelectedTaxPaymentIds}
+                setTaxApplicationAuthorityDocument={setTaxApplicationAuthorityDocument}
+                setTaxApplicationContact={setTaxApplicationContact}
+                setTaxApplicationDeliveryChannel={setTaxApplicationDeliveryChannel}
+                setTaxApplicationDuplicateWarningAccepted={setTaxApplicationDuplicateWarningAccepted}
+                setTaxApplicationForm={setTaxApplicationForm}
+                setTaxApplicationRelationship={setTaxApplicationRelationship}
+                setTaxApplicationRequestedAt={setTaxApplicationRequestedAt}
+                setTaxApplicationTaxpayerBirthDate={setTaxApplicationTaxpayerBirthDate}
+                setTaxApplicationTaxpayerFullName={setTaxApplicationTaxpayerFullName}
+                setTaxApplicationTaxpayerIdentityDocument={setTaxApplicationTaxpayerIdentityDocument}
+                setTaxApplicationTaxpayerInn={setTaxApplicationTaxpayerInn}
+                setTaxDocumentPayerInn={setTaxDocumentPayerInn}
+                setTaxDocumentYear={setTaxDocumentYear}
+                setTreatmentAcceptanceAcceptedAt={setTreatmentAcceptanceAcceptedAt}
+                setTreatmentAcceptanceAlternativesUnderstood={setTreatmentAcceptanceAlternativesUnderstood}
+                setTreatmentAcceptanceClinicalGoal={setTreatmentAcceptanceClinicalGoal}
+                setTreatmentAcceptanceCostChangeUnderstood={setTreatmentAcceptanceCostChangeUnderstood}
+                setTreatmentAcceptanceDiagnosisSummary={setTreatmentAcceptanceDiagnosisSummary}
+                setTreatmentAcceptanceDoctorFullName={setTreatmentAcceptanceDoctorFullName}
+                setTreatmentAcceptanceEstimatedTotalRub={setTreatmentAcceptanceEstimatedTotalRub}
+                setTreatmentAcceptanceEstimateValidUntil={setTreatmentAcceptanceEstimateValidUntil}
+                setTreatmentAcceptancePaymentTerms={setTreatmentAcceptancePaymentTerms}
+                setTreatmentAcceptanceQuestionsAnswered={setTreatmentAcceptanceQuestionsAnswered}
+                setTreatmentAcceptanceRejectedAlternatives={setTreatmentAcceptanceRejectedAlternatives}
+                setTreatmentAcceptanceRevisionAcknowledged={setTreatmentAcceptanceRevisionAcknowledged}
+                setTreatmentAcceptanceRisks={setTreatmentAcceptanceRisks}
+                setTreatmentAcceptanceStages={setTreatmentAcceptanceStages}
+                setTreatmentAcceptanceTeethOrArea={setTreatmentAcceptanceTeethOrArea}
+                setTreatmentAcceptanceVariant={setTreatmentAcceptanceVariant}
+                setTreatmentAcceptanceWarrantyTerms={setTreatmentAcceptanceWarrantyTerms}
+                setTreatmentEstimateAdminFullName={setTreatmentEstimateAdminFullName}
+                setTreatmentEstimateChangeRulesConfirmed={setTreatmentEstimateChangeRulesConfirmed}
+                setTreatmentEstimateDate={setTreatmentEstimateDate}
+                setTreatmentEstimateDoctorFullName={setTreatmentEstimateDoctorFullName}
+                setTreatmentEstimateExcludedItems={setTreatmentEstimateExcludedItems}
+                setTreatmentEstimateFiscalNoticeConfirmed={setTreatmentEstimateFiscalNoticeConfirmed}
+                setTreatmentEstimateNumber={setTreatmentEstimateNumber}
+                setTreatmentEstimatePatientOrPayerFullName={setTreatmentEstimatePatientOrPayerFullName}
+                setTreatmentEstimatePaymentMilestoneNotes={setTreatmentEstimatePaymentMilestoneNotes}
+                setTreatmentEstimatePreliminaryConfirmed={setTreatmentEstimatePreliminaryConfirmed}
+                setTreatmentEstimatePriceChangeRules={setTreatmentEstimatePriceChangeRules}
+                setTreatmentEstimateScopeConfirmed={setTreatmentEstimateScopeConfirmed}
+                setTreatmentEstimateSignedAt={setTreatmentEstimateSignedAt}
+                setTreatmentEstimateTotalRub={setTreatmentEstimateTotalRub}
+                setTreatmentEstimateTreatmentBasis={setTreatmentEstimateTreatmentBasis}
+                setTreatmentEstimateValidUntil={setTreatmentEstimateValidUntil}
+                setTreatmentPlanAlternatives={setTreatmentPlanAlternatives}
+                setTreatmentPlanClinicalReason={setTreatmentPlanClinicalReason}
+                setTreatmentPlanControlPlan={setTreatmentPlanControlPlan}
+                setTreatmentPlanDiagnosisSummary={setTreatmentPlanDiagnosisSummary}
+                setTreatmentPlanDoctorFullName={setTreatmentPlanDoctorFullName}
+                setTreatmentPlanEstimatedTotalRub={setTreatmentPlanEstimatedTotalRub}
+                setTreatmentPlanGoals={setTreatmentPlanGoals}
+                setTreatmentPlanNewApprovalAcknowledged={setTreatmentPlanNewApprovalAcknowledged}
+                setTreatmentPlanPlannedAt={setTreatmentPlanPlannedAt}
+                setTreatmentPlanPrognosis={setTreatmentPlanPrognosis}
+                setTreatmentPlanQuestionsAnswered={setTreatmentPlanQuestionsAnswered}
+                setTreatmentPlanRisks={setTreatmentPlanRisks}
+                setTreatmentPlanSeparateConsentAcknowledged={setTreatmentPlanSeparateConsentAcknowledged}
+                setTreatmentPlanStages={setTreatmentPlanStages}
+                setTreatmentPlanTeethOrArea={setTreatmentPlanTeethOrArea}
+                setWarrantyAftercareReceived={setWarrantyAftercareReceived}
+                setWarrantyCompletedAt={setWarrantyCompletedAt}
+                setWarrantyControlVisitSchedule={setWarrantyControlVisitSchedule}
+                setWarrantyControlVisitsUnderstood={setWarrantyControlVisitsUnderstood}
+                setWarrantyDoctorFullName={setWarrantyDoctorFullName}
+                setWarrantyExcludedRiskFactors={setWarrantyExcludedRiskFactors}
+                setWarrantyIssuedAt={setWarrantyIssuedAt}
+                setWarrantyLinkedActOrContract={setWarrantyLinkedActOrContract}
+                setWarrantyMaterialsOrSystems={setWarrantyMaterialsOrSystems}
+                setWarrantyPatientObligations={setWarrantyPatientObligations}
+                setWarrantyPeriod={setWarrantyPeriod}
+                setWarrantyPolicyApplied={setWarrantyPolicyApplied}
+                setWarrantyServiceOrWorkName={setWarrantyServiceOrWorkName}
+                setWarrantyTeethOrArea={setWarrantyTeethOrArea}
+                setWarrantyUrgentContactReasons={setWarrantyUrgentContactReasons}
+                setXrayArea={setXrayArea}
+                setXrayClinicalQuestion={setXrayClinicalQuestion}
+                setXrayDueDate={setXrayDueDate}
+                setXrayIncludeDicomExport={setXrayIncludeDicomExport}
+                setXrayIncludeRadiologistReport={setXrayIncludeRadiologistReport}
+                setXrayIndication={setXrayIndication}
+                setXrayPregnancyStatus={setXrayPregnancyStatus}
+                setXrayPriority={setXrayPriority}
+                setXrayRecipientClinic={setXrayRecipientClinic}
+                setXrayRequestedBy={setXrayRequestedBy}
+                setXraySafetyNotes={setXraySafetyNotes}
+                setXrayStudyType={setXrayStudyType}
                 structuredPayloadDocumentKinds={structuredPayloadDocumentKinds}
+                taxApplicationAuthorityDocument={taxApplicationAuthorityDocument}
+                taxApplicationContact={taxApplicationContact}
+                taxApplicationDeliveryChannel={taxApplicationDeliveryChannel}
                 taxApplicationDeliveryChannelOptions={taxApplicationDeliveryChannelOptions}
+                taxApplicationDuplicateWarningAccepted={taxApplicationDuplicateWarningAccepted}
+                taxApplicationForm={taxApplicationForm}
                 taxApplicationFormOptions={taxApplicationFormOptions}
+                taxApplicationRelationship={taxApplicationRelationship}
                 taxApplicationRelationshipOptions={taxApplicationRelationshipOptions}
+                taxApplicationRequestedAt={taxApplicationRequestedAt}
+                taxApplicationTaxpayerBirthDate={taxApplicationTaxpayerBirthDate}
+                taxApplicationTaxpayerFullName={taxApplicationTaxpayerFullName}
+                taxApplicationTaxpayerIdentityDocument={taxApplicationTaxpayerIdentityDocument}
+                taxApplicationTaxpayerInn={taxApplicationTaxpayerInn}
                 taxDocumentPayerOptions={taxDocumentPayerOptions}
+                taxDocumentYear={taxDocumentYear}
                 togglePhotoVideoMaterial={togglePhotoVideoMaterial}
+                treatmentAcceptanceAcceptedAt={treatmentAcceptanceAcceptedAt}
+                treatmentAcceptanceAlternativesUnderstood={treatmentAcceptanceAlternativesUnderstood}
+                treatmentAcceptanceClinicalGoal={treatmentAcceptanceClinicalGoal}
+                treatmentAcceptanceCostChangeUnderstood={treatmentAcceptanceCostChangeUnderstood}
+                treatmentAcceptanceDiagnosisSummary={treatmentAcceptanceDiagnosisSummary}
+                treatmentAcceptanceDoctorFullName={treatmentAcceptanceDoctorFullName}
+                treatmentAcceptanceEstimatedTotalRub={treatmentAcceptanceEstimatedTotalRub}
+                treatmentAcceptanceEstimateValidUntil={treatmentAcceptanceEstimateValidUntil}
+                treatmentAcceptancePaymentTerms={treatmentAcceptancePaymentTerms}
                 treatmentAcceptancePlannedTotalRub={treatmentAcceptancePlannedTotalRub}
+                treatmentAcceptanceQuestionsAnswered={treatmentAcceptanceQuestionsAnswered}
+                treatmentAcceptanceRejectedAlternatives={treatmentAcceptanceRejectedAlternatives}
+                treatmentAcceptanceRevisionAcknowledged={treatmentAcceptanceRevisionAcknowledged}
+                treatmentAcceptanceRisks={treatmentAcceptanceRisks}
+                treatmentAcceptanceStages={treatmentAcceptanceStages}
+                treatmentAcceptanceTeethOrArea={treatmentAcceptanceTeethOrArea}
+                treatmentAcceptanceVariant={treatmentAcceptanceVariant}
+                treatmentAcceptanceWarrantyTerms={treatmentAcceptanceWarrantyTerms}
+                treatmentEstimateAdminFullName={treatmentEstimateAdminFullName}
+                treatmentEstimateChangeRulesConfirmed={treatmentEstimateChangeRulesConfirmed}
+                treatmentEstimateDate={treatmentEstimateDate}
+                treatmentEstimateDoctorFullName={treatmentEstimateDoctorFullName}
+                treatmentEstimateExcludedItems={treatmentEstimateExcludedItems}
+                treatmentEstimateFiscalNoticeConfirmed={treatmentEstimateFiscalNoticeConfirmed}
+                treatmentEstimateNumber={treatmentEstimateNumber}
+                treatmentEstimatePatientOrPayerFullName={treatmentEstimatePatientOrPayerFullName}
                 treatmentEstimatePatientOrPayerFullNameValue={treatmentEstimatePatientOrPayerFullNameValue}
+                treatmentEstimatePaymentMilestoneNotes={treatmentEstimatePaymentMilestoneNotes}
+                treatmentEstimatePreliminaryConfirmed={treatmentEstimatePreliminaryConfirmed}
+                treatmentEstimatePriceChangeRules={treatmentEstimatePriceChangeRules}
+                treatmentEstimateScopeConfirmed={treatmentEstimateScopeConfirmed}
+                treatmentEstimateSignedAt={treatmentEstimateSignedAt}
+                treatmentEstimateTotalRub={treatmentEstimateTotalRub}
                 treatmentEstimateTotalRubValue={treatmentEstimateTotalRubValue}
+                treatmentEstimateTreatmentBasis={treatmentEstimateTreatmentBasis}
                 treatmentEstimateTreatmentBasisValue={treatmentEstimateTreatmentBasisValue}
+                treatmentEstimateValidUntil={treatmentEstimateValidUntil}
+                treatmentPlanAlternatives={treatmentPlanAlternatives}
+                treatmentPlanClinicalReason={treatmentPlanClinicalReason}
+                treatmentPlanControlPlan={treatmentPlanControlPlan}
+                treatmentPlanDiagnosisSummary={treatmentPlanDiagnosisSummary}
+                treatmentPlanDoctorFullName={treatmentPlanDoctorFullName}
+                treatmentPlanEstimatedTotalRub={treatmentPlanEstimatedTotalRub}
+                treatmentPlanGoals={treatmentPlanGoals}
+                treatmentPlanNewApprovalAcknowledged={treatmentPlanNewApprovalAcknowledged}
+                treatmentPlanPlannedAt={treatmentPlanPlannedAt}
+                treatmentPlanPrognosis={treatmentPlanPrognosis}
+                treatmentPlanQuestionsAnswered={treatmentPlanQuestionsAnswered}
+                treatmentPlanRisks={treatmentPlanRisks}
+                treatmentPlanSeparateConsentAcknowledged={treatmentPlanSeparateConsentAcknowledged}
+                treatmentPlanStages={treatmentPlanStages}
+                treatmentPlanTeethOrArea={treatmentPlanTeethOrArea}
+                warrantyAftercareReceived={warrantyAftercareReceived}
+                warrantyCompletedAt={warrantyCompletedAt}
+                warrantyControlVisitSchedule={warrantyControlVisitSchedule}
+                warrantyControlVisitsUnderstood={warrantyControlVisitsUnderstood}
+                warrantyDoctorFullName={warrantyDoctorFullName}
+                warrantyExcludedRiskFactors={warrantyExcludedRiskFactors}
+                warrantyIssuedAt={warrantyIssuedAt}
+                warrantyLinkedActOrContract={warrantyLinkedActOrContract}
                 warrantyLinkedActOrContractValue={warrantyLinkedActOrContractValue}
+                warrantyMaterialsOrSystems={warrantyMaterialsOrSystems}
+                warrantyPatientObligations={warrantyPatientObligations}
+                warrantyPeriod={warrantyPeriod}
+                warrantyPolicyApplied={warrantyPolicyApplied}
+                warrantyServiceOrWorkName={warrantyServiceOrWorkName}
                 warrantyServiceOrWorkNameValue={warrantyServiceOrWorkNameValue}
+                warrantyTeethOrArea={warrantyTeethOrArea}
                 warrantyTeethOrAreaValue={warrantyTeethOrAreaValue}
+                warrantyUrgentContactReasons={warrantyUrgentContactReasons}
+                xrayArea={xrayArea}
+                xrayClinicalQuestion={xrayClinicalQuestion}
+                xrayDueDate={xrayDueDate}
+                xrayIncludeDicomExport={xrayIncludeDicomExport}
+                xrayIncludeRadiologistReport={xrayIncludeRadiologistReport}
+                xrayIndication={xrayIndication}
+                xrayPregnancyStatus={xrayPregnancyStatus}
                 xrayPregnancyStatusOptions={xrayPregnancyStatusOptions}
+                xrayPriority={xrayPriority}
+                xrayRecipientClinic={xrayRecipientClinic}
+                xrayRequestedBy={xrayRequestedBy}
+                xraySafetyNotes={xraySafetyNotes}
+                xrayStudyType={xrayStudyType}
                 xrayStudyTypeOptions={xrayStudyTypeOptions}
               />
             </Suspense>
@@ -14627,6 +14683,10 @@ export function App() {
               cbctWorkbenchProjections={cbctWorkbenchProjections}
               cbctWorkbenchSeries={cbctWorkbenchSeries}
               cbctWorkbenchTools={cbctWorkbenchTools}
+              chairScheduleDirtyIds={chairScheduleDirtyIds}
+              chairScheduleDrafts={chairScheduleDrafts}
+              chairScheduleSaveStates={chairScheduleSaveStates}
+              chairScheduleSavingId={chairScheduleSavingId}
               changeClinicMode={changeClinicMode}
               checkDicomWebConnector={checkDicomWebConnector}
               checkDicomWorkstationReadiness={checkDicomWorkstationReadiness}
@@ -14746,6 +14806,7 @@ export function App() {
               isDicomWorkbenchReconnecting={isDicomWorkbenchReconnecting}
               isDicomWorkbenchServerSaving={isDicomWorkbenchServerSaving}
               isDicomWorkstationChecking={isDicomWorkstationChecking}
+              isDocumentIngesting={isDocumentIngesting}
               isClinicPublicLookupLoading={isClinicPublicLookupLoading}
               isImagingFolderScanning={isImagingFolderScanning}
               isLocalDicomOperationActive={isLocalDicomOperationActive}
@@ -14827,6 +14888,7 @@ export function App() {
               newRuleCategory={newRuleCategory}
               newRuleCompletedServiceId={newRuleCompletedServiceId}
               newRuleOwnerRole={newRuleOwnerRole}
+              newRulePatientText={newRulePatientText}
               newRuleRequiredServiceId={newRuleRequiredServiceId}
               newRuleSeverity={newRuleSeverity}
               newRuleSpecialty={newRuleSpecialty}
@@ -14957,6 +15019,7 @@ export function App() {
               setNewRuleCategory={setNewRuleCategory}
               setNewRuleCompletedServiceId={setNewRuleCompletedServiceId}
               setNewRuleOwnerRole={setNewRuleOwnerRole}
+              setNewRulePatientText={setNewRulePatientText}
               setNewRuleRequiredServiceId={setNewRuleRequiredServiceId}
               setNewRuleSeverity={setNewRuleSeverity}
               setNewRuleSpecialty={setNewRuleSpecialty}
@@ -14980,28 +15043,28 @@ export function App() {
               setTelegramAdminSecretDraft={
                 settingsAdminSecretDomain === "telegram" ? setTelegramAdminSecretDraft : setSettingsAdminSecretDraft
               }
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
+              setTelegramAllowVoiceIntakeDraft={setTelegramAllowVoiceIntakeDraft}
+              setTelegramBotConfigId={setTelegramBotConfigId}
+              setTelegramBotUsernameDraft={setTelegramBotUsernameDraft}
+              setTelegramEnabledFeaturesDraft={setTelegramEnabledFeaturesDraft}
+              setTelegramLinkActionState={setTelegramLinkActionState}
+              setTelegramLinkCode={setTelegramLinkCode}
+              setTelegramLinkStaffId={setTelegramLinkStaffId}
+              setTelegramLinkSubjectType={setTelegramLinkSubjectType}
+              setTelegramMapsUrlDraft={setTelegramMapsUrlDraft}
+              setTelegramModeDraft={setTelegramModeDraft}
+              setTelegramOutboxStatusFilter={setTelegramOutboxStatusFilter}
+              setTelegramOutboxTemplateFilter={setTelegramOutboxTemplateFilter}
+              setTelegramOwnBotUsernameDraft={setTelegramOwnBotUsernameDraft}
+              setTelegramPatientPortalBaseUrlDraft={setTelegramPatientPortalBaseUrlDraft}
+              setTelegramPrivacyModeDraft={setTelegramPrivacyModeDraft}
+              setTelegramReminderLeadTimesDraft={setTelegramReminderLeadTimesDraft}
+              setTelegramReviewRequestDelayDraft={setTelegramReviewRequestDelayDraft}
+              setTelegramReviewUrlDraft={setTelegramReviewUrlDraft}
+              setTelegramStaffEscalationChannelDraft={setTelegramStaffEscalationChannelDraft}
+              setTelegramTokenTtlDraft={setTelegramTokenTtlDraft}
+              setTelegramWebhookBaseUrlDraft={setTelegramWebhookBaseUrlDraft}
+              setTelegramWelcomeImageUrlDraft={setTelegramWelcomeImageUrlDraft}
               settingsTab={settingsTab}
               settingsTabs={settingsTabs}
               setUiLanguage={setUiLanguage}
@@ -15027,7 +15090,11 @@ export function App() {
               speechRecordingStrategy={speechRecordingStrategy}
               speechRecoveryStateLabels={speechRecoveryStateLabels}
               staffRoleLabels={staffRoleLabels}
+              staffScheduleDirtyIds={staffScheduleDirtyIds}
               staffScheduleDraftFromWorkingHours={staffScheduleDraftFromWorkingHours}
+              staffScheduleDrafts={staffScheduleDrafts}
+              staffScheduleSaveStates={staffScheduleSaveStates}
+              staffScheduleSavingId={staffScheduleSavingId}
               stageLocalImagingFolderRecovery={stageLocalImagingFolderRecovery}
               startImportDictation={startImportDictation}
               telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdminSecretDraft : settingsAdminSecretDraft}

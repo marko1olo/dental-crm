@@ -1,3 +1,4 @@
+import { usePatientStore } from "./store/patientStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import type { ChangeEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
@@ -28,30 +29,16 @@ type WeekdayOption = {
 type PatientsViewProps = {
   createPatient: () => void | Promise<void>;
   filteredPatients: Patient[];
-  isPatientCreating: boolean;
   money: (amountRub: number) => string;
-  newPatientBirthDate: string;
-  newPatientName: string;
-  newPatientPhone: string;
   normalizeOptionalWorkingDaysDraft: (days: number[]) => number[];
-  patientAdministrativeProfileDirty: boolean;
-  patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
-  patientAdministrativeProfileSaveState: PatientAdministrativeProfileSaveState;
   patientAdministrativeProfileValidationMessage: string | null;
-  patientCoreDirty: boolean;
-  patientCoreDraft: PatientCoreDraft;
-  patientCoreSaveState: PatientCoreSaveState;
   patientInsightById: Map<string, PatientInsight>;
   patientInsightRiskLabels: Record<PatientInsight["riskLevel"], string>;
   query: string;
   savePatientAdministrativeProfile: () => void | Promise<void | boolean>;
   savePatientCore: () => void | Promise<void | boolean>;
   selectedPatient: Patient | null | undefined;
-  setNewPatientBirthDate: (value: string) => void;
-  setNewPatientName: (value: string) => void;
-  setNewPatientPhone: (value: string) => void;
   setQuery: (value: string) => void;
-  setSelectedPatientId: (patientId: string) => void;
   updatePatientAdministrativeProfileDraft: (field: keyof PatientAdministrativeProfileDraft, value: string | number[]) => void;
   updatePatientCoreDraft: (field: keyof PatientCoreDraft, value: string) => void;
   weekdayOptions: WeekdayOption[];
@@ -61,32 +48,44 @@ type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
 export function PatientsView(props: PatientsViewProps) {
   const {
-    createPatient,
-    filteredPatients,
-    isPatientCreating,
-    money,
-    newPatientBirthDate,
-    newPatientName,
-    newPatientPhone,
-    normalizeOptionalWorkingDaysDraft,
-    patientAdministrativeProfileDirty,
-    patientAdministrativeProfileDraft,
-    patientAdministrativeProfileSaveState,
-    patientAdministrativeProfileValidationMessage,
-    patientCoreDirty,
+    selectedPatientId,
     patientCoreDraft,
     patientCoreSaveState,
+    patientCoreDirty,
+    patientAdministrativeProfileDraft,
+    patientAdministrativeProfileSaveState,
+    patientAdministrativeProfileDirty,
+    newPatientName,
+    newPatientPhone,
+    newPatientBirthDate,
+    isPatientCreating,
+    newRulePatientText,
+    setSelectedPatientId,
+    setPatientCoreDraft,
+    setPatientCoreSaveState,
+    setPatientCoreDirty,
+    setPatientAdministrativeProfileDraft,
+    setPatientAdministrativeProfileSaveState,
+    setPatientAdministrativeProfileDirty,
+    setNewPatientName,
+    setNewPatientPhone,
+    setNewPatientBirthDate,
+    setIsPatientCreating,
+    setNewRulePatientText
+  } = usePatientStore();
+  const {
+    createPatient,
+    filteredPatients,
+    money,
+    normalizeOptionalWorkingDaysDraft,
+    patientAdministrativeProfileValidationMessage,
     patientInsightById,
     patientInsightRiskLabels,
     query,
     savePatientAdministrativeProfile,
     savePatientCore,
     selectedPatient,
-    setNewPatientBirthDate,
-    setNewPatientName,
-    setNewPatientPhone,
     setQuery,
-    setSelectedPatientId,
     updatePatientAdministrativeProfileDraft,
     updatePatientCoreDraft,
     weekdayOptions

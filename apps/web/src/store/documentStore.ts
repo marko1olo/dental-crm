@@ -48,6 +48,12 @@ export interface DocumentState {
   documentVoidArchivePreserved: boolean;
   documentVoidStatusReviewed: boolean;
   documentAuditFacts: DocumentAuditFacts | null;
+  taxDocumentYear: number;
+  setTaxDocumentYear: (val: number | ((prev: number) => number)) => void;
+  selectedDocumentKind: GeneratedDocument["kind"];
+  setSelectedDocumentKind: (val: GeneratedDocument["kind"] | ((prev: GeneratedDocument["kind"]) => GeneratedDocument["kind"])) => void;
+  isDocumentIngesting: boolean;
+  setIsDocumentIngesting: (val: boolean | ((prev: boolean) => boolean)) => void;
   documentAuditFactsLoadingId: string | null;
   personalDataPurposes: string;
   personalDataCategories: string;
@@ -1713,6 +1719,12 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   documentVoidStatusReviewed: false,
   setDocumentVoidStatusReviewed: (val) => set((state) => ({ documentVoidStatusReviewed: typeof val === 'function' ? (val as any)(state.documentVoidStatusReviewed) : val })),
   documentAuditFacts: null,
+  taxDocumentYear: initialUiPreferences?.taxDocumentYear ?? new Date().getFullYear(),
+  setTaxDocumentYear: (val) => set((state) => ({ taxDocumentYear: typeof val === "function" ? val(state.taxDocumentYear) : val })),
+  selectedDocumentKind: "treatment_plan",
+  setSelectedDocumentKind: (val) => set((state) => ({ selectedDocumentKind: typeof val === "function" ? val(state.selectedDocumentKind) : val })),
+  isDocumentIngesting: false,
+  setIsDocumentIngesting: (val) => set((state) => ({ isDocumentIngesting: typeof val === "function" ? val(state.isDocumentIngesting) : val })),
   setDocumentAuditFacts: (val) => set((state) => ({ documentAuditFacts: typeof val === 'function' ? (val as any)(state.documentAuditFacts) : val })),
   documentAuditFactsLoadingId: null,
   setDocumentAuditFactsLoadingId: (val) => set((state) => ({ documentAuditFactsLoadingId: typeof val === 'function' ? (val as any)(state.documentAuditFactsLoadingId) : val })),
