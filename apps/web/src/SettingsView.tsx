@@ -1,3 +1,4 @@
+import { useSettingsStore } from "./store/settingsStore";
 import {
   Bot,
   CalendarDays,
@@ -1113,29 +1114,6 @@ export function SettingsView(props: SettingsViewProps) {
     setSmartImportMode,
     setSmartImportPreview,
     setSmartImportText,
-    setTelegramAdminSecretDraft,
-    setTelegramAllowVoiceIntakeDraft,
-    setTelegramBotConfigId,
-    setTelegramBotUsernameDraft,
-    setTelegramEnabledFeaturesDraft,
-    setTelegramLinkActionState,
-    setTelegramLinkCode,
-    setTelegramLinkStaffId,
-    setTelegramLinkSubjectType,
-    setTelegramMapsUrlDraft,
-    setTelegramModeDraft,
-    setTelegramOutboxStatusFilter,
-    setTelegramOutboxTemplateFilter,
-    setTelegramOwnBotUsernameDraft,
-    setTelegramPatientPortalBaseUrlDraft,
-    setTelegramPrivacyModeDraft,
-    setTelegramReminderLeadTimesDraft,
-    setTelegramReviewRequestDelayDraft,
-    setTelegramReviewUrlDraft,
-    setTelegramStaffEscalationChannelDraft,
-    setTelegramTokenTtlDraft,
-    setTelegramWebhookBaseUrlDraft,
-    setTelegramWelcomeImageUrlDraft,
     settingsTab,
     settingsTabs,
     setUiLanguage,
@@ -1250,6 +1228,32 @@ export function SettingsView(props: SettingsViewProps) {
     weekdayOptions,
     workspaceScopeLabels
   } = props;
+  const {
+    setTelegramOutbox,
+    setTelegramOutboxStatusFilter,
+    setTelegramOutboxTemplateFilter,
+    setTelegramLinkSubjectType,
+    setTelegramLinkStaffId,
+    setTelegramLinkCode,
+    setTelegramLinkActionState,
+    setTelegramModeDraft,
+    setTelegramBotUsernameDraft,
+    setTelegramOwnBotUsernameDraft,
+    setTelegramBotConfigId,
+    setTelegramWebhookBaseUrlDraft,
+    setTelegramPatientPortalBaseUrlDraft,
+    setTelegramWelcomeImageUrlDraft,
+    setTelegramReviewUrlDraft,
+    setTelegramMapsUrlDraft,
+    setTelegramEnabledFeaturesDraft,
+    setTelegramTokenTtlDraft,
+    setTelegramReminderLeadTimesDraft,
+    setTelegramReviewRequestDelayDraft,
+    setTelegramAllowVoiceIntakeDraft,
+    setTelegramStaffEscalationChannelDraft,
+    setTelegramPrivacyModeDraft,
+    setTelegramAdminSecretDraft
+  } = useSettingsStore();
 
   const recognitionInputReady = recognitionText.trim().length > 0;
   const smartImportInputReady = smartImportText.trim().length > 0;

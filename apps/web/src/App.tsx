@@ -1,5 +1,8 @@
 
 import { useDocumentStore } from "./store/documentStore";
+import { useImagingStore } from "./store/imagingStore";
+import { useSettingsStore } from "./store/settingsStore";
+import { useDocumentStore as _unused } from "./store/documentStore";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -955,10 +958,6 @@ export function App() {
   const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
   const activeOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
   const [uiLanguage, setUiLanguage] = useState<UiLanguage>(initialUiPreferences.uiLanguage);
-  const [onboardingDismissed, setOnboardingDismissed] = useState(initialUiPreferences.onboardingDismissed);
-  const [onboardingDismissedAt, setOnboardingDismissedAt] = useState<string | null>(initialUiPreferences.onboardingDismissedAt);
-  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>(initialUiPreferences.onboardingStep);
-  const [onboardingDraftMode, setOnboardingDraftMode] = useState(initialUiPreferences.onboardingDraftMode);
   const [clinicProfileDraft, setClinicProfileDraft] = useState<ClinicProfileDraft>(emptyClinicProfileDraft);
   const [clinicProfileSaveState, setClinicProfileSaveState] = useState<ClinicProfileSaveState>("idle");
   const [clinicProfileDirty, setClinicProfileDirty] = useState(false);
@@ -973,7 +972,6 @@ export function App() {
   const [patientAdministrativeProfileDirty, setPatientAdministrativeProfileDirty] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>(() => viewFromHash());
   const [settingsTab, setSettingsTab] = useState<SettingsTab>(() => settingsTabFromHash());
-  const [onboardingGuideExpanded, setOnboardingGuideExpanded] = useState(() => currentView === "settings" && settingsTab === "clinic");
   const [selectedWorkspaceRole, setSelectedWorkspaceRole] = useState<StaffRole>(initialUiPreferences.selectedWorkspaceRole);
   const [scheduleDoctorFilterId, setScheduleDoctorFilterId] = useState<string | null>(initialUiPreferences.scheduleDoctorFilterId);
   const [scheduleAssistantFilterId, setScheduleAssistantFilterId] = useState<string | null>(initialUiPreferences.scheduleAssistantFilterId);
@@ -987,7 +985,6 @@ export function App() {
   const [scheduleDefaultChairId, setScheduleDefaultChairId] = useState<string | null>(initialUiPreferences.scheduleDefaultChairId);
   const [scheduleStatusFilter, setScheduleStatusFilter] = useState<Appointment["status"] | "all">(initialUiPreferences.scheduleStatusFilter);
   const [scheduleDateFilter, setScheduleDateFilter] = useState(initialUiPreferences.scheduleDateFilter);
-  const [telegramHandoffNotice, setTelegramHandoffNotice] = useState<DenteTelegramHandoffTarget | null>(null);
   const [query, setQuery] = useState("");
   const [newPatientName, setNewPatientName] = useState("");
   const [newPatientPhone, setNewPatientPhone] = useState("");
@@ -1028,61 +1025,150 @@ export function App() {
   const [newRuleBlockedServiceId, setNewRuleBlockedServiceId] = useState("svc-prosthetics-crown");
   const [newRuleWarningText, setNewRuleWarningText] = useState("Проверьте обязательные условия до закрытия приема.");
   const [newRulePatientText, setNewRulePatientText] = useState("Это правило снижает риск повторного лечения и объясняет пациенту необходимость этапа.");
-  const [paymentAmount, setPaymentAmount] = useState("3800");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialUiPreferences.paymentMethod);
-  const [paymentFiscalReceiptNumber, setPaymentFiscalReceiptNumber] = useState("");
-  const [paymentFiscalReceiptIssuedAt, setPaymentFiscalReceiptIssuedAt] = useState("");
-  const [paymentFiscalFn, setPaymentFiscalFn] = useState("");
-  const [paymentFiscalFd, setPaymentFiscalFd] = useState("");
-  const [paymentFiscalFpd, setPaymentFiscalFpd] = useState("");
-  const [paymentFiscalCashierName, setPaymentFiscalCashierName] = useState("");
-  const [paymentFiscalReceiptUrl, setPaymentFiscalReceiptUrl] = useState("");
-  const [paymentPayerFullName, setPaymentPayerFullName] = useState("");
-  const [paymentPayerInn, setPaymentPayerInn] = useState("");
-  const [paymentPayerBirthDate, setPaymentPayerBirthDate] = useState("");
-  const [paymentPayerIdentityDocument, setPaymentPayerIdentityDocument] = useState("");
-  const [paymentPayerRelationship, setPaymentPayerRelationship] = useState("пациент");
-  const [paymentTaxDeductionCode, setPaymentTaxDeductionCode] = useState<"" | "1" | "2">("");
-  const [paymentFeedback, setPaymentFeedback] = useState("");
   const [taxDocumentYear, setTaxDocumentYear] = useState(initialUiPreferences.taxDocumentYear);
   const [selectedDocumentKind, setSelectedDocumentKind] = useState<GeneratedDocument["kind"]>(
     initialTelegramHandoffTarget?.documentKind ?? initialUiPreferences.selectedDocumentKind
   );
-  const [documentIssueConfirmationId, setDocumentIssueConfirmationId] = useState<string | null>(null);
-  const [documentIssueSignatureMode, setDocumentIssueSignatureMode] = useState<DocumentIssueSignatureMode>(
-    initialUiPreferences.documentIssueSignatureMode
-  );
-  const [documentIssueSignedAt, setDocumentIssueSignedAt] = useState(currentLocalDateTimeInputValue);
-  const [documentIssueRecipientFullName, setDocumentIssueRecipientFullName] = useState("");
-  const [documentIssueRecipientRole, setDocumentIssueRecipientRole] = useState("пациент/законный представитель");
-  const [documentIssueStaffFullName, setDocumentIssueStaffFullName] = useState(
-    initialUiPreferences.documentIssueStaffFullName || initialDocumentIssueSignatureDraft.staffFullName
-  );
-  const [documentIssueStaffRole, setDocumentIssueStaffRole] = useState(
-    initialUiPreferences.documentIssueStaffRole || initialDocumentIssueSignatureDraft.staffRole
-  );
-  const [documentIssueNote, setDocumentIssueNote] = useState("");
-  const [documentIssueIdentityChecked, setDocumentIssueIdentityChecked] = useState(false);
-  const [documentIssueDocumentOpenedAndChecked, setDocumentIssueDocumentOpenedAndChecked] = useState(false);
-  const [documentIssueRecipientSigned, setDocumentIssueRecipientSigned] = useState(false);
-  const [documentIssueClinicSigned, setDocumentIssueClinicSigned] = useState(false);
-  const [documentVoidConfirmationId, setDocumentVoidConfirmationId] = useState<string | null>(null);
-  const [documentVoidReasonCode, setDocumentVoidReasonCode] = useState<DocumentVoidReasonCode>("draft_error");
-  const [documentVoidReasonText, setDocumentVoidReasonText] = useState("");
-  const [documentVoidStaffFullName, setDocumentVoidStaffFullName] = useState(
-    initialUiPreferences.documentIssueStaffFullName || initialDocumentIssueSignatureDraft.staffFullName
-  );
-  const [documentVoidStaffRole, setDocumentVoidStaffRole] = useState(
-    initialUiPreferences.documentIssueStaffRole || initialDocumentIssueSignatureDraft.staffRole
-  );
-  const [documentVoidCorrectionDocumentId, setDocumentVoidCorrectionDocumentId] = useState("");
-  const [documentVoidReplacementRequired, setDocumentVoidReplacementRequired] = useState(false);
-  const [documentVoidPatientOrPayerNotified, setDocumentVoidPatientOrPayerNotified] = useState(false);
-  const [documentVoidArchivePreserved, setDocumentVoidArchivePreserved] = useState(false);
-  const [documentVoidStatusReviewed, setDocumentVoidStatusReviewed] = useState(false);
-  const [documentAuditFacts, setDocumentAuditFacts] = useState<DocumentAuditFacts | null>(null);
-  const [documentAuditFactsLoadingId, setDocumentAuditFactsLoadingId] = useState<string | null>(null);
-    const {
+      const {
+    imagingImportText,
+    setImagingImportText,
+    imagingImportSourceKind,
+    setImagingImportSourceKind,
+    localImagingFolderDraft,
+    setLocalImagingFolderDraft,
+    imagingFolderPath,
+    setImagingFolderPath,
+    browserPickedImagingFolder,
+    setBrowserPickedImagingFolder,
+    browserImagingScanProgress,
+    setBrowserImagingScanProgress,
+    browserDirectoryPickerAvailable,
+    setBrowserDirectoryPickerAvailable,
+    imagingImportPreview,
+    setImagingImportPreview,
+    imagingImportCommit,
+    setImagingImportCommit,
+    imagingFolderScan,
+    setImagingFolderScan,
+    dicomLocalFolderDiscovery,
+    setDicomLocalFolderDiscovery,
+    localImagingOrganizer,
+    setLocalImagingOrganizer,
+    dicomSeriesPreview,
+    setDicomSeriesPreview,
+    dicomFolderSeriesScan,
+    setDicomFolderSeriesScan,
+    dicomFolderWorkupPlan,
+    setDicomFolderWorkupPlan,
+    dicomFirstFramePreview,
+    setDicomFirstFramePreview,
+    dicomFirstFrameViewerState,
+    setDicomFirstFrameViewerState,
+    dicomWebEndpointUrl,
+    setDicomWebEndpointUrl,
+    dicomWebCheck,
+    setDicomWebCheck,
+    dicomViewerLaunchManifest,
+    setDicomViewerLaunchManifest,
+    dicomViewerToolStateBundle,
+    setDicomViewerToolStateBundle,
+    dicomViewerWorkbenchManifest,
+    setDicomViewerWorkbenchManifest,
+    dicomWorkbenchLocalSavedAt,
+    setDicomWorkbenchLocalSavedAt,
+    dicomWorkbenchServerBundle,
+    setDicomWorkbenchServerBundle,
+    dicomWorkbenchServerBundles,
+    setDicomWorkbenchServerBundles,
+    dicomWorkstationReadiness,
+    setDicomWorkstationReadiness,
+    dicomRenderCachePlan,
+    setDicomRenderCachePlan,
+    selectedImagingStudyId,
+    setSelectedImagingStudyId,
+    imagingKindFilter,
+    setImagingKindFilter,
+    imagingViewerState,
+    setImagingViewerState,
+    imagingViewerActiveTool,
+    setImagingViewerActiveTool,
+    ctPlanningActiveQuickActionId,
+    setCtPlanningActiveQuickActionId,
+    ctPlanningImplantPlan,
+    setCtPlanningImplantPlan,
+    imagingViewerAnnotations,
+    setImagingViewerAnnotations,
+    imagingViewerNote,
+    setImagingViewerNote,
+    imagingViewerSession,
+    setImagingViewerSession,
+    imagingViewerSaveState,
+    setImagingViewerSaveState,
+    imagingViewerLocalSavedAt,
+    setImagingViewerLocalSavedAt,
+    imagingViewerSaveError,
+    setImagingViewerSaveError,
+    imagingViewerSessionReady,
+    setImagingViewerSessionReady,
+    mprProjection,
+    setMprProjection,
+    mprAxisDeg,
+    setMprAxisDeg,
+    mprSlabMm,
+    setMprSlabMm,
+    mprSliceIndex,
+    setMprSliceIndex,
+    mprWindowPreset,
+    setMprWindowPreset,
+    mprCrosshairEnabled,
+    setMprCrosshairEnabled,
+    mprLinkedPlanesEnabled,
+    setMprLinkedPlanesEnabled,
+    mprWorkbenchLocalSavedAt,
+    setMprWorkbenchLocalSavedAt,
+    mprWorkbenchDraftRestored,
+    setMprWorkbenchDraftRestored,
+    isImagingImportLoading,
+    setIsImagingImportLoading,
+    isImagingImportCommitting,
+    setIsImagingImportCommitting,
+    imagingCreateSavingKind,
+    setImagingCreateSavingKind,
+    isImagingFolderScanning,
+    setIsImagingFolderScanning,
+    isDicomLocalDiscovering,
+    setIsDicomLocalDiscovering,
+    isLocalImagingOrganizing,
+    setIsLocalImagingOrganizing,
+    isDicomSeriesPreviewLoading,
+    setIsDicomSeriesPreviewLoading,
+    isDicomWebChecking,
+    setIsDicomWebChecking,
+    isDicomManifestBuilding,
+    setIsDicomManifestBuilding,
+    isDicomToolStateBuilding,
+    setIsDicomToolStateBuilding,
+    isDicomWorkbenchBuilding,
+    setIsDicomWorkbenchBuilding,
+    isDicomWorkbenchServerSaving,
+    setIsDicomWorkbenchServerSaving,
+    isDicomWorkbenchReconnecting,
+    setIsDicomWorkbenchReconnecting,
+    isDicomWorkstationChecking,
+    setIsDicomWorkstationChecking,
+    isDicomRenderCachePlanning,
+    setIsDicomRenderCachePlanning,
+    isDicomFolderWorkupPlanning,
+    setIsDicomFolderWorkupPlanning,
+    isDicomFirstFramePreviewing,
+    setIsDicomFirstFramePreviewing,
+    isBrowserImagingFolderPicking,
+    setIsBrowserImagingFolderPicking,
+    isLocalDicomOperationActive,
+    setIsLocalDicomOperationActive
+  } = useImagingStore();
+
+  const {
     documentCreateSavingKind,
     setDocumentCreateSavingKind,
     documentStatusSavingId,
@@ -1698,108 +1784,358 @@ export function App() {
     outpatient025uSocialSupportCode,
     setOutpatient025uSocialSupportCode,
     outpatient025uHealthStatusDisclosureContact,
-    setOutpatient025uHealthStatusDisclosureContact
+    setOutpatient025uHealthStatusDisclosureContact,
+      outpatient025uEmploymentCode,
+    setOutpatient025uEmploymentCode,
+    outpatient025uDisabilityGroup,
+    setOutpatient025uDisabilityGroup,
+    outpatient025uWorkOrStudyPlace,
+    setOutpatient025uWorkOrStudyPlace,
+    outpatient025uPalliativeCareNeedCode,
+    setOutpatient025uPalliativeCareNeedCode,
+    outpatient025uBloodGroup,
+    setOutpatient025uBloodGroup,
+    outpatient025uRhFactor,
+    setOutpatient025uRhFactor,
+    outpatient025uKellK1,
+    setOutpatient025uKellK1,
+    outpatient025uOtherBloodData,
+    setOutpatient025uOtherBloodData,
+    outpatient025uAllergyHistory,
+    setOutpatient025uAllergyHistory,
+    outpatient025uFinalEpicrisis,
+    setOutpatient025uFinalEpicrisis,
+    outpatient025uOfficialForm274nChecked,
+    setOutpatient025uOfficialForm274nChecked,
+    outpatient025uThirdPartyDataChecked,
+    setOutpatient025uThirdPartyDataChecked,
+    copyRequestDocumentTypes,
+    setCopyRequestDocumentTypes,
+    copyRequestPeriodStart,
+    setCopyRequestPeriodStart,
+    copyRequestPeriodEnd,
+    setCopyRequestPeriodEnd,
+    copyRequestFormat,
+    setCopyRequestFormat,
+    copyRequestRecipientFullName,
+    setCopyRequestRecipientFullName,
+    copyRequestRecipientIdentityDocument,
+    setCopyRequestRecipientIdentityDocument,
+    copyRequestRecipientAuthority,
+    setCopyRequestRecipientAuthority,
+    copyRequestRepresentativeAuthorityDocument,
+    setCopyRequestRepresentativeAuthorityDocument,
+    copyRequestRequestedAt,
+    setCopyRequestRequestedAt,
+    copyRequestContactForDelivery,
+    setCopyRequestContactForDelivery,
+    copyRequestSpecialInstructions,
+    setCopyRequestSpecialInstructions,
+    copyRequestIncludeDicomSourceData,
+    setCopyRequestIncludeDicomSourceData,
+    copyRequestIdentityVerified,
+    setCopyRequestIdentityVerified,
+    copyRequestThirdPartyDataChecked,
+    setCopyRequestThirdPartyDataChecked,
+    attendanceStartedAt,
+    setAttendanceStartedAt,
+    attendanceEndedAt,
+    setAttendanceEndedAt,
+    attendancePurpose,
+    setAttendancePurpose,
+    attendanceRecipientOrganization,
+    setAttendanceRecipientOrganization,
+    attendanceIssuedAt,
+    setAttendanceIssuedAt,
+    attendanceSignedByFullName,
+    setAttendanceSignedByFullName,
+    attendanceSignedByRole,
+    setAttendanceSignedByRole,
+    attendanceDiagnosisDisclosureExcluded,
+    setAttendanceDiagnosisDisclosureExcluded,
+    attendanceNotSickLeaveAcknowledged,
+    setAttendanceNotSickLeaveAcknowledged,
+    releaseRecipientFullName,
+    setReleaseRecipientFullName,
+    releaseRecipientIdentityDocument,
+    setReleaseRecipientIdentityDocument,
+    releaseRecipientAuthority,
+    setReleaseRecipientAuthority,
+    releaseSourceRequestDocumentId,
+    setReleaseSourceRequestDocumentId,
+    releaseChannel,
+    setReleaseChannel,
+    releaseDocumentTypes,
+    setReleaseDocumentTypes,
+    releasePeriodStart,
+    setReleasePeriodStart,
+    releasePeriodEnd,
+    setReleasePeriodEnd,
+    releaseDeliveredAt,
+    setReleaseDeliveredAt,
+    releaseAccessExpiresAt,
+    setReleaseAccessExpiresAt,
+    releaseThirdPartyDataChecked,
+    setReleaseThirdPartyDataChecked,
+    refundAction,
+    setRefundAction,
+    refundAmountRub,
+    setRefundAmountRub,
+    refundReason,
+    setRefundReason,
+    refundMethod,
+    setRefundMethod,
+    refundRecipientFullName,
+    setRefundRecipientFullName,
+    refundRecipientIdentityDocument,
+    setRefundRecipientIdentityDocument,
+    refundBankDetails,
+    setRefundBankDetails,
+    refundSelectedPaymentId,
+    setRefundSelectedPaymentId,
+    refundOriginalFiscalReceiptNumber,
+    setRefundOriginalFiscalReceiptNumber,
+    refundCorrectionFiscalReceiptNumber,
+    setRefundCorrectionFiscalReceiptNumber,
+    refundAccountantDecision,
+    setRefundAccountantDecision,
+    personalDataCrossBorderAllowed,
+    setPersonalDataCrossBorderAllowed,
+    personalDataAutomatedDecisionAllowed,
+    setPersonalDataAutomatedDecisionAllowed,
+    personalDataConsentGivenAt,
+    setPersonalDataConsentGivenAt,
+    personalDataVoluntaryConsentConfirmed,
+    setPersonalDataVoluntaryConsentConfirmed,
+    personalDataMedicalProcessingAcknowledged,
+    setPersonalDataMedicalProcessingAcknowledged,
+    refusalIntervention,
+    setRefusalIntervention,
+    refusalClinicalIndication,
+    setRefusalClinicalIndication,
+    refusalPatientReason,
+    setRefusalPatientReason,
+    refusalDoctorFullName,
+    setRefusalDoctorFullName,
+    refusalConfirmedAt,
+    setRefusalConfirmedAt,
+    refusalConsequencesUnderstood,
+    setRefusalConsequencesUnderstood,
+    refusalSecondOpinionOffered,
+    setRefusalSecondOpinionOffered,
+    refusalEmergencyCareExplained,
+    setRefusalEmergencyCareExplained,
+      paymentAmount,
+    setPaymentAmount,
+    paymentMethod,
+    setPaymentMethod,
+    paymentFiscalReceiptNumber,
+    setPaymentFiscalReceiptNumber,
+    paymentFiscalReceiptIssuedAt,
+    setPaymentFiscalReceiptIssuedAt,
+    paymentFiscalFn,
+    setPaymentFiscalFn,
+    paymentFiscalFd,
+    setPaymentFiscalFd,
+    paymentFiscalFpd,
+    setPaymentFiscalFpd,
+    paymentFiscalCashierName,
+    setPaymentFiscalCashierName,
+    paymentFiscalReceiptUrl,
+    setPaymentFiscalReceiptUrl,
+    paymentPayerFullName,
+    setPaymentPayerFullName,
+    paymentPayerInn,
+    setPaymentPayerInn,
+    paymentPayerBirthDate,
+    setPaymentPayerBirthDate,
+    paymentPayerIdentityDocument,
+    setPaymentPayerIdentityDocument,
+    paymentPayerRelationship,
+    setPaymentPayerRelationship,
+    paymentTaxDeductionCode,
+    setPaymentTaxDeductionCode,
+    paymentFeedback,
+    setPaymentFeedback,
+    documentIssueConfirmationId,
+    setDocumentIssueConfirmationId,
+    documentIssueSignatureMode,
+    setDocumentIssueSignatureMode,
+    documentIssueSignedAt,
+    setDocumentIssueSignedAt,
+    documentIssueRecipientFullName,
+    setDocumentIssueRecipientFullName,
+    documentIssueRecipientRole,
+    setDocumentIssueRecipientRole,
+    documentIssueStaffFullName,
+    setDocumentIssueStaffFullName,
+    documentIssueStaffRole,
+    setDocumentIssueStaffRole,
+    documentIssueNote,
+    setDocumentIssueNote,
+    documentIssueIdentityChecked,
+    setDocumentIssueIdentityChecked,
+    documentIssueDocumentOpenedAndChecked,
+    setDocumentIssueDocumentOpenedAndChecked,
+    documentIssueRecipientSigned,
+    setDocumentIssueRecipientSigned,
+    documentIssueClinicSigned,
+    setDocumentIssueClinicSigned,
+    documentVoidConfirmationId,
+    setDocumentVoidConfirmationId,
+    documentVoidReasonCode,
+    setDocumentVoidReasonCode,
+    documentVoidReasonText,
+    setDocumentVoidReasonText,
+    documentVoidStaffFullName,
+    setDocumentVoidStaffFullName,
+    documentVoidStaffRole,
+    setDocumentVoidStaffRole,
+    documentVoidCorrectionDocumentId,
+    setDocumentVoidCorrectionDocumentId,
+    documentVoidReplacementRequired,
+    setDocumentVoidReplacementRequired,
+    documentVoidPatientOrPayerNotified,
+    setDocumentVoidPatientOrPayerNotified,
+    documentVoidArchivePreserved,
+    setDocumentVoidArchivePreserved,
+    documentVoidStatusReviewed,
+    setDocumentVoidStatusReviewed,
+    documentAuditFacts,
+    setDocumentAuditFacts,
+    documentAuditFactsLoadingId,
+    setDocumentAuditFactsLoadingId,
+    personalDataPurposes,
+    setPersonalDataPurposes,
+    personalDataCategories,
+    setPersonalDataCategories,
+    personalDataActions,
+    setPersonalDataActions,
+    personalDataTransferRules,
+    setPersonalDataTransferRules,
+    personalDataRetentionPeriod,
+    setPersonalDataRetentionPeriod,
+    personalDataRevocationChannel,
+    setPersonalDataRevocationChannel,
+    refusalExplainedRisks,
+    setRefusalExplainedRisks,
+    refusalAlternatives,
+    setRefusalAlternatives,
+    refusalUrgentWarningSigns,
+    setRefusalUrgentWarningSigns,
+    documentIngestionTarget,
+    setDocumentIngestionTarget,
+    documentIngestion,
+    setDocumentIngestion,
   } = useDocumentStore();
-  const [outpatient025uEmploymentCode, setOutpatient025uEmploymentCode] = useState("");
-  const [outpatient025uDisabilityGroup, setOutpatient025uDisabilityGroup] = useState("");
-  const [outpatient025uWorkOrStudyPlace, setOutpatient025uWorkOrStudyPlace] = useState("");
-  const [outpatient025uPalliativeCareNeedCode, setOutpatient025uPalliativeCareNeedCode] = useState("");
-  const [outpatient025uBloodGroup, setOutpatient025uBloodGroup] = useState("");
-  const [outpatient025uRhFactor, setOutpatient025uRhFactor] = useState("");
-  const [outpatient025uKellK1, setOutpatient025uKellK1] = useState("");
-  const [outpatient025uOtherBloodData, setOutpatient025uOtherBloodData] = useState("");
-  const [outpatient025uAllergyHistory, setOutpatient025uAllergyHistory] = useState("");
-  const [outpatient025uFinalEpicrisis, setOutpatient025uFinalEpicrisis] = useState("");
-  const [outpatient025uOfficialForm274nChecked, setOutpatient025uOfficialForm274nChecked] = useState(false);
-  const [outpatient025uThirdPartyDataChecked, setOutpatient025uThirdPartyDataChecked] = useState(false);
-  const [copyRequestDocumentTypes, setCopyRequestDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или КТ-архив");
-  const [copyRequestPeriodStart, setCopyRequestPeriodStart] = useState("");
-  const [copyRequestPeriodEnd, setCopyRequestPeriodEnd] = useState("");
-  const [copyRequestFormat, setCopyRequestFormat] = useState<MedicalDocumentReleaseChannel>("pdf");
-  const [copyRequestRecipientFullName, setCopyRequestRecipientFullName] = useState("");
-  const [copyRequestRecipientIdentityDocument, setCopyRequestRecipientIdentityDocument] = useState("");
-  const [copyRequestRecipientAuthority, setCopyRequestRecipientAuthority] = useState("пациент лично");
-  const [copyRequestRepresentativeAuthorityDocument, setCopyRequestRepresentativeAuthorityDocument] = useState("");
-  const [copyRequestRequestedAt, setCopyRequestRequestedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [copyRequestContactForDelivery, setCopyRequestContactForDelivery] = useState("");
-  const [copyRequestSpecialInstructions, setCopyRequestSpecialInstructions] = useState("");
-  const [copyRequestIncludeDicomSourceData, setCopyRequestIncludeDicomSourceData] = useState(true);
-  const [copyRequestIdentityVerified, setCopyRequestIdentityVerified] = useState(false);
-  const [copyRequestThirdPartyDataChecked, setCopyRequestThirdPartyDataChecked] = useState(false);
-  const [attendanceStartedAt, setAttendanceStartedAt] = useState("");
-  const [attendanceEndedAt, setAttendanceEndedAt] = useState("");
-  const [attendancePurpose, setAttendancePurpose] = useState("для предъявления по месту требования");
-  const [attendanceRecipientOrganization, setAttendanceRecipientOrganization] = useState("");
-  const [attendanceIssuedAt, setAttendanceIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [attendanceSignedByFullName, setAttendanceSignedByFullName] = useState("");
-  const [attendanceSignedByRole, setAttendanceSignedByRole] = useState("врач/администратор");
-  const [attendanceDiagnosisDisclosureExcluded, setAttendanceDiagnosisDisclosureExcluded] = useState(false);
-  const [attendanceNotSickLeaveAcknowledged, setAttendanceNotSickLeaveAcknowledged] = useState(false);
-  const [releaseRecipientFullName, setReleaseRecipientFullName] = useState("");
-  const [releaseRecipientIdentityDocument, setReleaseRecipientIdentityDocument] = useState("");
-  const [releaseRecipientAuthority, setReleaseRecipientAuthority] = useState("пациент лично");
-  const [releaseSourceRequestDocumentId, setReleaseSourceRequestDocumentId] = useState("");
-  const [releaseChannel, setReleaseChannel] = useState<MedicalDocumentReleaseChannel>("paper");
-  const [releaseDocumentTypes, setReleaseDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или КТ-архив");
-  const [releasePeriodStart, setReleasePeriodStart] = useState("");
-  const [releasePeriodEnd, setReleasePeriodEnd] = useState("");
-  const [releaseDeliveredAt, setReleaseDeliveredAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [releaseAccessExpiresAt, setReleaseAccessExpiresAt] = useState("");
+  const {
+    onboardingDismissed,
+    setOnboardingDismissed,
+    onboardingDismissedAt,
+    setOnboardingDismissedAt,
+    onboardingStep,
+    setOnboardingStep,
+    onboardingDraftMode,
+    setOnboardingDraftMode,
+    onboardingGuideExpanded,
+    setOnboardingGuideExpanded,
+    telegramHandoffNotice,
+    setTelegramHandoffNotice,
+    telegramStatus,
+    setTelegramStatus,
+    telegramFeaturePlan,
+    setTelegramFeaturePlan,
+    telegramOutbox,
+    setTelegramOutbox,
+    telegramOutboxStatusFilter,
+    setTelegramOutboxStatusFilter,
+    telegramOutboxTemplateFilter,
+    setTelegramOutboxTemplateFilter,
+    telegramLinkCodes,
+    setTelegramLinkCodes,
+    telegramChatLinks,
+    setTelegramChatLinks,
+    telegramLinkCodeLedger,
+    setTelegramLinkCodeLedger,
+    telegramChatLinkLedger,
+    setTelegramChatLinkLedger,
+    telegramLinkSubjectType,
+    setTelegramLinkSubjectType,
+    telegramLinkStaffId,
+    setTelegramLinkStaffId,
+    telegramLinkCode,
+    setTelegramLinkCode,
+    telegramLinkActionState,
+    setTelegramLinkActionState,
+    telegramPreview,
+    setTelegramPreview,
+    telegramModeDraft,
+    setTelegramModeDraft,
+    telegramBotUsernameDraft,
+    setTelegramBotUsernameDraft,
+    telegramOwnBotUsernameDraft,
+    setTelegramOwnBotUsernameDraft,
+    telegramBotConfigId,
+    setTelegramBotConfigId,
+    telegramWebhookBaseUrlDraft,
+    setTelegramWebhookBaseUrlDraft,
+    telegramPatientPortalBaseUrlDraft,
+    setTelegramPatientPortalBaseUrlDraft,
+    telegramWelcomeImageUrlDraft,
+    setTelegramWelcomeImageUrlDraft,
+    telegramVisualCardUrlDrafts,
+    setTelegramVisualCardUrlDrafts,
+    telegramReviewUrlDraft,
+    setTelegramReviewUrlDraft,
+    telegramMapsUrlDraft,
+    setTelegramMapsUrlDraft,
+    telegramEnabledFeaturesDraft,
+    setTelegramEnabledFeaturesDraft,
+    telegramTokenTtlDraft,
+    setTelegramTokenTtlDraft,
+    telegramReminderLeadTimesDraft,
+    setTelegramReminderLeadTimesDraft,
+    telegramReviewRequestDelayDraft,
+    setTelegramReviewRequestDelayDraft,
+    telegramPostVisitCheckupDelayDrafts,
+    setTelegramPostVisitCheckupDelayDrafts,
+    telegramAllowVoiceIntakeDraft,
+    setTelegramAllowVoiceIntakeDraft,
+    telegramStaffEscalationChannelDraft,
+    setTelegramStaffEscalationChannelDraft,
+    telegramPrivacyModeDraft,
+    setTelegramPrivacyModeDraft,
+    telegramSettingsDirty,
+    setTelegramSettingsDirty,
+    telegramSettingsSaveState,
+    setTelegramSettingsSaveState,
+    telegramSettingsSaveError,
+    setTelegramSettingsSaveError,
+    clinicalAdminSecretDraft,
+    setClinicalAdminSecretDraft,
+    settingsAdminSecretDraft,
+    setSettingsAdminSecretDraft,
+    scheduleAdminSecretDraft,
+    setScheduleAdminSecretDraft,
+    telegramAdminSecretDraft,
+    setTelegramAdminSecretDraft,
+    clinicalAdminSecretSession,
+    setClinicalAdminSecretSession,
+    settingsAdminSecretSession,
+    setSettingsAdminSecretSession,
+    scheduleAdminSecretSession,
+    setScheduleAdminSecretSession,
+    telegramAdminSecretSession,
+    setTelegramAdminSecretSession,
+    telegramSendingItemId,
+    setTelegramSendingItemId,
+    telegramRevokingLinkId,
+    setTelegramRevokingLinkId
+  } = useSettingsStore();
+
   const [releaseProtectionNote, setReleaseProtectionNote] = useState(
     "личность получателя проверена, лишние данные третьих лиц исключены"
   );
-  const [releaseThirdPartyDataChecked, setReleaseThirdPartyDataChecked] = useState(false);
-  const [refundAction, setRefundAction] = useState<PaymentRefundCorrectionAction>("partial_refund");
-  const [refundAmountRub, setRefundAmountRub] = useState("3800");
-  const [refundReason, setRefundReason] = useState("");
-  const [refundMethod, setRefundMethod] = useState<PaymentRefundCorrectionMethod>("card");
-  const [refundRecipientFullName, setRefundRecipientFullName] = useState("");
-  const [refundRecipientIdentityDocument, setRefundRecipientIdentityDocument] = useState("");
-  const [refundBankDetails, setRefundBankDetails] = useState("");
-  const [refundSelectedPaymentId, setRefundSelectedPaymentId] = useState("");
-  const [refundOriginalFiscalReceiptNumber, setRefundOriginalFiscalReceiptNumber] = useState("");
-  const [refundCorrectionFiscalReceiptNumber, setRefundCorrectionFiscalReceiptNumber] = useState("");
-  const [refundAccountantDecision, setRefundAccountantDecision] = useState("");
-  const [personalDataPurposes, setPersonalDataPurposes] = useState(
-    "оказание стоматологической медицинской помощи\nведение медицинской карты и медицинской документации\nрасчеты, договоры, акты и налоговые документы\nуведомления о визитах, рекомендациях и готовности документов"
-  );
-  const [personalDataCategories, setPersonalDataCategories] = useState(
-    "ФИО, дата рождения, телефон, email и адреса\nпаспортные данные, ИНН, СНИЛС, полис ОМС или ДМС\nсведения о здоровье, диагнозы, снимки, планы лечения и назначения\nплатежные документы, договоры, акты и налоговые заявления"
-  );
-  const [personalDataActions, setPersonalDataActions] = useState(
-    "сбор\nзапись\nсистематизация\nхранение\nуточнение\nиспользование\nпередача по законному основанию\nобезличивание\nудаление после окончания срока хранения"
-  );
-  const [personalDataTransferRules, setPersonalDataTransferRules] = useState(
-    "Передача возможна только зуботехническим лабораториям, платежным и фискальным сервисам, страховым организациям, ИТ-подрядчикам с договором конфиденциальности, государственным органам по закону и пациентскому порталу по защищенному каналу."
-  );
-  const [personalDataCrossBorderAllowed, setPersonalDataCrossBorderAllowed] = useState(false);
-  const [personalDataAutomatedDecisionAllowed, setPersonalDataAutomatedDecisionAllowed] = useState(false);
-  const [personalDataRetentionPeriod, setPersonalDataRetentionPeriod] = useState(
-    "в течение срока оказания помощи и обязательного срока хранения медицинской и бухгалтерской документации"
-  );
-  const [personalDataRevocationChannel, setPersonalDataRevocationChannel] = useState(
-    "письменное заявление в клинике или защищенное обращение через портал пациента"
-  );
-  const [personalDataConsentGivenAt, setPersonalDataConsentGivenAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [personalDataVoluntaryConsentConfirmed, setPersonalDataVoluntaryConsentConfirmed] = useState(false);
-  const [personalDataMedicalProcessingAcknowledged, setPersonalDataMedicalProcessingAcknowledged] = useState(false);
-  const [refusalIntervention, setRefusalIntervention] = useState("");
-  const [refusalClinicalIndication, setRefusalClinicalIndication] = useState("");
-  const [refusalPatientReason, setRefusalPatientReason] = useState("");
-  const [refusalExplainedRisks, setRefusalExplainedRisks] = useState(
-    "усиление боли\nраспространение инфекции\nпотеря возможности сохранить зуб или ткани\nнеобходимость экстренного обращения при ухудшении"
-  );
-  const [refusalAlternatives, setRefusalAlternatives] = useState(
-    "повторная консультация\nобезболивание и контроль состояния\nвторое мнение профильного врача\nобращение в дежурную стоматологию при ухудшении"
-  );
-  const [refusalUrgentWarningSigns, setRefusalUrgentWarningSigns] = useState(
-    "отек лица или шеи\nтемпература\nзатруднение глотания или дыхания\nкровотечение\nнарастающая боль"
-  );
-  const [refusalDoctorFullName, setRefusalDoctorFullName] = useState("");
-  const [refusalConfirmedAt, setRefusalConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [refusalConsequencesUnderstood, setRefusalConsequencesUnderstood] = useState(false);
-  const [refusalSecondOpinionOffered, setRefusalSecondOpinionOffered] = useState(false);
-  const [refusalEmergencyCareExplained, setRefusalEmergencyCareExplained] = useState(false);
   const [communicationNote, setCommunicationNote] = useState("Пациенту передана информация, задача закрыта.");
   const [selectedSpecialty, setSelectedSpecialty] = useState<DentalSpecialty>(initialUiPreferences.selectedSpecialty);
   const [selectedProtocolId, setSelectedProtocolId] = useState<string | null>(initialUiPreferences.selectedProtocolId);
@@ -1810,9 +2146,7 @@ export function App() {
   const [importText, setImportText] = useState(
     "ФИО;Телефон;Дата рождения;Комментарий\nИванова Марина Сергеевна;+7 927 111-22-33;21.04.1988;уже есть в базе\nНовый Пациент;+7 927 333-44-55;12.02.1991;перенос из старой МИС\nБез Телефона;;05.08.1975;нужно уточнить контакт"
   );
-  const [imagingImportText, setImagingImportText] = useState(
-    "ФИО;Телефон;Тип;Зуб;Дата;Файл;Источник\nИванова Марина Сергеевна;+7 927 111-22-33;RVG;36;12.05.2026;C:\\Images\\ivanova_36.dcm;локальный RVG-датчик\nИванова Марина Сергеевна;+7 927 111-22-33;ТРГ;;10.05.2026;C:\\Images\\ivanova_ceph.ima;экспорт Sidexis\nПетров Алексей Николаевич;+7 927 555-19-40;ОПТГ;;10.05.2026;C:\\Images\\petrov_opg.jpg;экспорт ОПТГ"
-  );
+  
   const [smartImportText, setSmartImportText] = useState(
     "Новый Пациент Снимков +7 927 444-55-66 12.02.1991 перенос из старой МИС\nНовый Пациент Снимков +7 927 444-55-66 RVG 36 12.05.2026 C:\\Images\\new_patient_36.dcm\nИванова Марина Сергеевна +7 927 111-22-33 ОПТГ 10.05.2026 C:\\Images\\ivanova_opg.png\nслужебная строка без полезных данных"
   );
@@ -1830,82 +2164,68 @@ export function App() {
   const [recognitionTarget, setRecognitionTarget] = useState<AiRecognitionTarget>(initialUiPreferences.recognitionTarget);
   const [recognitionText, setRecognitionText] = useState(initialRecognitionText);
   const [importSourceKind, setImportSourceKind] = useState<ImportSourceKind>(initialUiPreferences.importSourceKind);
-  const [documentIngestionTarget, setDocumentIngestionTarget] = useState<DocumentIngestionTarget>(
-    initialUiPreferences.documentIngestionTarget
-  );
-  const [documentIngestion, setDocumentIngestion] = useState<DocumentIngestionResponse | null>(null);
-  const [imagingImportSourceKind, setImagingImportSourceKind] = useState<ImagingSourceKind>(
-    initialUiPreferences.imagingImportSourceKind
-  );
+  
   const [smartImportMode, setSmartImportMode] = useState<SmartImportMode>(initialUiPreferences.smartImportMode);
-  const [localImagingFolderDraft, setLocalImagingFolderDraft] = useState<LocalImagingFolderDraft | null>(() =>
-    loadLocalImagingFolderDraft()
-  );
-  const [imagingFolderPath, setImagingFolderPath] = useState(() => localImagingFolderDraft?.folderPath ?? "C:\\Images");
-  const [browserPickedImagingFolder, setBrowserPickedImagingFolder] = useState<BrowserPickedImagingFolderPreview | null>(() =>
-    loadBrowserPickedImagingFolderPreview()
-  );
-  const [browserImagingScanProgress, setBrowserImagingScanProgress] = useState<BrowserImagingScanProgress | null>(null);
+  
+  
+  
+  
   const [browserMigrationDiscovery, setBrowserMigrationDiscovery] = useState<MigrationLocalSourceDiscoveryResponse | null>(null);
   const [browserMigrationScanProgress, setBrowserMigrationScanProgress] = useState<BrowserMigrationScanProgress | null>(null);
-  const [browserDirectoryPickerAvailable, setBrowserDirectoryPickerAvailable] = useState(() =>
-    typeof window !== "undefined" && typeof (window as BrowserDirectoryPickerWindow).showDirectoryPicker === "function"
-  );
+  
   const [importIntake, setImportIntake] = useState<ImportIntakeResponse | null>(null);
   const [importPreview, setImportPreview] = useState<ImportPreviewResponse | null>(null);
   const [importCommit, setImportCommit] = useState<ImportCommitResponse | null>(null);
-  const [imagingImportPreview, setImagingImportPreview] = useState<ImagingImportPreviewResponse | null>(null);
-  const [imagingImportCommit, setImagingImportCommit] = useState<ImagingImportCommitResponse | null>(null);
-  const [imagingFolderScan, setImagingFolderScan] = useState<ImagingFolderScanResponse | null>(null);
-  const [dicomLocalFolderDiscovery, setDicomLocalFolderDiscovery] = useState<DicomLocalFolderDiscoveryResponse | null>(null);
+  
+  
+  
+  
   const [migrationAutopilot, setMigrationAutopilot] = useState<MigrationAutopilotResponse | null>(null);
   const [migrationSourceDiscovery, setMigrationSourceDiscovery] = useState<MigrationLocalSourceDiscoveryResponse | null>(null);
   const [migrationSourceWorkup, setMigrationSourceWorkup] = useState<MigrationLocalSourceWorkupResponse | null>(null);
   const [migrationSourceProbe, setMigrationSourceProbe] = useState<MigrationLocalSourceProbeResponse | null>(null);
   const [clinicPublicLookup, setClinicPublicLookup] = useState<ClinicPublicLookupResponse | null>(null);
-  const [localImagingOrganizer, setLocalImagingOrganizer] = useState<LocalImagingOrganizerResponse | null>(null);
-  const [dicomSeriesPreview, setDicomSeriesPreview] = useState<DicomSeriesPreviewResponse | null>(null);
-  const [dicomFolderSeriesScan, setDicomFolderSeriesScan] = useState<DicomFolderSeriesPreviewResponse | null>(null);
-  const [dicomFolderWorkupPlan, setDicomFolderWorkupPlan] = useState<DicomFolderWorkupPlanResponse | null>(null);
-  const [dicomFirstFramePreview, setDicomFirstFramePreview] = useState<DicomFirstFramePreviewResponse | null>(null);
+  
+  
+  
+  
+  
   const [dicomFirstFramePreviewRequest, setDicomFirstFramePreviewRequest] =
     useState<DicomFirstFramePreviewRequestContext | null>(null);
-  const [dicomFirstFrameViewerState, setDicomFirstFrameViewerState] = useState<ImagingViewerState>(
-    defaultDicomFirstFrameViewerState
-  );
-  const [dicomWebEndpointUrl, setDicomWebEndpointUrl] = useState(initialUiPreferences.dicomWebEndpointUrl);
+  
+  
   const [ohifBaseUrl, setOhifBaseUrl] = useState(initialUiPreferences.ohifBaseUrl);
-  const [dicomWebCheck, setDicomWebCheck] = useState<DicomWebConnectorCheckResponse | null>(null);
-  const [dicomViewerLaunchManifest, setDicomViewerLaunchManifest] = useState<DicomViewerLaunchManifestResponse | null>(null);
-  const [dicomViewerToolStateBundle, setDicomViewerToolStateBundle] = useState<DicomViewerToolStateBundleResponse | null>(null);
-  const [dicomViewerWorkbenchManifest, setDicomViewerWorkbenchManifest] = useState<DicomViewerWorkbenchManifestResponse | null>(null);
-  const [dicomWorkbenchLocalSavedAt, setDicomWorkbenchLocalSavedAt] = useState<string | null>(null);
-  const [dicomWorkbenchServerBundle, setDicomWorkbenchServerBundle] = useState<DicomWorkbenchBundle | null>(null);
-  const [dicomWorkbenchServerBundles, setDicomWorkbenchServerBundles] = useState<DicomWorkbenchBundle[]>([]);
-  const [dicomWorkstationReadiness, setDicomWorkstationReadiness] = useState<DicomWorkstationReadinessResponse | null>(null);
-  const [dicomRenderCachePlan, setDicomRenderCachePlan] = useState<DicomRenderCachePlanResponse | null>(null);
-  const [selectedImagingStudyId, setSelectedImagingStudyId] = useState<string | null>(null);
-  const [imagingKindFilter, setImagingKindFilter] = useState<ImagingStudyKind | "all">(initialUiPreferences.imagingKindFilter);
-  const [imagingViewerState, setImagingViewerState] = useState<ImagingViewerState>(defaultImagingViewerState);
-  const [imagingViewerActiveTool, setImagingViewerActiveTool] = useState<ImagingViewerTool>("window_level");
-  const [ctPlanningActiveQuickActionId, setCtPlanningActiveQuickActionId] = useState<string | null>(null);
-  const [ctPlanningImplantPlan, setCtPlanningImplantPlan] = useState<ImagingViewerImplantPlan | null>(null);
-  const [imagingViewerAnnotations, setImagingViewerAnnotations] = useState<ImagingViewerAnnotation[]>([]);
-  const [imagingViewerNote, setImagingViewerNote] = useState("");
-  const [imagingViewerSession, setImagingViewerSession] = useState<ImagingViewerSessionResponse["session"] | null>(null);
-  const [imagingViewerSaveState, setImagingViewerSaveState] = useState<ImagingViewerSaveState>("idle");
-  const [imagingViewerLocalSavedAt, setImagingViewerLocalSavedAt] = useState<string | null>(null);
-  const [imagingViewerSaveError, setImagingViewerSaveError] = useState<string | null>(null);
-  const [imagingViewerSessionReady, setImagingViewerSessionReady] = useState(false);
-  const [mprProjection, setMprProjection] = useState<MprProjection>("axial");
-  const [mprAxisDeg, setMprAxisDeg] = useState(0);
-  const [mprSlabMm, setMprSlabMm] = useState(1);
-  const [mprSliceIndex, setMprSliceIndex] = useState(0);
-  const [mprWindowPreset, setMprWindowPreset] = useState<MprWindowPreset>("bone");
-  const [mprCrosshairEnabled, setMprCrosshairEnabled] = useState(true);
-  const [mprLinkedPlanesEnabled, setMprLinkedPlanesEnabled] = useState(true);
-  const [mprWorkbenchLocalSavedAt, setMprWorkbenchLocalSavedAt] = useState<string | null>(null);
-  const [mprWorkbenchDraftRestored, setMprWorkbenchDraftRestored] = useState(false);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const [smartImportPreview, setSmartImportPreview] = useState<SmartImportPreviewResponse | null>(null);
   const [smartImportCommit, setSmartImportCommit] = useState<SmartImportCommitResponse | null>(null);
   const [recognitionJob, setRecognitionJob] = useState<AiRecognitionJob | null>(null);
@@ -1938,30 +2258,30 @@ export function App() {
   const [isImportLoading, setIsImportLoading] = useState(false);
   const [isDocumentIngesting, setIsDocumentIngesting] = useState(false);
   const [isImportCommitting, setIsImportCommitting] = useState(false);
-  const [isImagingImportLoading, setIsImagingImportLoading] = useState(false);
-  const [isImagingImportCommitting, setIsImagingImportCommitting] = useState(false);
-  const [imagingCreateSavingKind, setImagingCreateSavingKind] = useState<ImagingStudyKind | null>(null);
-  const [isImagingFolderScanning, setIsImagingFolderScanning] = useState(false);
-  const [isDicomLocalDiscovering, setIsDicomLocalDiscovering] = useState(false);
+  
+  
+  
+  
+  
   const [isMigrationAutopilotLoading, setIsMigrationAutopilotLoading] = useState(false);
   const [isMigrationHandoffReportLoading, setIsMigrationHandoffReportLoading] = useState(false);
   const [isMigrationSourceDiscovering, setIsMigrationSourceDiscovering] = useState(false);
   const [isMigrationSourceWorkupLoading, setIsMigrationSourceWorkupLoading] = useState(false);
   const [isMigrationSourceProbeLoading, setIsMigrationSourceProbeLoading] = useState(false);
   const [isClinicPublicLookupLoading, setIsClinicPublicLookupLoading] = useState(false);
-  const [isLocalImagingOrganizing, setIsLocalImagingOrganizing] = useState(false);
-  const [isDicomSeriesPreviewLoading, setIsDicomSeriesPreviewLoading] = useState(false);
-  const [isDicomWebChecking, setIsDicomWebChecking] = useState(false);
-  const [isDicomManifestBuilding, setIsDicomManifestBuilding] = useState(false);
-  const [isDicomToolStateBuilding, setIsDicomToolStateBuilding] = useState(false);
-  const [isDicomWorkbenchBuilding, setIsDicomWorkbenchBuilding] = useState(false);
-  const [isDicomWorkbenchServerSaving, setIsDicomWorkbenchServerSaving] = useState(false);
-  const [isDicomWorkbenchReconnecting, setIsDicomWorkbenchReconnecting] = useState(false);
-  const [isDicomWorkstationChecking, setIsDicomWorkstationChecking] = useState(false);
-  const [isDicomRenderCachePlanning, setIsDicomRenderCachePlanning] = useState(false);
-  const [isDicomFolderWorkupPlanning, setIsDicomFolderWorkupPlanning] = useState(false);
-  const [isDicomFirstFramePreviewing, setIsDicomFirstFramePreviewing] = useState(false);
-  const [isBrowserImagingFolderPicking, setIsBrowserImagingFolderPicking] = useState(false);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const [isBrowserMigrationScanning, setIsBrowserMigrationScanning] = useState(false);
   const [isSmartImportLoading, setIsSmartImportLoading] = useState(false);
   const [isSmartImportCommitting, setIsSmartImportCommitting] = useState(false);
@@ -1978,57 +2298,6 @@ export function App() {
   const [persistenceHealth, setPersistenceHealth] = useState<PersistenceHealth | null>(null);
   const [persistenceIntegrity, setPersistenceIntegrity] = useState<PersistenceIntegrityReport | null>(null);
   const [isPersistenceExporting, setIsPersistenceExporting] = useState(false);
-  const [telegramStatus, setTelegramStatus] = useState<DenteTelegramBotStatus | null>(null);
-  const [telegramFeaturePlan, setTelegramFeaturePlan] = useState<TelegramFeaturePlan | null>(null);
-  const [telegramOutbox, setTelegramOutbox] = useState<DenteTelegramOutboxResponse | null>(null);
-  const [telegramOutboxStatusFilter, setTelegramOutboxStatusFilter] = useState<TelegramOutboxStatusFilter>(
-    initialUiPreferences.telegramOutboxStatusFilter
-  );
-  const [telegramOutboxTemplateFilter, setTelegramOutboxTemplateFilter] = useState<TelegramOutboxTemplateFilter>(
-    initialUiPreferences.telegramOutboxTemplateFilter
-  );
-  const [telegramLinkCodes, setTelegramLinkCodes] = useState<DenteTelegramLinkCodePublic[]>([]);
-  const [telegramChatLinks, setTelegramChatLinks] = useState<DenteTelegramChatLinkPublic[]>([]);
-  const [telegramLinkCodeLedger, setTelegramLinkCodeLedger] = useState<DenteTelegramLinkCodeListResponse | null>(null);
-  const [telegramChatLinkLedger, setTelegramChatLinkLedger] = useState<DenteTelegramChatLinkListResponse | null>(null);
-  const [telegramLinkSubjectType, setTelegramLinkSubjectType] = useState<TelegramLinkSubjectType>(
-    initialUiPreferences.telegramLinkSubjectType
-  );
-  const [telegramLinkStaffId, setTelegramLinkStaffId] = useState(initialUiPreferences.telegramLinkStaffId ?? "");
-  const [telegramLinkCode, setTelegramLinkCode] = useState<DenteTelegramLinkCodeCreated | null>(null);
-  const [telegramLinkActionState, setTelegramLinkActionState] = useState<string | null>(null);
-  const [telegramPreview, setTelegramPreview] = useState<DenteTelegramMessagePreview | null>(null);
-  const [telegramModeDraft, setTelegramModeDraft] = useState<DenteTelegramBotMode>("shared_dente_bot");
-  const [telegramBotUsernameDraft, setTelegramBotUsernameDraft] = useState("");
-  const [telegramOwnBotUsernameDraft, setTelegramOwnBotUsernameDraft] = useState("");
-  const [telegramBotConfigId, setTelegramBotConfigId] = useState(initialUiPreferences.telegramBotConfigId);
-  const [telegramWebhookBaseUrlDraft, setTelegramWebhookBaseUrlDraft] = useState("");
-  const [telegramPatientPortalBaseUrlDraft, setTelegramPatientPortalBaseUrlDraft] = useState("");
-  const [telegramWelcomeImageUrlDraft, setTelegramWelcomeImageUrlDraft] = useState("");
-  const [telegramVisualCardUrlDrafts, setTelegramVisualCardUrlDrafts] = useState<DenteTelegramVisualCardUrls>(emptyTelegramVisualCardUrlDrafts);
-  const [telegramReviewUrlDraft, setTelegramReviewUrlDraft] = useState("");
-  const [telegramMapsUrlDraft, setTelegramMapsUrlDraft] = useState("");
-  const [telegramEnabledFeaturesDraft, setTelegramEnabledFeaturesDraft] = useState<DenteTelegramFeature[]>([]);
-  const [telegramTokenTtlDraft, setTelegramTokenTtlDraft] = useState("15");
-  const [telegramReminderLeadTimesDraft, setTelegramReminderLeadTimesDraft] = useState("24");
-  const [telegramReviewRequestDelayDraft, setTelegramReviewRequestDelayDraft] = useState("2");
-  const [telegramPostVisitCheckupDelayDrafts, setTelegramPostVisitCheckupDelayDrafts] = useState<TelegramPostVisitCheckupDelayDrafts>(
-    defaultTelegramPostVisitCheckupDelayDrafts
-  );
-  const [telegramAllowVoiceIntakeDraft, setTelegramAllowVoiceIntakeDraft] = useState(false);
-  const [telegramStaffEscalationChannelDraft, setTelegramStaffEscalationChannelDraft] = useState("");
-  const [telegramPrivacyModeDraft, setTelegramPrivacyModeDraft] = useState<DenteTelegramPrivacyMode>("no_phi_by_default");
-  const [telegramSettingsDirty, setTelegramSettingsDirty] = useState(false);
-  const [telegramSettingsSaveState, setTelegramSettingsSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [telegramSettingsSaveError, setTelegramSettingsSaveError] = useState<string | null>(null);
-  const [clinicalAdminSecretDraft, setClinicalAdminSecretDraft] = useState("");
-  const [settingsAdminSecretDraft, setSettingsAdminSecretDraft] = useState("");
-  const [scheduleAdminSecretDraft, setScheduleAdminSecretDraft] = useState("");
-  const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("");
-  const [clinicalAdminSecretSession, setClinicalAdminSecretSession] = useState("");
-  const [settingsAdminSecretSession, setSettingsAdminSecretSession] = useState("");
-  const [scheduleAdminSecretSession, setScheduleAdminSecretSession] = useState("");
-  const [telegramAdminSecretSession, setTelegramAdminSecretSession] = useState("");
   const [isTelegramLoading, setIsTelegramLoading] = useState(false);
   const [isTelegramLinkCreating, setIsTelegramLinkCreating] = useState(false);
   const [isTelegramSettingsSaving, setIsTelegramSettingsSaving] = useState(false);
@@ -2036,8 +2305,6 @@ export function App() {
   const [isTelegramOutboxLoadingMore, setIsTelegramOutboxLoadingMore] = useState(false);
   const [isTelegramLinkCodesLoadingMore, setIsTelegramLinkCodesLoadingMore] = useState(false);
   const [isTelegramChatLinksLoadingMore, setIsTelegramChatLinksLoadingMore] = useState(false);
-  const [telegramSendingItemId, setTelegramSendingItemId] = useState<string | null>(null);
-  const [telegramRevokingLinkId, setTelegramRevokingLinkId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uiPreferencesSyncError, setUiPreferencesSyncError] = useState<string | null>(null);
   const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
@@ -2045,7 +2312,7 @@ export function App() {
   const browserImagingScanAbortRef = useRef<AbortController | null>(null);
   const browserMigrationScanAbortRef = useRef<AbortController | null>(null);
   const localDicomOperationAbortRef = useRef<AbortController | null>(null);
-  const [isLocalDicomOperationActive, setIsLocalDicomOperationActive] = useState(false);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const speechAudioContextRef = useRef<AudioContext | null>(null);
@@ -5389,8 +5656,8 @@ export function App() {
     "--mpr-slab-width": mprSlabVisualWidth,
     "--mpr-slice-position": mprSlicePositionPercent
   };
-  const mprActiveProjectionLabel = mprProjectionLabels[mprProjection] ?? mprProjection;
-  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection] ?? "плоскость просмотра";
+  const mprActiveProjectionLabel = mprProjectionLabels[mprProjection as MprProjection] ?? mprProjection;
+  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection as MprProjection] ?? "плоскость просмотра";
   const mprProjectionCompass = mprProjectionCompassLabels(mprProjection);
   const mprAxisGuidance = buildMprAxisGuidance({
     canOpenMpr: mprControlsReady,
@@ -5424,7 +5691,7 @@ export function App() {
     axisLabel: mprAxisDirectionLabel,
     slabMm: mprSlabMm,
     sliceLabel: mprSliceLabel,
-    windowLabel: mprWindowPresetLabels[mprWindowPreset] ?? mprWindowPreset,
+    windowLabel: mprWindowPresetLabels[mprWindowPreset as MprWindowPreset] ?? mprWindowPreset,
     crosshair: mprCrosshairEnabled,
     linkedPlanes: mprLinkedPlanesEnabled
   };
@@ -5609,7 +5876,7 @@ export function App() {
   }, [cbctWorkbenchProjections, mprProjection]);
 
   useEffect(() => {
-    setMprSliceIndex((value) => clampMprSliceIndex(value, mprSliceMaxIndex));
+    setMprSliceIndex((value: any) => clampMprSliceIndex(value, mprSliceMaxIndex));
   }, [mprSliceMaxIndex]);
 
   useEffect(() => {
@@ -7678,7 +7945,7 @@ export function App() {
       applyBrowserPickedImagingFolderPreview(preview);
     } catch (scanError) {
       if (isBrowserImagingScanAbortError(scanError)) {
-        setBrowserImagingScanProgress((current) =>
+        setBrowserImagingScanProgress((current: any) =>
           current
             ? (() => {
                 const updatedAt = new Date().toISOString();
@@ -13831,7 +14098,7 @@ export function App() {
                 setScheduleDateFilter={setScheduleDateFilter}
                 setScheduleDoctorFilterId={setScheduleDoctorFilterId}
                 setScheduleStatusFilter={setScheduleStatusFilter}
-                setScheduleAdminSecretDraft={setScheduleAdminSecretDraft}
+                
                 shiftWarnings={shiftWarnings}
                 sortedAppointments={sortedAppointments}
                 staffRoleLabels={staffRoleLabels}
@@ -14031,15 +14298,6 @@ export function App() {
                 activePatient={activePatient}
                 activeUsableDocuments={activeUsableDocuments}
                 applyPostVisitCarePreset={applyPostVisitCarePreset}
-                attendanceDiagnosisDisclosureExcluded={attendanceDiagnosisDisclosureExcluded}
-                attendanceEndedAt={attendanceEndedAt}
-                attendanceIssuedAt={attendanceIssuedAt}
-                attendanceNotSickLeaveAcknowledged={attendanceNotSickLeaveAcknowledged}
-                attendancePurpose={attendancePurpose}
-                attendanceRecipientOrganization={attendanceRecipientOrganization}
-                attendanceSignedByFullName={attendanceSignedByFullName}
-                attendanceSignedByRole={attendanceSignedByRole}
-                attendanceStartedAt={attendanceStartedAt}
                 changePostVisitCareTopic={changePostVisitCareTopic}
                 clinicProfileDraft={clinicProfileDraft}
                 compactDocumentText={compactDocumentText}
@@ -14048,55 +14306,19 @@ export function App() {
                 completedActPaidRubValue={completedActPaidRubValue}
                 confirmDocumentIssue={confirmDocumentIssue}
                 confirmDocumentVoid={confirmDocumentVoid}
-                copyRequestContactForDelivery={copyRequestContactForDelivery}
-                copyRequestDocumentTypes={copyRequestDocumentTypes}
-                copyRequestFormat={copyRequestFormat}
-                copyRequestIdentityVerified={copyRequestIdentityVerified}
-                copyRequestIncludeDicomSourceData={copyRequestIncludeDicomSourceData}
-                copyRequestPeriodEnd={copyRequestPeriodEnd}
-                copyRequestPeriodStart={copyRequestPeriodStart}
-                copyRequestRecipientAuthority={copyRequestRecipientAuthority}
-                copyRequestRecipientFullName={copyRequestRecipientFullName}
-                copyRequestRecipientIdentityDocument={copyRequestRecipientIdentityDocument}
-                copyRequestRepresentativeAuthorityDocument={copyRequestRepresentativeAuthorityDocument}
-                copyRequestRequestedAt={copyRequestRequestedAt}
-                copyRequestSpecialInstructions={copyRequestSpecialInstructions}
-                copyRequestThirdPartyDataChecked={copyRequestThirdPartyDataChecked}
                 createDocument={createDocument}
                 dashboard={dashboard}
                 documentActionLabels={documentActionLabels}
-                documentAuditFacts={documentAuditFacts}
-                documentAuditFactsLoadingId={documentAuditFactsLoadingId}
                 documentIssueAttestationReady={documentIssueAttestationReady}
-                documentIssueClinicSigned={documentIssueClinicSigned}
                 documentIssueConfirmation={documentIssueConfirmation}
-                documentIssueDocumentOpenedAndChecked={documentIssueDocumentOpenedAndChecked}
-                documentIssueIdentityChecked={documentIssueIdentityChecked}
-                documentIssueNote={documentIssueNote}
-                documentIssueRecipientFullName={documentIssueRecipientFullName}
-                documentIssueRecipientRole={documentIssueRecipientRole}
-                documentIssueRecipientSigned={documentIssueRecipientSigned}
-                documentIssueSignatureMode={documentIssueSignatureMode}
                 documentIssueSignatureModeLabels={documentIssueSignatureModeLabels}
-                documentIssueSignedAt={documentIssueSignedAt}
-                documentIssueStaffFullName={documentIssueStaffFullName}
-                documentIssueStaffRole={documentIssueStaffRole}
                 documentLabels={documentLabels}
                 documentPatient={documentPatient}
                 documentSourceStatusClassNames={documentSourceStatusClassNames}
                 documentStatusLabels={documentStatusLabels}
-                documentVoidArchivePreserved={documentVoidArchivePreserved}
                 documentVoidConfirmation={documentVoidConfirmation}
-                documentVoidCorrectionDocumentId={documentVoidCorrectionDocumentId}
-                documentVoidPatientOrPayerNotified={documentVoidPatientOrPayerNotified}
                 documentVoidReady={documentVoidReady}
-                documentVoidReasonCode={documentVoidReasonCode}
                 documentVoidReasonLabels={documentVoidReasonLabels}
-                documentVoidReasonText={documentVoidReasonText}
-                documentVoidReplacementRequired={documentVoidReplacementRequired}
-                documentVoidStaffFullName={documentVoidStaffFullName}
-                documentVoidStaffRole={documentVoidStaffRole}
-                documentVoidStatusReviewed={documentVoidStatusReviewed}
                 downloadIssuedDocumentHtml={downloadIssuedDocumentHtml}
                 downloadIssuedDocumentPdf={downloadIssuedDocumentPdf}
                 downloadTaxDocumentXml={downloadTaxDocumentXml}
@@ -14142,27 +14364,12 @@ export function App() {
                 normalizedXrayPriority={normalizedXrayPriority}
                 normalizedXrayStudyType={normalizedXrayStudyType}
                 openIssuedDocumentHtml={openIssuedDocumentHtml}
-                outpatient025uAllergyHistory={outpatient025uAllergyHistory}
-                outpatient025uBloodGroup={outpatient025uBloodGroup}
-                outpatient025uDisabilityGroup={outpatient025uDisabilityGroup}
-                outpatient025uEmploymentCode={outpatient025uEmploymentCode}
-                outpatient025uFinalEpicrisis={outpatient025uFinalEpicrisis}
-                outpatient025uKellK1={outpatient025uKellK1}
                 outpatient025uMedicalCardNumberValue={outpatient025uMedicalCardNumberValue}
-                outpatient025uOfficialForm274nChecked={outpatient025uOfficialForm274nChecked}
-                outpatient025uOtherBloodData={outpatient025uOtherBloodData}
-                outpatient025uPalliativeCareNeedCode={outpatient025uPalliativeCareNeedCode}
-                outpatient025uRhFactor={outpatient025uRhFactor}
-                outpatient025uThirdPartyDataChecked={outpatient025uThirdPartyDataChecked}
-                outpatient025uWorkOrStudyPlace={outpatient025uWorkOrStudyPlace}
                 paidContractTotalRubValue={paidContractTotalRubValue}
                 patientIntakePregnancyStatusOptions={patientIntakePregnancyStatusOptions}
                 patientName={patientName}
                 paymentFiscalReceiptLabelForUi={paymentFiscalReceiptLabelForUi}
-                paymentFiscalReceiptNumber={paymentFiscalReceiptNumber}
                 paymentInvoiceTotalRubValue={paymentInvoiceTotalRubValue}
-                paymentPayerFullName={paymentPayerFullName}
-                paymentPayerIdentityDocument={paymentPayerIdentityDocument}
                 paymentReceiptFiscalReceiptLines={paymentReceiptFiscalReceiptLines}
                 paymentReceiptIssuedByValue={paymentReceiptIssuedByValue}
                 paymentReceiptPayerBirthDateValue={paymentReceiptPayerBirthDateValue}
@@ -14170,54 +14377,11 @@ export function App() {
                 paymentReceiptPayerIdentityDocumentValue={paymentReceiptPayerIdentityDocumentValue}
                 paymentReceiptPayerInnValue={paymentReceiptPayerInnValue}
                 paymentReceiptPayerRelationshipValue={paymentReceiptPayerRelationshipValue}
-                personalDataActions={personalDataActions}
-                personalDataAutomatedDecisionAllowed={personalDataAutomatedDecisionAllowed}
-                personalDataCategories={personalDataCategories}
-                personalDataConsentGivenAt={personalDataConsentGivenAt}
-                personalDataCrossBorderAllowed={personalDataCrossBorderAllowed}
-                personalDataMedicalProcessingAcknowledged={personalDataMedicalProcessingAcknowledged}
-                personalDataPurposes={personalDataPurposes}
-                personalDataRetentionPeriod={personalDataRetentionPeriod}
-                personalDataRevocationChannel={personalDataRevocationChannel}
-                personalDataTransferRules={personalDataTransferRules}
-                personalDataVoluntaryConsentConfirmed={personalDataVoluntaryConsentConfirmed}
                 photoVideoMaterialOptions={photoVideoMaterialOptions}
                 plannedServiceLinesForFinancialPayload={plannedServiceLinesForFinancialPayload}
                 postVisitCareTopicOptions={postVisitCareTopicOptions}
                 procedureSpecificConsentProcedureOptions={procedureSpecificConsentProcedureOptions}
-                refundAccountantDecision={refundAccountantDecision}
-                refundAction={refundAction}
-                refundAmountRub={refundAmountRub}
-                refundBankDetails={refundBankDetails}
-                refundCorrectionFiscalReceiptNumber={refundCorrectionFiscalReceiptNumber}
-                refundMethod={refundMethod}
-                refundOriginalFiscalReceiptNumber={refundOriginalFiscalReceiptNumber}
-                refundReason={refundReason}
-                refundRecipientFullName={refundRecipientFullName}
-                refundRecipientIdentityDocument={refundRecipientIdentityDocument}
-                refundSelectedPaymentId={refundSelectedPaymentId}
-                refusalAlternatives={refusalAlternatives}
-                refusalClinicalIndication={refusalClinicalIndication}
-                refusalConfirmedAt={refusalConfirmedAt}
-                refusalConsequencesUnderstood={refusalConsequencesUnderstood}
-                refusalDoctorFullName={refusalDoctorFullName}
-                refusalEmergencyCareExplained={refusalEmergencyCareExplained}
-                refusalExplainedRisks={refusalExplainedRisks}
-                refusalIntervention={refusalIntervention}
-                refusalPatientReason={refusalPatientReason}
-                refusalSecondOpinionOffered={refusalSecondOpinionOffered}
-                refusalUrgentWarningSigns={refusalUrgentWarningSigns}
-                releaseAccessExpiresAt={releaseAccessExpiresAt}
-                releaseChannel={releaseChannel}
-                releaseDeliveredAt={releaseDeliveredAt}
-                releaseDocumentTypes={releaseDocumentTypes}
-                releasePeriodEnd={releasePeriodEnd}
-                releasePeriodStart={releasePeriodStart}
                 releaseProtectionNote={releaseProtectionNote}
-                releaseRecipientAuthority={releaseRecipientAuthority}
-                releaseRecipientFullName={releaseRecipientFullName}
-                releaseRecipientIdentityDocument={releaseRecipientIdentityDocument}
-                releaseThirdPartyDataChecked={releaseThirdPartyDataChecked}
                 renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
                 requestDocumentIssue={requestDocumentIssue}
                 requestDocumentVoid={requestDocumentVoid}
@@ -14236,108 +14400,7 @@ export function App() {
                 selectedTaxPaymentIdSet={selectedTaxPaymentIdSet}
                 selectedTaxPaymentTotalRub={selectedTaxPaymentTotalRub}
                 selectRefundOriginalPayment={selectRefundOriginalPayment}
-                setAttendanceDiagnosisDisclosureExcluded={setAttendanceDiagnosisDisclosureExcluded}
-                setAttendanceEndedAt={setAttendanceEndedAt}
-                setAttendanceIssuedAt={setAttendanceIssuedAt}
-                setAttendanceNotSickLeaveAcknowledged={setAttendanceNotSickLeaveAcknowledged}
-                setAttendancePurpose={setAttendancePurpose}
-                setAttendanceRecipientOrganization={setAttendanceRecipientOrganization}
-                setAttendanceSignedByFullName={setAttendanceSignedByFullName}
-                setAttendanceSignedByRole={setAttendanceSignedByRole}
-                setAttendanceStartedAt={setAttendanceStartedAt}
-                setCopyRequestContactForDelivery={setCopyRequestContactForDelivery}
-                setCopyRequestDocumentTypes={setCopyRequestDocumentTypes}
-                setCopyRequestFormat={setCopyRequestFormat}
-                setCopyRequestIdentityVerified={setCopyRequestIdentityVerified}
-                setCopyRequestIncludeDicomSourceData={setCopyRequestIncludeDicomSourceData}
-                setCopyRequestPeriodEnd={setCopyRequestPeriodEnd}
-                setCopyRequestPeriodStart={setCopyRequestPeriodStart}
-                setCopyRequestRecipientAuthority={setCopyRequestRecipientAuthority}
-                setCopyRequestRecipientFullName={setCopyRequestRecipientFullName}
-                setCopyRequestRecipientIdentityDocument={setCopyRequestRecipientIdentityDocument}
-                setCopyRequestRepresentativeAuthorityDocument={setCopyRequestRepresentativeAuthorityDocument}
-                setCopyRequestRequestedAt={setCopyRequestRequestedAt}
-                setCopyRequestSpecialInstructions={setCopyRequestSpecialInstructions}
-                setCopyRequestThirdPartyDataChecked={setCopyRequestThirdPartyDataChecked}
-                setDocumentAuditFacts={setDocumentAuditFacts}
-                setDocumentIssueClinicSigned={setDocumentIssueClinicSigned}
-                setDocumentIssueConfirmationId={setDocumentIssueConfirmationId}
-                setDocumentIssueDocumentOpenedAndChecked={setDocumentIssueDocumentOpenedAndChecked}
-                setDocumentIssueIdentityChecked={setDocumentIssueIdentityChecked}
-                setDocumentIssueNote={setDocumentIssueNote}
-                setDocumentIssueRecipientFullName={setDocumentIssueRecipientFullName}
-                setDocumentIssueRecipientRole={setDocumentIssueRecipientRole}
-                setDocumentIssueRecipientSigned={setDocumentIssueRecipientSigned}
-                setDocumentIssueSignatureMode={setDocumentIssueSignatureMode}
-                setDocumentIssueSignedAt={setDocumentIssueSignedAt}
-                setDocumentIssueStaffFullName={setDocumentIssueStaffFullName}
-                setDocumentIssueStaffRole={setDocumentIssueStaffRole}
-                setDocumentVoidArchivePreserved={setDocumentVoidArchivePreserved}
-                setDocumentVoidConfirmationId={setDocumentVoidConfirmationId}
-                setDocumentVoidCorrectionDocumentId={setDocumentVoidCorrectionDocumentId}
-                setDocumentVoidPatientOrPayerNotified={setDocumentVoidPatientOrPayerNotified}
-                setDocumentVoidReasonCode={setDocumentVoidReasonCode}
-                setDocumentVoidReasonText={setDocumentVoidReasonText}
-                setDocumentVoidReplacementRequired={setDocumentVoidReplacementRequired}
-                setDocumentVoidStaffFullName={setDocumentVoidStaffFullName}
-                setDocumentVoidStaffRole={setDocumentVoidStaffRole}
-                setDocumentVoidStatusReviewed={setDocumentVoidStatusReviewed}
-                setOutpatient025uAllergyHistory={setOutpatient025uAllergyHistory}
-                setOutpatient025uBloodGroup={setOutpatient025uBloodGroup}
-                setOutpatient025uDisabilityGroup={setOutpatient025uDisabilityGroup}
-                setOutpatient025uEmploymentCode={setOutpatient025uEmploymentCode}
-                setOutpatient025uFinalEpicrisis={setOutpatient025uFinalEpicrisis}
-                setOutpatient025uKellK1={setOutpatient025uKellK1}
-                setOutpatient025uOfficialForm274nChecked={setOutpatient025uOfficialForm274nChecked}
-                setOutpatient025uOtherBloodData={setOutpatient025uOtherBloodData}
-                setOutpatient025uPalliativeCareNeedCode={setOutpatient025uPalliativeCareNeedCode}
-                setOutpatient025uRhFactor={setOutpatient025uRhFactor}
-                setOutpatient025uThirdPartyDataChecked={setOutpatient025uThirdPartyDataChecked}
-                setOutpatient025uWorkOrStudyPlace={setOutpatient025uWorkOrStudyPlace}
-                setPersonalDataActions={setPersonalDataActions}
-                setPersonalDataAutomatedDecisionAllowed={setPersonalDataAutomatedDecisionAllowed}
-                setPersonalDataCategories={setPersonalDataCategories}
-                setPersonalDataConsentGivenAt={setPersonalDataConsentGivenAt}
-                setPersonalDataCrossBorderAllowed={setPersonalDataCrossBorderAllowed}
-                setPersonalDataMedicalProcessingAcknowledged={setPersonalDataMedicalProcessingAcknowledged}
-                setPersonalDataPurposes={setPersonalDataPurposes}
-                setPersonalDataRetentionPeriod={setPersonalDataRetentionPeriod}
-                setPersonalDataRevocationChannel={setPersonalDataRevocationChannel}
-                setPersonalDataTransferRules={setPersonalDataTransferRules}
-                setPersonalDataVoluntaryConsentConfirmed={setPersonalDataVoluntaryConsentConfirmed}
-                setRefundAccountantDecision={setRefundAccountantDecision}
-                setRefundAction={setRefundAction}
-                setRefundAmountRub={setRefundAmountRub}
-                setRefundBankDetails={setRefundBankDetails}
-                setRefundCorrectionFiscalReceiptNumber={setRefundCorrectionFiscalReceiptNumber}
-                setRefundMethod={setRefundMethod}
-                setRefundOriginalFiscalReceiptNumber={setRefundOriginalFiscalReceiptNumber}
-                setRefundReason={setRefundReason}
-                setRefundRecipientFullName={setRefundRecipientFullName}
-                setRefundRecipientIdentityDocument={setRefundRecipientIdentityDocument}
-                setRefusalAlternatives={setRefusalAlternatives}
-                setRefusalClinicalIndication={setRefusalClinicalIndication}
-                setRefusalConfirmedAt={setRefusalConfirmedAt}
-                setRefusalConsequencesUnderstood={setRefusalConsequencesUnderstood}
-                setRefusalDoctorFullName={setRefusalDoctorFullName}
-                setRefusalEmergencyCareExplained={setRefusalEmergencyCareExplained}
-                setRefusalExplainedRisks={setRefusalExplainedRisks}
-                setRefusalIntervention={setRefusalIntervention}
-                setRefusalPatientReason={setRefusalPatientReason}
-                setRefusalSecondOpinionOffered={setRefusalSecondOpinionOffered}
-                setRefusalUrgentWarningSigns={setRefusalUrgentWarningSigns}
-                setReleaseAccessExpiresAt={setReleaseAccessExpiresAt}
-                setReleaseChannel={setReleaseChannel}
-                setReleaseDeliveredAt={setReleaseDeliveredAt}
-                setReleaseDocumentTypes={setReleaseDocumentTypes}
-                setReleasePeriodEnd={setReleasePeriodEnd}
-                setReleasePeriodStart={setReleasePeriodStart}
                 setReleaseProtectionNote={setReleaseProtectionNote}
-                setReleaseRecipientAuthority={setReleaseRecipientAuthority}
-                setReleaseRecipientFullName={setReleaseRecipientFullName}
-                setReleaseRecipientIdentityDocument={setReleaseRecipientIdentityDocument}
-                setReleaseSourceRequestDocumentId={setReleaseSourceRequestDocumentId}
-                setReleaseThirdPartyDataChecked={setReleaseThirdPartyDataChecked}
                 setSelectedDocumentKind={setSelectedDocumentKind}
                 setTaxDocumentYear={setTaxDocumentYear}
                 structuredPayloadDocumentKinds={structuredPayloadDocumentKinds}
@@ -14900,28 +14963,28 @@ export function App() {
               setTelegramAdminSecretDraft={
                 settingsAdminSecretDomain === "telegram" ? setTelegramAdminSecretDraft : setSettingsAdminSecretDraft
               }
-              setTelegramAllowVoiceIntakeDraft={setTelegramAllowVoiceIntakeDraft}
-              setTelegramBotConfigId={setTelegramBotConfigId}
-              setTelegramBotUsernameDraft={setTelegramBotUsernameDraft}
-              setTelegramEnabledFeaturesDraft={setTelegramEnabledFeaturesDraft}
-              setTelegramLinkActionState={setTelegramLinkActionState}
-              setTelegramLinkCode={setTelegramLinkCode}
-              setTelegramLinkStaffId={setTelegramLinkStaffId}
-              setTelegramLinkSubjectType={setTelegramLinkSubjectType}
-              setTelegramMapsUrlDraft={setTelegramMapsUrlDraft}
-              setTelegramModeDraft={setTelegramModeDraft}
-              setTelegramOutboxStatusFilter={setTelegramOutboxStatusFilter}
-              setTelegramOutboxTemplateFilter={setTelegramOutboxTemplateFilter}
-              setTelegramOwnBotUsernameDraft={setTelegramOwnBotUsernameDraft}
-              setTelegramPatientPortalBaseUrlDraft={setTelegramPatientPortalBaseUrlDraft}
-              setTelegramPrivacyModeDraft={setTelegramPrivacyModeDraft}
-              setTelegramReminderLeadTimesDraft={setTelegramReminderLeadTimesDraft}
-              setTelegramReviewRequestDelayDraft={setTelegramReviewRequestDelayDraft}
-              setTelegramReviewUrlDraft={setTelegramReviewUrlDraft}
-              setTelegramStaffEscalationChannelDraft={setTelegramStaffEscalationChannelDraft}
-              setTelegramTokenTtlDraft={setTelegramTokenTtlDraft}
-              setTelegramWebhookBaseUrlDraft={setTelegramWebhookBaseUrlDraft}
-              setTelegramWelcomeImageUrlDraft={setTelegramWelcomeImageUrlDraft}
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
               settingsTab={settingsTab}
               settingsTabs={settingsTabs}
               setUiLanguage={setUiLanguage}

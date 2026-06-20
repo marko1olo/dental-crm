@@ -1,3 +1,4 @@
+import { useSettingsStore } from "./store/settingsStore";
 import { Plus, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
@@ -56,7 +57,7 @@ type ScheduleViewProps = {
   setScheduleDateFilter: (value: string) => void;
   setScheduleDoctorFilterId: (value: string | null) => void;
   setScheduleStatusFilter: (value: Appointment["status"] | "all") => void;
-  setScheduleAdminSecretDraft: (value: string) => void;
+  
   shiftWarnings: Dashboard["shiftIntelligence"]["scheduleWarnings"];
   sortedAppointments: Appointment[];
   staffRoleLabels: Record<StaffRole, string>;
@@ -110,18 +111,17 @@ export function ScheduleView(props: ScheduleViewProps) {
     setScheduleDateFilter,
     setScheduleDoctorFilterId,
     setScheduleStatusFilter,
-    setScheduleAdminSecretDraft,
     shiftWarnings,
     sortedAppointments,
     staffRoleLabels,
-    scheduleAdminSecretDraft,
-    scheduleAdminSecretSession,
     toDateTimeLocalValue,
     unlockScheduleAdminSession,
     updateAppointmentScheduleDraft,
     updateNewAppointmentDraft,
     visibleScheduleSuggestions
   } = props;
+  const { setScheduleAdminSecretDraft, scheduleAdminSecretDraft, scheduleAdminSecretSession } = useSettingsStore();
+
   const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
   const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt);
   const newAppointmentEndsAtMs = Date.parse(newAppointmentDraft.endsAt);

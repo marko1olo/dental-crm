@@ -1,13 +1,259 @@
-
 import { create } from 'zustand';
-import { GeneratedDocument, TreatmentPlanAcceptanceVariant, PostVisitCareTopic, PhotoVideoConsentMaterial, XrayCbctReferralStudyType, XrayCbctReferralPregnancyStatus, XrayCbctReferralPriority, TaxDeductionApplicationForm, TaxDeductionApplicationDeliveryChannel, TaxDeductionApplicationRelationship, PatientIntakePregnancyStatus, ProcedureSpecificConsentProcedure } from "@dental/shared";
-import { dateInputValuePlusDays } from "../AppHelpers";
+import { PaymentRefundCorrectionAction, PaymentRefundCorrectionMethod } from "../AppHelpers";
+export type MedicalDocumentReleaseChannel = "paper" | "pdf" | "dicom_archive" | "secure_link" | "physical_media" | "other";
+import { PaymentMethod, DocumentIssueSignatureMode, DocumentVoidReasonCode, DocumentAuditFacts, DocumentIngestionTarget, DocumentIngestionResponse, GeneratedDocument, TreatmentPlanAcceptanceVariant, PostVisitCareTopic, PhotoVideoConsentMaterial, XrayCbctReferralStudyType, XrayCbctReferralPregnancyStatus, XrayCbctReferralPriority, TaxDeductionApplicationForm, TaxDeductionApplicationDeliveryChannel, TaxDeductionApplicationRelationship, PatientIntakePregnancyStatus, ProcedureSpecificConsentProcedure } from "@dental/shared";
+import { dateInputValuePlusDays, currentLocalDateTimeInputValue } from "../AppHelpers";
 import { defaultClinicalToothRowsText, toDateTimeLocalValue, loadUiPreferences } from "../AppHelpers";
 import { postVisitCarePresets } from "../postVisitCareData";
 
 const initialUiPreferences = loadUiPreferences();
 
 export interface DocumentState {
+  paymentAmount: string;
+  paymentMethod: PaymentMethod;
+  paymentFiscalReceiptNumber: string;
+  paymentFiscalReceiptIssuedAt: string;
+  paymentFiscalFn: string;
+  paymentFiscalFd: string;
+  paymentFiscalFpd: string;
+  paymentFiscalCashierName: string;
+  paymentFiscalReceiptUrl: string;
+  paymentPayerFullName: string;
+  paymentPayerInn: string;
+  paymentPayerBirthDate: string;
+  paymentPayerIdentityDocument: string;
+  paymentPayerRelationship: string;
+  paymentTaxDeductionCode: "" | "1" | "2";
+  paymentFeedback: string;
+  documentIssueConfirmationId: string | null;
+  documentIssueSignatureMode: DocumentIssueSignatureMode;
+  documentIssueSignedAt: any;
+  documentIssueRecipientFullName: string;
+  documentIssueRecipientRole: string;
+  documentIssueStaffFullName: any;
+  documentIssueStaffRole: any;
+  documentIssueNote: string;
+  documentIssueIdentityChecked: boolean;
+  documentIssueDocumentOpenedAndChecked: boolean;
+  documentIssueRecipientSigned: boolean;
+  documentIssueClinicSigned: boolean;
+  documentVoidConfirmationId: string | null;
+  documentVoidReasonCode: DocumentVoidReasonCode;
+  documentVoidReasonText: string;
+  documentVoidStaffFullName: any;
+  documentVoidStaffRole: any;
+  documentVoidCorrectionDocumentId: string;
+  documentVoidReplacementRequired: boolean;
+  documentVoidPatientOrPayerNotified: boolean;
+  documentVoidArchivePreserved: boolean;
+  documentVoidStatusReviewed: boolean;
+  documentAuditFacts: DocumentAuditFacts | null;
+  documentAuditFactsLoadingId: string | null;
+  personalDataPurposes: string;
+  personalDataCategories: string;
+  personalDataActions: string;
+  personalDataTransferRules: string;
+  personalDataRetentionPeriod: string;
+  personalDataRevocationChannel: string;
+  refusalExplainedRisks: string;
+  refusalAlternatives: string;
+  refusalUrgentWarningSigns: string;
+  documentIngestionTarget: DocumentIngestionTarget;
+  documentIngestion: DocumentIngestionResponse | null;
+  setPaymentAmount: (val: string | ((prev: string) => string)) => void;
+  setPaymentMethod: (val: PaymentMethod | ((prev: PaymentMethod) => PaymentMethod)) => void;
+  setPaymentFiscalReceiptNumber: (val: string | ((prev: string) => string)) => void;
+  setPaymentFiscalReceiptIssuedAt: (val: string | ((prev: string) => string)) => void;
+  setPaymentFiscalFn: (val: string | ((prev: string) => string)) => void;
+  setPaymentFiscalFd: (val: string | ((prev: string) => string)) => void;
+  setPaymentFiscalFpd: (val: string | ((prev: string) => string)) => void;
+  setPaymentFiscalCashierName: (val: string | ((prev: string) => string)) => void;
+  setPaymentFiscalReceiptUrl: (val: string | ((prev: string) => string)) => void;
+  setPaymentPayerFullName: (val: string | ((prev: string) => string)) => void;
+  setPaymentPayerInn: (val: string | ((prev: string) => string)) => void;
+  setPaymentPayerBirthDate: (val: string | ((prev: string) => string)) => void;
+  setPaymentPayerIdentityDocument: (val: string | ((prev: string) => string)) => void;
+  setPaymentPayerRelationship: (val: string | ((prev: string) => string)) => void;
+  setPaymentTaxDeductionCode: (val: "" | "1" | "2" | ((prev: "" | "1" | "2") => "" | "1" | "2")) => void;
+  setPaymentFeedback: (val: string | ((prev: string) => string)) => void;
+  setDocumentIssueConfirmationId: (val: string | null | ((prev: string | null) => string | null)) => void;
+  setDocumentIssueSignatureMode: (val: DocumentIssueSignatureMode | ((prev: DocumentIssueSignatureMode) => DocumentIssueSignatureMode)) => void;
+  setDocumentIssueSignedAt: (val: any | ((prev: any) => any)) => void;
+  setDocumentIssueRecipientFullName: (val: string | ((prev: string) => string)) => void;
+  setDocumentIssueRecipientRole: (val: string | ((prev: string) => string)) => void;
+  setDocumentIssueStaffFullName: (val: any | ((prev: any) => any)) => void;
+  setDocumentIssueStaffRole: (val: any | ((prev: any) => any)) => void;
+  setDocumentIssueNote: (val: string | ((prev: string) => string)) => void;
+  setDocumentIssueIdentityChecked: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentIssueDocumentOpenedAndChecked: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentIssueRecipientSigned: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentIssueClinicSigned: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentVoidConfirmationId: (val: string | null | ((prev: string | null) => string | null)) => void;
+  setDocumentVoidReasonCode: (val: DocumentVoidReasonCode | ((prev: DocumentVoidReasonCode) => DocumentVoidReasonCode)) => void;
+  setDocumentVoidReasonText: (val: string | ((prev: string) => string)) => void;
+  setDocumentVoidStaffFullName: (val: any | ((prev: any) => any)) => void;
+  setDocumentVoidStaffRole: (val: any | ((prev: any) => any)) => void;
+  setDocumentVoidCorrectionDocumentId: (val: string | ((prev: string) => string)) => void;
+  setDocumentVoidReplacementRequired: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentVoidPatientOrPayerNotified: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentVoidArchivePreserved: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentVoidStatusReviewed: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setDocumentAuditFacts: (val: DocumentAuditFacts | null | ((prev: DocumentAuditFacts | null) => DocumentAuditFacts | null)) => void;
+  setDocumentAuditFactsLoadingId: (val: string | null | ((prev: string | null) => string | null)) => void;
+  setPersonalDataPurposes: (val: string | ((prev: string) => string)) => void;
+  setPersonalDataCategories: (val: string | ((prev: string) => string)) => void;
+  setPersonalDataActions: (val: string | ((prev: string) => string)) => void;
+  setPersonalDataTransferRules: (val: string | ((prev: string) => string)) => void;
+  setPersonalDataRetentionPeriod: (val: string | ((prev: string) => string)) => void;
+  setPersonalDataRevocationChannel: (val: string | ((prev: string) => string)) => void;
+  setRefusalExplainedRisks: (val: string | ((prev: string) => string)) => void;
+  setRefusalAlternatives: (val: string | ((prev: string) => string)) => void;
+  setRefusalUrgentWarningSigns: (val: string | ((prev: string) => string)) => void;
+  setDocumentIngestionTarget: (val: DocumentIngestionTarget | ((prev: DocumentIngestionTarget) => DocumentIngestionTarget)) => void;
+  setDocumentIngestion: (val: DocumentIngestionResponse | null | ((prev: DocumentIngestionResponse | null) => DocumentIngestionResponse | null)) => void;
+
+  setOutpatient025uEmploymentCode: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uDisabilityGroup: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uWorkOrStudyPlace: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uPalliativeCareNeedCode: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uBloodGroup: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uRhFactor: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uKellK1: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uOtherBloodData: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uAllergyHistory: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uFinalEpicrisis: (val: string | ((prev: string) => string)) => void;
+  setOutpatient025uOfficialForm274nChecked: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setOutpatient025uThirdPartyDataChecked: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setCopyRequestDocumentTypes: (val: any | ((prev: any) => any)) => void;
+  setCopyRequestPeriodStart: (val: string | ((prev: string) => string)) => void;
+  setCopyRequestPeriodEnd: (val: string | ((prev: string) => string)) => void;
+  setCopyRequestFormat: (val: MedicalDocumentReleaseChannel | ((prev: MedicalDocumentReleaseChannel) => MedicalDocumentReleaseChannel)) => void;
+  setCopyRequestRecipientFullName: (val: string | ((prev: string) => string)) => void;
+  setCopyRequestRecipientIdentityDocument: (val: string | ((prev: string) => string)) => void;
+  setCopyRequestRecipientAuthority: (val: any | ((prev: any) => any)) => void;
+  setCopyRequestRepresentativeAuthorityDocument: (val: string | ((prev: string) => string)) => void;
+  setCopyRequestRequestedAt: (val: any | ((prev: any) => any)) => void;
+  setCopyRequestContactForDelivery: (val: string | ((prev: string) => string)) => void;
+  setCopyRequestSpecialInstructions: (val: string | ((prev: string) => string)) => void;
+  setCopyRequestIncludeDicomSourceData: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setCopyRequestIdentityVerified: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setCopyRequestThirdPartyDataChecked: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setAttendanceStartedAt: (val: string | ((prev: string) => string)) => void;
+  setAttendanceEndedAt: (val: string | ((prev: string) => string)) => void;
+  setAttendancePurpose: (val: any | ((prev: any) => any)) => void;
+  setAttendanceRecipientOrganization: (val: string | ((prev: string) => string)) => void;
+  setAttendanceIssuedAt: (val: any | ((prev: any) => any)) => void;
+  setAttendanceSignedByFullName: (val: string | ((prev: string) => string)) => void;
+  setAttendanceSignedByRole: (val: any | ((prev: any) => any)) => void;
+  setAttendanceDiagnosisDisclosureExcluded: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setAttendanceNotSickLeaveAcknowledged: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setReleaseRecipientFullName: (val: string | ((prev: string) => string)) => void;
+  setReleaseRecipientIdentityDocument: (val: string | ((prev: string) => string)) => void;
+  setReleaseRecipientAuthority: (val: any | ((prev: any) => any)) => void;
+  setReleaseSourceRequestDocumentId: (val: string | ((prev: string) => string)) => void;
+  setReleaseChannel: (val: MedicalDocumentReleaseChannel | ((prev: MedicalDocumentReleaseChannel) => MedicalDocumentReleaseChannel)) => void;
+  setReleaseDocumentTypes: (val: any | ((prev: any) => any)) => void;
+  setReleasePeriodStart: (val: string | ((prev: string) => string)) => void;
+  setReleasePeriodEnd: (val: string | ((prev: string) => string)) => void;
+  setReleaseDeliveredAt: (val: any | ((prev: any) => any)) => void;
+  setReleaseAccessExpiresAt: (val: string | ((prev: string) => string)) => void;
+  setReleaseThirdPartyDataChecked: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setRefundAction: (val: PaymentRefundCorrectionAction | ((prev: PaymentRefundCorrectionAction) => PaymentRefundCorrectionAction)) => void;
+  setRefundAmountRub: (val: any | ((prev: any) => any)) => void;
+  setRefundReason: (val: string | ((prev: string) => string)) => void;
+  setRefundMethod: (val: PaymentRefundCorrectionMethod | ((prev: PaymentRefundCorrectionMethod) => PaymentRefundCorrectionMethod)) => void;
+  setRefundRecipientFullName: (val: string | ((prev: string) => string)) => void;
+  setRefundRecipientIdentityDocument: (val: string | ((prev: string) => string)) => void;
+  setRefundBankDetails: (val: string | ((prev: string) => string)) => void;
+  setRefundSelectedPaymentId: (val: string | ((prev: string) => string)) => void;
+  setRefundOriginalFiscalReceiptNumber: (val: string | ((prev: string) => string)) => void;
+  setRefundCorrectionFiscalReceiptNumber: (val: string | ((prev: string) => string)) => void;
+  setRefundAccountantDecision: (val: string | ((prev: string) => string)) => void;
+  setPersonalDataCrossBorderAllowed: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setPersonalDataAutomatedDecisionAllowed: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setPersonalDataConsentGivenAt: (val: any | ((prev: any) => any)) => void;
+  setPersonalDataVoluntaryConsentConfirmed: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setPersonalDataMedicalProcessingAcknowledged: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setRefusalIntervention: (val: string | ((prev: string) => string)) => void;
+  setRefusalClinicalIndication: (val: string | ((prev: string) => string)) => void;
+  setRefusalPatientReason: (val: string | ((prev: string) => string)) => void;
+  setRefusalDoctorFullName: (val: string | ((prev: string) => string)) => void;
+  setRefusalConfirmedAt: (val: any | ((prev: any) => any)) => void;
+  setRefusalConsequencesUnderstood: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setRefusalSecondOpinionOffered: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setRefusalEmergencyCareExplained: (val: boolean | ((prev: boolean) => boolean)) => void;
+
+  outpatient025uEmploymentCode: string;
+  outpatient025uDisabilityGroup: string;
+  outpatient025uWorkOrStudyPlace: string;
+  outpatient025uPalliativeCareNeedCode: string;
+  outpatient025uBloodGroup: string;
+  outpatient025uRhFactor: string;
+  outpatient025uKellK1: string;
+  outpatient025uOtherBloodData: string;
+  outpatient025uAllergyHistory: string;
+  outpatient025uFinalEpicrisis: string;
+  outpatient025uOfficialForm274nChecked: boolean;
+  outpatient025uThirdPartyDataChecked: boolean;
+  copyRequestDocumentTypes: any;
+  copyRequestPeriodStart: string;
+  copyRequestPeriodEnd: string;
+  copyRequestFormat: MedicalDocumentReleaseChannel;
+  copyRequestRecipientFullName: string;
+  copyRequestRecipientIdentityDocument: string;
+  copyRequestRecipientAuthority: any;
+  copyRequestRepresentativeAuthorityDocument: string;
+  copyRequestRequestedAt: any;
+  copyRequestContactForDelivery: string;
+  copyRequestSpecialInstructions: string;
+  copyRequestIncludeDicomSourceData: boolean;
+  copyRequestIdentityVerified: boolean;
+  copyRequestThirdPartyDataChecked: boolean;
+  attendanceStartedAt: string;
+  attendanceEndedAt: string;
+  attendancePurpose: any;
+  attendanceRecipientOrganization: string;
+  attendanceIssuedAt: any;
+  attendanceSignedByFullName: string;
+  attendanceSignedByRole: any;
+  attendanceDiagnosisDisclosureExcluded: boolean;
+  attendanceNotSickLeaveAcknowledged: boolean;
+  releaseRecipientFullName: string;
+  releaseRecipientIdentityDocument: string;
+  releaseRecipientAuthority: any;
+  releaseSourceRequestDocumentId: string;
+  releaseChannel: MedicalDocumentReleaseChannel;
+  releaseDocumentTypes: any;
+  releasePeriodStart: string;
+  releasePeriodEnd: string;
+  releaseDeliveredAt: any;
+  releaseAccessExpiresAt: string;
+  releaseThirdPartyDataChecked: boolean;
+  refundAction: PaymentRefundCorrectionAction;
+  refundAmountRub: any;
+  refundReason: string;
+  refundMethod: PaymentRefundCorrectionMethod;
+  refundRecipientFullName: string;
+  refundRecipientIdentityDocument: string;
+  refundBankDetails: string;
+  refundSelectedPaymentId: string;
+  refundOriginalFiscalReceiptNumber: string;
+  refundCorrectionFiscalReceiptNumber: string;
+  refundAccountantDecision: string;
+  personalDataCrossBorderAllowed: boolean;
+  personalDataAutomatedDecisionAllowed: boolean;
+  personalDataConsentGivenAt: any;
+  personalDataVoluntaryConsentConfirmed: boolean;
+  personalDataMedicalProcessingAcknowledged: boolean;
+  refusalIntervention: string;
+  refusalClinicalIndication: string;
+  refusalPatientReason: string;
+  refusalDoctorFullName: string;
+  refusalConfirmedAt: any;
+  refusalConsequencesUnderstood: boolean;
+  refusalSecondOpinionOffered: boolean;
+  refusalEmergencyCareExplained: boolean;
+
   documentCreateSavingKind: GeneratedDocument["kind"] | null;
   setDocumentCreateSavingKind: (val: GeneratedDocument["kind"] | null | ((prev: GeneratedDocument["kind"] | null) => GeneratedDocument["kind"] | null)) => void;
   documentStatusSavingId: string | null;
@@ -1250,4 +1496,246 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   outpatient025uHealthStatusDisclosureContact: "",
   setOutpatient025uHealthStatusDisclosureContact: (val) => set((state) => ({ outpatient025uHealthStatusDisclosureContact: typeof val === 'function' ? (val as any)(state.outpatient025uHealthStatusDisclosureContact) : val })),
 
+  outpatient025uEmploymentCode: "",
+  setOutpatient025uEmploymentCode: (val) => set((state) => ({ outpatient025uEmploymentCode: typeof val === 'function' ? (val as any)(state.outpatient025uEmploymentCode) : val })),
+  outpatient025uDisabilityGroup: "",
+  setOutpatient025uDisabilityGroup: (val) => set((state) => ({ outpatient025uDisabilityGroup: typeof val === 'function' ? (val as any)(state.outpatient025uDisabilityGroup) : val })),
+  outpatient025uWorkOrStudyPlace: "",
+  setOutpatient025uWorkOrStudyPlace: (val) => set((state) => ({ outpatient025uWorkOrStudyPlace: typeof val === 'function' ? (val as any)(state.outpatient025uWorkOrStudyPlace) : val })),
+  outpatient025uPalliativeCareNeedCode: "",
+  setOutpatient025uPalliativeCareNeedCode: (val) => set((state) => ({ outpatient025uPalliativeCareNeedCode: typeof val === 'function' ? (val as any)(state.outpatient025uPalliativeCareNeedCode) : val })),
+  outpatient025uBloodGroup: "",
+  setOutpatient025uBloodGroup: (val) => set((state) => ({ outpatient025uBloodGroup: typeof val === 'function' ? (val as any)(state.outpatient025uBloodGroup) : val })),
+  outpatient025uRhFactor: "",
+  setOutpatient025uRhFactor: (val) => set((state) => ({ outpatient025uRhFactor: typeof val === 'function' ? (val as any)(state.outpatient025uRhFactor) : val })),
+  outpatient025uKellK1: "",
+  setOutpatient025uKellK1: (val) => set((state) => ({ outpatient025uKellK1: typeof val === 'function' ? (val as any)(state.outpatient025uKellK1) : val })),
+  outpatient025uOtherBloodData: "",
+  setOutpatient025uOtherBloodData: (val) => set((state) => ({ outpatient025uOtherBloodData: typeof val === 'function' ? (val as any)(state.outpatient025uOtherBloodData) : val })),
+  outpatient025uAllergyHistory: "",
+  setOutpatient025uAllergyHistory: (val) => set((state) => ({ outpatient025uAllergyHistory: typeof val === 'function' ? (val as any)(state.outpatient025uAllergyHistory) : val })),
+  outpatient025uFinalEpicrisis: "",
+  setOutpatient025uFinalEpicrisis: (val) => set((state) => ({ outpatient025uFinalEpicrisis: typeof val === 'function' ? (val as any)(state.outpatient025uFinalEpicrisis) : val })),
+  outpatient025uOfficialForm274nChecked: false,
+  setOutpatient025uOfficialForm274nChecked: (val) => set((state) => ({ outpatient025uOfficialForm274nChecked: typeof val === 'function' ? (val as any)(state.outpatient025uOfficialForm274nChecked) : val })),
+  outpatient025uThirdPartyDataChecked: false,
+  setOutpatient025uThirdPartyDataChecked: (val) => set((state) => ({ outpatient025uThirdPartyDataChecked: typeof val === 'function' ? (val as any)(state.outpatient025uThirdPartyDataChecked) : val })),
+  copyRequestDocumentTypes: "Выписка из медицинской карты\nКопия снимков или КТ-архив",
+  setCopyRequestDocumentTypes: (val) => set((state) => ({ copyRequestDocumentTypes: typeof val === 'function' ? (val as any)(state.copyRequestDocumentTypes) : val })),
+  copyRequestPeriodStart: "",
+  setCopyRequestPeriodStart: (val) => set((state) => ({ copyRequestPeriodStart: typeof val === 'function' ? (val as any)(state.copyRequestPeriodStart) : val })),
+  copyRequestPeriodEnd: "",
+  setCopyRequestPeriodEnd: (val) => set((state) => ({ copyRequestPeriodEnd: typeof val === 'function' ? (val as any)(state.copyRequestPeriodEnd) : val })),
+  copyRequestFormat: "pdf",
+  setCopyRequestFormat: (val) => set((state) => ({ copyRequestFormat: typeof val === 'function' ? (val as any)(state.copyRequestFormat) : val })),
+  copyRequestRecipientFullName: "",
+  setCopyRequestRecipientFullName: (val) => set((state) => ({ copyRequestRecipientFullName: typeof val === 'function' ? (val as any)(state.copyRequestRecipientFullName) : val })),
+  copyRequestRecipientIdentityDocument: "",
+  setCopyRequestRecipientIdentityDocument: (val) => set((state) => ({ copyRequestRecipientIdentityDocument: typeof val === 'function' ? (val as any)(state.copyRequestRecipientIdentityDocument) : val })),
+  copyRequestRecipientAuthority: "пациент лично",
+  setCopyRequestRecipientAuthority: (val) => set((state) => ({ copyRequestRecipientAuthority: typeof val === 'function' ? (val as any)(state.copyRequestRecipientAuthority) : val })),
+  copyRequestRepresentativeAuthorityDocument: "",
+  setCopyRequestRepresentativeAuthorityDocument: (val) => set((state) => ({ copyRequestRepresentativeAuthorityDocument: typeof val === 'function' ? (val as any)(state.copyRequestRepresentativeAuthorityDocument) : val })),
+  copyRequestRequestedAt: new Date().toLocaleString("ru-RU"),
+  setCopyRequestRequestedAt: (val) => set((state) => ({ copyRequestRequestedAt: typeof val === 'function' ? (val as any)(state.copyRequestRequestedAt) : val })),
+  copyRequestContactForDelivery: "",
+  setCopyRequestContactForDelivery: (val) => set((state) => ({ copyRequestContactForDelivery: typeof val === 'function' ? (val as any)(state.copyRequestContactForDelivery) : val })),
+  copyRequestSpecialInstructions: "",
+  setCopyRequestSpecialInstructions: (val) => set((state) => ({ copyRequestSpecialInstructions: typeof val === 'function' ? (val as any)(state.copyRequestSpecialInstructions) : val })),
+  copyRequestIncludeDicomSourceData: true,
+  setCopyRequestIncludeDicomSourceData: (val) => set((state) => ({ copyRequestIncludeDicomSourceData: typeof val === 'function' ? (val as any)(state.copyRequestIncludeDicomSourceData) : val })),
+  copyRequestIdentityVerified: false,
+  setCopyRequestIdentityVerified: (val) => set((state) => ({ copyRequestIdentityVerified: typeof val === 'function' ? (val as any)(state.copyRequestIdentityVerified) : val })),
+  copyRequestThirdPartyDataChecked: false,
+  setCopyRequestThirdPartyDataChecked: (val) => set((state) => ({ copyRequestThirdPartyDataChecked: typeof val === 'function' ? (val as any)(state.copyRequestThirdPartyDataChecked) : val })),
+  attendanceStartedAt: "",
+  setAttendanceStartedAt: (val) => set((state) => ({ attendanceStartedAt: typeof val === 'function' ? (val as any)(state.attendanceStartedAt) : val })),
+  attendanceEndedAt: "",
+  setAttendanceEndedAt: (val) => set((state) => ({ attendanceEndedAt: typeof val === 'function' ? (val as any)(state.attendanceEndedAt) : val })),
+  attendancePurpose: "для предъявления по месту требования",
+  setAttendancePurpose: (val) => set((state) => ({ attendancePurpose: typeof val === 'function' ? (val as any)(state.attendancePurpose) : val })),
+  attendanceRecipientOrganization: "",
+  setAttendanceRecipientOrganization: (val) => set((state) => ({ attendanceRecipientOrganization: typeof val === 'function' ? (val as any)(state.attendanceRecipientOrganization) : val })),
+  attendanceIssuedAt: new Date().toLocaleString("ru-RU"),
+  setAttendanceIssuedAt: (val) => set((state) => ({ attendanceIssuedAt: typeof val === 'function' ? (val as any)(state.attendanceIssuedAt) : val })),
+  attendanceSignedByFullName: "",
+  setAttendanceSignedByFullName: (val) => set((state) => ({ attendanceSignedByFullName: typeof val === 'function' ? (val as any)(state.attendanceSignedByFullName) : val })),
+  attendanceSignedByRole: "врач/администратор",
+  setAttendanceSignedByRole: (val) => set((state) => ({ attendanceSignedByRole: typeof val === 'function' ? (val as any)(state.attendanceSignedByRole) : val })),
+  attendanceDiagnosisDisclosureExcluded: false,
+  setAttendanceDiagnosisDisclosureExcluded: (val) => set((state) => ({ attendanceDiagnosisDisclosureExcluded: typeof val === 'function' ? (val as any)(state.attendanceDiagnosisDisclosureExcluded) : val })),
+  attendanceNotSickLeaveAcknowledged: false,
+  setAttendanceNotSickLeaveAcknowledged: (val) => set((state) => ({ attendanceNotSickLeaveAcknowledged: typeof val === 'function' ? (val as any)(state.attendanceNotSickLeaveAcknowledged) : val })),
+  releaseRecipientFullName: "",
+  setReleaseRecipientFullName: (val) => set((state) => ({ releaseRecipientFullName: typeof val === 'function' ? (val as any)(state.releaseRecipientFullName) : val })),
+  releaseRecipientIdentityDocument: "",
+  setReleaseRecipientIdentityDocument: (val) => set((state) => ({ releaseRecipientIdentityDocument: typeof val === 'function' ? (val as any)(state.releaseRecipientIdentityDocument) : val })),
+  releaseRecipientAuthority: "пациент лично",
+  setReleaseRecipientAuthority: (val) => set((state) => ({ releaseRecipientAuthority: typeof val === 'function' ? (val as any)(state.releaseRecipientAuthority) : val })),
+  releaseSourceRequestDocumentId: "",
+  setReleaseSourceRequestDocumentId: (val) => set((state) => ({ releaseSourceRequestDocumentId: typeof val === 'function' ? (val as any)(state.releaseSourceRequestDocumentId) : val })),
+  releaseChannel: "paper",
+  setReleaseChannel: (val) => set((state) => ({ releaseChannel: typeof val === 'function' ? (val as any)(state.releaseChannel) : val })),
+  releaseDocumentTypes: "Выписка из медицинской карты\nКопия снимков или КТ-архив",
+  setReleaseDocumentTypes: (val) => set((state) => ({ releaseDocumentTypes: typeof val === 'function' ? (val as any)(state.releaseDocumentTypes) : val })),
+  releasePeriodStart: "",
+  setReleasePeriodStart: (val) => set((state) => ({ releasePeriodStart: typeof val === 'function' ? (val as any)(state.releasePeriodStart) : val })),
+  releasePeriodEnd: "",
+  setReleasePeriodEnd: (val) => set((state) => ({ releasePeriodEnd: typeof val === 'function' ? (val as any)(state.releasePeriodEnd) : val })),
+  releaseDeliveredAt: new Date().toLocaleString("ru-RU"),
+  setReleaseDeliveredAt: (val) => set((state) => ({ releaseDeliveredAt: typeof val === 'function' ? (val as any)(state.releaseDeliveredAt) : val })),
+  releaseAccessExpiresAt: "",
+  setReleaseAccessExpiresAt: (val) => set((state) => ({ releaseAccessExpiresAt: typeof val === 'function' ? (val as any)(state.releaseAccessExpiresAt) : val })),
+  releaseThirdPartyDataChecked: false,
+  setReleaseThirdPartyDataChecked: (val) => set((state) => ({ releaseThirdPartyDataChecked: typeof val === 'function' ? (val as any)(state.releaseThirdPartyDataChecked) : val })),
+  refundAction: "partial_refund",
+  setRefundAction: (val) => set((state) => ({ refundAction: typeof val === 'function' ? (val as any)(state.refundAction) : val })),
+  refundAmountRub: "3800",
+  setRefundAmountRub: (val) => set((state) => ({ refundAmountRub: typeof val === 'function' ? (val as any)(state.refundAmountRub) : val })),
+  refundReason: "",
+  setRefundReason: (val) => set((state) => ({ refundReason: typeof val === 'function' ? (val as any)(state.refundReason) : val })),
+  refundMethod: "card",
+  setRefundMethod: (val) => set((state) => ({ refundMethod: typeof val === 'function' ? (val as any)(state.refundMethod) : val })),
+  refundRecipientFullName: "",
+  setRefundRecipientFullName: (val) => set((state) => ({ refundRecipientFullName: typeof val === 'function' ? (val as any)(state.refundRecipientFullName) : val })),
+  refundRecipientIdentityDocument: "",
+  setRefundRecipientIdentityDocument: (val) => set((state) => ({ refundRecipientIdentityDocument: typeof val === 'function' ? (val as any)(state.refundRecipientIdentityDocument) : val })),
+  refundBankDetails: "",
+  setRefundBankDetails: (val) => set((state) => ({ refundBankDetails: typeof val === 'function' ? (val as any)(state.refundBankDetails) : val })),
+  refundSelectedPaymentId: "",
+  setRefundSelectedPaymentId: (val) => set((state) => ({ refundSelectedPaymentId: typeof val === 'function' ? (val as any)(state.refundSelectedPaymentId) : val })),
+  refundOriginalFiscalReceiptNumber: "",
+  setRefundOriginalFiscalReceiptNumber: (val) => set((state) => ({ refundOriginalFiscalReceiptNumber: typeof val === 'function' ? (val as any)(state.refundOriginalFiscalReceiptNumber) : val })),
+  refundCorrectionFiscalReceiptNumber: "",
+  setRefundCorrectionFiscalReceiptNumber: (val) => set((state) => ({ refundCorrectionFiscalReceiptNumber: typeof val === 'function' ? (val as any)(state.refundCorrectionFiscalReceiptNumber) : val })),
+  refundAccountantDecision: "",
+  setRefundAccountantDecision: (val) => set((state) => ({ refundAccountantDecision: typeof val === 'function' ? (val as any)(state.refundAccountantDecision) : val })),
+  personalDataCrossBorderAllowed: false,
+  setPersonalDataCrossBorderAllowed: (val) => set((state) => ({ personalDataCrossBorderAllowed: typeof val === 'function' ? (val as any)(state.personalDataCrossBorderAllowed) : val })),
+  personalDataAutomatedDecisionAllowed: false,
+  setPersonalDataAutomatedDecisionAllowed: (val) => set((state) => ({ personalDataAutomatedDecisionAllowed: typeof val === 'function' ? (val as any)(state.personalDataAutomatedDecisionAllowed) : val })),
+  personalDataConsentGivenAt: new Date().toLocaleString("ru-RU"),
+  setPersonalDataConsentGivenAt: (val) => set((state) => ({ personalDataConsentGivenAt: typeof val === 'function' ? (val as any)(state.personalDataConsentGivenAt) : val })),
+  personalDataVoluntaryConsentConfirmed: false,
+  setPersonalDataVoluntaryConsentConfirmed: (val) => set((state) => ({ personalDataVoluntaryConsentConfirmed: typeof val === 'function' ? (val as any)(state.personalDataVoluntaryConsentConfirmed) : val })),
+  personalDataMedicalProcessingAcknowledged: false,
+  setPersonalDataMedicalProcessingAcknowledged: (val) => set((state) => ({ personalDataMedicalProcessingAcknowledged: typeof val === 'function' ? (val as any)(state.personalDataMedicalProcessingAcknowledged) : val })),
+  refusalIntervention: "",
+  setRefusalIntervention: (val) => set((state) => ({ refusalIntervention: typeof val === 'function' ? (val as any)(state.refusalIntervention) : val })),
+  refusalClinicalIndication: "",
+  setRefusalClinicalIndication: (val) => set((state) => ({ refusalClinicalIndication: typeof val === 'function' ? (val as any)(state.refusalClinicalIndication) : val })),
+  refusalPatientReason: "",
+  setRefusalPatientReason: (val) => set((state) => ({ refusalPatientReason: typeof val === 'function' ? (val as any)(state.refusalPatientReason) : val })),
+  refusalDoctorFullName: "",
+  setRefusalDoctorFullName: (val) => set((state) => ({ refusalDoctorFullName: typeof val === 'function' ? (val as any)(state.refusalDoctorFullName) : val })),
+  refusalConfirmedAt: new Date().toLocaleString("ru-RU"),
+  setRefusalConfirmedAt: (val) => set((state) => ({ refusalConfirmedAt: typeof val === 'function' ? (val as any)(state.refusalConfirmedAt) : val })),
+  refusalConsequencesUnderstood: false,
+  setRefusalConsequencesUnderstood: (val) => set((state) => ({ refusalConsequencesUnderstood: typeof val === 'function' ? (val as any)(state.refusalConsequencesUnderstood) : val })),
+  refusalSecondOpinionOffered: false,
+  setRefusalSecondOpinionOffered: (val) => set((state) => ({ refusalSecondOpinionOffered: typeof val === 'function' ? (val as any)(state.refusalSecondOpinionOffered) : val })),
+  refusalEmergencyCareExplained: false,
+  setRefusalEmergencyCareExplained: (val) => set((state) => ({ refusalEmergencyCareExplained: typeof val === 'function' ? (val as any)(state.refusalEmergencyCareExplained) : val })),
+  paymentAmount: "3800",
+  setPaymentAmount: (val) => set((state) => ({ paymentAmount: typeof val === 'function' ? (val as any)(state.paymentAmount) : val })),
+  paymentMethod: initialUiPreferences.paymentMethod,
+  setPaymentMethod: (val) => set((state) => ({ paymentMethod: typeof val === 'function' ? (val as any)(state.paymentMethod) : val })),
+  paymentFiscalReceiptNumber: "",
+  setPaymentFiscalReceiptNumber: (val) => set((state) => ({ paymentFiscalReceiptNumber: typeof val === 'function' ? (val as any)(state.paymentFiscalReceiptNumber) : val })),
+  paymentFiscalReceiptIssuedAt: "",
+  setPaymentFiscalReceiptIssuedAt: (val) => set((state) => ({ paymentFiscalReceiptIssuedAt: typeof val === 'function' ? (val as any)(state.paymentFiscalReceiptIssuedAt) : val })),
+  paymentFiscalFn: "",
+  setPaymentFiscalFn: (val) => set((state) => ({ paymentFiscalFn: typeof val === 'function' ? (val as any)(state.paymentFiscalFn) : val })),
+  paymentFiscalFd: "",
+  setPaymentFiscalFd: (val) => set((state) => ({ paymentFiscalFd: typeof val === 'function' ? (val as any)(state.paymentFiscalFd) : val })),
+  paymentFiscalFpd: "",
+  setPaymentFiscalFpd: (val) => set((state) => ({ paymentFiscalFpd: typeof val === 'function' ? (val as any)(state.paymentFiscalFpd) : val })),
+  paymentFiscalCashierName: "",
+  setPaymentFiscalCashierName: (val) => set((state) => ({ paymentFiscalCashierName: typeof val === 'function' ? (val as any)(state.paymentFiscalCashierName) : val })),
+  paymentFiscalReceiptUrl: "",
+  setPaymentFiscalReceiptUrl: (val) => set((state) => ({ paymentFiscalReceiptUrl: typeof val === 'function' ? (val as any)(state.paymentFiscalReceiptUrl) : val })),
+  paymentPayerFullName: "",
+  setPaymentPayerFullName: (val) => set((state) => ({ paymentPayerFullName: typeof val === 'function' ? (val as any)(state.paymentPayerFullName) : val })),
+  paymentPayerInn: "",
+  setPaymentPayerInn: (val) => set((state) => ({ paymentPayerInn: typeof val === 'function' ? (val as any)(state.paymentPayerInn) : val })),
+  paymentPayerBirthDate: "",
+  setPaymentPayerBirthDate: (val) => set((state) => ({ paymentPayerBirthDate: typeof val === 'function' ? (val as any)(state.paymentPayerBirthDate) : val })),
+  paymentPayerIdentityDocument: "",
+  setPaymentPayerIdentityDocument: (val) => set((state) => ({ paymentPayerIdentityDocument: typeof val === 'function' ? (val as any)(state.paymentPayerIdentityDocument) : val })),
+  paymentPayerRelationship: "пациент",
+  setPaymentPayerRelationship: (val) => set((state) => ({ paymentPayerRelationship: typeof val === 'function' ? (val as any)(state.paymentPayerRelationship) : val })),
+  paymentTaxDeductionCode: "",
+  setPaymentTaxDeductionCode: (val) => set((state) => ({ paymentTaxDeductionCode: typeof val === 'function' ? (val as any)(state.paymentTaxDeductionCode) : val })),
+  paymentFeedback: "",
+  setPaymentFeedback: (val) => set((state) => ({ paymentFeedback: typeof val === 'function' ? (val as any)(state.paymentFeedback) : val })),
+  documentIssueConfirmationId: null,
+  setDocumentIssueConfirmationId: (val) => set((state) => ({ documentIssueConfirmationId: typeof val === 'function' ? (val as any)(state.documentIssueConfirmationId) : val })),
+  documentIssueSignatureMode: initialUiPreferences.documentIssueSignatureMode,
+  setDocumentIssueSignatureMode: (val) => set((state) => ({ documentIssueSignatureMode: typeof val === 'function' ? (val as any)(state.documentIssueSignatureMode) : val })),
+  documentIssueSignedAt: currentLocalDateTimeInputValue,
+  setDocumentIssueSignedAt: (val) => set((state) => ({ documentIssueSignedAt: typeof val === 'function' ? (val as any)(state.documentIssueSignedAt) : val })),
+  documentIssueRecipientFullName: "",
+  setDocumentIssueRecipientFullName: (val) => set((state) => ({ documentIssueRecipientFullName: typeof val === 'function' ? (val as any)(state.documentIssueRecipientFullName) : val })),
+  documentIssueRecipientRole: "пациент/законный представитель",
+  setDocumentIssueRecipientRole: (val) => set((state) => ({ documentIssueRecipientRole: typeof val === 'function' ? (val as any)(state.documentIssueRecipientRole) : val })),
+  documentIssueStaffFullName: initialUiPreferences.documentIssueStaffFullName || "",
+  setDocumentIssueStaffFullName: (val) => set((state) => ({ documentIssueStaffFullName: typeof val === 'function' ? (val as any)(state.documentIssueStaffFullName) : val })),
+  documentIssueStaffRole: initialUiPreferences.documentIssueStaffRole || "",
+  setDocumentIssueStaffRole: (val) => set((state) => ({ documentIssueStaffRole: typeof val === 'function' ? (val as any)(state.documentIssueStaffRole) : val })),
+  documentIssueNote: "",
+  setDocumentIssueNote: (val) => set((state) => ({ documentIssueNote: typeof val === 'function' ? (val as any)(state.documentIssueNote) : val })),
+  documentIssueIdentityChecked: false,
+  setDocumentIssueIdentityChecked: (val) => set((state) => ({ documentIssueIdentityChecked: typeof val === 'function' ? (val as any)(state.documentIssueIdentityChecked) : val })),
+  documentIssueDocumentOpenedAndChecked: false,
+  setDocumentIssueDocumentOpenedAndChecked: (val) => set((state) => ({ documentIssueDocumentOpenedAndChecked: typeof val === 'function' ? (val as any)(state.documentIssueDocumentOpenedAndChecked) : val })),
+  documentIssueRecipientSigned: false,
+  setDocumentIssueRecipientSigned: (val) => set((state) => ({ documentIssueRecipientSigned: typeof val === 'function' ? (val as any)(state.documentIssueRecipientSigned) : val })),
+  documentIssueClinicSigned: false,
+  setDocumentIssueClinicSigned: (val) => set((state) => ({ documentIssueClinicSigned: typeof val === 'function' ? (val as any)(state.documentIssueClinicSigned) : val })),
+  documentVoidConfirmationId: null,
+  setDocumentVoidConfirmationId: (val) => set((state) => ({ documentVoidConfirmationId: typeof val === 'function' ? (val as any)(state.documentVoidConfirmationId) : val })),
+  documentVoidReasonCode: "draft_error",
+  setDocumentVoidReasonCode: (val) => set((state) => ({ documentVoidReasonCode: typeof val === 'function' ? (val as any)(state.documentVoidReasonCode) : val })),
+  documentVoidReasonText: "",
+  setDocumentVoidReasonText: (val) => set((state) => ({ documentVoidReasonText: typeof val === 'function' ? (val as any)(state.documentVoidReasonText) : val })),
+  documentVoidStaffFullName: initialUiPreferences.documentIssueStaffFullName || "",
+  setDocumentVoidStaffFullName: (val) => set((state) => ({ documentVoidStaffFullName: typeof val === 'function' ? (val as any)(state.documentVoidStaffFullName) : val })),
+  documentVoidStaffRole: initialUiPreferences.documentIssueStaffRole || "",
+  setDocumentVoidStaffRole: (val) => set((state) => ({ documentVoidStaffRole: typeof val === 'function' ? (val as any)(state.documentVoidStaffRole) : val })),
+  documentVoidCorrectionDocumentId: "",
+  setDocumentVoidCorrectionDocumentId: (val) => set((state) => ({ documentVoidCorrectionDocumentId: typeof val === 'function' ? (val as any)(state.documentVoidCorrectionDocumentId) : val })),
+  documentVoidReplacementRequired: false,
+  setDocumentVoidReplacementRequired: (val) => set((state) => ({ documentVoidReplacementRequired: typeof val === 'function' ? (val as any)(state.documentVoidReplacementRequired) : val })),
+  documentVoidPatientOrPayerNotified: false,
+  setDocumentVoidPatientOrPayerNotified: (val) => set((state) => ({ documentVoidPatientOrPayerNotified: typeof val === 'function' ? (val as any)(state.documentVoidPatientOrPayerNotified) : val })),
+  documentVoidArchivePreserved: false,
+  setDocumentVoidArchivePreserved: (val) => set((state) => ({ documentVoidArchivePreserved: typeof val === 'function' ? (val as any)(state.documentVoidArchivePreserved) : val })),
+  documentVoidStatusReviewed: false,
+  setDocumentVoidStatusReviewed: (val) => set((state) => ({ documentVoidStatusReviewed: typeof val === 'function' ? (val as any)(state.documentVoidStatusReviewed) : val })),
+  documentAuditFacts: null,
+  setDocumentAuditFacts: (val) => set((state) => ({ documentAuditFacts: typeof val === 'function' ? (val as any)(state.documentAuditFacts) : val })),
+  documentAuditFactsLoadingId: null,
+  setDocumentAuditFactsLoadingId: (val) => set((state) => ({ documentAuditFactsLoadingId: typeof val === 'function' ? (val as any)(state.documentAuditFactsLoadingId) : val })),
+  personalDataPurposes: "оказание стоматологической медицинской помощи\nведение медицинской карты и медицинской документации\nрасчеты, договоры, акты и налоговые документы\nуведомления о визитах, рекомендациях и готовности документов",
+  setPersonalDataPurposes: (val) => set((state) => ({ personalDataPurposes: typeof val === 'function' ? (val as any)(state.personalDataPurposes) : val })),
+  personalDataCategories: "ФИО, дата рождения, телефон, email и адреса\nпаспортные данные, ИНН, СНИЛС, полис ОМС или ДМС\nсведения о здоровье, диагнозы, снимки, планы лечения и назначения\nплатежные документы, договоры, акты и налоговые заявления",
+  setPersonalDataCategories: (val) => set((state) => ({ personalDataCategories: typeof val === 'function' ? (val as any)(state.personalDataCategories) : val })),
+  personalDataActions: "сбор\nзапись\nсистематизация\nхранение\nуточнение\nиспользование\nпередача по законному основанию\nобезличивание\nудаление после окончания срока хранения",
+  setPersonalDataActions: (val) => set((state) => ({ personalDataActions: typeof val === 'function' ? (val as any)(state.personalDataActions) : val })),
+  personalDataTransferRules: "Передача возможна только зуботехническим лабораториям, платежным и фискальным сервисам, страховым организациям, ИТ-подрядчикам с договором конфиденциальности, государственным органам по закону и пациентскому порталу по защищенному каналу.",
+  setPersonalDataTransferRules: (val) => set((state) => ({ personalDataTransferRules: typeof val === 'function' ? (val as any)(state.personalDataTransferRules) : val })),
+  personalDataRetentionPeriod: "в течение срока оказания помощи и обязательного срока хранения медицинской и бухгалтерской документации",
+  setPersonalDataRetentionPeriod: (val) => set((state) => ({ personalDataRetentionPeriod: typeof val === 'function' ? (val as any)(state.personalDataRetentionPeriod) : val })),
+  personalDataRevocationChannel: "письменное заявление в клинике или защищенное обращение через портал пациента",
+  setPersonalDataRevocationChannel: (val) => set((state) => ({ personalDataRevocationChannel: typeof val === 'function' ? (val as any)(state.personalDataRevocationChannel) : val })),
+  refusalExplainedRisks: "усиление боли\nраспространение инфекции\nпотеря возможности сохранить зуб или ткани\nнеобходимость экстренного обращения при ухудшении",
+  setRefusalExplainedRisks: (val) => set((state) => ({ refusalExplainedRisks: typeof val === 'function' ? (val as any)(state.refusalExplainedRisks) : val })),
+  refusalAlternatives: "повторная консультация\nобезболивание и контроль состояния\nвторое мнение профильного врача\nобращение в дежурную стоматологию при ухудшении",
+  setRefusalAlternatives: (val) => set((state) => ({ refusalAlternatives: typeof val === 'function' ? (val as any)(state.refusalAlternatives) : val })),
+  refusalUrgentWarningSigns: "отек лица или шеи\nтемпература\nзатруднение глотания или дыхания\nкровотечение\nнарастающая боль",
+  setRefusalUrgentWarningSigns: (val) => set((state) => ({ refusalUrgentWarningSigns: typeof val === 'function' ? (val as any)(state.refusalUrgentWarningSigns) : val })),
+  documentIngestionTarget: initialUiPreferences.documentIngestionTarget,
+  setDocumentIngestionTarget: (val) => set((state) => ({ documentIngestionTarget: typeof val === 'function' ? (val as any)(state.documentIngestionTarget) : val })),
+  documentIngestion: null,
+  setDocumentIngestion: (val) => set((state) => ({ documentIngestion: typeof val === 'function' ? (val as any)(state.documentIngestion) : val })),
 }));
