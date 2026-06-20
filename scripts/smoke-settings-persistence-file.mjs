@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { mkdirSync } from "node:fs";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -604,7 +605,22 @@ try {
   assert(legacyReloaded.ohifBaseUrl === "http://127.0.0.1:3000", "legacy OHIF URL default mismatch");
   assert(Number.isFinite(Date.parse(legacyReloaded.savedAt)), "legacy savedAt default missing");
 
-  writeFileSync(stateFilePath, "{ invalid dental state json", "utf8");
+
+  rmSync(stateFilePath, { force: true });
+  mkdirSync(stateFilePath, { recursive: true });
+  const unreadableIntegrity = getPersistentStateIntegrityReport();
+  const unreadableExport = buildPersistentStateExport();
+  const unreadableIntegrityText = JSON.stringify({ unreadableIntegrity, unreadableExport });
+  assert(
+    unreadableIntegrity.warnings.some((warning) => warning.includes("Файл состояния не читается")),
+    "unreadable persistence state must return an operator-readable warning"
+  );
+  assert(
+    !/EISDIR|EACCES|illegal operation on a directory|permission denied/i.test(unreadableIntegrityText),
+    "unreadable persistence state must not expose filesystem errors or internal diagnostics"
+  );
+  rmSync(stateFilePath, { recursive: true, force: true });
+writeFileSync(stateFilePath, "{ invalid dental state json", "utf8");
   const brokenIntegrity = getPersistentStateIntegrityReport();
   const brokenExport = buildPersistentStateExport();
   const brokenIntegrityText = JSON.stringify({ brokenIntegrity, brokenExport });
