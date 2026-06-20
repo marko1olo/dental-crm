@@ -1,5 +1,4 @@
-import { ImagingView } from "./ImagingView";
-import { VisitView } from "./VisitView";
+
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -365,6 +364,8 @@ import {
   warningSeverityLabels,
   workloadStateLabels
 } from "./workspaceUiLabels";
+const ImagingView = lazy(() => import("./ImagingView").then((module) => ({ default: module.ImagingView })));
+const VisitView = lazy(() => import("./VisitView").then((module) => ({ default: module.VisitView })));
 const FinanceView = lazy(() => import("./FinanceView").then((module) => ({ default: module.FinanceView })));
 const CommunicationsView = lazy(() => import("./CommunicationsView").then((module) => ({ default: module.CommunicationsView })));
 const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ default: module.DocumentsView })));
@@ -6595,7 +6596,7 @@ export function App() {
   const [dicomFirstFramePreview, setDicomFirstFramePreview] = useState<DicomFirstFramePreviewResponse | null>(null);
   const [dicomFirstFramePreviewRequest, setDicomFirstFramePreviewRequest] =
     useState<DicomFirstFramePreviewRequestContext | null>(null);
-  const [dicomFirstFrameViewerState, setDicomFirstFrameViewerState] = useState<ImagingView selectedWorkspaceRole={selectedWorkspaceRole}erState>(
+  const [dicomFirstFrameViewerState, setDicomFirstFrameViewerState] = useState<ImagingViewerState>(
     defaultDicomFirstFrameViewerState
   );
   const [dicomWebEndpointUrl, setDicomWebEndpointUrl] = useState(initialUiPreferences.dicomWebEndpointUrl);
