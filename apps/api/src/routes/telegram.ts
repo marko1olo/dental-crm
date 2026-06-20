@@ -2394,6 +2394,12 @@ async function handleWebhook(
   }));
 }
 
+export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
+  app.post("/api/telegram/webhook", handleWebhook);
+  app.post("/api/telegram/webhook/:organizationId/:botConfigId", handleWebhook);
+  app.post("/api/telegram/webhook/:organizationId", handleWebhook);
+}
+
 export async function registerTelegramRoutes(app: FastifyInstance) {
   const telegramControlPlaneRouteOptions = { preHandler: requireTelegramControlPlaneAccess };
 
@@ -2611,7 +2617,5 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
     }
   });
 
-  app.post("/api/telegram/webhook", handleWebhook);
-  app.post("/api/telegram/webhook/:organizationId/:botConfigId", handleWebhook);
-  app.post("/api/telegram/webhook/:organizationId", handleWebhook);
+
 }

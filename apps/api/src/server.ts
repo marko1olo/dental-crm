@@ -19,7 +19,7 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSpeechRoutes } from "./routes/speech.js";
 import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSystemRoutes } from "./routes/system.js";
-import { registerTelegramRoutes, startDenteTelegramOutboxDueWorker } from "./routes/telegram.js";
+import { registerTelegramRoutes, registerTelegramWebhookRoutes, startDenteTelegramOutboxDueWorker } from "./routes/telegram.js";
 import { registerVisitRoutes } from "./routes/visits.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
@@ -132,6 +132,7 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerSmartImportRoutes(app);
   await registerSystemRoutes(app);
   await registerTelegramRoutes(app);
+  await registerTelegramWebhookRoutes(app);
   await registerVisitRoutes(app);
 
   if (options.startTelegramWorker !== false) {
