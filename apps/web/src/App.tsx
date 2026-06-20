@@ -1,4 +1,5 @@
 
+import { useDocumentStore } from "./store/documentStore";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -1081,386 +1082,624 @@ export function App() {
   const [documentVoidStatusReviewed, setDocumentVoidStatusReviewed] = useState(false);
   const [documentAuditFacts, setDocumentAuditFacts] = useState<DocumentAuditFacts | null>(null);
   const [documentAuditFactsLoadingId, setDocumentAuditFactsLoadingId] = useState<string | null>(null);
-  const [documentCreateSavingKind, setDocumentCreateSavingKind] = useState<GeneratedDocument["kind"] | null>(null);
-  const [documentStatusSavingId, setDocumentStatusSavingId] = useState<string | null>(null);
-  const [taxDocumentPayerInn, setTaxDocumentPayerInn] = useState("");
-  const [selectedTaxPaymentIds, setSelectedTaxPaymentIds] = useState<string[]>([]);
-  const [selectedPaymentReceiptIds, setSelectedPaymentReceiptIds] = useState<string[]>([]);
-  const [taxApplicationTaxpayerFullName, setTaxApplicationTaxpayerFullName] = useState("");
-  const [taxApplicationTaxpayerInn, setTaxApplicationTaxpayerInn] = useState("");
-  const [taxApplicationTaxpayerBirthDate, setTaxApplicationTaxpayerBirthDate] = useState("");
-  const [taxApplicationTaxpayerIdentityDocument, setTaxApplicationTaxpayerIdentityDocument] = useState("");
-  const [taxApplicationRelationship, setTaxApplicationRelationship] = useState<TaxDeductionApplicationRelationship>("self");
-  const [taxApplicationForm, setTaxApplicationForm] = useState<TaxDeductionApplicationForm>(initialUiPreferences.taxApplicationForm);
-  const [taxApplicationDeliveryChannel, setTaxApplicationDeliveryChannel] =
-    useState<TaxDeductionApplicationDeliveryChannel>(initialUiPreferences.taxApplicationDeliveryChannel);
-  const [taxApplicationContact, setTaxApplicationContact] = useState("");
-  const [taxApplicationAuthorityDocument, setTaxApplicationAuthorityDocument] = useState("");
-  const [taxApplicationRequestedAt, setTaxApplicationRequestedAt] = useState(() => toDateTimeLocalValue(new Date().toISOString()));
-  const [taxApplicationDuplicateWarningAccepted, setTaxApplicationDuplicateWarningAccepted] = useState(false);
-  const [intakeChiefComplaint, setIntakeChiefComplaint] = useState("");
-  const [intakeAllergyStatus, setIntakeAllergyStatus] = useState("Аллергии и нежелательные реакции со слов пациента не отмечены.");
-  const [intakeCurrentMedications, setIntakeCurrentMedications] = useState("Постоянные препараты со слов пациента не принимает.");
-  const [intakeChronicConditions, setIntakeChronicConditions] = useState("Хронические заболевания со слов пациента отрицает.");
-  const [intakePregnancyStatus, setIntakePregnancyStatus] = useState<PatientIntakePregnancyStatus>("unknown");
-  const [intakeAnticoagulants, setIntakeAnticoagulants] = useState(
-    "Антикоагулянты и препараты, влияющие на кровотечение, со слов пациента не принимает."
-  );
-  const [intakeInfectiousRiskNotes, setIntakeInfectiousRiskNotes] = useState("Инфекционные риски со слов пациента не заявлены.");
-  const [intakeCardioEndocrineNotes, setIntakeCardioEndocrineNotes] = useState(
-    "Сердечно-сосудистые, эндокринные и иные системные риски требуют уточнения врачом перед вмешательством."
-  );
-  const [intakeEmergencyContact, setIntakeEmergencyContact] = useState("");
-  const [intakeAdditionalNotes, setIntakeAdditionalNotes] = useState("");
-  const [intakeAccuracyConfirmed, setIntakeAccuracyConfirmed] = useState(false);
-  const [informedConsentIntervention, setInformedConsentIntervention] = useState("Стоматологическое вмешательство по согласованному плану");
-  const [informedConsentToothOrArea, setInformedConsentToothOrArea] = useState("");
-  const [informedConsentDiagnosisOrIndication, setInformedConsentDiagnosisOrIndication] = useState("");
-  const [informedConsentExpectedBenefit, setInformedConsentExpectedBenefit] = useState(
-    "снижение боли, восстановление функции, профилактика осложнений и сохранение стоматологического здоровья"
-  );
-  const [informedConsentAnesthesia, setInformedConsentAnesthesia] = useState("местная анестезия по показаниям");
-  const [informedConsentMaterialNotes, setInformedConsentMaterialNotes] = useState("");
-  const [informedConsentTrustedContact, setInformedConsentTrustedContact] = useState("не разрешаю сообщать медицинские сведения третьим лицам");
-  const [informedConsentRisks, setInformedConsentRisks] = useState(
-    "боль, отек, кровотечение или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного приема или изменения плана лечения\nограниченный прогноз при исходном состоянии зубов и тканей"
-  );
-  const [informedConsentAlternatives, setInformedConsentAlternatives] = useState(
-    "отложить вмешательство и наблюдать состояние\nполучить второе мнение\nвыбрать альтернативный метод лечения при наличии показаний\nотказаться от вмешательства с фиксацией возможных последствий"
-  );
-  const [informedConsentAftercare, setInformedConsentAftercare] = useState(
-    "соблюдать рекомендации врача и режим приема препаратов\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при нарастающей боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок"
-  );
-  const [informedConsentDoctorFullName, setInformedConsentDoctorFullName] = useState("");
-  const [informedConsentConfirmedAt, setInformedConsentConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [informedConsentQuestionsAnswered, setInformedConsentQuestionsAnswered] = useState(false);
-  const [informedConsentRisksUnderstood, setInformedConsentRisksUnderstood] = useState(false);
-  const [informedConsentWithdrawUnderstood, setInformedConsentWithdrawUnderstood] = useState(false);
-  const [procedureConsentProcedureType, setProcedureConsentProcedureType] =
-    useState<ProcedureSpecificConsentProcedure>(initialUiPreferences.procedureConsentProcedureType);
-  const [procedureConsentProcedureName, setProcedureConsentProcedureName] = useState("Лечение зуба по согласованному плану");
-  const [procedureConsentToothOrArea, setProcedureConsentToothOrArea] = useState("");
-  const [procedureConsentDiagnosisOrIndication, setProcedureConsentDiagnosisOrIndication] = useState("");
-  const [procedureConsentAnesthesia, setProcedureConsentAnesthesia] = useState("местная анестезия по показаниям");
-  const [procedureConsentMaterials, setProcedureConsentMaterials] = useState("");
-  const [procedureConsentPatientRiskFactors, setProcedureConsentPatientRiskFactors] = useState(
-    "аллергии, постоянные препараты и хронические заболевания уточнены перед процедурой\nбеременность, антикоагулянты и инфекционные риски уточнены перед процедурой"
-  );
-  const [procedureConsentSpecificRisks, setProcedureConsentSpecificRisks] = useState(
-    "боль, отек, кровоточивость или временный дискомфорт\nнеобходимость повторного приема, коррекции или изменения плана\nаллергическая реакция на препараты или материалы"
-  );
-  const [procedureConsentAlternatives, setProcedureConsentAlternatives] = useState(
-    "отложить процедуру и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от процедуры с фиксацией возможных последствий"
-  );
-  const [procedureConsentAftercare, setProcedureConsentAftercare] = useState(
-    "соблюдать рекомендации врача после процедуры\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок"
-  );
-  const [procedureConsentDoctorFullName, setProcedureConsentDoctorFullName] = useState("");
-  const [procedureConsentConfirmedAt, setProcedureConsentConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [procedureConsentLocalFormAttached, setProcedureConsentLocalFormAttached] = useState(false);
-  const [procedureConsentQuestionsAnswered, setProcedureConsentQuestionsAnswered] = useState(false);
-  const [procedureConsentExactProcedureConfirmed, setProcedureConsentExactProcedureConfirmed] = useState(false);
-  const [procedureConsentRisksUnderstood, setProcedureConsentRisksUnderstood] = useState(false);
-  const [paidContractNumber, setPaidContractNumber] = useState("");
-  const [paidContractDate, setPaidContractDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
-  const [paidContractServiceStart, setPaidContractServiceStart] = useState("");
-  const [paidContractServiceEnd, setPaidContractServiceEnd] = useState("до полного оказания согласованных услуг или подписания акта");
-  const [paidContractCustomerFullName, setPaidContractCustomerFullName] = useState("");
-  const [paidContractRepresentativeFullName, setPaidContractRepresentativeFullName] = useState("");
-  const [paidContractCareReason, setPaidContractCareReason] = useState("");
-  const [paidContractServiceScope, setPaidContractServiceScope] = useState("");
-  const [paidContractTotalRub, setPaidContractTotalRub] = useState("");
-  const [paidContractPaymentTerms, setPaidContractPaymentTerms] = useState("оплата до или в день оказания услуги с выдачей кассового чека");
-  const [paidContractPriceChangeRules, setPaidContractPriceChangeRules] = useState("изменение объема, состава или стоимости платных услуг оформляется до оказания дополнительным соглашением или новым договором");
-  const [paidContractFreeCareNotice, setPaidContractFreeCareNotice] = useState("пациенту разъяснена возможность получения медицинской помощи в рамках программы государственных гарантий при наличии оснований и маршрутизации");
-  const [paidContractRecommendationWarning, setPaidContractRecommendationWarning] = useState("несоблюдение назначений, режима лечения и рекомендаций врача может снизить качество услуги, изменить сроки лечения или отрицательно сказаться на состоянии здоровья");
-  const [paidContractRefundTerms, setPaidContractRefundTerms] = useState("при отказе пациента от услуг оплачиваются фактически понесенные исполнителем расходы и фактически оказанные услуги; возврат оформляется по кассовым и бухгалтерским правилам клиники");
-  const [paidContractWarrantyTerms, setPaidContractWarrantyTerms] = useState("гарантийные и претензионные условия действуют по локальным правилам клиники, медицинским показаниям и при соблюдении рекомендаций врача");
-  const [paidContractDoctorFullName, setPaidContractDoctorFullName] = useState("");
-  const [paidContractSignedAt, setPaidContractSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [paidContractClinicInfoConfirmed, setPaidContractClinicInfoConfirmed] = useState(false);
-  const [paidContractServiceListConfirmed, setPaidContractServiceListConfirmed] = useState(false);
-  const [paidContractPaidBasisConfirmed, setPaidContractPaidBasisConfirmed] = useState(false);
-  const [paidContractWrittenChangesConfirmed, setPaidContractWrittenChangesConfirmed] = useState(false);
-  const [completedActNumber, setCompletedActNumber] = useState("");
-  const [completedActDate, setCompletedActDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
-  const [completedActContractNumber, setCompletedActContractNumber] = useState("");
-  const [completedActLinkedContractDocumentId, setCompletedActLinkedContractDocumentId] = useState("");
-  const [completedActServicePeriodStart, setCompletedActServicePeriodStart] = useState("");
-  const [completedActServicePeriodEnd, setCompletedActServicePeriodEnd] = useState("");
-  const [completedActDoctorFullName, setCompletedActDoctorFullName] = useState("");
-  const [completedActServicesSummary, setCompletedActServicesSummary] = useState("");
-  const [completedActTotalRub, setCompletedActTotalRub] = useState("");
-  const [completedActPaidRub, setCompletedActPaidRub] = useState("");
-  const [completedActFiscalReceipts, setCompletedActFiscalReceipts] = useState("");
-  const [completedActPatientClaims, setCompletedActPatientClaims] = useState("");
-  const [completedActLinkedContract, setCompletedActLinkedContract] = useState(false);
-  const [completedActFinalScopeConfirmed, setCompletedActFinalScopeConfirmed] = useState(false);
-  const [completedActFiscalReceiptsVerified, setCompletedActFiscalReceiptsVerified] = useState(false);
-  const [completedActAccepted, setCompletedActAccepted] = useState(false);
-  const [treatmentEstimateNumber, setTreatmentEstimateNumber] = useState("");
-  const [treatmentEstimateDate, setTreatmentEstimateDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
-  const [treatmentEstimatePatientOrPayerFullName, setTreatmentEstimatePatientOrPayerFullName] = useState("");
-  const [treatmentEstimateTreatmentBasis, setTreatmentEstimateTreatmentBasis] = useState("");
-  const [treatmentEstimateTotalRub, setTreatmentEstimateTotalRub] = useState("");
-  const [treatmentEstimateValidUntil, setTreatmentEstimateValidUntil] = useState("");
-  const [treatmentEstimatePriceChangeRules, setTreatmentEstimatePriceChangeRules] = useState(
-    "при изменении диагноза, объема вмешательства, материалов, лабораторного этапа или клинических условий стоимость согласуется до оказания дополнительных услуг"
-  );
-  const [treatmentEstimateExcludedItems, setTreatmentEstimateExcludedItems] = useState(
-    "услуги, не указанные в строках сметы\nдополнительная диагностика и лабораторные этапы при новых показаниях\nэкстренная помощь и лечение осложнений, не связанных с текущим планом"
-  );
-  const [treatmentEstimatePaymentMilestoneNotes, setTreatmentEstimatePaymentMilestoneNotes] = useState(
-    "оплата по этапам лечения или до оказания услуги; после фактической оплаты выдается кассовый чек"
-  );
-  const [treatmentEstimateDoctorFullName, setTreatmentEstimateDoctorFullName] = useState("");
-  const [treatmentEstimateAdminFullName, setTreatmentEstimateAdminFullName] = useState("");
-  const [treatmentEstimateSignedAt, setTreatmentEstimateSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [treatmentEstimatePreliminaryConfirmed, setTreatmentEstimatePreliminaryConfirmed] = useState(false);
-  const [treatmentEstimateScopeConfirmed, setTreatmentEstimateScopeConfirmed] = useState(false);
-  const [treatmentEstimateFiscalNoticeConfirmed, setTreatmentEstimateFiscalNoticeConfirmed] = useState(false);
-  const [treatmentEstimateChangeRulesConfirmed, setTreatmentEstimateChangeRulesConfirmed] = useState(false);
-  const [paymentInvoiceNumber, setPaymentInvoiceNumber] = useState("");
-  const [paymentInvoiceDate, setPaymentInvoiceDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
-  const [paymentInvoicePayerFullName, setPaymentInvoicePayerFullName] = useState("");
-  const [paymentInvoicePayerPhone, setPaymentInvoicePayerPhone] = useState("");
-  const [paymentInvoicePayerEmail, setPaymentInvoicePayerEmail] = useState("");
-  const [paymentInvoicePurpose, setPaymentInvoicePurpose] = useState("оплата стоматологических услуг по согласованному плану лечения");
-  const [paymentInvoiceDueDate, setPaymentInvoiceDueDate] = useState(() => dateInputValuePlusDays(7));
-  const [paymentInvoicePaymentTerms, setPaymentInvoicePaymentTerms] = useState("оплата до или в день оказания услуги; после оплаты выдается кассовый чек");
-  const [paymentInvoiceBankDetails, setPaymentInvoiceBankDetails] = useState("");
-  const [paymentInvoiceQrPayload, setPaymentInvoiceQrPayload] = useState("");
-  const [paymentInvoiceCashlessAllowed, setPaymentInvoiceCashlessAllowed] = useState(true);
-  const [paymentInvoiceCashDeskAllowed, setPaymentInvoiceCashDeskAllowed] = useState(true);
-  const [paymentInvoiceRequisitesVerified, setPaymentInvoiceRequisitesVerified] = useState(false);
-  const [paymentInvoiceServiceScopeConfirmed, setPaymentInvoiceServiceScopeConfirmed] = useState(false);
-  const [paymentInvoiceFiscalNoticeConfirmed, setPaymentInvoiceFiscalNoticeConfirmed] = useState(false);
-  const [paymentReceiptNumber, setPaymentReceiptNumber] = useState("");
-  const [paymentReceiptDate, setPaymentReceiptDate] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [paymentReceiptPayerFullName, setPaymentReceiptPayerFullName] = useState("");
-  const [paymentReceiptPayerBirthDate, setPaymentReceiptPayerBirthDate] = useState("");
-  const [paymentReceiptPayerInn, setPaymentReceiptPayerInn] = useState("");
-  const [paymentReceiptPayerIdentityDocument, setPaymentReceiptPayerIdentityDocument] = useState("");
-  const [paymentReceiptPayerRelationship, setPaymentReceiptPayerRelationship] = useState("");
-  const [paymentReceiptTaxSupportRequested, setPaymentReceiptTaxSupportRequested] = useState(
-    initialUiPreferences.paymentReceiptTaxSupportRequested
-  );
-  const [paymentReceiptPurpose, setPaymentReceiptPurpose] = useState("оплата стоматологических услуг по выбранным фискальным чекам");
-  const [paymentReceiptIssuedBy, setPaymentReceiptIssuedBy] = useState("");
-  const [paymentReceiptPaymentsVerified, setPaymentReceiptPaymentsVerified] = useState(false);
-  const [paymentReceiptPayerVerified, setPaymentReceiptPayerVerified] = useState(false);
-  const [paymentReceiptFiscalNoticeConfirmed, setPaymentReceiptFiscalNoticeConfirmed] = useState(false);
-  const [installmentScheduleNumber, setInstallmentScheduleNumber] = useState("");
-  const [installmentScheduleDate, setInstallmentScheduleDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
-  const [installmentScheduleBaseDocumentTitle, setInstallmentScheduleBaseDocumentTitle] = useState("");
-  const [installmentSchedulePayerFullName, setInstallmentSchedulePayerFullName] = useState("");
-  const [installmentScheduleTotalRub, setInstallmentScheduleTotalRub] = useState("");
-  const [installmentSchedulePrepaidRub, setInstallmentSchedulePrepaidRub] = useState("");
-  const [installmentScheduleRows, setInstallmentScheduleRows] = useState(
-    () => `Первый платеж | ${dateInputValuePlusDays(7)} | 0 | запланировано\nФинальный платеж | ${dateInputValuePlusDays(21)} | 0 | запланировано`
-  );
-  const [installmentScheduleLatePolicy, setInstallmentScheduleLatePolicy] = useState("при переносе срока администратор фиксирует контакт с пациентом, новый срок и основание переноса до наступления просрочки");
-  const [installmentSchedulePaymentMethodNotes, setInstallmentSchedulePaymentMethodNotes] = useState("оплата в кассе клиники, по ссылке или безналично с выдачей кассового чека после оплаты");
-  const [installmentScheduleResponsibleFullName, setInstallmentScheduleResponsibleFullName] = useState("");
-  const [installmentScheduleAccepted, setInstallmentScheduleAccepted] = useState(false);
-  const [installmentScheduleFiscalNoticeConfirmed, setInstallmentScheduleFiscalNoticeConfirmed] = useState(false);
-  const [installmentScheduleWrittenChangesConfirmed, setInstallmentScheduleWrittenChangesConfirmed] = useState(false);
-  const [minorRepresentativeFullName, setMinorRepresentativeFullName] = useState("");
-  const [minorRepresentativeRelationship, setMinorRepresentativeRelationship] = useState("");
-  const [minorRepresentativeIdentityDocument, setMinorRepresentativeIdentityDocument] = useState("");
-  const [minorRepresentativeAuthorityDocument, setMinorRepresentativeAuthorityDocument] = useState("");
-  const [minorRepresentativePhone, setMinorRepresentativePhone] = useState("");
-  const [minorConsentPatientFullName, setMinorConsentPatientFullName] = useState("");
-  const [minorConsentPatientBirthDate, setMinorConsentPatientBirthDate] = useState("");
-  const [minorConsentInterventionScope, setMinorConsentInterventionScope] = useState("");
-  const [minorConsentDiagnosisOrIndication, setMinorConsentDiagnosisOrIndication] = useState("");
-  const [minorConsentRisks, setMinorConsentRisks] = useState(
-    "боль, отек, кровоточивость или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного визита или изменения плана лечения"
-  );
-  const [minorConsentAlternatives, setMinorConsentAlternatives] = useState(
-    "отложить вмешательство и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от вмешательства с фиксацией рисков"
-  );
-  const [minorConsentDoctorFullName, setMinorConsentDoctorFullName] = useState("");
-  const [minorConsentSignedAt, setMinorConsentSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [minorConsentIdentityVerified, setMinorConsentIdentityVerified] = useState(false);
-  const [minorConsentAuthorityVerified, setMinorConsentAuthorityVerified] = useState(false);
-  const [minorConsentExplained, setMinorConsentExplained] = useState(false);
-  const [minorConsentStored, setMinorConsentStored] = useState(false);
-  const [minorConsentAgeExplanation, setMinorConsentAgeExplanation] = useState(false);
-  const [warrantyServiceOrWorkName, setWarrantyServiceOrWorkName] = useState("");
-  const [warrantyCompletedAt, setWarrantyCompletedAt] = useState("");
-  const [warrantyTeethOrArea, setWarrantyTeethOrArea] = useState("");
-  const [warrantyMaterialsOrSystems, setWarrantyMaterialsOrSystems] = useState("");
-  const [warrantyPeriod, setWarrantyPeriod] = useState("по локальному гарантийному положению клиники и виду выполненной работы");
-  const [warrantyControlVisitSchedule, setWarrantyControlVisitSchedule] = useState("контрольный осмотр по назначению врача; профессиональная гигиена по индивидуальному графику");
-  const [warrantyPatientObligations, setWarrantyPatientObligations] = useState(
-    "соблюдать рекомендации врача и режим после лечения\nприходить на контрольные визиты в согласованные сроки\nподдерживать домашнюю гигиену и профессиональную гигиену\nне выполнять самостоятельную коррекцию конструкции или реставрации"
-  );
-  const [warrantyExcludedRiskFactors, setWarrantyExcludedRiskFactors] = useState(
-    "травма, перегрузка, бруксизм или вредные привычки\nновые заболевания или отказ от рекомендованного лечения\nнарушение графика контрольных визитов\nсамостоятельное вмешательство или лечение в другой клинике без согласования"
-  );
-  const [warrantyUrgentContactReasons, setWarrantyUrgentContactReasons] = useState(
-    "острая боль или нарастающий отек\nподвижность, скол или выпадение конструкции\nкровотечение, температура или аллергическая реакция\nнарушение прикуса или невозможность пользоваться конструкцией"
-  );
-  const [warrantyLinkedActOrContract, setWarrantyLinkedActOrContract] = useState("");
-  const [warrantyDoctorFullName, setWarrantyDoctorFullName] = useState("");
-  const [warrantyIssuedAt, setWarrantyIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [warrantyPolicyApplied, setWarrantyPolicyApplied] = useState(false);
-  const [warrantyAftercareReceived, setWarrantyAftercareReceived] = useState(false);
-  const [warrantyControlVisitsUnderstood, setWarrantyControlVisitsUnderstood] = useState(false);
-  const [clinicalToothRowsText, setClinicalToothRowsText] = useState(defaultClinicalToothRowsText);
-  const [treatmentPlanClinicalReason, setTreatmentPlanClinicalReason] = useState("");
-  const [treatmentPlanDiagnosisSummary, setTreatmentPlanDiagnosisSummary] = useState("");
-  const [treatmentPlanTeethOrArea, setTreatmentPlanTeethOrArea] = useState("");
-  const [treatmentPlanGoals, setTreatmentPlanGoals] = useState("устранить жалобы пациента\nвосстановить функцию и герметичность\nснизить риск осложнений и повторного обращения");
-  const [treatmentPlanStages, setTreatmentPlanStages] = useState(
-    "Диагностика и подготовка | осмотр, снимки, фото-протокол, согласование объема | до начала лечения | уточнить диагноз и ограничения | 0\nОсновной этап | услуги по выбранному плану лечения | по расписанию клиники | объем корректируется по клинической ситуации | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | оценка результата и гигиены | 0"
-  );
-  const [treatmentPlanEstimatedTotalRub, setTreatmentPlanEstimatedTotalRub] = useState("");
-  const [treatmentPlanAlternatives, setTreatmentPlanAlternatives] = useState(
-    "наблюдение без активного лечения\nальтернативный материал или метод лечения\nпоэтапное лечение с переносом части работ\nполучение второго мнения\nотказ от лечения с фиксацией рисков"
-  );
-  const [treatmentPlanRisks, setTreatmentPlanRisks] = useState(
-    "изменение плана при новых клинических данных или снимках\nнеобходимость дополнительного визита, консультации или смежного специалиста\nизменение стоимости при изменении объема, материалов или сроков\nограниченный прогноз при исходном состоянии зубов и тканей"
-  );
-  const [treatmentPlanPrognosis, setTreatmentPlanPrognosis] = useState(
-    "прогноз зависит от исходного состояния зубов, тканей, гигиены, выполнения рекомендаций и явки на контрольные визиты"
-  );
-  const [treatmentPlanControlPlan, setTreatmentPlanControlPlan] = useState("контрольный осмотр после завершения этапа и далее по индивидуальному графику");
-  const [treatmentPlanDoctorFullName, setTreatmentPlanDoctorFullName] = useState("");
-  const [treatmentPlanPlannedAt, setTreatmentPlanPlannedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [treatmentPlanQuestionsAnswered, setTreatmentPlanQuestionsAnswered] = useState(false);
-  const [treatmentPlanSeparateConsentAcknowledged, setTreatmentPlanSeparateConsentAcknowledged] = useState(false);
-  const [treatmentPlanNewApprovalAcknowledged, setTreatmentPlanNewApprovalAcknowledged] = useState(false);
-  const [treatmentAcceptanceVariant, setTreatmentAcceptanceVariant] = useState<TreatmentPlanAcceptanceVariant>("standard");
-  const [treatmentAcceptanceClinicalGoal, setTreatmentAcceptanceClinicalGoal] = useState("санация, восстановление функции и профилактика осложнений");
-  const [treatmentAcceptanceDiagnosisSummary, setTreatmentAcceptanceDiagnosisSummary] = useState("");
-  const [treatmentAcceptanceTeethOrArea, setTreatmentAcceptanceTeethOrArea] = useState("");
-  const [treatmentAcceptanceStages, setTreatmentAcceptanceStages] = useState(
-    "Диагностика и подготовка | осмотр, снимки, фотопротокол, согласование объема | до начала лечения | 0\nОсновной этап лечения | услуги по выбранному плану лечения | по расписанию клиники | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | 0"
-  );
-  const [treatmentAcceptanceEstimatedTotalRub, setTreatmentAcceptanceEstimatedTotalRub] = useState("");
-  const [treatmentAcceptanceEstimateValidUntil, setTreatmentAcceptanceEstimateValidUntil] = useState("");
-  const [treatmentAcceptancePaymentTerms, setTreatmentAcceptancePaymentTerms] = useState("оплата по кассовому чеку до или в день оказания услуг; рассрочка или кредит оформляются отдельным соглашением");
-  const [treatmentAcceptanceRejectedAlternatives, setTreatmentAcceptanceRejectedAlternatives] = useState(
-    "наблюдение без активного лечения\nперенос лечения\nальтернативный материал или конструкция\nполучение второго мнения"
-  );
-  const [treatmentAcceptanceRisks, setTreatmentAcceptanceRisks] = useState(
-    "изменение плана при новых клинических данных или снимках\nизменение стоимости при изменении объема, материалов или сроков\nнеобходимость дополнительных визитов, коррекции или смежного специалиста\nограниченный прогноз при исходном состоянии зубов и тканей"
-  );
-  const [treatmentAcceptanceWarrantyTerms, setTreatmentAcceptanceWarrantyTerms] = useState(
-    "контрольные визиты обязательны; гарантийные условия действуют в пределах выбранного плана, соблюдения рекомендаций, гигиены и сроков контрольных посещений"
-  );
-  const [treatmentAcceptanceDoctorFullName, setTreatmentAcceptanceDoctorFullName] = useState("");
-  const [treatmentAcceptanceAcceptedAt, setTreatmentAcceptanceAcceptedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [treatmentAcceptanceQuestionsAnswered, setTreatmentAcceptanceQuestionsAnswered] = useState(false);
-  const [treatmentAcceptanceAlternativesUnderstood, setTreatmentAcceptanceAlternativesUnderstood] = useState(false);
-  const [treatmentAcceptanceCostChangeUnderstood, setTreatmentAcceptanceCostChangeUnderstood] = useState(false);
-  const [treatmentAcceptanceRevisionAcknowledged, setTreatmentAcceptanceRevisionAcknowledged] = useState(false);
-  const [postVisitCareTopic, setPostVisitCareTopic] = useState<PostVisitCareTopic>(initialUiPreferences.postVisitCareTopic);
-  const [postVisitProcedureName, setPostVisitProcedureName] = useState(postVisitCarePresets.filling_restoration.procedureName);
-  const [postVisitToothOrArea, setPostVisitToothOrArea] = useState("");
-  const [postVisitPerformedAt, setPostVisitPerformedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [postVisitDoctorFullName, setPostVisitDoctorFullName] = useState("");
-  const [postVisitManualEdited, setPostVisitManualEdited] = useState(false);
-  const [postVisitPresetFeedback, setPostVisitPresetFeedback] = useState("");
-  const [postVisitAllowedAfter, setPostVisitAllowedAfter] = useState(postVisitCarePresets.filling_restoration.allowedAfter);
-  const [postVisitRestrictions, setPostVisitRestrictions] = useState(postVisitCarePresets.filling_restoration.temporaryRestrictions);
-  const [postVisitMedicationAndRinsePlan, setPostVisitMedicationAndRinsePlan] = useState(postVisitCarePresets.filling_restoration.medicationAndRinsePlan);
-  const [postVisitHygieneInstructions, setPostVisitHygieneInstructions] = useState(postVisitCarePresets.filling_restoration.hygieneInstructions);
-  const [postVisitNutritionInstructions, setPostVisitNutritionInstructions] = useState(postVisitCarePresets.filling_restoration.nutritionInstructions);
-  const [postVisitUrgentWarningSigns, setPostVisitUrgentWarningSigns] = useState(postVisitCarePresets.filling_restoration.urgentWarningSigns);
-  const [postVisitFollowUpAt, setPostVisitFollowUpAt] = useState(postVisitCarePresets.filling_restoration.plannedFollowUpAt);
-  const [postVisitClinicContactInstruction, setPostVisitClinicContactInstruction] = useState("связаться с клиникой по телефону или через Telegram-бот клиники");
-  const [postVisitTelegramSummary, setPostVisitTelegramSummary] = useState(postVisitCarePresets.filling_restoration.telegramSummary);
-  const [postVisitPrintedCopyReceived, setPostVisitPrintedCopyReceived] = useState(false);
-  const [postVisitUrgentSignsUnderstood, setPostVisitUrgentSignsUnderstood] = useState(false);
-  const [postVisitTelegramSafe, setPostVisitTelegramSafe] = useState(false);
-  const [anesthesiaMethod, setAnesthesiaMethod] = useState("Инфильтрационная / проводниковая");
-  const [anesthesiaAnesthetic, setAnesthesiaAnesthetic] = useState("Артикаин 4%");
-  const [anesthesiaVasoconstrictor, setAnesthesiaVasoconstrictor] = useState("1:100000");
-  const [anesthesiaZone, setAnesthesiaZone] = useState("");
-  const [anesthesiaAllergyStatus, setAnesthesiaAllergyStatus] = useState("Аллергия на местные анестетики со слов пациента не отмечена.");
-  const [anesthesiaRestrictionNotes, setAnesthesiaRestrictionNotes] = useState("");
-  const [anesthesiaDoseTime, setAnesthesiaDoseTime] = useState(() =>
-    new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
-  );
-  const [anesthesiaDoseMl, setAnesthesiaDoseMl] = useState("1.7");
-  const [anesthesiaReaction, setAnesthesiaReaction] = useState("Без особенностей");
-  const [anesthesiaRisksExplained, setAnesthesiaRisksExplained] = useState(false);
-  const [anesthesiaAllergyRestrictionsChecked, setAnesthesiaAllergyRestrictionsChecked] = useState(false);
-  const [anesthesiaConsentConfirmed, setAnesthesiaConsentConfirmed] = useState(false);
-  const [prescriptionMedication, setPrescriptionMedication] = useState("");
-  const [prescriptionDosage, setPrescriptionDosage] = useState("");
-  const [prescriptionInstructions, setPrescriptionInstructions] = useState("");
-  const [prescriptionDuration, setPrescriptionDuration] = useState("");
-  const [prescriptionSafetyNotes, setPrescriptionSafetyNotes] = useState(
-    "Проверить аллергоанамнез до выдачи.\nОбъяснить режим приема, ограничения и действия при нежелательной реакции."
-  );
-  const [prescriptionUrgentContactReason, setPrescriptionUrgentContactReason] = useState(
-    "Связаться с клиникой при отеке, сыпи, нарастающей боли, кровотечении или температуре."
-  );
-  const [labWorkType, setLabWorkType] = useState("");
-  const [labTeethOrArea, setLabTeethOrArea] = useState("");
-  const [labMaterial, setLabMaterial] = useState("");
-  const [labShade, setLabShade] = useState("");
-  const [labSource, setLabSource] = useState("");
-  const [labDeadline, setLabDeadline] = useState("");
-  const [labTechnicianNotes, setLabTechnicianNotes] = useState("");
-  const [photoVideoLabTransferAllowed, setPhotoVideoLabTransferAllowed] = useState(true);
-  const [photoVideoColleagueConsultationAllowed, setPhotoVideoColleagueConsultationAllowed] = useState(true);
-  const [photoVideoEducationUseAllowed, setPhotoVideoEducationUseAllowed] = useState(false);
-  const [photoVideoMarketingUseAllowed, setPhotoVideoMarketingUseAllowed] = useState(false);
-  const [photoVideoRecognizablePublicationAllowed, setPhotoVideoRecognizablePublicationAllowed] = useState(false);
-  const [photoVideoClinicalRecordUseConfirmed, setPhotoVideoClinicalRecordUseConfirmed] = useState(false);
-  const [photoVideoAnonymizationConfirmed, setPhotoVideoAnonymizationConfirmed] = useState(false);
-  const [photoVideoMaterials, setPhotoVideoMaterials] = useState<PhotoVideoConsentMaterial[]>([
-    "intraoral_photo",
-    "xray",
-    "scan"
-  ]);
-  const [photoVideoRevocationChannel, setPhotoVideoRevocationChannel] = useState(
-    "письменное заявление в клинике или защищенное обращение через портал пациента"
-  );
-  const [photoVideoScopeNotes, setPhotoVideoScopeNotes] = useState("");
-  const [xrayStudyType, setXrayStudyType] = useState<XrayCbctReferralStudyType>("cbct");
-  const [xrayArea, setXrayArea] = useState("");
-  const [xrayClinicalQuestion, setXrayClinicalQuestion] = useState("");
-  const [xrayIndication, setXrayIndication] = useState("");
-  const [xrayPregnancyStatus, setXrayPregnancyStatus] = useState<XrayCbctReferralPregnancyStatus>("unknown");
-  const [xraySafetyNotes, setXraySafetyNotes] = useState(
-    "Перед исследованием уточнить беременность, ограничения и необходимость средств защиты."
-  );
-  const [xrayPriority, setXrayPriority] = useState<XrayCbctReferralPriority>("routine");
-  const [xrayIncludeDicomExport, setXrayIncludeDicomExport] = useState(true);
-  const [xrayIncludeRadiologistReport, setXrayIncludeRadiologistReport] = useState(true);
-  const [xrayRequestedBy, setXrayRequestedBy] = useState("");
-  const [xrayRecipientClinic, setXrayRecipientClinic] = useState("");
-  const [xrayDueDate, setXrayDueDate] = useState("");
-  const [recordExtractPeriodStart, setRecordExtractPeriodStart] = useState(() => new Date().toISOString().slice(0, 10));
-  const [recordExtractPeriodEnd, setRecordExtractPeriodEnd] = useState(() => new Date().toISOString().slice(0, 10));
-  const [recordExtractSourceVisitIds, setRecordExtractSourceVisitIds] = useState("");
-  const [recordExtractComplaintAndAnamnesis, setRecordExtractComplaintAndAnamnesis] = useState("");
-  const [recordExtractObjectiveStatus, setRecordExtractObjectiveStatus] = useState("");
-  const [recordExtractDiagnosis, setRecordExtractDiagnosis] = useState("");
-  const [recordExtractTreatmentProvided, setRecordExtractTreatmentProvided] = useState("");
-  const [recordExtractRecommendations, setRecordExtractRecommendations] = useState("");
-  const [recordExtractDoctorFullName, setRecordExtractDoctorFullName] = useState("");
-  const [recordExtractRecipientFullName, setRecordExtractRecipientFullName] = useState("");
-  const [recordExtractRecipientAuthority, setRecordExtractRecipientAuthority] = useState("пациент лично");
-  const [recordExtractIssuedAt, setRecordExtractIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
-  const [recordExtractPreparedFromSignedRecords, setRecordExtractPreparedFromSignedRecords] = useState(false);
-  const [recordExtractThirdPartyDataChecked, setRecordExtractThirdPartyDataChecked] = useState(false);
-  const [outpatient025uMedicalCardNumber, setOutpatient025uMedicalCardNumber] = useState("");
-  const [outpatient025uOpenedAt, setOutpatient025uOpenedAt] = useState(() => new Date().toISOString().slice(0, 10));
-  const [outpatient025uPatientSexCode, setOutpatient025uPatientSexCode] = useState<"1" | "2" | "unknown">("unknown");
-  const [outpatient025uCitizenship, setOutpatient025uCitizenship] = useState("");
-  const [outpatient025uRegistrationUrbanRuralCode, setOutpatient025uRegistrationUrbanRuralCode] = useState<"1" | "2" | "unknown">("unknown");
-  const [outpatient025uStayUrbanRuralCode, setOutpatient025uStayUrbanRuralCode] = useState<"1" | "2" | "unknown">("unknown");
-  const [outpatient025uOmsIssuedAt, setOutpatient025uOmsIssuedAt] = useState("");
-  const [outpatient025uInsurerName, setOutpatient025uInsurerName] = useState("");
-  const [outpatient025uSocialSupportCode, setOutpatient025uSocialSupportCode] = useState("");
-  const [outpatient025uHealthStatusDisclosureContact, setOutpatient025uHealthStatusDisclosureContact] = useState("");
+    const {
+    documentCreateSavingKind,
+    setDocumentCreateSavingKind,
+    documentStatusSavingId,
+    setDocumentStatusSavingId,
+    taxDocumentPayerInn,
+    setTaxDocumentPayerInn,
+    selectedTaxPaymentIds,
+    setSelectedTaxPaymentIds,
+    selectedPaymentReceiptIds,
+    setSelectedPaymentReceiptIds,
+    taxApplicationTaxpayerFullName,
+    setTaxApplicationTaxpayerFullName,
+    taxApplicationTaxpayerInn,
+    setTaxApplicationTaxpayerInn,
+    taxApplicationTaxpayerBirthDate,
+    setTaxApplicationTaxpayerBirthDate,
+    taxApplicationTaxpayerIdentityDocument,
+    setTaxApplicationTaxpayerIdentityDocument,
+    taxApplicationRelationship,
+    setTaxApplicationRelationship,
+    taxApplicationForm,
+    setTaxApplicationForm,
+    taxApplicationDeliveryChannel,
+    setTaxApplicationDeliveryChannel,
+    taxApplicationContact,
+    setTaxApplicationContact,
+    taxApplicationAuthorityDocument,
+    setTaxApplicationAuthorityDocument,
+    taxApplicationRequestedAt,
+    setTaxApplicationRequestedAt,
+    taxApplicationDuplicateWarningAccepted,
+    setTaxApplicationDuplicateWarningAccepted,
+    intakeChiefComplaint,
+    setIntakeChiefComplaint,
+    intakeAllergyStatus,
+    setIntakeAllergyStatus,
+    intakeCurrentMedications,
+    setIntakeCurrentMedications,
+    intakeChronicConditions,
+    setIntakeChronicConditions,
+    intakePregnancyStatus,
+    setIntakePregnancyStatus,
+    intakeAnticoagulants,
+    setIntakeAnticoagulants,
+    intakeInfectiousRiskNotes,
+    setIntakeInfectiousRiskNotes,
+    intakeCardioEndocrineNotes,
+    setIntakeCardioEndocrineNotes,
+    intakeEmergencyContact,
+    setIntakeEmergencyContact,
+    intakeAdditionalNotes,
+    setIntakeAdditionalNotes,
+    intakeAccuracyConfirmed,
+    setIntakeAccuracyConfirmed,
+    informedConsentIntervention,
+    setInformedConsentIntervention,
+    informedConsentToothOrArea,
+    setInformedConsentToothOrArea,
+    informedConsentDiagnosisOrIndication,
+    setInformedConsentDiagnosisOrIndication,
+    informedConsentExpectedBenefit,
+    setInformedConsentExpectedBenefit,
+    informedConsentAnesthesia,
+    setInformedConsentAnesthesia,
+    informedConsentMaterialNotes,
+    setInformedConsentMaterialNotes,
+    informedConsentTrustedContact,
+    setInformedConsentTrustedContact,
+    informedConsentRisks,
+    setInformedConsentRisks,
+    informedConsentAlternatives,
+    setInformedConsentAlternatives,
+    informedConsentAftercare,
+    setInformedConsentAftercare,
+    informedConsentDoctorFullName,
+    setInformedConsentDoctorFullName,
+    informedConsentConfirmedAt,
+    setInformedConsentConfirmedAt,
+    informedConsentQuestionsAnswered,
+    setInformedConsentQuestionsAnswered,
+    informedConsentRisksUnderstood,
+    setInformedConsentRisksUnderstood,
+    informedConsentWithdrawUnderstood,
+    setInformedConsentWithdrawUnderstood,
+    procedureConsentProcedureType,
+    setProcedureConsentProcedureType,
+    procedureConsentProcedureName,
+    setProcedureConsentProcedureName,
+    procedureConsentToothOrArea,
+    setProcedureConsentToothOrArea,
+    procedureConsentDiagnosisOrIndication,
+    setProcedureConsentDiagnosisOrIndication,
+    procedureConsentAnesthesia,
+    setProcedureConsentAnesthesia,
+    procedureConsentMaterials,
+    setProcedureConsentMaterials,
+    procedureConsentPatientRiskFactors,
+    setProcedureConsentPatientRiskFactors,
+    procedureConsentSpecificRisks,
+    setProcedureConsentSpecificRisks,
+    procedureConsentAlternatives,
+    setProcedureConsentAlternatives,
+    procedureConsentAftercare,
+    setProcedureConsentAftercare,
+    procedureConsentDoctorFullName,
+    setProcedureConsentDoctorFullName,
+    procedureConsentConfirmedAt,
+    setProcedureConsentConfirmedAt,
+    procedureConsentLocalFormAttached,
+    setProcedureConsentLocalFormAttached,
+    procedureConsentQuestionsAnswered,
+    setProcedureConsentQuestionsAnswered,
+    procedureConsentExactProcedureConfirmed,
+    setProcedureConsentExactProcedureConfirmed,
+    procedureConsentRisksUnderstood,
+    setProcedureConsentRisksUnderstood,
+    paidContractNumber,
+    setPaidContractNumber,
+    paidContractDate,
+    setPaidContractDate,
+    paidContractServiceStart,
+    setPaidContractServiceStart,
+    paidContractServiceEnd,
+    setPaidContractServiceEnd,
+    paidContractCustomerFullName,
+    setPaidContractCustomerFullName,
+    paidContractRepresentativeFullName,
+    setPaidContractRepresentativeFullName,
+    paidContractCareReason,
+    setPaidContractCareReason,
+    paidContractServiceScope,
+    setPaidContractServiceScope,
+    paidContractTotalRub,
+    setPaidContractTotalRub,
+    paidContractPaymentTerms,
+    setPaidContractPaymentTerms,
+    paidContractPriceChangeRules,
+    setPaidContractPriceChangeRules,
+    paidContractFreeCareNotice,
+    setPaidContractFreeCareNotice,
+    paidContractRecommendationWarning,
+    setPaidContractRecommendationWarning,
+    paidContractRefundTerms,
+    setPaidContractRefundTerms,
+    paidContractWarrantyTerms,
+    setPaidContractWarrantyTerms,
+    paidContractDoctorFullName,
+    setPaidContractDoctorFullName,
+    paidContractSignedAt,
+    setPaidContractSignedAt,
+    paidContractClinicInfoConfirmed,
+    setPaidContractClinicInfoConfirmed,
+    paidContractServiceListConfirmed,
+    setPaidContractServiceListConfirmed,
+    paidContractPaidBasisConfirmed,
+    setPaidContractPaidBasisConfirmed,
+    paidContractWrittenChangesConfirmed,
+    setPaidContractWrittenChangesConfirmed,
+    completedActNumber,
+    setCompletedActNumber,
+    completedActDate,
+    setCompletedActDate,
+    completedActContractNumber,
+    setCompletedActContractNumber,
+    completedActLinkedContractDocumentId,
+    setCompletedActLinkedContractDocumentId,
+    completedActServicePeriodStart,
+    setCompletedActServicePeriodStart,
+    completedActServicePeriodEnd,
+    setCompletedActServicePeriodEnd,
+    completedActDoctorFullName,
+    setCompletedActDoctorFullName,
+    completedActServicesSummary,
+    setCompletedActServicesSummary,
+    completedActTotalRub,
+    setCompletedActTotalRub,
+    completedActPaidRub,
+    setCompletedActPaidRub,
+    completedActFiscalReceipts,
+    setCompletedActFiscalReceipts,
+    completedActPatientClaims,
+    setCompletedActPatientClaims,
+    completedActLinkedContract,
+    setCompletedActLinkedContract,
+    completedActFinalScopeConfirmed,
+    setCompletedActFinalScopeConfirmed,
+    completedActFiscalReceiptsVerified,
+    setCompletedActFiscalReceiptsVerified,
+    completedActAccepted,
+    setCompletedActAccepted,
+    treatmentEstimateNumber,
+    setTreatmentEstimateNumber,
+    treatmentEstimateDate,
+    setTreatmentEstimateDate,
+    treatmentEstimatePatientOrPayerFullName,
+    setTreatmentEstimatePatientOrPayerFullName,
+    treatmentEstimateTreatmentBasis,
+    setTreatmentEstimateTreatmentBasis,
+    treatmentEstimateTotalRub,
+    setTreatmentEstimateTotalRub,
+    treatmentEstimateValidUntil,
+    setTreatmentEstimateValidUntil,
+    treatmentEstimatePriceChangeRules,
+    setTreatmentEstimatePriceChangeRules,
+    treatmentEstimateExcludedItems,
+    setTreatmentEstimateExcludedItems,
+    treatmentEstimatePaymentMilestoneNotes,
+    setTreatmentEstimatePaymentMilestoneNotes,
+    treatmentEstimateDoctorFullName,
+    setTreatmentEstimateDoctorFullName,
+    treatmentEstimateAdminFullName,
+    setTreatmentEstimateAdminFullName,
+    treatmentEstimateSignedAt,
+    setTreatmentEstimateSignedAt,
+    treatmentEstimatePreliminaryConfirmed,
+    setTreatmentEstimatePreliminaryConfirmed,
+    treatmentEstimateScopeConfirmed,
+    setTreatmentEstimateScopeConfirmed,
+    treatmentEstimateFiscalNoticeConfirmed,
+    setTreatmentEstimateFiscalNoticeConfirmed,
+    treatmentEstimateChangeRulesConfirmed,
+    setTreatmentEstimateChangeRulesConfirmed,
+    paymentInvoiceNumber,
+    setPaymentInvoiceNumber,
+    paymentInvoiceDate,
+    setPaymentInvoiceDate,
+    paymentInvoicePayerFullName,
+    setPaymentInvoicePayerFullName,
+    paymentInvoicePayerPhone,
+    setPaymentInvoicePayerPhone,
+    paymentInvoicePayerEmail,
+    setPaymentInvoicePayerEmail,
+    paymentInvoicePurpose,
+    setPaymentInvoicePurpose,
+    paymentInvoiceDueDate,
+    setPaymentInvoiceDueDate,
+    paymentInvoicePaymentTerms,
+    setPaymentInvoicePaymentTerms,
+    paymentInvoiceBankDetails,
+    setPaymentInvoiceBankDetails,
+    paymentInvoiceQrPayload,
+    setPaymentInvoiceQrPayload,
+    paymentInvoiceCashlessAllowed,
+    setPaymentInvoiceCashlessAllowed,
+    paymentInvoiceCashDeskAllowed,
+    setPaymentInvoiceCashDeskAllowed,
+    paymentInvoiceRequisitesVerified,
+    setPaymentInvoiceRequisitesVerified,
+    paymentInvoiceServiceScopeConfirmed,
+    setPaymentInvoiceServiceScopeConfirmed,
+    paymentInvoiceFiscalNoticeConfirmed,
+    setPaymentInvoiceFiscalNoticeConfirmed,
+    paymentReceiptNumber,
+    setPaymentReceiptNumber,
+    paymentReceiptDate,
+    setPaymentReceiptDate,
+    paymentReceiptPayerFullName,
+    setPaymentReceiptPayerFullName,
+    paymentReceiptPayerBirthDate,
+    setPaymentReceiptPayerBirthDate,
+    paymentReceiptPayerInn,
+    setPaymentReceiptPayerInn,
+    paymentReceiptPayerIdentityDocument,
+    setPaymentReceiptPayerIdentityDocument,
+    paymentReceiptPayerRelationship,
+    setPaymentReceiptPayerRelationship,
+    paymentReceiptTaxSupportRequested,
+    setPaymentReceiptTaxSupportRequested,
+    paymentReceiptPurpose,
+    setPaymentReceiptPurpose,
+    paymentReceiptIssuedBy,
+    setPaymentReceiptIssuedBy,
+    paymentReceiptPaymentsVerified,
+    setPaymentReceiptPaymentsVerified,
+    paymentReceiptPayerVerified,
+    setPaymentReceiptPayerVerified,
+    paymentReceiptFiscalNoticeConfirmed,
+    setPaymentReceiptFiscalNoticeConfirmed,
+    installmentScheduleNumber,
+    setInstallmentScheduleNumber,
+    installmentScheduleDate,
+    setInstallmentScheduleDate,
+    installmentScheduleBaseDocumentTitle,
+    setInstallmentScheduleBaseDocumentTitle,
+    installmentSchedulePayerFullName,
+    setInstallmentSchedulePayerFullName,
+    installmentScheduleTotalRub,
+    setInstallmentScheduleTotalRub,
+    installmentSchedulePrepaidRub,
+    setInstallmentSchedulePrepaidRub,
+    installmentScheduleRows,
+    setInstallmentScheduleRows,
+    installmentScheduleLatePolicy,
+    setInstallmentScheduleLatePolicy,
+    installmentSchedulePaymentMethodNotes,
+    setInstallmentSchedulePaymentMethodNotes,
+    installmentScheduleResponsibleFullName,
+    setInstallmentScheduleResponsibleFullName,
+    installmentScheduleAccepted,
+    setInstallmentScheduleAccepted,
+    installmentScheduleFiscalNoticeConfirmed,
+    setInstallmentScheduleFiscalNoticeConfirmed,
+    installmentScheduleWrittenChangesConfirmed,
+    setInstallmentScheduleWrittenChangesConfirmed,
+    minorRepresentativeFullName,
+    setMinorRepresentativeFullName,
+    minorRepresentativeRelationship,
+    setMinorRepresentativeRelationship,
+    minorRepresentativeIdentityDocument,
+    setMinorRepresentativeIdentityDocument,
+    minorRepresentativeAuthorityDocument,
+    setMinorRepresentativeAuthorityDocument,
+    minorRepresentativePhone,
+    setMinorRepresentativePhone,
+    minorConsentPatientFullName,
+    setMinorConsentPatientFullName,
+    minorConsentPatientBirthDate,
+    setMinorConsentPatientBirthDate,
+    minorConsentInterventionScope,
+    setMinorConsentInterventionScope,
+    minorConsentDiagnosisOrIndication,
+    setMinorConsentDiagnosisOrIndication,
+    minorConsentRisks,
+    setMinorConsentRisks,
+    minorConsentAlternatives,
+    setMinorConsentAlternatives,
+    minorConsentDoctorFullName,
+    setMinorConsentDoctorFullName,
+    minorConsentSignedAt,
+    setMinorConsentSignedAt,
+    minorConsentIdentityVerified,
+    setMinorConsentIdentityVerified,
+    minorConsentAuthorityVerified,
+    setMinorConsentAuthorityVerified,
+    minorConsentExplained,
+    setMinorConsentExplained,
+    minorConsentStored,
+    setMinorConsentStored,
+    minorConsentAgeExplanation,
+    setMinorConsentAgeExplanation,
+    warrantyServiceOrWorkName,
+    setWarrantyServiceOrWorkName,
+    warrantyCompletedAt,
+    setWarrantyCompletedAt,
+    warrantyTeethOrArea,
+    setWarrantyTeethOrArea,
+    warrantyMaterialsOrSystems,
+    setWarrantyMaterialsOrSystems,
+    warrantyPeriod,
+    setWarrantyPeriod,
+    warrantyControlVisitSchedule,
+    setWarrantyControlVisitSchedule,
+    warrantyPatientObligations,
+    setWarrantyPatientObligations,
+    warrantyExcludedRiskFactors,
+    setWarrantyExcludedRiskFactors,
+    warrantyUrgentContactReasons,
+    setWarrantyUrgentContactReasons,
+    warrantyLinkedActOrContract,
+    setWarrantyLinkedActOrContract,
+    warrantyDoctorFullName,
+    setWarrantyDoctorFullName,
+    warrantyIssuedAt,
+    setWarrantyIssuedAt,
+    warrantyPolicyApplied,
+    setWarrantyPolicyApplied,
+    warrantyAftercareReceived,
+    setWarrantyAftercareReceived,
+    warrantyControlVisitsUnderstood,
+    setWarrantyControlVisitsUnderstood,
+    clinicalToothRowsText,
+    setClinicalToothRowsText,
+    treatmentPlanClinicalReason,
+    setTreatmentPlanClinicalReason,
+    treatmentPlanDiagnosisSummary,
+    setTreatmentPlanDiagnosisSummary,
+    treatmentPlanTeethOrArea,
+    setTreatmentPlanTeethOrArea,
+    treatmentPlanGoals,
+    setTreatmentPlanGoals,
+    treatmentPlanStages,
+    setTreatmentPlanStages,
+    treatmentPlanEstimatedTotalRub,
+    setTreatmentPlanEstimatedTotalRub,
+    treatmentPlanAlternatives,
+    setTreatmentPlanAlternatives,
+    treatmentPlanRisks,
+    setTreatmentPlanRisks,
+    treatmentPlanPrognosis,
+    setTreatmentPlanPrognosis,
+    treatmentPlanControlPlan,
+    setTreatmentPlanControlPlan,
+    treatmentPlanDoctorFullName,
+    setTreatmentPlanDoctorFullName,
+    treatmentPlanPlannedAt,
+    setTreatmentPlanPlannedAt,
+    treatmentPlanQuestionsAnswered,
+    setTreatmentPlanQuestionsAnswered,
+    treatmentPlanSeparateConsentAcknowledged,
+    setTreatmentPlanSeparateConsentAcknowledged,
+    treatmentPlanNewApprovalAcknowledged,
+    setTreatmentPlanNewApprovalAcknowledged,
+    treatmentAcceptanceVariant,
+    setTreatmentAcceptanceVariant,
+    treatmentAcceptanceClinicalGoal,
+    setTreatmentAcceptanceClinicalGoal,
+    treatmentAcceptanceDiagnosisSummary,
+    setTreatmentAcceptanceDiagnosisSummary,
+    treatmentAcceptanceTeethOrArea,
+    setTreatmentAcceptanceTeethOrArea,
+    treatmentAcceptanceStages,
+    setTreatmentAcceptanceStages,
+    treatmentAcceptanceEstimatedTotalRub,
+    setTreatmentAcceptanceEstimatedTotalRub,
+    treatmentAcceptanceEstimateValidUntil,
+    setTreatmentAcceptanceEstimateValidUntil,
+    treatmentAcceptancePaymentTerms,
+    setTreatmentAcceptancePaymentTerms,
+    treatmentAcceptanceRejectedAlternatives,
+    setTreatmentAcceptanceRejectedAlternatives,
+    treatmentAcceptanceRisks,
+    setTreatmentAcceptanceRisks,
+    treatmentAcceptanceWarrantyTerms,
+    setTreatmentAcceptanceWarrantyTerms,
+    treatmentAcceptanceDoctorFullName,
+    setTreatmentAcceptanceDoctorFullName,
+    treatmentAcceptanceAcceptedAt,
+    setTreatmentAcceptanceAcceptedAt,
+    treatmentAcceptanceQuestionsAnswered,
+    setTreatmentAcceptanceQuestionsAnswered,
+    treatmentAcceptanceAlternativesUnderstood,
+    setTreatmentAcceptanceAlternativesUnderstood,
+    treatmentAcceptanceCostChangeUnderstood,
+    setTreatmentAcceptanceCostChangeUnderstood,
+    treatmentAcceptanceRevisionAcknowledged,
+    setTreatmentAcceptanceRevisionAcknowledged,
+    postVisitCareTopic,
+    setPostVisitCareTopic,
+    postVisitProcedureName,
+    setPostVisitProcedureName,
+    postVisitToothOrArea,
+    setPostVisitToothOrArea,
+    postVisitPerformedAt,
+    setPostVisitPerformedAt,
+    postVisitDoctorFullName,
+    setPostVisitDoctorFullName,
+    postVisitManualEdited,
+    setPostVisitManualEdited,
+    postVisitPresetFeedback,
+    setPostVisitPresetFeedback,
+    postVisitAllowedAfter,
+    setPostVisitAllowedAfter,
+    postVisitRestrictions,
+    setPostVisitRestrictions,
+    postVisitMedicationAndRinsePlan,
+    setPostVisitMedicationAndRinsePlan,
+    postVisitHygieneInstructions,
+    setPostVisitHygieneInstructions,
+    postVisitNutritionInstructions,
+    setPostVisitNutritionInstructions,
+    postVisitUrgentWarningSigns,
+    setPostVisitUrgentWarningSigns,
+    postVisitFollowUpAt,
+    setPostVisitFollowUpAt,
+    postVisitClinicContactInstruction,
+    setPostVisitClinicContactInstruction,
+    postVisitTelegramSummary,
+    setPostVisitTelegramSummary,
+    postVisitPrintedCopyReceived,
+    setPostVisitPrintedCopyReceived,
+    postVisitUrgentSignsUnderstood,
+    setPostVisitUrgentSignsUnderstood,
+    postVisitTelegramSafe,
+    setPostVisitTelegramSafe,
+    anesthesiaMethod,
+    setAnesthesiaMethod,
+    anesthesiaAnesthetic,
+    setAnesthesiaAnesthetic,
+    anesthesiaVasoconstrictor,
+    setAnesthesiaVasoconstrictor,
+    anesthesiaZone,
+    setAnesthesiaZone,
+    anesthesiaAllergyStatus,
+    setAnesthesiaAllergyStatus,
+    anesthesiaRestrictionNotes,
+    setAnesthesiaRestrictionNotes,
+    anesthesiaDoseTime,
+    setAnesthesiaDoseTime,
+    anesthesiaDoseMl,
+    setAnesthesiaDoseMl,
+    anesthesiaReaction,
+    setAnesthesiaReaction,
+    anesthesiaRisksExplained,
+    setAnesthesiaRisksExplained,
+    anesthesiaAllergyRestrictionsChecked,
+    setAnesthesiaAllergyRestrictionsChecked,
+    anesthesiaConsentConfirmed,
+    setAnesthesiaConsentConfirmed,
+    prescriptionMedication,
+    setPrescriptionMedication,
+    prescriptionDosage,
+    setPrescriptionDosage,
+    prescriptionInstructions,
+    setPrescriptionInstructions,
+    prescriptionDuration,
+    setPrescriptionDuration,
+    prescriptionSafetyNotes,
+    setPrescriptionSafetyNotes,
+    prescriptionUrgentContactReason,
+    setPrescriptionUrgentContactReason,
+    labWorkType,
+    setLabWorkType,
+    labTeethOrArea,
+    setLabTeethOrArea,
+    labMaterial,
+    setLabMaterial,
+    labShade,
+    setLabShade,
+    labSource,
+    setLabSource,
+    labDeadline,
+    setLabDeadline,
+    labTechnicianNotes,
+    setLabTechnicianNotes,
+    photoVideoLabTransferAllowed,
+    setPhotoVideoLabTransferAllowed,
+    photoVideoColleagueConsultationAllowed,
+    setPhotoVideoColleagueConsultationAllowed,
+    photoVideoEducationUseAllowed,
+    setPhotoVideoEducationUseAllowed,
+    photoVideoMarketingUseAllowed,
+    setPhotoVideoMarketingUseAllowed,
+    photoVideoRecognizablePublicationAllowed,
+    setPhotoVideoRecognizablePublicationAllowed,
+    photoVideoClinicalRecordUseConfirmed,
+    setPhotoVideoClinicalRecordUseConfirmed,
+    photoVideoAnonymizationConfirmed,
+    setPhotoVideoAnonymizationConfirmed,
+    photoVideoMaterials,
+    setPhotoVideoMaterials,
+    photoVideoRevocationChannel,
+    setPhotoVideoRevocationChannel,
+    photoVideoScopeNotes,
+    setPhotoVideoScopeNotes,
+    xrayStudyType,
+    setXrayStudyType,
+    xrayArea,
+    setXrayArea,
+    xrayClinicalQuestion,
+    setXrayClinicalQuestion,
+    xrayIndication,
+    setXrayIndication,
+    xrayPregnancyStatus,
+    setXrayPregnancyStatus,
+    xraySafetyNotes,
+    setXraySafetyNotes,
+    xrayPriority,
+    setXrayPriority,
+    xrayIncludeDicomExport,
+    setXrayIncludeDicomExport,
+    xrayIncludeRadiologistReport,
+    setXrayIncludeRadiologistReport,
+    xrayRequestedBy,
+    setXrayRequestedBy,
+    xrayRecipientClinic,
+    setXrayRecipientClinic,
+    xrayDueDate,
+    setXrayDueDate,
+    recordExtractPeriodStart,
+    setRecordExtractPeriodStart,
+    recordExtractPeriodEnd,
+    setRecordExtractPeriodEnd,
+    recordExtractSourceVisitIds,
+    setRecordExtractSourceVisitIds,
+    recordExtractComplaintAndAnamnesis,
+    setRecordExtractComplaintAndAnamnesis,
+    recordExtractObjectiveStatus,
+    setRecordExtractObjectiveStatus,
+    recordExtractDiagnosis,
+    setRecordExtractDiagnosis,
+    recordExtractTreatmentProvided,
+    setRecordExtractTreatmentProvided,
+    recordExtractRecommendations,
+    setRecordExtractRecommendations,
+    recordExtractDoctorFullName,
+    setRecordExtractDoctorFullName,
+    recordExtractRecipientFullName,
+    setRecordExtractRecipientFullName,
+    recordExtractRecipientAuthority,
+    setRecordExtractRecipientAuthority,
+    recordExtractIssuedAt,
+    setRecordExtractIssuedAt,
+    recordExtractPreparedFromSignedRecords,
+    setRecordExtractPreparedFromSignedRecords,
+    recordExtractThirdPartyDataChecked,
+    setRecordExtractThirdPartyDataChecked,
+    outpatient025uMedicalCardNumber,
+    setOutpatient025uMedicalCardNumber,
+    outpatient025uOpenedAt,
+    setOutpatient025uOpenedAt,
+    outpatient025uPatientSexCode,
+    setOutpatient025uPatientSexCode,
+    outpatient025uCitizenship,
+    setOutpatient025uCitizenship,
+    outpatient025uRegistrationUrbanRuralCode,
+    setOutpatient025uRegistrationUrbanRuralCode,
+    outpatient025uStayUrbanRuralCode,
+    setOutpatient025uStayUrbanRuralCode,
+    outpatient025uOmsIssuedAt,
+    setOutpatient025uOmsIssuedAt,
+    outpatient025uInsurerName,
+    setOutpatient025uInsurerName,
+    outpatient025uSocialSupportCode,
+    setOutpatient025uSocialSupportCode,
+    outpatient025uHealthStatusDisclosureContact,
+    setOutpatient025uHealthStatusDisclosureContact
+  } = useDocumentStore();
   const [outpatient025uEmploymentCode, setOutpatient025uEmploymentCode] = useState("");
   const [outpatient025uDisabilityGroup, setOutpatient025uDisabilityGroup] = useState("");
   const [outpatient025uWorkOrStudyPlace, setOutpatient025uWorkOrStudyPlace] = useState("");
