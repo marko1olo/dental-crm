@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import {
   speechChunkUploadSchema,
@@ -184,7 +185,7 @@ export async function registerSpeechRoutes(app: FastifyInstance) {
     const scope: Parameters<typeof listSpeechTranscriptionChunks>[1] = {};
     if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
     if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
-    return listSpeechTranscriptionChunks(recordingId, scope).map((chunk) => speechTranscriptionChunkSchema.parse(chunk));
+    return z.array(speechTranscriptionChunkSchema).parse(listSpeechTranscriptionChunks(recordingId, scope));
   });
 
   app.get("/api/speech/recordings/recovery", async (request, reply) => {
