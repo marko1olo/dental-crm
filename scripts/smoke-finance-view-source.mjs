@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+import { existsSync } from "node:fs";
+const appSource = readFileSync("apps/web/src/App.tsx", "utf8") + "\n" + (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "");
 const financeViewSource = readFileSync("apps/web/src/FinanceView.tsx", "utf8");
 const viteSource = readFileSync("apps/web/vite.config.ts", "utf8");
 
