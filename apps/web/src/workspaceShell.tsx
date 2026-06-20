@@ -18,7 +18,7 @@ import {
   Users
 } from "lucide-react";
 
-export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings"] as const;
+export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings", "marketing"] as const;
 export type AppView = (typeof appViews)[number];
 
 export const viewLabels: Record<AppView, string> = {
@@ -30,7 +30,8 @@ export const viewLabels: Record<AppView, string> = {
   documents: "Документы",
   finance: "Оплаты",
   communications: "Связь",
-  settings: "Настройки"
+  settings: "Настройки",
+  marketing: "Маркетинг/SEO"
 };
 
 export const viewHints: Record<AppView, string> = {
@@ -42,7 +43,8 @@ export const viewHints: Record<AppView, string> = {
   documents: "договоры и справки",
   finance: "оплаты и долги",
   communications: "сообщения и задачи",
-  settings: "клиника, импорт и доступы"
+  settings: "клиника, импорт и доступы",
+  marketing: "продвижение и отзывы"
 };
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
@@ -56,6 +58,7 @@ function SidebarIcon({ section }: { section: AppView }) {
   if (section === "finance") return <CreditCard aria-hidden="true" />;
   if (section === "communications") return <MessageSquare aria-hidden="true" />;
   if (section === "settings") return <Database aria-hidden="true" />;
+  if (section === "marketing") return <Sparkles aria-hidden="true" />;
   return <Sparkles aria-hidden="true" />;
 }
 
@@ -73,11 +76,21 @@ export function ActionIcon({ section }: { section: AppView }) {
 
 export function WorkspaceSidebar({
   currentView,
-  onViewIntent
+  onViewIntent,
+  role
 }: {
   currentView: AppView;
   onViewIntent?: WorkspaceViewIntentHandler;
+  role: StaffRole;
 }) {
+  const allowedViews = (view: AppView): boolean => {
+    if (role === "doctor") return ["shift", "schedule", "patients", "imaging", "visit", "documents", "communications"].includes(view);
+    if (role === "administrator") return ["schedule", "patients", "imaging", "documents", "finance", "communications", "settings"].includes(view);
+    if (role === "owner" || role === "manager") return ["schedule", "finance", "communications", "settings", "marketing", "patients"].includes(view);
+    if (role === "assistant") return ["shift", "schedule", "patients", "communications"].includes(view);
+    return true;
+  };
+
   return (
     <aside className="sidebar" aria-label="Навигация">
       <div className="brand-mark">
@@ -85,25 +98,27 @@ export function WorkspaceSidebar({
         <span>DENTE</span>
       </div>
       <nav>
-        {appViews.map((view) => (
-          <a
-            className={`nav-item ${currentView === view ? "active" : ""}`}
-            href={`#${view}`}
-            key={view}
-            aria-current={currentView === view ? "page" : undefined}
-            aria-label={`${viewLabels[view]}: ${viewHints[view]}`}
-            title={`${viewLabels[view]}: ${viewHints[view]}`}
-            onPointerEnter={() => onViewIntent?.(view)}
-            onFocus={() => onViewIntent?.(view)}
-            onTouchStart={() => onViewIntent?.(view)}
-          >
-            <SidebarIcon section={view} />
-            <span className="nav-copy">
-              <span className="nav-label">{viewLabels[view]}</span>
-              <small>{viewHints[view]}</small>
-            </span>
-          </a>
-        ))}
+        {appViews.map((view) =>
+          allowedViews(view) ? (
+            <a
+              className={`nav-item ${currentView === view ? "active" : ""}`}
+              href={`#${view}`}
+              key={view}
+              aria-current={currentView === view ? "page" : undefined}
+              aria-label={`${viewLabels[view]}: ${viewHints[view]}`}
+              title={`${viewLabels[view]}: ${viewHints[view]}`}
+              onPointerEnter={() => onViewIntent?.(view)}
+              onFocus={() => onViewIntent?.(view)}
+              onTouchStart={() => onViewIntent?.(view)}
+            >
+              <SidebarIcon section={view} />
+              <span className="nav-copy">
+                <span className="nav-label">{viewLabels[view]}</span>
+                <small>{viewHints[view]}</small>
+              </span>
+            </a>
+          ) : null
+        )}
       </nav>
     </aside>
   );

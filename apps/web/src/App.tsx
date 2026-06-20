@@ -369,6 +369,7 @@ const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ d
 const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ default: module.SettingsView })));
 const ScheduleView = lazy(() => import("./ScheduleView").then((module) => ({ default: module.ScheduleView })));
 const PatientsView = lazy(() => import("./PatientsView").then((module) => ({ default: module.PatientsView })));
+const MarketingView = lazy(() => import("./MarketingView").then((module) => ({ default: module.MarketingView })));
 
 function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
   return Boolean(status?.serverTranscriptionCurrentlyAvailable ?? status?.serverTranscriptionEnabled);
@@ -17189,7 +17190,7 @@ export function App() {
       <a className="skip-link" href="#workspace-content">
         Перейти к рабочей области
       </a>
-      <WorkspaceSidebar currentView={currentView} onViewIntent={preloadWorkspaceView} />
+      <WorkspaceSidebar currentView={currentView} onViewIntent={preloadWorkspaceView} role={selectedWorkspaceRole} />
 
       <section className={`workspace view-${currentView}`} id="workspace-content" tabIndex={-1} aria-label="Рабочая область">
         <WorkspaceTopbar
@@ -21547,6 +21548,12 @@ export function App() {
             />
           </Suspense>
           </WorkspaceRouteErrorBoundary>
+        ) : null}
+
+        {currentView === "marketing" ? (
+          <Suspense fallback={<AppLoadingState message="Загрузка маркетинга" />}>
+            <MarketingView clinicName={dashboard.clinicName} />
+          </Suspense>
         ) : null}
       </section>
     </main>

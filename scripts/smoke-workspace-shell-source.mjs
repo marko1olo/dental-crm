@@ -23,7 +23,9 @@ function forbidIn(source, snippet, message) {
 
 requireIn(appSource, 'from "./workspaceShell"', "App.tsx must import workspace shell boundaries");
 requireIn(appSource, 'from "./workspacePreload"', "App.tsx must import route preloading from the dedicated helper chunk");
-requireIn(appSource, "<WorkspaceSidebar currentView={currentView} onViewIntent={preloadWorkspaceView} />", "App.tsx must delegate sidebar rendering and route preloading");
+// WorkspaceSidebar must receive currentView and onViewIntent (role prop is allowed)
+requireIn(appSource, "<WorkspaceSidebar currentView={currentView}", "App.tsx must delegate sidebar rendering and route preloading");
+requireIn(appSource, "onViewIntent={preloadWorkspaceView}", "App.tsx must wire preload intent into the sidebar");
 requireIn(appSource, "<WorkspaceTopbar", "App.tsx must delegate topbar rendering");
 requireIn(preloadSource, "const workspaceViewPreloaders", "Workspace preload helper must own lazy route preload mapping next to route imports");
 requireIn(preloadSource, 'export type WorkspacePreloadIntent = "explicit" | "idle"', "Workspace preload helper must distinguish user-intent and idle route preloading");

@@ -1,0 +1,244 @@
+
+/* -------------------------------------------
+   MARKETING VIEW STYLES
+   ------------------------------------------- */
+.marketing-zone {
+  display: grid;
+  gap: 20px;
+}
+
+.marketing-stats-strip {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .marketing-stats-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+.marketing-stat-card {
+  align-items: center;
+  background: var(--paper-strong);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  display: flex;
+  gap: 14px;
+  padding: 14px 18px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.marketing-stat-card:hover {
+  box-shadow: 0 8px 24px rgba(22, 53, 46, 0.12);
+  transform: translateY(-2px);
+}
+
+.marketing-stat-card svg {
+  flex: 0 0 auto;
+  height: 22px;
+  width: 22px;
+}
+
+.marketing-rating {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.marketing-rating strong {
+  font-size: 17px;
+}
+
+.marketing-rating span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.marketing-tab-nav {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0;
+  margin-bottom: 4px;
+}
+
+.marketing-tab {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 7px;
+  margin-bottom: -1px;
+  padding: 10px 16px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.marketing-tab svg {
+  height: 16px;
+  width: 16px;
+}
+
+.marketing-tab.active {
+  border-bottom-color: var(--teal);
+  color: var(--teal-dark);
+}
+
+.marketing-tab:hover:not(.active) {
+  color: var(--ink);
+}
+
+.marketing-panel {
+  background: var(--paper-strong);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.marketing-form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 640px) {
+  .marketing-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.marketing-tone-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tone-btn {
+  align-items: center;
+  background: var(--paper-soft);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+  padding: 7px 14px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.tone-btn svg {
+  height: 15px;
+  width: 15px;
+}
+
+.tone-btn.active {
+  background: var(--teal-soft);
+  border-color: var(--teal);
+  color: var(--teal-dark);
+}
+
+.tone-btn-negative.active {
+  background: var(--rust-soft);
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+.marketing-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.marketing-result {
+  background: var(--paper-soft);
+  border: 1.5px solid var(--line-strong);
+  border-left: 4px solid var(--teal);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.marketing-result-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.marketing-reply-text {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.seo-keys-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seo-key-chip {
+  background: var(--teal-soft);
+  border: 1px solid var(--teal);
+  border-radius: 999px;
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 13px;
+}
+
+.marketing-warning {
+  background: var(--rust-soft);
+  border: 1px solid var(--rust);
+  border-radius: 8px;
+  color: var(--rust);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 4px;
+  padding: 12px 16px;
+}
+
+.marketing-formula {
+  align-items: center;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 14px 18px;
+}
+
+.formula-step {
+  background: var(--teal-soft);
+  border-radius: 6px;
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+}
+
+.formula-arrow {
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.icon-button.copied {
+  opacity: 1;
+}

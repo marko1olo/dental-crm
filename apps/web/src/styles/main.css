@@ -1,17 +1,17 @@
 :root {
   color: #25211d;
-  background: #eef6f4;
+  background: #fdfdfd;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --paper: #f8fcfa;
+  --paper: #ffffff;
   --paper-strong: #ffffff;
-  --paper-soft: #edf7f2;
+  --paper-soft: #f9fbfb;
   --ink: #25211d;
-  --muted: #5d6c65;
-  --line: #d0e2d9;
+  --muted: #808b86;
+  --line: rgba(208, 226, 217, 0.3);
   --line-strong: #a9c6b8;
   --teal: #0f766e;
   --teal-dark: #094b45;
@@ -12514,4 +12514,219 @@ img {
   .tooth-row {
     grid-template-columns: repeat(8, minmax(0, 1fr));
   }
+}
+
+/* ───────────────────────────────────────────────
+   HIDDEN PANELS (role-filtered / noise reduction)
+   ─────────────────────────────────────────────── */
+.specialty-focus-bar { display: none !important; }
+.clinical-rule-panel { display: none !important; }
+
+/* ───────────────────────────────────────────────
+   KEYFRAME ANIMATIONS
+   ─────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%  { opacity: 0.55; }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ───────────────────────────────────────────────
+   ENTRY ANIMATIONS — sections appear on mount
+   ─────────────────────────────────────────────── */
+.workspace > * {
+  animation: fade-up 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.workspace > *:nth-child(2) { animation-delay: 0.04s; }
+.workspace > *:nth-child(3) { animation-delay: 0.08s; }
+.workspace > *:nth-child(4) { animation-delay: 0.12s; }
+
+.panel {
+  animation: fade-up 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.shift-hero > * {
+  animation: fade-up 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.shift-hero > *:nth-child(2) { animation-delay: 0.06s; }
+
+/* ───────────────────────────────────────────────
+   SIDEBAR GLASSMORPHISM UPGRADE
+   ─────────────────────────────────────────────── */
+.sidebar {
+  position: relative;
+  background:
+    linear-gradient(160deg, rgba(15, 118, 110, 0.15) 0%, rgba(9, 75, 69, 0.05) 100%),
+    rgba(20, 28, 25, 0.96);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-right: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 4px 0 32px rgba(0,0,0,0.18);
+}
+
+/* ───────────────────────────────────────────────
+   NAV ITEM MICRO-ANIMATIONS
+   ─────────────────────────────────────────────── */
+.nav-item {
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  will-change: transform;
+  animation: slide-in-left 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sidebar nav .nav-item:nth-child(1) { animation-delay: 0.04s; }
+.sidebar nav .nav-item:nth-child(2) { animation-delay: 0.07s; }
+.sidebar nav .nav-item:nth-child(3) { animation-delay: 0.10s; }
+.sidebar nav .nav-item:nth-child(4) { animation-delay: 0.13s; }
+.sidebar nav .nav-item:nth-child(5) { animation-delay: 0.16s; }
+.sidebar nav .nav-item:nth-child(6) { animation-delay: 0.19s; }
+.sidebar nav .nav-item:nth-child(7) { animation-delay: 0.22s; }
+
+.nav-item:hover {
+  background: rgba(15, 118, 110, 0.25);
+  color: #ffffff;
+  transform: translateX(3px);
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+
+.nav-item.active {
+  background: rgba(15, 118, 110, 0.3);
+  color: #ffffff;
+  box-shadow: inset 3px 0 0 var(--teal);
+  position: relative;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: var(--teal);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ───────────────────────────────────────────────
+   BUTTON MICRO-ANIMATIONS
+   ─────────────────────────────────────────────── */
+.primary-button,
+.secondary-button {
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, opacity 0.15s ease;
+  will-change: transform;
+}
+
+.primary-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(15, 118, 110, 0.35);
+}
+
+.primary-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.secondary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.secondary-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ───────────────────────────────────────────────
+   ACTION TILE UPGRADE
+   ─────────────────────────────────────────────── */
+.action-tile {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  will-change: transform;
+}
+
+.action-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(15, 118, 110, 0.15);
+  border-color: var(--teal-soft);
+}
+
+.action-tile:active {
+  transform: translateY(-1px);
+}
+
+/* ───────────────────────────────────────────────
+   PANEL HOVER LIFT
+   ─────────────────────────────────────────────── */
+.now-card,
+.panel {
+  transition: box-shadow 0.2s ease;
+}
+
+.now-card:hover {
+  box-shadow: 0 20px 48px rgba(22, 53, 46, 0.15);
+}
+
+/* ───────────────────────────────────────────────
+   STATUS PILL PULSE (loading state)
+   ─────────────────────────────────────────────── */
+.status-pill.status-loading {
+  animation: pulse-soft 1.6s ease-in-out infinite;
+}
+
+/* ───────────────────────────────────────────────
+   TOPBAR GLASSMORPHISM
+   ─────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(253, 253, 253, 0.88);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border-bottom: 1px solid rgba(208, 226, 217, 0.4);
+  padding: 16px 22px;
+  margin: -22px -22px 0;
+}
+
+/* ───────────────────────────────────────────────
+   AVATAR PULSE ON HOVER
+   ─────────────────────────────────────────────── */
+.avatar {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.patient-hero:hover .avatar {
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.2);
+  transform: scale(1.06);
+}
+
+/* ───────────────────────────────────────────────
+   ROLE SWITCHER SMOOTH OPEN
+   ─────────────────────────────────────────────── */
+.role-switcher-options {
+  animation: fade-up 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ───────────────────────────────────────────────
+   BRAND MARK SUBTLE ANIMATION
+   ─────────────────────────────────────────────── */
+.brand-mark svg {
+  transition: transform 0.3s ease;
+}
+
+.brand-mark:hover svg {
+  transform: rotate(-10deg) scale(1.1);
 }

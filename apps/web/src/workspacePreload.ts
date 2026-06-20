@@ -6,7 +6,8 @@ const workspaceViewPreloaders: Partial<Record<AppView, () => Promise<unknown>>> 
   documents: () => import("./DocumentsView"),
   finance: () => import("./FinanceView"),
   communications: () => import("./CommunicationsView"),
-  settings: () => import("./SettingsView")
+  settings: () => import("./SettingsView"),
+  marketing: () => import("./MarketingView")
 };
 
 const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {
@@ -18,7 +19,8 @@ const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {
   documents: ["finance"],
   finance: ["documents"],
   communications: ["patients"],
-  settings: ["schedule"]
+  settings: ["schedule", "marketing"],
+  marketing: ["settings", "schedule"]
 };
 
 type IdlePreloadWindow = Window &
