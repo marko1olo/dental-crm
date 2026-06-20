@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Disallow admin/private paths from search indexing
+Disallow: /admin
+Disallow: /settings
+Disallow: /finance
