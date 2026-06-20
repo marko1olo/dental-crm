@@ -4304,7 +4304,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </div>
                 ) : null}
                 <div className="document-issue-confirmation-actions">
-                  <button className="secondary-button" type="button" disabled={documentIssueSaving} onClick={() => setDocumentIssueConfirmationId(null)}>
+                  <button className="secondary-button" type="button" disabled={documentIssueSaving} aria-busy={documentIssueSaving || undefined} onClick={() => setDocumentIssueConfirmationId(null)}>
                     Вернуться
                   </button>
                   <button
@@ -4432,7 +4432,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                   </div>
                 ) : null}
                 <div className="document-issue-confirmation-actions">
-                  <button className="secondary-button" type="button" disabled={documentVoidSaving} onClick={() => setDocumentVoidConfirmationId(null)}>
+                  <button className="secondary-button" type="button" disabled={documentVoidSaving} aria-busy={documentVoidSaving || undefined} onClick={() => setDocumentVoidConfirmationId(null)}>
                     Вернуться
                   </button>
                   <button
@@ -4696,6 +4696,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                           className="doc-link"
                           type="button"
                           disabled={documentStatusSaving}
+                          aria-busy={documentStatusSaving || undefined}
                           onClick={() => requestDocumentIssue(document)}
                           aria-describedby={documentLifecycleGuidanceId}
                           aria-label={`Проверить и выдать документ: ${documentActionContext}`}
@@ -4709,6 +4710,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                           className="text-button"
                           type="button"
                           disabled={documentStatusSaving}
+                          aria-busy={documentStatusSaving || undefined}
                           onClick={() => requestDocumentVoid(document)}
                           aria-describedby={documentLifecycleGuidanceId}
                           aria-label={`Аннулировать документ: ${documentActionContext}`}

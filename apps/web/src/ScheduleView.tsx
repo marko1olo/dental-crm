@@ -525,7 +525,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                         ? "Ошибка создания"
                         : "Готово к созданию"}
                 </span>
-                <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"}>
+                <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"} aria-busy={newAppointmentSaveState === "saving" || undefined}>
                   Сбросить
                 </button>
                 <button
@@ -760,7 +760,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                                   ? "Ошибка сохранения"
                                   : "Ждет сохранения"}
                           </span>
-                          <button className="secondary-button" type="button" disabled={appointmentSaveState === "saving"} onClick={() => closeAppointmentEditor(appointment.id)}>
+                          <button className="secondary-button" type="button" disabled={appointmentSaveState === "saving"} aria-busy={appointmentSaveState === "saving" || undefined} onClick={() => closeAppointmentEditor(appointment.id)}>
                             Закрыть
                           </button>
                           <button

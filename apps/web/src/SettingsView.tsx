@@ -3684,7 +3684,7 @@ export function SettingsView(props: SettingsViewProps) {
                   Объяснение пациенту
                   <textarea value={newRulePatientText} onChange={(event: TextInputChangeEvent) => setNewRulePatientText(event.target.value)} />
                 </label>
-                <button className="primary-button" type="button" onClick={createClinicalRuleFromSettings} disabled={isClinicalRuleSaving}>
+                <button className="primary-button" type="button" onClick={createClinicalRuleFromSettings} disabled={isClinicalRuleSaving} aria-busy={isClinicalRuleSaving || undefined}>
                   <Plus aria-hidden="true" /> {isClinicalRuleSaving ? "Сохраняю" : "Добавить правило"}
                 </button>
               </section>
@@ -5094,7 +5094,7 @@ export function SettingsView(props: SettingsViewProps) {
               />
               <div className="import-tool-row">
                 <span className="recognition-target">Цель: {recognitionTargetLabels[recognitionTarget]}</span>
-                <button className="primary-button" type="button" onClick={runRecognitionJob} disabled={isRecognitionLoading || !recognitionInputReady}>
+                <button className="primary-button" type="button" onClick={runRecognitionJob} disabled={isRecognitionLoading || !recognitionInputReady} aria-busy={isRecognitionLoading || undefined}>
                   <Sparkles aria-hidden="true" /> {isRecognitionLoading ? "Готовлю черновик" : "Распознать"}
                 </button>
               </div>
@@ -5241,7 +5241,7 @@ export function SettingsView(props: SettingsViewProps) {
                     >
                       <Sparkles aria-hidden="true" /> {isMigrationAutopilotLoading ? "Строю автоплан" : "Автоплан"}
                     </button>
-                    <button className="secondary-button" type="button" onClick={previewSmartImport} disabled={isSmartImportLoading || !smartImportInputReady}>
+                    <button className="secondary-button" type="button" onClick={previewSmartImport} disabled={isSmartImportLoading || !smartImportInputReady} aria-busy={isSmartImportLoading || undefined}>
                       <UploadCloud aria-hidden="true" /> {isSmartImportLoading ? "Разбираю" : "Разобрать"}
                     </button>
                   </div>
@@ -5296,7 +5296,7 @@ export function SettingsView(props: SettingsViewProps) {
                 >
                   <Sparkles aria-hidden="true" /> Смешанный пример
                 </button>
-                <button className="secondary-button" type="button" onClick={downloadSmartImportReport} disabled={isSmartReportLoading || !smartImportInputReady}>
+                <button className="secondary-button" type="button" onClick={downloadSmartImportReport} disabled={isSmartReportLoading || !smartImportInputReady} aria-busy={isSmartReportLoading || undefined}>
                   <FileText aria-hidden="true" /> {isSmartReportLoading ? "Готовлю отчет" : "Отчет проверки"}
                 </button>
                 <button
@@ -5304,6 +5304,7 @@ export function SettingsView(props: SettingsViewProps) {
                   type="button"
                   onClick={downloadSmartImportSafeHandoffReport}
                   disabled={isSmartSafeReportLoading || !smartImportInputReady}
+                  aria-busy={isSmartSafeReportLoading || undefined}
                   data-testid="download-smart-safe-handoff-report"
                   title="Табличный отчет для администратора, врача и специалиста переноса без ФИО, телефонов, дат рождения, локальных путей и имен файлов"
                 >
@@ -5321,7 +5322,7 @@ export function SettingsView(props: SettingsViewProps) {
                   <FileText aria-hidden="true" />{" "}
                   {isMigrationHandoffReportLoading ? "Готовлю план" : isMigrationAutopilotLoading ? "Жду автоплан" : migrationHandoffReportReady ? "План переноса" : "Сначала автоплан"}
                 </button>
-                <button className="primary-button" type="button" onClick={previewSmartImport} disabled={isSmartImportLoading || !smartImportInputReady}>
+                <button className="primary-button" type="button" onClick={previewSmartImport} disabled={isSmartImportLoading || !smartImportInputReady} aria-busy={isSmartImportLoading || undefined}>
                   <UploadCloud aria-hidden="true" /> {isSmartImportLoading ? "Разбираю" : "Разобрать"}
                 </button>
               </div>
@@ -6114,6 +6115,7 @@ export function SettingsView(props: SettingsViewProps) {
                     type="button"
                     data-testid="save-imports-clinic-profile"
                     disabled={clinicProfileSaveState === "saving"}
+                    aria-busy={clinicProfileSaveState === "saving" || undefined}
                     onClick={() => void saveClinicProfileFromDraft()}
                   >
                     <ShieldCheck aria-hidden="true" /> {clinicProfileSaveButtonText}
@@ -6145,6 +6147,8 @@ export function SettingsView(props: SettingsViewProps) {
                       !smartImportInputReady ||
                       (typedSmartImportPreview.patientPreview.readyRows === 0 && typedSmartImportPreview.imagingPreview.readyRows === 0)
                     }
+
+                    aria-busy={isSmartImportCommitting || undefined}
                   >
                     <CheckCircle2 aria-hidden="true" /> {isSmartImportCommitting ? "Записываю" : "Записать готовые"}
                   </button>
@@ -6219,6 +6223,7 @@ export function SettingsView(props: SettingsViewProps) {
                           type="button"
                           data-testid="save-smart-import-clinic-profile"
                           disabled={clinicProfileSaveState === "saving"}
+                          aria-busy={clinicProfileSaveState === "saving" || undefined}
                           onClick={() => void saveClinicProfileFromDraft()}
                         >
                           <ShieldCheck aria-hidden="true" /> {clinicProfileSaveButtonText}
@@ -7037,7 +7042,7 @@ export function SettingsView(props: SettingsViewProps) {
                 <button className="secondary-button" type="button" onClick={() => void previewDicomSeries()} disabled={isDicomSeriesPreviewLoading || !imagingImportInputReady}>
                   <Layers3 aria-hidden="true" /> {isDicomSeriesPreviewLoading ? "Группирую" : "Проверить серии"}
                 </button>
-                <button className="primary-button" type="button" onClick={previewImagingImport} disabled={isImagingImportLoading || !imagingImportInputReady}>
+                <button className="primary-button" type="button" onClick={previewImagingImport} disabled={isImagingImportLoading || !imagingImportInputReady} aria-busy={isImagingImportLoading || undefined}>
                   <UploadCloud aria-hidden="true" /> {isImagingImportLoading ? "Проверяю" : "Проверить снимки"}
                 </button>
               </div>
@@ -7103,6 +7108,7 @@ export function SettingsView(props: SettingsViewProps) {
                     type="button"
                     onClick={commitImagingImport}
                     disabled={isImagingImportCommitting || !imagingImportInputReady || typedImagingImportPreview.readyRows === 0}
+                    aria-busy={isImagingImportCommitting || undefined}
                   >
                     <CheckCircle2 aria-hidden="true" /> {isImagingImportCommitting ? "Записываю" : "Привязать готовые"}
                   </button>
@@ -7514,7 +7520,7 @@ export function SettingsView(props: SettingsViewProps) {
                 >
                   <ImageIcon aria-hidden="true" /> Фото журнала
                 </button>
-                <button className="primary-button" type="button" onClick={previewImport} disabled={isImportLoading || !patientImportInputReady}>
+                <button className="primary-button" type="button" onClick={previewImport} disabled={isImportLoading || !patientImportInputReady} aria-busy={isImportLoading || undefined}>
                   <UploadCloud aria-hidden="true" /> {isImportLoading ? "Проверяю" : "Проверить"}
                 </button>
               </div>
@@ -7547,6 +7553,7 @@ export function SettingsView(props: SettingsViewProps) {
                     type="button"
                     onClick={commitImport}
                     disabled={isImportCommitting || !patientImportInputReady || typedImportPreview.readyRows === 0}
+                    aria-busy={isImportCommitting || undefined}
                   >
                     <CheckCircle2 aria-hidden="true" /> {isImportCommitting ? "Записываю" : "Импортировать готовые"}
                   </button>

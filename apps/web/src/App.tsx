@@ -20226,6 +20226,7 @@ export function App() {
                       type="button"
                       onClick={buildDraft}
                       disabled={isDraftLoading || !visitDraftReadyToBuild}
+                      aria-busy={isDraftLoading || undefined}
                       aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
                     >
                       <Bot aria-hidden="true" /> {isDraftLoading ? "РЎРѕР±РёСЂР°СЋ" : "РЎРѕР±СЂР°С‚СЊ Р­РњРљ"}
