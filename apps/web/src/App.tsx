@@ -1,4 +1,4 @@
-import {
+﻿import {
   type CSSProperties,
   type KeyboardEvent,
   lazy,
@@ -363,6 +363,7 @@ import {
   warningSeverityLabels,
   workloadStateLabels
 } from "./workspaceUiLabels";
+const ImagingView = lazy(() => import("./ImagingView").then((module) => ({ default: module.ImagingView })));
 const FinanceView = lazy(() => import("./FinanceView").then((module) => ({ default: module.FinanceView })));
 const CommunicationsView = lazy(() => import("./CommunicationsView").then((module) => ({ default: module.CommunicationsView })));
 const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ default: module.DocumentsView })));
@@ -664,6 +665,8 @@ const browserImagingScanYieldEveryUnits = 24;
 const browserImagingScanYieldEveryMs = 20;
 const browserImagingScanProgressEveryUnits = 12;
 const browserImagingScanProgressEveryMs = 96;
+const browserImagingFileInputAccept =
+  ".dcm,.dicom,.ima,.rvg,.jpg,.jpeg,.png,.webp,.tif,.tiff,.bmp,.zip,.7z,.rar,.stl,.ply,.obj,application/dicom,image/*";
 const uiPreferencesStorageKey = "dental-crm:web-ui-preferences:v1";
 const documentPaymentSelectionStorageKey = "dental-crm:document-payment-selection:v1";
 const documentPayloadDraftStorageKey = "dental-crm:document-payload-drafts:v1";
@@ -760,20 +763,20 @@ type DocumentIssueSignatureDraft = {
 };
 
 const documentIssueSignatureModeLabels: Record<DocumentIssueSignatureMode, string> = {
-  paper_signed: "Бумажный экземпляр подписан",
-  simple_electronic_signature: "Простая электронная подпись",
-  qualified_electronic_signature: "УКЭП"
+  paper_signed: "Р‘СѓРјР°Р¶РЅС‹Р№ СЌРєР·РµРјРїР»СЏСЂ РїРѕРґРїРёСЃР°РЅ",
+  simple_electronic_signature: "РџСЂРѕСЃС‚Р°СЏ СЌР»РµРєС‚СЂРѕРЅРЅР°СЏ РїРѕРґРїРёСЃСЊ",
+  qualified_electronic_signature: "РЈРљР­Рџ"
 };
 
 const documentVoidReasonLabels: Record<DocumentVoidReasonCode, string> = {
-  draft_error: "Ошибка в черновике",
-  issued_in_error: "Документ выдан с ошибкой",
-  patient_request: "Запрос пациента или представителя",
-  duplicate_document: "Дубль документа",
-  tax_certificate_correction: "Коррекция налоговой справки",
-  medical_release_correction: "Коррекция выдачи меддокументов",
-  payment_correction: "Коррекция оплаты или чека",
-  other: "Другая причина"
+  draft_error: "РћС€РёР±РєР° РІ С‡РµСЂРЅРѕРІРёРєРµ",
+  issued_in_error: "Р”РѕРєСѓРјРµРЅС‚ РІС‹РґР°РЅ СЃ РѕС€РёР±РєРѕР№",
+  patient_request: "Р—Р°РїСЂРѕСЃ РїР°С†РёРµРЅС‚Р° РёР»Рё РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ",
+  duplicate_document: "Р”СѓР±Р»СЊ РґРѕРєСѓРјРµРЅС‚Р°",
+  tax_certificate_correction: "РљРѕСЂСЂРµРєС†РёСЏ РЅР°Р»РѕРіРѕРІРѕР№ СЃРїСЂР°РІРєРё",
+  medical_release_correction: "РљРѕСЂСЂРµРєС†РёСЏ РІС‹РґР°С‡Рё РјРµРґРґРѕРєСѓРјРµРЅС‚РѕРІ",
+  payment_correction: "РљРѕСЂСЂРµРєС†РёСЏ РѕРїР»Р°С‚С‹ РёР»Рё С‡РµРєР°",
+  other: "Р”СЂСѓРіР°СЏ РїСЂРёС‡РёРЅР°"
 };
 
 function browserGeneratedId(prefix: string): string {
@@ -831,7 +834,7 @@ function loadDocumentIssueSignatureDraft(organizationId: string | null | undefin
     version: 1,
     mode: "paper_signed",
     staffFullName: "",
-    staffRole: "Врач/администратор",
+    staffRole: "Р’СЂР°С‡/Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ",
     savedAt: ""
   };
   if (typeof window === "undefined") return fallback;
@@ -853,7 +856,7 @@ function loadDocumentIssueSignatureDraft(organizationId: string | null | undefin
       version: 1,
       mode: normalizedDocumentIssueSignatureMode(parsed.mode),
       staffFullName: typeof parsed.staffFullName === "string" ? parsed.staffFullName.slice(0, 240) : "",
-      staffRole: typeof parsed.staffRole === "string" && parsed.staffRole.trim() ? parsed.staffRole.slice(0, 120) : "Врач/администратор",
+      staffRole: typeof parsed.staffRole === "string" && parsed.staffRole.trim() ? parsed.staffRole.slice(0, 120) : "Р’СЂР°С‡/Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ",
       savedAt
     };
   } catch {
@@ -875,7 +878,7 @@ function saveDocumentIssueSignatureDraft(
         version: 1,
         mode,
         staffFullName: staffFullName.trim().slice(0, 240),
-        staffRole: staffRole.trim().slice(0, 120) || "Врач/администратор",
+        staffRole: staffRole.trim().slice(0, 120) || "Р’СЂР°С‡/Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ",
         savedAt: new Date().toISOString()
       } satisfies DocumentIssueSignatureDraft)
     );
@@ -1102,7 +1105,7 @@ function emptyMedicalRecordExtractDocumentDraftFields(): MedicalRecordExtractDoc
     recordExtractRecommendations: "",
     recordExtractDoctorFullName: "",
     recordExtractRecipientFullName: "",
-    recordExtractRecipientAuthority: "пациент лично",
+    recordExtractRecipientAuthority: "РїР°С†РёРµРЅС‚ Р»РёС‡РЅРѕ",
     recordExtractIssuedAt: new Date().toLocaleString("ru-RU"),
     recordExtractPreparedFromSignedRecords: false,
     recordExtractThirdPartyDataChecked: false
@@ -1123,7 +1126,7 @@ function normalizeMedicalRecordExtractDocumentDraftFields(value: unknown): Medic
     recordExtractRecommendations: localDraftString(candidate.recordExtractRecommendations),
     recordExtractDoctorFullName: localDraftString(candidate.recordExtractDoctorFullName, 240),
     recordExtractRecipientFullName: localDraftString(candidate.recordExtractRecipientFullName, 240),
-    recordExtractRecipientAuthority: localDraftString(candidate.recordExtractRecipientAuthority, 240) || "пациент лично",
+    recordExtractRecipientAuthority: localDraftString(candidate.recordExtractRecipientAuthority, 240) || "РїР°С†РёРµРЅС‚ Р»РёС‡РЅРѕ",
     recordExtractIssuedAt: localDraftString(candidate.recordExtractIssuedAt, 80),
     recordExtractPreparedFromSignedRecords: candidate.recordExtractPreparedFromSignedRecords === true,
     recordExtractThirdPartyDataChecked: candidate.recordExtractThirdPartyDataChecked === true
@@ -1475,7 +1478,7 @@ function localImagingFolderFingerprint(folderPath: string): string {
 }
 
 const dicomDownloadRedactionWarning =
-  "Скачанный пакет скрывает локальные пути снимков; перед загрузкой пикселей переподключите папку или устройство на рабочей станции.";
+  "РЎРєР°С‡Р°РЅРЅС‹Р№ РїР°РєРµС‚ СЃРєСЂС‹РІР°РµС‚ Р»РѕРєР°Р»СЊРЅС‹Рµ РїСѓС‚Рё СЃРЅРёРјРєРѕРІ; РїРµСЂРµРґ Р·Р°РіСЂСѓР·РєРѕР№ РїРёРєСЃРµР»РµР№ РїРµСЂРµРїРѕРґРєР»СЋС‡РёС‚Рµ РїР°РїРєСѓ РёР»Рё СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РЅР° СЂР°Р±РѕС‡РµР№ СЃС‚Р°РЅС†РёРё.";
 
 function uniqueDicomDownloadWarnings(warnings: string[]): string[] {
   return Array.from(new Set(warnings.map((warning) => warning.trim()).filter(Boolean)));
@@ -1567,24 +1570,24 @@ function classifyBrowserImagingFileName(fileName: string): "dicom" | "archive" |
 }
 
 const browserMigrationSourceTitles: Record<BrowserMigrationSourceKind, string> = {
-  mis_database: "Старая МИС или CRM",
-  firebird_database: "Старая серверная база программы",
-  access_database: "Старая настольная база",
-  sqlite_database: "Локальная база программы",
-  sql_dump: "Резервная копия старой базы",
-  spreadsheet_export: "Табличная выгрузка",
-  csv_export: "табличная выгрузка",
-  archive_export: "Архив выгрузки",
-  pacs_dicom: "архив снимков",
-  dicom_folder: "папка КЛКТ/КТ",
-  xray_image_archive: "Архив RVG/ОПТГ/фото",
-  vendor_imaging_system: "Программа снимков",
-  network_share: "Сетевая папка обмена",
-  unknown_legacy_source: "Неопознанный источник старой системы"
+  mis_database: "РЎС‚Р°СЂР°СЏ РњРРЎ РёР»Рё CRM",
+  firebird_database: "РЎС‚Р°СЂР°СЏ СЃРµСЂРІРµСЂРЅР°СЏ Р±Р°Р·Р° РїСЂРѕРіСЂР°РјРјС‹",
+  access_database: "РЎС‚Р°СЂР°СЏ РЅР°СЃС‚РѕР»СЊРЅР°СЏ Р±Р°Р·Р°",
+  sqlite_database: "Р›РѕРєР°Р»СЊРЅР°СЏ Р±Р°Р·Р° РїСЂРѕРіСЂР°РјРјС‹",
+  sql_dump: "Р РµР·РµСЂРІРЅР°СЏ РєРѕРїРёСЏ СЃС‚Р°СЂРѕР№ Р±Р°Р·С‹",
+  spreadsheet_export: "РўР°Р±Р»РёС‡РЅР°СЏ РІС‹РіСЂСѓР·РєР°",
+  csv_export: "С‚Р°Р±Р»РёС‡РЅР°СЏ РІС‹РіСЂСѓР·РєР°",
+  archive_export: "РђСЂС…РёРІ РІС‹РіСЂСѓР·РєРё",
+  pacs_dicom: "Р°СЂС…РёРІ СЃРЅРёРјРєРѕРІ",
+  dicom_folder: "РїР°РїРєР° РљР›РљРў/РљРў",
+  xray_image_archive: "РђСЂС…РёРІ RVG/РћРџРўР“/С„РѕС‚Рѕ",
+  vendor_imaging_system: "РџСЂРѕРіСЂР°РјРјР° СЃРЅРёРјРєРѕРІ",
+  network_share: "РЎРµС‚РµРІР°СЏ РїР°РїРєР° РѕР±РјРµРЅР°",
+  unknown_legacy_source: "РќРµРѕРїРѕР·РЅР°РЅРЅС‹Р№ РёСЃС‚РѕС‡РЅРёРє СЃС‚Р°СЂРѕР№ СЃРёСЃС‚РµРјС‹"
 };
 
 const browserLegacyMisTextPattern =
-  /1c|1с|\.1cd\b|мис|инфоклиника|infoclinica|infodent|инфодент|дента\s*офис|denta\s*office|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental4windows|dental\s*pro|dentpro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|medangel|медангел|medialog|медиалог|arnica|арника|sycret\s*dent|secret\s*dent|адента|adenta|dent\s*crm\s*24|dentcrm24|dent\.crm24|клиентикс|clientix|klientix|2v.*(?:стоматолог|dental)|future\s*it\s*dent|futureitdent|32\s*top|32top|medods|медодс|dental\s*tap|dentaltap|(?:^|[\\/])ident(?:[\\/]|$)|\bident\b|stomx|stom\s*x|стомx|стомикс|i[-\s]?stom|ай\s*стом|q[-\s]?stoma|кью\s*стома|бит\.?\s*стоматолог|bit\.?\s*stomatolog|1c.*стоматолог|1с.*стоматолог|mac\s*dent|macdent|stom\s*box|stombox|open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz|dentrix|eaglesoft|patterson|softdent|practice\s*works|curve\s*dental|denticon|tab32|dolphin\s*(?:imaging|management)|legacy|старая\s+баз/i;
+  /1c|1СЃ|\.1cd\b|РјРёСЃ|РёРЅС„РѕРєР»РёРЅРёРєР°|infoclinica|infodent|РёРЅС„РѕРґРµРЅС‚|РґРµРЅС‚Р°\s*РѕС„РёСЃ|denta\s*office|clinic\s*cards|cliniccards|dental\s*4\s*windows|d4w|dental4windows|dental\s*pro|dentpro|dental\s*soft|dentasoft|dental\s*cloud|clinic\s*365|clinic365|medangel|РјРµРґР°РЅРіРµР»|medialog|РјРµРґРёР°Р»РѕРі|arnica|Р°СЂРЅРёРєР°|sycret\s*dent|secret\s*dent|Р°РґРµРЅС‚Р°|adenta|dent\s*crm\s*24|dentcrm24|dent\.crm24|РєР»РёРµРЅС‚РёРєСЃ|clientix|klientix|2v.*(?:СЃС‚РѕРјР°С‚РѕР»РѕРі|dental)|future\s*it\s*dent|futureitdent|32\s*top|32top|medods|РјРµРґРѕРґСЃ|dental\s*tap|dentaltap|(?:^|[\\/])ident(?:[\\/]|$)|\bident\b|stomx|stom\s*x|СЃС‚РѕРјx|СЃС‚РѕРјРёРєСЃ|i[-\s]?stom|Р°Р№\s*СЃС‚РѕРј|q[-\s]?stoma|РєСЊСЋ\s*СЃС‚РѕРјР°|Р±РёС‚\.?\s*СЃС‚РѕРјР°С‚РѕР»РѕРі|bit\.?\s*stomatolog|1c.*СЃС‚РѕРјР°С‚РѕР»РѕРі|1СЃ.*СЃС‚РѕРјР°С‚РѕР»РѕРі|mac\s*dent|macdent|stom\s*box|stombox|open\s*dent(?:al)?|opendental|opendent|open\s*dent\s*images|atoz|dentrix|eaglesoft|patterson|softdent|practice\s*works|curve\s*dental|denticon|tab32|dolphin\s*(?:imaging|management)|legacy|СЃС‚Р°СЂР°СЏ\s+Р±Р°Р·/i;
 
 function classifyBrowserMigrationFileName(fileName: string): BrowserMigrationFileKind {
   const lowerName = fileName.toLowerCase();
@@ -1605,18 +1608,18 @@ function classifyBrowserMigrationFileName(fileName: string): BrowserMigrationFil
 function browserMigrationFolderHintScore(value: string): number {
   const normalized = value.toLowerCase();
   let score = 0;
-  if (/dental|denta|clinic|stom|стом|mis|crm|legacy|migration|миграц|перенос|backup|dump|export|выгруз|стар/.test(normalized)) score += 0.14;
+  if (/dental|denta|clinic|stom|СЃС‚РѕРј|mis|crm|legacy|migration|РјРёРіСЂР°С†|РїРµСЂРµРЅРѕСЃ|backup|dump|export|РІС‹РіСЂСѓР·|СЃС‚Р°СЂ/.test(normalized)) score += 0.14;
   if (browserLegacyMisTextPattern.test(normalized) || /sql|firebird|interbase|access|sqlite/.test(normalized)) score += 0.2;
-  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|durr|dürr|morita|i[-\s]?dixel|newtom|\bnnt\b|myray|owandy|quick\s*vision|quickvision|dexis|kavo|gendex|acteon|sopro|sopix|pspix|x[-\s]?mind|dolphin|3shape|medit|exocad/.test(normalized)) score += 0.18;
-  if (/dicom|dicomdir|cbct|кт|ккт|rvg|opg|оптг|xray|x-ray|рентген|сним|pacs|orthanc|dcm4chee/.test(normalized)) score += 0.18;
+  if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|durr|dГјrr|morita|i[-\s]?dixel|newtom|\bnnt\b|myray|owandy|quick\s*vision|quickvision|dexis|kavo|gendex|acteon|sopro|sopix|pspix|x[-\s]?mind|dolphin|3shape|medit|exocad/.test(normalized)) score += 0.18;
+  if (/dicom|dicomdir|cbct|РєС‚|РєРєС‚|rvg|opg|РѕРїС‚Рі|xray|x-ray|СЂРµРЅС‚РіРµРЅ|СЃРЅРёРј|pacs|orthanc|dcm4chee/.test(normalized)) score += 0.18;
   return score;
 }
 
 function browserMigrationSourceKindFromStats(stats: BrowserMigrationFolderStats): BrowserMigrationSourceKind {
   const text = stats.folderHint.toLowerCase();
   if (/sidexis|romexis|planmeca|vatech|carestream|ondemand|invivo|digora|soredex|trophy|visiodent|dbswin|vistasoft|morita|i[-\s]?dixel|newtom|\bnnt\b|myray|owandy|quick\s*vision|quickvision|dexis|kavo|gendex|acteon|sopro|sopix|pspix|x[-\s]?mind|dolphin|3shape|medit|exocad/.test(text)) return "vendor_imaging_system";
-  if (stats.hasDicomDir || stats.dicomLikeFiles > 0 || /dicom|cbct|кт|ккт/.test(text)) return "dicom_folder";
-  if (stats.imageFiles >= 6 || stats.modelFiles > 0 || /rvg|opg|оптг|xray|рентген|сним/.test(text)) return "xray_image_archive";
+  if (stats.hasDicomDir || stats.dicomLikeFiles > 0 || /dicom|cbct|РєС‚|РєРєС‚/.test(text)) return "dicom_folder";
+  if (stats.imageFiles >= 6 || stats.modelFiles > 0 || /rvg|opg|РѕРїС‚Рі|xray|СЂРµРЅС‚РіРµРЅ|СЃРЅРёРј/.test(text)) return "xray_image_archive";
   if (/\.fdb|\.gdb|\.fbk|\.ib\b|\.ibk|\.gbk|firebird|interbase/.test(text)) return "firebird_database";
   if (/\.mdb|\.accdb|access/.test(text)) return "access_database";
   if (/\.dbf|\.dbt|\.fpt|\.cdx|\.idx|\.ntx|\.ndx|\.mdx|dbase|foxpro|clipper|paradox/.test(text)) return "mis_database";
@@ -1665,14 +1668,14 @@ function buildBrowserMigrationDiscovery(input: {
       const sourceKind = browserMigrationSourceKindFromStats(stats);
       const fingerprint = browserPickedFolderFingerprint(`${input.rootName}:${stats.folderKey}:${matchedFiles}:${stats.totalBytes}`);
       const reasons: string[] = [];
-      if (stats.databaseFiles) reasons.push(`${stats.databaseFiles} файлов старой базы`);
-      if (stats.dumpFiles) reasons.push(`${stats.dumpFiles} файлов резервной копии`);
-      if (stats.tableFiles) reasons.push(`${stats.tableFiles} табличных выгрузок`);
-      if (stats.archiveFiles) reasons.push(`${stats.archiveFiles} архивов`);
-      if (stats.dicomLikeFiles) reasons.push(`${stats.dicomLikeFiles} признаков снимков или серий КТ`);
-      if (stats.imageFiles) reasons.push(`${stats.imageFiles} изображений`);
-      if (stats.modelFiles) reasons.push(`${stats.modelFiles} 3D-моделей зубов`);
-      if (hintScore > 0) reasons.push("название папки похоже на старую CRM/снимки/миграцию");
+      if (stats.databaseFiles) reasons.push(`${stats.databaseFiles} С„Р°Р№Р»РѕРІ СЃС‚Р°СЂРѕР№ Р±Р°Р·С‹`);
+      if (stats.dumpFiles) reasons.push(`${stats.dumpFiles} С„Р°Р№Р»РѕРІ СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё`);
+      if (stats.tableFiles) reasons.push(`${stats.tableFiles} С‚Р°Р±Р»РёС‡РЅС‹С… РІС‹РіСЂСѓР·РѕРє`);
+      if (stats.archiveFiles) reasons.push(`${stats.archiveFiles} Р°СЂС…РёРІРѕРІ`);
+      if (stats.dicomLikeFiles) reasons.push(`${stats.dicomLikeFiles} РїСЂРёР·РЅР°РєРѕРІ СЃРЅРёРјРєРѕРІ РёР»Рё СЃРµСЂРёР№ РљРў`);
+      if (stats.imageFiles) reasons.push(`${stats.imageFiles} РёР·РѕР±СЂР°Р¶РµРЅРёР№`);
+      if (stats.modelFiles) reasons.push(`${stats.modelFiles} 3D-РјРѕРґРµР»РµР№ Р·СѓР±РѕРІ`);
+      if (hintScore > 0) reasons.push("РЅР°Р·РІР°РЅРёРµ РїР°РїРєРё РїРѕС…РѕР¶Рµ РЅР° СЃС‚Р°СЂСѓСЋ CRM/СЃРЅРёРјРєРё/РјРёРіСЂР°С†РёСЋ");
       return {
         sourceRef: `browser-local:${fingerprint}`,
         safeDisplayName: `${browserMigrationSourceTitles[sourceKind]} #${fingerprint}`,
@@ -1691,8 +1694,8 @@ function buildBrowserMigrationDiscovery(input: {
         hasDicomDir: stats.hasDicomDir,
         latestModifiedAt: stats.latestModifiedAt,
         reasons,
-        warnings: ["Выбранная через браузер папка не дает полного пути; для автоматического переноса нужен локальный модуль или ручной путь администратора."],
-        smartImportLine: `Источник старой системы: ${browserMigrationSourceTitles[sourceKind]}; код источника browser-local:${fingerprint}; файлов=${matchedFiles}; старых баз=${stats.databaseFiles}; копий=${stats.dumpFiles}; таблиц=${stats.tableFiles}; КТ/снимков=${stats.dicomLikeFiles}; изображений=${stats.imageFiles}; моделей=${stats.modelFiles}`
+        warnings: ["Р’С‹Р±СЂР°РЅРЅР°СЏ С‡РµСЂРµР· Р±СЂР°СѓР·РµСЂ РїР°РїРєР° РЅРµ РґР°РµС‚ РїРѕР»РЅРѕРіРѕ РїСѓС‚Рё; РґР»СЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ РїРµСЂРµРЅРѕСЃР° РЅСѓР¶РµРЅ Р»РѕРєР°Р»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ РёР»Рё СЂСѓС‡РЅРѕР№ РїСѓС‚СЊ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°."],
+        smartImportLine: `РСЃС‚РѕС‡РЅРёРє СЃС‚Р°СЂРѕР№ СЃРёСЃС‚РµРјС‹: ${browserMigrationSourceTitles[sourceKind]}; РєРѕРґ РёСЃС‚РѕС‡РЅРёРєР° browser-local:${fingerprint}; С„Р°Р№Р»РѕРІ=${matchedFiles}; СЃС‚Р°СЂС‹С… Р±Р°Р·=${stats.databaseFiles}; РєРѕРїРёР№=${stats.dumpFiles}; С‚Р°Р±Р»РёС†=${stats.tableFiles}; РљРў/СЃРЅРёРјРєРѕРІ=${stats.dicomLikeFiles}; РёР·РѕР±СЂР°Р¶РµРЅРёР№=${stats.imageFiles}; РјРѕРґРµР»РµР№=${stats.modelFiles}`
       };
     })
     .filter((candidate): candidate is MigrationLocalSourceDiscoveryResponse["candidates"][number] => Boolean(candidate))
@@ -1712,12 +1715,12 @@ function buildBrowserMigrationDiscovery(input: {
     candidates,
     warnings: [
       ...input.warnings,
-      "Браузерный список читает только выбранную папку/файлы и не раскрывает серверу полный локальный путь.",
-      ...(candidates.length ? [] : ["В выбранной папке не найдено старых баз, снимков, архивов или выгрузок в пределах лимитов."])
+      "Р‘СЂР°СѓР·РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє С‡РёС‚Р°РµС‚ С‚РѕР»СЊРєРѕ РІС‹Р±СЂР°РЅРЅСѓСЋ РїР°РїРєСѓ/С„Р°Р№Р»С‹ Рё РЅРµ СЂР°СЃРєСЂС‹РІР°РµС‚ СЃРµСЂРІРµСЂСѓ РїРѕР»РЅС‹Р№ Р»РѕРєР°Р»СЊРЅС‹Р№ РїСѓС‚СЊ.",
+      ...(candidates.length ? [] : ["Р’ РІС‹Р±СЂР°РЅРЅРѕР№ РїР°РїРєРµ РЅРµ РЅР°Р№РґРµРЅРѕ СЃС‚Р°СЂС‹С… Р±Р°Р·, СЃРЅРёРјРєРѕРІ, Р°СЂС…РёРІРѕРІ РёР»Рё РІС‹РіСЂСѓР·РѕРє РІ РїСЂРµРґРµР»Р°С… Р»РёРјРёС‚РѕРІ."])
     ],
     nextAction: candidates.length
-      ? "Откройте план по найденному кандидату из браузера или отправьте его в умный разбор как список найденных файлов."
-      : "Выберите корень старой МИС/снимков выше уровнем или запустите локальный модуль миграции для полного автопоиска по ПК."
+      ? "РћС‚РєСЂРѕР№С‚Рµ РїР»Р°РЅ РїРѕ РЅР°Р№РґРµРЅРЅРѕРјСѓ РєР°РЅРґРёРґР°С‚Сѓ РёР· Р±СЂР°СѓР·РµСЂР° РёР»Рё РѕС‚РїСЂР°РІСЊС‚Рµ РµРіРѕ РІ СѓРјРЅС‹Р№ СЂР°Р·Р±РѕСЂ РєР°Рє СЃРїРёСЃРѕРє РЅР°Р№РґРµРЅРЅС‹С… С„Р°Р№Р»РѕРІ."
+      : "Р’С‹Р±РµСЂРёС‚Рµ РєРѕСЂРµРЅСЊ СЃС‚Р°СЂРѕР№ РњРРЎ/СЃРЅРёРјРєРѕРІ РІС‹С€Рµ СѓСЂРѕРІРЅРµРј РёР»Рё Р·Р°РїСѓСЃС‚РёС‚Рµ Р»РѕРєР°Р»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ РјРёРіСЂР°С†РёРё РґР»СЏ РїРѕР»РЅРѕРіРѕ Р°РІС‚РѕРїРѕРёСЃРєР° РїРѕ РџРљ."
   };
 }
 
@@ -1992,17 +1995,17 @@ function buildBrowserPickedImagingFolderPreview(stats: BrowserPickedImagingScanS
   const hasDicom = stats.dicomLikeFiles > 0;
   const hasModels = stats.modelFiles > 0;
   const nextAction = hasDicom
-    ? "Найдены файлы КТ/снимков. Для тяжелой КТ откройте эту же папку в локальном модуле клиники или в полноценном просмотрщике КТ."
+    ? "РќР°Р№РґРµРЅС‹ С„Р°Р№Р»С‹ РљРў/СЃРЅРёРјРєРѕРІ. Р”Р»СЏ С‚СЏР¶РµР»РѕР№ РљРў РѕС‚РєСЂРѕР№С‚Рµ СЌС‚Сѓ Р¶Рµ РїР°РїРєСѓ РІ Р»РѕРєР°Р»СЊРЅРѕРј РјРѕРґСѓР»Рµ РєР»РёРЅРёРєРё РёР»Рё РІ РїРѕР»РЅРѕС†РµРЅРЅРѕРј РїСЂРѕСЃРјРѕС‚СЂС‰РёРєРµ РљРў."
     : hasModels
-    ? "Найдены стоматологические 3D-модели. До подключения просмотрщика 3D-моделей держим это как метаданные органайзера."
-      : "В ограниченном браузерном сканировании файлы снимков не найдены.";
+    ? "РќР°Р№РґРµРЅС‹ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРёРµ 3D-РјРѕРґРµР»Рё. Р”Рѕ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР° 3D-РјРѕРґРµР»РµР№ РґРµСЂР¶РёРј СЌС‚Рѕ РєР°Рє РјРµС‚Р°РґР°РЅРЅС‹Рµ РѕСЂРіР°РЅР°Р№Р·РµСЂР°."
+      : "Р’ РѕРіСЂР°РЅРёС‡РµРЅРЅРѕРј Р±СЂР°СѓР·РµСЂРЅРѕРј СЃРєР°РЅРёСЂРѕРІР°РЅРёРё С„Р°Р№Р»С‹ СЃРЅРёРјРєРѕРІ РЅРµ РЅР°Р№РґРµРЅС‹.";
   return {
     version: 1,
-    safeDisplayName: `${hasDicom ? "Браузерная КТ-папка" : "Браузерная папка снимков"} #${fingerprint}`,
-    sourceLabel: stats.sourceKind === "browser_directory_picker" ? "Выбор папки браузером" : "Выбор файлов браузером",
+    safeDisplayName: `${hasDicom ? "Р‘СЂР°СѓР·РµСЂРЅР°СЏ РљРў-РїР°РїРєР°" : "Р‘СЂР°СѓР·РµСЂРЅР°СЏ РїР°РїРєР° СЃРЅРёРјРєРѕРІ"} #${fingerprint}`,
+    sourceLabel: stats.sourceKind === "browser_directory_picker" ? "Р’С‹Р±РѕСЂ РїР°РїРєРё Р±СЂР°СѓР·РµСЂРѕРј" : "Р’С‹Р±РѕСЂ С„Р°Р№Р»РѕРІ Р±СЂР°СѓР·РµСЂРѕРј",
     sourceKind: stats.sourceKind,
     folderFingerprint: fingerprint,
-    rootName: stats.rootName || "Выбранная папка",
+    rootName: stats.rootName || "Р’С‹Р±СЂР°РЅРЅР°СЏ РїР°РїРєР°",
     scannedFiles: stats.scannedFiles,
     scannedFolders: stats.scannedFolders,
     dicomLikeFiles: stats.dicomLikeFiles,
@@ -2033,8 +2036,8 @@ function loadLocalImagingFolderDraft(organizationId: string | null | undefined =
     }
     return {
       ...parsed,
-      safeDisplayName: parsed.safeDisplayName || `Локальная папка снимков #${localImagingFolderFingerprint(parsed.folderPath)}`,
-      sourceLabel: parsed.sourceLabel || "Это устройство",
+      safeDisplayName: parsed.safeDisplayName || `Р›РѕРєР°Р»СЊРЅР°СЏ РїР°РїРєР° СЃРЅРёРјРєРѕРІ #${localImagingFolderFingerprint(parsed.folderPath)}`,
+      sourceLabel: parsed.sourceLabel || "Р­С‚Рѕ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ",
       sourceKind: parsed.sourceKind || "manual",
       folderFingerprint: parsed.folderFingerprint || localImagingFolderFingerprint(parsed.folderPath),
       origin: parsed.origin || "manual"
@@ -2228,60 +2231,60 @@ function ctImplantPlanFromLibraryItem(implant: CtImplantLibraryItem): ImagingVie
 
 const imagingViewerPlans: Record<ImagingStudyKind, ImagingViewerPlan> = {
   periapical: {
-    label: "RVG / прицельный",
+    label: "RVG / РїСЂРёС†РµР»СЊРЅС‹Р№",
     mode: "two_d",
     primaryTools: ["window/level", "invert", "rotate", "zoom", "measure"],
     presets: ["endo", "caries", "implant"],
-    nextAction: "Смотреть локально; ИИ-описание только как черновик.",
-    warnings: ["Не заменяет диагноз врача.", "Измерения требуют калибровки датчика."]
+    nextAction: "РЎРјРѕС‚СЂРµС‚СЊ Р»РѕРєР°Р»СЊРЅРѕ; РР-РѕРїРёСЃР°РЅРёРµ С‚РѕР»СЊРєРѕ РєР°Рє С‡РµСЂРЅРѕРІРёРє.",
+    warnings: ["РќРµ Р·Р°РјРµРЅСЏРµС‚ РґРёР°РіРЅРѕР· РІСЂР°С‡Р°.", "РР·РјРµСЂРµРЅРёСЏ С‚СЂРµР±СѓСЋС‚ РєР°Р»РёР±СЂРѕРІРєРё РґР°С‚С‡РёРєР°."]
   },
   bitewing: {
-    label: "Интерпроксимальный снимок",
+    label: "РРЅС‚РµСЂРїСЂРѕРєСЃРёРјР°Р»СЊРЅС‹Р№ СЃРЅРёРјРѕРє",
     mode: "two_d",
     primaryTools: ["window/level", "invert", "zoom", "compare"],
     presets: ["caries", "bone"],
-    nextAction: "Смотреть локально; удобно для кариеса и контактов.",
-    warnings: ["Сравнение серий требует одинаковой проекции."]
+    nextAction: "РЎРјРѕС‚СЂРµС‚СЊ Р»РѕРєР°Р»СЊРЅРѕ; СѓРґРѕР±РЅРѕ РґР»СЏ РєР°СЂРёРµСЃР° Рё РєРѕРЅС‚Р°РєС‚РѕРІ.",
+    warnings: ["РЎСЂР°РІРЅРµРЅРёРµ СЃРµСЂРёР№ С‚СЂРµР±СѓРµС‚ РѕРґРёРЅР°РєРѕРІРѕР№ РїСЂРѕРµРєС†РёРё."]
   },
   opg: {
-    label: "ОПТГ / панорама",
+    label: "РћРџРўР“ / РїР°РЅРѕСЂР°РјР°",
     mode: "two_d",
     primaryTools: ["window/level", "invert", "rotate", "zoom", "measure"],
     presets: ["bone", "teeth", "implant"],
-    nextAction: "2D-просмотрщик достаточен для обзора; КТ открывать отдельным рабочим местом срезов.",
-    warnings: ["Панорама имеет искажения; линейные измерения проверять по КТ."]
+    nextAction: "2D-РїСЂРѕСЃРјРѕС‚СЂС‰РёРє РґРѕСЃС‚Р°С‚РѕС‡РµРЅ РґР»СЏ РѕР±Р·РѕСЂР°; РљРў РѕС‚РєСЂС‹РІР°С‚СЊ РѕС‚РґРµР»СЊРЅС‹Рј СЂР°Р±РѕС‡РёРј РјРµСЃС‚РѕРј СЃСЂРµР·РѕРІ.",
+    warnings: ["РџР°РЅРѕСЂР°РјР° РёРјРµРµС‚ РёСЃРєР°Р¶РµРЅРёСЏ; Р»РёРЅРµР№РЅС‹Рµ РёР·РјРµСЂРµРЅРёСЏ РїСЂРѕРІРµСЂСЏС‚СЊ РїРѕ РљРў."]
   },
   ceph: {
-    label: "ТРГ / цефалометрия",
+    label: "РўР Р“ / С†РµС„Р°Р»РѕРјРµС‚СЂРёСЏ",
     mode: "ceph",
     primaryTools: ["window/level", "rotate", "zoom", "landmarks"],
     presets: ["soft", "bone", "airway"],
-    nextAction: "Для ортодонтии нужен отдельный цефалометрический анализ с точками и углами.",
-    warnings: ["Точки/углы не должны автозаполняться без проверки врача."]
+    nextAction: "Р”Р»СЏ РѕСЂС‚РѕРґРѕРЅС‚РёРё РЅСѓР¶РµРЅ РѕС‚РґРµР»СЊРЅС‹Р№ С†РµС„Р°Р»РѕРјРµС‚СЂРёС‡РµСЃРєРёР№ Р°РЅР°Р»РёР· СЃ С‚РѕС‡РєР°РјРё Рё СѓРіР»Р°РјРё.",
+    warnings: ["РўРѕС‡РєРё/СѓРіР»С‹ РЅРµ РґРѕР»Р¶РЅС‹ Р°РІС‚РѕР·Р°РїРѕР»РЅСЏС‚СЊСЃСЏ Р±РµР· РїСЂРѕРІРµСЂРєРё РІСЂР°С‡Р°."]
   },
   cbct: {
-    label: "КЛКТ / КТ",
+    label: "РљР›РљРў / РљРў",
     mode: "cbct_mpr",
     primaryTools: ["MPR", "axial", "coronal", "sagittal", "panoramic curve"],
     presets: ["bone", "implant", "endo"],
-    nextAction: "Открывать в просмотре КЛКТ/КТ-срезов; здесь только быстрый предпросмотр.",
-    warnings: ["Нельзя диагностировать КЛКТ по одной плоской картинке.", "Нужны срезы серии, предварительная подготовка и полноценный просмотрщик КТ."]
+    nextAction: "РћС‚РєСЂС‹РІР°С‚СЊ РІ РїСЂРѕСЃРјРѕС‚СЂРµ РљР›РљРў/РљРў-СЃСЂРµР·РѕРІ; Р·РґРµСЃСЊ С‚РѕР»СЊРєРѕ Р±С‹СЃС‚СЂС‹Р№ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ.",
+    warnings: ["РќРµР»СЊР·СЏ РґРёР°РіРЅРѕСЃС‚РёСЂРѕРІР°С‚СЊ РљР›РљРў РїРѕ РѕРґРЅРѕР№ РїР»РѕСЃРєРѕР№ РєР°СЂС‚РёРЅРєРµ.", "РќСѓР¶РЅС‹ СЃСЂРµР·С‹ СЃРµСЂРёРё, РїСЂРµРґРІР°СЂРёС‚РµР»СЊРЅР°СЏ РїРѕРґРіРѕС‚РѕРІРєР° Рё РїРѕР»РЅРѕС†РµРЅРЅС‹Р№ РїСЂРѕСЃРјРѕС‚СЂС‰РёРє РљРў."]
   },
   photo: {
-    label: "Фото",
+    label: "Р¤РѕС‚Рѕ",
     mode: "photo",
     primaryTools: ["zoom", "rotate", "brightness", "contrast"],
     presets: ["clinical", "shade", "before/after"],
-    nextAction: "Фото можно использовать для коммуникации и черновиков документов.",
-    warnings: ["Цвет зависит от света и камеры."]
+    nextAction: "Р¤РѕС‚Рѕ РјРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РґР»СЏ РєРѕРјРјСѓРЅРёРєР°С†РёРё Рё С‡РµСЂРЅРѕРІРёРєРѕРІ РґРѕРєСѓРјРµРЅС‚РѕРІ.",
+    warnings: ["Р¦РІРµС‚ Р·Р°РІРёСЃРёС‚ РѕС‚ СЃРІРµС‚Р° Рё РєР°РјРµСЂС‹."]
   },
   other: {
-    label: "Другое изображение",
+    label: "Р”СЂСѓРіРѕРµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ",
     mode: "two_d",
     primaryTools: ["zoom", "rotate", "brightness", "contrast"],
     presets: ["neutral"],
-    nextAction: "Проверить источник и привязку к пациенту перед использованием.",
-    warnings: ["Неизвестный тип требует ручной проверки."]
+    nextAction: "РџСЂРѕРІРµСЂРёС‚СЊ РёСЃС‚РѕС‡РЅРёРє Рё РїСЂРёРІСЏР·РєСѓ Рє РїР°С†РёРµРЅС‚Сѓ РїРµСЂРµРґ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј.",
+    warnings: ["РќРµРёР·РІРµСЃС‚РЅС‹Р№ С‚РёРї С‚СЂРµР±СѓРµС‚ СЂСѓС‡РЅРѕР№ РїСЂРѕРІРµСЂРєРё."]
   }
 };
 
@@ -2297,93 +2300,93 @@ const imagingSourceChoices: ImagingSourceKind[] = [
 
 const smartImportModeLabels: Record<SmartImportMode, { title: string; detail: string }> = {
   auto: {
-    title: "Авто",
-    detail: "Сам разделит пациентов, снимки и мусор."
+    title: "РђРІС‚Рѕ",
+    detail: "РЎР°Рј СЂР°Р·РґРµР»РёС‚ РїР°С†РёРµРЅС‚РѕРІ, СЃРЅРёРјРєРё Рё РјСѓСЃРѕСЂ."
   },
   mixed: {
-    title: "Смешанный экспорт",
-    detail: "Пациенты + снимки из одной старой программы."
+    title: "РЎРјРµС€Р°РЅРЅС‹Р№ СЌРєСЃРїРѕСЂС‚",
+    detail: "РџР°С†РёРµРЅС‚С‹ + СЃРЅРёРјРєРё РёР· РѕРґРЅРѕР№ СЃС‚Р°СЂРѕР№ РїСЂРѕРіСЂР°РјРјС‹."
   },
   patients: {
-    title: "Только пациенты",
-    detail: "Принудительно отправить строки в базу пациентов."
+    title: "РўРѕР»СЊРєРѕ РїР°С†РёРµРЅС‚С‹",
+    detail: "РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РѕС‚РїСЂР°РІРёС‚СЊ СЃС‚СЂРѕРєРё РІ Р±Р°Р·Сѓ РїР°С†РёРµРЅС‚РѕРІ."
   },
   imaging: {
-    title: "Только снимки",
-    detail: "Принудительно разобрать как RVG/ОПТГ/КТ."
+    title: "РўРѕР»СЊРєРѕ СЃРЅРёРјРєРё",
+    detail: "РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ СЂР°Р·РѕР±СЂР°С‚СЊ РєР°Рє RVG/РћРџРўР“/РљРў."
   }
 };
 
 const importSourceLabels: Record<ImportSourceKind, { title: string; detail: string }> = {
   csv_text: {
-    title: "Таблица / Excel",
-    detail: "Копипаст таблицы или списка с разделителями."
+    title: "РўР°Р±Р»РёС†Р° / Excel",
+    detail: "РљРѕРїРёРїР°СЃС‚ С‚Р°Р±Р»РёС†С‹ РёР»Рё СЃРїРёСЃРєР° СЃ СЂР°Р·РґРµР»РёС‚РµР»СЏРјРё."
   },
   xlsx_copy: {
-    title: "Excel-вставка",
-    detail: "Строки из Excel или Google Sheets без ручной подготовки."
+    title: "Excel-РІСЃС‚Р°РІРєР°",
+    detail: "РЎС‚СЂРѕРєРё РёР· Excel РёР»Рё Google Sheets Р±РµР· СЂСѓС‡РЅРѕР№ РїРѕРґРіРѕС‚РѕРІРєРё."
   },
   mis_export: {
-    title: "Экспорт старой МИС",
-    detail: "32top, IDENT, Cliniccards, Open Dental и другие форматы через адаптеры."
+    title: "Р­РєСЃРїРѕСЂС‚ СЃС‚Р°СЂРѕР№ РњРРЎ",
+    detail: "32top, IDENT, Cliniccards, Open Dental Рё РґСЂСѓРіРёРµ С„РѕСЂРјР°С‚С‹ С‡РµСЂРµР· Р°РґР°РїС‚РµСЂС‹."
   },
   image_ocr: {
-    title: "Фото журнала",
-    detail: "OCR/vision распознает фото бумажного журнала, затем показывает предпросмотр."
+    title: "Р¤РѕС‚Рѕ Р¶СѓСЂРЅР°Р»Р°",
+    detail: "OCR/vision СЂР°СЃРїРѕР·РЅР°РµС‚ С„РѕС‚Рѕ Р±СѓРјР°Р¶РЅРѕРіРѕ Р¶СѓСЂРЅР°Р»Р°, Р·Р°С‚РµРј РїРѕРєР°Р·С‹РІР°РµС‚ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ."
   },
   voice_dictation: {
-    title: "Диктовка",
-    detail: "Надиктовка администратора превращается в строки пациентов."
+    title: "Р”РёРєС‚РѕРІРєР°",
+    detail: "РќР°РґРёРєС‚РѕРІРєР° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РїСЂРµРІСЂР°С‰Р°РµС‚СЃСЏ РІ СЃС‚СЂРѕРєРё РїР°С†РёРµРЅС‚РѕРІ."
   },
   free_text: {
-    title: "Свободный текст",
-    detail: "Умный разбор: ФИО, телефон, дата рождения, комментарий."
+    title: "РЎРІРѕР±РѕРґРЅС‹Р№ С‚РµРєСЃС‚",
+    detail: "РЈРјРЅС‹Р№ СЂР°Р·Р±РѕСЂ: Р¤РРћ, С‚РµР»РµС„РѕРЅ, РґР°С‚Р° СЂРѕР¶РґРµРЅРёСЏ, РєРѕРјРјРµРЅС‚Р°СЂРёР№."
   }
 };
 
 const ingestionTargetLabels: Record<DocumentIngestionTarget, string> = {
-  smart_import: "Умный импорт",
-  patients: "Пациенты",
-  imaging: "Снимки",
-  pricelist: "Прайс",
-  plain_text: "Текст"
+  smart_import: "РЈРјРЅС‹Р№ РёРјРїРѕСЂС‚",
+  patients: "РџР°С†РёРµРЅС‚С‹",
+  imaging: "РЎРЅРёРјРєРё",
+  pricelist: "РџСЂР°Р№СЃ",
+  plain_text: "РўРµРєСЃС‚"
 };
 
 const documentIngestionQualityLabels: Record<DocumentIngestionResponse["quality"]["extractionQuality"], string> = {
-  ready: "Можно открыть предпросмотр",
-  review: "Нужна ручная проверка",
-  ocr_required: "Нужен OCR / vision",
-  unsupported: "Формат не разобран"
+  ready: "РњРѕР¶РЅРѕ РѕС‚РєСЂС‹С‚СЊ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ",
+  review: "РќСѓР¶РЅР° СЂСѓС‡РЅР°СЏ РїСЂРѕРІРµСЂРєР°",
+  ocr_required: "РќСѓР¶РµРЅ OCR / vision",
+  unsupported: "Р¤РѕСЂРјР°С‚ РЅРµ СЂР°Р·РѕР±СЂР°РЅ"
 };
 
 const telegramBlockedReasonLabels: Record<string, string> = {
-  missing_patient_portal_base_url: "Не настроена ссылка на портал пациента.",
-  missing_clinic_review_url: "Не настроена ссылка клиники для отзывов.",
-  phi_requires_consent: "Шаблон содержит медданные и требует согласий перед отправкой.",
-  telegram_bot_disabled: "Telegram выключен в настройках клиники.",
-  telegram_bot_token_missing: "В серверных настройках клиники не подключен бот Telegram.",
-  encrypted_chat_transport_missing_or_unreadable: "Чат пациента еще не привязан или защищенная ссылка недоступна.",
-  patient_or_staff_not_linked_to_telegram: "Чат еще не связан через QR-код или одноразовую ссылку.",
-  post_visit_recommendation_document_not_issued: "Сначала выпустите памятку после приема.",
-  telegram_outbox_item_not_found_or_no_longer_open: "Задача уже не доступна для отправки.",
-  telegram_outbox_already_sent: "Это сообщение уже отправлено.",
-  telegram_outbox_not_due_yet: "Время отправки еще не наступило.",
-  telegram_outbox_preview_empty: "В сообщении нет текста для отправки.",
-  telegram_delivery_processing: "Отправка уже обрабатывается.",
-  telegram_transport_failed: "Telegram не принял сообщение. Проверьте подключение бота, сеть и связанный чат."
+  missing_patient_portal_base_url: "РќРµ РЅР°СЃС‚СЂРѕРµРЅР° СЃСЃС‹Р»РєР° РЅР° РїРѕСЂС‚Р°Р» РїР°С†РёРµРЅС‚Р°.",
+  missing_clinic_review_url: "РќРµ РЅР°СЃС‚СЂРѕРµРЅР° СЃСЃС‹Р»РєР° РєР»РёРЅРёРєРё РґР»СЏ РѕС‚Р·С‹РІРѕРІ.",
+  phi_requires_consent: "РЁР°Р±Р»РѕРЅ СЃРѕРґРµСЂР¶РёС‚ РјРµРґРґР°РЅРЅС‹Рµ Рё С‚СЂРµР±СѓРµС‚ СЃРѕРіР»Р°СЃРёР№ РїРµСЂРµРґ РѕС‚РїСЂР°РІРєРѕР№.",
+  telegram_bot_disabled: "Telegram РІС‹РєР»СЋС‡РµРЅ РІ РЅР°СЃС‚СЂРѕР№РєР°С… РєР»РёРЅРёРєРё.",
+  telegram_bot_token_missing: "Р’ СЃРµСЂРІРµСЂРЅС‹С… РЅР°СЃС‚СЂРѕР№РєР°С… РєР»РёРЅРёРєРё РЅРµ РїРѕРґРєР»СЋС‡РµРЅ Р±РѕС‚ Telegram.",
+  encrypted_chat_transport_missing_or_unreadable: "Р§Р°С‚ РїР°С†РёРµРЅС‚Р° РµС‰Рµ РЅРµ РїСЂРёРІСЏР·Р°РЅ РёР»Рё Р·Р°С‰РёС‰РµРЅРЅР°СЏ СЃСЃС‹Р»РєР° РЅРµРґРѕСЃС‚СѓРїРЅР°.",
+  patient_or_staff_not_linked_to_telegram: "Р§Р°С‚ РµС‰Рµ РЅРµ СЃРІСЏР·Р°РЅ С‡РµСЂРµР· QR-РєРѕРґ РёР»Рё РѕРґРЅРѕСЂР°Р·РѕРІСѓСЋ СЃСЃС‹Р»РєСѓ.",
+  post_visit_recommendation_document_not_issued: "РЎРЅР°С‡Р°Р»Р° РІС‹РїСѓСЃС‚РёС‚Рµ РїР°РјСЏС‚РєСѓ РїРѕСЃР»Рµ РїСЂРёРµРјР°.",
+  telegram_outbox_item_not_found_or_no_longer_open: "Р—Р°РґР°С‡Р° СѓР¶Рµ РЅРµ РґРѕСЃС‚СѓРїРЅР° РґР»СЏ РѕС‚РїСЂР°РІРєРё.",
+  telegram_outbox_already_sent: "Р­С‚Рѕ СЃРѕРѕР±С‰РµРЅРёРµ СѓР¶Рµ РѕС‚РїСЂР°РІР»РµРЅРѕ.",
+  telegram_outbox_not_due_yet: "Р’СЂРµРјСЏ РѕС‚РїСЂР°РІРєРё РµС‰Рµ РЅРµ РЅР°СЃС‚СѓРїРёР»Рѕ.",
+  telegram_outbox_preview_empty: "Р’ СЃРѕРѕР±С‰РµРЅРёРё РЅРµС‚ С‚РµРєСЃС‚Р° РґР»СЏ РѕС‚РїСЂР°РІРєРё.",
+  telegram_delivery_processing: "РћС‚РїСЂР°РІРєР° СѓР¶Рµ РѕР±СЂР°Р±Р°С‚С‹РІР°РµС‚СЃСЏ.",
+  telegram_transport_failed: "Telegram РЅРµ РїСЂРёРЅСЏР» СЃРѕРѕР±С‰РµРЅРёРµ. РџСЂРѕРІРµСЂСЊС‚Рµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Р±РѕС‚Р°, СЃРµС‚СЊ Рё СЃРІСЏР·Р°РЅРЅС‹Р№ С‡Р°С‚."
 };
 
 const telegramWarningLabels: Record<string, string> = {
-  idempotent_replay: "Повторная отправка распознана и не продублирована."
+  idempotent_replay: "РџРѕРІС‚РѕСЂРЅР°СЏ РѕС‚РїСЂР°РІРєР° СЂР°СЃРїРѕР·РЅР°РЅР° Рё РЅРµ РїСЂРѕРґСѓР±Р»РёСЂРѕРІР°РЅР°."
 };
 
 function telegramHumanMessage(value: string | null | undefined): string {
   if (!value) return "";
-  if (value.startsWith("feature_disabled:")) return "Сценарий выключен в настройках Telegram.";
+  if (value.startsWith("feature_disabled:")) return "РЎС†РµРЅР°СЂРёР№ РІС‹РєР»СЋС‡РµРЅ РІ РЅР°СЃС‚СЂРѕР№РєР°С… Telegram.";
   const mapped = telegramBlockedReasonLabels[value] ?? telegramWarningLabels[value];
   if (mapped) return mapped;
   if (!/^[a-z0-9_.:-]+$/.test(value)) return value;
-  return telegramBlockedReasonLabels[value] ?? telegramWarningLabels[value] ?? "Нужна проверка настройки Telegram.";
+  return telegramBlockedReasonLabels[value] ?? telegramWarningLabels[value] ?? "РќСѓР¶РЅР° РїСЂРѕРІРµСЂРєР° РЅР°СЃС‚СЂРѕР№РєРё Telegram.";
 }
 
 function isTelegramOutboxItemDueForUi(item: Pick<DenteTelegramOutboxResponse["items"][number], "scheduledAt">): boolean {
@@ -2392,35 +2395,35 @@ function isTelegramOutboxItemDueForUi(item: Pick<DenteTelegramOutboxResponse["it
 }
 
 const documentDetectedKindLabels: Record<string, string> = {
-  archive: "архив",
-  csv: "таблица",
-  docx: "документ Word",
-  html: "веб-страница",
-  image: "изображение",
-  json: "структурированный текст",
-  legacy_database: "старая база",
-  legacy_dump: "резервная копия старой базы",
-  ods: "таблица",
-  odt: "документ",
+  archive: "Р°СЂС…РёРІ",
+  csv: "С‚Р°Р±Р»РёС†Р°",
+  docx: "РґРѕРєСѓРјРµРЅС‚ Word",
+  html: "РІРµР±-СЃС‚СЂР°РЅРёС†Р°",
+  image: "РёР·РѕР±СЂР°Р¶РµРЅРёРµ",
+  json: "СЃС‚СЂСѓРєС‚СѓСЂРёСЂРѕРІР°РЅРЅС‹Р№ С‚РµРєСЃС‚",
+  legacy_database: "СЃС‚Р°СЂР°СЏ Р±Р°Р·Р°",
+  legacy_dump: "СЂРµР·РµСЂРІРЅР°СЏ РєРѕРїРёСЏ СЃС‚Р°СЂРѕР№ Р±Р°Р·С‹",
+  ods: "С‚Р°Р±Р»РёС†Р°",
+  odt: "РґРѕРєСѓРјРµРЅС‚",
   pdf: "PDF",
-  pptx: "презентация",
-  rtf: "текстовый документ",
-  spreadsheet: "таблица",
-  text: "текст",
-  unknown: "не определено",
-  xlsx: "таблица Excel",
-  xml: "структурированный текст",
-  zip: "архив"
+  pptx: "РїСЂРµР·РµРЅС‚Р°С†РёСЏ",
+  rtf: "С‚РµРєСЃС‚РѕРІС‹Р№ РґРѕРєСѓРјРµРЅС‚",
+  spreadsheet: "С‚Р°Р±Р»РёС†Р°",
+  text: "С‚РµРєСЃС‚",
+  unknown: "РЅРµ РѕРїСЂРµРґРµР»РµРЅРѕ",
+  xlsx: "С‚Р°Р±Р»РёС†Р° Excel",
+  xml: "СЃС‚СЂСѓРєС‚СѓСЂРёСЂРѕРІР°РЅРЅС‹Р№ С‚РµРєСЃС‚",
+  zip: "Р°СЂС…РёРІ"
 };
 
 function documentDetectedKindLabel(kind: string) {
-  return documentDetectedKindLabels[kind] ?? "файл";
+  return documentDetectedKindLabels[kind] ?? "С„Р°Р№Р»";
 }
 
 const dicomFirstFrameStatusLabels: Record<string, string> = {
-  ready: "готово",
-  unsupported: "не поддерживается",
-  not_found: "не найдено"
+  ready: "РіРѕС‚РѕРІРѕ",
+  unsupported: "РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ",
+  not_found: "РЅРµ РЅР°Р№РґРµРЅРѕ"
 };
 
 const toothRows = [
@@ -2436,6 +2439,82 @@ const toothStateByCode: Record<string, "watch" | "planned" | "done" | "missing">
   "48": "missing"
 };
 
+type ToothMapState = "watch" | "planned" | "done" | "missing";
+type ToothMapTool = ToothMapState | "diagnosis_review";
+
+const toothMapStateLabels: Record<ToothMapState | "idle", string> = {
+  idle: "Р±РµР· РѕС‚РјРµС‚РєРё",
+  watch: "РЅР°Р±Р»СЋРґРµРЅРёРµ",
+  planned: "РІ РїР»Р°РЅРµ",
+  done: "СЃРґРµР»Р°РЅРѕ",
+  missing: "РЅРµС‚ Р·СѓР±Р°"
+};
+
+const toothStatusQuickActions: Array<{ state: ToothMapState; label: string; objective: string; plan: string }> = [
+  {
+    state: "watch",
+    label: "РќР°Р±Р»СЋРґР°С‚СЊ",
+    objective: "С‚СЂРµР±СѓРµС‚ РѕСЃРјРѕС‚СЂР° Р·РѕРЅС‹, РїСЂРѕРІРµСЂРєРё СЃС‚Р°СЂС‹С… СЂРµСЃС‚Р°РІСЂР°С†РёР№ Рё РєРѕРЅС‚СЂРѕР»СЏ СЃРЅРёРјРєРѕРІ РїРѕ РїРѕРєР°Р·Р°РЅРёСЏРј",
+    plan: "РґРёРЅР°РјРёС‡РµСЃРєРѕРµ РЅР°Р±Р»СЋРґРµРЅРёРµ, РєРѕРЅС‚СЂРѕР»СЊ Р¶Р°Р»РѕР± Рё СЃРЅРёРјРєРѕРІ РїРѕ РїРѕРєР°Р·Р°РЅРёСЏРј"
+  },
+  {
+    state: "planned",
+    label: "Р’ РїР»Р°РЅ",
+    objective: "РµСЃС‚СЊ РєР»РёРЅРёС‡РµСЃРєР°СЏ Р·Р°РґР°С‡Р°, С‚СЂРµР±СѓРµС‚СЃСЏ СѓС‚РѕС‡РЅРёС‚СЊ РґРёР°РіРЅРѕР·, РїРѕРІРµСЂС…РЅРѕСЃС‚Рё Рё РѕР±СЉРµРј Р»РµС‡РµРЅРёСЏ",
+    plan: "РІРєР»СЋС‡РёС‚СЊ РІ РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ РїРѕСЃР»Рµ РѕС‡РЅРѕР№ РїСЂРѕРІРµСЂРєРё РґРёР°РіРЅРѕР·Р°, СЃРѕРіР»Р°СЃРёСЏ Рё СЃС‚РѕРёРјРѕСЃС‚Рё"
+  },
+  {
+    state: "done",
+    label: "РЎРґРµР»Р°РЅРѕ",
+    objective: "Р»РµС‡РµРЅРёРµ РІС‹РїРѕР»РЅРµРЅРѕ, С‚СЂРµР±СѓРµС‚СЃСЏ РєРѕРЅС‚СЂРѕР»СЊ РєРѕРЅС‚Р°РєС‚РѕРІ, РєСЂР°РµРІРѕРіРѕ РїСЂРёР»РµРіР°РЅРёСЏ Рё РїСЂРёРєСѓСЃР°",
+    plan: "РєРѕРЅС‚СЂРѕР»СЊ СЂРµР·СѓР»СЊС‚Р°С‚Р° Рё СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕ СѓС…РѕРґСѓ"
+  },
+  {
+    state: "missing",
+    label: "РќРµС‚ Р·СѓР±Р°",
+    objective: "Р·СѓР± РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚, С‚СЂРµР±СѓРµС‚СЃСЏ РѕС†РµРЅРєР° РґРµС„РµРєС‚Р°, СЃРѕСЃРµРґРЅРёС… Р·СѓР±РѕРІ Рё РІР°СЂРёР°РЅС‚РѕРІ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ",
+    plan: "РѕР±СЃСѓРґРёС‚СЊ РІР°СЂРёР°РЅС‚С‹ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РїРѕСЃР»Рµ РґРёР°РіРЅРѕСЃС‚РёРєРё Рё РѕС†РµРЅРєРё РїСЂРѕС‚РёРІРѕРїРѕРєР°Р·Р°РЅРёР№"
+  }
+];
+
+const toothMapToolLabels: Record<ToothMapTool, string> = {
+  watch: "РќР°Р±Р»СЋРґР°С‚СЊ",
+  planned: "Р’ РїР»Р°РЅ",
+  done: "РЎРґРµР»Р°РЅРѕ",
+  missing: "РќРµС‚ Р·СѓР±Р°",
+  diagnosis_review: "Р”РёР°РіРЅРѕР· Рє РїСЂРѕРІРµСЂРєРµ"
+};
+
+const clinicalToothStatusTextByMapState: Record<ToothMapState, string> = {
+  watch: "РЅР°Р±Р»СЋРґРµРЅРёРµ",
+  planned: "РїР»Р°РЅ",
+  done: "РІС‹РїРѕР»РЅРµРЅРѕ",
+  missing: "РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚"
+};
+
+const allAdultToothCodes = toothRows.flat();
+
+function extractFdiToothCodes(...values: Array<string | null | undefined>): string[] {
+  const text = values.filter(Boolean).join(" ");
+  const found = new Set<string>();
+  const pattern = /\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    if (allAdultToothCodes.includes(match[0] as (typeof allAdultToothCodes)[number])) {
+      found.add(match[0]);
+    }
+  }
+  return Array.from(found);
+}
+
+function appendClinicalLine(current: string, line: string): string {
+  const cleanLine = line.trim();
+  if (!cleanLine) return current;
+  const existing = current.trim();
+  if (existing.toLocaleLowerCase("ru-RU").includes(cleanLine.toLocaleLowerCase("ru-RU"))) return current;
+  return existing ? `${existing}\n${cleanLine}` : cleanLine;
+}
+
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("ru-RU", {
     hour: "2-digit",
@@ -2444,9 +2523,16 @@ function formatTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatClockDuration(durationMs: number): string {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 function patientName(patients: Patient[], patientId: string | null) {
-  if (!patientId) return "Новый пациент";
-  return patients.find((patient) => patient.id === patientId)?.fullName ?? "Пациент";
+  if (!patientId) return "РќРѕРІС‹Р№ РїР°С†РёРµРЅС‚";
+  return patients.find((patient) => patient.id === patientId)?.fullName ?? "РџР°С†РёРµРЅС‚";
 }
 
 function findPatient(patients: Patient[], patientId: string | null) {
@@ -2455,14 +2541,14 @@ function findPatient(patients: Patient[], patientId: string | null) {
 }
 
 function money(value: number | null) {
-  return `${(value ?? 0).toLocaleString("ru-RU")} ₽`;
+  return `${(value ?? 0).toLocaleString("ru-RU")} в‚Ѕ`;
 }
 
 function minutesLabel(value: number) {
-  if (value < 60) return `${value} мин`;
+  if (value < 60) return `${value} РјРёРЅ`;
   const hours = Math.floor(value / 60);
   const minutes = value % 60;
-  return minutes ? `${hours} ч ${minutes} мин` : `${hours} ч`;
+  return minutes ? `${hours} С‡ ${minutes} РјРёРЅ` : `${hours} С‡`;
 }
 
 function formatDateTime(value: string) {
@@ -2489,9 +2575,15 @@ type BrowserSpeechRecognition = {
   interimResults: boolean;
   lang: string;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
-  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
+  onerror: ((event: { error?: string; message?: string }) => void) | null;
+  onresult: ((event: {
+    resultIndex?: number;
+    results: ArrayLike<{ isFinal?: boolean; 0: { transcript: string } }>;
+  }) => void) | null;
+  onstart?: (() => void) | null;
+  abort?: () => void;
   start: () => void;
+  stop: () => void;
 };
 
 type BrowserWindowWithSpeech = Window &
@@ -2501,43 +2593,48 @@ type BrowserWindowWithSpeech = Window &
     webkitAudioContext?: typeof AudioContext;
   };
 
+type SpeechAudioInputDevice = {
+  deviceId: string;
+  label: string;
+};
+
 type VisitNoteField = "complaint" | "anamnesis" | "objectiveStatus" | "diagnosis" | "treatmentPlan";
 type VisitNoteForm = Record<VisitNoteField, string>;
 
 const visitNoteFieldDefinitions: Array<{ key: VisitNoteField; label: string }> = [
-  { key: "complaint", label: "Жалобы" },
-  { key: "anamnesis", label: "Анамнез" },
-  { key: "objectiveStatus", label: "Объективно" },
-  { key: "diagnosis", label: "Диагноз" },
-  { key: "treatmentPlan", label: "План" }
+  { key: "complaint", label: "Р–Р°Р»РѕР±С‹" },
+  { key: "anamnesis", label: "РђРЅР°РјРЅРµР·" },
+  { key: "objectiveStatus", label: "РћР±СЉРµРєС‚РёРІРЅРѕ" },
+  { key: "diagnosis", label: "Р”РёР°РіРЅРѕР·" },
+  { key: "treatmentPlan", label: "РџР»Р°РЅ" }
 ];
 
 const visitDraftQualityLabels: Record<NonNullable<VisitNoteDraft["quality"]>["level"], string> = {
-  ready: "Черновик плотный",
-  review: "Нужна проверка",
-  needs_more_dictation: "Нужно дописать"
+  ready: "Р§РµСЂРЅРѕРІРёРє РїР»РѕС‚РЅС‹Р№",
+  review: "РќСѓР¶РЅР° РїСЂРѕРІРµСЂРєР°",
+  needs_more_dictation: "РќСѓР¶РЅРѕ РґРѕРїРёСЃР°С‚СЊ"
 };
 
 const visitDraftSignalLabels: Record<string, string> = {
-  complaint_detected: "жалобы есть",
-  anamnesis_detected: "анамнез есть",
-  objective_detected: "осмотр есть",
-  diagnosis_mentioned: "диагноз есть",
-  plan_detected: "план есть",
-  tooth_codes_detected: "зуб указан",
-  imaging_mentioned: "снимки упомянуты",
-  consent_mentioned: "согласие упомянуто",
-  medical_risk_mentioned: "есть медриск",
-  procedure_mentioned: "процедура упомянута"
+  complaint_detected: "Р¶Р°Р»РѕР±С‹ РµСЃС‚СЊ",
+  anamnesis_detected: "Р°РЅР°РјРЅРµР· РµСЃС‚СЊ",
+  objective_detected: "РѕСЃРјРѕС‚СЂ РµСЃС‚СЊ",
+  diagnosis_mentioned: "РґРёР°РіРЅРѕР· РµСЃС‚СЊ",
+  plan_detected: "РїР»Р°РЅ РµСЃС‚СЊ",
+  tooth_codes_detected: "Р·СѓР± СѓРєР°Р·Р°РЅ",
+  imaging_mentioned: "СЃРЅРёРјРєРё СѓРїРѕРјСЏРЅСѓС‚С‹",
+  consent_mentioned: "СЃРѕРіР»Р°СЃРёРµ СѓРїРѕРјСЏРЅСѓС‚Рѕ",
+  medical_risk_mentioned: "РµСЃС‚СЊ РјРµРґСЂРёСЃРє",
+  procedure_mentioned: "РїСЂРѕС†РµРґСѓСЂР° СѓРїРѕРјСЏРЅСѓС‚Р°"
 };
 
 const visitDraftMissingFieldLabels: Record<string, string> = {
-  complaint: "жалобы",
-  anamnesis: "анамнез",
-  objective_status: "объективный статус",
-  diagnosis_review: "диагноз",
-  treatment_plan: "план лечения",
-  tooth_or_region: "зуб или область"
+  complaint: "Р¶Р°Р»РѕР±С‹",
+  anamnesis: "Р°РЅР°РјРЅРµР·",
+  objective_status: "РѕР±СЉРµРєС‚РёРІРЅС‹Р№ СЃС‚Р°С‚СѓСЃ",
+  diagnosis_review: "РґРёР°РіРЅРѕР·",
+  treatment_plan: "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ",
+  tooth_or_region: "Р·СѓР± РёР»Рё РѕР±Р»Р°СЃС‚СЊ"
 };
 
 function visitDraftSignalLabel(signal: string) {
@@ -2549,10 +2646,10 @@ function visitDraftMissingFieldLabel(field: string) {
 }
 
 const speechQualityLabels: Record<SpeechTranscriptionResponse["chunk"]["quality"]["level"], string> = {
-  clear: "чисто",
-  review: "проверить",
-  empty: "пусто",
-  failed: "сбой"
+  clear: "С‡РёСЃС‚Рѕ",
+  review: "РїСЂРѕРІРµСЂРёС‚СЊ",
+  empty: "РіРѕР»РѕСЃ РЅРµ СЂР°СЃРїРѕР·РЅР°РЅ",
+  failed: "РѕС€РёР±РєР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ"
 };
 
 const emptyVisitNoteForm: VisitNoteForm = {
@@ -2665,6 +2762,7 @@ function visitLocalDraftKey(visitId: string, organizationId: string | null | und
 
 const pendingVisitSaveQueueKey = "dental-crm:pending-visit-saves";
 const pendingSpeechChunkQueueKey = "dental-crm:pending-speech-chunks";
+const speechMicrophoneDeviceStorageKey = "dental-crm:speech-microphone-device";
 const speechChunkDbName = "dental-crm-offline";
 const speechChunkDbVersion = 4;
 const pendingVisitSaveStoreName = "pendingVisitSaves";
@@ -2679,6 +2777,28 @@ const requiredSpeechChunkDbStoreNames = [
   speechChunkStoreName
 ] as const;
 let speechChunkDbPromise: Promise<IDBDatabase> | null = null;
+
+function loadSelectedSpeechDeviceId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(speechMicrophoneDeviceStorageKey) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveSelectedSpeechDeviceId(deviceId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    if (deviceId) {
+      window.localStorage.setItem(speechMicrophoneDeviceStorageKey, deviceId);
+    } else {
+      window.localStorage.removeItem(speechMicrophoneDeviceStorageKey);
+    }
+  } catch {
+    // Browser storage can be disabled; recording should still work with the current in-memory choice.
+  }
+}
 
 function pendingVisitSaveQueueLocalKey(organizationId: string | null | undefined = null): string {
   return organizationScopedLocalStorageKey(pendingVisitSaveQueueKey, organizationId);
@@ -2695,7 +2815,7 @@ function localQueueOrganizationMatches(itemOrganizationId: string | null | undef
 function normalizeSpeechAppendText(value: string): string {
   return value
     .toLowerCase()
-    .replace(/ё/g, "е")
+    .replace(/С‘/g, "Рµ")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -2791,7 +2911,7 @@ type TelegramOutboxStatusFilter = DenteTelegramOutboxResponse["items"][number]["
 type TelegramOutboxTemplateFilter = DenteTelegramMessagePreview["templateKind"] | "all";
 
 const uiLanguageLabels: Record<UiLanguage, string> = {
-  ru: "Русский"
+  ru: "Р СѓСЃСЃРєРёР№"
 };
 
 type UiLanguageOption = { value: UiLanguage; label: string; detail: string };
@@ -2799,7 +2919,7 @@ type UiLanguageOption = { value: UiLanguage; label: string; detail: string };
 const defaultUiLanguageOption: UiLanguageOption = {
   value: "ru",
   label: uiLanguageLabels.ru,
-  detail: "Русский интерфейс включен сейчас. Выбор сохраняется автоматически и остается до смены языка."
+  detail: "Р СѓСЃСЃРєРёР№ РёРЅС‚РµСЂС„РµР№СЃ РІРєР»СЋС‡РµРЅ СЃРµР№С‡Р°СЃ. Р’С‹Р±РѕСЂ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё Рё РѕСЃС‚Р°РµС‚СЃСЏ РґРѕ СЃРјРµРЅС‹ СЏР·С‹РєР°."
 };
 
 const uiLanguageOptions: UiLanguageOption[] = [defaultUiLanguageOption];
@@ -2885,14 +3005,14 @@ function normalizeTelegramPublicHttpsUrlDraft(fieldLabel: string, value: string 
   try {
     parsed = new URL(raw);
   } catch {
-    throw new Error(`${fieldLabel}: укажите полный адрес вида https://...`);
+    throw new Error(`${fieldLabel}: СѓРєР°Р¶РёС‚Рµ РїРѕР»РЅС‹Р№ Р°РґСЂРµСЃ РІРёРґР° https://...`);
   }
 
   if (parsed.protocol !== "https:") {
-    throw new Error(`${fieldLabel}: нужна ссылка https://...`);
+    throw new Error(`${fieldLabel}: РЅСѓР¶РЅР° СЃСЃС‹Р»РєР° https://...`);
   }
   if (parsed.username || parsed.password) {
-    throw new Error(`${fieldLabel}: уберите логин и пароль из ссылки.`);
+    throw new Error(`${fieldLabel}: СѓР±РµСЂРёС‚Рµ Р»РѕРіРёРЅ Рё РїР°СЂРѕР»СЊ РёР· СЃСЃС‹Р»РєРё.`);
   }
 
   const pathSegments = parsed.pathname
@@ -2902,20 +3022,20 @@ function normalizeTelegramPublicHttpsUrlDraft(fieldLabel: string, value: string 
         return decodeURIComponent(segment).trim().toLowerCase();
       } catch (scanError) {
         if (isBrowserMigrationScanAbortError(scanError)) throw scanError;
-        throw new Error(`${fieldLabel}: исправьте кодировку пути в ссылке.`);
+        throw new Error(`${fieldLabel}: РёСЃРїСЂР°РІСЊС‚Рµ РєРѕРґРёСЂРѕРІРєСѓ РїСѓС‚Рё РІ СЃСЃС‹Р»РєРµ.`);
       }
     })
     .filter(Boolean);
   for (const segment of pathSegments) {
     const compactDigits = segment.replace(/\D/g, "");
     if (telegramPublicUrlSensitivePathSegments.has(segment)) {
-      throw new Error(`${fieldLabel}: ссылка должна вести на общую публичную страницу, без patient/visit/document/token в пути.`);
+      throw new Error(`${fieldLabel}: СЃСЃС‹Р»РєР° РґРѕР»Р¶РЅР° РІРµСЃС‚Рё РЅР° РѕР±С‰СѓСЋ РїСѓР±Р»РёС‡РЅСѓСЋ СЃС‚СЂР°РЅРёС†Сѓ, Р±РµР· patient/visit/document/token РІ РїСѓС‚Рё.`);
     }
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(segment)) {
-      throw new Error(`${fieldLabel}: уберите идентификатор пациента, визита или документа из пути.`);
+      throw new Error(`${fieldLabel}: СѓР±РµСЂРёС‚Рµ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїР°С†РёРµРЅС‚Р°, РІРёР·РёС‚Р° РёР»Рё РґРѕРєСѓРјРµРЅС‚Р° РёР· РїСѓС‚Рё.`);
     }
     if (compactDigits.length >= 10 || /\b\d{12}\b/.test(segment)) {
-      throw new Error(`${fieldLabel}: уберите телефон, ИНН, СНИЛС или другой личный номер из пути.`);
+      throw new Error(`${fieldLabel}: СѓР±РµСЂРёС‚Рµ С‚РµР»РµС„РѕРЅ, РРќРќ, РЎРќРР›РЎ РёР»Рё РґСЂСѓРіРѕР№ Р»РёС‡РЅС‹Р№ РЅРѕРјРµСЂ РёР· РїСѓС‚Рё.`);
     }
   }
 
@@ -2923,12 +3043,12 @@ function normalizeTelegramPublicHttpsUrlDraft(fieldLabel: string, value: string 
     telegramPublicUrlSensitiveQueryKeys.has(key.trim().toLowerCase())
   );
   if (sensitiveQueryKeys.length) {
-    throw new Error(`${fieldLabel}: уберите персональные параметры из ссылки: ${sensitiveQueryKeys.join(", ")}.`);
+    throw new Error(`${fieldLabel}: СѓР±РµСЂРёС‚Рµ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РёР· СЃСЃС‹Р»РєРё: ${sensitiveQueryKeys.join(", ")}.`);
   }
   for (const valuePart of parsed.searchParams.values()) {
     const compactDigits = valuePart.replace(/\D/g, "");
     if (compactDigits.length >= 10 || /\b\d{12}\b/.test(valuePart)) {
-      throw new Error(`${fieldLabel}: уберите телефон, ИНН, СНИЛС или другой личный номер из параметров.`);
+      throw new Error(`${fieldLabel}: СѓР±РµСЂРёС‚Рµ С‚РµР»РµС„РѕРЅ, РРќРќ, РЎРќРР›РЎ РёР»Рё РґСЂСѓРіРѕР№ Р»РёС‡РЅС‹Р№ РЅРѕРјРµСЂ РёР· РїР°СЂР°РјРµС‚СЂРѕРІ.`);
     }
   }
 
@@ -2938,7 +3058,7 @@ function normalizeTelegramPublicHttpsUrlDraft(fieldLabel: string, value: string 
 
 function normalizeTelegramVisualCardUrlDraftsForSave(drafts: DenteTelegramVisualCardUrls): DenteTelegramVisualCardUrls {
   const fieldLabel = (key: DenteTelegramVisualCardKey) =>
-    telegramVisualCardFields.find((field) => field.key === key)?.label ?? `Картинка Telegram ${key}`;
+    telegramVisualCardFields.find((field) => field.key === key)?.label ?? `РљР°СЂС‚РёРЅРєР° Telegram ${key}`;
   return {
     mainMenu: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("mainMenu"), drafts.mainMenu),
     appointment: normalizeTelegramPublicHttpsUrlDraft(fieldLabel("appointment"), drafts.appointment),
@@ -2956,7 +3076,7 @@ function normalizeTelegramBotUsernameDraft(fieldLabel: string, value: string | n
   if (!normalized) return null;
   if (!/^[A-Za-z][A-Za-z0-9_]{1,28}[Bb][Oo][Tt]$/.test(normalized)) {
     throw new Error(
-      `${fieldLabel}: укажите имя Telegram-бота без ссылки, 5-32 символа: латинские буквы, цифры, подчёркивания и окончание bot.`
+      `${fieldLabel}: СѓРєР°Р¶РёС‚Рµ РёРјСЏ Telegram-Р±РѕС‚Р° Р±РµР· СЃСЃС‹Р»РєРё, 5-32 СЃРёРјРІРѕР»Р°: Р»Р°С‚РёРЅСЃРєРёРµ Р±СѓРєРІС‹, С†РёС„СЂС‹, РїРѕРґС‡С‘СЂРєРёРІР°РЅРёСЏ Рё РѕРєРѕРЅС‡Р°РЅРёРµ bot.`
     );
   }
   return normalized;
@@ -2986,62 +3106,62 @@ type TelegramFeaturePlan = {
 type TelegramLinkSubjectType = "patient" | "staff";
 
 const telegramModeLabels: Record<DenteTelegramBotMode, string> = {
-  disabled: "выключен",
-  shared_dente_bot: "общий бот платформы",
-  clinic_owned_bot: "бот клиники"
+  disabled: "РІС‹РєР»СЋС‡РµРЅ",
+  shared_dente_bot: "РѕР±С‰РёР№ Р±РѕС‚ РїР»Р°С‚С„РѕСЂРјС‹",
+  clinic_owned_bot: "Р±РѕС‚ РєР»РёРЅРёРєРё"
 };
 
 const telegramModeHints: Record<DenteTelegramBotMode, string> = {
-  disabled: "Telegram не создает новые задачи и не отправляет сообщения.",
-  shared_dente_bot: "Одна общая основа: клиника определяется QR-кодом и связкой пациента.",
-  clinic_owned_bot: "Собственный бот клиники: имя сохраняется в настройках, секрет бота хранится в серверных настройках клиники."
+  disabled: "Telegram РЅРµ СЃРѕР·РґР°РµС‚ РЅРѕРІС‹Рµ Р·Р°РґР°С‡Рё Рё РЅРµ РѕС‚РїСЂР°РІР»СЏРµС‚ СЃРѕРѕР±С‰РµРЅРёСЏ.",
+  shared_dente_bot: "РћРґРЅР° РѕР±С‰Р°СЏ РѕСЃРЅРѕРІР°: РєР»РёРЅРёРєР° РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ QR-РєРѕРґРѕРј Рё СЃРІСЏР·РєРѕР№ РїР°С†РёРµРЅС‚Р°.",
+  clinic_owned_bot: "РЎРѕР±СЃС‚РІРµРЅРЅС‹Р№ Р±РѕС‚ РєР»РёРЅРёРєРё: РёРјСЏ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РІ РЅР°СЃС‚СЂРѕР№РєР°С…, СЃРµРєСЂРµС‚ Р±РѕС‚Р° С…СЂР°РЅРёС‚СЃСЏ РІ СЃРµСЂРІРµСЂРЅС‹С… РЅР°СЃС‚СЂРѕР№РєР°С… РєР»РёРЅРёРєРё."
 };
 
 const telegramPrivacyModeLabels: Record<DenteTelegramPrivacyMode, string> = {
-  no_phi_by_default: "Без медицинских данных в Telegram",
-  limited_admin_only: "Только административные сведения",
-  consented_phi_templates: "Чувствительные шаблоны только по согласию"
+  no_phi_by_default: "Р‘РµР· РјРµРґРёС†РёРЅСЃРєРёС… РґР°РЅРЅС‹С… РІ Telegram",
+  limited_admin_only: "РўРѕР»СЊРєРѕ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РёРІРЅС‹Рµ СЃРІРµРґРµРЅРёСЏ",
+  consented_phi_templates: "Р§СѓРІСЃС‚РІРёС‚РµР»СЊРЅС‹Рµ С€Р°Р±Р»РѕРЅС‹ С‚РѕР»СЊРєРѕ РїРѕ СЃРѕРіР»Р°СЃРёСЋ"
 };
 
 const telegramPrivacyModeHints: Record<DenteTelegramPrivacyMode, string> = {
-  no_phi_by_default: "В чат уходят только статусы, время, ссылки и общие памятки.",
-  limited_admin_only: "Разрешены административные статусы без диагноза, снимков и документов.",
-  consented_phi_templates: "Режим для будущих шаблонов с явным согласием пациента и аудитом."
+  no_phi_by_default: "Р’ С‡Р°С‚ СѓС…РѕРґСЏС‚ С‚РѕР»СЊРєРѕ СЃС‚Р°С‚СѓСЃС‹, РІСЂРµРјСЏ, СЃСЃС‹Р»РєРё Рё РѕР±С‰РёРµ РїР°РјСЏС‚РєРё.",
+  limited_admin_only: "Р Р°Р·СЂРµС€РµРЅС‹ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РёРІРЅС‹Рµ СЃС‚Р°С‚СѓСЃС‹ Р±РµР· РґРёР°РіРЅРѕР·Р°, СЃРЅРёРјРєРѕРІ Рё РґРѕРєСѓРјРµРЅС‚РѕРІ.",
+  consented_phi_templates: "Р РµР¶РёРј РґР»СЏ Р±СѓРґСѓС‰РёС… С€Р°Р±Р»РѕРЅРѕРІ СЃ СЏРІРЅС‹Рј СЃРѕРіР»Р°СЃРёРµРј РїР°С†РёРµРЅС‚Р° Рё Р°СѓРґРёС‚РѕРј."
 };
 
 const telegramTemplateLabels: Record<DenteTelegramMessagePreview["templateKind"], string> = {
-  appointment_reminder: "напоминание о приеме",
-  appointment_confirmation: "подтверждение приема",
-  payment_reminder_notice: "напоминание об оплате",
-  document_ready_notice: "документ готов",
-  tax_document_request_status: "статус налоговой справки",
-  callback_request_received: "заявка на звонок",
-  post_visit_instruction_link: "памятка после приема",
-  post_visit_checkup: "контроль после приема",
-  recall_notice: "профилактический recall",
-  review_request: "просьба оставить отзыв",
-  staff_daily_digest: "сводка сотруднику"
+  appointment_reminder: "РЅР°РїРѕРјРёРЅР°РЅРёРµ Рѕ РїСЂРёРµРјРµ",
+  appointment_confirmation: "РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РїСЂРёРµРјР°",
+  payment_reminder_notice: "РЅР°РїРѕРјРёРЅР°РЅРёРµ РѕР± РѕРїР»Р°С‚Рµ",
+  document_ready_notice: "РґРѕРєСѓРјРµРЅС‚ РіРѕС‚РѕРІ",
+  tax_document_request_status: "СЃС‚Р°С‚СѓСЃ РЅР°Р»РѕРіРѕРІРѕР№ СЃРїСЂР°РІРєРё",
+  callback_request_received: "Р·Р°СЏРІРєР° РЅР° Р·РІРѕРЅРѕРє",
+  post_visit_instruction_link: "РїР°РјСЏС‚РєР° РїРѕСЃР»Рµ РїСЂРёРµРјР°",
+  post_visit_checkup: "РєРѕРЅС‚СЂРѕР»СЊ РїРѕСЃР»Рµ РїСЂРёРµРјР°",
+  recall_notice: "РїСЂРѕС„РёР»Р°РєС‚РёС‡РµСЃРєРёР№ recall",
+  review_request: "РїСЂРѕСЃСЊР±Р° РѕСЃС‚Р°РІРёС‚СЊ РѕС‚Р·С‹РІ",
+  staff_daily_digest: "СЃРІРѕРґРєР° СЃРѕС‚СЂСѓРґРЅРёРєСѓ"
 };
 
 const telegramClassificationLabels: Record<DenteTelegramMessagePreview["classification"], string> = {
-  no_phi: "без медтайны",
-  limited_admin: "административное",
-  phi_requires_consent: "медданные только с согласием"
+  no_phi: "Р±РµР· РјРµРґС‚Р°Р№РЅС‹",
+  limited_admin: "Р°РґРјРёРЅРёСЃС‚СЂР°С‚РёРІРЅРѕРµ",
+  phi_requires_consent: "РјРµРґРґР°РЅРЅС‹Рµ С‚РѕР»СЊРєРѕ СЃ СЃРѕРіР»Р°СЃРёРµРј"
 };
 
 const telegramDeliveryStatusLabels: Record<DenteTelegramOutboxResponse["items"][number]["deliveryStatus"], string> = {
-  ready: "готово",
-  needs_chat_link: "нужно подключить Telegram",
-  blocked_by_policy: "заблокировано политикой",
-  transport_not_ready: "отправка не готова",
-  disabled: "выключено"
+  ready: "РіРѕС‚РѕРІРѕ",
+  needs_chat_link: "РЅСѓР¶РЅРѕ РїРѕРґРєР»СЋС‡РёС‚СЊ Telegram",
+  blocked_by_policy: "Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ РїРѕР»РёС‚РёРєРѕР№",
+  transport_not_ready: "РѕС‚РїСЂР°РІРєР° РЅРµ РіРѕС‚РѕРІР°",
+  disabled: "РІС‹РєР»СЋС‡РµРЅРѕ"
 };
 
 const telegramLinkCodeStatusLabels: Record<DenteTelegramLinkCodePublic["status"], string> = {
-  pending: "ожидает",
-  used: "использован",
-  expired: "истек",
-  revoked: "отозван"
+  pending: "РѕР¶РёРґР°РµС‚",
+  used: "РёСЃРїРѕР»СЊР·РѕРІР°РЅ",
+  expired: "РёСЃС‚РµРє",
+  revoked: "РѕС‚РѕР·РІР°РЅ"
 };
 
 const telegramOutboxStatusFilterOptions: TelegramOutboxStatusFilter[] = [
@@ -3055,8 +3175,8 @@ const telegramOutboxStatusFilterOptions: TelegramOutboxStatusFilter[] = [
 ];
 
 const telegramOutboxStatusFilterLabels: Record<TelegramOutboxStatusFilter, string> = {
-  all: "вся очередь",
-  due: "к отправке сейчас",
+  all: "РІСЃСЏ РѕС‡РµСЂРµРґСЊ",
+  due: "Рє РѕС‚РїСЂР°РІРєРµ СЃРµР№С‡Р°СЃ",
   ...telegramDeliveryStatusLabels
 };
 
@@ -3066,7 +3186,7 @@ const telegramOutboxTemplateFilterOptions: TelegramOutboxTemplateFilter[] = [
 ];
 
 const telegramOutboxTemplateFilterLabels: Record<TelegramOutboxTemplateFilter, string> = {
-  all: "все сценарии",
+  all: "РІСЃРµ СЃС†РµРЅР°СЂРёРё",
   ...telegramTemplateLabels
 };
 
@@ -3077,9 +3197,9 @@ type TelegramInlineButtonPreview = {
 };
 
 const telegramInlineButtonKindLabels: Record<TelegramInlineButtonPreview["kind"], string> = {
-  url: "ссылка",
-  callback: "действие",
-  unknown: "кнопка"
+  url: "СЃСЃС‹Р»РєР°",
+  callback: "РґРµР№СЃС‚РІРёРµ",
+  unknown: "РєРЅРѕРїРєР°"
 };
 
 function telegramInlineButtonRowsFromReplyMarkup(
@@ -3209,12 +3329,12 @@ function emptyAppointmentScheduleDraft(): AppointmentScheduleDraft {
 
 type MedicalDocumentReleaseChannel = "paper" | "pdf" | "dicom_archive" | "secure_link" | "physical_media" | "other";
 const medicalDocumentReleaseChannelLabels: Record<MedicalDocumentReleaseChannel, string> = {
-  paper: "Бумага",
+  paper: "Р‘СѓРјР°РіР°",
   pdf: "PDF",
-  dicom_archive: "архив снимков",
-  secure_link: "Защищенная ссылка",
-  physical_media: "Физический носитель",
-  other: "Иной канал"
+  dicom_archive: "Р°СЂС…РёРІ СЃРЅРёРјРєРѕРІ",
+  secure_link: "Р—Р°С‰РёС‰РµРЅРЅР°СЏ СЃСЃС‹Р»РєР°",
+  physical_media: "Р¤РёР·РёС‡РµСЃРєРёР№ РЅРѕСЃРёС‚РµР»СЊ",
+  other: "РРЅРѕР№ РєР°РЅР°Р»"
 };
 
 type PaymentRefundCorrectionAction =
@@ -3251,34 +3371,34 @@ const outpatient025uDemographicCodeOptions = ["1", "2", "unknown"] as const;
 type Outpatient025uDemographicCode = (typeof outpatient025uDemographicCodeOptions)[number];
 
 const patientIntakePregnancyStatusOptions: Array<{ value: PatientIntakePregnancyStatus; label: string }> = [
-  { value: "not_applicable", label: "Не применимо" },
-  { value: "denied", label: "Со слов пациента нет" },
-  { value: "possible", label: "Возможна беременность" },
-  { value: "confirmed", label: "Беременность подтверждена" },
-  { value: "lactation", label: "Лактация" },
-  { value: "unknown", label: "Не уточнено" }
+  { value: "not_applicable", label: "РќРµ РїСЂРёРјРµРЅРёРјРѕ" },
+  { value: "denied", label: "РЎРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РЅРµС‚" },
+  { value: "possible", label: "Р’РѕР·РјРѕР¶РЅР° Р±РµСЂРµРјРµРЅРЅРѕСЃС‚СЊ" },
+  { value: "confirmed", label: "Р‘РµСЂРµРјРµРЅРЅРѕСЃС‚СЊ РїРѕРґС‚РІРµСЂР¶РґРµРЅР°" },
+  { value: "lactation", label: "Р›Р°РєС‚Р°С†РёСЏ" },
+  { value: "unknown", label: "РќРµ СѓС‚РѕС‡РЅРµРЅРѕ" }
 ];
 
 const taxApplicationRelationshipOptions: Array<{ value: TaxDeductionApplicationRelationship; label: string }> = [
-  { value: "self", label: "Пациент сам" },
-  { value: "spouse", label: "Супруг / супруга" },
-  { value: "parent", label: "Родитель" },
-  { value: "child", label: "Ребенок" },
-  { value: "ward", label: "Подопечный" }
+  { value: "self", label: "РџР°С†РёРµРЅС‚ СЃР°Рј" },
+  { value: "spouse", label: "РЎСѓРїСЂСѓРі / СЃСѓРїСЂСѓРіР°" },
+  { value: "parent", label: "Р РѕРґРёС‚РµР»СЊ" },
+  { value: "child", label: "Р РµР±РµРЅРѕРє" },
+  { value: "ward", label: "РџРѕРґРѕРїРµС‡РЅС‹Р№" }
 ];
 
 const taxApplicationFormOptions: Array<{ value: TaxDeductionApplicationForm; label: string }> = [
-  { value: "knd_1151156", label: "КНД 1151156, расходы с 2024" },
-  { value: "legacy_2021_2023", label: "Старая справка, оплаты 2021-2023" }
+  { value: "knd_1151156", label: "РљРќР” 1151156, СЂР°СЃС…РѕРґС‹ СЃ 2024" },
+  { value: "legacy_2021_2023", label: "РЎС‚Р°СЂР°СЏ СЃРїСЂР°РІРєР°, РѕРїР»Р°С‚С‹ 2021-2023" }
 ];
 
 const taxApplicationDeliveryChannelOptions: Array<{ value: TaxDeductionApplicationDeliveryChannel; label: string }> = [
-  { value: "paper", label: "Бумажно в клинике" },
-  { value: "pdf", label: "PDF после подписи" },
-  { value: "secure_link", label: "Защищенная ссылка" },
+  { value: "paper", label: "Р‘СѓРјР°Р¶РЅРѕ РІ РєР»РёРЅРёРєРµ" },
+  { value: "pdf", label: "PDF РїРѕСЃР»Рµ РїРѕРґРїРёСЃРё" },
+  { value: "secure_link", label: "Р—Р°С‰РёС‰РµРЅРЅР°СЏ СЃСЃС‹Р»РєР°" },
   { value: "email", label: "Email" },
-  { value: "portal", label: "Личный кабинет" },
-  { value: "other", label: "Иной канал" }
+  { value: "portal", label: "Р›РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚" },
+  { value: "other", label: "РРЅРѕР№ РєР°РЅР°Р»" }
 ];
 
 type ClinicalToothSurface = ClinicalToothRow["surfaces"][number];
@@ -3286,152 +3406,152 @@ type ClinicalToothStatus = ClinicalToothRow["status"];
 
 const clinicalToothSurfaceAliases: Record<string, ClinicalToothSurface> = {
   o: "occlusal",
-  окклюзионная: "occlusal",
-  окклюзионно: "occlusal",
-  жевательная: "occlusal",
-  жевательно: "occlusal",
+  "РѕРєРєР»СЋР·РёРѕРЅРЅР°СЏ": "occlusal",
+  "РѕРєРєР»СЋР·РёРѕРЅРЅРѕ": "occlusal",
+  "Р¶РµРІР°С‚РµР»СЊРЅР°СЏ": "occlusal",
+  "Р¶РµРІР°С‚РµР»СЊРЅРѕ": "occlusal",
   m: "mesial",
-  медиальная: "mesial",
-  мезиальная: "mesial",
-  медиально: "mesial",
-  мезиально: "mesial",
+  "РјРµРґРёР°Р»СЊРЅР°СЏ": "mesial",
+  "РјРµР·РёР°Р»СЊРЅР°СЏ": "mesial",
+  "РјРµРґРёР°Р»СЊРЅРѕ": "mesial",
+  "РјРµР·РёР°Р»СЊРЅРѕ": "mesial",
   d: "distal",
-  дистальная: "distal",
-  дистально: "distal",
+  "РґРёСЃС‚Р°Р»СЊРЅР°СЏ": "distal",
+  "РґРёСЃС‚Р°Р»СЊРЅРѕ": "distal",
   b: "buccal",
-  щечная: "buccal",
-  щечно: "buccal",
-  вестибулярная: "buccal",
+  "С‰РµС‡РЅР°СЏ": "buccal",
+  "С‰РµС‡РЅРѕ": "buccal",
+  "РІРµСЃС‚РёР±СѓР»СЏСЂРЅР°СЏ": "buccal",
   l: "lingual",
-  язычная: "lingual",
-  язычно: "lingual",
+  "СЏР·С‹С‡РЅР°СЏ": "lingual",
+  "СЏР·С‹С‡РЅРѕ": "lingual",
   p: "palatal",
-  небная: "palatal",
-  небно: "palatal",
+  "РЅРµР±РЅР°СЏ": "palatal",
+  "РЅРµР±РЅРѕ": "palatal",
   i: "incisal",
-  режущий: "incisal",
-  "режущий край": "incisal",
-  корень: "root",
-  корневая: "root",
+  "СЂРµР¶СѓС‰РёР№": "incisal",
+  "СЂРµР¶СѓС‰РёР№ РєСЂР°Р№": "incisal",
+  "РєРѕСЂРµРЅСЊ": "root",
+  "РєРѕСЂРЅРµРІР°СЏ": "root",
   root: "root",
-  имплантация: "implant_site",
-  "зона имплантации": "implant_site",
+  "РёРјРїР»Р°РЅС‚Р°С†РёСЏ": "implant_site",
+  "Р·РѕРЅР° РёРјРїР»Р°РЅС‚Р°С†РёРё": "implant_site",
   "implant site": "implant_site",
-  "не применимо": "not_applicable",
-  нет: "not_applicable",
+  "РЅРµ РїСЂРёРјРµРЅРёРјРѕ": "not_applicable",
+  "РЅРµС‚": "not_applicable",
   "-": "not_applicable"
 };
 
 const clinicalToothStatusAliases: Record<string, ClinicalToothStatus> = {
-  норма: "sound",
-  "без патологии": "sound",
-  наблюдение: "watch",
-  контроль: "watch",
-  кариес: "caries",
+  "РЅРѕСЂРјР°": "sound",
+  "Р±РµР· РїР°С‚РѕР»РѕРіРёРё": "sound",
+  "РЅР°Р±Р»СЋРґРµРЅРёРµ": "watch",
+  "РєРѕРЅС‚СЂРѕР»СЊ": "watch",
+  "РєР°СЂРёРµСЃ": "caries",
   caries: "caries",
-  пульпит: "pulpitis_periodontitis",
-  периодонтит: "pulpitis_periodontitis",
-  эндо: "pulpitis_periodontitis",
-  пародонт: "periodontal",
-  пародонтология: "periodontal",
-  отсутствует: "missing",
-  удален: "missing",
-  удаленый: "missing",
-  удаленный: "missing",
-  имплант: "implant",
-  имплантат: "implant",
-  ортопедия: "prosthetic",
-  коронка: "prosthetic",
-  протез: "prosthetic",
-  ортодонтия: "orthodontic",
-  брекеты: "orthodontic",
-  элайнеры: "orthodontic",
-  план: "planned",
+  "РїСѓР»СЊРїРёС‚": "pulpitis_periodontitis",
+  "РїРµСЂРёРѕРґРѕРЅС‚РёС‚": "pulpitis_periodontitis",
+  "СЌРЅРґРѕ": "pulpitis_periodontitis",
+  "РїР°СЂРѕРґРѕРЅС‚": "periodontal",
+  "РїР°СЂРѕРґРѕРЅС‚РѕР»РѕРіРёСЏ": "periodontal",
+  "РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚": "missing",
+  "СѓРґР°Р»РµРЅ": "missing",
+  "СѓРґР°Р»РµРЅС‹Р№": "missing",
+  "СѓРґР°Р»РµРЅРЅС‹Р№": "missing",
+  "РёРјРїР»Р°РЅС‚": "implant",
+  "РёРјРїР»Р°РЅС‚Р°С‚": "implant",
+  "РѕСЂС‚РѕРїРµРґРёСЏ": "prosthetic",
+  "РєРѕСЂРѕРЅРєР°": "prosthetic",
+  "РїСЂРѕС‚РµР·": "prosthetic",
+  "РѕСЂС‚РѕРґРѕРЅС‚РёСЏ": "orthodontic",
+  "Р±СЂРµРєРµС‚С‹": "orthodontic",
+  "СЌР»Р°Р№РЅРµСЂС‹": "orthodontic",
+  "РїР»Р°РЅ": "planned",
   planned: "planned",
-  запланировано: "planned",
-  выполнено: "completed",
+  "Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРѕ": "planned",
+  "РІС‹РїРѕР»РЅРµРЅРѕ": "completed",
   completed: "completed",
-  готово: "completed",
-  иное: "other",
-  другое: "other"
+  "РіРѕС‚РѕРІРѕ": "completed",
+  "РёРЅРѕРµ": "other",
+  "РґСЂСѓРіРѕРµ": "other"
 };
 
 const installmentPaymentStatusAliases: Record<string, InstallmentPaymentStatus> = {
-  план: "planned",
-  запланирован: "planned",
-  запланировано: "planned",
-  ожидается: "planned",
+  "РїР»Р°РЅ": "planned",
+  "Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅ": "planned",
+  "Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРѕ": "planned",
+  "РѕР¶РёРґР°РµС‚СЃСЏ": "planned",
   planned: "planned",
-  оплачен: "paid",
-  оплачено: "paid",
+  "РѕРїР»Р°С‡РµРЅ": "paid",
+  "РѕРїР»Р°С‡РµРЅРѕ": "paid",
   paid: "paid",
-  просрочен: "overdue",
-  просрочено: "overdue",
-  просрочка: "overdue",
+  "РїСЂРѕСЃСЂРѕС‡РµРЅ": "overdue",
+  "РїСЂРѕСЃСЂРѕС‡РµРЅРѕ": "overdue",
+  "РїСЂРѕСЃСЂРѕС‡РєР°": "overdue",
   overdue: "overdue",
-  перенесен: "rescheduled",
-  перенесено: "rescheduled",
-  перенос: "rescheduled",
+  "РїРµСЂРµРЅРµСЃРµРЅ": "rescheduled",
+  "РїРµСЂРµРЅРµСЃРµРЅРѕ": "rescheduled",
+  "РїРµСЂРµРЅРѕСЃ": "rescheduled",
   rescheduled: "rescheduled",
-  отменен: "cancelled",
-  отменено: "cancelled",
-  отмена: "cancelled",
+  "РѕС‚РјРµРЅРµРЅ": "cancelled",
+  "РѕС‚РјРµРЅРµРЅРѕ": "cancelled",
+  "РѕС‚РјРµРЅР°": "cancelled",
   cancelled: "cancelled"
 };
 
 const defaultClinicalToothRowsText =
-  "36 | окклюзионная, дистальная | кариес | кариес дентина 36 зуба по осмотру и снимку | восстановление функции и профилактика осложнений | лечение кариеса и композитная реставрация | прогноз зависит от гигиены и контроля | десна без острого воспаления | | ";
+  "36 | РѕРєРєР»СЋР·РёРѕРЅРЅР°СЏ, РґРёСЃС‚Р°Р»СЊРЅР°СЏ | РєР°СЂРёРµСЃ | РєР°СЂРёРµСЃ РґРµРЅС‚РёРЅР° 36 Р·СѓР±Р° РїРѕ РѕСЃРјРѕС‚СЂСѓ Рё СЃРЅРёРјРєСѓ | РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ С„СѓРЅРєС†РёРё Рё РїСЂРѕС„РёР»Р°РєС‚РёРєР° РѕСЃР»РѕР¶РЅРµРЅРёР№ | Р»РµС‡РµРЅРёРµ РєР°СЂРёРµСЃР° Рё РєРѕРјРїРѕР·РёС‚РЅР°СЏ СЂРµСЃС‚Р°РІСЂР°С†РёСЏ | РїСЂРѕРіРЅРѕР· Р·Р°РІРёСЃРёС‚ РѕС‚ РіРёРіРёРµРЅС‹ Рё РєРѕРЅС‚СЂРѕР»СЏ | РґРµСЃРЅР° Р±РµР· РѕСЃС‚СЂРѕРіРѕ РІРѕСЃРїР°Р»РµРЅРёСЏ | | ";
 
 function normalizeTaxApplicationRelationship(value: string | null | undefined): TaxDeductionApplicationRelationship | null {
-  const normalized = value?.trim().toLocaleLowerCase("ru-RU").replaceAll("ё", "е").replace(/[\s_-]+/g, " ") ?? "";
+  const normalized = value?.trim().toLocaleLowerCase("ru-RU").replaceAll("С‘", "Рµ").replace(/[\s_-]+/g, " ") ?? "";
   if (!normalized) return null;
-  if (["self", "patient", "пациент", "сам пациент", "сама пациентка", "налогоплательщик"].includes(normalized)) return "self";
-  if (["spouse", "husband", "wife", "супруг", "супруга", "муж", "жена"].includes(normalized)) return "spouse";
-  if (["parent", "father", "mother", "родитель", "отец", "мать", "папа", "мама"].includes(normalized)) return "parent";
-  if (["child", "son", "daughter", "ребенок", "сын", "дочь", "усыновленный", "усыновленная"].includes(normalized)) return "child";
-  if (["ward", "подопечный", "подопечная", "опекаемый", "опекаемая"].includes(normalized)) return "ward";
+  if (["self", "patient", "РїР°С†РёРµРЅС‚", "СЃР°Рј РїР°С†РёРµРЅС‚", "СЃР°РјР° РїР°С†РёРµРЅС‚РєР°", "РЅР°Р»РѕРіРѕРїР»Р°С‚РµР»СЊС‰РёРє"].includes(normalized)) return "self";
+  if (["spouse", "husband", "wife", "СЃСѓРїСЂСѓРі", "СЃСѓРїСЂСѓРіР°", "РјСѓР¶", "Р¶РµРЅР°"].includes(normalized)) return "spouse";
+  if (["parent", "father", "mother", "СЂРѕРґРёС‚РµР»СЊ", "РѕС‚РµС†", "РјР°С‚СЊ", "РїР°РїР°", "РјР°РјР°"].includes(normalized)) return "parent";
+  if (["child", "son", "daughter", "СЂРµР±РµРЅРѕРє", "СЃС‹РЅ", "РґРѕС‡СЊ", "СѓСЃС‹РЅРѕРІР»РµРЅРЅС‹Р№", "СѓСЃС‹РЅРѕРІР»РµРЅРЅР°СЏ"].includes(normalized)) return "child";
+  if (["ward", "РїРѕРґРѕРїРµС‡РЅС‹Р№", "РїРѕРґРѕРїРµС‡РЅР°СЏ", "РѕРїРµРєР°РµРјС‹Р№", "РѕРїРµРєР°РµРјР°СЏ"].includes(normalized)) return "ward";
   return null;
 }
 
 const procedureSpecificConsentProcedureOptions: Array<{ value: ProcedureSpecificConsentProcedure; label: string }> = [
-  { value: "local_anesthesia", label: "Местная анестезия" },
-  { value: "therapy_endo_restoration", label: "Терапия, эндодонтия, реставрация" },
-  { value: "surgery_extraction", label: "Хирургия / удаление" },
-  { value: "implantation_bone_graft", label: "Имплантация / костная пластика" },
-  { value: "prosthetics", label: "Ортопедия" },
-  { value: "orthodontics", label: "Ортодонтия" },
-  { value: "hygiene_whitening", label: "Гигиена / отбеливание" },
-  { value: "periodontology", label: "Пародонтология" },
-  { value: "other", label: "Другая процедура" }
+  { value: "local_anesthesia", label: "РњРµСЃС‚РЅР°СЏ Р°РЅРµСЃС‚РµР·РёСЏ" },
+  { value: "therapy_endo_restoration", label: "РўРµСЂР°РїРёСЏ, СЌРЅРґРѕРґРѕРЅС‚РёСЏ, СЂРµСЃС‚Р°РІСЂР°С†РёСЏ" },
+  { value: "surgery_extraction", label: "РҐРёСЂСѓСЂРіРёСЏ / СѓРґР°Р»РµРЅРёРµ" },
+  { value: "implantation_bone_graft", label: "РРјРїР»Р°РЅС‚Р°С†РёСЏ / РєРѕСЃС‚РЅР°СЏ РїР»Р°СЃС‚РёРєР°" },
+  { value: "prosthetics", label: "РћСЂС‚РѕРїРµРґРёСЏ" },
+  { value: "orthodontics", label: "РћСЂС‚РѕРґРѕРЅС‚РёСЏ" },
+  { value: "hygiene_whitening", label: "Р“РёРіРёРµРЅР° / РѕС‚Р±РµР»РёРІР°РЅРёРµ" },
+  { value: "periodontology", label: "РџР°СЂРѕРґРѕРЅС‚РѕР»РѕРіРёСЏ" },
+  { value: "other", label: "Р”СЂСѓРіР°СЏ РїСЂРѕС†РµРґСѓСЂР°" }
 ];
 
 const xrayStudyTypeOptions: Array<{ value: XrayCbctReferralStudyType; label: string }> = [
-  { value: "rvg", label: "RVG / прицельный" },
-  { value: "opg", label: "ОПТГ" },
-  { value: "cbct", label: "КЛКТ / КТ" },
-  { value: "trg", label: "ТРГ" },
-  { value: "tmj", label: "ВНЧС" },
-  { value: "sinus", label: "Пазуха" },
-  { value: "photo_protocol", label: "Фотопротокол" },
-  { value: "other", label: "Другое" }
+  { value: "rvg", label: "RVG / РїСЂРёС†РµР»СЊРЅС‹Р№" },
+  { value: "opg", label: "РћРџРўР“" },
+  { value: "cbct", label: "РљР›РљРў / РљРў" },
+  { value: "trg", label: "РўР Р“" },
+  { value: "tmj", label: "Р’РќР§РЎ" },
+  { value: "sinus", label: "РџР°Р·СѓС…Р°" },
+  { value: "photo_protocol", label: "Р¤РѕС‚РѕРїСЂРѕС‚РѕРєРѕР»" },
+  { value: "other", label: "Р”СЂСѓРіРѕРµ" }
 ];
 
 const xrayPregnancyStatusOptions: Array<{ value: XrayCbctReferralPregnancyStatus; label: string }> = [
-  { value: "not_applicable", label: "Не применимо" },
-  { value: "denied", label: "Со слов пациента нет" },
-  { value: "possible", label: "Возможна" },
-  { value: "confirmed", label: "Подтверждена" },
-  { value: "unknown", label: "Не уточнено" }
+  { value: "not_applicable", label: "РќРµ РїСЂРёРјРµРЅРёРјРѕ" },
+  { value: "denied", label: "РЎРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РЅРµС‚" },
+  { value: "possible", label: "Р’РѕР·РјРѕР¶РЅР°" },
+  { value: "confirmed", label: "РџРѕРґС‚РІРµСЂР¶РґРµРЅР°" },
+  { value: "unknown", label: "РќРµ СѓС‚РѕС‡РЅРµРЅРѕ" }
 ];
 
 const photoVideoMaterialOptions: Array<{ value: PhotoVideoConsentMaterial; label: string }> = [
-  { value: "intraoral_photo", label: "Внутриротовые фото" },
-  { value: "face_photo", label: "Фото лица" },
-  { value: "video", label: "Видео" },
-  { value: "xray", label: "Рентген" },
-  { value: "cbct", label: "КЛКТ/КТ" },
-  { value: "scan", label: "Цифровые сканы" },
-  { value: "other", label: "Иные материалы" }
+  { value: "intraoral_photo", label: "Р’РЅСѓС‚СЂРёСЂРѕС‚РѕРІС‹Рµ С„РѕС‚Рѕ" },
+  { value: "face_photo", label: "Р¤РѕС‚Рѕ Р»РёС†Р°" },
+  { value: "video", label: "Р’РёРґРµРѕ" },
+  { value: "xray", label: "Р РµРЅС‚РіРµРЅ" },
+  { value: "cbct", label: "РљР›РљРў/РљРў" },
+  { value: "scan", label: "Р¦РёС„СЂРѕРІС‹Рµ СЃРєР°РЅС‹" },
+  { value: "other", label: "РРЅС‹Рµ РјР°С‚РµСЂРёР°Р»С‹" }
 ];
 
 const defaultUiPreferences: UiPreferences = {
@@ -3457,7 +3577,7 @@ const defaultUiPreferences: UiPreferences = {
   paymentReceiptTaxSupportRequested: false,
   documentIssueSignatureMode: "paper_signed",
   documentIssueStaffFullName: "",
-  documentIssueStaffRole: "Врач/администратор",
+  documentIssueStaffRole: "Р’СЂР°С‡/Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ",
   procedureConsentProcedureType: "implantation_bone_graft",
   postVisitCareTopic: "filling_restoration",
   pricelistSourceKind: "spreadsheet_copy",
@@ -3492,11 +3612,11 @@ const aiJobKindPreferenceValues: readonly AiJobKind[] = [
 ];
 
 const aiJobKindLabels: Record<AiJobKind, string> = {
-  voice_transcription: "диктовка врача",
-  visit_note_draft: "черновик приема",
-  image_summary: "описание снимка",
-  document_draft: "черновик документа",
-  paper_ocr: "разбор бумажного журнала"
+  voice_transcription: "РґРёРєС‚РѕРІРєР° РІСЂР°С‡Р°",
+  visit_note_draft: "С‡РµСЂРЅРѕРІРёРє РїСЂРёРµРјР°",
+  image_summary: "РѕРїРёСЃР°РЅРёРµ СЃРЅРёРјРєР°",
+  document_draft: "С‡РµСЂРЅРѕРІРёРє РґРѕРєСѓРјРµРЅС‚Р°",
+  paper_ocr: "СЂР°Р·Р±РѕСЂ Р±СѓРјР°Р¶РЅРѕРіРѕ Р¶СѓСЂРЅР°Р»Р°"
 };
 
 function isRecordKey<T extends string>(value: unknown, record: Record<T, unknown>): value is T {
@@ -4005,25 +4125,25 @@ async function saveServerUiPreferences(preferences: UiPreferences, adminSecret?:
     body: JSON.stringify(preferences)
   });
   if (!response.ok) {
-    throw new Error(await responseErrorMessage(response, "Настройки интерфейса не сохранены"));
+    throw new Error(await responseErrorMessage(response, "РќР°СЃС‚СЂРѕР№РєРё РёРЅС‚РµСЂС„РµР№СЃР° РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹"));
   }
 }
 
 function uiPreferencesSyncErrorMessage(_error: unknown): string {
-  return "Настройки интерфейса сохранены только на этом устройстве. Серверная синхронизация повторится автоматически.";
+  return "РќР°СЃС‚СЂРѕР№РєРё РёРЅС‚РµСЂС„РµР№СЃР° СЃРѕС…СЂР°РЅРµРЅС‹ С‚РѕР»СЊРєРѕ РЅР° СЌС‚РѕРј СѓСЃС‚СЂРѕР№СЃС‚РІРµ. РЎРµСЂРІРµСЂРЅР°СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ РїРѕРІС‚РѕСЂРёС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.";
 }
 
 function responseStatusFailureLabel(response: Response): string {
-  if (response.status === 0) return "нет ответа сервера";
-  if (response.status === 400) return "сервер не принял данные";
-  if (response.status === 401 || response.status === 403) return "нет доступа к действию";
-  if (response.status === 404) return "нужный маршрут не найден";
-  if (response.status === 409) return "данные уже изменились, обновите экран";
-  if (response.status === 413) return "файл или запрос слишком большой";
-  if (response.status === 422) return "данные не прошли проверку";
-  if (response.status === 429) return "слишком много запросов, повторите позже";
-  if (response.status >= 500) return "сервер не смог выполнить действие";
-  return `сервер вернул код ${response.status}`;
+  if (response.status === 0) return "РЅРµС‚ РѕС‚РІРµС‚Р° СЃРµСЂРІРµСЂР°";
+  if (response.status === 400) return "СЃРµСЂРІРµСЂ РЅРµ РїСЂРёРЅСЏР» РґР°РЅРЅС‹Рµ";
+  if (response.status === 401 || response.status === 403) return "РЅРµС‚ РґРѕСЃС‚СѓРїР° Рє РґРµР№СЃС‚РІРёСЋ";
+  if (response.status === 404) return "РЅСѓР¶РЅС‹Р№ РјР°СЂС€СЂСѓС‚ РЅРµ РЅР°Р№РґРµРЅ";
+  if (response.status === 409) return "РґР°РЅРЅС‹Рµ СѓР¶Рµ РёР·РјРµРЅРёР»РёСЃСЊ, РѕР±РЅРѕРІРёС‚Рµ СЌРєСЂР°РЅ";
+  if (response.status === 413) return "С„Р°Р№Р» РёР»Рё Р·Р°РїСЂРѕСЃ СЃР»РёС€РєРѕРј Р±РѕР»СЊС€РѕР№";
+  if (response.status === 422) return "РґР°РЅРЅС‹Рµ РЅРµ РїСЂРѕС€Р»Рё РїСЂРѕРІРµСЂРєСѓ";
+  if (response.status === 429) return "СЃР»РёС€РєРѕРј РјРЅРѕРіРѕ Р·Р°РїСЂРѕСЃРѕРІ, РїРѕРІС‚РѕСЂРёС‚Рµ РїРѕР·Р¶Рµ";
+  if (response.status >= 500) return "СЃРµСЂРІРµСЂ РЅРµ СЃРјРѕРі РІС‹РїРѕР»РЅРёС‚СЊ РґРµР№СЃС‚РІРёРµ";
+  return `СЃРµСЂРІРµСЂ РІРµСЂРЅСѓР» РєРѕРґ ${response.status}`;
 }
 
 async function responseErrorMessage(response: Response, fallback: string): Promise<string> {
@@ -4053,7 +4173,7 @@ function acceptedVisitSaveFailureIsRetryable(error: unknown): boolean {
 }
 
 function requestFailureMessage(fallback: string, _error: unknown): string {
-  return `${fallback}: сеть или локальный сервер недоступны. Повторите действие или проверьте подключение к серверу клиники.`;
+  return `${fallback}: СЃРµС‚СЊ РёР»Рё Р»РѕРєР°Р»СЊРЅС‹Р№ СЃРµСЂРІРµСЂ РЅРµРґРѕСЃС‚СѓРїРЅС‹. РџРѕРІС‚РѕСЂРёС‚Рµ РґРµР№СЃС‚РІРёРµ РёР»Рё РїСЂРѕРІРµСЂСЊС‚Рµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє СЃРµСЂРІРµСЂСѓ РєР»РёРЅРёРєРё.`;
 }
 
 const technicalWorkflowFailurePattern =
@@ -4078,11 +4198,11 @@ function operatorWorkflowFailureMessage(fallback: string, error: unknown): strin
 }
 
 function browserLocalSourceErrorMessage(fallback: string, _error: unknown): string {
-  return `${fallback}. Проверьте, что браузеру разрешено читать выбранный источник, или выберите файлы вручную.`;
+  return `${fallback}. РџСЂРѕРІРµСЂСЊС‚Рµ, С‡С‚Рѕ Р±СЂР°СѓР·РµСЂСѓ СЂР°Р·СЂРµС€РµРЅРѕ С‡РёС‚Р°С‚СЊ РІС‹Р±СЂР°РЅРЅС‹Р№ РёСЃС‚РѕС‡РЅРёРє, РёР»Рё РІС‹Р±РµСЂРёС‚Рµ С„Р°Р№Р»С‹ РІСЂСѓС‡РЅСѓСЋ.`;
 }
 
 function browserCapabilityFailureMessage(fallback: string, _error: unknown): string {
-  return `${fallback}. Проверьте разрешения браузера и повторите действие; если устройство занято другой программой, закройте ее.`;
+  return `${fallback}. РџСЂРѕРІРµСЂСЊС‚Рµ СЂР°Р·СЂРµС€РµРЅРёСЏ Р±СЂР°СѓР·РµСЂР° Рё РїРѕРІС‚РѕСЂРёС‚Рµ РґРµР№СЃС‚РІРёРµ; РµСЃР»Рё СѓСЃС‚СЂРѕР№СЃС‚РІРѕ Р·Р°РЅСЏС‚Рѕ РґСЂСѓРіРѕР№ РїСЂРѕРіСЂР°РјРјРѕР№, Р·Р°РєСЂРѕР№С‚Рµ РµРµ.`;
 }
 
 type OnboardingDismissalState = {
@@ -4155,13 +4275,13 @@ function saveOnboardingDismissed(
 }
 
 const weekdayOptions = [
-  { value: 1, label: "Пн" },
-  { value: 2, label: "Вт" },
-  { value: 3, label: "Ср" },
-  { value: 4, label: "Чт" },
-  { value: 5, label: "Пт" },
-  { value: 6, label: "Сб" },
-  { value: 0, label: "Вс" }
+  { value: 1, label: "РџРЅ" },
+  { value: 2, label: "Р’С‚" },
+  { value: 3, label: "РЎСЂ" },
+  { value: 4, label: "Р§С‚" },
+  { value: 5, label: "РџС‚" },
+  { value: 6, label: "РЎР±" },
+  { value: 0, label: "Р’СЃ" }
 ];
 
 const defaultWorkingDays = [1, 2, 3, 4, 5];
@@ -4400,7 +4520,7 @@ function newAppointmentDraftFromDashboard(
     status: "planned",
     startsAt: fromDateTimeLocalValue(startsAtLocal, timezone),
     endsAt: fromDateTimeLocalValue(endsAtLocal, timezone),
-    reason: "Первичная консультация",
+    reason: "РџРµСЂРІРёС‡РЅР°СЏ РєРѕРЅСЃСѓР»СЊС‚Р°С†РёСЏ",
     comment: ""
   };
 }
@@ -4479,22 +4599,22 @@ function appointmentScheduleDateMissingSteps(draft: AppointmentScheduleDraft): s
   const startsAtMs = Date.parse(startsAt);
   const endsAtMs = Date.parse(endsAt);
   return [
-    !startsAt ? "укажите начало приема" : null,
-    startsAt && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
-    !endsAt ? "укажите окончание приема" : null,
-    endsAt && !Number.isFinite(endsAtMs) ? "проверьте дату окончания приема" : null,
+    !startsAt ? "СѓРєР°Р¶РёС‚Рµ РЅР°С‡Р°Р»Рѕ РїСЂРёРµРјР°" : null,
+    startsAt && !Number.isFinite(startsAtMs) ? "РїСЂРѕРІРµСЂСЊС‚Рµ РґР°С‚Сѓ РЅР°С‡Р°Р»Р° РїСЂРёРµРјР°" : null,
+    !endsAt ? "СѓРєР°Р¶РёС‚Рµ РѕРєРѕРЅС‡Р°РЅРёРµ РїСЂРёРµРјР°" : null,
+    endsAt && !Number.isFinite(endsAtMs) ? "РїСЂРѕРІРµСЂСЊС‚Рµ РґР°С‚Сѓ РѕРєРѕРЅС‡Р°РЅРёСЏ РїСЂРёРµРјР°" : null,
     Number.isFinite(startsAtMs) && Number.isFinite(endsAtMs) && endsAtMs <= startsAtMs
-      ? "окончание приема должно быть позже начала"
+      ? "РѕРєРѕРЅС‡Р°РЅРёРµ РїСЂРёРµРјР° РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РїРѕР·Р¶Рµ РЅР°С‡Р°Р»Р°"
       : null
   ].filter((step): step is string => Boolean(step));
 }
 
 function appointmentScheduleMissingFields(draft: AppointmentScheduleDraft, clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined): string[] {
   const missing: string[] = [];
-  if (!draft.patientId) missing.push("выберите пациента");
-  if (!draft.doctorUserId) missing.push("выберите врача");
-  if (clinicMode !== "solo_doctor" && !draft.assistantUserId) missing.push("выберите ассистента");
-  if (!draft.chairId) missing.push("выберите кресло");
+  if (!draft.patientId) missing.push("РІС‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р°");
+  if (!draft.doctorUserId) missing.push("РІС‹Р±РµСЂРёС‚Рµ РІСЂР°С‡Р°");
+  if (clinicMode !== "solo_doctor" && !draft.assistantUserId) missing.push("РІС‹Р±РµСЂРёС‚Рµ Р°СЃСЃРёСЃС‚РµРЅС‚Р°");
+  if (!draft.chairId) missing.push("РІС‹Р±РµСЂРёС‚Рµ РєСЂРµСЃР»Рѕ");
   missing.push(...appointmentScheduleDateMissingSteps(draft));
   return missing;
 }
@@ -4697,16 +4817,16 @@ function patientAdministrativeProfileDraftSignature(draft: PatientAdministrative
 function patientAdministrativeProfileDraftIssue(draft: PatientAdministrativeProfileDraft): string | null {
   const inn = draft.taxpayerInn.trim();
   if (inn && !/^\d{10}$|^\d{12}$/.test(inn)) {
-    return "ИНН можно сохранить только в формате 10 или 12 цифр. Пока это локальный черновик.";
+    return "РРќРќ РјРѕР¶РЅРѕ СЃРѕС…СЂР°РЅРёС‚СЊ С‚РѕР»СЊРєРѕ РІ С„РѕСЂРјР°С‚Рµ 10 РёР»Рё 12 С†РёС„СЂ. РџРѕРєР° СЌС‚Рѕ Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє.";
   }
   if (draft.preferredAppointmentStart && !draft.preferredAppointmentEnd) {
-    return "Укажите конец удобного времени приема или очистите начало.";
+    return "РЈРєР°Р¶РёС‚Рµ РєРѕРЅРµС† СѓРґРѕР±РЅРѕРіРѕ РІСЂРµРјРµРЅРё РїСЂРёРµРјР° РёР»Рё РѕС‡РёСЃС‚РёС‚Рµ РЅР°С‡Р°Р»Рѕ.";
   }
   if (!draft.preferredAppointmentStart && draft.preferredAppointmentEnd) {
-    return "Укажите начало удобного времени приема или очистите конец.";
+    return "РЈРєР°Р¶РёС‚Рµ РЅР°С‡Р°Р»Рѕ СѓРґРѕР±РЅРѕРіРѕ РІСЂРµРјРµРЅРё РїСЂРёРµРјР° РёР»Рё РѕС‡РёСЃС‚РёС‚Рµ РєРѕРЅРµС†.";
   }
   if (draft.preferredAppointmentStart && draft.preferredAppointmentEnd && draft.preferredAppointmentEnd <= draft.preferredAppointmentStart) {
-    return "Конец удобного времени приема должен быть позже начала.";
+    return "РљРѕРЅРµС† СѓРґРѕР±РЅРѕРіРѕ РІСЂРµРјРµРЅРё РїСЂРёРµРјР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР·Р¶Рµ РЅР°С‡Р°Р»Р°.";
   }
   return null;
 }
@@ -4750,13 +4870,13 @@ function clinicProfileDraftSignature(draft: ClinicProfileDraft): string {
 
 function clinicLegalMissingFields(profile: ClinicProfile): string[] {
   const required: Array<[string, string | null | undefined]> = [
-    ["Юр. лицо", profile.legalName],
-    ["ИНН", profile.inn],
-    ["Адрес", profile.address],
-    ["Телефон", profile.phone],
-    ["Номер лицензии", profile.medicalLicenseNumber],
-    ["Дата лицензии", profile.medicalLicenseIssuedAt],
-    ["Кем выдана лицензия", profile.medicalLicenseIssuer]
+    ["Р®СЂ. Р»РёС†Рѕ", profile.legalName],
+    ["РРќРќ", profile.inn],
+    ["РђРґСЂРµСЃ", profile.address],
+    ["РўРµР»РµС„РѕРЅ", profile.phone],
+    ["РќРѕРјРµСЂ Р»РёС†РµРЅР·РёРё", profile.medicalLicenseNumber],
+    ["Р”Р°С‚Р° Р»РёС†РµРЅР·РёРё", profile.medicalLicenseIssuedAt],
+    ["РљРµРј РІС‹РґР°РЅР° Р»РёС†РµРЅР·РёСЏ", profile.medicalLicenseIssuer]
   ];
   return required.filter(([, value]) => !value?.trim()).map(([label]) => label);
 }
@@ -5008,7 +5128,7 @@ function savePendingSpeechChunksToLocalStorage(queue: PendingSpeechChunk[], orga
   }
   const payload = JSON.stringify(scopedQueue);
   if (payload.length > speechLocalStorageFallbackMaxBytes) {
-    throw new Error("Память для аудио на этом устройстве переполнена; освободите место или отправьте текущую запись.");
+    throw new Error("РџР°РјСЏС‚СЊ РґР»СЏ Р°СѓРґРёРѕ РЅР° СЌС‚РѕРј СѓСЃС‚СЂРѕР№СЃС‚РІРµ РїРµСЂРµРїРѕР»РЅРµРЅР°; РѕСЃРІРѕР±РѕРґРёС‚Рµ РјРµСЃС‚Рѕ РёР»Рё РѕС‚РїСЂР°РІСЊС‚Рµ С‚РµРєСѓС‰СѓСЋ Р·Р°РїРёСЃСЊ.");
   }
   window.localStorage.setItem(localKey, payload);
 }
@@ -5029,7 +5149,7 @@ function assertSpeechChunkDbStores(db: IDBDatabase): void {
 }
 
 function openSpeechChunkDb(): Promise<IDBDatabase> {
-  if (!speechChunkIndexedDbAvailable()) return Promise.reject(new Error("Браузер не дает сохранить аудио для отправки позже"));
+  if (!speechChunkIndexedDbAvailable()) return Promise.reject(new Error("Р‘СЂР°СѓР·РµСЂ РЅРµ РґР°РµС‚ СЃРѕС…СЂР°РЅРёС‚СЊ Р°СѓРґРёРѕ РґР»СЏ РѕС‚РїСЂР°РІРєРё РїРѕР·Р¶Рµ"));
   if (speechChunkDbPromise) return speechChunkDbPromise;
   speechChunkDbPromise = new Promise((resolve, reject) => {
     const request = window.indexedDB.open(speechChunkDbName, speechChunkDbVersion);
@@ -5072,11 +5192,11 @@ function openSpeechChunkDb(): Promise<IDBDatabase> {
     };
     request.onerror = () => {
       speechChunkDbPromise = null;
-      reject(request.error ?? new Error("Хранилище аудио не открылось"));
+      reject(request.error ?? new Error("РҐСЂР°РЅРёР»РёС‰Рµ Р°СѓРґРёРѕ РЅРµ РѕС‚РєСЂС‹Р»РѕСЃСЊ"));
     };
     request.onblocked = () => {
       speechChunkDbPromise = null;
-      reject(new Error("Хранилище аудио заблокировано другой вкладкой"));
+      reject(new Error("РҐСЂР°РЅРёР»РёС‰Рµ Р°СѓРґРёРѕ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ РґСЂСѓРіРѕР№ РІРєР»Р°РґРєРѕР№"));
     };
   });
   return speechChunkDbPromise;
@@ -5433,8 +5553,8 @@ async function readPendingSpeechChunksFromIndexedDb(organizationId: string | nul
     request.onsuccess = () => {
       resolve(Array.isArray(request.result) ? request.result : []);
     };
-    request.onerror = () => reject(request.error ?? new Error("Хранилище аудио не прочитано"));
-    transaction.onerror = () => reject(transaction.error ?? new Error("Операция с хранилищем аудио не выполнена"));
+    request.onerror = () => reject(request.error ?? new Error("РҐСЂР°РЅРёР»РёС‰Рµ Р°СѓРґРёРѕ РЅРµ РїСЂРѕС‡РёС‚Р°РЅРѕ"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("РћРїРµСЂР°С†РёСЏ СЃ С…СЂР°РЅРёР»РёС‰РµРј Р°СѓРґРёРѕ РЅРµ РІС‹РїРѕР»РЅРµРЅР°"));
   });
   const queue: PendingSpeechChunk[] = [];
   const staleIds: string[] = [];
@@ -5474,8 +5594,8 @@ async function savePendingSpeechChunksToIndexedDb(queue: PendingSpeechChunk[], o
       store.put(chunk);
     }
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Аудио не сохранено в локальное хранилище"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Сохранение аудио отменено браузером"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("РђСѓРґРёРѕ РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ РІ Р»РѕРєР°Р»СЊРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("РЎРѕС…СЂР°РЅРµРЅРёРµ Р°СѓРґРёРѕ РѕС‚РјРµРЅРµРЅРѕ Р±СЂР°СѓР·РµСЂРѕРј"));
   });
 }
 
@@ -5485,8 +5605,8 @@ async function putPendingSpeechChunkToIndexedDb(chunk: PendingSpeechChunk): Prom
     const transaction = db.transaction(speechChunkStoreName, "readwrite");
     transaction.objectStore(speechChunkStoreName).put(chunk);
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Очередь аудио не обновлена"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Обновление очереди аудио отменено браузером"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("РћС‡РµСЂРµРґСЊ Р°СѓРґРёРѕ РЅРµ РѕР±РЅРѕРІР»РµРЅР°"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("РћР±РЅРѕРІР»РµРЅРёРµ РѕС‡РµСЂРµРґРё Р°СѓРґРёРѕ РѕС‚РјРµРЅРµРЅРѕ Р±СЂР°СѓР·РµСЂРѕРј"));
   });
 }
 
@@ -5496,8 +5616,8 @@ async function deletePendingSpeechChunkFromIndexedDb(id: string): Promise<void> 
     const transaction = db.transaction(speechChunkStoreName, "readwrite");
     transaction.objectStore(speechChunkStoreName).delete(id);
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error("Аудио не удалено из локальной очереди"));
-    transaction.onabort = () => reject(transaction.error ?? new Error("Удаление аудио из очереди отменено браузером"));
+    transaction.onerror = () => reject(transaction.error ?? new Error("РђСѓРґРёРѕ РЅРµ СѓРґР°Р»РµРЅРѕ РёР· Р»РѕРєР°Р»СЊРЅРѕР№ РѕС‡РµСЂРµРґРё"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("РЈРґР°Р»РµРЅРёРµ Р°СѓРґРёРѕ РёР· РѕС‡РµСЂРµРґРё РѕС‚РјРµРЅРµРЅРѕ Р±СЂР°СѓР·РµСЂРѕРј"));
   });
 }
 
@@ -5577,7 +5697,7 @@ async function removePendingSpeechChunkById(id: string, organizationId: string |
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Аудиофрагмент не удалось прочитать"));
+    reader.onerror = () => reject(new Error("РђСѓРґРёРѕС„СЂР°РіРјРµРЅС‚ РЅРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ"));
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : "";
       resolve(result.split(",")[1] ?? "");
@@ -5594,7 +5714,7 @@ const maxPricelistImageBase64Chars = 3_800_000;
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Снимок не удалось прочитать"));
+    reader.onerror = () => reject(new Error("РЎРЅРёРјРѕРє РЅРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ"));
     reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
     reader.readAsDataURL(file);
   });
@@ -5604,7 +5724,7 @@ function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Снимок не удалось распознать"));
+    image.onerror = () => reject(new Error("РЎРЅРёРјРѕРє РЅРµ СѓРґР°Р»РѕСЃСЊ СЂР°СЃРїРѕР·РЅР°С‚СЊ"));
     image.src = dataUrl;
   });
 }
@@ -5615,7 +5735,7 @@ async function preparePricelistImage(file: File): Promise<{
   note: string;
 }> {
   if (!pricelistImageMimeTypes.includes(file.type as PricelistImageMimeType)) {
-    throw new Error("Поддерживаются JPEG, PNG или WebP.");
+    throw new Error("РџРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ JPEG, PNG РёР»Рё WebP.");
   }
 
   const dataUrl = await readFileAsDataUrl(file);
@@ -5631,7 +5751,7 @@ async function preparePricelistImage(file: File): Promise<{
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d");
-    if (!context) throw new Error("Canvas недоступен для сжатия изображения.");
+    if (!context) throw new Error("Canvas РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ СЃР¶Р°С‚РёСЏ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ.");
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, width, height);
     context.drawImage(image, 0, 0, width, height);
@@ -5644,13 +5764,13 @@ async function preparePricelistImage(file: File): Promise<{
         return {
           base64,
           mimeType: outputMimeType,
-          note: `Фото подготовлено: ${width}x${height}, ${megapixels} Мп, JPEG ${Math.round(quality * 100)}%.`
+          note: `Р¤РѕС‚Рѕ РїРѕРґРіРѕС‚РѕРІР»РµРЅРѕ: ${width}x${height}, ${megapixels} РњРї, JPEG ${Math.round(quality * 100)}%.`
         };
       }
     }
   }
 
-  throw new Error("Фото прайса слишком большое даже после сжатия. Нужен более четкий фрагмент страницы.");
+  throw new Error("Р¤РѕС‚Рѕ РїСЂР°Р№СЃР° СЃР»РёС€РєРѕРј Р±РѕР»СЊС€РѕРµ РґР°Р¶Рµ РїРѕСЃР»Рµ СЃР¶Р°С‚РёСЏ. РќСѓР¶РµРЅ Р±РѕР»РµРµ С‡РµС‚РєРёР№ С„СЂР°РіРјРµРЅС‚ СЃС‚СЂР°РЅРёС†С‹.");
 }
 
 async function queuePendingVisitSave(
@@ -5678,17 +5798,17 @@ function latestPendingVisitSaveAt(queue: PendingVisitSave[]): string | null {
 
 function visitSaveReceiptText(receipt: AcceptVisitDraftResponse["saveReceipt"]): string {
   if (receipt.status === "duplicate") {
-    return `Повторная отправка распознана: дубль не создан, серверная версия ${receipt.serverRevision}.`;
+    return `РџРѕРІС‚РѕСЂРЅР°СЏ РѕС‚РїСЂР°РІРєР° СЂР°СЃРїРѕР·РЅР°РЅР°: РґСѓР±Р»СЊ РЅРµ СЃРѕР·РґР°РЅ, СЃРµСЂРІРµСЂРЅР°СЏ РІРµСЂСЃРёСЏ ${receipt.serverRevision}.`;
   }
   if (receipt.warning) {
-    return `${receipt.warning} Серверная версия ${receipt.serverRevision}.`;
+    return `${receipt.warning} РЎРµСЂРІРµСЂРЅР°СЏ РІРµСЂСЃРёСЏ ${receipt.serverRevision}.`;
   }
-  return `Сервер подтвердил сохранение ${formatTime(receipt.savedAt)}, версия карты ${receipt.serverRevision}.`;
+  return `РЎРµСЂРІРµСЂ РїРѕРґС‚РІРµСЂРґРёР» СЃРѕС…СЂР°РЅРµРЅРёРµ ${formatTime(receipt.savedAt)}, РІРµСЂСЃРёСЏ РєР°СЂС‚С‹ ${receipt.serverRevision}.`;
 }
 
 function buildOfflineVisitDraftFromTranscript(transcript: string, specialty: DentalSpecialty): VisitNoteDraft {
   return buildRuleBasedVisitDraftFromTranscript(transcript, specialty, {
-    sourceLabel: "Локальный разбор диктовки"
+    sourceLabel: "Р›РѕРєР°Р»СЊРЅС‹Р№ СЂР°Р·Р±РѕСЂ РґРёРєС‚РѕРІРєРё"
   });
 }
 
@@ -5728,45 +5848,45 @@ const denteTelegramHandoffTargets: Record<DenteTelegramPortalSection, DenteTeleg
     section: "home",
     view: "shift",
     hash: "shift",
-    title: "Рабочий стол клиники",
-    detail: "Открыт стартовый экран клиники: ближайшие приемы, готовность команды, быстрые действия и рабочие настройки."
+    title: "Р Р°Р±РѕС‡РёР№ СЃС‚РѕР» РєР»РёРЅРёРєРё",
+    detail: "РћС‚РєСЂС‹С‚ СЃС‚Р°СЂС‚РѕРІС‹Р№ СЌРєСЂР°РЅ РєР»РёРЅРёРєРё: Р±Р»РёР¶Р°Р№С€РёРµ РїСЂРёРµРјС‹, РіРѕС‚РѕРІРЅРѕСЃС‚СЊ РєРѕРјР°РЅРґС‹, Р±С‹СЃС‚СЂС‹Рµ РґРµР№СЃС‚РІРёСЏ Рё СЂР°Р±РѕС‡РёРµ РЅР°СЃС‚СЂРѕР№РєРё."
   },
   documents: {
     section: "documents",
     view: "documents",
     hash: "documents",
-    title: "Документы",
-    detail: "Открыт раздел договоров, согласий, справок и архивов.",
+    title: "Р”РѕРєСѓРјРµРЅС‚С‹",
+    detail: "РћС‚РєСЂС‹С‚ СЂР°Р·РґРµР» РґРѕРіРѕРІРѕСЂРѕРІ, СЃРѕРіР»Р°СЃРёР№, СЃРїСЂР°РІРѕРє Рё Р°СЂС…РёРІРѕРІ.",
     documentKind: "patient_intake_questionnaire"
   },
   tax: {
     section: "tax",
     view: "documents",
     hash: "documents",
-    title: "Налоговые документы",
-    detail: "Открыт раздел КНД 1151156, заявлений, справок и фискальных оплат.",
+    title: "РќР°Р»РѕРіРѕРІС‹Рµ РґРѕРєСѓРјРµРЅС‚С‹",
+    detail: "РћС‚РєСЂС‹С‚ СЂР°Р·РґРµР» РљРќР” 1151156, Р·Р°СЏРІР»РµРЅРёР№, СЃРїСЂР°РІРѕРє Рё С„РёСЃРєР°Р»СЊРЅС‹С… РѕРїР»Р°С‚.",
     documentKind: "tax_deduction_certificate"
   },
   billing: {
     section: "billing",
     view: "finance",
     hash: "finance",
-    title: "Оплаты",
-    detail: "Открыт раздел оплат, чеков, счетов и налоговых реквизитов."
+    title: "РћРїР»Р°С‚С‹",
+    detail: "РћС‚РєСЂС‹С‚ СЂР°Р·РґРµР» РѕРїР»Р°С‚, С‡РµРєРѕРІ, СЃС‡РµС‚РѕРІ Рё РЅР°Р»РѕРіРѕРІС‹С… СЂРµРєРІРёР·РёС‚РѕРІ."
   },
   care: {
     section: "care",
     view: "communications",
     hash: "communications",
-    title: "Связь и памятки",
-    detail: "Открыта очередь связи: запросы памяток, инструкции после приема и задачи администратора."
+    title: "РЎРІСЏР·СЊ Рё РїР°РјСЏС‚РєРё",
+    detail: "РћС‚РєСЂС‹С‚Р° РѕС‡РµСЂРµРґСЊ СЃРІСЏР·Рё: Р·Р°РїСЂРѕСЃС‹ РїР°РјСЏС‚РѕРє, РёРЅСЃС‚СЂСѓРєС†РёРё РїРѕСЃР»Рµ РїСЂРёРµРјР° Рё Р·Р°РґР°С‡Рё Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°."
   },
   schedule: {
     section: "schedule",
     view: "schedule",
     hash: "schedule",
-    title: "Расписание",
-    detail: "Открыта очередь записей, фильтры врачей, ассистентов и кресел сохранены."
+    title: "Р Р°СЃРїРёСЃР°РЅРёРµ",
+    detail: "РћС‚РєСЂС‹С‚Р° РѕС‡РµСЂРµРґСЊ Р·Р°РїРёСЃРµР№, С„РёР»СЊС‚СЂС‹ РІСЂР°С‡РµР№, Р°СЃСЃРёСЃС‚РµРЅС‚РѕРІ Рё РєСЂРµСЃРµР» СЃРѕС…СЂР°РЅРµРЅС‹."
   }
 };
 
@@ -5795,65 +5915,65 @@ function stripDenteTelegramHandoffQuery(target: DenteTelegramHandoffTarget): voi
 }
 
 const workspaceScopeLabels: Record<Dashboard["clinicSettings"]["workspaceProfiles"][number]["scope"], string> = {
-  personal: "лично",
-  clinic: "клиника",
-  branch: "филиал",
-  network: "сеть"
+  personal: "Р»РёС‡РЅРѕ",
+  clinic: "РєР»РёРЅРёРєР°",
+  branch: "С„РёР»РёР°Р»",
+  network: "СЃРµС‚СЊ"
 };
 
 const patientInsightRiskLabels: Record<Dashboard["patientInsights"][number]["riskLevel"], string> = {
-  low: "спокойно",
-  watch: "контроль",
-  high: "срочно"
+  low: "СЃРїРѕРєРѕР№РЅРѕ",
+  watch: "РєРѕРЅС‚СЂРѕР»СЊ",
+  high: "СЃСЂРѕС‡РЅРѕ"
 };
 
 const recommendedActionPriorityLabels: Record<Dashboard["recommendedActions"][number]["priority"], string> = {
-  routine: "план",
-  important: "важно",
-  urgent: "срочно"
+  routine: "РїР»Р°РЅ",
+  important: "РІР°Р¶РЅРѕ",
+  urgent: "СЃСЂРѕС‡РЅРѕ"
 };
 
 const appointmentReadinessLabels: Record<Dashboard["appointmentReadiness"][number]["state"], string> = {
-  ready: "готово",
-  needs_attention: "проверить",
-  blocked: "важно"
+  ready: "РіРѕС‚РѕРІРѕ",
+  needs_attention: "РїСЂРѕРІРµСЂРёС‚СЊ",
+  blocked: "РІР°Р¶РЅРѕ"
 };
 
 const settingsTabs = [
-  { id: "clinic", title: "Клиника" },
-  { id: "access", title: "Доступы" },
-  { id: "telegram", title: "ТГ-бот" },
-  { id: "protocols", title: "Протоколы" },
-  { id: "rules", title: "Правила" },
-  { id: "prices", title: "Прайс" },
-  { id: "sources", title: "Источники" },
-  { id: "ai", title: "ИИ" },
-  { id: "imports", title: "Импорт" },
-  { id: "audit", title: "Аудит" }
+  { id: "clinic", title: "РљР»РёРЅРёРєР°" },
+  { id: "access", title: "Р”РѕСЃС‚СѓРїС‹" },
+  { id: "telegram", title: "РўР“-Р±РѕС‚" },
+  { id: "protocols", title: "РџСЂРѕС‚РѕРєРѕР»С‹" },
+  { id: "rules", title: "РџСЂР°РІРёР»Р°" },
+  { id: "prices", title: "РџСЂР°Р№СЃ" },
+  { id: "sources", title: "РСЃС‚РѕС‡РЅРёРєРё" },
+  { id: "ai", title: "РР" },
+  { id: "imports", title: "РРјРїРѕСЂС‚" },
+  { id: "audit", title: "РђСѓРґРёС‚" }
 ] as const;
 type SettingsTab = (typeof settingsTabs)[number]["id"];
 type AdminSecretSessionDomain = "clinical" | "settings" | "schedule" | "telegram";
 type AdminSecretUnlockDomain = AdminSecretSessionDomain | "all";
 
 const onboardingSteps: Array<{ id: OnboardingStep; title: string; detail: string }> = [
-  { id: "intro", title: "Знакомство", detail: "что где лежит" },
-  { id: "role", title: "Роль", detail: "врач и специализация" },
-  { id: "clinic", title: "Клиника", detail: "режим и контакты" },
-  { id: "legal", title: "Документы", detail: "юрданные и лицензия" },
-  { id: "team", title: "Команда", detail: "сотрудники и кресла" },
-  { id: "sources", title: "Импорт", detail: "прайс, снимки, голос" },
-  { id: "telegram", title: "ТГ-бот", detail: "бот, QR и отзывы" },
-  { id: "done", title: "Готово", detail: "проверка перед работой" }
+  { id: "intro", title: "Р—РЅР°РєРѕРјСЃС‚РІРѕ", detail: "С‡С‚Рѕ РіРґРµ Р»РµР¶РёС‚" },
+  { id: "role", title: "Р РѕР»СЊ", detail: "РІСЂР°С‡ Рё СЃРїРµС†РёР°Р»РёР·Р°С†РёСЏ" },
+  { id: "clinic", title: "РљР»РёРЅРёРєР°", detail: "СЂРµР¶РёРј Рё РєРѕРЅС‚Р°РєС‚С‹" },
+  { id: "legal", title: "Р”РѕРєСѓРјРµРЅС‚С‹", detail: "СЋСЂРґР°РЅРЅС‹Рµ Рё Р»РёС†РµРЅР·РёСЏ" },
+  { id: "team", title: "РљРѕРјР°РЅРґР°", detail: "СЃРѕС‚СЂСѓРґРЅРёРєРё Рё РєСЂРµСЃР»Р°" },
+  { id: "sources", title: "РРјРїРѕСЂС‚", detail: "РїСЂР°Р№СЃ, СЃРЅРёРјРєРё, РіРѕР»РѕСЃ" },
+  { id: "telegram", title: "РўР“-Р±РѕС‚", detail: "Р±РѕС‚, QR Рё РѕС‚Р·С‹РІС‹" },
+  { id: "done", title: "Р“РѕС‚РѕРІРѕ", detail: "РїСЂРѕРІРµСЂРєР° РїРµСЂРµРґ СЂР°Р±РѕС‚РѕР№" }
 ];
 
 const roleFocusOrder: StaffRole[] = ["doctor", "administrator", "assistant", "manager", "owner"];
 
 const speechProviderConnectorLabels: Record<SpeechProviderConnector, string> = {
-  client_only: "браузер",
-  server_wired: "сервер",
-  server_cataloged: "каталог",
-  local_bridge: "локальный модуль",
-  local_planned: "локально"
+  client_only: "Р±СЂР°СѓР·РµСЂ",
+  server_wired: "СЃРµСЂРІРµСЂ",
+  server_cataloged: "РєР°С‚Р°Р»РѕРі",
+  local_bridge: "Р»РѕРєР°Р»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ",
+  local_planned: "Р»РѕРєР°Р»СЊРЅРѕ"
 };
 
 function viewFromHash(): AppView {
@@ -5976,7 +6096,7 @@ export function App() {
   const [newChairHasXraySensor, setNewChairHasXraySensor] = useState(true);
   const [newChairHasMicroscope, setNewChairHasMicroscope] = useState(false);
   const [newChairHasSurgeryKit, setNewChairHasSurgeryKit] = useState(false);
-  const [newRuleTitle, setNewRuleTitle] = useState("Кариес требует снимок и изоляцию");
+  const [newRuleTitle, setNewRuleTitle] = useState("РљР°СЂРёРµСЃ С‚СЂРµР±СѓРµС‚ СЃРЅРёРјРѕРє Рё РёР·РѕР»СЏС†РёСЋ");
   const [newRuleAction, setNewRuleAction] = useState<Dashboard["clinicalRules"][number]["action"]>("add_required_service");
   const [newRuleSeverity, setNewRuleSeverity] = useState<Dashboard["clinicalRules"][number]["severity"]>("warning");
   const [newRuleOwnerRole, setNewRuleOwnerRole] = useState<Dashboard["clinicalRules"][number]["ownerRole"]>("doctor");
@@ -5986,8 +6106,8 @@ export function App() {
   const [newRuleRequiredServiceId, setNewRuleRequiredServiceId] = useState("svc-therapy-cofferdam");
   const [newRuleCompletedServiceId, setNewRuleCompletedServiceId] = useState("svc-therapy-caries");
   const [newRuleBlockedServiceId, setNewRuleBlockedServiceId] = useState("svc-prosthetics-crown");
-  const [newRuleWarningText, setNewRuleWarningText] = useState("Проверьте обязательные условия до закрытия приема.");
-  const [newRulePatientText, setNewRulePatientText] = useState("Это правило снижает риск повторного лечения и объясняет пациенту необходимость этапа.");
+  const [newRuleWarningText, setNewRuleWarningText] = useState("РџСЂРѕРІРµСЂСЊС‚Рµ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ СѓСЃР»РѕРІРёСЏ РґРѕ Р·Р°РєСЂС‹С‚РёСЏ РїСЂРёРµРјР°.");
+  const [newRulePatientText, setNewRulePatientText] = useState("Р­С‚Рѕ РїСЂР°РІРёР»Рѕ СЃРЅРёР¶Р°РµС‚ СЂРёСЃРє РїРѕРІС‚РѕСЂРЅРѕРіРѕ Р»РµС‡РµРЅРёСЏ Рё РѕР±СЉСЏСЃРЅСЏРµС‚ РїР°С†РёРµРЅС‚Сѓ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ СЌС‚Р°РїР°.");
   const [paymentAmount, setPaymentAmount] = useState("3800");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialUiPreferences.paymentMethod);
   const [paymentFiscalReceiptNumber, setPaymentFiscalReceiptNumber] = useState("");
@@ -6001,7 +6121,7 @@ export function App() {
   const [paymentPayerInn, setPaymentPayerInn] = useState("");
   const [paymentPayerBirthDate, setPaymentPayerBirthDate] = useState("");
   const [paymentPayerIdentityDocument, setPaymentPayerIdentityDocument] = useState("");
-  const [paymentPayerRelationship, setPaymentPayerRelationship] = useState("пациент");
+  const [paymentPayerRelationship, setPaymentPayerRelationship] = useState("РїР°С†РёРµРЅС‚");
   const [paymentTaxDeductionCode, setPaymentTaxDeductionCode] = useState<"" | "1" | "2">("");
   const [paymentFeedback, setPaymentFeedback] = useState("");
   const [taxDocumentYear, setTaxDocumentYear] = useState(initialUiPreferences.taxDocumentYear);
@@ -6014,7 +6134,7 @@ export function App() {
   );
   const [documentIssueSignedAt, setDocumentIssueSignedAt] = useState(currentLocalDateTimeInputValue);
   const [documentIssueRecipientFullName, setDocumentIssueRecipientFullName] = useState("");
-  const [documentIssueRecipientRole, setDocumentIssueRecipientRole] = useState("пациент/законный представитель");
+  const [documentIssueRecipientRole, setDocumentIssueRecipientRole] = useState("РїР°С†РёРµРЅС‚/Р·Р°РєРѕРЅРЅС‹Р№ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЊ");
   const [documentIssueStaffFullName, setDocumentIssueStaffFullName] = useState(
     initialUiPreferences.documentIssueStaffFullName || initialDocumentIssueSignatureDraft.staffFullName
   );
@@ -6060,37 +6180,37 @@ export function App() {
   const [taxApplicationRequestedAt, setTaxApplicationRequestedAt] = useState(() => toDateTimeLocalValue(new Date().toISOString()));
   const [taxApplicationDuplicateWarningAccepted, setTaxApplicationDuplicateWarningAccepted] = useState(false);
   const [intakeChiefComplaint, setIntakeChiefComplaint] = useState("");
-  const [intakeAllergyStatus, setIntakeAllergyStatus] = useState("Аллергии и нежелательные реакции со слов пациента не отмечены.");
-  const [intakeCurrentMedications, setIntakeCurrentMedications] = useState("Постоянные препараты со слов пациента не принимает.");
-  const [intakeChronicConditions, setIntakeChronicConditions] = useState("Хронические заболевания со слов пациента отрицает.");
+  const [intakeAllergyStatus, setIntakeAllergyStatus] = useState("РђР»Р»РµСЂРіРёРё Рё РЅРµР¶РµР»Р°С‚РµР»СЊРЅС‹Рµ СЂРµР°РєС†РёРё СЃРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РЅРµ РѕС‚РјРµС‡РµРЅС‹.");
+  const [intakeCurrentMedications, setIntakeCurrentMedications] = useState("РџРѕСЃС‚РѕСЏРЅРЅС‹Рµ РїСЂРµРїР°СЂР°С‚С‹ СЃРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РЅРµ РїСЂРёРЅРёРјР°РµС‚.");
+  const [intakeChronicConditions, setIntakeChronicConditions] = useState("РҐСЂРѕРЅРёС‡РµСЃРєРёРµ Р·Р°Р±РѕР»РµРІР°РЅРёСЏ СЃРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РѕС‚СЂРёС†Р°РµС‚.");
   const [intakePregnancyStatus, setIntakePregnancyStatus] = useState<PatientIntakePregnancyStatus>("unknown");
   const [intakeAnticoagulants, setIntakeAnticoagulants] = useState(
-    "Антикоагулянты и препараты, влияющие на кровотечение, со слов пациента не принимает."
+    "РђРЅС‚РёРєРѕР°РіСѓР»СЏРЅС‚С‹ Рё РїСЂРµРїР°СЂР°С‚С‹, РІР»РёСЏСЋС‰РёРµ РЅР° РєСЂРѕРІРѕС‚РµС‡РµРЅРёРµ, СЃРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РЅРµ РїСЂРёРЅРёРјР°РµС‚."
   );
-  const [intakeInfectiousRiskNotes, setIntakeInfectiousRiskNotes] = useState("Инфекционные риски со слов пациента не заявлены.");
+  const [intakeInfectiousRiskNotes, setIntakeInfectiousRiskNotes] = useState("РРЅС„РµРєС†РёРѕРЅРЅС‹Рµ СЂРёСЃРєРё СЃРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РЅРµ Р·Р°СЏРІР»РµРЅС‹.");
   const [intakeCardioEndocrineNotes, setIntakeCardioEndocrineNotes] = useState(
-    "Сердечно-сосудистые, эндокринные и иные системные риски требуют уточнения врачом перед вмешательством."
+    "РЎРµСЂРґРµС‡РЅРѕ-СЃРѕСЃСѓРґРёСЃС‚С‹Рµ, СЌРЅРґРѕРєСЂРёРЅРЅС‹Рµ Рё РёРЅС‹Рµ СЃРёСЃС‚РµРјРЅС‹Рµ СЂРёСЃРєРё С‚СЂРµР±СѓСЋС‚ СѓС‚РѕС‡РЅРµРЅРёСЏ РІСЂР°С‡РѕРј РїРµСЂРµРґ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕРј."
   );
   const [intakeEmergencyContact, setIntakeEmergencyContact] = useState("");
   const [intakeAdditionalNotes, setIntakeAdditionalNotes] = useState("");
   const [intakeAccuracyConfirmed, setIntakeAccuracyConfirmed] = useState(false);
-  const [informedConsentIntervention, setInformedConsentIntervention] = useState("Стоматологическое вмешательство по согласованному плану");
+  const [informedConsentIntervention, setInformedConsentIntervention] = useState("РЎС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРµ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ РїРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРјСѓ РїР»Р°РЅСѓ");
   const [informedConsentToothOrArea, setInformedConsentToothOrArea] = useState("");
   const [informedConsentDiagnosisOrIndication, setInformedConsentDiagnosisOrIndication] = useState("");
   const [informedConsentExpectedBenefit, setInformedConsentExpectedBenefit] = useState(
-    "снижение боли, восстановление функции, профилактика осложнений и сохранение стоматологического здоровья"
+    "СЃРЅРёР¶РµРЅРёРµ Р±РѕР»Рё, РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ С„СѓРЅРєС†РёРё, РїСЂРѕС„РёР»Р°РєС‚РёРєР° РѕСЃР»РѕР¶РЅРµРЅРёР№ Рё СЃРѕС…СЂР°РЅРµРЅРёРµ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРіРѕ Р·РґРѕСЂРѕРІСЊСЏ"
   );
-  const [informedConsentAnesthesia, setInformedConsentAnesthesia] = useState("местная анестезия по показаниям");
+  const [informedConsentAnesthesia, setInformedConsentAnesthesia] = useState("РјРµСЃС‚РЅР°СЏ Р°РЅРµСЃС‚РµР·РёСЏ РїРѕ РїРѕРєР°Р·Р°РЅРёСЏРј");
   const [informedConsentMaterialNotes, setInformedConsentMaterialNotes] = useState("");
-  const [informedConsentTrustedContact, setInformedConsentTrustedContact] = useState("не разрешаю сообщать медицинские сведения третьим лицам");
+  const [informedConsentTrustedContact, setInformedConsentTrustedContact] = useState("РЅРµ СЂР°Р·СЂРµС€Р°СЋ СЃРѕРѕР±С‰Р°С‚СЊ РјРµРґРёС†РёРЅСЃРєРёРµ СЃРІРµРґРµРЅРёСЏ С‚СЂРµС‚СЊРёРј Р»РёС†Р°Рј");
   const [informedConsentRisks, setInformedConsentRisks] = useState(
-    "боль, отек, кровотечение или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного приема или изменения плана лечения\nограниченный прогноз при исходном состоянии зубов и тканей"
+    "Р±РѕР»СЊ, РѕС‚РµРє, РєСЂРѕРІРѕС‚РµС‡РµРЅРёРµ РёР»Рё РІСЂРµРјРµРЅРЅС‹Р№ РґРёСЃРєРѕРјС„РѕСЂС‚\nР°Р»Р»РµСЂРіРёС‡РµСЃРєР°СЏ СЂРµР°РєС†РёСЏ РЅР° РїСЂРµРїР°СЂР°С‚С‹ РёР»Рё РјР°С‚РµСЂРёР°Р»С‹\nРЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РїРѕРІС‚РѕСЂРЅРѕРіРѕ РїСЂРёРµРјР° РёР»Рё РёР·РјРµРЅРµРЅРёСЏ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ\nРѕРіСЂР°РЅРёС‡РµРЅРЅС‹Р№ РїСЂРѕРіРЅРѕР· РїСЂРё РёСЃС…РѕРґРЅРѕРј СЃРѕСЃС‚РѕСЏРЅРёРё Р·СѓР±РѕРІ Рё С‚РєР°РЅРµР№"
   );
   const [informedConsentAlternatives, setInformedConsentAlternatives] = useState(
-    "отложить вмешательство и наблюдать состояние\nполучить второе мнение\nвыбрать альтернативный метод лечения при наличии показаний\nотказаться от вмешательства с фиксацией возможных последствий"
+    "РѕС‚Р»РѕР¶РёС‚СЊ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ Рё РЅР°Р±Р»СЋРґР°С‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ\nРїРѕР»СѓС‡РёС‚СЊ РІС‚РѕСЂРѕРµ РјРЅРµРЅРёРµ\nРІС‹Р±СЂР°С‚СЊ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ РјРµС‚РѕРґ Р»РµС‡РµРЅРёСЏ РїСЂРё РЅР°Р»РёС‡РёРё РїРѕРєР°Р·Р°РЅРёР№\nРѕС‚РєР°Р·Р°С‚СЊСЃСЏ РѕС‚ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР° СЃ С„РёРєСЃР°С†РёРµР№ РІРѕР·РјРѕР¶РЅС‹С… РїРѕСЃР»РµРґСЃС‚РІРёР№"
   );
   const [informedConsentAftercare, setInformedConsentAftercare] = useState(
-    "соблюдать рекомендации врача и режим приема препаратов\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при нарастающей боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок"
+    "СЃРѕР±Р»СЋРґР°С‚СЊ СЂРµРєРѕРјРµРЅРґР°С†РёРё РІСЂР°С‡Р° Рё СЂРµР¶РёРј РїСЂРёРµРјР° РїСЂРµРїР°СЂР°С‚РѕРІ\nРЅРµ РїСЂРёРЅРёРјР°С‚СЊ РїРёС‰Сѓ РґРѕ РѕРєРѕРЅС‡Р°РЅРёСЏ РґРµР№СЃС‚РІРёСЏ Р°РЅРµСЃС‚РµР·РёРё, РµСЃР»Рё РѕРЅР° РїСЂРёРјРµРЅСЏР»Р°СЃСЊ\nСЃРІСЏР·Р°С‚СЊСЃСЏ СЃ РєР»РёРЅРёРєРѕР№ РїСЂРё РЅР°СЂР°СЃС‚Р°СЋС‰РµР№ Р±РѕР»Рё, РѕС‚РµРєРµ, РєСЂРѕРІРѕС‚РµС‡РµРЅРёРё, С‚РµРјРїРµСЂР°С‚СѓСЂРµ РёР»Рё Р°Р»Р»РµСЂРіРёС‡РµСЃРєРѕР№ СЂРµР°РєС†РёРё\nСЏРІРёС‚СЊСЃСЏ РЅР° РєРѕРЅС‚СЂРѕР»СЊРЅС‹Р№ РїСЂРёРµРј РІ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅС‹Р№ СЃСЂРѕРє"
   );
   const [informedConsentDoctorFullName, setInformedConsentDoctorFullName] = useState("");
   const [informedConsentConfirmedAt, setInformedConsentConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
@@ -6099,22 +6219,22 @@ export function App() {
   const [informedConsentWithdrawUnderstood, setInformedConsentWithdrawUnderstood] = useState(false);
   const [procedureConsentProcedureType, setProcedureConsentProcedureType] =
     useState<ProcedureSpecificConsentProcedure>(initialUiPreferences.procedureConsentProcedureType);
-  const [procedureConsentProcedureName, setProcedureConsentProcedureName] = useState("Лечение зуба по согласованному плану");
+  const [procedureConsentProcedureName, setProcedureConsentProcedureName] = useState("Р›РµС‡РµРЅРёРµ Р·СѓР±Р° РїРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРјСѓ РїР»Р°РЅСѓ");
   const [procedureConsentToothOrArea, setProcedureConsentToothOrArea] = useState("");
   const [procedureConsentDiagnosisOrIndication, setProcedureConsentDiagnosisOrIndication] = useState("");
-  const [procedureConsentAnesthesia, setProcedureConsentAnesthesia] = useState("местная анестезия по показаниям");
+  const [procedureConsentAnesthesia, setProcedureConsentAnesthesia] = useState("РјРµСЃС‚РЅР°СЏ Р°РЅРµСЃС‚РµР·РёСЏ РїРѕ РїРѕРєР°Р·Р°РЅРёСЏРј");
   const [procedureConsentMaterials, setProcedureConsentMaterials] = useState("");
   const [procedureConsentPatientRiskFactors, setProcedureConsentPatientRiskFactors] = useState(
-    "аллергии, постоянные препараты и хронические заболевания уточнены перед процедурой\nбеременность, антикоагулянты и инфекционные риски уточнены перед процедурой"
+    "Р°Р»Р»РµСЂРіРёРё, РїРѕСЃС‚РѕСЏРЅРЅС‹Рµ РїСЂРµРїР°СЂР°С‚С‹ Рё С…СЂРѕРЅРёС‡РµСЃРєРёРµ Р·Р°Р±РѕР»РµРІР°РЅРёСЏ СѓС‚РѕС‡РЅРµРЅС‹ РїРµСЂРµРґ РїСЂРѕС†РµРґСѓСЂРѕР№\nР±РµСЂРµРјРµРЅРЅРѕСЃС‚СЊ, Р°РЅС‚РёРєРѕР°РіСѓР»СЏРЅС‚С‹ Рё РёРЅС„РµРєС†РёРѕРЅРЅС‹Рµ СЂРёСЃРєРё СѓС‚РѕС‡РЅРµРЅС‹ РїРµСЂРµРґ РїСЂРѕС†РµРґСѓСЂРѕР№"
   );
   const [procedureConsentSpecificRisks, setProcedureConsentSpecificRisks] = useState(
-    "боль, отек, кровоточивость или временный дискомфорт\nнеобходимость повторного приема, коррекции или изменения плана\nаллергическая реакция на препараты или материалы"
+    "Р±РѕР»СЊ, РѕС‚РµРє, РєСЂРѕРІРѕС‚РѕС‡РёРІРѕСЃС‚СЊ РёР»Рё РІСЂРµРјРµРЅРЅС‹Р№ РґРёСЃРєРѕРјС„РѕСЂС‚\nРЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РїРѕРІС‚РѕСЂРЅРѕРіРѕ РїСЂРёРµРјР°, РєРѕСЂСЂРµРєС†РёРё РёР»Рё РёР·РјРµРЅРµРЅРёСЏ РїР»Р°РЅР°\nР°Р»Р»РµСЂРіРёС‡РµСЃРєР°СЏ СЂРµР°РєС†РёСЏ РЅР° РїСЂРµРїР°СЂР°С‚С‹ РёР»Рё РјР°С‚РµСЂРёР°Р»С‹"
   );
   const [procedureConsentAlternatives, setProcedureConsentAlternatives] = useState(
-    "отложить процедуру и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от процедуры с фиксацией возможных последствий"
+    "РѕС‚Р»РѕР¶РёС‚СЊ РїСЂРѕС†РµРґСѓСЂСѓ Рё РЅР°Р±Р»СЋРґР°С‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ\nРІС‹Р±СЂР°С‚СЊ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ РјРµС‚РѕРґ Р»РµС‡РµРЅРёСЏ РїСЂРё РЅР°Р»РёС‡РёРё РїРѕРєР°Р·Р°РЅРёР№\nРїРѕР»СѓС‡РёС‚СЊ РІС‚РѕСЂРѕРµ РјРЅРµРЅРёРµ\nРѕС‚РєР°Р·Р°С‚СЊСЃСЏ РѕС‚ РїСЂРѕС†РµРґСѓСЂС‹ СЃ С„РёРєСЃР°С†РёРµР№ РІРѕР·РјРѕР¶РЅС‹С… РїРѕСЃР»РµРґСЃС‚РІРёР№"
   );
   const [procedureConsentAftercare, setProcedureConsentAftercare] = useState(
-    "соблюдать рекомендации врача после процедуры\nне принимать пищу до окончания действия анестезии, если она применялась\nсвязаться с клиникой при боли, отеке, кровотечении, температуре или аллергической реакции\nявиться на контрольный прием в согласованный срок"
+    "СЃРѕР±Р»СЋРґР°С‚СЊ СЂРµРєРѕРјРµРЅРґР°С†РёРё РІСЂР°С‡Р° РїРѕСЃР»Рµ РїСЂРѕС†РµРґСѓСЂС‹\nРЅРµ РїСЂРёРЅРёРјР°С‚СЊ РїРёС‰Сѓ РґРѕ РѕРєРѕРЅС‡Р°РЅРёСЏ РґРµР№СЃС‚РІРёСЏ Р°РЅРµСЃС‚РµР·РёРё, РµСЃР»Рё РѕРЅР° РїСЂРёРјРµРЅСЏР»Р°СЃСЊ\nСЃРІСЏР·Р°С‚СЊСЃСЏ СЃ РєР»РёРЅРёРєРѕР№ РїСЂРё Р±РѕР»Рё, РѕС‚РµРєРµ, РєСЂРѕРІРѕС‚РµС‡РµРЅРёРё, С‚РµРјРїРµСЂР°С‚СѓСЂРµ РёР»Рё Р°Р»Р»РµСЂРіРёС‡РµСЃРєРѕР№ СЂРµР°РєС†РёРё\nСЏРІРёС‚СЊСЃСЏ РЅР° РєРѕРЅС‚СЂРѕР»СЊРЅС‹Р№ РїСЂРёРµРј РІ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅС‹Р№ СЃСЂРѕРє"
   );
   const [procedureConsentDoctorFullName, setProcedureConsentDoctorFullName] = useState("");
   const [procedureConsentConfirmedAt, setProcedureConsentConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
@@ -6125,18 +6245,18 @@ export function App() {
   const [paidContractNumber, setPaidContractNumber] = useState("");
   const [paidContractDate, setPaidContractDate] = useState(() => new Date().toLocaleDateString("ru-RU"));
   const [paidContractServiceStart, setPaidContractServiceStart] = useState("");
-  const [paidContractServiceEnd, setPaidContractServiceEnd] = useState("до полного оказания согласованных услуг или подписания акта");
+  const [paidContractServiceEnd, setPaidContractServiceEnd] = useState("РґРѕ РїРѕР»РЅРѕРіРѕ РѕРєР°Р·Р°РЅРёСЏ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅС‹С… СѓСЃР»СѓРі РёР»Рё РїРѕРґРїРёСЃР°РЅРёСЏ Р°РєС‚Р°");
   const [paidContractCustomerFullName, setPaidContractCustomerFullName] = useState("");
   const [paidContractRepresentativeFullName, setPaidContractRepresentativeFullName] = useState("");
   const [paidContractCareReason, setPaidContractCareReason] = useState("");
   const [paidContractServiceScope, setPaidContractServiceScope] = useState("");
   const [paidContractTotalRub, setPaidContractTotalRub] = useState("");
-  const [paidContractPaymentTerms, setPaidContractPaymentTerms] = useState("оплата до или в день оказания услуги с выдачей кассового чека");
-  const [paidContractPriceChangeRules, setPaidContractPriceChangeRules] = useState("изменение объема, состава или стоимости платных услуг оформляется до оказания дополнительным соглашением или новым договором");
-  const [paidContractFreeCareNotice, setPaidContractFreeCareNotice] = useState("пациенту разъяснена возможность получения медицинской помощи в рамках программы государственных гарантий при наличии оснований и маршрутизации");
-  const [paidContractRecommendationWarning, setPaidContractRecommendationWarning] = useState("несоблюдение назначений, режима лечения и рекомендаций врача может снизить качество услуги, изменить сроки лечения или отрицательно сказаться на состоянии здоровья");
-  const [paidContractRefundTerms, setPaidContractRefundTerms] = useState("при отказе пациента от услуг оплачиваются фактически понесенные исполнителем расходы и фактически оказанные услуги; возврат оформляется по кассовым и бухгалтерским правилам клиники");
-  const [paidContractWarrantyTerms, setPaidContractWarrantyTerms] = useState("гарантийные и претензионные условия действуют по локальным правилам клиники, медицинским показаниям и при соблюдении рекомендаций врача");
+  const [paidContractPaymentTerms, setPaidContractPaymentTerms] = useState("РѕРїР»Р°С‚Р° РґРѕ РёР»Рё РІ РґРµРЅСЊ РѕРєР°Р·Р°РЅРёСЏ СѓСЃР»СѓРіРё СЃ РІС‹РґР°С‡РµР№ РєР°СЃСЃРѕРІРѕРіРѕ С‡РµРєР°");
+  const [paidContractPriceChangeRules, setPaidContractPriceChangeRules] = useState("РёР·РјРµРЅРµРЅРёРµ РѕР±СЉРµРјР°, СЃРѕСЃС‚Р°РІР° РёР»Рё СЃС‚РѕРёРјРѕСЃС‚Рё РїР»Р°С‚РЅС‹С… СѓСЃР»СѓРі РѕС„РѕСЂРјР»СЏРµС‚СЃСЏ РґРѕ РѕРєР°Р·Р°РЅРёСЏ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рј СЃРѕРіР»Р°С€РµРЅРёРµРј РёР»Рё РЅРѕРІС‹Рј РґРѕРіРѕРІРѕСЂРѕРј");
+  const [paidContractFreeCareNotice, setPaidContractFreeCareNotice] = useState("РїР°С†РёРµРЅС‚Сѓ СЂР°Р·СЉСЏСЃРЅРµРЅР° РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РїРѕР»СѓС‡РµРЅРёСЏ РјРµРґРёС†РёРЅСЃРєРѕР№ РїРѕРјРѕС‰Рё РІ СЂР°РјРєР°С… РїСЂРѕРіСЂР°РјРјС‹ РіРѕСЃСѓРґР°СЂСЃС‚РІРµРЅРЅС‹С… РіР°СЂР°РЅС‚РёР№ РїСЂРё РЅР°Р»РёС‡РёРё РѕСЃРЅРѕРІР°РЅРёР№ Рё РјР°СЂС€СЂСѓС‚РёР·Р°С†РёРё");
+  const [paidContractRecommendationWarning, setPaidContractRecommendationWarning] = useState("РЅРµСЃРѕР±Р»СЋРґРµРЅРёРµ РЅР°Р·РЅР°С‡РµРЅРёР№, СЂРµР¶РёРјР° Р»РµС‡РµРЅРёСЏ Рё СЂРµРєРѕРјРµРЅРґР°С†РёР№ РІСЂР°С‡Р° РјРѕР¶РµС‚ СЃРЅРёР·РёС‚СЊ РєР°С‡РµСЃС‚РІРѕ СѓСЃР»СѓРіРё, РёР·РјРµРЅРёС‚СЊ СЃСЂРѕРєРё Р»РµС‡РµРЅРёСЏ РёР»Рё РѕС‚СЂРёС†Р°С‚РµР»СЊРЅРѕ СЃРєР°Р·Р°С‚СЊСЃСЏ РЅР° СЃРѕСЃС‚РѕСЏРЅРёРё Р·РґРѕСЂРѕРІСЊСЏ");
+  const [paidContractRefundTerms, setPaidContractRefundTerms] = useState("РїСЂРё РѕС‚РєР°Р·Рµ РїР°С†РёРµРЅС‚Р° РѕС‚ СѓСЃР»СѓРі РѕРїР»Р°С‡РёРІР°СЋС‚СЃСЏ С„Р°РєС‚РёС‡РµСЃРєРё РїРѕРЅРµСЃРµРЅРЅС‹Рµ РёСЃРїРѕР»РЅРёС‚РµР»РµРј СЂР°СЃС…РѕРґС‹ Рё С„Р°РєС‚РёС‡РµСЃРєРё РѕРєР°Р·Р°РЅРЅС‹Рµ СѓСЃР»СѓРіРё; РІРѕР·РІСЂР°С‚ РѕС„РѕСЂРјР»СЏРµС‚СЃСЏ РїРѕ РєР°СЃСЃРѕРІС‹Рј Рё Р±СѓС…РіР°Р»С‚РµСЂСЃРєРёРј РїСЂР°РІРёР»Р°Рј РєР»РёРЅРёРєРё");
+  const [paidContractWarrantyTerms, setPaidContractWarrantyTerms] = useState("РіР°СЂР°РЅС‚РёР№РЅС‹Рµ Рё РїСЂРµС‚РµРЅР·РёРѕРЅРЅС‹Рµ СѓСЃР»РѕРІРёСЏ РґРµР№СЃС‚РІСѓСЋС‚ РїРѕ Р»РѕРєР°Р»СЊРЅС‹Рј РїСЂР°РІРёР»Р°Рј РєР»РёРЅРёРєРё, РјРµРґРёС†РёРЅСЃРєРёРј РїРѕРєР°Р·Р°РЅРёСЏРј Рё РїСЂРё СЃРѕР±Р»СЋРґРµРЅРёРё СЂРµРєРѕРјРµРЅРґР°С†РёР№ РІСЂР°С‡Р°");
   const [paidContractDoctorFullName, setPaidContractDoctorFullName] = useState("");
   const [paidContractSignedAt, setPaidContractSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [paidContractClinicInfoConfirmed, setPaidContractClinicInfoConfirmed] = useState(false);
@@ -6166,13 +6286,13 @@ export function App() {
   const [treatmentEstimateTotalRub, setTreatmentEstimateTotalRub] = useState("");
   const [treatmentEstimateValidUntil, setTreatmentEstimateValidUntil] = useState("");
   const [treatmentEstimatePriceChangeRules, setTreatmentEstimatePriceChangeRules] = useState(
-    "при изменении диагноза, объема вмешательства, материалов, лабораторного этапа или клинических условий стоимость согласуется до оказания дополнительных услуг"
+    "РїСЂРё РёР·РјРµРЅРµРЅРёРё РґРёР°РіРЅРѕР·Р°, РѕР±СЉРµРјР° РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР°, РјР°С‚РµСЂРёР°Р»РѕРІ, Р»Р°Р±РѕСЂР°С‚РѕСЂРЅРѕРіРѕ СЌС‚Р°РїР° РёР»Рё РєР»РёРЅРёС‡РµСЃРєРёС… СѓСЃР»РѕРІРёР№ СЃС‚РѕРёРјРѕСЃС‚СЊ СЃРѕРіР»Р°СЃСѓРµС‚СЃСЏ РґРѕ РѕРєР°Р·Р°РЅРёСЏ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… СѓСЃР»СѓРі"
   );
   const [treatmentEstimateExcludedItems, setTreatmentEstimateExcludedItems] = useState(
-    "услуги, не указанные в строках сметы\nдополнительная диагностика и лабораторные этапы при новых показаниях\nэкстренная помощь и лечение осложнений, не связанных с текущим планом"
+    "СѓСЃР»СѓРіРё, РЅРµ СѓРєР°Р·Р°РЅРЅС‹Рµ РІ СЃС‚СЂРѕРєР°С… СЃРјРµС‚С‹\nРґРѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РґРёР°РіРЅРѕСЃС‚РёРєР° Рё Р»Р°Р±РѕСЂР°С‚РѕСЂРЅС‹Рµ СЌС‚Р°РїС‹ РїСЂРё РЅРѕРІС‹С… РїРѕРєР°Р·Р°РЅРёСЏС…\nСЌРєСЃС‚СЂРµРЅРЅР°СЏ РїРѕРјРѕС‰СЊ Рё Р»РµС‡РµРЅРёРµ РѕСЃР»РѕР¶РЅРµРЅРёР№, РЅРµ СЃРІСЏР·Р°РЅРЅС‹С… СЃ С‚РµРєСѓС‰РёРј РїР»Р°РЅРѕРј"
   );
   const [treatmentEstimatePaymentMilestoneNotes, setTreatmentEstimatePaymentMilestoneNotes] = useState(
-    "оплата по этапам лечения или до оказания услуги; после фактической оплаты выдается кассовый чек"
+    "РѕРїР»Р°С‚Р° РїРѕ СЌС‚Р°РїР°Рј Р»РµС‡РµРЅРёСЏ РёР»Рё РґРѕ РѕРєР°Р·Р°РЅРёСЏ СѓСЃР»СѓРіРё; РїРѕСЃР»Рµ С„Р°РєС‚РёС‡РµСЃРєРѕР№ РѕРїР»Р°С‚С‹ РІС‹РґР°РµС‚СЃСЏ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє"
   );
   const [treatmentEstimateDoctorFullName, setTreatmentEstimateDoctorFullName] = useState("");
   const [treatmentEstimateAdminFullName, setTreatmentEstimateAdminFullName] = useState("");
@@ -6186,9 +6306,9 @@ export function App() {
   const [paymentInvoicePayerFullName, setPaymentInvoicePayerFullName] = useState("");
   const [paymentInvoicePayerPhone, setPaymentInvoicePayerPhone] = useState("");
   const [paymentInvoicePayerEmail, setPaymentInvoicePayerEmail] = useState("");
-  const [paymentInvoicePurpose, setPaymentInvoicePurpose] = useState("оплата стоматологических услуг по согласованному плану лечения");
+  const [paymentInvoicePurpose, setPaymentInvoicePurpose] = useState("РѕРїР»Р°С‚Р° СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРёС… СѓСЃР»СѓРі РїРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРјСѓ РїР»Р°РЅСѓ Р»РµС‡РµРЅРёСЏ");
   const [paymentInvoiceDueDate, setPaymentInvoiceDueDate] = useState(() => dateInputValuePlusDays(7));
-  const [paymentInvoicePaymentTerms, setPaymentInvoicePaymentTerms] = useState("оплата до или в день оказания услуги; после оплаты выдается кассовый чек");
+  const [paymentInvoicePaymentTerms, setPaymentInvoicePaymentTerms] = useState("РѕРїР»Р°С‚Р° РґРѕ РёР»Рё РІ РґРµРЅСЊ РѕРєР°Р·Р°РЅРёСЏ СѓСЃР»СѓРіРё; РїРѕСЃР»Рµ РѕРїР»Р°С‚С‹ РІС‹РґР°РµС‚СЃСЏ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє");
   const [paymentInvoiceBankDetails, setPaymentInvoiceBankDetails] = useState("");
   const [paymentInvoiceQrPayload, setPaymentInvoiceQrPayload] = useState("");
   const [paymentInvoiceCashlessAllowed, setPaymentInvoiceCashlessAllowed] = useState(true);
@@ -6206,7 +6326,7 @@ export function App() {
   const [paymentReceiptTaxSupportRequested, setPaymentReceiptTaxSupportRequested] = useState(
     initialUiPreferences.paymentReceiptTaxSupportRequested
   );
-  const [paymentReceiptPurpose, setPaymentReceiptPurpose] = useState("оплата стоматологических услуг по выбранным фискальным чекам");
+  const [paymentReceiptPurpose, setPaymentReceiptPurpose] = useState("РѕРїР»Р°С‚Р° СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРёС… СѓСЃР»СѓРі РїРѕ РІС‹Р±СЂР°РЅРЅС‹Рј С„РёСЃРєР°Р»СЊРЅС‹Рј С‡РµРєР°Рј");
   const [paymentReceiptIssuedBy, setPaymentReceiptIssuedBy] = useState("");
   const [paymentReceiptPaymentsVerified, setPaymentReceiptPaymentsVerified] = useState(false);
   const [paymentReceiptPayerVerified, setPaymentReceiptPayerVerified] = useState(false);
@@ -6218,10 +6338,10 @@ export function App() {
   const [installmentScheduleTotalRub, setInstallmentScheduleTotalRub] = useState("");
   const [installmentSchedulePrepaidRub, setInstallmentSchedulePrepaidRub] = useState("");
   const [installmentScheduleRows, setInstallmentScheduleRows] = useState(
-    () => `Первый платеж | ${dateInputValuePlusDays(7)} | 0 | запланировано\nФинальный платеж | ${dateInputValuePlusDays(21)} | 0 | запланировано`
+    () => `РџРµСЂРІС‹Р№ РїР»Р°С‚РµР¶ | ${dateInputValuePlusDays(7)} | 0 | Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРѕ\nР¤РёРЅР°Р»СЊРЅС‹Р№ РїР»Р°С‚РµР¶ | ${dateInputValuePlusDays(21)} | 0 | Р·Р°РїР»Р°РЅРёСЂРѕРІР°РЅРѕ`
   );
-  const [installmentScheduleLatePolicy, setInstallmentScheduleLatePolicy] = useState("при переносе срока администратор фиксирует контакт с пациентом, новый срок и основание переноса до наступления просрочки");
-  const [installmentSchedulePaymentMethodNotes, setInstallmentSchedulePaymentMethodNotes] = useState("оплата в кассе клиники, по ссылке или безналично с выдачей кассового чека после оплаты");
+  const [installmentScheduleLatePolicy, setInstallmentScheduleLatePolicy] = useState("РїСЂРё РїРµСЂРµРЅРѕСЃРµ СЃСЂРѕРєР° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ С„РёРєСЃРёСЂСѓРµС‚ РєРѕРЅС‚Р°РєС‚ СЃ РїР°С†РёРµРЅС‚РѕРј, РЅРѕРІС‹Р№ СЃСЂРѕРє Рё РѕСЃРЅРѕРІР°РЅРёРµ РїРµСЂРµРЅРѕСЃР° РґРѕ РЅР°СЃС‚СѓРїР»РµРЅРёСЏ РїСЂРѕСЃСЂРѕС‡РєРё");
+  const [installmentSchedulePaymentMethodNotes, setInstallmentSchedulePaymentMethodNotes] = useState("РѕРїР»Р°С‚Р° РІ РєР°СЃСЃРµ РєР»РёРЅРёРєРё, РїРѕ СЃСЃС‹Р»РєРµ РёР»Рё Р±РµР·РЅР°Р»РёС‡РЅРѕ СЃ РІС‹РґР°С‡РµР№ РєР°СЃСЃРѕРІРѕРіРѕ С‡РµРєР° РїРѕСЃР»Рµ РѕРїР»Р°С‚С‹");
   const [installmentScheduleResponsibleFullName, setInstallmentScheduleResponsibleFullName] = useState("");
   const [installmentScheduleAccepted, setInstallmentScheduleAccepted] = useState(false);
   const [installmentScheduleFiscalNoticeConfirmed, setInstallmentScheduleFiscalNoticeConfirmed] = useState(false);
@@ -6236,10 +6356,10 @@ export function App() {
   const [minorConsentInterventionScope, setMinorConsentInterventionScope] = useState("");
   const [minorConsentDiagnosisOrIndication, setMinorConsentDiagnosisOrIndication] = useState("");
   const [minorConsentRisks, setMinorConsentRisks] = useState(
-    "боль, отек, кровоточивость или временный дискомфорт\nаллергическая реакция на препараты или материалы\nнеобходимость повторного визита или изменения плана лечения"
+    "Р±РѕР»СЊ, РѕС‚РµРє, РєСЂРѕРІРѕС‚РѕС‡РёРІРѕСЃС‚СЊ РёР»Рё РІСЂРµРјРµРЅРЅС‹Р№ РґРёСЃРєРѕРјС„РѕСЂС‚\nР°Р»Р»РµСЂРіРёС‡РµСЃРєР°СЏ СЂРµР°РєС†РёСЏ РЅР° РїСЂРµРїР°СЂР°С‚С‹ РёР»Рё РјР°С‚РµСЂРёР°Р»С‹\nРЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РїРѕРІС‚РѕСЂРЅРѕРіРѕ РІРёР·РёС‚Р° РёР»Рё РёР·РјРµРЅРµРЅРёСЏ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ"
   );
   const [minorConsentAlternatives, setMinorConsentAlternatives] = useState(
-    "отложить вмешательство и наблюдать состояние\nвыбрать альтернативный метод лечения при наличии показаний\nполучить второе мнение\nотказаться от вмешательства с фиксацией рисков"
+    "РѕС‚Р»РѕР¶РёС‚СЊ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ Рё РЅР°Р±Р»СЋРґР°С‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ\nРІС‹Р±СЂР°С‚СЊ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ РјРµС‚РѕРґ Р»РµС‡РµРЅРёСЏ РїСЂРё РЅР°Р»РёС‡РёРё РїРѕРєР°Р·Р°РЅРёР№\nРїРѕР»СѓС‡РёС‚СЊ РІС‚РѕСЂРѕРµ РјРЅРµРЅРёРµ\nРѕС‚РєР°Р·Р°С‚СЊСЃСЏ РѕС‚ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР° СЃ С„РёРєСЃР°С†РёРµР№ СЂРёСЃРєРѕРІ"
   );
   const [minorConsentDoctorFullName, setMinorConsentDoctorFullName] = useState("");
   const [minorConsentSignedAt, setMinorConsentSignedAt] = useState(() => new Date().toLocaleString("ru-RU"));
@@ -6252,16 +6372,16 @@ export function App() {
   const [warrantyCompletedAt, setWarrantyCompletedAt] = useState("");
   const [warrantyTeethOrArea, setWarrantyTeethOrArea] = useState("");
   const [warrantyMaterialsOrSystems, setWarrantyMaterialsOrSystems] = useState("");
-  const [warrantyPeriod, setWarrantyPeriod] = useState("по локальному гарантийному положению клиники и виду выполненной работы");
-  const [warrantyControlVisitSchedule, setWarrantyControlVisitSchedule] = useState("контрольный осмотр по назначению врача; профессиональная гигиена по индивидуальному графику");
+  const [warrantyPeriod, setWarrantyPeriod] = useState("РїРѕ Р»РѕРєР°Р»СЊРЅРѕРјСѓ РіР°СЂР°РЅС‚РёР№РЅРѕРјСѓ РїРѕР»РѕР¶РµРЅРёСЋ РєР»РёРЅРёРєРё Рё РІРёРґСѓ РІС‹РїРѕР»РЅРµРЅРЅРѕР№ СЂР°Р±РѕС‚С‹");
+  const [warrantyControlVisitSchedule, setWarrantyControlVisitSchedule] = useState("РєРѕРЅС‚СЂРѕР»СЊРЅС‹Р№ РѕСЃРјРѕС‚СЂ РїРѕ РЅР°Р·РЅР°С‡РµРЅРёСЋ РІСЂР°С‡Р°; РїСЂРѕС„РµСЃСЃРёРѕРЅР°Р»СЊРЅР°СЏ РіРёРіРёРµРЅР° РїРѕ РёРЅРґРёРІРёРґСѓР°Р»СЊРЅРѕРјСѓ РіСЂР°С„РёРєСѓ");
   const [warrantyPatientObligations, setWarrantyPatientObligations] = useState(
-    "соблюдать рекомендации врача и режим после лечения\nприходить на контрольные визиты в согласованные сроки\nподдерживать домашнюю гигиену и профессиональную гигиену\nне выполнять самостоятельную коррекцию конструкции или реставрации"
+    "СЃРѕР±Р»СЋРґР°С‚СЊ СЂРµРєРѕРјРµРЅРґР°С†РёРё РІСЂР°С‡Р° Рё СЂРµР¶РёРј РїРѕСЃР»Рµ Р»РµС‡РµРЅРёСЏ\nРїСЂРёС…РѕРґРёС‚СЊ РЅР° РєРѕРЅС‚СЂРѕР»СЊРЅС‹Рµ РІРёР·РёС‚С‹ РІ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅС‹Рµ СЃСЂРѕРєРё\nРїРѕРґРґРµСЂР¶РёРІР°С‚СЊ РґРѕРјР°С€РЅСЋСЋ РіРёРіРёРµРЅСѓ Рё РїСЂРѕС„РµСЃСЃРёРѕРЅР°Р»СЊРЅСѓСЋ РіРёРіРёРµРЅСѓ\nРЅРµ РІС‹РїРѕР»РЅСЏС‚СЊ СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅСѓСЋ РєРѕСЂСЂРµРєС†РёСЋ РєРѕРЅСЃС‚СЂСѓРєС†РёРё РёР»Рё СЂРµСЃС‚Р°РІСЂР°С†РёРё"
   );
   const [warrantyExcludedRiskFactors, setWarrantyExcludedRiskFactors] = useState(
-    "травма, перегрузка, бруксизм или вредные привычки\nновые заболевания или отказ от рекомендованного лечения\nнарушение графика контрольных визитов\nсамостоятельное вмешательство или лечение в другой клинике без согласования"
+    "С‚СЂР°РІРјР°, РїРµСЂРµРіСЂСѓР·РєР°, Р±СЂСѓРєСЃРёР·Рј РёР»Рё РІСЂРµРґРЅС‹Рµ РїСЂРёРІС‹С‡РєРё\nРЅРѕРІС‹Рµ Р·Р°Р±РѕР»РµРІР°РЅРёСЏ РёР»Рё РѕС‚РєР°Р· РѕС‚ СЂРµРєРѕРјРµРЅРґРѕРІР°РЅРЅРѕРіРѕ Р»РµС‡РµРЅРёСЏ\nРЅР°СЂСѓС€РµРЅРёРµ РіСЂР°С„РёРєР° РєРѕРЅС‚СЂРѕР»СЊРЅС‹С… РІРёР·РёС‚РѕРІ\nСЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕРµ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ РёР»Рё Р»РµС‡РµРЅРёРµ РІ РґСЂСѓРіРѕР№ РєР»РёРЅРёРєРµ Р±РµР· СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ"
   );
   const [warrantyUrgentContactReasons, setWarrantyUrgentContactReasons] = useState(
-    "острая боль или нарастающий отек\nподвижность, скол или выпадение конструкции\nкровотечение, температура или аллергическая реакция\nнарушение прикуса или невозможность пользоваться конструкцией"
+    "РѕСЃС‚СЂР°СЏ Р±РѕР»СЊ РёР»Рё РЅР°СЂР°СЃС‚Р°СЋС‰РёР№ РѕС‚РµРє\nРїРѕРґРІРёР¶РЅРѕСЃС‚СЊ, СЃРєРѕР» РёР»Рё РІС‹РїР°РґРµРЅРёРµ РєРѕРЅСЃС‚СЂСѓРєС†РёРё\nРєСЂРѕРІРѕС‚РµС‡РµРЅРёРµ, С‚РµРјРїРµСЂР°С‚СѓСЂР° РёР»Рё Р°Р»Р»РµСЂРіРёС‡РµСЃРєР°СЏ СЂРµР°РєС†РёСЏ\nРЅР°СЂСѓС€РµРЅРёРµ РїСЂРёРєСѓСЃР° РёР»Рё РЅРµРІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РєРѕРЅСЃС‚СЂСѓРєС†РёРµР№"
   );
   const [warrantyLinkedActOrContract, setWarrantyLinkedActOrContract] = useState("");
   const [warrantyDoctorFullName, setWarrantyDoctorFullName] = useState("");
@@ -6273,44 +6393,44 @@ export function App() {
   const [treatmentPlanClinicalReason, setTreatmentPlanClinicalReason] = useState("");
   const [treatmentPlanDiagnosisSummary, setTreatmentPlanDiagnosisSummary] = useState("");
   const [treatmentPlanTeethOrArea, setTreatmentPlanTeethOrArea] = useState("");
-  const [treatmentPlanGoals, setTreatmentPlanGoals] = useState("устранить жалобы пациента\nвосстановить функцию и герметичность\nснизить риск осложнений и повторного обращения");
+  const [treatmentPlanGoals, setTreatmentPlanGoals] = useState("СѓСЃС‚СЂР°РЅРёС‚СЊ Р¶Р°Р»РѕР±С‹ РїР°С†РёРµРЅС‚Р°\nРІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ С„СѓРЅРєС†РёСЋ Рё РіРµСЂРјРµС‚РёС‡РЅРѕСЃС‚СЊ\nСЃРЅРёР·РёС‚СЊ СЂРёСЃРє РѕСЃР»РѕР¶РЅРµРЅРёР№ Рё РїРѕРІС‚РѕСЂРЅРѕРіРѕ РѕР±СЂР°С‰РµРЅРёСЏ");
   const [treatmentPlanStages, setTreatmentPlanStages] = useState(
-    "Диагностика и подготовка | осмотр, снимки, фото-протокол, согласование объема | до начала лечения | уточнить диагноз и ограничения | 0\nОсновной этап | услуги по выбранному плану лечения | по расписанию клиники | объем корректируется по клинической ситуации | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | оценка результата и гигиены | 0"
+    "Р”РёР°РіРЅРѕСЃС‚РёРєР° Рё РїРѕРґРіРѕС‚РѕРІРєР° | РѕСЃРјРѕС‚СЂ, СЃРЅРёРјРєРё, С„РѕС‚Рѕ-РїСЂРѕС‚РѕРєРѕР», СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РѕР±СЉРµРјР° | РґРѕ РЅР°С‡Р°Р»Р° Р»РµС‡РµРЅРёСЏ | СѓС‚РѕС‡РЅРёС‚СЊ РґРёР°РіРЅРѕР· Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ | 0\nРћСЃРЅРѕРІРЅРѕР№ СЌС‚Р°Рї | СѓСЃР»СѓРіРё РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ РїР»Р°РЅСѓ Р»РµС‡РµРЅРёСЏ | РїРѕ СЂР°СЃРїРёСЃР°РЅРёСЋ РєР»РёРЅРёРєРё | РѕР±СЉРµРј РєРѕСЂСЂРµРєС‚РёСЂСѓРµС‚СЃСЏ РїРѕ РєР»РёРЅРёС‡РµСЃРєРѕР№ СЃРёС‚СѓР°С†РёРё | 0\nРљРѕРЅС‚СЂРѕР»СЊ | РєРѕРЅС‚СЂРѕР»СЊРЅС‹Р№ РѕСЃРјРѕС‚СЂ Рё СЂРµРєРѕРјРµРЅРґР°С†РёРё | РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ СЌС‚Р°РїР° | РѕС†РµРЅРєР° СЂРµР·СѓР»СЊС‚Р°С‚Р° Рё РіРёРіРёРµРЅС‹ | 0"
   );
   const [treatmentPlanEstimatedTotalRub, setTreatmentPlanEstimatedTotalRub] = useState("");
   const [treatmentPlanAlternatives, setTreatmentPlanAlternatives] = useState(
-    "наблюдение без активного лечения\nальтернативный материал или метод лечения\nпоэтапное лечение с переносом части работ\nполучение второго мнения\nотказ от лечения с фиксацией рисков"
+    "РЅР°Р±Р»СЋРґРµРЅРёРµ Р±РµР· Р°РєС‚РёРІРЅРѕРіРѕ Р»РµС‡РµРЅРёСЏ\nР°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ РјР°С‚РµСЂРёР°Р» РёР»Рё РјРµС‚РѕРґ Р»РµС‡РµРЅРёСЏ\nРїРѕСЌС‚Р°РїРЅРѕРµ Р»РµС‡РµРЅРёРµ СЃ РїРµСЂРµРЅРѕСЃРѕРј С‡Р°СЃС‚Рё СЂР°Р±РѕС‚\nРїРѕР»СѓС‡РµРЅРёРµ РІС‚РѕСЂРѕРіРѕ РјРЅРµРЅРёСЏ\nРѕС‚РєР°Р· РѕС‚ Р»РµС‡РµРЅРёСЏ СЃ С„РёРєСЃР°С†РёРµР№ СЂРёСЃРєРѕРІ"
   );
   const [treatmentPlanRisks, setTreatmentPlanRisks] = useState(
-    "изменение плана при новых клинических данных или снимках\nнеобходимость дополнительного визита, консультации или смежного специалиста\nизменение стоимости при изменении объема, материалов или сроков\nограниченный прогноз при исходном состоянии зубов и тканей"
+    "РёР·РјРµРЅРµРЅРёРµ РїР»Р°РЅР° РїСЂРё РЅРѕРІС‹С… РєР»РёРЅРёС‡РµСЃРєРёС… РґР°РЅРЅС‹С… РёР»Рё СЃРЅРёРјРєР°С…\nРЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕРіРѕ РІРёР·РёС‚Р°, РєРѕРЅСЃСѓР»СЊС‚Р°С†РёРё РёР»Рё СЃРјРµР¶РЅРѕРіРѕ СЃРїРµС†РёР°Р»РёСЃС‚Р°\nРёР·РјРµРЅРµРЅРёРµ СЃС‚РѕРёРјРѕСЃС‚Рё РїСЂРё РёР·РјРµРЅРµРЅРёРё РѕР±СЉРµРјР°, РјР°С‚РµСЂРёР°Р»РѕРІ РёР»Рё СЃСЂРѕРєРѕРІ\nРѕРіСЂР°РЅРёС‡РµРЅРЅС‹Р№ РїСЂРѕРіРЅРѕР· РїСЂРё РёСЃС…РѕРґРЅРѕРј СЃРѕСЃС‚РѕСЏРЅРёРё Р·СѓР±РѕРІ Рё С‚РєР°РЅРµР№"
   );
   const [treatmentPlanPrognosis, setTreatmentPlanPrognosis] = useState(
-    "прогноз зависит от исходного состояния зубов, тканей, гигиены, выполнения рекомендаций и явки на контрольные визиты"
+    "РїСЂРѕРіРЅРѕР· Р·Р°РІРёСЃРёС‚ РѕС‚ РёСЃС…РѕРґРЅРѕРіРѕ СЃРѕСЃС‚РѕСЏРЅРёСЏ Р·СѓР±РѕРІ, С‚РєР°РЅРµР№, РіРёРіРёРµРЅС‹, РІС‹РїРѕР»РЅРµРЅРёСЏ СЂРµРєРѕРјРµРЅРґР°С†РёР№ Рё СЏРІРєРё РЅР° РєРѕРЅС‚СЂРѕР»СЊРЅС‹Рµ РІРёР·РёС‚С‹"
   );
-  const [treatmentPlanControlPlan, setTreatmentPlanControlPlan] = useState("контрольный осмотр после завершения этапа и далее по индивидуальному графику");
+  const [treatmentPlanControlPlan, setTreatmentPlanControlPlan] = useState("РєРѕРЅС‚СЂРѕР»СЊРЅС‹Р№ РѕСЃРјРѕС‚СЂ РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ СЌС‚Р°РїР° Рё РґР°Р»РµРµ РїРѕ РёРЅРґРёРІРёРґСѓР°Р»СЊРЅРѕРјСѓ РіСЂР°С„РёРєСѓ");
   const [treatmentPlanDoctorFullName, setTreatmentPlanDoctorFullName] = useState("");
   const [treatmentPlanPlannedAt, setTreatmentPlanPlannedAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [treatmentPlanQuestionsAnswered, setTreatmentPlanQuestionsAnswered] = useState(false);
   const [treatmentPlanSeparateConsentAcknowledged, setTreatmentPlanSeparateConsentAcknowledged] = useState(false);
   const [treatmentPlanNewApprovalAcknowledged, setTreatmentPlanNewApprovalAcknowledged] = useState(false);
   const [treatmentAcceptanceVariant, setTreatmentAcceptanceVariant] = useState<TreatmentPlanAcceptanceVariant>("standard");
-  const [treatmentAcceptanceClinicalGoal, setTreatmentAcceptanceClinicalGoal] = useState("санация, восстановление функции и профилактика осложнений");
+  const [treatmentAcceptanceClinicalGoal, setTreatmentAcceptanceClinicalGoal] = useState("СЃР°РЅР°С†РёСЏ, РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ С„СѓРЅРєС†РёРё Рё РїСЂРѕС„РёР»Р°РєС‚РёРєР° РѕСЃР»РѕР¶РЅРµРЅРёР№");
   const [treatmentAcceptanceDiagnosisSummary, setTreatmentAcceptanceDiagnosisSummary] = useState("");
   const [treatmentAcceptanceTeethOrArea, setTreatmentAcceptanceTeethOrArea] = useState("");
   const [treatmentAcceptanceStages, setTreatmentAcceptanceStages] = useState(
-    "Диагностика и подготовка | осмотр, снимки, фотопротокол, согласование объема | до начала лечения | 0\nОсновной этап лечения | услуги по выбранному плану лечения | по расписанию клиники | 0\nКонтроль | контрольный осмотр и рекомендации | после завершения этапа | 0"
+    "Р”РёР°РіРЅРѕСЃС‚РёРєР° Рё РїРѕРґРіРѕС‚РѕРІРєР° | РѕСЃРјРѕС‚СЂ, СЃРЅРёРјРєРё, С„РѕС‚РѕРїСЂРѕС‚РѕРєРѕР», СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РѕР±СЉРµРјР° | РґРѕ РЅР°С‡Р°Р»Р° Р»РµС‡РµРЅРёСЏ | 0\nРћСЃРЅРѕРІРЅРѕР№ СЌС‚Р°Рї Р»РµС‡РµРЅРёСЏ | СѓСЃР»СѓРіРё РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ РїР»Р°РЅСѓ Р»РµС‡РµРЅРёСЏ | РїРѕ СЂР°СЃРїРёСЃР°РЅРёСЋ РєР»РёРЅРёРєРё | 0\nРљРѕРЅС‚СЂРѕР»СЊ | РєРѕРЅС‚СЂРѕР»СЊРЅС‹Р№ РѕСЃРјРѕС‚СЂ Рё СЂРµРєРѕРјРµРЅРґР°С†РёРё | РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ СЌС‚Р°РїР° | 0"
   );
   const [treatmentAcceptanceEstimatedTotalRub, setTreatmentAcceptanceEstimatedTotalRub] = useState("");
   const [treatmentAcceptanceEstimateValidUntil, setTreatmentAcceptanceEstimateValidUntil] = useState("");
-  const [treatmentAcceptancePaymentTerms, setTreatmentAcceptancePaymentTerms] = useState("оплата по кассовому чеку до или в день оказания услуг; рассрочка или кредит оформляются отдельным соглашением");
+  const [treatmentAcceptancePaymentTerms, setTreatmentAcceptancePaymentTerms] = useState("РѕРїР»Р°С‚Р° РїРѕ РєР°СЃСЃРѕРІРѕРјСѓ С‡РµРєСѓ РґРѕ РёР»Рё РІ РґРµРЅСЊ РѕРєР°Р·Р°РЅРёСЏ СѓСЃР»СѓРі; СЂР°СЃСЃСЂРѕС‡РєР° РёР»Рё РєСЂРµРґРёС‚ РѕС„РѕСЂРјР»СЏСЋС‚СЃСЏ РѕС‚РґРµР»СЊРЅС‹Рј СЃРѕРіР»Р°С€РµРЅРёРµРј");
   const [treatmentAcceptanceRejectedAlternatives, setTreatmentAcceptanceRejectedAlternatives] = useState(
-    "наблюдение без активного лечения\nперенос лечения\nальтернативный материал или конструкция\nполучение второго мнения"
+    "РЅР°Р±Р»СЋРґРµРЅРёРµ Р±РµР· Р°РєС‚РёРІРЅРѕРіРѕ Р»РµС‡РµРЅРёСЏ\nРїРµСЂРµРЅРѕСЃ Р»РµС‡РµРЅРёСЏ\nР°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ РјР°С‚РµСЂРёР°Р» РёР»Рё РєРѕРЅСЃС‚СЂСѓРєС†РёСЏ\nРїРѕР»СѓС‡РµРЅРёРµ РІС‚РѕСЂРѕРіРѕ РјРЅРµРЅРёСЏ"
   );
   const [treatmentAcceptanceRisks, setTreatmentAcceptanceRisks] = useState(
-    "изменение плана при новых клинических данных или снимках\nизменение стоимости при изменении объема, материалов или сроков\nнеобходимость дополнительных визитов, коррекции или смежного специалиста\nограниченный прогноз при исходном состоянии зубов и тканей"
+    "РёР·РјРµРЅРµРЅРёРµ РїР»Р°РЅР° РїСЂРё РЅРѕРІС‹С… РєР»РёРЅРёС‡РµСЃРєРёС… РґР°РЅРЅС‹С… РёР»Рё СЃРЅРёРјРєР°С…\nРёР·РјРµРЅРµРЅРёРµ СЃС‚РѕРёРјРѕСЃС‚Рё РїСЂРё РёР·РјРµРЅРµРЅРёРё РѕР±СЉРµРјР°, РјР°С‚РµСЂРёР°Р»РѕРІ РёР»Рё СЃСЂРѕРєРѕРІ\nРЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РІРёР·РёС‚РѕРІ, РєРѕСЂСЂРµРєС†РёРё РёР»Рё СЃРјРµР¶РЅРѕРіРѕ СЃРїРµС†РёР°Р»РёСЃС‚Р°\nРѕРіСЂР°РЅРёС‡РµРЅРЅС‹Р№ РїСЂРѕРіРЅРѕР· РїСЂРё РёСЃС…РѕРґРЅРѕРј СЃРѕСЃС‚РѕСЏРЅРёРё Р·СѓР±РѕРІ Рё С‚РєР°РЅРµР№"
   );
   const [treatmentAcceptanceWarrantyTerms, setTreatmentAcceptanceWarrantyTerms] = useState(
-    "контрольные визиты обязательны; гарантийные условия действуют в пределах выбранного плана, соблюдения рекомендаций, гигиены и сроков контрольных посещений"
+    "РєРѕРЅС‚СЂРѕР»СЊРЅС‹Рµ РІРёР·РёС‚С‹ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹; РіР°СЂР°РЅС‚РёР№РЅС‹Рµ СѓСЃР»РѕРІРёСЏ РґРµР№СЃС‚РІСѓСЋС‚ РІ РїСЂРµРґРµР»Р°С… РІС‹Р±СЂР°РЅРЅРѕРіРѕ РїР»Р°РЅР°, СЃРѕР±Р»СЋРґРµРЅРёСЏ СЂРµРєРѕРјРµРЅРґР°С†РёР№, РіРёРіРёРµРЅС‹ Рё СЃСЂРѕРєРѕРІ РєРѕРЅС‚СЂРѕР»СЊРЅС‹С… РїРѕСЃРµС‰РµРЅРёР№"
   );
   const [treatmentAcceptanceDoctorFullName, setTreatmentAcceptanceDoctorFullName] = useState("");
   const [treatmentAcceptanceAcceptedAt, setTreatmentAcceptanceAcceptedAt] = useState(() => new Date().toLocaleString("ru-RU"));
@@ -6332,22 +6452,22 @@ export function App() {
   const [postVisitNutritionInstructions, setPostVisitNutritionInstructions] = useState(postVisitCarePresets.filling_restoration.nutritionInstructions);
   const [postVisitUrgentWarningSigns, setPostVisitUrgentWarningSigns] = useState(postVisitCarePresets.filling_restoration.urgentWarningSigns);
   const [postVisitFollowUpAt, setPostVisitFollowUpAt] = useState(postVisitCarePresets.filling_restoration.plannedFollowUpAt);
-  const [postVisitClinicContactInstruction, setPostVisitClinicContactInstruction] = useState("связаться с клиникой по телефону или через Telegram-бот клиники");
+  const [postVisitClinicContactInstruction, setPostVisitClinicContactInstruction] = useState("СЃРІСЏР·Р°С‚СЊСЃСЏ СЃ РєР»РёРЅРёРєРѕР№ РїРѕ С‚РµР»РµС„РѕРЅСѓ РёР»Рё С‡РµСЂРµР· Telegram-Р±РѕС‚ РєР»РёРЅРёРєРё");
   const [postVisitTelegramSummary, setPostVisitTelegramSummary] = useState(postVisitCarePresets.filling_restoration.telegramSummary);
   const [postVisitPrintedCopyReceived, setPostVisitPrintedCopyReceived] = useState(false);
   const [postVisitUrgentSignsUnderstood, setPostVisitUrgentSignsUnderstood] = useState(false);
   const [postVisitTelegramSafe, setPostVisitTelegramSafe] = useState(false);
-  const [anesthesiaMethod, setAnesthesiaMethod] = useState("Инфильтрационная / проводниковая");
-  const [anesthesiaAnesthetic, setAnesthesiaAnesthetic] = useState("Артикаин 4%");
+  const [anesthesiaMethod, setAnesthesiaMethod] = useState("РРЅС„РёР»СЊС‚СЂР°С†РёРѕРЅРЅР°СЏ / РїСЂРѕРІРѕРґРЅРёРєРѕРІР°СЏ");
+  const [anesthesiaAnesthetic, setAnesthesiaAnesthetic] = useState("РђСЂС‚РёРєР°РёРЅ 4%");
   const [anesthesiaVasoconstrictor, setAnesthesiaVasoconstrictor] = useState("1:100000");
   const [anesthesiaZone, setAnesthesiaZone] = useState("");
-  const [anesthesiaAllergyStatus, setAnesthesiaAllergyStatus] = useState("Аллергия на местные анестетики со слов пациента не отмечена.");
+  const [anesthesiaAllergyStatus, setAnesthesiaAllergyStatus] = useState("РђР»Р»РµСЂРіРёСЏ РЅР° РјРµСЃС‚РЅС‹Рµ Р°РЅРµСЃС‚РµС‚РёРєРё СЃРѕ СЃР»РѕРІ РїР°С†РёРµРЅС‚Р° РЅРµ РѕС‚РјРµС‡РµРЅР°.");
   const [anesthesiaRestrictionNotes, setAnesthesiaRestrictionNotes] = useState("");
   const [anesthesiaDoseTime, setAnesthesiaDoseTime] = useState(() =>
     new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
   );
   const [anesthesiaDoseMl, setAnesthesiaDoseMl] = useState("1.7");
-  const [anesthesiaReaction, setAnesthesiaReaction] = useState("Без особенностей");
+  const [anesthesiaReaction, setAnesthesiaReaction] = useState("Р‘РµР· РѕСЃРѕР±РµРЅРЅРѕСЃС‚РµР№");
   const [anesthesiaRisksExplained, setAnesthesiaRisksExplained] = useState(false);
   const [anesthesiaAllergyRestrictionsChecked, setAnesthesiaAllergyRestrictionsChecked] = useState(false);
   const [anesthesiaConsentConfirmed, setAnesthesiaConsentConfirmed] = useState(false);
@@ -6356,10 +6476,10 @@ export function App() {
   const [prescriptionInstructions, setPrescriptionInstructions] = useState("");
   const [prescriptionDuration, setPrescriptionDuration] = useState("");
   const [prescriptionSafetyNotes, setPrescriptionSafetyNotes] = useState(
-    "Проверить аллергоанамнез до выдачи.\nОбъяснить режим приема, ограничения и действия при нежелательной реакции."
+    "РџСЂРѕРІРµСЂРёС‚СЊ Р°Р»Р»РµСЂРіРѕР°РЅР°РјРЅРµР· РґРѕ РІС‹РґР°С‡Рё.\nРћР±СЉСЏСЃРЅРёС‚СЊ СЂРµР¶РёРј РїСЂРёРµРјР°, РѕРіСЂР°РЅРёС‡РµРЅРёСЏ Рё РґРµР№СЃС‚РІРёСЏ РїСЂРё РЅРµР¶РµР»Р°С‚РµР»СЊРЅРѕР№ СЂРµР°РєС†РёРё."
   );
   const [prescriptionUrgentContactReason, setPrescriptionUrgentContactReason] = useState(
-    "Связаться с клиникой при отеке, сыпи, нарастающей боли, кровотечении или температуре."
+    "РЎРІСЏР·Р°С‚СЊСЃСЏ СЃ РєР»РёРЅРёРєРѕР№ РїСЂРё РѕС‚РµРєРµ, СЃС‹РїРё, РЅР°СЂР°СЃС‚Р°СЋС‰РµР№ Р±РѕР»Рё, РєСЂРѕРІРѕС‚РµС‡РµРЅРёРё РёР»Рё С‚РµРјРїРµСЂР°С‚СѓСЂРµ."
   );
   const [labWorkType, setLabWorkType] = useState("");
   const [labTeethOrArea, setLabTeethOrArea] = useState("");
@@ -6381,7 +6501,7 @@ export function App() {
     "scan"
   ]);
   const [photoVideoRevocationChannel, setPhotoVideoRevocationChannel] = useState(
-    "письменное заявление в клинике или защищенное обращение через портал пациента"
+    "РїРёСЃСЊРјРµРЅРЅРѕРµ Р·Р°СЏРІР»РµРЅРёРµ РІ РєР»РёРЅРёРєРµ РёР»Рё Р·Р°С‰РёС‰РµРЅРЅРѕРµ РѕР±СЂР°С‰РµРЅРёРµ С‡РµСЂРµР· РїРѕСЂС‚Р°Р» РїР°С†РёРµРЅС‚Р°"
   );
   const [photoVideoScopeNotes, setPhotoVideoScopeNotes] = useState("");
   const [xrayStudyType, setXrayStudyType] = useState<XrayCbctReferralStudyType>("cbct");
@@ -6390,7 +6510,7 @@ export function App() {
   const [xrayIndication, setXrayIndication] = useState("");
   const [xrayPregnancyStatus, setXrayPregnancyStatus] = useState<XrayCbctReferralPregnancyStatus>("unknown");
   const [xraySafetyNotes, setXraySafetyNotes] = useState(
-    "Перед исследованием уточнить беременность, ограничения и необходимость средств защиты."
+    "РџРµСЂРµРґ РёСЃСЃР»РµРґРѕРІР°РЅРёРµРј СѓС‚РѕС‡РЅРёС‚СЊ Р±РµСЂРµРјРµРЅРЅРѕСЃС‚СЊ, РѕРіСЂР°РЅРёС‡РµРЅРёСЏ Рё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ СЃСЂРµРґСЃС‚РІ Р·Р°С‰РёС‚С‹."
   );
   const [xrayPriority, setXrayPriority] = useState<XrayCbctReferralPriority>("routine");
   const [xrayIncludeDicomExport, setXrayIncludeDicomExport] = useState(true);
@@ -6408,7 +6528,7 @@ export function App() {
   const [recordExtractRecommendations, setRecordExtractRecommendations] = useState("");
   const [recordExtractDoctorFullName, setRecordExtractDoctorFullName] = useState("");
   const [recordExtractRecipientFullName, setRecordExtractRecipientFullName] = useState("");
-  const [recordExtractRecipientAuthority, setRecordExtractRecipientAuthority] = useState("пациент лично");
+  const [recordExtractRecipientAuthority, setRecordExtractRecipientAuthority] = useState("РїР°С†РёРµРЅС‚ Р»РёС‡РЅРѕ");
   const [recordExtractIssuedAt, setRecordExtractIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [recordExtractPreparedFromSignedRecords, setRecordExtractPreparedFromSignedRecords] = useState(false);
   const [recordExtractThirdPartyDataChecked, setRecordExtractThirdPartyDataChecked] = useState(false);
@@ -6434,13 +6554,13 @@ export function App() {
   const [outpatient025uFinalEpicrisis, setOutpatient025uFinalEpicrisis] = useState("");
   const [outpatient025uOfficialForm274nChecked, setOutpatient025uOfficialForm274nChecked] = useState(false);
   const [outpatient025uThirdPartyDataChecked, setOutpatient025uThirdPartyDataChecked] = useState(false);
-  const [copyRequestDocumentTypes, setCopyRequestDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или КТ-архив");
+  const [copyRequestDocumentTypes, setCopyRequestDocumentTypes] = useState("Р’С‹РїРёСЃРєР° РёР· РјРµРґРёС†РёРЅСЃРєРѕР№ РєР°СЂС‚С‹\nРљРѕРїРёСЏ СЃРЅРёРјРєРѕРІ РёР»Рё РљРў-Р°СЂС…РёРІ");
   const [copyRequestPeriodStart, setCopyRequestPeriodStart] = useState("");
   const [copyRequestPeriodEnd, setCopyRequestPeriodEnd] = useState("");
   const [copyRequestFormat, setCopyRequestFormat] = useState<MedicalDocumentReleaseChannel>("pdf");
   const [copyRequestRecipientFullName, setCopyRequestRecipientFullName] = useState("");
   const [copyRequestRecipientIdentityDocument, setCopyRequestRecipientIdentityDocument] = useState("");
-  const [copyRequestRecipientAuthority, setCopyRequestRecipientAuthority] = useState("пациент лично");
+  const [copyRequestRecipientAuthority, setCopyRequestRecipientAuthority] = useState("РїР°С†РёРµРЅС‚ Р»РёС‡РЅРѕ");
   const [copyRequestRepresentativeAuthorityDocument, setCopyRequestRepresentativeAuthorityDocument] = useState("");
   const [copyRequestRequestedAt, setCopyRequestRequestedAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [copyRequestContactForDelivery, setCopyRequestContactForDelivery] = useState("");
@@ -6450,25 +6570,25 @@ export function App() {
   const [copyRequestThirdPartyDataChecked, setCopyRequestThirdPartyDataChecked] = useState(false);
   const [attendanceStartedAt, setAttendanceStartedAt] = useState("");
   const [attendanceEndedAt, setAttendanceEndedAt] = useState("");
-  const [attendancePurpose, setAttendancePurpose] = useState("для предъявления по месту требования");
+  const [attendancePurpose, setAttendancePurpose] = useState("РґР»СЏ РїСЂРµРґСЉСЏРІР»РµРЅРёСЏ РїРѕ РјРµСЃС‚Сѓ С‚СЂРµР±РѕРІР°РЅРёСЏ");
   const [attendanceRecipientOrganization, setAttendanceRecipientOrganization] = useState("");
   const [attendanceIssuedAt, setAttendanceIssuedAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [attendanceSignedByFullName, setAttendanceSignedByFullName] = useState("");
-  const [attendanceSignedByRole, setAttendanceSignedByRole] = useState("врач/администратор");
+  const [attendanceSignedByRole, setAttendanceSignedByRole] = useState("РІСЂР°С‡/Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ");
   const [attendanceDiagnosisDisclosureExcluded, setAttendanceDiagnosisDisclosureExcluded] = useState(false);
   const [attendanceNotSickLeaveAcknowledged, setAttendanceNotSickLeaveAcknowledged] = useState(false);
   const [releaseRecipientFullName, setReleaseRecipientFullName] = useState("");
   const [releaseRecipientIdentityDocument, setReleaseRecipientIdentityDocument] = useState("");
-  const [releaseRecipientAuthority, setReleaseRecipientAuthority] = useState("пациент лично");
+  const [releaseRecipientAuthority, setReleaseRecipientAuthority] = useState("РїР°С†РёРµРЅС‚ Р»РёС‡РЅРѕ");
   const [releaseSourceRequestDocumentId, setReleaseSourceRequestDocumentId] = useState("");
   const [releaseChannel, setReleaseChannel] = useState<MedicalDocumentReleaseChannel>("paper");
-  const [releaseDocumentTypes, setReleaseDocumentTypes] = useState("Выписка из медицинской карты\nКопия снимков или КТ-архив");
+  const [releaseDocumentTypes, setReleaseDocumentTypes] = useState("Р’С‹РїРёСЃРєР° РёР· РјРµРґРёС†РёРЅСЃРєРѕР№ РєР°СЂС‚С‹\nРљРѕРїРёСЏ СЃРЅРёРјРєРѕРІ РёР»Рё РљРў-Р°СЂС…РёРІ");
   const [releasePeriodStart, setReleasePeriodStart] = useState("");
   const [releasePeriodEnd, setReleasePeriodEnd] = useState("");
   const [releaseDeliveredAt, setReleaseDeliveredAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [releaseAccessExpiresAt, setReleaseAccessExpiresAt] = useState("");
   const [releaseProtectionNote, setReleaseProtectionNote] = useState(
-    "личность получателя проверена, лишние данные третьих лиц исключены"
+    "Р»РёС‡РЅРѕСЃС‚СЊ РїРѕР»СѓС‡Р°С‚РµР»СЏ РїСЂРѕРІРµСЂРµРЅР°, Р»РёС€РЅРёРµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РёСЃРєР»СЋС‡РµРЅС‹"
   );
   const [releaseThirdPartyDataChecked, setReleaseThirdPartyDataChecked] = useState(false);
   const [refundAction, setRefundAction] = useState<PaymentRefundCorrectionAction>("partial_refund");
@@ -6483,24 +6603,24 @@ export function App() {
   const [refundCorrectionFiscalReceiptNumber, setRefundCorrectionFiscalReceiptNumber] = useState("");
   const [refundAccountantDecision, setRefundAccountantDecision] = useState("");
   const [personalDataPurposes, setPersonalDataPurposes] = useState(
-    "оказание стоматологической медицинской помощи\nведение медицинской карты и медицинской документации\nрасчеты, договоры, акты и налоговые документы\nуведомления о визитах, рекомендациях и готовности документов"
+    "РѕРєР°Р·Р°РЅРёРµ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕР№ РјРµРґРёС†РёРЅСЃРєРѕР№ РїРѕРјРѕС‰Рё\nРІРµРґРµРЅРёРµ РјРµРґРёС†РёРЅСЃРєРѕР№ РєР°СЂС‚С‹ Рё РјРµРґРёС†РёРЅСЃРєРѕР№ РґРѕРєСѓРјРµРЅС‚Р°С†РёРё\nСЂР°СЃС‡РµС‚С‹, РґРѕРіРѕРІРѕСЂС‹, Р°РєС‚С‹ Рё РЅР°Р»РѕРіРѕРІС‹Рµ РґРѕРєСѓРјРµРЅС‚С‹\nСѓРІРµРґРѕРјР»РµРЅРёСЏ Рѕ РІРёР·РёС‚Р°С…, СЂРµРєРѕРјРµРЅРґР°С†РёСЏС… Рё РіРѕС‚РѕРІРЅРѕСЃС‚Рё РґРѕРєСѓРјРµРЅС‚РѕРІ"
   );
   const [personalDataCategories, setPersonalDataCategories] = useState(
-    "ФИО, дата рождения, телефон, email и адреса\nпаспортные данные, ИНН, СНИЛС, полис ОМС или ДМС\nсведения о здоровье, диагнозы, снимки, планы лечения и назначения\nплатежные документы, договоры, акты и налоговые заявления"
+    "Р¤РРћ, РґР°С‚Р° СЂРѕР¶РґРµРЅРёСЏ, С‚РµР»РµС„РѕРЅ, email Рё Р°РґСЂРµСЃР°\nРїР°СЃРїРѕСЂС‚РЅС‹Рµ РґР°РЅРЅС‹Рµ, РРќРќ, РЎРќРР›РЎ, РїРѕР»РёСЃ РћРњРЎ РёР»Рё Р”РњРЎ\nСЃРІРµРґРµРЅРёСЏ Рѕ Р·РґРѕСЂРѕРІСЊРµ, РґРёР°РіРЅРѕР·С‹, СЃРЅРёРјРєРё, РїР»Р°РЅС‹ Р»РµС‡РµРЅРёСЏ Рё РЅР°Р·РЅР°С‡РµРЅРёСЏ\nРїР»Р°С‚РµР¶РЅС‹Рµ РґРѕРєСѓРјРµРЅС‚С‹, РґРѕРіРѕРІРѕСЂС‹, Р°РєС‚С‹ Рё РЅР°Р»РѕРіРѕРІС‹Рµ Р·Р°СЏРІР»РµРЅРёСЏ"
   );
   const [personalDataActions, setPersonalDataActions] = useState(
-    "сбор\nзапись\nсистематизация\nхранение\nуточнение\nиспользование\nпередача по законному основанию\nобезличивание\nудаление после окончания срока хранения"
+    "СЃР±РѕСЂ\nР·Р°РїРёСЃСЊ\nСЃРёСЃС‚РµРјР°С‚РёР·Р°С†РёСЏ\nС…СЂР°РЅРµРЅРёРµ\nСѓС‚РѕС‡РЅРµРЅРёРµ\nРёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ\nРїРµСЂРµРґР°С‡Р° РїРѕ Р·Р°РєРѕРЅРЅРѕРјСѓ РѕСЃРЅРѕРІР°РЅРёСЋ\nРѕР±РµР·Р»РёС‡РёРІР°РЅРёРµ\nСѓРґР°Р»РµРЅРёРµ РїРѕСЃР»Рµ РѕРєРѕРЅС‡Р°РЅРёСЏ СЃСЂРѕРєР° С…СЂР°РЅРµРЅРёСЏ"
   );
   const [personalDataTransferRules, setPersonalDataTransferRules] = useState(
-    "Передача возможна только зуботехническим лабораториям, платежным и фискальным сервисам, страховым организациям, ИТ-подрядчикам с договором конфиденциальности, государственным органам по закону и пациентскому порталу по защищенному каналу."
+    "РџРµСЂРµРґР°С‡Р° РІРѕР·РјРѕР¶РЅР° С‚РѕР»СЊРєРѕ Р·СѓР±РѕС‚РµС…РЅРёС‡РµСЃРєРёРј Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏРј, РїР»Р°С‚РµР¶РЅС‹Рј Рё С„РёСЃРєР°Р»СЊРЅС‹Рј СЃРµСЂРІРёСЃР°Рј, СЃС‚СЂР°С…РѕРІС‹Рј РѕСЂРіР°РЅРёР·Р°С†РёСЏРј, РРў-РїРѕРґСЂСЏРґС‡РёРєР°Рј СЃ РґРѕРіРѕРІРѕСЂРѕРј РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё, РіРѕСЃСѓРґР°СЂСЃС‚РІРµРЅРЅС‹Рј РѕСЂРіР°РЅР°Рј РїРѕ Р·Р°РєРѕРЅСѓ Рё РїР°С†РёРµРЅС‚СЃРєРѕРјСѓ РїРѕСЂС‚Р°Р»Сѓ РїРѕ Р·Р°С‰РёС‰РµРЅРЅРѕРјСѓ РєР°РЅР°Р»Сѓ."
   );
   const [personalDataCrossBorderAllowed, setPersonalDataCrossBorderAllowed] = useState(false);
   const [personalDataAutomatedDecisionAllowed, setPersonalDataAutomatedDecisionAllowed] = useState(false);
   const [personalDataRetentionPeriod, setPersonalDataRetentionPeriod] = useState(
-    "в течение срока оказания помощи и обязательного срока хранения медицинской и бухгалтерской документации"
+    "РІ С‚РµС‡РµРЅРёРµ СЃСЂРѕРєР° РѕРєР°Р·Р°РЅРёСЏ РїРѕРјРѕС‰Рё Рё РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРіРѕ СЃСЂРѕРєР° С…СЂР°РЅРµРЅРёСЏ РјРµРґРёС†РёРЅСЃРєРѕР№ Рё Р±СѓС…РіР°Р»С‚РµСЂСЃРєРѕР№ РґРѕРєСѓРјРµРЅС‚Р°С†РёРё"
   );
   const [personalDataRevocationChannel, setPersonalDataRevocationChannel] = useState(
-    "письменное заявление в клинике или защищенное обращение через портал пациента"
+    "РїРёСЃСЊРјРµРЅРЅРѕРµ Р·Р°СЏРІР»РµРЅРёРµ РІ РєР»РёРЅРёРєРµ РёР»Рё Р·Р°С‰РёС‰РµРЅРЅРѕРµ РѕР±СЂР°С‰РµРЅРёРµ С‡РµСЂРµР· РїРѕСЂС‚Р°Р» РїР°С†РёРµРЅС‚Р°"
   );
   const [personalDataConsentGivenAt, setPersonalDataConsentGivenAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [personalDataVoluntaryConsentConfirmed, setPersonalDataVoluntaryConsentConfirmed] = useState(false);
@@ -6509,37 +6629,40 @@ export function App() {
   const [refusalClinicalIndication, setRefusalClinicalIndication] = useState("");
   const [refusalPatientReason, setRefusalPatientReason] = useState("");
   const [refusalExplainedRisks, setRefusalExplainedRisks] = useState(
-    "усиление боли\nраспространение инфекции\nпотеря возможности сохранить зуб или ткани\nнеобходимость экстренного обращения при ухудшении"
+    "СѓСЃРёР»РµРЅРёРµ Р±РѕР»Рё\nСЂР°СЃРїСЂРѕСЃС‚СЂР°РЅРµРЅРёРµ РёРЅС„РµРєС†РёРё\nРїРѕС‚РµСЂСЏ РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё СЃРѕС…СЂР°РЅРёС‚СЊ Р·СѓР± РёР»Рё С‚РєР°РЅРё\nРЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ СЌРєСЃС‚СЂРµРЅРЅРѕРіРѕ РѕР±СЂР°С‰РµРЅРёСЏ РїСЂРё СѓС…СѓРґС€РµРЅРёРё"
   );
   const [refusalAlternatives, setRefusalAlternatives] = useState(
-    "повторная консультация\nобезболивание и контроль состояния\nвторое мнение профильного врача\nобращение в дежурную стоматологию при ухудшении"
+    "РїРѕРІС‚РѕСЂРЅР°СЏ РєРѕРЅСЃСѓР»СЊС‚Р°С†РёСЏ\nРѕР±РµР·Р±РѕР»РёРІР°РЅРёРµ Рё РєРѕРЅС‚СЂРѕР»СЊ СЃРѕСЃС‚РѕСЏРЅРёСЏ\nРІС‚РѕСЂРѕРµ РјРЅРµРЅРёРµ РїСЂРѕС„РёР»СЊРЅРѕРіРѕ РІСЂР°С‡Р°\nРѕР±СЂР°С‰РµРЅРёРµ РІ РґРµР¶СѓСЂРЅСѓСЋ СЃС‚РѕРјР°С‚РѕР»РѕРіРёСЋ РїСЂРё СѓС…СѓРґС€РµРЅРёРё"
   );
   const [refusalUrgentWarningSigns, setRefusalUrgentWarningSigns] = useState(
-    "отек лица или шеи\nтемпература\nзатруднение глотания или дыхания\nкровотечение\nнарастающая боль"
+    "РѕС‚РµРє Р»РёС†Р° РёР»Рё С€РµРё\nС‚РµРјРїРµСЂР°С‚СѓСЂР°\nР·Р°С‚СЂСѓРґРЅРµРЅРёРµ РіР»РѕС‚Р°РЅРёСЏ РёР»Рё РґС‹С…Р°РЅРёСЏ\nРєСЂРѕРІРѕС‚РµС‡РµРЅРёРµ\nРЅР°СЂР°СЃС‚Р°СЋС‰Р°СЏ Р±РѕР»СЊ"
   );
   const [refusalDoctorFullName, setRefusalDoctorFullName] = useState("");
   const [refusalConfirmedAt, setRefusalConfirmedAt] = useState(() => new Date().toLocaleString("ru-RU"));
   const [refusalConsequencesUnderstood, setRefusalConsequencesUnderstood] = useState(false);
   const [refusalSecondOpinionOffered, setRefusalSecondOpinionOffered] = useState(false);
   const [refusalEmergencyCareExplained, setRefusalEmergencyCareExplained] = useState(false);
-  const [communicationNote, setCommunicationNote] = useState("Пациенту передана информация, задача закрыта.");
+  const [communicationNote, setCommunicationNote] = useState("РџР°С†РёРµРЅС‚Сѓ РїРµСЂРµРґР°РЅР° РёРЅС„РѕСЂРјР°С†РёСЏ, Р·Р°РґР°С‡Р° Р·Р°РєСЂС‹С‚Р°.");
   const [selectedSpecialty, setSelectedSpecialty] = useState<DentalSpecialty>(initialUiPreferences.selectedSpecialty);
   const [selectedProtocolId, setSelectedProtocolId] = useState<string | null>(initialUiPreferences.selectedProtocolId);
+  const [selectedToothCode, setSelectedToothCode] = useState<string>("36");
+  const [toothMapActiveTool, setToothMapActiveTool] = useState<ToothMapTool>("watch");
+  const [manualToothStateByCode, setManualToothStateByCode] = useState<Record<string, ToothMapState>>({});
   const [transcript, setTranscript] = useState(
-    "Пациент жалуется на боль при накусывании. Объективно кариозная полость 36. План лечение под анестезией, реставрация."
+    "РџР°С†РёРµРЅС‚ Р¶Р°Р»СѓРµС‚СЃСЏ РЅР° Р±РѕР»СЊ РїСЂРё РЅР°РєСѓСЃС‹РІР°РЅРёРё. РћР±СЉРµРєС‚РёРІРЅРѕ РєР°СЂРёРѕР·РЅР°СЏ РїРѕР»РѕСЃС‚СЊ 36. РџР»Р°РЅ Р»РµС‡РµРЅРёРµ РїРѕРґ Р°РЅРµСЃС‚РµР·РёРµР№, СЂРµСЃС‚Р°РІСЂР°С†РёСЏ."
   );
   const [clearedTranscriptSnapshot, setClearedTranscriptSnapshot] = useState<string | null>(null);
   const [importText, setImportText] = useState(
-    "ФИО;Телефон;Дата рождения;Комментарий\nИванова Марина Сергеевна;+7 927 111-22-33;21.04.1988;уже есть в базе\nНовый Пациент;+7 927 333-44-55;12.02.1991;перенос из старой МИС\nБез Телефона;;05.08.1975;нужно уточнить контакт"
+    "Р¤РРћ;РўРµР»РµС„РѕРЅ;Р”Р°С‚Р° СЂРѕР¶РґРµРЅРёСЏ;РљРѕРјРјРµРЅС‚Р°СЂРёР№\nРРІР°РЅРѕРІР° РњР°СЂРёРЅР° РЎРµСЂРіРµРµРІРЅР°;+7 927 111-22-33;21.04.1988;СѓР¶Рµ РµСЃС‚СЊ РІ Р±Р°Р·Рµ\nРќРѕРІС‹Р№ РџР°С†РёРµРЅС‚;+7 927 333-44-55;12.02.1991;РїРµСЂРµРЅРѕСЃ РёР· СЃС‚Р°СЂРѕР№ РњРРЎ\nР‘РµР· РўРµР»РµС„РѕРЅР°;;05.08.1975;РЅСѓР¶РЅРѕ СѓС‚РѕС‡РЅРёС‚СЊ РєРѕРЅС‚Р°РєС‚"
   );
   const [imagingImportText, setImagingImportText] = useState(
-    "ФИО;Телефон;Тип;Зуб;Дата;Файл;Источник\nИванова Марина Сергеевна;+7 927 111-22-33;RVG;36;12.05.2026;C:\\Images\\ivanova_36.dcm;локальный RVG-датчик\nИванова Марина Сергеевна;+7 927 111-22-33;ТРГ;;10.05.2026;C:\\Images\\ivanova_ceph.ima;экспорт Sidexis\nПетров Алексей Николаевич;+7 927 555-19-40;ОПТГ;;10.05.2026;C:\\Images\\petrov_opg.jpg;экспорт ОПТГ"
+    "Р¤РРћ;РўРµР»РµС„РѕРЅ;РўРёРї;Р—СѓР±;Р”Р°С‚Р°;Р¤Р°Р№Р»;РСЃС‚РѕС‡РЅРёРє\nРРІР°РЅРѕРІР° РњР°СЂРёРЅР° РЎРµСЂРіРµРµРІРЅР°;+7 927 111-22-33;RVG;36;12.05.2026;C:\\Images\\ivanova_36.dcm;Р»РѕРєР°Р»СЊРЅС‹Р№ RVG-РґР°С‚С‡РёРє\nРРІР°РЅРѕРІР° РњР°СЂРёРЅР° РЎРµСЂРіРµРµРІРЅР°;+7 927 111-22-33;РўР Р“;;10.05.2026;C:\\Images\\ivanova_ceph.ima;СЌРєСЃРїРѕСЂС‚ Sidexis\nРџРµС‚СЂРѕРІ РђР»РµРєСЃРµР№ РќРёРєРѕР»Р°РµРІРёС‡;+7 927 555-19-40;РћРџРўР“;;10.05.2026;C:\\Images\\petrov_opg.jpg;СЌРєСЃРїРѕСЂС‚ РћРџРўР“"
   );
   const [smartImportText, setSmartImportText] = useState(
-    "Новый Пациент Снимков +7 927 444-55-66 12.02.1991 перенос из старой МИС\nНовый Пациент Снимков +7 927 444-55-66 RVG 36 12.05.2026 C:\\Images\\new_patient_36.dcm\nИванова Марина Сергеевна +7 927 111-22-33 ОПТГ 10.05.2026 C:\\Images\\ivanova_opg.png\nслужебная строка без полезных данных"
+    "РќРѕРІС‹Р№ РџР°С†РёРµРЅС‚ РЎРЅРёРјРєРѕРІ +7 927 444-55-66 12.02.1991 РїРµСЂРµРЅРѕСЃ РёР· СЃС‚Р°СЂРѕР№ РњРРЎ\nРќРѕРІС‹Р№ РџР°С†РёРµРЅС‚ РЎРЅРёРјРєРѕРІ +7 927 444-55-66 RVG 36 12.05.2026 C:\\Images\\new_patient_36.dcm\nРРІР°РЅРѕРІР° РњР°СЂРёРЅР° РЎРµСЂРіРµРµРІРЅР° +7 927 111-22-33 РћРџРўР“ 10.05.2026 C:\\Images\\ivanova_opg.png\nСЃР»СѓР¶РµР±РЅР°СЏ СЃС‚СЂРѕРєР° Р±РµР· РїРѕР»РµР·РЅС‹С… РґР°РЅРЅС‹С…"
   );
   const [pricelistText, setPricelistText] = useState(
-    "Коронка циркониевая MultiLayer 35 000 руб\nКоронка IPS e.max 32 000 руб\nВинир керамический E.max 38 000 руб\nРеставрация композитная Filtek 9 500 руб\nЛечение канала 1 канал 6 800 руб\nИмплантация Straumann BLX 85 000 руб\nАбатмент индивидуальный циркониевый 28 000 руб\nСинус-лифтинг открытый 55 000 руб\nПрофессиональная гигиена Air Flow EMS 6 000 руб\nЭлайнеры Star Smile 160 000 руб"
+    "РљРѕСЂРѕРЅРєР° С†РёСЂРєРѕРЅРёРµРІР°СЏ MultiLayer 35 000 СЂСѓР±\nРљРѕСЂРѕРЅРєР° IPS e.max 32 000 СЂСѓР±\nР’РёРЅРёСЂ РєРµСЂР°РјРёС‡РµСЃРєРёР№ E.max 38 000 СЂСѓР±\nР РµСЃС‚Р°РІСЂР°С†РёСЏ РєРѕРјРїРѕР·РёС‚РЅР°СЏ Filtek 9 500 СЂСѓР±\nР›РµС‡РµРЅРёРµ РєР°РЅР°Р»Р° 1 РєР°РЅР°Р» 6 800 СЂСѓР±\nРРјРїР»Р°РЅС‚Р°С†РёСЏ Straumann BLX 85 000 СЂСѓР±\nРђР±Р°С‚РјРµРЅС‚ РёРЅРґРёРІРёРґСѓР°Р»СЊРЅС‹Р№ С†РёСЂРєРѕРЅРёРµРІС‹Р№ 28 000 СЂСѓР±\nРЎРёРЅСѓСЃ-Р»РёС„С‚РёРЅРі РѕС‚РєСЂС‹С‚С‹Р№ 55 000 СЂСѓР±\nРџСЂРѕС„РµСЃСЃРёРѕРЅР°Р»СЊРЅР°СЏ РіРёРіРёРµРЅР° Air Flow EMS 6 000 СЂСѓР±\nР­Р»Р°Р№РЅРµСЂС‹ Star Smile 160 000 СЂСѓР±"
   );
   const [pricelistSourceKind, setPricelistSourceKind] = useState<PricelistSourceKind>(initialUiPreferences.pricelistSourceKind);
   const [usePricelistAi, setUsePricelistAi] = useState(initialUiPreferences.usePricelistAi);
@@ -6648,6 +6771,7 @@ export function App() {
   const [speechRecordingStrategy, setSpeechRecordingStrategy] = useState<SpeechRecordingStrategy | null>(null);
   const [speechRecordingRecovery, setSpeechRecordingRecovery] = useState<SpeechRecordingRecoveryList | null>(null);
   const [pendingSpeechChunkCount, setPendingSpeechChunkCount] = useState(() => loadPendingSpeechChunksFromLocalStorage(activeOrganizationId).length);
+  const [speechAutoFlushRetryTick, setSpeechAutoFlushRetryTick] = useState(0);
   const [speechStatusNote, setSpeechStatusNote] = useState<string | null>(null);
   const [speechLastQuality, setSpeechLastQuality] = useState<SpeechTranscriptionResponse["chunk"]["quality"] | null>(null);
   const [browserContinuity, setBrowserContinuity] = useState<BrowserContinuityStatus | null>(null);
@@ -6692,7 +6816,21 @@ export function App() {
   const [isRecognitionLoading, setIsRecognitionLoading] = useState(false);
   const [isPricelistAnalyzing, setIsPricelistAnalyzing] = useState(false);
   const [isVisitDictating, setIsVisitDictating] = useState(false);
+  const [isVisitDictationStarting, setIsVisitDictationStarting] = useState(false);
+  const [visitDictationInterim, setVisitDictationInterim] = useState("");
+  const [isServerVoiceRecordingStarting, setIsServerVoiceRecordingStarting] = useState(false);
   const [isServerVoiceRecording, setIsServerVoiceRecording] = useState(false);
+  const [speechActiveUploadCount, setSpeechActiveUploadCount] = useState(0);
+  const [isSpeechRecordingFinalizing, setIsSpeechRecordingFinalizing] = useState(false);
+  const [isSpeechMicrophoneTesting, setIsSpeechMicrophoneTesting] = useState(false);
+  const [speechMicrophoneVerified, setSpeechMicrophoneVerified] = useState(false);
+  const [speechInputLevel, setSpeechInputLevel] = useState<number | null>(null);
+  const [speechRecordingElapsedMs, setSpeechRecordingElapsedMs] = useState(0);
+  const [speechMicrophoneLabel, setSpeechMicrophoneLabel] = useState<string | null>(null);
+  const [speechAudioInputDevices, setSpeechAudioInputDevices] = useState<SpeechAudioInputDevice[]>([]);
+  const [selectedSpeechDeviceId, setSelectedSpeechDeviceId] = useState(loadSelectedSpeechDeviceId);
+  const [dictationSystemStatusOpen, setDictationSystemStatusOpen] = useState(false);
+  const [speechRetrySuggested, setSpeechRetrySuggested] = useState(false);
   const [isTranscriptPolishing, setIsTranscriptPolishing] = useState(false);
   const [isPaymentSaving, setIsPaymentSaving] = useState(false);
   const [communicationSavingTaskId, setCommunicationSavingTaskId] = useState<string | null>(null);
@@ -6763,29 +6901,61 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [uiPreferencesSyncError, setUiPreferencesSyncError] = useState<string | null>(null);
   const browserDirectoryInputRef = useRef<HTMLInputElement | null>(null);
+  const browserImagingFilesInputRef = useRef<HTMLInputElement | null>(null);
   const browserMigrationInputRef = useRef<HTMLInputElement | null>(null);
   const browserImagingScanAbortRef = useRef<AbortController | null>(null);
   const browserMigrationScanAbortRef = useRef<AbortController | null>(null);
   const localDicomOperationAbortRef = useRef<AbortController | null>(null);
   const [isLocalDicomOperationActive, setIsLocalDicomOperationActive] = useState(false);
+  const visitRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const visitDictationShouldRestartRef = useRef(false);
+  const visitDictationRestartTimerRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const serverVoiceRecordingShouldContinueRef = useRef(false);
+  const serverVoiceRecordingStopRequestedRef = useRef(false);
+  const serverVoiceRecordingRestartTimerRef = useRef<number | null>(null);
+  const speechAudioInputDevicesRef = useRef<SpeechAudioInputDevice[]>([]);
   const speechAudioContextRef = useRef<AudioContext | null>(null);
   const speechAnalyserRef = useRef<AnalyserNode | null>(null);
   const speechMonitorTimerRef = useRef<number | null>(null);
+  const speechRecordingTimerRef = useRef<number | null>(null);
+  const speechRecordingStartedAtRef = useRef(0);
   const speechRecordingIdRef = useRef<string | null>(null);
   const speechChunkIndexRef = useRef(0);
   const speechSegmentStartedAtRef = useRef(0);
   const speechLastSoundAtRef = useRef(0);
+  const speechVoiceLevelAvailableRef = useRef(false);
+  const speechVoiceDetectedDuringRecordingRef = useRef(false);
+  const speechSegmentVoiceDetectedRef = useRef(false);
+  const speechQuietWarningShownRef = useRef(false);
+  const speechRecordingHadRecognizedTextRef = useRef(false);
+  const speechRecordingVoiceLevelAvailableAtStopRef = useRef(false);
+  const speechRecordingVoiceDetectedAtStopRef = useRef(false);
   const speechPendingChunkDurationMsRef = useRef<number | null>(null);
+  const speechPendingChunkHadVoiceRef = useRef<boolean | null>(null);
+  const speechActiveGatewayStatusRef = useRef<SpeechGatewayStatus | null>(null);
   const speechUploadPromisesRef = useRef<Set<Promise<void>>>(new Set());
   const appliedSpeechChunkKeysRef = useRef<Set<string>>(new Set());
+  const serverVoiceRecordingStartingRef = useRef(false);
+  const speechAutoFlushInFlightRef = useRef(false);
+  const speechAutoFlushLastKeyRef = useRef<string | null>(null);
+  const speechAutoFlushRetryTimerRef = useRef<number | null>(null);
   const lastServerDraftSignatureRef = useRef<string | null>(null);
   const visitDraftUserEditedRef = useRef(false);
   const patientAdministrativeProfileDraftRef = useRef<PatientAdministrativeProfileDraft>(emptyPatientAdministrativeProfileDraft());
   const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
   const chairScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
   const appointmentScheduleDraftsRef = useRef<Record<string, AppointmentScheduleDraft>>({});
+  const attachBrowserDirectoryInputRef = useMemo(
+    () => (input: HTMLInputElement | null) => {
+      browserDirectoryInputRef.current = input;
+      if (!input) return;
+      input.setAttribute("webkitdirectory", "");
+      input.setAttribute("directory", "");
+    },
+    []
+  );
   const imagingViewerSaveTimerRef = useRef<number | null>(null);
   const mprWorkbenchSaveTimerRef = useRef<number | null>(null);
 
@@ -6937,7 +7107,7 @@ export function App() {
     const domain = resolvedAdminSecretUnlockDomain(domainOverride);
     const secret = adminSecretDraftForDomain(domain).trim();
     if (!secret) {
-      setError("Введите секрет администратора клиники, если он включен в серверных настройках клиники.");
+      setError("Р’РІРµРґРёС‚Рµ СЃРµРєСЂРµС‚ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РєР»РёРЅРёРєРё, РµСЃР»Рё РѕРЅ РІРєР»СЋС‡РµРЅ РІ СЃРµСЂРІРµСЂРЅС‹С… РЅР°СЃС‚СЂРѕР№РєР°С… РєР»РёРЅРёРєРё.");
       return;
     }
     rememberAdminSecret(secret, domain);
@@ -6956,7 +7126,7 @@ export function App() {
       })
       .catch((loadError: unknown) => {
         forgetAdminSecret(domain);
-        setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
+        setError(operatorWorkflowFailureMessage("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РґР°РЅРЅС‹Рµ РєР»РёРЅРёРєРё", loadError));
       });
   }
 
@@ -6967,7 +7137,7 @@ export function App() {
     if (domain === "settings" || domain === "schedule" || domain === "telegram") return;
     setDashboard(null);
     void loadDashboard().catch((loadError: unknown) => {
-      setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
+      setError(operatorWorkflowFailureMessage("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РґР°РЅРЅС‹Рµ РєР»РёРЅРёРєРё", loadError));
     });
   }
 
@@ -6977,7 +7147,7 @@ export function App() {
       headers: denteClinicalReadHeaders({}, options.adminSecret)
     });
     if (!response.ok) {
-      const message = await responseErrorMessage(response, "Данные клиники не загружены");
+      const message = await responseErrorMessage(response, "Р”Р°РЅРЅС‹Рµ РєР»РёРЅРёРєРё РЅРµ Р·Р°РіСЂСѓР¶РµРЅС‹");
       if (response.status === 403 || response.status === 503) {
         setAccessUnlockRequired(true);
         setAccessUnlockMessage(message);
@@ -7243,7 +7413,7 @@ export function App() {
     const payload = buildClinicProfileUpdatePayload(clinicProfileDraft);
     const expectedSignature = clinicProfileDraftSignature(clinicProfileDraft);
     if (!payload.clinicName?.trim()) {
-      setError("Укажите рабочее название клиники.");
+      setError("РЈРєР°Р¶РёС‚Рµ СЂР°Р±РѕС‡РµРµ РЅР°Р·РІР°РЅРёРµ РєР»РёРЅРёРєРё.");
       setClinicProfileSaveState("error");
       return false;
     }
@@ -7254,7 +7424,7 @@ export function App() {
         headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Профиль клиники не сохранен"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РџСЂРѕС„РёР»СЊ РєР»РёРЅРёРєРё РЅРµ СЃРѕС…СЂР°РЅРµРЅ"));
       const clinicSettings = (await response.json()) as Dashboard["clinicSettings"];
       setDashboard((current) =>
         current
@@ -7274,7 +7444,7 @@ export function App() {
       setError(null);
       return true;
     } catch (saveError) {
-      const message = operatorWorkflowFailureMessage("Профиль клиники не сохранен", saveError);
+      const message = operatorWorkflowFailureMessage("РџСЂРѕС„РёР»СЊ РєР»РёРЅРёРєРё РЅРµ СЃРѕС…СЂР°РЅРµРЅ", saveError);
       setClinicProfileSaveState("error");
       setError(message);
       return false;
@@ -7288,11 +7458,11 @@ export function App() {
 
   async function savePatientCore(): Promise<boolean> {
     if (patientCoreSaveState === "saving") {
-      setError("Дождитесь завершения сохранения карточки пациента.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РєР°СЂС‚РѕС‡РєРё РїР°С†РёРµРЅС‚Р°.");
       return false;
     }
     if (!selectedPatient) {
-      setError("Выберите пациента перед сохранением карточки.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р° РїРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј РєР°СЂС‚РѕС‡РєРё.");
       return false;
     }
     if (!patientCoreDirty) return true;
@@ -7300,7 +7470,7 @@ export function App() {
     const expectedSignature = patientCoreDraftSignature(patientCoreDraft);
     if (!payload.fullName?.trim()) {
       setPatientCoreSaveState("error");
-      setError("ФИО пациента обязательно для расписания, документов и связи.");
+      setError("Р¤РРћ РїР°С†РёРµРЅС‚Р° РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РґР»СЏ СЂР°СЃРїРёСЃР°РЅРёСЏ, РґРѕРєСѓРјРµРЅС‚РѕРІ Рё СЃРІСЏР·Рё.");
       return false;
     }
     setPatientCoreSaveState("saving");
@@ -7310,7 +7480,7 @@ export function App() {
         headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Карточка пациента не сохранена"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РљР°СЂС‚РѕС‡РєР° РїР°С†РёРµРЅС‚Р° РЅРµ СЃРѕС…СЂР°РЅРµРЅР°"));
       const savedPatient = (await response.json()) as Patient;
       setDashboard((current) =>
         current
@@ -7331,18 +7501,18 @@ export function App() {
       return true;
     } catch (saveError) {
       setPatientCoreSaveState("error");
-      setError(operatorWorkflowFailureMessage("Карточка пациента не сохранена", saveError));
+      setError(operatorWorkflowFailureMessage("РљР°СЂС‚РѕС‡РєР° РїР°С†РёРµРЅС‚Р° РЅРµ СЃРѕС…СЂР°РЅРµРЅР°", saveError));
       return false;
     }
   }
 
   async function savePatientAdministrativeProfile() {
     if (patientAdministrativeProfileSaveState === "saving") {
-      setError("Дождитесь завершения сохранения реквизитов пациента.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂРµРєРІРёР·РёС‚РѕРІ РїР°С†РёРµРЅС‚Р°.");
       return false;
     }
     if (!selectedPatient) {
-      setError("Выберите пациента перед сохранением реквизитов.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р° РїРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј СЂРµРєРІРёР·РёС‚РѕРІ.");
       return false;
     }
     if (!patientAdministrativeProfileDirty) return true;
@@ -7359,7 +7529,7 @@ export function App() {
         headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(buildPatientAdministrativeProfilePayload(patientAdministrativeProfileDraft))
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Данные пациента не сохранены"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р”Р°РЅРЅС‹Рµ РїР°С†РёРµРЅС‚Р° РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹"));
       const savedPatient = (await response.json()) as Patient;
       setDashboard((current) =>
         current
@@ -7380,7 +7550,7 @@ export function App() {
       return true;
     } catch (saveError) {
       setPatientAdministrativeProfileSaveState("error");
-      setError(operatorWorkflowFailureMessage("Данные пациента не сохранены", saveError));
+      setError(operatorWorkflowFailureMessage("Р”Р°РЅРЅС‹Рµ РїР°С†РёРµРЅС‚Р° РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹", saveError));
       return false;
     }
   }
@@ -7388,9 +7558,9 @@ export function App() {
   function buildOnboardingFirstAppointmentIssues(): string[] {
     const issues: string[] = [];
     const requiredClinicDraftFields: Array<[string, string]> = [
-      ["название клиники", clinicProfileDraft.clinicName],
-      ["телефон клиники", clinicProfileDraft.phone],
-      ["часовой пояс", clinicProfileDraft.timezone]
+      ["РЅР°Р·РІР°РЅРёРµ РєР»РёРЅРёРєРё", clinicProfileDraft.clinicName],
+      ["С‚РµР»РµС„РѕРЅ РєР»РёРЅРёРєРё", clinicProfileDraft.phone],
+      ["С‡Р°СЃРѕРІРѕР№ РїРѕСЏСЃ", clinicProfileDraft.timezone]
     ];
     for (const [label, value] of requiredClinicDraftFields) {
       if (!value.trim()) issues.push(label);
@@ -7399,10 +7569,10 @@ export function App() {
     const activeDoctors = activeStaff.filter((member) => member.role === "doctor" || member.role === "owner");
     const activeAssistants = activeStaff.filter((member) => member.role === "assistant");
     const activeChairs = dashboard?.clinicSettings.chairs.filter((chair) => chair.active) ?? [];
-    if (!activeDoctors.length) issues.push("врач для первого приема");
-    if (!activeDoctors.some((member) => member.canSignMedicalRecords)) issues.push("врач с правом подписи ЭМК");
-    if (!activeChairs.length) issues.push("кресло / кабинет");
-    if (dashboard?.clinicSettings.profile.mode !== "solo_doctor" && !activeAssistants.length) issues.push("ассистент");
+    if (!activeDoctors.length) issues.push("РІСЂР°С‡ РґР»СЏ РїРµСЂРІРѕРіРѕ РїСЂРёРµРјР°");
+    if (!activeDoctors.some((member) => member.canSignMedicalRecords)) issues.push("РІСЂР°С‡ СЃ РїСЂР°РІРѕРј РїРѕРґРїРёСЃРё Р­РњРљ");
+    if (!activeChairs.length) issues.push("РєСЂРµСЃР»Рѕ / РєР°Р±РёРЅРµС‚");
+    if (dashboard?.clinicSettings.profile.mode !== "solo_doctor" && !activeAssistants.length) issues.push("Р°СЃСЃРёСЃС‚РµРЅС‚");
     const activeAppointmentReadiness = dashboard?.activeVisit.appointmentId
       ? dashboard.appointmentReadiness.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
       : null;
@@ -7419,12 +7589,12 @@ export function App() {
   function buildOnboardingDocumentReadinessIssues(): string[] {
     const issues: string[] = [];
     const requiredDocumentDraftFields: Array<[string, string]> = [
-      ["юридическое наименование", clinicProfileDraft.legalName],
-      ["ИНН", clinicProfileDraft.inn],
-      ["адрес", clinicProfileDraft.address],
-      ["номер медицинской лицензии", clinicProfileDraft.medicalLicenseNumber],
-      ["дата медицинской лицензии", clinicProfileDraft.medicalLicenseIssuedAt],
-      ["орган, выдавший лицензию", clinicProfileDraft.medicalLicenseIssuer]
+      ["СЋСЂРёРґРёС‡РµСЃРєРѕРµ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ", clinicProfileDraft.legalName],
+      ["РРќРќ", clinicProfileDraft.inn],
+      ["Р°РґСЂРµСЃ", clinicProfileDraft.address],
+      ["РЅРѕРјРµСЂ РјРµРґРёС†РёРЅСЃРєРѕР№ Р»РёС†РµРЅР·РёРё", clinicProfileDraft.medicalLicenseNumber],
+      ["РґР°С‚Р° РјРµРґРёС†РёРЅСЃРєРѕР№ Р»РёС†РµРЅР·РёРё", clinicProfileDraft.medicalLicenseIssuedAt],
+      ["РѕСЂРіР°РЅ, РІС‹РґР°РІС€РёР№ Р»РёС†РµРЅР·РёСЋ", clinicProfileDraft.medicalLicenseIssuer]
     ];
     for (const [label, value] of requiredDocumentDraftFields) {
       if (!value.trim()) issues.push(label);
@@ -7438,28 +7608,28 @@ export function App() {
 
   function buildOnboardingTelegramRecommendations(): string[] {
     const recommendations: string[] = [];
-    if (telegramModeDraft === "disabled") recommendations.push("включить режим Telegram");
-    if (!telegramBotUsernameDraft.trim() && !telegramOwnBotUsernameDraft.trim()) recommendations.push("указать имя Telegram-бота");
-    if (!telegramPatientPortalBaseUrlDraft.trim()) recommendations.push("добавить адрес портала пациента");
-    if (!telegramReviewUrlDraft.trim()) recommendations.push("добавить ссылку для оценки клиники");
-    if (!telegramMapsUrlDraft.trim()) recommendations.push("добавить ссылку на карточку клиники на картах");
+    if (telegramModeDraft === "disabled") recommendations.push("РІРєР»СЋС‡РёС‚СЊ СЂРµР¶РёРј Telegram");
+    if (!telegramBotUsernameDraft.trim() && !telegramOwnBotUsernameDraft.trim()) recommendations.push("СѓРєР°Р·Р°С‚СЊ РёРјСЏ Telegram-Р±РѕС‚Р°");
+    if (!telegramPatientPortalBaseUrlDraft.trim()) recommendations.push("РґРѕР±Р°РІРёС‚СЊ Р°РґСЂРµСЃ РїРѕСЂС‚Р°Р»Р° РїР°С†РёРµРЅС‚Р°");
+    if (!telegramReviewUrlDraft.trim()) recommendations.push("РґРѕР±Р°РІРёС‚СЊ СЃСЃС‹Р»РєСѓ РґР»СЏ РѕС†РµРЅРєРё РєР»РёРЅРёРєРё");
+    if (!telegramMapsUrlDraft.trim()) recommendations.push("РґРѕР±Р°РІРёС‚СЊ СЃСЃС‹Р»РєСѓ РЅР° РєР°СЂС‚РѕС‡РєСѓ РєР»РёРЅРёРєРё РЅР° РєР°СЂС‚Р°С…");
     return recommendations;
   }
 
   function focusOnboardingIssue(issues: string[]): void {
-    if (issues.some((issue) => ["врач для первого приема", "врач с правом подписи ЭМК", "кресло / кабинет", "ассистент"].includes(issue))) {
+    if (issues.some((issue) => ["РІСЂР°С‡ РґР»СЏ РїРµСЂРІРѕРіРѕ РїСЂРёРµРјР°", "РІСЂР°С‡ СЃ РїСЂР°РІРѕРј РїРѕРґРїРёСЃРё Р­РњРљ", "РєСЂРµСЃР»Рѕ / РєР°Р±РёРЅРµС‚", "Р°СЃСЃРёСЃС‚РµРЅС‚"].includes(issue))) {
       setOnboardingStep("team");
       return;
     }
-    if (issues.some((issue) => ["название клиники", "телефон клиники", "часовой пояс"].includes(issue))) {
+    if (issues.some((issue) => ["РЅР°Р·РІР°РЅРёРµ РєР»РёРЅРёРєРё", "С‚РµР»РµС„РѕРЅ РєР»РёРЅРёРєРё", "С‡Р°СЃРѕРІРѕР№ РїРѕСЏСЃ"].includes(issue))) {
       setOnboardingStep("clinic");
       return;
     }
-    if (issues.some((issue) => ["юридическое наименование", "ИНН", "адрес", "номер медицинской лицензии", "дата медицинской лицензии", "орган, выдавший лицензию"].includes(issue))) {
+    if (issues.some((issue) => ["СЋСЂРёРґРёС‡РµСЃРєРѕРµ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ", "РРќРќ", "Р°РґСЂРµСЃ", "РЅРѕРјРµСЂ РјРµРґРёС†РёРЅСЃРєРѕР№ Р»РёС†РµРЅР·РёРё", "РґР°С‚Р° РјРµРґРёС†РёРЅСЃРєРѕР№ Р»РёС†РµРЅР·РёРё", "РѕСЂРіР°РЅ, РІС‹РґР°РІС€РёР№ Р»РёС†РµРЅР·РёСЋ"].includes(issue))) {
       setOnboardingStep("legal");
       return;
     }
-    if (issues.some((issue) => issue.includes("Telegram") || issue.includes("бот") || issue.includes("портал") || issue.includes("оценки") || issue.includes("картах"))) {
+    if (issues.some((issue) => issue.includes("Telegram") || issue.includes("Р±РѕС‚") || issue.includes("РїРѕСЂС‚Р°Р»") || issue.includes("РѕС†РµРЅРєРё") || issue.includes("РєР°СЂС‚Р°С…"))) {
       setOnboardingStep("telegram");
     }
   }
@@ -7468,7 +7638,7 @@ export function App() {
     const issues = buildOnboardingFirstAppointmentIssues();
     if (!issues.length) return true;
     focusOnboardingIssue(issues);
-    setError(`Перед первым рабочим экраном заполните: ${issues.join(", ")}.`);
+    setError(`РџРµСЂРµРґ РїРµСЂРІС‹Рј СЂР°Р±РѕС‡РёРј СЌРєСЂР°РЅРѕРј Р·Р°РїРѕР»РЅРёС‚Рµ: ${issues.join(", ")}.`);
     return false;
   }
 
@@ -7592,7 +7762,7 @@ export function App() {
       }
     }
     if (!persistUiPreferences(savedPreferences)) {
-      const message = "Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.";
+      const message = "РќР°СЃС‚СЂРѕР№РєРё РёРЅС‚РµСЂС„РµР№СЃР° РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹: Р±СЂР°СѓР·РµСЂ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°Р» Р»РѕРєР°Р»СЊРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ.";
       setUiPreferencesSyncError(message);
       setError(message);
       return;
@@ -7622,7 +7792,7 @@ export function App() {
       savedAt: dismissalSavedAt
     };
     if (!persistUiPreferences(savedPreferences)) {
-      const message = "Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.";
+      const message = "РќР°СЃС‚СЂРѕР№РєРё РёРЅС‚РµСЂС„РµР№СЃР° РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹: Р±СЂР°СѓР·РµСЂ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°Р» Р»РѕРєР°Р»СЊРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ.";
       setUiPreferencesSyncError(message);
       setError(message);
       return;
@@ -7703,13 +7873,13 @@ export function App() {
         cache: "no-store",
         headers: denteClinicalReadHeaders({}, options.adminSecret)
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Проверка сервера не выполнена"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РџСЂРѕРІРµСЂРєР° СЃРµСЂРІРµСЂР° РЅРµ РІС‹РїРѕР»РЅРµРЅР°"));
       const report = (await response.json()) as PersistenceIntegrityReport & { meta?: PersistenceHealth };
       setPersistenceIntegrity(report);
       setPersistenceHealth(normalizePersistenceHealth(report));
     } catch (healthError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Статус сохранности недоступен", healthError));
+        setError(operatorWorkflowFailureMessage("РЎС‚Р°С‚СѓСЃ СЃРѕС…СЂР°РЅРЅРѕСЃС‚Рё РЅРµРґРѕСЃС‚СѓРїРµРЅ", healthError));
       }
     }
   }
@@ -7717,28 +7887,28 @@ export function App() {
   async function loadPersistenceIntegrity(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/system/persistence/verify", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Проверка резервной копии не выполнена"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РџСЂРѕРІРµСЂРєР° СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё РЅРµ РІС‹РїРѕР»РЅРµРЅР°"));
       const report = (await response.json()) as PersistenceIntegrityReport & { meta?: PersistenceHealth };
       setPersistenceIntegrity(report);
       if (report.meta) setPersistenceHealth(report.meta);
     } catch (verifyError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Проверка резервной копии не выполнена", verifyError));
+        setError(operatorWorkflowFailureMessage("РџСЂРѕРІРµСЂРєР° СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё РЅРµ РІС‹РїРѕР»РЅРµРЅР°", verifyError));
       }
     }
   }
 
   async function downloadPersistenceExport() {
     if (isPersistenceExporting) {
-      setError("Дождитесь завершения текущего экспорта резервной копии.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ СЌРєСЃРїРѕСЂС‚Р° СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё.");
       return;
     }
     setIsPersistenceExporting(true);
     try {
       const response = await fetch("/api/system/persistence/export", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Экспорт резервной копии не выполнен"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р­РєСЃРїРѕСЂС‚ СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё РЅРµ РІС‹РїРѕР»РЅРµРЅ"));
       const blob = await response.blob();
-      if (blob.size === 0) throw new Error("Сервер вернул пустой файл резервной копии.");
+      if (blob.size === 0) throw new Error("РЎРµСЂРІРµСЂ РІРµСЂРЅСѓР» РїСѓСЃС‚РѕР№ С„Р°Р№Р» СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё.");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -7750,7 +7920,7 @@ export function App() {
       await loadPersistenceIntegrity({ silent: true });
       setError(null);
     } catch (exportError) {
-      setError(operatorWorkflowFailureMessage("Экспорт резервной копии не выполнен", exportError));
+      setError(operatorWorkflowFailureMessage("Р­РєСЃРїРѕСЂС‚ СЂРµР·РµСЂРІРЅРѕР№ РєРѕРїРёРё РЅРµ РІС‹РїРѕР»РЅРµРЅ", exportError));
     } finally {
       setIsPersistenceExporting(false);
     }
@@ -7761,7 +7931,7 @@ export function App() {
       setBrowserContinuity(await inspectBrowserContinuity());
     } catch (continuityError) {
       if (!options.silent) {
-        setError(browserCapabilityFailureMessage("Проверка сохранности браузера не выполнена", continuityError));
+        setError(browserCapabilityFailureMessage("РџСЂРѕРІРµСЂРєР° СЃРѕС…СЂР°РЅРЅРѕСЃС‚Рё Р±СЂР°СѓР·РµСЂР° РЅРµ РІС‹РїРѕР»РЅРµРЅР°", continuityError));
       }
     }
   }
@@ -7769,11 +7939,11 @@ export function App() {
   async function loadLocalBridgeReadiness(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/system/local-bridges/readiness", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Готовность локального модуля не проверена"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р“РѕС‚РѕРІРЅРѕСЃС‚СЊ Р»РѕРєР°Р»СЊРЅРѕРіРѕ РјРѕРґСѓР»СЏ РЅРµ РїСЂРѕРІРµСЂРµРЅР°"));
       setLocalBridgeReadiness((await response.json()) as LocalBridgeReadinessResponse);
     } catch (bridgeError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Готовность локального модуля не проверена", bridgeError));
+        setError(operatorWorkflowFailureMessage("Р“РѕС‚РѕРІРЅРѕСЃС‚СЊ Р»РѕРєР°Р»СЊРЅРѕРіРѕ РјРѕРґСѓР»СЏ РЅРµ РїСЂРѕРІРµСЂРµРЅР°", bridgeError));
       }
     }
   }
@@ -7781,43 +7951,43 @@ export function App() {
   async function loadLocalBridgeUsePlans(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/system/local-bridges/use-plans", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "План локального модуля недоступен"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РџР»Р°РЅ Р»РѕРєР°Р»СЊРЅРѕРіРѕ РјРѕРґСѓР»СЏ РЅРµРґРѕСЃС‚СѓРїРµРЅ"));
       const payload = (await response.json()) as LocalBridgeUsePlansResponse;
       setLocalBridgeUsePlans(payload);
       setLocalBridgeReadiness(payload.readiness);
     } catch (planError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("План локального модуля недоступен", planError));
+        setError(operatorWorkflowFailureMessage("РџР»Р°РЅ Р»РѕРєР°Р»СЊРЅРѕРіРѕ РјРѕРґСѓР»СЏ РЅРµРґРѕСЃС‚СѓРїРµРЅ", planError));
       }
     }
   }
 
   async function requestBrowserStoragePersistence() {
     if (typeof navigator === "undefined" || !navigator.storage || typeof navigator.storage.persist !== "function") {
-      setError("Постоянное хранилище браузера недоступно на этом устройстве.");
+      setError("РџРѕСЃС‚РѕСЏРЅРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ Р±СЂР°СѓР·РµСЂР° РЅРµРґРѕСЃС‚СѓРїРЅРѕ РЅР° СЌС‚РѕРј СѓСЃС‚СЂРѕР№СЃС‚РІРµ.");
       return;
     }
     try {
       const granted = await navigator.storage.persist();
       await refreshBrowserContinuity({ silent: true });
       if (!granted) {
-        setError("Браузер не выдал постоянное хранилище. Локальные черновики работают, но устройство может очистить локальное хранилище при нехватке места.");
+        setError("Р‘СЂР°СѓР·РµСЂ РЅРµ РІС‹РґР°Р» РїРѕСЃС‚РѕСЏРЅРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ. Р›РѕРєР°Р»СЊРЅС‹Рµ С‡РµСЂРЅРѕРІРёРєРё СЂР°Р±РѕС‚Р°СЋС‚, РЅРѕ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РјРѕР¶РµС‚ РѕС‡РёСЃС‚РёС‚СЊ Р»РѕРєР°Р»СЊРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ РїСЂРё РЅРµС…РІР°С‚РєРµ РјРµСЃС‚Р°.");
       }
     } catch (storageError) {
-      setError(browserCapabilityFailureMessage("Запрос постоянного хранилища не выполнен", storageError));
+      setError(browserCapabilityFailureMessage("Р—Р°РїСЂРѕСЃ РїРѕСЃС‚РѕСЏРЅРЅРѕРіРѕ С…СЂР°РЅРёР»РёС‰Р° РЅРµ РІС‹РїРѕР»РЅРµРЅ", storageError));
     }
   }
 
   async function loadSpeechGatewayStatus(options: { silent?: boolean } = {}): Promise<SpeechGatewayStatus | null> {
     try {
       const response = await fetch("/api/speech/status", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Состояние распознавания недоступно"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРѕСЃС‚РѕСЏРЅРёРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРЅРѕ"));
       const status = (await response.json()) as SpeechGatewayStatus;
       setSpeechGatewayStatus(status);
       return status;
     } catch (speechError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Шлюз распознавания речи недоступен", speechError));
+        setError(operatorWorkflowFailureMessage("РЁР»СЋР· СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ СЂРµС‡Рё РЅРµРґРѕСЃС‚СѓРїРµРЅ", speechError));
       }
       return null;
     }
@@ -7826,11 +7996,11 @@ export function App() {
   async function loadSpeechGatewayHealthReport(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/speech/gateway-health", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Проверка распознавания недоступна"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РџСЂРѕРІРµСЂРєР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРЅР°"));
       setSpeechGatewayHealthReport((await response.json()) as SpeechGatewayHealthReport);
     } catch (speechHealthError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Проверка распознавания недоступна", speechHealthError));
+        setError(operatorWorkflowFailureMessage("РџСЂРѕРІРµСЂРєР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРЅР°", speechHealthError));
       }
     }
   }
@@ -7838,11 +8008,11 @@ export function App() {
   async function loadSpeechProviderRuntimeStatuses(options: { silent?: boolean } = {}) {
     try {
       const response = await fetch("/api/speech/providers/runtime", { cache: "no-store", headers: denteClinicalReadHeaders() });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Провайдеры распознавания недоступны"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РџСЂРѕРІР°Р№РґРµСЂС‹ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРЅС‹"));
       setSpeechProviderRuntimeStatuses((await response.json()) as SpeechProviderRuntimeStatus[]);
     } catch (speechRuntimeError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Провайдер распознавания недоступен", speechRuntimeError));
+        setError(operatorWorkflowFailureMessage("РџСЂРѕРІР°Р№РґРµСЂ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРµРЅ", speechRuntimeError));
       }
     }
   }
@@ -7860,11 +8030,11 @@ export function App() {
           source: "visit"
         })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Стратегия распознавания недоступна"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎС‚СЂР°С‚РµРіРёСЏ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРЅР°"));
       setSpeechRecordingStrategy((await response.json()) as SpeechRecordingStrategy);
     } catch (speechStrategyError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Стратегия распознавания недоступна", speechStrategyError));
+        setError(operatorWorkflowFailureMessage("РЎС‚СЂР°С‚РµРіРёСЏ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРЅР°", speechStrategyError));
       }
     }
   }
@@ -7882,11 +8052,11 @@ export function App() {
         cache: "no-store",
         headers: denteClinicalReadHeaders()
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Восстановление диктовки недоступно"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РґРёРєС‚РѕРІРєРё РЅРµРґРѕСЃС‚СѓРїРЅРѕ"));
       setSpeechRecordingRecovery((await response.json()) as SpeechRecordingRecoveryList);
     } catch (speechRecoveryError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Восстановление диктовки недоступно", speechRecoveryError));
+        setError(operatorWorkflowFailureMessage("Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РґРёРєС‚РѕРІРєРё РЅРµРґРѕСЃС‚СѓРїРЅРѕ", speechRecoveryError));
       }
     }
   }
@@ -7947,7 +8117,7 @@ export function App() {
       })
     });
     if (!response.ok) {
-      throw new WorkflowResponseError(await responseErrorMessage(response, "Прием не принят"), response.status);
+      throw new WorkflowResponseError(await responseErrorMessage(response, "РџСЂРёРµРј РЅРµ РїСЂРёРЅСЏС‚"), response.status);
     }
     return (await response.json()) as AcceptVisitDraftResponse;
   }
@@ -7961,7 +8131,7 @@ export function App() {
       cache: "no-store",
       headers: denteClinicalReadHeaders()
     });
-    if (!response.ok) throw new Error(await responseErrorMessage(response, "Серверный черновик не загружен"));
+    if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРµСЂРІРµСЂРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РЅРµ Р·Р°РіСЂСѓР¶РµРЅ"));
     return (await response.json()) as VisitDraftAutosaveResponse;
   }
 
@@ -7986,14 +8156,14 @@ export function App() {
           selectedSpecialty,
           transcript,
           draft: visitNoteDraftFromForm(visitNoteForm, [
-            "Серверный снимок автосохранения. Перед принятием черновика ЭМК врач все равно проверяет текст."
+            "РЎРµСЂРІРµСЂРЅС‹Р№ СЃРЅРёРјРѕРє Р°РІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёСЏ. РџРµСЂРµРґ РїСЂРёРЅСЏС‚РёРµРј С‡РµСЂРЅРѕРІРёРєР° Р­РњРљ РІСЂР°С‡ РІСЃРµ СЂР°РІРЅРѕ РїСЂРѕРІРµСЂСЏРµС‚ С‚РµРєСЃС‚."
           ]),
           baseRevision: dashboard.activeVisit.revision ?? null,
           clientDraftId: `visit-draft-${dashboard.activeVisit.id}`,
           clientSavedAt
         })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Серверный черновик не сохранен"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРµСЂРІРµСЂРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РЅРµ СЃРѕС…СЂР°РЅРµРЅ"));
       const result = (await response.json()) as VisitDraftAutosaveResponse;
       lastServerDraftSignatureRef.current = signature;
       setLastServerDraftSavedAt(result.serverDraft?.serverSavedAt ?? clientSavedAt);
@@ -8001,7 +8171,7 @@ export function App() {
     } catch (syncError) {
       setServerDraftSyncState("error");
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Серверный черновик не сохранен", syncError));
+        setError(operatorWorkflowFailureMessage("РЎРµСЂРІРµСЂРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РЅРµ СЃРѕС…СЂР°РЅРµРЅ", syncError));
       }
     }
   }
@@ -8034,7 +8204,7 @@ export function App() {
       await savePendingVisitSaves(remaining, activeOrganizationId);
       await refreshPendingVisitSaveState();
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Сервер пока не принял очередь", syncError));
+        setError(operatorWorkflowFailureMessage("РЎРµСЂРІРµСЂ РїРѕРєР° РЅРµ РїСЂРёРЅСЏР» РѕС‡РµСЂРµРґСЊ", syncError));
       }
     } finally {
       setIsPendingVisitSyncing(false);
@@ -8048,15 +8218,34 @@ export function App() {
       body: JSON.stringify(input)
     });
     const payload = (await response.json()) as SpeechTranscriptionResponse & { error?: unknown; message?: unknown };
+    const failureDetail = speechChunkFailureDetail(payload, response);
     if (payload.chunk?.status === "needs_provider_key" && !payload.chunk.transcript.trim()) {
-      throw new Error("Серверное распознавание сейчас недоступно; аудио осталось в локальной очереди.");
+      throw new Error(failureDetail || "РЎРµСЂРІРµСЂРЅРѕРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ СЃРµР№С‡Р°СЃ РЅРµРґРѕСЃС‚СѓРїРЅРѕ; Р°СѓРґРёРѕ РѕСЃС‚Р°Р»РѕСЃСЊ РІ Р»РѕРєР°Р»СЊРЅРѕР№ РѕС‡РµСЂРµРґРё.");
     }
     if (!response.ok) {
-      const rawDetail = typeof payload.message === "string" ? payload.message : typeof payload.error === "string" ? payload.error : null;
-      const detail = operatorReadableErrorDetail(rawDetail) ?? responseStatusFailureLabel(response);
-      throw new Error(`Распознавание речи не выполнено: ${detail}`);
+      throw new Error(`Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ СЂРµС‡Рё РЅРµ РІС‹РїРѕР»РЅРµРЅРѕ: ${failureDetail || responseStatusFailureLabel(response)}`);
     }
     return payload;
+  }
+
+  function speechChunkFailureDetail(payload: (Partial<SpeechTranscriptionResponse> & { error?: unknown; message?: unknown }) | null, response: Response): string {
+    const chunk = payload?.chunk;
+    if (chunk) {
+      const details = [
+        chunk.quality.providerWarnings[0],
+        chunk.warnings[0],
+        chunk.quality.nextAction
+      ]
+        .map((detail) => operatorReadableErrorDetail(detail ?? null))
+        .filter((detail): detail is string => Boolean(detail));
+      const uniqueDetails = Array.from(new Set(details));
+      if (uniqueDetails.length) return uniqueDetails.slice(0, 2).join(" ");
+      if (chunk.status === "failed") return "СЃРµСЂРІРµСЂ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµ РІРµСЂРЅСѓР» С‚РµРєСЃС‚; Р°СѓРґРёРѕ СЃРѕС…СЂР°РЅРµРЅРѕ РґР»СЏ РїРѕРІС‚РѕСЂРЅРѕР№ РѕС‚РїСЂР°РІРєРё.";
+      if (chunk.status === "needs_provider_key") return "РёСЃС‚РѕС‡РЅРёРє СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ СЃРµР№С‡Р°СЃ РЅРµРґРѕСЃС‚СѓРїРµРЅ; Р°СѓРґРёРѕ СЃРѕС…СЂР°РЅРµРЅРѕ РґР»СЏ РїРѕРІС‚РѕСЂРЅРѕР№ РѕС‚РїСЂР°РІРєРё.";
+    }
+    const rawDetail =
+      typeof payload?.message === "string" ? payload.message : typeof payload?.error === "string" ? payload.error : null;
+    return operatorReadableErrorDetail(rawDetail) ?? responseStatusFailureLabel(response);
   }
 
   function speechChunkApplyKey(result: SpeechTranscriptionResponse): string {
@@ -8073,26 +8262,43 @@ export function App() {
     void loadSpeechRecordingRecovery({ silent: true });
     const applyKey = speechChunkApplyKey(result);
     if (appliedSpeechChunkKeysRef.current.has(applyKey)) {
-      setSpeechStatusNote(`Фрагмент ${result.chunk.chunkIndex + 1} уже учтен, дубль не добавлен.`);
+      setSpeechStatusNote("Р­С‚Р° С‡Р°СЃС‚СЊ Р·Р°РїРёСЃРё СѓР¶Рµ РґРѕР±Р°РІР»РµРЅР°, РґСѓР±Р»СЊ РЅРµ РІСЃС‚Р°РІР»РµРЅ.");
       return;
     }
     if (!speechTranscriptionMatchesActiveVisit(result)) {
-      setSpeechStatusNote("Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.");
+      setSpeechStatusNote("Р­С‚Р° С‡Р°СЃС‚СЊ Р·Р°РїРёСЃРё РѕС‚РЅРѕСЃРёС‚СЃСЏ Рє РґСЂСѓРіРѕРјСѓ РїСЂРёРµРјСѓ Рё РЅРµ РґРѕР±Р°РІР»РµРЅР° РІ С‚РµРєСѓС‰СѓСЋ РєР°СЂС‚Сѓ.");
       return;
     }
     const text = result.chunk.transcript.trim();
     const quality = result.chunk.quality;
     setSpeechLastQuality(quality);
-    const qualitySuffix = quality.level === "clear" ? "" : ` · ${speechQualityLabels[quality.level]}`;
+    const qualitySuffix = quality.level === "clear" ? "" : ` В· ${speechQualityLabels[quality.level]}`;
     if (text) {
       appliedSpeechChunkKeysRef.current.add(applyKey);
+      speechRecordingHadRecognizedTextRef.current = true;
+      setSpeechRetrySuggested(false);
       appendVisitDictationText(text);
+      const moreSpeechPartsExpected =
+        Boolean(mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") ||
+        speechUploadPromisesRef.current.size > 1 ||
+        isSpeechRecordingFinalizing;
       setSpeechStatusNote(
         result.chunk.status === "transcribed"
-          ? `${result.chunk.providerLabel}: фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}`
-          : `Сохранен фрагмент ${result.chunk.chunkIndex + 1}${qualitySuffix}: ${quality.nextAction}`
+          ? moreSpeechPartsExpected
+            ? `${result.chunk.providerLabel}: С‡Р°СЃС‚СЊ С‚РµРєСЃС‚Р° РґРѕР±Р°РІР»РµРЅР°, Р¶РґСѓ РѕСЃС‚Р°Р»СЊРЅС‹Рµ С‡Р°СЃС‚Рё${qualitySuffix}`
+            : `${result.chunk.providerLabel}: С‚РµРєСЃС‚ РґРѕР±Р°РІР»РµРЅ${qualitySuffix}`
+          : `Р§Р°СЃС‚СЊ Р·Р°РїРёСЃРё СЃРѕС…СЂР°РЅРµРЅР°${qualitySuffix}: ${quality.nextAction}`
       );
       return;
+    }
+    if (quality.level === "empty" && speechQuietWarningShownRef.current) {
+      openDictationStatusWhenMicrophoneChoiceHelps();
+      setSpeechRetrySuggested(true);
+      setSpeechStatusNote(`${speechQualityLabels[quality.level]}: ${quietMicrophoneNextAction()}`);
+      return;
+    }
+    if (quality.level === "empty" || quality.level === "failed") {
+      setSpeechRetrySuggested(true);
     }
     setSpeechStatusNote(`${speechQualityLabels[quality.level]}: ${quality.nextAction}`);
   }
@@ -8110,10 +8316,11 @@ export function App() {
         headers: denteClinicalReadHeaders()
         }
       );
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись распознавания не собрана"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р—Р°РїРёСЃСЊ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅРµ СЃРѕР±СЂР°РЅР°"));
       const assembly = (await response.json()) as SpeechRecordingAssembly;
       const assembledTranscript = assembly.transcript.trim();
       if (assembledTranscript) {
+        speechRecordingHadRecognizedTextRef.current = true;
         visitDraftUserEditedRef.current = true;
         setTranscript((current) => {
           const normalizedCurrent = current.replace(/\s+/g, " ").trim();
@@ -8123,14 +8330,15 @@ export function App() {
         });
       }
       if (!options.silent || assembly.missingChunkIndexes.length || assembly.warnings.length) {
-        const missing = assembly.missingChunkIndexes.length ? ` · пропуски ${assembly.missingChunkIndexes.join(", ")}` : "";
-        setSpeechStatusNote(`Запись собрана: ${assembly.chunkCount} фрагм.${missing}`);
+        const missing = assembly.missingChunkIndexes.length ? ` В· РїСЂРѕРїСѓСЃРєРё ${assembly.missingChunkIndexes.join(", ")}` : "";
+        const assembledMessage = assembly.chunkCount > 0 ? `Р—Р°РїРёСЃСЊ СЃРѕР±СЂР°РЅР°: С‡Р°СЃС‚РµР№ Р·Р°РїРёСЃРё ${assembly.chunkCount}${missing}` : "Р—Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°. Р•СЃР»Рё С‚РµРєСЃС‚ РЅРµ РїРѕСЏРІРёР»СЃСЏ, РїРѕРїСЂРѕР±СѓР№С‚Рµ РіРѕРІРѕСЂРёС‚СЊ Р±Р»РёР¶Рµ Рє РјРёРєСЂРѕС„РѕРЅСѓ Рё Р·Р°РїРёС€РёС‚Рµ РµС‰Рµ СЂР°Р·.";
+        setSpeechStatusNote(assembledMessage);
       }
       void loadSpeechRecordingRecovery({ silent: true });
       return assembly;
     } catch (assemblyError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Не удалось собрать запись распознавания", assemblyError));
+        setError(operatorWorkflowFailureMessage("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР±СЂР°С‚СЊ Р·Р°РїРёСЃСЊ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ", assemblyError));
       }
       return null;
     }
@@ -8138,20 +8346,66 @@ export function App() {
 
   function trackSpeechUpload(upload: Promise<void>) {
     speechUploadPromisesRef.current.add(upload);
-    upload.finally(() => speechUploadPromisesRef.current.delete(upload)).catch(() => undefined);
+    setSpeechActiveUploadCount((count) => count + 1);
+    upload
+      .finally(() => {
+        speechUploadPromisesRef.current.delete(upload);
+        setSpeechActiveUploadCount((count) => Math.max(0, count - 1));
+      })
+      .catch(() => undefined);
   }
 
   async function waitForSpeechUploads() {
-    const pendingUploads = Array.from(speechUploadPromisesRef.current);
-    if (pendingUploads.length) {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const pendingUploads = Array.from(speechUploadPromisesRef.current);
+      if (!pendingUploads.length) {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 150));
+        if (!speechUploadPromisesRef.current.size) return;
+        continue;
+      }
       await Promise.allSettled(pendingUploads);
     }
+    const remainingUploads = Array.from(speechUploadPromisesRef.current);
+    if (remainingUploads.length) await Promise.allSettled(remainingUploads);
   }
 
-  async function finalizeSpeechRecording(recordingId: string) {
-    await waitForSpeechUploads();
-    await flushPendingSpeechChunks({ silent: true });
-    await assembleSpeechRecording(recordingId, { silent: true });
+  function finalSpeechNoTextMessage() {
+    if (speechRecordingVoiceLevelAvailableAtStopRef.current && !speechRecordingVoiceDetectedAtStopRef.current) {
+      openDictationStatusWhenMicrophoneChoiceHelps();
+      return `Р—Р°РїРёСЃСЊ СЃРґРµР»Р°РЅР°, РЅРѕ РјРёРєСЂРѕС„РѕРЅ РїРѕС‡С‚Рё РЅРµ СЃР»С‹С€Р°Р» РіРѕР»РѕСЃ. ${quietMicrophoneNextAction()} РџСЂРѕРІРµСЂСЊС‚Рµ РјРёРєСЂРѕС„РѕРЅ Рё Р·Р°РїРёС€РёС‚Рµ РµС‰Рµ СЂР°Р·.`;
+    }
+    return "Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ Р·Р°РІРµСЂС€РµРЅРѕ, РЅРѕ С‚РµРєСЃС‚ РЅРµ РїРѕСЏРІРёР»СЃСЏ. РќР°Р¶РјРёС‚Рµ В«РџСЂРѕРІРµСЂРёС‚СЊ РјРёРєСЂРѕС„РѕРЅВ», Р·Р°С‚РµРј Р·Р°РїРёС€РёС‚Рµ РµС‰Рµ СЂР°Р· Р±Р»РёР¶Рµ Рє РјРёРєСЂРѕС„РѕРЅСѓ.";
+  }
+
+  async function finalizeSpeechRecording(recordingId: string, options: { progressNote?: boolean } = {}) {
+    setIsSpeechRecordingFinalizing(true);
+    if (options.progressNote !== false) {
+      setSpeechStatusNote("Р—Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°. Р Р°СЃРїРѕР·РЅР°СЋ РїРѕСЃР»РµРґРЅРёРµ С‡Р°СЃС‚Рё Р·Р°РїРёСЃРё.");
+    }
+    try {
+      await waitForSpeechUploads();
+      await flushPendingSpeechChunks({ silent: true });
+      const assembly = await assembleSpeechRecording(recordingId, { silent: true });
+      const queuedChunksAfterFlush = await loadPendingSpeechChunks(activeOrganizationId);
+      const queuedCurrentRecordingCount = queuedChunksAfterFlush.filter((chunk) => chunk.recordingId === recordingId).length;
+      if (options.progressNote !== false && assembly) {
+        if (assembly.transcript.trim() || speechRecordingHadRecognizedTextRef.current) {
+          setSpeechRetrySuggested(false);
+          setSpeechStatusNote("РўРµРєСЃС‚ РіРѕС‚РѕРІ. РџСЂРѕРІРµСЂСЊС‚Рµ РїРѕР»Рµ РґРёРєС‚РѕРІРєРё Рё РЅР°Р¶РјРёС‚Рµ В«РЎРѕР±СЂР°С‚СЊ Р­РњРљВ».");
+        } else if (queuedCurrentRecordingCount > 0) {
+          setSpeechRetrySuggested(false);
+          setSpeechStatusNote(
+            `Р—РІСѓРє СЃРѕС…СЂР°РЅРµРЅ Р»РѕРєР°Р»СЊРЅРѕ: ${queuedCurrentRecordingCount} С„СЂР°РіРј. РљРѕРіРґР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ Р±СѓРґРµС‚ РіРѕС‚РѕРІРѕ, CRM РѕС‚РїСЂР°РІРёС‚ РµРіРѕ Рё РґРѕР±Р°РІРёС‚ С‚РµРєСЃС‚.`
+          );
+        } else {
+          setSpeechMicrophoneVerified(false);
+          setSpeechRetrySuggested(true);
+          setSpeechStatusNote(finalSpeechNoTextMessage());
+        }
+      }
+    } finally {
+      setIsSpeechRecordingFinalizing(false);
+    }
   }
 
   async function flushPendingSpeechChunks(options: { silent?: boolean } = {}) {
@@ -8164,7 +8418,7 @@ export function App() {
     if (!isOnline) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
-        setSpeechStatusNote(`Очередь распознавания сохранена локально: ${queue.length} фрагм., отправка после подключения.`);
+        setSpeechStatusNote(`РћС‡РµСЂРµРґСЊ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ СЃРѕС…СЂР°РЅРµРЅР° Р»РѕРєР°Р»СЊРЅРѕ: ${queue.length} С„СЂР°РіРј., РѕС‚РїСЂР°РІРєР° РїРѕСЃР»Рµ РїРѕРґРєР»СЋС‡РµРЅРёСЏ.`);
       }
       return;
     }
@@ -8174,7 +8428,7 @@ export function App() {
     if (hasAudioWaitingForServer && !speechGatewayCanUpload(currentGateway)) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
-        setSpeechStatusNote(`Очередь распознавания сохранена: ${queue.length} фрагм. Серверное распознавание еще не готово, аудио не удалено.`);
+        setSpeechStatusNote(`РћС‡РµСЂРµРґСЊ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ СЃРѕС…СЂР°РЅРµРЅР°: ${queue.length} С„СЂР°РіРј. РЎРµСЂРІРµСЂРЅРѕРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ РµС‰Рµ РЅРµ РіРѕС‚РѕРІРѕ, Р°СѓРґРёРѕ РЅРµ СѓРґР°Р»РµРЅРѕ.`);
       }
       return;
     }
@@ -8194,7 +8448,7 @@ export function App() {
     } catch (syncError) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Очередь распознавания пока не отправлена", syncError));
+        setError(operatorWorkflowFailureMessage("РћС‡РµСЂРµРґСЊ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РїРѕРєР° РЅРµ РѕС‚РїСЂР°РІР»РµРЅР°", syncError));
       }
     }
   }
@@ -8368,7 +8622,7 @@ export function App() {
       onboardingDraftMode
     });
     if (!savedPreferences) {
-      setUiPreferencesSyncError("Настройки интерфейса не сохранены: браузер заблокировал локальное хранилище.");
+      setUiPreferencesSyncError("РќР°СЃС‚СЂРѕР№РєРё РёРЅС‚РµСЂС„РµР№СЃР° РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹: Р±СЂР°СѓР·РµСЂ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°Р» Р»РѕРєР°Р»СЊРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ.");
       return undefined;
     }
     queueUiPreferencesServerSync(savedPreferences, { delayMs: 600 });
@@ -8436,7 +8690,7 @@ export function App() {
 
   useEffect(() => {
     loadDashboard().catch((loadError: unknown) => {
-      setError(operatorWorkflowFailureMessage("Не удалось загрузить данные", loadError));
+      setError(operatorWorkflowFailureMessage("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РґР°РЅРЅС‹Рµ", loadError));
     });
   }, []);
 
@@ -9052,9 +9306,9 @@ export function App() {
   const documentPatientMatchesActiveVisit = Boolean(documentPatient && dashboard?.activeVisit.patientId === documentPatient.id);
   const paymentPatientContextReady = Boolean(documentPatient && documentPatientMatchesActiveVisit);
   const paymentPatientContextMessage = !documentPatient
-    ? "Выберите пациента текущего приема перед записью оплаты."
+    ? "Р’С‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р° С‚РµРєСѓС‰РµРіРѕ РїСЂРёРµРјР° РїРµСЂРµРґ Р·Р°РїРёСЃСЊСЋ РѕРїР»Р°С‚С‹."
     : !documentPatientMatchesActiveVisit
-      ? `Сейчас выбран пациент ${documentPatient.fullName}, но активный прием открыт для другого пациента. Переключите активный прием перед записью оплаты.`
+      ? `РЎРµР№С‡Р°СЃ РІС‹Р±СЂР°РЅ РїР°С†РёРµРЅС‚ ${documentPatient.fullName}, РЅРѕ Р°РєС‚РёРІРЅС‹Р№ РїСЂРёРµРј РѕС‚РєСЂС‹С‚ РґР»СЏ РґСЂСѓРіРѕРіРѕ РїР°С†РёРµРЅС‚Р°. РџРµСЂРµРєР»СЋС‡РёС‚Рµ Р°РєС‚РёРІРЅС‹Р№ РїСЂРёРµРј РїРµСЂРµРґ Р·Р°РїРёСЃСЊСЋ РѕРїР»Р°С‚С‹.`
       : "";
 
   useEffect(() => {
@@ -9063,7 +9317,7 @@ export function App() {
     setPaymentPayerInn("");
     setPaymentPayerBirthDate("");
     setPaymentPayerIdentityDocument("");
-    setPaymentPayerRelationship("пациент");
+    setPaymentPayerRelationship("РїР°С†РёРµРЅС‚");
     setPaymentTaxDeductionCode("");
   }, [documentPatient?.id]);
 
@@ -9170,9 +9424,9 @@ export function App() {
 
   function telegramSubjectName(subjectType: DenteTelegramChatLinkPublic["subjectType"], subjectId: string): string {
     if (subjectType === "patient") {
-      return dashboard?.patients.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
+      return dashboard?.patients.find((patient) => patient.id === subjectId)?.fullName ?? "РџР°С†РёРµРЅС‚";
     }
-    return dashboard?.clinicSettings.staff.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
+    return dashboard?.clinicSettings.staff.find((member) => member.id === subjectId)?.fullName ?? "РЎРѕС‚СЂСѓРґРЅРёРє";
   }
 
   const activeChair = useMemo(() => {
@@ -9331,7 +9585,7 @@ export function App() {
     setReleasePeriodStart(request.periodStart ?? "");
     setReleasePeriodEnd(request.periodEnd ?? "");
     setReleaseProtectionNote(
-      `Выдача по запросу ${sourceDocument.title}; канал: ${medicalDocumentReleaseChannelLabels[request.requestedFormat]}. Личность получателя проверена, лишние данные третьих лиц исключаются перед передачей.`
+      `Р’С‹РґР°С‡Р° РїРѕ Р·Р°РїСЂРѕСЃСѓ ${sourceDocument.title}; РєР°РЅР°Р»: ${medicalDocumentReleaseChannelLabels[request.requestedFormat]}. Р›РёС‡РЅРѕСЃС‚СЊ РїРѕР»СѓС‡Р°С‚РµР»СЏ РїСЂРѕРІРµСЂРµРЅР°, Р»РёС€РЅРёРµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РёСЃРєР»СЋС‡Р°СЋС‚СЃСЏ РїРµСЂРµРґ РїРµСЂРµРґР°С‡РµР№.`
     );
   }, [issuedMedicalCopyRequestDocuments, selectedReleaseSourceRequestDocumentId]);
 
@@ -9347,6 +9601,63 @@ export function App() {
       .filter((toothCode): toothCode is string => Boolean(toothCode));
     return Array.from(new Set(toothCodes)).slice(0, 6).join(", ");
   }, [activeTreatmentPlanItems]);
+
+  const activeVisitTreatmentPlanItems = useMemo(() => {
+    if (!dashboard) return [];
+    return dashboard.treatmentPlanItems.filter(
+      (item) =>
+        item.patientId === dashboard.activeVisit.patientId &&
+        item.status !== "cancelled" &&
+        (!item.visitId || item.visitId === dashboard.activeVisit.id)
+    );
+  }, [dashboard]);
+
+  const activeVisitDetectedToothCodes = useMemo(() => {
+    const draftToothCodes = draft?.quality?.detectedToothCodes ?? [];
+    return Array.from(
+      new Set([
+        ...activeVisitTreatmentPlanItems.map((item) => item.toothCode?.trim()).filter((toothCode): toothCode is string => Boolean(toothCode)),
+        ...draftToothCodes,
+        ...extractFdiToothCodes(
+          transcript,
+          visitNoteForm.complaint,
+          visitNoteForm.anamnesis,
+          visitNoteForm.objectiveStatus,
+          visitNoteForm.diagnosis,
+          visitNoteForm.treatmentPlan
+        )
+      ])
+    ).filter((toothCode) => allAdultToothCodes.includes(toothCode as (typeof allAdultToothCodes)[number]));
+  }, [activeVisitTreatmentPlanItems, draft?.quality?.detectedToothCodes, transcript, visitNoteForm]);
+
+  const activeVisitToothStateByCode = useMemo(() => {
+    const states: Record<string, ToothMapState> = {};
+    for (const item of activeVisitTreatmentPlanItems) {
+      const toothCode = item.toothCode?.trim();
+      if (!toothCode) continue;
+      if (item.status === "completed") states[toothCode] = "done";
+      else if (item.status === "in_progress" || item.status === "approved" || item.status === "proposed") states[toothCode] = "planned";
+    }
+    for (const toothCode of activeVisitDetectedToothCodes) {
+      if (!states[toothCode]) states[toothCode] = "watch";
+    }
+    Object.entries(manualToothStateByCode).forEach(([toothCode, state]) => {
+      if (allAdultToothCodes.includes(toothCode as (typeof allAdultToothCodes)[number])) states[toothCode] = state;
+    });
+    return states;
+  }, [activeVisitDetectedToothCodes, activeVisitTreatmentPlanItems, manualToothStateByCode]);
+
+  const selectedToothPlanItems = useMemo(() => {
+    return activeVisitTreatmentPlanItems.filter((item) => item.toothCode?.trim() === selectedToothCode);
+  }, [activeVisitTreatmentPlanItems, selectedToothCode]);
+
+  const selectedToothState = activeVisitToothStateByCode[selectedToothCode] ?? "idle";
+  const selectedToothPlanSummary = selectedToothPlanItems
+    .map((item) => {
+      const service = dashboard?.serviceCatalog.find((candidate) => candidate.id === item.serviceId);
+      return `${service?.title ?? item.serviceId}${item.status === "completed" ? " РІС‹РїРѕР»РЅРµРЅРѕ" : " РІ РїР»Р°РЅРµ"}`;
+    })
+    .join("; ");
 
   const activeTreatmentPlanScenarios = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
@@ -9434,7 +9745,7 @@ export function App() {
       const payerKey = taxPaymentPayerKeyForUi(payment);
       if (!payerKey) continue;
       const payerInn = payment.payerInn?.trim() || "";
-      const payerName = payment.payerFullName?.trim() || "Плательщик";
+      const payerName = payment.payerFullName?.trim() || "РџР»Р°С‚РµР»СЊС‰РёРє";
       const payerRelationship = payment.payerRelationship?.trim();
       const payerIdentity = payment.payerIdentityDocument?.trim();
       const existing = optionsByKey.get(payerKey);
@@ -9447,8 +9758,8 @@ export function App() {
         key: payerKey,
         inn: payerInn,
         label: payerInn
-          ? `${payerName} · ИНН ${payerInn}${payerRelationship ? ` · ${payerRelationship}` : ""}`
-          : `${payerName} · документ ${payerIdentity || "без ИНН"}${payerRelationship ? ` · ${payerRelationship}` : ""}`,
+          ? `${payerName} В· РРќРќ ${payerInn}${payerRelationship ? ` В· ${payerRelationship}` : ""}`
+          : `${payerName} В· РґРѕРєСѓРјРµРЅС‚ ${payerIdentity || "Р±РµР· РРќРќ"}${payerRelationship ? ` В· ${payerRelationship}` : ""}`,
         amountRub: payment.amountRub,
         paymentCount: 1
       });
@@ -10069,13 +10380,13 @@ export function App() {
   const cbctWorkbenchTools = useMemo(() => cbctWorkbenchSeries?.mprReadiness.tools ?? [], [cbctWorkbenchSeries]);
   const cbctWorkbenchPlanes = useMemo<CbctWorkbenchPlane[]>(
     () => [
-      { key: "axial", title: "Аксиальная", detail: "Срез сверху-вниз" },
-      { key: "coronal", title: "Корональная", detail: "Фронтальная плоскость" },
-      { key: "sagittal", title: "Сагиттальная", detail: "Боковая плоскость" },
+      { key: "axial", title: "РђРєСЃРёР°Р»СЊРЅР°СЏ", detail: "РЎСЂРµР· СЃРІРµСЂС…Сѓ-РІРЅРёР·" },
+      { key: "coronal", title: "РљРѕСЂРѕРЅР°Р»СЊРЅР°СЏ", detail: "Р¤СЂРѕРЅС‚Р°Р»СЊРЅР°СЏ РїР»РѕСЃРєРѕСЃС‚СЊ" },
+      { key: "sagittal", title: "РЎР°РіРёС‚С‚Р°Р»СЊРЅР°СЏ", detail: "Р‘РѕРєРѕРІР°СЏ РїР»РѕСЃРєРѕСЃС‚СЊ" },
       {
         key: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "panoramic_reconstruction" : "oblique",
-        title: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Панорама" : "Косая",
-        detail: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Кривая из КЛКТ" : "Наклонная плоскость"
+        title: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "РџР°РЅРѕСЂР°РјР°" : "РљРѕСЃР°СЏ",
+        detail: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "РљСЂРёРІР°СЏ РёР· РљР›РљРў" : "РќР°РєР»РѕРЅРЅР°СЏ РїР»РѕСЃРєРѕСЃС‚СЊ"
       }
     ],
     [cbctWorkbenchSeries]
@@ -10090,7 +10401,7 @@ export function App() {
   const mprSlabVisualWidth = `${Math.min(86, Math.max(18, 14 + mprSlabMm * 2.2))}%`;
   const mprSlicePositionPercent = mprSliceMaxIndex > 0 ? `${(mprSafeSliceIndex / mprSliceMaxIndex) * 100}%` : "50%";
   const mprCurrentSliceFraction = mprSliceFraction(mprSafeSliceIndex, mprSliceMaxIndex);
-  const mprSliceLabel = mprControlsReady ? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}` : "срез включится после КЛКТ/КТ-серии";
+  const mprSliceLabel = mprControlsReady ? `СЃСЂРµР· ${mprSafeSliceIndex + 1} РёР· ${mprSliceMaxIndex + 1}` : "СЃСЂРµР· РІРєР»СЋС‡РёС‚СЃСЏ РїРѕСЃР»Рµ РљР›РљРў/РљРў-СЃРµСЂРёРё";
   const mprAxisRangeValue = formatMprAxisRangeValue({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
   const mprSlabRangeValue = formatMprSlabRangeValue({ canOpenMpr: mprControlsReady, slabMm: mprSlabMm });
   const mprSliceRangeValue = formatMprSliceRangeValue({
@@ -10104,7 +10415,7 @@ export function App() {
     "--mpr-slice-position": mprSlicePositionPercent
   };
   const mprActiveProjectionLabel = mprProjectionLabels[mprProjection] ?? mprProjection;
-  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection] ?? "плоскость просмотра";
+  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection] ?? "РїР»РѕСЃРєРѕСЃС‚СЊ РїСЂРѕСЃРјРѕС‚СЂР°";
   const mprProjectionCompass = mprProjectionCompassLabels(mprProjection);
   const mprAxisGuidance = buildMprAxisGuidance({
     canOpenMpr: mprControlsReady,
@@ -10199,19 +10510,19 @@ export function App() {
   };
   const createCtPlanningArtifact = (command: CtPlanningArtifactCommand) => {
     if (!selectedImagingStudy) {
-      setError("Выберите КТ-снимок перед созданием разметки.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РљРў-СЃРЅРёРјРѕРє РїРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј СЂР°Р·РјРµС‚РєРё.");
       return;
     }
     if (!imagingViewerSessionReady) {
-      setError("Дождитесь загрузки сессии просмотра снимка перед созданием КТ-разметки.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РіСЂСѓР·РєРё СЃРµСЃСЃРёРё РїСЂРѕСЃРјРѕС‚СЂР° СЃРЅРёРјРєР° РїРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј РљРў-СЂР°Р·РјРµС‚РєРё.");
       return;
     }
     if (command.requiresVolume && !mprControlsReady) {
-      setError("Для этой КТ-разметки нужна готовая КЛКТ/КТ-серия.");
+      setError("Р”Р»СЏ СЌС‚РѕР№ РљРў-СЂР°Р·РјРµС‚РєРё РЅСѓР¶РЅР° РіРѕС‚РѕРІР°СЏ РљР›РљРў/РљРў-СЃРµСЂРёСЏ.");
       return;
     }
     if (command.requiresImplant && !ctPlanningImplantPlan) {
-      setError("Сначала выберите имплант из библиотеки, затем создайте ось или шаблон.");
+      setError("РЎРЅР°С‡Р°Р»Р° РІС‹Р±РµСЂРёС‚Рµ РёРјРїР»Р°РЅС‚ РёР· Р±РёР±Р»РёРѕС‚РµРєРё, Р·Р°С‚РµРј СЃРѕР·РґР°Р№С‚Рµ РѕСЃСЊ РёР»Рё С€Р°Р±Р»РѕРЅ.");
       return;
     }
     const matchingQuickAction = findCtPlanningQuickActionForArtifactCommand(command);
@@ -10234,14 +10545,14 @@ export function App() {
       measurementValue: null,
       unit: command.unit,
       note: [
-        `Черновик КТ-разметки: ${command.detail}`,
-        `Плоскость: ${mprProjectionLabels[projection] ?? projection}`,
-        `Срез: ${mprSafeSliceIndex + 1}/${mprSliceMaxIndex + 1}`,
-        `Слой: ${mprSlabMm} мм`,
-        ctPlanningImplantPlan ? `Имплант: ${ctPlanningImplantPlan.diameterMm} x ${ctPlanningImplantPlan.lengthMm} мм` : ""
+        `Р§РµСЂРЅРѕРІРёРє РљРў-СЂР°Р·РјРµС‚РєРё: ${command.detail}`,
+        `РџР»РѕСЃРєРѕСЃС‚СЊ: ${mprProjectionLabels[projection] ?? projection}`,
+        `РЎСЂРµР·: ${mprSafeSliceIndex + 1}/${mprSliceMaxIndex + 1}`,
+        `РЎР»РѕР№: ${mprSlabMm} РјРј`,
+        ctPlanningImplantPlan ? `РРјРїР»Р°РЅС‚: ${ctPlanningImplantPlan.diameterMm} x ${ctPlanningImplantPlan.lengthMm} РјРј` : ""
       ]
         .filter(Boolean)
-        .join(" · "),
+        .join(" В· "),
       createdByUserId: null,
       createdAt: now,
       updatedAt: now
@@ -10292,12 +10603,12 @@ export function App() {
 
   async function restoreMprWorkbenchLocalDraft() {
     if (!cbctWorkbenchSeriesKey) {
-      setError("Сначала выберите готовую КЛКТ/КТ-серию, чтобы вернуть последний вид КТ-срезов.");
+      setError("РЎРЅР°С‡Р°Р»Р° РІС‹Р±РµСЂРёС‚Рµ РіРѕС‚РѕРІСѓСЋ РљР›РљРў/РљРў-СЃРµСЂРёСЋ, С‡С‚РѕР±С‹ РІРµСЂРЅСѓС‚СЊ РїРѕСЃР»РµРґРЅРёР№ РІРёРґ РљРў-СЃСЂРµР·РѕРІ.");
       return;
     }
     const draft = await loadLocalMprWorkbenchDraft(cbctWorkbenchSeriesKey, activeOrganizationId);
     if (!draft) {
-      setError("Для этой КЛКТ/КТ-серии еще нет сохраненного вида КТ-срезов.");
+      setError("Р”Р»СЏ СЌС‚РѕР№ РљР›РљРў/РљРў-СЃРµСЂРёРё РµС‰Рµ РЅРµС‚ СЃРѕС…СЂР°РЅРµРЅРЅРѕРіРѕ РІРёРґР° РљРў-СЃСЂРµР·РѕРІ.");
       return;
     }
     applyMprWorkbenchState(draft.state);
@@ -10419,7 +10730,7 @@ export function App() {
         cache: "no-store",
         headers: denteClinicalReadHeaders()
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Сессия просмотрщика не загружена"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРµСЃСЃРёСЏ РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР° РЅРµ Р·Р°РіСЂСѓР¶РµРЅР°"));
       const payload = (await response.json()) as ImagingViewerSessionResponse;
       setImagingViewerSession(payload.session);
       const localIsNewer =
@@ -10440,7 +10751,7 @@ export function App() {
         setImagingViewerSaveState("saved");
       }
     } catch {
-      setImagingViewerSaveError(localDraft ? "Сервер недоступен; локальный черновик просмотрщика сохранен." : "Сессия просмотрщика недоступна.");
+      setImagingViewerSaveError(localDraft ? "РЎРµСЂРІРµСЂ РЅРµРґРѕСЃС‚СѓРїРµРЅ; Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР° СЃРѕС…СЂР°РЅРµРЅ." : "РЎРµСЃСЃРёСЏ РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР° РЅРµРґРѕСЃС‚СѓРїРЅР°.");
       setImagingViewerSaveState(localDraft ? "queued" : "error");
     } finally {
       setImagingViewerSessionReady(true);
@@ -10450,7 +10761,7 @@ export function App() {
   async function saveCurrentImagingViewerSession(clientSavedAt: string) {
     if (!selectedImagingStudy) return;
     if (!isOnline) {
-      setImagingViewerSaveError("Офлайн: локальный черновик просмотрщика сохранен до появления сети на рабочей станции.");
+      setImagingViewerSaveError("РћС„Р»Р°Р№РЅ: Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР° СЃРѕС…СЂР°РЅРµРЅ РґРѕ РїРѕСЏРІР»РµРЅРёСЏ СЃРµС‚Рё РЅР° СЂР°Р±РѕС‡РµР№ СЃС‚Р°РЅС†РёРё.");
       setImagingViewerSaveState("queued");
       return;
     }
@@ -10468,7 +10779,7 @@ export function App() {
           clientSavedAt
         })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Сессия просмотрщика не сохранена"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРµСЃСЃРёСЏ РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР° РЅРµ СЃРѕС…СЂР°РЅРµРЅР°"));
       const payload = (await response.json()) as ImagingViewerSessionResponse;
       setImagingViewerSession(payload.session);
       const localSaved = saveLocalImagingViewerDraft(
@@ -10484,18 +10795,18 @@ export function App() {
       if (localSaved) setImagingViewerLocalSavedAt(payload.session.clientSavedAt ?? clientSavedAt);
       setImagingViewerSaveState("saved");
     } catch {
-      setImagingViewerSaveError("Серверное сохранение не выполнено; локальный черновик просмотра сохранен.");
+      setImagingViewerSaveError("РЎРµСЂРІРµСЂРЅРѕРµ СЃРѕС…СЂР°РЅРµРЅРёРµ РЅРµ РІС‹РїРѕР»РЅРµРЅРѕ; Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РїСЂРѕСЃРјРѕС‚СЂР° СЃРѕС…СЂР°РЅРµРЅ.");
       setImagingViewerSaveState("queued");
     }
   }
 
   function retryImagingViewerSessionSave() {
     if (!selectedImagingStudy?.id) {
-      setError("Выберите снимок перед повторным сохранением просмотра.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ СЃРЅРёРјРѕРє РїРµСЂРµРґ РїРѕРІС‚РѕСЂРЅС‹Рј СЃРѕС…СЂР°РЅРµРЅРёРµРј РїСЂРѕСЃРјРѕС‚СЂР°.");
       return;
     }
     if (!imagingViewerSessionReady) {
-      setError("Дождитесь загрузки сессии просмотра снимка перед повторным сохранением.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РіСЂСѓР·РєРё СЃРµСЃСЃРёРё РїСЂРѕСЃРјРѕС‚СЂР° СЃРЅРёРјРєР° РїРµСЂРµРґ РїРѕРІС‚РѕСЂРЅС‹Рј СЃРѕС…СЂР°РЅРµРЅРёРµРј.");
       return;
     }
     const clientSavedAt = imagingViewerLocalSavedAt ?? new Date().toISOString();
@@ -10504,16 +10815,16 @@ export function App() {
 
   function addImagingViewerNoteAnnotation() {
     if (!selectedImagingStudy) {
-      setError("Выберите снимок перед добавлением заметки.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ СЃРЅРёРјРѕРє РїРµСЂРµРґ РґРѕР±Р°РІР»РµРЅРёРµРј Р·Р°РјРµС‚РєРё.");
       return;
     }
     if (!imagingViewerSessionReady) {
-      setError("Дождитесь загрузки сессии просмотра снимка перед добавлением заметки.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РіСЂСѓР·РєРё СЃРµСЃСЃРёРё РїСЂРѕСЃРјРѕС‚СЂР° СЃРЅРёРјРєР° РїРµСЂРµРґ РґРѕР±Р°РІР»РµРЅРёРµРј Р·Р°РјРµС‚РєРё.");
       return;
     }
     const cleanNote = imagingViewerNoteText;
     if (!cleanNote) {
-      setError("Введите текст заметки перед добавлением к снимку.");
+      setError("Р’РІРµРґРёС‚Рµ С‚РµРєСЃС‚ Р·Р°РјРµС‚РєРё РїРµСЂРµРґ РґРѕР±Р°РІР»РµРЅРёРµРј Рє СЃРЅРёРјРєСѓ.");
       return;
     }
     const now = new Date().toISOString();
@@ -10563,7 +10874,7 @@ export function App() {
       setImagingViewerSaveError(null);
       setImagingViewerSaveState("local");
     } else {
-      setImagingViewerSaveError("Браузер отклонил локальное сохранение черновика просмотрщика; держите вкладку открытой до завершения серверной записи.");
+      setImagingViewerSaveError("Р‘СЂР°СѓР·РµСЂ РѕС‚РєР»РѕРЅРёР» Р»РѕРєР°Р»СЊРЅРѕРµ СЃРѕС…СЂР°РЅРµРЅРёРµ С‡РµСЂРЅРѕРІРёРєР° РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР°; РґРµСЂР¶РёС‚Рµ РІРєР»Р°РґРєСѓ РѕС‚РєСЂС‹С‚РѕР№ РґРѕ Р·Р°РІРµСЂС€РµРЅРёСЏ СЃРµСЂРІРµСЂРЅРѕР№ Р·Р°РїРёСЃРё.");
       setImagingViewerSaveState("error");
     }
     if (imagingViewerSaveTimerRef.current) window.clearTimeout(imagingViewerSaveTimerRef.current);
@@ -10590,16 +10901,20 @@ export function App() {
 
   const visibleVisitSpecialtyFocusOptions = useMemo(() => {
     const visibleSpecialties = new Set<DentalSpecialty>();
+    const alwaysAvailableSpecialties = new Set<DentalSpecialty>(["surgeon"]);
     const reasonSpecialty = inferSpecialtyFromText(activeAppointment?.reason);
 
     activeDoctor?.specialties.forEach((specialty) => visibleSpecialties.add(specialty));
     if (activeChair?.specialization) visibleSpecialties.add(activeChair.specialization);
     if (reasonSpecialty) visibleSpecialties.add(reasonSpecialty);
     visibleSpecialties.add(selectedSpecialty);
+    visibleSpecialties.add("surgeon");
     visibleSpecialties.add("universal");
 
     return visitSpecialtyFocusOptions.filter(
-      (option) => specialtiesWithTemplates.includes(option.specialty) && visibleSpecialties.has(option.specialty)
+      (option) =>
+        visibleSpecialties.has(option.specialty) &&
+        (specialtiesWithTemplates.includes(option.specialty) || alwaysAvailableSpecialties.has(option.specialty))
     );
   }, [activeAppointment?.reason, activeChair?.specialization, activeDoctor, selectedSpecialty, specialtiesWithTemplates]);
 
@@ -10619,10 +10934,10 @@ export function App() {
   }, [selectedProtocolId, specialtyProtocolTemplates]);
 
   const dictationQuickPhrases = useMemo(() => {
-    const visitReason = activeAppointment?.reason ?? selectedProtocolTemplate?.visitReason ?? "осмотр";
+    const visitReason = activeAppointment?.reason ?? selectedProtocolTemplate?.visitReason ?? "РѕСЃРјРѕС‚СЂ";
     const specialtyPhrases = specialtyQuickPhraseLibrary[selectedSpecialty] ?? specialtyQuickPhraseLibrary.universal;
     return [
-      { label: "Повод", text: `Повод приема: ${visitReason}.` },
+      { label: "РџРѕРІРѕРґ", text: `РџРѕРІРѕРґ РїСЂРёРµРјР°: ${visitReason}.` },
       ...specialtyPhrases
     ];
   }, [activeAppointment?.reason, selectedProtocolTemplate?.visitReason, selectedSpecialty]);
@@ -10654,18 +10969,107 @@ export function App() {
   const isVisitNoteDirty = visitNoteFieldDefinitions.some(({ key }) => visitNoteForm[key] !== savedVisitNoteForm[key]);
   const hasVisitNoteFormText = visitNoteFieldDefinitions.some(({ key }) => visitNoteForm[key].trim().length > 0);
   const hasVisitTranscriptText = transcript.trim().length > 0;
+  const browserDictationAvailable =
+    typeof window !== "undefined" &&
+    Boolean((window as BrowserWindowWithSpeech).SpeechRecognition ?? (window as BrowserWindowWithSpeech).webkitSpeechRecognition);
+  const serverVoiceRecordingAvailable =
+    typeof window !== "undefined" &&
+    typeof navigator !== "undefined" &&
+    Boolean(navigator.mediaDevices?.getUserMedia) &&
+    typeof MediaRecorder !== "undefined";
+  const speechMicrophoneTestAvailable =
+    typeof window !== "undefined" && typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+  const speechUploadReady = speechGatewayCanUpload(speechGatewayStatus);
+  const speechRecognitionReady = speechUploadReady && isOnline;
+  const speechTranscriptionBusy = speechActiveUploadCount > 0 || isSpeechRecordingFinalizing;
+  const speechAutoFlushPendingAudioReady =
+    speechRecognitionReady &&
+    pendingSpeechChunkCount > 0 &&
+    !speechTranscriptionBusy &&
+    !isServerVoiceRecording &&
+    !isServerVoiceRecordingStarting;
+  useEffect(() => {
+    return () => {
+      if (speechAutoFlushRetryTimerRef.current !== null) {
+        window.clearTimeout(speechAutoFlushRetryTimerRef.current);
+        speechAutoFlushRetryTimerRef.current = null;
+      }
+    };
+  }, []);
+  useEffect(() => {
+    if (!speechAutoFlushPendingAudioReady) {
+      if (speechAutoFlushRetryTimerRef.current !== null) {
+        window.clearTimeout(speechAutoFlushRetryTimerRef.current);
+        speechAutoFlushRetryTimerRef.current = null;
+      }
+      if (!speechRecognitionReady || pendingSpeechChunkCount === 0) {
+        speechAutoFlushLastKeyRef.current = null;
+      }
+      return;
+    }
+    if (speechAutoFlushInFlightRef.current) return;
+    const flushKey = [
+      activeOrganizationId?.trim() ?? "default",
+      dashboard?.activeVisit.id ?? "no-visit",
+      speechGatewayStatus?.providerId ?? "unknown",
+      speechGatewayStatus?.serverTranscriptionCurrentlyAvailable ? "available" : "unavailable",
+      speechGatewayStatus?.serverTranscriptionEnabled ? "enabled" : "disabled",
+      pendingSpeechChunkCount
+    ].join(":");
+    if (speechAutoFlushLastKeyRef.current === flushKey) return;
+    speechAutoFlushLastKeyRef.current = flushKey;
+    speechAutoFlushInFlightRef.current = true;
+    void flushPendingSpeechChunks({ silent: true }).finally(() => {
+      speechAutoFlushInFlightRef.current = false;
+      if (speechAutoFlushRetryTimerRef.current === null) {
+        speechAutoFlushRetryTimerRef.current = window.setTimeout(() => {
+          speechAutoFlushRetryTimerRef.current = null;
+          speechAutoFlushLastKeyRef.current = null;
+          setSpeechAutoFlushRetryTick((tick) => tick + 1);
+        }, 12000);
+      }
+    });
+  }, [
+    activeOrganizationId,
+    dashboard?.activeVisit.id,
+    pendingSpeechChunkCount,
+    speechAutoFlushPendingAudioReady,
+    speechAutoFlushRetryTick,
+    speechGatewayStatus?.providerId,
+    speechGatewayStatus?.serverTranscriptionCurrentlyAvailable,
+    speechGatewayStatus?.serverTranscriptionEnabled,
+    speechRecognitionReady
+  ]);
+  const speechTranscriptionBusyDetail = speechActiveUploadCount
+    ? `${speechActiveUploadCount} С‡Р°СЃС‚СЊ Р·Р°РїРёСЃРё СЂР°СЃРїРѕР·РЅР°РµС‚СЃСЏ`
+    : "СЃРѕР±РёСЂР°СЋ РёС‚РѕРіРѕРІС‹Р№ С‚РµРєСЃС‚ Р·Р°РїРёСЃРё";
+  const speechVoiceWorkBusy = isServerVoiceRecordingStarting || isServerVoiceRecording || isVisitDictating || isVisitDictationStarting || speechTranscriptionBusy;
+  const speechVoiceWorkMissingStep = isServerVoiceRecordingStarting || isServerVoiceRecording || isVisitDictating || isVisitDictationStarting
+    ? "РґРѕР¶РґРёС‚РµСЃСЊ РѕРєРѕРЅС‡Р°РЅРёСЏ Р·Р°РїРёСЃРё РіРѕР»РѕСЃР°"
+    : speechTranscriptionBusy
+      ? "РґРѕР¶РґРёС‚РµСЃСЊ РѕРєРѕРЅС‡Р°РЅРёСЏ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РіРѕР»РѕСЃР°"
+      : null;
+  const visitVoicePrimaryUsesServer = serverVoiceRecordingAvailable || isServerVoiceRecording;
+  const visitDictationPrimaryDetail = visitVoicePrimaryUsesServer
+    ? speechRecognitionReady
+      ? `${speechGatewayStatus?.providerLabel ?? "Groq Whisper"} РіРѕС‚РѕРІ: РјРѕР¶РЅРѕ РіРѕРІРѕСЂРёС‚СЊ РґРѕР»СЊС€Рµ, С‚РµРєСЃС‚ РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ С‡Р°СЃС‚РµР№ Р·Р°РїРёСЃРё.`
+      : "CRM Р·Р°РїРёС€РµС‚ РіРѕР»РѕСЃ РЅРѕСЂРјР°Р»СЊРЅРѕ Рё РїСЂРѕРІРµСЂРёС‚ Groq РїСЂРё СЃС‚Р°СЂС‚Рµ. Р•СЃР»Рё СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРЅРѕ, Р·РІСѓРє СЃРѕС…СЂР°РЅРёС‚СЃСЏ РІ РѕС‡РµСЂРµРґСЊ."
+    : browserDictationAvailable
+      ? "Р“РѕРІРѕСЂРёС‚Рµ РѕР±С‹С‡РЅС‹РјРё С„СЂР°Р·Р°РјРё. Р‘СЂР°СѓР·РµСЂ РјРѕР¶РµС‚ РґРµР»Р°С‚СЊ РєРѕСЂРѕС‚РєРёРµ РїР°СѓР·С‹, CRM РїСЂРѕРґРѕР»Р¶РёС‚ СЃР»СѓС€Р°С‚СЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё."
+      : "Р’ СЌС‚РѕРј Р±СЂР°СѓР·РµСЂРµ РЅРµС‚ РІСЃС‚СЂРѕРµРЅРЅРѕР№ РґРёРєС‚РѕРІРєРё. РњРѕР¶РЅРѕ РїРµС‡Р°С‚Р°С‚СЊ РІСЂСѓС‡РЅСѓСЋ РёР»Рё РІРєР»СЋС‡РёС‚СЊ СЃРµСЂРІРµСЂРЅРѕРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ С‡РµСЂРµР· Groq.";
   const visitDraftBuildMissingSteps = [
-    !activePatient ? "выберите пациента" : null,
-    !hasVisitTranscriptText ? "добавьте текст диктовки или нажмите голосовую запись" : null
+    !activePatient ? "РІС‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р°" : null,
+    !hasVisitTranscriptText ? "РґРѕР±Р°РІСЊС‚Рµ С‚РµРєСЃС‚ РґРёРєС‚РѕРІРєРё РёР»Рё РЅР°Р¶РјРёС‚Рµ РіРѕР»РѕСЃРѕРІСѓСЋ Р·Р°РїРёСЃСЊ" : null,
+    speechVoiceWorkMissingStep
   ].filter((step): step is string => Boolean(step));
   const visitDraftReadyToBuild = visitDraftBuildMissingSteps.length === 0;
   const visitNoteAcceptMissingSteps = [
-    !hasVisitNoteFormText ? "заполните хотя бы одно поле ЭМК или соберите черновик из диктовки" : null,
-    !draft && !isVisitNoteDirty ? "внесите правку в ЭМК или подготовьте новый черновик" : null
+    !hasVisitNoteFormText ? "Р·Р°РїРѕР»РЅРёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРЅРѕ РїРѕР»Рµ Р­РњРљ РёР»Рё СЃРѕР±РµСЂРёС‚Рµ С‡РµСЂРЅРѕРІРёРє РёР· РґРёРєС‚РѕРІРєРё" : null,
+    !draft && !isVisitNoteDirty ? "РІРЅРµСЃРёС‚Рµ РїСЂР°РІРєСѓ РІ Р­РњРљ РёР»Рё РїРѕРґРіРѕС‚РѕРІСЊС‚Рµ РЅРѕРІС‹Р№ С‡РµСЂРЅРѕРІРёРє" : null
   ].filter((step): step is string => Boolean(step));
   const visitNoteReadyToAccept = visitNoteAcceptMissingSteps.length === 0;
-  const visitNoteActionLabel = isDraftAccepting ? "Сохраняю" : draft ? "Принять" : isVisitNoteDirty ? "Сохранить" : "Сохранено";
-  const visitNoteStatusLabel = draft ? "черновик готов" : isVisitNoteDirty ? "есть правки" : "сохранено";
+  const visitNoteActionLabel = isDraftAccepting ? "РЎРѕС…СЂР°РЅСЏСЋ" : draft ? "РџСЂРёРЅСЏС‚СЊ" : isVisitNoteDirty ? "РЎРѕС…СЂР°РЅРёС‚СЊ" : "РЎРѕС…СЂР°РЅРµРЅРѕ";
+  const visitNoteStatusLabel = draft ? "С‡РµСЂРЅРѕРІРёРє РіРѕС‚РѕРІ" : isVisitNoteDirty ? "РµСЃС‚СЊ РїСЂР°РІРєРё" : "СЃРѕС…СЂР°РЅРµРЅРѕ";
   const visitHasSavedNote = hasVisitNoteFormText && !draft && !isVisitNoteDirty;
   const visitWorkflowSteps: Array<{
     key: string;
@@ -10675,27 +11079,21 @@ export function App() {
   }> = [
     {
       key: "dictation",
-      label: "Диктовка",
-      detail: hasVisitTranscriptText ? "текст есть" : "начните голосом или текстом",
+      label: "Р”РёРєС‚РѕРІРєР°",
+      detail: hasVisitTranscriptText ? "С‚РµРєСЃС‚ РµСЃС‚СЊ" : hasVisitNoteFormText ? "РјРѕР¶РЅРѕ Р±РµР· РґРёРєС‚РѕРІРєРё" : "РЅР°Р¶РјРёС‚Рµ В«Р—Р°РїРёСЃР°С‚СЊВ»",
       state: hasVisitTranscriptText ? "ready" : "active"
     },
     {
-      key: "draft",
-      label: "Черновик",
-      detail: draft ? "проверьте результат" : isVisitNoteDirty ? "есть ручные правки" : "соберите из диктовки",
-      state: draft || isVisitNoteDirty ? "ready" : hasVisitTranscriptText ? "active" : "locked"
-    },
-    {
       key: "emk",
-      label: "ЭМК",
-      detail: visitHasSavedNote ? "запись сохранена" : visitNoteReadyToAccept ? "осталось подтвердить" : "ждет черновик",
-      state: visitHasSavedNote ? "ready" : visitNoteReadyToAccept ? "active" : "locked"
+      label: "Р­РњРљ",
+      detail: visitHasSavedNote ? "Р·Р°РїРѕР»РЅРµРЅР°" : draft || isVisitNoteDirty ? "РїСЂРѕРІРµСЂСЊС‚Рµ РїРѕР»СЏ" : hasVisitTranscriptText ? "СЃРѕР±РµСЂРёС‚Рµ РёР· С‚РµРєСЃС‚Р°" : "Р¶РґРµС‚ С‚РµРєСЃС‚Р°",
+      state: visitHasSavedNote ? "ready" : draft || isVisitNoteDirty ? "active" : hasVisitTranscriptText ? "active" : "locked"
     },
     {
-      key: "close",
-      label: "Закрытие",
-      detail: visitCloseChecklist?.readyToSign ? "готово" : primaryVisitWarning?.title ?? "проверка в конце",
-      state: visitCloseChecklist?.readyToSign ? "ready" : visitHasSavedNote ? "active" : "locked"
+      key: "save",
+      label: "РЎРѕС…СЂР°РЅРёС‚СЊ",
+      detail: visitHasSavedNote ? "Р·Р°РїРёСЃСЊ СЃРѕС…СЂР°РЅРµРЅР°" : visitNoteReadyToAccept ? "РїРѕРґС‚РІРµСЂРґРёС‚Рµ Р·Р°РїРёСЃСЊ" : "РїРѕСЃР»Рµ РїСЂРѕРІРµСЂРєРё",
+      state: visitHasSavedNote ? "ready" : visitNoteReadyToAccept ? "active" : "locked"
     }
   ];
   const visitPrimaryAction:
@@ -10706,27 +11104,55 @@ export function App() {
         disabled?: boolean;
         onClick: () => void;
       }
-    = !hasVisitTranscriptText
+    = !hasVisitTranscriptText && !hasVisitNoteFormText && !isVisitNoteDirty
     ? {
         kind: "dictation",
-        label: isVisitDictating ? "Слушаю" : "Начать диктовку",
-        detail: "Можно сразу говорить. Если микрофон не откроется, поле диктовки остается доступным для текста.",
-        disabled: isVisitDictating,
-        onClick: startVisitDictation
+        label: visitVoicePrimaryUsesServer
+          ? isSpeechMicrophoneTesting
+            ? "РџСЂРѕРІРµСЂСЏСЋ РјРёРєСЂРѕС„РѕРЅ"
+            : isServerVoiceRecordingStarting
+              ? "Р’РєР»СЋС‡Р°СЋ Р·Р°РїРёСЃСЊ"
+            : isServerVoiceRecording
+            ? "РћСЃС‚Р°РЅРѕРІРёС‚СЊ Р·Р°РїРёСЃСЊ"
+            : speechTranscriptionBusy
+              ? "Р Р°СЃРїРѕР·РЅР°СЋ РіРѕР»РѕСЃ"
+            : speechRetrySuggested
+              ? "Р—Р°РїРёСЃР°С‚СЊ РµС‰Рµ СЂР°Р·"
+              : "Р—Р°РїРёСЃР°С‚СЊ РіРѕР»РѕСЃ"
+          : isSpeechMicrophoneTesting || isVisitDictationStarting
+            ? "РџСЂРѕРІРµСЂСЏСЋ РјРёРєСЂРѕС„РѕРЅ"
+            : isVisitDictating
+              ? "РћСЃС‚Р°РЅРѕРІРёС‚СЊ РґРёРєС‚РѕРІРєСѓ"
+              : speechRetrySuggested
+                ? "Р”РёРєС‚РѕРІР°С‚СЊ РµС‰Рµ СЂР°Р·"
+                : "Р”РёРєС‚РѕРІР°С‚СЊ",
+        detail: visitDictationPrimaryDetail,
+        disabled: visitVoicePrimaryUsesServer
+          ? isSpeechMicrophoneTesting || isServerVoiceRecordingStarting || (!isServerVoiceRecording && speechTranscriptionBusy)
+          : isSpeechMicrophoneTesting || isVisitDictationStarting || (!browserDictationAvailable && !isVisitDictating),
+        onClick: visitVoicePrimaryUsesServer
+          ? isServerVoiceRecording
+            ? stopServerVoiceRecording
+            : () => void startServerVoiceRecording()
+          : isVisitDictating
+            ? stopVisitDictation
+            : () => void startVisitDictation()
       }
-    : !draft && !isVisitNoteDirty
-      ? {
-          kind: "draft",
-          label: isDraftLoading ? "Собираю" : "Собрать черновик",
-          detail: "Система разложит диктовку по полям ЭМК, врач потом проверит и сохранит.",
-          disabled: isDraftLoading || !visitDraftReadyToBuild,
-          onClick: () => void buildDraft()
-        }
+    : hasVisitTranscriptText && !draft && !isVisitNoteDirty
+        ? {
+            kind: "draft",
+            label: speechVoiceWorkBusy ? "Р“РѕР»РѕСЃ РёРґРµС‚" : isDraftLoading ? "РЎРѕР±РёСЂР°СЋ" : "РЎРѕР±СЂР°С‚СЊ Р­РњРљ",
+            detail: speechVoiceWorkBusy
+              ? "Р”РѕР¶РґРёС‚РµСЃСЊ РѕРєРѕРЅС‡Р°РЅРёСЏ Р·Р°РїРёСЃРё Рё СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ, РїРѕС‚РѕРј CRM СЃРѕР±РµСЂРµС‚ РєР°СЂС‚Сѓ РёР· РїРѕР»РЅРѕРіРѕ С‚РµРєСЃС‚Р°."
+              : "РЎРёСЃС‚РµРјР° СЂР°Р·Р»РѕР¶РёС‚ РґРёРєС‚РѕРІРєСѓ РїРѕ РїРѕР»СЏРј РєР°СЂС‚С‹. РџРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј РІСЂР°С‡ РїСЂРѕРІРµСЂСЏРµС‚ РєР°Р¶РґРѕРµ РїРѕР»Рµ.",
+            disabled: isDraftLoading || !visitDraftReadyToBuild,
+            onClick: () => void buildDraft()
+          }
       : !visitHasSavedNote
         ? {
             kind: "save",
             label: visitNoteActionLabel,
-            detail: "Проверьте поля ЭМК и сохраните запись приема.",
+            detail: "РџСЂРѕРІРµСЂСЊС‚Рµ РїРѕР»СЏ Р­РњРљ Рё СЃРѕС…СЂР°РЅРёС‚Рµ Р·Р°РїРёСЃСЊ РїСЂРёРµРјР°.",
             disabled: !visitNoteReadyToAccept || isDraftAccepting,
             onClick: () => void acceptDraftToVisit()
           }
@@ -10739,129 +11165,268 @@ export function App() {
             }
           : {
               kind: "close",
-              label: "Проверить закрытие",
-              detail: visitCloseChecklist?.nextAction ?? "Финальная проверка оплаты, документов и подписи приема.",
+              label: "РџСЂРѕРІРµСЂРёС‚СЊ Р·Р°РєСЂС‹С‚РёРµ",
+              detail: visitCloseChecklist?.nextAction ?? "Р¤РёРЅР°Р»СЊРЅР°СЏ РїСЂРѕРІРµСЂРєР° РѕРїР»Р°С‚С‹, РґРѕРєСѓРјРµРЅС‚РѕРІ Рё РїРѕРґРїРёСЃРё РїСЂРёРµРјР°.",
               onClick: () => scrollToVisitArea(".close-checklist")
             };
-  const speechRecoveryIssueCount =
-    speechRecordingRecovery?.recordings.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
-  const speechRecoveryQualityIssueCount =
-    speechRecordingRecovery?.recordings.reduce(
-      (total, recording) =>
-        total + recording.qualityCounts.review + recording.qualityCounts.empty + recording.qualityCounts.failed,
-      0
-    ) ?? 0;
-  const currentSpeechQualityIssue =
-    speechLastQuality && speechLastQuality.level !== "clear" ? speechLastQuality : null;
-  const speechUploadReady = speechGatewayCanUpload(speechGatewayStatus);
-  const speechRecognitionReady = speechUploadReady && isOnline;
   const speechGatewayActiveProviderIsLocal =
     speechGatewayStatus?.providerId === "local_whisper" || speechGatewayStatus?.providerId === "vosk_local";
-  const emptyDictationVoiceActionLabel = speechRecognitionReady
-    ? speechGatewayActiveProviderIsLocal
-      ? "Распознать локально"
-      : "Распознать на сервере"
-    : "Сохранить в очередь";
-  const pendingSpeechFlushActionLabel = speechRecognitionReady ? "Отправить звук" : "Проверить очередь";
+  const browserDictationStatusLabel = isVisitDictationStarting
+    ? "РџСЂРѕРІРµСЂСЏСЋ РјРёРєСЂРѕС„РѕРЅ"
+    : isSpeechMicrophoneTesting
+      ? "РџСЂРѕРІРµСЂРєР° РјРёРєСЂРѕС„РѕРЅР°"
+    : isServerVoiceRecordingStarting
+      ? "Р’РєР»СЋС‡Р°СЋ Р·Р°РїРёСЃСЊ"
+    : isServerVoiceRecording
+      ? "Р—Р°РїРёСЃСЊ РёРґРµС‚ С‡РµСЂРµР· Groq"
+    : speechTranscriptionBusy
+      ? "Р Р°СЃРїРѕР·РЅР°СЋ Р·Р°РїРёСЃСЊ"
+    : isVisitDictating
+    ? "Р‘СЂР°СѓР·РµСЂ СЃР»СѓС€Р°РµС‚"
+    : speechRecognitionReady
+      ? "Р“РѕС‚РѕРІРѕ Рє Р·Р°РїРёСЃРё РіРѕР»РѕСЃР°"
+      : serverVoiceRecordingAvailable
+        ? "Р“РѕС‚РѕРІРѕ Рє Р·Р°РїРёСЃРё Р°СѓРґРёРѕ"
+      : browserDictationAvailable
+        ? "Р“РѕС‚РѕРІРѕ Рє Р±СЂР°СѓР·РµСЂРЅРѕР№ РґРёРєС‚РѕРІРєРµ"
+      : "Р”РёРєС‚РѕРІРєР° РЅРµРґРѕСЃС‚СѓРїРЅР°";
+  const browserDictationStatusDetail = isVisitDictationStarting
+    ? "Р Р°Р·СЂРµС€РёС‚Рµ РґРѕСЃС‚СѓРї Рє РјРёРєСЂРѕС„РѕРЅСѓ, РµСЃР»Рё Р±СЂР°СѓР·РµСЂ СЃРїСЂРѕСЃРёС‚."
+    : isSpeechMicrophoneTesting
+      ? "РЎРєР°Р¶РёС‚Рµ Р»СЋР±СѓСЋ РєРѕСЂРѕС‚РєСѓСЋ С„СЂР°Р·Сѓ. CRM РїСЂРѕРІРµСЂСЏРµС‚ С‚РѕР»СЊРєРѕ СѓСЂРѕРІРµРЅСЊ Р·РІСѓРєР°, Р°СѓРґРёРѕ РЅРёРєСѓРґР° РЅРµ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ."
+    : isServerVoiceRecordingStarting
+      ? "Р Р°Р·СЂРµС€РёС‚Рµ РґРѕСЃС‚СѓРї Рє РјРёРєСЂРѕС„РѕРЅСѓ. РџРѕРІС‚РѕСЂРЅРѕ РЅР°Р¶РёРјР°С‚СЊ РєРЅРѕРїРєСѓ РЅРµ РЅСѓР¶РЅРѕ."
+    : isServerVoiceRecording
+      ? "Р“РѕРІРѕСЂРёС‚Рµ СЃРїРѕРєРѕР№РЅРѕ. CRM РѕС‚РїСЂР°РІР»СЏРµС‚ С‡Р°СЃС‚Рё Р·Р°РїРёСЃРё РЅР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё."
+    : speechTranscriptionBusy
+      ? "РќРµ СЃРѕР±РёСЂР°Р№С‚Рµ Р­РњРљ СЂР°РЅСЊС€Рµ РІСЂРµРјРµРЅРё: РґРѕР¶РґРёС‚РµСЃСЊ, РїРѕРєР° РїРѕСЃР»РµРґРЅРёРµ С‡Р°СЃС‚Рё Р·Р°РїРёСЃРё РїРѕСЏРІСЏС‚СЃСЏ РІ С‚РµРєСЃС‚Рµ."
+    : isVisitDictating
+    ? "Р“РѕРІРѕСЂРёС‚Рµ, Р·Р°С‚РµРј РЅР°Р¶РјРёС‚Рµ В«РЎС‚РѕРїВ». РўРµРєСЃС‚ Р±СѓРґРµС‚ РґРѕР±Р°РІР»РµРЅ РІ РїРѕР»Рµ РЅРёР¶Рµ."
+    : speechRecognitionReady
+      ? "РћСЃРЅРѕРІРЅР°СЏ РєРЅРѕРїРєР° РїРёС€РµС‚ РґР»РёРЅРЅСѓСЋ Р·Р°РїРёСЃСЊ С‡РµСЂРµР· СЃРµСЂРІРµСЂРЅРѕРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ."
+      : serverVoiceRecordingAvailable
+        ? "РћСЃРЅРѕРІРЅР°СЏ РєРЅРѕРїРєР° РїРёС€РµС‚ РіРѕР»РѕСЃ Рё СЃР°РјР° РїСЂРѕРІРµСЂРёС‚ СЃРµСЂРІРµСЂРЅРѕРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ РїРµСЂРµРґ СЃС‚Р°СЂС‚РѕРј."
+    : browserDictationAvailable
+      ? "Р—Р°РїР°СЃРЅРѕР№ СЂРµР¶РёРј С‡РµСЂРµР· Р±СЂР°СѓР·РµСЂ. Р›СѓС‡С€Рµ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Chrome РёР»Рё Edge."
+      : "РћС‚РєСЂРѕР№С‚Рµ CRM РІ Chrome/Edge РёР»Рё РІСЃС‚Р°РІСЊС‚Рµ С‚РµРєСЃС‚ РІСЂСѓС‡РЅСѓСЋ.";
+  const serverSpeechStatusDetail = speechTranscriptionBusy
+    ? speechTranscriptionBusyDetail
+    : speechRecognitionReady
+    ? "Groq Whisper РіРѕС‚РѕРІ."
+    : !speechGatewayStatus
+      ? "Groq Р±СѓРґРµС‚ РїСЂРѕРІРµСЂРµРЅ РїСЂРё СЃС‚Р°СЂС‚Рµ Р·Р°РїРёСЃРё."
+    : speechGatewayStatus?.keyConfigured
+      ? "Groq РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ: Р·РІСѓРє СЃРѕС…СЂР°РЅРёС‚СЃСЏ Рё РѕС‚РїСЂР°РІРёС‚СЃСЏ РїРѕР·Р¶Рµ."
+      : "Р”Р»СЏ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ РЅСѓР¶РµРЅ РєР»СЋС‡ Groq; РїРµС‡Р°С‚РЅС‹Р№ С‚РµРєСЃС‚ С‚РѕР¶Рµ СЂР°Р±РѕС‚Р°РµС‚.";
+  const speechInputLevelPercent = Math.round(Math.max(0, Math.min(1, speechInputLevel ?? 0)) * 100);
+  const speechInputMonitorActive = isServerVoiceRecording || isSpeechMicrophoneTesting;
+  const speechInputLevelState =
+    !speechInputMonitorActive ? "idle" : speechInputLevel === null ? "unknown" : speechInputLevelPercent >= 18 ? "voice" : "quiet";
+  const speechInputLevelLabel =
+    speechInputLevelState === "voice"
+      ? "РјРёРєСЂРѕС„РѕРЅ СЃР»С‹С€РёС‚"
+      : speechInputLevelState === "quiet"
+        ? "С‚РёС…Рѕ, РіРѕРІРѕСЂРёС‚Рµ Р±Р»РёР¶Рµ"
+        : speechInputLevelState === "unknown"
+          ? "СѓСЂРѕРІРµРЅСЊ Р·РІСѓРєР° РЅРµРґРѕСЃС‚СѓРїРµРЅ"
+          : "Р·Р°РїРёСЃСЊ РЅРµ РёРґРµС‚";
+  const serverVoiceRecordButtonLabel = isServerVoiceRecording
+    ? "РЎС‚РѕРї Р·Р°РїРёСЃСЊ"
+    : isServerVoiceRecordingStarting
+      ? "Р’РєР»СЋС‡Р°СЋ"
+    : speechTranscriptionBusy
+      ? "Р Р°СЃРїРѕР·РЅР°СЋ"
+      : speechRetrySuggested
+        ? "Р—Р°РїРёСЃР°С‚СЊ РµС‰Рµ СЂР°Р·"
+        : hasVisitTranscriptText
+          ? "Р”РѕР±Р°РІРёС‚СЊ РіРѕР»РѕСЃ"
+          : "Р—Р°РїРёСЃР°С‚СЊ РіРѕР»РѕСЃ";
+  const browserVoiceRecordButtonLabel = isVisitDictationStarting
+    ? "РџСЂРѕРІРµСЂСЏСЋ"
+    : isVisitDictating
+      ? "РЎС‚РѕРї"
+      : speechRetrySuggested
+        ? "Р”РёРєС‚РѕРІР°С‚СЊ РµС‰Рµ СЂР°Р·"
+        : hasVisitTranscriptText
+          ? "Р”РѕР±Р°РІРёС‚СЊ РіРѕР»РѕСЃ"
+          : "Р”РёРєС‚РѕРІР°С‚СЊ";
+  const serverVoiceRecordButtonClassName =
+    isServerVoiceRecording || hasVisitTranscriptText ? "secondary-button" : "primary-button";
+  const browserVoiceRecordButtonClassName =
+    isVisitDictating || hasVisitTranscriptText ? "secondary-button" : "primary-button";
+  const pendingSpeechFlushActionLabel = speechRecognitionReady ? "РћС‚РїСЂР°РІРёС‚СЊ Р·РІСѓРє" : "РџСЂРѕРІРµСЂРёС‚СЊ РѕС‡РµСЂРµРґСЊ";
   const pendingSpeechFlushActionTitle =
     speechRecognitionReady
-      ? "Отправить сохраненные аудиофрагменты на распознавание."
-      : "Проверить готовность распознавания. Аудио останется в локальной очереди, пока источник недоступен.";
-  const speechSafetyValue = pendingSpeechChunkCount
-    ? `${pendingSpeechChunkCount} аудио`
-    : currentSpeechQualityIssue
-      ? speechQualityLabels[currentSpeechQualityIssue.level]
-      : speechRecognitionReady
-        ? speechGatewayActiveProviderIsLocal
-          ? "локальный модуль готов"
-          : "распознавание готово"
-        : "очередь локально";
-  const speechSafetyDetail = pendingSpeechChunkCount
-    ? "аудио сохранено и уйдет позже"
-    : currentSpeechQualityIssue
-      ? currentSpeechQualityIssue.nextAction
-      : speechRecognitionReady
-        ? speechGatewayActiveProviderIsLocal
-          ? `${speechGatewayStatus?.providerLabel ?? "локальный модуль"}, фрагменты уходят в локальный модуль`
-          : `${speechGatewayStatus?.providerLabel ?? "распознавание"}, звук отправляется частями`
-        : "аудио хранится локально до готового источника";
-  const speechSafetyState =
-    pendingSpeechChunkCount || currentSpeechQualityIssue || !isOnline || !speechUploadReady
-      ? "warn"
-      : "ready";
+      ? "РћС‚РїСЂР°РІРёС‚СЊ СЃРѕС…СЂР°РЅРµРЅРЅС‹Рµ Р°СѓРґРёРѕС„СЂР°РіРјРµРЅС‚С‹ РЅР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ."
+      : "РџСЂРѕРІРµСЂРёС‚СЊ РіРѕС‚РѕРІРЅРѕСЃС‚СЊ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ. РђСѓРґРёРѕ РѕСЃС‚Р°РЅРµС‚СЃСЏ РІ Р»РѕРєР°Р»СЊРЅРѕР№ РѕС‡РµСЂРµРґРё, РїРѕРєР° РёСЃС‚РѕС‡РЅРёРє РЅРµРґРѕСЃС‚СѓРїРµРЅ.";
+  const showPendingSpeechQueueCard = pendingSpeechChunkCount > 0 && !speechTranscriptionBusy;
+  const pendingSpeechQueueTitle = pendingSpeechChunkCount
+    ? `РЎРѕС…СЂР°РЅРµРЅ Р·РІСѓРє: ${pendingSpeechChunkCount} ${pendingSpeechChunkCount === 1 ? "С„СЂР°РіРјРµРЅС‚" : "С„СЂР°РіРј."}`
+    : "";
+  const pendingSpeechQueueDetail = speechRecognitionReady
+    ? "CRM СЃР°РјР° РѕС‚РїСЂР°РІР»СЏРµС‚ РѕС‡РµСЂРµРґСЊ РЅР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ. РњРѕР¶РЅРѕ РЅР°Р¶Р°С‚СЊ РєРЅРѕРїРєСѓ, С‡С‚РѕР±С‹ РїСЂРѕРІРµСЂРёС‚СЊ РїСЂСЏРјРѕ СЃРµР№С‡Р°СЃ."
+    : "Р—РІСѓРє РЅРµ РїРѕС‚РµСЂСЏРЅ. РљРѕРіРґР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ Р±СѓРґРµС‚ РіРѕС‚РѕРІРѕ, CRM РѕС‚РїСЂР°РІРёС‚ РµРіРѕ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.";
+  const dictationSystemStatusItems = [
+    {
+      label: "Р§РµСЂРЅРѕРІРёРє",
+      detail: lastLocalSavedAt ? `СЃРѕС…СЂР°РЅРµРЅ ${formatTime(lastLocalSavedAt)}` : localAutosaveReady ? "Р°РІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёРµ РІРєР»СЋС‡РµРЅРѕ" : "РїСЂРѕРІРµСЂСЏСЋ Р°РІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёРµ"
+    },
+    speechMicrophoneLabel ? { label: "РњРёРєСЂРѕС„РѕРЅ", detail: speechMicrophoneLabel } : isServerVoiceRecording ? { label: "РњРёРєСЂРѕС„РѕРЅ", detail: "РґРѕСЃС‚СѓРї СЂР°Р·СЂРµС€РµРЅ" } : null,
+    localDraftWasRestored ? { label: "Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ", detail: "Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅ" } : null,
+    !isOnline ? { label: "РЎРµС‚СЊ", detail: "РѕС„Р»Р°Р№РЅ, СЃРµСЂРІРµСЂ СЃРёРЅС…СЂРѕРЅРёР·РёСЂСѓРµС‚СЃСЏ РїРѕР·Р¶Рµ" } : null,
+    pendingVisitSaveCount
+      ? {
+          label: "РЎРѕС…СЂР°РЅРµРЅРёРµ",
+          detail: `${pendingVisitSaveCount} СЃРѕС…СЂР°РЅРµРЅРёРµ Р¶РґРµС‚ РѕС‚РїСЂР°РІРєРё${lastPendingVisitSaveAt ? ` СЃ ${formatTime(lastPendingVisitSaveAt)}` : ""}`
+        }
+      : null,
+    speechTranscriptionBusy ? { label: "Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ", detail: speechTranscriptionBusyDetail } : null,
+    pendingSpeechChunkCount && !speechTranscriptionBusy ? { label: "Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ", detail: `${pendingSpeechChunkCount} С‡Р°СЃС‚СЊ Р·Р°РїРёСЃРё РІ РѕС‡РµСЂРµРґРё` } : null,
+    lastServerDraftSavedAt && serverDraftSyncState === "saved"
+      ? { label: "РЎРµСЂРІРµСЂ", detail: `С‡РµСЂРЅРѕРІРёРє СЃРѕС…СЂР°РЅРµРЅ ${formatTime(lastServerDraftSavedAt)}` }
+      : serverDraftSyncState === "saving"
+        ? { label: "РЎРµСЂРІРµСЂ", detail: "СЃРѕС…СЂР°РЅСЏРµС‚ С‡РµСЂРЅРѕРІРёРє" }
+        : serverDraftSyncState === "queued" || serverDraftSyncState === "error"
+          ? { label: "РЎРµСЂРІРµСЂ", detail: "РїРѕРІС‚РѕСЂРёС‚ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЋ" }
+          : null
+  ].filter((item): item is { label: string; detail: string } => Boolean(item));
+  const dictationSystemStatusSummary = isServerVoiceRecording
+    ? speechMicrophoneLabel
+      ? `Р·Р°РїРёСЃСЊ РёРґРµС‚ В· ${speechMicrophoneLabel}`
+      : "Р·Р°РїРёСЃСЊ РёРґРµС‚ В· РјРёРєСЂРѕС„РѕРЅ СЂР°Р·СЂРµС€РµРЅ"
+    : speechTranscriptionBusy
+      ? `СЂР°СЃРїРѕР·РЅР°СЋ В· ${speechTranscriptionBusyDetail}`
+    : pendingSpeechChunkCount
+      ? `${pendingSpeechChunkCount} С‡Р°СЃС‚СЊ Р·Р°РїРёСЃРё РІ РѕС‡РµСЂРµРґРё`
+      : lastLocalSavedAt
+        ? `СЃРѕС…СЂР°РЅРµРЅРѕ ${formatTime(lastLocalSavedAt)}`
+        : "РіРѕС‚РѕРІРѕ";
+  const speechMicrophoneSelectionLocked = isServerVoiceRecording || isSpeechMicrophoneTesting || isVisitDictating || isVisitDictationStarting;
+  const showSpeechMicrophoneSelect = speechAudioInputDevices.length > 1 || Boolean(selectedSpeechDeviceId);
+  const dictationNoticeState: "active" | "ready" | "warn" =
+    isServerVoiceRecording || speechTranscriptionBusy
+      ? "active"
+      : speechRetrySuggested || (speechStatusNote && /С‚РёС…Рѕ|РїСѓСЃС‚Рѕ|РЅРµРґРѕСЃС‚СѓРї|РЅРµ СЃР»С‹С€|РїРѕС‡С‚Рё РЅРµ СЃР»С‹С€|РіРѕР»РѕСЃ РЅРµ СЂР°СЃРїРѕР·РЅР°РЅ/i.test(speechStatusNote))
+        ? "warn"
+        : "ready";
+  const showDictationMicrophoneTestAction =
+    speechMicrophoneTestAvailable && !speechVoiceWorkBusy && (!hasVisitTranscriptText || speechRetrySuggested || dictationNoticeState === "warn");
+  const showDictationProcessingActions = hasVisitTranscriptText && !speechVoiceWorkBusy;
+  const showDictationMoreActions = showDictationProcessingActions || Boolean(clearedTranscriptSnapshot);
+  const showVisitDraftMissingPanel = !visitDraftReadyToBuild && hasVisitTranscriptText;
+  const showDictationQuickPhrases = !hasVisitTranscriptText && !speechVoiceWorkBusy;
+  const showDictationVoiceStatus = !hasVisitTranscriptText || speechVoiceWorkBusy || dictationNoticeState === "warn" || pendingSpeechChunkCount > 0;
+  const showDictationSystemStatus =
+    dictationSystemStatusOpen ||
+    speechVoiceWorkBusy ||
+    dictationNoticeState === "warn" ||
+    !isOnline ||
+    pendingSpeechChunkCount > 0 ||
+    pendingVisitSaveCount > 0 ||
+    localDraftWasRestored ||
+    serverDraftSyncState === "saving" ||
+    serverDraftSyncState === "queued" ||
+    serverDraftSyncState === "error" ||
+    showSpeechMicrophoneSelect;
   const browserContinuityCritical =
     browserContinuity !== null && (!browserContinuity.localStorageWritable || !browserContinuity.indexedDbSupported);
   const browserContinuityValue = !browserContinuity
-    ? "проверка"
+    ? "РїСЂРѕРІРµСЂРєР°"
     : browserContinuityCritical
-      ? "ограничено"
+      ? "РѕРіСЂР°РЅРёС‡РµРЅРѕ"
       : isOnline
-        ? "онлайн"
-        : "офлайн";
+        ? "РѕРЅР»Р°Р№РЅ"
+        : "РѕС„Р»Р°Р№РЅ";
   const browserContinuityDetail = !browserContinuity
-    ? "проверяю локальное хранилище"
+    ? "РїСЂРѕРІРµСЂСЏСЋ Р»РѕРєР°Р»СЊРЅРѕРµ С…СЂР°РЅРёР»РёС‰Рµ"
     : browserContinuityCritical
-      ? browserContinuity.warnings.slice(0, 2).join(", ") || "локальная защита ограничена"
-      : `${browserContinuity.localStorageWritable ? "черновики ок" : "черновики выкл."} · ${
-          browserContinuity.indexedDbSupported ? "очередь аудио ок" : "очередь аудио выкл."
+      ? browserContinuity.warnings.slice(0, 2).join(", ") || "Р»РѕРєР°Р»СЊРЅР°СЏ Р·Р°С‰РёС‚Р° РѕРіСЂР°РЅРёС‡РµРЅР°"
+      : `${browserContinuity.localStorageWritable ? "С‡РµСЂРЅРѕРІРёРєРё РѕРє" : "С‡РµСЂРЅРѕРІРёРєРё РІС‹РєР»."} В· ${
+          browserContinuity.indexedDbSupported ? "РѕС‡РµСЂРµРґСЊ Р°СѓРґРёРѕ РѕРє" : "РѕС‡РµСЂРµРґСЊ Р°СѓРґРёРѕ РІС‹РєР»."
         }`;
   const browserContinuityState = !browserContinuity ? "busy" : browserContinuityCritical ? "warn" : "ready";
+  const visitWorkStatusState: "ready" | "warn" | "busy" =
+    !browserContinuity || serverDraftSyncState === "saving" || speechTranscriptionBusy
+      ? "busy"
+      : !isOnline ||
+          pendingVisitSaveCount > 0 ||
+          pendingSpeechChunkCount > 0 ||
+          browserContinuityCritical ||
+          serverDraftSyncState === "queued" ||
+          serverDraftSyncState === "error"
+        ? "warn"
+        : "ready";
+  const visitWorkStatusTitle =
+    speechTranscriptionBusy
+      ? "Р Р°СЃРїРѕР·РЅР°СЋ РіРѕР»РѕСЃ"
+      : visitWorkStatusState === "ready"
+      ? "Р Р°Р±РѕС‡РёР№ СЂРµР¶РёРј РіРѕС‚РѕРІ"
+      : visitWorkStatusState === "busy"
+        ? "РџСЂРѕРІРµСЂСЏСЋ СЃРѕС…СЂР°РЅРµРЅРёРµ"
+        : "Р•СЃС‚СЊ Р»РѕРєР°Р»СЊРЅР°СЏ РѕС‡РµСЂРµРґСЊ";
+  const visitWorkStatusDetail = [
+    lastLocalSavedAt ? `С‡РµСЂРЅРѕРІРёРє СЃРѕС…СЂР°РЅРµРЅ ${formatTime(lastLocalSavedAt)}` : localAutosaveReady ? "Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РІРєР»СЋС‡РµРЅ" : "Р»РѕРєР°Р»СЊРЅРѕРµ СЃРѕС…СЂР°РЅРµРЅРёРµ РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ",
+    pendingVisitSaveCount ? `${pendingVisitSaveCount} СЃРѕС…СЂР°РЅРµРЅРёРµ Р¶РґРµС‚ СЃРµСЂРІРµСЂ` : "СЃРµСЂРІРµСЂРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РІРєР»СЋС‡РµРЅ",
+    speechTranscriptionBusy ? `РіРѕР»РѕСЃ: ${speechTranscriptionBusyDetail}` : null,
+    browserDictationAvailable ? "РґРёРєС‚РѕРІРєР° СЂР°Р±РѕС‚Р°РµС‚ РІ Р±СЂР°СѓР·РµСЂРµ" : "РґРёРєС‚РѕРІРєР° С‚РѕР»СЊРєРѕ С‚РµРєСЃС‚РѕРј",
+    speechRecognitionReady ? "РґР»РёРЅРЅР°СЏ Р·Р°РїРёСЃСЊ РіРѕС‚РѕРІР°" : "РґР»РёРЅРЅР°СЏ Р·Р°РїРёСЃСЊ РЅРµ РїРѕРґРєР»СЋС‡РµРЅР°"
+  ].filter(Boolean).join(" В· ");
   const browserCanRequestPersistentStorage =
     typeof navigator !== "undefined" && Boolean(navigator.storage) && typeof navigator.storage.persist === "function";
   const browserContinuityChecks = [
     {
-      label: "Локальные черновики",
-      value: browserContinuity?.localStorageWritable ? "ок" : browserContinuity ? "выкл." : "проверка",
-      detail: lastLocalSavedAt ? `последнее ${formatTime(lastLocalSavedAt)}` : "проверка автосохранения"
+      label: "Р›РѕРєР°Р»СЊРЅС‹Рµ С‡РµСЂРЅРѕРІРёРєРё",
+      value: browserContinuity?.localStorageWritable ? "РѕРє" : browserContinuity ? "РІС‹РєР»." : "РїСЂРѕРІРµСЂРєР°",
+      detail: lastLocalSavedAt ? `РїРѕСЃР»РµРґРЅРµРµ ${formatTime(lastLocalSavedAt)}` : "РїСЂРѕРІРµСЂРєР° Р°РІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёСЏ"
     },
     {
-      label: "Очередь аудио",
-      value: browserContinuity?.indexedDbSupported ? "ок" : browserContinuity ? "выкл." : "проверка",
-      detail: pendingSpeechChunkCount ? `фрагментов в очереди: ${pendingSpeechChunkCount}` : "аудио сохранится для отправки позже"
+      label: "РћС‡РµСЂРµРґСЊ Р°СѓРґРёРѕ",
+      value: browserContinuity?.indexedDbSupported ? "РѕРє" : browserContinuity ? "РІС‹РєР»." : "РїСЂРѕРІРµСЂРєР°",
+      detail: pendingSpeechChunkCount ? `С„СЂР°РіРјРµРЅС‚РѕРІ РІ РѕС‡РµСЂРµРґРё: ${pendingSpeechChunkCount}` : "Р°СѓРґРёРѕ СЃРѕС…СЂР°РЅРёС‚СЃСЏ РґР»СЏ РѕС‚РїСЂР°РІРєРё РїРѕР·Р¶Рµ"
     },
     {
-      label: "Выбор локальной КТ",
-      value: browserContinuity?.directoryPickerSupported ? "папка" : browserContinuity?.filePickerSupported ? "файлы" : browserContinuity ? "ограничено" : "проверка",
+      label: "Р’С‹Р±РѕСЂ Р»РѕРєР°Р»СЊРЅРѕР№ РљРў",
+      value: browserContinuity?.directoryPickerSupported ? "РїР°РїРєР°" : browserContinuity?.filePickerSupported ? "С„Р°Р№Р»С‹" : browserContinuity ? "РѕРіСЂР°РЅРёС‡РµРЅРѕ" : "РїСЂРѕРІРµСЂРєР°",
       detail: browserContinuity?.directoryPickerSupported
-        ? "доступ к папке только после выбора пользователем; CRM не сохраняет тяжелые данные снимков"
+        ? "РґРѕСЃС‚СѓРї Рє РїР°РїРєРµ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ РІС‹Р±РѕСЂР° РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј; CRM РЅРµ СЃРѕС…СЂР°РЅСЏРµС‚ С‚СЏР¶РµР»С‹Рµ РґР°РЅРЅС‹Рµ СЃРЅРёРјРєРѕРІ"
         : browserContinuity?.filePickerSupported
-          ? "можно выбрать файлы вручную; постоянный доступ к папке не сохраняется"
-          : "используйте серверный путь, настольный модуль или внешний просмотр"
+          ? "РјРѕР¶РЅРѕ РІС‹Р±СЂР°С‚СЊ С„Р°Р№Р»С‹ РІСЂСѓС‡РЅСѓСЋ; РїРѕСЃС‚РѕСЏРЅРЅС‹Р№ РґРѕСЃС‚СѓРї Рє РїР°РїРєРµ РЅРµ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ"
+          : "РёСЃРїРѕР»СЊР·СѓР№С‚Рµ СЃРµСЂРІРµСЂРЅС‹Р№ РїСѓС‚СЊ, РЅР°СЃС‚РѕР»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ РёР»Рё РІРЅРµС€РЅРёР№ РїСЂРѕСЃРјРѕС‚СЂ"
     },
     {
-      label: "OPFS браузера",
-      value: browserContinuity?.opfsSupported ? "доступно" : browserContinuity ? "нет" : "проверка",
+      label: "OPFS Р±СЂР°СѓР·РµСЂР°",
+      value: browserContinuity?.opfsSupported ? "РґРѕСЃС‚СѓРїРЅРѕ" : browserContinuity ? "РЅРµС‚" : "РїСЂРѕРІРµСЂРєР°",
       detail: browserContinuity?.opfsSupported
-        ? "синхронный файловый доступ только в worker; диагностическое хранение в CRM отключено"
-        : "текущее восстановление КТ не требует OPFS"
+        ? "СЃРёРЅС…СЂРѕРЅРЅС‹Р№ С„Р°Р№Р»РѕРІС‹Р№ РґРѕСЃС‚СѓРї С‚РѕР»СЊРєРѕ РІ worker; РґРёР°РіРЅРѕСЃС‚РёС‡РµСЃРєРѕРµ С…СЂР°РЅРµРЅРёРµ РІ CRM РѕС‚РєР»СЋС‡РµРЅРѕ"
+        : "С‚РµРєСѓС‰РµРµ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РљРў РЅРµ С‚СЂРµР±СѓРµС‚ OPFS"
     },
     {
-      label: "Граница КТ-хранилища",
-      value: browserContinuity?.browserCtOfflineStorageBoundary.mode === "metadata_only" ? "метаданные" : browserContinuity ? "ограничено" : "проверка",
+      label: "Р“СЂР°РЅРёС†Р° РљРў-С…СЂР°РЅРёР»РёС‰Р°",
+      value: browserContinuity?.browserCtOfflineStorageBoundary.mode === "metadata_only" ? "РјРµС‚Р°РґР°РЅРЅС‹Рµ" : browserContinuity ? "РѕРіСЂР°РЅРёС‡РµРЅРѕ" : "РїСЂРѕРІРµСЂРєР°",
       detail:
         browserContinuity?.browserCtOfflineStorageBoundary.mode === "metadata_only"
-          ? "локально сохраняются план открытия, состояние и пометки; тяжелые данные снимков и 3D-моделей остаются во внешнем просмотре"
-          : "локальное восстановление КТ не подтверждено"
+          ? "Р»РѕРєР°Р»СЊРЅРѕ СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ РїР»Р°РЅ РѕС‚РєСЂС‹С‚РёСЏ, СЃРѕСЃС‚РѕСЏРЅРёРµ Рё РїРѕРјРµС‚РєРё; С‚СЏР¶РµР»С‹Рµ РґР°РЅРЅС‹Рµ СЃРЅРёРјРєРѕРІ Рё 3D-РјРѕРґРµР»РµР№ РѕСЃС‚Р°СЋС‚СЃСЏ РІРѕ РІРЅРµС€РЅРµРј РїСЂРѕСЃРјРѕС‚СЂРµ"
+          : "Р»РѕРєР°Р»СЊРЅРѕРµ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ РљРў РЅРµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ"
     },
     {
-      label: "Работа без сети",
-      value: browserContinuity ? browserContinuityRegistrationLabels[browserContinuity.serviceWorkerRegistrationState] : "проверка",
-      detail: browserContinuity?.serviceWorkerControlled ? "эта вкладка готова к работе без сети" : "обновите вкладку после включения офлайн-режима"
+      label: "Р Р°Р±РѕС‚Р° Р±РµР· СЃРµС‚Рё",
+      value: browserContinuity ? browserContinuityRegistrationLabels[browserContinuity.serviceWorkerRegistrationState] : "РїСЂРѕРІРµСЂРєР°",
+      detail: browserContinuity?.serviceWorkerControlled ? "СЌС‚Р° РІРєР»Р°РґРєР° РіРѕС‚РѕРІР° Рє СЂР°Р±РѕС‚Рµ Р±РµР· СЃРµС‚Рё" : "РѕР±РЅРѕРІРёС‚Рµ РІРєР»Р°РґРєСѓ РїРѕСЃР»Рµ РІРєР»СЋС‡РµРЅРёСЏ РѕС„Р»Р°Р№РЅ-СЂРµР¶РёРјР°"
     },
     {
-      label: "Память для офлайна",
-      value: browserContinuity?.cacheStorageSupported ? "ок" : browserContinuity ? "выкл." : "проверка",
-      detail: browserContinuity?.storagePersisted === true ? "браузер не должен очищать черновики сам" : "браузер может очистить при нехватке места"
+      label: "РџР°РјСЏС‚СЊ РґР»СЏ РѕС„Р»Р°Р№РЅР°",
+      value: browserContinuity?.cacheStorageSupported ? "РѕРє" : browserContinuity ? "РІС‹РєР»." : "РїСЂРѕРІРµСЂРєР°",
+      detail: browserContinuity?.storagePersisted === true ? "Р±СЂР°СѓР·РµСЂ РЅРµ РґРѕР»Р¶РµРЅ РѕС‡РёС‰Р°С‚СЊ С‡РµСЂРЅРѕРІРёРєРё СЃР°Рј" : "Р±СЂР°СѓР·РµСЂ РјРѕР¶РµС‚ РѕС‡РёСЃС‚РёС‚СЊ РїСЂРё РЅРµС…РІР°С‚РєРµ РјРµСЃС‚Р°"
     },
     {
-      label: "Место",
+      label: "РњРµСЃС‚Рѕ",
       value: formatMegabytes(browserContinuity?.storageUsageMb ?? null),
-      detail: browserContinuity?.storageQuotaMb != null ? `лимит ${formatMegabytes(browserContinuity.storageQuotaMb)}` : "оценка недоступна"
+      detail: browserContinuity?.storageQuotaMb != null ? `Р»РёРјРёС‚ ${formatMegabytes(browserContinuity.storageQuotaMb)}` : "РѕС†РµРЅРєР° РЅРµРґРѕСЃС‚СѓРїРЅР°"
     },
     {
-      label: "Синхронизация",
-      value: isOnline ? "онлайн" : "офлайн",
-      detail: pendingVisitSaveCount ? `в очереди сохранений приема: ${pendingVisitSaveCount}` : "серверная очередь пуста"
+      label: "РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ",
+      value: isOnline ? "РѕРЅР»Р°Р№РЅ" : "РѕС„Р»Р°Р№РЅ",
+      detail: pendingVisitSaveCount ? `РІ РѕС‡РµСЂРµРґРё СЃРѕС…СЂР°РЅРµРЅРёР№ РїСЂРёРµРјР°: ${pendingVisitSaveCount}` : "СЃРµСЂРІРµСЂРЅР°СЏ РѕС‡РµСЂРµРґСЊ РїСѓСЃС‚Р°"
     }
   ];
   const localBridgeStatusState =
@@ -10873,61 +11438,12 @@ export function App() {
           ? "warn"
           : "busy";
   const localBridgeStatusValue = !localBridgeReadiness
-    ? "проверка"
+    ? "РїСЂРѕРІРµСЂРєР°"
     : localBridgeReadiness.readyCount
-      ? `готово ${localBridgeReadiness.readyCount}/${localBridgeReadiness.bridges.length}`
+      ? `РіРѕС‚РѕРІРѕ ${localBridgeReadiness.readyCount}/${localBridgeReadiness.bridges.length}`
       : localBridgeReadiness.configuredCount
-        ? "настроено"
-        : "не задано";
-  const visitSafetyCards: Array<{ key: string; label: string; value: string; detail: string; state: "ready" | "warn" | "busy" }> = [
-    {
-      key: "local",
-      label: "Локально",
-      value: lastLocalSavedAt ? formatTime(lastLocalSavedAt) : localAutosaveReady ? "включено" : "загрузка",
-      detail: localDraftWasRestored ? "черновик восстановлен на этом устройстве" : "автосохранение на этом устройстве",
-      state: lastLocalSavedAt || localAutosaveReady ? "ready" : "busy"
-    },
-    {
-      key: "server",
-      label: "Сервер",
-      value:
-        serverDraftSyncState === "saving"
-          ? "сохраняет"
-          : serverDraftSyncState === "saved" && lastServerDraftSavedAt
-            ? formatTime(lastServerDraftSavedAt)
-            : serverDraftSyncState === "queued" || serverDraftSyncState === "error"
-              ? "повторит"
-              : "готов",
-      detail: pendingVisitSaveCount ? `${pendingVisitSaveCount} сохранение ожидает синхронизацию` : "серверный черновик включен",
-      state: serverDraftSyncState === "saving" ? "busy" : pendingVisitSaveCount || serverDraftSyncState === "queued" || serverDraftSyncState === "error" ? "warn" : "ready"
-    },
-    {
-      key: "browser",
-      label: "Устройство",
-      value: browserContinuityValue,
-      detail: browserContinuityDetail,
-      state: browserContinuityState
-    },
-    {
-      key: "stt",
-      label: "Голос",
-      value: speechSafetyValue,
-      detail: speechSafetyDetail,
-      state: speechSafetyState
-    },
-    {
-      key: "recovery",
-      label: "Восстановление",
-      value: speechRecoveryIssueCount ? "проверить" : speechRecordingRecovery ? "чисто" : "скоро",
-      detail: speechRecoveryQualityIssueCount
-        ? `${speechRecoveryQualityIssueCount} фрагм. распознавания на проверку`
-        : speechRecoveryIssueCount
-          ? `${speechRecoveryIssueCount} запись требует внимания`
-          : "потерь диктовки не видно",
-      state: speechRecoveryIssueCount ? "warn" : speechRecordingRecovery ? "ready" : "busy"
-    }
-  ];
-
+        ? "РЅР°СЃС‚СЂРѕРµРЅРѕ"
+        : "РЅРµ Р·Р°РґР°РЅРѕ";
   function scrollToVisitArea(selector: string) {
     window.location.hash = "visit";
     window.requestAnimationFrame(() => {
@@ -10948,9 +11464,91 @@ export function App() {
     setVisitNoteForm((current) => ({ ...current, [field]: value }));
   }
 
+  function appendVisitNoteLine(field: VisitNoteField, line: string, options: { scroll?: boolean } = {}) {
+    visitDraftUserEditedRef.current = true;
+    setVisitNoteForm((current) => ({ ...current, [field]: appendClinicalLine(current[field], line) }));
+    if (options.scroll !== false) scrollToVisitArea(".visit-note-panel");
+  }
+
+  function toothPlanSummaryForCode(toothCode: string): string {
+    return activeVisitTreatmentPlanItems
+      .filter((item) => item.toothCode?.trim() === toothCode)
+      .map((item) => {
+        const service = dashboard?.serviceCatalog.find((candidate) => candidate.id === item.serviceId);
+        return `${service?.title ?? item.serviceId}${item.status === "completed" ? " РІС‹РїРѕР»РЅРµРЅРѕ" : " РІ РїР»Р°РЅРµ"}`;
+      })
+      .join("; ");
+  }
+
+  function upsertClinicalToothRowFromMap(toothCode: string, state: ToothMapState, action: (typeof toothStatusQuickActions)[number]) {
+    const nextLine = [
+      toothCode,
+      "РЅРµ РїСЂРёРјРµРЅРёРјРѕ",
+      clinicalToothStatusTextByMapState[state],
+      action.objective,
+      "РѕС‚РјРµС‚РєР° РІРЅРµСЃРµРЅР° РІСЂР°С‡РѕРј РІ Р·СѓР±РЅРѕР№ РєР°СЂС‚Рµ РїСЂРёРµРјР°",
+      action.plan,
+      state === "missing" ? "РїСЂРѕРіРЅРѕР· Р·Р°РІРёСЃРёС‚ РѕС‚ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РІР°СЂРёР°РЅС‚Р° РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ" : "РїСЂРѕРіРЅРѕР· Р·Р°РІРёСЃРёС‚ РѕС‚ РґРёР°РіРЅРѕСЃС‚РёРєРё, РіРёРіРёРµРЅС‹ Рё РєРѕРЅС‚СЂРѕР»СЏ",
+      "",
+      "",
+      ""
+    ].join(" | ");
+    setClinicalToothRowsText((current) => {
+      const lines = documentTextLines(current).filter((line) => !line.split("|")[0]?.trim().match(new RegExp(`^(?:Р·СѓР±\\s*)?${toothCode}$`, "i")));
+      return [...lines, nextLine].join("\n");
+    });
+  }
+
+  function applyToothQuickAction(toothCode: string, action: (typeof toothStatusQuickActions)[number]) {
+    setSelectedToothCode(toothCode);
+    setManualToothStateByCode((current) => ({ ...current, [toothCode]: action.state }));
+    upsertClinicalToothRowFromMap(toothCode, action.state, action);
+    appendVisitNoteLine("objectiveStatus", `${toothCode}: ${action.objective}.`, { scroll: false });
+    appendVisitNoteLine(
+      "treatmentPlan",
+      `${toothCode}: ${toothPlanSummaryForCode(toothCode) || action.plan}. Р”РёР°РіРЅРѕР· Рё РѕР±СЉРµРј Р»РµС‡РµРЅРёСЏ РїСЂРѕРІРµСЂРёС‚СЊ РІСЂР°С‡РѕРј.`,
+      { scroll: false }
+    );
+  }
+
+  function applySelectedToothQuickAction(action: (typeof toothStatusQuickActions)[number]) {
+    setToothMapActiveTool(action.state);
+    applyToothQuickAction(selectedToothCode, action);
+    scrollToVisitArea(".visit-note-panel");
+  }
+
+  function appendToothDiagnosisReview(toothCode: string) {
+    setSelectedToothCode(toothCode);
+    appendVisitNoteLine(
+      "diagnosis",
+      `${toothCode}: РєР»РёРЅРёС‡РµСЃРєР°СЏ С„РѕСЂРјСѓР»РёСЂРѕРІРєР° РґРёР°РіРЅРѕР·Р° С‚СЂРµР±СѓРµС‚ РїСЂРѕРІРµСЂРєРё РІСЂР°С‡РѕРј РїРѕСЃР»Рµ РѕСЃРјРѕС‚СЂР° Рё РґРёР°РіРЅРѕСЃС‚РёРєРё.`,
+      { scroll: false }
+    );
+  }
+
+  function appendSelectedToothDiagnosisReview() {
+    setToothMapActiveTool("diagnosis_review");
+    appendToothDiagnosisReview(selectedToothCode);
+    scrollToVisitArea(".visit-note-panel");
+  }
+
+  function applyActiveToothMapTool(toothCode: string) {
+    const action = toothStatusQuickActions.find((candidate) => candidate.state === toothMapActiveTool);
+    if (action) {
+      applyToothQuickAction(toothCode, action);
+      return;
+    }
+    appendToothDiagnosisReview(toothCode);
+  }
+
+  function openOutpatientMedicalCardDocument() {
+    setSelectedDocumentKind("outpatient_medical_card_025u");
+    window.location.hash = "documents";
+  }
+
   function buildOfflineDraft() {
     if (!hasVisitTranscriptText) {
-      setError("Добавьте текст диктовки перед локальным разбором.");
+      setError("Р”РѕР±Р°РІСЊС‚Рµ С‚РµРєСЃС‚ РґРёРєС‚РѕРІРєРё РїРµСЂРµРґ Р»РѕРєР°Р»СЊРЅС‹Рј СЂР°Р·Р±РѕСЂРѕРј.");
       return;
     }
     visitDraftUserEditedRef.current = true;
@@ -10985,24 +11583,24 @@ export function App() {
   }
 
   function openScheduleWarning(warning: ScheduleWarning) {
-    if (warning.actionLabel.toLowerCase().includes("связ")) {
+    if (warning.actionLabel.toLowerCase().includes("СЃРІСЏР·")) {
       window.location.hash = "communications";
       return;
     }
-    if (warning.actionLabel.toLowerCase().includes("оплат")) {
+    if (warning.actionLabel.toLowerCase().includes("РѕРїР»Р°С‚")) {
       window.location.hash = "finance";
       return;
     }
-    if (warning.actionLabel.toLowerCase().includes("документ")) {
+    if (warning.actionLabel.toLowerCase().includes("РґРѕРєСѓРјРµРЅС‚")) {
       window.location.hash = "documents";
       return;
     }
-    if (warning.actionLabel.toLowerCase().includes("роль")) {
+    if (warning.actionLabel.toLowerCase().includes("СЂРѕР»СЊ")) {
       window.location.hash = "settings";
       setSettingsTab("clinic");
       return;
     }
-    if (warning.actionLabel.toLowerCase().includes("пациент")) {
+    if (warning.actionLabel.toLowerCase().includes("РїР°С†РёРµРЅС‚")) {
       window.location.hash = "patients";
       return;
     }
@@ -11011,12 +11609,12 @@ export function App() {
 
   async function createPatient() {
     if (isPatientCreating) {
-      setError("Дождитесь завершения создания карточки пациента.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ СЃРѕР·РґР°РЅРёСЏ РєР°СЂС‚РѕС‡РєРё РїР°С†РёРµРЅС‚Р°.");
       return;
     }
     const fullName = newPatientName.trim();
     if (!fullName) {
-      setError("Укажите ФИО пациента перед созданием карточки.");
+      setError("РЈРєР°Р¶РёС‚Рµ Р¤РРћ РїР°С†РёРµРЅС‚Р° РїРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј РєР°СЂС‚РѕС‡РєРё.");
       return;
     }
     const payload = {
@@ -11032,7 +11630,7 @@ export function App() {
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
-      setError(await responseErrorMessage(response, "Пациент не создан"));
+      setError(await responseErrorMessage(response, "РџР°С†РёРµРЅС‚ РЅРµ СЃРѕР·РґР°РЅ"));
       return;
     }
     const patient = (await response.json()) as Patient;
@@ -11051,7 +11649,7 @@ export function App() {
     );
     setError(null);
     } catch (patientError) {
-      setError(operatorWorkflowFailureMessage("Пациент не создан", patientError));
+      setError(operatorWorkflowFailureMessage("РџР°С†РёРµРЅС‚ РЅРµ СЃРѕР·РґР°РЅ", patientError));
     } finally {
       setIsPatientCreating(false);
     }
@@ -11082,19 +11680,19 @@ export function App() {
       return;
     }
     if (!response.ok) {
-      setError(await responseErrorMessage(response, "Режим клиники не сохранен"));
+      setError(await responseErrorMessage(response, "Р РµР¶РёРј РєР»РёРЅРёРєРё РЅРµ СЃРѕС…СЂР°РЅРµРЅ"));
       return;
     }
     await loadDashboard();
     } catch (modeError) {
-      setError(operatorWorkflowFailureMessage("Режим клиники не сохранен", modeError));
+      setError(operatorWorkflowFailureMessage("Р РµР¶РёРј РєР»РёРЅРёРєРё РЅРµ СЃРѕС…СЂР°РЅРµРЅ", modeError));
     }
   }
 
   async function addStaffMember(role: StaffRole) {
     const fullName = newStaffName.trim();
     if (!fullName) {
-      setError("Введите ФИО сотрудника перед добавлением в команду.");
+      setError("Р’РІРµРґРёС‚Рµ Р¤РРћ СЃРѕС‚СЂСѓРґРЅРёРєР° РїРµСЂРµРґ РґРѕР±Р°РІР»РµРЅРёРµРј РІ РєРѕРјР°РЅРґСѓ.");
       return;
     }
     if (!(await saveClinicProfileIfDirty())) return;
@@ -11114,7 +11712,7 @@ export function App() {
       })
     });
     if (!response.ok) {
-      setError(await responseErrorMessage(response, "Сотрудник не добавлен"));
+      setError(await responseErrorMessage(response, "РЎРѕС‚СЂСѓРґРЅРёРє РЅРµ РґРѕР±Р°РІР»РµРЅ"));
       return;
     }
     setNewStaffName("");
@@ -11122,7 +11720,7 @@ export function App() {
     setNewStaffSpecialty(selectedSpecialty);
     await loadDashboard();
     } catch (staffError) {
-      setError(operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError));
+      setError(operatorWorkflowFailureMessage("РЎРѕС‚СЂСѓРґРЅРёРє РЅРµ РґРѕР±Р°РІР»РµРЅ", staffError));
     }
   }
 
@@ -11140,7 +11738,7 @@ export function App() {
       });
       if (!response.ok) {
         setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "error" }));
-        setError(await responseErrorMessage(response, "Расписание сотрудника не сохранено"));
+        setError(await responseErrorMessage(response, "Р Р°СЃРїРёСЃР°РЅРёРµ СЃРѕС‚СЂСѓРґРЅРёРєР° РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ"));
         return false;
       }
       const latestDraft = staffScheduleDraftsRef.current[staffId];
@@ -11157,7 +11755,7 @@ export function App() {
       return true;
     } catch (scheduleSaveError) {
       setStaffScheduleSaveStates((current) => ({ ...current, [staffId]: "error" }));
-      setError(operatorWorkflowFailureMessage("Расписание сотрудника не сохранено", scheduleSaveError));
+      setError(operatorWorkflowFailureMessage("Р Р°СЃРїРёСЃР°РЅРёРµ СЃРѕС‚СЂСѓРґРЅРёРєР° РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ", scheduleSaveError));
       return false;
     } finally {
       setStaffScheduleSavingId(null);
@@ -11178,7 +11776,7 @@ export function App() {
       });
       if (!response.ok) {
         setChairScheduleSaveStates((current) => ({ ...current, [chairId]: "error" }));
-        setError(await responseErrorMessage(response, "Расписание кресла не сохранено"));
+        setError(await responseErrorMessage(response, "Р Р°СЃРїРёСЃР°РЅРёРµ РєСЂРµСЃР»Р° РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ"));
         return false;
       }
       const latestDraft = chairScheduleDraftsRef.current[chairId];
@@ -11195,7 +11793,7 @@ export function App() {
       return true;
     } catch (scheduleSaveError) {
       setChairScheduleSaveStates((current) => ({ ...current, [chairId]: "error" }));
-      setError(operatorWorkflowFailureMessage("Расписание кресла не сохранено", scheduleSaveError));
+      setError(operatorWorkflowFailureMessage("Р Р°СЃРїРёСЃР°РЅРёРµ РєСЂРµСЃР»Р° РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ", scheduleSaveError));
       return false;
     } finally {
       setChairScheduleSavingId(null);
@@ -11207,12 +11805,12 @@ export function App() {
     options: { closeEditorOnSave?: boolean } = {}
   ): Promise<boolean> {
     if (appointmentScheduleSaveStates[appointmentId] === "saving") {
-      setError("Дождитесь завершения текущего сохранения записи.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ СЃРѕС…СЂР°РЅРµРЅРёСЏ Р·Р°РїРёСЃРё.");
       return false;
     }
     const draft = appointmentScheduleDrafts[appointmentId];
     if (!draft) {
-      const message = "Откройте запись в расписании перед сохранением.";
+      const message = "РћС‚РєСЂРѕР№С‚Рµ Р·Р°РїРёСЃСЊ РІ СЂР°СЃРїРёСЃР°РЅРёРё РїРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј.";
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
       setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
       setError(message);
@@ -11220,7 +11818,7 @@ export function App() {
     }
     const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);
     if (missing.length) {
-      const message = `Перед сохранением записи: ${missing.join("; ")}.`;
+      const message = `РџРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј Р·Р°РїРёСЃРё: ${missing.join("; ")}.`;
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
       setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
       setError(message);
@@ -11235,7 +11833,7 @@ export function App() {
         headers: scheduleMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(appointmentUpdateInputFromDraft(draft))
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не сохранена"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р—Р°РїРёСЃСЊ РЅРµ СЃРѕС…СЂР°РЅРµРЅР°"));
       const payload = await response.json();
       const nextDashboard = dashboardSchema.parse(payload);
       setDashboard(nextDashboard);
@@ -11260,7 +11858,7 @@ export function App() {
       setError(null);
       return true;
     } catch (saveError) {
-      const message = operatorWorkflowFailureMessage("Запись не сохранена", saveError);
+      const message = operatorWorkflowFailureMessage("Р—Р°РїРёСЃСЊ РЅРµ СЃРѕС…СЂР°РЅРµРЅР°", saveError);
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
       setAppointmentScheduleSaveStates((current) => ({ ...current, [appointmentId]: "error" }));
       setError(message);
@@ -11274,16 +11872,16 @@ export function App() {
 
   async function createAppointmentFromDraft(): Promise<boolean> {
     if (!dashboard) {
-      setError("Данные клиники еще не загружены. Повторите создание записи после загрузки рабочего экрана.");
+      setError("Р”Р°РЅРЅС‹Рµ РєР»РёРЅРёРєРё РµС‰Рµ РЅРµ Р·Р°РіСЂСѓР¶РµРЅС‹. РџРѕРІС‚РѕСЂРёС‚Рµ СЃРѕР·РґР°РЅРёРµ Р·Р°РїРёСЃРё РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё СЂР°Р±РѕС‡РµРіРѕ СЌРєСЂР°РЅР°.");
       return false;
     }
     if (newAppointmentSaveState === "saving") {
-      setError("Дождитесь завершения текущего создания записи.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ СЃРѕР·РґР°РЅРёСЏ Р·Р°РїРёСЃРё.");
       return false;
     }
     const missing = newAppointmentMissingFields(newAppointmentDraft);
     if (missing.length) {
-      const message = `Перед созданием записи: ${missing.join("; ")}.`;
+      const message = `РџРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј Р·Р°РїРёСЃРё: ${missing.join("; ")}.`;
       setNewAppointmentError(message);
       setNewAppointmentSaveState("error");
       setError(message);
@@ -11298,7 +11896,7 @@ export function App() {
         headers: scheduleMutationHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(appointmentCreateInputFromDraft(newAppointmentDraft))
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не создана"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р—Р°РїРёСЃСЊ РЅРµ СЃРѕР·РґР°РЅР°"));
       const payload = await response.json();
       const nextDashboard = dashboardSchema.parse(payload);
       const createdAppointment = nextDashboard.appointments.find((appointment) => !previousIds.has(appointment.id)) ?? null;
@@ -11327,7 +11925,7 @@ export function App() {
       setError(null);
       return true;
     } catch (createError) {
-      const message = operatorWorkflowFailureMessage("Запись не создана", createError);
+      const message = operatorWorkflowFailureMessage("Р—Р°РїРёСЃСЊ РЅРµ СЃРѕР·РґР°РЅР°", createError);
       setNewAppointmentError(message);
       setNewAppointmentSaveState("error");
       setError(message);
@@ -11338,7 +11936,7 @@ export function App() {
   async function addChair() {
     const name = newChairName.trim();
     if (!name) {
-      setError("Введите название кресла или кабинета перед добавлением.");
+      setError("Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РєСЂРµСЃР»Р° РёР»Рё РєР°Р±РёРЅРµС‚Р° РїРµСЂРµРґ РґРѕР±Р°РІР»РµРЅРёРµРј.");
       return;
     }
     if (!(await saveClinicProfileIfDirty())) return;
@@ -11361,7 +11959,7 @@ export function App() {
       })
     });
     if (!response.ok) {
-      setError(await responseErrorMessage(response, "Кресло не добавлено"));
+      setError(await responseErrorMessage(response, "РљСЂРµСЃР»Рѕ РЅРµ РґРѕР±Р°РІР»РµРЅРѕ"));
       return;
     }
     setNewChairName("");
@@ -11370,7 +11968,7 @@ export function App() {
     setNewChairHasSurgeryKit(false);
     await loadDashboard();
     } catch (chairError) {
-      setError(operatorWorkflowFailureMessage("Кресло не добавлено", chairError));
+      setError(operatorWorkflowFailureMessage("РљСЂРµСЃР»Рѕ РЅРµ РґРѕР±Р°РІР»РµРЅРѕ", chairError));
     }
   }
 
@@ -11383,7 +11981,7 @@ export function App() {
 
   async function runRecognitionJob() {
     if (!recognitionText.trim()) {
-      setError("Вставьте текст, OCR или диктовку перед распознаванием.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ С‚РµРєСЃС‚, OCR РёР»Рё РґРёРєС‚РѕРІРєСѓ РїРµСЂРµРґ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµРј.");
       return;
     }
     setIsRecognitionLoading(true);
@@ -11395,18 +11993,18 @@ export function App() {
           kind: recognitionKind,
           target: recognitionTarget,
           inputText: recognitionText,
-          sourceLabel: `Настройки: ${aiJobKindLabels[recognitionKind]}`,
+          sourceLabel: `РќР°СЃС‚СЂРѕР№РєРё: ${aiJobKindLabels[recognitionKind]}`,
           patientId: activePatient?.id ?? null
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Распознавание не подготовлено"));
+        throw new Error(await responseErrorMessage(response, "Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅРѕ"));
       }
       const result = (await response.json()) as AiRecognitionJobResponse;
       setRecognitionJob(result.job);
       await loadDashboard();
     } catch (recognitionError) {
-      setError(operatorWorkflowFailureMessage("Распознавание не подготовлено", recognitionError));
+      setError(operatorWorkflowFailureMessage("Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅРѕ", recognitionError));
     } finally {
       setIsRecognitionLoading(false);
     }
@@ -11414,7 +12012,7 @@ export function App() {
 
   async function analyzePricelist() {
     if (!pricelistText.trim() && !pricelistImageBase64) {
-      setError("Вставьте прайс-лист или загрузите фото прайса перед разбором.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ РїСЂР°Р№СЃ-Р»РёСЃС‚ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ С„РѕС‚Рѕ РїСЂР°Р№СЃР° РїРµСЂРµРґ СЂР°Р·Р±РѕСЂРѕРј.");
       return;
     }
     setIsPricelistAnalyzing(true);
@@ -11433,11 +12031,11 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Прайс не разобран"));
+        throw new Error(await responseErrorMessage(response, "РџСЂР°Р№СЃ РЅРµ СЂР°Р·РѕР±СЂР°РЅ"));
       }
       setPricelistAnalysis((await response.json()) as DentalPricelistAnalysisResponse);
     } catch (priceError) {
-      setError(operatorWorkflowFailureMessage("Прайс не разобран", priceError));
+      setError(operatorWorkflowFailureMessage("РџСЂР°Р№СЃ РЅРµ СЂР°Р·РѕР±СЂР°РЅ", priceError));
     } finally {
       setIsPricelistAnalyzing(false);
     }
@@ -11456,7 +12054,7 @@ export function App() {
       setUsePricelistAi(true);
       setPricelistAnalysis(null);
     } catch (imageError) {
-      setError(operatorWorkflowFailureMessage("Фото прайса не подготовлено", imageError));
+      setError(operatorWorkflowFailureMessage("Р¤РѕС‚Рѕ РїСЂР°Р№СЃР° РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅРѕ", imageError));
     } finally {
       setIsPricelistAnalyzing(false);
     }
@@ -11472,7 +12070,7 @@ export function App() {
   async function ingestImportFile(file: File | undefined) {
     if (!file) return;
     if (file.size > 8 * 1024 * 1024) {
-      setError("Файл больше 8 МБ. Для больших архивов нужен пакетный импорт на сервере или распознавание через локальный модуль клиники.");
+      setError("Р¤Р°Р№Р» Р±РѕР»СЊС€Рµ 8 РњР‘. Р”Р»СЏ Р±РѕР»СЊС€РёС… Р°СЂС…РёРІРѕРІ РЅСѓР¶РµРЅ РїР°РєРµС‚РЅС‹Р№ РёРјРїРѕСЂС‚ РЅР° СЃРµСЂРІРµСЂРµ РёР»Рё СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ С‡РµСЂРµР· Р»РѕРєР°Р»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ РєР»РёРЅРёРєРё.");
       return;
     }
     setIsDocumentIngesting(true);
@@ -11489,7 +12087,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Файл не разобран"));
+        throw new Error(await responseErrorMessage(response, "Р¤Р°Р№Р» РЅРµ СЂР°Р·РѕР±СЂР°РЅ"));
       }
       const result = (await response.json()) as DocumentIngestionResponse;
       setDocumentIngestion(result);
@@ -11517,7 +12115,7 @@ export function App() {
           setPricelistImageBase64(prepared.base64);
           setPricelistImageMimeType(prepared.mimeType);
           setPricelistImageName(file.name);
-          setPricelistImageNote(`${prepared.note} Получено через общий импорт файлов.`);
+          setPricelistImageNote(`${prepared.note} РџРѕР»СѓС‡РµРЅРѕ С‡РµСЂРµР· РѕР±С‰РёР№ РёРјРїРѕСЂС‚ С„Р°Р№Р»РѕРІ.`);
           setPricelistSourceKind("photo_ocr");
           setUsePricelistAi(true);
         } else {
@@ -11529,7 +12127,7 @@ export function App() {
         window.location.hash = "settings/prices";
       }
     } catch (ingestionError) {
-      setError(operatorWorkflowFailureMessage("Файл не разобран", ingestionError));
+      setError(operatorWorkflowFailureMessage("Р¤Р°Р№Р» РЅРµ СЂР°Р·РѕР±СЂР°РЅ", ingestionError));
     } finally {
       setIsDocumentIngesting(false);
     }
@@ -11557,19 +12155,19 @@ export function App() {
     setTranscript(
       [
         `${template.visitReason}.`,
-        `Жалобы: ${template.complaintPrompt}`,
-        `Объективно: ${template.objectiveTemplate}`,
-        `Диагнозы к проверке: ${template.diagnosisHints.join("; ")}`,
-        `План: ${template.treatmentPlanTemplate}`,
-        `Документы: ${template.requiredDocuments.map((kind) => documentLabels[kind]).join(", ")}.`,
-        `Снимки: ${template.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}.`
+        `Р–Р°Р»РѕР±С‹: ${template.complaintPrompt}`,
+        `РћР±СЉРµРєС‚РёРІРЅРѕ: ${template.objectiveTemplate}`,
+        `Р”РёР°РіРЅРѕР·С‹ Рє РїСЂРѕРІРµСЂРєРµ: ${template.diagnosisHints.join("; ")}`,
+        `РџР»Р°РЅ: ${template.treatmentPlanTemplate}`,
+        `Р”РѕРєСѓРјРµРЅС‚С‹: ${template.requiredDocuments.map((kind) => documentLabels[kind]).join(", ")}.`,
+        `РЎРЅРёРјРєРё: ${template.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}.`
       ].join("\n")
     );
   }
 
   async function polishTranscript() {
     if (!hasVisitTranscriptText) {
-      setError("Перед очисткой диктовки: добавьте текст диктовки или нажмите голосовую запись.");
+      setError("РџРµСЂРµРґ РѕС‡РёСЃС‚РєРѕР№ РґРёРєС‚РѕРІРєРё: РґРѕР±Р°РІСЊС‚Рµ С‚РµРєСЃС‚ РґРёРєС‚РѕРІРєРё РёР»Рё РЅР°Р¶РјРёС‚Рµ РіРѕР»РѕСЃРѕРІСѓСЋ Р·Р°РїРёСЃСЊ.");
       return;
     }
     visitDraftUserEditedRef.current = true;
@@ -11585,7 +12183,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Серверная очистка диктовки недоступна"));
+        throw new Error(await responseErrorMessage(response, "РЎРµСЂРІРµСЂРЅР°СЏ РѕС‡РёСЃС‚РєР° РґРёРєС‚РѕРІРєРё РЅРµРґРѕСЃС‚СѓРїРЅР°"));
       }
       const result = (await response.json()) as SpeechTranscriptPolishResponse;
       setTranscript(result.normalizedTranscript);
@@ -11593,24 +12191,24 @@ export function App() {
       setVisitNoteForm(visitNoteFormFromDraft(result.draft));
       const polishLabel =
         result.polishMode === "deterministic_neural"
-          ? `ИИ-полировка ${result.modelName ?? ""}`.trim()
-          : "локальная проверка правил";
+          ? `РР-РїРѕР»РёСЂРѕРІРєР° ${result.modelName ?? ""}`.trim()
+          : "Р»РѕРєР°Р»СЊРЅР°СЏ РїСЂРѕРІРµСЂРєР° РїСЂР°РІРёР»";
       setSpeechStatusNote(
         result.changedPhrases.length
-          ? `Текст очищен (${polishLabel}): ${result.changedPhrases.slice(0, 4).join(", ")}`
-          : `Текст проверен (${polishLabel}): факты не добавлялись.`
+          ? `РўРµРєСЃС‚ РѕС‡РёС‰РµРЅ (${polishLabel}): ${result.changedPhrases.slice(0, 4).join(", ")}`
+          : `РўРµРєСЃС‚ РїСЂРѕРІРµСЂРµРЅ (${polishLabel}): С„Р°РєС‚С‹ РЅРµ РґРѕР±Р°РІР»СЏР»РёСЃСЊ.`
       );
     } catch (polishError) {
       const local = normalizeDentalSpeechTranscript(transcript, selectedSpecialty);
       const localDraft = buildRuleBasedVisitDraftFromTranscript(local.normalizedText, selectedSpecialty, {
-        sourceLabel: "Локальная очистка диктовки"
+        sourceLabel: "Р›РѕРєР°Р»СЊРЅР°СЏ РѕС‡РёСЃС‚РєР° РґРёРєС‚РѕРІРєРё"
       });
       setTranscript(local.normalizedText);
       setDraft(localDraft);
       setVisitNoteForm(visitNoteFormFromDraft(localDraft));
-      setSpeechStatusNote("Текст очищен локальным разбором без сервера.");
+      setSpeechStatusNote("РўРµРєСЃС‚ РѕС‡РёС‰РµРЅ Р»РѕРєР°Р»СЊРЅС‹Рј СЂР°Р·Р±РѕСЂРѕРј Р±РµР· СЃРµСЂРІРµСЂР°.");
       if (polishError instanceof Error) {
-        setError(`${operatorWorkflowFailureMessage("Серверная очистка недоступна", polishError)} Использован локальный разбор.`);
+        setError(`${operatorWorkflowFailureMessage("РЎРµСЂРІРµСЂРЅР°СЏ РѕС‡РёСЃС‚РєР° РЅРµРґРѕСЃС‚СѓРїРЅР°", polishError)} РСЃРїРѕР»СЊР·РѕРІР°РЅ Р»РѕРєР°Р»СЊРЅС‹Р№ СЂР°Р·Р±РѕСЂ.`);
       }
     } finally {
       setIsTranscriptPolishing(false);
@@ -11620,10 +12218,10 @@ export function App() {
   async function buildDraft() {
     if (!dashboard || !activePatient || !hasVisitTranscriptText) {
       const missingSteps = [
-        !dashboard ? "дождитесь загрузки приема" : null,
+        !dashboard ? "РґРѕР¶РґРёС‚РµСЃСЊ Р·Р°РіСЂСѓР·РєРё РїСЂРёРµРјР°" : null,
         ...visitDraftBuildMissingSteps
       ].filter((step): step is string => Boolean(step));
-      setError(`Перед сборкой черновика: ${missingSteps.join(", ")}.`);
+      setError(`РџРµСЂРµРґ СЃР±РѕСЂРєРѕР№ С‡РµСЂРЅРѕРІРёРєР°: ${missingSteps.join(", ")}.`);
       return;
     }
     visitDraftUserEditedRef.current = true;
@@ -11640,7 +12238,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Серверный черновик недоступен"));
+        throw new Error(await responseErrorMessage(response, "РЎРµСЂРІРµСЂРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РЅРµРґРѕСЃС‚СѓРїРµРЅ"));
       }
       const result = (await response.json()) as VisitNoteDraft;
       setDraft(result);
@@ -11651,7 +12249,7 @@ export function App() {
       setDraft(fallbackDraft);
       setVisitNoteForm(visitNoteFormFromDraft(fallbackDraft));
       scrollToVisitArea(".visit-note-panel");
-      setError(`${operatorWorkflowFailureMessage("Серверный черновик недоступен", draftError)} Включен офлайн-разбор.`);
+      setError(`${operatorWorkflowFailureMessage("РЎРµСЂРІРµСЂРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РЅРµРґРѕСЃС‚СѓРїРµРЅ", draftError)} Р’РєР»СЋС‡РµРЅ РѕС„Р»Р°Р№РЅ-СЂР°Р·Р±РѕСЂ.`);
     } finally {
       setIsDraftLoading(false);
     }
@@ -11659,17 +12257,17 @@ export function App() {
 
   async function acceptDraftToVisit() {
     if (!dashboard) {
-      setError("Данные приема еще не загружены. Повторите сохранение после загрузки рабочего экрана.");
+      setError("Р”Р°РЅРЅС‹Рµ РїСЂРёРµРјР° РµС‰Рµ РЅРµ Р·Р°РіСЂСѓР¶РµРЅС‹. РџРѕРІС‚РѕСЂРёС‚Рµ СЃРѕС…СЂР°РЅРµРЅРёРµ РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё СЂР°Р±РѕС‡РµРіРѕ СЌРєСЂР°РЅР°.");
       return;
     }
     if (!visitNoteReadyToAccept) {
-      setError(`Перед сохранением приема: ${visitNoteAcceptMissingSteps.join(", ")}.`);
+      setError(`РџРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј РїСЂРёРµРјР°: ${visitNoteAcceptMissingSteps.join(", ")}.`);
       return;
     }
     setIsDraftAccepting(true);
     const acceptedDraft = visitNoteDraftFromForm(
       visitNoteForm,
-      draft?.warnings ?? ["Правки внесены врачом вручную. Подпись приема остается отдельным действием."]
+      draft?.warnings ?? ["РџСЂР°РІРєРё РІРЅРµСЃРµРЅС‹ РІСЂР°С‡РѕРј РІСЂСѓС‡РЅСѓСЋ. РџРѕРґРїРёСЃСЊ РїСЂРёРµРјР° РѕСЃС‚Р°РµС‚СЃСЏ РѕС‚РґРµР»СЊРЅС‹Рј РґРµР№СЃС‚РІРёРµРј."]
     );
     const doctorSummary = acceptedDraft.warnings.join(" ");
     const clientMutationId = createLocalQueueId();
@@ -11684,7 +12282,7 @@ export function App() {
       scrollToVisitArea(".visit-fields");
     } catch (acceptError) {
       if (!acceptedVisitSaveFailureIsRetryable(acceptError)) {
-        setError(operatorWorkflowFailureMessage("Прием не принят", acceptError));
+        setError(operatorWorkflowFailureMessage("РџСЂРёРµРј РЅРµ РїСЂРёРЅСЏС‚", acceptError));
         return;
       }
       const queued = await queuePendingVisitSave({
@@ -11704,14 +12302,14 @@ export function App() {
         objectiveStatus: acceptedDraft.objectiveStatus,
         diagnosis: acceptedDraft.diagnosis,
         treatmentPlan: acceptedDraft.treatmentPlan,
-        doctorSummary: doctorSummary || "Черновик ЭМК принят врачом локально и ожидает синхронизацию.",
+        doctorSummary: doctorSummary || "Р§РµСЂРЅРѕРІРёРє Р­РњРљ РїСЂРёРЅСЏС‚ РІСЂР°С‡РѕРј Р»РѕРєР°Р»СЊРЅРѕ Рё РѕР¶РёРґР°РµС‚ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЋ.",
         updatedAt: queued.queuedAt
       };
       setDashboard((current) => (current ? { ...current, activeVisit: optimisticVisit } : current));
       setDraft(null);
       setVisitNoteForm(visitNoteFormFromVisit(optimisticVisit));
       scrollToVisitArea(".visit-fields");
-      setError(`${operatorWorkflowFailureMessage("Серверное сохранение недоступно", acceptError)} Прием сохранен локально и поставлен в очередь.`);
+      setError(`${operatorWorkflowFailureMessage("РЎРµСЂРІРµСЂРЅРѕРµ СЃРѕС…СЂР°РЅРµРЅРёРµ РЅРµРґРѕСЃС‚СѓРїРЅРѕ", acceptError)} РџСЂРёРµРј СЃРѕС…СЂР°РЅРµРЅ Р»РѕРєР°Р»СЊРЅРѕ Рё РїРѕСЃС‚Р°РІР»РµРЅ РІ РѕС‡РµСЂРµРґСЊ.`);
     } finally {
       setIsDraftAccepting(false);
     }
@@ -11719,7 +12317,7 @@ export function App() {
 
   async function previewImport() {
     if (!importText.trim()) {
-      setError("Вставьте список пациентов, OCR журнала или надиктуйте импорт перед проверкой.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ СЃРїРёСЃРѕРє РїР°С†РёРµРЅС‚РѕРІ, OCR Р¶СѓСЂРЅР°Р»Р° РёР»Рё РЅР°РґРёРєС‚СѓР№С‚Рµ РёРјРїРѕСЂС‚ РїРµСЂРµРґ РїСЂРѕРІРµСЂРєРѕР№.");
       return;
     }
     setIsImportLoading(true);
@@ -11734,7 +12332,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Импорт не проверен"));
+        throw new Error(await responseErrorMessage(response, "РРјРїРѕСЂС‚ РЅРµ РїСЂРѕРІРµСЂРµРЅ"));
       }
       const result = (await response.json()) as ImportIntakeResponse;
       setImportIntake(result);
@@ -11742,7 +12340,7 @@ export function App() {
       setImportText(result.normalizedText);
       setImportCommit(null);
     } catch (importError) {
-      setError(operatorWorkflowFailureMessage("Импорт не проверен", importError));
+      setError(operatorWorkflowFailureMessage("РРјРїРѕСЂС‚ РЅРµ РїСЂРѕРІРµСЂРµРЅ", importError));
     } finally {
       setIsImportLoading(false);
     }
@@ -11750,19 +12348,19 @@ export function App() {
 
   async function commitImport() {
     if (isImportCommitting) {
-      setError("Дождитесь завершения текущей записи импорта пациентов.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ Р·Р°РїРёСЃРё РёРјРїРѕСЂС‚Р° РїР°С†РёРµРЅС‚РѕРІ.");
       return;
     }
     if (!importText.trim()) {
-      setError("Вставьте список пациентов, OCR журнала или надиктуйте импорт перед записью.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ СЃРїРёСЃРѕРє РїР°С†РёРµРЅС‚РѕРІ, OCR Р¶СѓСЂРЅР°Р»Р° РёР»Рё РЅР°РґРёРєС‚СѓР№С‚Рµ РёРјРїРѕСЂС‚ РїРµСЂРµРґ Р·Р°РїРёСЃСЊСЋ.");
       return;
     }
     if (!importPreview) {
-      setError("Сначала проверьте импорт пациентов, чтобы увидеть готовые и проблемные строки.");
+      setError("РЎРЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЊС‚Рµ РёРјРїРѕСЂС‚ РїР°С†РёРµРЅС‚РѕРІ, С‡С‚РѕР±С‹ СѓРІРёРґРµС‚СЊ РіРѕС‚РѕРІС‹Рµ Рё РїСЂРѕР±Р»РµРјРЅС‹Рµ СЃС‚СЂРѕРєРё.");
       return;
     }
     if (importPreview.readyRows === 0) {
-      setError("В импорте пациентов нет готовых строк. Исправьте предупреждения и повторите проверку.");
+      setError("Р’ РёРјРїРѕСЂС‚Рµ РїР°С†РёРµРЅС‚РѕРІ РЅРµС‚ РіРѕС‚РѕРІС‹С… СЃС‚СЂРѕРє. РСЃРїСЂР°РІСЊС‚Рµ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏ Рё РїРѕРІС‚РѕСЂРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ.");
       return;
     }
     setIsImportCommitting(true);
@@ -11777,14 +12375,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Импорт не записан"));
+        throw new Error(await responseErrorMessage(response, "РРјРїРѕСЂС‚ РЅРµ Р·Р°РїРёСЃР°РЅ"));
       }
       const result = (await response.json()) as ImportCommitResponse;
       setImportCommit(result);
       setImportPreview(result.preview);
       await loadDashboard();
     } catch (importError) {
-      setError(operatorWorkflowFailureMessage("Импорт не записан", importError));
+      setError(operatorWorkflowFailureMessage("РРјРїРѕСЂС‚ РЅРµ Р·Р°РїРёСЃР°РЅ", importError));
     } finally {
       setIsImportCommitting(false);
     }
@@ -11793,7 +12391,7 @@ export function App() {
   async function previewSmartImportText(rawText: string, mode: SmartImportMode) {
     const cleanText = rawText.trim();
     if (!cleanText) {
-      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед разбором.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ РІС‹РіСЂСѓР·РєСѓ РёР· СЃС‚Р°СЂРѕР№ РњРРЎ, С‚Р°Р±Р»РёС†Сѓ, OCR РёР»Рё РґРёРєС‚РѕРІРєСѓ РїРµСЂРµРґ СЂР°Р·Р±РѕСЂРѕРј.");
       return;
     }
     setIsSmartImportLoading(true);
@@ -11808,12 +12406,12 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Умный импорт не проверен"));
+        throw new Error(await responseErrorMessage(response, "РЈРјРЅС‹Р№ РёРјРїРѕСЂС‚ РЅРµ РїСЂРѕРІРµСЂРµРЅ"));
       }
       setSmartImportPreview((await response.json()) as SmartImportPreviewResponse);
       setSmartImportCommit(null);
     } catch (importError) {
-      setError(operatorWorkflowFailureMessage("Умный импорт не проверен", importError));
+      setError(operatorWorkflowFailureMessage("РЈРјРЅС‹Р№ РёРјРїРѕСЂС‚ РЅРµ РїСЂРѕРІРµСЂРµРЅ", importError));
     } finally {
       setIsSmartImportLoading(false);
     }
@@ -11825,19 +12423,19 @@ export function App() {
 
   async function commitSmartImport() {
     if (isSmartImportCommitting) {
-      setError("Дождитесь завершения текущей записи умного импорта.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ Р·Р°РїРёСЃРё СѓРјРЅРѕРіРѕ РёРјРїРѕСЂС‚Р°.");
       return;
     }
     if (!smartImportText.trim()) {
-      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед записью.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ РІС‹РіСЂСѓР·РєСѓ РёР· СЃС‚Р°СЂРѕР№ РњРРЎ, С‚Р°Р±Р»РёС†Сѓ, OCR РёР»Рё РґРёРєС‚РѕРІРєСѓ РїРµСЂРµРґ Р·Р°РїРёСЃСЊСЋ.");
       return;
     }
     if (!smartImportPreview) {
-      setError("Сначала разберите умный импорт, чтобы увидеть готовые строки и пропуски.");
+      setError("РЎРЅР°С‡Р°Р»Р° СЂР°Р·Р±РµСЂРёС‚Рµ СѓРјРЅС‹Р№ РёРјРїРѕСЂС‚, С‡С‚РѕР±С‹ СѓРІРёРґРµС‚СЊ РіРѕС‚РѕРІС‹Рµ СЃС‚СЂРѕРєРё Рё РїСЂРѕРїСѓСЃРєРё.");
       return;
     }
     if (smartImportPreview.patientPreview.readyRows === 0 && smartImportPreview.imagingPreview.readyRows === 0) {
-      setError("В умном импорте нет готовых пациентов или снимков. Исправьте строки и повторите разбор.");
+      setError("Р’ СѓРјРЅРѕРј РёРјРїРѕСЂС‚Рµ РЅРµС‚ РіРѕС‚РѕРІС‹С… РїР°С†РёРµРЅС‚РѕРІ РёР»Рё СЃРЅРёРјРєРѕРІ. РСЃРїСЂР°РІСЊС‚Рµ СЃС‚СЂРѕРєРё Рё РїРѕРІС‚РѕСЂРёС‚Рµ СЂР°Р·Р±РѕСЂ.");
       return;
     }
     setIsSmartImportCommitting(true);
@@ -11852,14 +12450,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Умный импорт не записан"));
+        throw new Error(await responseErrorMessage(response, "РЈРјРЅС‹Р№ РёРјРїРѕСЂС‚ РЅРµ Р·Р°РїРёСЃР°РЅ"));
       }
       const result = (await response.json()) as SmartImportCommitResponse;
       setSmartImportCommit(result);
       setSmartImportPreview(result.preview);
       await loadDashboard();
     } catch (importError) {
-      setError(operatorWorkflowFailureMessage("Умный импорт не записан", importError));
+      setError(operatorWorkflowFailureMessage("РЈРјРЅС‹Р№ РёРјРїРѕСЂС‚ РЅРµ Р·Р°РїРёСЃР°РЅ", importError));
     } finally {
       setIsSmartImportCommitting(false);
     }
@@ -11867,7 +12465,7 @@ export function App() {
 
   async function downloadSmartImportReport() {
     if (!smartImportText.trim()) {
-      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед отчетом проверки.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ РІС‹РіСЂСѓР·РєСѓ РёР· СЃС‚Р°СЂРѕР№ РњРРЎ, С‚Р°Р±Р»РёС†Сѓ, OCR РёР»Рё РґРёРєС‚РѕРІРєСѓ РїРµСЂРµРґ РѕС‚С‡РµС‚РѕРј РїСЂРѕРІРµСЂРєРё.");
       return;
     }
     setIsSmartReportLoading(true);
@@ -11882,7 +12480,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Отчет импорта не создан"));
+        throw new Error(await responseErrorMessage(response, "РћС‚С‡РµС‚ РёРјРїРѕСЂС‚Р° РЅРµ СЃРѕР·РґР°РЅ"));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -11894,7 +12492,7 @@ export function App() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (reportError) {
-      setError(operatorWorkflowFailureMessage("Отчет импорта не создан", reportError));
+      setError(operatorWorkflowFailureMessage("РћС‚С‡РµС‚ РёРјРїРѕСЂС‚Р° РЅРµ СЃРѕР·РґР°РЅ", reportError));
     } finally {
       setIsSmartReportLoading(false);
     }
@@ -11902,7 +12500,7 @@ export function App() {
 
   async function downloadSmartImportSafeHandoffReport() {
     if (!smartImportText.trim()) {
-      setError("Вставьте выгрузку из старой МИС, таблицу, OCR или диктовку перед отчетом переноса.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ РІС‹РіСЂСѓР·РєСѓ РёР· СЃС‚Р°СЂРѕР№ РњРРЎ, С‚Р°Р±Р»РёС†Сѓ, OCR РёР»Рё РґРёРєС‚РѕРІРєСѓ РїРµСЂРµРґ РѕС‚С‡РµС‚РѕРј РїРµСЂРµРЅРѕСЃР°.");
       return;
     }
     setIsSmartSafeReportLoading(true);
@@ -11917,7 +12515,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Отчет переноса по импорту не создан"));
+        throw new Error(await responseErrorMessage(response, "РћС‚С‡РµС‚ РїРµСЂРµРЅРѕСЃР° РїРѕ РёРјРїРѕСЂС‚Сѓ РЅРµ СЃРѕР·РґР°РЅ"));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -11929,7 +12527,7 @@ export function App() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (reportError) {
-      setError(operatorWorkflowFailureMessage("Отчет переноса по импорту не создан", reportError));
+      setError(operatorWorkflowFailureMessage("РћС‚С‡РµС‚ РїРµСЂРµРЅРѕСЃР° РїРѕ РёРјРїРѕСЂС‚Сѓ РЅРµ СЃРѕР·РґР°РЅ", reportError));
     } finally {
       setIsSmartSafeReportLoading(false);
     }
@@ -11988,7 +12586,7 @@ export function App() {
         body: JSON.stringify(migrationAutopilotRequestPayload(knownDiscovery, options))
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Автоплан миграции не построен"));
+        throw new Error(await responseErrorMessage(response, "РђРІС‚РѕРїР»Р°РЅ РјРёРіСЂР°С†РёРё РЅРµ РїРѕСЃС‚СЂРѕРµРЅ"));
       }
       const result = (await response.json()) as MigrationAutopilotResponse;
       setMigrationAutopilot(result);
@@ -12003,7 +12601,7 @@ export function App() {
       });
       if (result.clinicLookup) setClinicPublicLookup(result.clinicLookup);
     } catch (autopilotError) {
-      setError(operatorWorkflowFailureMessage("Автоплан миграции не построен", autopilotError));
+      setError(operatorWorkflowFailureMessage("РђРІС‚РѕРїР»Р°РЅ РјРёРіСЂР°С†РёРё РЅРµ РїРѕСЃС‚СЂРѕРµРЅ", autopilotError));
     } finally {
       setIsMigrationAutopilotLoading(false);
     }
@@ -12012,7 +12610,7 @@ export function App() {
   async function downloadMigrationHandoffReport() {
     const knownDiscovery = activeMigrationDiscoveryForAutopilot();
     if (!migrationAutopilot && !knownDiscovery && !smartImportText.trim()) {
-      setError("Сначала запустите автоплан миграции, выберите папку/диск или вставьте текст выгрузки для плана переноса.");
+      setError("РЎРЅР°С‡Р°Р»Р° Р·Р°РїСѓСЃС‚РёС‚Рµ Р°РІС‚РѕРїР»Р°РЅ РјРёРіСЂР°С†РёРё, РІС‹Р±РµСЂРёС‚Рµ РїР°РїРєСѓ/РґРёСЃРє РёР»Рё РІСЃС‚Р°РІСЊС‚Рµ С‚РµРєСЃС‚ РІС‹РіСЂСѓР·РєРё РґР»СЏ РїР»Р°РЅР° РїРµСЂРµРЅРѕСЃР°.");
       return;
     }
     setIsMigrationHandoffReportLoading(true);
@@ -12023,7 +12621,7 @@ export function App() {
         body: JSON.stringify(migrationAutopilotRequestPayload(knownDiscovery, { includeSmartImportText: Boolean(smartImportText.trim()) }))
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "План миграции не создан"));
+        throw new Error(await responseErrorMessage(response, "РџР»Р°РЅ РјРёРіСЂР°С†РёРё РЅРµ СЃРѕР·РґР°РЅ"));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -12035,7 +12633,7 @@ export function App() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (reportError) {
-      setError(operatorWorkflowFailureMessage("План миграции не создан", reportError));
+      setError(operatorWorkflowFailureMessage("РџР»Р°РЅ РјРёРіСЂР°С†РёРё РЅРµ СЃРѕР·РґР°РЅ", reportError));
     } finally {
       setIsMigrationHandoffReportLoading(false);
     }
@@ -12059,13 +12657,13 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Поиск старых источников не выполнен"));
+        throw new Error(await responseErrorMessage(response, "РџРѕРёСЃРє СЃС‚Р°СЂС‹С… РёСЃС‚РѕС‡РЅРёРєРѕРІ РЅРµ РІС‹РїРѕР»РЅРµРЅ"));
       }
       const result = (await response.json()) as MigrationLocalSourceDiscoveryResponse;
       setMigrationSourceDiscovery(result);
       await runMigrationAutopilot(result);
     } catch (discoveryError) {
-      setError(operatorWorkflowFailureMessage("Поиск старых источников не выполнен", discoveryError));
+      setError(operatorWorkflowFailureMessage("РџРѕРёСЃРє СЃС‚Р°СЂС‹С… РёСЃС‚РѕС‡РЅРёРєРѕРІ РЅРµ РІС‹РїРѕР»РЅРµРЅ", discoveryError));
     } finally {
       setIsMigrationSourceDiscovering(false);
     }
@@ -12092,11 +12690,11 @@ export function App() {
 
   async function previewMigrationDiscoveryCandidate(candidate: MigrationLocalSourceDiscoveryResponse["candidates"][number]) {
     if (!migrationCandidateCanPreview(candidate)) {
-      setError("У найденного источника пока нет файлов для предпросмотра. Откройте план переноса или проверку источника.");
+      setError("РЈ РЅР°Р№РґРµРЅРЅРѕРіРѕ РёСЃС‚РѕС‡РЅРёРєР° РїРѕРєР° РЅРµС‚ С„Р°Р№Р»РѕРІ РґР»СЏ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂР°. РћС‚РєСЂРѕР№С‚Рµ РїР»Р°РЅ РїРµСЂРµРЅРѕСЃР° РёР»Рё РїСЂРѕРІРµСЂРєСѓ РёСЃС‚РѕС‡РЅРёРєР°.");
       return;
     }
     if (!candidate.smartImportLine.trim()) {
-      setError("У найденного источника нет строки для умного предпросмотра. Откройте план или повторите поиск.");
+      setError("РЈ РЅР°Р№РґРµРЅРЅРѕРіРѕ РёСЃС‚РѕС‡РЅРёРєР° РЅРµС‚ СЃС‚СЂРѕРєРё РґР»СЏ СѓРјРЅРѕРіРѕ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂР°. РћС‚РєСЂРѕР№С‚Рµ РїР»Р°РЅ РёР»Рё РїРѕРІС‚РѕСЂРёС‚Рµ РїРѕРёСЃРє.");
       return;
     }
     setSmartImportMode("auto");
@@ -12109,14 +12707,14 @@ export function App() {
     const sources = migrationAutopilot?.sources ?? [];
     const selectedSources = sourceFingerprint ? sources.filter((source) => source.candidate.sourceFingerprint === sourceFingerprint) : [];
     if (sourceFingerprint && !selectedSources.length) {
-      setError("Источник из автоплана уже не найден. Обновите автоплан или выберите источник из текущего списка.");
+      setError("РСЃС‚РѕС‡РЅРёРє РёР· Р°РІС‚РѕРїР»Р°РЅР° СѓР¶Рµ РЅРµ РЅР°Р№РґРµРЅ. РћР±РЅРѕРІРёС‚Рµ Р°РІС‚РѕРїР»Р°РЅ РёР»Рё РІС‹Р±РµСЂРёС‚Рµ РёСЃС‚РѕС‡РЅРёРє РёР· С‚РµРєСѓС‰РµРіРѕ СЃРїРёСЃРєР°.");
       return;
     }
     const previewSources = selectedSources.length
       ? selectedSources.filter((source) => migrationCandidateCanPreview(source.candidate))
       : sources.filter((source) => source.readiness.level === "ready_for_preview" || migrationCandidateCanPreview(source.candidate));
     if (selectedSources.length && !previewSources.length) {
-      setError("У выбранного источника пока нет файлов для предпросмотра. Откройте план переноса или проверку источника.");
+      setError("РЈ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РёСЃС‚РѕС‡РЅРёРєР° РїРѕРєР° РЅРµС‚ С„Р°Р№Р»РѕРІ РґР»СЏ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂР°. РћС‚РєСЂРѕР№С‚Рµ РїР»Р°РЅ РїРµСЂРµРЅРѕСЃР° РёР»Рё РїСЂРѕРІРµСЂРєСѓ РёСЃС‚РѕС‡РЅРёРєР°.");
       return;
     }
     const sourceLines = Array.from(
@@ -12124,7 +12722,7 @@ export function App() {
     );
 
     if (!sourceLines.length) {
-      setError("Автоплан пока не дал строк для предпросмотра. Сначала запустите поиск на ПК или выберите папку/диск старой системы.");
+      setError("РђРІС‚РѕРїР»Р°РЅ РїРѕРєР° РЅРµ РґР°Р» СЃС‚СЂРѕРє РґР»СЏ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂР°. РЎРЅР°С‡Р°Р»Р° Р·Р°РїСѓСЃС‚РёС‚Рµ РїРѕРёСЃРє РЅР° РџРљ РёР»Рё РІС‹Р±РµСЂРёС‚Рµ РїР°РїРєСѓ/РґРёСЃРє СЃС‚Р°СЂРѕР№ СЃРёСЃС‚РµРјС‹.");
       return;
     }
 
@@ -12148,11 +12746,11 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "План переноса источника не построен"));
+        throw new Error(await responseErrorMessage(response, "РџР»Р°РЅ РїРµСЂРµРЅРѕСЃР° РёСЃС‚РѕС‡РЅРёРєР° РЅРµ РїРѕСЃС‚СЂРѕРµРЅ"));
       }
       setMigrationSourceWorkup((await response.json()) as MigrationLocalSourceWorkupResponse);
     } catch (workupError) {
-      setError(operatorWorkflowFailureMessage("План переноса источника не построен", workupError));
+      setError(operatorWorkflowFailureMessage("РџР»Р°РЅ РїРµСЂРµРЅРѕСЃР° РёСЃС‚РѕС‡РЅРёРєР° РЅРµ РїРѕСЃС‚СЂРѕРµРЅ", workupError));
     } finally {
       setIsMigrationSourceWorkupLoading(false);
     }
@@ -12176,11 +12774,11 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Проверка источника не выполнена"));
+        throw new Error(await responseErrorMessage(response, "РџСЂРѕРІРµСЂРєР° РёСЃС‚РѕС‡РЅРёРєР° РЅРµ РІС‹РїРѕР»РЅРµРЅР°"));
       }
       setMigrationSourceProbe((await response.json()) as MigrationLocalSourceProbeResponse);
     } catch (probeError) {
-      setError(operatorWorkflowFailureMessage("Проверка источника не выполнена", probeError));
+      setError(operatorWorkflowFailureMessage("РџСЂРѕРІРµСЂРєР° РёСЃС‚РѕС‡РЅРёРєР° РЅРµ РІС‹РїРѕР»РЅРµРЅР°", probeError));
     } finally {
       setIsMigrationSourceProbeLoading(false);
     }
@@ -12197,7 +12795,7 @@ export function App() {
       medicalLicenseNumber: clinicProfileDraft.medicalLicenseNumber
     };
     if (!Object.values(payload).some((value) => typeof value === "string" && value.trim())) {
-      setError("Для поиска реквизитов клиники укажите ИНН, ОГРН, название, адрес или номер лицензии.");
+      setError("Р”Р»СЏ РїРѕРёСЃРєР° СЂРµРєРІРёР·РёС‚РѕРІ РєР»РёРЅРёРєРё СѓРєР°Р¶РёС‚Рµ РРќРќ, РћР“Р Рќ, РЅР°Р·РІР°РЅРёРµ, Р°РґСЂРµСЃ РёР»Рё РЅРѕРјРµСЂ Р»РёС†РµРЅР·РёРё.");
       return;
     }
     setIsClinicPublicLookupLoading(true);
@@ -12208,11 +12806,11 @@ export function App() {
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Публичный поиск клиники не выполнен"));
+        throw new Error(await responseErrorMessage(response, "РџСѓР±Р»РёС‡РЅС‹Р№ РїРѕРёСЃРє РєР»РёРЅРёРєРё РЅРµ РІС‹РїРѕР»РЅРµРЅ"));
       }
       setClinicPublicLookup((await response.json()) as ClinicPublicLookupResponse);
     } catch (lookupError) {
-      setError(operatorWorkflowFailureMessage("Публичный поиск клиники не выполнен", lookupError));
+      setError(operatorWorkflowFailureMessage("РџСѓР±Р»РёС‡РЅС‹Р№ РїРѕРёСЃРє РєР»РёРЅРёРєРё РЅРµ РІС‹РїРѕР»РЅРµРЅ", lookupError));
     } finally {
       setIsClinicPublicLookupLoading(false);
     }
@@ -12220,7 +12818,7 @@ export function App() {
 
   async function previewImagingImport() {
     if (!imagingImportText.trim()) {
-      setError("Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ перед проверкой.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ СЃС‚СЂРѕРєРё СЃРѕ СЃРЅРёРјРєР°РјРё РёР»Рё РІС‹Р±РµСЂРёС‚Рµ РїСЂРёРјРµСЂ РљРў/РћРџРўР“/РўР Р“ РїРµСЂРµРґ РїСЂРѕРІРµСЂРєРѕР№.");
       return;
     }
     setIsImagingImportLoading(true);
@@ -12235,13 +12833,13 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Импорт снимков не проверен"));
+        throw new Error(await responseErrorMessage(response, "РРјРїРѕСЂС‚ СЃРЅРёРјРєРѕРІ РЅРµ РїСЂРѕРІРµСЂРµРЅ"));
       }
       setImagingImportPreview((await response.json()) as ImagingImportPreviewResponse);
       setImagingImportCommit(null);
       setDicomSeriesPreview(null);
     } catch (importError) {
-      setError(operatorWorkflowFailureMessage("Импорт снимков не проверен", importError));
+      setError(operatorWorkflowFailureMessage("РРјРїРѕСЂС‚ СЃРЅРёРјРєРѕРІ РЅРµ РїСЂРѕРІРµСЂРµРЅ", importError));
     } finally {
       setIsImagingImportLoading(false);
     }
@@ -12261,8 +12859,8 @@ export function App() {
     const draft: LocalImagingFolderDraft = {
       version: 1,
       folderPath: cleanFolderPath,
-      safeDisplayName: metadata.safeDisplayName ?? `Локальная папка снимков #${fingerprint}`,
-      sourceLabel: metadata.sourceLabel ?? "Ручной выбор локальной папки",
+      safeDisplayName: metadata.safeDisplayName ?? `Р›РѕРєР°Р»СЊРЅР°СЏ РїР°РїРєР° СЃРЅРёРјРєРѕРІ #${fingerprint}`,
+      sourceLabel: metadata.sourceLabel ?? "Р СѓС‡РЅРѕР№ РІС‹Р±РѕСЂ Р»РѕРєР°Р»СЊРЅРѕР№ РїР°РїРєРё",
       sourceKind: metadata.sourceKind ?? "manual",
       folderFingerprint: fingerprint,
       origin: metadata.origin ?? "manual",
@@ -12573,7 +13171,7 @@ export function App() {
       { handle: directoryHandle, key: "root", hint: directoryHandle.name, depth: 0 }
     ];
 
-    publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка выбранной папки", "scanning", true);
+    publishBrowserMigrationScanProgress(progressStats, options, runtime, "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅРѕР№ РїР°РїРєРё", "scanning", true);
 
     while (stack.length > 0 && scannedFolders < browserMigrationScanFolderLimit && scannedFiles < browserMigrationScanFileLimit) {
       throwIfBrowserMigrationScanAborted(options.signal);
@@ -12583,7 +13181,7 @@ export function App() {
       progressStats.scannedFolders = scannedFolders;
       runtime.processedUnits += 1;
       browserMigrationStatsFor(statsByFolder, current.key, current.hint, current.depth);
-      publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка подпапок старой системы");
+      publishBrowserMigrationScanProgress(progressStats, options, runtime, "РїСЂРѕРІРµСЂРєР° РїРѕРґРїР°РїРѕРє СЃС‚Р°СЂРѕР№ СЃРёСЃС‚РµРјС‹");
       await maybeYieldBrowserMigrationScan(runtime, options.signal);
       try {
         let inspectedDirectoryEntries = 0;
@@ -12591,7 +13189,7 @@ export function App() {
           throwIfBrowserMigrationScanAborted(options.signal);
           inspectedDirectoryEntries += 1;
           if (inspectedDirectoryEntries > browserMigrationScanDirectoryEntryLimit) {
-            warnings.push(`Браузерный список ограничил одну папку ${browserMigrationScanDirectoryEntryLimit} элементами для отзывчивости интерфейса.`);
+            warnings.push(`Р‘СЂР°СѓР·РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє РѕРіСЂР°РЅРёС‡РёР» РѕРґРЅСѓ РїР°РїРєСѓ ${browserMigrationScanDirectoryEntryLimit} СЌР»РµРјРµРЅС‚Р°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
             break;
           }
           if (handle.kind === "directory") {
@@ -12622,21 +13220,21 @@ export function App() {
           });
           addBrowserMigrationKindToScanStats(progressStats, kind, file.size);
           runtime.processedUnits += 1;
-          publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка старых баз, выгрузок и снимков");
+          publishBrowserMigrationScanProgress(progressStats, options, runtime, "РїСЂРѕРІРµСЂРєР° СЃС‚Р°СЂС‹С… Р±Р°Р·, РІС‹РіСЂСѓР·РѕРє Рё СЃРЅРёРјРєРѕРІ");
           await maybeYieldBrowserMigrationScan(runtime, options.signal);
         }
       } catch (scanError) {
         if (isBrowserMigrationScanAbortError(scanError)) throw scanError;
-        warnings.push("Одну выбранную в браузере подпапку не удалось прочитать; она пропущена.");
+        warnings.push("РћРґРЅСѓ РІС‹Р±СЂР°РЅРЅСѓСЋ РІ Р±СЂР°СѓР·РµСЂРµ РїРѕРґРїР°РїРєСѓ РЅРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ; РѕРЅР° РїСЂРѕРїСѓС‰РµРЅР°.");
       }
     }
 
-    if (scannedFiles >= browserMigrationScanFileLimit) warnings.push(`Браузерный список ограничен ${browserMigrationScanFileLimit} файлами для отзывчивости интерфейса.`);
-    if (scannedFolders >= browserMigrationScanFolderLimit) warnings.push(`Браузерный список ограничен ${browserMigrationScanFolderLimit} папками для отзывчивости интерфейса.`);
+    if (scannedFiles >= browserMigrationScanFileLimit) warnings.push(`Р‘СЂР°СѓР·РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє РѕРіСЂР°РЅРёС‡РµРЅ ${browserMigrationScanFileLimit} С„Р°Р№Р»Р°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
+    if (scannedFolders >= browserMigrationScanFolderLimit) warnings.push(`Р‘СЂР°СѓР·РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє РѕРіСЂР°РЅРёС‡РµРЅ ${browserMigrationScanFolderLimit} РїР°РїРєР°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
     publishBrowserMigrationScanProgress(progressStats, options, runtime, null, "done", true);
     return buildBrowserMigrationDiscovery({
       rootName: directoryHandle.name || "browser-selected-folder",
-      sourceLabel: "Браузерный список папки",
+      sourceLabel: "Р‘СЂР°СѓР·РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє РїР°РїРєРё",
       scannedFolders,
       scannedFiles,
       folderStats: Array.from(statsByFolder.values()),
@@ -12669,7 +13267,7 @@ export function App() {
       warnings
     };
 
-    publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка выбранных файлов", "scanning", true);
+    publishBrowserMigrationScanProgress(progressStats, options, runtime, "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅС‹С… С„Р°Р№Р»РѕРІ", "scanning", true);
 
     for (let fileIndex = 0; fileIndex < scanCount; fileIndex += 1) {
       throwIfBrowserMigrationScanAborted(options.signal);
@@ -12696,15 +13294,15 @@ export function App() {
       });
       addBrowserMigrationKindToScanStats(progressStats, kind, file.size);
       runtime.processedUnits += 1;
-      publishBrowserMigrationScanProgress(progressStats, options, runtime, "проверка старых баз, выгрузок и снимков");
+      publishBrowserMigrationScanProgress(progressStats, options, runtime, "РїСЂРѕРІРµСЂРєР° СЃС‚Р°СЂС‹С… Р±Р°Р·, РІС‹РіСЂСѓР·РѕРє Рё СЃРЅРёРјРєРѕРІ");
       await maybeYieldBrowserMigrationScan(runtime, options.signal);
     }
 
-    if (selectedFileCount > browserMigrationScanFileLimit) warnings.push(`Браузерный список ограничен ${browserMigrationScanFileLimit} файлами для отзывчивости интерфейса.`);
+    if (selectedFileCount > browserMigrationScanFileLimit) warnings.push(`Р‘СЂР°СѓР·РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє РѕРіСЂР°РЅРёС‡РµРЅ ${browserMigrationScanFileLimit} С„Р°Р№Р»Р°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
     publishBrowserMigrationScanProgress(progressStats, options, runtime, null, "done", true);
     return buildBrowserMigrationDiscovery({
       rootName: "browser-selected-files",
-      sourceLabel: "Браузерный список файлов",
+      sourceLabel: "Р‘СЂР°СѓР·РµСЂРЅС‹Р№ СЃРїРёСЃРѕРє С„Р°Р№Р»РѕРІ",
       scannedFolders: Math.max(1, folders.size),
       scannedFiles,
       folderStats: Array.from(statsByFolder.values()),
@@ -12721,8 +13319,8 @@ export function App() {
         await runBrowserMigrationSourceScan({
           rootName: directoryHandle.name || "browser-selected-folder",
           sourceKind: "browser_directory_picker",
-          currentItem: "проверка выбранной папки",
-          errorMessage: "Браузер не открыл выбор старой базы или папки снимков",
+          currentItem: "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅРѕР№ РїР°РїРєРё",
+          errorMessage: "Р‘СЂР°СѓР·РµСЂ РЅРµ РѕС‚РєСЂС‹Р» РІС‹Р±РѕСЂ СЃС‚Р°СЂРѕР№ Р±Р°Р·С‹ РёР»Рё РїР°РїРєРё СЃРЅРёРјРєРѕРІ",
           scan: (options) => scanBrowserMigrationDirectoryHandle(directoryHandle, options)
         });
         return;
@@ -12730,7 +13328,7 @@ export function App() {
       browserMigrationInputRef.current?.click();
     } catch (pickerError) {
       if (pickerError instanceof DOMException && pickerError.name === "AbortError") return;
-      setError(browserLocalSourceErrorMessage("Браузер не открыл выбор старой базы или папки снимков", pickerError));
+      setError(browserLocalSourceErrorMessage("Р‘СЂР°СѓР·РµСЂ РЅРµ РѕС‚РєСЂС‹Р» РІС‹Р±РѕСЂ СЃС‚Р°СЂРѕР№ Р±Р°Р·С‹ РёР»Рё РїР°РїРєРё СЃРЅРёРјРєРѕРІ", pickerError));
     } finally {
       setIsBrowserMigrationScanning(false);
     }
@@ -12743,12 +13341,12 @@ export function App() {
       await runBrowserMigrationSourceScan({
         rootName: "browser-selected-files",
         sourceKind: "browser_file_input",
-        currentItem: "проверка выбранных файлов",
-        errorMessage: "Браузер не разобрал выбранные файлы старой системы",
+        currentItem: "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅС‹С… С„Р°Р№Р»РѕРІ",
+        errorMessage: "Р‘СЂР°СѓР·РµСЂ РЅРµ СЂР°Р·РѕР±СЂР°Р» РІС‹Р±СЂР°РЅРЅС‹Рµ С„Р°Р№Р»С‹ СЃС‚Р°СЂРѕР№ СЃРёСЃС‚РµРјС‹",
         scan: (options) => scanBrowserMigrationFileList(fileList, options)
       });
     } catch (pickerError) {
-      setError(browserLocalSourceErrorMessage("Браузер не разобрал выбранные файлы старой системы", pickerError));
+      setError(browserLocalSourceErrorMessage("Р‘СЂР°СѓР·РµСЂ РЅРµ СЂР°Р·РѕР±СЂР°Р» РІС‹Р±СЂР°РЅРЅС‹Рµ С„Р°Р№Р»С‹ СЃС‚Р°СЂРѕР№ СЃРёСЃС‚РµРјС‹", pickerError));
     } finally {
       setIsBrowserMigrationScanning(false);
       if (browserMigrationInputRef.current) browserMigrationInputRef.current.value = "";
@@ -12761,7 +13359,7 @@ export function App() {
   ): Promise<BrowserPickedImagingFolderPreview> {
     const runtime = createBrowserImagingScanRuntime(options.startedAt);
     const stats: BrowserPickedImagingScanStats = {
-      rootName: "Выбранная папка браузера",
+      rootName: "Р’С‹Р±СЂР°РЅРЅР°СЏ РїР°РїРєР° Р±СЂР°СѓР·РµСЂР°",
       sourceKind: "browser_directory_picker",
       scannedFiles: 0,
       scannedFolders: 0,
@@ -12775,7 +13373,7 @@ export function App() {
     let magicReads = 0;
     const stack: BrowserFileSystemDirectoryHandle[] = [directoryHandle];
 
-    publishBrowserImagingScanProgress(stats, options, runtime, "проверка выбранной папки", "scanning", true);
+    publishBrowserImagingScanProgress(stats, options, runtime, "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅРѕР№ РїР°РїРєРё", "scanning", true);
 
     while (stack.length > 0 && stats.scannedFolders < browserImagingScanFolderLimit && stats.scannedFiles < browserImagingScanFileLimit) {
       throwIfBrowserImagingScanAborted(options.signal);
@@ -12783,7 +13381,7 @@ export function App() {
       if (!current) break;
       stats.scannedFolders += 1;
       runtime.processedUnits += 1;
-      publishBrowserImagingScanProgress(stats, options, runtime, "проверка подпапок");
+      publishBrowserImagingScanProgress(stats, options, runtime, "РїСЂРѕРІРµСЂРєР° РїРѕРґРїР°РїРѕРє");
       await maybeYieldBrowserImagingScan(runtime, options.signal);
       try {
         let inspectedDirectoryEntries = 0;
@@ -12791,7 +13389,7 @@ export function App() {
           throwIfBrowserImagingScanAborted(options.signal);
           inspectedDirectoryEntries += 1;
           if (inspectedDirectoryEntries > browserImagingScanDirectoryEntryLimit) {
-            stats.warnings.push(`Браузерное сканирование ограничило одну папку ${browserImagingScanDirectoryEntryLimit} элементами для отзывчивости интерфейса.`);
+            stats.warnings.push(`Р‘СЂР°СѓР·РµСЂРЅРѕРµ СЃРєР°РЅРёСЂРѕРІР°РЅРёРµ РѕРіСЂР°РЅРёС‡РёР»Рѕ РѕРґРЅСѓ РїР°РїРєСѓ ${browserImagingScanDirectoryEntryLimit} СЌР»РµРјРµРЅС‚Р°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
             break;
           }
           if (handle.kind === "directory") {
@@ -12813,22 +13411,22 @@ export function App() {
           else if (kind === "model") stats.modelFiles += 1;
           else if (kind === "image") stats.imageFiles += 1;
           runtime.processedUnits += 1;
-          publishBrowserImagingScanProgress(stats, options, runtime, "проверка файлов КТ и 3D");
+          publishBrowserImagingScanProgress(stats, options, runtime, "РїСЂРѕРІРµСЂРєР° С„Р°Р№Р»РѕРІ РљРў Рё 3D");
           await maybeYieldBrowserImagingScan(runtime, options.signal);
         }
       } catch (scanError) {
         if (isBrowserImagingScanAbortError(scanError)) throw scanError;
-        stats.warnings.push("Одну выбранную в браузере подпапку не удалось прочитать, она пропущена.");
+        stats.warnings.push("РћРґРЅСѓ РІС‹Р±СЂР°РЅРЅСѓСЋ РІ Р±СЂР°СѓР·РµСЂРµ РїРѕРґРїР°РїРєСѓ РЅРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ, РѕРЅР° РїСЂРѕРїСѓС‰РµРЅР°.");
       }
     }
 
     if (stats.scannedFiles >= browserImagingScanFileLimit) {
-      stats.warnings.push(`Браузерное сканирование ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`);
+      stats.warnings.push(`Р‘СЂР°СѓР·РµСЂРЅРѕРµ СЃРєР°РЅРёСЂРѕРІР°РЅРёРµ РѕРіСЂР°РЅРёС‡РµРЅРѕ ${browserImagingScanFileLimit} С„Р°Р№Р»Р°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
     }
     if (stats.scannedFolders >= browserImagingScanFolderLimit) {
-      stats.warnings.push(`Браузерное сканирование ограничено ${browserImagingScanFolderLimit} папками для отзывчивости интерфейса.`);
+      stats.warnings.push(`Р‘СЂР°СѓР·РµСЂРЅРѕРµ СЃРєР°РЅРёСЂРѕРІР°РЅРёРµ РѕРіСЂР°РЅРёС‡РµРЅРѕ ${browserImagingScanFolderLimit} РїР°РїРєР°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
     }
-    stats.warnings.push("Браузер проверил выбранную папку без передачи полного пути. Для полноценного открытия тяжелой КТ выберите эту же папку в локальном модуле клиники или укажите путь на рабочем ПК.");
+    stats.warnings.push("Р‘СЂР°СѓР·РµСЂ РїСЂРѕРІРµСЂРёР» РІС‹Р±СЂР°РЅРЅСѓСЋ РїР°РїРєСѓ Р±РµР· РїРµСЂРµРґР°С‡Рё РїРѕР»РЅРѕРіРѕ РїСѓС‚Рё. Р”Р»СЏ РїРѕР»РЅРѕС†РµРЅРЅРѕРіРѕ РѕС‚РєСЂС‹С‚РёСЏ С‚СЏР¶РµР»РѕР№ РљРў РІС‹Р±РµСЂРёС‚Рµ СЌС‚Сѓ Р¶Рµ РїР°РїРєСѓ РІ Р»РѕРєР°Р»СЊРЅРѕРј РјРѕРґСѓР»Рµ РєР»РёРЅРёРєРё РёР»Рё СѓРєР°Р¶РёС‚Рµ РїСѓС‚СЊ РЅР° СЂР°Р±РѕС‡РµРј РџРљ.");
     publishBrowserImagingScanProgress(stats, options, runtime, null, "done", true);
 
     return buildBrowserPickedImagingFolderPreview(stats);
@@ -12841,7 +13439,7 @@ export function App() {
     const scanCount = Math.min(selectedFileCount, browserImagingScanFileLimit);
     let magicReads = 0;
     const stats: BrowserPickedImagingScanStats = {
-      rootName: "Выбранные файлы браузера",
+      rootName: "Р’С‹Р±СЂР°РЅРЅС‹Рµ С„Р°Р№Р»С‹ Р±СЂР°СѓР·РµСЂР°",
       sourceKind: "browser_file_input",
       scannedFiles: 0,
       scannedFolders: 1,
@@ -12853,7 +13451,7 @@ export function App() {
       warnings: []
     };
 
-    publishBrowserImagingScanProgress(stats, options, runtime, "проверка выбранных файлов", "scanning", true);
+    publishBrowserImagingScanProgress(stats, options, runtime, "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅС‹С… С„Р°Р№Р»РѕРІ", "scanning", true);
 
     for (let fileIndex = 0; fileIndex < scanCount; fileIndex += 1) {
       const file = fileList.item(fileIndex);
@@ -12878,14 +13476,14 @@ export function App() {
       else if (kind === "model") stats.modelFiles += 1;
       else if (kind === "image") stats.imageFiles += 1;
       runtime.processedUnits += 1;
-      publishBrowserImagingScanProgress(stats, options, runtime, "проверка файлов КТ и 3D");
+      publishBrowserImagingScanProgress(stats, options, runtime, "РїСЂРѕРІРµСЂРєР° С„Р°Р№Р»РѕРІ РљРў Рё 3D");
       await maybeYieldBrowserImagingScan(runtime, options.signal);
     }
 
     if (selectedFileCount > browserImagingScanFileLimit) {
-      stats.warnings.push(`Браузерное сканирование ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`);
+      stats.warnings.push(`Р‘СЂР°СѓР·РµСЂРЅРѕРµ СЃРєР°РЅРёСЂРѕРІР°РЅРёРµ РѕРіСЂР°РЅРёС‡РµРЅРѕ ${browserImagingScanFileLimit} С„Р°Р№Р»Р°РјРё РґР»СЏ РѕС‚Р·С‹РІС‡РёРІРѕСЃС‚Рё РёРЅС‚РµСЂС„РµР№СЃР°.`);
     }
-    stats.warnings.push("Файлы выбраны через запасной режим браузера. После обновления страницы их нужно выбрать заново; для постоянной привязки лучше выбрать папку или локальный модуль клиники.");
+    stats.warnings.push("Р¤Р°Р№Р»С‹ РІС‹Р±СЂР°РЅС‹ С‡РµСЂРµР· Р·Р°РїР°СЃРЅРѕР№ СЂРµР¶РёРј Р±СЂР°СѓР·РµСЂР°. РџРѕСЃР»Рµ РѕР±РЅРѕРІР»РµРЅРёСЏ СЃС‚СЂР°РЅРёС†С‹ РёС… РЅСѓР¶РЅРѕ РІС‹Р±СЂР°С‚СЊ Р·Р°РЅРѕРІРѕ; РґР»СЏ РїРѕСЃС‚РѕСЏРЅРЅРѕР№ РїСЂРёРІСЏР·РєРё Р»СѓС‡С€Рµ РІС‹Р±СЂР°С‚СЊ РїР°РїРєСѓ РёР»Рё Р»РѕРєР°Р»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ РєР»РёРЅРёРєРё.");
     publishBrowserImagingScanProgress(stats, options, runtime, null, "done", true);
 
     return buildBrowserPickedImagingFolderPreview(stats);
@@ -12898,10 +13496,10 @@ export function App() {
       if (typeof picker === "function") {
         const directoryHandle = await picker({ id: "dental-crm-local-imaging", mode: "read" });
         await runBrowserImagingFolderScan({
-          rootName: "Выбранная папка браузера",
+          rootName: "Р’С‹Р±СЂР°РЅРЅР°СЏ РїР°РїРєР° Р±СЂР°СѓР·РµСЂР°",
           sourceKind: "browser_directory_picker",
-          currentItem: "проверка выбранной папки",
-          errorMessage: "Браузер не открыл выбор папки снимков",
+          currentItem: "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅРѕР№ РїР°РїРєРё",
+          errorMessage: "Р‘СЂР°СѓР·РµСЂ РЅРµ РѕС‚РєСЂС‹Р» РІС‹Р±РѕСЂ РїР°РїРєРё СЃРЅРёРјРєРѕРІ",
           scan: (options) => scanBrowserDirectoryHandle(directoryHandle, options)
         });
         return;
@@ -12909,10 +13507,20 @@ export function App() {
       browserDirectoryInputRef.current?.click();
     } catch (pickerError) {
       if (pickerError instanceof DOMException && pickerError.name === "AbortError") return;
-      setError(browserLocalSourceErrorMessage("Браузер не открыл выбор папки снимков", pickerError));
+      setError(browserLocalSourceErrorMessage("Р‘СЂР°СѓР·РµСЂ РЅРµ РѕС‚РєСЂС‹Р» РІС‹Р±РѕСЂ РїР°РїРєРё СЃРЅРёРјРєРѕРІ", pickerError));
     } finally {
       setIsBrowserImagingFolderPicking(false);
     }
+  }
+
+  function pickBrowserImagingFiles() {
+    if (isBrowserImagingFolderPicking) return;
+    const input = browserImagingFilesInputRef.current;
+    if (!input) {
+      setError("РљРЅРѕРїРєР° РІС‹Р±РѕСЂР° С„Р°Р№Р»РѕРІ СЃРЅРёРјРєРѕРІ РЅРµ РіРѕС‚РѕРІР°. РћС‚РєСЂРѕР№С‚Рµ РІРєР»Р°РґРєСѓ В«РЎРЅРёРјРєРёВ» РёР»Рё В«РќР°СЃС‚СЂРѕР№РєРё в†’ РСЃС‚РѕС‡РЅРёРєРёВ» Рё РїРѕРІС‚РѕСЂРёС‚Рµ.");
+      return;
+    }
+    input.click();
   }
 
   async function handleBrowserDirectoryInputChange(fileList: FileList | null) {
@@ -12920,17 +13528,18 @@ export function App() {
     setIsBrowserImagingFolderPicking(true);
     try {
       await runBrowserImagingFolderScan({
-        rootName: "Выбранные файлы браузера",
+        rootName: "Р’С‹Р±СЂР°РЅРЅС‹Рµ С„Р°Р№Р»С‹ Р±СЂР°СѓР·РµСЂР°",
         sourceKind: "browser_file_input",
-        currentItem: "проверка выбранных файлов",
-        errorMessage: "Браузер не открыл выбор файлов снимков",
+        currentItem: "РїСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅС‹С… С„Р°Р№Р»РѕРІ",
+        errorMessage: "Р‘СЂР°СѓР·РµСЂ РЅРµ РѕС‚РєСЂС‹Р» РІС‹Р±РѕСЂ С„Р°Р№Р»РѕРІ СЃРЅРёРјРєРѕРІ",
         scan: (options) => scanBrowserFileList(fileList, options)
       });
     } catch (pickerError) {
-      setError(browserLocalSourceErrorMessage("Браузер не открыл выбор файлов снимков", pickerError));
+      setError(browserLocalSourceErrorMessage("Р‘СЂР°СѓР·РµСЂ РЅРµ РѕС‚РєСЂС‹Р» РІС‹Р±РѕСЂ С„Р°Р№Р»РѕРІ СЃРЅРёРјРєРѕРІ", pickerError));
     } finally {
       setIsBrowserImagingFolderPicking(false);
       if (browserDirectoryInputRef.current) browserDirectoryInputRef.current.value = "";
+      if (browserImagingFilesInputRef.current) browserImagingFilesInputRef.current.value = "";
     }
   }
 
@@ -12951,7 +13560,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Поиск папок со снимками не выполнен"));
+        throw new Error(await responseErrorMessage(response, "РџРѕРёСЃРє РїР°РїРѕРє СЃРѕ СЃРЅРёРјРєР°РјРё РЅРµ РІС‹РїРѕР»РЅРµРЅ"));
       }
       const result = (await response.json()) as DicomLocalFolderDiscoveryResponse;
       setDicomLocalFolderDiscovery(result);
@@ -12962,7 +13571,7 @@ export function App() {
       setLocalImagingOrganizer(null);
     } catch (discoveryError) {
       if (isLocalDicomOperationAbortError(discoveryError)) return;
-      setError(operatorWorkflowFailureMessage("Поиск папок со снимками не выполнен", discoveryError));
+      setError(operatorWorkflowFailureMessage("РџРѕРёСЃРє РїР°РїРѕРє СЃРѕ СЃРЅРёРјРєР°РјРё РЅРµ РІС‹РїРѕР»РЅРµРЅ", discoveryError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomLocalDiscovering(false);
@@ -12991,7 +13600,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Локальный организатор снимков не выполнен"));
+        throw new Error(await responseErrorMessage(response, "Р›РѕРєР°Р»СЊРЅС‹Р№ РѕСЂРіР°РЅРёР·Р°С‚РѕСЂ СЃРЅРёРјРєРѕРІ РЅРµ РІС‹РїРѕР»РЅРµРЅ"));
       }
       const result = (await response.json()) as LocalImagingOrganizerResponse;
       setLocalImagingOrganizer(result);
@@ -13002,7 +13611,7 @@ export function App() {
       setDicomLocalFolderDiscovery(null);
     } catch (organizerError) {
       if (isLocalDicomOperationAbortError(organizerError)) return;
-      setError(operatorWorkflowFailureMessage("Локальный организатор снимков не выполнен", organizerError));
+      setError(operatorWorkflowFailureMessage("Р›РѕРєР°Р»СЊРЅС‹Р№ РѕСЂРіР°РЅРёР·Р°С‚РѕСЂ СЃРЅРёРјРєРѕРІ РЅРµ РІС‹РїРѕР»РЅРµРЅ", organizerError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsLocalImagingOrganizing(false);
@@ -13012,7 +13621,7 @@ export function App() {
   async function scanImagingFolder() {
     const folderPath = imagingFolderPath.trim();
     if (!folderPath) {
-      setError("Укажите путь к папке снимков перед сканированием.");
+      setError("РЈРєР°Р¶РёС‚Рµ РїСѓС‚СЊ Рє РїР°РїРєРµ СЃРЅРёРјРєРѕРІ РїРµСЂРµРґ СЃРєР°РЅРёСЂРѕРІР°РЅРёРµРј.");
       return;
     }
     rememberLocalImagingFolder(folderPath, { origin: "manual" });
@@ -13030,7 +13639,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Папка снимков не просканирована"));
+        throw new Error(await responseErrorMessage(response, "РџР°РїРєР° СЃРЅРёРјРєРѕРІ РЅРµ РїСЂРѕСЃРєР°РЅРёСЂРѕРІР°РЅР°"));
       }
       const result = (await response.json()) as ImagingFolderScanResponse;
       setImagingFolderScan(result);
@@ -13043,7 +13652,7 @@ export function App() {
       setDicomSeriesPreview(null);
     } catch (scanError) {
       if (isLocalDicomOperationAbortError(scanError)) return;
-      setError(operatorWorkflowFailureMessage("Папка снимков не просканирована", scanError));
+      setError(operatorWorkflowFailureMessage("РџР°РїРєР° СЃРЅРёРјРєРѕРІ РЅРµ РїСЂРѕСЃРєР°РЅРёСЂРѕРІР°РЅР°", scanError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsImagingFolderScanning(false);
@@ -13053,7 +13662,7 @@ export function App() {
   async function scanDicomFolderSeries() {
     const folderPath = imagingFolderPath.trim();
     if (!folderPath) {
-      setError("Укажите путь к локальной папке со снимками перед чтением метаданных.");
+      setError("РЈРєР°Р¶РёС‚Рµ РїСѓС‚СЊ Рє Р»РѕРєР°Р»СЊРЅРѕР№ РїР°РїРєРµ СЃРѕ СЃРЅРёРјРєР°РјРё РїРµСЂРµРґ С‡С‚РµРЅРёРµРј РјРµС‚Р°РґР°РЅРЅС‹С….");
       return;
     }
     rememberLocalImagingFolder(folderPath, { origin: "manual" });
@@ -13071,7 +13680,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Метаданные папки снимков не прочитаны"));
+        throw new Error(await responseErrorMessage(response, "РњРµС‚Р°РґР°РЅРЅС‹Рµ РїР°РїРєРё СЃРЅРёРјРєРѕРІ РЅРµ РїСЂРѕС‡РёС‚Р°РЅС‹"));
       }
       const result = (await response.json()) as DicomFolderSeriesPreviewResponse;
       setDicomFolderSeriesScan(result);
@@ -13089,7 +13698,7 @@ export function App() {
       setImagingImportCommit(null);
     } catch (scanError) {
       if (isLocalDicomOperationAbortError(scanError)) return;
-      setError(operatorWorkflowFailureMessage("Метаданные папки снимков не прочитаны", scanError));
+      setError(operatorWorkflowFailureMessage("РњРµС‚Р°РґР°РЅРЅС‹Рµ РїР°РїРєРё СЃРЅРёРјРєРѕРІ РЅРµ РїСЂРѕС‡РёС‚Р°РЅС‹", scanError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsImagingFolderScanning(false);
@@ -13103,7 +13712,7 @@ export function App() {
   ) {
     const cleanFolderPath = folderPath.trim();
     if (!cleanFolderPath) {
-      setError("Укажите путь к локальной папке со снимками перед предпросмотром первого среза.");
+      setError("РЈРєР°Р¶РёС‚Рµ РїСѓС‚СЊ Рє Р»РѕРєР°Р»СЊРЅРѕР№ РїР°РїРєРµ СЃРѕ СЃРЅРёРјРєР°РјРё РїРµСЂРµРґ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂРѕРј РїРµСЂРІРѕРіРѕ СЃСЂРµР·Р°.");
       return;
     }
     rememberLocalImagingFolder(cleanFolderPath, metadata);
@@ -13129,12 +13738,12 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Первый срез снимков не показан"));
+        throw new Error(await responseErrorMessage(response, "РџРµСЂРІС‹Р№ СЃСЂРµР· СЃРЅРёРјРєРѕРІ РЅРµ РїРѕРєР°Р·Р°РЅ"));
       }
       setDicomFirstFramePreview((await response.json()) as DicomFirstFramePreviewResponse);
     } catch (previewError) {
       if (isLocalDicomOperationAbortError(previewError)) return;
-      setError(operatorWorkflowFailureMessage("Первый срез снимков не показан", previewError));
+      setError(operatorWorkflowFailureMessage("РџРµСЂРІС‹Р№ СЃСЂРµР· СЃРЅРёРјРєРѕРІ РЅРµ РїРѕРєР°Р·Р°РЅ", previewError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomFirstFramePreviewing(false);
@@ -13170,7 +13779,7 @@ export function App() {
       })
     });
     if (!response.ok) {
-      throw new Error(await responseErrorMessage(response, "План папки снимков не подготовлен"));
+      throw new Error(await responseErrorMessage(response, "РџР»Р°РЅ РїР°РїРєРё СЃРЅРёРјРєРѕРІ РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅ"));
     }
     return {
       client,
@@ -13210,7 +13819,7 @@ export function App() {
   async function buildDicomFolderWorkupPlan() {
     const folderPath = imagingFolderPath.trim();
     if (!folderPath) {
-      setError("Укажите путь к локальной папке со снимками перед подготовкой плана.");
+      setError("РЈРєР°Р¶РёС‚Рµ РїСѓС‚СЊ Рє Р»РѕРєР°Р»СЊРЅРѕР№ РїР°РїРєРµ СЃРѕ СЃРЅРёРјРєР°РјРё РїРµСЂРµРґ РїРѕРґРіРѕС‚РѕРІРєРѕР№ РїР»Р°РЅР°.");
       return;
     }
     rememberLocalImagingFolder(folderPath, { origin: "manual" });
@@ -13221,7 +13830,7 @@ export function App() {
       applyDicomFolderWorkupResult(result);
     } catch (workupError) {
       if (isLocalDicomOperationAbortError(workupError)) return;
-      setError(operatorWorkflowFailureMessage("План папки снимков не подготовлен", workupError));
+      setError(operatorWorkflowFailureMessage("РџР»Р°РЅ РїР°РїРєРё СЃРЅРёРјРєРѕРІ РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅ", workupError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomFolderWorkupPlanning(false);
@@ -13235,7 +13844,7 @@ export function App() {
   ) {
     const cleanFolderPath = folderPath.trim();
     if (!cleanFolderPath) {
-      setError("Укажите путь к локальной папке со снимками перед подготовкой КТ-просмотра.");
+      setError("РЈРєР°Р¶РёС‚Рµ РїСѓС‚СЊ Рє Р»РѕРєР°Р»СЊРЅРѕР№ РїР°РїРєРµ СЃРѕ СЃРЅРёРјРєР°РјРё РїРµСЂРµРґ РїРѕРґРіРѕС‚РѕРІРєРѕР№ РљРў-РїСЂРѕСЃРјРѕС‚СЂР°.");
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13246,7 +13855,7 @@ export function App() {
       const { client, result } = await fetchDicomFolderWorkup(cleanFolderPath, sourceName, { signal: controller.signal });
       const selectedPlan = selectPreferredDicomWorkupPlan(result);
       if (!selectedPlan) {
-        throw new Error("В этой папке не найдена пригодная серия КЛКТ/КТ.");
+        throw new Error("Р’ СЌС‚РѕР№ РїР°РїРєРµ РЅРµ РЅР°Р№РґРµРЅР° РїСЂРёРіРѕРґРЅР°СЏ СЃРµСЂРёСЏ РљР›РљРў/РљРў.");
       }
 
       const manifestResponse = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
@@ -13267,7 +13876,7 @@ export function App() {
         })
       });
       if (!manifestResponse.ok) {
-        throw new Error(await responseErrorMessage(manifestResponse, "Просмотр КЛКТ/КТ не подготовлен"));
+        throw new Error(await responseErrorMessage(manifestResponse, "РџСЂРѕСЃРјРѕС‚СЂ РљР›РљРў/РљРў РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅ"));
       }
 
       const manifest = (await manifestResponse.json()) as DicomViewerWorkbenchManifestResponse;
@@ -13281,7 +13890,7 @@ export function App() {
       await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true, signal: controller.signal });
     } catch (workbenchError) {
       if (isLocalDicomOperationAbortError(workbenchError)) return;
-      setError(operatorWorkflowFailureMessage("Просмотр КЛКТ/КТ не подготовлен", workbenchError));
+      setError(operatorWorkflowFailureMessage("РџСЂРѕСЃРјРѕС‚СЂ РљР›РљРў/РљРў РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅ", workbenchError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomFolderWorkupPlanning(false);
@@ -13291,7 +13900,7 @@ export function App() {
 
   async function previewDicomSeries() {
     if (!imagingImportText.trim()) {
-      setError("Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ перед группировкой серий.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ СЃС‚СЂРѕРєРё СЃРѕ СЃРЅРёРјРєР°РјРё РёР»Рё РІС‹Р±РµСЂРёС‚Рµ РїСЂРёРјРµСЂ РљРў/РћРџРўР“/РўР Р“ РїРµСЂРµРґ РіСЂСѓРїРїРёСЂРѕРІРєРѕР№ СЃРµСЂРёР№.");
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13308,7 +13917,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Серии снимков не разобраны"));
+        throw new Error(await responseErrorMessage(response, "РЎРµСЂРёРё СЃРЅРёРјРєРѕРІ РЅРµ СЂР°Р·РѕР±СЂР°РЅС‹"));
       }
       setDicomSeriesPreview((await response.json()) as DicomSeriesPreviewResponse);
       setDicomViewerLaunchManifest(null);
@@ -13320,7 +13929,7 @@ export function App() {
       setDicomFolderWorkupPlan(null);
     } catch (seriesError) {
       if (isLocalDicomOperationAbortError(seriesError)) return;
-      setError(operatorWorkflowFailureMessage("Серии снимков не разобраны", seriesError));
+      setError(operatorWorkflowFailureMessage("РЎРµСЂРёРё СЃРЅРёРјРєРѕРІ РЅРµ СЂР°Р·РѕР±СЂР°РЅС‹", seriesError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomSeriesPreviewLoading(false);
@@ -13329,7 +13938,7 @@ export function App() {
 
   async function checkDicomWebConnector() {
     if (!dicomWebEndpointUrl.trim()) {
-      setError("Укажите адрес архива снимков перед проверкой.");
+      setError("РЈРєР°Р¶РёС‚Рµ Р°РґСЂРµСЃ Р°СЂС…РёРІР° СЃРЅРёРјРєРѕРІ РїРµСЂРµРґ РїСЂРѕРІРµСЂРєРѕР№.");
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13348,7 +13957,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Проверка архива снимков не выполнена"));
+        throw new Error(await responseErrorMessage(response, "РџСЂРѕРІРµСЂРєР° Р°СЂС…РёРІР° СЃРЅРёРјРєРѕРІ РЅРµ РІС‹РїРѕР»РЅРµРЅР°"));
       }
       setDicomWebCheck((await response.json()) as DicomWebConnectorCheckResponse);
       setDicomViewerWorkbenchManifest(null);
@@ -13356,7 +13965,7 @@ export function App() {
       setDicomWorkstationReadiness(null);
     } catch (checkError) {
       if (isLocalDicomOperationAbortError(checkError)) return;
-      setError(operatorWorkflowFailureMessage("Проверка архива снимков не выполнена", checkError));
+      setError(operatorWorkflowFailureMessage("РџСЂРѕРІРµСЂРєР° Р°СЂС…РёРІР° СЃРЅРёРјРєРѕРІ РЅРµ РІС‹РїРѕР»РЅРµРЅР°", checkError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomWebChecking(false);
@@ -13365,7 +13974,7 @@ export function App() {
 
   async function buildDicomViewerWorkbenchManifest() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию.");
+      setError("РЎРЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЊС‚Рµ СЃРµСЂРёРё СЃРЅРёРјРєРѕРІ Рё РІС‹Р±РµСЂРёС‚Рµ РіРѕС‚РѕРІСѓСЋ РљР›РљРў/РљРў-СЃРµСЂРёСЋ.");
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13390,7 +13999,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Просмотр КЛКТ/КТ не подготовлен"));
+        throw new Error(await responseErrorMessage(response, "РџСЂРѕСЃРјРѕС‚СЂ РљР›РљРў/РљРў РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅ"));
       }
       const result = (await response.json()) as DicomViewerWorkbenchManifestResponse;
       const clientSavedAt = new Date().toISOString();
@@ -13401,7 +14010,7 @@ export function App() {
       await saveDicomWorkbenchBundleToServer(result, clientSavedAt, { silent: true, signal: controller.signal });
     } catch (workbenchError) {
       if (isLocalDicomOperationAbortError(workbenchError)) return;
-      setError(operatorWorkflowFailureMessage("Просмотр КЛКТ/КТ не подготовлен", workbenchError));
+      setError(operatorWorkflowFailureMessage("РџСЂРѕСЃРјРѕС‚СЂ РљР›РљРў/РљРў РЅРµ РїРѕРґРіРѕС‚РѕРІР»РµРЅ", workbenchError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomWorkbenchBuilding(false);
@@ -13410,7 +14019,7 @@ export function App() {
 
   async function buildDicomViewerLaunchManifest() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию для внешнего просмотра.");
+      setError("РЎРЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЊС‚Рµ СЃРµСЂРёРё СЃРЅРёРјРєРѕРІ Рё РІС‹Р±РµСЂРёС‚Рµ РіРѕС‚РѕРІСѓСЋ РљР›РљРў/РљРў-СЃРµСЂРёСЋ РґР»СЏ РІРЅРµС€РЅРµРіРѕ РїСЂРѕСЃРјРѕС‚СЂР°.");
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13431,14 +14040,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "План открытия снимков не создан"));
+        throw new Error(await responseErrorMessage(response, "РџР»Р°РЅ РѕС‚РєСЂС‹С‚РёСЏ СЃРЅРёРјРєРѕРІ РЅРµ СЃРѕР·РґР°РЅ"));
       }
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomViewerLaunchManifest((await response.json()) as DicomViewerLaunchManifestResponse);
     } catch (manifestError) {
       if (isLocalDicomOperationAbortError(manifestError)) return;
-      setError(operatorWorkflowFailureMessage("План открытия снимков не создан", manifestError));
+      setError(operatorWorkflowFailureMessage("РџР»Р°РЅ РѕС‚РєСЂС‹С‚РёСЏ СЃРЅРёРјРєРѕРІ РЅРµ СЃРѕР·РґР°РЅ", manifestError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomManifestBuilding(false);
@@ -13447,7 +14056,7 @@ export function App() {
 
   async function buildDicomViewerToolStateBundle() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию для экспорта состояния.");
+      setError("РЎРЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЊС‚Рµ СЃРµСЂРёРё СЃРЅРёРјРєРѕРІ Рё РІС‹Р±РµСЂРёС‚Рµ РіРѕС‚РѕРІСѓСЋ РљР›РљРў/РљРў-СЃРµСЂРёСЋ РґР»СЏ СЌРєСЃРїРѕСЂС‚Р° СЃРѕСЃС‚РѕСЏРЅРёСЏ.");
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13467,14 +14076,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Состояние просмотра снимков не собрано"));
+        throw new Error(await responseErrorMessage(response, "РЎРѕСЃС‚РѕСЏРЅРёРµ РїСЂРѕСЃРјРѕС‚СЂР° СЃРЅРёРјРєРѕРІ РЅРµ СЃРѕР±СЂР°РЅРѕ"));
       }
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomViewerToolStateBundle((await response.json()) as DicomViewerToolStateBundleResponse);
     } catch (toolStateError) {
       if (isLocalDicomOperationAbortError(toolStateError)) return;
-      setError(operatorWorkflowFailureMessage("Состояние просмотра снимков не собрано", toolStateError));
+      setError(operatorWorkflowFailureMessage("РЎРѕСЃС‚РѕСЏРЅРёРµ РїСЂРѕСЃРјРѕС‚СЂР° СЃРЅРёРјРєРѕРІ РЅРµ СЃРѕР±СЂР°РЅРѕ", toolStateError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomToolStateBuilding(false);
@@ -13483,7 +14092,7 @@ export function App() {
 
   function downloadDicomViewerToolStateBundle() {
     if (!dicomViewerToolStateBundle) {
-      setError("Сначала соберите состояние просмотра снимков, затем скачайте файл состояния.");
+      setError("РЎРЅР°С‡Р°Р»Р° СЃРѕР±РµСЂРёС‚Рµ СЃРѕСЃС‚РѕСЏРЅРёРµ РїСЂРѕСЃРјРѕС‚СЂР° СЃРЅРёРјРєРѕРІ, Р·Р°С‚РµРј СЃРєР°С‡Р°Р№С‚Рµ С„Р°Р№Р» СЃРѕСЃС‚РѕСЏРЅРёСЏ.");
       return;
     }
     const safeBundle = redactedDicomViewerToolStateBundleForDownload(dicomViewerToolStateBundle);
@@ -13505,7 +14114,7 @@ export function App() {
 
   function downloadDicomWorkbenchManifest() {
     if (!dicomViewerWorkbenchManifest) {
-      setError("Сначала соберите рабочий набор КЛКТ/КТ-срезов, затем скачайте файл состояния.");
+      setError("РЎРЅР°С‡Р°Р»Р° СЃРѕР±РµСЂРёС‚Рµ СЂР°Р±РѕС‡РёР№ РЅР°Р±РѕСЂ РљР›РљРў/РљРў-СЃСЂРµР·РѕРІ, Р·Р°С‚РµРј СЃРєР°С‡Р°Р№С‚Рµ С„Р°Р№Р» СЃРѕСЃС‚РѕСЏРЅРёСЏ.");
       return;
     }
     const safeManifest = redactedDicomWorkbenchManifestForDownload(dicomViewerWorkbenchManifest);
@@ -13547,7 +14156,7 @@ export function App() {
     try {
       const response = await fetch("/api/imaging/dicom/workbench-bundles?limit=6", { headers: denteClinicalReadHeaders() });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Список сохраненных наборов просмотра не загружен"));
+        throw new Error(await responseErrorMessage(response, "РЎРїРёСЃРѕРє СЃРѕС…СЂР°РЅРµРЅРЅС‹С… РЅР°Р±РѕСЂРѕРІ РїСЂРѕСЃРјРѕС‚СЂР° РЅРµ Р·Р°РіСЂСѓР¶РµРЅ"));
       }
       const result = (await response.json()) as DicomWorkbenchBundleListResponse;
       setDicomWorkbenchServerBundles(result.bundles);
@@ -13557,7 +14166,7 @@ export function App() {
       }
     } catch (bundleError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Список сохраненных наборов просмотра не загружен", bundleError));
+        setError(operatorWorkflowFailureMessage("РЎРїРёСЃРѕРє СЃРѕС…СЂР°РЅРµРЅРЅС‹С… РЅР°Р±РѕСЂРѕРІ РїСЂРѕСЃРјРѕС‚СЂР° РЅРµ Р·Р°РіСЂСѓР¶РµРЅ", bundleError));
       }
     }
   }
@@ -13580,7 +14189,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Набор просмотра КЛКТ/КТ-срезов не сохранен"));
+        throw new Error(await responseErrorMessage(response, "РќР°Р±РѕСЂ РїСЂРѕСЃРјРѕС‚СЂР° РљР›РљРў/РљРў-СЃСЂРµР·РѕРІ РЅРµ СЃРѕС…СЂР°РЅРµРЅ"));
       }
       const result = (await response.json()) as DicomWorkbenchBundleResponse;
       setDicomWorkbenchServerBundle(result.bundle);
@@ -13592,7 +14201,7 @@ export function App() {
     } catch (saveError) {
       if (isLocalDicomOperationAbortError(saveError)) return null;
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Набор просмотра КЛКТ/КТ-срезов не сохранен", saveError));
+        setError(operatorWorkflowFailureMessage("РќР°Р±РѕСЂ РїСЂРѕСЃРјРѕС‚СЂР° РљР›РљРў/РљРў-СЃСЂРµР·РѕРІ РЅРµ СЃРѕС…СЂР°РЅРµРЅ", saveError));
       }
       return null;
     } finally {
@@ -13602,7 +14211,7 @@ export function App() {
 
   async function reconnectDicomWorkbenchFromCurrentFolder() {
     if (!imagingFolderPath.trim()) {
-      setError("Укажите локальную папку со снимками перед переподключением просмотра.");
+      setError("РЈРєР°Р¶РёС‚Рµ Р»РѕРєР°Р»СЊРЅСѓСЋ РїР°РїРєСѓ СЃРѕ СЃРЅРёРјРєР°РјРё РїРµСЂРµРґ РїРµСЂРµРїРѕРґРєР»СЋС‡РµРЅРёРµРј РїСЂРѕСЃРјРѕС‚СЂР°.");
       return;
     }
     const targetStudyUid =
@@ -13632,7 +14241,7 @@ export function App() {
         })
       });
       if (!workupResponse.ok) {
-        throw new Error(await responseErrorMessage(workupResponse, "Источник снимков не переподключен"));
+        throw new Error(await responseErrorMessage(workupResponse, "РСЃС‚РѕС‡РЅРёРє СЃРЅРёРјРєРѕРІ РЅРµ РїРµСЂРµРїРѕРґРєР»СЋС‡РµРЅ"));
       }
       const workup = (await workupResponse.json()) as DicomFolderWorkupPlanResponse;
       const matchedPlan =
@@ -13645,7 +14254,7 @@ export function App() {
         workup.plans[0] ??
         null;
       if (!matchedPlan) {
-        throw new Error("Переподключение снимков не нашло пригодную КТ-серию в текущей папке.");
+        throw new Error("РџРµСЂРµРїРѕРґРєР»СЋС‡РµРЅРёРµ СЃРЅРёРјРєРѕРІ РЅРµ РЅР°С€Р»Рѕ РїСЂРёРіРѕРґРЅСѓСЋ РљРў-СЃРµСЂРёСЋ РІ С‚РµРєСѓС‰РµР№ РїР°РїРєРµ.");
       }
 
       const manifestResponse = await fetch("/api/imaging/dicom/viewer-workbench-manifest", {
@@ -13666,7 +14275,7 @@ export function App() {
         })
       });
       if (!manifestResponse.ok) {
-        throw new Error(await responseErrorMessage(manifestResponse, "План переподключения снимков не создан"));
+        throw new Error(await responseErrorMessage(manifestResponse, "РџР»Р°РЅ РїРµСЂРµРїРѕРґРєР»СЋС‡РµРЅРёСЏ СЃРЅРёРјРєРѕРІ РЅРµ СЃРѕР·РґР°РЅ"));
       }
       const manifest = (await manifestResponse.json()) as DicomViewerWorkbenchManifestResponse;
       const clientSavedAt = new Date().toISOString();
@@ -13680,7 +14289,7 @@ export function App() {
       await saveDicomWorkbenchBundleToServer(manifest, clientSavedAt, { silent: true, signal: controller.signal });
     } catch (reconnectError) {
       if (isLocalDicomOperationAbortError(reconnectError)) return;
-      setError(operatorWorkflowFailureMessage("Источник снимков не переподключен", reconnectError));
+      setError(operatorWorkflowFailureMessage("РСЃС‚РѕС‡РЅРёРє СЃРЅРёРјРєРѕРІ РЅРµ РїРµСЂРµРїРѕРґРєР»СЋС‡РµРЅ", reconnectError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomWorkbenchReconnecting(false);
@@ -13689,7 +14298,7 @@ export function App() {
 
   async function checkDicomWorkstationReadiness() {
     if (!cbctWorkbenchSeries) {
-      setError("Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию.");
+      setError("РЎРЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЊС‚Рµ СЃРµСЂРёРё СЃРЅРёРјРєРѕРІ Рё РІС‹Р±РµСЂРёС‚Рµ РіРѕС‚РѕРІСѓСЋ РљР›РљРў/РљРў-СЃРµСЂРёСЋ.");
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13707,7 +14316,7 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Готовность станции просмотра не проверена"));
+        throw new Error(await responseErrorMessage(response, "Р“РѕС‚РѕРІРЅРѕСЃС‚СЊ СЃС‚Р°РЅС†РёРё РїСЂРѕСЃРјРѕС‚СЂР° РЅРµ РїСЂРѕРІРµСЂРµРЅР°"));
       }
       setDicomWorkstationReadiness((await response.json()) as DicomWorkstationReadinessResponse);
       setDicomViewerWorkbenchManifest(null);
@@ -13715,7 +14324,7 @@ export function App() {
       setDicomRenderCachePlan(null);
     } catch (readinessError) {
       if (isLocalDicomOperationAbortError(readinessError)) return;
-      setError(operatorWorkflowFailureMessage("Готовность станции просмотра не проверена", readinessError));
+      setError(operatorWorkflowFailureMessage("Р“РѕС‚РѕРІРЅРѕСЃС‚СЊ СЃС‚Р°РЅС†РёРё РїСЂРѕСЃРјРѕС‚СЂР° РЅРµ РїСЂРѕРІРµСЂРµРЅР°", readinessError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomWorkstationChecking(false);
@@ -13725,10 +14334,10 @@ export function App() {
   async function buildDicomRenderCachePlan() {
     if (!cbctWorkbenchSeries || !dicomWorkstationReadiness) {
       const missingSteps = [
-        !cbctWorkbenchSeries ? "выберите готовую КЛКТ/КТ-серию" : null,
-        !dicomWorkstationReadiness ? "сначала проверьте этот ПК" : null
+        !cbctWorkbenchSeries ? "РІС‹Р±РµСЂРёС‚Рµ РіРѕС‚РѕРІСѓСЋ РљР›РљРў/РљРў-СЃРµСЂРёСЋ" : null,
+        !dicomWorkstationReadiness ? "СЃРЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЊС‚Рµ СЌС‚РѕС‚ РџРљ" : null
       ].filter((step): step is string => Boolean(step));
-      setError(`Перед планом быстрой загрузки снимков: ${missingSteps.join(", ")}.`);
+      setError(`РџРµСЂРµРґ РїР»Р°РЅРѕРј Р±С‹СЃС‚СЂРѕР№ Р·Р°РіСЂСѓР·РєРё СЃРЅРёРјРєРѕРІ: ${missingSteps.join(", ")}.`);
       return;
     }
     const controller = startLocalDicomOperation();
@@ -13745,14 +14354,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "План быстрой загрузки снимков не построен"));
+        throw new Error(await responseErrorMessage(response, "РџР»Р°РЅ Р±С‹СЃС‚СЂРѕР№ Р·Р°РіСЂСѓР·РєРё СЃРЅРёРјРєРѕРІ РЅРµ РїРѕСЃС‚СЂРѕРµРЅ"));
       }
       setDicomViewerWorkbenchManifest(null);
       setDicomWorkbenchLocalSavedAt(null);
       setDicomRenderCachePlan((await response.json()) as DicomRenderCachePlanResponse);
     } catch (cachePlanError) {
       if (isLocalDicomOperationAbortError(cachePlanError)) return;
-      setError(operatorWorkflowFailureMessage("План быстрой загрузки снимков не построен", cachePlanError));
+      setError(operatorWorkflowFailureMessage("РџР»Р°РЅ Р±С‹СЃС‚СЂРѕР№ Р·Р°РіСЂСѓР·РєРё СЃРЅРёРјРєРѕРІ РЅРµ РїРѕСЃС‚СЂРѕРµРЅ", cachePlanError));
     } finally {
       finishLocalDicomOperation(controller);
       setIsDicomRenderCachePlanning(false);
@@ -13761,19 +14370,19 @@ export function App() {
 
   async function commitImagingImport() {
     if (isImagingImportCommitting) {
-      setError("Дождитесь завершения текущей привязки снимков.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ РїСЂРёРІСЏР·РєРё СЃРЅРёРјРєРѕРІ.");
       return;
     }
     if (!imagingImportText.trim()) {
-      setError("Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ перед привязкой.");
+      setError("Р’СЃС‚Р°РІСЊС‚Рµ СЃС‚СЂРѕРєРё СЃРѕ СЃРЅРёРјРєР°РјРё РёР»Рё РІС‹Р±РµСЂРёС‚Рµ РїСЂРёРјРµСЂ РљРў/РћРџРўР“/РўР Р“ РїРµСЂРµРґ РїСЂРёРІСЏР·РєРѕР№.");
       return;
     }
     if (!imagingImportPreview) {
-      setError("Сначала проверьте импорт снимков, чтобы увидеть готовые и проблемные строки.");
+      setError("РЎРЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЊС‚Рµ РёРјРїРѕСЂС‚ СЃРЅРёРјРєРѕРІ, С‡С‚РѕР±С‹ СѓРІРёРґРµС‚СЊ РіРѕС‚РѕРІС‹Рµ Рё РїСЂРѕР±Р»РµРјРЅС‹Рµ СЃС‚СЂРѕРєРё.");
       return;
     }
     if (imagingImportPreview.readyRows === 0) {
-      setError("В импорте снимков нет готовых строк. Исправьте предупреждения и повторите проверку.");
+      setError("Р’ РёРјРїРѕСЂС‚Рµ СЃРЅРёРјРєРѕРІ РЅРµС‚ РіРѕС‚РѕРІС‹С… СЃС‚СЂРѕРє. РСЃРїСЂР°РІСЊС‚Рµ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏ Рё РїРѕРІС‚РѕСЂРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ.");
       return;
     }
     setIsImagingImportCommitting(true);
@@ -13788,14 +14397,14 @@ export function App() {
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Импорт снимков не записан"));
+        throw new Error(await responseErrorMessage(response, "РРјРїРѕСЂС‚ СЃРЅРёРјРєРѕРІ РЅРµ Р·Р°РїРёСЃР°РЅ"));
       }
       const result = (await response.json()) as ImagingImportCommitResponse;
       setImagingImportCommit(result);
       setImagingImportPreview(result.preview);
       await loadDashboard();
     } catch (importError) {
-      setError(operatorWorkflowFailureMessage("Снимки не записаны", importError));
+      setError(operatorWorkflowFailureMessage("РЎРЅРёРјРєРё РЅРµ Р·Р°РїРёСЃР°РЅС‹", importError));
     } finally {
       setIsImagingImportCommitting(false);
     }
@@ -13815,61 +14424,224 @@ export function App() {
   function clearTranscriptWithUndo() {
     const previousTranscript = transcript;
     if (!previousTranscript.trim()) {
-      setSpeechStatusNote("Диктовка уже пустая. Нечего очищать.");
+      setSpeechStatusNote("Р”РёРєС‚РѕРІРєР° СѓР¶Рµ РїСѓСЃС‚Р°СЏ. РќРµС‡РµРіРѕ РѕС‡РёС‰Р°С‚СЊ.");
       return;
     }
     visitDraftUserEditedRef.current = true;
     setClearedTranscriptSnapshot(previousTranscript);
     setTranscript("");
-    setSpeechStatusNote("Диктовка очищена. Можно сразу вернуть текст кнопкой «Вернуть».");
+    setSpeechStatusNote("Р”РёРєС‚РѕРІРєР° РѕС‡РёС‰РµРЅР°. РњРѕР¶РЅРѕ СЃСЂР°Р·Сѓ РІРµСЂРЅСѓС‚СЊ С‚РµРєСЃС‚ РєРЅРѕРїРєРѕР№ В«Р’РµСЂРЅСѓС‚СЊВ».");
   }
 
   function undoTranscriptClear() {
     if (!clearedTranscriptSnapshot) {
-      setSpeechStatusNote("Нет очищенной диктовки для восстановления.");
+      setSpeechStatusNote("РќРµС‚ РѕС‡РёС‰РµРЅРЅРѕР№ РґРёРєС‚РѕРІРєРё РґР»СЏ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ.");
       return;
     }
     visitDraftUserEditedRef.current = true;
     setTranscript(clearedTranscriptSnapshot);
     setClearedTranscriptSnapshot(null);
-    setSpeechStatusNote("Диктовка восстановлена из локального черновика.");
+    setSpeechStatusNote("Р”РёРєС‚РѕРІРєР° РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅР° РёР· Р»РѕРєР°Р»СЊРЅРѕРіРѕ С‡РµСЂРЅРѕРІРёРєР°.");
   }
 
-  function startVisitDictation() {
-    if (isVisitDictating) {
-      setError("Дождитесь завершения текущей браузерной диктовки.");
+  function visitMicrophoneFailureMessage(error: unknown) {
+    const errorName = error instanceof Error ? error.name : "";
+    if (errorName === "NotAllowedError" || errorName === "SecurityError") {
+      return "Р‘СЂР°СѓР·РµСЂ РЅРµ РґР°Р» РґРѕСЃС‚СѓРї Рє РјРёРєСЂРѕС„РѕРЅСѓ. РќР°Р¶РјРёС‚Рµ РЅР° Р·РЅР°С‡РѕРє Р·Р°РјРєР° Сѓ Р°РґСЂРµСЃР° СЃС‚СЂР°РЅРёС†С‹, СЂР°Р·СЂРµС€РёС‚Рµ РјРёРєСЂРѕС„РѕРЅ Рё СЃРЅРѕРІР° РЅР°Р¶РјРёС‚Рµ В«Р”РёРєС‚РѕРІР°С‚СЊВ».";
+    }
+    if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
+      return "РњРёРєСЂРѕС„РѕРЅ РЅРµ РЅР°Р№РґРµРЅ. РџСЂРѕРІРµСЂСЊС‚Рµ, С‡С‚Рѕ РѕРЅ РїРѕРґРєР»СЋС‡РµРЅ Рё РІС‹Р±СЂР°РЅ РІ Windows, РёР»Рё РїСЂРѕРґРѕР»Р¶Р°Р№С‚Рµ С‚РµРєСЃС‚РѕРј.";
+    }
+    if (errorName === "NotReadableError" || errorName === "TrackStartError") {
+      return "РњРёРєСЂРѕС„РѕРЅ Р·Р°РЅСЏС‚ РґСЂСѓРіРѕР№ РїСЂРѕРіСЂР°РјРјРѕР№. Р—Р°РєСЂРѕР№С‚Рµ РґСЂСѓРіРёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ СЃ РјРёРєСЂРѕС„РѕРЅРѕРј Рё СЃРЅРѕРІР° РЅР°Р¶РјРёС‚Рµ В«Р”РёРєС‚РѕРІР°С‚СЊВ».";
+    }
+    return "РњРёРєСЂРѕС„РѕРЅ РЅРµ Р·Р°РїСѓСЃС‚РёР»СЃСЏ. РњРѕР¶РЅРѕ РїСЂРѕРґРѕР»Р¶Р°С‚СЊ С‚РµРєСЃС‚РѕРј, Р° РїРѕС‚РѕРј РїСЂРѕРІРµСЂРёС‚СЊ СЂР°Р·СЂРµС€РµРЅРёРµ РјРёРєСЂРѕС„РѕРЅР° РІ Р±СЂР°СѓР·РµСЂРµ.";
+  }
+
+  function clearVisitDictationRestartTimer() {
+    if (visitDictationRestartTimerRef.current === null) return;
+    window.clearTimeout(visitDictationRestartTimerRef.current);
+    visitDictationRestartTimerRef.current = null;
+  }
+
+  function clearServerVoiceRecordingRestartTimer() {
+    if (serverVoiceRecordingRestartTimerRef.current === null) return;
+    window.clearTimeout(serverVoiceRecordingRestartTimerRef.current);
+    serverVoiceRecordingRestartTimerRef.current = null;
+  }
+
+  function launchVisitRecognition(Recognition: new () => BrowserSpeechRecognition, restart = false) {
+    clearVisitDictationRestartTimer();
+    const recognition = new Recognition();
+    visitRecognitionRef.current = recognition;
+    recognition.lang = "ru-RU";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onstart = () => {
+      setIsVisitDictationStarting(false);
+      setIsVisitDictating(true);
+      setSpeechStatusNote(
+        restart
+          ? "РџСЂРѕРґРѕР»Р¶Р°СЋ СЃР»СѓС€Р°С‚СЊ. Р•СЃР»Рё Р±СЂР°СѓР·РµСЂ СЃРґРµР»Р°Р» РєРѕСЂРѕС‚РєСѓСЋ РїР°СѓР·Сѓ, РїСЂРѕСЃС‚Рѕ РіРѕРІРѕСЂРёС‚Рµ РґР°Р»СЊС€Рµ."
+          : "РњРёРєСЂРѕС„РѕРЅ РІРєР»СЋС‡РµРЅ. Р“РѕРІРѕСЂРёС‚Рµ РѕР±С‹С‡РЅС‹РјРё С„СЂР°Р·Р°РјРё, РїРѕСЃР»Рµ РїР°СѓР·С‹ С‚РµРєСЃС‚ РїРѕСЏРІРёС‚СЃСЏ РІ РїРѕР»Рµ."
+      );
+    };
+    recognition.onresult = (event) => {
+      const startIndex = typeof event.resultIndex === "number" ? event.resultIndex : 0;
+      let finalText = "";
+      let interimText = "";
+      for (let index = startIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        if (!result) continue;
+        const text = result[0]?.transcript?.trim();
+        if (!text) continue;
+        if (result.isFinal === false) {
+          interimText = `${interimText} ${text}`.trim();
+        } else {
+          finalText = `${finalText} ${text}`.trim();
+        }
+      }
+      if (finalText) {
+        appendVisitDictationText(finalText);
+        setVisitDictationInterim("");
+        setSpeechStatusNote("РўРµРєСЃС‚ РґРѕР±Р°РІР»РµРЅ РІ РґРёРєС‚РѕРІРєСѓ. РџСЂРѕРґРѕР»Р¶Р°Р№С‚Рµ РіРѕРІРѕСЂРёС‚СЊ РёР»Рё РЅР°Р¶РјРёС‚Рµ В«РЎС‚РѕРїВ».");
+      } else if (interimText) {
+        setVisitDictationInterim(interimText);
+        setSpeechStatusNote("РЎР»С‹С€Сѓ РіРѕР»РѕСЃ, СЂР°СЃРїРѕР·РЅР°СЋ С„СЂР°Р·Сѓ.");
+      }
+    };
+    recognition.onerror = (event) => {
+      const code = event.error ?? "";
+      const fatal = code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture" || code === "network";
+      if (fatal) {
+        visitDictationShouldRestartRef.current = false;
+        clearVisitDictationRestartTimer();
+        setIsVisitDictationStarting(false);
+        setIsVisitDictating(false);
+      }
+      setVisitDictationInterim("");
+      const message =
+        code === "not-allowed" || code === "service-not-allowed"
+          ? "Р‘СЂР°СѓР·РµСЂ РЅРµ РґР°Р» РґРѕСЃС‚СѓРї Рє РјРёРєСЂРѕС„РѕРЅСѓ. Р Р°Р·СЂРµС€РёС‚Рµ РјРёРєСЂРѕС„РѕРЅ РґР»СЏ СЌС‚РѕР№ СЃС‚СЂР°РЅРёС†С‹ РёР»Рё РїСЂРѕРґРѕР»Р¶Р°Р№С‚Рµ С‚РµРєСЃС‚РѕРј."
+          : code === "audio-capture"
+            ? "РњРёРєСЂРѕС„РѕРЅ РЅРµ РЅР°Р№РґРµРЅ. РџСЂРѕРІРµСЂСЊС‚Рµ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РёР»Рё РїСЂРѕРґРѕР»Р¶Р°Р№С‚Рµ С‚РµРєСЃС‚РѕРј."
+            : code === "network"
+              ? "Р‘СЂР°СѓР·РµСЂРЅР°СЏ РґРёРєС‚РѕРІРєР° РЅРµ РїРѕР»СѓС‡РёР»Р° РѕС‚РІРµС‚. РўРµРєСЃС‚ РјРѕР¶РЅРѕ РїСЂРѕРґРѕР»Р¶РёС‚СЊ РІСЂСѓС‡РЅСѓСЋ."
+              : code === "no-speech"
+                ? "РџР°СѓР·Р° Р±РµР· СЂРµС‡Рё. РџСЂРѕРґРѕР»Р¶Р°СЋ СЃР»СѓС€Р°С‚СЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё."
+                : "РљРѕСЂРѕС‚РєР°СЏ РїР°СѓР·Р° Р±СЂР°СѓР·РµСЂР°. РџСЂРѕРґРѕР»Р¶Р°СЋ СЃР»СѓС€Р°С‚СЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.";
+      if (fatal) {
+        setError(message);
+      } else {
+        setSpeechStatusNote(message);
+      }
+    };
+    recognition.onend = () => {
+      if (visitRecognitionRef.current !== recognition) return;
+      visitRecognitionRef.current = null;
+      if (visitDictationShouldRestartRef.current) {
+        setIsVisitDictationStarting(false);
+        setIsVisitDictating(true);
+        setSpeechStatusNote("Р‘СЂР°СѓР·РµСЂ СЃРґРµР»Р°Р» РєРѕСЂРѕС‚РєСѓСЋ РїР°СѓР·Сѓ. РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРѕРґРѕР»Р¶Р°СЋ СЃР»СѓС€Р°С‚СЊ.");
+        visitDictationRestartTimerRef.current = window.setTimeout(() => {
+          visitDictationRestartTimerRef.current = null;
+          if (!visitDictationShouldRestartRef.current) return;
+          launchVisitRecognition(Recognition, true);
+        }, 180);
+        return;
+      }
+      setIsVisitDictationStarting(false);
+      setIsVisitDictating(false);
+    };
+
+    try {
+      recognition.start();
+      setIsVisitDictationStarting(false);
+      setIsVisitDictating(true);
+      setSpeechStatusNote(
+        restart
+          ? "РџСЂРѕРґРѕР»Р¶Р°СЋ СЃР»СѓС€Р°С‚СЊ. Р•СЃР»Рё Р±СЂР°СѓР·РµСЂ СЃРґРµР»Р°Р» РєРѕСЂРѕС‚РєСѓСЋ РїР°СѓР·Сѓ, РїСЂРѕСЃС‚Рѕ РіРѕРІРѕСЂРёС‚Рµ РґР°Р»СЊС€Рµ."
+          : "РњРёРєСЂРѕС„РѕРЅ РІРєР»СЋС‡РµРЅ. Р“РѕРІРѕСЂРёС‚Рµ РѕР±С‹С‡РЅС‹РјРё С„СЂР°Р·Р°РјРё, РїРѕСЃР»Рµ РїР°СѓР·С‹ С‚РµРєСЃС‚ РїРѕСЏРІРёС‚СЃСЏ РІ РїРѕР»Рµ."
+      );
+    } catch {
+      visitDictationShouldRestartRef.current = false;
+      visitRecognitionRef.current = null;
+      clearVisitDictationRestartTimer();
+      setIsVisitDictationStarting(false);
+      setIsVisitDictating(false);
+      setError("Р‘СЂР°СѓР·РµСЂ РЅРµ СЃРјРѕРі Р·Р°РїСѓСЃС‚РёС‚СЊ РјРёРєСЂРѕС„РѕРЅ. РўРµРєСЃС‚ РјРѕР¶РЅРѕ РїСЂРѕРґРѕР»Р¶РёС‚СЊ РІСЂСѓС‡РЅСѓСЋ.");
+    }
+  }
+
+  async function startVisitDictation() {
+    if (isSpeechMicrophoneTesting) {
+      setSpeechStatusNote("Р”РѕР¶РґРёС‚РµСЃСЊ РѕРєРѕРЅС‡Р°РЅРёСЏ РїСЂРѕРІРµСЂРєРё РјРёРєСЂРѕС„РѕРЅР°, РїРѕС‚РѕРј РІРєР»СЋС‡Р°Р№С‚Рµ РґРёРєС‚РѕРІРєСѓ.");
       return;
+    }
+    if (isVisitDictating || isVisitDictationStarting) {
+      stopVisitDictation();
+      return;
+    }
+    if (isServerVoiceRecording || mediaRecorderRef.current?.state === "recording") {
+      stopServerVoiceRecording();
     }
     const speechWindow = window as BrowserWindowWithSpeech;
     const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!Recognition) {
-      setError("Браузерная диктовка недоступна. Текст можно печатать вручную, локальный черновик все равно сохранится.");
+      setError("Р‘СЂР°СѓР·РµСЂРЅР°СЏ РґРёРєС‚РѕРІРєР° РЅРµРґРѕСЃС‚СѓРїРЅР°. РўРµРєСЃС‚ РјРѕР¶РЅРѕ РїРµС‡Р°С‚Р°С‚СЊ РІСЂСѓС‡РЅСѓСЋ, Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє РІСЃРµ СЂР°РІРЅРѕ СЃРѕС…СЂР°РЅРёС‚СЃСЏ.");
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("Р‘СЂР°СѓР·РµСЂ РЅРµ СѓРјРµРµС‚ РїСЂРѕРІРµСЂСЏС‚СЊ РјРёРєСЂРѕС„РѕРЅ РЅР° СЌС‚РѕР№ СЃС‚СЂР°РЅРёС†Рµ. РћС‚РєСЂРѕР№С‚Рµ CRM РІ Chrome РёР»Рё Edge, Р»РёР±Рѕ РїСЂРѕРґРѕР»Р¶Р°Р№С‚Рµ С‚РµРєСЃС‚РѕРј.");
       return;
     }
 
-    const recognition = new Recognition();
-    recognition.lang = "ru-RU";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = (event) => {
-      const transcriptText = Array.from(event.results)
-        .map((result) => result[0].transcript)
-        .join(" ");
-      appendVisitDictationText(transcriptText);
-    };
-    recognition.onerror = () => {
-      setError("Диктовка не распознана. Продолжайте печатать, текущий черновик не потерян.");
-      setIsVisitDictating(false);
-    };
-    recognition.onend = () => setIsVisitDictating(false);
     setError(null);
-    setIsVisitDictating(true);
+    setSpeechRetrySuggested(false);
+    setSpeechMicrophoneVerified(false);
+    setVisitDictationInterim("");
+    setIsVisitDictationStarting(true);
+    setSpeechStatusNote("РџСЂРѕРІРµСЂСЏСЋ РјРёРєСЂРѕС„РѕРЅ. Р•СЃР»Рё Р±СЂР°СѓР·РµСЂ СЃРїСЂРѕСЃРёС‚ СЂР°Р·СЂРµС€РµРЅРёРµ, РЅР°Р¶РјРёС‚Рµ В«Р Р°Р·СЂРµС€РёС‚СЊВ».");
     try {
-      recognition.start();
-    } catch {
+      const micStream = await getSpeechMicrophoneStream();
+      setSpeechMicrophoneLabel(microphoneLabelFromStream(micStream));
+      await refreshSpeechAudioInputDevices();
+      micStream.getTracks().forEach((track) => track.stop());
+    } catch (micError) {
+      visitDictationShouldRestartRef.current = false;
+      visitRecognitionRef.current = null;
+      setIsVisitDictationStarting(false);
       setIsVisitDictating(false);
-      setError("Браузер не смог запустить микрофон. Текст можно продолжить вручную.");
+      setVisitDictationInterim("");
+      setSpeechMicrophoneLabel(null);
+      setError(visitMicrophoneFailureMessage(micError));
+      return;
     }
+
+    visitDictationShouldRestartRef.current = true;
+    setSpeechStatusNote("РњРёРєСЂРѕС„РѕРЅ РїСЂРѕРІРµСЂРµРЅ. Р—Р°РїСѓСЃРєР°СЋ РґРёРєС‚РѕРІРєСѓ.");
+    launchVisitRecognition(Recognition);
+  }
+
+  function stopVisitDictation() {
+    visitDictationShouldRestartRef.current = false;
+    clearVisitDictationRestartTimer();
+    setIsVisitDictationStarting(false);
+    setVisitDictationInterim("");
+    const recognition = visitRecognitionRef.current;
+    if (!recognition) {
+      setIsVisitDictating(false);
+      setSpeechStatusNote("Р”РёРєС‚РѕРІРєР° СѓР¶Рµ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°.");
+      return;
+    }
+    try {
+      recognition.stop();
+    } catch {
+      recognition.abort?.();
+    }
+    visitRecognitionRef.current = null;
+    setIsVisitDictating(false);
+    setSpeechStatusNote("Р”РёРєС‚РѕРІРєР° РѕСЃС‚Р°РЅРѕРІР»РµРЅР°. РџСЂРѕРІРµСЂСЊС‚Рµ С‚РµРєСЃС‚ Рё СЃРѕР±РµСЂРёС‚Рµ С‡РµСЂРЅРѕРІРёРє Р­РњРљ.");
   }
 
   function preferredSpeechMimeType(): string {
@@ -13877,22 +14649,192 @@ export function App() {
     return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
   }
 
-  async function uploadSpeechBlob(blob: Blob) {
+  function microphoneLabelFromStream(stream: MediaStream): string | null {
+    const rawLabel = stream.getAudioTracks()[0]?.label?.replace(/\s+/g, " ").trim() ?? "";
+    if (!rawLabel) return null;
+    return rawLabel.length > 64 ? `${rawLabel.slice(0, 61)}...` : rawLabel;
+  }
+
+  async function refreshSpeechAudioInputDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const audioInputs = (await navigator.mediaDevices.enumerateDevices())
+        .filter((device) => device.kind === "audioinput")
+        .map((device, index) => ({
+          deviceId: device.deviceId,
+          label: (device.label || `РњРёРєСЂРѕС„РѕРЅ ${index + 1}`).replace(/\s+/g, " ").trim()
+        }))
+        .filter((device) => device.deviceId);
+      speechAudioInputDevicesRef.current = audioInputs;
+      setSpeechAudioInputDevices(audioInputs);
+      if (selectedSpeechDeviceId && !audioInputs.some((device) => device.deviceId === selectedSpeechDeviceId)) {
+        setSelectedSpeechDeviceId("");
+        saveSelectedSpeechDeviceId("");
+      }
+    } catch {
+      speechAudioInputDevicesRef.current = [];
+      setSpeechAudioInputDevices([]);
+    }
+  }
+
+  function updateSelectedSpeechDeviceId(deviceId: string) {
+    setSelectedSpeechDeviceId(deviceId);
+    saveSelectedSpeechDeviceId(deviceId);
+    setSpeechMicrophoneVerified(false);
+    const selectedDevice = speechAudioInputDevices.find((device) => device.deviceId === deviceId);
+    setSpeechMicrophoneLabel(selectedDevice?.label ?? null);
+  }
+
+  function quietMicrophoneNextAction() {
+    return speechAudioInputDevicesRef.current.length > 1
+      ? "Р“РѕРІРѕСЂРёС‚Рµ Р±Р»РёР¶Рµ РёР»Рё РѕС‚РєСЂРѕР№С‚Рµ В«РЎС‚Р°С‚СѓСЃВ» Рё РІС‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ РјРёРєСЂРѕС„РѕРЅ."
+      : "Р“РѕРІРѕСЂРёС‚Рµ Р±Р»РёР¶Рµ РёР»Рё РїСЂРѕРІРµСЂСЊС‚Рµ РјРёРєСЂРѕС„РѕРЅ РІ Windows/Р±СЂР°СѓР·РµСЂРµ.";
+  }
+
+  function openDictationStatusWhenMicrophoneChoiceHelps() {
+    if (speechAudioInputDevicesRef.current.length > 1) {
+      setDictationSystemStatusOpen(true);
+    }
+  }
+
+  async function getSpeechMicrophoneStream(): Promise<MediaStream> {
+    if (!selectedSpeechDeviceId) {
+      return navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: selectedSpeechDeviceId } } });
+    } catch {
+      setSelectedSpeechDeviceId("");
+      saveSelectedSpeechDeviceId("");
+      setSpeechStatusNote("Р’С‹Р±СЂР°РЅРЅС‹Р№ РјРёРєСЂРѕС„РѕРЅ РЅРµРґРѕСЃС‚СѓРїРµРЅ. CRM РІР·СЏР»Р° РґРѕСЃС‚СѓРїРЅС‹Р№ РјРёРєСЂРѕС„РѕРЅ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.");
+      return navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+  }
+
+  async function testSpeechMicrophone() {
+    if (isServerVoiceRecording || mediaRecorderRef.current?.state === "recording") {
+      setSpeechStatusNote("РћСЃС‚Р°РЅРѕРІРёС‚Рµ С‚РµРєСѓС‰СѓСЋ Р·Р°РїРёСЃСЊ, РїРѕС‚РѕРј РїСЂРѕРІРµСЂСЊС‚Рµ РјРёРєСЂРѕС„РѕРЅ.");
+      return;
+    }
+    if (isVisitDictating || isVisitDictationStarting) {
+      setSpeechStatusNote("РћСЃС‚Р°РЅРѕРІРёС‚Рµ Р±СЂР°СѓР·РµСЂРЅСѓСЋ РґРёРєС‚РѕРІРєСѓ, РїРѕС‚РѕРј РїСЂРѕРІРµСЂСЊС‚Рµ РјРёРєСЂРѕС„РѕРЅ.");
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("Р‘СЂР°СѓР·РµСЂ РЅРµ СѓРјРµРµС‚ РїСЂРѕРІРµСЂСЏС‚СЊ РјРёРєСЂРѕС„РѕРЅ РЅР° СЌС‚РѕР№ СЃС‚СЂР°РЅРёС†Рµ. РћС‚РєСЂРѕР№С‚Рµ CRM РІ Chrome РёР»Рё Edge.");
+      return;
+    }
+
+    setError(null);
+    setSpeechRetrySuggested(false);
+    setSpeechMicrophoneVerified(false);
+    setIsSpeechMicrophoneTesting(true);
+    setSpeechInputLevel(null);
+    startSpeechRecordingClock();
+    setSpeechStatusNote("РџСЂРѕРІРµСЂСЏСЋ РјРёРєСЂРѕС„РѕРЅ: СЃРєР°Р¶РёС‚Рµ РєРѕСЂРѕС‚РєСѓСЋ С„СЂР°Р·Сѓ РѕР±С‹С‡РЅС‹Рј РіРѕР»РѕСЃРѕРј.");
+
+    let stream: MediaStream | null = null;
+    let audioContext: AudioContext | null = null;
+    let sampleTimer: number | null = null;
+    try {
+      stream = await getSpeechMicrophoneStream();
+      setSpeechMicrophoneLabel(microphoneLabelFromStream(stream));
+      await refreshSpeechAudioInputDevices();
+
+      const audioWindow = window as BrowserWindowWithSpeech;
+      const AudioContextClass = window.AudioContext ?? audioWindow.webkitAudioContext;
+      if (!AudioContextClass) {
+        setSpeechStatusNote("РњРёРєСЂРѕС„РѕРЅ СЂР°Р·СЂРµС€РµРЅ, РЅРѕ Р±СЂР°СѓР·РµСЂ РЅРµ РїРѕРєР°Р·Р°Р» СѓСЂРѕРІРµРЅСЊ Р·РІСѓРєР°. РџРѕРїСЂРѕР±СѓР№С‚Рµ Р·Р°РїРёСЃСЊ РІ Chrome РёР»Рё Edge.");
+        return;
+      }
+
+      audioContext = new AudioContextClass();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.25;
+      source.connect(analyser);
+      const samples = new Uint8Array(analyser.fftSize);
+      const result = await new Promise<{ maxLevel: number; voiceDetected: boolean }>((resolve) => {
+        let maxLevel = 0;
+        let voiceDetected = false;
+        sampleTimer = window.setInterval(() => {
+          analyser.getByteTimeDomainData(samples);
+          let sumSquares = 0;
+          for (const sample of samples) {
+            const centered = (sample - 128) / 128;
+            sumSquares += centered * centered;
+          }
+          const rms = Math.sqrt(sumSquares / samples.length);
+          const level = Math.max(0, Math.min(1, rms / 0.075));
+          maxLevel = Math.max(maxLevel, level);
+          if (level >= 0.18) voiceDetected = true;
+          setSpeechInputLevel(level);
+        }, 150);
+        window.setTimeout(() => {
+          if (sampleTimer !== null) {
+            window.clearInterval(sampleTimer);
+            sampleTimer = null;
+          }
+          resolve({ maxLevel, voiceDetected });
+        }, 2600);
+      });
+
+      if (result.voiceDetected) {
+        setSpeechRetrySuggested(false);
+        setSpeechMicrophoneVerified(true);
+        setSpeechStatusNote("РњРёРєСЂРѕС„РѕРЅ СЃР»С‹С€РёС‚ РіРѕР»РѕСЃ. РўРµРїРµСЂСЊ РЅР°Р¶РјРёС‚Рµ В«Р—Р°РїРёСЃР°С‚СЊ РіРѕР»РѕСЃВ» Рё РґРёРєС‚СѓР№С‚Рµ РєР°СЂС‚Сѓ.");
+      } else {
+        setSpeechRetrySuggested(true);
+        setSpeechMicrophoneVerified(false);
+        openDictationStatusWhenMicrophoneChoiceHelps();
+        setSpeechStatusNote(`РњРёРєСЂРѕС„РѕРЅ РїРѕРґРєР»СЋС‡РµРЅ, РЅРѕ РіРѕР»РѕСЃ РїРѕС‡С‚Рё РЅРµ СЃР»С‹С€РµРЅ. ${quietMicrophoneNextAction()}`);
+      }
+    } catch (micError) {
+      setSpeechMicrophoneLabel(null);
+      setSpeechMicrophoneVerified(false);
+      setError(visitMicrophoneFailureMessage(micError));
+    } finally {
+      if (sampleTimer !== null) window.clearInterval(sampleTimer);
+      audioContext?.close().catch(() => undefined);
+      stream?.getTracks().forEach((track) => track.stop());
+      setIsSpeechMicrophoneTesting(false);
+      stopSpeechRecordingClock();
+      setSpeechInputLevel(null);
+    }
+  }
+
+  async function uploadSpeechBlob(blob: Blob, statusOverride: SpeechGatewayStatus | null = null) {
     if (!dashboard || blob.size === 0) return;
-    const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
+    const currentGatewayStatus = statusOverride ?? speechActiveGatewayStatusRef.current ?? speechGatewayStatus;
+    const durationMs = speechPendingChunkDurationMsRef.current ?? currentGatewayStatus?.recommendedChunkMs ?? 15_000;
+    const chunkHadVoice = speechPendingChunkHadVoiceRef.current;
+    speechPendingChunkDurationMsRef.current = null;
+    speechPendingChunkHadVoiceRef.current = null;
+    if (chunkHadVoice === false) {
+      setSpeechMicrophoneVerified(false);
+      openDictationStatusWhenMicrophoneChoiceHelps();
+      const recordingStillActive = mediaRecorderRef.current?.state === "recording";
+      if (recordingStillActive) {
+        setSpeechRetrySuggested(false);
+        setSpeechStatusNote(`Р“РѕР»РѕСЃ РїРѕС‡С‚Рё РЅРµ СЃР»С‹С€РµРЅ, РЅРѕ CRM РІСЃРµ СЂР°РІРЅРѕ РѕС‚РїСЂР°РІР»СЏРµС‚ С„СЂР°РіРјРµРЅС‚ РЅР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ. ${quietMicrophoneNextAction()}`);
+      } else {
+        setSpeechRetrySuggested(true);
+        setSpeechStatusNote(`Р“РѕР»РѕСЃ РїРѕС‡С‚Рё РЅРµ СЃР»С‹С€РµРЅ, РЅРѕ CRM РІСЃРµ СЂР°РІРЅРѕ РїСЂРѕРІРµСЂСЏРµС‚ РїРѕСЃР»РµРґРЅРёР№ С„СЂР°РіРјРµРЅС‚. ${quietMicrophoneNextAction()}`);
+      }
+    }
+    const maxChunkBytes = currentGatewayStatus?.maxChunkBytes ?? 6_000_000;
     if (blob.size > maxChunkBytes) {
       setSpeechStatusNote(
-        `Распознавание: аудио-фрагмент ${Math.round(blob.size / 1024 / 1024)} МБ больше лимита ${Math.round(
+        `Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ: Р°СѓРґРёРѕ-С„СЂР°РіРјРµРЅС‚ ${Math.round(blob.size / 1024 / 1024)} РњР‘ Р±РѕР»СЊС€Рµ Р»РёРјРёС‚Р° ${Math.round(
           maxChunkBytes / 1024 / 1024
-        )} МБ; запись продолжается, уменьшите длительность чанка или используйте локальный модуль.`
+        )} РњР‘; Р·Р°РїРёСЃСЊ РїСЂРѕРґРѕР»Р¶Р°РµС‚СЃСЏ, СѓРјРµРЅСЊС€РёС‚Рµ РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊ С‡Р°РЅРєР° РёР»Рё РёСЃРїРѕР»СЊР·СѓР№С‚Рµ Р»РѕРєР°Р»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ.`
       );
       return;
     }
     const audioBase64 = await blobToBase64(blob);
     const chunkIndex = speechChunkIndexRef.current;
     speechChunkIndexRef.current += 1;
-    const durationMs = speechPendingChunkDurationMsRef.current ?? speechGatewayStatus?.recommendedChunkMs ?? 15_000;
-    speechPendingChunkDurationMsRef.current = null;
     const chunk: SpeechChunkUploadInput = {
       recordingId: speechRecordingIdRef.current ?? createLocalQueueId(),
       chunkIndex,
@@ -13909,30 +14851,33 @@ export function App() {
     const queuedBeforeUpload = await queuePendingSpeechChunk(chunk, activeOrganizationId);
     await refreshPendingSpeechChunkState();
 
-    if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
+    if (!isOnline || !speechGatewayCanUpload(currentGatewayStatus)) {
       setSpeechStatusNote(
         queuedBeforeUpload
-          ? `Фрагмент ${chunkIndex + 1} сохранен локально; распознавание отправится, когда источник будет готов.`
-          : `Фрагмент ${chunkIndex + 1} не сохранен: локальная очередь недоступна.`
+          ? `Р¤СЂР°РіРјРµРЅС‚ ${chunkIndex + 1} СЃРѕС…СЂР°РЅРµРЅ Р»РѕРєР°Р»СЊРЅРѕ; СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ РѕС‚РїСЂР°РІРёС‚СЃСЏ, РєРѕРіРґР° РёСЃС‚РѕС‡РЅРёРє Р±СѓРґРµС‚ РіРѕС‚РѕРІ.`
+          : `Р¤СЂР°РіРјРµРЅС‚ ${chunkIndex + 1} РЅРµ СЃРѕС…СЂР°РЅРµРЅ: Р»РѕРєР°Р»СЊРЅР°СЏ РѕС‡РµСЂРµРґСЊ РЅРµРґРѕСЃС‚СѓРїРЅР°.`
       );
       return;
     }
 
     try {
       const result = await submitSpeechChunk(chunk);
-      applySpeechTranscription(result);
       if (queuedBeforeUpload) {
         await removePendingSpeechChunkById(queuedBeforeUpload.id, activeOrganizationId);
         await refreshPendingSpeechChunkState();
       }
+      applySpeechTranscription(result);
     } catch (speechError) {
       const queued = queuedBeforeUpload ?? (await queuePendingSpeechChunk(chunk, activeOrganizationId));
       await refreshPendingSpeechChunkState();
+      const failureDetail = operatorReadableErrorDetailFromUnknown(speechError);
       setSpeechStatusNote(
         queued
-          ? `Фрагмент ${chunkIndex + 1} сохранен локально и уйдет на сервер позже.`
-          : `Фрагмент ${chunkIndex + 1} не отправлен: ${
-              operatorReadableErrorDetailFromUnknown(speechError) ?? "повторите запись или проверьте подключение к серверу клиники"
+          ? `Р¤СЂР°РіРјРµРЅС‚ ${chunkIndex + 1} СЃРѕС…СЂР°РЅРµРЅ Р»РѕРєР°Р»СЊРЅРѕ: ${
+              failureDetail ?? "СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРЅРѕ"
+            }. CRM РїРѕРІС‚РѕСЂРёС‚ РѕС‚РїСЂР°РІРєСѓ РїРѕР·Р¶Рµ.`
+          : `Р¤СЂР°РіРјРµРЅС‚ ${chunkIndex + 1} РЅРµ РѕС‚РїСЂР°РІР»РµРЅ: ${
+              failureDetail ?? "РїРѕРІС‚РѕСЂРёС‚Рµ Р·Р°РїРёСЃСЊ РёР»Рё РїСЂРѕРІРµСЂСЊС‚Рµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє СЃРµСЂРІРµСЂСѓ РєР»РёРЅРёРєРё"
             }.`
       );
     }
@@ -13946,6 +14891,29 @@ export function App() {
     speechAudioContextRef.current?.close().catch(() => undefined);
     speechAudioContextRef.current = null;
     speechAnalyserRef.current = null;
+    speechVoiceLevelAvailableRef.current = false;
+    speechSegmentVoiceDetectedRef.current = false;
+    speechPendingChunkHadVoiceRef.current = null;
+    setSpeechInputLevel(null);
+  }
+
+  function stopSpeechRecordingClock() {
+    if (speechRecordingTimerRef.current !== null) {
+      window.clearInterval(speechRecordingTimerRef.current);
+      speechRecordingTimerRef.current = null;
+    }
+    speechRecordingStartedAtRef.current = 0;
+    setSpeechRecordingElapsedMs(0);
+  }
+
+  function startSpeechRecordingClock() {
+    stopSpeechRecordingClock();
+    const startedAt = Date.now();
+    speechRecordingStartedAtRef.current = startedAt;
+    setSpeechRecordingElapsedMs(0);
+    speechRecordingTimerRef.current = window.setInterval(() => {
+      setSpeechRecordingElapsedMs(Date.now() - startedAt);
+    }, 500);
   }
 
   function requestSpeechChunk(reason: "silence" | "max_time" | "manual") {
@@ -13953,16 +14921,23 @@ export function App() {
     if (!recorder || recorder.state !== "recording") return;
     try {
       const now = Date.now();
-      const durationMs = Math.max(250, Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000));
+      const currentGatewayStatus = speechActiveGatewayStatusRef.current ?? speechGatewayStatus;
+      const durationMs = Math.max(250, Math.min(now - speechSegmentStartedAtRef.current, currentGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000));
       speechPendingChunkDurationMsRef.current = durationMs;
+      speechPendingChunkHadVoiceRef.current = !speechVoiceLevelAvailableRef.current || speechSegmentVoiceDetectedRef.current;
       recorder.requestData();
       speechSegmentStartedAtRef.current = now;
       speechLastSoundAtRef.current = now;
+      speechSegmentVoiceDetectedRef.current = false;
       if (reason !== "manual") {
-        setSpeechStatusNote(reason === "silence" ? "Фрагмент отправлен после паузы." : "Фрагмент отправлен по лимиту времени.");
+        setSpeechStatusNote(
+          reason === "silence"
+            ? "РџР°СѓР·Р° СЂР°СЃРїРѕР·РЅР°РЅР°: С‡Р°СЃС‚СЊ Р·Р°РїРёСЃРё РѕС‚РїСЂР°РІР»РµРЅР°, Р·Р°РїРёСЃСЊ РїСЂРѕРґРѕР»Р¶Р°РµС‚СЃСЏ."
+            : "Р§Р°СЃС‚СЊ Р·Р°РїРёСЃРё РѕС‚РїСЂР°РІР»РµРЅР° РїРѕ Р»РёРјРёС‚Сѓ РІСЂРµРјРµРЅРё, Р·Р°РїРёСЃСЊ РїСЂРѕРґРѕР»Р¶Р°РµС‚СЃСЏ."
+        );
       }
     } catch {
-      setSpeechStatusNote("Браузер не отдал аудио-фрагмент, запись продолжается.");
+      setSpeechStatusNote("Р‘СЂР°СѓР·РµСЂ РЅРµ РѕС‚РґР°Р» Р°СѓРґРёРѕ-С„СЂР°РіРјРµРЅС‚, Р·Р°РїРёСЃСЊ РїСЂРѕРґРѕР»Р¶Р°РµС‚СЃСЏ.");
     }
   }
 
@@ -13970,7 +14945,7 @@ export function App() {
     stopSpeechMonitor();
     const audioWindow = window as BrowserWindowWithSpeech;
     const AudioContextClass = window.AudioContext ?? audioWindow.webkitAudioContext;
-    const providerLabel = status?.providerLabel ?? "Локальная запись";
+    const providerLabel = status?.providerLabel ?? "Р›РѕРєР°Р»СЊРЅР°СЏ Р·Р°РїРёСЃСЊ";
     const chunkingPolicy = status?.chunkingPolicy ?? {
       strategy: "time_and_silence" as const,
       minChunkMs: 10_000,
@@ -13982,9 +14957,13 @@ export function App() {
       dedupeWindowChars: 600
     };
     const recommendedChunkMs = status?.recommendedChunkMs ?? 15_000;
+    speechVoiceLevelAvailableRef.current = false;
+    speechSegmentVoiceDetectedRef.current = false;
+    speechQuietWarningShownRef.current = false;
     if (!AudioContextClass) {
+      setSpeechInputLevel(null);
       recorder.start(recommendedChunkMs);
-      setSpeechStatusNote(`${providerLabel}: запись идет по таймеру, Web Audio недоступен.`);
+      setSpeechStatusNote(`${providerLabel}: Р·Р°РїРёСЃСЊ РёРґРµС‚. Р“РѕРІРѕСЂРёС‚Рµ, Р·Р°С‚РµРј РЅР°Р¶РјРёС‚Рµ В«РЎС‚РѕРї Р·Р°РїРёСЃСЊВ».`);
       return;
     }
 
@@ -13997,8 +14976,10 @@ export function App() {
       source.connect(analyser);
       speechAudioContextRef.current = audioContext;
       speechAnalyserRef.current = analyser;
+      speechVoiceLevelAvailableRef.current = true;
       speechSegmentStartedAtRef.current = Date.now();
       speechLastSoundAtRef.current = Date.now();
+      speechSegmentVoiceDetectedRef.current = false;
       recorder.start(Math.max(1000, Math.min(recommendedChunkMs, chunkingPolicy.maxChunkMs)));
       const samples = new Uint8Array(analyser.fftSize);
       speechMonitorTimerRef.current = window.setInterval(() => {
@@ -14009,12 +14990,24 @@ export function App() {
           sumSquares += centered * centered;
         }
         const rms = Math.sqrt(sumSquares / samples.length);
+        const level = Math.max(0, Math.min(1, rms / Math.max(chunkingPolicy.rmsThreshold * 5, 0.05)));
+        const voiceIsAudible = level >= 0.18;
+        setSpeechInputLevel(level);
         const now = Date.now();
         const segmentAgeMs = now - speechSegmentStartedAtRef.current;
+        if (voiceIsAudible) {
+          speechVoiceDetectedDuringRecordingRef.current = true;
+          speechSegmentVoiceDetectedRef.current = true;
+        }
         if (rms >= chunkingPolicy.rmsThreshold) {
           speechLastSoundAtRef.current = now;
         }
         const silentForMs = now - speechLastSoundAtRef.current;
+        if (!voiceIsAudible && segmentAgeMs >= 3_500 && !speechQuietWarningShownRef.current) {
+          speechQuietWarningShownRef.current = true;
+          openDictationStatusWhenMicrophoneChoiceHelps();
+          setSpeechStatusNote(`РњРёРєСЂРѕС„РѕРЅ РІРєР»СЋС‡РµРЅ, РЅРѕ РіРѕР»РѕСЃ РїРѕС‡С‚Рё РЅРµ СЃР»С‹С€РµРЅ. ${quietMicrophoneNextAction()}`);
+        }
         if (segmentAgeMs >= chunkingPolicy.maxChunkMs) {
           requestSpeechChunk("max_time");
           return;
@@ -14023,107 +15016,257 @@ export function App() {
           requestSpeechChunk("silence");
         }
       }, chunkingPolicy.monitorIntervalMs);
-      setSpeechStatusNote(
-        `${providerLabel}: умные фрагменты ${Math.round(chunkingPolicy.minChunkMs / 1000)}-${Math.round(
-          chunkingPolicy.maxChunkMs / 1000
-        )} сек., пауза ${chunkingPolicy.silenceMs} мс.`
-      );
+      setSpeechStatusNote(`${providerLabel}: Р·Р°РїРёСЃСЊ РёРґРµС‚. РўРµРєСЃС‚ РїРѕСЏРІРёС‚СЃСЏ РІ РїРѕР»Рµ РїРѕ РјРµСЂРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ.`);
     } catch {
       stopSpeechMonitor();
+      setSpeechInputLevel(null);
       recorder.start(recommendedChunkMs);
-      setSpeechStatusNote(`${providerLabel}: запись идет по таймеру, умное деление недоступно.`);
+      setSpeechStatusNote(`${providerLabel}: Р·Р°РїРёСЃСЊ РёРґРµС‚. Р“РѕРІРѕСЂРёС‚Рµ, Р·Р°С‚РµРј РЅР°Р¶РјРёС‚Рµ В«РЎС‚РѕРї Р·Р°РїРёСЃСЊВ».`);
+    }
+  }
+
+  function configureServerVoiceRecorder(stream: MediaStream, recorder: MediaRecorder, currentGatewayStatus: SpeechGatewayStatus | null) {
+    mediaStreamRef.current = stream;
+    mediaRecorderRef.current = recorder;
+    recorder.ondataavailable = (event) => {
+      if (event.data.size === 0) {
+        speechPendingChunkDurationMsRef.current = null;
+        speechPendingChunkHadVoiceRef.current = null;
+        return;
+      }
+      if (event.data.size > 0 && !speechPendingChunkDurationMsRef.current) {
+        const now = Date.now();
+        speechPendingChunkDurationMsRef.current = Math.max(
+          250,
+          Math.min(now - speechSegmentStartedAtRef.current, currentGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
+        );
+        speechPendingChunkHadVoiceRef.current = !speechVoiceLevelAvailableRef.current || speechSegmentVoiceDetectedRef.current;
+        speechSegmentStartedAtRef.current = now;
+        speechLastSoundAtRef.current = now;
+        speechSegmentVoiceDetectedRef.current = false;
+      }
+      if (event.data.size > 0) {
+        const effectiveGatewayStatus = speechActiveGatewayStatusRef.current ?? currentGatewayStatus;
+        trackSpeechUpload(uploadSpeechBlob(event.data, effectiveGatewayStatus));
+      }
+    };
+    recorder.onstop = () => {
+      const recordingId = speechRecordingIdRef.current;
+      const voiceLevelAvailable = speechVoiceLevelAvailableRef.current;
+      const voiceDetected = speechVoiceDetectedDuringRecordingRef.current;
+      speechRecordingVoiceLevelAvailableAtStopRef.current = voiceLevelAvailable;
+      speechRecordingVoiceDetectedAtStopRef.current = voiceDetected;
+      const shouldRestart =
+        serverVoiceRecordingShouldContinueRef.current && !serverVoiceRecordingStopRequestedRef.current && Boolean(recordingId);
+      stopSpeechMonitor();
+      stream.getTracks().forEach((track) => track.stop());
+      mediaRecorderRef.current = null;
+      mediaStreamRef.current = null;
+
+      if (shouldRestart) {
+        setIsServerVoiceRecording(true);
+        setSpeechRetrySuggested(false);
+        setSpeechStatusNote("Р‘СЂР°СѓР·РµСЂ РїСЂРµСЂРІР°Р» Р·Р°РїРёСЃСЊ РЅР° СЃРµРєСѓРЅРґСѓ. CRM СЃРЅРѕРІР° РІРєР»СЋС‡Р°РµС‚ РјРёРєСЂРѕС„РѕРЅ Рё РїСЂРѕРґРѕР»Р¶Р°РµС‚ СЌС‚Сѓ Р¶Рµ РґРёРєС‚РѕРІРєСѓ.");
+        clearServerVoiceRecordingRestartTimer();
+        serverVoiceRecordingRestartTimerRef.current = window.setTimeout(() => {
+          serverVoiceRecordingRestartTimerRef.current = null;
+          void restartServerVoiceRecorderAfterUnexpectedStop(currentGatewayStatus);
+        }, 250);
+        return;
+      }
+
+      serverVoiceRecordingShouldContinueRef.current = false;
+      serverVoiceRecordingStopRequestedRef.current = false;
+      setIsServerVoiceRecording(false);
+      speechActiveGatewayStatusRef.current = null;
+      stopSpeechRecordingClock();
+      if (voiceLevelAvailable && !voiceDetected) {
+        setSpeechRetrySuggested(false);
+        setSpeechStatusNote(`Р—Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°. РџСЂРѕРІРµСЂСЏСЋ РґР°Р¶Рµ С‚РёС…СѓСЋ Р·Р°РїРёСЃСЊ. ${quietMicrophoneNextAction()}`);
+      }
+      if (recordingId) {
+        void finalizeSpeechRecording(recordingId);
+      }
+    };
+    startSpeechMonitor(stream, recorder, currentGatewayStatus);
+    setIsServerVoiceRecording(true);
+  }
+
+  async function restartServerVoiceRecorderAfterUnexpectedStop(statusOverride: SpeechGatewayStatus | null) {
+    if (!dashboard || !serverVoiceRecordingShouldContinueRef.current || serverVoiceRecordingStopRequestedRef.current) return;
+    try {
+      const currentGatewayStatus = statusOverride ?? speechActiveGatewayStatusRef.current ?? speechGatewayStatus;
+      speechActiveGatewayStatusRef.current = currentGatewayStatus;
+      const stream = await getSpeechMicrophoneStream();
+      setSpeechMicrophoneLabel(microphoneLabelFromStream(stream));
+      await refreshSpeechAudioInputDevices();
+      const mimeType = preferredSpeechMimeType();
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      if (!speechRecordingIdRef.current) {
+        speechRecordingIdRef.current = createLocalQueueId();
+      }
+      serverVoiceRecordingStopRequestedRef.current = false;
+      configureServerVoiceRecorder(stream, recorder, currentGatewayStatus);
+      setSpeechStatusNote("Р—Р°РїРёСЃСЊ РїСЂРѕРґРѕР»Р¶РµРЅР°. Р“РѕРІРѕСЂРёС‚Рµ РґР°Р»СЊС€Рµ, С‚РµРєСЃС‚ РґРѕР±Р°РІРёС‚СЃСЏ РІ С‚РѕС‚ Р¶Рµ С‡РµСЂРЅРѕРІРёРє.");
+    } catch (recordingError) {
+      const recordingId = speechRecordingIdRef.current;
+      serverVoiceRecordingShouldContinueRef.current = false;
+      serverVoiceRecordingStopRequestedRef.current = false;
+      clearServerVoiceRecordingRestartTimer();
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
+      setIsServerVoiceRecording(false);
+      speechActiveGatewayStatusRef.current = null;
+      stopSpeechMonitor();
+      stopSpeechRecordingClock();
+      setSpeechMicrophoneLabel(null);
+      setError(browserCapabilityFailureMessage("Р—Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІРёР»Р°СЃСЊ Рё РЅРµ СЃРјРѕРіР»Р° РІРєР»СЋС‡РёС‚СЊСЃСЏ СЃРЅРѕРІР°", recordingError));
+      if (recordingId) {
+        void finalizeSpeechRecording(recordingId);
+      }
     }
   }
 
   async function startServerVoiceRecording() {
-    if (!dashboard) {
-      setError("Данные приема еще не загружены. Повторите запись после загрузки рабочего экрана.");
+    if (serverVoiceRecordingStartingRef.current || isServerVoiceRecordingStarting) {
+      setSpeechStatusNote("Р—Р°РїРёСЃСЊ СѓР¶Рµ РІРєР»СЋС‡Р°РµС‚СЃСЏ. Р Р°Р·СЂРµС€РёС‚Рµ РјРёРєСЂРѕС„РѕРЅ Рё РїРѕРґРѕР¶РґРёС‚Рµ РЅРµСЃРєРѕР»СЊРєРѕ СЃРµРєСѓРЅРґ.");
       return;
     }
+    if (!dashboard) {
+      setError("Р”Р°РЅРЅС‹Рµ РїСЂРёРµРјР° РµС‰Рµ РЅРµ Р·Р°РіСЂСѓР¶РµРЅС‹. РџРѕРІС‚РѕСЂРёС‚Рµ Р·Р°РїРёСЃСЊ РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё СЂР°Р±РѕС‡РµРіРѕ СЌРєСЂР°РЅР°.");
+      return;
+    }
+    if (isSpeechMicrophoneTesting) {
+      setSpeechStatusNote("Р”РѕР¶РґРёС‚РµСЃСЊ РѕРєРѕРЅС‡Р°РЅРёСЏ РїСЂРѕРІРµСЂРєРё РјРёРєСЂРѕС„РѕРЅР°, РїРѕС‚РѕРј РЅР°Р¶РјРёС‚Рµ В«Р—Р°РїРёСЃР°С‚СЊ РіРѕР»РѕСЃВ».");
+      return;
+    }
+    if (isVisitDictating || isVisitDictationStarting) {
+      stopVisitDictation();
+    }
     if (isServerVoiceRecording || mediaRecorderRef.current?.state === "recording") {
-      setError("Запись уже идет. Нажмите «Стоп запись», чтобы завершить текущий фрагмент.");
+      setError("Р—Р°РїРёСЃСЊ СѓР¶Рµ РёРґРµС‚. РќР°Р¶РјРёС‚Рµ В«РЎС‚РѕРї Р·Р°РїРёСЃСЊВ», С‡С‚РѕР±С‹ Р·Р°РІРµСЂС€РёС‚СЊ С‚РµРєСѓС‰СѓСЋ Р·Р°РїРёСЃСЊ.");
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      setError("Запись аудио недоступна в этом браузере. Текст можно печатать вручную, локальный черновик сохранится.");
+      setError("Р—Р°РїРёСЃСЊ Р°СѓРґРёРѕ РЅРµРґРѕСЃС‚СѓРїРЅР° РІ СЌС‚РѕРј Р±СЂР°СѓР·РµСЂРµ. РўРµРєСЃС‚ РјРѕР¶РЅРѕ РїРµС‡Р°С‚Р°С‚СЊ РІСЂСѓС‡РЅСѓСЋ, Р»РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє СЃРѕС…СЂР°РЅРёС‚СЃСЏ.");
       return;
     }
 
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      serverVoiceRecordingStartingRef.current = true;
+      setIsServerVoiceRecordingStarting(true);
+      clearServerVoiceRecordingRestartTimer();
+      serverVoiceRecordingShouldContinueRef.current = false;
+      serverVoiceRecordingStopRequestedRef.current = false;
+      setError(null);
+      setSpeechRetrySuggested(false);
+      setSpeechMicrophoneVerified(false);
+      setSpeechStatusNote("Р’РєР»СЋС‡Р°СЋ РјРёРєСЂРѕС„РѕРЅ. Р•СЃР»Рё Р±СЂР°СѓР·РµСЂ СЃРїСЂРѕСЃРёС‚ РґРѕСЃС‚СѓРї, РЅР°Р¶РјРёС‚Рµ В«Р Р°Р·СЂРµС€РёС‚СЊВ».");
+      const gatewayStatusPromise = loadSpeechGatewayStatus({ silent: true });
+      const currentGatewayStatus = speechGatewayStatus;
+      speechActiveGatewayStatusRef.current = currentGatewayStatus;
+      void gatewayStatusPromise.then((freshGatewayStatus) => {
+        if (!freshGatewayStatus || mediaRecorderRef.current?.state !== "recording") return;
+        speechActiveGatewayStatusRef.current = freshGatewayStatus;
+        if (speechChunkIndexRef.current === 0) {
+          setSpeechStatusNote(
+            speechGatewayCanUpload(freshGatewayStatus)
+              ? `${freshGatewayStatus.providerLabel}: Р·Р°РїРёСЃСЊ РёРґРµС‚. РўРµРєСЃС‚ РїРѕСЏРІРёС‚СЃСЏ РїРѕ РјРµСЂРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ.`
+              : "Р—Р°РїРёСЃСЊ РёРґРµС‚. Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ РїРѕРєР° РЅРµ РіРѕС‚РѕРІРѕ, Р·РІСѓРє СЃРѕС…СЂР°РЅРёС‚СЃСЏ Рё РѕС‚РїСЂР°РІРёС‚СЃСЏ РїРѕР·Р¶Рµ."
+          );
+        }
+      });
+      void Promise.all([
+        loadSpeechGatewayHealthReport({ silent: true }),
+        loadSpeechProviderRuntimeStatuses({ silent: true }),
+        loadSpeechRecordingStrategy({ silent: true })
+      ]);
+      stream = await getSpeechMicrophoneStream();
+      setSpeechMicrophoneLabel(microphoneLabelFromStream(stream));
+      await refreshSpeechAudioInputDevices();
       const mimeType = preferredSpeechMimeType();
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-      mediaStreamRef.current = stream;
-      mediaRecorderRef.current = recorder;
       speechRecordingIdRef.current = createLocalQueueId();
       speechChunkIndexRef.current = 0;
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && !speechPendingChunkDurationMsRef.current) {
-          const now = Date.now();
-          speechPendingChunkDurationMsRef.current = Math.max(
-            250,
-            Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
-          );
-          speechSegmentStartedAtRef.current = now;
-          speechLastSoundAtRef.current = now;
-        }
-        if (event.data.size > 0) {
-          trackSpeechUpload(uploadSpeechBlob(event.data));
-        }
-      };
-      recorder.onstop = () => {
-        const recordingId = speechRecordingIdRef.current;
-        stopSpeechMonitor();
-        stream.getTracks().forEach((track) => track.stop());
-        mediaRecorderRef.current = null;
-        mediaStreamRef.current = null;
-        setIsServerVoiceRecording(false);
-        if (recordingId) {
-          void finalizeSpeechRecording(recordingId);
-        }
-      };
-      startSpeechMonitor(stream, recorder, speechGatewayStatus);
-      setError(null);
-      if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
+      speechRecordingHadRecognizedTextRef.current = false;
+      speechVoiceDetectedDuringRecordingRef.current = false;
+      speechSegmentVoiceDetectedRef.current = false;
+      speechQuietWarningShownRef.current = false;
+      speechRecordingVoiceLevelAvailableAtStopRef.current = false;
+      speechRecordingVoiceDetectedAtStopRef.current = false;
+      serverVoiceRecordingShouldContinueRef.current = true;
+      serverVoiceRecordingStopRequestedRef.current = false;
+      startSpeechRecordingClock();
+      configureServerVoiceRecorder(stream, recorder, currentGatewayStatus);
+      stream = null;
+      serverVoiceRecordingStartingRef.current = false;
+      setIsServerVoiceRecordingStarting(false);
+      if (!isOnline || (currentGatewayStatus && !speechGatewayCanUpload(currentGatewayStatus))) {
         setSpeechStatusNote(
           isOnline
-            ? "Запись идет в локальную очередь: серверное распознавание пока не готово, аудио не отправляется."
-            : "Запись идет в локальную очередь: офлайн, аудио отправится после подключения."
+            ? "Р—Р°РїРёСЃСЊ РёРґРµС‚ РІ Р»РѕРєР°Р»СЊРЅСѓСЋ РѕС‡РµСЂРµРґСЊ: СЃРµСЂРІРµСЂРЅРѕРµ СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ РїРѕРєР° РЅРµ РіРѕС‚РѕРІРѕ, Р°СѓРґРёРѕ РЅРµ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ."
+            : "Р—Р°РїРёСЃСЊ РёРґРµС‚ РІ Р»РѕРєР°Р»СЊРЅСѓСЋ РѕС‡РµСЂРµРґСЊ: РѕС„Р»Р°Р№РЅ, Р°СѓРґРёРѕ РѕС‚РїСЂР°РІРёС‚СЃСЏ РїРѕСЃР»Рµ РїРѕРґРєР»СЋС‡РµРЅРёСЏ."
         );
       }
-      setIsServerVoiceRecording(true);
     } catch (recordingError) {
+      stream?.getTracks().forEach((track) => track.stop());
+      serverVoiceRecordingStartingRef.current = false;
+      setIsServerVoiceRecordingStarting(false);
+      serverVoiceRecordingShouldContinueRef.current = false;
+      serverVoiceRecordingStopRequestedRef.current = false;
+      clearServerVoiceRecordingRestartTimer();
       setIsServerVoiceRecording(false);
-      setError(browserCapabilityFailureMessage("Микрофон недоступен", recordingError));
+      speechActiveGatewayStatusRef.current = null;
+      stopSpeechRecordingClock();
+      setSpeechMicrophoneLabel(null);
+      setError(browserCapabilityFailureMessage("РњРёРєСЂРѕС„РѕРЅ РЅРµРґРѕСЃС‚СѓРїРµРЅ", recordingError));
     }
   }
 
   function stopServerVoiceRecording() {
+    clearServerVoiceRecordingRestartTimer();
     const recorder = mediaRecorderRef.current;
-    if (recorder && recorder.state !== "inactive") {
-      speechPendingChunkDurationMsRef.current = Math.max(250, Date.now() - speechSegmentStartedAtRef.current);
-      recorder.requestData();
-      recorder.stop();
+    const recordingId = speechRecordingIdRef.current;
+    if (!recorder && !recordingId && !mediaStreamRef.current && !isServerVoiceRecording) {
+      serverVoiceRecordingShouldContinueRef.current = false;
+      serverVoiceRecordingStopRequestedRef.current = false;
+      setSpeechStatusNote("РђРєС‚РёРІРЅРѕР№ Р·Р°РїРёСЃРё РґРёРєС‚РѕРІРєРё РЅРµС‚.");
       return;
     }
-    const recordingId = speechRecordingIdRef.current;
-    if (!recordingId && !mediaStreamRef.current && !isServerVoiceRecording) {
-      setSpeechStatusNote("Активной записи диктовки нет.");
+    serverVoiceRecordingShouldContinueRef.current = false;
+    serverVoiceRecordingStopRequestedRef.current = true;
+    if (recorder && recorder.state !== "inactive") {
+      const currentGatewayStatus = speechActiveGatewayStatusRef.current ?? speechGatewayStatus;
+      speechPendingChunkDurationMsRef.current = Math.max(
+        250,
+        Math.min(Date.now() - speechSegmentStartedAtRef.current, currentGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
+      );
+      speechPendingChunkHadVoiceRef.current = !speechVoiceLevelAvailableRef.current || speechSegmentVoiceDetectedRef.current;
+      recorder.requestData();
+      recorder.stop();
+      setSpeechStatusNote("Р—Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°. РџРѕСЃР»РµРґРЅСЏСЏ С‡Р°СЃС‚СЊ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ РЅР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёРµ.");
       return;
     }
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     stopSpeechMonitor();
     mediaStreamRef.current = null;
     mediaRecorderRef.current = null;
+    serverVoiceRecordingShouldContinueRef.current = false;
+    serverVoiceRecordingStopRequestedRef.current = false;
     setIsServerVoiceRecording(false);
+    speechActiveGatewayStatusRef.current = null;
+    stopSpeechRecordingClock();
     if (recordingId) {
       void finalizeSpeechRecording(recordingId);
     }
+    setSpeechStatusNote("Р—Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°. РџСЂРѕРІРµСЂСЊС‚Рµ С‚РµРєСЃС‚ Рё СЃРѕР±РµСЂРёС‚Рµ Р­РњРљ.");
   }
 
   function startImportDictation() {
     if (isImportDictating) {
-      setError("Дождитесь завершения текущей диктовки импорта.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ РґРёРєС‚РѕРІРєРё РёРјРїРѕСЂС‚Р°.");
       return;
     }
     const speechWindow = window as BrowserWindowWithSpeech;
@@ -14131,9 +15274,9 @@ export function App() {
     if (!Recognition) {
       setImportSourceKind("voice_dictation");
       setImportText((current) =>
-        `${current}\n\nДиктовка недоступна в этом браузере. Вставь распознанный текст сюда: Иванов Иван, телефон +7 900 000-00-00, дата рождения 01.01.1980.`
+        `${current}\n\nР”РёРєС‚РѕРІРєР° РЅРµРґРѕСЃС‚СѓРїРЅР° РІ СЌС‚РѕРј Р±СЂР°СѓР·РµСЂРµ. Р’СЃС‚Р°РІСЊ СЂР°СЃРїРѕР·РЅР°РЅРЅС‹Р№ С‚РµРєСЃС‚ СЃСЋРґР°: РРІР°РЅРѕРІ РРІР°РЅ, С‚РµР»РµС„РѕРЅ +7 900 000-00-00, РґР°С‚Р° СЂРѕР¶РґРµРЅРёСЏ 01.01.1980.`
       );
-      setError("Браузерная диктовка импорта недоступна. Вставьте список пациентов вручную или загрузите OCR.");
+      setError("Р‘СЂР°СѓР·РµСЂРЅР°СЏ РґРёРєС‚РѕРІРєР° РёРјРїРѕСЂС‚Р° РЅРµРґРѕСЃС‚СѓРїРЅР°. Р’СЃС‚Р°РІСЊС‚Рµ СЃРїРёСЃРѕРє РїР°С†РёРµРЅС‚РѕРІ РІСЂСѓС‡РЅСѓСЋ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ OCR.");
       return;
     }
     const recognition = new Recognition();
@@ -14152,7 +15295,7 @@ export function App() {
     recognition.onerror = () => {
       setImportSourceKind("voice_dictation");
       setIsImportDictating(false);
-      setError("Диктовка импорта не распознана. Вставьте список вручную или загрузите OCR.");
+      setError("Р”РёРєС‚РѕРІРєР° РёРјРїРѕСЂС‚Р° РЅРµ СЂР°СЃРїРѕР·РЅР°РЅР°. Р’СЃС‚Р°РІСЊС‚Рµ СЃРїРёСЃРѕРє РІСЂСѓС‡РЅСѓСЋ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ OCR.");
     };
     recognition.onend = () => setIsImportDictating(false);
     setError(null);
@@ -14161,21 +15304,21 @@ export function App() {
       recognition.start();
     } catch {
       setIsImportDictating(false);
-      setError("Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.");
+      setError("Р‘СЂР°СѓР·РµСЂ РЅРµ СЃРјРѕРі Р·Р°РїСѓСЃС‚РёС‚СЊ РјРёРєСЂРѕС„РѕРЅ РґР»СЏ РёРјРїРѕСЂС‚Р°. Р’СЃС‚Р°РІСЊС‚Рµ СЃРїРёСЃРѕРє РїР°С†РёРµРЅС‚РѕРІ РІСЂСѓС‡РЅСѓСЋ РёР»Рё Р·Р°РіСЂСѓР·РёС‚Рµ С„Р°Р№Р».");
     }
   }
 
   async function createClinicalRuleFromSettings() {
     if (!dashboard) {
-      setError("Данные клиники еще не загружены. Повторите создание правила после загрузки настроек.");
+      setError("Р”Р°РЅРЅС‹Рµ РєР»РёРЅРёРєРё РµС‰Рµ РЅРµ Р·Р°РіСЂСѓР¶РµРЅС‹. РџРѕРІС‚РѕСЂРёС‚Рµ СЃРѕР·РґР°РЅРёРµ РїСЂР°РІРёР»Р° РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё РЅР°СЃС‚СЂРѕРµРє.");
       return;
     }
     if (isClinicalRuleSaving) {
-      setError("Дождитесь завершения текущей записи клинического правила.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ Р·Р°РїРёСЃРё РєР»РёРЅРёС‡РµСЃРєРѕРіРѕ РїСЂР°РІРёР»Р°.");
       return;
     }
     if (!newRuleTitle.trim() || !newRuleWarningText.trim() || !newRulePatientText.trim()) {
-      setError("Клиническое правило должно иметь название, предупреждение и объяснение для пациента.");
+      setError("РљР»РёРЅРёС‡РµСЃРєРѕРµ РїСЂР°РІРёР»Рѕ РґРѕР»Р¶РЅРѕ РёРјРµС‚СЊ РЅР°Р·РІР°РЅРёРµ, РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ Рё РѕР±СЉСЏСЃРЅРµРЅРёРµ РґР»СЏ РїР°С†РёРµРЅС‚Р°.");
       return;
     }
 
@@ -14195,18 +15338,18 @@ export function App() {
           requiredServiceIds: newRuleAction === "add_required_service" ? [newRuleRequiredServiceId] : [],
           requiresCompletedServiceIds: newRuleAction === "block_service" ? [newRuleCompletedServiceId] : [],
           blockedServiceIds: newRuleAction === "block_service" ? [newRuleBlockedServiceId] : [],
-          condition: "Настроено в библиотеке правил клиники.",
+          condition: "РќР°СЃС‚СЂРѕРµРЅРѕ РІ Р±РёР±Р»РёРѕС‚РµРєРµ РїСЂР°РІРёР» РєР»РёРЅРёРєРё.",
           warningText: newRuleWarningText.trim(),
           patientText: newRulePatientText.trim(),
           active: true
         })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Клиническое правило не сохранено"));
+        throw new Error(await responseErrorMessage(response, "РљР»РёРЅРёС‡РµСЃРєРѕРµ РїСЂР°РІРёР»Рѕ РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ"));
       }
       await loadDashboard();
     } catch (ruleError) {
-      setError(operatorWorkflowFailureMessage("Клиническое правило не сохранено", ruleError));
+      setError(operatorWorkflowFailureMessage("РљР»РёРЅРёС‡РµСЃРєРѕРµ РїСЂР°РІРёР»Рѕ РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ", ruleError));
     } finally {
       setIsClinicalRuleSaving(false);
     }
@@ -14214,7 +15357,7 @@ export function App() {
 
   async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
     if (isClinicalRuleSaving) {
-      setError("Дождитесь завершения текущей записи клинического правила.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ Р·Р°РїРёСЃРё РєР»РёРЅРёС‡РµСЃРєРѕРіРѕ РїСЂР°РІРёР»Р°.");
       return;
     }
     setIsClinicalRuleSaving(true);
@@ -14225,23 +15368,23 @@ export function App() {
         body: JSON.stringify({ active: !rule.active })
       });
       if (!response.ok) {
-        throw new Error(await responseErrorMessage(response, "Клиническое правило не обновлено"));
+        throw new Error(await responseErrorMessage(response, "РљР»РёРЅРёС‡РµСЃРєРѕРµ РїСЂР°РІРёР»Рѕ РЅРµ РѕР±РЅРѕРІР»РµРЅРѕ"));
       }
       await loadDashboard();
     } catch (ruleError) {
-      setError(operatorWorkflowFailureMessage("Клиническое правило не обновлено", ruleError));
+      setError(operatorWorkflowFailureMessage("РљР»РёРЅРёС‡РµСЃРєРѕРµ РїСЂР°РІРёР»Рѕ РЅРµ РѕР±РЅРѕРІР»РµРЅРѕ", ruleError));
     } finally {
       setIsClinicalRuleSaving(false);
     }
   }
 
   function requiredDocumentField(value: string, label: string): string | null {
-    return value.trim() ? null : `Заполните поле: ${label}.`;
+    return value.trim() ? null : `Р—Р°РїРѕР»РЅРёС‚Рµ РїРѕР»Рµ: ${label}.`;
   }
 
   function confirmedDocumentLiteral(value: boolean, label: string): true {
     if (!value) {
-      throw new Error(`Не подтверждено обязательное условие документа: ${label}.`);
+      throw new Error(`РќРµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРµ СѓСЃР»РѕРІРёРµ РґРѕРєСѓРјРµРЅС‚Р°: ${label}.`);
     }
     return true;
   }
@@ -14265,9 +15408,9 @@ export function App() {
       const [stageName, plannedServices, plannedTiming, amount] = line.split("|").map((part) => part.trim());
       const parsedAmount = amount ? Number(amount.replace(/[^\d]/g, "")) : Number.NaN;
       return {
-        stageName: stageName || `Этап ${index + 1}`,
-        plannedServices: plannedServices || "объем лечения по выбранному плану",
-        plannedTiming: plannedTiming || "по расписанию клиники",
+        stageName: stageName || `Р­С‚Р°Рї ${index + 1}`,
+        plannedServices: plannedServices || "РѕР±СЉРµРј Р»РµС‡РµРЅРёСЏ РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ РїР»Р°РЅСѓ",
+        plannedTiming: plannedTiming || "РїРѕ СЂР°СЃРїРёСЃР°РЅРёСЋ РєР»РёРЅРёРєРё",
         estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null
       };
     });
@@ -14292,9 +15435,9 @@ export function App() {
       const [stageName, plannedServices, plannedTiming, clinicalNotes, amount] = line.split("|").map((part) => part.trim());
       const parsedAmount = amount ? Number(amount.replace(/[^\d]/g, "")) : Number.NaN;
       return {
-        stageName: stageName || `Этап ${index + 1}`,
-        plannedServices: plannedServices || "объем лечения по клиническому плану",
-        plannedTiming: plannedTiming || "по расписанию клиники",
+        stageName: stageName || `Р­С‚Р°Рї ${index + 1}`,
+        plannedServices: plannedServices || "РѕР±СЉРµРј Р»РµС‡РµРЅРёСЏ РїРѕ РєР»РёРЅРёС‡РµСЃРєРѕРјСѓ РїР»Р°РЅСѓ",
+        plannedTiming: plannedTiming || "РїРѕ СЂР°СЃРїРёСЃР°РЅРёСЋ РєР»РёРЅРёРєРё",
         clinicalNotes: clinicalNotes || null,
         estimatedAmountRub: Number.isFinite(parsedAmount) ? parsedAmount : null
       };
@@ -14307,7 +15450,7 @@ export function App() {
   }
 
   function treatmentPlanClinicalReasonValue(): string {
-    return treatmentPlanClinicalReason.trim() || dashboard?.activeVisit.complaint?.trim() || "плановое стоматологическое лечение по результатам осмотра";
+    return treatmentPlanClinicalReason.trim() || dashboard?.activeVisit.complaint?.trim() || "РїР»Р°РЅРѕРІРѕРµ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРµ Р»РµС‡РµРЅРёРµ РїРѕ СЂРµР·СѓР»СЊС‚Р°С‚Р°Рј РѕСЃРјРѕС‚СЂР°";
   }
 
   function treatmentPlanDiagnosisSummaryValue(): string {
@@ -14322,7 +15465,7 @@ export function App() {
     return value
       .trim()
       .toLocaleLowerCase("ru-RU")
-      .replaceAll("ё", "е")
+      .replaceAll("С‘", "Рµ")
       .replace(/[.]+/g, "")
       .replace(/\s+/g, " ");
   }
@@ -14345,17 +15488,17 @@ export function App() {
       treatmentPlanTeethOrAreaValue() ||
       treatmentAcceptanceTeethOrArea.trim() ||
       inferredTreatmentArea ||
-      "область лечения";
+      "РѕР±Р»Р°СЃС‚СЊ Р»РµС‡РµРЅРёСЏ";
     const fallbackFinding =
       procedureConsentDiagnosisOrIndication.trim() ||
       treatmentPlanDiagnosisSummaryValue() ||
       treatmentAcceptanceDiagnosisSummary.trim() ||
       recordExtractDiagnosisValue() ||
-      "клиническая находка требует уточнения врачом";
+      "РєР»РёРЅРёС‡РµСЃРєР°СЏ РЅР°С…РѕРґРєР° С‚СЂРµР±СѓРµС‚ СѓС‚РѕС‡РЅРµРЅРёСЏ РІСЂР°С‡РѕРј";
     const fallbackIndication =
-      treatmentPlanClinicalReasonValue() || recordExtractComplaintAndAnamnesisValue() || "медицинское показание к лечению";
+      treatmentPlanClinicalReasonValue() || recordExtractComplaintAndAnamnesisValue() || "РјРµРґРёС†РёРЅСЃРєРѕРµ РїРѕРєР°Р·Р°РЅРёРµ Рє Р»РµС‡РµРЅРёСЋ";
     const fallbackAction =
-      dashboard?.activeVisit.treatmentPlan?.trim() || procedureConsentProcedureName.trim() || treatmentAcceptanceClinicalGoal.trim() || "согласованное стоматологическое лечение";
+      dashboard?.activeVisit.treatmentPlan?.trim() || procedureConsentProcedureName.trim() || treatmentAcceptanceClinicalGoal.trim() || "СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРµ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРµ Р»РµС‡РµРЅРёРµ";
 
     return documentTextLines(clinicalToothRowsText).map((line, index) => {
       const [
@@ -14372,7 +15515,7 @@ export function App() {
       ] = line.split("|").map((part) => part.trim());
 
       return {
-        toothOrArea: toothOrArea || fallbackArea || `зона ${index + 1}`,
+        toothOrArea: toothOrArea || fallbackArea || `Р·РѕРЅР° ${index + 1}`,
         surfaces: clinicalToothSurfacesValue(surfaces || ""),
         status: clinicalToothStatusValue(status || ""),
         diagnosisOrFinding: diagnosisOrFinding || fallbackFinding,
@@ -14404,7 +15547,7 @@ export function App() {
   }
 
   function paidContractCareReasonValue(): string {
-    return paidContractCareReason.trim() || dashboard?.activeVisit.complaint?.trim() || "плановое стоматологическое лечение по результатам осмотра";
+    return paidContractCareReason.trim() || dashboard?.activeVisit.complaint?.trim() || "РїР»Р°РЅРѕРІРѕРµ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРµ Р»РµС‡РµРЅРёРµ РїРѕ СЂРµР·СѓР»СЊС‚Р°С‚Р°Рј РѕСЃРјРѕС‚СЂР°";
   }
 
   function paidContractServiceScopeValue(): string {
@@ -14451,7 +15594,7 @@ export function App() {
         const totalRub = Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
         return {
           serviceName: service?.title ?? item.serviceId,
-          toothOrArea: item.toothCode ? `зуб ${item.toothCode}` : null,
+          toothOrArea: item.toothCode ? `Р·СѓР± ${item.toothCode}` : null,
           quantity: item.quantity,
           unitPriceRub: item.unitPriceRub,
           discountRub: item.discountRub,
@@ -14468,7 +15611,7 @@ export function App() {
     return (
       treatmentEstimateTreatmentBasis.trim() ||
       compactDocumentText(dashboard?.activeVisit.diagnosis, dashboard?.activeVisit.complaint, dashboard?.activeVisit.treatmentPlan) ||
-      "плановое стоматологическое лечение по результатам осмотра"
+      "РїР»Р°РЅРѕРІРѕРµ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРµ Р»РµС‡РµРЅРёРµ РїРѕ СЂРµР·СѓР»СЊС‚Р°С‚Р°Рј РѕСЃРјРѕС‚СЂР°"
     );
   }
 
@@ -14518,11 +15661,11 @@ export function App() {
   }
 
   function paymentReceiptPayerRelationshipValue(): string {
-    return paymentReceiptPayerRelationship.trim() || firstPaymentReceiptPayment()?.payerRelationship?.trim() || "пациент";
+    return paymentReceiptPayerRelationship.trim() || firstPaymentReceiptPayment()?.payerRelationship?.trim() || "РїР°С†РёРµРЅС‚";
   }
 
   function paymentReceiptIssuedByValue(): string {
-    return paymentReceiptIssuedBy.trim() || activeDoctor?.fullName || "Администратор клиники";
+    return paymentReceiptIssuedBy.trim() || activeDoctor?.fullName || "РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ РєР»РёРЅРёРєРё";
   }
 
   function paymentReceiptFiscalReceiptLines(): string[] {
@@ -14550,9 +15693,9 @@ export function App() {
     const rows = documentTextLines(installmentScheduleRows).map((line, index) => {
       const [label, dueDate, amount, status] = line.split("|").map((part) => part.trim());
       const parsedAmount = amount ? Number(amount.replace(/[^\d]/g, "")) : Number.NaN;
-      const parsedStatus = installmentPaymentStatusAliases[status?.toLocaleLowerCase("ru-RU").replaceAll("ё", "е") ?? ""] ?? "planned";
+      const parsedStatus = installmentPaymentStatusAliases[status?.toLocaleLowerCase("ru-RU").replaceAll("С‘", "Рµ") ?? ""] ?? "planned";
       return {
-        label: label || `Платеж ${index + 1}`,
+        label: label || `РџР»Р°С‚РµР¶ ${index + 1}`,
         dueDate: dueDate || dateInputValuePlusDays(index === 0 ? 7 : 21),
         amountRub: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0,
         status: parsedStatus
@@ -14564,13 +15707,13 @@ export function App() {
     const firstPart = Math.ceil(remaining / 2);
     const secondPart = remaining - firstPart;
     return [
-      { label: "Первый платеж", dueDate: dateInputValuePlusDays(7), amountRub: firstPart, status: "planned" as const },
-      ...(secondPart > 0 ? [{ label: "Финальный платеж", dueDate: dateInputValuePlusDays(21), amountRub: secondPart, status: "planned" as const }] : [])
+      { label: "РџРµСЂРІС‹Р№ РїР»Р°С‚РµР¶", dueDate: dateInputValuePlusDays(7), amountRub: firstPart, status: "planned" as const },
+      ...(secondPart > 0 ? [{ label: "Р¤РёРЅР°Р»СЊРЅС‹Р№ РїР»Р°С‚РµР¶", dueDate: dateInputValuePlusDays(21), amountRub: secondPart, status: "planned" as const }] : [])
     ];
   }
 
   function installmentScheduleBaseDocumentTitleValue(): string {
-    return installmentScheduleBaseDocumentTitle.trim() || activeUsableDocuments.find((document) => document.kind === "paid_medical_services_contract")?.title || "договор или план лечения клиники";
+    return installmentScheduleBaseDocumentTitle.trim() || activeUsableDocuments.find((document) => document.kind === "paid_medical_services_contract")?.title || "РґРѕРіРѕРІРѕСЂ РёР»Рё РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ РєР»РёРЅРёРєРё";
   }
 
   function installmentSchedulePayerFullNameValue(): string {
@@ -14578,7 +15721,7 @@ export function App() {
   }
 
   function installmentScheduleResponsibleFullNameValue(): string {
-    return installmentScheduleResponsibleFullName.trim() || activeDoctor?.fullName || "Администратор клиники";
+    return installmentScheduleResponsibleFullName.trim() || activeDoctor?.fullName || "РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ РєР»РёРЅРёРєРё";
   }
 
   function minorRepresentativeFullNameValue(): string {
@@ -14610,7 +15753,7 @@ export function App() {
   }
 
   function minorConsentInterventionScopeValue(): string {
-    return minorConsentInterventionScope.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || "стоматологическое вмешательство по согласованному плану";
+    return minorConsentInterventionScope.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || "СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРµ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ РїРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРјСѓ РїР»Р°РЅСѓ";
   }
 
   function minorConsentDiagnosisOrIndicationValue(): string {
@@ -14626,14 +15769,14 @@ export function App() {
   }
 
   function warrantyTeethOrAreaValue(): string {
-    return warrantyTeethOrArea.trim() || inferredTreatmentArea || "область лечения по визиту";
+    return warrantyTeethOrArea.trim() || inferredTreatmentArea || "РѕР±Р»Р°СЃС‚СЊ Р»РµС‡РµРЅРёСЏ РїРѕ РІРёР·РёС‚Сѓ";
   }
 
   function warrantyLinkedActOrContractValue(): string {
     return (
       warrantyLinkedActOrContract.trim() ||
       activeUsableDocuments.find((document) => document.kind === "completed_works_act" || document.kind === "paid_medical_services_contract")?.title ||
-      "акт выполненных работ или договор клиники"
+      "Р°РєС‚ РІС‹РїРѕР»РЅРµРЅРЅС‹С… СЂР°Р±РѕС‚ РёР»Рё РґРѕРіРѕРІРѕСЂ РєР»РёРЅРёРєРё"
     );
   }
 
@@ -14642,11 +15785,11 @@ export function App() {
   }
 
   function postVisitProcedureNameValue(): string {
-    return postVisitProcedureName.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || "Рекомендации после стоматологического приема";
+    return postVisitProcedureName.trim() || dashboard?.activeVisit.treatmentPlan?.trim() || "Р РµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ СЃС‚РѕРјР°С‚РѕР»РѕРіРёС‡РµСЃРєРѕРіРѕ РїСЂРёРµРјР°";
   }
 
   function postVisitToothOrAreaValue(): string {
-    return postVisitToothOrArea.trim() || inferredTreatmentArea || "область лечения по записи приема";
+    return postVisitToothOrArea.trim() || inferredTreatmentArea || "РѕР±Р»Р°СЃС‚СЊ Р»РµС‡РµРЅРёСЏ РїРѕ Р·Р°РїРёСЃРё РїСЂРёРµРјР°";
   }
 
   function postVisitDoctorFullNameValue(): string {
@@ -14654,10 +15797,10 @@ export function App() {
   }
 
   function applyPostVisitCarePreset(topic: PostVisitCareTopic, options: { force?: boolean } = {}) {
-    const topicLabel = postVisitCareTopicOptions.find((option) => option.value === topic)?.label ?? "выбранной темы";
+    const topicLabel = postVisitCareTopicOptions.find((option) => option.value === topic)?.label ?? "РІС‹Р±СЂР°РЅРЅРѕР№ С‚РµРјС‹";
     if (postVisitManualEdited && !options.force) {
       setPostVisitPresetFeedback(
-        `Тема "${topicLabel}" выбрана. Текст не перезаписан, потому что есть ручные правки. Нажмите "Подставить памятку для темы", если нужно заменить поля.`
+        `РўРµРјР° "${topicLabel}" РІС‹Р±СЂР°РЅР°. РўРµРєСЃС‚ РЅРµ РїРµСЂРµР·Р°РїРёСЃР°РЅ, РїРѕС‚РѕРјСѓ С‡С‚Рѕ РµСЃС‚СЊ СЂСѓС‡РЅС‹Рµ РїСЂР°РІРєРё. РќР°Р¶РјРёС‚Рµ "РџРѕРґСЃС‚Р°РІРёС‚СЊ РїР°РјСЏС‚РєСѓ РґР»СЏ С‚РµРјС‹", РµСЃР»Рё РЅСѓР¶РЅРѕ Р·Р°РјРµРЅРёС‚СЊ РїРѕР»СЏ.`
       );
       return;
     }
@@ -14675,7 +15818,7 @@ export function App() {
     setPostVisitUrgentSignsUnderstood(false);
     setPostVisitTelegramSafe(false);
     setPostVisitManualEdited(false);
-    setPostVisitPresetFeedback(options.force ? `Памятка для темы "${topicLabel}" подставлена, ручные правки сброшены.` : "");
+    setPostVisitPresetFeedback(options.force ? `РџР°РјСЏС‚РєР° РґР»СЏ С‚РµРјС‹ "${topicLabel}" РїРѕРґСЃС‚Р°РІР»РµРЅР°, СЂСѓС‡РЅС‹Рµ РїСЂР°РІРєРё СЃР±СЂРѕС€РµРЅС‹.` : "");
   }
 
   function changePostVisitCareTopic(topic: PostVisitCareTopic) {
@@ -14729,8 +15872,8 @@ export function App() {
   function outpatient025uDoctorValue(): { fullName: string; position: string; specialty: string } {
     return {
       fullName: recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "",
-      position: "врач-стоматолог",
-      specialty: activeDoctor?.specialties[0] ?? "стоматология"
+      position: "РІСЂР°С‡-СЃС‚РѕРјР°С‚РѕР»РѕРі",
+      specialty: activeDoctor?.specialties[0] ?? "СЃС‚РѕРјР°С‚РѕР»РѕРіРёСЏ"
     };
   }
 
@@ -14821,7 +15964,7 @@ export function App() {
           medicinesAndPhysiotherapy: null,
           sickLeaveOrCertificate: null,
           preferentialPrescriptions: null,
-          informedConsentOrRefusal: "согласия и отказы проверены по подписанной медицинской записи клиники",
+          informedConsentOrRefusal: "СЃРѕРіР»Р°СЃРёСЏ Рё РѕС‚РєР°Р·С‹ РїСЂРѕРІРµСЂРµРЅС‹ РїРѕ РїРѕРґРїРёСЃР°РЅРЅРѕР№ РјРµРґРёС†РёРЅСЃРєРѕР№ Р·Р°РїРёСЃРё РєР»РёРЅРёРєРё",
           clinicalToothRows: clinicalToothRowsValue()
         }
       ],
@@ -14838,13 +15981,13 @@ export function App() {
       finalEpicrisis: outpatient025uFinalEpicrisis.trim() || null,
       preparedFromSignedMedicalRecords: confirmedDocumentLiteral(
         recordExtractPreparedFromSignedRecords,
-        "карта 025/у собрана из подписанных медицинских записей"
+        "РєР°СЂС‚Р° 025/Сѓ СЃРѕР±СЂР°РЅР° РёР· РїРѕРґРїРёСЃР°РЅРЅС‹С… РјРµРґРёС†РёРЅСЃРєРёС… Р·Р°РїРёСЃРµР№"
       ),
       officialForm274nChecked: confirmedDocumentLiteral(
         outpatient025uOfficialForm274nChecked,
-        "структура карты 025/у сверена с приказом Минздрава N 274н"
+        "СЃС‚СЂСѓРєС‚СѓСЂР° РєР°СЂС‚С‹ 025/Сѓ СЃРІРµСЂРµРЅР° СЃ РїСЂРёРєР°Р·РѕРј РњРёРЅР·РґСЂР°РІР° N 274РЅ"
       ),
-      thirdPartyDataChecked: confirmedDocumentLiteral(outpatient025uThirdPartyDataChecked, "данные третьих лиц для карты 025/у проверены")
+      thirdPartyDataChecked: confirmedDocumentLiteral(outpatient025uThirdPartyDataChecked, "РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РґР»СЏ РєР°СЂС‚С‹ 025/Сѓ РїСЂРѕРІРµСЂРµРЅС‹")
     };
   }
 
@@ -14870,208 +16013,208 @@ export function App() {
     if (!structuredPayloadDocumentKinds.has(kind)) return null;
     if (kind === "paid_medical_services_contract") {
       return (
-        requiredDocumentField(paidContractNumber, "договор, номер") ??
-        requiredDocumentField(paidContractDate, "договор, дата") ??
-        requiredDocumentField(paidContractServiceStart, "договор, начало оказания услуг") ??
-        requiredDocumentField(paidContractServiceEnd, "договор, окончание или условие завершения") ??
-        requiredDocumentField(paidContractCustomerFullNameValue(), "договор, заказчик") ??
-        requiredDocumentField(paidContractCareReasonValue(), "договор, основание обращения") ??
-        requiredDocumentField(paidContractServiceScopeValue(), "договор, состав услуг") ??
-        (paidContractTotalRubValue() > 0 ? null : "Укажите ориентировочную стоимость договора.") ??
-        requiredDocumentField(paidContractPaymentTerms, "договор, порядок оплаты") ??
-        requiredDocumentField(paidContractPriceChangeRules, "договор, изменение цены и объема") ??
-        requiredDocumentField(paidContractFreeCareNotice, "договор, уведомление о бесплатной помощи") ??
-        requiredDocumentField(paidContractRecommendationWarning, "договор, предупреждение о рекомендациях врача") ??
-        requiredDocumentField(paidContractRefundTerms, "договор, отказ и возврат") ??
-        requiredDocumentField(paidContractWarrantyTerms, "договор, гарантия и претензии") ??
-        requiredDocumentField(paidContractDoctorFullNameValue(), "договор, врач") ??
-        requiredDocumentField(paidContractSignedAt, "договор, дата подписания") ??
-        (paidContractClinicInfoConfirmed ? null : "Подтвердите, что пациент получил сведения о клинике и лицензии.") ??
-        (paidContractServiceListConfirmed ? null : "Подтвердите, что пациент получил перечень услуг и стоимость.") ??
-        (paidContractPaidBasisConfirmed ? null : "Подтвердите, что пациент понимает платную основу услуг.") ??
-        (paidContractWrittenChangesConfirmed ? null : "Подтвердите, что изменения договора оформляются письменно.")
+        requiredDocumentField(paidContractNumber, "РґРѕРіРѕРІРѕСЂ, РЅРѕРјРµСЂ") ??
+        requiredDocumentField(paidContractDate, "РґРѕРіРѕРІРѕСЂ, РґР°С‚Р°") ??
+        requiredDocumentField(paidContractServiceStart, "РґРѕРіРѕРІРѕСЂ, РЅР°С‡Р°Р»Рѕ РѕРєР°Р·Р°РЅРёСЏ СѓСЃР»СѓРі") ??
+        requiredDocumentField(paidContractServiceEnd, "РґРѕРіРѕРІРѕСЂ, РѕРєРѕРЅС‡Р°РЅРёРµ РёР»Рё СѓСЃР»РѕРІРёРµ Р·Р°РІРµСЂС€РµРЅРёСЏ") ??
+        requiredDocumentField(paidContractCustomerFullNameValue(), "РґРѕРіРѕРІРѕСЂ, Р·Р°РєР°Р·С‡РёРє") ??
+        requiredDocumentField(paidContractCareReasonValue(), "РґРѕРіРѕРІРѕСЂ, РѕСЃРЅРѕРІР°РЅРёРµ РѕР±СЂР°С‰РµРЅРёСЏ") ??
+        requiredDocumentField(paidContractServiceScopeValue(), "РґРѕРіРѕРІРѕСЂ, СЃРѕСЃС‚Р°РІ СѓСЃР»СѓРі") ??
+        (paidContractTotalRubValue() > 0 ? null : "РЈРєР°Р¶РёС‚Рµ РѕСЂРёРµРЅС‚РёСЂРѕРІРѕС‡РЅСѓСЋ СЃС‚РѕРёРјРѕСЃС‚СЊ РґРѕРіРѕРІРѕСЂР°.") ??
+        requiredDocumentField(paidContractPaymentTerms, "РґРѕРіРѕРІРѕСЂ, РїРѕСЂСЏРґРѕРє РѕРїР»Р°С‚С‹") ??
+        requiredDocumentField(paidContractPriceChangeRules, "РґРѕРіРѕРІРѕСЂ, РёР·РјРµРЅРµРЅРёРµ С†РµРЅС‹ Рё РѕР±СЉРµРјР°") ??
+        requiredDocumentField(paidContractFreeCareNotice, "РґРѕРіРѕРІРѕСЂ, СѓРІРµРґРѕРјР»РµРЅРёРµ Рѕ Р±РµСЃРїР»Р°С‚РЅРѕР№ РїРѕРјРѕС‰Рё") ??
+        requiredDocumentField(paidContractRecommendationWarning, "РґРѕРіРѕРІРѕСЂ, РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ Рѕ СЂРµРєРѕРјРµРЅРґР°С†РёСЏС… РІСЂР°С‡Р°") ??
+        requiredDocumentField(paidContractRefundTerms, "РґРѕРіРѕРІРѕСЂ, РѕС‚РєР°Р· Рё РІРѕР·РІСЂР°С‚") ??
+        requiredDocumentField(paidContractWarrantyTerms, "РґРѕРіРѕРІРѕСЂ, РіР°СЂР°РЅС‚РёСЏ Рё РїСЂРµС‚РµРЅР·РёРё") ??
+        requiredDocumentField(paidContractDoctorFullNameValue(), "РґРѕРіРѕРІРѕСЂ, РІСЂР°С‡") ??
+        requiredDocumentField(paidContractSignedAt, "РґРѕРіРѕРІРѕСЂ, РґР°С‚Р° РїРѕРґРїРёСЃР°РЅРёСЏ") ??
+        (paidContractClinicInfoConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» СЃРІРµРґРµРЅРёСЏ Рѕ РєР»РёРЅРёРєРµ Рё Р»РёС†РµРЅР·РёРё.") ??
+        (paidContractServiceListConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» РїРµСЂРµС‡РµРЅСЊ СѓСЃР»СѓРі Рё СЃС‚РѕРёРјРѕСЃС‚СЊ.") ??
+        (paidContractPaidBasisConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅРёРјР°РµС‚ РїР»Р°С‚РЅСѓСЋ РѕСЃРЅРѕРІСѓ СѓСЃР»СѓРі.") ??
+        (paidContractWrittenChangesConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РёР·РјРµРЅРµРЅРёСЏ РґРѕРіРѕРІРѕСЂР° РѕС„РѕСЂРјР»СЏСЋС‚СЃСЏ РїРёСЃСЊРјРµРЅРЅРѕ.")
       );
     }
     if (kind === "completed_works_act") {
       return (
-        requiredDocumentField(completedActNumber, "акт, номер") ??
-        requiredDocumentField(completedActDate, "акт, дата") ??
-        requiredDocumentField(completedActContractNumber, "акт, договор") ??
-        (selectedCompletedActContractDocumentId ? null : "Выберите конкретный уже выданный договор для акта.") ??
-        requiredDocumentField(completedActServicePeriodStart, "акт, начало периода оказания") ??
-        requiredDocumentField(completedActServicePeriodEnd, "акт, окончание периода оказания") ??
-        requiredDocumentField(completedActDoctorFullNameValue(), "акт, врач-исполнитель") ??
-        requiredDocumentField(completedActServicesSummaryValue(), "акт, состав работ") ??
-        (completedActTotalRubValue() > 0 ? null : "Укажите сумму по акту.") ??
-        (completedActPaidRubValue() > 0 ? null : "Для акта нужна фактическая оплаченная сумма.") ??
-        (completedActFiscalReceiptLines().length ? null : "Добавьте номера фискальных чеков по акту.") ??
-        (completedActLinkedContract ? null : "Подтвердите связь акта с подписанным договором.") ??
-        (completedActFinalScopeConfirmed ? null : "Подтвердите финальный состав работ.") ??
-        (completedActFiscalReceiptsVerified ? null : "Подтвердите проверку фискальных чеков.") ??
-        (completedActAccepted ? null : "Подтвердите приемку работ пациентом.")
+        requiredDocumentField(completedActNumber, "Р°РєС‚, РЅРѕРјРµСЂ") ??
+        requiredDocumentField(completedActDate, "Р°РєС‚, РґР°С‚Р°") ??
+        requiredDocumentField(completedActContractNumber, "Р°РєС‚, РґРѕРіРѕРІРѕСЂ") ??
+        (selectedCompletedActContractDocumentId ? null : "Р’С‹Р±РµСЂРёС‚Рµ РєРѕРЅРєСЂРµС‚РЅС‹Р№ СѓР¶Рµ РІС‹РґР°РЅРЅС‹Р№ РґРѕРіРѕРІРѕСЂ РґР»СЏ Р°РєС‚Р°.") ??
+        requiredDocumentField(completedActServicePeriodStart, "Р°РєС‚, РЅР°С‡Р°Р»Рѕ РїРµСЂРёРѕРґР° РѕРєР°Р·Р°РЅРёСЏ") ??
+        requiredDocumentField(completedActServicePeriodEnd, "Р°РєС‚, РѕРєРѕРЅС‡Р°РЅРёРµ РїРµСЂРёРѕРґР° РѕРєР°Р·Р°РЅРёСЏ") ??
+        requiredDocumentField(completedActDoctorFullNameValue(), "Р°РєС‚, РІСЂР°С‡-РёСЃРїРѕР»РЅРёС‚РµР»СЊ") ??
+        requiredDocumentField(completedActServicesSummaryValue(), "Р°РєС‚, СЃРѕСЃС‚Р°РІ СЂР°Р±РѕС‚") ??
+        (completedActTotalRubValue() > 0 ? null : "РЈРєР°Р¶РёС‚Рµ СЃСѓРјРјСѓ РїРѕ Р°РєС‚Сѓ.") ??
+        (completedActPaidRubValue() > 0 ? null : "Р”Р»СЏ Р°РєС‚Р° РЅСѓР¶РЅР° С„Р°РєС‚РёС‡РµСЃРєР°СЏ РѕРїР»Р°С‡РµРЅРЅР°СЏ СЃСѓРјРјР°.") ??
+        (completedActFiscalReceiptLines().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РЅРѕРјРµСЂР° С„РёСЃРєР°Р»СЊРЅС‹С… С‡РµРєРѕРІ РїРѕ Р°РєС‚Сѓ.") ??
+        (completedActLinkedContract ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЃРІСЏР·СЊ Р°РєС‚Р° СЃ РїРѕРґРїРёСЃР°РЅРЅС‹Рј РґРѕРіРѕРІРѕСЂРѕРј.") ??
+        (completedActFinalScopeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ С„РёРЅР°Р»СЊРЅС‹Р№ СЃРѕСЃС‚Р°РІ СЂР°Р±РѕС‚.") ??
+        (completedActFiscalReceiptsVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ С„РёСЃРєР°Р»СЊРЅС‹С… С‡РµРєРѕРІ.") ??
+        (completedActAccepted ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРёРµРјРєСѓ СЂР°Р±РѕС‚ РїР°С†РёРµРЅС‚РѕРј.")
       );
     }
     if (kind === "treatment_cost_estimate") {
       const serviceLines = plannedServiceLinesForFinancialPayload();
       return (
-        requiredDocumentField(treatmentEstimateNumber, "смета, номер") ??
-        requiredDocumentField(treatmentEstimateDate, "смета, дата") ??
-        requiredDocumentField(treatmentEstimatePatientOrPayerFullNameValue(), "смета, пациент или плательщик") ??
-        requiredDocumentField(treatmentEstimateTreatmentBasisValue(), "смета, основание лечения") ??
-        (serviceLines.length ? null : "Для сметы нужен состав услуг из плана лечения.") ??
-        (treatmentEstimateTotalRubValue() > 0 ? null : "Укажите итоговую сумму сметы.") ??
-        requiredDocumentField(treatmentEstimateValidUntil, "смета, срок действия") ??
-        requiredDocumentField(treatmentEstimatePriceChangeRules, "смета, правила изменения цены") ??
-        (documentTextLines(treatmentEstimateExcludedItems).length ? null : "Укажите, что не входит в текущую смету.") ??
-        requiredDocumentField(treatmentEstimatePaymentMilestoneNotes, "смета, условия оплаты") ??
-        requiredDocumentField(treatmentEstimateDoctorFullNameValue(), "смета, ответственный врач") ??
-        requiredDocumentField(treatmentEstimateSignedAt, "смета, дата ознакомления") ??
-        (treatmentEstimatePreliminaryConfirmed ? null : "Подтвердите предварительный характер сметы.") ??
-        (treatmentEstimateScopeConfirmed ? null : "Подтвердите соответствие состава услуг плану лечения.") ??
-        (treatmentEstimateFiscalNoticeConfirmed ? null : "Подтвердите, что смета не заменяет договор, акт и кассовый чек.") ??
-        (treatmentEstimateChangeRulesConfirmed ? null : "Подтвердите правило обновления сметы при изменениях.")
+        requiredDocumentField(treatmentEstimateNumber, "СЃРјРµС‚Р°, РЅРѕРјРµСЂ") ??
+        requiredDocumentField(treatmentEstimateDate, "СЃРјРµС‚Р°, РґР°С‚Р°") ??
+        requiredDocumentField(treatmentEstimatePatientOrPayerFullNameValue(), "СЃРјРµС‚Р°, РїР°С†РёРµРЅС‚ РёР»Рё РїР»Р°С‚РµР»СЊС‰РёРє") ??
+        requiredDocumentField(treatmentEstimateTreatmentBasisValue(), "СЃРјРµС‚Р°, РѕСЃРЅРѕРІР°РЅРёРµ Р»РµС‡РµРЅРёСЏ") ??
+        (serviceLines.length ? null : "Р”Р»СЏ СЃРјРµС‚С‹ РЅСѓР¶РµРЅ СЃРѕСЃС‚Р°РІ СѓСЃР»СѓРі РёР· РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ.") ??
+        (treatmentEstimateTotalRubValue() > 0 ? null : "РЈРєР°Р¶РёС‚Рµ РёС‚РѕРіРѕРІСѓСЋ СЃСѓРјРјСѓ СЃРјРµС‚С‹.") ??
+        requiredDocumentField(treatmentEstimateValidUntil, "СЃРјРµС‚Р°, СЃСЂРѕРє РґРµР№СЃС‚РІРёСЏ") ??
+        requiredDocumentField(treatmentEstimatePriceChangeRules, "СЃРјРµС‚Р°, РїСЂР°РІРёР»Р° РёР·РјРµРЅРµРЅРёСЏ С†РµРЅС‹") ??
+        (documentTextLines(treatmentEstimateExcludedItems).length ? null : "РЈРєР°Р¶РёС‚Рµ, С‡С‚Рѕ РЅРµ РІС…РѕРґРёС‚ РІ С‚РµРєСѓС‰СѓСЋ СЃРјРµС‚Сѓ.") ??
+        requiredDocumentField(treatmentEstimatePaymentMilestoneNotes, "СЃРјРµС‚Р°, СѓСЃР»РѕРІРёСЏ РѕРїР»Р°С‚С‹") ??
+        requiredDocumentField(treatmentEstimateDoctorFullNameValue(), "СЃРјРµС‚Р°, РѕС‚РІРµС‚СЃС‚РІРµРЅРЅС‹Р№ РІСЂР°С‡") ??
+        requiredDocumentField(treatmentEstimateSignedAt, "СЃРјРµС‚Р°, РґР°С‚Р° РѕР·РЅР°РєРѕРјР»РµРЅРёСЏ") ??
+        (treatmentEstimatePreliminaryConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРµРґРІР°СЂРёС‚РµР»СЊРЅС‹Р№ С…Р°СЂР°РєС‚РµСЂ СЃРјРµС‚С‹.") ??
+        (treatmentEstimateScopeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ СЃРѕСЃС‚Р°РІР° СѓСЃР»СѓРі РїР»Р°РЅСѓ Р»РµС‡РµРЅРёСЏ.") ??
+        (treatmentEstimateFiscalNoticeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ СЃРјРµС‚Р° РЅРµ Р·Р°РјРµРЅСЏРµС‚ РґРѕРіРѕРІРѕСЂ, Р°РєС‚ Рё РєР°СЃСЃРѕРІС‹Р№ С‡РµРє.") ??
+        (treatmentEstimateChangeRulesConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂР°РІРёР»Рѕ РѕР±РЅРѕРІР»РµРЅРёСЏ СЃРјРµС‚С‹ РїСЂРё РёР·РјРµРЅРµРЅРёСЏС….")
       );
     }
     if (kind === "payment_invoice") {
       const serviceLines = plannedServiceLinesForFinancialPayload();
       return (
-        requiredDocumentField(paymentInvoiceNumber, "счет, номер") ??
-        requiredDocumentField(paymentInvoiceDate, "счет, дата") ??
-        requiredDocumentField(paymentInvoicePayerFullNameValue(), "счет, плательщик") ??
-        requiredDocumentField(paymentInvoicePurpose, "счет, назначение платежа") ??
-        (serviceLines.length ? null : "Для счета нужен состав услуг из плана лечения.") ??
-        (paymentInvoiceTotalRubValue() > 0 ? null : "Укажите сумму счета.") ??
-        requiredDocumentField(paymentInvoiceDueDate, "счет, срок оплаты") ??
-        requiredDocumentField(paymentInvoicePaymentTerms, "счет, условия оплаты") ??
-        requiredDocumentField(paymentInvoiceBankDetailsValue(), "счет, реквизиты клиники") ??
-        (paymentInvoiceCashlessAllowed || paymentInvoiceCashDeskAllowed ? null : "Выберите хотя бы один способ оплаты.") ??
-        (paymentInvoiceRequisitesVerified ? null : "Подтвердите проверку реквизитов клиники.") ??
-        (paymentInvoiceServiceScopeConfirmed ? null : "Подтвердите состав услуг счета.") ??
-        (paymentInvoiceFiscalNoticeConfirmed ? null : "Подтвердите предупреждение: счет не заменяет кассовый чек.")
+        requiredDocumentField(paymentInvoiceNumber, "СЃС‡РµС‚, РЅРѕРјРµСЂ") ??
+        requiredDocumentField(paymentInvoiceDate, "СЃС‡РµС‚, РґР°С‚Р°") ??
+        requiredDocumentField(paymentInvoicePayerFullNameValue(), "СЃС‡РµС‚, РїР»Р°С‚РµР»СЊС‰РёРє") ??
+        requiredDocumentField(paymentInvoicePurpose, "СЃС‡РµС‚, РЅР°Р·РЅР°С‡РµРЅРёРµ РїР»Р°С‚РµР¶Р°") ??
+        (serviceLines.length ? null : "Р”Р»СЏ СЃС‡РµС‚Р° РЅСѓР¶РµРЅ СЃРѕСЃС‚Р°РІ СѓСЃР»СѓРі РёР· РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ.") ??
+        (paymentInvoiceTotalRubValue() > 0 ? null : "РЈРєР°Р¶РёС‚Рµ СЃСѓРјРјСѓ СЃС‡РµС‚Р°.") ??
+        requiredDocumentField(paymentInvoiceDueDate, "СЃС‡РµС‚, СЃСЂРѕРє РѕРїР»Р°С‚С‹") ??
+        requiredDocumentField(paymentInvoicePaymentTerms, "СЃС‡РµС‚, СѓСЃР»РѕРІРёСЏ РѕРїР»Р°С‚С‹") ??
+        requiredDocumentField(paymentInvoiceBankDetailsValue(), "СЃС‡РµС‚, СЂРµРєРІРёР·РёС‚С‹ РєР»РёРЅРёРєРё") ??
+        (paymentInvoiceCashlessAllowed || paymentInvoiceCashDeskAllowed ? null : "Р’С‹Р±РµСЂРёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ СЃРїРѕСЃРѕР± РѕРїР»Р°С‚С‹.") ??
+        (paymentInvoiceRequisitesVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ СЂРµРєРІРёР·РёС‚РѕРІ РєР»РёРЅРёРєРё.") ??
+        (paymentInvoiceServiceScopeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЃРѕСЃС‚Р°РІ СѓСЃР»СѓРі СЃС‡РµС‚Р°.") ??
+        (paymentInvoiceFiscalNoticeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ: СЃС‡РµС‚ РЅРµ Р·Р°РјРµРЅСЏРµС‚ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє.")
       );
     }
     if (kind === "payment_receipt") {
       return (
-        requiredDocumentField(paymentReceiptNumber, "квитанция, номер") ??
-        requiredDocumentField(paymentReceiptDate, "квитанция, дата") ??
-        (selectedPaymentReceiptPayments.length ? null : "Выберите оплаченные платежи для квитанции.") ??
-        (selectedPaymentReceiptTotalRub > 0 ? null : "Сумма выбранных платежей должна быть больше нуля.") ??
-        requiredDocumentField(paymentReceiptPayerFullNameValue(), "квитанция, ФИО плательщика") ??
+        requiredDocumentField(paymentReceiptNumber, "РєРІРёС‚Р°РЅС†РёСЏ, РЅРѕРјРµСЂ") ??
+        requiredDocumentField(paymentReceiptDate, "РєРІРёС‚Р°РЅС†РёСЏ, РґР°С‚Р°") ??
+        (selectedPaymentReceiptPayments.length ? null : "Р’С‹Р±РµСЂРёС‚Рµ РѕРїР»Р°С‡РµРЅРЅС‹Рµ РїР»Р°С‚РµР¶Рё РґР»СЏ РєРІРёС‚Р°РЅС†РёРё.") ??
+        (selectedPaymentReceiptTotalRub > 0 ? null : "РЎСѓРјРјР° РІС‹Р±СЂР°РЅРЅС‹С… РїР»Р°С‚РµР¶РµР№ РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ.") ??
+        requiredDocumentField(paymentReceiptPayerFullNameValue(), "РєРІРёС‚Р°РЅС†РёСЏ, Р¤РРћ РїР»Р°С‚РµР»СЊС‰РёРєР°") ??
         (paymentReceiptTaxSupportRequested
-          ? requiredDocumentField(paymentReceiptPayerBirthDateValue(), "квитанция, дата рождения плательщика") ??
-            requiredDocumentField(paymentReceiptPayerRelationshipValue(), "квитанция, связь плательщика с пациентом") ??
+          ? requiredDocumentField(paymentReceiptPayerBirthDateValue(), "РєРІРёС‚Р°РЅС†РёСЏ, РґР°С‚Р° СЂРѕР¶РґРµРЅРёСЏ РїР»Р°С‚РµР»СЊС‰РёРєР°") ??
+            requiredDocumentField(paymentReceiptPayerRelationshipValue(), "РєРІРёС‚Р°РЅС†РёСЏ, СЃРІСЏР·СЊ РїР»Р°С‚РµР»СЊС‰РёРєР° СЃ РїР°С†РёРµРЅС‚РѕРј") ??
             (paymentReceiptPayerInnValue().replace(/\D+/g, "").length === 12 || paymentReceiptPayerIdentityDocumentValue().trim()
               ? null
-              : "Для налоговой квитанции укажите 12-значный ИНН плательщика или документ плательщика.")
+              : "Р”Р»СЏ РЅР°Р»РѕРіРѕРІРѕР№ РєРІРёС‚Р°РЅС†РёРё СѓРєР°Р¶РёС‚Рµ 12-Р·РЅР°С‡РЅС‹Р№ РРќРќ РїР»Р°С‚РµР»СЊС‰РёРєР° РёР»Рё РґРѕРєСѓРјРµРЅС‚ РїР»Р°С‚РµР»СЊС‰РёРєР°.")
           : null) ??
-        requiredDocumentField(paymentReceiptPurpose, "квитанция, назначение оплаты") ??
+        requiredDocumentField(paymentReceiptPurpose, "РєРІРёС‚Р°РЅС†РёСЏ, РЅР°Р·РЅР°С‡РµРЅРёРµ РѕРїР»Р°С‚С‹") ??
         (paymentReceiptFiscalReceiptLines().length === selectedPaymentReceiptPayments.length
           ? null
-          : "У каждого выбранного платежа должен быть номер фискального чека.") ??
+          : "РЈ РєР°Р¶РґРѕРіРѕ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РїР»Р°С‚РµР¶Р° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РЅРѕРјРµСЂ С„РёСЃРєР°Р»СЊРЅРѕРіРѕ С‡РµРєР°.") ??
         (selectedPaymentReceiptPayments.every((payment) => Boolean(payment.fiscalReceiptIssuedAt?.trim()))
           ? null
-          : "У каждого выбранного платежа должна быть дата фискального чека.") ??
-        requiredDocumentField(paymentReceiptIssuedByValue(), "квитанция, кто выдал") ??
-        (paymentReceiptPaymentsVerified ? null : "Подтвердите сверку выбранных платежей и фискальных чеков.") ??
-        (paymentReceiptPayerVerified ? null : "Подтвердите проверку данных плательщика.") ??
-        (paymentReceiptFiscalNoticeConfirmed ? null : "Подтвердите, что квитанция не заменяет кассовый чек.")
+          : "РЈ РєР°Р¶РґРѕРіРѕ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РїР»Р°С‚РµР¶Р° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ РґР°С‚Р° С„РёСЃРєР°Р»СЊРЅРѕРіРѕ С‡РµРєР°.") ??
+        requiredDocumentField(paymentReceiptIssuedByValue(), "РєРІРёС‚Р°РЅС†РёСЏ, РєС‚Рѕ РІС‹РґР°Р»") ??
+        (paymentReceiptPaymentsVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЃРІРµСЂРєСѓ РІС‹Р±СЂР°РЅРЅС‹С… РїР»Р°С‚РµР¶РµР№ Рё С„РёСЃРєР°Р»СЊРЅС‹С… С‡РµРєРѕРІ.") ??
+        (paymentReceiptPayerVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ РґР°РЅРЅС‹С… РїР»Р°С‚РµР»СЊС‰РёРєР°.") ??
+        (paymentReceiptFiscalNoticeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РєРІРёС‚Р°РЅС†РёСЏ РЅРµ Р·Р°РјРµРЅСЏРµС‚ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє.")
       );
     }
     if (kind === "installment_payment_schedule") {
       const installments = installmentScheduleInstallmentRows();
       return (
-        requiredDocumentField(installmentScheduleNumber, "график, номер") ??
-        requiredDocumentField(installmentScheduleDate, "график, дата") ??
-        requiredDocumentField(installmentScheduleBaseDocumentTitleValue(), "график, основание") ??
-        requiredDocumentField(installmentSchedulePayerFullNameValue(), "график, плательщик") ??
-        (installmentScheduleTotalRubValue() > 0 ? null : "Укажите общую сумму графика.") ??
-        (installmentScheduleRemainingRubValue() >= 0 ? null : "Остаток по графику не может быть отрицательным.") ??
-        (installments.length ? null : "Добавьте платежи графика или укажите остаток к оплате.") ??
-        requiredDocumentField(installmentScheduleLatePolicy, "график, правила просрочки") ??
-        requiredDocumentField(installmentSchedulePaymentMethodNotes, "график, способы оплаты") ??
-        requiredDocumentField(installmentScheduleResponsibleFullNameValue(), "график, ответственный") ??
-        (installmentScheduleAccepted ? null : "Подтвердите принятие графика пациентом.") ??
-        (installmentScheduleFiscalNoticeConfirmed ? null : "Подтвердите, что график не заменяет кассовый чек.") ??
-        (installmentScheduleWrittenChangesConfirmed ? null : "Подтвердите письменное оформление изменений графика.")
+        requiredDocumentField(installmentScheduleNumber, "РіСЂР°С„РёРє, РЅРѕРјРµСЂ") ??
+        requiredDocumentField(installmentScheduleDate, "РіСЂР°С„РёРє, РґР°С‚Р°") ??
+        requiredDocumentField(installmentScheduleBaseDocumentTitleValue(), "РіСЂР°С„РёРє, РѕСЃРЅРѕРІР°РЅРёРµ") ??
+        requiredDocumentField(installmentSchedulePayerFullNameValue(), "РіСЂР°С„РёРє, РїР»Р°С‚РµР»СЊС‰РёРє") ??
+        (installmentScheduleTotalRubValue() > 0 ? null : "РЈРєР°Р¶РёС‚Рµ РѕР±С‰СѓСЋ СЃСѓРјРјСѓ РіСЂР°С„РёРєР°.") ??
+        (installmentScheduleRemainingRubValue() >= 0 ? null : "РћСЃС‚Р°С‚РѕРє РїРѕ РіСЂР°С„РёРєСѓ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РѕС‚СЂРёС†Р°С‚РµР»СЊРЅС‹Рј.") ??
+        (installments.length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РїР»Р°С‚РµР¶Рё РіСЂР°С„РёРєР° РёР»Рё СѓРєР°Р¶РёС‚Рµ РѕСЃС‚Р°С‚РѕРє Рє РѕРїР»Р°С‚Рµ.") ??
+        requiredDocumentField(installmentScheduleLatePolicy, "РіСЂР°С„РёРє, РїСЂР°РІРёР»Р° РїСЂРѕСЃСЂРѕС‡РєРё") ??
+        requiredDocumentField(installmentSchedulePaymentMethodNotes, "РіСЂР°С„РёРє, СЃРїРѕСЃРѕР±С‹ РѕРїР»Р°С‚С‹") ??
+        requiredDocumentField(installmentScheduleResponsibleFullNameValue(), "РіСЂР°С„РёРє, РѕС‚РІРµС‚СЃС‚РІРµРЅРЅС‹Р№") ??
+        (installmentScheduleAccepted ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРёРЅСЏС‚РёРµ РіСЂР°С„РёРєР° РїР°С†РёРµРЅС‚РѕРј.") ??
+        (installmentScheduleFiscalNoticeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РіСЂР°С„РёРє РЅРµ Р·Р°РјРµРЅСЏРµС‚ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє.") ??
+        (installmentScheduleWrittenChangesConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїРёСЃСЊРјРµРЅРЅРѕРµ РѕС„РѕСЂРјР»РµРЅРёРµ РёР·РјРµРЅРµРЅРёР№ РіСЂР°С„РёРєР°.")
       );
     }
     if (kind === "minor_legal_representative_consent") {
       return (
-        requiredDocumentField(minorRepresentativeFullNameValue(), "представитель, ФИО") ??
-        requiredDocumentField(minorRepresentativeRelationshipValue(), "представитель, родство или статус") ??
-        requiredDocumentField(minorRepresentativeIdentityDocumentValue(), "представитель, документ личности") ??
-        requiredDocumentField(minorRepresentativeAuthorityDocument, "представитель, основание полномочий") ??
-        requiredDocumentField(minorConsentPatientFullNameValue(), "несовершеннолетний, ФИО") ??
-        requiredDocumentField(minorConsentPatientBirthDateValue(), "несовершеннолетний, дата рождения") ??
-        requiredDocumentField(minorConsentInterventionScopeValue(), "согласие, вмешательство") ??
-        requiredDocumentField(minorConsentDiagnosisOrIndicationValue(), "согласие, диагноз или показание") ??
-        (documentTextLines(minorConsentRisks).length ? null : "Добавьте разъясненные риски для представителя.") ??
-        (documentTextLines(minorConsentAlternatives).length ? null : "Добавьте альтернативы лечения для представителя.") ??
-        requiredDocumentField(minorConsentDoctorFullNameValue(), "согласие, врач") ??
-        requiredDocumentField(minorConsentSignedAt, "согласие, дата и время") ??
-        (minorConsentIdentityVerified ? null : "Подтвердите проверку личности представителя.") ??
-        (minorConsentAuthorityVerified ? null : "Подтвердите полномочия представителя.") ??
-        (minorConsentExplained ? null : "Подтвердите разъяснение вмешательства, рисков и альтернатив.") ??
-        (minorConsentStored ? null : "Подтвердите хранение согласия в медкарте.") ??
-        (minorConsentAgeExplanation ? null : "Подтвердите объяснение ребенку по возрасту и состоянию.")
+        requiredDocumentField(minorRepresentativeFullNameValue(), "РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЊ, Р¤РРћ") ??
+        requiredDocumentField(minorRepresentativeRelationshipValue(), "РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЊ, СЂРѕРґСЃС‚РІРѕ РёР»Рё СЃС‚Р°С‚СѓСЃ") ??
+        requiredDocumentField(minorRepresentativeIdentityDocumentValue(), "РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЊ, РґРѕРєСѓРјРµРЅС‚ Р»РёС‡РЅРѕСЃС‚Рё") ??
+        requiredDocumentField(minorRepresentativeAuthorityDocument, "РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЊ, РѕСЃРЅРѕРІР°РЅРёРµ РїРѕР»РЅРѕРјРѕС‡РёР№") ??
+        requiredDocumentField(minorConsentPatientFullNameValue(), "РЅРµСЃРѕРІРµСЂС€РµРЅРЅРѕР»РµС‚РЅРёР№, Р¤РРћ") ??
+        requiredDocumentField(minorConsentPatientBirthDateValue(), "РЅРµСЃРѕРІРµСЂС€РµРЅРЅРѕР»РµС‚РЅРёР№, РґР°С‚Р° СЂРѕР¶РґРµРЅРёСЏ") ??
+        requiredDocumentField(minorConsentInterventionScopeValue(), "СЃРѕРіР»Р°СЃРёРµ, РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ") ??
+        requiredDocumentField(minorConsentDiagnosisOrIndicationValue(), "СЃРѕРіР»Р°СЃРёРµ, РґРёР°РіРЅРѕР· РёР»Рё РїРѕРєР°Р·Р°РЅРёРµ") ??
+        (documentTextLines(minorConsentRisks).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЂР°Р·СЉСЏСЃРЅРµРЅРЅС‹Рµ СЂРёСЃРєРё РґР»СЏ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ.") ??
+        (documentTextLines(minorConsentAlternatives).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹ Р»РµС‡РµРЅРёСЏ РґР»СЏ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ.") ??
+        requiredDocumentField(minorConsentDoctorFullNameValue(), "СЃРѕРіР»Р°СЃРёРµ, РІСЂР°С‡") ??
+        requiredDocumentField(minorConsentSignedAt, "СЃРѕРіР»Р°СЃРёРµ, РґР°С‚Р° Рё РІСЂРµРјСЏ") ??
+        (minorConsentIdentityVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ Р»РёС‡РЅРѕСЃС‚Рё РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ.") ??
+        (minorConsentAuthorityVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїРѕР»РЅРѕРјРѕС‡РёСЏ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ.") ??
+        (minorConsentExplained ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЂР°Р·СЉСЏСЃРЅРµРЅРёРµ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР°, СЂРёСЃРєРѕРІ Рё Р°Р»СЊС‚РµСЂРЅР°С‚РёРІ.") ??
+        (minorConsentStored ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ С…СЂР°РЅРµРЅРёРµ СЃРѕРіР»Р°СЃРёСЏ РІ РјРµРґРєР°СЂС‚Рµ.") ??
+        (minorConsentAgeExplanation ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РѕР±СЉСЏСЃРЅРµРЅРёРµ СЂРµР±РµРЅРєСѓ РїРѕ РІРѕР·СЂР°СЃС‚Сѓ Рё СЃРѕСЃС‚РѕСЏРЅРёСЋ.")
       );
     }
     if (kind === "warranty_service_memo") {
       return (
-        requiredDocumentField(warrantyServiceOrWorkNameValue(), "гарантия, работа или услуга") ??
-        requiredDocumentField(warrantyCompletedAt, "гарантия, дата завершения") ??
-        requiredDocumentField(warrantyTeethOrAreaValue(), "гарантия, зубы или область") ??
-        requiredDocumentField(warrantyMaterialsOrSystems, "гарантия, материалы или системы") ??
-        requiredDocumentField(warrantyPeriod, "гарантия, срок и условия") ??
-        requiredDocumentField(warrantyControlVisitSchedule, "гарантия, контрольные визиты") ??
-        (documentTextLines(warrantyPatientObligations).length ? null : "Добавьте обязанности пациента для сохранения гарантии.") ??
-        (documentTextLines(warrantyExcludedRiskFactors).length ? null : "Добавьте условия, требующие отдельной оценки.") ??
-        (documentTextLines(warrantyUrgentContactReasons).length ? null : "Добавьте признаки для срочной связи с клиникой.") ??
-        requiredDocumentField(warrantyLinkedActOrContractValue(), "гарантия, связанный акт или договор") ??
-        requiredDocumentField(warrantyDoctorFullNameValue(), "гарантия, врач") ??
-        requiredDocumentField(warrantyIssuedAt, "гарантия, дата выдачи") ??
-        (warrantyPolicyApplied ? null : "Подтвердите применение локального гарантийного положения.") ??
-        (warrantyAftercareReceived ? null : "Подтвердите выдачу рекомендаций после лечения.") ??
-        (warrantyControlVisitsUnderstood ? null : "Подтвердите понимание контрольных визитов пациентом.")
+        requiredDocumentField(warrantyServiceOrWorkNameValue(), "РіР°СЂР°РЅС‚РёСЏ, СЂР°Р±РѕС‚Р° РёР»Рё СѓСЃР»СѓРіР°") ??
+        requiredDocumentField(warrantyCompletedAt, "РіР°СЂР°РЅС‚РёСЏ, РґР°С‚Р° Р·Р°РІРµСЂС€РµРЅРёСЏ") ??
+        requiredDocumentField(warrantyTeethOrAreaValue(), "РіР°СЂР°РЅС‚РёСЏ, Р·СѓР±С‹ РёР»Рё РѕР±Р»Р°СЃС‚СЊ") ??
+        requiredDocumentField(warrantyMaterialsOrSystems, "РіР°СЂР°РЅС‚РёСЏ, РјР°С‚РµСЂРёР°Р»С‹ РёР»Рё СЃРёСЃС‚РµРјС‹") ??
+        requiredDocumentField(warrantyPeriod, "РіР°СЂР°РЅС‚РёСЏ, СЃСЂРѕРє Рё СѓСЃР»РѕРІРёСЏ") ??
+        requiredDocumentField(warrantyControlVisitSchedule, "РіР°СЂР°РЅС‚РёСЏ, РєРѕРЅС‚СЂРѕР»СЊРЅС‹Рµ РІРёР·РёС‚С‹") ??
+        (documentTextLines(warrantyPatientObligations).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РѕР±СЏР·Р°РЅРЅРѕСЃС‚Рё РїР°С†РёРµРЅС‚Р° РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РіР°СЂР°РЅС‚РёРё.") ??
+        (documentTextLines(warrantyExcludedRiskFactors).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СѓСЃР»РѕРІРёСЏ, С‚СЂРµР±СѓСЋС‰РёРµ РѕС‚РґРµР»СЊРЅРѕР№ РѕС†РµРЅРєРё.") ??
+        (documentTextLines(warrantyUrgentContactReasons).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РїСЂРёР·РЅР°РєРё РґР»СЏ СЃСЂРѕС‡РЅРѕР№ СЃРІСЏР·Рё СЃ РєР»РёРЅРёРєРѕР№.") ??
+        requiredDocumentField(warrantyLinkedActOrContractValue(), "РіР°СЂР°РЅС‚РёСЏ, СЃРІСЏР·Р°РЅРЅС‹Р№ Р°РєС‚ РёР»Рё РґРѕРіРѕРІРѕСЂ") ??
+        requiredDocumentField(warrantyDoctorFullNameValue(), "РіР°СЂР°РЅС‚РёСЏ, РІСЂР°С‡") ??
+        requiredDocumentField(warrantyIssuedAt, "РіР°СЂР°РЅС‚РёСЏ, РґР°С‚Р° РІС‹РґР°С‡Рё") ??
+        (warrantyPolicyApplied ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРёРјРµРЅРµРЅРёРµ Р»РѕРєР°Р»СЊРЅРѕРіРѕ РіР°СЂР°РЅС‚РёР№РЅРѕРіРѕ РїРѕР»РѕР¶РµРЅРёСЏ.") ??
+        (warrantyAftercareReceived ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РІС‹РґР°С‡Сѓ СЂРµРєРѕРјРµРЅРґР°С†РёР№ РїРѕСЃР»Рµ Р»РµС‡РµРЅРёСЏ.") ??
+        (warrantyControlVisitsUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїРѕРЅРёРјР°РЅРёРµ РєРѕРЅС‚СЂРѕР»СЊРЅС‹С… РІРёР·РёС‚РѕРІ РїР°С†РёРµРЅС‚РѕРј.")
       );
     }
     if (kind === "patient_intake_questionnaire") {
       return (
-        requiredDocumentField(intakeChiefComplaint, "анкета, жалоба или цель визита") ??
-        requiredDocumentField(intakeAllergyStatus, "анкета, аллергии") ??
-        requiredDocumentField(intakeCurrentMedications, "анкета, постоянные препараты") ??
-        requiredDocumentField(intakeChronicConditions, "анкета, хронические заболевания") ??
-        requiredDocumentField(intakeAnticoagulants, "анкета, антикоагулянты") ??
-        requiredDocumentField(intakeInfectiousRiskNotes, "анкета, инфекционные риски") ??
-        requiredDocumentField(intakeCardioEndocrineNotes, "анкета, системные риски") ??
-        (intakeAccuracyConfirmed ? null : "Пациент должен подтвердить достоверность анкеты перед созданием документа.")
+        requiredDocumentField(intakeChiefComplaint, "Р°РЅРєРµС‚Р°, Р¶Р°Р»РѕР±Р° РёР»Рё С†РµР»СЊ РІРёР·РёС‚Р°") ??
+        requiredDocumentField(intakeAllergyStatus, "Р°РЅРєРµС‚Р°, Р°Р»Р»РµСЂРіРёРё") ??
+        requiredDocumentField(intakeCurrentMedications, "Р°РЅРєРµС‚Р°, РїРѕСЃС‚РѕСЏРЅРЅС‹Рµ РїСЂРµРїР°СЂР°С‚С‹") ??
+        requiredDocumentField(intakeChronicConditions, "Р°РЅРєРµС‚Р°, С…СЂРѕРЅРёС‡РµСЃРєРёРµ Р·Р°Р±РѕР»РµРІР°РЅРёСЏ") ??
+        requiredDocumentField(intakeAnticoagulants, "Р°РЅРєРµС‚Р°, Р°РЅС‚РёРєРѕР°РіСѓР»СЏРЅС‚С‹") ??
+        requiredDocumentField(intakeInfectiousRiskNotes, "Р°РЅРєРµС‚Р°, РёРЅС„РµРєС†РёРѕРЅРЅС‹Рµ СЂРёСЃРєРё") ??
+        requiredDocumentField(intakeCardioEndocrineNotes, "Р°РЅРєРµС‚Р°, СЃРёСЃС‚РµРјРЅС‹Рµ СЂРёСЃРєРё") ??
+        (intakeAccuracyConfirmed ? null : "РџР°С†РёРµРЅС‚ РґРѕР»Р¶РµРЅ РїРѕРґС‚РІРµСЂРґРёС‚СЊ РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚СЊ Р°РЅРєРµС‚С‹ РїРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј РґРѕРєСѓРјРµРЅС‚Р°.")
       );
     }
     if (kind === "tax_deduction_application") {
       const normalizedInn = taxApplicationTaxpayerInn.replace(/[^\d]/g, "");
       return (
-        requiredDocumentField(taxApplicationTaxpayerFullName, "налоговое заявление, заявитель") ??
+        requiredDocumentField(taxApplicationTaxpayerFullName, "РЅР°Р»РѕРіРѕРІРѕРµ Р·Р°СЏРІР»РµРЅРёРµ, Р·Р°СЏРІРёС‚РµР»СЊ") ??
         (taxApplicationForm === "legacy_2021_2023" && normalizedInn.length !== 10 && normalizedInn.length !== 12
-          ? "Для старой налоговой справки укажите 10- или 12-значный ИНН заявителя."
+          ? "Р”Р»СЏ СЃС‚Р°СЂРѕР№ РЅР°Р»РѕРіРѕРІРѕР№ СЃРїСЂР°РІРєРё СѓРєР°Р¶РёС‚Рµ 10- РёР»Рё 12-Р·РЅР°С‡РЅС‹Р№ РРќРќ Р·Р°СЏРІРёС‚РµР»СЏ."
           : null) ??
         (normalizedInn && normalizedInn.length !== 10 && normalizedInn.length !== 12
-          ? "ИНН заявителя должен содержать 10 или 12 цифр."
+          ? "РРќРќ Р·Р°СЏРІРёС‚РµР»СЏ РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ 10 РёР»Рё 12 С†РёС„СЂ."
           : null) ??
         (taxApplicationForm === "knd_1151156" && normalizedInn && normalizedInn.length !== 12
-          ? "Для КНД 1151156 ИНН физического лица должен быть 12-значным. Если ИНН нет, оставьте поле пустым и заполните документ заявителя."
+          ? "Р”Р»СЏ РљРќР” 1151156 РРќРќ С„РёР·РёС‡РµСЃРєРѕРіРѕ Р»РёС†Р° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ 12-Р·РЅР°С‡РЅС‹Рј. Р•СЃР»Рё РРќРќ РЅРµС‚, РѕСЃС‚Р°РІСЊС‚Рµ РїРѕР»Рµ РїСѓСЃС‚С‹Рј Рё Р·Р°РїРѕР»РЅРёС‚Рµ РґРѕРєСѓРјРµРЅС‚ Р·Р°СЏРІРёС‚РµР»СЏ."
           : null) ??
         (isDateInputValue(taxApplicationTaxpayerBirthDate)
           ? null
-          : "Укажите дату рождения заявителя в формате календарной даты.") ??
-        requiredDocumentField(taxApplicationTaxpayerIdentityDocument, "налоговое заявление, документ заявителя") ??
+          : "РЈРєР°Р¶РёС‚Рµ РґР°С‚Сѓ СЂРѕР¶РґРµРЅРёСЏ Р·Р°СЏРІРёС‚РµР»СЏ РІ С„РѕСЂРјР°С‚Рµ РєР°Р»РµРЅРґР°СЂРЅРѕР№ РґР°С‚С‹.") ??
+        requiredDocumentField(taxApplicationTaxpayerIdentityDocument, "РЅР°Р»РѕРіРѕРІРѕРµ Р·Р°СЏРІР»РµРЅРёРµ, РґРѕРєСѓРјРµРЅС‚ Р·Р°СЏРІРёС‚РµР»СЏ") ??
         (taxApplicationRelationship === "self" || taxApplicationAuthorityDocument.trim()
           ? null
-          : "Для заявления представителя укажите документ, подтверждающий полномочия.") ??
-        requiredDocumentField(taxApplicationContact, "налоговое заявление, контакт или канал выдачи") ??
-        (isDateTimeLocalInputValue(taxApplicationRequestedAt) ? null : "Укажите дату и время заявления через календарь.") ??
+          : "Р”Р»СЏ Р·Р°СЏРІР»РµРЅРёСЏ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ СѓРєР°Р¶РёС‚Рµ РґРѕРєСѓРјРµРЅС‚, РїРѕРґС‚РІРµСЂР¶РґР°СЋС‰РёР№ РїРѕР»РЅРѕРјРѕС‡РёСЏ.") ??
+        requiredDocumentField(taxApplicationContact, "РЅР°Р»РѕРіРѕРІРѕРµ Р·Р°СЏРІР»РµРЅРёРµ, РєРѕРЅС‚Р°РєС‚ РёР»Рё РєР°РЅР°Р» РІС‹РґР°С‡Рё") ??
+        (isDateTimeLocalInputValue(taxApplicationRequestedAt) ? null : "РЈРєР°Р¶РёС‚Рµ РґР°С‚Сѓ Рё РІСЂРµРјСЏ Р·Р°СЏРІР»РµРЅРёСЏ С‡РµСЂРµР· РєР°Р»РµРЅРґР°СЂСЊ.") ??
         (taxApplicationDuplicateWarningAccepted
           ? null
-          : "Подтвердите, что администратор проверит отсутствие повторной справки по тем же расходам.")
+          : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ РїСЂРѕРІРµСЂРёС‚ РѕС‚СЃСѓС‚СЃС‚РІРёРµ РїРѕРІС‚РѕСЂРЅРѕР№ СЃРїСЂР°РІРєРё РїРѕ С‚РµРј Р¶Рµ СЂР°СЃС…РѕРґР°Рј.")
       );
     }
     if (kind === "informed_consent") {
@@ -15079,18 +16222,18 @@ export function App() {
       const effectiveIndication = informedConsentDiagnosisOrIndication.trim() || dashboard?.activeVisit.complaint || "";
       const effectiveDoctor = informedConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
       return (
-        requiredDocumentField(informedConsentIntervention, "информированное согласие, вмешательство") ??
-        requiredDocumentField(effectiveArea, "информированное согласие, область или зубы") ??
-        requiredDocumentField(effectiveIndication, "информированное согласие, диагноз или показание") ??
-        requiredDocumentField(informedConsentExpectedBenefit, "информированное согласие, ожидаемая польза") ??
-        (documentTextLines(informedConsentRisks).length ? null : "Добавьте разъясненные риски для информированного согласия.") ??
-        (documentTextLines(informedConsentAlternatives).length ? null : "Добавьте альтернативы лечения для информированного согласия.") ??
-        (documentTextLines(informedConsentAftercare).length ? null : "Добавьте рекомендации после вмешательства для информированного согласия.") ??
-        requiredDocumentField(effectiveDoctor, "информированное согласие, врач") ??
-        requiredDocumentField(informedConsentConfirmedAt, "информированное согласие, дата подтверждения") ??
-        (informedConsentQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы перед согласием.") ??
-        (informedConsentRisksUnderstood ? null : "Подтвердите, что пациент понял риски, ограничения и прогноз.") ??
-        (informedConsentWithdrawUnderstood ? null : "Подтвердите, что пациенту объяснено право отказаться до вмешательства.")
+        requiredDocumentField(informedConsentIntervention, "РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ") ??
+        requiredDocumentField(effectiveArea, "РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РѕР±Р»Р°СЃС‚СЊ РёР»Рё Р·СѓР±С‹") ??
+        requiredDocumentField(effectiveIndication, "РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РґРёР°РіРЅРѕР· РёР»Рё РїРѕРєР°Р·Р°РЅРёРµ") ??
+        requiredDocumentField(informedConsentExpectedBenefit, "РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РѕР¶РёРґР°РµРјР°СЏ РїРѕР»СЊР·Р°") ??
+        (documentTextLines(informedConsentRisks).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЂР°Р·СЉСЏСЃРЅРµРЅРЅС‹Рµ СЂРёСЃРєРё РґР»СЏ РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ.") ??
+        (documentTextLines(informedConsentAlternatives).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹ Р»РµС‡РµРЅРёСЏ РґР»СЏ РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ.") ??
+        (documentTextLines(informedConsentAftercare).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР° РґР»СЏ РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ.") ??
+        requiredDocumentField(effectiveDoctor, "РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РІСЂР°С‡") ??
+        requiredDocumentField(informedConsentConfirmedAt, "РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РґР°С‚Р° РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ") ??
+        (informedConsentQuestionsAnswered ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» РѕС‚РІРµС‚С‹ РЅР° РІРѕРїСЂРѕСЃС‹ РїРµСЂРµРґ СЃРѕРіР»Р°СЃРёРµРј.") ??
+        (informedConsentRisksUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅСЏР» СЂРёСЃРєРё, РѕРіСЂР°РЅРёС‡РµРЅРёСЏ Рё РїСЂРѕРіРЅРѕР·.") ??
+        (informedConsentWithdrawUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚Сѓ РѕР±СЉСЏСЃРЅРµРЅРѕ РїСЂР°РІРѕ РѕС‚РєР°Р·Р°С‚СЊСЃСЏ РґРѕ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР°.")
       );
     }
     if (kind === "procedure_specific_consent_packet") {
@@ -15098,270 +16241,270 @@ export function App() {
       const effectiveIndication = procedureConsentDiagnosisOrIndication.trim() || dashboard?.activeVisit.complaint || "";
       const effectiveDoctor = procedureConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
       return (
-        requiredDocumentField(procedureConsentProcedureName, "процедурное согласие, процедура") ??
-        requiredDocumentField(effectiveArea, "процедурное согласие, область или зубы") ??
-        requiredDocumentField(effectiveIndication, "процедурное согласие, показание") ??
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
+        requiredDocumentField(procedureConsentProcedureName, "РїСЂРѕС†РµРґСѓСЂРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РїСЂРѕС†РµРґСѓСЂР°") ??
+        requiredDocumentField(effectiveArea, "РїСЂРѕС†РµРґСѓСЂРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РѕР±Р»Р°СЃС‚СЊ РёР»Рё Р·СѓР±С‹") ??
+        requiredDocumentField(effectiveIndication, "РїСЂРѕС†РµРґСѓСЂРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РїРѕРєР°Р·Р°РЅРёРµ") ??
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј.") ??
         (documentTextLines(procedureConsentPatientRiskFactors).length
           ? null
-          : "Добавьте персональные факторы риска пациента для процедурного согласия.") ??
+          : "Р”РѕР±Р°РІСЊС‚Рµ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹Рµ С„Р°РєС‚РѕСЂС‹ СЂРёСЃРєР° РїР°С†РёРµРЅС‚Р° РґР»СЏ РїСЂРѕС†РµРґСѓСЂРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ.") ??
         (documentTextLines(procedureConsentSpecificRisks).length
           ? null
-          : "Добавьте процедурные риски для процедурного согласия.") ??
+          : "Р”РѕР±Р°РІСЊС‚Рµ РїСЂРѕС†РµРґСѓСЂРЅС‹Рµ СЂРёСЃРєРё РґР»СЏ РїСЂРѕС†РµРґСѓСЂРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ.") ??
         (documentTextLines(procedureConsentAlternatives).length
           ? null
-          : "Добавьте альтернативы лечения для процедурного согласия.") ??
+          : "Р”РѕР±Р°РІСЊС‚Рµ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹ Р»РµС‡РµРЅРёСЏ РґР»СЏ РїСЂРѕС†РµРґСѓСЂРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ.") ??
         (documentTextLines(procedureConsentAftercare).length
           ? null
-          : "Добавьте ограничения и рекомендации после процедуры.") ??
-        requiredDocumentField(effectiveDoctor, "процедурное согласие, врач") ??
-        requiredDocumentField(procedureConsentConfirmedAt, "процедурное согласие, дата подтверждения") ??
-        (procedureConsentQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы по процедуре.") ??
-        (procedureConsentExactProcedureConfirmed ? null : "Подтвердите, что пациенту названа конкретная процедура, зона и объем.") ??
-        (procedureConsentRisksUnderstood ? null : "Подтвердите, что пациент понял процедурные риски и ограничения.")
+          : "Р”РѕР±Р°РІСЊС‚Рµ РѕРіСЂР°РЅРёС‡РµРЅРёСЏ Рё СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РїСЂРѕС†РµРґСѓСЂС‹.") ??
+        requiredDocumentField(effectiveDoctor, "РїСЂРѕС†РµРґСѓСЂРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РІСЂР°С‡") ??
+        requiredDocumentField(procedureConsentConfirmedAt, "РїСЂРѕС†РµРґСѓСЂРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ, РґР°С‚Р° РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ") ??
+        (procedureConsentQuestionsAnswered ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» РѕС‚РІРµС‚С‹ РЅР° РІРѕРїСЂРѕСЃС‹ РїРѕ РїСЂРѕС†РµРґСѓСЂРµ.") ??
+        (procedureConsentExactProcedureConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚Сѓ РЅР°Р·РІР°РЅР° РєРѕРЅРєСЂРµС‚РЅР°СЏ РїСЂРѕС†РµРґСѓСЂР°, Р·РѕРЅР° Рё РѕР±СЉРµРј.") ??
+        (procedureConsentRisksUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅСЏР» РїСЂРѕС†РµРґСѓСЂРЅС‹Рµ СЂРёСЃРєРё Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ.")
       );
     }
     if (kind === "treatment_plan") {
       return (
-        requiredDocumentField(treatmentPlanClinicalReasonValue(), "план лечения, повод обращения") ??
-        requiredDocumentField(treatmentPlanDiagnosisSummaryValue(), "план лечения, диагноз или клиническое основание") ??
-        requiredDocumentField(treatmentPlanTeethOrAreaValue(), "план лечения, зубы или область") ??
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
-        (documentTextLines(treatmentPlanGoals).length ? null : "Добавьте цели лечения.") ??
-        (treatmentPlanStageRows().length ? null : "Добавьте этапы плана лечения.") ??
-        (treatmentPlanTotalRubValue() > 0 ? null : "Укажите ориентировочную стоимость плана лечения.") ??
-        (documentTextLines(treatmentPlanAlternatives).length ? null : "Добавьте альтернативы плана лечения.") ??
-        (documentTextLines(treatmentPlanRisks).length ? null : "Добавьте риски и ограничения плана лечения.") ??
-        requiredDocumentField(treatmentPlanPrognosis, "план лечения, прогноз и ограничения") ??
-        requiredDocumentField(treatmentPlanControlPlan, "план лечения, контроль") ??
-        requiredDocumentField(treatmentPlanDoctorFullNameValue(), "план лечения, врач") ??
-        requiredDocumentField(treatmentPlanPlannedAt, "план лечения, дата") ??
-        (treatmentPlanQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы.") ??
-        (treatmentPlanSeparateConsentAcknowledged ? null : "Подтвердите, что план не заменяет отдельное согласие.") ??
-        (treatmentPlanNewApprovalAcknowledged ? null : "Подтвердите, что изменение плана требует нового согласования.")
+        requiredDocumentField(treatmentPlanClinicalReasonValue(), "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ, РїРѕРІРѕРґ РѕР±СЂР°С‰РµРЅРёСЏ") ??
+        requiredDocumentField(treatmentPlanDiagnosisSummaryValue(), "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ, РґРёР°РіРЅРѕР· РёР»Рё РєР»РёРЅРёС‡РµСЃРєРѕРµ РѕСЃРЅРѕРІР°РЅРёРµ") ??
+        requiredDocumentField(treatmentPlanTeethOrAreaValue(), "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ, Р·СѓР±С‹ РёР»Рё РѕР±Р»Р°СЃС‚СЊ") ??
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј.") ??
+        (documentTextLines(treatmentPlanGoals).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ С†РµР»Рё Р»РµС‡РµРЅРёСЏ.") ??
+        (treatmentPlanStageRows().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЌС‚Р°РїС‹ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ.") ??
+        (treatmentPlanTotalRubValue() > 0 ? null : "РЈРєР°Р¶РёС‚Рµ РѕСЂРёРµРЅС‚РёСЂРѕРІРѕС‡РЅСѓСЋ СЃС‚РѕРёРјРѕСЃС‚СЊ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ.") ??
+        (documentTextLines(treatmentPlanAlternatives).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ.") ??
+        (documentTextLines(treatmentPlanRisks).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЂРёСЃРєРё Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ.") ??
+        requiredDocumentField(treatmentPlanPrognosis, "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ, РїСЂРѕРіРЅРѕР· Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ") ??
+        requiredDocumentField(treatmentPlanControlPlan, "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ, РєРѕРЅС‚СЂРѕР»СЊ") ??
+        requiredDocumentField(treatmentPlanDoctorFullNameValue(), "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ, РІСЂР°С‡") ??
+        requiredDocumentField(treatmentPlanPlannedAt, "РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ, РґР°С‚Р°") ??
+        (treatmentPlanQuestionsAnswered ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» РѕС‚РІРµС‚С‹ РЅР° РІРѕРїСЂРѕСЃС‹.") ??
+        (treatmentPlanSeparateConsentAcknowledged ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР»Р°РЅ РЅРµ Р·Р°РјРµРЅСЏРµС‚ РѕС‚РґРµР»СЊРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ.") ??
+        (treatmentPlanNewApprovalAcknowledged ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РёР·РјРµРЅРµРЅРёРµ РїР»Р°РЅР° С‚СЂРµР±СѓРµС‚ РЅРѕРІРѕРіРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ.")
       );
     }
     if (kind === "treatment_plan_acceptance") {
       return (
-        requiredDocumentField(treatmentAcceptanceClinicalGoal, "согласование плана, клиническая цель") ??
-        requiredDocumentField(treatmentAcceptanceDiagnosisSummary.trim() || dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "", "согласование плана, диагноз или основание") ??
-        requiredDocumentField(treatmentAcceptanceTeethOrArea.trim() || inferredTreatmentArea || "", "согласование плана, зубы или область") ??
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
-        (treatmentAcceptanceStageRows().length ? null : "Добавьте этапы согласованного плана лечения.") ??
-        (treatmentAcceptanceTotalRubValue() > 0 ? null : "Укажите ориентировочную стоимость согласованного плана.") ??
-        requiredDocumentField(treatmentAcceptanceEstimateValidUntil, "согласование плана, срок действия сметы") ??
-        requiredDocumentField(treatmentAcceptancePaymentTerms, "согласование плана, условия оплаты") ??
-        (documentTextLines(treatmentAcceptanceRejectedAlternatives).length ? null : "Добавьте отклоненные или отложенные альтернативы.") ??
-        (documentTextLines(treatmentAcceptanceRisks).length ? null : "Добавьте риски и ограничения плана.") ??
-        requiredDocumentField(treatmentAcceptanceWarrantyTerms, "согласование плана, гарантия и контроль") ??
-        requiredDocumentField(treatmentAcceptanceDoctorFullName.trim() || activeDoctor?.fullName || "", "согласование плана, врач") ??
-        requiredDocumentField(treatmentAcceptanceAcceptedAt, "согласование плана, дата") ??
-        (treatmentAcceptanceQuestionsAnswered ? null : "Подтвердите, что пациент получил ответы на вопросы.") ??
-        (treatmentAcceptanceAlternativesUnderstood ? null : "Подтвердите, что пациент понимает альтернативы.") ??
-        (treatmentAcceptanceCostChangeUnderstood ? null : "Подтвердите, что пациент понимает возможность изменения стоимости.") ??
-        (treatmentAcceptanceRevisionAcknowledged ? null : "Подтвердите, что существенное изменение плана требует нового согласования.")
+        requiredDocumentField(treatmentAcceptanceClinicalGoal, "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, РєР»РёРЅРёС‡РµСЃРєР°СЏ С†РµР»СЊ") ??
+        requiredDocumentField(treatmentAcceptanceDiagnosisSummary.trim() || dashboard?.activeVisit.diagnosis || dashboard?.activeVisit.complaint || "", "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, РґРёР°РіРЅРѕР· РёР»Рё РѕСЃРЅРѕРІР°РЅРёРµ") ??
+        requiredDocumentField(treatmentAcceptanceTeethOrArea.trim() || inferredTreatmentArea || "", "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, Р·СѓР±С‹ РёР»Рё РѕР±Р»Р°СЃС‚СЊ") ??
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј.") ??
+        (treatmentAcceptanceStageRows().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЌС‚Р°РїС‹ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРіРѕ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ.") ??
+        (treatmentAcceptanceTotalRubValue() > 0 ? null : "РЈРєР°Р¶РёС‚Рµ РѕСЂРёРµРЅС‚РёСЂРѕРІРѕС‡РЅСѓСЋ СЃС‚РѕРёРјРѕСЃС‚СЊ СЃРѕРіР»Р°СЃРѕРІР°РЅРЅРѕРіРѕ РїР»Р°РЅР°.") ??
+        requiredDocumentField(treatmentAcceptanceEstimateValidUntil, "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, СЃСЂРѕРє РґРµР№СЃС‚РІРёСЏ СЃРјРµС‚С‹") ??
+        requiredDocumentField(treatmentAcceptancePaymentTerms, "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, СѓСЃР»РѕРІРёСЏ РѕРїР»Р°С‚С‹") ??
+        (documentTextLines(treatmentAcceptanceRejectedAlternatives).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РѕС‚РєР»РѕРЅРµРЅРЅС‹Рµ РёР»Рё РѕС‚Р»РѕР¶РµРЅРЅС‹Рµ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹.") ??
+        (documentTextLines(treatmentAcceptanceRisks).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЂРёСЃРєРё Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ РїР»Р°РЅР°.") ??
+        requiredDocumentField(treatmentAcceptanceWarrantyTerms, "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, РіР°СЂР°РЅС‚РёСЏ Рё РєРѕРЅС‚СЂРѕР»СЊ") ??
+        requiredDocumentField(treatmentAcceptanceDoctorFullName.trim() || activeDoctor?.fullName || "", "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, РІСЂР°С‡") ??
+        requiredDocumentField(treatmentAcceptanceAcceptedAt, "СЃРѕРіР»Р°СЃРѕРІР°РЅРёРµ РїР»Р°РЅР°, РґР°С‚Р°") ??
+        (treatmentAcceptanceQuestionsAnswered ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» РѕС‚РІРµС‚С‹ РЅР° РІРѕРїСЂРѕСЃС‹.") ??
+        (treatmentAcceptanceAlternativesUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅРёРјР°РµС‚ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹.") ??
+        (treatmentAcceptanceCostChangeUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅРёРјР°РµС‚ РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РёР·РјРµРЅРµРЅРёСЏ СЃС‚РѕРёРјРѕСЃС‚Рё.") ??
+        (treatmentAcceptanceRevisionAcknowledged ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ СЃСѓС‰РµСЃС‚РІРµРЅРЅРѕРµ РёР·РјРµРЅРµРЅРёРµ РїР»Р°РЅР° С‚СЂРµР±СѓРµС‚ РЅРѕРІРѕРіРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ.")
       );
     }
     if (kind === "post_visit_recommendations") {
       return (
-        requiredDocumentField(postVisitProcedureNameValue(), "рекомендации после приема, процедура") ??
-        requiredDocumentField(postVisitToothOrAreaValue(), "рекомендации после приема, область") ??
-        requiredDocumentField(postVisitPerformedAt, "рекомендации после приема, дата приема") ??
-        requiredDocumentField(postVisitDoctorFullNameValue(), "рекомендации после приема, врач") ??
-        (documentTextLines(postVisitAllowedAfter).length ? null : "Добавьте, когда пациенту можно пить, есть и возвращаться к нагрузке.") ??
-        (documentTextLines(postVisitRestrictions).length ? null : "Добавьте временные ограничения после приема.") ??
-        (documentTextLines(postVisitMedicationAndRinsePlan).length ? null : "Добавьте назначения, полоскания или явно укажите, что назначений нет.") ??
-        (documentTextLines(postVisitHygieneInstructions).length ? null : "Добавьте правила гигиены после приема.") ??
-        (documentTextLines(postVisitNutritionInstructions).length ? null : "Добавьте рекомендации по питанию.") ??
-        (documentTextLines(postVisitUrgentWarningSigns).length ? null : "Добавьте тревожные признаки для срочной связи с клиникой.") ??
-        requiredDocumentField(postVisitClinicContactInstruction, "рекомендации после приема, контакт клиники") ??
-        requiredDocumentField(postVisitTelegramSummary, "рекомендации после приема, краткий текст для Telegram") ??
-        (postVisitPrintedCopyReceived ? null : "Подтвердите, что пациент получил рекомендации.") ??
-        (postVisitUrgentSignsUnderstood ? null : "Подтвердите, что пациент понимает тревожные признаки.") ??
-        (postVisitTelegramSafe ? null : "Подтвердите, что текст безопасен для Telegram и не содержит лишних медицинских подробностей.")
+        requiredDocumentField(postVisitProcedureNameValue(), "СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РїСЂРёРµРјР°, РїСЂРѕС†РµРґСѓСЂР°") ??
+        requiredDocumentField(postVisitToothOrAreaValue(), "СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РїСЂРёРµРјР°, РѕР±Р»Р°СЃС‚СЊ") ??
+        requiredDocumentField(postVisitPerformedAt, "СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РїСЂРёРµРјР°, РґР°С‚Р° РїСЂРёРµРјР°") ??
+        requiredDocumentField(postVisitDoctorFullNameValue(), "СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РїСЂРёРµРјР°, РІСЂР°С‡") ??
+        (documentTextLines(postVisitAllowedAfter).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ, РєРѕРіРґР° РїР°С†РёРµРЅС‚Сѓ РјРѕР¶РЅРѕ РїРёС‚СЊ, РµСЃС‚СЊ Рё РІРѕР·РІСЂР°С‰Р°С‚СЊСЃСЏ Рє РЅР°РіСЂСѓР·РєРµ.") ??
+        (documentTextLines(postVisitRestrictions).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РІСЂРµРјРµРЅРЅС‹Рµ РѕРіСЂР°РЅРёС‡РµРЅРёСЏ РїРѕСЃР»Рµ РїСЂРёРµРјР°.") ??
+        (documentTextLines(postVisitMedicationAndRinsePlan).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РЅР°Р·РЅР°С‡РµРЅРёСЏ, РїРѕР»РѕСЃРєР°РЅРёСЏ РёР»Рё СЏРІРЅРѕ СѓРєР°Р¶РёС‚Рµ, С‡С‚Рѕ РЅР°Р·РЅР°С‡РµРЅРёР№ РЅРµС‚.") ??
+        (documentTextLines(postVisitHygieneInstructions).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РїСЂР°РІРёР»Р° РіРёРіРёРµРЅС‹ РїРѕСЃР»Рµ РїСЂРёРµРјР°.") ??
+        (documentTextLines(postVisitNutritionInstructions).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕ РїРёС‚Р°РЅРёСЋ.") ??
+        (documentTextLines(postVisitUrgentWarningSigns).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ С‚СЂРµРІРѕР¶РЅС‹Рµ РїСЂРёР·РЅР°РєРё РґР»СЏ СЃСЂРѕС‡РЅРѕР№ СЃРІСЏР·Рё СЃ РєР»РёРЅРёРєРѕР№.") ??
+        requiredDocumentField(postVisitClinicContactInstruction, "СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РїСЂРёРµРјР°, РєРѕРЅС‚Р°РєС‚ РєР»РёРЅРёРєРё") ??
+        requiredDocumentField(postVisitTelegramSummary, "СЂРµРєРѕРјРµРЅРґР°С†РёРё РїРѕСЃР»Рµ РїСЂРёРµРјР°, РєСЂР°С‚РєРёР№ С‚РµРєСЃС‚ РґР»СЏ Telegram") ??
+        (postVisitPrintedCopyReceived ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» СЂРµРєРѕРјРµРЅРґР°С†РёРё.") ??
+        (postVisitUrgentSignsUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅРёРјР°РµС‚ С‚СЂРµРІРѕР¶РЅС‹Рµ РїСЂРёР·РЅР°РєРё.") ??
+        (postVisitTelegramSafe ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ С‚РµРєСЃС‚ Р±РµР·РѕРїР°СЃРµРЅ РґР»СЏ Telegram Рё РЅРµ СЃРѕРґРµСЂР¶РёС‚ Р»РёС€РЅРёС… РјРµРґРёС†РёРЅСЃРєРёС… РїРѕРґСЂРѕР±РЅРѕСЃС‚РµР№.")
       );
     }
     if (kind === "anesthesia_consent_log") {
       return (
-        requiredDocumentField(anesthesiaMethod, "анестезия, метод") ??
-        requiredDocumentField(anesthesiaAnesthetic, "анестезия, препарат") ??
-        requiredDocumentField(anesthesiaZone, "анестезия, зона") ??
-        requiredDocumentField(anesthesiaAllergyStatus, "анестезия, аллергоанамнез") ??
-        requiredDocumentField(anesthesiaDoseTime, "анестезия, время введения") ??
-        requiredDocumentField(anesthesiaDoseMl, "анестезия, доза") ??
-        (anesthesiaRisksExplained ? null : "Подтвердите, что пациенту объяснены риски и ограничения анестезии.") ??
-        (anesthesiaAllergyRestrictionsChecked ? null : "Подтвердите, что аллергии, лекарства и ограничения проверены до введения.") ??
-        (anesthesiaConsentConfirmed ? null : "Подтвердите согласие пациента на выбранную местную анестезию.")
+        requiredDocumentField(anesthesiaMethod, "Р°РЅРµСЃС‚РµР·РёСЏ, РјРµС‚РѕРґ") ??
+        requiredDocumentField(anesthesiaAnesthetic, "Р°РЅРµСЃС‚РµР·РёСЏ, РїСЂРµРїР°СЂР°С‚") ??
+        requiredDocumentField(anesthesiaZone, "Р°РЅРµСЃС‚РµР·РёСЏ, Р·РѕРЅР°") ??
+        requiredDocumentField(anesthesiaAllergyStatus, "Р°РЅРµСЃС‚РµР·РёСЏ, Р°Р»Р»РµСЂРіРѕР°РЅР°РјРЅРµР·") ??
+        requiredDocumentField(anesthesiaDoseTime, "Р°РЅРµСЃС‚РµР·РёСЏ, РІСЂРµРјСЏ РІРІРµРґРµРЅРёСЏ") ??
+        requiredDocumentField(anesthesiaDoseMl, "Р°РЅРµСЃС‚РµР·РёСЏ, РґРѕР·Р°") ??
+        (anesthesiaRisksExplained ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚Сѓ РѕР±СЉСЏСЃРЅРµРЅС‹ СЂРёСЃРєРё Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ Р°РЅРµСЃС‚РµР·РёРё.") ??
+        (anesthesiaAllergyRestrictionsChecked ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ Р°Р»Р»РµСЂРіРёРё, Р»РµРєР°СЂСЃС‚РІР° Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ РїСЂРѕРІРµСЂРµРЅС‹ РґРѕ РІРІРµРґРµРЅРёСЏ.") ??
+        (anesthesiaConsentConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЃРѕРіР»Р°СЃРёРµ РїР°С†РёРµРЅС‚Р° РЅР° РІС‹Р±СЂР°РЅРЅСѓСЋ РјРµСЃС‚РЅСѓСЋ Р°РЅРµСЃС‚РµР·РёСЋ.")
       );
     }
     if (kind === "prescription_medication_order") {
       return (
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
-        requiredDocumentField(prescriptionMedication, "назначение, препарат") ??
-        requiredDocumentField(prescriptionDosage, "назначение, дозировка") ??
-        requiredDocumentField(prescriptionInstructions, "назначение, режим приема") ??
-        requiredDocumentField(prescriptionDuration, "назначение, длительность") ??
-        (documentTextLines(prescriptionSafetyNotes).length ? null : "Добавьте хотя бы одну памятку пациенту для назначения.") ??
-        requiredDocumentField(prescriptionUrgentContactReason, "назначение, когда срочно связаться")
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј.") ??
+        requiredDocumentField(prescriptionMedication, "РЅР°Р·РЅР°С‡РµРЅРёРµ, РїСЂРµРїР°СЂР°С‚") ??
+        requiredDocumentField(prescriptionDosage, "РЅР°Р·РЅР°С‡РµРЅРёРµ, РґРѕР·РёСЂРѕРІРєР°") ??
+        requiredDocumentField(prescriptionInstructions, "РЅР°Р·РЅР°С‡РµРЅРёРµ, СЂРµР¶РёРј РїСЂРёРµРјР°") ??
+        requiredDocumentField(prescriptionDuration, "РЅР°Р·РЅР°С‡РµРЅРёРµ, РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊ") ??
+        (documentTextLines(prescriptionSafetyNotes).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРЅСѓ РїР°РјСЏС‚РєСѓ РїР°С†РёРµРЅС‚Сѓ РґР»СЏ РЅР°Р·РЅР°С‡РµРЅРёСЏ.") ??
+        requiredDocumentField(prescriptionUrgentContactReason, "РЅР°Р·РЅР°С‡РµРЅРёРµ, РєРѕРіРґР° СЃСЂРѕС‡РЅРѕ СЃРІСЏР·Р°С‚СЊСЃСЏ")
       );
     }
     if (kind === "lab_work_order") {
       return (
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
-        requiredDocumentField(labWorkType, "лаборатория, вид работы") ??
-        requiredDocumentField(labTeethOrArea, "лаборатория, зубы или зона") ??
-        requiredDocumentField(labMaterial, "лаборатория, материал") ??
-        requiredDocumentField(labShade, "лаборатория, цвет") ??
-        requiredDocumentField(labSource, "лаборатория, источник данных") ??
-        requiredDocumentField(labDeadline, "лаборатория, срок")
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј.") ??
+        requiredDocumentField(labWorkType, "Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏ, РІРёРґ СЂР°Р±РѕС‚С‹") ??
+        requiredDocumentField(labTeethOrArea, "Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏ, Р·СѓР±С‹ РёР»Рё Р·РѕРЅР°") ??
+        requiredDocumentField(labMaterial, "Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏ, РјР°С‚РµСЂРёР°Р»") ??
+        requiredDocumentField(labShade, "Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏ, С†РІРµС‚") ??
+        requiredDocumentField(labSource, "Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏ, РёСЃС‚РѕС‡РЅРёРє РґР°РЅРЅС‹С…") ??
+        requiredDocumentField(labDeadline, "Р»Р°Р±РѕСЂР°С‚РѕСЂРёСЏ, СЃСЂРѕРє")
       );
     }
     if (kind === "photo_video_consent") {
       return (
-        (photoVideoMaterials.length ? null : "Отметьте хотя бы один тип фото, видео или снимков.") ??
-        (photoVideoClinicalRecordUseConfirmed ? null : "Подтвердите, что фото, видео и снимки вносятся в медицинскую карту пациента.") ??
-        (photoVideoAnonymizationConfirmed ? null : "Подтвердите, что внешнее использование возможно только после обезличивания, кроме отдельно разрешенной узнаваемой публикации.") ??
-        requiredDocumentField(photoVideoRevocationChannel, "фото/видео, порядок отзыва согласия") ??
+        (photoVideoMaterials.length ? null : "РћС‚РјРµС‚СЊС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ С‚РёРї С„РѕС‚Рѕ, РІРёРґРµРѕ РёР»Рё СЃРЅРёРјРєРѕРІ.") ??
+        (photoVideoClinicalRecordUseConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ С„РѕС‚Рѕ, РІРёРґРµРѕ Рё СЃРЅРёРјРєРё РІРЅРѕСЃСЏС‚СЃСЏ РІ РјРµРґРёС†РёРЅСЃРєСѓСЋ РєР°СЂС‚Сѓ РїР°С†РёРµРЅС‚Р°.") ??
+        (photoVideoAnonymizationConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РІРЅРµС€РЅРµРµ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ РІРѕР·РјРѕР¶РЅРѕ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ РѕР±РµР·Р»РёС‡РёРІР°РЅРёСЏ, РєСЂРѕРјРµ РѕС‚РґРµР»СЊРЅРѕ СЂР°Р·СЂРµС€РµРЅРЅРѕР№ СѓР·РЅР°РІР°РµРјРѕР№ РїСѓР±Р»РёРєР°С†РёРё.") ??
+        requiredDocumentField(photoVideoRevocationChannel, "С„РѕС‚Рѕ/РІРёРґРµРѕ, РїРѕСЂСЏРґРѕРє РѕС‚Р·С‹РІР° СЃРѕРіР»Р°СЃРёСЏ") ??
         (photoVideoRecognizablePublicationAllowed && !photoVideoMarketingUseAllowed && !photoVideoEducationUseAllowed
-          ? "Публикация узнаваемых материалов возможна только вместе с отдельным разрешением на обучение или маркетинг."
+          ? "РџСѓР±Р»РёРєР°С†РёСЏ СѓР·РЅР°РІР°РµРјС‹С… РјР°С‚РµСЂРёР°Р»РѕРІ РІРѕР·РјРѕР¶РЅР° С‚РѕР»СЊРєРѕ РІРјРµСЃС‚Рµ СЃ РѕС‚РґРµР»СЊРЅС‹Рј СЂР°Р·СЂРµС€РµРЅРёРµРј РЅР° РѕР±СѓС‡РµРЅРёРµ РёР»Рё РјР°СЂРєРµС‚РёРЅРі."
           : null)
       );
     }
     if (kind === "xray_cbct_referral") {
       return (
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
-        requiredDocumentField(xrayArea, "снимок, область") ??
-        requiredDocumentField(xrayClinicalQuestion, "снимок, клинический вопрос") ??
-        requiredDocumentField(xrayIndication, "снимок, показание") ??
-        requiredDocumentField(xraySafetyNotes, "снимок, ограничения и защита") ??
-        requiredDocumentField(xrayRequestedBy.trim() || activeDoctor?.fullName || "", "снимок, назначивший врач")
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј.") ??
+        requiredDocumentField(xrayArea, "СЃРЅРёРјРѕРє, РѕР±Р»Р°СЃС‚СЊ") ??
+        requiredDocumentField(xrayClinicalQuestion, "СЃРЅРёРјРѕРє, РєР»РёРЅРёС‡РµСЃРєРёР№ РІРѕРїСЂРѕСЃ") ??
+        requiredDocumentField(xrayIndication, "СЃРЅРёРјРѕРє, РїРѕРєР°Р·Р°РЅРёРµ") ??
+        requiredDocumentField(xraySafetyNotes, "СЃРЅРёРјРѕРє, РѕРіСЂР°РЅРёС‡РµРЅРёСЏ Рё Р·Р°С‰РёС‚Р°") ??
+        requiredDocumentField(xrayRequestedBy.trim() || activeDoctor?.fullName || "", "СЃРЅРёРјРѕРє, РЅР°Р·РЅР°С‡РёРІС€РёР№ РІСЂР°С‡")
       );
     }
     if (kind === "outpatient_medical_card_025u") {
       return (
-        requiredDocumentField(clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim(), "карта 025/у, медорганизация") ??
-        requiredDocumentField(outpatient025uMedicalCardNumberValue(), "карта 025/у, номер медицинской карты") ??
-        requiredDocumentField(outpatient025uOpenedAt, "карта 025/у, дата открытия") ??
-        requiredDocumentField(recordExtractPeriodStart, "карта 025/у, период с") ??
-        requiredDocumentField(recordExtractPeriodEnd, "карта 025/у, период по") ??
-        (outpatient025uSourceVisitIdsValue().length ? null : "Добавьте источник подписанной медицинской записи для карты 025/у.") ??
-        requiredDocumentField(documentPatient?.fullName ?? "", "карта 025/у, пациент") ??
-        requiredDocumentField(recordExtractComplaintAndAnamnesisValue(), "карта 025/у, жалобы и анамнез") ??
-        requiredDocumentField(recordExtractObjectiveStatusValue(), "карта 025/у, объективный статус") ??
-        requiredDocumentField(recordExtractDiagnosisValue(), "карта 025/у, диагноз") ??
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам для карты 025/у.") ??
-        requiredDocumentField(recordExtractTreatmentProvidedValue(), "карта 025/у, проведенное лечение") ??
-        requiredDocumentField(recordExtractRecommendations, "карта 025/у, назначения и рекомендации") ??
-        requiredDocumentField(recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "", "карта 025/у, врач") ??
-        (recordExtractPreparedFromSignedRecords ? null : "Подтвердите, что карта 025/у собрана из подписанных медицинских записей.") ??
-        (outpatient025uOfficialForm274nChecked ? null : "Подтвердите сверку карты 025/у с приказом Минздрава N 274н.") ??
-        (outpatient025uThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц для карты 025/у исключены.")
+        requiredDocumentField(clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim(), "РєР°СЂС‚Р° 025/Сѓ, РјРµРґРѕСЂРіР°РЅРёР·Р°С†РёСЏ") ??
+        requiredDocumentField(outpatient025uMedicalCardNumberValue(), "РєР°СЂС‚Р° 025/Сѓ, РЅРѕРјРµСЂ РјРµРґРёС†РёРЅСЃРєРѕР№ РєР°СЂС‚С‹") ??
+        requiredDocumentField(outpatient025uOpenedAt, "РєР°СЂС‚Р° 025/Сѓ, РґР°С‚Р° РѕС‚РєСЂС‹С‚РёСЏ") ??
+        requiredDocumentField(recordExtractPeriodStart, "РєР°СЂС‚Р° 025/Сѓ, РїРµСЂРёРѕРґ СЃ") ??
+        requiredDocumentField(recordExtractPeriodEnd, "РєР°СЂС‚Р° 025/Сѓ, РїРµСЂРёРѕРґ РїРѕ") ??
+        (outpatient025uSourceVisitIdsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РёСЃС‚РѕС‡РЅРёРє РїРѕРґРїРёСЃР°РЅРЅРѕР№ РјРµРґРёС†РёРЅСЃРєРѕР№ Р·Р°РїРёСЃРё РґР»СЏ РєР°СЂС‚С‹ 025/Сѓ.") ??
+        requiredDocumentField(documentPatient?.fullName ?? "", "РєР°СЂС‚Р° 025/Сѓ, РїР°С†РёРµРЅС‚") ??
+        requiredDocumentField(recordExtractComplaintAndAnamnesisValue(), "РєР°СЂС‚Р° 025/Сѓ, Р¶Р°Р»РѕР±С‹ Рё Р°РЅР°РјРЅРµР·") ??
+        requiredDocumentField(recordExtractObjectiveStatusValue(), "РєР°СЂС‚Р° 025/Сѓ, РѕР±СЉРµРєС‚РёРІРЅС‹Р№ СЃС‚Р°С‚СѓСЃ") ??
+        requiredDocumentField(recordExtractDiagnosisValue(), "РєР°СЂС‚Р° 025/Сѓ, РґРёР°РіРЅРѕР·") ??
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј РґР»СЏ РєР°СЂС‚С‹ 025/Сѓ.") ??
+        requiredDocumentField(recordExtractTreatmentProvidedValue(), "РєР°СЂС‚Р° 025/Сѓ, РїСЂРѕРІРµРґРµРЅРЅРѕРµ Р»РµС‡РµРЅРёРµ") ??
+        requiredDocumentField(recordExtractRecommendations, "РєР°СЂС‚Р° 025/Сѓ, РЅР°Р·РЅР°С‡РµРЅРёСЏ Рё СЂРµРєРѕРјРµРЅРґР°С†РёРё") ??
+        requiredDocumentField(recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "", "РєР°СЂС‚Р° 025/Сѓ, РІСЂР°С‡") ??
+        (recordExtractPreparedFromSignedRecords ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РєР°СЂС‚Р° 025/Сѓ СЃРѕР±СЂР°РЅР° РёР· РїРѕРґРїРёСЃР°РЅРЅС‹С… РјРµРґРёС†РёРЅСЃРєРёС… Р·Р°РїРёСЃРµР№.") ??
+        (outpatient025uOfficialForm274nChecked ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЃРІРµСЂРєСѓ РєР°СЂС‚С‹ 025/Сѓ СЃ РїСЂРёРєР°Р·РѕРј РњРёРЅР·РґСЂР°РІР° N 274РЅ.") ??
+        (outpatient025uThirdPartyDataChecked ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ Р»РёС€РЅРёРµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РґР»СЏ РєР°СЂС‚С‹ 025/Сѓ РёСЃРєР»СЋС‡РµРЅС‹.")
       );
     }
     if (kind === "medical_record_extract") {
       const sourceVisitIds = documentTextLines(recordExtractSourceVisitIds);
       return (
-        requiredDocumentField(recordExtractPeriodStart, "выписка, период с") ??
-        requiredDocumentField(recordExtractPeriodEnd, "выписка, период по") ??
-        (sourceVisitIds.length || dashboard?.activeVisit.id ? null : "Добавьте источник медицинской записи для выписки.") ??
-        requiredDocumentField(recordExtractComplaintAndAnamnesisValue(), "выписка, жалобы и анамнез") ??
-        requiredDocumentField(recordExtractObjectiveStatusValue(), "выписка, объективный статус") ??
-        requiredDocumentField(recordExtractDiagnosisValue(), "выписка, диагноз") ??
-        (clinicalToothRowsValue().length ? null : "Добавьте клинические строки по зубам или сегментам.") ??
-        requiredDocumentField(recordExtractTreatmentProvidedValue(), "выписка, проведенное лечение") ??
-        requiredDocumentField(recordExtractRecommendations, "выписка, рекомендации") ??
-        requiredDocumentField(recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "", "выписка, врач") ??
-        requiredDocumentField(recordExtractRecipientFullName.trim() || documentPatient?.fullName || "", "выписка, получатель") ??
-        requiredDocumentField(recordExtractRecipientAuthority, "выписка, основание выдачи") ??
-        requiredDocumentField(recordExtractIssuedAt, "выписка, дата") ??
-        (recordExtractPreparedFromSignedRecords ? null : "Подтвердите, что выписка собрана из подписанных медицинских записей.") ??
-        (recordExtractThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц исключены.")
+        requiredDocumentField(recordExtractPeriodStart, "РІС‹РїРёСЃРєР°, РїРµСЂРёРѕРґ СЃ") ??
+        requiredDocumentField(recordExtractPeriodEnd, "РІС‹РїРёСЃРєР°, РїРµСЂРёРѕРґ РїРѕ") ??
+        (sourceVisitIds.length || dashboard?.activeVisit.id ? null : "Р”РѕР±Р°РІСЊС‚Рµ РёСЃС‚РѕС‡РЅРёРє РјРµРґРёС†РёРЅСЃРєРѕР№ Р·Р°РїРёСЃРё РґР»СЏ РІС‹РїРёСЃРєРё.") ??
+        requiredDocumentField(recordExtractComplaintAndAnamnesisValue(), "РІС‹РїРёСЃРєР°, Р¶Р°Р»РѕР±С‹ Рё Р°РЅР°РјРЅРµР·") ??
+        requiredDocumentField(recordExtractObjectiveStatusValue(), "РІС‹РїРёСЃРєР°, РѕР±СЉРµРєС‚РёРІРЅС‹Р№ СЃС‚Р°С‚СѓСЃ") ??
+        requiredDocumentField(recordExtractDiagnosisValue(), "РІС‹РїРёСЃРєР°, РґРёР°РіРЅРѕР·") ??
+        (clinicalToothRowsValue().length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј РёР»Рё СЃРµРіРјРµРЅС‚Р°Рј.") ??
+        requiredDocumentField(recordExtractTreatmentProvidedValue(), "РІС‹РїРёСЃРєР°, РїСЂРѕРІРµРґРµРЅРЅРѕРµ Р»РµС‡РµРЅРёРµ") ??
+        requiredDocumentField(recordExtractRecommendations, "РІС‹РїРёСЃРєР°, СЂРµРєРѕРјРµРЅРґР°С†РёРё") ??
+        requiredDocumentField(recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "", "РІС‹РїРёСЃРєР°, РІСЂР°С‡") ??
+        requiredDocumentField(recordExtractRecipientFullName.trim() || documentPatient?.fullName || "", "РІС‹РїРёСЃРєР°, РїРѕР»СѓС‡Р°С‚РµР»СЊ") ??
+        requiredDocumentField(recordExtractRecipientAuthority, "РІС‹РїРёСЃРєР°, РѕСЃРЅРѕРІР°РЅРёРµ РІС‹РґР°С‡Рё") ??
+        requiredDocumentField(recordExtractIssuedAt, "РІС‹РїРёСЃРєР°, РґР°С‚Р°") ??
+        (recordExtractPreparedFromSignedRecords ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РІС‹РїРёСЃРєР° СЃРѕР±СЂР°РЅР° РёР· РїРѕРґРїРёСЃР°РЅРЅС‹С… РјРµРґРёС†РёРЅСЃРєРёС… Р·Р°РїРёСЃРµР№.") ??
+        (recordExtractThirdPartyDataChecked ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ Р»РёС€РЅРёРµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РёСЃРєР»СЋС‡РµРЅС‹.")
       );
     }
     if (kind === "medical_record_copy_request") {
       return (
-        (documentTextLines(copyRequestDocumentTypes).length ? null : "Добавьте состав запрошенных медицинских документов.") ??
-        requiredDocumentField(copyRequestRecipientFullName.trim() || documentPatient?.fullName || "", "запрос копий, получатель") ??
-        requiredDocumentField(copyRequestRecipientIdentityDocument, "запрос копий, документ получателя") ??
-        requiredDocumentField(copyRequestRecipientAuthority, "запрос копий, основание полномочий") ??
-        requiredDocumentField(copyRequestRequestedAt, "запрос копий, дата запроса") ??
-        requiredDocumentField(copyRequestContactForDelivery, "запрос копий, контакт и канал выдачи") ??
-        (copyRequestIdentityVerified ? null : "Подтвердите проверку личности получателя.") ??
-        (copyRequestThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц будут исключены.")
+        (documentTextLines(copyRequestDocumentTypes).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЃРѕСЃС‚Р°РІ Р·Р°РїСЂРѕС€РµРЅРЅС‹С… РјРµРґРёС†РёРЅСЃРєРёС… РґРѕРєСѓРјРµРЅС‚РѕРІ.") ??
+        requiredDocumentField(copyRequestRecipientFullName.trim() || documentPatient?.fullName || "", "Р·Р°РїСЂРѕСЃ РєРѕРїРёР№, РїРѕР»СѓС‡Р°С‚РµР»СЊ") ??
+        requiredDocumentField(copyRequestRecipientIdentityDocument, "Р·Р°РїСЂРѕСЃ РєРѕРїРёР№, РґРѕРєСѓРјРµРЅС‚ РїРѕР»СѓС‡Р°С‚РµР»СЏ") ??
+        requiredDocumentField(copyRequestRecipientAuthority, "Р·Р°РїСЂРѕСЃ РєРѕРїРёР№, РѕСЃРЅРѕРІР°РЅРёРµ РїРѕР»РЅРѕРјРѕС‡РёР№") ??
+        requiredDocumentField(copyRequestRequestedAt, "Р·Р°РїСЂРѕСЃ РєРѕРїРёР№, РґР°С‚Р° Р·Р°РїСЂРѕСЃР°") ??
+        requiredDocumentField(copyRequestContactForDelivery, "Р·Р°РїСЂРѕСЃ РєРѕРїРёР№, РєРѕРЅС‚Р°РєС‚ Рё РєР°РЅР°Р» РІС‹РґР°С‡Рё") ??
+        (copyRequestIdentityVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ Р»РёС‡РЅРѕСЃС‚Рё РїРѕР»СѓС‡Р°С‚РµР»СЏ.") ??
+        (copyRequestThirdPartyDataChecked ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ Р»РёС€РЅРёРµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† Р±СѓРґСѓС‚ РёСЃРєР»СЋС‡РµРЅС‹.")
       );
     }
     if (kind === "visit_attendance_certificate") {
       return (
-        requiredDocumentField(attendanceStartedAtValue(), "справка о посещении, начало приема") ??
-        requiredDocumentField(attendanceEndedAtValue(), "справка о посещении, окончание приема") ??
-        requiredDocumentField(attendancePurpose, "справка о посещении, цель выдачи") ??
-        requiredDocumentField(attendanceIssuedAt, "справка о посещении, дата выдачи") ??
-        requiredDocumentField(attendanceSignedByValue(), "справка о посещении, подписант") ??
-        requiredDocumentField(attendanceSignedByRole, "справка о посещении, должность подписанта") ??
-        (attendanceDiagnosisDisclosureExcluded ? null : "Подтвердите, что диагноз и план лечения не раскрываются в справке.") ??
-        (attendanceNotSickLeaveAcknowledged ? null : "Подтвердите, что справка не заменяет листок нетрудоспособности.")
+        requiredDocumentField(attendanceStartedAtValue(), "СЃРїСЂР°РІРєР° Рѕ РїРѕСЃРµС‰РµРЅРёРё, РЅР°С‡Р°Р»Рѕ РїСЂРёРµРјР°") ??
+        requiredDocumentField(attendanceEndedAtValue(), "СЃРїСЂР°РІРєР° Рѕ РїРѕСЃРµС‰РµРЅРёРё, РѕРєРѕРЅС‡Р°РЅРёРµ РїСЂРёРµРјР°") ??
+        requiredDocumentField(attendancePurpose, "СЃРїСЂР°РІРєР° Рѕ РїРѕСЃРµС‰РµРЅРёРё, С†РµР»СЊ РІС‹РґР°С‡Рё") ??
+        requiredDocumentField(attendanceIssuedAt, "СЃРїСЂР°РІРєР° Рѕ РїРѕСЃРµС‰РµРЅРёРё, РґР°С‚Р° РІС‹РґР°С‡Рё") ??
+        requiredDocumentField(attendanceSignedByValue(), "СЃРїСЂР°РІРєР° Рѕ РїРѕСЃРµС‰РµРЅРёРё, РїРѕРґРїРёСЃР°РЅС‚") ??
+        requiredDocumentField(attendanceSignedByRole, "СЃРїСЂР°РІРєР° Рѕ РїРѕСЃРµС‰РµРЅРёРё, РґРѕР»Р¶РЅРѕСЃС‚СЊ РїРѕРґРїРёСЃР°РЅС‚Р°") ??
+        (attendanceDiagnosisDisclosureExcluded ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РґРёР°РіРЅРѕР· Рё РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ РЅРµ СЂР°СЃРєСЂС‹РІР°СЋС‚СЃСЏ РІ СЃРїСЂР°РІРєРµ.") ??
+        (attendanceNotSickLeaveAcknowledged ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ СЃРїСЂР°РІРєР° РЅРµ Р·Р°РјРµРЅСЏРµС‚ Р»РёСЃС‚РѕРє РЅРµС‚СЂСѓРґРѕСЃРїРѕСЃРѕР±РЅРѕСЃС‚Рё.")
       );
     }
     if (kind === "medical_document_release_receipt") {
       return (
-        requiredDocumentField(selectedReleaseSourceRequestDocumentId, "выдача документов, выданный запрос на копии") ??
-        requiredDocumentField(releaseRecipientFullName, "выдача документов, получатель") ??
-        requiredDocumentField(releaseRecipientIdentityDocument, "выдача документов, документ получателя") ??
-        requiredDocumentField(releaseRecipientAuthority, "выдача документов, основание полномочий") ??
-        (documentTextLines(releaseDocumentTypes).length ? null : "Добавьте состав выдаваемых медицинских документов.") ??
-        requiredDocumentField(releaseDeliveredAt, "выдача документов, дата и время") ??
-        requiredDocumentField(releaseProtectionNote, "выдача документов, защита передачи") ??
-        (releaseThirdPartyDataChecked ? null : "Подтвердите, что лишние данные третьих лиц исключены.")
+        requiredDocumentField(selectedReleaseSourceRequestDocumentId, "РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ, РІС‹РґР°РЅРЅС‹Р№ Р·Р°РїСЂРѕСЃ РЅР° РєРѕРїРёРё") ??
+        requiredDocumentField(releaseRecipientFullName, "РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ, РїРѕР»СѓС‡Р°С‚РµР»СЊ") ??
+        requiredDocumentField(releaseRecipientIdentityDocument, "РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ, РґРѕРєСѓРјРµРЅС‚ РїРѕР»СѓС‡Р°С‚РµР»СЏ") ??
+        requiredDocumentField(releaseRecipientAuthority, "РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ, РѕСЃРЅРѕРІР°РЅРёРµ РїРѕР»РЅРѕРјРѕС‡РёР№") ??
+        (documentTextLines(releaseDocumentTypes).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЃРѕСЃС‚Р°РІ РІС‹РґР°РІР°РµРјС‹С… РјРµРґРёС†РёРЅСЃРєРёС… РґРѕРєСѓРјРµРЅС‚РѕРІ.") ??
+        requiredDocumentField(releaseDeliveredAt, "РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ, РґР°С‚Р° Рё РІСЂРµРјСЏ") ??
+        requiredDocumentField(releaseProtectionNote, "РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ, Р·Р°С‰РёС‚Р° РїРµСЂРµРґР°С‡Рё") ??
+        (releaseThirdPartyDataChecked ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ Р»РёС€РЅРёРµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РёСЃРєР»СЋС‡РµРЅС‹.")
       );
     }
     if (kind === "payment_refund_correction_request") {
       const requestedAmount = normalizeRubAmountInput(refundAmountRub);
       return (
-        requiredDocumentField(refundSelectedPaymentId, "возврат/коррекция, исходный платеж") ??
+        requiredDocumentField(refundSelectedPaymentId, "РІРѕР·РІСЂР°С‚/РєРѕСЂСЂРµРєС†РёСЏ, РёСЃС…РѕРґРЅС‹Р№ РїР»Р°С‚РµР¶") ??
         (requestedAmount !== null && requestedAmount > 0
           ? null
           : rubAmountInputMissingStep(
               refundAmountRub,
-              "Укажите сумму возврата или коррекции больше нуля.",
-              "Укажите сумму возврата или коррекции целыми рублями без копеек."
+              "РЈРєР°Р¶РёС‚Рµ СЃСѓРјРјСѓ РІРѕР·РІСЂР°С‚Р° РёР»Рё РєРѕСЂСЂРµРєС†РёРё Р±РѕР»СЊС€Рµ РЅСѓР»СЏ.",
+              "РЈРєР°Р¶РёС‚Рµ СЃСѓРјРјСѓ РІРѕР·РІСЂР°С‚Р° РёР»Рё РєРѕСЂСЂРµРєС†РёРё С†РµР»С‹РјРё СЂСѓР±Р»СЏРјРё Р±РµР· РєРѕРїРµРµРє."
             )) ??
-        requiredDocumentField(refundReason, "возврат/коррекция, основание") ??
-        requiredDocumentField(refundRecipientFullName, "возврат/коррекция, получатель") ??
-        requiredDocumentField(refundRecipientIdentityDocument, "возврат/коррекция, документ получателя") ??
-        requiredDocumentField(refundOriginalFiscalReceiptNumber, "возврат/коррекция, исходный фискальный чек") ??
-        requiredDocumentField(refundAccountantDecision, "возврат/коррекция, решение ответственного")
+        requiredDocumentField(refundReason, "РІРѕР·РІСЂР°С‚/РєРѕСЂСЂРµРєС†РёСЏ, РѕСЃРЅРѕРІР°РЅРёРµ") ??
+        requiredDocumentField(refundRecipientFullName, "РІРѕР·РІСЂР°С‚/РєРѕСЂСЂРµРєС†РёСЏ, РїРѕР»СѓС‡Р°С‚РµР»СЊ") ??
+        requiredDocumentField(refundRecipientIdentityDocument, "РІРѕР·РІСЂР°С‚/РєРѕСЂСЂРµРєС†РёСЏ, РґРѕРєСѓРјРµРЅС‚ РїРѕР»СѓС‡Р°С‚РµР»СЏ") ??
+        requiredDocumentField(refundOriginalFiscalReceiptNumber, "РІРѕР·РІСЂР°С‚/РєРѕСЂСЂРµРєС†РёСЏ, РёСЃС…РѕРґРЅС‹Р№ С„РёСЃРєР°Р»СЊРЅС‹Р№ С‡РµРє") ??
+        requiredDocumentField(refundAccountantDecision, "РІРѕР·РІСЂР°С‚/РєРѕСЂСЂРµРєС†РёСЏ, СЂРµС€РµРЅРёРµ РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕРіРѕ")
       );
     }
     if (kind === "personal_data_processing_consent") {
       const operatorName = clinicProfileDraft.legalName.trim() || clinicProfileDraft.clinicName.trim();
       const operatorInn = clinicProfileDraft.inn.replace(/[^\d]/g, "");
       return (
-        requiredDocumentField(operatorName, "ПДн, оператор клиники") ??
-        (operatorInn.length === 10 || operatorInn.length === 12 ? null : "ИНН оператора ПДн должен содержать 10 или 12 цифр.") ??
-        requiredDocumentField(clinicProfileDraft.address, "ПДн, адрес оператора") ??
-        (documentTextLines(personalDataPurposes).length ? null : "Добавьте цели обработки персональных данных.") ??
-        (documentTextLines(personalDataCategories).length ? null : "Добавьте категории персональных данных.") ??
-        (documentTextLines(personalDataActions).length ? null : "Добавьте действия с персональными данными.") ??
-        requiredDocumentField(personalDataTransferRules, "ПДн, правила передачи третьим лицам") ??
-        requiredDocumentField(personalDataRetentionPeriod, "ПДн, срок хранения") ??
-        requiredDocumentField(personalDataRevocationChannel, "ПДн, порядок отзыва") ??
-        requiredDocumentField(personalDataConsentGivenAt, "ПДн, дата согласия") ??
-        (personalDataVoluntaryConsentConfirmed ? null : "Подтвердите добровольное согласие пациента на обработку ПДн.") ??
-        (personalDataMedicalProcessingAcknowledged ? null : "Подтвердите, что пациент понимает обработку медицинских данных.")
+        requiredDocumentField(operatorName, "РџР”РЅ, РѕРїРµСЂР°С‚РѕСЂ РєР»РёРЅРёРєРё") ??
+        (operatorInn.length === 10 || operatorInn.length === 12 ? null : "РРќРќ РѕРїРµСЂР°С‚РѕСЂР° РџР”РЅ РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ 10 РёР»Рё 12 С†РёС„СЂ.") ??
+        requiredDocumentField(clinicProfileDraft.address, "РџР”РЅ, Р°РґСЂРµСЃ РѕРїРµСЂР°С‚РѕСЂР°") ??
+        (documentTextLines(personalDataPurposes).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ С†РµР»Рё РѕР±СЂР°Р±РѕС‚РєРё РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С….") ??
+        (documentTextLines(personalDataCategories).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РєР°С‚РµРіРѕСЂРёРё РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С….") ??
+        (documentTextLines(personalDataActions).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РґРµР№СЃС‚РІРёСЏ СЃ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹РјРё РґР°РЅРЅС‹РјРё.") ??
+        requiredDocumentField(personalDataTransferRules, "РџР”РЅ, РїСЂР°РІРёР»Р° РїРµСЂРµРґР°С‡Рё С‚СЂРµС‚СЊРёРј Р»РёС†Р°Рј") ??
+        requiredDocumentField(personalDataRetentionPeriod, "РџР”РЅ, СЃСЂРѕРє С…СЂР°РЅРµРЅРёСЏ") ??
+        requiredDocumentField(personalDataRevocationChannel, "РџР”РЅ, РїРѕСЂСЏРґРѕРє РѕС‚Р·С‹РІР°") ??
+        requiredDocumentField(personalDataConsentGivenAt, "РџР”РЅ, РґР°С‚Р° СЃРѕРіР»Р°СЃРёСЏ") ??
+        (personalDataVoluntaryConsentConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РґРѕР±СЂРѕРІРѕР»СЊРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ РїР°С†РёРµРЅС‚Р° РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ РџР”РЅ.") ??
+        (personalDataMedicalProcessingAcknowledged ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅРёРјР°РµС‚ РѕР±СЂР°Р±РѕС‚РєСѓ РјРµРґРёС†РёРЅСЃРєРёС… РґР°РЅРЅС‹С….")
       );
     }
     if (kind === "medical_intervention_refusal") {
       return (
-        requiredDocumentField(refusalIntervention, "отказ, вмешательство") ??
-        requiredDocumentField(refusalClinicalIndication, "отказ, клиническое показание") ??
-        (documentTextLines(refusalExplainedRisks).length ? null : "Добавьте разъясненные риски отказа.") ??
-        (documentTextLines(refusalAlternatives).length ? null : "Добавьте предложенные альтернативы.") ??
-        (documentTextLines(refusalUrgentWarningSigns).length ? null : "Добавьте тревожные признаки для срочного обращения.") ??
-        requiredDocumentField(refusalDoctorFullName.trim() || activeDoctor?.fullName || "", "отказ, врач") ??
-        requiredDocumentField(refusalConfirmedAt, "отказ, дата подтверждения") ??
-        (refusalConsequencesUnderstood ? null : "Подтвердите, что пациент понял последствия отказа.") ??
-        (refusalSecondOpinionOffered ? null : "Подтвердите, что пациенту предложено второе мнение или альтернатива.") ??
-        (refusalEmergencyCareExplained ? null : "Подтвердите, что пациенту объяснено, когда нужна экстренная помощь.")
+        requiredDocumentField(refusalIntervention, "РѕС‚РєР°Р·, РІРјРµС€Р°С‚РµР»СЊСЃС‚РІРѕ") ??
+        requiredDocumentField(refusalClinicalIndication, "РѕС‚РєР°Р·, РєР»РёРЅРёС‡РµСЃРєРѕРµ РїРѕРєР°Р·Р°РЅРёРµ") ??
+        (documentTextLines(refusalExplainedRisks).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ СЂР°Р·СЉСЏСЃРЅРµРЅРЅС‹Рµ СЂРёСЃРєРё РѕС‚РєР°Р·Р°.") ??
+        (documentTextLines(refusalAlternatives).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ РїСЂРµРґР»РѕР¶РµРЅРЅС‹Рµ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹.") ??
+        (documentTextLines(refusalUrgentWarningSigns).length ? null : "Р”РѕР±Р°РІСЊС‚Рµ С‚СЂРµРІРѕР¶РЅС‹Рµ РїСЂРёР·РЅР°РєРё РґР»СЏ СЃСЂРѕС‡РЅРѕРіРѕ РѕР±СЂР°С‰РµРЅРёСЏ.") ??
+        requiredDocumentField(refusalDoctorFullName.trim() || activeDoctor?.fullName || "", "РѕС‚РєР°Р·, РІСЂР°С‡") ??
+        requiredDocumentField(refusalConfirmedAt, "РѕС‚РєР°Р·, РґР°С‚Р° РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ") ??
+        (refusalConsequencesUnderstood ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚ РїРѕРЅСЏР» РїРѕСЃР»РµРґСЃС‚РІРёСЏ РѕС‚РєР°Р·Р°.") ??
+        (refusalSecondOpinionOffered ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚Сѓ РїСЂРµРґР»РѕР¶РµРЅРѕ РІС‚РѕСЂРѕРµ РјРЅРµРЅРёРµ РёР»Рё Р°Р»СЊС‚РµСЂРЅР°С‚РёРІР°.") ??
+        (refusalEmergencyCareExplained ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ, С‡С‚Рѕ РїР°С†РёРµРЅС‚Сѓ РѕР±СЉСЏСЃРЅРµРЅРѕ, РєРѕРіРґР° РЅСѓР¶РЅР° СЌРєСЃС‚СЂРµРЅРЅР°СЏ РїРѕРјРѕС‰СЊ.")
       );
     }
     return null;
@@ -15388,10 +16531,10 @@ export function App() {
           warrantyAndClaimsTerms: paidContractWarrantyTerms.trim(),
           doctorFullName: paidContractDoctorFullNameValue(),
           signedAt: paidContractSignedAt.trim(),
-          patientReceivedClinicInfo: confirmedDocumentLiteral(paidContractClinicInfoConfirmed, "информация о клинике получена"),
-          patientReceivedPriceAndServiceList: confirmedDocumentLiteral(paidContractServiceListConfirmed, "перечень услуг и цены получены"),
-          patientUnderstandsPaidBasis: confirmedDocumentLiteral(paidContractPaidBasisConfirmed, "платная основа понятна"),
-          changesRequireWrittenAgreement: confirmedDocumentLiteral(paidContractWrittenChangesConfirmed, "изменения оформляются письменно")
+          patientReceivedClinicInfo: confirmedDocumentLiteral(paidContractClinicInfoConfirmed, "РёРЅС„РѕСЂРјР°С†РёСЏ Рѕ РєР»РёРЅРёРєРµ РїРѕР»СѓС‡РµРЅР°"),
+          patientReceivedPriceAndServiceList: confirmedDocumentLiteral(paidContractServiceListConfirmed, "РїРµСЂРµС‡РµРЅСЊ СѓСЃР»СѓРі Рё С†РµРЅС‹ РїРѕР»СѓС‡РµРЅС‹"),
+          patientUnderstandsPaidBasis: confirmedDocumentLiteral(paidContractPaidBasisConfirmed, "РїР»Р°С‚РЅР°СЏ РѕСЃРЅРѕРІР° РїРѕРЅСЏС‚РЅР°"),
+          changesRequireWrittenAgreement: confirmedDocumentLiteral(paidContractWrittenChangesConfirmed, "РёР·РјРµРЅРµРЅРёСЏ РѕС„РѕСЂРјР»СЏСЋС‚СЃСЏ РїРёСЃСЊРјРµРЅРЅРѕ")
         }
       };
     }
@@ -15410,10 +16553,10 @@ export function App() {
           paidRub: completedActPaidRubValue(),
           fiscalReceiptNumbers: completedActFiscalReceiptLines(),
           patientClaimsText: completedActPatientClaims.trim() || null,
-          linkedToSignedContract: confirmedDocumentLiteral(completedActLinkedContract, "акт связан с подписанным договором"),
-          finalServiceScopeConfirmed: confirmedDocumentLiteral(completedActFinalScopeConfirmed, "итоговый объем услуг подтвержден"),
-          fiscalReceiptsVerified: confirmedDocumentLiteral(completedActFiscalReceiptsVerified, "фискальные чеки проверены"),
-          patientAcceptedWorks: confirmedDocumentLiteral(completedActAccepted, "пациент принял работы")
+          linkedToSignedContract: confirmedDocumentLiteral(completedActLinkedContract, "Р°РєС‚ СЃРІСЏР·Р°РЅ СЃ РїРѕРґРїРёСЃР°РЅРЅС‹Рј РґРѕРіРѕРІРѕСЂРѕРј"),
+          finalServiceScopeConfirmed: confirmedDocumentLiteral(completedActFinalScopeConfirmed, "РёС‚РѕРіРѕРІС‹Р№ РѕР±СЉРµРј СѓСЃР»СѓРі РїРѕРґС‚РІРµСЂР¶РґРµРЅ"),
+          fiscalReceiptsVerified: confirmedDocumentLiteral(completedActFiscalReceiptsVerified, "С„РёСЃРєР°Р»СЊРЅС‹Рµ С‡РµРєРё РїСЂРѕРІРµСЂРµРЅС‹"),
+          patientAcceptedWorks: confirmedDocumentLiteral(completedActAccepted, "РїР°С†РёРµРЅС‚ РїСЂРёРЅСЏР» СЂР°Р±РѕС‚С‹")
         }
       };
     }
@@ -15433,10 +16576,10 @@ export function App() {
           responsibleDoctorFullName: treatmentEstimateDoctorFullNameValue(),
           responsibleAdminFullName: treatmentEstimateAdminFullName.trim() || null,
           signedAt: treatmentEstimateSignedAt.trim(),
-          patientUnderstandsPreliminaryEstimate: confirmedDocumentLiteral(treatmentEstimatePreliminaryConfirmed, "предварительный характер сметы понятен"),
-          serviceScopeMatchesTreatmentPlan: confirmedDocumentLiteral(treatmentEstimateScopeConfirmed, "объем сметы соответствует плану"),
-          estimateDoesNotReplaceContractOrFiscalReceipt: confirmedDocumentLiteral(treatmentEstimateFiscalNoticeConfirmed, "смета не заменяет договор и чек"),
-          changesRequireUpdatedEstimate: confirmedDocumentLiteral(treatmentEstimateChangeRulesConfirmed, "изменения требуют обновления сметы")
+          patientUnderstandsPreliminaryEstimate: confirmedDocumentLiteral(treatmentEstimatePreliminaryConfirmed, "РїСЂРµРґРІР°СЂРёС‚РµР»СЊРЅС‹Р№ С…Р°СЂР°РєС‚РµСЂ СЃРјРµС‚С‹ РїРѕРЅСЏС‚РµРЅ"),
+          serviceScopeMatchesTreatmentPlan: confirmedDocumentLiteral(treatmentEstimateScopeConfirmed, "РѕР±СЉРµРј СЃРјРµС‚С‹ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ РїР»Р°РЅСѓ"),
+          estimateDoesNotReplaceContractOrFiscalReceipt: confirmedDocumentLiteral(treatmentEstimateFiscalNoticeConfirmed, "СЃРјРµС‚Р° РЅРµ Р·Р°РјРµРЅСЏРµС‚ РґРѕРіРѕРІРѕСЂ Рё С‡РµРє"),
+          changesRequireUpdatedEstimate: confirmedDocumentLiteral(treatmentEstimateChangeRulesConfirmed, "РёР·РјРµРЅРµРЅРёСЏ С‚СЂРµР±СѓСЋС‚ РѕР±РЅРѕРІР»РµРЅРёСЏ СЃРјРµС‚С‹")
         }
       };
     }
@@ -15457,9 +16600,9 @@ export function App() {
           cashlessPaymentAllowed: paymentInvoiceCashlessAllowed,
           cashDeskPaymentAllowed: paymentInvoiceCashDeskAllowed,
           qrPaymentPayload: paymentInvoiceQrPayload.trim() || null,
-          clinicRequisitesVerified: confirmedDocumentLiteral(paymentInvoiceRequisitesVerified, "реквизиты клиники проверены"),
-          serviceScopeConfirmed: confirmedDocumentLiteral(paymentInvoiceServiceScopeConfirmed, "объем услуги в счете подтвержден"),
-          payerInformedInvoiceIsNotFiscalReceipt: confirmedDocumentLiteral(paymentInvoiceFiscalNoticeConfirmed, "плательщик понимает, что счет не является чеком")
+          clinicRequisitesVerified: confirmedDocumentLiteral(paymentInvoiceRequisitesVerified, "СЂРµРєРІРёР·РёС‚С‹ РєР»РёРЅРёРєРё РїСЂРѕРІРµСЂРµРЅС‹"),
+          serviceScopeConfirmed: confirmedDocumentLiteral(paymentInvoiceServiceScopeConfirmed, "РѕР±СЉРµРј СѓСЃР»СѓРіРё РІ СЃС‡РµС‚Рµ РїРѕРґС‚РІРµСЂР¶РґРµРЅ"),
+          payerInformedInvoiceIsNotFiscalReceipt: confirmedDocumentLiteral(paymentInvoiceFiscalNoticeConfirmed, "РїР»Р°С‚РµР»СЊС‰РёРє РїРѕРЅРёРјР°РµС‚, С‡С‚Рѕ СЃС‡РµС‚ РЅРµ СЏРІР»СЏРµС‚СЃСЏ С‡РµРєРѕРј")
         }
       };
     }
@@ -15479,9 +16622,9 @@ export function App() {
           paymentPurpose: paymentReceiptPurpose.trim(),
           fiscalReceiptNumbers: paymentReceiptFiscalReceiptLines(),
           issuedByFullName: paymentReceiptIssuedByValue(),
-          paymentAndFiscalDataVerified: confirmedDocumentLiteral(paymentReceiptPaymentsVerified, "платежи и фискальные чеки сверены"),
-          payerIdentityVerified: confirmedDocumentLiteral(paymentReceiptPayerVerified, "данные плательщика проверены"),
-          receiptDoesNotReplaceFiscalReceipt: confirmedDocumentLiteral(paymentReceiptFiscalNoticeConfirmed, "квитанция не заменяет кассовый чек")
+          paymentAndFiscalDataVerified: confirmedDocumentLiteral(paymentReceiptPaymentsVerified, "РїР»Р°С‚РµР¶Рё Рё С„РёСЃРєР°Р»СЊРЅС‹Рµ С‡РµРєРё СЃРІРµСЂРµРЅС‹"),
+          payerIdentityVerified: confirmedDocumentLiteral(paymentReceiptPayerVerified, "РґР°РЅРЅС‹Рµ РїР»Р°С‚РµР»СЊС‰РёРєР° РїСЂРѕРІРµСЂРµРЅС‹"),
+          receiptDoesNotReplaceFiscalReceipt: confirmedDocumentLiteral(paymentReceiptFiscalNoticeConfirmed, "РєРІРёС‚Р°РЅС†РёСЏ РЅРµ Р·Р°РјРµРЅСЏРµС‚ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє")
         }
       };
     }
@@ -15499,9 +16642,9 @@ export function App() {
           latePaymentPolicy: installmentScheduleLatePolicy.trim(),
           paymentMethodNotes: installmentSchedulePaymentMethodNotes.trim(),
           responsibleStaffFullName: installmentScheduleResponsibleFullNameValue(),
-          patientAcceptedSchedule: confirmedDocumentLiteral(installmentScheduleAccepted, "график платежей принят"),
-          scheduleDoesNotReplaceFiscalReceipt: confirmedDocumentLiteral(installmentScheduleFiscalNoticeConfirmed, "график не заменяет кассовый чек"),
-          changesRequireWrittenAgreement: confirmedDocumentLiteral(installmentScheduleWrittenChangesConfirmed, "изменения графика оформляются письменно")
+          patientAcceptedSchedule: confirmedDocumentLiteral(installmentScheduleAccepted, "РіСЂР°С„РёРє РїР»Р°С‚РµР¶РµР№ РїСЂРёРЅСЏС‚"),
+          scheduleDoesNotReplaceFiscalReceipt: confirmedDocumentLiteral(installmentScheduleFiscalNoticeConfirmed, "РіСЂР°С„РёРє РЅРµ Р·Р°РјРµРЅСЏРµС‚ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє"),
+          changesRequireWrittenAgreement: confirmedDocumentLiteral(installmentScheduleWrittenChangesConfirmed, "РёР·РјРµРЅРµРЅРёСЏ РіСЂР°С„РёРєР° РѕС„РѕСЂРјР»СЏСЋС‚СЃСЏ РїРёСЃСЊРјРµРЅРЅРѕ")
         }
       };
     }
@@ -15521,11 +16664,11 @@ export function App() {
           alternativesExplained: documentTextLines(minorConsentAlternatives),
           doctorFullName: minorConsentDoctorFullNameValue(),
           signedAt: minorConsentSignedAt.trim(),
-          representativeIdentityVerified: confirmedDocumentLiteral(minorConsentIdentityVerified, "личность представителя проверена"),
-          representativeAuthorityVerified: confirmedDocumentLiteral(minorConsentAuthorityVerified, "полномочия представителя проверены"),
-          informedConsentExplained: confirmedDocumentLiteral(minorConsentExplained, "информированное согласие разъяснено"),
-          medicalRecordConsentStored: confirmedDocumentLiteral(minorConsentStored, "согласие сохранено в медкарте"),
-          ageAppropriateExplanationGiven: confirmedDocumentLiteral(minorConsentAgeExplanation, "ребенку дано объяснение по возрасту")
+          representativeIdentityVerified: confirmedDocumentLiteral(minorConsentIdentityVerified, "Р»РёС‡РЅРѕСЃС‚СЊ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ РїСЂРѕРІРµСЂРµРЅР°"),
+          representativeAuthorityVerified: confirmedDocumentLiteral(minorConsentAuthorityVerified, "РїРѕР»РЅРѕРјРѕС‡РёСЏ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЏ РїСЂРѕРІРµСЂРµРЅС‹"),
+          informedConsentExplained: confirmedDocumentLiteral(minorConsentExplained, "РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ СЂР°Р·СЉСЏСЃРЅРµРЅРѕ"),
+          medicalRecordConsentStored: confirmedDocumentLiteral(minorConsentStored, "СЃРѕРіР»Р°СЃРёРµ СЃРѕС…СЂР°РЅРµРЅРѕ РІ РјРµРґРєР°СЂС‚Рµ"),
+          ageAppropriateExplanationGiven: confirmedDocumentLiteral(minorConsentAgeExplanation, "СЂРµР±РµРЅРєСѓ РґР°РЅРѕ РѕР±СЉСЏСЃРЅРµРЅРёРµ РїРѕ РІРѕР·СЂР°СЃС‚Сѓ")
         }
       };
     }
@@ -15544,9 +16687,9 @@ export function App() {
           linkedActOrContract: warrantyLinkedActOrContractValue(),
           doctorFullName: warrantyDoctorFullNameValue(),
           issuedAt: warrantyIssuedAt.trim(),
-          localWarrantyPolicyApplied: confirmedDocumentLiteral(warrantyPolicyApplied, "локальное гарантийное положение применено"),
-          patientReceivedAftercare: confirmedDocumentLiteral(warrantyAftercareReceived, "пациент получил рекомендации"),
-          patientUnderstandsControlVisits: confirmedDocumentLiteral(warrantyControlVisitsUnderstood, "контрольные визиты понятны")
+          localWarrantyPolicyApplied: confirmedDocumentLiteral(warrantyPolicyApplied, "Р»РѕРєР°Р»СЊРЅРѕРµ РіР°СЂР°РЅС‚РёР№РЅРѕРµ РїРѕР»РѕР¶РµРЅРёРµ РїСЂРёРјРµРЅРµРЅРѕ"),
+          patientReceivedAftercare: confirmedDocumentLiteral(warrantyAftercareReceived, "РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» СЂРµРєРѕРјРµРЅРґР°С†РёРё"),
+          patientUnderstandsControlVisits: confirmedDocumentLiteral(warrantyControlVisitsUnderstood, "РєРѕРЅС‚СЂРѕР»СЊРЅС‹Рµ РІРёР·РёС‚С‹ РїРѕРЅСЏС‚РЅС‹")
         }
       };
     }
@@ -15563,7 +16706,7 @@ export function App() {
           cardioEndocrineNotes: intakeCardioEndocrineNotes.trim(),
           emergencyContact: intakeEmergencyContact.trim() || null,
           additionalNotes: intakeAdditionalNotes.trim() || null,
-          accuracyConfirmed: confirmedDocumentLiteral(intakeAccuracyConfirmed, "пациент подтвердил достоверность анкеты")
+          accuracyConfirmed: confirmedDocumentLiteral(intakeAccuracyConfirmed, "РїР°С†РёРµРЅС‚ РїРѕРґС‚РІРµСЂРґРёР» РґРѕСЃС‚РѕРІРµСЂРЅРѕСЃС‚СЊ Р°РЅРєРµС‚С‹")
         }
       };
     }
@@ -15582,7 +16725,7 @@ export function App() {
           contactForReadyDocument: taxApplicationContact.trim(),
           applicantAuthorityDocument: taxApplicationAuthorityDocument.trim() || null,
           requestedAt: fromDateTimeLocalValue(taxApplicationRequestedAt),
-          duplicateWarningAccepted: confirmedDocumentLiteral(taxApplicationDuplicateWarningAccepted, "проверка дублей налоговой справки подтверждена")
+          duplicateWarningAccepted: confirmedDocumentLiteral(taxApplicationDuplicateWarningAccepted, "РїСЂРѕРІРµСЂРєР° РґСѓР±Р»РµР№ РЅР°Р»РѕРіРѕРІРѕР№ СЃРїСЂР°РІРєРё РїРѕРґС‚РІРµСЂР¶РґРµРЅР°")
         }
       };
     }
@@ -15601,9 +16744,9 @@ export function App() {
           aftercareRequirements: documentTextLines(informedConsentAftercare),
           doctorFullName: informedConsentDoctorFullName.trim() || activeDoctor?.fullName || "",
           consentConfirmedAt: informedConsentConfirmedAt.trim(),
-          patientQuestionsAnswered: confirmedDocumentLiteral(informedConsentQuestionsAnswered, "вопросы пациента по информированному согласию закрыты"),
-          patientUnderstandsRisks: confirmedDocumentLiteral(informedConsentRisksUnderstood, "риски информированного согласия понятны"),
-          patientMayWithdrawBeforeIntervention: confirmedDocumentLiteral(informedConsentWithdrawUnderstood, "право отказаться до вмешательства объяснено")
+          patientQuestionsAnswered: confirmedDocumentLiteral(informedConsentQuestionsAnswered, "РІРѕРїСЂРѕСЃС‹ РїР°С†РёРµРЅС‚Р° РїРѕ РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРјСѓ СЃРѕРіР»Р°СЃРёСЋ Р·Р°РєСЂС‹С‚С‹"),
+          patientUnderstandsRisks: confirmedDocumentLiteral(informedConsentRisksUnderstood, "СЂРёСЃРєРё РёРЅС„РѕСЂРјРёСЂРѕРІР°РЅРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ РїРѕРЅСЏС‚РЅС‹"),
+          patientMayWithdrawBeforeIntervention: confirmedDocumentLiteral(informedConsentWithdrawUnderstood, "РїСЂР°РІРѕ РѕС‚РєР°Р·Р°С‚СЊСЃСЏ РґРѕ РІРјРµС€Р°С‚РµР»СЊСЃС‚РІР° РѕР±СЉСЏСЃРЅРµРЅРѕ")
         }
       };
     }
@@ -15624,9 +16767,9 @@ export function App() {
           doctorFullName: procedureConsentDoctorFullName.trim() || activeDoctor?.fullName || "",
           consentConfirmedAt: procedureConsentConfirmedAt.trim(),
           localClinicFormAttached: procedureConsentLocalFormAttached,
-          patientQuestionsAnswered: confirmedDocumentLiteral(procedureConsentQuestionsAnswered, "вопросы пациента по процедуре закрыты"),
-          exactProcedureConfirmed: confirmedDocumentLiteral(procedureConsentExactProcedureConfirmed, "процедура, зона и объем подтверждены"),
-          patientUnderstandsSpecificRisks: confirmedDocumentLiteral(procedureConsentRisksUnderstood, "процедурные риски понятны")
+          patientQuestionsAnswered: confirmedDocumentLiteral(procedureConsentQuestionsAnswered, "РІРѕРїСЂРѕСЃС‹ РїР°С†РёРµРЅС‚Р° РїРѕ РїСЂРѕС†РµРґСѓСЂРµ Р·Р°РєСЂС‹С‚С‹"),
+          exactProcedureConfirmed: confirmedDocumentLiteral(procedureConsentExactProcedureConfirmed, "РїСЂРѕС†РµРґСѓСЂР°, Р·РѕРЅР° Рё РѕР±СЉРµРј РїРѕРґС‚РІРµСЂР¶РґРµРЅС‹"),
+          patientUnderstandsSpecificRisks: confirmedDocumentLiteral(procedureConsentRisksUnderstood, "РїСЂРѕС†РµРґСѓСЂРЅС‹Рµ СЂРёСЃРєРё РїРѕРЅСЏС‚РЅС‹")
         }
       };
     }
@@ -15646,9 +16789,9 @@ export function App() {
           controlPlan: treatmentPlanControlPlan.trim(),
           doctorFullName: treatmentPlanDoctorFullNameValue(),
           plannedAt: treatmentPlanPlannedAt.trim(),
-          patientQuestionsAnswered: confirmedDocumentLiteral(treatmentPlanQuestionsAnswered, "вопросы пациента по плану лечения закрыты"),
-          planRequiresSeparateConsent: confirmedDocumentLiteral(treatmentPlanSeparateConsentAcknowledged, "план не заменяет отдельное согласие"),
-          planRequiresNewApprovalOnChange: confirmedDocumentLiteral(treatmentPlanNewApprovalAcknowledged, "изменение плана требует нового согласования")
+          patientQuestionsAnswered: confirmedDocumentLiteral(treatmentPlanQuestionsAnswered, "РІРѕРїСЂРѕСЃС‹ РїР°С†РёРµРЅС‚Р° РїРѕ РїР»Р°РЅСѓ Р»РµС‡РµРЅРёСЏ Р·Р°РєСЂС‹С‚С‹"),
+          planRequiresSeparateConsent: confirmedDocumentLiteral(treatmentPlanSeparateConsentAcknowledged, "РїР»Р°РЅ РЅРµ Р·Р°РјРµРЅСЏРµС‚ РѕС‚РґРµР»СЊРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ"),
+          planRequiresNewApprovalOnChange: confirmedDocumentLiteral(treatmentPlanNewApprovalAcknowledged, "РёР·РјРµРЅРµРЅРёРµ РїР»Р°РЅР° С‚СЂРµР±СѓРµС‚ РЅРѕРІРѕРіРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ")
         }
       };
     }
@@ -15669,10 +16812,10 @@ export function App() {
           warrantyAndControlTerms: treatmentAcceptanceWarrantyTerms.trim(),
           doctorFullName: treatmentAcceptanceDoctorFullName.trim() || activeDoctor?.fullName || "",
           acceptedAt: treatmentAcceptanceAcceptedAt.trim(),
-          patientQuestionsAnswered: confirmedDocumentLiteral(treatmentAcceptanceQuestionsAnswered, "вопросы пациента по согласованию плана закрыты"),
-          patientUnderstandsAlternatives: confirmedDocumentLiteral(treatmentAcceptanceAlternativesUnderstood, "альтернативы плана понятны"),
-          patientUnderstandsCostMayChange: confirmedDocumentLiteral(treatmentAcceptanceCostChangeUnderstood, "изменение стоимости понятно"),
-          revisionRequiresNewApproval: confirmedDocumentLiteral(treatmentAcceptanceRevisionAcknowledged, "пересмотр плана требует нового согласования")
+          patientQuestionsAnswered: confirmedDocumentLiteral(treatmentAcceptanceQuestionsAnswered, "РІРѕРїСЂРѕСЃС‹ РїР°С†РёРµРЅС‚Р° РїРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЋ РїР»Р°РЅР° Р·Р°РєСЂС‹С‚С‹"),
+          patientUnderstandsAlternatives: confirmedDocumentLiteral(treatmentAcceptanceAlternativesUnderstood, "Р°Р»СЊС‚РµСЂРЅР°С‚РёРІС‹ РїР»Р°РЅР° РїРѕРЅСЏС‚РЅС‹"),
+          patientUnderstandsCostMayChange: confirmedDocumentLiteral(treatmentAcceptanceCostChangeUnderstood, "РёР·РјРµРЅРµРЅРёРµ СЃС‚РѕРёРјРѕСЃС‚Рё РїРѕРЅСЏС‚РЅРѕ"),
+          revisionRequiresNewApproval: confirmedDocumentLiteral(treatmentAcceptanceRevisionAcknowledged, "РїРµСЂРµСЃРјРѕС‚СЂ РїР»Р°РЅР° С‚СЂРµР±СѓРµС‚ РЅРѕРІРѕРіРѕ СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ")
         }
       };
     }
@@ -15693,9 +16836,9 @@ export function App() {
           plannedFollowUpAt: postVisitFollowUpAt.trim() || null,
           clinicContactInstruction: postVisitClinicContactInstruction.trim(),
           telegramSummary: postVisitTelegramSummary.trim(),
-          patientReceivedPrintedCopy: confirmedDocumentLiteral(postVisitPrintedCopyReceived, "пациент получил памятку"),
-          patientUnderstandsUrgentSigns: confirmedDocumentLiteral(postVisitUrgentSignsUnderstood, "тревожные признаки понятны"),
-          safeForTelegramSending: confirmedDocumentLiteral(postVisitTelegramSafe, "Telegram-текст проверен")
+          patientReceivedPrintedCopy: confirmedDocumentLiteral(postVisitPrintedCopyReceived, "РїР°С†РёРµРЅС‚ РїРѕР»СѓС‡РёР» РїР°РјСЏС‚РєСѓ"),
+          patientUnderstandsUrgentSigns: confirmedDocumentLiteral(postVisitUrgentSignsUnderstood, "С‚СЂРµРІРѕР¶РЅС‹Рµ РїСЂРёР·РЅР°РєРё РїРѕРЅСЏС‚РЅС‹"),
+          safeForTelegramSending: confirmedDocumentLiteral(postVisitTelegramSafe, "Telegram-С‚РµРєСЃС‚ РїСЂРѕРІРµСЂРµРЅ")
         }
       };
     }
@@ -15717,9 +16860,9 @@ export function App() {
               reaction: anesthesiaReaction.trim() || null
             }
           ],
-          patientAnesthesiaRisksExplained: confirmedDocumentLiteral(anesthesiaRisksExplained, "риски анестезии разъяснены"),
-          allergyAndRestrictionStatusChecked: confirmedDocumentLiteral(anesthesiaAllergyRestrictionsChecked, "аллергии и ограничения проверены"),
-          patientConfirmedAnesthesiaConsent: confirmedDocumentLiteral(anesthesiaConsentConfirmed, "согласие на местную анестезию подтверждено")
+          patientAnesthesiaRisksExplained: confirmedDocumentLiteral(anesthesiaRisksExplained, "СЂРёСЃРєРё Р°РЅРµСЃС‚РµР·РёРё СЂР°Р·СЉСЏСЃРЅРµРЅС‹"),
+          allergyAndRestrictionStatusChecked: confirmedDocumentLiteral(anesthesiaAllergyRestrictionsChecked, "Р°Р»Р»РµСЂРіРёРё Рё РѕРіСЂР°РЅРёС‡РµРЅРёСЏ РїСЂРѕРІРµСЂРµРЅС‹"),
+          patientConfirmedAnesthesiaConsent: confirmedDocumentLiteral(anesthesiaConsentConfirmed, "СЃРѕРіР»Р°СЃРёРµ РЅР° РјРµСЃС‚РЅСѓСЋ Р°РЅРµСЃС‚РµР·РёСЋ РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ")
         }
       };
     }
@@ -15757,14 +16900,14 @@ export function App() {
     if (kind === "photo_video_consent") {
       return {
         photoVideoConsent: {
-          clinicalRecordUse: confirmedDocumentLiteral(photoVideoClinicalRecordUseConfirmed, "использование фото, видео и снимков в медицинской карте подтверждено"),
+          clinicalRecordUse: confirmedDocumentLiteral(photoVideoClinicalRecordUseConfirmed, "РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ С„РѕС‚Рѕ, РІРёРґРµРѕ Рё СЃРЅРёРјРєРѕРІ РІ РјРµРґРёС†РёРЅСЃРєРѕР№ РєР°СЂС‚Рµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ"),
           labTransferAllowed: photoVideoLabTransferAllowed,
           colleagueConsultationAllowed: photoVideoColleagueConsultationAllowed,
           educationUseAllowed: photoVideoEducationUseAllowed,
           marketingUseAllowed: photoVideoMarketingUseAllowed,
           recognizablePublicationAllowed: photoVideoRecognizablePublicationAllowed,
           materials: photoVideoMaterials,
-          anonymizationRequired: confirmedDocumentLiteral(photoVideoAnonymizationConfirmed, "обезличивание внешнего использования подтверждено"),
+          anonymizationRequired: confirmedDocumentLiteral(photoVideoAnonymizationConfirmed, "РѕР±РµР·Р»РёС‡РёРІР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ"),
           revocationChannel: photoVideoRevocationChannel.trim(),
           scopeNotes: photoVideoScopeNotes.trim() || null
         }
@@ -15783,7 +16926,7 @@ export function App() {
           priority: xrayPriority,
           includeDicomExport: xrayIncludeDicomExport,
           includeRadiologistReport: xrayIncludeRadiologistReport,
-          requestedBy: xrayRequestedBy.trim() || activeDoctor?.fullName || "лечащий врач",
+          requestedBy: xrayRequestedBy.trim() || activeDoctor?.fullName || "Р»РµС‡Р°С‰РёР№ РІСЂР°С‡",
           recipientClinic: xrayRecipientClinic.trim() || null,
           dueDate: xrayDueDate.trim() || null
         }
@@ -15800,7 +16943,7 @@ export function App() {
         medicalRecordExtract: {
           periodStart: recordExtractPeriodStart.trim(),
           periodEnd: recordExtractPeriodEnd.trim(),
-          sourceVisitIds: sourceVisitIds.length ? sourceVisitIds : [dashboard?.activeVisit.id ?? "текущий визит"],
+          sourceVisitIds: sourceVisitIds.length ? sourceVisitIds : [dashboard?.activeVisit.id ?? "С‚РµРєСѓС‰РёР№ РІРёР·РёС‚"],
           complaintAndAnamnesis: recordExtractComplaintAndAnamnesisValue(),
           objectiveStatus: recordExtractObjectiveStatusValue(),
           diagnosis: recordExtractDiagnosisValue(),
@@ -15811,8 +16954,8 @@ export function App() {
           recipientFullName: recordExtractRecipientFullName.trim() || documentPatient?.fullName || "",
           recipientAuthority: recordExtractRecipientAuthority.trim(),
           issuedAt: recordExtractIssuedAt.trim(),
-          preparedFromSignedMedicalRecords: confirmedDocumentLiteral(recordExtractPreparedFromSignedRecords, "выписка подготовлена из подписанных записей"),
-          thirdPartyDataChecked: confirmedDocumentLiteral(recordExtractThirdPartyDataChecked, "данные третьих лиц проверены")
+          preparedFromSignedMedicalRecords: confirmedDocumentLiteral(recordExtractPreparedFromSignedRecords, "РІС‹РїРёСЃРєР° РїРѕРґРіРѕС‚РѕРІР»РµРЅР° РёР· РїРѕРґРїРёСЃР°РЅРЅС‹С… Р·Р°РїРёСЃРµР№"),
+          thirdPartyDataChecked: confirmedDocumentLiteral(recordExtractThirdPartyDataChecked, "РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РїСЂРѕРІРµСЂРµРЅС‹")
         }
       };
     }
@@ -15831,8 +16974,8 @@ export function App() {
           contactForDelivery: copyRequestContactForDelivery.trim(),
           specialInstructions: copyRequestSpecialInstructions.trim() || null,
           includeDicomSourceData: copyRequestIncludeDicomSourceData,
-          identityVerified: confirmedDocumentLiteral(copyRequestIdentityVerified, "личность получателя запроса проверена"),
-          thirdPartyDataExclusionAcknowledged: confirmedDocumentLiteral(copyRequestThirdPartyDataChecked, "исключение данных третьих лиц подтверждено")
+          identityVerified: confirmedDocumentLiteral(copyRequestIdentityVerified, "Р»РёС‡РЅРѕСЃС‚СЊ РїРѕР»СѓС‡Р°С‚РµР»СЏ Р·Р°РїСЂРѕСЃР° РїСЂРѕРІРµСЂРµРЅР°"),
+          thirdPartyDataExclusionAcknowledged: confirmedDocumentLiteral(copyRequestThirdPartyDataChecked, "РёСЃРєР»СЋС‡РµРЅРёРµ РґР°РЅРЅС‹С… С‚СЂРµС‚СЊРёС… Р»РёС† РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ")
         }
       };
     }
@@ -15846,8 +16989,8 @@ export function App() {
           issuedAt: attendanceIssuedAt.trim(),
           signedByFullName: attendanceSignedByValue(),
           signedByRole: attendanceSignedByRole.trim(),
-          diagnosisDisclosureExcluded: confirmedDocumentLiteral(attendanceDiagnosisDisclosureExcluded, "диагноз не раскрывается в справке посещения"),
-          notSickLeaveAcknowledged: confirmedDocumentLiteral(attendanceNotSickLeaveAcknowledged, "справка не заменяет больничный")
+          diagnosisDisclosureExcluded: confirmedDocumentLiteral(attendanceDiagnosisDisclosureExcluded, "РґРёР°РіРЅРѕР· РЅРµ СЂР°СЃРєСЂС‹РІР°РµС‚СЃСЏ РІ СЃРїСЂР°РІРєРµ РїРѕСЃРµС‰РµРЅРёСЏ"),
+          notSickLeaveAcknowledged: confirmedDocumentLiteral(attendanceNotSickLeaveAcknowledged, "СЃРїСЂР°РІРєР° РЅРµ Р·Р°РјРµРЅСЏРµС‚ Р±РѕР»СЊРЅРёС‡РЅС‹Р№")
         }
       };
     }
@@ -15865,7 +17008,7 @@ export function App() {
           deliveredAt: releaseDeliveredAt.trim(),
           accessExpiresAt: releaseAccessExpiresAt.trim() || null,
           deliveryProtectionNote: releaseProtectionNote.trim(),
-          thirdPartyDataChecked: confirmedDocumentLiteral(releaseThirdPartyDataChecked, "лишние данные третьих лиц исключены")
+          thirdPartyDataChecked: confirmedDocumentLiteral(releaseThirdPartyDataChecked, "Р»РёС€РЅРёРµ РґР°РЅРЅС‹Рµ С‚СЂРµС‚СЊРёС… Р»РёС† РёСЃРєР»СЋС‡РµРЅС‹")
         }
       };
     }
@@ -15901,8 +17044,8 @@ export function App() {
           retentionPeriod: personalDataRetentionPeriod.trim(),
           revocationChannel: personalDataRevocationChannel.trim(),
           consentGivenAt: personalDataConsentGivenAt.trim(),
-          patientConfirmedVoluntaryConsent: confirmedDocumentLiteral(personalDataVoluntaryConsentConfirmed, "добровольное согласие на ПДн подтверждено"),
-          medicalDataProcessingAcknowledged: confirmedDocumentLiteral(personalDataMedicalProcessingAcknowledged, "обработка медицинских данных понятна")
+          patientConfirmedVoluntaryConsent: confirmedDocumentLiteral(personalDataVoluntaryConsentConfirmed, "РґРѕР±СЂРѕРІРѕР»СЊРЅРѕРµ СЃРѕРіР»Р°СЃРёРµ РЅР° РџР”РЅ РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ"),
+          medicalDataProcessingAcknowledged: confirmedDocumentLiteral(personalDataMedicalProcessingAcknowledged, "РѕР±СЂР°Р±РѕС‚РєР° РјРµРґРёС†РёРЅСЃРєРёС… РґР°РЅРЅС‹С… РїРѕРЅСЏС‚РЅР°")
         }
       };
     }
@@ -15917,9 +17060,9 @@ export function App() {
           urgentWarningSigns: documentTextLines(refusalUrgentWarningSigns),
           doctorFullName: refusalDoctorFullName.trim() || activeDoctor?.fullName || "",
           refusalConfirmedAt: refusalConfirmedAt.trim(),
-          patientUnderstandsConsequences: confirmedDocumentLiteral(refusalConsequencesUnderstood, "последствия отказа понятны"),
-          secondOpinionOffered: confirmedDocumentLiteral(refusalSecondOpinionOffered, "второе мнение или альтернатива предложены"),
-          emergencyCareExplained: confirmedDocumentLiteral(refusalEmergencyCareExplained, "экстренная помощь объяснена")
+          patientUnderstandsConsequences: confirmedDocumentLiteral(refusalConsequencesUnderstood, "РїРѕСЃР»РµРґСЃС‚РІРёСЏ РѕС‚РєР°Р·Р° РїРѕРЅСЏС‚РЅС‹"),
+          secondOpinionOffered: confirmedDocumentLiteral(refusalSecondOpinionOffered, "РІС‚РѕСЂРѕРµ РјРЅРµРЅРёРµ РёР»Рё Р°Р»СЊС‚РµСЂРЅР°С‚РёРІР° РїСЂРµРґР»РѕР¶РµРЅС‹"),
+          emergencyCareExplained: confirmedDocumentLiteral(refusalEmergencyCareExplained, "СЌРєСЃС‚СЂРµРЅРЅР°СЏ РїРѕРјРѕС‰СЊ РѕР±СЉСЏСЃРЅРµРЅР°")
         }
       };
     }
@@ -15929,11 +17072,11 @@ export function App() {
   function renderClinicalToothRowsEditor() {
     return (
       <label>
-        Клинические строки по зубам и сегментам
+        РљР»РёРЅРёС‡РµСЃРєРёРµ СЃС‚СЂРѕРєРё РїРѕ Р·СѓР±Р°Рј Рё СЃРµРіРјРµРЅС‚Р°Рј
         <textarea value={clinicalToothRowsText} onChange={(event) => setClinicalToothRowsText(event.target.value)} rows={5} />
         <small>
-          Формат строки: зуб/сегмент | поверхности | статус | диагноз/находка | показание | действие | прогноз | пародонт | имплант/ортопедия |
-          ортодонтия
+          Р¤РѕСЂРјР°С‚ СЃС‚СЂРѕРєРё: Р·СѓР±/СЃРµРіРјРµРЅС‚ | РїРѕРІРµСЂС…РЅРѕСЃС‚Рё | СЃС‚Р°С‚СѓСЃ | РґРёР°РіРЅРѕР·/РЅР°С…РѕРґРєР° | РїРѕРєР°Р·Р°РЅРёРµ | РґРµР№СЃС‚РІРёРµ | РїСЂРѕРіРЅРѕР· | РїР°СЂРѕРґРѕРЅС‚ | РёРјРїР»Р°РЅС‚/РѕСЂС‚РѕРїРµРґРёСЏ |
+          РѕСЂС‚РѕРґРѕРЅС‚РёСЏ
         </small>
       </label>
     );
@@ -15941,11 +17084,11 @@ export function App() {
 
   async function createDocument(kind: GeneratedDocument["kind"]) {
     if (documentCreateSavingKind) {
-      setError("Дождитесь завершения текущего создания документа.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ СЃРѕР·РґР°РЅРёСЏ РґРѕРєСѓРјРµРЅС‚Р°.");
       return;
     }
     if (!documentPatient || !dashboard) {
-      setError("Выберите пациента перед созданием документа.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р° РїРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј РґРѕРєСѓРјРµРЅС‚Р°.");
       return;
     }
     const amountSource = documentAmountSource(kind);
@@ -15958,16 +17101,16 @@ export function App() {
     }
     const documentPayload = documentPayloadForKind(kind);
     if ((kind === "tax_deduction_certificate" || kind === "tax_deduction_registry") && taxDocumentYear < 2024) {
-      setError("КНД 1151156 подходит только для оплат с 2024 года. Для 2021-2023 выберите старую справку.");
+      setError("РљРќР” 1151156 РїРѕРґС…РѕРґРёС‚ С‚РѕР»СЊРєРѕ РґР»СЏ РѕРїР»Р°С‚ СЃ 2024 РіРѕРґР°. Р”Р»СЏ 2021-2023 РІС‹Р±РµСЂРёС‚Рµ СЃС‚Р°СЂСѓСЋ СЃРїСЂР°РІРєСѓ.");
       return;
     }
     if (kind === "legacy_tax_deduction_certificate" && (taxDocumentYear < 2021 || taxDocumentYear > 2023)) {
-      setError("Старая налоговая справка подходит только для оплат 2021-2023. Для 2024+ выберите КНД 1151156.");
+      setError("РЎС‚Р°СЂР°СЏ РЅР°Р»РѕРіРѕРІР°СЏ СЃРїСЂР°РІРєР° РїРѕРґС…РѕРґРёС‚ С‚РѕР»СЊРєРѕ РґР»СЏ РѕРїР»Р°С‚ 2021-2023. Р”Р»СЏ 2024+ РІС‹Р±РµСЂРёС‚Рµ РљРќР” 1151156.");
       return;
     }
     const selectedTaxPayerInn = isTaxDocument ? selectedTaxDocumentPayerInn : "";
     if (isTaxDocument && taxDocumentPayerOptions.length > 1 && !selectedTaxDocumentPayerKey) {
-      setError("Выберите плательщика для КНД 1151156. Разные налогоплательщики должны идти отдельными справками.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РїР»Р°С‚РµР»СЊС‰РёРєР° РґР»СЏ РљРќР” 1151156. Р Р°Р·РЅС‹Рµ РЅР°Р»РѕРіРѕРїР»Р°С‚РµР»СЊС‰РёРєРё РґРѕР»Р¶РЅС‹ РёРґС‚Рё РѕС‚РґРµР»СЊРЅС‹РјРё СЃРїСЂР°РІРєР°РјРё.");
       return;
     }
     const usesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(kind);
@@ -15981,18 +17124,18 @@ export function App() {
       ? selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
       : [];
     if (requiresTaxPaymentSelection && selectedTaxPaymentIdsForDocument.length === 0) {
-      setError("Выберите фискальные чеки для налогового документа. Система больше не подставляет все оплаты за год автоматически.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ С„РёСЃРєР°Р»СЊРЅС‹Рµ С‡РµРєРё РґР»СЏ РЅР°Р»РѕРіРѕРІРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р°. РЎРёСЃС‚РµРјР° Р±РѕР»СЊС€Рµ РЅРµ РїРѕРґСЃС‚Р°РІР»СЏРµС‚ РІСЃРµ РѕРїР»Р°С‚С‹ Р·Р° РіРѕРґ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.");
       return;
     }
     if (requiresPaymentReceiptSelection && selectedPaymentReceiptIdsForDocument.length === 0) {
-      setError("Выберите оплаченные платежи для платежной квитанции. Система не подставляет все оплаты скрыто.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РѕРїР»Р°С‡РµРЅРЅС‹Рµ РїР»Р°С‚РµР¶Рё РґР»СЏ РїР»Р°С‚РµР¶РЅРѕР№ РєРІРёС‚Р°РЅС†РёРё. РЎРёСЃС‚РµРјР° РЅРµ РїРѕРґСЃС‚Р°РІР»СЏРµС‚ РІСЃРµ РѕРїР»Р°С‚С‹ СЃРєСЂС‹С‚Рѕ.");
       return;
     }
     const linkActiveVisit =
       metadata.requiresVisit || metadata.group === "payment" || (metadata.group !== "tax" && metadata.amountSource !== "none");
     if (linkActiveVisit && !documentPatientMatchesActiveVisit) {
       setError(
-        `Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`
+        `Р”РѕРєСѓРјРµРЅС‚ В«${metadata.label}В» С‚СЂРµР±СѓРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ РїСЂРёРµРјР° РїР°С†РёРµРЅС‚Р° ${documentPatient.fullName}. РЎРµР№С‡Р°СЃ РѕС‚РєСЂС‹С‚ РїСЂРёРµРј РґСЂСѓРіРѕРіРѕ РїР°С†РёРµРЅС‚Р°, РїРѕСЌС‚РѕРјСѓ СЃРёСЃС‚РµРјР° РЅРµ СЃРѕР·РґР°СЃС‚ РґРѕРєСѓРјРµРЅС‚ СЃ С‡СѓР¶РѕР№ РїСЂРёРІСЏР·РєРѕР№ Рє РїСЂРёРµРјСѓ. РћС‚РєСЂРѕР№С‚Рµ РЅСѓР¶РЅС‹Р№ РїСЂРёРµРј РёР»Рё РІС‹Р±РµСЂРёС‚Рµ РґРѕРєСѓРјРµРЅС‚ Р±РµР· РїСЂРёРІСЏР·РєРё Рє РІРёР·РёС‚Сѓ.`
       );
       return;
     }
@@ -16020,8 +17163,8 @@ export function App() {
     if (amountSource === "paid" && !paidAmount) {
       setError(
         metadata.group === "tax"
-          ? `Для налогового документа нужна фактическая оплата за ${taxDocumentYear} год. План лечения и оплаты других лет не подходят.`
-          : "Для этого документа нужна фактическая оплата. План лечения или примерная сумма не подходят."
+          ? `Р”Р»СЏ РЅР°Р»РѕРіРѕРІРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р° РЅСѓР¶РЅР° С„Р°РєС‚РёС‡РµСЃРєР°СЏ РѕРїР»Р°С‚Р° Р·Р° ${taxDocumentYear} РіРѕРґ. РџР»Р°РЅ Р»РµС‡РµРЅРёСЏ Рё РѕРїР»Р°С‚С‹ РґСЂСѓРіРёС… Р»РµС‚ РЅРµ РїРѕРґС…РѕРґСЏС‚.`
+          : "Р”Р»СЏ СЌС‚РѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р° РЅСѓР¶РЅР° С„Р°РєС‚РёС‡РµСЃРєР°СЏ РѕРїР»Р°С‚Р°. РџР»Р°РЅ Р»РµС‡РµРЅРёСЏ РёР»Рё РїСЂРёРјРµСЂРЅР°СЏ СЃСѓРјРјР° РЅРµ РїРѕРґС…РѕРґСЏС‚."
       );
       return;
     }
@@ -16031,7 +17174,7 @@ export function App() {
       paidAmount &&
       documentPayload.paymentRefundCorrection.amountRub > paidAmount
     ) {
-      setError("Сумма возврата или коррекции не может превышать фактическую оплату по выбранному визиту.");
+      setError("РЎСѓРјРјР° РІРѕР·РІСЂР°С‚Р° РёР»Рё РєРѕСЂСЂРµРєС†РёРё РЅРµ РјРѕР¶РµС‚ РїСЂРµРІС‹С€Р°С‚СЊ С„Р°РєС‚РёС‡РµСЃРєСѓСЋ РѕРїР»Р°С‚Сѓ РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ РІРёР·РёС‚Сѓ.");
       return;
     }
     const totalAmountRub = amountSource === "paid" ? paidAmount : amountSource === "planned" ? plannedAmount : null;
@@ -16050,22 +17193,22 @@ export function App() {
           taxYear: isTaxDocument ? taxDocumentYear : null,
           taxPayerInn: isTaxDocument ? selectedTaxPayerInn || null : null,
           payload: payloadForDocument,
-          title: isTaxDocument ? `${metadata.title} за ${taxDocumentYear} год` : undefined,
+          title: isTaxDocument ? `${metadata.title} Р·Р° ${taxDocumentYear} РіРѕРґ` : undefined,
           totalAmountRub: moneyDocumentKinds.has(kind) ? totalAmountRub : null
         })
       });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "Документ не создан"));
+        setError(await responseErrorMessage(response, "Р”РѕРєСѓРјРµРЅС‚ РЅРµ СЃРѕР·РґР°РЅ"));
         return;
       }
       try {
         await loadDashboard();
         setError(null);
       } catch (error) {
-        setError(requestFailureMessage("Документ создан, но список документов не перезагружен", error));
+        setError(requestFailureMessage("Р”РѕРєСѓРјРµРЅС‚ СЃРѕР·РґР°РЅ, РЅРѕ СЃРїРёСЃРѕРє РґРѕРєСѓРјРµРЅС‚РѕРІ РЅРµ РїРµСЂРµР·Р°РіСЂСѓР¶РµРЅ", error));
       }
     } catch (error) {
-      setError(requestFailureMessage("Документ не создан", error));
+      setError(requestFailureMessage("Р”РѕРєСѓРјРµРЅС‚ РЅРµ СЃРѕР·РґР°РЅ", error));
     } finally {
       setDocumentCreateSavingKind(null);
     }
@@ -16073,7 +17216,7 @@ export function App() {
 
   async function updateDocumentStatus(documentId: string, action: "issue" | "void", payload?: unknown): Promise<boolean> {
     if (documentStatusSavingId) {
-      setError("Дождитесь завершения текущего действия с документом.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ РґРµР№СЃС‚РІРёСЏ СЃ РґРѕРєСѓРјРµРЅС‚РѕРј.");
       return false;
     }
     setDocumentStatusSavingId(documentId);
@@ -16089,7 +17232,7 @@ export function App() {
           : {})
       });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "Статус документа не обновлен"));
+        setError(await responseErrorMessage(response, "РЎС‚Р°С‚СѓСЃ РґРѕРєСѓРјРµРЅС‚Р° РЅРµ РѕР±РЅРѕРІР»РµРЅ"));
         return false;
       }
       setDocumentAuditFacts(null);
@@ -16097,11 +17240,11 @@ export function App() {
         await loadDashboard();
         setError(null);
       } catch (error) {
-        setError(requestFailureMessage("Статус документа обновлен, но список документов не перезагружен", error));
+        setError(requestFailureMessage("РЎС‚Р°С‚СѓСЃ РґРѕРєСѓРјРµРЅС‚Р° РѕР±РЅРѕРІР»РµРЅ, РЅРѕ СЃРїРёСЃРѕРє РґРѕРєСѓРјРµРЅС‚РѕРІ РЅРµ РїРµСЂРµР·Р°РіСЂСѓР¶РµРЅ", error));
       }
       return true;
     } catch (error) {
-      setError(requestFailureMessage("Статус документа не обновлен", error));
+      setError(requestFailureMessage("РЎС‚Р°С‚СѓСЃ РґРѕРєСѓРјРµРЅС‚Р° РЅРµ РѕР±РЅРѕРІР»РµРЅ", error));
       return false;
     } finally {
       setDocumentStatusSavingId(null);
@@ -16110,21 +17253,21 @@ export function App() {
 
   function requestDocumentIssue(document: GeneratedDocument) {
     if (!dashboard) {
-      setError("Данные клиники еще не загружены. Повторите выдачу документа после загрузки рабочего экрана.");
+      setError("Р”Р°РЅРЅС‹Рµ РєР»РёРЅРёРєРё РµС‰Рµ РЅРµ Р·Р°РіСЂСѓР¶РµРЅС‹. РџРѕРІС‚РѕСЂРёС‚Рµ РІС‹РґР°С‡Сѓ РґРѕРєСѓРјРµРЅС‚Р° РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё СЂР°Р±РѕС‡РµРіРѕ СЌРєСЂР°РЅР°.");
       return;
     }
     if (document.status !== "draft") {
-      setError("Выдать можно только черновик документа.");
+      setError("Р’С‹РґР°С‚СЊ РјРѕР¶РЅРѕ С‚РѕР»СЊРєРѕ С‡РµСЂРЅРѕРІРёРє РґРѕРєСѓРјРµРЅС‚Р°.");
       return;
     }
     setDocumentIssueSignedAt(currentLocalDateTimeInputValue());
     setDocumentIssueRecipientFullName(patientName(dashboard.patients, document.patientId));
-    setDocumentIssueRecipientRole("пациент/законный представитель");
+    setDocumentIssueRecipientRole("РїР°С†РёРµРЅС‚/Р·Р°РєРѕРЅРЅС‹Р№ РїСЂРµРґСЃС‚Р°РІРёС‚РµР»СЊ");
     if (!documentIssueStaffFullName.trim() && activeDoctor?.fullName) {
       setDocumentIssueStaffFullName(activeDoctor.fullName);
     }
     if (!documentIssueStaffRole.trim()) {
-      setDocumentIssueStaffRole(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Врач/администратор");
+      setDocumentIssueStaffRole(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Р’СЂР°С‡/Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ");
     }
     setDocumentIssueNote("");
     setDocumentIssueIdentityChecked(false);
@@ -16137,11 +17280,11 @@ export function App() {
   async function confirmDocumentIssue() {
     const documentId = documentIssueConfirmation?.id;
     if (!documentId) {
-      setError("Выберите черновик документа для выдачи.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ С‡РµСЂРЅРѕРІРёРє РґРѕРєСѓРјРµРЅС‚Р° РґР»СЏ РІС‹РґР°С‡Рё.");
       return;
     }
     if (!documentIssueAttestationReady) {
-      setError("Перед выдачей отметьте проверку личности, просмотр документа и подписи пациента/клиники.");
+      setError("РџРµСЂРµРґ РІС‹РґР°С‡РµР№ РѕС‚РјРµС‚СЊС‚Рµ РїСЂРѕРІРµСЂРєСѓ Р»РёС‡РЅРѕСЃС‚Рё, РїСЂРѕСЃРјРѕС‚СЂ РґРѕРєСѓРјРµРЅС‚Р° Рё РїРѕРґРїРёСЃРё РїР°С†РёРµРЅС‚Р°/РєР»РёРЅРёРєРё.");
       return;
     }
     const payload = {
@@ -16173,7 +17316,7 @@ export function App() {
 
   function requestDocumentVoid(document: GeneratedDocument) {
     if (document.status === "voided") {
-      setError("Документ уже аннулирован.");
+      setError("Р”РѕРєСѓРјРµРЅС‚ СѓР¶Рµ Р°РЅРЅСѓР»РёСЂРѕРІР°РЅ.");
       return;
     }
     setDocumentVoidReasonCode(document.status === "issued" ? "issued_in_error" : "draft_error");
@@ -16182,7 +17325,7 @@ export function App() {
       setDocumentVoidStaffFullName(activeDoctor.fullName);
     }
     if (!documentVoidStaffRole.trim()) {
-      setDocumentVoidStaffRole(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Врач/администратор");
+      setDocumentVoidStaffRole(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Р’СЂР°С‡/Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ");
     }
     setDocumentVoidCorrectionDocumentId("");
     setDocumentVoidReplacementRequired(document.status === "issued");
@@ -16195,11 +17338,11 @@ export function App() {
   async function confirmDocumentVoid() {
     const documentId = documentVoidConfirmation?.id;
     if (!documentId) {
-      setError("Выберите документ для аннулирования.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РґРѕРєСѓРјРµРЅС‚ РґР»СЏ Р°РЅРЅСѓР»РёСЂРѕРІР°РЅРёСЏ.");
       return;
     }
     if (!documentVoidReady) {
-      setError("Перед аннулированием укажите причину, ответственного сотрудника, сохранение архива и проверку статуса.");
+      setError("РџРµСЂРµРґ Р°РЅРЅСѓР»РёСЂРѕРІР°РЅРёРµРј СѓРєР°Р¶РёС‚Рµ РїСЂРёС‡РёРЅСѓ, РѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕРіРѕ СЃРѕС‚СЂСѓРґРЅРёРєР°, СЃРѕС…СЂР°РЅРµРЅРёРµ Р°СЂС…РёРІР° Рё РїСЂРѕРІРµСЂРєСѓ СЃС‚Р°С‚СѓСЃР°.");
       return;
     }
     const payload = {
@@ -16226,7 +17369,7 @@ export function App() {
     try {
       const response = await fetch(`/api/documents/${documentId}/tax-xml`, { cache: "no-store", headers: denteClinicalReadHeaders() });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "XML ФНС не выгружен"));
+        setError(await responseErrorMessage(response, "XML Р¤РќРЎ РЅРµ РІС‹РіСЂСѓР¶РµРЅ"));
         return;
       }
 
@@ -16244,7 +17387,7 @@ export function App() {
       URL.revokeObjectURL(url);
       setError(null);
     } catch (error) {
-      setError(requestFailureMessage("XML ФНС не выгружен", error));
+      setError(requestFailureMessage("XML Р¤РќРЎ РЅРµ РІС‹РіСЂСѓР¶РµРЅ", error));
     }
   }
 
@@ -16253,13 +17396,13 @@ export function App() {
     try {
       const response = await fetch(`/api/documents/${documentId}/audit-facts`, { cache: "no-store", headers: denteClinicalReadHeaders() });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "Паспорт выдачи не загружен"));
+        setError(await responseErrorMessage(response, "РџР°СЃРїРѕСЂС‚ РІС‹РґР°С‡Рё РЅРµ Р·Р°РіСЂСѓР¶РµРЅ"));
         return;
       }
       setDocumentAuditFacts((await response.json()) as DocumentAuditFacts);
       setError(null);
     } catch (error) {
-      setError(requestFailureMessage("Паспорт выдачи не загружен", error));
+      setError(requestFailureMessage("РџР°СЃРїРѕСЂС‚ РІС‹РґР°С‡Рё РЅРµ Р·Р°РіСЂСѓР¶РµРЅ", error));
     } finally {
       setDocumentAuditFactsLoadingId(null);
     }
@@ -16277,7 +17420,7 @@ export function App() {
     try {
       const response = await fetch(issuedDocumentHtmlDownloadUrl(documentId), { cache: "no-store", headers: denteClinicalReadHeaders() });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "Архивный HTML не скачан"));
+        setError(await responseErrorMessage(response, "РђСЂС…РёРІРЅС‹Р№ HTML РЅРµ СЃРєР°С‡Р°РЅ"));
         return;
       }
 
@@ -16295,7 +17438,7 @@ export function App() {
       URL.revokeObjectURL(url);
       if (!options.preserveError) setError(null);
     } catch (error) {
-      setError(requestFailureMessage("Архивный HTML не скачан", error));
+      setError(requestFailureMessage("РђСЂС…РёРІРЅС‹Р№ HTML РЅРµ СЃРєР°С‡Р°РЅ", error));
     }
   }
 
@@ -16304,7 +17447,7 @@ export function App() {
       const previewUrl = issuedDocumentHtmlPreviewUrl(documentId);
       if (clinicalAdminSecretSession.trim()) {
         setError(
-          "HTML-предпросмотр в новом окне не может передать секрет администратора клиники. CRM запускает защищенное скачивание архивного HTML."
+          "HTML-РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ РІ РЅРѕРІРѕРј РѕРєРЅРµ РЅРµ РјРѕР¶РµС‚ РїРµСЂРµРґР°С‚СЊ СЃРµРєСЂРµС‚ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РєР»РёРЅРёРєРё. CRM Р·Р°РїСѓСЃРєР°РµС‚ Р·Р°С‰РёС‰РµРЅРЅРѕРµ СЃРєР°С‡РёРІР°РЅРёРµ Р°СЂС…РёРІРЅРѕРіРѕ HTML."
         );
         await downloadIssuedDocumentHtml(documentId, { preserveError: true });
         return;
@@ -16317,11 +17460,11 @@ export function App() {
       }
 
       setError(
-        "Браузер заблокировал новое окно документа. CRM запускает скачивание архивного HTML; если мобильный браузер его отклонит, нажмите \"Скачать HTML\" в строке документа."
+        "Р‘СЂР°СѓР·РµСЂ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°Р» РЅРѕРІРѕРµ РѕРєРЅРѕ РґРѕРєСѓРјРµРЅС‚Р°. CRM Р·Р°РїСѓСЃРєР°РµС‚ СЃРєР°С‡РёРІР°РЅРёРµ Р°СЂС…РёРІРЅРѕРіРѕ HTML; РµСЃР»Рё РјРѕР±РёР»СЊРЅС‹Р№ Р±СЂР°СѓР·РµСЂ РµРіРѕ РѕС‚РєР»РѕРЅРёС‚, РЅР°Р¶РјРёС‚Рµ \"РЎРєР°С‡Р°С‚СЊ HTML\" РІ СЃС‚СЂРѕРєРµ РґРѕРєСѓРјРµРЅС‚Р°."
       );
       await downloadIssuedDocumentHtml(documentId, { preserveError: true });
     } catch (error) {
-      setError(requestFailureMessage("HTML документа не открыт", error));
+      setError(requestFailureMessage("HTML РґРѕРєСѓРјРµРЅС‚Р° РЅРµ РѕС‚РєСЂС‹С‚", error));
     }
   }
 
@@ -16329,7 +17472,7 @@ export function App() {
     try {
       const response = await fetch(`/api/documents/${documentId}/pdf`, { cache: "no-store", headers: denteClinicalReadHeaders() });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "PDF не сформирован"));
+        setError(await responseErrorMessage(response, "PDF РЅРµ СЃС„РѕСЂРјРёСЂРѕРІР°РЅ"));
         return;
       }
 
@@ -16347,28 +17490,28 @@ export function App() {
       URL.revokeObjectURL(url);
       setError(null);
     } catch (error) {
-      setError(requestFailureMessage("PDF не сформирован", error));
+      setError(requestFailureMessage("PDF РЅРµ СЃС„РѕСЂРјРёСЂРѕРІР°РЅ", error));
     }
   }
 
   async function recordPayment() {
     setPaymentFeedback("");
     if (isPaymentSaving) {
-      setError("Дождитесь завершения текущей записи оплаты.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ Р·Р°РїРёСЃРё РѕРїР»Р°С‚С‹.");
       return;
     }
     if (!documentPatient || !dashboard) {
-      setError("Выберите пациента и активный прием перед записью оплаты.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р° Рё Р°РєС‚РёРІРЅС‹Р№ РїСЂРёРµРј РїРµСЂРµРґ Р·Р°РїРёСЃСЊСЋ РѕРїР»Р°С‚С‹.");
       return;
     }
     if (!documentPatientMatchesActiveVisit) {
-      setError(paymentPatientContextMessage || "Оплата не записана: выбранный пациент не совпадает с активным приемом.");
+      setError(paymentPatientContextMessage || "РћРїР»Р°С‚Р° РЅРµ Р·Р°РїРёСЃР°РЅР°: РІС‹Р±СЂР°РЅРЅС‹Р№ РїР°С†РёРµРЅС‚ РЅРµ СЃРѕРІРїР°РґР°РµС‚ СЃ Р°РєС‚РёРІРЅС‹Рј РїСЂРёРµРјРѕРј.");
       return;
     }
     const amountRub = normalizeRubAmountInput(paymentAmount);
     const amountMissingStep = rubAmountInputMissingStep(paymentAmount);
     if (amountMissingStep || amountRub === null) {
-      setError(`Сумма оплаты: ${amountMissingStep ?? "укажите сумму больше нуля"}.`);
+      setError(`РЎСѓРјРјР° РѕРїР»Р°С‚С‹: ${amountMissingStep ?? "СѓРєР°Р¶РёС‚Рµ СЃСѓРјРјСѓ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ"}.`);
       return;
     }
     const paymentPayerName = paymentPayerFullName.trim();
@@ -16383,34 +17526,34 @@ export function App() {
     const taxReadyPaymentRequested = paymentTaxDeductionCode === "1" || paymentTaxDeductionCode === "2";
     if (taxReadyPaymentRequested) {
       const missingTaxFields = [
-        [paymentFiscalReceiptIssuedAt.trim(), "дата фискального чека"],
-        [explicitFiscalFn, "ФН"],
-        [explicitFiscalFd, "ФД"],
-        [explicitFiscalFpd, "ФПД"],
-        [paymentPayerName, "ФИО плательщика"],
-        [explicitPayerBirthDate, "дата рождения плательщика"],
-        [explicitPayerIdentityDocument, "документ плательщика"],
-        [paymentPayerRelation, "родство плательщика"]
+        [paymentFiscalReceiptIssuedAt.trim(), "РґР°С‚Р° С„РёСЃРєР°Р»СЊРЅРѕРіРѕ С‡РµРєР°"],
+        [explicitFiscalFn, "Р¤Рќ"],
+        [explicitFiscalFd, "Р¤Р”"],
+        [explicitFiscalFpd, "Р¤РџР”"],
+        [paymentPayerName, "Р¤РРћ РїР»Р°С‚РµР»СЊС‰РёРєР°"],
+        [explicitPayerBirthDate, "РґР°С‚Р° СЂРѕР¶РґРµРЅРёСЏ РїР»Р°С‚РµР»СЊС‰РёРєР°"],
+        [explicitPayerIdentityDocument, "РґРѕРєСѓРјРµРЅС‚ РїР»Р°С‚РµР»СЊС‰РёРєР°"],
+        [paymentPayerRelation, "СЂРѕРґСЃС‚РІРѕ РїР»Р°С‚РµР»СЊС‰РёРєР°"]
       ]
         .filter(([value]) => !value)
         .map(([, label]) => label);
       if (missingTaxFields.length) {
-        setError(`Для налоговой оплаты заполните явно: ${missingTaxFields.join(", ")}. Данные из карточки пациента не подставляются автоматически.`);
+        setError(`Р”Р»СЏ РЅР°Р»РѕРіРѕРІРѕР№ РѕРїР»Р°С‚С‹ Р·Р°РїРѕР»РЅРёС‚Рµ СЏРІРЅРѕ: ${missingTaxFields.join(", ")}. Р”Р°РЅРЅС‹Рµ РёР· РєР°СЂС‚РѕС‡РєРё РїР°С†РёРµРЅС‚Р° РЅРµ РїРѕРґСЃС‚Р°РІР»СЏСЋС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.`);
         return;
       }
     }
     if (explicitFiscalReceiptUrl && !/^https?:\/\/\S+$/i.test(explicitFiscalReceiptUrl)) {
-      setError("Ссылка ОФД должна начинаться с http:// или https://");
+      setError("РЎСЃС‹Р»РєР° РћР¤Р” РґРѕР»Р¶РЅР° РЅР°С‡РёРЅР°С‚СЊСЃСЏ СЃ http:// РёР»Рё https://");
       return;
     }
     const patientIsPayer =
       (!paymentPayerName || paymentPayerName === documentPatient.fullName) &&
-      (!paymentPayerRelation || paymentPayerRelation.toLocaleLowerCase("ru-RU") === "пациент");
+      (!paymentPayerRelation || paymentPayerRelation.toLocaleLowerCase("ru-RU") === "РїР°С†РёРµРЅС‚");
     const administrativePayerInn = patientIsPayer ? documentPatient.administrativeProfile?.taxpayerInn?.trim() ?? "" : "";
     const administrativePayerDocument = patientIsPayer ? documentPatient.administrativeProfile?.identityDocument?.trim() ?? "" : "";
     const normalizedPayerInn = taxReadyPaymentRequested ? explicitPayerInn : explicitPayerInn || administrativePayerInn;
     if (normalizedPayerInn && !/^\d{10}$|^\d{12}$/.test(normalizedPayerInn)) {
-      setError("ИНН плательщика должен содержать 10 или 12 цифр");
+      setError("РРќРќ РїР»Р°С‚РµР»СЊС‰РёРєР° РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ 10 РёР»Рё 12 С†РёС„СЂ");
       return;
     }
     setIsPaymentSaving(true);
@@ -16451,13 +17594,13 @@ export function App() {
           payerIdentityDocument: taxReadyPaymentRequested
             ? explicitPayerIdentityDocument
             : explicitPayerIdentityDocument || administrativePayerDocument || null,
-          payerRelationship: taxReadyPaymentRequested ? paymentPayerRelation : paymentPayerRelation || "пациент",
+          payerRelationship: taxReadyPaymentRequested ? paymentPayerRelation : paymentPayerRelation || "РїР°С†РёРµРЅС‚",
           taxDeductionCode: paymentTaxDeductionCode || null,
-          note: "Оплата из рабочего экрана CRM"
+          note: "РћРїР»Р°С‚Р° РёР· СЂР°Р±РѕС‡РµРіРѕ СЌРєСЂР°РЅР° CRM"
         })
       });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "Оплата не записана"));
+        setError(await responseErrorMessage(response, "РћРїР»Р°С‚Р° РЅРµ Р·Р°РїРёСЃР°РЅР°"));
         return;
       }
       setPaymentAmount("");
@@ -16472,13 +17615,13 @@ export function App() {
       setPaymentPayerInn("");
       setPaymentPayerBirthDate("");
       setPaymentPayerIdentityDocument("");
-      setPaymentPayerRelationship("пациент");
+      setPaymentPayerRelationship("РїР°С†РёРµРЅС‚");
       setPaymentTaxDeductionCode("");
       await loadDashboard();
-      setPaymentFeedback(`Оплата ${money(amountRub)} записана для ${documentPatient.fullName}. Фискальные и налоговые поля очищены для следующего платежа.`);
+      setPaymentFeedback(`РћРїР»Р°С‚Р° ${money(amountRub)} Р·Р°РїРёСЃР°РЅР° РґР»СЏ ${documentPatient.fullName}. Р¤РёСЃРєР°Р»СЊРЅС‹Рµ Рё РЅР°Р»РѕРіРѕРІС‹Рµ РїРѕР»СЏ РѕС‡РёС‰РµРЅС‹ РґР»СЏ СЃР»РµРґСѓСЋС‰РµРіРѕ РїР»Р°С‚РµР¶Р°.`);
       setError(null);
     } catch (paymentError) {
-      setError(operatorWorkflowFailureMessage("Оплата не записана", paymentError));
+      setError(operatorWorkflowFailureMessage("РћРїР»Р°С‚Р° РЅРµ Р·Р°РїРёСЃР°РЅР°", paymentError));
     } finally {
       setIsPaymentSaving(false);
     }
@@ -16511,14 +17654,18 @@ export function App() {
     if (dashboard && task.patientId !== dashboard.activeVisit.patientId) {
       const taskPatientName = patientName(dashboard.patients, task.patientId);
       setError(
-        `Открыта форма «${documentLabels[kind]}» для заявки пациента ${taskPatientName}. Перед выпуском документа переключите активный прием на этого пациента, чтобы не создать документ по текущему визиту.`
+        `РћС‚РєСЂС‹С‚Р° С„РѕСЂРјР° В«${documentLabels[kind]}В» РґР»СЏ Р·Р°СЏРІРєРё РїР°С†РёРµРЅС‚Р° ${taskPatientName}. РџРµСЂРµРґ РІС‹РїСѓСЃРєРѕРј РґРѕРєСѓРјРµРЅС‚Р° РїРµСЂРµРєР»СЋС‡РёС‚Рµ Р°РєС‚РёРІРЅС‹Р№ РїСЂРёРµРј РЅР° СЌС‚РѕРіРѕ РїР°С†РёРµРЅС‚Р°, С‡С‚РѕР±С‹ РЅРµ СЃРѕР·РґР°С‚СЊ РґРѕРєСѓРјРµРЅС‚ РїРѕ С‚РµРєСѓС‰РµРјСѓ РІРёР·РёС‚Сѓ.`
       );
     }
   }
 
   async function completeCommunicationTask(taskId: string, outcome: CommunicationTaskOutcome) {
     if (communicationSavingTaskId) {
-      setError("Дождитесь завершения текущего закрытия задачи связи.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ Р·Р°РєСЂС‹С‚РёСЏ Р·Р°РґР°С‡Рё СЃРІСЏР·Рё.");
+      return;
+    }
+    if (!outcome) {
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РёСЃС…РѕРґ Р·Р°РґР°С‡Рё СЃРІСЏР·Рё: РЅРµС‚ РѕС‚РІРµС‚Р°, РїРµСЂРµР·РІРѕРЅРёС‚СЊ, РїРµСЂРµРЅРѕСЃ, РѕР±РµС‰Р°Р» РѕРїР»Р°С‚Сѓ РёР»Рё РІС‹РґР°С‡Р° РґРѕРєСѓРјРµРЅС‚РѕРІ.");
       return;
     }
     if (!outcome) {
@@ -16533,17 +17680,17 @@ export function App() {
         body: JSON.stringify({
           taskId,
           outcome,
-          note: communicationNote.trim() || "Задача связи закрыта."
+          note: communicationNote.trim() || "Р—Р°РґР°С‡Р° СЃРІСЏР·Рё Р·Р°РєСЂС‹С‚Р°."
         })
       });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "Задача связи не закрыта"));
+        setError(await responseErrorMessage(response, "Р—Р°РґР°С‡Р° СЃРІСЏР·Рё РЅРµ Р·Р°РєСЂС‹С‚Р°"));
         return;
       }
       await loadDashboard();
       setError(null);
     } catch (communicationError) {
-      setError(operatorWorkflowFailureMessage("Задача связи не закрыта", communicationError));
+      setError(operatorWorkflowFailureMessage("Р—Р°РґР°С‡Р° СЃРІСЏР·Рё РЅРµ Р·Р°РєСЂС‹С‚Р°", communicationError));
     } finally {
       setCommunicationSavingTaskId(null);
     }
@@ -16614,11 +17761,11 @@ export function App() {
         fetch(`/api/telegram/link-codes?${linkCodeParams.toString()}`, { cache: "no-store", headers }),
         fetch(`/api/telegram/chat-links?${chatLinkParams.toString()}`, { cache: "no-store", headers })
       ]);
-      if (!statusResponse.ok) throw new Error(await responseErrorMessage(statusResponse, "Статус Telegram"));
-      if (!featurePlanResponse.ok) throw new Error(await responseErrorMessage(featurePlanResponse, "План Telegram"));
-      if (!outboxResponse.ok) throw new Error(await responseErrorMessage(outboxResponse, "Очередь Telegram"));
-      if (!linkCodesResponse.ok) throw new Error(await responseErrorMessage(linkCodesResponse, "Коды Telegram"));
-      if (!chatLinksResponse.ok) throw new Error(await responseErrorMessage(chatLinksResponse, "Связанные Telegram-чаты"));
+      if (!statusResponse.ok) throw new Error(await responseErrorMessage(statusResponse, "РЎС‚Р°С‚СѓСЃ Telegram"));
+      if (!featurePlanResponse.ok) throw new Error(await responseErrorMessage(featurePlanResponse, "РџР»Р°РЅ Telegram"));
+      if (!outboxResponse.ok) throw new Error(await responseErrorMessage(outboxResponse, "РћС‡РµСЂРµРґСЊ Telegram"));
+      if (!linkCodesResponse.ok) throw new Error(await responseErrorMessage(linkCodesResponse, "РљРѕРґС‹ Telegram"));
+      if (!chatLinksResponse.ok) throw new Error(await responseErrorMessage(chatLinksResponse, "РЎРІСЏР·Р°РЅРЅС‹Рµ Telegram-С‡Р°С‚С‹"));
       setTelegramStatus((await statusResponse.json()) as DenteTelegramBotStatus);
       setTelegramFeaturePlan((await featurePlanResponse.json()) as TelegramFeaturePlan);
       setTelegramOutbox((await outboxResponse.json()) as DenteTelegramOutboxResponse);
@@ -16630,7 +17777,7 @@ export function App() {
       setTelegramChatLinks(nextChatLinkLedger.chatLinks);
     } catch (telegramError) {
       if (!options.silent) {
-        setError(operatorWorkflowFailureMessage("Панель управления Telegram недоступна", telegramError));
+        setError(operatorWorkflowFailureMessage("РџР°РЅРµР»СЊ СѓРїСЂР°РІР»РµРЅРёСЏ Telegram РЅРµРґРѕСЃС‚СѓРїРЅР°", telegramError));
       }
     } finally {
       if (!options.silent) setIsTelegramLoading(false);
@@ -16644,7 +17791,7 @@ export function App() {
       const headers = telegramControlPlaneHeaders({}, telegramAdminSecretSession || telegramAdminSecretDraft);
       const outboxParams = telegramOutboxRequestParams(telegramOutbox.nextCursor);
       const response = await fetch(`/api/telegram/outbox?${outboxParams.toString()}`, { cache: "no-store", headers });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Очередь Telegram"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РћС‡РµСЂРµРґСЊ Telegram"));
       const nextPage = (await response.json()) as DenteTelegramOutboxResponse;
       setTelegramOutbox((current) => {
         if (!current) return nextPage;
@@ -16655,7 +17802,7 @@ export function App() {
         };
       });
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Очередь Telegram не загрузилась", telegramError));
+      setError(operatorWorkflowFailureMessage("РћС‡РµСЂРµРґСЊ Telegram РЅРµ Р·Р°РіСЂСѓР·РёР»Р°СЃСЊ", telegramError));
     } finally {
       setIsTelegramOutboxLoadingMore(false);
     }
@@ -16668,14 +17815,14 @@ export function App() {
       const headers = telegramControlPlaneHeaders({}, telegramAdminSecretSession || telegramAdminSecretDraft);
       const params = telegramLinkCodeLedgerRequestParams(telegramLinkCodeLedger.nextCursor);
       const response = await fetch(`/api/telegram/link-codes?${params.toString()}`, { cache: "no-store", headers });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Коды Telegram"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РљРѕРґС‹ Telegram"));
       const nextPage = (await response.json()) as DenteTelegramLinkCodeListResponse;
       const knownIds = new Set(telegramLinkCodes.map((code) => code.id));
       const linkCodes = [...telegramLinkCodes, ...nextPage.linkCodes.filter((code) => !knownIds.has(code.id))];
       setTelegramLinkCodes(linkCodes);
       setTelegramLinkCodeLedger({ ...nextPage, linkCodes });
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Коды Telegram не загрузились", telegramError));
+      setError(operatorWorkflowFailureMessage("РљРѕРґС‹ Telegram РЅРµ Р·Р°РіСЂСѓР·РёР»РёСЃСЊ", telegramError));
     } finally {
       setIsTelegramLinkCodesLoadingMore(false);
     }
@@ -16688,14 +17835,14 @@ export function App() {
       const headers = telegramControlPlaneHeaders({}, telegramAdminSecretSession || telegramAdminSecretDraft);
       const params = telegramChatLinkLedgerRequestParams(telegramChatLinkLedger.nextCursor);
       const response = await fetch(`/api/telegram/chat-links?${params.toString()}`, { cache: "no-store", headers });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Связанные Telegram-чаты"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРІСЏР·Р°РЅРЅС‹Рµ Telegram-С‡Р°С‚С‹"));
       const nextPage = (await response.json()) as DenteTelegramChatLinkListResponse;
       const knownIds = new Set(telegramChatLinks.map((link) => link.id));
       const chatLinks = [...telegramChatLinks, ...nextPage.chatLinks.filter((link) => !knownIds.has(link.id))];
       setTelegramChatLinks(chatLinks);
       setTelegramChatLinkLedger({ ...nextPage, chatLinks });
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Связанные Telegram-чаты не загрузились", telegramError));
+      setError(operatorWorkflowFailureMessage("РЎРІСЏР·Р°РЅРЅС‹Рµ Telegram-С‡Р°С‚С‹ РЅРµ Р·Р°РіСЂСѓР·РёР»РёСЃСЊ", telegramError));
     } finally {
       setIsTelegramChatLinksLoadingMore(false);
     }
@@ -16703,19 +17850,19 @@ export function App() {
 
   async function createTelegramLinkCode() {
     if (isTelegramLinkCreating) {
-      setError("Дождитесь завершения текущего создания Telegram-кода.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ СЃРѕР·РґР°РЅРёСЏ Telegram-РєРѕРґР°.");
       return;
     }
     if (!dashboard) {
-      setError("Данные клиники еще не загружены. Повторите создание Telegram-кода после загрузки рабочего экрана.");
+      setError("Р”Р°РЅРЅС‹Рµ РєР»РёРЅРёРєРё РµС‰Рµ РЅРµ Р·Р°РіСЂСѓР¶РµРЅС‹. РџРѕРІС‚РѕСЂРёС‚Рµ СЃРѕР·РґР°РЅРёРµ Telegram-РєРѕРґР° РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё СЂР°Р±РѕС‡РµРіРѕ СЌРєСЂР°РЅР°.");
       return;
     }
     const subjectId = telegramLinkSubjectType === "patient" ? activePatient?.id : telegramLinkStaffId;
     if (!subjectId) {
       setError(
         telegramLinkSubjectType === "patient"
-          ? "Выберите активного пациента для Telegram-кода."
-          : "Выберите сотрудника для Telegram-кода."
+          ? "Р’С‹Р±РµСЂРёС‚Рµ Р°РєС‚РёРІРЅРѕРіРѕ РїР°С†РёРµРЅС‚Р° РґР»СЏ Telegram-РєРѕРґР°."
+          : "Р’С‹Р±РµСЂРёС‚Рµ СЃРѕС‚СЂСѓРґРЅРёРєР° РґР»СЏ Telegram-РєРѕРґР°."
       );
       return;
     }
@@ -16735,12 +17882,12 @@ export function App() {
           createdByUserId: activeDoctor?.id ?? null
         })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Telegram-код не создан"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Telegram-РєРѕРґ РЅРµ СЃРѕР·РґР°РЅ"));
       setTelegramLinkCode((await response.json()) as DenteTelegramLinkCodeCreated);
       await loadTelegramControlPlane({ silent: true });
       setError(null);
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Telegram-код не создан", telegramError));
+      setError(operatorWorkflowFailureMessage("Telegram-РєРѕРґ РЅРµ СЃРѕР·РґР°РЅ", telegramError));
     } finally {
       setIsTelegramLinkCreating(false);
     }
@@ -16749,7 +17896,7 @@ export function App() {
   async function copyTelegramTextToClipboard(value: string | null | undefined, label: string) {
     const text = value?.trim();
     if (!text) {
-      const message = `${label} пустой. Сначала создайте новый Telegram-код или проверьте настройки бота.`;
+      const message = `${label} РїСѓСЃС‚РѕР№. РЎРЅР°С‡Р°Р»Р° СЃРѕР·РґР°Р№С‚Рµ РЅРѕРІС‹Р№ Telegram-РєРѕРґ РёР»Рё РїСЂРѕРІРµСЂСЊС‚Рµ РЅР°СЃС‚СЂРѕР№РєРё Р±РѕС‚Р°.`;
       setTelegramLinkActionState(message);
       setError(message);
       return;
@@ -16768,17 +17915,17 @@ export function App() {
         document.execCommand("copy");
         document.body.removeChild(area);
       }
-      setTelegramLinkActionState(`${label} скопирован`);
+      setTelegramLinkActionState(`${label} СЃРєРѕРїРёСЂРѕРІР°РЅ`);
       setError(null);
     } catch {
       setTelegramLinkActionState(null);
-      setError(`${label} не скопирован. Откройте ссылку или выделите код вручную.`);
+      setError(`${label} РЅРµ СЃРєРѕРїРёСЂРѕРІР°РЅ. РћС‚РєСЂРѕР№С‚Рµ СЃСЃС‹Р»РєСѓ РёР»Рё РІС‹РґРµР»РёС‚Рµ РєРѕРґ РІСЂСѓС‡РЅСѓСЋ.`);
     }
   }
 
   function downloadTelegramQrSvg() {
     if (!telegramLinkCode?.qrSvg) {
-      const message = "QR-код недоступен. Используйте текстовый код или создайте новый Telegram-код.";
+      const message = "QR-РєРѕРґ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РСЃРїРѕР»СЊР·СѓР№С‚Рµ С‚РµРєСЃС‚РѕРІС‹Р№ РєРѕРґ РёР»Рё СЃРѕР·РґР°Р№С‚Рµ РЅРѕРІС‹Р№ Telegram-РєРѕРґ.";
       setTelegramLinkActionState(message);
       setError(message);
       return;
@@ -16792,13 +17939,13 @@ export function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    setTelegramLinkActionState("QR-код скачан");
+    setTelegramLinkActionState("QR-РєРѕРґ СЃРєР°С‡Р°РЅ");
     setError(null);
   }
 
   async function revokeTelegramChatLink(linkId: string) {
     if (telegramRevokingLinkId) {
-      setError("Дождитесь завершения текущего отзыва Telegram-связки.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ РѕС‚Р·С‹РІР° Telegram-СЃРІСЏР·РєРё.");
       return;
     }
     setTelegramRevokingLinkId(linkId);
@@ -16807,11 +17954,11 @@ export function App() {
         method: "POST",
         headers: telegramControlPlaneHeaders()
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Связка Telegram не отозвана"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРІСЏР·РєР° Telegram РЅРµ РѕС‚РѕР·РІР°РЅР°"));
       await loadTelegramControlPlane({ silent: true });
       setError(null);
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Связка Telegram не отозвана", telegramError));
+      setError(operatorWorkflowFailureMessage("РЎРІСЏР·РєР° Telegram РЅРµ РѕС‚РѕР·РІР°РЅР°", telegramError));
     } finally {
       setTelegramRevokingLinkId(null);
     }
@@ -16821,11 +17968,11 @@ export function App() {
     const isStaffPreview = templateKind === "staff_daily_digest";
     const staffId = telegramLinkStaffId || telegramLinkStaffOptions[0]?.id || "";
     if (!isStaffPreview && !activePatient) {
-      setError("Выберите активного пациента перед предпросмотром Telegram-сообщения.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ Р°РєС‚РёРІРЅРѕРіРѕ РїР°С†РёРµРЅС‚Р° РїРµСЂРµРґ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂРѕРј Telegram-СЃРѕРѕР±С‰РµРЅРёСЏ.");
       return;
     }
     if (isStaffPreview && !staffId) {
-      setError("Выберите сотрудника перед предпросмотром Telegram-дайджеста.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ СЃРѕС‚СЂСѓРґРЅРёРєР° РїРµСЂРµРґ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂРѕРј Telegram-РґР°Р№РґР¶РµСЃС‚Р°.");
       return;
     }
     setIsTelegramLoading(true);
@@ -16841,11 +17988,11 @@ export function App() {
           includePhi: false
         })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Предпросмотр Telegram не создан"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РџСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ Telegram РЅРµ СЃРѕР·РґР°РЅ"));
       setTelegramPreview((await response.json()) as DenteTelegramMessagePreview);
       setError(null);
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Предпросмотр Telegram не создан", telegramError));
+      setError(operatorWorkflowFailureMessage("РџСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ Telegram РЅРµ СЃРѕР·РґР°РЅ", telegramError));
     } finally {
       setIsTelegramLoading(false);
     }
@@ -16853,7 +18000,7 @@ export function App() {
 
   async function saveTelegramSettings(options: { silent?: boolean } = {}): Promise<boolean> {
     if (telegramPrivacyModeDraft === "consented_phi_templates") {
-      const message = "Чувствительные Telegram-шаблоны заблокированы до отдельного согласия пациента, аудита и серверной политики PHI.";
+      const message = "Р§СѓРІСЃС‚РІРёС‚РµР»СЊРЅС‹Рµ Telegram-С€Р°Р±Р»РѕРЅС‹ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅС‹ РґРѕ РѕС‚РґРµР»СЊРЅРѕРіРѕ СЃРѕРіР»Р°СЃРёСЏ РїР°С†РёРµРЅС‚Р°, Р°СѓРґРёС‚Р° Рё СЃРµСЂРІРµСЂРЅРѕР№ РїРѕР»РёС‚РёРєРё PHI.";
       setTelegramSettingsSaveState("error");
       setTelegramSettingsSaveError(message);
       if (!options.silent) setError(message);
@@ -16886,16 +18033,16 @@ export function App() {
     let clinicReviewUrl: string | null;
     let clinicMapsUrl: string | null;
     try {
-      botUsername = normalizeTelegramBotUsernameDraft("Общий бот", telegramBotUsernameDraft);
-      ownBotUsername = normalizeTelegramBotUsernameDraft("Бот клиники", telegramOwnBotUsernameDraft);
-      webhookBaseUrl = normalizeTelegramPublicHttpsUrlDraft("Адрес приема сообщений Telegram", telegramWebhookBaseUrlDraft);
-      patientPortalBaseUrl = normalizeTelegramPublicHttpsUrlDraft("Портал пациента", telegramPatientPortalBaseUrlDraft);
-      welcomeImageUrl = normalizeTelegramPublicHttpsUrlDraft("Картинка приветствия", telegramWelcomeImageUrlDraft);
+      botUsername = normalizeTelegramBotUsernameDraft("РћР±С‰РёР№ Р±РѕС‚", telegramBotUsernameDraft);
+      ownBotUsername = normalizeTelegramBotUsernameDraft("Р‘РѕС‚ РєР»РёРЅРёРєРё", telegramOwnBotUsernameDraft);
+      webhookBaseUrl = normalizeTelegramPublicHttpsUrlDraft("РђРґСЂРµСЃ РїСЂРёРµРјР° СЃРѕРѕР±С‰РµРЅРёР№ Telegram", telegramWebhookBaseUrlDraft);
+      patientPortalBaseUrl = normalizeTelegramPublicHttpsUrlDraft("РџРѕСЂС‚Р°Р» РїР°С†РёРµРЅС‚Р°", telegramPatientPortalBaseUrlDraft);
+      welcomeImageUrl = normalizeTelegramPublicHttpsUrlDraft("РљР°СЂС‚РёРЅРєР° РїСЂРёРІРµС‚СЃС‚РІРёСЏ", telegramWelcomeImageUrlDraft);
       visualCardUrls = normalizeTelegramVisualCardUrlDraftsForSave(telegramVisualCardUrlDrafts);
-      clinicReviewUrl = normalizeTelegramPublicHttpsUrlDraft("Ссылка на отзыв", telegramReviewUrlDraft);
-      clinicMapsUrl = normalizeTelegramPublicHttpsUrlDraft("Ссылка на карту", telegramMapsUrlDraft);
+      clinicReviewUrl = normalizeTelegramPublicHttpsUrlDraft("РЎСЃС‹Р»РєР° РЅР° РѕС‚Р·С‹РІ", telegramReviewUrlDraft);
+      clinicMapsUrl = normalizeTelegramPublicHttpsUrlDraft("РЎСЃС‹Р»РєР° РЅР° РєР°СЂС‚Сѓ", telegramMapsUrlDraft);
     } catch (urlError) {
-      const message = operatorReadableErrorDetailFromUnknown(urlError) ?? "Проверьте Telegram-настройки перед сохранением.";
+      const message = operatorReadableErrorDetailFromUnknown(urlError) ?? "РџСЂРѕРІРµСЂСЊС‚Рµ Telegram-РЅР°СЃС‚СЂРѕР№РєРё РїРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј.";
       setTelegramSettingsSaveState("error");
       setTelegramSettingsSaveError(message);
       if (!options.silent) setError(message);
@@ -16938,7 +18085,7 @@ export function App() {
           privacyMode: telegramPrivacyModeDraft
         })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Настройки Telegram не сохранены"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РќР°СЃС‚СЂРѕР№РєРё Telegram РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹"));
       setTelegramStatus((await response.json()) as DenteTelegramBotStatus);
       setTelegramSettingsDirty(false);
       setTelegramSettingsSaveState("saved");
@@ -16946,7 +18093,7 @@ export function App() {
       setError(null);
       return true;
     } catch (telegramError) {
-      const message = operatorWorkflowFailureMessage("Настройки Telegram не сохранены", telegramError);
+      const message = operatorWorkflowFailureMessage("РќР°СЃС‚СЂРѕР№РєРё Telegram РЅРµ СЃРѕС…СЂР°РЅРµРЅС‹", telegramError);
       setTelegramSettingsSaveState("error");
       setTelegramSettingsSaveError(message);
       if (!options.silent) setError(message);
@@ -16958,7 +18105,7 @@ export function App() {
 
   async function sendTelegramOutboxItem(itemId: string) {
     if (telegramSendingItemId || isTelegramSendingDue) {
-      setError("Дождитесь завершения текущей отправки Telegram.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ РѕС‚РїСЂР°РІРєРё Telegram.");
       return;
     }
     setTelegramSendingItemId(itemId);
@@ -16975,12 +18122,12 @@ export function App() {
           clientMutationId: mutationId
         })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Сообщение Telegram не отправлено"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "РЎРѕРѕР±С‰РµРЅРёРµ Telegram РЅРµ РѕС‚РїСЂР°РІР»РµРЅРѕ"));
       const result = (await response.json()) as DenteTelegramOutboxSendResponse;
       if (result.status === "blocked" || result.status === "failed") {
         const warning = result.warnings[0] ? telegramHumanMessage(result.warnings[0]) : "";
         const reason = telegramHumanMessage(result.blockedReason) || warning;
-        setError(`Отправка Telegram заблокирована${reason ? `: ${reason}` : ""}`);
+        setError(`РћС‚РїСЂР°РІРєР° Telegram Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅР°${reason ? `: ${reason}` : ""}`);
         await loadTelegramControlPlane({ silent: true });
         return;
       }
@@ -16988,7 +18135,7 @@ export function App() {
       await loadTelegramControlPlane({ silent: true });
       if (result.status === "sent") await loadDashboard();
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Сообщение Telegram не отправлено", telegramError));
+      setError(operatorWorkflowFailureMessage("РЎРѕРѕР±С‰РµРЅРёРµ Telegram РЅРµ РѕС‚РїСЂР°РІР»РµРЅРѕ", telegramError));
     } finally {
       setTelegramSendingItemId(null);
     }
@@ -16996,11 +18143,11 @@ export function App() {
 
   async function sendDueTelegramOutbox() {
     if (isTelegramSendingDue || telegramSendingItemId) {
-      setError("Дождитесь завершения текущей отправки Telegram.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµР№ РѕС‚РїСЂР°РІРєРё Telegram.");
       return;
     }
     if (!telegramOutbox?.dueCount) {
-      setError("Telegram: готовых сообщений к отправке нет.");
+      setError("Telegram: РіРѕС‚РѕРІС‹С… СЃРѕРѕР±С‰РµРЅРёР№ Рє РѕС‚РїСЂР°РІРєРµ РЅРµС‚.");
       return;
     }
     setIsTelegramSendingDue(true);
@@ -17010,13 +18157,13 @@ export function App() {
         headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ dryRun: false, limit: 25 })
       });
-      if (!response.ok) throw new Error(await responseErrorMessage(response, "Готовые Telegram-сообщения не отправлены"));
+      if (!response.ok) throw new Error(await responseErrorMessage(response, "Р“РѕС‚РѕРІС‹Рµ Telegram-СЃРѕРѕР±С‰РµРЅРёСЏ РЅРµ РѕС‚РїСЂР°РІР»РµРЅС‹"));
       const result = (await response.json()) as DenteTelegramOutboxSendDueResponse;
       await loadTelegramControlPlane({ silent: true });
       if (result.sentCount > 0) await loadDashboard();
-      setError(result.sentCount > 0 ? `Telegram: отправлено ${result.sentCount}, проверено ${result.attemptedCount}.` : "Telegram: готовых сообщений к отправке нет.");
+      setError(result.sentCount > 0 ? `Telegram: РѕС‚РїСЂР°РІР»РµРЅРѕ ${result.sentCount}, РїСЂРѕРІРµСЂРµРЅРѕ ${result.attemptedCount}.` : "Telegram: РіРѕС‚РѕРІС‹С… СЃРѕРѕР±С‰РµРЅРёР№ Рє РѕС‚РїСЂР°РІРєРµ РЅРµС‚.");
     } catch (telegramError) {
-      setError(operatorWorkflowFailureMessage("Готовые Telegram-сообщения не отправлены", telegramError));
+      setError(operatorWorkflowFailureMessage("Р“РѕС‚РѕРІС‹Рµ Telegram-СЃРѕРѕР±С‰РµРЅРёСЏ РЅРµ РѕС‚РїСЂР°РІР»РµРЅС‹", telegramError));
     } finally {
       setIsTelegramSendingDue(false);
     }
@@ -17024,21 +18171,21 @@ export function App() {
 
   async function createImagingStudy(kind: ImagingStudyKind) {
     if (imagingCreateSavingKind) {
-      setError("Дождитесь завершения текущего добавления снимка.");
+      setError("Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ РґРѕР±Р°РІР»РµРЅРёСЏ СЃРЅРёРјРєР°.");
       return;
     }
     if (!activePatient || !dashboard) {
-      setError("Выберите пациента и активный прием перед добавлением снимка.");
+      setError("Р’С‹Р±РµСЂРёС‚Рµ РїР°С†РёРµРЅС‚Р° Рё Р°РєС‚РёРІРЅС‹Р№ РїСЂРёРµРј РїРµСЂРµРґ РґРѕР±Р°РІР»РµРЅРёРµРј СЃРЅРёРјРєР°.");
       return;
     }
     const titles: Record<ImagingStudyKind, string> = {
-      periapical: "Прицельный 36",
-      bitewing: "Интерпроксимальный контроль",
-      opg: "ОПТГ",
-      ceph: "ТРГ боковая",
-      cbct: "КЛКТ / КТ",
-      photo: "Фото полости рта",
-      other: "Снимок"
+      periapical: "РџСЂРёС†РµР»СЊРЅС‹Р№ 36",
+      bitewing: "РРЅС‚РµСЂРїСЂРѕРєСЃРёРјР°Р»СЊРЅС‹Р№ РєРѕРЅС‚СЂРѕР»СЊ",
+      opg: "РћРџРўР“",
+      ceph: "РўР Р“ Р±РѕРєРѕРІР°СЏ",
+      cbct: "РљР›РљРў / РљРў",
+      photo: "Р¤РѕС‚Рѕ РїРѕР»РѕСЃС‚Рё СЂС‚Р°",
+      other: "РЎРЅРёРјРѕРє"
     };
     setImagingCreateSavingKind(kind);
     try {
@@ -17051,14 +18198,14 @@ export function App() {
           kind,
           title: titles[kind],
           toothCode: kind === "periapical" ? "36" : null,
-          region: kind === "opg" || kind === "cbct" ? "обе челюсти" : kind === "ceph" ? "профиль черепа" : "текущий прием",
+          region: kind === "opg" || kind === "cbct" ? "РѕР±Рµ С‡РµР»СЋСЃС‚Рё" : kind === "ceph" ? "РїСЂРѕС„РёР»СЊ С‡РµСЂРµРїР°" : "С‚РµРєСѓС‰РёР№ РїСЂРёРµРј",
           sourceKind: kind === "cbct" || kind === "opg" || kind === "ceph" ? "dicom_file" : "sensor_bridge",
-          sourceName: kind === "cbct" || kind === "opg" || kind === "ceph" ? "Импорт КТ/снимков" : "Локальный RVG-датчик",
-          aiSummary: "Черновик: снимок добавлен в карту. Описание требует проверки врача."
+          sourceName: kind === "cbct" || kind === "opg" || kind === "ceph" ? "РРјРїРѕСЂС‚ РљРў/СЃРЅРёРјРєРѕРІ" : "Р›РѕРєР°Р»СЊРЅС‹Р№ RVG-РґР°С‚С‡РёРє",
+          aiSummary: "Р§РµСЂРЅРѕРІРёРє: СЃРЅРёРјРѕРє РґРѕР±Р°РІР»РµРЅ РІ РєР°СЂС‚Сѓ. РћРїРёСЃР°РЅРёРµ С‚СЂРµР±СѓРµС‚ РїСЂРѕРІРµСЂРєРё РІСЂР°С‡Р°."
         })
       });
       if (!response.ok) {
-        setError(await responseErrorMessage(response, "Снимок не добавлен"));
+        setError(await responseErrorMessage(response, "РЎРЅРёРјРѕРє РЅРµ РґРѕР±Р°РІР»РµРЅ"));
         return;
       }
       const createdStudy = (await response.json()) as { id?: string; kind?: ImagingStudyKind };
@@ -17067,28 +18214,28 @@ export function App() {
       if (createdStudy.id) setSelectedImagingStudyId(createdStudy.id);
       setError(null);
     } catch (imagingError) {
-      setError(operatorWorkflowFailureMessage("Снимок не добавлен", imagingError));
+      setError(operatorWorkflowFailureMessage("РЎРЅРёРјРѕРє РЅРµ РґРѕР±Р°РІР»РµРЅ", imagingError));
     } finally {
       setImagingCreateSavingKind(null);
     }
   }
 
   const imagingViewerSaveTitle: Record<ImagingViewerSaveState, string> = {
-    idle: "Сессия просмотра",
-    local: "Локальный черновик сохранен",
-    saving: "Сохраняю просмотр",
-    saved: "Просмотр сохранен",
-    queued: isOnline ? "Повтор серверного сохранения в очереди" : "Офлайн-черновик сохранен",
-    error: "Сохранение требует проверки"
+    idle: "РЎРµСЃСЃРёСЏ РїСЂРѕСЃРјРѕС‚СЂР°",
+    local: "Р›РѕРєР°Р»СЊРЅС‹Р№ С‡РµСЂРЅРѕРІРёРє СЃРѕС…СЂР°РЅРµРЅ",
+    saving: "РЎРѕС…СЂР°РЅСЏСЋ РїСЂРѕСЃРјРѕС‚СЂ",
+    saved: "РџСЂРѕСЃРјРѕС‚СЂ СЃРѕС…СЂР°РЅРµРЅ",
+    queued: isOnline ? "РџРѕРІС‚РѕСЂ СЃРµСЂРІРµСЂРЅРѕРіРѕ СЃРѕС…СЂР°РЅРµРЅРёСЏ РІ РѕС‡РµСЂРµРґРё" : "РћС„Р»Р°Р№РЅ-С‡РµСЂРЅРѕРІРёРє СЃРѕС…СЂР°РЅРµРЅ",
+    error: "РЎРѕС…СЂР°РЅРµРЅРёРµ С‚СЂРµР±СѓРµС‚ РїСЂРѕРІРµСЂРєРё"
   };
   const imagingViewerSaveDetail = [
-    `${imagingViewerAnnotations.length} разметок`,
-    imagingViewerLocalSavedAt ? `локально ${formatTime(imagingViewerLocalSavedAt)}` : "локально ожидает",
-    imagingViewerSession?.serverSavedAt ? `сервер ${formatTime(imagingViewerSession.serverSavedAt)}` : "сервер ожидает",
+    `${imagingViewerAnnotations.length} СЂР°Р·РјРµС‚РѕРє`,
+    imagingViewerLocalSavedAt ? `Р»РѕРєР°Р»СЊРЅРѕ ${formatTime(imagingViewerLocalSavedAt)}` : "Р»РѕРєР°Р»СЊРЅРѕ РѕР¶РёРґР°РµС‚",
+    imagingViewerSession?.serverSavedAt ? `СЃРµСЂРІРµСЂ ${formatTime(imagingViewerSession.serverSavedAt)}` : "СЃРµСЂРІРµСЂ РѕР¶РёРґР°РµС‚",
     imagingViewerSaveError
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(" В· ");
   const canRetryImagingViewerSave =
     imagingViewerSessionReady && Boolean(selectedImagingStudy?.id) && (imagingViewerSaveState === "queued" || imagingViewerSaveState === "error");
   const imagingViewerNoteText = imagingViewerNote.trim();
@@ -17112,12 +18259,12 @@ export function App() {
   if (error && !dashboard) {
     return (
       <AppLoadingState
-        message={`Рабочий сервер недоступен: ${error}`}
-        actionLabel="Повторить загрузку"
+        message={`Р Р°Р±РѕС‡РёР№ СЃРµСЂРІРµСЂ РЅРµРґРѕСЃС‚СѓРїРµРЅ: ${error}`}
+        actionLabel="РџРѕРІС‚РѕСЂРёС‚СЊ Р·Р°РіСЂСѓР·РєСѓ"
         onAction={() => {
           setError(null);
           void loadDashboard().catch((loadError: unknown) => {
-            setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
+            setError(operatorWorkflowFailureMessage("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РґР°РЅРЅС‹Рµ РєР»РёРЅРёРєРё", loadError));
           });
         }}
       />
@@ -17125,7 +18272,7 @@ export function App() {
   }
 
   if (!dashboard || !activePatient) {
-    return <AppLoadingState message="Загрузка рабочей смены" />;
+    return <AppLoadingState message="Р—Р°РіСЂСѓР·РєР° СЂР°Р±РѕС‡РµР№ СЃРјРµРЅС‹" />;
   }
 
   const activeWorkspaceProfile =
@@ -17187,11 +18334,11 @@ export function App() {
   return (
     <main className="app-shell">
       <a className="skip-link" href="#workspace-content">
-        Перейти к рабочей области
+        РџРµСЂРµР№С‚Рё Рє СЂР°Р±РѕС‡РµР№ РѕР±Р»Р°СЃС‚Рё
       </a>
       <WorkspaceSidebar currentView={currentView} onViewIntent={preloadWorkspaceView} />
 
-      <section className={`workspace view-${currentView}`} id="workspace-content" tabIndex={-1} aria-label="Рабочая область">
+      <section className={`workspace view-${currentView}`} id="workspace-content" tabIndex={-1} aria-label="Р Р°Р±РѕС‡Р°СЏ РѕР±Р»Р°СЃС‚СЊ">
         <WorkspaceTopbar
           clinicName={dashboard.clinicName}
           onGoToDictation={goToVisitDictation}
@@ -17229,7 +18376,7 @@ export function App() {
             <AlertTriangle aria-hidden="true" />
             <p>{error}</p>
             <button className="secondary-button" type="button" onClick={() => setError(null)}>
-              Понятно
+              РџРѕРЅСЏС‚РЅРѕ
             </button>
           </section>
         ) : null}
@@ -17239,7 +18386,7 @@ export function App() {
             <AlertTriangle aria-hidden="true" />
             <p>{uiPreferencesSyncError}</p>
             <button className="secondary-button" type="button" onClick={() => setUiPreferencesSyncError(null)}>
-              Понятно
+              РџРѕРЅСЏС‚РЅРѕ
             </button>
           </section>
         ) : null}
@@ -17248,72 +18395,72 @@ export function App() {
           <section className="app-notice telegram-handoff-notice" role="status" aria-live="polite">
             <Bot aria-hidden="true" />
             <p>
-              Открыто из Telegram: <strong>{telegramHandoffNotice.title}</strong>. {telegramHandoffNotice.detail} Ссылка не содержит
-              пациента, документ, запись или оплату.
+              РћС‚РєСЂС‹С‚Рѕ РёР· Telegram: <strong>{telegramHandoffNotice.title}</strong>. {telegramHandoffNotice.detail} РЎСЃС‹Р»РєР° РЅРµ СЃРѕРґРµСЂР¶РёС‚
+              РїР°С†РёРµРЅС‚Р°, РґРѕРєСѓРјРµРЅС‚, Р·Р°РїРёСЃСЊ РёР»Рё РѕРїР»Р°С‚Сѓ.
             </p>
             <button className="secondary-button" type="button" onClick={() => setTelegramHandoffNotice(null)}>
-              Понятно
+              РџРѕРЅСЏС‚РЅРѕ
             </button>
           </section>
         ) : null}
 
         {!onboardingDismissed && !showFullOnboardingGuide ? (
-          <section className="onboarding-compact-strip" aria-label="Первичная настройка клиники">
+          <section className="onboarding-compact-strip" aria-label="РџРµСЂРІРёС‡РЅР°СЏ РЅР°СЃС‚СЂРѕР№РєР° РєР»РёРЅРёРєРё">
             <div>
-              <strong>Можно начать прием без мастера</strong>
+              <strong>РњРѕР¶РЅРѕ РЅР°С‡Р°С‚СЊ РїСЂРёРµРј Р±РµР· РјР°СЃС‚РµСЂР°</strong>
               <span>
-                Документы предупредят о реквизитах позже. Сейчас важнее открыть пациента, диктовку и расписание.
+                Р”РѕРєСѓРјРµРЅС‚С‹ РїСЂРµРґСѓРїСЂРµРґСЏС‚ Рѕ СЂРµРєРІРёР·РёС‚Р°С… РїРѕР·Р¶Рµ. РЎРµР№С‡Р°СЃ РІР°Р¶РЅРµРµ РѕС‚РєСЂС‹С‚СЊ РїР°С†РёРµРЅС‚Р°, РґРёРєС‚РѕРІРєСѓ Рё СЂР°СЃРїРёСЃР°РЅРёРµ.
               </span>
             </div>
             <span className="onboarding-compact-score">
-              {currentOnboardingIndex + 1}/{onboardingSteps.length} · документы {legalReadinessPercent}%
+              {currentOnboardingIndex + 1}/{onboardingSteps.length} В· РґРѕРєСѓРјРµРЅС‚С‹ {legalReadinessPercent}%
             </span>
             <button className="primary-button" type="button" onClick={() => void continueOnboardingInDraftMode("visit")}>
-              <ClipboardCheck aria-hidden="true" /> Прием
+              <ClipboardCheck aria-hidden="true" /> РџСЂРёРµРј
             </button>
             <button className="secondary-button" type="button" onClick={() => openOnboardingGuide()}>
-              <ShieldCheck aria-hidden="true" /> Настроить
+              <ShieldCheck aria-hidden="true" /> РќР°СЃС‚СЂРѕРёС‚СЊ
             </button>
           </section>
         ) : null}
 
         {showFullOnboardingGuide ? (
-          <section className="onboarding-shell" aria-label="Первичная настройка клиники">
+          <section className="onboarding-shell" aria-label="РџРµСЂРІРёС‡РЅР°СЏ РЅР°СЃС‚СЂРѕР№РєР° РєР»РёРЅРёРєРё">
             <div className="onboarding-head">
               <div>
-                <p className="eyebrow">Первое открытие</p>
-                <h2>Настройка новой клиники и рабочего места врача</h2>
+                <p className="eyebrow">РџРµСЂРІРѕРµ РѕС‚РєСЂС‹С‚РёРµ</p>
+                <h2>РќР°СЃС‚СЂРѕР№РєР° РЅРѕРІРѕР№ РєР»РёРЅРёРєРё Рё СЂР°Р±РѕС‡РµРіРѕ РјРµСЃС‚Р° РІСЂР°С‡Р°</h2>
                 <p>
-                  Можно начать прием сразу. Юридические поля, импорт и Telegram остаются в настройке и не мешают диктовке,
-                  расписанию и карточке пациента.
+                  РњРѕР¶РЅРѕ РЅР°С‡Р°С‚СЊ РїСЂРёРµРј СЃСЂР°Р·Сѓ. Р®СЂРёРґРёС‡РµСЃРєРёРµ РїРѕР»СЏ, РёРјРїРѕСЂС‚ Рё Telegram РѕСЃС‚Р°СЋС‚СЃСЏ РІ РЅР°СЃС‚СЂРѕР№РєРµ Рё РЅРµ РјРµС€Р°СЋС‚ РґРёРєС‚РѕРІРєРµ,
+                  СЂР°СЃРїРёСЃР°РЅРёСЋ Рё РєР°СЂС‚РѕС‡РєРµ РїР°С†РёРµРЅС‚Р°.
                 </p>
               </div>
               <div className="onboarding-score">
                 <span>{currentOnboardingIndex + 1}/{onboardingSteps.length}</span>
                 <strong>{legalReadinessPercent}%</strong>
-                <small>готовность документов</small>
+                <small>РіРѕС‚РѕРІРЅРѕСЃС‚СЊ РґРѕРєСѓРјРµРЅС‚РѕРІ</small>
               </div>
             </div>
 
-            <div className="onboarding-fast-start" aria-label="Быстрый старт работы">
+            <div className="onboarding-fast-start" aria-label="Р‘С‹СЃС‚СЂС‹Р№ СЃС‚Р°СЂС‚ СЂР°Р±РѕС‚С‹">
               <div>
-                <strong>Рабочий вход без мастера</strong>
+                <strong>Р Р°Р±РѕС‡РёР№ РІС…РѕРґ Р±РµР· РјР°СЃС‚РµСЂР°</strong>
                 <span>
-                  Черновики приема сохраняются. Документы и налоговые формы сами покажут, каких реквизитов не хватает.
+                  Р§РµСЂРЅРѕРІРёРєРё РїСЂРёРµРјР° СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ. Р”РѕРєСѓРјРµРЅС‚С‹ Рё РЅР°Р»РѕРіРѕРІС‹Рµ С„РѕСЂРјС‹ СЃР°РјРё РїРѕРєР°Р¶СѓС‚, РєР°РєРёС… СЂРµРєРІРёР·РёС‚РѕРІ РЅРµ С…РІР°С‚Р°РµС‚.
                 </span>
               </div>
               <button className="primary-button" type="button" onClick={() => void continueOnboardingInDraftMode("visit")}>
-                <ClipboardCheck aria-hidden="true" /> Открыть прием
+                <ClipboardCheck aria-hidden="true" /> РћС‚РєСЂС‹С‚СЊ РїСЂРёРµРј
               </button>
               <button className="secondary-button" type="button" onClick={() => void continueOnboardingInDraftMode("schedule")}>
-                <CalendarDays aria-hidden="true" /> Расписание
+                <CalendarDays aria-hidden="true" /> Р Р°СЃРїРёСЃР°РЅРёРµ
               </button>
               <button className="secondary-button" type="button" onClick={() => void moveOnboardingTo("legal")}>
-                <ShieldCheck aria-hidden="true" /> Реквизиты
+                <ShieldCheck aria-hidden="true" /> Р РµРєРІРёР·РёС‚С‹
               </button>
             </div>
 
-            <div className="onboarding-step-list" aria-label="Шаги знакомства">
+            <div className="onboarding-step-list" aria-label="РЁР°РіРё Р·РЅР°РєРѕРјСЃС‚РІР°">
               {onboardingSteps.map((step, index) => (
                 <button
                   className={step.id === onboardingStep ? "active" : index < currentOnboardingIndex ? "done" : ""}
@@ -17335,17 +18482,17 @@ export function App() {
             {onboardingStep === "intro" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Короткая карта приложения</h3>
+                  <h3>РљРѕСЂРѕС‚РєР°СЏ РєР°СЂС‚Р° РїСЂРёР»РѕР¶РµРЅРёСЏ</h3>
                   <p>
-                    Смена показывает очередь и срочные действия. Прием хранит черновики локально и на сервере. Документы
-                    генерируются из проверенных данных пациента, оплаты и лицензии клиники.
+                    РЎРјРµРЅР° РїРѕРєР°Р·С‹РІР°РµС‚ РѕС‡РµСЂРµРґСЊ Рё СЃСЂРѕС‡РЅС‹Рµ РґРµР№СЃС‚РІРёСЏ. РџСЂРёРµРј С…СЂР°РЅРёС‚ С‡РµСЂРЅРѕРІРёРєРё Р»РѕРєР°Р»СЊРЅРѕ Рё РЅР° СЃРµСЂРІРµСЂРµ. Р”РѕРєСѓРјРµРЅС‚С‹
+                    РіРµРЅРµСЂРёСЂСѓСЋС‚СЃСЏ РёР· РїСЂРѕРІРµСЂРµРЅРЅС‹С… РґР°РЅРЅС‹С… РїР°С†РёРµРЅС‚Р°, РѕРїР»Р°С‚С‹ Рё Р»РёС†РµРЅР·РёРё РєР»РёРЅРёРєРё.
                   </p>
                 </div>
                 <div className="onboarding-source-grid">
-                  <span>Прием: протоколы, голос, офлайн-черновик</span>
-                  <span>Документы: пациент, оплата, налоговая</span>
-                  <span>Импорт: прайс, старые базы, снимки</span>
-                  <span>Настройки: роль, кабинет, юридический профиль</span>
+                  <span>РџСЂРёРµРј: РїСЂРѕС‚РѕРєРѕР»С‹, РіРѕР»РѕСЃ, РѕС„Р»Р°Р№РЅ-С‡РµСЂРЅРѕРІРёРє</span>
+                  <span>Р”РѕРєСѓРјРµРЅС‚С‹: РїР°С†РёРµРЅС‚, РѕРїР»Р°С‚Р°, РЅР°Р»РѕРіРѕРІР°СЏ</span>
+                  <span>РРјРїРѕСЂС‚: РїСЂР°Р№СЃ, СЃС‚Р°СЂС‹Рµ Р±Р°Р·С‹, СЃРЅРёРјРєРё</span>
+                  <span>РќР°СЃС‚СЂРѕР№РєРё: СЂРѕР»СЊ, РєР°Р±РёРЅРµС‚, СЋСЂРёРґРёС‡РµСЃРєРёР№ РїСЂРѕС„РёР»СЊ</span>
                 </div>
               </div>
             ) : null}
@@ -17353,11 +18500,11 @@ export function App() {
             {onboardingStep === "role" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Кто сейчас работает</h3>
-                  <p>Выбор роли и специализации сохраняется как настройка рабочего места и не подмешивает чужие разделы.</p>
+                  <h3>РљС‚Рѕ СЃРµР№С‡Р°СЃ СЂР°Р±РѕС‚Р°РµС‚</h3>
+                  <p>Р’С‹Р±РѕСЂ СЂРѕР»Рё Рё СЃРїРµС†РёР°Р»РёР·Р°С†РёРё СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РєР°Рє РЅР°СЃС‚СЂРѕР№РєР° СЂР°Р±РѕС‡РµРіРѕ РјРµСЃС‚Р° Рё РЅРµ РїРѕРґРјРµС€РёРІР°РµС‚ С‡СѓР¶РёРµ СЂР°Р·РґРµР»С‹.</p>
                 </div>
                 <div className="onboarding-form-grid">
-                  <div className="role-picker form-span-2" aria-label="Роль нового сотрудника">
+                  <div className="role-picker form-span-2" aria-label="Р РѕР»СЊ РЅРѕРІРѕРіРѕ СЃРѕС‚СЂСѓРґРЅРёРєР°">
                     {roleFocusOrder.map((role) => (
                       <button
                         className={selectedWorkspaceRole === role ? "active" : ""}
@@ -17370,7 +18517,7 @@ export function App() {
                       </button>
                     ))}
                   </div>
-                  <div className="specialty-strip form-span-2" aria-label="Специализация врача">
+                  <div className="specialty-strip form-span-2" aria-label="РЎРїРµС†РёР°Р»РёР·Р°С†РёСЏ РІСЂР°С‡Р°">
                     {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
                       <button
                         className={selectedSpecialty === specialty ? "active" : ""}
@@ -17390,10 +18537,10 @@ export function App() {
             {onboardingStep === "clinic" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Режим и базовые контакты</h3>
-                  <p>Режим меняет первый экран, очереди ролей и подсказки без ручной перенастройки интерфейса.</p>
+                  <h3>Р РµР¶РёРј Рё Р±Р°Р·РѕРІС‹Рµ РєРѕРЅС‚Р°РєС‚С‹</h3>
+                  <p>Р РµР¶РёРј РјРµРЅСЏРµС‚ РїРµСЂРІС‹Р№ СЌРєСЂР°РЅ, РѕС‡РµСЂРµРґРё СЂРѕР»РµР№ Рё РїРѕРґСЃРєР°Р·РєРё Р±РµР· СЂСѓС‡РЅРѕР№ РїРµСЂРµРЅР°СЃС‚СЂРѕР№РєРё РёРЅС‚РµСЂС„РµР№СЃР°.</p>
                 </div>
-                <div className="mode-grid form-span-2" aria-label="Режим клиники">
+                <div className="mode-grid form-span-2" aria-label="Р РµР¶РёРј РєР»РёРЅРёРєРё">
                   {(Object.keys(clinicModeLabels) as ClinicMode[]).map((mode) => (
                     <button
                       className={`mode-card ${dashboard.clinicSettings.profile.mode === mode ? "active" : ""}`}
@@ -17409,19 +18556,19 @@ export function App() {
                 </div>
                 <div className="onboarding-form-grid">
                   <label>
-                    Название клиники
+                    РќР°Р·РІР°РЅРёРµ РєР»РёРЅРёРєРё
                     <input value={clinicProfileDraft.clinicName} onChange={(event) => updateClinicProfileDraft("clinicName", event.target.value)} />
                   </label>
                   <label>
-                    Телефон
+                    РўРµР»РµС„РѕРЅ
                     <input value={clinicProfileDraft.phone} onChange={(event) => updateClinicProfileDraft("phone", event.target.value)} />
                   </label>
                   <label>
-                    Часовой пояс
+                    Р§Р°СЃРѕРІРѕР№ РїРѕСЏСЃ
                     <input value={clinicProfileDraft.timezone} onChange={(event) => updateClinicProfileDraft("timezone", event.target.value)} />
                   </label>
                   <label>
-                    Язык интерфейса
+                    РЇР·С‹Рє РёРЅС‚РµСЂС„РµР№СЃР°
                     <select value={uiLanguage} onChange={(event) => setUiLanguage(normalizeUiLanguageInput(event.target.value))}>
                       {uiLanguageOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -17432,7 +18579,7 @@ export function App() {
                     <small className="field-note">{selectedUiLanguageOption.detail}</small>
                   </label>
                   <label>
-                    Минут на визит
+                    РњРёРЅСѓС‚ РЅР° РІРёР·РёС‚
                     <input
                       inputMode="numeric"
                       value={clinicProfileDraft.defaultVisitMinutes}
@@ -17440,23 +18587,23 @@ export function App() {
                     />
                   </label>
                   <label>
-                    Начало смены
+                    РќР°С‡Р°Р»Рѕ СЃРјРµРЅС‹
                     <input type="time" value={clinicProfileDraft.workdayStart} onChange={(event) => updateClinicProfileDraft("workdayStart", event.target.value)} />
                   </label>
                   <label>
-                    Конец смены
+                    РљРѕРЅРµС† СЃРјРµРЅС‹
                     <input type="time" value={clinicProfileDraft.workdayEnd} onChange={(event) => updateClinicProfileDraft("workdayEnd", event.target.value)} />
                   </label>
                   <label>
-                    Буфер, мин
+                    Р‘СѓС„РµСЂ, РјРёРЅ
                     <input
                       inputMode="numeric"
                       value={clinicProfileDraft.appointmentBufferMinutes}
                       onChange={(event) => updateClinicProfileDraft("appointmentBufferMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
                     />
                   </label>
-                  <div className="weekday-toggle-row form-span-2" role="group" aria-label="Рабочие дни клиники">
-                    <span>Рабочие дни</span>
+                  <div className="weekday-toggle-row form-span-2" role="group" aria-label="Р Р°Р±РѕС‡РёРµ РґРЅРё РєР»РёРЅРёРєРё">
+                    <span>Р Р°Р±РѕС‡РёРµ РґРЅРё</span>
                     {weekdayOptions.map((day) => (
                       <button
                         className={clinicProfileDraft.workingDays.includes(day.value) ? "active" : ""}
@@ -17476,48 +18623,48 @@ export function App() {
             {onboardingStep === "legal" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Юридические данные для договоров и налоговых справок</h3>
+                  <h3>Р®СЂРёРґРёС‡РµСЃРєРёРµ РґР°РЅРЅС‹Рµ РґР»СЏ РґРѕРіРѕРІРѕСЂРѕРІ Рё РЅР°Р»РѕРіРѕРІС‹С… СЃРїСЂР°РІРѕРє</h3>
                   <p>
-                    Без этих полей приложение не должно выдавать финальные договоры, акты и налоговые документы как готовые.
+                    Р‘РµР· СЌС‚РёС… РїРѕР»РµР№ РїСЂРёР»РѕР¶РµРЅРёРµ РЅРµ РґРѕР»Р¶РЅРѕ РІС‹РґР°РІР°С‚СЊ С„РёРЅР°Р»СЊРЅС‹Рµ РґРѕРіРѕРІРѕСЂС‹, Р°РєС‚С‹ Рё РЅР°Р»РѕРіРѕРІС‹Рµ РґРѕРєСѓРјРµРЅС‚С‹ РєР°Рє РіРѕС‚РѕРІС‹Рµ.
                   </p>
                 </div>
                 <div className="onboarding-form-grid">
                   <label>
-                    Юридическое лицо
+                    Р®СЂРёРґРёС‡РµСЃРєРѕРµ Р»РёС†Рѕ
                     <input value={clinicProfileDraft.legalName} onChange={(event) => updateClinicProfileDraft("legalName", event.target.value)} />
                   </label>
                   <label>
-                    ИНН
+                    РРќРќ
                     <input value={clinicProfileDraft.inn} onChange={(event) => updateClinicProfileDraft("inn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))} />
                   </label>
                   <label>
-                    КПП
+                    РљРџРџ
                     <input value={clinicProfileDraft.kpp} onChange={(event) => updateClinicProfileDraft("kpp", event.target.value.replace(/[^\d]/g, "").slice(0, 9))} />
                   </label>
                   <label>
-                    ОГРН / ОГРНИП
+                    РћР“Р Рќ / РћР“Р РќРРџ
                     <input value={clinicProfileDraft.ogrn} onChange={(event) => updateClinicProfileDraft("ogrn", event.target.value.replace(/[^\d]/g, "").slice(0, 15))} />
                   </label>
                   <label className="form-span-2">
-                    Адрес
+                    РђРґСЂРµСЃ
                     <input value={clinicProfileDraft.address} onChange={(event) => updateClinicProfileDraft("address", event.target.value)} />
                   </label>
                   <label>
-                    Номер лицензии
+                    РќРѕРјРµСЂ Р»РёС†РµРЅР·РёРё
                     <input value={clinicProfileDraft.medicalLicenseNumber} onChange={(event) => updateClinicProfileDraft("medicalLicenseNumber", event.target.value)} />
                   </label>
                   <label>
-                    Дата лицензии
+                    Р”Р°С‚Р° Р»РёС†РµРЅР·РёРё
                     <input value={clinicProfileDraft.medicalLicenseIssuedAt} onChange={(event) => updateClinicProfileDraft("medicalLicenseIssuedAt", event.target.value)} />
                   </label>
                   <label className="form-span-2">
-                    Кем выдана лицензия
+                    РљРµРј РІС‹РґР°РЅР° Р»РёС†РµРЅР·РёСЏ
                     <input value={clinicProfileDraft.medicalLicenseIssuer} onChange={(event) => updateClinicProfileDraft("medicalLicenseIssuer", event.target.value)} />
                   </label>
                 </div>
                 <div className="clinic-legal-summary">
                   <strong>{legalReadinessPercent}%</strong>
-                  <span>{legalMissingFields.length ? `Не хватает: ${legalMissingFields.join(", ")}` : "Минимальные поля заполнены"}</span>
+                  <span>{legalMissingFields.length ? `РќРµ С…РІР°С‚Р°РµС‚: ${legalMissingFields.join(", ")}` : "РњРёРЅРёРјР°Р»СЊРЅС‹Рµ РїРѕР»СЏ Р·Р°РїРѕР»РЅРµРЅС‹"}</span>
                 </div>
               </div>
             ) : null}
@@ -17525,15 +18672,15 @@ export function App() {
             {onboardingStep === "team" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Команда и кабинет</h3>
-                  <p>Сотрудники и кресла сразу попадают в серверное состояние, аудит и расписание.</p>
+                  <h3>РљРѕРјР°РЅРґР° Рё РєР°Р±РёРЅРµС‚</h3>
+                  <p>РЎРѕС‚СЂСѓРґРЅРёРєРё Рё РєСЂРµСЃР»Р° СЃСЂР°Р·Сѓ РїРѕРїР°РґР°СЋС‚ РІ СЃРµСЂРІРµСЂРЅРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ, Р°СѓРґРёС‚ Рё СЂР°СЃРїРёСЃР°РЅРёРµ.</p>
                 </div>
                 <div className="onboarding-form-grid">
                   <label>
-                    Новый сотрудник
+                    РќРѕРІС‹Р№ СЃРѕС‚СЂСѓРґРЅРёРє
                     <input value={newStaffName} onChange={(event) => setNewStaffName(event.target.value)} />
                   </label>
-                  <div className="role-picker form-span-2" aria-label="Роль нового сотрудника">
+                  <div className="role-picker form-span-2" aria-label="Р РѕР»СЊ РЅРѕРІРѕРіРѕ СЃРѕС‚СЂСѓРґРЅРёРєР°">
                     {(["doctor", "administrator", "assistant", "manager"] as StaffRole[]).map((role) => (
                       <button
                         className={newStaffRole === role ? "active" : ""}
@@ -17547,7 +18694,7 @@ export function App() {
                     ))}
                   </div>
                   {newStaffRole === "doctor" || newStaffRole === "assistant" ? (
-                    <div className="specialty-strip staff-specialty-picker form-span-2" aria-label="Специальность нового сотрудника">
+                    <div className="specialty-strip staff-specialty-picker form-span-2" aria-label="РЎРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЊ РЅРѕРІРѕРіРѕ СЃРѕС‚СЂСѓРґРЅРёРєР°">
                       {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
                         <button
                           className={newStaffSpecialty === specialty ? "active" : ""}
@@ -17568,15 +18715,15 @@ export function App() {
                     aria-describedby={!newStaffReadyToCreate ? onboardingStaffCreateGuidanceId : undefined}
                     disabled={!newStaffReadyToCreate}
                   >
-                    <Plus aria-hidden="true" /> Добавить сотрудника
+                    <Plus aria-hidden="true" /> Р”РѕР±Р°РІРёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°
                   </button>
                   {!newStaffReadyToCreate ? (
                     <p className="quick-create-guidance form-span-2" id={onboardingStaffCreateGuidanceId} role="status" aria-live="polite">
-                      Введите ФИО сотрудника, затем выберите роль.
+                      Р’РІРµРґРёС‚Рµ Р¤РРћ СЃРѕС‚СЂСѓРґРЅРёРєР°, Р·Р°С‚РµРј РІС‹Р±РµСЂРёС‚Рµ СЂРѕР»СЊ.
                     </p>
                   ) : null}
                   <label>
-                    Кресло / кабинет
+                    РљСЂРµСЃР»Рѕ / РєР°Р±РёРЅРµС‚
                     <input value={newChairName} onChange={(event) => setNewChairName(event.target.value)} />
                   </label>
                   <button
@@ -17586,19 +18733,19 @@ export function App() {
                     aria-describedby={!newChairReadyToCreate ? onboardingChairCreateGuidanceId : undefined}
                     disabled={!newChairReadyToCreate}
                   >
-                    <Plus aria-hidden="true" /> Добавить кресло
+                    <Plus aria-hidden="true" /> Р”РѕР±Р°РІРёС‚СЊ РєСЂРµСЃР»Рѕ
                   </button>
                   {!newChairReadyToCreate ? (
                     <p className="quick-create-guidance form-span-2" id={onboardingChairCreateGuidanceId} role="status" aria-live="polite">
-                      Введите понятное название кресла или кабинета.
+                      Р’РІРµРґРёС‚Рµ РїРѕРЅСЏС‚РЅРѕРµ РЅР°Р·РІР°РЅРёРµ РєСЂРµСЃР»Р° РёР»Рё РєР°Р±РёРЅРµС‚Р°.
                     </p>
                   ) : null}
                 </div>
-                <div className="onboarding-schedule-grid form-span-2" aria-label="Расписание команды при первом запуске">
+                <div className="onboarding-schedule-grid form-span-2" aria-label="Р Р°СЃРїРёСЃР°РЅРёРµ РєРѕРјР°РЅРґС‹ РїСЂРё РїРµСЂРІРѕРј Р·Р°РїСѓСЃРєРµ">
                   <div className="onboarding-schedule-section">
                     <div>
-                      <h4>Расписание команды</h4>
-                      <p>Сразу задайте рабочие дни и часы. Изменения автосохраняются и остаются выбранными, пока вы их не поменяете.</p>
+                      <h4>Р Р°СЃРїРёСЃР°РЅРёРµ РєРѕРјР°РЅРґС‹</h4>
+                      <p>РЎСЂР°Р·Сѓ Р·Р°РґР°Р№С‚Рµ СЂР°Р±РѕС‡РёРµ РґРЅРё Рё С‡Р°СЃС‹. РР·РјРµРЅРµРЅРёСЏ Р°РІС‚РѕСЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ Рё РѕСЃС‚Р°СЋС‚СЃСЏ РІС‹Р±СЂР°РЅРЅС‹РјРё, РїРѕРєР° РІС‹ РёС… РЅРµ РїРѕРјРµРЅСЏРµС‚Рµ.</p>
                     </div>
                     <div className="staff-list">
                       {dashboard.clinicSettings.staff
@@ -17609,41 +18756,41 @@ export function App() {
                           const scheduleDirty = staffScheduleDirtyIds.has(member.id);
                           const scheduleSaving = staffScheduleSavingId === member.id || scheduleSaveState === "saving";
                           const scheduleSaveLabel = scheduleSaving
-                            ? "Автосохранение"
+                            ? "РђРІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёРµ"
                             : scheduleSaveState === "error"
-                              ? "Не сохранено"
+                              ? "РќРµ СЃРѕС…СЂР°РЅРµРЅРѕ"
                               : scheduleDirty
-                                ? "Ждет автосохранения"
-                                : "Сохранено";
+                                ? "Р–РґРµС‚ Р°РІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёСЏ"
+                                : "РЎРѕС…СЂР°РЅРµРЅРѕ";
                           return (
                             <div className="staff-row onboarding-schedule-row" key={`onboarding-staff-schedule-${member.id}`}>
                               <span style={{ background: member.color }} />
                               <div>
                                 <strong>{member.fullName}</strong>
                                 <p>
-                                  {staffRoleLabels[member.role]} · {member.specialties.map((item) => specialtyLabels[item]).join(", ")}
+                                  {staffRoleLabels[member.role]} В· {member.specialties.map((item) => specialtyLabels[item]).join(", ")}
                                 </p>
                               </div>
                               <div className="staff-schedule-editor onboarding-compact-schedule-editor">
                                 <label>
-                                  С
+                                  РЎ
                                   <input
-                                    aria-label={`Начало смены: ${member.fullName}`}
+                                    aria-label={`РќР°С‡Р°Р»Рѕ СЃРјРµРЅС‹: ${member.fullName}`}
                                     type="time"
                                     value={scheduleDraft.start}
                                     onChange={(event) => updateStaffScheduleDraft(member.id, { start: event.target.value })}
                                   />
                                 </label>
                                 <label>
-                                  До
+                                  Р”Рѕ
                                   <input
-                                    aria-label={`Конец смены: ${member.fullName}`}
+                                    aria-label={`РљРѕРЅРµС† СЃРјРµРЅС‹: ${member.fullName}`}
                                     type="time"
                                     value={scheduleDraft.end}
                                     onChange={(event) => updateStaffScheduleDraft(member.id, { end: event.target.value })}
                                   />
                                 </label>
-                                <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни сотрудника: ${member.fullName}`}>
+                                <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Р Р°Р±РѕС‡РёРµ РґРЅРё СЃРѕС‚СЂСѓРґРЅРёРєР°: ${member.fullName}`}>
                                   {weekdayOptions.map((day) => (
                                     <button
                                       className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
@@ -17664,7 +18811,7 @@ export function App() {
                                     onClick={() => void saveStaffSchedule(member.id)}
                                     disabled={scheduleSaving}
                                   >
-                                    {scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
+                                    {scheduleSaving ? "РЎРѕС…СЂР°РЅСЏСЋ" : "РЎРѕС…СЂР°РЅРёС‚СЊ СЃРµР№С‡Р°СЃ"}
                                   </button>
                                 </div>
                               </div>
@@ -17675,8 +18822,8 @@ export function App() {
                   </div>
                   <div className="onboarding-schedule-section">
                     <div>
-                      <h4>Расписание кресел</h4>
-                      <p>Кабинет может работать иначе, чем врач. Это сразу учитывается в записи и конфликтных слотах.</p>
+                      <h4>Р Р°СЃРїРёСЃР°РЅРёРµ РєСЂРµСЃРµР»</h4>
+                      <p>РљР°Р±РёРЅРµС‚ РјРѕР¶РµС‚ СЂР°Р±РѕС‚Р°С‚СЊ РёРЅР°С‡Рµ, С‡РµРј РІСЂР°С‡. Р­С‚Рѕ СЃСЂР°Р·Сѓ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ РІ Р·Р°РїРёСЃРё Рё РєРѕРЅС„Р»РёРєС‚РЅС‹С… СЃР»РѕС‚Р°С….</p>
                     </div>
                     <div className="staff-list">
                       {dashboard.clinicSettings.chairs
@@ -17687,39 +18834,39 @@ export function App() {
                           const scheduleDirty = chairScheduleDirtyIds.has(chair.id);
                           const scheduleSaving = chairScheduleSavingId === chair.id || scheduleSaveState === "saving";
                           const scheduleSaveLabel = scheduleSaving
-                            ? "Автосохранение"
+                            ? "РђРІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёРµ"
                             : scheduleSaveState === "error"
-                              ? "Не сохранено"
+                              ? "РќРµ СЃРѕС…СЂР°РЅРµРЅРѕ"
                               : scheduleDirty
-                                ? "Ждет автосохранения"
-                                : "Сохранено";
+                                ? "Р–РґРµС‚ Р°РІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёСЏ"
+                                : "РЎРѕС…СЂР°РЅРµРЅРѕ";
                           return (
                             <div className="staff-row onboarding-schedule-row" key={`onboarding-chair-schedule-${chair.id}`}>
                               <CalendarDays aria-hidden="true" />
                               <div>
                                 <strong>{chair.name}</strong>
-                                <p>{chair.specialization ? specialtyLabels[chair.specialization] : "универсально"}</p>
+                                <p>{chair.specialization ? specialtyLabels[chair.specialization] : "СѓРЅРёРІРµСЂСЃР°Р»СЊРЅРѕ"}</p>
                               </div>
                               <div className="staff-schedule-editor onboarding-compact-schedule-editor">
                                 <label>
-                                  С
+                                  РЎ
                                   <input
-                                    aria-label={`Начало работы кресла: ${chair.name}`}
+                                    aria-label={`РќР°С‡Р°Р»Рѕ СЂР°Р±РѕС‚С‹ РєСЂРµСЃР»Р°: ${chair.name}`}
                                     type="time"
                                     value={scheduleDraft.start}
                                     onChange={(event) => updateChairScheduleDraft(chair.id, { start: event.target.value })}
                                   />
                                 </label>
                                 <label>
-                                  До
+                                  Р”Рѕ
                                   <input
-                                    aria-label={`Конец работы кресла: ${chair.name}`}
+                                    aria-label={`РљРѕРЅРµС† СЂР°Р±РѕС‚С‹ РєСЂРµСЃР»Р°: ${chair.name}`}
                                     type="time"
                                     value={scheduleDraft.end}
                                     onChange={(event) => updateChairScheduleDraft(chair.id, { end: event.target.value })}
                                   />
                                 </label>
-                                <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни кресла: ${chair.name}`}>
+                                <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Р Р°Р±РѕС‡РёРµ РґРЅРё РєСЂРµСЃР»Р°: ${chair.name}`}>
                                   {weekdayOptions.map((day) => (
                                     <button
                                       className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
@@ -17740,7 +18887,7 @@ export function App() {
                                     onClick={() => void saveChairSchedule(chair.id)}
                                     disabled={scheduleSaving}
                                   >
-                                    {scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
+                                    {scheduleSaving ? "РЎРѕС…СЂР°РЅСЏСЋ" : "РЎРѕС…СЂР°РЅРёС‚СЊ СЃРµР№С‡Р°СЃ"}
                                   </button>
                                 </div>
                               </div>
@@ -17756,20 +18903,20 @@ export function App() {
             {onboardingStep === "sources" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Источники данных</h3>
+                  <h3>РСЃС‚РѕС‡РЅРёРєРё РґР°РЅРЅС‹С…</h3>
                   <p>
-                    Выберите рабочие источники один раз. Система сохранит эти настройки автоматически и будет использовать их в прайсах,
-                    переносе пациентов, документах, снимках и внешнем просмотре КТ, пока клиника сама их не поменяет.
+                    Р’С‹Р±РµСЂРёС‚Рµ СЂР°Р±РѕС‡РёРµ РёСЃС‚РѕС‡РЅРёРєРё РѕРґРёРЅ СЂР°Р·. РЎРёСЃС‚РµРјР° СЃРѕС…СЂР°РЅРёС‚ СЌС‚Рё РЅР°СЃС‚СЂРѕР№РєРё Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё Рё Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РёС… РІ РїСЂР°Р№СЃР°С…,
+                    РїРµСЂРµРЅРѕСЃРµ РїР°С†РёРµРЅС‚РѕРІ, РґРѕРєСѓРјРµРЅС‚Р°С…, СЃРЅРёРјРєР°С… Рё РІРЅРµС€РЅРµРј РїСЂРѕСЃРјРѕС‚СЂРµ РљРў, РїРѕРєР° РєР»РёРЅРёРєР° СЃР°РјР° РёС… РЅРµ РїРѕРјРµРЅСЏРµС‚.
                   </p>
                 </div>
 
-                <div className="onboarding-source-config" aria-label="Быстрая настройка источников данных">
+                <div className="onboarding-source-config" aria-label="Р‘С‹СЃС‚СЂР°СЏ РЅР°СЃС‚СЂРѕР№РєР° РёСЃС‚РѕС‡РЅРёРєРѕРІ РґР°РЅРЅС‹С…">
                   <section className="onboarding-source-section">
                     <div>
-                      <strong>Прайс клиники</strong>
-                      <span>Откуда администратор чаще всего заносит цены и материалы.</span>
+                      <strong>РџСЂР°Р№СЃ РєР»РёРЅРёРєРё</strong>
+                      <span>РћС‚РєСѓРґР° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ С‡Р°С‰Рµ РІСЃРµРіРѕ Р·Р°РЅРѕСЃРёС‚ С†РµРЅС‹ Рё РјР°С‚РµСЂРёР°Р»С‹.</span>
                     </div>
-                    <div className="onboarding-source-choice-row" aria-label="Источник прайса">
+                    <div className="onboarding-source-choice-row" aria-label="РСЃС‚РѕС‡РЅРёРє РїСЂР°Р№СЃР°">
                       {(Object.keys(pricelistSourceKindLabels) as PricelistSourceKind[]).map((kind) => (
                         <button
                           className={pricelistSourceKind === kind ? "active" : ""}
@@ -17790,10 +18937,10 @@ export function App() {
 
                   <section className="onboarding-source-section">
                     <div>
-                      <strong>Перенос пациентов</strong>
-                      <span>Основной формат старой базы или бумажного журнала.</span>
+                      <strong>РџРµСЂРµРЅРѕСЃ РїР°С†РёРµРЅС‚РѕРІ</strong>
+                      <span>РћСЃРЅРѕРІРЅРѕР№ С„РѕСЂРјР°С‚ СЃС‚Р°СЂРѕР№ Р±Р°Р·С‹ РёР»Рё Р±СѓРјР°Р¶РЅРѕРіРѕ Р¶СѓСЂРЅР°Р»Р°.</span>
                     </div>
-                    <div className="onboarding-source-choice-row" aria-label="Источник переноса пациентов">
+                    <div className="onboarding-source-choice-row" aria-label="РСЃС‚РѕС‡РЅРёРє РїРµСЂРµРЅРѕСЃР° РїР°С†РёРµРЅС‚РѕРІ">
                       {(Object.keys(importSourceLabels) as ImportSourceKind[]).map((kind) => (
                         <button
                           className={importSourceKind === kind ? "active" : ""}
@@ -17814,10 +18961,10 @@ export function App() {
 
                   <section className="onboarding-source-section">
                     <div>
-                      <strong>Смешанная выгрузка</strong>
-                      <span>Как разбирать файл, где вместе пациенты, снимки и служебные строки.</span>
+                      <strong>РЎРјРµС€Р°РЅРЅР°СЏ РІС‹РіСЂСѓР·РєР°</strong>
+                      <span>РљР°Рє СЂР°Р·Р±РёСЂР°С‚СЊ С„Р°Р№Р», РіРґРµ РІРјРµСЃС‚Рµ РїР°С†РёРµРЅС‚С‹, СЃРЅРёРјРєРё Рё СЃР»СѓР¶РµР±РЅС‹Рµ СЃС‚СЂРѕРєРё.</span>
                     </div>
-                    <div className="onboarding-source-choice-row" aria-label="Режим смешанного импорта">
+                    <div className="onboarding-source-choice-row" aria-label="Р РµР¶РёРј СЃРјРµС€Р°РЅРЅРѕРіРѕ РёРјРїРѕСЂС‚Р°">
                       {(Object.keys(smartImportModeLabels) as SmartImportMode[]).map((mode) => (
                         <button
                           className={smartImportMode === mode ? "active" : ""}
@@ -17838,10 +18985,10 @@ export function App() {
 
                   <section className="onboarding-source-section">
                     <div>
-                      <strong>Документы и файлы</strong>
-                      <span>Куда по умолчанию отправлять распознанный документ, таблицу, архив или фото.</span>
+                      <strong>Р”РѕРєСѓРјРµРЅС‚С‹ Рё С„Р°Р№Р»С‹</strong>
+                      <span>РљСѓРґР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РѕС‚РїСЂР°РІР»СЏС‚СЊ СЂР°СЃРїРѕР·РЅР°РЅРЅС‹Р№ РґРѕРєСѓРјРµРЅС‚, С‚Р°Р±Р»РёС†Сѓ, Р°СЂС…РёРІ РёР»Рё С„РѕС‚Рѕ.</span>
                     </div>
-                    <div className="onboarding-source-choice-row" aria-label="Маршрут распознанных документов">
+                    <div className="onboarding-source-choice-row" aria-label="РњР°СЂС€СЂСѓС‚ СЂР°СЃРїРѕР·РЅР°РЅРЅС‹С… РґРѕРєСѓРјРµРЅС‚РѕРІ">
                       {(Object.keys(ingestionTargetLabels) as DocumentIngestionTarget[]).map((target) => (
                         <button
                           className={documentIngestionTarget === target ? "active" : ""}
@@ -17858,10 +19005,10 @@ export function App() {
 
                   <section className="onboarding-source-section onboarding-source-section-wide">
                     <div>
-                      <strong>Снимки и КТ</strong>
-                      <span>Основной поток RVG, ОПТГ, КТ, архива снимков или локальных папок.</span>
+                      <strong>РЎРЅРёРјРєРё Рё РљРў</strong>
+                      <span>РћСЃРЅРѕРІРЅРѕР№ РїРѕС‚РѕРє RVG, РћРџРўР“, РљРў, Р°СЂС…РёРІР° СЃРЅРёРјРєРѕРІ РёР»Рё Р»РѕРєР°Р»СЊРЅС‹С… РїР°РїРѕРє.</span>
                     </div>
-                    <div className="onboarding-source-choice-row" aria-label="Источник снимков">
+                    <div className="onboarding-source-choice-row" aria-label="РСЃС‚РѕС‡РЅРёРє СЃРЅРёРјРєРѕРІ">
                       {imagingSourceChoices.map((kind) => (
                         <button
                           className={imagingImportSourceKind === kind ? "active" : ""}
@@ -17883,12 +19030,12 @@ export function App() {
 
                   <section className="onboarding-source-section onboarding-source-section-wide">
                     <div>
-                      <strong>Архив снимков и внешний просмотр</strong>
-                      <span>Адреса просмотрщика сохраняются вместе с остальными настройками источников.</span>
+                      <strong>РђСЂС…РёРІ СЃРЅРёРјРєРѕРІ Рё РІРЅРµС€РЅРёР№ РїСЂРѕСЃРјРѕС‚СЂ</strong>
+                      <span>РђРґСЂРµСЃР° РїСЂРѕСЃРјРѕС‚СЂС‰РёРєР° СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ РІРјРµСЃС‚Рµ СЃ РѕСЃС‚Р°Р»СЊРЅС‹РјРё РЅР°СЃС‚СЂРѕР№РєР°РјРё РёСЃС‚РѕС‡РЅРёРєРѕРІ.</span>
                     </div>
                     <div className="onboarding-source-url-grid">
                       <label>
-                        Адрес архива снимков
+                        РђРґСЂРµСЃ Р°СЂС…РёРІР° СЃРЅРёРјРєРѕРІ
                         <input
                           value={dicomWebEndpointUrl}
                           onChange={(event) => {
@@ -17902,7 +19049,7 @@ export function App() {
                         />
                       </label>
                       <label>
-                        Адрес внешнего просмотра
+                        РђРґСЂРµСЃ РІРЅРµС€РЅРµРіРѕ РїСЂРѕСЃРјРѕС‚СЂР°
                         <input
                           value={ohifBaseUrl}
                           onChange={(event) => {
@@ -17918,10 +19065,10 @@ export function App() {
                 </div>
 
                 <div className="onboarding-source-grid">
-                  <span>Автосохранено: прайс, импорт, документы, снимки, архив и внешний просмотр</span>
-                  <button type="button" onClick={() => { setSettingsTab("prices"); window.location.hash = "settings/prices"; }}>Открыть прайс</button>
-                  <button type="button" onClick={() => { setSettingsTab("imports"); window.location.hash = "settings/imports"; }}>Открыть перенос</button>
-                  <button type="button" onClick={() => { setSettingsTab("sources"); window.location.hash = "settings/sources"; }}>Открыть снимки</button>
+                  <span>РђРІС‚РѕСЃРѕС…СЂР°РЅРµРЅРѕ: РїСЂР°Р№СЃ, РёРјРїРѕСЂС‚, РґРѕРєСѓРјРµРЅС‚С‹, СЃРЅРёРјРєРё, Р°СЂС…РёРІ Рё РІРЅРµС€РЅРёР№ РїСЂРѕСЃРјРѕС‚СЂ</span>
+                  <button type="button" onClick={() => { setSettingsTab("prices"); window.location.hash = "settings/prices"; }}>РћС‚РєСЂС‹С‚СЊ РїСЂР°Р№СЃ</button>
+                  <button type="button" onClick={() => { setSettingsTab("imports"); window.location.hash = "settings/imports"; }}>РћС‚РєСЂС‹С‚СЊ РїРµСЂРµРЅРѕСЃ</button>
+                  <button type="button" onClick={() => { setSettingsTab("sources"); window.location.hash = "settings/sources"; }}>РћС‚РєСЂС‹С‚СЊ СЃРЅРёРјРєРё</button>
                 </div>
               </div>
             ) : null}
@@ -17929,33 +19076,33 @@ export function App() {
             {onboardingStep === "telegram" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Telegram, QR и связь с пациентами</h3>
+                  <h3>Telegram, QR Рё СЃРІСЏР·СЊ СЃ РїР°С†РёРµРЅС‚Р°РјРё</h3>
                   <p>
-                    Настройте Telegram-бот сразу при первом запуске: QR-привязка пациента, напоминания, памятки после лечения,
-                    отзывы и ссылки на портал сохраняются автоматически и применяются ко всей клинике.
+                    РќР°СЃС‚СЂРѕР№С‚Рµ Telegram-Р±РѕС‚ СЃСЂР°Р·Сѓ РїСЂРё РїРµСЂРІРѕРј Р·Р°РїСѓСЃРєРµ: QR-РїСЂРёРІСЏР·РєР° РїР°С†РёРµРЅС‚Р°, РЅР°РїРѕРјРёРЅР°РЅРёСЏ, РїР°РјСЏС‚РєРё РїРѕСЃР»Рµ Р»РµС‡РµРЅРёСЏ,
+                    РѕС‚Р·С‹РІС‹ Рё СЃСЃС‹Р»РєРё РЅР° РїРѕСЂС‚Р°Р» СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё Рё РїСЂРёРјРµРЅСЏСЋС‚СЃСЏ РєРѕ РІСЃРµР№ РєР»РёРЅРёРєРµ.
                   </p>
                 </div>
                 <div className="onboarding-telegram-status">
                   <span>
-                    Бот
-                    <strong>{telegramStatus?.botUsername ? `@${telegramStatus.botUsername.replace(/^@/, "")}` : "не загружен"}</strong>
+                    Р‘РѕС‚
+                    <strong>{telegramStatus?.botUsername ? `@${telegramStatus.botUsername.replace(/^@/, "")}` : "РЅРµ Р·Р°РіСЂСѓР¶РµРЅ"}</strong>
                   </span>
                   <span>
-                    Транспорт
-                    <strong>{telegramStatus?.webhookReady ? "готов" : "нужна проверка"}</strong>
+                    РўСЂР°РЅСЃРїРѕСЂС‚
+                    <strong>{telegramStatus?.webhookReady ? "РіРѕС‚РѕРІ" : "РЅСѓР¶РЅР° РїСЂРѕРІРµСЂРєР°"}</strong>
                   </span>
                   <span>
-                    QR-коды
-                    <strong>{telegramStatus?.pendingLinkCodeCount ?? 0} ожидают</strong>
+                    QR-РєРѕРґС‹
+                    <strong>{telegramStatus?.pendingLinkCodeCount ?? 0} РѕР¶РёРґР°СЋС‚</strong>
                   </span>
                   <span>
-                    Чаты
-                    <strong>{telegramStatus?.activeChatLinkCount ?? 0} связаны</strong>
+                    Р§Р°С‚С‹
+                    <strong>{telegramStatus?.activeChatLinkCount ?? 0} СЃРІСЏР·Р°РЅС‹</strong>
                   </span>
                 </div>
                 <div className="onboarding-form-grid">
                   <label>
-                    Имя общего бота в Telegram
+                    РРјСЏ РѕР±С‰РµРіРѕ Р±РѕС‚Р° РІ Telegram
                     <input
                       value={telegramBotUsernameDraft}
                       placeholder="dentecrm_bot"
@@ -17966,7 +19113,7 @@ export function App() {
                     />
                   </label>
                   <label>
-                    Портал пациента
+                    РџРѕСЂС‚Р°Р» РїР°С†РёРµРЅС‚Р°
                     <input
                       type="url"
                       inputMode="url"
@@ -17979,7 +19126,7 @@ export function App() {
                     />
                   </label>
                   <label>
-                    Картинка приветствия
+                    РљР°СЂС‚РёРЅРєР° РїСЂРёРІРµС‚СЃС‚РІРёСЏ
                     <input
                       type="url"
                       inputMode="url"
@@ -17992,7 +19139,7 @@ export function App() {
                     />
                   </label>
                   <label>
-                    Ссылка на отзыв
+                    РЎСЃС‹Р»РєР° РЅР° РѕС‚Р·С‹РІ
                     <input
                       type="url"
                       inputMode="url"
@@ -18005,7 +19152,7 @@ export function App() {
                     />
                   </label>
                   <label>
-                    Ссылка на карту
+                    РЎСЃС‹Р»РєР° РЅР° РєР°СЂС‚Сѓ
                     <input
                       type="url"
                       inputMode="url"
@@ -18018,7 +19165,7 @@ export function App() {
                     />
                   </label>
                   <label>
-                    Срок QR-кода, минут
+                    РЎСЂРѕРє QR-РєРѕРґР°, РјРёРЅСѓС‚
                     <input
                       type="number"
                       min={5}
@@ -18032,7 +19179,7 @@ export function App() {
                     />
                   </label>
                   <label>
-                    Напоминания до приема, часы
+                    РќР°РїРѕРјРёРЅР°РЅРёСЏ РґРѕ РїСЂРёРµРјР°, С‡Р°СЃС‹
                     <input
                       inputMode="text"
                       placeholder="24, 2"
@@ -18042,10 +19189,10 @@ export function App() {
                         markTelegramSettingsDirty();
                       }}
                     />
-                    <small>Напоминания до приема в часах: от 1 до 168, максимум 6 значений.</small>
+                    <small>РќР°РїРѕРјРёРЅР°РЅРёСЏ РґРѕ РїСЂРёРµРјР° РІ С‡Р°СЃР°С…: РѕС‚ 1 РґРѕ 168, РјР°РєСЃРёРјСѓРј 6 Р·РЅР°С‡РµРЅРёР№.</small>
                   </label>
                   <label>
-                    Просьба оценить клинику, часы после визита
+                    РџСЂРѕСЃСЊР±Р° РѕС†РµРЅРёС‚СЊ РєР»РёРЅРёРєСѓ, С‡Р°СЃС‹ РїРѕСЃР»Рµ РІРёР·РёС‚Р°
                     <input
                       type="number"
                       min={1}
@@ -18057,11 +19204,11 @@ export function App() {
                         markTelegramSettingsDirty();
                       }}
                     />
-                    <small>Клиника сама выбирает момент просьбы оставить отзыв: от 1 до 720 часов после закрытого визита или оплаты.</small>
+                    <small>РљР»РёРЅРёРєР° СЃР°РјР° РІС‹Р±РёСЂР°РµС‚ РјРѕРјРµРЅС‚ РїСЂРѕСЃСЊР±С‹ РѕСЃС‚Р°РІРёС‚СЊ РѕС‚Р·С‹РІ: РѕС‚ 1 РґРѕ 720 С‡Р°СЃРѕРІ РїРѕСЃР»Рµ Р·Р°РєСЂС‹С‚РѕРіРѕ РІРёР·РёС‚Р° РёР»Рё РѕРїР»Р°С‚С‹.</small>
                   </label>
                   <fieldset className="telegram-checkup-delay-fields full">
-                    <legend>Контроль после лечения</legend>
-                    <small>Через сколько часов Telegram спросит пациента о самочувствии после выданной памятки.</small>
+                    <legend>РљРѕРЅС‚СЂРѕР»СЊ РїРѕСЃР»Рµ Р»РµС‡РµРЅРёСЏ</legend>
+                    <small>Р§РµСЂРµР· СЃРєРѕР»СЊРєРѕ С‡Р°СЃРѕРІ Telegram СЃРїСЂРѕСЃРёС‚ РїР°С†РёРµРЅС‚Р° Рѕ СЃР°РјРѕС‡СѓРІСЃС‚РІРёРё РїРѕСЃР»Рµ РІС‹РґР°РЅРЅРѕР№ РїР°РјСЏС‚РєРё.</small>
                     {telegramPostVisitCheckupDelayFields.map((field) => (
                       <label key={field.key}>
                         {field.label}
@@ -18078,7 +19225,7 @@ export function App() {
                     ))}
                   </fieldset>
                   <label>
-                    Секрет администратора клиники
+                    РЎРµРєСЂРµС‚ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РєР»РёРЅРёРєРё
                     <input
                       type="password"
                       autoComplete="current-password"
@@ -18090,15 +19237,15 @@ export function App() {
                           unlockTelegramAdminSession("telegram");
                         }
                       }}
-                      placeholder="если защищенные настройки включены на сервере клиники"
+                      placeholder="РµСЃР»Рё Р·Р°С‰РёС‰РµРЅРЅС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё РІРєР»СЋС‡РµРЅС‹ РЅР° СЃРµСЂРІРµСЂРµ РєР»РёРЅРёРєРё"
                     />
-                    <small>{telegramAdminSecretSession ? "Разблокировано до перезагрузки страницы." : "Секрет не сохраняется в браузере."}</small>
+                    <small>{telegramAdminSecretSession ? "Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ РґРѕ РїРµСЂРµР·Р°РіСЂСѓР·РєРё СЃС‚СЂР°РЅРёС†С‹." : "РЎРµРєСЂРµС‚ РЅРµ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РІ Р±СЂР°СѓР·РµСЂРµ."}</small>
                   </label>
                   <button className="secondary-button" type="button" onClick={() => unlockTelegramAdminSession("telegram")}>
-                    <ShieldCheck aria-hidden="true" /> Разблокировать
+                    <ShieldCheck aria-hidden="true" /> Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ
                   </button>
                   <label>
-                    Приватность
+                    РџСЂРёРІР°С‚РЅРѕСЃС‚СЊ
                     <select
                       value={telegramPrivacyModeDraft}
                       onChange={(event) => {
@@ -18109,12 +19256,12 @@ export function App() {
                       <option value="no_phi_by_default">{telegramPrivacyModeLabels.no_phi_by_default}</option>
                       <option value="limited_admin_only">{telegramPrivacyModeLabels.limited_admin_only}</option>
                       <option value="consented_phi_templates" disabled>
-                        {telegramPrivacyModeLabels.consented_phi_templates} (после аудита)
+                        {telegramPrivacyModeLabels.consented_phi_templates} (РїРѕСЃР»Рµ Р°СѓРґРёС‚Р°)
                       </option>
                     </select>
                   </label>
                 </div>
-                <div className="onboarding-feature-list" aria-label="Быстрые сценарии Telegram">
+                <div className="onboarding-feature-list" aria-label="Р‘С‹СЃС‚СЂС‹Рµ СЃС†РµРЅР°СЂРёРё Telegram">
                   <div className="onboarding-telegram-visual-cards">
                     {telegramVisualCardFields
                       .filter((field) => onboardingTelegramVisualCardKeys.includes(field.key))
@@ -18128,7 +19275,7 @@ export function App() {
                             value={telegramVisualCardUrlDrafts[field.key] ?? ""}
                             onChange={(event) => updateTelegramVisualCardUrlDraft(field.key, event.target.value)}
                           />
-                          <small>{field.help} Если поле пустое, используется картинка приветствия.</small>
+                          <small>{field.help} Р•СЃР»Рё РїРѕР»Рµ РїСѓСЃС‚РѕРµ, РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РєР°СЂС‚РёРЅРєР° РїСЂРёРІРµС‚СЃС‚РІРёСЏ.</small>
                         </label>
                       ))}
                   </div>
@@ -18163,7 +19310,7 @@ export function App() {
                 </div>
                 <div className="onboarding-inline-actions">
                   <button className="secondary-button" type="button" onClick={() => void saveTelegramSettings()} disabled={isTelegramSettingsSaving}>
-                    <ShieldCheck aria-hidden="true" /> {isTelegramSettingsSaving ? "Сохраняю" : "Сохранить Telegram"}
+                    <ShieldCheck aria-hidden="true" /> {isTelegramSettingsSaving ? "РЎРѕС…СЂР°РЅСЏСЋ" : "РЎРѕС…СЂР°РЅРёС‚СЊ Telegram"}
                   </button>
                   <button
                     className="secondary-button"
@@ -18173,18 +19320,18 @@ export function App() {
                       window.location.hash = "settings/telegram";
                     }}
                   >
-                    <Bot aria-hidden="true" /> Открыть полную панель
+                    <Bot aria-hidden="true" /> РћС‚РєСЂС‹С‚СЊ РїРѕР»РЅСѓСЋ РїР°РЅРµР»СЊ
                   </button>
                   <span className={`telegram-save-state save-${telegramSettingsSaveState}`}>
                     {telegramSettingsSaveState === "saving"
-                      ? "Автосохранение..."
+                      ? "РђРІС‚РѕСЃРѕС…СЂР°РЅРµРЅРёРµ..."
                       : telegramSettingsSaveState === "saved"
-                        ? "Telegram сохранен."
+                        ? "Telegram СЃРѕС…СЂР°РЅРµРЅ."
                         : telegramSettingsSaveState === "error"
-                          ? telegramSettingsSaveError ?? "Telegram не сохранен."
+                          ? telegramSettingsSaveError ?? "Telegram РЅРµ СЃРѕС…СЂР°РЅРµРЅ."
                           : telegramSettingsDirty
-                            ? "Изменения будут сохранены автоматически."
-                            : "Конфигурация Telegram сохранена."}
+                            ? "РР·РјРµРЅРµРЅРёСЏ Р±СѓРґСѓС‚ СЃРѕС…СЂР°РЅРµРЅС‹ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё."
+                            : "РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ Telegram СЃРѕС…СЂР°РЅРµРЅР°."}
                   </span>
                 </div>
               </div>
@@ -18193,32 +19340,32 @@ export function App() {
             {onboardingStep === "done" ? (
               <div className="onboarding-panel">
                 <div>
-                  <h3>Проверка перед работой</h3>
+                  <h3>РџСЂРѕРІРµСЂРєР° РїРµСЂРµРґ СЂР°Р±РѕС‚РѕР№</h3>
                   <p>
-                    Профиль клиники: {legalReadinessPercent}%. Команда: {dashboard.clinicSettings.staff.length}. Кабинеты:{" "}
-                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
-                    {documentFactoryGroups.reduce((total, group) => total + group.kinds.length, 0)} шаблонов.
+                    РџСЂРѕС„РёР»СЊ РєР»РёРЅРёРєРё: {legalReadinessPercent}%. РљРѕРјР°РЅРґР°: {dashboard.clinicSettings.staff.length}. РљР°Р±РёРЅРµС‚С‹:{" "}
+                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "РіРѕС‚РѕРІ Рє РѕС‚РїСЂР°РІРєРµ" : "РЅСѓР¶РЅР° РЅР°СЃС‚СЂРѕР№РєР° РѕС‚РїСЂР°РІРєРё"}. Р”РѕРєСѓРјРµРЅС‚С‹:{" "}
+                    {documentFactoryGroups.reduce((total, group) => total + group.kinds.length, 0)} С€Р°Р±Р»РѕРЅРѕРІ.
                   </p>
                 </div>
                 <div className="onboarding-readiness-grid">
                   <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
                   <span>{staffRoleLabels[selectedWorkspaceRole]}</span>
                   <span>{specialtyLabels[selectedSpecialty]}</span>
-                  <span>{telegramEnabledFeaturesDraft.length} Telegram-сценариев включено</span>
-                  <span>{onboardingDocumentsReady ? "документы готовы к выдаче" : "документы требуют реквизитов"}</span>
+                  <span>{telegramEnabledFeaturesDraft.length} Telegram-СЃС†РµРЅР°СЂРёРµРІ РІРєР»СЋС‡РµРЅРѕ</span>
+                  <span>{onboardingDocumentsReady ? "РґРѕРєСѓРјРµРЅС‚С‹ РіРѕС‚РѕРІС‹ Рє РІС‹РґР°С‡Рµ" : "РґРѕРєСѓРјРµРЅС‚С‹ С‚СЂРµР±СѓСЋС‚ СЂРµРєРІРёР·РёС‚РѕРІ"}</span>
                 </div>
                 {!onboardingReadyToFinish ? (
-                  <p className="onboarding-blocker">До завершения нужно заполнить: {onboardingBlockingIssues.join(", ")}.</p>
+                  <p className="onboarding-blocker">Р”Рѕ Р·Р°РІРµСЂС€РµРЅРёСЏ РЅСѓР¶РЅРѕ Р·Р°РїРѕР»РЅРёС‚СЊ: {onboardingBlockingIssues.join(", ")}.</p>
                 ) : null}
                 {!onboardingDocumentsReady ? (
                   <p className="onboarding-blocker onboarding-advisory">
-                    Первый рабочий экран можно открыть сейчас. Для договоров, актов и налоговых форм позже заполните:{" "}
+                    РџРµСЂРІС‹Р№ СЂР°Р±РѕС‡РёР№ СЌРєСЂР°РЅ РјРѕР¶РЅРѕ РѕС‚РєСЂС‹С‚СЊ СЃРµР№С‡Р°СЃ. Р”Р»СЏ РґРѕРіРѕРІРѕСЂРѕРІ, Р°РєС‚РѕРІ Рё РЅР°Р»РѕРіРѕРІС‹С… С„РѕСЂРј РїРѕР·Р¶Рµ Р·Р°РїРѕР»РЅРёС‚Рµ:{" "}
                     {onboardingDocumentReadinessIssues.join(", ")}.
                   </p>
                 ) : null}
                 {onboardingTelegramRecommendations.length ? (
                   <p className="onboarding-blocker onboarding-advisory">
-                    Telegram можно включить позже: {onboardingTelegramRecommendations.join(", ")}.
+                    Telegram РјРѕР¶РЅРѕ РІРєР»СЋС‡РёС‚СЊ РїРѕР·Р¶Рµ: {onboardingTelegramRecommendations.join(", ")}.
                   </p>
                 ) : null}
               </div>
@@ -18226,7 +19373,7 @@ export function App() {
 
             {!onboardingReadyToFinish ? (
               <p className="onboarding-blocker onboarding-action-guidance" id={onboardingFinishGuidanceId} role="status" aria-live="polite">
-                Чтобы завершить настройку, заполните: {onboardingBlockingIssues.join(", ")}.
+                Р§С‚РѕР±С‹ Р·Р°РІРµСЂС€РёС‚СЊ РЅР°СЃС‚СЂРѕР№РєСѓ, Р·Р°РїРѕР»РЅРёС‚Рµ: {onboardingBlockingIssues.join(", ")}.
               </p>
             ) : null}
 
@@ -18238,19 +19385,19 @@ export function App() {
                 aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
                 disabled={!onboardingReadyToFinish}
               >
-                Скрыть
+                РЎРєСЂС‹С‚СЊ
               </button>
               {!onboardingReadyToFinish ? (
                 <button className="secondary-button" type="button" onClick={() => void continueOnboardingInDraftMode()}>
-                  Продолжить в черновике
+                  РџСЂРѕРґРѕР»Р¶РёС‚СЊ РІ С‡РµСЂРЅРѕРІРёРєРµ
                 </button>
               ) : null}
               <button className="secondary-button" type="button" onClick={() => void saveClinicProfileFromDraft()} disabled={clinicProfileSaveState === "saving"}>
-                <ShieldCheck aria-hidden="true" /> {clinicProfileSaveState === "saving" ? "Сохраняю" : "Сохранить профиль"}
+                <ShieldCheck aria-hidden="true" /> {clinicProfileSaveState === "saving" ? "РЎРѕС…СЂР°РЅСЏСЋ" : "РЎРѕС…СЂР°РЅРёС‚СЊ РїСЂРѕС„РёР»СЊ"}
               </button>
               {previousOnboardingStep ? (
                 <button className="secondary-button" type="button" onClick={() => void moveOnboardingTo(previousOnboardingStep.id)}>
-                  Назад
+                  РќР°Р·Р°Рґ
                 </button>
               ) : null}
               {nextOnboardingStep ? (
@@ -18261,7 +19408,7 @@ export function App() {
                   aria-describedby={nextOnboardingStep.id === "done" && !onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
                   disabled={nextOnboardingStep.id === "done" && !onboardingReadyToFinish}
                 >
-                  Дальше <ArrowRight aria-hidden="true" />
+                  Р”Р°Р»СЊС€Рµ <ArrowRight aria-hidden="true" />
                 </button>
               ) : (
                 <button
@@ -18271,7 +19418,7 @@ export function App() {
                   aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
                   disabled={!onboardingReadyToFinish}
                 >
-                  Завершить настройку
+                  Р—Р°РІРµСЂС€РёС‚СЊ РЅР°СЃС‚СЂРѕР№РєСѓ
                 </button>
               )}
             </div>
@@ -18279,22 +19426,22 @@ export function App() {
         ) : null}
 
         {onboardingDismissed && onboardingDraftMode && !onboardingReadyToFinish ? (
-          <section className="onboarding-draft-strip" aria-label="Первичная настройка в черновике">
+          <section className="onboarding-draft-strip" aria-label="РџРµСЂРІРёС‡РЅР°СЏ РЅР°СЃС‚СЂРѕР№РєР° РІ С‡РµСЂРЅРѕРІРёРєРµ">
             <div>
-              <strong>Первичная настройка не завершена</strong>
-              <span>Можно работать в черновике, но перед выдачей документов заполните: {onboardingBlockingIssues.join(", ")}.</span>
+              <strong>РџРµСЂРІРёС‡РЅР°СЏ РЅР°СЃС‚СЂРѕР№РєР° РЅРµ Р·Р°РІРµСЂС€РµРЅР°</strong>
+              <span>РњРѕР¶РЅРѕ СЂР°Р±РѕС‚Р°С‚СЊ РІ С‡РµСЂРЅРѕРІРёРєРµ, РЅРѕ РїРµСЂРµРґ РІС‹РґР°С‡РµР№ РґРѕРєСѓРјРµРЅС‚РѕРІ Р·Р°РїРѕР»РЅРёС‚Рµ: {onboardingBlockingIssues.join(", ")}.</span>
             </div>
             <button className="secondary-button" type="button" onClick={reopenOnboarding}>
-              Вернуться к настройке
+              Р’РµСЂРЅСѓС‚СЊСЃСЏ Рє РЅР°СЃС‚СЂРѕР№РєРµ
             </button>
           </section>
         ) : null}
 
         {onboardingDismissed && onboardingReadyToFinish && !onboardingDocumentsReady ? (
-          <section className="onboarding-draft-strip" aria-label="Документы требуют реквизитов">
+          <section className="onboarding-draft-strip" aria-label="Р”РѕРєСѓРјРµРЅС‚С‹ С‚СЂРµР±СѓСЋС‚ СЂРµРєРІРёР·РёС‚РѕРІ">
             <div>
-              <strong>Документы требуют реквизитов</strong>
-              <span>Для договоров, актов и налоговых форм заполните: {onboardingDocumentReadinessIssues.join(", ")}.</span>
+              <strong>Р”РѕРєСѓРјРµРЅС‚С‹ С‚СЂРµР±СѓСЋС‚ СЂРµРєРІРёР·РёС‚РѕРІ</strong>
+              <span>Р”Р»СЏ РґРѕРіРѕРІРѕСЂРѕРІ, Р°РєС‚РѕРІ Рё РЅР°Р»РѕРіРѕРІС‹С… С„РѕСЂРј Р·Р°РїРѕР»РЅРёС‚Рµ: {onboardingDocumentReadinessIssues.join(", ")}.</span>
             </div>
             <button
               className="secondary-button"
@@ -18305,7 +19452,7 @@ export function App() {
                 window.location.hash = "settings/clinic";
               }}
             >
-              Заполнить реквизиты
+              Р—Р°РїРѕР»РЅРёС‚СЊ СЂРµРєРІРёР·РёС‚С‹
             </button>
           </section>
         ) : null}
@@ -18314,46 +19461,46 @@ export function App() {
         <>
         <section className="shift-hero" id="shift">
           <div className="now-card">
-            <p className="eyebrow">Сейчас в работе</p>
+            <p className="eyebrow">РЎРµР№С‡Р°СЃ РІ СЂР°Р±РѕС‚Рµ</p>
             <div className="patient-hero">
               <div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
               <div>
                 <h2>{activePatient.fullName}</h2>
-                <p>{activePatient.phone ?? "телефон не указан"}</p>
+                <p>{activePatient.phone ?? "С‚РµР»РµС„РѕРЅ РЅРµ СѓРєР°Р·Р°РЅ"}</p>
               </div>
             </div>
             <div className="hero-actions">
               <button className="primary-button" type="button" onClick={() => { window.location.hash = "visit"; }}>
-                <ClipboardCheck aria-hidden="true" /> Открыть прием
+                <ClipboardCheck aria-hidden="true" /> РћС‚РєСЂС‹С‚СЊ РїСЂРёРµРј
               </button>
               <button className="secondary-button" type="button" onClick={() => { window.location.hash = "imaging"; }}>
-                <ImageIcon aria-hidden="true" /> Снимки
+                <ImageIcon aria-hidden="true" /> РЎРЅРёРјРєРё
               </button>
               <button
                 className="secondary-button"
                 type="button"
                 aria-describedby={!activePatientHasCallablePhone ? "shift-call-guidance" : undefined}
                 disabled={!activePatientHasCallablePhone}
-                title={activePatientHasCallablePhone ? "Позвонить пациенту" : "В карточке пациента нет телефона"}
+                title={activePatientHasCallablePhone ? "РџРѕР·РІРѕРЅРёС‚СЊ РїР°С†РёРµРЅС‚Сѓ" : "Р’ РєР°СЂС‚РѕС‡РєРµ РїР°С†РёРµРЅС‚Р° РЅРµС‚ С‚РµР»РµС„РѕРЅР°"}
                 onClick={() => {
                   if (!activePatientHasCallablePhone) {
-                    setError("В карточке пациента нет телефона. Добавьте номер в разделе «Пациенты», чтобы позвонить.");
+                    setError("Р’ РєР°СЂС‚РѕС‡РєРµ РїР°С†РёРµРЅС‚Р° РЅРµС‚ С‚РµР»РµС„РѕРЅР°. Р”РѕР±Р°РІСЊС‚Рµ РЅРѕРјРµСЂ РІ СЂР°Р·РґРµР»Рµ В«РџР°С†РёРµРЅС‚С‹В», С‡С‚РѕР±С‹ РїРѕР·РІРѕРЅРёС‚СЊ.");
                     return;
                   }
                   window.location.href = `tel:${activePatientCallablePhone}`;
                 }}
               >
-                <Phone aria-hidden="true" /> Позвонить
+                <Phone aria-hidden="true" /> РџРѕР·РІРѕРЅРёС‚СЊ
               </button>
             </div>
             {!activePatientHasCallablePhone ? (
               <p className="hero-call-guidance" id="shift-call-guidance" role="status" aria-live="polite">
-                В карточке пациента нет телефона. Откройте «Пациенты» и добавьте номер, чтобы кнопка звонка стала активной.
+                Р’ РєР°СЂС‚РѕС‡РєРµ РїР°С†РёРµРЅС‚Р° РЅРµС‚ С‚РµР»РµС„РѕРЅР°. РћС‚РєСЂРѕР№С‚Рµ В«РџР°С†РёРµРЅС‚С‹В» Рё РґРѕР±Р°РІСЊС‚Рµ РЅРѕРјРµСЂ, С‡С‚РѕР±С‹ РєРЅРѕРїРєР° Р·РІРѕРЅРєР° СЃС‚Р°Р»Р° Р°РєС‚РёРІРЅРѕР№.
               </p>
             ) : null}
           </div>
 
-          <div className="next-actions" aria-label="Следующие действия">
+          <div className="next-actions" aria-label="РЎР»РµРґСѓСЋС‰РёРµ РґРµР№СЃС‚РІРёСЏ">
             {visibleRecommendedActions.map((action) => (
               <button
                 className={`action-tile priority-${action.priority}`}
@@ -18368,7 +19515,7 @@ export function App() {
                   <span>{action.metricLabel}</span>
                   <p>{action.title}</p>
                   <small>
-                    {recommendedActionPriorityLabels[action.priority]} · {action.detail}
+                    {recommendedActionPriorityLabels[action.priority]} В· {action.detail}
                   </small>
                 </div>
               </button>
@@ -18376,8 +19523,8 @@ export function App() {
           </div>
         </section>
 
-        <section className="care-path" aria-label="Путь приема">
-          {["Запись", "ЭМК", "Оплата", "Документы"].map((step, index) => (
+        <section className="care-path" aria-label="РџСѓС‚СЊ РїСЂРёРµРјР°">
+          {["Р—Р°РїРёСЃСЊ", "Р­РњРљ", "РћРїР»Р°С‚Р°", "Р”РѕРєСѓРјРµРЅС‚С‹"].map((step, index) => (
             <div className={`path-step ${index <= 1 ? "done" : ""}`} key={step}>
               <span>{index + 1}</span>
               <p>{step}</p>
@@ -18385,31 +19532,31 @@ export function App() {
           ))}
         </section>
 
-        <section className="role-focus-strip" aria-label="Фокус текущей роли">
+        <section className="role-focus-strip" aria-label="Р¤РѕРєСѓСЃ С‚РµРєСѓС‰РµР№ СЂРѕР»Рё">
           <div>
             <UserCheck aria-hidden="true" />
             <div>
-              <p className="eyebrow">Фокус: {staffRoleLabels[selectedWorkspaceRole]}</p>
-              <h2>{activeRoleQueue?.title ?? activeRolePolicy?.title ?? "Рабочая очередь"}</h2>
-              <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor[0] ?? "Открыть смену и проверить очередь"}</p>
+              <p className="eyebrow">Р¤РѕРєСѓСЃ: {staffRoleLabels[selectedWorkspaceRole]}</p>
+              <h2>{activeRoleQueue?.title ?? activeRolePolicy?.title ?? "Р Р°Р±РѕС‡Р°СЏ РѕС‡РµСЂРµРґСЊ"}</h2>
+              <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor[0] ?? "РћС‚РєСЂС‹С‚СЊ СЃРјРµРЅСѓ Рё РїСЂРѕРІРµСЂРёС‚СЊ РѕС‡РµСЂРµРґСЊ"}</p>
             </div>
           </div>
-          <div className="role-focus-meta" aria-label="Доступы текущей роли">
-            <span>{activeRoleQueue?.openItems ?? 0} открыто</span>
-            {activeRolePolicy ? <span>Старт: {viewLabels[activeRolePolicy.defaultSection]}</span> : null}
+          <div className="role-focus-meta" aria-label="Р”РѕСЃС‚СѓРїС‹ С‚РµРєСѓС‰РµР№ СЂРѕР»Рё">
+            <span>{activeRoleQueue?.openItems ?? 0} РѕС‚РєСЂС‹С‚Рѕ</span>
+            {activeRolePolicy ? <span>РЎС‚Р°СЂС‚: {viewLabels[activeRolePolicy.defaultSection]}</span> : null}
             {activeRoleWritableSections.slice(0, 3).map((section) => (
-              <span key={section}>пишет: {viewLabels[section]}</span>
+              <span key={section}>РїРёС€РµС‚: {viewLabels[section]}</span>
             ))}
-            {activeRoleRestrictedSections[0] ? <span>ограничено: {viewLabels[activeRoleRestrictedSections[0]]}</span> : null}
+            {activeRoleRestrictedSections[0] ? <span>РѕРіСЂР°РЅРёС‡РµРЅРѕ: {viewLabels[activeRoleRestrictedSections[0]]}</span> : null}
           </div>
         </section>
 
-        <section className="shift-intelligence" aria-label="Операционный контроль смены">
+        <section className="shift-intelligence" aria-label="РћРїРµСЂР°С†РёРѕРЅРЅС‹Р№ РєРѕРЅС‚СЂРѕР»СЊ СЃРјРµРЅС‹">
           <article className="mode-fit-card">
             <div className="mode-fit-head">
               <Building2 aria-hidden="true" />
               <div>
-                <p className="eyebrow">Режим клиники</p>
+                <p className="eyebrow">Р РµР¶РёРј РєР»РёРЅРёРєРё</p>
                 <h2>{dashboard.shiftIntelligence.modeFit.title}</h2>
               </div>
               <strong>{dashboard.shiftIntelligence.modeFit.fitScore}%</strong>
@@ -18429,18 +19576,18 @@ export function App() {
             <div className="mode-fit-head">
               <Gauge aria-hidden="true" />
               <div>
-                <p className="eyebrow">Загрузка</p>
-                <h2>{mostLoadedResource?.title ?? "Нет ресурсов"}</h2>
+                <p className="eyebrow">Р—Р°РіСЂСѓР·РєР°</p>
+                <h2>{mostLoadedResource?.title ?? "РќРµС‚ СЂРµСЃСѓСЂСЃРѕРІ"}</h2>
               </div>
               <strong>{mostLoadedResource ? `${mostLoadedResource.utilizationPercent}%` : "0%"}</strong>
             </div>
             {mostLoadedResource ? (
               <>
                 <p>
-                  {minutesLabel(mostLoadedResource.bookedMinutes)} · {mostLoadedResource.appointmentCount} записей ·{" "}
+                  {minutesLabel(mostLoadedResource.bookedMinutes)} В· {mostLoadedResource.appointmentCount} Р·Р°РїРёСЃРµР№ В·{" "}
                   {workloadStateLabels[mostLoadedResource.state]}
                 </p>
-                <div className="load-meter" aria-label={`Загрузка ${mostLoadedResource.utilizationPercent}%`}>
+                <div className="load-meter" aria-label={`Р—Р°РіСЂСѓР·РєР° ${mostLoadedResource.utilizationPercent}%`}>
                   <span style={{ width: `${Math.min(100, mostLoadedResource.utilizationPercent)}%` }} />
                 </div>
                 <div className="mode-fit-list">
@@ -18450,7 +19597,7 @@ export function App() {
                 </div>
               </>
             ) : (
-              <p>Врачей и кресел пока нет в настройках.</p>
+              <p>Р’СЂР°С‡РµР№ Рё РєСЂРµСЃРµР» РїРѕРєР° РЅРµС‚ РІ РЅР°СЃС‚СЂРѕР№РєР°С….</p>
             )}
           </article>
 
@@ -18474,7 +19621,7 @@ export function App() {
               <article className={`shift-warning warning-${warning.severity}`} key={warning.id}>
                 <AlertTriangle aria-hidden="true" />
                 <div>
-                  <span>{warningSeverityLabels[warning.severity]} · {staffRoleLabels[warning.ownerRole]}</span>
+                  <span>{warningSeverityLabels[warning.severity]} В· {staffRoleLabels[warning.ownerRole]}</span>
                   <h3>{warning.title}</h3>
                   <p>{warning.detail}</p>
                 </div>
@@ -18489,14 +19636,14 @@ export function App() {
         ) : null}
 
         {["shift", "patients"].includes(currentView) ? (
-        <section className="patient-cockpit" aria-label="Карточка пациента">
+        <section className="patient-cockpit" aria-label="РљР°СЂС‚РѕС‡РєР° РїР°С†РёРµРЅС‚Р°">
           <div className="patient-summary-card">
-            <p className="eyebrow">Карточка пациента</p>
+            <p className="eyebrow">РљР°СЂС‚РѕС‡РєР° РїР°С†РёРµРЅС‚Р°</p>
             <h2>{activePatient.fullName}</h2>
             <div className="patient-facts">
-              <span>{activePatient.birthDate ?? "дата рождения не указана"}</span>
-              <span>{activePatient.phone ?? "телефон не указан"}</span>
-              <span>{activePatient.notes ?? "без критических заметок"}</span>
+              <span>{activePatient.birthDate ?? "РґР°С‚Р° СЂРѕР¶РґРµРЅРёСЏ РЅРµ СѓРєР°Р·Р°РЅР°"}</span>
+              <span>{activePatient.phone ?? "С‚РµР»РµС„РѕРЅ РЅРµ СѓРєР°Р·Р°РЅ"}</span>
+              <span>{activePatient.notes ?? "Р±РµР· РєСЂРёС‚РёС‡РµСЃРєРёС… Р·Р°РјРµС‚РѕРє"}</span>
             </div>
             {activePatientInsight ? (
               <div className={`patient-insight-panel risk-${activePatientInsight.riskLevel}`}>
@@ -18505,12 +19652,12 @@ export function App() {
                   <strong>{activePatientInsight.nextBestAction}</strong>
                 </div>
                 <div className="patient-insight-meta">
-                  <span>{activePatientInsight.balanceDueRub ? `остаток ${money(activePatientInsight.balanceDueRub)}` : "оплата спокойна"}</span>
-                  <span>{activePatientInsight.openTasks} задач связи</span>
-                  <span>{activePatientInsight.missingDocumentKinds.length} документов</span>
-                  {activePatientInsight.recallDueAt ? <span>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
+                  <span>{activePatientInsight.balanceDueRub ? `РѕСЃС‚Р°С‚РѕРє ${money(activePatientInsight.balanceDueRub)}` : "РѕРїР»Р°С‚Р° СЃРїРѕРєРѕР№РЅР°"}</span>
+                  <span>{activePatientInsight.openTasks} Р·Р°РґР°С‡ СЃРІСЏР·Рё</span>
+                  <span>{activePatientInsight.missingDocumentKinds.length} РґРѕРєСѓРјРµРЅС‚РѕРІ</span>
+                  {activePatientInsight.recallDueAt ? <span>РїРѕРІС‚РѕСЂРЅС‹Р№ РІРёР·РёС‚ {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
                 </div>
-                <p>{activePatientInsight.riskReasons.slice(0, 2).join(" · ")}</p>
+                <p>{activePatientInsight.riskReasons.slice(0, 2).join(" В· ")}</p>
               </div>
             ) : null}
           </div>
@@ -18518,40 +19665,40 @@ export function App() {
             <article>
               <History aria-hidden="true" />
               <div>
-                <h3>История</h3>
-                <p>Приемы, диагнозы, зубная карта, файлы и решения врача в одном месте.</p>
+                <h3>РСЃС‚РѕСЂРёСЏ</h3>
+                <p>РџСЂРёРµРјС‹, РґРёР°РіРЅРѕР·С‹, Р·СѓР±РЅР°СЏ РєР°СЂС‚Р°, С„Р°Р№Р»С‹ Рё СЂРµС€РµРЅРёСЏ РІСЂР°С‡Р° РІ РѕРґРЅРѕРј РјРµСЃС‚Рµ.</p>
               </div>
             </article>
             <article>
               <FileText aria-hidden="true" />
               <div>
-                <h3>Документы</h3>
-                <p>{activeUsableDocuments.length} документа по текущему лечению, включая договор и акт.</p>
+                <h3>Р”РѕРєСѓРјРµРЅС‚С‹</h3>
+                <p>{activeUsableDocuments.length} РґРѕРєСѓРјРµРЅС‚Р° РїРѕ С‚РµРєСѓС‰РµРјСѓ Р»РµС‡РµРЅРёСЋ, РІРєР»СЋС‡Р°СЏ РґРѕРіРѕРІРѕСЂ Рё Р°РєС‚.</p>
               </div>
             </article>
             <article>
               <CreditCard aria-hidden="true" />
               <div>
-                <h3>Оплаты</h3>
+                <h3>РћРїР»Р°С‚С‹</h3>
                 <p>
-                  Оплачено {money(dashboard.billingSummary.totalPaidRub)}, остаток {money(dashboard.billingSummary.totalDueRub)}.
+                  РћРїР»Р°С‡РµРЅРѕ {money(dashboard.billingSummary.totalPaidRub)}, РѕСЃС‚Р°С‚РѕРє {money(dashboard.billingSummary.totalDueRub)}.
                 </p>
               </div>
             </article>
             <article>
               <MessageSquare aria-hidden="true" />
               <div>
-                <h3>Связь</h3>
-                <p>{activeCommunicationTasks.length} задач: подтверждения, долги, инструкции и повторные визиты.</p>
+                <h3>РЎРІСЏР·СЊ</h3>
+                <p>{activeCommunicationTasks.length} Р·Р°РґР°С‡: РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ, РґРѕР»РіРё, РёРЅСЃС‚СЂСѓРєС†РёРё Рё РїРѕРІС‚РѕСЂРЅС‹Рµ РІРёР·РёС‚С‹.</p>
               </div>
             </article>
             <article>
               <ImageIcon aria-hidden="true" />
               <div>
-                <h3>Снимки</h3>
-                <p>{activeImagingStudies.length} снимка: прицельные, ОПТГ, ТРГ, КТ и фото без поиска по папкам.</p>
+                <h3>РЎРЅРёРјРєРё</h3>
+                <p>{activeImagingStudies.length} СЃРЅРёРјРєР°: РїСЂРёС†РµР»СЊРЅС‹Рµ, РћРџРўР“, РўР Р“, РљРў Рё С„РѕС‚Рѕ Р±РµР· РїРѕРёСЃРєР° РїРѕ РїР°РїРєР°Рј.</p>
                 <button className="text-button feature-link" type="button" onClick={() => { window.location.hash = "imaging"; }}>
-                  Открыть просмотрщик
+                  РћС‚РєСЂС‹С‚СЊ РїСЂРѕСЃРјРѕС‚СЂС‰РёРє
                 </button>
               </div>
             </article>
@@ -18560,794 +19707,153 @@ export function App() {
         ) : null}
 
         {currentView === "imaging" ? (
-        <section className="imaging-panel" id="imaging" aria-label="Снимки пациента">
-          <div className="imaging-copy">
-            <div>
-              <p className="eyebrow">Снимки пациента</p>
-              <h2>Прицельные, ОПТГ, ТРГ, КТ и фото в одной ленте</h2>
-            </div>
-            <div className="imaging-actions">
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => createImagingStudy("periapical")}
-                disabled={Boolean(imagingCreateSavingKind)}
-              >
-                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "periapical" ? "Добавляю" : "Прицельный"}
-              </button>
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => createImagingStudy("opg")}
-                disabled={Boolean(imagingCreateSavingKind)}
-              >
-                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "opg" ? "Добавляю" : "ОПТГ"}
-              </button>
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => createImagingStudy("ceph")}
-                disabled={Boolean(imagingCreateSavingKind)}
-              >
-                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "ceph" ? "Добавляю" : "ТРГ"}
-              </button>
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => createImagingStudy("cbct")}
-                disabled={Boolean(imagingCreateSavingKind)}
-              >
-                <Plus aria-hidden="true" /> {imagingCreateSavingKind === "cbct" ? "Добавляю" : "КТ"}
-              </button>
-            </div>
-          </div>
-
-          <div className="imaging-patient-strip" aria-label="Контекст снимков">
-            <article>
-              <span>Пациент</span>
-              <strong>{activePatient.fullName}</strong>
-              <small>{activeAppointment?.reason ?? "текущий прием"}</small>
-            </article>
-            <article>
-              <span>В ленте</span>
-              <strong>{activeImagingStudies.length}</strong>
-              <small>локально и на сервере, без удаления сырья</small>
-            </article>
-            <article>
-              <span>Режим</span>
-              <strong>{selectedImagingViewerPlan?.label ?? "просмотрщик"}</strong>
-              <small>{selectedImagingViewerPlan?.warnings[0] ?? "ИИ только помогает, решение остается за врачом"}</small>
-            </article>
-          </div>
-
-          <div className="imaging-kind-filter" aria-label="Фильтр типа снимка">
-            <button className={imagingKindFilter === "all" ? "active" : ""} type="button" aria-pressed={imagingKindFilter === "all"} onClick={() => setImagingKindFilter("all")}>
-              Все
-            </button>
-            {imagingKindOptions.map((kind) => (
-              <button
-                className={imagingKindFilter === kind ? "active" : ""}
-                key={kind}
-                type="button"
-                aria-pressed={imagingKindFilter === kind}
-                onClick={() => setImagingKindFilter(kind)}
-              >
-                {imagingKindLabels[kind]}
-              </button>
-            ))}
-          </div>
-
-          <div className="imaging-layout">
-            <article className="imaging-viewer">
-              {selectedImagingStudy ? (
-                <>
-                  <div className="imaging-viewer-stage">
-                    <img
-                      src={imagingPreviewSource(selectedImagingStudy)}
-                      alt={selectedImagingStudy.title}
-                      decoding="async"
-                      style={imagingViewerImageStyle}
-                    />
-                    <div className="imaging-viewer-meta">
-                      <strong>{selectedImagingStudy.title}</strong>
-                      <span>
-                        {imagingKindLabels[selectedImagingStudy.kind]} · {selectedImagingStudy.toothCode ?? selectedImagingStudy.region}
-                      </span>
-                      <p>{selectedImagingStudy.aiSummary}</p>
-                    </div>
-                  </div>
-
-                  {selectedImagingViewerPlan ? (
-                    <div className={`imaging-viewer-plan viewer-plan-${selectedImagingViewerPlan.mode}`}>
-                      <div>
-                        <strong>{selectedImagingViewerPlan.label}</strong>
-                        <span>{selectedImagingViewerPlan.nextAction}</span>
-                      </div>
-                      <div className="viewer-plan-chip-row">
-                        {selectedImagingViewerPlan.primaryTools.slice(0, 5).map((tool) => (
-                          <span key={tool}>{imagingViewerToolLabels[tool] ?? "инструмент просмотра"}</span>
-                        ))}
-                      </div>
-                      {selectedImagingViewerPlan.warnings[0] ? <small>{selectedImagingViewerPlan.warnings[0]}</small> : null}
-                    </div>
-                  ) : null}
-
-                  {imagingComparisonCandidates.length ? (
-                    <div className="imaging-compare-strip" data-testid="imaging-compare-strip" aria-label="Быстрое сравнение снимков пациента">
-                      <div className="imaging-compare-head">
-                        <strong>Сравнить с</strong>
-                        <span>ближайшие по зубу, области, типу или дате</span>
-                      </div>
-                      <div className="imaging-compare-list">
-                        {imagingComparisonCandidates.map(({ study, reason }) => (
-                          <button
-                            key={study.id}
-                            type="button"
-                            onClick={() => {
-                              if (imagingKindFilter !== "all" && imagingKindFilter !== study.kind) setImagingKindFilter("all");
-                              setSelectedImagingStudyId(study.id);
-                            }}
-                          >
-                            <img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
-                            <span>
-                              <strong>{imagingKindLabels[study.kind]}</strong>
-                              <small>{formatShortDate(study.capturedAt)} · {reason}</small>
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="imaging-viewer-toolbar" aria-label="Настройки рентген-снимка">
-                    <div className="imaging-viewer-tools">
-                      <button
-                        className="viewer-tool-button"
-                        type="button"
-                        title="Повернуть влево"
-                        aria-label="Повернуть снимок влево"
-                        onClick={() => setImagingViewerState((state) => ({ ...state, rotationDeg: state.rotationDeg - 90 }))}
-                      >
-                        <RotateCcw aria-hidden="true" />
-                      </button>
-                      <button
-                        className="viewer-tool-button"
-                        type="button"
-                        title="Повернуть вправо"
-                        aria-label="Повернуть снимок вправо"
-                        onClick={() => setImagingViewerState((state) => ({ ...state, rotationDeg: state.rotationDeg + 90 }))}
-                      >
-                        <RotateCw aria-hidden="true" />
-                      </button>
-                      <button
-                        className={`viewer-tool-button ${imagingViewerState.flipHorizontal ? "active" : ""}`}
-                        type="button"
-                        title="Зеркально"
-                        aria-label="Зеркально отразить снимок"
-                        aria-pressed={imagingViewerState.flipHorizontal}
-                        onClick={() => setImagingViewerState((state) => ({ ...state, flipHorizontal: !state.flipHorizontal }))}
-                      >
-                        <FlipHorizontal aria-hidden="true" />
-                      </button>
-                      <button
-                        className={`viewer-tool-button ${imagingViewerState.inverted ? "active" : ""}`}
-                        type="button"
-                        title="Инверсия"
-                        aria-label="Инвертировать снимок"
-                        aria-pressed={imagingViewerState.inverted}
-                        onClick={() => setImagingViewerState((state) => ({ ...state, inverted: !state.inverted }))}
-                      >
-                        ±
-                      </button>
-                      <button
-                        className="viewer-tool-button"
-                        type="button"
-                        title="Уменьшить"
-                        aria-label="Уменьшить снимок"
-                        onClick={() => setImagingViewerState((state) => ({ ...state, zoom: Math.max(0.75, state.zoom - 0.1) }))}
-                      >
-                        <ZoomOut aria-hidden="true" />
-                      </button>
-                      <button
-                        className="viewer-tool-button"
-                        type="button"
-                        title="Увеличить"
-                        aria-label="Увеличить снимок"
-                        onClick={() => setImagingViewerState((state) => ({ ...state, zoom: Math.min(1.8, state.zoom + 0.1) }))}
-                      >
-                        <ZoomIn aria-hidden="true" />
-                      </button>
-                      <button
-                        className="viewer-tool-button"
-                        type="button"
-                        title="Сбросить"
-                        aria-label="Сбросить настройки снимка"
-                        onClick={() => {
-                          setImagingViewerState(defaultImagingViewerState);
-                          setImagingViewerActiveTool("window_level");
-                          setCtPlanningActiveQuickActionId(null);
-                          setCtPlanningImplantPlan(null);
-                        }}
-                      >
-                        <RefreshCw aria-hidden="true" />
-                      </button>
-                    </div>
-                    <div className="viewer-slider-grid">
-                      <label>
-                        Яркость
-                        <input
-                          min="0.65"
-                          max="1.45"
-                          step="0.05"
-                          type="range"
-                          value={imagingViewerState.brightness}
-                          onChange={(event) => setImagingViewerState((state) => ({ ...state, brightness: Number(event.target.value) }))}
-                        />
-                      </label>
-                      <label>
-                        Контраст
-                        <input
-                          min="0.75"
-                          max="1.85"
-                          step="0.05"
-                          type="range"
-                          value={imagingViewerState.contrast}
-                          onChange={(event) => setImagingViewerState((state) => ({ ...state, contrast: Number(event.target.value) }))}
-                        />
-                      </label>
-                    </div>
-                    <div className={`viewer-session-strip viewer-save-state-${imagingViewerSaveState}`} aria-label="Автосохранение сеанса просмотра снимка">
-                      <div>
-                        <strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
-                        <span>{imagingViewerSaveDetail}</span>
-                      </div>
-                      <input
-                        aria-label="Заметка к снимку"
-                        value={imagingViewerNote}
-                        onChange={(event) => setImagingViewerNote(event.target.value)}
-                        placeholder="Заметка к снимку"
-                      />
-                      <div className="viewer-session-actions">
-                        <button
-                          className="secondary-button"
-                          type="button"
-                          onClick={addImagingViewerNoteAnnotation}
-                          aria-describedby={!imagingViewerNoteReady || !imagingViewerSessionReady ? imagingViewerNoteMissingId : undefined}
-                          disabled={!imagingViewerNoteReady || !imagingViewerSessionReady}
-                        >
-                          <Plus aria-hidden="true" /> Заметка
-                        </button>
-                        {canRetryImagingViewerSave ? (
-                          <button
-                            className="secondary-button"
-                            type="button"
-                            onClick={retryImagingViewerSessionSave}
-                            aria-describedby={!isOnline ? imagingViewerRetryMissingId : undefined}
-                            disabled={!isOnline}
-                          >
-                            <RefreshCw aria-hidden="true" /> Повторить
-                          </button>
-                        ) : null}
-                      </div>
-                      {!imagingViewerSessionReady ? (
-                        <p className="viewer-note-missing" id={imagingViewerNoteMissingId} role="status" aria-live="polite">
-                          Дождитесь загрузки просмотра, чтобы прикрепить заметку к снимку.
-                        </p>
-                      ) : !imagingViewerNoteReady ? (
-                        <p className="viewer-note-missing" id={imagingViewerNoteMissingId} role="status" aria-live="polite">
-                          Напишите текст заметки, чтобы прикрепить ее к снимку.
-                        </p>
-                      ) : null}
-                      {canRetryImagingViewerSave && !isOnline ? (
-                        <p className="viewer-note-missing" id={imagingViewerRetryMissingId} role="status" aria-live="polite">
-                          Повторная отправка просмотра станет доступна после подключения к сети.
-                        </p>
-                      ) : null}
-                    </div>
-                    {imagingViewerAnnotations.length ? (
-                      <div className="viewer-annotation-list" aria-label="Сохраненные разметки к снимкам">
-                        {imagingViewerAnnotations.slice(0, 3).map((annotation) => (
-                          <article key={annotation.id}>
-                            <strong>{annotation.label}</strong>
-                            <span>
-                              {annotation.toothCode ?? selectedImagingStudy.region ?? "study"} · {formatShortDate(annotation.updatedAt)}
-                            </span>
-                          </article>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </>
-              ) : (
-                <div className="imaging-empty">
-                  <ImageIcon aria-hidden="true" />
-                  <p>Снимков по текущему пациенту пока нет.</p>
-                </div>
-              )}
-            </article>
-
-            <div className="imaging-list">
-              {visibleImagingStudies.map((study) => (
-                <article
-                  className={`imaging-row imaging-${study.status} ${selectedImagingStudy?.id === study.id ? "active" : ""}`}
-                  key={study.id}
-                >
-                  <img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
-                  <div>
-                    <h3>{study.title}</h3>
-                    <p>
-                      {imagingKindLabels[study.kind]} · {study.toothCode ?? study.region ?? "область не указана"} ·{" "}
-                      {formatShortDate(study.capturedAt)}
-                    </p>
-                    <span>{imagingSourceLabels[study.sourceKind]} · {study.sourceName}</span>
-                  </div>
-                  <div className="imaging-row-actions">
-                    <button
-                      className="text-button imaging-row-select"
-                      type="button"
-                      onClick={() => setSelectedImagingStudyId(study.id)}
-                      aria-pressed={selectedImagingStudy?.id === study.id}
-                      aria-label={`Выбрать снимок: ${study.title}, ${formatShortDate(study.capturedAt)}`}
-                      title={`Выбрать снимок: ${study.title}`}
-                    >
-                      {selectedImagingStudy?.id === study.id ? "Выбрано" : "Выбрать"}
-                    </button>
-                    <a
-                      className="doc-link"
-                      href={imagingViewerHref(study)}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      aria-label={`Открыть просмотрщик снимка: ${study.title}, ${formatShortDate(study.capturedAt)}`}
-                      title={`Открыть просмотрщик снимка: ${study.title}`}
-                    >
-                      Открыть
-                    </a>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          {selectedImagingStudy?.kind === "cbct" ? (
-            <section className="clinical-mpr-panel" aria-label="Управление КЛКТ и КТ-срезами">
-              <div className="clinical-mpr-head">
-                <div>
-                  <p className="eyebrow">Рабочее место КЛКТ</p>
-                  <h3>3 плоскости, косой срез, панорама и внешний КТ-просмотрщик</h3>
-                  <small>
-                    Основной прием не блокируется: если серия тяжелая, CRM оставляет предпросмотр и предлагает внешний просмотр или локальный модуль объема.
-                  </small>
-                </div>
-                <a
-                  className="secondary-button"
-                  href={imagingViewerHref(selectedImagingStudy)}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  aria-label={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy.title}`}
-                  title={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy.title}`}
-                >
-                  <ExternalLink aria-hidden="true" /> КТ-просмотрщик
-                </a>
-              </div>
-              <div className="clinical-mpr-summary-grid" aria-label="Краткий статус КЛКТ">
-                <article>
-                  <strong>{selectedImagingViewerPlan?.mode === "cbct_mpr" ? "Маршрут КТ-срезов" : "Быстрый предпросмотр"}</strong>
-                  <span>{selectedImagingViewerPlan?.nextAction ?? "Откройте КТ-просмотрщик, когда нужен 3D-разбор."}</span>
-                </article>
-                <article>
-                  <strong>
-                    {dicomViewerWorkbenchManifest
-                      ? `готовность загрузки ${dicomViewerWorkbenchManifest.readiness.readinessScore}%`
-                      : "Рабочее место опционально"}
-                  </strong>
-                  <span>
-                    {dicomViewerWorkbenchManifest
-                        ? `${dicomLabel(dicomQualityModeLabels, dicomViewerWorkbenchManifest.renderCachePlan.qualityMode, "режим качества")} / ${dicomLabel(
-                          dicomTextureStrategyLabels,
-                          dicomViewerWorkbenchManifest.renderCachePlan.textureStrategy,
-                          "план загрузки"
-                        )}`
-                      : "Соберите КТ-пакет в настройках источников; карточка приема останется легкой."}
-                  </span>
-                </article>
-                <article>
-                  <strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
-                  <span>{imagingViewerAnnotations.length} разметок; исходные снимки остаются в просмотрщике или исходной папке.</span>
-                </article>
-              </div>
-              <div className="mpr-clinical-roadmap" data-testid="ct-mpr-clinical-roadmap" aria-label="Клиническая готовность КТ-срезов">
-                <div className="mpr-clinical-roadmap-head">
-                  <strong>Карта КТ-срезов</strong>
-                  <span>{mprClinicalNextStep}</span>
-                </div>
-                <div className="mpr-clinical-roadmap-steps">
-                  {mprClinicalChecklist.map((item) => (
-                    <article className={`mpr-clinical-step status-${item.status}`} key={item.id}>
-                      <strong>{item.title}</strong>
-                      <span>{item.detail}</span>
-                    </article>
-                  ))}
-                </div>
-              </div>
-              <div className="mpr-operator-summary" data-testid="ct-mpr-operator-summary" aria-label="Быстрая сводка настройки КТ-срезов">
-                {mprOperatorSummaryCards.map((card) => (
-                  <article className={`tone-${card.tone}`} key={card.id}>
-                    <span>{card.title}</span>
-                    <strong>{card.value}</strong>
-                    <p>{card.detail}</p>
-                  </article>
-                ))}
-              </div>
-              <CtPlanningToolsPanel
-                canPlan={mprControlsReady}
-                activeTool={imagingViewerActiveTool}
-                activeQuickActionId={ctPlanningActiveQuickActionId}
-                onActivateTool={applyCtPlanningQuickAction}
-                selectedImplantId={ctPlanningImplantPlan?.itemId ?? null}
-                selectedImplantPlan={ctPlanningImplantPlan}
-                onSelectImplant={selectCtPlanningImplant}
-                localAnnotations={imagingViewerAnnotations}
-                annotationRefs={ctPlanningAnnotationRefs}
-                onCreateArtifact={createCtPlanningArtifact}
-                toolStateBundle={dicomViewerWorkbenchManifest?.toolStateBundle ?? dicomViewerToolStateBundle}
-              />
-              <details className="clinical-mpr-advanced" open={mprControlsAutoOpen}>
-                <summary>
-                  <span>Управление КТ-срезами</span>
-                  <small>Открывается только для КТ-разбора; обычный прием остается без лишних панелей.</small>
-                </summary>
-              <div className="clinical-mpr-grid">
-                <div className="mpr-plane-grid">
-                  {cbctWorkbenchPlanes.map((plane) => {
-                    const planeSupported = cbctWorkbenchProjections.includes(plane.key);
-                    const planeAvailable = mprControlsReady && planeSupported;
-                    const planeUnavailableReason = !mprControlsReady
-                      ? mprSeriesRequiredProjectionLabel
-                      : planeSupported
-                        ? ""
-                        : mprUnavailableProjectionLabel;
-                    return (
-                      <button
-                        className={`mpr-plane ${mprProjection === plane.key ? "active" : ""}`}
-                        key={plane.key}
-                        type="button"
-                        onClick={() => setMprProjection(plane.key)}
-                        disabled={!planeAvailable}
-                        aria-pressed={mprProjection === plane.key}
-                        aria-label={`${plane.title}: ${plane.detail}${planeUnavailableReason ? `; ${planeUnavailableReason}` : ""}`}
-                      >
-                        <strong>{plane.title}</strong>
-                        <span>{plane.detail}</span>
-                        {planeUnavailableReason ? <small className="mpr-plane-unavailable">{planeUnavailableReason}</small> : null}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div
-                  className={`mpr-axis-visualizer ${mprControlsReady ? "" : "disabled"}`}
-                  data-testid="ct-mpr-axis-visualizer"
-                  style={mprAxisVisualizerStyle}
-                  role="img"
-                  aria-label={mprAxisVisualizerLabel}
-                  aria-describedby="ct-mpr-keyboard-help"
-                  aria-disabled={!mprControlsReady}
-                  aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown PageUp PageDown Home End"
-                  tabIndex={mprControlsReady ? 0 : -1}
-                  onKeyDown={handleMprKeyboardNavigation}
-                >
-                  <span className="visually-hidden" id="ct-mpr-keyboard-help">
-                    Стрелки влево и вправо меняют угол оси, стрелки вверх и вниз меняют срез, PageUp и PageDown меняют толщину слоя, Home и End переходят к началу и концу серии.
-                  </span>
-                  <div className="mpr-axis-board" aria-hidden="true">
-                    <span className="mpr-axis-label mpr-axis-label-top">{mprProjectionCompass.top}</span>
-                    <span className="mpr-axis-label mpr-axis-label-right">{mprProjectionCompass.right}</span>
-                    <span className="mpr-axis-label mpr-axis-label-bottom">{mprProjectionCompass.bottom}</span>
-                    <span className="mpr-axis-label mpr-axis-label-left">{mprProjectionCompass.left}</span>
-                    <span className="mpr-axis-slab" />
-                    <span className="mpr-axis-slice-marker" />
-                    <span className="mpr-axis-line mpr-axis-line-primary" />
-                    <span className="mpr-axis-line mpr-axis-line-secondary" />
-                    <span className={`mpr-axis-crosshair ${mprCrosshairEnabled ? "active" : ""}`} />
-                    <span className="mpr-axis-angle-badge">{mprAxisAngleBadge}</span>
-                    <span className="mpr-axis-slab-badge">{mprSlabBadge}</span>
-                    <span className="mpr-axis-slice-badge">{mprSliceBadge}</span>
-                  </div>
-                  <div className="mpr-axis-facts">
-                    <strong>{mprActiveProjectionLabel}</strong>
-                    <span>{mprActiveProjectionOrientation}</span>
-                    <span>{mprProjectionCompass.summary}</span>
-                    <span>{mprAxisDirectionLabel}</span>
-                    <span>слой {mprSlabMm} мм</span>
-                    <span>{mprSliceLabel}</span>
-                    <div className="mpr-axis-guidance" data-testid="ct-mpr-axis-guidance">
-                      <span>{mprAxisGuidance.tiltLabel}</span>
-                      <span>{mprAxisGuidance.slabLabel}</span>
-                      <span>{mprAxisGuidance.sliceLabel}</span>
-                    </div>
-                    <small className="mpr-workbench-summary" data-testid="ct-mpr-workbench-summary" aria-live="polite">
-                      {mprWorkbenchSummaryText}
-                    </small>
-                    <small>
-                      {mprControlsReady
-                        ? `${mprLinkedPlanesEnabled ? "плоскости связаны" : "плоскости отдельно"} · ${mprCrosshairEnabled ? "курсор включен" : "курсор скрыт"}`
-                        : "сначала откройте готовую КЛКТ/КТ-серию"}
-                    </small>
-                    <div className={`mpr-preset-fit ${mprNearestClinicalPreset.exact ? "exact" : ""}`} data-testid="ct-mpr-preset-fit">
-                      <span>{mprNearestClinicalPreset.label}</span>
-                      <button
-                        type="button"
-                        onClick={applyNearestMprClinicalPreset}
-                        disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}
-                        aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
-                        title={`Подогнать под протокол: ${mprNearestClinicalPreset.label}`}
-                      >
-                        Подогнать
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="mpr-control-panel">
-                  <div className="mpr-toggle-row">
-                    {cbctWorkbenchProjections.map((projection) => (
-                      <button
-                        className={mprProjection === projection ? "active" : ""}
-                        key={projection}
-                        type="button"
-                        onClick={() => setMprProjection(projection)}
-                        disabled={!mprControlsReady}
-                        aria-pressed={mprProjection === projection}
-                      >
-                        {mprProjectionLabels[projection]}
-                      </button>
-                    ))}
-                  </div>
-                  <label>
-                    Угол оси: {mprAxisDeg}°
-                    <input
-                      aria-valuetext={mprAxisRangeValue}
-                      disabled={!mprControlsReady}
-                      min={mprAxisBounds.min}
-                      max={mprAxisBounds.max}
-                      step="1"
-                      type="range"
-                      value={mprAxisDeg}
-                      onChange={(event) => setMprAxisDeg(clampMprAxisDeg(Number(event.target.value)))}
-                    />
-                  </label>
-                  <div className="mpr-stepper-row" data-testid="ct-mpr-axis-nudge" aria-label="Точная правка угла КТ-срезов">
-                    {mprAxisNudgeDeg.map((delta) => (
-                      <button
-                        key={delta}
-                        type="button"
-                        onClick={() => setMprAxisDeg(clampMprAxisDeg(mprAxisDeg + delta))}
-                        disabled={!mprControlsReady}
-                        aria-label={`Изменить угол оси КТ-среза на ${formatSignedMprStep(delta, "°")}`}
-                      >
-                        {formatSignedMprStep(delta, "°")}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mpr-preset-row" aria-label="Быстрые углы КТ-срезов">
-                    {mprAxisPresetDeg.map((angle) => (
-                      <button
-                        className={mprAxisDeg === angle ? "active" : ""}
-                        key={angle}
-                        type="button"
-                        onClick={() => setMprAxisDeg(angle)}
-                        disabled={!mprControlsReady}
-                        aria-pressed={mprAxisDeg === angle}
-                        aria-label={`Установить угол оси КТ-срезов ${angle > 0 ? `+${angle}` : angle}°`}
-                      >
-                        {angle > 0 ? `+${angle}°` : `${angle}°`}
-                      </button>
-                    ))}
-                  </div>
-                  <label>
-                    Толщина слоя: {mprSlabMm} мм
-                    <input
-                      aria-valuetext={mprSlabRangeValue}
-                      disabled={!mprControlsReady}
-                      min={mprSlabBounds.min}
-                      max={mprSlabBounds.max}
-                      step="1"
-                      type="range"
-                      value={mprSlabMm}
-                      onChange={(event) => setMprSlabMm(clampMprSlabMm(Number(event.target.value)))}
-                    />
-                  </label>
-                  <div className="mpr-stepper-row" data-testid="ct-mpr-slab-nudge" aria-label="Точная правка толщины слоя КТ-срезов">
-                    {mprSlabNudgeMm.map((delta) => (
-                      <button
-                        key={delta}
-                        type="button"
-                        onClick={() => setMprSlabMm(clampMprSlabMm(mprSlabMm + delta))}
-                        disabled={!mprControlsReady}
-                        aria-label={`Изменить толщину слоя КТ-срезов на ${formatSignedMprStep(delta, " мм")}`}
-                      >
-                        {formatSignedMprStep(delta, " мм")}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mpr-preset-row" aria-label="Быстрая толщина слоя КТ-срезов">
-                    {mprSlabPresetMm.map((slab) => (
-                      <button
-                        className={mprSlabMm === slab ? "active" : ""}
-                        key={slab}
-                        type="button"
-                        onClick={() => setMprSlabMm(slab)}
-                        disabled={!mprControlsReady}
-                        aria-pressed={mprSlabMm === slab}
-                        aria-label={`Установить толщину слоя КТ-срезов ${slab} мм`}
-                      >
-                        {slab} мм
-                      </button>
-                    ))}
-                    <button type="button" onClick={() => setMprAxisDeg(0)} disabled={!mprControlsReady} aria-pressed={mprAxisDeg === 0} aria-label="Вернуть ось КТ-срезов к 0°">
-                      <RotateCcw aria-hidden="true" /> ось 0°
-                    </button>
-                  </div>
-                  <label>
-                    Положение среза: {mprSliceLabel}
-                    <input
-                      disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-                      min="0"
-                      max={mprSliceMaxIndex}
-                      step="1"
-                      type="range"
-                      value={mprSafeSliceIndex}
-                      aria-valuetext={mprSliceRangeValue}
-                      onChange={(event) => setMprSliceIndex(clampMprSliceIndex(Number(event.target.value), mprSliceMaxIndex))}
-                    />
-                  </label>
-                  <div className="mpr-manual-grid" data-testid="ct-mpr-manual-inputs" aria-label="Точные числовые настройки КТ-срезов">
-                    <label>
-                      Угол, °
-                      <input
-                        disabled={!mprControlsReady}
-                        inputMode="numeric"
-                        max={mprAxisBounds.max}
-                        min={mprAxisBounds.min}
-                        step="1"
-                        type="number"
-                        value={mprAxisDeg}
-                        onChange={(event) => setMprAxisDeg(clampMprAxisDeg(Number(event.target.value)))}
-                      />
-                    </label>
-                    <label>
-                      Слой, мм
-                      <input
-                        disabled={!mprControlsReady}
-                        inputMode="numeric"
-                        max={mprSlabBounds.max}
-                        min={mprSlabBounds.min}
-                        step="1"
-                        type="number"
-                        value={mprSlabMm}
-                        onChange={(event) => setMprSlabMm(clampMprSlabMm(Number(event.target.value)))}
-                      />
-                    </label>
-                    <label>
-                      Срез
-                      <input
-                        disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-                        inputMode="numeric"
-                        max={mprSliceMaxIndex + 1}
-                        min="1"
-                        step="1"
-                        type="number"
-                        value={mprSafeSliceIndex + 1}
-                        onChange={(event) => setMprSliceIndex(clampMprSliceIndex(Number(event.target.value) - 1, mprSliceMaxIndex))}
-                      />
-                    </label>
-                  </div>
-                  <div className="mpr-stepper-row" data-testid="ct-mpr-slice-nudge" aria-label="Точная навигация по КТ-срезам">
-                    {mprSliceNudgeSteps.map((delta) => (
-                      <button
-                        key={delta}
-                        type="button"
-                        onClick={() => setMprSliceIndex(clampMprSliceIndex(mprSafeSliceIndex + delta, mprSliceMaxIndex))}
-                        disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-                        aria-label={`Перейти по КТ-срезам на ${formatSignedMprStep(delta, " срез")}`}
-                      >
-                        {formatSignedMprStep(delta, " срез")}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mpr-preset-row" aria-label="Опорные КТ-срезы">
-                    {mprSlicePresetFractions.map((preset) => {
-                      const targetIndex = mprSliceIndexFromFraction(preset.fraction, mprSliceMaxIndex);
-                      return (
-                        <button
-                          className={mprSafeSliceIndex === targetIndex ? "active" : ""}
-                          key={preset.id}
-                          type="button"
-                          onClick={() => setMprSliceIndex(targetIndex)}
-                          disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
-                          aria-pressed={mprSafeSliceIndex === targetIndex}
-                          aria-label={`Перейти на опорный КТ-срез: ${preset.label}`}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button className="mpr-reset-button" type="button" onClick={resetMprControls} disabled={!mprControlsReady}>
-                    <RefreshCw aria-hidden="true" /> Сбросить КТ-срезы
-                  </button>
-                  <div className="mpr-memory-strip" data-testid="ct-mpr-memory-strip">
+          <WorkspaceRouteErrorBoundary view="imaging" label={viewLabels.imaging} panelClassName="imaging-panel" panelId="imaging">
+            <Suspense
+              fallback={
+                <section className="imaging-panel" id="imaging" aria-label="?????? ????????" aria-busy="true">
+                  <div className="imaging-copy">
                     <div>
-                      <strong>{mprWorkbenchLocalSavedAt ? `Последний вид ${formatTime(mprWorkbenchLocalSavedAt)}` : "Последний вид появится после настройки"}</strong>
-                      <span>
-                        {mprWorkbenchDraftRestored
-                          ? "Серия открыта с сохраненными осями, окном и толщиной слоя."
-                          : "Ось, толщина слоя, окно, курсор и связанные плоскости запоминаются для этой КТ-серии."}
-                      </span>
+                      <p className="eyebrow">?????? ????????</p>
+                      <h2>???????? ??????</h2>
                     </div>
-                    <button type="button" onClick={restoreMprWorkbenchLocalDraft} disabled={!mprControlsReady || !mprWorkbenchLocalSavedAt}>
-                      <History aria-hidden="true" /> Вернуть вид
-                    </button>
                   </div>
-                  <div className="mpr-clinical-preset-grid" data-testid="ct-mpr-clinical-presets" aria-label="Клинические протоколы КТ-срезов">
-                    {mprClinicalPresets.map((preset) => {
-                      const projectionFallbackNote = mprControlsReady
-                        ? describeMprClinicalPresetProjectionFallback(preset.projection, cbctWorkbenchProjections, mprProjectionLabels)
-                        : null;
-                      return (
-                        <button
-                          className={mprClinicalPresetButtonClass(preset)}
-                          key={preset.id}
-                          type="button"
-                          onClick={() => applyMprClinicalPreset(preset)}
-                          aria-current={mprNearestClinicalPreset.exact && mprNearestClinicalPreset.title === preset.title ? "true" : undefined}
-                          disabled={!mprControlsReady}
-                        >
-                          <strong>{preset.title}</strong>
-                          <span>{preset.detail}</span>
-                          {projectionFallbackNote ? <small>{projectionFallbackNote}</small> : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="mpr-toggle-row">
-                    {(Object.keys(mprWindowPresetLabels) as MprWindowPreset[]).map((preset) => (
-                      <button
-                        className={mprWindowPreset === preset ? "active" : ""}
-                        key={preset}
-                        type="button"
-                        onClick={() => setMprWindowPreset(preset)}
-                        disabled={!mprControlsReady}
-                        aria-pressed={mprWindowPreset === preset}
-                      >
-                        {mprWindowPresetLabels[preset]}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mpr-check-row">
-                    <label>
-                      <input checked={mprCrosshairEnabled} disabled={!mprControlsReady} type="checkbox" onChange={(event) => setMprCrosshairEnabled(event.target.checked)} />
-                      Синхронный курсор
-                    </label>
-                    <label>
-                      <input checked={mprLinkedPlanesEnabled} disabled={!mprControlsReady} type="checkbox" onChange={(event) => setMprLinkedPlanesEnabled(event.target.checked)} />
-                      Связанные плоскости
-                    </label>
-                  </div>
-                  {!mprControlsReady ? (
-                    <p className="mpr-control-disabled-note" role="status">
-                      Сначала откройте готовую КЛКТ/КТ-серию. После этого включатся оси, толщина слоя и связанные плоскости.
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              </details>
-              <div className="clinical-mpr-safety">
-                <span>{selectedImagingViewerPlan?.nextAction ?? "Подготовить серию КЛКТ/КТ к просмотру срезов."}</span>
-                <span>{cbctWorkbenchSeries?.mprReadiness.resourcePolicy.nextAction ?? "Метаданные серии пока не загружены: сначала открываем предпросмотр и внешний просмотр."}</span>
-                <span>ИИ-описание не является диагнозом; врач подтверждает все выводы.</span>
-              </div>
-            </section>
-          ) : null}
-        </section>
+                </section>
+              }
+            >
+              <ImagingView
+                activeAppointment={activeAppointment}
+                activeImagingStudies={activeImagingStudies}
+                activePatient={activePatient}
+                addImagingViewerNoteAnnotation={addImagingViewerNoteAnnotation}
+                applyCtPlanningQuickAction={applyCtPlanningQuickAction}
+                applyMprClinicalPreset={applyMprClinicalPreset}
+                applyNearestMprClinicalPreset={applyNearestMprClinicalPreset}
+                attachBrowserDirectoryInputRef={attachBrowserDirectoryInputRef}
+                browserImagingFileInputAccept={browserImagingFileInputAccept}
+                browserImagingFilesInputRef={browserImagingFilesInputRef}
+                browserImagingScanProgress={browserImagingScanProgress}
+                browserPickedImagingFolder={browserPickedImagingFolder}
+                canRetryImagingViewerSave={canRetryImagingViewerSave}
+                cancelBrowserImagingFolderScan={cancelBrowserImagingFolderScan}
+                cbctWorkbenchPlanes={cbctWorkbenchPlanes}
+                cbctWorkbenchProjections={cbctWorkbenchProjections}
+                cbctWorkbenchSeries={cbctWorkbenchSeries}
+                clampMprAxisDeg={clampMprAxisDeg}
+                clampMprSlabMm={clampMprSlabMm}
+                clampMprSliceIndex={clampMprSliceIndex}
+                createCtPlanningArtifact={createCtPlanningArtifact}
+                createImagingStudy={createImagingStudy}
+                ctPlanningActiveQuickActionId={ctPlanningActiveQuickActionId}
+                ctPlanningAnnotationRefs={ctPlanningAnnotationRefs}
+                ctPlanningImplantPlan={ctPlanningImplantPlan}
+                defaultImagingViewerState={defaultImagingViewerState}
+                describeMprClinicalPresetProjectionFallback={describeMprClinicalPresetProjectionFallback}
+                dicomLabel={dicomLabel}
+                dicomQualityModeLabels={dicomQualityModeLabels}
+                dicomTextureStrategyLabels={dicomTextureStrategyLabels}
+                dicomViewerToolStateBundle={dicomViewerToolStateBundle}
+                dicomViewerWorkbenchManifest={dicomViewerWorkbenchManifest}
+                formatByteSize={formatByteSize}
+                formatShortDate={formatShortDate}
+                formatSignedMprStep={formatSignedMprStep}
+                formatTime={formatTime}
+                handleBrowserDirectoryInputChange={handleBrowserDirectoryInputChange}
+                handleMprKeyboardNavigation={handleMprKeyboardNavigation}
+                imagingComparisonCandidates={imagingComparisonCandidates}
+                imagingCreateSavingKind={imagingCreateSavingKind}
+                imagingKindFilter={imagingKindFilter}
+                imagingKindLabels={imagingKindLabels}
+                imagingKindOptions={imagingKindOptions}
+                imagingPreviewSource={imagingPreviewSource}
+                imagingSourceLabels={imagingSourceLabels}
+                imagingViewerActiveTool={imagingViewerActiveTool}
+                imagingViewerAnnotations={imagingViewerAnnotations}
+                imagingViewerHref={imagingViewerHref}
+                imagingViewerImageStyle={imagingViewerImageStyle}
+                imagingViewerNote={imagingViewerNote}
+                imagingViewerNoteMissingId={imagingViewerNoteMissingId}
+                imagingViewerNoteReady={imagingViewerNoteReady}
+                imagingViewerRetryMissingId={imagingViewerRetryMissingId}
+                imagingViewerSaveDetail={imagingViewerSaveDetail}
+                imagingViewerSaveState={imagingViewerSaveState}
+                imagingViewerSaveTitle={imagingViewerSaveTitle}
+                imagingViewerSessionReady={imagingViewerSessionReady}
+                imagingViewerState={imagingViewerState}
+                imagingViewerToolLabels={imagingViewerToolLabels}
+                isBrowserImagingFolderPicking={isBrowserImagingFolderPicking}
+                isOnline={isOnline}
+                mprActiveProjectionLabel={mprActiveProjectionLabel}
+                mprActiveProjectionOrientation={mprActiveProjectionOrientation}
+                mprAxisAngleBadge={mprAxisAngleBadge}
+                mprAxisBounds={mprAxisBounds}
+                mprAxisDeg={mprAxisDeg}
+                mprAxisDirectionLabel={mprAxisDirectionLabel}
+                mprAxisGuidance={mprAxisGuidance}
+                mprAxisNudgeDeg={mprAxisNudgeDeg}
+                mprAxisPresetDeg={mprAxisPresetDeg}
+                mprAxisRangeValue={mprAxisRangeValue}
+                mprAxisVisualizerLabel={mprAxisVisualizerLabel}
+                mprAxisVisualizerStyle={mprAxisVisualizerStyle}
+                mprClinicalChecklist={mprClinicalChecklist}
+                mprClinicalNextStep={mprClinicalNextStep}
+                mprClinicalPresetButtonClass={mprClinicalPresetButtonClass}
+                mprClinicalPresets={mprClinicalPresets}
+                mprControlsAutoOpen={mprControlsAutoOpen}
+                mprControlsReady={mprControlsReady}
+                mprCrosshairEnabled={mprCrosshairEnabled}
+                mprLinkedPlanesEnabled={mprLinkedPlanesEnabled}
+                mprNearestClinicalPreset={mprNearestClinicalPreset}
+                mprOperatorSummaryCards={mprOperatorSummaryCards}
+                mprProjection={mprProjection}
+                mprProjectionCompass={mprProjectionCompass}
+                mprProjectionLabels={mprProjectionLabels}
+                mprSafeSliceIndex={mprSafeSliceIndex}
+                mprSeriesRequiredProjectionLabel={mprSeriesRequiredProjectionLabel}
+                mprSlabBadge={mprSlabBadge}
+                mprSlabBounds={mprSlabBounds}
+                mprSlabMm={mprSlabMm}
+                mprSlabNudgeMm={mprSlabNudgeMm}
+                mprSlabPresetMm={mprSlabPresetMm}
+                mprSlabRangeValue={mprSlabRangeValue}
+                mprSliceBadge={mprSliceBadge}
+                mprSliceIndexFromFraction={mprSliceIndexFromFraction}
+                mprSliceLabel={mprSliceLabel}
+                mprSliceMaxIndex={mprSliceMaxIndex}
+                mprSliceNudgeSteps={mprSliceNudgeSteps}
+                mprSlicePresetFractions={mprSlicePresetFractions}
+                mprSliceRangeValue={mprSliceRangeValue}
+                mprUnavailableProjectionLabel={mprUnavailableProjectionLabel}
+                mprWindowPreset={mprWindowPreset}
+                mprWindowPresetLabels={mprWindowPresetLabels}
+                mprWorkbenchDraftRestored={mprWorkbenchDraftRestored}
+                mprWorkbenchLocalSavedAt={mprWorkbenchLocalSavedAt}
+                mprWorkbenchSummaryText={mprWorkbenchSummaryText}
+                pickBrowserImagingFiles={pickBrowserImagingFiles}
+                pickBrowserImagingFolder={pickBrowserImagingFolder}
+                resetMprControls={resetMprControls}
+                restoreMprWorkbenchLocalDraft={restoreMprWorkbenchLocalDraft}
+                retryImagingViewerSessionSave={retryImagingViewerSessionSave}
+                selectCtPlanningImplant={selectCtPlanningImplant}
+                selectedImagingStudy={selectedImagingStudy}
+                selectedImagingViewerPlan={selectedImagingViewerPlan}
+                setCtPlanningActiveQuickActionId={setCtPlanningActiveQuickActionId}
+                setCtPlanningImplantPlan={setCtPlanningImplantPlan}
+                setImagingKindFilter={setImagingKindFilter}
+                setImagingViewerActiveTool={setImagingViewerActiveTool}
+                setImagingViewerNote={setImagingViewerNote}
+                setImagingViewerState={setImagingViewerState}
+                setMprAxisDeg={setMprAxisDeg}
+                setMprCrosshairEnabled={setMprCrosshairEnabled}
+                setMprLinkedPlanesEnabled={setMprLinkedPlanesEnabled}
+                setMprProjection={setMprProjection}
+                setMprSlabMm={setMprSlabMm}
+                setMprSliceIndex={setMprSliceIndex}
+                setMprWindowPreset={setMprWindowPreset}
+                setSelectedImagingStudyId={setSelectedImagingStudyId}
+                visibleImagingStudies={visibleImagingStudies}
+              />
+            </Suspense>
+          </WorkspaceRouteErrorBoundary>
         ) : null}
 
         {["schedule", "patients", "visit", "documents", "finance", "communications"].includes(currentView) ? (
@@ -19358,8 +19864,8 @@ export function App() {
               fallback={
                 <div className="panel schedule-panel" id="schedule" aria-busy="true">
                   <div className="panel-heading">
-                    <h2>Расписание</h2>
-                    <span className="status-pill status-planned">загрузка</span>
+                    <h2>Р Р°СЃРїРёСЃР°РЅРёРµ</h2>
+                    <span className="status-pill status-planned">Р·Р°РіСЂСѓР·РєР°</span>
                   </div>
                 </div>
               }
@@ -19422,8 +19928,8 @@ export function App() {
               fallback={
                 <div className="panel patients-panel" id="patients" aria-busy="true">
                   <div className="panel-heading">
-                    <h2>Быстрый поиск</h2>
-                    <span className="status-pill status-planned">загрузка</span>
+                    <h2>Р‘С‹СЃС‚СЂС‹Р№ РїРѕРёСЃРє</h2>
+                    <span className="status-pill status-planned">Р·Р°РіСЂСѓР·РєР°</span>
                   </div>
                 </div>
               }
@@ -19467,45 +19973,45 @@ export function App() {
           {currentView === "visit" ? (
           <div className="panel visit-panel" id="visit">
             <div className="panel-heading">
-              <h2>Текущий прием</h2>
-              <span className="status-pill status-in_treatment">Черновик</span>
+              <h2>РўРµРєСѓС‰РёР№ РїСЂРёРµРј</h2>
+              <span className="status-pill status-in_treatment">Р§РµСЂРЅРѕРІРёРє</span>
             </div>
 
-            <section className="visit-focus-bar" aria-label="Быстрый фокус приема">
+            <section className="visit-focus-bar" aria-label="Р‘С‹СЃС‚СЂС‹Р№ С„РѕРєСѓСЃ РїСЂРёРµРјР°">
               <div className="visit-focus-patient">
                 <div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
                 <div>
-                  <p className="eyebrow">Пациент сейчас</p>
+                  <p className="eyebrow">РџР°С†РёРµРЅС‚ СЃРµР№С‡Р°СЃ</p>
                   <h3>{activePatient.fullName}</h3>
                   <p>
-                    {activeAppointment?.reason ?? "прием"} · {activePatient.phone ?? "телефон не указан"}
+                    {activeAppointment?.reason ?? "РїСЂРёРµРј"} В· {activePatient.phone ?? "С‚РµР»РµС„РѕРЅ РЅРµ СѓРєР°Р·Р°РЅ"}
                   </p>
                 </div>
               </div>
               <div className="visit-focus-status">
                 <span className={visitWarnings.length ? "" : "ready"}>
-                  {visitWarnings.length ? `${visitWarnings.length} предупр.` : "спокойно"}
+                  {visitWarnings.length ? `${visitWarnings.length} РїСЂРµРґСѓРїСЂ.` : "СЃРїРѕРєРѕР№РЅРѕ"}
                 </span>
-                <strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
+                <strong>{primaryVisitWarning?.title ?? "РњРѕР¶РЅРѕ РІРµСЃС‚Рё РїСЂРёРµРј"}</strong>
                 <p>
-                  {visitCloseChecklist ? `${visitCloseChecklist.score}% готовности` : "статус закрытия не рассчитан"} ·{" "}
-                  предупреждения не останавливают прием · {activeImagingStudies.length} снимка · {activeUsableDocuments.length} документа
+                  {visitCloseChecklist ? `${visitCloseChecklist.score}% РіРѕС‚РѕРІРЅРѕСЃС‚Рё` : "СЃС‚Р°С‚СѓСЃ Р·Р°РєСЂС‹С‚РёСЏ РЅРµ СЂР°СЃСЃС‡РёС‚Р°РЅ"} В·{" "}
+                  РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏ РЅРµ РѕСЃС‚Р°РЅР°РІР»РёРІР°СЋС‚ РїСЂРёРµРј В· {activeImagingStudies.length} СЃРЅРёРјРєР° В· {activeUsableDocuments.length} РґРѕРєСѓРјРµРЅС‚Р°
                 </p>
               </div>
               <div className="visit-focus-actions">
                 <button className="primary-button" type="button" onClick={() => scrollToVisitArea(".dictation-box")}>
-                  <Mic aria-hidden="true" /> Диктовка
+                  <Mic aria-hidden="true" /> Р”РёРєС‚РѕРІРєР°
                 </button>
                 <button className="secondary-button" type="button" onClick={openVisitWarningAction}>
-                  <AlertTriangle aria-hidden="true" /> Риски
+                  <AlertTriangle aria-hidden="true" /> Р РёСЃРєРё
                 </button>
               </div>
             </section>
 
-            <section className="visit-next-step" data-testid="visit-next-step-panel" aria-label="Следующий шаг приема">
+            <section className="visit-next-step" data-testid="visit-next-step-panel" aria-label="РЎР»РµРґСѓСЋС‰РёР№ С€Р°Рі РїСЂРёРµРјР°">
               <div className="visit-next-step-main">
                 <div>
-                  <p className="eyebrow">Сейчас сделать</p>
+                  <p className="eyebrow">РЎРµР№С‡Р°СЃ СЃРґРµР»Р°С‚СЊ</p>
                   <h3>{visitPrimaryAction.label}</h3>
                   <p id="visit-primary-action-detail">{visitPrimaryAction.detail}</p>
                 </div>
@@ -19524,7 +20030,7 @@ export function App() {
                   {visitPrimaryAction.label}
                 </button>
               </div>
-              <div className="visit-progress-strip" data-testid="visit-progress-strip" aria-label="Прогресс приема">
+              <div className="visit-progress-strip" data-testid="visit-progress-strip" aria-label="РџСЂРѕРіСЂРµСЃСЃ РїСЂРёРµРјР°">
                 {visitWorkflowSteps.map((step, index) => (
                   <article className={`visit-progress-step step-${step.state}`} key={step.key}>
                     <span>{index + 1}</span>
@@ -19537,22 +20043,17 @@ export function App() {
               </div>
             </section>
 
-            <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки">
-              {visitSafetyCards.map((item) => (
-                <article className={`safety-${item.state}`} key={item.key}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                  <p>{item.detail}</p>
-                </article>
-              ))}
+            <section className={`visit-work-status status-${visitWorkStatusState}`} aria-label="РЎРѕС…СЂР°РЅРЅРѕСЃС‚СЊ С‡РµСЂРЅРѕРІРёРєР° Рё РґРёРєС‚РѕРІРєРё">
+              <strong>{visitWorkStatusTitle}</strong>
+              <p>{visitWorkStatusDetail}</p>
             </section>
 
-            <section className="specialty-focus-bar" aria-label="Фокус специальности приема">
-              <div>
-                <p className="eyebrow">Фокус врача</p>
-                <h3>{specialtyLabels[selectedSpecialty]}</h3>
-                <p>{activeDoctor?.fullName.split(" ")[0] ?? "Врач"} · {activeChair?.name ?? "кресло"}</p>
-              </div>
+            <details className="specialty-focus-bar" aria-label="Р¤РѕРєСѓСЃ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚Рё РїСЂРёРµРјР°">
+              <summary>
+                <span>РўРёРї РїСЂРёРµРјР°</span>
+                <strong>{specialtyLabels[selectedSpecialty]}</strong>
+                <small>{activeDoctor?.fullName.split(" ")[0] ?? "Р’СЂР°С‡"} В· {activeChair?.name ?? "РєСЂРµСЃР»Рѕ"}</small>
+              </summary>
               <div className="specialty-focus-options">
                 {visibleVisitSpecialtyFocusOptions.map((option) => (
                   <button
@@ -19570,130 +20071,223 @@ export function App() {
                   </button>
                 ))}
               </div>
-            </section>
+            </details>
 
-            <div className="dictation-box">
+              <div className="dictation-box">
               <div className="dictation-header">
                 <Mic aria-hidden="true" />
                 <div>
-                  <h3>Диктовка врача</h3>
+                  <h3>Р”РёРєС‚РѕРІРєР° РІСЂР°С‡Р°</h3>
                   <p>
-                    Черновик, требует подтверждения врача.{" "}
-                    {lastLocalSavedAt ? `Локально сохранено ${formatTime(lastLocalSavedAt)}.` : "Локальное автосохранение включено."}
-                    {localDraftWasRestored ? " Восстановлен локальный черновик." : ""}
-                    {!isOnline ? " Офлайн: сервер синхронизируется позже." : ""}
-                    {pendingVisitSaveCount
-                      ? ` Сервер ожидает ${pendingVisitSaveCount} сохранение${lastPendingVisitSaveAt ? ` с ${formatTime(lastPendingVisitSaveAt)}` : ""}.`
-                      : ""}
-                    {pendingSpeechChunkCount ? ` Распознавание ждет ${pendingSpeechChunkCount} аудио-фрагм.` : ""}
-                    {lastServerDraftSavedAt && serverDraftSyncState === "saved" ? ` Серверный черновик ${formatTime(lastServerDraftSavedAt)}.` : ""}
-                    {serverDraftSyncState === "saving" ? " Сервер сохраняет черновик." : ""}
-                    {serverDraftSyncState === "queued" || serverDraftSyncState === "error" ? " Серверный черновик повторит синхронизацию." : ""}
-                    {speechStatusNote ? ` ${speechStatusNote}` : ""}
+                    Р“РѕРІРѕСЂРёС‚Рµ РёР»Рё РїРµС‡Р°С‚Р°Р№С‚Рµ. РџРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј РІСЂР°С‡ РїСЂРѕРІРµСЂСЏРµС‚ С‚РµРєСЃС‚.
                   </p>
                 </div>
               </div>
-              <div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">
-                {dictationQuickPhrases.map((phrase) => (
-                  <button type="button" key={phrase.label} onClick={() => appendToTranscript(phrase.text)}>
-                    {phrase.label}
+              {speechStatusNote ? (
+                <div className={`dictation-main-note note-${dictationNoticeState}`} role="status" aria-live="polite">
+                  {speechStatusNote}
+                </div>
+              ) : null}
+              {showDictationSystemStatus ? (
+                <details className="dictation-system-status" open={dictationSystemStatusOpen} onToggle={(event) => setDictationSystemStatusOpen(event.currentTarget.open)}>
+                  <summary>
+                    <span>РЎС‚Р°С‚СѓСЃ</span>
+                    {" "}
+                    <strong>{dictationSystemStatusSummary}</strong>
+                  </summary>
+                  <dl>
+                    {dictationSystemStatusItems.map((item) => (
+                      <div key={`${item.label}-${item.detail}`}>
+                        <dt>{item.label}</dt>
+                        <dd>{item.detail}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {showSpeechMicrophoneSelect ? (
+                    <label className="dictation-mic-select">
+                      <span>Р’С‹Р±РѕСЂ РјРёРєСЂРѕС„РѕРЅР°</span>
+                      <select
+                        value={selectedSpeechDeviceId}
+                        onChange={(event) => updateSelectedSpeechDeviceId(event.target.value)}
+                        disabled={speechMicrophoneSelectionLocked}
+                      >
+                        <option value="">РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё</option>
+                        {speechAudioInputDevices.map((device) => (
+                          <option value={device.deviceId} key={device.deviceId}>
+                            {device.label}
+                          </option>
+                        ))}
+                      </select>
+                      <small>{speechMicrophoneSelectionLocked ? "РћСЃС‚Р°РЅРѕРІРёС‚Рµ Р·Р°РїРёСЃСЊ, С‡С‚РѕР±С‹ СЃРјРµРЅРёС‚СЊ РјРёРєСЂРѕС„РѕРЅ." : "Р•СЃР»Рё РіРѕР»РѕСЃ С‚РёС…РёР№, РІС‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ РјРёРєСЂРѕС„РѕРЅ Рё РЅР°С‡РЅРёС‚Рµ Р·Р°РїРёСЃСЊ Р·Р°РЅРѕРІРѕ."}</small>
+                    </label>
+                  ) : null}
+                </details>
+              ) : null}
+              {showDictationVoiceStatus ? (
+                <div className={`dictation-voice-status ${speechVoiceWorkBusy ? "active" : serverVoiceRecordingAvailable || speechRecognitionReady || browserDictationAvailable ? "ready" : "warn"}`}>
+                  <div>
+                    <strong>{browserDictationStatusLabel}</strong>
+                    <span>{browserDictationStatusDetail}</span>
+                  </div>
+                  <small>{serverSpeechStatusDetail}</small>
+                </div>
+              ) : null}
+              {showPendingSpeechQueueCard ? (
+                <div className="dictation-queue-card" role="status" aria-live="polite">
+                  <div>
+                    <strong>{pendingSpeechQueueTitle}</strong>
+                    <span>{pendingSpeechQueueDetail}</span>
+                  </div>
+                  <button className="secondary-button" type="button" onClick={() => flushPendingSpeechChunks({ silent: false })} title={pendingSpeechFlushActionTitle}>
+                    {pendingSpeechFlushActionLabel}
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : null}
+              {speechInputMonitorActive ? (
+                <div className={`dictation-live-meter meter-${speechInputLevelState}`} role="status" aria-live="polite">
+                  <div>
+                    <strong>{formatClockDuration(speechRecordingElapsedMs)}</strong>
+                    <span>{speechInputLevelLabel}</span>
+                  </div>
+                  <div className="dictation-level-track" aria-hidden="true">
+                    <span style={{ width: `${speechInputLevelPercent}%` }} />
+                  </div>
+                </div>
+              ) : null}
+              {visitDictationInterim ? (
+                <div className="dictation-interim" role="status" aria-live="polite">
+                  РЎРµР№С‡Р°СЃ СЃР»С‹С€Сѓ: <strong>{visitDictationInterim}</strong>
+                </div>
+              ) : null}
+              {showDictationQuickPhrases ? (
+                <div className="dictation-quick-row" aria-label="Р‘С‹СЃС‚СЂС‹Рµ С„СЂР°Р·С‹ РґР»СЏ РґРёРєС‚РѕРІРєРё">
+                  {dictationQuickPhrases.map((phrase) => (
+                    <button type="button" key={phrase.label} onClick={() => appendToTranscript(phrase.text)}>
+                      {phrase.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <textarea
-                aria-label="Текст диктовки"
+                aria-label="РўРµРєСЃС‚ РґРёРєС‚РѕРІРєРё"
                 value={transcript}
                 onChange={(event) => {
                   visitDraftUserEditedRef.current = true;
+                  if (event.target.value.trim()) setSpeechRetrySuggested(false);
                   setTranscript(event.target.value);
                   if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
                 }}
               />
               <div className="dictation-actions">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={clearTranscriptWithUndo}
-                  disabled={!hasVisitTranscriptText}
-                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
-                >
-                  Очистить
-                </button>
-                {clearedTranscriptSnapshot ? (
-                  <button className="secondary-button" type="button" onClick={undoTranscriptClear}>
-                    Вернуть
+                {serverVoiceRecordingAvailable || isServerVoiceRecording ? (
+                  <button
+                    className={serverVoiceRecordButtonClassName}
+                    type="button"
+                    onClick={isServerVoiceRecording ? stopServerVoiceRecording : () => void startServerVoiceRecording()}
+                    disabled={isSpeechMicrophoneTesting || isServerVoiceRecordingStarting || (!isServerVoiceRecording && speechTranscriptionBusy)}
+                    title={
+                      speechGatewayActiveProviderIsLocal
+                        ? `${speechGatewayStatus?.providerLabel ?? "Р»РѕРєР°Р»СЊРЅС‹Р№ РјРѕРґСѓР»СЊ"}: Р·Р°РїРёСЃСЊ С‡Р°СЃС‚СЏРјРё`
+                        : `${speechGatewayStatus?.providerLabel ?? "Groq Whisper"}: РґР»РёРЅРЅР°СЏ Р·Р°РїРёСЃСЊ РіРѕР»РѕСЃР°`
+                    }
+                  >
+                    <Mic aria-hidden="true" /> {serverVoiceRecordButtonLabel}
                   </button>
-                ) : null}
-                <button className="secondary-button" type="button" onClick={startVisitDictation} disabled={isVisitDictating}>
-                  <Mic aria-hidden="true" /> {isVisitDictating ? "Слушаю" : "Голос"}
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
-                  title={
-                    speechRecognitionReady
-                      ? speechGatewayActiveProviderIsLocal
-                        ? `${speechGatewayStatus?.providerLabel ?? "локальный модуль"}: запись частями в локальный модуль`
-                        : `${speechGatewayStatus?.providerLabel ?? "распознавание"}: запись частями`
-                      : "Аудио сохранится локально и уйдет на распознавание, когда источник будет готов"
-                  }
-                >
-                  <Mic aria-hidden="true" />{" "}
-                  {isServerVoiceRecording
-                    ? "Стоп запись"
-                    : emptyDictationVoiceActionLabel}
-                </button>
-                {pendingSpeechChunkCount ? (
+                ) : (
+                  <button
+                    className={browserVoiceRecordButtonClassName}
+                    type="button"
+                    onClick={isVisitDictating ? stopVisitDictation : () => void startVisitDictation()}
+                    disabled={isSpeechMicrophoneTesting || isVisitDictationStarting || (!browserDictationAvailable && !isVisitDictating)}
+                    title={browserDictationAvailable ? "Р’СЃС‚СЂРѕРµРЅРЅР°СЏ РґРёРєС‚РѕРІРєР° Р±СЂР°СѓР·РµСЂР°" : "РћС‚РєСЂРѕР№С‚Рµ CRM РІ Chrome РёР»Рё Edge РґР»СЏ РґРёРєС‚РѕРІРєРё"}
+                  >
+                    <Mic aria-hidden="true" /> {browserVoiceRecordButtonLabel}
+                  </button>
+                )}
+                {showDictationMicrophoneTestAction ? (
                   <button
                     className="secondary-button"
                     type="button"
-                    onClick={() => flushPendingSpeechChunks({ silent: false })}
-                    title={pendingSpeechFlushActionTitle}
+                    onClick={() => void testSpeechMicrophone()}
+                    disabled={isSpeechMicrophoneTesting || isServerVoiceRecording || isVisitDictating || isVisitDictationStarting || speechTranscriptionBusy}
+                    title={
+                      speechMicrophoneVerified
+                        ? "РњРёРєСЂРѕС„РѕРЅ СѓР¶Рµ РїСЂРѕРІРµСЂРµРЅ. РњРѕР¶РЅРѕ РЅР°Р¶Р°С‚СЊ РµС‰Рµ СЂР°Р·, РµСЃР»Рё РЅСѓР¶РЅРѕ РїРµСЂРµРїСЂРѕРІРµСЂРёС‚СЊ. РђСѓРґРёРѕ РЅРµ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ."
+                        : "Р›РѕРєР°Р»СЊРЅРѕ РїСЂРѕРІРµСЂРёС‚СЊ, СЃР»С‹С€РёС‚ Р»Рё Р±СЂР°СѓР·РµСЂ РјРёРєСЂРѕС„РѕРЅ. РђСѓРґРёРѕ РЅРµ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ."
+                    }
                   >
-                    {pendingSpeechFlushActionLabel}
+                    <Mic aria-hidden="true" /> {isSpeechMicrophoneTesting ? "РЎР»СѓС€Р°СЋ" : speechMicrophoneVerified ? "РњРёРєСЂРѕС„РѕРЅ РїСЂРѕРІРµСЂРµРЅ" : "РџСЂРѕРІРµСЂРёС‚СЊ РјРёРєСЂРѕС„РѕРЅ"}
                   </button>
                 ) : null}
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={polishTranscript}
-                  disabled={!hasVisitTranscriptText || isTranscriptPolishing}
-                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
-                  title={
-                    speechGatewayStatus?.polishPolicy.neuralEnabled
-                      ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
-                      : "Локальная очистка терминов, секций и номеров зубов"
-                  }
-                >
-                  <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить текст"}
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={buildOfflineDraft}
-                  disabled={!hasVisitTranscriptText}
-                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
-                >
-                  Локальный разбор
-                </button>
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={buildDraft}
-                  disabled={isDraftLoading || !visitDraftReadyToBuild}
-                  aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
-                >
-                  <Bot aria-hidden="true" /> {isDraftLoading ? "Собираю" : "Собрать черновик"}
-                </button>
-                {!hasVisitTranscriptText ? (
+                {showDictationProcessingActions ? (
+                  <>
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={buildDraft}
+                      disabled={isDraftLoading || !visitDraftReadyToBuild}
+                      aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
+                    >
+                      <Bot aria-hidden="true" /> {isDraftLoading ? "РЎРѕР±РёСЂР°СЋ" : "РЎРѕР±СЂР°С‚СЊ Р­РњРљ"}
+                    </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={polishTranscript}
+                      disabled={isTranscriptPolishing}
+                      title={
+                        speechGatewayStatus?.polishPolicy.neuralEnabled
+                          ? `РђРєРєСѓСЂР°С‚РЅР°СЏ РѕС‡РёСЃС‚РєР° С‚РµРєСЃС‚Р°: ${speechGatewayStatus.polishPolicy.modelName ?? "РјРѕРґРµР»СЊ"}`
+                          : "Р›РѕРєР°Р»СЊРЅР°СЏ РѕС‡РёСЃС‚РєР° С‚РµСЂРјРёРЅРѕРІ, СЃРµРєС†РёР№ Рё РЅРѕРјРµСЂРѕРІ Р·СѓР±РѕРІ"
+                      }
+                    >
+                      <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Р§РёС‰Сѓ" : "РЈРїРѕСЂСЏРґРѕС‡РёС‚СЊ С‚РµРєСЃС‚"}
+                    </button>
+                  </>
+                ) : null}
+                {showDictationMoreActions ? (
+                  <details className="dictation-more-actions">
+                    <summary>Р•С‰Рµ</summary>
+                    <div>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={clearTranscriptWithUndo}
+                        disabled={!hasVisitTranscriptText || speechVoiceWorkBusy}
+                        aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                      >
+                        РћС‡РёСЃС‚РёС‚СЊ С‚РµРєСЃС‚
+                      </button>
+                      {clearedTranscriptSnapshot ? (
+                        <button className="secondary-button" type="button" onClick={undoTranscriptClear}>
+                          Р’РµСЂРЅСѓС‚СЊ С‚РµРєСЃС‚
+                        </button>
+                      ) : null}
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={buildOfflineDraft}
+                        disabled={!hasVisitTranscriptText || speechVoiceWorkBusy}
+                        aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                      >
+                        Р—Р°РїРѕР»РЅРёС‚СЊ Р±РµР· РЅРµР№СЂРѕСЃРµС‚Рё
+                      </button>
+                    </div>
+                  </details>
+                ) : null}
+                {!hasVisitTranscriptText && !speechVoiceWorkBusy ? (
                   <div className="dictation-action-guidance" id="dictation-clear-guidance" role="status" aria-live="polite">
-                    В диктовке пока нет текста: нажмите «Голос», «{emptyDictationVoiceActionLabel}» или впишите текст вручную.
+                    Р’ РґРёРєС‚РѕРІРєРµ РїРѕРєР° РЅРµС‚ С‚РµРєСЃС‚Р°: РЅР°Р¶РјРёС‚Рµ В«Р—Р°РїРёСЃР°С‚СЊ РіРѕР»РѕСЃВ» РёР»Рё РІРїРёС€РёС‚Рµ С‚РµРєСЃС‚ РІСЂСѓС‡РЅСѓСЋ.
                   </div>
                 ) : null}
-                {!visitDraftReadyToBuild ? (
+                {!hasVisitTranscriptText && speechVoiceWorkBusy ? (
+                  <div className="dictation-action-guidance" id="dictation-clear-guidance" role="status" aria-live="polite">
+                    Р“РѕР»РѕСЃ РµС‰Рµ Р·Р°РїРёСЃС‹РІР°РµС‚СЃСЏ РёР»Рё СЂР°СЃРїРѕР·РЅР°РµС‚СЃСЏ. РљРѕРіРґР° С‚РµРєСЃС‚ РїРѕСЏРІРёС‚СЃСЏ РІ РїРѕР»Рµ, CRM РґР°СЃС‚ СЃРѕР±СЂР°С‚СЊ Р­РњРљ.
+                  </div>
+                ) : null}
+                {showVisitDraftMissingPanel ? (
                   <div className="visit-draft-missing" id="visit-draft-missing" role="status" aria-live="polite">
-                    <strong>Чтобы собрать черновик, осталось:</strong>
+                    <strong>Р§С‚РѕР±С‹ СЃРѕР±СЂР°С‚СЊ Р­РњРљ, РѕСЃС‚Р°Р»РѕСЃСЊ:</strong>
                     <ul>
                       {visitDraftBuildMissingSteps.map((step) => (
                         <li key={step}>{step}</li>
@@ -19704,11 +20298,11 @@ export function App() {
               </div>
             </div>
 
-            <section className="visit-note-panel" aria-label="Черновик электронной медицинской карты">
+            <section className="visit-note-panel" aria-label="Р§РµСЂРЅРѕРІРёРє СЌР»РµРєС‚СЂРѕРЅРЅРѕР№ РјРµРґРёС†РёРЅСЃРєРѕР№ РєР°СЂС‚С‹">
               <div className="visit-note-head">
                 <div>
-                  <p className="eyebrow">ЭМК после диктовки</p>
-                  <h3>{draft ? "Проверьте черновик" : isVisitNoteDirty ? "Проверьте правки" : "Структура приема"}</h3>
+                  <p className="eyebrow">Р­РњРљ РїРѕСЃР»Рµ РґРёРєС‚РѕРІРєРё</p>
+                  <h3>{draft ? "РџСЂРѕРІРµСЂСЊС‚Рµ С‡РµСЂРЅРѕРІРёРє" : isVisitNoteDirty ? "РџСЂРѕРІРµСЂСЊС‚Рµ РїСЂР°РІРєРё" : "РЎС‚СЂСѓРєС‚СѓСЂР° РїСЂРёРµРјР°"}</h3>
                 </div>
                 <span className={draft || isVisitNoteDirty ? "ready" : ""}>{visitNoteStatusLabel}</span>
               </div>
@@ -19725,7 +20319,7 @@ export function App() {
                 <div className={`visit-draft-quality quality-${draft.quality.level}`}>
                   <div>
                     <strong>{visitDraftQualityLabels[draft.quality.level]}</strong>
-                    <span>{Math.round(draft.quality.confidence * 100)}% · {specialtyLabels[draft.quality.specialty]}</span>
+                    <span>{Math.round(draft.quality.confidence * 100)}% В· {specialtyLabels[draft.quality.specialty]}</span>
                   </div>
                   <p>{draft.quality.nextAction}</p>
                   <div className="visit-draft-signal-row">
@@ -19736,7 +20330,7 @@ export function App() {
                       <span key={signal}>{visitDraftSignalLabel(signal)}</span>
                     ))}
                     {draft.quality.missingCriticalFields.slice(0, 5).map((field) => (
-                      <small key={field}>проверить: {visitDraftMissingFieldLabel(field)}</small>
+                      <small key={field}>РїСЂРѕРІРµСЂРёС‚СЊ: {visitDraftMissingFieldLabel(field)}</small>
                     ))}
                   </div>
                 </div>
@@ -19748,16 +20342,16 @@ export function App() {
                   {draft
                     ? draft.warnings.join(" ")
                     : isVisitNoteDirty
-                      ? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
+                      ? "РџСЂР°РІРєРё Р±СѓРґСѓС‚ СЃРѕС…СЂР°РЅРµРЅС‹ РІ Р­РњРљ. РџРѕРґРїРёСЃСЊ РїСЂРёРµРјР° РѕСЃС‚Р°РµС‚СЃСЏ РѕС‚РґРµР»СЊРЅС‹Рј РґРµР№СЃС‚РІРёРµРј."
                       : pendingVisitSaveCount
-                        ? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
+                        ? "Р›РѕРєР°Р»СЊРЅРѕРµ СЃРѕС…СЂР°РЅРµРЅРёРµ РµСЃС‚СЊ. РЎРµСЂРІРµСЂРЅР°СЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ РѕР¶РёРґР°РµС‚ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РёР»Рё РїРѕРІС‚РѕСЂРЅРѕР№ РїРѕРїС‹С‚РєРё."
                         : lastVisitSaveReceipt
                           ? visitSaveReceiptText(lastVisitSaveReceipt)
                           : dashboard.activeVisit.doctorSummary}
                 </p>
                 {pendingVisitSaveCount ? (
                   <button className="secondary-button" type="button" onClick={() => void flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>
-                    {isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
+                    {isPendingVisitSyncing ? "РЎРёРЅС…СЂРѕРЅРёР·РёСЂСѓСЋ" : "РЎРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°С‚СЊ"}
                   </button>
                 ) : null}
                 <button
@@ -19771,7 +20365,7 @@ export function App() {
                 </button>
                 {!visitNoteReadyToAccept ? (
                   <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite">
-                    <strong>Чтобы сохранить запись приема, осталось:</strong>
+                    <strong>Р§С‚РѕР±С‹ СЃРѕС…СЂР°РЅРёС‚СЊ Р·Р°РїРёСЃСЊ РїСЂРёРµРјР°, РѕСЃС‚Р°Р»РѕСЃСЊ:</strong>
                     <ul>
                       {visitNoteAcceptMissingSteps.map((step) => (
                         <li key={step}>{step}</li>
@@ -19782,18 +20376,18 @@ export function App() {
               </div>
             </section>
 
-            <details className="protocol-library" aria-label="Шаблоны приема по специальности">
+            <details className="protocol-library" aria-label="РЁР°Р±Р»РѕРЅС‹ РїСЂРёРµРјР° РїРѕ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚Рё">
               <summary className="protocol-summary">
                 <div>
-                  <h3>Шаблон приема</h3>
-                  <p>{selectedProtocolTemplate?.title ?? "Выберите специальность и шаблон"}</p>
+                  <h3>РЁР°Р±Р»РѕРЅ РїСЂРёРµРјР°</h3>
+                  <p>{selectedProtocolTemplate?.title ?? "Р’С‹Р±РµСЂРёС‚Рµ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЊ Рё С€Р°Р±Р»РѕРЅ"}</p>
                 </div>
                 <span>{selectedProtocolTemplate ? specialtyLabels[selectedProtocolTemplate.specialty] : dashboard.protocolTemplates.length}</span>
               </summary>
               <div className="protocol-head">
                 <div>
-                  <h3>Шаблон приема</h3>
-                  <p>Выбор специальности меняет протокол, снимки, документы и предупреждения.</p>
+                  <h3>РЁР°Р±Р»РѕРЅ РїСЂРёРµРјР°</h3>
+                  <p>Р’С‹Р±РѕСЂ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚Рё РјРµРЅСЏРµС‚ РїСЂРѕС‚РѕРєРѕР», СЃРЅРёРјРєРё, РґРѕРєСѓРјРµРЅС‚С‹ Рё РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏ.</p>
                 </div>
                 <span>{dashboard.protocolTemplates.length}</span>
               </div>
@@ -19818,7 +20412,7 @@ export function App() {
                   <div>
                     <strong>{selectedProtocolTemplate.title}</strong>
                     <p>
-                      {selectedProtocolTemplate.defaultDurationMinutes} мин · снимки{" "}
+                      {selectedProtocolTemplate.defaultDurationMinutes} РјРёРЅ В· СЃРЅРёРјРєРё{" "}
                       {selectedProtocolTemplate.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}
                     </p>
                   </div>
@@ -19841,7 +20435,7 @@ export function App() {
                     ))}
                   </ul>
                   <button className="secondary-button" type="button" onClick={() => applyProtocolTemplate(selectedProtocolTemplate)}>
-                    <ClipboardCheck aria-hidden="true" /> Заполнить диктовку
+                    <ClipboardCheck aria-hidden="true" /> Р—Р°РїРѕР»РЅРёС‚СЊ РґРёРєС‚РѕРІРєСѓ
                   </button>
                 </article>
               ) : null}
@@ -19857,40 +20451,79 @@ export function App() {
               summary={activeVisitClinicalRuleSummary}
             />
 
-            <div className="tooth-map" aria-label="Зубная карта">
+            <div className="tooth-map" aria-label="Р—СѓР±РЅР°СЏ РєР°СЂС‚Р°">
               <div className="tooth-map-head">
                 <div>
-                  <h3>Зубная карта</h3>
-                  <p>Визуальный контекст вместо поиска по строкам.</p>
+                  <h3>Р—СѓР±РЅР°СЏ РєР°СЂС‚Р°</h3>
+                  <p>
+                    РРЅСЃС‚СЂСѓРјРµРЅС‚: {toothMapToolLabels[toothMapActiveTool]}. Р’С‹Р±СЂР°РЅ FDI {selectedToothCode}:{" "}
+                    {toothMapStateLabels[selectedToothState]}. РљР»РёРє РїРѕ Р·СѓР±Сѓ СЃСЂР°Р·Сѓ СЃС‚Р°РІРёС‚ РѕС‚РјРµС‚РєСѓ.
+                  </p>
                 </div>
-                <span>FDI</span>
+                <button className="secondary-button" type="button" onClick={openOutpatientMedicalCardDocument}>
+                  <FileText aria-hidden="true" /> 025/Сѓ
+                </button>
+              </div>
+              <div className="tooth-map-selected" aria-label="Р‘С‹СЃС‚СЂС‹Рµ РґРµР№СЃС‚РІРёСЏ РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ Р·СѓР±Сѓ">
+                <strong>РљРёСЃС‚СЊ: {toothMapToolLabels[toothMapActiveTool]}</strong>
+                <div>
+                  {toothStatusQuickActions.map((action) => (
+                    <button
+                      className={toothMapActiveTool === action.state ? "active" : ""}
+                      type="button"
+                      key={action.state}
+                      aria-pressed={toothMapActiveTool === action.state}
+                      onClick={() => applySelectedToothQuickAction(action)}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                  <button
+                    className={toothMapActiveTool === "diagnosis_review" ? "active" : ""}
+                    type="button"
+                    aria-pressed={toothMapActiveTool === "diagnosis_review"}
+                    onClick={appendSelectedToothDiagnosisReview}
+                  >
+                    Р”РёР°РіРЅРѕР· Рє РїСЂРѕРІРµСЂРєРµ
+                  </button>
+                </div>
               </div>
               {toothRows.map((row, rowIndex) => (
                 <div className="tooth-row" key={rowIndex === 0 ? "upper" : "lower"}>
-                  {row.map((code) => (
-                    <span className={`tooth tooth-${toothStateByCode[code] ?? "idle"}`} key={code}>
+                  {row.map((code) => {
+                    const state = activeVisitToothStateByCode[code] ?? toothStateByCode[code] ?? "idle";
+                    return (
+                    <button
+                      className={`tooth tooth-${state} ${selectedToothCode === code ? "selected" : ""}`}
+                      key={code}
+                      type="button"
+                      aria-pressed={selectedToothCode === code}
+                      aria-label={`Р—СѓР± ${code}: ${toothMapStateLabels[state]}. РџСЂРёРјРµРЅРёС‚СЊ ${toothMapToolLabels[toothMapActiveTool]}`}
+                      onClick={() => applyActiveToothMapTool(code)}
+                    >
                       <span>{code}</span>
-                    </span>
-                  ))}
+                    </button>
+                    );
+                  })}
                 </div>
               ))}
               <div className="tooth-legend">
-                <span className="legend-planned">36 лечение</span>
-                <span className="legend-watch">16/46 наблюдать</span>
-                <span className="legend-done">26 готово</span>
-                <span className="legend-missing">48 нет</span>
+                <span className="legend-planned">РІ РїР»Р°РЅРµ</span>
+                <span className="legend-watch">РЅР°Р±Р»СЋРґРµРЅРёРµ</span>
+                <span className="legend-done">СЃРґРµР»Р°РЅРѕ</span>
+                <span className="legend-missing">РЅРµС‚ Р·СѓР±Р°</span>
               </div>
             </div>
 
             {visitCloseChecklist ? (
-              <div className="close-checklist" aria-label="Предупреждения перед закрытием приема">
+              <div className="close-checklist" aria-label="РџСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏ РїРµСЂРµРґ Р·Р°РєСЂС‹С‚РёРµРј РїСЂРёРµРјР°">
                 <div className="close-checklist-head">
                   <div>
-                    <h3>Закрытие приема</h3>
+                    <h3>Р—Р°РєСЂС‹С‚РёРµ РїСЂРёРµРјР°</h3>
                     <p>{primaryVisitWarning?.actionLabel ?? visitCloseChecklist.nextAction}</p>
                   </div>
                   <span className={visitCloseChecklist.readyToSign ? "ready" : ""}>
-                    {visitCloseChecklist.readyToSign ? "готово" : `${visitCloseChecklist.score}%`}
+                    {visitCloseChecklist.readyToSign ? "РіРѕС‚РѕРІРѕ" : `${visitCloseChecklist.score}%`}
                   </span>
                 </div>
                 {visitCloseChecklist.items.map((task) => (
@@ -19906,7 +20539,7 @@ export function App() {
                     <div>
                       <strong>{task.title}</strong>
                       <p>{task.detail}</p>
-                      <small>{staffRoleLabels[task.ownerRole]} · {task.actionLabel}</small>
+                      <small>{staffRoleLabels[task.ownerRole]} В· {task.actionLabel}</small>
                     </div>
                   </button>
                 ))}
@@ -19922,8 +20555,8 @@ export function App() {
               fallback={
                 <div className="panel documents-panel" id="documents" aria-busy="true">
                   <div className="panel-heading">
-                    <h2>Документы и согласия</h2>
-                    <span className="status-pill status-planned">загрузка</span>
+                    <h2>Р”РѕРєСѓРјРµРЅС‚С‹ Рё СЃРѕРіР»Р°СЃРёСЏ</h2>
+                    <span className="status-pill status-planned">Р·Р°РіСЂСѓР·РєР°</span>
                   </div>
                 </div>
               }
@@ -20876,8 +21509,8 @@ export function App() {
               fallback={
                 <div className="panel finance-panel" id="finance" aria-busy="true">
                   <div className="panel-heading">
-                    <h2>Оплаты, план лечения и вычет</h2>
-                    <span className="status-pill status-planned">загрузка</span>
+                    <h2>РћРїР»Р°С‚С‹, РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ Рё РІС‹С‡РµС‚</h2>
+                    <span className="status-pill status-planned">Р·Р°РіСЂСѓР·РєР°</span>
                   </div>
                 </div>
               }
@@ -20959,8 +21592,8 @@ export function App() {
               fallback={
                 <div className="panel communications-panel" id="communications" aria-busy="true">
                   <div className="panel-heading">
-                    <h2>Связь с пациентами</h2>
-                    <span className="status-pill status-planned">загрузка</span>
+                    <h2>РЎРІСЏР·СЊ СЃ РїР°С†РёРµРЅС‚Р°РјРё</h2>
+                    <span className="status-pill status-planned">Р·Р°РіСЂСѓР·РєР°</span>
                   </div>
                 </div>
               }
@@ -20993,10 +21626,10 @@ export function App() {
         ) : null}
 
         {["documents", "finance", "communications", "settings"].includes(currentView) ? (
-        <details className="compliance-bar" aria-label="Контроль">
+        <details className="compliance-bar" aria-label="РљРѕРЅС‚СЂРѕР»СЊ">
           <summary>
             <ShieldCheck aria-hidden="true" />
-            <span>Служебные ограничения</span>
+            <span>РЎР»СѓР¶РµР±РЅС‹Рµ РѕРіСЂР°РЅРёС‡РµРЅРёСЏ</span>
           </summary>
           <div>
             {dashboard.complianceWarnings.map((warning) => (
@@ -21012,8 +21645,8 @@ export function App() {
             fallback={
               <section className="settings-zone" id="settings" aria-busy="true">
                 <div className="panel-heading settings-heading">
-                  <h2>Настройки</h2>
-                  <span className="status-pill status-planned">загрузка</span>
+                  <h2>РќР°СЃС‚СЂРѕР№РєРё</h2>
+                  <span className="status-pill status-planned">Р·Р°РіСЂСѓР·РєР°</span>
                 </div>
               </section>
             }
@@ -21033,8 +21666,10 @@ export function App() {
               browserContinuityChecks={browserContinuityChecks}
               browserContinuityState={browserContinuityState}
               browserContinuityValue={browserContinuityValue}
-              browserDirectoryInputRef={browserDirectoryInputRef}
+              browserDirectoryInputRef={attachBrowserDirectoryInputRef}
               browserDirectoryPickerAvailable={browserDirectoryPickerAvailable}
+              browserImagingFileInputAccept={browserImagingFileInputAccept}
+              browserImagingFilesInputRef={browserImagingFilesInputRef}
               browserImagingScanProgress={browserImagingScanProgress}
               browserMigrationDiscovery={browserMigrationDiscovery}
               browserMigrationScanProgress={browserMigrationScanProgress}
@@ -21280,6 +21915,7 @@ export function App() {
               persistenceHealth={persistenceHealth}
               persistenceIntegrity={persistenceIntegrity}
               pickBrowserImagingFolder={pickBrowserImagingFolder}
+              pickBrowserImagingFiles={pickBrowserImagingFiles}
               pickBrowserMigrationSource={pickBrowserMigrationSource}
               policyAuditEventLabels={policyAuditEventLabels}
               prepareDicomWorkbenchFromFolder={prepareDicomWorkbenchFromFolder}

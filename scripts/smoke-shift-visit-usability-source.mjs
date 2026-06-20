@@ -22,8 +22,10 @@ requireIn(appSource, "В карточке пациента нет телефон
 requireIn(appSource, "В карточке пациента нет телефона. Добавьте номер", "Shift call handler must fail visibly if invoked without a callable phone.");
 forbidIn(appSource, '<button className="secondary-button" type="button">\n                <Phone', "Shift call action must not be a dead button.");
 
-requireIn(appSource, 'className={`tooth tooth-${toothStateByCode[code] ?? "idle"}`}', "Tooth map must keep visual tooth states.");
-forbidIn(appSource, '<button className={`tooth tooth-${toothStateByCode[code] ?? "idle"}`}', "Non-clickable tooth map cells must not be buttons.");
+requireIn(appSource, "const state = activeVisitToothStateByCode[code] ?? toothStateByCode[code] ?? \"idle\";", "Tooth map must keep visit-specific visual tooth states.");
+requireIn(appSource, "className={`tooth tooth-${state} ${selectedToothCode === code ? \"selected\" : \"\"}`}", "Tooth map must show state and selected tooth visually.");
+requireIn(appSource, "onClick={() => applyActiveToothMapTool(code)}", "Tooth map cells must apply the active tool immediately.");
+requireIn(appSource, "aria-label={`Зуб ${code}: ${toothMapStateLabels[state]}. Применить ${toothMapToolLabels[toothMapActiveTool]}`}", "Tooth map cells must expose active-tool action for accessibility.");
 
 requireIn(shellSource, "top-dictation-button", "Topbar must expose the dictation shortcut.");
 requireIn(shellSource, "onClick={onGoToDictation}", "Topbar dictation button must be wired.");
@@ -33,7 +35,8 @@ requireIn(appSource, 'aria-describedby={!hasVisitTranscriptText ? "dictation-cle
 requireIn(appSource, 'id="dictation-clear-guidance"', "Visit dictation must render empty-dictation guidance.");
 requireIn(appSource, "Диктовка уже пустая. Нечего очищать.", "Visit dictation clear action must fail visibly when invoked without text.");
 requireIn(appSource, "Нет очищенной диктовки для восстановления.", "Visit dictation undo action must fail visibly when there is no undo buffer.");
-requireIn(appSource, "Дождитесь завершения текущей браузерной диктовки.", "Visit browser dictation must guard duplicate starts.");
+requireIn(appSource, "if (isVisitDictating || isVisitDictationStarting)", "Visit browser dictation must handle duplicate starts.");
+requireIn(appSource, "stopVisitDictation();", "Visit browser dictation duplicate action must stop the active dictation.");
 requireIn(appSource, "Данные приема еще не загружены. Повторите запись после загрузки рабочего экрана.", "Visit server dictation must fail visibly while dashboard data is missing.");
 requireIn(appSource, "Запись уже идет. Нажмите «Стоп запись»", "Visit server dictation must guard duplicate recording starts.");
 requireIn(appSource, "Активной записи диктовки нет.", "Visit server dictation stop action must fail visibly when no recording is active.");
@@ -42,9 +45,10 @@ requireIn(appSource, "visit-draft-missing", "Visit workflow must render draft mi
 requireIn(appSource, "disabled={isDraftLoading || !visitDraftReadyToBuild}", "Visit draft generation must be blocked until dictation is ready.");
 requireIn(appSource, 'aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}', "Visit draft generation button must point to missing-step guidance.");
 requireIn(appSource, 'id="visit-draft-missing"', "Visit draft missing-step guidance must be addressable.");
-requireIn(appSource, "disabled={!hasVisitTranscriptText || isTranscriptPolishing}", "Visit transcript polish must share the readiness guard.");
+requireIn(appSource, "const showDictationProcessingActions = hasVisitTranscriptText && !speechVoiceWorkBusy;", "Visit transcript polish actions must only render when dictation text is ready.");
+requireIn(appSource, "disabled={isTranscriptPolishing}", "Visit transcript polish must guard duplicate polish runs.");
 requireIn(appSource, 'aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}', "Visit transcript actions must point to empty-dictation guidance.");
-requireIn(appSource, "disabled={!hasVisitTranscriptText}", "Visit offline parser must share the readiness guard.");
+requireIn(appSource, "disabled={!hasVisitTranscriptText || speechVoiceWorkBusy}", "Visit offline parser must share the readiness guard and avoid voice-work races.");
 requireIn(appSource, "Добавьте текст диктовки перед локальным разбором.", "Visit offline parser must fail visibly when invoked without dictation.");
 requireIn(appSource, "Перед очисткой диктовки:", "Visit transcript polish must fail visibly when invoked without dictation.");
 requireIn(appSource, "Перед сборкой черновика:", "Visit draft generation handler must fail visibly when invoked while blocked.");
@@ -85,7 +89,7 @@ requireIn(appSource, "повторный визит {formatShortDate(activePatie
 requireIn(appSource, 'data-testid="visit-next-step-panel"', "Visit workflow must render the single next-step panel.");
 requireIn(appSource, 'data-testid="visit-primary-action"', "Visit workflow must render a wired primary next action.");
 requireIn(appSource, 'data-testid="visit-progress-strip"', "Visit workflow must render the visit progress strip.");
-requireIn(appSource, "Распознать на сервере", "Visit voice action must use human wording instead of STT jargon.");
+requireIn(appSource, "Записать голос", "Visit voice action must use human wording instead of STT jargon.");
 requireIn(appSource, 'label: "Работа без сети"', "Visit safety device checks must use clinician-readable offline wording.");
 requireIn(appSource, "аудио сохранится для отправки позже", "Visit safety device checks must describe queued audio without IndexedDB jargon.");
 requireIn(appSource, "эта вкладка готова к работе без сети", "Visit safety device checks must describe offline readiness without service worker jargon.");

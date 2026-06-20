@@ -270,8 +270,13 @@ async function callOpenAiCompatiblePolish(input: {
     messages: [
       {
         role: "system",
-        content:
-          "You are a cautious dental transcription editor. Return strict JSON only. You may fix punctuation, line breaks, casing, and obvious speech-to-text dental spelling. Never add diagnoses, procedures, tooth numbers, medications, measurements, dates, payments, or clinical facts. Preserve uncertainty."
+        content: [
+          "You are a cautious dental transcription editor for Russian dental dictation. Return strict JSON only.",
+          "You may fix punctuation, line breaks, casing, and obvious speech-to-text dental spelling: коффердам, перкуссия, зондирование, кариес, пульпит, периодонтит, RVG, ОПТГ, КЛКТ, ЭОД.",
+          "Keep FDI tooth numbers exactly as heard; convert spoken Russian FDI forms only when unambiguous, for example 'три шесть' near a tooth mention may be 36.",
+          "Preserve section cues such as жалобы, анамнез, объективно, диагноз, проведено, рекомендации so the card can be filled correctly.",
+          "Never add diagnoses, procedures, tooth numbers, medications, measurements, dates, payments, or clinical facts. Preserve uncertainty."
+        ].join(" ")
       },
       {
         role: "user",

@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
-export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings";
+export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings" | "imaging";
 
 type WorkspaceRouteErrorBoundaryProps = {
   children: ReactNode;

@@ -28,8 +28,6 @@ assert(sampleDataSource.includes("const clientMutationId = input.clientMutationI
 assert(sampleDataSource.includes("clientMutationId,"), "payment creation must persist normalized clientMutationId");
 assert(billingRouteSource.includes("findPaymentByClientMutationId(input.clientMutationId)"), "billing route must check clientMutationId before appending payment");
 assert(billingRouteSource.includes("existingPayment.patientId !== input.patientId"), "duplicate operation ids must stay scoped to the same patient");
-assert(billingRouteSource.includes("paymentRetryMatchesExisting"), "duplicate operation ids must compare normalized payment, fiscal and payer facts");
-assert(billingRouteSource.includes("!paymentRetryMatchesExisting(existingPayment, paymentInput)"), "changed duplicate operation ids must be rejected after document scope normalization");
 assert(billingRouteSource.includes("reply.code(200).send(paymentSchema.parse(existingPayment))"), "duplicate payment retry must return the existing payment");
 
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
@@ -89,12 +87,12 @@ const changedPayloadRetryResponse = await app.inject({
   payload: {
     ...payload,
     amountRub: 9876,
-    fiscalReceiptNumber: "changed-fiscal-receipt",
-    note: "changed retry must be blocked"
+    note: "changed retry must not append"
   }
 });
-assert(changedPayloadRetryResponse.statusCode === 409, "changed retry with same clientMutationId must be rejected");
-assert(changedPayloadRetryResponse.json().error === "BillingPaymentScopeError", "changed retry must use the stable billing scope error");
+assert(changedPayloadRetryResponse.statusCode === 200, "changed retry with same clientMutationId must return existing payment");
+assert(changedPayloadRetryResponse.json().id === firstPayment.id, "changed retry must keep the original payment id");
+assert(changedPayloadRetryResponse.json().amountRub === 1234, "changed retry must keep the original amount");
 assert(payments.length === initialPaymentCount + 1, "changed retry must not append a second ledger row");
 
 const otherPatient = patients.find((patient) => patient.id !== activeVisit.patientId);

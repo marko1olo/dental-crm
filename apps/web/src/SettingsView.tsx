@@ -742,6 +742,8 @@ export function SettingsView(props: SettingsViewProps) {
     browserContinuityValue,
     browserDirectoryInputRef,
     browserDirectoryPickerAvailable,
+    browserImagingFileInputAccept,
+    browserImagingFilesInputRef,
     browserImagingScanProgress,
     browserMigrationDiscovery,
     browserMigrationScanProgress,
@@ -988,6 +990,7 @@ export function SettingsView(props: SettingsViewProps) {
     persistenceHealth,
     persistenceIntegrity,
     pickBrowserImagingFolder,
+    pickBrowserImagingFiles,
     pickBrowserMigrationSource,
     policyAuditEventLabels,
     prepareDicomWorkbenchFromFolder,
@@ -6330,6 +6333,16 @@ export function SettingsView(props: SettingsViewProps) {
                   tabIndex={-1}
                   onChange={(event: InputChangeEvent) => void handleBrowserDirectoryInputChange(event.currentTarget.files)}
                 />
+                <input
+                  ref={browserImagingFilesInputRef}
+                  data-testid="browser-local-imaging-files-input"
+                  type="file"
+                  multiple
+                  hidden
+                  tabIndex={-1}
+                  accept={browserImagingFileInputAccept}
+                  onChange={(event: InputChangeEvent) => void handleBrowserDirectoryInputChange(event.currentTarget.files)}
+                />
                 <button
                   className="secondary-button"
                   type="button"
@@ -6342,7 +6355,17 @@ export function SettingsView(props: SettingsViewProps) {
                       : "Использовать запасной выбор файлов браузера для локальных снимков"
                   }
                 >
-                  <UploadCloud aria-hidden="true" /> {isBrowserImagingFolderPicking ? "Сканирую" : "Выбрать КТ"}
+                  <UploadCloud aria-hidden="true" /> {isBrowserImagingFolderPicking ? "Сканирую" : "Папка КТ"}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  data-testid="browser-pick-local-imaging-files"
+                  onClick={pickBrowserImagingFiles}
+                  disabled={isBrowserImagingFolderPicking}
+                  title="Выбрать отдельные DICOM, RVG, JPG/PNG/TIFF, ZIP/RAR/7z или 3D-файлы"
+                >
+                  <FileText aria-hidden="true" /> Файлы
                 </button>
                 {isBrowserImagingFolderPicking && browserImagingScanProgress ? (
                   <button

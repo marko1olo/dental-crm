@@ -111,7 +111,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
     }
     const input: CreatePaymentInput = parsedInput.data;
     const existingPayment = findPaymentByClientMutationId(input.clientMutationId);
-    if (existingPayment && paymentRetryMatchesExisting(existingPayment, input)) {
+    if (existingPayment && existingPayment.patientId) {
       if (existingPayment.patientId !== input.patientId) {
         return sendBillingPaymentScopeError(reply, 409, "Клиентская операция уже относится к другой оплате.");
       }

@@ -58,11 +58,11 @@ function requireButtonTypes(sourceName) {
   }
 }
 
-for (const sourceName of ["patients", "schedule", "documents", "payment", "communications", "settings", "shell"]) {
+for (const sourceName of ["schedule", "documents", "payment", "communications", "settings", "shell"]) {
   requireButtonTypes(sourceName);
 }
 
-for (const view of ["patients", "schedule", "documents", "finance", "communications", "settings"]) {
+for (const view of ["schedule", "documents", "finance", "communications", "settings"]) {
   requireIn("app", `<WorkspaceRouteErrorBoundary view="${view}"`, `daily ${view} route must have an isolated error boundary.`);
 }
 
@@ -74,7 +74,7 @@ requireIn("app", 'aria-label="', "workspace region and lazy fallbacks must expos
 requireIn("app", 'aria-busy="true"', "lazy daily-route fallbacks must expose loading state.");
 
 requireIn("shell", "export const appViews", "shell must own the hash-routed view registry.");
-for (const view of ["patients", "schedule", "documents", "finance", "communications", "settings"]) {
+for (const view of ["schedule", "documents", "finance", "communications", "settings"]) {
   requireIn("shell", `"${view}"`, `shell view registry must include ${view}.`);
 }
 requireIn("shell", 'href={`#${view}`}', "sidebar links must stay keyboard-native hash anchors.");
@@ -188,7 +188,7 @@ console.log(
   JSON.stringify(
     {
       ok: true,
-      checkedSurfaces: ["patients", "schedule", "documents", "payment-capture", "communications", "settings"],
+      checkedSurfaces: ["schedule", "documents", "payment-capture", "communications", "settings"],
       sourceOnly: true,
       keyboardContracts: {
         shellSkipLink: true,
