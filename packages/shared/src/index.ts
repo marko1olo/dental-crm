@@ -7367,3 +7367,12 @@ export const migrationAutopilotResponseSchema = z.object({
   nextAction: z.string()
 });
 export type MigrationAutopilotResponse = z.infer<typeof migrationAutopilotResponseSchema>;
+
+export type LocalImagingFolderDraft = any;
+export type BrowserPickedImagingFolderPreview = any;
+export type BrowserImagingScanProgress = any;
+export type ImagingViewerState = any;
+export type ImagingViewerSaveState = any;
+export type MprProjection = any;
+export type MprWindowPreset = any;
+

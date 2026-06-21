@@ -5875,3 +5875,5 @@ export function settingsTabFromHash(): SettingsTab {
   const [, tab] = window.location.hash.replace("#", "").split("/");
   return settingsTabs.some((item) => item.id === tab) ? (tab as SettingsTab) : "clinic";
 }
+
+export const initialUiPreferences = {} as any;

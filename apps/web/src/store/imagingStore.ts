@@ -1,7 +1,7 @@
-// @ts-nocheck
+
 import { create } from "zustand";
-import { loadUiPreferences, defaultImagingViewerState } from "../AppHelpers";
-import type { 
+import { loadUiPreferences, defaultImagingViewerState, initialUiPreferences, defaultDicomFirstFrameViewerState } from "../AppHelpers";
+import type { ImagingViewerSessionResponse, 
   ImagingSourceKind, LocalImagingFolderDraft, BrowserPickedImagingFolderPreview, BrowserImagingScanProgress,
   ImagingImportPreviewResponse, ImagingImportCommitResponse, ImagingFolderScanResponse, DicomLocalFolderDiscoveryResponse,
   LocalImagingOrganizerResponse, DicomSeriesPreviewResponse, DicomFolderSeriesPreviewResponse, DicomFolderWorkupPlanResponse,
