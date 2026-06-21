@@ -2361,7 +2361,7 @@ const {
     recognitionPresets[0]?.text ??
     "";
   const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
-  const activeOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
+  const activeOrganizationId = dashboard?.clinicSettings.profile?.organizationId ?? null;
 
 
 
@@ -3016,7 +3016,7 @@ const {
     if (!activeDoctors.length) issues.push("врач для первого приема");
     if (!activeDoctors.some((member) => member.canSignMedicalRecords)) issues.push("врач с правом подписи ЭМК");
     if (!activeChairs.length) issues.push("кресло / кабинет");
-    if (dashboard?.clinicSettings.profile.mode !== "solo_doctor" && !activeAssistants.length) issues.push("ассистент");
+    if (dashboard?.clinicSettings.profile?.mode !== "solo_doctor" && !activeAssistants.length) issues.push("ассистент");
     const activeAppointmentReadiness = dashboard?.activeVisit.appointmentId
       ? dashboard.appointmentReadiness.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
       : null;
@@ -3031,6 +3031,7 @@ const {
   }
 
   function buildOnboardingDocumentReadinessIssues(): string[] {
+    if (!clinicProfileDraft) return [];
     const issues: string[] = [];
     const requiredDocumentDraftFields: Array<[string, string]> = [
       ["юридическое наименование", clinicProfileDraft.legalName],
@@ -3215,7 +3216,7 @@ const {
       true,
       dismissalSavedAt,
       false,
-      dashboard?.clinicSettings.profile.organizationId ?? null
+      dashboard?.clinicSettings.profile?.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3254,7 +3255,7 @@ const {
       true,
       dismissalSavedAt,
       true,
-      dashboard?.clinicSettings.profile.organizationId ?? null
+      dashboard?.clinicSettings.profile?.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3291,7 +3292,7 @@ const {
       false,
       new Date().toISOString(),
       false,
-      dashboard?.clinicSettings.profile.organizationId ?? null
+      dashboard?.clinicSettings.profile?.organizationId ?? null
     );
     setOnboardingDismissed(false);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3907,7 +3908,7 @@ const {
   }, [settingsAdminSecretSession]);
 
   useEffect(() => {
-    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim() ?? "";
+    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim() ?? "";
     if (!uiPreferencesHydrated || !organizationId || documentIssueSignatureHydratedOrganizationIdRef.current === organizationId) return;
     documentIssueSignatureHydratedOrganizationIdRef.current = organizationId;
     const scopedDraft = loadDocumentIssueSignatureDraft(organizationId);
@@ -3917,10 +3918,10 @@ const {
     setDocumentIssueSignatureMode(scopedDraft.mode);
     setDocumentIssueStaffFullName(scopedDraft.staffFullName);
     setDocumentIssueStaffRole(scopedDraft.staffRole);
-  }, [dashboard?.clinicSettings.profile.organizationId, uiPreferencesHydrated]);
+  }, [dashboard?.clinicSettings.profile?.organizationId, uiPreferencesHydrated]);
 
   useEffect(() => {
-    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim() ?? "";
+    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim() ?? "";
     if (!uiPreferencesHydrated || !organizationId || onboardingDismissalHydratedOrganizationIdRef.current === organizationId) return;
     onboardingDismissalHydratedOrganizationIdRef.current = organizationId;
     const scopedDismissal = loadOnboardingDismissalState(organizationId);
@@ -3931,7 +3932,7 @@ const {
     setOnboardingDismissedAt(scopedDismissal.savedAt);
     setOnboardingDraftMode(scopedDismissal.dismissed ? scopedDismissal.draftMode : false);
     if (!scopedDismissal.dismissed) setOnboardingStep("intro");
-  }, [dashboard?.clinicSettings.profile.organizationId, onboardingDismissedAt, uiPreferencesHydrated]);
+  }, [dashboard?.clinicSettings.profile?.organizationId, onboardingDismissedAt, uiPreferencesHydrated]);
 
   useEffect(() => {
     if (!uiPreferencesHydrated) return undefined;
@@ -4208,8 +4209,12 @@ const {
   ]);
 
   useEffect(() => {
-    if (!dashboard?.clinicSettings.profile || clinicProfileDraftHydratedRef.current) return;
-    setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard?.clinicSettings.profile));
+    if (!dashboard || clinicProfileDraftHydratedRef.current) return;
+    if (dashboard.clinicSettings.profile) {
+      setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard.clinicSettings.profile));
+    } else {
+      setClinicProfileDraft(emptyClinicProfileDraft);
+    }
     setClinicProfileDirty(false);
     clinicProfileDraftHydratedRef.current = true;
   }, [dashboard]);
@@ -4426,7 +4431,7 @@ const {
     telegramOutboxTemplateFilter,
     telegramModeDraft,
     telegramBotConfigId,
-    dashboard?.clinicSettings.profile.organizationId
+    dashboard?.clinicSettings.profile?.organizationId
   ]);
 
   useEffect(() => {
@@ -4637,7 +4642,7 @@ const {
         if (scheduleChairFilterId && appointment.chairId !== scheduleChairFilterId) return false;
         if (scheduleStatusFilter !== "all" && appointment.status !== scheduleStatusFilter) return false;
         if (scheduleDateFilter) {
-          const localAppointmentDate = toDateTimeLocalValue(appointment.startsAt, dashboard?.clinicSettings.profile.timezone).slice(0, 10);
+          const localAppointmentDate = toDateTimeLocalValue(appointment.startsAt, dashboard?.clinicSettings.profile?.timezone).slice(0, 10);
           if (localAppointmentDate !== scheduleDateFilter) return false;
         }
         return true;
@@ -4894,12 +4899,12 @@ const {
 
   useEffect(() => {
     saveDocumentIssueSignatureDraft(
-      dashboard?.clinicSettings.profile.organizationId ?? null,
+      dashboard?.clinicSettings.profile?.organizationId ?? null,
       documentIssueSignatureMode,
       documentIssueStaffFullName,
       documentIssueStaffRole
     );
-  }, [dashboard?.clinicSettings.profile.organizationId, documentIssueSignatureMode, documentIssueStaffFullName, documentIssueStaffRole]);
+  }, [dashboard?.clinicSettings.profile?.organizationId, documentIssueSignatureMode, documentIssueStaffFullName, documentIssueStaffRole]);
 
   const activeIssuedPaidContracts = useMemo(() => {
     return activeDocuments
@@ -5046,7 +5051,7 @@ const {
       unpaidDocuments
     };
   }, [activePayments, activeTreatmentPlanItems, activeUsableDocuments, dashboard, documentPatient?.id]);
-  const documentLocalPersistenceOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
+  const documentLocalPersistenceOrganizationId = dashboard?.clinicSettings.profile?.organizationId ?? null;
 
   const taxDocumentPayerOptions = useMemo(() => {
     const optionsByKey = new Map<string, { key: string; inn: string; label: string; amountRub: number; paymentCount: number }>();
@@ -6840,7 +6845,7 @@ const {
       setError(message);
       return false;
     }
-    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);
+    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode);
     if (missing.length) {
       const message = `Перед сохранением записи: ${missing.join("; ")}.`;
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
@@ -6891,7 +6896,7 @@ const {
   }
 
   function newAppointmentMissingFields(draft: AppointmentScheduleDraft): string[] {
-    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);
+    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode);
   }
 
   async function createAppointmentFromDraft(): Promise<boolean> {
@@ -10120,7 +10125,7 @@ const {
   }
 
   function paymentInvoiceBankDetailsValue(): string {
-    return paymentInvoiceBankDetails.trim() || dashboard?.clinicSettings.profile.bankDetails?.trim() || "";
+    return paymentInvoiceBankDetails.trim() || dashboard?.clinicSettings.profile?.bankDetails?.trim() || "";
   }
 
   function firstPaymentReceiptPayment() {
@@ -11790,7 +11795,7 @@ const {
       }
     } satisfies IssueDocumentInput;
     saveDocumentIssueSignatureDraft(
-      dashboard?.clinicSettings.profile.organizationId ?? null,
+      dashboard?.clinicSettings.profile?.organizationId ?? null,
       documentIssueSignatureMode,
       documentIssueStaffFullName,
       documentIssueStaffRole
@@ -12190,7 +12195,7 @@ const {
   }
 
   function appendTelegramRuntimeScopeParams(params: URLSearchParams): URLSearchParams {
-    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim();
+    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim();
     const botConfigId = telegramBotConfigId.trim();
     if (telegramModeDraft === "clinic_owned_bot" && organizationId && botConfigId) {
       params.set("organizationId", organizationId);
@@ -12222,7 +12227,7 @@ const {
   }
 
   function telegramStatusEndpoint(): string {
-    const organizationId = dashboard?.clinicSettings.profile.organizationId?.trim();
+    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim();
     const botConfigId = telegramBotConfigId.trim();
     if (telegramModeDraft === "clinic_owned_bot" && organizationId && botConfigId) {
       return `/api/telegram/status/${encodeURIComponent(organizationId)}/${encodeURIComponent(botConfigId)}`;
@@ -12356,10 +12361,10 @@ const {
         method: "POST",
         headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          organizationId: dashboard?.clinicSettings.profile.organizationId,
+          organizationId: dashboard?.clinicSettings.profile?.organizationId,
           subjectType: telegramLinkSubjectType,
           subjectId,
-          clinicId: dashboard?.clinicSettings.profile.organizationId,
+          clinicId: dashboard?.clinicSettings.profile?.organizationId,
           botConfigId: telegramModeDraft === "clinic_owned_bot" ? telegramBotConfigId.trim() || undefined : undefined,
           ttlMinutes: parseTelegramLinkTtlMinutes(),
           createdByUserId: activeDoctor?.id ?? null
@@ -12731,7 +12736,7 @@ const {
 
 
   const activeWorkspaceProfile =
-    dashboard?.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard?.clinicSettings.profile.mode) ??
+    dashboard?.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
     dashboard?.clinicSettings.workspaceProfiles[0];
   const settingsAdminSecretDomain: AdminSecretUnlockDomain = settingsTab === "telegram" ? "telegram" : "settings";
   const activeRolePolicy =

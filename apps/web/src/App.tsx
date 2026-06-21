@@ -2106,10 +2106,10 @@ export function App() {
                 <div className="mode-grid form-span-2" aria-label="Режим клиники">
                   {(Object.keys(clinicModeLabels) as ClinicMode[]).map((mode) => (
                     <button
-                      className={`mode-card ${dashboard.clinicSettings.profile.mode === mode ? "active" : ""}`}
+                      className={`mode-card ${dashboard.clinicSettings.profile?.mode === mode ? "active" : ""}`}
                       key={mode}
                       type="button"
-                      aria-pressed={dashboard.clinicSettings.profile.mode === mode}
+                      aria-pressed={dashboard.clinicSettings.profile?.mode === mode}
                       onClick={() => changeClinicMode(mode)}
                     >
                       <strong>{clinicModeLabels[mode].title}</strong>
@@ -2911,7 +2911,7 @@ export function App() {
                   </p>
                 </div>
                 <div className="onboarding-readiness-grid">
-                  <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
+                  <span>{clinicModeLabels[dashboard.clinicSettings.profile?.mode].title}</span>
                   <span>{staffRoleLabels[selectedWorkspaceRole]}</span>
                   <span>{specialtyLabels[selectedSpecialty]}</span>
                   <span>{telegramEnabledFeaturesDraft.length} Telegram-сценариев включено</span>
