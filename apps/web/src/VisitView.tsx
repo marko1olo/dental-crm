@@ -251,74 +251,77 @@ export function VisitView(props: VisitViewProps) {
                   if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
                 }}
               />
-              <div className="dictation-actions">
+              <div className="dictation-actions" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center' }}>
+                <button
+                  className={isServerVoiceRecording ? "primary-button" : "secondary-button"}
+                  type="button"
+                  style={{ 
+                    padding: '16px', 
+                    fontSize: '16px', 
+                    justifyContent: 'center', 
+                    backgroundColor: isServerVoiceRecording ? 'var(--rust)' : undefined,
+                    color: isServerVoiceRecording ? '#fff' : undefined,
+                    borderColor: isServerVoiceRecording ? 'var(--rust)' : undefined,
+                    animation: isServerVoiceRecording ? 'ai-pulse 2s infinite' : 'none'
+                  }}
+                  onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
+                >
+                  <Mic aria-hidden="true" style={{ width: '20px', height: '20px' }} />{" "}
+                  {isServerVoiceRecording ? "Остановить и распознать" : "Начать диктовку"}
+                </button>
+
                 <button
                   className="secondary-button"
                   type="button"
                   onClick={clearTranscriptWithUndo}
                   disabled={!hasVisitTranscriptText}
-                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                  title="Очистить текст"
                 >
                   Очистить
                 </button>
                 {clearedTranscriptSnapshot ? (
-                  <button className="secondary-button" type="button" onClick={undoTranscriptClear}>
+                  <button className="secondary-button" type="button" onClick={undoTranscriptClear} title="Вернуть текст">
                     Вернуть
                   </button>
                 ) : null}
-                <button className="secondary-button" type="button" onClick={startVisitDictation} disabled={isVisitDictating}>
-                  <Mic aria-hidden="true" /> {isVisitDictating ? "Слушаю" : "Голос"}
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
-                  title={
-                    speechRecognitionReady
-                      ? speechGatewayActiveProviderIsLocal
-                        ? `${speechGatewayStatus?.providerLabel ?? "локальный модуль"}: запись частями в локальный модуль`
-                        : `${speechGatewayStatus?.providerLabel ?? "распознавание"}: запись частями`
-                      : "Аудио сохранится локально и уйдет на распознавание, когда источник будет готов"
-                  }
-                >
-                  <Mic aria-hidden="true" />{" "}
-                  {isServerVoiceRecording
-                    ? "Стоп запись"
-                    : emptyDictationVoiceActionLabel}
-                </button>
-                {pendingSpeechChunkCount ? (
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => flushPendingSpeechChunks({ silent: false })}
-                    title={pendingSpeechFlushActionTitle}
-                  >
-                    {pendingSpeechFlushActionLabel}
-                  </button>
-                ) : null}
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={polishTranscript}
-                  disabled={!hasVisitTranscriptText || isTranscriptPolishing}
-                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
-                  title={
-                    speechGatewayStatus?.polishPolicy.neuralEnabled
-                      ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
-                      : "Локальная очистка терминов, секций и номеров зубов"
-                  }
-                >
-                  <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить текст"}
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={buildOfflineDraft}
-                  disabled={!hasVisitTranscriptText}
-                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
-                >
-                  Локальный разбор
-                </button>
+                <details className="advanced-dictation-actions" style={{ display: 'inline-block' }}>
+                  <summary style={{ cursor: 'pointer', fontSize: '14px', color: 'var(--slate-500)', padding: '8px' }}>Дополнительно</summary>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    {pendingSpeechChunkCount ? (
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => flushPendingSpeechChunks({ silent: false })}
+                        title={pendingSpeechFlushActionTitle}
+                      >
+                        {pendingSpeechFlushActionLabel}
+                      </button>
+                    ) : null}
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={polishTranscript}
+                      disabled={!hasVisitTranscriptText || isTranscriptPolishing}
+                      aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                      title={
+                        speechGatewayStatus?.polishPolicy.neuralEnabled
+                          ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
+                          : "Локальная очистка терминов, секций и номеров зубов"
+                      }
+                    >
+                      <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить текст"}
+                    </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={buildOfflineDraft}
+                      disabled={!hasVisitTranscriptText}
+                      aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                    >
+                      Локальный разбор
+                    </button>
+                  </div>
+                </details>
                 <button
                   className="primary-button"
                   type="button"
