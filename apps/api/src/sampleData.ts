@@ -6614,6 +6614,9 @@ function buildDenteTelegramAppointmentReminderItems(runtimeScope?: DenteTelegram
   const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
   const { settings } = runtime;
   const nowMs = Date.now();
+  const activePatientsMap = new Map(
+    patients.filter((p) => p.status === "active").map((p) => [p.id, p])
+  );
   return appointments.flatMap((appointment) => {
     if (appointment.organizationId !== settings.organizationId) return [];
     if (!appointment.patientId) return [];
@@ -6621,7 +6624,7 @@ function buildDenteTelegramAppointmentReminderItems(runtimeScope?: DenteTelegram
     if (!["planned", "confirmed"].includes(appointment.status)) return [];
     const startsAtMs = Date.parse(appointment.startsAt);
     if (!Number.isFinite(startsAtMs) || startsAtMs <= nowMs) return [];
-    const patient = patients.find((candidate) => candidate.id === patientId && candidate.status === "active");
+    const patient = activePatientsMap.get(patientId);
     if (!patient) return [];
     return normalizeAppointmentReminderLeadTimes(settings.appointmentReminderLeadTimesHours).flatMap((leadTimeHours) => {
       const itemId = appointmentReminderOutboxId(appointment, leadTimeHours);
