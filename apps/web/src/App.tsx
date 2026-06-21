@@ -1799,6 +1799,7 @@ export function App() {
     toggleTelegramFeature,
     toothRows,
     toothStateByCode,
+    setToothState,
     transcript,
     treatmentAcceptancePlannedTotalRub,
     treatmentEstimatePatientOrPayerFullNameValue,
@@ -4211,6 +4212,14 @@ export function App() {
               visibleTelegramOutboxItems={visibleTelegramOutboxItems}
               weekdayOptions={weekdayOptions}
               workspaceScopeLabels={workspaceScopeLabels}
+              staffScheduleDirtyIds={staffScheduleDirtyIds}
+              staffScheduleDrafts={staffScheduleDrafts}
+              staffScheduleSaveStates={staffScheduleSaveStates}
+              staffScheduleSavingId={staffScheduleSavingId}
+              chairScheduleDirtyIds={chairScheduleDirtyIds}
+              chairScheduleDrafts={chairScheduleDrafts}
+              chairScheduleSaveStates={chairScheduleSaveStates}
+              chairScheduleSavingId={chairScheduleSavingId}
             />
           </Suspense>
           </WorkspaceRouteErrorBoundary>

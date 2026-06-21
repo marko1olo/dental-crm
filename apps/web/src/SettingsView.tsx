@@ -1258,14 +1258,14 @@ export function SettingsView(props: SettingsViewProps) {
     setTelegramAdminSecretDraft
   } = useSettingsStore();
 
-  const recognitionInputReady = recognitionText.trim().length > 0;
-  const smartImportInputReady = smartImportText.trim().length > 0;
-  const imagingImportInputReady = imagingImportText.trim().length > 0;
-  const patientImportInputReady = importText.trim().length > 0;
-  const localImagingFolderReady = imagingFolderPath.trim().length > 0;
-  const newStaffReadyToCreate = newStaffName.trim().length > 0;
-  const newChairReadyToCreate = newChairName.trim().length > 0;
-  const adminSecretReady = telegramAdminSecretDraft.trim().length > 0;
+  const recognitionInputReady = (recognitionText || "").trim().length > 0;
+  const smartImportInputReady = (smartImportText || "").trim().length > 0;
+  const imagingImportInputReady = (imagingImportText || "").trim().length > 0;
+  const patientImportInputReady = (importText || "").trim().length > 0;
+  const localImagingFolderReady = (imagingFolderPath || "").trim().length > 0;
+  const newStaffReadyToCreate = (newStaffName || "").trim().length > 0;
+  const newChairReadyToCreate = (newChairName || "").trim().length > 0;
+  const adminSecretReady = (telegramAdminSecretDraft || "").trim().length > 0;
   const adminSecretScopeWarning =
     settingsTab === "telegram"
       ? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
@@ -1343,7 +1343,7 @@ export function SettingsView(props: SettingsViewProps) {
   const dicomArchiveAddressGuidanceId = "dicom-archive-address-guidance";
   const localDicomFolderGuidanceId = "local-dicom-folder-guidance";
   const migrationHandoffReportGuidanceId = "migration-handoff-report-guidance";
-  const dicomArchiveAddressReady = dicomWebEndpointUrl.trim().length > 0;
+  const dicomArchiveAddressReady = (dicomWebEndpointUrl || "").trim().length > 0;
   const telegramOutboxBulkSendGuidance = isTelegramLoading
     ? "Дождитесь загрузки очереди Telegram."
     : isTelegramSendingDue || telegramSendingItemId
@@ -2913,7 +2913,7 @@ export function SettingsView(props: SettingsViewProps) {
                     </span>
                     {typedTelegramLinkCodes.map((code) => (
                       <small key={code.id}>
-                        {telegramSubjectName(code.subjectType, code.subjectId)} · *{code.codeLast4} · {telegramLinkCodeStatusLabels[code.status]} · до{" "}
+                        {telegramSubjectName(code.subjectType, code.subjectId)} · *{code.codeLast4} · {(telegramLinkCodeStatusLabels || { pending: "ожидает", used: "использован", expired: "истек", revoked: "отозван" })[code.status]} · до{" "}
                         {formatDateTime(code.expiresAt)}
                       </small>
                     ))}
@@ -3860,7 +3860,7 @@ export function SettingsView(props: SettingsViewProps) {
                   className="primary-button"
                   type="button"
                   onClick={analyzePricelist}
-                  disabled={isPricelistAnalyzing || (!pricelistText.trim() && !pricelistImageBase64)}
+                  disabled={isPricelistAnalyzing || (!(pricelistText || "").trim() && !pricelistImageBase64)}
                 >
                   <UploadCloud aria-hidden="true" /> {isPricelistAnalyzing ? "Разбираю" : "Разобрать прайс"}
                 </button>
@@ -4657,7 +4657,7 @@ export function SettingsView(props: SettingsViewProps) {
                         type="button"
                         data-testid="reconnect-dicom-workbench-folder"
                         onClick={() => void reconnectDicomWorkbenchFromCurrentFolder()}
-                        disabled={!imagingFolderPath.trim() || isDicomWorkbenchReconnecting}
+                        disabled={!(imagingFolderPath || "").trim() || isDicomWorkbenchReconnecting}
                       >
                         <RefreshCw aria-hidden="true" />
                         {isDicomWorkbenchReconnecting ? "Подключаю" : "Переподключить папку"}

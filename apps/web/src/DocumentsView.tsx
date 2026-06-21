@@ -995,11 +995,11 @@ export function DocumentsView(props: DocumentsViewProps) {
   } = useDocumentStore();
 
   const documentIssueMissingSteps = [
-    !documentIssueSignedAt.trim() ? "укажите дату и время подписи" : null,
-    !documentIssueRecipientFullName.trim() ? "укажите получателя" : null,
-    !documentIssueRecipientRole.trim() ? "укажите статус получателя" : null,
-    !documentIssueStaffFullName.trim() ? "укажите сотрудника клиники" : null,
-    !documentIssueStaffRole.trim() ? "укажите роль сотрудника" : null,
+    !String(documentIssueSignedAt || "").trim() ? "укажите дату и время подписи" : null,
+    !String(documentIssueRecipientFullName || "").trim() ? "укажите получателя" : null,
+    !String(documentIssueRecipientRole || "").trim() ? "укажите статус получателя" : null,
+    !String(documentIssueStaffFullName || "").trim() ? "укажите сотрудника клиники" : null,
+    !String(documentIssueStaffRole || "").trim() ? "укажите роль сотрудника" : null,
     !documentIssueIdentityChecked ? "отметьте проверку личности получателя" : null,
     !documentIssueDocumentOpenedAndChecked ? "откройте и проверьте HTML/PDF" : null,
     !documentIssueRecipientSigned ? "отметьте подпись получателя" : null,
@@ -1007,9 +1007,9 @@ export function DocumentsView(props: DocumentsViewProps) {
   ].filter((step): step is string => Boolean(step));
 
   const documentVoidMissingSteps = [
-    documentVoidReasonText.trim().length < 12 ? "опишите причину аннулирования подробнее" : null,
-    !documentVoidStaffFullName.trim() ? "укажите ответственного сотрудника" : null,
-    !documentVoidStaffRole.trim() ? "укажите роль сотрудника" : null,
+    String(documentVoidReasonText || "").trim().length < 12 ? "опишите причину аннулирования подробнее" : null,
+    !String(documentVoidStaffFullName || "").trim() ? "укажите ответственного сотрудника" : null,
+    !String(documentVoidStaffRole || "").trim() ? "укажите роль сотрудника" : null,
     !documentVoidArchivePreserved ? "подтвердите сохранение архивной копии" : null,
     !documentVoidStatusReviewed ? "подтвердите проверку медицинских и налоговых последствий" : null
   ].filter((step): step is string => Boolean(step));
