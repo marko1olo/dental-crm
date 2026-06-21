@@ -98,8 +98,9 @@ export function loadAdditionalServerEnv(): string[] {
       applyParsedEnv(parseDotEnvFile(readFileSync(filePath)));
       loadedEnvFiles.push(filePath);
       appendUnseenEnvFiles(queue, seen, explicitEnvFiles());
-    } catch {
+    } catch (error) {
       // Keep startup non-blocking: a broken optional env import must not stop local development.
+      console.warn(`[env] Failed to load optional env file ${filePath}`, error);
     }
   }
   return getLoadedServerEnvFiles();
