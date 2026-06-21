@@ -27,8 +27,11 @@ artifacts/
 *.db-shm
 *.session
 *.session-journal
+local-secrets/*.env
+local-secrets/*.local
+!local-secrets/*.example
+!local-secrets/README.md
 scripts/smoke-speech-key-rotation.mjs
-scripts/smoke-telegram-bot.mjs
 playwright-report/
 blob-report/
 *.tsbuildinfo

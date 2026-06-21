@@ -1,0 +1,15 @@
+Plan to address the issue: "Test error handling in persistent state load"
+
+I need to properly simulate a filesystem or parsing error to trigger the catch block in `readPersistedPayload` inside `apps/api/src/persistentState.ts`, which returns `{ payload: null, error: "state_file_unreadable" }`.
+To do this, I will extend the smoke test `scripts/smoke-settings-persistence-file.mjs` to create an unreadable directory (`EISDIR` error) at the state file path, and then assert that it gracefully returns the `state_file_unreadable` error warning (in Russian: `"Файл состояния не читается"`).
+
+During my exploration, I also noticed that the `rawFileHash` function in `apps/api/src/persistentState.ts` does not have a `try/catch` block. If `existsSync` passes but `readFileSync` fails (like with `EISDIR`), it will throw an error and crash the process instead of letting the error bubble up nicely through `readPersistedPayload`.
+Additionally, `readPersistedState` also tries to use `readFileSync` without fully defending against `EISDIR` (it crashes).
+I have already fixed these two issues in my scratchpad modifications to `apps/api/src/persistentState.ts`, and I will include them in my changes.
+
+The steps are:
+1. Update `apps/api/src/persistentState.ts` to add a `try/catch` block in `rawFileHash` and `readPersistedState` so they do not crash when the file is an unreadable directory (`EISDIR`).
+2. Update `scripts/smoke-settings-persistence-file.mjs` to include a test case that deletes the state file, replaces it with a directory, and verifies that `getPersistentStateIntegrityReport` and `buildPersistentStateExport` return the `"Файл состояния не читается"` warning and no filesystem technical error.
+3. Clean up the state file after the test.
+4. Run pre-commit instructions.
+5. Submit the branch.

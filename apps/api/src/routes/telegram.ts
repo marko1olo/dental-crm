@@ -253,6 +253,21 @@ function readableTelegramSettingsValidationMessage(error: unknown): string {
   return "Настройки Telegram не сохранены. Проверьте поля формы и публичные ссылки.";
 }
 
+function readableTelegramSettingsSchemaMessage(error: unknown): string {
+  const issues = Array.isArray((error as { issues?: unknown }).issues)
+    ? ((error as { issues: Array<{ path?: unknown[]; message?: unknown }> }).issues)
+    : [];
+  const firstIssue = issues[0];
+  if (!firstIssue) return "Настройки Telegram не сохранены. Проверьте поля формы.";
+
+  const fieldName = Array.isArray(firstIssue.path) ? firstIssue.path.map((part) => String(part)).join(".") : "";
+  const fieldLabel = telegramSettingsFieldLabel(fieldName);
+  const message = typeof firstIssue.message === "string" ? repairMojibakeText(firstIssue.message).trim() : "";
+  const looksTechnical = /invalid|required|expected|string|number|boolean|uuid|literal|received/i.test(message);
+  if (message && !looksTechnical) return `${fieldLabel}: ${message}`;
+  return `${fieldLabel}: проверьте значение поля.`;
+}
+
 type TelegramLinkCodeRejection = {
   error: "TelegramChatEncryptionKeyMissing" | "TelegramLinkCodeScopeInvalid";
   reason: "chat_encryption_missing" | "link_code_scope_invalid";
@@ -290,6 +305,13 @@ function telegramLinkCodeRejection(error: unknown): TelegramLinkCodeRejection {
       error: "TelegramChatEncryptionKeyMissing",
       reason: "chat_encryption_missing",
       message: telegramLinkCodeEncryptionMissingMessage
+    };
+  }
+  if (message.includes("активному пациенту") || message.includes("активному сотруднику")) {
+    return {
+      error: "TelegramLinkCodeScopeInvalid",
+      reason: "link_code_scope_invalid",
+      message
     };
   }
   return {
@@ -2372,6 +2394,12 @@ async function handleWebhook(
   }));
 }
 
+export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
+  app.post("/api/telegram/webhook", handleWebhook);
+  app.post("/api/telegram/webhook/:organizationId/:botConfigId", handleWebhook);
+  app.post("/api/telegram/webhook/:organizationId", handleWebhook);
+}
+
 export async function registerTelegramRoutes(app: FastifyInstance) {
   const telegramControlPlaneRouteOptions = { preHandler: requireTelegramControlPlaneAccess };
 
@@ -2408,9 +2436,11 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
   app.put("/api/settings/telegram", telegramControlPlaneRouteOptions, async (request, reply) => {
     const parsedInput = parseTelegramRouteBody(updateDenteTelegramBotSettingsSchema, request.body);
     if (!parsedInput.ok) {
+      const schemaResult = updateDenteTelegramBotSettingsSchema.safeParse(request.body);
+      const issueCount = schemaResult.success ? 0 : schemaResult.error.issues.length;
       return reply.code(400).send({
         error: "TelegramSettingsValidationFailed",
-        message: parsedInput.message
+        message: schemaResult.success || issueCount !== 1 ? parsedInput.message : readableTelegramSettingsSchemaMessage(schemaResult.error)
       });
     }
     const input: UpdateDenteTelegramBotSettingsInput = parsedInput.value;
@@ -2587,7 +2617,5 @@ export async function registerTelegramRoutes(app: FastifyInstance) {
     }
   });
 
-  app.post("/api/telegram/webhook", handleWebhook);
-  app.post("/api/telegram/webhook/:organizationId/:botConfigId", handleWebhook);
-  app.post("/api/telegram/webhook/:organizationId", handleWebhook);
+
 }

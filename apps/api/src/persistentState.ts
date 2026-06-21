@@ -125,7 +125,11 @@ function fileNameOf(filePath: string): string {
 
 function rawFileHash(filePath: string): string | null {
   if (!existsSync(filePath)) return null;
-  return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+  try {
+    return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+  } catch {
+    return null;
+  }
 }
 
 function stateCollectionCounts(state: Partial<DentalMutableState> | null | undefined): Record<string, number> {

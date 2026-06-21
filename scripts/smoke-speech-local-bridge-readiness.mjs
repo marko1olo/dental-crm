@@ -45,11 +45,14 @@ if (!speechPlan.includes("DENTAL_LOCAL_WHISPER_TRANSCRIBE_URL") || !speechPlan.i
 
 for (const marker of [
   "const speechRecognitionReady = speechUploadReady && isOnline;",
+  "const serverVoiceRecordingAvailable =",
+  "const visitVoicePrimaryUsesServer = serverVoiceRecordingAvailable || isServerVoiceRecording;",
   "const speechGatewayActiveProviderIsLocal =",
   'speechGatewayStatus?.providerId === "local_whisper" || speechGatewayStatus?.providerId === "vosk_local";',
-  '"Распознать локально"',
-  '"Сохранить в очередь"',
-  "локальный модуль готов",
+  '`${speechGatewayStatus?.providerLabel ?? "локальный модуль"}: запись частями`',
+  "speechActiveGatewayStatusRef.current = currentGatewayStatus;",
+  "Groq будет проверен при старте записи.",
+  "звук сохранится в очередь",
   "когда источник будет готов"
 ]) {
   if (!appSource.includes(marker)) fail(`Visit speech status UI does not map local bridge readiness honestly: ${marker}`);

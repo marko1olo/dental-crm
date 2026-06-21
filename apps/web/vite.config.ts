@@ -64,7 +64,7 @@ export default defineConfig({
           if (normalizedId.includes("/node_modules/react") || normalizedId.includes("/node_modules/react-dom")) return "react-vendor";
           if (normalizedId.includes("/node_modules/lucide-react")) return "icons";
           if (normalizedId.includes("/node_modules/zod")) return "schema-vendor";
-          if (normalizedId.includes("/packages/shared")) return "dental-shared";
+          if (normalizedId.includes("/packages/shared") || normalizedId.includes("/node_modules/@dental/shared/")) return "dental-shared";
           return undefined;
         }
       }

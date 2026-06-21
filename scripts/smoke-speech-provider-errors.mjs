@@ -39,6 +39,16 @@ requireIn(
 );
 requireIn(gatewaySource, "function speechProviderFailureReason", "Speech gateway must own public provider failure mapping.");
 requireIn(polishSource, "function speechPolishFailureReason", "Speech polish must own public neural failure mapping.");
+requireIn(
+  gatewaySource,
+  "CRM получила почти пустой аудиофрагмент. Проверьте выбранный микрофон, говорите ближе и повторите запись.",
+  "Speech gateway must give a concrete next action for tiny or empty audio."
+);
+requireIn(
+  gatewaySource,
+  "Похоже, в фрагменте была тишина или голос был слишком далеко. Проверьте микрофон и повторите фразу.",
+  "Speech gateway must explain Whisper no-speech results in doctor-readable wording."
+);
 forbidIn(gatewaySource, "недоступен (${code})", "Speech warnings must not interpolate raw provider failure codes.");
 forbidIn(gatewaySource, "`http_${error.statusCode}`", "Speech warnings must not expose http_N tokens.");
 forbidIn(gatewaySource, "источник вернул код ${error.statusCode}", "Speech warnings must not expose raw HTTP status text.");
@@ -67,7 +77,9 @@ process.env.DENTAL_SPEECH_KEY_HEALTH_FILE = "off";
 process.env.DENTAL_SPEECH_KEY_RETRY_LIMIT = "1";
 process.env.DENTAL_SPEECH_PROVIDER_TIMEOUT_MS = "5000";
 process.env.DENTAL_SPEECH_RATE_LIMIT_COOLDOWN_MS = "60000";
-process.env.GROQ_API_KEY = "gsk_synthetic_provider_error_key_do_not_leak_111111111111";
+delete process.env.GROQ_API_KEY;
+process.env.GROQ_API_KEYS =
+  "gsk_synthetic_provider_error_key_do_not_leak_111111111111,gsk_synthetic_provider_empty_key_do_not_leak_222222222222";
 process.env.DENTAL_SPEECH_NEURAL_POLISH = "true";
 process.env.DENTAL_SPEECH_POLISH_PROVIDER = "custom";
 process.env.DENTAL_SPEECH_POLISH_BASE_URL = "https://synthetic-polish.local/v1";
@@ -100,6 +112,16 @@ globalThis.fetch = async () => {
         }
       }),
       { status: 500, statusText: "Server Error", headers: { "Content-Type": "application/json" } }
+    );
+  }
+  if (fetchMode === "emptyStt") {
+    sttFetchCalls += 1;
+    return new Response(
+      JSON.stringify({
+        text: "",
+        segments: [{ text: "", avg_logprob: -1.7, no_speech_prob: 0.92, compression_ratio: 1.1 }]
+      }),
+      { status: 200, statusText: "OK", headers: { "Content-Type": "application/json" } }
     );
   }
   throw new Error(`Unexpected speech smoke fetch mode: ${fetchMode}`);
@@ -155,6 +177,25 @@ try {
     `STT warning must preserve the recovery action: ${sttWarnings}`
   );
   forbidPattern(sttWarnings, rawTokenPattern, "STT provider warning leaked raw provider detail.");
+
+  fetchMode = "emptyStt";
+  const emptyResult = await transcribeSpeechChunk({
+    recordingId: `speech-provider-empty-${Date.now()}`,
+    chunkIndex: 0,
+    mimeType: "audio/webm",
+    audioBase64: Buffer.from("synthetic quiet audio bytes").toString("base64"),
+    durationMs: 12_000,
+    language: "ru",
+    source: "visit",
+    specialty: "therapist"
+  });
+  assert(emptyResult.chunk.status === "failed", `Expected failed after empty STT, got ${emptyResult.chunk.status}`);
+  assert(
+    emptyResult.chunk.quality.nextAction.toLowerCase().includes("микрофон") &&
+      (emptyResult.chunk.quality.nextAction.includes("повторите фразу") ||
+        emptyResult.chunk.quality.nextAction.includes("повторите запись")),
+    `Empty STT next action must point the doctor to mic/phrase retry: ${emptyResult.chunk.quality.nextAction}`
+  );
 
   fetchMode = "polish";
   const polish = await polishSpeechTranscript({

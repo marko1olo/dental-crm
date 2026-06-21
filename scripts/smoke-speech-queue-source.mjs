@@ -19,6 +19,7 @@ const applyBlock = sourceSlice("function speechTranscriptionMatchesActiveVisit",
 const flushBlock = sourceSlice("async function flushPendingSpeechChunks", "function applyUiPreferences");
 const queueStorageBlock = sourceSlice("function normalizePendingSpeechChunk", "function speechChunkIndexedDbAvailable");
 const recoveryBlock = sourceSlice("async function loadSpeechRecordingRecovery", "async function refreshSpeechRuntime");
+const autoFlushBlock = sourceSlice("const speechAutoFlushPendingAudioReady =", "const speechTranscriptionBusyDetail =");
 
 for (const marker of [
   "if (!dashboard?.activeVisit.id || !dashboard.activeVisit.patientId)",
@@ -35,7 +36,7 @@ for (const marker of [
   'if (result.chunk.source !== "visit" || !result.chunk.visitId || !dashboard?.activeVisit.id) return true;',
   "return result.chunk.visitId === dashboard.activeVisit.id;",
   "if (!speechTranscriptionMatchesActiveVisit(result))",
-  "Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.",
+  "Эта часть записи относится к другому приему и не добавлена в текущую карту.",
   "appendVisitDictationText(text)"
 ]) {
   if (!applyBlock.includes(marker)) fail(`Speech apply guard missing marker: ${marker}`);
@@ -59,15 +60,34 @@ if (!flushBlock.includes("const hasAudioWaitingForServer = queue.some((item) => 
 
 for (const marker of [
   "const speechRecognitionReady = speechUploadReady && isOnline;",
+  "const serverVoiceRecordingAvailable =",
+  "const visitVoicePrimaryUsesServer = serverVoiceRecordingAvailable || isServerVoiceRecording;",
   "const speechGatewayActiveProviderIsLocal =",
   'speechGatewayStatus?.providerId === "local_whisper" || speechGatewayStatus?.providerId === "vosk_local";',
-  "const emptyDictationVoiceActionLabel = speechRecognitionReady",
-  '"Распознать локально"',
-  '"Распознать на сервере"',
-  '"Сохранить в очередь"',
-  "«{emptyDictationVoiceActionLabel}»"
+  "speechActiveGatewayStatusRef.current = currentGatewayStatus;",
+  "const effectiveGatewayStatus = speechActiveGatewayStatusRef.current ?? currentGatewayStatus;",
+  "uploadSpeechBlob(event.data, effectiveGatewayStatus)",
+  '"CRM запишет голос нормально и проверит Groq при старте.',
+  '"Записать голос"'
 ]) {
-  if (!source.includes(marker)) fail(`Speech empty-dictation guidance missing local-readiness marker: ${marker}`);
+  if (!source.includes(marker)) fail(`Speech primary recording path missing marker: ${marker}`);
+}
+
+for (const marker of [
+  "pendingSpeechChunkCount > 0",
+  "!speechTranscriptionBusy",
+  "!isServerVoiceRecording",
+  "!isServerVoiceRecordingStarting",
+  "speechAutoFlushInFlightRef.current",
+  "speechAutoFlushLastKeyRef.current",
+  "speechAutoFlushRetryTimerRef.current",
+  "speechGatewayStatus?.serverTranscriptionCurrentlyAvailable ? \"available\" : \"unavailable\"",
+  "void flushPendingSpeechChunks({ silent: true })",
+  "window.setTimeout(() =>",
+  "setSpeechAutoFlushRetryTick((tick) => tick + 1)",
+  "speechAutoFlushRetryTick"
+]) {
+  if (!autoFlushBlock.includes(marker)) fail(`Speech queued-audio auto flush missing marker: ${marker}`);
 }
 
 for (const marker of [
@@ -101,6 +121,16 @@ for (const marker of [
   "queuePendingSpeechChunk(chunk, activeOrganizationId)"
 ]) {
   if (!source.includes(marker)) fail(`Speech queue active-organization wiring missing: ${marker}`);
+}
+
+for (const marker of [
+  "function speechChunkFailureDetail",
+  "chunk.quality.providerWarnings[0]",
+  "chunk.quality.nextAction",
+  "const failureDetail = operatorReadableErrorDetailFromUnknown(speechError);",
+  "CRM повторит отправку позже."
+]) {
+  if (!source.includes(marker)) fail(`Speech queued-audio failure feedback missing marker: ${marker}`);
 }
 
 if (flushBlock.includes("\n        flushedRecordingIds.add(item.recordingId);")) {
