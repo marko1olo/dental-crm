@@ -4533,39 +4533,40 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
     [...candidates.filter((candidate) => knownCandidateKeys.has(candidateKey(candidate))), ...candidates],
     candidateKey
   ).slice(0, Math.min(input.maxProbeCandidates, candidates.length));
-  const sources: MigrationAutopilotSource[] = [];
-  for (const candidate of probedCandidates) {
-    let probe: MigrationLocalSourceProbeResponse | null = null;
-    try {
-      probe = await buildMigrationLocalSourceProbe({
-        sourceRef: candidate.sourceRef,
-        sourceKind: candidate.sourceKind,
-        safeDisplayName: candidate.safeDisplayName,
-        maxDepth: Math.min(2, input.maxDepth),
-        maxFolders: 100,
-        maxFiles: 600,
-        maxSampleArtifacts: 10,
-        readHeaderBytes: 4096
-      });
-      probe.warnings.forEach((warning) => warnings.add(warning));
-      probe.privacyWarnings.forEach((warning) => privacyWarnings.add(warning));
-    } catch {
-      warnings.add(`Источник ${candidate.safeDisplayName} найден, но быстрая проверка не завершилась. Откройте план источника или выберите папку вручную.`);
-    }
-    const score = migrationAutopilotScore(candidate, probe);
-    const readiness = migrationAutopilotReadiness(candidate, probe);
-    sources.push({
-      candidate,
-      probe,
-      score,
-      priority: migrationAutopilotPriority(score),
-      owner: migrationAutopilotOwner(candidate, probe),
-      readiness,
-      bridgeKit: migrationAutopilotBridgeKit(candidate, probe, readiness),
-      recommendedAction: migrationAutopilotRecommendedAction(candidate, probe),
-      riskFlags: migrationAutopilotRiskFlags(candidate, probe)
-    });
-  }
+  const sources: MigrationAutopilotSource[] = await Promise.all(
+    probedCandidates.map(async (candidate) => {
+      let probe: MigrationLocalSourceProbeResponse | null = null;
+      try {
+        probe = await buildMigrationLocalSourceProbe({
+          sourceRef: candidate.sourceRef,
+          sourceKind: candidate.sourceKind,
+          safeDisplayName: candidate.safeDisplayName,
+          maxDepth: Math.min(2, input.maxDepth),
+          maxFolders: 100,
+          maxFiles: 600,
+          maxSampleArtifacts: 10,
+          readHeaderBytes: 4096
+        });
+        probe.warnings.forEach((warning) => warnings.add(warning));
+        probe.privacyWarnings.forEach((warning) => privacyWarnings.add(warning));
+      } catch {
+        warnings.add(`Источник ${candidate.safeDisplayName} найден, но быстрая проверка не завершилась. Откройте план источника или выберите папку вручную.`);
+      }
+      const score = migrationAutopilotScore(candidate, probe);
+      const readiness = migrationAutopilotReadiness(candidate, probe);
+      return {
+        candidate,
+        probe,
+        score,
+        priority: migrationAutopilotPriority(score),
+        owner: migrationAutopilotOwner(candidate, probe),
+        readiness,
+        bridgeKit: migrationAutopilotBridgeKit(candidate, probe, readiness),
+        recommendedAction: migrationAutopilotRecommendedAction(candidate, probe),
+        riskFlags: migrationAutopilotRiskFlags(candidate, probe)
+      };
+    })
+  );
 
   for (const candidate of candidates.slice(probedCandidates.length)) {
     const score = migrationAutopilotScore(candidate, null);
