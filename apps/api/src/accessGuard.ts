@@ -12,11 +12,11 @@ export function configuredClinicalMutationSecret(): string | null {
 }
 
 function clinicalMutationsUnguardedAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" || process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS === "1";
+  return process.env.NODE_ENV !== "production" && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS === "1";
 }
 
 function clinicalReadsUnguardedAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" || process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS === "1";
+  return process.env.NODE_ENV !== "production" && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS === "1";
 }
 
 function timingSafeSecretEqual(providedSecret: string | null, expectedSecret: string): boolean {
