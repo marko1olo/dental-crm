@@ -83,8 +83,6 @@ const issuedArchiveIntegrityError =
 
 function pdfBrowserCandidates(): string[] {
   return [
-    process.env.DENTE_PDF_BROWSER_BIN,
-    process.env.BROWSER_BIN,
     "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
     "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
