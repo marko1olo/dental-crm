@@ -2146,9 +2146,12 @@ function buildScheduleSuggestions(readiness = buildAppointmentReadiness()): Sche
   const priorityRank: Record<ScheduleSuggestion["priority"], number> = { urgent: 0, important: 1, routine: 2 };
   const add = (suggestion: ScheduleSuggestion) => suggestions.push(suggestion);
 
+  const appointmentsById = new Map(appointments.map((a) => [a.id, a]));
+  const patientsById = new Map(patients.map((p) => [p.id, p]));
+
   readiness.forEach((item) => {
-    const appointment = appointments.find((entry) => entry.id === item.appointmentId);
-    const patient = patients.find((entry) => entry.id === item.patientId);
+    const appointment = appointmentsById.get(item.appointmentId);
+    const patient = item.patientId ? patientsById.get(item.patientId) : undefined;
     if (!appointment) return;
 
     if (item.state === "blocked") {
