@@ -2559,7 +2559,7 @@ img {
   border-left-color: #d8b866;
 }
 
-.mpr-clinical-step.status-todo {
+.mpr-clinical-step.status-pending_review {
   border-left-color: #78958e;
   opacity: 0.84;
 }

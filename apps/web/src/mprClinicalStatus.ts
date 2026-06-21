@@ -1,6 +1,6 @@
 import { formatMprSliceFractionLabel } from "./mprControlMath";
 
-export type MprClinicalStatus = "ready" | "active" | "todo";
+export type MprClinicalStatus = "ready" | "active" | "pending_review";
 
 export type MprClinicalChecklistItem = {
   id: "series" | "orientation" | "sync" | "viewer";
@@ -280,7 +280,7 @@ export function buildMprClinicalChecklist(input: MprClinicalChecklistInput): Mpr
           ? "Серия найдена, но просмотр срезов ограничен: проверьте полноту КЛКТ/КТ."
           : "Сначала проверьте серии снимков и выберите КЛКТ/КТ.",
       action: input.canOpenMpr ? "Можно настраивать плоскости." : "Проверьте серии и выберите готовую КЛКТ/КТ-серию.",
-      status: input.canOpenMpr ? "ready" : input.hasSeries ? "active" : "todo"
+      status: input.canOpenMpr ? "ready" : input.hasSeries ? "active" : "pending_review"
     },
     {
       id: "orientation",
@@ -297,7 +297,7 @@ export function buildMprClinicalChecklist(input: MprClinicalChecklistInput): Mpr
             ? "Нажмите «Подогнать» или выберите клинический протокол ниже."
             : "Выберите доступный протокол ниже или откройте серию с нужной плоскостью."
         : "Сначала нужна пригодная КЛКТ/КТ-серия.",
-      status: input.canOpenMpr ? (input.protocolExact ? "ready" : "active") : "todo"
+      status: input.canOpenMpr ? (input.protocolExact ? "ready" : "active") : "pending_review"
     },
     {
       id: "sync",
@@ -311,7 +311,7 @@ export function buildMprClinicalChecklist(input: MprClinicalChecklistInput): Mpr
           : input.canOpenMpr
             ? "Для быстрого разбора обычно включают курсор и связанные плоскости."
             : "Сначала нужна пригодная КЛКТ/КТ-серия.",
-      status: input.canOpenMpr && input.linkedPlanes && input.crosshair ? "ready" : input.canOpenMpr ? "active" : "todo"
+      status: input.canOpenMpr && input.linkedPlanes && input.crosshair ? "ready" : input.canOpenMpr ? "active" : "pending_review"
     },
     {
       id: "viewer",
@@ -328,7 +328,7 @@ export function buildMprClinicalChecklist(input: MprClinicalChecklistInput): Mpr
           : input.canOpenMpr
             ? "Проверьте этот ПК и подготовьте КТ-рабочее место."
             : "Сначала выберите пригодную серию.",
-      status: input.hasWorkbenchManifest ? "ready" : input.canOpenMpr ? "active" : "todo"
+      status: input.hasWorkbenchManifest ? "ready" : input.canOpenMpr ? "active" : "pending_review"
     }
   ];
 }
