@@ -1,4 +1,4 @@
-import { test, describe, afterEach } from 'node:test';
+import { test, describe, afterEach, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { createDenteApiApp } from '../server.js';
 import type { FastifyInstance } from 'fastify';
@@ -45,5 +45,43 @@ describe('AI Routes', () => {
     assert.strictEqual(response.statusCode, 400);
     const json = response.json();
     assert.strictEqual(json.error, 'VisitNoteDraftValidationError');
+  });
+});
+
+describe('AI Routes Integration', () => {
+  let integrationApp: Awaited<ReturnType<typeof createDenteApiApp>>;
+
+  beforeEach(async () => {
+    process.env.DENTE_CLINICAL_ADMIN_SECRET = 'test-secret';
+    integrationApp = await createDenteApiApp({ startTelegramWorker: false });
+  });
+
+  afterEach(async () => {
+    await integrationApp.close();
+    delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+  });
+
+  describe('POST /api/ai/visit-note-draft', () => {
+    test('handles missing patient (404)', async () => {
+      const response = await integrationApp.inject({
+        method: 'POST',
+        url: '/api/ai/visit-note-draft',
+        headers: {
+          'x-dente-admin-secret': 'test-secret',
+        },
+        payload: {
+          patientId: '11111111-1111-4111-8111-111111111111',
+          transcript: 'Жалобы на боль при накусывании.',
+          specialty: 'therapist',
+          source: 'voice',
+        },
+      });
+
+      assert.strictEqual(response.statusCode, 404);
+
+      const body = response.json();
+      assert.strictEqual(body.error, 'VisitNoteDraftScopeError');
+      assert.strictEqual(body.message, 'Пациент не найден. Выберите пациента из актуальной карты.');
+    });
   });
 });
