@@ -179,15 +179,18 @@ export function VisitView(props: VisitViewProps) {
               </div>
             </section>
 
-            <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки">
-              {visitSafetyCards.map((item) => (
-                <article className={`safety-${item.state}`} key={item.key}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                  <p>{item.detail}</p>
-                </article>
-              ))}
-            </section>
+            <details className="visit-safety-strip-toggle" style={{ margin: '1rem 0', fontSize: '0.85rem', color: 'var(--slate-500)' }}>
+              <summary style={{ cursor: 'pointer', userSelect: 'none' }}>Инженерный статус (локальное сохранение, связь с сервером)</summary>
+              <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--slate-50)', borderRadius: '8px' }}>
+                {visitSafetyCards.map((item) => (
+                  <article className={`safety-${item.state}`} key={item.key}>
+                    <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</span>
+                    <strong style={{ display: 'block', margin: '4px 0' }}>{item.value}</strong>
+                    <p style={{ margin: '0', fontSize: '0.8rem', lineHeight: '1.2' }}>{item.detail}</p>
+                  </article>
+                ))}
+              </section>
+            </details>
 
             <section className="specialty-focus-bar" aria-label="Фокус специальности приема">
               <div>
@@ -221,17 +224,14 @@ export function VisitView(props: VisitViewProps) {
                   <h3>Диктовка врача</h3>
                   <p>
                     Черновик, требует подтверждения врача.{" "}
-                    {lastLocalSavedAt ? `Локально сохранено ${formatTime(lastLocalSavedAt)}.` : "Локальное автосохранение включено."}
-                    {localDraftWasRestored ? " Восстановлен локальный черновик." : ""}
-                    {!isOnline ? " Офлайн: сервер синхронизируется позже." : ""}
-                    {pendingVisitSaveCount
-                      ? ` Сервер ожидает ${pendingVisitSaveCount} сохранение${lastPendingVisitSaveAt ? ` с ${formatTime(lastPendingVisitSaveAt)}` : ""}.`
-                      : ""}
-                    {pendingSpeechChunkCount ? ` Распознавание ждет ${pendingSpeechChunkCount} аудио-фрагм.` : ""}
-                    {lastServerDraftSavedAt && serverDraftSyncState === "saved" ? ` Серверный черновик ${formatTime(lastServerDraftSavedAt)}.` : ""}
-                    {serverDraftSyncState === "saving" ? " Сервер сохраняет черновик." : ""}
-                    {serverDraftSyncState === "queued" || serverDraftSyncState === "error" ? " Серверный черновик повторит синхронизацию." : ""}
-                    {speechStatusNote ? ` ${speechStatusNote}` : ""}
+                    <span style={{ color: 'var(--slate-500)', fontSize: '0.9em' }}>
+                      {serverDraftSyncState === "saving" || pendingVisitSaveCount > 0 ? "Синхронизация..." 
+                        : !isOnline ? "Офлайн (сохранено локально)"
+                        : lastServerDraftSavedAt ? `Сохранено ${formatTime(lastServerDraftSavedAt)}`
+                        : lastLocalSavedAt ? `Локально сохранено ${formatTime(lastLocalSavedAt)}`
+                        : "Автосохранение включено"}
+                    </span>
+                    {speechStatusNote ? <span style={{ display: 'inline-block', marginLeft: '8px', color: 'var(--rust)', fontSize: '0.9em' }}>{speechStatusNote}</span> : null}
                   </p>
                 </div>
               </div>
@@ -251,13 +251,13 @@ export function VisitView(props: VisitViewProps) {
                   if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
                 }}
               />
-              <div className="dictation-actions" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center' }}>
+              <div className="dictation-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
                 <button
                   className={isServerVoiceRecording ? "primary-button" : "secondary-button"}
                   type="button"
                   style={{ 
-                    padding: '16px', 
-                    fontSize: '16px', 
+                    padding: '12px 16px', 
+                    fontSize: '15px', 
                     justifyContent: 'center', 
                     backgroundColor: isServerVoiceRecording ? 'var(--rust)' : undefined,
                     color: isServerVoiceRecording ? '#fff' : undefined,
@@ -266,9 +266,23 @@ export function VisitView(props: VisitViewProps) {
                   }}
                   onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
                 >
-                  <Mic aria-hidden="true" style={{ width: '20px', height: '20px' }} />{" "}
+                  <Mic aria-hidden="true" style={{ width: '18px', height: '18px' }} />{" "}
                   {isServerVoiceRecording ? "Остановить и распознать" : "Начать диктовку"}
                 </button>
+
+                <button
+                  className="primary-button"
+                  type="button"
+                  style={{ padding: '12px 16px', fontSize: '15px' }}
+                  onClick={buildDraft}
+                  disabled={isDraftLoading || !visitDraftReadyToBuild}
+                  aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
+                >
+                  <Bot aria-hidden="true" style={{ width: '18px', height: '18px' }} />{" "}
+                  {isDraftLoading ? "Собираю" : "Собрать черновик"}
+                </button>
+
+                <div style={{ flexGrow: 1 }} />
 
                 <button
                   className="secondary-button"
@@ -322,15 +336,7 @@ export function VisitView(props: VisitViewProps) {
                     </button>
                   </div>
                 </details>
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={buildDraft}
-                  disabled={isDraftLoading || !visitDraftReadyToBuild}
-                  aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
-                >
-                  <Bot aria-hidden="true" /> {isDraftLoading ? "Собираю" : "Собрать черновик"}
-                </button>
+
                 {!hasVisitTranscriptText ? (
                   <div className="dictation-action-guidance" id="dictation-clear-guidance" role="status" aria-live="polite">
                     В диктовке пока нет текста: нажмите «Голос», «{emptyDictationVoiceActionLabel}» или впишите текст вручную.
@@ -405,19 +411,21 @@ export function VisitView(props: VisitViewProps) {
                     {isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
                   </button>
                 ) : null}
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={acceptDraftToVisit}
-                  disabled={!visitNoteReadyToAccept || isDraftAccepting}
-                  aria-describedby={!visitNoteReadyToAccept ? "visit-note-missing" : undefined}
-                >
-                  <Check aria-hidden="true" /> {visitNoteActionLabel}
-                </button>
-                {!visitNoteReadyToAccept ? (
-                  <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite">
-                    <strong>Чтобы сохранить запись приема, осталось:</strong>
-                    <ul>
+                {(draft || isVisitNoteDirty) ? (
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={acceptDraftToVisit}
+                    disabled={!visitNoteReadyToAccept || isDraftAccepting}
+                    aria-describedby={!visitNoteReadyToAccept ? "visit-note-missing" : undefined}
+                  >
+                    <Check aria-hidden="true" /> {visitNoteActionLabel}
+                  </button>
+                ) : null}
+                {(draft || isVisitNoteDirty) && !visitNoteReadyToAccept ? (
+                  <div className="visit-note-missing" id="visit-note-missing" role="status" aria-live="polite" style={{ marginTop: '1rem', background: 'var(--amber-50)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--amber-200)' }}>
+                    <strong style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--amber-900)' }}>Чтобы сохранить запись приема, осталось:</strong>
+                    <ul style={{ margin: 0, paddingLeft: '1.5rem', color: 'var(--amber-800)' }}>
                       {visitNoteAcceptMissingSteps.map((step) => (
                         <li key={step}>{step}</li>
                       ))}
