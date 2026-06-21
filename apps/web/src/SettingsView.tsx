@@ -1654,7 +1654,7 @@ export function SettingsView(props: SettingsViewProps) {
     {
       id: "source",
       title: "Источник",
-      status: migrationKnownSourceCount > 0 ? "ready" : isMigrationSourceDiscovering || isBrowserMigrationScanning ? "active" : "todo",
+      status: migrationKnownSourceCount > 0 ? "ready" : isMigrationSourceDiscovering || isBrowserMigrationScanning ? "active" : "pending_review",
       detail:
         migrationKnownSourceCount > 0
           ? `Найдено ${migrationKnownSourceCount}`
@@ -1665,7 +1665,7 @@ export function SettingsView(props: SettingsViewProps) {
     {
       id: "plan",
       title: "План",
-      status: typedMigrationAutopilot || typedMigrationSourceWorkup ? "ready" : isMigrationAutopilotLoading || isMigrationSourceWorkupLoading ? "active" : "todo",
+      status: typedMigrationAutopilot || typedMigrationSourceWorkup ? "ready" : isMigrationAutopilotLoading || isMigrationSourceWorkupLoading ? "active" : "pending_review",
       detail: typedMigrationAutopilot
         ? `${Math.round(typedMigrationAutopilot.operatorPacket.score * 100)}% готовности`
         : typedMigrationSourceWorkup
@@ -1677,7 +1677,7 @@ export function SettingsView(props: SettingsViewProps) {
     {
       id: "preview",
       title: "Предпросмотр",
-      status: typedSmartImportPreview ? "ready" : isSmartImportLoading ? "active" : smartImportInputReady || migrationPreviewableSourceCount > 0 ? "todo" : "locked",
+      status: typedSmartImportPreview ? "ready" : isSmartImportLoading ? "active" : smartImportInputReady || migrationPreviewableSourceCount > 0 ? "pending_review" : "locked",
       detail: typedSmartImportPreview
         ? `${migrationPreviewReadyRows} готово к записи`
         : isSmartImportLoading
@@ -1693,7 +1693,7 @@ export function SettingsView(props: SettingsViewProps) {
     {
       id: "clinic",
       title: "Реквизиты",
-      status: migrationClinicFieldsFound > 0 ? "ready" : isClinicPublicLookupLoading ? "active" : "todo",
+      status: migrationClinicFieldsFound > 0 ? "ready" : isClinicPublicLookupLoading ? "active" : "pending_review",
       detail:
         migrationClinicFieldsFound > 0
           ? `Полей ${migrationClinicFieldsFound}`
