@@ -5807,6 +5807,7 @@ export const visitNoteDraftQualitySchema = z.object({
   confidence: z.number().min(0).max(1),
   specialty: dentalSpecialtySchema,
   detectedToothCodes: z.array(z.string()),
+  detectedToothStates: z.record(z.enum(["idle", "watch", "planned", "done", "missing", "treatment"])).optional(),
   signals: z.array(z.string()),
   missingCriticalFields: z.array(z.string()),
   nextAction: z.string()

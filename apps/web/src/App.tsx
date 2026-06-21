@@ -3378,6 +3378,7 @@ export function App() {
         stopServerVoiceRecording={stopServerVoiceRecording}
         toothRows={toothRows}
         toothStateByCode={toothStateByCode}
+        setToothState={setToothState}
         transcript={transcript}
         undoTranscriptClear={undoTranscriptClear}
         updateVisitNoteField={updateVisitNoteField}

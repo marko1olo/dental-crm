@@ -9,6 +9,8 @@ import { emptyVisitNoteForm, type VisitNoteForm, loadUiPreferences, defaultUiPre
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
+export type ToothState = "idle" | "watch" | "planned" | "done" | "missing" | "treatment";
+
 export interface VisitStore {
   selectedSpecialty: DentalSpecialty;
   setSelectedSpecialty: (val: DentalSpecialty | ((prev: DentalSpecialty) => DentalSpecialty)) => void;
@@ -27,6 +29,12 @@ export interface VisitStore {
 
   visitNoteForm: VisitNoteForm;
   setVisitNoteForm: (val: VisitNoteForm | ((prev: VisitNoteForm) => VisitNoteForm)) => void;
+
+  /** Reactive tooth state map — updated from AI draft + manual clicks. Resets on new visit load. */
+  visitToothStateByCode: Record<string, ToothState>;
+  setVisitToothStateByCode: (val: Record<string, ToothState> | ((prev: Record<string, ToothState>) => Record<string, ToothState>)) => void;
+  setToothState: (code: string, state: ToothState) => void;
+  applyAiToothCodes: (detectedCodes: string[], primaryState?: ToothState, detectedToothStates?: Record<string, ToothState>) => void;
 
   lastServerDraftSavedAt: string | null;
   setLastServerDraftSavedAt: (val: string | null | ((prev: string | null) => string | null)) => void;
@@ -86,6 +94,30 @@ export const useVisitStore = create<VisitStore>((set) => ({
 
   visitNoteForm: emptyVisitNoteForm,
   setVisitNoteForm: (val) => set((state) => ({ visitNoteForm: typeof val === "function" ? val(state.visitNoteForm) : val })),
+
+  visitToothStateByCode: {},
+  setVisitToothStateByCode: (val) => set((state) => ({ visitToothStateByCode: typeof val === "function" ? val(state.visitToothStateByCode) : val })),
+  setToothState: (code, state) => set((prev) => ({ visitToothStateByCode: { ...prev.visitToothStateByCode, [code]: state } })),
+  applyAiToothCodes: (detectedCodes, primaryState = "planned", detectedToothStates) => set((prev) => {
+    const next = { ...prev.visitToothStateByCode };
+    
+    // 1. If AI returned explicit states, apply them first
+    if (detectedToothStates) {
+      for (const [code, state] of Object.entries(detectedToothStates)) {
+        if (!next[code] || next[code] === "idle") {
+          next[code] = state;
+        }
+      }
+    }
+    
+    // 2. Fallback to just lighting up codes with primaryState (from regex parse) if not explicitly mapped
+    for (const code of detectedCodes) {
+      if (!next[code] || next[code] === "idle") {
+        next[code] = primaryState;
+      }
+    }
+    return { visitToothStateByCode: next };
+  }),
 
   lastServerDraftSavedAt: null,
   setLastServerDraftSavedAt: (val) => set((state) => ({ lastServerDraftSavedAt: typeof val === "function" ? val(state.lastServerDraftSavedAt) : val })),

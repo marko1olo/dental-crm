@@ -101,6 +101,7 @@ export interface VisitViewProps {
   visitSaveReceiptText: any;
   visitWarnings: any;
   visitWorkflowSteps: any;
+  setToothState: (code: string, state: string) => void;
 }
 
 export function VisitView(props: VisitViewProps) {
@@ -502,25 +503,41 @@ export function VisitView(props: VisitViewProps) {
               <div className="tooth-map-head">
                 <div>
                   <h3>Зубная карта</h3>
-                  <p>Визуальный контекст вместо поиска по строкам.</p>
+                  <p>Нажмите зуб для смены статуса. ИИ подсвечивает зубы из диктовки.</p>
                 </div>
                 <span>FDI</span>
               </div>
+              <div className="tooth-map-legend">
+                <span className="tooth-legend-item legend-planned">В плане</span>
+                <span className="tooth-legend-item legend-treatment">Лечение</span>
+                <span className="tooth-legend-item legend-watch">Наблюдение</span>
+                <span className="tooth-legend-item legend-done">Готово</span>
+                <span className="tooth-legend-item legend-missing">Нет зуба</span>
+              </div>
               {toothRows.map((row, rowIndex) => (
                 <div className="tooth-row" key={rowIndex === 0 ? "upper" : "lower"}>
-                  {row.map((code) => (
-                    <span className={`tooth tooth-${toothStateByCode[code] ?? "idle"}`} key={code}>
-                      <span>{code}</span>
-                    </span>
-                  ))}
+                  {row.map((code) => {
+                    const state = toothStateByCode[code] ?? "idle";
+                    const cycleState = () => {
+                      const order: Array<typeof state> = ["idle", "planned", "treatment", "watch", "done", "missing"];
+                      const next = order[(order.indexOf(state as any) + 1) % order.length];
+                      setToothState(code, next as any);
+                    };
+                    return (
+                      <button
+                        key={code}
+                        type="button"
+                        className={`tooth tooth-${state}${state === "planned" ? " tooth-ai-detected" : ""}`}
+                        onClick={cycleState}
+                        aria-label={`Зуб ${code}: ${state === "idle" ? "норма" : state === "planned" ? "в плане ИИ" : state === "treatment" ? "лечение" : state === "watch" ? "наблюдение" : state === "done" ? "готово" : "нет зуба"}. Нажмите для смены.`}
+                        aria-pressed={state !== "idle"}
+                      >
+                        <span>{code}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               ))}
-              <div className="tooth-legend">
-                <span className="legend-planned">36 лечение</span>
-                <span className="legend-watch">16/46 наблюдать</span>
-                <span className="legend-done">26 готово</span>
-                <span className="legend-missing">48 нет</span>
-              </div>
             </div>
 
             {visitCloseChecklist ? (

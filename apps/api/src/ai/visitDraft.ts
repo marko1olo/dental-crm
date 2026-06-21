@@ -92,7 +92,7 @@ async function callOpenAiCompatibleVisitDraft(input: {
   transcript: string;
   specialty: DentalSpecialty;
   apiKey: string;
-}): Promise<Partial<VisitNoteDraft>> {
+}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: any }> {
   if (!input.config.baseUrl || !input.config.modelName) {
     throw new Error("ИИ-генератор черновика не настроен.");
   }
@@ -126,6 +126,7 @@ async function callOpenAiCompatibleVisitDraft(input: {
 - "objectiveStatus": Объективный статус полости рта и целевого зуба (состояние слизистой, перкуссия, зондирование, состояние твердых тканей зуба).
 - "diagnosis": Установленный диагноз с указанием кода МКБ-10 и пораженного зуба (например, "K02.1 Кариес дентина 36 зуба").
 - "treatmentPlan": Протокол проведенного лечения (анестезия, коффердам, обработка, пломба/реставрация, полировка, рекомендации).
+- "toothStates": Объект, где ключи — номера упомянутых зубов (например, "46", "31"), а значения — строго одно из следующих состояний: "treatment" (лечение прямо сейчас), "planned" (в плане на будущее), "watch" (наблюдение/кариес в пятне), "done" (ранее вылечен, здоров), "missing" (зуб отсутствует/имплант). Верните {} если зубы не упоминались.
 
 Правила:
 1. Пишите на грамотном медицинском русском языке.
@@ -182,7 +183,8 @@ async function callOpenAiCompatibleVisitDraft(input: {
     anamnesis: typeof parsed.anamnesis === "string" ? parsed.anamnesis.trim() : null,
     objectiveStatus: typeof parsed.objectiveStatus === "string" ? parsed.objectiveStatus.trim() : null,
     diagnosis: typeof parsed.diagnosis === "string" ? parsed.diagnosis.trim() : null,
-    treatmentPlan: typeof parsed.treatmentPlan === "string" ? parsed.treatmentPlan.trim() : null
+    treatmentPlan: typeof parsed.treatmentPlan === "string" ? parsed.treatmentPlan.trim() : null,
+    _rawToothStates: typeof parsed.toothStates === "object" && parsed.toothStates !== null ? parsed.toothStates : null
   };
 }
 
@@ -190,7 +192,7 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
   config: VisitDraftNeuralConfig;
   transcript: string;
   specialty: DentalSpecialty;
-}): Promise<Partial<VisitNoteDraft>> {
+}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: any }> {
   if (input.config.explicitApiKey) {
     return callOpenAiCompatibleVisitDraft({ ...input, apiKey: input.config.explicitApiKey });
   }
@@ -253,6 +255,23 @@ export async function buildVisitDraftFromTranscript(
       specialty
     });
 
+    // Inject structured AI tooth states into quality object if present
+    const finalQuality = baseline.quality ? { ...baseline.quality } : undefined;
+    if (neural._rawToothStates && finalQuality) {
+      const parsedStates: Record<string, "idle" | "watch" | "planned" | "done" | "missing" | "treatment"> = {};
+      const validStates = new Set(["idle", "watch", "planned", "done", "missing", "treatment"]);
+      for (const [code, state] of Object.entries(neural._rawToothStates)) {
+        if (typeof state === "string" && validStates.has(state)) {
+          parsedStates[code] = state as any;
+        }
+      }
+      if (Object.keys(parsedStates).length > 0) {
+        finalQuality.detectedToothStates = parsedStates;
+        // Also sync detectedToothCodes to be a superset of the explicit AI states
+        finalQuality.detectedToothCodes = Array.from(new Set([...(finalQuality.detectedToothCodes || []), ...Object.keys(parsedStates)]));
+      }
+    }
+
     // Merge neural outputs with baseline fallbacks if any field is empty or missing
     return {
       complaint: neural.complaint || baseline.complaint,
@@ -260,10 +279,10 @@ export async function buildVisitDraftFromTranscript(
       objectiveStatus: neural.objectiveStatus || baseline.objectiveStatus,
       diagnosis: neural.diagnosis || baseline.diagnosis,
       treatmentPlan: neural.treatmentPlan || baseline.treatmentPlan,
-      quality: baseline.quality,
+      quality: finalQuality,
       warnings: [
         `Черновик приема (Форма 043/у) сформирован ИИ (${config.modelName}). Требуется обязательная проверка врачом.`,
-        ...baseline.warnings.filter(w => !w.includes("черновик собран по профилю специальности"))
+        ...(baseline.warnings || []).filter(w => !w.includes("черновик собран по профилю специальности"))
       ]
     };
   } catch (error) {

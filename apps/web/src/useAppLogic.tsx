@@ -565,7 +565,6 @@ import {
   documentDetectedKindLabel,
   dicomFirstFrameStatusLabels,
   toothRows,
-  toothStateByCode,
   formatTime,
   patientName,
   findPatient,
@@ -1120,6 +1119,7 @@ const {
     transcript, setTranscript,
     draft, setDraft,
     visitNoteForm, setVisitNoteForm,
+    visitToothStateByCode, setToothState, applyAiToothCodes,
     lastServerDraftSavedAt, setLastServerDraftSavedAt,
     serverDraftSyncState, setServerDraftSyncState,
     localDraftWasRestored, setLocalDraftWasRestored,
@@ -7267,6 +7267,14 @@ const {
       const result = (await response.json()) as VisitNoteDraft;
       setDraft(result);
       setVisitNoteForm(visitNoteFormFromDraft(result));
+      // Auto-update tooth map from AI-detected tooth codes
+      if (result.quality?.detectedToothCodes?.length || result.quality?.detectedToothStates) {
+        applyAiToothCodes(
+          result.quality?.detectedToothCodes || [], 
+          "planned", 
+          result.quality?.detectedToothStates as any
+        );
+      }
       scrollToVisitArea(".visit-note-panel");
     } catch (draftError) {
       const fallbackDraft = buildOfflineVisitDraftFromTranscript(transcript, selectedSpecialty);
@@ -13655,7 +13663,8 @@ const {
     toggleStaffWorkingDay,
     toggleTelegramFeature,
     toothRows,
-    toothStateByCode,
+    toothStateByCode: visitToothStateByCode,
+    setToothState,
     transcript,
     treatmentAcceptancePlannedTotalRub,
     treatmentEstimatePatientOrPayerFullNameValue,
