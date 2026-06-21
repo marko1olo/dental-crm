@@ -725,7 +725,7 @@ function installmentRows(document: GeneratedDocument, context: DocumentRenderCon
   const totalRub = treatmentPlanTotalRub(document, context) ?? document.totalAmountRub ?? 0;
   const paidRub = paidTotalForDocument(document, context);
   const remainingRub = Math.max(0, totalRub - paidRub);
-  const rows = [];
+  const rows: string[] = [];
   if (paidRub > 0) {
     rows.push(`<tr><td>Оплачено по сохраненным платежам</td><td>${escapeHtml(rub(paidRub))}</td><td>оплачено</td></tr>`);
   }

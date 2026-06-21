@@ -770,7 +770,7 @@ export async function executeDenteTelegramOutboxDueBatch(
   const dueItems = outbox.items
     .filter((item) => item.deliveryStatus === "ready" && isDenteTelegramOutboxItemDue(item, nowMs))
     .slice(0, input.limit);
-  const results = [];
+  const results: any[] = [];
   for (const item of dueItems) {
     const sendResult = await executeTelegramOutboxSend(
       item.id,
