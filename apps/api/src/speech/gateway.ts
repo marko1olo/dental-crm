@@ -1490,6 +1490,7 @@ async function transcribeWithProvider(input: {
   language: string;
   specialty?: DentalSpecialty | null;
   source?: SpeechChunkUploadInput["source"];
+  abortSignal?: AbortSignal;
 }): Promise<ProviderTranscript> {
   if (input.providerId === "local_whisper") {
     return transcribeLocalWhisperBridge({
