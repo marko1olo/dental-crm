@@ -6648,10 +6648,13 @@ function buildDenteTelegramPostVisitInstructionItems(runtimeScope?: DenteTelegra
   const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
   const organizationScope = runtime.settings.organizationId;
   const visitPatientPairs = new Map<string, { visitId: string; patientId: string }>();
+  const activePatientsMap = new Map(
+    patients.filter((p) => p.status === "active").map((p) => [p.id, p])
+  );
   for (const item of treatmentPlanItems) {
     if (!item.visitId || item.organizationId !== organizationScope) continue;
     if (item.status !== "completed" && item.status !== "in_progress") continue;
-    const patient = patients.find((candidate) => candidate.id === item.patientId && candidate.status === "active");
+    const patient = activePatientsMap.get(item.patientId);
     if (!patient) continue;
     visitPatientPairs.set(`${item.visitId}:${item.patientId}`, { visitId: item.visitId, patientId: item.patientId });
   }
@@ -6660,7 +6663,7 @@ function buildDenteTelegramPostVisitInstructionItems(runtimeScope?: DenteTelegra
     if (document.kind !== "post_visit_recommendations") continue;
     if (document.status !== "issued") continue;
     if (!document.visitId || !document.payload?.postVisitRecommendations?.safeForTelegramSending) continue;
-    const patient = patients.find((candidate) => candidate.id === document.patientId && candidate.status === "active");
+    const patient = activePatientsMap.get(document.patientId);
     if (!patient) continue;
     visitPatientPairs.set(`${document.visitId}:${document.patientId}`, { visitId: document.visitId, patientId: document.patientId });
   }
