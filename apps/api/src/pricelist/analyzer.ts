@@ -597,7 +597,7 @@ function responseFromItems(input: {
   });
 }
 
-export function analyzePricelistDeterministic(
+function analyzePricelistDeterministic(
   request: DentalPricelistAnalysisRequest,
   parserMode: PricelistParserMode = "deterministic",
   extraWarnings: string[] = []

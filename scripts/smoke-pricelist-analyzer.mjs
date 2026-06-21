@@ -52,7 +52,7 @@ if (
 process.env.GROQ_API_KEY = "";
 process.env.GROQ_API_KEYS = "";
 
-const { analyzePricelist, analyzePricelistDeterministic } = await import(pathToFileURL(analyzerPath).href);
+const { analyzePricelist } = await import(pathToFileURL(analyzerPath).href);
 
 const rawText = [
   "Коронка циркониевая MultiLayer 35 000 руб",
@@ -68,7 +68,7 @@ const rawText = [
   "ОПТГ 2 500 руб"
 ].join("\n");
 
-const deterministic = analyzePricelistDeterministic({
+const deterministic = await analyzePricelist({
   sourceName: "synthetic-pricelist",
   sourceKind: "spreadsheet_copy",
   rawText,
