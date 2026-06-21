@@ -535,6 +535,7 @@ assert(
 );
 delete process.env.DENTE_TELEGRAM_ADMIN_SECRET;
 
+process.env.NODE_ENV = "development";
 process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS = "1";
 const explicitEscapeResponse = await app.inject(protectedRequests[0]);
 assert(

@@ -194,6 +194,7 @@ const missingEnvResponse = await missingEnvApp.inject({
 assert(missingEnvResponse.statusCode === 503, `production without settings secret must fail closed: ${missingEnvResponse.statusCode}`);
 await missingEnvApp.close();
 
+process.env.NODE_ENV = "development";
 process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS = "1";
 const explicitEscapeApp = createApp();
 await registerSettingsRoutes(explicitEscapeApp);

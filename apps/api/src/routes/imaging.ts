@@ -132,7 +132,7 @@ function configuredDicomWebSettingsSecret(): string | null {
 }
 
 function dicomWebSettingsUnguardedAllowed(): boolean {
-  return process.env.NODE_ENV !== "production" || process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS === "1";
+  return process.env.NODE_ENV !== "production" && process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS === "1";
 }
 
 function timingSafeDicomWebSecretEqual(providedSecret: string | null, expectedSecret: string): boolean {
