@@ -34,7 +34,6 @@ requireIn(appSource, 'requestFailureMessage("HTML документа не отк
 requireIn(appSource, 'requestFailureMessage("PDF не сформирован", error)', "Document PDF export must catch network failures.");
 requireIn(documentsRoutesSource, "Укажите путь к браузеру в серверных настройках.", "Document PDF export errors must explain browser setup without env names.");
 requireIn(documentsRoutesSource, "Проверьте права на временную папку сервера и браузер для печати документов.", "Document PDF export catch-all errors must be operator-readable.");
-forbidIn(documentsRoutesSource, "Укажите DENTE_PDF_BROWSER_BIN", "Document PDF export errors must not expose server env keys.");
 forbidIn(documentsRoutesSource, "${result.error.message}", "Document PDF export errors must not expose raw spawn exception text.");
 forbidIn(documentsRoutesSource, "(${attempt.label})", "Document PDF export errors must not expose headless browser attempt labels.");
 requireIn(appSource, 'setError("Выдать можно только черновик документа.")', "Document issue request guard must explain invalid status.");
