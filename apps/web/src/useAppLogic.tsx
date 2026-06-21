@@ -898,15 +898,9 @@ import {
   roleFocusOrder,
   speechProviderConnectorLabels,
   viewFromHash,
-  settingsTabFromHash
+  settingsTabFromHash,
+  speechGatewayCanUpload
 } from "./AppHelpers";
-import { useAppStore } from "./store/appStore";
-import { useDocumentStore } from "./store/documentStore";
-import { useImagingStore } from "./store/imagingStore";
-import { usePatientStore } from "./store/patientStore";
-import { useScheduleStore } from "./store/scheduleStore";
-import { useVisitStore } from "./store/visitStore";
-import { useSettingsStore } from "./store/settingsStore";
 
 export function useAppLogic(): any {
 const {
@@ -981,44 +975,6 @@ const {
     newAppointmentSaveState,
     setNewAppointmentSaveState
   } = useScheduleStore();
-  const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
-  const initialTelegramHandoffTargetRef = useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
-  const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
-  const uiPreferencesServerReadyRef = useRef(false);
-  const uiPreferencesHydratedRef = useRef(false);
-  const pendingUiPreferencesSyncRef = useRef<UiPreferences | null>(null);
-  const uiPreferencesSyncInFlightRef = useRef(false);
-  const uiPreferencesRetryTimerRef = useRef<number | null>(null);
-  const newAppointmentDraftUserEditedRef = useRef(false);
-  const clinicProfileDraftHydratedRef = useRef(false);
-  const clinicProfileDraftRef = useRef<ClinicProfileDraft>(emptyClinicProfileDraft());
-  const patientCoreDraftRef = useRef<PatientCoreDraft>(emptyPatientCoreDraft());
-  const releaseSourceRequestAutofillRef = useRef<string | null>(null);
-  const taxPaymentSelectionHydratedKeyRef = useRef<string | null>(null);
-  const paymentReceiptSelectionHydratedKeyRef = useRef<string | null>(null);
-  const outpatient025uDraftHydratedKeyRef = useRef<string | null>(null);
-  const medicalRecordExtractDraftHydratedKeyRef = useRef<string | null>(null);
-  const initialDocumentIssueSignatureDraftRef = useRef<DocumentIssueSignatureDraft | null>(null);
-  const documentIssueSignatureHydratedOrganizationIdRef = useRef<string | null>(null);
-  const onboardingDismissalHydratedOrganizationIdRef = useRef<string | null>(null);
-  const localImagingRecoveryHydratedOrganizationIdRef = useRef<string | null>(null);
-  if (initialUiPreferencesRef.current === null) {
-    initialUiPreferencesRef.current = loadUiPreferences();
-  }
-  if (initialDocumentIssueSignatureDraftRef.current === null) {
-    initialDocumentIssueSignatureDraftRef.current = loadDocumentIssueSignatureDraft();
-  }
-  const initialUiPreferences = initialUiPreferencesRef.current ?? defaultUiPreferences;
-  const initialDocumentIssueSignatureDraft = initialDocumentIssueSignatureDraftRef.current ?? loadDocumentIssueSignatureDraft();
-  const initialTelegramHandoffTarget = initialTelegramHandoffTargetRef.current;
-  const initialRecognitionText =
-    recognitionPresets.find(
-      (preset) => preset.kind === initialUiPreferences.recognitionKind && preset.target === initialUiPreferences.recognitionTarget
-    )?.text ??
-    recognitionPresets[0]?.text ??
-    "";
-  const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
-  const activeOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
       const {
     imagingImportText,
     setImagingImportText,
@@ -1157,7 +1113,6 @@ const {
     isLocalDicomOperationActive,
     setIsLocalDicomOperationActive
   } = useImagingStore();
-
   const {
     selectedSpecialty, setSelectedSpecialty,
     selectedProtocolId, setSelectedProtocolId,
@@ -1179,7 +1134,6 @@ const {
     isTranscriptPolishing, setIsTranscriptPolishing,
     lastServerDraftSignatureRef, visitDraftUserEditedRef
   } = useVisitStore();
-
   const {
     documentCreateSavingKind,
     setDocumentCreateSavingKind,
@@ -2264,7 +2218,6 @@ const {
     uiPreferencesSyncError,
     setUiPreferencesSyncError
   } = useAppStore();
-
   const {
     onboardingDismissed,
     setOnboardingDismissed,
@@ -2369,6 +2322,54 @@ const {
     telegramRevokingLinkId,
     setTelegramRevokingLinkId
   } = useSettingsStore();
+
+
+  const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
+  const initialTelegramHandoffTargetRef = useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
+  const initialUiPreferencesRef = useRef<UiPreferences | null>(null);
+  const uiPreferencesServerReadyRef = useRef(false);
+  const uiPreferencesHydratedRef = useRef(false);
+  const pendingUiPreferencesSyncRef = useRef<UiPreferences | null>(null);
+  const uiPreferencesSyncInFlightRef = useRef(false);
+  const uiPreferencesRetryTimerRef = useRef<number | null>(null);
+  const newAppointmentDraftUserEditedRef = useRef(false);
+  const clinicProfileDraftHydratedRef = useRef(false);
+  const clinicProfileDraftRef = useRef<ClinicProfileDraft>(emptyClinicProfileDraft());
+  const patientCoreDraftRef = useRef<PatientCoreDraft>(emptyPatientCoreDraft());
+  const releaseSourceRequestAutofillRef = useRef<string | null>(null);
+  const taxPaymentSelectionHydratedKeyRef = useRef<string | null>(null);
+  const paymentReceiptSelectionHydratedKeyRef = useRef<string | null>(null);
+  const outpatient025uDraftHydratedKeyRef = useRef<string | null>(null);
+  const medicalRecordExtractDraftHydratedKeyRef = useRef<string | null>(null);
+  const initialDocumentIssueSignatureDraftRef = useRef<DocumentIssueSignatureDraft | null>(null);
+  const documentIssueSignatureHydratedOrganizationIdRef = useRef<string | null>(null);
+  const onboardingDismissalHydratedOrganizationIdRef = useRef<string | null>(null);
+  const localImagingRecoveryHydratedOrganizationIdRef = useRef<string | null>(null);
+  if (initialUiPreferencesRef.current === null) {
+    initialUiPreferencesRef.current = loadUiPreferences();
+  }
+  if (initialDocumentIssueSignatureDraftRef.current === null) {
+    initialDocumentIssueSignatureDraftRef.current = loadDocumentIssueSignatureDraft();
+  }
+  const initialUiPreferences = initialUiPreferencesRef.current ?? defaultUiPreferences;
+  const initialDocumentIssueSignatureDraft = initialDocumentIssueSignatureDraftRef.current ?? loadDocumentIssueSignatureDraft();
+  const initialTelegramHandoffTarget = initialTelegramHandoffTargetRef.current;
+  const initialRecognitionText =
+    recognitionPresets.find(
+      (preset) => preset.kind === initialUiPreferences.recognitionKind && preset.target === initialUiPreferences.recognitionTarget
+    )?.text ??
+    recognitionPresets[0]?.text ??
+    "";
+  const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
+  const activeOrganizationId = dashboard?.clinicSettings.profile.organizationId ?? null;
+
+
+
+
+
+
+
+
   
   
   
@@ -2804,15 +2805,15 @@ const {
     const activePatientIds = new Set(dashboard.patients.filter((patient) => patient.status === "active").map((patient) => patient.id));
     const firstActivePatientId = dashboard.patients.find((patient) => patient.status === "active")?.id ?? null;
     const doctorIds = new Set(
-      dashboard.clinicSettings.staff
+      dashboard?.clinicSettings.staff
         .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
         .map((member) => member.id)
     );
     const assistantIds = new Set(
-      dashboard.clinicSettings.staff.filter((member) => member.active && member.role === "assistant").map((member) => member.id)
+      dashboard?.clinicSettings.staff.filter((member) => member.active && member.role === "assistant").map((member) => member.id)
     );
-    const staffIds = new Set(dashboard.clinicSettings.staff.filter((member) => member.active).map((member) => member.id));
-    const chairIds = new Set(dashboard.clinicSettings.chairs.filter((chair) => chair.active).map((chair) => chair.id));
+    const staffIds = new Set(dashboard?.clinicSettings.staff.filter((member) => member.active).map((member) => member.id));
+    const chairIds = new Set(dashboard?.clinicSettings.chairs.filter((chair) => chair.active).map((chair) => chair.id));
     const protocolIds = new Set(dashboard.protocolTemplates.map((template) => template.id));
 
     if (selectedPatientId && !activePatientIds.has(selectedPatientId)) setSelectedPatientId(firstActivePatientId);
@@ -2998,6 +2999,7 @@ const {
   }
 
   function buildOnboardingFirstAppointmentIssues(): string[] {
+    if (!clinicProfileDraft) return [];
     const issues: string[] = [];
     const requiredClinicDraftFields: Array<[string, string]> = [
       ["название клиники", clinicProfileDraft.clinicName],
@@ -4207,7 +4209,7 @@ const {
 
   useEffect(() => {
     if (!dashboard?.clinicSettings.profile || clinicProfileDraftHydratedRef.current) return;
-    setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard.clinicSettings.profile));
+    setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard?.clinicSettings.profile));
     setClinicProfileDirty(false);
     clinicProfileDraftHydratedRef.current = true;
   }, [dashboard]);
@@ -4216,7 +4218,7 @@ const {
     if (!dashboard) return;
     setStaffScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard.clinicSettings.staff.forEach((member) => {
+      dashboard?.clinicSettings.staff.forEach((member) => {
         next[member.id] = current[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
       });
       return next;
@@ -4227,7 +4229,7 @@ const {
     if (!dashboard) return;
     setChairScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard.clinicSettings.chairs.forEach((chair) => {
+      dashboard?.clinicSettings.chairs.forEach((chair) => {
         next[chair.id] = current[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
       });
       return next;
@@ -4635,7 +4637,7 @@ const {
         if (scheduleChairFilterId && appointment.chairId !== scheduleChairFilterId) return false;
         if (scheduleStatusFilter !== "all" && appointment.status !== scheduleStatusFilter) return false;
         if (scheduleDateFilter) {
-          const localAppointmentDate = toDateTimeLocalValue(appointment.startsAt, dashboard.clinicSettings.profile.timezone).slice(0, 10);
+          const localAppointmentDate = toDateTimeLocalValue(appointment.startsAt, dashboard?.clinicSettings.profile.timezone).slice(0, 10);
           if (localAppointmentDate !== scheduleDateFilter) return false;
         }
         return true;
@@ -4744,7 +4746,7 @@ const {
 
   const activeDoctor = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard.clinicSettings.staff.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
+    return dashboard?.clinicSettings.staff.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const telegramLinkStaffOptions = useMemo(
@@ -4797,7 +4799,7 @@ const {
 
   const activeChair = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard.clinicSettings.chairs.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
+    return dashboard?.clinicSettings.chairs.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const patientInsightById = useMemo(() => {
@@ -6251,7 +6253,7 @@ const {
     dashboard?.documents.filter((document) => documentKindMetadata[document.kind].group === "tax") ?? [];
   const shiftWarnings = dashboard?.shiftIntelligence.scheduleWarnings ?? [];
   const allResourceLoads = dashboard
-    ? [...dashboard.shiftIntelligence.doctorLoads, ...dashboard.shiftIntelligence.assistantLoads, ...dashboard.shiftIntelligence.chairLoads]
+    ? [...dashboard?.shiftIntelligence.doctorLoads, ...dashboard?.shiftIntelligence.assistantLoads, ...dashboard?.shiftIntelligence.chairLoads]
     : [];
   const mostLoadedResource = allResourceLoads.slice().sort((left, right) => right.utilizationPercent - left.utilizationPercent)[0] ?? null;
 
@@ -12346,10 +12348,10 @@ const {
         method: "POST",
         headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          organizationId: dashboard.clinicSettings.profile.organizationId,
+          organizationId: dashboard?.clinicSettings.profile.organizationId,
           subjectType: telegramLinkSubjectType,
           subjectId,
-          clinicId: dashboard.clinicSettings.profile.organizationId,
+          clinicId: dashboard?.clinicSettings.profile.organizationId,
           botConfigId: telegramModeDraft === "clinic_owned_bot" ? telegramBotConfigId.trim() || undefined : undefined,
           ttlMinutes: parseTelegramLinkTtlMinutes(),
           createdByUserId: activeDoctor?.id ?? null
@@ -12718,63 +12720,35 @@ const {
   const imagingPreviewSource = (study: Dashboard["imagingStudies"][number]) => imagingPreviewObjectUrls[study.id] ?? study.previewUrl;
   const imagingViewerHref = (study: Dashboard["imagingStudies"][number]) => imagingPreviewObjectUrls[study.id] ?? study.viewerUrl ?? study.previewUrl;
 
-  if (accessUnlockRequired && !dashboard) {
-    return (
-      <AppUnlockState
-        accessMessage={accessUnlockMessage}
-        adminSecretDraft={clinicalAdminSecretDraft}
-        onAdminSecretChange={setClinicalAdminSecretDraft}
-        onUnlock={() => unlockTelegramAdminSession("all")}
-      />
-    );
-  }
 
-  if (error && !dashboard) {
-    return (
-      <AppLoadingState
-        message={`Рабочий сервер недоступен: ${error}`}
-        actionLabel="Повторить загрузку"
-        onAction={() => {
-          setError(null);
-          void loadDashboard().catch((loadError: unknown) => {
-            setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
-          });
-        }}
-      />
-    );
-  }
-
-  if (!dashboard || !activePatient) {
-    return <AppLoadingState message="Загрузка рабочей смены" />;
-  }
 
   const activeWorkspaceProfile =
-    dashboard.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard.clinicSettings.profile.mode) ??
-    dashboard.clinicSettings.workspaceProfiles[0];
+    dashboard?.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard?.clinicSettings.profile.mode) ??
+    dashboard?.clinicSettings.workspaceProfiles[0];
   const settingsAdminSecretDomain: AdminSecretUnlockDomain = settingsTab === "telegram" ? "telegram" : "settings";
   const activeRolePolicy =
-    dashboard.clinicSettings.roleAccessPolicies.find((policy) => policy.role === selectedWorkspaceRole) ??
-    dashboard.clinicSettings.roleAccessPolicies.find((policy) => policy.role === "doctor") ??
-    dashboard.clinicSettings.roleAccessPolicies[0];
+    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === selectedWorkspaceRole) ??
+    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === "doctor") ??
+    dashboard?.clinicSettings.roleAccessPolicies[0];
   const activeQueueRole: StaffRole = selectedWorkspaceRole === "owner" ? "manager" : selectedWorkspaceRole;
   const activeRoleQueue =
-    dashboard.shiftIntelligence.roleQueues.find((queue) => queue.role === activeQueueRole) ?? dashboard.shiftIntelligence.roleQueues[0];
+    dashboard?.shiftIntelligence.roleQueues.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence.roleQueues[0];
   const activeRoleWritableSections = activeRolePolicy?.canWrite ?? [];
   const activeRoleRestrictedSections = activeRolePolicy?.restricted ?? [];
-  const roleRecommendedActions = dashboard.recommendedActions.filter(
+  const roleRecommendedActions = (dashboard?.recommendedActions ?? []).filter(
     (action) => action.role === selectedWorkspaceRole || (selectedWorkspaceRole === "owner" && action.role === "manager")
   );
-  const visibleRecommendedActions = (roleRecommendedActions.length ? roleRecommendedActions : dashboard.recommendedActions).slice(0, 4);
-  const roleScheduleSuggestions = dashboard.scheduleSuggestions.filter(
+  const visibleRecommendedActions = (roleRecommendedActions.length ? roleRecommendedActions : (dashboard?.recommendedActions ?? [])).slice(0, 4);
+  const roleScheduleSuggestions = (dashboard?.scheduleSuggestions ?? []).filter(
     (suggestion) => suggestion.ownerRole === selectedWorkspaceRole || (selectedWorkspaceRole === "owner" && suggestion.ownerRole === "manager")
   );
-  const visibleScheduleSuggestions = (roleScheduleSuggestions.length ? roleScheduleSuggestions : dashboard.scheduleSuggestions).slice(0, 3);
-  const legalMissingFields = clinicLegalMissingFields(dashboard.clinicSettings.profile);
-  const legalReadinessPercent = clinicLegalReadinessPercent(dashboard.clinicSettings.profile);
-  const onboardingFirstAppointmentIssues = buildOnboardingFirstAppointmentIssues();
-  const onboardingDocumentReadinessIssues = buildOnboardingDocumentReadinessIssues();
+  const visibleScheduleSuggestions = (roleScheduleSuggestions.length ? roleScheduleSuggestions : (dashboard?.scheduleSuggestions ?? [])).slice(0, 3);
+  const legalMissingFields = dashboard ? clinicLegalMissingFields(dashboard.clinicSettings.profile) : [];
+  const legalReadinessPercent = dashboard ? clinicLegalReadinessPercent(dashboard.clinicSettings.profile) : 0;
+  const onboardingFirstAppointmentIssues = dashboard ? buildOnboardingFirstAppointmentIssues() : [];
+  const onboardingDocumentReadinessIssues = dashboard ? buildOnboardingDocumentReadinessIssues() : [];
   const onboardingBlockingIssues = onboardingFirstAppointmentIssues;
-  const onboardingTelegramRecommendations = buildOnboardingTelegramRecommendations();
+  const onboardingTelegramRecommendations = dashboard ? buildOnboardingTelegramRecommendations() : [];
   const onboardingReadyToFinish = onboardingFirstAppointmentIssues.length === 0;
   const onboardingDocumentsReady = onboardingDocumentReadinessIssues.length === 0;
   const newStaffReadyToCreate = newStaffName.trim().length > 0;
@@ -12806,51 +12780,6 @@ const {
   };
 
   return {
-    AlertTriangle,
-    AppLoadingState,
-    ArrowRight,
-    Bot,
-    CalendarDays,
-    Check,
-    CheckCircle2,
-    ClinicMode,
-    ClinicalRulePanel,
-    ClipboardCheck,
-    CommunicationsView,
-    CtPlanningToolsPanel,
-    DentalSpecialty,
-    DocumentIngestionTarget,
-    DocumentsView,
-    ExternalLink,
-    FinanceView,
-    FlipHorizontal,
-    ImageIcon,
-    ImagingView,
-    ImportSourceKind,
-    MarketingView,
-    Mic,
-    PatientCockpit,
-    PatientsView,
-    Plus,
-    PricelistSourceKind,
-    RefreshCw,
-    RotateCcw,
-    RotateCw,
-    ScheduleView,
-    SettingsView,
-    ShieldCheck,
-    ShiftView,
-    SmartImportMode,
-    Sparkles,
-    StaffRole,
-    Suspense,
-    VisitView,
-    WorkspaceContinuityStrip,
-    WorkspaceRouteErrorBoundary,
-    WorkspaceSidebar,
-    WorkspaceTopbar,
-    ZoomIn,
-    ZoomOut,
     acceptDraftToVisit,
     activeAppointment,
     activeChair,
@@ -13782,6 +13711,12 @@ const {
     weekdayOptions,
     workspaceScopeLabels,
     xrayPregnancyStatusOptions,
-    xrayStudyTypeOptions
+    xrayStudyTypeOptions,
+    accessUnlockRequired,
+    accessUnlockMessage,
+    clinicalAdminSecretDraft,
+    setClinicalAdminSecretDraft,
+    loadDashboard,
+    operatorWorkflowFailureMessage
   };
 }

@@ -923,51 +923,6 @@ import {
 export function App() {
   
   const {
-    AlertTriangle,
-    AppLoadingState,
-    ArrowRight,
-    Bot,
-    CalendarDays,
-    Check,
-    CheckCircle2,
-    ClinicMode,
-    ClinicalRulePanel,
-    ClipboardCheck,
-    CommunicationsView,
-    CtPlanningToolsPanel,
-    DentalSpecialty,
-    DocumentIngestionTarget,
-    DocumentsView,
-    ExternalLink,
-    FinanceView,
-    FlipHorizontal,
-    ImageIcon,
-    ImagingView,
-    ImportSourceKind,
-    MarketingView,
-    Mic,
-    PatientCockpit,
-    PatientsView,
-    Plus,
-    PricelistSourceKind,
-    RefreshCw,
-    RotateCcw,
-    RotateCw,
-    ScheduleView,
-    SettingsView,
-    ShieldCheck,
-    ShiftView,
-    SmartImportMode,
-    Sparkles,
-    StaffRole,
-    Suspense,
-    VisitView,
-    WorkspaceContinuityStrip,
-    WorkspaceRouteErrorBoundary,
-    WorkspaceSidebar,
-    WorkspaceTopbar,
-    ZoomIn,
-    ZoomOut,
     acceptDraftToVisit,
     activeAppointment,
     activeChair,
@@ -1899,8 +1854,45 @@ export function App() {
     weekdayOptions,
     workspaceScopeLabels,
     xrayPregnancyStatusOptions,
-    xrayStudyTypeOptions
-  } = useAppLogic();
+    xrayStudyTypeOptions,
+  
+  accessUnlockRequired,
+  accessUnlockMessage,
+  clinicalAdminSecretDraft,
+  setClinicalAdminSecretDraft,
+  loadDashboard,
+  operatorWorkflowFailureMessage
+} = useAppLogic();
+
+  if (accessUnlockRequired && !dashboard) {
+    return (
+      <AppUnlockState
+        accessMessage={accessUnlockMessage}
+        adminSecretDraft={clinicalAdminSecretDraft}
+        onAdminSecretChange={setClinicalAdminSecretDraft}
+        onUnlock={() => unlockTelegramAdminSession("all")}
+      />
+    );
+  }
+
+  if (error && !dashboard) {
+    return (
+      <AppLoadingState
+        message={`Рабочий сервер недоступен: ${error}`}
+        actionLabel="Повторить загрузку"
+        onAction={() => {
+          setError(null);
+          void loadDashboard().catch((loadError: unknown) => {
+            setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError));
+          });
+        }}
+      />
+    );
+  }
+
+  if (!dashboard || !activePatient) {
+    return <AppLoadingState message="Загрузка рабочей смены" />;
+  }
 
   return (
     <main className="app-shell">

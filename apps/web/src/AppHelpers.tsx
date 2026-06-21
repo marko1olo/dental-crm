@@ -374,7 +374,7 @@ const ScheduleView = lazy(() => import("./ScheduleView").then((module) => ({ def
 const PatientsView = lazy(() => import("./PatientsView").then((module) => ({ default: module.PatientsView })));
 const MarketingView = lazy(() => import("./MarketingView").then((module) => ({ default: module.MarketingView })));
 
-function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
+export function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
   return Boolean(status?.serverTranscriptionCurrentlyAvailable ?? status?.serverTranscriptionEnabled);
 }
 
