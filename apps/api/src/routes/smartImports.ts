@@ -1733,8 +1733,9 @@ async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>
     "foreach ($l in $shortcuts) { if ($l) { $rows += [pscustomobject]@{ channel='shortcut'; value=[string]$l } } }",
     "$rows | ConvertTo-Json -Compress"
   ].join("; ");
+  const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
-    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script], {
+    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
       timeout: 2500,
       maxBuffer: 160 * 1024,
       windowsHide: true
@@ -2028,8 +2029,9 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
     "$rows = Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { [pscustomobject]@{ root=[string]$_.Root; displayRoot=[string]$_.DisplayRoot } }",
     "$rows | ConvertTo-Json -Compress"
   ].join("; ");
+  const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
-    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script], {
+    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
       timeout: 1600,
       maxBuffer: 80 * 1024,
       windowsHide: true
