@@ -7,6 +7,7 @@ import { sleep } from "./lib/sleep.mjs";
 import { findFreePort } from "./lib/findFreePort.mjs";
 import { waitFor, evaluate, setFileInputFiles } from "./lib/cdp.mjs";
 import path from "node:path";
+import { inputHelpersExpression } from "./lib/inputHelpersExpression.mjs";
 
 const width = Number(process.env.SMOKE_WIDTH ?? 1440);
 const height = Number(process.env.SMOKE_HEIGHT ?? 1100);
@@ -198,23 +199,6 @@ async function createFixtureFiles() {
 }
 
 
-
-function inputHelpersExpression(body) {
-  return `(() => {
-    const setFieldValue = (element, value) => {
-      const prototype = element instanceof HTMLTextAreaElement
-        ? HTMLTextAreaElement.prototype
-        : element instanceof HTMLSelectElement
-          ? HTMLSelectElement.prototype
-          : HTMLInputElement.prototype;
-      const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
-      descriptor?.set?.call(element, value);
-      element.dispatchEvent(new Event("input", { bubbles: true }));
-      element.dispatchEvent(new Event("change", { bubbles: true }));
-    };
-    ${body}
-  })()`;
-}
 
 await mkdir(tempRoot, { recursive: true });
 await mkdir(screenshotDir, { recursive: true });
