@@ -96,7 +96,9 @@ async function waitForHttp(url, label, attempts = 120) {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       const response = await fetch(url, { cache: "no-store" });
-      if (response.ok) return response;
+      if (response.ok) {
+        return response;
+      }
       lastError = new Error(`${label} HTTP ${response.status}`);
     } catch (error) {
       lastError = error;
@@ -184,7 +186,9 @@ async function waitFor(cdp, expression, label, attempts = 80) {
       expression,
       returnByValue: true
     });
-    if (snapshot.result.value) return snapshot.result.value;
+    if (snapshot.result.value) {
+      return snapshot.result.value;
+    }
     await sleep(250);
   }
   throw new Error(`${label} did not become ready: ${JSON.stringify(snapshot?.result?.value ?? null)}`);
@@ -228,7 +232,9 @@ async function waitForDashboard(predicate, label, attempts = 80) {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     current = await dashboard();
     const result = predicate(current);
-    if (result) return { dashboard: current, result };
+    if (result) {
+      return { dashboard: current, result };
+    }
     await sleep(250);
   }
   throw new Error(`${label} did not appear in dashboard`);
@@ -258,13 +264,17 @@ async function setFileInputFiles(cdp, selector, files) {
     nodeId: documentNode.root.nodeId,
     selector
   });
-  if (!inputNode.nodeId) throw new Error(`File input not found: ${selector}`);
+  if (!inputNode.nodeId) {
+    throw new Error(`File input not found: ${selector}`);
+  }
   await cdp.send("DOM.setFileInputFiles", { nodeId: inputNode.nodeId, files });
   await evaluate(
     cdp,
     `(() => {
       const input = document.querySelector(${JSON.stringify(selector)});
-      if (!input) return { ok: false, reason: "missing_input" };
+      if (!input) {
+        return { ok: false, reason: "missing_input" };
+      }
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
       return { ok: true, filesLength: input.files ? input.files.length : 0 };
@@ -356,7 +366,9 @@ try {
   const initialCommunicationEventCount = initialDashboard.communicationEvents.length;
   const openCommunicationTask = initialDashboard.communicationTasks.find((task) => task.status !== "completed");
   const activePatientName = initialDashboard.patients.find((patient) => patient.id === initialDashboard.activeVisit.patientId)?.fullName;
-  if (!activePatientName) throw new Error("Active patient was not found in isolated dashboard");
+  if (!activePatientName) {
+    throw new Error("Active patient was not found in isolated dashboard");
+  }
 
   await mkdir(browserProfileDir, { recursive: true });
   browserProcess = spawnTracked(
@@ -383,7 +395,9 @@ try {
     processExitFailure(browserProcess, "browser")
   ]);
   const pageTarget = targets.find((target) => target.type === "page") ?? targets[0];
-  if (!pageTarget?.webSocketDebuggerUrl) throw new Error("No page CDP target found");
+  if (!pageTarget?.webSocketDebuggerUrl) {
+    throw new Error("No page CDP target found");
+  }
 
   const cdp = connectCdp(pageTarget.webSocketDebuggerUrl);
   await cdp.opened;
@@ -398,13 +412,17 @@ try {
     cdp,
     inputHelpersExpression(`
       const amount = document.querySelector("#payment-amount-input");
-      if (!amount) return { ok: false, reason: "missing_amount_input" };
+      if (!amount) {
+        return { ok: false, reason: "missing_amount_input" };
+      }
       setFieldValue(amount, "1200");
       return { ok: true, amount: amount.value };
     `),
     "fill payment amount"
   );
-  if (!paymentInputResult.ok) throw new Error(`Payment form was not filled: ${JSON.stringify(paymentInputResult)}`);
+  if (!paymentInputResult.ok) {
+    throw new Error(`Payment form was not filled: ${JSON.stringify(paymentInputResult)}`);
+  }
   await waitFor(
     cdp,
     `(() => {
@@ -417,7 +435,9 @@ try {
     cdp,
     `(() => {
       const button = document.querySelector("#payment-capture button.primary-button");
-      if (!button || button.disabled) return { ok: false, disabled: button?.disabled ?? null };
+      if (!button || button.disabled) {
+        return { ok: false, disabled: button?.disabled ?? null };
+      }
       button.click();
       return { ok: true };
     })()`,
@@ -435,10 +455,14 @@ try {
     cdp,
     inputHelpersExpression(`
       const kind = document.querySelector(".document-factory-selected-kind select");
-      if (!kind) return { ok: false, reason: "missing_document_kind_select" };
+      if (!kind) {
+        return { ok: false, reason: "missing_document_kind_select" };
+      }
       setFieldValue(kind, "patient_intake_questionnaire");
       const card = document.querySelector(".document-payload-card");
-      if (!card) return { ok: false, reason: "missing_intake_card" };
+      if (!card) {
+        return { ok: false, reason: "missing_intake_card" };
+      }
       const textareas = Array.from(card.querySelectorAll("textarea"));
       const values = [
         "Test complaint for smoke workflow",
@@ -472,7 +496,9 @@ try {
     cdp,
     `(() => {
       const button = document.querySelector(".document-factory-selected-kind button.primary-button");
-      if (!button || button.disabled) return { ok: false, disabled: button?.disabled ?? null };
+      if (!button || button.disabled) {
+        return { ok: false, disabled: button?.disabled ?? null };
+      }
       button.click();
       return { ok: true };
     })()`,
@@ -489,14 +515,18 @@ try {
     `(() => {
       const watchTool = document.querySelector(".tooth-map-selected button");
       const tooth24 = Array.from(document.querySelectorAll(".tooth-row button")).find((button) => button.textContent.trim() === "24");
-      if (!watchTool || !tooth24) return { ok: false, hasWatchTool: Boolean(watchTool), hasTooth24: Boolean(tooth24) };
+      if (!watchTool || !tooth24) {
+        return { ok: false, hasWatchTool: Boolean(watchTool), hasTooth24: Boolean(tooth24) };
+      }
       watchTool.click();
       tooth24.click();
       return { ok: true, tooth24Class: tooth24.className };
     })()`,
     "mark tooth 24"
   );
-  if (!toothResult.ok) throw new Error(`Tooth map action failed: ${JSON.stringify(toothResult)}`);
+  if (!toothResult.ok) {
+    throw new Error(`Tooth map action failed: ${JSON.stringify(toothResult)}`);
+  }
   await waitFor(
     cdp,
     `(() => {
@@ -514,9 +544,15 @@ try {
   const scheduleAssistant = initialDashboard.clinicSettings.staff.find((member) => member.active && member.role === "assistant");
   const scheduleChair = initialDashboard.clinicSettings.chairs.find((chair) => chair.active);
   const assistantRequired = initialDashboard.clinicSettings.profile.mode !== "solo_doctor";
-  if (!scheduleDoctor) throw new Error("No active doctor or owner found for schedule smoke action");
-  if (!scheduleChair) throw new Error("No active chair found for schedule smoke action");
-  if (assistantRequired && !scheduleAssistant) throw new Error("No active assistant found for schedule smoke action");
+  if (!scheduleDoctor) {
+    throw new Error("No active doctor or owner found for schedule smoke action");
+  }
+  if (!scheduleChair) {
+    throw new Error("No active chair found for schedule smoke action");
+  }
+  if (assistantRequired && !scheduleAssistant) {
+    throw new Error("No active assistant found for schedule smoke action");
+  }
 
   await navigateTo(cdp, "schedule", "#schedule.schedule-panel");
   await waitFor(cdp, `(() => Boolean(document.querySelector(".appointment-create-editor")))()`, "appointment create editor");
@@ -524,7 +560,9 @@ try {
     cdp,
     inputHelpersExpression(`
       const editor = document.querySelector(".appointment-create-editor");
-      if (!editor) return { ok: false, reason: "missing_editor" };
+      if (!editor) {
+        return { ok: false, reason: "missing_editor" };
+      }
       const inputs = Array.from(editor.querySelectorAll("input"));
       const selects = Array.from(editor.querySelectorAll("select"));
       const textarea = editor.querySelector("textarea");
@@ -545,7 +583,9 @@ try {
     `),
     "fill appointment create form"
   );
-  if (!scheduleFormResult.ok) throw new Error(`Appointment create form was not filled: ${JSON.stringify(scheduleFormResult)}`);
+  if (!scheduleFormResult.ok) {
+    throw new Error(`Appointment create form was not filled: ${JSON.stringify(scheduleFormResult)}`);
+  }
   await waitFor(
     cdp,
     `(() => {
@@ -558,7 +598,9 @@ try {
     cdp,
     `(() => {
       const button = document.querySelector(".appointment-create-editor .appointment-editor-actions button.primary-button");
-      if (!button || button.disabled) return { ok: false, disabled: button?.disabled ?? null };
+      if (!button || button.disabled) {
+        return { ok: false, disabled: button?.disabled ?? null };
+      }
       button.click();
       return { ok: true };
     })()`,
@@ -576,7 +618,11 @@ try {
     "created appointment visible in UI"
   );
 
-  if (!openCommunicationTask) throw new Error("No open communication task found for communication smoke action");
+  if (!openCommunicationTask) {
+
+    throw new Error("No open communication task found for communication smoke action");
+
+  }
   await navigateTo(cdp, "communications", "#communications.communications-panel");
   await waitFor(cdp, `(() => document.querySelectorAll(".communication-task").length > 0)()`, "communication task list");
   const communicationResult = await evaluate(
@@ -586,26 +632,36 @@ try {
       const card = Array.from(document.querySelectorAll(".communication-task")).find((candidate) =>
         candidate.textContent.includes(${JSON.stringify(openCommunicationTask.title)})
       );
-      if (!note || !card) return { ok: false, hasNote: Boolean(note), hasCard: Boolean(card) };
+      if (!note || !card) {
+        return { ok: false, hasNote: Boolean(note), hasCard: Boolean(card) };
+      }
       setFieldValue(note, "Synthetic communication close note");
       const select = card.querySelector(".communication-outcome-select select");
-      if (!select) return { ok: false, reason: "missing_outcome_select" };
+      if (!select) {
+        return { ok: false, reason: "missing_outcome_select" };
+      }
       setFieldValue(select, "callback_requested");
       const buttons = Array.from(card.querySelectorAll(".communication-task-actions button"));
       const closeButton = buttons[buttons.length - 1];
-      if (!closeButton) return { ok: false, reason: "missing_close_button", buttonCount: buttons.length };
+      if (!closeButton) {
+        return { ok: false, reason: "missing_close_button", buttonCount: buttons.length };
+      }
       return { ok: true, disabled: closeButton.disabled, buttonCount: buttons.length };
     `),
     "fill communication task completion"
   );
-  if (!communicationResult.ok) throw new Error(`Communication task completion form was not filled: ${JSON.stringify(communicationResult)}`);
+  if (!communicationResult.ok) {
+    throw new Error(`Communication task completion form was not filled: ${JSON.stringify(communicationResult)}`);
+  }
   await waitFor(
     cdp,
     `(() => {
       const card = Array.from(document.querySelectorAll(".communication-task")).find((candidate) =>
         candidate.textContent.includes(${JSON.stringify(openCommunicationTask.title)})
       );
-      if (!card) return null;
+      if (!card) {
+        return null;
+      }
       const buttons = Array.from(card.querySelectorAll(".communication-task-actions button"));
       const closeButton = buttons[buttons.length - 1];
       return closeButton && !closeButton.disabled ? { text: closeButton.textContent.trim() } : null;
@@ -618,10 +674,14 @@ try {
       const card = Array.from(document.querySelectorAll(".communication-task")).find((candidate) =>
         candidate.textContent.includes(${JSON.stringify(openCommunicationTask.title)})
       );
-      if (!card) return { ok: false, reason: "missing_card" };
+      if (!card) {
+        return { ok: false, reason: "missing_card" };
+      }
       const buttons = Array.from(card.querySelectorAll(".communication-task-actions button"));
       const closeButton = buttons[buttons.length - 1];
-      if (!closeButton || closeButton.disabled) return { ok: false, disabled: closeButton?.disabled ?? null };
+      if (!closeButton || closeButton.disabled) {
+        return { ok: false, disabled: closeButton?.disabled ?? null };
+      }
       closeButton.click();
       return { ok: true };
     })()`,
@@ -652,7 +712,9 @@ try {
     inputHelpersExpression(`
       const inputs = Array.from(document.querySelectorAll("#patients .quick-create input"));
       const button = document.querySelector("#patients .quick-create-action");
-      if (inputs.length < 3 || !button) return { ok: false, inputCount: inputs.length, hasButton: Boolean(button) };
+      if (inputs.length < 3 || !button) {
+        return { ok: false, inputCount: inputs.length, hasButton: Boolean(button) };
+      }
       setFieldValue(inputs[0], ${JSON.stringify(patientName)});
       setFieldValue(inputs[1], "+7 900 123-45-67");
       setFieldValue(inputs[2], "1991-02-03");
@@ -660,7 +722,9 @@ try {
     `),
     "fill patient create form"
   );
-  if (!patientCreateResult.ok) throw new Error(`Patient create form was not filled: ${JSON.stringify(patientCreateResult)}`);
+  if (!patientCreateResult.ok) {
+    throw new Error(`Patient create form was not filled: ${JSON.stringify(patientCreateResult)}`);
+  }
   await waitFor(
     cdp,
     `(() => {
@@ -673,7 +737,9 @@ try {
     cdp,
     `(() => {
       const button = document.querySelector("#patients .quick-create-action");
-      if (!button || button.disabled) return { ok: false, disabled: button?.disabled ?? null };
+      if (!button || button.disabled) {
+        return { ok: false, disabled: button?.disabled ?? null };
+      }
       button.click();
       return { ok: true };
     })()`,
@@ -694,7 +760,9 @@ try {
     cdp,
     `(() => {
       const status = document.querySelector('[data-testid="imaging-upload-status"]');
-      if (!status) return null;
+      if (!status) {
+        return null;
+      }
       const text = status.innerText;
       const dicomLike = /DICOM|КТ|РљРў/.test(text);
       return text.includes("3") && dicomLike ? { text } : null;
@@ -713,11 +781,23 @@ try {
   const createdAppointment = finalDashboard.appointments.find((appointment) => appointment.reason === appointmentReason);
   const completedCommunicationTask = finalDashboard.communicationTasks.find((task) => task.id === openCommunicationTask.id && task.status === "completed");
 
-  if (!createdPayment) throw new Error("Recorded payment was not found in final dashboard");
-  if (!createdDocument) throw new Error("Created patient intake document was not found in final dashboard");
-  if (!createdPatient) throw new Error("Created patient was not found in final dashboard");
-  if (!createdAppointment) throw new Error("Created appointment was not found in final dashboard");
-  if (!completedCommunicationTask) throw new Error("Completed communication task was not found in final dashboard");
+  if (!createdPayment) {
+
+    throw new Error("Recorded payment was not found in final dashboard");
+
+  }
+  if (!createdDocument) {
+    throw new Error("Created patient intake document was not found in final dashboard");
+  }
+  if (!createdPatient) {
+    throw new Error("Created patient was not found in final dashboard");
+  }
+  if (!createdAppointment) {
+    throw new Error("Created appointment was not found in final dashboard");
+  }
+  if (!completedCommunicationTask) {
+    throw new Error("Completed communication task was not found in final dashboard");
+  }
 
   console.log(
     JSON.stringify({
