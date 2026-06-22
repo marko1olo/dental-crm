@@ -5,6 +5,7 @@ import os from "node:os";
 import { fetchJson } from "./lib/fetchJson.mjs";
 import { sleep } from "./lib/sleep.mjs";
 import { findFreePort } from "./lib/findFreePort.mjs";
+import { waitFor, evaluate, setFileInputFiles } from "./lib/cdp.mjs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -161,31 +162,7 @@ function connectCdp(wsUrl) {
   };
 }
 
-async function waitFor(cdp, expression, label, attempts = 80) {
-  let snapshot = null;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    snapshot = await cdp.send("Runtime.evaluate", {
-      expression,
-      returnByValue: true
-    });
-    if (snapshot.result.value) {
-      return snapshot.result.value;
-    }
-    await sleep(250);
-  }
-  throw new Error(`${label} did not become ready: ${JSON.stringify(snapshot?.result?.value ?? null)}`);
-}
 
-async function evaluate(cdp, expression, label) {
-  const result = await cdp.send("Runtime.evaluate", {
-    expression,
-    returnByValue: true
-  });
-  if (result.exceptionDetails) {
-    throw new Error(`${label} threw in browser: ${JSON.stringify(result.exceptionDetails)}`);
-  }
-  return result.result.value;
-}
 
 async function navigateTo(cdp, hash, selector) {
   await cdp.send("Page.navigate", { url: `${webBaseUrl}/#${hash}` });
@@ -240,30 +217,7 @@ async function createFixtureFiles() {
   return files;
 }
 
-async function setFileInputFiles(cdp, selector, files) {
-  const documentNode = await cdp.send("DOM.getDocument", { depth: 1 });
-  const inputNode = await cdp.send("DOM.querySelector", {
-    nodeId: documentNode.root.nodeId,
-    selector
-  });
-  if (!inputNode.nodeId) {
-    throw new Error(`File input not found: ${selector}`);
-  }
-  await cdp.send("DOM.setFileInputFiles", { nodeId: inputNode.nodeId, files });
-  await evaluate(
-    cdp,
-    `(() => {
-      const input = document.querySelector(${JSON.stringify(selector)});
-      if (!input) {
-        return { ok: false, reason: "missing_input" };
-      }
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-      return { ok: true, filesLength: input.files ? input.files.length : 0 };
-    })()`,
-    `dispatch files for ${selector}`
-  );
-}
+
 
 function inputHelpersExpression(body) {
   return `(() => {

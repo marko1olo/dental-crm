@@ -5,6 +5,7 @@ import os from "node:os";
 import { fetchJson } from "./lib/fetchJson.mjs";
 import { sleep } from "./lib/sleep.mjs";
 import { findFreePort } from "./lib/findFreePort.mjs";
+import { waitFor } from "./lib/cdp.mjs";
 import path from "node:path";
 
 const baseTargetUrl = process.argv[2] ?? process.env.SMOKE_BASE_URL ?? "http://127.0.0.1:5173/";
@@ -91,18 +92,7 @@ function connectCdp(wsUrl) {
   };
 }
 
-async function waitFor(cdp, expression, label, attempts = 80) {
-  let snapshot = null;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    snapshot = await cdp.send("Runtime.evaluate", {
-      expression,
-      returnByValue: true
-    });
-    if (snapshot.result.value) return snapshot.result.value;
-    await sleep(250);
-  }
-  throw new Error(`${label} did not become ready: ${JSON.stringify(snapshot?.result?.value ?? null)}`);
-}
+
 
 async function cleanup(browser) {
   if (!browser.killed) browser.kill();
