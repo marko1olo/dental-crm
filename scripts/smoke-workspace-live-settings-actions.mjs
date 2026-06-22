@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { spawnTracked, stopTracked, processExitFailure } from "./lib/processTracking.mjs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import { fetchJson } from "./lib/fetchJson.mjs";
@@ -63,39 +64,6 @@ async function waitForHttp(url, label, attempts = 120) {
   throw lastError ?? new Error(`${label} was not reachable`);
 }
 
-
-function spawnTracked(name, command, args, options) {
-  const child = spawn(command, args, options);
-  let stderr = "";
-  let stdout = "";
-  child.stderr?.on("data", (chunk) => {
-    stderr = `${stderr}${chunk.toString("utf8")}`.slice(-4_000);
-  });
-  child.stdout?.on("data", (chunk) => {
-    stdout = `${stdout}${chunk.toString("utf8")}`.slice(-4_000);
-  });
-  return { child, name, stderr: () => stderr, stdout: () => stdout };
-}
-
-async function stopTracked(tracked) {
-  if (!tracked?.child || tracked.child.killed) return;
-  tracked.child.kill();
-  await Promise.race([new Promise((resolve) => tracked.child.once("exit", resolve)), sleep(2_000)]);
-}
-
-function processExitFailure(tracked, label) {
-  return new Promise((_, reject) => {
-    tracked.child.once("exit", (code, signal) => {
-      reject(
-        new Error(
-          `${label} exited early (code=${code ?? "null"}, signal=${signal ?? "null"}) stdout=${tracked
-            .stdout()
-            .slice(-800)} stderr=${tracked.stderr().slice(-800)}`
-        )
-      );
-    });
-  });
-}
 
 function connectCdp(wsUrl) {
   const socket = new WebSocket(wsUrl);
