@@ -53,6 +53,34 @@ try {
   const updatedFileContent = JSON.parse(readFileSync(stateFilePath, "utf8"));
   assert(updatedFileContent.state.staffMembers[0].name === "Dr. Smith Updated", "Updated state payload mismatch");
 
+  // Verify that an error during save does not crash the process
+  let originalWarn = console.warn;
+  let warnMessages = [];
+  console.warn = (msg) => warnMessages.push(msg);
+
+  try {
+    const badTempRoot = mkdtempSync(path.join(tmpdir(), "dental-save-persist-bad-"));
+    const badStateFilePath = path.join(badTempRoot, "state.json");
+    const fs = await import("node:fs");
+    fs.mkdirSync(badStateFilePath); // Make the target file a directory!
+    process.env.DENTAL_STATE_FILE = badStateFilePath;
+
+    let threw = false;
+    try {
+      savePersistentState(dummyState);
+    } catch (err) {
+      threw = true;
+    }
+
+    assert(!threw, "savePersistentState should not throw an error on file system failure");
+    assert(warnMessages.length > 0, "savePersistentState should log a warning on failure");
+    assert(warnMessages[0].startsWith("Dental state file save failed"), "Warning message mismatch");
+
+    fs.rmSync(badTempRoot, { recursive: true, force: true });
+  } finally {
+    console.warn = originalWarn;
+  }
+
   console.log("PASS: savePersistentState verified successfully");
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
