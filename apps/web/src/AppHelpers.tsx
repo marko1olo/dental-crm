@@ -782,8 +782,7 @@ export const documentVoidReasonLabels: Record<DocumentVoidReasonCode, string> = 
 };
 
 export function browserGeneratedId(prefix: string): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return `${prefix}-${crypto.randomUUID()}`;
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${crypto.randomUUID()}`;
 }
 
 export function currentLocalDateTimeInputValue(): string {
