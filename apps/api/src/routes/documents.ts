@@ -66,22 +66,22 @@ import {
 import { buildKnd1151156Xml } from "../documents/taxXml.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
 
-function documentAttachmentFileName(document: GeneratedDocument, extension: "html" | "pdf" | "xml"): string {
+export function documentAttachmentFileName(document: GeneratedDocument, extension: "html" | "pdf" | "xml"): string {
   return `dente-${document.kind}-${document.id}.${extension}`;
 }
 
-function documentRequiresIssuedArchive(document: GeneratedDocument): boolean {
+export function documentRequiresIssuedArchive(document: GeneratedDocument): boolean {
   return document.status === "issued" || (document.status === "voided" && Boolean(document.issuedAt));
 }
 
-function documentHasIssuedArchiveMetadata(document: GeneratedDocument): boolean {
+export function documentHasIssuedArchiveMetadata(document: GeneratedDocument): boolean {
   return Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
 }
 
-const issuedArchiveIntegrityError =
+export const issuedArchiveIntegrityError =
   "Архивная копия выданного документа отсутствует или не прошла проверку целостности.";
 
-function pdfBrowserCandidates(): string[] {
+export function pdfBrowserCandidates(): string[] {
   return [
     "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
     "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -111,17 +111,17 @@ function isSafeBrowserPath(candidate: string): boolean {
   return basename ? allowedPdfBrowserExecutables.has(basename) : false;
 }
 
-function findPdfBrowserPath(): string | null {
+export function findPdfBrowserPath(): string | null {
   return pdfBrowserCandidates().find((candidate) => isSafeBrowserPath(candidate) && existsSync(candidate)) ?? null;
 }
 
-function configuredPdfExportTimeoutMs(): number {
+export function configuredPdfExportTimeoutMs(): number {
   const raw = Number(process.env.DENTE_PDF_EXPORT_TIMEOUT_MS ?? "60000");
   if (!Number.isFinite(raw)) return 60000;
   return Math.min(180000, Math.max(10000, Math.trunc(raw)));
 }
 
-async function readValidPdfFile(pdfPath: string): Promise<Buffer | null> {
+export async function readValidPdfFile(pdfPath: string): Promise<Buffer | null> {
   try {
     const pdf = await readFile(pdfPath);
     if (pdf.length >= 512 && pdf.subarray(0, 4).equals(Buffer.from("%PDF"))) return pdf;
@@ -131,7 +131,7 @@ async function readValidPdfFile(pdfPath: string): Promise<Buffer | null> {
   return null;
 }
 
-async function renderIssuedHtmlToPdf(html: string): Promise<{ ok: true; pdf: Buffer } | { ok: false; error: string }> {
+export async function renderIssuedHtmlToPdf(html: string): Promise<{ ok: true; pdf: Buffer } | { ok: false; error: string }> {
   const browserPath = findPdfBrowserPath();
   if (!browserPath) {
     return {
@@ -229,11 +229,11 @@ async function renderIssuedHtmlToPdf(html: string): Promise<{ ok: true; pdf: Buf
   }
 }
 
-function normalizedDocumentChainValue(value: string | null | undefined): string {
+export function normalizedDocumentChainValue(value: string | null | undefined): string {
   return (value ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("ru-RU");
 }
 
-function normalizedTaxpayerInn(value: string | null | undefined): string {
+export function normalizedTaxpayerInn(value: string | null | undefined): string {
   return (value ?? "").replace(/\D+/g, "");
 }
 
@@ -242,7 +242,7 @@ type TaxCertificateAnnualTaxpayerScope = {
   identityKey: string;
 };
 
-function paymentAnnualTaxpayerScope(payment: Payment): TaxCertificateAnnualTaxpayerScope {
+export function paymentAnnualTaxpayerScope(payment: Payment): TaxCertificateAnnualTaxpayerScope {
   const relationship =
     normalizeTaxApplicationRelationship(payment.payerRelationship) ?? normalizedDocumentChainValue(payment.payerRelationship);
   return {
@@ -256,7 +256,7 @@ function paymentAnnualTaxpayerScope(payment: Payment): TaxCertificateAnnualTaxpa
   };
 }
 
-function annualTaxpayerScopesForDocument(document: GeneratedDocument): TaxCertificateAnnualTaxpayerScope[] {
+export function annualTaxpayerScopesForDocument(document: GeneratedDocument): TaxCertificateAnnualTaxpayerScope[] {
   const scopes = new Map<string, TaxCertificateAnnualTaxpayerScope>();
   const addScope = (scope: TaxCertificateAnnualTaxpayerScope) => {
     const key = scope.inn ? `inn:${scope.inn}` : `identity:${scope.identityKey}`;
@@ -275,7 +275,7 @@ function annualTaxpayerScopesForDocument(document: GeneratedDocument): TaxCertif
   return [...scopes.values()];
 }
 
-function annualTaxpayerScopesOverlap(
+export function annualTaxpayerScopesOverlap(
   left: readonly TaxCertificateAnnualTaxpayerScope[],
   right: readonly TaxCertificateAnnualTaxpayerScope[]
 ): boolean {
@@ -288,7 +288,7 @@ function annualTaxpayerScopesOverlap(
   return false;
 }
 
-function findIssuedDuplicateTaxCertificate(document: GeneratedDocument): GeneratedDocument | null {
+export function findIssuedDuplicateTaxCertificate(document: GeneratedDocument): GeneratedDocument | null {
   if (!taxDocumentDuplicateSensitive(document.kind) || !document.taxYear) return null;
   const targetAnnualScopes = annualTaxpayerScopesForDocument(document);
   const targetReceiptKeys = receiptKeysForTaxDocument(document, payments);
@@ -317,7 +317,7 @@ function findIssuedDuplicateTaxCertificate(document: GeneratedDocument): Generat
   );
 }
 
-function taxSnapshotDocument(document: GeneratedDocument, snapshot: TaxPaymentSnapshot | null): GeneratedDocument {
+export function taxSnapshotDocument(document: GeneratedDocument, snapshot: TaxPaymentSnapshot | null): GeneratedDocument {
   if (!snapshot) return document;
   return {
     ...document,
@@ -326,16 +326,16 @@ function taxSnapshotDocument(document: GeneratedDocument, snapshot: TaxPaymentSn
   };
 }
 
-function cloneSnapshotValue<T>(value: T): T {
+export function cloneSnapshotValue<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-function taxXmlSourceSnapshotSha256(snapshot: TaxXmlSourceSnapshot | null | undefined): string | null {
+export function taxXmlSourceSnapshotSha256(snapshot: TaxXmlSourceSnapshot | null | undefined): string | null {
   if (!snapshot) return null;
   return createHash("sha256").update(JSON.stringify(snapshot), "utf8").digest("hex");
 }
 
-function taxXmlSourceSnapshotForIssue(
+export function taxXmlSourceSnapshotForIssue(
   document: GeneratedDocument,
   patient: Patient,
   snapshot: TaxPaymentSnapshot | null,
@@ -350,24 +350,24 @@ function taxXmlSourceSnapshotForIssue(
   };
 }
 
-function frozenTaxXmlPatient(document: GeneratedDocument, fallbackPatient: Patient): Patient {
+export function frozenTaxXmlPatient(document: GeneratedDocument, fallbackPatient: Patient): Patient {
   return document.taxXmlSourceSnapshot?.patient ?? fallbackPatient;
 }
 
-function frozenTaxXmlClinicProfile(document: GeneratedDocument, fallbackClinicProfile: ClinicProfile): ClinicProfile {
+export function frozenTaxXmlClinicProfile(document: GeneratedDocument, fallbackClinicProfile: ClinicProfile): ClinicProfile {
   return document.taxXmlSourceSnapshot?.clinicProfile ?? fallbackClinicProfile;
 }
 
-function frozenTaxXmlPayments(document: GeneratedDocument, fallbackPayments: Payment[]): Payment[] {
+export function frozenTaxXmlPayments(document: GeneratedDocument, fallbackPayments: Payment[]): Payment[] {
   return document.taxXmlSourceSnapshot?.payments ?? fallbackPayments;
 }
 
-function releasedDocumentTypesCoveredByRequest(releasedTypes: readonly string[], requestedTypes: readonly string[]): boolean {
+export function releasedDocumentTypesCoveredByRequest(releasedTypes: readonly string[], requestedTypes: readonly string[]): boolean {
   const requestedValues = new Set(requestedTypes.map((item) => normalizedDocumentChainValue(item)).filter(Boolean));
   return releasedTypes.every((item) => requestedValues.has(normalizedDocumentChainValue(item)));
 }
 
-function comparableDocumentChainDate(value: string | null | undefined): number | null {
+export function comparableDocumentChainDate(value: string | null | undefined): number | null {
   const normalized = (value ?? "").trim();
   if (!normalized) return null;
   const datePrefix = /^(\d{4})-(\d{2})-(\d{2})/.exec(normalized);
@@ -381,12 +381,12 @@ function comparableDocumentChainDate(value: string | null | undefined): number |
   return parsed;
 }
 
-function documentChainDateIsBlankOrValid(value: string | null | undefined): boolean {
+export function documentChainDateIsBlankOrValid(value: string | null | undefined): boolean {
   const normalized = (value ?? "").trim();
   return !normalized || comparableDocumentChainDate(normalized) !== null;
 }
 
-function documentChainDateRangeIsChronological(
+export function documentChainDateRangeIsChronological(
   periodStart: string | null | undefined,
   periodEnd: string | null | undefined
 ): boolean {
@@ -396,11 +396,11 @@ function documentChainDateRangeIsChronological(
   return start === null || end === null || start <= end;
 }
 
-function medicalRecordExtractPeriodIsChronological(payload: MedicalRecordExtractPayload): boolean {
+export function medicalRecordExtractPeriodIsChronological(payload: MedicalRecordExtractPayload): boolean {
   return documentChainDateRangeIsChronological(payload.periodStart, payload.periodEnd);
 }
 
-function medicalRecordExtractDatesAreValid(payload: MedicalRecordExtractPayload): boolean {
+export function medicalRecordExtractDatesAreValid(payload: MedicalRecordExtractPayload): boolean {
   return (
     documentChainDateIsBlankOrValid(payload.periodStart) &&
     documentChainDateIsBlankOrValid(payload.periodEnd) &&
@@ -409,7 +409,7 @@ function medicalRecordExtractDatesAreValid(payload: MedicalRecordExtractPayload)
   );
 }
 
-function medicalRecordCopyRequestDatesAreValid(payload: MedicalRecordCopyRequestPayload): boolean {
+export function medicalRecordCopyRequestDatesAreValid(payload: MedicalRecordCopyRequestPayload): boolean {
   return (
     documentChainDateIsBlankOrValid(payload.periodStart) &&
     documentChainDateIsBlankOrValid(payload.periodEnd) &&
@@ -418,7 +418,7 @@ function medicalRecordCopyRequestDatesAreValid(payload: MedicalRecordCopyRequest
   );
 }
 
-function outpatientMedicalCard025uDatesAreValid(payload: OutpatientMedicalCard025uPayload): boolean {
+export function outpatientMedicalCard025uDatesAreValid(payload: OutpatientMedicalCard025uPayload): boolean {
   const dates = [
     payload.openedAt,
     payload.periodStart,
@@ -442,7 +442,7 @@ function outpatientMedicalCard025uDatesAreValid(payload: OutpatientMedicalCard02
   return dates.every(documentChainDateIsBlankOrValid) && documentChainDateRangeIsChronological(payload.periodStart, payload.periodEnd);
 }
 
-function medicalDocumentReleaseReceiptDatesAreValid(payload: MedicalDocumentReleaseReceiptPayload): boolean {
+export function medicalDocumentReleaseReceiptDatesAreValid(payload: MedicalDocumentReleaseReceiptPayload): boolean {
   const deliveredAt = comparableDocumentChainDate(payload.deliveredAt);
   const accessExpiresAt = comparableDocumentChainDate(payload.accessExpiresAt);
   if (
@@ -458,7 +458,7 @@ function medicalDocumentReleaseReceiptDatesAreValid(payload: MedicalDocumentRele
   return true;
 }
 
-function releaseMaterialKindForDelivery(
+export function releaseMaterialKindForDelivery(
   deliveryMethod: DocumentReleaseJournalEntry["deliveryMethod"],
   documentTypes: readonly string[] = [],
   includeDicomSourceData = false
@@ -469,7 +469,7 @@ function releaseMaterialKindForDelivery(
   return "copy";
 }
 
-function releaseSourceSnapshotSha256(document: GeneratedDocument, scope: string): string {
+export function releaseSourceSnapshotSha256(document: GeneratedDocument, scope: string): string {
   return createHash("sha256")
     .update(
       JSON.stringify({
@@ -490,7 +490,7 @@ function releaseSourceSnapshotSha256(document: GeneratedDocument, scope: string)
     .digest("hex");
 }
 
-function buildMedicalDocumentReleaseJournalEntry(
+export function buildMedicalDocumentReleaseJournalEntry(
   document: GeneratedDocument,
   issuedAt: string,
   signatureAttestation: DocumentIssueSignatureAttestation
@@ -585,7 +585,7 @@ function buildMedicalDocumentReleaseJournalEntry(
   return null;
 }
 
-function releasePeriodCoveredByRequest(
+export function releasePeriodCoveredByRequest(
   release: MedicalDocumentReleaseReceiptPayload,
   request: MedicalRecordCopyRequestPayload
 ): boolean {
@@ -600,14 +600,14 @@ function releasePeriodCoveredByRequest(
   return true;
 }
 
-function taxCertificateExpectedApplicationForm(document: GeneratedDocument): TaxDeductionApplicationPayload["requestedForm"] | null {
+export function taxCertificateExpectedApplicationForm(document: GeneratedDocument): TaxDeductionApplicationPayload["requestedForm"] | null {
   if (document.kind === "tax_deduction_certificate") return "knd_1151156";
   if (document.kind === "tax_deduction_registry") return "knd_1151156";
   if (document.kind === "legacy_tax_deduction_certificate") return "legacy_2021_2023";
   return null;
 }
 
-function normalizeTaxApplicationRelationship(value: string | null | undefined): TaxDeductionApplicationRelationship | null {
+export function normalizeTaxApplicationRelationship(value: string | null | undefined): TaxDeductionApplicationRelationship | null {
   const normalized = normalizedDocumentChainValue(value);
   if (!normalized) return null;
   if (["self", "patient", "пациент", "сам", "сама", "лично"].includes(normalized)) return "self";
@@ -618,7 +618,7 @@ function normalizeTaxApplicationRelationship(value: string | null | undefined): 
   return null;
 }
 
-function paymentMatchesTaxApplication(payment: Payment, application: TaxDeductionApplicationPayload): boolean {
+export function paymentMatchesTaxApplication(payment: Payment, application: TaxDeductionApplicationPayload): boolean {
   return (
     normalizedDocumentChainValue(payment.payerInn) === normalizedDocumentChainValue(application.taxpayerInn) &&
     normalizedDocumentChainValue(payment.payerFullName) === normalizedDocumentChainValue(application.taxpayerFullName) &&
@@ -628,7 +628,7 @@ function paymentMatchesTaxApplication(payment: Payment, application: TaxDeductio
   );
 }
 
-function taxApplicationMatchesSelectedPayments(paymentsForDocument: Payment[], application: TaxDeductionApplicationPayload): boolean {
+export function taxApplicationMatchesSelectedPayments(paymentsForDocument: Payment[], application: TaxDeductionApplicationPayload): boolean {
   const applicationPaymentIds = application.selectedPaymentIds ?? [];
   if (!applicationPaymentIds.length) return true;
   const documentPaymentIds = new Set(paymentsForDocument.map((payment) => payment.id));
@@ -636,7 +636,7 @@ function taxApplicationMatchesSelectedPayments(paymentsForDocument: Payment[], a
   return applicationPaymentIds.every((paymentId) => documentPaymentIds.has(paymentId));
 }
 
-function hasIssuedTaxApplicationForCertificate(document: GeneratedDocument): boolean {
+export function hasIssuedTaxApplicationForCertificate(document: GeneratedDocument): boolean {
   const expectedForm = taxCertificateExpectedApplicationForm(document);
   if (!expectedForm || !document.taxYear) return false;
   const taxPayments = taxPaymentsForDocumentScope(document, payments);
@@ -662,7 +662,7 @@ function hasIssuedTaxApplicationForCertificate(document: GeneratedDocument): boo
   });
 }
 
-function releaseReceiptMatchesCopyRequest(
+export function releaseReceiptMatchesCopyRequest(
   release: MedicalDocumentReleaseReceiptPayload,
   request: MedicalRecordCopyRequestPayload
 ): boolean {
@@ -676,7 +676,7 @@ function releaseReceiptMatchesCopyRequest(
   );
 }
 
-function findIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): GeneratedDocument | null {
+export function findIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): GeneratedDocument | null {
   const release = document.payload?.medicalDocumentReleaseReceipt;
   if (!release) return null;
   const sourceRequestDocumentId = release.sourceRequestDocumentId;
@@ -696,11 +696,11 @@ function findIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): Ge
   );
 }
 
-function hasIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): boolean {
+export function hasIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): boolean {
   return Boolean(findIssuedMedicalCopyRequestForRelease(document));
 }
 
-function completedWorksActMatchesIssuedContract(document: GeneratedDocument): boolean {
+export function completedWorksActMatchesIssuedContract(document: GeneratedDocument): boolean {
   const act = document.payload?.completedWorksAct;
   if (!act) return false;
   return documents.some((candidate) => {
@@ -716,7 +716,7 @@ function completedWorksActMatchesIssuedContract(document: GeneratedDocument): bo
   });
 }
 
-function medicalRecordExtractVisitDate(visitId: string): number | null {
+export function medicalRecordExtractVisitDate(visitId: string): number | null {
   const visit = findVisitById(visitId);
   if (!visit) return null;
   const appointment = visit.appointmentId ? appointments.find((candidate) => candidate.id === visit.appointmentId) : null;
@@ -727,7 +727,7 @@ function medicalRecordExtractVisitDate(visitId: string): number | null {
   );
 }
 
-function signedMedicalSourceVisitsAreValid(
+export function signedMedicalSourceVisitsAreValid(
   sourceVisitIds: readonly string[],
   document: GeneratedDocument,
   periodStartRaw: string | null | undefined,
@@ -748,40 +748,40 @@ function signedMedicalSourceVisitsAreValid(
   });
 }
 
-function medicalRecordExtractSourcesAreValid(payload: MedicalRecordExtractPayload, document: GeneratedDocument): boolean {
+export function medicalRecordExtractSourcesAreValid(payload: MedicalRecordExtractPayload, document: GeneratedDocument): boolean {
   return signedMedicalSourceVisitsAreValid(payload.sourceVisitIds, document, payload.periodStart, payload.periodEnd);
 }
 
-function outpatientMedicalCard025uSourcesAreValid(payload: OutpatientMedicalCard025uPayload, document: GeneratedDocument): boolean {
+export function outpatientMedicalCard025uSourcesAreValid(payload: OutpatientMedicalCard025uPayload, document: GeneratedDocument): boolean {
   if (!payload.sourceVisitIds.length || !payload.specialistVisitRecords.length) return false;
   const sourceIds = new Set(payload.sourceVisitIds);
   if (payload.specialistVisitRecords.some((record) => !sourceIds.has(record.sourceVisitId))) return false;
   return signedMedicalSourceVisitsAreValid(payload.sourceVisitIds, document, payload.periodStart, payload.periodEnd);
 }
 
-function documentRenderContext() {
+export function documentRenderContext() {
   return { clinicProfile, payments, serviceCatalog, treatmentPlanItems };
 }
 
-function apiError(message: string, error = "DocumentOperationRejected") {
+export function apiError(message: string, error = "DocumentOperationRejected") {
   return {
     error,
     message: repairMojibakeText(message)
   };
 }
 
-const documentCreateValidationMessage =
+export const documentCreateValidationMessage =
   "Документ не создан: выберите пациента, тип документа и заполните обязательные поля формы.";
-const documentIssueValidationMessage =
+export const documentIssueValidationMessage =
   "Документ не выдан: подтвердите подпись или получение, проверку личности и ответственного сотрудника.";
-const documentVoidValidationMessage =
+export const documentVoidValidationMessage =
   "Документ не аннулирован: укажите причину, ответственного сотрудника, архив и проверку статуса.";
 
-function objectRecord(value: unknown): Record<string, unknown> | null {
+export function objectRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
-function documentCreateValidationMessageForRequest(body: unknown): string {
+export function documentCreateValidationMessageForRequest(body: unknown): string {
   const input = objectRecord(body);
   const payload = objectRecord(input?.payload);
   const application = objectRecord(payload?.taxDeductionApplication);
@@ -794,11 +794,11 @@ function documentCreateValidationMessageForRequest(body: unknown): string {
   return documentCreateValidationMessage;
 }
 
-function configuredTaxOfficeCode(): string | null {
+export function configuredTaxOfficeCode(): string | null {
   return process.env.DENTE_FNS_TAX_OFFICE_CODE?.trim() || process.env.FNS_TAX_OFFICE_CODE?.trim() || null;
 }
 
-function documentIssueChainBlockReason(document: GeneratedDocument): string | null {
+export function documentIssueChainBlockReason(document: GeneratedDocument): string | null {
   if (taxCertificateExpectedApplicationForm(document) && !hasIssuedTaxApplicationForCertificate(document)) {
     return "Перед выдачей налогового документа нужно выпустить заявление налогоплательщика с тем же годом, формой, ИНН, реквизитами плательщика и точным набором выбранных фискальных чеков.";
   }
@@ -848,7 +848,7 @@ function documentIssueChainBlockReason(document: GeneratedDocument): string | nu
   return null;
 }
 
-function buildDocumentAuditFacts(document: GeneratedDocument, patient: (typeof patients)[number]) {
+export function buildDocumentAuditFacts(document: GeneratedDocument, patient: (typeof patients)[number]) {
   const renderContext = documentRenderContext();
   const issueBlockReason =
     document.status === "draft" ? documentIssueBlockReason(document, patient, renderContext) ?? documentIssueChainBlockReason(document) : null;
@@ -938,373 +938,21 @@ function buildDocumentAuditFacts(document: GeneratedDocument, patient: (typeof p
   });
 }
 
+export { documentIssueBlockReason, renderDocumentHtml, taxFiscalDocumentBlockReason };
+import { register as registerCreate } from "./documents/create.js";
+import { register as registerIssue } from "./documents/issue.js";
+import { register as registerVoid } from "./documents/void.js";
+import { register as registerTaxXml } from "./documents/taxXml.js";
+import { register as registerAuditFacts } from "./documents/auditFacts.js";
+import { register as registerPdf } from "./documents/pdf.js";
+import { register as registerHtml } from "./documents/html.js";
+
 export async function registerDocumentRoutes(app: FastifyInstance) {
-  app.post("/api/documents", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "document create"))) return;
-    const parsedInput = createDocumentSchema.safeParse(request.body);
-    if (!parsedInput.success) {
-      return reply.code(400).send({
-        error: "DocumentValidationFailed",
-        message: repairMojibakeText(documentCreateValidationMessageForRequest(request.body))
-      });
-    }
-    const input = repairMojibakeDeep(parsedInput.data);
-    const patient = patients.find((candidate) => candidate.id === input.patientId);
-    const visit = input.visitId ? findVisitById(input.visitId) : null;
-    const validation = validateDocumentCreation(input, {
-      patient: patient ?? null,
-      visit,
-      paidAmountRub: paidAmountRubForDocument(input.kind, input, payments),
-      plannedAmountRub: plannedAmountRubForDocument(input.kind, input, treatmentPlanItems),
-      taxPaymentSelectionError: taxPaymentSelectionErrorForDocument(input, payments),
-      paymentReceiptSelectionError: paymentReceiptSelectionErrorForDocument(input, payments),
-      paymentRefundCorrectionSelectionError: paymentRefundCorrectionSelectionErrorForDocument(input, payments)
-    });
-    if (!validation.ok) {
-      return reply.code(validation.statusCode).send(apiError(validation.error));
-    }
-
-    const document = createGeneratedDocument(validation.input);
-    return reply.code(201).send(publicGeneratedDocumentSchema.parse(document));
-  });
-
-  app.post("/api/documents/:id/issue", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "document issue"))) return;
-    const { id } = request.params as { id: string };
-    const existing = documents.find((candidate) => candidate.id === id);
-    if (!existing) {
-      return reply.code(404).send(apiError("Документ не найден"));
-    }
-    if (existing.status === "voided") {
-      return reply.code(409).send(apiError("Аннулированный документ нельзя выдать."));
-    }
-    if (existing.status === "issued") {
-      return reply.code(409).send(apiError("Документ уже выдан."));
-    }
-    const patient = patients.find((candidate) => candidate.id === existing.patientId);
-    if (!patient) {
-      return reply.code(404).send(apiError("Пациент не найден"));
-    }
-    const taxPaymentSnapshot = taxDocumentUsesPaymentSnapshot(existing.kind)
-      ? buildTaxPaymentSnapshotForIssue(existing, payments, documents)
-      : null;
-    if (taxDocumentUsesPaymentSnapshot(existing.kind) && !taxPaymentSnapshot) {
-      const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(existing);
-      if (duplicateTaxCertificate) {
-        return reply
-          .code(409)
-          .send(
-            apiError(
-              "За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. Справка должна быть годовой; сначала аннулируйте или корректно оформите предыдущую справку."
-            )
-          );
-      }
-      return reply
-        .code(409)
-        .send(apiError("Для налогового документа нет новых оплаченных фискальных чеков за выбранный год."));
-    }
-
-    const issueCandidate = taxSnapshotDocument(existing, taxPaymentSnapshot);
-    const renderContext = documentRenderContext();
-    const blockReason = documentIssueBlockReason(issueCandidate, patient, renderContext);
-    if (blockReason) {
-      return reply.code(409).send(apiError(blockReason));
-    }
-    const chainBlockReason = documentIssueChainBlockReason(issueCandidate);
-    if (chainBlockReason) {
-      return reply.code(409).send(apiError(chainBlockReason));
-    }
-    const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(issueCandidate);
-    if (duplicateTaxCertificate) {
-      return reply
-        .code(409)
-        .send(
-          apiError(
-            "За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. Справка должна быть годовой; сначала аннулируйте или корректно оформите предыдущую справку."
-          )
-        );
-    }
-
-    const parsedIssueInput = issueDocumentSchema.safeParse(request.body);
-    if (!parsedIssueInput.success) {
-      return reply.code(400).send({
-        error: "DocumentIssueValidationFailed",
-        message: repairMojibakeText(documentIssueValidationMessage)
-      });
-    }
-
-    const signatureAttestation = repairMojibakeDeep(parsedIssueInput.data.signatureAttestation);
-    const issuedAt = new Date().toISOString();
-    const releaseJournalEntry = buildMedicalDocumentReleaseJournalEntry(
-      issueCandidate,
-      issuedAt,
-      signatureAttestation
-    );
-    const taxXmlSourceSnapshot = taxXmlSourceSnapshotForIssue(issueCandidate, patient, taxPaymentSnapshot, issuedAt);
-    const issuedDocumentCandidate = {
-      ...issueCandidate,
-      status: "issued" as const,
-      issuedAt,
-      signatureAttestation,
-      releaseJournalEntry,
-      taxXmlSourceSnapshot
-    };
-    const issuedHtml = renderDocumentHtml(issuedDocumentCandidate, patient, renderContext);
-    const document = issueGeneratedDocument(id, {
-      issuedAt,
-      releaseJournalEntry,
-      snapshotHtml: issuedHtml,
-      signatureAttestation,
-      taxPaymentSnapshot,
-      taxXmlSourceSnapshot,
-      totalAmountRub: issueCandidate.totalAmountRub
-    });
-    if (!document) {
-      return reply.code(409).send(apiError("Статус документа нельзя изменить."));
-    }
-    return reply.send(publicGeneratedDocumentSchema.parse(document));
-  });
-
-  app.post("/api/documents/:id/void", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "document void"))) return;
-    const { id } = request.params as { id: string };
-    const existing = documents.find((candidate) => candidate.id === id);
-    if (!existing) {
-      return reply.code(404).send(apiError("Документ не найден"));
-    }
-
-    const parsedVoidInput = voidDocumentSchema.safeParse(request.body);
-    if (!parsedVoidInput.success) {
-      return reply.code(400).send({
-        error: "DocumentVoidValidationFailed",
-        message: repairMojibakeText(documentVoidValidationMessage)
-      });
-    }
-
-    const voidAttestationInput = repairMojibakeDeep(parsedVoidInput.data.voidAttestation);
-    const correctionDocumentId = voidAttestationInput.correctionDocumentId ?? null;
-    if (correctionDocumentId === id) {
-      return reply.code(409).send(apiError("Документ не может ссылаться на себя как на исправление."));
-    }
-    if (correctionDocumentId) {
-      const correctionDocument = documents.find((candidate) => candidate.id === correctionDocumentId);
-      if (
-        !correctionDocument ||
-        correctionDocument.organizationId !== existing.organizationId ||
-        correctionDocument.patientId !== existing.patientId ||
-        correctionDocument.status === "voided"
-      ) {
-        return reply
-          .code(409)
-          .send(apiError("Исправляющий документ должен существовать у того же пациента, той же клиники и не быть аннулированным."));
-      }
-    }
-
-    const voidedAt = new Date().toISOString();
-    const document = voidGeneratedDocument(id, {
-      voidedAt,
-      voidAttestation: {
-        ...voidAttestationInput,
-        voidedAt
-      }
-    });
-    if (!document) {
-      return reply.code(409).send(apiError("Статус документа нельзя изменить."));
-    }
-    return reply.send(publicGeneratedDocumentSchema.parse(document));
-  });
-
-  app.get("/api/documents/:id/tax-xml", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "document tax xml"))) return;
-    const { id } = request.params as { id: string };
-    const document = documents.find((candidate) => candidate.id === id);
-    if (!document) {
-      return reply.code(404).send(apiError("Документ не найден"));
-    }
-    if (document.status === "voided") {
-      return reply.code(409).send(apiError("Аннулированный документ нельзя выгрузить в XML ФНС."));
-    }
-    if (document.status !== "issued") {
-      return reply.code(409).send(apiError("XML ФНС можно выгрузить только после выдачи налоговой справки. Сначала выпустите справку и заморозьте состав оплат."));
-    }
-    if (!document.signatureAttestation) {
-      return reply.code(409).send(apiError("XML ФНС нельзя выгрузить без отметки подписания и получения выданного документа."));
-    }
-
-    if (document.taxXmlSnapshot) {
-      return reply
-        .header("Content-Disposition", `attachment; filename="${document.taxXmlSnapshot.fileName}.xml"`)
-        .type("application/xml; charset=utf-8")
-        .send(document.taxXmlSnapshot.xml);
-    }
-
-    const patient = patients.find((candidate) => candidate.id === document.patientId);
-    if (!patient) {
-      return reply.code(404).send(apiError("Пациент не найден"));
-    }
-
-    const taxPaymentSnapshot =
-      document.taxPaymentSnapshot ??
-      (taxDocumentUsesPaymentSnapshot(document.kind) ? buildTaxPaymentSnapshotForIssue(document, payments, documents) : null);
-    if (taxDocumentUsesPaymentSnapshot(document.kind) && !taxPaymentSnapshot) {
-      const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(document);
-      if (duplicateTaxCertificate) {
-        return reply
-          .code(409)
-          .send(
-            apiError(
-              "За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. XML ФНС нельзя собирать до аннулирования или корректировки предыдущей справки."
-            )
-          );
-      }
-      return reply
-        .code(409)
-        .send(apiError("Для XML ФНС нет новых оплаченных фискальных чеков за выбранный год."));
-    }
-    const xmlDocument = taxSnapshotDocument(document, taxPaymentSnapshot);
-    const xmlSourceSnapshotSha256 = taxXmlSourceSnapshotSha256(xmlDocument.taxXmlSourceSnapshot);
-    if (!xmlSourceSnapshotSha256) {
-      return reply
-        .code(409)
-        .send(apiError("XML ФНС нельзя собрать без снимка данных пациента, клиники и платежей на момент выдачи. Аннулируйте и выдайте исправленную справку."));
-    }
-    const renderContext = documentRenderContext();
-    const xmlPatient = frozenTaxXmlPatient(xmlDocument, patient);
-    const xmlClinicProfile = frozenTaxXmlClinicProfile(xmlDocument, clinicProfile);
-    const xmlPayments = frozenTaxXmlPayments(xmlDocument, payments);
-    const xmlRenderContext = { ...renderContext, clinicProfile: xmlClinicProfile, payments: xmlPayments };
-    const blockReason = documentIssueBlockReason(xmlDocument, xmlPatient, xmlRenderContext);
-    if (blockReason) {
-      return reply.code(409).send(apiError(blockReason));
-    }
-    const taxBlockReason = taxFiscalDocumentBlockReason(xmlDocument, xmlPatient, xmlRenderContext);
-    if (taxBlockReason) {
-      return reply.code(409).send(apiError(taxBlockReason));
-    }
-    const chainBlockReason = documentIssueChainBlockReason(xmlDocument);
-    if (chainBlockReason) {
-      return reply.code(409).send(apiError(chainBlockReason));
-    }
-    const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(xmlDocument);
-    if (duplicateTaxCertificate) {
-      return reply
-        .code(409)
-        .send(
-          apiError(
-            "За этот налоговый год и этого налогоплательщика уже выдана налоговая справка. XML ФНС нельзя собирать до аннулирования или корректировки предыдущей справки."
-          )
-        );
-    }
-
-    const taxOfficeCode = configuredTaxOfficeCode();
-    const result = buildKnd1151156Xml(xmlDocument, xmlPatient, {
-      clinicProfile: xmlClinicProfile,
-      payments: xmlPayments,
-      taxOfficeCode
-    });
-    if (!result.ok) {
-      return reply.code(result.statusCode).send(apiError(result.error));
-    }
-    const storedDocument = storeTaxXmlSnapshot(document.id, {
-      fileName: result.fileName,
-      xml: result.xml,
-      taxOfficeCode: (taxOfficeCode ?? "").replace(/\D+/g, ""),
-      sourceSnapshotSha256: xmlSourceSnapshotSha256
-    });
-    const snapshot = storedDocument?.taxXmlSnapshot;
-    if (!snapshot) {
-      return reply.code(409).send(apiError("XML ФНС собран, но не сохранен как архивный снимок."));
-    }
-
-    return reply
-      .header("Content-Disposition", `attachment; filename="${snapshot.fileName}.xml"`)
-      .type("application/xml; charset=utf-8")
-      .send(snapshot.xml);
-  });
-
-  app.get("/api/documents/:id/audit-facts", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "document audit facts"))) return;
-    const { id } = request.params as { id: string };
-    const document = documents.find((candidate) => candidate.id === id);
-    if (!document) {
-      return reply.code(404).send(apiError("Документ не найден"));
-    }
-
-    const patient = patients.find((candidate) => candidate.id === document.patientId);
-    if (!patient) {
-      return reply.code(404).send(apiError("Пациент не найден"));
-    }
-
-    return reply.send(buildDocumentAuditFacts(document, patient));
-  });
-
-  app.get<{ Params: { id: string } }>("/api/documents/:id/pdf", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "document pdf"))) return;
-    const { id } = request.params;
-    const document = documents.find((candidate) => candidate.id === id);
-    if (!document) {
-      return reply.code(404).send(apiError("Документ не найден"));
-    }
-    if (!documentRequiresIssuedArchive(document)) {
-      return reply.code(409).send(apiError("PDF можно выгрузить только из выданной архивной HTML-копии."));
-    }
-    if (!document.signatureAttestation) {
-      return reply.code(409).send(apiError("PDF нельзя выгрузить без отметки подписания и получения выданного документа."));
-    }
-
-    if (!documentHasIssuedArchiveMetadata(document)) {
-      return reply.code(409).send(apiError(issuedArchiveIntegrityError));
-    }
-
-    const issuedSnapshot = readIssuedDocumentSnapshot(document);
-    if (!issuedSnapshot) {
-      return reply.code(409).send(apiError("Архивная копия выданного документа отсутствует или не прошла проверку целостности."));
-    }
-
-    const result = await renderIssuedHtmlToPdf(issuedSnapshot);
-    if (!result.ok) {
-      return reply.code(503).send(apiError(result.error));
-    }
-
-    return reply
-      .header("Content-Disposition", `attachment; filename="${documentAttachmentFileName(document, "pdf")}"`)
-      .type("application/pdf")
-      .send(result.pdf);
-  });
-
-  app.get<{ Params: { id: string }; Querystring: { download?: string } }>("/api/documents/:id/html", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "document html"))) return;
-    const { id } = request.params as { id: string };
-    const document = documents.find((candidate) => candidate.id === id);
-    if (!document) {
-      return reply.code(404).send(apiError("Документ не найден"));
-    }
-
-    const patient = patients.find((candidate) => candidate.id === document.patientId);
-    if (!patient) {
-      return reply.code(404).send(apiError("Пациент не найден"));
-    }
-
-    const issuedSnapshot = readIssuedDocumentSnapshot(document);
-    if (documentRequiresIssuedArchive(document)) {
-      if (!documentHasIssuedArchiveMetadata(document)) {
-        return reply.code(409).send(apiError(issuedArchiveIntegrityError));
-      }
-      if (!issuedSnapshot) {
-        return reply.code(409).send(apiError("Архивная копия выданного документа отсутствует или не прошла проверку целостности."));
-      }
-      if (request.query.download === "1" || request.query.download === "true") {
-        reply.header("Content-Disposition", `attachment; filename="${documentAttachmentFileName(document, "html")}"`);
-      }
-      return reply.type("text/html; charset=utf-8").send(issuedSnapshot);
-    }
-
-    const renderContext = documentRenderContext();
-    const blockReason = documentIssueBlockReason(document, patient, renderContext) ?? documentIssueChainBlockReason(document);
-    if (blockReason) {
-      return reply.code(409).send(apiError(`Печатная форма недоступна: ${blockReason}`));
-    }
-
-    return reply.type("text/html; charset=utf-8").send(renderDocumentHtml(document, patient, renderContext));
-  });
+  await registerCreate(app);
+  await registerIssue(app);
+  await registerVoid(app);
+  await registerTaxXml(app);
+  await registerAuditFacts(app);
+  await registerPdf(app);
+  await registerHtml(app);
 }
