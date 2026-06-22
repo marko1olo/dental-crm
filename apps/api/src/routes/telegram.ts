@@ -67,7 +67,7 @@ import type {
   DenteTelegramLinkCodeListStatusFilter
 } from "../sampleData.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
-import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage, type TelegramTransportResult } from "../telegramTransport.js";
+import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage, type TelegramTransportFailure } from "../telegramTransport.js";
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -86,7 +86,6 @@ type TelegramRouteBodySchema<T> = {
 type TelegramRouteBodyParseResult<T> =
   | { ok: true; value: T }
   | { ok: false; message: string };
-type TelegramTransportFailure = Extract<TelegramTransportResult, { ok: false }>;
 type TelegramChatInfo = {
   id: string;
   type: string | null;
