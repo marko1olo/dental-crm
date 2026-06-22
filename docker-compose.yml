@@ -4,15 +4,15 @@ services:
     container_name: dental-crm-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: dental
-      POSTGRES_PASSWORD: dental
-      POSTGRES_DB: dental_crm
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dental -d dental_crm"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 20
