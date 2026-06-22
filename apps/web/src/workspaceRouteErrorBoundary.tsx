@@ -1,14 +1,13 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, type ErrorInfo, type PropsWithChildren } from "react";
 
 export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings" | "visit" | "imaging" | "marketing";
 
-type WorkspaceRouteErrorBoundaryProps = {
-  children: ReactNode;
+type WorkspaceRouteErrorBoundaryProps = PropsWithChildren<{
   label: string;
   panelClassName: string;
   panelId: string;
   view: LazyWorkspaceView;
-};
+}>;
 
 type WorkspaceRouteErrorBoundaryState = {
   detail: string;
