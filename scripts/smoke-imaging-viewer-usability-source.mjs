@@ -949,7 +949,7 @@ requireIn(settingsSource, "resolveMprClinicalPresetProjection(preset.projection,
 requireIn(mprClinicalSource, "sliceFraction", "Clinical CT MPR nearest-protocol matching must include selected slice depth.");
 requireIn(mprClinicalSource, "protocolExact", "Clinical CT MPR roadmap must receive nearest-protocol fit state.");
 requireIn(mprClinicalSource, "Нажмите «Подогнать»", "Clinical CT MPR roadmap must give a one-click fix when the nearest protocol does not match.");
-requireIn(mprClinicalSource, 'status: input.canOpenMpr ? (input.protocolExact ? "ready" : "active") : "todo"', "Clinical CT MPR orientation step must be active, not ready, until the protocol matches.");
+requireIn(mprClinicalSource, 'status: input.canOpenMpr ? (input.protocolExact ? "ready" : "active") : "pending_review"', "Clinical CT MPR orientation step must be active, not ready, until the protocol matches.");
 requireIn(mprClinicalSource, "buildMprWorkbenchSummary", "Clinical CT MPR summary must live in the shared clinical MPR module.");
 requireIn(mprClinicalSource, "плоскости связаны", "Clinical CT MPR summary must include linked-plane state.");
 requireIn(mprClinicalSource, "КЛКТ/КТ-серия готова к просмотру срезов.", "Clinical CT MPR helper copy must use Russian CT terminology.");
