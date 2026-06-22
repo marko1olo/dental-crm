@@ -31,7 +31,9 @@ export type SendTelegramPhotoMessageInput = {
   timeoutMs?: number;
 };
 
-type TelegramTransportErrorClass = Extract<TelegramTransportResult, { ok: false }>["errorClass"];
+export type TelegramTransportFailure = Extract<TelegramTransportResult, { ok: false }>;
+
+type TelegramTransportErrorClass = TelegramTransportFailure["errorClass"];
 
 export type AnswerTelegramCallbackQueryInput = {
   botToken: string;
