@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { timingSafeSecretEqual } from "./utils/timingSafeSecretEqual.js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 
 export const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -19,13 +19,6 @@ function clinicalReadsUnguardedAllowed(): boolean {
   return process.env.NODE_ENV !== "production" && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS === "1";
 }
 
-function timingSafeSecretEqual(providedSecret: string | null, expectedSecret: string): boolean {
-  if (!providedSecret) return false;
-  const providedBuffer = Buffer.from(providedSecret);
-  const expectedBuffer = Buffer.from(expectedSecret);
-  if (providedBuffer.length !== expectedBuffer.length) return false;
-  return timingSafeEqual(providedBuffer, expectedBuffer);
-}
 
 export async function requireClinicalMutationAccess(
   request: FastifyRequest,
