@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
+import { fetchJson } from "./lib/fetchJson.mjs";
+import { sleep } from "./lib/sleep.mjs";
 import path from "node:path";
 
 const targetUrl = process.argv[2] ?? "http://127.0.0.1:5173/#settings/sources";
@@ -53,10 +55,6 @@ const browser = spawn(
   { stdio: "ignore" }
 );
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function cleanupBrowserProfile() {
   browser.kill();
   await Promise.race([
@@ -84,21 +82,6 @@ async function cleanupBrowserProfile() {
       })
     );
   }
-}
-
-async function fetchJson(url, attempts = 40) {
-  let lastError;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) return response.json();
-      lastError = new Error(`HTTP ${response.status}`);
-    } catch (error) {
-      lastError = error;
-    }
-    await sleep(250);
-  }
-  throw lastError ?? new Error(`Failed to fetch ${url}`);
 }
 
 async function fetchCdpJson(pathname, attempts = 40) {

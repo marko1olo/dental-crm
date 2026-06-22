@@ -1,8 +1,10 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { createServer } from "node:net";
 import os from "node:os";
+import { fetchJson } from "./lib/fetchJson.mjs";
+import { sleep } from "./lib/sleep.mjs";
+import { findFreePort } from "./lib/findFreePort.mjs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -45,10 +47,6 @@ if (!existsSync(vitePath)) {
   throw new Error("Vite binary is missing. Run dependency install before this smoke test.");
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function pad2(value) {
   return String(value).padStart(2, "0");
 }
@@ -79,18 +77,6 @@ function nextBusinessMorningWindow(scheduleDefaults = {}) {
   };
 }
 
-function findFreePort() {
-  return new Promise((resolve, reject) => {
-    const server = createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      const selectedPort = typeof address === "object" && address ? address.port : 0;
-      server.close(() => resolve(selectedPort));
-    });
-  });
-}
-
 async function waitForHttp(url, label, attempts = 120) {
   let lastError;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -108,10 +94,6 @@ async function waitForHttp(url, label, attempts = 120) {
   throw lastError ?? new Error(`${label} was not reachable`);
 }
 
-async function fetchJson(url, attempts = 80) {
-  const response = await waitForHttp(url, url, attempts);
-  return response.json();
-}
 
 function spawnTracked(name, command, args, options) {
   const child = spawn(command, args, options);
