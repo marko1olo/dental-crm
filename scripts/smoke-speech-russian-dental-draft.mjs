@@ -216,6 +216,60 @@ includesText(codeAndPlanDraft.treatmentPlan, "контроль при боли",
 assert(codeAndPlanDraft.quality?.signals.includes("plan_detected"), "quality must detect morphological plan sections");
 assert(codeAndPlanDraft.quality?.signals.includes("procedure_mentioned"), "quality must detect morphological procedure sections");
 
+const surgeonTranscript = [
+  "Жалобы на боль в области восьмерки.",
+  "Объективно зуб 38 дистопирован, перкуссия безболезненная.",
+  "Диагноз ретенция и дистопия 38.",
+  "Проведено удаление зуба 38, кюретаж лунки, гемостаз, наложены швы."
+].join(" ");
+const surgeonDraft = buildRuleBasedVisitDraftFromTranscript(surgeonTranscript, "surgeon");
+includesText(surgeonDraft.complaint, "восьмерки", "surgeon complaint field");
+includesText(surgeonDraft.objectiveStatus, "дистопирован", "surgeon objective field");
+includesText(surgeonDraft.diagnosis, "ретенция", "surgeon diagnosis field");
+includesText(surgeonDraft.treatmentPlan, "удаление зуба", "surgeon treatment plan field");
+includesText(surgeonDraft.treatmentPlan, "лунки", "surgeon treatment plan field");
+includesText(surgeonDraft.treatmentPlan, "швы", "surgeon treatment plan field");
+
+const orthopedistTranscript = [
+  "Жалобы на выпадение коронки.",
+  "Объективно культя зуба 24 сохранена, десна без воспаления.",
+  "Диагноз дефект коронковой части зуба 24.",
+  "План лечения снятие слепков, изготовление временной коронки."
+].join(" ");
+const orthopedistDraft = buildRuleBasedVisitDraftFromTranscript(orthopedistTranscript, "orthopedist");
+includesText(orthopedistDraft.complaint, "выпадение коронки", "orthopedist complaint field");
+includesText(orthopedistDraft.objectiveStatus, "культя", "orthopedist objective field");
+includesText(orthopedistDraft.diagnosis, "дефект коронковой части", "orthopedist diagnosis field");
+includesText(orthopedistDraft.treatmentPlan, "снятие слепков", "orthopedist treatment plan field");
+includesText(orthopedistDraft.treatmentPlan, "временной коронки", "orthopedist treatment plan field");
+
+const orthodontistTranscript = [
+  "Жалобы на неровные зубы.",
+  "Объективно скученность зубов на нижней челюсти.",
+  "Диагноз дистальный прикус.",
+  "Лечение фиксация брекет системы на нижнюю челюсть, установка дуги."
+].join(" ");
+const orthodontistDraft = buildRuleBasedVisitDraftFromTranscript(orthodontistTranscript, "orthodontist");
+includesText(orthodontistDraft.complaint, "неровные зубы", "orthodontist complaint field");
+includesText(orthodontistDraft.objectiveStatus, "скученность зубов", "orthodontist objective field");
+includesText(orthodontistDraft.diagnosis, "дистальный прикус", "orthodontist diagnosis field");
+includesText(orthodontistDraft.treatmentPlan, "фиксация брекет", "orthodontist treatment plan field");
+includesText(orthodontistDraft.treatmentPlan, "установка дуги", "orthodontist treatment plan field");
+
+const hygienistTranscript = [
+  "Жалобы на кровоточивость десен.",
+  "Объективно мягкий и твердый зубной налет, десна гиперемирована.",
+  "Диагноз хронический гингивит.",
+  "Проведена ультразвуковая чистка, эйр флоу, полировка пастой, фторирование."
+].join(" ");
+const hygienistDraft = buildRuleBasedVisitDraftFromTranscript(hygienistTranscript, "hygienist");
+includesText(hygienistDraft.complaint, "кровоточивость десен", "hygienist complaint field");
+includesText(hygienistDraft.objectiveStatus, "зубной налет", "hygienist objective field");
+includesText(hygienistDraft.diagnosis, "хронический гингивит", "hygienist diagnosis field");
+includesText(hygienistDraft.treatmentPlan, "ультразвуковая", "hygienist treatment plan field");
+includesText(hygienistDraft.treatmentPlan, "Air Flow", "hygienist treatment plan field");
+includesText(hygienistDraft.treatmentPlan, "фторирование", "hygienist treatment plan field");
+
 console.log(
   JSON.stringify({
     ok: true,
