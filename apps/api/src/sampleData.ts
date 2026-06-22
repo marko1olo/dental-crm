@@ -1919,45 +1919,55 @@ function buildAppointmentReadiness(patientInsights = buildPatientInsights()): Ap
     const blockers = checks.filter((check) => !check.ready).map((check) => check.detail);
     const warnings = patientPreferenceWarnings;
     const score = Math.round((checks.filter((check) => check.ready).length / checks.length) * 100);
-    const state: AppointmentReadiness["state"] =
-      !patient || !doctor || !chair || hasImageReviewBlocker || hasScheduleBlocker
-        ? "blocked"
-        : warnings.length || score < 84
-          ? "needs_attention"
-          : "ready";
-    const ownerRole: AppointmentReadiness["ownerRole"] = hasScheduleBlocker || warnings.length
-      ? "administrator"
-      : !doctor || hasImageReviewBlocker
-        ? "doctor"
-        : !chair || (assistantRequired && !assistant)
-          ? "assistant"
-          : !hasContract || !hasConsent || hasBalance || appointmentTasks.length > 0
-            ? "administrator"
-            : "assistant";
-    const nextAction =
-      state === "ready"
-        ? "Можно принимать пациента"
-        : !patient
-          ? "Создать карточку пациента"
-          : !doctor
-            ? "Назначить врача"
-          : !chair
-              ? "Назначить кресло"
-              : assistantRequired && !assistant
-                ? "Назначить ассистента"
-              : hasScheduleBlocker
-                ? "Согласовать время приема"
-                : warnings.length
-                  ? "Подтвердить время с пациентом"
-                : hasImageReviewBlocker
-                  ? "Проверить снимок"
-                  : !hasContract || !hasConsent
-                    ? "Подготовить документы"
-                    : hasBalance
-                      ? "Уточнить оплату"
-                      : appointmentTasks.length
-                        ? "Закрыть связь с пациентом"
-                        : "Проверить подготовку";
+
+    let state: AppointmentReadiness["state"];
+    if (!patient || !doctor || !chair || hasImageReviewBlocker || hasScheduleBlocker) {
+      state = "blocked";
+    } else if (warnings.length || score < 84) {
+      state = "needs_attention";
+    } else {
+      state = "ready";
+    }
+
+    let ownerRole: AppointmentReadiness["ownerRole"];
+    if (hasScheduleBlocker || warnings.length) {
+      ownerRole = "administrator";
+    } else if (!doctor || hasImageReviewBlocker) {
+      ownerRole = "doctor";
+    } else if (!chair || (assistantRequired && !assistant)) {
+      ownerRole = "assistant";
+    } else if (!hasContract || !hasConsent || hasBalance || appointmentTasks.length > 0) {
+      ownerRole = "administrator";
+    } else {
+      ownerRole = "assistant";
+    }
+
+    let nextAction: string;
+    if (state === "ready") {
+      nextAction = "Можно принимать пациента";
+    } else if (!patient) {
+      nextAction = "Создать карточку пациента";
+    } else if (!doctor) {
+      nextAction = "Назначить врача";
+    } else if (!chair) {
+      nextAction = "Назначить кресло";
+    } else if (assistantRequired && !assistant) {
+      nextAction = "Назначить ассистента";
+    } else if (hasScheduleBlocker) {
+      nextAction = "Согласовать время приема";
+    } else if (warnings.length) {
+      nextAction = "Подтвердить время с пациентом";
+    } else if (hasImageReviewBlocker) {
+      nextAction = "Проверить снимок";
+    } else if (!hasContract || !hasConsent) {
+      nextAction = "Подготовить документы";
+    } else if (hasBalance) {
+      nextAction = "Уточнить оплату";
+    } else if (appointmentTasks.length > 0) {
+      nextAction = "Закрыть связь с пациентом";
+    } else {
+      nextAction = "Проверить подготовку";
+    }
 
     return {
       appointmentId: appointment.id,
