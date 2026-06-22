@@ -1,6 +1,35 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { repairMojibakeDeep } from '../text/repairMojibake.js';
+import { repairMojibakeText, repairMojibakeDeep } from '../text/repairMojibake.js';
+
+describe('repairMojibakeText', () => {
+  test('returns normal ascii strings unchanged', () => {
+    const input = "Hello world!";
+    assert.strictEqual(repairMojibakeText(input), input);
+  });
+
+  test('returns normal cyrillic strings unchanged', () => {
+    const input = "Привет, мир!";
+    assert.strictEqual(repairMojibakeText(input), input);
+  });
+
+  test('repairs fully mangled cyrillic mojibake', () => {
+    const input = "Ð\u0098Ð²Ð°Ð½"; // Иван
+    const expected = "Иван";
+    assert.strictEqual(repairMojibakeText(input), expected);
+  });
+
+  test('repairs token-mixed strings with mojibake', () => {
+    const input = "Hello Ð\u0098Ð²Ð°Ð½";
+    const expected = "Hello Иван";
+    assert.strictEqual(repairMojibakeText(input), expected);
+  });
+
+  test('gracefully handles likely mojibake that cannot be decoded', () => {
+    const input = "?\u0300\u0301\u0302 invalid";
+    assert.strictEqual(repairMojibakeText(input), input);
+  });
+});
 
 describe('repairMojibakeDeep', () => {
   test('repairs deep mojibake correctly', () => {
