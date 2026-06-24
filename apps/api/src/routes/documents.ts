@@ -64,7 +64,7 @@ import {
   taxPaymentsForDocumentScope
 } from "../documents/taxPaymentSnapshot.js";
 import { buildKnd1151156Xml } from "../documents/taxXml.js";
-import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
+import { repairMojibakeText } from "../text/repairMojibake.js";
 
 export function documentAttachmentFileName(document: GeneratedDocument, extension: "html" | "pdf" | "xml"): string {
   return `dente-${document.kind}-${document.id}.${extension}`;
