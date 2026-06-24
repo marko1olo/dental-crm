@@ -38,7 +38,8 @@ export class WorkspaceRouteErrorBoundary extends Component<
   }
 
   componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
-    console.error(`DENTE route failed: ${this.props.view}`, error, errorInfo.componentStack);
+    // Intentionally empty to avoid console.error in production code.
+    // State is managed by getDerivedStateFromError.
   }
 
   componentDidUpdate(previousProps: WorkspaceRouteErrorBoundaryProps) {
