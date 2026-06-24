@@ -1,7 +1,0 @@
-<<<<<<< SEARCH
-export async function registerVisitRoutes(app: FastifyInstance) {
-=======
-export { sendVisitDraftMutationError as _sendVisitDraftMutationErrorForTesting };
-
-export async function registerVisitRoutes(app: FastifyInstance) {
->>>>>>> REPLACE

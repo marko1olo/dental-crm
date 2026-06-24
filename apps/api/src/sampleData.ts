@@ -8584,6 +8584,9 @@ export function getVisitDraftAutosave(visitId: string): VisitDraftAutosave | nul
 }
 
 export function upsertVisitDraftAutosave(input: VisitDraftAutosaveRequest): VisitDraftAutosave {
+  if (process.env.DENTAL_MOCK_UPSERT_VISIT_DRAFT_AUTOSAVE_ERROR) {
+    throw new Error(process.env.DENTAL_MOCK_UPSERT_VISIT_DRAFT_AUTOSAVE_ERROR);
+  }
   if (input.visitId !== activeVisit.id || input.patientId !== activeVisit.patientId) {
     throw new Error("Визит не найден");
   }
@@ -8625,6 +8628,9 @@ export function upsertVisitDraftAutosave(input: VisitDraftAutosaveRequest): Visi
 }
 
 export function acceptVisitDraft(input: AcceptVisitDraftInput): AcceptVisitDraftResponse {
+  if (process.env.DENTAL_MOCK_ACCEPT_VISIT_DRAFT_ERROR) {
+    throw new Error(process.env.DENTAL_MOCK_ACCEPT_VISIT_DRAFT_ERROR);
+  }
   if (input.visitId !== activeVisit.id) {
     throw new Error("Визит не найден");
   }

@@ -63,8 +63,6 @@ function sendVisitDraftMutationError(error: unknown, reply: FastifyReply, operat
   });
 }
 
-export { sendVisitDraftMutationError as _sendVisitDraftMutationErrorForTesting };
-
 export async function registerVisitRoutes(app: FastifyInstance) {
   app.get("/api/visits/:visitId/draft/autosave", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "visit draft autosave read"))) return;
