@@ -1,6 +1,0 @@
-🧹 [code health improvement] Remove unused import _unused from useDocumentStore
-
-🎯 **What:** Removed the unused import `import { useDocumentStore as _unused } from "./store/documentStore";` from `apps/web/src/useAppLogic.tsx`.
-💡 **Why:** Duplicate, unused imports add unnecessary noise and clutter to the file without providing any value, making the codebase slightly harder to maintain.
-✅ **Verification:** Verified that `npm run lint` (`typecheck`) and the test suites correctly complete as they did before the changes.
-✨ **Result:** A cleaner codebase.
