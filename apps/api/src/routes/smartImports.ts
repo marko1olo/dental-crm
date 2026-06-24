@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
-import { open, readdir } from "node:fs/promises";
+import { open, readdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -2178,7 +2178,7 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
       if (isDicomDir) hasDicomDir = true;
       if (!firstMatchPath && (isDatabase || isDump || isTable || isArchive || isDicom || isImage)) firstMatchPath = fullPath;
       try {
-        const modified = statSync(fullPath).mtime.toISOString();
+        const modified = (await stat(fullPath)).mtime.toISOString();
         if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
       } catch {
         // Best-effort metadata only.
@@ -3540,7 +3540,7 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
         }
         scannedFiles += 1;
         try {
-          const modified = statSync(fullPath).mtime.toISOString();
+          const modified = (await stat(fullPath)).mtime.toISOString();
           if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
         } catch {
           // Metadata is best-effort only.
