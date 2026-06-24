@@ -4367,26 +4367,55 @@ export function newAppointmentDraftFromDashboard(
   const selectedSpecialty = preferences.selectedSpecialty ?? "universal";
   const specialtyMatches = (specialties: DentalSpecialty[]) =>
     selectedSpecialty === "universal" || specialties.includes(selectedSpecialty) || specialties.includes("universal");
-  const savedDoctor = preferences.scheduleDefaultDoctorUserId
-    ? dashboard.clinicSettings.staff.find(
-        (member) =>
-          member.id === preferences.scheduleDefaultDoctorUserId &&
-          member.active &&
-          (member.role === "doctor" || member.role === "owner")
-      )
-    : null;
-  const doctor =
-    savedDoctor ??
-    dashboard.clinicSettings.staff.find(
-      (member) => member.active && (member.role === "doctor" || member.role === "owner") && specialtyMatches(member.specialties)
-    ) ?? dashboard.clinicSettings.staff.find((member) => member.active && (member.role === "doctor" || member.role === "owner"));
-  const savedAssistant =
-    profile.mode === "solo_doctor" || !preferences.scheduleDefaultAssistantUserId
-      ? null
-      : dashboard.clinicSettings.staff.find(
-          (member) => member.id === preferences.scheduleDefaultAssistantUserId && member.active && member.role === "assistant"
-        );
-  const assistant = savedAssistant ?? dashboard.clinicSettings.staff.find((member) => member.active && member.role === "assistant");
+  let doctor: typeof dashboard.clinicSettings.staff[0] | undefined;
+  let savedDoctor: typeof doctor | undefined;
+  let specialtyDoctor: typeof doctor | undefined;
+  let anyDoctor: typeof doctor | undefined;
+
+  let assistant: typeof doctor | undefined;
+  let savedAssistant: typeof doctor | undefined;
+  let anyAssistant: typeof doctor | undefined;
+
+  for (let i = 0; i < dashboard.clinicSettings.staff.length; i++) {
+    const member = dashboard.clinicSettings.staff[i];
+    if (!member || !member.active) continue;
+
+    if (member.role === "doctor" || member.role === "owner") {
+      if (!anyDoctor) anyDoctor = member;
+      if (!specialtyDoctor && specialtyMatches(member.specialties)) specialtyDoctor = member;
+      if (preferences.scheduleDefaultDoctorUserId && member.id === preferences.scheduleDefaultDoctorUserId) {
+        savedDoctor = member;
+      }
+    } else if (member.role === "assistant") {
+      if (!anyAssistant) anyAssistant = member;
+      if (preferences.scheduleDefaultAssistantUserId && member.id === preferences.scheduleDefaultAssistantUserId) {
+        savedAssistant = member;
+      }
+    }
+
+    // Optimization: If we've found our perfect matches, we can stop searching.
+    const hasBestDoctor = preferences.scheduleDefaultDoctorUserId ? !!savedDoctor : !!specialtyDoctor;
+    const hasBestAssistant = preferences.scheduleDefaultAssistantUserId ? !!savedAssistant : !!anyAssistant;
+
+    // Original bug compatibility:
+    // If we're solo_doctor but we have no preferred assistant ID,
+    // we should NOT prevent earlier assignment, so we just require
+    // we found an assistant or we're in solo_doctor
+    if (hasBestDoctor && hasBestAssistant) {
+      break;
+    }
+  }
+
+  doctor = savedDoctor ?? specialtyDoctor ?? anyDoctor;
+
+  // Restore the original behavior explicitly:
+  // if profile.mode is 'solo_doctor' OR no preferred assistant ID, savedAssistant was null.
+  // Then the fallback `dashboard.clinicSettings.staff.find(...)` ran.
+  // But our loop still sets `savedAssistant` or `anyAssistant`.
+  // To match the exact original output:
+  const shouldSkipSavedAssistant = profile.mode === "solo_doctor" || !preferences.scheduleDefaultAssistantUserId;
+  const originalSavedAssistant = shouldSkipSavedAssistant ? null : savedAssistant;
+  assistant = originalSavedAssistant ?? anyAssistant;
   const savedChair = preferences.scheduleDefaultChairId
     ? dashboard.clinicSettings.chairs.find((candidate) => candidate.id === preferences.scheduleDefaultChairId && candidate.active)
     : null;
