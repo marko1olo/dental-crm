@@ -32,6 +32,11 @@ storeCode = storeCode.replace(
   'OnboardingStep,', 'type OnboardingStep,'
 );
 
+storeCode = storeCode.replace(
+  /import \{ SpeechQualityThreshold, DentalBotVisualActionMode, SpeechRecognitionAction, BotLinkSubjectType \} from "@dental\/shared";/g,
+  'import { type SpeechQualityThreshold, type DentalBotVisualActionMode, type SpeechRecognitionAction, type BotLinkSubjectType } from "@dental/shared";'
+);
+
 // 5. Fix emptyTelegramVisualCardUrlDrafts and defaultTelegramPostVisitCheckupDelayDrafts calls in the object
 storeCode = storeCode.replace(/emptyTelegramVisualCardUrlDrafts,/g, 'emptyTelegramVisualCardUrlDrafts(),');
 // For defaultTelegramPostVisitCheckupDelayDrafts it's an object exported from AppHelpers, keep it as is, just imported.
