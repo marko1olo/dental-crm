@@ -4,6 +4,7 @@ import {
   documentRequiresPaidRecord,
   documentAmountSource,
   documentKindSchema,
+  buildRuleBasedVisitDraftFromTranscript,
 } from "../index.js";
 
 describe("documentAmountSource", () => {
@@ -89,5 +90,100 @@ describe("documentRequiresPaidRecord", () => {
       const result = documentRequiresPaidRecord(kind);
       assert.strictEqual(typeof result, "boolean");
     }
+  });
+});
+
+describe("buildRuleBasedVisitDraftFromTranscript", () => {
+  test("happy path: extracts all sections perfectly from a structured transcript", () => {
+    const transcript =
+      "Жалобы на боль в 36 зубе при накусывании. Анамнез: зуб болит уже третий день, аллергии на медикаменты нет. Объективно: глубокая кариозная полость, перкуссия резко болезненна. Диагноз: острый верхушечный периодонтит 36 зуба. Лечение: анестезия, коффердам, экстирпация пульпы, механическая и медикаментозная обработка корневых каналов, пломбирование каналов гуттаперчей, временная пломба.";
+    const draft = buildRuleBasedVisitDraftFromTranscript(transcript);
+
+    // Complaint
+    assert.strictEqual(
+      draft.complaint,
+      "на боль в 36 зубе при накусывании",
+    );
+
+    // Anamnesis
+    assert.strictEqual(
+      draft.anamnesis,
+      "зуб болит уже третий день, аллергии на медикаменты нет",
+    );
+
+    // Objective
+    assert.strictEqual(
+      draft.objectiveStatus,
+      "глубокая кариозная полость, перкуссия резко болезненна",
+    );
+
+    // Diagnosis
+    assert.strictEqual(
+      draft.diagnosis,
+      "острый верхушечный периодонтит 36 зуба",
+    );
+
+    // Treatment
+    assert.strictEqual(
+      draft.treatmentPlan,
+      "анестезия, коффердам, экстирпация пульпы, механическая и медикаментозная обработка корневых каналов, пломбирование каналов гуттаперчей, временная пломба",
+    );
+
+    // Quality checks
+    assert.ok(draft.quality);
+    assert.strictEqual(draft.quality.level, "ready");
+    assert.ok(draft.quality.confidence > 0.8);
+    assert.ok(draft.quality.detectedToothCodes.includes("36"));
+  });
+
+  test("fallback mechanisms: applies fallbacks when sections are missing", () => {
+    const transcript = "Просто болит зуб";
+    const draft = buildRuleBasedVisitDraftFromTranscript(transcript);
+
+    // If complaint is present, it will be the text itself since no other sections exist.
+    assert.strictEqual(draft.complaint, "Просто болит зуб");
+
+    // Check fallbacks
+    assert.ok(draft.anamnesis?.includes("Анамнез уточнить"));
+    assert.ok(draft.objectiveStatus?.includes("Просто болит зуб"));
+    assert.strictEqual(draft.diagnosis, null);
+    assert.ok(draft.treatmentPlan?.includes("План: маршрутизация"));
+
+    assert.ok(draft.quality);
+    assert.strictEqual(draft.quality.level, "needs_more_dictation");
+  });
+
+  test("tooth extraction: correctly identifies multiple tooth codes", () => {
+    const transcript = "Кариес на 11 и 21 зубах. Также нужно посмотреть 46 и 47. 8-ки не беспокоят.";
+    const draft = buildRuleBasedVisitDraftFromTranscript(transcript);
+
+    assert.ok(draft.quality);
+    const teeth = draft.quality.detectedToothCodes;
+    assert.ok(teeth.includes("11"));
+    assert.ok(teeth.includes("21"));
+    assert.ok(teeth.includes("46"));
+    assert.ok(teeth.includes("47"));
+  });
+
+  test("empty/garbage transcript: falls back gracefully", () => {
+    const draft = buildRuleBasedVisitDraftFromTranscript("");
+
+    assert.strictEqual(draft.complaint, "Жалобы не распознаны, уточнить у пациента.");
+    assert.ok(draft.anamnesis?.includes("Анамнез уточнить"));
+
+    assert.ok(draft.quality);
+    assert.strictEqual(draft.quality.level, "needs_more_dictation");
+    assert.strictEqual(draft.quality.confidence, 0.25); // Minimum confidence
+  });
+
+  test("specialty differences: implantologist specialty alters fallbacks", () => {
+    const transcript = "Просто короткая запись";
+
+    const universalDraft = buildRuleBasedVisitDraftFromTranscript(transcript, "universal");
+    const implantologistDraft = buildRuleBasedVisitDraftFromTranscript(transcript, "implantologist");
+
+    // Implantologist should have a different objective fallback
+    assert.notStrictEqual(universalDraft.objectiveStatus, implantologistDraft.objectiveStatus);
+    assert.ok(implantologistDraft.objectiveStatus?.includes("уточнить зону адентии"));
   });
 });
