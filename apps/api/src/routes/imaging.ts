@@ -4969,7 +4969,7 @@ function defaultDicomDiscoveryRoots() {
 }
 
 function fingerprintLocalPath(folderPath: string) {
-  return createHash("sha1").update(path.resolve(folderPath)).digest("hex").slice(0, 10);
+  return createHash("sha256").update(path.resolve(folderPath)).digest("hex").slice(0, 10);
 }
 
 function classifyLocalImagingSource(root: string, folderPath: string, fromManualRoot: boolean) {
@@ -5252,7 +5252,7 @@ function isLikelySoftwareResourceFolder(folderPath: string) {
 }
 
 function buildOrganizerCaseId(folderPath: string) {
-  return `local-imaging-${createHash("sha1").update(folderPath).digest("hex").slice(0, 14)}`;
+  return `local-imaging-${createHash("sha256").update(folderPath).digest("hex").slice(0, 14)}`;
 }
 
 function latestIso(left: string | null, right: string | null) {
