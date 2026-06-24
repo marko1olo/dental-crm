@@ -1726,35 +1726,38 @@ async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>
     "$shell = New-Object -ComObject WScript.Shell",
     "$shortcuts = foreach ($root in $shortcutRoots) { if ($root -and (Test-Path $root)) { Get-ChildItem -Path $root -Filter *.lnk -Recurse -ErrorAction SilentlyContinue | Select-Object -First 400 | ForEach-Object { $lnk = $shell.CreateShortcut($_.FullName); ([string]$_.Name + ' || ' + [string]$lnk.TargetPath + ' || ' + [string]$lnk.Arguments + ' || ' + [string]$lnk.WorkingDirectory) } } }",
     "$shortcuts = $shortcuts | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160",
-    "$rows = @()",
-    "foreach ($p in $processes) { if ($p) { $rows += [pscustomobject]@{ channel='process'; value=[string]$p } } }",
-    "foreach ($s in $services) { if ($s) { $rows += [pscustomobject]@{ channel='service'; value=[string]$s } } }",
-    "foreach ($a in $apps) { if ($a) { $rows += [pscustomobject]@{ channel='installed_app'; value=[string]$a } } }",
-    "foreach ($l in $shortcuts) { if ($l) { $rows += [pscustomobject]@{ channel='shortcut'; value=[string]$l } } }",
-    "$rows | ConvertTo-Json -Compress"
+    "foreach ($p in $processes) { if ($p) { 'process::' + [string]$p } }",
+    "foreach ($s in $services) { if ($s) { 'service::' + [string]$s } }",
+    "foreach ($a in $apps) { if ($a) { 'installed_app::' + [string]$a } }",
+    "foreach ($l in $shortcuts) { if ($l) { 'shortcut::' + [string]$l } }"
   ].join("; ");
   const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
-    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
+    const psPath = path.join(process.env.WINDIR || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+    const { stdout } = await execFileAsync(psPath, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
       timeout: 2500,
       maxBuffer: 160 * 1024,
       windowsHide: true
     });
     if (!stdout.trim()) return [];
-    const parsed = JSON.parse(stdout);
-    const rows = Array.isArray(parsed) ? parsed : [parsed];
+    const rows = stdout.split(/\r?\n/).filter((line) => line.trim().length > 0);
     return rows
-      .map((row) => ({
-        channel:
-          row?.channel === "service"
-            ? ("service" as const)
-            : row?.channel === "installed_app"
-              ? ("installed_app" as const)
-              : row?.channel === "shortcut"
-                ? ("shortcut" as const)
-                : ("process" as const),
-        value: String(row?.value ?? "").trim()
-      }))
+      .map((row) => {
+        const parts = row.split("::");
+        const channelRaw = String(parts[0] ?? "").trim();
+        const value = String(parts.slice(1).join("::") ?? "").trim();
+        return {
+          channel:
+            channelRaw === "service"
+              ? ("service" as const)
+              : channelRaw === "installed_app"
+                ? ("installed_app" as const)
+                : channelRaw === "shortcut"
+                  ? ("shortcut" as const)
+                  : ("process" as const),
+          value
+        };
+      })
       .filter((row) => row.value.length >= 3);
   } catch {
     warnings.add("Системные сигналы рабочей станции не прочитаны: поиск продолжился по доступным папкам и ярлыкам без списка процессов, служб и установленных программ.");
@@ -2026,23 +2029,23 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
   if (os.platform() !== "win32") return [] as string[];
   const script = [
     "$ErrorActionPreference='SilentlyContinue'",
-    "$rows = Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { [pscustomobject]@{ root=[string]$_.Root; displayRoot=[string]$_.DisplayRoot } }",
-    "$rows | ConvertTo-Json -Compress"
+    "Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { [string]$_.Root + '::' + [string]$_.DisplayRoot }"
   ].join("; ");
   const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
-    const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
+    const psPath = path.join(process.env.WINDIR || "C:\\Windows", "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+    const { stdout } = await execFileAsync(psPath, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
       timeout: 1600,
       maxBuffer: 80 * 1024,
       windowsHide: true
     });
     if (!stdout.trim()) return [];
-    const parsed = JSON.parse(stdout);
-    const rows = Array.isArray(parsed) ? parsed : [parsed];
+    const rows = stdout.split(/\r?\n/).filter((line) => line.trim().length > 0);
     const roots: string[] = [];
     for (const row of rows) {
-      const root = String(row?.root ?? "").trim();
-      const displayRoot = String(row?.displayRoot ?? "").trim();
+      const parts = row.split("::");
+      const root = String(parts[0] ?? "").trim();
+      const displayRoot = String(parts[1] ?? "").trim();
       if (/^[D-Z]:\\$/i.test(root)) roots.push(root);
       if (displayRoot.startsWith("\\\\")) roots.push(displayRoot);
     }
