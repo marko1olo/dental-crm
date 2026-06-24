@@ -3632,18 +3632,32 @@ const {
     setIsPendingVisitSyncing(true);
     let remaining = pending;
     try {
-      for (const item of pending) {
-        const result = await submitAcceptedVisitDraft(item.visitId, item.draft, item.doctorSummary, {
-          clientMutationId: item.clientMutationId,
-          baseRevision: item.baseRevision,
-          clientSavedAt: item.queuedAt
-        });
-        remaining = remaining.filter((candidate) => candidate.id !== item.id);
-        await savePendingVisitSaves(remaining, activeOrganizationId);
-        if (dashboard?.activeVisit.id === result.visit.id) {
-          applyAcceptedVisitResponse(result);
+      const results = await Promise.allSettled(
+        pending.map(async (item) => {
+          const result = await submitAcceptedVisitDraft(item.visitId, item.draft, item.doctorSummary, {
+            clientMutationId: item.clientMutationId,
+            baseRevision: item.baseRevision,
+            clientSavedAt: item.queuedAt
+          });
+          return { item, result };
+        })
+      );
+
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          remaining = remaining.filter((candidate) => candidate.id !== r.value.item.id);
+          if (dashboard?.activeVisit.id === r.value.result.visit.id) {
+            applyAcceptedVisitResponse(r.value.result);
+          }
         }
       }
+
+      const firstError = results.find((r) => r.status === "rejected");
+      if (firstError && firstError.status === "rejected") {
+        throw firstError.reason;
+      }
+
+      await savePendingVisitSaves(remaining, activeOrganizationId);
       await refreshPendingVisitSaveState();
     } catch (syncError) {
       await savePendingVisitSaves(remaining, activeOrganizationId);
