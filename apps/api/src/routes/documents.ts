@@ -63,7 +63,7 @@ import {
   taxPaymentSnapshotTotalRub,
   taxPaymentsForDocumentScope
 } from "../documents/taxPaymentSnapshot.js";
-import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
+import { repairMojibakeText } from "../text/repairMojibake.js";
 
 export function documentAttachmentFileName(document: GeneratedDocument, extension: "html" | "pdf" | "xml"): string {
   return `dente-${document.kind}-${document.id}.${extension}`;
