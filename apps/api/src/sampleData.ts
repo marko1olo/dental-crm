@@ -1072,8 +1072,9 @@ export function buildBillingSummary(): BillingSummary {
   const totalPaidRub = payments
     .filter((payment) => payment.status === "paid")
     .reduce((total, payment) => total + payment.amountRub, 0);
+  const serviceCatalogMap = new Map(serviceCatalog.map((item) => [item.id, item]));
   const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
-    const service = serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+    const service = serviceCatalogMap.get(item.serviceId);
     return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
   }, 0);
   const draftDocumentAmountRub = documents
