@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
   createDocumentSchema,
   issueDocumentSchema,
