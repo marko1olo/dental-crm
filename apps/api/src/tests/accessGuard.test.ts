@@ -3,9 +3,10 @@ import assert from 'node:assert';
 import { requireClinicalMutationAccess, requireClinicalReadAccess, denteAdminSecretHeader } from '../accessGuard.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
-const TEST_SECRET = 'test-secret-value';
-
 describe('accessGuard', () => {
+  const MOCK_SECRET = 'mock-admin-secret';
+  const WRONG_SECRET = 'wrong-admin-secret';
+
   let mockRequest: Partial<FastifyRequest>;
   let mockReply: Partial<FastifyReply>;
   let sendMock: ReturnType<typeof mock.fn>;
@@ -67,7 +68,7 @@ describe('accessGuard', () => {
     });
 
     test('secret configured, missing header -> 403', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, false);
       assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
@@ -79,31 +80,31 @@ describe('accessGuard', () => {
     });
 
     test('secret configured, incorrect header -> 403', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
-      mockRequest.headers = { [denteAdminSecretHeader]: 'wrong-secret' };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+      mockRequest.headers = { [denteAdminSecretHeader]: WRONG_SECRET };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, false);
       assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
     });
 
     test('secret configured, correct header -> true', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
-      mockRequest.headers = { [denteAdminSecretHeader]: TEST_SECRET };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+      mockRequest.headers = { [denteAdminSecretHeader]: MOCK_SECRET };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
       assert.strictEqual(codeMock.mock.calls.length, 0);
     });
 
     test('secret configured with spaces, correct header -> true', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = ` ${TEST_SECRET} `;
-      mockRequest.headers = { [denteAdminSecretHeader]: TEST_SECRET };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = ` ${MOCK_SECRET} `;
+      mockRequest.headers = { [denteAdminSecretHeader]: MOCK_SECRET };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
     });
 
     test('secret configured, array header -> true', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
-      mockRequest.headers = { [denteAdminSecretHeader]: [TEST_SECRET, 'other'] };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+      mockRequest.headers = { [denteAdminSecretHeader]: [MOCK_SECRET, 'other'] };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
     });
@@ -146,7 +147,7 @@ describe('accessGuard', () => {
     });
 
     test('secret configured, missing header -> 403', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
       const result = await requireClinicalReadAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, false);
       assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
@@ -158,16 +159,16 @@ describe('accessGuard', () => {
     });
 
     test('secret configured, incorrect header -> 403', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
-      mockRequest.headers = { [denteAdminSecretHeader]: 'wrong-secret' };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+      mockRequest.headers = { [denteAdminSecretHeader]: WRONG_SECRET };
       const result = await requireClinicalReadAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, false);
       assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
     });
 
     test('secret configured, correct header -> true', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
-      mockRequest.headers = { [denteAdminSecretHeader]: TEST_SECRET };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+      mockRequest.headers = { [denteAdminSecretHeader]: MOCK_SECRET };
       const result = await requireClinicalReadAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
       assert.strictEqual(codeMock.mock.calls.length, 0);
