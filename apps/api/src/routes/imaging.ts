@@ -1464,8 +1464,29 @@ function rgbaToPngDataUrl(width: number, height: number, rgba: Buffer) {
   return `data:image/png;base64,${png.toString("base64")}`;
 }
 
-function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): DicomFirstFramePixelParse {
-  const warnings: string[] = [];
+
+interface DicomPixelTags {
+  warnings: string[];
+  explicitVr: boolean;
+  bigEndian: boolean;
+  transferSyntaxUid: string | null;
+  photometricInterpretation: string | null;
+  rows: number | null;
+  columns: number | null;
+  bitsAllocated: number | null;
+  bitsStored: number | null;
+  pixelRepresentation: number | null;
+  samplesPerPixel: number | null;
+  windowCenter: number | null;
+  windowWidth: number | null;
+  rescaleIntercept: number;
+  rescaleSlope: number;
+  pixelDataOffset: number;
+  pixelDataLength: number;
+  unsupportedReturn?: DicomFirstFramePixelParse;
+}
+
+function parseDicomPixelTags(buffer: Buffer, warnings: string[]): DicomPixelTags {
   let cursor = buffer.length >= 132 && buffer.subarray(128, 132).toString("latin1") === "DICM" ? 132 : 0;
   let explicitVr = true;
   let bigEndian = false;
@@ -1510,21 +1531,26 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     if (tagKey === "7fe00010") {
       if (valueLength === 0xffffffff) {
         return {
-          status: "unsupported",
-          transferSyntaxUid,
-          photometricInterpretation,
-          sourceWidth: columns,
-          sourceHeight: rows,
-          bitsAllocated,
-          bitsStored,
-          pixelRepresentation,
-          windowCenter,
-          windowWidth,
-          imageDataUrl: null,
-          width: null,
-          height: null,
-          warnings: [...warnings, "Сжатый формат снимка не поддерживается быстрым предпросмотром."],
-          nextAction: "Откройте снимок через внешний КТ-модуль или локальный обработчик."
+          warnings, explicitVr, bigEndian, transferSyntaxUid, photometricInterpretation, rows, columns,
+          bitsAllocated, bitsStored, pixelRepresentation, samplesPerPixel, windowCenter, windowWidth,
+          rescaleIntercept, rescaleSlope, pixelDataOffset, pixelDataLength,
+          unsupportedReturn: {
+            status: "unsupported",
+            transferSyntaxUid,
+            photometricInterpretation,
+            sourceWidth: columns,
+            sourceHeight: rows,
+            bitsAllocated,
+            bitsStored,
+            pixelRepresentation,
+            windowCenter,
+            windowWidth,
+            imageDataUrl: null,
+            width: null,
+            height: null,
+            warnings: [...warnings, "Сжатый формат снимка не поддерживается быстрым предпросмотром."],
+            nextAction: "Откройте снимок через внешний КТ-модуль или локальный обработчик."
+          }
         };
       }
       pixelDataOffset = valueOffset;
@@ -1561,21 +1587,28 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     cursor = valueOffset + valueLength + (valueLength % 2);
   }
 
+  return {
+    warnings, explicitVr, bigEndian, transferSyntaxUid, photometricInterpretation, rows, columns,
+    bitsAllocated, bitsStored, pixelRepresentation, samplesPerPixel, windowCenter, windowWidth,
+    rescaleIntercept, rescaleSlope, pixelDataOffset, pixelDataLength
+  };
+}
+
+function validateDicomPixelData(tags: DicomPixelTags, bufferLength: number): DicomFirstFramePixelParse | null {
+  const {
+    pixelDataOffset, pixelDataLength, transferSyntaxUid, photometricInterpretation,
+    columns, rows, bitsAllocated, bitsStored, pixelRepresentation, windowCenter, windowWidth,
+    bigEndian, warnings, samplesPerPixel
+  } = tags;
+
+  if (tags.unsupportedReturn) {
+    return tags.unsupportedReturn;
+  }
+
   if (!pixelDataOffset || pixelDataOffset < 0 || pixelDataLength <= 0) {
     return {
-      status: "unsupported",
-      transferSyntaxUid,
-      photometricInterpretation,
-      sourceWidth: columns,
-      sourceHeight: rows,
-      bitsAllocated,
-      bitsStored,
-      pixelRepresentation,
-      windowCenter,
-      windowWidth,
-      imageDataUrl: null,
-      width: null,
-      height: null,
+      status: "unsupported", transferSyntaxUid, photometricInterpretation, sourceWidth: columns, sourceHeight: rows,
+      bitsAllocated, bitsStored, pixelRepresentation, windowCenter, windowWidth, imageDataUrl: null, width: null, height: null,
       warnings: [...warnings, "Кадр снимка не найден в быстром предпросмотре."],
       nextAction: "Оставьте список серии или используйте отдельный КТ-просмотрщик."
     };
@@ -1583,19 +1616,8 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
 
   if (!dicomTransferSyntaxIsSupported(transferSyntaxUid) || bigEndian) {
     return {
-      status: "unsupported",
-      transferSyntaxUid,
-      photometricInterpretation,
-      sourceWidth: columns,
-      sourceHeight: rows,
-      bitsAllocated,
-      bitsStored,
-      pixelRepresentation,
-      windowCenter,
-      windowWidth,
-      imageDataUrl: null,
-      width: null,
-      height: null,
+      status: "unsupported", transferSyntaxUid, photometricInterpretation, sourceWidth: columns, sourceHeight: rows,
+      bitsAllocated, bitsStored, pixelRepresentation, windowCenter, windowWidth, imageDataUrl: null, width: null, height: null,
       warnings: [...warnings, "Формат файла снимка не поддерживается быстрым предпросмотром."],
       nextAction: "Откройте снимок через внешний КТ-модуль или локальный обработчик для этого формата."
     };
@@ -1607,57 +1629,25 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
   }
   if (!rows || !columns || rows <= 0 || columns <= 0 || rows > 8192 || columns > 8192) {
     return {
-      status: "unsupported",
-      transferSyntaxUid,
-      photometricInterpretation: normalizedPhotometric,
-      sourceWidth: columns,
-      sourceHeight: rows,
-      bitsAllocated,
-      bitsStored,
-      pixelRepresentation,
-      windowCenter,
-      windowWidth,
-      imageDataUrl: null,
-      width: null,
-      height: null,
-      warnings,
-      nextAction: "Откройте отдельный КТ-просмотрщик для такого размера изображения."
+      status: "unsupported", transferSyntaxUid, photometricInterpretation: normalizedPhotometric, sourceWidth: columns, sourceHeight: rows,
+      bitsAllocated, bitsStored, pixelRepresentation, windowCenter, windowWidth, imageDataUrl: null, width: null, height: null,
+      warnings, nextAction: "Откройте отдельный КТ-просмотрщик для такого размера изображения."
     };
   }
+
   if ((samplesPerPixel ?? 1) !== 1 || !["MONOCHROME1", "MONOCHROME2"].includes(normalizedPhotometric)) {
     return {
-      status: "unsupported",
-      transferSyntaxUid,
-      photometricInterpretation: normalizedPhotometric,
-      sourceWidth: columns,
-      sourceHeight: rows,
-      bitsAllocated,
-      bitsStored,
-      pixelRepresentation,
-      windowCenter,
-      windowWidth,
-      imageDataUrl: null,
-      width: null,
-      height: null,
+      status: "unsupported", transferSyntaxUid, photometricInterpretation: normalizedPhotometric, sourceWidth: columns, sourceHeight: rows,
+      bitsAllocated, bitsStored, pixelRepresentation, windowCenter, windowWidth, imageDataUrl: null, width: null, height: null,
       warnings: [...warnings, "Быстрый предпросмотр открывает только серые стоматологические снимки."],
       nextAction: "Откройте этот файл в полном просмотрщике: формат нестандартный для быстрого предпросмотра."
     };
   }
+
   if (bitsAllocated !== 8 && bitsAllocated !== 16) {
     return {
-      status: "unsupported",
-      transferSyntaxUid,
-      photometricInterpretation: normalizedPhotometric,
-      sourceWidth: columns,
-      sourceHeight: rows,
-      bitsAllocated,
-      bitsStored,
-      pixelRepresentation,
-      windowCenter,
-      windowWidth,
-      imageDataUrl: null,
-      width: null,
-      height: null,
+      status: "unsupported", transferSyntaxUid, photometricInterpretation: normalizedPhotometric, sourceWidth: columns, sourceHeight: rows,
+      bitsAllocated, bitsStored, pixelRepresentation, windowCenter, windowWidth, imageDataUrl: null, width: null, height: null,
       warnings: [...warnings, "Глубина изображения не поддерживается быстрым предпросмотром."],
       nextAction: "Откройте этот файл в полном просмотрщике снимков."
     };
@@ -1665,25 +1655,31 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
 
   const bytesPerPixel = bitsAllocated / 8;
   const expectedBytes = rows * columns * bytesPerPixel;
-  if (pixelDataLength < expectedBytes || pixelDataOffset + expectedBytes > buffer.length) {
+  if (pixelDataLength < expectedBytes || pixelDataOffset + expectedBytes > bufferLength) {
     return {
-      status: "unsupported",
-      transferSyntaxUid,
-      photometricInterpretation: normalizedPhotometric,
-      sourceWidth: columns,
-      sourceHeight: rows,
-      bitsAllocated,
-      bitsStored,
-      pixelRepresentation,
-      windowCenter,
-      windowWidth,
-      imageDataUrl: null,
-      width: null,
-      height: null,
+      status: "unsupported", transferSyntaxUid, photometricInterpretation: normalizedPhotometric, sourceWidth: columns, sourceHeight: rows,
+      bitsAllocated, bitsStored, pixelRepresentation, windowCenter, windowWidth, imageDataUrl: null, width: null, height: null,
       warnings: [...warnings, "Данные первого кадра короче ожидаемого размера."],
       nextAction: "Откройте полный КТ-просмотрщик: быстрый предпросмотр не может открыть этот кадр."
     };
   }
+
+  return null;
+}
+
+function renderDicomPreview(
+  buffer: Buffer,
+  tags: DicomPixelTags,
+  maxPreviewEdge: number
+): DicomFirstFramePixelParse {
+  const {
+    rows, columns, bitsAllocated, pixelRepresentation, rescaleSlope, rescaleIntercept,
+    pixelDataOffset, windowCenter, windowWidth, photometricInterpretation,
+    transferSyntaxUid, bitsStored, warnings
+  } = tags as DicomPixelTags & { rows: number; columns: number; bitsAllocated: number };
+
+  const normalizedPhotometric = photometricInterpretation ?? "MONOCHROME2";
+  const bytesPerPixel = bitsAllocated / 8;
 
   const scale = Math.min(1, maxPreviewEdge / Math.max(rows, columns));
   const width = Math.max(1, Math.round(columns * scale));
@@ -1712,7 +1708,8 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
   const invert = normalizedPhotometric === "MONOCHROME1";
   let center = windowCenter ?? (minValue + maxValue) / 2;
   let window = windowWidth && windowWidth > 1 ? windowWidth : Math.max(1, maxValue - minValue);
-  const renderPreview = (renderCenter: number, renderWindow: number) => {
+
+  const performRender = (renderCenter: number, renderWindow: number) => {
     const lower = renderCenter - renderWindow / 2;
     const upper = renderCenter + renderWindow / 2;
     const rendered = Buffer.alloc(width * height * 4);
@@ -1746,7 +1743,7 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     };
   };
 
-  let rendered = renderPreview(center, window);
+  let rendered = performRender(center, window);
   if (
     windowCenter &&
     windowWidth &&
@@ -1755,7 +1752,7 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
   ) {
     center = (minValue + maxValue) / 2;
     window = Math.max(1, maxValue - minValue);
-    rendered = renderPreview(center, window);
+    rendered = performRender(center, window);
     warnings.push("Окно снимка дало низкоконтрастный предпросмотр; использовано min/max окно по выборке.");
   }
 
@@ -1781,6 +1778,18 @@ function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): Dico
     warnings,
     nextAction: "Используйте это только как быстрый ориентировочный предпросмотр; для диагностики нужен просмотрщик КТ-срезов."
   };
+}
+
+function parseDicomFirstFramePixel(buffer: Buffer, maxPreviewEdge: number): DicomFirstFramePixelParse {
+  const warnings: string[] = [];
+  const tags = parseDicomPixelTags(buffer, warnings);
+
+  const validationError = validateDicomPixelData(tags, buffer.length);
+  if (validationError) {
+    return validationError;
+  }
+
+  return renderDicomPreview(buffer, tags, maxPreviewEdge);
 }
 
 function dicomFirstFrameReadyResponse(input: {
