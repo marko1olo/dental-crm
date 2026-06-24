@@ -4,8 +4,8 @@ import { requireClinicalMutationAccess, requireClinicalReadAccess, denteAdminSec
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 describe('accessGuard', () => {
-  const MOCK_SECRET = 'mock-admin-secret';
-  const WRONG_SECRET = 'wrong-admin-secret';
+  const MOCK_SECRET = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
+  const WRONG_SECRET = process.env.WRONG_TEST_SECRET || `wrong-test-secret-${Date.now()}`;
 
   let mockRequest: Partial<FastifyRequest>;
   let mockReply: Partial<FastifyReply>;
