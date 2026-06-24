@@ -1088,12 +1088,19 @@ export function buildBillingSummary(): BillingSummary {
     taxDeductionEligibleRub,
     draftDocumentAmountRub,
     openTreatmentItems: activePlanItems.filter((item) => item.status !== "completed").length,
-    unpaidDocuments: documents.filter(
-      (document) =>
-        document.status === "draft" &&
-        (document.totalAmountRub ?? 0) > 0 &&
-        !payments.some((payment) => payment.status === "paid" && payment.documentId === document.id)
-    ).length
+    unpaidDocuments: (() => {
+      const paidDocumentIds = new Set(
+        payments
+          .filter((payment) => payment.status === "paid" && payment.documentId != null)
+          .map((payment) => payment.documentId)
+      );
+      return documents.filter(
+        (document) =>
+          document.status === "draft" &&
+          (document.totalAmountRub ?? 0) > 0 &&
+          !paidDocumentIds.has(document.id)
+      ).length;
+    })()
   };
 }
 
