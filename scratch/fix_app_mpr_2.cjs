@@ -1,6 +1,8 @@
 const fs = require('fs');
+const path = require('path');
 
-let code = fs.readFileSync('C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx', 'utf8');
+const appPath = path.join(__dirname, '../apps/web/src/App.tsx');
+let code = fs.readFileSync(appPath, 'utf8');
 
 // Undo the "as any" and replace with "as MprProjection" and "as MprWindowPreset"
 code = code.replace(/mprProjectionLabels\[mprProjection as any\]/g, 'mprProjectionLabels[mprProjection as MprProjection]');
@@ -10,6 +12,14 @@ code = code.replace(/mprWindowPresetLabels\[mprWindowPreset as any\]/g, 'mprWind
 // Also fix: src/App.tsx(5879,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
 // I will just let the regex catch it, it's `(value) => setMprSliceIndex` ... wait I tried this before and it didn't catch it because of newlines maybe?
 code = code.replace(/\(value\) => setMprSliceIndex/g, '(value: any) => setMprSliceIndex');
+
+// Also fix: src/App.tsx(5879,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
+// That is:  const setMprWorkbenchDraftLayout = (value) => {
+// Needs to be: const setMprWorkbenchDraftLayout = (value: any) => {
+code = code.replace(
+  /const setMprWorkbenchDraftLayout = \(value\) => \{/g,
+  'const setMprWorkbenchDraftLayout = (value: any) => {'
+);
 
 // src/App.tsx(7948,40): error TS7006: Parameter 'current' implicitly has an 'any' type.
 // It's probably `(current) => ...`
@@ -23,4 +33,4 @@ code = code.replace(/setImagingImportPreview\(\(current\) =>/g, 'setImagingImpor
 code = code.replace(/setImagingImportCommit\(\(current\) =>/g, 'setImagingImportCommit((current: any) =>');
 code = code.replace(/setBrowserImagingScanProgress\(\(current\) =>/g, 'setBrowserImagingScanProgress((current: any) =>');
 
-fs.writeFileSync('C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx', code);
+fs.writeFileSync(appPath, code, 'utf8');
