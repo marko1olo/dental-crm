@@ -52,9 +52,10 @@ describe('AI Routes', () => {
 
 describe('AI Routes Integration', () => {
   let integrationApp: Awaited<ReturnType<typeof createDenteApiApp>>;
+  const testSecret = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
 
   beforeEach(async () => {
-    process.env.DENTE_CLINICAL_ADMIN_SECRET = 'test-secret';
+    process.env.DENTE_CLINICAL_ADMIN_SECRET = testSecret;
     integrationApp = await createDenteApiApp({ startTelegramWorker: false });
   });
 
@@ -69,7 +70,7 @@ describe('AI Routes Integration', () => {
         method: 'POST',
         url: '/api/ai/visit-note-draft',
         headers: {
-          'x-dente-admin-secret': 'test-secret',
+          'x-dente-admin-secret': testSecret,
         },
         payload: {
           patientId: '11111111-1111-4111-8111-111111111111',
