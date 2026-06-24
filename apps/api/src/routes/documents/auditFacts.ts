@@ -59,7 +59,7 @@ import {
   buildMedicalDocumentReleaseJournalEntry,
   taxXmlSourceSnapshotForIssue
 } from "../documents.js";
-import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
+import { taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
   app.get("/api/documents/:id/audit-facts", async (request, reply) => {
