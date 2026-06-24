@@ -1,4 +1,5 @@
 // @ts-nocheck
+import pLimit from "p-limit";
 import { useDocumentStore } from "./store/documentStore";
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -4100,8 +4101,9 @@ const {
     let cancelled = false;
     const abortController = new AbortController();
     const createdUrls: string[] = [];
+    const limit = pLimit(5);
     void Promise.all(
-      imagingPreviewWorkset.map(async (study): Promise<[string, string] | null> => {
+      imagingPreviewWorkset.map((study) => limit(async (): Promise<[string, string] | null> => {
         if (!study.previewUrl.startsWith("/api/")) return [study.id, study.previewUrl];
         const response = await fetch(study.previewUrl, {
           cache: "no-store",
@@ -4116,7 +4118,7 @@ const {
         }
         createdUrls.push(blobUrl);
         return [study.id, blobUrl];
-      })
+      }))
     )
       .then((entries) => {
         if (cancelled) {

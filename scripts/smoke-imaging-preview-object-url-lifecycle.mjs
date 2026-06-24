@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-const source = readFileSync("apps/web/src/App.tsx", "utf8");
+const source = readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
 const normalizedSource = source.replace(/\r\n/g, "\n");
 const start = source.indexOf("const imagingPreviewWorkset =");
 const end = source.indexOf("useEffect(() => {\n    const settings = telegramStatus?.settings;", start);
@@ -23,7 +23,7 @@ function requireSourceSnippet(snippet, message) {
 requireSnippet("const abortController = new AbortController();", "protected preview fetches must be abortable");
 requireSnippet('if (currentView !== "imaging" || !dashboard?.imagingStudies.length) return [];', "preview fetch workset must stay gated to the visible imaging route");
 requireSnippet("const imagingPreviewWorkset = useMemo(() =>", "preview fetches must use a memoized visible workset");
-requireSnippet("imagingPreviewWorkset.map(async (study)", "preview fetches must not scan every dashboard image on app boot");
+requireSnippet("imagingPreviewWorkset.map((study)", "preview fetches must not scan every dashboard image on app boot");
 requireSnippet("if (!imagingPreviewWorkset.length)", "preview URL map must clear when the imaging route has no visible workset");
 requireSnippet("signal: abortController.signal", "fetch must use the preview AbortController signal");
 requireSnippet("abortController.abort();", "cleanup must abort in-flight preview fetches");
