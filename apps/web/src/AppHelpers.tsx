@@ -884,7 +884,8 @@ export function saveDocumentIssueSignatureDraft(
         savedAt: new Date().toISOString()
       } satisfies DocumentIssueSignatureDraft)
     );
-  } catch {
+  } catch (error) {
+    console.warn(error);
     // Signature defaults are convenience only; the server still requires explicit attestation on issue.
   }
 }
