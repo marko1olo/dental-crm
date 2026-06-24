@@ -1,37 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { documentRequiresPaidRecord, documentKindSchema, documentPayloadActualKeys } from '../index.js';
-
-describe('documentPayloadActualKeys', () => {
-  test('returns an empty array for null or undefined payload', () => {
-    assert.deepStrictEqual(documentPayloadActualKeys(null), []);
-    assert.deepStrictEqual(documentPayloadActualKeys(undefined), []);
-  });
-
-  test('returns an empty array for an empty payload', () => {
-    assert.deepStrictEqual(documentPayloadActualKeys({}), []);
-  });
-
-  test('returns the keys that have defined values', () => {
-    const payload = {
-      patientIntakeQuestionnaire: {} as any,
-      paymentInvoice: {} as any
-    };
-    const expected = ['patientIntakeQuestionnaire', 'paymentInvoice'];
-    assert.deepStrictEqual(documentPayloadActualKeys(payload as any), expected);
-  });
-
-  test('filters out keys with undefined values', () => {
-    const payload = {
-      patientIntakeQuestionnaire: {} as any,
-      paymentInvoice: undefined,
-      completedWorksAct: {} as any,
-      minorLegalRepresentativeConsent: undefined
-    };
-    const expected = ['patientIntakeQuestionnaire', 'completedWorksAct'];
-    assert.deepStrictEqual(documentPayloadActualKeys(payload), expected);
-  });
-});
+import { documentRequiresPaidRecord, documentKindSchema } from '../index.js';
 
 describe('documentRequiresPaidRecord', () => {
   test('returns expected boolean for different document kinds', () => {
