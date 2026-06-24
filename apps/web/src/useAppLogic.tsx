@@ -3796,16 +3796,38 @@ const {
 
     const flushedRecordingIds = new Set<string>();
     try {
-      for (const item of queue) {
-        const result = await submitSpeechChunk(item);
+      const submitPromises = queue.map((item) =>
+        submitSpeechChunk(item).then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (reason) => ({ status: "rejected" as const, reason })
+        )
+      );
+
+      // Wait for all to finish so we do not leave in-flight network requests orphaned.
+      const outcomes = await Promise.all(submitPromises);
+
+      let firstSyncError: unknown = null;
+
+      for (let i = 0; i < queue.length; i++) {
+        const item = queue[i]!;
+        const outcome = outcomes[i]!;
+        if (outcome.status === "rejected") {
+          if (!firstSyncError) firstSyncError = outcome.reason;
+          continue; // Process remaining successful items instead of abandoning them
+        }
+
+        const result = outcome.value;
         applySpeechTranscription(result);
         await removePendingSpeechChunkById(item.id, activeOrganizationId);
         if (speechTranscriptionMatchesActiveVisit(result)) flushedRecordingIds.add(item.recordingId);
         await refreshPendingSpeechChunkState();
       }
-      for (const recordingId of flushedRecordingIds) {
-        await assembleSpeechRecording(recordingId, { silent: true });
-      }
+
+      if (firstSyncError) throw firstSyncError;
+
+      await Promise.all(
+        Array.from(flushedRecordingIds).map((recordingId) => assembleSpeechRecording(recordingId, { silent: true }))
+      );
     } catch (syncError) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
