@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
 import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
-import { opendir, readdir } from "node:fs/promises";
+import { opendir, readdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setImmediate as yieldImmediate } from "node:timers/promises";
@@ -5079,7 +5079,7 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
       if (isArchive && !firstFilePath) firstFilePath = fullPath;
 
       try {
-        const modified = statSync(fullPath).mtime.toISOString();
+        const modified = (await stat(fullPath)).mtime.toISOString();
         if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
       } catch {
         // Discovery remains best-effort.
