@@ -53,6 +53,23 @@ const visiblePaymentMethods: PaymentMethod[] = ["cash", "card", "bank_transfer",
 
 const digitsOnly = (value: string, maxLength: number) => value.replace(/[^\d]/g, "").slice(0, maxLength);
 
+type DigitsInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
+  maxLength: number;
+  onChange: (value: string) => void;
+};
+
+function DigitsInput({ maxLength, onChange, ...props }: DigitsInputProps) {
+  return (
+    <input
+      inputMode="numeric"
+      autoComplete="off"
+      pattern="[0-9]*"
+      {...props}
+      onChange={(event) => onChange(digitsOnly(event.target.value, maxLength))}
+    />
+  );
+}
+
 export function PaymentCapture({
   amount,
   feedback,
@@ -203,34 +220,28 @@ export function PaymentCapture({
           </label>
           <label>
             ФН
-            <input
-              inputMode="numeric"
-              autoComplete="off"
-              pattern="[0-9]*"
+            <DigitsInput
+              maxLength={32}
               value={fiscalFn}
-              onChange={(event) => onFiscalFnChange(digitsOnly(event.target.value, 32))}
+              onChange={onFiscalFnChange}
               placeholder="номер фискального накопителя"
             />
           </label>
           <label>
             ФД
-            <input
-              inputMode="numeric"
-              autoComplete="off"
-              pattern="[0-9]*"
+            <DigitsInput
+              maxLength={32}
               value={fiscalFd}
-              onChange={(event) => onFiscalFdChange(digitsOnly(event.target.value, 32))}
+              onChange={onFiscalFdChange}
               placeholder="номер фискального документа"
             />
           </label>
           <label>
             ФПД
-            <input
-              inputMode="numeric"
-              autoComplete="off"
-              pattern="[0-9]*"
+            <DigitsInput
+              maxLength={32}
               value={fiscalFpd}
-              onChange={(event) => onFiscalFpdChange(digitsOnly(event.target.value, 32))}
+              onChange={onFiscalFpdChange}
               placeholder="фискальный признак"
             />
           </label>
@@ -271,14 +282,12 @@ export function PaymentCapture({
           </label>
           <label>
             ИНН плательщика
-            <input
-              inputMode="numeric"
-              autoComplete="off"
-              pattern="[0-9]*"
+            <DigitsInput
+              maxLength={12}
               aria-invalid={payerInnInvalid || undefined}
               aria-describedby={payerInnInvalid ? paymentMissingId : undefined}
               value={payerInn}
-              onChange={(event) => onPayerInnChange(digitsOnly(event.target.value, 12))}
+              onChange={onPayerInnChange}
               placeholder={patientDefaults.taxpayerInn ?? "если есть"}
             />
           </label>
