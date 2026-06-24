@@ -5068,7 +5068,7 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
       if (isArchive && !firstFilePath) firstFilePath = fullPath;
 
       try {
-        const modified = statSync(fullPath).mtime.toISOString();
+        const modified = (await stat(fullPath)).mtime.toISOString();
         if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
       } catch {
         // Discovery remains best-effort.
