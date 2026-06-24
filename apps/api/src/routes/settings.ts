@@ -77,7 +77,7 @@ function hasActiveScheduleConflict(message: string): boolean {
   return message.includes("активная запись") || message.includes("активные записи");
 }
 
-function clinicProfileMutationRejection(reply: FastifyReply, error: unknown) {
+export function clinicProfileMutationRejection(reply: FastifyReply, error: unknown) {
   const message = settingsDomainMessage(error);
   if (message.includes("часовой пояс")) {
     return reply.code(409).send({
