@@ -49,11 +49,20 @@ type PaymentCaptureProps = {
   taxDeductionCode: TaxDeductionCode;
 };
 
-const visiblePaymentMethods: PaymentMethod[] = ["cash", "card", "bank_transfer", "online"];
+const visiblePaymentMethods: PaymentMethod[] = [
+  "cash",
+  "card",
+  "bank_transfer",
+  "online",
+];
 
-const digitsOnly = (value: string, maxLength: number) => value.replace(/[^\d]/g, "").slice(0, maxLength);
+const digitsOnly = (value: string, maxLength: number) =>
+  value.replace(/[^\d]/g, "").slice(0, maxLength);
 
-type DigitsInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> & {
+type DigitsInputProps = Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange"
+> & {
   maxLength: number;
   onChange: (value: string) => void;
 };
@@ -67,6 +76,289 @@ function DigitsInput({ maxLength, onChange, ...props }: DigitsInputProps) {
       {...props}
       onChange={(event) => onChange(digitsOnly(event.target.value, maxLength))}
     />
+  );
+}
+
+type PaymentFiscalDetailsProps = {
+  fiscalCashierName: string;
+  fiscalDetailsOpen: boolean;
+  fiscalFd: string;
+  fiscalFn: string;
+  fiscalFpd: string;
+  fiscalReceiptIssuedAt: string;
+  fiscalReceiptNumber: string;
+  fiscalReceiptUrl: string;
+  fiscalReceiptUrlInvalid: boolean;
+  onFiscalCashierNameChange: (value: string) => void;
+  onFiscalFdChange: (value: string) => void;
+  onFiscalFnChange: (value: string) => void;
+  onFiscalFpdChange: (value: string) => void;
+  onFiscalReceiptIssuedAtChange: (value: string) => void;
+  onFiscalReceiptNumberChange: (value: string) => void;
+  onFiscalReceiptUrlChange: (value: string) => void;
+  paymentMissingId: string;
+};
+
+function PaymentFiscalDetails({
+  fiscalCashierName,
+  fiscalDetailsOpen,
+  fiscalFd,
+  fiscalFn,
+  fiscalFpd,
+  fiscalReceiptIssuedAt,
+  fiscalReceiptNumber,
+  fiscalReceiptUrl,
+  fiscalReceiptUrlInvalid,
+  onFiscalCashierNameChange,
+  onFiscalFdChange,
+  onFiscalFnChange,
+  onFiscalFpdChange,
+  onFiscalReceiptIssuedAtChange,
+  onFiscalReceiptNumberChange,
+  onFiscalReceiptUrlChange,
+  paymentMissingId,
+}: PaymentFiscalDetailsProps) {
+  return (
+    <details
+      className="payment-capture-detail-section"
+      open={fiscalDetailsOpen}
+    >
+      <summary>Фискальный чек и кассир</summary>
+      <div className="payment-capture-detail-grid">
+        <label>
+          Номер чека / примечание
+          <input
+            autoComplete="off"
+            value={fiscalReceiptNumber}
+            onChange={(event) =>
+              onFiscalReceiptNumberChange(event.target.value)
+            }
+            placeholder="можно оставить пустым, если есть ФН/ФД/ФПД"
+          />
+        </label>
+        <label>
+          Дата чека
+          <input
+            type="datetime-local"
+            value={fiscalReceiptIssuedAt}
+            onChange={(event) =>
+              onFiscalReceiptIssuedAtChange(event.target.value)
+            }
+          />
+        </label>
+        <label>
+          ФН
+          <DigitsInput
+            maxLength={32}
+            value={fiscalFn}
+            onChange={onFiscalFnChange}
+            placeholder="номер фискального накопителя"
+          />
+        </label>
+        <label>
+          ФД
+          <DigitsInput
+            maxLength={32}
+            value={fiscalFd}
+            onChange={onFiscalFdChange}
+            placeholder="номер фискального документа"
+          />
+        </label>
+        <label>
+          ФПД
+          <DigitsInput
+            maxLength={32}
+            value={fiscalFpd}
+            onChange={onFiscalFpdChange}
+            placeholder="фискальный признак"
+          />
+        </label>
+        <label>
+          Ссылка ОФД
+          <input
+            type="url"
+            autoComplete="url"
+            aria-invalid={fiscalReceiptUrlInvalid || undefined}
+            aria-describedby={
+              fiscalReceiptUrlInvalid ? paymentMissingId : undefined
+            }
+            value={fiscalReceiptUrl}
+            onChange={(event) => onFiscalReceiptUrlChange(event.target.value)}
+            placeholder="https://..."
+          />
+        </label>
+        <label>
+          Кассир
+          <input
+            autoComplete="off"
+            value={fiscalCashierName}
+            onChange={(event) => onFiscalCashierNameChange(event.target.value)}
+            placeholder="ФИО администратора"
+          />
+        </label>
+      </div>
+    </details>
+  );
+}
+
+type PaymentTaxPayerDetailsProps = {
+  applyPatientTaxDefaults: () => void;
+  onPayerBirthDateChange: (value: string) => void;
+  onPayerFullNameChange: (value: string) => void;
+  onPayerIdentityDocumentChange: (value: string) => void;
+  onPayerInnChange: (value: string) => void;
+  onPayerRelationshipChange: (value: string) => void;
+  onTaxDeductionCodeChange: (value: TaxDeductionCode) => void;
+  patientDefaults: {
+    birthDate?: string | null;
+    fullName?: string | null;
+    identityDocument?: string | null;
+    taxpayerInn?: string | null;
+  };
+  patientTaxDefaultsAvailable: boolean;
+  payerBirthDate: string;
+  payerFullName: string;
+  payerIdentityDocument: string;
+  payerInn: string;
+  payerInnInvalid: boolean;
+  payerRelationship: string;
+  paymentMissingId: string;
+  taxDeductionCode: TaxDeductionCode;
+  taxDefaultsGuidanceId: string;
+  taxPayerDetailsOpen: boolean;
+};
+
+function PaymentTaxPayerDetails({
+  applyPatientTaxDefaults,
+  onPayerBirthDateChange,
+  onPayerFullNameChange,
+  onPayerIdentityDocumentChange,
+  onPayerInnChange,
+  onPayerRelationshipChange,
+  onTaxDeductionCodeChange,
+  patientDefaults,
+  patientTaxDefaultsAvailable,
+  payerBirthDate,
+  payerFullName,
+  payerIdentityDocument,
+  payerInn,
+  payerInnInvalid,
+  payerRelationship,
+  paymentMissingId,
+  taxDeductionCode,
+  taxDefaultsGuidanceId,
+  taxPayerDetailsOpen,
+}: PaymentTaxPayerDetailsProps) {
+  return (
+    <details
+      className="payment-capture-detail-section"
+      open={taxPayerDetailsOpen}
+    >
+      <summary>Плательщик для налогового вычета</summary>
+      <div className="payment-capture-detail-grid">
+        <label>
+          Плательщик для вычета
+          <input
+            autoComplete="name"
+            value={payerFullName}
+            onChange={(event) => onPayerFullNameChange(event.target.value)}
+            placeholder={patientDefaults.fullName ?? "ФИО налогоплательщика"}
+          />
+        </label>
+        <label>
+          ИНН плательщика
+          <DigitsInput
+            maxLength={12}
+            aria-invalid={payerInnInvalid || undefined}
+            aria-describedby={payerInnInvalid ? paymentMissingId : undefined}
+            value={payerInn}
+            onChange={onPayerInnChange}
+            placeholder={patientDefaults.taxpayerInn ?? "если есть"}
+          />
+        </label>
+        <label>
+          Дата рождения плательщика
+          <input
+            type="date"
+            autoComplete="bday"
+            value={payerBirthDate}
+            onChange={(event) => onPayerBirthDateChange(event.target.value)}
+            placeholder={patientDefaults.birthDate ?? ""}
+          />
+        </label>
+        <label>
+          Документ плательщика
+          <input
+            autoComplete="off"
+            value={payerIdentityDocument}
+            onChange={(event) =>
+              onPayerIdentityDocumentChange(event.target.value)
+            }
+            placeholder={
+              patientDefaults.identityDocument ?? "паспорт / иной документ"
+            }
+          />
+        </label>
+        <label>
+          Родство
+          <input
+            autoComplete="off"
+            value={payerRelationship}
+            onChange={(event) => onPayerRelationshipChange(event.target.value)}
+            placeholder="пациент"
+          />
+        </label>
+        <div
+          className="payment-methods"
+          aria-label="Код медицинской услуги для налогового вычета"
+        >
+          <button
+            className={taxDeductionCode === "" ? "active" : ""}
+            type="button"
+            aria-pressed={taxDeductionCode === ""}
+            onClick={() => onTaxDeductionCodeChange("")}
+          >
+            Не выбран
+          </button>
+          {(["1", "2"] as const).map((code) => (
+            <button
+              className={taxDeductionCode === code ? "active" : ""}
+              key={code}
+              type="button"
+              aria-pressed={taxDeductionCode === code}
+              onClick={() => onTaxDeductionCodeChange(code)}
+            >
+              Код {code}
+            </button>
+          ))}
+        </div>
+        <div className="payment-tax-defaults">
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={applyPatientTaxDefaults}
+            disabled={!patientTaxDefaultsAvailable}
+            aria-describedby={
+              !patientTaxDefaultsAvailable ? taxDefaultsGuidanceId : undefined
+            }
+            data-testid="payment-fill-payer-from-patient"
+          >
+            <UserRound aria-hidden="true" /> Заполнить из карточки пациента
+          </button>
+          {!patientTaxDefaultsAvailable ? (
+            <small id={taxDefaultsGuidanceId}>
+              В карточке пациента нет ФИО, даты рождения, документа или ИНН для
+              автозаполнения.
+            </small>
+          ) : (
+            <small>
+              Заполнит только пустые поля и не перезапишет ручные правки
+              администратора.
+            </small>
+          )}
+        </div>
+      </div>
+    </details>
   );
 }
 
@@ -107,70 +399,103 @@ export function PaymentCapture({
   payerIdentityDocument,
   payerInn,
   payerRelationship,
-  taxDeductionCode
+  taxDeductionCode,
 }: PaymentCaptureProps) {
   const amountMissingStep = rubAmountInputMissingStep(amount);
-  const taxDeductionRequested = taxDeductionCode === "1" || taxDeductionCode === "2";
+  const taxDeductionRequested =
+    taxDeductionCode === "1" || taxDeductionCode === "2";
   const trimmedFiscalReceiptUrl = fiscalReceiptUrl.trim();
   const trimmedPayerInn = payerInn.trim();
   const paymentMissingId = "payment-capture-missing";
   const taxDefaultsGuidanceId = "payment-tax-defaults-guidance";
   const paymentAmountInvalid = Boolean(amountMissingStep);
-  const fiscalReceiptUrlInvalid = Boolean(trimmedFiscalReceiptUrl && !/^https?:\/\/\S+$/i.test(trimmedFiscalReceiptUrl));
-  const payerInnInvalid = Boolean(trimmedPayerInn && !/^\d{10}$|^\d{12}$/.test(trimmedPayerInn));
+  const fiscalReceiptUrlInvalid = Boolean(
+    trimmedFiscalReceiptUrl &&
+    !/^https?:\/\/\S+$/i.test(trimmedFiscalReceiptUrl),
+  );
+  const payerInnInvalid = Boolean(
+    trimmedPayerInn && !/^\d{10}$|^\d{12}$/.test(trimmedPayerInn),
+  );
   const patientTaxDefaultsAvailable = Boolean(
     patientDefaults.fullName?.trim() ||
-      patientDefaults.birthDate?.trim() ||
-      patientDefaults.identityDocument?.trim() ||
-      patientDefaults.taxpayerInn?.trim()
+    patientDefaults.birthDate?.trim() ||
+    patientDefaults.identityDocument?.trim() ||
+    patientDefaults.taxpayerInn?.trim(),
   );
   const fiscalDetailsOpen =
     taxDeductionRequested ||
     Boolean(
       fiscalReceiptNumber.trim() ||
-        fiscalReceiptIssuedAt.trim() ||
-        fiscalFn.trim() ||
-        fiscalFd.trim() ||
-        fiscalFpd.trim() ||
-        trimmedFiscalReceiptUrl ||
-        fiscalCashierName.trim()
+      fiscalReceiptIssuedAt.trim() ||
+      fiscalFn.trim() ||
+      fiscalFd.trim() ||
+      fiscalFpd.trim() ||
+      trimmedFiscalReceiptUrl ||
+      fiscalCashierName.trim(),
     );
   const taxPayerDetailsOpen =
     taxDeductionRequested ||
     Boolean(
       payerFullName.trim() ||
-        trimmedPayerInn ||
-        payerBirthDate.trim() ||
-        payerIdentityDocument.trim() ||
-        payerRelationship.trim()
+      trimmedPayerInn ||
+      payerBirthDate.trim() ||
+      payerIdentityDocument.trim() ||
+      payerRelationship.trim(),
     );
   const paymentMissingSteps = [
-    !patientContextReady ? patientContextMessage || "выберите пациента текущего приема" : null,
+    !patientContextReady
+      ? patientContextMessage || "выберите пациента текущего приема"
+      : null,
     amountMissingStep,
-    fiscalReceiptUrlInvalid ? "ссылка ОФД должна начинаться с http:// или https://" : null,
+    fiscalReceiptUrlInvalid
+      ? "ссылка ОФД должна начинаться с http:// или https://"
+      : null,
     payerInnInvalid ? "ИНН плательщика должен содержать 10 или 12 цифр" : null,
-    taxDeductionRequested && !fiscalReceiptIssuedAt.trim() ? "для вычета укажите дату фискального чека" : null,
+    taxDeductionRequested && !fiscalReceiptIssuedAt.trim()
+      ? "для вычета укажите дату фискального чека"
+      : null,
     taxDeductionRequested && !fiscalFn.trim() ? "для вычета укажите ФН" : null,
     taxDeductionRequested && !fiscalFd.trim() ? "для вычета укажите ФД" : null,
-    taxDeductionRequested && !fiscalFpd.trim() ? "для вычета укажите ФПД" : null,
-    taxDeductionRequested && !payerFullName.trim() ? "для вычета укажите ФИО плательщика явно" : null,
-    taxDeductionRequested && !payerBirthDate.trim() ? "для вычета укажите дату рождения плательщика" : null,
-    taxDeductionRequested && !payerIdentityDocument.trim() ? "для вычета укажите документ плательщика" : null,
-    taxDeductionRequested && !payerRelationship.trim() ? "для вычета укажите родство плательщика" : null
+    taxDeductionRequested && !fiscalFpd.trim()
+      ? "для вычета укажите ФПД"
+      : null,
+    taxDeductionRequested && !payerFullName.trim()
+      ? "для вычета укажите ФИО плательщика явно"
+      : null,
+    taxDeductionRequested && !payerBirthDate.trim()
+      ? "для вычета укажите дату рождения плательщика"
+      : null,
+    taxDeductionRequested && !payerIdentityDocument.trim()
+      ? "для вычета укажите документ плательщика"
+      : null,
+    taxDeductionRequested && !payerRelationship.trim()
+      ? "для вычета укажите родство плательщика"
+      : null,
   ].filter((step): step is string => Boolean(step));
   const paymentReadyToSubmit = paymentMissingSteps.length === 0;
   const applyPatientTaxDefaults = () => {
-    if (!payerFullName.trim() && patientDefaults.fullName?.trim()) onPayerFullNameChange(patientDefaults.fullName.trim());
-    if (!payerBirthDate.trim() && patientDefaults.birthDate?.trim()) onPayerBirthDateChange(patientDefaults.birthDate.trim());
-    if (!payerIdentityDocument.trim() && patientDefaults.identityDocument?.trim()) onPayerIdentityDocumentChange(patientDefaults.identityDocument.trim());
-    if (!trimmedPayerInn && patientDefaults.taxpayerInn?.trim()) onPayerInnChange(digitsOnly(patientDefaults.taxpayerInn, 12));
+    if (!payerFullName.trim() && patientDefaults.fullName?.trim())
+      onPayerFullNameChange(patientDefaults.fullName.trim());
+    if (!payerBirthDate.trim() && patientDefaults.birthDate?.trim())
+      onPayerBirthDateChange(patientDefaults.birthDate.trim());
+    if (
+      !payerIdentityDocument.trim() &&
+      patientDefaults.identityDocument?.trim()
+    )
+      onPayerIdentityDocumentChange(patientDefaults.identityDocument.trim());
+    if (!trimmedPayerInn && patientDefaults.taxpayerInn?.trim())
+      onPayerInnChange(digitsOnly(patientDefaults.taxpayerInn, 12));
     if (!payerRelationship.trim()) onPayerRelationshipChange("пациент");
   };
 
   return (
     <div className="payment-capture" id="payment-capture">
       {feedback ? (
-        <div className="payment-capture-feedback" role="status" aria-live="polite">
+        <div
+          className="payment-capture-feedback"
+          role="status"
+          aria-live="polite"
+        >
           {feedback}
         </div>
       ) : null}
@@ -202,165 +527,53 @@ export function PaymentCapture({
           </button>
         ))}
       </div>
-      <details className="payment-capture-detail-section" open={fiscalDetailsOpen}>
-        <summary>Фискальный чек и кассир</summary>
-        <div className="payment-capture-detail-grid">
-          <label>
-            Номер чека / примечание
-            <input
-              autoComplete="off"
-              value={fiscalReceiptNumber}
-              onChange={(event) => onFiscalReceiptNumberChange(event.target.value)}
-              placeholder="можно оставить пустым, если есть ФН/ФД/ФПД"
-            />
-          </label>
-          <label>
-            Дата чека
-            <input type="datetime-local" value={fiscalReceiptIssuedAt} onChange={(event) => onFiscalReceiptIssuedAtChange(event.target.value)} />
-          </label>
-          <label>
-            ФН
-            <DigitsInput
-              maxLength={32}
-              value={fiscalFn}
-              onChange={onFiscalFnChange}
-              placeholder="номер фискального накопителя"
-            />
-          </label>
-          <label>
-            ФД
-            <DigitsInput
-              maxLength={32}
-              value={fiscalFd}
-              onChange={onFiscalFdChange}
-              placeholder="номер фискального документа"
-            />
-          </label>
-          <label>
-            ФПД
-            <DigitsInput
-              maxLength={32}
-              value={fiscalFpd}
-              onChange={onFiscalFpdChange}
-              placeholder="фискальный признак"
-            />
-          </label>
-          <label>
-            Ссылка ОФД
-            <input
-              type="url"
-              autoComplete="url"
-              aria-invalid={fiscalReceiptUrlInvalid || undefined}
-              aria-describedby={fiscalReceiptUrlInvalid ? paymentMissingId : undefined}
-              value={fiscalReceiptUrl}
-              onChange={(event) => onFiscalReceiptUrlChange(event.target.value)}
-              placeholder="https://..."
-            />
-          </label>
-          <label>
-            Кассир
-            <input
-              autoComplete="off"
-              value={fiscalCashierName}
-              onChange={(event) => onFiscalCashierNameChange(event.target.value)}
-              placeholder="ФИО администратора"
-            />
-          </label>
-        </div>
-      </details>
-      <details className="payment-capture-detail-section" open={taxPayerDetailsOpen}>
-        <summary>Плательщик для налогового вычета</summary>
-        <div className="payment-capture-detail-grid">
-          <label>
-            Плательщик для вычета
-            <input
-              autoComplete="name"
-              value={payerFullName}
-              onChange={(event) => onPayerFullNameChange(event.target.value)}
-              placeholder={patientDefaults.fullName ?? "ФИО налогоплательщика"}
-            />
-          </label>
-          <label>
-            ИНН плательщика
-            <DigitsInput
-              maxLength={12}
-              aria-invalid={payerInnInvalid || undefined}
-              aria-describedby={payerInnInvalid ? paymentMissingId : undefined}
-              value={payerInn}
-              onChange={onPayerInnChange}
-              placeholder={patientDefaults.taxpayerInn ?? "если есть"}
-            />
-          </label>
-          <label>
-            Дата рождения плательщика
-            <input
-              type="date"
-              autoComplete="bday"
-              value={payerBirthDate}
-              onChange={(event) => onPayerBirthDateChange(event.target.value)}
-              placeholder={patientDefaults.birthDate ?? ""}
-            />
-          </label>
-          <label>
-            Документ плательщика
-            <input
-              autoComplete="off"
-              value={payerIdentityDocument}
-              onChange={(event) => onPayerIdentityDocumentChange(event.target.value)}
-              placeholder={patientDefaults.identityDocument ?? "паспорт / иной документ"}
-            />
-          </label>
-          <label>
-            Родство
-            <input
-              autoComplete="off"
-              value={payerRelationship}
-              onChange={(event) => onPayerRelationshipChange(event.target.value)}
-              placeholder="пациент"
-            />
-          </label>
-          <div className="payment-methods" aria-label="Код медицинской услуги для налогового вычета">
-            <button
-              className={taxDeductionCode === "" ? "active" : ""}
-              type="button"
-              aria-pressed={taxDeductionCode === ""}
-              onClick={() => onTaxDeductionCodeChange("")}
-            >
-              Не выбран
-            </button>
-            {(["1", "2"] as const).map((code) => (
-              <button
-                className={taxDeductionCode === code ? "active" : ""}
-                key={code}
-                type="button"
-                aria-pressed={taxDeductionCode === code}
-                onClick={() => onTaxDeductionCodeChange(code)}
-              >
-                Код {code}
-              </button>
-            ))}
-          </div>
-          <div className="payment-tax-defaults">
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={applyPatientTaxDefaults}
-              disabled={!patientTaxDefaultsAvailable}
-              aria-describedby={!patientTaxDefaultsAvailable ? taxDefaultsGuidanceId : undefined}
-              data-testid="payment-fill-payer-from-patient"
-            >
-              <UserRound aria-hidden="true" /> Заполнить из карточки пациента
-            </button>
-            {!patientTaxDefaultsAvailable ? (
-              <small id={taxDefaultsGuidanceId}>В карточке пациента нет ФИО, даты рождения, документа или ИНН для автозаполнения.</small>
-            ) : (
-              <small>Заполнит только пустые поля и не перезапишет ручные правки администратора.</small>
-            )}
-          </div>
-        </div>
-      </details>
+      <PaymentFiscalDetails
+        fiscalCashierName={fiscalCashierName}
+        fiscalDetailsOpen={fiscalDetailsOpen}
+        fiscalFd={fiscalFd}
+        fiscalFn={fiscalFn}
+        fiscalFpd={fiscalFpd}
+        fiscalReceiptIssuedAt={fiscalReceiptIssuedAt}
+        fiscalReceiptNumber={fiscalReceiptNumber}
+        fiscalReceiptUrl={fiscalReceiptUrl}
+        fiscalReceiptUrlInvalid={fiscalReceiptUrlInvalid}
+        onFiscalCashierNameChange={onFiscalCashierNameChange}
+        onFiscalFdChange={onFiscalFdChange}
+        onFiscalFnChange={onFiscalFnChange}
+        onFiscalFpdChange={onFiscalFpdChange}
+        onFiscalReceiptIssuedAtChange={onFiscalReceiptIssuedAtChange}
+        onFiscalReceiptNumberChange={onFiscalReceiptNumberChange}
+        onFiscalReceiptUrlChange={onFiscalReceiptUrlChange}
+        paymentMissingId={paymentMissingId}
+      />
+      <PaymentTaxPayerDetails
+        applyPatientTaxDefaults={applyPatientTaxDefaults}
+        onPayerBirthDateChange={onPayerBirthDateChange}
+        onPayerFullNameChange={onPayerFullNameChange}
+        onPayerIdentityDocumentChange={onPayerIdentityDocumentChange}
+        onPayerInnChange={onPayerInnChange}
+        onPayerRelationshipChange={onPayerRelationshipChange}
+        onTaxDeductionCodeChange={onTaxDeductionCodeChange}
+        patientDefaults={patientDefaults}
+        patientTaxDefaultsAvailable={patientTaxDefaultsAvailable}
+        payerBirthDate={payerBirthDate}
+        payerFullName={payerFullName}
+        payerIdentityDocument={payerIdentityDocument}
+        payerInn={payerInn}
+        payerInnInvalid={payerInnInvalid}
+        payerRelationship={payerRelationship}
+        paymentMissingId={paymentMissingId}
+        taxDeductionCode={taxDeductionCode}
+        taxDefaultsGuidanceId={taxDefaultsGuidanceId}
+        taxPayerDetailsOpen={taxPayerDetailsOpen}
+      />
       {!paymentReadyToSubmit ? (
-        <div className="payment-capture-missing" id={paymentMissingId} role="status" aria-live="polite">
+        <div
+          className="payment-capture-missing"
+          id={paymentMissingId}
+          role="status"
+          aria-live="polite"
+        >
           <strong>Чтобы принять оплату, осталось:</strong>
           <ul>
             {paymentMissingSteps.map((step) => (
@@ -370,7 +583,8 @@ export function PaymentCapture({
         </div>
       ) : null}
       <p className="payment-capture-safeguard">
-        Каждая оплата добавляет новую строку в историю. Ошибку закрывайте возвратом или коррекцией, не повторной записью.
+        Каждая оплата добавляет новую строку в историю. Ошибку закрывайте
+        возвратом или коррекцией, не повторной записью.
       </p>
       <button
         className="primary-button"
@@ -380,7 +594,8 @@ export function PaymentCapture({
         aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
         disabled={isSaving || !paymentReadyToSubmit}
       >
-        <CreditCard aria-hidden="true" /> {isSaving ? "Записываю" : "Принять оплату"}
+        <CreditCard aria-hidden="true" />{" "}
+        {isSaving ? "Записываю" : "Принять оплату"}
       </button>
     </div>
   );
