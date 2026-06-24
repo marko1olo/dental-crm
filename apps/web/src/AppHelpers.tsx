@@ -1297,7 +1297,8 @@ export function loadLocalImagingViewerDraft(studyId: string | null, organization
       return null;
     }
     return parsed?.state && Array.isArray(parsed.annotations) ? parsed : null;
-  } catch {
+  } catch (error) {
+    console.warn("Failed to load local imaging viewer draft", error);
     return null;
   }
 }
