@@ -13,7 +13,7 @@ if (!existsSync(routePath)) {
 const { parseImagingManifest } = await import(pathToFileURL(routePath).href);
 
 // Empty Input Case
-const emptyResult = parseImagingManifest({
+const emptyResult = await parseImagingManifest({
   sourceName: "testEmpty",
   sourceKind: "folder_watch",
   rawText: "   \n  \n"
@@ -30,7 +30,7 @@ const headersText = [
   "Иванова Марина Сергеевна,,UnknownKind,/path/to/image2.jpg,2023-01-03,"
 ].join("\n");
 
-const headersResult = parseImagingManifest({
+const headersResult = await parseImagingManifest({
   sourceName: "testHeaders",
   sourceKind: "folder_watch",
   rawText: headersText
@@ -59,7 +59,7 @@ const noHeadersText = [
   "/path/to/some/image/file.jpg Иванова Марина Сергеевна +7 (900) 555-55-55 01.01.2023 ОПТГ 11"
 ].join("\n");
 
-const noHeadersResult = parseImagingManifest({
+const noHeadersResult = await parseImagingManifest({
   sourceName: "testNoHeaders",
   sourceKind: "folder_watch",
   rawText: noHeadersText

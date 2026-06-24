@@ -4488,7 +4488,7 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
     "Автопилот сканирует только локальные источники и ограниченные заголовки; старые базы, снимки и локальные пути не отправляются в публичный поиск.",
     "Онлайн-поиск разрешен только для реквизитов клиники: ИНН, ОГРН, КПП, название, адрес, лицензия."
   ]);
-  const smartImportPreview = input.smartImport ? buildSmartImportPreview(input.smartImport) : null;
+  const smartImportPreview = input.smartImport ? await buildSmartImportPreview(input.smartImport) : null;
   const smartImportKnownSources = (smartImportPreview?.legacySources ?? []).slice(0, 24).map(migrationCandidateFromSmartLegacySource);
   const explicitKnownSources = [...(input.knownSources ?? []), ...smartImportKnownSources];
   const discovery = await discoverLocalMigrationSources({
@@ -4990,7 +4990,7 @@ function buildMigrationPlan(input: {
   };
 }
 
-function buildSmartImportPreview(input: { sourceName: string; rawText: string; mode: SmartImportMode }) {
+async function buildSmartImportPreview(input: { sourceName: string; rawText: string; mode: SmartImportMode }) {
   const lines = input.rawText.split(/\r?\n/);
   const classifications = lines.map((line, index) => classifyLine(line, index + 1, input.mode));
   const patientLines = classifications.filter((line) => line.kind === "patient").map((line) => line.text);
@@ -5010,7 +5010,7 @@ function buildSmartImportPreview(input: { sourceName: string; rawText: string; m
     sourceKind: "mis_export",
     rawText: patientRawText || emptyPatientText
   });
-  const imagingPreview = parseImagingManifest({
+  const imagingPreview = await parseImagingManifest({
     sourceName: `${input.sourceName}:imaging`,
     sourceKind: "folder_watch",
     rawText: imagingRawText
@@ -5057,7 +5057,7 @@ function csvCell(value: string | number | null | undefined) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function buildSmartImportReportCsv(preview: ReturnType<typeof buildSmartImportPreview>) {
+function buildSmartImportReportCsv(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>) {
   const rows: Array<Array<string | number | null | undefined>> = [
     [
       "section",
@@ -5200,7 +5200,7 @@ function smartImportSafeHandoffFingerprint(section: string, rowNumber: number, s
   return migrationFingerprint(`${section}:${rowNumber}:${status}:${kind}`).toUpperCase();
 }
 
-function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSmartImportPreview>) {
+function buildSmartImportSafeHandoffReportCsv(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>) {
   const rows: Array<Array<string | number | null | undefined>> = [
     [
       "section",
@@ -5523,7 +5523,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return buildSmartImportPreview(input);
+    return await buildSmartImportPreview(input);
   });
 
   app.post("/api/imports/smart/local-source-discovery", async (request, reply) => {
@@ -5612,7 +5612,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = buildSmartImportPreview(input);
+    const preview = await buildSmartImportPreview(input);
     const csv = buildSmartImportReportCsv(preview);
     return reply
       .type("text/csv; charset=utf-8")
@@ -5629,7 +5629,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = buildSmartImportPreview(input);
+    const preview = await buildSmartImportPreview(input);
     const csv = buildSmartImportSafeHandoffReportCsv(preview);
     return reply
       .type("text/csv; charset=utf-8")
@@ -5646,7 +5646,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = buildSmartImportPreview(input);
+    const preview = await buildSmartImportPreview(input);
     const patientCommit =
       preview.patientPreview.totalRows > 0
         ? commitPatientImport({
