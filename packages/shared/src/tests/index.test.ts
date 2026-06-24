@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { documentRequiresPaidRecord, documentKindSchema } from '../index.js';
+import { documentRequiresPaidRecord, documentKindSchema, documentPayloadAllowedKeys, type DocumentKind } from '../index.js';
 
 describe('documentRequiresPaidRecord', () => {
   test('returns expected boolean for different document kinds', () => {
@@ -25,6 +25,27 @@ describe('documentRequiresPaidRecord', () => {
     for (const kind of documentKindSchema.options) {
       const result = documentRequiresPaidRecord(kind);
       assert.strictEqual(typeof result, 'boolean');
+    }
+  });
+});
+
+describe('documentPayloadAllowedKeys', () => {
+  test('returns expected payload keys for known document kinds', () => {
+    assert.deepStrictEqual(documentPayloadAllowedKeys('paid_medical_services_contract'), ['paidMedicalServicesContract']);
+    assert.deepStrictEqual(documentPayloadAllowedKeys('treatment_plan'), ['treatmentPlan']);
+    assert.deepStrictEqual(documentPayloadAllowedKeys('tax_deduction_certificate'), ['taxPaymentSelection']);
+    assert.deepStrictEqual(documentPayloadAllowedKeys('patient_intake_questionnaire'), ['patientIntakeQuestionnaire']);
+  });
+
+  test('returns empty array for unknown document kinds', () => {
+    // Testing invalid input
+    assert.deepStrictEqual(documentPayloadAllowedKeys('unknown_document_kind' as DocumentKind), []);
+  });
+
+  test('handles all valid document kinds without throwing and returns an array', () => {
+    for (const kind of documentKindSchema.options) {
+      const result = documentPayloadAllowedKeys(kind);
+      assert.ok(Array.isArray(result));
     }
   });
 });
