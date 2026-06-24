@@ -1827,19 +1827,58 @@ function staffDailyCapacityMinutes(staff: StaffMember): number {
 }
 
 function buildAppointmentReadiness(patientInsights = buildPatientInsights()): AppointmentReadiness[] {
+  const patientsById = new Map(patients.map((p) => [p.id, p]));
+  const activeStaffById = new Map(staffMembers.filter((m) => m.active).map((m) => [m.id, m]));
+  const activeChairsById = new Map(chairs.filter((c) => c.active).map((c) => [c.id, c]));
+
+  const documentsByPatientId = new Map<string, typeof documents[0][]>();
+  for (const doc of documents) {
+    if (doc.status !== "voided") {
+      let docs = documentsByPatientId.get(doc.patientId);
+      if (!docs) {
+        docs = [];
+        documentsByPatientId.set(doc.patientId, docs);
+      }
+      docs.push(doc);
+    }
+  }
+
+  const imagesByPatientId = new Map<string, typeof imagingStudies[0][]>();
+  for (const study of imagingStudies) {
+    let images = imagesByPatientId.get(study.patientId);
+    if (!images) {
+      images = [];
+      imagesByPatientId.set(study.patientId, images);
+    }
+    images.push(study);
+  }
+
+  const patientInsightsByPatientId = new Map(patientInsights.map((i) => [i.patientId, i]));
+
+  const openTasksByAppointmentId = new Map<string, typeof communicationTasks[0][]>();
+  for (const task of communicationTasks) {
+    if (task.appointmentId && isOpenCommunicationTask(task)) {
+      let tasks = openTasksByAppointmentId.get(task.appointmentId);
+      if (!tasks) {
+        tasks = [];
+        openTasksByAppointmentId.set(task.appointmentId, tasks);
+      }
+      tasks.push(task);
+    }
+  }
+
   return appointments.map((appointment) => {
-    const patient = patients.find((item) => item.id === appointment.patientId);
-    const doctor = staffMembers.find((member) => member.id === appointment.doctorUserId && member.active);
+    const patient = appointment.patientId ? patientsById.get(appointment.patientId) : undefined;
+    const doctor = appointment.doctorUserId ? activeStaffById.get(appointment.doctorUserId) : undefined;
+    const assistantMaybe = appointment.assistantUserId ? activeStaffById.get(appointment.assistantUserId) : null;
     const assistant = appointment.assistantUserId
-      ? staffMembers.find((member) => member.id === appointment.assistantUserId && member.role === "assistant" && member.active)
+      ? (assistantMaybe?.role === "assistant" ? assistantMaybe : null)
       : null;
-    const chair = chairs.find((item) => item.id === appointment.chairId && item.active);
-    const patientDocuments = documents.filter((document) => document.patientId === appointment.patientId && document.status !== "voided");
-    const patientImages = imagingStudies.filter((study) => study.patientId === appointment.patientId);
-    const insight = patientInsights.find((item) => item.patientId === appointment.patientId);
-    const appointmentTasks = communicationTasks.filter(
-      (task) => task.appointmentId === appointment.id && isOpenCommunicationTask(task)
-    );
+    const chair = appointment.chairId ? activeChairsById.get(appointment.chairId) : undefined;
+    const patientDocuments = (appointment.patientId ? documentsByPatientId.get(appointment.patientId) : undefined) || [];
+    const patientImages = (appointment.patientId ? imagesByPatientId.get(appointment.patientId) : undefined) || [];
+    const insight = appointment.patientId ? patientInsightsByPatientId.get(appointment.patientId) : undefined;
+    const appointmentTasks = openTasksByAppointmentId.get(appointment.id) || [];
     const hasContract = patientDocuments.some((document) => document.kind === "paid_medical_services_contract");
     const hasConsent = patientDocuments.some((document) => document.kind === "informed_consent");
     const hasImageForTreatment = patientImages.some((study) => study.status !== "failed");
