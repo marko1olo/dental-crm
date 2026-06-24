@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { documentRequiresPaidRecord, documentKindSchema } from '../index.js';
+import { documentRequiresPaidRecord, documentKindSchema, documentPayloadDisallowedKeys } from '../index.js';
 
 describe('documentRequiresPaidRecord', () => {
   test('returns expected boolean for different document kinds', () => {
@@ -26,5 +26,55 @@ describe('documentRequiresPaidRecord', () => {
       const result = documentRequiresPaidRecord(kind);
       assert.strictEqual(typeof result, 'boolean');
     }
+  });
+});
+
+describe('documentPayloadDisallowedKeys', () => {
+  test('returns empty array when payload is null or undefined', () => {
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', null), []);
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', undefined), []);
+  });
+
+  test('returns empty array when payload is an empty object', () => {
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', {}), []);
+  });
+
+  test('returns empty array when payload only contains allowed keys', () => {
+    const payload = {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+      }
+    };
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), []);
+  });
+
+  test('returns array of disallowed keys when payload contains keys not allowed for the given kind', () => {
+    const payload = {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+      },
+      paidMedicalServicesContract: {
+        contractNumber: '123',
+        contractDate: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+      }
+    };
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), ['paidMedicalServicesContract']);
+  });
+
+  test('ignores keys with undefined values', () => {
+    const payload = {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+      },
+      paidMedicalServicesContract: undefined
+    };
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), []);
   });
 });
