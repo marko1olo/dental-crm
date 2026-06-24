@@ -8035,3 +8035,4 @@ export type MprProjection = any;
 export type MprWindowPreset = any;
 
 export * from "./utils/strings.js";
+export * from "./utils/dates.js";
