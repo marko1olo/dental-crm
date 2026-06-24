@@ -2569,22 +2569,42 @@ function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
 
   return Array.from(buckets.values()).map((seriesRows, index): DicomSeriesPreviewGroup => {
     const first = seriesRows[0];
-    const kind = seriesRows.find((row) => row.kind)?.kind ?? null;
-    const modality = seriesRows.find((row) => row.modality)?.modality ?? null;
-    const patientId = seriesRows.find((row) => row.patientId)?.patientId ?? null;
-    const patientName = seriesRows.find((row) => row.patientName)?.patientName ?? null;
-    const studyInstanceUid = seriesRows.find((row) => row.studyInstanceUid)?.studyInstanceUid ?? null;
-    const seriesInstanceUid = seriesRows.find((row) => row.seriesInstanceUid)?.seriesInstanceUid ?? null;
-    const studyDescription = seriesRows.find((row) => row.studyDescription)?.studyDescription ?? null;
-    const seriesDescription = seriesRows.find((row) => row.seriesDescription)?.seriesDescription ?? null;
-    const capturedAt = seriesRows.find((row) => row.capturedAt)?.capturedAt ?? null;
-    const firstFilePath = seriesRows.find((row) => row.filePath)?.filePath ?? null;
+    let kind: "other" | "periapical" | "bitewing" | "opg" | "ceph" | "cbct" | "photo" | null = null;
+    let modality: string | null = null;
+    let patientId: string | null = null;
+    let patientName: string | null = null;
+    let studyInstanceUid: string | null = null;
+    let seriesInstanceUid: string | null = null;
+    let studyDescription: string | null = null;
+    let seriesDescription: string | null = null;
+    let capturedAt: string | null = null;
+    let firstFilePath: string | null = null;
+    let imageRows: number | null = null;
+    let imageColumns: number | null = null;
+    let bitsAllocated: number | null = null;
+    let samplesPerPixel: number | null = null;
+
+    for (let i = 0; i < seriesRows.length; i++) {
+      const row = seriesRows[i];
+      if (!row) continue;
+      if (kind === null && row.kind) kind = row.kind;
+      if (modality === null && row.modality) modality = row.modality;
+      if (patientId === null && row.patientId) patientId = row.patientId;
+      if (patientName === null && row.patientName) patientName = row.patientName;
+      if (studyInstanceUid === null && row.studyInstanceUid) studyInstanceUid = row.studyInstanceUid;
+      if (seriesInstanceUid === null && row.seriesInstanceUid) seriesInstanceUid = row.seriesInstanceUid;
+      if (studyDescription === null && row.studyDescription) studyDescription = row.studyDescription;
+      if (seriesDescription === null && row.seriesDescription) seriesDescription = row.seriesDescription;
+      if (capturedAt === null && row.capturedAt) capturedAt = row.capturedAt;
+      if (firstFilePath === null && row.filePath) firstFilePath = row.filePath;
+      if (imageRows === null && row.imageRows) imageRows = row.imageRows;
+      if (imageColumns === null && row.imageColumns) imageColumns = row.imageColumns;
+      if (bitsAllocated === null && row.bitsAllocated) bitsAllocated = row.bitsAllocated;
+      if (samplesPerPixel === null && row.samplesPerPixel) samplesPerPixel = row.samplesPerPixel;
+    }
+
     const sourceKind = first?.sourceKind ?? "dicom_file";
     const sourceName = first?.sourceName ?? "dicom_series";
-    const imageRows = seriesRows.find((row) => row.imageRows)?.imageRows ?? null;
-    const imageColumns = seriesRows.find((row) => row.imageColumns)?.imageColumns ?? null;
-    const bitsAllocated = seriesRows.find((row) => row.bitsAllocated)?.bitsAllocated ?? null;
-    const samplesPerPixel = seriesRows.find((row) => row.samplesPerPixel)?.samplesPerPixel ?? null;
     const rowPixelBytes = seriesRows.reduce((total, row) => total + (row.estimatedPixelBytes ?? 0), 0);
     const estimatedPixelBytes =
       rowPixelBytes > 0
