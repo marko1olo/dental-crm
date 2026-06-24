@@ -1451,7 +1451,8 @@ export function loadLocalMprWorkbenchDraftFromLocalStorage(
     }
     const state = normalizeMprWorkbenchState(parsed.state);
     return state ? { ...parsed, state } : null;
-  } catch {
+  } catch (error) {
+    console.warn(error);
     return null;
   }
 }
