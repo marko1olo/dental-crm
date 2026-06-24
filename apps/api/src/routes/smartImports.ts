@@ -2097,9 +2097,9 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
   const workstationSignalRoots = migrationRootsFromWorkstationSignals(workstationSignals);
   const baseRoots = input.rootPaths?.length ? input.rootPaths : migrationDiscoveryDefaultRoots();
   const mappedRoots = input.rootPaths?.length ? [] : await readWindowsMigrationMappedRoots(warnings);
-  const roots = [...workstationSignalRoots, ...baseRoots, ...migrationDriveDataRoots(mappedRoots)]
-    .map((root) => path.resolve(root))
-    .filter((root, index, all) => migrationRootExists(root) && all.indexOf(root) === index);
+  const candidateRoots = [...workstationSignalRoots, ...baseRoots, ...migrationDriveDataRoots(mappedRoots)]
+    .map((root) => path.resolve(root));
+  const roots = Array.from(new Set(candidateRoots)).filter((root) => migrationRootExists(root));
   const candidates: MigrationLocalSourceDiscoveryCandidate[] = [];
   const visited = new Set<string>();
   const queue = roots.map((root) => ({ root, folderPath: root, depth: 0 }));
