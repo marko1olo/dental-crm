@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const mainAppSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appLogicSource = readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
+const appSource = mainAppSource + appLogicSource;
 const financeViewSource = readFileSync("apps/web/src/FinanceView.tsx", "utf8");
 const paymentCaptureSource = readFileSync("apps/web/src/PaymentCapture.tsx", "utf8");
 const rubAmountInputSource = readFileSync("apps/web/src/rubAmountInput.ts", "utf8");
@@ -72,8 +74,8 @@ requireIn(paymentCaptureSource, 'className="payment-capture-detail-section"', "P
 requireIn(paymentCaptureSource, "<summary>Фискальный чек и кассир</summary>", "PaymentCapture must hide fiscal receipt fields behind a clear summary");
 requireIn(paymentCaptureSource, "<summary>Плательщик для налогового вычета</summary>", "PaymentCapture must hide tax payer fields behind a clear summary");
 requireIn(paymentCaptureSource, 'className="payment-capture-detail-grid"', "PaymentCapture details must use a contained detail grid");
-requireIn(paymentCaptureSource, "digitsOnly(event.target.value, 32)", "PaymentCapture must keep fiscal number normalization");
-requireIn(paymentCaptureSource, "digitsOnly(event.target.value, 12)", "PaymentCapture must keep payer INN normalization");
+requireIn(paymentCaptureSource, "maxLength={32}", "PaymentCapture must keep fiscal number normalization");
+requireIn(paymentCaptureSource, "maxLength={12}", "PaymentCapture must keep payer INN normalization");
 requireIn(paymentCaptureSource, "aria-pressed={method === paymentMethod}", "Payment method segmented buttons must expose the selected method.");
 requireIn(paymentCaptureSource, "aria-pressed={taxDeductionCode === \"\"}", "Tax deduction empty segmented button must expose its selected state.");
 requireIn(paymentCaptureSource, "aria-pressed={taxDeductionCode === code}", "Tax deduction code segmented buttons must expose their selected state.");
