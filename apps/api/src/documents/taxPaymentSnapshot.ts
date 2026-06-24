@@ -128,12 +128,20 @@ export function taxPaymentsForIssueSnapshot(
   payments: readonly Payment[],
   documents: readonly GeneratedDocument[]
 ): Payment[] {
-  const selectedPayments = baseTaxPaymentsForDocument(document, payments);
-  if (selectedPaymentIdsForTaxDocument(document).size) return selectedPayments;
-  if (!taxDocumentDuplicateSensitive(document.kind)) return selectedPayments;
+  const explicitPaymentIds = selectedPaymentIdsForTaxDocument(document);
+  if (explicitPaymentIds.size) {
+    return baseTaxPaymentsForDocument(document, payments);
+  }
+
+  const matchingPayments = payments.filter((payment) => paymentMatchesDocumentTaxScope(document, payment));
+
+  if (!taxDocumentDuplicateSensitive(document.kind)) {
+    const linkedPayments = matchingPayments.filter((payment) => payment.documentId === document.id);
+    return linkedPayments.length ? linkedPayments : matchingPayments;
+  }
 
   const covered = coveredIdentifiersForIssuedTaxCertificates(document, documents, payments);
-  return selectedPayments.filter(
+  return matchingPayments.filter(
     (payment) => !covered.paymentIds.has(payment.id) && !covered.fiscalReceiptKeys.has(taxPaymentReceiptKey(payment))
   );
 }
