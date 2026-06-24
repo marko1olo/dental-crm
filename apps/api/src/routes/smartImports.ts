@@ -1714,25 +1714,25 @@ function normalizeMigrationSignalValues(value: string | undefined) {
 
 async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>) {
   if (os.platform() !== "win32") return [] as Array<{ channel: "process" | "service" | "installed_app" | "shortcut"; value: string }>;
-  const script = [
-    "$ErrorActionPreference='SilentlyContinue'",
-    "$rx='sidexis|sirona|romexis|planmeca|vatech|ezdent|carestream|kodak|morita|idixel|i-dixel|veraview|newtom|new tom|nnt|myray|cefla|owandy|quickvision|quick vision|dexis|kavo|ka vo|gendex|acteon|sopro|sopix|pspix|x-mind|x mind|ondemand|invivo|cliniview|dbswin|vistasoft|digora|soredex|trophy|visiodent|mediadent|vixwin|sopro|schick|dtx|3shape|medit|exocad|firebird|interbase|sqlite|mssql|sql|dbf|dbase|foxpro|clipper|paradox|1cv8|1c|cliniccards|dental|stomatology|opendental|open dental|dentrix|eaglesoft|patterson|infoclinica|infodent|dentasoft|clinic365|sycret|secret dent|adenta|dentcrm24|clientix|klientix|medods|dentaltap|istom|qstoma|macdent|stombox|medangel|medialog|arnica|ident|stomx|dicom|pacs|rvg|xray|cbct|opg'",
-    "$processes = Get-Process | Select-Object -First 500 -Property ProcessName,Path | ForEach-Object { ([string]$_.ProcessName + ' || ' + [string]$_.Path) } | Where-Object { $_ -match $rx }",
-    "$services = Get-CimInstance Win32_Service | Select-Object -First 1000 -Property Name,DisplayName,PathName | ForEach-Object { ([string]$_.Name + ' || ' + [string]$_.DisplayName + ' || ' + [string]$_.PathName) } | Where-Object { $_ -match $rx }",
-    "$uninstallPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*')",
-    "$apps = foreach ($p in $uninstallPaths) { Get-ItemProperty -Path $p | Select-Object -First 800 -Property DisplayName,InstallLocation,InstallSource,DisplayIcon | ForEach-Object { ([string]$_.DisplayName + ' || ' + [string]$_.InstallLocation + ' || ' + [string]$_.InstallSource + ' || ' + [string]$_.DisplayIcon) } }",
-    "$apps = $apps | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160",
-    "$shortcutRoots = @([Environment]::GetFolderPath('Desktop'),[Environment]::GetFolderPath('CommonDesktopDirectory'),[Environment]::GetFolderPath('StartMenu'),[Environment]::GetFolderPath('CommonStartMenu'))",
-    "$shell = New-Object -ComObject WScript.Shell",
-    "$shortcuts = foreach ($root in $shortcutRoots) { if ($root -and (Test-Path $root)) { Get-ChildItem -Path $root -Filter *.lnk -Recurse -ErrorAction SilentlyContinue | Select-Object -First 400 | ForEach-Object { $lnk = $shell.CreateShortcut($_.FullName); ([string]$_.Name + ' || ' + [string]$lnk.TargetPath + ' || ' + [string]$lnk.Arguments + ' || ' + [string]$lnk.WorkingDirectory) } } }",
-    "$shortcuts = $shortcuts | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160",
-    "$rows = @()",
-    "foreach ($p in $processes) { if ($p) { $rows += [pscustomobject]@{ channel='process'; value=[string]$p } } }",
-    "foreach ($s in $services) { if ($s) { $rows += [pscustomobject]@{ channel='service'; value=[string]$s } } }",
-    "foreach ($a in $apps) { if ($a) { $rows += [pscustomobject]@{ channel='installed_app'; value=[string]$a } } }",
-    "foreach ($l in $shortcuts) { if ($l) { $rows += [pscustomobject]@{ channel='shortcut'; value=[string]$l } } }",
-    "$rows | ConvertTo-Json -Compress"
-  ].join("; ");
+  const script = `
+    $ErrorActionPreference='SilentlyContinue';
+    $rx='sidexis|sirona|romexis|planmeca|vatech|ezdent|carestream|kodak|morita|idixel|i-dixel|veraview|newtom|new tom|nnt|myray|cefla|owandy|quickvision|quick vision|dexis|kavo|ka vo|gendex|acteon|sopro|sopix|pspix|x-mind|x mind|ondemand|invivo|cliniview|dbswin|vistasoft|digora|soredex|trophy|visiodent|mediadent|vixwin|sopro|schick|dtx|3shape|medit|exocad|firebird|interbase|sqlite|mssql|sql|dbf|dbase|foxpro|clipper|paradox|1cv8|1c|cliniccards|dental|stomatology|opendental|open dental|dentrix|eaglesoft|patterson|infoclinica|infodent|dentasoft|clinic365|sycret|secret dent|adenta|dentcrm24|clientix|klientix|medods|dentaltap|istom|qstoma|macdent|stombox|medangel|medialog|arnica|ident|stomx|dicom|pacs|rvg|xray|cbct|opg';
+    $processes = Get-Process | Select-Object -First 500 -Property ProcessName,Path | ForEach-Object { ([string]$_.ProcessName + ' || ' + [string]$_.Path) } | Where-Object { $_ -match $rx };
+    $services = Get-CimInstance Win32_Service | Select-Object -First 1000 -Property Name,DisplayName,PathName | ForEach-Object { ([string]$_.Name + ' || ' + [string]$_.DisplayName + ' || ' + [string]$_.PathName) } | Where-Object { $_ -match $rx };
+    $uninstallPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*');
+    $apps = foreach ($p in $uninstallPaths) { Get-ItemProperty -Path $p | Select-Object -First 800 -Property DisplayName,InstallLocation,InstallSource,DisplayIcon | ForEach-Object { ([string]$_.DisplayName + ' || ' + [string]$_.InstallLocation + ' || ' + [string]$_.InstallSource + ' || ' + [string]$_.DisplayIcon) } };
+    $apps = $apps | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160;
+    $shortcutRoots = @([Environment]::GetFolderPath('Desktop'),[Environment]::GetFolderPath('CommonDesktopDirectory'),[Environment]::GetFolderPath('StartMenu'),[Environment]::GetFolderPath('CommonStartMenu'));
+    $shell = New-Object -ComObject WScript.Shell;
+    $shortcuts = foreach ($root in $shortcutRoots) { if ($root -and (Test-Path $root)) { Get-ChildItem -Path $root -Filter *.lnk -Recurse -ErrorAction SilentlyContinue | Select-Object -First 400 | ForEach-Object { $lnk = $shell.CreateShortcut($_.FullName); ([string]$_.Name + ' || ' + [string]$lnk.TargetPath + ' || ' + [string]$lnk.Arguments + ' || ' + [string]$lnk.WorkingDirectory) } } };
+    $shortcuts = $shortcuts | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160;
+    $rows = @();
+    foreach ($p in $processes) { if ($p) { $rows += [pscustomobject]@{ channel='process'; value=[string]$p } } };
+    foreach ($s in $services) { if ($s) { $rows += [pscustomobject]@{ channel='service'; value=[string]$s } } };
+    foreach ($a in $apps) { if ($a) { $rows += [pscustomobject]@{ channel='installed_app'; value=[string]$a } } };
+    foreach ($l in $shortcuts) { if ($l) { $rows += [pscustomobject]@{ channel='shortcut'; value=[string]$l } } };
+    $rows | ConvertTo-Json -Compress;
+  `;
   const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
     const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
@@ -2024,11 +2024,11 @@ function migrationRootsFromWorkstationSignals(signals: MigrationWorkstationSigna
 
 async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
   if (os.platform() !== "win32") return [] as string[];
-  const script = [
-    "$ErrorActionPreference='SilentlyContinue'",
-    "$rows = Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { [pscustomobject]@{ root=[string]$_.Root; displayRoot=[string]$_.DisplayRoot } }",
-    "$rows | ConvertTo-Json -Compress"
-  ].join("; ");
+  const script = `
+    $ErrorActionPreference='SilentlyContinue';
+    $rows = Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { [pscustomobject]@{ root=[string]$_.Root; displayRoot=[string]$_.DisplayRoot } };
+    $rows | ConvertTo-Json -Compress;
+  `;
   const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
     const { stdout } = await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
