@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useDocumentStore } from "./store/documentStore";
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
