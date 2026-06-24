@@ -1,3 +1,4 @@
+import { round2 } from "./ctPlanningMath";
 import type { DicomViewerToolStateAnnotation } from "@dental/shared";
 import type { CtPlanningGeometrySummary } from "./ctPlanningGeometry";
 
@@ -43,7 +44,6 @@ export type CtPlanningMeasurementPlan = {
   warnings: string[];
 };
 
-const round2 = (value: number) => Math.round(value * 100) / 100;
 
 function hasPoints(annotation: DicomViewerToolStateAnnotation, minimum: number) {
   return annotation.points.length >= minimum;
