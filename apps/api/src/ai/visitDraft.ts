@@ -87,12 +87,25 @@ function createVisitDraftNeuralConfig(): VisitDraftNeuralConfig {
   };
 }
 
+
+interface OpenAIChatResponse {
+  error?: {
+    message?: string;
+  };
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
 async function callOpenAiCompatibleVisitDraft(input: {
+
   config: VisitDraftNeuralConfig;
   transcript: string;
   specialty: DentalSpecialty;
   apiKey: string;
-}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: any }> {
+}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: Record<string, unknown> | undefined }> {
   if (!input.config.baseUrl || !input.config.modelName) {
     throw new Error("ИИ-генератор черновика не настроен.");
   }
@@ -159,15 +172,15 @@ async function callOpenAiCompatibleVisitDraft(input: {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw providerHttpError(response.status, response.statusText, (payload as any).error?.message);
+    throw providerHttpError(response.status, response.statusText, (payload as OpenAIChatResponse).error?.message);
   }
 
-  const content = (payload as any).choices?.[0]?.message?.content;
+  const content = (payload as OpenAIChatResponse).choices?.[0]?.message?.content;
   if (typeof content !== "string") {
     throw new Error("ИИ-генератор черновика вернул пустой или некорректный ответ.");
   }
 
-  let parsed: any;
+  let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(content.trim());
   } catch {
@@ -184,7 +197,7 @@ async function callOpenAiCompatibleVisitDraft(input: {
     objectiveStatus: typeof parsed.objectiveStatus === "string" ? parsed.objectiveStatus.trim() : null,
     diagnosis: typeof parsed.diagnosis === "string" ? parsed.diagnosis.trim() : null,
     treatmentPlan: typeof parsed.treatmentPlan === "string" ? parsed.treatmentPlan.trim() : null,
-    _rawToothStates: typeof parsed.toothStates === "object" && parsed.toothStates !== null ? parsed.toothStates : null
+    _rawToothStates: typeof parsed.toothStates === "object" && parsed.toothStates !== null ? (parsed.toothStates as Record<string, unknown>) : undefined
   };
 }
 
@@ -192,7 +205,7 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
   config: VisitDraftNeuralConfig;
   transcript: string;
   specialty: DentalSpecialty;
-}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: any }> {
+}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: Record<string, unknown> | undefined }> {
   if (input.config.explicitApiKey) {
     return callOpenAiCompatibleVisitDraft({ ...input, apiKey: input.config.explicitApiKey });
   }
@@ -262,7 +275,7 @@ export async function buildVisitDraftFromTranscript(
       const validStates = new Set(["idle", "watch", "planned", "done", "missing", "treatment"]);
       for (const [code, state] of Object.entries(neural._rawToothStates)) {
         if (typeof state === "string" && validStates.has(state)) {
-          parsedStates[code] = state as any;
+          parsedStates[code] = state as typeof parsedStates[string];
         }
       }
       if (Object.keys(parsedStates).length > 0) {
