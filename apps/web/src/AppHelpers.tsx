@@ -5531,6 +5531,12 @@ export async function loadPendingSpeechChunks(organizationId: string | null | un
 
 export function createLocalQueueId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && "getRandomValues" in crypto) {
+    const array = new Uint32Array(1);
+    (crypto as any).getRandomValues(array);
+    return `local-${Date.now()}-${array[0]!.toString(16)}`;
+  }
+  // Fallback if crypto is completely unavailable (very unlikely in modern environments)
   return `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
