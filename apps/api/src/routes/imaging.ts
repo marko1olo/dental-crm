@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
 import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
-import { opendir, readdir } from "node:fs/promises";
+import { opendir, readdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setImmediate as yieldImmediate } from "node:timers/promises";
@@ -1941,7 +1941,7 @@ async function buildDicomFirstFramePreview(input: {
     await maybeYieldApiDicomScan(yieldState, options.signal);
     const filePath = files[index];
     if (!filePath) continue;
-    const stats = statSync(filePath);
+    const stats = await stat(filePath);
     if (stats.size > input.maxFileBytes) {
       warnings.push("Файл снимка выше байтового лимита легкого предпросмотра пропущен.");
       continue;

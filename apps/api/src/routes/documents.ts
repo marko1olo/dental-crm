@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { requireClinicalMutationAccess } from "../accessGuard.js";
 import {
   createDocumentSchema,
   documentAuditFactsSchema,
@@ -63,7 +63,6 @@ import {
   taxPaymentSnapshotTotalRub,
   taxPaymentsForDocumentScope
 } from "../documents/taxPaymentSnapshot.js";
-import { buildKnd1151156Xml } from "../documents/taxXml.js";
 import { repairMojibakeText } from "../text/repairMojibake.js";
 
 export function documentAttachmentFileName(document: GeneratedDocument, extension: "html" | "pdf" | "xml"): string {
