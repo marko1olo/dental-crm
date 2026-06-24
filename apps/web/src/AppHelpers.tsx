@@ -947,6 +947,7 @@ export function loadDocumentPaymentSelectionStore(organizationId: string | null 
     }
     return { version: 1, selections };
   } catch {
+    // Document payment selection is local operator convenience; read failures are safe to ignore.
     return emptyDocumentPaymentSelectionStore();
   }
 }
