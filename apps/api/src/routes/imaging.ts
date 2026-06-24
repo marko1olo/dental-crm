@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
 import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
-import { opendir, readdir } from "node:fs/promises";
+import { opendir, readdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setImmediate as yieldImmediate } from "node:timers/promises";
@@ -88,7 +88,8 @@ import {
   type ImagingStudyKind,
   type LocalImagingOrganizerCase,
   type LocalImagingOrganizerRecommendedAction,
-  type LocalImagingOrganizerRequest
+  type LocalImagingOrganizerRequest,
+  splitLine
 } from "@dental/shared";
 import {
   createImagingStudy,
@@ -565,27 +566,6 @@ function detectDelimiter(headerLine: string) {
   return candidates
     .map((delimiter) => ({ delimiter, count: headerLine.split(delimiter).length }))
     .sort((left, right) => right.count - left.count)[0]?.delimiter ?? ";";
-}
-
-function splitLine(line: string, delimiter: string) {
-  const values: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-      continue;
-    }
-    if (char === delimiter && !inQuotes) {
-      values.push(current.trim());
-      current = "";
-      continue;
-    }
-    current += char;
-  }
-  values.push(current.trim());
-  return values;
 }
 
 function normalizePhone(value: string | null) {
@@ -1961,7 +1941,7 @@ async function buildDicomFirstFramePreview(input: {
     await maybeYieldApiDicomScan(yieldState, options.signal);
     const filePath = files[index];
     if (!filePath) continue;
-    const stats = statSync(filePath);
+    const stats = await stat(filePath);
     if (stats.size > input.maxFileBytes) {
       warnings.push("Файл снимка выше байтового лимита легкого предпросмотра пропущен.");
       continue;

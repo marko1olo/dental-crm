@@ -1,9 +1,14 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { spawnTracked, stopTracked, processExitFailure } from "./lib/processTracking.mjs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { createServer } from "node:net";
 import os from "node:os";
+import { fetchJson } from "./lib/fetchJson.mjs";
+import { sleep } from "./lib/sleep.mjs";
+import { findFreePort } from "./lib/findFreePort.mjs";
+import { waitFor, evaluate, setFileInputFiles } from "./lib/cdp.mjs";
 import path from "node:path";
+import { inputHelpersExpression } from "./lib/inputHelpersExpression.mjs";
 
 const width = Number(process.env.SMOKE_WIDTH ?? 1440);
 const height = Number(process.env.SMOKE_HEIGHT ?? 1100);
@@ -44,22 +49,6 @@ if (!existsSync(vitePath)) {
   throw new Error("Vite binary is missing. Run dependency install before this smoke test.");
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function findFreePort() {
-  return new Promise((resolve, reject) => {
-    const server = createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      const selectedPort = typeof address === "object" && address ? address.port : 0;
-      server.close(() => resolve(selectedPort));
-    });
-  });
-}
-
 async function waitForHttp(url, label, attempts = 120) {
   let lastError;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -75,43 +64,6 @@ async function waitForHttp(url, label, attempts = 120) {
   throw lastError ?? new Error(`${label} was not reachable`);
 }
 
-async function fetchJson(url, attempts = 80) {
-  const response = await waitForHttp(url, url, attempts);
-  return response.json();
-}
-
-function spawnTracked(name, command, args, options) {
-  const child = spawn(command, args, options);
-  let stderr = "";
-  let stdout = "";
-  child.stderr?.on("data", (chunk) => {
-    stderr = `${stderr}${chunk.toString("utf8")}`.slice(-4_000);
-  });
-  child.stdout?.on("data", (chunk) => {
-    stdout = `${stdout}${chunk.toString("utf8")}`.slice(-4_000);
-  });
-  return { child, name, stderr: () => stderr, stdout: () => stdout };
-}
-
-async function stopTracked(tracked) {
-  if (!tracked?.child || tracked.child.killed) return;
-  tracked.child.kill();
-  await Promise.race([new Promise((resolve) => tracked.child.once("exit", resolve)), sleep(2_000)]);
-}
-
-function processExitFailure(tracked, label) {
-  return new Promise((_, reject) => {
-    tracked.child.once("exit", (code, signal) => {
-      reject(
-        new Error(
-          `${label} exited early (code=${code ?? "null"}, signal=${signal ?? "null"}) stdout=${tracked
-            .stdout()
-            .slice(-800)} stderr=${tracked.stderr().slice(-800)}`
-        )
-      );
-    });
-  });
-}
 
 function connectCdp(wsUrl) {
   const socket = new WebSocket(wsUrl);
@@ -146,29 +98,7 @@ function connectCdp(wsUrl) {
   };
 }
 
-async function waitFor(cdp, expression, label, attempts = 80) {
-  let snapshot = null;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    snapshot = await cdp.send("Runtime.evaluate", {
-      expression,
-      returnByValue: true
-    });
-    if (snapshot.result.value) return snapshot.result.value;
-    await sleep(250);
-  }
-  throw new Error(`${label} did not become ready: ${JSON.stringify(snapshot?.result?.value ?? null)}`);
-}
 
-async function evaluate(cdp, expression, label) {
-  const result = await cdp.send("Runtime.evaluate", {
-    expression,
-    returnByValue: true
-  });
-  if (result.exceptionDetails) {
-    throw new Error(`${label} threw in browser: ${JSON.stringify(result.exceptionDetails)}`);
-  }
-  return result.result.value;
-}
 
 async function navigateTo(cdp, hash, selector) {
   await cdp.send("Page.navigate", { url: `${webBaseUrl}/#${hash}` });
@@ -236,43 +166,7 @@ async function createFixtureFiles() {
   return files;
 }
 
-async function setFileInputFiles(cdp, selector, files) {
-  const documentNode = await cdp.send("DOM.getDocument", { depth: 1 });
-  const inputNode = await cdp.send("DOM.querySelector", {
-    nodeId: documentNode.root.nodeId,
-    selector
-  });
-  if (!inputNode.nodeId) throw new Error(`File input not found: ${selector}`);
-  await cdp.send("DOM.setFileInputFiles", { nodeId: inputNode.nodeId, files });
-  await evaluate(
-    cdp,
-    `(() => {
-      const input = document.querySelector(${JSON.stringify(selector)});
-      if (!input) return { ok: false, reason: "missing_input" };
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-      return { ok: true, filesLength: input.files ? input.files.length : 0 };
-    })()`,
-    `dispatch files for ${selector}`
-  );
-}
 
-function inputHelpersExpression(body) {
-  return `(() => {
-    const setFieldValue = (element, value) => {
-      const prototype = element instanceof HTMLTextAreaElement
-        ? HTMLTextAreaElement.prototype
-        : element instanceof HTMLSelectElement
-          ? HTMLSelectElement.prototype
-          : HTMLInputElement.prototype;
-      const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
-      descriptor?.set?.call(element, value);
-      element.dispatchEvent(new Event("input", { bubbles: true }));
-      element.dispatchEvent(new Event("change", { bubbles: true }));
-    };
-    ${body}
-  })()`;
-}
 
 await mkdir(tempRoot, { recursive: true });
 await mkdir(screenshotDir, { recursive: true });

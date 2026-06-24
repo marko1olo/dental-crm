@@ -252,11 +252,16 @@ export function savePersistentState(state: DentalMutableState): void {
     ...payloadCore,
     checksum: checksumPersistentState(payloadCore)
   };
-  mkdirSync(path.dirname(stateFilePath), { recursive: true });
-  rotateStateBackup();
-  const tempPath = `${stateFilePath}.tmp`;
-  writeFileSync(tempPath, JSON.stringify(payload, null, 2), "utf8");
-  renameSync(tempPath, stateFilePath);
+
+  try {
+    mkdirSync(path.dirname(stateFilePath), { recursive: true });
+    rotateStateBackup();
+    const tempPath = `${stateFilePath}.tmp`;
+    writeFileSync(tempPath, JSON.stringify(payload, null, 2), "utf8");
+    renameSync(tempPath, stateFilePath);
+  } catch (error) {
+    console.warn(`Dental state file save failed: ${error instanceof Error ? error.message : "unknown save error"}`);
+  }
 }
 
 export function getPersistentStateMeta() {

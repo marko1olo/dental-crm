@@ -83,7 +83,7 @@ import {
   type MprProjection,
   type MprWindowPreset
 } from "./imagingUiLabels";
-import { CtPlanningToolsPanel, type CtImplantLibraryItem, type CtPlanningQuickAction } from "./ctPlanningTools";
+import { CtPlanningToolsPanel, type CtPlanningQuickAction } from "./ctPlanningTools";
 import type {
   AiRecognitionJob,
   AuditEvent,
@@ -1563,10 +1563,6 @@ export function SettingsView(props: SettingsViewProps) {
     setMprWindowPreset(action.windowPreset);
     setMprCrosshairEnabled(true);
     setMprLinkedPlanesEnabled(true);
-  };
-  const selectCtPlanningImplantFromSettings = (implant: CtImplantLibraryItem) => {
-    setCtPlanningActiveQuickActionId?.("implant_library");
-    selectCtPlanningImplant(implant);
   };
   const applyNearestMprClinicalPreset = () => {
     const preset = mprClinicalPresets.find((candidate) => candidate.title === mprNearestClinicalPreset.title);
@@ -4065,7 +4061,10 @@ export function SettingsView(props: SettingsViewProps) {
                 onActivateTool={applyCtPlanningQuickAction}
                 selectedImplantId={typedCtPlanningImplantPlan?.itemId ?? null}
                 selectedImplantPlan={typedCtPlanningImplantPlan}
-                onSelectImplant={selectCtPlanningImplantFromSettings}
+                onSelectImplant={(implant) => {
+                  setCtPlanningActiveQuickActionId?.("implant_library");
+                  selectCtPlanningImplant(implant);
+                }}
                 toolStateBundle={typedDicomViewerWorkbenchManifest?.toolStateBundle ?? typedDicomViewerToolStateBundle}
                 dentalModelWorkbenchManifest={activeDentalModelWorkbenchManifest}
                 localBridgeReadiness={typedLocalBridgeReadiness}

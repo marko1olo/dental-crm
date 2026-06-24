@@ -782,8 +782,7 @@ export const documentVoidReasonLabels: Record<DocumentVoidReasonCode, string> = 
 };
 
 export function browserGeneratedId(prefix: string): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return `${prefix}-${crypto.randomUUID()}`;
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${crypto.randomUUID()}`;
 }
 
 export function currentLocalDateTimeInputValue(): string {
@@ -861,7 +860,8 @@ export function loadDocumentIssueSignatureDraft(organizationId: string | null | 
       staffRole: typeof parsed.staffRole === "string" && parsed.staffRole.trim() ? parsed.staffRole.slice(0, 120) : "Врач/администратор",
       savedAt
     };
-  } catch {
+  } catch (error) {
+    console.warn(error);
     return fallback;
   }
 }
@@ -884,7 +884,8 @@ export function saveDocumentIssueSignatureDraft(
         savedAt: new Date().toISOString()
       } satisfies DocumentIssueSignatureDraft)
     );
-  } catch {
+  } catch (error) {
+    console.warn(error);
     // Signature defaults are convenience only; the server still requires explicit attestation on issue.
   }
 }
@@ -948,6 +949,7 @@ export function loadDocumentPaymentSelectionStore(organizationId: string | null 
     }
     return { version: 1, selections };
   } catch {
+    // Document payment selection is local operator convenience; read failures are safe to ignore.
     return emptyDocumentPaymentSelectionStore();
   }
 }
@@ -1295,7 +1297,8 @@ export function loadLocalImagingViewerDraft(studyId: string | null, organization
       return null;
     }
     return parsed?.state && Array.isArray(parsed.annotations) ? parsed : null;
-  } catch {
+  } catch (error) {
+    console.warn("Failed to load local imaging viewer draft", error);
     return null;
   }
 }
@@ -1358,7 +1361,8 @@ export function loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId: str
       return null;
     }
     return parsed;
-  } catch {
+  } catch (error) {
+    console.warn("Failed to load local DICOM workbench draft from local storage:", error);
     return null;
   }
 }

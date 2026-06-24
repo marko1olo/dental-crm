@@ -62,7 +62,7 @@ function assertNotIncludes(source, marker, label) {
 ].forEach((marker) => assertIncludes(imagingSource, marker, "API DICOM ZIP bounded range-read contract"));
 
 [
-  'import { opendir, readdir } from "node:fs/promises";',
+  'import { opendir, readdir, stat } from "node:fs/promises";',
   "type ApiDicomFolderTraversalLimits",
   "const apiDicomDefaultMaxFolders = 900",
   "const apiDicomDefaultMaxEntriesPerFolder = 2000",

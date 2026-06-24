@@ -990,6 +990,28 @@ assert(
   missingTaxBirthDateSelectionError,
   "tax-support payment receipt must reject selected payments without stored payer birth date"
 );
+const paymentsWithoutPayerRelationship = payments.map((payment) =>
+  payment.id === taxPayment2026Id ? { ...payment, payerRelationship: null } : payment
+);
+const missingPayerRelationshipSelectionError = paymentReceiptSelectionErrorForDocument(
+  completePaymentReceiptInput,
+  paymentsWithoutPayerRelationship
+);
+assert(
+  missingPayerRelationshipSelectionError,
+  "tax-support payment receipt must reject selected payments without stored payer relationship"
+);
+const paymentsWithoutPayerInnAndIdentity = payments.map((payment) =>
+  payment.id === taxPayment2026Id ? { ...payment, payerInn: null, payerIdentityDocument: null } : payment
+);
+const missingPayerInnAndIdentitySelectionError = paymentReceiptSelectionErrorForDocument(
+  completePaymentReceiptInput,
+  paymentsWithoutPayerInnAndIdentity
+);
+assert(
+  missingPayerInnAndIdentitySelectionError,
+  "tax-support payment receipt must reject selected payments without stored payer inn or identity document"
+);
 const badPaymentReceiptPayload = clone(paymentReceiptPayload);
 badPaymentReceiptPayload.paymentReceipt.totalPaidRub = 2999;
 const badPaymentReceiptInput = { patientId, visitId, kind: "payment_receipt", payload: badPaymentReceiptPayload };

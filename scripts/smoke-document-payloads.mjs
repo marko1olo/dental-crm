@@ -16,7 +16,10 @@ const {
   documentPayloadSchema,
   documentReleaseJournalEntrySchema,
   documentVoidAttestationSchema,
-  publicGeneratedDocumentSchema
+  publicGeneratedDocumentSchema,
+  documentPayloadDisallowedKeys,
+  documentPayloadActualKeys,
+  documentPayloadAllowedKeys
 } = await import(pathToFileURL(sharedPath).href);
 const { documentIssueBlockReason, renderDocumentHtml } = await import(pathToFileURL(rendererPath).href);
 
@@ -1345,5 +1348,34 @@ const trimmedCreateTitlePayload = createDocumentSchema.parse({
   title: "  Intake packet  "
 });
 assert(trimmedCreateTitlePayload.title === "Intake packet", "createDocumentSchema must trim custom titles");
+
+// --- payload key utilities ---
+
+// documentPayloadActualKeys
+const actualKeysEmpty = documentPayloadActualKeys(null);
+assert(actualKeysEmpty.length === 0, "documentPayloadActualKeys must return empty array for null payload");
+
+const actualKeysUndefined = documentPayloadActualKeys(undefined);
+assert(actualKeysUndefined.length === 0, "documentPayloadActualKeys must return empty array for undefined payload");
+
+const actualKeysFiltered = documentPayloadActualKeys({ a: 1, b: undefined, c: "test" });
+assert(actualKeysFiltered.length === 2 && actualKeysFiltered.includes("a") && actualKeysFiltered.includes("c"), "documentPayloadActualKeys must ignore undefined values");
+
+// documentPayloadAllowedKeys
+const allowedKeysIntake = documentPayloadAllowedKeys("patient_intake_questionnaire");
+assert(allowedKeysIntake.length === 1 && allowedKeysIntake[0] === "patientIntakeQuestionnaire", "documentPayloadAllowedKeys must return expected keys for known kind");
+
+const allowedKeysUnknown = documentPayloadAllowedKeys("unknown_kind");
+assert(allowedKeysUnknown.length === 0, "documentPayloadAllowedKeys must return empty array for unmapped/unknown kind");
+
+// documentPayloadDisallowedKeys
+const disallowedKeysEmpty = documentPayloadDisallowedKeys("patient_intake_questionnaire", null);
+assert(disallowedKeysEmpty.length === 0, "documentPayloadDisallowedKeys must return empty array for null payload");
+
+const disallowedKeysAllowedOnly = documentPayloadDisallowedKeys("patient_intake_questionnaire", { patientIntakeQuestionnaire: { clinical: { text: "" } } });
+assert(disallowedKeysAllowedOnly.length === 0, "documentPayloadDisallowedKeys must return empty array when only allowed keys are present");
+
+const disallowedKeysMixed = documentPayloadDisallowedKeys("patient_intake_questionnaire", { patientIntakeQuestionnaire: { clinical: { text: "" } }, randomKey: 123, anotherKey: undefined });
+assert(disallowedKeysMixed.length === 1 && disallowedKeysMixed[0] === "randomKey", "documentPayloadDisallowedKeys must return array of disallowed keys when unmapped keys are present");
 
 console.log(JSON.stringify({ ok: true, checked: cases.map((entry) => entry.kind) }));

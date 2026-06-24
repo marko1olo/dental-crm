@@ -1,4 +1,5 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash } from "node:crypto";
+import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
   createDenteTelegramLinkCodeSchema,
@@ -67,7 +68,7 @@ import type {
   DenteTelegramLinkCodeListStatusFilter
 } from "../sampleData.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
-import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage, type TelegramTransportResult } from "../telegramTransport.js";
+import { answerTelegramCallbackQuery, sendTelegramPhotoMessage, sendTelegramTextMessage, type TelegramTransportFailure } from "../telegramTransport.js";
 
 const telegramSecretHeader = "x-telegram-bot-api-secret-token";
 const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -86,7 +87,6 @@ type TelegramRouteBodySchema<T> = {
 type TelegramRouteBodyParseResult<T> =
   | { ok: true; value: T }
   | { ok: false; message: string };
-type TelegramTransportFailure = Extract<TelegramTransportResult, { ok: false }>;
 type TelegramChatInfo = {
   id: string;
   type: string | null;
@@ -1245,14 +1245,6 @@ function configuredTelegramAdminSecret(): string | null {
 
 function isExplicitlyUnguardedControlPlaneAllowed(): boolean {
   return process.env.NODE_ENV !== "production" && process.env.DENTE_TELEGRAM_ALLOW_UNGUARDED_CONTROL_PLANE === "1";
-}
-
-function timingSafeSecretEqual(providedSecret: string | null, expectedSecret: string): boolean {
-  if (!providedSecret) return false;
-  const providedBuffer = Buffer.from(providedSecret);
-  const expectedBuffer = Buffer.from(expectedSecret);
-  if (providedBuffer.length !== expectedBuffer.length) return false;
-  return timingSafeEqual(providedBuffer, expectedBuffer);
 }
 
 async function requireTelegramControlPlaneAccess(request: FastifyRequest, reply: FastifyReply) {

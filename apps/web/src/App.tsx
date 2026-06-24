@@ -8,7 +8,6 @@ import { useVisitStore } from "./store/visitStore";
 import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
-import { useDocumentStore as _unused } from "./store/documentStore";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -312,7 +311,7 @@ import {
 } from "./pricelistUiMeta";
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import { inferDashboardVisitSpecialty, inferSpecialtyFromText, visitSpecialtyFocusOptions } from "./visitSpecialtyData";
-import { ActionIcon, appViews, type AppView, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
+import { ActionIcon, appViews, getFilteredAppViews, viewLabels, WorkspaceSidebar, WorkspaceTopbar } from "./workspaceShell";
 import { preloadWorkspaceView, scheduleIdleWorkspacePreload } from "./workspacePreload";
 import { WorkspaceContinuityStrip } from "./workspaceContinuityStrip";
 import { WorkspaceRouteErrorBoundary } from "./workspaceRouteErrorBoundary";
