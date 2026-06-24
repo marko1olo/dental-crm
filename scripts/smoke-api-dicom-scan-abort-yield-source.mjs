@@ -38,18 +38,18 @@ function assertNotIncludes(source, marker, label) {
   "const zipEntryMetadataCompressedReadLimit = 8 * 1024 * 1024",
   "const zipEntryMetadataChunkBytes = 64 * 1024",
   "type ZipCentralDirectoryDetailedResult",
-  "function readExactFileRange(",
-  "readSync(descriptor, buffer, bytesRead, length - bytesRead, position + bytesRead)",
-  "descriptor: number | null",
-  "const descriptor = openSync(filePath, \"r\")",
-  "readExactFileRange(descriptor, stats.size - tailLength, tailLength)",
-  "readExactFileRange(descriptor, centralDirectoryOffset, centralDirectorySize)",
+  "async function readExactFileRange(",
+  "const { bytesRead: chunk } = await filehandle.read(buffer, bytesRead, length - bytesRead, position + bytesRead)",
+  "filehandle: FileHandle | null",
+  "const filehandle = await open(filePath, \"r\")",
+  "readExactFileRange(filehandle, stats.size - tailLength, tailLength)",
+  "readExactFileRange(filehandle, centralDirectoryOffset, centralDirectorySize)",
   "centralDirectoryOffset + centralDirectorySize > stats.size",
   "createInflateRaw()",
   "async function zipEntryPrefix(",
-  "zipEntryPrefix(descriptor: number",
-  "await zipEntryPrefix(zip.descriptor, entry, input.maxHeaderBytes)",
-  "closeSync(zip.descriptor)",
+  "zipEntryPrefix(filehandle: FileHandle",
+  "await zipEntryPrefix(zip.filehandle, entry, input.maxHeaderBytes)",
+  "await zip.filehandle.close()",
   "split/multi-disk ZIP",
   "zip64_entry_skipped",
   "zip_entry_out_of_bounds",
@@ -139,7 +139,7 @@ if (yieldCount < 8) {
 }
 
 const detailedZipParser = imagingSource.slice(
-  imagingSource.indexOf("function readZipCentralDirectoryDetailed"),
+  imagingSource.indexOf("async function readZipCentralDirectoryDetailed"),
   imagingSource.indexOf("function zipEntryPrefix")
 );
 if (detailedZipParser.includes("readFileSync(filePath)")) {
@@ -157,7 +157,7 @@ if (namesOnlyZipParser.includes("readFileSync(filePath)")) {
 assertNotIncludes(imagingSource, "zipPreviewByteLimit", "API DICOM ZIP parser must not use a total archive-size gate");
 assertNotIncludes(imagingSource, "stats.size > zipPreviewByteLimit", "API DICOM ZIP parser must not reject large regular ZIP archives before range reads");
 assertNotIncludes(imagingSource, "inflateRawSync", "API DICOM ZIP metadata scan must not inflate full entries synchronously");
-assertNotIncludes(imagingSource, "readExactFileRange(descriptor, dataStart, entry.compressedSize)", "API DICOM ZIP metadata scan must not read full compressed entries");
+assertNotIncludes(imagingSource, "readExactFileRange(filehandle, dataStart, entry.compressedSize)", "API DICOM ZIP metadata scan must not read full compressed entries");
 assertNotIncludes(imagingSource, "parseDicomFirstFramePixel(readFileSync(filePath)", "DICOM first-frame preview must not read full files synchronously");
 assertNotIncludes(imagingSource, "readFileSync(filePath)", "API imaging route must not use full synchronous file reads for DICOM previews");
 
