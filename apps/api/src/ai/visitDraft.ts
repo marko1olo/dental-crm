@@ -25,6 +25,31 @@ type VisitDraftNeuralConfig = {
   modelName: string | null;
   maxTranscriptChars: number;
 };
+type ToothState = "idle" | "watch" | "planned" | "done" | "missing" | "treatment";
+
+interface OpenAiErrorResponse {
+  error?: {
+    message?: string;
+  };
+}
+
+interface OpenAiCompletionResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
+interface ParsedDraft {
+  complaint?: unknown;
+  anamnesis?: unknown;
+  objectiveStatus?: unknown;
+  diagnosis?: unknown;
+  treatmentPlan?: unknown;
+  toothStates?: unknown;
+}
+
 
 function booleanFromEnv(value: string | undefined): boolean {
   return ["1", "true", "yes", "on"].includes((value ?? "").trim().toLowerCase());
@@ -92,7 +117,7 @@ async function callOpenAiCompatibleVisitDraft(input: {
   transcript: string;
   specialty: DentalSpecialty;
   apiKey: string;
-}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: any }> {
+}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: Record<string, unknown> | null }> {
   if (!input.config.baseUrl || !input.config.modelName) {
     throw new Error("ИИ-генератор черновика не настроен.");
   }
@@ -159,15 +184,15 @@ async function callOpenAiCompatibleVisitDraft(input: {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw providerHttpError(response.status, response.statusText, (payload as any).error?.message);
+    throw providerHttpError(response.status, response.statusText, (payload as OpenAiErrorResponse).error?.message);
   }
 
-  const content = (payload as any).choices?.[0]?.message?.content;
+  const content = (payload as OpenAiCompletionResponse).choices?.[0]?.message?.content;
   if (typeof content !== "string") {
     throw new Error("ИИ-генератор черновика вернул пустой или некорректный ответ.");
   }
 
-  let parsed: any;
+  let parsed: ParsedDraft;
   try {
     parsed = JSON.parse(content.trim());
   } catch {
@@ -184,7 +209,7 @@ async function callOpenAiCompatibleVisitDraft(input: {
     objectiveStatus: typeof parsed.objectiveStatus === "string" ? parsed.objectiveStatus.trim() : null,
     diagnosis: typeof parsed.diagnosis === "string" ? parsed.diagnosis.trim() : null,
     treatmentPlan: typeof parsed.treatmentPlan === "string" ? parsed.treatmentPlan.trim() : null,
-    _rawToothStates: typeof parsed.toothStates === "object" && parsed.toothStates !== null ? parsed.toothStates : null
+    _rawToothStates: typeof parsed.toothStates === "object" && parsed.toothStates !== null ? (parsed.toothStates as Record<string, unknown>) : null
   };
 }
 
@@ -192,7 +217,7 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
   config: VisitDraftNeuralConfig;
   transcript: string;
   specialty: DentalSpecialty;
-}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: any }> {
+}): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: Record<string, unknown> | null }> {
   if (input.config.explicitApiKey) {
     return callOpenAiCompatibleVisitDraft({ ...input, apiKey: input.config.explicitApiKey });
   }
@@ -262,7 +287,7 @@ export async function buildVisitDraftFromTranscript(
       const validStates = new Set(["idle", "watch", "planned", "done", "missing", "treatment"]);
       for (const [code, state] of Object.entries(neural._rawToothStates)) {
         if (typeof state === "string" && validStates.has(state)) {
-          parsedStates[code] = state as any;
+          parsedStates[code] = state as ToothState;
         }
       }
       if (Object.keys(parsedStates).length > 0) {
