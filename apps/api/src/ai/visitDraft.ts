@@ -254,6 +254,10 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
   throw new Error(`Сбой ИИ-генератора черновика после нескольких попыток: ${detail}`);
 }
 
+function isToothState(state: unknown): state is ToothState {
+  return typeof state === "string" && ["idle", "watch", "planned", "done", "missing", "treatment"].includes(state);
+}
+
 export async function buildVisitDraftFromTranscript(
   transcript: string,
   specialty: DentalSpecialty = "universal"
@@ -283,11 +287,10 @@ export async function buildVisitDraftFromTranscript(
     // Inject structured AI tooth states into quality object if present
     const finalQuality = baseline.quality ? { ...baseline.quality } : undefined;
     if (neural._rawToothStates && finalQuality) {
-      const parsedStates: Record<string, "idle" | "watch" | "planned" | "done" | "missing" | "treatment"> = {};
-      const validStates = new Set(["idle", "watch", "planned", "done", "missing", "treatment"]);
+      const parsedStates: Record<string, ToothState> = {};
       for (const [code, state] of Object.entries(neural._rawToothStates)) {
-        if (typeof state === "string" && validStates.has(state)) {
-          parsedStates[code] = state as ToothState;
+        if (isToothState(state)) {
+          parsedStates[code] = state;
         }
       }
       if (Object.keys(parsedStates).length > 0) {
