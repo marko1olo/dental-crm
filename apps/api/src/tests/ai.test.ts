@@ -4,6 +4,8 @@ import { createDenteApiApp } from '../server.js';
 import type { FastifyInstance } from 'fastify';
 import { buildVisitDraftFromTranscript } from '../ai/visitDraft.js';
 
+const TEST_SECRET = 'test-secret-value';
+
 
 describe('AI Routes', () => {
   const originalReadsAllowed = process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS;
@@ -54,7 +56,7 @@ describe('AI Routes Integration', () => {
   let integrationApp: Awaited<ReturnType<typeof createDenteApiApp>>;
 
   beforeEach(async () => {
-    process.env.DENTE_CLINICAL_ADMIN_SECRET = 'test-secret';
+    process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
     integrationApp = await createDenteApiApp({ startTelegramWorker: false });
   });
 
@@ -69,7 +71,7 @@ describe('AI Routes Integration', () => {
         method: 'POST',
         url: '/api/ai/visit-note-draft',
         headers: {
-          'x-dente-admin-secret': 'test-secret',
+          'x-dente-admin-secret': TEST_SECRET,
         },
         payload: {
           patientId: '11111111-1111-4111-8111-111111111111',

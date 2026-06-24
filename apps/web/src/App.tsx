@@ -8,7 +8,6 @@ import { useVisitStore } from "./store/visitStore";
 import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
-import { useDocumentStore as _unused } from "./store/documentStore";
 import {
   type CSSProperties,
   type KeyboardEvent,
