@@ -1,3 +1,4 @@
+import { polylineLengthMm, distanceMm, round1, round2, finiteOrNull } from "./ctPlanningMath";
 import type {
   DicomViewerToolStateAnnotation,
   DicomViewerToolStatePoint,
@@ -46,32 +47,13 @@ export type CtPlanningGeometrySummary = {
   warnings: string[];
 };
 
-const round1 = (value: number) => Math.round(value * 10) / 10;
-const round2 = (value: number) => Math.round(value * 100) / 100;
-const finiteOrNull = (value: number) => (Number.isFinite(value) ? value : null);
 
 function normalizedToothCode(value: string | null | undefined) {
   const clean = value?.trim();
   return clean ? clean.toUpperCase() : null;
 }
 
-function distanceMm(a: DicomViewerToolStatePoint, b: DicomViewerToolStatePoint) {
-  const dx = a.world[0] - b.world[0];
-  const dy = a.world[1] - b.world[1];
-  const dz = a.world[2] - b.world[2];
-  return Math.hypot(dx, dy, dz);
-}
 
-function polylineLengthMm(points: DicomViewerToolStatePoint[]) {
-  let total = 0;
-  for (let index = 1; index < points.length; index += 1) {
-    const previous = points[index - 1];
-    const current = points[index];
-    if (!previous || !current) continue;
-    total += distanceMm(previous, current);
-  }
-  return finiteOrNull(total);
-}
 
 function polygonAreaMm2(points: DicomViewerToolStatePoint[]) {
   if (points.length < 3) return null;

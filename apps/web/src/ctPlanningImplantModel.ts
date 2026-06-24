@@ -1,3 +1,4 @@
+import { polylineLengthMm, distanceMm, round1, round2, clamp } from "./ctPlanningMath";
 import type {
   DentalModelFileRole,
   DentalModelWorkbenchItem,
@@ -72,9 +73,6 @@ export type CtPlanningLocal3DReadinessPlan = {
   nextAction: string;
 };
 
-const round1 = (value: number) => Math.round(value * 10) / 10;
-const round2 = (value: number) => Math.round(value * 100) / 100;
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const implantModelOutputBoundarySummary =
   "CRM хранит маршрут, ось, апекс, втулку и отступы как параметры плана. CAD/STL выпускает лаборатория или локальный 3D-модуль.";
 const local3DOutputBoundarySummary =
@@ -220,12 +218,6 @@ export function buildCtPlanningLocal3DReadinessPlan(input: {
   };
 }
 
-function distanceMm(a: DicomViewerToolStatePoint, b: DicomViewerToolStatePoint) {
-  const dx = a.world[0] - b.world[0];
-  const dy = a.world[1] - b.world[1];
-  const dz = a.world[2] - b.world[2];
-  return Math.hypot(dx, dy, dz);
-}
 
 function implantAxisAnnotation(annotations: DicomViewerToolStateAnnotation[]) {
   let selected: DicomViewerToolStateAnnotation | null = null;
@@ -298,17 +290,6 @@ function axisLength(axis: DicomViewerToolStateAnnotation | null) {
   return first && last ? round2(distanceMm(first, last)) : null;
 }
 
-function polylineLengthMm(points: DicomViewerToolStatePoint[]) {
-  if (points.length < 2) return null;
-  let total = 0;
-  for (let index = 1; index < points.length; index += 1) {
-    const previous = points[index - 1];
-    const current = points[index];
-    if (!previous || !current) continue;
-    total += distanceMm(previous, current);
-  }
-  return Number.isFinite(total) ? round2(total) : null;
-}
 
 function apexLabel(axis: DicomViewerToolStateAnnotation | null, implantPlan: ImagingViewerImplantPlan | null) {
   if (!axis || !implantPlan) return "нет оси";
