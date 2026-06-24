@@ -860,7 +860,8 @@ export function loadDocumentIssueSignatureDraft(organizationId: string | null | 
       staffRole: typeof parsed.staffRole === "string" && parsed.staffRole.trim() ? parsed.staffRole.slice(0, 120) : "Врач/администратор",
       savedAt
     };
-  } catch {
+  } catch (error) {
+    console.warn(error);
     return fallback;
   }
 }
