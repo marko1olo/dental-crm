@@ -78,13 +78,12 @@ function documentStatusBanner(document: GeneratedDocument) {
 }
 
 const unresolvedPlaceholderPatterns = [
-  "заполнить",
-  "________",
-  "указать врачом",
-  "указать по",
-  "не указана",
-  "не указан"
-].map((pattern) => repairMojibakeText(pattern));
+  "{ ",
+  " { ",
+  " {_",
+  "_} ",
+  " }"
+];
 
 export function documentHasUnresolvedPlaceholders(html: string): boolean {
   const htmlWithoutSignatureBlanks = html.replace(/<div class="signatures">[\s\S]*?<\/div>/g, "");
