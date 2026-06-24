@@ -978,9 +978,8 @@ export function saveDocumentPaymentSelection(
       documentPaymentSelectionLocalKey(organizationId),
       JSON.stringify({ version: 1, selections: trimmedSelections } satisfies DocumentPaymentSelectionStore)
     );
-  } catch (error) {
+  } catch {
     // Document payment selection is local operator convenience; failed storage must not block document issue.
-    console.warn("Failed to save document payment selection to local storage:", error);
   }
 }
 
