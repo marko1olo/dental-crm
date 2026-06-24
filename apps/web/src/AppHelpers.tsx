@@ -1229,7 +1229,8 @@ export function saveOutpatient025uDocumentDraft(
       documentPayloadDraftLocalKey(organizationId),
       JSON.stringify({ version: 1, drafts: trimmedDrafts } satisfies DocumentPayloadDraftStore)
     );
-  } catch {
+  } catch (error) {
+    console.warn("Failed to save outpatient 025u document draft:", error);
     // Payload drafts are recovery data only; document issue still validates all facts server-side.
   }
 }
