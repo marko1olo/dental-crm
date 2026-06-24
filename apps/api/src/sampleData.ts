@@ -1443,13 +1443,35 @@ function buildPatientInsights(): PatientInsight[] {
     "completed_works_act"
   ];
 
+  const groupByPatientId = <T extends { patientId: string | null }>(items: T[], filterFn?: (item: T) => boolean) => {
+    const map = new Map<string, T[]>();
+    for (const item of items) {
+      if (!item.patientId) continue;
+      if (filterFn && !filterFn(item)) continue;
+      const arr = map.get(item.patientId);
+      if (arr) {
+        arr.push(item);
+      } else {
+        map.set(item.patientId, [item]);
+      }
+    }
+    return map;
+  };
+
+  const docsByPatient = groupByPatientId(documents);
+  const tasksByPatient = groupByPatientId(communicationTasks, isOpenCommunicationTask);
+  const imagesByPatient = groupByPatientId(imagingStudies);
+  const paymentsByPatient = groupByPatientId(payments, (payment) => payment.status === "paid");
+  const planItemsByPatient = groupByPatientId(treatmentPlanItems);
+  const appointmentsByPatient = groupByPatientId(appointments);
+
   return patients.map((patient) => {
-    const patientDocuments = documents.filter((document) => document.patientId === patient.id);
-    const patientTasks = communicationTasks.filter((task) => task.patientId === patient.id && isOpenCommunicationTask(task));
-    const patientImages = imagingStudies.filter((study) => study.patientId === patient.id);
-    const patientPayments = payments.filter((payment) => payment.patientId === patient.id && payment.status === "paid");
-    const patientPlanItems = treatmentPlanItems.filter((item) => item.patientId === patient.id);
-    const patientAppointments = appointments.filter((appointment) => appointment.patientId === patient.id);
+    const patientDocuments = docsByPatient.get(patient.id) ?? [];
+    const patientTasks = tasksByPatient.get(patient.id) ?? [];
+    const patientImages = imagesByPatient.get(patient.id) ?? [];
+    const patientPayments = paymentsByPatient.get(patient.id) ?? [];
+    const patientPlanItems = planItemsByPatient.get(patient.id) ?? [];
+    const patientAppointments = appointmentsByPatient.get(patient.id) ?? [];
     const draftVisit = activeVisit.patientId === patient.id && activeVisit.status === "draft";
     const missingDocumentKinds = requiredDocuments.filter(
       (kind) => !patientDocuments.some((document) => document.kind === kind && document.status !== "voided")
@@ -9333,3 +9355,5 @@ export function createImagingStudy(input: {
   });
   return study;
 }
+
+export { isOpenCommunicationTask };
