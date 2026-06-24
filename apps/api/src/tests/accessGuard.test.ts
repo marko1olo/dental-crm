@@ -147,7 +147,7 @@ describe('accessGuard', () => {
     });
 
     test('secret configured, missing header -> 403', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
       const result = await requireClinicalReadAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, false);
       assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
