@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
   createDocumentSchema,
   issueDocumentSchema,
@@ -33,7 +33,7 @@ import {
   taxDocumentUsesPaymentSnapshot
 } from "../../documents/taxPaymentSnapshot.js";
 import { buildKnd1151156Xml } from "../../documents/taxXml.js";
-import { repairMojibakeDeep, repairMojibakeText } from "../../text/repairMojibake.js";
+import { repairMojibakeText } from "../../text/repairMojibake.js";
 
 import {
   apiError,
@@ -59,7 +59,7 @@ import {
   buildMedicalDocumentReleaseJournalEntry,
   taxXmlSourceSnapshotForIssue
 } from "../documents.js";
-import { taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
+
 
 export async function register(app: FastifyInstance) {
   app.get("/api/documents/:id/audit-facts", async (request, reply) => {
