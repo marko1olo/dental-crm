@@ -1361,7 +1361,8 @@ export function loadLocalDicomWorkbenchDraftFromLocalStorage(organizationId: str
       return null;
     }
     return parsed;
-  } catch {
+  } catch (error) {
+    console.warn("Failed to load local DICOM workbench draft from local storage:", error);
     return null;
   }
 }
