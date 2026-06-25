@@ -1063,18 +1063,29 @@ async function buildDicomHeaderManifest(
           warnings.push(`${filePath}: сканирование метаданных читает только первые ${dicomZipMetadataEntryLimit}/${dicomEntries.length} записей снимков.`);
         }
 
-        for (const entry of dicomEntries.slice(0, dicomZipMetadataEntryLimit)) {
+        const entriesToProcess = dicomEntries.slice(0, dicomZipMetadataEntryLimit);
+        const chunkSize = 25;
+        for (let i = 0; i < entriesToProcess.length; i += chunkSize) {
+          const chunk = entriesToProcess.slice(i, i + chunkSize);
           await maybeYieldApiDicomScan(yieldState, options.signal);
-          const prefix = await zipEntryPrefix(zip.descriptor, entry, input.maxHeaderBytes);
-          if (!prefix.buffer) {
-            if (prefix.warning) warnings.push(`${filePath}: ${prefix.warning}`);
-            continue;
+          const chunkResults = await Promise.all(
+            chunk.map(async (entry) => {
+              const prefix = await zipEntryPrefix(zip.descriptor as number, entry, input.maxHeaderBytes);
+              return { entry, prefix };
+            })
+          );
+
+          for (const { entry, prefix } of chunkResults) {
+            if (!prefix.buffer) {
+              if (prefix.warning) warnings.push(`${filePath}: ${prefix.warning}`);
+              continue;
+            }
+            const virtualPath = `${filePath}::${entry.name}`;
+            const metadata = parseDicomHeader(prefix.buffer);
+            filesParsed += 1;
+            warnings.push(...metadata.warnings.map((warning) => `${virtualPath}: ${warning}`));
+            rows.push(dicomMetadataManifestRow(virtualPath, metadata, input.sourceName));
           }
-          const virtualPath = `${filePath}::${entry.name}`;
-          const metadata = parseDicomHeader(prefix.buffer);
-          filesParsed += 1;
-          warnings.push(...metadata.warnings.map((warning) => `${virtualPath}: ${warning}`));
-          rows.push(dicomMetadataManifestRow(virtualPath, metadata, input.sourceName));
         }
       } finally {
         closeSync(zip.descriptor);
