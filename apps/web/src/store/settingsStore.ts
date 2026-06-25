@@ -30,11 +30,7 @@ import {
   
 } from "@dental/shared";
 
-
-// Hardcoded fallback for missing variables that were removed from AppHelpers
-
 import { create } from "zustand";
- // assume this might be needed
 
 export interface SettingsState {
   onboardingDismissed: any;
