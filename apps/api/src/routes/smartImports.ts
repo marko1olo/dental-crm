@@ -1714,9 +1714,11 @@ function normalizeMigrationSignalValues(value: string | undefined) {
 
 async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>) {
   if (os.platform() !== "win32") return [] as Array<{ channel: "process" | "service" | "installed_app" | "shortcut"; value: string }>;
+  const rxPattern = "sidexis|sirona|romexis|planmeca|vatech|ezdent|carestream|kodak|morita|idixel|i-dixel|veraview|newtom|new tom|nnt|myray|cefla|owandy|quickvision|quick vision|dexis|kavo|ka vo|gendex|acteon|sopro|sopix|pspix|x-mind|x mind|ondemand|invivo|cliniview|dbswin|vistasoft|digora|soredex|trophy|visiodent|mediadent|vixwin|sopro|schick|dtx|3shape|medit|exocad|firebird|interbase|sqlite|mssql|sql|dbf|dbase|foxpro|clipper|paradox|1cv8|1c|cliniccards|dental|stomatology|opendental|open dental|dentrix|eaglesoft|patterson|infoclinica|infodent|dentasoft|clinic365|sycret|secret dent|adenta|dentcrm24|clientix|klientix|medods|dentaltap|istom|qstoma|macdent|stombox|medangel|medialog|arnica|ident|stomx|dicom|pacs|rvg|xray|cbct|opg";
   const script = [
     "$ErrorActionPreference='SilentlyContinue'",
-    "$rx='sidexis|sirona|romexis|planmeca|vatech|ezdent|carestream|kodak|morita|idixel|i-dixel|veraview|newtom|new tom|nnt|myray|cefla|owandy|quickvision|quick vision|dexis|kavo|ka vo|gendex|acteon|sopro|sopix|pspix|x-mind|x mind|ondemand|invivo|cliniview|dbswin|vistasoft|digora|soredex|trophy|visiodent|mediadent|vixwin|sopro|schick|dtx|3shape|medit|exocad|firebird|interbase|sqlite|mssql|sql|dbf|dbase|foxpro|clipper|paradox|1cv8|1c|cliniccards|dental|stomatology|opendental|open dental|dentrix|eaglesoft|patterson|infoclinica|infodent|dentasoft|clinic365|sycret|secret dent|adenta|dentcrm24|clientix|klientix|medods|dentaltap|istom|qstoma|macdent|stombox|medangel|medialog|arnica|ident|stomx|dicom|pacs|rvg|xray|cbct|opg'",
+    "$rx = $env:MIGRATION_RX",
+    "$rows = @()",
     "$processes = Get-Process | Select-Object -First 500 -Property ProcessName,Path | ForEach-Object { ([string]$_.ProcessName + ' || ' + [string]$_.Path) } | Where-Object { $_ -match $rx }",
     "$services = Get-CimInstance Win32_Service | Select-Object -First 1000 -Property Name,DisplayName,PathName | ForEach-Object { ([string]$_.Name + ' || ' + [string]$_.DisplayName + ' || ' + [string]$_.PathName) } | Where-Object { $_ -match $rx }",
     "$uninstallPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*')",
@@ -1726,10 +1728,11 @@ async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>
     "$shell = New-Object -ComObject WScript.Shell",
     "$shortcuts = foreach ($root in $shortcutRoots) { if ($root -and (Test-Path $root)) { Get-ChildItem -Path $root -Filter *.lnk -Recurse -ErrorAction SilentlyContinue | Select-Object -First 400 | ForEach-Object { $lnk = $shell.CreateShortcut($_.FullName); ([string]$_.Name + ' || ' + [string]$lnk.TargetPath + ' || ' + [string]$lnk.Arguments + ' || ' + [string]$lnk.WorkingDirectory) } } }",
     "$shortcuts = $shortcuts | Where-Object { $_ -and $_ -match $rx } | Select-Object -First 160",
-    "foreach ($p in $processes) { if ($p) { 'process::' + [string]$p } }",
-    "foreach ($s in $services) { if ($s) { 'service::' + [string]$s } }",
-    "foreach ($a in $apps) { if ($a) { 'installed_app::' + [string]$a } }",
-    "foreach ($l in $shortcuts) { if ($l) { 'shortcut::' + [string]$l } }"
+    "foreach ($p in $processes) { if ($p) { $rows += [pscustomobject]@{ channel='process'; value=[string]$p } } }",
+    "foreach ($s in $services) { if ($s) { $rows += [pscustomobject]@{ channel='service'; value=[string]$s } } }",
+    "foreach ($a in $apps) { if ($a) { $rows += [pscustomobject]@{ channel='installed_app'; value=[string]$a } } }",
+    "foreach ($l in $shortcuts) { if ($l) { $rows += [pscustomobject]@{ channel='shortcut'; value=[string]$l } } }",
+    "$rows | ConvertTo-Json -Compress"
   ].join("; ");
   const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
@@ -1737,15 +1740,16 @@ async function readWindowsMigrationWorkstationSignalValues(warnings: Set<string>
     const { stdout } = await execFileAsync(psPath, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encodedScript], {
       timeout: 2500,
       maxBuffer: 160 * 1024,
-      windowsHide: true
+      windowsHide: true,
+      env: { ...process.env, MIGRATION_RX: rxPattern }
     });
     if (!stdout.trim()) return [];
-    const rows = stdout.split(/\r?\n/).filter((line) => line.trim().length > 0);
+    const parsed = JSON.parse(stdout);
+    const rows = Array.isArray(parsed) ? parsed : [parsed];
     return rows
       .map((row) => {
-        const parts = row.split("::");
-        const channelRaw = String(parts[0] ?? "").trim();
-        const value = String(parts.slice(1).join("::") ?? "").trim();
+        const channelRaw = String(row?.channel ?? "").trim();
+        const value = String(row?.value ?? "").trim();
         return {
           channel:
             channelRaw === "service"
@@ -2029,7 +2033,9 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
   if (os.platform() !== "win32") return [] as string[];
   const script = [
     "$ErrorActionPreference='SilentlyContinue'",
-    "Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { [string]$_.Root + '::' + [string]$_.DisplayRoot }"
+    "$roots = @()",
+    "Get-PSDrive -PSProvider FileSystem | Select-Object -First 80 | ForEach-Object { $roots += [pscustomobject]@{ root=[string]$_.Root; displayRoot=[string]$_.DisplayRoot } }",
+    "$roots | ConvertTo-Json -Compress"
   ].join("; ");
   const encodedScript = Buffer.from(script, "utf16le").toString("base64");
   try {
@@ -2040,12 +2046,12 @@ async function readWindowsMigrationMappedRoots(warnings: Set<string>) {
       windowsHide: true
     });
     if (!stdout.trim()) return [];
-    const rows = stdout.split(/\r?\n/).filter((line) => line.trim().length > 0);
+    const parsed = JSON.parse(stdout);
+    const rows = Array.isArray(parsed) ? parsed : [parsed];
     const roots: string[] = [];
     for (const row of rows) {
-      const parts = row.split("::");
-      const root = String(parts[0] ?? "").trim();
-      const displayRoot = String(parts[1] ?? "").trim();
+      const root = String(row?.root ?? "").trim();
+      const displayRoot = String(row?.displayRoot ?? "").trim();
       if (/^[D-Z]:\\$/i.test(root)) roots.push(root);
       if (displayRoot.startsWith("\\\\")) roots.push(displayRoot);
     }
