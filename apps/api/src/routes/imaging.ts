@@ -1,6 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import dns from "node:dns/promises";
 import { once } from "node:events";
 import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
+import net from "node:net";
 import { opendir, readdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -2864,6 +2866,66 @@ function connectorStatusFromHttpStatus(httpStatus: number | null, fetchError: bo
   return "misconfigured";
 }
 
+// Helper to validate IP
+function isSafeIp(ip: string): boolean {
+  if (net.isIPv4(ip)) {
+    const parts = ip.split(".").map(Number);
+    // Check 127.0.0.0/8 (Loopback), 10.0.0.0/8 (Private), 172.16.0.0/12 (Private), 192.168.0.0/16 (Private)
+    // Also block 169.254.0.0/16 (Link-local) and 0.0.0.0/8 (Current network)
+    if (
+      parts[0] === 127 ||
+      parts[0] === 10 ||
+      (parts[0] === 172 && parts[1] !== undefined && parts[1] >= 16 && parts[1] <= 31) ||
+      (parts[0] === 192 && parts[1] === 168) ||
+      (parts[0] === 169 && parts[1] === 254) ||
+      parts[0] === 0
+    ) {
+      return false;
+    }
+    return true;
+  } else if (net.isIPv6(ip)) {
+    const lowerIp = ip.toLowerCase();
+
+    // Mitigate IPv4-mapped IPv6
+    if (lowerIp.startsWith("::ffff:")) {
+      return isSafeIp(lowerIp.substring(7));
+    }
+
+    // Block ::1 (Loopback), fc00::/7 (Unique Local Address), fe80::/10 (Link-local)
+    if (
+      lowerIp === "::1" ||
+      lowerIp.startsWith("fc") ||
+      lowerIp.startsWith("fd") ||
+      lowerIp.startsWith("fe8") ||
+      lowerIp.startsWith("fe9") ||
+      lowerIp.startsWith("fea") ||
+      lowerIp.startsWith("feb")
+    ) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+// Check URL safety (accepting TOCTOU to not break HTTPS/SNI)
+async function isSafeTarget(urlString: string): Promise<boolean> {
+  try {
+    const url = new URL(urlString);
+    const hostname = url.hostname;
+
+    if (hostname === "localhost") return false;
+
+    const addresses = await dns.lookup(hostname);
+    const ip = addresses.address;
+
+    return isSafeIp(ip);
+  } catch {
+    // If URL parsing or DNS resolution fails, consider it unsafe
+    return false;
+  }
+}
+
 async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
   const qidoUrl = buildQidoProbeUrl(input);
   const wadoBaseUrl = safeJoinUrl(input.endpointUrl, input.wadoRsPath);
@@ -2876,12 +2938,17 @@ async function checkDicomWebConnector(input: DicomWebConnectorCheckRequest) {
   let fetchError = false;
 
   try {
-    const response = await fetch(qidoUrl, {
-      method: "GET",
-      headers,
-      signal: abortController.signal
-    });
-    httpStatus = response.status;
+    if (!(await isSafeTarget(qidoUrl))) {
+      fetchError = true;
+      warnings.push("Безопасность: адрес архива снимков недопустим (указывает на внутреннюю сеть или loopback).");
+    } else {
+      const response = await fetch(qidoUrl, {
+        method: "GET",
+        headers,
+        signal: abortController.signal
+      });
+      httpStatus = response.status;
+    }
   } catch {
     fetchError = true;
     warnings.push("Проверка архива снимков не завершилась; проверьте адрес архива и доступ с сервера клиники.");
