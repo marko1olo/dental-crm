@@ -36,4 +36,40 @@ describe('splitLine', () => {
     assert.deepStrictEqual(splitLine('a|b|c', '|'), ['a', 'b', 'c']);
     assert.deepStrictEqual(splitLine('first\tsecond\tthird', '\t'), ['first', 'second', 'third']);
   });
+
+  test('handles multiple quoted segments', () => {
+    assert.deepStrictEqual(splitLine('a,"b",c,"d"', ','), ['a', 'b', 'c', 'd']);
+    assert.deepStrictEqual(splitLine('"a,b",c,"d,e"', ','), ['a,b', 'c', 'd,e']);
+  });
+
+  test('handles empty quotes', () => {
+    assert.deepStrictEqual(splitLine('a,"",c', ','), ['a', '', 'c']);
+    assert.deepStrictEqual(splitLine('""', ','), ['']);
+  });
+
+  test('handles unclosed quotes', () => {
+    assert.deepStrictEqual(splitLine('a,"b,c', ','), ['a', 'b,c']);
+    assert.deepStrictEqual(splitLine('a,"b', ','), ['a', 'b']);
+  });
+
+  test('handles strings with only delimiters', () => {
+    assert.deepStrictEqual(splitLine(',', ','), ['', '']);
+    assert.deepStrictEqual(splitLine(',,', ','), ['', '', '']);
+  });
+
+  test('handles strings with only whitespaces', () => {
+    assert.deepStrictEqual(splitLine('   ', ','), ['']);
+  });
+
+  test('handles whitespace around empty elements', () => {
+    assert.deepStrictEqual(splitLine('a, ,c', ','), ['a', '', 'c']);
+  });
+
+  test('handles quotes used as escape for delimiter only', () => {
+    assert.deepStrictEqual(splitLine('","', ','), [',']);
+  });
+
+  test('handles quotes adjacent to characters without delimiters', () => {
+    assert.deepStrictEqual(splitLine('a,"b""c",d', ','), ['a', 'bc', 'd']);
+  });
 });
