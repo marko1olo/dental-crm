@@ -319,6 +319,7 @@ describe("savePersistentState", () => {
     denteTelegramChatLinks: [],
     denteTelegramWebhookEvents: [],
     denteTelegramOutboxDeliveryReceipts: [],
+    denteTelegramBotSettings: {} as any,
     uiPreferences: null,
     activeVisit: {} as any,
   };
@@ -365,11 +366,11 @@ describe("savePersistentState", () => {
     savePersistentState(modifiedState);
 
     // Check backup directory
-    assert.strictEqual(fs.existsSync(backupDir), true);
     const backups = fs.readdirSync(backupDir);
     assert.strictEqual(backups.length, 1);
-
-    const backupContent = fs.readFileSync(path.join(backupDir, backups[0]), "utf8");
+    const backupName = backups[0];
+    if (!backupName) throw new Error("No backup files found");
+    const backupContent = fs.readFileSync(path.join(backupDir, backupName), "utf8");
     const backupParsed = JSON.parse(backupContent);
 
     // Backup should be the FIRST state
