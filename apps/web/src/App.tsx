@@ -4559,7 +4559,7 @@ export function App() {
 
         {currentView === "marketing" ? (
           <Suspense fallback={<AppLoadingState message="Загрузка маркетинга" />}>
-            <MarketingView clinicName={dashboard.clinicName} />
+            <MarketingView clinicName={dashboard.clinicName} clinicPhone={clinicProfileDraft.phone} />
           </Suspense>
         ) : null}
       </section>
