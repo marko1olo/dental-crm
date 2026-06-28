@@ -23,8 +23,67 @@ import { registerTelegramRoutes, registerTelegramWebhookRoutes, startDenteTelegr
 import { registerVisitRoutes } from "./routes/visits.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
+import net from "node:net";
+import { ensureSshTunnel } from "./speech/tunnel.js";
 
 loadAdditionalServerEnv();
+
+async function checkProxyPortDirectly(proxyUrlString: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const cleanUrl = proxyUrlString.replace(/^socks5h?:\/\//i, "socks5://");
+      const url = new URL(cleanUrl.includes("://") ? cleanUrl : `socks5://${cleanUrl}`);
+      const port = parseInt(url.port || "1080");
+      const host = url.hostname || "127.0.0.1";
+      const socket = net.connect(port, host, () => {
+        socket.end();
+        resolve(true);
+      });
+      socket.setTimeout(1500);
+      socket.on("timeout", () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.on("error", () => {
+        resolve(false);
+      });
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+export async function setupProxyAndTunnels() {
+  // 1. Проверяем наличие SSH-ключа. Если есть, пробуем поднять туннель на порту 1080
+  const hasTunnel = await ensureSshTunnel().catch((err) => {
+    console.warn("[Proxy Boot] SSH SOCKS5 tunnel autostart failed:", err);
+    return false;
+  });
+
+  if (hasTunnel) {
+    process.env.HTTPS_PROXY = "socks5://127.0.0.1:1080";
+    process.env.HTTP_PROXY = "socks5://127.0.0.1:1080";
+    process.env.PROXY_URL = "socks5://127.0.0.1:1080";
+    console.log("[Proxy Boot] Traffic routed via active SSH SOCKS5 tunnel on port 1080.");
+    return;
+  }
+
+  // 2. Если туннеля нет, проверяем настроенный прокси из .env
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.PROXY_URL;
+  if (proxyUrl) {
+    const isOnline = await checkProxyPortDirectly(proxyUrl);
+    if (isOnline) {
+      console.log(`[Proxy Boot] Configured proxy ${proxyUrl} is online. Traffic routed via proxy.`);
+    } else {
+      console.warn(`[Proxy Boot] Configured proxy ${proxyUrl} is offline. Disabling proxy env variables to force clean direct connections.`);
+      delete process.env.HTTPS_PROXY;
+      delete process.env.HTTP_PROXY;
+      delete process.env.PROXY_URL;
+    }
+  } else {
+    console.log("[Proxy Boot] No proxy configured. Operating in direct connection mode.");
+  }
+}
 
 type HttpErrorLike = {
   statusCode?: unknown;
@@ -159,6 +218,9 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
 }
 
 export async function startDenteApiServer() {
+  await setupProxyAndTunnels().catch(err => {
+    console.error("[Proxy Boot] Failed to run proxy/tunnel diagnostics:", err);
+  });
   const app = await createDenteApiApp();
   const host = process.env.API_HOST ?? "127.0.0.1";
   const port = Number(process.env.API_PORT ?? 4100);

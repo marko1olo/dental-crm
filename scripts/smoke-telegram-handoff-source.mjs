@@ -1,6 +1,10 @@
 import fs from "node:fs";
 
-const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  fs.readFileSync("apps/web/src/App.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8")
+].join("\n");
 const styleSource = fs.readFileSync("apps/web/src/styles/main.css", "utf8");
 
 const missing = [];

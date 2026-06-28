@@ -1888,6 +1888,27 @@ export function SettingsView(props: SettingsViewProps) {
     selectSettingsTab(nextTab.id);
     window.setTimeout(() => document.getElementById(nextTabButtonId)?.focus(), 0);
   };
+  const renderTabButton = (tab: SettingsTab) => {
+    const tabSelected = settingsTab === tab.id;
+    return (
+      <button
+        aria-controls={settingsTabPanelId(tab.id)}
+        aria-pressed={tabSelected}
+        aria-selected={tabSelected}
+        className={tabSelected ? "active" : ""}
+        id={settingsTabButtonId(tab.id)}
+        key={tab.id}
+        onClick={() => selectSettingsTab(tab.id)}
+        onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => handleSettingsTabKeyDown(event, tab.id)}
+        ref={tabSelected ? activeSettingsTabButtonRef : undefined}
+        role="tab"
+        tabIndex={tabSelected ? 0 : -1}
+        type="button"
+      >
+        {tab.title}
+      </button>
+    );
+  };
 
   return (
         <section className="settings-zone" id="settings" aria-label="Настройки и перенос данных">
@@ -1905,27 +1926,18 @@ export function SettingsView(props: SettingsViewProps) {
           </div>
 
           <div className="settings-tabs" role="tablist" aria-label="Раздел настроек">
-            {typedSettingsTabs.map((tab) => {
-              const tabSelected = settingsTab === tab.id;
-              return (
-                <button
-                  aria-controls={settingsTabPanelId(tab.id)}
-                  aria-pressed={tabSelected}
-                  aria-selected={tabSelected}
-                  className={tabSelected ? "active" : ""}
-                  id={settingsTabButtonId(tab.id)}
-                  key={tab.id}
-                  onClick={() => selectSettingsTab(tab.id)}
-                  onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => handleSettingsTabKeyDown(event, tab.id)}
-                  ref={tabSelected ? activeSettingsTabButtonRef : undefined}
-                  role="tab"
-                  tabIndex={tabSelected ? 0 : -1}
-                  type="button"
-                >
-                  {tab.title}
-                </button>
-              );
-            })}
+            <div className="settings-tabs-group">
+              <span className="settings-tabs-group-header">Основные</span>
+              {typedSettingsTabs.filter((t) => ["clinic", "access", "telegram"].includes(t.id)).map(renderTabButton)}
+            </div>
+            <div className="settings-tabs-group">
+              <span className="settings-tabs-group-header">Клинические</span>
+              {typedSettingsTabs.filter((t) => ["protocols", "rules", "prices", "ai"].includes(t.id)).map(renderTabButton)}
+            </div>
+            <div className="settings-tabs-group">
+              <span className="settings-tabs-group-header">Системные</span>
+              {typedSettingsTabs.filter((t) => ["sources", "imports", "audit"].includes(t.id)).map(renderTabButton)}
+            </div>
           </div>
 
           <div
@@ -1935,53 +1947,59 @@ export function SettingsView(props: SettingsViewProps) {
             aria-labelledby={settingsTabButtonId(settingsTab)}
           >
           {settingsTab !== "telegram" ? (
-            <article className="telegram-link-panel telegram-admin-panel">
-              <div className="panel-heading">
-                <div>
-                  <h3>Доступ к защищенным настройкам</h3>
-                  <p>Если сервер клиники требует админ-доступ, введите секрет для изменений профиля, команды, кресел, источников, импорта и аудита. В браузере он не сохраняется.</p>
-                  <p>{adminSecretScopeWarning}</p>
-                </div>
-              </div>
-              <div className="telegram-link-controls">
-                <label>
-                  Секрет администратора клиники для настроек
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    value={telegramAdminSecretDraft}
-                    onChange={(event: TextInputChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
-                    onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                      if (event.key === "Enter" && adminSecretReady) {
-                        event.preventDefault();
-                        unlockTelegramAdminSession();
-                      }
-                    }}
-                    placeholder="введите секрет администратора"
+            <details className="settings-advanced-block settings-admin-secret-block">
+              <summary className="settings-advanced-toggle">
+                <span className="settings-advanced-label">
+                  <span className="settings-advanced-icon">🔐</span>
+                  Доступ к защищённым настройкам
+                </span>
+                <span className="settings-advanced-hint">только если требует сервер</span>
+                <span className="settings-advanced-chevron">▼</span>
+              </summary>
+              <article className="telegram-link-panel telegram-admin-panel settings-advanced-form">
+                <p>Если сервер клиники требует админ-доступ, введите секрет для изменений профиля, команды, кресел, источников, импорта и аудита. В браузере он не сохраняется.</p>
+                <p>{adminSecretScopeWarning}</p>
+                <div className="telegram-link-controls">
+                  <label>
+                    Секрет администратора клиники для настроек
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={telegramAdminSecretDraft}
+                      onChange={(event: TextInputChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
+                      onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                        if (event.key === "Enter" && adminSecretReady) {
+                          event.preventDefault();
+                          unlockTelegramAdminSession();
+                        }
+                      }}
+                      placeholder="введите секрет администратора"
+                      aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
+                    />
+                  </label>
+                  {!adminSecretReady ? (
+                    <p className="admin-unlock-guidance" id="settings-admin-unlock-guidance" role="status" aria-live="polite">
+                      Введите секрет администратора клиники, чтобы менять защищенные настройки.
+                    </p>
+                  ) : null}
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={unlockTelegramAdminSession}
                     aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
-                  />
-                </label>
-                {!adminSecretReady ? (
-                  <p className="admin-unlock-guidance" id="settings-admin-unlock-guidance" role="status" aria-live="polite">
-                    Введите секрет администратора клиники, чтобы менять защищенные настройки.
-                  </p>
-                ) : null}
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={unlockTelegramAdminSession}
-                  aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
-                  disabled={!adminSecretReady}
-                >
-                  <ShieldCheck aria-hidden="true" /> Разблокировать
-                </button>
-                <button className="secondary-button" type="button" onClick={lockTelegramAdminSession} disabled={!telegramAdminSecretSession}>
-                  Забыть секрет
-                </button>
-              </div>
-              <p>{telegramAdminSecretSession ? "Админ-доступ к защищенным настройкам активен до перезагрузки страницы." : "Без секрета будут работать только окружения, где сервер не требует админ-доступ."}</p>
-            </article>
+                    disabled={!adminSecretReady}
+                  >
+                    <ShieldCheck aria-hidden="true" /> Разблокировать
+                  </button>
+                  <button className="secondary-button" type="button" onClick={lockTelegramAdminSession} disabled={!telegramAdminSecretSession}>
+                    Забыть секрет
+                  </button>
+                </div>
+                <p>{telegramAdminSecretSession ? "Админ-доступ активен до перезагрузки страницы." : "Без секрета работают только окружения без обязательного админ-доступа."}</p>
+              </article>
+            </details>
           ) : null}
+
           {settingsTab === "clinic" ? (
           <section className="clinic-config" aria-label="Аккаунт клиники и команда">
             <div className="clinic-config-head">
@@ -2036,98 +2054,28 @@ export function SettingsView(props: SettingsViewProps) {
             <section className="clinic-legal-form" aria-label="Юридический профиль клиники">
               <div className="clinic-legal-summary">
                 <div>
-                  <p className="eyebrow">Профиль документов</p>
-                  <h3>Данные для договоров, актов, чеков и налоговой справки</h3>
-                  <p>
-                    Эти поля сохраняются на сервере и подставляются в шаблоны. Если критичные поля пустые, выдача финального документа блокируется.
-                  </p>
+                  <p className="eyebrow">Настройки клиники</p>
+                  <h3>Основные данные и профиль для документов</h3>
                 </div>
-                <strong>{legalReadinessPercent}%</strong>
-                <span>{legalMissingFields.length ? `Не хватает: ${legalMissingFields.join(", ")}` : "Минимальные поля заполнены"}</span>
+                <div className="legal-readiness-badge">
+                  <strong>{legalReadinessPercent}%</strong>
+                  <span>{legalMissingFields.length ? `Не заполнено: ${legalMissingFields.join(", ")}` : "Минимум заполнен"}</span>
+                </div>
               </div>
-              <div className="clinic-profile-form-grid">
+
+              {/* === ОСНОВНЫЕ ПОЛЯ — всегда видны === */}
+              <div className="clinic-profile-form-grid settings-essential-block">
                 <label>
-                  Рабочее название
+                  Название клиники
                   <input value={clinicProfileDraft.clinicName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("clinicName", event.target.value)} />
-                </label>
-                <label>
-                  Юридическое лицо
-                  <input value={clinicProfileDraft.legalName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("legalName", event.target.value)} />
-                </label>
-                <label>
-                  ИНН
-                  <input inputMode="numeric" value={clinicProfileDraft.inn} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("inn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))} />
-                </label>
-                <label>
-                  КПП
-                  <input inputMode="numeric" value={clinicProfileDraft.kpp} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("kpp", event.target.value.replace(/[^\d]/g, "").slice(0, 9))} />
-                </label>
-                <label>
-                  ОГРН / ОГРНИП
-                  <input inputMode="numeric" value={clinicProfileDraft.ogrn} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("ogrn", event.target.value.replace(/[^\d]/g, "").slice(0, 15))} />
                 </label>
                 <label>
                   Телефон
                   <input value={clinicProfileDraft.phone} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("phone", event.target.value)} />
                 </label>
-                <label>
-                  Email
-                  <input value={clinicProfileDraft.email} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("email", event.target.value)} />
-                </label>
-                <label>
-                  Сайт
-                  <input value={clinicProfileDraft.website} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("website", event.target.value)} />
-                </label>
                 <label className="form-span-2">
                   Адрес
                   <input value={clinicProfileDraft.address} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("address", event.target.value)} />
-                </label>
-                <label>
-                  Номер лицензии
-                  <input value={clinicProfileDraft.medicalLicenseNumber} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseNumber", event.target.value)} />
-                </label>
-                <label>
-                  Дата лицензии
-                  <input value={clinicProfileDraft.medicalLicenseIssuedAt} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuedAt", event.target.value)} />
-                </label>
-                <label className="form-span-2">
-                  Кем выдана лицензия
-                  <input value={clinicProfileDraft.medicalLicenseIssuer} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuer", event.target.value)} />
-                </label>
-                <label>
-                  Подписант
-                  <input value={clinicProfileDraft.signatoryName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryName", event.target.value)} />
-                </label>
-                <label>
-                  Должность подписанта
-                  <input value={clinicProfileDraft.signatoryTitle} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryTitle", event.target.value)} />
-                </label>
-                <label className="form-span-2">
-                  Банковские реквизиты
-                  <textarea value={clinicProfileDraft.bankDetails} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("bankDetails", event.target.value)} />
-                </label>
-                <label>
-                  Часовой пояс
-                  <input value={clinicProfileDraft.timezone} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("timezone", event.target.value)} />
-                </label>
-                <label>
-                  Язык интерфейса
-                  <select value={uiLanguage} onChange={(event: SelectChangeEvent) => setUiLanguage(normalizeUiLanguageInput(event.target.value))}>
-                    {typedUiLanguageOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <small className="field-note">{selectedUiLanguageOption.detail}</small>
-                </label>
-                <label>
-                  Минут на визит
-                  <input
-                    inputMode="numeric"
-                    value={clinicProfileDraft.defaultVisitMinutes}
-                    onChange={(event: InputChangeEvent) => updateClinicProfileDraft("defaultVisitMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
-                  />
                 </label>
                 <label>
                   Начало смены
@@ -2137,37 +2085,130 @@ export function SettingsView(props: SettingsViewProps) {
                   Конец смены
                   <input type="time" value={clinicProfileDraft.workdayEnd} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayEnd", event.target.value)} />
                 </label>
-                <label>
-                  Буфер, мин
-                  <input
-                    inputMode="numeric"
-                    value={clinicProfileDraft.appointmentBufferMinutes}
-                    onChange={(event: InputChangeEvent) => updateClinicProfileDraft("appointmentBufferMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
-                  />
-                </label>
                 <div className="weekday-toggle-row form-span-2" role="group" aria-label="Рабочие дни клиники">
                   <span>Рабочие дни</span>
-                  {typedWeekdayOptions.map((day) => (
-                      <button
-                        className={clinicProfileDraft.workingDays.includes(day.value) ? "active" : ""}
-                        key={day.value}
-                        type="button"
-                        aria-pressed={clinicProfileDraft.workingDays.includes(day.value)}
-                        onClick={() => toggleClinicWorkingDay(day.value)}
-                      >
+                  {typedWeekdayOptions.map((day: any) => (
+                    <button
+                      className={clinicProfileDraft.workingDays.includes(day.value) ? "active" : ""}
+                      key={day.value}
+                      type="button"
+                      aria-pressed={clinicProfileDraft.workingDays.includes(day.value)}
+                      onClick={() => toggleClinicWorkingDay(day.value)}
+                    >
                       {day.label}
                     </button>
                   ))}
                 </div>
-                <label className="checkbox-line">
-                  <input
-                    checked={clinicProfileDraft.egiszEnabled}
-                    type="checkbox"
-                    onChange={(event: InputChangeEvent) => updateClinicProfileDraft("egiszEnabled", event.target.checked)}
-                  />
-                  ЕГИСЗ-адаптер включен
-                </label>
               </div>
+
+              {/* === ДЛЯ ДОКУМЕНТОВ — collapsible === */}
+              <details className="settings-advanced-block">
+                <summary className="settings-advanced-toggle">
+                  <span className="settings-advanced-label">
+                    <span className="settings-advanced-icon">📋</span>
+                    Для договоров и налоговых документов
+                  </span>
+                  <span className="settings-advanced-hint">ИНН, лицензия, банк, подписант</span>
+                  <span className="settings-advanced-chevron">▼</span>
+                </summary>
+                <div className="clinic-profile-form-grid settings-advanced-form">
+                  <label>
+                    Юридическое лицо
+                    <input value={clinicProfileDraft.legalName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("legalName", event.target.value)} />
+                    <small className="field-note">ИП Иванова М.С. или ООО «Клиника»</small>
+                  </label>
+                  <label>
+                    ИНН
+                    <input inputMode="numeric" value={clinicProfileDraft.inn} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("inn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))} />
+                  </label>
+                  <label>
+                    КПП
+                    <input inputMode="numeric" value={clinicProfileDraft.kpp} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("kpp", event.target.value.replace(/[^\d]/g, "").slice(0, 9))} />
+                    <small className="field-note">Только для ООО / АО. ИП оставить пустым.</small>
+                  </label>
+                  <label>
+                    ОГРН / ОГРНИП
+                    <input inputMode="numeric" value={clinicProfileDraft.ogrn} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("ogrn", event.target.value.replace(/[^\d]/g, "").slice(0, 15))} />
+                  </label>
+                  <label>
+                    Email
+                    <input value={clinicProfileDraft.email} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("email", event.target.value)} />
+                  </label>
+                  <label>
+                    Сайт
+                    <input value={clinicProfileDraft.website} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("website", event.target.value)} />
+                  </label>
+                  <label>
+                    Номер лицензии
+                    <input value={clinicProfileDraft.medicalLicenseNumber} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseNumber", event.target.value)} />
+                  </label>
+                  <label>
+                    Дата лицензии
+                    <input value={clinicProfileDraft.medicalLicenseIssuedAt} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuedAt", event.target.value)} />
+                  </label>
+                  <label className="form-span-2">
+                    Кем выдана лицензия
+                    <input value={clinicProfileDraft.medicalLicenseIssuer} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuer", event.target.value)} />
+                  </label>
+                  <label>
+                    Подписант
+                    <input value={clinicProfileDraft.signatoryName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryName", event.target.value)} />
+                    <small className="field-note">ФИО того, кто подписывает договоры</small>
+                  </label>
+                  <label>
+                    Должность подписанта
+                    <input value={clinicProfileDraft.signatoryTitle} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryTitle", event.target.value)} />
+                    <small className="field-note">Например: индивидуальный предприниматель</small>
+                  </label>
+                  <label className="form-span-2">
+                    Банковские реквизиты
+                    <textarea value={clinicProfileDraft.bankDetails} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("bankDetails", event.target.value)} />
+                    <small className="field-note">р/с, БИК, банк — всё в одной строке или через запятую</small>
+                  </label>
+                  <label>
+                    Часовой пояс
+                    <input value={clinicProfileDraft.timezone} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("timezone", event.target.value)} />
+                    <small className="field-note">Например: Europe/Moscow</small>
+                  </label>
+                  <label>
+                    Язык интерфейса
+                    <select value={uiLanguage} onChange={(event: SelectChangeEvent) => setUiLanguage(normalizeUiLanguageInput(event.target.value))}>
+                      {typedUiLanguageOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <small className="field-note">{selectedUiLanguageOption.detail}</small>
+                  </label>
+                  <label>
+                    Минут на визит
+                    <input
+                      inputMode="numeric"
+                      value={clinicProfileDraft.defaultVisitMinutes}
+                      onChange={(event: InputChangeEvent) => updateClinicProfileDraft("defaultVisitMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
+                    />
+                  </label>
+                  <label>
+                    Буфер между записями, мин
+                    <input
+                      inputMode="numeric"
+                      value={clinicProfileDraft.appointmentBufferMinutes}
+                      onChange={(event: InputChangeEvent) => updateClinicProfileDraft("appointmentBufferMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
+                    />
+                  </label>
+                  <label className="checkbox-line form-span-2">
+                    <input
+                      checked={clinicProfileDraft.egiszEnabled}
+                      type="checkbox"
+                      onChange={(event: InputChangeEvent) => updateClinicProfileDraft("egiszEnabled", event.target.checked)}
+                    />
+                    ЕГИСЗ-адаптер включен
+                    <small className="field-note">Нужен только при подключении к федеральной системе ЕГИСЗ</small>
+                  </label>
+                </div>
+              </details>
+
               <div className="clinic-profile-actions">
                 <button
                   className="secondary-button"
@@ -2175,10 +2216,10 @@ export function SettingsView(props: SettingsViewProps) {
                   onClick={() => void lookupClinicPublicProfile()}
                   disabled={isClinicPublicLookupLoading}
                 >
-                  <Search aria-hidden="true" /> {isClinicPublicLookupLoading ? "Ищу реквизиты" : "Найти реквизиты"}
+                  <Search aria-hidden="true" /> {isClinicPublicLookupLoading ? "Ищу реквизиты…" : "Найти реквизиты по ИНН"}
                 </button>
                 <button className="primary-button" type="button" onClick={() => void saveClinicProfileFromDraft()} disabled={clinicProfileSaveState === "saving"}>
-                  <ShieldCheck aria-hidden="true" /> {clinicProfileSaveState === "saving" ? "Сохраняю" : "Сохранить профиль"}
+                  <ShieldCheck aria-hidden="true" /> {clinicProfileSaveState === "saving" ? "Сохраняю…" : "Сохранить"}
                 </button>
                 <span className={`save-state save-state-${clinicProfileSaveState}`}>
                   {clinicProfileSaveState === "saved"
@@ -2188,6 +2229,8 @@ export function SettingsView(props: SettingsViewProps) {
                       : "Изменения не выдаются в документах до сохранения"}
                 </span>
               </div>
+
+
               {clinicPublicLookup ? (
                 <div className="clinic-public-lookup-result" data-testid="clinic-public-lookup-result" aria-label="Публичный поиск реквизитов клиники">
                   <div className="dicom-discovery-head">
@@ -2248,6 +2291,7 @@ export function SettingsView(props: SettingsViewProps) {
                 </div>
               ) : null}
             </section>
+
 
             <div className="clinic-config-grid">
               <article>
@@ -2347,7 +2391,7 @@ export function SettingsView(props: SettingsViewProps) {
                             />
                           </label>
                           <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни: ${member.fullName}`}>
-                            {typedWeekdayOptions.map((day) => (
+                            {typedWeekdayOptions.map((day: any) => (
                               <button
                                 className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
                                 key={day.value}
@@ -2362,7 +2406,7 @@ export function SettingsView(props: SettingsViewProps) {
                           <div className="staff-day-hours" aria-label={`Часы по дням: ${member.fullName}`}>
                             {typedWeekdayOptions
                               .filter((day) => scheduleDraft.workingDays.includes(day.value))
-                              .map((day) => {
+                              .map((day: any) => {
                                 const dayHours = scheduleDraft.perDay[day.value];
                                 return (
                                   <div key={`hours-${member.id}-${day.value}`}>
@@ -2498,7 +2542,7 @@ export function SettingsView(props: SettingsViewProps) {
                             />
                           </label>
                           <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни кресла: ${chair.name}`}>
-                            {typedWeekdayOptions.map((day) => (
+                            {typedWeekdayOptions.map((day: any) => (
                               <button
                                 className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
                                 key={day.value}
@@ -2513,7 +2557,7 @@ export function SettingsView(props: SettingsViewProps) {
                           <div className="staff-day-hours" aria-label={`Часы по дням кресла: ${chair.name}`}>
                             {typedWeekdayOptions
                               .filter((day) => scheduleDraft.workingDays.includes(day.value))
-                              .map((day) => {
+                              .map((day: any) => {
                                 const dayHours = scheduleDraft.perDay[day.value];
                                 return (
                                   <div key={`chair-hours-${chair.id}-${day.value}`}>
@@ -2684,52 +2728,57 @@ export function SettingsView(props: SettingsViewProps) {
               </article>
             </div>
 
-            <article className="telegram-link-panel telegram-admin-panel">
-              <div className="panel-heading">
-                <div>
-                  <h3>Доступ к Telegram</h3>
-                  <p>Если Telegram-панель защищена на сервере клиники, введите секрет администратора для управления ботом, кодами и отправками. В браузере он не сохраняется.</p>
-                  <p>{adminSecretScopeWarning}</p>
-                </div>
-              </div>
-              <div className="telegram-link-controls">
-                <label>
-                  Секрет администратора клиники для Telegram
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    value={telegramAdminSecretDraft}
-                    onChange={(event: TextInputChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
-                    onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                      if (event.key === "Enter" && adminSecretReady) {
-                        event.preventDefault();
-                        unlockTelegramAdminSession();
-                      }
-                    }}
-                    placeholder="введите секрет администратора"
+            <details className="settings-advanced-block settings-admin-secret-block">
+              <summary className="settings-advanced-toggle">
+                <span className="settings-advanced-label">
+                  <span className="settings-advanced-icon">🔐</span>
+                  Доступ к Telegram
+                </span>
+                <span className="settings-advanced-hint">только если требует сервер</span>
+                <span className="settings-advanced-chevron">▼</span>
+              </summary>
+              <article className="telegram-link-panel telegram-admin-panel settings-advanced-form">
+                <p>Если Telegram-панель защищена на сервере клиники, введите секрет администратора для управления ботом, кодами и отправками. В браузере он не сохраняется.</p>
+                <p>{adminSecretScopeWarning}</p>
+                <div className="telegram-link-controls">
+                  <label>
+                    Секрет администратора клиники для Telegram
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={telegramAdminSecretDraft}
+                      onChange={(event: TextInputChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
+                      onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                        if (event.key === "Enter" && adminSecretReady) {
+                          event.preventDefault();
+                          unlockTelegramAdminSession();
+                        }
+                      }}
+                      placeholder="введите секрет администратора"
+                      aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
+                    />
+                  </label>
+                  {!adminSecretReady ? (
+                    <p className="admin-unlock-guidance" id="settings-admin-unlock-guidance" role="status" aria-live="polite">
+                      Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
+                    </p>
+                  ) : null}
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={unlockTelegramAdminSession}
                     aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
-                  />
-                </label>
-                {!adminSecretReady ? (
-                  <p className="admin-unlock-guidance" id="settings-admin-unlock-guidance" role="status" aria-live="polite">
-                    Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
-                  </p>
-                ) : null}
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={unlockTelegramAdminSession}
-                  aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
-                  disabled={!adminSecretReady}
-                >
-                  <ShieldCheck aria-hidden="true" /> Разблокировать
-                </button>
-                <button className="secondary-button" type="button" onClick={lockTelegramAdminSession} disabled={!telegramAdminSecretSession}>
-                  Забыть секрет
-                </button>
-              </div>
-              <p>{telegramAdminSecretSession ? "Админ-доступ к Telegram активен до перезагрузки страницы." : "Без секрета будут работать только окружения, где сервер не требует админ-доступ."}</p>
-            </article>
+                    disabled={!adminSecretReady}
+                  >
+                    <ShieldCheck aria-hidden="true" /> Разблокировать
+                  </button>
+                  <button className="secondary-button" type="button" onClick={lockTelegramAdminSession} disabled={!telegramAdminSecretSession}>
+                    Забыть секрет
+                  </button>
+                </div>
+                <p>{telegramAdminSecretSession ? "Админ-доступ к Telegram активен до перезагрузки страницы." : "Без секрета будут работать только окружения без обязательного админ-доступа."}</p>
+              </article>
+            </details>
 
             <div className="telegram-workbench">
               <article className="telegram-link-panel">
@@ -3593,101 +3642,113 @@ export function SettingsView(props: SettingsViewProps) {
             </div>
 
             <div className="rule-studio-layout">
-              <section className="rule-form" aria-label="Новое клиническое правило">
-                <div className="panel-heading">
-                  <h3>Новое правило</h3>
-                  <span className="status-pill status-arrived">{newRuleAction}</span>
+              <details className="settings-advanced-block new-rule-collapsible" style={{ flex: 1, minWidth: "320px", margin: "0 0 1rem 0" }}>
+                <summary className="settings-advanced-toggle">
+                  <span className="settings-advanced-label">
+                    <span className="settings-advanced-icon">➕</span>
+                    Добавить новое правило
+                  </span>
+                  <span className="settings-advanced-hint">триггеры, обязательные услуги и запреты</span>
+                  <span className="settings-advanced-chevron">▼</span>
+                </summary>
+                <div className="settings-advanced-form">
+                  <section className="rule-form" aria-label="Новое клиническое правило" style={{ padding: 0, border: "none", background: "none" }}>
+                    <div className="panel-heading">
+                      <h3>Новое правило</h3>
+                      <span className="status-pill status-arrived">{newRuleAction}</span>
+                    </div>
+                    <label>
+                      Название
+                      <input value={newRuleTitle} onChange={(event: TextInputChangeEvent) => setNewRuleTitle(event.target.value)} />
+                    </label>
+                    <div className="rule-form-grid">
+                      <label>
+                        Действие
+                        <select value={newRuleAction} onChange={(event: SelectChangeEvent) => setNewRuleAction(normalizedClinicalRuleAction(event.target.value))}>
+                          {typedClinicalRuleActions.map((action) => (
+                            <option key={action} value={action}>{typedClinicalRuleActionLabels[action]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Уровень
+                        <select value={newRuleSeverity} onChange={(event: SelectChangeEvent) => setNewRuleSeverity(normalizedClinicalRuleSeverity(event.target.value))}>
+                          {typedClinicalRuleSeverities.map((severity) => (
+                            <option key={severity} value={severity}>{typedClinicalRuleSeverityLabels[severity]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Владелец
+                        <select value={newRuleOwnerRole} onChange={(event: SelectChangeEvent) => setNewRuleOwnerRole(normalizedStaffRole(event.target.value))}>
+                          {clinicalRuleOwnerRoles.map((role) => (
+                            <option key={role} value={role}>{staffRoleLabels[role]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Специальность
+                        <select value={newRuleSpecialty} onChange={(event: SelectChangeEvent) => setNewRuleSpecialty(normalizedDentalSpecialty(event.target.value))}>
+                          {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
+                            <option key={specialty} value={specialty}>{specialtyLabels[specialty]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Категория
+                        <select value={newRuleCategory} onChange={(event: SelectChangeEvent) => setNewRuleCategory(normalizedServiceCategory(event.target.value))}>
+                          {typedServiceCategories.map((category) => (
+                            <option key={category} value={category}>{typedServiceCategoryLabels[category]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Триггер
+                        <select value={newRuleTriggerServiceId} onChange={(event: SelectChangeEvent) => setNewRuleTriggerServiceId(event.target.value)}>
+                          {typedServiceCatalog.map((service) => (
+                            <option key={service.id} value={service.id}>{service.title}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Обязательная услуга
+                        <select value={newRuleRequiredServiceId} onChange={(event: SelectChangeEvent) => setNewRuleRequiredServiceId(event.target.value)}>
+                          {typedServiceCatalog.map((service) => (
+                            <option key={service.id} value={service.id}>{service.title}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Должно быть завершено
+                        <select value={newRuleCompletedServiceId} onChange={(event: SelectChangeEvent) => setNewRuleCompletedServiceId(event.target.value)}>
+                          {typedServiceCatalog.map((service) => (
+                            <option key={service.id} value={service.id}>{service.title}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Блокировать
+                        <select value={newRuleBlockedServiceId} onChange={(event: SelectChangeEvent) => setNewRuleBlockedServiceId(event.target.value)}>
+                          {typedServiceCatalog.map((service) => (
+                            <option key={service.id} value={service.id}>{service.title}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <label>
+                      Предупреждение врачу
+                      <textarea value={newRuleWarningText} onChange={(event: TextInputChangeEvent) => setNewRuleWarningText(event.target.value)} />
+                    </label>
+                    <label>
+                      Объяснение пациенту
+                      <textarea value={newRulePatientText} onChange={(event: TextInputChangeEvent) => setNewRulePatientText(event.target.value)} />
+                    </label>
+                    <button className="primary-button" type="button" onClick={createClinicalRuleFromSettings} disabled={isClinicalRuleSaving} aria-busy={isClinicalRuleSaving || undefined}>
+                      <Plus aria-hidden="true" /> {isClinicalRuleSaving ? "Сохраняю" : "Добавить правило"}
+                    </button>
+                  </section>
                 </div>
-                <label>
-                  Название
-                  <input value={newRuleTitle} onChange={(event: TextInputChangeEvent) => setNewRuleTitle(event.target.value)} />
-                </label>
-                <div className="rule-form-grid">
-                  <label>
-                    Действие
-                    <select value={newRuleAction} onChange={(event: SelectChangeEvent) => setNewRuleAction(normalizedClinicalRuleAction(event.target.value))}>
-                      {typedClinicalRuleActions.map((action) => (
-                        <option key={action} value={action}>{typedClinicalRuleActionLabels[action]}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Уровень
-                    <select value={newRuleSeverity} onChange={(event: SelectChangeEvent) => setNewRuleSeverity(normalizedClinicalRuleSeverity(event.target.value))}>
-                      {typedClinicalRuleSeverities.map((severity) => (
-                        <option key={severity} value={severity}>{typedClinicalRuleSeverityLabels[severity]}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Владелец
-                    <select value={newRuleOwnerRole} onChange={(event: SelectChangeEvent) => setNewRuleOwnerRole(normalizedStaffRole(event.target.value))}>
-                      {clinicalRuleOwnerRoles.map((role) => (
-                        <option key={role} value={role}>{staffRoleLabels[role]}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Специальность
-                    <select value={newRuleSpecialty} onChange={(event: SelectChangeEvent) => setNewRuleSpecialty(normalizedDentalSpecialty(event.target.value))}>
-                      {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
-                        <option key={specialty} value={specialty}>{specialtyLabels[specialty]}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Категория
-                    <select value={newRuleCategory} onChange={(event: SelectChangeEvent) => setNewRuleCategory(normalizedServiceCategory(event.target.value))}>
-                      {typedServiceCategories.map((category) => (
-                        <option key={category} value={category}>{typedServiceCategoryLabels[category]}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Триггер
-                    <select value={newRuleTriggerServiceId} onChange={(event: SelectChangeEvent) => setNewRuleTriggerServiceId(event.target.value)}>
-                      {typedServiceCatalog.map((service) => (
-                        <option key={service.id} value={service.id}>{service.title}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Обязательная услуга
-                    <select value={newRuleRequiredServiceId} onChange={(event: SelectChangeEvent) => setNewRuleRequiredServiceId(event.target.value)}>
-                      {typedServiceCatalog.map((service) => (
-                        <option key={service.id} value={service.id}>{service.title}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Должно быть завершено
-                    <select value={newRuleCompletedServiceId} onChange={(event: SelectChangeEvent) => setNewRuleCompletedServiceId(event.target.value)}>
-                      {typedServiceCatalog.map((service) => (
-                        <option key={service.id} value={service.id}>{service.title}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Блокировать
-                    <select value={newRuleBlockedServiceId} onChange={(event: SelectChangeEvent) => setNewRuleBlockedServiceId(event.target.value)}>
-                      {typedServiceCatalog.map((service) => (
-                        <option key={service.id} value={service.id}>{service.title}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <label>
-                  Предупреждение врачу
-                  <textarea value={newRuleWarningText} onChange={(event: TextInputChangeEvent) => setNewRuleWarningText(event.target.value)} />
-                </label>
-                <label>
-                  Объяснение пациенту
-                  <textarea value={newRulePatientText} onChange={(event: TextInputChangeEvent) => setNewRulePatientText(event.target.value)} />
-                </label>
-                <button className="primary-button" type="button" onClick={createClinicalRuleFromSettings} disabled={isClinicalRuleSaving} aria-busy={isClinicalRuleSaving || undefined}>
-                  <Plus aria-hidden="true" /> {isClinicalRuleSaving ? "Сохраняю" : "Добавить правило"}
-                </button>
-              </section>
+              </details>
 
               <section className="rule-library" aria-label="Библиотека правил клиники">
                 {typedClinicalRules.map((rule) => (

@@ -1,6 +1,10 @@
 import { readFile } from "node:fs/promises";
 
-const appSource = await readFile("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  await readFile("apps/web/src/App.tsx", "utf8"),
+  await readFile("apps/web/src/useAppLogic.tsx", "utf8"),
+  await readFile("apps/web/src/AppHelpers.tsx", "utf8")
+].join("\n");
 const documentsViewSource = await readFile("apps/web/src/DocumentsView.tsx", "utf8");
 const scheduleViewSource = await readFile("apps/web/src/ScheduleView.tsx", "utf8");
 const settingsViewSource = await readFile("apps/web/src/SettingsView.tsx", "utf8");

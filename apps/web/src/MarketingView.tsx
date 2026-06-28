@@ -73,12 +73,12 @@ const MOCK_STATS: MarketingStats = {
   google: { rating: 4.6, reviews: 112 }
 };
 
-export function MarketingView({ clinicName }: { clinicName: string }) {
+export function MarketingView({ clinicName, clinicPhone }: { clinicName: string; clinicPhone: string }) {
   const [reviewText, setReviewText] = useState("");
   const [tone, setTone] = useState<ReviewTone>("positive");
   const [generatedReply, setGeneratedReply] = useState("");
   const [phone, setPhone] = useState(() => {
-    return localStorage.getItem("dental_crm_mkt_phone") || "+7 (800) 000-00-00";
+    return localStorage.getItem("dental_crm_mkt_phone") || clinicPhone || "+7 (800) 000-00-00";
   });
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">("reviews");

@@ -107,7 +107,10 @@ assert(validTaxResponse.json().taxDeductionCode === "2", "tax payment must prese
 assert(validTaxResponse.json().fiscalReceipt?.fn === "9287440300000099", "tax payment must preserve structured fiscal FN");
 assert(validTaxResponse.json().fiscalReceiptNumber.includes("FN-SMOKE-TAX-OK"), "explicit fiscal receipt number must stay when provided");
 
-const appSource = await import("node:fs").then((fs) => fs.readFileSync(appSourcePath, "utf8"));
+const appSource = [
+  await import("node:fs").then((fs) => fs.readFileSync(appSourcePath, "utf8")),
+  await import("node:fs").then((fs) => fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"))
+].join("\n");
 assertSourceContains(
   appSource,
   "const taxReadyPaymentRequested = paymentTaxDeductionCode === \"1\" || paymentTaxDeductionCode === \"2\";",

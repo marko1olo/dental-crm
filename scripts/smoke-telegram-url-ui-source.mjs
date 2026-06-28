@@ -1,6 +1,8 @@
 import fs from "node:fs";
 
-const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
+const useAppLogic = fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
+const appHelpers = fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8");
+const appSource = `${useAppLogic}\n${appHelpers}`;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

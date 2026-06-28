@@ -14,6 +14,7 @@ process.env.DENTAL_STATE_FILE = stateFilePath;
 process.env.DENTAL_STATE_BACKUP_DIR = backupDirectoryPath;
 process.env.DENTAL_STATE_BACKUPS = "2";
 process.env.DENTE_SETTINGS_ADMIN_SECRET = "synthetic-settings-secret";
+process.env.DENTE_SCHEDULE_ADMIN_SECRET = "synthetic-settings-secret";
 delete process.env.DENTAL_STATE_PERSISTENCE;
 
 const routePath = path.resolve("apps/api/dist/routes/settings.js");

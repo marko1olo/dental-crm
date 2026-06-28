@@ -3,7 +3,8 @@
    MARKETING VIEW STYLES
    ------------------------------------------- */
 .marketing-zone {
-  display: grid;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
   gap: 20px;
 }
 
@@ -241,4 +242,31 @@
 
 .icon-button.copied {
   opacity: 1;
+}
+
+.marketing-panel label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.marketing-panel input.text-input,
+.marketing-panel textarea.text-input {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--ink);
+}
+
+.marketing-panel input.text-input:focus,
+.marketing-panel textarea.text-input:focus {
+  border-color: var(--teal);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--teal-glow);
 }

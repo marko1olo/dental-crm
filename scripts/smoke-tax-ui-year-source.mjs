@@ -4,7 +4,11 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const source = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  readFileSync("apps/web/src/App.tsx", "utf8"),
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8")
+].join("\n");
+const source = appSource;
 const documentsViewSource = readFileSync("apps/web/src/DocumentsView.tsx", "utf8");
 const uiLabelsSource = readFileSync("apps/web/src/workspaceUiLabels.ts", "utf8");
 const helperIndex = uiLabelsSource.indexOf("function paymentTaxYearForUi");

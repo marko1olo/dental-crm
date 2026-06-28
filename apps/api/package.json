@@ -18,6 +18,8 @@
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.3.3",
     "pg": "^8.15.6",
+    "socks-proxy-agent": "^10.1.0",
+    "undici": "^8.5.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

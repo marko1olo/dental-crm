@@ -5,6 +5,9 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
+process.env.NODE_ENV = "development";
+process.env.DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS = "1";
+process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS = "1";
 
 const routePath = path.resolve("apps/api/dist/routes/settings.js");
 const patientRoutePath = path.resolve("apps/api/dist/routes/patients.js");
@@ -917,6 +920,8 @@ assert(
 
 const appSource = [
   fs.readFileSync("apps/web/src/App.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
   fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8"),
   fs.readFileSync("apps/web/src/ScheduleView.tsx", "utf8"),
   fs.readFileSync("apps/web/src/PatientsView.tsx", "utf8")

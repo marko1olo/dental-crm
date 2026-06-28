@@ -69,8 +69,18 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function readSource(sourcePath) {
+  if (sourcePath === "apps/api/src/routes/documents.ts") {
+    const main = readFileSync(sourcePath, "utf8");
+    const subFiles = ["create.ts", "issue.ts", "void.ts", "taxXml.ts", "auditFacts.ts", "pdf.ts", "html.ts"];
+    const subContents = subFiles.map(file => readFileSync(`apps/api/src/routes/documents/${file}`, "utf8"));
+    return [main, ...subContents].join("\n");
+  }
+  return readFileSync(sourcePath, "utf8");
+}
+
 for (const [sourcePath, expectedGuardCount] of guardedSources) {
-  const source = readFileSync(sourcePath, "utf8");
+  const source = readSource(sourcePath);
   const guardCount = (source.match(/requireClinicalMutationAccess/g) ?? []).length - 1;
   assert(
     guardCount >= expectedGuardCount,
@@ -79,7 +89,7 @@ for (const [sourcePath, expectedGuardCount] of guardedSources) {
 }
 
 for (const [sourcePath, expectedGuardCount] of guardedReadSources) {
-  const source = readFileSync(sourcePath, "utf8");
+  const source = readSource(sourcePath);
   const guardCount = (source.match(/requireClinicalReadAccess/g) ?? []).length - 1;
   assert(
     guardCount >= expectedGuardCount,
@@ -87,7 +97,10 @@ for (const [sourcePath, expectedGuardCount] of guardedReadSources) {
   );
 }
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  readFileSync("apps/web/src/App.tsx", "utf8"),
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8")
+].join("\n");
 [
   "accessUnlockRequired",
   "denteClinicalReadHeaders",

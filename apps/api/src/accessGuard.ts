@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { timingSafeSecretEqual } from "./utils/timingSafeSecretEqual.js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 

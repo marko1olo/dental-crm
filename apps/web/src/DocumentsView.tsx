@@ -4154,39 +4154,51 @@ export function DocumentsView(props: DocumentsViewProps) {
                 ) : null}
               </section>
 
-              {documentFactoryGroups.map((group) => (
-                <section className="document-factory-group" key={group.title}>
-                  <h3>{group.title}</h3>
-                  <div>
-                    {group.kinds.map((kind) => {
-                      const metadata = documentKindMetadata[kind];
-                      return (
-                        <button
-                          className="secondary-button document-factory-kind-button"
-                          type="button"
-                          key={kind}
-                          disabled={Boolean(documentCreateSavingKind)}
-                          aria-busy={documentCreateSavingKind === kind || undefined}
-                          onClick={() => {
-                            setSelectedDocumentKind(kind);
-                            if (!structuredPayloadDocumentKinds.has(kind)) {
-                              void createDocument(kind);
-                            }
-                          }}
-                        >
-                          <FileText aria-hidden="true" />
-                          <span className="document-factory-kind-button-text">
-                            <span>{documentLabels[kind]}</span>
-                            <small className={documentSourceStatusClassNames[metadata.sourceStatus]}>
-                              {documentCreateSavingKind === kind ? "Создаю" : documentSourceStatusLabels[metadata.sourceStatus]}
-                            </small>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
+              <details className="settings-advanced-block document-templates-collapsible">
+                <summary className="settings-advanced-toggle">
+                  <span className="settings-advanced-label">
+                    <span className="settings-advanced-icon">📂</span>
+                    Каталог шаблонов документов ({documentFactoryGroups.length} разделов, 30+ форм)
+                  </span>
+                  <span className="settings-advanced-hint">Нажмите, чтобы развернуть все шаблоны</span>
+                  <span className="settings-advanced-chevron">▼</span>
+                </summary>
+                <div className="settings-advanced-form">
+                  {documentFactoryGroups.map((group) => (
+                    <section className="document-factory-group" key={group.title}>
+                      <h3>{group.title}</h3>
+                      <div>
+                        {group.kinds.map((kind) => {
+                          const metadata = documentKindMetadata[kind];
+                          return (
+                            <button
+                              className="secondary-button document-factory-kind-button"
+                              type="button"
+                              key={kind}
+                              disabled={Boolean(documentCreateSavingKind)}
+                              aria-busy={documentCreateSavingKind === kind || undefined}
+                              onClick={() => {
+                                setSelectedDocumentKind(kind);
+                                if (!structuredPayloadDocumentKinds.has(kind)) {
+                                  void createDocument(kind);
+                                }
+                              }}
+                            >
+                              <FileText aria-hidden="true" />
+                              <span className="document-factory-kind-button-text">
+                                <span>{documentLabels[kind]}</span>
+                                <small className={documentSourceStatusClassNames[metadata.sourceStatus]}>
+                                  {documentCreateSavingKind === kind ? "Создаю" : documentSourceStatusLabels[metadata.sourceStatus]}
+                                </small>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              </details>
             </div>
             {documentIssueConfirmation ? (
               <section className="document-issue-confirmation" role="dialog" aria-label="Подтверждение выдачи документа">

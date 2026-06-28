@@ -1,6 +1,10 @@
 import { readFile } from "node:fs/promises";
 
-const source = await readFile("apps/web/src/App.tsx", "utf8");
+const source = [
+  await readFile("apps/web/src/App.tsx", "utf8"),
+  await readFile("apps/web/src/useAppLogic.tsx", "utf8"),
+  await readFile("apps/web/src/AppHelpers.tsx", "utf8")
+].join("\n");
 const speechPlan = await readFile("docs/05-speech-transcription-plan.md", "utf8");
 
 function fail(message) {

@@ -22,7 +22,9 @@ import {
   updateClinicMode,
   updateClinicProfile,
   updateChairWorkingHours,
-  updateStaffWorkingHours
+  updateStaffWorkingHours,
+  resetToDemo,
+  resetToZeroMode
 } from "../sampleData.js";
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
 
@@ -278,5 +280,19 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     } catch (error) {
       return chairWorkingHoursRejection(reply, error);
     }
+  });
+
+  app.post("/api/settings/reset-demo", async (request, reply) => {
+    resetToDemo();
+    return { success: true, message: "Демонстрационный режим успешно запущен." };
+  });
+
+  app.post("/api/settings/reset-zero", async (request, reply) => {
+    const body = request.body as { role?: string } | null;
+    const role = (body?.role === "doctor" || body?.role === "administrator" || body?.role === "owner" || body?.role === "assistant" || body?.role === "manager")
+      ? body.role
+      : "doctor";
+    resetToZeroMode(role);
+    return { success: true, message: "База данных успешно очищена. Запущен нулевой режим." };
   });
 }

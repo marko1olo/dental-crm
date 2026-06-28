@@ -1,6 +1,11 @@
 import { readFileSync } from "node:fs";
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  readFileSync("apps/web/src/App.tsx", "utf8"),
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+  readFileSync("apps/web/src/ImagingView.tsx", "utf8"),
+  readFileSync("apps/web/src/VisitView.tsx", "utf8")
+].join("\n");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 
 const missing = [];

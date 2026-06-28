@@ -28,9 +28,7 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
   }
 
   componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
-    if (!import.meta.env.PROD) {
-      console.error("DENTE boot failed", error, errorInfo.componentStack);
-    }
+    console.error("DENTE boot failed", error, errorInfo.componentStack);
   }
 
   render() {

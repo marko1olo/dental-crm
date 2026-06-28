@@ -2,6 +2,77 @@ import { createHash, randomInt } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { SpeechGatewayProvider } from "@dental/shared";
+import { fetch as undiciFetch, ProxyAgent, Agent, Dispatcher } from "undici";
+import { SocksClient } from "socks";
+import tls from "node:tls";
+
+let cachedProxyAgent: Dispatcher | null = null;
+function getProxyAgent(): Dispatcher | null {
+  const proxyUrl = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+  if (!proxyUrl) return null;
+  if (!cachedProxyAgent) {
+    try {
+      if (proxyUrl.startsWith("socks")) {
+        const parsed = new URL(proxyUrl);
+        const proxyHost = parsed.hostname;
+        const proxyPort = Number(parsed.port || 1080);
+        const proxyType = proxyUrl.includes("socks4") ? 4 : 5;
+        
+        cachedProxyAgent = new Agent({
+          connect: (opts, callback) => {
+            const destPort = opts.port ? Number(opts.port) : (opts.protocol === "https:" ? 443 : 80);
+            const destHost = opts.host || "";
+            
+            SocksClient.createConnection({
+              proxy: {
+                host: proxyHost,
+                port: proxyPort,
+                type: proxyType as 4 | 5
+              },
+              command: "connect",
+              destination: {
+                host: destHost,
+                port: destPort
+              }
+            }, (err, info) => {
+              if (err) {
+                callback(err, null);
+                return;
+              }
+              
+              if (!info) {
+                callback(new Error("SOCKS connection returned no info"), null);
+                return;
+              }
+              
+              if (opts.protocol === "https:") {
+                const tlsSocket = tls.connect({
+                  socket: info.socket,
+                  servername: opts.servername || opts.host
+                }, () => {
+                  callback(null, tlsSocket);
+                });
+                
+                tlsSocket.on("error", (tlsErr) => {
+                  callback(tlsErr, null);
+                });
+              } else {
+                callback(null, info.socket);
+              }
+            });
+          }
+        });
+        console.log(`[Proxy Agent] Created undici SOCKS Agent routing to SOCKS proxy: ${proxyUrl}`);
+      } else {
+        cachedProxyAgent = new ProxyAgent({ uri: proxyUrl });
+        console.log(`[Proxy Agent] Created undici ProxyAgent routing to HTTP/HTTPS proxy: ${proxyUrl}`);
+      }
+    } catch (err) {
+      console.error(`[Proxy Agent] Failed to initialize ProxyAgent for ${proxyUrl}:`, err);
+    }
+  }
+  return cachedProxyAgent;
+}
 
 type ProviderKeySpec = {
   singles: string[];
@@ -445,8 +516,13 @@ export async function fetchWithProviderTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const dispatcher = getProxyAgent();
   try {
-    return await fetch(input, { ...init, signal: controller.signal });
+    return await undiciFetch(input as any, {
+      ...init,
+      signal: controller.signal,
+      dispatcher: dispatcher || undefined
+    } as any) as any;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new SpeechProviderRequestError(`Источник распознавания не ответил за ${Math.round(timeoutMs / 1000)} сек.`, {

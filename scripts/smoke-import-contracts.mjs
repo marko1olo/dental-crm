@@ -25,7 +25,11 @@ const smartImportsSource = readFileSync("apps/api/src/routes/smartImports.ts", "
 const importsSource = readFileSync("apps/api/src/routes/imports.ts", "utf8");
 const documentExtractorSource = readFileSync("apps/api/src/ingestion/documentExtractor.ts", "utf8");
 const sharedSource = readFileSync("packages/shared/src/index.ts", "utf8");
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  readFileSync("apps/web/src/App.tsx", "utf8"),
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+  readFileSync("apps/web/src/AppHelpers.tsx", "utf8")
+].join("\n");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 const systemSource = readFileSync("apps/api/src/routes/system.ts", "utf8");
 

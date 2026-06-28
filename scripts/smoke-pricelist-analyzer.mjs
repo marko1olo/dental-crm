@@ -10,7 +10,8 @@ if (!existsSync(analyzerPath)) {
 const appSource = readFileSync(path.resolve("apps/web/src/App.tsx"), "utf8");
 const settingsViewSource = readFileSync(path.resolve("apps/web/src/SettingsView.tsx"), "utf8");
 const pricelistUiMetaSource = readFileSync(path.resolve("apps/web/src/pricelistUiMeta.ts"), "utf8");
-const uiSource = `${appSource}\n${settingsViewSource}\n${pricelistUiMetaSource}`;
+const useAppLogicSource = readFileSync(path.resolve("apps/web/src/useAppLogic.tsx"), "utf8");
+const uiSource = `${appSource}\n${settingsViewSource}\n${pricelistUiMetaSource}\n${useAppLogicSource}`;
 const requiredUiSnippets = [
   "pricelistCrownTypeLabels",
   "pricelistMaterialSummaryText",
