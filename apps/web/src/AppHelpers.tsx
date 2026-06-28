@@ -1,4 +1,4 @@
-
+﻿
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -948,7 +948,8 @@ export function loadDocumentPaymentSelectionStore(organizationId: string | null 
       if (organizationId) window.localStorage.removeItem(documentPaymentSelectionStorageKey);
     }
     return { version: 1, selections };
-  } catch {
+  } catch (error) {
+    console.error("Failed to load signature draft", error);
     // Document payment selection is local operator convenience; read failures are safe to ignore.
     return emptyDocumentPaymentSelectionStore();
   }
@@ -981,7 +982,8 @@ export function saveDocumentPaymentSelection(
       documentPaymentSelectionLocalKey(organizationId),
       JSON.stringify({ version: 1, selections: trimmedSelections } satisfies DocumentPaymentSelectionStore)
     );
-  } catch {
+  } catch (error) {
+    console.error("Failed to save payment selection", error);
     // Document payment selection is local operator convenience; failed storage must not block document issue.
   }
 }
@@ -1232,7 +1234,8 @@ export function saveOutpatient025uDocumentDraft(
       documentPayloadDraftLocalKey(organizationId),
       JSON.stringify({ version: 1, drafts: trimmedDrafts } satisfies DocumentPayloadDraftStore)
     );
-  } catch {
+  } catch (error) {
+    console.error("Failed to save outpatient 025u document draft", error);
     // Payload drafts are recovery data only; document issue still validates all facts server-side.
   }
 }
@@ -1272,7 +1275,8 @@ export function saveMedicalRecordExtractDocumentDraft(
       documentPayloadDraftLocalKey(organizationId),
       JSON.stringify({ version: 1, drafts: trimmedDrafts } satisfies DocumentPayloadDraftStore)
     );
-  } catch {
+  } catch (error) {
+    console.error("Failed to save medical record extract document draft", error);
     // Payload drafts are recovery data only; document issue still validates all facts server-side.
   }
 }
@@ -1948,7 +1952,8 @@ export function saveBrowserPickedImagingFolderPreview(
       organizationScopedLocalStorageKey(browserPickedImagingFolderStorageKey, organizationId),
       JSON.stringify(preview)
     );
-  } catch {
+  } catch (error) {
+    console.error("Failed to save browser picked imaging folder preview", error);
     // Browser-picked folder summaries are best-effort and contain no raw local path.
   }
 }
@@ -1971,7 +1976,8 @@ export function loadBrowserPickedImagingFolderPreview(
       return null;
     }
     return parsed;
-  } catch {
+  } catch (error) {
+    console.error("Failed to remove browser picked imaging folder preview", error);
     return null;
   }
 }
