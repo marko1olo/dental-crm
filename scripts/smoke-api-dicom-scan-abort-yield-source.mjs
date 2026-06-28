@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+﻿import { readFile } from "node:fs/promises";
 
 const imagingSource = await readFile("apps/api/src/routes/imaging.ts", "utf8");
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
@@ -38,18 +38,18 @@ function assertNotIncludes(source, marker, label) {
   "const zipEntryMetadataCompressedReadLimit = 8 * 1024 * 1024",
   "const zipEntryMetadataChunkBytes = 64 * 1024",
   "type ZipCentralDirectoryDetailedResult",
-  "function readExactFileRange(",
-  "readSync(descriptor, buffer, bytesRead, length - bytesRead, position + bytesRead)",
-  "descriptor: number | null",
-  "const descriptor = openSync(filePath, \"r\")",
-  "readExactFileRange(descriptor, stats.size - tailLength, tailLength)",
-  "readExactFileRange(descriptor, centralDirectoryOffset, centralDirectorySize)",
+  "async function readExactFileRange(",
+  "await fileHandle.read(buffer, bytesRead, length - bytesRead, position + bytesRead)",
+  "fileHandle: FileHandle | null",
+  "fileHandle = await open(filePath, \"r\")",
+  "readExactFileRange(fileHandle, stats.size - tailLength, tailLength)",
+  "readExactFileRange(fileHandle, centralDirectoryOffset, centralDirectorySize)",
   "centralDirectoryOffset + centralDirectorySize > stats.size",
   "createInflateRaw()",
   "async function zipEntryPrefix(",
-  "zipEntryPrefix(descriptor: number",
-  "await zipEntryPrefix(zip.descriptor, entry, input.maxHeaderBytes)",
-  "closeSync(zip.descriptor)",
+  "zipEntryPrefix(fileHandle: FileHandle",
+  "await zipEntryPrefix(zip.fileHandle, entry, input.maxHeaderBytes)",
+  "await zip.fileHandle.close()",
   "split/multi-disk ZIP",
   "zip64_entry_skipped",
   "zip_entry_out_of_bounds",
