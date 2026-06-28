@@ -211,7 +211,9 @@ function throwIfApiDicomScanAborted(signal?: AbortSignal) {
 }
 
 function isApiDicomScanAbortError(error: unknown) {
-  return error instanceof Error && error.name === apiDicomScanAbortErrorName;
+  if (error instanceof Error && error.name === apiDicomScanAbortErrorName) return true;
+  if (error instanceof DOMException && error.name === "TimeoutError") return true;
+  return false;
 }
 
 async function maybeYieldApiDicomScan(state: ApiDicomScanYieldState, signal?: AbortSignal) {
@@ -236,7 +238,10 @@ async function runAbortableImagingScan<T>(
   reply: FastifyReply,
   operation: (options: ApiDicomScanOptions) => Promise<T>
 ) {
-  const signal = createImagingRequestAbortSignal(request);
+  const requestSignal = createImagingRequestAbortSignal(request);
+  const timeoutSignal = AbortSignal.timeout(300_000);
+  const signal = AbortSignal.any([requestSignal, timeoutSignal]);
+
   try {
     return await operation({ signal });
   } catch (error) {
