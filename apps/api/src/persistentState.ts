@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import type {
   AiRecognitionJob,
@@ -103,13 +103,13 @@ function timestampForFileName(value = new Date()): string {
 
 function listBackupFiles(): Array<{ filePath: string; savedAt: string; sizeBytes: number }> {
   const backupDirectoryPath = getBackupDirectoryPath();
-  if (!existsSync(backupDirectoryPath)) return [];
+  if (!fs.existsSync(backupDirectoryPath)) return [];
 
-  return readdirSync(backupDirectoryPath, { withFileTypes: true })
+  return fs.readdirSync(backupDirectoryPath, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
     .map((entry) => {
       const filePath = path.join(backupDirectoryPath, entry.name);
-      const stats = statSync(filePath);
+      const stats = fs.statSync(filePath);
       return {
         filePath,
         savedAt: stats.mtime.toISOString(),
@@ -124,9 +124,9 @@ function fileNameOf(filePath: string): string {
 }
 
 function rawFileHash(filePath: string): string | null {
-  if (!existsSync(filePath)) return null;
+  if (!fs.existsSync(filePath)) return null;
   try {
-    return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+    return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
   } catch {
     return null;
   }
@@ -185,9 +185,9 @@ function compactPersistenceWarnings(warnings: Array<string | null | undefined>):
 }
 
 function readPersistedPayload(filePath: string): { payload: Partial<PersistedDentalState> | null; error: PersistedPayloadReadError | null } {
-  if (!existsSync(filePath)) return { payload: null, error: "state_file_missing" };
+  if (!fs.existsSync(filePath)) return { payload: null, error: "state_file_missing" };
   try {
-    return { payload: JSON.parse(readFileSync(filePath, "utf8")) as Partial<PersistedDentalState>, error: null };
+    return { payload: JSON.parse(fs.readFileSync(filePath, "utf8")) as Partial<PersistedDentalState>, error: null };
   } catch {
     return { payload: null, error: "state_file_unreadable" };
   }
@@ -196,26 +196,26 @@ function readPersistedPayload(filePath: string): { payload: Partial<PersistedDen
 function rotateStateBackup(): void {
   const stateFilePath = getStateFilePath();
   const backupDirectoryPath = getBackupDirectoryPath();
-  if (!existsSync(stateFilePath)) return;
+  if (!fs.existsSync(stateFilePath)) return;
 
-  mkdirSync(backupDirectoryPath, { recursive: true });
+  fs.mkdirSync(backupDirectoryPath, { recursive: true });
   const backupPath = path.join(backupDirectoryPath, `dental-crm-state-${timestampForFileName()}.json`);
-  copyFileSync(stateFilePath, backupPath);
+  fs.copyFileSync(stateFilePath, backupPath);
 
   const maxBackupCount = getMaxBackupCount();
   const backupLimit = Number.isFinite(maxBackupCount) && maxBackupCount > 0 ? Math.floor(maxBackupCount) : 30;
   const staleBackups = listBackupFiles().slice(backupLimit);
   for (const backup of staleBackups) {
-    unlinkSync(backup.filePath);
+    fs.unlinkSync(backup.filePath);
   }
 }
 
 function readPersistedState(): PersistedDentalState | null {
   const stateFilePath = getStateFilePath();
-  if (!persistenceEnabled() || !existsSync(stateFilePath)) return null;
+  if (!persistenceEnabled() || !fs.existsSync(stateFilePath)) return null;
 
   try {
-    const parsed = JSON.parse(readFileSync(stateFilePath, "utf8")) as Partial<PersistedDentalState>;
+    const parsed = JSON.parse(fs.readFileSync(stateFilePath, "utf8")) as Partial<PersistedDentalState>;
     if (parsed.version !== stateVersion || !parsed.state) return null;
     if (parsed.checksum) {
       const expectedChecksum = checksumPersistentState({
@@ -254,11 +254,11 @@ export function savePersistentState(state: DentalMutableState): void {
   };
 
   try {
-    mkdirSync(path.dirname(stateFilePath), { recursive: true });
+    fs.mkdirSync(path.dirname(stateFilePath), { recursive: true });
     rotateStateBackup();
     const tempPath = `${stateFilePath}.tmp`;
-    writeFileSync(tempPath, JSON.stringify(payload, null, 2), "utf8");
-    renameSync(tempPath, stateFilePath);
+    fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), "utf8");
+    fs.renameSync(tempPath, stateFilePath);
   } catch (error) {
     console.warn(`Dental state file save failed: ${error instanceof Error ? error.message : "unknown save error"}`);
   }
@@ -274,7 +274,7 @@ export function getPersistentStateMeta() {
   return {
     enabled: persistenceEnabled(),
     filePath: stateFilePath,
-    exists: existsSync(stateFilePath),
+    exists: fs.existsSync(stateFilePath),
     version: persisted?.version ?? null,
     savedAt: persisted?.savedAt ?? null,
     checksum: persisted?.checksum ?? null,
