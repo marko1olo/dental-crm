@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useAppLogic } from './useAppLogic';
 
 import { useAppStore } from "./store/appStore";
