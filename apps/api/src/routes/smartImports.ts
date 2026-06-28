@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+﻿import type { FastifyInstance } from "fastify";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
@@ -5217,7 +5217,7 @@ function smartImportSafeHandoffFingerprint(section: string, rowNumber: number, s
   return migrationFingerprint(`${section}:${rowNumber}:${status}:${kind}`).toUpperCase();
 }
 
-function buildSmartImportSafeHandoffReportCsv(preview: ReturnType<typeof buildSmartImportPreview>) {
+function buildSmartImportSafeHandoffReportCsv(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>) {
   const rows: Array<Array<string | number | null | undefined>> = [
     [
       "section",
@@ -5540,7 +5540,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return buildSmartImportPreview(input);
+    return await buildSmartImportPreview(input);
   });
 
   app.post("/api/imports/smart/local-source-discovery", async (request, reply) => {
@@ -5629,7 +5629,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = buildSmartImportPreview(input);
+    const preview = await buildSmartImportPreview(input);
     const csv = buildSmartImportReportCsv(preview);
     return reply
       .type("text/csv; charset=utf-8")
@@ -5646,7 +5646,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = buildSmartImportPreview(input);
+    const preview = await buildSmartImportPreview(input);
     const csv = buildSmartImportSafeHandoffReportCsv(preview);
     return reply
       .type("text/csv; charset=utf-8")
@@ -5663,7 +5663,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = buildSmartImportPreview(input);
+    const preview = await buildSmartImportPreview(input);
     const patientCommit =
       preview.patientPreview.totalRows > 0
         ? commitPatientImport({
