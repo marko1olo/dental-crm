@@ -802,7 +802,15 @@ function uniqueClinicPublicLookupSuggestions(suggestions: ClinicPublicLookupSugg
   const seen = new Set<string>();
   const result: ClinicPublicLookupSuggestion[] = [];
   for (const suggestion of suggestions) {
-    const key = JSON.stringify(Object.entries(suggestion.fields).sort(([left], [right]) => left.localeCompare(right)));
+    let key = "";
+    const keys = Object.keys(suggestion.fields).sort();
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i] as keyof typeof suggestion.fields;
+      const v = suggestion.fields[k];
+      if (v !== undefined) {
+        key += `${JSON.stringify(k)}:${JSON.stringify(v)}|`;
+      }
+    }
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(suggestion);

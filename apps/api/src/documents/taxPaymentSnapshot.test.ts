@@ -23,7 +23,7 @@ describe('taxPaymentYear', () => {
   const basePayment = {} as Payment;
 
   test('returns null when neither fiscalReceiptIssuedAt nor paidAt are provided', () => {
-    assert.strictEqual(taxPaymentYear({ ...basePayment, fiscalReceiptIssuedAt: undefined, paidAt: undefined }), null);
+    assert.strictEqual(taxPaymentYear({ ...basePayment, fiscalReceiptIssuedAt: null, paidAt: null }), null);
   });
 
   test('uses fiscalReceiptIssuedAt when both are provided', () => {
@@ -35,7 +35,7 @@ describe('taxPaymentYear', () => {
 
   test('uses paidAt when fiscalReceiptIssuedAt is absent', () => {
     assert.strictEqual(
-      taxPaymentYear({ ...basePayment, fiscalReceiptIssuedAt: undefined, paidAt: '2024-11-15T08:30:00Z' }),
+      taxPaymentYear({ ...basePayment, fiscalReceiptIssuedAt: null, paidAt: '2024-11-15T08:30:00Z' }),
       2024
     );
   });
