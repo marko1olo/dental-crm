@@ -7417,9 +7417,9 @@ const {
       
       const result = await response.json();
       if (result.draft && result.draft[fieldKey]) {
-        updateVisitNoteField(fieldKey, result.draft[fieldKey]);
+        updateVisitNoteField(fieldKey as VisitNoteField, result.draft[fieldKey]);
       } else if (result.normalizedTranscript) {
-        updateVisitNoteField(fieldKey, result.normalizedTranscript);
+        updateVisitNoteField(fieldKey as VisitNoteField, result.normalizedTranscript);
       }
     } catch (e) {
       if (e instanceof Error) {
@@ -9941,7 +9941,7 @@ const {
       const recordingId = speechRecordingIdRef.current;
       stopSpeechMonitor();
       const shouldRestart = serverVoiceRecordingShouldContinueRef.current && !serverVoiceRecordingStopRequestedRef.current && Boolean(recordingId);
-      if (shouldRestart) {
+      if (shouldRestart && recordingId) {
         setSpeechStatusNote("Браузер прервал запись на секунду. CRM снова включает микрофон и продолжает эту же диктовку.");
         restartServerVoiceRecorderAfterUnexpectedStop(recordingId);
         return;
@@ -9954,6 +9954,13 @@ const {
         void finalizeSpeechRecording(recordingId);
       }
     };
+  }
+
+  function clearServerVoiceRecordingRestartTimer() {
+    if (serverVoiceRecordingRestartTimerRef.current) {
+      clearTimeout(serverVoiceRecordingRestartTimerRef.current);
+      serverVoiceRecordingRestartTimerRef.current = null;
+    }
   }
 
   function restartServerVoiceRecorderAfterUnexpectedStop(recordingId: string) {
