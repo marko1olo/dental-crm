@@ -311,27 +311,37 @@ export function PatientsView(props: PatientsViewProps) {
                   {patientCoreSaveGuidance}
                 </p>
               ) : null}
-              <div className="panel-heading compact-heading patient-doc-heading">
-                <div>
-                  <p className="eyebrow">Реквизиты для документов</p>
-                  <h3>{selectedPatient?.fullName ?? "Пациент не выбран"}</h3>
-                </div>
-                <span className={`status-pill status-${patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage ? "cancelled" : "confirmed"}`}>
-                  {patientAdministrativeProfileSaveState === "saving"
-                    ? "сохранение"
-                    : patientAdministrativeProfileSaveState === "saved"
-                      ? "сохранено"
-                      : patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage
-                        ? "ошибка"
-                        : patientAdministrativeProfileDirty
-                          ? "Ждет сохранения"
-                          : "локально"}
+            <details className="settings-advanced-block patient-docs-collapsible">
+              <summary className="settings-advanced-toggle">
+                <span className="settings-advanced-label">
+                  <span className="settings-advanced-icon">📝</span>
+                  Реквизиты и пожелания для документов
                 </span>
-              </div>
-              {patientAdministrativeProfileValidationMessage ? (
-                <p className="save-error patient-admin-validation">{patientAdministrativeProfileValidationMessage}</p>
-              ) : null}
-              <div className="clinic-profile-form-grid patient-admin-form-grid">
+                <span className="settings-advanced-hint">Паспорт, ИНН, представитель, удобное время</span>
+                <span className="settings-advanced-chevron">▼</span>
+              </summary>
+              <div className="settings-advanced-form">
+                <div className="panel-heading compact-heading patient-doc-heading">
+                  <div>
+                    <p className="eyebrow">Реквизиты для документов</p>
+                    <h3>{selectedPatient?.fullName ?? "Пациент не выбран"}</h3>
+                  </div>
+                  <span className={`status-pill status-${patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage ? "cancelled" : "confirmed"}`}>
+                    {patientAdministrativeProfileSaveState === "saving"
+                      ? "сохранение"
+                      : patientAdministrativeProfileSaveState === "saved"
+                        ? "сохранено"
+                        : patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage
+                          ? "ошибка"
+                          : patientAdministrativeProfileDirty
+                            ? "Ждет сохранения"
+                            : "локально"}
+                  </span>
+                </div>
+                {patientAdministrativeProfileValidationMessage ? (
+                  <p className="save-error patient-admin-validation">{patientAdministrativeProfileValidationMessage}</p>
+                ) : null}
+                <div className="clinic-profile-form-grid patient-admin-form-grid">
                 <label>
                   Документ пациента
                   <input
@@ -515,6 +525,8 @@ export function PatientsView(props: PatientsViewProps) {
                   {patientAdministrativeSaveGuidance}
                 </p>
               ) : null}
+              </div>
+            </details>
             </section>
           </div>
 

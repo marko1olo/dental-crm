@@ -32,7 +32,7 @@ if (!existsSync(routePath)) {
 
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
-const { registerTelegramRoutes } = await import(pathToFileURL(routePath).href);
+const { registerTelegramRoutes, registerTelegramWebhookRoutes } = await import(pathToFileURL(routePath).href);
 const { activeVisit } = await import(pathToFileURL(sampleDataPath).href);
 
 function assert(condition, message) {
@@ -53,6 +53,7 @@ function telegramFetchStub(calls) {
 try {
   const app = Fastify({ logger: false });
   await registerTelegramRoutes(app);
+  await registerTelegramWebhookRoutes(app);
   const telegramFetchCalls = [];
   globalThis.fetch = telegramFetchStub(telegramFetchCalls);
 

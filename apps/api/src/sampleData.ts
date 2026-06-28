@@ -3453,6 +3453,126 @@ function normalizePostVisitCheckupDelayHoursByTopic(input: unknown): DenteTelegr
   return normalized;
 }
 
+const originalDemoData = JSON.parse(JSON.stringify(mutableStateSnapshot()));
+
+export function resetToDemo(): void {
+  replaceCollection(patients, originalDemoData.patients);
+  replaceCollection(appointments, originalDemoData.appointments);
+  replaceCollection(payments, originalDemoData.payments);
+  replaceCollection(documents, originalDemoData.documents);
+  replaceCollection(clinicalRules, originalDemoData.clinicalRules);
+  replaceCollection(imagingStudies, originalDemoData.imagingStudies);
+  replaceCollection(importBatches, originalDemoData.importBatches);
+  replaceCollection(aiRecognitionJobs, originalDemoData.aiRecognitionJobs);
+  replaceCollection(imagingViewerSessions, originalDemoData.imagingViewerSessions);
+  replaceCollection(dicomWorkbenchBundles, originalDemoData.dicomWorkbenchBundles);
+  replaceCollection(speechTranscriptionChunks, originalDemoData.speechTranscriptionChunks);
+  replaceCollection(visitSaveReceipts, originalDemoData.visitSaveReceipts);
+  replaceCollection(visitDraftAutosaves, originalDemoData.visitDraftAutosaves);
+  replaceCollection(communicationTasks, originalDemoData.communicationTasks);
+  replaceCollection(communicationEvents, originalDemoData.communicationEvents);
+  replaceCollection(chairs, originalDemoData.chairs);
+  replaceCollection(staffMembers, originalDemoData.staffMembers);
+  replaceCollection(denteTelegramLinkCodes, originalDemoData.denteTelegramLinkCodes);
+  replaceCollection(denteTelegramChatLinks, originalDemoData.denteTelegramChatLinks);
+  replaceCollection(denteTelegramWebhookEvents, originalDemoData.denteTelegramWebhookEvents);
+  replaceCollection(denteTelegramOutboxDeliveryReceipts, originalDemoData.denteTelegramOutboxDeliveryReceipts);
+  Object.assign(clinicProfile, originalDemoData.clinicProfile);
+  Object.assign(activeVisit, originalDemoData.activeVisit);
+  Object.assign(denteTelegramBotSettings, originalDemoData.denteTelegramBotSettings);
+  persistMutableState();
+}
+
+export function resetToZeroMode(role: StaffRole): void {
+  patients.length = 0;
+  appointments.length = 0;
+  payments.length = 0;
+  documents.length = 0;
+  clinicalRules.length = 0;
+  imagingStudies.length = 0;
+  importBatches.length = 0;
+  aiRecognitionJobs.length = 0;
+  imagingViewerSessions.length = 0;
+  dicomWorkbenchBundles.length = 0;
+  speechTranscriptionChunks.length = 0;
+  visitSaveReceipts.length = 0;
+  visitDraftAutosaves.length = 0;
+  communicationTasks.length = 0;
+  communicationEvents.length = 0;
+  chairs.length = 0;
+  denteTelegramLinkCodes.length = 0;
+  denteTelegramChatLinks.length = 0;
+  denteTelegramWebhookEvents.length = 0;
+  denteTelegramOutboxDeliveryReceipts.length = 0;
+
+  Object.assign(clinicProfile, {
+    organizationId,
+    clinicName: "",
+    legalName: null,
+    inn: null,
+    kpp: null,
+    ogrn: null,
+    address: null,
+    phone: null,
+    email: null,
+    website: null,
+    medicalLicenseNumber: null,
+    medicalLicenseIssuedAt: null,
+    medicalLicenseIssuer: null,
+    bankDetails: null,
+    signatoryName: null,
+    signatoryTitle: null,
+    mode: "solo_doctor",
+    timezone: "Europe/Moscow",
+    defaultVisitMinutes: 45,
+    scheduleDefaults: defaultClinicScheduleDefaults,
+    networkEnabled: false,
+    egiszEnabled: false,
+    updatedAt: new Date().toISOString()
+  });
+
+  staffMembers.length = 0;
+  const defaultMember: StaffMember = {
+    id: doctorUserId,
+    organizationId,
+    fullName: role === "doctor" ? "Врач-Организатор" : "Администратор",
+    role: role,
+    specialties: role === "doctor" ? ["therapist"] : [],
+    phone: "+79999999999",
+    email: "clinic@example.com",
+    active: true,
+    canSignMedicalRecords: true,
+    canManageMoney: role === "owner" || role === "manager" || role === "administrator",
+    canManageImports: role === "owner" || role === "manager" || role === "administrator",
+    color: "#0f766e",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  staffMembers.push(defaultMember);
+
+  Object.assign(activeVisit, {
+    id: activeVisitId,
+    organizationId,
+    patientId: marinaPatientId,
+    appointmentId: null,
+    doctorId: doctorUserId,
+    chairId: null,
+    status: "draft",
+    diagnoses: [],
+    complaints: "",
+    anamnesis: "",
+    objectiveStatus: "",
+    treatmentDone: "",
+    toothCardState: "{}",
+    protocolText: "",
+    revision: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  persistMutableState();
+}
+
 function applyPersistentState(): void {
   const state = loadPersistentState();
   if (!state) return;

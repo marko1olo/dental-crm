@@ -208,38 +208,66 @@ export function ImagingView(props: ImagingViewProps) {
                       Остановить
                     </button>
                   ) : null}
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => createImagingStudy("periapical")}
-                    disabled={Boolean(imagingCreateSavingKind)}
-                  >
-                    <Plus aria-hidden="true" /> {imagingCreateSavingKind === "periapical" ? "Добавляю" : "Прицельный"}
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => createImagingStudy("opg")}
-                    disabled={Boolean(imagingCreateSavingKind)}
-                  >
-                    <Plus aria-hidden="true" /> {imagingCreateSavingKind === "opg" ? "Добавляю" : "ОПТГ"}
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => createImagingStudy("ceph")}
-                    disabled={Boolean(imagingCreateSavingKind)}
-                  >
-                    <Plus aria-hidden="true" /> {imagingCreateSavingKind === "ceph" ? "Добавляю" : "ТРГ"}
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => createImagingStudy("cbct")}
-                    disabled={Boolean(imagingCreateSavingKind)}
-                  >
-                    <Plus aria-hidden="true" /> {imagingCreateSavingKind === "cbct" ? "Добавляю" : "КТ"}
-                  </button>
+                  <details className="imaging-add-dropdown" style={{ position: "relative", display: "inline-block" }}>
+                    <summary className="secondary-button" style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", cursor: "pointer", height: "36px", listStyle: "none" }}>
+                      <Plus aria-hidden="true" />
+                      Добавить снимок вручную
+                      <span style={{ fontSize: "0.65rem", marginLeft: "4px" }}>▼</span>
+                    </summary>
+                    <div style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "100%",
+                      marginTop: "6px",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
+                      zIndex: 9999,
+                      padding: "8px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                      minWidth: "160px"
+                    }}>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        style={{ border: "none", width: "100%", justifyContent: "flex-start", margin: 0, background: "none" }}
+                        onClick={() => createImagingStudy("periapical")}
+                        disabled={Boolean(imagingCreateSavingKind)}
+                      >
+                        Прицельный {imagingCreateSavingKind === "periapical" ? "(создаю)" : ""}
+                      </button>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        style={{ border: "none", width: "100%", justifyContent: "flex-start", margin: 0, background: "none" }}
+                        onClick={() => createImagingStudy("opg")}
+                        disabled={Boolean(imagingCreateSavingKind)}
+                      >
+                        ОПТГ {imagingCreateSavingKind === "opg" ? "(создаю)" : ""}
+                      </button>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        style={{ border: "none", width: "100%", justifyContent: "flex-start", margin: 0, background: "none" }}
+                        onClick={() => createImagingStudy("ceph")}
+                        disabled={Boolean(imagingCreateSavingKind)}
+                      >
+                        ТРГ {imagingCreateSavingKind === "ceph" ? "(создаю)" : ""}
+                      </button>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        style={{ border: "none", width: "100%", justifyContent: "flex-start", margin: 0, background: "none" }}
+                        onClick={() => createImagingStudy("cbct")}
+                        disabled={Boolean(imagingCreateSavingKind)}
+                      >
+                        КТ {imagingCreateSavingKind === "cbct" ? "(создаю)" : ""}
+                      </button>
+                    </div>
+                  </details>
                 </div>
               </div>
     

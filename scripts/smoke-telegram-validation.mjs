@@ -17,7 +17,7 @@ if (!existsSync(routePath) || !existsSync(sampleDataPath)) {
 
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
-const { registerTelegramRoutes } = await import(pathToFileURL(routePath).href);
+const { registerTelegramRoutes, registerTelegramWebhookRoutes } = await import(pathToFileURL(routePath).href);
 const { patients } = await import(pathToFileURL(sampleDataPath).href);
 
 function assert(condition, message) {
@@ -90,6 +90,7 @@ assert(
 
 const app = Fastify({ logger: false });
 await registerTelegramRoutes(app);
+await registerTelegramWebhookRoutes(app);
 
 const adminHeaders = { "x-dente-admin-secret": process.env.DENTE_TELEGRAM_ADMIN_SECRET };
 const webhookHeaders = { "x-telegram-bot-api-secret-token": process.env.DENTE_TELEGRAM_WEBHOOK_SECRET };

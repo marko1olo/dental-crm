@@ -142,7 +142,7 @@ export function PaymentCapture({
         trimmedPayerInn ||
         payerBirthDate.trim() ||
         payerIdentityDocument.trim() ||
-        payerRelationship.trim()
+        (payerRelationship.trim() && payerRelationship.trim() !== "пациент")
     );
   const paymentMissingSteps = [
     !patientContextReady ? patientContextMessage || "выберите пациента текущего приема" : null,

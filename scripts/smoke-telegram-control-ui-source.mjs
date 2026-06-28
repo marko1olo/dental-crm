@@ -2,6 +2,10 @@ import fs from "node:fs";
 
 const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
 const settingsSource = fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8");
+const useAppLogicSource = fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
+const appHelpersSource = fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8");
+const settingsStoreSource = fs.readFileSync("apps/web/src/store/settingsStore.ts", "utf8");
+const appStoreSource = fs.readFileSync("apps/web/src/store/appStore.ts", "utf8");
 const styleSource = fs.readFileSync("apps/web/src/styles/main.css", "utf8");
 const sharedSource = fs.readFileSync("packages/shared/src/index.ts", "utf8");
 const apiSource = fs.readFileSync("apps/api/src/sampleData.ts", "utf8");
@@ -19,7 +23,7 @@ const migrationSource = [
 
 const secretPattern = /\b\d{8,12}:AA[A-Za-z0-9_-]{30,}\b/;
 const missing = [];
-const clientUiSource = `${appSource}\n${settingsSource}`;
+const clientUiSource = `${appSource}\n${settingsSource}\n${useAppLogicSource}\n${appHelpersSource}\n${settingsStoreSource}\n${appStoreSource}`;
 
 for (const [label, source] of [
   ["App.tsx", appSource],

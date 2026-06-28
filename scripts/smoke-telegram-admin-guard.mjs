@@ -15,7 +15,7 @@ if (!existsSync(routePath)) {
 
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const Fastify = requireFromApi("fastify");
-const { registerTelegramRoutes } = await import(pathToFileURL(routePath).href);
+const { registerTelegramRoutes, registerTelegramWebhookRoutes } = await import(pathToFileURL(routePath).href);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -23,6 +23,9 @@ function assert(condition, message) {
 
 const app = Fastify({ logger: false });
 await registerTelegramRoutes(app);
+if (typeof registerTelegramWebhookRoutes === "function") {
+  await registerTelegramWebhookRoutes(app);
+}
 
 const missingSecretResponse = await app.inject({
   method: "GET",

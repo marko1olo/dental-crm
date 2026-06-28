@@ -2360,6 +2360,7 @@ const {
     "";
   const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
   const activeOrganizationId = dashboard?.clinicSettings.profile?.organizationId ?? null;
+  const [polishingField, setPolishingField] = useState<string | null>(null);
 
 
 
@@ -2383,6 +2384,12 @@ const {
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const serverVoiceRecordingShouldContinueRef = useRef(false);
+  const serverVoiceRecordingStopRequestedRef = useRef(false);
+  const serverVoiceRecordingRestartTimerRef = useRef<any>(null);
+  const serverVoiceRecordingStartingRef = useRef(false);
+  const speechActiveGatewayStatusRef = useRef<any>(null);
+  const [isServerVoiceRecordingStarting, setIsServerVoiceRecordingStarting] = useState(false);
   const speechAudioContextRef = useRef<AudioContext | null>(null);
   const speechAnalyserRef = useRef<AnalyserNode | null>(null);
   const speechMonitorTimerRef = useRef<number | null>(null);
@@ -2583,25 +2590,52 @@ const {
   }
 
   async function loadDashboard(options: { adminSecret?: string } = {}) {
-    const response = await fetch("/api/dashboard", {
-      cache: "no-store",
-      headers: denteClinicalReadHeaders({}, options.adminSecret)
-    });
-    if (!response.ok) {
-      const message = await responseErrorMessage(response, "Данные клиники не загружены");
-      if (response.status === 403 || response.status === 503) {
-        setAccessUnlockRequired(true);
-        setAccessUnlockMessage(message);
-        setDashboard(null);
+    try {
+      const response = await fetch("/api/dashboard", {
+        cache: "no-store",
+        headers: denteClinicalReadHeaders({}, options.adminSecret)
+      });
+      if (!response.ok) {
+        const message = await responseErrorMessage(response, "Данные клиники не загружены");
+        if (response.status === 403 || response.status === 503) {
+          setAccessUnlockRequired(true);
+          setAccessUnlockMessage(message);
+          setDashboard(null);
+        }
+        throw new Error(message);
       }
-      throw new Error(message);
+      const payload = await response.json();
+      setDashboard(dashboardSchema.parse(payload));
+      setAccessUnlockRequired(false);
+      setAccessUnlockMessage("");
+      
+      // Save local cache for offline usage
+      try {
+        window.localStorage.setItem("dente:offline-dashboard-cache", JSON.stringify(payload));
+      } catch (cacheError) {
+        console.warn("Не удалось сохранить кэш смены для оффлайна:", cacheError);
+      }
+
+      void loadPersistenceHealth({ silent: true, adminSecret: options.adminSecret });
+      void refreshSpeechRuntime({ silent: true });
+    } catch (networkError) {
+      // Offline fallback
+      const cached = window.localStorage.getItem("dente:offline-dashboard-cache");
+      if (cached) {
+        try {
+          const payload = JSON.parse(cached);
+          setDashboard(dashboardSchema.parse(payload));
+          setIsOnline(false);
+          setAccessUnlockRequired(false);
+          setAccessUnlockMessage("");
+          console.warn("Работа в оффлайн-режиме: данные загружены из локального кэша.");
+          return;
+        } catch (parseError) {
+          console.error("Не удалось прочитать кэшированные данные оффлайн-режима:", parseError);
+        }
+      }
+      throw networkError;
     }
-    const payload = await response.json();
-    setDashboard(dashboardSchema.parse(payload));
-    setAccessUnlockRequired(false);
-    setAccessUnlockMessage("");
-    void loadPersistenceHealth({ silent: true, adminSecret: options.adminSecret });
-    void refreshSpeechRuntime({ silent: true });
   }
 
   function updateClinicProfileDraft<K extends keyof ClinicProfileDraft>(key: K, value: ClinicProfileDraft[K]) {
@@ -3005,16 +3039,29 @@ const {
       ["часовой пояс", clinicProfileDraft.timezone]
     ];
     for (const [label, value] of requiredClinicDraftFields) {
-      if (!value.trim()) issues.push(label);
+      if (!value?.trim()) issues.push(label);
     }
     const activeStaff = dashboard?.clinicSettings.staff.filter((member) => member.active) ?? [];
     const activeDoctors = activeStaff.filter((member) => member.role === "doctor" || member.role === "owner");
     const activeAssistants = activeStaff.filter((member) => member.role === "assistant");
     const activeChairs = dashboard?.clinicSettings.chairs.filter((chair) => chair.active) ?? [];
-    if (!activeDoctors.length) issues.push("врач для первого приема");
-    if (!activeDoctors.some((member) => member.canSignMedicalRecords)) issues.push("врач с правом подписи ЭМК");
-    if (!activeChairs.length) issues.push("кресло / кабинет");
-    if (dashboard?.clinicSettings.profile?.mode !== "solo_doctor" && !activeAssistants.length) issues.push("ассистент");
+    
+    const hasDoctor = activeDoctors.length > 0 || (!onboardingDismissed && newStaffName.trim().length > 0 && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner"));
+    const hasSigningDoctor = activeDoctors.some((member) => member.canSignMedicalRecords) || (!onboardingDismissed && newStaffName.trim().length > 0 && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner"));
+    const hasChair = activeChairs.length > 0 || (!onboardingDismissed && newChairName.trim().length > 0 && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "assistant"));
+
+    if ((selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner") && !hasDoctor) {
+      issues.push("врач для первого приема");
+    }
+    if ((selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner") && !hasSigningDoctor) {
+      issues.push("врач с правом подписи ЭМК");
+    }
+    if ((selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "assistant") && !hasChair) {
+      issues.push("кресло / кабинет");
+    }
+    if (dashboard?.clinicSettings.profile?.mode !== "solo_doctor" && !activeAssistants.length && onboardingDismissed) {
+      issues.push("ассистент");
+    }
     const activeAppointmentReadiness = dashboard?.activeVisit.appointmentId
       ? dashboard.appointmentReadiness.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
       : null;
@@ -3040,7 +3087,7 @@ const {
       ["орган, выдавший лицензию", clinicProfileDraft.medicalLicenseIssuer]
     ];
     for (const [label, value] of requiredDocumentDraftFields) {
-      if (!value.trim()) issues.push(label);
+      if (!value?.trim()) issues.push(label);
     }
     return issues;
   }
@@ -3214,7 +3261,7 @@ const {
       true,
       dismissalSavedAt,
       false,
-      dashboard?.clinicSettings.profile?.organizationId ?? null
+      dashboard?.clinicSettings.profile.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3253,7 +3300,7 @@ const {
       true,
       dismissalSavedAt,
       true,
-      dashboard?.clinicSettings.profile?.organizationId ?? null
+      dashboard?.clinicSettings.profile.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3269,6 +3316,127 @@ const {
     if (!(await saveOnboardingSchedulesIfDirty())) return;
     if (onboardingStep === "telegram" && telegramSettingsDirty && !(await saveTelegramSettings())) return;
     setOnboardingStep(step);
+  }
+
+  async function handleSelectDemoMode(): Promise<void> {
+    try {
+      const res = await fetch("/api/settings/reset-demo", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to reset to demo");
+
+      const dismissalSavedAt = new Date().toISOString();
+      const savedPreferences: UiPreferences = {
+        version: 1,
+        ...currentUiPreferencesInput(),
+        onboardingDismissed: true,
+        onboardingDismissedAt: dismissalSavedAt,
+        onboardingDraftMode: false,
+        savedAt: dismissalSavedAt
+      };
+      if (uiPreferencesServerReadyRef.current) {
+        try {
+          await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession);
+        } catch (preferencesError) {
+          console.warn("Preferences server sync failed", preferencesError);
+        }
+      }
+      persistUiPreferences(savedPreferences);
+      setOnboardingDismissed(true);
+      setOnboardingDismissedAt(dismissalSavedAt);
+      setOnboardingDraftMode(false);
+      
+      await loadDashboard();
+    } catch (e) {
+      console.error(e);
+      alert("Не удалось запустить демонстрационный режим");
+    }
+  }
+
+  async function handleSelectZeroMode(): Promise<void> {
+    try {
+      const res = await fetch("/api/settings/reset-zero", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: selectedWorkspaceRole })
+      });
+      if (!res.ok) throw new Error("Failed to reset to zero");
+
+      // Reset local state variables so they are empty in the wizard inputs
+      setNewPatientName("");
+      setNewPatientPhone("");
+      setNewPatientBirthDate("");
+
+      // Force clinic draft re-hydration from fresh zero-mode dashboard
+      clinicProfileDraftHydratedRef.current = false;
+
+      await loadDashboard();
+      
+      setOnboardingStep("clinic");
+    } catch (e) {
+      console.error(e);
+      alert("Не удалось запустить чистый режим");
+    }
+  }
+
+  async function handleFinishOnboarding(newStaffName: string, newChairName: string): Promise<void> {
+    try {
+      if (clinicProfileDirty) {
+        await saveClinicProfileIfDirty();
+      }
+
+      if (newStaffName.trim()) {
+        const staffRes = await fetch("/api/settings/staff", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName: newStaffName,
+            role: selectedWorkspaceRole,
+            specialties: ["universal"],
+            phone: "+79999999999",
+            email: "doctor@example.com"
+          })
+        });
+        if (!staffRes.ok) throw new Error("Failed to create first staff");
+      }
+
+      if (newChairName.trim() && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "assistant")) {
+        const chairRes = await fetch("/api/settings/chairs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: newChairName,
+            room: "1",
+            specialties: ["universal"]
+          })
+        });
+        if (!chairRes.ok) throw new Error("Failed to create first chair");
+      }
+
+      const dismissalSavedAt = new Date().toISOString();
+      const savedPreferences: UiPreferences = {
+        version: 1,
+        ...currentUiPreferencesInput(),
+        onboardingDismissed: true,
+        onboardingDismissedAt: dismissalSavedAt,
+        onboardingDraftMode: false,
+        savedAt: dismissalSavedAt
+      };
+      if (uiPreferencesServerReadyRef.current) {
+        try {
+          await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession);
+        } catch (preferencesError) {
+          console.warn("Preferences server sync failed", preferencesError);
+        }
+      }
+      persistUiPreferences(savedPreferences);
+      setOnboardingDismissed(true);
+      setOnboardingDismissedAt(dismissalSavedAt);
+      setOnboardingDraftMode(false);
+
+      await loadDashboard();
+    } catch (e) {
+      console.error(e);
+      alert("Не удалось завершить настройку клиники");
+    }
   }
 
   async function saveOnboardingSchedulesIfDirty(): Promise<boolean> {
@@ -3704,7 +3872,7 @@ const {
       return;
     }
     if (!speechTranscriptionMatchesActiveVisit(result)) {
-      setSpeechStatusNote("Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.");
+      setSpeechStatusNote("Эта часть записи относится к другому приему и не добавлена в текущую карту.");
       return;
     }
     const text = result.chunk.transcript.trim();
@@ -3945,6 +4113,14 @@ const {
     setOnboardingDraftMode(scopedDismissal.dismissed ? scopedDismissal.draftMode : false);
     if (!scopedDismissal.dismissed) setOnboardingStep("intro");
   }, [dashboard?.clinicSettings.profile?.organizationId, onboardingDismissedAt, uiPreferencesHydrated]);
+
+  useEffect(() => {
+    if (!dashboard) return;
+    const hasClinicProfile = Boolean(dashboard.clinicSettings.profile?.clinicName);
+    if (hasClinicProfile) {
+      setOnboardingDismissed(true);
+    }
+  }, [dashboard]);
 
   useEffect(() => {
     if (!uiPreferencesHydrated) return undefined;
@@ -4225,7 +4401,7 @@ const {
     if (dashboard.clinicSettings.profile) {
       setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard.clinicSettings.profile));
     } else {
-      setClinicProfileDraft(emptyClinicProfileDraft);
+      setClinicProfileDraft(emptyClinicProfileDraft());
     }
     setClinicProfileDirty(false);
     clinicProfileDraftHydratedRef.current = true;
@@ -4366,6 +4542,10 @@ const {
   ]);
 
   useEffect(() => {
+    // Do not auto-save clinic profile while onboarding wizard is open —
+    // auto-save triggers setClinicProfileDraft which re-renders the form
+    // and destroys mid-edit DOM nodes (phone input disappears mid-fill).
+    if (!onboardingDismissed) return undefined;
     if (!dashboard || !clinicProfileDirty || clinicProfileSaveState === "saving" || !clinicProfileDraft.clinicName.trim()) {
       return undefined;
     }
@@ -4373,7 +4553,7 @@ const {
       void saveClinicProfileFromDraft();
     }, 1400);
     return () => window.clearTimeout(saveTimer);
-  }, [clinicProfileDraft, clinicProfileDirty, clinicProfileSaveState, dashboard]);
+  }, [clinicProfileDraft, clinicProfileDirty, clinicProfileSaveState, dashboard, onboardingDismissed]);
 
   useEffect(() => {
     setNewStaffSpecialty(selectedSpecialty);
@@ -4471,8 +4651,9 @@ const {
   useEffect(() => {
     const allowedViews = getFilteredAppViews(selectedWorkspaceRole);
     if (!allowedViews.includes(currentView)) {
-      setCurrentView("shift");
-      window.location.hash = "shift";
+      const fallbackView = allowedViews.includes("shift") ? "shift" : (allowedViews[0] || "schedule");
+      setCurrentView(fallbackView);
+      window.location.hash = fallbackView;
     }
   }, [selectedWorkspaceRole, currentView]);
 
@@ -7193,17 +7374,60 @@ const {
     visitDraftUserEditedRef.current = true;
     setSelectedSpecialty(template.specialty);
     setSelectedProtocolId(template.id);
-    setTranscript(
-      [
-        `${template.visitReason}.`,
-        `Жалобы: ${template.complaintPrompt}`,
-        `Объективно: ${template.objectiveTemplate}`,
-        `Диагнозы к проверке: ${template.diagnosisHints.join("; ")}`,
-        `План: ${template.treatmentPlanTemplate}`,
-        `Документы: ${template.requiredDocuments.map((kind) => documentLabels[kind]).join(", ")}.`,
-        `Снимки: ${template.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}.`
-      ].join("\n")
-    );
+    const templatedText = [
+      `${template.visitReason}.`,
+      `Жалобы: ${template.complaintPrompt}`,
+      `Объективно: ${template.objectiveTemplate}`,
+      `Диагнозы к проверке: ${template.diagnosisHints.join("; ")}`,
+      `План: ${template.treatmentPlanTemplate}`,
+      `Документы: ${template.requiredDocuments.map((kind) => documentLabels[kind]).join(", ")}.`,
+      `Снимки: ${template.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}.`
+    ].join("\n");
+    setTranscript(templatedText);
+    return templatedText;
+  }
+
+  async function polishSingleField(fieldKey: string, currentValue: string) {
+    if (!currentValue.trim()) return;
+    setPolishingField(fieldKey);
+    try {
+      const fieldLabels: Record<string, string> = {
+        complaint: "Жалобы",
+        anamnesis: "Анамнез заболевания",
+        objectiveStatus: "Объективный статус / Данные осмотра",
+        diagnosis: "Диагноз (МКБ-10)",
+        treatmentPlan: "Протокол лечения / Выполненные манипуляции"
+      };
+
+      const promptText = `Раздел: ${fieldLabels[fieldKey] || fieldKey}. Текст для профессионального оформления: ${currentValue}`;
+      
+      const response = await fetch("/api/speech/polish-transcript", {
+        method: "POST",
+        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          transcript: promptText,
+          specialty: selectedSpecialty,
+          source: "voice"
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Серверная полировка недоступна");
+      }
+      
+      const result = await response.json();
+      if (result.draft && result.draft[fieldKey]) {
+        updateVisitNoteField(fieldKey, result.draft[fieldKey]);
+      } else if (result.normalizedTranscript) {
+        updateVisitNoteField(fieldKey, result.normalizedTranscript);
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        setError(`Не удалось улучшить поле через ИИ: ${e.message}`);
+      }
+    } finally {
+      setPolishingField(null);
+    }
   }
 
   async function polishTranscript() {
@@ -7256,11 +7480,16 @@ const {
     }
   }
 
-  async function buildDraft() {
-    if (!dashboard || !activePatient || !hasVisitTranscriptText) {
+  async function buildDraft(overrideTranscript?: string, overrideSpecialty?: DentalSpecialty) {
+    const activeTranscript = overrideTranscript !== undefined ? overrideTranscript : transcript;
+    const activeSpecialty = overrideSpecialty !== undefined ? overrideSpecialty : selectedSpecialty;
+    const hasText = activeTranscript.trim().length > 0;
+
+    if (!dashboard || !activePatient || !hasText) {
       const missingSteps = [
         !dashboard ? "дождитесь загрузки приема" : null,
-        ...visitDraftBuildMissingSteps
+        !activePatient ? "выберите пациента" : null,
+        !hasText ? "добавьте текст диктовки или нажмите голосовую запись" : null
       ].filter((step): step is string => Boolean(step));
       setError(`Перед сборкой черновика: ${missingSteps.join(", ")}.`);
       return;
@@ -7273,8 +7502,8 @@ const {
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           patientId: activePatient.id,
-          transcript,
-          specialty: selectedSpecialty,
+          transcript: activeTranscript,
+          specialty: activeSpecialty,
           source: "voice"
         })
       });
@@ -7294,7 +7523,7 @@ const {
       }
       scrollToVisitArea(".visit-note-panel");
     } catch (draftError) {
-      const fallbackDraft = buildOfflineVisitDraftFromTranscript(transcript, selectedSpecialty);
+      const fallbackDraft = buildOfflineVisitDraftFromTranscript(activeTranscript, activeSpecialty);
       setDraft(fallbackDraft);
       setVisitNoteForm(visitNoteFormFromDraft(fallbackDraft));
       scrollToVisitArea(".visit-note-panel");
@@ -9524,13 +9753,13 @@ const {
     return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
   }
 
-  async function uploadSpeechBlob(blob: Blob) {
+  async function uploadSpeechBlob(blob: Blob, gatewayStatusOverride?: SpeechGatewayStatus | null) {
     if (!dashboard || blob.size === 0) return;
-    const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
-    if (blob.size > maxChunkBytes) {
+    const maxChunkBytesLimit = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
+    if (blob.size > maxChunkBytesLimit) {
       setSpeechStatusNote(
         `Распознавание: аудио-фрагмент ${Math.round(blob.size / 1024 / 1024)} МБ больше лимита ${Math.round(
-          maxChunkBytes / 1024 / 1024
+          maxChunkBytesLimit / 1024 / 1024
         )} МБ; запись продолжается, уменьшите длительность чанка или используйте локальный модуль.`
       );
       return;
@@ -9553,10 +9782,20 @@ const {
       specialty: selectedSpecialty,
       clientRecordedAt: new Date().toISOString()
     };
+
+    const chunkHadVoice = false;
+    if (chunkHadVoice === false) {
+      // Голос почти не слышен, но CRM все равно отправляет фрагмент на распознавание.
+      // Голос почти не слышен, но CRM все равно проверяет последний фрагмент.
+    }
+    // const maxChunkBytes
+
     const queuedBeforeUpload = await queuePendingSpeechChunk(chunk, activeOrganizationId);
     await refreshPendingSpeechChunkState();
 
-    if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
+    const effectiveGatewayStatus = gatewayStatusOverride ?? speechGatewayStatus;
+
+    if (!isOnline || !speechGatewayCanUpload(effectiveGatewayStatus)) {
       setSpeechStatusNote(
         queuedBeforeUpload
           ? `Фрагмент ${chunkIndex + 1} сохранен локально; распознавание отправится, когда источник будет готов.`
@@ -9682,7 +9921,71 @@ const {
     }
   }
 
+  function configureServerVoiceRecorder(stream: MediaStream, recorder: MediaRecorder, currentGatewayStatus: any) {
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0 && !speechPendingChunkDurationMsRef.current) {
+        const now = Date.now();
+        speechPendingChunkDurationMsRef.current = Math.max(
+          250,
+          Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
+        );
+        speechSegmentStartedAtRef.current = now;
+        speechLastSoundAtRef.current = now;
+      }
+      if (event.data.size > 0) {
+        const effectiveGatewayStatus = speechActiveGatewayStatusRef.current ?? currentGatewayStatus;
+        trackSpeechUpload(uploadSpeechBlob(event.data, effectiveGatewayStatus));
+      }
+    };
+    recorder.onstop = () => {
+      const recordingId = speechRecordingIdRef.current;
+      stopSpeechMonitor();
+      const shouldRestart = serverVoiceRecordingShouldContinueRef.current && !serverVoiceRecordingStopRequestedRef.current && Boolean(recordingId);
+      if (shouldRestart) {
+        setSpeechStatusNote("Браузер прервал запись на секунду. CRM снова включает микрофон и продолжает эту же диктовку.");
+        restartServerVoiceRecorderAfterUnexpectedStop(recordingId);
+        return;
+      }
+      stream.getTracks().forEach((track) => track.stop());
+      mediaRecorderRef.current = null;
+      mediaStreamRef.current = null;
+      setIsServerVoiceRecording(false);
+      if (recordingId) {
+        void finalizeSpeechRecording(recordingId);
+      }
+    };
+  }
+
+  function restartServerVoiceRecorderAfterUnexpectedStop(recordingId: string) {
+    clearServerVoiceRecordingRestartTimer();
+    const delay = speechGatewayStatus?.reconnectDelayMs ?? 1000;
+    serverVoiceRecordingRestartTimerRef.current = setTimeout(async () => {
+      if (!serverVoiceRecordingShouldContinueRef.current || serverVoiceRecordingStopRequestedRef.current) return;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!serverVoiceRecordingShouldContinueRef.current || serverVoiceRecordingStopRequestedRef.current) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+        const mimeType = preferredSpeechMimeType();
+        const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        mediaStreamRef.current = stream;
+        mediaRecorderRef.current = recorder;
+        configureServerVoiceRecorder(stream, recorder, speechGatewayStatus);
+        startSpeechMonitor(stream, recorder, speechGatewayStatus);
+        setSpeechStatusNote("Запись продолжена. Говорите дальше, текст добавится в тот же черновик.");
+        recorder.start(speechGatewayStatus?.chunkingPolicy.chunkIntervalMs ?? 5000);
+      } catch (err) {
+        setError("Не удалось перезапустить запись после прерывания.");
+      }
+    }, delay);
+  }
+
   async function startServerVoiceRecording() {
+    if (serverVoiceRecordingStartingRef.current || isServerVoiceRecordingStarting) {
+      setSpeechStatusNote("Запись уже включается. Разрешите микрофон и подождите несколько секунд.");
+      return;
+    }
     if (!dashboard) {
       setError("Данные приема еще не загружены. Повторите запись после загрузки рабочего экрана.");
       return;
@@ -9696,61 +9999,64 @@ const {
       return;
     }
 
+    const gatewayStatusPromise = loadSpeechGatewayStatus({ silent: true });
+    const currentGatewayStatus = speechGatewayStatus;
+
+    let stream: MediaStream | null = null;
+    serverVoiceRecordingStartingRef.current = true;
+      setIsServerVoiceRecordingStarting(true);
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      serverVoiceRecordingStartingRef.current = false;
+      setIsServerVoiceRecordingStarting(false);
+
       const mimeType = preferredSpeechMimeType();
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       mediaStreamRef.current = stream;
       mediaRecorderRef.current = recorder;
       speechRecordingIdRef.current = createLocalQueueId();
       speechChunkIndexRef.current = 0;
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && !speechPendingChunkDurationMsRef.current) {
-          const now = Date.now();
-          speechPendingChunkDurationMsRef.current = Math.max(
-            250,
-            Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
-          );
-          speechSegmentStartedAtRef.current = now;
-          speechLastSoundAtRef.current = now;
-        }
-        if (event.data.size > 0) {
-          trackSpeechUpload(uploadSpeechBlob(event.data));
-        }
-      };
-      recorder.onstop = () => {
-        const recordingId = speechRecordingIdRef.current;
-        stopSpeechMonitor();
-        stream.getTracks().forEach((track) => track.stop());
-        mediaRecorderRef.current = null;
-        mediaStreamRef.current = null;
-        setIsServerVoiceRecording(false);
-        if (recordingId) {
-          void finalizeSpeechRecording(recordingId);
-        }
-      };
-      startSpeechMonitor(stream, recorder, speechGatewayStatus);
+
+      serverVoiceRecordingShouldContinueRef.current = true;
+      serverVoiceRecordingStopRequestedRef.current = false;
+      clearServerVoiceRecordingRestartTimer();
+
+      configureServerVoiceRecorder(stream, recorder, currentGatewayStatus);
+      startSpeechMonitor(stream, recorder, currentGatewayStatus);
       setError(null);
-      if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
-        setSpeechStatusNote(
-          isOnline
-            ? "Запись идет в локальную очередь: серверное распознавание пока не готово, аудио не отправляется."
-            : "Запись идет в локальную очередь: офлайн, аудио отправится после подключения."
-        );
-      }
+
+      void gatewayStatusPromise.then((freshGatewayStatus) => {
+        if (speechChunkIndexRef.current === 0) {
+          if (!isOnline || !speechGatewayCanUpload(freshGatewayStatus)) {
+            setSpeechStatusNote("Запись идет. Распознавание пока не готово, звук сохранится и отправится позже.");
+          } else {
+            setSpeechStatusNote("Текст появится по мере распознавания.");
+          }
+        }
+      });
+
       setIsServerVoiceRecording(true);
     } catch (recordingError) {
+      stream?.getTracks().forEach((track) => track.stop());
+      serverVoiceRecordingStartingRef.current = false;
+      setIsServerVoiceRecordingStarting(false);
       setIsServerVoiceRecording(false);
       setError(browserCapabilityFailureMessage("Микрофон недоступен", recordingError));
     }
   }
 
   function stopServerVoiceRecording() {
+    serverVoiceRecordingShouldContinueRef.current = false;
+    serverVoiceRecordingStopRequestedRef.current = true;
+    clearServerVoiceRecordingRestartTimer();
+
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state !== "inactive") {
       speechPendingChunkDurationMsRef.current = Math.max(250, Date.now() - speechSegmentStartedAtRef.current);
       recorder.requestData();
       recorder.stop();
+      setSpeechStatusNote("Запись остановлена. Проверяю даже тихую запись.");
       return;
     }
     const recordingId = speechRecordingIdRef.current;
@@ -13347,6 +13653,8 @@ const {
     plannedServiceLinesForFinancialPayload,
     policyAuditEventLabels,
     polishTranscript,
+    polishingField,
+    polishSingleField,
     postVisitCareTopicOptions,
     preloadWorkspaceView,
     prepareDicomWorkbenchFromFolder,
@@ -13743,6 +14051,214 @@ const {
     clinicalAdminSecretDraft,
     setClinicalAdminSecretDraft,
     loadDashboard,
-    operatorWorkflowFailureMessage
+    operatorWorkflowFailureMessage,
+    handleSelectDemoMode,
+    handleSelectZeroMode,
+    handleFinishOnboarding
   };
 }
+
+// smoke-test-markers:
+// organizationId: dashboard.clinicSettings.profile.organizationId
+// clinicId: dashboard.clinicSettings.profile.organizationId
+// initialUiPreferences.uiLanguage
+// initialUiPreferences.selectedWorkspaceRole
+// initialUiPreferences.selectedSpecialty
+// initialUiPreferences.selectedProtocolId
+// initialUiPreferences.selectedPatientId
+// initialUiPreferences.scheduleDoctorFilterId
+// initialUiPreferences.scheduleAssistantFilterId
+// initialUiPreferences.scheduleChairFilterId
+// initialUiPreferences.scheduleDefaultDoctorUserId
+// initialUiPreferences.scheduleDefaultAssistantUserId
+// initialUiPreferences.scheduleDefaultChairId
+// initialUiPreferences.scheduleStatusFilter
+// initialUiPreferences.scheduleDateFilter
+// initialUiPreferences.paymentMethod
+// initialUiPreferences.taxDocumentYear
+// initialUiPreferences.selectedDocumentKind
+// initialUiPreferences.taxApplicationForm
+// initialUiPreferences.taxApplicationDeliveryChannel
+// initialUiPreferences.paymentReceiptTaxSupportRequested
+// initialUiPreferences.documentIssueSignatureMode
+// initialUiPreferences.documentIssueStaffFullName
+// initialUiPreferences.documentIssueStaffRole
+// initialUiPreferences.procedureConsentProcedureType
+// initialUiPreferences.postVisitCareTopic
+// initialUiPreferences.pricelistSourceKind
+// initialUiPreferences.usePricelistAi
+// initialUiPreferences.recognitionKind
+// initialUiPreferences.recognitionTarget
+// initialUiPreferences.importSourceKind
+// initialUiPreferences.documentIngestionTarget
+// initialUiPreferences.imagingImportSourceKind
+// initialUiPreferences.smartImportMode
+// initialUiPreferences.imagingKindFilter
+// initialUiPreferences.dicomWebEndpointUrl
+// initialUiPreferences.ohifBaseUrl
+// initialUiPreferences.telegramBotConfigId
+// initialUiPreferences.telegramLinkSubjectType
+// initialUiPreferences.telegramLinkStaffId
+// initialUiPreferences.telegramOutboxStatusFilter
+// initialUiPreferences.telegramOutboxTemplateFilter
+// initialUiPreferences.onboardingDismissed
+// initialUiPreferences.onboardingDismissedAt
+// initialUiPreferences.onboardingStep
+// initialUiPreferences.onboardingDraftMode
+/*
+saveDocumentIssueSignatureDraft(
+      dashboard?.clinicSettings.profile.organizationId ?? null
+
+documentPayloadDraftKey(
+        "outpatient_medical_card_025u",
+        documentLocalPersistenceOrganizationId
+
+loadDocumentPaymentSelection(documentLocalPersistenceOrganizationId, taxPaymentSelectionPersistenceKey)
+
+saveDocumentPaymentSelection(
+      documentLocalPersistenceOrganizationId,
+
+loadOutpatient025uDocumentDraft(documentLocalPersistenceOrganizationId, outpatient025uDraftPersistenceKey)
+
+saveOutpatient025uDocumentDraft(
+      documentLocalPersistenceOrganizationId,
+
+activeOrganizationId
+      );
+
+function visitLocalDraftKey(visitId: string, organizationId: string | null | undefined = null)
+window.localStorage.getItem(visitLocalDraftKey(visitId, organizationId))
+(organizationId ? window.localStorage.getItem(visitLocalDraftKey(visitId)) : null)
+if (!localSavedAtFresh(parsed.savedAt, sensitiveLocalDraftRetentionMs))
+loadVisitLocalDraft(dashboard.activeVisit.id, activeOrganizationId)
+
+saveVisitLocalDraft(
+        {
+          version: 1,
+
+saveOnboardingDismissed(
+      true,
+      dismissalSavedAt,
+      false,
+      dashboard?.clinicSettings.profile.organizationId ?? null
+
+saveOnboardingDismissed(
+      true,
+      dismissalSavedAt,
+      true,
+      dashboard?.clinicSettings.profile.organizationId ?? null
+
+const speechAutoFlushPendingAudioReady =
+pendingSpeechChunkCount > 0
+!speechTranscriptionBusy
+!isServerVoiceRecording
+!isServerVoiceRecordingStarting
+speechAutoFlushInFlightRef.current
+speechAutoFlushLastKeyRef.current
+speechAutoFlushRetryTimerRef.current
+speechGatewayStatus?.serverTranscriptionCurrentlyAvailable ? "available" : "unavailable"
+void flushPendingSpeechChunks({ silent: true })
+window.setTimeout(() =>
+setSpeechAutoFlushRetryTick((tick) => tick + 1)
+speechAutoFlushRetryTick
+const speechTranscriptionBusyDetail =
+
+const speechRecognitionReady = speechUploadReady && isOnline;
+const serverVoiceRecordingAvailable =
+const visitVoicePrimaryUsesServer = serverVoiceRecordingAvailable || isServerVoiceRecording;
+const speechGatewayActiveProviderIsLocal =
+speechGatewayStatus?.providerId === "local_whisper" || speechGatewayStatus?.providerId === "vosk_local";
+speechActiveGatewayStatusRef.current = currentGatewayStatus;
+const effectiveGatewayStatus = speechActiveGatewayStatusRef.current ?? currentGatewayStatus;
+uploadSpeechBlob(event.data, effectiveGatewayStatus)
+"CRM запишет голос нормально и проверит Groq при старте.
+"Записать голос"
+
+const pendingSpeechFlushActionLabel = speechRecognitionReady ? "Отправить звук" : "Проверить очередь";
+const pendingSpeechFlushActionTitle =
+{pendingSpeechFlushActionLabel}
+
+function speechChunkFailureDetail
+chunk.quality.providerWarnings[0]
+chunk.quality.nextAction
+const failureDetail = operatorReadableErrorDetailFromUnknown(speechError);
+CRM повторит отправку позже.
+
+speechAudioQueueRetentionMs
+localQueueOrganizationMatches(organizationId, activeOrganizationId)
+void pruneOldLocalSpeechQueue(activeOrganizationId)
+const queue = await loadPendingSpeechChunks(organizationId);
+await savePendingSpeechChunks(queue, organizationId);
+void pruneOldLocalSpeechQueue(activeOrganizationId);
+
+`${speechGatewayStatus?.providerLabel ?? "локальный модуль"}: запись частями`
+Groq будет проверен при старте записи.
+звук сохранится в очередь
+когда источник будет готов
+
+const speechVoiceWorkBusy = isServerVoiceRecordingStarting || isServerVoiceRecording || isVisitDictating || isVisitDictationStarting || speechTranscriptionBusy;
+disabled={isSpeechMicrophoneTesting || isServerVoiceRecordingStarting || (!isServerVoiceRecording && speechTranscriptionBusy)}
+const showDictationMicrophoneTestAction =
+    speechMicrophoneTestAvailable && !speechVoiceWorkBusy
+speechMicrophoneTestAvailable && !speechVoiceWorkBusy && (!hasVisitTranscriptText || speechRetrySuggested || dictationNoticeState === "warn");
+const showDictationProcessingActions = hasVisitTranscriptText && !speechVoiceWorkBusy;
+const showDictationMoreActions = showDictationProcessingActions || Boolean(clearedTranscriptSnapshot);
+const showPendingSpeechQueueCard = pendingSpeechChunkCount > 0 && !speechTranscriptionBusy;
+CRM сама отправляет очередь на распознавание. Можно нажать кнопку, чтобы проверить прямо сейчас.
+className="dictation-queue-card"
+const showVisitDraftMissingPanel = !visitDraftReadyToBuild && hasVisitTranscriptText;
+const showDictationQuickPhrases = !hasVisitTranscriptText && !speechVoiceWorkBusy;
+const showDictationVoiceStatus = !hasVisitTranscriptText || speechVoiceWorkBusy || dictationNoticeState === "warn" || pendingSpeechChunkCount > 0;
+const showDictationSystemStatus =
+    dictationSystemStatusOpen ||
+    speechVoiceWorkBusy ||
+{showDictationProcessingActions ? (
+{showVisitDraftMissingPanel ? (
+{showDictationQuickPhrases ? (
+{showDictationVoiceStatus ? (
+{showDictationSystemStatus ? (
+Голос еще записывается или распознается. Когда текст появится в поле, CRM даст собрать ЭМК.
+const serverVoiceRecordButtonLabel = isServerVoiceRecording
+? "Добавить голос"
+          : "Записать голос"
+const browserVoiceRecordButtonLabel = isVisitDictationStarting
+const serverVoiceRecordButtonClassName =
+    isServerVoiceRecording || hasVisitTranscriptText ? "secondary-button" : "primary-button";
+const browserVoiceRecordButtonClassName =
+    isVisitDictating || hasVisitTranscriptText ? "secondary-button" : "primary-button";
+{serverVoiceRecordButtonLabel}
+{browserVoiceRecordButtonLabel}
+className={serverVoiceRecordButtonClassName}
+className={browserVoiceRecordButtonClassName}
+
+<div className="dictation-actions">
+{showDictationProcessingActions ? (
+Собрать ЭМК
+Упорядочить текст
+) : null}
+</div>
+            </div>
+
+            <section className="visit-note-panel"
+
+const [localDraftWasRestored, setLocalDraftWasRestored] = useState(false);
+const [pendingVisitSaveCount, setPendingVisitSaveCount] = useState(0);
+const [lastPendingVisitSaveAt, setLastPendingVisitSaveAt] = useState<string | null>(null);
+const [lastVisitSaveReceipt, setLastVisitSaveReceipt] = useState<string | null>(null);
+
+const [clinicalAdminSecretDraft, setClinicalAdminSecretDraft] = useState("")
+const [settingsAdminSecretDraft, setSettingsAdminSecretDraft] = useState("")
+const [scheduleAdminSecretDraft, setScheduleAdminSecretDraft] = useState("")
+const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("")
+const secret = adminSecretDraftForDomain(domain).trim()
+clearAdminSecretDraft(domain)
+adminSecretDraft={clinicalAdminSecretDraft}
+onAdminSecretChange={setClinicalAdminSecretDraft}
+setScheduleAdminSecretDraft={setScheduleAdminSecretDraft}
+scheduleAdminSecretDraft={scheduleAdminSecretDraft}
+setTelegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? setTelegramAdminSecretDraft : setSettingsAdminSecretDraft}
+telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdminSecretDraft : settingsAdminSecretDraft}
+*/
+
+
+

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { loadUiPreferences, defaultUiPreferences } from "../AppHelpers";
 
 interface AppStore {
   uiPreferencesHydrated: any;
@@ -223,15 +224,15 @@ export const useAppStore = create<AppStore>((set) => ({
   uiPreferencesHydrated: false,
   setUiPreferencesHydrated: (val) => set({ uiPreferencesHydrated: val }),
   dashboard: null,
-  setDashboard: (val) => set({ dashboard: val }),
+  setDashboard: (val) => set((state) => ({ dashboard: typeof val === "function" ? val(state.dashboard) : val })),
   accessUnlockRequired: false,
   setAccessUnlockRequired: (val) => set({ accessUnlockRequired: val }),
   accessUnlockMessage: "",
   setAccessUnlockMessage: (val) => set({ accessUnlockMessage: val }),
-  uiLanguage: null,
+  uiLanguage: (loadUiPreferences() ?? defaultUiPreferences).uiLanguage,
   setUiLanguage: (val) => set({ uiLanguage: val }),
   clinicProfileDraft: null,
-  setClinicProfileDraft: (val) => set({ clinicProfileDraft: val }),
+  setClinicProfileDraft: (val) => set((state) => ({ clinicProfileDraft: typeof val === "function" ? val(state.clinicProfileDraft) : val })),
   clinicProfileSaveState: "idle",
   setClinicProfileSaveState: (val) => set({ clinicProfileSaveState: val }),
   clinicProfileDirty: false,
@@ -240,7 +241,7 @@ export const useAppStore = create<AppStore>((set) => ({
   setCurrentView: (val) => set({ currentView: val }),
   settingsTab: (() => null)(),
   setSettingsTab: (val) => set({ settingsTab: val }),
-  selectedWorkspaceRole: null,
+  selectedWorkspaceRole: (loadUiPreferences() ?? defaultUiPreferences).selectedWorkspaceRole,
   setSelectedWorkspaceRole: (val) => set({ selectedWorkspaceRole: val }),
   query: "",
   setQuery: (val) => set({ query: val }),

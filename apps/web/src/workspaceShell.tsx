@@ -75,11 +75,22 @@ export function ActionIcon({ section }: { section: AppView }) {
 }
 
 export function getFilteredAppViews(role: StaffRole): AppView[] {
-  if (role === "doctor") return ["shift", "schedule", "patients", "imaging", "visit", "documents", "communications"];
-  if (role === "administrator") return ["schedule", "patients", "imaging", "documents", "finance", "communications", "settings"];
-  if (role === "owner" || role === "manager") return ["schedule", "finance", "communications", "settings", "marketing", "patients"];
-  if (role === "assistant") return ["shift", "schedule", "patients", "communications"];
-  return Array.from(appViews);
+  if (role === "doctor") {
+    return ["shift", "schedule", "patients", "imaging", "visit", "documents", "communications"];
+  }
+  if (role === "assistant") {
+    return ["shift", "schedule", "patients", "imaging", "documents", "communications"];
+  }
+  if (role === "administrator") {
+    return ["schedule", "patients", "documents", "finance", "communications", "settings"];
+  }
+  if (role === "manager") {
+    return ["schedule", "patients", "finance", "communications", "settings"];
+  }
+  if (role === "owner") {
+    return Array.from(appViews);
+  }
+  return ["schedule", "patients"];
 }
 
 export function WorkspaceSidebar({

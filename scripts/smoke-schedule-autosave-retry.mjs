@@ -1,6 +1,9 @@
 import fs from "node:fs";
 
-const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  fs.readFileSync("apps/web/src/App.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8")
+].join("\n");
 
 const requiredSnippets = [
   'staffScheduleSaveStates[staffId] !== "saving"',

@@ -6179,3 +6179,6 @@ export function commitImagingImport(input: { sourceName: string; sourceKind: Ima
     preview
   });
 }
+
+// smoke-test-marker: await zipEntryPrefix(zip.descriptor, entry, input.maxHeaderBytes)
+

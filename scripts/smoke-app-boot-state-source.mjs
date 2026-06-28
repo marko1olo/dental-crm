@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  readFileSync("apps/web/src/App.tsx", "utf8"),
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8")
+].join("\n");
 const browserContinuitySource = readFileSync("apps/web/src/browserContinuity.ts", "utf8");
 const bootSource = readFileSync("apps/web/src/AppBootState.tsx", "utf8");
 const runtimeSource = `${appSource}\n${browserContinuitySource}`;

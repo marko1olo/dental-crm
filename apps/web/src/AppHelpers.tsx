@@ -3447,7 +3447,7 @@ export const photoVideoMaterialOptions: Array<{ value: PhotoVideoConsentMaterial
 export const defaultUiPreferences: UiPreferences = {
   version: 1,
   uiLanguage: "ru",
-  selectedWorkspaceRole: "doctor",
+  selectedWorkspaceRole: "owner",
   selectedSpecialty: "therapist",
   selectedProtocolId: null,
   selectedPatientId: null,
@@ -4119,7 +4119,13 @@ export function parseOnboardingDismissalState(raw: string | null): OnboardingDis
 export function loadOnboardingDismissalState(organizationId: string | null | undefined = null): OnboardingDismissalState | null {
   if (typeof window === "undefined") return null;
   try {
-    return parseOnboardingDismissalState(window.localStorage.getItem(onboardingLocalKey(organizationId)));
+    const scopedVal = window.localStorage.getItem(onboardingLocalKey(organizationId));
+    if (scopedVal) {
+      const parsed = parseOnboardingDismissalState(scopedVal);
+      if (parsed) return parsed;
+    }
+    const unscopedVal = window.localStorage.getItem(onboardingStorageKey);
+    return parseOnboardingDismissalState(unscopedVal);
   } catch {
     return null;
   }
@@ -4565,7 +4571,7 @@ export function clinicProfileDraftFromProfile(profile: ClinicProfile): ClinicPro
     appointmentBufferMinutes: 10
   };
   return {
-    clinicName: profile.clinicName,
+    clinicName: profile.clinicName ?? "",
     legalName: profile.legalName ?? "",
     inn: profile.inn ?? "",
     kpp: profile.kpp ?? "",
@@ -4580,13 +4586,13 @@ export function clinicProfileDraftFromProfile(profile: ClinicProfile): ClinicPro
     bankDetails: profile.bankDetails ?? "",
     signatoryName: profile.signatoryName ?? "",
     signatoryTitle: profile.signatoryTitle ?? "",
-    timezone: profile.timezone,
-    defaultVisitMinutes: String(profile.defaultVisitMinutes),
-    workdayStart: schedule.workdayStart,
-    workdayEnd: schedule.workdayEnd,
+    timezone: profile.timezone ?? "Europe/Samara",
+    defaultVisitMinutes: String(profile.defaultVisitMinutes ?? 45),
+    workdayStart: schedule.workdayStart ?? "09:00",
+    workdayEnd: schedule.workdayEnd ?? "18:00",
     workingDays: normalizeWorkingDaysDraft(schedule.workingDays),
-    appointmentBufferMinutes: String(schedule.appointmentBufferMinutes),
-    egiszEnabled: profile.egiszEnabled
+    appointmentBufferMinutes: String(schedule.appointmentBufferMinutes ?? 10),
+    egiszEnabled: profile.egiszEnabled ?? false
   };
 }
 
@@ -5846,14 +5852,11 @@ export type AdminSecretSessionDomain = "clinical" | "settings" | "schedule" | "t
 export type AdminSecretUnlockDomain = AdminSecretSessionDomain | "all";
 
 export const onboardingSteps: Array<{ id: OnboardingStep; title: string; detail: string }> = [
-  { id: "intro", title: "Знакомство", detail: "что где лежит" },
-  { id: "role", title: "Роль", detail: "врач и специализация" },
-  { id: "clinic", title: "Клиника", detail: "режим и контакты" },
-  { id: "legal", title: "Документы", detail: "юрданные и лицензия" },
-  { id: "team", title: "Команда", detail: "сотрудники и кресла" },
-  { id: "sources", title: "Импорт", detail: "прайс, снимки, голос" },
+  { id: "intro", title: "Режим запуска", detail: "демо или чистая" },
+  { id: "clinic", title: "Клиника", detail: "название и телефон" },
+  { id: "team", title: "Команда", detail: "первый врач и кресло" },
   { id: "telegram", title: "ТГ-бот", detail: "бот, QR и отзывы" },
-  { id: "done", title: "Готово", detail: "проверка перед работой" }
+  { id: "done", title: "Готово", detail: "проверка и старт" }
 ];
 
 export const roleFocusOrder: StaffRole[] = ["doctor", "administrator", "assistant", "manager", "owner"];

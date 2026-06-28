@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-const source = readFileSync("apps/web/src/App.tsx", "utf8");
+const source = readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
 const normalizedSource = source.replace(/\r\n/g, "\n");
 const start = source.indexOf("const imagingPreviewWorkset =");
 const end = source.indexOf("useEffect(() => {\n    const settings = telegramStatus?.settings;", start);

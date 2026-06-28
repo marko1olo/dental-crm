@@ -1,6 +1,7 @@
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { Plus, ShieldCheck } from "lucide-react";
+import { useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
 import { motionSafeScrollIntoView } from "./motionPreference";
@@ -136,6 +137,8 @@ export function ScheduleView(props: ScheduleViewProps) {
     visibleScheduleSuggestions
   } = props;
   const { setScheduleAdminSecretDraft, scheduleAdminSecretDraft, scheduleAdminSecretSession } = useSettingsStore();
+  const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
   const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt);
@@ -242,48 +245,60 @@ export function ScheduleView(props: ScheduleViewProps) {
           <div className="panel schedule-panel" id="schedule">
             <div className="panel-heading">
               <h2>Очередь смены</h2>
-              <button
-                className="text-button"
-                type="button"
-                onClick={() => setScheduleDateFilter(todayScheduleDate())}
-              >
-                День
-              </button>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setShowShiftAnalytics(!showShiftAnalytics)}
+                  style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
+                >
+                  {showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
+                </button>
+                <button
+                  className="text-button"
+                  type="button"
+                  onClick={() => setScheduleDateFilter(todayScheduleDate())}
+                >
+                  День
+                </button>
+              </div>
             </div>
-            <div className="schedule-command-grid">
-              <article>
-                <span>Врачи</span>
-                <strong>{dashboard.shiftIntelligence.doctorLoads.length}</strong>
-                <p>
-                  {dashboard.shiftIntelligence.doctorLoads
-                    .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
-                    .join(" · ")}
-                </p>
-              </article>
-              <article>
-                <span>Ассистенты</span>
-                <strong>{dashboard.shiftIntelligence.assistantLoads.length}</strong>
-                <p>
-                  {dashboard.shiftIntelligence.assistantLoads
-                    .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
-                    .join(" · ") || "не назначены"}
-                </p>
-              </article>
-              <article>
-                <span>Кресла</span>
-                <strong>{dashboard.shiftIntelligence.chairLoads.length}</strong>
-                <p>
-                  {dashboard.shiftIntelligence.chairLoads
-                    .map((load: ResourceLoad) => `${load.title} ${load.utilizationPercent}%`)
-                    .join(" · ")}
-                </p>
-              </article>
-              <article>
-                <span>Контроль</span>
-                <strong>{shiftWarnings.length}</strong>
-                <p>{shiftWarnings[0]?.title ?? "нет срочных предупреждений"}</p>
-              </article>
-            </div>
+            {showShiftAnalytics && (
+              <div className="schedule-command-grid">
+                <article>
+                  <span>Врачи</span>
+                  <strong>{dashboard.shiftIntelligence.doctorLoads.length}</strong>
+                  <p>
+                    {dashboard.shiftIntelligence.doctorLoads
+                      .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
+                      .join(" · ")}
+                  </p>
+                </article>
+                <article>
+                  <span>Ассистенты</span>
+                  <strong>{dashboard.shiftIntelligence.assistantLoads.length}</strong>
+                  <p>
+                    {dashboard.shiftIntelligence.assistantLoads
+                      .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
+                      .join(" · ") || "не назначены"}
+                  </p>
+                </article>
+                <article>
+                  <span>Кресла</span>
+                  <strong>{dashboard.shiftIntelligence.chairLoads.length}</strong>
+                  <p>
+                    {dashboard.shiftIntelligence.chairLoads
+                      .map((load: ResourceLoad) => `${load.title} ${load.utilizationPercent}%`)
+                      .join(" · ")}
+                  </p>
+                </article>
+                <article>
+                  <span>Контроль</span>
+                  <strong>{shiftWarnings.length}</strong>
+                  <p>{shiftWarnings[0]?.title ?? "нет срочных предупреждений"}</p>
+                </article>
+              </div>
+            )}
             <section
               className="schedule-shift-summary"
               data-testid="schedule-shift-summary"
@@ -291,15 +306,17 @@ export function ScheduleView(props: ScheduleViewProps) {
               aria-live="polite"
             >
               <strong>{scheduleFilteredSummary}</strong>
-              <div className="schedule-shift-summary-grid">
-                {scheduleLoadSummaryCards.map((card) => (
-                  <article key={card.id}>
-                    <span>{card.title}</span>
-                    <strong>{card.value}</strong>
-                    <p>{card.detail}</p>
-                  </article>
-                ))}
-              </div>
+              {showShiftAnalytics && (
+                <div className="schedule-shift-summary-grid">
+                  {scheduleLoadSummaryCards.map((card) => (
+                    <article key={card.id}>
+                      <span>{card.title}</span>
+                      <strong>{card.value}</strong>
+                      <p>{card.detail}</p>
+                    </article>
+                  ))}
+                </div>
+              )}
             </section>
             <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания">
               <label>
@@ -376,7 +393,9 @@ export function ScheduleView(props: ScheduleViewProps) {
                 </button>
               </div>
             </div>
-            <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания">
+            <details className="schedule-secret-collapsible">
+              <summary>🔐 Разблокировать сохранение расписания</summary>
+              <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания">
               {!scheduleAdminSecretSession ? (
                 <>
                   <label className="form-span-2">
@@ -424,134 +443,149 @@ export function ScheduleView(props: ScheduleViewProps) {
                   </button>
                 </div>
               )}
-            </div>
-            <div className="appointment-editor appointment-create-editor" aria-label="Создание записи">
-              <label>
-                Начало
-                <input
-                  type="datetime-local"
-                  value={toDateTimeLocalValue(newAppointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
-                  onChange={(event: TextFieldChangeEvent) =>
-                    updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
-                  }
-                />
-              </label>
-              <label>
-                Окончание
-                <input
-                  type="datetime-local"
-                  value={toDateTimeLocalValue(newAppointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
-                  onChange={(event: TextFieldChangeEvent) =>
-                    updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
-                  }
-                />
-              </label>
-              <label>
-                Пациент
-                <select value={newAppointmentDraft.patientId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("patientId", event.target.value)}>
-                  <option value="">Выберите пациента</option>
-                  {dashboard.patients
-                    .filter((patient) => patient.status === "active")
-                    .map((patient) => (
-                      <option key={patient.id} value={patient.id}>
-                        {patient.fullName}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label>
-                Врач
-                <select value={newAppointmentDraft.doctorUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("doctorUserId", event.target.value)}>
-                  <option value="">Выберите врача</option>
-                  {dashboard.clinicSettings.staff
-                    .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
-                    .map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.fullName}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label>
-                Ассистент
-                <select value={newAppointmentDraft.assistantUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("assistantUserId", event.target.value)}>
-                  <option value="">{dashboard.clinicSettings.profile.mode === "solo_doctor" ? "Не нужен в режиме соло" : "Выберите ассистента"}</option>
-                  {dashboard.clinicSettings.staff
-                    .filter((member) => member.active && member.role === "assistant")
-                    .map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.fullName}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label>
-                Кресло
-                <select value={newAppointmentDraft.chairId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("chairId", event.target.value)}>
-                  <option value="">Выберите кресло</option>
-                  {dashboard.clinicSettings.chairs
-                    .filter((chair) => chair.active)
-                    .map((chair) => (
-                      <option key={chair.id} value={chair.id}>
-                        {chair.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label>
-                Статус
-                <select value={newAppointmentDraft.status} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("status", normalizedAppointmentStatus(event.target.value))}>
-                  {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
-                    <option key={status} value={status}>
-                      {appointmentLabels[status]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="form-span-2">
-                Причина записи
-                <input value={newAppointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
-              </label>
-              <label className="form-span-2">
-                Комментарий
-                <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
-              </label>
-              {!newAppointmentReadyToCreate ? (
-                <div className="schedule-create-missing" id="new-appointment-create-missing" role="status" aria-live="polite">
-                  <strong>Чтобы создать запись, осталось:</strong>
-                  <ul>
-                    {newAppointmentMissingSteps.map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              <div className="appointment-editor-actions">
-                {newAppointmentError ? <span className="save-error">{newAppointmentError}</span> : null}
-                <span className={`save-state save-state-${newAppointmentSaveState}`}>
-                  {newAppointmentSaveState === "saving"
-                    ? "Создаю"
-                    : newAppointmentSaveState === "saved"
-                      ? "Запись создана"
-                      : newAppointmentSaveState === "error"
-                        ? "Ошибка создания"
-                        : "Готово к созданию"}
-                </span>
-                <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"} aria-busy={newAppointmentSaveState === "saving" || undefined}>
-                  Сбросить
-                </button>
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={() => void createAppointmentFromDraft()}
-                  disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
-                  aria-busy={newAppointmentSaveState === "saving" || undefined}
-                  aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
-                >
-                  <Plus aria-hidden="true" /> Создать запись
-                </button>
               </div>
+            </details>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
+              <button
+                className="primary-button"
+                type="button"
+                aria-expanded={showCreateForm}
+                onClick={() => setShowCreateForm((v) => !v)}
+              >
+                {showCreateForm ? "➖ Скрыть форму создания записи" : "➕ Создать запись в расписание"}
+              </button>
             </div>
+
+            {showCreateForm && (
+              <div className="appointment-editor appointment-create-editor" aria-label="Создание записи">
+                <label>
+                  Начало
+                  <input
+                    type="datetime-local"
+                    value={toDateTimeLocalValue(newAppointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+                    onChange={(event: TextFieldChangeEvent) =>
+                      updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
+                    }
+                  />
+                </label>
+                <label>
+                  Окончание
+                  <input
+                    type="datetime-local"
+                    value={toDateTimeLocalValue(newAppointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+                    onChange={(event: TextFieldChangeEvent) =>
+                      updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
+                    }
+                  />
+                </label>
+                <label>
+                  Пациент
+                  <select value={newAppointmentDraft.patientId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("patientId", event.target.value)}>
+                    <option value="">Выберите пациента</option>
+                    {dashboard.patients
+                      .filter((patient) => patient.status === "active")
+                      .map((patient) => (
+                        <option key={patient.id} value={patient.id}>
+                          {patient.fullName}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  Врач
+                  <select value={newAppointmentDraft.doctorUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("doctorUserId", event.target.value)}>
+                    <option value="">Выберите врача</option>
+                    {dashboard.clinicSettings.staff
+                      .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+                      .map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.fullName}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  Ассистент
+                  <select value={newAppointmentDraft.assistantUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("assistantUserId", event.target.value)}>
+                    <option value="">{dashboard.clinicSettings.profile.mode === "solo_doctor" ? "Не нужен в режиме соло" : "Выберите ассистента"}</option>
+                    {dashboard.clinicSettings.staff
+                      .filter((member) => member.active && member.role === "assistant")
+                      .map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.fullName}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  Кресло
+                  <select value={newAppointmentDraft.chairId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("chairId", event.target.value)}>
+                    <option value="">Выберите кресло</option>
+                    {dashboard.clinicSettings.chairs
+                      .filter((chair) => chair.active)
+                      .map((chair) => (
+                        <option key={chair.id} value={chair.id}>
+                          {chair.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  Статус
+                  <select value={newAppointmentDraft.status} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("status", normalizedAppointmentStatus(event.target.value))}>
+                    {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
+                      <option key={status} value={status}>
+                        {appointmentLabels[status]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="form-span-2">
+                  Причина записи
+                  <input value={newAppointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
+                </label>
+                <label className="form-span-2">
+                  Комментарий
+                  <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
+                </label>
+                {!newAppointmentReadyToCreate ? (
+                  <div className="schedule-create-missing" id="new-appointment-create-missing" role="status" aria-live="polite">
+                    <strong>Чтобы создать запись, осталось:</strong>
+                    <ul>
+                      {newAppointmentMissingSteps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <div className="appointment-editor-actions">
+                  {newAppointmentError ? <span className="save-error">{newAppointmentError}</span> : null}
+                  <span className={`save-state save-state-${newAppointmentSaveState}`}>
+                    {newAppointmentSaveState === "saving"
+                      ? "Создаю"
+                      : newAppointmentSaveState === "saved"
+                        ? "Запись создана"
+                        : newAppointmentSaveState === "error"
+                          ? "Ошибка создания"
+                          : "Готово к созданию"}
+                  </span>
+                  <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"} aria-busy={newAppointmentSaveState === "saving" || undefined}>
+                    Сбросить
+                  </button>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() => void createAppointmentFromDraft()}
+                    disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
+                    aria-busy={newAppointmentSaveState === "saving" || undefined}
+                    aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
+                  >
+                    <Plus aria-hidden="true" /> Создать запись
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="schedule-suggestion-strip" aria-label="Подсказки расписания">
               {visibleScheduleSuggestions.map((suggestion) => (
                 <button

@@ -1,6 +1,10 @@
 import { readFile } from "node:fs/promises";
 
-const appSource = await readFile("apps/web/src/App.tsx", "utf8");
+const appSource = [
+  await readFile("apps/web/src/App.tsx", "utf8"),
+  await readFile("apps/web/src/useAppLogic.tsx", "utf8"),
+  await readFile("apps/web/src/AppHelpers.tsx", "utf8")
+].join("\n");
 const workspaceStaticOptionsSource = await readFile("apps/web/src/workspaceStaticOptions.ts", "utf8");
 const webSource = [
   appSource,

@@ -38,7 +38,11 @@ function assertNoMojibake(value, label) {
   assert(!/[ÐÑ]/.test(String(value)), `${label} contains mojibake`);
 }
 
-const appSource = [readFileSync("apps/web/src/App.tsx", "utf8"), readFileSync("apps/web/src/DocumentsView.tsx", "utf8")].join("\n");
+const appSource = [
+  readFileSync("apps/web/src/App.tsx", "utf8"),
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
+  readFileSync("apps/web/src/DocumentsView.tsx", "utf8")
+].join("\n");
 const documentRoutesSource = readFileSync("apps/api/src/routes/documents.ts", "utf8");
 const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 const taxXmlSource = readFileSync("apps/api/src/documents/taxXml.ts", "utf8");

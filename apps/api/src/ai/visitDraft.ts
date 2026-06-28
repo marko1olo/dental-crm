@@ -14,7 +14,7 @@ import {
   numberFromEnv
 } from "../speech/keyPool.js";
 
-type SpeechPolishProvider = "none" | "openai" | "groq" | "custom";
+type SpeechPolishProvider = "none" | "openai" | "groq" | "gemini" | "custom";
 
 type VisitDraftNeuralConfig = {
   neuralEnabled: boolean;
@@ -57,7 +57,7 @@ function booleanFromEnv(value: string | undefined): boolean {
 
 function selectedPolishProvider(): SpeechPolishProvider {
   const rawProvider = (process.env.DENTAL_SPEECH_POLISH_PROVIDER ?? "").trim().toLowerCase();
-  if (rawProvider === "openai" || rawProvider === "groq" || rawProvider === "custom") return rawProvider;
+  if (rawProvider === "openai" || rawProvider === "groq" || rawProvider === "gemini" || rawProvider === "custom") return rawProvider;
   if (process.env.DENTAL_SPEECH_POLISH_BASE_URL?.trim()) return "custom";
   return "none";
 }
@@ -67,6 +67,7 @@ function baseUrlForProvider(provider: SpeechPolishProvider): string | null {
   if (explicitBaseUrl) return explicitBaseUrl;
   if (provider === "openai") return "https://api.openai.com/v1";
   if (provider === "groq") return "https://api.groq.com/openai/v1";
+  if (provider === "gemini") return "https://generativelanguage.googleapis.com/v1beta/openai";
   return null;
 }
 
@@ -78,14 +79,22 @@ function apiKeyForProvider(provider: SpeechPolishProvider): string | null {
 function keyProviderForPolishProvider(provider: SpeechPolishProvider): SpeechGatewayProvider | null {
   if (provider === "openai") return "openai_transcribe";
   if (provider === "groq") return "groq_whisper";
+  if (provider === "gemini") return "google_speech";
   return null;
 }
 
 function modelForProvider(provider: SpeechPolishProvider): string | null {
+  if (provider === "gemini") {
+    return process.env.DENTAL_SPEECH_POLISH_GEMINI_MODEL?.trim() || process.env.DENTAL_SPEECH_POLISH_MODEL?.trim() || "gemini-2.5-flash";
+  }
+  if (provider === "groq") {
+    return process.env.DENTAL_SPEECH_POLISH_GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  }
+  if (provider === "openai") {
+    return process.env.DENTAL_SPEECH_POLISH_OPENAI_MODEL?.trim() || "gpt-4o-mini";
+  }
   const explicitModel = process.env.DENTAL_SPEECH_POLISH_MODEL?.trim();
   if (explicitModel) return explicitModel;
-  if (provider === "openai") return "gpt-4o-mini";
-  if (provider === "groq") return "openai/gpt-oss-20b";
   return null;
 }
 
@@ -213,45 +222,106 @@ async function callOpenAiCompatibleVisitDraft(input: {
   };
 }
 
+// Список резервных моделей и провайдеров (каскадный фоллбек)
+// Актуальные модели Groq: https://console.groq.com/docs/models
+// Актуальные модели Gemini: https://ai.google.dev/gemini-api/docs/models
+const DENTAL_AI_CASCADING_MODELS: Array<{ provider: SpeechPolishProvider; model: string }> = [
+  // Gemini (бесплатно, быстро)
+  { provider: "gemini", model: "gemini-2.5-flash" },         // Primary — 15 RPM, 1500 RPD free
+  { provider: "gemini", model: "gemini-3-flash" },            // New Gemini 3 Flash — 5 RPM, 20 RPD free
+  { provider: "gemini", model: "gemini-3.1-flash-lite" },     // Lite — 15 RPM, 500 RPD free
+  // Groq (бесплатно, очень быстро, production)
+  { provider: "groq", model: "llama-3.3-70b-versatile" },     // Production — 280 t/s, 1K RPD
+  { provider: "groq", model: "meta-llama/llama-4-scout-17b-16e-instruct" }, // Preview — 750 t/s
+  { provider: "groq", model: "qwen/qwen3-32b" },              // Preview — 400 t/s, 1K RPD
+  { provider: "groq", model: "openai/gpt-oss-120b" },        // Production — 500 t/s
+  { provider: "groq", model: "llama-3.1-8b-instant" },       // Ultra-fast fallback — 560 t/s, 14.4K RPD
+];
+
 async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
   config: VisitDraftNeuralConfig;
   transcript: string;
   specialty: DentalSpecialty;
 }): Promise<Partial<VisitNoteDraft> & { _rawToothStates?: Record<string, unknown> | null }> {
-  if (input.config.explicitApiKey) {
-    return callOpenAiCompatibleVisitDraft({ ...input, apiKey: input.config.explicitApiKey });
+  // Попытка 1: Используем основную настроенную конфигурацию
+  try {
+    if (input.config.neuralEnabled) {
+      if (input.config.explicitApiKey) {
+        return await callOpenAiCompatibleVisitDraft({ ...input, apiKey: input.config.explicitApiKey });
+      }
+      const keyProviderId = input.config.keyProviderId;
+      if (keyProviderId) {
+        const triedFingerprints = new Set<string>();
+        const maxAttempts = keyRetryLimit(keyProviderId);
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
+          if (!keyCandidate) break;
+          triedFingerprints.add(keyCandidate.fingerprint);
+          try {
+            const result = await callOpenAiCompatibleVisitDraft({
+              ...input,
+              apiKey: keyCandidate.value
+            });
+            recordProviderKeySuccess(keyProviderId, keyCandidate);
+            return result;
+          } catch (error) {
+            recordProviderKeyFailure(keyProviderId, keyCandidate, error);
+            if (!shouldTryNextProviderKey(error)) break;
+          }
+        }
+      }
+    }
+  } catch (primaryError) {
+    console.warn(`[AI Draft Primary Fallback Triggered] Сбой основного провайдера: ${primaryError instanceof Error ? primaryError.message : primaryError}`);
   }
 
-  const keyProviderId = input.config.keyProviderId;
-  if (!keyProviderId) {
-    throw new Error("Резерв серверного доступа не настроен.");
-  }
-
-  const triedFingerprints = new Set<string>();
-  const maxAttempts = keyRetryLimit(keyProviderId);
-  let lastError: unknown = null;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
-    if (!keyCandidate) break;
-    triedFingerprints.add(keyCandidate.fingerprint);
+  // Попытка 2: Идем по каскаду моделей
+  console.log("[AI Draft Cascade] Запуск цепочки фоллбеков...");
+  for (const fallback of DENTAL_AI_CASCADING_MODELS) {
+    // Пропускаем, если эта же модель только что упала в Попытке 1
+    if (fallback.provider === input.config.provider && fallback.model === input.config.modelName) {
+      continue;
+    }
 
     try {
+      const fallbackBaseUrl = baseUrlForProvider(fallback.provider);
+      const fallbackKeyProviderId = keyProviderForPolishProvider(fallback.provider);
+      if (!fallbackBaseUrl || !fallbackKeyProviderId) continue;
+
+      const triedFingerprints = new Set<string>();
+      const keyCandidate = selectProviderKey(fallbackKeyProviderId, triedFingerprints);
+      if (!keyCandidate) {
+        console.warn(`[AI Draft Cascade] Нет доступных ключей для провайдера ${fallback.provider}`);
+        continue;
+      }
+
+      console.log(`[AI Draft Cascade] Пробуем ${fallback.provider} (${fallback.model})...`);
+      const fallbackConfig: VisitDraftNeuralConfig = {
+        neuralEnabled: true,
+        provider: fallback.provider,
+        baseUrl: fallbackBaseUrl,
+        explicitApiKey: null,
+        keyProviderId: fallbackKeyProviderId,
+        modelName: fallback.model,
+        maxTranscriptChars: input.config.maxTranscriptChars
+      };
+
       const result = await callOpenAiCompatibleVisitDraft({
-        ...input,
+        config: fallbackConfig,
+        transcript: input.transcript,
+        specialty: input.specialty,
         apiKey: keyCandidate.value
       });
-      recordProviderKeySuccess(keyProviderId, keyCandidate);
+
+      recordProviderKeySuccess(fallbackKeyProviderId, keyCandidate);
+      console.log(`[AI Draft Cascade] УСПЕХ на модели ${fallback.model} (${fallback.provider})`);
       return result;
-    } catch (error) {
-      lastError = error;
-      recordProviderKeyFailure(keyProviderId, keyCandidate, error);
-      if (!shouldTryNextProviderKey(error)) break;
+    } catch (fallbackError) {
+      console.warn(`[AI Draft Cascade] Модель ${fallback.model} (${fallback.provider}) завершилась ошибкой: ${fallbackError instanceof Error ? fallbackError.message : fallbackError}`);
     }
   }
 
-  const detail = lastError instanceof Error ? lastError.message : String(lastError ?? "");
-  throw new Error(`Сбой ИИ-генератора черновика после нескольких попыток: ${detail}`);
+  throw new Error("Сбой ИИ-генератора черновика: все модели из каскада фоллбеков завершились ошибкой или лимиты исчерпаны.");
 }
 
 export async function buildVisitDraftFromTranscript(

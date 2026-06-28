@@ -19,7 +19,7 @@ import {
   shouldTryNextProviderKey
 } from "./keyPool.js";
 
-type SpeechPolishProvider = "none" | "openai" | "groq" | "custom";
+type SpeechPolishProvider = "none" | "openai" | "groq" | "gemini" | "custom";
 
 type SpeechPolishConfig = {
   deterministicEnabled: true;
@@ -54,6 +54,7 @@ const polishProviderLabels: Record<SpeechPolishProvider, string> = {
   none: "Только локальный парсер правил",
   openai: "серверная очистка диктовки",
   groq: "быстрая серверная очистка диктовки",
+  gemini: "очистка диктовки через Google Gemini",
   custom: "очистка диктовки через сервер клиники"
 };
 
@@ -68,7 +69,7 @@ function numberFromEnv(name: string, fallback: number): number {
 
 function selectedPolishProvider(): SpeechPolishProvider {
   const rawProvider = (process.env.DENTAL_SPEECH_POLISH_PROVIDER ?? "").trim().toLowerCase();
-  if (rawProvider === "openai" || rawProvider === "groq" || rawProvider === "custom") return rawProvider;
+  if (rawProvider === "openai" || rawProvider === "groq" || rawProvider === "gemini" || rawProvider === "custom") return rawProvider;
   if (process.env.DENTAL_SPEECH_POLISH_BASE_URL?.trim()) return "custom";
   return "none";
 }
@@ -78,6 +79,7 @@ function baseUrlForProvider(provider: SpeechPolishProvider): string | null {
   if (explicitBaseUrl) return explicitBaseUrl;
   if (provider === "openai") return "https://api.openai.com/v1";
   if (provider === "groq") return "https://api.groq.com/openai/v1";
+  if (provider === "gemini") return "https://generativelanguage.googleapis.com/v1beta/openai";
   return null;
 }
 
@@ -89,14 +91,22 @@ function apiKeyForProvider(provider: SpeechPolishProvider): string | null {
 function keyProviderForPolishProvider(provider: SpeechPolishProvider): SpeechGatewayProvider | null {
   if (provider === "openai") return "openai_transcribe";
   if (provider === "groq") return "groq_whisper";
+  if (provider === "gemini") return "google_speech";
   return null;
 }
 
 function modelForProvider(provider: SpeechPolishProvider): string | null {
+  if (provider === "gemini") {
+    return process.env.DENTAL_SPEECH_POLISH_GEMINI_MODEL?.trim() || process.env.DENTAL_SPEECH_POLISH_MODEL?.trim() || "gemini-2.5-flash";
+  }
+  if (provider === "groq") {
+    return process.env.DENTAL_SPEECH_POLISH_GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  }
+  if (provider === "openai") {
+    return process.env.DENTAL_SPEECH_POLISH_OPENAI_MODEL?.trim() || "gpt-4o-mini";
+  }
   const explicitModel = process.env.DENTAL_SPEECH_POLISH_MODEL?.trim();
   if (explicitModel) return explicitModel;
-  if (provider === "openai") return "gpt-4o-mini";
-  if (provider === "groq") return "openai/gpt-oss-20b";
   return null;
 }
 
@@ -319,54 +329,109 @@ async function callOpenAiCompatiblePolish(input: {
   };
 }
 
+// Список резервных моделей и провайдеров (каскадный фоллбек)
+const DENTAL_AI_CASCADING_MODELS: Array<{ provider: SpeechPolishProvider; model: string }> = [
+  { provider: "gemini", model: "gemini-3.1-flash-lite" },
+  { provider: "gemini", model: "gemini-3.5-flash" },
+  { provider: "gemini", model: "gemini-2.5-flash" },
+  { provider: "groq", model: "openai/gpt-oss-120b" },
+  { provider: "groq", model: "meta-llama/llama-4-scout-17b-16e-instruct" },
+  { provider: "groq", model: "qwen/qwen3.6-27b" },
+  { provider: "groq", model: "llama-3.3-70b-versatile" },
+  { provider: "gemini", model: "gemma-4-26b" },
+];
+
 async function callOpenAiCompatiblePolishWithKeyRotation(input: {
   config: SpeechPolishConfig;
   transcript: string;
   specialty: DentalSpecialty;
 }): Promise<{ normalizedTranscript: string; warnings: string[] }> {
-  if (input.config.explicitApiKey) {
-    return callOpenAiCompatiblePolish({ ...input, apiKey: input.config.explicitApiKey });
+  // Попытка 1: Используем основную настроенную конфигурацию
+  try {
+    if (input.config.neuralEnabled) {
+      if (input.config.explicitApiKey) {
+        return await callOpenAiCompatiblePolish({ ...input, apiKey: input.config.explicitApiKey });
+      }
+      const keyProviderId = input.config.keyProviderId;
+      if (keyProviderId) {
+        const triedFingerprints = new Set<string>();
+        const maxAttempts = keyRetryLimit(keyProviderId);
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
+          if (!keyCandidate) break;
+          triedFingerprints.add(keyCandidate.fingerprint);
+          try {
+            const result = await callOpenAiCompatiblePolish({
+              ...input,
+              apiKey: keyCandidate.value
+            });
+            recordProviderKeySuccess(keyProviderId, keyCandidate);
+            if (attempt > 0) {
+              result.warnings.push(`Дополнительная очистка диктовки восстановилась после резервной попытки ${attempt + 1}.`);
+            }
+            return result;
+          } catch (error) {
+            recordProviderKeyFailure(keyProviderId, keyCandidate, error);
+            if (!shouldTryNextProviderKey(error)) break;
+          }
+        }
+      }
+    }
+  } catch (primaryError) {
+    console.warn(`[AI Polish Primary Fallback Triggered] Сбой основного провайдера очистки: ${primaryError instanceof Error ? primaryError.message : primaryError}`);
   }
 
-  const keyProviderId = input.config.keyProviderId;
-  if (!keyProviderId) {
-    throw new Error("Резерв серверной очистки диктовки не настроен.");
-  }
-
-  const triedFingerprints = new Set<string>();
-  const maxAttempts = keyRetryLimit(keyProviderId);
-  let lastError: unknown = null;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
-    if (!keyCandidate) break;
-    triedFingerprints.add(keyCandidate.fingerprint);
+  // Попытка 2: Идем по каскаду моделей
+  console.log("[AI Polish Cascade] Запуск цепочки фоллбеков...");
+  for (const fallback of DENTAL_AI_CASCADING_MODELS) {
+    // Пропускаем, если эта же модель только что упала в Попытке 1
+    if (fallback.provider === input.config.provider && fallback.model === input.config.modelName) {
+      continue;
+    }
 
     try {
+      const fallbackBaseUrl = baseUrlForProvider(fallback.provider);
+      const fallbackKeyProviderId = keyProviderForPolishProvider(fallback.provider);
+      if (!fallbackBaseUrl || !fallbackKeyProviderId) continue;
+
+      const triedFingerprints = new Set<string>();
+      const keyCandidate = selectProviderKey(fallbackKeyProviderId, triedFingerprints);
+      if (!keyCandidate) {
+        console.warn(`[AI Polish Cascade] Нет доступных ключей для провайдера ${fallback.provider}`);
+        continue;
+      }
+
+      console.log(`[AI Polish Cascade] Пробуем ${fallback.provider} (${fallback.model})...`);
+      const fallbackConfig: SpeechPolishConfig = {
+        deterministicEnabled: true,
+        neuralEnabled: true,
+        provider: fallback.provider,
+        providerLabel: polishProviderLabels[fallback.provider],
+        baseUrl: fallbackBaseUrl,
+        explicitApiKey: null,
+        keyProviderId: fallbackKeyProviderId,
+        modelName: fallback.model,
+        maxTranscriptChars: input.config.maxTranscriptChars,
+        warnings: []
+      };
+
       const result = await callOpenAiCompatiblePolish({
-        ...input,
+        config: fallbackConfig,
+        transcript: input.transcript,
+        specialty: input.specialty,
         apiKey: keyCandidate.value
       });
-      recordProviderKeySuccess(keyProviderId, keyCandidate);
-      if (attempt > 0) {
-        result.warnings.push(`Дополнительная очистка диктовки восстановилась после резервной попытки ${attempt + 1}.`);
-      }
+
+      recordProviderKeySuccess(fallbackKeyProviderId, keyCandidate);
+      console.log(`[AI Polish Cascade] УСПЕХ на модели ${fallback.model} (${fallback.provider})`);
+      result.warnings.push(`Текст очищен через резервную модель ${fallback.model} (${fallback.provider}).`);
       return result;
-    } catch (error) {
-      lastError = error;
-      recordProviderKeyFailure(keyProviderId, keyCandidate, error);
-      if (!shouldTryNextProviderKey(error)) break;
+    } catch (fallbackError) {
+      console.warn(`[AI Polish Cascade] Модель ${fallback.model} (${fallback.provider}) завершилась ошибкой: ${fallbackError instanceof Error ? fallbackError.message : fallbackError}`);
     }
   }
 
-  const summary = getProviderKeyPoolSummary(keyProviderId);
-  const detail = lastError ? speechPolishFailureReason(lastError) : "все серверные доступы временно на паузе";
-  if (lastError instanceof SpeechProviderRequestError) {
-    throw lastError;
-  }
-  throw new Error(
-    `${input.config.providerLabel}: сбой после ${triedFingerprints.size}/${maxAttempts} попыток; доступно ${summary.availableKeyCount}/${summary.configuredKeyCount} серверных маршрутов. ${detail}`
-  );
+  throw new Error("Сбой серверной очистки диктовки: все модели из каскада фоллбеков завершились ошибкой или лимиты исчерпаны.");
 }
 
 export async function polishSpeechTranscript(
