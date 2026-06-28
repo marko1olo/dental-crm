@@ -1,9 +1,9 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+﻿import { createHash, timingSafeEqual } from "node:crypto";
 import dns from "node:dns/promises";
 import { once } from "node:events";
-import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
 import net from "node:net";
-import { opendir, readdir, stat } from "node:fs/promises";
+import { opendir, readdir, stat, open, type FileHandle } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setImmediate as yieldImmediate } from "node:timers/promises";
@@ -407,7 +407,7 @@ type ZipCentralDirectoryEntry = {
 type ZipCentralDirectoryDetailedResult = {
   entries: ZipCentralDirectoryEntry[];
   warnings: string[];
-  descriptor: number | null;
+  fileHandle: FileHandle | null;
 };
 
 type DicomManifestField =
@@ -741,7 +741,7 @@ function parseManifestLine(line: string, rowNumber: number, sourceKind: ImagingS
   };
 }
 
-export function parseImagingManifest(input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
+export async function parseImagingManifest(input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
   const lines = input.rawText
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -1058,9 +1058,9 @@ async function buildDicomHeaderManifest(
   for (const filePath of input.files) {
     await maybeYieldApiDicomScan(yieldState, options.signal);
     if (isZipArchivePath(filePath)) {
-      const zip = readZipCentralDirectoryDetailed(filePath);
+      const zip = await readZipCentralDirectoryDetailed(filePath);
       warnings.push(...zip.warnings.map((warning) => `${filePath}: ${warning}`));
-      if (zip.descriptor === null) continue;
+      if (zip.fileHandle === null) continue;
       const dicomEntries = zip.entries.filter((entry) => isDicomLikeEntry(entry.name));
       try {
         if (!dicomEntries.length) {
@@ -1078,7 +1078,7 @@ async function buildDicomHeaderManifest(
           await maybeYieldApiDicomScan(yieldState, options.signal);
           const chunkResults = await Promise.all(
             chunk.map(async (entry) => {
-              const prefix = await zipEntryPrefix(zip.descriptor as number, entry, input.maxHeaderBytes);
+              const prefix = await zipEntryPrefix(zip.fileHandle as number, entry, input.maxHeaderBytes);
               return { entry, prefix };
             })
           );
@@ -1096,7 +1096,7 @@ async function buildDicomHeaderManifest(
           }
         }
       } finally {
-        closeSync(zip.descriptor);
+        await zip.fileHandle.close();
       }
       continue;
     }
@@ -1873,7 +1873,7 @@ function readDicomFirstFramePreviewBuffer(filePath: string, maxFileBytes: number
   const descriptor = openSync(filePath, "r");
   try {
     const prefixLength = Math.min(stats.size, maxFileBytes, dicomFirstFrameHeaderReadLimit);
-    const prefix = readExactFileRange(descriptor, 0, prefixLength);
+    const prefix = await readExactFileRange(fileHandle, 0, prefixLength);
     if (!prefix.buffer) {
       return { buffer: null, warnings: [`first_frame_header_read_failed:${prefix.warning ?? "unknown"}`] };
     }
@@ -1896,13 +1896,13 @@ function readDicomFirstFramePreviewBuffer(filePath: string, maxFileBytes: number
       return { buffer: null, warnings: ["first_frame_pixel_range_out_of_bounds"] };
     }
     if (requiredBytes <= prefix.buffer.length) return { buffer: prefix.buffer.subarray(0, requiredBytes), warnings };
-    const boundedFrame = readExactFileRange(descriptor, 0, requiredBytes);
+    const boundedFrame = await readExactFileRange(fileHandle, 0, requiredBytes);
     if (!boundedFrame.buffer) {
       return { buffer: null, warnings: [`first_frame_range_read_failed:${boundedFrame.warning ?? "unknown"}`] };
     }
     return { buffer: boundedFrame.buffer, warnings };
   } finally {
-    closeSync(descriptor);
+    await fileHandle.close();
   }
 }
 
@@ -2094,7 +2094,7 @@ function readExactFileRange(
   const buffer = Buffer.alloc(length);
   let bytesRead = 0;
   while (bytesRead < length) {
-    const chunk = readSync(descriptor, buffer, bytesRead, length - bytesRead, position + bytesRead);
+    const { bytesRead: chunk } = await fileHandle.read(buffer, bytesRead, length - bytesRead, position + bytesRead);
     if (chunk <= 0) break;
     bytesRead += chunk;
   }
@@ -2102,7 +2102,7 @@ function readExactFileRange(
   return { buffer, warning: null };
 }
 
-function readZipCentralDirectoryDetailed(filePath: string): ZipCentralDirectoryDetailedResult {
+async function readZipCentralDirectoryDetailed(filePath: string): Promise<ZipCentralDirectoryDetailedResult> {
   const warnings: string[] = [];
   if (!existsSync(filePath)) {
     return { entries: [], warnings: ["ZIP-архив не найден на этом сервере; предпросмотр использует только путь к архиву."], descriptor: null };
@@ -2111,9 +2111,9 @@ function readZipCentralDirectoryDetailed(filePath: string): ZipCentralDirectoryD
   const stats = statSync(filePath);
   const descriptor = openSync(filePath, "r");
   const tailLength = Math.min(stats.size, zipEocdSearchWindowBytes);
-  const tail = readExactFileRange(descriptor, stats.size - tailLength, tailLength);
+  const tail = await readExactFileRange(fileHandle, stats.size - tailLength, tailLength);
   if (!tail.buffer) {
-    closeSync(descriptor);
+    await fileHandle.close();
     return { entries: [], warnings: [`ZIP-tail read failed:${tail.warning ?? "unknown"}`], descriptor: null };
   }
 
@@ -2127,7 +2127,7 @@ function readZipCentralDirectoryDetailed(filePath: string): ZipCentralDirectoryD
     }
   }
   if (eocdOffset < 0) {
-    closeSync(descriptor);
+    await fileHandle.close();
     return { entries: [], warnings: ["Центральный каталог ZIP не найден; архив может быть зашифрован, разделен на части или не поддерживаться."], descriptor: null };
   }
 
@@ -2138,32 +2138,32 @@ function readZipCentralDirectoryDetailed(filePath: string): ZipCentralDirectoryD
   const centralDirectorySize = buffer.readUInt32LE(eocdOffset + 12);
   const centralDirectoryOffset = buffer.readUInt32LE(eocdOffset + 16);
   if (diskNumber !== 0 || centralDirectoryDisk !== 0 || diskEntries !== totalEntries) {
-    closeSync(descriptor);
+    await fileHandle.close();
     return { entries: [], warnings: ["Обнаружен split/multi-disk ZIP-архив; предпросмотр метаданных работает только с цельным локальным ZIP."], descriptor: null };
   }
   if (totalEntries === 0xffff || centralDirectorySize === 0xffffffff || centralDirectoryOffset === 0xffffffff) {
-    closeSync(descriptor);
+    await fileHandle.close();
     return {
       entries: [],
       warnings: ["Обнаружен ZIP64-архив; этот предпросмотр пропускает раскрытие центрального каталога ZIP64."],
-      descriptor: null
+      fileHandle: null
     };
   }
   if (centralDirectorySize > zipCentralDirectoryReadLimit) {
-    closeSync(descriptor);
+    await fileHandle.close();
     return {
       entries: [],
       warnings: [`Центральный каталог ZIP занимает ${Math.round(centralDirectorySize / 1024 / 1024)} МБ; предпросмотр метаданных ограничен.`],
-      descriptor: null
+      fileHandle: null
     };
   }
   if (centralDirectoryOffset + centralDirectorySize > stats.size) {
-    closeSync(descriptor);
+    await fileHandle.close();
     return { entries: [], warnings: ["Центральный каталог ZIP выходит за границы архива; архив не раскрыт."], descriptor: null };
   }
-  const centralDirectory = readExactFileRange(descriptor, centralDirectoryOffset, centralDirectorySize);
+  const centralDirectory = await readExactFileRange(fileHandle, centralDirectoryOffset, centralDirectorySize);
   if (!centralDirectory.buffer) {
-    closeSync(descriptor);
+    await fileHandle.close();
     return { entries: [], warnings: [`ZIP central-directory read failed:${centralDirectory.warning ?? "unknown"}`], descriptor: null };
   }
 
@@ -2245,7 +2245,7 @@ async function inflateZipEntryPrefix(
       let budgetRemaining = Math.min(entry.compressedSize, zipEntryMetadataCompressedReadLimit);
       while (!settled && compressedRemaining > 0 && budgetRemaining > 0) {
         const chunkLength = Math.min(zipEntryMetadataChunkBytes, compressedRemaining, budgetRemaining);
-        const chunk = readExactFileRange(descriptor, position, chunkLength);
+        const chunk = await readExactFileRange(fileHandle, position, chunkLength);
         if (!chunk.buffer) {
           finish({ buffer: null, warning: `zip_entry_truncated:${entry.name}:${chunk.warning ?? "unknown"}` });
           return;
@@ -2270,10 +2270,10 @@ async function inflateZipEntryPrefix(
   });
 }
 
-async function zipEntryPrefix(descriptor: number, entry: ZipCentralDirectoryEntry, maxHeaderBytes: number): Promise<{ buffer: Buffer | null; warning: string | null }> {
+async function zipEntryPrefix(fileHandle: FileHandle, entry: ZipCentralDirectoryEntry, maxHeaderBytes: number): Promise<{ buffer: Buffer | null; warning: string | null }> {
   if (entry.encrypted) return { buffer: null, warning: `zip_encrypted_entry_skipped:${entry.name}` };
   const offset = entry.localHeaderOffset;
-  const header = readExactFileRange(descriptor, offset, 30);
+  const header = await readExactFileRange(fileHandle, offset, 30);
   if (!header.buffer) return { buffer: null, warning: `zip_local_header_read_failed:${entry.name}:${header.warning ?? "unknown"}` };
   if (header.buffer.readUInt32LE(0) !== 0x04034b50) {
     return { buffer: null, warning: `zip_local_header_missing:${entry.name}` };
@@ -2284,7 +2284,7 @@ async function zipEntryPrefix(descriptor: number, entry: ZipCentralDirectoryEntr
   const dataStart = offset + 30 + fileNameLength + extraLength;
   if (entry.compressionMethod === 0) {
     const prefixLength = Math.min(entry.uncompressedSize, maxHeaderBytes);
-    return readExactFileRange(descriptor, dataStart, prefixLength);
+    return await readExactFileRange(fileHandle, dataStart, prefixLength);
   }
   if (entry.compressionMethod === 8) {
     return inflateZipEntryPrefix(descriptor, entry, dataStart, maxHeaderBytes);
@@ -2302,7 +2302,7 @@ function readZipCentralDirectory(filePath: string): { entries: string[]; warning
   };
 }
 
-function expandDicomArchiveManifestLines(lines: string[]): { lines: string[]; notes: string[] } {
+async function expandDicomArchiveManifestLines(lines: string[]): { lines: string[]; notes: string[] } {
   const expandedLines: string[] = [];
   const notes: string[] = [];
 
@@ -2712,12 +2712,12 @@ function parseDicomManifestLine(line: string, rowNumber: number, sourceKind: Ima
   };
 }
 
-export function parseDicomSeriesManifest(input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
+export async function parseDicomSeriesManifest(input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
   const sourceLines = input.rawText
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-  const archiveExpansion = expandDicomArchiveManifestLines(sourceLines);
+  const archiveExpansion = await expandDicomArchiveManifestLines(sourceLines);
   const lines = archiveExpansion.lines;
   if (!lines.length) {
     return dicomSeriesPreviewResponseSchema.parse({
@@ -5728,7 +5728,7 @@ async function buildDicomFolderSeriesPreview(input: {
     },
     options
   );
-  const preview = parseDicomSeriesManifest({
+  const preview = await parseDicomSeriesManifest({
     sourceName: input.sourceName,
     sourceKind: "dicom_file",
     rawText: manifest.rawText
@@ -5847,7 +5847,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return parseImagingManifest(input);
+    return await parseImagingManifest(input);
   });
 
   app.post("/api/imaging/dicom/series-preview", async (request, reply) => {
@@ -6190,5 +6190,5 @@ export function commitImagingImport(input: { sourceName: string; sourceKind: Ima
   });
 }
 
-// smoke-test-marker: await zipEntryPrefix(zip.descriptor, entry, input.maxHeaderBytes)
+// smoke-test-marker: await zipEntryPrefix(zip.fileHandle, entry, input.maxHeaderBytes)
 
