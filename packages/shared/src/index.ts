@@ -726,7 +726,7 @@ export function documentAmountSource(kind: DocumentKind): DocumentAmountSource {
 }
 
 export function documentRequiresPaidRecord(kind: DocumentKind): boolean {
-  return documentKindMetadata[kind].requiresPaidRecord;
+  return documentKindMetadata[kind]?.requiresPaidRecord ?? false;
 }
 
 export const aiJobKindSchema = z.enum([
