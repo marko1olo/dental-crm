@@ -1,0 +1,10 @@
+🔒 [security] Fix insecure CORS policy in production
+
+🎯 What:
+Reject '*' and 'null' values for WEB_ORIGIN in production environment.
+
+⚠️ Risk:
+Permitting '*' or 'null' as allowed origins globally can allow attackers to perform Cross-Site Request Forgery (CSRF) and bypass Same-Origin Policy (SOP), potentially leading to unauthorized access to API endpoints and sensitive data exposure.
+
+🛡️ Solution:
+Added a runtime check that throws an error during server startup if process.env.NODE_ENV === 'production' and an insecure origin ('*' or 'null') is configured.
