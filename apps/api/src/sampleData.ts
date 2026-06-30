@@ -1076,7 +1076,7 @@ export function buildBillingSummary(): BillingSummary {
     .filter((payment) => payment.status === "paid")
     .reduce((total, payment) => total + payment.amountRub, 0);
   const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
-    const service = serviceCatalogMap.get(item.serviceId) || serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+    const service = serviceCatalogMap.get(item.serviceId);
     return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
   }, 0);
   const draftDocumentAmountRub = documents
@@ -6501,7 +6501,7 @@ function buildDenteTelegramRecallItems(runtimeScope?: DenteTelegramOutboxRuntime
     if (item.organizationId !== organizationScope) return [];
     if (item.status !== "completed") return [];
 
-    const service = serviceCatalogMap.get(item.serviceId) || serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+    const service = serviceCatalogMap.get(item.serviceId);
     if (service?.category !== "hygiene") return [];
 
     const patient = patients.find((candidate) => candidate.id === item.patientId && candidate.status === "active");
