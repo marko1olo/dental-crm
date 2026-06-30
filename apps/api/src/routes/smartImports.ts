@@ -5217,8 +5217,131 @@ function smartImportSafeHandoffFingerprint(section: string, rowNumber: number, s
   return migrationFingerprint(`${section}:${rowNumber}:${status}:${kind}`).toUpperCase();
 }
 
+type SafeHandoffRow = Array<string | number | null | undefined>;
+
+function getSafeHandoffSummaryRow(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow {
+  return [
+    "summary",
+    1,
+    "review",
+    "",
+    "smart_import_safe_handoff",
+    `lines ${preview.totalLines}; patient rows ${preview.patientPreview.totalRows}; imaging rows ${preview.imagingPreview.totalRows}; clinic fields ${
+      preview.clinicSuggestion ? Object.keys(preview.clinicSuggestion.fields).length : 0
+    }; legacy sources ${preview.legacySources.length}`,
+    "",
+    "Табличный отчет для передачи: без ФИО, телефонов, дат рождения, заметок, локальных путей, имен файлов, тяжелых данных снимков и содержимого старых баз.",
+    "Этот файл можно дать администратору, IT или поставщику; внутренний отчет использовать только внутри клиники."
+  ];
+}
+
+function getSafeHandoffMigrationStepRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  return preview.migrationPlan.steps.map((step, index) => [
+    "migration_step",
+    index + 1,
+    step.status,
+    "",
+    step.id,
+    step.detail,
+    "",
+    "Шаг миграции содержит только агрегированные счетчики и маршрут разбора.",
+    step.nextAction
+  ]);
+}
+
+function getSafeHandoffPatientRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  return preview.patientPreview.rows.map((row) => [
+    "patient_row",
+    row.rowNumber,
+    row.status,
+    "",
+    "patient_record",
+    `patient-row #${smartImportSafeHandoffFingerprint("patient", row.rowNumber, row.status)}`,
+    smartImportSafeHandoffWarnings(row.warnings.length),
+    "ФИО, телефон, дата рождения и заметки пациента намеренно скрыты из передаваемого файла.",
+    row.status === "ready" ? "Оператор клиники проверяет эту строку во внутреннем предпросмотре до записи." : "Исправить или проверить строку во внутреннем предпросмотре клиники."
+  ]);
+}
+
+function getSafeHandoffImagingRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  return preview.imagingPreview.rows.map((row) => {
+    const safeKind = row.kind ?? "imaging";
+    return [
+      "imaging_row",
+      row.rowNumber,
+      row.status,
+      "",
+      safeKind,
+      `imaging-row #${smartImportSafeHandoffFingerprint("imaging", row.rowNumber, row.status, safeKind)}`,
+      smartImportSafeHandoffWarnings(row.warnings.length),
+      "ФИО пациента, локальный путь, имя файла и содержимое снимка намеренно скрыты из передаваемого файла.",
+      row.status === "ready" ? "Оператор клиники привязывает это только после внутренней проверки пациента и источника." : "Подготовить список метаданных или ручное сопоставление внутри клиники."
+    ];
+  });
+}
+
+function getSafeHandoffClinicSuggestionRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  if (!preview.clinicSuggestion) return [];
+  return Object.entries(preview.clinicSuggestion.fields).map(([field, value]) => {
+    const safeForPublicLookup = safeSmartImportClinicFields.has(field);
+    return [
+      "clinic_profile_suggestion",
+      preview.clinicSuggestion?.sourceLineNumbers.join(","),
+      safeForPublicLookup ? "review" : "redacted",
+      Math.round(preview.clinicSuggestion?.confidence ?? 0),
+      field,
+      safeForPublicLookup ? String(value ?? "") : "непубличное поле клиники скрыто из передаваемого файла",
+      preview.clinicSuggestion?.warnings.length ? "у подсказки клиники есть внутренние предупреждения" : "",
+      safeForPublicLookup
+        ? "Только реквизиты клиники. Не смешивать пациентские данные с публичным поиском."
+        : "Непубличное или неоднозначное поле клиники остается во внутреннем предпросмотре.",
+      safeForPublicLookup ? "Сверить с документами клиники перед сохранением." : "Проверить на экране профиля клиники."
+    ];
+  });
+}
+
+function getSafeHandoffPublicLookupRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  return preview.publicLookupTargets.map((target, index) => [
+    "public_lookup",
+    index + 1,
+    "manual",
+    "",
+    target.kind,
+    target.query,
+    "",
+    target.privacy,
+    target.nextAction
+  ]);
+}
+
+function getSafeHandoffLegacySourceRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  return preview.legacySources.map((source, index) => [
+    "legacy_source",
+    index + 1,
+    source.automationLevel,
+    Math.round(source.confidence * 100),
+    source.kind,
+    source.safeSourceAlias ?? `legacy-source #${smartImportSafeHandoffFingerprint("legacy", index + 1, source.automationLevel, source.kind)}`,
+    safeLegacySourceEvidence(source).join(" | "),
+    source.privacy,
+    source.nextAction
+  ]);
+}
+
+function getSafeHandoffParserNoteRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  return preview.parserNotes.map((note, index) => [
+    "parser_note", index + 1, "info", "", "safe_policy", note, "", "Заметка парсера содержит правило процесса, а не сырые строки источника.", ""
+  ]);
+}
+
+function getSafeHandoffPrivacyWarningRows(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>): SafeHandoffRow[] {
+  return preview.migrationPlan.privacyWarnings.map((warning, index) => [
+    "privacy_warning", index + 1, "blocked", "", "policy", warning, "", "Граница передаваемого миграционного файла.", ""
+  ]);
+}
+
 function buildSmartImportSafeHandoffReportCsv(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>) {
-  const rows: Array<Array<string | number | null | undefined>> = [
+  const rows: SafeHandoffRow[] = [
     [
       "section",
       "rowNumber",
@@ -5232,117 +5355,15 @@ function buildSmartImportSafeHandoffReportCsv(preview: Awaited<ReturnType<typeof
     ]
   ];
 
-  rows.push([
-    "summary",
-    1,
-    "review",
-    "",
-    "smart_import_safe_handoff",
-    `lines ${preview.totalLines}; patient rows ${preview.patientPreview.totalRows}; imaging rows ${preview.imagingPreview.totalRows}; clinic fields ${
-      preview.clinicSuggestion ? Object.keys(preview.clinicSuggestion.fields).length : 0
-    }; legacy sources ${preview.legacySources.length}`,
-    "",
-    "Табличный отчет для передачи: без ФИО, телефонов, дат рождения, заметок, локальных путей, имен файлов, тяжелых данных снимков и содержимого старых баз.",
-    "Этот файл можно дать администратору, IT или поставщику; внутренний отчет использовать только внутри клиники."
-  ]);
-
-  preview.migrationPlan.steps.forEach((step, index) => {
-    rows.push([
-      "migration_step",
-      index + 1,
-      step.status,
-      "",
-      step.id,
-      step.detail,
-      "",
-      "Шаг миграции содержит только агрегированные счетчики и маршрут разбора.",
-      step.nextAction
-    ]);
-  });
-
-  preview.patientPreview.rows.forEach((row) => {
-    rows.push([
-      "patient_row",
-      row.rowNumber,
-      row.status,
-      "",
-      "patient_record",
-      `patient-row #${smartImportSafeHandoffFingerprint("patient", row.rowNumber, row.status)}`,
-      smartImportSafeHandoffWarnings(row.warnings.length),
-      "ФИО, телефон, дата рождения и заметки пациента намеренно скрыты из передаваемого файла.",
-      row.status === "ready" ? "Оператор клиники проверяет эту строку во внутреннем предпросмотре до записи." : "Исправить или проверить строку во внутреннем предпросмотре клиники."
-    ]);
-  });
-
-  preview.imagingPreview.rows.forEach((row) => {
-    const safeKind = row.kind ?? "imaging";
-    rows.push([
-      "imaging_row",
-      row.rowNumber,
-      row.status,
-      "",
-      safeKind,
-      `imaging-row #${smartImportSafeHandoffFingerprint("imaging", row.rowNumber, row.status, safeKind)}`,
-      smartImportSafeHandoffWarnings(row.warnings.length),
-      "ФИО пациента, локальный путь, имя файла и содержимое снимка намеренно скрыты из передаваемого файла.",
-      row.status === "ready" ? "Оператор клиники привязывает это только после внутренней проверки пациента и источника." : "Подготовить список метаданных или ручное сопоставление внутри клиники."
-    ]);
-  });
-
-  if (preview.clinicSuggestion) {
-    Object.entries(preview.clinicSuggestion.fields).forEach(([field, value]) => {
-      const safeForPublicLookup = safeSmartImportClinicFields.has(field);
-      rows.push([
-        "clinic_profile_suggestion",
-        preview.clinicSuggestion?.sourceLineNumbers.join(","),
-        safeForPublicLookup ? "review" : "redacted",
-        Math.round(preview.clinicSuggestion?.confidence ?? 0),
-        field,
-        safeForPublicLookup ? String(value ?? "") : "непубличное поле клиники скрыто из передаваемого файла",
-        preview.clinicSuggestion?.warnings.length ? "у подсказки клиники есть внутренние предупреждения" : "",
-        safeForPublicLookup
-          ? "Только реквизиты клиники. Не смешивать пациентские данные с публичным поиском."
-          : "Непубличное или неоднозначное поле клиники остается во внутреннем предпросмотре.",
-        safeForPublicLookup ? "Сверить с документами клиники перед сохранением." : "Проверить на экране профиля клиники."
-      ]);
-    });
-  }
-
-  preview.publicLookupTargets.forEach((target, index) => {
-    rows.push([
-      "public_lookup",
-      index + 1,
-      "manual",
-      "",
-      target.kind,
-      target.query,
-      "",
-      target.privacy,
-      target.nextAction
-    ]);
-  });
-
-  preview.legacySources.forEach((source, index) => {
-    rows.push([
-      "legacy_source",
-      index + 1,
-      source.automationLevel,
-      Math.round(source.confidence * 100),
-      source.kind,
-      source.safeSourceAlias ?? `legacy-source #${smartImportSafeHandoffFingerprint("legacy", index + 1, source.automationLevel, source.kind)}`,
-      safeLegacySourceEvidence(source).join(" | "),
-      source.privacy,
-      source.nextAction
-    ]);
-  });
-
-  preview.parserNotes.forEach((note, index) => {
-    rows.push(["parser_note", index + 1, "info", "", "safe_policy", note, "", "Заметка парсера содержит правило процесса, а не сырые строки источника.", ""]);
-  });
-
-  preview.migrationPlan.privacyWarnings.forEach((warning, index) => {
-    rows.push(["privacy_warning", index + 1, "blocked", "", "policy", warning, "", "Граница передаваемого миграционного файла.", ""]);
-  });
+  rows.push(getSafeHandoffSummaryRow(preview));
+  rows.push(...getSafeHandoffMigrationStepRows(preview));
+  rows.push(...getSafeHandoffPatientRows(preview));
+  rows.push(...getSafeHandoffImagingRows(preview));
+  rows.push(...getSafeHandoffClinicSuggestionRows(preview));
+  rows.push(...getSafeHandoffPublicLookupRows(preview));
+  rows.push(...getSafeHandoffLegacySourceRows(preview));
+  rows.push(...getSafeHandoffParserNoteRows(preview));
+  rows.push(...getSafeHandoffPrivacyWarningRows(preview));
 
   return rows.map((row) => row.map(csvCell).join(";")).join("\n");
 }
