@@ -72,4 +72,32 @@ describe('splitLine', () => {
   test('handles quotes adjacent to characters without delimiters', () => {
     assert.deepStrictEqual(splitLine('a,"b""c",d', ','), ['a', 'bc', 'd']);
   });
+
+  test('handles strings with no delimiters', () => {
+    assert.deepStrictEqual(splitLine('abc', ','), ['abc']);
+    assert.deepStrictEqual(splitLine('a b c', ','), ['a b c']);
+  });
+
+  test('handles strings with newlines', () => {
+    assert.deepStrictEqual(splitLine('a,\n,c', ','), ['a', '', 'c']);
+    assert.deepStrictEqual(splitLine('a,"b\nc",d', ','), ['a', 'b\nc', 'd']);
+    assert.deepStrictEqual(splitLine('line1\nline2,line3', ','), ['line1\nline2', 'line3']);
+  });
+
+  test('handles quoted delimiters at the very end', () => {
+    assert.deepStrictEqual(splitLine('a,b,"c,"', ','), ['a', 'b', 'c,']);
+  });
+
+  test('handles quotes in the middle of a string', () => {
+    assert.deepStrictEqual(splitLine('a"b"c', ','), ['abc']);
+  });
+
+
+  test('handles multi-character delimiters (current behavior)', () => {
+    // Current behavior uses strict character matching against the whole delimiter string instead of substrings,
+    // so character by character it only splits if 'char === delimiter', which only happens for 1-char strings.
+    // If we pass a multi-character delimiter, it'll never match a single character.
+    assert.deepStrictEqual(splitLine('a||b||c', '||'), ['a||b||c']);
+  });
+
 });
