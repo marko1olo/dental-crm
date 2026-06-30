@@ -8,7 +8,7 @@ export function normalizeRubAmountInput(value: string): number | null {
   return Number.isSafeInteger(amountRub) ? amountRub : null;
 }
 
-export function rubAmountInputMissingStep(
+export function validateRubAmountInput(
   value: string,
   zeroMessage = "укажите сумму больше нуля",
   invalidMessage = wholeRublesMessage
@@ -18,4 +18,12 @@ export function rubAmountInputMissingStep(
   if (amountRub === null) return invalidMessage;
   if (amountRub <= 0) return zeroMessage;
   return null;
+}
+
+export function rubAmountInputMissingStep(
+  value: number | null | undefined,
+  step: number
+): boolean {
+  if (!value) return false;
+  return value % step !== 0;
 }

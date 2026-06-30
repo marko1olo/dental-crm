@@ -210,7 +210,7 @@ import {
 } from "./communicationTaskData";
 import { imagingConnectorCards, imagingViewerCapabilities, recognitionPresets } from "./settingsStaticData";
 import { motionSafeScrollIntoView } from "./motionPreference";
-import { normalizeRubAmountInput, rubAmountInputMissingStep } from "./rubAmountInput";
+import { normalizeRubAmountInput, validateRubAmountInput } from "./rubAmountInput";
 import {
   imagingCaptureDistanceMs,
   imagingComparisonReason,
@@ -11280,7 +11280,7 @@ const {
         requiredDocumentField(refundSelectedPaymentId, "возврат/коррекция, исходный платеж") ??
         (requestedAmount !== null && requestedAmount > 0
           ? null
-          : rubAmountInputMissingStep(
+          : validateRubAmountInput(
               refundAmountRub,
               "Укажите сумму возврата или коррекции больше нуля.",
               "Укажите сумму возврата или коррекции целыми рублями без копеек."
@@ -12326,7 +12326,7 @@ const {
       return;
     }
     const amountRub = normalizeRubAmountInput(paymentAmount);
-    const amountMissingStep = rubAmountInputMissingStep(paymentAmount);
+    const amountMissingStep = validateRubAmountInput(paymentAmount);
     if (amountMissingStep || amountRub === null) {
       setError(`Сумма оплаты: ${amountMissingStep ?? "укажите сумму больше нуля"}.`);
       return;

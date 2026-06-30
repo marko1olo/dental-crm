@@ -8,7 +8,7 @@ import {
 import { structuredPayloadDocumentKinds } from "./workspaceUiLabels";
 import {
   normalizeRubAmountInput,
-  rubAmountInputMissingStep,
+  validateRubAmountInput,
 } from "./rubAmountInput";
 
 export type DocumentState = Record<string, any>;

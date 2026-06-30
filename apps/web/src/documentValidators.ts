@@ -2,7 +2,7 @@ import { DocumentState } from "./documentLogic";
 import { isDateInputValue, isDateTimeLocalInputValue } from "./AppHelpers";
 import {
   normalizeRubAmountInput,
-  rubAmountInputMissingStep,
+  validateRubAmountInput,
 } from "./rubAmountInput";
 
 export function validatePaidMedicalServicesContract(
@@ -1574,7 +1574,7 @@ export function validatePaymentRefundCorrectionRequest(
     ) ??
     (requestedAmount !== null && requestedAmount > 0
       ? null
-      : rubAmountInputMissingStep(
+      : validateRubAmountInput(
           refundAmountRub,
           "Укажите сумму возврата или коррекции больше нуля.",
           "Укажите сумму возврата или коррекции целыми рублями без копеек.",

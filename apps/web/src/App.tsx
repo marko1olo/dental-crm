@@ -211,7 +211,7 @@ import {
 } from "./communicationTaskData";
 import { imagingConnectorCards, imagingViewerCapabilities, recognitionPresets } from "./settingsStaticData";
 import { motionSafeScrollIntoView } from "./motionPreference";
-import { normalizeRubAmountInput, rubAmountInputMissingStep } from "./rubAmountInput";
+import { normalizeRubAmountInput, validateRubAmountInput } from "./rubAmountInput";
 import {
   imagingCaptureDistanceMs,
   imagingComparisonReason,
