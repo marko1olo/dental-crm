@@ -3371,31 +3371,28 @@ function planningTaskKindForQuickActionId(
   return null;
 }
 
-function buildDicomViewerPlanningTasks(input: DicomViewerToolStateBundleRequest): DicomViewerPlanningTask[] {
-  const series = input.series;
-  const viewerState = input.viewerState;
-  const canOpenVolume = series.mprReadiness.canOpenMpr && series.mprReadiness.volumeCandidate;
-  const canBuildPanoramic = series.mprReadiness.canBuildPanoramic;
-  const activeProjection = viewerState?.projection ?? (series.mprReadiness.projections[0] ?? "axial");
-  const activeWindowPreset = viewerState?.windowPreset ?? (series.kind === "cbct" ? "bone" : "endo");
-  const slabMm = viewerState?.slabMm ?? 1;
-  const axisDeg = viewerState?.axisDeg ?? 0;
-  const implantPlan = viewerState?.implantPlan ?? null;
-  const activeQuickActionTaskKind = planningTaskKindForQuickActionId(viewerState?.activeQuickActionId ?? null);
+function getDicomViewerPlanningTaskDefinitions(context: {
+  slabMm: number;
+  axisDeg: number;
+  activeProjection: DicomViewerPlanningTask["projection"];
+  activeWindowPreset: DicomViewerPlanningTask["windowPreset"];
+  canBuildPanoramic: boolean;
+}): Array<{
+  kind: DicomViewerPlanningTask["kind"];
+  title: string;
+  crmTool: DicomViewerToolConfig["crmTool"];
+  projection: DicomViewerPlanningTask["projection"];
+  windowPreset: DicomViewerPlanningTask["windowPreset"];
+  slabMm: number;
+  axisDeg: number;
+  requiresVolume: boolean;
+  requiresPanoramic: boolean;
+  outputUnit: string | null;
+  reason: string;
+}> {
+  const { slabMm, axisDeg, activeProjection, activeWindowPreset, canBuildPanoramic } = context;
 
-  const taskDefinitions: Array<{
-    kind: DicomViewerPlanningTask["kind"];
-    title: string;
-    crmTool: DicomViewerToolConfig["crmTool"];
-    projection: DicomViewerPlanningTask["projection"];
-    windowPreset: DicomViewerPlanningTask["windowPreset"];
-    slabMm: number;
-    axisDeg: number;
-    requiresVolume: boolean;
-    requiresPanoramic: boolean;
-    outputUnit: string | null;
-    reason: string;
-  }> = [
+  return [
     {
       kind: "panoramic_reconstruction",
       title: "ОПТГ-реконструкция",
@@ -3540,6 +3537,27 @@ function buildDicomViewerPlanningTasks(input: DicomViewerToolStateBundleRequest)
       reason: "Сохранить втулку шаблона, ось импланта и цель экспорта без передачи снимков."
     }
   ];
+}
+
+function buildDicomViewerPlanningTasks(input: DicomViewerToolStateBundleRequest): DicomViewerPlanningTask[] {
+  const series = input.series;
+  const viewerState = input.viewerState;
+  const canOpenVolume = series.mprReadiness.canOpenMpr && series.mprReadiness.volumeCandidate;
+  const canBuildPanoramic = series.mprReadiness.canBuildPanoramic;
+  const activeProjection = viewerState?.projection ?? (series.mprReadiness.projections[0] ?? "axial");
+  const activeWindowPreset = viewerState?.windowPreset ?? (series.kind === "cbct" ? "bone" : "endo");
+  const slabMm = viewerState?.slabMm ?? 1;
+  const axisDeg = viewerState?.axisDeg ?? 0;
+  const implantPlan = viewerState?.implantPlan ?? null;
+  const activeQuickActionTaskKind = planningTaskKindForQuickActionId(viewerState?.activeQuickActionId ?? null);
+
+  const taskDefinitions = getDicomViewerPlanningTaskDefinitions({
+    slabMm,
+    axisDeg,
+    activeProjection,
+    activeWindowPreset,
+    canBuildPanoramic
+  });
 
   return taskDefinitions.map((task) => {
     const warnings: string[] = [];
