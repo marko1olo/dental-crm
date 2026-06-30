@@ -62,10 +62,8 @@ function getProxyAgent(): Dispatcher | null {
             });
           }
         });
-        console.log(`[Proxy Agent] Created undici SOCKS Agent routing to SOCKS proxy: ${proxyUrl}`);
       } else {
         cachedProxyAgent = new ProxyAgent({ uri: proxyUrl });
-        console.log(`[Proxy Agent] Created undici ProxyAgent routing to HTTP/HTTPS proxy: ${proxyUrl}`);
       }
     } catch (err) {
       console.error(`[Proxy Agent] Failed to initialize ProxyAgent for ${proxyUrl}:`, err);
