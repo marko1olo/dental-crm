@@ -25,6 +25,14 @@ describe('repairMojibakeText', () => {
     assert.strictEqual(repairMojibakeText(input), expected);
   });
 
+  test('repairs various common mojibake strings', () => {
+    assert.strictEqual(repairMojibakeText("ÐŸÑ€Ð¸Ð²ÐµÑ‚"), "Привет");
+    assert.strictEqual(repairMojibakeText("Hello ÐŸÑ€Ð¸Ð²ÐµÑ‚ world"), "Hello Привет world");
+    assert.strictEqual(repairMojibakeText("ÐœÐ¸Ñ€"), "Мир");
+    assert.strictEqual(repairMojibakeText("Ð—Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº"), "Заголовок");
+    assert.strictEqual(repairMojibakeText("ÐžÐ¿Ð¸Ñ\u0081Ð°Ð½Ð¸Ðµ"), "Описание");
+  });
+
   test('gracefully handles likely mojibake that cannot be decoded', () => {
     const input = "?\u0300\u0301\u0302 invalid";
     assert.strictEqual(repairMojibakeText(input), input);
