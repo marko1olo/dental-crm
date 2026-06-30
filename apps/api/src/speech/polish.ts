@@ -401,7 +401,6 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
         continue;
       }
 
-      console.log(`[AI Polish Cascade] Пробуем ${fallback.provider} (${fallback.model})...`);
       const fallbackConfig: SpeechPolishConfig = {
         deterministicEnabled: true,
         neuralEnabled: true,
