@@ -72,9 +72,7 @@ export async function setupProxyAndTunnels() {
   const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.PROXY_URL;
   if (proxyUrl) {
     const isOnline = await checkProxyPortDirectly(proxyUrl);
-    if (isOnline) {
-      console.log(`[Proxy Boot] Configured proxy ${proxyUrl} is online. Traffic routed via proxy.`);
-    } else {
+    if (!isOnline) {
       console.warn(`[Proxy Boot] Configured proxy ${proxyUrl} is offline. Disabling proxy env variables to force clean direct connections.`);
       delete process.env.HTTPS_PROXY;
       delete process.env.HTTP_PROXY;
