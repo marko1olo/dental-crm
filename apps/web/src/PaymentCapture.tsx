@@ -1,6 +1,6 @@
 import { CreditCard, UserRound } from "lucide-react";
 import type { PaymentMethod } from "@dental/shared";
-import { rubAmountInputMissingStep } from "./rubAmountInput";
+import { validateRubAmountInput } from "./rubAmountInput";
 
 type TaxDeductionCode = "" | "1" | "2";
 
@@ -346,7 +346,7 @@ export function PaymentCapture({
   payerRelationship,
   taxDeductionCode
 }: PaymentCaptureProps) {
-  const amountMissingStep = rubAmountInputMissingStep(amount);
+  const amountMissingStep = validateRubAmountInput(amount);
   const taxDeductionRequested = taxDeductionCode === "1" || taxDeductionCode === "2";
   const trimmedFiscalReceiptUrl = fiscalReceiptUrl.trim();
   const trimmedPayerInn = payerInn.trim();
