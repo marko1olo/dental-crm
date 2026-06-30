@@ -80,8 +80,6 @@ export async function setupProxyAndTunnels() {
       delete process.env.HTTP_PROXY;
       delete process.env.PROXY_URL;
     }
-  } else {
-    console.log("[Proxy Boot] No proxy configured. Operating in direct connection mode.");
   }
 }
 
