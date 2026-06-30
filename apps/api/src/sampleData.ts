@@ -1069,19 +1069,58 @@ function treatmentLineTotal(item: TreatmentPlanItem): number {
 }
 
 export function buildBillingSummary(): BillingSummary {
-  const activePlanItems = treatmentPlanItems.filter((item) => item.status !== "cancelled");
-  const totalPlannedRub = activePlanItems.reduce((total, item) => total + treatmentLineTotal(item), 0);
-  const totalDiscountRub = activePlanItems.reduce((total, item) => total + item.discountRub, 0);
-  const totalPaidRub = payments
-    .filter((payment) => payment.status === "paid")
-    .reduce((total, payment) => total + payment.amountRub, 0);
-  const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
+  let totalPlannedRub = 0;
+  let totalDiscountRub = 0;
+  let taxDeductionEligibleRub = 0;
+  let openTreatmentItems = 0;
+
+  for (let i = 0; i < treatmentPlanItems.length; i++) {
+    const item = treatmentPlanItems[i];
+    if (!item || item.status === "cancelled") continue;
+
+    const lineTotal = treatmentLineTotal(item);
+    totalPlannedRub += lineTotal;
+    totalDiscountRub += item.discountRub;
+
     const service = serviceCatalogMap.get(item.serviceId) || serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
-    return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
-  }, 0);
-  const draftDocumentAmountRub = documents
-    .filter((document) => document.status === "draft")
-    .reduce((total, document) => total + (document.totalAmountRub ?? 0), 0);
+    if (service?.taxDeductible) {
+      taxDeductionEligibleRub += lineTotal;
+    }
+
+    if (item.status !== "completed") {
+      openTreatmentItems += 1;
+    }
+  }
+
+  let totalPaidRub = 0;
+  const paidDocumentIds = new Set<string>();
+  for (let i = 0; i < payments.length; i++) {
+    const payment = payments[i];
+    if (!payment) continue;
+
+    if (payment.status === "paid") {
+      totalPaidRub += payment.amountRub;
+      if (payment.documentId) {
+        paidDocumentIds.add(payment.documentId);
+      }
+    }
+  }
+
+  let draftDocumentAmountRub = 0;
+  let unpaidDocuments = 0;
+  for (let i = 0; i < documents.length; i++) {
+    const document = documents[i];
+    if (!document) continue;
+
+    if (document.status === "draft") {
+      const amount = document.totalAmountRub ?? 0;
+      draftDocumentAmountRub += amount;
+
+      if (amount > 0 && !paidDocumentIds.has(document.id)) {
+        unpaidDocuments += 1;
+      }
+    }
+  }
 
   return {
     totalPlannedRub,
@@ -1090,13 +1129,8 @@ export function buildBillingSummary(): BillingSummary {
     totalDueRub: Math.max(0, totalPlannedRub - totalPaidRub),
     taxDeductionEligibleRub,
     draftDocumentAmountRub,
-    openTreatmentItems: activePlanItems.filter((item) => item.status !== "completed").length,
-    unpaidDocuments: documents.filter(
-      (document) =>
-        document.status === "draft" &&
-        (document.totalAmountRub ?? 0) > 0 &&
-        !payments.some((payment) => payment.status === "paid" && payment.documentId === document.id)
-    ).length
+    openTreatmentItems,
+    unpaidDocuments
   };
 }
 
