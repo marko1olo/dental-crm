@@ -5,8 +5,6 @@ import net from "node:net";
 
 let tunnelProcess: ChildProcess | null = null;
 const SOCKS_PORT = 1080;
-const SSH_KEY = "C:\\Users\\Admin\\\\.ssh\\\\id_ed25519";
-const SSH_HOST = "root@62.84.100.97";
 
 function isPortOpen(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -25,6 +23,19 @@ function isPortOpen(port: number): Promise<boolean> {
 }
 
 export async function ensureSshTunnel(): Promise<boolean> {
+  const sshKey = process.env.SSH_KEY_PATH;
+  const sshHost = process.env.SSH_HOST;
+
+  if (!sshKey || !sshHost) {
+    console.warn(`[SSH Tunnel] SSH_KEY_PATH or SSH_HOST environment variables not set. Cannot start tunnel.`);
+    return false;
+  }
+
+  if (sshHost.startsWith("-") || sshKey.startsWith("-")) {
+    console.warn(`[SSH Tunnel] Invalid SSH_HOST or SSH_KEY_PATH. Cannot start tunnel.`);
+    return false;
+  }
+
   // 1. Проверяем, слушает ли уже порт 1080
   const alreadyOpen = await isPortOpen(SOCKS_PORT);
   if (alreadyOpen) {
@@ -33,12 +44,12 @@ export async function ensureSshTunnel(): Promise<boolean> {
   }
 
   // 2. Проверяем наличие приватного ключа
-  if (!existsSync("C:\\Users\\Admin\\.ssh\\id_ed25519")) {
-    console.warn(`[SSH Tunnel] SSH key not found at C:\\Users\\Admin\\.ssh\\id_ed25519. Cannot start tunnel.`);
+  if (!existsSync(sshKey)) {
+    console.warn(`[SSH Tunnel] SSH key not found at ${sshKey}. Cannot start tunnel.`);
     return false;
   }
 
-  console.log(`[SSH Tunnel] Starting SSH SOCKS5 tunnel on port ${SOCKS_PORT} via ${SSH_HOST}...`);
+  console.log(`[SSH Tunnel] Starting SSH SOCKS5 tunnel on port ${SOCKS_PORT} via ${sshHost}...`);
   
   try {
     const cmdArgs = [
@@ -48,8 +59,8 @@ export async function ensureSshTunnel(): Promise<boolean> {
       "-o", "ConnectTimeout=5",
       "-o", "StrictHostKeyChecking=no",
       "-o", "UserKnownHostsFile=NUL",
-      "-i", "C:\\Users\\Admin\\.ssh\\id_ed25519",
-      SSH_HOST
+      "-i", sshKey,
+      sshHost
     ];
 
     tunnelProcess = spawn("ssh", cmdArgs, {
