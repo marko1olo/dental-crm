@@ -1,0 +1,115 @@
+import { test, describe } from 'node:test';
+import assert from 'node:assert';
+import { resolveMprKeyboardAdjustment } from '../mprControlMath.js';
+
+describe('resolveMprKeyboardAdjustment', () => {
+  const defaultInput = {
+    shiftKey: false,
+    axisDeg: 0,
+    slabMm: 15,
+    sliceIndex: 50,
+    maxIndex: 100
+  };
+
+  test('handles unknown keys by returning null', () => {
+    assert.strictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'a' }), null);
+    assert.strictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'Enter' }), null);
+    assert.strictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: '' }), null);
+  });
+
+  describe('ArrowLeft and ArrowRight (axis adjustment)', () => {
+    test('decreases axis without shift (step 1)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowLeft' }), { kind: 'axis', value: -1 });
+    });
+
+    test('increases axis without shift (step 1)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowRight' }), { kind: 'axis', value: 1 });
+    });
+
+    test('decreases axis with shift (step 5)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowLeft', shiftKey: true }), { kind: 'axis', value: -5 });
+    });
+
+    test('increases axis with shift (step 5)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowRight', shiftKey: true }), { kind: 'axis', value: 5 });
+    });
+
+    test('clamps axis to minimum (-90)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowLeft', shiftKey: true, axisDeg: -88 }), { kind: 'axis', value: -90 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowLeft', shiftKey: true, axisDeg: -95 }), { kind: 'axis', value: -90 });
+    });
+
+    test('clamps axis to maximum (90)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowRight', shiftKey: true, axisDeg: 88 }), { kind: 'axis', value: 90 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowRight', shiftKey: true, axisDeg: 95 }), { kind: 'axis', value: 90 });
+    });
+  });
+
+  describe('PageDown and PageUp (slab adjustment)', () => {
+    test('decreases slab without shift (step 1)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageDown' }), { kind: 'slab', value: 14 });
+    });
+
+    test('increases slab without shift (step 1)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageUp' }), { kind: 'slab', value: 16 });
+    });
+
+    test('decreases slab with shift (step 5)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageDown', shiftKey: true }), { kind: 'slab', value: 10 });
+    });
+
+    test('increases slab with shift (step 5)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageUp', shiftKey: true }), { kind: 'slab', value: 20 });
+    });
+
+    test('clamps slab to minimum (1)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageDown', shiftKey: true, slabMm: 4 }), { kind: 'slab', value: 1 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageDown', shiftKey: true, slabMm: 0 }), { kind: 'slab', value: 1 });
+    });
+
+    test('clamps slab to maximum (30)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageUp', shiftKey: true, slabMm: 28 }), { kind: 'slab', value: 30 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'PageUp', shiftKey: true, slabMm: 35 }), { kind: 'slab', value: 30 });
+    });
+  });
+
+  describe('ArrowDown and ArrowUp (slice adjustment)', () => {
+    test('decreases slice without shift (step 1)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowDown' }), { kind: 'slice', value: 49 });
+    });
+
+    test('increases slice without shift (step 1)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowUp' }), { kind: 'slice', value: 51 });
+    });
+
+    test('decreases slice with shift (step 10)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowDown', shiftKey: true }), { kind: 'slice', value: 40 });
+    });
+
+    test('increases slice with shift (step 10)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowUp', shiftKey: true }), { kind: 'slice', value: 60 });
+    });
+
+    test('clamps slice to minimum (0)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowDown', shiftKey: true, sliceIndex: 5 }), { kind: 'slice', value: 0 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowDown', shiftKey: true, sliceIndex: -5 }), { kind: 'slice', value: 0 });
+    });
+
+    test('clamps slice to maximum (maxIndex)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowUp', shiftKey: true, sliceIndex: 95, maxIndex: 100 }), { kind: 'slice', value: 100 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'ArrowUp', shiftKey: true, sliceIndex: 105, maxIndex: 100 }), { kind: 'slice', value: 100 });
+    });
+  });
+
+  describe('Home and End (slice limits)', () => {
+    test('Home jumps to start of slice (0)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'Home' }), { kind: 'slice', value: 0 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'Home', shiftKey: true }), { kind: 'slice', value: 0 });
+    });
+
+    test('End jumps to end of slice (maxIndex)', () => {
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'End' }), { kind: 'slice', value: 100 });
+      assert.deepStrictEqual(resolveMprKeyboardAdjustment({ ...defaultInput, key: 'End', shiftKey: true }), { kind: 'slice', value: 100 });
+    });
+  });
+});
