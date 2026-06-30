@@ -64,7 +64,6 @@ export async function setupProxyAndTunnels() {
     process.env.HTTPS_PROXY = "socks5://127.0.0.1:1080";
     process.env.HTTP_PROXY = "socks5://127.0.0.1:1080";
     process.env.PROXY_URL = "socks5://127.0.0.1:1080";
-    console.log("[Proxy Boot] Traffic routed via active SSH SOCKS5 tunnel on port 1080.");
     return;
   }
 
@@ -72,16 +71,12 @@ export async function setupProxyAndTunnels() {
   const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.PROXY_URL;
   if (proxyUrl) {
     const isOnline = await checkProxyPortDirectly(proxyUrl);
-    if (isOnline) {
-      console.log(`[Proxy Boot] Configured proxy ${proxyUrl} is online. Traffic routed via proxy.`);
-    } else {
+    if (!isOnline) {
       console.warn(`[Proxy Boot] Configured proxy ${proxyUrl} is offline. Disabling proxy env variables to force clean direct connections.`);
       delete process.env.HTTPS_PROXY;
       delete process.env.HTTP_PROXY;
       delete process.env.PROXY_URL;
     }
-  } else {
-    console.log("[Proxy Boot] No proxy configured. Operating in direct connection mode.");
   }
 }
 
