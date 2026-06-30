@@ -276,7 +276,6 @@ async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {
   }
 
   // Попытка 2: Идем по каскаду моделей
-  console.log("[AI Draft Cascade] Запуск цепочки фоллбеков...");
   for (const fallback of DENTAL_AI_CASCADING_MODELS) {
     // Пропускаем, если эта же модель только что упала в Попытке 1
     if (fallback.provider === input.config.provider && fallback.model === input.config.modelName) {
