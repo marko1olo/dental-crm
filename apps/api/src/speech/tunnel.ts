@@ -64,7 +64,6 @@ export async function ensureSshTunnel(): Promise<boolean> {
 
     const checkOpen = await isPortOpen(SOCKS_PORT);
     if (checkOpen) {
-      console.log(`[SSH Tunnel] SSH SOCKS5 tunnel successfully established on port ${SOCKS_PORT}.`);
       return true;
     } else {
       console.warn(`[SSH Tunnel] Tunnel process spawned but port ${SOCKS_PORT} is still closed.`);
