@@ -34,6 +34,15 @@ describe('taxPaymentSelectionErrorForDocument', () => {
     assert.strictEqual(error, 'Для налогового заявления, справки или реестра нужно явно выбрать фискальные чеки. Автоматический захват всех оплат за год отключен.');
   });
 
+  test('returns null if tax document does not require payment selection and none selected', () => {
+    const error = taxPaymentSelectionErrorForDocument({
+      ...baseInput,
+      kind: 'tax_deduction_application',
+      payload: { taxDeductionApplication: { requestedTaxYear: 2023, taxpayerInn: '123456789012', requestedForm: 'knd_1151156', selectedPaymentIds: [] } as TaxDeductionApplicationPayload }
+    }, basePayments);
+    assert.strictEqual(error, null);
+  });
+
   test('returns error if there are duplicates in selected ids', () => {
     const input = { ...baseInput, payload: { taxPaymentSelection: { selectedPaymentIds: ['payment-1', 'payment-1'] } } };
     const error = taxPaymentSelectionErrorForDocument(input, basePayments);
@@ -81,6 +90,12 @@ describe('taxPaymentSelectionErrorForDocument', () => {
     ];
     const input = { ...baseInput, payload: { taxPaymentSelection: { selectedPaymentIds: ['payment-1', 'payment-3'] } } };
     const error = taxPaymentSelectionErrorForDocument(input, payments);
+    assert.strictEqual(error, 'Выбранный фискальный чек не относится к выбранному налоговому году.');
+  });
+
+  test('returns error if taxYear is not provided but payments are selected', () => {
+    const input = { ...baseInput, taxYear: undefined };
+    const error = taxPaymentSelectionErrorForDocument(input, basePayments);
     assert.strictEqual(error, 'Выбранный фискальный чек не относится к выбранному налоговому году.');
   });
 
