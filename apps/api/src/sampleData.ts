@@ -6741,11 +6741,19 @@ function documentReadyAlreadyCovered(document: GeneratedDocument, outboxItemId: 
 function buildDenteTelegramDocumentReadyItems(runtimeScope?: DenteTelegramOutboxRuntimeScope): DenteTelegramOutboxItem[] {
   const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
   const organizationScope = runtime.settings.organizationId;
+
+  const activePatients = new Map<string, Patient>();
+  for (const p of patients) {
+    if (p.status === "active") {
+      activePatients.set(p.id, p);
+    }
+  }
+
   return documents.flatMap((document) => {
     if (document.organizationId !== organizationScope) return [];
     if (document.status !== "issued") return [];
     if (documentReadyNoticeExcludedKinds.has(document.kind)) return [];
-    const patient = patients.find((candidate) => candidate.id === document.patientId && candidate.status === "active");
+    const patient = activePatients.get(document.patientId);
     if (!patient) return [];
 
     const itemId = documentReadyOutboxId(document);
