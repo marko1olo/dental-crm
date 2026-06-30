@@ -78,7 +78,6 @@ export async function ensureSshTunnel(): Promise<boolean> {
 
 export function stopSshTunnel(): void {
   if (tunnelProcess) {
-    console.log("[SSH Tunnel] Stopping SSH SOCKS5 tunnel...");
     try {
       tunnelProcess.kill();
     } catch {
