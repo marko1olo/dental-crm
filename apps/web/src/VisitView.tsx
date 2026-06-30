@@ -977,7 +977,7 @@ export function VisitView(props: VisitViewProps) {
           {/* ═══════════════════════════════════════════════════════════════
               Clinical Context Modal — открывается по клику на зуб (без штампа)
           ═══════════════════════════════════════════════════════════════ */}
-          <style dangerouslySetInnerHTML={{ __html: `
+          <style>{`
             @keyframes _ccm-fade { from { opacity:0 } to { opacity:1 } }
             @keyframes _ccm-up {
               from { transform: translate(-50%,-45%) scale(.95); opacity:0 }
@@ -1088,7 +1088,7 @@ export function VisitView(props: VisitViewProps) {
             }
             .clinical-rules-toggle > summary:hover { background: #f1f5f9; }
             .clinical-rules-toggle > summary::-webkit-details-marker { display: none; }
-          ` }} />
+          `}</style>
 
           {selectedToothForMenu && (() => {
             const { code } = selectedToothForMenu;
