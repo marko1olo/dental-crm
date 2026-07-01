@@ -2393,222 +2393,274 @@ export async function registerTelegramWebhookRoutes(app: FastifyInstance) {
   app.post("/api/telegram/webhook/:organizationId", handleWebhook);
 }
 
+async function handleGetTelegramStatusByOrg(request: FastifyRequest<{ Params: { organizationId: string } }>, reply: FastifyReply) {
+  const runtimeResult = resolveTelegramRuntimeContext(request.params.organizationId);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  return buildStatus(request.params.organizationId);
+}
+
+async function handleGetTelegramStatusByOrgAndBot(request: FastifyRequest<{ Params: { organizationId: string; botConfigId: string } }>, reply: FastifyReply) {
+  const runtimeResult = resolveTelegramRuntimeContext(request.params.organizationId, request.params.botConfigId);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  return buildStatus(request.params.organizationId, request.params.botConfigId);
+}
+
+async function handleUpdateTelegramSettings(request: FastifyRequest, reply: FastifyReply) {
+  const parsedInput = parseTelegramRouteBody(updateDenteTelegramBotSettingsSchema, request.body);
+  if (!parsedInput.ok) {
+    const schemaResult = updateDenteTelegramBotSettingsSchema.safeParse(request.body);
+    const issueCount = schemaResult.success ? 0 : schemaResult.error.issues.length;
+    return reply.code(400).send({
+      error: "TelegramSettingsValidationFailed",
+      message: schemaResult.success || issueCount !== 1 ? parsedInput.message : readableTelegramSettingsSchemaMessage(schemaResult.error)
+    });
+  }
+  const input: UpdateDenteTelegramBotSettingsInput = parsedInput.value;
+  try {
+    updateDenteTelegramBotSettings(input);
+  } catch (settingsError) {
+    return reply.code(400).send({
+      error: "TelegramSettingsValidationFailed",
+      message: readableTelegramSettingsValidationMessage(settingsError)
+    });
+  }
+  return buildStatus();
+}
+
+async function handleGetTelegramOutbox(request: FastifyRequest<{ Querystring: Record<string, unknown> }>, reply: FastifyReply) {
+  const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  return buildDenteTelegramOutbox(parseTelegramOutboxQuery(request.query), runtimeResult.runtime.runtimeScope);
+}
+
+async function handlePostTelegramOutboxSend(request: FastifyRequest<{ Params: { itemId: string }; Querystring: Record<string, unknown> }>, reply: FastifyReply) {
+  const parsedInput = parseTelegramRouteBody(denteTelegramOutboxSendRequestSchema, request.body ?? {});
+  if (!parsedInput.ok) return sendTelegramValidationError(reply);
+  const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  const result = await executeTelegramOutboxSend(request.params.itemId, parsedInput.value, runtimeResult.runtime);
+  return reply.code(result.statusCode).send(result.body);
+}
+
+async function handlePostTelegramOutboxSendDue(request: FastifyRequest<{ Querystring: Record<string, unknown> }>, reply: FastifyReply) {
+  const input = parseTelegramOutboxSendDueInput(request.body ?? {});
+  if (!input) return sendTelegramValidationError(reply, "TelegramOutboxDueValidationFailed");
+  const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  const response = await executeDenteTelegramOutboxDueBatch(input, runtimeResult.runtime);
+  return reply.code(response.failedCount > 0 ? 502 : response.blockedCount > 0 ? 409 : 200).send(response);
+}
+
+async function handlePostTelegramLinkCodes(request: FastifyRequest, reply: FastifyReply) {
+  const parsedInput = parseTelegramRouteBody(createDenteTelegramLinkCodeSchema, request.body);
+  if (!parsedInput.ok) return sendTelegramValidationError(reply);
+  const input = parsedInput.value;
+  const requestedOrganizationId = input.organizationId ?? (input.botConfigId ? (input.clinicId ?? null) : null);
+  const runtimeResult = resolveTelegramRuntimeContext(requestedOrganizationId, input.botConfigId ?? null);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  const runtime = runtimeResult.context;
+  const settings = runtime.settings;
+  const requestedClinicId = input.clinicId?.trim() || null;
+  if (requestedClinicId && requestedClinicId !== runtime.clinicId) {
+    return reply.code(409).send({
+      error: "TelegramLinkCodeScopeInvalid",
+      message: "Код привязки Telegram относится к другой клинике."
+    });
+  }
+  if (settings.mode === "disabled" || !settings.enabledFeatures.includes("patient_linking")) {
+    return reply.code(409).send({
+      error: "TelegramLinkingDisabled",
+      message: "Привязка Telegram отключена в настройках клиники."
+    });
+  }
+  try {
+    return createDenteTelegramLinkCode({
+      ...input,
+      organizationId: runtime.organizationId,
+      clinicId: input.clinicId ?? runtime.clinicId,
+      botConfigId: runtime.botConfigId,
+      botUsername: runtime.botUsername
+    });
+  } catch (linkCodeError) {
+    const rejection = telegramLinkCodeRejection(linkCodeError);
+    return reply.code(409).send({
+      error: rejection.error,
+      reason: rejection.reason,
+      message: rejection.message
+    });
+  }
+}
+
+async function handleGetTelegramLinkCodes(request: FastifyRequest<{ Querystring: Record<string, unknown> }>, reply: FastifyReply) {
+  const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  const runtime = runtimeResult.runtime.context;
+  return buildDenteTelegramLinkCodeList({
+    ...parseTelegramLinkCodeListQuery(request.query),
+    organizationId: runtime.organizationId,
+    clinicId: runtime.clinicId,
+    botConfigId: runtime.botConfigId
+  });
+}
+
+async function handleGetTelegramChatLinks(request: FastifyRequest<{ Querystring: Record<string, unknown> }>, reply: FastifyReply) {
+  const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  const runtime = runtimeResult.runtime.context;
+  return buildDenteTelegramChatLinkList({
+    ...parseTelegramChatLinkListQuery(request.query),
+    organizationId: runtime.organizationId,
+    clinicId: runtime.clinicId,
+    botConfigId: runtime.botConfigId
+  });
+}
+
+async function handlePostTelegramChatLinksRevoke(request: FastifyRequest<{ Params: { linkId: string }; Querystring: Record<string, unknown> }>, reply: FastifyReply) {
+  const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  const runtime = runtimeResult.runtime.context;
+  const revoked = revokeDenteTelegramChatLink(request.params.linkId, {
+    organizationId: runtime.organizationId,
+    clinicId: runtime.clinicId,
+    botConfigId: runtime.botConfigId
+  });
+  if (!revoked) {
+    return reply.code(404).send({
+      error: "TelegramChatLinkNotFound",
+      message: telegramChatLinkNotFoundMessage
+    });
+  }
+  return denteTelegramChatLinkPublicSchema.parse(revoked);
+}
+
+async function handlePostTelegramMessagesPreview(request: FastifyRequest<{ Querystring: Record<string, unknown> }>, reply: FastifyReply) {
+  const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
+  if (!runtimeResult.ok) {
+    return reply.code(runtimeResult.statusCode).send({
+      error: runtimeResult.error,
+      message: runtimeResult.message
+    });
+  }
+  const parsedInput = parseTelegramRouteBody(denteTelegramMessagePreviewRequestSchema, request.body);
+  if (!parsedInput.ok) return sendTelegramValidationError(reply);
+  const input = parsedInput.value;
+  try {
+    return renderDenteTelegramMessagePreview(input, runtimeResult.runtime.context.settings);
+  } catch (previewError) {
+    const rejection = telegramMessagePreviewRejection(previewError);
+    return reply.code(404).send({ error: "TelegramMessagePreviewNotFound", reason: rejection.reason, message: rejection.message });
+  }
+}
+
 export async function registerTelegramRoutes(app: FastifyInstance) {
   const telegramControlPlaneRouteOptions = { preHandler: requireTelegramControlPlaneAccess };
 
   app.get("/api/telegram/status", telegramControlPlaneRouteOptions, async () => buildStatus());
 
-  app.get<{ Params: { organizationId: string } }>("/api/telegram/status/:organizationId", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const runtimeResult = resolveTelegramRuntimeContext(request.params.organizationId);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    return buildStatus(request.params.organizationId);
-  });
+  app.get<{ Params: { organizationId: string } }>(
+    "/api/telegram/status/:organizationId",
+    telegramControlPlaneRouteOptions,
+    handleGetTelegramStatusByOrg
+  );
 
   app.get<{ Params: { organizationId: string; botConfigId: string } }>(
     "/api/telegram/status/:organizationId/:botConfigId",
     telegramControlPlaneRouteOptions,
-    async (request, reply) => {
-      const runtimeResult = resolveTelegramRuntimeContext(request.params.organizationId, request.params.botConfigId);
-      if (!runtimeResult.ok) {
-        return reply.code(runtimeResult.statusCode).send({
-          error: runtimeResult.error,
-          message: runtimeResult.message
-        });
-      }
-      return buildStatus(request.params.organizationId, request.params.botConfigId);
-    }
+    handleGetTelegramStatusByOrgAndBot
   );
 
   app.get("/api/settings/telegram", telegramControlPlaneRouteOptions, async () => buildStatus());
 
-  app.put("/api/settings/telegram", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const parsedInput = parseTelegramRouteBody(updateDenteTelegramBotSettingsSchema, request.body);
-    if (!parsedInput.ok) {
-      const schemaResult = updateDenteTelegramBotSettingsSchema.safeParse(request.body);
-      const issueCount = schemaResult.success ? 0 : schemaResult.error.issues.length;
-      return reply.code(400).send({
-        error: "TelegramSettingsValidationFailed",
-        message: schemaResult.success || issueCount !== 1 ? parsedInput.message : readableTelegramSettingsSchemaMessage(schemaResult.error)
-      });
-    }
-    const input: UpdateDenteTelegramBotSettingsInput = parsedInput.value;
-    try {
-      updateDenteTelegramBotSettings(input);
-    } catch (settingsError) {
-      return reply.code(400).send({
-        error: "TelegramSettingsValidationFailed",
-        message: readableTelegramSettingsValidationMessage(settingsError)
-      });
-    }
-    return buildStatus();
-  });
+  app.put("/api/settings/telegram", telegramControlPlaneRouteOptions, handleUpdateTelegramSettings);
 
   app.get("/api/telegram/feature-plan", telegramControlPlaneRouteOptions, async () => buildFeaturePlan(getDenteTelegramBotSettings()));
 
-  app.get<{ Querystring: Record<string, unknown> }>("/api/telegram/outbox", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    return buildDenteTelegramOutbox(parseTelegramOutboxQuery(request.query), runtimeResult.runtime.runtimeScope);
-  });
+  app.get<{ Querystring: Record<string, unknown> }>(
+    "/api/telegram/outbox",
+    telegramControlPlaneRouteOptions,
+    handleGetTelegramOutbox
+  );
 
-  app.post<{ Params: { itemId: string }; Querystring: Record<string, unknown> }>("/api/telegram/outbox/:itemId/send", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const parsedInput = parseTelegramRouteBody(denteTelegramOutboxSendRequestSchema, request.body ?? {});
-    if (!parsedInput.ok) return sendTelegramValidationError(reply);
-    const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    const result = await executeTelegramOutboxSend(request.params.itemId, parsedInput.value, runtimeResult.runtime);
-    return reply.code(result.statusCode).send(result.body);
-  });
+  app.post<{ Params: { itemId: string }; Querystring: Record<string, unknown> }>(
+    "/api/telegram/outbox/:itemId/send",
+    telegramControlPlaneRouteOptions,
+    handlePostTelegramOutboxSend
+  );
 
-  app.post<{ Querystring: Record<string, unknown> }>("/api/telegram/outbox/send-due", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const input = parseTelegramOutboxSendDueInput(request.body ?? {});
-    if (!input) return sendTelegramValidationError(reply, "TelegramOutboxDueValidationFailed");
-    const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    const response = await executeDenteTelegramOutboxDueBatch(input, runtimeResult.runtime);
-    return reply.code(response.failedCount > 0 ? 502 : response.blockedCount > 0 ? 409 : 200).send(response);
-  });
+  app.post<{ Querystring: Record<string, unknown> }>(
+    "/api/telegram/outbox/send-due",
+    telegramControlPlaneRouteOptions,
+    handlePostTelegramOutboxSendDue
+  );
 
-  app.post("/api/telegram/link-codes", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const parsedInput = parseTelegramRouteBody(createDenteTelegramLinkCodeSchema, request.body);
-    if (!parsedInput.ok) return sendTelegramValidationError(reply);
-    const input = parsedInput.value;
-    const requestedOrganizationId = input.organizationId ?? (input.botConfigId ? (input.clinicId ?? null) : null);
-    const runtimeResult = resolveTelegramRuntimeContext(requestedOrganizationId, input.botConfigId ?? null);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    const runtime = runtimeResult.context;
-    const settings = runtime.settings;
-    const requestedClinicId = input.clinicId?.trim() || null;
-    if (requestedClinicId && requestedClinicId !== runtime.clinicId) {
-      return reply.code(409).send({
-        error: "TelegramLinkCodeScopeInvalid",
-        message: "Код привязки Telegram относится к другой клинике."
-      });
-    }
-    if (settings.mode === "disabled" || !settings.enabledFeatures.includes("patient_linking")) {
-      return reply.code(409).send({
-        error: "TelegramLinkingDisabled",
-        message: "Привязка Telegram отключена в настройках клиники."
-      });
-    }
-    try {
-      return createDenteTelegramLinkCode({
-        ...input,
-        organizationId: runtime.organizationId,
-        clinicId: input.clinicId ?? runtime.clinicId,
-        botConfigId: runtime.botConfigId,
-        botUsername: runtime.botUsername
-      });
-    } catch (linkCodeError) {
-      const rejection = telegramLinkCodeRejection(linkCodeError);
-      return reply.code(409).send({
-        error: rejection.error,
-        reason: rejection.reason,
-        message: rejection.message
-      });
-    }
-  });
+  app.post("/api/telegram/link-codes", telegramControlPlaneRouteOptions, handlePostTelegramLinkCodes);
 
-  app.get<{ Querystring: Record<string, unknown> }>("/api/telegram/link-codes", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    const runtime = runtimeResult.runtime.context;
-    return buildDenteTelegramLinkCodeList({
-      ...parseTelegramLinkCodeListQuery(request.query),
-      organizationId: runtime.organizationId,
-      clinicId: runtime.clinicId,
-      botConfigId: runtime.botConfigId
-    });
-  });
+  app.get<{ Querystring: Record<string, unknown> }>(
+    "/api/telegram/link-codes",
+    telegramControlPlaneRouteOptions,
+    handleGetTelegramLinkCodes
+  );
 
-  app.get<{ Querystring: Record<string, unknown> }>("/api/telegram/chat-links", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    const runtime = runtimeResult.runtime.context;
-    return buildDenteTelegramChatLinkList({
-      ...parseTelegramChatLinkListQuery(request.query),
-      organizationId: runtime.organizationId,
-      clinicId: runtime.clinicId,
-      botConfigId: runtime.botConfigId
-    });
-  });
+  app.get<{ Querystring: Record<string, unknown> }>(
+    "/api/telegram/chat-links",
+    telegramControlPlaneRouteOptions,
+    handleGetTelegramChatLinks
+  );
 
-  app.post<{ Params: { linkId: string }; Querystring: Record<string, unknown> }>("/api/telegram/chat-links/:linkId/revoke", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    const runtime = runtimeResult.runtime.context;
-    const revoked = revokeDenteTelegramChatLink(request.params.linkId, {
-      organizationId: runtime.organizationId,
-      clinicId: runtime.clinicId,
-      botConfigId: runtime.botConfigId
-    });
-    if (!revoked) {
-      return reply.code(404).send({
-        error: "TelegramChatLinkNotFound",
-        message: telegramChatLinkNotFoundMessage
-      });
-    }
-    return denteTelegramChatLinkPublicSchema.parse(revoked);
-  });
+  app.post<{ Params: { linkId: string }; Querystring: Record<string, unknown> }>(
+    "/api/telegram/chat-links/:linkId/revoke",
+    telegramControlPlaneRouteOptions,
+    handlePostTelegramChatLinksRevoke
+  );
 
-  app.post<{ Querystring: Record<string, unknown> }>("/api/telegram/messages/preview", telegramControlPlaneRouteOptions, async (request, reply) => {
-    const runtimeResult = resolveTelegramOutboxRuntimeScopeFromQuery(request.query);
-    if (!runtimeResult.ok) {
-      return reply.code(runtimeResult.statusCode).send({
-        error: runtimeResult.error,
-        message: runtimeResult.message
-      });
-    }
-    const parsedInput = parseTelegramRouteBody(denteTelegramMessagePreviewRequestSchema, request.body);
-    if (!parsedInput.ok) return sendTelegramValidationError(reply);
-    const input = parsedInput.value;
-    try {
-      return renderDenteTelegramMessagePreview(input, runtimeResult.runtime.context.settings);
-    } catch (previewError) {
-      const rejection = telegramMessagePreviewRejection(previewError);
-      return reply.code(404).send({ error: "TelegramMessagePreviewNotFound", reason: rejection.reason, message: rejection.message });
-    }
-  });
-
-
+  app.post<{ Querystring: Record<string, unknown> }>(
+    "/api/telegram/messages/preview",
+    telegramControlPlaneRouteOptions,
+    handlePostTelegramMessagesPreview
+  );
 }
