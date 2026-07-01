@@ -4,9 +4,18 @@ import { resolve } from "node:path";
 import net from "node:net";
 
 let tunnelProcess: ChildProcess | null = null;
-const SOCKS_PORT = 1080;
-const SSH_KEY = "C:\\Users\\Admin\\\\.ssh\\\\id_ed25519";
-const SSH_HOST = "root@62.84.100.97";
+
+function getSocksPort(): number {
+  return process.env.DENTAL_SSH_SOCKS_PORT ? parseInt(process.env.DENTAL_SSH_SOCKS_PORT, 10) : 1080;
+}
+
+function getSshKey(): string | undefined {
+  return process.env.DENTAL_SSH_KEY;
+}
+
+function getSshHost(): string | undefined {
+  return process.env.DENTAL_SSH_HOST;
+}
 
 function isPortOpen(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -25,31 +34,40 @@ function isPortOpen(port: number): Promise<boolean> {
 }
 
 export async function ensureSshTunnel(): Promise<boolean> {
-  // 1. Проверяем, слушает ли уже порт 1080
-  const alreadyOpen = await isPortOpen(SOCKS_PORT);
+  const sshKey = getSshKey();
+  const sshHost = getSshHost();
+  const socksPort = getSocksPort();
+
+  if (!sshKey || !sshHost) {
+    console.warn("[SSH Tunnel] DENTAL_SSH_KEY or DENTAL_SSH_HOST is not set. Cannot start tunnel.");
+    return false;
+  }
+
+  // 1. Проверяем, слушает ли уже порт
+  const alreadyOpen = await isPortOpen(socksPort);
   if (alreadyOpen) {
-    console.log(`[SSH Tunnel] SOCKS5 port ${SOCKS_PORT} is already active/listening.`);
+    console.log(`[SSH Tunnel] SOCKS5 port ${socksPort} is already active/listening.`);
     return true;
   }
 
   // 2. Проверяем наличие приватного ключа
-  if (!existsSync("C:\\Users\\Admin\\.ssh\\id_ed25519")) {
-    console.warn(`[SSH Tunnel] SSH key not found at C:\\Users\\Admin\\.ssh\\id_ed25519. Cannot start tunnel.`);
+  if (!existsSync(sshKey)) {
+    console.warn(`[SSH Tunnel] SSH key not found at ${sshKey}. Cannot start tunnel.`);
     return false;
   }
 
-  console.log(`[SSH Tunnel] Starting SSH SOCKS5 tunnel on port ${SOCKS_PORT} via ${SSH_HOST}...`);
+  console.log(`[SSH Tunnel] Starting SSH SOCKS5 tunnel on port ${socksPort} via ${sshHost}...`);
   
   try {
     const cmdArgs = [
       "-N",
-      "-D", SOCKS_PORT.toString(),
+      "-D", socksPort.toString(),
       "-o", "ExitOnForwardFailure=yes",
       "-o", "ConnectTimeout=5",
       "-o", "StrictHostKeyChecking=no",
       "-o", "UserKnownHostsFile=NUL",
-      "-i", "C:\\Users\\Admin\\.ssh\\id_ed25519",
-      SSH_HOST
+      "-i", sshKey,
+      sshHost
     ];
 
     tunnelProcess = spawn("ssh", cmdArgs, {
@@ -62,12 +80,12 @@ export async function ensureSshTunnel(): Promise<boolean> {
     // Ждем 2 секунды, пока туннель установит соединение
     await new Promise((r) => setTimeout(r, 2000));
 
-    const checkOpen = await isPortOpen(SOCKS_PORT);
+    const checkOpen = await isPortOpen(socksPort);
     if (checkOpen) {
-      console.log(`[SSH Tunnel] SSH SOCKS5 tunnel successfully established on port ${SOCKS_PORT}.`);
+      console.log(`[SSH Tunnel] SSH SOCKS5 tunnel successfully established on port ${socksPort}.`);
       return true;
     } else {
-      console.warn(`[SSH Tunnel] Tunnel process spawned but port ${SOCKS_PORT} is still closed.`);
+      console.warn(`[SSH Tunnel] Tunnel process spawned but port ${socksPort} is still closed.`);
       return false;
     }
   } catch (err) {
