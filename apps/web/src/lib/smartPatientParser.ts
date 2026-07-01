@@ -52,8 +52,8 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
   }
 
   // 3. Date of birth extraction
-  // Numeric: 12.05.1990, 12/05/90, 12-05-1990
-  const dobRegexNum = /(?:^|\s)(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{2,4})(?:\s|$)/;
+  // Numeric: 12.05.1990, 12/05/90, 12-05-1990, 12 05 90, 12 5 1990
+  const dobRegexNum = /(?:^|\s)(\d{1,2})[\.\/\-\s]+(\d{1,2})[\.\/\-\s]+(\d{2,4})(?:\s|$)/;
   const dobMatchNum = remaining.match(dobRegexNum);
   if (dobMatchNum && dobMatchNum[1] && dobMatchNum[2] && dobMatchNum[3]) {
     let day = dobMatchNum[1];
@@ -122,18 +122,20 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
   }
 
   // 4. Name extraction & cleanup
-  const stopRoots = ["создай", "добавь", "запиши", "пациент", "нов", "пожалуйст", "имя", "на", "в", "к", "доктор", "врач", "ребенк", "мальчик", "девочк", "прием", "час", "срочн", "запис", "отмен", "перенес", "передвин", "телефон", "мобильн", "номер", "сотов", "дата", "рождени", "год", "восьмерк", "восемь", "семь", "плюс", "зовут", "лет"];
+  const stopWordsRegex = /\b(созда[а-я]*|добав[а-я]*|запиш[а-я]*|пациент[а-я]*|нов(?:ый|ого|ая|ую)|пожалуйст[а-я]*|имя|на|в|к|доктор[а-я]*|врач[а-я]*|ребенк[а-я]*|мальчик[а-я]*|девочк[а-я]*|прием[а-я]*|час(?:ов|а)?|срочн[а-я]*|запис[а-я]*|отмен[а-я]*|перенес[а-я]*|передвин[а-я]*|телефон[а-я]*|мобильн[а-я]*|номер[а-я]*|сотов[а-я]*|дата|рождени[а-я]*|год(?:а|у)?|восьмерк[а-я]*|восемь|семь|плюс|зовут|лет)\b/gi;
+  
+  remaining = remaining.replace(stopWordsRegex, ' ');
   
   const finalWords = remaining.split(/[\s,;]+/).filter(Boolean);
   const cleanWords: string[] = [];
   
   for (const w of finalWords) {
-    // Only remove words if they match stop roots, but allow 1-letter words except "в", "к"
+    // allow 1-letter initials except "в", "к", "с"
     if (w.length <= 1 && !["в", "к", "с"].includes(w.toLowerCase())) {
       cleanWords.push(w);
       continue;
     }
-    if (!containsAnyFuzzyRoot(w, stopRoots)) {
+    if (w.length > 1) {
       cleanWords.push(w);
     }
   }
