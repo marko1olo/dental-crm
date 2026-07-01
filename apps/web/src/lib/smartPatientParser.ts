@@ -1,4 +1,4 @@
-import { containsAnyFuzzyRoot } from "./stringUtils";
+import { containsAnyFuzzyRoot, textToNumbers } from "./stringUtils";
 
 export interface ParsedPatientData {
   fullName: string;
@@ -10,7 +10,8 @@ export interface ParsedPatientData {
 
 export function parsePatientDictationLocal(input: string): ParsedPatientData {
   const result: ParsedPatientData = { fullName: "", phone: "", birthDate: "" };
-  let remaining = " " + input + " ";
+  const normalizedInput = textToNumbers(input);
+  let remaining = " " + normalizedInput + " ";
 
   // 0. Notes extraction
   const words = remaining.split(' ');

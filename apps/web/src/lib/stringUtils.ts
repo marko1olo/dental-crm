@@ -109,3 +109,115 @@ export function containsFuzzyRoot(text: string, root: string): boolean {
 export function containsAnyFuzzyRoot(text: string, roots: string[]): boolean {
   return roots.some(r => containsFuzzyRoot(text, r));
 }
+
+/**
+ * Converts Russian number words into digits. 
+ * Correctly combines "восемь девятьсот шестнадцать" into "8 916".
+ */
+export function textToNumbers(text: string): string {
+  const numValues: Record<string, number> = {
+    "ноль": 0, "нуль": 0, "один": 1, "одна": 1, "первый": 1, "первого": 1,
+    "два": 2, "две": 2, "второй": 2, "второго": 2,
+    "три": 3, "третий": 3, "третьего": 3,
+    "четыре": 4, "четвертый": 4, "четвертого": 4,
+    "пять": 5, "пятый": 5, "пятого": 5,
+    "шесть": 6, "шестой": 6, "шестого": 6,
+    "семь": 7, "седьмой": 7, "седьмого": 7,
+    "восемь": 8, "восьмой": 8, "восьмого": 8,
+    "девять": 9, "девятый": 9, "девятого": 9,
+    "десять": 10, "десятый": 10, "десятого": 10,
+    "одиннадцать": 11, "двенадцать": 12, "тринадцать": 13, 
+    "четырнадцать": 14, "пятнадцать": 15, "шестнадцать": 16, 
+    "семнадцать": 17, "восемнадцать": 18, "девятнадцать": 19,
+    "двадцать": 20, "тридцать": 30, "сорок": 40, "пятьдесят": 50,
+    "шестьдесят": 60, "семьдесят": 70, "восемьдесят": 80, "девяносто": 90,
+    "сто": 100, "двести": 200, "триста": 300, "четыреста": 400, "четреста": 400,
+    "пятьсот": 500, "шестьсот": 600, "семьсот": 700, "восемьсот": 800, "девятьсот": 900,
+    "тысяча": 1000, "тысячи": 1000, "тысяч": 1000
+  };
+
+  const tokens = text.split(/(\s+)/);
+  const result: string[] = [];
+  
+  let currentNum = 0;
+  let inNumber = false;
+  
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]!;
+    if (token.trim() === '') {
+      result.push(token);
+      continue;
+    }
+    
+    const match = token.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
+    const prefix = match ? match[1] : '';
+    const word = match ? match[2]!.toLowerCase() : token.toLowerCase();
+    const suffix = match ? match[3] : '';
+    
+    let matchedVal = numValues[word];
+    if (matchedVal === undefined) {
+      for (const [k, v] of Object.entries(numValues)) {
+        // use isFuzzyRootMatch for number words too, to catch "одинадцать" or "восьмисот"
+        if (isFuzzyRootMatch(word, k)) {
+          matchedVal = v;
+          break;
+        }
+      }
+    }
+    
+    if (matchedVal !== undefined) {
+      inNumber = true;
+      
+      if (matchedVal === 1000) {
+        currentNum = currentNum === 0 ? 1000 : currentNum * 1000;
+      } else if (currentNum > 0 && matchedVal >= 100 && (currentNum % 1000) !== 0) {
+         result.push(prefix + currentNum.toString() + " ");
+         currentNum = matchedVal;
+      } else if (currentNum > 0 && matchedVal >= 10 && matchedVal < 100 && (currentNum % 100) !== 0) {
+         result.push(prefix + currentNum.toString() + " ");
+         currentNum = matchedVal;
+      } else if (currentNum > 0 && matchedVal < 10 && (currentNum % 10) !== 0) {
+         result.push(prefix + currentNum.toString() + " ");
+         currentNum = matchedVal;
+      } else {
+         currentNum += matchedVal;
+      }
+      
+      let nextIsNumber = false;
+      for (let j = i + 1; j < tokens.length; j++) {
+        if (tokens[j]!.trim() !== '') {
+          const wMatch = tokens[j]!.match(/^([.,;!?]*)(.*?)([.,;!?]*)$/);
+          const nextWord = wMatch ? wMatch[2]!.toLowerCase() : tokens[j]!.toLowerCase();
+          
+          let hasNext = numValues[nextWord] !== undefined;
+          if (!hasNext) {
+            for (const k of Object.keys(numValues)) {
+              if (isFuzzyRootMatch(nextWord, k)) {
+                hasNext = true; break;
+              }
+            }
+          }
+          if (hasNext) {
+            nextIsNumber = true;
+          }
+          break;
+        }
+      }
+      
+      if (!nextIsNumber) {
+        result.push(currentNum === 0 && matchedVal !== 0 ? token : (currentNum.toString() + suffix));
+        currentNum = 0;
+        inNumber = false;
+      }
+    } else {
+      if (inNumber) {
+        result.push(currentNum.toString() + " ");
+        currentNum = 0;
+        inNumber = false;
+      }
+      result.push(token);
+    }
+  }
+  
+  return result.join('');
+}
