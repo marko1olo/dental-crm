@@ -271,11 +271,19 @@ export function normalizeDentalSlang(text: string): string {
     if (!word) continue;
     
     let toothDigit = "";
+    let isSlangWord = false;
     for (const [k, v] of Object.entries(slangMap)) {
       if (isFuzzyRootMatch(word, k)) {
         toothDigit = v;
+        isSlangWord = true;
         break;
       }
+    }
+    
+    // Also support raw digits 1-8 if they have quadrant context words!
+    if (!toothDigit && /^[1-8]$/.test(word)) {
+      toothDigit = word;
+      isSlangWord = false;
     }
     
     if (toothDigit) {
@@ -301,7 +309,9 @@ export function normalizeDentalSlang(text: string): string {
       else if (isLower && isRight) quad = "4";
       else if (isUpper) quad = "1"; 
       else if (isLower) quad = "4"; 
-      else quad = "1"; // fallback to 1 if just "шестерка" and no quadrant is found, better than nothing
+      else if (isRight) quad = "1";
+      else if (isLeft) quad = "2";
+      else if (isSlangWord) quad = "1"; // fallback only if it was an explicit slang word
       
       if (quad) {
         words[i] = words[i]!.replace(word, quad + toothDigit);

@@ -1,6 +1,6 @@
-import { textToNumbers } from "../apps/web/src/lib/stringUtils.ts";
+import { normalizeDentalSlang } from "../apps/web/src/lib/stringUtils.ts";
 
-console.log(textToNumbers("две тысячи двадцатый"));
-console.log(textToNumbers("одна тысяча девятьсот"));
-console.log(textToNumbers("тысяча девятьсот"));
-console.log(textToNumbers("двенадцатое тысяча девятьсот"));
+console.log(normalizeDentalSlang("удалили верхний левый 5 зуб"));
+console.log(normalizeDentalSlang("кариес на левой 6"));
+console.log(normalizeDentalSlang("болит 7"));
+console.log(normalizeDentalSlang("лечили верхнюю восьмерку"));
