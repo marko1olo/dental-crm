@@ -123,10 +123,10 @@ function fileNameOf(filePath: string): string {
   return path.basename(filePath);
 }
 
-function rawFileHash(filePath: string): string | null {
+async function rawFileHash(filePath: string): Promise<string | null> {
   if (!fs.existsSync(filePath)) return null;
   try {
-    return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+    return createHash("sha256").update(await fs.promises.readFile(filePath)).digest("hex");
   } catch {
     return null;
   }
@@ -286,23 +286,26 @@ export function getPersistentStateMeta() {
   };
 }
 
-export function getPersistentStateIntegrityReport(limit = 8) {
+export async function getPersistentStateIntegrityReport(limit = 8) {
   const stateFilePath = getStateFilePath();
   const meta = getPersistentStateMeta();
   const { payload, error } = readPersistedPayload(stateFilePath);
   const checksumOk = checksumVerified(payload);
-  const backups = listBackupFiles().slice(0, Math.max(0, limit)).map((backup) => {
-    const backupPayload = readPersistedPayload(backup.filePath);
-    return {
-      fileName: fileNameOf(backup.filePath),
-      savedAt: backup.savedAt,
-      sizeBytes: backup.sizeBytes,
-      fileHash: rawFileHash(backup.filePath),
-      checksumVerified: checksumVerified(backupPayload.payload),
-      readable: !backupPayload.error,
-      warning: backupPayload.error ? persistenceWarningText(backupPayload.error) : null
-    };
-  });
+  const backupsList = listBackupFiles().slice(0, Math.max(0, limit));
+  const backups = await Promise.all(
+    backupsList.map(async (backup) => {
+      const backupPayload = readPersistedPayload(backup.filePath);
+      return {
+        fileName: fileNameOf(backup.filePath),
+        savedAt: backup.savedAt,
+        sizeBytes: backup.sizeBytes,
+        fileHash: await rawFileHash(backup.filePath),
+        checksumVerified: checksumVerified(backupPayload.payload),
+        readable: !backupPayload.error,
+        warning: backupPayload.error ? persistenceWarningText(backupPayload.error) : null
+      };
+    })
+  );
   const warningCodes: Array<PersistenceIntegrityWarning | null> = [
     !meta.enabled ? "persistence_disabled" : null,
     !meta.exists ? "state_file_missing" : null,
@@ -316,7 +319,7 @@ export function getPersistentStateIntegrityReport(limit = 8) {
     ok: meta.enabled && meta.exists && checksumOk !== false && warnings.length === 0,
     checkedAt: new Date().toISOString(),
     meta,
-    stateFileHash: rawFileHash(stateFilePath),
+    stateFileHash: await rawFileHash(stateFilePath),
     checksumVerified: checksumOk,
     stateCounts: stateCollectionCounts(payload?.state),
     backups,
@@ -328,14 +331,14 @@ export function getPersistentStateIntegrityReport(limit = 8) {
   };
 }
 
-export function buildPersistentStateExport() {
+export async function buildPersistentStateExport() {
   const stateFilePath = getStateFilePath();
   const { payload, error } = readPersistedPayload(stateFilePath);
   return {
     exportedAt: new Date().toISOString(),
     exportKind: "dental-crm-prototype-state",
     exportVersion: 1,
-    integrity: getPersistentStateIntegrityReport(12),
+    integrity: await getPersistentStateIntegrityReport(12),
     error: error ? persistenceWarningText(error) : null,
     payload
   };
