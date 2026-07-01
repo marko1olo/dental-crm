@@ -142,10 +142,9 @@ function dicomWebSettingsUnguardedAllowed(): boolean {
 
 function timingSafeDicomWebSecretEqual(providedSecret: string | null, expectedSecret: string): boolean {
   if (!providedSecret) return false;
-  const providedBuffer = Buffer.from(providedSecret);
-  const expectedBuffer = Buffer.from(expectedSecret);
-  if (providedBuffer.length !== expectedBuffer.length) return false;
-  return timingSafeEqual(providedBuffer, expectedBuffer);
+  const providedHash = createHash("sha256").update(providedSecret).digest();
+  const expectedHash = createHash("sha256").update(expectedSecret).digest();
+  return timingSafeEqual(providedHash, expectedHash);
 }
 
 async function requireDicomWebSettingsAccess(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
