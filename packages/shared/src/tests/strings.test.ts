@@ -72,4 +72,12 @@ describe('splitLine', () => {
   test('handles quotes adjacent to characters without delimiters', () => {
     assert.deepStrictEqual(splitLine('a,"b""c",d', ','), ['a', 'bc', 'd']);
   });
+
+  test('handles multi-character delimiters (does not split as it only checks single characters)', () => {
+    assert.deepStrictEqual(splitLine('a||b', '||'), ['a||b']);
+  });
+
+  test('handles empty string delimiters (does not split)', () => {
+    assert.deepStrictEqual(splitLine('a,b,c', ''), ['a,b,c']);
+  });
 });
