@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 
 import { existsSync } from "node:fs";
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8") + "\n" + readFileSync("apps/web/src/ImagingView.tsx", "utf8") + "\n" + (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "");
+const appSource = 
+  readFileSync("apps/web/src/App.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/AppHelpers.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ImagingView.tsx", "utf8") + "\n" +
+  (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "");
 const browserContinuitySource = readFileSync("apps/web/src/browserContinuity.ts", "utf8");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
@@ -9,7 +14,15 @@ const mprClinicalSource = readFileSync("apps/web/src/mprClinicalStatus.ts", "utf
 const mprControlMathSource = readFileSync("apps/web/src/mprControlMath.ts", "utf8");
 const imagingUiLabelsSource = readFileSync("apps/web/src/imagingUiLabels.ts", "utf8");
 const ctPlanningCatalogSource = readFileSync("apps/web/src/ctPlanningCatalog.ts", "utf8");
-const ctPlanningToolsSource = readFileSync("apps/web/src/ctPlanningTools.tsx", "utf8");
+const ctPlanningToolsSource = 
+  readFileSync("apps/web/src/ctPlanningTools.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ctPlanningPlanBoardPanel.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ctPlanningQuickActionsPanel.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ctPlanningTaskBoardPanel.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ctPlanningGeometryGridPanel.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ctPlanningMetricGridPanel.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ctPlanningImplantLibraryPanel.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/ctPlanningToolGridPanel.tsx", "utf8");
 const ctPlanningStateSource = readFileSync("apps/web/src/ctPlanningState.ts", "utf8");
 const ctPlanningGeometrySource = readFileSync("apps/web/src/ctPlanningGeometry.ts", "utf8");
 const ctPlanningMeasurementPlanSource = readFileSync("apps/web/src/ctPlanningMeasurementPlan.ts", "utf8");

@@ -99,7 +99,11 @@ export async function register(app: FastifyInstance) {
     }
 
     const issueCandidate = taxSnapshotDocument(existing, taxPaymentSnapshot);
-    const renderContext = documentRenderContext();
+    const requestHost = request.headers.host ?? "127.0.0.1:4100";
+    const requestProto = (request.headers["x-forwarded-proto"] as string) ?? "http";
+    const origin = `${requestProto}://${requestHost}`;
+
+    const renderContext = { ...documentRenderContext(), origin };
     const blockReason = documentIssueBlockReason(issueCandidate, patient, renderContext);
     if (blockReason) {
       return reply.code(409).send(apiError(blockReason));

@@ -30,7 +30,7 @@ function assert(condition, message) {
 const sharedSource = readFileSync("packages/shared/src/index.ts", "utf8");
 const routeSource = readFileSync("apps/api/src/routes/communications.ts", "utf8");
 const sampleSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = readFileSync("apps/web/src/App.tsx", "utf8") + "\n" + readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
 const communicationsSource = readFileSync("apps/web/src/CommunicationsView.tsx", "utf8");
 
 for (const outcome of outcomes) {

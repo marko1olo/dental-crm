@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = 
+  readFileSync("apps/web/src/App.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
 const scheduleSource = readFileSync("apps/web/src/ScheduleView.tsx", "utf8");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 

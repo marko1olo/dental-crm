@@ -8,14 +8,14 @@ describe('parseDicomSeriesManifest', () => {
     mock.restoreAll();
   });
 
-  test('returns default preview response when rawText yields no lines', () => {
+  test('returns default preview response when rawText yields no lines', async () => {
     const input = {
       sourceName: 'test-source.zip',
       sourceKind: 'dicom_file' as ImagingSourceKind,
       rawText: '   \n\r\n   '
     };
 
-    const result = parseDicomSeriesManifest(input);
+    const result = await parseDicomSeriesManifest(input);
 
     assert.strictEqual(result.sourceName, 'test-source.zip');
     assert.strictEqual(result.sourceKind, 'dicom_file');

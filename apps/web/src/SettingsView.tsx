@@ -83,7 +83,7 @@ import {
   type MprProjection,
   type MprWindowPreset
 } from "./imagingUiLabels";
-import { CtPlanningToolsPanel, type CtPlanningQuickAction } from "./ctPlanningTools";
+import { CtPlanningToolsPanel, type CtPlanningQuickAction, type CtImplantLibraryItem } from "./ctPlanningTools";
 import type {
   AiRecognitionJob,
   AuditEvent,
@@ -1232,6 +1232,8 @@ export function SettingsView(props: SettingsViewProps) {
     workspaceScopeLabels
   } = props;
   const {
+    clinicMode,
+    setClinicMode,
     setTelegramOutbox,
     setTelegramOutboxStatusFilter,
     setTelegramOutboxTemplateFilter,
@@ -1563,6 +1565,10 @@ export function SettingsView(props: SettingsViewProps) {
     setMprWindowPreset(action.windowPreset);
     setMprCrosshairEnabled(true);
     setMprLinkedPlanesEnabled(true);
+  };
+  const selectCtPlanningImplantFromSettings = (implant: CtImplantLibraryItem) => {
+    setCtPlanningActiveQuickActionId?.("implant_library");
+    selectCtPlanningImplant(implant);
   };
   const applyNearestMprClinicalPreset = () => {
     const preset = mprClinicalPresets.find((candidate) => candidate.title === mprNearestClinicalPreset.title);
@@ -1951,7 +1957,7 @@ export function SettingsView(props: SettingsViewProps) {
               <summary className="settings-advanced-toggle">
                 <span className="settings-advanced-label">
                   <span className="settings-advanced-icon">🔐</span>
-                  Доступ к защищённым настройкам
+                  Доступ к защищенным настройкам
                 </span>
                 <span className="settings-advanced-hint">только если требует сервер</span>
                 <span className="settings-advanced-chevron">▼</span>
@@ -1986,7 +1992,7 @@ export function SettingsView(props: SettingsViewProps) {
                     className="secondary-button"
                     type="button"
                     onClick={unlockTelegramAdminSession}
-                    aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
+                  aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
                     disabled={!adminSecretReady}
                   >
                     <ShieldCheck aria-hidden="true" /> Разблокировать
@@ -2011,7 +2017,23 @@ export function SettingsView(props: SettingsViewProps) {
                   {dashboard.clinicSettings.profile.timezone}
                 </p>
               </div>
-              <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
+                
+                {/* Тотальное упрощение: режим работы соло */}
+                <button
+                  className={`primary-button ${dashboard.clinicSettings.soloDoctorMode ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => {
+                    dashboard.clinicSettings.soloDoctorMode = !dashboard.clinicSettings.soloDoctorMode;
+                    alert('Режим ' + (dashboard.clinicSettings.soloDoctorMode ? 'ВКЛЮЧЕН: Ассистенты скрыты' : 'ВЫКЛЮЧЕН: Ассистенты показаны') + '. Требуется перезагрузка для применения.');
+                    window.location.reload();
+                  }}
+                  style={{ background: dashboard.clinicSettings.soloDoctorMode ? 'var(--teal)' : 'var(--slate-200)', color: dashboard.clinicSettings.soloDoctorMode ? '#fff' : 'var(--slate-700)', border: 'none', padding: '6px 12px', fontSize: '13px' }}
+                >
+                  {dashboard.clinicSettings.soloDoctorMode ? "✓ Работаю без ассистента" : "Работаю с ассистентом"}
+                </button>
+              </div>
             </div>
 
             <div className="mode-grid" aria-label="Режим продукта">
@@ -2077,6 +2099,34 @@ export function SettingsView(props: SettingsViewProps) {
                   Адрес
                   <input value={clinicProfileDraft.address} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("address", event.target.value)} />
                 </label>
+                <div className="form-span-2">
+                  <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Режим работы клиники</span>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {[
+                      { value: "solo_doctor", label: "Частный кабинет (без ассистента)" },
+                      { value: "small_clinic", label: "Стандартный (с ассистентами)" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`quick-chip ${clinicProfileDraft.mode === option.value ? 'active' : ''}`}
+                        onClick={() => updateClinicProfileDraft("mode", option.value)}
+                        style={{
+                          background: clinicProfileDraft.mode === option.value ? 'var(--brand-500)' : 'var(--slate-100)',
+                          color: clinicProfileDraft.mode === option.value ? '#fff' : 'var(--slate-700)',
+                          padding: "8px 16px",
+                          borderRadius: "20px",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          fontWeight: 500
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <label>
                   Начало смены
                   <input type="time" value={clinicProfileDraft.workdayStart} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayStart", event.target.value)} />
@@ -2200,7 +2250,7 @@ export function SettingsView(props: SettingsViewProps) {
                   <label className="checkbox-line form-span-2">
                     <input
                       checked={clinicProfileDraft.egiszEnabled}
-                      type="checkbox"
+                      type="checkbox" className="toggle-switch"
                       onChange={(event: InputChangeEvent) => updateClinicProfileDraft("egiszEnabled", event.target.checked)}
                     />
                     ЕГИСЗ-адаптер включен
@@ -2403,30 +2453,36 @@ export function SettingsView(props: SettingsViewProps) {
                               </button>
                             ))}
                           </div>
-                          <div className="staff-day-hours" aria-label={`Часы по дням: ${member.fullName}`}>
-                            {typedWeekdayOptions
-                              .filter((day) => scheduleDraft.workingDays.includes(day.value))
-                              .map((day: any) => {
-                                const dayHours = scheduleDraft.perDay[day.value];
-                                return (
-                                  <div key={`hours-${member.id}-${day.value}`}>
-                                    <span>{day.label}</span>
-                                    <input
-                                      aria-label={`${day.label}, начало`}
-                                      type="time"
-                                      value={dayHours?.start ?? scheduleDraft.start}
-                                      onChange={(event: InputChangeEvent) => updateStaffScheduleDay(member.id, day.value, { start: event.target.value })}
-                                    />
-                                    <input
-                                      aria-label={`${day.label}, конец`}
-                                      type="time"
-                                      value={dayHours?.end ?? scheduleDraft.end}
-                                      onChange={(event: InputChangeEvent) => updateStaffScheduleDay(member.id, day.value, { end: event.target.value })}
-                                    />
-                                  </div>
-                                );
-                              })}
-                          </div>
+                          <details className="settings-advanced-block schedule-advanced-block">
+                            <summary className="settings-advanced-toggle">
+                              <span className="settings-advanced-label">Индивидуальные часы по дням</span>
+                              <span className="settings-advanced-chevron">▼</span>
+                            </summary>
+                            <div className="staff-day-hours" aria-label={`Часы по дням: ${member.fullName}`}>
+                              {typedWeekdayOptions
+                                .filter((day) => scheduleDraft.workingDays.includes(day.value))
+                                .map((day: any) => {
+                                  const dayHours = scheduleDraft.perDay[day.value];
+                                  return (
+                                    <div key={`hours-${member.id}-${day.value}`}>
+                                      <span>{day.label}</span>
+                                      <input
+                                        aria-label={`${day.label}, начало`}
+                                        type="time"
+                                        value={dayHours?.start ?? scheduleDraft.start}
+                                        onChange={(event: InputChangeEvent) => updateStaffScheduleDay(member.id, day.value, { start: event.target.value })}
+                                      />
+                                      <input
+                                        aria-label={`${day.label}, конец`}
+                                        type="time"
+                                        value={dayHours?.end ?? scheduleDraft.end}
+                                        onChange={(event: InputChangeEvent) => updateStaffScheduleDay(member.id, day.value, { end: event.target.value })}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </details>
                           <div className="staff-schedule-actions">
                             <span className={`save-state save-state-${scheduleSaveState}`}>{scheduleSaveLabel}</span>
                             <button
@@ -2554,30 +2610,36 @@ export function SettingsView(props: SettingsViewProps) {
                               </button>
                             ))}
                           </div>
-                          <div className="staff-day-hours" aria-label={`Часы по дням кресла: ${chair.name}`}>
-                            {typedWeekdayOptions
-                              .filter((day) => scheduleDraft.workingDays.includes(day.value))
-                              .map((day: any) => {
-                                const dayHours = scheduleDraft.perDay[day.value];
-                                return (
-                                  <div key={`chair-hours-${chair.id}-${day.value}`}>
-                                    <span>{day.label}</span>
-                                    <input
-                                      aria-label={`${day.label}, начало кресла`}
-                                      type="time"
-                                      value={dayHours?.start ?? scheduleDraft.start}
-                                      onChange={(event: InputChangeEvent) => updateChairScheduleDay(chair.id, day.value, { start: event.target.value })}
-                                    />
-                                    <input
-                                      aria-label={`${day.label}, конец кресла`}
-                                      type="time"
-                                      value={dayHours?.end ?? scheduleDraft.end}
-                                      onChange={(event: InputChangeEvent) => updateChairScheduleDay(chair.id, day.value, { end: event.target.value })}
-                                    />
-                                  </div>
-                                );
-                              })}
-                          </div>
+                          <details className="settings-advanced-block schedule-advanced-block">
+                            <summary className="settings-advanced-toggle">
+                              <span className="settings-advanced-label">Индивидуальные часы по дням</span>
+                              <span className="settings-advanced-chevron">▼</span>
+                            </summary>
+                            <div className="staff-day-hours" aria-label={`Часы по дням кресла: ${chair.name}`}>
+                              {typedWeekdayOptions
+                                .filter((day) => scheduleDraft.workingDays.includes(day.value))
+                                .map((day: any) => {
+                                  const dayHours = scheduleDraft.perDay[day.value];
+                                  return (
+                                    <div key={`chair-hours-${chair.id}-${day.value}`}>
+                                      <span>{day.label}</span>
+                                      <input
+                                        aria-label={`${day.label}, начало кресла`}
+                                        type="time"
+                                        value={dayHours?.start ?? scheduleDraft.start}
+                                        onChange={(event: InputChangeEvent) => updateChairScheduleDay(chair.id, day.value, { start: event.target.value })}
+                                      />
+                                      <input
+                                        aria-label={`${day.label}, конец кресла`}
+                                        type="time"
+                                        value={dayHours?.end ?? scheduleDraft.end}
+                                        onChange={(event: InputChangeEvent) => updateChairScheduleDay(chair.id, day.value, { end: event.target.value })}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </details>
                           <div className="staff-schedule-actions">
                             <span className={`save-state save-state-${scheduleSaveState}`}>{scheduleSaveLabel}</span>
                             <button
@@ -2792,20 +2854,29 @@ export function SettingsView(props: SettingsViewProps) {
                   </button>
                 </div>
                 <div className="telegram-link-controls">
-                  <label>
-                    Кого подключаем
-                    <select
-                      value={telegramLinkSubjectType}
-                      onChange={(event: SelectChangeEvent) => {
-                        setTelegramLinkSubjectType(normalizedTelegramLinkSubjectType(event.target.value));
-                        setTelegramLinkCode(null);
-                        setTelegramLinkActionState(null);
-                      }}
-                    >
-                      <option value="patient">Активный пациент</option>
-                      <option value="staff">Сотрудник клиники</option>
-                    </select>
-                  </label>
+                  <div className="settings-field">
+                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Кого подключаем</span>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {[
+                        { value: "patient", label: "Активный пациент" },
+                        { value: "staff", label: "Сотрудник клиники" }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`quick-chip ${telegramLinkSubjectType === option.value ? 'active' : ''}`}
+                          onClick={() => {
+                            setTelegramLinkSubjectType(normalizedTelegramLinkSubjectType(option.value));
+                            setTelegramLinkCode(null);
+                            setTelegramLinkActionState(null);
+                          }}
+                          style={{ background: telegramLinkSubjectType === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramLinkSubjectType === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: "pointer", fontSize: "14px" }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   {telegramLinkSubjectType === "staff" ? (
                     <label>
                       Сотрудник
@@ -2995,21 +3066,30 @@ export function SettingsView(props: SettingsViewProps) {
                   ))}
                 </div>
                 <div className="telegram-settings-form">
-                  <label>
-                    Режим бота
-                    <select
-                      value={telegramModeDraft}
-                      onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-                        setTelegramModeDraft(normalizedTelegramBotMode(event.target.value));
-                        markTelegramSettingsDirty();
-                      }}
-                    >
-                      <option value="shared_dente_bot">{telegramModeLabels.shared_dente_bot}</option>
-                      <option value="disabled">{telegramModeLabels.disabled}</option>
-                      <option value="clinic_owned_bot">{telegramModeLabels.clinic_owned_bot}</option>
-                    </select>
-                    <small>{telegramModeHints[telegramModeDraft]}</small>
-                  </label>
+                  <div className="settings-field">
+                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Режим бота</span>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                      {[
+                        { value: "shared_dente_bot", label: telegramModeLabels.shared_dente_bot },
+                        { value: "disabled", label: telegramModeLabels.disabled },
+                        { value: "clinic_owned_bot", label: telegramModeLabels.clinic_owned_bot }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`quick-chip ${telegramModeDraft === option.value ? 'active' : ''}`}
+                          onClick={() => {
+                            setTelegramModeDraft(normalizedTelegramBotMode(option.value));
+                            markTelegramSettingsDirty();
+                          }}
+                          style={{ background: telegramModeDraft === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramModeDraft === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: "pointer", fontSize: "14px" }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <small className="field-note">{telegramModeHints[telegramModeDraft]}</small>
+                  </div>
                   <label>
                     Имя общего бота в Telegram
                     <input
@@ -3156,29 +3236,38 @@ export function SettingsView(props: SettingsViewProps) {
                       }}
                     />
                   </label>
-                  <label>
-                    Приватность
-                    <select
-                      value={telegramPrivacyModeDraft}
-                      onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-                        setTelegramPrivacyModeDraft(normalizedTelegramPrivacyMode(event.target.value));
-                        markTelegramSettingsDirty();
-                      }}
-                    >
-                      <option value="no_phi_by_default">{telegramPrivacyModeLabels.no_phi_by_default}</option>
-                      <option value="limited_admin_only">{telegramPrivacyModeLabels.limited_admin_only}</option>
-                      <option value="consented_phi_templates" disabled>
-                        {telegramPrivacyModeLabels.consented_phi_templates} (после аудита)
-                      </option>
-                    </select>
-                    <small>{telegramPrivacyModeHints[telegramPrivacyModeDraft]}</small>
-                  </label>
+                  <div className="settings-field">
+                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Приватность</span>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                      {[
+                        { value: "no_phi_by_default", label: telegramPrivacyModeLabels.no_phi_by_default },
+                        { value: "limited_admin_only", label: telegramPrivacyModeLabels.limited_admin_only },
+                        { value: "consented_phi_templates", label: telegramPrivacyModeLabels.consented_phi_templates + " (после аудита)" }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`quick-chip ${telegramPrivacyModeDraft === option.value ? 'active' : ''}`}
+                          onClick={() => {
+                            if (option.value === "consented_phi_templates") return;
+                            setTelegramPrivacyModeDraft(normalizedTelegramPrivacyMode(option.value));
+                            markTelegramSettingsDirty();
+                          }}
+                          disabled={option.value === "consented_phi_templates"}
+                          style={{ background: telegramPrivacyModeDraft === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramPrivacyModeDraft === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: option.value === "consented_phi_templates" ? "not-allowed" : "pointer", fontSize: "14px", opacity: option.value === "consented_phi_templates" ? 0.5 : 1 }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <small className="field-note">{telegramPrivacyModeHints[telegramPrivacyModeDraft]}</small>
+                  </div>
                 </div>
                 <div className="telegram-feature-grid" aria-label="Функции Telegram">
                   {typedTelegramFeatureOptions.map((feature) => (
                     <label className={typedTelegramEnabledFeaturesDraft.includes(feature) ? "feature-enabled" : ""} key={feature}>
                       <input
-                        type="checkbox"
+                        type="checkbox" className="toggle-switch"
                         checked={typedTelegramEnabledFeaturesDraft.includes(feature)}
                         onChange={() => toggleTelegramFeature(feature)}
                       />
@@ -3191,7 +3280,7 @@ export function SettingsView(props: SettingsViewProps) {
                 </div>
                 <label className="telegram-voice-toggle">
                   <input
-                    type="checkbox"
+                    type="checkbox" className="toggle-switch"
                     checked={telegramAllowVoiceIntakeDraft}
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       const checked = event.target.checked;
@@ -3423,23 +3512,23 @@ export function SettingsView(props: SettingsViewProps) {
               <div className="telegram-outbox-controls" aria-label="Фильтры очереди Telegram">
                 <label>
                   Статус
-                  <select value={telegramOutboxStatusFilter} onChange={(event: SelectChangeEvent) => setTelegramOutboxStatusFilter(normalizedTelegramOutboxStatusFilter(event.target.value))}>
-                    {typedTelegramOutboxStatusFilterOptions.map((status) => (
-                      <option value={status} key={status}>
-                        {telegramOutboxStatusFilterLabels[status]}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="quick-chips-row">
+  {typedTelegramOutboxStatusFilterOptions.map((status) => (
+    <button key={status} type="button" className={`quick-chip ${telegramOutboxStatusFilter === status ? 'selected' : ''}`} onClick={() => setTelegramOutboxStatusFilter(status as any)}>
+      {telegramOutboxStatusFilterLabels[status]}
+    </button>
+  ))}
+</div>
                 </label>
                 <label>
                   Сценарий
-                  <select value={telegramOutboxTemplateFilter} onChange={(event: SelectChangeEvent) => setTelegramOutboxTemplateFilter(normalizedTelegramOutboxTemplateFilter(event.target.value))}>
-                    {typedTelegramOutboxTemplateFilterOptions.map((templateKind) => (
-                      <option value={templateKind} key={templateKind}>
-                        {telegramOutboxTemplateFilterLabels[templateKind]}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="quick-chips-row">
+  {typedTelegramOutboxTemplateFilterOptions.map((templateKind) => (
+    <button key={templateKind} type="button" className={`quick-chip ${telegramOutboxTemplateFilter === templateKind ? 'selected' : ''}`} onClick={() => setTelegramOutboxTemplateFilter(templateKind as any)}>
+      {telegramOutboxTemplateFilterLabels[templateKind]}
+    </button>
+  ))}
+</div>
                 </label>
                 <span>
                   Показано {typedVisibleTelegramOutboxItems.length} из {typedTelegramOutbox?.filteredCount ?? filteredTelegramOutboxItems.length}
@@ -3664,84 +3753,112 @@ export function SettingsView(props: SettingsViewProps) {
                     <div className="rule-form-grid">
                       <label>
                         Действие
-                        <select value={newRuleAction} onChange={(event: SelectChangeEvent) => setNewRuleAction(normalizedClinicalRuleAction(event.target.value))}>
-                          {typedClinicalRuleActions.map((action) => (
-                            <option key={action} value={action}>{typedClinicalRuleActionLabels[action]}</option>
-                          ))}
-                        </select>
+                        <div className="quick-chips-row">
+  {typedClinicalRuleActions.map((action) => (
+    <button key={action} type="button" className={`quick-chip ${newRuleAction === action ? 'selected' : ''}`} onClick={() => setNewRuleAction(action)}>
+      {typedClinicalRuleActionLabels[action]}
+    </button>
+  ))}
+</div>
                       </label>
                       <label>
                         Уровень
-                        <select value={newRuleSeverity} onChange={(event: SelectChangeEvent) => setNewRuleSeverity(normalizedClinicalRuleSeverity(event.target.value))}>
-                          {typedClinicalRuleSeverities.map((severity) => (
-                            <option key={severity} value={severity}>{typedClinicalRuleSeverityLabels[severity]}</option>
-                          ))}
-                        </select>
+                        <div className="quick-chips-row">
+  {typedClinicalRuleSeverities.map((severity) => (
+    <button key={severity} type="button" className={`quick-chip ${newRuleSeverity === severity ? 'selected' : ''}`} onClick={() => setNewRuleSeverity(severity)}>
+      {typedClinicalRuleSeverityLabels[severity]}
+    </button>
+  ))}
+</div>
                       </label>
                       <label>
                         Владелец
-                        <select value={newRuleOwnerRole} onChange={(event: SelectChangeEvent) => setNewRuleOwnerRole(normalizedStaffRole(event.target.value))}>
-                          {clinicalRuleOwnerRoles.map((role) => (
-                            <option key={role} value={role}>{staffRoleLabels[role]}</option>
-                          ))}
-                        </select>
+                        <div className="quick-chips-row">
+  {clinicalRuleOwnerRoles.map((role) => (
+    <button key={role} type="button" className={`quick-chip ${newRuleOwnerRole === role ? 'selected' : ''}`} onClick={() => setNewRuleOwnerRole(role)}>
+      {staffRoleLabels[role]}
+    </button>
+  ))}
+</div>
                       </label>
                       <label>
                         Специальность
-                        <select value={newRuleSpecialty} onChange={(event: SelectChangeEvent) => setNewRuleSpecialty(normalizedDentalSpecialty(event.target.value))}>
-                          {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
-                            <option key={specialty} value={specialty}>{specialtyLabels[specialty]}</option>
-                          ))}
-                        </select>
+                        <div className="quick-chips-row">
+  {(Object.keys(specialtyLabels)).map((specialty) => (
+    <button key={specialty} type="button" className={`quick-chip ${newRuleSpecialty === specialty ? 'selected' : ''}`} onClick={() => setNewRuleSpecialty(specialty)}>
+      {specialtyLabels[specialty]}
+    </button>
+  ))}
+</div>
                       </label>
                       <label>
                         Категория
-                        <select value={newRuleCategory} onChange={(event: SelectChangeEvent) => setNewRuleCategory(normalizedServiceCategory(event.target.value))}>
-                          {typedServiceCategories.map((category) => (
-                            <option key={category} value={category}>{typedServiceCategoryLabels[category]}</option>
-                          ))}
-                        </select>
+                        <div className="quick-chips-row">
+  {typedServiceCategories.map((category) => (
+    <button key={category} type="button" className={`quick-chip ${newRuleCategory === category ? 'selected' : ''}`} onClick={() => setNewRuleCategory(category)}>
+      {typedServiceCategoryLabels[category]}
+    </button>
+  ))}
+</div>
                       </label>
                       <label>
                         Триггер
-                        <select value={newRuleTriggerServiceId} onChange={(event: SelectChangeEvent) => setNewRuleTriggerServiceId(event.target.value)}>
-                          {typedServiceCatalog.map((service) => (
-                            <option key={service.id} value={service.id}>{service.title}</option>
-                          ))}
-                        </select>
+                        <input type="text" list="trigger-services" value={typedServiceCatalog.find(s => s.id === newRuleTriggerServiceId)?.title ?? ''} onChange={(e) => {
+    const s = typedServiceCatalog.find(srv => srv.title === e.target.value);
+    if (s) setNewRuleTriggerServiceId(s.id); else setNewRuleTriggerServiceId('');
+  }} placeholder="Выберите услугу..." />
+  <datalist id="trigger-services">
+    {typedServiceCatalog.map(s => <option key={s.id} value={s.title} />)}
+  </datalist>
                       </label>
                       <label>
                         Обязательная услуга
-                        <select value={newRuleRequiredServiceId} onChange={(event: SelectChangeEvent) => setNewRuleRequiredServiceId(event.target.value)}>
-                          {typedServiceCatalog.map((service) => (
-                            <option key={service.id} value={service.id}>{service.title}</option>
-                          ))}
-                        </select>
+                        <input type="text" list="req-services" value={typedServiceCatalog.find(s => s.id === newRuleRequiredServiceId)?.title ?? ''} onChange={(e) => {
+    const s = typedServiceCatalog.find(srv => srv.title === e.target.value);
+    if (s) setNewRuleRequiredServiceId(s.id); else setNewRuleRequiredServiceId('');
+  }} placeholder="Выберите услугу..." />
+  <datalist id="req-services">
+    {typedServiceCatalog.map(s => <option key={s.id} value={s.title} />)}
+  </datalist>
                       </label>
                       <label>
                         Должно быть завершено
-                        <select value={newRuleCompletedServiceId} onChange={(event: SelectChangeEvent) => setNewRuleCompletedServiceId(event.target.value)}>
-                          {typedServiceCatalog.map((service) => (
-                            <option key={service.id} value={service.id}>{service.title}</option>
-                          ))}
-                        </select>
+                        <input type="text" list="comp-services" value={typedServiceCatalog.find(s => s.id === newRuleCompletedServiceId)?.title ?? ''} onChange={(e) => {
+    const s = typedServiceCatalog.find(srv => srv.title === e.target.value);
+    if (s) setNewRuleCompletedServiceId(s.id); else setNewRuleCompletedServiceId('');
+  }} placeholder="Выберите услугу..." />
+  <datalist id="comp-services">
+    {typedServiceCatalog.map(s => <option key={s.id} value={s.title} />)}
+  </datalist>
                       </label>
                       <label>
                         Блокировать
-                        <select value={newRuleBlockedServiceId} onChange={(event: SelectChangeEvent) => setNewRuleBlockedServiceId(event.target.value)}>
-                          {typedServiceCatalog.map((service) => (
-                            <option key={service.id} value={service.id}>{service.title}</option>
-                          ))}
-                        </select>
+                        <input type="text" list="block-services" value={typedServiceCatalog.find(s => s.id === newRuleBlockedServiceId)?.title ?? ''} onChange={(e) => {
+    const s = typedServiceCatalog.find(srv => srv.title === e.target.value);
+    if (s) setNewRuleBlockedServiceId(s.id); else setNewRuleBlockedServiceId('');
+  }} placeholder="Выберите услугу..." />
+  <datalist id="block-services">
+    {typedServiceCatalog.map(s => <option key={s.id} value={s.title} />)}
+  </datalist>
                       </label>
                     </div>
                     <label>
                       Предупреждение врачу
                       <textarea value={newRuleWarningText} onChange={(event: TextInputChangeEvent) => setNewRuleWarningText(event.target.value)} />
+                      <div className="quick-chips-row" style={{ marginTop: '4px' }}>
+                        {["Сначала сделайте снимок", "Проверьте аллергию", "Требуется подписание согласия", "Проверьте остаток долга"].map(chip => (
+                          <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setNewRuleWarningText(chip)}>{chip}</button>
+                        ))}
+                      </div>
                     </label>
                     <label>
                       Объяснение пациенту
                       <textarea value={newRulePatientText} onChange={(event: TextInputChangeEvent) => setNewRulePatientText(event.target.value)} />
+                      <div className="quick-chips-row" style={{ marginTop: '4px' }}>
+                        {["Это нужно для вашей безопасности", "Обязательное требование Минздрава", "Без этого мы не можем гарантировать результат"].map(chip => (
+                          <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setNewRulePatientText(chip)}>{chip}</button>
+                        ))}
+                      </div>
                     </label>
                     <button className="primary-button" type="button" onClick={createClinicalRuleFromSettings} disabled={isClinicalRuleSaving} aria-busy={isClinicalRuleSaving || undefined}>
                       <Plus aria-hidden="true" /> {isClinicalRuleSaving ? "Сохраняю" : "Добавить правило"}
@@ -4122,10 +4239,7 @@ export function SettingsView(props: SettingsViewProps) {
                 onActivateTool={applyCtPlanningQuickAction}
                 selectedImplantId={typedCtPlanningImplantPlan?.itemId ?? null}
                 selectedImplantPlan={typedCtPlanningImplantPlan}
-                onSelectImplant={(implant) => {
-                  setCtPlanningActiveQuickActionId?.("implant_library");
-                  selectCtPlanningImplant(implant);
-                }}
+                onSelectImplant={selectCtPlanningImplantFromSettings}
                 toolStateBundle={typedDicomViewerWorkbenchManifest?.toolStateBundle ?? typedDicomViewerToolStateBundle}
                 dentalModelWorkbenchManifest={activeDentalModelWorkbenchManifest}
                 localBridgeReadiness={typedLocalBridgeReadiness}
@@ -4458,11 +4572,11 @@ export function SettingsView(props: SettingsViewProps) {
                   </div>
                   <div className="mpr-check-row">
                     <label>
-                      <input checked={mprCrosshairEnabled} disabled={!mprControlsReady} type="checkbox" onChange={(event: InputChangeEvent) => setMprCrosshairEnabled(event.target.checked)} />
+                      <input checked={mprCrosshairEnabled} disabled={!mprControlsReady} type="checkbox" className="toggle-switch" onChange={(event: InputChangeEvent) => setMprCrosshairEnabled(event.target.checked)} />
                       Синхронный курсор
                     </label>
                     <label>
-                      <input checked={mprLinkedPlanesEnabled} disabled={!mprControlsReady} type="checkbox" onChange={(event: InputChangeEvent) => setMprLinkedPlanesEnabled(event.target.checked)} />
+                      <input checked={mprLinkedPlanesEnabled} disabled={!mprControlsReady} type="checkbox" className="toggle-switch" onChange={(event: InputChangeEvent) => setMprLinkedPlanesEnabled(event.target.checked)} />
                       Связанные плоскости
                     </label>
                   </div>

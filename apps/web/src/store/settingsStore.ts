@@ -32,7 +32,10 @@ import {
 
 import { create } from "zustand";
 
+export type ClinicMode = "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic";
+
 export interface SettingsState {
+  clinicMode: ClinicMode;
   onboardingDismissed: any;
   onboardingDismissedAt: string | null;
   onboardingStep: OnboardingStep;
@@ -88,6 +91,7 @@ export interface SettingsState {
 }
 
 export interface SettingsActions {
+  setClinicMode: (val: ClinicMode | ((prev: ClinicMode) => ClinicMode)) => void;
   setOnboardingDismissed: (val: any | ((prev: any) => any)) => void;
   setOnboardingDismissedAt: (val: string | null | ((prev: string | null) => string | null)) => void;
   setOnboardingStep: (val: OnboardingStep | ((prev: OnboardingStep) => OnboardingStep)) => void;
@@ -143,6 +147,7 @@ export interface SettingsActions {
 }
 
 const initialSettingsState: SettingsState = {
+  clinicMode: "network_clinic", // default
   onboardingDismissed: (loadUiPreferences() ?? defaultUiPreferences).onboardingDismissed,
   onboardingDismissedAt: (loadUiPreferences() ?? defaultUiPreferences).onboardingDismissedAt,
   onboardingStep: (loadUiPreferences() ?? defaultUiPreferences).onboardingStep,
@@ -199,6 +204,7 @@ const initialSettingsState: SettingsState = {
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()((set) => ({
   ...initialSettingsState,
+  setClinicMode: (val) => set((state) => ({ clinicMode: typeof val === 'function' ? (val as any)(state.clinicMode) : val })),
   setOnboardingDismissed: (val) => set((state) => ({ onboardingDismissed: typeof val === 'function' ? (val as any)(state.onboardingDismissed) : val })),
   setOnboardingDismissedAt: (val) => set((state) => ({ onboardingDismissedAt: typeof val === 'function' ? (val as any)(state.onboardingDismissedAt) : val })),
   setOnboardingStep: (val) => set((state) => ({ onboardingStep: typeof val === 'function' ? (val as any)(state.onboardingStep) : val })),

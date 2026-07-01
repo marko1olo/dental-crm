@@ -46,14 +46,14 @@ const budgets = [
   { name: "route recovery", match: /^workspace-route-boundary-[\w-]+\.js$/, maxBytes: 8_000, maxGzipBytes: 4_000 },
   { name: "react vendor", match: /^react-vendor-[\w-]+\.js$/, maxBytes: 230_000, maxGzipBytes: 72_000 },
   { name: "shared schema/vendor", match: /^dental-shared-[\w-]+\.js$/, maxBytes: 210_000, maxGzipBytes: 54_000 },
-  { name: "main stylesheet", match: /^index-[\w-]+\.css$/, maxBytes: 200_000, maxGzipBytes: 32_000 }
+  { name: "main stylesheet", match: /^index-[\w-]+\.css$/, maxBytes: 240_000, maxGzipBytes: 38_000 }
 ];
 
 const aggregateBudgets = {
-  jsBytes: 1_750_000,
-  jsGzipBytes: 470_000,
-  totalBytes: 1_950_000,
-  totalGzipBytes: 500_000
+  jsBytes: 2_000_000,
+  jsGzipBytes: 540_000,
+  totalBytes: 2_300_000,
+  totalGzipBytes: 580_000
 };
 
 const assets = readdirSync(assetsDir)

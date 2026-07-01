@@ -1468,7 +1468,8 @@ export const clinicSettingsSchema = z.object({
   integrationPresets: z.array(integrationPresetSchema),
   workspaceProfiles: z.array(clinicWorkspaceProfileSchema),
   roleAccessPolicies: z.array(roleAccessPolicySchema),
-  modeHints: z.array(z.string())
+  modeHints: z.array(z.string()),
+  soloDoctorMode: z.boolean().optional()
 });
 export type ClinicSettings = z.infer<typeof clinicSettingsSchema>;
 
@@ -3589,7 +3590,10 @@ export const treatmentPlanPayloadSchema = z.object({
   plannedAt: documentDateLikeStringSchema,
   patientQuestionsAnswered: z.literal(true),
   planRequiresSeparateConsent: z.literal(true),
-  planRequiresNewApprovalOnChange: z.literal(true)
+  planRequiresNewApprovalOnChange: z.literal(true),
+  patientFriendlyExplanation: z.string().trim().max(4000).nullable().optional(),
+  patientHygieneAdvice: z.string().trim().max(4000).nullable().optional(),
+  customHygieneTextOverride: z.string().trim().max(4000).nullable().optional()
 });
 export type TreatmentPlanPayload = z.infer<typeof treatmentPlanPayloadSchema>;
 

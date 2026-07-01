@@ -1,8 +1,8 @@
-// @ts-nocheck
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Bot, Check, CheckCircle2, ClipboardCheck, Mic, ShieldCheck, Sparkles } from "lucide-react";
 import { getToothPath, getToothConfig } from "./utils/toothGeometry";
+import { DictationHints } from "./DictationHints";
 
 export interface VisitViewProps {
   AlertTriangle: any;
@@ -113,9 +113,10 @@ export interface VisitViewProps {
 export function VisitView(props: VisitViewProps) {
   const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
 
-  const [activeEmkTab, setActiveEmkTab] = React.useState("all");
-  const [activeQuadrant, setActiveQuadrant] = React.useState(null);
-  const [activeStamp, setActiveStamp] = React.useState(null);
+  const [activeEmkTab, setActiveEmkTab] = useState("all");
+  const [showHints, setShowHints] = useState(false);
+  const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(null);
+  const [activeStamp, setActiveStamp] = React.useState<string | null>(null);
 
   // ── Clinical Context Modal state ─────────────────────────────
   const [selectedToothForMenu, setSelectedToothForMenu] = React.useState<{ code: string; state: string } | null>(null);
@@ -328,7 +329,7 @@ export function VisitView(props: VisitViewProps) {
                 </div>
               </div>
               <div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">
-                {dictationQuickPhrases.map((phrase) => (
+                {dictationQuickPhrases.map((phrase: any) => (
                   <button type="button" key={phrase.label} onClick={() => appendToTranscript(phrase.text)}>
                     {phrase.label}
                   </button>
@@ -786,12 +787,46 @@ export function VisitView(props: VisitViewProps) {
               </div>
 
               <div className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""}`}>
-                {visibleFields.map((field) => (
-                  <label key={field.key}>
-                    {field.label}
-                    <textarea value={visitNoteForm[field.key]} onChange={(event) => updateVisitNoteField(field.key, event.target.value)} />
-                  </label>
-                ))}
+                {visibleFields.map((field) => {
+                  const QUICK_CHIPS: Record<string, string[]> = {
+                    complaint: ["Жалоб нет", "Ноющие боли", "Острая боль", "Боль при накусывании", "Реакция на холод/горячее", "Застревание пищи", "Эстетический дефект", "Проф. осмотр"],
+                    anamnesis: ["Ранее лечен по поводу неосложненного кариеса", "Травма зуба", "Хрон. заболевания отрицает", "Аллергоанамнез не отягощен", "Аллергия на лидокаин"],
+                    objectiveStatus: ["Зондирование безболезненно", "Перкуссия безболезненна", "Слизистая оболочка бледно-розового цвета", "Глубокая кариозная полость", "Сообщается с полостью зуба"],
+                    diagnosis: ["K02.1 Кариес дентина", "K04.0 Острый пульпит", "K04.5 Хронический апикальный периодонтит", "K05.0 Острый гингивит", "K08.1 Потеря зубов"],
+                    treatmentPlan: ["Анестезия аппликационная", "Анестезия инфильтрационная", "Коффердам", "Мех/Мед обработка", "Реставрация композитом светового отверждения", "Шлифовка, полировка", "Удаление зуба"]
+                  };
+                  const chips = QUICK_CHIPS[field.key] || [];
+                  return (
+                    <div key={field.key} className="emk-field-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ fontSize: '0.85rem', color: '#475569' }}>{field.label}</strong>
+                      </div>
+                      {chips.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                          {chips.map(chip => (
+                            <button
+                              key={chip}
+                              type="button"
+                              onClick={() => {
+                                const curr = visitNoteForm[field.key] || "";
+                                const sep = curr.length > 0 && !curr.endsWith(' ') ? ', ' : '';
+                                updateVisitNoteField(field.key, curr + sep + chip);
+                              }}
+                              className="quick-chip"
+                            >
+                              + {chip}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <textarea 
+                        value={visitNoteForm[field.key]} 
+                        onChange={(event) => updateVisitNoteField(field.key, event.target.value)}
+                        style={{ minHeight: '60px', borderRadius: '8px', padding: '0.6rem', border: '1px solid #cbd5e1' }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
               {draft?.quality ? (
@@ -933,7 +968,7 @@ export function VisitView(props: VisitViewProps) {
                 <ClinicalRulePanel
                   actionLabels={clinicalRuleActionLabels}
                   context="visit"
-                  evaluations={activeVisitClinicalRuleEvaluations}
+                  evaluations={dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ? activeVisitClinicalRuleEvaluations.filter((e: any) => e.ownerRole !== "assistant") : activeVisitClinicalRuleEvaluations}
                   serviceTitle={serviceTitle}
                   severityLabels={clinicalRuleSeverityLabels}
                   staffRoleLabels={staffRoleLabels}
@@ -953,7 +988,9 @@ export function VisitView(props: VisitViewProps) {
                     {visitCloseChecklist.readyToSign ? "готово" : `${visitCloseChecklist.score}%`}
                   </span>
                 </div>
-                {visitCloseChecklist.items.map((task) => (
+                {visitCloseChecklist.items
+                  .filter((task: any) => dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ? task.ownerRole !== "assistant" : true)
+                  .map((task: any) => (
                   <button
                     className={`close-task ${task.ready ? "done" : ""} ${task.blocking && !task.ready ? "blocking" : ""}`}
                     key={task.id}

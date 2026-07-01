@@ -1,4 +1,4 @@
-import { CreditCard, UserRound } from "lucide-react";
+import { CreditCard, UserRound, Mic } from "lucide-react";
 import type { PaymentMethod } from "@dental/shared";
 import { rubAmountInputMissingStep } from "./rubAmountInput";
 
@@ -47,6 +47,7 @@ type PaymentCaptureProps = {
   payerInn: string;
   payerRelationship: string;
   taxDeductionCode: TaxDeductionCode;
+  remainingDebt?: number;
 };
 
 const visiblePaymentMethods: PaymentMethod[] = ["cash", "card", "bank_transfer", "online"];
@@ -344,7 +345,8 @@ export function PaymentCapture({
   payerIdentityDocument,
   payerInn,
   payerRelationship,
-  taxDeductionCode
+  taxDeductionCode,
+  remainingDebt
 }: PaymentCaptureProps) {
   const amountMissingStep = rubAmountInputMissingStep(amount);
   const taxDeductionRequested = taxDeductionCode === "1" || taxDeductionCode === "2";
@@ -410,7 +412,18 @@ export function PaymentCapture({
         <div className="payment-capture-feedback" role="status" aria-live="polite">
           {feedback}
         </div>
-      ) : null}
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+          <button
+            type="button"
+            className="secondary-button quick-chip quick-chip--sm"
+            style={{ display: "inline-flex", gap: "4px", alignItems: "center" }}
+            onClick={() => alert("Запись голоса... (Демо ИИ)")}
+          >
+            <Mic size={14} /> Надиктовать ИИ
+          </button>
+        </div>
+      )}
       <label>
         Сумма
         <input
@@ -425,6 +438,29 @@ export function PaymentCapture({
           onChange={(event) => onAmountChange(event.target.value)}
           placeholder="3800"
         />
+        {remainingDebt !== undefined && (
+          <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap", width: "max-content", maxWidth: "260px" }}>
+            {remainingDebt > 0 && (
+              <button
+                type="button"
+                className="quick-chip"
+                onClick={() => onAmountChange(String(remainingDebt))}
+              >
+                Долг: {remainingDebt} ₽
+              </button>
+            )}
+            {[1000, 2000, 3000, 5000].map((val) => (
+              <button
+                key={val}
+                type="button"
+                className="quick-chip quick-chip--sm"
+                onClick={() => onAmountChange(String(val))}
+              >
+                {val} ₽
+              </button>
+            ))}
+          </div>
+        )}
       </label>
       <div className="payment-methods" aria-label="Способ оплаты">
         {visiblePaymentMethods.map((paymentMethod) => (

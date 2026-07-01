@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 
-const appSource = await readFile("apps/web/src/App.tsx", "utf8");
+const appSource = 
+  (await readFile("apps/web/src/App.tsx", "utf8")) + "\n" +
+  (await readFile("apps/web/src/useAppLogic.tsx", "utf8")) + "\n" +
+  (await readFile("apps/web/src/AppHelpers.tsx", "utf8"));
 const settingsSource = await readFile("apps/web/src/SettingsView.tsx", "utf8");
 const stylesSource = await readFile("apps/web/src/styles/main.css", "utf8");
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));

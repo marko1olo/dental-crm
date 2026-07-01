@@ -175,6 +175,7 @@ export function FinanceView({
       />
 
       <PaymentCapture
+        remainingDebt={billingSummary?.totalDueRub}
         amount={paymentAmount}
         feedback={paymentFeedback}
         fiscalCashierName={paymentFiscalCashierName}

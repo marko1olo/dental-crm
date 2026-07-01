@@ -31,7 +31,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const appSource = readFileSync(path.resolve("apps/web/src/App.tsx"), "utf8");
+const appSource = readFileSync(path.resolve("apps/web/src/App.tsx"), "utf8") + "\n" + readFileSync(path.resolve("apps/web/src/useAppLogic.tsx"), "utf8");
 const patientsSource = readFileSync(path.resolve("apps/web/src/PatientsView.tsx"), "utf8");
 assert(appSource.includes('lazy(() => import("./PatientsView")'), "patients screen must stay behind the lazy route boundary");
 assert(patientsSource.includes("patient-core-form-grid"), "patient core edit form is missing from UI source");

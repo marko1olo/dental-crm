@@ -74,9 +74,9 @@ export type CtPlanningLocal3DReadinessPlan = {
 };
 
 const implantModelOutputBoundarySummary =
-  "CRM хранит маршрут, ось, апекс, втулку и отступы как параметры плана. CAD/STL выпускает лаборатория или локальный 3D-модуль.";
+  "CAD/STL выпускает лаборатория или локальный 3D-модуль";
 const local3DOutputBoundarySummary =
-  "В браузере хранится только готовность 3D-кейса и метаданные ролей. Поверхности черепа/кости, дуги, скан-боди, шаблон и CAD/STL остаются в локальном 3D-модуле, внешнем просмотре или лаборатории.";
+  "Поверхности черепа/кости, дуги, скан-боди, шаблон и CAD/STL остаются в локальном 3D-модуле";
 
 const local3DTargetLabels: Record<DentalModelWorkbenchManifest["recommendedTarget"], string> = {
   metadata_only: "только метаданные",

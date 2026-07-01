@@ -74,6 +74,12 @@ export interface VisitStore {
 
   lastServerDraftSignatureRef: { current: string | null };
   visitDraftUserEditedRef: { current: boolean };
+
+  speechRetrySuggested: boolean;
+  setSpeechRetrySuggested: (val: boolean | ((prev: boolean) => boolean)) => void;
+
+  speechLiveRms: number;
+  setSpeechLiveRms: (val: number | ((prev: number) => number)) => void;
 }
 
 export const useVisitStore = create<VisitStore>((set) => ({
@@ -157,4 +163,10 @@ export const useVisitStore = create<VisitStore>((set) => ({
 
   lastServerDraftSignatureRef: { current: null },
   visitDraftUserEditedRef: { current: false },
+
+  speechRetrySuggested: false,
+  setSpeechRetrySuggested: (val) => set((state) => ({ speechRetrySuggested: typeof val === "function" ? val(state.speechRetrySuggested) : val })),
+
+  speechLiveRms: 0,
+  setSpeechLiveRms: (val) => set((state) => ({ speechLiveRms: typeof val === "function" ? val(state.speechLiveRms) : val })),
 }));

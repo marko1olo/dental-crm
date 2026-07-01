@@ -1,7 +1,11 @@
 import { usePatientStore } from "./store/patientStore";
-import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowRight, Plus, Search, ShieldCheck, UserCheck, Mic } from "lucide-react";
+import { useState } from "react";
 import type { ChangeEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
+import { DictationHints } from "./DictationHints";
+import { SmartParsePreview } from "./SmartParsePreview";
+import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -73,6 +77,11 @@ export function PatientsView(props: PatientsViewProps) {
     setIsPatientCreating,
     setNewRulePatientText
   } = usePatientStore();
+
+  const [smartInputText, setSmartInputText] = useState("");
+  const [showSmartPreview, setShowSmartPreview] = useState(false);
+  const [smartParsedData, setSmartParsedData] = useState<any>(null);
+  const [showHints, setShowHints] = useState(false);
   const {
     createPatient,
     filteredPatients,
@@ -145,13 +154,63 @@ export function PatientsView(props: PatientsViewProps) {
               </div>
             </div>
             <div className="quick-create">
-              <input
-                aria-label="ФИО нового пациента"
-                autoComplete="name"
-                value={newPatientName}
-                onChange={(event: TextFieldChangeEvent) => setNewPatientName(event.target.value)}
-                placeholder="Новый пациент"
-              />
+                <div style={{ position: 'relative', width: '100%', minWidth: '250px' }}>
+                  <input
+                    aria-label="ФИО или 'Иванов 89001234567 12.05.1990'"
+                    autoComplete="name"
+                    value={smartInputText}
+                    onChange={(event: TextFieldChangeEvent) => {
+                      setSmartInputText(event.target.value);
+                      setNewPatientName(event.target.value); // Sync for normal usage
+                    }}
+                    onFocus={() => setShowHints(true)}
+                    onBlur={() => setTimeout(() => setShowHints(false), 200)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && smartInputText.trim()) {
+                        e.preventDefault();
+                        const parsed = parsePatientDictationLocal(smartInputText);
+                        setSmartParsedData(parsed);
+                        setShowSmartPreview(true);
+                        setShowHints(false);
+                      }
+                    }}
+                    placeholder="Новый пациент (ФИО Телефон Нажмите Enter)"
+                    style={{ width: '100%', paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    title="Надиктовать данные пациента"
+                    onClick={() => alert("Запись голоса (Демо ИИ): ФИО пациента...")}
+                    style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-500)', padding: '6px', borderRadius: '50%' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-50)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Mic size={18} />
+                  </button>
+
+                  <DictationHints isVisible={showHints} type="patient" />
+                  
+                  <SmartParsePreview 
+                    isVisible={showSmartPreview}
+                    parsedData={smartParsedData}
+                    rawText={smartInputText}
+                    type="patient"
+                    onApply={(data: any) => {
+                      if (data) {
+                        setNewPatientName(data.fullName || smartInputText);
+                        if (data.phone) setNewPatientPhone(data.phone);
+                        if (data.birthDate) setNewPatientBirthDate(data.birthDate);
+                        if (data.notes) updatePatientCoreDraft("notes", data.notes);
+                      }
+                      setShowSmartPreview(false);
+                      setSmartInputText(data?.fullName || "");
+                    }}
+                    onManual={() => {
+                      setShowSmartPreview(false);
+                    }}
+                    onClose={() => setShowSmartPreview(false)}
+                  />
+                </div>
               <input
                 aria-label="Телефон нового пациента"
                 type="tel"
@@ -226,16 +285,15 @@ export function PatientsView(props: PatientsViewProps) {
               ) : null}
             </div>
             <section className="patient-admin-panel" aria-label="Административные данные активного пациента">
-              <div className="panel-heading compact-heading">
+              <div className="panel-heading compact-heading" style={{ borderBottom: 'none', paddingBottom: '0', marginBottom: '8px' }}>
                 <div>
-                  <p className="eyebrow">Карточка и документы пациента</p>
-                  <h3>{selectedPatient?.fullName ?? "Пациент не выбран"}</h3>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Карточка пациента</span>
                 </div>
                 <span className={`status-pill status-${patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error" ? "cancelled" : "confirmed"}`}>
                   {patientCoreSaveState === "saving"
-                    ? "карточка сохраняется"
+                    ? "сохранение"
                     : patientAdministrativeProfileSaveState === "saving"
-                      ? "документы сохраняются"
+                      ? "сохранение"
                       : patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error"
                         ? "ошибка"
                         : patientCoreDirty || patientAdministrativeProfileDirty
@@ -243,7 +301,7 @@ export function PatientsView(props: PatientsViewProps) {
                           : "сохранено"}
                 </span>
               </div>
-              <div className="clinic-profile-form-grid patient-core-form-grid">
+              <div className="clinic-profile-form-grid patient-core-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 <label className="form-span-2">
                   ФИО пациента
                   <input
@@ -283,18 +341,47 @@ export function PatientsView(props: PatientsViewProps) {
                     placeholder="patient@example.ru"
                   />
                 </label>
-                <label className="form-span-2">
-                  Заметки для команды
+                <div className="form-span-2" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Заметки для команды</span>
+                    <button
+                      type="button"
+                      onClick={() => alert(`Запись голоса ИИ для заметок пациента`)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--brand-500)', fontSize: '12px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-50)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <Mic size={14} /> Надиктовать
+                    </button>
+                  </div>
                   <textarea
                     value={patientCoreDraft.notes}
                     onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("notes", event.target.value)}
                     placeholder="важное для связи, приема и документов"
-                    rows={2}
+                    rows={3}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '14px', resize: 'vertical' }}
                   />
-                </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
+                    {["Очень тревожный", "Сложный пациент", "VIP", "Просит звонить заранее", "Часто отменяет", "Плохо переносит анестезию", "Должник", "Рвотный рефлекс"].map(chip => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          const currentVal = patientCoreDraft.notes.trim();
+                          const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
+                          updatePatientCoreDraft("notes", newVal);
+                        }}
+                        style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--slate-100)', border: '1px solid var(--slate-200)', borderRadius: '12px', cursor: 'pointer', color: 'var(--slate-700)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--slate-200)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--slate-100)'; }}
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="patient-admin-actions">
-                <p>ФИО, дата рождения и контакты сразу используются в расписании, документах, налоговых формах, Telegram-связи и напоминаниях.</p>
+              <div className="patient-admin-actions" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start' }}>
                 <button
                   className="primary-button"
                   type="button"
@@ -321,10 +408,9 @@ export function PatientsView(props: PatientsViewProps) {
                 <span className="settings-advanced-chevron">▼</span>
               </summary>
               <div className="settings-advanced-form">
-                <div className="panel-heading compact-heading patient-doc-heading">
+                <div className="panel-heading compact-heading patient-doc-heading" style={{ borderBottom: 'none', paddingBottom: '0', marginBottom: '8px' }}>
                   <div>
-                    <p className="eyebrow">Реквизиты для документов</p>
-                    <h3>{selectedPatient?.fullName ?? "Пациент не выбран"}</h3>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Реквизиты для документов</span>
                   </div>
                   <span className={`status-pill status-${patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage ? "cancelled" : "confirmed"}`}>
                     {patientAdministrativeProfileSaveState === "saving"
@@ -341,6 +427,9 @@ export function PatientsView(props: PatientsViewProps) {
                 {patientAdministrativeProfileValidationMessage ? (
                   <p className="save-error patient-admin-validation">{patientAdministrativeProfileValidationMessage}</p>
                 ) : null}
+                <details className="patient-admin-details" style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--slate-700)' }}>Дополнительные документы и адреса (развернуть)</summary>
+                  <div style={{ marginTop: '12px' }}>
                 <div className="clinic-profile-form-grid patient-admin-form-grid">
                 <label>
                   Документ пациента
@@ -507,8 +596,9 @@ export function PatientsView(props: PatientsViewProps) {
                   />
                 </label>
               </div>
-              <div className="patient-admin-actions">
-                <p>Эти данные подставляются в согласия, запросы копий меддокументации и расписки о выдаче. Пустые поля не печатаются.</p>
+                  </div>
+                </details>
+              <div className="patient-admin-actions" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start' }}>
                 <button
                   className="primary-button"
                   type="button"

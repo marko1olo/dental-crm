@@ -1060,18 +1060,18 @@ export function DocumentsView(props: DocumentsViewProps) {
     const sourceLabel = documentSourceStatusLabels[documentKindMetadata[document.kind].sourceStatus];
     const hasIssuedArchive = Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
     if (document.status === "draft") {
-      return `Черновик: Открыть показывает предварительный HTML. Паспорт покажет источник, блокеры и доступные действия. Архивные HTML/PDF появятся только после проверки и выдачи. Источник: ${sourceLabel}.`;
+      return `Черновик (требует проверки). Источник: ${sourceLabel}.`;
     }
     if (document.status === "issued" && hasIssuedArchive) {
-      return `Выдано: Открыть и Скачать используют сохраненный архив. Паспорт показывает подпись, контрольную метку, журнал выдачи и блокеры PDF/ФНС. Аннулирование потребует причину и подтверждение архива. Источник: ${sourceLabel}.`;
+      return `Выдано (доступно скачивание). Источник: ${sourceLabel}.`;
     }
     if (document.status === "issued") {
-      return `Выдано без контрольной метки архива: откройте Паспорт и проверьте блокеры скачивания перед передачей пациенту. Источник: ${sourceLabel}.`;
+      return `Выдано (без архива, см. паспорт). Источник: ${sourceLabel}.`;
     }
     if (document.status === "voided" && hasIssuedArchive) {
-      return `Аннулировано: Открыть и Скачать остаются архивной копией. Причина аннулирования, сотрудник и последствия находятся в Паспорте выдачи. Источник: ${sourceLabel}.`;
+      return `Аннулировано (доступен старый архив). Источник: ${sourceLabel}.`;
     }
-    return `Аннулировано: архив недоступен без контрольной метки. Паспорт показывает причину и оставшиеся ограничения. Источник: ${sourceLabel}.`;
+    return `Аннулировано. Источник: ${sourceLabel}.`;
   }
 
   return (
@@ -1214,11 +1214,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     ? "Заполните форму ниже. Выбранный документ сохраняется в настройках."
                     : "Можно создать сразу. Выбор сохранится для следующего открытия."}
                 </span>
-                {selectedDocumentNeedsPayload ? (
-                  <small className="document-create-guidance" role="status" aria-live="polite">
-                    Перед созданием CRM проверит обязательные поля этой формы. Если чего-то не хватает, исправьте блок ниже и нажмите снова.
-                  </small>
-                ) : null}
+
                 <button
                   className="primary-button"
                   type="button"
@@ -1266,6 +1262,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Договор платных медицинских услуг</h3>
                     <p>Фиксация номера, сроков, состава услуг, стоимости, порядка оплаты и обязательных уведомлений пациента до лечения.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Номер договора
@@ -1363,6 +1362,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={paidContractWrittenChangesConfirmed} type="checkbox" onChange={(event) => setPaidContractWrittenChangesConfirmed(event.target.checked)} />
                     Изменения состава или стоимости оформляются письменно
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -1373,6 +1374,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Акт выполненных работ</h3>
                     <p>Финальное подтверждение фактически оказанных услуг, оплаты, чеков и претензий пациента.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Номер акта
@@ -1487,6 +1491,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={completedActAccepted} type="checkbox" onChange={(event) => setCompletedActAccepted(event.target.checked)} />
                     Пациент принял работы, замечания внесены до подписания
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -1496,6 +1502,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Смета лечения</h3>
                     <p>Предварительный расчет с составом услуг, сроком действия, исключениями и правилами изменения цены.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Номер сметы
@@ -1589,6 +1598,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={treatmentEstimateChangeRulesConfirmed} type="checkbox" onChange={(event) => setTreatmentEstimateChangeRulesConfirmed(event.target.checked)} />
                     При изменениях нужна обновленная смета или отдельное согласование
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -1598,6 +1609,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Счет на оплату</h3>
                     <p>Реквизиты, плательщик, срок оплаты и состав услуг. Счет не заменяет кассовый чек.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Номер счета
@@ -1667,6 +1681,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={paymentInvoiceFiscalNoticeConfirmed} type="checkbox" onChange={(event) => setPaymentInvoiceFiscalNoticeConfirmed(event.target.checked)} />
                     Плательщик предупрежден: счет не является кассовым чеком
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -1676,6 +1692,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Платежная квитанция</h3>
                     <p>Явный набор оплаченных платежей, данные плательщика и фискальные чеки без скрытого захвата лишних оплат.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Номер квитанции
@@ -1804,6 +1823,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={paymentReceiptFiscalNoticeConfirmed} type="checkbox" onChange={(event) => setPaymentReceiptFiscalNoticeConfirmed(event.target.checked)} />
                     Квитанция не заменяет кассовый чек
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -1813,6 +1834,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>График рассрочки и оплат</h3>
                     <p>Внутренний график сроков и сумм к договору или плану лечения без подмены банковского кредита.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Номер графика
@@ -1875,6 +1899,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={installmentScheduleWrittenChangesConfirmed} type="checkbox" onChange={(event) => setInstallmentScheduleWrittenChangesConfirmed(event.target.checked)} />
                     Изменения суммы или сроков оформляются письменно
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -1884,6 +1910,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Согласие законного представителя</h3>
                     <p>Проверка личности, полномочий и согласия на конкретное вмешательство несовершеннолетнего.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Представитель
@@ -1962,6 +1991,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={minorConsentAgeExplanation} type="checkbox" onChange={(event) => setMinorConsentAgeExplanation(event.target.checked)} />
                     Ребенку дано объяснение по возрасту и состоянию
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -1971,6 +2002,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Гарантийная памятка</h3>
                     <p>Условия контроля, гарантийный срок, обязанности пациента и признаки для срочной связи.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Работа или услуга
                     <textarea value={warrantyServiceOrWorkName} onChange={(event) => setWarrantyServiceOrWorkName(event.target.value)} placeholder={warrantyServiceOrWorkNameValue()} rows={2} />
@@ -2035,6 +2069,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={warrantyControlVisitsUnderstood} type="checkbox" onChange={(event) => setWarrantyControlVisitsUnderstood(event.target.checked)} />
                     Пациент понимает обязательность контрольных визитов
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2044,6 +2080,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Анкета пациента</h3>
                     <p>Жалоба, аллергии, лекарства, хронические заболевания и риски до приема.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Жалоба или цель визита
                     <textarea
@@ -2128,6 +2167,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Пациент подтвердил достоверность сведений
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2137,6 +2178,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Заявление на налоговую справку</h3>
                     <p>Заявитель, ИНН, документ, родство, год и способ выдачи без ручных правок в HTML.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Заявитель / налогоплательщик
                     <input value={taxApplicationTaxpayerFullName} onChange={(event) => setTaxApplicationTaxpayerFullName(event.target.value)} />
@@ -2236,6 +2280,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Перед выдачей будет проверен дубль по тем же расходам
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2245,6 +2291,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Информированное согласие</h3>
                     <p>Конкретное вмешательство, область, показание, риски, альтернативы и рекомендации без пустого шаблона.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Планируемое вмешательство
                     <textarea value={informedConsentIntervention} onChange={(event) => setInformedConsentIntervention(event.target.value)} rows={2} />
@@ -2334,6 +2383,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Пациенту объяснено право отказаться до вмешательства
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2343,6 +2394,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Процедурное согласие</h3>
                     <p>Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Блок процедуры
@@ -2460,6 +2514,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Пациент понял процедурные риски и ограничения
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2469,6 +2525,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>План лечения</h3>
                     <p>Клиническая логика, этапы, альтернативы, риски и контроль до отдельного согласия на вмешательство.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Повод обращения
                     <textarea
@@ -2566,6 +2625,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Изменение диагноза, объема, сроков или стоимости требует нового согласования
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2575,6 +2636,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Согласование плана лечения</h3>
                     <p>Фиксирует выбранный вариант, этапы, сумму, срок действия сметы, альтернативы, риски и подтверждения пациента.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Выбранный вариант
                     <select
@@ -2681,6 +2745,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={treatmentAcceptanceRevisionAcknowledged} type="checkbox" onChange={(event) => setTreatmentAcceptanceRevisionAcknowledged(event.target.checked)} />
                     Существенное изменение плана требует нового согласования
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2690,6 +2756,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Рекомендации после приема</h3>
                     <p>Структурированная памятка для пациента и короткий текст для Telegram-бота клиники.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Блок
@@ -2878,6 +2947,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <input checked={postVisitTelegramSafe} type="checkbox" onChange={(event) => setPostVisitTelegramSafe(event.target.checked)} />
                     Telegram-текст не раскрывает лишние медицинские подробности
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2887,6 +2958,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Журнал анестезии</h3>
                     <p>Перед созданием: метод, препарат, зона, доза и реакция.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Метод
                     <input value={anesthesiaMethod} onChange={(event) => setAnesthesiaMethod(event.target.value)} />
@@ -2954,6 +3028,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Пациент согласен на выбранную местную анестезию
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -2963,6 +3039,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Назначение препаратов</h3>
                     <p>Один понятный блок назначения без догадок в документе.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
                   <label>
                     Препарат
@@ -2992,6 +3071,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                       rows={2}
                     />
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3001,6 +3082,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Заявка в лабораторию</h3>
                     <p>Работа, зона, материал, цвет, источник данных и срок.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
                   <label>
                     Вид работы
@@ -3030,6 +3114,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     Комментарий технику
                     <textarea value={labTechnicianNotes} onChange={(event) => setLabTechnicianNotes(event.target.value)} rows={2} />
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3039,6 +3125,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Фото, видео и снимки</h3>
                     <p>Отдельные разрешения: карта, лаборатория, консилиум, обучение, маркетинг и узнаваемая публикация.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     {typedPhotoVideoMaterialOptions.map((option) => (
                       <label className="document-payload-checkbox" key={option.value}>
@@ -3119,6 +3208,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     Ограничения пациента
                     <textarea value={photoVideoScopeNotes} onChange={(event) => setPhotoVideoScopeNotes(event.target.value)} rows={2} />
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3128,6 +3219,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Направление на снимок</h3>
                     <p>Вид исследования, область, клинический вопрос, показание и ограничения до рентгена или КЛКТ.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
                   <label>
                     Вид исследования
@@ -3223,6 +3317,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                       <input value={xrayDueDate} onChange={(event) => setXrayDueDate(event.target.value)} placeholder="например: до имплантации" />
                     </label>
                   </div>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3233,6 +3329,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Официальная учетная форма по приказу Минздрава N 274н: только карточка пациента, профиль клиники и подписанные записи.</p>
                     <p className="document-payload-note">Черновик этой карты сохраняется локально для выбранного пациента и визита до изменения или выпуска документа.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Номер карты
@@ -3481,6 +3580,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Лишние данные третьих лиц исключены
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3490,6 +3591,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Выписка из карты</h3>
                     <p>Только сведения из подписанной медзаписи: период, диагноз, лечение, рекомендации и получатель.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Период с
@@ -3599,6 +3703,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Лишние данные третьих лиц исключены
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3608,6 +3714,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Запрос копий меддокументов</h3>
                     <p>Состав, период, формат, получатель, полномочия и контакт выдачи без пустых полей.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Что выдать
                     <textarea value={copyRequestDocumentTypes} onChange={(event) => setCopyRequestDocumentTypes(event.target.value)} rows={3} />
@@ -3712,6 +3821,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Лишние данные третьих лиц будут исключены
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3721,6 +3832,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Справка о посещении</h3>
                     <p>Фиксирует только факт и время приема без диагноза, лечения, снимков и стоимости.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Начало приема
@@ -3785,6 +3899,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Справка не заменяет листок нетрудоспособности
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3794,6 +3910,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Выдача меддокументов</h3>
                     <p>Только по конкретному уже выданному запросу пациента или представителя.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Основание выдачи
                     <select
@@ -3880,6 +3999,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Лишние данные третьих лиц исключены
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3889,6 +4010,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Согласие на ПДн</h3>
                     <p>Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
                       Оператор
@@ -3979,6 +4103,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Пациент понимает обработку медицинских данных
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -3988,6 +4114,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Отказ от вмешательства</h3>
                     <p>Что предложено, почему нужно, какие риски объяснены и когда срочно обращаться.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Предложенное вмешательство
                     <input
@@ -4059,6 +4188,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     />
                     Пациенту объяснено, когда нужна экстренная помощь
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
 
@@ -4068,6 +4199,9 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <h3>Возврат или коррекция</h3>
                     <p>Сумма, действие, чек, получатель и решение ответственного.</p>
                   </div>
+  <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Действие
                     <select value={refundAction} onChange={(event) => setRefundAction(normalizedPaymentRefundCorrectionAction(event.target.value))}>
@@ -4150,6 +4284,8 @@ export function DocumentsView(props: DocumentsViewProps) {
                     Решение ответственного
                     <textarea value={refundAccountantDecision} onChange={(event) => setRefundAccountantDecision(event.target.value)} rows={2} />
                   </label>
+    </div>
+  </details>
                 </article>
                 ) : null}
               </section>

@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 
 import { existsSync } from "node:fs";
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8") + "\n" + (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "");
+const appSource = 
+  readFileSync("apps/web/src/App.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8") + "\n" +
+  (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "") + "\n" +
+  (existsSync("apps/web/src/ShiftView.tsx") ? readFileSync("apps/web/src/ShiftView.tsx", "utf8") : "");
 const shellSource = readFileSync("apps/web/src/workspaceShell.tsx", "utf8");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 

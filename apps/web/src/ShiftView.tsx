@@ -11,7 +11,9 @@ import {
   MessageSquare,
   Phone,
   UserCheck,
-  Gauge
+  Gauge,
+  Calendar,
+  Info
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { formatShortDate, money, minutesLabel, patientInsightRiskLabels } from "./AppHelpers";
@@ -55,7 +57,6 @@ export function ShiftView({
     <>
 
         <section className="shift-hero" id="shift">
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <div className="now-card">
               <p className="eyebrow">Сейчас в работе</p>
               {activePatient ? (
@@ -91,8 +92,21 @@ export function ShiftView({
                       <Phone aria-hidden="true" /> Позвонить
                     </button>
                   </div>
+                  
+                  {/* Compact Status Tracker */}
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '16px', background: 'var(--slate-50)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--slate-200)', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--slate-500)' }}>Статус:</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                      <span style={{ color: 'var(--teal)', fontWeight: 600 }}>1. Запись</span>
+                      <span style={{ color: 'var(--slate-300)' }}>→</span>
+                      <span style={{ color: dashboard.activeVisit ? 'var(--teal)' : 'var(--slate-400)', fontWeight: dashboard.activeVisit ? 600 : 400 }}>2. ЭМК</span>
+                      <span style={{ color: 'var(--slate-300)' }}>→</span>
+                      <span style={{ color: 'var(--slate-400)' }}>3. Оплата</span>
+                    </div>
+                  </div>
+
                   {!activePatientHasCallablePhone ? (
-                    <p className="hero-call-guidance" id="shift-call-guidance" role="status" aria-live="polite">
+                    <p className="hero-call-guidance" id="shift-call-guidance" role="status" aria-live="polite" style={{ marginTop: '12px' }}>
                       В карточке пациента нет телефона. Откройте «Пациенты» и добавьте номер, чтобы кнопка звонка стала активной.
                     </p>
                   ) : null}
@@ -105,8 +119,8 @@ export function ShiftView({
             </div>
 
             {/* РАСПИСАНИЕ НА СЕГОДНЯ */}
-            <div className="today-schedule-box" style={{ background: "var(--paper-strong)", border: "1px solid var(--line)", borderRadius: "8px", boxShadow: "var(--shadow)", padding: "18px" }}>
-              <h3 style={{ margin: "0 0 12px 0", fontSize: "14px", fontWeight: "700", color: "var(--slate-800)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <div className="today-schedule-box">
+              <h3>
                 <ClipboardCheck size={16} color="var(--teal)" /> Расписание приемов на сегодня
               </h3>
               {doctorTodayAppointments.length > 0 ? (
@@ -132,17 +146,6 @@ export function ShiftView({
                       <div 
                         key={app.id} 
                         className={`today-schedule-item status-${app.status} ${isCurrent ? "current-active" : ""}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "10px 12px",
-                          border: isCurrent ? "2px solid var(--teal)" : "1px solid var(--line)",
-                          borderRadius: "8px",
-                          background: isCurrent ? "rgba(13, 148, 136, 0.05)" : "var(--paper-light)",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease"
-                        }}
                         onClick={() => {
                           if (patient) {
                             setSelectedPatientId(patient.id);
@@ -150,18 +153,18 @@ export function ShiftView({
                           }
                         }}
                       >
-                        <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
-                          <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--slate-500)" }}>
+                        <div className="today-schedule-item-info">
+                          <span className="today-schedule-time">
                             {timeStart} – {timeEnd}
                           </span>
-                          <strong style={{ fontSize: "13px", color: "var(--slate-800)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          <strong className="today-schedule-name">
                             {patient ? patient.fullName : "Неизвестный пациент"}
                           </strong>
-                          <span style={{ fontSize: "11px", color: "var(--slate-500)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          <span className="today-schedule-reason">
                             {app.reason || "плановый осмотр"}
                           </span>
                         </div>
-                        <span className={`visit-document-badge status-${app.status === "in_treatment" || app.status === "completed" || app.status === "confirmed" ? "signed" : "draft"}`} style={{ fontSize: "9px", fontWeight: "800", textTransform: "uppercase", padding: "2px 6px", borderRadius: "4px", whiteSpace: "nowrap" }}>
+                        <span className={`visit-document-badge status-${app.status === "in_treatment" || app.status === "completed" || app.status === "confirmed" ? "signed" : "draft"}`}>
                           {statusLabels[app.status] || app.status}
                         </span>
                       </div>
@@ -169,58 +172,16 @@ export function ShiftView({
                   })}
                 </div>
               ) : (
-                <p style={{ fontSize: "12px", color: "var(--slate-500)", margin: 0 }}>
+                <p className="today-schedule-empty">
                   Сегодня у вас нет запланированных приемов.
                 </p>
               )}
             </div>
-          </div>
-
-          <div className="next-actions" aria-label="Следующие действия">
-            {visibleRecommendedActions.map((action: any) => (
-              <button
-                className={`action-tile priority-${action.priority}`}
-                key={action.id}
-                type="button"
-                onClick={() => {
-                  window.location.hash = action.section;
-                }}
-              >
-                <ActionIcon section={action.section} />
-                <div>
-                  <span>{action.metricLabel}</span>
-                  <p>{action.title}</p>
-                  <small>
-                    {recommendedActionPriorityLabels[action.priority]} · {action.detail}
-                  </small>
-                </div>
-              </button>
-            ))}
-          </div>
         </section>
 
-        <section className="care-path" aria-label="Путь приема">
-          {["Запись", "ЭМК", "Оплата", "Документы"].map((step, index) => (
-            <div className={`path-step ${index <= 1 ? "done" : ""}`} key={step}>
-              <span>{index + 1}</span>
-              <p>{step}</p>
-            </div>
-          ))}
-        </section>
+        {/* Removed care path tracker */}
 
-        <div className="shift-details-toggle">
-          <button
-            className="text-button shift-details-btn"
-            type="button"
-            aria-expanded={showDetails}
-            onClick={() => setShowDetails((v) => !v)}
-          >
-            {showDetails ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-            {showDetails ? "Скрыть детали смены" : "Показать детали смены"}
-          </button>
-        </div>
-
-        {showDetails && (
+        <div className="shift-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginTop: '16px' }}>
           <>
             <section className="role-focus-strip" aria-label="Фокус текущей роли">
               <div>
@@ -337,24 +298,10 @@ export function ShiftView({
                   ))}
               </div>
 
-              <div className="shift-warning-list">
-                {shiftWarnings.slice(0, 4).map((warning: any) => (
-                  <article className={`shift-warning warning-${warning.severity}`} key={warning.id}>
-                    <AlertTriangle aria-hidden="true" />
-                    <div>
-                      <span>{warningSeverityLabels[warning.severity]} · {staffRoleLabels[warning.ownerRole]}</span>
-                      <h3>{warning.title}</h3>
-                      <p>{warning.detail}</p>
-                    </div>
-                    <button className="text-button" type="button" onClick={() => openScheduleWarning(warning)}>
-                      {warning.actionLabel}
-                    </button>
-                  </article>
-                ))}
-              </div>
+              {/* Removed shift warning list */}
             </section>
           </>
-        )}
+        </div>
     </>
   );
 }
@@ -387,24 +334,35 @@ export function PatientCockpit({
           <div className="patient-summary-card">
             <p className="eyebrow">Карточка пациента</p>
             <h2>{activePatient.fullName}</h2>
-            <div className="patient-facts">
-              <span>{activePatient.birthDate ?? "дата рождения не указана"}</span>
-              <span>{activePatient.phone ?? "телефон не указан"}</span>
-              <span>{activePatient.notes ?? "без критических заметок"}</span>
+            <div className="patient-info-list" style={{ display: "flex", flexDirection: "column", gap: "12px", border: "none", background: "transparent" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)", fontSize: "14px" }}>
+                <Calendar size={16} />
+                <span>Дата рождения: <strong style={{ color: "var(--text-primary)" }}>{activePatient.birthDate ?? "не указана"}</strong></span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)", fontSize: "14px" }}>
+                <Phone size={16} />
+                <span>Телефон: <strong style={{ color: "var(--text-primary)" }}>{activePatient.phone ?? "не указан"}</strong></span>
+              </div>
+              {activePatient.notes && (
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", color: "var(--text-secondary)", fontSize: "14px" }}>
+                  <Info size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+                  <span>Заметки: <strong style={{ color: "var(--text-primary)" }}>{activePatient.notes}</strong></span>
+                </div>
+              )}
             </div>
             {activePatientInsight ? (
-              <div className={`patient-insight-panel risk-${activePatientInsight.riskLevel}`}>
-                <div className="patient-insight-head">
-                  <span>{patientInsightRiskLabels[activePatientInsight.riskLevel as keyof typeof patientInsightRiskLabels]}</span>
-                  <strong>{activePatientInsight.nextBestAction}</strong>
+              <div className={`patient-insight-panel risk-${activePatientInsight.riskLevel}`} style={{ padding: '12px', borderRadius: '8px', background: activePatientInsight.riskLevel === 'high' ? '#fee2e2' : activePatientInsight.riskLevel === 'medium' ? '#fef3c7' : '#f1f5f9', border: '1px solid ' + (activePatientInsight.riskLevel === 'high' ? '#f87171' : activePatientInsight.riskLevel === 'medium' ? '#fbbf24' : '#e2e8f0') }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: activePatientInsight.riskLevel === 'high' ? '#b91c1c' : activePatientInsight.riskLevel === 'medium' ? '#b45309' : '#475569' }}>
+                    {patientInsightRiskLabels[activePatientInsight.riskLevel as keyof typeof patientInsightRiskLabels]}
+                  </span>
+                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{activePatientInsight.nextBestAction}</strong>
                 </div>
-                <div className="patient-insight-meta">
-                  <span>{activePatientInsight.balanceDueRub ? `остаток ${money(activePatientInsight.balanceDueRub)}` : "оплата спокойна"}</span>
-                  <span>{activePatientInsight.openTasks} задач связи</span>
-                  <span>{activePatientInsight.missingDocumentKinds.length} документов</span>
-                  {activePatientInsight.recallDueAt ? <span>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', fontSize: '12px', fontWeight: 500 }}>
+                  {activePatientInsight.balanceDueRub ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>💰 Долг {money(activePatientInsight.balanceDueRub)}</span> : null}
+                  {activePatientInsight.openTasks > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📞 {activePatientInsight.openTasks} задач</span> : null}
+                  {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📄 {activePatientInsight.missingDocumentKinds.length} док-тов нет</span> : null}
                 </div>
-                <p>{activePatientInsight.riskReasons.slice(0, 2).join(" · ")}</p>
               </div>
             ) : null}
           </div>
@@ -412,38 +370,36 @@ export function PatientCockpit({
             <article className="clickable-card" onClick={() => { window.location.hash = "visit"; }} style={{ cursor: "pointer" }}>
               <History aria-hidden="true" />
               <div>
-                <h3>История (ЭМК)</h3>
-                <p>Приемы, диагнозы, зубная карта, файлы и решения врача в одном месте. Нажмите, чтобы открыть прием.</p>
+                <h3>ЭМК / История</h3>
+                <p className="tile-meta">Приёмы · диагнозы · зубная карта</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "documents"; }} style={{ cursor: "pointer" }}>
               <FileText aria-hidden="true" />
               <div>
                 <h3>Документы</h3>
-                <p>{activeUsableDocuments.length} документа по текущему лечению, включая договор и акт. Нажмите, чтобы открыть.</p>
+                <p className="tile-meta">{activeUsableDocuments.length > 0 ? `${activeUsableDocuments.length} шт.` : "нет"} по визиту</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "finance"; }} style={{ cursor: "pointer" }}>
               <CreditCard aria-hidden="true" />
               <div>
                 <h3>Оплаты</h3>
-                <p>
-                  Оплачено {money(dashboard.billingSummary.totalPaidRub)}, остаток {money(dashboard.billingSummary.totalDueRub)}. Нажмите, чтобы перейти.
-                </p>
+                <p className="tile-meta">{money(dashboard.billingSummary.totalPaidRub)} · долг {money(dashboard.billingSummary.totalDueRub)}</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "communications"; }} style={{ cursor: "pointer" }}>
               <MessageSquare aria-hidden="true" />
               <div>
                 <h3>Связь</h3>
-                <p>{activeCommunicationTasks.length} задач: подтверждения, долги, инструкции и повторные визиты. Нажмите для перехода.</p>
+                <p className="tile-meta">{activeCommunicationTasks.length > 0 ? `${activeCommunicationTasks.length} задач` : "задач нет"}</p>
               </div>
             </article>
             <article className="clickable-card" onClick={() => { window.location.hash = "imaging"; }} style={{ cursor: "pointer" }}>
               <ImageIcon aria-hidden="true" />
               <div>
                 <h3>Снимки</h3>
-                <p>{activeImagingStudies.length} снимка: прицельные, ОПТГ, ТРГ, КТ и фото. Нажмите для просмотра.</p>
+                <p className="tile-meta">{activeImagingStudies.length > 0 ? `${activeImagingStudies.length} снимка` : "снимков нет"}</p>
               </div>
             </article>
           </div>

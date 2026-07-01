@@ -1,4 +1,4 @@
-﻿import type { FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
@@ -4505,7 +4505,7 @@ async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
     "Автопилот сканирует только локальные источники и ограниченные заголовки; старые базы, снимки и локальные пути не отправляются в публичный поиск.",
     "Онлайн-поиск разрешен только для реквизитов клиники: ИНН, ОГРН, КПП, название, адрес, лицензия."
   ]);
-  const smartImportPreview = input.smartImport ? buildSmartImportPreview(input.smartImport) : null;
+  const smartImportPreview = input.smartImport ? await buildSmartImportPreview(input.smartImport) : null;
   const smartImportKnownSources = (smartImportPreview?.legacySources ?? []).slice(0, 24).map(migrationCandidateFromSmartLegacySource);
   const explicitKnownSources = [...(input.knownSources ?? []), ...smartImportKnownSources];
   const discovery = await discoverLocalMigrationSources({
@@ -5007,7 +5007,7 @@ function buildMigrationPlan(input: {
   };
 }
 
-function buildSmartImportPreview(input: { sourceName: string; rawText: string; mode: SmartImportMode }) {
+async function buildSmartImportPreview(input: { sourceName: string; rawText: string; mode: SmartImportMode }) {
   const lines = input.rawText.split(/\r?\n/);
   const classifications = lines.map((line, index) => classifyLine(line, index + 1, input.mode));
   const patientLines = classifications.filter((line) => line.kind === "patient").map((line) => line.text);
@@ -5027,7 +5027,7 @@ function buildSmartImportPreview(input: { sourceName: string; rawText: string; m
     sourceKind: "mis_export",
     rawText: patientRawText || emptyPatientText
   });
-  const imagingPreview = parseImagingManifest({
+  const imagingPreview = await parseImagingManifest({
     sourceName: `${input.sourceName}:imaging`,
     sourceKind: "folder_watch",
     rawText: imagingRawText
@@ -5074,7 +5074,7 @@ function csvCell(value: string | number | null | undefined) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function buildSmartImportReportCsv(preview: ReturnType<typeof buildSmartImportPreview>) {
+function buildSmartImportReportCsv(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>) {
   const rows: Array<Array<string | number | null | undefined>> = [
     [
       "section",

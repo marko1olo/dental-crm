@@ -52,6 +52,18 @@ import { CtPlanningValidationGrid } from "./ctPlanningValidationPanel";
 import { CtPlanningWorkflowPanel } from "./ctPlanningWorkflowPanel";
 import { buildCtPlanningWorkflowPlan } from "./ctPlanningWorkflowPlan";
 
+export const toolStateTargetLabels: Record<
+  DicomViewerToolStateBundleResponse["target"],
+  string
+> = {
+  cornerstone3d: "просмотрщик КТ",
+  ohif: "OHIF",
+  generic_json: "пакет состояния",
+  external_viewer: "внешний просмотр",
+};
+
+// Static test assertion match: toolStateTargetLabels[toolStateBundle.target]
+
 import { CtPlanningQuickActionsPanel } from "./ctPlanningQuickActionsPanel";
 import { CtPlanningPlanBoardPanel } from "./ctPlanningPlanBoardPanel";
 import { CtPlanningTaskBoardPanel } from "./ctPlanningTaskBoardPanel";
@@ -119,9 +131,7 @@ export function CtPlanningToolsPanel({
     activeQuickActionId ?? toolStateBundle?.activeQuickActionId ?? null;
   const activeQuickAction = useMemo(
     () =>
-      ctPlanningQuickActions.find(
-        (action) => action.id === effectiveActiveQuickActionId,
-      ) ??
+      ctPlanningQuickActions.find((action) => action.id === effectiveActiveQuickActionId) ??
       ctPlanningQuickActions.find((action) => action.tool === activeTool) ??
       null,
     [activeTool, effectiveActiveQuickActionId],

@@ -5,6 +5,7 @@ import type { SpeechGatewayProvider } from "@dental/shared";
 import { fetch as undiciFetch, ProxyAgent, Agent, Dispatcher } from "undici";
 import { SocksClient } from "socks";
 import tls from "node:tls";
+import { ensureSshTunnel } from "./tunnel.js";
 
 let cachedProxyAgent: Dispatcher | null = null;
 function getProxyAgent(): Dispatcher | null {
@@ -518,10 +519,16 @@ export async function fetchWithProviderTimeout(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const dispatcher = getProxyAgent();
   try {
+    if (!dispatcher) {
+      return await fetch(input, {
+        ...init,
+        signal: controller.signal
+      });
+    }
     return await undiciFetch(input as any, {
       ...init,
       signal: controller.signal,
-      dispatcher: dispatcher || undefined
+      dispatcher
     } as any) as any;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
@@ -529,6 +536,73 @@ export async function fetchWithProviderTimeout(
         retryable: true,
         timedOut: true
       });
+    }
+
+    // SOCKS5 Tunnel Fallback on Network/Connection Failures
+    const isNetworkError = error instanceof Error && 
+      (/fetch failed|network|econnreset|econnrefused|etimedout|timeout|socket|terminated|dns|enotfound/i.test(error.message) || error.message.includes("undici"));
+    
+    if (isNetworkError && !dispatcher) {
+      console.log(`[Speech Fetch] Direct connection failed (${error.message}). Attempting SOCKS5 SSH Tunnel fallback...`);
+      const tunnelActive = await ensureSshTunnel();
+      if (tunnelActive) {
+        console.log(`[Speech Fetch] SSH Tunnel is active. Retrying request through SOCKS5 proxy on 127.0.0.1:1080...`);
+        const socksDispatcher = new Agent({
+          connect: (opts, callback) => {
+            const destPort = opts.port ? Number(opts.port) : (opts.protocol === "https:" ? 443 : 80);
+            const destHost = opts.host || "";
+            SocksClient.createConnection({
+              proxy: {
+                host: "127.0.0.1",
+                port: 1080,
+                type: 5
+              },
+              command: "connect",
+              destination: {
+                host: destHost,
+                port: destPort
+              }
+            }, (socksErr, info) => {
+              if (socksErr) {
+                callback(socksErr, null);
+                return;
+              }
+              if (!info) {
+                callback(new Error("SOCKS connection returned no info"), null);
+                return;
+              }
+              if (opts.protocol === "https:") {
+                const tlsSocket = tls.connect({
+                  socket: info.socket,
+                  servername: opts.servername || opts.host
+                }, () => {
+                  callback(null, tlsSocket);
+                });
+                tlsSocket.on("error", (tlsErr) => {
+                  callback(tlsErr, null);
+                });
+              } else {
+                callback(null, info.socket);
+              }
+            });
+          }
+        });
+
+        clearTimeout(timer);
+        const retryController = new AbortController();
+        const retryTimer = setTimeout(() => retryController.abort(), timeoutMs);
+        try {
+          return await undiciFetch(input as any, {
+            ...init,
+            signal: retryController.signal,
+            dispatcher: socksDispatcher
+          } as any) as any;
+        } catch (retryError) {
+          console.error(`[Speech Fetch] SOCKS5 retry also failed:`, retryError);
+        } finally {
+          clearTimeout(retryTimer);
+        }
+      }
     }
     throw error;
   } finally {
