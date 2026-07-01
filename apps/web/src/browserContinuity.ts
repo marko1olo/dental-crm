@@ -1,4 +1,10 @@
-export type BrowserContinuityRegistrationState = "unsupported" | "not_registered" | "installing" | "waiting" | "active" | "error";
+export type BrowserContinuityRegistrationState =
+  | "unsupported"
+  | "not_registered"
+  | "installing"
+  | "waiting"
+  | "active"
+  | "error";
 
 export type BrowserCtOfflineStorageBoundary = {
   mode: "metadata_only";
@@ -13,13 +19,16 @@ export type BrowserCtOfflineStorageBoundary = {
   heavyDataOwner: "external_viewer_or_future_local_module";
 };
 
-export const browserContinuityRegistrationLabels: Record<BrowserContinuityRegistrationState, string> = {
+export const browserContinuityRegistrationLabels: Record<
+  BrowserContinuityRegistrationState,
+  string
+> = {
   unsupported: "не поддерживается",
   not_registered: "не включено",
   installing: "готовится",
   waiting: "обновляется",
   active: "готово",
-  error: "ошибка"
+  error: "ошибка",
 };
 
 export type BrowserContinuityStatus = {
@@ -49,18 +58,19 @@ type BrowserStorageManagerWithOpfs = StorageManager & {
   getDirectory?: unknown;
 };
 
-export const browserCtOfflineStorageBoundary: BrowserCtOfflineStorageBoundary = {
-  mode: "metadata_only",
-  indexedDbStore: "dicomWorkbenchDrafts",
-  mprIndexedDbStore: "mprWorkbenchDrafts",
-  savesDiagnosticPixels: false,
-  savesMeshGeometry: false,
-  storesDirectoryHandles: false,
-  storesUserFilePaths: false,
-  opfsDiagnosticStorageEnabled: false,
-  opfsSyncAccessHandleWorkerOnly: true,
-  heavyDataOwner: "external_viewer_or_future_local_module"
-};
+export const browserCtOfflineStorageBoundary: BrowserCtOfflineStorageBoundary =
+  {
+    mode: "metadata_only",
+    indexedDbStore: "dicomWorkbenchDrafts",
+    mprIndexedDbStore: "mprWorkbenchDrafts",
+    savesDiagnosticPixels: false,
+    savesMeshGeometry: false,
+    storesDirectoryHandles: false,
+    storesUserFilePaths: false,
+    opfsDiagnosticStorageEnabled: false,
+    opfsSyncAccessHandleWorkerOnly: true,
+    heavyDataOwner: "external_viewer_or_future_local_module",
+  };
 
 function browserLocalStorageWritable(): boolean {
   if (typeof window === "undefined") return false;
@@ -74,8 +84,29 @@ function browserLocalStorageWritable(): boolean {
   }
 }
 
+export async function browserIndexedDbWritable(): Promise<boolean> {
+  if (typeof window === "undefined" || !("indexedDB" in window)) return false;
+
+  let idbWorks = false;
+  try {
+    const idb = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = window.indexedDB.open("test-dente-db-support", 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+    idb.close();
+    window.indexedDB.deleteDatabase("test-dente-db-support");
+    idbWorks = true;
+  } catch (e) {
+    idbWorks = false;
+  }
+  return idbWorks;
+}
+
 function megabytes(value: number | null | undefined): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? Math.round((value / 1024 / 1024) * 10) / 10 : null;
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.round((value / 1024 / 1024) * 10) / 10
+    : null;
 }
 
 export function formatMegabytes(value: number | null): string {
@@ -94,25 +125,35 @@ export function formatByteSize(value: number | null | undefined): string {
 export async function inspectBrowserContinuity(): Promise<BrowserContinuityStatus> {
   const warnings: string[] = [];
   const localStorageWritable = browserLocalStorageWritable();
-  const indexedDbSupported = typeof window !== "undefined" && "indexedDB" in window;
-  const cacheStorageSupported = typeof window !== "undefined" && "caches" in window;
-  const fileAccessWindow = typeof window !== "undefined" ? (window as BrowserFileAccessWindow) : null;
-  const directoryPickerSupported = typeof fileAccessWindow?.showDirectoryPicker === "function";
-  const filePickerSupported = typeof fileAccessWindow?.showOpenFilePicker === "function";
+  const indexedDbSupported = await browserIndexedDbWritable();
+  const cacheStorageSupported =
+    typeof window !== "undefined" && "caches" in window;
+  const fileAccessWindow =
+    typeof window !== "undefined" ? (window as BrowserFileAccessWindow) : null;
+  const directoryPickerSupported =
+    typeof fileAccessWindow?.showDirectoryPicker === "function";
+  const filePickerSupported =
+    typeof fileAccessWindow?.showOpenFilePicker === "function";
   const storageManager =
-    typeof navigator !== "undefined" && navigator.storage ? (navigator.storage as BrowserStorageManagerWithOpfs) : null;
+    typeof navigator !== "undefined" && navigator.storage
+      ? (navigator.storage as BrowserStorageManagerWithOpfs)
+      : null;
   const opfsSupported = typeof storageManager?.getDirectory === "function";
-  const serviceWorkerSupported = typeof navigator !== "undefined" && "serviceWorker" in navigator;
+  const serviceWorkerSupported =
+    typeof navigator !== "undefined" && "serviceWorker" in navigator;
   let serviceWorkerControlled = false;
-  let serviceWorkerRegistrationState: BrowserContinuityRegistrationState = serviceWorkerSupported ? "not_registered" : "unsupported";
+  let serviceWorkerRegistrationState: BrowserContinuityRegistrationState =
+    serviceWorkerSupported ? "not_registered" : "unsupported";
 
   if (serviceWorkerSupported) {
     try {
       serviceWorkerControlled = Boolean(navigator.serviceWorker.controller);
       const registration = await navigator.serviceWorker.getRegistration();
       if (registration?.active) serviceWorkerRegistrationState = "active";
-      else if (registration?.waiting) serviceWorkerRegistrationState = "waiting";
-      else if (registration?.installing) serviceWorkerRegistrationState = "installing";
+      else if (registration?.waiting)
+        serviceWorkerRegistrationState = "waiting";
+      else if (registration?.installing)
+        serviceWorkerRegistrationState = "installing";
       else serviceWorkerRegistrationState = "not_registered";
     } catch {
       serviceWorkerRegistrationState = "error";
@@ -128,16 +169,27 @@ export async function inspectBrowserContinuity(): Promise<BrowserContinuityStatu
       const estimate = await navigator.storage.estimate();
       storageUsageMb = megabytes(estimate.usage);
       storageQuotaMb = megabytes(estimate.quota);
-      storagePersisted = typeof navigator.storage.persisted === "function" ? await navigator.storage.persisted() : null;
+      storagePersisted =
+        typeof navigator.storage.persisted === "function"
+          ? await navigator.storage.persisted()
+          : null;
     } catch {
       warnings.push("Оценка хранилища браузера недоступна");
     }
   }
 
-  if (!localStorageWritable) warnings.push("Локальное хранилище черновиков недоступно");
-  if (!indexedDbSupported) warnings.push("Браузер не дает сохранить аудио для отправки позже");
-  if (!cacheStorageSupported) warnings.push("Браузер не дает сохранить экран для работы без сети");
-  if (storageUsageMb !== null && storageQuotaMb !== null && storageQuotaMb > 0 && storageUsageMb / storageQuotaMb > 0.85) {
+  if (!localStorageWritable)
+    warnings.push("Локальное хранилище черновиков недоступно");
+  if (!indexedDbSupported)
+    warnings.push("Браузер не дает сохранить аудио для отправки позже");
+  if (!cacheStorageSupported)
+    warnings.push("Браузер не дает сохранить экран для работы без сети");
+  if (
+    storageUsageMb !== null &&
+    storageQuotaMb !== null &&
+    storageQuotaMb > 0 &&
+    storageUsageMb / storageQuotaMb > 0.85
+  ) {
     warnings.push("Место для локальных черновиков почти заполнено");
   }
 
@@ -156,6 +208,6 @@ export async function inspectBrowserContinuity(): Promise<BrowserContinuityStatu
     storagePersisted,
     storageUsageMb,
     storageQuotaMb,
-    warnings
+    warnings,
   };
 }
