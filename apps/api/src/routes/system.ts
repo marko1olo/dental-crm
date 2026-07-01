@@ -612,7 +612,7 @@ async function buildLocalBridgeUsePlans() {
 export async function registerSystemRoutes(app: FastifyInstance) {
   app.get("/api/system/persistence/verify", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "persistence verify"))) return;
-    return getPersistentStateIntegrityReport();
+    return await getPersistentStateIntegrityReport();
   });
 
   app.get("/api/system/local-bridges/readiness", async (request, reply) => {
@@ -633,7 +633,7 @@ export async function registerSystemRoutes(app: FastifyInstance) {
       action: "persistence_export_downloaded",
       reason: "Администратор клиники скачал резервную копию состояния прототипа для аварийного восстановления или проверки переноса."
     });
-    const snapshot = buildPersistentStateExport();
+    const snapshot = await buildPersistentStateExport();
     if (!snapshot.payload) {
       return reply.code(404).send({
         error: "PersistenceExportUnavailable",
