@@ -65,9 +65,13 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
     return d.toISOString().split('T')[0] ?? "";
   };
 
+  const MONTHS: Record<string, number> = {
+    "янв": 0, "фев": 1, "мар": 2, "апр": 3, "мая": 4, "май": 4,
+    "июн": 5, "июл": 6, "авг": 7, "сен": 8, "окт": 9, "ноя": 10, "дек": 11
+  };
+
   if (containsAnyFuzzyRoot(remaining, ["послезавтра"])) {
     result.dateStr = getOffsetDate(2);
-    // remove the matched word (naive approach, assume it's there)
     remaining = remaining.replace(/(послезавтра)\S*/ig, " ");
   } else if (containsAnyFuzzyRoot(remaining, ["завтра"])) {
     result.dateStr = getOffsetDate(1);
@@ -76,20 +80,42 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
     result.dateStr = getOffsetDate(0);
     remaining = remaining.replace(/(сегодня|щас|сейчас)\S*/ig, " ");
   } else {
-    // Check days of week
-    const WEEKDAYS = ["воскресенье", "понедельник", "вторник", "сред", "четверг", "пятниц", "суббот"];
-    const WEEKDAY_INDEXES = [0, 1, 2, 3, 4, 5, 6];
+    // Check explicit date "15 мая"
+    const explicitDateMatch = remaining.match(/([1-9]|[12][0-9]|3[01])\s+([а-я]{3,8})/i);
+    let dateFound = false;
     
-    for (let i = 0; i < WEEKDAYS.length; i++) {
-      const day = WEEKDAYS[i] as string;
-      if (containsAnyFuzzyRoot(remaining, [day])) {
-        const targetIdx = WEEKDAY_INDEXES[i] as number;
-        const currentIdx = today.getDay();
-        let diff = targetIdx - currentIdx;
-        if (diff <= 0) diff += 7;
-        result.dateStr = getOffsetDate(diff);
-        remaining = remaining.replace(new RegExp(`(?:^|\\s)(?:в|на|во)?\\s*${day}\\S*`, 'ig'), ' ');
-        break;
+    if (explicitDateMatch) {
+      const day = parseInt(explicitDateMatch[1]!, 10);
+      const monthStr = explicitDateMatch[2]!.slice(0, 3).toLowerCase();
+      if (MONTHS[monthStr] !== undefined) {
+        const targetDate = new Date(today);
+        targetDate.setMonth(MONTHS[monthStr]!);
+        targetDate.setDate(day);
+        if (targetDate.getTime() < today.getTime() - 86400000) {
+          targetDate.setFullYear(today.getFullYear() + 1);
+        }
+        result.dateStr = targetDate.toISOString().split('T')[0] ?? "";
+        remaining = remaining.replace(explicitDateMatch[0], ' ');
+        dateFound = true;
+      }
+    }
+    
+    if (!dateFound) {
+      // Check days of week
+      const WEEKDAYS = ["воскресенье", "понедельник", "вторник", "сред", "четверг", "пятниц", "суббот"];
+      const WEEKDAY_INDEXES = [0, 1, 2, 3, 4, 5, 6];
+      
+      for (let i = 0; i < WEEKDAYS.length; i++) {
+        const day = WEEKDAYS[i] as string;
+        if (containsAnyFuzzyRoot(remaining, [day])) {
+          const targetIdx = WEEKDAY_INDEXES[i] as number;
+          const currentIdx = today.getDay();
+          let diff = targetIdx - currentIdx;
+          if (diff <= 0) diff += 7;
+          result.dateStr = getOffsetDate(diff);
+          remaining = remaining.replace(new RegExp(`(?:^|\\s)(?:в|на|во)?\\s*${day}\\S*`, 'ig'), ' ');
+          break;
+        }
       }
     }
   }
