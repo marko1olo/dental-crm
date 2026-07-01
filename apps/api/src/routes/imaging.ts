@@ -635,9 +635,15 @@ function normalizeDicomUid(value: string | null | undefined) {
   return uid && uid.length <= 96 ? uid : null;
 }
 
+const dicomUidPatternCache = new Map<string, RegExp>();
+
 function extractDicomUid(value: string, labels: string[]) {
   for (const label of labels) {
-    const pattern = new RegExp(`${label}\\s*[:=]\\s*(\\d+(?:\\.\\d+){2,})`, "i");
+    let pattern = dicomUidPatternCache.get(label);
+    if (!pattern) {
+      pattern = new RegExp(`${label}\\s*[:=]\\s*(\\d+(?:\\.\\d+){2,})`, "i");
+      dicomUidPatternCache.set(label, pattern);
+    }
     const match = pattern.exec(value);
     if (match?.[1]) return normalizeDicomUid(match[1]);
   }
@@ -684,9 +690,15 @@ function parsePositiveInteger(value: string | null | undefined) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+const dicomFieldValuePatternCache = new Map<string, RegExp>();
+
 function extractDicomFieldValue(line: string, labels: string[]) {
   for (const label of labels) {
-    const pattern = new RegExp(`${label}\\s*[:=]\\s*([^;|,]+)`, "i");
+    let pattern = dicomFieldValuePatternCache.get(label);
+    if (!pattern) {
+      pattern = new RegExp(`${label}\\s*[:=]\\s*([^;|,]+)`, "i");
+      dicomFieldValuePatternCache.set(label, pattern);
+    }
     const match = pattern.exec(line);
     if (match?.[1]) return match[1].trim();
   }
