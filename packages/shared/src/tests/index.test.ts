@@ -4,6 +4,7 @@ import {
   documentRequiresPaidRecord,
   documentAmountSource,
   documentKindSchema,
+  documentPayloadDisallowedKeys,
   buildRuleBasedVisitDraftFromTranscript,
 } from "../index.js";
 
@@ -185,5 +186,48 @@ describe("buildRuleBasedVisitDraftFromTranscript", () => {
     // Implantologist should have a different objective fallback
     assert.notStrictEqual(universalDraft.objectiveStatus, implantologistDraft.objectiveStatus);
     assert.ok(implantologistDraft.objectiveStatus?.includes("уточнить зону адентии"));
+  });
+});
+
+describe("documentPayloadDisallowedKeys", () => {
+  test("returns empty array for null or undefined payload", () => {
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", null), []);
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined), []);
+  });
+
+  test("returns empty array when only allowed keys are present", () => {
+    // "patient_intake_questionnaire" allows "patientIntakeQuestionnaire"
+    const payload: any = {
+      patientIntakeQuestionnaire: {
+        patientResponses: []
+      }
+    };
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", payload), []);
+  });
+
+  test("returns array of disallowed keys when present in payload", () => {
+    // "patient_intake_questionnaire" allows "patientIntakeQuestionnaire"
+    // "completedWorksAct" is disallowed for this kind
+    const payload: any = {
+      patientIntakeQuestionnaire: {
+        patientResponses: []
+      },
+      completedWorksAct: {
+        works: []
+      }
+    };
+    // Need to cast to any to bypass TS compilation error since completedWorksAct is not normally expected here
+    // but the function takes any valid DocumentPayload
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", payload as any), ["completedWorksAct"]);
+  });
+
+  test("ignores undefined keys in payload", () => {
+    const payload: any = {
+      patientIntakeQuestionnaire: {
+        patientResponses: []
+      },
+      completedWorksAct: undefined // This is a disallowed key, but it's undefined, so it shouldn't be counted
+    };
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", payload as any), []);
   });
 });
