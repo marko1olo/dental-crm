@@ -282,10 +282,17 @@ async function callOpenAiCompatiblePolish(input: {
         role: "system",
         content: [
           "You are a cautious dental transcription editor for Russian dental dictation. Return strict JSON only.",
-          "You may fix punctuation, line breaks, casing, and obvious speech-to-text dental spelling: коффердам, перкуссия, зондирование, кариес, пульпит, периодонтит, RVG, ОПТГ, КЛКТ, ЭОД.",
-          "Keep FDI tooth numbers exactly as heard; convert spoken Russian FDI forms only when unambiguous, for example 'три шесть' near a tooth mention may be 36.",
-          "Preserve section cues such as жалобы, анамнез, объективно, диагноз, проведено, рекомендации so the card can be filled correctly.",
-          "Never add diagnoses, procedures, tooth numbers, medications, measurements, dates, payments, or clinical facts. Preserve uncertainty."
+          "Fix punctuation, casing, obvious speech-to-text dental spelling errors, and layout formatting. Do NOT add new clinical facts, diagnoses, teeth, or treatments.",
+          "Apply these corrections for common STT errors:",
+          "- коффердам (not кофе дам or кофердам)",
+          "- перкуссия (not дискуссия or экскурсия)",
+          "- фиссуры / фиссура (not фигуры or фисуры)",
+          "- рецессия (not репрессия)",
+          "- депульпация / депульпирование (not депопуляция)",
+          "- периодонтит, пульпит, кариес, зондирование, орально, вестибулярно, дистально, медиально.",
+          "- КЛКТ, ОПТГ, RVG, ЭОД.",
+          "Convert spoken Russian FDI tooth forms to digits when clear (e.g., 'три шесть' near tooth mentions becomes '36', 'зуб один один' becomes 'зуб 11').",
+          "Ensure section headers like 'Жалобы:', 'Анамнез:', 'Объективно:', 'Диагноз:', 'Проведено:' or 'Лечение:', 'Рекомендации:' are on new lines if dictated."
         ].join(" ")
       },
       {
@@ -346,6 +353,7 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
   transcript: string;
   specialty: DentalSpecialty;
 }): Promise<{ normalizedTranscript: string; warnings: string[] }> {
+  let primaryError: unknown = null;
   // Попытка 1: Используем основную настроенную конфигурацию
   try {
     if (input.config.neuralEnabled) {
@@ -377,8 +385,9 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
         }
       }
     }
-  } catch (primaryError) {
-    console.warn(`[AI Polish Primary Fallback Triggered] Сбой основного провайдера очистки: ${primaryError instanceof Error ? primaryError.message : primaryError}`);
+  } catch (err) {
+    primaryError = err;
+    console.warn(`[AI Polish Primary Fallback Triggered] Сбой основного провайдера очистки: ${err instanceof Error ? err.message : err}`);
   }
 
   // Попытка 2: Идем по каскаду моделей
@@ -431,6 +440,9 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
     }
   }
 
+  if (primaryError) {
+    throw primaryError;
+  }
   throw new Error("Сбой серверной очистки диктовки: все модели из каскада фоллбеков завершились ошибкой или лимиты исчерпаны.");
 }
 

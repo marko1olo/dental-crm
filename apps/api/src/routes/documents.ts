@@ -82,8 +82,9 @@ export const issuedArchiveIntegrityError =
 
 export function pdfBrowserCandidates(): string[] {
   return [
-    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
     "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/usr/bin/microsoft-edge",
@@ -106,7 +107,7 @@ const allowedPdfBrowserExecutables = new Set([
 ]);
 
 function isSafeBrowserPath(candidate: string): boolean {
-  const basename = candidate.split(/[\/]/).pop()?.toLowerCase();
+  const basename = candidate.split(/[\/\\]/).pop()?.toLowerCase();
   return basename ? allowedPdfBrowserExecutables.has(basename) : false;
 }
 
@@ -879,7 +880,9 @@ export function buildDocumentAuditFacts(document: GeneratedDocument, patient: (t
   const metadata = documentKindMetadata[document.kind];
   const htmlPreviewUrl = `/api/documents/${document.id}/html`;
   const htmlDownloadUrl = immutableSnapshotReady ? `${htmlPreviewUrl}?download=1` : null;
-  const pdfDownloadUrl = immutableSnapshotReady && hasIssueSignatureAttestation ? `/api/documents/${document.id}/pdf` : null;
+  // treatment_plan PDFs are rendered on-the-fly (no signed archive required) — available in draft too
+  const treatmentPlanPdfUrl = document.kind === "treatment_plan" ? `/api/documents/${document.id}/treatment-plan-pdf` : null;
+  const pdfDownloadUrl = treatmentPlanPdfUrl ?? (immutableSnapshotReady && hasIssueSignatureAttestation ? `/api/documents/${document.id}/pdf` : null);
   const canExportFnsXml =
     document.kind === "tax_deduction_certificate" &&
     document.status === "issued" &&

@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 
 import { existsSync } from "node:fs";
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8") + "\n" + (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "") + "\n" + (existsSync("apps/web/src/ImagingView.tsx") ? readFileSync("apps/web/src/ImagingView.tsx", "utf8") : "");
+const appSource = 
+  readFileSync("apps/web/src/App.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8") + "\n" +
+  (existsSync("apps/web/src/AppHelpers.tsx") ? readFileSync("apps/web/src/AppHelpers.tsx", "utf8") : "") + "\n" +
+  (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "") + "\n" +
+  (existsSync("apps/web/src/ImagingView.tsx") ? readFileSync("apps/web/src/ImagingView.tsx", "utf8") : "");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 const mprClinicalSource = readFileSync("apps/web/src/mprClinicalStatus.ts", "utf8");

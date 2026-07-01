@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const appSource = [
   fs.readFileSync("apps/web/src/App.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
   fs.readFileSync("apps/web/src/DocumentsView.tsx", "utf8")
 ].join("\n");
 const sharedSource = fs.readFileSync("packages/shared/src/index.ts", "utf8");

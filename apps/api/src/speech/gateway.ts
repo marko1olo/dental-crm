@@ -1539,7 +1539,7 @@ async function transcribeWithProvider(input: {
         result = await transcribeOpenAiCompatible({
           endpoint: "https://api.groq.com/openai/v1/audio/transcriptions",
           apiKey: keyCandidate.value,
-          model: process.env.GROQ_STT_MODEL ?? "whisper-large-v3-turbo",
+          model: process.env.GROQ_STT_MODEL ?? "whisper-large-v3",
           audio: input.audio,
           mimeType: input.mimeType,
           language: input.language,

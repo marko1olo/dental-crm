@@ -6,8 +6,12 @@ import {
   createAiRecognitionJobSchema,
   visitNoteDraftRequestSchema,
   visitNoteDraftSchema,
+  treatmentPlanPayloadSchema
 } from "@dental/shared";
 import { buildVisitDraftFromTranscript } from "../ai/visitDraft.js";
+import { personalizeTreatmentPlan } from "../ai/treatmentPlanPersonalize.js";
+import { personalizePostVisitRecommendations } from "../ai/postVisitPersonalize.js";
+import { parseDictationWithLLM } from "../ai/dictationParser.js";
 import {
   createAiRecognitionJob,
   imagingStudies,
@@ -140,5 +144,61 @@ export async function registerAiRoutes(app: FastifyInstance) {
     }
 
     return visitNoteDraftSchema.parse(await buildVisitDraftFromTranscript(input.transcript, input.specialty));
+  });
+
+  app.post("/api/ai/treatment-plan-personalize", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "personalize treatment plan"))) return;
+    const parsedInput = treatmentPlanPayloadSchema.safeParse(request.body);
+    if (!parsedInput.success) {
+      return reply.code(400).send({
+        error: "TreatmentPlanValidationError",
+        message: "Некорректный план лечения для ИИ-персонализации."
+      });
+    }
+    const result = await personalizeTreatmentPlan(parsedInput.data);
+    return reply.send(result);
+  });
+
+  app.post("/api/ai/post-visit-personalize", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "personalize post visit recommendations"))) return;
+    const schema = z.object({
+      careTopic: z.string(),
+      procedureName: z.string(),
+      toothOrArea: z.string(),
+      doctorFullName: z.string()
+    });
+    const parsedInput = schema.safeParse(request.body);
+    if (!parsedInput.success) {
+      return reply.code(400).send({
+        error: "PostVisitPersonalizeValidationError",
+        message: "Некорректные параметры для ИИ-рекомендаций после приема."
+      });
+    }
+    const result = await personalizePostVisitRecommendations(parsedInput.data);
+    return reply.send(result);
+  });
+
+  app.post("/api/ai/parse-dictation", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "parse dictation with AI"))) return;
+    const schema = z.object({
+      text: z.string(),
+      type: z.enum(["schedule", "patient", "visit"])
+    });
+    const parsedInput = schema.safeParse(request.body);
+    if (!parsedInput.success) {
+      return reply.code(400).send({
+        error: "ParseDictationValidationError",
+        message: "Некорректные параметры для ИИ-разбора."
+      });
+    }
+    try {
+      const result = await parseDictationWithLLM(parsedInput.data.text, parsedInput.data.type as any);
+      return reply.send(result);
+    } catch (err: any) {
+      return reply.code(500).send({
+        error: "ParseDictationError",
+        message: err.message || "Ошибка парсинга диктовки"
+      });
+    }
   });
 }

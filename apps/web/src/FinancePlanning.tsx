@@ -1,4 +1,5 @@
-import { ClipboardList } from "lucide-react";
+import { useState } from "react";
+import { ClipboardList, ChevronDown, ChevronUp } from "lucide-react";
 import type { Dashboard } from "@dental/shared";
 
 type TreatmentPlanScenario = Dashboard["treatmentPlanScenarios"][number];
@@ -40,6 +41,8 @@ export function FinancePlanningOverview({
   scenarios,
   strategyLabels
 }: FinancePlanningOverviewProps) {
+  const [showScenarios, setShowScenarios] = useState(false);
+
   return (
     <>
       <div className="finance-summary-grid" aria-label="Финансовая сводка">
@@ -66,40 +69,58 @@ export function FinancePlanningOverview({
       </div>
 
       <section className="plan-scenarios" aria-label="Варианты плана лечения">
-        <div className="panel-heading">
-          <h3>Варианты плана</h3>
-          <span className="status-pill status-confirmed">{scenarios.length}</span>
+        <div className="panel-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3>Варианты плана</h3>
+            <span className="status-pill status-confirmed">{scenarios.length}</span>
+          </div>
+          {scenarios.length > 0 && (
+            <button
+              type="button"
+              className="text-button"
+              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+              onClick={() => setShowScenarios(!showScenarios)}
+            >
+              {showScenarios ? (
+                <>Скрыть <ChevronUp size={16} /></>
+              ) : (
+                <>Показать {scenarios.length} варианта <ChevronDown size={16} /></>
+              )}
+            </button>
+          )}
         </div>
         {scenarios.length ? (
-          <div className="plan-scenario-grid">
-            {scenarios.map((scenario) => (
-              <article className={`plan-scenario priority-${scenario.priority}`} key={scenario.id}>
-                <div className="scenario-header">
-                  <span>{strategyLabels[scenario.strategy]} · {priorityLabels[scenario.priority]}</span>
-                  <strong>{money(scenario.totalRub)}</strong>
-                </div>
-                <h3>{scenario.title}</h3>
-                <p>
-                  {scenario.visitCount} виз. · {scenario.durationMonths ? `${scenario.durationMonths} мес.` : "сегодня"} ·{" "}
-                  {scenario.includedServiceIds.length} услуг
-                </p>
-                <div className="scenario-phase-list">
-                  {scenario.phases.map((phase) => (
-                    <div key={`${scenario.id}-${phase.title}`}>
-                      <span>{phase.title} · {phase.window}</span>
-                      <strong>{money(phase.amountRub)}</strong>
-                      <p>{phase.focus}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="scenario-notes">
-                  <p><strong>Плюс:</strong> {scenario.pros[0]}</p>
-                  <p><strong>Компромисс:</strong> {scenario.tradeoffs[0]}</p>
-                  {scenario.clinicalWarnings[0] ? <small>{scenario.clinicalWarnings[0]}</small> : null}
-                </div>
-              </article>
-            ))}
-          </div>
+          showScenarios && (
+            <div className="plan-scenario-grid">
+              {scenarios.map((scenario) => (
+                <article className={`plan-scenario priority-${scenario.priority}`} key={scenario.id}>
+                  <div className="scenario-header">
+                    <span>{strategyLabels[scenario.strategy]} · {priorityLabels[scenario.priority]}</span>
+                    <strong>{money(scenario.totalRub)}</strong>
+                  </div>
+                  <h3>{scenario.title}</h3>
+                  <p>
+                    {scenario.visitCount} виз. · {scenario.durationMonths ? `${scenario.durationMonths} мес.` : "сегодня"} ·{" "}
+                    {scenario.includedServiceIds.length} услуг
+                  </p>
+                  <div className="scenario-phase-list">
+                    {scenario.phases.map((phase) => (
+                      <div key={`${scenario.id}-${phase.title}`}>
+                        <span>{phase.title} · {phase.window}</span>
+                        <strong>{money(phase.amountRub)}</strong>
+                        <p>{phase.focus}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="scenario-notes">
+                    <p><strong>Плюс:</strong> {scenario.pros[0]}</p>
+                    <p><strong>Компромисс:</strong> {scenario.tradeoffs[0]}</p>
+                    {scenario.clinicalWarnings[0] ? <small>{scenario.clinicalWarnings[0]}</small> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )
         ) : (
           <article className="finance-empty-state">
             <ClipboardList aria-hidden="true" />

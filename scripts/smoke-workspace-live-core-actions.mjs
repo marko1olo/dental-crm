@@ -105,6 +105,10 @@ function connectCdp(wsUrl) {
 
   socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
+    if (message.method === "Runtime.consoleAPICalled") {
+      const args = message.params.args.map(a => a.value !== undefined ? a.value : a.description || JSON.stringify(a)).join(" ");
+      console.log(`[BROWSER CONSOLE]:`, args);
+    }
     if (!message.id) return;
     const request = pending.get(message.id);
     if (!request) return;
@@ -140,7 +144,14 @@ async function navigateTo(cdp, hash, selector) {
     `(() => document.readyState === "complete" && Boolean(document.querySelector(".app-shell")))()`,
     `${hash} app shell`
   );
-  await waitFor(cdp, `(() => Boolean(document.querySelector(${JSON.stringify(selector)})))()`, `${hash} selector ${selector}`);
+  await waitFor(
+    cdp,
+    `(() => {
+      const el = document.querySelector(${JSON.stringify(selector)});
+      return el && el.getAttribute("aria-busy") !== "true";
+    })()`,
+    `${hash} selector ${selector} not busy`
+  );
 }
 
 async function saveScreenshot(cdp, name) {
@@ -214,6 +225,9 @@ const apiProcess = spawnTracked(
       DENTE_SETTINGS_ADMIN_SECRET: "",
       DENTE_SCHEDULE_ADMIN_SECRET: "",
       DENTE_TELEGRAM_ADMIN_SECRET: "",
+      DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS: "1",
+      DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS: "1",
+      DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS: "1",
       DENTAL_API_SERVER_PATH: apiServerPath,
       DENTAL_STATE_FILE: stateFilePath,
       DENTAL_STATE_BACKUP_DIR: backupDir,
@@ -398,6 +412,7 @@ try {
   );
 
   await navigateTo(cdp, "visit", "#visit.visit-panel");
+  await waitFor(cdp, `(() => Boolean(document.querySelector(".tooth-map")))()`, "tooth map");
   const toothResult = await evaluate(
     cdp,
     `(() => {
@@ -443,6 +458,21 @@ try {
   }
 
   await navigateTo(cdp, "schedule", "#schedule.schedule-panel");
+  const clickResult = await evaluate(
+    cdp,
+    `(() => {
+      const buttons = Array.from(document.querySelectorAll("button"));
+      const btn = buttons.find(b => b.textContent.includes("Создать запись"));
+      if (!btn) {
+        return { ok: false, foundButtons: buttons.map(b => b.textContent.trim()) };
+      }
+      btn.click();
+      return { ok: true };
+    })()`
+  );
+  if (!clickResult.ok) {
+    throw new Error("Could not find 'Создать запись' button on schedule panel. Buttons found: " + JSON.stringify(clickResult.foundButtons));
+  }
   await waitFor(cdp, `(() => Boolean(document.querySelector(".appointment-create-editor")))()`, "appointment create editor");
   const scheduleFormResult = await evaluate(
     cdp,
@@ -494,6 +524,21 @@ try {
     })()`,
     "create appointment"
   );
+  await sleep(1000);
+  const editorState = await evaluate(
+    cdp,
+    `(() => {
+      const errorEl = document.querySelector(".appointment-editor-actions .save-error");
+      const stateEl = document.querySelector(".appointment-editor-actions .save-state");
+      const missingEl = document.querySelector("#new-appointment-create-missing");
+      return {
+        errorText: errorEl ? errorEl.textContent.trim() : null,
+        stateText: stateEl ? stateEl.textContent.trim() : null,
+        missingText: missingEl ? missingEl.textContent.trim() : null
+      };
+    })()`
+  );
+  console.log("Appointment Editor state after click:", JSON.stringify(editorState));
   await waitForDashboard(
     (state) => state.appointments.length > initialAppointmentCount && state.appointments.some((appointment) => appointment.reason === appointmentReason),
     "created appointment"
@@ -644,20 +689,43 @@ try {
 
   await navigateTo(cdp, "imaging", "#imaging.imaging-panel");
   await setFileInputFiles(cdp, '[data-testid="imaging-browser-local-files-input"]', fixtureFiles);
-  const imagingResult = await waitFor(
-    cdp,
-    `(() => {
-      const status = document.querySelector('[data-testid="imaging-upload-status"]');
-      if (!status) {
-        return null;
-      }
-      const text = status.innerText;
-      const dicomLike = /DICOM|КТ|РљРў/.test(text);
-      return text.includes("3") && dicomLike ? { text } : null;
-    })()`,
-    "imaging file upload status",
-    120
-  );
+  let imagingResult;
+  try {
+    imagingResult = await waitFor(
+      cdp,
+      `(() => {
+        const status = document.querySelector('[data-testid="imaging-upload-status"]');
+        if (!status) {
+          return null;
+        }
+        const text = status.innerText;
+        const dicomLike = /DICOM|КТ|РљРў/.test(text);
+        return text.includes("3") && dicomLike ? { text } : null;
+      })()`,
+      "imaging file upload status",
+      120
+    );
+  } catch (error) {
+    const diag = await evaluate(
+      cdp,
+      `(() => {
+        const status = document.querySelector('[data-testid="imaging-upload-status"]');
+        const alert = document.querySelector('.workspace-route-error, .default-clinic-banner, [role="alert"]');
+        const appError = document.querySelector('.app-error-banner, .error-message');
+        const bodyText = document.body.innerText;
+        return {
+          statusExists: Boolean(status),
+          statusHtml: status ? status.outerHTML : null,
+          alertText: alert ? alert.textContent.trim() : null,
+          appErrorText: appError ? appError.textContent.trim() : null,
+          bodyTextLength: bodyText.length,
+          bodyTextPrefix: bodyText.slice(0, 1000)
+        };
+      })()`
+    );
+    console.error("DIAGNOSTICS ON IMAGING UPLOAD FAILURE:", JSON.stringify(diag, null, 2));
+    throw error;
+  }
 
   const finalScreenshot = await saveScreenshot(cdp, "final-imaging");
   cdp.close();
@@ -703,6 +771,17 @@ try {
       screenshot: finalScreenshot
     })
   );
+} catch (error) {
+  console.error("SMOKE TEST FAILED:", error);
+  console.error("--- API PROCESS STDOUT ---");
+  console.error(apiProcess.stdout());
+  console.error("--- API PROCESS STDERR ---");
+  console.error(apiProcess.stderr());
+  console.error("--- WEB PROCESS STDOUT ---");
+  console.error(webProcess.stdout());
+  console.error("--- WEB PROCESS STDERR ---");
+  console.error(webProcess.stderr());
+  throw error;
 } finally {
   await stopTracked(browserProcess);
   await stopTracked(webProcess);

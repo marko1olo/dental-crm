@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 
-const appSource = readFileSync("apps/web/src/App.tsx", "utf8");
+const appSource = 
+  readFileSync("apps/web/src/App.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/useAppLogic.tsx", "utf8") + "\n" +
+  readFileSync("apps/web/src/AppHelpers.tsx", "utf8");
 const serverSource = readFileSync("apps/api/src/server.ts", "utf8");
 
 function assert(condition, message) {
@@ -26,7 +29,7 @@ function sourceBetween(source, startNeedle, endNeedle) {
 const openIssuedDocumentHtmlSource = sourceBetween(
   appSource,
   "async function openIssuedDocumentHtml(documentId: string)",
-  "async function downloadIssuedDocumentPdf(documentId: string)"
+  "async function downloadIssuedDocumentPdf(documentId: string, overrideUrl?: string)"
 );
 const downloadIssuedDocumentHtmlSource = sourceBetween(
   appSource,

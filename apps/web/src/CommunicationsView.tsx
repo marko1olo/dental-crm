@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, FileText, History, MessageSquare, Send } from "lucide-react";
+import { CheckCircle2, FileText, History, MessageSquare, Send, Mic } from "lucide-react";
 import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole } from "@dental/shared";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
@@ -124,23 +124,22 @@ function CommunicationTaskCard({
               Сохраняю в журнал
             </span>
           ) : null}
-          <label className="communication-outcome-select" htmlFor={outcomeSelectId}>
-            Исход
-            <select
-              id={outcomeSelectId}
-              value={selectedOutcome}
-              onChange={(event) => setSelectedOutcome(event.target.value as CommunicationTaskOutcome | "")}
-              disabled={communicationSaveInProgress}
-              aria-describedby={completionNoteDescriptionId}
-            >
-              <option value="">Выбрать</option>
+          <div className="communication-outcome-select">
+            <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Исход</span>
+            <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
               {communicationTaskOutcomeOptions.map(([outcome, label]) => (
-                <option value={outcome} key={outcome}>
+                <button
+                  key={outcome}
+                  type="button"
+                  className={`quick-chip ${selectedOutcome === outcome ? 'selected' : ''}`}
+                  onClick={() => setSelectedOutcome(outcome as CommunicationTaskOutcome)}
+                  disabled={communicationSaveInProgress}
+                >
                   {label}
-                </option>
+                </button>
               ))}
-            </select>
-          </label>
+            </div>
+          </div>
           <button
             aria-label={`Закрыть задачу связи: ${task.title}`}
             aria-busy={isTaskSaving || undefined}
@@ -254,17 +253,49 @@ export function CommunicationsView({
         </article>
       </div>
 
-      <div className="communication-note-row">
-        <label htmlFor={communicationNoteInputId}>
-          Заметка закрытия
-          <input
-            id={communicationNoteInputId}
-            value={communicationNote}
-            onChange={(event) => onCommunicationNoteChange(event.target.value)}
-            aria-describedby={communicationNoteDescriptionId}
-          />
-        </label>
-        <span id={communicationNoteDescriptionId}>Задача закрывается с событием и попадает в аудит.</span>
+      <div className="communication-note-row" style={{ background: 'var(--paper)', padding: '16px', borderRadius: '12px', border: '1px solid var(--slate-200)', marginBottom: '20px', boxShadow: '0 2px 4px rgba(15,23,42,0.02)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div>
+            <label htmlFor={communicationNoteInputId} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--slate-800)', display: 'block' }}>
+              Заметка закрытия
+            </label>
+            <span id={communicationNoteDescriptionId} style={{ fontSize: '12px', color: 'var(--slate-500)' }}>Задача закрывается с событием и попадает в аудит.</span>
+          </div>
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ display: "inline-flex", gap: "6px", alignItems: "center", padding: '6px 12px', color: 'var(--brand-600)', background: 'var(--brand-50)', border: 'none', borderRadius: '8px', fontWeight: 600 }}
+            onClick={() => alert("Запись голоса... (Демо ИИ)")}
+          >
+            <Mic size={16} /> Надиктовать
+          </button>
+        </div>
+        <textarea
+          id={communicationNoteInputId}
+          value={communicationNote}
+          onChange={(event) => onCommunicationNoteChange(event.target.value)}
+          aria-describedby={communicationNoteDescriptionId}
+          placeholder="Нажмите для ввода или надиктуйте результат связи..."
+          rows={2}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '14px', resize: 'vertical', marginBottom: '12px' }}
+        />
+        <div className="quick-chips-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--slate-400)', alignSelf: 'center', marginRight: '4px' }}>Шаблоны:</span>
+          {["Недозвон", "Обещал оплатить", "Подумает", "Перезвонить позже", "Запрос документов"].map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              className="quick-chip quick-chip--sm"
+              style={{ background: 'var(--slate-100)', color: 'var(--slate-700)', border: '1px solid var(--slate-200)', borderRadius: '16px', padding: '4px 10px', fontSize: '12px' }}
+              onClick={() => {
+                const prev = communicationNote || "";
+                onCommunicationNoteChange(prev ? `${prev}, ${chip.toLowerCase()}` : chip);
+              }}
+            >
+              + {chip}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="communication-layout">

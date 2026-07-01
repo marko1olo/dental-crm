@@ -1,0 +1,102 @@
+/* NEW MODERN SCHEDULE CARDS */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.appointment-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.appointment-card.readiness-needs_attention {
+  border-left: 5px solid var(--amber);
+}
+.appointment-card.readiness-ready {
+  border-left: 5px solid var(--teal);
+}
+
+.appointment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 118, 110, 0.08);
+  border-color: var(--line-strong);
+}
+
+.appointment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.appointment-card-time {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.appointment-card-time span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.appointment-card-status {
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.appointment-card-body h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--slate-800);
+  margin: 0 0 8px 0;
+}
+
+.appointment-card-body .chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.appointment-card-body .chip {
+  background: var(--slate-100);
+  color: var(--slate-700);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.appointment-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+}
+
+.appointment-card .appointment-edit-button {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.appointment-card:hover .appointment-edit-button {
+  opacity: 1;
+}

@@ -19,7 +19,7 @@ describe("commitImagingImport", () => {
     auditEvents.splice(0, auditEvents.length, ...initialAuditEventsSnapshot);
   });
 
-  it("processes valid records only and maps properties to the created study correctly", () => {
+  it("processes valid records only and maps properties to the created study correctly", async () => {
     const patient = patients[0];
     assert.ok(patient, "Expected at least one patient in sample data");
 
@@ -35,9 +35,9 @@ describe("commitImagingImport", () => {
         // Invalid row (no filepath)
         `${patient.fullName}|opg||Missing Path|${patient.phone}|||`,
       ].join("\n")
-    };
+     };
 
-    const result = commitImagingImport(input);
+     const result = await commitImagingImport(input);
 
     assert.strictEqual(result.preview.totalRows, 3);
     assert.strictEqual(result.importedCount, 1);

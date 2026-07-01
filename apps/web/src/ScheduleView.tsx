@@ -1,10 +1,13 @@
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
-import { Plus, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { Plus, ShieldCheck, Bot, Mic } from "lucide-react";
+import { useState, useRef } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
 import { motionSafeScrollIntoView } from "./motionPreference";
+import { smartBookingParser } from "./lib/smartBookingParser";
+import { DictationHints } from "./DictationHints";
+import { SmartParsePreview } from "./SmartParsePreview";
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -139,6 +142,12 @@ export function ScheduleView(props: ScheduleViewProps) {
   const { setScheduleAdminSecretDraft, scheduleAdminSecretDraft, scheduleAdminSecretSession } = useSettingsStore();
   const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [useManualSelects, setUseManualSelects] = useState(false);
+
+  const [smartInputText, setSmartInputText] = useState("");
+  const [showSmartPreview, setShowSmartPreview] = useState(false);
+  const [smartParsedData, setSmartParsedData] = useState<Partial<AppointmentScheduleDraft> | null>(null);
+  const [showHints, setShowHints] = useState(false);
 
   const adminSecretReady = scheduleAdminSecretDraft.trim().length > 0;
   const newAppointmentStartsAtMs = Date.parse(newAppointmentDraft.startsAt);
@@ -304,10 +313,23 @@ export function ScheduleView(props: ScheduleViewProps) {
               data-testid="schedule-shift-summary"
               aria-label="Короткая сводка смены"
               aria-live="polite"
+              style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}
             >
-              <strong>{scheduleFilteredSummary}</strong>
+              {sortedAppointments.length > 0 ? (
+                <span className="status-pill status-confirmed">Записей: {sortedAppointments.length}</span>
+              ) : (
+                <span className="status-pill status-cancelled">Нет записей</span>
+              )}
+              {activeScheduleFilterCount > 0 ? (
+                <span className="status-pill status-arrived">Фильтров: {activeScheduleFilterCount}</span>
+              ) : null}
+              {shiftWarnings.length > 0 ? (
+                <span className="status-pill status-overdue">Предупреждений: {shiftWarnings.length}</span>
+              ) : (
+                <span className="status-pill status-completed">Ок</span>
+              )}
               {showShiftAnalytics && (
-                <div className="schedule-shift-summary-grid">
+                <div className="schedule-shift-summary-grid" style={{ width: "100%", marginTop: "12px" }}>
                   {scheduleLoadSummaryCards.map((card) => (
                     <article key={card.id}>
                       <span>{card.title}</span>
@@ -318,80 +340,52 @@ export function ScheduleView(props: ScheduleViewProps) {
                 </div>
               )}
             </section>
-            <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания">
-              <label>
-                День
+            <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--slate-100)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--slate-200)', paddingRight: '12px', marginRight: '4px' }}>
                 <input
                   type="date"
                   value={scheduleDateFilter}
                   onChange={(event: TextFieldChangeEvent) => setScheduleDateFilter(event.target.value)}
+                  style={{ border: 'none', background: 'transparent', fontSize: '14px', fontWeight: 600, color: 'var(--slate-800)', outline: 'none', cursor: 'pointer' }}
                 />
-              </label>
-              <label>
-                Врач
-                <select value={scheduleDoctorFilterId ?? ""} onChange={(event: SelectChangeEvent) => setScheduleDoctorFilterId(event.target.value || null)}>
-                  <option value="">Все врачи</option>
-                  {dashboard.clinicSettings.staff
-                    .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
-                    .map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.fullName}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label>
-                Ассистент
-                <select value={scheduleAssistantFilterId ?? ""} onChange={(event: SelectChangeEvent) => setScheduleAssistantFilterId(event.target.value || null)}>
-                  <option value="">Все ассистенты</option>
-                  {dashboard.clinicSettings.staff
-                    .filter((member) => member.active && member.role === "assistant")
-                    .map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.fullName}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label>
-                Кресло
-                <select value={scheduleChairFilterId ?? ""} onChange={(event: SelectChangeEvent) => setScheduleChairFilterId(event.target.value || null)}>
-                  <option value="">Все кресла</option>
-                  {dashboard.clinicSettings.chairs
-                    .filter((chair) => chair.active)
-                    .map((chair) => (
-                      <option key={chair.id} value={chair.id}>
-                        {chair.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label>
-                Статус
-                <select
-                  value={scheduleStatusFilter}
-                  onChange={(event: SelectChangeEvent) => setScheduleStatusFilter(normalizedAppointmentStatusFilter(event.target.value))}
-                >
-                  <option value="all">Все статусы</option>
-                  {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
-                    <option key={status} value={status}>
-                      {appointmentLabels[status]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="schedule-filter-actions">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => setScheduleDateFilter(todayScheduleDate())}
-                >
-                  Сегодня
-                </button>
-                <button className="text-button" type="button" onClick={resetScheduleFilters}>
-                  Сбросить фильтры
-                </button>
               </div>
+              
+              <button
+                type="button"
+                className={`quick-chip ${!scheduleDoctorFilterId && !scheduleChairFilterId ? 'active' : ''}`}
+                onClick={resetScheduleFilters}
+                
+              >
+                Все записи
+              </button>
+              
+              {dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff
+                .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+                .map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    className={`quick-chip ${scheduleDoctorFilterId === member.id ? 'active' : ''}`}
+                    onClick={() => setScheduleDoctorFilterId(scheduleDoctorFilterId === member.id ? null : member.id)}
+                    
+                  >
+                    {member.fullName.split(' ')[0]}
+                  </button>
+                ))}
+              
+              {dashboard.clinicSettings.chairs
+                .filter((chair) => chair.active)
+                .map((chair) => (
+                  <button
+                    key={chair.id}
+                    type="button"
+                    className={`quick-chip ${scheduleChairFilterId === chair.id ? 'active' : ''}`}
+                    onClick={() => setScheduleChairFilterId(scheduleChairFilterId === chair.id ? null : chair.id)}
+                    
+                  >
+                    {chair.name}
+                  </button>
+                ))}
             </div>
             <details className="schedule-secret-collapsible">
               <summary>🔐 Разблокировать сохранение расписания</summary>
@@ -446,163 +440,317 @@ export function ScheduleView(props: ScheduleViewProps) {
               </div>
             </details>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
-              <button
-                className="primary-button"
-                type="button"
-                aria-expanded={showCreateForm}
-                onClick={() => setShowCreateForm((v) => !v)}
-              >
-                {showCreateForm ? "➖ Скрыть форму создания записи" : "➕ Создать запись в расписание"}
-              </button>
-            </div>
-
-            {showCreateForm && (
-              <div className="appointment-editor appointment-create-editor" aria-label="Создание записи">
-                <label>
-                  Начало
+            <div className="appointment-create-editor" aria-label="Создание записи">
+              <div className="smart-ai-booking" style={{ marginBottom: '12px', border: '1px solid var(--brand-300)', boxShadow: '0 2px 8px rgba(14, 165, 233, 0.05)', borderRadius: '12px', padding: '8px 12px', background: 'var(--paper)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Bot size={18} color="var(--brand-600)" />
+                <div style={{ position: 'relative', flex: 1 }}>
                   <input
-                    type="datetime-local"
-                    value={toDateTimeLocalValue(newAppointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
-                    onChange={(event: TextFieldChangeEvent) =>
-                      updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
-                    }
+                    type="text"
+                    value={smartInputText}
+                    placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
+                    onFocus={() => setShowHints(true)}
+                    onBlur={() => setTimeout(() => setShowHints(false), 200)}
+                    onChange={(e) => setSmartInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && smartInputText.trim()) {
+                        e.preventDefault();
+                        const parsed = smartBookingParser(smartInputText, dashboard);
+                        setSmartParsedData(parsed);
+                        setShowSmartPreview(true);
+                        setShowHints(false);
+                      }
+                    }}
+                    style={{ width: '100%', padding: '12px 48px 12px 16px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '15px', outline: 'none' }}
                   />
-                </label>
-                <label>
-                  Окончание
-                  <input
-                    type="datetime-local"
-                    value={toDateTimeLocalValue(newAppointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
-                    onChange={(event: TextFieldChangeEvent) =>
-                      updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
-                    }
-                  />
-                </label>
-                <label>
-                  Пациент
-                  <select value={newAppointmentDraft.patientId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("patientId", event.target.value)}>
-                    <option value="">Выберите пациента</option>
-                    {dashboard.patients
-                      .filter((patient) => patient.status === "active")
-                      .map((patient) => (
-                        <option key={patient.id} value={patient.id}>
-                          {patient.fullName}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <label>
-                  Врач
-                  <select value={newAppointmentDraft.doctorUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("doctorUserId", event.target.value)}>
-                    <option value="">Выберите врача</option>
-                    {dashboard.clinicSettings.staff
-                      .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
-                      .map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.fullName}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <label>
-                  Ассистент
-                  <select value={newAppointmentDraft.assistantUserId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("assistantUserId", event.target.value)}>
-                    <option value="">{dashboard.clinicSettings.profile.mode === "solo_doctor" ? "Не нужен в режиме соло" : "Выберите ассистента"}</option>
-                    {dashboard.clinicSettings.staff
-                      .filter((member) => member.active && member.role === "assistant")
-                      .map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.fullName}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <label>
-                  Кресло
-                  <select value={newAppointmentDraft.chairId} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("chairId", event.target.value)}>
-                    <option value="">Выберите кресло</option>
-                    {dashboard.clinicSettings.chairs
-                      .filter((chair) => chair.active)
-                      .map((chair) => (
-                        <option key={chair.id} value={chair.id}>
-                          {chair.name}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                <label>
-                  Статус
-                  <select value={newAppointmentDraft.status} onChange={(event: SelectChangeEvent) => updateNewAppointmentDraft("status", normalizedAppointmentStatus(event.target.value))}>
-                    {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
-                      <option key={status} value={status}>
-                        {appointmentLabels[status]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="form-span-2">
-                  Причина записи
-                  <input value={newAppointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
-                </label>
-                <label className="form-span-2">
-                  Комментарий
-                  <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
-                </label>
-                {!newAppointmentReadyToCreate ? (
-                  <div className="schedule-create-missing" id="new-appointment-create-missing" role="status" aria-live="polite">
-                    <strong>Чтобы создать запись, осталось:</strong>
-                    <ul>
-                      {newAppointmentMissingSteps.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-                <div className="appointment-editor-actions">
-                  {newAppointmentError ? <span className="save-error">{newAppointmentError}</span> : null}
-                  <span className={`save-state save-state-${newAppointmentSaveState}`}>
-                    {newAppointmentSaveState === "saving"
-                      ? "Создаю"
-                      : newAppointmentSaveState === "saved"
-                        ? "Запись создана"
-                        : newAppointmentSaveState === "error"
-                          ? "Ошибка создания"
-                          : "Готово к созданию"}
-                  </span>
-                  <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"} aria-busy={newAppointmentSaveState === "saving" || undefined}>
-                    Сбросить
-                  </button>
                   <button
-                    className="primary-button"
                     type="button"
-                    onClick={() => void createAppointmentFromDraft()}
-                    disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
-                    aria-busy={newAppointmentSaveState === "saving" || undefined}
-                    aria-describedby={!newAppointmentReadyToCreate ? "new-appointment-create-missing" : undefined}
+                    title="Надиктовать"
+                    onClick={() => alert("Запись голоса... (Демо ИИ)")}
+                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-500)', padding: '4px', borderRadius: '50%' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-50)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <Plus aria-hidden="true" /> Создать запись
+                    <Mic size={20} />
                   </button>
+                  
+                  <DictationHints isVisible={showHints} type="schedule" />
+                  
+                  <SmartParsePreview 
+                    isVisible={showSmartPreview}
+                    parsedData={smartParsedData}
+                    rawText={smartInputText}
+                    type="schedule"
+                    onApply={(data: any) => {
+                      if (data) {
+                        if (data.patientId) updateNewAppointmentDraft("patientId", data.patientId);
+                        if (data.doctorUserId) updateNewAppointmentDraft("doctorUserId", data.doctorUserId);
+                        if (data.startsAt) updateNewAppointmentDraft("startsAt", data.startsAt);
+                        if (data.endsAt) updateNewAppointmentDraft("endsAt", data.endsAt);
+                        if (data.reason || data.service) updateNewAppointmentDraft("reason", data.reason || data.service);
+                        if (data.chairId) updateNewAppointmentDraft("chairId", data.chairId);
+                        if (data.comment || data.note) updateNewAppointmentDraft("comment", data.comment || data.note);
+                      }
+                      setShowSmartPreview(false);
+                      setSmartInputText("");
+                      setShowCreateForm(true); // Open form to review
+                    }}
+                    onManual={() => {
+                      setShowSmartPreview(false);
+                      setShowCreateForm(true);
+                    }}
+                    onClose={() => setShowSmartPreview(false)}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <button
+                      className="text-button"
+                      type="button"
+                      onClick={() => setShowCreateForm((v) => !v)}
+                      style={{ fontSize: '13px', color: 'var(--slate-500)', textDecoration: 'underline' }}
+                    >
+                      {showCreateForm ? "Скрыть ручной ввод" : "Показать все поля / Ручной ввод"}
+                    </button>
+                    {showCreateForm && (
+                      <label style={{ fontSize: '13px', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={useManualSelects} onChange={(e) => setUseManualSelects(e.target.checked)} />
+                        Классические списки
+                      </label>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {newAppointmentReadyToCreate ? (
+                      <span className="save-state save-state-idle" style={{ color: 'var(--teal)' }}>✓ Готово к созданию</span>
+                    ) : (
+                      <span className="save-state save-state-idle" style={{ color: 'var(--amber)' }}>Заполните поля</span>
+                    )}
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={() => void createAppointmentFromDraft()}
+                      disabled={newAppointmentSaveState === "saving" || !newAppointmentReadyToCreate}
+                      aria-busy={newAppointmentSaveState === "saving" || undefined}
+                      style={{ padding: '6px 16px', minHeight: '32px' }}
+                    >
+                      <Plus size={16} aria-hidden="true" style={{ marginRight: '6px' }} /> Создать
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
-            <div className="schedule-suggestion-strip" aria-label="Подсказки расписания">
-              {visibleScheduleSuggestions.map((suggestion) => (
-                <button
-                  className={`schedule-suggestion priority-${suggestion.priority}`}
-                  key={suggestion.id}
-                  type="button"
-                  onClick={() => openScheduleSuggestion(suggestion.section)}
-                >
-                  <span>{recommendedActionPriorityLabels[suggestion.priority]}</span>
-                  <strong>{suggestion.title}</strong>
-                  <p>{suggestion.detail}</p>
-                  <small>{staffRoleLabels[suggestion.ownerRole]} · {suggestion.reason}</small>
-                </button>
-              ))}
+
+              {showCreateForm && (
+                <div className="appointment-editor" style={{ marginBottom: '24px', padding: '16px', background: 'var(--paper)', borderRadius: '12px', border: '1px solid var(--slate-200)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <label>
+                      Начало
+                      <input
+                        type="datetime-local"
+                        value={toDateTimeLocalValue(newAppointmentDraft.startsAt, dashboard.clinicSettings.profile.timezone)}
+                        onChange={(event: TextFieldChangeEvent) =>
+                          updateNewAppointmentDraft("startsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
+                        }
+                      />
+                    </label>
+                    <label>
+                      Окончание
+                      <input
+                        type="datetime-local"
+                        value={toDateTimeLocalValue(newAppointmentDraft.endsAt, dashboard.clinicSettings.profile.timezone)}
+                        onChange={(event: TextFieldChangeEvent) =>
+                          updateNewAppointmentDraft("endsAt", fromDateTimeLocalValue(event.target.value, dashboard.clinicSettings.profile.timezone))
+                        }
+                      />
+                    </label>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px' }}>
+                    <div>
+                      <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
+                      {useManualSelects || dashboard.patients.length > 20 ? (
+                        <select
+                          value={newAppointmentDraft.patientId || ''}
+                          onChange={(e) => updateNewAppointmentDraft('patientId', e.target.value)}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                        >
+                          <option value="">-- Выберите пациента --</option>
+                          {dashboard.patients.filter(p => p.status === 'active').map(p => (
+                            <option key={p.id} value={p.id}>{p.fullName}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {dashboard.patients
+                            .filter((patient) => patient.status === "active")
+                            .map((patient) => (
+                              <button
+                                key={patient.id}
+                                type="button"
+                                className={`quick-chip ${newAppointmentDraft.patientId === patient.id ? 'active' : ''}`}
+                                onClick={() => updateNewAppointmentDraft("patientId", patient.id)}
+                                
+                              >
+                                {patient.fullName}
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Врач</span>
+                      {useManualSelects ? (
+                        <select
+                          value={newAppointmentDraft.doctorUserId || ''}
+                          onChange={(e) => updateNewAppointmentDraft('doctorUserId', e.target.value)}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                        >
+                          <option value="">-- Выберите врача --</option>
+                          {dashboard.clinicSettings.staff.filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
+                            <option key={m.id} value={m.id}>{m.fullName}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {dashboard.clinicSettings.staff
+                            .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+                            .map((member) => (
+                              <button
+                                key={member.id}
+                                type="button"
+                                className={`quick-chip ${newAppointmentDraft.doctorUserId === member.id ? 'active' : ''}`}
+                                onClick={() => updateNewAppointmentDraft("doctorUserId", member.id)}
+                                
+                              >
+                                {member.fullName}
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
+                    <div>
+                      <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {dashboard.clinicSettings.staff
+                          .filter((member) => member.active && member.role === "assistant")
+                          .map((member) => (
+                            <button
+                              key={member.id}
+                              type="button"
+                              className={`quick-chip ${newAppointmentDraft.assistantUserId === member.id ? 'active' : ''}`}
+                              onClick={() => updateNewAppointmentDraft("assistantUserId", newAppointmentDraft.assistantUserId === member.id ? "" : member.id)}
+                              
+                            >
+                              {member.fullName}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                    )}
+
+                    <div>
+                      <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {dashboard.clinicSettings.chairs
+                          .filter((chair) => chair.active)
+                          .map((chair) => (
+                            <button
+                              key={chair.id}
+                              type="button"
+                              className={`quick-chip ${newAppointmentDraft.chairId === chair.id ? 'active' : ''}`}
+                              onClick={() => updateNewAppointmentDraft("chairId", chair.id)}
+                              
+                            >
+                              {chair.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Статус</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
+                            <button
+                              key={status}
+                              type="button"
+                              className={`quick-chip ${newAppointmentDraft.status === status ? 'active' : ''}`}
+                              onClick={() => updateNewAppointmentDraft("status", status)}
+                              
+                            >
+                              {appointmentLabels[status]}
+                            </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <label className="form-span-2">
+                    Причина записи
+                    <input value={newAppointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("reason", event.target.value)} />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                      {["Кариес", "Пульпит", "Удаление", "Осмотр", "Профгигиена", "Консультация", "Брекеты", "Коронка", "КЛКТ", "Имплантация"].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => {
+                            const currentVal = newAppointmentDraft.reason.trim();
+                            const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
+                            updateNewAppointmentDraft("reason", newVal);
+                          }}
+                          className="quick-chip quick-chip--sm"
+                          
+                          
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </label>
+                  <label className="form-span-2">
+                    Комментарий
+                    <textarea value={newAppointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateNewAppointmentDraft("comment", event.target.value)} rows={2} />
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                      {["Первичный", "Острая боль", "По ДМС", "Повторный", "Снимок с собой", "Требуется КТ"].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => {
+                            const currentVal = newAppointmentDraft.comment.trim();
+                            const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
+                            updateNewAppointmentDraft("comment", newVal);
+                          }}
+                          className="quick-chip quick-chip--sm"
+                          
+                          
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </label>
+                  {!newAppointmentReadyToCreate ? (
+                    <div className="schedule-create-missing" id="new-appointment-create-missing" role="status" aria-live="polite">
+                      <strong>Чтобы создать запись, осталось:</strong>
+                      <ul>
+                        {newAppointmentMissingSteps.map((step) => (
+                          <li key={step}>{step}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  <div className="appointment-editor-actions">
+                    {newAppointmentError ? <span className="save-error">{newAppointmentError}</span> : null}
+                    <button className="secondary-button" type="button" onClick={resetNewAppointmentDraft} disabled={newAppointmentSaveState === "saving"} aria-busy={newAppointmentSaveState === "saving" || undefined}>
+                      Сбросить
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="timeline">
+            <div className="schedule-timeline">
               {sortedAppointments.map((appointment) => {
+                const appointmentSuggestions = visibleScheduleSuggestions.filter(s => s.appointmentId === appointment.id);
                 const readiness = appointmentReadinessById.get(appointment.id);
                 const appointmentDoctor = dashboard.clinicSettings.staff.find((member) => member.id === appointment.doctorUserId);
                 const appointmentAssistant = appointment.assistantUserId
@@ -627,59 +775,81 @@ export function ScheduleView(props: ScheduleViewProps) {
                 const appointmentHandoffNoteId = `appointment-handoff-note-${appointment.id}`;
                 const appointmentPatientName = patientName(dashboard.patients, appointment.patientId);
                 return (
-                  <article className={`appointment-row ${readiness ? `readiness-${readiness.state}` : ""}`} key={appointment.id}>
-                    <time>
-                      {formatTime(appointment.startsAt)}
-                      <span>{formatTime(appointment.endsAt)}</span>
-                    </time>
-                    <div>
-                      <h3>{appointmentPatientName}</h3>
-                      <p>
-                        {appointment.reason} ·{" "}
-                        {appointmentDoctor?.fullName.split(" ")[0] ?? "врач"} ·{" "}
-                        {appointmentAssistant?.fullName.split(" ")[0] ?? "ассистент не назначен"} ·{" "}
-                        {appointmentChair?.name ?? "кресло"}
-                      </p>
-                      {readiness ? (
-                        <div className="appointment-readiness">
-                          <span className={`readiness-pill readiness-${readiness.state}`}>
-                            {appointmentReadinessLabels[readiness.state]} · {readiness.score}%
-                          </span>
-                          <span>{staffRoleLabels[readiness.ownerRole]}</span>
-                          <span>{readiness.nextAction}</span>
-                          {readiness.checks.slice(0, 3).map((check) => (
-                            <span className={check.ready ? "check-ready" : "check-missing"} key={check.key}>
-                              {check.title}
-                            </span>
-                          ))}
-                          {readiness.warnings.slice(0, 2).map((warning) => (
-                            <span className="check-warning" key={warning}>
-                              {warning}
-                            </span>
-                          ))}
-                          {appointmentHasOpenVisit ? <span className="handoff-lock">Открыт прием: пациент закреплен</span> : null}
-                        </div>
-                      ) : null}
-                      {appointmentHasOpenVisit ? (
-                        <p className="appointment-handoff-note" id={appointmentHandoffNoteId}>
-                          Пациент и закрывающий статус этой записи меняются только после закрытия приема.
-                        </p>
-                      ) : null}
+                  <div className="timeline-node" key={appointment.id}>
+                    <div className="timeline-line"></div>
+                    <div className="timeline-time">{formatTime(appointment.startsAt)}</div>
+                    
+                    <div className="timeline-content">
+                      <article className={`appointment-card ${readiness ? `readiness-${readiness.state}` : ""}`}>
+                    <div className="appointment-card-header">
+                      <div className="appointment-card-time">
+                        {formatTime(appointment.startsAt)}
+                        <span>{formatTime(appointment.endsAt)}</span>
+                      </div>
+                      <span className={`appointment-card-status status-pill status-${appointment.status}`}>
+                        {appointmentLabels[appointment.status]}
+                      </span>
                     </div>
-                    <span className={`status-pill status-${appointment.status}`}>
-                      {appointmentLabels[appointment.status]}
-                    </span>
-                    <button
-                      className="secondary-button appointment-edit-button"
-                      type="button"
-                      onClick={() => openAppointmentEditor(appointment)}
-                      aria-expanded={appointmentEditing}
-                      aria-controls={appointmentEditorId}
-                      aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
-                      title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
-                    >
-                      Настроить
-                    </button>
+
+                    <div className="appointment-card-body">
+                      <h3 style={{ marginBottom: '4px' }}>{appointmentPatientName}</h3>
+                      <div className="chip-group">
+                        {appointmentSuggestions.map((suggestion) => (
+                          <span 
+                            key={suggestion.id} 
+                            className={`chip chip-suggestion priority-${suggestion.priority}`} 
+                            onClick={(e) => { e.stopPropagation(); openScheduleSuggestion(suggestion.section); }}
+                            style={{ 
+                              cursor: 'pointer', 
+                              background: suggestion.priority === 'urgent' ? '#fee2e2' : '#fef3c7',
+                              color: suggestion.priority === 'urgent' ? '#991b1b' : '#92400e',
+                              border: `1px solid ${suggestion.priority === 'urgent' ? '#fca5a5' : '#fcd34d'}`
+                            }}
+                            title={suggestion.detail}
+                          >
+                            ⚠️ {suggestion.title}
+                          </span>
+                        ))}
+                        <span className="chip chip-reason">
+                          {appointment.reason || "Причина не указана"}
+                        </span>
+                        <span className="chip chip-doctor">
+                          {appointmentDoctor?.fullName.split(" ")[0] ?? "Врач не назначен"}
+                        </span>
+                        {appointmentChair && (
+                          <span className="chip chip-chair">{appointmentChair.name}</span>
+                        )}
+                      </div>
+                      {readiness && (
+                        <div className="appt-readiness-row">
+                          <span className={`readiness-dot readiness-dot-${readiness.state}`} />
+                          <span className="appt-next-action">{readiness.nextAction}</span>
+                          <span className="appt-readiness-score">{readiness.score}%</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {appointmentHasOpenVisit ? (
+                      <p className="appointment-handoff-note" id={appointmentHandoffNoteId} style={{ fontSize: '12px', color: 'var(--amber)', background: 'var(--amber-50)', padding: '6px', borderRadius: '4px', marginTop: '4px' }}>
+                        Пациент и закрывающий статус этой записи меняются только после закрытия приема.
+                      </p>
+                    ) : null}
+
+                    <div className="appointment-card-footer">
+                      <button
+                        className="secondary-button appointment-edit-button"
+                        type="button"
+                        onClick={() => openAppointmentEditor(appointment)}
+                        aria-expanded={appointmentEditing}
+                        aria-controls={appointmentEditorId}
+                        aria-label={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
+                        title={`Настроить запись: ${appointmentPatientName}, ${formatTime(appointment.startsAt)}-${formatTime(appointment.endsAt)}`}
+                        style={{ padding: '4px 12px', minHeight: '28px', fontSize: '12px' }}
+                      >
+                        Настроить
+                      </button>
+                    </div>
+
                     {appointmentEditing ? (
                       <div className="appointment-editor form-span-2" id={appointmentEditorId} aria-label={`Редактирование записи: ${appointmentPatientName}`}>
                         <label>
@@ -710,80 +880,174 @@ export function ScheduleView(props: ScheduleViewProps) {
                             }
                           />
                         </label>
-                        <label>
-                          Пациент
-                          <select
-                            value={appointmentDraft.patientId}
-                            onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "patientId", event.target.value)}
-                            disabled={appointment.id === dashboard.activeVisit.appointmentId}
-                            aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}
-                          >
-                            <option value="">Не назначен</option>
-                            {dashboard.patients
-                              .filter((patient) => patient.status === "active")
-                              .map((patient) => (
-                                <option key={patient.id} value={patient.id}>
-                                  {patient.fullName}
-                                </option>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '16px', gridColumn: '1 / -1' }}>
+                          <div>
+                            <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Пациент</span>
+                            {useManualSelects || dashboard.patients.length > 20 ? (
+                              <select
+                                value={appointmentDraft.patientId || ''}
+                                onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'patientId', e.target.value)}
+                                disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                                style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                              >
+                                <option value="">-- Выберите пациента --</option>
+                                {dashboard.patients.filter(p => p.status === 'active').map(p => (
+                                  <option key={p.id} value={p.id}>{p.fullName}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {dashboard.patients
+                                  .filter((patient) => patient.status === "active")
+                                  .map((patient) => (
+                                    <button
+                                      key={patient.id}
+                                      type="button"
+                                      className={`quick-chip ${appointmentDraft.patientId === patient.id ? 'active' : ''}`}
+                                      onClick={() => updateAppointmentScheduleDraft(appointment.id, "patientId", patient.id)}
+                                      
+                                      disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                                    >
+                                      {patient.fullName}
+                                    </button>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <div>
+                            <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Врач</span>
+                            {useManualSelects ? (
+                              <select
+                                value={appointmentDraft.doctorUserId || ''}
+                                onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'doctorUserId', e.target.value)}
+                                style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--slate-300)' }}
+                              >
+                                <option value="">-- Выберите врача --</option>
+                                {dashboard.clinicSettings.staff.filter(m => m.active && (m.role === 'doctor' || m.role === 'owner')).map(m => (
+                                  <option key={m.id} value={m.id}>{m.fullName}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {dashboard.clinicSettings.staff
+                                  .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
+                                  .map((member) => (
+                                    <button
+                                      key={member.id}
+                                      type="button"
+                                      className={`quick-chip ${appointmentDraft.doctorUserId === member.id ? 'active' : ''}`}
+                                      onClick={() => updateAppointmentScheduleDraft(appointment.id, "doctorUserId", member.id)}
+                                      
+                                    >
+                                      {member.fullName}
+                                    </button>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {dashboard.clinicSettings.profile.mode !== "solo_doctor" && (
+                          <div>
+                            <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Ассистент</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {dashboard.clinicSettings.staff
+                                .filter((member) => member.active && member.role === "assistant")
+                                .map((member) => (
+                                  <button
+                                    key={member.id}
+                                    type="button"
+                                    className={`quick-chip ${appointmentDraft.assistantUserId === member.id ? 'active' : ''}`}
+                                    onClick={() => updateAppointmentScheduleDraft(appointment.id, "assistantUserId", appointmentDraft.assistantUserId === member.id ? "" : member.id)}
+                                    
+                                  >
+                                    {member.fullName}
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                          )}
+
+                          <div>
+                            <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Кресло</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {dashboard.clinicSettings.chairs
+                                .filter((chair) => chair.active)
+                                .map((chair) => (
+                                  <button
+                                    key={chair.id}
+                                    type="button"
+                                    className={`quick-chip ${appointmentDraft.chairId === chair.id ? 'active' : ''}`}
+                                    onClick={() => updateAppointmentScheduleDraft(appointment.id, "chairId", chair.id)}
+                                    
+                                  >
+                                    {chair.name}
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Статус</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
+                                  <button
+                                    key={status}
+                                    type="button"
+                                    className={`quick-chip ${appointmentDraft.status === status ? 'active' : ''}`}
+                                    onClick={() => updateAppointmentScheduleDraft(appointment.id, "status", normalizedAppointmentStatus(status))}
+                                    
+                                    disabled={appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses.has(status)}
+                                  >
+                                    {appointmentLabels[status]}
+                                  </button>
                               ))}
-                          </select>
-                        </label>
-                        <label>
-                          Врач
-                          <select value={appointmentDraft.doctorUserId} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "doctorUserId", event.target.value)}>
-                            <option value="">Не назначен</option>
-                            {dashboard.clinicSettings.staff
-                              .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
-                              .map((member) => (
-                                <option key={member.id} value={member.id}>
-                                  {member.fullName}
-                                </option>
-                              ))}
-                          </select>
-                        </label>
-                        <label>
-                          Ассистент
-                          <select value={appointmentDraft.assistantUserId} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "assistantUserId", event.target.value)}>
-                            <option value="">Не назначен</option>
-                            {dashboard.clinicSettings.staff
-                              .filter((member) => member.active && member.role === "assistant")
-                              .map((member) => (
-                                <option key={member.id} value={member.id}>
-                                  {member.fullName}
-                                </option>
-                              ))}
-                          </select>
-                        </label>
-                        <label>
-                          Кресло
-                          <select value={appointmentDraft.chairId} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "chairId", event.target.value)}>
-                            <option value="">Не назначено</option>
-                            {dashboard.clinicSettings.chairs
-                              .filter((chair) => chair.active)
-                              .map((chair) => (
-                                <option key={chair.id} value={chair.id}>
-                                  {chair.name}
-                                </option>
-                              ))}
-                          </select>
-                        </label>
-                        <label>
-                          Статус
-                          <select value={appointmentDraft.status} onChange={(event: SelectChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "status", normalizedAppointmentStatus(event.target.value))}>
-                            {(Object.keys(appointmentLabels) as Appointment["status"][]).map((status) => (
-                              <option key={status} value={status} disabled={appointmentHasOpenVisit && activeVisitLockedAppointmentStatuses.has(status)}>
-                                {appointmentLabels[status]}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                            </div>
+                          </div>
+                        </div>
                         <label className="form-span-2">
                           Причина
                           <input value={appointmentDraft.reason} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "reason", event.target.value)} />
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                            {["Кариес", "Пульпит", "Удаление", "Осмотр", "Профгигиена", "Консультация", "Брекеты", "Коронка", "КЛКТ", "Имплантация"].map(chip => (
+                              <button
+                                key={chip}
+                                type="button"
+                                onClick={() => {
+                                  const currentVal = appointmentDraft.reason.trim();
+                                  const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
+                                  updateAppointmentScheduleDraft(appointment.id, "reason", newVal);
+                                }}
+                                className="quick-chip quick-chip--sm"
+                                
+                                
+                              >
+                                + {chip}
+                              </button>
+                            ))}
+                          </div>
                         </label>
                         <label className="form-span-2">
                           Комментарий
                           <textarea value={appointmentDraft.comment} onChange={(event: TextFieldChangeEvent) => updateAppointmentScheduleDraft(appointment.id, "comment", event.target.value)} rows={2} />
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                            {["Первичный", "Острая боль", "По ДМС", "Повторный", "Снимок с собой", "Требуется КТ"].map(chip => (
+                              <button
+                                key={chip}
+                                type="button"
+                                onClick={() => {
+                                  const currentVal = appointmentDraft.comment.trim();
+                                  const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
+                                  updateAppointmentScheduleDraft(appointment.id, "comment", newVal);
+                                }}
+                                className="quick-chip quick-chip--sm"
+                                
+                                
+                              >
+                                + {chip}
+                              </button>
+                            ))}
+                          </div>
                         </label>
                         <div className="appointment-editor-actions">
                           {appointmentSaveError ? <span className="save-error">{appointmentSaveError}</span> : null}
@@ -823,6 +1087,8 @@ export function ScheduleView(props: ScheduleViewProps) {
                       </div>
                     ) : null}
                   </article>
+                </div>
+              </div>
                 );
               })}
               {sortedAppointments.length === 0 ? (

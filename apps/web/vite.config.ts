@@ -60,6 +60,14 @@ export default defineConfig({
           if (normalizedId.endsWith("/apps/web/src/communicationTaskData.ts")) return "communication-task-data";
           if (normalizedId.endsWith("/apps/web/src/workspaceStaticOptions.ts")) return "workspace-static-options";
           if (normalizedId.endsWith("/apps/web/src/workspaceUiLabels.ts")) return "workspace-ui-labels";
+          if (normalizedId.endsWith("/apps/web/src/store/settingsStore.ts")) return "settings-store";
+          if (normalizedId.endsWith("/apps/web/src/store/documentStore.ts")) return "document-store";
+          if (normalizedId.endsWith("/apps/web/src/store/imagingStore.ts")) return "imaging-store";
+          if (normalizedId.endsWith("/apps/web/src/store/scheduleStore.ts")) return "schedule-store";
+          if (normalizedId.endsWith("/apps/web/src/store/patientStore.ts")) return "patient-store";
+          if (normalizedId.endsWith("/apps/web/src/store/visitStore.ts")) return "visit-store";
+          if (normalizedId.endsWith("/apps/web/src/store/appStore.ts")) return "app-store";
+          if (normalizedId.endsWith("/apps/web/src/store/uiStore.ts")) return "ui-store";
           if (normalizedId.endsWith("/apps/web/src/App.tsx")) return "workspace";
           if (normalizedId.includes("/node_modules/react") || normalizedId.includes("/node_modules/react-dom")) return "react-vendor";
           if (normalizedId.includes("/node_modules/lucide-react")) return "icons";

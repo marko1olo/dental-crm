@@ -1,4 +1,4 @@
-﻿import type { GeneratedDocument, Payment, TaxPaymentSnapshot } from "@dental/shared";
+import type { GeneratedDocument, Payment, TaxPaymentSnapshot } from "@dental/shared";
 
 const taxDocumentSnapshotKinds = new Set<GeneratedDocument["kind"]>([
   "tax_deduction_certificate",
@@ -137,6 +137,7 @@ export function taxPaymentsForIssueSnapshot(
   }
 
   const covered = coveredIdentifiersForIssuedTaxCertificates(document, documents, payments);
+  const selectedPayments = baseTaxPaymentsForDocument(document, payments);
   return selectedPayments.filter(
     (payment) => !covered.paymentIds.has(payment.id) && !covered.fiscalReceiptKeys.has(taxPaymentReceiptKey(payment))
   );

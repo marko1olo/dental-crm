@@ -1220,6 +1220,18 @@ export interface DocumentState {
   setTreatmentPlanNewApprovalAcknowledged: (
     val: boolean | ((prev: boolean) => boolean),
   ) => void;
+  treatmentPlanPatientFriendlyExplanation: string;
+  setTreatmentPlanPatientFriendlyExplanation: (
+    val: string | ((prev: string) => string),
+  ) => void;
+  treatmentPlanPatientHygieneAdvice: string;
+  setTreatmentPlanPatientHygieneAdvice: (
+    val: string | ((prev: string) => string),
+  ) => void;
+  treatmentPlanCustomHygieneTextOverride: string;
+  setTreatmentPlanCustomHygieneTextOverride: (
+    val: string | ((prev: string) => string),
+  ) => void;
   treatmentAcceptanceVariant: TreatmentPlanAcceptanceVariant;
   setTreatmentAcceptanceVariant: (
     val:
@@ -3795,6 +3807,30 @@ const createClinicalSlice = (set: any) => ({
       treatmentPlanNewApprovalAcknowledged:
         typeof val === "function"
           ? (val as any)(state.treatmentPlanNewApprovalAcknowledged)
+          : val,
+    })),
+  treatmentPlanPatientFriendlyExplanation: "",
+  setTreatmentPlanPatientFriendlyExplanation: (val) =>
+    set((state) => ({
+      treatmentPlanPatientFriendlyExplanation:
+        typeof val === "function"
+          ? (val as any)(state.treatmentPlanPatientFriendlyExplanation)
+          : val,
+    })),
+  treatmentPlanPatientHygieneAdvice: "",
+  setTreatmentPlanPatientHygieneAdvice: (val) =>
+    set((state) => ({
+      treatmentPlanPatientHygieneAdvice:
+        typeof val === "function"
+          ? (val as any)(state.treatmentPlanPatientHygieneAdvice)
+          : val,
+    })),
+  treatmentPlanCustomHygieneTextOverride: "",
+  setTreatmentPlanCustomHygieneTextOverride: (val) =>
+    set((state) => ({
+      treatmentPlanCustomHygieneTextOverride:
+        typeof val === "function"
+          ? (val as any)(state.treatmentPlanCustomHygieneTextOverride)
           : val,
     })),
   treatmentAcceptanceVariant: "standard",
