@@ -1,4 +1,4 @@
-import { containsAnyFuzzyRoot, textToNumbers } from "./stringUtils";
+import { containsAnyFuzzyRoot, textToNumbers, normalizeDentalSlang } from "./stringUtils";
 
 export interface ParsedVisitData {
   toothUpdates: { code: string; state: string }[];
@@ -13,71 +13,85 @@ export interface ParsedVisitData {
 
 export function parseVisitDictationLocal(input: string): ParsedVisitData {
   const result: ParsedVisitData = { toothUpdates: [], emkUpdates: {} };
-  const normalizedInput = textToNumbers(input);
+  let normalizedInput = textToNumbers(input);
+  normalizedInput = normalizeDentalSlang(normalizedInput);
   const lower = normalizedInput.toLowerCase();
 
-  // Extract teeth (2-digit numbers starting with 1-4 or 5-8 for kids)
-  // Negative lookahead prevents matching "15 мая", "12 часов", "14:30", "15 руб"
-  const teethMatches = input.match(/\b([1-4][1-8]|[5-8][1-5])\b(?!\s*[:.\-]\s*\d+)(?!\s*(?:часов|часа|ч|утра|дня|вечера|мин|минут|января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря|руб|рублей|тыс|лет|года|год))/gi);
-  const teeth = teethMatches ? Array.from(new Set(teethMatches)) : [];
-
-  // Keywords and patterns
-  // Keywords and patterns
-  const isCaries = containsAnyFuzzyRoot(lower, ["кариес", "дырк", "полост", "клиновид"]);
-  const isPulpitis = containsAnyFuzzyRoot(lower, ["пульпит", "нерв", "эндо", "канал"]);
-  const isPeriodontitis = containsAnyFuzzyRoot(lower, ["периодонтит", "кист", "гранулем"]);
-  const isExtraction = containsAnyFuzzyRoot(lower, ["удален", "рвать", "удалил", "экстракц", "восьмерк"]);
-  const isHygiene = containsAnyFuzzyRoot(lower, ["гигиен", "чистк", "air flow", "камн", "налет"]);
-  const isImplant = containsAnyFuzzyRoot(lower, ["имплант", "хирурги", "синус", "нктр", "остеопласт"]);
-  const isCrown = containsAnyFuzzyRoot(lower, ["коронк", "протез", "ортопеди", "винир", "вкладк"]);
-
-  if (teeth.length > 0) {
-    let state = "planned";
-    if (isExtraction || isCaries || isPulpitis || isPeriodontitis) state = "treatment";
-    if (containsAnyFuzzyRoot(lower, ["канал", "эндо"])) state = "treatment";
-    if (containsAnyFuzzyRoot(lower, ["наблюд"])) state = "watch";
-    if (isCrown) state = "prosthetics";
-    if (isImplant) state = "implant";
-    if (containsAnyFuzzyRoot(lower, ["готов", "заверш", "вылечил", "поставил"])) state = "done";
-    if (isExtraction && containsAnyFuzzyRoot(lower, ["удалил"])) state = "missing";
+  // Clause-based tooth extraction (handles "Кариес 16, удаление 48")
+  const clauses = normalizedInput.split(/[.,;!?]/).map(c => c.trim()).filter(Boolean);
+  let lastKnownState = "planned";
+  
+  for (const clause of clauses) {
+    const clauseLower = clause.toLowerCase();
+    const teethMatches = clause.match(/\b([1-4][1-8]|[5-8][1-5])\b(?!\s*[:.\-]\s*\d+)(?!\s*(?:часов|часа|ч|утра|дня|вечера|мин|минут|января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря|руб|рублей|тыс|лет|года|год))/gi);
+    const teeth = teethMatches ? Array.from(new Set(teethMatches)) : [];
     
-    teeth.forEach(t => result.toothUpdates.push({ code: t, state }));
-  } else if (lower.match(/\b(вч|верхняя челюсть|на верхней)\b/)) {
-     // If jaw is specified but no tooth, we could apply to a region, but for now just tag it.
+    if (teeth.length > 0) {
+      let state = "";
+      const isCaries = containsAnyFuzzyRoot(clauseLower, ["кариес", "дырк", "полост", "клиновид"]);
+      const isPulpitis = containsAnyFuzzyRoot(clauseLower, ["пульпит", "нерв", "эндо", "канал"]);
+      const isPeriodontitis = containsAnyFuzzyRoot(clauseLower, ["периодонтит", "кист", "гранулем"]);
+      const isExtraction = containsAnyFuzzyRoot(clauseLower, ["удален", "рвать", "удалил", "экстракц", "восьмерк"]);
+      const isHygiene = containsAnyFuzzyRoot(clauseLower, ["гигиен", "чистк", "air flow", "камн", "налет"]);
+      const isImplant = containsAnyFuzzyRoot(clauseLower, ["имплант", "хирурги", "синус", "нктр", "остеопласт"]);
+      const isCrown = containsAnyFuzzyRoot(clauseLower, ["коронк", "протез", "ортопеди", "винир", "вкладк"]);
+      
+      if (isExtraction || isCaries || isPulpitis || isPeriodontitis) state = "treatment";
+      if (containsAnyFuzzyRoot(clauseLower, ["канал", "эндо"])) state = "treatment";
+      if (containsAnyFuzzyRoot(clauseLower, ["наблюд"])) state = "watch";
+      if (isCrown) state = "prosthetics";
+      if (isImplant) state = "implant";
+      if (containsAnyFuzzyRoot(clauseLower, ["готов", "заверш", "вылечил", "поставил"])) state = "done";
+      if (isExtraction && containsAnyFuzzyRoot(clauseLower, ["удалил"])) state = "missing";
+      
+      if (!state) state = lastKnownState;
+      else lastKnownState = state;
+      
+      teeth.forEach(t => result.toothUpdates.push({ code: t, state }));
+    }
   }
 
-  // Pre-fill based on inferred conditions
-  if (isPulpitis) {
+  // Pre-fill based on inferred conditions (calculated globally for the whole text)
+  const isCariesGlobal = containsAnyFuzzyRoot(lower, ["кариес", "дырк", "полост", "клиновид"]);
+  const isPulpitisGlobal = containsAnyFuzzyRoot(lower, ["пульпит", "нерв", "эндо", "канал"]);
+  const isPeriodontitisGlobal = containsAnyFuzzyRoot(lower, ["периодонтит", "кист", "гранулем"]);
+  // Removed "восьмерк" from extraction, as it is now normalized to tooth '8' and doesn't always imply extraction
+  const isExtractionGlobal = containsAnyFuzzyRoot(lower, ["удален", "рвать", "удалил", "экстракц"]);
+  const isHygieneGlobal = containsAnyFuzzyRoot(lower, ["гигиен", "чистк", "air flow", "камн", "налет"]);
+  const isCrownGlobal = containsAnyFuzzyRoot(lower, ["коронк", "протез", "ортопеди", "винир", "вкладк"]);
+  const isImplantGlobal = containsAnyFuzzyRoot(lower, ["имплант", "хирурги", "синус", "нктр", "остеопласт"]);
+
+  if (isPulpitisGlobal) {
     result.emkUpdates.diagnosis = "К04.0 Острый пульпит (или обострение хронического)";
     result.emkUpdates.complaint = "Самопроизвольные, ночные боли, сильные боли от температурных раздражителей.";
     result.emkUpdates.objectiveStatus = "Глубокая кариозная полость, сообщающаяся с полостью зуба, зондирование резко болезненно. Перкуссия безболезненна.";
     result.emkUpdates.treatmentPlan = "Анестезия, изоляция (коффердам), экстирпация пульпы, механическая и медикаментозная обработка корневых каналов, временная/постоянная обтурация.";
-  } else if (isPeriodontitis) {
+  } else if (isPeriodontitisGlobal) {
     result.emkUpdates.diagnosis = "К04.5 Хронический апикальный периодонтит";
     result.emkUpdates.complaint = "Боли при накусывании, чувство «выросшего зуба».";
     result.emkUpdates.objectiveStatus = "Зуб изменен в цвете, кариозная полость глубокая, зондирование безболезненно. Перкуссия болезненна. На рентгенограмме разряжение костной ткани в области апекса.";
     result.emkUpdates.treatmentPlan = "Анестезия, изоляция (коффердам), раскрытие полости зуба, медикаментозная обработка каналов, временное пломбирование пастой на основе гидроксида кальция.";
-  } else if (isExtraction) {
+  } else if (isExtractionGlobal) {
     result.emkUpdates.diagnosis = "К04.5 Хронический апикальный периодонтит (показание к удалению)";
     result.emkUpdates.complaint = "Разрушение зуба, боли, невозможность восстановления.";
     result.emkUpdates.objectiveStatus = "Коронковая часть зуба разрушена более чем на 2/3, подвижность, перкуссия болезненна.";
     result.emkUpdates.treatmentPlan = "Анестезия, атравматичное удаление зуба, кюретаж лунки, гемостаз, швы, рекомендации.";
-  } else if (isCaries) {
+  } else if (isCariesGlobal) {
     result.emkUpdates.diagnosis = "К02.1 Кариес дентина";
     result.emkUpdates.complaint = "Застревание пищи, кратковременные боли от сладкого и холодного.";
     result.emkUpdates.objectiveStatus = "Глубокая кариозная полость в пределах плащевого/околопульпарного дентина, зондирование болезненно по эмалево-дентинной границе.";
     result.emkUpdates.treatmentPlan = "Анестезия, изоляция (коффердам), препарирование, медикаментозная обработка, адгезивный протокол, реставрация композитным материалом, шлифовка, полировка.";
-  } else if (isHygiene) {
+  } else if (isHygieneGlobal) {
     result.emkUpdates.diagnosis = "К05.1 Хронический гингивит";
     result.emkUpdates.complaint = "Кровоточивость десен при чистке зубов, наличие налета.";
     result.emkUpdates.objectiveStatus = "Над- и поддесневые зубные отложения, пигментированный налет, маргинальная десна отечна, гиперемирована, кровоточивость при зондировании.";
     result.emkUpdates.treatmentPlan = "Аппликационная анестезия, ультразвуковой скейлинг, Air Flow, полировка пастами, фторирование, обучение индивидуальной гигиене полости рта.";
-  } else if (isCrown) {
+  } else if (isCrownGlobal) {
     result.emkUpdates.diagnosis = "К08.3 Разрушение зуба (показание к протезированию)";
     result.emkUpdates.complaint = "Эстетический/функциональный дефект, разрушение коронковой части зуба.";
     result.emkUpdates.objectiveStatus = "Коронковая часть зуба разрушена. Зуб ранее депульпирован. Корневые каналы обтурированы плотно до верхушки.";
     result.emkUpdates.treatmentPlan = "Снятие оттисков, регистрация прикуса. Препарирование зуба. Фиксация временной коронки. Изготовление и фиксация постоянной ортопедической конструкции.";
-  } else if (isImplant) {
+  } else if (isImplantGlobal) {
     result.emkUpdates.diagnosis = "К08.1 Частичная потеря зубов";
     result.emkUpdates.complaint = "Отсутствие зуба, нарушение функции жевания.";
     result.emkUpdates.objectiveStatus = "Отсутствие зуба в зубном ряду. Атрофия альвеолярного гребня в пределах нормы. Слизистая без патологических изменений. По данным КЛКТ объем костной ткани достаточный.";

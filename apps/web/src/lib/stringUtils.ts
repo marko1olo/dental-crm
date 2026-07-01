@@ -221,3 +221,59 @@ export function textToNumbers(text: string): string {
   
   return result.join('');
 }
+
+/**
+ * Normalizes dental slang into ISO tooth numbers (e.g., "верхняя левая шестерка" -> "26").
+ */
+export function normalizeDentalSlang(text: string): string {
+  const slangMap: Record<string, string> = {
+    "единичк": "1", "двойк": "2", "тройк": "3", "четверк": "4",
+    "пятерк": "5", "шестерк": "6", "семерк": "7", "восьмерк": "8",
+    "единиц": "1", "двойниц": "2" 
+  };
+
+  const words = text.split(/(\s+)/);
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]!.trim();
+    if (!word) continue;
+    
+    let toothDigit = "";
+    for (const [k, v] of Object.entries(slangMap)) {
+      if (isFuzzyRootMatch(word, k)) {
+        toothDigit = v;
+        break;
+      }
+    }
+    
+    if (toothDigit) {
+      let isUpper = false;
+      let isLower = false;
+      let isLeft = false;
+      let isRight = false;
+      
+      const searchStart = Math.max(0, i - 10);
+      const searchEnd = Math.min(words.length - 1, i + 10);
+      for (let j = searchStart; j <= searchEnd; j++) {
+        const ctxWord = words[j]!.trim();
+        if (isFuzzyRootMatch(ctxWord, "верхн") || isFuzzyRootMatch(ctxWord, "сверх")) isUpper = true;
+        if (isFuzzyRootMatch(ctxWord, "нижн") || isFuzzyRootMatch(ctxWord, "снизу")) isLower = true;
+        if (isFuzzyRootMatch(ctxWord, "лев") || isFuzzyRootMatch(ctxWord, "слев")) isLeft = true;
+        if (isFuzzyRootMatch(ctxWord, "прав") || isFuzzyRootMatch(ctxWord, "справ")) isRight = true;
+      }
+      
+      let quad = "";
+      if (isUpper && isRight) quad = "1";
+      else if (isUpper && isLeft) quad = "2";
+      else if (isLower && isLeft) quad = "3";
+      else if (isLower && isRight) quad = "4";
+      else if (isUpper) quad = "1"; 
+      else if (isLower) quad = "4"; 
+      else quad = "1"; // fallback to 1 if just "шестерка" and no quadrant is found, better than nothing
+      
+      if (quad) {
+        words[i] = words[i]!.replace(word, quad + toothDigit);
+      }
+    }
+  }
+  return words.join('');
+}
