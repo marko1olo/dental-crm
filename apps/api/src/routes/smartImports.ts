@@ -394,6 +394,175 @@ function hasRequisites(value: string) {
   return /\b(?:\d{10}|\d{12}|\d{13}|\d{15})\b/.test(value);
 }
 
+type ClassificationCategory = "imagingScore" | "patientScore" | "clinicScore" | "legacySourceScore";
+
+interface ClassificationContext {
+  hasImagingPathForScoring: boolean;
+  hasImagingKeyword: boolean;
+  hasClinicLicenseKeyword: boolean;
+  hasClinicLegalEntity: boolean;
+  hasLegacyDatabasePath: boolean;
+  hasLegacySourceKeyword: boolean;
+  hasLegacyMisName: boolean;
+  hasSmartPreviewSourceRef: boolean;
+  hasImagingSourceFolder: boolean;
+  hasImagingVendor: boolean;
+}
+
+interface ClassificationRule {
+  category: ClassificationCategory;
+  score: number;
+  reason: string;
+  condition: (text: string, ctx: ClassificationContext) => boolean;
+}
+
+const classificationRules: ClassificationRule[] = [
+  {
+    category: "imagingScore",
+    score: 0.48,
+    reason: "найден путь к файлу снимка",
+    condition: (_, ctx) => ctx.hasImagingPathForScoring
+  },
+  {
+    category: "imagingScore",
+    score: 0.34,
+    reason: "найдены RVG/ОПТГ/КТ признаки",
+    condition: (_, ctx) => ctx.hasImagingKeyword
+  },
+  {
+    category: "imagingScore",
+    score: 0.1,
+    reason: "найден FDI номер зуба",
+    condition: (text, ctx) => (ctx.hasImagingPathForScoring || ctx.hasImagingKeyword) && /\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/.test(text)
+  },
+  {
+    category: "patientScore",
+    score: 0.34,
+    reason: "найден телефон",
+    condition: (text) => hasPhone(text)
+  },
+  {
+    category: "patientScore",
+    score: 0.18,
+    reason: "найдена дата",
+    condition: (text) => hasDate(text)
+  },
+  {
+    category: "patientScore",
+    score: 0.24,
+    reason: "найдено похожее ФИО",
+    condition: (text) => hasLikelyName(text)
+  },
+  {
+    category: "patientScore",
+    score: 0.12,
+    reason: "найдены поля пациента",
+    condition: (text) => patientKeywordPattern.test(text)
+  },
+  {
+    category: "clinicScore",
+    score: 0.38,
+    reason: "найдены поля клиники",
+    condition: (text) => clinicKeywordPattern.test(text)
+  },
+  {
+    category: "clinicScore",
+    score: 0.16,
+    reason: "найден адрес клиники",
+    condition: (text) => /адрес|address|местонахождение/i.test(text)
+  },
+  {
+    category: "clinicScore",
+    score: 0.5,
+    reason: "найдена лицензия клиники",
+    condition: (_, ctx) => ctx.hasClinicLicenseKeyword
+  },
+  {
+    category: "clinicScore",
+    score: 0.3,
+    reason: "найдена строка юрлица с реквизитами",
+    condition: (text, ctx) => ctx.hasClinicLegalEntity && hasRequisites(text)
+  },
+  {
+    category: "clinicScore",
+    score: 0.08,
+    reason: "строка похожа на название клиники",
+    condition: (text) => /клиник|стоматолог|dental|dent|clinic/i.test(text) && hasLikelyName(text)
+  },
+  {
+    category: "clinicScore",
+    score: 0.24,
+    reason: "найдены ИНН/КПП/ОГРН или лицензионные цифры",
+    condition: (text) => hasRequisites(text)
+  },
+  {
+    category: "clinicScore",
+    score: 0.28,
+    reason: "найдены публичные контакты клиники",
+    condition: (text) => /@/.test(text) || /https?:\/\/|www\./i.test(text)
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.46,
+    reason: "найден путь к старой базе, архиву или табличной выгрузке",
+    condition: (_, ctx) => ctx.hasLegacyDatabasePath
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.32,
+    reason: "найдены признаки старой МИС, базы, архива снимков или выгрузки",
+    condition: (_, ctx) => ctx.hasLegacySourceKeyword
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.24,
+    reason: "найдено название старой стоматологической МИС",
+    condition: (_, ctx) => ctx.hasLegacyMisName
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.46,
+    reason: "найден источник из автоплана предпросмотра",
+    condition: (_, ctx) => ctx.hasSmartPreviewSourceRef
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.48,
+    reason: "найден источник архива снимков или папка КТ",
+    condition: (_, ctx) => ctx.hasImagingSourceFolder
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.18,
+    reason: "найдена старая программа снимков",
+    condition: (_, ctx) => ctx.hasImagingVendor
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.18,
+    reason: "старая программа снимков указана как папка или выгрузка, а не одиночный снимок",
+    condition: (_, ctx) => ctx.hasImagingSourceFolder && ctx.hasImagingVendor
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.44,
+    reason: "найден источник архива снимков без конкретного файла снимка",
+    condition: (text) => /pacs|orthanc|dcm4chee|dicomweb|qido|wado|пакс/i.test(text) && !/\.(?:dcm|dicom|ima)\b/i.test(text)
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.2,
+    reason: "найден формат старой базы или резервной копии",
+    condition: (text) => /\.fdb|\.gdb|\.fbk|\.ib\b|\.ibk\b|\.gbk\b|\.mdb|\.accdb|\.sqlite|\.sqlite3|\.dbf|\.dbt|\.fpt|\.cdx|\.idx|\.ntx|\.ndx|\.mdx|\.bak|\.sql|\.dump|foxpro|clipper|paradox/i.test(text)
+  },
+  {
+    category: "legacySourceScore",
+    score: 0.12,
+    reason: "строка похожа на экспорт таблиц старой системы",
+    condition: (text) => /\.csv|\.tsv|\.xls|\.xlsx|\.xlsm|\.xlsb|выгруз|экспорт/i.test(text) && /(пациент|patient|клиент|visit|визит|payment|оплат|услуг|service)/i.test(text)
+  }
+];
+
 function classifyLine(line: string, lineNumber: number, mode: SmartImportMode): SmartImportLineClassification {
   const text = line.trim();
   if (!text) {
@@ -424,102 +593,28 @@ function classifyLine(line: string, lineNumber: number, mode: SmartImportMode): 
   const hasImagingPathForScoring =
     hasImagePath && !(hasClinicLicenseKeyword && !/\.(?:dcm|dicom|ima|dc3|acr|jpg|jpeg|png|tif|tiff|bmp|webp)\b/i.test(text));
 
-  if (hasImagingPathForScoring) {
-    imagingScore += 0.48;
-    reasons.push("найден путь к файлу снимка");
-  }
-  if (hasImagingKeyword) {
-    imagingScore += 0.34;
-    reasons.push("найдены RVG/ОПТГ/КТ признаки");
-  }
-  if ((hasImagingPathForScoring || hasImagingKeyword) && /\b(?:1[1-8]|2[1-8]|3[1-8]|4[1-8])\b/.test(text)) {
-    imagingScore += 0.1;
-    reasons.push("найден FDI номер зуба");
-  }
+  const ctx: ClassificationContext = {
+    hasImagingPathForScoring,
+    hasImagingKeyword,
+    hasClinicLicenseKeyword,
+    hasClinicLegalEntity,
+    hasLegacyDatabasePath,
+    hasLegacySourceKeyword,
+    hasLegacyMisName,
+    hasSmartPreviewSourceRef,
+    hasImagingSourceFolder,
+    hasImagingVendor
+  };
 
-  if (hasPhone(text)) {
-    patientScore += 0.34;
-    reasons.push("найден телефон");
-  }
-  if (hasDate(text)) {
-    patientScore += 0.18;
-    reasons.push("найдена дата");
-  }
-  if (hasLikelyName(text)) {
-    patientScore += 0.24;
-    reasons.push("найдено похожее ФИО");
-  }
-  if (patientKeywordPattern.test(text)) {
-    patientScore += 0.12;
-    reasons.push("найдены поля пациента");
-  }
-  if (clinicKeywordPattern.test(text)) {
-    clinicScore += 0.38;
-    reasons.push("найдены поля клиники");
-  }
-  if (/адрес|address|местонахождение/i.test(text)) {
-    clinicScore += 0.16;
-    reasons.push("найден адрес клиники");
-  }
-  if (hasClinicLicenseKeyword) {
-    clinicScore += 0.5;
-    reasons.push("найдена лицензия клиники");
-  }
-  if (hasClinicLegalEntity && hasRequisites(text)) {
-    clinicScore += 0.3;
-    reasons.push("найдена строка юрлица с реквизитами");
-  }
-  if (/клиник|стоматолог|dental|dent|clinic/i.test(text) && hasLikelyName(text)) {
-    clinicScore += 0.08;
-    reasons.push("строка похожа на название клиники");
-  }
-  if (hasRequisites(text)) {
-    clinicScore += 0.24;
-    reasons.push("найдены ИНН/КПП/ОГРН или лицензионные цифры");
-  }
-  if (/@/.test(text) || /https?:\/\/|www\./i.test(text)) {
-    clinicScore += 0.28;
-    reasons.push("найдены публичные контакты клиники");
-  }
-  if (hasLegacyDatabasePath) {
-    legacySourceScore += 0.46;
-    reasons.push("найден путь к старой базе, архиву или табличной выгрузке");
-  }
-  if (hasLegacySourceKeyword) {
-    legacySourceScore += 0.32;
-    reasons.push("найдены признаки старой МИС, базы, архива снимков или выгрузки");
-  }
-  if (hasLegacyMisName) {
-    legacySourceScore += 0.24;
-    reasons.push("найдено название старой стоматологической МИС");
-  }
-  if (hasSmartPreviewSourceRef) {
-    legacySourceScore += 0.46;
-    reasons.push("найден источник из автоплана предпросмотра");
-  }
-  if (hasImagingSourceFolder) {
-    legacySourceScore += 0.48;
-    reasons.push("найден источник архива снимков или папка КТ");
-  }
-  if (hasImagingVendor) {
-    legacySourceScore += 0.18;
-    reasons.push("найдена старая программа снимков");
-  }
-  if (hasImagingSourceFolder && hasImagingVendor) {
-    legacySourceScore += 0.18;
-    reasons.push("старая программа снимков указана как папка или выгрузка, а не одиночный снимок");
-  }
-  if (/pacs|orthanc|dcm4chee|dicomweb|qido|wado|пакс/i.test(text) && !/\.(?:dcm|dicom|ima)\b/i.test(text)) {
-    legacySourceScore += 0.44;
-    reasons.push("найден источник архива снимков без конкретного файла снимка");
-  }
-  if (/\.fdb|\.gdb|\.fbk|\.ib\b|\.ibk\b|\.gbk\b|\.mdb|\.accdb|\.sqlite|\.sqlite3|\.dbf|\.dbt|\.fpt|\.cdx|\.idx|\.ntx|\.ndx|\.mdx|\.bak|\.sql|\.dump|foxpro|clipper|paradox/i.test(text)) {
-    legacySourceScore += 0.2;
-    reasons.push("найден формат старой базы или резервной копии");
-  }
-  if (/\.csv|\.tsv|\.xls|\.xlsx|\.xlsm|\.xlsb|выгруз|экспорт/i.test(text) && /(пациент|patient|клиент|visit|визит|payment|оплат|услуг|service)/i.test(text)) {
-    legacySourceScore += 0.12;
-    reasons.push("строка похожа на экспорт таблиц старой системы");
+  for (const rule of classificationRules) {
+    if (rule.condition(text, ctx)) {
+      if (rule.category === "imagingScore") imagingScore += rule.score;
+      else if (rule.category === "patientScore") patientScore += rule.score;
+      else if (rule.category === "clinicScore") clinicScore += rule.score;
+      else if (rule.category === "legacySourceScore") legacySourceScore += rule.score;
+
+      reasons.push(rule.reason);
+    }
   }
 
   if (mode === "patients") {
