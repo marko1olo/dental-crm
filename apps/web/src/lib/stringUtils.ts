@@ -156,10 +156,11 @@ export function textToNumbers(text: string): string {
     
     let matchedVal = numValues[word];
     if (matchedVal === undefined) {
-      for (const [k, v] of Object.entries(numValues)) {
-        // use isFuzzyRootMatch for number words too, to catch "одинадцать" or "восьмисот"
+      // Sort keys by length descending to match longest roots first (e.g., "двенадцать" before "две")
+      const sortedKeys = Object.keys(numValues).sort((a, b) => b.length - a.length);
+      for (const k of sortedKeys) {
         if (isFuzzyRootMatch(word, k)) {
-          matchedVal = v;
+          matchedVal = numValues[k];
           break;
         }
       }
@@ -168,8 +169,39 @@ export function textToNumbers(text: string): string {
     if (matchedVal !== undefined) {
       inNumber = true;
       
-      if (matchedVal === 1000) {
-        currentNum = currentNum === 0 ? 1000 : currentNum * 1000;
+      if (matchedVal === 0) {
+        if (currentNum > 0) {
+          result.push(prefix + currentNum.toString() + " ");
+        }
+        result.push(prefix + "0 ");
+        currentNum = 0;
+        inNumber = false;
+      } else if (matchedVal === 1000) {
+        if (currentNum === 0) {
+           currentNum = 1000;
+        } else {
+           let isValidMultiplier = true;
+           const wLower = word.toLowerCase();
+           const lastDigit = currentNum % 10;
+           const lastTwoDigits = currentNum % 100;
+           
+           if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+              if (wLower.endsWith("а") || wLower.endsWith("и")) isValidMultiplier = false;
+           } else if (lastDigit === 1) {
+              if (!wLower.endsWith("а") && !wLower.endsWith("у")) isValidMultiplier = false;
+           } else if (lastDigit >= 2 && lastDigit <= 4) {
+              if (!wLower.endsWith("и")) isValidMultiplier = false;
+           } else {
+              if (wLower.endsWith("а") || wLower.endsWith("и")) isValidMultiplier = false;
+           }
+           
+           if (isValidMultiplier) {
+              currentNum *= 1000;
+           } else {
+              result.push(prefix + currentNum.toString() + " ");
+              currentNum = 1000;
+           }
+        }
       } else if (currentNum > 0 && matchedVal >= 100 && (currentNum % 1000) !== 0) {
          result.push(prefix + currentNum.toString() + " ");
          currentNum = matchedVal;
@@ -191,7 +223,8 @@ export function textToNumbers(text: string): string {
           
           let hasNext = numValues[nextWord] !== undefined;
           if (!hasNext) {
-            for (const k of Object.keys(numValues)) {
+            const sortedKeys = Object.keys(numValues).sort((a, b) => b.length - a.length);
+            for (const k of sortedKeys) {
               if (isFuzzyRootMatch(nextWord, k)) {
                 hasNext = true; break;
               }

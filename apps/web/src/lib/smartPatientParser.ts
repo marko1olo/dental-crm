@@ -53,7 +53,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
 
   // 3. Date of birth extraction
   // Numeric: 12.05.1990, 12/05/90, 12-05-1990, 12 05 90, 12 5 1990
-  const dobRegexNum = /(?:^|\s)(\d{1,2})[\.\/\-\s]+(\d{1,2})[\.\/\-\s]+(\d{2,4})(?:\s|$)/;
+  const dobRegexNum = /(?:^|\s)(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{2,4})(?:\s|$)/;
   const dobMatchNum = remaining.match(dobRegexNum);
   if (dobMatchNum && dobMatchNum[1] && dobMatchNum[2] && dobMatchNum[3]) {
     let day = dobMatchNum[1];
