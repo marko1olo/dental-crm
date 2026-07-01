@@ -22,8 +22,8 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
 
   // 0. Detect intent
   // "удаление" is a dental service, so "удали/удалить" means cancel, not "удал[а-я]*"
-  // "снимок" is a service, so "сними/снимите" means cancel, not "сним[а-я]*"
-  const cancelRegex = /\b(отмен[а-я]*|удали|удалите|удалить запись|убери|сними|снимите)\b/i;
+  // Negative lookahead: "удалить" is cancel, UNLESS it's "удалить зуб/восьмерку/и т.д."
+  const cancelRegex = /\b(отмен[а-я]*|удали(?!\w)|удалите(?!\w)|удалить(?!\s+(?:зуб|восьмерк|семерк|шестерк|пятерк|четверк|тройк|двойк|единичк|корень|кист|имплант|нерв|капюшон))|убери|сними(?!\w)|снимите(?!\w))\b/i;
   const rescheduleRegex = /\b(перенес[а-я]*|двин[а-я]*|сдвин[а-я]*)\b/i;
   
   if (cancelRegex.test(remaining)) {
@@ -39,17 +39,22 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
 
   // 1. Time extraction
   const timeRegex = /(?:^|\s)([0-1]?[0-9]|2[0-3])[\-:\.]([0-5][0-9])(?=\s|$)/;
+  const timeRegexSpace = /(?:^|\s)(?:в|на)?\s*([0-1]?[0-9]|2[0-3])\s+([0-5][0-9])(?=\s|$)/; // catches "3 30" (три тридцать)
+  const hourRegex = /(?:^|\s)(?:в|на)\s+([0-1]?[0-9]|2[0-3])\s*(часов|часа|ч)?(?=\s|$)/;
+  
   const timeMatch = remaining.match(timeRegex);
+  const timeMatchSpace = remaining.match(timeRegexSpace);
+  const hourMatch = remaining.match(hourRegex);
+  
   if (timeMatch && timeMatch[1] && timeMatch[2]) {
     result.timeStr = `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}`;
     remaining = remaining.replace(timeMatch[0], ' ');
-  } else {
-    const hourRegex = /(?:^|\s)(?:в|на)\s+([0-1]?[0-9]|2[0-3])\s*(часов|часа|ч)?(?=\s|$)/;
-    const hourMatch = remaining.match(hourRegex);
-    if (hourMatch && hourMatch[1]) {
-      result.timeStr = `${hourMatch[1].padStart(2, '0')}:00`;
-      remaining = remaining.replace(hourMatch[0], ' ');
-    }
+  } else if (timeMatchSpace && timeMatchSpace[1] && timeMatchSpace[2]) {
+    result.timeStr = `${timeMatchSpace[1].padStart(2, '0')}:${timeMatchSpace[2]}`;
+    remaining = remaining.replace(timeMatchSpace[0], ' ');
+  } else if (hourMatch && hourMatch[1]) {
+    result.timeStr = `${hourMatch[1].padStart(2, '0')}:00`;
+    remaining = remaining.replace(hourMatch[0], ' ');
   }
 
   // 2. Date extraction (Relative and absolute)
