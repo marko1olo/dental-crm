@@ -4495,9 +4495,8 @@ function buildDicomProgressiveLoadStages(input: {
   return stages;
 }
 
-function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
+function computeDicomRenderMetrics(input: DicomRenderCachePlanRequest) {
   const { series, renderPlan } = input;
-  const warnings = new Set<string>();
   const fileCount = Math.max(1, series.fileCount);
   const centerSliceIndex = Math.floor((fileCount - 1) / 2);
   const requestedSlice = input.viewerState?.sliceIndex ?? centerSliceIndex;
@@ -4549,15 +4548,7 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
       : Math.max(16, Math.min(renderPlan.estimatedGpuMemoryMb, Math.ceil(maxResidentSlices * perSliceMb * 1.4)));
   const shouldPersistToIndexedDb =
     series.mprReadiness.resourcePolicy.cacheMode === "bounded_disk" || series.mprReadiness.resourcePolicy.cacheMode === "dicomweb_stream";
-  if (!canUseWorker && renderPlan.textureStrategy !== "external_viewer" && renderPlan.textureStrategy !== "metadata_only") {
-    warnings.add("Фоновая подготовка КТ-срезов недоступна: план снижает параллельность и оставляет короткие порции работы.");
-  }
-  if (renderPlan.progressiveSliceWindowCap < renderPlan.targetSliceBatch) {
-    warnings.add(`Окно прогрессивной загрузки ограничено политикой памяти: ${renderPlan.progressiveSliceWindowCap} срезов за фазу.`);
-  }
-  if (renderPlan.diagnosticPixelPolicy === "browser_preview_not_diagnostic") {
-    warnings.add("Браузерный КТ-план не является диагностическим пиксельным рендером; CAD/диагностика должны идти через внешний или настольный модуль.");
-  }
+
   const firstPaintBudgetMs =
     renderPlan.qualityMode === "diagnostic_full"
       ? 1400
@@ -4566,24 +4557,51 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
         : renderPlan.qualityMode === "interactive_low"
           ? 650
           : 300;
-  const interactionPhases = buildDicomRenderInteractionPhases({
+
+  return {
     fileCount,
-    renderPlan,
-    firstBatch,
-    maxResidentSlices,
-    workerCount
-  });
-  const progressiveStages = buildDicomProgressiveLoadStages({
-    fileCount,
+    centerSliceIndex,
     activeSliceIndex,
+    firstBatch,
     firstWindowStart,
     firstWindowEnd,
-    firstBatch,
-    maxResidentSlices,
-    workerCount,
+    totalBatches,
+    perSliceMb,
+    firstWindowMemoryMb,
     canUseWorker,
-    renderPlan
-  });
+    workerCount,
+    decodeConcurrency,
+    uploadConcurrency,
+    maxResidentSlices,
+    cpuMemoryBudgetMb,
+    gpuMemoryBudgetMb,
+    shouldPersistToIndexedDb,
+    firstPaintBudgetMs
+  };
+}
+
+function buildDicomRenderTasks(options: {
+  input: DicomRenderCachePlanRequest;
+  metrics: ReturnType<typeof computeDicomRenderMetrics>;
+  warnings: Set<string>;
+}): DicomRenderCacheTask[] {
+  const { input, metrics, warnings } = options;
+  const { series, renderPlan } = input;
+  const {
+    fileCount,
+    activeSliceIndex,
+    firstBatch,
+    firstWindowStart,
+    firstWindowEnd,
+    perSliceMb,
+    firstWindowMemoryMb,
+    canUseWorker,
+    decodeConcurrency,
+    uploadConcurrency,
+    shouldPersistToIndexedDb,
+    firstPaintBudgetMs
+  } = metrics;
+
   const tasks: DicomRenderCacheTask[] = [];
 
   if (renderPlan.textureStrategy === "external_viewer") {
@@ -4687,22 +4705,22 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
       if (adjacentWindow) {
         const nextStart = adjacentWindow.start;
         const nextEnd = adjacentWindow.end;
-      tasks.push(
-        renderTask({
-          id: "build-adjacent-brick",
-          kind: "build_texture_brick",
-          target: "gpu",
-          priority: "prefetch",
-          sliceStart: nextStart,
-          sliceEnd: nextEnd,
-          projection: null,
-          estimatedMemoryMb: taskMemoryForRange(nextStart, nextEnd, perSliceMb),
-          budgetMs: Math.max(320, Math.ceil(firstBatch * 14 / uploadConcurrency)),
-          blocking: false,
-          label: "Соседний фрагмент объема",
-          nextAction: "Подгружайте следующий фрагмент только после того, как первое окно стало интерактивным."
-        })
-      );
+        tasks.push(
+          renderTask({
+            id: "build-adjacent-brick",
+            kind: "build_texture_brick",
+            target: "gpu",
+            priority: "prefetch",
+            sliceStart: nextStart,
+            sliceEnd: nextEnd,
+            projection: null,
+            estimatedMemoryMb: taskMemoryForRange(nextStart, nextEnd, perSliceMb),
+            budgetMs: Math.max(320, Math.ceil(firstBatch * 14 / uploadConcurrency)),
+            blocking: false,
+            label: "Соседний фрагмент объема",
+            nextAction: "Подгружайте следующий фрагмент только после того, как первое окно стало интерактивным."
+          })
+        );
       }
     }
 
@@ -4764,6 +4782,63 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
     }
   }
 
+  return tasks;
+}
+
+function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
+  const { series, renderPlan } = input;
+  const warnings = new Set<string>();
+  const metrics = computeDicomRenderMetrics(input);
+  const {
+    fileCount,
+    centerSliceIndex,
+    activeSliceIndex,
+    firstBatch,
+    firstWindowStart,
+    firstWindowEnd,
+    totalBatches,
+    canUseWorker,
+    workerCount,
+    decodeConcurrency,
+    uploadConcurrency,
+    maxResidentSlices,
+    cpuMemoryBudgetMb,
+    gpuMemoryBudgetMb,
+    shouldPersistToIndexedDb,
+    firstPaintBudgetMs
+  } = metrics;
+
+  if (!canUseWorker && renderPlan.textureStrategy !== "external_viewer" && renderPlan.textureStrategy !== "metadata_only") {
+    warnings.add("Фоновая подготовка КТ-срезов недоступна: план снижает параллельность и оставляет короткие порции работы.");
+  }
+  if (renderPlan.progressiveSliceWindowCap < renderPlan.targetSliceBatch) {
+    warnings.add(`Окно прогрессивной загрузки ограничено политикой памяти: ${renderPlan.progressiveSliceWindowCap} срезов за фазу.`);
+  }
+  if (renderPlan.diagnosticPixelPolicy === "browser_preview_not_diagnostic") {
+    warnings.add("Браузерный КТ-план не является диагностическим пиксельным рендером; CAD/диагностика должны идти через внешний или настольный модуль.");
+  }
+
+  const interactionPhases = buildDicomRenderInteractionPhases({
+    fileCount,
+    renderPlan,
+    firstBatch,
+    maxResidentSlices,
+    workerCount
+  });
+  const progressiveStages = buildDicomProgressiveLoadStages({
+    fileCount,
+    activeSliceIndex,
+    firstWindowStart,
+    firstWindowEnd,
+    firstBatch,
+    maxResidentSlices,
+    workerCount,
+    canUseWorker,
+    renderPlan
+  });
+
+  const tasks = buildDicomRenderTasks({ input, metrics, warnings });
+
   if (renderPlan.qualityMode === "interactive_low") warnings.add("Режим слабой станции: держите первый показ в пониженном разрешении и повышайте качество только по явному запросу.");
   if (totalBatches > 8) warnings.add("Большой стек: нужны инкрементальные пакеты и видимый прогресс; экран приема блокировать нельзя.");
 
@@ -4807,6 +4882,7 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
     nextAction
   });
 }
+
 
 function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest) {
   const series = input.series;
