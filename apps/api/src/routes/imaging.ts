@@ -4808,21 +4808,34 @@ function buildDicomRenderCachePlan(input: DicomRenderCachePlanRequest) {
   });
 }
 
-function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest) {
-  const series = input.series;
-  const client = input.client;
-  const resourcePolicy = series.mprReadiness.resourcePolicy;
-  const runtimeProfile = buildDicomClientRuntimeProfile({ series, client });
-  const hardwareTier = detectWorkstationTier(client);
-  const detectedTier = runtimeProfile.mobileConstrained ? "low_end" : hardwareTier;
-  const warnings = new Set<string>();
+function buildWorkstationChecks(ctx: {
+  series: DicomWorkstationReadinessRequest["series"];
+  client: DicomWorkstationReadinessRequest["client"];
+  connector?: DicomWorkstationReadinessRequest["connector"] | null;
+  resourcePolicy: DicomMprReadiness["resourcePolicy"];
+  runtimeProfile: DicomClientRuntimeProfile;
+  detectedTier: DicomMprReadiness["resourcePolicy"]["requiredTier"];
+  tierOk: boolean;
+  freeStorageMb: number | null;
+  storageNeededMb: number;
+  connectorReady: boolean;
+  renderPlan: DicomGpuRenderPlan;
+}): DicomWorkstationReadinessCheck[] {
+  const {
+    series,
+    client,
+    connector,
+    resourcePolicy,
+    runtimeProfile,
+    detectedTier,
+    tierOk,
+    freeStorageMb,
+    storageNeededMb,
+    connectorReady,
+    renderPlan
+  } = ctx;
   const checks: DicomWorkstationReadinessCheck[] = [];
-  const freeStorageMb =
-    client.storageQuotaMb !== null && client.storageUsageMb !== null
-      ? Math.max(0, client.storageQuotaMb - client.storageUsageMb)
-      : null;
 
-  const tierOk = mprTierRank[detectedTier] >= mprTierRank[resourcePolicy.requiredTier];
   checks.push(
     readinessCheck({
       id: "runtime",
@@ -4832,6 +4845,7 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
       nextAction: runtimeProfile.nextAction
     })
   );
+
   checks.push(
     readinessCheck({
       id: "tier",
@@ -4862,7 +4876,6 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
     })
   );
 
-  const storageNeededMb = Math.max(512, Math.min(4096, resourcePolicy.estimatedMemoryMb * 2));
   const storageOk = freeStorageMb === null || freeStorageMb >= storageNeededMb;
   checks.push(
     readinessCheck({
@@ -4877,18 +4890,14 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
     })
   );
 
-  const connectorReady =
-    series.sourceKind === "dicomweb" || series.sourceKind === "pacs"
-      ? input.connector?.status === "ready"
-      : true;
   checks.push(
     readinessCheck({
       id: "source",
       label: "Доступ к источнику",
-      status: connectorReady ? "pass" : input.connector ? "warn" : "fail",
+      status: connectorReady ? "pass" : connector ? "warn" : "fail",
       detail:
         series.sourceKind === "dicomweb" || series.sourceKind === "pacs"
-          ? `Архив снимков: ${input.connector?.status ?? "не проверен"}.`
+          ? `Архив снимков: ${connector?.status ?? "не проверен"}.`
           : `Путь локального списка снимков: ${series.firstFilePath ? "доступен" : "отсутствует"}.`,
       nextAction: connectorReady
         ? "Продолжайте через подготовку плана открытия."
@@ -4896,23 +4905,6 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
     })
   );
 
-  if (!client.online && (series.sourceKind === "dicomweb" || series.sourceKind === "pacs")) {
-    warnings.add("Источник архива снимков требует сеть; офлайн-режим должен оставаться только с метаданными.");
-  }
-  runtimeProfile.warnings.forEach((warning) => warnings.add(warning));
-  if (!series.mprReadiness.canOpenMpr) series.mprReadiness.blockers.forEach((blocker) => warnings.add(blocker));
-  if (!tierOk) warnings.add("Текущая рабочая станция ниже рекомендованного класса для выбранной политики ресурсов КЛКТ.");
-  if (!client.webgl2Supported) warnings.add("Для диагностического 3D-просмотра в браузере нужна поддержка современной браузерной графики.");
-  if (!client.indexedDbSupported) warnings.add("Для восстановления просмотра нужно доступное локальное хранилище браузера.");
-  if (!connectorReady) warnings.add("Архив снимков не готов к передаче срезов.");
-
-  const renderPlan = buildGpuRenderPlan({
-    series,
-    client,
-    connectorReady,
-    tierOk
-  });
-  renderPlan.warnings.forEach((warning) => warnings.add(warning));
   const memoryPolicyWarn =
     renderPlan.memoryBudgetClass === "minimum" ||
     renderPlan.memoryBudgetClass === "constrained" ||
@@ -4930,9 +4922,51 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
     })
   );
 
+  return checks;
+}
+
+function buildWorkstationWarnings(ctx: {
+  series: DicomWorkstationReadinessRequest["series"];
+  client: DicomWorkstationReadinessRequest["client"];
+  runtimeProfile: DicomClientRuntimeProfile;
+  tierOk: boolean;
+  connectorReady: boolean;
+  renderPlan: DicomGpuRenderPlan;
+}): string[] {
+  const { series, client, runtimeProfile, tierOk, connectorReady, renderPlan } = ctx;
+  const warnings = new Set<string>();
+
+  if (!client.online && (series.sourceKind === "dicomweb" || series.sourceKind === "pacs")) {
+    warnings.add("Источник архива снимков требует сеть; офлайн-режим должен оставаться только с метаданными.");
+  }
+  runtimeProfile.warnings.forEach((warning) => warnings.add(warning));
+  if (!series.mprReadiness.canOpenMpr) series.mprReadiness.blockers.forEach((blocker) => warnings.add(blocker));
+  if (!tierOk) warnings.add("Текущая рабочая станция ниже рекомендованного класса для выбранной политики ресурсов КЛКТ.");
+  if (!client.webgl2Supported) warnings.add("Для диагностического 3D-просмотра в браузере нужна поддержка современной браузерной графики.");
+  if (!client.indexedDbSupported) warnings.add("Для восстановления просмотра нужно доступное локальное хранилище браузера.");
+  if (!connectorReady) warnings.add("Архив снимков не готов к передаче срезов.");
+
+  renderPlan.warnings.forEach((warning) => warnings.add(warning));
+
+  return Array.from(warnings);
+}
+
+function evaluateWorkstationStrategy(ctx: {
+  series: DicomWorkstationReadinessRequest["series"];
+  client: DicomWorkstationReadinessRequest["client"];
+  resourcePolicy: DicomMprReadiness["resourcePolicy"];
+  runtimeProfile: DicomClientRuntimeProfile;
+  renderPlan: DicomGpuRenderPlan;
+  checks: DicomWorkstationReadinessCheck[];
+  tierOk: boolean;
+  connectorReady: boolean;
+}) {
+  const { series, client, resourcePolicy, runtimeProfile, renderPlan, checks, tierOk, connectorReady } = ctx;
+
   const failCount = checks.filter((check) => check.status === "fail").length;
   const warnCount = checks.filter((check) => check.status === "warn").length;
   const readinessScore = Math.max(0, Math.min(100, 100 - failCount * 30 - warnCount * 14));
+
   const shouldUseExternalViewer =
     renderPlan.textureStrategy === "external_viewer" ||
     renderPlan.textureStrategy === "metadata_only" ||
@@ -4941,11 +4975,13 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
     !connectorReady ||
     runtimeProfile.mobileConstrained ||
     (!tierOk && resourcePolicy.requiredTier !== "low_end");
+
   const effectiveLoadStrategy: DicomMprReadiness["resourcePolicy"]["loadStrategy"] = shouldUseExternalViewer
     ? "external_handoff"
     : !tierOk && resourcePolicy.loadStrategy === "mpr_full"
       ? "mpr_downsampled"
       : resourcePolicy.loadStrategy;
+
   const canOpenInBrowser =
     !shouldUseExternalViewer &&
     series.mprReadiness.canOpenMpr &&
@@ -4964,18 +5000,89 @@ function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest)
       ? "Используйте внешний просмотр и держите тяжелые данные снимков вне оболочки CRM."
       : "Оставайтесь в списке серии/2D-предпросмотре, пока недостающие проверки не закрыты.";
 
+  return {
+    readinessScore,
+    shouldUseExternalViewer,
+    effectiveLoadStrategy,
+    canOpenInBrowser,
+    nextAction
+  };
+}
+
+function buildDicomWorkstationReadiness(input: DicomWorkstationReadinessRequest) {
+  const series = input.series;
+  const client = input.client;
+  const resourcePolicy = series.mprReadiness.resourcePolicy;
+
+  const runtimeProfile = buildDicomClientRuntimeProfile({ series, client });
+  const hardwareTier = detectWorkstationTier(client);
+  const detectedTier = runtimeProfile.mobileConstrained ? "low_end" : hardwareTier;
+
+  const freeStorageMb =
+    client.storageQuotaMb !== null && client.storageUsageMb !== null
+      ? Math.max(0, client.storageQuotaMb - client.storageUsageMb)
+      : null;
+  const storageNeededMb = Math.max(512, Math.min(4096, resourcePolicy.estimatedMemoryMb * 2));
+
+  const tierOk = mprTierRank[detectedTier] >= mprTierRank[resourcePolicy.requiredTier];
+  const connectorReady =
+    series.sourceKind === "dicomweb" || series.sourceKind === "pacs"
+      ? input.connector?.status === "ready"
+      : true;
+
+  const renderPlan = buildGpuRenderPlan({
+    series,
+    client,
+    connectorReady,
+    tierOk
+  });
+
+  const checks = buildWorkstationChecks({
+    series,
+    client,
+    connector: input.connector,
+    resourcePolicy,
+    runtimeProfile,
+    detectedTier,
+    tierOk,
+    freeStorageMb,
+    storageNeededMb,
+    connectorReady,
+    renderPlan
+  });
+
+  const warnings = buildWorkstationWarnings({
+    series,
+    client,
+    runtimeProfile,
+    tierOk,
+    connectorReady,
+    renderPlan
+  });
+
+  const strategy = evaluateWorkstationStrategy({
+    series,
+    client,
+    resourcePolicy,
+    runtimeProfile,
+    renderPlan,
+    checks,
+    tierOk,
+    connectorReady
+  });
+
   return dicomWorkstationReadinessResponseSchema.parse({
     detectedTier,
     requiredTier: resourcePolicy.requiredTier,
-    effectiveLoadStrategy,
+    effectiveLoadStrategy: strategy.effectiveLoadStrategy,
     runtimeProfile,
-    readinessScore,
-    canOpenInBrowser,
-    shouldUseExternalViewer,
+    readinessScore: strategy.readinessScore,
+    canOpenInBrowser: strategy.canOpenInBrowser,
+    shouldUseExternalViewer: strategy.shouldUseExternalViewer,
     renderPlan,
     checks,
-    warnings: Array.from(warnings),
-    nextAction
+    warnings,
+    nextAction: strategy.nextAction
   });
 }
 
