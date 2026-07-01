@@ -38,7 +38,7 @@ describe('buildPersistentStateExport', () => {
     }
   });
 
-  test('happy path - builds export with valid state file', () => {
+  test('happy path - builds export with valid state file', async () => {
     const stateFilePath = process.env.DENTAL_STATE_FILE as string;
     const mockState = { someData: 123 };
     const version = 1;
@@ -57,7 +57,7 @@ describe('buildPersistentStateExport', () => {
 
     fs.writeFileSync(stateFilePath, JSON.stringify(payload));
 
-    const result = buildPersistentStateExport();
+    const result = await buildPersistentStateExport();
 
     assert.strictEqual(result.exportKind, "dental-crm-prototype-state");
     assert.strictEqual(result.exportVersion, 1);
@@ -69,10 +69,10 @@ describe('buildPersistentStateExport', () => {
     assert.strictEqual(result.integrity.meta.exists, true);
   });
 
-  test('error path - file missing', () => {
+  test('error path - file missing', async () => {
     // We intentionally do not create the file
 
-    const result = buildPersistentStateExport();
+    const result = await buildPersistentStateExport();
 
     assert.strictEqual(result.exportKind, "dental-crm-prototype-state");
     assert.strictEqual(result.exportVersion, 1);
@@ -87,14 +87,14 @@ describe('buildPersistentStateExport', () => {
     assert.strictEqual(result.integrity.warnings.length > 0, true);
   });
 
-  test('error path - invalid JSON', () => {
+  test('error path - invalid JSON', async () => {
     const stateFilePath = process.env.DENTAL_STATE_FILE as string;
     mock.method(console, 'warn', () => {}); // Suppress expected warning from readPersistedState called via meta
 
     // Write invalid JSON
     fs.writeFileSync(stateFilePath, "{ invalid_json: true");
 
-    const result = buildPersistentStateExport();
+    const result = await buildPersistentStateExport();
 
     assert.strictEqual(result.exportKind, "dental-crm-prototype-state");
     assert.strictEqual(result.exportVersion, 1);
