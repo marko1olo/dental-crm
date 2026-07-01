@@ -1,4 +1,4 @@
-import { isFuzzyMatch, containsAnyFuzzyRoot } from "./stringUtils";
+import { isFuzzyMatch, containsAnyFuzzyRoot, textToNumbers } from "./stringUtils";
 
 export interface ParsedScheduleData {
   intent: "CREATE" | "CANCEL" | "RESCHEDULE";
@@ -9,8 +9,16 @@ export interface ParsedScheduleData {
 }
 
 export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
-  const result: ParsedScheduleData = { intent: "CREATE", timeStr: null, dateStr: null, patientName: null, service: null };
-  let remaining = input.toLowerCase();
+  const result: ParsedScheduleData = {
+    intent: "CREATE",
+    timeStr: null,
+    dateStr: null,
+    patientName: null,
+    service: null
+  };
+  
+  const normalizedInput = textToNumbers(input);
+  let remaining = " " + normalizedInput.toLowerCase() + " ";
 
   // 0. Detect intent
   // "удаление" is a dental service, so "удали/удалить" means cancel, not "удал[а-я]*"

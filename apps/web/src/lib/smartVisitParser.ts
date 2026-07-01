@@ -1,4 +1,4 @@
-import { containsAnyFuzzyRoot } from "./stringUtils";
+import { containsAnyFuzzyRoot, textToNumbers } from "./stringUtils";
 
 export interface ParsedVisitData {
   toothUpdates: { code: string; state: string }[];
@@ -13,7 +13,8 @@ export interface ParsedVisitData {
 
 export function parseVisitDictationLocal(input: string): ParsedVisitData {
   const result: ParsedVisitData = { toothUpdates: [], emkUpdates: {} };
-  const lower = input.toLowerCase();
+  const normalizedInput = textToNumbers(input);
+  const lower = normalizedInput.toLowerCase();
 
   // Extract teeth (2-digit numbers starting with 1-4 or 5-8 for kids)
   // Negative lookahead prevents matching "15 мая", "12 часов", "14:30", "15 руб"
@@ -84,7 +85,7 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
   }
 
   // Very naive NLP sentence extraction to override/append to defaults
-  const sentences = input.split(/[.?!;]/).map(s => s.trim()).filter(Boolean);
+  const sentences = normalizedInput.split(/[.?!;]/).map(s => s.trim()).filter(Boolean);
   let customComplaints: string[] = [];
   let customObjective: string[] = [];
   let customTreatment: string[] = [];
@@ -121,7 +122,7 @@ export function parseVisitDictationLocal(input: string): ParsedVisitData {
 
   // Fallback for simple pain without "жалобы" keyword if still empty
   if (!result.emkUpdates.complaint && containsAnyFuzzyRoot(lower, ["болит", "ноет"])) {
-    const painMatch = input.match(/([^.,;]*?(?:болит|ноет)[^.,;]*)/i);
+    const painMatch = normalizedInput.match(/([^.,;]*?(?:болит|ноет)[^.,;]*)/i);
     if (painMatch && painMatch[1]) {
       result.emkUpdates.complaint = painMatch[1].trim();
     }

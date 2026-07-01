@@ -1,5 +1,5 @@
 import type { Dashboard, Appointment } from "@dental/shared";
-import { isFuzzyMatch, containsAnyFuzzyRoot } from "./stringUtils";
+import { isFuzzyMatch, containsAnyFuzzyRoot, textToNumbers } from "./stringUtils";
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -40,8 +40,9 @@ export function smartBookingParser(
   text: string,
   dashboard: Dashboard
 ): Partial<AppointmentScheduleDraft> {
+  const normalizedInput = textToNumbers(text);
   const parsed: Partial<AppointmentScheduleDraft> = {};
-  let remaining = " " + text.toLowerCase().trim() + " ";
+  let remaining = " " + normalizedInput.toLowerCase().trim() + " ";
   
   const words = remaining.split(/[^а-яёa-z0-9]+/i).filter((w) => w.length > 0);
   
