@@ -1,6 +1,7 @@
 import { test, describe, mock, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { parseDicomSeriesManifest } from './imaging.js';
+import fs from 'node:fs';
+import { parseDicomSeriesManifest, hasDicomMagic } from './imaging.js';
 import type { ImagingSourceKind } from '@dental/shared';
 
 describe('parseDicomSeriesManifest', () => {
@@ -27,5 +28,24 @@ describe('parseDicomSeriesManifest', () => {
     assert.deepStrictEqual(result.rows, []);
     assert.deepStrictEqual(result.series, []);
     assert.deepStrictEqual(result.parserNotes, ['Нет строк списка снимков для разбора.']);
+  });
+});
+
+describe('hasDicomMagic', () => {
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  test('returns false when fs.statSync throws an error', () => {
+    mock.method(fs, 'statSync', () => {
+      throw new Error('Mocked node:fs statSync error');
+    });
+
+    const result = hasDicomMagic('dummy-path.dcm');
+
+    assert.strictEqual(result, false);
+
+    const mockStatSync = fs.statSync as any;
+    assert.strictEqual(mockStatSync.mock.callCount(), 1);
   });
 });
