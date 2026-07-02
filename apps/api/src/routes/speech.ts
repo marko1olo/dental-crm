@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
   speechChunkUploadSchema,
   speechGatewayHealthReportSchema,
@@ -141,134 +141,139 @@ function validateSpeechClinicalScope(
   };
 }
 
-export async function registerSpeechRoutes(app: FastifyInstance) {
-  app.get("/api/speech/status", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "speech gateway status"))) return;
-    return speechGatewayStatusSchema.parse(getSpeechGatewayStatus());
-  });
 
-  app.get("/api/speech/gateway-health", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "speech gateway health"))) return;
-    return speechGatewayHealthReportSchema.parse(getSpeechGatewayHealthReport());
-  });
+async function handleSpeechStatus(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "speech gateway status"))) return;
+  return speechGatewayStatusSchema.parse(getSpeechGatewayStatus());
+}
 
-  app.get("/api/speech/providers/runtime", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "speech provider runtime"))) return;
-    return getSpeechProviderRuntimeStatuses().map((provider) => speechProviderRuntimeStatusSchema.parse(provider));
-  });
+async function handleSpeechGatewayHealth(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "speech gateway health"))) return;
+  return speechGatewayHealthReportSchema.parse(getSpeechGatewayHealthReport());
+}
 
-  app.post("/api/speech/recording-strategy", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "speech recording strategy"))) return;
-    const input = parseSpeechPayload(
-      speechRecordingStrategyRequestSchema,
-      request.body,
-      "SpeechStrategyValidationError",
-      speechStrategyValidationMessage,
-      reply
-    );
-    if (!input) return;
-    return speechRecordingStrategySchema.parse(buildSpeechRecordingStrategy(input));
-  });
+async function handleSpeechProvidersRuntime(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "speech provider runtime"))) return;
+  return getSpeechProviderRuntimeStatuses().map((provider) => speechProviderRuntimeStatusSchema.parse(provider));
+}
 
-  app.get("/api/speech/chunks", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "speech chunks"))) return;
-    const query = request.query as { recordingId?: string; visitId?: string; patientId?: string };
-    const recordingId = query.recordingId?.trim();
-    if (!recordingId) return [];
-
-    const scopeValidation = validateSpeechClinicalScope(
-      { patientId: query.patientId, visitId: query.visitId },
-      { requirePatientOrVisit: true }
-    );
-    if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
-
-    const scope: Parameters<typeof listSpeechTranscriptionChunks>[1] = {};
-    if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
-    if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
-    return z.array(speechTranscriptionChunkSchema).parse(listSpeechTranscriptionChunks(recordingId, scope));
-  });
-
-  app.get("/api/speech/recordings/recovery", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "speech recording recovery"))) return;
-    const query = request.query as { visitId?: string; patientId?: string; limit?: string };
-    const scopeValidation = validateSpeechClinicalScope(
-      { patientId: query.patientId, visitId: query.visitId },
-      { requirePatientOrVisit: true }
-    );
-    if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
-
-    const filters: { visitId?: string | null; patientId?: string | null; limit?: number | null } = {};
-    if (scopeValidation.visitId) filters.visitId = scopeValidation.visitId;
-    if (scopeValidation.patientId) filters.patientId = scopeValidation.patientId;
-    if (query.limit) filters.limit = Number(query.limit);
-    return speechRecordingRecoveryListSchema.parse(listSpeechRecordingRecoveries(filters));
-  });
-
-  app.get("/api/speech/recordings/:recordingId/assemble", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "speech recording assemble"))) return;
-    const params = request.params as { recordingId: string };
-    const query = request.query as { visitId?: string; patientId?: string };
-    const scopeValidation = validateSpeechClinicalScope(
-      { patientId: query.patientId, visitId: query.visitId },
-      { requirePatientOrVisit: true }
-    );
-    if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
-
-    const scope: Parameters<typeof assembleSpeechRecording>[1] = {};
-    if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
-    if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
-    return speechRecordingAssemblySchema.parse(assembleSpeechRecording(params.recordingId, scope));
-  });
-
-  app.post(
-    "/api/speech/transcribe-chunk",
-    {
-      bodyLimit: speechJsonBodyLimitBytes()
-    },
-    async (request, reply) => {
-      if (!(await requireClinicalMutationAccess(request, reply, "speech chunk transcribe"))) return;
-      const input = parseSpeechPayload(
-        speechChunkUploadSchema,
-        request.body,
-        "SpeechChunkValidationError",
-        speechChunkValidationMessage,
-        reply
-      );
-      if (!input) return;
-      const scopeValidation = validateSpeechClinicalScope(input);
-      if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
-      const scopedInput: SpeechChunkUploadInput = {
-        ...input,
-        patientId: scopeValidation.patientId,
-        visitId: scopeValidation.visitId
-      };
-
-      try {
-        const result = await transcribeSpeechChunk(scopedInput);
-        return reply.code(result.chunk.status === "failed" ? 503 : 201).send(speechTranscriptionResponseSchema.parse(result));
-      } catch (error) {
-        if (error instanceof SpeechChunkPayloadError) {
-          return sendSpeechChunkRejection(reply, error.statusCode, "audio_rejected", speechChunkAudioRejectedMessage);
-        }
-        if (error instanceof SpeechChunkIdentityConflictError) {
-          return sendSpeechChunkRejection(reply, error.statusCode, "chunk_conflict", speechChunkConflictMessage);
-        }
-        throw error;
-      }
-    }
+async function handleSpeechRecordingStrategy(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "speech recording strategy"))) return;
+  const input = parseSpeechPayload(
+    speechRecordingStrategyRequestSchema,
+    request.body,
+    "SpeechStrategyValidationError",
+    speechStrategyValidationMessage,
+    reply
   );
+  if (!input) return;
+  return speechRecordingStrategySchema.parse(buildSpeechRecordingStrategy(input));
+}
 
-  app.post("/api/speech/polish-transcript", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "speech transcript polish"))) return;
-    const parsedInput = speechTranscriptPolishRequestSchema.safeParse(request.body);
-    if (!parsedInput.success) {
-      return reply.code(400).send({
-        error: "ValidationError",
-        message:
-          "Некорректный текст для очистки диктовки. Передайте непустую расшифровку до 80 000 символов и специальность приема."
-      });
+async function handleSpeechChunks(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "speech chunks"))) return;
+  const query = request.query as { recordingId?: string; visitId?: string; patientId?: string };
+  const recordingId = query.recordingId?.trim();
+  if (!recordingId) return [];
+
+  const scopeValidation = validateSpeechClinicalScope(
+    { patientId: query.patientId, visitId: query.visitId },
+    { requirePatientOrVisit: true }
+  );
+  if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
+
+  const scope: Parameters<typeof listSpeechTranscriptionChunks>[1] = {};
+  if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
+  if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
+  return z.array(speechTranscriptionChunkSchema).parse(listSpeechTranscriptionChunks(recordingId, scope));
+}
+
+async function handleSpeechRecordingsRecovery(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "speech recording recovery"))) return;
+  const query = request.query as { visitId?: string; patientId?: string; limit?: string };
+  const scopeValidation = validateSpeechClinicalScope(
+    { patientId: query.patientId, visitId: query.visitId },
+    { requirePatientOrVisit: true }
+  );
+  if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
+
+  const filters: { visitId?: string | null; patientId?: string | null; limit?: number | null } = {};
+  if (scopeValidation.visitId) filters.visitId = scopeValidation.visitId;
+  if (scopeValidation.patientId) filters.patientId = scopeValidation.patientId;
+  if (query.limit) filters.limit = Number(query.limit);
+  return speechRecordingRecoveryListSchema.parse(listSpeechRecordingRecoveries(filters));
+}
+
+async function handleSpeechRecordingAssemble(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "speech recording assemble"))) return;
+  const params = request.params as { recordingId: string };
+  const query = request.query as { visitId?: string; patientId?: string };
+  const scopeValidation = validateSpeechClinicalScope(
+    { patientId: query.patientId, visitId: query.visitId },
+    { requirePatientOrVisit: true }
+  );
+  if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
+
+  const scope: Parameters<typeof assembleSpeechRecording>[1] = {};
+  if (scopeValidation.visitId) scope.visitId = scopeValidation.visitId;
+  if (scopeValidation.patientId) scope.patientId = scopeValidation.patientId;
+  return speechRecordingAssemblySchema.parse(assembleSpeechRecording(params.recordingId, scope));
+}
+
+async function handleSpeechTranscribeChunk(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalMutationAccess(request, reply, "speech chunk transcribe"))) return;
+  const input = parseSpeechPayload(
+    speechChunkUploadSchema,
+    request.body,
+    "SpeechChunkValidationError",
+    speechChunkValidationMessage,
+    reply
+  );
+  if (!input) return;
+  const scopeValidation = validateSpeechClinicalScope(input);
+  if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
+  const scopedInput: SpeechChunkUploadInput = {
+    ...input,
+    patientId: scopeValidation.patientId,
+    visitId: scopeValidation.visitId
+  };
+
+  try {
+    const result = await transcribeSpeechChunk(scopedInput);
+    return reply.code(result.chunk.status === "failed" ? 503 : 201).send(speechTranscriptionResponseSchema.parse(result));
+  } catch (error) {
+    if (error instanceof SpeechChunkPayloadError) {
+      return sendSpeechChunkRejection(reply, error.statusCode, "audio_rejected", speechChunkAudioRejectedMessage);
     }
-    const input = parsedInput.data;
-    return speechTranscriptPolishResponseSchema.parse(await polishSpeechTranscript(input));
-  });
+    if (error instanceof SpeechChunkIdentityConflictError) {
+      return sendSpeechChunkRejection(reply, error.statusCode, "chunk_conflict", speechChunkConflictMessage);
+    }
+    throw error;
+  }
+}
+
+async function handleSpeechPolishTranscript(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalMutationAccess(request, reply, "speech transcript polish"))) return;
+  const parsedInput = speechTranscriptPolishRequestSchema.safeParse(request.body);
+  if (!parsedInput.success) {
+    return reply.code(400).send({
+      error: "ValidationError",
+      message:
+        "Некорректный текст для очистки диктовки. Передайте непустую расшифровку до 80 000 символов и специальность приема."
+    });
+  }
+  const input = parsedInput.data;
+  return speechTranscriptPolishResponseSchema.parse(await polishSpeechTranscript(input));
+}
+
+export async function registerSpeechRoutes(app: FastifyInstance) {
+  app.get("/api/speech/status", handleSpeechStatus);
+  app.get("/api/speech/gateway-health", handleSpeechGatewayHealth);
+  app.get("/api/speech/providers/runtime", handleSpeechProvidersRuntime);
+  app.post("/api/speech/recording-strategy", handleSpeechRecordingStrategy);
+  app.get("/api/speech/chunks", handleSpeechChunks);
+  app.get("/api/speech/recordings/recovery", handleSpeechRecordingsRecovery);
+  app.get("/api/speech/recordings/:recordingId/assemble", handleSpeechRecordingAssemble);
+  app.post("/api/speech/transcribe-chunk", { bodyLimit: speechJsonBodyLimitBytes() }, handleSpeechTranscribeChunk);
+  app.post("/api/speech/polish-transcript", handleSpeechPolishTranscript);
 }
