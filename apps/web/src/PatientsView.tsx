@@ -1,11 +1,14 @@
 import { usePatientStore } from "./store/patientStore";
-import { ArrowRight, Plus, Search, ShieldCheck, UserCheck, Mic } from "lucide-react";
+import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import { useState } from "react";
+import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import type { ChangeEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
+import { Odontogram } from "./components/Odontogram";
+import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -177,16 +180,17 @@ export function PatientsView(props: PatientsViewProps) {
                     placeholder="Новый пациент (ФИО Телефон Нажмите Enter)"
                     style={{ width: '100%', paddingRight: '40px' }}
                   />
-                  <button
-                    type="button"
-                    title="Надиктовать данные пациента"
-                    onClick={() => alert("Запись голоса (Демо ИИ): ФИО пациента...")}
-                    style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-500)', padding: '6px', borderRadius: '50%' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-50)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <Mic size={18} />
-                  </button>
+                  <SmartMicrophoneButton
+                    context="patient"
+                    onResult={(text) => {
+                      setSmartInputText(text);
+                      const parsed = parsePatientDictationLocal(text);
+                      setSmartParsedData(parsed);
+                      setShowSmartPreview(true);
+                      setShowHints(false);
+                    }}
+                    style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}
+                  />
 
                   <DictationHints isVisible={showHints} type="patient" />
                   
@@ -344,15 +348,13 @@ export function PatientsView(props: PatientsViewProps) {
                 <div className="form-span-2" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Заметки для команды</span>
-                    <button
-                      type="button"
-                      onClick={() => alert(`Запись голоса ИИ для заметок пациента`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--brand-500)', fontSize: '12px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-50)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    >
-                      <Mic size={14} /> Надиктовать
-                    </button>
+                    <SmartMicrophoneButton
+                      context="general"
+                      onResult={(t) => {
+                        const prev = patientCoreDraft.notes || "";
+                        updatePatientCoreDraft("notes", prev ? `${prev}, ${t}` : t);
+                      }}
+                    />
                   </div>
                   <textarea
                     value={patientCoreDraft.notes}
@@ -398,6 +400,15 @@ export function PatientsView(props: PatientsViewProps) {
                   {patientCoreSaveGuidance}
                 </p>
               ) : null}
+
+              {/* Odontogram Section */}
+              <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+                 <Odontogram />
+              </div>
+
+              {/* ShadowAnalyst — AI 2D X-Ray Analyzer */}
+              <VisiographAnalyzer />
+
             <details className="settings-advanced-block patient-docs-collapsible">
               <summary className="settings-advanced-toggle">
                 <span className="settings-advanced-label">

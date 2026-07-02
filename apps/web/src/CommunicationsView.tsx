@@ -1,3 +1,4 @@
+import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useState } from "react";
 import { CheckCircle2, FileText, History, MessageSquare, Send, Mic } from "lucide-react";
 import type { CommunicationTaskOutcome, Dashboard, GeneratedDocument, StaffRole } from "@dental/shared";
@@ -261,14 +262,14 @@ export function CommunicationsView({
             </label>
             <span id={communicationNoteDescriptionId} style={{ fontSize: '12px', color: 'var(--slate-500)' }}>Задача закрывается с событием и попадает в аудит.</span>
           </div>
-          <button
-            type="button"
-            className="secondary-button"
+          <SmartMicrophoneButton
+            context="general"
+            onResult={(t) => {
+              const prev = communicationNote || "";
+              onCommunicationNoteChange(prev ? `${prev}, ${t}` : t);
+            }}
             style={{ display: "inline-flex", gap: "6px", alignItems: "center", padding: '6px 12px', color: 'var(--brand-600)', background: 'var(--brand-50)', border: 'none', borderRadius: '8px', fontWeight: 600 }}
-            onClick={() => alert("Запись голоса... (Демо ИИ)")}
-          >
-            <Mic size={16} /> Надиктовать
-          </button>
+          />
         </div>
         <textarea
           id={communicationNoteInputId}

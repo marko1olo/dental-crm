@@ -6,6 +6,7 @@ import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import {
+  type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent,
   lazy,
@@ -15,6 +16,7 @@ import {
   useRef,
   useState
 } from "react";
+import { showToast } from "./components/GlobalToast";
 import {
   ArrowRight,
   AlertTriangle,
@@ -3361,7 +3363,7 @@ const {
       await loadDashboard();
     } catch (e) {
       console.error(e);
-      alert("Не удалось запустить демонстрационный режим");
+      showToast("Не удалось запустить демонстрационный режим", "error");
     }
   }
 
@@ -3387,7 +3389,7 @@ const {
       setOnboardingStep("clinic");
     } catch (e) {
       console.error(e);
-      alert("Не удалось запустить чистый режим");
+      showToast("Не удалось запустить чистый режим", "error");
     }
   }
 
@@ -3449,7 +3451,7 @@ const {
       await loadDashboard();
     } catch (e) {
       console.error(e);
-      alert("Не удалось завершить настройку клиники");
+      showToast("Не удалось завершить настройку клиники", "error");
     }
   }
 
@@ -4702,7 +4704,7 @@ const {
   useEffect(() => {
     if (!currentView) return;
     const allowedViews = getFilteredAppViews(selectedWorkspaceRole);
-    console.log("allowedViewsGuard: currentView=" + currentView + " role=" + selectedWorkspaceRole + " allowed=" + allowedViews.join(",") + " includes=" + allowedViews.includes(currentView));
+
     if (!allowedViews.includes(currentView)) {
       const fallbackView = allowedViews[0] || "schedule";
       setCurrentView(fallbackView);
@@ -7091,7 +7093,7 @@ const {
       setError(message);
       return false;
     }
-    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode);
+    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode, dashboard?.clinicSettings.staff);
     if (missing.length) {
       const message = `Перед сохранением записи: ${missing.join("; ")}.`;
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
@@ -7142,7 +7144,7 @@ const {
   }
 
   function newAppointmentMissingFields(draft: AppointmentScheduleDraft): string[] {
-    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);
+    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode, dashboard?.clinicSettings.staff);
   }
 
   async function createAppointmentFromDraft(): Promise<boolean> {

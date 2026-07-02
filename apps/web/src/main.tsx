@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { AppShell } from "./AppShell";
 import "./styles/main.css";
+import "./styles/shadow-analyst.css";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -14,11 +14,16 @@
   "dependencies": {
     "@dental/shared": "*",
     "@fastify/cors": "^10.0.1",
+    "chokidar": "^5.0.0",
+    "decimal.js": "^10.6.0",
+    "dicom-parser": "^1.8.21",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.3.3",
+    "fuse.js": "^7.4.2",
     "pg": "^8.15.6",
     "qrcode": "^1.5.4",
+    "sharp": "^0.35.3",
     "socks-proxy-agent": "^10.1.0",
     "undici": "^8.5.0",
     "zod": "^3.24.4"

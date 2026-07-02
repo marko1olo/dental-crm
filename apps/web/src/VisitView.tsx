@@ -1,9 +1,15 @@
 import React, { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "./components/GlobalToast";
 import { AlertTriangle, Bot, Check, CheckCircle2, ClipboardCheck, Mic, ShieldCheck, Sparkles } from "lucide-react";
 import { getToothPath, getToothConfig } from "./utils/toothGeometry";
 import { DictationHints } from "./DictationHints";
-
+import { SmartParsePreview } from "./SmartParsePreview";
+import { AiOrchestrator } from "./lib/aiOrchestrator";
+import { parseVisitDictationLocal } from "./lib/smartVisitParser";
+import { useVisitStore } from "./store/visitStore";
+import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 export interface VisitViewProps {
   AlertTriangle: any;
   Bot: any;
@@ -115,6 +121,10 @@ export function VisitView(props: VisitViewProps) {
 
   const [activeEmkTab, setActiveEmkTab] = useState("all");
   const [showHints, setShowHints] = useState(false);
+  const [showSmartPreview, setShowSmartPreview] = useState(false);
+  const [smartParsedData, setSmartParsedData] = useState<any>(null);
+  
+  const visitAiDiagnosesByCode = useVisitStore((state) => state.visitAiDiagnosesByCode);
   const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(null);
   const [activeStamp, setActiveStamp] = React.useState<string | null>(null);
 
@@ -274,9 +284,9 @@ export function VisitView(props: VisitViewProps) {
 
             <details className="visit-safety-strip-toggle" style={{ margin: '1rem 0', fontSize: '0.85rem', color: 'var(--slate-500)' }}>
               <summary style={{ cursor: 'pointer', userSelect: 'none' }}>Инженерный статус (локальное сохранение, связь с сервером)</summary>
-              <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--slate-50)', borderRadius: '8px' }}>
-                {visitSafetyCards.map((item) => (
-                  <article className={`safety-${item.state}`} key={item.key}>
+              <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--slate-50)', borderRadius: '8px' }}>
+                {visitSafetyCards.map((item: any) => (
+                  <article className={`safety-${item.state}`} key={item.key} style={{ flex: '1 1 200px' }}>
                     <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</span>
                     <strong style={{ display: 'block', margin: '4px 0' }}>{item.value}</strong>
                     <p style={{ margin: '0', fontSize: '0.8rem', lineHeight: '1.2' }}>{item.detail}</p>
@@ -335,36 +345,98 @@ export function VisitView(props: VisitViewProps) {
                   </button>
                 ))}
               </div>
-              <textarea
-                aria-label="Текст диктовки"
-                value={transcript}
-                onChange={(event) => {
-                  visitDraftUserEditedRef.current = true;
-                  setTranscript(event.target.value);
-                  if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
-                }}
-              />
-              <div className="dictation-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-                <button
-                  className={isServerVoiceRecording ? "primary-button" : "secondary-button"}
-                  type="button"
-                  style={{ 
-                    padding: '12px 16px', 
-                    fontSize: '15px', 
-                    justifyContent: 'center', 
-                    backgroundColor: isServerVoiceRecording ? 'var(--rust)' : undefined,
-                    color: isServerVoiceRecording ? '#fff' : undefined,
-                    borderColor: isServerVoiceRecording ? 'var(--rust)' : undefined,
-                    animation: isServerVoiceRecording ? 'ai-pulse 2s infinite' : 'none'
+              <div style={{ position: 'relative' }}>
+                <textarea
+                  aria-label="Текст диктовки"
+                  value={transcript}
+                  onFocus={() => setShowHints(true)}
+                  onBlur={() => setTimeout(() => setShowHints(false), 200)}
+                  onChange={(event) => {
+                    visitDraftUserEditedRef.current = true;
+                    setTranscript(event.target.value);
+                    if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
                   }}
-                  onClick={isServerVoiceRecording ? stopServerVoiceRecording : startServerVoiceRecording}
-                >
-                  <Mic aria-hidden="true" style={{ width: '18px', height: '18px' }} />{" "}
-                  {isServerVoiceRecording ? "Остановить и распознать" : "Начать диктовку"}
-                </button>
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey && transcript.trim()) {
+                      e.preventDefault();
+                      const orchestratorResult = AiOrchestrator.processEmkDictation(transcript);
+                        const parsed = orchestratorResult.source === "local_algorithm" 
+                          ? orchestratorResult.data 
+                          : { isAiTask: true, prompt: orchestratorResult.suggestedPrompt };
+                      setSmartParsedData(parsed);
+                      setShowSmartPreview(true);
+                      setShowHints(false);
+                    }
+                  }}
+                  placeholder="Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"
+                  style={{ minHeight: '120px', width: '100%' }}
+                />
+                
+                
+                
+                <SmartParsePreview 
+                  isVisible={showSmartPreview}
+                  parsedData={smartParsedData}
+                  rawText={transcript}
+                  type="visit"
+                  onApply={(data: any) => {
+                    if (data) {
+                      if (data.toothUpdates) {
+                        data.toothUpdates.forEach((t: any) => setToothState(t.code, t.state));
+                      }
+                      if (data.emkUpdates) {
+                        Object.entries(data.emkUpdates).forEach(([k, v]) => {
+                          if (v) appendToEMKField(k, v as string);
+                        });
+                      }
+                    }
+                    setShowSmartPreview(false);
+                  }}
+                  onManual={() => setShowSmartPreview(false)}
+                  onClose={() => setShowSmartPreview(false)}
+                />
+              </div>
+              <div className="dictation-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                <SmartMicrophoneButton
+                  context="visit"
+                  onResult={(text) => {
+                    const current = transcript || "";
+                    const newText = current ? `${current}\n${text}` : text;
+                    setTranscript(newText);
+                    
+                    const orchestratorResult = AiOrchestrator.processEmkDictation(newText);
+                    const parsed = orchestratorResult.source === "local_algorithm" 
+                      ? orchestratorResult.data 
+                      : { isAiTask: true, prompt: orchestratorResult.suggestedPrompt };
+                    setSmartParsedData(parsed);
+                    setShowSmartPreview(true);
+                    setShowHints(false);
+                  }}
+                  style={{ padding: '12px 16px', fontSize: '15px', justifyContent: 'center' }}
+                />
 
                 <button
                   className="primary-button"
+                  type="button"
+                  style={{ padding: '12px 16px', fontSize: '15px' }}
+                  onClick={() => {
+                    const orchestratorResult = AiOrchestrator.processEmkDictation(transcript);
+                    const parsed = orchestratorResult.source === "local_algorithm" 
+                      ? orchestratorResult.data 
+                      : { isAiTask: true, prompt: orchestratorResult.suggestedPrompt };
+                    setSmartParsedData(parsed);
+                    setShowSmartPreview(true);
+                    setShowHints(false);
+                  }}
+                  disabled={!hasVisitTranscriptText}
+                  aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
+                >
+                  <Check aria-hidden="true" style={{ width: '18px', height: '18px' }} />{" "}
+                  Разобрать текст
+                </button>
+
+                <button
+                  className="secondary-button"
                   type="button"
                   style={{ padding: '12px 16px', fontSize: '15px' }}
                   onClick={buildDraft}
@@ -372,7 +444,7 @@ export function VisitView(props: VisitViewProps) {
                   aria-describedby={!visitDraftReadyToBuild ? "visit-draft-missing" : undefined}
                 >
                   <Bot aria-hidden="true" style={{ width: '18px', height: '18px' }} />{" "}
-                  {isDraftLoading ? "Собираю" : "Собрать черновик"}
+                  {isDraftLoading ? "Собираю" : "Собрать нейро-черновик"}
                 </button>
 
                 <div style={{ flexGrow: 1 }} />
@@ -418,15 +490,6 @@ export function VisitView(props: VisitViewProps) {
                     >
                       <Sparkles aria-hidden="true" /> {isTranscriptPolishing ? "Чищу" : "Очистить текст"}
                     </button>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      onClick={buildOfflineDraft}
-                      disabled={!hasVisitTranscriptText}
-                      aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
-                    >
-                      Локальный разбор
-                    </button>
                   </div>
                 </details>
 
@@ -447,6 +510,8 @@ export function VisitView(props: VisitViewProps) {
                 ) : null}
               </div>
             </div>
+
+            <VisiographAnalyzer />
 
             <div className="tooth-map" aria-label="Зубная карта">
               <div className="tooth-map-head">
@@ -568,9 +633,7 @@ export function VisitView(props: VisitViewProps) {
                       <div className="tooth-half">
                         {(toothRows[0] || []).slice(0, 8).map((code) => {
                           const state = toothStateByCode[code] ?? "idle";
-                          if (code === "15") {
-                            console.log("RENDER TOOTH 15 state:", state);
-                          }
+
                           const geom = getToothPath(Number(code));
                           const cfg = getToothConfig(Number(code));
                           const isDetected = (draft?.quality?.detectedToothCodes || []).includes(code);
@@ -1014,118 +1077,7 @@ export function VisitView(props: VisitViewProps) {
           {/* ═══════════════════════════════════════════════════════════════
               Clinical Context Modal — открывается по клику на зуб (без штампа)
           ═══════════════════════════════════════════════════════════════ */}
-          <style dangerouslySetInnerHTML={{ __html: `
-            @keyframes _ccm-fade { from { opacity:0 } to { opacity:1 } }
-            @keyframes _ccm-up {
-              from { transform: translate(-50%,-45%) scale(.95); opacity:0 }
-              to   { transform: translate(-50%,-50%) scale(1);   opacity:1 }
-            }
-            ._ccm-overlay {
-              position:fixed; inset:0; z-index:3000;
-              background:rgba(15,23,42,.52);
-              backdrop-filter:blur(14px);
-              animation:_ccm-fade .18s ease-out;
-            }
-            ._ccm-content {
-              position:fixed; top:50%; left:50%;
-              transform:translate(-50%,-50%);
-              display:flex; align-items:stretch; gap:1.25rem;
-              z-index:3001;
-              width:96%; max-width:900px;
-              height:82vh; max-height:580px;
-              animation:_ccm-up .22s cubic-bezier(.16,1,.3,1) forwards;
-            }
-            ._ccm-panel {
-              flex:1; min-width:0;
-              background:rgba(255,255,255,.92);
-              backdrop-filter:blur(20px);
-              border:1px solid rgba(255,255,255,.6);
-              box-shadow:0 24px 48px -12px rgba(15,23,42,.22);
-              border-radius:22px;
-              padding:1.25rem 1rem;
-              display:flex; flex-direction:column; gap:.55rem;
-              overflow-y:auto;
-            }
-            ._ccm-center {
-              width:220px; flex-shrink:0;
-              display:flex; flex-direction:column;
-              align-items:center; justify-content:space-between;
-              background:rgba(255,255,255,.55);
-              backdrop-filter:blur(16px);
-              border:1px solid rgba(255,255,255,.4);
-              border-radius:22px;
-              padding:1.25rem .75rem;
-            }
-            ._ccm-tooth-stage {
-              flex:1; display:flex; align-items:center; justify-content:center;
-              transform:scale(2.5);
-              filter:drop-shadow(0 12px 24px rgba(15,23,42,.18));
-            }
-            ._ccm-h {
-              margin:0 0 .15rem;
-              font-size:.9rem; font-weight:700; color:#1e293b;
-              border-bottom:1px solid #e2e8f0; padding-bottom:.55rem;
-            }
-            ._ccm-label {
-              font-size:.65rem; font-weight:800; letter-spacing:.06em;
-              text-transform:uppercase; color:#64748b;
-              margin:.6rem 0 .15rem;
-            }
-            ._ccm-label:first-of-type { margin-top:0 }
-            ._ccm-btn {
-              width:100%; padding:.6rem .8rem;
-              border-radius:10px;
-              border:1px solid #e2e8f0;
-              background:#fff; color:#334155;
-              font-size:.82rem; font-weight:600;
-              text-align:left; cursor:pointer;
-              display:flex; align-items:center; justify-content:space-between;
-              transition:background .13s, border-color .13s, box-shadow .13s;
-            }
-            ._ccm-btn:hover { background:#f8fafc; border-color:#cbd5e1; box-shadow:0 2px 8px rgba(15,23,42,.07); }
-            ._ccm-btn.active { background:var(--ab,#f0f9ff); color:var(--af,#0369a1); border-color:var(--abr,#bae6fd); }
-            ._ccm-btn[data-color="green"] { border-left:3px solid #4ade80 }
-            ._ccm-btn[data-color="slate"] { border-left:3px solid #94a3b8 }
-            ._ccm-btn[data-color="amber"] { border-left:3px solid #f59e0b }
-            ._ccm-btn[data-color="red"]   { border-left:3px solid #f87171 }
-            ._ccm-btn[data-color="rose"]  { border-left:3px solid #fb7185 }
-            ._ccm-btn[data-color="blue"]  { border-left:3px solid #60a5fa }
-            ._ccm-btn[data-color="cyan"]  { border-left:3px solid #22d3ee }
-            ._ccm-btn[data-color="violet"]{ border-left:3px solid #a78bfa }
-            ._ccm-btn[data-color="pink"]  { border-left:3px solid #f472b6 }
-            ._ccm-warn {
-              padding:.6rem .75rem; border-radius:10px;
-              background:#fffbeb; border:1px solid #fde68a;
-              font-size:.73rem; color:#78350f;
-            }
-            ._ccm-code-badge {
-              font-size:.7rem; font-weight:800; letter-spacing:.1em;
-              color:#64748b; margin-bottom:.5rem;
-            }
-            ._ccm-close-btn {
-              width:100%; border-radius:12px; padding:.55rem;
-              font-size:.8rem; font-weight:700;
-              border:1px solid #cbd5e1; background:#f8fafc; color:#475569;
-              cursor:pointer; transition:background .13s;
-            }
-            ._ccm-close-btn:hover { background:#e2e8f0; }
-            .clinical-rules-toggle {
-              margin: .75rem 0;
-              border-radius: 12px;
-              border: 1px solid #e2e8f0;
-              overflow: hidden;
-            }
-            .clinical-rules-toggle > summary {
-              padding: .75rem 1rem;
-              background: #f8fafc;
-              font-size: .85rem; font-weight: 700; color: #475569;
-              cursor: pointer; user-select: none; outline: none;
-              list-style: none;
-              transition: background .15s;
-            }
-            .clinical-rules-toggle > summary:hover { background: #f1f5f9; }
-            .clinical-rules-toggle > summary::-webkit-details-marker { display: none; }
-          ` }} />
+          
 
           {selectedToothForMenu && (() => {
             const { code } = selectedToothForMenu;
@@ -1323,7 +1275,7 @@ export function VisitView(props: VisitViewProps) {
                           onClick={() => {
                             if (visitWarnings && visitWarnings.some((w: any) =>
                               /бисфосф|bisph/i.test(w.title + w.detail))) {
-                              alert(`⚠️ ПРЕДУПРЕЖДЕНИЕ: У пациента обнаружены бисфосфонаты в анамнезе. Имплантация противопоказана — риск остеонекроза. Проконсультируйтесь с хирургом-ортопедом.`);
+                              showToast(`⚠️ ПРЕДУПРЕЖДЕНИЕ: У пациента обнаружены бисфосфонаты в анамнезе. Имплантация противопоказана — риск остеонекроза. Проконсультируйтесь с хирургом-ортопедом.`, 'error');
                               return;
                             }
                             setMaterialCategory("implant");

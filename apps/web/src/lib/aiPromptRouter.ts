@@ -1,34 +1,118 @@
 // Centralized LLM Prompt Router
-// Groups prompts by domain (Schedule, Medical, Patient) to avoid spaghetti string literals.
+// Groups prompts by domain to avoid spaghetti string literals and provide a robust AI Backbone.
 
 export const Prompts = {
   System: {
-    Base: "You are a highly skilled AI assistant for a modern dental clinic.",
-    StrictJSON: "You must return valid JSON only, without markdown wrapping.",
+    Base: `Ты — высококлассный ИИ-ассистент современной стоматологической клиники. 
+Твоя задача — помогать врачам, ассистентам и администраторам автоматизировать рутину.
+Отвечай профессионально, четко, без лишней воды. Никакой сикофантии. Если данных не хватает — так и скажи.
+Никаких галлюцинаций. Используй строго медицинскую терминологию там, где это уместно.`,
+    StrictJSON: `ВАЖНО: Ты должен вернуть СТРОГО валидный JSON. Никакого текста до или после JSON. Никаких маркдаун-оберток (\`\`\`json). Только сам объект.`
   },
   Patient: {
     ExtractDetails: (input: string) => `
-      Parse the following raw text into structured patient data.
-      Text: "${input}"
-      Return JSON: { "fullName": string, "phone": string, "birthDate": "YYYY-MM-DD" }
-    `,
+Проанализируй следующий неструктурированный текст (диктовку или результаты распознавания OCR паспорта/анкеты).
+Текст: "${input}"
+
+Твоя задача — извлечь данные пациента.
+Верни JSON в формате:
+{
+  "fullName": "ФИО в именительном падеже",
+  "phone": "Телефон в формате +7 (XXX) XXX-XX-XX, если есть",
+  "birthDate": "Дата рождения в формате YYYY-MM-DD, если есть",
+  "passport": "Серия и номер паспорта, кем выдан, код подразделения, если есть",
+  "notes": "Любые другие важные детали (аллергии, страхи, ДМС, и т.д.)"
+}
+`
   },
   Schedule: {
     AnalyzeNote: (input: string) => `
-      Parse the following appointment dictation into structured data.
-      Text: "${input}"
-      Return JSON: { "dateTime": "YYYY-MM-DD HH:mm", "patientName": string, "service": string, "doctorRole": string }
-    `,
+Ты медицинский регистратор. Разбери сложную диктовку администратора или врача о записи пациента.
+Текст: "${input}"
+
+Извлеки максимум информации для создания записи в расписании.
+Обрати особое внимание на относительные даты ("завтра", "послезавтра", "через неделю") и время ("пол-третьего", "в половину пятого").
+
+Верни JSON:
+{
+  "dateTime": "YYYY-MM-DD HH:mm (если можно точно вычислить) или null",
+  "relativeTime": "Относительное время, если точную дату вычислить нельзя",
+  "patientName": "ФИО пациента",
+  "service": "Услуга или причина обращения (например, Удаление зуба, Консультация)",
+  "durationMinutes": "Длительность в минутах (число), если указано",
+  "doctorRole": "Требуемый врач или специальность",
+  "isCancellation": boolean (true, если это отмена записи),
+  "isReschedule": boolean (true, если это перенос записи)
+}
+`
   },
   Medical: {
-    StructureEmk: (input: string, fieldContext: string) => `
-      You are structuring a medical note for the dental EMK field: ${fieldContext}.
-      Doctor's dictation: "${input}"
-      Format it clearly, use professional terminology.
-    `,
-    GenerateTreatmentPlan: (diagnosis: string, tooth: string) => `
-      Create a standard treatment plan for ${diagnosis} on tooth ${tooth}.
-      Include 3-4 steps.
-    `,
+    StructureEmk: (input: string) => `
+Ты стоматолог-терапевт, хирург или ортопед. На основе сырой диктовки врача сформируй профессиональную медицинскую запись для ЭМК (Электронной Медицинской Карты).
+Диктовка: "${input}"
+
+Сформируй данные, используя строгую стоматологическую терминологию. 
+Верни JSON:
+{
+  "complaint": "Жалобы пациента (лаконично)",
+  "anamnesis": "Анамнез заболевания (развитие боли, ранее леченные зубы)",
+  "objectiveStatus": "Объективный статус (зонд, перкуссия, пальпация, ЭОД, термопроба)",
+  "diagnosis": "Диагноз (желательно с кодом по МКБ-10, если понятно из контекста)",
+  "treatmentPlan": "План лечения (этапы, анестезия, материалы)",
+  "toothCodes": ["Список номеров зубов (например, 46, 38), если упомянуты"]
+}
+`,
+    ClinicalAudit: (emkRecord: string) => `
+Ты Главный врач стоматологической клиники. Проведи аудит следующей медицинской записи:
+Запись: "${emkRecord}"
+
+Проверь:
+1. Соответствует ли план лечения поставленному диагнозу?
+2. Нет ли противоречий в объективном статусе?
+3. Достаточно ли полно описана картина для защиты клиники юридически?
+
+Верни JSON:
+{
+  "isApproved": boolean (пройдена ли проверка),
+  "issues": ["Список найденных проблем или неточностей"],
+  "recommendations": ["Как улучшить запись"]
+}
+`
+  },
+  Imaging: {
+    AnalyzeCTReport: (input: string) => `
+Ты стоматолог-рентгенолог. Разбери заключение по КЛКТ или панорамному снимку.
+Текст: "${input}"
+
+Верни JSON:
+{
+  "findings": ["Список ключевых находок (кисты, кариес, ретенция, воспаления)"],
+  "teethAffected": ["Номера проблемных зубов"],
+  "implantFeasibility": "Оценка возможности имплантации (объем кости, близость канала), если упомянуто",
+  "summary": "Краткое резюме для пациента понятным языком"
+}
+`
+  },
+  Marketing: {
+    PatientFollowUp: (patientName: string, recentProcedure: string) => `
+Ты заботливый администратор клиники. Напиши короткое и вежливое сообщение (SMS/WhatsApp) пациенту ${patientName}, который недавно прошел процедуру: ${recentProcedure}.
+Сообщение должно спросить о самочувствии и напомнить, что в случае боли он может связаться с клиникой. Тон доброжелательный, но не навязчивый.
+Верни JSON: { "messageText": "текст сообщения" }
+`,
+
+    GenerateReviewReply: (reviewText: string, tone: string, clinicName: string, seoKeys: string[]) => `
+Ты опытный маркетолог стоматологической клиники "${clinicName}". 
+Напиши профессиональный ответ на отзыв пациента.
+Тональность отзыва: ${tone} (positive/neutral/negative)
+Текст отзыва: "${reviewText}"
+
+Ключевые слова для SEO (используй 1-2 слова естественно в тексте, если тональность positive или neutral. При негативе - не используй, чтобы не звучать цинично):
+${seoKeys.join(', ')}
+
+Требования:
+- Ответ должен быть вежливым и эмпатичным.
+- Если отзыв негативный - извинись, поблагодари за обратную связь и попроси связаться с главным врачом для решения ситуации.
+- Верни JSON: { "replyText": "твой ответ" }
+`
   }
 };

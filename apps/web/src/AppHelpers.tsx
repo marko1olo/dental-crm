@@ -1,4 +1,4 @@
-﻿
+
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -4511,11 +4511,11 @@ export function appointmentScheduleDateMissingSteps(draft: AppointmentScheduleDr
   ].filter((step): step is string => Boolean(step));
 }
 
-export function appointmentScheduleMissingFields(draft: AppointmentScheduleDraft, clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined): string[] {
+export function appointmentScheduleMissingFields(draft: AppointmentScheduleDraft, clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined, staff: Dashboard["clinicSettings"]["staff"] | null | undefined): string[] {
   const missing: string[] = [];
   if (!draft.patientId) missing.push("выберите пациента");
   if (!draft.doctorUserId) missing.push("выберите врача");
-  if (clinicMode !== "solo_doctor" && !draft.assistantUserId) missing.push("выберите ассистента");
+  if (clinicMode !== "solo_doctor" && (staff || []).some(s => s.role === "assistant" && s.active) && !draft.assistantUserId) missing.push("выберите ассистента");
   if (!draft.chairId) missing.push("выберите кресло");
   missing.push(...appointmentScheduleDateMissingSteps(draft));
   return missing;

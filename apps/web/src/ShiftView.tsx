@@ -79,8 +79,9 @@ export function ShiftView({
                       className="secondary-button"
                       type="button"
                       aria-describedby={!activePatientHasCallablePhone ? "shift-call-guidance" : undefined}
-                      disabled={!activePatientHasCallablePhone}
+                      aria-disabled={!activePatientHasCallablePhone}
                       title={activePatientHasCallablePhone ? "Позвонить пациенту" : "В карточке пациента нет телефона"}
+                      style={{ opacity: !activePatientHasCallablePhone ? 0.6 : 1 }}
                       onClick={() => {
                         if (!activePatientHasCallablePhone) {
                           setError("В карточке пациента нет телефона. Добавьте номер в разделе «Пациенты», чтобы позвонить.");
@@ -145,7 +146,18 @@ export function ShiftView({
                     return (
                       <div 
                         key={app.id} 
-                        className={`today-schedule-item status-${app.status} ${isCurrent ? "current-active" : ""}`}
+                        className={`today-schedule-item ${isCurrent ? "current-active" : ""}`}
+                        style={{ 
+                          display: "flex", 
+                          justifyContent: "space-between", 
+                          alignItems: "flex-start", 
+                          padding: "12px", 
+                          background: isCurrent ? "var(--teal-50, #f0fdfa)" : "var(--white, #fff)", 
+                          border: isCurrent ? "1px solid var(--teal-200, #99f6e4)" : "1px solid var(--slate-200, #e2e8f0)", 
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
                         onClick={() => {
                           if (patient) {
                             setSelectedPatientId(patient.id);
@@ -153,18 +165,26 @@ export function ShiftView({
                           }
                         }}
                       >
-                        <div className="today-schedule-item-info">
-                          <span className="today-schedule-time">
+                        <div className="today-schedule-item-info" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span className="today-schedule-time" style={{ fontSize: "12px", fontWeight: 600, color: "var(--slate-500, #64748b)" }}>
                             {timeStart} – {timeEnd}
                           </span>
-                          <strong className="today-schedule-name">
+                          <strong className="today-schedule-name" style={{ fontSize: "14px", color: "var(--slate-900, #0f172a)" }}>
                             {patient ? patient.fullName : "Неизвестный пациент"}
                           </strong>
-                          <span className="today-schedule-reason">
+                          <span className="today-schedule-reason" style={{ fontSize: "13px", color: "var(--slate-600, #475569)" }}>
                             {app.reason || "плановый осмотр"}
                           </span>
                         </div>
-                        <span className={`visit-document-badge status-${app.status === "in_treatment" || app.status === "completed" || app.status === "confirmed" ? "signed" : "draft"}`}>
+                        <span style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          padding: "4px 8px",
+                          borderRadius: "4px",
+                          background: app.status === "in_treatment" ? "#dcfce7" : app.status === "planned" ? "#f1f5f9" : "#fef3c7",
+                          color: app.status === "in_treatment" ? "#166534" : app.status === "planned" ? "#475569" : "#b45309"
+                        }}>
                           {statusLabels[app.status] || app.status}
                         </span>
                       </div>
@@ -192,13 +212,13 @@ export function ShiftView({
                   <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor[0] ?? "Открыть смену и проверить очередь"}</p>
                 </div>
               </div>
-              <div className="role-focus-meta" aria-label="Доступы текущей роли">
-                <span>{activeRoleQueue?.openItems ?? 0} открыто</span>
-                {activeRolePolicy ? <span>Старт: {viewLabels[activeRolePolicy.defaultSection]}</span> : null}
+              <div className="role-focus-meta flex flex-wrap gap-2 justify-start mt-2" aria-label="Доступы текущей роли">
+                <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-bold border border-slate-200">{activeRoleQueue?.openItems ?? 0} открыто</span>
+                {activeRolePolicy ? <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-bold border border-slate-200">Старт: {viewLabels[activeRolePolicy.defaultSection]}</span> : null}
                 {activeRoleWritableSections.slice(0, 3).map((section: any) => (
-                  <span key={section}>пишет: {viewLabels[section]}</span>
+                  <span key={section} className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-bold border border-slate-200">пишет: {viewLabels[section]}</span>
                 ))}
-                {activeRoleRestrictedSections[0] ? <span>ограничено: {viewLabels[activeRoleRestrictedSections[0]]}</span> : null}
+                {activeRoleRestrictedSections[0] ? <span className="bg-rose-50 text-rose-700 px-2 py-1 rounded-full text-xs font-bold border border-rose-200">ограничено: {viewLabels[activeRoleRestrictedSections[0]]}</span> : null}
               </div>
             </section>
 

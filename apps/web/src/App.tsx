@@ -3,6 +3,8 @@
 // setSelectedPatientId(patient.id)
 
 import { useAppLogic } from './useAppLogic';
+import { VoiceAssistantUI } from './components/VoiceAssistantUI';
+import { Omnibar } from './components/Omnibar';
 
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -2222,12 +2224,14 @@ export function App() {
 
       <section className={`workspace view-${currentView}`} id="workspace-content" tabIndex={-1} aria-label="Рабочая область">
         {dashboard?.clinicName === "Стоматология, 1 кабинет" && (
-          <div className="default-clinic-banner" role="alert" style={{ padding: '6px 16px', minHeight: 'unset', display: 'flex', alignItems: 'center', gap: '10px', background: 'linear-gradient(90deg, #fff7ed 0%, #fffbf5 100%)', borderBottom: '1px solid #fed7aa', borderTop: 'none', borderLeft: 'none', borderRight: 'none', borderRadius: 0 }}>
-            <span aria-hidden="true" style={{ fontSize: '14px' }}>🚀</span>
-            <p style={{ margin: 0, fontSize: '12px', color: '#92400e', flex: 1 }}>
-              <strong>Демо-режим.</strong> Тестовые данные. Для настройки своей клиники —
-            </p>
-            <button className="primary-button banner-btn" type="button" onClick={reopenOnboarding} style={{ padding: '4px 12px', fontSize: '12px', minHeight: 'unset', whiteSpace: 'nowrap' }}>
+          <div className="default-clinic-banner" role="alert">
+            <div className="banner-content">
+              <span className="banner-icon" aria-hidden="true">🚀</span>
+              <p>
+                <strong>Демо-режим.</strong> Тестовые данные. Для настройки своей клиники —
+              </p>
+            </div>
+            <button className="primary-button banner-btn" type="button" onClick={reopenOnboarding}>
               Запустить мастер
             </button>
           </div>
@@ -4566,6 +4570,9 @@ export function App() {
             <MarketingView clinicName={dashboard.clinicName} clinicPhone={clinicProfileDraft.phone} />
           </Suspense>
         ) : null}
+
+        <VoiceAssistantUI />
+        <Omnibar />
       </section>
     </main>
   );

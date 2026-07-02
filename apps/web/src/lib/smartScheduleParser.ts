@@ -21,10 +21,8 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
   let remaining = " " + normalizedInput.toLowerCase() + " ";
 
   // 0. Detect intent
-  // "удаление" is a dental service, so "удали/удалить" means cancel, not "удал[а-я]*"
-  // Negative lookahead: "удалить" is cancel, UNLESS it's "удалить зуб/восьмерку/и т.д."
-  const cancelRegex = /\b(отмен[а-я]*|удали(?!\w)|удалите(?!\w)|удалить(?!\s+(?:зуб|восьмерк|семерк|шестерк|пятерк|четверк|тройк|двойк|единичк|корень|кист|имплант|нерв|капюшон))|убери|сними(?!\w)|снимите(?!\w))\b/i;
-  const rescheduleRegex = /\b(перенес[а-я]*|двин[а-я]*|сдвин[а-я]*)\b/i;
+  const cancelRegex = /(?:^|[^а-яёa-z0-9])(отмен[а-я]*|удали(?!\w)|удалите(?!\w)|удалить(?!\s+(?:зуб|восьмерк|семерк|шестерк|пятерк|четверк|тройк|двойк|единичк|корень|кист|имплант|нерв|капюшон))|убери|сними(?!\w)|снимите(?!\w))(?:[^а-яёa-z0-9]|$)/i;
+  const rescheduleRegex = /(?:^|[^а-яёa-z0-9])(перенес[а-я]*|двин[а-я]*|сдвин[а-я]*)(?:[^а-яёa-z0-9]|$)/i;
   
   if (cancelRegex.test(remaining)) {
     result.intent = "CANCEL";
@@ -34,12 +32,13 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
     remaining = remaining.replace(rescheduleRegex, ' ');
   } else {
     // If we see "запиш" it's create, but we default to CREATE anyway
-    remaining = remaining.replace(/\b(запиш[а-я]*|созда[а-я]*|добав[а-я]*)\b/ig, ' ');
+    remaining = remaining.replace(/(?:^|[^а-яёa-z0-9])(запиш[а-я]*|созда[а-я]*|добав[а-я]*)(?:[^а-яёa-z0-9]|$)/ig, ' ');
   }
 
   // 1. Time extraction
-  const timeRegex = /(?:^|\s)([0-1]?[0-9]|2[0-3])[\-:\.]([0-5][0-9])(?=\s|$)/;
-  const timeRegexSpace = /(?:^|\s)(?:в|на)?\s*([0-1]?[0-9]|2[0-3])\s+([0-5][0-9])(?=\s|$)/; // catches "3 30" (три тридцать)
+  // 15:00, 15.00, 15-00
+  const timeRegex = /(?:^|\s|\b)([0-1]?[0-9]|2[0-3])[\-:\.]([0-5][0-9])(?=\s|$|\b)/;
+  const timeRegexSpace = /(?:^|\s)(?:в|на)?\s*([0-1]?[0-9]|2[0-3])\s+([0-5][0-9])(?=\s|$)/;
   const hourRegex = /(?:^|\s)(?:в|на)\s+([0-1]?[0-9]|2[0-3])\s*(часов|часа|ч)?(?=\s|$)/;
   
   const timeMatch = remaining.match(timeRegex);
@@ -57,7 +56,7 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
     remaining = remaining.replace(hourMatch[0], ' ');
   }
 
-  // 2. Date extraction (Relative and absolute)
+  // 2. Date extraction
   const today = new Date();
   const getOffsetDate = (days: number): string => {
     const d = new Date(today);
@@ -72,15 +71,14 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
 
   if (containsAnyFuzzyRoot(remaining, ["послезавтра"])) {
     result.dateStr = getOffsetDate(2);
-    remaining = remaining.replace(/(послезавтра)\S*/ig, " ");
+    remaining = remaining.replace(/(?:^|[^а-яёa-z0-9])(послезавтра)(?:[^а-яёa-z0-9]|$)/ig, " ");
   } else if (containsAnyFuzzyRoot(remaining, ["завтра"])) {
     result.dateStr = getOffsetDate(1);
-    remaining = remaining.replace(/(завтра)\S*/ig, " ");
+    remaining = remaining.replace(/(?:^|[^а-яёa-z0-9])(завтра)(?:[^а-яёa-z0-9]|$)/ig, " ");
   } else if (containsAnyFuzzyRoot(remaining, ["сегодня", "щас", "сейчас"])) {
     result.dateStr = getOffsetDate(0);
-    remaining = remaining.replace(/(сегодня|щас|сейчас)\S*/ig, " ");
+    remaining = remaining.replace(/(?:^|[^а-яёa-z0-9])(сегодня|щас|сейчас)(?:[^а-яёa-z0-9]|$)/ig, " ");
   } else {
-    // Check explicit date "15 мая"
     const explicitDateMatch = remaining.match(/([1-9]|[12][0-9]|3[01])\s+([а-я]{3,8})/i);
     let dateFound = false;
     
@@ -101,7 +99,6 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
     }
     
     if (!dateFound) {
-      // Check days of week
       const WEEKDAYS = ["воскресенье", "понедельник", "вторник", "сред", "четверг", "пятниц", "суббот"];
       const WEEKDAY_INDEXES = [0, 1, 2, 3, 4, 5, 6];
       
@@ -113,7 +110,7 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
           let diff = targetIdx - currentIdx;
           if (diff <= 0) diff += 7;
           result.dateStr = getOffsetDate(diff);
-          remaining = remaining.replace(new RegExp(`(?:^|\\s)(?:в|на|во)?\\s*${day}\\S*`, 'ig'), ' ');
+          remaining = remaining.replace(new RegExp(`(?:^|[^а-яёa-z0-9])(?:в|на|во)?\\s*${day}[а-я]*(?:[^а-яёa-z0-9]|$)`, 'ig'), ' ');
           break;
         }
       }
@@ -146,22 +143,26 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
     { key: "швы", name: "Снятие швов" }
   ];
 
-  let foundService = false;
   for (const s of SERVICES) {
     if (containsAnyFuzzyRoot(remaining, [s.key])) {
       result.service = s.name;
-      // remove the matched word
-      const words = remaining.split(' ');
-      remaining = words.filter(w => !w.toLowerCase().includes(s.key)).join(' ');
-      foundService = true;
+      remaining = remaining.replace(new RegExp(`(?:^|[^а-яёa-z0-9])\\S*${s.key}\\S*(?:[^а-яёa-z0-9]|$)`, 'ig'), ' ');
       break;
     }
   }
 
   // 4. Aggressive cleanup for patient name
-  const stopWords = /\b(на|в|с|к|доктору|врачу|пациента|пациентка|пациент|ребенка|мальчика|девочку|прием|часов|часа|ч|пожалуйста|срочно|запись|ааа|эээ|короче|блин|типа|дня|утра|вечера|ночи|зуба|зуб)\b/gi;
-  remaining = remaining.replace(stopWords, ' ');
-  remaining = remaining.replace(/\s+/g, ' ').trim();
+  const stopWords = [
+    "на", "в", "с", "к", "доктору", "врачу", "пациента", "пациентка", "пациент", "ребенка", "мальчика", "девочку",
+    "прием", "часов", "часа", "ч", "пожалуйста", "срочно", "запись", "ааа", "эээ", "короче", "блин", "типа",
+    "дня", "утра", "вечера", "ночи", "зуба", "зуб"
+  ];
+  const stopWordsPattern = new RegExp(`(?:^|[^а-яёa-z0-9])(${stopWords.join('|')})(?:[^а-яёa-z0-9]|$)`, 'gi');
+  remaining = remaining.replace(stopWordsPattern, ' ');
+  remaining = remaining.replace(stopWordsPattern, ' ');
+  
+  // Clean punctuation
+  remaining = remaining.replace(/[,;.!?]/g, ' ').replace(/\s+/g, ' ').trim();
   
   if (remaining.length > 2) {
     result.patientName = remaining.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -169,3 +170,4 @@ export function parseScheduleDictationLocal(input: string): ParsedScheduleData {
 
   return result;
 }
+

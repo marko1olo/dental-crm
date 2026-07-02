@@ -21,12 +21,16 @@ import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSystemRoutes } from "./routes/system.js";
 import { registerTelegramRoutes, registerTelegramWebhookRoutes, startDenteTelegramOutboxDueWorker } from "./routes/telegram.js";
 import { registerVisitRoutes } from "./routes/visits.js";
+import { registerDicomwebRoutes } from "./routes/dicomweb.js";
+import { registerXrayRoutes } from "./routes/xray.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
 import { ensureSshTunnel } from "./speech/tunnel.js";
+import { startWatchdog } from "./watchdog.js";
 
 loadAdditionalServerEnv();
+startWatchdog();
 
 async function checkProxyPortDirectly(proxyUrlString: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -206,6 +210,8 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerTelegramRoutes(app);
   await registerTelegramWebhookRoutes(app);
   await registerVisitRoutes(app);
+  await registerDicomwebRoutes(app);
+  await registerXrayRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });

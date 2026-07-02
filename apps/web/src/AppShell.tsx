@@ -1,6 +1,8 @@
 import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
 
 const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
+import { GlobalToast } from "./components/GlobalToast";
+
 
 type AppShellErrorBoundaryState = {
   hasError: boolean;
@@ -62,6 +64,8 @@ export function AppShell() {
       >
         <DentalWorkspace />
       </Suspense>
+      <GlobalToast />
     </AppShellErrorBoundary>
   );
 }
+

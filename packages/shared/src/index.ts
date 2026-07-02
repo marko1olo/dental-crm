@@ -1558,6 +1558,7 @@ export const serviceCatalogItemSchema = z.object({
   organizationId: z.string().uuid(),
   code: z.string(),
   title: z.string(),
+  aliases: z.array(z.string()).default([]),
   category: serviceCategorySchema,
   specialty: dentalSpecialtySchema,
   basePriceRub: z.number().int().nonnegative(),
@@ -1704,6 +1705,8 @@ export const treatmentPlanItemSchema = z.object({
   patientId: z.string().uuid(),
   visitId: z.string().uuid().nullable(),
   serviceId: z.string(),
+  snapshotServiceName: z.string(),
+  snapshotServiceCategory: serviceCategorySchema.nullable().optional(),
   toothCode: z.string().nullable(),
   quantity: z.number().int().positive(),
   unitPriceRub: z.number().int().nonnegative(),
@@ -2485,6 +2488,7 @@ export const patientSchema = z.object({
   email: z.string().email().nullable(),
   notes: z.string().nullable(),
   administrativeProfile: patientAdministrativeProfileSchema.nullable().default(null),
+  balanceRub: z.number().int().default(0),
   createdAt: z.string(),
   updatedAt: z.string()
 });

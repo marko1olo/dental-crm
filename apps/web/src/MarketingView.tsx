@@ -1,5 +1,6 @@
 import "./styles/marketing.css";
 import { useState } from "react";
+import { AiOrchestrator } from "./lib/aiOrchestrator";
 import {
   MessageSquare,
   ThumbsUp,
@@ -14,72 +15,60 @@ import {
   Globe
 } from "lucide-react";
 
-const SEO_KEYS_DENTISTRY = [
-  "лечение кариеса",
-  "безболезненное удаление",
-  "стоматология",
-  "лечение зубов",
-  "чистка зубов",
-  "отбеливание зубов",
-  "протезирование зубов",
-  "имплантация зубов",
-  "стоматологическая клиника",
-  "детская стоматология",
-  "ортодонт брекеты",
-  "профессиональная гигиена"
-];
-
-type ReviewTone = "positive" | "negative" | "neutral";
-
-function injectSeoKeys(text: string, tone: ReviewTone): string {
-  if (tone === "negative") {
-    // Minimum keys for negative — don't look cynical
-    const key = SEO_KEYS_DENTISTRY[Math.floor(Math.random() * 4)] ?? "лечение зубов";
-    return text.replace("{SEO1}", key);
-  }
-  const key1 = SEO_KEYS_DENTISTRY[Math.floor(Math.random() * 6)] ?? "лечение зубов";
-  const key2 = SEO_KEYS_DENTISTRY[6 + Math.floor(Math.random() * 6)] ?? "стоматологическая клиника";
-  return text.replace("{SEO1}", key1).replace("{SEO2}", key2);
-}
-
-function generateReply(reviewText: string, tone: ReviewTone, clinicName: string, phone: string): string {
-  const name = clinicName || "нашей клинике";
-  const ph = phone || "администратором";
-
-  if (tone === "positive") {
-    const template = `Большое спасибо за ваш отзыв! 😊 Нам очень важно, что вы остались довольны {SEO1} и качеством обслуживания. Мы всегда стремимся к тому, чтобы {SEO2} в ${name} было приятным и безопасным опытом. Ждём вас снова!`;
-    return injectSeoKeys(template, tone);
-  }
-
-  if (tone === "neutral") {
-    const template = `Благодарим вас за обратную связь! Каждый отзыв помогает нам становиться лучше. Если вас что-то не устроило в части {SEO1}, мы будем рады обсудить это лично. Записаться можно по телефону или через приложение. Надеемся увидеть вас снова в ${name}.`;
-    return injectSeoKeys(template, tone);
-  }
-
-  // Negative
-  const template = `Приносим свои искренние извинения за доставленные неудобства. Мы ценим вашу обратную связь и воспринимаем её серьёзно. Пожалуйста, свяжитесь напрямую с главным врачом по телефону ${ph} — мы разберёмся в ситуации и сделаем всё возможное для её решения.`;
-  return injectSeoKeys(template, tone);
-}
-
 type MarketingStats = {
   yandex: { rating: number; reviews: number };
   gis2: { rating: number; reviews: number };
   google: { rating: number; reviews: number };
 };
 
-const MOCK_STATS: MarketingStats = {
-  yandex: { rating: 4.7, reviews: 84 },
-  gis2: { rating: 4.8, reviews: 61 },
-  google: { rating: 4.6, reviews: 112 }
+const DEFAULT_STATS: MarketingStats = {
+  yandex: { rating: 0, reviews: 0 },
+  gis2: { rating: 0, reviews: 0 },
+  google: { rating: 0, reviews: 0 }
 };
 
+type ReviewTone = "positive" | "negative" | "neutral";
+
 export function MarketingView({ clinicName, clinicPhone }: { clinicName: string; clinicPhone: string }) {
+  const [customSeoKeys, setCustomSeoKeys] = useState(() => {
+    try {
+      const saved = localStorage.getItem("dental_crm_mkt_seo_keys");
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return [
+      "лечение кариеса", "безболезненное удаление", "стоматология", 
+      "профессиональная гигиена", "имплантация зубов"
+    ];
+  });
+  
+  const handleAddSeoKey = (val: string) => {
+    if (!val.trim()) return;
+    const updated = [...customSeoKeys, val.trim()];
+    setCustomSeoKeys(updated);
+    localStorage.setItem("dental_crm_mkt_seo_keys", JSON.stringify(updated));
+  };
+
+  const handleRemoveSeoKey = (val: string) => {
+    const updated = customSeoKeys.filter(k => k !== val);
+    setCustomSeoKeys(updated);
+    localStorage.setItem("dental_crm_mkt_seo_keys", JSON.stringify(updated));
+  };
+
   const [reviewText, setReviewText] = useState("");
   const [tone, setTone] = useState<ReviewTone>("positive");
   const [generatedReply, setGeneratedReply] = useState("");
   const [phone, setPhone] = useState(() => {
     return localStorage.getItem("dental_crm_mkt_phone") || clinicPhone || "+7 (800) 000-00-00";
   });
+  
+  const [stats, setStats] = useState<MarketingStats>(() => {
+    try {
+      const saved = localStorage.getItem("dental_crm_mkt_stats");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return DEFAULT_STATS;
+  });
+
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">("reviews");
 
@@ -88,12 +77,35 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
     setPhone(val);
     localStorage.setItem("dental_crm_mkt_phone", val);
   };
+  
+  const updateStat = (platform: keyof MarketingStats, field: 'rating' | 'reviews', value: string) => {
+    const num = parseFloat(value) || 0;
+    const newStats = { ...stats, [platform]: { ...stats[platform], [field]: num } };
+    setStats(newStats);
+    localStorage.setItem("dental_crm_mkt_stats", JSON.stringify(newStats));
+  };
+
+  const [newKeyInput, setNewKeyInput] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const handleGenerate = () => {
     if (!reviewText.trim()) return;
-    const reply = generateReply(reviewText, tone, clinicName, phone);
-    setGeneratedReply(reply);
-    setCopied(false);
+    setIsAiLoading(true);
+    setAiError(null);
+    setGeneratedReply("");
+
+    const orchestratorResult = AiOrchestrator.processMarketingReview(reviewText, tone, clinicName, customSeoKeys);
+    
+    // Simulate AI LLM Request Fallback (Since we are in local UI mode)
+    setTimeout(() => {
+       if (orchestratorResult.source === "llm_required") {
+          // Demo fallback text showing the generated prompt
+          const fallbackText = "--- ДЕМО-РЕЖИМ (LLM не подключена) ---\nГенерируемый промпт:\n" + orchestratorResult.suggestedPrompt;
+          setGeneratedReply(fallbackText);
+       }
+       setIsAiLoading(false);
+    }, 600);
   };
 
   const handleCopy = () => {
@@ -125,10 +137,9 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
           <MapPin aria-hidden="true" style={{ color: "#e63946" }} />
           <div>
             <p className="eyebrow">Яндекс.Карты</p>
-            <div className="marketing-rating">
-              <Star aria-hidden="true" style={{ color: "#f4a261", width: 16, height: 16 }} />
-              <strong>{MOCK_STATS.yandex.rating}</strong>
-              <span>· {MOCK_STATS.yandex.reviews} отзывов</span>
+            <div className="marketing-rating" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <input type="number" step="0.1" value={stats.yandex.rating || ''} onChange={e => updateStat('yandex', 'rating', e.target.value)} placeholder="Оценка" style={{ width: '60px', padding: '2px 4px', fontSize: '13px' }} />
+              <input type="number" value={stats.yandex.reviews || ''} onChange={e => updateStat('yandex', 'reviews', e.target.value)} placeholder="Отзывов" style={{ width: '70px', padding: '2px 4px', fontSize: '13px' }} />
             </div>
           </div>
         </article>
@@ -136,10 +147,9 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
           <Globe aria-hidden="true" style={{ color: "#2196f3" }} />
           <div>
             <p className="eyebrow">2ГИС</p>
-            <div className="marketing-rating">
-              <Star aria-hidden="true" style={{ color: "#f4a261", width: 16, height: 16 }} />
-              <strong>{MOCK_STATS.gis2.rating}</strong>
-              <span>· {MOCK_STATS.gis2.reviews} отзывов</span>
+            <div className="marketing-rating" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <input type="number" step="0.1" value={stats.gis2.rating || ''} onChange={e => updateStat('gis2', 'rating', e.target.value)} placeholder="Оценка" style={{ width: '60px', padding: '2px 4px', fontSize: '13px' }} />
+              <input type="number" value={stats.gis2.reviews || ''} onChange={e => updateStat('gis2', 'reviews', e.target.value)} placeholder="Отзывов" style={{ width: '70px', padding: '2px 4px', fontSize: '13px' }} />
             </div>
           </div>
         </article>
@@ -147,10 +157,9 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
           <Search aria-hidden="true" style={{ color: "#0f766e" }} />
           <div>
             <p className="eyebrow">Google</p>
-            <div className="marketing-rating">
-              <Star aria-hidden="true" style={{ color: "#f4a261", width: 16, height: 16 }} />
-              <strong>{MOCK_STATS.google.rating}</strong>
-              <span>· {MOCK_STATS.google.reviews} отзывов</span>
+            <div className="marketing-rating" style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <input type="number" step="0.1" value={stats.google.rating || ''} onChange={e => updateStat('google', 'rating', e.target.value)} placeholder="Оценка" style={{ width: '60px', padding: '2px 4px', fontSize: '13px' }} />
+              <input type="number" value={stats.google.reviews || ''} onChange={e => updateStat('google', 'reviews', e.target.value)} placeholder="Отзывов" style={{ width: '70px', padding: '2px 4px', fontSize: '13px' }} />
             </div>
           </div>
         </article>
@@ -158,9 +167,9 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
           <TrendingUp aria-hidden="true" style={{ color: "#0f766e" }} />
           <div>
             <p className="eyebrow">Позиция в поиске</p>
-            <strong style={{ fontSize: 18 }}>Топ-3 по "стоматология" · Самара</strong>
+            <strong style={{ fontSize: 18 }}>Топ-3 по "стоматология"</strong>
             <p style={{ color: "var(--muted)", marginTop: 4, fontSize: 13 }}>
-              Обновляется вручную. Введите запрос в Яндекс.Карты и зафиксируйте позицию.
+              Укажите актуальные данные вручную для отслеживания динамики.
             </p>
           </div>
         </article>
@@ -262,6 +271,12 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
               placeholder="Вставьте текст отзыва сюда..."
               style={{ resize: "vertical", fontFamily: "inherit" }}
             />
+            <div className="quick-chips-row" style={{ marginTop: '8px', marginBottom: '16px' }}>
+              <button type="button" className="quick-chip" onClick={() => { setReviewText("Вчера удаляла зуб мудрости. Врач просто супер, всё прошло без боли!"); setTone("positive"); }}>👍 Удаление зуба (Позитив)</button>
+              <button type="button" className="quick-chip" onClick={() => { setReviewText("Долго ждал приема, администратор даже не поздоровалась."); setTone("negative"); }}>👎 Очередь (Негатив)</button>
+              <button type="button" className="quick-chip" onClick={() => { setReviewText("Обычная клиника, цены средние."); setTone("neutral"); }}>😐 Обычный отзыв (Нейтраль)</button>
+            </div>
+
           </div>
 
           <div className="marketing-actions">
@@ -269,7 +284,7 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
               className="primary-button"
               type="button"
               onClick={handleGenerate}
-              disabled={!reviewText.trim()}
+              disabled={!reviewText.trim() || isAiLoading}
             >
               <MessageSquare aria-hidden="true" />
               Сгенерировать ответ
@@ -308,17 +323,24 @@ export function MarketingView({ clinicName, clinicPhone }: { clinicName: string;
 
       {/* SEO KEYS TAB */}
       {activeTab === "keys" ? (
+        
         <div className="marketing-panel">
           <p style={{ color: "var(--muted)", marginBottom: 16 }}>
-            Эти ключи автоматически вставляются в ответы на отзывы. Они помогают продвижению клиники в поиске Яндекс.Карты и 2ГИС.
+            Эти ключи автоматически передаются ИИ для вставки в ответы на отзывы. Они помогают продвижению клиники в поиске.
           </p>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+             <input type="text" className="text-input" value={newKeyInput} onChange={e => setNewKeyInput(e.target.value)} placeholder="Новый SEO-ключ (напр. 'детский ортодонт')" />
+             <button type="button" className="secondary-button" onClick={() => { handleAddSeoKey(newKeyInput); setNewKeyInput(""); }}>Добавить</button>
+          </div>
           <div className="seo-keys-grid">
-            {SEO_KEYS_DENTISTRY.map((key) => (
-              <span className="seo-key-chip" key={key}>
+            {customSeoKeys.map((key: string) => (
+              <span className="seo-key-chip" key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {key}
+                <button type="button" onClick={() => handleRemoveSeoKey(key)} style={{ background: 'none', border: 'none', color: 'var(--slate-400)', cursor: 'pointer', padding: 0 }}>×</button>
               </span>
             ))}
           </div>
+
           <p className="eyebrow" style={{ marginTop: 20 }}>
             Правило вставки ключей
           </p>
