@@ -1,69 +1,40 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
-  createDocumentSchema,
-  issueDocumentSchema,
-  publicGeneratedDocumentSchema,
-  voidDocumentSchema
-} from "@dental/shared";
-import {
   clinicProfile,
-  createGeneratedDocument,
   documents,
-  findVisitById,
-  issueGeneratedDocument,
   patients,
   payments,
-  readIssuedDocumentSnapshot,
-  storeTaxXmlSnapshot,
-  treatmentPlanItems,
-  voidGeneratedDocument
+  storeTaxXmlSnapshot
 } from "../../sampleData.js";
-import {
-  paidAmountRubForDocument,
-  plannedAmountRubForDocument,
-  paymentRefundCorrectionSelectionErrorForDocument,
-  paymentReceiptSelectionErrorForDocument,
-  taxPaymentSelectionErrorForDocument,
-  validateDocumentCreation
-} from "../../documents/guards.js";
 
 import {
   buildTaxPaymentSnapshotForIssue,
   taxDocumentUsesPaymentSnapshot
 } from "../../documents/taxPaymentSnapshot.js";
 import { buildKnd1151156Xml } from "../../documents/taxXml.js";
-import { repairMojibakeDeep, repairMojibakeText } from "../../text/repairMojibake.js";
 
 import {
   apiError,
-  buildDocumentAuditFacts,
   configuredTaxOfficeCode,
-  documentAttachmentFileName,
-  documentCreateValidationMessageForRequest,
-  documentHasIssuedArchiveMetadata,
   documentIssueBlockReason,
   documentIssueChainBlockReason,
-  documentRequiresIssuedArchive,
   findIssuedDuplicateTaxCertificate,
   frozenTaxXmlClinicProfile,
   frozenTaxXmlPatient,
   frozenTaxXmlPayments,
-  issuedArchiveIntegrityError,
-  renderIssuedHtmlToPdf,
   taxSnapshotDocument,
   taxXmlSourceSnapshotSha256,
-  documentRenderContext,
-  documentVoidValidationMessage,
-  documentIssueValidationMessage,
-  buildMedicalDocumentReleaseJournalEntry,
-  taxXmlSourceSnapshotForIssue
+  documentRenderContext
 } from "../documents.js";
-import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
+import { taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
-  app.get("/api/documents/:id/tax-xml", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "document tax xml"))) return;
+  app.get("/api/documents/:id/tax-xml", handleGetTaxXml);
+}
+
+async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
+  if (!(await requireClinicalReadAccess(request, reply, "document tax xml"))) return;
     const { id } = request.params as { id: string };
     const document = documents.find((candidate) => candidate.id === id);
     if (!document) {
@@ -168,5 +139,4 @@ export async function register(app: FastifyInstance) {
       .header("Content-Disposition", `attachment; filename="${snapshot.fileName}.xml"`)
       .type("application/xml; charset=utf-8")
       .send(snapshot.xml);
-  });
 }
