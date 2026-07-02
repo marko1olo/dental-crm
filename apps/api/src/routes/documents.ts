@@ -295,26 +295,39 @@ export function findIssuedDuplicateTaxCertificate(document: GeneratedDocument): 
   const targetPaymentIds = paymentIdsForTaxDocument(document, payments);
   if (!targetAnnualScopes.length && !targetReceiptKeys.size && !targetPaymentIds.size) return null;
 
-  return (
-    documents.find((candidate) => {
-      if (candidate.id === document.id) return false;
-      if (candidate.organizationId !== document.organizationId) return false;
-      if (candidate.status !== "issued") return false;
-      if (candidate.kind !== document.kind) return false;
-      if (candidate.patientId !== document.patientId) return false;
-      if (candidate.taxYear !== document.taxYear) return false;
+  for (const candidate of documents) {
+    if (candidate.patientId !== document.patientId) continue;
+    if (candidate.taxYear !== document.taxYear) continue;
+    if (candidate.status !== "issued") continue;
+    if (candidate.kind !== document.kind) continue;
+    if (candidate.organizationId !== document.organizationId) continue;
+    if (candidate.id === document.id) continue;
 
-      const candidateAnnualScopes = annualTaxpayerScopesForDocument(candidate);
-      if (annualTaxpayerScopesOverlap(targetAnnualScopes, candidateAnnualScopes)) return true;
+    const candidateAnnualScopes = annualTaxpayerScopesForDocument(candidate);
+    if (annualTaxpayerScopesOverlap(targetAnnualScopes, candidateAnnualScopes)) return candidate;
 
-      const candidateReceiptKeys = receiptKeysForTaxDocument(candidate, payments);
-      const candidatePaymentIds = paymentIdsForTaxDocument(candidate, payments);
-      return (
-        [...candidateReceiptKeys].some((key) => targetReceiptKeys.has(key)) ||
-        [...candidatePaymentIds].some((id) => targetPaymentIds.has(id))
-      );
-    }) ?? null
-  );
+    const candidateReceiptKeys = receiptKeysForTaxDocument(candidate, payments);
+    let hasReceiptKey = false;
+    for (const key of candidateReceiptKeys) {
+      if (targetReceiptKeys.has(key)) {
+        hasReceiptKey = true;
+        break;
+      }
+    }
+    if (hasReceiptKey) return candidate;
+
+    const candidatePaymentIds = paymentIdsForTaxDocument(candidate, payments);
+    let hasPaymentId = false;
+    for (const id of candidatePaymentIds) {
+      if (targetPaymentIds.has(id)) {
+        hasPaymentId = true;
+        break;
+      }
+    }
+    if (hasPaymentId) return candidate;
+  }
+
+  return null;
 }
 
 export function taxSnapshotDocument(document: GeneratedDocument, snapshot: TaxPaymentSnapshot | null): GeneratedDocument {
