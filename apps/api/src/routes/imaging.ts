@@ -1625,6 +1625,72 @@ function buildUnsupportedDicomResponse(
 }
 
 
+function buildDicomPreviewRgba(
+  width: number,
+  height: number,
+  r: number,
+  c: number,
+  invert: boolean,
+  sampleValue: (index: number) => number,
+  renderCenter: number,
+  renderWindow: number
+): { rgba: Buffer; grayMin: number; grayMax: number; grayMean: number } {
+  const lower = renderCenter - renderWindow / 2;
+  const upper = renderCenter + renderWindow / 2;
+  const rendered = Buffer.alloc(width * height * 4);
+  let grayMin = 255;
+  let grayMax = 0;
+  let graySum = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    const sourceY = Math.min(r - 1, Math.floor((y / height) * r));
+    for (let x = 0; x < width; x += 1) {
+      const sourceX = Math.min(c - 1, Math.floor((x / width) * c));
+      const pixelValue = sampleValue(sourceY * c + sourceX);
+      const clamped = Math.max(0, Math.min(1, (pixelValue - lower) / Math.max(1, upper - lower)));
+      const gray = invert ? 255 - Math.round(clamped * 255) : Math.round(clamped * 255);
+      const targetOffset = (y * width + x) * 4;
+      rendered[targetOffset] = gray;
+      rendered[targetOffset + 1] = gray;
+      rendered[targetOffset + 2] = gray;
+      rendered[targetOffset + 3] = 255;
+      if (gray < grayMin) grayMin = gray;
+      if (gray > grayMax) grayMax = gray;
+      graySum += gray;
+    }
+  }
+
+  return {
+    rgba: rendered,
+    grayMin,
+    grayMax,
+    grayMean: graySum / Math.max(1, width * height)
+  };
+}
+
+function createDicomPixelSampler(
+  buffer: Buffer,
+  pixelDataOffset: number,
+  bytesPerPixel: number,
+  bitsAllocated: number,
+  pixelRepresentation: number | null | undefined,
+  rescaleSlope: number,
+  rescaleIntercept: number
+): (index: number) => number {
+  return (index: number) => {
+    const offset = pixelDataOffset + index * bytesPerPixel;
+    const raw =
+      bitsAllocated === 16
+        ? pixelRepresentation === 1
+          ? buffer.readInt16LE(offset)
+          : buffer.readUInt16LE(offset)
+        : pixelRepresentation === 1
+          ? buffer.readInt8(offset)
+          : buffer.readUInt8(offset);
+    return raw * rescaleSlope + rescaleIntercept;
+  };
+}
+
 function renderDicomPreviewImage(
   buffer: Buffer,
   metadata: DicomImageMetadata,
@@ -1646,18 +1712,15 @@ function renderDicomPreviewImage(
   const bytesPerPixel = (bitsAllocated as number) / 8;
   const invert = photometricInterpretation === "MONOCHROME1";
 
-  const sampleValue = (index: number) => {
-    const offset = pixelDataOffset + index * bytesPerPixel;
-    const raw =
-      bitsAllocated === 16
-        ? pixelRepresentation === 1
-          ? buffer.readInt16LE(offset)
-          : buffer.readUInt16LE(offset)
-        : pixelRepresentation === 1
-          ? buffer.readInt8(offset)
-          : buffer.readUInt8(offset);
-    return raw * rescaleSlope + rescaleIntercept;
-  };
+  const sampleValue = createDicomPixelSampler(
+    buffer,
+    pixelDataOffset,
+    bytesPerPixel,
+    bitsAllocated as number,
+    pixelRepresentation,
+    rescaleSlope,
+    rescaleIntercept
+  );
 
   let minValue = Number.POSITIVE_INFINITY;
   let maxValue = Number.NEGATIVE_INFINITY;
@@ -1671,41 +1734,7 @@ function renderDicomPreviewImage(
   let center = windowCenter ?? (minValue + maxValue) / 2;
   let window = windowWidth && windowWidth > 1 ? windowWidth : Math.max(1, maxValue - minValue);
 
-  const renderPreview = (renderCenter: number, renderWindow: number) => {
-    const lower = renderCenter - renderWindow / 2;
-    const upper = renderCenter + renderWindow / 2;
-    const rendered = Buffer.alloc(width * height * 4);
-    let grayMin = 255;
-    let grayMax = 0;
-    let graySum = 0;
-
-    for (let y = 0; y < height; y += 1) {
-      const sourceY = Math.min(r - 1, Math.floor((y / height) * r));
-      for (let x = 0; x < width; x += 1) {
-        const sourceX = Math.min(c - 1, Math.floor((x / width) * c));
-        const pixelValue = sampleValue(sourceY * c + sourceX);
-        const clamped = Math.max(0, Math.min(1, (pixelValue - lower) / Math.max(1, upper - lower)));
-        const gray = invert ? 255 - Math.round(clamped * 255) : Math.round(clamped * 255);
-        const targetOffset = (y * width + x) * 4;
-        rendered[targetOffset] = gray;
-        rendered[targetOffset + 1] = gray;
-        rendered[targetOffset + 2] = gray;
-        rendered[targetOffset + 3] = 255;
-        if (gray < grayMin) grayMin = gray;
-        if (gray > grayMax) grayMax = gray;
-        graySum += gray;
-      }
-    }
-
-    return {
-      rgba: rendered,
-      grayMin,
-      grayMax,
-      grayMean: graySum / Math.max(1, width * height)
-    };
-  };
-
-  let rendered = renderPreview(center, window);
+  let rendered = buildDicomPreviewRgba(width, height, r, c, invert, sampleValue, center, window);
   if (
     windowCenter &&
     windowWidth &&
@@ -1714,7 +1743,7 @@ function renderDicomPreviewImage(
   ) {
     center = (minValue + maxValue) / 2;
     window = Math.max(1, maxValue - minValue);
-    rendered = renderPreview(center, window);
+    rendered = buildDicomPreviewRgba(width, height, r, c, invert, sampleValue, center, window);
     warnings.push("Окно снимка дало низкоконтрастный предпросмотр; использовано min/max окно по выборке.");
   }
 
