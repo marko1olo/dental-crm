@@ -633,7 +633,6 @@ export function VisitView(props: VisitViewProps) {
                       <div className="tooth-half">
                         {(toothRows[0] || []).slice(0, 8).map((code) => {
                           const state = toothStateByCode[code] ?? "idle";
-
                           const geom = getToothPath(Number(code));
                           const cfg = getToothConfig(Number(code));
                           const isDetected = (draft?.quality?.detectedToothCodes || []).includes(code);
