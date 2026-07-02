@@ -202,7 +202,4 @@ describe("documentPayloadDisallowedKeys", () => {
     assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", null), []);
     assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined), []);
   });
-
-
-  });
 });
