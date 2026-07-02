@@ -2,6 +2,49 @@ import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { formatByteSize, formatMegabytes, inspectBrowserContinuity, browserIndexedDbWritable } from '../browserContinuity.js';
 
+describe('inspectBrowserContinuity', () => {
+  test('adds warning when navigator.storage.estimate throws an error', async () => {
+    const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+
+    try {
+      Object.defineProperty(globalThis, 'window', {
+        value: {},
+        configurable: true,
+        writable: true,
+      });
+
+      Object.defineProperty(globalThis, 'navigator', {
+        value: {
+          storage: {
+            estimate: async () => {
+              throw new Error('Simulated storage estimate error');
+            },
+          },
+        },
+        configurable: true,
+        writable: true,
+      });
+
+      const status = await inspectBrowserContinuity();
+
+      assert.ok(status.warnings.includes('Оценка хранилища браузера недоступна'));
+    } finally {
+      if (originalWindowDescriptor) {
+        Object.defineProperty(globalThis, 'window', originalWindowDescriptor);
+      } else {
+        delete (globalThis as any).window;
+      }
+      if (originalNavigatorDescriptor) {
+        Object.defineProperty(globalThis, 'navigator', originalNavigatorDescriptor);
+      } else {
+        delete (globalThis as any).navigator;
+      }
+    }
+  });
+});
+
+
 describe('formatMegabytes', () => {
   test('returns "н/д" when value is null', () => {
     assert.strictEqual(formatMegabytes(null), 'н/д');
