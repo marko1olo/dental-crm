@@ -5074,124 +5074,147 @@ function csvCell(value: string | number | null | undefined) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function buildSmartImportReportCsv(preview: Awaited<ReturnType<typeof buildSmartImportPreview>>) {
-  const rows: Array<Array<string | number | null | undefined>> = [
-    [
-      "section",
-      "rowNumber",
-      "status",
-      "confidence",
-      "nameOrPatient",
-      "phoneOrKind",
-      "dateOrTooth",
-      "fileOrNotes",
-      "warnings",
-      "reason",
-      "sourceText"
-    ]
+type SmartImportCsvRow = Array<string | number | null | undefined>;
+type SmartImportPreviewType = Awaited<ReturnType<typeof buildSmartImportPreview>>;
+
+function getLineClassificationRows(preview: SmartImportPreviewType): SmartImportCsvRow[] {
+  return preview.lineClassifications.map((line) => [
+    "line_classification",
+    line.lineNumber,
+    line.kind,
+    Math.round(line.confidence * 100),
+    "",
+    "",
+    "",
+    "",
+    "",
+    line.reason,
+    smartImportReportSourceText(line)
+  ]);
+}
+
+function getPatientPreviewRows(preview: SmartImportPreviewType): SmartImportCsvRow[] {
+  return preview.patientPreview.rows.map((row) => [
+    "patient_preview",
+    row.rowNumber,
+    row.status,
+    "",
+    row.fullName,
+    row.phone,
+    row.birthDate,
+    row.notes,
+    row.warnings.join(" | "),
+    row.status === "ready" ? "ready_for_commit" : "needs_fix_or_manual_review",
+    ""
+  ]);
+}
+
+function getImagingPreviewRows(preview: SmartImportPreviewType): SmartImportCsvRow[] {
+  return preview.imagingPreview.rows.map((row) => [
+    "imaging_preview",
+    row.rowNumber,
+    row.status,
+    "",
+    row.patientName,
+    row.kind,
+    row.toothCode ?? row.region,
+    row.filePath,
+    row.warnings.join(" | "),
+    row.status === "ready" ? "ready_for_commit" : "needs_mapping_or_source_fix",
+    ""
+  ]);
+}
+
+function getClinicSuggestionRows(preview: SmartImportPreviewType): SmartImportCsvRow[] {
+  if (!preview.clinicSuggestion) return [];
+  return Object.entries(preview.clinicSuggestion.fields).map(([field, value]) => [
+    "clinic_profile_suggestion",
+    preview.clinicSuggestion?.sourceLineNumbers.join(","),
+    "review",
+    Math.round(preview.clinicSuggestion?.confidence ?? 0),
+    field,
+    String(value ?? ""),
+    "",
+    "",
+    preview.clinicSuggestion?.warnings.join(" | "),
+    "confirm_before_copy_to_clinic_profile",
+    preview.clinicRawText
+  ]);
+}
+
+function getPublicLookupRows(preview: SmartImportPreviewType): SmartImportCsvRow[] {
+  return preview.publicLookupTargets.map((target, index) => [
+    "public_lookup",
+    index + 1,
+    target.kind,
+    "",
+    target.title,
+    target.query,
+    "",
+    target.url,
+    target.privacy,
+    target.nextAction,
+    ""
+  ]);
+}
+
+function getLegacySourceRows(preview: SmartImportPreviewType): SmartImportCsvRow[] {
+  return preview.legacySources.map((source, index) => [
+    "legacy_source",
+    index + 1,
+    source.kind,
+    Math.round(source.confidence * 100),
+    source.title,
+    source.automationLevel,
+    source.safeSourceAlias ?? "",
+    source.requiredArtifacts.join(" | "),
+    source.privacy,
+    source.nextAction,
+    safeLegacySourceEvidence(source).join(" | ")
+  ]);
+}
+
+function getParserNoteRows(preview: SmartImportPreviewType): SmartImportCsvRow[] {
+  return preview.parserNotes.map((note, index) => [
+    "parser_note",
+    index + 1,
+    "info",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    note,
+    ""
+  ]);
+}
+
+function buildSmartImportReportCsv(preview: SmartImportPreviewType) {
+  const header: SmartImportCsvRow = [
+    "section",
+    "rowNumber",
+    "status",
+    "confidence",
+    "nameOrPatient",
+    "phoneOrKind",
+    "dateOrTooth",
+    "fileOrNotes",
+    "warnings",
+    "reason",
+    "sourceText"
   ];
 
-  preview.lineClassifications.forEach((line) => {
-    rows.push([
-      "line_classification",
-      line.lineNumber,
-      line.kind,
-      Math.round(line.confidence * 100),
-      "",
-      "",
-      "",
-      "",
-      "",
-      line.reason,
-      smartImportReportSourceText(line)
-    ]);
-  });
-
-  preview.patientPreview.rows.forEach((row) => {
-    rows.push([
-      "patient_preview",
-      row.rowNumber,
-      row.status,
-      "",
-      row.fullName,
-      row.phone,
-      row.birthDate,
-      row.notes,
-      row.warnings.join(" | "),
-      row.status === "ready" ? "ready_for_commit" : "needs_fix_or_manual_review",
-      ""
-    ]);
-  });
-
-  preview.imagingPreview.rows.forEach((row) => {
-    rows.push([
-      "imaging_preview",
-      row.rowNumber,
-      row.status,
-      "",
-      row.patientName,
-      row.kind,
-      row.toothCode ?? row.region,
-      row.filePath,
-      row.warnings.join(" | "),
-      row.status === "ready" ? "ready_for_commit" : "needs_mapping_or_source_fix",
-      ""
-    ]);
-  });
-
-  if (preview.clinicSuggestion) {
-    Object.entries(preview.clinicSuggestion.fields).forEach(([field, value]) => {
-      rows.push([
-        "clinic_profile_suggestion",
-        preview.clinicSuggestion?.sourceLineNumbers.join(","),
-        "review",
-        Math.round(preview.clinicSuggestion?.confidence ?? 0),
-        field,
-        String(value ?? ""),
-        "",
-        "",
-        preview.clinicSuggestion?.warnings.join(" | "),
-        "confirm_before_copy_to_clinic_profile",
-        preview.clinicRawText
-      ]);
-    });
-  }
-
-  preview.publicLookupTargets.forEach((target, index) => {
-    rows.push([
-      "public_lookup",
-      index + 1,
-      target.kind,
-      "",
-      target.title,
-      target.query,
-      "",
-      target.url,
-      target.privacy,
-      target.nextAction,
-      ""
-    ]);
-  });
-
-  preview.legacySources.forEach((source, index) => {
-    rows.push([
-      "legacy_source",
-      index + 1,
-      source.kind,
-      Math.round(source.confidence * 100),
-      source.title,
-      source.automationLevel,
-      source.safeSourceAlias ?? "",
-      source.requiredArtifacts.join(" | "),
-      source.privacy,
-      source.nextAction,
-      safeLegacySourceEvidence(source).join(" | ")
-    ]);
-  });
-
-  preview.parserNotes.forEach((note, index) => {
-    rows.push(["parser_note", index + 1, "info", "", "", "", "", "", "", note, ""]);
-  });
+  const rows: SmartImportCsvRow[] = [
+    header,
+    ...getLineClassificationRows(preview),
+    ...getPatientPreviewRows(preview),
+    ...getImagingPreviewRows(preview),
+    ...getClinicSuggestionRows(preview),
+    ...getPublicLookupRows(preview),
+    ...getLegacySourceRows(preview),
+    ...getParserNoteRows(preview)
+  ];
 
   return rows.map((row) => row.map(csvCell).join(";")).join("\n");
 }
