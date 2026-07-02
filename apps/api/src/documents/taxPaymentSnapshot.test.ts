@@ -55,6 +55,20 @@ describe('taxPaymentYear', () => {
     assert.strictEqual(taxPaymentYear({ ...basePayment, paidAt: 'not a date' }), null);
     assert.strictEqual(taxPaymentYear({ ...basePayment, paidAt: '----' }), null);
   });
+
+  test('returns null for empty strings (and falls back if one is empty)', () => {
+    assert.strictEqual(taxPaymentYear({ ...basePayment, fiscalReceiptIssuedAt: '', paidAt: '' }), null);
+    assert.strictEqual(taxPaymentYear({ ...basePayment, fiscalReceiptIssuedAt: '', paidAt: '2024-01-01' }), 2024);
+  });
+
+  test('returns null for whitespace-only strings', () => {
+    assert.strictEqual(taxPaymentYear({ ...basePayment, paidAt: '   ' }), null);
+  });
+
+  test('returns null for missing/undefined fields', () => {
+    assert.strictEqual(taxPaymentYear({} as Payment), null);
+    assert.strictEqual(taxPaymentYear({ id: 'payment-1' } as Payment), null);
+  });
 });
 
 describe('taxPaymentsForIssueSnapshot', () => {
