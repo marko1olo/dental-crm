@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
 import net from "node:net";
 import { opendir, readdir, stat } from "node:fs/promises";
-import { open, type FileHandle } from "node:fs/promises";
+import { access, open, type FileHandle } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setImmediate as yieldImmediate } from "node:timers/promises";
@@ -5662,9 +5662,28 @@ function buildDentalModelWorkbenchManifest(input: {
 
 async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest, options: ApiDicomScanOptions = {}) {
   const fromManualRoot = Boolean(input.rootPaths?.length);
-  const roots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
-    .map((root) => path.resolve(root))
-    .filter((root, index, all) => existsSync(root) && all.indexOf(root) === index);
+  const rawRoots = input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots();
+  const uniqueRoots = Array.from(new Set(rawRoots.map((root) => path.resolve(root))));
+  const roots: string[] = [];
+  const BATCH_SIZE = 50;
+
+  for (let i = 0; i < uniqueRoots.length; i += BATCH_SIZE) {
+    const batch = uniqueRoots.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map(async (root) => {
+        try {
+          await access(root);
+          return root;
+        } catch {
+          return null;
+        }
+      })
+    );
+    for (const res of results) {
+      if (res !== null) roots.push(res);
+    }
+  }
+
   const warnings = new Set<string>();
   const cases: LocalImagingOrganizerCase[] = [];
   const visited = new Set<string>();
