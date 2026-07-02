@@ -6563,6 +6563,9 @@ function recallScheduledAt(item: TreatmentPlanItem): string {
 function buildDenteTelegramRecallItems(runtimeScope?: DenteTelegramOutboxRuntimeScope): DenteTelegramOutboxItem[] {
   const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
   const organizationScope = runtime.settings.organizationId;
+  const activePatientsMap = new Map(
+    patients.filter((p) => p.status === "active").map((p) => [p.id, p])
+  );
   return treatmentPlanItems.flatMap((item) => {
     if (item.organizationId !== organizationScope) return [];
     if (item.status !== "completed") return [];
@@ -6570,7 +6573,7 @@ function buildDenteTelegramRecallItems(runtimeScope?: DenteTelegramOutboxRuntime
     const service = serviceCatalogMap.get(item.serviceId) || serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
     if (service?.category !== "hygiene") return [];
 
-    const patient = patients.find((candidate) => candidate.id === item.patientId && candidate.status === "active");
+    const patient = activePatientsMap.get(item.patientId);
     if (!patient) return [];
 
     const itemId = recallOutboxId(item);
