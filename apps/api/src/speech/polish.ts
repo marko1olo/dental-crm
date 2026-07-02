@@ -391,7 +391,6 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
   }
 
   // Попытка 2: Идем по каскаду моделей
-  console.log("[AI Polish Cascade] Запуск цепочки фоллбеков...");
   for (const fallback of DENTAL_AI_CASCADING_MODELS) {
     // Пропускаем, если эта же модель только что упала в Попытке 1
     if (fallback.provider === input.config.provider && fallback.model === input.config.modelName) {
@@ -410,7 +409,6 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
         continue;
       }
 
-      console.log(`[AI Polish Cascade] Пробуем ${fallback.provider} (${fallback.model})...`);
       const fallbackConfig: SpeechPolishConfig = {
         deterministicEnabled: true,
         neuralEnabled: true,
@@ -432,7 +430,6 @@ async function callOpenAiCompatiblePolishWithKeyRotation(input: {
       });
 
       recordProviderKeySuccess(fallbackKeyProviderId, keyCandidate);
-      console.log(`[AI Polish Cascade] УСПЕХ на модели ${fallback.model} (${fallback.provider})`);
       result.warnings.push(`Текст очищен через резервную модель ${fallback.model} (${fallback.provider}).`);
       return result;
     } catch (fallbackError) {
