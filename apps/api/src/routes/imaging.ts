@@ -5092,9 +5092,21 @@ function shouldSkipDicomDiscoveryDirectory(directoryName: string) {
 
 async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest, options: ApiDicomScanOptions = {}) {
   const fromManualRoot = Boolean(input.rootPaths?.length);
-  const roots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
-    .map((root) => path.resolve(root))
-    .filter((root, index, all) => existsSync(root) && all.indexOf(root) === index);
+  const rawRoots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
+    .map((root) => path.resolve(root));
+
+  const uniqueRoots = Array.from(new Set(rawRoots));
+  const existsChecks = await Promise.all(
+    uniqueRoots.map(async (root) => {
+      try {
+        await stat(root);
+        return true;
+      } catch {
+        return false;
+      }
+    })
+  );
+  const roots = uniqueRoots.filter((_, index) => existsChecks[index]);
   const warnings = new Set<string>();
   const candidates: DicomLocalFolderDiscoveryCandidate[] = [];
   const visited = new Set<string>();
