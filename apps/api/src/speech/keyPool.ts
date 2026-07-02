@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { SpeechGatewayProvider } from "@dental/shared";
 import { fetch as undiciFetch, ProxyAgent, Agent, Dispatcher } from "undici";
+import type { RequestInfo, RequestInit } from "undici";
 import { SocksClient } from "socks";
 import tls from "node:tls";
 import { ensureSshTunnel } from "./tunnel.js";
@@ -525,11 +526,11 @@ export async function fetchWithProviderTimeout(
         signal: controller.signal
       });
     }
-    return await undiciFetch(input as any, {
-      ...init,
+    return await undiciFetch(input as URL | RequestInfo, {
+      ...init as unknown as RequestInit,
       signal: controller.signal,
       dispatcher
-    } as any) as any;
+    }) as unknown as Response;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new SpeechProviderRequestError(`Источник распознавания не ответил за ${Math.round(timeoutMs / 1000)} сек.`, {
@@ -592,11 +593,11 @@ export async function fetchWithProviderTimeout(
         const retryController = new AbortController();
         const retryTimer = setTimeout(() => retryController.abort(), timeoutMs);
         try {
-          return await undiciFetch(input as any, {
-            ...init,
+          return await undiciFetch(input as URL | RequestInfo, {
+            ...init as unknown as RequestInit,
             signal: retryController.signal,
             dispatcher: socksDispatcher
-          } as any) as any;
+          }) as unknown as Response;
         } catch (retryError) {
           console.error(`[Speech Fetch] SOCKS5 retry also failed:`, retryError);
         } finally {
