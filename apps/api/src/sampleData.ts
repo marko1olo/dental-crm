@@ -1689,7 +1689,7 @@ function normalizeMutableScheduleState(): void {
 
 const appointmentTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 
-function validScheduleTimeZone(value: string | null | undefined): string {
+export function validScheduleTimeZone(value: string | null | undefined): string {
   const timeZone = value?.trim() || defaultClinicTimezone;
   try {
     getAppointmentTimeFormatter(timeZone);
