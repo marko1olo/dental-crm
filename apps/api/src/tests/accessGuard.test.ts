@@ -1,6 +1,6 @@
 import { test, describe, afterEach, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
-import { requireClinicalMutationAccess, requireClinicalReadAccess, denteAdminSecretHeader } from '../accessGuard.js';
+import { requireClinicalMutationAccess, requireClinicalReadAccess, configuredClinicalAccessSecret, configuredClinicalMutationSecret, denteAdminSecretHeader } from '../accessGuard.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 describe('accessGuard', () => {
@@ -29,6 +29,40 @@ describe('accessGuard', () => {
   afterEach(() => {
     process.env = { ...originalEnv };
     mock.restoreAll();
+  });
+
+  describe('configuredClinicalAccessSecret', () => {
+    test('returns trimmed secret when set', () => {
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = '  my-secret  ';
+      assert.strictEqual(configuredClinicalAccessSecret(), 'my-secret');
+    });
+
+    test('returns null when not set', () => {
+      delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+      assert.strictEqual(configuredClinicalAccessSecret(), null);
+    });
+
+    test('returns null when empty', () => {
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = '   ';
+      assert.strictEqual(configuredClinicalAccessSecret(), null);
+    });
+  });
+
+  describe('configuredClinicalMutationSecret', () => {
+    test('returns trimmed secret when set', () => {
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = '  my-secret  ';
+      assert.strictEqual(configuredClinicalMutationSecret(), 'my-secret');
+    });
+
+    test('returns null when not set', () => {
+      delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
+      assert.strictEqual(configuredClinicalMutationSecret(), null);
+    });
+
+    test('returns null when empty', () => {
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = '   ';
+      assert.strictEqual(configuredClinicalMutationSecret(), null);
+    });
   });
 
   describe('requireClinicalMutationAccess', () => {
