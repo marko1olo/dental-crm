@@ -2602,73 +2602,113 @@ function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
 
   return Array.from(buckets.values()).map((seriesRows, index): DicomSeriesPreviewGroup => {
     const first = seriesRows[0];
-    const kind = seriesRows.find((row) => row.kind)?.kind ?? null;
-    const modality = seriesRows.find((row) => row.modality)?.modality ?? null;
-    const patientId = seriesRows.find((row) => row.patientId)?.patientId ?? null;
-    const patientName = seriesRows.find((row) => row.patientName)?.patientName ?? null;
-    const studyInstanceUid = seriesRows.find((row) => row.studyInstanceUid)?.studyInstanceUid ?? null;
-    const seriesInstanceUid = seriesRows.find((row) => row.seriesInstanceUid)?.seriesInstanceUid ?? null;
-    const studyDescription = seriesRows.find((row) => row.studyDescription)?.studyDescription ?? null;
-    const seriesDescription = seriesRows.find((row) => row.seriesDescription)?.seriesDescription ?? null;
-    const capturedAt = seriesRows.find((row) => row.capturedAt)?.capturedAt ?? null;
-    const firstFilePath = seriesRows.find((row) => row.filePath)?.filePath ?? null;
+
+    let kind: string | null | undefined = undefined;
+    let modality: string | null | undefined = undefined;
+    let patientId: string | null | undefined = undefined;
+    let patientName: string | null | undefined = undefined;
+    let studyInstanceUid: string | null | undefined = undefined;
+    let seriesInstanceUid: string | null | undefined = undefined;
+    let studyDescription: string | null | undefined = undefined;
+    let seriesDescription: string | null | undefined = undefined;
+    let capturedAt: string | null | undefined = undefined;
+    let firstFilePath: string | null | undefined = undefined;
+    let imageRows: number | null | undefined = undefined;
+    let imageColumns: number | null | undefined = undefined;
+    let bitsAllocated: number | null | undefined = undefined;
+    let samplesPerPixel: number | null | undefined = undefined;
+
+    let rowPixelBytes = 0;
+    const warnings = new Set<string>();
+
+    for (const row of seriesRows) {
+      if (kind === undefined && row.kind) kind = row.kind;
+      if (modality === undefined && row.modality) modality = row.modality;
+      if (patientId === undefined && row.patientId) patientId = row.patientId;
+      if (patientName === undefined && row.patientName) patientName = row.patientName;
+      if (studyInstanceUid === undefined && row.studyInstanceUid) studyInstanceUid = row.studyInstanceUid;
+      if (seriesInstanceUid === undefined && row.seriesInstanceUid) seriesInstanceUid = row.seriesInstanceUid;
+      if (studyDescription === undefined && row.studyDescription) studyDescription = row.studyDescription;
+      if (seriesDescription === undefined && row.seriesDescription) seriesDescription = row.seriesDescription;
+      if (capturedAt === undefined && row.capturedAt) capturedAt = row.capturedAt;
+      if (firstFilePath === undefined && row.filePath) firstFilePath = row.filePath;
+      if (imageRows === undefined && row.imageRows) imageRows = row.imageRows;
+      if (imageColumns === undefined && row.imageColumns) imageColumns = row.imageColumns;
+      if (bitsAllocated === undefined && row.bitsAllocated) bitsAllocated = row.bitsAllocated;
+      if (samplesPerPixel === undefined && row.samplesPerPixel) samplesPerPixel = row.samplesPerPixel;
+
+      rowPixelBytes += row.estimatedPixelBytes ?? 0;
+
+      if (row.warnings?.length) {
+        for (const w of row.warnings) warnings.add(w);
+      }
+    }
+
+    const kindNull = (kind ?? null) as DicomSeriesPreviewGroup["kind"];
+    const modalityNull = modality ?? null;
+    const patientIdNull = patientId ?? null;
+    const patientNameNull = patientName ?? null;
+    const studyInstanceUidNull = studyInstanceUid ?? null;
+    const seriesInstanceUidNull = seriesInstanceUid ?? null;
+    const studyDescriptionNull = studyDescription ?? null;
+    const seriesDescriptionNull = seriesDescription ?? null;
+    const capturedAtNull = capturedAt ?? null;
+    const firstFilePathNull = firstFilePath ?? null;
+    const imageRowsNull = imageRows ?? null;
+    const imageColumnsNull = imageColumns ?? null;
+    const bitsAllocatedNull = bitsAllocated ?? null;
+    const samplesPerPixelNull = samplesPerPixel ?? null;
+
     const sourceKind = first?.sourceKind ?? "dicom_file";
     const sourceName = first?.sourceName ?? "dicom_series";
-    const imageRows = seriesRows.find((row) => row.imageRows)?.imageRows ?? null;
-    const imageColumns = seriesRows.find((row) => row.imageColumns)?.imageColumns ?? null;
-    const bitsAllocated = seriesRows.find((row) => row.bitsAllocated)?.bitsAllocated ?? null;
-    const samplesPerPixel = seriesRows.find((row) => row.samplesPerPixel)?.samplesPerPixel ?? null;
-    const rowPixelBytes = seriesRows.reduce((total, row) => total + (row.estimatedPixelBytes ?? 0), 0);
     const estimatedPixelBytes =
       rowPixelBytes > 0
         ? rowPixelBytes
-        : imageRows && imageColumns && bitsAllocated
-          ? imageRows * imageColumns * (samplesPerPixel ?? 1) * Math.max(1, Math.ceil(bitsAllocated / 8)) * seriesRows.length
+        : imageRowsNull && imageColumnsNull && bitsAllocatedNull
+          ? imageRowsNull * imageColumnsNull * (samplesPerPixelNull ?? 1) * Math.max(1, Math.ceil(bitsAllocatedNull / 8)) * seriesRows.length
           : null;
-    const warnings = new Set<string>();
-    seriesRows.flatMap((row) => row.warnings).forEach((warning) => warnings.add(warning));
-    if (!studyInstanceUid || !seriesInstanceUid) warnings.add("Нет кодов исследования/серии: серия сгруппирована по папке или описанию");
-    if (!patientId) warnings.add("Пациент не сопоставлен: перед записью нужен ручной матчинг");
-    if (!kind) warnings.add("Тип исследования не распознан");
-    if (kind === "cbct" && seriesRows.length < 8) warnings.add("Для КЛКТ/КТ-срезов мало срезов: проверьте полный экспорт серии");
-    const blocked = !kind || !firstFilePath;
+    if (!studyInstanceUidNull || !seriesInstanceUidNull) warnings.add("Нет кодов исследования/серии: серия сгруппирована по папке или описанию");
+    if (!patientIdNull) warnings.add("Пациент не сопоставлен: перед записью нужен ручной матчинг");
+    if (!kindNull) warnings.add("Тип исследования не распознан");
+    if (kindNull === "cbct" && seriesRows.length < 8) warnings.add("Для КЛКТ/КТ-срезов мало срезов: проверьте полный экспорт серии");
+    const blocked = !kindNull || !firstFilePathNull;
     const mprReadiness = buildMprReadiness({
-      kind,
-      modality,
+      kind: kindNull,
+      modality: modalityNull,
       fileCount: seriesRows.length,
       estimatedPixelBytes,
-      firstFilePath,
+      firstFilePath: firstFilePathNull,
       sourceKind,
-      hasStudySeriesUid: Boolean(studyInstanceUid && seriesInstanceUid)
+      hasStudySeriesUid: Boolean(studyInstanceUidNull && seriesInstanceUidNull)
     });
     mprReadiness.blockers.forEach((blocker) => warnings.add(blocker));
     mprReadiness.warnings.forEach((warning) => warnings.add(warning));
-    const status = blocked ? "blocked" : patientId && warnings.size === 0 ? "ready" : "warning";
+    const status = blocked ? "blocked" : patientIdNull && warnings.size === 0 ? "ready" : "warning";
     const recommendedViewer: DicomSeriesViewer = blocked
       ? "none"
       : mprReadiness.volumeCandidate
         ? mprReadiness.canOpenMpr
           ? "cbct_mpr"
           : "external_dicom"
-        : recommendedViewerFor({ kind, modality, fileCount: seriesRows.length });
+        : recommendedViewerFor({ kind: kindNull, modality: modalityNull, fileCount: seriesRows.length });
     return {
       id: `dicom-series-${index + 1}`,
-      patientId,
-      patientName,
-      kind,
-      modality,
-      studyInstanceUid,
-      seriesInstanceUid,
-      studyDescription,
-      seriesDescription,
-      capturedAt,
+      patientId: patientIdNull,
+      patientName: patientNameNull,
+      kind: kindNull,
+      modality: modalityNull,
+      studyInstanceUid: studyInstanceUidNull,
+      seriesInstanceUid: seriesInstanceUidNull,
+      studyDescription: studyDescriptionNull,
+      seriesDescription: seriesDescriptionNull,
+      capturedAt: capturedAtNull,
       fileCount: seriesRows.length,
-      imageRows,
-      imageColumns,
-      bitsAllocated,
-      samplesPerPixel,
+      imageRows: imageRowsNull,
+      imageColumns: imageColumnsNull,
+      bitsAllocated: bitsAllocatedNull,
+      samplesPerPixel: samplesPerPixelNull,
       estimatedPixelBytes,
-      firstFilePath,
+      firstFilePath: firstFilePathNull,
       sourceKind,
       sourceName,
       recommendedViewer,
