@@ -905,46 +905,106 @@ async function collectImagingFiles(
   let foldersScanned = 0;
   let folderQueueLimitHit = false;
 
-  while (queueIndex < queue.length && files.length < maxFiles && foldersScanned < maxFolders) {
-    await maybeYieldApiDicomScan(yieldState, options.signal);
-    const current = queue[queueIndex];
-    queueIndex += 1;
-    if (!current) break;
-    foldersScanned += 1;
-    try {
-      let entriesInspected = 0;
-      const directory = await opendir(current);
-      for await (const entry of directory) {
-        await maybeYieldApiDicomScan(yieldState, options.signal);
-        entriesInspected += 1;
-        if (entriesInspected > maxEntriesPerFolder) {
-          warnings.push(`Проверка папки ограничена ${maxEntriesPerFolder} элементами: ${current}`);
-          break;
-        }
-        const entryName = entry.name.toString();
-        const fullPath = path.join(current, entryName);
-        if (entry.isDirectory()) {
-          if (recursive) {
-            const queuedFolders = queue.length - queueIndex;
-            if (foldersScanned + queuedFolders < maxFolders) queue.push(fullPath);
-            else folderQueueLimitHit = true;
-          }
+  const concurrencyLimit = 15;
+  let activeWorkers = 0;
+  let isDone = false;
+  let errorToThrow: unknown = null;
+
+  await new Promise<void>((resolve, reject) => {
+    function spawnWorkers() {
+      if (errorToThrow || isDone) return;
+
+      while (
+        activeWorkers < concurrencyLimit &&
+        queueIndex < queue.length &&
+        files.length < maxFiles &&
+        foldersScanned < maxFolders
+      ) {
+        const current = queue[queueIndex];
+        queueIndex += 1;
+        foldersScanned += 1;
+        activeWorkers += 1;
+
+        if (!current) {
+          activeWorkers -= 1;
           continue;
         }
-        if (!entry.isFile()) continue;
-        if (!imagingFileExtensions.has(path.extname(entryName).toLowerCase())) continue;
-        files.push(fullPath);
-        if (files.length >= maxFiles) {
-          warnings.push(`Остановлено на лимите ${maxFiles} файлов.`);
-          break;
+
+        processFolder(current).finally(() => {
+          activeWorkers -= 1;
+          if (errorToThrow) return;
+
+          if (files.length >= maxFiles || foldersScanned >= maxFolders || queueIndex >= queue.length) {
+            if (activeWorkers === 0 && !isDone) {
+              isDone = true;
+              resolve();
+            }
+          } else {
+            spawnWorkers();
+          }
+        });
+      }
+
+      if (activeWorkers === 0 && (queueIndex >= queue.length || files.length >= maxFiles || foldersScanned >= maxFolders)) {
+        if (!isDone) {
+          isDone = true;
+          resolve();
         }
       }
-    } catch (error) {
-      if (isApiDicomScanAbortError(error)) throw error;
-      warnings.push(`Не удалось прочитать папку: ${current}`);
-      continue;
     }
-  }
+
+    async function processFolder(current: string) {
+      try {
+        await maybeYieldApiDicomScan(yieldState, options.signal);
+        let entriesInspected = 0;
+        const directory = await opendir(current);
+        for await (const entry of directory) {
+          if (files.length >= maxFiles) break;
+
+          await maybeYieldApiDicomScan(yieldState, options.signal);
+          entriesInspected += 1;
+          if (entriesInspected > maxEntriesPerFolder) {
+            warnings.push(`Проверка папки ограничена ${maxEntriesPerFolder} элементами: ${current}`);
+            break;
+          }
+          const entryName = entry.name.toString();
+          const fullPath = path.join(current, entryName);
+          if (entry.isDirectory()) {
+            if (recursive) {
+              const queuedFolders = queue.length - queueIndex;
+              if (foldersScanned + queuedFolders < maxFolders) {
+                queue.push(fullPath);
+              } else {
+                folderQueueLimitHit = true;
+              }
+            }
+            continue;
+          }
+          if (!entry.isFile()) continue;
+          if (!imagingFileExtensions.has(path.extname(entryName).toLowerCase())) continue;
+
+          if (files.length < maxFiles) {
+            files.push(fullPath);
+            if (files.length >= maxFiles) {
+              warnings.push(`Остановлено на лимите ${maxFiles} файлов.`);
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        if (isApiDicomScanAbortError(error)) {
+          errorToThrow = error;
+          reject(error);
+          return;
+        }
+        warnings.push(`Не удалось прочитать папку: ${current}`);
+      }
+    }
+
+    spawnWorkers();
+  });
+
+  if (errorToThrow) throw errorToThrow;
   if (foldersScanned >= maxFolders || folderQueueLimitHit || queueIndex < queue.length) {
     warnings.push(`Сканирование папок остановлено на лимите ${maxFolders}.`);
   }
