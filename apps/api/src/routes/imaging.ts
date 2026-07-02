@@ -2105,11 +2105,13 @@ async function readExactFileRange(
 
 async function readZipCentralDirectoryDetailed(filePath: string): Promise<ZipCentralDirectoryDetailedResult> {
   const warnings: string[] = [];
-  if (!existsSync(filePath)) {
+  let stats;
+  try {
+    stats = await stat(filePath);
+  } catch {
     return { entries: [], warnings: ["ZIP-архив не найден на этом сервере; предпросмотр использует только путь к архиву."], fileHandle: null };
   }
 
-  const stats = await stat(filePath);
   const fileHandle = await open(filePath, "r");
   const tailLength = Math.min(stats.size, zipEocdSearchWindowBytes);
   const tail = await readExactFileRange(fileHandle, stats.size - tailLength, tailLength);
