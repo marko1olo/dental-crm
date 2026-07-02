@@ -652,7 +652,7 @@ function contentToString(content: string | Array<{ type?: string; text?: string 
   return "";
 }
 
-function safeParseJsonObject(value: string): Record<string, unknown> {
+export function safeParseJsonObject(value: string): Record<string, unknown> {
   const trimmed = value.trim();
   if (!trimmed) return {};
   try {
