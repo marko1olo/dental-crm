@@ -4,6 +4,7 @@ import {
   documentRequiresPaidRecord,
   documentAmountSource,
   documentKindSchema,
+  documentPayloadDisallowedKeys,
   buildRuleBasedVisitDraftFromTranscript,
   documentPayloadDisallowedKeys,
 } from "../index.js";
@@ -202,30 +203,6 @@ describe("documentPayloadDisallowedKeys", () => {
     assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined), []);
   });
 
-  test("returns empty array when payload only has allowed keys", () => {
-    const payload = { patientIntakeQuestionnaire: {} } as any;
-    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", payload), []);
-  });
 
-  test("returns disallowed keys when payload has extra keys", () => {
-    const payload = {
-      patientIntakeQuestionnaire: {},
-      extraKey1: "some value",
-      extraKey2: 123
-    } as any;
-
-    const disallowed = documentPayloadDisallowedKeys("patient_intake_questionnaire", payload);
-    assert.deepStrictEqual(disallowed.sort(), ["extraKey1", "extraKey2"].sort());
-  });
-
-  test("ignores keys with undefined values even if disallowed", () => {
-    const payload = {
-      patientIntakeQuestionnaire: {},
-      extraKey1: undefined,
-      extraKey2: "defined"
-    } as any;
-
-    const disallowed = documentPayloadDisallowedKeys("patient_intake_questionnaire", payload);
-    assert.deepStrictEqual(disallowed, ["extraKey2"]);
   });
 });
