@@ -7096,28 +7096,20 @@ function denteTelegramMainMenuRow(): Array<{ text: string; callback_data: string
   return [{ text: "Главное меню", callback_data: "dente:start" }];
 }
 
-function telegramReplyMarkupFor(
-  templateKind: DenteTelegramTemplateKind,
-  appointmentId: string | null = null,
-  settings: DenteTelegramBotSettings = denteTelegramBotSettings,
-  appointmentCallbackScope: DenteTelegramAppointmentCallbackScope = {}
+function telegramReplyMarkupForReviewRequest(settings: DenteTelegramBotSettings): Record<string, unknown> | null {
+  const reviewUrl = safeHttpsUrl(settings.clinicReviewUrl);
+  const mapsUrl = safeHttpsUrl(settings.clinicMapsUrl);
+  const buttons: Array<{ text: string; url: string }> = [];
+  if (reviewUrl) buttons.push({ text: "Оценить клинику", url: reviewUrl });
+  if (mapsUrl) buttons.push({ text: "Открыть карту", url: mapsUrl });
+  return buttons.length ? { inline_keyboard: [buttons, denteTelegramMainMenuRow()] } : null;
+}
+
+function telegramReplyMarkupForAppointment(
+  appointmentId: string | null,
+  signedAppointmentCallbackScope: Record<string, unknown>
 ): Record<string, unknown> | null {
-  const portalRow = denteTelegramPortalRowForTemplate(templateKind, settings);
-  const signedAppointmentCallbackScope = normalizeDenteTelegramAppointmentCallbackScope(
-    appointmentCallbackScope,
-    settings
-  );
-
-  if (templateKind === "review_request") {
-    const reviewUrl = safeHttpsUrl(settings.clinicReviewUrl);
-    const mapsUrl = safeHttpsUrl(settings.clinicMapsUrl);
-    const buttons: Array<{ text: string; url: string }> = [];
-    if (reviewUrl) buttons.push({ text: "Оценить клинику", url: reviewUrl });
-    if (mapsUrl) buttons.push({ text: "Открыть карту", url: mapsUrl });
-    return buttons.length ? { inline_keyboard: [buttons, denteTelegramMainMenuRow()] } : null;
-  }
-
-  if ((templateKind === "appointment_reminder" || templateKind === "appointment_confirmation") && appointmentId) {
+  if (appointmentId) {
     if (!denteTelegramAppointmentCallbacksReady()) {
       return {
         inline_keyboard: [
@@ -7144,102 +7136,134 @@ function telegramReplyMarkupFor(
     };
   }
 
-  if (templateKind === "appointment_reminder" || templateKind === "appointment_confirmation") {
-    return {
-      inline_keyboard: [
-        [
-          { text: "Связаться с клиникой", callback_data: "dente:contact" },
-          { text: "Конфиденциальность", callback_data: "dente:privacy" }
-        ],
-        denteTelegramMainMenuRow()
-      ]
-    };
-  }
-
-  if (templateKind === "document_ready_notice") {
-    const rows = [
-      portalRow,
+  return {
+    inline_keyboard: [
       [
-        { text: "Документы", callback_data: "dente:documents" },
-        { text: "Связаться", callback_data: "dente:contact" }
-      ],
-      [{ text: "Конфиденциальность", callback_data: "dente:privacy" }],
-      denteTelegramMainMenuRow()
-    ].filter((row) => row.length);
-    return rows.length ? { inline_keyboard: rows } : null;
-  }
-
-  if (templateKind === "tax_document_request_status") {
-    const rows = [
-      portalRow,
-      [
-        { text: "Налоговая", callback_data: "dente:tax" },
-        { text: "Документы", callback_data: "dente:documents" }
-      ],
-      [
-        { text: "Связаться", callback_data: "dente:contact" },
+        { text: "Связаться с клиникой", callback_data: "dente:contact" },
         { text: "Конфиденциальность", callback_data: "dente:privacy" }
       ],
       denteTelegramMainMenuRow()
-    ].filter((row) => row.length);
-    return rows.length ? { inline_keyboard: rows } : null;
-  }
+    ]
+  };
+}
 
-  if (templateKind === "payment_reminder_notice") {
-    const rows = [
-      portalRow,
-      [
-        { text: "Оплата и чеки", callback_data: "dente:billing" },
-        { text: "Документы", callback_data: "dente:documents" }
-      ],
-      [
-        { text: "Связаться", callback_data: "dente:contact" },
-        { text: "Конфиденциальность", callback_data: "dente:privacy" }
-      ],
-      denteTelegramMainMenuRow()
-    ].filter((row) => row.length);
-    return rows.length ? { inline_keyboard: rows } : null;
-  }
+function telegramReplyMarkupForDocumentReadyNotice(portalRow: Array<{ text: string; url: string }>): Record<string, unknown> | null {
+  const rows = [
+    portalRow,
+    [
+      { text: "Документы", callback_data: "dente:documents" },
+      { text: "Связаться", callback_data: "dente:contact" }
+    ],
+    [{ text: "Конфиденциальность", callback_data: "dente:privacy" }],
+    denteTelegramMainMenuRow()
+  ].filter((row) => row.length);
+  return rows.length ? { inline_keyboard: rows } : null;
+}
 
-  if (templateKind === "post_visit_instruction_link" || templateKind === "post_visit_checkup") {
-    const rows = [
-      portalRow,
-      [
-        { text: "Памятки", callback_data: "dente:care" },
-        { text: "Связаться", callback_data: "dente:contact" }
-      ],
-      [{ text: "Конфиденциальность", callback_data: "dente:privacy" }],
-      denteTelegramMainMenuRow()
-    ].filter((row) => row.length);
-    return rows.length ? { inline_keyboard: rows } : null;
-  }
+function telegramReplyMarkupForTaxDocumentRequestStatus(portalRow: Array<{ text: string; url: string }>): Record<string, unknown> | null {
+  const rows = [
+    portalRow,
+    [
+      { text: "Налоговая", callback_data: "dente:tax" },
+      { text: "Документы", callback_data: "dente:documents" }
+    ],
+    [
+      { text: "Связаться", callback_data: "dente:contact" },
+      { text: "Конфиденциальность", callback_data: "dente:privacy" }
+    ],
+    denteTelegramMainMenuRow()
+  ].filter((row) => row.length);
+  return rows.length ? { inline_keyboard: rows } : null;
+}
 
-  if (templateKind === "recall_notice") {
-    const rows = [
-      portalRow,
-      [
-        { text: "Расписание", callback_data: "dente:schedule" },
-        { text: "Связаться", callback_data: "dente:contact" }
-      ],
-      [{ text: "Конфиденциальность", callback_data: "dente:privacy" }],
-      denteTelegramMainMenuRow()
-    ].filter((row) => row.length);
-    return rows.length ? { inline_keyboard: rows } : null;
-  }
+function telegramReplyMarkupForPaymentReminderNotice(portalRow: Array<{ text: string; url: string }>): Record<string, unknown> | null {
+  const rows = [
+    portalRow,
+    [
+      { text: "Оплата и чеки", callback_data: "dente:billing" },
+      { text: "Документы", callback_data: "dente:documents" }
+    ],
+    [
+      { text: "Связаться", callback_data: "dente:contact" },
+      { text: "Конфиденциальность", callback_data: "dente:privacy" }
+    ],
+    denteTelegramMainMenuRow()
+  ].filter((row) => row.length);
+  return rows.length ? { inline_keyboard: rows } : null;
+}
 
-  if (templateKind === "staff_daily_digest") {
-    const rows = [
-      portalRow,
-      [
-        { text: "Расписание", callback_data: "dente:schedule" },
-        { text: "Связь", callback_data: "dente:contact" }
-      ],
-      denteTelegramMainMenuRow()
-    ].filter((row) => row.length);
-    return rows.length ? { inline_keyboard: rows } : null;
-  }
+function telegramReplyMarkupForPostVisit(portalRow: Array<{ text: string; url: string }>): Record<string, unknown> | null {
+  const rows = [
+    portalRow,
+    [
+      { text: "Памятки", callback_data: "dente:care" },
+      { text: "Связаться", callback_data: "dente:contact" }
+    ],
+    [{ text: "Конфиденциальность", callback_data: "dente:privacy" }],
+    denteTelegramMainMenuRow()
+  ].filter((row) => row.length);
+  return rows.length ? { inline_keyboard: rows } : null;
+}
 
-  return null;
+function telegramReplyMarkupForRecallNotice(portalRow: Array<{ text: string; url: string }>): Record<string, unknown> | null {
+  const rows = [
+    portalRow,
+    [
+      { text: "Расписание", callback_data: "dente:schedule" },
+      { text: "Связаться", callback_data: "dente:contact" }
+    ],
+    [{ text: "Конфиденциальность", callback_data: "dente:privacy" }],
+    denteTelegramMainMenuRow()
+  ].filter((row) => row.length);
+  return rows.length ? { inline_keyboard: rows } : null;
+}
+
+function telegramReplyMarkupForStaffDailyDigest(portalRow: Array<{ text: string; url: string }>): Record<string, unknown> | null {
+  const rows = [
+    portalRow,
+    [
+      { text: "Расписание", callback_data: "dente:schedule" },
+      { text: "Связь", callback_data: "dente:contact" }
+    ],
+    denteTelegramMainMenuRow()
+  ].filter((row) => row.length);
+  return rows.length ? { inline_keyboard: rows } : null;
+}
+
+function telegramReplyMarkupFor(
+  templateKind: DenteTelegramTemplateKind,
+  appointmentId: string | null = null,
+  settings: DenteTelegramBotSettings = denteTelegramBotSettings,
+  appointmentCallbackScope: DenteTelegramAppointmentCallbackScope = {}
+): Record<string, unknown> | null {
+  const portalRow = denteTelegramPortalRowForTemplate(templateKind, settings);
+  const signedAppointmentCallbackScope = normalizeDenteTelegramAppointmentCallbackScope(
+    appointmentCallbackScope,
+    settings
+  );
+
+  switch (templateKind) {
+    case "review_request":
+      return telegramReplyMarkupForReviewRequest(settings);
+    case "appointment_reminder":
+    case "appointment_confirmation":
+      return telegramReplyMarkupForAppointment(appointmentId, signedAppointmentCallbackScope);
+    case "document_ready_notice":
+      return telegramReplyMarkupForDocumentReadyNotice(portalRow);
+    case "tax_document_request_status":
+      return telegramReplyMarkupForTaxDocumentRequestStatus(portalRow);
+    case "payment_reminder_notice":
+      return telegramReplyMarkupForPaymentReminderNotice(portalRow);
+    case "post_visit_instruction_link":
+    case "post_visit_checkup":
+      return telegramReplyMarkupForPostVisit(portalRow);
+    case "recall_notice":
+      return telegramReplyMarkupForRecallNotice(portalRow);
+    case "staff_daily_digest":
+      return telegramReplyMarkupForStaffDailyDigest(portalRow);
+    default:
+      return null;
+  }
 }
 
 function telegramScheduleReplyMarkupForPatientAppointment(
