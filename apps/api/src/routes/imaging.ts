@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import dns from "node:dns/promises";
 import { once } from "node:events";
-import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
+import fs from "node:fs";
 import net from "node:net";
 import { opendir, readdir, stat } from "node:fs/promises";
 import { open, type FileHandle } from "node:fs/promises";
@@ -1153,15 +1153,15 @@ function isDicomPixelPath(filePath: string): boolean {
 
 function hasDicomMagic(filePath: string): boolean {
   try {
-    const stats = statSync(filePath);
+    const stats = fs.statSync(filePath);
     if (!stats.isFile() || stats.size < 132 || stats.size > 2 * 1024 * 1024 * 1024) return false;
     const buffer = Buffer.alloc(132);
-    const handle = openSync(filePath, "r");
+    const handle = fs.openSync(filePath, "r");
     try {
-      readSync(handle, buffer, 0, 132, 0);
+      fs.readSync(handle, buffer, 0, 132, 0);
       return buffer.toString("latin1", 128, 132) === "DICM";
     } finally {
-      closeSync(handle);
+      fs.closeSync(handle);
     }
   } catch {
     return false;
@@ -1175,16 +1175,16 @@ function isDicomHeaderCandidatePath(filePath: string): boolean {
   return hasDicomMagic(filePath);
 }
 
-function readFilePrefix(filePath: string, maxBytes: number): Buffer {
-  const stats = statSync(filePath);
+export function readFilePrefix(filePath: string, maxBytes: number): Buffer {
+  const stats = fs.statSync(filePath);
   const bytesToRead = Math.max(0, Math.min(stats.size, maxBytes));
   const buffer = Buffer.alloc(bytesToRead);
-  const handle = openSync(filePath, "r");
+  const handle = fs.openSync(filePath, "r");
   try {
-    readSync(handle, buffer, 0, bytesToRead, 0);
+    fs.readSync(handle, buffer, 0, bytesToRead, 0);
     return buffer;
   } finally {
-    closeSync(handle);
+    fs.closeSync(handle);
   }
 }
 
@@ -2105,7 +2105,7 @@ async function readExactFileRange(
 
 async function readZipCentralDirectoryDetailed(filePath: string): Promise<ZipCentralDirectoryDetailedResult> {
   const warnings: string[] = [];
-  if (!existsSync(filePath)) {
+  if (!fs.existsSync(filePath)) {
     return { entries: [], warnings: ["ZIP-архив не найден на этом сервере; предпросмотр использует только путь к архиву."], fileHandle: null };
   }
 
@@ -5048,7 +5048,7 @@ function defaultDicomDiscoveryRoots() {
     path.join(oneDrive, "Documents"),
     path.join(oneDrive, "Pictures")
   ];
-  return Array.from(new Set(roots.map((root) => path.resolve(root)).filter((root) => existsSync(root))));
+  return Array.from(new Set(roots.map((root) => path.resolve(root)).filter((root) => fs.existsSync(root))));
 }
 
 function fingerprintLocalPath(folderPath: string) {
@@ -5094,7 +5094,7 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
   const fromManualRoot = Boolean(input.rootPaths?.length);
   const roots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
     .map((root) => path.resolve(root))
-    .filter((root, index, all) => existsSync(root) && all.indexOf(root) === index);
+    .filter((root, index, all) => fs.existsSync(root) && all.indexOf(root) === index);
   const warnings = new Set<string>();
   const candidates: DicomLocalFolderDiscoveryCandidate[] = [];
   const visited = new Set<string>();
@@ -5499,7 +5499,7 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest, 
   const fromManualRoot = Boolean(input.rootPaths?.length);
   const roots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
     .map((root) => path.resolve(root))
-    .filter((root, index, all) => existsSync(root) && all.indexOf(root) === index);
+    .filter((root, index, all) => fs.existsSync(root) && all.indexOf(root) === index);
   const warnings = new Set<string>();
   const cases: LocalImagingOrganizerCase[] = [];
   const visited = new Set<string>();
