@@ -39,7 +39,6 @@ export async function ensureSshTunnel(): Promise<boolean> {
   // 1. Проверяем, слушает ли уже порт 1080
   const alreadyOpen = await isPortOpen(SOCKS_PORT);
   if (alreadyOpen) {
-    console.log(`[SSH Tunnel] SOCKS5 port ${SOCKS_PORT} is already active/listening.`);
     return true;
   }
 
