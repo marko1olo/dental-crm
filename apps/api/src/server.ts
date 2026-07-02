@@ -138,7 +138,12 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
     .map((origin) => origin.trim())
     .filter(Boolean)
     .map((origin) => {
-      if (origin === "*" || origin === "null") return origin;
+      if (origin === "*" || origin === "null") {
+        if (process.env.NODE_ENV === "production") {
+          throw new Error(`Insecure WEB_ORIGIN configured: "${origin}" is not allowed in production`);
+        }
+        return origin;
+      }
       try {
         return new URL(origin).origin;
       } catch {
