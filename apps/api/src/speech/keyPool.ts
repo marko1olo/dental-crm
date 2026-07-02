@@ -9,7 +9,8 @@ import { ensureSshTunnel } from "./tunnel.js";
 
 let cachedProxyAgent: Dispatcher | null = null;
 function getProxyAgent(): Dispatcher | null {
-  const proxyUrl = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+  const proxyUrl =
+    process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
   if (!proxyUrl) return null;
   if (!cachedProxyAgent) {
     try {
@@ -18,58 +19,72 @@ function getProxyAgent(): Dispatcher | null {
         const proxyHost = parsed.hostname;
         const proxyPort = Number(parsed.port || 1080);
         const proxyType = proxyUrl.includes("socks4") ? 4 : 5;
-        
+
         cachedProxyAgent = new Agent({
           connect: (opts, callback) => {
-            const destPort = opts.port ? Number(opts.port) : (opts.protocol === "https:" ? 443 : 80);
+            const destPort = opts.port
+              ? Number(opts.port)
+              : opts.protocol === "https:"
+                ? 443
+                : 80;
             const destHost = opts.host || "";
-            
-            SocksClient.createConnection({
-              proxy: {
-                host: proxyHost,
-                port: proxyPort,
-                type: proxyType as 4 | 5
+
+            SocksClient.createConnection(
+              {
+                proxy: {
+                  host: proxyHost,
+                  port: proxyPort,
+                  type: proxyType as 4 | 5,
+                },
+                command: "connect",
+                destination: {
+                  host: destHost,
+                  port: destPort,
+                },
               },
-              command: "connect",
-              destination: {
-                host: destHost,
-                port: destPort
-              }
-            }, (err, info) => {
-              if (err) {
-                callback(err, null);
-                return;
-              }
-              
-              if (!info) {
-                callback(new Error("SOCKS connection returned no info"), null);
-                return;
-              }
-              
-              if (opts.protocol === "https:") {
-                const tlsSocket = tls.connect({
-                  socket: info.socket,
-                  servername: opts.servername || opts.host
-                }, () => {
-                  callback(null, tlsSocket);
-                });
-                
-                tlsSocket.on("error", (tlsErr) => {
-                  callback(tlsErr, null);
-                });
-              } else {
-                callback(null, info.socket);
-              }
-            });
-          }
+              (err, info) => {
+                if (err) {
+                  callback(err, null);
+                  return;
+                }
+
+                if (!info) {
+                  callback(
+                    new Error("SOCKS connection returned no info"),
+                    null,
+                  );
+                  return;
+                }
+
+                if (opts.protocol === "https:") {
+                  const tlsSocket = tls.connect(
+                    {
+                      socket: info.socket,
+                      servername: opts.servername || opts.host,
+                    },
+                    () => {
+                      callback(null, tlsSocket);
+                    },
+                  );
+
+                  tlsSocket.on("error", (tlsErr) => {
+                    callback(tlsErr, null);
+                  });
+                } else {
+                  callback(null, info.socket);
+                }
+              },
+            );
+          },
         });
-        console.log(`[Proxy Agent] Created undici SOCKS Agent routing to SOCKS proxy: ${proxyUrl}`);
       } else {
         cachedProxyAgent = new ProxyAgent({ uri: proxyUrl });
-        console.log(`[Proxy Agent] Created undici ProxyAgent routing to HTTP/HTTPS proxy: ${proxyUrl}`);
       }
     } catch (err) {
-      console.error(`[Proxy Agent] Failed to initialize ProxyAgent for ${proxyUrl}:`, err);
+      console.error(
+        `[Proxy Agent] Failed to initialize ProxyAgent for ${proxyUrl}:`,
+        err,
+      );
     }
   }
   return cachedProxyAgent;
@@ -137,46 +152,46 @@ const providerKeySpecs: Record<SpeechGatewayProvider, ProviderKeySpec> = {
   groq_whisper: {
     singles: ["GROQ_API_KEY"],
     lists: ["GROQ_API_KEYS"],
-    numberedBases: ["GROQ_API_KEY"]
+    numberedBases: ["GROQ_API_KEY"],
   },
   openai_transcribe: {
     singles: ["OPENAI_API_KEY"],
     lists: ["OPENAI_API_KEYS"],
-    numberedBases: ["OPENAI_API_KEY"]
+    numberedBases: ["OPENAI_API_KEY"],
   },
   deepgram_streaming: {
     singles: ["DEEPGRAM_API_KEY"],
     lists: ["DEEPGRAM_API_KEYS"],
-    numberedBases: ["DEEPGRAM_API_KEY"]
+    numberedBases: ["DEEPGRAM_API_KEY"],
   },
   assemblyai_async: {
     singles: ["ASSEMBLYAI_API_KEY"],
     lists: ["ASSEMBLYAI_API_KEYS"],
-    numberedBases: ["ASSEMBLYAI_API_KEY"]
+    numberedBases: ["ASSEMBLYAI_API_KEY"],
   },
   cloudflare_whisper: {
     singles: ["CLOUDFLARE_API_TOKEN"],
     lists: ["CLOUDFLARE_API_TOKENS"],
-    numberedBases: ["CLOUDFLARE_API_TOKEN"]
+    numberedBases: ["CLOUDFLARE_API_TOKEN"],
   },
   azure_speech: {
     singles: ["AZURE_SPEECH_KEY"],
     lists: ["AZURE_SPEECH_KEYS"],
-    numberedBases: ["AZURE_SPEECH_KEY"]
+    numberedBases: ["AZURE_SPEECH_KEY"],
   },
   google_speech: {
     singles: ["GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_API_KEY"],
     lists: ["GOOGLE_API_KEYS"],
-    numberedBases: ["GOOGLE_API_KEY"]
+    numberedBases: ["GOOGLE_API_KEY"],
   },
   huggingface_asr: {
     singles: ["HUGGINGFACE_API_TOKEN", "HF_TOKEN"],
     lists: ["HUGGINGFACE_API_TOKENS", "HF_TOKENS"],
-    numberedBases: ["HUGGINGFACE_API_TOKEN", "HF_TOKEN"]
+    numberedBases: ["HUGGINGFACE_API_TOKEN", "HF_TOKEN"],
   },
   mobile_native_speech: { singles: [], lists: [], numberedBases: [] },
   local_whisper: { singles: [], lists: [], numberedBases: [] },
-  vosk_local: { singles: [], lists: [], numberedBases: [] }
+  vosk_local: { singles: [], lists: [], numberedBases: [] },
 };
 
 function keyHealthFilePath(): string | null {
@@ -186,7 +201,10 @@ function keyHealthFilePath(): string | null {
 }
 
 function keyHealthTtlMs(): number {
-  return numberFromEnv("DENTAL_SPEECH_KEY_HEALTH_TTL_MS", 30 * 24 * 60 * 60 * 1000);
+  return numberFromEnv(
+    "DENTAL_SPEECH_KEY_HEALTH_TTL_MS",
+    30 * 24 * 60 * 60 * 1000,
+  );
 }
 
 function isPersistedHealthKey(value: string): boolean {
@@ -199,19 +217,33 @@ function normalizePersistedHealth(value: unknown): KeyHealth | null {
   const cooldownUntil = Number(candidate.cooldownUntil ?? 0);
   const failures = Number(candidate.failures ?? 0);
   const successes = Number(candidate.successes ?? 0);
-  const lastUsedAt = candidate.lastUsedAt === null || candidate.lastUsedAt === undefined ? null : Number(candidate.lastUsedAt);
+  const lastUsedAt =
+    candidate.lastUsedAt === null || candidate.lastUsedAt === undefined
+      ? null
+      : Number(candidate.lastUsedAt);
   const lastStatusCode =
-    candidate.lastStatusCode === null || candidate.lastStatusCode === undefined ? null : Number(candidate.lastStatusCode);
-  if (!Number.isFinite(cooldownUntil) || !Number.isFinite(failures) || !Number.isFinite(successes)) return null;
+    candidate.lastStatusCode === null || candidate.lastStatusCode === undefined
+      ? null
+      : Number(candidate.lastStatusCode);
+  if (
+    !Number.isFinite(cooldownUntil) ||
+    !Number.isFinite(failures) ||
+    !Number.isFinite(successes)
+  )
+    return null;
   if (lastUsedAt !== null && !Number.isFinite(lastUsedAt)) return null;
   if (lastStatusCode !== null && !Number.isFinite(lastStatusCode)) return null;
   return {
     cooldownUntil: Math.max(0, Math.floor(cooldownUntil)),
     failures: Math.max(0, Math.floor(failures)),
     successes: Math.max(0, Math.floor(successes)),
-    lastUsedAt: lastUsedAt === null ? null : Math.max(0, Math.floor(lastUsedAt)),
-    lastStatusCode: lastStatusCode === null ? null : Math.max(0, Math.floor(lastStatusCode)),
-    lastError: candidate.lastError ? sanitizeProviderErrorMessage(String(candidate.lastError)) : null
+    lastUsedAt:
+      lastUsedAt === null ? null : Math.max(0, Math.floor(lastUsedAt)),
+    lastStatusCode:
+      lastStatusCode === null ? null : Math.max(0, Math.floor(lastStatusCode)),
+    lastError: candidate.lastError
+      ? sanitizeProviderErrorMessage(String(candidate.lastError))
+      : null,
   };
 }
 
@@ -219,7 +251,11 @@ function pruneKeyHealth(now = Date.now()): void {
   const ttlMs = keyHealthTtlMs();
   for (const [key, health] of keyHealthByFingerprint.entries()) {
     const lastUsedAt = health.lastUsedAt ?? 0;
-    if (health.cooldownUntil <= now && lastUsedAt > 0 && now - lastUsedAt > ttlMs) {
+    if (
+      health.cooldownUntil <= now &&
+      lastUsedAt > 0 &&
+      now - lastUsedAt > ttlMs
+    ) {
       keyHealthByFingerprint.delete(key);
     }
   }
@@ -231,8 +267,11 @@ function loadKeyHealthFromDisk(): void {
   const filePath = keyHealthFilePath();
   if (!filePath || !existsSync(filePath)) return;
   try {
-    const parsed = JSON.parse(readFileSync(filePath, "utf8")) as Partial<PersistedKeyHealthFile>;
-    const health = parsed.health && typeof parsed.health === "object" ? parsed.health : {};
+    const parsed = JSON.parse(
+      readFileSync(filePath, "utf8"),
+    ) as Partial<PersistedKeyHealthFile>;
+    const health =
+      parsed.health && typeof parsed.health === "object" ? parsed.health : {};
     for (const [key, value] of Object.entries(health)) {
       if (!isPersistedHealthKey(key)) continue;
       const normalized = normalizePersistedHealth(value);
@@ -254,7 +293,11 @@ function saveKeyHealthToDisk(): void {
     const payload: PersistedKeyHealthFile = {
       version: 1,
       savedAt: new Date().toISOString(),
-      health: Object.fromEntries([...keyHealthByFingerprint.entries()].sort(([left], [right]) => left.localeCompare(right)))
+      health: Object.fromEntries(
+        [...keyHealthByFingerprint.entries()].sort(([left], [right]) =>
+          left.localeCompare(right),
+        ),
+      ),
     };
     writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   } catch {
@@ -275,7 +318,7 @@ export class SpeechProviderRequestError extends Error {
       retryable?: boolean;
       rateLimited?: boolean;
       timedOut?: boolean;
-    } = {}
+    } = {},
   ) {
     super(sanitizeProviderErrorMessage(message));
     this.name = "SpeechProviderRequestError";
@@ -308,7 +351,10 @@ function authCooldownMs(): number {
 }
 
 function maxNumberedKeys(): number {
-  return Math.max(1, Math.min(numberFromEnv("DENTAL_SPEECH_MAX_NUMBERED_KEYS", 20), 100));
+  return Math.max(
+    1,
+    Math.min(numberFromEnv("DENTAL_SPEECH_MAX_NUMBERED_KEYS", 20), 100),
+  );
 }
 
 function splitKeyList(value: string | undefined): string[] {
@@ -323,11 +369,17 @@ function fingerprintSecret(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 12);
 }
 
-function healthKey(providerId: SpeechGatewayProvider, candidate: Pick<SpeechProviderKeyCandidate, "fingerprint">): string {
+function healthKey(
+  providerId: SpeechGatewayProvider,
+  candidate: Pick<SpeechProviderKeyCandidate, "fingerprint">,
+): string {
   return `${providerId}:${candidate.fingerprint}`;
 }
 
-function healthFor(providerId: SpeechGatewayProvider, candidate: Pick<SpeechProviderKeyCandidate, "fingerprint">): KeyHealth {
+function healthFor(
+  providerId: SpeechGatewayProvider,
+  candidate: Pick<SpeechProviderKeyCandidate, "fingerprint">,
+): KeyHealth {
   loadKeyHealthFromDisk();
   return (
     keyHealthByFingerprint.get(healthKey(providerId, candidate)) ?? {
@@ -336,17 +388,23 @@ function healthFor(providerId: SpeechGatewayProvider, candidate: Pick<SpeechProv
       successes: 0,
       lastUsedAt: null,
       lastStatusCode: null,
-      lastError: null
+      lastError: null,
     }
   );
 }
 
 function isLikelyTransientProviderError(error: unknown): boolean {
-  const message = sanitizeProviderErrorMessage(error instanceof Error ? error.message : String(error ?? "")).toLowerCase();
-  return /fetch failed|network|econnreset|econnrefused|etimedout|timeout|socket|terminated|temporar|dns|enotfound/.test(message);
+  const message = sanitizeProviderErrorMessage(
+    error instanceof Error ? error.message : String(error ?? ""),
+  ).toLowerCase();
+  return /fetch failed|network|econnreset|econnrefused|etimedout|timeout|socket|terminated|temporar|dns|enotfound/.test(
+    message,
+  );
 }
 
-export function getProviderKeyCandidates(providerId: SpeechGatewayProvider): SpeechProviderKeyCandidate[] {
+export function getProviderKeyCandidates(
+  providerId: SpeechGatewayProvider,
+): SpeechProviderKeyCandidate[] {
   const spec = providerKeySpecs[providerId];
   const values: Array<{ value: string; source: string }> = [];
 
@@ -378,16 +436,18 @@ export function getProviderKeyCandidates(providerId: SpeechGatewayProvider): Spe
     .map((candidate, index) => ({
       ...candidate,
       fingerprint: fingerprintSecret(candidate.value),
-      ordinal: index + 1
+      ordinal: index + 1,
     }));
 }
 
-export function getProviderAcceptedKeyEnvVars(providerId: SpeechGatewayProvider): string[] {
+export function getProviderAcceptedKeyEnvVars(
+  providerId: SpeechGatewayProvider,
+): string[] {
   const spec = providerKeySpecs[providerId];
   return [
     ...spec.lists,
     ...spec.numberedBases.map((baseName) => `${baseName}_1..N`),
-    ...spec.singles
+    ...spec.singles,
   ].filter((envName, index, envNames) => envNames.indexOf(envName) === index);
 }
 
@@ -398,14 +458,21 @@ export function providerKeyCount(providerId: SpeechGatewayProvider): number {
 export function keyRetryLimit(providerId: SpeechGatewayProvider): number {
   const configuredKeyCount = providerKeyCount(providerId);
   if (!configuredKeyCount) return 0;
-  const requested = numberFromEnv("DENTAL_SPEECH_KEY_RETRY_LIMIT", Math.min(3, configuredKeyCount));
+  const requested = numberFromEnv(
+    "DENTAL_SPEECH_KEY_RETRY_LIMIT",
+    Math.min(3, configuredKeyCount),
+  );
   return Math.max(1, Math.min(requested, configuredKeyCount));
 }
 
-export function getProviderKeyPoolSummary(providerId: SpeechGatewayProvider): SpeechProviderKeyPoolSummary {
+export function getProviderKeyPoolSummary(
+  providerId: SpeechGatewayProvider,
+): SpeechProviderKeyPoolSummary {
   const candidates = getProviderKeyCandidates(providerId);
   const now = Date.now();
-  const coolingDownKeyCount = candidates.filter((candidate) => healthFor(providerId, candidate).cooldownUntil > now).length;
+  const coolingDownKeyCount = candidates.filter(
+    (candidate) => healthFor(providerId, candidate).cooldownUntil > now,
+  ).length;
 
   return {
     configuredKeyCount: candidates.length,
@@ -416,11 +483,13 @@ export function getProviderKeyPoolSummary(providerId: SpeechGatewayProvider): Sp
     timeoutMs: speechProviderTimeoutMs(),
     rateLimitCooldownMs: rateLimitCooldownMs(),
     errorCooldownMs: errorCooldownMs(),
-    authCooldownMs: authCooldownMs()
+    authCooldownMs: authCooldownMs(),
   };
 }
 
-export function getProviderKeyHealthSnapshots(providerId: SpeechGatewayProvider): SpeechProviderKeyHealthSnapshot[] {
+export function getProviderKeyHealthSnapshots(
+  providerId: SpeechGatewayProvider,
+): SpeechProviderKeyHealthSnapshot[] {
   const now = Date.now();
   return getProviderKeyCandidates(providerId).map((candidate) => {
     const health = healthFor(providerId, candidate);
@@ -430,30 +499,42 @@ export function getProviderKeyHealthSnapshots(providerId: SpeechGatewayProvider)
       source: candidate.source,
       ordinal: candidate.ordinal,
       available: !coolingDown,
-      coolingDownUntil: coolingDown ? new Date(health.cooldownUntil).toISOString() : null,
+      coolingDownUntil: coolingDown
+        ? new Date(health.cooldownUntil).toISOString()
+        : null,
       failures: health.failures,
       successes: health.successes,
-      lastUsedAt: health.lastUsedAt ? new Date(health.lastUsedAt).toISOString() : null,
+      lastUsedAt: health.lastUsedAt
+        ? new Date(health.lastUsedAt).toISOString()
+        : null,
       lastStatusCode: health.lastStatusCode,
-      lastError: health.lastError
+      lastError: health.lastError,
     };
   });
 }
 
 export function selectProviderKey(
   providerId: SpeechGatewayProvider,
-  triedFingerprints: Set<string> = new Set<string>()
+  triedFingerprints: Set<string> = new Set<string>(),
 ): SpeechProviderKeyCandidate | null {
   const now = Date.now();
-  const candidates = getProviderKeyCandidates(providerId).filter((candidate) => {
-    const health = healthFor(providerId, candidate);
-    return health.cooldownUntil <= now && !triedFingerprints.has(candidate.fingerprint);
-  });
+  const candidates = getProviderKeyCandidates(providerId).filter(
+    (candidate) => {
+      const health = healthFor(providerId, candidate);
+      return (
+        health.cooldownUntil <= now &&
+        !triedFingerprints.has(candidate.fingerprint)
+      );
+    },
+  );
   if (!candidates.length) return null;
   return candidates[randomInt(candidates.length)] ?? null;
 }
 
-export function recordProviderKeySuccess(providerId: SpeechGatewayProvider, candidate: SpeechProviderKeyCandidate): void {
+export function recordProviderKeySuccess(
+  providerId: SpeechGatewayProvider,
+  candidate: SpeechProviderKeyCandidate,
+): void {
   const previous = healthFor(providerId, candidate);
   keyHealthByFingerprint.set(healthKey(providerId, candidate), {
     cooldownUntil: 0,
@@ -461,7 +542,7 @@ export function recordProviderKeySuccess(providerId: SpeechGatewayProvider, cand
     successes: previous.successes + 1,
     lastUsedAt: Date.now(),
     lastStatusCode: null,
-    lastError: null
+    lastError: null,
   });
   saveKeyHealthToDisk();
 }
@@ -469,10 +550,11 @@ export function recordProviderKeySuccess(providerId: SpeechGatewayProvider, cand
 export function recordProviderKeyFailure(
   providerId: SpeechGatewayProvider,
   candidate: SpeechProviderKeyCandidate,
-  error: unknown
+  error: unknown,
 ): void {
   const previous = healthFor(providerId, candidate);
-  const requestError = error instanceof SpeechProviderRequestError ? error : null;
+  const requestError =
+    error instanceof SpeechProviderRequestError ? error : null;
   const statusCode = requestError?.statusCode ?? null;
   let cooldownMs = 0;
 
@@ -480,40 +562,63 @@ export function recordProviderKeyFailure(
     cooldownMs = rateLimitCooldownMs();
   } else if (statusCode === 401 || statusCode === 403) {
     cooldownMs = authCooldownMs();
-  } else if (requestError?.timedOut || requestError?.retryable || (statusCode !== null && statusCode >= 500)) {
+  } else if (
+    requestError?.timedOut ||
+    requestError?.retryable ||
+    (statusCode !== null && statusCode >= 500)
+  ) {
     cooldownMs = errorCooldownMs();
   } else if (isLikelyTransientProviderError(error)) {
     cooldownMs = errorCooldownMs();
   }
 
   keyHealthByFingerprint.set(healthKey(providerId, candidate), {
-    cooldownUntil: cooldownMs > 0 ? Date.now() + cooldownMs : previous.cooldownUntil,
+    cooldownUntil:
+      cooldownMs > 0 ? Date.now() + cooldownMs : previous.cooldownUntil,
     failures: previous.failures + 1,
     successes: previous.successes,
     lastUsedAt: Date.now(),
     lastStatusCode: statusCode,
-    lastError: sanitizeProviderErrorMessage(error instanceof Error ? error.message : "unknown provider error")
+    lastError: sanitizeProviderErrorMessage(
+      error instanceof Error ? error.message : "unknown provider error",
+    ),
   });
   saveKeyHealthToDisk();
 }
 
 export function shouldTryNextProviderKey(error: unknown): boolean {
-  if (!(error instanceof SpeechProviderRequestError)) return isLikelyTransientProviderError(error);
+  if (!(error instanceof SpeechProviderRequestError))
+    return isLikelyTransientProviderError(error);
   if (error.rateLimited || error.timedOut || error.retryable) return true;
   return error.statusCode === 401 || error.statusCode === 403;
 }
 
-export function providerHttpError(statusCode: number, statusText: string, message?: string): SpeechProviderRequestError {
+export function providerHttpError(
+  statusCode: number,
+  statusText: string,
+  message?: string,
+): SpeechProviderRequestError {
   const rateLimited = statusCode === 429;
-  const retryable = rateLimited || statusCode === 408 || statusCode >= 500 || statusCode === 401 || statusCode === 403;
-  const detail = sanitizeProviderErrorMessage(message || `${statusCode} ${statusText}`);
-  return new SpeechProviderRequestError(detail, { statusCode, retryable, rateLimited });
+  const retryable =
+    rateLimited ||
+    statusCode === 408 ||
+    statusCode >= 500 ||
+    statusCode === 401 ||
+    statusCode === 403;
+  const detail = sanitizeProviderErrorMessage(
+    message || `${statusCode} ${statusText}`,
+  );
+  return new SpeechProviderRequestError(detail, {
+    statusCode,
+    retryable,
+    rateLimited,
+  });
 }
 
 export async function fetchWithProviderTimeout(
   input: Parameters<typeof fetch>[0],
   init: Parameters<typeof fetch>[1] = {},
-  timeoutMs = speechProviderTimeoutMs()
+  timeoutMs = speechProviderTimeoutMs(),
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -532,10 +637,13 @@ export async function fetchWithProviderTimeout(
     } as any) as any;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new SpeechProviderRequestError(`Источник распознавания не ответил за ${Math.round(timeoutMs / 1000)} сек.`, {
-        retryable: true,
-        timedOut: true
-      });
+      throw new SpeechProviderRequestError(
+        `Источник распознавания не ответил за ${Math.round(timeoutMs / 1000)} сек.`,
+        {
+          retryable: true,
+          timedOut: true,
+        },
+      );
     }
 
     // SOCKS5 Tunnel Fallback on Network/Connection Failures
@@ -614,9 +722,18 @@ export function sanitizeProviderErrorMessage(message: string): string {
   return message
     .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [redacted]")
     .replace(/Token\s+[A-Za-z0-9._-]+/gi, "Token [redacted]")
-    .replace(/Authorization\s*:\s*[^\s,;]+(?:\s+[^\s,;]+)?/gi, "Authorization: [redacted]")
-    .replace(/([?&](?:api[_-]?key|key|token|access[_-]?token)=)[^&\s]+/gi, "$1[redacted]")
-    .replace(/\b(api[_-]?key|token|secret|password)\s*[:=]\s*[A-Za-z0-9._~+/-]{12,}/gi, "$1=[redacted]")
+    .replace(
+      /Authorization\s*:\s*[^\s,;]+(?:\s+[^\s,;]+)?/gi,
+      "Authorization: [redacted]",
+    )
+    .replace(
+      /([?&](?:api[_-]?key|key|token|access[_-]?token)=)[^&\s]+/gi,
+      "$1[redacted]",
+    )
+    .replace(
+      /\b(api[_-]?key|token|secret|password)\s*[:=]\s*[A-Za-z0-9._~+/-]{12,}/gi,
+      "$1=[redacted]",
+    )
     .replace(/sk-[A-Za-z0-9_-]{16,}/g, "sk-[redacted]")
     .replace(/[A-Za-z0-9_-]{48,}/g, "[redacted]")
     .slice(0, 240);
