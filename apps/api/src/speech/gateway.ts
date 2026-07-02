@@ -841,12 +841,22 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
   const estimatedChunkCount = expectedDurationMs
     ? Math.max(1, Math.ceil(expectedDurationMs / gateway.recommendedChunkMs))
     : null;
+
+  const baseStrategy = {
+    chunkMs: gateway.recommendedChunkMs,
+    minChunkMs: gateway.chunkingPolicy.minChunkMs,
+    maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
+    estimatedChunkCount,
+    maxChunkBytes: gateway.maxChunkBytes
+  };
+
   const steps: string[] = [];
   const warnings: string[] = [];
   const longRecording = Boolean(expectedDurationMs && expectedDurationMs > 20 * 60_000);
 
   if (input.privacyMode === "local_only") {
     return {
+      ...baseStrategy,
       recommendedPath: "local_transcript_only",
       providerId: "browser_speech",
       providerLabel: providerLabels.browser_speech,
@@ -854,11 +864,6 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
       localQueueRequired: true,
       deterministicParserRequired: true,
       neuralPolishAllowed: false,
-      chunkMs: gateway.recommendedChunkMs,
-      minChunkMs: gateway.chunkingPolicy.minChunkMs,
-      maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
-      estimatedChunkCount,
-      maxChunkBytes: gateway.maxChunkBytes,
       reason: "Режим приватности запрещает облачную отправку; держите текст локально и запускайте детерминированный стоматологический парсер.",
       steps: [
         "Используйте браузерную или мобильную диктовку, когда она доступна.",
@@ -872,6 +877,7 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
 
   if (input.networkState === "offline") {
     return {
+      ...baseStrategy,
       recommendedPath: "offline_queue",
       providerId: gateway.providerId,
       providerLabel: gateway.providerLabel,
@@ -879,11 +885,6 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
       localQueueRequired: true,
       deterministicParserRequired: true,
       neuralPolishAllowed: false,
-      chunkMs: gateway.recommendedChunkMs,
-      minChunkMs: gateway.chunkingPolicy.minChunkMs,
-      maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
-      estimatedChunkCount,
-      maxChunkBytes: gateway.maxChunkBytes,
       reason: "Сети нет; врач должен продолжать работу без блокирующего окна.",
       steps: [
         "Сохраняйте аудиофрагменты в IndexedDB, если аудио есть.",
@@ -897,6 +898,7 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
 
   if (!gateway.serverTranscriptionEnabled) {
     return {
+      ...baseStrategy,
       recommendedPath: "browser_live",
       providerId: "browser_speech",
       providerLabel: providerLabels.browser_speech,
@@ -904,11 +906,6 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
       localQueueRequired: true,
       deterministicParserRequired: true,
       neuralPolishAllowed: false,
-      chunkMs: gateway.recommendedChunkMs,
-      minChunkMs: gateway.chunkingPolicy.minChunkMs,
-      maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
-      estimatedChunkCount,
-      maxChunkBytes: gateway.maxChunkBytes,
       reason: "Серверный источник распознавания не готов; браузерная диктовка и печать остаются самым быстрым режимом.",
       steps: [
         "Добавляйте распознанный браузером текст в автосохраняемое поле диктовки.",
@@ -922,6 +919,7 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
 
   if (!gateway.serverTranscriptionCurrentlyAvailable) {
     return {
+      ...baseStrategy,
       recommendedPath: "offline_queue",
       providerId: gateway.providerId,
       providerLabel: gateway.providerLabel,
@@ -929,11 +927,6 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
       localQueueRequired: true,
       deterministicParserRequired: true,
       neuralPolishAllowed: false,
-      chunkMs: gateway.recommendedChunkMs,
-      minChunkMs: gateway.chunkingPolicy.minChunkMs,
-      maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
-      estimatedChunkCount,
-      maxChunkBytes: gateway.maxChunkBytes,
       reason: "Серверное распознавание настроено, но текущие источники или ключи недоступны; записывайте локально и повторяйте без блокировки приема.",
       steps: [
         "Сохраняйте каждый аудиофрагмент в IndexedDB до любой попытки отправки.",
@@ -965,6 +958,7 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
   );
 
   return {
+    ...baseStrategy,
     recommendedPath: longRecording ? "async_long_recording" : "server_chunked",
     providerId: gateway.providerId,
     providerLabel: gateway.providerLabel,
@@ -972,11 +966,6 @@ export function buildSpeechRecordingStrategy(input: SpeechRecordingStrategyReque
     localQueueRequired: true,
     deterministicParserRequired: true,
     neuralPolishAllowed: gateway.polishPolicy.neuralEnabled,
-    chunkMs: gateway.recommendedChunkMs,
-    minChunkMs: gateway.chunkingPolicy.minChunkMs,
-    maxChunkMs: gateway.chunkingPolicy.maxChunkMs,
-    estimatedChunkCount,
-    maxChunkBytes: gateway.maxChunkBytes,
     reason: longRecording
       ? "Серверное распознавание настроено, но длинное аудио требует асинхронного потока."
       : "Серверное распознавание настроено; фрагментированная загрузка балансирует качество, лимиты источника и локальное восстановление.",
