@@ -6017,7 +6017,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return await parseImagingManifest(input);
+    return parseImagingManifest(input);
   });
 
   app.post("/api/imaging/dicom/series-preview", async (request, reply) => {
