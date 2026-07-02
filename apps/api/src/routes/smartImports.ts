@@ -3287,6 +3287,121 @@ async function inspectMigrationProbeFile(input: {
   }
 }
 
+
+function addMigrationProbeWarnings(
+  warnings: Set<string>,
+  flags: {
+    routeExpired: boolean;
+    routeToken?: string | null;
+    isBrowserManifest: boolean;
+    isSmartPreviewSource: boolean;
+    isWorkstationProfile: boolean;
+    isWorkstationSignal: boolean;
+    isUrl: boolean;
+  }
+) {
+  if (flags.routeExpired) {
+    warnings.add("Внутренний номер источника устарел или был создан в другой серверной сессии: повторите автопоиск или выбор папки, чтобы получить новый номер.");
+  } else if (flags.routeToken) {
+    warnings.add("Источник передан через внутренний номер: сырой локальный путь не возвращается в браузер и отчеты.");
+  }
+
+  if (flags.isBrowserManifest) {
+    warnings.add("Браузерный список не раскрывает серверу полный путь и не дает читать файлы повторно; проверка строит план разбора по типу источника и внутреннему отпечатку.");
+  } else if (flags.isSmartPreviewSource) {
+    warnings.add("Источник получен из текста/Excel/OCR; проверка строит план разбора по распознанному типу, а не сканирует файловую систему.");
+  } else if (flags.isWorkstationProfile) {
+    warnings.add("След установленной системы не является путем к данным; проверка строит план разбора по типу старого приложения и внутреннему отпечатку.");
+  } else if (flags.isWorkstationSignal) {
+    warnings.add("Системный след рабочей станции не является путем к данным; проверка строит план разбора по профилю старой программы и внутреннему отпечатку.");
+  } else if (flags.isUrl) {
+    warnings.add("Сетевой адрес не сканируется как локальный диск; проверка строит только план разбора.");
+  }
+}
+
+
+async function scanMigrationProbeDirectory(
+  normalizedSourceRef: string,
+  input: MigrationLocalSourceProbeRequest,
+  counts: ReturnType<typeof emptyMigrationProbeCounts>,
+  formatSignals: Set<string>,
+  artifactSamples: MigrationProbeArtifact[],
+  warnings: Set<string>,
+  vendorInputs: string[],
+  initialLatestModifiedAt: string | null,
+  initialScannedFolders: number,
+  initialScannedFiles: number
+) {
+  let latestModifiedAt = initialLatestModifiedAt;
+  let scannedFolders = initialScannedFolders;
+  let scannedFiles = initialScannedFiles;
+
+  const queue = [{ folderPath: normalizedSourceRef, depth: 0 }];
+  const visited = new Set<string>();
+
+  while (queue.length && scannedFolders < input.maxFolders && scannedFiles < input.maxFiles) {
+    const current = queue.shift();
+    if (!current) break;
+    const key = current.folderPath.toLowerCase();
+    if (visited.has(key)) continue;
+    visited.add(key);
+    scannedFolders += 1;
+
+    let entries;
+    try {
+      entries = await readdir(current.folderPath, { withFileTypes: true });
+    } catch {
+      warnings.add("Одну подпапку проверки не удалось прочитать; она пропущена.");
+      continue;
+    }
+
+    const orderedEntries = [...entries].sort(
+      (left, right) =>
+        migrationDiscoveryEntryPriority(right, current.folderPath) - migrationDiscoveryEntryPriority(left, current.folderPath) ||
+        left.name.toString().localeCompare(right.name.toString())
+    );
+    for (const entry of orderedEntries) {
+      const entryName = entry.name.toString();
+      const fullPath = path.join(current.folderPath, entryName);
+      vendorInputs.push(entryName);
+      if (entry.isDirectory()) {
+        if (shouldSkipMigrationDiscoveryDirectory(entryName)) continue;
+        if (current.depth < input.maxDepth && queue.length + scannedFolders < input.maxFolders) {
+          const nextItem = { folderPath: fullPath, depth: current.depth + 1 };
+          if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
+          else queue.push(nextItem);
+        }
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (scannedFiles >= input.maxFiles) {
+        warnings.add(`Проверка источника остановлена после ${input.maxFiles} файлов; выберите папку ближе к старой программе для более точной инвентаризации.`);
+        break;
+      }
+      scannedFiles += 1;
+      try {
+        const modified = (await stat(fullPath)).mtime.toISOString();
+        if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
+      } catch {
+        // Metadata is best-effort only.
+      }
+      await inspectMigrationProbeFile({
+        filePath: fullPath,
+        depth: current.depth,
+        readHeaderBytes: input.readHeaderBytes,
+        counts,
+        formatSignals,
+        artifactSamples,
+        maxSampleArtifacts: input.maxSampleArtifacts,
+        warnings
+      });
+    }
+  }
+  if (queue.length) warnings.add(`Проверка источника остановлена после ${input.maxFolders} папок; выберите папку ближе к старой программе для более точной инвентаризации.`);
+
+  return { latestModifiedAt, scannedFolders, scannedFiles };
+}
+
 async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRequest) {
   const routeRef = resolveMigrationSourceRoute(input.sourceRef);
   const sourceRef = routeRef.sourceRef;
@@ -3315,23 +3430,17 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
   let scannedFolders = 0;
   let scannedFiles = 0;
 
-  if (routeRef.routeExpired) {
-    warnings.add("Внутренний номер источника устарел или был создан в другой серверной сессии: повторите автопоиск или выбор папки, чтобы получить новый номер.");
-  } else if (routeRef.routeToken) {
-    warnings.add("Источник передан через внутренний номер: сырой локальный путь не возвращается в браузер и отчеты.");
-  }
+  addMigrationProbeWarnings(warnings, {
+    routeExpired: routeRef.routeExpired,
+    routeToken: routeRef.routeToken,
+    isBrowserManifest,
+    isSmartPreviewSource,
+    isWorkstationProfile,
+    isWorkstationSignal,
+    isUrl
+  });
 
-  if (isBrowserManifest) {
-    warnings.add("Браузерный список не раскрывает серверу полный путь и не дает читать файлы повторно; проверка строит план разбора по типу источника и внутреннему отпечатку.");
-  } else if (isSmartPreviewSource) {
-    warnings.add("Источник получен из текста/Excel/OCR; проверка строит план разбора по распознанному типу, а не сканирует файловую систему.");
-  } else if (isWorkstationProfile) {
-    warnings.add("След установленной системы не является путем к данным; проверка строит план разбора по типу старого приложения и внутреннему отпечатку.");
-  } else if (isWorkstationSignal) {
-    warnings.add("Системный след рабочей станции не является путем к данным; проверка строит план разбора по профилю старой программы и внутреннему отпечатку.");
-  } else if (isUrl) {
-    warnings.add("Сетевой адрес не сканируется как локальный диск; проверка строит только план разбора.");
-  } else if (!routeRef.routeExpired) {
+  if (!routeRef.routeExpired && !isBrowserManifest && !isSmartPreviewSource && !isWorkstationProfile && !isWorkstationSignal && !isUrl) {
     try {
       const stat = statSync(normalizedSourceRef);
       sourceExists = true;
@@ -3359,67 +3468,21 @@ async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRe
   }
 
   if (sourceExists && !isUrl && !isBrowserLikeManifest && !isWorkstationTrace && sourceIsDirectory) {
-    const queue = [{ folderPath: normalizedSourceRef, depth: 0 }];
-    const visited = new Set<string>();
-    while (queue.length && scannedFolders < input.maxFolders && scannedFiles < input.maxFiles) {
-      const current = queue.shift();
-      if (!current) break;
-      const key = current.folderPath.toLowerCase();
-      if (visited.has(key)) continue;
-      visited.add(key);
-      scannedFolders += 1;
-
-      let entries;
-      try {
-        entries = await readdir(current.folderPath, { withFileTypes: true });
-      } catch {
-        warnings.add("Одну подпапку проверки не удалось прочитать; она пропущена.");
-        continue;
-      }
-
-      const orderedEntries = [...entries].sort(
-        (left, right) =>
-          migrationDiscoveryEntryPriority(right, current.folderPath) - migrationDiscoveryEntryPriority(left, current.folderPath) ||
-          left.name.toString().localeCompare(right.name.toString())
-      );
-      for (const entry of orderedEntries) {
-        const entryName = entry.name.toString();
-        const fullPath = path.join(current.folderPath, entryName);
-        vendorInputs.push(entryName);
-        if (entry.isDirectory()) {
-          if (shouldSkipMigrationDiscoveryDirectory(entryName)) continue;
-          if (current.depth < input.maxDepth && queue.length + scannedFolders < input.maxFolders) {
-            const nextItem = { folderPath: fullPath, depth: current.depth + 1 };
-            if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
-            else queue.push(nextItem);
-          }
-          continue;
-        }
-        if (!entry.isFile()) continue;
-        if (scannedFiles >= input.maxFiles) {
-          warnings.add(`Проверка источника остановлена после ${input.maxFiles} файлов; выберите папку ближе к старой программе для более точной инвентаризации.`);
-          break;
-        }
-        scannedFiles += 1;
-        try {
-          const modified = (await stat(fullPath)).mtime.toISOString();
-          if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
-        } catch {
-          // Metadata is best-effort only.
-        }
-        await inspectMigrationProbeFile({
-          filePath: fullPath,
-          depth: current.depth,
-          readHeaderBytes: input.readHeaderBytes,
-          counts,
-          formatSignals,
-          artifactSamples,
-          maxSampleArtifacts: input.maxSampleArtifacts,
-          warnings
-        });
-      }
-    }
-    if (queue.length) warnings.add(`Проверка источника остановлена после ${input.maxFolders} папок; выберите папку ближе к старой программе для более точной инвентаризации.`);
+    const scanResult = await scanMigrationProbeDirectory(
+      normalizedSourceRef,
+      input,
+      counts,
+      formatSignals,
+      artifactSamples,
+      warnings,
+      vendorInputs,
+      latestModifiedAt,
+      scannedFolders,
+      scannedFiles
+    );
+    latestModifiedAt = scanResult.latestModifiedAt;
+    scannedFolders = scanResult.scannedFolders;
+    scannedFiles = scanResult.scannedFiles;
   }
 
   const formatSignalList = uniqueStrings(Array.from(formatSignals));
