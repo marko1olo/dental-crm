@@ -68,7 +68,6 @@ export async function setupProxyAndTunnels() {
     process.env.HTTPS_PROXY = "socks5://127.0.0.1:1080";
     process.env.HTTP_PROXY = "socks5://127.0.0.1:1080";
     process.env.PROXY_URL = "socks5://127.0.0.1:1080";
-    console.log("[Proxy Boot] Traffic routed via active SSH SOCKS5 tunnel on port 1080.");
     return;
   }
 
