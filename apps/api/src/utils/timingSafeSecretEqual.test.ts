@@ -23,4 +23,19 @@ describe('timingSafeSecretEqual', () => {
   test('returns false when secrets have the same length but differ', () => {
     assert.strictEqual(timingSafeSecretEqual('secretA', 'secretB'), false);
   });
+
+  test('returns false when expected secret is undefined (prevents "undefined" string cast attacks)', () => {
+    // Before fix, String(undefined) -> "undefined", so providing "undefined" would match
+    assert.strictEqual(timingSafeSecretEqual('undefined', undefined), false);
+  });
+
+  test('returns false when expected secret is null (prevents "null" string cast attacks)', () => {
+    // Before fix, String(null) -> "null", so providing "null" would match
+    assert.strictEqual(timingSafeSecretEqual('null', null), false);
+  });
+
+  test('returns true when secrets match with unicode/emoji characters', () => {
+    const unicodeSecret = '🔒-super-secret-🔑-🔐';
+    assert.strictEqual(timingSafeSecretEqual(unicodeSecret, unicodeSecret), true);
+  });
 });
