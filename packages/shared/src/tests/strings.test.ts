@@ -20,6 +20,11 @@ describe('splitLine', () => {
     assert.deepStrictEqual(splitLine(' a , "b, c" , d ', ','), ['a', 'b, c', 'd']);
   });
 
+  test('handles empty string delimiter', () => {
+    assert.deepStrictEqual(splitLine('abc', ''), ['abc']);
+    assert.deepStrictEqual(splitLine('', ''), ['']);
+  });
+
   test('handles empty string', () => {
     assert.deepStrictEqual(splitLine('', ','), ['']);
   });
