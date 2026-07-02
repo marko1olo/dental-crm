@@ -37,6 +37,43 @@ describe("loadPersistentState", () => {
 
     assert.strictEqual(result, null);
   });
+
+  test("returns null and logs warning when state file contains malformed JSON", () => {
+    mock.method(fs, "existsSync", () => true);
+    mock.method(fs, "readFileSync", () => "{ malformed");
+
+    let warningMessage = "";
+    mock.method(console, "warn", (msg: string) => {
+      warningMessage = msg;
+    });
+
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+
+    const result = loadPersistentState();
+
+    assert.strictEqual(result, null);
+    assert.ok(warningMessage.startsWith("Dental state file ignored:"));
+    assert.ok(warningMessage.toLowerCase().includes("json"));
+  });
+
+  test("returns null and logs unknown error when an arbitrary non-Error is thrown", () => {
+    mock.method(fs, "existsSync", () => true);
+    mock.method(fs, "readFileSync", () => {
+      throw "Arbitrary string error";
+    });
+
+    let warningMessage = "";
+    mock.method(console, "warn", (msg: string) => {
+      warningMessage = msg;
+    });
+
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+
+    const result = loadPersistentState();
+
+    assert.strictEqual(result, null);
+    assert.strictEqual(warningMessage, "Dental state file ignored: unknown parse error");
+  });
 });
 
 describe("getPersistentStateMeta", () => {
