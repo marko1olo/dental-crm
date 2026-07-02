@@ -24,6 +24,50 @@ describe("loadPersistentState", () => {
     }
   });
 
+
+  test("returns null when persistence is disabled", () => {
+    process.env.DENTAL_STATE_PERSISTENCE = "off";
+    const result = loadPersistentState();
+    assert.strictEqual(result, null);
+  });
+
+  test("returns null when file is missing", () => {
+    mock.method(fs, "existsSync", () => false);
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+    const result = loadPersistentState();
+    assert.strictEqual(result, null);
+  });
+
+  test("returns null when file is unreadable (invalid json)", () => {
+    mock.method(fs, "existsSync", () => true);
+    mock.method(fs, "readFileSync", () => "{ invalid json");
+    mock.method(console, "warn", () => {});
+
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+    const result = loadPersistentState();
+    assert.strictEqual(result, null);
+  });
+
+  test("returns null when version mismatches", () => {
+    mock.method(fs, "existsSync", () => true);
+    mock.method(fs, "readFileSync", () => JSON.stringify({ version: 999, state: {} }));
+    mock.method(console, "warn", () => {});
+
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+    const result = loadPersistentState();
+    assert.strictEqual(result, null);
+  });
+
+  test("returns null when checksum mismatches", () => {
+    mock.method(fs, "existsSync", () => true);
+    mock.method(fs, "readFileSync", () => JSON.stringify({ version: 1, state: {}, checksum: "invalid" }));
+    mock.method(console, "warn", () => {});
+
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+    const result = loadPersistentState();
+    assert.strictEqual(result, null);
+  });
+
   test("returns null when file system access throws an error", () => {
     mock.method(fs, "existsSync", () => true);
     mock.method(fs, "readFileSync", () => {
@@ -247,6 +291,28 @@ describe("getPersistentStateIntegrityReport", () => {
     assert.strictEqual(report.backups[0]?.checksumVerified, true);
     assert.strictEqual(report.backups[0]?.readable, true);
     assert.deepStrictEqual(report.warnings, []);
+  });
+
+
+  test("returns null for stateFileHash when fs.readFileSync throws an error (e.g. EACCES)", () => {
+    const { stateFile } = setupTempEnv();
+    const payload = createValidPayload();
+    fs.writeFileSync(stateFile, JSON.stringify(payload), "utf8");
+
+    mock.method(fs, "readFileSync", (path, options) => {
+      // Mock rawFileHash calling readFileSync without encoding
+      if (options === undefined) {
+        const error: any = new Error("EACCES: permission denied");
+        error.code = "EACCES";
+        throw error;
+      }
+      // Return normal mock content for the first read to parse json payload
+      return JSON.stringify(payload);
+    });
+
+    const report = getPersistentStateIntegrityReport();
+
+    assert.strictEqual(report.stateFileHash, null);
   });
 
   test("returns warning for backup checksum mismatch", () => {
