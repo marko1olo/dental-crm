@@ -4686,40 +4686,145 @@ function staffCanSeeTelegramDigestTask(staff: StaffMember, task: CommunicationTa
   return task.assignedRole === staff.role;
 }
 
-function buildStaffDailyDigestTelegramPreview(
-  input: DenteTelegramMessagePreviewRequest,
-  baseWarning: string,
-  organizationScope: string
-): Omit<DenteTelegramMessagePreview, "replyMarkup" | "photoUrl"> {
-  const staff = input.staffId
-    ? staffMembers.find((member) => member.id === input.staffId && member.organizationId === organizationScope && member.active) ?? null
-    : null;
-  if (input.staffId && !staff) {
-    throw new Error("Сотрудник для предпросмотра Telegram не найден.");
-  }
-  const clinicDateKey = appointmentClinicDateKey(new Date().toISOString());
-  const scopedAppointments = appointments.filter(
-    (appointment) =>
-      appointment.organizationId === organizationScope &&
-      staffDigestVisibleAppointmentStatuses.has(appointment.status) &&
-      appointmentClinicDateKey(appointment.startsAt) === clinicDateKey &&
-      (!staff || staffCanSeeTelegramDigestAppointment(staff, appointment))
-  );
-  const scopedTasks = communicationTasks.filter(
-    (task) => task.organizationId === organizationScope && isOpenCommunicationTask(task) && (!staff || staffCanSeeTelegramDigestTask(staff, task))
-  );
-  const roleLabel = staff ? staffRoleLabelForTelegramDigest(staff.role) : "команда клиники";
-  const urgentTaskCount = scopedTasks.filter((task) => task.priority === "urgent" || task.priority === "high").length;
 
-  return {
-    templateKind: "staff_daily_digest",
-    classification: "limited_admin",
-    allowedByDefault: true,
-    text: `DENTE: сводка на сегодня для роли "${roleLabel}": приемов ${scopedAppointments.length}, открытых задач ${scopedTasks.length}, срочных ${urgentTaskCount}. Откройте расписание или очередь связи в DENTE.`,
-    variablesUsed: ["staffRole", "appointmentCount", "openTaskCount", "urgentTaskCount"],
-    warnings: [baseWarning, "Сводка содержит только счетчики и не раскрывает пациентов, диагнозы, зубы, оплату и документы."],
-    blockedReason: null
-  };
+
+export function buildDenteTelegramMessagePreviewData(
+  templateKind: DenteTelegramTemplateKind,
+  context: TelegramMessageContext,
+  baseWarning: string
+): Omit<DenteTelegramMessagePreview, "replyMarkup" | "photoUrl"> {
+  switch (templateKind) {
+    case "appointment_reminder":
+      return {
+        templateKind: "appointment_reminder",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: `DENTE: напоминаем о приеме в ${context.clinicName} ${context.appointmentTime}. Если нужно перенести запись, свяжитесь с клиникой.`,
+        variablesUsed: ["clinicName", ...(context.hasAppointment ? ["appointmentTime"] : [])],
+        warnings: [baseWarning, "Напоминание содержит только административное время приема и не раскрывает причину визита."],
+        blockedReason: null
+      };
+    case "appointment_confirmation":
+      return {
+        templateKind: "appointment_confirmation",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: `DENTE: напоминание о записи от ${context.clinicName}. Подтвердите прием, перенесите его или позвоните в клинику.`,
+        variablesUsed: ["clinicName"],
+        warnings: [baseWarning],
+        blockedReason: null
+      };
+    case "payment_reminder_notice":
+      return {
+        templateKind: "payment_reminder_notice",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: context.portalUrl
+          ? `DENTE: у клиники есть вопрос по оплате. Свяжитесь с ${context.clinicName} или откройте защищенный портал: ${context.portalUrl}`
+          : `DENTE: у клиники есть вопрос по оплате. Свяжитесь с ${context.clinicName}.`,
+        variablesUsed: context.portalUrl ? ["clinicName", "patientPortalBaseUrl"] : ["clinicName"],
+        warnings: [baseWarning, "Сумма, детализация лечения и фискальные данные не отправляются через Telegram."],
+        blockedReason: null
+      };
+    case "document_ready_notice":
+      return {
+        templateKind: "document_ready_notice",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: `DENTE: документ клиники готов. Открывайте его только в защищенном портале: ${context.portalUrl}`,
+        variablesUsed: ["patientPortalBaseUrl"],
+        warnings: [baseWarning, "Telegram передает только уведомление о готовности и ссылку на портал."],
+        blockedReason: null
+      };
+    case "tax_document_request_status":
+      return {
+        templateKind: "tax_document_request_status",
+        classification: "no_phi",
+        allowedByDefault: true,
+        text: context.portalUrl
+          ? `DENTE: статус запроса налоговых документов обновлен. Откройте налоговый раздел защищенного портала: ${context.portalUrl}`
+          : "DENTE: статус запроса налоговых документов обновлен. Файлы готовятся внутри DENTE или защищенного портала.",
+        variablesUsed: context.portalUrl ? ["patientPortalBaseUrl"] : [],
+        warnings: [baseWarning, "Файл налоговой справки не отправляется через Telegram."],
+        blockedReason: null
+      };
+    case "callback_request_received":
+      return {
+        templateKind: "callback_request_received",
+        classification: "no_phi",
+        allowedByDefault: true,
+        text: "DENTE: запрос обратного звонка получен. Администратор клиники свяжется с вами.",
+        variablesUsed: [],
+        warnings: [baseWarning],
+        blockedReason: null
+      };
+    case "post_visit_instruction_link":
+      return {
+        templateKind: "post_visit_instruction_link",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: `DENTE: памятка после приема готова в защищенном портале клиники: ${context.portalUrl}`,
+        variablesUsed: ["patientPortalBaseUrl"],
+        warnings: [baseWarning, "Текст памятки не встраивается в Telegram."],
+        blockedReason: null
+      };
+    case "post_visit_checkup":
+      return {
+        templateKind: "post_visit_checkup",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: `DENTE: проверьте памятку после приема в защищенном портале: ${context.portalUrl}. Если есть вопросы или самочувствие ухудшается, свяжитесь с клиникой.`,
+        variablesUsed: ["patientPortalBaseUrl"],
+        warnings: [baseWarning, "Контрольное сообщение не раскрывает процедуру, зуб, диагноз, назначения и текст памятки."],
+        blockedReason: null
+      };
+    case "recall_notice":
+      return {
+        templateKind: "recall_notice",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: `DENTE: ${context.clinicName} приглашает вас на профилактический контроль. Запишитесь через защищенный портал: ${context.portalUrl}`,
+        variablesUsed: ["clinicName", "patientPortalBaseUrl"],
+        warnings: [baseWarning, "Сообщение не раскрывает проведенную процедуру и причину приглашения."],
+        blockedReason: null
+      };
+    case "review_request":
+      return {
+        templateKind: "review_request",
+        classification: "no_phi",
+        allowedByDefault: true,
+        text: `DENTE: спасибо за визит в ${context.clinicName}. Ниже ссылка, чтобы оценить клинику.`,
+        variablesUsed: ["clinicName", ...(context.reviewUrl ? ["clinicReviewUrl"] : []), ...(context.mapsUrl ? ["clinicMapsUrl"] : [])],
+        warnings: [
+          baseWarning,
+          "Ссылки для отзывов должны быть общими HTTPS-ссылками клиники без пациента, приема, диагноза и идентификаторов лечения."
+        ],
+        blockedReason: null
+      };
+    case "staff_daily_digest":
+      return {
+        templateKind: "staff_daily_digest",
+        classification: "limited_admin",
+        allowedByDefault: true,
+        text: `DENTE: сводка на сегодня для роли "${context.staffRoleLabel}": приемов ${context.appointmentCount}, открытых задач ${context.openTaskCount}, срочных ${context.urgentTaskCount}. Откройте расписание или очередь связи в DENTE.`,
+        variablesUsed: ["staffRole", "appointmentCount", "openTaskCount", "urgentTaskCount"],
+        warnings: [baseWarning, "Сводка содержит только счетчики и не раскрывает пациентов, диагнозы, зубы, оплату и документы."],
+        blockedReason: null
+      };
+  }
+}
+
+export interface TelegramMessageContext {
+  clinicName: string;
+  appointmentTime?: string;
+  hasAppointment: boolean;
+  portalUrl: string | null;
+  reviewUrl: string | null;
+  mapsUrl: string | null;
+  staffRoleLabel?: string;
+  appointmentCount?: number;
+  openTaskCount?: number;
+  urgentTaskCount?: number;
 }
 
 export function renderDenteTelegramMessagePreview(
@@ -4810,108 +4915,42 @@ export function renderDenteTelegramMessagePreview(
 
   const baseWarning =
     "В Telegram не включаются диагнозы, номера зубов, план лечения, снимки, налоговые PDF, детализация оплаты и копии меддокументов.";
-  const previews: Record<DenteTelegramMessagePreviewRequest["templateKind"], Omit<DenteTelegramMessagePreview, "replyMarkup" | "photoUrl">> = {
-    appointment_reminder: {
-      templateKind: "appointment_reminder",
-      classification: "limited_admin",
-      allowedByDefault: true,
-      text: `DENTE: напоминаем о приеме в ${clinicName} ${appointmentTime}. Если нужно перенести запись, свяжитесь с клиникой.`,
-      variablesUsed: ["clinicName", ...(appointment ? ["appointmentTime"] : [])],
-      warnings: [baseWarning, "Напоминание содержит только административное время приема и не раскрывает причину визита."],
-      blockedReason: null
-    },
-    appointment_confirmation: {
-      templateKind: "appointment_confirmation",
-      classification: "limited_admin",
-      allowedByDefault: true,
-      text: `DENTE: напоминание о записи от ${clinicName}. Подтвердите прием, перенесите его или позвоните в клинику.`,
-      variablesUsed: ["clinicName"],
-      warnings: [baseWarning],
-      blockedReason: null
-    },
-    payment_reminder_notice: {
-      templateKind: "payment_reminder_notice",
-      classification: "limited_admin",
-      allowedByDefault: true,
-      text: portal
-        ? `DENTE: у клиники есть вопрос по оплате. Свяжитесь с ${clinicName} или откройте защищенный портал: ${portal}`
-        : `DENTE: у клиники есть вопрос по оплате. Свяжитесь с ${clinicName}.`,
-      variablesUsed: portal ? ["clinicName", "patientPortalBaseUrl"] : ["clinicName"],
-      warnings: [baseWarning, "Сумма, детализация лечения и фискальные данные не отправляются через Telegram."],
-      blockedReason: null
-    },
-    document_ready_notice: {
-      templateKind: "document_ready_notice",
-      classification: "limited_admin",
-      allowedByDefault: true,
-      text: `DENTE: документ клиники готов. Открывайте его только в защищенном портале: ${portal}`,
-      variablesUsed: ["patientPortalBaseUrl"],
-      warnings: [baseWarning, "Telegram передает только уведомление о готовности и ссылку на портал."],
-      blockedReason: null
-    },
-    tax_document_request_status: {
-      templateKind: "tax_document_request_status",
-      classification: "no_phi",
-      allowedByDefault: true,
-      text: portal
-        ? `DENTE: статус запроса налоговых документов обновлен. Откройте налоговый раздел защищенного портала: ${portal}`
-        : "DENTE: статус запроса налоговых документов обновлен. Файлы готовятся внутри DENTE или защищенного портала.",
-      variablesUsed: portal ? ["patientPortalBaseUrl"] : [],
-      warnings: [baseWarning, "Файл налоговой справки не отправляется через Telegram."],
-      blockedReason: null
-    },
-    callback_request_received: {
-      templateKind: "callback_request_received",
-      classification: "no_phi",
-      allowedByDefault: true,
-      text: "DENTE: запрос обратного звонка получен. Администратор клиники свяжется с вами.",
-      variablesUsed: [],
-      warnings: [baseWarning],
-      blockedReason: null
-    },
-    post_visit_instruction_link: {
-      templateKind: "post_visit_instruction_link",
-      classification: "limited_admin",
-      allowedByDefault: true,
-      text: `DENTE: памятка после приема готова в защищенном портале клиники: ${portal}`,
-      variablesUsed: ["patientPortalBaseUrl"],
-      warnings: [baseWarning, "Текст памятки не встраивается в Telegram."],
-      blockedReason: null
-    },
-    post_visit_checkup: {
-      templateKind: "post_visit_checkup",
-      classification: "limited_admin",
-      allowedByDefault: true,
-      text: `DENTE: проверьте памятку после приема в защищенном портале: ${portal}. Если есть вопросы или самочувствие ухудшается, свяжитесь с клиникой.`,
-      variablesUsed: ["patientPortalBaseUrl"],
-      warnings: [baseWarning, "Контрольное сообщение не раскрывает процедуру, зуб, диагноз, назначения и текст памятки."],
-      blockedReason: null
-    },
-    recall_notice: {
-      templateKind: "recall_notice",
-      classification: "limited_admin",
-      allowedByDefault: true,
-      text: `DENTE: ${clinicName} приглашает вас на профилактический контроль. Запишитесь через защищенный портал: ${portal}`,
-      variablesUsed: ["clinicName", "patientPortalBaseUrl"],
-      warnings: [baseWarning, "Сообщение не раскрывает проведенную процедуру и причину приглашения."],
-      blockedReason: null
-    },
-    review_request: {
-      templateKind: "review_request",
-      classification: "no_phi",
-      allowedByDefault: true,
-      text: `DENTE: спасибо за визит в ${clinicName}. Ниже ссылка, чтобы оценить клинику.`,
-      variablesUsed: ["clinicName", ...(reviewUrl ? ["clinicReviewUrl"] : []), ...(mapsUrl ? ["clinicMapsUrl"] : [])],
-      warnings: [
-        baseWarning,
-        "Ссылки для отзывов должны быть общими HTTPS-ссылками клиники без пациента, приема, диагноза и идентификаторов лечения."
-      ],
-      blockedReason: null
-    },
-    staff_daily_digest: buildStaffDailyDigestTelegramPreview(input, baseWarning, settings.organizationId)
+    const context: TelegramMessageContext = {
+    clinicName,
+    appointmentTime,
+    hasAppointment: !!appointment,
+    portalUrl: portal,
+    reviewUrl,
+    mapsUrl,
   };
 
-  const preview = previews[input.templateKind];
+  if (input.templateKind === "staff_daily_digest") {
+    const staff = input.staffId
+      ? staffMembers.find((member) => member.id === input.staffId && member.organizationId === settings.organizationId && member.active) ?? null
+      : null;
+    if (input.staffId && !staff) {
+      throw new Error("Сотрудник для предпросмотра Telegram не найден.");
+    }
+    const clinicDateKey = appointmentClinicDateKey(new Date().toISOString());
+    const scopedAppointments = appointments.filter(
+      (appointment) =>
+        appointment.organizationId === settings.organizationId &&
+        staffDigestVisibleAppointmentStatuses.has(appointment.status) &&
+        appointmentClinicDateKey(appointment.startsAt) === clinicDateKey &&
+        (!staff || staffCanSeeTelegramDigestAppointment(staff, appointment))
+    );
+    const scopedTasks = communicationTasks.filter(
+      (task) => task.organizationId === settings.organizationId && isOpenCommunicationTask(task) && (!staff || staffCanSeeTelegramDigestTask(staff, task))
+    );
+    const urgentTaskCount = scopedTasks.filter((task) => task.priority === "urgent" || task.priority === "high").length;
+
+    context.staffRoleLabel = staff ? staffRoleLabelForTelegramDigest(staff.role) : "команда клиники";
+    context.appointmentCount = scopedAppointments.length;
+    context.openTaskCount = scopedTasks.length;
+    context.urgentTaskCount = urgentTaskCount;
+  }
+
+  const preview = buildDenteTelegramMessagePreviewData(input.templateKind, context, baseWarning);
   const appointmentCallbackUnavailable =
     (input.templateKind === "appointment_reminder" || input.templateKind === "appointment_confirmation") &&
     Boolean(input.appointmentId) &&
