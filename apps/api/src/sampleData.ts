@@ -6570,7 +6570,7 @@ function buildDenteTelegramRecallItems(runtimeScope?: DenteTelegramOutboxRuntime
     if (item.organizationId !== organizationScope) return [];
     if (item.status !== "completed") return [];
 
-    const service = serviceCatalogMap.get(item.serviceId) || serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+    const service = serviceCatalogMap.get(item.serviceId);
     if (service?.category !== "hygiene") return [];
 
     const patient = activePatientsMap.get(item.patientId);
