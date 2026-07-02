@@ -37,8 +37,6 @@ export async function ensureSshTunnel(): Promise<boolean> {
     console.warn(`[SSH Tunnel] SSH key not found at C:\\Users\\Admin\\.ssh\\id_ed25519. Cannot start tunnel.`);
     return false;
   }
-
-  console.log(`[SSH Tunnel] Starting SSH SOCKS5 tunnel on port ${SOCKS_PORT} via ${SSH_HOST}...`);
   
   try {
     const cmdArgs = [
