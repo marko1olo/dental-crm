@@ -91,6 +91,13 @@ describe("documentRequiresPaidRecord", () => {
       assert.strictEqual(typeof result, "boolean");
     }
   });
+
+  test("edge cases: handles invalid or missing document kinds gracefully", () => {
+    assert.strictEqual(documentRequiresPaidRecord("" as any), false);
+    assert.strictEqual(documentRequiresPaidRecord("invalid_kind" as any), false);
+    assert.strictEqual(documentRequiresPaidRecord(undefined as any), false);
+    assert.strictEqual(documentRequiresPaidRecord(null as any), false);
+  });
 });
 
 describe("buildRuleBasedVisitDraftFromTranscript", () => {
