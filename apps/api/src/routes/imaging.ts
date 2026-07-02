@@ -5130,6 +5130,8 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
     let latestModifiedAt: string | null = null;
     const folderWarnings = new Set<string>();
 
+    const statPromises: Promise<string | null>[] = [];
+
     for (const entry of entries) {
       await maybeYieldApiDicomScan(yieldState, options.signal);
       const entryName = entry.name.toString();
@@ -5161,11 +5163,17 @@ async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest
       }
       if (isArchive && !firstFilePath) firstFilePath = fullPath;
 
-      try {
-        const modified = (await stat(fullPath)).mtime.toISOString();
-        if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
-      } catch {
-        // Discovery remains best-effort.
+      statPromises.push(
+        stat(fullPath)
+          .then((s) => s.mtime.toISOString())
+          .catch(() => null)
+      );
+    }
+
+    const statResults = await Promise.all(statPromises);
+    for (const modified of statResults) {
+      if (modified && (!latestModifiedAt || modified > latestModifiedAt)) {
+        latestModifiedAt = modified;
       }
     }
 
@@ -5536,6 +5544,16 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest, 
     const folderWarnings = new Set<string>();
     const folderHasDicomHint = folderHintScore(item.folderPath) > 0;
 
+    const statPromises: Promise<{
+      fullPath: string;
+      entryName: string;
+      isModelFileOrArchive: boolean;
+      confidence: number | undefined;
+      format: ReturnType<typeof detectDentalModelFormat> | undefined;
+      role: ReturnType<typeof detectDentalModelRole> | undefined;
+      stats: { size: number; mtime: Date } | null;
+    }>[] = [];
+
     for (const entry of entries) {
       await maybeYieldApiDicomScan(yieldState, options.signal);
       const entryName = entry.name.toString();
@@ -5572,37 +5590,46 @@ async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest, 
       if (isArchive) archiveFiles += 1;
       if (isImage) imageFiles += 1;
       if (isDicomFile) dicomLikeFiles += 1;
-      if (input.includeDentalModels && (isModelFile || isModelArchive)) {
+
+      const isModelFileOrArchive = Boolean(input.includeDentalModels && (isModelFile || isModelArchive));
+      if (isModelFileOrArchive) {
         modelFiles += 1;
-        let sizeBytes = 0;
-        try {
-          const fileStats = await stat(fullPath);
-          sizeBytes = fileStats.size;
-          latestModifiedAt = latestIso(latestModifiedAt, fileStats.mtime.toISOString());
-        } catch {
+      }
+
+      const confidence = isModelFileOrArchive ? scoreDentalModelFile(entryName, item.folderPath) : undefined;
+      const format = isModelFileOrArchive ? detectDentalModelFormat(entryName) : undefined;
+      const role = isModelFileOrArchive ? detectDentalModelRole(entryName, item.folderPath) : undefined;
+
+      statPromises.push(
+        stat(fullPath)
+          .then((s) => ({ fullPath, entryName, isModelFileOrArchive, confidence, format, role, stats: s }))
+          .catch(() => ({ fullPath, entryName, isModelFileOrArchive, confidence, format, role, stats: null }))
+      );
+    }
+
+    const statResults = await Promise.all(statPromises);
+    for (const result of statResults) {
+      if (result.stats) {
+        latestModifiedAt = latestIso(latestModifiedAt, result.stats.mtime.toISOString());
+      }
+
+      if (result.isModelFileOrArchive) {
+        if (!result.stats) {
           folderWarnings.add("Не удалось прочитать сведения об одном файле модели; он мог измениться во время сканирования.");
         }
-
-        const confidence = scoreDentalModelFile(entryName, item.folderPath);
+        const sizeBytes = result.stats ? result.stats.size : 0;
         modelCandidates.push({
-          filePath: fullPath,
-          fileName: entryName,
-          format: detectDentalModelFormat(entryName),
-          role: detectDentalModelRole(entryName, item.folderPath),
+          filePath: result.fullPath,
+          fileName: result.entryName,
+          format: result.format!,
+          role: result.role!,
           sizeBytes,
-          confidence,
+          confidence: result.confidence!,
           warnings:
             sizeBytes > 250 * 1024 * 1024
               ? ["Крупная сетка/архив: предпросмотр должен оставаться только с метаданными, пока не подключен локальный 3D-обработчик."]
               : []
         });
-      } else {
-        try {
-          const fileStats = await stat(fullPath);
-          latestModifiedAt = latestIso(latestModifiedAt, fileStats.mtime.toISOString());
-        } catch {
-          // Organizer is best-effort and must not block on a disappearing file.
-        }
       }
     }
 
