@@ -2105,6 +2105,12 @@ function migrationCandidateFromWorkstationSignal(signal: MigrationWorkstationSig
   };
 }
 
+
+interface MigrationDiscoveryQueueItem {
+  root: string;
+  folderPath: string;
+  depth: number;
+}
 async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscoveryRequest) {
   const warnings = new Set<string>();
   const workstationSignals = await collectMigrationWorkstationSignals(input, warnings);
@@ -2127,168 +2133,7 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
     visited.add(key);
     scannedFolders += 1;
 
-    let entries;
-    try {
-      entries = await readdir(item.folderPath, { withFileTypes: true });
-    } catch {
-      warnings.add("Одну локальную папку миграционного поиска не удалось прочитать; она пропущена.");
-      continue;
-    }
-
-    let filesInspected = 0;
-    let databaseFiles = 0;
-    let dumpFiles = 0;
-    let tableFiles = 0;
-    let archiveFiles = 0;
-    let dicomLikeFiles = 0;
-    let imageFiles = 0;
-    let hasDicomDir = false;
-    let firstMatchPath = "";
-    let firstProfileEvidencePath = "";
-    let latestModifiedAt: string | null = null;
-    const folderWarnings = new Set<string>();
-    const fileProfileMatches = new Map<string, (typeof migrationWorkstationProfiles)[number]>();
-
-    const orderedEntries = [...entries].sort(
-      (left, right) =>
-        migrationDiscoveryEntryPriority(right, item.folderPath) - migrationDiscoveryEntryPriority(left, item.folderPath) ||
-        left.name.toString().localeCompare(right.name.toString())
-    );
-    for (const entry of orderedEntries) {
-      const entryName = entry.name.toString();
-      const fullPath = path.join(item.folderPath, entryName);
-      if (entry.isDirectory()) {
-        if (shouldSkipMigrationDiscoveryDirectory(entryName)) continue;
-        const nextDepth = item.depth + 1;
-        if (nextDepth <= input.maxDepth) {
-          const nextItem = { root: item.root, folderPath: fullPath, depth: nextDepth };
-          if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
-          else queue.push(nextItem);
-        }
-        continue;
-      }
-      if (!entry.isFile()) continue;
-      if (filesInspected >= input.maxFilesPerFolder) {
-        folderWarnings.add(`Проверка файлов в этой папке ограничена ${input.maxFilesPerFolder} файлами.`);
-        continue;
-      }
-      filesInspected += 1;
-      const profilesForFile = migrationWorkstationProfileMatches(fullPath);
-      if (profilesForFile.length) {
-        if (!firstProfileEvidencePath) firstProfileEvidencePath = fullPath;
-        for (const profile of profilesForFile) fileProfileMatches.set(profile.label, profile);
-      }
-      const extension = path.extname(entryName).toLowerCase();
-      const isDicomDir = /^DICOMDIR$/i.test(entryName);
-      const isDatabase = migrationDatabaseExtensions.has(extension);
-      const isDump = migrationDumpExtensions.has(extension);
-      const isTable = migrationTableExtensions.has(extension);
-      const isArchive = migrationArchiveExtensions.has(extension);
-      const isDicom = migrationDicomExtensions.has(extension) || isDicomDir;
-      const isImage = migrationImageExtensions.has(extension);
-      if (isDatabase) databaseFiles += 1;
-      if (isDump) dumpFiles += 1;
-      if (isTable) tableFiles += 1;
-      if (isArchive) archiveFiles += 1;
-      if (isDicom) dicomLikeFiles += 1;
-      if (isImage) imageFiles += 1;
-      if (isDicomDir) hasDicomDir = true;
-      if (!firstMatchPath && (isDatabase || isDump || isTable || isArchive || isDicom || isImage)) firstMatchPath = fullPath;
-      try {
-        const modified = (await stat(fullPath)).mtime.toISOString();
-        if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
-      } catch {
-        // Best-effort metadata only.
-      }
-    }
-
-    const hintScore = migrationFolderHintScore(item.folderPath);
-    const hasGenericDataContainerHint = migrationClinicDataContainerHint(item.folderPath);
-    const profileMatches = Array.from(
-      new Map(
-        [...migrationWorkstationProfileMatches(`${item.folderPath} ${firstMatchPath}`), ...fileProfileMatches.values()].map((profile) => [profile.label, profile])
-      ).values()
-    );
-    const matchedFiles = databaseFiles + dumpFiles + tableFiles + archiveFiles + dicomLikeFiles + imageFiles;
-    const confidence = Math.min(
-      1,
-      hintScore +
-        (databaseFiles ? 0.5 : 0) +
-        (dumpFiles ? 0.42 : 0) +
-        (tableFiles ? 0.28 : 0) +
-        (archiveFiles ? 0.2 : 0) +
-        (dicomLikeFiles ? 0.46 : 0) +
-        (hasDicomDir ? 0.24 : 0) +
-        (imageFiles >= 8 ? 0.22 : imageFiles > 0 ? 0.08 : 0)
-    );
-    const isCandidate = matchedFiles > 0 ? confidence >= 0.24 : hintScore >= 0.28 || profileMatches.length > 0;
-    if (!isCandidate) continue;
-    const profileOnly = matchedFiles === 0 && profileMatches.length > 0;
-    const rawSourceRef =
-      firstMatchPath ||
-      (profileOnly && firstProfileEvidencePath
-        ? `workstation-profile:${migrationFingerprint(firstProfileEvidencePath)}`
-        : item.folderPath);
-    const detectedSourceKind = migrationSourceKindFromCounts({
-      folderPath: item.folderPath,
-      firstMatchPath: firstMatchPath || firstProfileEvidencePath || rawSourceRef,
-      databaseFiles,
-      dumpFiles,
-      tableFiles,
-      archiveFiles,
-      dicomLikeFiles,
-      imageFiles,
-      hasDicomDir
-    });
-    const sourceKind =
-      matchedFiles === 0 && hasGenericDataContainerHint && !profileMatches.length
-        ? ("unknown_legacy_source" as const)
-        : detectedSourceKind;
-    const shouldUseFolderSource =
-      sourceKind === "mis_database" && firstMatchPath ? migrationDbfFolderSourceRequired(item.folderPath, firstMatchPath) : false;
-    const sourceRef = shouldUseFolderSource ? item.folderPath : rawSourceRef;
-    const reasons: string[] = [];
-    if (databaseFiles) reasons.push(`${databaseFiles} файлов старой базы`);
-    if (dumpFiles) reasons.push(`${dumpFiles} файлов резервной копии`);
-    if (tableFiles) reasons.push(`${tableFiles} табличных выгрузок`);
-    if (archiveFiles) reasons.push(`${archiveFiles} архивов`);
-    if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} признаков КТ/снимков`);
-    if (imageFiles) reasons.push(`${imageFiles} изображений`);
-    if (hintScore > 0) reasons.push("имя папки похоже на старую CRM/снимки/миграцию");
-    if (hasGenericDataContainerHint) reasons.push("имя папки похоже на контейнер резервных копий, выгрузок или данных клиники");
-    if (shouldUseFolderSource) reasons.push("DBF/FoxPro нужно переносить всей папкой, чтобы не потерять memo и index файлы");
-    profileMatches.slice(0, 3).forEach((profile) => reasons.push(`${profile.label}: ${profile.reason}`));
-    if (!matchedFiles && hasGenericDataContainerHint) {
-      folderWarnings.add("Папка похожа на контейнер старой клиники, но на этом уровне нет явных баз, таблиц или снимков: откройте план, увеличьте глубину или выберите вложенную папку с данными, выгрузкой или резервной копией.");
-    }
-    if (!matchedFiles && profileMatches.length) {
-      folderWarnings.add("Найден след старой системы без явных файлов базы или снимков на этом уровне: нужен локальный модуль только для чтения, штатная выгрузка или более глубокая корневая папка.");
-    }
-    const isProfileToken = sourceRef.startsWith("workstation-profile:");
-    const primaryProfile = profileMatches[0] ?? null;
-    const safeDisplayName = primaryProfile ? migrationProfileSafeAlias(primaryProfile.label, sourceKind, sourceRef) : migrationSafeAlias(sourceKind, sourceRef);
-    const sourceRouteRef = registerMigrationSourceRoute(sourceRef, sourceKind, safeDisplayName);
-    candidates.push({
-      sourceRef: sourceRouteRef,
-      safeDisplayName,
-      sourceKind,
-      sourceLabel: isProfileToken ? "След установленной системы" : sourceRef === item.folderPath ? (profileMatches.length ? "Папка профиля старой системы" : "Папка-кандидат") : "Файл-кандидат",
-      sourceFingerprint: migrationFingerprint(sourceRef),
-      depth: migrationDiscoveryDepth(item.root, item.folderPath),
-      confidence: Number(confidence.toFixed(2)),
-      matchedFiles,
-      databaseFiles,
-      dumpFiles,
-      tableFiles,
-      archiveFiles,
-      dicomLikeFiles,
-      imageFiles,
-      hasDicomDir,
-      latestModifiedAt,
-      reasons,
-      warnings: Array.from(folderWarnings),
-      smartImportLine: `${legacySourceTitles[sourceKind]} ${sourceRouteRef}`
-    });
+    await inspectMigrationDiscoveryFolder(item, input, queue, candidates, warnings);
   }
 
   if (queue.length) warnings.add(`Поиск остановлен после ${input.maxFolders} папок. Выберите папку ближе к старой программе или увеличьте лимит проверки.`);
@@ -5734,3 +5579,175 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
 }
 
 export { buildSmartImportPreview };
+
+
+async function inspectMigrationDiscoveryFolder(
+  item: MigrationDiscoveryQueueItem,
+  input: MigrationLocalSourceDiscoveryRequest,
+  queue: MigrationDiscoveryQueueItem[],
+  candidates: MigrationLocalSourceDiscoveryCandidate[],
+  warnings: Set<string>
+) {
+  let entries;
+  try {
+    entries = await readdir(item.folderPath, { withFileTypes: true });
+  } catch {
+    warnings.add("Одну локальную папку миграционного поиска не удалось прочитать; она пропущена.");
+    return;
+  }
+
+  let filesInspected = 0;
+  let databaseFiles = 0;
+  let dumpFiles = 0;
+  let tableFiles = 0;
+  let archiveFiles = 0;
+  let dicomLikeFiles = 0;
+  let imageFiles = 0;
+  let hasDicomDir = false;
+  let firstMatchPath = "";
+  let firstProfileEvidencePath = "";
+  let latestModifiedAt: string | null = null;
+  const folderWarnings = new Set<string>();
+  const fileProfileMatches = new Map<string, (typeof migrationWorkstationProfiles)[number]>();
+
+  const orderedEntries = [...entries].sort(
+    (left, right) =>
+      migrationDiscoveryEntryPriority(right, item.folderPath) - migrationDiscoveryEntryPriority(left, item.folderPath) ||
+      left.name.toString().localeCompare(right.name.toString())
+  );
+  for (const entry of orderedEntries) {
+    const entryName = entry.name.toString();
+    const fullPath = path.join(item.folderPath, entryName);
+    if (entry.isDirectory()) {
+      if (shouldSkipMigrationDiscoveryDirectory(entryName)) continue;
+      const nextDepth = item.depth + 1;
+      if (nextDepth <= input.maxDepth) {
+        const nextItem = { root: item.root, folderPath: fullPath, depth: nextDepth };
+        if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
+        else queue.push(nextItem);
+      }
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    if (filesInspected >= input.maxFilesPerFolder) {
+      folderWarnings.add(`Проверка файлов в этой папке ограничена ${input.maxFilesPerFolder} файлами.`);
+      continue;
+    }
+    filesInspected += 1;
+    const profilesForFile = migrationWorkstationProfileMatches(fullPath);
+    if (profilesForFile.length) {
+      if (!firstProfileEvidencePath) firstProfileEvidencePath = fullPath;
+      for (const profile of profilesForFile) fileProfileMatches.set(profile.label, profile);
+    }
+    const extension = path.extname(entryName).toLowerCase();
+    const isDicomDir = /^DICOMDIR$/i.test(entryName);
+    const isDatabase = migrationDatabaseExtensions.has(extension);
+    const isDump = migrationDumpExtensions.has(extension);
+    const isTable = migrationTableExtensions.has(extension);
+    const isArchive = migrationArchiveExtensions.has(extension);
+    const isDicom = migrationDicomExtensions.has(extension) || isDicomDir;
+    const isImage = migrationImageExtensions.has(extension);
+    if (isDatabase) databaseFiles += 1;
+    if (isDump) dumpFiles += 1;
+    if (isTable) tableFiles += 1;
+    if (isArchive) archiveFiles += 1;
+    if (isDicom) dicomLikeFiles += 1;
+    if (isImage) imageFiles += 1;
+    if (isDicomDir) hasDicomDir = true;
+    if (!firstMatchPath && (isDatabase || isDump || isTable || isArchive || isDicom || isImage)) firstMatchPath = fullPath;
+    try {
+      const modified = (await stat(fullPath)).mtime.toISOString();
+      if (!latestModifiedAt || modified > latestModifiedAt) latestModifiedAt = modified;
+    } catch {
+      // Best-effort metadata only.
+    }
+  }
+
+  const hintScore = migrationFolderHintScore(item.folderPath);
+  const hasGenericDataContainerHint = migrationClinicDataContainerHint(item.folderPath);
+  const profileMatches = Array.from(
+    new Map(
+      [...migrationWorkstationProfileMatches(`${item.folderPath} ${firstMatchPath}`), ...fileProfileMatches.values()].map((profile) => [profile.label, profile])
+    ).values()
+  );
+  const matchedFiles = databaseFiles + dumpFiles + tableFiles + archiveFiles + dicomLikeFiles + imageFiles;
+  const confidence = Math.min(
+    1,
+    hintScore +
+      (databaseFiles ? 0.5 : 0) +
+      (dumpFiles ? 0.42 : 0) +
+      (tableFiles ? 0.28 : 0) +
+      (archiveFiles ? 0.2 : 0) +
+      (dicomLikeFiles ? 0.46 : 0) +
+      (hasDicomDir ? 0.24 : 0) +
+      (imageFiles >= 8 ? 0.22 : imageFiles > 0 ? 0.08 : 0)
+  );
+  const isCandidate = matchedFiles > 0 ? confidence >= 0.24 : hintScore >= 0.28 || profileMatches.length > 0;
+  if (!isCandidate) return;
+  const profileOnly = matchedFiles === 0 && profileMatches.length > 0;
+  const rawSourceRef =
+    firstMatchPath ||
+    (profileOnly && firstProfileEvidencePath
+      ? `workstation-profile:${migrationFingerprint(firstProfileEvidencePath)}`
+      : item.folderPath);
+  const detectedSourceKind = migrationSourceKindFromCounts({
+    folderPath: item.folderPath,
+    firstMatchPath: firstMatchPath || firstProfileEvidencePath || rawSourceRef,
+    databaseFiles,
+    dumpFiles,
+    tableFiles,
+    archiveFiles,
+    dicomLikeFiles,
+    imageFiles,
+    hasDicomDir
+  });
+  const sourceKind =
+    matchedFiles === 0 && hasGenericDataContainerHint && !profileMatches.length
+      ? ("unknown_legacy_source" as const)
+      : detectedSourceKind;
+  const shouldUseFolderSource =
+    sourceKind === "mis_database" && firstMatchPath ? migrationDbfFolderSourceRequired(item.folderPath, firstMatchPath) : false;
+  const sourceRef = shouldUseFolderSource ? item.folderPath : rawSourceRef;
+  const reasons: string[] = [];
+  if (databaseFiles) reasons.push(`${databaseFiles} файлов старой базы`);
+  if (dumpFiles) reasons.push(`${dumpFiles} файлов резервной копии`);
+  if (tableFiles) reasons.push(`${tableFiles} табличных выгрузок`);
+  if (archiveFiles) reasons.push(`${archiveFiles} архивов`);
+  if (dicomLikeFiles) reasons.push(`${dicomLikeFiles} признаков КТ/снимков`);
+  if (imageFiles) reasons.push(`${imageFiles} изображений`);
+  if (hintScore > 0) reasons.push("имя папки похоже на старую CRM/снимки/миграцию");
+  if (hasGenericDataContainerHint) reasons.push("имя папки похоже на контейнер резервных копий, выгрузок или данных клиники");
+  if (shouldUseFolderSource) reasons.push("DBF/FoxPro нужно переносить всей папкой, чтобы не потерять memo и index файлы");
+  profileMatches.slice(0, 3).forEach((profile) => reasons.push(`${profile.label}: ${profile.reason}`));
+  if (!matchedFiles && hasGenericDataContainerHint) {
+    folderWarnings.add("Папка похожа на контейнер старой клиники, но на этом уровне нет явных баз, таблиц или снимков: откройте план, увеличьте глубину или выберите вложенную папку с данными, выгрузкой или резервной копией.");
+  }
+  if (!matchedFiles && profileMatches.length) {
+    folderWarnings.add("Найден след старой системы без явных файлов базы или снимков на этом уровне: нужен локальный модуль только для чтения, штатная выгрузка или более глубокая корневая папка.");
+  }
+  const isProfileToken = sourceRef.startsWith("workstation-profile:");
+  const primaryProfile = profileMatches[0] ?? null;
+  const safeDisplayName = primaryProfile ? migrationProfileSafeAlias(primaryProfile.label, sourceKind, sourceRef) : migrationSafeAlias(sourceKind, sourceRef);
+  const sourceRouteRef = registerMigrationSourceRoute(sourceRef, sourceKind, safeDisplayName);
+  candidates.push({
+    sourceRef: sourceRouteRef,
+    safeDisplayName,
+    sourceKind,
+    sourceLabel: isProfileToken ? "След установленной системы" : sourceRef === item.folderPath ? (profileMatches.length ? "Папка профиля старой системы" : "Папка-кандидат") : "Файл-кандидат",
+    sourceFingerprint: migrationFingerprint(sourceRef),
+    depth: migrationDiscoveryDepth(item.root, item.folderPath),
+    confidence: Number(confidence.toFixed(2)),
+    matchedFiles,
+    databaseFiles,
+    dumpFiles,
+    tableFiles,
+    archiveFiles,
+    dicomLikeFiles,
+    imageFiles,
+    hasDicomDir,
+    latestModifiedAt,
+    reasons,
+    warnings: Array.from(folderWarnings),
+    smartImportLine: `${legacySourceTitles[sourceKind]} ${sourceRouteRef}`
+  });
+}
