@@ -12010,68 +12010,60 @@ const {
     );
   }
 
-  async function createDocument(kind: GeneratedDocument["kind"]) {
-    if (documentCreateSavingKind) {
-      setError("Дождитесь завершения текущего создания документа.");
-      return;
-    }
-    if (!documentPatient || !dashboard) {
-      setError("Выберите пациента перед созданием документа.");
-      return;
-    }
-    const amountSource = documentAmountSource(kind);
-    const metadata = documentKindMetadata[kind];
-    const isTaxDocument = metadata.group === "tax";
-    const payloadError = validateDocumentPayloadForKind(kind);
-    if (payloadError) {
-      setError(payloadError);
-      return;
-    }
-    const documentPayload = documentPayloadForKind(kind);
+  function validateDocumentCreation(
+    kind: GeneratedDocument["kind"],
+    isTaxDocument: boolean,
+    selectedPaymentReceiptIdsForDocument: string[],
+    selectedTaxPaymentIdsForDocument: string[],
+    linkActiveVisit: boolean,
+    metadata: typeof documentKindMetadata[GeneratedDocument["kind"]]
+  ): string | null {
     if ((kind === "tax_deduction_certificate" || kind === "tax_deduction_registry") && taxDocumentYear < 2024) {
-      setError("КНД 1151156 подходит только для оплат с 2024 года. Для 2021-2023 выберите старую справку.");
-      return;
+      return "КНД 1151156 подходит только для оплат с 2024 года. Для 2021-2023 выберите старую справку.";
     }
     if (kind === "legacy_tax_deduction_certificate" && (taxDocumentYear < 2021 || taxDocumentYear > 2023)) {
-      setError("Старая налоговая справка подходит только для оплат 2021-2023. Для 2024+ выберите КНД 1151156.");
-      return;
+      return "Старая налоговая справка подходит только для оплат 2021-2023. Для 2024+ выберите КНД 1151156.";
     }
-    const selectedTaxPayerInn = isTaxDocument ? selectedTaxDocumentPayerInn : "";
     if (isTaxDocument && taxDocumentPayerOptions.length > 1 && !selectedTaxDocumentPayerKey) {
-      setError("Выберите плательщика для КНД 1151156. Разные налогоплательщики должны идти отдельными справками.");
-      return;
+      return "Выберите плательщика для КНД 1151156. Разные налогоплательщики должны идти отдельными справками.";
     }
-    const usesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(kind);
+
     const requiresTaxPaymentSelection = taxPaymentSelectionPayloadDocumentKinds.has(kind);
-    const selectedTaxPaymentIdsForDocument = usesTaxPaymentSelection
-      ? selectedTaxPaymentIdsForCurrentDocument()
-      : [];
-    const requiresPaymentReceiptSelection = kind === "payment_receipt";
-    const eligiblePaymentReceiptIdSet = new Set(eligiblePaymentReceiptPayments.map((payment) => payment.id));
-    const selectedPaymentReceiptIdsForDocument = requiresPaymentReceiptSelection
-      ? selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
-      : [];
     if (requiresTaxPaymentSelection && selectedTaxPaymentIdsForDocument.length === 0) {
-      setError("Выберите фискальные чеки для налогового документа. Система больше не подставляет все оплаты за год автоматически.");
-      return;
+      return "Выберите фискальные чеки для налогового документа. Система больше не подставляет все оплаты за год автоматически.";
     }
+
+    const requiresPaymentReceiptSelection = kind === "payment_receipt";
     if (requiresPaymentReceiptSelection && selectedPaymentReceiptIdsForDocument.length === 0) {
-      setError("Выберите оплаченные платежи для платежной квитанции. Система не подставляет все оплаты скрыто.");
-      return;
+      return "Выберите оплаченные платежи для платежной квитанции. Система не подставляет все оплаты скрыто.";
     }
-    const linkActiveVisit =
-      metadata.requiresVisit || metadata.group === "payment" || (metadata.group !== "tax" && metadata.amountSource !== "none");
+
     if (linkActiveVisit && !documentPatientMatchesActiveVisit) {
-      setError(
-        `Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`
-      );
-      return;
+      return `Документ «${metadata.label}» требует активного приема пациента ${documentPatient?.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`;
     }
+
+    return null;
+  }
+
+  function calculateDocumentAmounts(
+    kind: GeneratedDocument["kind"],
+    amountSource: ReturnType<typeof documentAmountSource>,
+    metadata: typeof documentKindMetadata[GeneratedDocument["kind"]],
+    documentPayload: ReturnType<typeof documentPayloadForKind>,
+    selectedPaymentReceiptIdsForDocument: string[],
+    selectedTaxPaymentIdsForDocument: string[]
+  ): { totalAmountRub: number | null; error: string | null } {
+    if (!dashboard) return { totalAmountRub: null, error: "Данные не загружены" };
+
+    const requiresPaymentReceiptSelection = kind === "payment_receipt";
+    const requiresTaxPaymentSelection = taxPaymentSelectionPayloadDocumentKinds.has(kind);
+
     const plannedAmount =
       activeTreatmentPlanItems
         .filter((item) => item.status !== "cancelled")
         .filter((item) => !dashboard.activeVisit.id || item.visitId === dashboard.activeVisit.id)
         .reduce((total, item) => total + Math.max(0, item.unitPriceRub * item.quantity - item.discountRub), 0) || null;
+
     const paidAmount =
       activePayments
         .filter((payment) => payment.status === "paid")
@@ -12088,27 +12080,44 @@ const {
           );
         })
         .reduce((total, payment) => total + payment.amountRub, 0) || null;
+
     if (amountSource === "paid" && !paidAmount) {
-      setError(
-        metadata.group === "tax"
-          ? `Для налогового документа нужна фактическая оплата за ${taxDocumentYear} год. План лечения и оплаты других лет не подходят.`
-          : "Для этого документа нужна фактическая оплата. План лечения или примерная сумма не подходят."
-      );
-      return;
+      return {
+        totalAmountRub: null,
+        error:
+          metadata.group === "tax"
+            ? `Для налогового документа нужна фактическая оплата за ${taxDocumentYear} год. План лечения и оплаты других лет не подходят.`
+            : "Для этого документа нужна фактическая оплата. План лечения или примерная сумма не подходят."
+      };
     }
+
     if (
       kind === "payment_refund_correction_request" &&
       documentPayload?.paymentRefundCorrection &&
       paidAmount &&
       documentPayload.paymentRefundCorrection.amountRub > paidAmount
     ) {
-      setError("Сумма возврата или коррекции не может превышать фактическую оплату по выбранному визиту.");
-      return;
+      return {
+        totalAmountRub: null,
+        error: "Сумма возврата или коррекции не может превышать фактическую оплату по выбранному визиту."
+      };
     }
+
     const totalAmountRub = amountSource === "paid" ? paidAmount : amountSource === "planned" ? plannedAmount : null;
-    const payloadForDocument = taxPaymentSelectionPayloadDocumentKinds.has(kind)
-      ? { ...(documentPayload ?? {}), taxPaymentSelection: { selectedPaymentIds: selectedTaxPaymentIdsForDocument } }
-      : documentPayload;
+    return { totalAmountRub, error: null };
+  }
+
+  async function submitDocumentCreation(
+    kind: GeneratedDocument["kind"],
+    isTaxDocument: boolean,
+    linkActiveVisit: boolean,
+    metadata: typeof documentKindMetadata[GeneratedDocument["kind"]],
+    payloadForDocument: ReturnType<typeof documentPayloadForKind>,
+    totalAmountRub: number | null,
+    selectedTaxPayerInn: string
+  ) {
+    if (!documentPatient || !dashboard) return;
+
     setDocumentCreateSavingKind(kind);
     try {
       const response = await fetch("/api/documents", {
@@ -12140,6 +12149,82 @@ const {
     } finally {
       setDocumentCreateSavingKind(null);
     }
+  }
+
+  async function createDocument(kind: GeneratedDocument["kind"]) {
+    if (documentCreateSavingKind) {
+      setError("Дождитесь завершения текущего создания документа.");
+      return;
+    }
+    if (!documentPatient || !dashboard) {
+      setError("Выберите пациента перед созданием документа.");
+      return;
+    }
+
+    const payloadError = validateDocumentPayloadForKind(kind);
+    if (payloadError) {
+      setError(payloadError);
+      return;
+    }
+
+    const documentPayload = documentPayloadForKind(kind);
+    const amountSource = documentAmountSource(kind);
+    const metadata = documentKindMetadata[kind];
+    const isTaxDocument = metadata.group === "tax";
+
+    const usesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(kind);
+    const selectedTaxPaymentIdsForDocument = usesTaxPaymentSelection ? selectedTaxPaymentIdsForCurrentDocument() : [];
+
+    const requiresPaymentReceiptSelection = kind === "payment_receipt";
+    const eligiblePaymentReceiptIdSet = new Set(eligiblePaymentReceiptPayments.map((payment) => payment.id));
+    const selectedPaymentReceiptIdsForDocument = requiresPaymentReceiptSelection
+      ? selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
+      : [];
+
+    const linkActiveVisit =
+      metadata.requiresVisit || metadata.group === "payment" || (metadata.group !== "tax" && metadata.amountSource !== "none");
+
+    const validationError = validateDocumentCreation(
+      kind,
+      isTaxDocument,
+      selectedPaymentReceiptIdsForDocument,
+      selectedTaxPaymentIdsForDocument,
+      linkActiveVisit,
+      metadata
+    );
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const { totalAmountRub, error: amountError } = calculateDocumentAmounts(
+      kind,
+      amountSource,
+      metadata,
+      documentPayload,
+      selectedPaymentReceiptIdsForDocument,
+      selectedTaxPaymentIdsForDocument
+    );
+    if (amountError) {
+      setError(amountError);
+      return;
+    }
+
+    const payloadForDocument = taxPaymentSelectionPayloadDocumentKinds.has(kind)
+      ? { ...(documentPayload ?? {}), taxPaymentSelection: { selectedPaymentIds: selectedTaxPaymentIdsForDocument } }
+      : documentPayload;
+
+    const selectedTaxPayerInn = isTaxDocument ? selectedTaxDocumentPayerInn : "";
+
+    await submitDocumentCreation(
+      kind,
+      isTaxDocument,
+      linkActiveVisit,
+      metadata,
+      payloadForDocument,
+      totalAmountRub,
+      selectedTaxPayerInn
+    );
   }
 
   async function updateDocumentStatus(documentId: string, action: "issue" | "void", payload?: unknown): Promise<boolean> {
