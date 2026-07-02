@@ -10,6 +10,7 @@ import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { useVisitStore } from "./store/visitStore";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import "./styles/VisitView.css";
 export interface VisitViewProps {
   AlertTriangle: any;
   Bot: any;
