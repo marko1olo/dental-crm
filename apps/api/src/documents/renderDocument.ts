@@ -87,6 +87,7 @@ const unresolvedPlaceholderPatterns = [
 ].map((pattern) => repairMojibakeText(pattern));
 
 export function documentHasUnresolvedPlaceholders(html: string): boolean {
+  if (html.includes("[[{") || html.includes("}]]")) return true;
   const htmlWithoutSignatureBlanks = html.replace(/<div class="signatures">[\s\S]*?<\/div>/g, "");
   const normalized = htmlWithoutSignatureBlanks.toLocaleLowerCase("ru-RU");
   return unresolvedPlaceholderPatterns.some((pattern) => normalized.includes(pattern));
