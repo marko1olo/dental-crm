@@ -217,6 +217,18 @@ export const denteTelegramBotSettings: DenteTelegramBotSettings = {
 
 export const denteTelegramWebhookEvents: DenteTelegramWebhookEvent[] = [];
 export const denteTelegramOutboxDeliveryReceipts: DenteTelegramOutboxDeliveryReceipt[] = [];
+export const denteTelegramOutboxDeliveryReceiptsMap = new Map<string, DenteTelegramOutboxDeliveryReceipt>();
+
+function syncDenteTelegramOutboxDeliveryReceiptsMap(): void {
+  denteTelegramOutboxDeliveryReceiptsMap.clear();
+  for (let i = denteTelegramOutboxDeliveryReceipts.length - 1; i >= 0; i--) {
+    const receipt = denteTelegramOutboxDeliveryReceipts[i];
+    if (receipt && receipt.clientMutationId) {
+      denteTelegramOutboxDeliveryReceiptsMap.set(`${receipt.outboxItemId}:${receipt.clientMutationId}`, receipt);
+    }
+  }
+}
+
 export const denteTelegramLinkCodes: DenteTelegramLinkCode[] = [];
 export const denteTelegramChatLinks: DenteTelegramChatLink[] = [];
 
@@ -3576,6 +3588,7 @@ export function resetToDemo(): void {
   replaceCollection(denteTelegramChatLinks, originalDemoData.denteTelegramChatLinks);
   replaceCollection(denteTelegramWebhookEvents, originalDemoData.denteTelegramWebhookEvents);
   replaceCollection(denteTelegramOutboxDeliveryReceipts, originalDemoData.denteTelegramOutboxDeliveryReceipts);
+  syncDenteTelegramOutboxDeliveryReceiptsMap();
   Object.assign(clinicProfile, originalDemoData.clinicProfile);
   Object.assign(activeVisit, originalDemoData.activeVisit);
   Object.assign(denteTelegramBotSettings, originalDemoData.denteTelegramBotSettings);
@@ -3603,6 +3616,7 @@ export function resetToZeroMode(role: StaffRole): void {
   denteTelegramChatLinks.length = 0;
   denteTelegramWebhookEvents.length = 0;
   denteTelegramOutboxDeliveryReceipts.length = 0;
+  syncDenteTelegramOutboxDeliveryReceiptsMap();
 
   Object.assign(clinicProfile, {
     organizationId,
@@ -3714,6 +3728,7 @@ function applyPersistentState(): void {
   normalizeDenteTelegramBotScopedLedgers();
   replaceCollection(denteTelegramWebhookEvents, state.denteTelegramWebhookEvents);
   replaceCollection(denteTelegramOutboxDeliveryReceipts, state.denteTelegramOutboxDeliveryReceipts);
+  syncDenteTelegramOutboxDeliveryReceiptsMap();
   uiPreferences = state.uiPreferences ?? null;
   if (state.activeVisit) {
     Object.assign(activeVisit, state.activeVisit);
@@ -6599,11 +6614,7 @@ export function findDenteTelegramOutboxDeliveryReceipt(
   clientMutationId: string | null | undefined
 ): DenteTelegramOutboxDeliveryReceipt | null {
   if (!clientMutationId) return null;
-  return (
-    denteTelegramOutboxDeliveryReceipts.find(
-      (receipt) => receipt.outboxItemId === outboxItemId && receipt.clientMutationId === clientMutationId
-    ) ?? null
-  );
+  return denteTelegramOutboxDeliveryReceiptsMap.get(`${outboxItemId}:${clientMutationId}`) ?? null;
 }
 
 export function claimDenteTelegramOutboxDeliveryReceipt(
@@ -6627,7 +6638,11 @@ export function claimDenteTelegramOutboxDeliveryReceipt(
     createdAt: new Date().toISOString()
   };
   denteTelegramOutboxDeliveryReceipts.unshift(receipt);
-  denteTelegramOutboxDeliveryReceipts.splice(200);
+  denteTelegramOutboxDeliveryReceiptsMap.set(`${receipt.outboxItemId}:${receipt.clientMutationId}`, receipt);
+  const removed = denteTelegramOutboxDeliveryReceipts.splice(200);
+  for (const r of removed) {
+    denteTelegramOutboxDeliveryReceiptsMap.delete(`${r.outboxItemId}:${r.clientMutationId}`);
+  }
   persistMutableState();
   return null;
 }
@@ -7407,14 +7422,16 @@ export function recordDenteTelegramOutboxDelivery(input: {
       blockedReason: input.blockedReason ?? (input.status === "failed" ? "telegram_transport_failed" : null),
       createdAt: now
     };
-    const existingIndex = denteTelegramOutboxDeliveryReceipts.findIndex(
-      (candidate) => candidate.outboxItemId === receipt.outboxItemId && candidate.clientMutationId === receipt.clientMutationId
-    );
-    if (existingIndex >= 0) {
-      denteTelegramOutboxDeliveryReceipts[existingIndex] = receipt;
+    const existing = denteTelegramOutboxDeliveryReceiptsMap.get(`${receipt.outboxItemId}:${receipt.clientMutationId}`);
+    if (existing) {
+      Object.assign(existing, receipt);
     } else {
       denteTelegramOutboxDeliveryReceipts.unshift(receipt);
-      denteTelegramOutboxDeliveryReceipts.splice(200);
+      denteTelegramOutboxDeliveryReceiptsMap.set(`${receipt.outboxItemId}:${receipt.clientMutationId}`, receipt);
+      const removed = denteTelegramOutboxDeliveryReceipts.splice(200);
+      for (const r of removed) {
+        denteTelegramOutboxDeliveryReceiptsMap.delete(`${r.outboxItemId}:${r.clientMutationId}`);
+      }
     }
   }
 
