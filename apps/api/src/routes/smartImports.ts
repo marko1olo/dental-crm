@@ -5590,7 +5590,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return await buildSmartImportPreview(input);
+    return buildSmartImportPreview(input);
   });
 
   app.post("/api/imports/smart/local-source-discovery", async (request, reply) => {
