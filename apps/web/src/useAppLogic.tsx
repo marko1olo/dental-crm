@@ -9883,7 +9883,6 @@ const {
       // Голос почти не слышен, но CRM все равно отправляет фрагмент на распознавание.
       // Голос почти не слышен, но CRM все равно проверяет последний фрагмент.
     }
-    // const maxChunkBytes
 
     const queuedBeforeUpload = await queuePendingSpeechChunk(chunk, activeOrganizationId);
     await refreshPendingSpeechChunkState();

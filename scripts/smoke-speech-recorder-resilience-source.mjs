@@ -226,7 +226,7 @@ const uploadEnd = appSource.indexOf("function stopSpeechMonitor()", uploadStart)
 if (uploadStart === -1 || uploadEnd === -1) fail("Speech upload block was not found.");
 const uploadBlock = appSource.slice(uploadStart, uploadEnd);
 const quietBlockStart = uploadBlock.indexOf("if (chunkHadVoice === false) {");
-const maxChunkIndex = uploadBlock.indexOf("const maxChunkBytes");
+const maxChunkIndex = uploadBlock.indexOf("const queuedBeforeUpload");
 if (quietBlockStart === -1 || maxChunkIndex === -1 || quietBlockStart > maxChunkIndex) {
   fail("Speech quiet-chunk handling block was not found.");
 }
