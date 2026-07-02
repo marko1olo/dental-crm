@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from "fastify";
+﻿import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import {
   aiRecognitionJobResponseSchema,
@@ -12,6 +12,9 @@ import { buildVisitDraftFromTranscript } from "../ai/visitDraft.js";
 import { personalizeTreatmentPlan } from "../ai/treatmentPlanPersonalize.js";
 import { personalizePostVisitRecommendations } from "../ai/postVisitPersonalize.js";
 import { parseDictationWithLLM } from "../ai/dictationParser.js";
+import { parseDictationLocally } from "../ai/localDictationParser.js";
+import { db } from "../db/client.js";
+import { imagingAnnotations } from "../db/schema.js";
 import {
   createAiRecognitionJob,
   imagingStudies,
@@ -152,7 +155,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
     if (!parsedInput.success) {
       return reply.code(400).send({
         error: "TreatmentPlanValidationError",
-        message: "Некорректный план лечения для ИИ-персонализации."
+        message: "Оекорректный план лечения для ИИ-персонализации."
       });
     }
     const result = await personalizeTreatmentPlan(parsedInput.data);
@@ -171,7 +174,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
     if (!parsedInput.success) {
       return reply.code(400).send({
         error: "PostVisitPersonalizeValidationError",
-        message: "Некорректные параметры для ИИ-рекомендаций после приема."
+        message: "Оекорректные параметры для ИИ-рекомендаций после приема."
       });
     }
     const result = await personalizePostVisitRecommendations(parsedInput.data);
@@ -182,23 +185,59 @@ export async function registerAiRoutes(app: FastifyInstance) {
     if (!(await requireClinicalReadAccess(request, reply, "parse dictation with AI"))) return;
     const schema = z.object({
       text: z.string(),
-      type: z.enum(["schedule", "patient", "visit"])
+      type: z.enum(["schedule", "patient", "visit"]),
+      volumeContext: z.object({
+        studyId: z.string(),
+        seriesId: z.string().optional(),
+        organizationId: z.string(),
+        patientId: z.string(),
+        coordinates: z.record(z.any()).optional()
+      }).optional()
     });
+    
     const parsedInput = schema.safeParse(request.body);
     if (!parsedInput.success) {
       return reply.code(400).send({
         error: "ParseDictationValidationError",
-        message: "Некорректные параметры для ИИ-разбора."
+        message: "Оеверный формат для AI-разбора."
       });
     }
+
     try {
-      const result = await parseDictationWithLLM(parsedInput.data.text, parsedInput.data.type as any);
+      const { text, type, volumeContext } = parsedInput.data;
+      
+      // 1. Try Local Algorithmic NLP first (to save LLM keys)
+      let result = parseDictationLocally(text, type as any);
+      
+      // 2. Fallback to LLM if local NLP couldn't handle complex natural language
+      if (!result) {
+        result = await parseDictationWithLLM(text, type as any);
+      }
+
+      // 3. Database Linkage (If 3D viewer context is provided and teeth were found)
+      if (volumeContext && (result as any)?.toothUpdates && (result as any).toothUpdates.length > 0) {
+        // We link coordinates to the first mentioned tooth, or multiple if needed
+        for (const update of (result as any).toothUpdates) {
+          await db.insert(imagingAnnotations).values({
+            organizationId: volumeContext.organizationId,
+            patientId: volumeContext.patientId,
+            studyId: volumeContext.studyId,
+            annotationType: "tooth",
+            toothCode: update.code,
+            coordinates: volumeContext.coordinates || null,
+            notes: (result as any).emkUpdates?.complaint || update.state
+          });
+        }
+      }
+
       return reply.send(result);
     } catch (err: any) {
       return reply.code(500).send({
         error: "ParseDictationError",
-        message: err.message || "Ошибка парсинга диктовки"
+        message: err.message || "Ншибка парсинга диктовки"
       });
     }
   });
 }
+
+

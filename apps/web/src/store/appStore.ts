@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { loadUiPreferences, defaultUiPreferences } from "../AppHelpers";
 
 interface AppStore {
+  isOmnibarOpen: boolean;
+  setOmnibarOpen: (val: boolean) => void;
   uiPreferencesHydrated: any;
   setUiPreferencesHydrated: (val: any) => void;
   dashboard: any;
@@ -221,6 +223,8 @@ interface AppStore {
 }
 
 export const useAppStore = create<AppStore>((set) => ({
+  isOmnibarOpen: false,
+  setOmnibarOpen: (val) => set({ isOmnibarOpen: val }),
   uiPreferencesHydrated: false,
   setUiPreferencesHydrated: (val) => set({ uiPreferencesHydrated: val }),
   dashboard: null,

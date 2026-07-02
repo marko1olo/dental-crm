@@ -164,6 +164,10 @@ import type {
 } from "@dental/shared";
 import type { ImagingConnectorCard, ImagingViewerCapability, RecognitionPreset } from "./settingsStaticData";
 import { motionSafeScrollIntoView } from "./motionPreference";
+import { PriceDictationBar } from "./PriceDictationBar";
+import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
+import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
+import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
 import { viewLabels as workspaceViewLabels } from "./workspaceShell";
 
 type MprAxisVisualizerStyle = CSSProperties & {
@@ -2006,1646 +2010,206 @@ export function SettingsView(props: SettingsViewProps) {
             </details>
           ) : null}
 
-          {settingsTab === "clinic" ? (
-          <section className="clinic-config" aria-label="Аккаунт клиники и команда">
-            <div className="clinic-config-head">
-              <div>
-                <p className="eyebrow">Аккаунт клиники</p>
-                <h2>{dashboard.clinicSettings.profile.clinicName}</h2>
-                <p>
-                  {dashboard.clinicSettings.profile.legalName} · {dashboard.clinicSettings.profile.address} ·{" "}
-                  {dashboard.clinicSettings.profile.timezone}
-                </p>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
-                <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
-                
-                {/* Тотальное упрощение: режим работы соло */}
-                <button
-                  className={`primary-button ${dashboard.clinicSettings.soloDoctorMode ? 'active' : ''}`}
-                  type="button"
-                  onClick={() => {
-                    dashboard.clinicSettings.soloDoctorMode = !dashboard.clinicSettings.soloDoctorMode;
-                    alert('Режим ' + (dashboard.clinicSettings.soloDoctorMode ? 'ВКЛЮЧЕН: Ассистенты скрыты' : 'ВЫКЛЮЧЕН: Ассистенты показаны') + '. Требуется перезагрузка для применения.');
-                    window.location.reload();
-                  }}
-                  style={{ background: dashboard.clinicSettings.soloDoctorMode ? 'var(--teal)' : 'var(--slate-200)', color: dashboard.clinicSettings.soloDoctorMode ? '#fff' : 'var(--slate-700)', border: 'none', padding: '6px 12px', fontSize: '13px' }}
-                >
-                  {dashboard.clinicSettings.soloDoctorMode ? "✓ Работаю без ассистента" : "Работаю с ассистентом"}
-                </button>
-              </div>
-            </div>
+          <SettingsClinicTab 
+            settingsTab={settingsTab} 
+            props={{
+              ...props,
+              dashboard,
+              weekdayOptions,
+              uiLanguageOptions,
+              clinicModeLabels,
+              staffRoleLabels,
+              specialtyLabels,
+              legalReadinessPercent,
+              legalMissingFields,
+              uiLanguage,
+              setUiLanguage,
+              telegramModeLabels,
+              adminSecretScopeWarning,
+              telegramAdminSecretDraft,
+              setTelegramAdminSecretDraft,
+              adminSecretReady,
+              unlockTelegramAdminSession,
+              lockTelegramAdminSession,
+              telegramAdminSecretSession,
+              loadTelegramControlPlane,
+              telegramLinkSubjectType,
+              setTelegramLinkSubjectType,
+              normalizedTelegramLinkSubjectType,
+              setTelegramLinkCode,
+              setTelegramLinkActionState,
+              telegramLinkStaffId,
+              setTelegramLinkStaffId,
+              isTelegramLinkCreating,
+              telegramLinkCode,
+              telegramLinkActionState,
+              telegramQrSvgToDataUrl,
+              telegramChatLinkLedger,
+              typedTelegramChatLinks,
+              telegramSubjectName,
+              revokeTelegramChatLink,
+              telegramRevokingLinkId,
+              loadMoreTelegramChatLinks,
+              isTelegramChatLinksLoadingMore,
+              telegramLinkCodeLedger,
+              typedTelegramLinkCodes,
+              telegramLinkCodeStatusLabels,
+              loadMoreTelegramLinkCodes,
+              isTelegramLinkCodesLoadingMore,
+              telegramModeDraft,
+              setTelegramModeDraft,
+              normalizedTelegramBotMode,
+              telegramModeHints,
+              telegramBotUsernameDraft,
+              setTelegramBotUsernameDraft,
+              telegramOwnBotUsernameDraft,
+              setTelegramOwnBotUsernameDraft,
+              telegramBotConfigId,
+              setTelegramBotConfigId,
+              telegramWebhookBaseUrlDraft,
+              setTelegramWebhookBaseUrlDraft,
+              telegramPatientPortalBaseUrlDraft,
+              setTelegramPatientPortalBaseUrlDraft,
+              telegramWelcomeImageUrlDraft,
+              setTelegramWelcomeImageUrlDraft,
+              telegramTokenTtlDraft,
+              setTelegramTokenTtlDraft,
+              telegramReminderLeadTimesDraft,
+              setTelegramReminderLeadTimesDraft,
+              telegramReviewRequestDelayDraft,
+              setTelegramReviewRequestDelayDraft,
+              typedTelegramPostVisitCheckupDelayDrafts,
+              telegramStaffEscalationChannelDraft,
+              setTelegramStaffEscalationChannelDraft,
+              telegramPrivacyModeLabels,
+              telegramPrivacyModeDraft,
+              setTelegramPrivacyModeDraft,
+              normalizedTelegramPrivacyMode,
+              telegramPrivacyModeHints,
+              typedTelegramFeatureOptions,
+              typedTelegramEnabledFeaturesDraft,
+              toggleTelegramFeature,
+              telegramFeatureLabel,
+              telegramAllowVoiceIntakeDraft,
+              setTelegramAllowVoiceIntakeDraft,
+              setTelegramEnabledFeaturesDraft,
+              telegramVisualCardUrlDrafts,
+              updateTelegramVisualCardUrlDraft,
+              telegramReviewUrlDraft,
+              setTelegramReviewUrlDraft,
+              telegramMapsUrlDraft,
+              SettingsClinicTab,
+              SettingsAccessTab,
+              SettingsTelegramTab
+            }} 
+          />
+          <SettingsAccessTab 
+            settingsTab={settingsTab} 
+            props={{
+              ...props,
+              dashboard,
+              workspaceScopeLabels,
+              staffRoleLabels,
+              clinicModeLabels,
+              policyAuditEventLabels
+            }} 
+          />
+          <SettingsTelegramTab 
+            settingsTab={settingsTab} 
+            props={{
+              ...props,
+              dashboard,
+              telegramPostVisitCheckupDelayFields,
+              telegramVisualCardFields,
+              telegramFeatureHelp,
+              telegramPreview,
+              typedTelegramInlineButtonKindLabels,
+              telegramHumanMessage,
+              telegramOutbox,
+              sendDueTelegramOutbox,
+              isTelegramSendingDue,
+              telegramSendingItemId,
+              isTelegramLoading,
+              telegramOutboxStatusFilterOptions,
+              telegramOutboxStatusFilter,
+              setTelegramOutboxStatusFilter,
+              telegramOutboxStatusFilterLabels,
+              telegramOutboxTemplateFilterOptions,
+              telegramOutboxTemplateFilter,
+              setTelegramOutboxTemplateFilter,
+              telegramOutboxTemplateFilterLabels,
+              visibleTelegramOutboxItems,
+              telegramTemplateLabels,
+              telegramDeliveryStatusLabels,
+              sendTelegramOutboxItem,
+              isTelegramOutboxItemDueForUi,
+              loadMoreTelegramOutbox,
+              isTelegramOutboxLoadingMore,
+              telegramStatus,
+              telegramClassificationLabels,
 
-            <div className="mode-grid" aria-label="Режим продукта">
-              {typedClinicModes.map((mode) => (
-                <button
-                  className={`mode-card ${dashboard.clinicSettings.profile.mode === mode ? "active" : ""}`}
-                  key={mode}
-                  type="button"
-                  aria-pressed={dashboard.clinicSettings.profile.mode === mode}
-                  onClick={() => changeClinicMode(mode)}
-                >
-                  <strong>{clinicModeLabels[mode].title}</strong>
-                  <span>{clinicModeLabels[mode].detail}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="clinic-hints">
-              {typedModeHints.map((hint) => (
-                <span key={hint}>{hint}</span>
-              ))}
-            </div>
-
-            <div className="mode-readiness">
-              <div>
-                <p className="eyebrow">Готовность режима</p>
-                <strong>{dashboard.shiftIntelligence.modeFit.fitScore}%</strong>
-                <span>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep}</span>
-              </div>
-              <div>
-                <p className="eyebrow">Открытые роли</p>
-                {typedRoleQueues.map((queue) => (
-                  <span key={queue.role}>
-                    {staffRoleLabels[queue.role]}: {queue.openItems}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <section className="clinic-legal-form" aria-label="Юридический профиль клиники">
-              <div className="clinic-legal-summary">
-                <div>
-                  <p className="eyebrow">Настройки клиники</p>
-                  <h3>Основные данные и профиль для документов</h3>
-                </div>
-                <div className="legal-readiness-badge">
-                  <strong>{legalReadinessPercent}%</strong>
-                  <span>{legalMissingFields.length ? `Не заполнено: ${legalMissingFields.join(", ")}` : "Минимум заполнен"}</span>
-                </div>
-              </div>
-
-              {/* === ОСНОВНЫЕ ПОЛЯ — всегда видны === */}
-              <div className="clinic-profile-form-grid settings-essential-block">
-                <label>
-                  Название клиники
-                  <input value={clinicProfileDraft.clinicName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("clinicName", event.target.value)} />
-                </label>
-                <label>
-                  Телефон
-                  <input value={clinicProfileDraft.phone} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("phone", event.target.value)} />
-                </label>
-                <label className="form-span-2">
-                  Адрес
-                  <input value={clinicProfileDraft.address} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("address", event.target.value)} />
-                </label>
-                <div className="form-span-2">
-                  <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Режим работы клиники</span>
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    {[
-                      { value: "solo_doctor", label: "Частный кабинет (без ассистента)" },
-                      { value: "small_clinic", label: "Стандартный (с ассистентами)" },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={`quick-chip ${clinicProfileDraft.mode === option.value ? 'active' : ''}`}
-                        onClick={() => updateClinicProfileDraft("mode", option.value)}
-                        style={{
-                          background: clinicProfileDraft.mode === option.value ? 'var(--brand-500)' : 'var(--slate-100)',
-                          color: clinicProfileDraft.mode === option.value ? '#fff' : 'var(--slate-700)',
-                          padding: "8px 16px",
-                          borderRadius: "20px",
-                          border: "none",
-                          cursor: "pointer",
-                          fontSize: "14px",
-                          fontWeight: 500
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <label>
-                  Начало смены
-                  <input type="time" value={clinicProfileDraft.workdayStart} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayStart", event.target.value)} />
-                </label>
-                <label>
-                  Конец смены
-                  <input type="time" value={clinicProfileDraft.workdayEnd} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayEnd", event.target.value)} />
-                </label>
-                <div className="weekday-toggle-row form-span-2" role="group" aria-label="Рабочие дни клиники">
-                  <span>Рабочие дни</span>
-                  {typedWeekdayOptions.map((day: any) => (
-                    <button
-                      className={clinicProfileDraft.workingDays.includes(day.value) ? "active" : ""}
-                      key={day.value}
-                      type="button"
-                      aria-pressed={clinicProfileDraft.workingDays.includes(day.value)}
-                      onClick={() => toggleClinicWorkingDay(day.value)}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* === ДЛЯ ДОКУМЕНТОВ — collapsible === */}
-              <details className="settings-advanced-block">
-                <summary className="settings-advanced-toggle">
-                  <span className="settings-advanced-label">
-                    <span className="settings-advanced-icon">📋</span>
-                    Для договоров и налоговых документов
-                  </span>
-                  <span className="settings-advanced-hint">ИНН, лицензия, банк, подписант</span>
-                  <span className="settings-advanced-chevron">▼</span>
-                </summary>
-                <div className="clinic-profile-form-grid settings-advanced-form">
-                  <label>
-                    Юридическое лицо
-                    <input value={clinicProfileDraft.legalName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("legalName", event.target.value)} />
-                    <small className="field-note">ИП Иванова М.С. или ООО «Клиника»</small>
-                  </label>
-                  <label>
-                    ИНН
-                    <input inputMode="numeric" value={clinicProfileDraft.inn} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("inn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))} />
-                  </label>
-                  <label>
-                    КПП
-                    <input inputMode="numeric" value={clinicProfileDraft.kpp} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("kpp", event.target.value.replace(/[^\d]/g, "").slice(0, 9))} />
-                    <small className="field-note">Только для ООО / АО. ИП оставить пустым.</small>
-                  </label>
-                  <label>
-                    ОГРН / ОГРНИП
-                    <input inputMode="numeric" value={clinicProfileDraft.ogrn} onChange={(event: InputChangeEvent) => updateClinicProfileDraft("ogrn", event.target.value.replace(/[^\d]/g, "").slice(0, 15))} />
-                  </label>
-                  <label>
-                    Email
-                    <input value={clinicProfileDraft.email} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("email", event.target.value)} />
-                  </label>
-                  <label>
-                    Сайт
-                    <input value={clinicProfileDraft.website} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("website", event.target.value)} />
-                  </label>
-                  <label>
-                    Номер лицензии
-                    <input value={clinicProfileDraft.medicalLicenseNumber} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseNumber", event.target.value)} />
-                  </label>
-                  <label>
-                    Дата лицензии
-                    <input value={clinicProfileDraft.medicalLicenseIssuedAt} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuedAt", event.target.value)} />
-                  </label>
-                  <label className="form-span-2">
-                    Кем выдана лицензия
-                    <input value={clinicProfileDraft.medicalLicenseIssuer} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuer", event.target.value)} />
-                  </label>
-                  <label>
-                    Подписант
-                    <input value={clinicProfileDraft.signatoryName} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryName", event.target.value)} />
-                    <small className="field-note">ФИО того, кто подписывает договоры</small>
-                  </label>
-                  <label>
-                    Должность подписанта
-                    <input value={clinicProfileDraft.signatoryTitle} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryTitle", event.target.value)} />
-                    <small className="field-note">Например: индивидуальный предприниматель</small>
-                  </label>
-                  <label className="form-span-2">
-                    Банковские реквизиты
-                    <textarea value={clinicProfileDraft.bankDetails} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("bankDetails", event.target.value)} />
-                    <small className="field-note">р/с, БИК, банк — всё в одной строке или через запятую</small>
-                  </label>
-                  <label>
-                    Часовой пояс
-                    <input value={clinicProfileDraft.timezone} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("timezone", event.target.value)} />
-                    <small className="field-note">Например: Europe/Moscow</small>
-                  </label>
-                  <label>
-                    Язык интерфейса
-                    <select value={uiLanguage} onChange={(event: SelectChangeEvent) => setUiLanguage(normalizeUiLanguageInput(event.target.value))}>
-                      {typedUiLanguageOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <small className="field-note">{selectedUiLanguageOption.detail}</small>
-                  </label>
-                  <label>
-                    Минут на визит
-                    <input
-                      inputMode="numeric"
-                      value={clinicProfileDraft.defaultVisitMinutes}
-                      onChange={(event: InputChangeEvent) => updateClinicProfileDraft("defaultVisitMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
-                    />
-                  </label>
-                  <label>
-                    Буфер между записями, мин
-                    <input
-                      inputMode="numeric"
-                      value={clinicProfileDraft.appointmentBufferMinutes}
-                      onChange={(event: InputChangeEvent) => updateClinicProfileDraft("appointmentBufferMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))}
-                    />
-                  </label>
-                  <label className="checkbox-line form-span-2">
-                    <input
-                      checked={clinicProfileDraft.egiszEnabled}
-                      type="checkbox" className="toggle-switch"
-                      onChange={(event: InputChangeEvent) => updateClinicProfileDraft("egiszEnabled", event.target.checked)}
-                    />
-                    ЕГИСЗ-адаптер включен
-                    <small className="field-note">Нужен только при подключении к федеральной системе ЕГИСЗ</small>
-                  </label>
-                </div>
-              </details>
-
-              <div className="clinic-profile-actions">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => void lookupClinicPublicProfile()}
-                  disabled={isClinicPublicLookupLoading}
-                >
-                  <Search aria-hidden="true" /> {isClinicPublicLookupLoading ? "Ищу реквизиты…" : "Найти реквизиты по ИНН"}
-                </button>
-                <button className="primary-button" type="button" onClick={() => void saveClinicProfileFromDraft()} disabled={clinicProfileSaveState === "saving"}>
-                  <ShieldCheck aria-hidden="true" /> {clinicProfileSaveState === "saving" ? "Сохраняю…" : "Сохранить"}
-                </button>
-                <span className={`save-state save-state-${clinicProfileSaveState}`}>
-                  {clinicProfileSaveState === "saved"
-                    ? "Сохранено"
-                    : clinicProfileSaveState === "error"
-                      ? "Проверьте поля"
-                      : "Изменения не выдаются в документах до сохранения"}
-                </span>
-              </div>
-
-
-              {clinicPublicLookup ? (
-                <div className="clinic-public-lookup-result" data-testid="clinic-public-lookup-result" aria-label="Публичный поиск реквизитов клиники">
-                  <div className="dicom-discovery-head">
-                    <strong>
-                      Публичный поиск: {clinicPublicLookupProviderStatusLabels[clinicPublicLookup.providerStatus] ?? humanizeMigrationText(clinicPublicLookup.providerStatus)} · запрос {clinicPublicLookup.safeQuery || "не сформирован"}
-                    </strong>
-                    <span>{humanizeMigrationText(clinicPublicLookup.nextAction)}</span>
-                  </div>
-                  <small className="clinic-public-boundary">{clinicPublicLookupBoundaryText}</small>
-                  {clinicPublicLookup.suggestions.length ? (
-                    <div className="clinic-public-suggestions">
-                      {typedClinicPublicLookupSuggestions.slice(0, 4).map((suggestion, index) => (
-                        <article key={`${suggestion.source}-${index}`}>
-                          <strong>
-                            {clinicPublicLookupSuggestionSourceLabels[suggestion.source] ?? humanizeMigrationText(suggestion.source)} · {Math.round(suggestion.confidence * 100)}%
-                          </strong>
-                          <p>
-                            {clinicLookupSuggestionFieldEntries(suggestion.fields)
-                              .map(([key, value]) => `${clinicPublicLookupFieldLabels[key] ?? key}: ${String(value).trim()}`)
-                              .join(" · ")}
-                          </p>
-                          {suggestion.warnings.slice(0, 2).map((warning: string) => (
-                            <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-                          ))}
-                          <small className="clinic-public-apply-summary">{clinicLookupSuggestionApplySummary(suggestion.fields)}</small>
-                          <button
-                            className="text-button"
-                            type="button"
-                            disabled={!clinicLookupSuggestionFieldEntries(suggestion.fields).length}
-                            onClick={() => applyClinicLookupSuggestion(suggestion.fields)}
-                          >
-                            Подставить в профиль
-                          </button>
-                        </article>
-                      ))}
-                    </div>
-                  ) : null}
-                  {clinicPublicLookup.publicLookupTargets.length ? (
-                    <div className="clinic-public-targets">
-                      {typedClinicPublicLookupTargets.map((target) => (
-                        <a
-                          className="secondary-button"
-                          href={target.url}
-                          key={`${target.kind}:${target.title}`}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          aria-label={`Открыть публичный источник реквизитов в новой вкладке: ${target.title}`}
-                          title={`Открыть публичный источник реквизитов в новой вкладке: ${target.title}`}
-                        >
-                          <ExternalLink aria-hidden="true" /> {target.title}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                  {clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (
-                    <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-                  ))}
-                </div>
-              ) : null}
-            </section>
-
-
-            <div className="clinic-config-grid">
-              <article>
-                <div className="panel-heading">
-                  <h3>Команда и права</h3>
-                  <span className="status-pill status-arrived">{dashboard.clinicSettings.staff.length}</span>
-                </div>
-                <div className="quick-create">
-                  <input
-                    aria-label="Новый сотрудник"
-                    placeholder="ФИО сотрудника"
-                    value={newStaffName}
-                    onChange={(event: TextInputChangeEvent) => setNewStaffName(event.target.value)}
-                  />
-                  <button
-                    aria-label="Добавить сотрудника"
-                    className="icon-button"
-                    type="button"
-                    onClick={() => addStaffMember(newStaffRole)}
-                    disabled={!newStaffReadyToCreate}
-                  >
-                    <Plus aria-hidden="true" />
-                  </button>
-                </div>
-                {!newStaffReadyToCreate ? (
-                  <p className="quick-create-guidance" role="status" aria-live="polite">
-                    Введите ФИО сотрудника, затем выберите роль.
-                  </p>
-                ) : null}
-                <div className="role-picker" aria-label="Роль нового сотрудника">
-                  {staffCreationRoles.map((role) => (
-                    <button
-                      className={newStaffRole === role ? "active" : ""}
-                      key={role}
-                      type="button"
-                      aria-pressed={newStaffRole === role}
-                      onClick={() => setNewStaffRole(role)}
-                    >
-                      {staffRoleLabels[role]}
-                    </button>
-                  ))}
-                </div>
-                {newStaffRole === "doctor" || newStaffRole === "assistant" ? (
-                  <div className="specialty-strip staff-specialty-picker" aria-label="Специальность нового сотрудника">
-                    {(Object.keys(specialtyLabels) as DentalSpecialty[]).map((specialty) => (
-                      <button
-                        className={newStaffSpecialty === specialty ? "active" : ""}
-                        key={specialty}
-                        type="button"
-                        aria-pressed={newStaffSpecialty === specialty}
-                        onClick={() => setNewStaffSpecialty(specialty)}
-                      >
-                        {specialtyLabels[specialty]}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className="staff-list">
-                  {typedStaffMembers.map((member) => {
-                    const scheduleDraft = staffScheduleDrafts[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
-                    const scheduleSaveState = staffScheduleSaveStates[member.id] ?? "saved";
-                    const scheduleDirty = staffScheduleDirtyIds.has(member.id);
-                    const scheduleSaving = staffScheduleSavingId === member.id || scheduleSaveState === "saving";
-                    const scheduleSaveLabel = scheduleSaving
-                      ? "Автосохранение"
-                      : scheduleSaveState === "error"
-                        ? "Не сохранено"
-                        : scheduleDirty
-                          ? "Ждет автосохранения"
-                          : "Сохранено";
-                    return (
-                      <div className="staff-row" key={member.id}>
-                        <span style={{ background: member.color }} />
-                        <div>
-                          <strong>{member.fullName}</strong>
-                          <p>
-                            {staffRoleLabels[member.role]} · {member.specialties.map((item) => specialtyLabels[item]).join(", ")}
-                          </p>
-                        </div>
-                        <small>{member.canSignMedicalRecords ? "ЭМК" : member.canManageImports ? "Импорт" : "Доступ"}</small>
-                        <div className="staff-schedule-editor">
-                          <label>
-                            С
-                            <input
-                              type="time"
-                              value={scheduleDraft.start}
-                              onChange={(event: InputChangeEvent) => updateStaffScheduleDraft(member.id, { start: event.target.value })}
-                            />
-                          </label>
-                          <label>
-                            До
-                            <input
-                              type="time"
-                              value={scheduleDraft.end}
-                              onChange={(event: InputChangeEvent) => updateStaffScheduleDraft(member.id, { end: event.target.value })}
-                            />
-                          </label>
-                          <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни: ${member.fullName}`}>
-                            {typedWeekdayOptions.map((day: any) => (
-                              <button
-                                className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
-                                key={day.value}
-                                type="button"
-                                aria-pressed={scheduleDraft.workingDays.includes(day.value)}
-                                onClick={() => toggleStaffWorkingDay(member.id, day.value)}
-                              >
-                                {day.label}
-                              </button>
-                            ))}
-                          </div>
-                          <details className="settings-advanced-block schedule-advanced-block">
-                            <summary className="settings-advanced-toggle">
-                              <span className="settings-advanced-label">Индивидуальные часы по дням</span>
-                              <span className="settings-advanced-chevron">▼</span>
-                            </summary>
-                            <div className="staff-day-hours" aria-label={`Часы по дням: ${member.fullName}`}>
-                              {typedWeekdayOptions
-                                .filter((day) => scheduleDraft.workingDays.includes(day.value))
-                                .map((day: any) => {
-                                  const dayHours = scheduleDraft.perDay[day.value];
-                                  return (
-                                    <div key={`hours-${member.id}-${day.value}`}>
-                                      <span>{day.label}</span>
-                                      <input
-                                        aria-label={`${day.label}, начало`}
-                                        type="time"
-                                        value={dayHours?.start ?? scheduleDraft.start}
-                                        onChange={(event: InputChangeEvent) => updateStaffScheduleDay(member.id, day.value, { start: event.target.value })}
-                                      />
-                                      <input
-                                        aria-label={`${day.label}, конец`}
-                                        type="time"
-                                        value={dayHours?.end ?? scheduleDraft.end}
-                                        onChange={(event: InputChangeEvent) => updateStaffScheduleDay(member.id, day.value, { end: event.target.value })}
-                                      />
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </details>
-                          <div className="staff-schedule-actions">
-                            <span className={`save-state save-state-${scheduleSaveState}`}>{scheduleSaveLabel}</span>
-                            <button
-                              className="secondary-button compact-button"
-                              type="button"
-                              onClick={() => void saveStaffSchedule(member.id)}
-                              disabled={scheduleSaving}
-                            >
-                              {scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </article>
-
-              <article>
-                <div className="panel-heading">
-                  <h3>Кресла и кабинеты</h3>
-                  <span className="status-pill status-confirmed">{dashboard.clinicSettings.chairs.length}</span>
-                </div>
-                <div className="quick-create">
-                  <input
-                    aria-label="Новое кресло"
-                    placeholder="Кресло / кабинет"
-                    value={newChairName}
-                    onChange={(event: TextInputChangeEvent) => setNewChairName(event.target.value)}
-                  />
-                  <button
-                    aria-label="Добавить кресло или кабинет"
-                    className="icon-button"
-                    type="button"
-                    onClick={addChair}
-                    disabled={!newChairReadyToCreate}
-                  >
-                    <Plus aria-hidden="true" />
-                  </button>
-                </div>
-                {!newChairReadyToCreate ? (
-                  <p className="quick-create-guidance" role="status" aria-live="polite">
-                    Введите понятное название кресла или кабинета.
-                  </p>
-                ) : null}
-                <div className="role-picker equipment-picker" aria-label="Оборудование кресла">
-                  <button
-                    className={newChairHasXraySensor ? "active" : ""}
-                    type="button"
-                    aria-pressed={newChairHasXraySensor}
-                    onClick={() => setNewChairHasXraySensor((value: boolean) => !value)}
-                  >
-                    RVG
-                  </button>
-                  <button
-                    className={newChairHasMicroscope ? "active" : ""}
-                    type="button"
-                    aria-pressed={newChairHasMicroscope}
-                    onClick={() => setNewChairHasMicroscope((value: boolean) => !value)}
-                  >
-                    Микроскоп
-                  </button>
-                  <button
-                    className={newChairHasSurgeryKit ? "active" : ""}
-                    type="button"
-                    aria-pressed={newChairHasSurgeryKit}
-                    onClick={() => setNewChairHasSurgeryKit((value: boolean) => !value)}
-                  >
-                    Хирургия
-                  </button>
-                </div>
-                <div className="staff-list">
-                  {typedChairs.map((chair) => {
-                    const scheduleDraft = chairScheduleDrafts[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
-                    const scheduleSaveState = chairScheduleSaveStates[chair.id] ?? "saved";
-                    const scheduleDirty = chairScheduleDirtyIds.has(chair.id);
-                    const scheduleSaving = chairScheduleSavingId === chair.id || scheduleSaveState === "saving";
-                    const scheduleSaveLabel = scheduleSaving
-                      ? "Автосохранение"
-                      : scheduleSaveState === "error"
-                        ? "Не сохранено"
-                        : scheduleDirty
-                          ? "Ждет автосохранения"
-                          : "Сохранено";
-                    return (
-                      <div className="staff-row" key={chair.id}>
-                        <CalendarDays aria-hidden="true" />
-                        <div>
-                          <strong>{chair.name}</strong>
-                          <p>
-                            {chair.room ?? "кабинет не указан"} ·{" "}
-                            {chair.specialization ? specialtyLabels[chair.specialization] : "универсально"}
-                          </p>
-                        </div>
-                        <small>
-                          {chair.hasXraySensor ? "RVG" : chair.hasMicroscope ? "Микроскоп" : chair.hasSurgeryKit ? "Хирургия" : "База"}
-                        </small>
-                        <div className="staff-schedule-editor">
-                          <label>
-                            С
-                            <input
-                              type="time"
-                              value={scheduleDraft.start}
-                              onChange={(event: InputChangeEvent) => updateChairScheduleDraft(chair.id, { start: event.target.value })}
-                            />
-                          </label>
-                          <label>
-                            До
-                            <input
-                              type="time"
-                              value={scheduleDraft.end}
-                              onChange={(event: InputChangeEvent) => updateChairScheduleDraft(chair.id, { end: event.target.value })}
-                            />
-                          </label>
-                          <div className="weekday-toggle-row staff-weekday-row" role="group" aria-label={`Рабочие дни кресла: ${chair.name}`}>
-                            {typedWeekdayOptions.map((day: any) => (
-                              <button
-                                className={scheduleDraft.workingDays.includes(day.value) ? "active" : ""}
-                                key={day.value}
-                                type="button"
-                                aria-pressed={scheduleDraft.workingDays.includes(day.value)}
-                                onClick={() => toggleChairWorkingDay(chair.id, day.value)}
-                              >
-                                {day.label}
-                              </button>
-                            ))}
-                          </div>
-                          <details className="settings-advanced-block schedule-advanced-block">
-                            <summary className="settings-advanced-toggle">
-                              <span className="settings-advanced-label">Индивидуальные часы по дням</span>
-                              <span className="settings-advanced-chevron">▼</span>
-                            </summary>
-                            <div className="staff-day-hours" aria-label={`Часы по дням кресла: ${chair.name}`}>
-                              {typedWeekdayOptions
-                                .filter((day) => scheduleDraft.workingDays.includes(day.value))
-                                .map((day: any) => {
-                                  const dayHours = scheduleDraft.perDay[day.value];
-                                  return (
-                                    <div key={`chair-hours-${chair.id}-${day.value}`}>
-                                      <span>{day.label}</span>
-                                      <input
-                                        aria-label={`${day.label}, начало кресла`}
-                                        type="time"
-                                        value={dayHours?.start ?? scheduleDraft.start}
-                                        onChange={(event: InputChangeEvent) => updateChairScheduleDay(chair.id, day.value, { start: event.target.value })}
-                                      />
-                                      <input
-                                        aria-label={`${day.label}, конец кресла`}
-                                        type="time"
-                                        value={dayHours?.end ?? scheduleDraft.end}
-                                        onChange={(event: InputChangeEvent) => updateChairScheduleDay(chair.id, day.value, { end: event.target.value })}
-                                      />
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </details>
-                          <div className="staff-schedule-actions">
-                            <span className={`save-state save-state-${scheduleSaveState}`}>{scheduleSaveLabel}</span>
-                            <button
-                              className="secondary-button compact-button"
-                              type="button"
-                              onClick={() => void saveChairSchedule(chair.id)}
-                              disabled={scheduleSaving}
-                            >
-                              {scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-              </article>
-            </div>
-          </section>
-          ) : null}
-
-          {settingsTab === "access" ? (
-          <section className="access-settings" aria-label="Доступы, рабочие профили и роли">
-            <div className="import-copy">
-              <UserCheck aria-hidden="true" />
-              <div>
-                <p className="eyebrow">Доступы</p>
-                <h2>Рабочие профили для врача, администратора, ассистента и сети</h2>
-                <p>
-                  Режим клиники влияет на первый экран, видимые разделы, права записи, аудит и зоны, где нужно ручное подтверждение.
-                </p>
-              </div>
-            </div>
-
-            {typedActiveWorkspaceProfile ? (
-              <article className="active-workspace-card">
-                <div>
-                  <span>{workspaceScopeLabels[typedActiveWorkspaceProfile.scope]}</span>
-                  <h3>{typedActiveWorkspaceProfile.title}</h3>
-                  <p>{typedActiveWorkspaceProfile.description}</p>
-                </div>
-                <div className="workspace-token-row">
-                  <strong>Старт: {viewLabels[typedActiveWorkspaceProfile.defaultSection]}</strong>
-                  {typedActiveWorkspaceProfile.primaryRoles.map((role) => (
-                    <span key={role}>{staffRoleLabels[role]}</span>
-                  ))}
-                </div>
-              </article>
-            ) : null}
-
-            <div className="workspace-profile-grid">
-              {typedWorkspaceProfiles.map((profile) => (
-                <article className={`workspace-profile-card ${profile.mode === dashboard.clinicSettings.profile.mode ? "active" : ""}`} key={profile.id}>
-                  <div className="workspace-profile-head">
-                    <span>{clinicModeLabels[profile.mode].title}</span>
-                    <strong>{profile.title}</strong>
-                    <p>{profile.description}</p>
-                  </div>
-                  <div className="workspace-token-row" aria-label="Разделы профиля">
-                    {profile.visibleSections.map((section) => (
-                      <span key={section}>{viewLabels[section]}</span>
-                    ))}
-                  </div>
-                  <ul>
-                    {profile.automations.slice(0, 3).map((automation) => (
-                      <li key={automation}>{automation}</li>
-                    ))}
-                  </ul>
-                  <small>{profile.compactNavigation ? "Компактная навигация для телефона" : "Расширенная навигация для команды"}</small>
-                </article>
-              ))}
-            </div>
-
-            <div className="access-policy-grid">
-              {typedRoleAccessPolicies.map((policy) => (
-                <article className="access-policy-card" key={policy.role}>
-                  <div className="access-policy-head">
-                    <ShieldCheck aria-hidden="true" />
-                    <div>
-                      <span>{workspaceScopeLabels[policy.scope]}</span>
-                      <h3>{policy.title}</h3>
-                      <p>Первый экран: {viewLabels[policy.defaultSection]}</p>
-                    </div>
-                  </div>
-                  <div className="access-column-row">
-                    <div>
-                      <strong>Запись</strong>
-                      {policy.canWrite.map((section) => (
-                        <span key={section}>{viewLabels[section]}</span>
-                      ))}
-                    </div>
-                    <div>
-                      <strong>Ограничено</strong>
-                      {policy.restricted.length ? (
-                        policy.restricted.map((section) => <span key={section}>{viewLabels[section]}</span>)
-                      ) : (
-                        <span>нет</span>
-                      )}
-                    </div>
-                  </div>
-                  <ul>
-                    {policy.requiresApprovalFor.slice(0, 3).map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                  <small>Аудит: {policy.auditEvents.map((event) => policyAuditEventLabels[event] ?? event).join(", ")}</small>
-                </article>
-              ))}
-            </div>
-          </section>
-          ) : null}
-
-          {settingsTab === "telegram" ? (
-          <section className="telegram-settings" aria-label="Telegram-бот клиники">
-            <div className="import-copy">
-              <Bot aria-hidden="true" />
-              <div>
-                <p className="eyebrow">Бот клиники</p>
-                <h2>Telegram-связь без передачи медицинских данных</h2>
-                <p>
-                  Код действует короткое время, хранится на сервере только как хэш и связывает чат с пациентом или сотрудником.
-                  Документы, снимки, диагнозы и налоговые PDF остаются в CRM и защищенном портале.
-                </p>
-              </div>
-            </div>
-
-            <div className="telegram-status-grid">
-              <article>
-                <span>Бот</span>
-                <strong>{typedTelegramStatus?.botUsername ? `@${typedTelegramStatus.botUsername.replace(/^@/, "")}` : "не указан"}</strong>
-                <p>{typedTelegramStatus ? telegramModeLabels[typedTelegramStatus.mode] : "статус не загружен"}</p>
-              </article>
-              <article>
-                <span>Бот клиники</span>
-                <strong>{typedTelegramStatus?.tokenConfigured ? "подключен" : "не подключен"}</strong>
-                <p>Секрет бота хранится в серверных настройках и не показывается в приложении.</p>
-              </article>
-              <article>
-                <span>Прием сообщений</span>
-                <strong>{typedTelegramStatus?.webhookReady ? "готов" : "проверить"}</strong>
-                <p>{typedTelegramStatus?.webhookSecretConfigured ? "защита входящих сообщений включена" : "нужно включить защиту входящих сообщений"}</p>
-              </article>
-              <article>
-                <span>Связки</span>
-                <strong>{typedTelegramStatus?.activeChatLinkCount ?? 0}</strong>
-                <p>{typedTelegramStatus?.pendingLinkCodeCount ?? 0} кодов ожидают подтверждения</p>
-              </article>
-            </div>
-
-            <details className="settings-advanced-block settings-admin-secret-block">
-              <summary className="settings-advanced-toggle">
-                <span className="settings-advanced-label">
-                  <span className="settings-advanced-icon">🔐</span>
-                  Доступ к Telegram
-                </span>
-                <span className="settings-advanced-hint">только если требует сервер</span>
-                <span className="settings-advanced-chevron">▼</span>
-              </summary>
-              <article className="telegram-link-panel telegram-admin-panel settings-advanced-form">
-                <p>Если Telegram-панель защищена на сервере клиники, введите секрет администратора для управления ботом, кодами и отправками. В браузере он не сохраняется.</p>
-                <p>{adminSecretScopeWarning}</p>
-                <div className="telegram-link-controls">
-                  <label>
-                    Секрет администратора клиники для Telegram
-                    <input
-                      type="password"
-                      autoComplete="current-password"
-                      value={telegramAdminSecretDraft}
-                      onChange={(event: TextInputChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
-                      onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                        if (event.key === "Enter" && adminSecretReady) {
-                          event.preventDefault();
-                          unlockTelegramAdminSession();
-                        }
-                      }}
-                      placeholder="введите секрет администратора"
-                      aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
-                    />
-                  </label>
-                  {!adminSecretReady ? (
-                    <p className="admin-unlock-guidance" id="settings-admin-unlock-guidance" role="status" aria-live="polite">
-                      Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
-                    </p>
-                  ) : null}
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={unlockTelegramAdminSession}
-                    aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
-                    disabled={!adminSecretReady}
-                  >
-                    <ShieldCheck aria-hidden="true" /> Разблокировать
-                  </button>
-                  <button className="secondary-button" type="button" onClick={lockTelegramAdminSession} disabled={!telegramAdminSecretSession}>
-                    Забыть секрет
-                  </button>
-                </div>
-                <p>{telegramAdminSecretSession ? "Админ-доступ к Telegram активен до перезагрузки страницы." : "Без секрета будут работать только окружения без обязательного админ-доступа."}</p>
-              </article>
-            </details>
-
-            <div className="telegram-workbench">
-              <article className="telegram-link-panel">
-                <div className="panel-heading">
-                  <div>
-                    <h3>QR для подключения</h3>
-                    <p>Покажите пациенту или сотруднику. Старый ожидающий код для этой записи будет отозван.</p>
-                  </div>
-                  <button className="secondary-button" type="button" onClick={() => void loadTelegramControlPlane()} disabled={isTelegramLoading}>
-                    <RefreshCw aria-hidden="true" /> Обновить
-                  </button>
-                </div>
-                <div className="telegram-link-controls">
-                  <div className="settings-field">
-                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Кого подключаем</span>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      {[
-                        { value: "patient", label: "Активный пациент" },
-                        { value: "staff", label: "Сотрудник клиники" }
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`quick-chip ${telegramLinkSubjectType === option.value ? 'active' : ''}`}
-                          onClick={() => {
-                            setTelegramLinkSubjectType(normalizedTelegramLinkSubjectType(option.value));
-                            setTelegramLinkCode(null);
-                            setTelegramLinkActionState(null);
-                          }}
-                          style={{ background: telegramLinkSubjectType === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramLinkSubjectType === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: "pointer", fontSize: "14px" }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {telegramLinkSubjectType === "staff" ? (
-                    <label>
-                      Сотрудник
-                      <select
-                        value={telegramLinkStaffId}
-                        onChange={(event: SelectChangeEvent) => {
-                          setTelegramLinkStaffId(event.target.value);
-                          setTelegramLinkCode(null);
-                          setTelegramLinkActionState(null);
-                        }}
-                      >
-                        {typedTelegramLinkStaffOptions.length === 0 ? (
-                          <option value="">Нет активных сотрудников</option>
-                        ) : null}
-                        {typedTelegramLinkStaffOptions.map((member) => (
-                          <option key={member.id} value={member.id}>
-                            {member.fullName}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : (
-                    <label>
-                      Пациент
-                      <input readOnly value={activePatient?.fullName ?? "Нет активного пациента"} />
-                    </label>
-                  )}
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={() => void createTelegramLinkCode()}
-                    disabled={isTelegramLinkCreating || (telegramLinkSubjectType === "staff" && !typedTelegramLinkStaffOptions.length)}
-                  >
-                    <Bot aria-hidden="true" /> {isTelegramLinkCreating ? "Создаю" : "Создать QR/код"}
-                  </button>
-                </div>
-
-                {telegramLinkCode ? (
-                  <div className="telegram-link-result">
-                    <div>
-                      <span>Код</span>
-                      <strong>{telegramLinkCode.code}</strong>
-                      <p>До {formatDateTime(telegramLinkCode.expiresAt)}. В списках показывается только хвост {telegramLinkCode.codeLast4}.</p>
-                      {telegramLinkCode.deepLink ? (
-                        <a
-                          href={telegramLinkCode.deepLink}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          aria-label="Открыть ссылку Telegram в новой вкладке"
-                          title="Открыть ссылку Telegram в новой вкладке"
-                        >
-                          Открыть ссылку Telegram <ExternalLink aria-hidden="true" />
-                        </a>
-                      ) : null}
-                      <small>{telegramLinkCode.shareText}</small>
-                      <div className="telegram-link-actions">
-                        <button
-                          className="secondary-button compact-button"
-                          type="button"
-                          onClick={() => void copyTelegramTextToClipboard(telegramLinkCode.code, "Код")}
-                          disabled={!telegramLinkCode.code.trim()}
-                        >
-                          <Copy aria-hidden="true" /> Код
-                        </button>
-                        {telegramLinkCode.deepLink ? (
-                          <button
-                            className="secondary-button compact-button"
-                            type="button"
-                            onClick={() => void copyTelegramTextToClipboard(telegramLinkCode.deepLink, "Ссылка")}
-                          >
-                            <Copy aria-hidden="true" /> Ссылка
-                          </button>
-                        ) : null}
-                        <button
-                          className="secondary-button compact-button"
-                          type="button"
-                          onClick={() => void copyTelegramTextToClipboard(telegramLinkCode.shareText, "Текст для пациента")}
-                          disabled={!telegramLinkCode.shareText.trim()}
-                        >
-                          <Copy aria-hidden="true" /> Текст
-                        </button>
-                        {telegramLinkCode.qrSvg ? (
-                          <button className="secondary-button compact-button" type="button" onClick={downloadTelegramQrSvg}>
-                            <Download aria-hidden="true" /> Скачать QR
-                          </button>
-                        ) : null}
-                      </div>
-                      {telegramLinkActionState ? <small className="telegram-link-action-state">{telegramLinkActionState}</small> : null}
-                    </div>
-                    {telegramLinkCode.qrSvg ? (
-                      <img
-                        alt="QR-код Telegram-бота клиники"
-                        src={telegramQrSvgToDataUrl(telegramLinkCode.qrSvg)}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <p>QR недоступен для слишком длинной ссылки, используйте код вручную.</p>
-                    )}
-                  </div>
-                ) : null}
-
-                <div className="telegram-link-ledger">
-                  <div>
-                    <h4>Активные связки</h4>
-                    <p>
-                      {telegramChatLinkLedger?.activeCount ?? typedTelegramChatLinks.filter((link) => link.status === "active").length} чатов сейчас можно использовать для отправок.
-                      {telegramChatLinkLedger ? ` Показано ${typedTelegramChatLinks.length} из ${telegramChatLinkLedger.filteredCount}.` : ""}
-                    </p>
-                  </div>
-                  {typedTelegramChatLinks.length ? (
-                    <div className="telegram-link-ledger-list">
-                      {typedTelegramChatLinks.map((link) => (
-                        <article className={`telegram-link-ledger-row link-${link.status}`} key={link.id}>
-                          <div>
-                            <strong>{telegramSubjectName(link.subjectType, link.subjectId)}</strong>
-                            <span>
-                              {link.subjectType === "patient" ? "пациент" : "сотрудник"} · чат *{link.chatIdLast4 ?? "----"} · {link.status === "active" ? "активна" : "отозвана"}
-                            </span>
-                            <small>{formatDateTime(link.linkedAt)}</small>
-                          </div>
-                          <button
-                            className="secondary-button compact-button"
-                            type="button"
-                            onClick={() => void revokeTelegramChatLink(link.id)}
-                            disabled={link.status !== "active" || Boolean(telegramRevokingLinkId)}
-                          >
-                            {telegramRevokingLinkId === link.id ? "..." : "Отозвать"}
-                          </button>
-                        </article>
-                      ))}
-                      {telegramChatLinkLedger?.nextCursor ? (
-                        <button
-                          className="secondary-button compact-button"
-                          type="button"
-                          onClick={() => void loadMoreTelegramChatLinks()}
-                          disabled={isTelegramChatLinksLoadingMore}
-                        >
-                          {isTelegramChatLinksLoadingMore ? "Загружаем" : "Показать еще связки"}
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <p className="telegram-empty-state">Связанных Telegram-чатов пока нет. Создайте QR и попросите пациента открыть бота.</p>
-                  )}
-                  <div className="telegram-link-ledger-codes">
-                    <span>
-                      {telegramLinkCodeLedger?.pendingCount ?? typedTelegramLinkCodes.filter((code) => code.status === "pending").length} кодов ожидают подключения
-                      {telegramLinkCodeLedger ? ` · показано ${typedTelegramLinkCodes.length} из ${telegramLinkCodeLedger.filteredCount}` : ""}
-                    </span>
-                    {typedTelegramLinkCodes.map((code) => (
-                      <small key={code.id}>
-                        {telegramSubjectName(code.subjectType, code.subjectId)} · *{code.codeLast4} · {(telegramLinkCodeStatusLabels || { pending: "ожидает", used: "использован", expired: "истек", revoked: "отозван" })[code.status]} · до{" "}
-                        {formatDateTime(code.expiresAt)}
-                      </small>
-                    ))}
-                    {telegramLinkCodeLedger?.nextCursor ? (
-                      <button
-                        className="secondary-button compact-button"
-                        type="button"
-                        onClick={() => void loadMoreTelegramLinkCodes()}
-                        disabled={isTelegramLinkCodesLoadingMore}
-                      >
-                        {isTelegramLinkCodesLoadingMore ? "Загружаем" : "Показать еще коды"}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </article>
-
-              <article className="telegram-policy-panel">
-                <div className="panel-heading">
-                  <div>
-                    <h3>Безопасные сценарии</h3>
-                    <p>Это не рекламная рассылка и не канал медицинских документов. Только уведомления и портальные ссылки.</p>
-                  </div>
-                  <span className="status-pill status-confirmed">{typedTelegramFeaturePlan?.enabledFeatures.length ?? 0}</span>
-                </div>
-                <div className="telegram-token-row">
-                  {(typedTelegramFeaturePlan?.patientSafeActions ?? []).slice(0, 6).map((action) => (
-                    <span key={action}>{action}</span>
-                  ))}
-                </div>
-                <div className="telegram-blocked-list">
-                  {(typedTelegramFeaturePlan?.blockedByDefault ?? []).slice(0, 6).map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
-                <div className="telegram-settings-form">
-                  <div className="settings-field">
-                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Режим бота</span>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
-                      {[
-                        { value: "shared_dente_bot", label: telegramModeLabels.shared_dente_bot },
-                        { value: "disabled", label: telegramModeLabels.disabled },
-                        { value: "clinic_owned_bot", label: telegramModeLabels.clinic_owned_bot }
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`quick-chip ${telegramModeDraft === option.value ? 'active' : ''}`}
-                          onClick={() => {
-                            setTelegramModeDraft(normalizedTelegramBotMode(option.value));
-                            markTelegramSettingsDirty();
-                          }}
-                          style={{ background: telegramModeDraft === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramModeDraft === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: "pointer", fontSize: "14px" }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                    <small className="field-note">{telegramModeHints[telegramModeDraft]}</small>
-                  </div>
-                  <label>
-                    Имя общего бота в Telegram
-                    <input
-                      inputMode="text"
-                      placeholder="dentecrm_bot"
-                      value={telegramBotUsernameDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramBotUsernameDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <label>
-                    Имя бота клиники в Telegram
-                    <input
-                      inputMode="text"
-                      placeholder="clinic_bot"
-                      value={telegramOwnBotUsernameDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramOwnBotUsernameDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <label>
-                    Профиль бота клиники
-                    <input
-                      inputMode="text"
-                      placeholder="clinic-main"
-                      value={telegramBotConfigId}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => setTelegramBotConfigId(event.target.value)}
-                    />
-                    <small>Если у клиники один бот, оставьте основной профиль. Для нескольких ботов используйте понятную метку вроде clinic-main.</small>
-                  </label>
-                  <label>
-                    Адрес приема сообщений Telegram
-                    <input
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://crm.clinic.ru"
-                      value={telegramWebhookBaseUrlDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramWebhookBaseUrlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                    <small>Публичный HTTPS-адрес CRM, который Telegram сможет открыть для входящих сообщений.</small>
-                  </label>
-                  <label>
-                    Портал пациента
-                    <input
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://portal.example"
-                      value={telegramPatientPortalBaseUrlDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramPatientPortalBaseUrlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <label>
-                    Картинка приветствия
-                    <input
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://.../welcome.jpg"
-                      value={telegramWelcomeImageUrlDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramWelcomeImageUrlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <label>
-                    Срок QR-кода, минут
-                    <input
-                      type="number"
-                      min={5}
-                      max={1440}
-                      step={5}
-                      value={telegramTokenTtlDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramTokenTtlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <label>
-                    Напоминания до приема, часы
-                    <input
-                      inputMode="text"
-                      placeholder="24, 2"
-                      value={telegramReminderLeadTimesDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramReminderLeadTimesDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                    <small>Напоминания до приема в часах: от 1 до 168, максимум 6 значений.</small>
-                  </label>
-                  <label>
-                    Просьба оценить клинику, часы после визита
-                    <input
-                      type="number"
-                      min={1}
-                      max={720}
-                      step={1}
-                      value={telegramReviewRequestDelayDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramReviewRequestDelayDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                    <small>Клиника сама выбирает момент просьбы оставить отзыв: от 1 до 720 часов после закрытого визита или оплаты.</small>
-                  </label>
-                  <fieldset className="telegram-checkup-delay-fields full">
-                    <legend>Контроль после лечения</legend>
-                    <small>Настраивается для каждой клиники. Бот отправит короткий вопрос о самочувствии через выбранное число часов после памятки.</small>
-                    {typedTelegramPostVisitCheckupDelayFields.map((field) => (
-                      <label key={field.key}>
-                        {field.label}
-                        <input
-                          type="number"
-                          min={1}
-                          max={720}
-                          step={1}
-                          value={typedTelegramPostVisitCheckupDelayDrafts[field.key]}
-                          onChange={(event: ChangeEvent<HTMLInputElement>) => updateTelegramPostVisitCheckupDelayDraft(field.key, event.target.value)}
-                        />
-                        <small>{field.help}</small>
-                      </label>
-                    ))}
-                  </fieldset>
-                  <label>
-                    Канал эскалации
-                    <input
-                      inputMode="text"
-                      placeholder="@clinic_admins"
-                      value={telegramStaffEscalationChannelDraft}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setTelegramStaffEscalationChannelDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <div className="settings-field">
-                    <span className="field-label" style={{ fontSize: "14px", fontWeight: 600, color: "var(--slate-700)", display: "block", marginBottom: "8px" }}>Приватность</span>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
-                      {[
-                        { value: "no_phi_by_default", label: telegramPrivacyModeLabels.no_phi_by_default },
-                        { value: "limited_admin_only", label: telegramPrivacyModeLabels.limited_admin_only },
-                        { value: "consented_phi_templates", label: telegramPrivacyModeLabels.consented_phi_templates + " (после аудита)" }
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`quick-chip ${telegramPrivacyModeDraft === option.value ? 'active' : ''}`}
-                          onClick={() => {
-                            if (option.value === "consented_phi_templates") return;
-                            setTelegramPrivacyModeDraft(normalizedTelegramPrivacyMode(option.value));
-                            markTelegramSettingsDirty();
-                          }}
-                          disabled={option.value === "consented_phi_templates"}
-                          style={{ background: telegramPrivacyModeDraft === option.value ? 'var(--brand-500)' : 'var(--slate-100)', color: telegramPrivacyModeDraft === option.value ? '#fff' : 'var(--slate-700)', padding: "6px 12px", borderRadius: "16px", border: "none", cursor: option.value === "consented_phi_templates" ? "not-allowed" : "pointer", fontSize: "14px", opacity: option.value === "consented_phi_templates" ? 0.5 : 1 }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                    <small className="field-note">{telegramPrivacyModeHints[telegramPrivacyModeDraft]}</small>
-                  </div>
-                </div>
-                <div className="telegram-feature-grid" aria-label="Функции Telegram">
-                  {typedTelegramFeatureOptions.map((feature) => (
-                    <label className={typedTelegramEnabledFeaturesDraft.includes(feature) ? "feature-enabled" : ""} key={feature}>
-                      <input
-                        type="checkbox" className="toggle-switch"
-                        checked={typedTelegramEnabledFeaturesDraft.includes(feature)}
-                        onChange={() => toggleTelegramFeature(feature)}
-                      />
-                      <span>
-                        <strong>{telegramFeatureLabel(feature)}</strong>
-                        <small>{typedTelegramFeatureHelp[feature]}</small>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                <label className="telegram-voice-toggle">
-                  <input
-                    type="checkbox" className="toggle-switch"
-                    checked={telegramAllowVoiceIntakeDraft}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                      const checked = event.target.checked;
-                      setTelegramAllowVoiceIntakeDraft(checked);
-                      if (checked && !typedTelegramEnabledFeaturesDraft.includes("voice_note_intake")) {
-                        setTelegramEnabledFeaturesDraft((current: DenteTelegramFeature[]) => [...current, "voice_note_intake"]);
-                      }
-                      markTelegramSettingsDirty();
-                    }}
-                  />
-                  <span>
-                    <strong>Разрешить голосовые обращения</strong>
-                    <small>Даже при включении бот не отправляет диагнозы и файлы в Telegram.</small>
-                  </span>
-                </label>
-                <div className="telegram-visual-card-fields">
-                  {typedTelegramVisualCardFields.map((field) => (
-                    <label key={field.key}>
-                      {field.label}
-                      <input
-                        type="url"
-                        inputMode="url"
-                        placeholder={field.placeholder}
-                        value={telegramVisualCardUrlDrafts[field.key] ?? ""}
-                        onChange={(event: ChangeEvent<HTMLInputElement>) => updateTelegramVisualCardUrlDraft(field.key, event.target.value)}
-                      />
-                      <small>{field.help} Если поле пустое, используется картинка приветствия.</small>
-                    </label>
-                  ))}
-                </div>
-                <div className="telegram-external-links">
-                  <label>
-                    Ссылка на отзыв
-                    <input
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://..."
-                      value={telegramReviewUrlDraft}
-                      onChange={(event: TextInputChangeEvent) => {
-                        setTelegramReviewUrlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <label>
-                    Ссылка на карту
-                    <input
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://..."
-                      value={telegramMapsUrlDraft}
-                      onChange={(event: TextInputChangeEvent) => {
-                        setTelegramMapsUrlDraft(event.target.value);
-                        markTelegramSettingsDirty();
-                      }}
-                    />
-                  </label>
-                  <button className="secondary-button" type="button" onClick={() => void saveTelegramSettings()} disabled={isTelegramSettingsSaving}>
-                    <ExternalLink aria-hidden="true" /> {isTelegramSettingsSaving ? "..." : "Сохранить"}
-                  </button>
-                </div>
-                <p className={`telegram-save-state save-${telegramSettingsSaveState}`}>
-                  {telegramSettingsSaveState === "saving"
-                    ? "Автосохранение настроек..."
-                    : telegramSettingsSaveState === "saved"
-                      ? "Настройки Telegram сохранены."
-                      : telegramSettingsSaveState === "error"
-                        ? telegramSettingsSaveError ?? "Настройки Telegram не сохранены."
-                        : telegramSettingsDirty
-                          ? "Изменения будут сохранены автоматически."
-                          : "Выбранная конфигурация сохранена и будет применяться до изменения."}
-                </p>
-                <div className="telegram-preview-actions">
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("appointment_confirmation")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-                    disabled={!activePatient || isTelegramLoading}
-                  >
-                    <Send aria-hidden="true" /> Прием
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("document_ready_notice")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-                    disabled={!activePatient || isTelegramLoading}
-                  >
-                    <FileCheck2 aria-hidden="true" /> Документ
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("payment_reminder_notice")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-                    disabled={!activePatient || isTelegramLoading}
-                  >
-                    <CreditCard aria-hidden="true" /> Оплата
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("recall_notice")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-                    disabled={!activePatient || isTelegramLoading}
-                  >
-                    <CalendarDays aria-hidden="true" /> Профилактика
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("review_request")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-                    disabled={!activePatient || isTelegramLoading}
-                  >
-                    <ExternalLink aria-hidden="true" /> Отзыв
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("post_visit_instruction_link")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-                    disabled={!activePatient || isTelegramLoading}
-                  >
-                    <ClipboardCheck aria-hidden="true" /> Памятка
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("post_visit_checkup")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-                    disabled={!activePatient || isTelegramLoading}
-                  >
-                    <ClipboardCheck aria-hidden="true" /> Контроль
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => void previewTelegramTemplate("staff_daily_digest")}
-                    aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}
-                    disabled={!typedTelegramLinkStaffOptions.length || isTelegramLoading}
-                  >
-                    <Users aria-hidden="true" /> {"\u0421\u0432\u043e\u0434\u043a\u0430 \u0441\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a\u0443"}
-                  </button>
-                </div>
-                {isTelegramLoading ? (
-                  <p className="telegram-preview-guidance" id={telegramPreviewLoadingGuidanceId} role="status" aria-live="polite">
-                    Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.
-                  </p>
-                ) : !activePatient ? (
-                  <p className="telegram-preview-guidance" id={telegramPreviewPatientGuidanceId} role="status" aria-live="polite">
-                    Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.
-                  </p>
-                ) : null}
-                {!isTelegramLoading && !typedTelegramLinkStaffOptions.length ? (
-                  <p className="telegram-preview-guidance" id={telegramPreviewStaffGuidanceId} role="status" aria-live="polite">
-                    Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.
-                  </p>
-                ) : null}
-                {typedTelegramPreview ? (
-                  <div className="telegram-preview-box">
-                    <span>
-                      {telegramTemplateLabels[typedTelegramPreview.templateKind]} · {telegramClassificationLabels[typedTelegramPreview.classification]}
-                    </span>
-                    <p>{typedTelegramPreview.text || telegramHumanMessage(typedTelegramPreview.blockedReason)}</p>
-                    {typedTelegramPreview.photoUrl ? (
-                      <div className="telegram-visual-card-preview">
-                        <img
-                          src={typedTelegramPreview.photoUrl}
-                          alt="Визуальная карточка Telegram"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <span className="telegram-visual-card-indicator">
-                          <ImageIcon aria-hidden="true" /> Визуальная карточка
-                        </span>
-                      </div>
-                    ) : null}
-                    {getTypedTelegramInlineButtonRows(typedTelegramPreview.replyMarkup).length ? (
-                      <div className="telegram-preview-buttons" aria-label="Кнопки Telegram-сообщения">
-                        {getTypedTelegramInlineButtonRows(typedTelegramPreview.replyMarkup).map((row, rowIndex) => (
-                          <div className="telegram-inline-button-row" key={`preview-row-${rowIndex}`}>
-                            {row.map((button) => (
-                              <span className="telegram-preview-button" key={`${button.text}:${button.target}`}>
-                                {button.text}
-                                <small>{typedTelegramInlineButtonKindLabels[button.kind]}</small>
-                              </span>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                    {typedTelegramPreview.warnings.map((warning) => (
-                      <small key={warning}>{telegramHumanMessage(warning)}</small>
-                    ))}
-                  </div>
-                ) : null}
-              </article>
-            </div>
-
-            <article className="telegram-outbox-panel">
-              <div className="panel-heading">
-                <div>
-                  <h3>Очередь отправок</h3>
-                  <p>Это расчет готовности: отправка разрешена только при связанном чате, подключенном боте и защищенной серверной связке.</p>
-                </div>
-                <div className="telegram-outbox-summary-actions">
-                  <span className="status-pill status-confirmed">
-                    {typedTelegramOutbox?.dueCount ?? 0} к отправке сейчас / {typedTelegramOutbox?.readyCount ?? 0} готово / {typedTelegramOutbox?.blockedCount ?? 0} требует настройки
-                  </span>
-                  <button
-                    className="secondary-button compact-button"
-                    type="button"
-                    onClick={() => void sendDueTelegramOutbox()}
-                    aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}
-                    aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}
-                    disabled={!typedTelegramOutbox?.dueCount || isTelegramSendingDue || Boolean(telegramSendingItemId) || isTelegramLoading}
-                  >
-                    <Send aria-hidden="true" /> {isTelegramSendingDue ? "Отправляем" : "Отправить готовые"}
-                  </button>
-                  {telegramOutboxBulkSendGuidance ? (
-                    <p className="telegram-outbox-guidance" id={telegramOutboxSendGuidanceId} role="status" aria-live="polite">
-                      {telegramOutboxBulkSendGuidance}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="telegram-outbox-controls" aria-label="Фильтры очереди Telegram">
-                <label>
-                  Статус
-                  <div className="quick-chips-row">
-  {typedTelegramOutboxStatusFilterOptions.map((status) => (
-    <button key={status} type="button" className={`quick-chip ${telegramOutboxStatusFilter === status ? 'selected' : ''}`} onClick={() => setTelegramOutboxStatusFilter(status as any)}>
-      {telegramOutboxStatusFilterLabels[status]}
-    </button>
-  ))}
-</div>
-                </label>
-                <label>
-                  Сценарий
-                  <div className="quick-chips-row">
-  {typedTelegramOutboxTemplateFilterOptions.map((templateKind) => (
-    <button key={templateKind} type="button" className={`quick-chip ${telegramOutboxTemplateFilter === templateKind ? 'selected' : ''}`} onClick={() => setTelegramOutboxTemplateFilter(templateKind as any)}>
-      {telegramOutboxTemplateFilterLabels[templateKind]}
-    </button>
-  ))}
-</div>
-                </label>
-                <span>
-                  Показано {typedVisibleTelegramOutboxItems.length} из {typedTelegramOutbox?.filteredCount ?? filteredTelegramOutboxItems.length}
-                  {typedTelegramOutbox ? ` / всего ${typedTelegramOutbox.totalCount}` : ""}
-                </span>
-              </div>
-              <div className="telegram-outbox-list">
-                {typedVisibleTelegramOutboxItems.map((item) => {
-                  const itemButtonRows = getTypedTelegramInlineButtonRows(item.replyMarkup);
-                  const itemBlockingNote = item.blockedReason ? telegramHumanMessage(item.blockedReason) : "";
-                  const itemWarningNotes = item.warnings.map((warning) => telegramHumanMessage(warning)).filter(Boolean);
-                  return (
-                    <article className={`telegram-outbox-item outbox-${item.deliveryStatus}`} key={item.id}>
-                      <div>
-                        <strong>{item.title}</strong>
-                        <p>{item.previewText || telegramHumanMessage(item.blockedReason)}</p>
-                        <div className="telegram-outbox-preview-meta">
-                          {item.photoUrl ? (
-                            <div className="telegram-visual-card-preview compact">
-                              <img
-                                src={item.photoUrl}
-                                alt="Картинка Telegram-сообщения"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                              <span className="telegram-visual-card-indicator">
-                                <ImageIcon aria-hidden="true" /> Картинка
-                              </span>
-                            </div>
-                          ) : null}
-                          {itemButtonRows.length ? (
-                            <div className="telegram-outbox-buttons" aria-label="Кнопки Telegram">
-                              {itemButtonRows.map((row, rowIndex) => (
-                                <div className="telegram-inline-button-row" key={`${item.id}-row-${rowIndex}`}>
-                                  {row.map((button) => (
-                                    <span key={`${item.id}-${button.text}-${button.target}`}>
-                                      {button.text}
-                                      <small>{typedTelegramInlineButtonKindLabels[button.kind]}</small>
-                                    </span>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
-                        </div>
-                        {itemBlockingNote || itemWarningNotes.length ? (
-                          <div className="telegram-outbox-notes" aria-label="Причины и предупреждения Telegram">
-                            {itemBlockingNote ? <small>{itemBlockingNote}</small> : null}
-                            {itemWarningNotes.map((warning) => (
-                              <small key={`${item.id}:${warning}`}>{warning}</small>
-                            ))}
-                          </div>
-                        ) : null}
-                        <small>
-                          {telegramTemplateLabels[item.templateKind]} · {telegramDeliveryStatusLabels[item.deliveryStatus]} · {formatDateTime(item.scheduledAt)}
-                        </small>
-                      </div>
-                      <div className="telegram-outbox-actions">
-                        <span>{item.chatLinkId ? "чат связан" : "нужен QR"}</span>
-                        <button
-                          className="secondary-button compact-button"
-                          type="button"
-                          onClick={() => void sendTelegramOutboxItem(item.id)}
-                          disabled={
-                            item.deliveryStatus !== "ready" ||
-                            !isTelegramOutboxItemDueForUi(item) ||
-                            Boolean(telegramSendingItemId) ||
-                            isTelegramSendingDue
-                          }
-                        >
-                          <Send aria-hidden="true" /> {telegramSendingItemId === item.id ? "..." : "Отправить"}
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-                {telegramOutboxRemainingCount > 0 || typedTelegramOutbox?.nextCursor ? (
-                  <div className="telegram-outbox-result-note">
-                    <span>Еще {telegramOutboxRemainingCount} задач в выбранном фильтре.</span>
-                    {typedTelegramOutbox?.nextCursor ? (
-                      <button
-                        className="secondary-button compact-button"
-                        type="button"
-                        onClick={() => void loadMoreTelegramOutbox()}
-                        disabled={isTelegramOutboxLoadingMore}
-                      >
-                        {isTelegramOutboxLoadingMore ? "Загружаем" : "Показать еще"}
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-                {typedTelegramOutbox && typedTelegramOutbox.items.length > 0 && filteredTelegramOutboxItems.length === 0 ? (
-                  <p className="telegram-empty-state">По выбранным фильтрам задач нет.</p>
-                ) : null}
-                {typedTelegramOutbox && typedTelegramOutbox.items.length === 0 ? (
-                  <p className="telegram-empty-state">Нет Telegram-задач в текущей очереди связи.</p>
-                ) : null}
-              </div>
-              {typedTelegramOutbox?.warnings.length ? (
-                <div className="telegram-warning-strip compact">
-                  {typedTelegramOutbox.warnings.map((warning) => (
-                    <span key={warning}>{telegramHumanMessage(warning)}</span>
-                  ))}
-                </div>
-              ) : null}
-            </article>
-
-            {typedTelegramStatus?.warnings.length || typedTelegramStatus?.nextActions.length ? (
-              <div className="telegram-warning-strip">
-                {[...(typedTelegramStatus?.warnings ?? []), ...(typedTelegramStatus?.nextActions ?? [])].map((item) => (
-                  <span key={item}>{telegramHumanMessage(item)}</span>
-                ))}
-              </div>
-            ) : null}
-          </section>
-          ) : null}
-
+              setTelegramMapsUrlDraft,
+              markTelegramSettingsDirty,
+              saveTelegramSettings,
+              isTelegramSettingsSaving,
+              telegramSettingsSaveState,
+              telegramSettingsSaveError,
+              telegramSettingsDirty,
+              previewTelegramTemplate,
+              telegramPreviewLoadingGuidanceId,
+              activePatient,
+              telegramPreviewPatientGuidanceId,
+              typedTelegramLinkStaffOptions,
+              telegramPreviewStaffGuidanceId,
+              telegramLinkCodeStatusLabels,
+              telegramLinkCodeLedger,
+              loadMoreTelegramLinkCodes,
+              isTelegramLinkCodesLoadingMore,
+              telegramModeLabels,
+              telegramModeDraft,
+              setTelegramModeDraft,
+              normalizedTelegramBotMode,
+              telegramModeHints,
+              telegramBotUsernameDraft,
+              setTelegramBotUsernameDraft,
+              telegramOwnBotUsernameDraft,
+              setTelegramOwnBotUsernameDraft,
+              telegramBotConfigId,
+              setTelegramBotConfigId,
+              telegramWebhookBaseUrlDraft,
+              setTelegramWebhookBaseUrlDraft,
+              telegramPatientPortalBaseUrlDraft,
+              setTelegramPatientPortalBaseUrlDraft,
+              telegramWelcomeImageUrlDraft,
+              setTelegramWelcomeImageUrlDraft,
+              telegramTokenTtlDraft,
+              setTelegramTokenTtlDraft,
+              telegramReminderLeadTimesDraft,
+              setTelegramReminderLeadTimesDraft,
+              telegramReviewRequestDelayDraft,
+              setTelegramReviewRequestDelayDraft,
+              typedTelegramPostVisitCheckupDelayDrafts,
+              telegramStaffEscalationChannelDraft,
+              setTelegramStaffEscalationChannelDraft,
+              telegramPrivacyModeLabels,
+              telegramPrivacyModeDraft,
+              setTelegramPrivacyModeDraft,
+              normalizedTelegramPrivacyMode,
+              telegramPrivacyModeHints,
+              typedTelegramFeatureOptions,
+              typedTelegramEnabledFeaturesDraft,
+              toggleTelegramFeature,
+              telegramFeatureLabel,
+              telegramAllowVoiceIntakeDraft,
+              setTelegramAllowVoiceIntakeDraft,
+              setTelegramEnabledFeaturesDraft,
+              telegramVisualCardUrlDrafts,
+              updateTelegramVisualCardUrlDraft,
+              telegramReviewUrlDraft,
+              setTelegramReviewUrlDraft,
+              telegramMapsUrlDraft
+            }} 
+          />
           {settingsTab === "protocols" ? (
           <section className="protocol-settings" aria-label="Библиотека клинических протоколов">
             <div className="import-copy">
@@ -3982,6 +2546,13 @@ export function SettingsView(props: SettingsViewProps) {
             </details>
 
             <div className="pricelist-workbench">
+              <PriceDictationBar 
+                onPriceParsed={(service, price, category) => {
+                  const newEntry = `${category ? category + ' ' : ''}${service} ${price} руб`;
+                  setPricelistText(prev => prev ? prev + '\n' + newEntry : newEntry);
+                  setPricelistAnalysis(null);
+                }} 
+              />
               <textarea
                 aria-label="Прайс-лист клиники"
                 value={pricelistText}

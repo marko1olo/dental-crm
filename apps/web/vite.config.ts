@@ -1,12 +1,32 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import path from "path";
+import { fileURLToPath } from "url";
 
 declare const process: { env: Record<string, string | undefined> };
 
 const apiProxyTarget = process.env.DENTAL_API_PROXY_TARGET ?? "http://127.0.0.1:4100";
 
+// __dirname equivalent for ESM configs
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Always point to root node_modules to prevent React duplication
+const rootNodeModules = path.resolve(__dirname, "../../node_modules");
+
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+    alias: {
+      "react": path.join(rootNodeModules, "react"),
+      "react-dom": path.join(rootNodeModules, "react-dom"),
+      "react/jsx-runtime": path.join(rootNodeModules, "react/jsx-runtime"),
+      "react/jsx-dev-runtime": path.join(rootNodeModules, "react/jsx-dev-runtime"),
+    },
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom"],
+  },
   build: {
     rollupOptions: {
       output: {
@@ -79,8 +99,15 @@ export default defineConfig({
     }
   },
   server: {
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
     proxy: {
       "/api": apiProxyTarget
     }
+  },
+  worker: {
+    format: "es"
   }
 });

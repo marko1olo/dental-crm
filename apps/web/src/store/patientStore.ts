@@ -12,7 +12,12 @@ import {
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
+export type ToothStatus = "Healthy" | "Caries" | "Filling" | "Missing" | "Implant" | "Crown";
+
 export interface PatientStore {
+  odontogramState: Record<number, ToothStatus>;
+  setToothStatus: (toothNumber: number, status: ToothStatus) => void;
+
   selectedPatientId: string | null;
   setSelectedPatientId: (val: string | null | ((prev: string | null) => string | null)) => void;
 
@@ -51,6 +56,11 @@ export interface PatientStore {
 }
 
 export const usePatientStore = create<PatientStore>((set) => ({
+  odontogramState: {},
+  setToothStatus: (toothNumber, status) => set((state) => ({ 
+    odontogramState: { ...state.odontogramState, [toothNumber]: status } 
+  })),
+
   selectedPatientId: initialUiPreferences.selectedPatientId ?? null,
   setSelectedPatientId: (val) => set((state) => ({ selectedPatientId: typeof val === "function" ? val(state.selectedPatientId) : val })),
 

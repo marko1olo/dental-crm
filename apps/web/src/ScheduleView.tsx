@@ -1,13 +1,15 @@
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { Plus, ShieldCheck, Bot, Mic } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { showToast } from "./components/GlobalToast";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ResourceLoad, ScheduleSuggestion, StaffRole } from "@dental/shared";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { smartBookingParser } from "./lib/smartBookingParser";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
+import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 
 type AppointmentScheduleDraft = {
   patientId: string;
@@ -155,7 +157,7 @@ export function ScheduleView(props: ScheduleViewProps) {
   const newAppointmentMissingSteps = [
     !newAppointmentDraft.patientId ? "выберите пациента" : null,
     !newAppointmentDraft.doctorUserId ? "выберите врача" : null,
-    dashboard.clinicSettings.profile.mode !== "solo_doctor" && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
+    dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !newAppointmentDraft.assistantUserId ? "выберите ассистента" : null,
     !newAppointmentDraft.chairId ? "выберите кресло" : null,
     !newAppointmentDraft.startsAt.trim() ? "укажите начало приема" : null,
     newAppointmentDraft.startsAt.trim() && !Number.isFinite(newAppointmentStartsAtMs) ? "проверьте дату начала" : null,
@@ -172,7 +174,7 @@ export function ScheduleView(props: ScheduleViewProps) {
     return [
       !draft.patientId ? "выберите пациента" : null,
       !draft.doctorUserId ? "выберите врача" : null,
-      dashboard.clinicSettings.profile.mode !== "solo_doctor" && !draft.assistantUserId ? "выберите ассистента" : null,
+      dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
       !draft.chairId ? "выберите кресло" : null,
       !draft.startsAt.trim() ? "укажите начало приема" : null,
       draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
@@ -253,7 +255,7 @@ export function ScheduleView(props: ScheduleViewProps) {
   return (
           <div className="panel schedule-panel" id="schedule">
             <div className="panel-heading">
-              <h2>Очередь смены</h2>
+              <h2>Расписание приемов</h2>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <button
                   className="secondary-button"
@@ -441,10 +443,11 @@ export function ScheduleView(props: ScheduleViewProps) {
             </details>
 
             <div className="appointment-create-editor" aria-label="Создание записи">
-              <div className="smart-ai-booking" style={{ marginBottom: '12px', border: '1px solid var(--brand-300)', boxShadow: '0 2px 8px rgba(14, 165, 233, 0.05)', borderRadius: '12px', padding: '8px 12px', background: 'var(--paper)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Bot size={18} color="var(--brand-600)" />
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <input
+              <div className="smart-ai-booking" style={{ marginBottom: '12px', border: '1px solid var(--brand-300)', boxShadow: '0 2px 8px rgba(14, 165, 233, 0.05)', borderRadius: '12px', padding: '12px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Bot size={18} color="var(--brand-600)" />
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <input
                     type="text"
                     value={smartInputText}
                     placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
@@ -462,19 +465,18 @@ export function ScheduleView(props: ScheduleViewProps) {
                     }}
                     style={{ width: '100%', padding: '12px 48px 12px 16px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '15px', outline: 'none' }}
                   />
-                  <button
-                    type="button"
-                    title="Надиктовать"
-                    onClick={() => alert("Запись голоса... (Демо ИИ)")}
-                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-500)', padding: '4px', borderRadius: '50%' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-50)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <Mic size={20} />
-                  </button>
-                  
+                  <SmartMicrophoneButton
+                    context="schedule"
+                    onResult={(text) => {
+                      setSmartInputText(text);
+                      const parsed = smartBookingParser(text, dashboard);
+                      setSmartParsedData(parsed);
+                      setShowSmartPreview(true);
+                      setShowHints(false);
+                    }}
+                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)' }}
+                  />
                   <DictationHints isVisible={showHints} type="schedule" />
-                  
                   <SmartParsePreview 
                     isVisible={showSmartPreview}
                     parsedData={smartParsedData}
@@ -501,7 +503,8 @@ export function ScheduleView(props: ScheduleViewProps) {
                     onClose={() => setShowSmartPreview(false)}
                   />
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <button
                       className="text-button"
@@ -780,11 +783,11 @@ export function ScheduleView(props: ScheduleViewProps) {
                     <div className="timeline-time">{formatTime(appointment.startsAt)}</div>
                     
                     <div className="timeline-content">
-                      <article className={`appointment-card ${readiness ? `readiness-${readiness.state}` : ""}`}>
-                    <div className="appointment-card-header">
-                      <div className="appointment-card-time">
+                      <article className={`appointment-card ${readiness ? `readiness-${readiness.state}` : ""}`} style={{ padding: '16px', background: 'white', border: '1px solid var(--slate-200)', borderRadius: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div className="appointment-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--slate-100)', paddingBottom: '8px', marginBottom: '4px' }}>
+                      <div className="appointment-card-time" style={{ fontWeight: 600, fontSize: '14px', color: 'var(--slate-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {formatTime(appointment.startsAt)}
-                        <span>{formatTime(appointment.endsAt)}</span>
+                        <span style={{ fontWeight: 400, color: 'var(--slate-500)' }}>{formatTime(appointment.endsAt)}</span>
                       </div>
                       <span className={`appointment-card-status status-pill status-${appointment.status}`}>
                         {appointmentLabels[appointment.status]}
@@ -793,7 +796,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 
                     <div className="appointment-card-body">
                       <h3 style={{ marginBottom: '4px' }}>{appointmentPatientName}</h3>
-                      <div className="chip-group">
+                      <div className="chip-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                         {appointmentSuggestions.map((suggestion) => (
                           <span 
                             key={suggestion.id} 
@@ -835,7 +838,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                       </p>
                     ) : null}
 
-                    <div className="appointment-card-footer">
+                    <div className="appointment-card-footer" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--slate-50)' }}>
                       <button
                         className="secondary-button appointment-edit-button"
                         type="button"

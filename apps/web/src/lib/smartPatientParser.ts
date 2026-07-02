@@ -10,38 +10,63 @@ export interface ParsedPatientData {
 
 export function parsePatientDictationLocal(input: string): ParsedPatientData {
   const result: ParsedPatientData = { fullName: "", phone: "", birthDate: "" };
-  const normalizedInput = textToNumbers(input);
+  let normalizedInput = textToNumbers(input);
+  
+  // Normalize email dictations
+  normalizedInput = normalizedInput.replace(/(?:^|[^а-яёa-z0-9])(собака|собачка|эт)(?:[^а-яёa-z0-9]|$)/ig, '@');
+  normalizedInput = normalizedInput.replace(/(?:^|[^а-яёa-z0-9])(точка)(?:[^а-яёa-z0-9]|$)/ig, '.');
+  normalizedInput = normalizedInput.replace(/(?:^|[^а-яёa-z0-9])(нижнее подчеркивание)(?:[^а-яёa-z0-9]|$)/ig, '_');
+  normalizedInput = normalizedInput.replace(/(?:^|[^а-яёa-z0-9])(тире)(?:[^а-яёa-z0-9]|$)/ig, '-');
+  normalizedInput = normalizedInput.replace(/\s+@\s+/g, '@');
+  normalizedInput = normalizedInput.replace(/\s+\.\s+/g, '.');
+
   let remaining = " " + normalizedInput + " ";
 
-  // 0. Notes extraction
-  const words = remaining.split(' ');
-  const notesRoots = ["заметк", "комментар", "примечан", "важно", "напиши", "укажи", "пометк"];
-  let noteStartIndex = -1;
-  for (let i = 0; i < words.length; i++) {
-    if (containsAnyFuzzyRoot(words[i] || '', notesRoots)) {
-      noteStartIndex = i;
-      break;
+  // 0. Notes & Tags extraction
+  const notesMatch = remaining.match(/(?:^|[^а-яёa-z0-9])(заметка|примечание|комментарий|важно|пометка|жалоба|жалобы)\s*[:\-]?\s*(.*)/i);
+  if (notesMatch && notesMatch[2]) {
+    result.notes = notesMatch[2].trim();
+    remaining = remaining.substring(0, notesMatch.index);
+  }
+
+  const medicalTags: string[] = [];
+  const tagRegexes = [
+    { regex: /(?:^|[^а-яёa-z0-9])(аллерги[яик]\s*(?:на\s+[а-я]+)?)(?:[^а-яёa-z0-9]|$)/i },
+    { regex: /(?:^|[^а-яёa-z0-9])(дмс|по дмс)(?:[^а-яёa-z0-9]|$)/i, tag: "ДМС" },
+    { regex: /(?:^|[^а-яёa-z0-9])(вип|vip)(?:[^а-яёa-z0-9]|$)/i, tag: "VIP" },
+    { regex: /(?:^|[^а-яёa-z0-9])(боится\s*боли|страх|паник)(?:[^а-яёa-z0-9]|$)/i, tag: "Боится боли" },
+    { regex: /(?:^|[^а-яёa-z0-9])(опаздывает|задерживается)(?:[^а-яёa-z0-9]|$)/i, tag: "Часто опаздывает" },
+    { regex: /(?:^|[^а-яёa-z0-9])(сложный\s*пациент|конфликтный)(?:[^а-яёa-z0-9]|$)/i, tag: "Сложный пациент" },
+    { regex: /(?:^|[^а-яёa-z0-9])(только\s*по\s*выходным|в\s*выходные)(?:[^а-яёa-z0-9]|$)/i, tag: "Только по выходным" },
+    { regex: /(?:^|[^а-яёa-z0-9])(беременност[ьяи]\s*[1-9]?\s*(?:месяц|недел[яиь]|тримсестр)?)(?:[^а-яёa-z0-9]|$)/i, tag: "Беременность" }
+  ];
+
+  for (const t of tagRegexes) {
+    const match = remaining.match(t.regex);
+    if (match && match[1]) {
+      medicalTags.push(t.tag || (match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase()));
+      remaining = remaining.replace(match[1], ' ');
     }
   }
-  if (noteStartIndex !== -1) {
-    result.notes = words.slice(noteStartIndex + 1).join(' ').trim();
-    remaining = words.slice(0, noteStartIndex).join(' ');
+
+  if (medicalTags.length > 0) {
+    const tagsString = medicalTags.join(", ");
+    result.notes = result.notes ? `${result.notes}, ${tagsString}` : tagsString;
   }
 
   // 1. Email extraction
-  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/i;
+  const emailRegex = /(?:^|[^a-z0-9._%+-])([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})(?:[^a-z0-9._%+-]|$)/i;
   const emailMatch = remaining.match(emailRegex);
-  if (emailMatch && emailMatch[0]) {
-    result.email = emailMatch[0].trim();
-    remaining = remaining.replace(emailMatch[0], ' ');
+  if (emailMatch && emailMatch[1]) {
+    result.email = emailMatch[1].trim();
+    remaining = remaining.replace(emailMatch[1], ' ');
   }
 
   // 2. Phone extraction
-  // Matches +7 999 123 45 67, 8(999)123-45-67, 8 999 1234567, 9991234567, etc.
-  const phoneRegex = /(?:\+7|8|7)?[\s\-()]*[9][\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d/i;
+  const phoneRegex = /((?:\+7|8|7)?[\s\-()]*[98][\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d[\s\-()]*\d(?:[^0-9]|$))/i;
   const phoneMatch = remaining.match(phoneRegex);
-  if (phoneMatch && phoneMatch[0]) {
-    const raw = phoneMatch[0];
+  if (phoneMatch && phoneMatch[1]) {
+    const raw = phoneMatch[1];
     let cleaned = raw.replace(/\D/g, '');
     if (cleaned.length === 10) cleaned = '7' + cleaned;
     if (cleaned.length === 11 && cleaned.startsWith('8')) cleaned = '7' + cleaned.slice(1);
@@ -52,8 +77,7 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
   }
 
   // 3. Date of birth extraction
-  // Numeric: 12.05.1990, 12/05/90, 12-05-1990, 12 05 90, 12 5 1990
-  const dobRegexNum = /(?:^|\s)(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{2,4})(?:\s|$)/;
+  const dobRegexNum = /(?:^|[^0-9])(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{1,2})[\.\/\-\s]+(?:0\s+)?(\d{2,4})(?:[^0-9]|$)/;
   const dobMatchNum = remaining.match(dobRegexNum);
   if (dobMatchNum && dobMatchNum[1] && dobMatchNum[2] && dobMatchNum[3]) {
     let day = dobMatchNum[1];
@@ -64,9 +88,8 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
       year = y > 30 ? `19${year}` : `20${year}`;
     }
     result.birthDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    remaining = remaining.replace(dobMatchNum[0], ' ');
+    remaining = remaining.replace(dobMatchNum[0].trim(), ' ');
   } else {
-    // Text: 12 мая 90, 12 мая 1990 года (fuzzy month matching)
     const monthRoots = ["январ", "феврал", "март", "апрел", "мая", "май", "июн", "июл", "август", "сентябр", "октябр", "ноябр", "декабр"];
     const monthMap: Record<string, number> = {
       "январ": 1, "феврал": 2, "март": 3, "апрел": 4, "мая": 5, "май": 5, "июн": 6, "июл": 7, "август": 8, "сентябр": 9, "октябр": 10, "ноябр": 11, "декабр": 12
@@ -79,23 +102,21 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
       
       const dayNum = parseInt(w1, 10);
       if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= 31) {
-        // Is w2 a fuzzy month?
         let matchedMonth = -1;
         for (const root of monthRoots) {
-          if (containsAnyFuzzyRoot(w2, [root])) {
+          if (w2.toLowerCase().startsWith(root.substring(0, 3))) {
             matchedMonth = monthMap[root]!;
             break;
           }
         }
         
         if (matchedMonth !== -1) {
-          // Look for year in w3 or w4 (in case of "года")
           let yearStr = "";
           let yearWordIndex = -1;
           for (let k = 1; k <= 3; k++) {
              const potentialYear = wordsTokens[i+1+k];
-             if (potentialYear && /^\d{2,4}$/.test(potentialYear)) {
-               yearStr = potentialYear;
+             if (potentialYear && /^\d{2,4}[.,;!?]*$/.test(potentialYear)) {
+               yearStr = potentialYear.replace(/[.,;!?]/g, '');
                yearWordIndex = i+1+k;
                break;
              }
@@ -109,11 +130,9 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
              }
              result.birthDate = `${year}-${String(matchedMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
              
-             // Remove the matched words
-             const matchedText = wordsTokens.slice(i, yearWordIndex + 1).join(' ');
-             remaining = remaining.replace(matchedText, ' ');
-             // Also remove "год" or "года" if it follows
-             remaining = remaining.replace(/\b(?:года|год)\b/gi, ' ');
+             const matchedTokensRegex = wordsTokens.slice(i, yearWordIndex + 1).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+             remaining = remaining.replace(new RegExp(matchedTokensRegex, 'i'), ' ');
+             remaining = remaining.replace(/(?:^|[^а-яёa-z0-9])(?:года|год)(?:[^а-яёa-z0-9]|$)/gi, ' ');
              break;
           }
         }
@@ -122,25 +141,21 @@ export function parsePatientDictationLocal(input: string): ParsedPatientData {
   }
 
   // 4. Name extraction & cleanup
-  const stopWordsRegex = /\b(созда[а-я]*|добав[а-я]*|запиш[а-я]*|пациент[а-я]*|нов(?:ый|ого|ая|ую)|пожалуйст[а-я]*|имя|на|в|к|доктор[а-я]*|врач[а-я]*|ребенк[а-я]*|мальчик[а-я]*|девочк[а-я]*|прием[а-я]*|час(?:ов|а)?|срочн[а-я]*|запис[а-я]*|отмен[а-я]*|перенес[а-я]*|передвин[а-я]*|телефон[а-я]*|мобильн[а-я]*|номер[а-я]*|сотов[а-я]*|дата|рождени[а-я]*|год(?:а|у)?|восьмерк[а-я]*|восемь|семь|плюс|зовут|лет)\b/gi;
+  const stopWords = [
+    "создай", "создать", "добавь", "добавить", "запиши", "записать", "пациент", "пациента", "пациентка", "карточку", "девочку", "мальчика", "ребенка",
+    "пац", "поц", "новый", "нового", "новая", "новую", "пожалуйста", "имя", "на", "в", "к", "с", "доктор", "доктора", "врач", "врача", 
+    "прием", "срочно", "запись", "отмени", "перенеси", "передвинь", "телефон", "мобильный", "номер", "сотовый", "тел", 
+    "дата", "рождения", "год", "года", "зовут", "лет", "др", "почта", "email", "днюха", "днюху", "анамнезе", "анамнез",
+    "заметка", "примечание", "комментарий", "важно", "пометка", "плюс", "плюсом", "собака", "собачка", "точка"
+  ];
+  const stopWordsPattern = new RegExp(`(?:^|[^а-яёa-z0-9])(${stopWords.join('|')})(?:[^а-яёa-z0-9]|$)`, 'gi');
   
-  remaining = remaining.replace(stopWordsRegex, ' ');
+  // Apply multiple times to catch overlapping boundaries like " Новый пациент "
+  remaining = remaining.replace(stopWordsPattern, ' ');
+  remaining = remaining.replace(stopWordsPattern, ' ');
   
-  const finalWords = remaining.split(/[\s,;]+/).filter(Boolean);
-  const cleanWords: string[] = [];
-  
-  for (const w of finalWords) {
-    // allow 1-letter initials except "в", "к", "с"
-    if (w.length <= 1 && !["в", "к", "с"].includes(w.toLowerCase())) {
-      cleanWords.push(w);
-      continue;
-    }
-    if (w.length > 1) {
-      cleanWords.push(w);
-    }
-  }
-  
-  remaining = cleanWords.join(' ').trim();
+  // Clean up punctuation and numbers in names
+  remaining = remaining.replace(/[0-9.,;!?+@_]/g, ' ').replace(/\s+/g, ' ').trim();
   
   if (remaining.length > 0) {
     result.fullName = remaining.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');

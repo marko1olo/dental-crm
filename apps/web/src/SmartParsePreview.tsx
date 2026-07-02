@@ -6,7 +6,7 @@ export interface SmartParsePreviewProps {
   isVisible: boolean;
   parsedData: any; // e.g. from smartBookingParser
   rawText: string;
-  type: "schedule" | "patient" | "visit";
+  type: "schedule" | "patient" | "visit" | "prices";
   onApply: (data: any) => void;
   onManual: () => void;
   onClose: () => void;
@@ -38,7 +38,7 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
       const data = await response.json();
       setInternalData(data);
     } catch (err: any) {
-      setAiError(err.message || "Сбой при парсинге ИИ");
+      setAiError("Ошибка API (Локальный режим): Подключите ключи в .env для реального LLM-парсинга");
     } finally {
       setIsAiLoading(false);
     }
@@ -62,13 +62,31 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
 
   // Render logic depending on type
   const renderSchedulePreview = (data: any) => {
+    if (data && data.isAiTask) return <div className="space-y-2 text-sm">
+        {data.isAiTask && (
+          <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
+             <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
+             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
+          </div>
+        )}
+</div>;
     if (!data || Object.keys(data).length === 0) {
       return <div className="text-sm text-slate-500 italic">Не удалось распознать детали. Попробуйте еще раз или используйте ИИ.</div>;
     }
     return (
       <div className="space-y-2 text-sm">
-        {data.status === 'cancelled' && (
-          <div className="bg-red-50 text-red-700 p-2 rounded text-xs font-semibold uppercase">Отмена записи</div>
+        {data.action === 'cancel' && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-2 rounded text-xs font-semibold flex justify-between items-center">
+            ОТМЕНА ЗАПИСИ
+            <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px]">Action</span>
+          </div>
+        )}
+        {data.action === 'reschedule' && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 p-2 rounded text-xs font-semibold flex justify-between items-center">
+            ПЕРЕНОС ЗАПИСИ
+            <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-[10px]">Action</span>
+          </div>
         )}
         {data.patientId && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
@@ -116,7 +134,51 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
     );
   };
 
+  const renderPricesPreview = (data: any) => {
+    if (data && data.isAiTask) return <div className="space-y-2 text-sm">
+        {data.isAiTask && (
+          <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
+             <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
+             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
+          </div>
+        )}
+</div>;
+    if (!data || !data.serviceName) return <div className="text-sm text-slate-500">Пусто... Назовите услугу и цену.</div>;
+    return (
+      <div className="space-y-2 text-sm">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-2 rounded text-xs font-semibold flex justify-between items-center mb-2">
+          ДОБАВИТЬ В ПРАЙС
+          <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[10px]">Action</span>
+        </div>
+        <div className="flex justify-between border-b border-slate-100 pb-1">
+          <span className="text-slate-500">Услуга:</span><span className="font-medium text-slate-800">{data.serviceName}</span>
+        </div>
+        {data.price !== null && data.price !== undefined && (
+          <div className="flex justify-between border-b border-slate-100 pb-1">
+            <span className="text-slate-500">Цена:</span><span className="font-bold text-emerald-600">{data.price} ₽</span>
+          </div>
+        )}
+        {data.category && (
+          <div className="flex justify-between border-b border-slate-100 pb-1">
+            <span className="text-slate-500">Категория:</span>
+            <span className="font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[10px]">{data.category}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderPatientPreview = (data: any) => {
+    if (data && data.isAiTask) return <div className="space-y-2 text-sm">
+        {data.isAiTask && (
+          <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
+             <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
+             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
+          </div>
+        )}
+</div>;
     if (!data || Object.keys(data).length === 0) return <div className="text-sm text-slate-500">Пусто...</div>;
     return (
       <div className="space-y-2 text-sm">
@@ -145,6 +207,53 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
     );
   };
 
+  const renderVisitPreview = (data: any) => {
+    if (data && data.isAiTask) return <div className="space-y-2 text-sm">
+        {data.isAiTask && (
+          <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
+             <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
+             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
+          </div>
+        )}
+</div>;
+    if (!data || (!data.toothUpdates?.length && !Object.keys(data.emkUpdates || {}).length)) {
+      return <div className="text-sm text-slate-500">Не удалось распознать приём...</div>;
+    }
+    return (
+      <div className="space-y-2 text-sm max-h-[300px] overflow-y-auto pr-2">
+        {data.toothUpdates && data.toothUpdates.length > 0 && (
+          <div className="mb-2">
+            <span className="text-slate-500 block mb-1">Зубы:</span>
+            <div className="flex flex-wrap gap-1">
+              {data.toothUpdates.map((t: any, i: number) => (
+                <span key={i} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100">
+                  {t.code}: {t.state}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {data.emkUpdates && Object.entries(data.emkUpdates).map(([k, v]) => {
+          if (!v) return null;
+          let label = k;
+          if (k === 'complaint') label = 'Жалобы';
+          if (k === 'anamnesis') label = 'Анамнез';
+          if (k === 'objectiveStatus') label = 'Объективно';
+          if (k === 'diagnosis') label = 'Диагноз';
+          if (k === 'treatmentPlan') label = 'Лечение';
+          
+          return (
+            <div key={k} className="flex flex-col border-t border-slate-100 pt-1 mt-1">
+              <span className="text-slate-500 text-xs mb-1">{label}:</span>
+              <span className="font-medium text-slate-800 text-xs whitespace-pre-wrap">{v as string}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (isAiLoading) {
       return (
@@ -158,7 +267,9 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
     switch (type) {
       case "schedule": return renderSchedulePreview(internalData);
       case "patient": return renderPatientPreview(internalData);
-      default: return <div className="text-sm text-slate-500">Превью для {type} в разработке...</div>;
+      case "visit": return renderVisitPreview(internalData);
+      case "prices": return renderPricesPreview(internalData);
+      default: return <div className="text-sm text-slate-500">Неизвестный контекст диктовки: {type}</div>;
     }
   };
 

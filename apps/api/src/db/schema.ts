@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
   unique,
+  index,
   uuid
 } from "drizzle-orm/pg-core";
 import type {
@@ -687,3 +688,85 @@ export const aiJobs = pgTable("ai_jobs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true })
 });
+
+export const imagingSeries = pgTable("imaging_series", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  studyId: uuid("study_id").notNull().references(() => imagingStudies.id, { onDelete: "cascade" }),
+  dicomSeriesUid: text("dicom_series_uid").notNull(),
+  seriesNumber: integer("series_number"),
+  modality: text("modality"),
+  bodyPartExamined: text("body_part_examined"),
+  seriesDescription: text("series_description"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    imagingSeriesStudyIdx: index("imaging_series_study_idx").on(table.studyId),
+    imagingSeriesUidIdx: index("imaging_series_uid_idx").on(table.dicomSeriesUid)
+  };
+});
+
+export const imagingInstances = pgTable("imaging_instances", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  seriesId: uuid("series_id").notNull().references(() => imagingSeries.id, { onDelete: "cascade" }),
+  dicomSopInstanceUid: text("dicom_sop_instance_uid").notNull(),
+  instanceNumber: integer("instance_number"),
+  sopClassUid: text("sop_class_uid"),
+  storagePath: text("storage_path").notNull(),
+  rows: integer("rows"),
+  columns: integer("columns"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    imagingInstancesSeriesIdx: index("imaging_instances_series_idx").on(table.seriesId),
+    imagingInstancesUidIdx: index("imaging_instances_uid_idx").on(table.dicomSopInstanceUid)
+  };
+});
+
+export const imagingAnnotations = pgTable("imaging_annotations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  studyId: uuid("study_id").notNull().references(() => imagingStudies.id, { onDelete: "cascade" }),
+  seriesId: uuid("series_id").references(() => imagingSeries.id, { onDelete: "cascade" }),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  toothCode: text("tooth_code"), // FDI numbering: "11", "36", etc.
+  annotationType: text("annotation_type").notNull(), // e.g., "point", "measurement", "roi", "nerve_trace", "panoramic_curve"
+  coordinates: jsonb("coordinates").notNull(), // 3D DICOM coordinates or 2D image coordinates
+  measurements: jsonb("measurements"), // e.g., length, HU, area
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// 2D X-Ray (вisiograph) scans with AI analysis results, patient-scoped
+export const xrayScans = pgTable("xray_scans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  visitId: uuid("visit_id").references(() => visits.id),
+  // Storage: base64 data URI or storage path for the image
+  imageDataUri: text("image_data_uri"),       // base64 data URI (for small images)
+  storagePath: text("storage_path"),           // path on disk for larger files
+  originalFilename: text("original_filename"),
+  mimeType: text("mime_type").notNull().default("image/jpeg"),
+  // AI Analysis results
+  aiReport: text("ai_report"),                // Full markdown report from AI
+  aiSummary: text("ai_summary"),              // Short 2-3 sentence summary
+  aiToothStates: jsonb("ai_tooth_states"),    // Record<toothCode, status> from AI JSON block
+  aiModelName: text("ai_model_name"),
+  aiAnalyzedAt: timestamp("ai_analyzed_at", { withTimezone: true }),
+  aiError: text("ai_error"),
+  status: text("status").notNull().default("pending"), // pending | analyzing | done | error
+  // Metadata
+  kind: text("kind").notNull().default("periapical"),  // periapical | bitewing | opg | other
+  toothCode: text("tooth_code"),              // Which tooth this scan is primarily about (FDI)
+  notes: text("notes"),
+  capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  xrayScansPatientIdx: index("xray_scans_patient_idx").on(table.patientId),
+  xrayScansOrgIdx: index("xray_scans_org_idx").on(table.organizationId),
+}));
+

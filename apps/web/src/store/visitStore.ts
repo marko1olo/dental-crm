@@ -33,8 +33,11 @@ export interface VisitStore {
   /** Reactive tooth state map — updated from AI draft + manual clicks. Resets on new visit load. */
   visitToothStateByCode: Record<string, ToothState>;
   setVisitToothStateByCode: (val: Record<string, ToothState> | ((prev: Record<string, ToothState>) => Record<string, ToothState>)) => void;
+  
+  visitAiDiagnosesByCode: Record<string, string>;
+  
   setToothState: (code: string, state: ToothState) => void;
-  applyAiToothCodes: (detectedCodes: string[], primaryState?: ToothState, detectedToothStates?: Record<string, ToothState>) => void;
+  applyAiToothCodes: (detectedCodes: string[], primaryState?: ToothState, detectedToothStates?: Record<string, ToothState>, aiDiagnoses?: Record<string, string>) => void;
 
   lastServerDraftSavedAt: string | null;
   setLastServerDraftSavedAt: (val: string | null | ((prev: string | null) => string | null)) => void;
@@ -103,9 +106,13 @@ export const useVisitStore = create<VisitStore>((set) => ({
 
   visitToothStateByCode: {},
   setVisitToothStateByCode: (val) => set((state) => ({ visitToothStateByCode: typeof val === "function" ? val(state.visitToothStateByCode) : val })),
+  
+  visitAiDiagnosesByCode: {},
+  
   setToothState: (code, state) => set((prev) => ({ visitToothStateByCode: { ...prev.visitToothStateByCode, [code]: state } })),
-  applyAiToothCodes: (detectedCodes, primaryState = "planned", detectedToothStates) => set((prev) => {
+  applyAiToothCodes: (detectedCodes, primaryState = "planned", detectedToothStates, aiDiagnoses) => set((prev) => {
     const next = { ...prev.visitToothStateByCode };
+    const nextDiagnoses = { ...prev.visitAiDiagnosesByCode };
     
     // 1. If AI returned explicit states, apply them first
     if (detectedToothStates) {
@@ -116,13 +123,20 @@ export const useVisitStore = create<VisitStore>((set) => ({
       }
     }
     
-    // 2. Fallback to just lighting up codes with primaryState (from regex parse) if not explicitly mapped
+    // 2. Map AI diagnoses
+    if (aiDiagnoses) {
+      for (const [code, diag] of Object.entries(aiDiagnoses)) {
+        nextDiagnoses[code] = diag;
+      }
+    }
+    
+    // 3. Fallback to just lighting up codes with primaryState (from regex parse) if not explicitly mapped
     for (const code of detectedCodes) {
       if (!next[code] || next[code] === "idle") {
         next[code] = primaryState;
       }
     }
-    return { visitToothStateByCode: next };
+    return { visitToothStateByCode: next, visitAiDiagnosesByCode: nextDiagnoses };
   }),
 
   lastServerDraftSavedAt: null,

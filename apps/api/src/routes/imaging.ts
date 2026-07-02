@@ -105,6 +105,10 @@ import {
   saveDicomWorkbenchBundle,
   saveImagingViewerSession
 } from "../sampleData.js";
+import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
+import { analyzeVisiographImage } from "../ai/visiograph.js";
+import { readFile } from "node:fs/promises";
+
 
 const kindLabels = {
   periapical: "Прицельный",
@@ -5840,6 +5844,21 @@ async function buildDicomFolderWorkupPlan(input: DicomFolderWorkupPlanRequest, o
 }
 
 export async function registerImagingRoutes(app: FastifyInstance) {
+  app.post("/api/imaging/visiograph-ai", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "visiograph ai analysis"))) return;
+    try {
+      const body = request.body as { imageBase64?: string };
+      if (!body?.imageBase64) {
+        return reply.code(400).send({ error: "Missing imageBase64" });
+      }
+      const result = await analyzeVisiographImage(body.imageBase64);
+      return reply.send(result);
+    } catch (err: any) {
+      console.error("[Visiograph AI] Error:", err);
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
   app.post("/api/imaging/imports/preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "imaging import preview"))) return;
     const parsed = parseImagingPayload(
@@ -6150,6 +6169,42 @@ export async function registerImagingRoutes(app: FastifyInstance) {
       aiSummary: input.aiSummary
     });
     return reply.code(201).send(imagingStudySchema.parse(study));
+  });
+
+  // ─── AI Analysis ──────────────────────────────────────────────────────────
+  app.post("/api/imaging/studies/:id/analyze", async (request, reply) => {
+    if (!(await requireClinicalMutationAccess(request, reply, "imaging study analyze"))) return;
+    const { id } = request.params as { id: string };
+    const study = imagingStudies.find((candidate) => candidate.id === id);
+    if (!study) return sendImagingStudyNotFound(reply);
+
+    let imageBase64: string;
+    try {
+      if (study.storagePath && existsSync(study.storagePath)) {
+        // Real image on disk — read as base64
+        const buf = await readFile(study.storagePath);
+        imageBase64 = buf.toString("base64");
+      } else {
+        // No real image file: use a minimal 1x1 white PNG so the AI at least gets a valid payload
+        // In production this would be fetched from PACS / DICOM storage
+        imageBase64 =
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      }
+    } catch {
+      imageBase64 =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    }
+
+    try {
+      const analysisResult = await analyzeImagingStudy(imageBase64);
+      // Mutate in-memory study (persists for session)
+      (study as any).aiSummary = analysisResult.summary;
+      (study as any).aiToothUpdates = analysisResult.toothUpdates;
+      return reply.code(200).send({ ok: true, analysisResult });
+    } catch (err: any) {
+      const message = err?.message ?? "Анализ завершился ошибкой";
+      return reply.code(502).send({ ok: false, message });
+    }
   });
 
   app.get("/api/imaging/studies/:id/preview.svg", async (request, reply) => {

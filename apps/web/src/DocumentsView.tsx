@@ -33,6 +33,13 @@ type MedicalCopyRequestSourceDocument = GeneratedDocument & {
 
 type DocumentsViewProps = Record<string, any>;
 
+
+const EXTRACT_DIAGNOSIS_CHIPS = ["Кариес", "Пульпит", "Периодонтит", "Адентия", "Гингивит", "Норма"];
+const EXTRACT_TREATMENT_CHIPS = ["Препарирование", "Пломбирование", "Экстирпация пульпы", "Удаление зуба", "Профессиональная гигиена", "Консультация"];
+const EXTRACT_REC_CHIPS = ["Осмотр через 6 месяцев", "Рентген-контроль", "Санация полости рта", "Консультация ортопеда", "Прием НПВС при болях"];
+const REFUSAL_REASON_CHIPS = ["Страх перед процедурой", "Нехватка времени", "Финансовые причины", "Желание получить второе мнение"];
+const REFUND_REASON_CHIPS = ["Ошибка при оплате", "Отказ от продолжения лечения", "Оплата авансом", "Медицинские противопоказания"];
+
 function humanizeDocumentAuditText(value: string): string {
   return value
     .replace(/Официальная XSD-валидация/gi, "Официальная проверка формата ФНС")
@@ -1215,16 +1222,6 @@ export function DocumentsView(props: DocumentsViewProps) {
                     : "Можно создать сразу. Выбор сохранится для следующего открытия."}
                 </span>
 
-                <button
-                  className="primary-button"
-                  type="button"
-                  disabled={Boolean(documentCreateSavingKind)}
-                  aria-busy={isSelectedDocumentCreating || undefined}
-                  aria-describedby={selectedDocumentCreateGuidanceId}
-                  onClick={() => void createDocument(selectedDocumentKind)}
-                >
-                  <FileText aria-hidden="true" /> {isSelectedDocumentCreating ? "Создаю документ" : "Создать выбранный документ"}
-                </button>
               </div>
               <article className="document-source-card" aria-label="Статус источника выбранной формы">
                 <div className="document-source-card-heading">
@@ -1298,6 +1295,21 @@ export function DocumentsView(props: DocumentsViewProps) {
                   <label>
                     Основание обращения
                     <textarea value={paidContractCareReason} onChange={(event) => setPaidContractCareReason(event.target.value)} placeholder={dashboard?.activeVisit.complaint ?? "жалоба, диагноз или плановый повод"} rows={2} />
+                    <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
+                      {["Кариес", "Пульпит", "Острая боль", "Плановый осмотр", "Профгигиена", "Жалобы отсутствуют"].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="quick-chip quick-chip--sm"
+                          onClick={() => {
+                            const current = paidContractCareReason.trim();
+                            setPaidContractCareReason(current ? `${current}, ${chip.toLowerCase()}` : chip);
+                          }}
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
                   </label>
                   <label>
                     Состав услуг
@@ -1474,6 +1486,18 @@ export function DocumentsView(props: DocumentsViewProps) {
                       placeholder="оставьте пустым, если замечаний нет"
                       rows={3}
                     />
+                    <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
+                      {["Без замечаний", "Претензий не имею", "Услуги оказаны в полном объеме"].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="quick-chip quick-chip--sm"
+                          onClick={() => setCompletedActPatientClaims(chip)}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
                   </label>
                   <label className="document-payload-checkbox">
                     <input checked={completedActLinkedContract} type="checkbox" onChange={(event) => setCompletedActLinkedContract(event.target.checked)} />
@@ -1537,6 +1561,21 @@ export function DocumentsView(props: DocumentsViewProps) {
                       placeholder={treatmentEstimateTreatmentBasisValue()}
                       rows={3}
                     />
+                    <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
+                      {["Кариес дентина", "Острый пульпит", "Частичная адентия", "Хронический периодонтит", "Осмотр и профгигиена"].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="quick-chip quick-chip--sm"
+                          onClick={() => {
+                            const current = treatmentEstimateTreatmentBasis.trim();
+                            setTreatmentEstimateTreatmentBasis(current ? `${current}, ${chip.toLowerCase()}` : chip);
+                          }}
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
                   </label>
                   <div className="document-payload-row">
                     <label>
@@ -1564,10 +1603,40 @@ export function DocumentsView(props: DocumentsViewProps) {
                   <label>
                     Не входит в текущую смету
                     <textarea value={treatmentEstimateExcludedItems} onChange={(event) => setTreatmentEstimateExcludedItems(event.target.value)} rows={4} />
+                    <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
+                      {["Рентгенологические снимки", "Анестезия", "Дополнительные материалы", "Консультации смежных специалистов", "Удаление зубов"].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="quick-chip quick-chip--sm"
+                          onClick={() => {
+                            const current = treatmentEstimateExcludedItems.trim();
+                            setTreatmentEstimateExcludedItems(current ? `${current}, ${chip.toLowerCase()}` : chip);
+                          }}
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
                   </label>
                   <label>
                     Условия оплаты
                     <textarea value={treatmentEstimatePaymentMilestoneNotes} onChange={(event) => setTreatmentEstimatePaymentMilestoneNotes(event.target.value)} rows={3} />
+                    <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
+                      {["100% предоплата", "Оплата по факту", "Аванс 50%", "Оплата поэтапно", "В рассрочку"].map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="quick-chip quick-chip--sm"
+                          onClick={() => {
+                            const current = treatmentEstimatePaymentMilestoneNotes.trim();
+                            setTreatmentEstimatePaymentMilestoneNotes(current ? `${current}, ${chip.toLowerCase()}` : chip);
+                          }}
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
                   </label>
                   <div className="document-payload-row">
                     <label>
@@ -3639,6 +3708,18 @@ export function DocumentsView(props: DocumentsViewProps) {
                       placeholder={dashboard?.activeVisit.diagnosis ?? "только после врачебной проверки"}
                       rows={2}
                     />
+                    <div className="quick-chips-row" style={{ flexWrap: 'wrap', marginTop: '4px' }}>
+                      {EXTRACT_DIAGNOSIS_CHIPS.map(chip => (
+                        <button
+                          key={chip}
+                          type="button"
+                          className="quick-chip quick-chip--sm"
+                          onClick={() => setRecordExtractDiagnosis(prev => (prev ? prev + ", " + chip : chip))}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
                   </label>
                   {renderClinicalToothRowsEditor()}
                   <label>
@@ -4290,6 +4371,19 @@ export function DocumentsView(props: DocumentsViewProps) {
                 ) : null}
               </section>
 
+              <div style={{ marginTop: "16px" }}>
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={Boolean(documentCreateSavingKind)}
+                  aria-busy={isSelectedDocumentCreating || undefined}
+                  aria-describedby={selectedDocumentCreateGuidanceId}
+                  onClick={() => void createDocument(selectedDocumentKind)}
+                >
+                  <FileText aria-hidden="true" /> {isSelectedDocumentCreating ? "Создаю документ" : "Создать выбранный документ"}
+                </button>
+              </div>
+
               <details className="settings-advanced-block document-templates-collapsible">
                 <summary className="settings-advanced-toggle">
                   <span className="settings-advanced-label">
@@ -4297,7 +4391,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     Каталог шаблонов документов ({documentFactoryGroups.length} разделов, 30+ форм)
                   </span>
                   <span className="settings-advanced-hint">Нажмите, чтобы развернуть все шаблоны</span>
-                  <span className="settings-advanced-chevron">▼</span>
+                  <span className="settings-advanced-chevron">{"\u25BC"}</span>
                 </summary>
                 <div className="settings-advanced-form">
                   {documentFactoryGroups.map((group) => (
