@@ -2105,21 +2105,18 @@ function migrationCandidateFromWorkstationSignal(signal: MigrationWorkstationSig
   };
 }
 
-async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscoveryRequest) {
-  const warnings = new Set<string>();
-  const workstationSignals = await collectMigrationWorkstationSignals(input, warnings);
-  const workstationSignalRoots = migrationRootsFromWorkstationSignals(workstationSignals);
-  const baseRoots = input.rootPaths?.length ? input.rootPaths : migrationDiscoveryDefaultRoots();
-  const mappedRoots = input.rootPaths?.length ? [] : await readWindowsMigrationMappedRoots(warnings);
-  const candidateRoots = [...workstationSignalRoots, ...baseRoots, ...migrationDriveDataRoots(mappedRoots)]
-    .map((root) => path.resolve(root));
-  const roots = Array.from(new Set(candidateRoots)).filter((root) => migrationRootExists(root));
-  const candidates: MigrationLocalSourceDiscoveryCandidate[] = [];
+
+async function* generateMigrationDiscoveryFolders(
+  roots: string[],
+  maxFolders: number,
+  maxDepth: number,
+  warnings: Set<string>
+) {
   const visited = new Set<string>();
   const queue = roots.map((root) => ({ root, folderPath: root, depth: 0 }));
   let scannedFolders = 0;
 
-  while (queue.length && scannedFolders < input.maxFolders) {
+  while (queue.length && scannedFolders < maxFolders) {
     const item = queue.shift();
     if (!item) break;
     const key = item.folderPath.toLowerCase();
@@ -2135,6 +2132,54 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
       continue;
     }
 
+    const orderedEntries = [...entries].sort(
+      (left, right) =>
+        migrationDiscoveryEntryPriority(right, item.folderPath) - migrationDiscoveryEntryPriority(left, item.folderPath) ||
+        left.name.toString().localeCompare(right.name.toString())
+    );
+
+    const files: typeof orderedEntries = [];
+
+    for (const entry of orderedEntries) {
+      const entryName = entry.name.toString();
+      const fullPath = path.join(item.folderPath, entryName);
+      if (entry.isDirectory()) {
+        if (shouldSkipMigrationDiscoveryDirectory(entryName)) continue;
+        const nextDepth = item.depth + 1;
+        if (nextDepth <= maxDepth) {
+          const nextItem = { root: item.root, folderPath: fullPath, depth: nextDepth };
+          if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
+          else queue.push(nextItem);
+        }
+        continue;
+      }
+      if (entry.isFile()) {
+         files.push(entry);
+      }
+    }
+
+    yield { root: item.root, folderPath: item.folderPath, depth: item.depth, files, scannedFoldersQueueLength: queue.length, scannedFolders };
+  }
+
+  if (queue.length) warnings.add(`Поиск остановлен после ${maxFolders} папок. Выберите папку ближе к старой программе или увеличьте лимит проверки.`);
+}
+
+async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscoveryRequest) {
+  const warnings = new Set<string>();
+  const workstationSignals = await collectMigrationWorkstationSignals(input, warnings);
+  const workstationSignalRoots = migrationRootsFromWorkstationSignals(workstationSignals);
+  const baseRoots = input.rootPaths?.length ? input.rootPaths : migrationDiscoveryDefaultRoots();
+  const mappedRoots = input.rootPaths?.length ? [] : await readWindowsMigrationMappedRoots(warnings);
+  const candidateRoots = [...workstationSignalRoots, ...baseRoots, ...migrationDriveDataRoots(mappedRoots)]
+    .map((root) => path.resolve(root));
+  const roots = Array.from(new Set(candidateRoots)).filter((root) => migrationRootExists(root));
+  const candidates: MigrationLocalSourceDiscoveryCandidate[] = [];
+  let scannedFolders = 0;
+
+  for await (const item of generateMigrationDiscoveryFolders(roots, input.maxFolders, input.maxDepth, warnings)) {
+    scannedFolders = item.scannedFolders;
+    const files = item.files;
+
     let filesInspected = 0;
     let databaseFiles = 0;
     let dumpFiles = 0;
@@ -2149,25 +2194,9 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
     const folderWarnings = new Set<string>();
     const fileProfileMatches = new Map<string, (typeof migrationWorkstationProfiles)[number]>();
 
-    const orderedEntries = [...entries].sort(
-      (left, right) =>
-        migrationDiscoveryEntryPriority(right, item.folderPath) - migrationDiscoveryEntryPriority(left, item.folderPath) ||
-        left.name.toString().localeCompare(right.name.toString())
-    );
-    for (const entry of orderedEntries) {
+    for (const entry of files) {
       const entryName = entry.name.toString();
       const fullPath = path.join(item.folderPath, entryName);
-      if (entry.isDirectory()) {
-        if (shouldSkipMigrationDiscoveryDirectory(entryName)) continue;
-        const nextDepth = item.depth + 1;
-        if (nextDepth <= input.maxDepth) {
-          const nextItem = { root: item.root, folderPath: fullPath, depth: nextDepth };
-          if (migrationDirectoryPriority(fullPath) >= 2) queue.unshift(nextItem);
-          else queue.push(nextItem);
-        }
-        continue;
-      }
-      if (!entry.isFile()) continue;
       if (filesInspected >= input.maxFilesPerFolder) {
         folderWarnings.add(`Проверка файлов в этой папке ограничена ${input.maxFilesPerFolder} файлами.`);
         continue;
@@ -2291,7 +2320,6 @@ async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscover
     });
   }
 
-  if (queue.length) warnings.add(`Поиск остановлен после ${input.maxFolders} папок. Выберите папку ближе к старой программе или увеличьте лимит проверки.`);
   for (const signal of workstationSignals) {
     const candidate = migrationCandidateFromWorkstationSignal(signal);
     if (candidate) candidates.push(candidate);
