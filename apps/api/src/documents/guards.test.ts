@@ -38,7 +38,7 @@ describe('taxPaymentSelectionErrorForDocument', () => {
     const error = taxPaymentSelectionErrorForDocument({
       ...baseInput,
       kind: 'tax_deduction_application',
-      payload: { taxDeductionApplication: { requestedTaxYear: 2023, taxpayerInn: '123456789012', requestedForm: 'knd_1151156', selectedPaymentIds: [] } as TaxDeductionApplicationPayload }
+      payload: { taxDeductionApplication: { requestedTaxYear: 2023, taxpayerInn: '123456789012', requestedForm: 'knd_1151156', selectedPaymentIds: [] } as unknown as TaxDeductionApplicationPayload }
     }, basePayments);
     assert.strictEqual(error, null);
   });
