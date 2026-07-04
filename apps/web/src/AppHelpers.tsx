@@ -5871,6 +5871,7 @@ export const appointmentReadinessLabels: Record<Dashboard["appointmentReadiness"
 };
 
 export const settingsTabs = [
+  { id: "profile", title: "Мой профиль" },
   { id: "clinic", title: "Клиника" },
   { id: "access", title: "Доступы" },
   { id: "telegram", title: "ТГ-бот" },

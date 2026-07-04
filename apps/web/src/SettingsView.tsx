@@ -166,6 +166,7 @@ import type {
 import type { ImagingConnectorCard, ImagingViewerCapability, RecognitionPreset } from "./settingsStaticData";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PriceDictationBar } from "./PriceDictationBar";
+import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
 import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
@@ -2019,6 +2020,15 @@ export function SettingsView(props: SettingsViewProps) {
                 <p>{telegramAdminSecretSession ? "Админ-доступ активен до перезагрузки страницы." : "Без секрета работают только окружения без обязательного админ-доступа."}</p>
               </article>
             </details>
+          ) : null}
+
+          {settingsTab === "profile" ? (
+            <SettingsProfileTab
+              props={{
+                activeStaffUser: props.activeStaffUser,
+                staffRoleLabels: props.staffRoleLabels,
+              }}
+            />
           ) : null}
 
           <SettingsClinicTab 

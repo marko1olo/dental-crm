@@ -1897,7 +1897,7 @@ export function App() {
   const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
   const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
 
-  // On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard immediately
+  // On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard + restore user profile
   useEffect(() => {
     if (clinicAuthed && !dashboard) {
       void loadDashboard().catch((e) => {
@@ -1908,6 +1908,17 @@ export function App() {
         setClinicAuthed(false);
         setStaffAuthed(false);
       });
+    }
+    // Restore staff user profile from token on page refresh
+    const staffToken = localStorage.getItem("dente_staff_token");
+    if (staffToken && !activeStaffUser) {
+      fetch("/api/auth/user/me", {
+        headers: { "x-dente-staff-token": staffToken }
+      }).then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.user) setActiveStaffUser(data.user);
+        })
+        .catch(() => { /* silent - user will be prompted to re-login */ });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run once on mount only
@@ -4147,6 +4158,7 @@ export function App() {
             }
           >
             <SettingsView
+              activeStaffUser={activeStaffUser}
               activePatient={activePatient}
               activeSettingsTabButtonRef={activeSettingsTabButtonRef}
               activeSpeechProviderHealth={activeSpeechProviderHealth}
