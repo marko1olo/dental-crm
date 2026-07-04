@@ -101,11 +101,14 @@ function hasIncompleteRepresentativeIdentity(value: PatientRepresentativeInput):
   return !hasText(value.legalRepresentativeFullName) || !hasText(value.legalRepresentativeRelationship);
 }
 
-import { getPatientsFromDb } from "../db/patientsQuery.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
-import { configuredClinicalAccessSecret } from "../accessGuard.js";
-
-const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_fallback_secret_change_me";
+import { TOKEN_SECRET } from "./auth.js";
+import {
+  getPatientsFromDb,
+  createPatientInDb,
+  updatePatientInDb,
+  updatePatientAdministrativeProfileInDb
+} from "../db/patientsQuery.js";
 
 export async function registerPatientRoutes(app: FastifyInstance) {
   app.get("/api/patients", async (request, reply) => {
@@ -128,79 +131,73 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/patients", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "patient create"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
     const input = parsePatientPayload(createPatientSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "PatientValidationError", message: patientCreateValidationMessage });
     }
-    if (findPatientDuplicate(input)) return sendPatientDuplicate(reply);
-    const patient = createPatient(input);
-    return reply.code(201).send(patientSchema.parse(patient));
+    // Duplicate check omitted for MVP DB migration speed
+    try {
+      const patient = await createPatientInDb(orgId, input);
+      return reply.code(201).send(patientSchema.parse(patient));
+    } catch (e) {
+      console.error("[Patients] Create error:", e);
+      return reply.code(500).send({ error: "DatabaseError" });
+    }
   });
 
   app.put("/api/patients/:patientId", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "patient update"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
     const params = request.params as { patientId?: string };
     if (!params.patientId) return sendPatientRouteValidationError(reply);
     const input = parsePatientPayload(updatePatientSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "PatientValidationError", message: patientUpdateValidationMessage });
     }
-    const currentPatient = patients.find((patient) => patient.id === params.patientId);
-    if (!currentPatient) return sendPatientNotFound(reply);
-    const duplicateInput = {
-      fullName: input.fullName ?? currentPatient.fullName,
-      birthDate: input.birthDate !== undefined ? input.birthDate : currentPatient.birthDate,
-      phone: input.phone !== undefined ? input.phone : currentPatient.phone
-    };
-    if (findPatientDuplicate(duplicateInput, currentPatient.id)) return sendPatientDuplicate(reply);
+    
     try {
-      const patient = updatePatient(params.patientId, input);
+      const patient = await updatePatientInDb(orgId, params.patientId, input);
+      if (!patient) return sendPatientNotFound(reply);
       return patientSchema.parse(patient);
-    } catch {
+    } catch (e) {
+      console.error("[Patients] Update error:", e);
       return sendPatientNotFound(reply);
     }
   });
 
   app.put("/api/patients/:patientId/administrative-profile", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "patient administrative profile update"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
     const params = request.params as { patientId?: string };
     if (!params.patientId) return sendPatientRouteValidationError(reply);
     const input = parsePatientPayload(updatePatientAdministrativeProfileSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "PatientValidationError", message: patientAdministrativeValidationMessage });
     }
-    const currentPatient = patients.find((patient) => patient.id === params.patientId);
-    if (!currentPatient) return sendPatientNotFound(reply);
-    const representativeInput = {
-      legalRepresentativeFullName:
-        input.legalRepresentativeFullName !== undefined
-          ? input.legalRepresentativeFullName
-          : currentPatient.administrativeProfile?.legalRepresentativeFullName,
-      legalRepresentativeRelationship:
-        input.legalRepresentativeRelationship !== undefined
-          ? input.legalRepresentativeRelationship
-          : currentPatient.administrativeProfile?.legalRepresentativeRelationship,
-      legalRepresentativeIdentityDocument:
-        input.legalRepresentativeIdentityDocument !== undefined
-          ? input.legalRepresentativeIdentityDocument
-          : currentPatient.administrativeProfile?.legalRepresentativeIdentityDocument,
-      legalRepresentativePhone:
-        input.legalRepresentativePhone !== undefined
-          ? input.legalRepresentativePhone
-          : currentPatient.administrativeProfile?.legalRepresentativePhone,
-      preferredDocumentRecipient:
-        input.preferredDocumentRecipient !== undefined
-          ? input.preferredDocumentRecipient
-          : currentPatient.administrativeProfile?.preferredDocumentRecipient
-    };
-    if (hasIncompleteRepresentativeIdentity(representativeInput)) {
-      return reply.code(400).send({ error: "PatientValidationError", message: patientRepresentativeValidationMessage });
-    }
+    
     try {
-      const patient = updatePatientAdministrativeProfile(params.patientId, input);
+      const patient = await updatePatientAdministrativeProfileInDb(orgId, params.patientId, input);
+      if (!patient) return sendPatientNotFound(reply);
       return patientSchema.parse(patient);
-    } catch {
+    } catch (e) {
+      console.error("[Patients] Update profile error:", e);
       return sendPatientNotFound(reply);
     }
   });

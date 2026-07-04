@@ -63,15 +63,33 @@ function sendVisitDraftMutationError(error: unknown, reply: FastifyReply, operat
   });
 }
 
+import { verifyToken } from "../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "./auth.js";
+import { getVisitDraftAutosaveFromDb, upsertVisitDraftAutosaveInDb, acceptVisitDraftInDb } from "../db/visitsQuery.js";
+
 export async function registerVisitRoutes(app: FastifyInstance) {
   app.get("/api/visits/:visitId/draft/autosave", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "visit draft autosave read"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+    
     const { visitId } = request.params as { visitId: string };
-    return visitDraftAutosaveResponseSchema.parse({ serverDraft: getVisitDraftAutosave(visitId) });
+    const draft = await getVisitDraftAutosaveFromDb(orgId, visitId);
+    if (!draft) return reply.code(404).send({ error: "VisitNotFound", message: visitDraftNotFoundMessage });
+    return visitDraftAutosaveResponseSchema.parse({ serverDraft: draft });
   });
 
   app.put("/api/visits/:visitId/draft/autosave", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "visit draft autosave"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
     const { visitId } = request.params as { visitId: string };
     const input = parseVisitPayload(
       visitDraftAutosaveRequestSchema,
@@ -82,14 +100,21 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     if (!input) return;
 
     try {
-      return visitDraftAutosaveResponseSchema.parse({ serverDraft: upsertVisitDraftAutosave(input) });
+      const serverDraft = await upsertVisitDraftAutosaveInDb(orgId, input);
+      return visitDraftAutosaveResponseSchema.parse({ serverDraft });
     } catch (error) {
       return sendVisitDraftMutationError(error, reply, "autosave");
     }
   });
 
   app.post("/api/visits/:visitId/draft/accept", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "visit draft accept"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
     const { visitId } = request.params as { visitId: string };
     const input = parseVisitPayload(
       acceptVisitDraftSchema,
@@ -100,7 +125,7 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     if (!input) return;
 
     try {
-      const result = acceptVisitDraft(input);
+      const result = await acceptVisitDraftInDb(orgId, input);
       return acceptVisitDraftResponseSchema.parse(result);
     } catch (error) {
       return sendVisitDraftMutationError(error, reply, "accept");
