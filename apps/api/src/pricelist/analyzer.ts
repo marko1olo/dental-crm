@@ -12,7 +12,7 @@ import {
   type ServiceCatalogItem,
   type ServiceCategory
 } from "@dental/shared";
-import { serviceCatalog } from "../sampleData.js";
+
 import {
   fetchWithProviderTimeout,
   getProviderKeyPoolSummary,
@@ -405,10 +405,10 @@ function titleTokens(value: string): Set<string> {
   );
 }
 
-function matchServiceId(item: Pick<DentalPricelistItem, "category" | "specialty" | "title">): string | null {
+function matchServiceId(item: Pick<DentalPricelistItem, "category" | "specialty" | "title">, catalog: ServiceCatalogItem[]): string | null {
   const sourceTokens = titleTokens(item.title);
   let best: { service: ServiceCatalogItem; score: number } | null = null;
-  for (const service of serviceCatalog) {
+  for (const service of catalog) {
     let score = service.category === item.category ? 2 : 0;
     if (service.specialty === item.specialty || service.specialty === "universal") score += 1;
     for (const token of titleTokens(service.title)) {
@@ -471,7 +471,8 @@ function splitPricelistLines(rawText: string): string[] {
 function buildItemFromLine(
   line: string,
   lineNumber: number,
-  input: DentalPricelistAnalysisRequest
+  input: DentalPricelistAnalysisRequest,
+  catalog: ServiceCatalogItem[]
 ): DentalPricelistItem {
   const classification = classifyLine(line, input.preferredSpecialty);
   const material = classifyMaterial(line);
@@ -501,7 +502,7 @@ function buildItemFromLine(
   };
   item.warnings = buildWarnings({ ...item, sourceKind: input.sourceKind });
   item.confidence = confidenceForItem(item);
-  item.matchedServiceId = matchServiceId(item);
+  item.matchedServiceId = matchServiceId(item, catalog);
   return dentalPricelistItemSchema.parse(item);
 }
 
@@ -599,12 +600,13 @@ function responseFromItems(input: {
 
 function analyzePricelistDeterministic(
   request: DentalPricelistAnalysisRequest,
+  catalog: ServiceCatalogItem[],
   parserMode: PricelistParserMode = "deterministic",
   extraWarnings: string[] = []
 ): DentalPricelistAnalysisResponse {
   const lines = splitPricelistLines(request.rawText);
   const items = lines
-    .map((line, index) => buildItemFromLine(line, index + 1, request))
+    .map((line, index) => buildItemFromLine(line, index + 1, request, catalog))
     .filter((item) => item.title.length > 0 && (item.priceRub !== null || item.category !== "other"));
   const warnings = [...extraWarnings];
   if (!items.length) warnings.push("no_pricelist_rows_detected");
@@ -680,13 +682,13 @@ function asWarnings(value: unknown): string[] {
     : [];
 }
 
-function itemFromGroq(raw: unknown, index: number, request: DentalPricelistAnalysisRequest): DentalPricelistItem | null {
+function itemFromGroq(raw: unknown, index: number, request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): DentalPricelistItem | null {
   if (!raw || typeof raw !== "object") return null;
   const record = raw as Record<string, unknown>;
   const sourceText = normalizeText(asString(record.sourceText, asString(record.title)));
   if (!sourceText) return null;
 
-  const fallback = buildItemFromLine(sourceText, index + 1, request);
+  const fallback = buildItemFromLine(sourceText, index + 1, request, catalog);
   const item: DentalPricelistItem = {
     ...fallback,
     id: `price-ai-${index + 1}`,
@@ -710,11 +712,11 @@ function itemFromGroq(raw: unknown, index: number, request: DentalPricelistAnaly
     warnings: Array.from(new Set([...fallback.warnings, ...asWarnings(record.warnings)])),
     matchedServiceId: null
   };
-  item.matchedServiceId = matchServiceId(item);
+  item.matchedServiceId = matchServiceId(item, catalog);
   return dentalPricelistItemSchema.safeParse(item).success ? dentalPricelistItemSchema.parse(item) : fallback;
 }
 
-async function callGroqPricelist(request: DentalPricelistAnalysisRequest): Promise<DentalPricelistItem[]> {
+async function callGroqPricelist(request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): Promise<DentalPricelistItem[]> {
   const modelName = groqPricelistModelName();
   const tried = new Set<string>();
   const maxAttempts = keyRetryLimit(groqProviderId);
@@ -760,7 +762,7 @@ async function callGroqPricelist(request: DentalPricelistAnalysisRequest): Promi
       const parsed = safeParseJsonObject(contentText);
       const rows = Array.isArray(parsed.items) ? parsed.items : [];
       const items = rows
-        .map((row, index) => itemFromGroq(row, index, request))
+        .map((row, index) => itemFromGroq(row, index, request, catalog))
         .filter((item): item is DentalPricelistItem => Boolean(item));
       if (!items.length) {
         throw new Error("Groq returned JSON without pricelist items.");
@@ -777,27 +779,27 @@ async function callGroqPricelist(request: DentalPricelistAnalysisRequest): Promi
   throw new Error(sanitizeProviderErrorMessage(lastError instanceof Error ? lastError.message : "Groq pricelist extraction failed."));
 }
 
-export async function analyzePricelist(request: DentalPricelistAnalysisRequest): Promise<DentalPricelistAnalysisResponse> {
+export async function analyzePricelist(request: DentalPricelistAnalysisRequest, catalog: ServiceCatalogItem[]): Promise<DentalPricelistAnalysisResponse> {
   const keyPool = getProviderKeyPoolSummary(groqProviderId);
   const modelName = groqPricelistModelName();
 
   if (!request.useServerAi) {
-    return analyzePricelistDeterministic(request);
+    return analyzePricelistDeterministic(request, catalog);
   }
 
   if (request.imageBase64 && !isExpectedImagePayload(request)) {
-    return analyzePricelistDeterministic(request, "deterministic_groq_fallback", [
+    return analyzePricelistDeterministic(request, catalog, "deterministic_groq_fallback", [
       "image_payload_invalid",
       "groq_skipped_invalid_image_payload"
     ]);
   }
 
   if (!keyPool.configuredKeyCount) {
-    return analyzePricelistDeterministic(request, "deterministic_groq_fallback", ["groq_key_pool_empty"]);
+    return analyzePricelistDeterministic(request, catalog, "deterministic_groq_fallback", ["groq_key_pool_empty"]);
   }
 
   try {
-    const items = await callGroqPricelist(request);
+    const items = await callGroqPricelist(request, catalog);
     return responseFromItems({
       request,
       items,
@@ -808,7 +810,7 @@ export async function analyzePricelist(request: DentalPricelistAnalysisRequest):
       modelName
     });
   } catch (error) {
-    return analyzePricelistDeterministic(request, "deterministic_groq_fallback", [
+    return analyzePricelistDeterministic(request, catalog, "deterministic_groq_fallback", [
       `groq_failed:${sanitizeProviderErrorMessage(error instanceof Error ? error.message : "unknown")}`
     ]);
   }

@@ -96,15 +96,19 @@ import {
   splitLine
 } from "@dental/shared";
 import {
-  createImagingStudy,
-  findVisitById,
+  getImagingStudiesForPatient,
+  getAllImagingStudies,
+  getImagingStudyById,
+  createImagingStudyInDb,
+  updateImagingStudyAiSummaryInDb,
+  getDefaultOrganizationId,
   getOrCreateImagingViewerSession,
-  imagingStudies,
   listDicomWorkbenchBundles,
-  patients,
   saveDicomWorkbenchBundle,
   saveImagingViewerSession
-} from "../sampleData.js";
+} from "../db/imagingQuery.js";
+import { getVisitByIdInDb } from "../db/visitsQuery.js";
+import { getPatientByIdFromDb, getPatientsFromDb } from "../db/patientsQuery.js";
 import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
 import { readFile } from "node:fs/promises";
@@ -708,7 +712,8 @@ function extractDicomFieldValue(line: string, labels: string[]) {
   return null;
 }
 
-function matchPatient(patientName: string | null, phone: string | null) {
+async function matchPatient(orgId: string, patientName: string | null, phone: string | null) {
+  const patients = await getPatientsFromDb(orgId);
   const normalizedName = patientName?.trim().toLowerCase();
   return patients.find((patient) => {
     const patientPhone = normalizePhone(patient.phone);
@@ -717,7 +722,7 @@ function matchPatient(patientName: string | null, phone: string | null) {
   });
 }
 
-function parseManifestLine(line: string, rowNumber: number, sourceKind: ImagingSourceKind, sourceName: string): ImagingImportPreviewRow {
+async function parseManifestLine(orgId: string, line: string, rowNumber: number, sourceKind: ImagingSourceKind, sourceName: string): Promise<ImagingImportPreviewRow> {
   const phone = extractPhone(line);
   const filePath = extractFilePath(line);
   const date = normalizeDate(line.match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/)?.[0] ?? null);
@@ -733,7 +738,7 @@ function parseManifestLine(line: string, rowNumber: number, sourceKind: ImagingS
     .filter((part) => /^[A-Za-zА-Яа-яЁё-]{2,}$/.test(part))
     .slice(0, 4)
     .join(" ") || null;
-  const patient = matchPatient(patientName, phone);
+  const patient = await matchPatient(orgId, patientName, phone);
   const warnings: string[] = [];
   if (!patient) warnings.push("Пациент не найден, нужно сопоставление");
   if (!kind) warnings.push("Тип снимка не распознан");
@@ -757,7 +762,7 @@ function parseManifestLine(line: string, rowNumber: number, sourceKind: ImagingS
   };
 }
 
-export async function parseImagingManifest(input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
+export async function parseImagingManifest(orgId: string, input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
   const lines = input.rawText
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -778,8 +783,8 @@ export async function parseImagingManifest(input: { sourceName: string; sourceKi
   const delimiter = detectDelimiter(lines[0] ?? "");
   const headers = splitLine(lines[0] ?? "", delimiter).map((cell) => headerAliases[normalizeHeader(cell)] ?? null);
   const hasHeader = headers.some(Boolean);
-  const rows: ImagingImportPreviewRow[] = (hasHeader ? lines.slice(1) : lines).map((line, index) => {
-    if (!hasHeader) return parseManifestLine(line, index + 1, input.sourceKind, input.sourceName);
+  const rows: ImagingImportPreviewRow[] = await Promise.all((hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
+    if (!hasHeader) return await parseManifestLine(orgId, line, index + 1, input.sourceKind, input.sourceName);
     const cells = splitLine(line, delimiter);
     const draft: Partial<ImagingImportPreviewRow> = {
       rowNumber: index + 2,
@@ -795,7 +800,7 @@ export async function parseImagingManifest(input: { sourceName: string; sourceKi
       else if (field === "capturedAt") draft.capturedAt = normalizeDate(value);
       else draft[field] = value as never;
     });
-    const patient = matchPatient(draft.patientName ?? null, draft.phone ?? null);
+    const patient = await matchPatient(orgId, draft.patientName ?? null, draft.phone ?? null);
     const kind = draft.kind ?? detectKind(draft.filePath ?? "");
     const source = detectSourceKind(draft.filePath ?? draft.sourceName ?? "", input.sourceKind);
     const warnings: string[] = [];
@@ -819,7 +824,7 @@ export async function parseImagingManifest(input: { sourceName: string; sourceKi
       status: blocked ? "blocked" : patient ? "ready" : "warning",
       warnings
     };
-  });
+  }));
 
   return imagingImportPreviewResponseSchema.parse({
     sourceName: input.sourceName,
@@ -845,7 +850,7 @@ function escapeXml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-function previewSvg(study: (typeof imagingStudies)[number]) {
+function previewSvg(study: any) {
   const label = kindLabels[study.kind];
   const detail = study.toothCode ? `Зуб ${study.toothCode}` : study.region ?? "Область не указана";
   const anatomy =
@@ -2810,8 +2815,8 @@ function buildDicomSeriesGroups(rows: DicomSeriesPreviewRow[]) {
   });
 }
 
-function parseDicomManifestLine(line: string, rowNumber: number, sourceKind: ImagingSourceKind, sourceName: string): DicomSeriesPreviewRow {
-  const base = parseManifestLine(line, rowNumber, sourceKind, sourceName);
+async function parseDicomManifestLine(orgId: string, line: string, rowNumber: number, sourceKind: ImagingSourceKind, sourceName: string): Promise<DicomSeriesPreviewRow> {
+  const base = await parseManifestLine(orgId, line, rowNumber, sourceKind, sourceName);
   const modality = normalizeModality(extractDicomFieldValue(line, ["modality", "0008,0060", "\\(0008,0060\\)"]));
   const studyInstanceUid = extractDicomUid(line, ["StudyInstanceUID", "Study UID", "StudyUID", "0020,000D", "\\(0020,000D\\)"]);
   const seriesInstanceUid = extractDicomUid(line, ["SeriesInstanceUID", "Series UID", "SeriesUID", "0020,000E", "\\(0020,000E\\)"]);
@@ -2859,7 +2864,7 @@ function parseDicomManifestLine(line: string, rowNumber: number, sourceKind: Ima
   };
 }
 
-export async function parseDicomSeriesManifest(input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
+export async function parseDicomSeriesManifest(orgId: string, input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
   const sourceLines = input.rawText
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -2884,8 +2889,8 @@ export async function parseDicomSeriesManifest(input: { sourceName: string; sour
   const delimiter = detectDelimiter(lines[0] ?? "");
   const headers = splitLine(lines[0] ?? "", delimiter).map((cell) => dicomHeaderAliases[normalizeHeader(cell)] ?? null);
   const hasHeader = headers.some(Boolean);
-  const rows: DicomSeriesPreviewRow[] = (hasHeader ? lines.slice(1) : lines).map((line, index) => {
-    if (!hasHeader) return parseDicomManifestLine(line, index + 1, input.sourceKind, input.sourceName);
+  const rows: DicomSeriesPreviewRow[] = await Promise.all((hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
+    if (!hasHeader) return await parseDicomManifestLine(orgId, line, index + 1, input.sourceKind, input.sourceName);
     const cells = splitLine(line, delimiter);
     const draft: Partial<DicomSeriesPreviewRow> = {
       rowNumber: index + 2,
@@ -2914,8 +2919,8 @@ export async function parseDicomSeriesManifest(input: { sourceName: string; sour
         draft[field] = normalizeDicomUid(value);
       } else draft[field] = value as never;
     });
-    const lineFallback = parseDicomManifestLine(line, index + 2, input.sourceKind, input.sourceName);
-    const patient = matchPatient(draft.patientName ?? lineFallback.patientName, draft.phone ?? lineFallback.phone);
+    const lineFallback = await parseDicomManifestLine(orgId, line, index + 2, input.sourceKind, input.sourceName);
+    const patient = await matchPatient(orgId, draft.patientName ?? lineFallback.patientName, draft.phone ?? lineFallback.phone);
     const modality = draft.modality ?? lineFallback.modality;
     const kind =
       draft.kind ??
@@ -2958,7 +2963,7 @@ export async function parseDicomSeriesManifest(input: { sourceName: string; sour
       status: blocked ? "blocked" : patient ? "ready" : "warning",
       warnings
     };
-  });
+  }));
   const series = buildDicomSeriesGroups(rows);
 
   return dicomSeriesPreviewResponseSchema.parse({
@@ -6032,7 +6037,9 @@ async function buildDicomFolderSeriesPreview(input: {
     },
     options
   );
-  const preview = await parseDicomSeriesManifest({
+  var orgId = await getDefaultOrganizationId();
+      if (!orgId) throw new Error("No org");
+      const preview = await parseDicomSeriesManifest(orgId, {
     sourceName: input.sourceName,
     sourceKind: "dicom_file",
     rawText: manifest.rawText
@@ -6166,7 +6173,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return parseImagingManifest(input);
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) throw new Error("No org");
+      return parseImagingManifest(orgId, input);
   });
 
   app.post("/api/imaging/dicom/series-preview", async (request, reply) => {
@@ -6178,7 +6187,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return parseDicomSeriesManifest(input);
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) throw new Error("No org");
+      return parseDicomSeriesManifest(orgId, input);
   });
 
   app.post("/api/imaging/dicomweb/check", async (request, reply) => {
@@ -6262,7 +6273,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const bundle = saveDicomWorkbenchBundle(input);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) return reply.code(500).send({ error: "No org" });
+    const bundle = await saveDicomWorkbenchBundle(orgId, input);
     return reply.code(201).send(dicomWorkbenchBundleResponseSchema.parse({ bundle, warnings: bundle.warnings }));
   });
 
@@ -6270,7 +6283,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     if (!(await requireClinicalReadAccess(request, reply, "dicom workbench bundles"))) return;
     const query = request.query as { limit?: string | number | undefined };
     const requestedLimit = Number(query.limit ?? 8);
-    const bundles = listDicomWorkbenchBundles(Number.isFinite(requestedLimit) ? requestedLimit : 8);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) return reply.code(500).send({ error: "No org" });
+    const bundles = await listDicomWorkbenchBundles(orgId, Number.isFinite(requestedLimit) ? requestedLimit : 8);
     return dicomWorkbenchBundleListResponseSchema.parse({
       bundles,
       total: bundles.length,
@@ -6351,7 +6366,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return commitImagingImport(input);
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) throw new Error("No org");
+      return commitImagingImport(orgId, input);
   });
 
   app.post("/api/imaging/folders/scan-preview", async (request, reply) => {
@@ -6369,11 +6386,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
         maxEntriesPerFolder: input.maxEntriesPerFolder
       });
       const rawText = buildFolderScanManifest(scan.files);
-      const preview = parseImagingManifest({
-        sourceName: input.sourceName,
-        sourceKind: "folder_watch",
-        rawText
-      });
+      var orgId = await getDefaultOrganizationId();
+      if (!orgId) throw new Error("No org");
+      const preview = await parseImagingManifest(orgId, { sourceName: input.sourceName, sourceKind: "folder_watch", rawText });
 
       return imagingFolderScanResponseSchema.parse({
         folderPath: path.resolve(input.folderPath),
@@ -6390,16 +6405,20 @@ export async function registerImagingRoutes(app: FastifyInstance) {
   app.get("/api/imaging/studies", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "imaging studies"))) return;
     const { patientId } = request.query as { patientId?: string };
-    const studies = patientId ? imagingStudies.filter((study) => study.patientId === patientId) : imagingStudies;
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) return reply.code(500).send({ error: "No org" });
+      const studies = patientId ? await getImagingStudiesForPatient(orgId, patientId) : await getAllImagingStudies(orgId);
     return studies.map((study) => imagingStudySchema.parse(study));
   });
 
   app.get("/api/imaging/studies/:id/viewer-session", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "imaging viewer session read"))) return;
     const { id } = request.params as { id: string };
-    const study = imagingStudies.find((candidate) => candidate.id === id);
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) return reply.code(500).send({ error: "No org" });
+      const study = await getImagingStudyById(orgId, id);
     if (!study) return sendImagingStudyNotFound(reply);
-    const session = getOrCreateImagingViewerSession(id);
+    const session = await getOrCreateImagingViewerSession(orgId, study);
     return imagingViewerSessionResponseSchema.parse({
       session,
       warnings: session.warnings
@@ -6409,7 +6428,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
   app.put("/api/imaging/studies/:id/viewer-session", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "imaging viewer session save"))) return;
     const { id } = request.params as { id: string };
-    const study = imagingStudies.find((candidate) => candidate.id === id);
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) return reply.code(500).send({ error: "No org" });
+      const study = await getImagingStudyById(orgId, id);
     if (!study) return sendImagingStudyNotFound(reply);
     const parsed = parseImagingPayload(
       saveImagingViewerSessionRequestSchema,
@@ -6418,7 +6439,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const session = saveImagingViewerSession(id, input);
+    const session = await saveImagingViewerSession(orgId, id, input);
     return reply.code(200).send(
       imagingViewerSessionResponseSchema.parse({
         session,
@@ -6428,6 +6449,8 @@ export async function registerImagingRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/imaging/studies", async (request, reply) => {
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) return reply.code(500).send({ error: "No org" });
     if (!(await requireClinicalMutationAccess(request, reply, "imaging study create"))) return;
     const parsed = parseImagingPayload(
       createImagingStudySchema,
@@ -6436,12 +6459,12 @@ export async function registerImagingRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const patient = patients.find((candidate) => candidate.id === input.patientId);
+    const patient = await getPatientByIdFromDb(orgId, input.patientId);
     if (!patient) {
       return sendImagingStudyScopeError(reply, 404, "Пациент для снимка не найден.");
     }
     if (input.visitId) {
-      const visit = findVisitById(input.visitId);
+      const visit = await getVisitByIdInDb(orgId, input.visitId);
       if (!visit) {
         return sendImagingStudyScopeError(reply, 404, "Прием для снимка не найден.");
       }
@@ -6452,7 +6475,7 @@ export async function registerImagingRoutes(app: FastifyInstance) {
         return sendImagingStudyScopeError(reply, 409, "Снимок относится к приему другой клиники.");
       }
     }
-    const study = createImagingStudy({
+    const study = await createImagingStudyInDb(orgId, {
       patientId: input.patientId,
       visitId: input.visitId,
       kind: input.kind,
@@ -6473,7 +6496,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
   app.post("/api/imaging/studies/:id/analyze", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "imaging study analyze"))) return;
     const { id } = request.params as { id: string };
-    const study = imagingStudies.find((candidate) => candidate.id === id);
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) return reply.code(500).send({ error: "No org" });
+      const study = await getImagingStudyById(orgId, id);
     if (!study) return sendImagingStudyNotFound(reply);
 
     let imageBase64: string;
@@ -6508,7 +6533,9 @@ export async function registerImagingRoutes(app: FastifyInstance) {
   app.get("/api/imaging/studies/:id/preview.svg", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "imaging preview"))) return;
     const { id } = request.params as { id: string };
-    const study = imagingStudies.find((candidate) => candidate.id === id);
+    var orgId = await getDefaultOrganizationId();
+      if (!orgId) return reply.code(500).send({ error: "No org" });
+      const study = await getImagingStudyById(orgId, id);
     if (!study) {
       return sendImagingStudyNotFound(reply);
     }
@@ -6516,11 +6543,11 @@ export async function registerImagingRoutes(app: FastifyInstance) {
   });
 }
 
-export async function commitImagingImport(input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
-  const preview = await parseImagingManifest(input);
+export async function commitImagingImport(orgId: string, input: { sourceName: string; sourceKind: ImagingSourceKind; rawText: string }) {
+  const preview = await parseImagingManifest(orgId, input);
   const readyRows = preview.rows.filter((row) => row.status === "ready" && row.patientId && row.kind && row.filePath);
-  const createdStudyIds = readyRows.map((row) => {
-    const study = createImagingStudy({
+  const createdStudyIds = await Promise.all(readyRows.map(async (row) => {
+    const study = await createImagingStudyInDb(orgId, {
       patientId: row.patientId!,
       kind: row.kind!,
       title: row.title ?? kindLabels[row.kind!],
@@ -6533,7 +6560,7 @@ export async function commitImagingImport(input: { sourceName: string; sourceKin
       aiSummary: `Импортировано из ${row.sourceName}. Требует проверки снимка и привязки к ЭМК.`
     });
     return study.id;
-  });
+  }));
 
   return imagingImportCommitResponseSchema.parse({
     sourceName: input.sourceName,

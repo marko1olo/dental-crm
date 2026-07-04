@@ -37,7 +37,7 @@ describe("commitImagingImport", () => {
       ].join("\n")
      };
 
-     const result = await commitImagingImport(input);
+     const result = await commitImagingImport("mock-org", input);
 
     assert.strictEqual(result.preview.totalRows, 3);
     assert.strictEqual(result.importedCount, 1);

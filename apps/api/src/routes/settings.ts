@@ -1,5 +1,18 @@
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { db } from "../db/client.js";
+import * as schema from "../db/schema.js";
+import {
+  getClinicSettingsFromDb,
+  getUiPreferencesFromDb,
+  saveUiPreferencesInDb,
+  updateClinicModeInDb,
+  updateClinicProfileInDb,
+  createStaffMemberInDb,
+  updateStaffWorkingHoursInDb,
+  createChairInDb,
+  updateChairWorkingHoursInDb
+} from "../db/settingsQuery.js";
 import {
   chairSchema,
   clinicSettingsSchema,
@@ -159,43 +172,60 @@ function settingsUnguardedMutationsAllowed(): boolean {
   return process.env.NODE_ENV !== "production" && process.env.DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS === "1";
 }
 
-async function requireSettingsAccess(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
+async function requireSettingsAccess(request: FastifyRequest, reply: FastifyReply): Promise<string | null> {
   const adminSecret = configuredSettingsAdminSecret();
+  let hasAccess = false;
+  
   if (!adminSecret) {
-    if (settingsUnguardedMutationsAllowed()) return true;
-    reply.code(503).send({
-      error: "SettingsAdminSecretMissing",
-      message: "На сервере не задан секрет администратора клиники для изменения настроек клиники."
-    });
-    return false;
+    if (settingsUnguardedMutationsAllowed()) hasAccess = true;
+    else {
+      reply.code(503).send({
+        error: "SettingsAdminSecretMissing",
+        message: "На сервере не задан секрет администратора клиники для изменения настроек клиники."
+      });
+      return null;
+    }
+  } else {
+    const providedSecret = request.headers[denteAdminSecretHeader];
+    const normalizedProvidedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
+    if (timingSafeSecretEqual(typeof normalizedProvidedSecret === "string" ? normalizedProvidedSecret : null, adminSecret)) {
+      hasAccess = true;
+    } else {
+      reply.code(403).send({
+        error: "SettingsAdminSecretRequired",
+        message: "Для изменения настроек клиники нужен действующий секрет администратора клиники."
+      });
+      return null;
+    }
   }
-  const providedSecret = request.headers[denteAdminSecretHeader];
-  const normalizedProvidedSecret = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
-  if (timingSafeSecretEqual(typeof normalizedProvidedSecret === "string" ? normalizedProvidedSecret : null, adminSecret)) {
-    return true;
+
+  // Find default organization (MVP assumes single org)
+  const [org] = await db.select().from(schema.organizations).limit(1);
+  if (!org) {
+    reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
+    return null;
   }
-  reply.code(403).send({
-    error: "SettingsAdminSecretRequired",
-    message: "Для изменения настроек клиники нужен действующий секрет администратора клиники."
-  });
-  return false;
+  return org.id;
 }
 
 export async function registerSettingsRoutes(app: FastifyInstance) {
   app.get("/api/settings/clinic", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
-    return clinicSettingsSchema.parse(buildClinicSettings());
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const settings = await getClinicSettingsFromDb(orgId);
+    return clinicSettingsSchema.parse(settings);
   });
 
   app.get("/api/settings/preferences", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
-    return {
-      preferences: getUiPreferences() ? uiPreferencesSchema.parse(getUiPreferences()) : null
-    };
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const prefs = await getUiPreferencesFromDb(orgId);
+    return { preferences: prefs ? uiPreferencesSchema.parse(prefs) : null };
   });
 
   app.put("/api/settings/preferences", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
     const input = parseSettingsPayload(uiPreferencesInputSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "SettingsValidationError", message: uiPreferencesValidationMessage });
@@ -226,17 +256,23 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/settings/staff", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
     const input = parseSettingsPayload(createStaffMemberSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "SettingsValidationError", message: staffCreateValidationMessage });
     }
-    const member = createStaffMember(input);
-    return reply.code(201).send(staffMemberSchema.parse(member));
+    await createStaffMemberInDb(orgId, input);
+    const settings = await getClinicSettingsFromDb(orgId);
+    // Find the newly created staff to return (for simplicity, we just return the full staff member object from settings list)
+    // Actually, createStaffMemberSchema expects the created object, but frontend might just refetch. We'll return the last one matching.
+    const created = settings.staff.find(s => s.fullName === input.fullName);
+    return reply.code(201).send(staffMemberSchema.parse(created));
   });
 
   app.put("/api/settings/staff/:staffId/working-hours", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
     const params = request.params as { staffId?: string };
     if (!params.staffId) {
       return reply.code(400).send({
@@ -249,24 +285,32 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "SettingsValidationError", message: staffWorkingHoursValidationMessage });
     }
     try {
-      return staffMemberSchema.parse(repairMojibakeDeep(updateStaffWorkingHours(params.staffId, input)));
+      await updateStaffWorkingHoursInDb(orgId, params.staffId, input);
+      const settings = await getClinicSettingsFromDb(orgId);
+      const updated = settings.staff.find(s => s.id === params.staffId);
+      if (!updated) throw new Error("Сотрудник не найден.");
+      return staffMemberSchema.parse(updated);
     } catch (error) {
       return staffWorkingHoursRejection(reply, error);
     }
   });
 
   app.post("/api/settings/chairs", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
     const input = parseSettingsPayload(createChairSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "SettingsValidationError", message: chairCreateValidationMessage });
     }
-    const chair = createChair(input);
-    return reply.code(201).send(chairSchema.parse(chair));
+    await createChairInDb(orgId, input);
+    const settings = await getClinicSettingsFromDb(orgId);
+    const created = settings.chairs.find(c => c.name === input.name);
+    return reply.code(201).send(chairSchema.parse(created));
   });
 
   app.put("/api/settings/chairs/:chairId/working-hours", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
     const params = request.params as { chairId?: string };
     if (!params.chairId) {
       return reply.code(400).send({
@@ -279,7 +323,11 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "SettingsValidationError", message: chairWorkingHoursValidationMessage });
     }
     try {
-      return chairSchema.parse(repairMojibakeDeep(updateChairWorkingHours(params.chairId, input)));
+      await updateChairWorkingHoursInDb(orgId, params.chairId, input);
+      const settings = await getClinicSettingsFromDb(orgId);
+      const updated = settings.chairs.find(c => c.id === params.chairId);
+      if (!updated) throw new Error("Кресло не найдено.");
+      return chairSchema.parse(updated);
     } catch (error) {
       return chairWorkingHoursRejection(reply, error);
     }

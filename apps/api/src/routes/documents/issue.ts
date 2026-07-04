@@ -1,3 +1,4 @@
+import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -14,7 +15,6 @@ import {
   issueGeneratedDocument,
   patients,
   payments,
-  readIssuedDocumentSnapshot,
   storeTaxXmlSnapshot,
   treatmentPlanItems,
   voidGeneratedDocument
@@ -83,7 +83,7 @@ export async function register(app: FastifyInstance) {
       ? buildTaxPaymentSnapshotForIssue(existing, payments, documents)
       : null;
     if (taxDocumentUsesPaymentSnapshot(existing.kind) && !taxPaymentSnapshot) {
-      const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(existing);
+      const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(existing, []);
       if (duplicateTaxCertificate) {
         return reply
           .code(409)
@@ -108,11 +108,11 @@ export async function register(app: FastifyInstance) {
     if (blockReason) {
       return reply.code(409).send(apiError(blockReason));
     }
-    const chainBlockReason = documentIssueChainBlockReason(issueCandidate);
+    const chainBlockReason = await documentIssueChainBlockReason(issueCandidate);
     if (chainBlockReason) {
       return reply.code(409).send(apiError(chainBlockReason));
     }
-    const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(issueCandidate);
+    const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(issueCandidate, []);
     if (duplicateTaxCertificate) {
       return reply
         .code(409)
@@ -133,7 +133,7 @@ export async function register(app: FastifyInstance) {
 
     const signatureAttestation = repairMojibakeDeep(parsedIssueInput.data.signatureAttestation);
     const issuedAt = new Date().toISOString();
-    const releaseJournalEntry = buildMedicalDocumentReleaseJournalEntry(
+    const releaseJournalEntry = await buildMedicalDocumentReleaseJournalEntry(
       issueCandidate,
       issuedAt,
       signatureAttestation

@@ -15,12 +15,11 @@ import { parseDictationWithLLM } from "../ai/dictationParser.js";
 import { parseDictationLocally } from "../ai/localDictationParser.js";
 import { db } from "../db/client.js";
 import { imagingAnnotations } from "../db/schema.js";
-import {
-  createAiRecognitionJob,
-  imagingStudies,
-  listAiRecognitionJobs,
-  patients,
-} from "../sampleData.js";
+import { listAiRecognitionJobsFromDb, createAiRecognitionJobInDb } from "../db/aiQuery.js";
+import { getPatientByIdFromDb } from "../db/patientsQuery.js";
+import { getImagingStudyById } from "../db/imagingQuery.js";
+import { getDefaultOrganizationId } from "../db/documentQuery.js";
+
 import {
   requireClinicalMutationAccess,
   requireClinicalReadAccess,
@@ -61,14 +60,18 @@ function sendVisitNoteDraftScopeError(
 
 export async function registerAiRoutes(app: FastifyInstance) {
   app.get("/api/ai/recognition-jobs", async (request, reply) => {
+    const orgId = await getDefaultOrganizationId();
+    if (!orgId) return reply.code(500).send({ error: "No organization" });
     if (
       !(await requireClinicalReadAccess(request, reply, "ai recognition jobs"))
     )
       return;
-    return z.array(aiRecognitionJobSchema).parse(listAiRecognitionJobs());
+    return z.array(aiRecognitionJobSchema).parse(await listAiRecognitionJobsFromDb(orgId));
   });
 
   app.post("/api/ai/recognition-jobs", async (request, reply) => {
+    const orgId = await getDefaultOrganizationId();
+    if (!orgId) return reply.code(500).send({ error: "No organization" });
     if (
       !(await requireClinicalMutationAccess(
         request,
@@ -86,9 +89,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
       });
     }
     const input = parsedInput.data;
-    const patient = input.patientId
-      ? patients.find((candidate) => candidate.id === input.patientId)
-      : null;
+    const patient = input.patientId ? await getPatientByIdFromDb(orgId, input.patientId) : null;
     if (input.patientId && !patient) {
       return sendAiRecognitionScopeError(
         reply,
@@ -96,11 +97,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
         aiRecognitionPatientMissingMessage,
       );
     }
-    const imagingStudy = input.imagingStudyId
-      ? imagingStudies.find(
-          (candidate) => candidate.id === input.imagingStudyId,
-        )
-      : null;
+    const imagingStudy = input.imagingStudyId ? await getImagingStudyById(orgId, input.imagingStudyId) : null;
     if (input.imagingStudyId && !imagingStudy) {
       return sendAiRecognitionScopeError(
         reply,
@@ -115,7 +112,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
         aiRecognitionStudyPatientMismatchMessage,
       );
     }
-    const job = createAiRecognitionJob({
+    const job = await createAiRecognitionJobInDb(orgId, {
       ...input,
       patientId:
         patient?.id ?? imagingStudy?.patientId ?? input.patientId ?? null,
@@ -124,6 +121,8 @@ export async function registerAiRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/ai/visit-note-draft", async (request, reply) => {
+    const orgId = await getDefaultOrganizationId();
+    if (!orgId) return reply.code(500).send({ error: "No organization" });
     if (
       !(await requireClinicalReadAccess(request, reply, "ai visit note draft"))
     )
@@ -136,9 +135,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
       });
     }
     const input = parsedInput.data;
-    const patient = patients.find(
-      (candidate) => candidate.id === input.patientId,
-    );
+    const patient = await getPatientByIdFromDb(orgId, input.patientId);
     if (!patient) {
       return sendVisitNoteDraftScopeError(
         reply,

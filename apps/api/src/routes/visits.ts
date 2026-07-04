@@ -5,7 +5,6 @@ import {
   visitDraftAutosaveRequestSchema,
   visitDraftAutosaveResponseSchema
 } from "@dental/shared";
-import { acceptVisitDraft, getVisitDraftAutosave, upsertVisitDraftAutosave } from "../sampleData.js";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 
 type VisitPayloadSchema<T> = {
