@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { organizations, users } from "../db/schema.js";
+import { organizations, users, auditEvents } from "../db/schema.js";
 import { configuredClinicalAccessSecret } from "../accessGuard.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
 import { recordAuditEvent } from "../sampleData.js";
@@ -74,14 +74,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       60 * 60 * 24 // 24h clinic session
     );
 
-    recordAuditEvent({
-      id: "audit_" + Date.now(),
+    await db.insert(auditEvents).values({
       organizationId: org.id,
-      category: "auth",
+      entityType: "organization",
+      entityId: org.id,
       action: "clinic_login_success",
-      actorRole: "system",
-      detail: `Открыт рабочий кабинет: ${org.name}`,
-      createdAt: new Date().toISOString()
+      reason: `Открыт рабочий кабинет: ${org.name}`
     });
 
     return reply.send({
@@ -134,15 +132,13 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       60 * 60 * 8 // 8h staff session
     );
 
-    recordAuditEvent({
-      id: "audit_" + Date.now(),
+    await db.insert(auditEvents).values({
       organizationId: orgId,
-      category: "auth",
+      actorUserId: user.id,
+      entityType: "user",
+      entityId: user.id,
       action: "staff_unlock_success",
-      actorId: user.id,
-      actorRole: user.role,
-      detail: `Сотрудник разблокировал рабочую сессию: ${user.fullName} (${user.role})`,
-      createdAt: new Date().toISOString()
+      reason: `Сотрудник ${user.fullName} начал сессию.`
     });
 
     return reply.send({
@@ -168,7 +164,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const clinicPayload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
     const staffPayload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
 
-    let activeUser = null;
+    let activeUser: any = null;
     if (staffPayload?.userId && clinicPayload?.organizationId) {
       const [user] = await db
         .select({ id: users.id, fullName: users.fullName, role: users.role })
@@ -245,7 +241,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     // Create owner user if specified
-    let owner = null;
+    let owner: any = null;
     if (ownerName) {
       const pinHash = ownerPin ? hashCredential(ownerPin) : hashCredential("0000");
       const [ownerUser] = await db

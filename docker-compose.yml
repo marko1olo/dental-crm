@@ -1,32 +1,52 @@
+version: "3.8"
+
 services:
+  # Database
   postgres:
     image: postgres:16-alpine
     container_name: dental-crm-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-dental}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dental}
+      POSTGRES_DB: ${POSTGRES_DB:-dental_crm}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dental} -d ${POSTGRES_DB:-dental_crm}"]
       interval: 5s
       timeout: 3s
       retries: 20
 
-  redis:
-    image: redis:7-alpine
-    container_name: dental-crm-redis
+  # API Backend
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: dental-crm-api
     restart: unless-stopped
     ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis_data:/data
+      - "4100:4100"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-dental}:${POSTGRES_PASSWORD:-dental}@postgres:5432/${POSTGRES_DB:-dental_crm}
+      - AUTH_TOKEN_SECRET=${AUTH_TOKEN_SECRET:-my_super_secret_key_change_me_in_production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Web Frontend (Nginx serving Vite static build)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: dental-crm-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:
-  redis_data:

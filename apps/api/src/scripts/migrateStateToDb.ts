@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "../db/schema.js";
 
 // We will read the actual saved state, or fallback to the sample data
-import { getDentalState } from "../persistentState.js";
+import { loadPersistentState } from "../persistentState.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 
 const pool = new pg.Pool({
@@ -44,7 +44,7 @@ async function clearDatabase() {
 
 async function migrate() {
   console.log("🚀 Starting DB Migration from JSON State...");
-  const state = getDentalState();
+  const state = loadPersistentState() as any;
   if (!state) {
     console.error("❌ Could not load JSON state.");
     process.exit(1);
@@ -180,10 +180,8 @@ async function migrate() {
       kind: doc.kind as any,
       status: doc.status as any,
       payloadJson: JSON.stringify(doc.payload),
-      schemaVersion: doc.schemaVersion,
-      createdAt: new Date(doc.createdAt),
-      updatedAt: new Date(doc.updatedAt),
-    });
+      createdAt: new Date(doc.createdAt)
+    } as any);
   }
 
   console.log(`⚖️ Migrating ${state.clinicalRules.length} Clinical Rules...`);
