@@ -101,10 +101,30 @@ function hasIncompleteRepresentativeIdentity(value: PatientRepresentativeInput):
   return !hasText(value.legalRepresentativeFullName) || !hasText(value.legalRepresentativeRelationship);
 }
 
+import { getPatientsFromDb } from "../db/patientsQuery.js";
+import { verifyToken } from "../utils/cryptoHelper.js";
+import { configuredClinicalAccessSecret } from "../accessGuard.js";
+
+const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_fallback_secret_change_me";
+
 export async function registerPatientRoutes(app: FastifyInstance) {
   app.get("/api/patients", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "patient list"))) return;
-    return patients.map((patient) => patientSchema.parse(patient));
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+
+    const orgId = payload.organizationId as string;
+    
+    try {
+      const dbPatients = await getPatientsFromDb(orgId);
+      return dbPatients.map((patient) => patientSchema.parse(patient));
+    } catch (e) {
+      console.error("[Patients] Error fetching from DB:", e);
+      return reply.code(500).send({ error: "DatabaseError" });
+    }
   });
 
   app.post("/api/patients", async (request, reply) => {
