@@ -230,10 +230,22 @@ export const users = pgTable("users", {
   role: text("role").notNull(),
   phone: text("phone"),
   email: text("email"),
+  passwordHash: text("password_hash"),
   pinCodeHash: text("pin_code_hash"),
   isActive: boolean("is_active").notNull().default(true),
   uiPreferences: jsonb("ui_preferences"),
   workingHours: jsonb("working_hours"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const userInvitations = pgTable("user_invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  email: text("email").notNull(),
+  role: text("role").notNull(),
+  inviteToken: text("invite_token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 

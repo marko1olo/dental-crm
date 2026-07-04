@@ -22,13 +22,28 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
     clinicName: org.name,
     todayIso: new Date().toISOString().split("T")[0],
     clinicSettings: {
-      mode: "one_chair",
-      timezone: "Europe/Samara",
-      defaultVisitMinutes: 45,
-      scheduleDefaults: {
-        workDays: [1,2,3,4,5],
-        startHour: "09:00",
-        endHour: "20:00"
+      profile: {
+        id: org.id,
+        organizationId: org.id,
+        clinicName: org.name,
+        legalName: org.name,
+        inn: "1234567890",
+        taxId: "",
+        licenseNumber: "",
+        address: "Default Address",
+        phone: "+70000000000",
+        timezone: "Europe/Samara",
+        mode: "one_chair",
+        defaultVisitMinutes: 45,
+        scheduleDefaults: {
+          workingDays: [1,2,3,4,5],
+          workdayStart: "09:00",
+          workdayEnd: "20:00",
+          appointmentBufferMinutes: 15
+        },
+        networkEnabled: false,
+        egiszEnabled: false,
+        updatedAt: new Date().toISOString()
       },
       staff: users.map(u => ({
         id: u.id,
@@ -59,15 +74,13 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
         notes: null,
         workingHours: null
       })),
-      networkEnabled: false,
-      egiszEnabled: false,
-      updatedAt: new Date().toISOString()
+      integrationPresets: [],
+      workspaceProfiles: [],
+      roleAccessPolicies: [],
+      modeHints: [],
+      soloDoctorMode: false
     },
-    shiftIntelligence: {
-      alerts: [],
-      focusItems: [],
-      dailyGoal: { text: "Миграция в БД", progress: 0, target: 100 }
-    },
+    // 
     patients: patients.map(p => ({
       id: p.id,
       organizationId: p.organizationId,
@@ -98,8 +111,85 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
     })),
     appointmentReadiness: [],
     scheduleSuggestions: [],
-    activeVisit: null,
-    visitCloseChecklist: [],
+    activeVisit: {
+      id: "00000000-0000-0000-0000-000000000000",
+      organizationId: organizationId,
+      patientId: "00000000-0000-0000-0000-000000000000",
+      appointmentId: null,
+      status: "draft",
+      revision: 1,
+      complaint: null,
+      anamnesis: null,
+      objectiveStatus: null,
+      diagnosis: null,
+      treatmentPlan: null,
+      doctorSummary: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    visitCloseChecklist: {
+      visitId: "00000000-0000-0000-0000-000000000000",
+      readyToSign: false,
+      score: 0,
+      nextAction: "review",
+      blockingItems: 0,
+      items: []
+    },
+    shiftIntelligence: {
+      modeFit: { 
+        mode: "one_chair", 
+        title: "Один кабинет", 
+        fitScore: 100, 
+        blockers: [], 
+        upgrades: [], 
+        lowFrictionNextStep: "ready" 
+      },
+      doctorLoads: [],
+      assistantLoads: [],
+      chairLoads: [],
+      roleQueues: [],
+      scheduleWarnings: []
+    },
+    protocolTemplates: [],
+    treatmentPlanItems: [],
+    treatmentPlanScenarios: [],
+    clinicalRuleEvaluations: [],
+    clinicalRuleSummary: {
+      activeRules: 0,
+      evaluatedRules: 0,
+      unresolved: 0,
+      blockers: 0,
+      warnings: 0,
+      requiredServices: 0,
+      coveredRules: 0
+    },
+    payments: [],
+    billingSummary: {
+      totalPlannedRub: 0,
+      totalDiscountRub: 0,
+      totalPaidRub: 0,
+      totalDueRub: 0,
+      taxDeductionEligibleRub: 0,
+      draftDocumentAmountRub: 0,
+      openTreatmentItems: 0,
+      unpaidDocuments: 0
+    },
+    communicationTemplates: [],
+    communicationEvents: [],
+    communicationSummary: {
+      openTasks: 0,
+      urgentTasks: 0,
+      dueToday: 0,
+      overdue: 0,
+      completedToday: 0,
+      appointmentConfirmations: 0,
+      paymentReminders: 0,
+      postVisitInstructions: 0
+    },
+    importBatches: [],
+    speechProviders: [],
+    auditEvents: [],
+    complianceWarnings: [],
     documents: documents.map(d => ({
       id: d.id,
       organizationId: d.organizationId,
@@ -133,7 +223,6 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
       createdAt: s.createdAt.toISOString(),
       updatedAt: s.createdAt.toISOString()
     })),
-    protocolTemplates: [],
     serviceCatalog: serviceCatalog.map(s => ({
       id: s.id,
       organizationId: s.organizationId,

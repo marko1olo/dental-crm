@@ -160,6 +160,7 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   });
 
   app.setErrorHandler((error, _request, reply) => {
+    import("node:fs").then(m => m.appendFileSync("C:/Clinic_MVP/error.log", ((error as any)?.stack || (error as any)?.message || String(error)) + "\nCAUSE: " + ((error as any)?.cause || "") + "\n"));
     if (isZodValidationError(error)) {
       reply.status(400).send({
         error: "ValidationError",
@@ -247,3 +248,5 @@ export async function startDenteApiServer() {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await startDenteApiServer();
 }
+
+// trigger restart

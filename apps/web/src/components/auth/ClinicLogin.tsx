@@ -44,71 +44,65 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-xl select-none">
-      
-      {/* Dynamic Background Glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-600/5 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="auth-overlay">
+      <div className="auth-glow auth-glow--left"></div>
+      <div className="auth-glow auth-glow--right"></div>
 
-      <div className="w-full max-w-md p-8 bg-neutral-900/40 border border-neutral-800 rounded-3xl shadow-2xl backdrop-blur-md mx-4 animate-fade-in-up">
+      <div className="auth-modal animate-fade-in-up">
         
-        {/* Header Icon */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
-            <Shield className="w-8 h-8" />
+        <div className="auth-header-center">
+          <div className="auth-logo-box">
+            <Shield size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">DENTE CRM-MIS</h2>
-          <p className="text-xs text-neutral-400 mt-1 uppercase tracking-widest">Активация кабинета</p>
+          <h2 className="auth-logo-title">DENTE CRM-MIS</h2>
+          <p className="auth-logo-subtitle">Активация кабинета</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email/Login ID Input */}
-          <div>
-            <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Building size={12} /> Логин / Email клиники
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-form-group">
+            <label className="auth-label">
+              <Building size={12} className="auth-icon-inline" /> Логин / Email клиники
             </label>
             <input
               type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="clinic@example.com"
-              className="w-full bg-neutral-950/50 border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
+              className="auth-input"
               disabled={loading}
             />
           </div>
 
-          {/* Password Input */}
-          <div>
-            <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <KeyRound size={12} /> Мастер-пароль
+          <div className="auth-form-group">
+            <label className="auth-label">
+              <KeyRound size={12} className="auth-icon-inline" /> Мастер-пароль
             </label>
-            <div className="relative">
+            <div className="auth-input-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-neutral-950/50 border border-neutral-800 rounded-xl pl-4 pr-10 py-3 text-white text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
+                className="auth-input auth-input--with-icon"
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                className="auth-input-icon-btn"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-medium rounded-xl py-3 px-4 text-sm transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] flex items-center justify-center gap-2 mt-4"
+            className="auth-submit-btn"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <div className="auth-spinner"></div>
             ) : (
               <>
                 Вход в кабинет <ArrowRight size={16} />
@@ -117,10 +111,10 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-neutral-800 text-center">
-          <p className="text-[11px] text-neutral-500 leading-relaxed">
+        <div className="auth-footer-hints auth-footer-hints--border">
+          <p>
             Авторизация требуется для загрузки расписания и шифрования данных.<br />
-            Демо-доступ: <code className="text-neutral-400 bg-neutral-950 px-1 py-0.5 rounded">clinic@example.com</code> / <code className="text-neutral-400 bg-neutral-950 px-1 py-0.5 rounded">dente2026</code>
+            Демо-доступ: <code>clinic@example.com</code> / <code>dente2026</code>
           </p>
         </div>
 

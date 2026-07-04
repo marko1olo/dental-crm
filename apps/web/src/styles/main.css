@@ -1,3 +1,5 @@
+@import './auth.css';
+
 :root {
 
   color: #25211d;
@@ -15909,3 +15911,299 @@ input:focus, select:focus, textarea:focus {
   10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
   20%, 40%, 60%, 80% { transform: translateX(6px); }
 }
+
+/* ========== APPOINTMENT CARD COMPONENT - STRICT CLS-PROOF LAYOUT ========== */
+
+.appointment-card-time {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--slate-900);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appointment-card-time .time-end {
+  font-weight: 400;
+  color: var(--slate-400);
+  font-size: 13px;
+}
+
+.appointment-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--slate-100);
+  gap: 8px;
+}
+
+.appt-readiness-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--slate-500);
+}
+
+.readiness-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.readiness-dot-ok { background: var(--teal, #14b8a6); }
+.readiness-dot-needs_attention { background: var(--amber, #f59e0b); }
+.readiness-dot-blocked { background: var(--red, #ef4444); }
+
+.appt-next-action {
+  flex: 1;
+  font-size: 12px;
+  color: var(--slate-600);
+}
+
+.appt-readiness-score {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--slate-700);
+}
+
+.handoff-lock {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber-700, #b45309);
+  background: var(--amber-50, #fffbeb);
+  border: 1px solid var(--amber-200, #fde68a);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.appointment-handoff-note {
+  font-size: 12px;
+  color: var(--amber, #f59e0b);
+  background: var(--amber-50, #fffbeb);
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+  border-left: 3px solid var(--amber, #f59e0b);
+}
+
+.chip-assistant {
+  background: var(--violet-50, #f5f3ff);
+  color: var(--violet-700, #6d28d9);
+  border-color: var(--violet-200, #ddd6fe);
+}
+
+.chip-suggestion {
+  cursor: pointer;
+  font-size: 12px;
+  transition: opacity 0.15s;
+}
+
+.chip-suggestion:hover {
+  opacity: 0.8;
+}
+
+.chip-suggestion.priority-urgent {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  border-color: #fca5a5 !important;
+}
+
+.chip-suggestion.priority-important {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fcd34d !important;
+}
+
+.appointment-edit-button {
+  padding: 4px 12px !important;
+  min-height: 28px !important;
+  font-size: 12px !important;
+}
+
+/* ========== SMART AI BOOKING BLOCK ========== */
+
+.smart-ai-booking {
+  margin-bottom: 12px;
+  border: 1px solid var(--brand-300);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.05);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ========== SCHEDULE ENTITY GRID (editor chip selectors) ========== */
+
+.schedule-entity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.schedule-entity-label {
+  font-size: 13px;
+  color: var(--slate-500);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.schedule-select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--slate-300);
+}
+
+.quick-chip--sm {
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  min-height: 24px !important;
+}
+
+
+
+/* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
+.appointment-card {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.08);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+}
+.appointment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(13, 148, 136, 0.15);
+  border-color: var(--line-strong);
+}
+.appointment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+.appointment-card-time {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.appointment-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.appointment-card-body h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink);
+}
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.appointment-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(208, 226, 217, 0.15);
+}
+
+
+
+/* --- SCHEDULE FILTERS --- */
+.schedule-shift-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.schedule-shift-summary-grid {
+  width: 100%;
+  margin-top: 12px;
+}
+.schedule-filter-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.schedule-date-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-right: 1px solid var(--line-strong);
+  padding-right: 12px;
+  margin-right: 4px;
+}
+.schedule-date-filter-input {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  outline: none;
+  cursor: pointer;
+}
+
+
+/* Timeline CLS Fixes */
+.timeline-node {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 16px;
+  position: relative;
+  min-height: 120px;
+}
+
+.timeline-time {
+  font-weight: 700;
+  color: var(--slate-500);
+  text-align: right;
+  padding-top: 16px;
+}
+
+.timeline-content {
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 90px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--slate-200);
+  z-index: 0;
+}
+
+.timeline-content article.appointment-card {
+  position: relative;
+  z-index: 1;
+  min-height: 100px;
+}
+

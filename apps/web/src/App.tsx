@@ -6,7 +6,7 @@ import { useAppLogic } from './useAppLogic';
 import { VoiceAssistantUI } from './components/VoiceAssistantUI';
 import { Omnibar } from './components/Omnibar';
 import { CommandPalette } from './components/CommandPalette';
-import { ClinicLogin } from './components/auth/ClinicLogin';
+import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
 
 import { useAppStore } from "./store/appStore";
@@ -1897,6 +1897,21 @@ export function App() {
   const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
   const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
 
+  // On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard immediately
+  useEffect(() => {
+    if (clinicAuthed && !dashboard) {
+      void loadDashboard().catch((e) => {
+        // Token expired or invalid - force re-login
+        console.warn("[Dente] Persisted clinic token invalid, forcing re-login:", e);
+        localStorage.removeItem("dente_clinic_token");
+        localStorage.removeItem("dente_staff_token");
+        setClinicAuthed(false);
+        setStaffAuthed(false);
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount only
+
   // Auto-lock on inactivity (5 minutes)
   useEffect(() => {
     if (!clinicAuthed) return;
@@ -1935,14 +1950,24 @@ export function App() {
 
   // Show clinic login gate if not authed
   if (!clinicAuthed) {
-    return <ClinicLogin onLoginSuccess={() => setClinicAuthed(true)} />;
+    return <AuthHub onSuccess={(cp, up) => {
+      setClinicAuthed(true);
+      if (up) {
+        setStaffAuthed(true);
+        setActiveStaffUser(up);
+      }
+      void loadDashboard();
+    }} />;
   }
 
   // Show staff PIN pad if clinic authed but no staff session (or after lock)
   if (!staffAuthed || showStaffPinPad) {
+    if (!dashboard) {
+      return <AppLoadingState message="Загрузка данных клиники..." />;
+    }
     return (
       <StaffPinPad
-        staffMembers={dashboard?.clinicSettings?.staff ?? []}
+        staffMembers={dashboard.clinicSettings?.staff ?? []}
         onUnlockSuccess={(user) => {
           setActiveStaffUser(user);
           setStaffAuthed(true);
@@ -2284,7 +2309,7 @@ export function App() {
     );
   }
 
-  if (!dashboard || !activePatient) {
+  if (!dashboard) {
     return <AppLoadingState message="Загрузка рабочей смены" />;
   }
 
@@ -2301,7 +2326,7 @@ export function App() {
             <div className="banner-content">
               <span className="banner-icon" aria-hidden="true">🚀</span>
               <p>
-                <strong>Демо-режим.</strong> Тестовые данные. Для настройки своей клиники —
+                <strong>Демо-режим.</strong> Тестовые данные загружены. Для настройки своей клиники нажмите «Запустить мастер».
               </p>
             </div>
             <button className="primary-button banner-btn" type="button" onClick={reopenOnboarding}>
