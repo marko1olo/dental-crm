@@ -1,3 +1,4 @@
+import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -14,7 +15,6 @@ import {
   issueGeneratedDocument,
   patients,
   payments,
-  readIssuedDocumentSnapshot,
   storeTaxXmlSnapshot,
   treatmentPlanItems,
   voidGeneratedDocument

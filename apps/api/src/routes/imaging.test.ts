@@ -15,7 +15,7 @@ describe('parseDicomSeriesManifest', () => {
       rawText: '   \n\r\n   '
     };
 
-    const result = await parseDicomSeriesManifest(input);
+    const result = await parseDicomSeriesManifest("mock-org", input);
 
     assert.strictEqual(result.sourceName, 'test-source.zip');
     assert.strictEqual(result.sourceKind, 'dicom_file');

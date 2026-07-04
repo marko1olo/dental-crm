@@ -1,6 +1,5 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPatientSchema, patientSchema, updatePatientAdministrativeProfileSchema, updatePatientSchema } from "@dental/shared";
-import { createPatient, patients, updatePatient, updatePatientAdministrativeProfile } from "../sampleData.js";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 
 type PatientPayloadSchema<T> = {
@@ -61,14 +60,14 @@ function normalizePatientPhoneForDuplicate(value: string | null | undefined): st
   return digits.length >= 5 ? digits : "";
 }
 
-function findPatientDuplicate(input: PatientDuplicateInput, ignoredPatientId?: string) {
+function findPatientDuplicate(patientsList: any[], input: PatientDuplicateInput, ignoredPatientId?: string) {
   const inputName = normalizePatientNameForDuplicate(input.fullName);
   const inputBirthDate = (input.birthDate ?? "").trim();
   const inputPhone = normalizePatientPhoneForDuplicate(input.phone);
   if (!inputName && !inputBirthDate && !inputPhone) return null;
 
   return (
-    patients.find((patient) => {
+    patientsList.find((patient) => {
       if (patient.id === ignoredPatientId || patient.status !== "active") return false;
       const sameName = Boolean(inputName) && inputName === normalizePatientNameForDuplicate(patient.fullName);
       const sameBirthDate = Boolean(inputBirthDate) && inputBirthDate === (patient.birthDate ?? "");
@@ -142,7 +141,9 @@ export async function registerPatientRoutes(app: FastifyInstance) {
     if (!input) {
       return reply.code(400).send({ error: "PatientValidationError", message: patientCreateValidationMessage });
     }
-    // Duplicate check omitted for MVP DB migration speed
+    const dbPatients = await getPatientsFromDb(orgId);
+    const duplicate = findPatientDuplicate(dbPatients, input);
+    if (duplicate) return sendPatientDuplicate(reply);
     try {
       const patient = await createPatientInDb(orgId, input);
       return reply.code(201).send(patientSchema.parse(patient));

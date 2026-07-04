@@ -5,13 +5,14 @@ import {
 } from "@dental/shared";
 import { requireClinicalReadAccess } from "../accessGuard.js";
 import { analyzePricelist } from "../pricelist/analyzer.js";
+import { getDefaultOrganizationId, getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
 
 type PricelistPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
 };
 
 const pricelistValidationMessage =
-  "Прайс не проверен: передайте текст прайса или изображение до безопасного лимита.";
+  "Ошибка валидации: прайс-лист или запрос не соответствуют формату.";
 
 function parsePricelistPayload<T>(schema: PricelistPayloadSchema<T>, value: unknown) {
   const parsed = schema.safeParse(value);
@@ -36,7 +37,12 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
           message: pricelistValidationMessage
         });
       }
-      return dentalPricelistAnalysisResponseSchema.parse(await analyzePricelist(input));
+      const orgId = await getDefaultOrganizationId();
+      if (!orgId) {
+        return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
+      }
+      const catalog = await getServiceCatalogForOrganization(orgId);
+      return dentalPricelistAnalysisResponseSchema.parse(await analyzePricelist(input, catalog));
     }
   );
 }

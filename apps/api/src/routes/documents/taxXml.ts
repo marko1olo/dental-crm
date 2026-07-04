@@ -66,7 +66,7 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
       document.taxPaymentSnapshot ??
       (taxDocumentUsesPaymentSnapshot(document.kind) ? buildTaxPaymentSnapshotForIssue(document, payments, documents) : null);
     if (taxDocumentUsesPaymentSnapshot(document.kind) && !taxPaymentSnapshot) {
-      const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(document);
+      const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(document, []);
       if (duplicateTaxCertificate) {
         return reply
           .code(409)
@@ -100,11 +100,11 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
     if (taxBlockReason) {
       return reply.code(409).send(apiError(taxBlockReason));
     }
-    const chainBlockReason = documentIssueChainBlockReason(xmlDocument);
+    const chainBlockReason = await documentIssueChainBlockReason(xmlDocument);
     if (chainBlockReason) {
       return reply.code(409).send(apiError(chainBlockReason));
     }
-    const duplicateTaxCertificate = findIssuedDuplicateTaxCertificate(xmlDocument);
+    const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(xmlDocument, []);
     if (duplicateTaxCertificate) {
       return reply
         .code(409)

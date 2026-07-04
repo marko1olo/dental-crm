@@ -4,6 +4,7 @@ import {
   integer,
   jsonb,
   numeric,
+  real,
   pgEnum,
   pgTable,
   text,
@@ -176,6 +177,7 @@ export const aiJobKind = pgEnum("ai_job_kind", [
   "paper_ocr"
 ]);
 export const aiJobStatus = pgEnum("ai_job_status", ["queued", "running", "needs_review", "accepted", "rejected", "failed"]);
+export const aiRecognitionTarget = pgEnum("ai_recognition_target", ["visit_note", "patient_import", "imaging_summary", "document_draft"]);
 export const imagingStudyKind = pgEnum("imaging_study_kind", ["periapical", "bitewing", "opg", "ceph", "cbct", "photo", "other"]);
 export const imagingSourceKind = pgEnum("imaging_source_kind", [
   "manual_upload",
@@ -205,6 +207,8 @@ export const organizations = pgTable("organizations", {
   bankDetails: text("bank_details"),
   signatoryName: text("signatory_name"),
   signatoryTitle: text("signatory_title"),
+  clinicMode: text("clinic_mode").notNull().default("demo"), // demo, single, network
+  clinicSchedule: jsonb("clinic_schedule"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
@@ -228,6 +232,8 @@ export const users = pgTable("users", {
   email: text("email"),
   pinCodeHash: text("pin_code_hash"),
   isActive: boolean("is_active").notNull().default(true),
+  uiPreferences: jsonb("ui_preferences"),
+  workingHours: jsonb("working_hours"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 
@@ -236,7 +242,10 @@ export const chairs = pgTable("chairs", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   clinicId: uuid("clinic_id").notNull().references(() => clinics.id),
   name: text("name").notNull(),
-  isActive: boolean("is_active").notNull().default(true)
+  isActive: boolean("is_active").notNull().default(true),
+  equipment: text("equipment"),
+  specializations: text("specializations"),
+  workingHours: jsonb("working_hours")
 });
 
 export const patients = pgTable("patients", {
@@ -385,10 +394,11 @@ export const payments = pgTable("payments", {
   patientId: uuid("patient_id").notNull().references(() => patients.id),
   visitId: uuid("visit_id").references(() => visits.id),
   documentId: uuid("document_id"),
+  clientMutationId: text("client_mutation_id"),
   amountRub: integer("amount_rub").notNull(),
   method: paymentMethod("method").notNull().default("card"),
   status: paymentStatus("status").notNull().default("paid"),
-  paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
+  paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
   fiscalReceiptNumber: text("fiscal_receipt_number"),
   fiscalReceiptIssuedAt: text("fiscal_receipt_issued_at"),
   fiscalReceiptUrl: text("fiscal_receipt_url"),
@@ -400,7 +410,8 @@ export const payments = pgTable("payments", {
   payerRelationship: text("payer_relationship"),
   taxDeductionCode: text("tax_deduction_code"),
   note: text("note"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
 
 export const generatedDocuments = pgTable("generated_documents", {
@@ -685,13 +696,22 @@ export const aiJobs = pgTable("ai_jobs", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   patientId: uuid("patient_id").references(() => patients.id),
   visitId: uuid("visit_id").references(() => visits.id),
+  imagingStudyId: uuid("imaging_study_id").references(() => imagingStudies.id),
   kind: aiJobKind("kind").notNull(),
+  target: aiRecognitionTarget("target").notNull().default("visit_note"),
   status: aiJobStatus("status").notNull().default("queued"),
+  sourceLabel: text("source_label").notNull().default("manual"),
+  inputText: text("input_text"),
+  resultText: text("result_text"),
+  confidence: real("confidence").notNull().default(0),
+  warnings: text("warnings").array(),
+  suggestedNextStep: text("suggested_next_step").notNull().default("review_result"),
   inputStoragePath: text("input_storage_path"),
   outputText: text("output_text"),
   modelName: text("model_name"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  reviewedAt: timestamp("reviewed_at", { withTimezone: true })
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
 
 export const imagingSeries = pgTable("imaging_series", {
@@ -775,3 +795,36 @@ export const xrayScans = pgTable("xray_scans", {
   xrayScansOrgIdx: index("xray_scans_org_idx").on(table.organizationId),
 }));
 
+
+export const imagingViewerSessions = pgTable("imaging_viewer_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  studyId: uuid("study_id").notNull().references(() => imagingStudies.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  visitId: uuid("visit_id").references(() => visits.id),
+  state: jsonb("state").notNull(),
+  annotations: jsonb("annotations").notNull().default([]),
+  warnings: jsonb("warnings").notNull().default([]),
+  clientSavedAt: timestamp("client_saved_at", { withTimezone: true }),
+  serverSavedAt: timestamp("server_saved_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const dicomWorkbenchBundles = pgTable("dicom_workbench_bundles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  seriesKey: text("series_key").notNull(),
+  patientId: uuid("patient_id").references(() => patients.id),
+  studyInstanceUid: text("study_instance_uid"),
+  seriesInstanceUid: text("series_instance_uid"),
+  sourceName: text("source_name").notNull(),
+  sourceKind: imagingSourceKind("source_kind").notNull(),
+  pixelPolicy: text("pixel_policy").notNull().default("metadata_and_tool_state_only_no_pixels"),
+  manifest: jsonb("manifest").notNull(),
+  warnings: jsonb("warnings").notNull().default([]),
+  clientSavedAt: timestamp("client_saved_at", { withTimezone: true }),
+  serverSavedAt: timestamp("server_saved_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});

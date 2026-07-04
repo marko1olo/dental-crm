@@ -30,21 +30,19 @@ import {
   type TaxDeductionApplicationPayload,
   type TaxDeductionApplicationRelationship
 } from "@dental/shared";
+import { getAppointmentByIdInDb } from "../db/appointmentsQuery.js";
+import { getVisitByIdInDb } from "../db/visitsQuery.js";
+import { getDocumentRenderContextFromDb, readIssuedDocumentSnapshot } from "../db/documentQuery.js";
 import {
-  appointments,
-  createGeneratedDocument,
-  clinicProfile,
-  documents,
-  findVisitById,
-  issueGeneratedDocument,
-  patients,
-  payments,
-  readIssuedDocumentSnapshot,
-  serviceCatalog,
-  storeTaxXmlSnapshot,
-  treatmentPlanItems,
-  voidGeneratedDocument
-} from "../sampleData.js";
+  getDefaultOrganizationId,
+  getDocumentsByPatientId,
+  getDocumentById,
+  createGeneratedDocumentInDb,
+  issueGeneratedDocumentInDb,
+  voidGeneratedDocumentInDb,
+  storeTaxXmlSnapshotInDb
+} from "../db/documentQuery.js";
+
 import {
   paidAmountRubForDocument,
   paymentRefundCorrectionSelectionErrorForDocument,
@@ -263,7 +261,7 @@ export function annualTaxpayerScopesForDocument(document: GeneratedDocument): Ta
     if (scope.inn || scope.identityKey.replace(/\|/g, "")) scopes.set(key, scope);
   };
 
-  for (const payment of taxPaymentsForDocumentScope(document, payments)) {
+  for (const payment of taxPaymentsForDocumentScope(document, [])) {
     addScope(paymentAnnualTaxpayerScope(payment));
   }
 
@@ -288,14 +286,15 @@ export function annualTaxpayerScopesOverlap(
   return false;
 }
 
-export function findIssuedDuplicateTaxCertificate(document: GeneratedDocument): GeneratedDocument | null {
+export async function findIssuedDuplicateTaxCertificate(document: GeneratedDocument, payments: import('@dental/shared').Payment[]): Promise<GeneratedDocument | null> {
+  const allDocuments = await getDocumentsByPatientId(document.organizationId, document.patientId);
   if (!taxDocumentDuplicateSensitive(document.kind) || !document.taxYear) return null;
   const targetAnnualScopes = annualTaxpayerScopesForDocument(document);
-  const targetReceiptKeys = receiptKeysForTaxDocument(document, payments);
-  const targetPaymentIds = paymentIdsForTaxDocument(document, payments);
+  const targetReceiptKeys = receiptKeysForTaxDocument(document, []);
+  const targetPaymentIds = paymentIdsForTaxDocument(document, []);
   if (!targetAnnualScopes.length && !targetReceiptKeys.size && !targetPaymentIds.size) return null;
 
-  for (const candidate of documents) {
+  for (const candidate of allDocuments) {
     if (candidate.patientId !== document.patientId) continue;
     if (candidate.taxYear !== document.taxYear) continue;
     if (candidate.status !== "issued") continue;
@@ -306,7 +305,7 @@ export function findIssuedDuplicateTaxCertificate(document: GeneratedDocument): 
     const candidateAnnualScopes = annualTaxpayerScopesForDocument(candidate);
     if (annualTaxpayerScopesOverlap(targetAnnualScopes, candidateAnnualScopes)) return candidate;
 
-    const candidateReceiptKeys = receiptKeysForTaxDocument(candidate, payments);
+    const candidateReceiptKeys = receiptKeysForTaxDocument(candidate, []);
     let hasReceiptKey = false;
     for (const key of candidateReceiptKeys) {
       if (targetReceiptKeys.has(key)) {
@@ -316,7 +315,7 @@ export function findIssuedDuplicateTaxCertificate(document: GeneratedDocument): 
     }
     if (hasReceiptKey) return candidate;
 
-    const candidatePaymentIds = paymentIdsForTaxDocument(candidate, payments);
+    const candidatePaymentIds = paymentIdsForTaxDocument(candidate, []);
     let hasPaymentId = false;
     for (const id of candidatePaymentIds) {
       if (targetPaymentIds.has(id)) {
@@ -358,7 +357,7 @@ export function taxXmlSourceSnapshotForIssue(
   return {
     createdAt: issuedAt,
     patient: cloneSnapshotValue(patient),
-    clinicProfile: cloneSnapshotValue(clinicProfile),
+    clinicProfile: cloneSnapshotValue(undefined as any),
     payments: snapshot.payments.map((payment) => cloneSnapshotValue(payment))
   };
 }
@@ -503,11 +502,11 @@ export function releaseSourceSnapshotSha256(document: GeneratedDocument, scope: 
     .digest("hex");
 }
 
-export function buildMedicalDocumentReleaseJournalEntry(
+export async function buildMedicalDocumentReleaseJournalEntry(
   document: GeneratedDocument,
   issuedAt: string,
   signatureAttestation: DocumentIssueSignatureAttestation
-): DocumentReleaseJournalEntry | null {
+): Promise<DocumentReleaseJournalEntry | null> {
   const responsibleStaff = `${signatureAttestation.staffRole} ${signatureAttestation.staffFullName}`.trim();
   if (document.kind === "medical_record_copy_request") {
     const payload = document.payload?.medicalRecordCopyRequest;
@@ -567,7 +566,7 @@ export function buildMedicalDocumentReleaseJournalEntry(
   if (document.kind === "medical_document_release_receipt") {
     const payload = document.payload?.medicalDocumentReleaseReceipt;
     if (!payload) return null;
-    const sourceRequest = findIssuedMedicalCopyRequestForRelease(document);
+    const sourceRequest = await findIssuedMedicalCopyRequestForRelease(document);
     return {
       id: randomUUID(),
       entryKind: "release_completed",
@@ -649,13 +648,14 @@ export function taxApplicationMatchesSelectedPayments(paymentsForDocument: Payme
   return applicationPaymentIds.every((paymentId) => documentPaymentIds.has(paymentId));
 }
 
-export function hasIssuedTaxApplicationForCertificate(document: GeneratedDocument): boolean {
+export async function hasIssuedTaxApplicationForCertificate(document: GeneratedDocument): Promise<boolean> {
+  const allDocuments = await getDocumentsByPatientId(document.organizationId, document.patientId);
   const expectedForm = taxCertificateExpectedApplicationForm(document);
   if (!expectedForm || !document.taxYear) return false;
-  const taxPayments = taxPaymentsForDocumentScope(document, payments);
+  const taxPayments = taxPaymentsForDocumentScope(document, []);
   if (!taxPayments.length) return false;
 
-  return documents.some((candidate) => {
+  return allDocuments.some((candidate) => {
     const application = candidate.payload?.taxDeductionApplication;
     if (!application) return false;
     if (candidate.status !== "issued") return false;
@@ -689,12 +689,14 @@ export function releaseReceiptMatchesCopyRequest(
   );
 }
 
-export function findIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): GeneratedDocument | null {
+export async function findIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): Promise<GeneratedDocument | null> {
+  const orgId = await getDefaultOrganizationId();
+  const allDocuments = await getDocumentsByPatientId(orgId!, document.patientId);
   const release = document.payload?.medicalDocumentReleaseReceipt;
   if (!release) return null;
   const sourceRequestDocumentId = release.sourceRequestDocumentId;
   return (
-    documents.find((candidate) => {
+    allDocuments.find((candidate) => {
       const request = candidate.payload?.medicalRecordCopyRequest;
       if (!request) return false;
       return (
@@ -709,14 +711,15 @@ export function findIssuedMedicalCopyRequestForRelease(document: GeneratedDocume
   );
 }
 
-export function hasIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): boolean {
-  return Boolean(findIssuedMedicalCopyRequestForRelease(document));
+export async function hasIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): Promise<boolean> {
+  return Boolean(await findIssuedMedicalCopyRequestForRelease(document));
 }
 
-export function completedWorksActMatchesIssuedContract(document: GeneratedDocument): boolean {
+export async function completedWorksActMatchesIssuedContract(document: GeneratedDocument): Promise<boolean> {
+  const allDocuments = await getDocumentsByPatientId(document.organizationId, document.patientId);
   const act = document.payload?.completedWorksAct;
   if (!act) return false;
-  return documents.some((candidate) => {
+  return allDocuments.some((candidate) => {
     const contract = candidate.payload?.paidMedicalServicesContract;
     if (!contract) return false;
     if (candidate.id !== act.linkedContractDocumentId) return false;
@@ -729,51 +732,51 @@ export function completedWorksActMatchesIssuedContract(document: GeneratedDocume
   });
 }
 
-export function medicalRecordExtractVisitDate(visitId: string): number | null {
-  const visit = findVisitById(visitId);
+export async function medicalRecordExtractVisitDate(organizationId: string, visitId: string): Promise<number | null> {
+  const visit = await getVisitByIdInDb(organizationId, visitId);
   if (!visit) return null;
-  const appointment = visit.appointmentId ? appointments.find((candidate) => candidate.id === visit.appointmentId) : null;
+  const appointment = visit.appointmentId ? await getAppointmentByIdInDb(organizationId, visit.appointmentId) : null;
   return (
-    comparableDocumentChainDate(appointment?.startsAt) ??
-    comparableDocumentChainDate(visit.updatedAt) ??
-    comparableDocumentChainDate(visit.createdAt)
+    comparableDocumentChainDate(appointment?.startsAt ? (typeof appointment.startsAt === "string" ? appointment.startsAt : appointment.startsAt.toISOString()) : null) ??
+    comparableDocumentChainDate(typeof visit.updatedAt === "string" ? visit.updatedAt : visit.updatedAt.toISOString()) ??
+    comparableDocumentChainDate(typeof visit.createdAt === "string" ? visit.createdAt : visit.createdAt.toISOString())
   );
 }
 
-export function signedMedicalSourceVisitsAreValid(
+export async function signedMedicalSourceVisitsAreValid(
   sourceVisitIds: readonly string[],
   document: GeneratedDocument,
   periodStartRaw: string | null | undefined,
   periodEndRaw: string | null | undefined
-): boolean {
+): Promise<boolean> {
   const periodStart = comparableDocumentChainDate(periodStartRaw);
   const periodEnd = comparableDocumentChainDate(periodEndRaw);
   if (!documentChainDateRangeIsChronological(periodStartRaw, periodEndRaw)) return false;
-  return sourceVisitIds.every((visitId) => {
-    const visit = findVisitById(visitId);
+  for (const visitId of sourceVisitIds) {
+    const visit = await getVisitByIdInDb(document.organizationId, visitId);
     if (!visit || visit.patientId !== document.patientId || visit.status !== "signed") return false;
 
-    const visitDate = medicalRecordExtractVisitDate(visitId);
+    const visitDate = await medicalRecordExtractVisitDate(document.organizationId, visitId);
     if (visitDate === null) return false;
     if (periodStart !== null && visitDate < periodStart) return false;
     if (periodEnd !== null && visitDate > periodEnd) return false;
-    return true;
-  });
+  }
+  return true;
 }
 
-export function medicalRecordExtractSourcesAreValid(payload: MedicalRecordExtractPayload, document: GeneratedDocument): boolean {
-  return signedMedicalSourceVisitsAreValid(payload.sourceVisitIds, document, payload.periodStart, payload.periodEnd);
+export async function medicalRecordExtractSourcesAreValid(payload: MedicalRecordExtractPayload, document: GeneratedDocument): Promise<boolean> {
+  return await signedMedicalSourceVisitsAreValid(payload.sourceVisitIds, document, payload.periodStart, payload.periodEnd);
 }
 
-export function outpatientMedicalCard025uSourcesAreValid(payload: OutpatientMedicalCard025uPayload, document: GeneratedDocument): boolean {
+export async function outpatientMedicalCard025uSourcesAreValid(payload: OutpatientMedicalCard025uPayload, document: GeneratedDocument): Promise<boolean> {
   if (!payload.sourceVisitIds.length || !payload.specialistVisitRecords.length) return false;
   const sourceIds = new Set(payload.sourceVisitIds);
   if (payload.specialistVisitRecords.some((record) => !sourceIds.has(record.sourceVisitId))) return false;
-  return signedMedicalSourceVisitsAreValid(payload.sourceVisitIds, document, payload.periodStart, payload.periodEnd);
+  return await signedMedicalSourceVisitsAreValid(payload.sourceVisitIds, document, payload.periodStart, payload.periodEnd);
 }
 
 export function documentRenderContext() {
-  return { clinicProfile, payments, serviceCatalog, treatmentPlanItems };
+  return {} as any;
 }
 
 export function apiError(message: string, error = "DocumentOperationRejected") {
@@ -811,8 +814,10 @@ export function configuredTaxOfficeCode(): string | null {
   return process.env.DENTE_FNS_TAX_OFFICE_CODE?.trim() || process.env.FNS_TAX_OFFICE_CODE?.trim() || null;
 }
 
-export function documentIssueChainBlockReason(document: GeneratedDocument): string | null {
-  if (taxCertificateExpectedApplicationForm(document) && !hasIssuedTaxApplicationForCertificate(document)) {
+export async function documentIssueChainBlockReason(document: GeneratedDocument): Promise<string | null> {
+  const orgId = await getDefaultOrganizationId();
+  const allDocuments = await getDocumentsByPatientId(orgId!, document.patientId);
+  if (taxCertificateExpectedApplicationForm(document) && !(await hasIssuedTaxApplicationForCertificate(document))) {
     return "Перед выдачей налогового документа нужно выпустить заявление налогоплательщика с тем же годом, формой, ИНН, реквизитами плательщика и точным набором выбранных фискальных чеков.";
   }
 
@@ -826,7 +831,7 @@ export function documentIssueChainBlockReason(document: GeneratedDocument): stri
     if (!medicalDocumentReleaseReceiptDatesAreValid(releaseReceipt)) {
       return "Расписку о выдаче медицинских документов нельзя выдать: даты выдачи, доступа или периода указаны в нераспознаваемом формате либо период указан в обратном порядке.";
     }
-    if (!hasIssuedMedicalCopyRequestForRelease(document)) {
+    if (!(await hasIssuedMedicalCopyRequestForRelease(document))) {
       return "Перед распиской о выдаче медицинских документов нужно выбрать конкретный уже выданный запрос пациента или представителя с тем же получателем, форматом, периодом и не меньшим составом документов.";
     }
   }
@@ -840,7 +845,7 @@ export function documentIssueChainBlockReason(document: GeneratedDocument): stri
     if (!outpatientMedicalCard025uDatesAreValid(card025u)) {
       return "Карту 025/у нельзя выдать: даты открытия, периода, записей или результатов указаны в нераспознаваемом формате либо период указан в обратном порядке.";
     }
-    if (!outpatientMedicalCard025uSourcesAreValid(card025u, document)) {
+    if (!await outpatientMedicalCard025uSourcesAreValid(card025u, document)) {
       return "Карту 025/у нельзя выдать: исходные визиты не найдены, принадлежат другому пациенту, не подписаны врачом, не входят в период карты или запись врача ссылается на отсутствующий источник.";
     }
   }
@@ -853,7 +858,7 @@ export function documentIssueChainBlockReason(document: GeneratedDocument): stri
     if (!medicalRecordExtractPeriodIsChronological(extract)) {
       return "Выписку нельзя выдать: период выписки указан в обратном порядке.";
     }
-    if (!medicalRecordExtractSourcesAreValid(extract, document)) {
+    if (!await medicalRecordExtractSourcesAreValid(extract, document)) {
       return "Выписку нельзя выдать: один или несколько исходных приемов не найдены, принадлежат другому пациенту, еще не подписаны врачом или не входят в период выписки.";
     }
   }
@@ -861,10 +866,9 @@ export function documentIssueChainBlockReason(document: GeneratedDocument): stri
   return null;
 }
 
-export function buildDocumentAuditFacts(document: GeneratedDocument, patient: (typeof patients)[number]) {
-  const renderContext = documentRenderContext();
-  const issueBlockReason =
-    document.status === "draft" ? documentIssueBlockReason(document, patient, renderContext) ?? documentIssueChainBlockReason(document) : null;
+export async function buildDocumentAuditFacts(document: GeneratedDocument, patient: Patient) {
+  const renderContext = await getDocumentRenderContextFromDb(document.organizationId, patient.id);
+  const issueBlockReason = document.status === "draft" ? (await documentIssueBlockReason(document, patient, renderContext)) ?? (await documentIssueChainBlockReason(document)) : null;
   const issuedArchiveRequired = documentRequiresIssuedArchive(document);
   const issuedSnapshot = readIssuedDocumentSnapshot(document);
   const immutableSnapshotReady = Boolean(issuedSnapshot && documentHasIssuedArchiveMetadata(document) && issuedArchiveRequired);

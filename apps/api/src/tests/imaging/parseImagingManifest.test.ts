@@ -4,7 +4,7 @@ import { parseImagingManifest } from "../../routes/imaging.js";
 import { imagingImportPreviewResponseSchema } from "@dental/shared";
 
 test("parseImagingManifest - handles empty text", async () => {
-  const result = await parseImagingManifest({
+  const result = await parseImagingManifest("test-org-id", {
     sourceName: "empty.csv",
     sourceKind: "manual_upload",
     rawText: ""
@@ -22,7 +22,7 @@ test("parseImagingManifest - handles empty text", async () => {
 });
 
 test("parseImagingManifest - handles text with only empty lines", async () => {
-  const result = await parseImagingManifest({
+  const result = await parseImagingManifest("test-org-id", {
     sourceName: "empty.csv",
     sourceKind: "manual_upload",
     rawText: "\n\r\n  \n\t\n"

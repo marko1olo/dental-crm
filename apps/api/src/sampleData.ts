@@ -9107,7 +9107,7 @@ function moveSnapshotTempFile(tempPath: string, snapshotPath: string): void {
   }
 }
 
-function writeIssuedDocumentSnapshot(documentId: string, html: string): { snapshotPath: string; sha256: string; createdAt: string } {
+export function writeIssuedDocumentSnapshot(documentId: string, html: string): { snapshotPath: string; sha256: string; createdAt: string } {
   const snapshotPath = documentSnapshotPath(documentId);
   mkdirSync(path.dirname(snapshotPath), { recursive: true });
   const tempPath = `${snapshotPath}.tmp`;
@@ -9133,16 +9133,7 @@ export function storeIssuedDocumentSnapshot(documentId: string, html: string): G
   return document;
 }
 
-export function readIssuedDocumentSnapshot(document: GeneratedDocument): string | null {
-  if (document.status !== "issued" && document.status !== "voided") return null;
-  if (!document.issuedSnapshotSha256) return null;
-  const snapshotPath = document.storagePath || documentSnapshotPath(document.id);
-  if (!existsSync(snapshotPath)) return null;
-  const html = readFileSync(snapshotPath, "utf8");
-  const actualHash = createHash("sha256").update(html, "utf8").digest("hex");
-  if (actualHash !== document.issuedSnapshotSha256) return null;
-  return html;
-}
+
 
 export function createGeneratedDocument(input: {
   patientId: string;
@@ -9474,12 +9465,10 @@ function normalizeViewerAnnotations(annotations: ImagingViewerAnnotation[]): Ima
   }));
 }
 
-export function getOrCreateImagingViewerSession(studyId: string): ImagingViewerSession {
-  const existing = imagingViewerSessions.find((session) => session.studyId === studyId);
+export function getOrCreateImagingViewerSession(study: ImagingStudy): ImagingViewerSession {
+  const existing = imagingViewerSessions.find((session) => session.studyId === study.id);
   if (existing) return existing;
 
-  const study = imagingStudies.find((candidate) => candidate.id === studyId);
-  if (!study) throw new Error("Исследование не найдено");
   const now = new Date().toISOString();
   const session: ImagingViewerSession = {
     id: randomUUID(),

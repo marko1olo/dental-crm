@@ -1,7 +1,14 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput, type Payment } from "@dental/shared";
-import { createPayment, documents, findPaymentByClientMutationId, findVisitById, patients } from "../sampleData.js";
 import { requireClinicalMutationAccess } from "../accessGuard.js";
+import {
+  getDefaultOrganizationId,
+  findPaymentByClientMutationIdInDb,
+  getPatientForBilling,
+  getVisitForBilling,
+  getDocumentForBilling,
+  createPaymentInDb
+} from "../db/billingQuery.js";
 
 function documentCanReceivePayment(documentKind: keyof typeof documentKindMetadata): boolean {
   const metadata = documentKindMetadata[documentKind];
@@ -109,8 +116,12 @@ export async function registerBillingRoutes(app: FastifyInstance) {
         message: paymentValidationMessage
       });
     }
+    const orgId = await getDefaultOrganizationId();
+    if (!orgId) {
+      return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
+    }
     const input: CreatePaymentInput = parsedInput.data;
-    const existingPayment = findPaymentByClientMutationId(input.clientMutationId);
+    const existingPayment = await findPaymentByClientMutationIdInDb(orgId, input.clientMutationId);
     if (existingPayment && existingPayment.patientId) {
       if (existingPayment.patientId !== input.patientId) {
         return sendBillingPaymentScopeError(reply, 409, "Клиентская операция уже относится к другой оплате.");
@@ -118,12 +129,12 @@ export async function registerBillingRoutes(app: FastifyInstance) {
       return reply.code(200).send(paymentSchema.parse(existingPayment));
     }
     let paymentInput = input;
-    const patient = patients.find((candidate) => candidate.id === input.patientId);
+    const patient = await getPatientForBilling(orgId, input.patientId);
     if (!patient) {
       return sendBillingPaymentScopeError(reply, 404, "Пациент для оплаты не найден.");
     }
     if (input.visitId) {
-      const visit = findVisitById(input.visitId);
+      const visit = await getVisitForBilling(orgId, input.visitId);
       if (!visit) {
         return sendBillingPaymentScopeError(reply, 404, "Прием для оплаты не найден.");
       }
@@ -132,7 +143,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
       }
     }
     if (input.documentId) {
-      const document = documents.find((candidate) => candidate.id === input.documentId);
+      const document = await getDocumentForBilling(orgId, input.documentId);
       if (!document) {
         return sendBillingPaymentScopeError(reply, 404, "Документ для оплаты не найден.");
       }
@@ -143,7 +154,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
         return sendBillingPaymentScopeError(reply, 409, "Документ оплаты относится к другому приему.");
       }
       if (document.visitId && !input.visitId) {
-        const visit = findVisitById(document.visitId);
+        const visit = await getVisitForBilling(orgId, document.visitId);
         if (!visit) {
           return sendBillingPaymentScopeError(reply, 404, "Прием документа для оплаты не найден.");
         }
@@ -162,7 +173,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
           "Заявление на возврат или коррекцию не принимает новую оплату. Оформите документ коррекции без повторной записи оплаты."
         );
       }
-      if (!documentCanReceivePayment(document.kind)) {
+      if (!documentCanReceivePayment(document.kind as any)) {
         return sendBillingPaymentScopeError(
           reply,
           409,
@@ -180,7 +191,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
       }
       return reply.code(200).send(paymentSchema.parse(existingPayment));
     }
-    const payment = createPayment(paymentInput);
+    const payment = await createPaymentInDb(orgId, paymentInput);
     return reply.code(201).send(paymentSchema.parse(payment));
   });
 }

@@ -82,3 +82,8 @@ export async function updateAppointmentInDb(organizationId: string, appointmentI
     comment: updated.comment
   } as unknown as Appointment;
 }
+
+export async function getAppointmentByIdInDb(organizationId: string, id: string) {
+  const [res] = await db.select().from(schema.appointments).where(and(eq(schema.appointments.organizationId, organizationId), eq(schema.appointments.id, id))).limit(1);
+  return res || null;
+}

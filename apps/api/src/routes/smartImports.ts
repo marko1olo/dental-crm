@@ -48,8 +48,10 @@ import {
   type UpdateClinicProfileInput
 } from "@dental/shared";
 import { commitImagingImport, parseImagingManifest } from "./imaging.js";
+import { getDefaultOrganizationId } from "../db/imagingQuery.js";
 import { buildPatientImportPreview, commitPatientImport } from "./imports.js";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+
 
 const execFileAsync = promisify(execFile);
 const emptyPatientText = "ФИО;Телефон;Дата рождения;Комментарий";
@@ -4505,13 +4507,13 @@ function clinicLookupInputFromSmartImport(suggestion: SmartImportClinicProfileSu
   return [payload.inn, payload.ogrn, payload.clinicName, payload.legalName, payload.address, payload.medicalLicenseNumber].some((item) => item && item.trim()) ? payload : null;
 }
 
-async function buildMigrationAutopilot(input: MigrationAutopilotRequest) {
+async function buildMigrationAutopilot(orgId: string, input: MigrationAutopilotRequest) {
   const warnings = new Set<string>();
   const privacyWarnings = new Set<string>([
     "Автопилот сканирует только локальные источники и ограниченные заголовки; старые базы, снимки и локальные пути не отправляются в публичный поиск.",
     "Онлайн-поиск разрешен только для реквизитов клиники: ИНН, ОГРН, КПП, название, адрес, лицензия."
   ]);
-  const smartImportPreview = input.smartImport ? await buildSmartImportPreview(input.smartImport) : null;
+  const smartImportPreview = input.smartImport ? await buildSmartImportPreview(orgId, input.smartImport) : null;
   const smartImportKnownSources = (smartImportPreview?.legacySources ?? []).slice(0, 24).map(migrationCandidateFromSmartLegacySource);
   const explicitKnownSources = [...(input.knownSources ?? []), ...smartImportKnownSources];
   const discovery = await discoverLocalMigrationSources({
@@ -5013,7 +5015,7 @@ function buildMigrationPlan(input: {
   };
 }
 
-async function buildSmartImportPreview(input: { sourceName: string; rawText: string; mode: SmartImportMode }) {
+async function buildSmartImportPreview(orgId: string, input: { sourceName: string; rawText: string; mode: SmartImportMode }) {
   const lines = input.rawText.split(/\r?\n/);
   const classifications = lines.map((line, index) => classifyLine(line, index + 1, input.mode));
   const patientLines = classifications.filter((line) => line.kind === "patient").map((line) => line.text);
@@ -5033,7 +5035,7 @@ async function buildSmartImportPreview(input: { sourceName: string; rawText: str
     sourceKind: "mis_export",
     rawText: patientRawText || emptyPatientText
   });
-  const imagingPreview = await parseImagingManifest({
+  const imagingPreview = await parseImagingManifest(orgId, {
     sourceName: `${input.sourceName}:imaging`,
     sourceKind: "folder_watch",
     rawText: imagingRawText
@@ -5590,7 +5592,9 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return buildSmartImportPreview(input);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    return buildSmartImportPreview(orgId, input);
   });
 
   app.post("/api/imports/smart/local-source-discovery", async (request, reply) => {
@@ -5638,7 +5642,9 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return buildMigrationAutopilot(input);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    return buildMigrationAutopilot(orgId, input);
   });
 
   app.post("/api/imports/smart/migration-autopilot/report.csv", async (request, reply) => {
@@ -5650,7 +5656,9 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const plan = await buildMigrationAutopilot(input);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    const plan = await buildMigrationAutopilot(orgId, input);
     const csv = buildMigrationAutopilotReportCsv(plan);
     return reply
       .type("text/csv; charset=utf-8")
@@ -5679,7 +5687,11 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = await buildSmartImportPreview(input);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    const preview = await buildSmartImportPreview(orgId, input);
     const csv = buildSmartImportReportCsv(preview);
     return reply
       .type("text/csv; charset=utf-8")
@@ -5696,7 +5708,9 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = await buildSmartImportPreview(input);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    const preview = await buildSmartImportPreview(orgId, input);
     const csv = buildSmartImportSafeHandoffReportCsv(preview);
     return reply
       .type("text/csv; charset=utf-8")
@@ -5713,7 +5727,11 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    const preview = await buildSmartImportPreview(input);
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    var orgId = await getDefaultOrganizationId();
+    if (!orgId) throw new Error("No org");
+    const preview = await buildSmartImportPreview(orgId, input);
     const patientCommit =
       preview.patientPreview.totalRows > 0
         ? commitPatientImport({
@@ -5724,7 +5742,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
         : null;
     const imagingCommit =
       preview.imagingPreview.totalRows > 0
-        ? commitImagingImport({
+        ? commitImagingImport(orgId, {
             sourceName: `${input.sourceName}:imaging`,
             sourceKind: "folder_watch",
             rawText: preview.imagingRawText

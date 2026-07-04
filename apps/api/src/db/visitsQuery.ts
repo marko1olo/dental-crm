@@ -103,3 +103,8 @@ export async function acceptVisitDraftInDb(organizationId: string, input: Accept
 
   return { acceptedVisitId: visit.id, newRevision };
 }
+
+export async function getVisitByIdInDb(organizationId: string, id: string) {
+  const [res] = await db.select().from(schema.visits).where(and(eq(schema.visits.organizationId, organizationId), eq(schema.visits.id, id))).limit(1);
+  return res || null;
+}
