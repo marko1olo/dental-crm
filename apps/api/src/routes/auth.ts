@@ -380,4 +380,76 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const staffToken = signToken({ userId: user.id, fullName: user.fullName, role: user.role, organizationId: user.organizationId }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
     return reply.send({ ok: true, clinicToken, staffToken, user: { id: user.id, fullName: user.fullName, role: user.role, email: user.email } });
   });
+
+  // ─── SaaS User Profile: Get Current User ──────────────────────────────────────
+  app.get('/api/auth/user/me', async (request: FastifyRequest, reply: FastifyReply) => {
+    const staffHeader = request.headers['x-dente-staff-token'];
+    const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
+    const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+
+    if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
+
+    const [user] = await db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        role: users.role,
+        email: users.email,
+        organizationId: users.organizationId,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(and(eq(users.id, payload.userId as string), eq(users.isActive, true)))
+      .limit(1);
+
+    if (!user) return reply.code(404).send({ error: 'NotFound', message: 'Пользователь не найден.' });
+
+    return reply.send({ ok: true, user });
+  });
+
+  // ─── SaaS User Profile: Update Password ───────────────────────────────────────
+  app.post('/api/auth/user/update-password', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { oldPassword, newPassword } = (request.body as any) ?? {};
+    const staffHeader = request.headers['x-dente-staff-token'];
+    const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
+    const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+
+    if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
+    if (!oldPassword || !newPassword) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый пароль.' });
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
+    if (!user || !user.passwordHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или пароль не установлен.' });
+
+    if (!verifyCredential(oldPassword, user.passwordHash)) {
+      return reply.code(401).send({ error: 'AuthError', message: 'Старый пароль неверен.' });
+    }
+
+    const newPasswordHash = hashCredential(newPassword);
+    await db.update(users).set({ passwordHash: newPasswordHash }).where(eq(users.id, user.id));
+
+    return reply.send({ ok: true, message: 'Пароль успешно изменен.' });
+  });
+
+  // ─── SaaS User Profile: Update PIN ───────────────────────────────────────────
+  app.post('/api/auth/user/update-pin', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { oldPin, newPin } = (request.body as any) ?? {};
+    const staffHeader = request.headers['x-dente-staff-token'];
+    const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
+    const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+
+    if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
+    if (!oldPin || !newPin) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый PIN-код.' });
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.userId as string)).limit(1);
+    if (!user || !user.pinCodeHash) return reply.code(401).send({ error: 'AuthError', message: 'Пользователь не найден или PIN не установлен.' });
+
+    if (!verifyCredential(oldPin, user.pinCodeHash)) {
+      return reply.code(401).send({ error: 'AuthError', message: 'Старый PIN-код неверен.' });
+    }
+
+    const newPinHash = hashCredential(newPin);
+    await db.update(users).set({ pinCodeHash: newPinHash }).where(eq(users.id, user.id));
+
+    return reply.send({ ok: true, message: 'PIN-код успешно изменен.' });
+  });
 }

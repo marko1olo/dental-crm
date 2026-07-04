@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Shield, Mail, KeyRound, ArrowRight, Building } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Mail, KeyRound, ArrowRight, Building, Eye, EyeOff } from 'lucide-react';
 import { showToast } from '../GlobalToast';
 
 interface UserLoginProps {
@@ -11,6 +11,7 @@ interface UserLoginProps {
 export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode }: UserLoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,8 +33,11 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
 
       localStorage.setItem('dente_clinic_token', data.clinicToken);
       localStorage.setItem('dente_staff_token', data.staffToken);
-      showToast('Вход успешен!', 'success');
-      onSuccess({ organizationId: data.user.organizationId }, data.user);
+      showToast('Вход выполнен', 'success');
+      onSuccess(
+        { organizationId: data.user?.organizationId ?? data.organizationId },
+        data.user
+      );
     } catch (err: any) {
       showToast(err.message || 'Неверный email или пароль', 'error');
     } finally {
@@ -55,11 +59,39 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-form-group">
             <label className="auth-label"><Mail size={12} className="auth-icon-inline" /> Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="doctor@clinic.com" className="auth-input" disabled={loading} />
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="doctor@clinic.com"
+              className="auth-input"
+              disabled={loading}
+              autoComplete="email"
+              autoFocus
+            />
           </div>
           <div className="auth-form-group">
             <label className="auth-label"><KeyRound size={12} className="auth-icon-inline" /> Пароль</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="auth-input" disabled={loading} />
+            <div className="auth-input-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="auth-input auth-input--with-icon"
+                disabled={loading}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="auth-input-icon-btn"
+                onClick={() => setShowPassword(v => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="auth-submit-btn">
@@ -69,9 +101,9 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
 
         <div className="auth-footer-hints auth-footer-hints--border">
           <p>Нет аккаунта? <button type="button" onClick={onSwitchToRegister} className="auth-link-btn">Зарегистрировать клинику</button></p>
-          <p style={{ marginTop: '8px' }}>
-            <button type="button" onClick={onSwitchToClinicMode} className="auth-link-btn" style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 auto' }}>
-              <Building size={14} /> Режим общего ПК клиники
+          <p style={{ marginTop: '10px' }}>
+            <button type="button" onClick={onSwitchToClinicMode} className="auth-link-btn--muted auth-link-btn">
+              <Building size={13} /> Режим общего ПК клиники
             </button>
           </p>
         </div>

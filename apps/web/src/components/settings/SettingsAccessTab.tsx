@@ -1,5 +1,6 @@
-import React from "react";
-import { UserCheck, ShieldCheck } from "lucide-react";
+import React, { useState } from "react";
+import { UserCheck, ShieldCheck, Mail, Link as LinkIcon, Check } from "lucide-react";
+import { showToast } from "../GlobalToast";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { StaffRole } from "@dental/shared";
 type WorkspaceProfile = any;
@@ -16,11 +17,53 @@ export function SettingsAccessTab({ props, settingsTab }: { props: Record<string
   } = props;
   const viewLabels = workspaceViewLabels as Record<string, string>;
 
+  // Hooks MUST be called before any conditional returns (React Rules of Hooks)
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('doctor');
+  const [inviteLink, setInviteLink] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   if (settingsTab !== "access") return null;
 
+  const handleGenerateInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) {
+      showToast('Введите email', 'warning');
+      return;
+    }
+    setLoading(true);
+    setCopied(false);
+    try {
+      const staffToken = localStorage.getItem('dente_staff_token') || '';
+      const response = await fetch('/api/auth/invites/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-dente-staff-token': staffToken },
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Ошибка генерации');
+      
+      const fullUrl = window.location.origin + data.inviteLink;
+      setInviteLink(fullUrl);
+      showToast('Приглашение создано!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Не удалось создать приглашение', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    showToast('Ссылка скопирована', 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const typedActiveWorkspaceProfile = activeWorkspaceProfile as WorkspaceProfile | null;
-  const typedWorkspaceProfiles = dashboard.clinicSettings.workspaceProfiles as WorkspaceProfile[];
-  const typedRoleAccessPolicies = dashboard.clinicSettings.roleAccessPolicies as RoleAccessPolicy[];
+  const typedWorkspaceProfiles = (dashboard?.clinicSettings?.workspaceProfiles ?? []) as WorkspaceProfile[];
+  const typedRoleAccessPolicies = (dashboard?.clinicSettings?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
 
   return (
 <section className="access-settings" aria-label="Доступы, рабочие профили и роли">
@@ -34,6 +77,34 @@ export function SettingsAccessTab({ props, settingsTab }: { props: Record<string
                 </p>
               </div>
             </div>
+
+            <article className="active-workspace-card" style={{ marginTop: '24px', backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '18px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={18} /> Пригласить сотрудника</h3>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Сгенерируйте уникальную ссылку для регистрации нового врача, ассистента или администратора.</p>
+              </div>
+              <form onSubmit={handleGenerateInvite} style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <input type="email" placeholder="email@example.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', flex: '1', minWidth: '200px' }} />
+                <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} disabled={loading} style={{ padding: '8px 12px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', minWidth: '150px' }}>
+                  <option value="doctor">Врач</option>
+                  <option value="admin">Администратор</option>
+                  <option value="assistant">Ассистент</option>
+                  <option value="owner">Владелец</option>
+                </select>
+                <button type="submit" disabled={loading} style={{ padding: '8px 16px', borderRadius: '6px', background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                  {loading ? 'Создание...' : 'Сгенерировать'}
+                </button>
+              </form>
+              
+              {inviteLink && (
+                <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed rgba(59, 130, 246, 0.5)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#93c5fd', fontFamily: 'monospace', wordBreak: 'break-all', fontSize: '13px' }}>{inviteLink}</span>
+                  <button onClick={handleCopy} style={{ marginLeft: '12px', padding: '6px 12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {copied ? <><Check size={14} /> Скопировано</> : <><LinkIcon size={14} /> Копировать</>}
+                  </button>
+                </div>
+              )}
+            </article>
 
             {typedActiveWorkspaceProfile ? (
               <article className="active-workspace-card">
