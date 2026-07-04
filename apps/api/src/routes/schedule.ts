@@ -152,23 +152,41 @@ async function requireScheduleMutationAccess(request: FastifyRequest, reply: Fas
   return false;
 }
 
+import { verifyToken } from "../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "./auth.js";
+import { getDashboardFromDb } from "../db/dashboardQuery.js";
+import { createAppointmentInDb, updateAppointmentInDb } from "../db/appointmentsQuery.js";
+
 export async function registerScheduleRoutes(app: FastifyInstance) {
   app.post("/api/appointments", async (request, reply) => {
-    if (!(await requireScheduleMutationAccess(request, reply))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
     const input = parseSchedulePayload(createAppointmentSchema, request.body);
     if (!input) {
       return reply.code(400).send({ code: "AppointmentValidationError", message: appointmentCreateValidationMessage });
     }
     try {
-      createAppointment(input);
-      return reply.code(201).send(dashboardSchema.parse(buildDashboard()));
+      await createAppointmentInDb(orgId, input);
+      const dashboard = await getDashboardFromDb(orgId);
+      return reply.code(201).send(dashboardSchema.parse(dashboard));
     } catch (error) {
       return sendAppointmentRejection(reply, appointmentRejectionResponse("create", error));
     }
   });
 
   async function updateAppointmentHandler(request: FastifyRequest<{ Params: { appointmentId?: string } }>, reply: FastifyReply) {
-    if (!(await requireScheduleMutationAccess(request, reply))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = payload.organizationId as string;
+
     const params = request.params as { appointmentId?: string };
     if (!params.appointmentId) {
       return reply.code(400).send({ code: "AppointmentRouteValidationError", message: appointmentMissingRouteMessage });
@@ -178,8 +196,9 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
       return reply.code(400).send({ code: "AppointmentValidationError", message: appointmentUpdateValidationMessage });
     }
     try {
-      updateAppointment(params.appointmentId, input);
-      return dashboardSchema.parse(buildDashboard());
+      await updateAppointmentInDb(orgId, params.appointmentId, input);
+      const dashboard = await getDashboardFromDb(orgId);
+      return dashboardSchema.parse(dashboard);
     } catch (error) {
       return sendAppointmentRejection(reply, appointmentRejectionResponse("update", error));
     }
