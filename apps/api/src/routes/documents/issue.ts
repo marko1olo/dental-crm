@@ -7,18 +7,7 @@ import {
   publicGeneratedDocumentSchema,
   voidDocumentSchema
 } from "@dental/shared";
-import {
-  clinicProfile,
-  createGeneratedDocument,
-  documents,
-  findVisitById,
-  issueGeneratedDocument,
-  patients,
-  payments,
-  storeTaxXmlSnapshot,
-  treatmentPlanItems,
-  voidGeneratedDocument
-} from "../../sampleData.js";
+
 import {
   paidAmountRubForDocument,
   plannedAmountRubForDocument,
@@ -59,13 +48,24 @@ import {
   buildMedicalDocumentReleaseJournalEntry,
   taxXmlSourceSnapshotForIssue
 } from "../documents.js";
+import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb, storeTaxXmlSnapshotInDb } from "../../db/documentQuery.js";
+import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { getVisitByIdInDb } from "../../db/visitsQuery.js";
+import { verifyToken } from "../../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "../auth.js";
+
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
   app.post("/api/documents/:id/issue", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "document issue"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const orgId = payload?.organizationId as string || "mock-org";
     const { id } = request.params as { id: string };
-    const existing = documents.find((candidate) => candidate.id === id);
+    const existing = await getDocumentById(orgId, id);
     if (!existing) {
       return reply.code(404).send(apiError("Документ не найден"));
     }
@@ -75,12 +75,12 @@ export async function register(app: FastifyInstance) {
     if (existing.status === "issued") {
       return reply.code(409).send(apiError("Документ уже выдан."));
     }
-    const patient = patients.find((candidate) => candidate.id === existing.patientId);
+    const patient = await getPatientByIdFromDb(orgId, existing.patientId);
     if (!patient) {
       return reply.code(404).send(apiError("Пациент не найден"));
     }
     const taxPaymentSnapshot = taxDocumentUsesPaymentSnapshot(existing.kind)
-      ? buildTaxPaymentSnapshotForIssue(existing, payments, documents)
+      ? buildTaxPaymentSnapshotForIssue(existing, await import("../../db/billingQuery.js").then(m => m.getPaymentsByPatientIdInDb(orgId, existing.patientId)), await import("../../db/documentQuery.js").then(m => m.getDocumentsByPatientId(orgId, existing.patientId)))
       : null;
     if (taxDocumentUsesPaymentSnapshot(existing.kind) && !taxPaymentSnapshot) {
       const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(existing, []);
@@ -148,7 +148,7 @@ export async function register(app: FastifyInstance) {
       taxXmlSourceSnapshot
     };
     const issuedHtml = renderDocumentHtml(issuedDocumentCandidate, patient, renderContext);
-    const document = issueGeneratedDocument(id, {
+    const document = await issueGeneratedDocumentInDb(orgId, id, {
       issuedAt,
       releaseJournalEntry,
       snapshotHtml: issuedHtml,

@@ -7,18 +7,7 @@ import {
   publicGeneratedDocumentSchema,
   voidDocumentSchema
 } from "@dental/shared";
-import {
-  clinicProfile,
-  createGeneratedDocument,
-  documents,
-  findVisitById,
-  issueGeneratedDocument,
-  patients,
-  payments,
-  storeTaxXmlSnapshot,
-  treatmentPlanItems,
-  voidGeneratedDocument
-} from "../../sampleData.js";
+
 import {
   paidAmountRubForDocument,
   plannedAmountRubForDocument,
@@ -59,13 +48,24 @@ import {
   buildMedicalDocumentReleaseJournalEntry,
   taxXmlSourceSnapshotForIssue
 } from "../documents.js";
+import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb, storeTaxXmlSnapshotInDb } from "../../db/documentQuery.js";
+import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { getVisitByIdInDb } from "../../db/visitsQuery.js";
+import { verifyToken } from "../../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "../auth.js";
+
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
   app.post("/api/documents/:id/void", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "document void"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const orgId = payload?.organizationId as string || "mock-org";
     const { id } = request.params as { id: string };
-    const existing = documents.find((candidate) => candidate.id === id);
+    const existing = await getDocumentById(orgId, id);
     if (!existing) {
       return reply.code(404).send(apiError("Документ не найден"));
     }
@@ -84,7 +84,7 @@ export async function register(app: FastifyInstance) {
       return reply.code(409).send(apiError("Документ не может ссылаться на себя как на исправление."));
     }
     if (correctionDocumentId) {
-      const correctionDocument = documents.find((candidate) => candidate.id === correctionDocumentId);
+      const correctionDocument = await getDocumentById(orgId, correctionDocumentId);
       if (
         !correctionDocument ||
         correctionDocument.organizationId !== existing.organizationId ||
@@ -98,7 +98,7 @@ export async function register(app: FastifyInstance) {
     }
 
     const voidedAt = new Date().toISOString();
-    const document = voidGeneratedDocument(id, {
+    const document = await voidGeneratedDocumentInDb(orgId, id, {
       voidedAt,
       voidAttestation: {
         ...voidAttestationInput,

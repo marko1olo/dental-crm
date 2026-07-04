@@ -18,11 +18,12 @@ import {
 import {
   SpeechChunkIdentityConflictError,
   assembleSpeechRecording,
-  findVisitById,
   listSpeechRecordingRecoveries,
   listSpeechTranscriptionChunks,
-  patients
-} from "../sampleData.js";
+} from "../speech/storage.js";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { patients, visits } from "../db/schema.js";
 import {
   SpeechChunkPayloadError,
   buildSpeechRecordingStrategy,
@@ -103,10 +104,10 @@ function sendSpeechChunkRejection(
   });
 }
 
-function validateSpeechClinicalScope(
+async function validateSpeechClinicalScope(
   input: SpeechScopeInput,
   options: { requirePatientOrVisit?: boolean } = {}
-): SpeechScopeValidation {
+): Promise<SpeechScopeValidation> {
   const requestedPatientId = normalizeScopeId(input.patientId);
   const requestedVisitId = normalizeScopeId(input.visitId);
 
@@ -117,14 +118,18 @@ function validateSpeechClinicalScope(
     return speechScopeFailure(400, "Для диктовки приема выберите активный прием.");
   }
 
-  const patient = requestedPatientId ? patients.find((candidate) => candidate.id === requestedPatientId) : null;
-  if (requestedPatientId && !patient) {
-    return speechScopeFailure(404, "Пациент для диктовки не найден.");
+  let patient: any = null;
+  if (requestedPatientId) {
+    const [found] = await db.select().from(patients).where(eq(patients.id, requestedPatientId)).limit(1);
+    patient = found ?? null;
+    if (!patient) return speechScopeFailure(404, "Пациент для диктовки не найден.");
   }
 
-  const visit = requestedVisitId ? findVisitById(requestedVisitId) : null;
-  if (requestedVisitId && !visit) {
-    return speechScopeFailure(404, "Прием для диктовки не найден.");
+  let visit: any = null;
+  if (requestedVisitId) {
+    const [found] = await db.select().from(visits).where(eq(visits.id, requestedVisitId)).limit(1);
+    visit = found ?? null;
+    if (!visit) return speechScopeFailure(404, "Прием для диктовки не найден.");
   }
 
   if (visit && patient && visit.patientId !== patient.id) {
@@ -176,7 +181,7 @@ async function handleSpeechChunks(request: FastifyRequest, reply: FastifyReply) 
   const recordingId = query.recordingId?.trim();
   if (!recordingId) return [];
 
-  const scopeValidation = validateSpeechClinicalScope(
+  const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
     { requirePatientOrVisit: true }
   );
@@ -191,7 +196,7 @@ async function handleSpeechChunks(request: FastifyRequest, reply: FastifyReply) 
 async function handleSpeechRecordingsRecovery(request: FastifyRequest, reply: FastifyReply) {
   if (!(await requireClinicalReadAccess(request, reply, "speech recording recovery"))) return;
   const query = request.query as { visitId?: string; patientId?: string; limit?: string };
-  const scopeValidation = validateSpeechClinicalScope(
+  const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
     { requirePatientOrVisit: true }
   );
@@ -208,7 +213,7 @@ async function handleSpeechRecordingAssemble(request: FastifyRequest, reply: Fas
   if (!(await requireClinicalReadAccess(request, reply, "speech recording assemble"))) return;
   const params = request.params as { recordingId: string };
   const query = request.query as { visitId?: string; patientId?: string };
-  const scopeValidation = validateSpeechClinicalScope(
+  const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
     { requirePatientOrVisit: true }
   );
@@ -230,7 +235,7 @@ async function handleSpeechTranscribeChunk(request: FastifyRequest, reply: Fasti
     reply
   );
   if (!input) return;
-  const scopeValidation = validateSpeechClinicalScope(input);
+  const scopeValidation = await validateSpeechClinicalScope(input);
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);
   const scopedInput: SpeechChunkUploadInput = {
     ...input,

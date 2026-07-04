@@ -14,8 +14,8 @@ import {
   createClinicalRuleSchema,
   uiPreferencesSchema
 } from "@dental/shared";
-import { createTelegramQrSvg } from "./telegramQr.js";
-import { repairMojibakeDeep, repairMojibakeText } from "./text/repairMojibake.js";
+import { createTelegramQrSvg } from "../telegramQr.js";
+import { repairMojibakeDeep, repairMojibakeText } from "../text/repairMojibake.js";
 import type {
   AcceptVisitDraftInput,
   AcceptVisitDraftResponse,
@@ -134,7 +134,7 @@ import type {
   VisitNoteDraft,
   VisitSaveReceipt
 } from "@dental/shared";
-import { loadPersistentState, savePersistentState, type DentalMutableState } from "./persistentState.js";
+import { loadPersistentState, savePersistentState, type DentalMutableState } from "../persistentState.js";
 
 type PatientAdministrativeProfilePatch = {
   [K in keyof PatientAdministrativeProfile]?: PatientAdministrativeProfile[K] | undefined;

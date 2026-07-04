@@ -1,12 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
-import {
-  clinicProfile,
-  documents,
-  patients,
-  payments,
-  storeTaxXmlSnapshot
-} from "../../sampleData.js";
+
 
 import {
   buildTaxPaymentSnapshotForIssue,
@@ -27,6 +21,13 @@ import {
   taxXmlSourceSnapshotSha256,
   documentRenderContext
 } from "../documents.js";
+import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb, storeTaxXmlSnapshotInDb } from "../../db/documentQuery.js";
+import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { getVisitByIdInDb } from "../../db/visitsQuery.js";
+import { verifyToken } from "../../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "../auth.js";
+
 import { taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
@@ -36,7 +37,11 @@ export async function register(app: FastifyInstance) {
 async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
   if (!(await requireClinicalReadAccess(request, reply, "document tax xml"))) return;
     const { id } = request.params as { id: string };
-    const document = documents.find((candidate) => candidate.id === id);
+        const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const orgId = payload?.organizationId as string || "mock-org";
+    const document = await getDocumentById(orgId, id);
     if (!document) {
       return reply.code(404).send(apiError("Документ не найден"));
     }
@@ -57,14 +62,14 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
         .send(document.taxXmlSnapshot.xml);
     }
 
-    const patient = patients.find((candidate) => candidate.id === document.patientId);
+    const patient = await getPatientByIdFromDb(orgId, document.patientId);
     if (!patient) {
       return reply.code(404).send(apiError("Пациент не найден"));
     }
 
     const taxPaymentSnapshot =
       document.taxPaymentSnapshot ??
-      (taxDocumentUsesPaymentSnapshot(document.kind) ? buildTaxPaymentSnapshotForIssue(document, payments, documents) : null);
+      (taxDocumentUsesPaymentSnapshot(document.kind) ? buildTaxPaymentSnapshotForIssue(document, await import("../../db/billingQuery.js").then(m => m.getPaymentsByPatientIdInDb(orgId, document.patientId)), await import("../../db/documentQuery.js").then(m => m.getDocumentsByPatientId(orgId, document.patientId))) : null);
     if (taxDocumentUsesPaymentSnapshot(document.kind) && !taxPaymentSnapshot) {
       const duplicateTaxCertificate = await findIssuedDuplicateTaxCertificate(document, []);
       if (duplicateTaxCertificate) {
@@ -89,8 +94,8 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
     }
     const renderContext = documentRenderContext();
     const xmlPatient = frozenTaxXmlPatient(xmlDocument, patient);
-    const xmlClinicProfile = frozenTaxXmlClinicProfile(xmlDocument, clinicProfile);
-    const xmlPayments = frozenTaxXmlPayments(xmlDocument, payments);
+    const xmlClinicProfile = frozenTaxXmlClinicProfile(xmlDocument, await import("../../db/settingsQuery.js").then(m => m.getClinicSettingsFromDb(orgId).then(s => s.profile)));
+    const xmlPayments = frozenTaxXmlPayments(xmlDocument, await import("../../db/billingQuery.js").then(m => m.getPaymentsByPatientIdInDb(orgId, xmlDocument.patientId)));
     const xmlRenderContext = { ...renderContext, clinicProfile: xmlClinicProfile, payments: xmlPayments };
     const blockReason = documentIssueBlockReason(xmlDocument, xmlPatient, xmlRenderContext);
     if (blockReason) {
@@ -124,7 +129,7 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
     if (!result.ok) {
       return reply.code(result.statusCode).send(apiError(result.error));
     }
-    const storedDocument = storeTaxXmlSnapshot(document.id, {
+    const storedDocument = await storeTaxXmlSnapshotInDb(orgId, document.id, {
       fileName: result.fileName,
       xml: result.xml,
       taxOfficeCode: (taxOfficeCode ?? "").replace(/\D+/g, ""),

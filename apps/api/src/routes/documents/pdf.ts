@@ -7,18 +7,7 @@ import {
   publicGeneratedDocumentSchema,
   voidDocumentSchema
 } from "@dental/shared";
-import {
-  clinicProfile,
-  createGeneratedDocument,
-  documents,
-  findVisitById,
-  issueGeneratedDocument,
-  patients,
-  payments,
-  storeTaxXmlSnapshot,
-  treatmentPlanItems,
-  voidGeneratedDocument
-} from "../../sampleData.js";
+
 import {
   paidAmountRubForDocument,
   plannedAmountRubForDocument,
@@ -59,6 +48,13 @@ import {
   buildMedicalDocumentReleaseJournalEntry,
   taxXmlSourceSnapshotForIssue
 } from "../documents.js";
+import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb, storeTaxXmlSnapshotInDb } from "../../db/documentQuery.js";
+import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { getVisitByIdInDb } from "../../db/visitsQuery.js";
+import { verifyToken } from "../../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "../auth.js";
+
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
@@ -68,7 +64,11 @@ export async function register(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>("/api/documents/:id/pdf", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "document pdf"))) return;
     const { id } = request.params;
-    const document = documents.find((candidate) => candidate.id === id);
+        const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const orgId = payload?.organizationId as string || "mock-org";
+    const document = await getDocumentById(orgId, id);
     if (!document) {
       return reply.code(404).send(apiError("Р”РѕРєСѓРјРµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ"));
     }
@@ -107,8 +107,12 @@ export async function register(app: FastifyInstance) {
   // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   app.get<{ Params: { id: string } }>("/api/documents/:id/treatment-plan-pdf", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "treatment plan pdf"))) return;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const orgId = payload?.organizationId as string || "mock-org";
     const { id } = request.params;
-    const document = documents.find((candidate) => candidate.id === id);
+    const document = await getDocumentById(orgId, id);
     if (!document) {
       return reply.code(404).send(apiError("Р”РѕРєСѓРјРµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ"));
     }
@@ -116,7 +120,7 @@ export async function register(app: FastifyInstance) {
       return reply.code(409).send(apiError("Р­С‚РѕС‚ РјР°СЂС€СЂСѓС‚ РїСЂРµРґРЅР°Р·РЅР°С‡РµРЅ С‚РѕР»СЊРєРѕ РґР»СЏ РґРѕРєСѓРјРµРЅС‚РѕРІ С‚РёРїР° treatment_plan."));
     }
 
-    const patient = patients.find((p) => p.id === document.patientId);
+    const patient = await import("../../db/patientsQuery.js").then(m => m.getPatientByIdFromDb(orgId, document.patientId));
     if (!patient) {
       return reply.code(404).send(apiError("РџР°С†РёРµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ"));
     }

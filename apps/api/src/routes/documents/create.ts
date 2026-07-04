@@ -7,18 +7,7 @@ import {
   publicGeneratedDocumentSchema,
   voidDocumentSchema
 } from "@dental/shared";
-import {
-  clinicProfile,
-  createGeneratedDocument,
-  documents,
-  findVisitById,
-  issueGeneratedDocument,
-  patients,
-  payments,
-  storeTaxXmlSnapshot,
-  treatmentPlanItems,
-  voidGeneratedDocument
-} from "../../sampleData.js";
+
 import {
   paidAmountRubForDocument,
   plannedAmountRubForDocument,
@@ -34,6 +23,14 @@ import {
 } from "../../documents/taxPaymentSnapshot.js";
 import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 import { repairMojibakeDeep, repairMojibakeText } from "../../text/repairMojibake.js";
+import { createGeneratedDocumentInDb } from "../../db/documentQuery.js";
+import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { getVisitByIdInDb } from "../../db/visitsQuery.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { getTreatmentPlanItemsForPatient } from "../../db/clinicalQuery.js";
+import { verifyToken } from "../../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "../auth.js";
+
 
 import {
   apiError,
@@ -72,22 +69,30 @@ export async function register(app: FastifyInstance) {
       });
     }
     const input = repairMojibakeDeep(parsedInput.data);
-    const patient = patients.find((candidate) => candidate.id === input.patientId);
-    const visit = input.visitId ? findVisitById(input.visitId) : null;
+    const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const orgId = payload?.organizationId as string || "mock-org"; // fallback for tests
+
+    const patient = await getPatientByIdFromDb(orgId, input.patientId);
+    const visit = input.visitId ? await getVisitByIdInDb(orgId, input.visitId) : null;
+    const patientPayments = await getPaymentsByPatientIdInDb(orgId, input.patientId);
+    const patientPlanItems = await getTreatmentPlanItemsForPatient(orgId, input.patientId);
+    
     const validation = validateDocumentCreation(input, {
       patient: patient ?? null,
       visit,
-      paidAmountRub: paidAmountRubForDocument(input.kind, input, payments),
-      plannedAmountRub: plannedAmountRubForDocument(input.kind, input, treatmentPlanItems),
-      taxPaymentSelectionError: taxPaymentSelectionErrorForDocument(input, payments),
-      paymentReceiptSelectionError: paymentReceiptSelectionErrorForDocument(input, payments),
-      paymentRefundCorrectionSelectionError: paymentRefundCorrectionSelectionErrorForDocument(input, payments)
+      paidAmountRub: paidAmountRubForDocument(input.kind, input, patientPayments),
+      plannedAmountRub: plannedAmountRubForDocument(input.kind, input, patientPlanItems.map(item => ({ ...item, quantity: Number(item.quantity) }))),
+      taxPaymentSelectionError: taxPaymentSelectionErrorForDocument(input, patientPayments),
+      paymentReceiptSelectionError: paymentReceiptSelectionErrorForDocument(input, patientPayments),
+      paymentRefundCorrectionSelectionError: paymentRefundCorrectionSelectionErrorForDocument(input, patientPayments)
     });
     if (!validation.ok) {
       return reply.code(validation.statusCode).send(apiError(validation.error));
     }
 
-    const document = createGeneratedDocument(validation.input);
+    const document = await createGeneratedDocumentInDb(orgId, validation.input);
     return reply.code(201).send(publicGeneratedDocumentSchema.parse(document));
   });
 }

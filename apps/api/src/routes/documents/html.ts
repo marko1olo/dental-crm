@@ -7,18 +7,7 @@ import {
   publicGeneratedDocumentSchema,
   voidDocumentSchema
 } from "@dental/shared";
-import {
-  clinicProfile,
-  createGeneratedDocument,
-  documents,
-  findVisitById,
-  issueGeneratedDocument,
-  patients,
-  payments,
-  storeTaxXmlSnapshot,
-  treatmentPlanItems,
-  voidGeneratedDocument
-} from "../../sampleData.js";
+
 import {
   paidAmountRubForDocument,
   plannedAmountRubForDocument,
@@ -59,18 +48,29 @@ import {
   buildMedicalDocumentReleaseJournalEntry,
   taxXmlSourceSnapshotForIssue
 } from "../documents.js";
+import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb, storeTaxXmlSnapshotInDb } from "../../db/documentQuery.js";
+import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
+import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
+import { getVisitByIdInDb } from "../../db/visitsQuery.js";
+import { verifyToken } from "../../utils/cryptoHelper.js";
+import { TOKEN_SECRET } from "../auth.js";
+
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
   app.get<{ Params: { id: string }; Querystring: { download?: string } }>("/api/documents/:id/html", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "document html"))) return;
     const { id } = request.params as { id: string };
-    const document = documents.find((candidate) => candidate.id === id);
+        const clinicHeader = request.headers["x-dente-clinic-token"];
+    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const orgId = payload?.organizationId as string || "mock-org";
+    const document = await getDocumentById(orgId, id);
     if (!document) {
       return reply.code(404).send(apiError("Документ не найден"));
     }
 
-    const patient = patients.find((candidate) => candidate.id === document.patientId);
+    const patient = await getPatientByIdFromDb(orgId, document.patientId);
     if (!patient) {
       return reply.code(404).send(apiError("Пациент не найден"));
     }

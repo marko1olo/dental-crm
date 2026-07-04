@@ -5030,7 +5030,7 @@ async function buildSmartImportPreview(orgId: string, input: { sourceName: strin
   const publicLookupTargets = buildPublicLookupTargets(clinicSuggestion, clinicRawText);
   const legacySources = buildLegacySources(legacySourceLines);
 
-  const patientPreview = buildPatientImportPreview({
+  const patientPreview = await buildPatientImportPreview(orgId, {
     sourceName: `${input.sourceName}:patients`,
     sourceKind: "mis_export",
     rawText: patientRawText || emptyPatientText
@@ -5734,7 +5734,7 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     const preview = await buildSmartImportPreview(orgId, input);
     const patientCommit =
       preview.patientPreview.totalRows > 0
-        ? commitPatientImport({
+        ? commitPatientImport(orgId, {
             sourceName: `${input.sourceName}:patients`,
             sourceKind: "mis_export",
             rawText: preview.patientRawText

@@ -1,7 +1,7 @@
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { createAppointmentSchema, dashboardSchema, updateAppointmentSchema } from "@dental/shared";
-import { buildDashboard, createAppointment, updateAppointment } from "../sampleData.js";
+
 import { repairMojibakeText } from "../text/repairMojibake.js";
 
 type SchedulePayloadSchema<T> = {

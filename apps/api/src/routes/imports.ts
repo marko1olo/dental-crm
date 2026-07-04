@@ -13,7 +13,9 @@ import {
   splitLine,
   normalizeDate
 } from "@dental/shared";
-import { createPatient, patients, recordAuditEvent, recordImportBatch } from "../sampleData.js";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { patients, importBatches, auditEvents, organizations } from "../db/schema.js";
 import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
 
 const headerAliases: Record<string, keyof Pick<ImportPreviewRow, "fullName" | "phone" | "birthDate" | "notes">> = {
@@ -163,7 +165,7 @@ function normalizeImportText(input: ImportPreviewRequest) {
   return ["ФИО;Телефон;Дата рождения;Комментарий", ...rows].join("\n");
 }
 
-export function buildPatientImportIntake(input: ImportPreviewRequest): ImportIntakeResponse {
+export async function buildPatientImportIntake(orgId: string, input: ImportPreviewRequest): Promise<ImportIntakeResponse> {
   const normalizedText = normalizeImportText(input);
   const notes = [
     "Сначала выполняется распознавание полей, затем preview. Запись в базу только после подтверждения.",
@@ -175,7 +177,7 @@ export function buildPatientImportIntake(input: ImportPreviewRequest): ImportInt
   if (input.sourceKind === "voice_dictation") {
     notes.push("Диктовка превращается в текст браузером или AI-worker, затем разбирается тем же безопасным preview.");
   }
-  const preview = buildPatientImportPreview({
+  const preview = await buildPatientImportPreview(orgId, {
     ...input,
     rawText: normalizedText
   });
@@ -200,7 +202,7 @@ function emptyPreview(sourceName: string): ImportPreviewResponse {
   });
 }
 
-export function buildPatientImportPreview(input: ImportPreviewRequest): ImportPreviewResponse {
+export async function buildPatientImportPreview(orgId: string, input: ImportPreviewRequest): Promise<ImportPreviewResponse> {
   const normalizedRawText = normalizeImportText(input);
   const lines = normalizedRawText
     .split(/\r?\n/)
@@ -219,8 +221,10 @@ export function buildPatientImportPreview(input: ImportPreviewRequest): ImportPr
   const delimiter = detectDelimiter(headerLine);
   const headerCells = splitLine(headerLine, delimiter).map(normalizeHeader);
   const mappedHeaders = headerCells.map((header) => headerAliases[header] ?? null);
-  const knownPhones = new Set(patients.map((patient) => normalizePhone(patient.phone)).filter(Boolean));
-  const knownNames = new Set(patients.map((patient) => patient.fullName.trim().toLowerCase()));
+  
+  const existingPatients = await db.select().from(patients).where(eq(patients.organizationId, orgId));
+  const knownPhones = new Set(existingPatients.map((patient) => normalizePhone(patient.phone)).filter(Boolean));
+  const knownNames = new Set(existingPatients.map((patient) => patient.fullName.trim().toLowerCase()));
 
   const rows: ImportPreviewRow[] = lines.slice(1).map((line, index) => {
     const cells = splitLine(line, delimiter);
@@ -284,6 +288,9 @@ export function buildPatientImportPreview(input: ImportPreviewRequest): ImportPr
 export async function registerImportRoutes(app: FastifyInstance) {
   app.post("/api/imports/patients/intake", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "patient import intake"))) return;
+    const [org] = await db.select().from(organizations).limit(1);
+    if (!org) return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
+    
     const parsed = parseImportPayload(
       importIntakeRequestSchema,
       request.body,
@@ -291,11 +298,14 @@ export async function registerImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return buildPatientImportIntake(input);
+    return await buildPatientImportIntake(org.id, input);
   });
 
   app.post("/api/imports/patients/preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "patient import preview"))) return;
+    const [org] = await db.select().from(organizations).limit(1);
+    if (!org) return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
+
     const parsed = parseImportPayload(
       importPreviewRequestSchema,
       request.body,
@@ -303,11 +313,14 @@ export async function registerImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return buildPatientImportPreview(input);
+    return await buildPatientImportPreview(org.id, input);
   });
 
   app.post("/api/imports/patients/commit", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "patient import commit"))) return;
+    const [org] = await db.select().from(organizations).limit(1);
+    if (!org) return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
+
     const parsed = parseImportPayload(
       importCommitRequestSchema,
       request.body,
@@ -315,48 +328,64 @@ export async function registerImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    return commitPatientImport(input);
+    return await commitPatientImport(org.id, input);
   });
 }
 
-export function commitPatientImport(input: ImportPreviewRequest) {
-  const preview = buildPatientImportPreview(input);
-  const importedPatientIds = preview.rows
-    .filter((row) => row.status === "ready" && row.fullName)
-    .map((row) => {
-      const patient = createPatient({
+export async function commitPatientImport(orgId: string, input: ImportPreviewRequest) {
+  const preview = await buildPatientImportPreview(orgId, input);
+  
+  const result = await db.transaction(async (tx) => {
+    const importedPatientIds: string[] = [];
+    const validRows = preview.rows.filter((row) => row.status === "ready" && row.fullName);
+    
+    for (const row of validRows) {
+      const [inserted] = await tx.insert(patients).values({
+        organizationId: orgId,
         fullName: row.fullName ?? "",
         birthDate: row.birthDate,
         phone: row.phone,
-        notes: row.notes
-      });
-      recordAuditEvent({
+        notes: row.notes,
+        status: "active"
+      }).returning();
+      
+      importedPatientIds.push(inserted!.id);
+
+      await tx.insert(auditEvents).values({
+        organizationId: orgId,
         entityType: "patient",
-        entityId: patient.id,
+        entityId: inserted!.id,
         action: "patient_imported",
         reason: `Импорт из ${input.sourceName}, строка ${row.rowNumber}.`
       });
-      return patient.id;
+    }
+
+    const [batch] = await tx.insert(importBatches).values({
+      organizationId: orgId,
+      sourceName: input.sourceName,
+      status: "completed",
+      totalRows: preview.totalRows,
+      importedRows: importedPatientIds.length,
+      skippedRows: preview.totalRows - importedPatientIds.length,
+      warningRows: preview.warningRows,
+      blockedRows: preview.blockedRows
+    }).returning();
+
+    await tx.insert(auditEvents).values({
+      organizationId: orgId,
+      entityType: "import_batch",
+      entityId: batch!.id,
+      action: "import_committed",
+      reason: `Импортировано ${importedPatientIds.length}, пропущено ${preview.totalRows - importedPatientIds.length}.`
     });
-  const batch = recordImportBatch({
-    sourceName: input.sourceName,
-    totalRows: preview.totalRows,
-    importedRows: importedPatientIds.length,
-    skippedRows: preview.totalRows - importedPatientIds.length,
-    warningRows: preview.warningRows,
-    blockedRows: preview.blockedRows
-  });
-  recordAuditEvent({
-    entityType: "import_batch",
-    entityId: batch.id,
-    action: "import_committed",
-    reason: `Импортировано ${importedPatientIds.length}, пропущено ${preview.totalRows - importedPatientIds.length}.`
+
+    return { importedPatientIds };
   });
 
   return importCommitResponseSchema.parse({
     preview,
-    importedCount: importedPatientIds.length,
-    skippedCount: preview.totalRows - importedPatientIds.length,
-    importedPatientIds
+    importedCount: result.importedPatientIds.length,
+    skippedCount: preview.totalRows - result.importedPatientIds.length,
+    importedPatientIds: result.importedPatientIds
   });
 }
