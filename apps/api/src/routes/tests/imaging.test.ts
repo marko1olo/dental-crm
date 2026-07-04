@@ -1,6 +1,6 @@
 import { describe, it, before, after } from "node:test";
 import assert from "node:assert";
-import { patients, imagingStudies, auditEvents } from "../../sampleData.js";
+import { patients, imagingStudies, auditEvents } from "../../telegram/legacyMocks.js";
 import type { ImagingSourceKind, ImagingStudy, AuditEvent } from "@dental/shared";
 import { commitImagingImport } from "../imaging.js";
 

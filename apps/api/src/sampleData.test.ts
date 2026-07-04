@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
-import { validScheduleTimeZone } from "./sampleData.js";
+import { validScheduleTimeZone } from "./telegram/legacyMocks.js";
 
 describe("validScheduleTimeZone", () => {
   test("returns default timezone for invalid timezone", () => {

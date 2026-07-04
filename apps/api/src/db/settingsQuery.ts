@@ -1,7 +1,7 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
-import type { ClinicSettings, UiPreferences, CreateStaffMemberInput, CreateChairInput, UpdateClinicProfileInput, ClinicProfile } from "@dental/shared";
+import type { ClinicSettings, UiPreferences, CreateStaffMemberInput, CreateChairInput, UpdateClinicProfileInput, ClinicProfile, ClinicMode } from "@dental/shared";
 
 // Dummy fallback for legacy UI preferences if multiple users exist
 export async function getUiPreferencesFromDb(organizationId: string): Promise<UiPreferences | null> {
@@ -99,7 +99,7 @@ export async function getClinicSettingsFromDb(organizationId: string): Promise<C
   };
 }
 
-export async function updateClinicModeInDb(organizationId: string, mode: "single" | "network" | "demo") {
+export async function updateClinicModeInDb(organizationId: string, mode: ClinicMode) {
   await db.update(schema.organizations).set({ clinicMode: mode }).where(eq(schema.organizations.id, organizationId));
 }
 

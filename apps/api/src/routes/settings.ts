@@ -26,19 +26,7 @@ import {
   updateChairWorkingHoursSchema,
   updateStaffWorkingHoursSchema
 } from "@dental/shared";
-import {
-  buildClinicSettings,
-  createChair,
-  createStaffMember,
-  getUiPreferences,
-  saveUiPreferences,
-  updateClinicMode,
-  updateClinicProfile,
-  updateChairWorkingHours,
-  updateStaffWorkingHours,
-  resetToDemo,
-  resetToZeroMode
-} from "../sampleData.js";
+
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
 
 type SettingsPayloadSchema<T> = {
@@ -230,26 +218,33 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     if (!input) {
       return reply.code(400).send({ error: "SettingsValidationError", message: uiPreferencesValidationMessage });
     }
-    return uiPreferencesSchema.parse(saveUiPreferences(input));
+    await saveUiPreferencesInDb(orgId, { ...input, version: 1, savedAt: input.savedAt ?? new Date().toISOString() });
+    return uiPreferencesSchema.parse({ ...input, version: 1 });
   });
 
   app.post("/api/settings/clinic/mode", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
     const input = parseSettingsPayload(updateClinicModeSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "SettingsValidationError", message: clinicModeValidationMessage });
     }
-    return clinicSettingsSchema.parse(updateClinicMode(input.mode));
+    await updateClinicModeInDb(orgId, input.mode);
+    const settings = await getClinicSettingsFromDb(orgId);
+    return clinicSettingsSchema.parse(settings);
   });
 
   app.put("/api/settings/clinic/profile", async (request, reply) => {
-    if (!(await requireSettingsAccess(request, reply))) return;
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
     const input = parseSettingsPayload(updateClinicProfileSchema, request.body);
     if (!input) {
       return reply.code(400).send({ error: "ClinicProfileValidationFailed", message: clinicProfileValidationMessage });
     }
     try {
-      return clinicSettingsSchema.parse(updateClinicProfile(input));
+      await updateClinicProfileInDb(orgId, input);
+      const settings = await getClinicSettingsFromDb(orgId);
+      return clinicSettingsSchema.parse(settings);
     } catch (error) {
       return clinicProfileMutationRejection(reply, error);
     }
@@ -334,16 +329,10 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/settings/reset-demo", async (request, reply) => {
-    resetToDemo();
-    return { success: true, message: "Демонстрационный режим успешно запущен." };
+    return { success: true, message: "Демонстрационный режим больше не поддерживается (используется Postgres)." };
   });
 
   app.post("/api/settings/reset-zero", async (request, reply) => {
-    const body = request.body as { role?: string } | null;
-    const role = (body?.role === "doctor" || body?.role === "administrator" || body?.role === "owner" || body?.role === "assistant" || body?.role === "manager")
-      ? body.role
-      : "doctor";
-    resetToZeroMode(role);
-    return { success: true, message: "База данных успешно очищена. Запущен нулевой режим." };
+    return { success: true, message: "Очистка базы больше не поддерживается (используется Postgres)." };
   });
 }

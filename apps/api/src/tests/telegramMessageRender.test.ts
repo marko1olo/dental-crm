@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { buildDenteTelegramMessagePreviewData, type TelegramMessageContext } from "../sampleData.js";
+import { buildDenteTelegramMessagePreviewData, type TelegramMessageContext } from "../telegram/legacyMocks.js";
 import type { DenteTelegramTemplateKind } from "@dental/shared";
 
 describe("buildDenteTelegramMessagePreviewData", () => {

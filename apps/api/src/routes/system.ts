@@ -11,7 +11,8 @@ import {
   type LocalBridgeUsePlanStep
 } from "@dental/shared";
 import { buildPersistentStateExport, getPersistentStateIntegrityReport } from "../persistentState.js";
-import { recordAuditEvent } from "../sampleData.js";
+import { db } from "../db/client.js";
+import { auditEvents, organizations } from "../db/schema.js";
 import { getSpeechGatewayStatus } from "../speech/gateway.js";
 
 function timestampForDownloadName(value = new Date()): string {
@@ -627,12 +628,16 @@ export async function registerSystemRoutes(app: FastifyInstance) {
 
   app.get("/api/system/persistence/export", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "persistence export"))) return;
-    recordAuditEvent({
-      entityType: "system",
-      entityId: "persistence-export",
-      action: "persistence_export_downloaded",
-      reason: "Администратор клиники скачал резервную копию состояния прототипа для аварийного восстановления или проверки переноса."
-    });
+    const [org] = await db.select().from(organizations).limit(1);
+    if (org) {
+      await db.insert(auditEvents).values({
+        organizationId: org.id,
+        entityType: "system",
+        entityId: "persistence-export",
+        action: "persistence_export_downloaded",
+        reason: "Администратор клиники скачал резервную копию состояния прототипа для аварийного восстановления или проверки переноса."
+      });
+    }
     const snapshot = await buildPersistentStateExport();
     if (!snapshot.payload) {
       return reply.code(404).send({

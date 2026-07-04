@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { safeDenteTelegramPublicHttpsUrl } from '../sampleData.js';
+import { safeDenteTelegramPublicHttpsUrl } from './legacyMocks.js';
 
 describe('safeDenteTelegramPublicHttpsUrl', () => {
   test('returns valid URL string for a valid https URL', () => {

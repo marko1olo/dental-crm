@@ -43,7 +43,7 @@ export function readIssuedDocumentSnapshot(document: import('@dental/shared').Ge
   if (actualHash !== document.issuedSnapshotSha256) return null;
   return html;
 }
-import { recordAuditEvent } from "../sampleData.js";
+import { recordAuditEvent } from "../audit.js";
 
 // Basic mapping from schema to type
 function mapDocument(record: typeof schema.generatedDocuments.$inferSelect): GeneratedDocument {
@@ -147,7 +147,8 @@ export async function createGeneratedDocumentInDb(
 
   if (!record) throw new Error("Failed to create document");
 
-  recordAuditEvent({
+  await recordAuditEvent({
+    organizationId,
     entityType: "document",
     entityId: record.id,
     action: "document_created",
@@ -202,7 +203,8 @@ export async function issueGeneratedDocumentInDb(
 
   if (!updated) return null;
 
-  recordAuditEvent({
+  await recordAuditEvent({
+    organizationId,
     entityType: "document",
     entityId: updated.id,
     action: "document_issued",
@@ -238,7 +240,8 @@ export async function voidGeneratedDocumentInDb(
 
   if (!updated) return null;
 
-  recordAuditEvent({
+  await recordAuditEvent({
+    organizationId,
     entityType: "document",
     entityId: updated.id,
     action: "document_voided",
@@ -251,12 +254,19 @@ export async function voidGeneratedDocumentInDb(
 export async function storeTaxXmlSnapshotInDb(
   organizationId: string,
   documentId: string,
-  snapshot: TaxXmlSnapshot
-): Promise<void> {
-  await db
+  snapshot: Omit<TaxXmlSnapshot, "createdAt" | "sha256"> & Partial<Pick<TaxXmlSnapshot, "createdAt" | "sha256">>
+): Promise<any> {
+  const completeSnapshot: TaxXmlSnapshot = {
+    ...snapshot,
+    createdAt: snapshot.createdAt || new Date().toISOString(),
+    sha256: snapshot.sha256 || require("crypto").createHash("sha256").update(snapshot.xml).digest("hex")
+  };
+  const [doc] = await db
     .update(schema.generatedDocuments)
-    .set({ taxXmlSnapshot: snapshot })
-    .where(and(eq(schema.generatedDocuments.organizationId, organizationId), eq(schema.generatedDocuments.id, documentId)));
+    .set({ taxXmlSnapshot: completeSnapshot })
+    .where(and(eq(schema.generatedDocuments.organizationId, organizationId), eq(schema.generatedDocuments.id, documentId)))
+    .returning();
+  return doc;
 }
 
 export async function getDocumentRenderContextFromDb(organizationId: string, patientId?: string) {

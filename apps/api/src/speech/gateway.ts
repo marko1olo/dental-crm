@@ -13,7 +13,8 @@ import type {
   SpeechTranscriptionStatus,
   SpeechTranscriptionResponse
 } from "@dental/shared";
-import { recordSpeechTranscriptionChunk, speechProviders } from "../sampleData.js";
+import { recordSpeechTranscriptionChunk } from "./storage.js";
+import { speechProviders } from "./providers.js";
 import { buildDentalSttPrompt, getDentalSttPromptPolicy } from "./dentalPrompt.js";
 import {
   fetchWithProviderTimeout,
@@ -1819,7 +1820,7 @@ export async function transcribeSpeechChunk(input: SpeechChunkUploadInput): Prom
     providerLabel: usedProviderLabel
   });
 
-  const chunk = recordSpeechTranscriptionChunk({
+  const chunk = await recordSpeechTranscriptionChunk({
     recordingId: input.recordingId,
     chunkIndex: input.chunkIndex,
     source: input.source,
