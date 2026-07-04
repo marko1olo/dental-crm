@@ -2833,6 +2833,11 @@ function postVisitRecommendations(document: GeneratedDocument) {
           ${bulletList(payload.urgentWarningSigns)}
         </div>
       </div>
+
+      <div class="doc-section-card recs-full-width-card">
+        <h3>📱 Краткий текст для Telegram</h3>
+        <p style="margin: 4px 0; font-size: 11.5px; color: #334155;">${escapeHtml(payload.telegramSummary)}</p>
+      </div>
     </div>
 
     ${checkList([

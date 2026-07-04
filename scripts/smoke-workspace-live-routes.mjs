@@ -7,8 +7,14 @@ import { sleep } from "./lib/sleep.mjs";
 import { findFreePort } from "./lib/findFreePort.mjs";
 import { waitFor } from "./lib/cdp.mjs";
 import path from "node:path";
+import { spawnTracked, stopTracked, processExitFailure } from "./lib/processTracking.mjs";
 
-const baseTargetUrl = process.argv[2] ?? process.env.SMOKE_BASE_URL ?? "http://127.0.0.1:5173/";
+const watchdog = setTimeout(() => {
+  console.error("SMOKE TEST TIMEOUT: Process terminated by watchdog");
+  process.exit(1);
+}, 90000);
+watchdog.unref();
+
 const width = Number(process.env.SMOKE_WIDTH ?? 1440);
 const height = Number(process.env.SMOKE_HEIGHT ?? 1100);
 const configuredPort = process.env.SMOKE_CDP_PORT ? Number(process.env.SMOKE_CDP_PORT) : null;
@@ -16,8 +22,109 @@ const port = configuredPort ?? (await findFreePort());
 const profileDir = path.join(os.tmpdir(), `dental-crm-workspace-live-routes-${process.pid}`);
 const screenshotDir = process.env.SMOKE_SCREENSHOT_DIR ?? "test-results/workspace-live-routes";
 
+const apiServerPath = path.resolve("apps/api/dist/server.js");
+const vitePath = path.resolve("apps/web/node_modules/vite/bin/vite.js");
+const tempRoot = path.join(os.tmpdir(), `dental-crm-live-routes-${process.pid}`);
+const stateFilePath = path.join(tempRoot, "state", "dental-crm-state.json");
+const backupDir = path.join(tempRoot, "backups");
+const snapshotDir = path.join(tempRoot, "document-snapshots");
+
+async function waitForHttp(url, label, attempts = 120) {
+  let lastError;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (response.ok) {
+        return response;
+      }
+      lastError = new Error(`${label} HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    await sleep(250);
+  }
+  throw lastError ?? new Error(`${label} was not reachable`);
+}
+
+let baseTargetUrl = process.argv[2] ?? process.env.SMOKE_BASE_URL ?? null;
+let isIsolated = false;
+let apiProcess = null;
+let webProcess = null;
+
+if (!baseTargetUrl) {
+  isIsolated = true;
+  if (!existsSync(apiServerPath)) {
+    throw new Error("Build API first: apps/api/dist/server.js is missing.");
+  }
+  if (!existsSync(vitePath)) {
+    throw new Error("Vite binary is missing. Run dependency install before this smoke test.");
+  }
+  const apiPort = await findFreePort();
+  const webPort = await findFreePort();
+  const apiBaseUrl = `http://127.0.0.1:${apiPort}`;
+  baseTargetUrl = `http://127.0.0.1:${webPort}`;
+
+  await mkdir(tempRoot, { recursive: true });
+
+  const apiBootstrap = `
+  import { pathToFileURL } from "node:url";
+  const { createDenteApiApp } = await import(pathToFileURL(process.env.DENTAL_API_SERVER_PATH).href);
+  const app = await createDenteApiApp({ startTelegramWorker: false });
+  await app.listen({ host: process.env.API_HOST, port: Number(process.env.API_PORT) });
+  `;
+
+  apiProcess = spawnTracked(
+    "api",
+    process.execPath,
+    ["--input-type=module", "-e", apiBootstrap],
+    {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        API_HOST: "127.0.0.1",
+        API_PORT: String(apiPort),
+        WEB_ORIGIN: baseTargetUrl,
+        NODE_ENV: "development",
+        DENTE_CLINICAL_ADMIN_SECRET: "",
+        DENTE_SETTINGS_ADMIN_SECRET: "",
+        DENTE_SCHEDULE_ADMIN_SECRET: "",
+        DENTE_TELEGRAM_ADMIN_SECRET: "",
+        DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS: "1",
+        DENTE_SETTINGS_ALLOW_UNGUARDED_MUTATIONS: "1",
+        DENTE_SCHEDULE_ALLOW_UNGUARDED_MUTATIONS: "1",
+        DENTE_CLINICAL_ALLOW_UNGUARDED_READS: "1",
+        DENTAL_API_SERVER_PATH: apiServerPath,
+        DENTAL_STATE_FILE: stateFilePath,
+        DENTAL_STATE_BACKUP_DIR: backupDir,
+        DENTAL_STATE_BACKUPS: "2",
+        DENTAL_DOCUMENT_SNAPSHOT_DIR: snapshotDir,
+        DENTAL_SPEECH_PROVIDER: "demo",
+        DENTAL_SPEECH_POLISH_PROVIDER: "demo"
+      },
+      stdio: ["ignore", "pipe", "pipe"]
+    }
+  );
+
+  webProcess = spawnTracked(
+    "web",
+    process.execPath,
+    [vitePath, "--host", "127.0.0.1", "--port", String(webPort), "--strictPort"],
+    {
+      cwd: path.resolve("apps/web"),
+      env: {
+        ...process.env,
+        DENTAL_API_PROXY_TARGET: apiBaseUrl
+      },
+      stdio: ["ignore", "pipe", "pipe"]
+    }
+  );
+
+  await Promise.race([waitForHttp(`${apiBaseUrl}/api/health`, "isolated API"), processExitFailure(apiProcess, "isolated API")]);
+  await Promise.race([waitForHttp(baseTargetUrl, "isolated web"), processExitFailure(webProcess, "isolated web")]);
+}
+
 const routes = [
-  { hash: "shift", rootSelector: "#shift.shift-hero", readySelectors: [".next-actions button", ".patient-cockpit"] },
+  { hash: "shift", rootSelector: "#shift.shift-hero", readySelectors: [".patient-cockpit"] },
   { hash: "schedule", rootSelector: "#schedule.schedule-panel", readySelectors: ['[data-testid="schedule-shift-summary"]'] },
   { hash: "patients", rootSelector: "#patients.patients-panel", readySelectors: [".quick-create input", ".patient-list"] },
   {
@@ -98,6 +205,11 @@ async function cleanup(browser) {
   if (!browser.killed) browser.kill();
   await Promise.race([new Promise((resolve) => browser.once("exit", resolve)), sleep(2_000)]);
   await rm(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
+  if (isIsolated) {
+    await stopTracked(webProcess);
+    await stopTracked(apiProcess);
+    await rm(tempRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
+  }
 }
 
 function routeReadyExpression(route) {

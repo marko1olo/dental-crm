@@ -6,7 +6,6 @@ import {
   documentKindSchema,
   documentPayloadDisallowedKeys,
   buildRuleBasedVisitDraftFromTranscript,
-  documentPayloadDisallowedKeys,
 } from "../index.js";
 
 describe("documentAmountSource", () => {

@@ -219,4 +219,105 @@ export class AiOrchestrator {
       data: localResult
     };
   }
+
+  /**
+   * Parses global voice navigation commands (e.g. view switching, searching, date filtering).
+   */
+  static parseGlobalNavigation(input: string): {
+    view?: string;
+    query?: string;
+    date?: string;
+    feedbackText: string;
+  } {
+    const lower = input.toLowerCase().trim().replace(/[.,!?]/g, "");
+    
+    // 1. Check for search query (e.g. "найди пациента Иванов", "открой карту Петрова")
+    const searchMatch = lower.match(/^(?:найди|открой|ищи|поиск|найди пациента|открой карту|открой карточку)\s+(.+)$/i);
+    if (searchMatch && searchMatch[1]) {
+      const queryName = searchMatch[1].trim();
+      // Capitalize first letter for visual query cleanliness if possible
+      const capitalizedQuery = queryName.charAt(0).toUpperCase() + queryName.slice(1);
+      return {
+        view: "patients",
+        query: capitalizedQuery,
+        feedbackText: `Ищу пациента ${capitalizedQuery}.`
+      };
+    }
+
+    // 2. Check view mapping synonyms
+    let view: string | undefined = undefined;
+    let feedbackText = "";
+
+    if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:смен|работу|перв)/i.test(lower) || lower === "смена") {
+      view = "shift";
+      feedbackText = "Открываю смену.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:запис|расписан|календар|очеред)/i.test(lower) || /(записи|расписание|календарь)/i.test(lower)) {
+      view = "schedule";
+      feedbackText = "Открываю расписание.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:пациент|карточ)/i.test(lower) || lower === "пациенты") {
+      view = "patients";
+      feedbackText = "Открываю список пациентов.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:сним|рентген|визиогр|клкт|кт)/i.test(lower) || /(снимки|рентген|клкт|визиограф)/i.test(lower)) {
+      view = "imaging";
+      feedbackText = "Открываю снимки.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:прием|приём|текущ)/i.test(lower) || lower === "прием" || lower === "приём") {
+      view = "visit";
+      feedbackText = "Открываю текущий прием.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:документ|договор|согласи|справк)/i.test(lower) || lower === "документы") {
+      view = "documents";
+      feedbackText = "Открываю документы.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:оплат|финанс|касс|долг)/i.test(lower) || /(оплаты|финансы|касса)/i.test(lower)) {
+      view = "finance";
+      feedbackText = "Открываю финансы.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:связ|сообщен|задач|чат|телеграм)/i.test(lower) || lower === "связь" || lower === "сообщения") {
+      view = "communications";
+      feedbackText = "Открываю связь.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:настройк|профил|клиник)/i.test(lower) || lower === "настройки") {
+      view = "settings";
+      feedbackText = "Открываю настройки.";
+    } else if (/(?:перейди|открой|переключи|покажи)\s+(?:в|на)?\s*(?:маркетинг|seo|сео|отзыв)/i.test(lower) || lower === "маркетинг") {
+      view = "marketing";
+      feedbackText = "Открываю маркетинг.";
+    }
+
+    // 3. Date filtering for Schedule (if view is schedule or active, e.g. "записи на завтра", "расписание сегодня")
+    if (view === "schedule" || (!view && /(?:запис|расписан|календар|прием|приём|завтра|сегодня|вчера|послезавтра)/i.test(lower))) {
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const getLocalDateString = (timeMs: number) => {
+        return new Date(timeMs - (offset * 60 * 1000)).toISOString().split('T')[0];
+      };
+
+      let dateStr: string | undefined = undefined;
+      let dateWord = "";
+
+      if (lower.includes("сегодня")) {
+        dateStr = getLocalDateString(now.getTime());
+        dateWord = "сегодня";
+      } else if (lower.includes("завтра")) {
+        dateStr = getLocalDateString(now.getTime() + 24 * 60 * 60 * 1000);
+        dateWord = "завтра";
+      } else if (lower.includes("вчера")) {
+        dateStr = getLocalDateString(now.getTime() - 24 * 60 * 60 * 1000);
+        dateWord = "вчера";
+      } else if (lower.includes("послезавтра")) {
+        dateStr = getLocalDateString(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+        dateWord = "послезавтра";
+      }
+
+      if (dateStr) {
+        return {
+          view: view || "schedule",
+          date: dateStr,
+          feedbackText: view ? `Открываю расписание на ${dateWord}.` : `Показываю записи на ${dateWord}.`
+        };
+      }
+    }
+
+    if (view) {
+      return { view, feedbackText };
+    }
+
+    return { feedbackText: "" };
+  }
 }

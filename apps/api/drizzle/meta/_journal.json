@@ -176,6 +176,13 @@
       "when": 1782925072560,
       "tag": "0024_small_namor",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1783133970729,
+      "tag": "0025_yellow_hedge_knight",
+      "breakpoints": true
     }
   ]
 }

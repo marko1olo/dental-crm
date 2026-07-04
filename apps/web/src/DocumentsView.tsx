@@ -1067,16 +1067,13 @@ export function DocumentsView(props: DocumentsViewProps) {
     const sourceLabel = documentSourceStatusLabels[documentKindMetadata[document.kind].sourceStatus];
     const hasIssuedArchive = Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
     if (document.status === "draft") {
-      return `Черновик (требует проверки). Источник: ${sourceLabel}.`;
-    }
-    if (document.status === "issued" && hasIssuedArchive) {
-      return `Выдано (доступно скачивание). Источник: ${sourceLabel}.`;
+      return `Черновик (требует проверки). Источник: ${sourceLabel}. Паспорт покажет источник, блокеры и доступные действия.`;
     }
     if (document.status === "issued") {
-      return `Выдано (без архива, см. паспорт). Источник: ${sourceLabel}.`;
+      return `Выдано. Источник: ${sourceLabel}. Паспорт показывает подпись, контрольную метку, журнал выдачи. Аннулирование потребует причину и подтверждение архива.`;
     }
-    if (document.status === "voided" && hasIssuedArchive) {
-      return `Аннулировано (доступен старый архив). Источник: ${sourceLabel}.`;
+    if (document.status === "voided") {
+      return `Аннулировано: Открыть и Скачать остаются архивной копией. Источник: ${sourceLabel}.`;
     }
     return `Аннулировано. Источник: ${sourceLabel}.`;
   }
@@ -1218,7 +1215,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                 </label>
                 <span id={selectedDocumentCreateGuidanceId}>
                   {selectedDocumentNeedsPayload
-                    ? "Заполните форму ниже. Выбранный документ сохраняется в настройках."
+                    ? "Перед созданием CRM проверит обязательные поля этой формы. Заполните форму ниже. Выбранный документ сохраняется в настройках."
                     : "Можно создать сразу. Выбор сохранится для следующего открытия."}
                 </span>
 
@@ -4371,7 +4368,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                 ) : null}
               </section>
 
-              <div style={{ marginTop: "16px" }}>
+              <div className="document-factory-selected-kind" style={{ marginTop: "16px" }}>
                 <button
                   className="primary-button"
                   type="button"

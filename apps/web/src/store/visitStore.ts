@@ -24,6 +24,9 @@ export interface VisitStore {
   transcript: string;
   setTranscript: (val: string | ((prev: string) => string)) => void;
 
+  sessionTranscript: string;
+  setSessionTranscript: (val: string | ((prev: string) => string)) => void;
+
   draft: VisitNoteDraft | null;
   setDraft: (val: VisitNoteDraft | null | ((prev: VisitNoteDraft | null) => VisitNoteDraft | null)) => void;
 
@@ -97,6 +100,9 @@ export const useVisitStore = create<VisitStore>((set) => ({
 
   transcript: "",
   setTranscript: (val) => set((state) => ({ transcript: typeof val === "function" ? val(state.transcript) : val })),
+
+  sessionTranscript: "",
+  setSessionTranscript: (val) => set((state) => ({ sessionTranscript: typeof val === "function" ? val(state.sessionTranscript) : val })),
 
   draft: null,
   setDraft: (val) => set((state) => ({ draft: typeof val === "function" ? val(state.draft) : val })),

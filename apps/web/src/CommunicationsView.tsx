@@ -126,7 +126,18 @@ function CommunicationTaskCard({
             </span>
           ) : null}
           <div className="communication-outcome-select">
-            <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Исход</span>
+            <label htmlFor={outcomeSelectId} style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Исход</label>
+            <select
+              id={outcomeSelectId}
+              value={selectedOutcome}
+              onChange={(e) => setSelectedOutcome(e.target.value as CommunicationTaskOutcome)}
+              style={{ display: "none" }} // keep chips visual but have a linked select for accessibility
+            >
+              <option value="">Выберите исход...</option>
+              {communicationTaskOutcomeOptions.map(([outcome, label]) => (
+                <option key={outcome} value={outcome}>{label}</option>
+              ))}
+            </select>
             <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
               {communicationTaskOutcomeOptions.map(([outcome, label]) => (
                 <button

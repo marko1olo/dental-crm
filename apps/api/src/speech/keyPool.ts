@@ -9,7 +9,7 @@ import tls from "node:tls";
 import { ensureSshTunnel } from "./tunnel.js";
 
 let cachedProxyAgent: Dispatcher | null = null;
-function getProxyAgent(): Dispatcher | null {
+export function getProxyAgent(): Dispatcher | null {
   const proxyUrl =
     process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
   if (!proxyUrl) return null;

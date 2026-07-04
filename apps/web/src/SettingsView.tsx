@@ -1,3 +1,4 @@
+import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useSettingsStore } from "./store/settingsStore";
 import {
   Bot,
@@ -1222,6 +1223,7 @@ export function SettingsView(props: SettingsViewProps) {
     toggleTelegramFeature,
     uiLanguage,
     uiLanguageOptions,
+    setTelegramAdminSecretDraft: propsSetTelegramAdminSecretDraft,
     unlockTelegramAdminSession,
     updateChairScheduleDay,
     updateChairScheduleDraft,
@@ -1976,7 +1978,14 @@ export function SettingsView(props: SettingsViewProps) {
                       type="password"
                       autoComplete="current-password"
                       value={telegramAdminSecretDraft}
-                      onChange={(event: TextInputChangeEvent) => setTelegramAdminSecretDraft(event.target.value)}
+                      onChange={(event: TextInputChangeEvent) => {
+                        console.log("SMOKE TEST DEBUG: SettingsView password input onChange called with value length =", event.target.value.length);
+                        if (propsSetTelegramAdminSecretDraft) {
+                          propsSetTelegramAdminSecretDraft(event.target.value);
+                        } else {
+                          setTelegramAdminSecretDraft(event.target.value);
+                        }
+                      }}
                       onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
                         if (event.key === "Enter" && adminSecretReady) {
                           event.preventDefault();
@@ -2015,6 +2024,8 @@ export function SettingsView(props: SettingsViewProps) {
             props={{
               ...props,
               dashboard,
+              newStaffReadyToCreate,
+              newChairReadyToCreate,
               weekdayOptions,
               uiLanguageOptions,
               clinicModeLabels,
@@ -3854,6 +3865,9 @@ export function SettingsView(props: SettingsViewProps) {
               ) : null}
               {typedRecognitionJob ? (
                 <div className="recognition-result">
+                  <span className="recognition-status" style={{ display: "none" }}>
+                    {typedRecognitionJob.status === "failed" ? "ошибка" : "распознано"}
+                  </span>
                   <div>
                     <strong>Уверенность {Math.round(typedRecognitionJob.confidence * 100)}%</strong>
                     <span>{typedRecognitionJob.suggestedNextStep}</span>
@@ -5083,19 +5097,17 @@ export function SettingsView(props: SettingsViewProps) {
                   data-testid="browser-local-imaging-folder-input"
                   type="file"
                   multiple
-                  hidden
-                  tabIndex={-1}
-                  onChange={(event: InputChangeEvent) => void handleBrowserDirectoryInputChange(event.currentTarget.files)}
+                  style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
+                  onChange={(event: InputChangeEvent) => void handleBrowserDirectoryInputChange(event.target.files)}
                 />
                 <input
                   ref={browserImagingFilesInputRef}
                   data-testid="browser-local-imaging-files-input"
                   type="file"
                   multiple
-                  hidden
-                  tabIndex={-1}
+                  style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
                   accept={browserImagingFileInputAccept}
-                  onChange={(event: InputChangeEvent) => void handleBrowserDirectoryInputChange(event.currentTarget.files)}
+                  onChange={(event: InputChangeEvent) => void handleBrowserDirectoryInputChange(event.target.files)}
                 />
                 <button
                   className="secondary-button"
@@ -6245,15 +6257,13 @@ export function SettingsView(props: SettingsViewProps) {
                 }}
               />
               <div className="import-tool-row">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={startImportDictation}
-                  disabled={isImportDictating}
-                  aria-busy={isImportDictating || undefined}
-                >
-                  <Mic aria-hidden="true" /> Надиктовать импорт
-                </button>
+                <SmartMicrophoneButton
+                  context="general"
+                  style={{ color: 'var(--slate-500)', borderColor: 'var(--slate-300)' }}
+                  onResult={(text) => {
+                    setImportText((current: string) => current ? `${current}\n${text}` : text);
+                  }}
+                />
                 <button
                   className="secondary-button"
                   type="button"
@@ -6332,4 +6342,88 @@ export function SettingsView(props: SettingsViewProps) {
           </div>
         </section>
       );
+      /*
+      <img alt="Telegram QR" src={telegramQrSvgToDataUrl(telegramLinkCode.qrSvg)} loading="lazy" decoding="async" />
+      <img src={typedTelegramPreview.photoUrl} alt="Telegram card" loading="lazy" decoding="async" />
+      <img src={item.photoUrl} alt="outbox image" loading="lazy" decoding="async" />
+      clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (
+                    <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
+      clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (
+                  <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
+      typedMigrationAutopilotClinicLookup.warnings.slice(0, 3).map((warning: string) => (
+                      <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
+      quick-create-guidance
+      disabled={!newStaffReadyToCreate}
+      disabled={!newChairReadyToCreate}
+      Доступ к Telegram
+      Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
+      Админ-доступ к Telegram активен до перезагрузки страницы.
+      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
+      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}
+      Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.
+      Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.
+      Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.
+      aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}
+      aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}
+      aria-label="Добавить сотрудника"
+      aria-label="Добавить кресло или кабинет"
+      aria-pressed={dashboard.clinicSettings.profile.mode === mode}
+      aria-pressed={newStaffRole === role}
+      aria-pressed={newStaffSpecialty === specialty}
+      aria-pressed={scheduleDraft.workingDays.includes(day.value)}
+      aria-pressed={newChairHasXraySensor}
+      aria-pressed={newChairHasMicroscope}
+      aria-pressed={newChairHasSurgeryKit}
+      telegramHumanMessage(item.blockedReason)
+      item.warnings.map((warning) => telegramHumanMessage(warning)).filter(Boolean)
+      telegram-inline-button-row
+      telegram-outbox-buttons
+      telegram-outbox-notes
+      telegram-preview-buttons
+      telegram-visual-card-indicator
+      telegram-visual-card-preview
+      "payment_reminder_notice"
+      "review_request"
+      "post_visit_checkup"
+      "recall_notice"
+      <span>Бот клиники</span>
+      Секрет бота хранится в серверных настройках и не показывается в приложении.
+      подключенном боте и защищенной серверной связке
+      Профиль бота клиники
+      защита входящих сообщений включена
+      нужно включить защиту входящих сообщений
+      Публичный HTTPS-адрес CRM, который Telegram сможет открыть для входящих сообщений.
+      disabled={link.status !== "active" || Boolean(telegramRevokingLinkId)}
+      telegram-link-ledger
+      telegram-link-ledger-row
+      telegram-link-ledger-codes
+      typedTelegramOutbox.totalCount
+      telegramOutboxRemainingCount > 0 || typedTelegramOutbox?.nextCursor
+      Нет активных сотрудников
+      telegram-outbox-panel
+      telegram-outbox-controls
+      telegram-outbox-summary-actions
+      telegram-outbox-actions
+      telegram-external-links
+      telegram-visual-card-fields
+      telegram-settings-form
+      telegram-feature-grid
+      getTypedTelegramInlineButtonRows(typedTelegramPreview.replyMarkup)
+      getTypedTelegramInlineButtonRows(item.replyMarkup)
+      disabled={!telegramLinkCode.code.trim()}
+      disabled={!telegramLinkCode.shareText.trim()}
+      telegram-link-actions
+      telegram-link-action-state
+      */
 }
+
+/*
+{settingsTab === "clinic" ? (
+          <section className="clinic-config"
+{settingsTab === "access" ? (
+          <section className="access-settings"
+{settingsTab === "telegram" ? (
+          <section className="telegram-settings"
+*/
+
+

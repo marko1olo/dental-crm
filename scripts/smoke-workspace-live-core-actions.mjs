@@ -11,6 +11,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { inputHelpersExpression } from "./lib/inputHelpersExpression.mjs";
 
+const watchdog = setTimeout(() => {
+  console.error("SMOKE TEST TIMEOUT: Process terminated by watchdog");
+  process.exit(1);
+}, 90000);
+watchdog.unref();
+
 const width = Number(process.env.SMOKE_WIDTH ?? 1440);
 const height = Number(process.env.SMOKE_HEIGHT ?? 1100);
 const apiPort = Number(process.env.SMOKE_API_PORT ?? (await findFreePort()));

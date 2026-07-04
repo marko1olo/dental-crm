@@ -191,6 +191,8 @@ export const imagingStudyStatus = pgEnum("imaging_study_status", ["available", "
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  loginId: text("login_id"),
+  passwordHash: text("password_hash"),
   inn: text("inn"),
   kpp: text("kpp"),
   ogrn: text("ogrn"),
@@ -224,6 +226,7 @@ export const users = pgTable("users", {
   role: text("role").notNull(),
   phone: text("phone"),
   email: text("email"),
+  pinCodeHash: text("pin_code_hash"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });

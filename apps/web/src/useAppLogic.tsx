@@ -9746,8 +9746,34 @@ const {
   }
 
   function appendVisitDictationText(value: string) {
-    const cleanValue = value.trim();
+    let cleanValue = value.trim();
     if (!cleanValue) return;
+
+    // --- Voice Commands Interceptor ---
+    // Remove basic punctuation and lowercase for exact command matching
+    const lower = cleanValue.toLowerCase().replace(/[.,!?]/g, "").trim();
+
+    if (lower === "очистить всё" || lower === "удалить всё" || lower === "удалить карту") {
+      clearTranscriptWithUndo();
+      setSpeechStatusNote("Голосовая команда: Текст очищен");
+      return;
+    }
+
+    if (lower === "сформировать карту" || lower === "завершить запись") {
+      setSpeechStatusNote("Голосовая команда: Формирование карты...");
+      if (isServerVoiceRecording) {
+        stopServerVoiceRecording();
+      }
+      setTimeout(() => buildDraft(), 400);
+      return;
+    }
+
+    // Inline formatting commands
+    cleanValue = cleanValue
+      .replace(/(?:^|\s)(новая строка|с новой строки)(?:\s|$)/gi, "\n")
+      .replace(/(?:^|\s)абзац(?:\s|$)/gi, "\n\n");
+    // ----------------------------------
+
     visitDraftUserEditedRef.current = true;
     setClearedTranscriptSnapshot(null);
     setTranscript((current: any) =>
@@ -9954,15 +9980,15 @@ const {
     const providerLabel = status?.providerLabel ?? "Локальная запись";
     const chunkingPolicy = status?.chunkingPolicy ?? {
       strategy: "time_and_silence" as const,
-      minChunkMs: 10_000,
-      maxChunkMs: 25_000,
-      silenceMs: 900,
+      minChunkMs: 15_000,
+      maxChunkMs: 30_000,
+      silenceMs: 1500,
       rmsThreshold: 0.015,
       monitorIntervalMs: 250,
       overlapMs: 500,
       dedupeWindowChars: 600
     };
-    const recommendedChunkMs = status?.recommendedChunkMs ?? 15_000;
+    const recommendedChunkMs = status?.recommendedChunkMs ?? 20_000;
     if (!AudioContextClass) {
       recorder.start(recommendedChunkMs);
       setSpeechStatusNote(`${providerLabel}: запись идет по таймеру, Web Audio недоступен.`);
@@ -14053,6 +14079,7 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     setPricelistSourceKind,
     setPricelistText,
     setQuery,
+    setScheduleDateFilter,
     setRecognitionJob,
     setRecognitionText,
     setReleaseProtectionNote,
@@ -14086,6 +14113,7 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     settingsAdminSecretSession,
     settingsTab,
     settingsTabs,
+    scheduleDateFilter,
     shiftWarnings,
     showAdministrationTopActions,
     showDoctorVisitShortcut,

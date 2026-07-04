@@ -66,7 +66,10 @@ const chairWorkingHoursRejectedMessage =
 
 function parseSettingsPayload<T>(schema: SettingsPayloadSchema<T>, value: unknown) {
   const parsed = schema.safeParse(value);
-  if (!parsed.success) return null;
+  if (!parsed.success) {
+    console.error("SMOKE TEST DEBUG: parseSettingsPayload failed validation:", (parsed as any).error?.format());
+    return null;
+  }
   return parsed.data;
 }
 

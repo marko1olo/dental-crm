@@ -199,7 +199,7 @@ export function PatientsView(props: PatientsViewProps) {
                     parsedData={smartParsedData}
                     rawText={smartInputText}
                     type="patient"
-                    onApply={(data: any) => {
+                    onApply={(data: Record<string, string | undefined>) => {
                       if (data) {
                         setNewPatientName(data.fullName || smartInputText);
                         if (data.phone) setNewPatientPhone(data.phone);

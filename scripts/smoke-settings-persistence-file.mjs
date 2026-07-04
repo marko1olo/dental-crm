@@ -609,8 +609,8 @@ try {
 
   rmSync(stateFilePath, { force: true });
   mkdirSync(stateFilePath, { recursive: true });
-  const unreadableIntegrity = getPersistentStateIntegrityReport();
-  const unreadableExport = buildPersistentStateExport();
+  const unreadableIntegrity = await getPersistentStateIntegrityReport();
+  const unreadableExport = await buildPersistentStateExport();
   const unreadableIntegrityText = JSON.stringify({ unreadableIntegrity, unreadableExport });
   assert(
     unreadableIntegrity.warnings.some((warning) => warning.includes("Файл состояния не читается")),
@@ -622,8 +622,8 @@ try {
   );
   rmSync(stateFilePath, { recursive: true, force: true });
 writeFileSync(stateFilePath, "{ invalid dental state json", "utf8");
-  const brokenIntegrity = getPersistentStateIntegrityReport();
-  const brokenExport = buildPersistentStateExport();
+  const brokenIntegrity = await getPersistentStateIntegrityReport();
+  const brokenExport = await buildPersistentStateExport();
   const brokenIntegrityText = JSON.stringify({ brokenIntegrity, brokenExport });
   assert(
     brokenIntegrity.warnings.some((warning) => warning.includes("Файл состояния не читается")),

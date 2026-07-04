@@ -1,6 +1,6 @@
 import { CreditCard, UserRound, Mic, Bot } from "lucide-react";
 import type { PaymentMethod } from "@dental/shared";
-import { validateRubAmountInput } from "./rubAmountInput";
+import { validateRubAmountInput, rubAmountInputMissingStep } from "./rubAmountInput";
 import { textToNumbers } from "./lib/stringUtils";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -118,7 +118,7 @@ function FiscalDetails({
   paymentMissingId
 }: FiscalDetailsProps) {
   return (
-    <details className="smart-details" open={fiscalDetailsOpen}>
+    <details className="payment-capture-detail-section" open={fiscalDetailsOpen}>
       <summary>Фискальный чек и кассир</summary>
       <div className="smart-details-content">
         <div className="payment-capture-detail-grid">
@@ -220,7 +220,7 @@ function TaxPayerDetails({
   taxPayerDetailsOpen
 }: TaxPayerDetailsProps) {
   return (
-    <details className="smart-details" open={taxPayerDetailsOpen}>
+    <details className="payment-capture-detail-section" open={taxPayerDetailsOpen}>
       <summary>Плательщик для налогового вычета</summary>
       <div className="smart-details-content">
         <div className="payment-capture-detail-grid">
@@ -330,7 +330,7 @@ function InstallmentCalculator({ totalAmount, isOpen }: InstallmentCalculatorPro
   const monthlyPayment = months > 0 ? Math.round(remaining / months) : 0;
 
   return (
-    <details className="smart-details" open={isOpen} style={{ marginBottom: "20px" }}>
+    <details className="payment-capture-detail-section" open={isOpen} style={{ marginBottom: "20px" }}>
       <summary>Калькулятор рассрочки (Внутренний)</summary>
       <div className="smart-details-content" style={{ padding: "16px", background: "var(--brand-50)", borderRadius: "8px", marginTop: "8px" }}>
         <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "16px" }}>
@@ -434,6 +434,7 @@ export function PaymentCapture({
   };
   
   const amountMissingStep = validateRubAmountInput(amount);
+  // rubAmountInputMissingStep(amount)
   const taxDeductionRequested = taxDeductionCode === "1" || taxDeductionCode === "2";
   const trimmedFiscalReceiptUrl = fiscalReceiptUrl.trim();
   const trimmedPayerInn = payerInn.trim();
