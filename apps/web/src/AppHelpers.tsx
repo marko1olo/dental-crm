@@ -4002,7 +4002,20 @@ export function saveUiPreferences(preferences: UiPreferencesInput): UiPreference
 
 export function denteAdminSecretRequestHeaders(extra: Record<string, string> = {}, adminSecret?: string): Record<string, string> {
   const secret = adminSecret?.trim();
-  return secret ? { ...extra, [denteAdminSecretHeaderName]: secret } : extra;
+  const headers = secret ? { ...extra, [denteAdminSecretHeaderName]: secret } : { ...extra };
+  
+  if (typeof window !== 'undefined') {
+    const clinicToken = localStorage.getItem("dente_clinic_token");
+    const staffToken = localStorage.getItem("dente_staff_token");
+    if (clinicToken) {
+      headers["x-dente-clinic-token"] = clinicToken;
+    }
+    if (staffToken) {
+      headers["x-dente-staff-token"] = staffToken;
+    }
+  }
+  
+  return headers;
 }
 
 export async function loadServerUiPreferences(adminSecret?: string): Promise<UiPreferences | null> {

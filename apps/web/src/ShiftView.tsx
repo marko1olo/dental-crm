@@ -382,6 +382,7 @@ export function PatientCockpit({
                   {activePatientInsight.balanceDueRub ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>💰 Долг {money(activePatientInsight.balanceDueRub)}</span> : null}
                   {activePatientInsight.openTasks > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📞 {activePatientInsight.openTasks} задач</span> : null}
                   {activePatientInsight.missingDocumentKinds.length > 0 ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>📄 {activePatientInsight.missingDocumentKinds.length} док-тов нет</span> : null}
+                  {activePatientInsight.recallDueAt ? <span style={{ background: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>повторный визит {formatShortDate(activePatientInsight.recallDueAt)}</span> : null}
                 </div>
               </div>
             ) : null}

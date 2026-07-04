@@ -304,10 +304,16 @@ async function runCascade(
 
         console.warn(`[visionAnalyzer] ${slot.provider} key=${apiKey.slice(0, 10)}... failed: ${err.message}`);
 
-        // For rate-limit or auth — immediately try next key
-        if (statusCode === 429 || statusCode === 401 || statusCode === 403) continue;
-        // For network errors — also try next key
-        if (!statusCode || statusCode >= 500) continue;
+        // For rate-limit or auth — try next key after a safety delay to avoid spamming
+        if (statusCode === 429 || statusCode === 401 || statusCode === 403) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          continue;
+        }
+        // For network errors — also try next key after a safety delay
+        if (!statusCode || statusCode >= 500) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          continue;
+        }
         // Client errors (400, 422) — likely model/param issue, skip to next slot
         break;
       }

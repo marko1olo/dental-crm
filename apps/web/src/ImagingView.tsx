@@ -47,7 +47,6 @@ export function ImagingView(props: ImagingViewProps) {
   applyNearestMprClinicalPreset,
   attachBrowserDirectoryInputRef,
   browserImagingFileInputAccept,
-  browserImagingFilesInputRef,
   browserImagingScanProgress,
   browserPickedImagingFolder,
   canRetryImagingViewerSave,
@@ -145,7 +144,6 @@ export function ImagingView(props: ImagingViewProps) {
   mprWorkbenchDraftRestored,
   mprWorkbenchLocalSavedAt,
   mprWorkbenchSummaryText,
-  pickBrowserImagingFiles,
   pickBrowserImagingFolder,
   resetMprControls,
   restoreMprWorkbenchLocalDraft,
@@ -169,6 +167,12 @@ export function ImagingView(props: ImagingViewProps) {
   setSelectedImagingStudyId,
   visibleImagingStudies
   } = props;
+
+  const localFilesInputRef = useRef<HTMLInputElement | null>(null);
+  const browserImagingFilesInputRef = props.browserImagingFilesInputRef || localFilesInputRef;
+  const pickBrowserImagingFiles = props.pickBrowserImagingFiles || (() => {
+    browserImagingFilesInputRef.current?.click();
+  });
 
   const [localImageIds, setLocalImageIds] = useState<string[]>([]);
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
@@ -234,19 +238,17 @@ export function ImagingView(props: ImagingViewProps) {
                     data-testid="imaging-browser-local-folder-input"
                     type="file"
                     multiple
-                    hidden
-                    tabIndex={-1}
-                    onChange={(event) => void handleBrowserDirectoryInputChange(event.currentTarget.files)}
+                    style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
+                    onChange={(event) => void handleBrowserDirectoryInputChange(event.target.files)}
                   />
                   <input
                     ref={browserImagingFilesInputRef}
                     data-testid="imaging-browser-local-files-input"
                     type="file"
                     multiple
-                    hidden
-                    tabIndex={-1}
+                    style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
                     accept={browserImagingFileInputAccept}
-                    onChange={(event) => void handleBrowserDirectoryInputChange(event.currentTarget.files)}
+                    onChange={(event) => void handleBrowserDirectoryInputChange(event.target.files)}
                   />
                   <button
                     className="primary-button"
@@ -436,6 +438,7 @@ export function ImagingView(props: ImagingViewProps) {
                             enhanced={enhancementOn && !!selectedImagingStudy.aiSummary} 
                           />
                         )}
+                        {/* <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title} decoding="async" style={imagingViewerImageStyle} /> */}
 
                         {/* AI analysis overlay loader */}
                         {isAnalyzingAI && (

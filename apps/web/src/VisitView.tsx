@@ -86,6 +86,7 @@ export interface VisitViewProps {
   speechGatewayStatus: any;
   speechRecognitionReady: any;
   speechStatusNote: any;
+  speechTranscriptionBusy: any;
   staffRoleLabels: any;
   startServerVoiceRecording: any;
   startVisitDictation: any;
@@ -118,7 +119,7 @@ export interface VisitViewProps {
 }
 
 export function VisitView(props: VisitViewProps) {
-  const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
+  const { AlertTriangle, Bot, Check, CheckCircle2, ClinicalRulePanel, ClipboardCheck, Mic, Sparkles, acceptDraftToVisit, activeAppointment, activeChair, activeDoctor, activeImagingStudies, activePatient, activePatientInsight, activeUsableDocuments, activeVisitClinicalRuleEvaluations, activeVisitClinicalRuleSummary, appendToTranscript, applyProtocolTemplate, buildDraft, buildOfflineDraft, clearTranscriptWithUndo, clearedTranscriptSnapshot, clinicalRuleActionLabels, clinicalRuleSeverityLabels, dashboard, dictationQuickPhrases, draft, emptyDictationVoiceActionLabel, flushPendingSpeechChunks, flushPendingVisitSaves, formatTime, hasVisitTranscriptText, imagingKindLabels, isDraftAccepting, isDraftLoading, isOnline, isPendingVisitSyncing, isServerVoiceRecording, isTranscriptPolishing, isVisitDictating, isVisitNoteDirty, lastLocalSavedAt, lastPendingVisitSaveAt, lastServerDraftSavedAt, lastVisitSaveReceipt, localDraftWasRestored, openVisitWarningAction, pendingSpeechChunkCount, pendingSpeechFlushActionLabel, pendingSpeechFlushActionTitle, pendingVisitSaveCount, polishTranscript, polishingField, polishSingleField, primaryVisitWarning, scrollToVisitArea, selectedProtocolTemplate, selectedSpecialty, selectedWorkspaceRole, serverDraftSyncState, serviceTitle, setClearedTranscriptSnapshot, setSelectedProtocolId, setSelectedSpecialty, setTranscript, specialtiesWithTemplates, specialtyLabels, specialtyProtocolTemplates, speechGatewayActiveProviderIsLocal, speechGatewayStatus, speechRecognitionReady, speechStatusNote, speechTranscriptionBusy, staffRoleLabels, startServerVoiceRecording, startVisitDictation, stopServerVoiceRecording, toothRows, toothStateByCode, setToothState, transcript, undoTranscriptClear, updateVisitNoteField, visibleVisitSpecialtyFocusOptions, visitCloseChecklist, visitDraftBuildMissingSteps, visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftReadyToBuild, visitDraftSignalLabel, visitDraftUserEditedRef, visitNoteAcceptMissingSteps, visitNoteActionLabel, visitNoteFieldDefinitions, visitNoteForm, visitNoteReadyToAccept, visitNoteStatusLabel, visitPrimaryAction, visitSafetyCards, visitSaveReceiptText, visitWarnings, visitWorkflowSteps } = props;
 
   const [activeEmkTab, setActiveEmkTab] = useState("all");
   const [showHints, setShowHints] = useState(false);
@@ -128,6 +129,8 @@ export function VisitView(props: VisitViewProps) {
   const visitAiDiagnosesByCode = useVisitStore((state) => state.visitAiDiagnosesByCode);
   const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(null);
   const [activeStamp, setActiveStamp] = React.useState<string | null>(null);
+  const activeStampRef = React.useRef<string | null>(null);
+  activeStampRef.current = activeStamp;
 
   // ── Clinical Context Modal state ─────────────────────────────
   const [selectedToothForMenu, setSelectedToothForMenu] = React.useState<{ code: string; state: string } | null>(null);
@@ -192,9 +195,9 @@ export function VisitView(props: VisitViewProps) {
     : visitNoteFieldDefinitions.filter((f) => f.key === activeEmkTab);
 
   const handleToothClick = (code: string, currentState: string) => {
-    if (activeStamp !== null) {
+    if (activeStampRef.current !== null) {
       // Quick stamp mode: apply instantly, no popup
-      setToothState(code, activeStamp);
+      setToothState(code, activeStampRef.current);
     } else {
       // Default mode: open clinical context modal
       setSelectedToothForMenu({ code, state: currentState });
@@ -321,11 +324,21 @@ export function VisitView(props: VisitViewProps) {
               </div>
             </section>
 
-            <div className="dictation-box">
+            <div className="dictation-box" style={{ position: 'relative' }}>
+              {speechTranscriptionBusy && (
+                <div className="dictation-overlay-skeleton">
+                  <div className="skeleton-wave"></div>
+                  <div className="skeleton-wave"></div>
+                  <div className="skeleton-wave"></div>
+                </div>
+              )}
               <div className="dictation-header">
-                <Mic aria-hidden="true" />
+                <Mic aria-hidden="true" className={isServerVoiceRecording ? "recording-icon-pulse" : ""} style={{ color: isServerVoiceRecording ? 'var(--red-500)' : undefined }} />
                 <div>
-                  <h3>Диктовка врача</h3>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    Диктовка врача
+                    {speechTranscriptionBusy && <span className="transcribing-badge-pulse">Обработка голоса...</span>}
+                  </h3>
                   <p>
                     Черновик, требует подтверждения врача.{" "}
                     <span style={{ color: 'var(--slate-500)', fontSize: '0.9em' }}>
@@ -373,8 +386,49 @@ export function VisitView(props: VisitViewProps) {
                   style={{ minHeight: '120px', width: '100%' }}
                 />
                 
+                {(showHints || isServerVoiceRecording) && (
+                  <div className="voice-commands-hint" style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    background: 'var(--slate-50)',
+                    border: '1px solid var(--slate-200)',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: 'var(--slate-600)',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ fontWeight: 600, color: 'var(--brand-600)' }}><Mic size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px', marginBottom: '2px' }}/>Голосовые команды:</span>
+                    <span><kbd style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Очистить всё</kbd> — удалить текст</span>
+                    <span><kbd style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Абзац</kbd> — перенос строки</span>
+                    <span><kbd style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Сформировать карту</kbd> — готово</span>
+                  </div>
+                )}
                 
-                
+                {isServerVoiceRecording && (
+                  <div style={{
+                    marginTop: '8px', 
+                    padding: '12px', 
+                    background: '#f8fafc', 
+                    color: '#64748b', 
+                    borderRadius: '8px',
+                    border: '1px dashed #cbd5e1',
+                    fontStyle: 'italic',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', gap: '4px', height: '16px', alignItems: 'center' }}>
+                      <div className="skeleton-wave" style={{ width: '4px', height: '10px', background: '#ef4444', borderRadius: '2px', animation: 'skeleton-wave 1s ease-in-out infinite', animationDelay: '0s' }} />
+                      <div className="skeleton-wave" style={{ width: '4px', height: '10px', background: '#ef4444', borderRadius: '2px', animation: 'skeleton-wave 1s ease-in-out infinite', animationDelay: '0.2s' }} />
+                      <div className="skeleton-wave" style={{ width: '4px', height: '10px', background: '#ef4444', borderRadius: '2px', animation: 'skeleton-wave 1s ease-in-out infinite', animationDelay: '0.4s' }} />
+                    </div>
+                    <span>Слушаю вас...</span>
+                  </div>
+                )}
                 <SmartParsePreview 
                   isVisible={showSmartPreview}
                   parsedData={smartParsedData}
@@ -515,6 +569,9 @@ export function VisitView(props: VisitViewProps) {
             <VisiographAnalyzer />
 
             <div className="tooth-map" aria-label="Зубная карта">
+              <div className="tooth-map-selected" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
+                <button type="button" onClick={() => { setActiveStamp("watch"); activeStampRef.current = "watch"; }}>Наблюдение</button>
+              </div>
               <div className="tooth-map-head">
                 <div>
                   <h3>Зубная карта</h3>
@@ -631,7 +688,7 @@ export function VisitView(props: VisitViewProps) {
                   <div className="tooth-jaw upper-jaw">
                     {/* Правая половина верхней: Q1 — 18→11 */}
                     {(activeQuadrant === null || activeQuadrant === 1) && (
-                      <div className="tooth-half">
+                      <div className="tooth-half tooth-row">
                         {(toothRows[0] || []).slice(0, 8).map((code) => {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
@@ -641,7 +698,7 @@ export function VisitView(props: VisitViewProps) {
                             <button
                               key={code}
                               type="button"
-                              className={`tooth tooth-${state}${isDetected ? " tooth-ai-detected" : ""}`}
+                              className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
                             >
@@ -673,7 +730,7 @@ export function VisitView(props: VisitViewProps) {
                     {activeQuadrant === null && <div className="tooth-center-line" aria-hidden="true" />}
                     {/* Левая половина верхней: Q2 — 21→28 */}
                     {(activeQuadrant === null || activeQuadrant === 2) && (
-                      <div className="tooth-half">
+                      <div className="tooth-half tooth-row">
                         {(toothRows[0] || []).slice(8).map((code) => {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
@@ -683,7 +740,7 @@ export function VisitView(props: VisitViewProps) {
                             <button
                               key={code}
                               type="button"
-                              className={`tooth tooth-${state}${isDetected ? " tooth-ai-detected" : ""}`}
+                              className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
                             >
@@ -726,7 +783,7 @@ export function VisitView(props: VisitViewProps) {
                   <div className="tooth-jaw lower-jaw">
                     {/* Правая нижняя Q4 — 48→41 */}
                     {(activeQuadrant === null || activeQuadrant === 4) && (
-                      <div className="tooth-half">
+                      <div className="tooth-half tooth-row">
                         {(toothRows[1] || []).slice(0, 8).map((code) => {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
@@ -736,7 +793,7 @@ export function VisitView(props: VisitViewProps) {
                             <button
                               key={code}
                               type="button"
-                              className={`tooth tooth-${state}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
+                              className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
                             >
@@ -768,7 +825,7 @@ export function VisitView(props: VisitViewProps) {
                     {activeQuadrant === null && <div className="tooth-center-line" aria-hidden="true" />}
                     {/* Левая нижняя Q3 — 31→38 */}
                     {(activeQuadrant === null || activeQuadrant === 3) && (
-                      <div className="tooth-half">
+                      <div className="tooth-half tooth-row">
                         {(toothRows[1] || []).slice(8).map((code) => {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
@@ -778,7 +835,7 @@ export function VisitView(props: VisitViewProps) {
                             <button
                               key={code}
                               type="button"
-                              className={`tooth tooth-${state}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
+                              className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
                               onClick={() => handleToothClick(code, state)}
                               aria-label={`Зуб ${code}`}
                             >
@@ -1031,6 +1088,7 @@ export function VisitView(props: VisitViewProps) {
                 <ClinicalRulePanel
                   actionLabels={clinicalRuleActionLabels}
                   context="visit"
+                  // evaluations={activeVisitClinicalRuleEvaluations}
                   evaluations={dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ? activeVisitClinicalRuleEvaluations.filter((e: any) => e.ownerRole !== "assistant") : activeVisitClinicalRuleEvaluations}
                   serviceTitle={serviceTitle}
                   severityLabels={clinicalRuleSeverityLabels}

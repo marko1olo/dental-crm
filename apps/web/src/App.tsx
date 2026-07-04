@@ -5,6 +5,9 @@
 import { useAppLogic } from './useAppLogic';
 import { VoiceAssistantUI } from './components/VoiceAssistantUI';
 import { Omnibar } from './components/Omnibar';
+import { CommandPalette } from './components/CommandPalette';
+import { ClinicLogin } from './components/auth/ClinicLogin';
+import { StaffPinPad } from './components/auth/StaffPinPad';
 
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -821,7 +824,7 @@ import {
   appointmentCreateInputFromDraft,
   appointmentScheduleDraftSignature,
   appointmentScheduleDateMissingSteps,
-  appointmentScheduleMissingFields,
+  appointmentScheduleMissingFields, // return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode);
   staffWorkingHoursFromDraft,
   staffScheduleDraftSignature,
   defaultStaffScheduleDraft,
@@ -1718,6 +1721,7 @@ export function App() {
     speechRecordingStrategy,
     speechRecoveryStateLabels,
     speechStatusNote,
+    speechTranscriptionBusy,
     speechLiveRms,
     staffRoleLabels,
     staffScheduleDirtyIds,
@@ -1874,12 +1878,81 @@ export function App() {
   handleSelectDemoMode,
   handleSelectZeroMode,
   setSelectedPatientId,
+  setScheduleDateFilter,
+  scheduleDateFilter,
   handleFinishOnboarding
 } = useAppLogic();
 
   useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
   const [resetting, setResetting] = useState(false);
+
+  // --- DUAL-TIER AUTH STATE ---
+  const [clinicAuthed, setClinicAuthed] = useState<boolean>(() => {
+    return typeof window !== "undefined" && !!localStorage.getItem("dente_clinic_token");
+  });
+  const [staffAuthed, setStaffAuthed] = useState<boolean>(() => {
+    return typeof window !== "undefined" && !!localStorage.getItem("dente_staff_token");
+  });
+  const [showStaffPinPad, setShowStaffPinPad] = useState<boolean>(false);
+  const [activeStaffUser, setActiveStaffUser] = useState<any>(null);
+
+  // Auto-lock on inactivity (5 minutes)
+  useEffect(() => {
+    if (!clinicAuthed) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        setStaffAuthed(false);
+        setShowStaffPinPad(true);
+        localStorage.removeItem("dente_staff_token");
+      }, 5 * 60 * 1000);
+    };
+    const events = ["mousemove", "keydown", "pointerdown", "touchstart"];
+    events.forEach((e) => document.addEventListener(e, resetTimer, { passive: true }));
+    resetTimer();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => document.removeEventListener(e, resetTimer));
+    };
+  }, [clinicAuthed]);
+
+  const handleClinicLogout = () => {
+    localStorage.removeItem("dente_clinic_token");
+    localStorage.removeItem("dente_staff_token");
+    setClinicAuthed(false);
+    setStaffAuthed(false);
+    setShowStaffPinPad(false);
+    setActiveStaffUser(null);
+  };
+
+  const handleLockSession = () => {
+    localStorage.removeItem("dente_staff_token");
+    setStaffAuthed(false);
+    setShowStaffPinPad(true);
+  };
+
+  // Show clinic login gate if not authed
+  if (!clinicAuthed) {
+    return <ClinicLogin onLoginSuccess={() => setClinicAuthed(true)} />;
+  }
+
+  // Show staff PIN pad if clinic authed but no staff session (or after lock)
+  if (!staffAuthed || showStaffPinPad) {
+    return (
+      <StaffPinPad
+        staffMembers={dashboard?.clinicSettings?.staff ?? []}
+        onUnlockSuccess={(user) => {
+          setActiveStaffUser(user);
+          setStaffAuthed(true);
+          setShowStaffPinPad(false);
+        }}
+        onClinicLogout={handleClinicLogout}
+      />
+    );
+  }
+
 
   if (!onboardingDismissed) {
     return (
@@ -2255,6 +2328,7 @@ export function App() {
           showDoctorVisitShortcut={showDoctorVisitShortcut}
           staffRoleLabels={staffRoleLabels}
           todayIso={dashboard.todayIso}
+          onLockSession={handleLockSession}
         />
 
         <WorkspaceContinuityStrip
@@ -3446,6 +3520,15 @@ export function App() {
         formatSignedMprStep={formatSignedMprStep}
         formatTime={formatTime}
         handleMprKeyboardNavigation={handleMprKeyboardNavigation}
+        handleBrowserDirectoryInputChange={handleBrowserDirectoryInputChange}
+        browserDirectoryInputRef={browserDirectoryInputRef}
+        attachBrowserDirectoryInputRef={browserDirectoryInputRef}
+        browserImagingScanProgress={browserImagingScanProgress}
+        browserPickedImagingFolder={browserPickedImagingFolder}
+        cancelBrowserImagingFolderScan={cancelBrowserImagingFolderScan}
+        formatByteSize={formatByteSize}
+        isBrowserImagingFolderPicking={isBrowserImagingFolderPicking}
+        pickBrowserImagingFolder={pickBrowserImagingFolder}
         imagingComparisonCandidates={imagingComparisonCandidates}
         imagingCreateSavingKind={imagingCreateSavingKind}
         imagingKindFilter={imagingKindFilter}
@@ -3712,6 +3795,7 @@ export function App() {
         speechGatewayStatus={speechGatewayStatus}
         speechRecognitionReady={speechRecognitionReady}
         speechStatusNote={speechStatusNote}
+        speechTranscriptionBusy={speechTranscriptionBusy}
         staffRoleLabels={staffRoleLabels}
         startServerVoiceRecording={startServerVoiceRecording}
         startVisitDictation={startVisitDictation}
@@ -4571,9 +4655,29 @@ export function App() {
           </Suspense>
         ) : null}
 
-        <VoiceAssistantUI />
+        <VoiceAssistantUI 
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = view;
+          }}
+          onSearchQuery={(q) => {
+            setQuery(q);
+          }}
+          onDateChange={(date) => {
+            setScheduleDateFilter(date);
+          }}
+        />
         <Omnibar />
+        <CommandPalette 
+          patients={filteredPatients} 
+          onSelectPatient={(id) => {
+            setSelectedPatientId(id);
+            setCurrentView("patients");
+          }} 
+          onNavigate={(view) => setCurrentView(view as any)} 
+        />
       </section>
     </main>
   );
 }
+

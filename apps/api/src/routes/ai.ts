@@ -1,4 +1,4 @@
-﻿import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import {
   aiRecognitionJobResponseSchema,
@@ -79,6 +79,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
       return;
     const parsedInput = createAiRecognitionJobSchema.safeParse(request.body);
     if (!parsedInput.success) {
+      console.error("SMOKE TEST DEBUG: createAiRecognitionJobSchema failed validation:", parsedInput.error.format());
       return reply.code(400).send({
         error: "AiRecognitionValidationError",
         message: aiRecognitionValidationMessage,

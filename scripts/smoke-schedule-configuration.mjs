@@ -923,6 +923,9 @@ const appSource = [
   fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8"),
   fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8"),
   fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/components/settings/SettingsAccessTab.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/components/settings/SettingsClinicTab.tsx", "utf8"),
+  fs.readFileSync("apps/web/src/components/settings/SettingsTelegramTab.tsx", "utf8"),
   fs.readFileSync("apps/web/src/ScheduleView.tsx", "utf8"),
   fs.readFileSync("apps/web/src/PatientsView.tsx", "utf8")
 ].join("\n");

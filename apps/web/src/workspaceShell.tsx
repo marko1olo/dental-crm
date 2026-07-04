@@ -15,7 +15,8 @@ import {
   ReceiptText,
   Sparkles,
   Stethoscope,
-  Users
+  Users,
+  Lock
 } from "lucide-react";
 
 export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings", "marketing"] as const;
@@ -151,6 +152,7 @@ type WorkspaceTopbarProps = {
   showDoctorVisitShortcut: boolean;
   staffRoleLabels: Record<StaffRole, string>;
   todayIso: string;
+  onLockSession?: () => void;
 };
 
 export function WorkspaceTopbar({
@@ -166,7 +168,8 @@ export function WorkspaceTopbar({
   showAdministrationTopActions,
   showDoctorVisitShortcut,
   staffRoleLabels,
-  todayIso
+  todayIso,
+  onLockSession
 }: WorkspaceTopbarProps) {
   return (
     <header className="topbar">
@@ -230,6 +233,18 @@ export function WorkspaceTopbar({
         >
           <Mic aria-hidden="true" />
         </button>
+        {onLockSession ? (
+          <button
+            aria-label="Заблокировать сессию"
+            className="icon-button top-lock-button"
+            type="button"
+            title="Заблокировать сессию"
+            onClick={onLockSession}
+            style={{ color: "#ef4444" }}
+          >
+            <Lock aria-hidden="true" size={20} />
+          </button>
+        ) : null}
         <button
           className="primary-button"
           type="button"

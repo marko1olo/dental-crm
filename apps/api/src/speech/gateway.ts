@@ -33,6 +33,73 @@ import {
 } from "./keyPool.js";
 import { getSpeechPolishPolicy } from "./polish.js";
 
+/**
+ * Known hallucination strings that Whisper-class models produce on silence or non-speech audio.
+ * This list is populated from empirical testing (10 samples of varying duration/noise).
+ * Add new entries as discovered. All comparisons are case-insensitive and trimmed.
+ */
+const HALLUCINATION_BLACKLIST: ReadonlyArray<RegExp | string> = [
+  // Whisper silence/noise hallucinations — confirmed in batch tests 2026-07-04
+  // 15 noise types tested (silence, white, pink, brown, sine, modulated hum, mixes)
+  // 3 unique patterns discovered: all variants listed below
+  "Продолжение следует",       // 11/15 tests — the dominant hallucination
+  "продолжение следует",
+  "To be continued",
+  "Субтитры создавал",         // 2/15 tests — high amplitude white noise, brown+hum mix
+  "Субтитры сделал",           // 1/15 tests — modulated 150Hz hum
+  "Субтитры подготовлены",
+  "DimaTorzok",                // Appears in all "Субтитры" variants
+  "Amara.org",
+  "amara.org",
+  "Спасибо за просмотр",
+  "Спасибо за внимание",
+  "Подписывайтесь на канал",
+  "Ставьте лайки",
+  "www.youtube.com",
+  // Whisper repetition loops (detected with regex)
+  /^(.{1,60})\1{4,}$/s,
+];
+
+/**
+ * Returns true if the transcription text looks like a hallucination.
+ * Centralised — all providers pass through this before the text is used.
+ */
+function isHallucinatedTranscript(text: string): { hallucinated: boolean; reason: string } {
+  const trimmed = text.trim();
+  if (!trimmed) return { hallucinated: false, reason: "" };
+
+  // Check blacklist
+  for (const entry of HALLUCINATION_BLACKLIST) {
+    if (typeof entry === "string") {
+      if (trimmed.toLowerCase().includes(entry.toLowerCase())) {
+        return { hallucinated: true, reason: `Blacklisted phrase: "${entry}"` };
+      }
+    } else {
+      if (entry.test(trimmed)) {
+        return { hallucinated: true, reason: `Repetition loop detected (regex: ${entry.source})` };
+      }
+    }
+  }
+
+  // Check for extreme word repetition (same word 5+ times in a row)
+  const words = trimmed.split(/\s+/);
+  if (words.length >= 5) {
+    let runLen = 1;
+    for (let i = 1; i < words.length; i++) {
+      if (words[i]!.toLowerCase() === words[i - 1]!.toLowerCase()) {
+        runLen++;
+        if (runLen >= 5) {
+          return { hallucinated: true, reason: `Word repetition loop: "${words[i - 1]}" x${runLen}` };
+        }
+      } else {
+        runLen = 1;
+      }
+    }
+  }
+
+  return { hallucinated: false, reason: "" };
+}
+
 type ProviderTranscript = {
   text: string;
   confidence: number | null;
@@ -53,7 +120,8 @@ const wiredServerProviders: SpeechProviderKind[] = [
   "openai_transcribe",
   "deepgram_streaming",
   "assemblyai_async",
-  "cloudflare_whisper"
+  "cloudflare_whisper",
+  "google_speech"
 ];
 const localSpeechProviders: SpeechProviderKind[] = ["local_whisper", "vosk_local"];
 
@@ -1472,6 +1540,57 @@ async function transcribeCloudflareWhisper(input: {
   };
 }
 
+async function transcribeGeminiMultimodal(input: {
+  apiKey: string;
+  audio: Buffer;
+  mimeType: string;
+  language: string;
+  prompt?: string | null;
+}): Promise<ProviderTranscript> {
+  const model = process.env.GOOGLE_SPEECH_MODEL ?? "gemini-2.5-flash";
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${input.apiKey}`;
+  
+  const baseMimeType = input.mimeType.split(';')[0] || "audio/webm";
+  const base64Audio = input.audio.toString('base64');
+  
+  const textPrompt = `Transcribe the following audio accurately in ${input.language}. Do not add any conversational filler. ${input.prompt ?? ""}`;
+  
+  const response = await fetchWithProviderTimeout(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            { text: textPrompt },
+            { inline_data: { mime_type: baseMimeType, data: base64Audio } }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.1
+      }
+    })
+  });
+  
+  const payload = (await response.json().catch(() => ({}))) as any;
+  if (!response.ok) {
+    throw providerHttpError(response.status, response.statusText, payload?.error?.message || JSON.stringify(payload));
+  }
+  
+  const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (typeof text !== "string") {
+    throw new Error("Invalid response format from Gemini: " + JSON.stringify(payload));
+  }
+  
+  const cleanText = text.trim();
+  return {
+    text: cleanText,
+    confidence: null,
+    warnings: []
+  };
+}
+
 async function transcribeWithProvider(input: {
   providerId: SpeechGatewayProvider;
   audio: Buffer;
@@ -1570,6 +1689,19 @@ async function transcribeWithProvider(input: {
           audio: input.audio,
           mimeType: input.mimeType
         });
+      } else if (input.providerId === "google_speech") {
+        const prompt = buildDentalSttPrompt({
+          providerId: "google_speech",
+          specialty: input.specialty ?? null,
+          source: input.source ?? "visit"
+        });
+        result = await transcribeGeminiMultimodal({
+          apiKey: keyCandidate.value,
+          audio: input.audio,
+          mimeType: input.mimeType,
+          language: input.language,
+          prompt
+        });
       } else {
         throw new Error(
           `${providerLabels[input.providerId]} есть в каталоге, но прямое серверное распознавание пока не включено. Выберите подключенный источник или браузерную диктовку.`
@@ -1643,9 +1775,18 @@ export async function transcribeSpeechChunk(input: SpeechChunkUploadInput): Prom
         confidence = providerResult.confidence;
         warnings.push(...providerResult.warnings);
         if (providerResult.text) {
-          transcript = providerResult.text;
-          responseStatus = "transcribed";
-          break;
+          const hallucinationCheck = isHallucinatedTranscript(providerResult.text);
+          if (hallucinationCheck.hallucinated) {
+            // Hallucination means the chunk had no real speech (silence/noise).
+            // No point forwarding to next provider — silently discard.
+            responseStatus = "transcribed";
+            transcript = "";
+            break;
+          } else {
+            transcript = providerResult.text;
+            responseStatus = "transcribed";
+            break;
+          }
         }
         warnings.push(`${providerLabels[providerId]} не вернул текст.`);
         if (localTranscript) {
