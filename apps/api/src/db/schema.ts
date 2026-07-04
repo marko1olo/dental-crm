@@ -290,6 +290,8 @@ export const visits = pgTable("visits", {
   diagnosis: text("diagnosis"),
   treatmentPlan: text("treatment_plan"),
   doctorSummary: text("doctor_summary"),
+  transcript: text("transcript"), // Store the raw voice/text transcript for AI processing
+  draftAutosave: jsonb("draft_autosave"), // Store the transient UI VisitDraftAutosave payload
   signedAt: timestamp("signed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()

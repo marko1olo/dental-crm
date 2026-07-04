@@ -6,7 +6,7 @@ import { configuredClinicalAccessSecret } from "../accessGuard.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
 import { recordAuditEvent } from "../sampleData.js";
 
-const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_fallback_secret_change_me";
+export const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_fallback_secret_change_me";
 
 interface ClinicLoginBody {
   email?: string;
