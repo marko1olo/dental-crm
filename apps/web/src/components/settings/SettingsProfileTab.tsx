@@ -162,7 +162,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
         <p>Личные данные, пароль и PIN-код для входа в систему.</p>
       </div>
 
-      <div className="settings-grid">
+      <div style={{ display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "600px" }}>
         {/* Personal data */}
         <section className="settings-section">
           <div className="settings-section-header">

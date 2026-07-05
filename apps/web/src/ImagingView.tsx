@@ -346,7 +346,7 @@ export function ImagingView(props: ImagingViewProps) {
               <div className="imaging-patient-strip" aria-label="Контекст снимков">
                 <article>
                   <span>Пациент</span>
-                  <strong>{activePatient.fullName}</strong>
+                  <strong>{activePatient?.fullName ?? "Пациент не выбран"}</strong>
                   <small>{activeAppointment?.reason ?? "текущий прием"}</small>
                 </article>
                 <article>
@@ -418,27 +418,26 @@ export function ImagingView(props: ImagingViewProps) {
 
               <div className="imaging-layout">
                 <article className="imaging-viewer">
-                  {selectedImagingStudy ? (
+                  {selectedImagingStudy || localImageIds.length > 0 || browserPickedImagingFolder ? (
                     <>
                       <div className="imaging-viewer-stage" style={{ position: 'relative' }}>
                         {localImageIds.length > 0 ? (
                           <Cornerstone3DViewer imageIds={localImageIds} />
-                        ) : selectedImagingStudy.kind === "cbct" ? (
+                        ) : selectedImagingStudy?.kind === "cbct" ? (
                           <div className="w-full h-full flex flex-col gap-4 p-4">
                             <DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
                             <div className="opacity-50 pointer-events-none w-full flex-1">
                               <Cornerstone3DViewer 
-                                imageIds={[`wadouri:http://localhost:3000/api/dicomweb/studies/${selectedImagingStudy.dicomStudyUid}/series/1/instances/1`]} 
+                                imageIds={[`wadouri:http://localhost:3000/api/dicomweb/studies/${selectedImagingStudy?.dicomStudyUid}/series/1/instances/1`]} 
                               />
                             </div>
                           </div>
                         ) : (
                           <ShadowAnalystImageSlider 
                             imageUrl={imagingPreviewSource(selectedImagingStudy)} 
-                            enhanced={enhancementOn && !!selectedImagingStudy.aiSummary} 
+                            enhanced={enhancementOn && !!selectedImagingStudy?.aiSummary} 
                           />
                         )}
-                        {/* <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title} decoding="async" style={imagingViewerImageStyle} /> */}
 
                         {/* AI analysis overlay loader */}
                         {isAnalyzingAI && (
@@ -450,19 +449,19 @@ export function ImagingView(props: ImagingViewProps) {
                       </div>
 
                       <div className="imaging-viewer-meta">
-                        <strong>{selectedImagingStudy.title}</strong>
+                        <strong>{selectedImagingStudy?.title ?? "Локальный предпросмотр"}</strong>
                         <span>
-                          {imagingKindLabels[selectedImagingStudy.kind]} · {selectedImagingStudy.toothCode ?? selectedImagingStudy.region}
+                          {selectedImagingStudy ? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode ?? selectedImagingStudy.region}` : "Локальные файлы DICOM (КТ)"}
                         </span>
                         <button
                           type="button"
-                          className={selectedImagingStudy.aiSummary ? "secondary-button" : "primary-button"}
-                          disabled={isAnalyzingAI}
+                          className={selectedImagingStudy?.aiSummary ? "secondary-button" : "primary-button"}
+                          disabled={isAnalyzingAI || !selectedImagingStudy}
                           onClick={handleAnalyzeAI}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', maxWidth: 'fit-content' }}
                         >
                           <Bot aria-hidden="true" size={16} />
-                          {isAnalyzingAI ? "Анализирую..." : (selectedImagingStudy.aiSummary ? "Обновить анализ" : "AI-Диагностика (ShadowAnalyst)")}
+                          {isAnalyzingAI ? "Анализирую..." : (selectedImagingStudy?.aiSummary ? "Обновить анализ" : "AI-Диагностика (ShadowAnalyst)")}
                         </button>
                       </div>
 
@@ -508,7 +507,9 @@ export function ImagingView(props: ImagingViewProps) {
                         </div>
                       ) : null}
     
-                      <div className="imaging-viewer-toolbar" aria-label="Настройки рентген-снимка">
+                      {!(localImageIds.length > 0 || selectedImagingStudy?.kind === "cbct") && (
+                        <div style={{ display: 'contents' }}>
+                          <div className="imaging-viewer-toolbar" aria-label="Настройки рентген-снимка">
                         <div className="imaging-viewer-tools">
                           <button
                             className="viewer-tool-button"
@@ -717,16 +718,18 @@ export function ImagingView(props: ImagingViewProps) {
                               <article key={annotation.id}>
                                 <strong>{annotation.label}</strong>
                                 <span>
-                                  {annotation.toothCode ?? selectedImagingStudy.region ?? "study"} · {formatShortDate(annotation.updatedAt)}
+                                  {annotation.toothCode ?? selectedImagingStudy?.region ?? "study"} · {formatShortDate(annotation.updatedAt)}
                                 </span>
                               </article>
                             ))}
                           </div>
                         ) : null}
                       </div>
+                      </div>
+                      )}
 
                       {/* SA Report — full-width below toolbar, only when AI analysis exists */}
-                      {selectedImagingStudy.aiSummary && (
+                      {selectedImagingStudy?.aiSummary && (
                         <div className="sa-report-column">
                           <ShadowAnalystReport
                             summary={selectedImagingStudy.aiSummary}
@@ -737,9 +740,14 @@ export function ImagingView(props: ImagingViewProps) {
                       )}
                     </>
                   ) : (
-                    <div className="imaging-empty">
-                      <ImageIcon aria-hidden="true" />
-                      <p>Снимков по текущему пациенту пока нет.</p>
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8">
+                      <div className="text-center mb-4">
+                        <ImageIcon aria-hidden="true" style={{ fontSize: '3rem', opacity: 0.5 }} />
+                        <p className="text-neutral-400 mt-2">Снимков по текущему пациенту пока нет.</p>
+                      </div>
+                      <div className="w-full max-w-2xl">
+                        <DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
+                      </div>
                     </div>
                   )}
                 </article>

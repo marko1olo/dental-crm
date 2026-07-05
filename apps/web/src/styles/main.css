@@ -8951,13 +8951,22 @@ img {
 
 .appointment-editor {
   background: #fbfefd;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
   display: grid;
-  gap: 10px;
+  gap: 12px;
   grid-column: 1 / -1;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 12px;
+  padding: 16px;
+}
+
+.timeline-content .appointment-editor {
+  position: absolute;
+  top: calc(100% - 20px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 10px 30px -5px rgba(13, 148, 136, 0.2);
 }
 
 .appointment-create-editor {
@@ -16207,3 +16216,52 @@ input:focus, select:focus, textarea:focus {
   min-height: 100px;
 }
 
+/* UX/UI Polish & CLS Prevention Classes */
+.fixed-grid-cell {
+  aspect-ratio: auto;
+  min-height: 80px;
+  contain: layout size;
+}
+
+.min-h-reserved-error {
+  min-height: 24px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.chip-template-button {
+  background: var(--slate-100);
+  color: var(--slate-700);
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.chip-template-button:hover {
+  background: var(--slate-200);
+  color: var(--slate-900);
+}
+
+.chip-template-button:active {
+  transform: scale(0.96);
+}
+
+.chip-templates-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+/* Patient List CLS Fixes */
+.patient-row { 
+  display: grid !important; 
+  grid-template-columns: 1fr auto !important; 
+  min-height: 80px !important; 
+}

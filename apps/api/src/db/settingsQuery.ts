@@ -148,6 +148,14 @@ export async function updateStaffWorkingHoursInDb(organizationId: string, staffI
   await db.update(schema.users).set({ workingHours }).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
 }
 
+export async function updateStaffCredentialsInDb(
+  organizationId: string,
+  staffId: string,
+  updates: { email?: string; passwordHash?: string; pinCodeHash?: string }
+) {
+  await db.update(schema.users).set(updates).where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)));
+}
+
 export async function createChairInDb(organizationId: string, input: CreateChairInput) {
   const [clinic] = await db.select().from(schema.clinics).where(eq(schema.clinics.organizationId, organizationId)).limit(1);
   if (!clinic) throw new Error("Clinic not found");

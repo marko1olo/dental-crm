@@ -10,9 +10,11 @@ import {
   updateClinicProfileInDb,
   createStaffMemberInDb,
   updateStaffWorkingHoursInDb,
+  updateStaffCredentialsInDb,
   createChairInDb,
   updateChairWorkingHoursInDb
 } from "../db/settingsQuery.js";
+import { hashCredential } from "../utils/cryptoHelper.js";
 import {
   chairSchema,
   clinicSettingsSchema,
@@ -263,6 +265,32 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
     // Actually, createStaffMemberSchema expects the created object, but frontend might just refetch. We'll return the last one matching.
     const created = settings.staff.find(s => s.fullName === input.fullName);
     return reply.code(201).send(staffMemberSchema.parse(created));
+  });
+
+  app.post("/api/settings/staff/:staffId/credentials", async (request, reply) => {
+    const orgId = await requireSettingsAccess(request, reply);
+    if (!orgId) return;
+    const params = request.params as { staffId?: string };
+    if (!params.staffId) {
+      return reply.code(400).send({ error: "SettingsRouteValidationError", message: "ID сотрудника обязателен." });
+    }
+    
+    const { email, password, pinCode } = (request.body as any) ?? {};
+    if (!email && !password && !pinCode) {
+      return reply.code(400).send({ error: "SettingsValidationError", message: "Не переданы данные для обновления." });
+    }
+
+    const updates: { email?: string; passwordHash?: string; pinCodeHash?: string } = {};
+    if (email) updates.email = email.toLowerCase().trim();
+    if (password) updates.passwordHash = hashCredential(password);
+    if (pinCode) updates.pinCodeHash = hashCredential(pinCode);
+
+    try {
+      await updateStaffCredentialsInDb(orgId, params.staffId, updates);
+      return reply.code(200).send({ ok: true });
+    } catch (err: any) {
+      return reply.code(500).send({ error: "InternalError", message: "Не удалось обновить доступы." });
+    }
   });
 
   app.put("/api/settings/staff/:staffId/working-hours", async (request, reply) => {

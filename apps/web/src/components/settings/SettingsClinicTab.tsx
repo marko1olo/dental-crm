@@ -1,12 +1,70 @@
-import React from "react";
+import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
 import type { KeyboardEvent, ChangeEvent } from "react";
-import { ShieldCheck, Plus, ExternalLink, RefreshCw, Copy, CheckCircle2, Search, CalendarDays } from "lucide-react";
+import { ShieldCheck, Plus, ExternalLink, RefreshCw, Copy, CheckCircle2, Search, CalendarDays, KeyRound } from "lucide-react";
 import { ClinicMode, StaffRole, Chair, RoleQueue, StaffMember, DentalSpecialty } from "@dental/shared";
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type WeekdayOption = { value: number; label: string };
+
+function StaffCredentialsEditor({ member, saveCredentials }: { member: any, saveCredentials: (staffId: string, email?: string, password?: string, pin?: string) => Promise<boolean> }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [email, setEmail] = useState(member.email || "");
+  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const success = await saveCredentials(member.id, email, password, pin);
+    setSaving(false);
+    if (success) {
+      showToast("Доступы обновлены", "success");
+      setPassword("");
+      setPin("");
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="staff-credentials-editor" style={{ marginTop: 12, padding: "12px", background: "rgba(0,0,0,0.02)", borderRadius: 6, border: "1px solid var(--slate-200, #e2e8f0)" }}>
+      <button 
+        type="button" 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="secondary-button compact-button" 
+        style={{ display: "flex", gap: 6, alignItems: "center" }}
+      >
+        <KeyRound size={14} />
+        {member.email ? `Управление доступом (${member.email})` : "Выдать доступ (логин/пароль)"}
+      </button>
+      
+      {isOpen && (
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+          <label style={{ fontSize: 12 }}>
+            Email (Логин)
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" style={{ width: "100%", marginTop: 4 }} />
+          </label>
+          <div style={{ display: "flex", gap: 12 }}>
+            <label style={{ fontSize: 12, flex: 1 }}>
+              Новый пароль
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Оставьте пустым, чтобы не менять" style={{ width: "100%", marginTop: 4 }} />
+            </label>
+            <label style={{ fontSize: 12, flex: 1 }}>
+              Новый PIN (4 цифры)
+              <input type="password" value={pin} onChange={e => setPin(e.target.value)} maxLength={4} placeholder="0000" style={{ width: "100%", marginTop: 4 }} />
+            </label>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+            <button type="button" onClick={handleSave} disabled={saving} className="primary-button compact-button">
+              {saving ? "Сохраняю..." : "Сохранить доступы"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function SettingsClinicTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
   const {
@@ -27,6 +85,7 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
     newStaffName,
     setNewStaffName,
     addStaffMember,
+    saveStaffCredentials,
     newStaffReadyToCreate,
     newStaffRole,
     setNewStaffRole,
@@ -567,6 +626,7 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
                             </button>
                           </div>
                         </div>
+                        <StaffCredentialsEditor member={member} saveCredentials={props.saveStaffCredentials || saveStaffCredentials} />
                       </div>
                     );
                   })}

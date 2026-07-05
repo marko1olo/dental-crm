@@ -178,11 +178,45 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={onDrop}
-      className={`w-full h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors ${
-        isDragging ? "border-blue-500 bg-blue-500/10" : "border-neutral-700 bg-neutral-900"
+      onClick={() => document.getElementById("dicom-folder-input")?.click()}
+      className={`w-full h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors cursor-pointer ${
+        isDragging ? "border-blue-500 bg-blue-500/10" : "border-neutral-700 bg-neutral-900 hover:bg-neutral-800"
       }`}
     >
-      <div className="text-neutral-400 font-medium">{status}</div>
+      <input
+        id="dicom-folder-input"
+        type="file"
+        // @ts-ignore
+        webkitdirectory="true"
+        directory="true"
+        multiple
+        className="hidden"
+        onChange={async (e) => {
+          if (loading || !e.target.files) return;
+          setLoading(true);
+          const allFiles = Array.from(e.target.files);
+          setStatus(`Scanning ${allFiles.length} files...`);
+          const validImageIds: string[] = [];
+          for (let i = 0; i < allFiles.length; i++) {
+            if (i % 10 === 0) setStatus(`Scanning files: ${i}/${allFiles.length}`);
+            const f = allFiles[i];
+            if (f) {
+                const imageId = await processFile(f);
+                if (imageId) validImageIds.push(imageId);
+            }
+          }
+          if (validImageIds.length > 0) {
+            setStatus(`Loaded ${validImageIds.length} DICOM instances.`);
+            onImagesLoaded(validImageIds);
+          } else {
+            setStatus("No valid DICOM files found.");
+          }
+          setLoading(false);
+          // reset input
+          e.target.value = '';
+        }}
+      />
+      <div className="text-neutral-400 font-medium">{status} (Кликните или перетащите папку)</div>
       {loading && <div className="mt-2 w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
       <div className="text-xs text-neutral-600 mt-2">Works completely locally. No server upload.</div>
     </div>

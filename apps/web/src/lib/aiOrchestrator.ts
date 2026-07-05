@@ -67,7 +67,11 @@ export class AiOrchestrator {
     }
 
     // 1. Check for strong temporal markers and booking actions (Schedule Priority)
-    const isSchedule = /(запиш|прием|расписан|на завтра|перенес|отмен|запись|в \d{2}:\d{2}|сдвинь|следующ|через неделю)/i.test(lower);
+    const scheduleMatch = /(запиш|прием|расписан|запись|перенес|перезапиш|отмен|удали|убери запись)/i.test(lower);
+    const timeMatch = /(на завтра|на сегодня|в \d{1,2}:\d{2}|с \d{1,2}|в \d{1,2} час|на \d{1,2} час|через неделю|послезавтра)/i.test(lower);
+    
+    // If it has both a patient indicator ("новый пациент", name) + time, or strong booking verb -> It's Schedule
+    const isSchedule = scheduleMatch || (timeMatch && /(пациент|к врачу|к хирургу|к терапевту|на)/i.test(lower));
     if (isSchedule) return "schedule_appointment";
     
     // 2. Check for clinical / medical record keywords (EMK)

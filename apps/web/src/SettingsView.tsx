@@ -167,6 +167,7 @@ import type { ImagingConnectorCard, ImagingViewerCapability, RecognitionPreset }
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PriceDictationBar } from "./PriceDictationBar";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
+import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
 import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
@@ -232,7 +233,7 @@ type DicomFirstFrameViewerState = {
   contrast: number;
   zoom: number;
 };
-type SettingsTabId = "clinic" | "access" | "telegram" | "protocols" | "rules" | "prices" | "sources" | "ai" | "imports" | "audit";
+type SettingsTabId = "profile" | "staff" | "clinic" | "access" | "telegram" | "protocols" | "rules" | "prices" | "sources" | "ai" | "imports" | "audit";
 type SettingsTab = { id: SettingsTabId; title: string };
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
 type MigrationOperatorActionScope = "primary" | "script";
@@ -1942,8 +1943,12 @@ export function SettingsView(props: SettingsViewProps) {
 
           <div className="settings-tabs" role="tablist" aria-label="Раздел настроек">
             <div className="settings-tabs-group">
+              <span className="settings-tabs-group-header">Мой аккаунт</span>
+              {typedSettingsTabs.filter((t) => ["profile"].includes(t.id)).map(renderTabButton)}
+            </div>
+            <div className="settings-tabs-group">
               <span className="settings-tabs-group-header">Основные</span>
-              {typedSettingsTabs.filter((t) => ["clinic", "access", "telegram"].includes(t.id)).map(renderTabButton)}
+              {typedSettingsTabs.filter((t) => ["clinic", "staff", "access", "telegram"].includes(t.id)).map(renderTabButton)}
             </div>
             <div className="settings-tabs-group">
               <span className="settings-tabs-group-header">Клинические</span>
@@ -2029,6 +2034,10 @@ export function SettingsView(props: SettingsViewProps) {
                 staffRoleLabels: props.staffRoleLabels,
               }}
             />
+          ) : null}
+
+          {settingsTab === "staff" ? (
+            <SettingsStaffTab props={{...props, newStaffReadyToCreate}} />
           ) : null}
 
           <SettingsClinicTab 

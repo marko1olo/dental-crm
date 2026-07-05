@@ -76,6 +76,10 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     const orgId = payload.organizationId as string;
     
     const { visitId } = request.params as { visitId: string };
+    // Zero UUID = placeholder for "no active visit" — return empty 200, not 404
+    if (!visitId || visitId === "00000000-0000-0000-0000-000000000000") {
+      return visitDraftAutosaveResponseSchema.parse({ serverDraft: null });
+    }
     const draft = await getVisitDraftAutosaveFromDb(orgId, visitId);
     if (!draft) return reply.code(404).send({ error: "VisitNotFound", message: visitDraftNotFoundMessage });
     return visitDraftAutosaveResponseSchema.parse({ serverDraft: draft });

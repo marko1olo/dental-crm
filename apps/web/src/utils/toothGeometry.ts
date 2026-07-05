@@ -166,8 +166,10 @@ export const getToothPath = (toothId: number): ToothGeometryType => {
 
 export const getToothConfig = (toothId: number) => {
   const num = toothId % 10;
-  if (num <= 2) return { width: "36px", height: "56px", viewWidth: 100, viewHeight: 150 };
-  if (num === 3) return { width: "40px", height: "64px", viewWidth: 100, viewHeight: 150 };
-  if (num <= 5) return { width: "44px", height: "70px", viewWidth: 100, viewHeight: 150 };
-  return { width: "50px", height: "78px", viewWidth: 100, viewHeight: 150 };
+  // All teeth have 90px height (20% bigger than 75px).
+  // The widths are scaled down to crop empty viewBox space, creating dense layouts.
+  if (num <= 2) return { width: "32px", height: "90px", viewWidth: 100, viewHeight: 150 };
+  if (num === 3) return { width: "36px", height: "90px", viewWidth: 100, viewHeight: 150 };
+  if (num <= 5) return { width: "44px", height: "90px", viewWidth: 100, viewHeight: 150 };
+  return { width: "60px", height: "90px", viewWidth: 100, viewHeight: 150 };
 };

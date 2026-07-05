@@ -1,0 +1,280 @@
+/* patients-redesign.css - Premium, clean UX for Patients tab */
+
+.patients-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--neutral-50, #f8fafc);
+  min-height: 100vh;
+}
+
+/* Modern Header */
+.patients-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #ffffff;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid var(--slate-200, #e2e8f0);
+}
+
+.patients-search-box {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.patients-search-box svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate-400, #94a3b8);
+  width: 18px;
+  height: 18px;
+}
+
+.patients-search-box input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid var(--slate-300, #cbd5e1);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: var(--slate-50, #f8fafc);
+}
+
+.patients-search-box input:focus {
+  background: #ffffff;
+  border-color: var(--brand-500, #3b82f6);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Smart Input Group */
+.smart-create-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 2;
+}
+
+.smart-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.smart-input-wrapper input {
+  width: 100%;
+  padding: 10px 40px 10px 16px;
+  border: 1px solid var(--brand-200, #bfdbfe);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+  transition: all 0.2s;
+}
+
+.smart-input-wrapper input:focus {
+  border-color: var(--brand-500, #3b82f6);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Patient List Grid */
+.patient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.patient-card-item {
+  background: #ffffff;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  min-height: 120px;
+}
+
+.patient-card-item:hover {
+  border-color: var(--brand-300, #93c5fd);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+
+.patient-card-item.selected {
+  border-color: var(--brand-500, #3b82f6);
+  background: var(--brand-50, #eff6ff);
+  box-shadow: 0 0 0 1px var(--brand-500, #3b82f6);
+}
+
+.patient-card-item h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--slate-800, #1e293b);
+}
+
+.patient-card-item p {
+  margin: 0;
+  color: var(--slate-500, #64748b);
+  font-size: 0.9rem;
+}
+
+.patient-card-meta {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.patient-card-meta .risk-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* Detailed Patient Panel */
+.patient-detail-card {
+  background: #ffffff;
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.patient-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: var(--slate-50, #f8fafc);
+  border-bottom: 1px solid var(--slate-200, #e2e8f0);
+}
+
+.patient-detail-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--slate-800, #1e293b);
+}
+
+.patient-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate-600, #475569);
+}
+
+.form-field input, .form-field textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--slate-300, #cbd5e1);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  background: #ffffff;
+}
+
+.form-field input:focus, .form-field textarea:focus {
+  border-color: var(--brand-500, #3b82f6);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-span-full {
+  grid-column: 1 / -1;
+}
+
+/* Clean Chips */
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tag-chip {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--slate-100, #f1f5f9);
+  color: var(--slate-600, #475569);
+  border: 1px solid var(--slate-200, #e2e8f0);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-chip:hover {
+  background: var(--slate-200, #e2e8f0);
+  color: var(--slate-800, #1e293b);
+}
+
+/* Card Sections */
+.patient-section {
+  padding: 1.5rem;
+  border-top: 1px solid var(--slate-200, #e2e8f0);
+}
+
+.patient-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--slate-800, #1e293b);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Primary Action Button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: var(--brand-600, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--brand-700, #1d4ed8);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
