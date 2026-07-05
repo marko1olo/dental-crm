@@ -2624,7 +2624,8 @@ const {
       setDashboard(dashboardSchema.parse(payload));
       setAccessUnlockRequired(false);
       setAccessUnlockMessage("");
-      
+      setError(null); // clear any pre-auth or stale errors once dashboard loads successfully
+
       // Save local cache for offline usage
       try {
         window.localStorage.setItem("dente:offline-dashboard-cache", JSON.stringify(payload));
@@ -4291,10 +4292,15 @@ const {
   }, []);
 
   useEffect(() => {
+    // Only load dashboard on mount if a clinic session already exists (page refresh).
+    // When not authenticated, App.tsx blocks rendering and calls loadDashboard() after login.
+    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("dente_clinic_token");
+    if (!hasToken) return;
     loadDashboard().catch((loadError: unknown) => {
       setError(operatorWorkflowFailureMessage("Не удалось загрузить данные", loadError));
     });
   }, []);
+
 
   const imagingPreviewWorkset = useMemo(() => {
     if (currentView !== "imaging" || !dashboard?.imagingStudies.length) return [];
@@ -5072,10 +5078,10 @@ const {
   const filteredPatients = useMemo(() => {
     if (!dashboard) return [];
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return dashboard.patients;
+    if (!normalizedQuery) return dashboard.patients.slice(0, 50);
     return dashboard.patients.filter((patient) => {
       return `${patient.fullName} ${patient.phone ?? ""}`.toLowerCase().includes(normalizedQuery);
-    });
+    }).slice(0, 50);
   }, [dashboard, query]);
 
   const activeDocuments = useMemo(() => {
@@ -6998,6 +7004,25 @@ const {
     await loadDashboard();
     } catch (staffError) {
       setError(operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError));
+    }
+  }
+  async function saveStaffCredentials(staffId: string, email?: string, password?: string, pinCode?: string): Promise<boolean> {
+    if (!(await saveClinicProfileIfDirty())) return false;
+    try {
+      const response = await fetch(`/api/settings/staff/${staffId}/credentials`, {
+        method: "POST",
+        headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ email, password, pinCode })
+      });
+      if (!response.ok) {
+        setError(await responseErrorMessage(response, "Не удалось сохранить доступы сотрудника"));
+        return false;
+      }
+      await loadDashboard();
+      return true;
+    } catch (err) {
+      setError(operatorWorkflowFailureMessage("Не удалось сохранить доступы", err));
+      return false;
     }
   }
 
@@ -13000,6 +13025,7 @@ const {
     }
   }
 
+
   async function previewTelegramTemplate(templateKind: DenteTelegramMessagePreview["templateKind"]) {
     const isStaffPreview = templateKind === "staff_daily_digest";
     const staffId = telegramLinkStaffId || telegramLinkStaffOptions[0]?.id || "";
@@ -13961,6 +13987,7 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     savePatientAdministrativeProfile,
     savePatientCore,
     saveStaffSchedule,
+    saveStaffCredentials,
     saveTelegramSettings,
     scanDicomFolderSeries,
     scanImagingFolder,

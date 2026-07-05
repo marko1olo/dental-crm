@@ -20,10 +20,10 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
     
     try {
       const dashboard = await getDashboardFromDb(orgId);
-      return dashboardSchema.parse(dashboard);
-    } catch (e) {
-      console.error("[Dashboard] Error fetching from DB:", e);
-      return reply.code(500).send({ error: "DatabaseError" });
+      return dashboard;
+    } catch (e: any) {
+      console.error("[Dashboard] Error fetching from DB:", e.message || String(e));
+      return reply.code(500).send({ error: "DatabaseError", details: e.message });
     }
   });
 }

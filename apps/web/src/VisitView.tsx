@@ -204,6 +204,23 @@ export function VisitView(props: VisitViewProps) {
     }
   };
 
+  if (!activePatient) {
+    return (
+      <>
+        <div className="panel visit-panel" id="visit">
+          <div className="panel-heading">
+            <h2>Текущий прием</h2>
+          </div>
+          <div style={{ textAlign: 'center', padding: '64px 24px', color: 'var(--color-text-muted, #6b7280)' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🦷</div>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text, #111827)', marginBottom: '8px' }}>Пациент не выбран</h3>
+            <p style={{ fontSize: '0.875rem' }}>Выберите пациента в разделе «Пациенты»<br />или создайте запись в «Записях», чтобы начать приём.</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return <>
           <div className="panel visit-panel" id="visit">
             <div className="panel-heading">
@@ -360,52 +377,35 @@ export function VisitView(props: VisitViewProps) {
                 ))}
               </div>
               <div style={{ position: 'relative' }}>
-                <textarea
-                  aria-label="Текст диктовки"
-                  value={transcript}
-                  onFocus={() => setShowHints(true)}
-                  onBlur={() => setTimeout(() => setShowHints(false), 200)}
-                  onChange={(event) => {
-                    visitDraftUserEditedRef.current = true;
-                    setTranscript(event.target.value);
-                    if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.ctrlKey && transcript.trim()) {
-                      e.preventDefault();
-                      const orchestratorResult = AiOrchestrator.processEmkDictation(transcript);
-                        const parsed = orchestratorResult.source === "local_algorithm" 
-                          ? orchestratorResult.data 
-                          : { isAiTask: true, prompt: orchestratorResult.suggestedPrompt };
-                      setSmartParsedData(parsed);
-                      setShowSmartPreview(true);
-                      setShowHints(false);
-                    }
-                  }}
-                  placeholder="Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"
-                  style={{ minHeight: '120px', width: '100%' }}
-                />
-                
-                {(showHints || isServerVoiceRecording) && (
-                  <div className="voice-commands-hint" style={{
-                    marginTop: '8px',
-                    padding: '8px 12px',
-                    background: 'var(--slate-50)',
-                    border: '1px solid var(--slate-200)',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    color: 'var(--slate-600)',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '12px',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{ fontWeight: 600, color: 'var(--brand-600)' }}><Mic size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px', marginBottom: '2px' }}/>Голосовые команды:</span>
-                    <span><kbd style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Очистить всё</kbd> — удалить текст</span>
-                    <span><kbd style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Абзац</kbd> — перенос строки</span>
-                    <span><kbd style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Сформировать карту</kbd> — готово</span>
-                  </div>
-                )}
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <textarea
+                    aria-label="Текст диктовки"
+                    value={transcript}
+                    onFocus={() => setShowHints(true)}
+                    onBlur={() => setTimeout(() => setShowHints(false), 200)}
+                    onChange={(event) => {
+                      visitDraftUserEditedRef.current = true;
+                      setTranscript(event.target.value);
+                      if (event.target.value.trim()) setClearedTranscriptSnapshot(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.ctrlKey && transcript.trim()) {
+                        e.preventDefault();
+                        const orchestratorResult = AiOrchestrator.processEmkDictation(transcript);
+                          const parsed = orchestratorResult.source === "local_algorithm" 
+                            ? orchestratorResult.data 
+                            : { isAiTask: true, prompt: orchestratorResult.suggestedPrompt };
+                        setSmartParsedData(parsed);
+                        setShowSmartPreview(true);
+                        setShowHints(false);
+                      }
+                    }}
+                    placeholder="Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"
+                    style={{ minHeight: '120px', width: '100%', resize: 'vertical' }}
+                  />
+                  
+                  <DictationHints isVisible={showHints || isServerVoiceRecording} type="visit" />
+                </div>
                 
                 {isServerVoiceRecording && (
                   <div style={{
@@ -942,7 +942,9 @@ export function VisitView(props: VisitViewProps) {
                       <textarea 
                         value={visitNoteForm[field.key]} 
                         onChange={(event) => updateVisitNoteField(field.key, event.target.value)}
-                        style={{ minHeight: '60px', borderRadius: '8px', padding: '0.6rem', border: '1px solid #cbd5e1' }}
+                        style={{ minHeight: '80px', borderRadius: '8px', padding: '0.6rem', border: '1px solid var(--slate-300)', resize: 'vertical', width: '100%', outline: 'none' }}
+                        onFocus={(e) => e.target.style.borderColor = 'var(--brand-400)'}
+                        onBlur={(e) => e.target.style.borderColor = 'var(--slate-300)'}
                       />
                     </div>
                   );

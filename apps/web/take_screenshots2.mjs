@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import path from 'path';
 
 const APP_URL = 'http://127.0.0.1:5173';
-const OUT_DIR = 'C:\\Users\\Admin\\.gemini\\antigravity\\brain\\19527560-fbad-4059-97a2-76c3b38db9cc\\scratch';
+const OUT_DIR = 'C:\\Users\\Admin\\.gemini\\antigravity\\brain\\e413e738-71c0-4b21-884d-6f53c4ba6235\\scratch';
 
 async function run() {
   console.log('Launching browser...');

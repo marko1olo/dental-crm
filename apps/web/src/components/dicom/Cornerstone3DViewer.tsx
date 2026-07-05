@@ -258,60 +258,60 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-neutral-950 text-white relative font-sans">
+    <div style={{ width: '100%', height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column', backgroundColor: '#0a0a0a', color: '#fff', position: 'relative', fontFamily: 'sans-serif' }}>
       
       {/* KICKASS GLASSMORPHISM TOOLBAR */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-2xl shadow-2xl">
-        <div className="flex bg-black/40 rounded-xl p-1 gap-1">
+      <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', padding: '8px', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '4px', gap: '4px' }}>
           <button 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTool === cornerstoneTools.CrosshairsTool.toolName ? 'bg-blue-600 text-white' : 'text-neutral-300 hover:text-white hover:bg-white/10'}`}
+            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.CrosshairsTool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.CrosshairsTool.toolName ? '#fff' : '#d4d4d8' }}
             onClick={() => setTool(cornerstoneTools.CrosshairsTool.toolName)}
           >
             MPR (Oblique)
           </button>
           <button 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTool === cornerstoneTools.SplineROITool.toolName ? 'bg-blue-600 text-white' : 'text-neutral-300 hover:text-white hover:bg-white/10'}`}
+            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.SplineROITool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.SplineROITool.toolName ? '#fff' : '#d4d4d8' }}
             onClick={() => setTool(cornerstoneTools.SplineROITool.toolName)}
           >
             Дуга (Spline)
           </button>
           <button 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTool === cornerstoneTools.ProbeTool.toolName ? 'bg-blue-600 text-white' : 'text-neutral-300 hover:text-white hover:bg-white/10'}`}
+            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.ProbeTool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.ProbeTool.toolName ? '#fff' : '#d4d4d8' }}
             onClick={() => setTool(cornerstoneTools.ProbeTool.toolName)}
           >
             Probe (HU)
           </button>
           <button 
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTool === 'Implant' ? 'bg-indigo-600 text-white' : 'text-neutral-300 hover:text-white hover:bg-white/10'}`}
+            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === 'Implant' ? '#4f46e5' : 'transparent', color: activeTool === 'Implant' ? '#fff' : '#d4d4d8' }}
             onClick={simulateImplantPlacement}
           >
             Implant (+Log)
           </button>
         </div>
 
-        <div className="w-px h-8 bg-white/20 mx-1"></div>
+        <div style={{ width: '1px', height: '32px', backgroundColor: 'rgba(255,255,255,0.2)', margin: '0 4px' }}></div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-neutral-400">Толщина (ОПТГ):</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+          <span style={{ color: '#a3a3a3' }}>Толщина (ОПТГ):</span>
           <input 
             type="range" min="0" max="20" step="1" 
             value={panorexThickness} 
             onChange={(e) => setPanorexThickness(Number(e.target.value))}
-            className="w-24 accent-blue-500"
+            style={{ width: '96px', cursor: 'pointer' }}
           />
-          <span className="w-6 text-right">{panorexThickness}mm</span>
+          <span style={{ width: '24px', textAlign: 'right' }}>{panorexThickness}mm</span>
         </div>
 
-        <div className="flex bg-black/40 rounded-xl p-1 gap-1 ml-1">
+        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '4px', gap: '4px', marginLeft: '4px' }}>
           <button 
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${blendMode === 'mip' ? 'bg-neutral-600 text-white' : 'text-neutral-400 hover:text-white hover:bg-white/10'}`}
+            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: panorexThickness === 0 ? 'not-allowed' : 'pointer', border: 'none', opacity: panorexThickness === 0 ? 0.5 : 1, transition: 'all 0.2s', backgroundColor: blendMode === 'mip' ? '#525252' : 'transparent', color: blendMode === 'mip' ? '#fff' : '#a3a3a3' }}
             onClick={() => setBlendMode("mip")}
             disabled={panorexThickness === 0}
           >
             MIP
           </button>
           <button 
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${blendMode === 'average' ? 'bg-neutral-600 text-white' : 'text-neutral-400 hover:text-white hover:bg-white/10'}`}
+            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: panorexThickness === 0 ? 'not-allowed' : 'pointer', border: 'none', opacity: panorexThickness === 0 ? 0.5 : 1, transition: 'all 0.2s', backgroundColor: blendMode === 'average' ? '#525252' : 'transparent', color: blendMode === 'average' ? '#fff' : '#a3a3a3' }}
             onClick={() => setBlendMode("average")}
             disabled={panorexThickness === 0}
           >
@@ -320,10 +320,10 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
         </div>
 
         <button 
-          className="ml-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(79,70,229,0.5)] transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+          style={{ marginLeft: '8px', background: 'linear-gradient(to right, #2563eb, #4f46e5)', color: '#fff', padding: '8px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 'bold', border: 'none', cursor: 'pointer', boxShadow: '0 0 15px rgba(79,70,229,0.5)', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
           onClick={handleGeneratePanorex}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           Развернуть
         </button>
       </div>
@@ -338,35 +338,31 @@ export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
         />
       )}
 
-      <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-[1px] bg-neutral-800 p-[1px]">
-        <div className="relative bg-black group">
-          <div className="absolute top-2 left-2 px-2 py-1 rounded bg-black/50 backdrop-blur text-[10px] font-bold text-red-400 tracking-wider z-10 opacity-70 group-hover:opacity-100 transition-opacity">AXIAL</div>
-          <div ref={axialRef} className="w-full h-full" onContextMenu={e => e.preventDefault()} />
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', backgroundColor: '#262626', padding: '2px' }}>
+        <div style={{ position: 'relative', backgroundColor: '#000' }}>
+          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#f87171', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>AXIAL</div>
+          <div ref={axialRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
         </div>
-        <div className="relative bg-black group">
-          <div className="absolute top-2 left-2 px-2 py-1 rounded bg-black/50 backdrop-blur text-[10px] font-bold text-green-400 tracking-wider z-10 opacity-70 group-hover:opacity-100 transition-opacity">SAGITTAL</div>
-          <div ref={sagittalRef} className="w-full h-full" onContextMenu={e => e.preventDefault()} />
+        <div style={{ position: 'relative', backgroundColor: '#000' }}>
+          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#4ade80', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>SAGITTAL</div>
+          <div ref={sagittalRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
         </div>
-        <div className="relative bg-black group">
-          <div className="absolute top-2 left-2 px-2 py-1 rounded bg-black/50 backdrop-blur text-[10px] font-bold text-blue-400 tracking-wider z-10 opacity-70 group-hover:opacity-100 transition-opacity">CORONAL</div>
-          <div ref={coronalRef} className="w-full h-full" onContextMenu={e => e.preventDefault()} />
+        <div style={{ position: 'relative', backgroundColor: '#000' }}>
+          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#60a5fa', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>CORONAL</div>
+          <div ref={coronalRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
         </div>
-        <div className="relative bg-neutral-900 flex flex-col items-center justify-center p-4">
-          <div className="text-neutral-500 text-sm font-medium mb-4">Surgical Module Logs</div>
+        <div style={{ position: 'relative', backgroundColor: '#171717', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginBottom: '16px' }}>Surgical Module Logs</div>
           
           {aiProtocolLog && implants.length > 0 && (
-            <div className={`w-full max-w-sm p-4 rounded-xl border backdrop-blur-sm ${
-              (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 
-              ? 'bg-red-500/20 border-red-500/50 text-red-100' 
-              : 'bg-green-500/20 border-green-500/50 text-green-100'
-            }`}>
-              <div className="font-bold mb-2 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div style={{ width: '100%', maxWidth: '384px', padding: '16px', borderRadius: '12px', border: '1px solid', backgroundColor: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)', borderColor: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.5)', color: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? '#fecaca' : '#dcfce7' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 AI Auto-Protocol
               </div>
-              <p className="text-xs leading-relaxed">{aiProtocolLog}</p>
+              <p style={{ fontSize: '12px', lineHeight: 1.5 }}>{aiProtocolLog}</p>
               {(implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 && (
-                <div className="mt-2 text-xs font-bold text-red-400">
+                <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 'bold', color: '#f87171' }}>
                   ⚠️ КРИТИЧЕСКАЯ БЛИЗОСТЬ К НЕРВУ!
                 </div>
               )}

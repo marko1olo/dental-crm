@@ -355,17 +355,19 @@ export function AppointmentCard(props: AppointmentCardProps) {
             </div>
           </label>
           <div className="appointment-editor-actions">
-            {appointmentSaveError ? <span className="save-error">{appointmentSaveError}</span> : null}
-            {appointmentMissingSteps.length ? (
-              <div className="schedule-create-missing schedule-save-missing" id={appointmentSaveMissingId} role="status" aria-live="polite">
-                <strong>Чтобы сохранить запись, исправьте:</strong>
-                <ul>
-                  {appointmentMissingSteps.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            <div className="min-h-reserved-error" style={{ flex: 1, flexDirection: 'column' }}>
+              {appointmentSaveError ? <span className="save-error">{appointmentSaveError}</span> : null}
+              {appointmentMissingSteps.length ? (
+                <div className="schedule-create-missing schedule-save-missing" id={appointmentSaveMissingId} role="status" aria-live="polite">
+                  <strong>Чтобы сохранить запись, исправьте:</strong>
+                  <ul>
+                    {appointmentMissingSteps.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
             <span className={`save-state save-state-${appointmentSaveState}`}>
               {appointmentSaveState === "saving"
                 ? "Сохраняю"

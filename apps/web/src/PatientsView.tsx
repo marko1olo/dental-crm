@@ -141,113 +141,92 @@ export function PatientsView(props: PatientsViewProps) {
           : null;
 
   return (
-          <div className="panel patients-panel" id="patients">
-            <div className="panel-heading">
-              <h2>Быстрый поиск</h2>
-              <div className="search-box">
-                <Search aria-hidden="true" />
-                <input
-                  aria-label="Поиск пациента"
-                  type="search"
-                  autoComplete="off"
-                  value={query}
-                  onChange={(event: TextFieldChangeEvent) => setQuery(event.target.value)}
-                  placeholder="ФИО или телефон"
-                />
-              </div>
-            </div>
-            <div className="quick-create">
-                <div style={{ position: 'relative', width: '100%', minWidth: '250px' }}>
-                  <input
-                    aria-label="ФИО или 'Иванов 89001234567 12.05.1990'"
-                    autoComplete="name"
-                    value={smartInputText}
-                    onChange={(event: TextFieldChangeEvent) => {
-                      setSmartInputText(event.target.value);
-                      setNewPatientName(event.target.value); // Sync for normal usage
-                    }}
-                    onFocus={() => setShowHints(true)}
-                    onBlur={() => setTimeout(() => setShowHints(false), 200)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && smartInputText.trim()) {
-                        e.preventDefault();
-                        const parsed = parsePatientDictationLocal(smartInputText);
-                        setSmartParsedData(parsed);
-                        setShowSmartPreview(true);
-                        setShowHints(false);
-                      }
-                    }}
-                    placeholder="Новый пациент (ФИО Телефон Нажмите Enter)"
-                    style={{ width: '100%', paddingRight: '40px' }}
-                  />
-                  <SmartMicrophoneButton
-                    context="patient"
-                    onResult={(text) => {
-                      setSmartInputText(text);
-                      const parsed = parsePatientDictationLocal(text);
-                      setSmartParsedData(parsed);
-                      setShowSmartPreview(true);
-                      setShowHints(false);
-                    }}
-                    style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}
-                  />
-
-                  <DictationHints isVisible={showHints} type="patient" />
-                  
-                  <SmartParsePreview 
-                    isVisible={showSmartPreview}
-                    parsedData={smartParsedData}
-                    rawText={smartInputText}
-                    type="patient"
-                    onApply={(data: Record<string, string | undefined>) => {
-                      if (data) {
-                        setNewPatientName(data.fullName || smartInputText);
-                        if (data.phone) setNewPatientPhone(data.phone);
-                        if (data.birthDate) setNewPatientBirthDate(data.birthDate);
-                        if (data.notes) updatePatientCoreDraft("notes", data.notes);
-                      }
-                      setShowSmartPreview(false);
-                      setSmartInputText(data?.fullName || "");
-                    }}
-                    onManual={() => {
-                      setShowSmartPreview(false);
-                    }}
-                    onClose={() => setShowSmartPreview(false)}
-                  />
-                </div>
-              <input
-                aria-label="Телефон нового пациента"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={newPatientPhone}
-                onChange={(event: TextFieldChangeEvent) => setNewPatientPhone(event.target.value)}
-                placeholder="+7 телефон"
-              />
-              <input
-                aria-label="Дата рождения нового пациента"
-                type="date"
-                autoComplete="bday"
-                value={newPatientBirthDate}
-                onChange={(event: TextFieldChangeEvent) => setNewPatientBirthDate(event.target.value)}
-              />
-              <button
-                className="primary-button quick-create-action"
-                type="button"
-                title="Создать пациента"
-                onClick={createPatient}
-                aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}
-                disabled={!patientCreateReady}
-                aria-busy={isPatientCreating || undefined}
-              >
-                <Plus aria-hidden="true" /> Создать
-              </button>
-            </div>
-            {patientCreateGuidance ? (
-              <p className="quick-create-guidance" id="patient-create-guidance" role="status" aria-live="polite">
-                {patientCreateGuidance}
-              </p>
-            ) : null}
+    <div className="patients-panel" id="patients">
+      <header className="patients-header">
+        <div className="patients-search-box">
+          <Search aria-hidden="true" />
+          <input
+            aria-label="Поиск пациента"
+            type="search"
+            autoComplete="off"
+            value={query}
+            onChange={(event: TextFieldChangeEvent) => setQuery(event.target.value)}
+            placeholder="Поиск пациента: ФИО или телефон"
+          />
+        </div>
+        <div className="smart-create-group">
+          <div className="smart-input-wrapper">
+            <input
+              aria-label="ФИО или 'Иванов 89001234567 12.05.1990'"
+              autoComplete="name"
+              value={smartInputText}
+              onChange={(event: TextFieldChangeEvent) => {
+                setSmartInputText(event.target.value);
+                setNewPatientName(event.target.value); // Sync for normal usage
+              }}
+              onFocus={() => setShowHints(true)}
+              onBlur={() => setTimeout(() => setShowHints(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && smartInputText.trim()) {
+                  e.preventDefault();
+                  const parsed = parsePatientDictationLocal(smartInputText);
+                  setSmartParsedData(parsed);
+                  setShowSmartPreview(true);
+                  setShowHints(false);
+                }
+              }}
+              placeholder="Умный ввод: ФИО Телефон Дата (Enter)"
+            />
+            <SmartMicrophoneButton
+              context="patient"
+              onResult={(text) => {
+                setSmartInputText(text);
+                const parsed = parsePatientDictationLocal(text);
+                setSmartParsedData(parsed);
+                setShowSmartPreview(true);
+                setShowHints(false);
+              }}
+              style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}
+            />
+            <DictationHints isVisible={showHints} type="patient" />
+            <SmartParsePreview 
+              isVisible={showSmartPreview}
+              parsedData={smartParsedData}
+              rawText={smartInputText}
+              type="patient"
+              onApply={(data: Record<string, string | undefined>) => {
+                if (data) {
+                  setNewPatientName(data.fullName || smartInputText);
+                  if (data.phone) setNewPatientPhone(data.phone);
+                  if (data.birthDate) setNewPatientBirthDate(data.birthDate);
+                  if (data.notes) updatePatientCoreDraft("notes", data.notes);
+                }
+                setShowSmartPreview(false);
+                setSmartInputText(data?.fullName || "");
+              }}
+              onManual={() => setShowSmartPreview(false)}
+              onClose={() => setShowSmartPreview(false)}
+            />
+          </div>
+          <button
+            className="btn-primary"
+            type="button"
+            title="Создать пациента"
+            onClick={createPatient}
+            aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}
+            disabled={!patientCreateReady}
+            aria-busy={isPatientCreating || undefined}
+          >
+            <Plus aria-hidden="true" size={18} /> Создать
+          </button>
+        </div>
+      </header>
+      
+      {patientCreateGuidance ? (
+        <p className="quick-create-guidance" id="patient-create-guidance" role="status" aria-live="polite">
+          {patientCreateGuidance}
+        </p>
+      ) : null}
             <div className="patient-list">
               {filteredPatients.map((patient) => {
                 const insight = patientInsightById.get(patient.id);

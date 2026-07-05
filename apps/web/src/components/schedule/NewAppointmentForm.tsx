@@ -121,12 +121,28 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
             <option key={status} value={status}>{appointmentLabels[status as Appointment["status"]]}</option>
           ))}
         </select>
-        <input
-          type="text"
-          value={newAppointmentDraft.reason}
-          onChange={(event) => updateNewAppointmentDraft("reason", event.target.value)}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <input
+            type="text"
+            placeholder="Услуга / Причина (например: Кариес, Осмотр)"
+            value={newAppointmentDraft.reason}
+            onChange={(event) => updateNewAppointmentDraft("reason", event.target.value)}
+          />
+          <div className="chip-templates-row">
+            {["Осмотр", "Кариес", "Пульпит", "Профгигиена", "Удаление", "Консультация", "Снятие швов"].map(t => (
+              <button 
+                key={t} 
+                type="button" 
+                className="chip-template-button" 
+                onClick={() => updateNewAppointmentDraft("reason", t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
         <textarea
+          placeholder="Комментарий (опционально)"
           value={newAppointmentDraft.comment}
           onChange={(event) => updateNewAppointmentDraft("comment", event.target.value)}
         />

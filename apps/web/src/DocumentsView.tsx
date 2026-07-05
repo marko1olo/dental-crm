@@ -1,4 +1,5 @@
 import { CheckCircle2, FileText } from "lucide-react";
+import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import { useDocumentStore, type MedicalDocumentReleaseChannel } from "./store/documentStore";
 import {
   documentFactoryGroups,
@@ -38,6 +39,9 @@ const EXTRACT_DIAGNOSIS_CHIPS = ["Кариес", "Пульпит", "Период
 const EXTRACT_TREATMENT_CHIPS = ["Препарирование", "Пломбирование", "Экстирпация пульпы", "Удаление зуба", "Профессиональная гигиена", "Консультация"];
 const EXTRACT_REC_CHIPS = ["Осмотр через 6 месяцев", "Рентген-контроль", "Санация полости рта", "Консультация ортопеда", "Прием НПВС при болях"];
 const REFUSAL_REASON_CHIPS = ["Страх перед процедурой", "Нехватка времени", "Финансовые причины", "Желание получить второе мнение"];
+const REFUSAL_RISK_CHIPS = ["Обострение воспаления", "Потеря зуба", "Развитие абсцесса", "Распространение инфекции"];
+const REFUSAL_ALT_CHIPS = ["Удаление зуба", "Отсроченное лечение", "Консультация другого специалиста", "Наблюдение"];
+const REFUSAL_WARNING_CHIPS = ["Острая пульсирующая боль", "Отек десны или щеки", "Повышение температуры тела", "Гнойные выделения"];
 const REFUND_REASON_CHIPS = ["Ошибка при оплате", "Отказ от продолжения лечения", "Оплата авансом", "Медицинские противопоказания"];
 
 function humanizeDocumentAuditText(value: string): string {
@@ -4212,22 +4216,54 @@ export function DocumentsView(props: DocumentsViewProps) {
                       rows={2}
                     />
                   </label>
-                  <label>
-                    Причина отказа со слов пациента
-                    <textarea value={refusalPatientReason} onChange={(event) => setRefusalPatientReason(event.target.value)} rows={2} />
-                  </label>
-                  <label>
-                    Разъясненные риски
-                    <textarea value={refusalExplainedRisks} onChange={(event) => setRefusalExplainedRisks(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    Предложенные альтернативы
-                    <textarea value={refusalAlternatives} onChange={(event) => setRefusalAlternatives(event.target.value)} rows={4} />
-                  </label>
-                  <label>
-                    Тревожные признаки
-                    <textarea value={refusalUrgentWarningSigns} onChange={(event) => setRefusalUrgentWarningSigns(event.target.value)} rows={4} />
-                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Причина отказа со слов пациента</span>
+                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalPatientReason(refusalPatientReason ? `${refusalPatientReason}, ${t}` : t)} />
+                    </div>
+                    <textarea value={refusalPatientReason} onChange={(event) => setRefusalPatientReason(event.target.value)} rows={2} style={{ marginTop: '0' }} />
+                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                      {REFUSAL_REASON_CHIPS.map(chip => (
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalPatientReason(refusalPatientReason.trim() ? `${refusalPatientReason.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Разъясненные риски</span>
+                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalExplainedRisks(refusalExplainedRisks ? `${refusalExplainedRisks}, ${t}` : t)} />
+                    </div>
+                    <textarea value={refusalExplainedRisks} onChange={(event) => setRefusalExplainedRisks(event.target.value)} rows={3} style={{ marginTop: '0' }} />
+                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                      {REFUSAL_RISK_CHIPS.map(chip => (
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalExplainedRisks(refusalExplainedRisks.trim() ? `${refusalExplainedRisks.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Предложенные альтернативы</span>
+                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalAlternatives(refusalAlternatives ? `${refusalAlternatives}, ${t}` : t)} />
+                    </div>
+                    <textarea value={refusalAlternatives} onChange={(event) => setRefusalAlternatives(event.target.value)} rows={3} style={{ marginTop: '0' }} />
+                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                      {REFUSAL_ALT_CHIPS.map(chip => (
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalAlternatives(refusalAlternatives.trim() ? `${refusalAlternatives.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Тревожные признаки</span>
+                      <SmartMicrophoneButton context="general" onResult={(t) => setRefusalUrgentWarningSigns(refusalUrgentWarningSigns ? `${refusalUrgentWarningSigns}, ${t}` : t)} />
+                    </div>
+                    <textarea value={refusalUrgentWarningSigns} onChange={(event) => setRefusalUrgentWarningSigns(event.target.value)} rows={3} style={{ marginTop: '0' }} />
+                    <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+                      {REFUSAL_WARNING_CHIPS.map(chip => (
+                        <button key={chip} type="button" className="quick-chip quick-chip--sm" onClick={() => setRefusalUrgentWarningSigns(refusalUrgentWarningSigns.trim() ? `${refusalUrgentWarningSigns.trim()}, ${chip.toLowerCase()}` : chip)}>+ {chip}</button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="document-payload-row">
                     <label>
                       Врач

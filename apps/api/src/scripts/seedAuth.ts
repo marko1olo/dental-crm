@@ -17,7 +17,7 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import * as schema from "../db/schema.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 
@@ -118,11 +118,26 @@ async function seedAuth() {
       .where(eq(schema.users.id, staff.id))
       .limit(1);
 
+    // For the owner, we will set both the adminPin and the clinicPassword, 
+    // so they can login directly via UserLogin (Personal Mode)
+    const isOwner = staff.email === "owner@example.com";
+    const userPasswordHash = isOwner ? passwordHash : null;
+
     if (existingUser) {
+      // Upsert staff credentials (users table)
       await db
         .update(schema.users)
-        .set({ pinCodeHash })
-        .where(eq(schema.users.id, staff.id));
+        .set({ 
+          pinCodeHash,
+          passwordHash: userPasswordHash,
+          isActive: true
+        })
+        .where(
+          and(
+            eq(schema.users.organizationId, DEMO_ORG_ID),
+            eq(schema.users.fullName, staff.fullName)
+          )
+        );
       console.log(`  ✅ User PIN updated: ${staff.fullName} (${staff.role}) [PIN: ${pin}]`);
     } else {
       await db.insert(schema.users).values({
@@ -133,6 +148,7 @@ async function seedAuth() {
         phone: staff.phone,
         email: staff.email,
         pinCodeHash,
+        passwordHash: userPasswordHash,
         isActive: true
       });
       console.log(`  ✅ User created: ${staff.fullName} (${staff.role}) [PIN: ${pin}]`);
