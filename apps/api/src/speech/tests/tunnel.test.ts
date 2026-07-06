@@ -224,5 +224,41 @@ describe("tunnel", () => {
     // This shouldn't throw an error
     stopSshTunnel();
     assert.strictEqual(spawnMock.kill.mock.calls.length, 1);
+import { test, describe, afterEach, mock } from "node:test";
+
+
+
+  const originalEnv = { ...process.env };
+
+
+    // Restore environment variables without replacing the process.env object itself
+    for (const key of Object.keys(process.env)) {
+      if (!(key in originalEnv)) {
+        delete process.env[key];
+    for (const [key, value] of Object.entries(originalEnv)) {
+      process.env[key] = value;
+
+
+  test("should catch and log error if child_process.spawn throws", async () => {
+    // We want to test the missing error test for SSH tunnel child process
+
+
+    mock.method(net, "createServer", () => ({
+      once: (evt: string, cb: any) => {
+        if (evt === "listening") cb();
+      close: () => {}
+    }));
+
+    const consoleErrorMock = mock.method(console, "error", () => {});
+
+    process.env.SSH_KEY_PATH = "/dummy/key";
+    process.env.SSH_HOST = "user@localhost";
+
+
+
+    // Verify that the error was caught and logged
+    assert.strictEqual(consoleErrorMock.mock.calls.length, 1);
+    assert.strictEqual(consoleErrorMock.mock.calls[0]!.arguments[0], "[SSH Tunnel] Failed to launch SSH tunnel:");
+    assert.strictEqual(consoleErrorMock.mock.calls[0]!.arguments[1].message, "Simulated spawn error");
   });
 });
