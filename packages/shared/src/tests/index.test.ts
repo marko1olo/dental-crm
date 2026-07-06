@@ -7,6 +7,27 @@ import {
   documentPayloadDisallowedKeys,
   buildRuleBasedVisitDraftFromTranscript,
 } from "../index.js";
+import { test, describe } from 'node:test';
+import assert from 'node:assert';
+import { documentRequiresPaidRecord, documentAmountSource, documentKindSchema } from '../index.js';
+
+describe('documentAmountSource', () => {
+  test('returns expected amount source for different document kinds', () => {
+    assert.strictEqual(documentAmountSource('completed_works_act'), 'paid');
+    assert.strictEqual(documentAmountSource('tax_deduction_certificate'), 'paid');
+    assert.strictEqual(documentAmountSource('paid_medical_services_contract'), 'planned');
+    assert.strictEqual(documentAmountSource('treatment_plan'), 'planned');
+    assert.strictEqual(documentAmountSource('informed_consent'), 'none');
+    assert.strictEqual(documentAmountSource('procedure_specific_consent_packet'), 'none');
+  });
+
+  test('handles all valid document kinds returning a valid amount source', () => {
+    for (const kind of documentKindSchema.options) {
+      const result = documentAmountSource(kind);
+      assert.ok(['none', 'planned', 'paid'].includes(result), `Invalid amount source for kind ${kind}: ${result}`);
+    }
+  });
+});
 
 describe("documentAmountSource", () => {
   test("returns expected amount source for different document kinds", () => {
