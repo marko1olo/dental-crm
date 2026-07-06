@@ -381,3 +381,15 @@ import type { Payment } from '@dental/shared';
   test('returns null for an invalid date string', () => {
     const payment = { id: 'p1', fiscalReceiptIssuedAt: 'not a real date string' } as Payment;
     assert.strictEqual(taxPaymentYear(payment), null);
+import { taxDocumentUsesPaymentSnapshot } from './taxPaymentSnapshot.js';
+import type { GeneratedDocument } from '@dental/shared';
+
+describe('taxDocumentUsesPaymentSnapshot', () => {
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('tax_deduction_certificate'), true);
+
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('legacy_tax_deduction_certificate'), true);
+
+  test('returns true for tax_deduction_registry', () => {
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('tax_deduction_registry'), true);
+
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('treatment_plan'), false);
