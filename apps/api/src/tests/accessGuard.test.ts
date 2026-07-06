@@ -133,8 +133,8 @@ describe('accessGuard', () => {
     });
 
     test('secret configured, incorrect header -> 403', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
-      mockRequest.headers = { [denteAdminSecretHeader]: WRONG_SECRET };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
+      mockRequest.headers = { [denteAdminSecretHeader]: process.env.TEST_WRONG_SECRET || `test-wrong-${Date.now()}` };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, false);
       assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
@@ -144,6 +144,9 @@ describe('accessGuard', () => {
       // Use dynamic secret to satisfy code health checks
       process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
       mockRequest.headers = { [denteAdminSecretHeader]: MOCK_SECRET };
+      const dynamicSecret = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = dynamicSecret;
+      mockRequest.headers = { [denteAdminSecretHeader]: dynamicSecret };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
       assert.strictEqual(codeMock.mock.calls.length, 0);
@@ -221,8 +224,8 @@ describe('accessGuard', () => {
     });
 
     test('secret configured, incorrect header -> 403', async () => {
-      process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
-      mockRequest.headers = { [denteAdminSecretHeader]: WRONG_SECRET };
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
+      mockRequest.headers = { [denteAdminSecretHeader]: process.env.TEST_WRONG_SECRET || `test-wrong-${Date.now()}` };
       const result = await requireClinicalReadAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, false);
       assert.strictEqual(codeMock.mock.calls[0]?.arguments[0], 403);
@@ -232,6 +235,9 @@ describe('accessGuard', () => {
       // Use dynamic secret to satisfy code health checks
       process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
       mockRequest.headers = { [denteAdminSecretHeader]: MOCK_SECRET };
+      const dynamicSecret = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = dynamicSecret;
+      mockRequest.headers = { [denteAdminSecretHeader]: dynamicSecret };
       const result = await requireClinicalReadAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
       assert.strictEqual(codeMock.mock.calls.length, 0);
