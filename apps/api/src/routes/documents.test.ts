@@ -423,5 +423,79 @@ describe('normalizedTaxpayerInn', () => {
 
   test('returns the same string if it contains only digits', () => {
     assert.strictEqual(normalizedTaxpayerInn('1234567890'), '1234567890');
+import { releaseSourceSnapshotSha256 } from './documents.js';
+
+describe('releaseSourceSnapshotSha256', () => {
+  const baseDocument: GeneratedDocument = {
+    organizationId: 'org-1',
+    visitId: 'visit-1',
+    kind: 'medical_record_copy_request',
+    title: 'Request Copy',
+    issuedAt: '2023-05-10T10:00:00Z',
+    totalAmountRub: 1500,
+    payload: {
+      medicalRecordCopyRequest: {
+        recipientFullName: 'John Doe',
+        recipientAuthority: 'Self',
+        requestedFormat: 'paper',
+        requestedDocumentTypes: ['medical_record'],
+        requestedAt: '2023-05-10T10:00:00Z'
+  } as GeneratedDocument;
+
+  test('deterministically generates the same hash for the same document and scope', () => {
+    const hash1 = releaseSourceSnapshotSha256(baseDocument, 'test_scope');
+    const hash2 = releaseSourceSnapshotSha256(baseDocument, 'test_scope');
+
+    assert.strictEqual(typeof hash1, 'string');
+    assert.strictEqual(hash1.length, 64); // SHA256 hex is 64 chars
+    assert.strictEqual(hash1, hash2);
+
+  test('generates different hashes for different scopes', () => {
+    const hash1 = releaseSourceSnapshotSha256(baseDocument, 'scope_a');
+    const hash2 = releaseSourceSnapshotSha256(baseDocument, 'scope_b');
+
+    assert.notStrictEqual(hash1, hash2);
+
+  test('generates different hashes if documentId changes', () => {
+    const hash1 = releaseSourceSnapshotSha256(baseDocument, 'test_scope');
+    const doc2 = { ...baseDocument, id: 'doc-2' };
+    const hash2 = releaseSourceSnapshotSha256(doc2, 'test_scope');
+
+    assert.notStrictEqual(hash1, hash2);
+
+  test('generates different hashes if kind changes', () => {
+    const hash1 = releaseSourceSnapshotSha256(baseDocument, 'test_scope');
+    const doc2 = { ...baseDocument, kind: 'medical_record_extract' } as GeneratedDocument;
+    const hash2 = releaseSourceSnapshotSha256(doc2, 'test_scope');
+
+    assert.notStrictEqual(hash1, hash2);
+
+  test('explicitly maps undefined optional properties to null before hashing', () => {
+    // If undefined properties are stripped by JSON.stringify, it might cause issues or inconsistency.
+    // The function explicitly uses `?? null`. Let's ensure this is working by providing a document with undefined.
+
+    const docWithUndefined: GeneratedDocument = {
+      organizationId: 'org-1',
+      visitId: 'visit-1',
+      kind: 'medical_record_copy_request',
+      title: 'Request Copy',
+      issuedAt: undefined,
+      totalAmountRub: undefined,
+      payload: undefined,
+
+    const docWithNull: GeneratedDocument = {
+      organizationId: 'org-1',
+      visitId: 'visit-1',
+      kind: 'medical_record_copy_request',
+      title: 'Request Copy',
+      issuedAt: null,
+      totalAmountRub: null,
+      payload: null,
+
+    const hashFromUndefined = releaseSourceSnapshotSha256(docWithUndefined, 'test_scope');
+    const hashFromNull = releaseSourceSnapshotSha256(docWithNull, 'test_scope');
+
+    // Because the function does `issuedAt: document.issuedAt ?? null`, both should map to the same JSON and same hash
+    assert.strictEqual(hashFromUndefined, hashFromNull);
   });
 });
