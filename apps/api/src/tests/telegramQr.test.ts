@@ -12,6 +12,10 @@ describe('createTelegramQrSvg', () => {
   });
 
   test('returns null if payload exceeds MAX_QR_BYTES (78 bytes)', () => {
+  test('returns null for empty payload', () => {
+
+  test('returns null for payload exceeding MAX_QR_BYTES (78 bytes)', () => {
+    // 79 bytes payload
     const longPayload = 'a'.repeat(79);
     assert.strictEqual(createTelegramQrSvg(longPayload), null);
   });
@@ -44,5 +48,16 @@ describe('createTelegramQrSvg', () => {
   test('fails for multibyte characters exceeding limit', () => {
     const emojiPayload = '😀'.repeat(20); // 20 * 4 = 80 bytes
     assert.strictEqual(createTelegramQrSvg(emojiPayload), null);
+  test('returns SVG string for valid payload', () => {
+    const payload = 'https://t.me/examplebot?start=12345';
+    const svg = createTelegramQrSvg(payload);
+
+    assert.ok(svg);
+    assert.strictEqual(typeof svg, 'string');
+
+  test('handles maximum valid payload length (78 bytes)', () => {
+
+    assert.ok(svg);
+    assert.strictEqual(typeof svg, 'string');
   });
 });
