@@ -673,3 +673,19 @@ import { snapshotPaymentsForDocument } from './taxPaymentSnapshot.js';
 
   test('returns null for invalid date strings', () => {
     const payment = { fiscalReceiptIssuedAt: 'invalid-date-string' } as Payment;
+
+  test('returns explicitly parsed year from fiscalReceiptIssuedAt', () => {
+
+  test('returns explicitly parsed year from paidAt if fiscalReceiptIssuedAt is null', () => {
+    const payment = { fiscalReceiptIssuedAt: null, paidAt: '2024-01-01' } as Payment;
+
+  test('returns year from parsed Date if format is different but valid', () => {
+    const payment = { fiscalReceiptIssuedAt: 'Oct 23, 2021' } as unknown as Payment;
+
+  test('returns null if both fiscalReceiptIssuedAt and paidAt are null', () => {
+    const payment = { fiscalReceiptIssuedAt: null, paidAt: null } as Payment;
+
+  test('returns null if both fiscalReceiptIssuedAt and paidAt are undefined', () => {
+
+  test('returns null for invalid date string', () => {
+    const payment = { paidAt: 'invalid-date' } as Payment;
