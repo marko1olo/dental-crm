@@ -22,6 +22,9 @@ describe('createTelegramQrSvg', () => {
 
   test('generates valid SVG for normal payload', () => {
     const svg = createTelegramQrSvg('https://t.me/example');
+  test('returns valid SVG for normal payload', () => {
+    const payload = 'https://t.me/example';
+    const svg = createTelegramQrSvg(payload);
     assert.ok(svg !== null);
     assert.ok(svg.startsWith('<svg'));
     assert.ok(svg.endsWith('</svg>'));
@@ -73,5 +76,25 @@ describe('createTelegramQrSvg', () => {
     const svg2 = createTelegramQrSvg(payload);
 
     assert.strictEqual(svg1, svg2);
+
+  test('returns consistent SVG for same payload', () => {
+    const payload = 'https://t.me/example_bot?start=12345';
+
+  test('returns null for payload exceeding 78 bytes', () => {
+    // 78 bytes is the MAX_QR_BYTES for version 4 QR codes
+    const largePayload = 'a'.repeat(79);
+    assert.strictEqual(createTelegramQrSvg(largePayload), null);
+
+  test('handles exact maximum length payload (78 bytes)', () => {
+
+  test('handles cyrillic characters correctly', () => {
+    // UTF-8 cyrillic characters take 2 bytes each
+    const cyrillicPayload = 'Привет'; // 6 chars * 2 bytes = 12 bytes
+    const svg = createTelegramQrSvg(cyrillicPayload);
+
+  test('returns null for cyrillic payload exceeding 78 bytes', () => {
+    // 40 cyrillic chars = 80 bytes
+    const largeCyrillicPayload = 'а'.repeat(40);
+    assert.strictEqual(createTelegramQrSvg(largeCyrillicPayload), null);
   });
 });
