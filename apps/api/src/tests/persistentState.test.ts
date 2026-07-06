@@ -551,4 +551,79 @@ describe("savePersistentState", () => {
 
     assert.strictEqual(warningLogged, true);
   });
+
+  test("enforces the backup limit by deleting stale backups", async () => {
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+    const stateFile = process.env.DENTAL_STATE_FILE!;
+    const backupDir = process.env.DENTAL_STATE_BACKUP_DIR!;
+    process.env.DENTAL_STATE_BACKUPS = "2";
+
+    // 1st save
+    const state1 = { ...mockState, clinicProfile: { id: "c1", name: "" } as any };
+    savePersistentState(state1);
+    // Let time pass so the timestamp is different if the machine is fast
+    await new Promise(r => setTimeout(r, 10));
+
+    // 2nd save - creates backup of state1
+    const state2 = { ...mockState, clinicProfile: { id: "c2", name: "" } as any };
+    savePersistentState(state2);
+    await new Promise(r => setTimeout(r, 10));
+
+    // 3rd save - creates backup of state2
+    const state3 = { ...mockState, clinicProfile: { id: "c3", name: "" } as any };
+    savePersistentState(state3);
+    await new Promise(r => setTimeout(r, 10));
+
+    // 4th save - creates backup of state3, deletes backup of state1
+    const state4 = { ...mockState, clinicProfile: { id: "c4", name: "" } as any };
+    savePersistentState(state4);
+
+    const backups = fs.readdirSync(backupDir).sort();
+    assert.strictEqual(backups.length, 2, "Should only keep 2 backups");
+
+    // We expect backups for state2 and state3.
+    // The current state is state4.
+    const backupParsed1 = JSON.parse(fs.readFileSync(path.join(backupDir, backups[0]!), "utf8"));
+    const backupParsed2 = JSON.parse(fs.readFileSync(path.join(backupDir, backups[1]!), "utf8"));
+
+    const ids = [backupParsed1.state.clinicProfile.id, backupParsed2.state.clinicProfile.id].sort();
+    assert.deepStrictEqual(ids, ["c2", "c3"]);
+  });
+
+  test("uses atomic write pattern (write to .tmp then rename)", () => {
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+    const stateFile = process.env.DENTAL_STATE_FILE!;
+
+    let tempFileWritten: string | null = null;
+    let renameArgs: [string, string] | null = null;
+
+    mock.method(fs, "writeFileSync", (file: string, data: any, options: any) => {
+      tempFileWritten = file;
+    });
+    mock.method(fs, "renameSync", (oldPath: string, newPath: string) => {
+      renameArgs = [oldPath, newPath];
+    });
+
+    savePersistentState(mockState);
+
+    assert.strictEqual(tempFileWritten, `${stateFile}.tmp`, "Should write to a .tmp file first");
+    assert.deepStrictEqual(renameArgs, [`${stateFile}.tmp`, stateFile], "Should rename .tmp file to actual file");
+  });
+
+  test("catches non-Error objects and logs a generic warning", () => {
+    process.env.DENTAL_STATE_PERSISTENCE = "on";
+
+    mock.method(fs, "writeFileSync", () => {
+      throw "just a string error";
+    });
+
+    let warningLogged = "";
+    mock.method(console, "warn", (message: string) => {
+      warningLogged = message;
+    });
+
+    savePersistentState(mockState);
+
+    assert.ok(warningLogged.includes("unknown save error"), "Should log 'unknown save error' for non-Error thrown objects");
+  });
 });
