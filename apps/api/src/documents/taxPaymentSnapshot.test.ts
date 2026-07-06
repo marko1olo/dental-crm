@@ -655,3 +655,21 @@ import { snapshotPaymentsForDocument } from './taxPaymentSnapshot.js';
       const result = taxPaymentsForDocumentScope(baseDocument, paymentsWithZeroAmount);
 
       assert.strictEqual(result[0].id, 'pay-valid');
+
+  test('returns null when neither fiscalReceiptIssuedAt nor paidAt is provided', () => {
+
+  test('extracts explicit year from fiscalReceiptIssuedAt starting with YYYY', () => {
+
+  test('extracts year from fiscalReceiptIssuedAt via Date parsing if it does not start with YYYY', () => {
+    // A string that might be parsed correctly by Date but doesn't start with 4 digits.
+    // e.g. "May 10, 2022"
+    const payment = { fiscalReceiptIssuedAt: 'May 10, 2022' } as Payment;
+    assert.strictEqual(taxPaymentYear(payment), 2022);
+
+    const payment = { paidAt: '2021-08-15T00:00:00Z' } as Payment;
+
+  test('prioritizes fiscalReceiptIssuedAt over paidAt', () => {
+      paidAt: '2022-12-31'
+
+  test('returns null for invalid date strings', () => {
+    const payment = { fiscalReceiptIssuedAt: 'invalid-date-string' } as Payment;
