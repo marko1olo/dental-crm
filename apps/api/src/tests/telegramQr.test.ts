@@ -16,6 +16,11 @@ describe('createTelegramQrSvg', () => {
 
   test('returns null for payload exceeding MAX_QR_BYTES (78 bytes)', () => {
     // 79 bytes payload
+  test('returns null when payload is null', () => {
+
+  test('returns null when payload is an empty string', () => {
+
+  test('returns null when payload exceeds MAX_QR_BYTES (78 bytes)', () => {
     const longPayload = 'a'.repeat(79);
     assert.strictEqual(createTelegramQrSvg(longPayload), null);
   });
@@ -96,5 +101,13 @@ describe('createTelegramQrSvg', () => {
     // 40 cyrillic chars = 80 bytes
     const largeCyrillicPayload = 'а'.repeat(40);
     assert.strictEqual(createTelegramQrSvg(largeCyrillicPayload), null);
+  test('successfully generates an SVG for a valid payload', () => {
+    const validPayload = 't.me/examplebot?start=123';
+    const result = createTelegramQrSvg(validPayload);
+
+    assert.notStrictEqual(result, null);
+    assert.ok(result?.startsWith('<svg xmlns="http://www.w3.org/2000/svg"'));
+    assert.ok(result?.includes('<path fill="#111827" d="'));
+    assert.ok(result?.includes('role="img" aria-label="DENTE Telegram QR"'));
   });
 });
