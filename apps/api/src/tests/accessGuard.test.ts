@@ -7,6 +7,8 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 describe('accessGuard', () => {
   const MOCK_SECRET = process.env.TEST_ADMIN_SECRET || `mock-admin-secret-${Date.now()}`;
   const WRONG_SECRET = process.env.TEST_WRONG_SECRET || `wrong-admin-secret-${Date.now()}`;
+  const MOCK_SECRET = process.env.MOCK_ADMIN_SECRET || `mock-admin-secret-${Date.now()}`;
+  const WRONG_SECRET = process.env.WRONG_ADMIN_SECRET || `wrong-admin-secret-${Date.now()}`;
 
   let mockRequest: Partial<FastifyRequest>;
   let mockReply: Partial<FastifyReply>;
@@ -149,6 +151,9 @@ describe('accessGuard', () => {
       // Use dynamic secret to satisfy code health checks
       process.env.DENTE_CLINICAL_ADMIN_SECRET = ` ${MOCK_SECRET} `;
       mockRequest.headers = { [denteAdminSecretHeader]: MOCK_SECRET };
+      const testSecret = process.env.TEST_SECRET || `my-secret-${Date.now()}`;
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = ` ${testSecret} `;
+      mockRequest.headers = { [denteAdminSecretHeader]: testSecret };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
     });
@@ -157,6 +162,9 @@ describe('accessGuard', () => {
       // Use dynamic secret to satisfy code health checks
       process.env.DENTE_CLINICAL_ADMIN_SECRET = MOCK_SECRET;
       mockRequest.headers = { [denteAdminSecretHeader]: [MOCK_SECRET, 'other'] };
+      const testSecret = process.env.TEST_SECRET || `my-secret-${Date.now()}`;
+      process.env.DENTE_CLINICAL_ADMIN_SECRET = testSecret;
+      mockRequest.headers = { [denteAdminSecretHeader]: [testSecret, 'other'] };
       const result = await requireClinicalMutationAccess(mockRequest as FastifyRequest, mockReply as FastifyReply);
       assert.strictEqual(result, true);
     });
