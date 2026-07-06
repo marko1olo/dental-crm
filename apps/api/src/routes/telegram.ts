@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+﻿import { createHash } from "node:crypto";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
