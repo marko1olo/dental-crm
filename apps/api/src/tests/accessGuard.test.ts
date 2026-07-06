@@ -9,6 +9,8 @@ describe('accessGuard', () => {
   const WRONG_SECRET = process.env.TEST_WRONG_SECRET || `wrong-admin-secret-${Date.now()}`;
   const MOCK_SECRET = process.env.MOCK_ADMIN_SECRET || `mock-admin-secret-${Date.now()}`;
   const WRONG_SECRET = process.env.WRONG_ADMIN_SECRET || `wrong-admin-secret-${Date.now()}`;
+  const MOCK_SECRET = process.env.TEST_SECRET || `test-secret-${Date.now()}`;
+  const WRONG_SECRET = process.env.WRONG_TEST_SECRET || `wrong-test-secret-${Date.now()}`;
 
   let mockRequest: Partial<FastifyRequest>;
   let mockReply: Partial<FastifyReply>;
