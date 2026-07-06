@@ -66,13 +66,13 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
         {data.isAiTask && (
           <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
              <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
-             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-400 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
              <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
           </div>
         )}
 </div>;
     if (!data || Object.keys(data).length === 0) {
-      return <div className="text-sm text-slate-500 italic">Не удалось распознать детали. Попробуйте еще раз или используйте ИИ.</div>;
+      return <div className="text-sm text-slate-400 italic">Не удалось распознать детали. Попробуйте еще раз или используйте ИИ.</div>;
     }
     return (
       <div className="space-y-2 text-sm">
@@ -90,43 +90,43 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
         )}
         {data.patientId && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Пациент:</span>
+            <span className="text-slate-400">Пациент:</span>
             <span className="font-medium text-slate-800">Найдено в базе ✓</span>
           </div>
         )}
         {data.patientName && !data.patientId && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Пациент (ИИ):</span>
+            <span className="text-slate-400">Пациент (ИИ):</span>
             <span className="font-medium text-slate-800">{data.patientName}</span>
           </div>
         )}
         {data.doctorUserId && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Врач:</span>
+            <span className="text-slate-400">Врач:</span>
             <span className="font-medium text-slate-800">Найден в базе ✓</span>
           </div>
         )}
         {data.startsAt && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Время:</span>
+            <span className="text-slate-400">Время:</span>
             <span className="font-medium text-slate-800">{formatDate(data.startsAt)} в {formatTime(data.startsAt)}</span>
           </div>
         )}
         {data.timeStr && !data.startsAt && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Время (ИИ):</span>
+            <span className="text-slate-400">Время (ИИ):</span>
             <span className="font-medium text-slate-800">{data.dateStr} в {data.timeStr}</span>
           </div>
         )}
         {(data.reason || data.service) && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Услуга:</span>
+            <span className="text-slate-400">Услуга:</span>
             <span className="font-medium text-slate-800">{data.reason || data.service}</span>
           </div>
         )}
         {(data.comment || data.note) && (
           <div className="flex flex-col pt-1">
-            <span className="text-slate-500 text-xs mb-1">Заметка:</span>
+            <span className="text-slate-400 text-xs mb-1">Заметка:</span>
             <span className="bg-amber-50 p-2 rounded text-amber-900 italic text-xs">{data.comment || data.note}</span>
           </div>
         )}
@@ -139,12 +139,12 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
         {data.isAiTask && (
           <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
              <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
-             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-400 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
              <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
           </div>
         )}
 </div>;
-    if (!data || !data.serviceName) return <div className="text-sm text-slate-500">Пусто... Назовите услугу и цену.</div>;
+    if (!data || !data.serviceName) return <div className="text-sm text-slate-400">Пусто... Назовите услугу и цену.</div>;
     return (
       <div className="space-y-2 text-sm">
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-2 rounded text-xs font-semibold flex justify-between items-center mb-2">
@@ -152,16 +152,16 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
           <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[10px]">Action</span>
         </div>
         <div className="flex justify-between border-b border-slate-100 pb-1">
-          <span className="text-slate-500">Услуга:</span><span className="font-medium text-slate-800">{data.serviceName}</span>
+          <span className="text-slate-400">Услуга:</span><span className="font-medium text-slate-800">{data.serviceName}</span>
         </div>
         {data.price !== null && data.price !== undefined && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Цена:</span><span className="font-bold text-emerald-600">{data.price} ₽</span>
+            <span className="text-slate-400">Цена:</span><span className="font-bold text-emerald-600">{data.price} ₽</span>
           </div>
         )}
         {data.category && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Категория:</span>
+            <span className="text-slate-400">Категория:</span>
             <span className="font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[10px]">{data.category}</span>
           </div>
         )}
@@ -174,32 +174,32 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
         {data.isAiTask && (
           <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
              <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
-             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-400 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
              <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
           </div>
         )}
 </div>;
-    if (!data || Object.keys(data).length === 0) return <div className="text-sm text-slate-500">Пусто...</div>;
+    if (!data || Object.keys(data).length === 0) return <div className="text-sm text-slate-400">Пусто...</div>;
     return (
       <div className="space-y-2 text-sm">
         {data.fullName && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">ФИО:</span><span className="font-medium">{data.fullName}</span>
+            <span className="text-slate-400">ФИО:</span><span className="font-medium">{data.fullName}</span>
           </div>
         )}
         {data.phone && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Телефон:</span><span className="font-medium">{data.phone}</span>
+            <span className="text-slate-400">Телефон:</span><span className="font-medium">{data.phone}</span>
           </div>
         )}
         {data.birthDate && (
           <div className="flex justify-between border-b border-slate-100 pb-1">
-            <span className="text-slate-500">Дата рождения:</span><span className="font-medium">{data.birthDate}</span>
+            <span className="text-slate-400">Дата рождения:</span><span className="font-medium">{data.birthDate}</span>
           </div>
         )}
         {data.notes && (
           <div className="flex flex-col pt-1">
-            <span className="text-slate-500 text-xs mb-1">Заметки:</span>
+            <span className="text-slate-400 text-xs mb-1">Заметки:</span>
             <span className="bg-amber-50 p-2 rounded text-amber-900 italic text-xs">{data.notes}</span>
           </div>
         )}
@@ -212,19 +212,19 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
         {data.isAiTask && (
           <div className="flex flex-col border-b border-slate-100 pb-2 mb-2">
              <span className="bg-purple-100 text-purple-800 p-2 rounded text-xs font-semibold uppercase mb-2">Сложный запрос. Требуется ИИ</span>
-             <span className="text-slate-500 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
+             <span className="text-slate-400 text-xs mb-1">Сгенерированный промпт (Готов к отправке):</span>
              <span className="text-slate-800 text-[11px] font-mono leading-tight bg-slate-50 p-2 rounded border border-slate-200 break-words whitespace-pre-wrap max-h-[150px] overflow-y-auto">{data.prompt}</span>
           </div>
         )}
 </div>;
     if (!data || (!data.toothUpdates?.length && !Object.keys(data.emkUpdates || {}).length)) {
-      return <div className="text-sm text-slate-500">Не удалось распознать приём...</div>;
+      return <div className="text-sm text-slate-400">Не удалось распознать приём...</div>;
     }
     return (
       <div className="space-y-2 text-sm max-h-[300px] overflow-y-auto pr-2">
         {data.toothUpdates && data.toothUpdates.length > 0 && (
           <div className="mb-2">
-            <span className="text-slate-500 block mb-1">Зубы:</span>
+            <span className="text-slate-400 block mb-1">Зубы:</span>
             <div className="flex flex-wrap gap-1">
               {data.toothUpdates.map((t: any, i: number) => (
                 <span key={i} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs border border-blue-100">
@@ -245,7 +245,7 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
           
           return (
             <div key={k} className="flex flex-col border-t border-slate-100 pt-1 mt-1">
-              <span className="text-slate-500 text-xs mb-1">{label}:</span>
+              <span className="text-slate-400 text-xs mb-1">{label}:</span>
               <span className="font-medium text-slate-800 text-xs whitespace-pre-wrap">{v as string}</span>
             </div>
           );
@@ -269,7 +269,7 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
       case "patient": return renderPatientPreview(internalData);
       case "visit": return renderVisitPreview(internalData);
       case "prices": return renderPricesPreview(internalData);
-      default: return <div className="text-sm text-slate-500">Неизвестный контекст диктовки: {type}</div>;
+      default: return <div className="text-sm text-slate-400">Неизвестный контекст диктовки: {type}</div>;
     }
   };
 
@@ -289,7 +289,7 @@ export function SmartParsePreview({ isVisible, parsedData, rawText, type, onAppl
               </svg>
               Результат распознавания
             </h4>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-400 transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>

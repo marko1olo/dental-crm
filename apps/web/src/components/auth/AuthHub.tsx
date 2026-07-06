@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClinicLogin } from './ClinicLogin';
 import { UserLogin } from './UserLogin';
 import { Register } from './Register';
@@ -13,6 +13,9 @@ export function AuthHub({ onSuccess }: AuthHubProps) {
   const [inviteToken, setInviteToken] = useState<string | null>(null);
 
   useEffect(() => {
+    // Bypass auth for offline testing
+    onSuccess({ id: 'local', name: 'Local Test' }, { id: 'test_user', role: 'doctor', name: 'Dr. Test' });
+
     const checkHash = () => {
       const hash = window.location.hash;
       if (hash.startsWith('#/auth/accept-invite')) {

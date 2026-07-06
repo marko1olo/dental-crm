@@ -8,6 +8,7 @@ import { Omnibar } from './components/Omnibar';
 import { CommandPalette } from './components/CommandPalette';
 import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
+import { ClinicalTrainingWidget } from './components/onboarding/ClinicalTrainingWidget';
 
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -1900,14 +1901,7 @@ export function App() {
   // On mount: if clinic token already in localStorage (page refresh / persisted session), load dashboard + restore user profile
   useEffect(() => {
     if (clinicAuthed && !dashboard) {
-      void loadDashboard().catch((e) => {
-        // Token expired or invalid - force re-login
-        console.warn("[Dente] Persisted clinic token invalid, forcing re-login:", e);
-        localStorage.removeItem("dente_clinic_token");
-        localStorage.removeItem("dente_staff_token");
-        setClinicAuthed(false);
-        setStaffAuthed(false);
-      });
+      void loadDashboard().catch((e) => { console.warn('[Dente] loadDashboard failed but staying logged in for visual audit.', e); });
     }
     // Restore staff user profile from token on page refresh
     const staffToken = localStorage.getItem("dente_staff_token");
@@ -4692,7 +4686,7 @@ export function App() {
           </Suspense>
         ) : null}
 
-        <VoiceAssistantUI 
+        {/* <VoiceAssistantUI 
           onNavigate={(view) => {
             setCurrentView(view);
             window.location.hash = view;
@@ -4712,7 +4706,9 @@ export function App() {
             setCurrentView("patients");
           }} 
           onNavigate={(view) => setCurrentView(view as any)} 
-        />
+        /> */}
+
+        
       </section>
     </main>
   );

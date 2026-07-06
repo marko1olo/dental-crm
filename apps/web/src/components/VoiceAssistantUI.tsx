@@ -103,12 +103,12 @@ export function VoiceAssistantUI({ onNavigate, onSearchQuery, onDateChange }: Vo
               </div>
               <div>
                 <h3 className="font-bold text-sm text-white">Голосовое управление</h3>
-                <p className="text-[10px] text-neutral-500 m-0 uppercase tracking-wider">Интерактивное обучение</p>
+                <p className="text-[10px] text-neutral-400 m-0 uppercase tracking-wider">Интерактивное обучение</p>
               </div>
             </div>
             <button 
               onClick={() => setShowTutorial(false)}
-              className="text-neutral-500 hover:text-neutral-300 transition-colors p-1 hover:bg-neutral-800 rounded-lg"
+              className="text-neutral-400 hover:text-neutral-300 transition-colors p-1 hover:bg-neutral-800 rounded-lg"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>

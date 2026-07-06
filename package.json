@@ -133,6 +133,7 @@
     "concurrently": "^9.1.2",
     "playwright": "^1.61.1",
     "puppeteer": "^25.3.0",
+    "ts-morph": "^28.0.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
@@ -140,6 +141,6 @@
     "@babel/traverse": "^8.0.0",
     "fast-json-stringify": "^6.4.0",
     "ret": "^0.5.0",
-    "ts-morph": "^28.0.0"
+    "tsx": "^4.22.4"
   }
 }

@@ -7,7 +7,7 @@ import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/s
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
-import { Odontogram } from "./components/Odontogram";
+import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 
 type PatientInsight = Dashboard["patientInsights"][number];
@@ -381,9 +381,9 @@ export function PatientsView(props: PatientsViewProps) {
               ) : null}
 
               {/* Odontogram Section */}
-              <div style={{ marginTop: '24px', marginBottom: '16px' }}>
-                 <Odontogram />
-              </div>
+                <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+                  {selectedPatient && <OdontogramModule patientId={selectedPatient.id} />}
+                </div>
 
               {/* ShadowAnalyst — AI 2D X-Ray Analyzer */}
               <VisiographAnalyzer />

@@ -126,7 +126,7 @@ function CommunicationTaskCard({
             </span>
           ) : null}
           <div className="communication-outcome-select">
-            <label htmlFor={outcomeSelectId} style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Исход</label>
+            <label htmlFor={outcomeSelectId} style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500, marginBottom: '8px', display: 'block' }}>Исход</label>
             <select
               id={outcomeSelectId}
               value={selectedOutcome}
@@ -265,13 +265,13 @@ export function CommunicationsView({
         </article>
       </div>
 
-      <div className="communication-note-row" style={{ background: 'var(--paper)', padding: '16px', borderRadius: '12px', border: '1px solid var(--slate-200)', marginBottom: '20px', boxShadow: '0 2px 4px rgba(15,23,42,0.02)' }}>
+      <div className="communication-note-row" style={{ background: 'var(--paper)', padding: '16px', borderRadius: '12px', border: '1px solid var(--line)', marginBottom: '20px', boxShadow: '0 2px 4px rgba(15,23,42,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
-            <label htmlFor={communicationNoteInputId} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--slate-800)', display: 'block' }}>
+            <label htmlFor={communicationNoteInputId} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', display: 'block' }}>
               Заметка закрытия
             </label>
-            <span id={communicationNoteDescriptionId} style={{ fontSize: '12px', color: 'var(--slate-500)' }}>Задача закрывается с событием и попадает в аудит.</span>
+            <span id={communicationNoteDescriptionId} style={{ fontSize: '12px', color: 'var(--muted)' }}>Задача закрывается с событием и попадает в аудит.</span>
           </div>
           <SmartMicrophoneButton
             context="general"
@@ -279,7 +279,7 @@ export function CommunicationsView({
               const prev = communicationNote || "";
               onCommunicationNoteChange(prev ? `${prev}, ${t}` : t);
             }}
-            style={{ display: "inline-flex", gap: "6px", alignItems: "center", padding: '6px 12px', color: 'var(--brand-600)', background: 'var(--brand-50)', border: 'none', borderRadius: '8px', fontWeight: 600 }}
+            style={{ display: "inline-flex", gap: "6px", alignItems: "center", padding: '6px 12px', color: 'var(--teal-dark)', background: 'var(--teal-soft)', border: 'none', borderRadius: '8px', fontWeight: 600 }}
           />
         </div>
         <textarea
@@ -289,16 +289,16 @@ export function CommunicationsView({
           aria-describedby={communicationNoteDescriptionId}
           placeholder="Нажмите для ввода или надиктуйте результат связи..."
           rows={2}
-          style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '14px', resize: 'vertical', marginBottom: '12px' }}
+          style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--line-strong)', fontSize: '14px', resize: 'vertical', marginBottom: '12px' }}
         />
         <div className="quick-chips-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--slate-400)', alignSelf: 'center', marginRight: '4px' }}>Шаблоны:</span>
+          <span style={{ fontSize: '12px', color: 'var(--muted)', alignSelf: 'center', marginRight: '4px' }}>Шаблоны:</span>
           {["Недозвон", "Обещал оплатить", "Подумает", "Перезвонить позже", "Запрос документов"].map((chip) => (
             <button
               key={chip}
               type="button"
               className="quick-chip quick-chip--sm"
-              style={{ background: 'var(--slate-100)', color: 'var(--slate-700)', border: '1px solid var(--slate-200)', borderRadius: '16px', padding: '4px 10px', fontSize: '12px' }}
+              style={{ background: 'var(--paper-soft)', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: '16px', padding: '4px 10px', fontSize: '12px' }}
               onClick={() => {
                 const prev = communicationNote || "";
                 onCommunicationNoteChange(prev ? `${prev}, ${chip.toLowerCase()}` : chip);

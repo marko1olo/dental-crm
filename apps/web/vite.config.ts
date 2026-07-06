@@ -15,8 +15,26 @@ const rootNodeModules = path.resolve(__dirname, "../../node_modules");
 
 import { VitePWA } from "vite-plugin-pwa";
 
+function cornerstoneCodecPlugin() {
+  return {
+    name: 'cornerstone-codec-plugin',
+    transform(code: string, id: string) {
+      if (id.includes('@cornerstonejs/codec-') || id.includes('@cornerstonejs\\\\codec-')) {
+        if (code.includes('module.exports = ')) {
+          const match = code.match(/module\.exports\s*=\s*([a-zA-Z0-9_]+);/);
+          if (match) {
+            return code + `\nexport default ${match[1]};\n`;
+          }
+        }
+      }
+      return null;
+    }
+  };
+}
+
 export default defineConfig({
   plugins: [
+    cornerstoneCodecPlugin(),
     react(),
     VitePWA({
       registerType: "autoUpdate",
@@ -56,7 +74,14 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ["react", "react-dom"],
+    exclude: ["@cornerstonejs/dicom-image-loader"],
+    include: [
+      "@cornerstonejs/dicom-image-loader > dicom-parser",
+      "@cornerstonejs/dicom-image-loader > @cornerstonejs/codec-charls",
+      "@cornerstonejs/dicom-image-loader > @cornerstonejs/codec-libjpeg-turbo-8bit",
+      "@cornerstonejs/dicom-image-loader > @cornerstonejs/codec-openjpeg",
+      "@cornerstonejs/dicom-image-loader > @cornerstonejs/codec-openjph"
+    ],
   },
   build: {
     rollupOptions: {
@@ -143,6 +168,9 @@ export default defineConfig({
     }
   },
   server: {
+    host: "127.0.0.1",
+    port: 5173,
+    strictPort: true,
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "require-corp",

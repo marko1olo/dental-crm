@@ -117,6 +117,44 @@ export function FinancePlanningOverview({
                     <p><strong>Компромисс:</strong> {scenario.tradeoffs[0]}</p>
                     {scenario.clinicalWarnings[0] ? <small>{scenario.clinicalWarnings[0]}</small> : null}
                   </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                    <button 
+                      className="primary-button" 
+                      style={{ flex: 1 }}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('http://127.0.0.1:4100/api/scheduler/draft-from-plan', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ treatmentPlanId: scenario.id })
+                          });
+                          const data = await res.json();
+                          if (res.ok) alert('Черновик визита успешно создан в расписании!');
+                          else alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                        } catch (e) { alert('Ошибка сети'); }
+                      }}
+                    >
+                      Запланировать
+                    </button>
+                    <button 
+                      className="secondary-button" 
+                      style={{ flex: 1 }}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('http://127.0.0.1:4100/api/clinical/handoff', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ treatmentPlanId: scenario.id, toothNumber: 46 }) // Hardcoded for MVP E2E
+                          });
+                          const data = await res.json();
+                          if (res.ok) alert('Задача для ортопеда успешно создана (Handoff)!');
+                          else alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                        } catch (e) { alert('Ошибка сети'); }
+                      }}
+                    >
+                      Handoff Ортопеду
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
