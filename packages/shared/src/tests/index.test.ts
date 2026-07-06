@@ -16,6 +16,7 @@ import {
   documentPayloadAllowedKeys,
   documentPayloadActualKeys
 } from '../index.js';
+import { documentRequiresPaidRecord, documentKindSchema, documentPayloadDisallowedKeys } from '../index.js';
 
 describe('documentPayloadAllowedKeys', () => {
   test('returns expected payload keys for specific document kinds', () => {
@@ -275,5 +276,40 @@ describe("documentPayloadDisallowedKeys", () => {
   test("returns empty array for null or undefined payload", () => {
     assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", null), []);
     assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined), []);
+describe('documentPayloadDisallowedKeys', () => {
+  test('returns empty array when payload is null or undefined', () => {
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', null), []);
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', undefined), []);
+
+  test('returns empty array when payload is an empty object', () => {
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', {}), []);
+
+  test('returns empty array when payload only contains allowed keys', () => {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), []);
+
+  test('returns array of disallowed keys when payload contains keys not allowed for the given kind', () => {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+      },
+      paidMedicalServicesContract: {
+        contractNumber: '123',
+        contractDate: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), ['paidMedicalServicesContract']);
+
+  test('ignores keys with undefined values', () => {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: '2023-01-01',
+        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
+      },
+      paidMedicalServicesContract: undefined
+    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), []);
   });
 });
