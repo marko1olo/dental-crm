@@ -435,3 +435,73 @@ describe('taxPaymentSnapshotTotalRub', () => {
   test('returns the sum of amounts for multiple payments', () => {
     const snapshot = { payments: [{ amountRub: 100 }, { amountRub: 200 }, { amountRub: 50 }] } as unknown as TaxPaymentSnapshot;
     assert.strictEqual(taxPaymentSnapshotTotalRub(snapshot), 350);
+import { baseTaxPaymentsForDocument } from './taxPaymentSnapshot.js';
+
+describe('baseTaxPaymentsForDocument', () => {
+    createdAt: new Date().toISOString(),
+      taxPaymentSelection: { selectedPaymentIds: ['payment-1', 'payment-2'] }
+
+  const validPayment1: Payment = {
+    payerInn: '123456789012',
+    documentId: null
+
+  const validPayment2: Payment = {
+    payerInn: '123456789012',
+    documentId: null
+
+  test('returns [] if document does not have a taxYear', () => {
+    const docWithoutYear = { ...baseDocument, taxYear: undefined } as unknown as GeneratedDocument;
+    const result = baseTaxPaymentsForDocument(docWithoutYear, [validPayment1, validPayment2]);
+    assert.deepStrictEqual(result, []);
+
+  describe('for snapshot-based documents (tax_deduction_certificate)', () => {
+    test('returns [] if there are no explicitly selected payment IDs in payload', () => {
+      const docWithoutSelection = { ...baseDocument, payload: {} } as GeneratedDocument;
+      const result = baseTaxPaymentsForDocument(docWithoutSelection, [validPayment1, validPayment2]);
+      assert.deepStrictEqual(result, []);
+
+    test('returns matching payments that are in the selectedPaymentIds set', () => {
+      const result = baseTaxPaymentsForDocument(baseDocument, [validPayment1, validPayment2]);
+      assert.deepStrictEqual(result, [validPayment1, validPayment2]);
+
+    test('correctly filters out selected payments that do not match the document tax scope', () => {
+      const mismatchedPatient: Payment = { ...validPayment1, id: 'payment-3', patientId: 'patient-2' } as Payment;
+      const mismatchedYear: Payment = { ...validPayment1, id: 'payment-4', fiscalReceiptIssuedAt: '2022-01-01' } as Payment;
+      const notPaid: Payment = { ...validPayment1, id: 'payment-5', status: 'planned' } as Payment;
+      const negativeAmount: Payment = { ...validPayment1, id: 'payment-6', amountRub: 0 } as Payment;
+      const mismatchedInn: Payment = { ...validPayment1, id: 'payment-7', payerInn: '987654321098' } as Payment;
+
+      const doc = {
+            selectedPaymentIds: ['payment-1', 'payment-3', 'payment-4', 'payment-5', 'payment-6', 'payment-7']
+
+      const payments = [validPayment1, mismatchedPatient, mismatchedYear, notPaid, negativeAmount, mismatchedInn];
+      const result = baseTaxPaymentsForDocument(doc, payments);
+
+      // Only payment-1 should match the tax scope
+      assert.deepStrictEqual(result, [validPayment1]);
+
+  describe('for non-snapshot-based documents (completed_works_act)', () => {
+    const actDocument = {
+      payload: {}
+
+    test('returns payments linked to the document if any exist and match tax scope', () => {
+      const linkedPayment1 = { ...validPayment1, id: 'linked-1', documentId: actDocument.id } as Payment;
+      const linkedPayment2 = { ...validPayment2, id: 'linked-2', documentId: actDocument.id } as Payment;
+      const unlinkedPayment = { ...validPayment1, id: 'unlinked-1', documentId: 'other-doc' } as Payment;
+
+      const result = baseTaxPaymentsForDocument(actDocument, [linkedPayment1, linkedPayment2, unlinkedPayment]);
+      assert.deepStrictEqual(result, [linkedPayment1, linkedPayment2]);
+
+    test('returns all matching payments if no linked payments exist', () => {
+      const unlinkedPayment1 = { ...validPayment1, id: 'unlinked-1', documentId: 'other-doc' } as Payment;
+      const unlinkedPayment2 = { ...validPayment2, id: 'unlinked-2', documentId: null } as Payment;
+
+      const result = baseTaxPaymentsForDocument(actDocument, [unlinkedPayment1, unlinkedPayment2]);
+      assert.deepStrictEqual(result, [unlinkedPayment1, unlinkedPayment2]);
+
+    test('filters out linked payments that do not match tax scope', () => {
+      const linkedValid = { ...validPayment1, id: 'linked-1', documentId: actDocument.id } as Payment;
+      const linkedInvalidYear = { ...validPayment2, id: 'linked-2', documentId: actDocument.id, fiscalReceiptIssuedAt: '2022-01-01' } as Payment;
+
+      const result = baseTaxPaymentsForDocument(actDocument, [linkedValid, linkedInvalidYear]);
+      assert.deepStrictEqual(result, [linkedValid]);
