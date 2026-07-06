@@ -4370,24 +4370,41 @@ const {
     let cancelled = false;
     const abortController = new AbortController();
     const createdUrls: string[] = [];
-    void Promise.all(
-      imagingPreviewWorkset.map(async (study): Promise<[string, string] | null> => {
-        if (!study.previewUrl.startsWith("/api/")) return [study.id, study.previewUrl];
-        const response = await fetch(study.previewUrl, {
-          cache: "no-store",
-          headers: denteClinicalReadHeaders(),
-          signal: abortController.signal
-        });
-        if (!response.ok) return null;
-        const blobUrl = URL.createObjectURL(await response.blob());
-        if (cancelled) {
-          revokeObjectUrlIfNeeded(blobUrl);
-          return null;
-        }
-        createdUrls.push(blobUrl);
-        return [study.id, blobUrl];
-      })
-    )
+
+    // We cannot use p-limit as it's an unreviewed dependency.
+    // Instead we can chunk the workset manually.
+    void (async () => {
+      const results: (readonly [string, string] | null)[] = [];
+      const CHUNK_SIZE = 5;
+
+      for (let i = 0; i < imagingPreviewWorkset.length; i += CHUNK_SIZE) {
+        if (cancelled) break;
+        const chunk = imagingPreviewWorkset.slice(i, i + CHUNK_SIZE);
+        const chunkResults = await Promise.all(chunk.map(async (study): Promise<[string, string] | null> => {
+          if (!study.previewUrl.startsWith("/api/")) return [study.id, study.previewUrl];
+          try {
+            const response = await fetch(study.previewUrl, {
+              cache: "no-store",
+              headers: denteClinicalReadHeaders(),
+              signal: abortController.signal
+            });
+            if (!response.ok) return null;
+            const blobUrl = URL.createObjectURL(await response.blob());
+            if (cancelled) {
+              revokeObjectUrlIfNeeded(blobUrl);
+              return null;
+            }
+            createdUrls.push(blobUrl);
+            return [study.id, blobUrl];
+          } catch (err) {
+            if ((err as Error).name === "AbortError") return null;
+            throw err;
+          }
+        }));
+        results.push(...chunkResults);
+      }
+      return results;
+    })()
       .then((entries) => {
         if (cancelled) {
           createdUrls.forEach(revokeObjectUrlIfNeeded);
