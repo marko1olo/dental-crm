@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import { taxPaymentSelectionErrorForDocument, paidAmountRubForDocument } from './guards.js';
+import { taxPaymentSelectionErrorForDocument, paymentRefundCorrectionSelectionErrorForDocument } from './guards.js';
 import type { Payment, CreateDocumentInput, TaxDeductionApplicationPayload } from '@dental/shared';
 
 describe('taxPaymentSelectionErrorForDocument', () => {
@@ -247,5 +248,90 @@ describe('paidAmountRubForDocument', () => {
     };
     const amount = paidAmountRubForDocument('completed_works_act', input, basePayments);
     assert.strictEqual(amount, 300); // payment-1 and payment-2 match visit-1 and status='paid'
+describe('paymentRefundCorrectionSelectionErrorForDocument', () => {
+  const baseInput: CreateDocumentInput = {
+        amountRub: 100,
+        originalFiscalReceiptNumber: '12345',
+        action: 'full_refund',
+        reason: 'some reason',
+        recipientFullName: 'test name',
+        recipientIdentityDocument: 'doc',
+        refundMethod: 'cash',
+        accountantDecision: 'pending'
+
+    {
+      id: 'payment-1',
+      status: 'paid',
+      amountRub: 100,
+      fiscalReceiptNumber: '12345',
+      fiscalReceiptIssuedAt: '2023-01-01T12:00:00Z'
+    } as Payment
+
+  test('returns null when valid selection is provided', () => {
+    const error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, basePayments);
+    assert.strictEqual(error, null);
+
+  test('returns null if input kind is not payment_refund_correction_request', () => {
+    const error = paymentRefundCorrectionSelectionErrorForDocument({ ...baseInput, kind: 'completed_works_act' }, basePayments);
+    assert.strictEqual(error, null);
+
+  test('returns null if payload is missing paymentRefundCorrection', () => {
+    const error = paymentRefundCorrectionSelectionErrorForDocument({ ...baseInput, payload: {} }, basePayments);
+    assert.strictEqual(error, null);
+
+  test('returns error when no payments are selected', () => {
+    const error = paymentRefundCorrectionSelectionErrorForDocument(
+      { ...baseInput, payload: { paymentRefundCorrection: { ...baseInput.payload?.paymentRefundCorrection, selectedPaymentIds: [] } as any } },
+      basePayments
+    );
+    assert.strictEqual(error, 'Для возврата или коррекции выберите конкретный исходный оплаченный платеж.');
+
+  test('returns error when duplicate payment IDs are selected', () => {
+    const error = paymentRefundCorrectionSelectionErrorForDocument(
+      { ...baseInput, payload: { paymentRefundCorrection: { ...baseInput.payload?.paymentRefundCorrection, selectedPaymentIds: ['payment-1', 'payment-1'] } as any } },
+      basePayments
+    );
+    assert.strictEqual(error, 'В выбранных исходных платежах есть дубли. Оставьте каждый платеж один раз.');
+
+  test('returns error when a selected payment is not found in the provided payments array', () => {
+    const error = paymentRefundCorrectionSelectionErrorForDocument(
+      { ...baseInput, payload: { paymentRefundCorrection: { ...baseInput.payload?.paymentRefundCorrection, selectedPaymentIds: ['payment-unknown'] } as any } },
+      basePayments
+    );
+    assert.strictEqual(error, 'Выбранный исходный платеж для возврата или коррекции не найден. Обновите экран и выберите платеж заново.');
+
+  test('returns error when the selected payment belongs to a different patient', () => {
+    const payments = [{ ...basePayments[0], patientId: 'patient-2' } as Payment];
+    const error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, payments);
+    assert.strictEqual(error, 'Выбранный исходный платеж для возврата или коррекции относится к другому пациенту.');
+
+  test('returns error when the selected payment belongs to a different visit', () => {
+    const payments = [{ ...basePayments[0], visitId: 'visit-2' } as Payment];
+    const error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, payments);
+    assert.strictEqual(error, 'Выбранный исходный платеж для возврата или коррекции относится к другому визиту.');
+
+  test('returns error when the selected payment has a status other than paid or its amount is not positive', () => {
+    let payments = [{ ...basePayments[0], status: 'planned' } as Payment];
+    let error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, payments);
+    assert.strictEqual(error, 'Возврат или коррекцию можно оформить только по проведенному положительному платежу.');
+
+    payments = [{ ...basePayments[0], amountRub: 0 } as Payment];
+    error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, payments);
+    assert.strictEqual(error, 'Возврат или коррекцию можно оформить только по проведенному положительному платежу.');
+
+  test('returns error when the selected payment is missing a fiscal receipt number', () => {
+    const payments = [{ ...basePayments[0], fiscalReceiptNumber: '' } as Payment];
+    const error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, payments);
+    assert.strictEqual(error, 'Возврат или коррекция требуют номер исходного фискального чека в выбранном платеже.');
+
+  test('returns error when the selected payment is missing a fiscal receipt issued date', () => {
+    const payments = [{ ...basePayments[0], fiscalReceiptIssuedAt: '' } as Payment];
+    const error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, payments);
+    assert.strictEqual(error, 'Возврат или коррекция требуют дату исходного фискального чека в выбранном платеже.');
+
+  test('returns error when the selected payment fiscal receipt number does not match expected', () => {
+    const payments = [{ ...basePayments[0], fiscalReceiptNumber: '99999' } as Payment];
+    const error = paymentRefundCorrectionSelectionErrorForDocument(baseInput, payments);
+    assert.strictEqual(error, 'Исходный фискальный чек в заявлении не совпадает с выбранным платежом.');
   });
 });
