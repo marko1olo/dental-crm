@@ -716,3 +716,26 @@ import { documentKindSchema } from '@dental/shared';
     assert.strictEqual(taxDocumentUsesPaymentSnapshot('contract' as any), false);
     assert.strictEqual(taxDocumentUsesPaymentSnapshot('receipt' as any), false);
     assert.strictEqual(taxDocumentUsesPaymentSnapshot('treatment_plan' as any), false);
+
+  const basePayment = {
+    id: 'test-payment',
+    visitId: null,
+    documentId: null,
+    method: 'cash',
+    createdAt: '2023-01-01T00:00:00.000Z',
+    note: null
+
+  test('returns null if both fiscalReceiptIssuedAt and paidAt are missing', () => {
+    const payment = { ...basePayment, fiscalReceiptIssuedAt: null, paidAt: null };
+
+  test('extracts explicit year from fiscalReceiptIssuedAt starting with 4 digits', () => {
+    const payment = { ...basePayment, fiscalReceiptIssuedAt: '2023-10-15', paidAt: '2022-01-01' };
+
+  test('falls back to paidAt if fiscalReceiptIssuedAt is missing', () => {
+    const payment = { ...basePayment, fiscalReceiptIssuedAt: null, paidAt: '2022-12-31T23:59:59.000Z' };
+
+  test('parses year from a valid date string that does not start with 4 digits', () => {
+    const payment = { ...basePayment, fiscalReceiptIssuedAt: 'Dec 25, 1995' };
+    assert.strictEqual(taxPaymentYear(payment), 1995);
+
+    const payment = { ...basePayment, fiscalReceiptIssuedAt: 'invalid date' };
