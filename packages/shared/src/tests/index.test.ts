@@ -17,6 +17,7 @@ import {
   documentPayloadActualKeys
 } from '../index.js';
 import { documentRequiresPaidRecord, documentKindSchema, documentPayloadDisallowedKeys } from '../index.js';
+import { documentRequiresPaidRecord, documentKindSchema, documentPayloadAllowedKeys, type DocumentKind } from '../index.js';
 
 describe('documentPayloadAllowedKeys', () => {
   test('returns expected payload keys for specific document kinds', () => {
@@ -392,3 +393,17 @@ describe('documentPayloadDisallowedKeys', () => {
     assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), []);
   });
 });
+describe('documentPayloadAllowedKeys', () => {
+  test('returns expected payload keys for known document kinds', () => {
+    assert.deepStrictEqual(documentPayloadAllowedKeys('paid_medical_services_contract'), ['paidMedicalServicesContract']);
+    assert.deepStrictEqual(documentPayloadAllowedKeys('treatment_plan'), ['treatmentPlan']);
+    assert.deepStrictEqual(documentPayloadAllowedKeys('tax_deduction_certificate'), ['taxPaymentSelection']);
+    assert.deepStrictEqual(documentPayloadAllowedKeys('patient_intake_questionnaire'), ['patientIntakeQuestionnaire']);
+
+  test('returns empty array for unknown document kinds', () => {
+    // Testing invalid input
+    assert.deepStrictEqual(documentPayloadAllowedKeys('unknown_document_kind' as DocumentKind), []);
+
+  test('handles all valid document kinds without throwing and returns an array', () => {
+      const result = documentPayloadAllowedKeys(kind);
+      assert.ok(Array.isArray(result));
