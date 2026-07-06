@@ -539,3 +539,18 @@ import { snapshotPaymentsForDocument } from './taxPaymentSnapshot.js';
     if (result) {
       assert.notStrictEqual(result[0], payments[0]);
       assert.notStrictEqual(result[1], payments[1]);
+  test('returns true for tax_deduction_certificate', () => {
+  });
+
+  test('returns true for legacy_tax_deduction_certificate', () => {
+  });
+
+  });
+
+  test('returns false for other document kinds', () => {
+    // Test a few other document kinds that are not in the set
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('invoice' as GeneratedDocument['kind']), false);
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('treatment_plan' as GeneratedDocument['kind']), false);
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('completed_works_act' as GeneratedDocument['kind']), false);
+  });
+});
