@@ -709,3 +709,10 @@ import { documentKindSchema } from '@dental/shared';
       const result = taxDocumentUsesPaymentSnapshot(kind);
       const isSnapshotKind = snapshotKinds.includes(kind);
       assert.strictEqual(result, isSnapshotKind, `Expected ${kind} to be ${isSnapshotKind}`);
+
+
+
+
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('contract' as any), false);
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('receipt' as any), false);
+    assert.strictEqual(taxDocumentUsesPaymentSnapshot('treatment_plan' as any), false);
