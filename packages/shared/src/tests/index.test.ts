@@ -10,6 +10,60 @@ import {
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import { documentRequiresPaidRecord, documentAmountSource, documentKindSchema } from '../index.js';
+import {
+  documentRequiresPaidRecord,
+  documentKindSchema,
+  documentPayloadAllowedKeys,
+  documentPayloadActualKeys
+} from '../index.js';
+
+describe('documentPayloadAllowedKeys', () => {
+  test('returns expected payload keys for specific document kinds', () => {
+    assert.deepStrictEqual(documentPayloadAllowedKeys('treatment_plan'), ['treatmentPlan']);
+    assert.deepStrictEqual(documentPayloadAllowedKeys('tax_deduction_certificate'), ['taxPaymentSelection']);
+  });
+
+  test('returns an empty array for unknown document kinds', () => {
+    // @ts-expect-error Testing invalid input
+    assert.deepStrictEqual(documentPayloadAllowedKeys('unknown_kind'), []);
+  });
+
+  test('handles all valid document kinds without throwing', () => {
+    for (const kind of documentKindSchema.options) {
+      const result = documentPayloadAllowedKeys(kind);
+      assert.ok(Array.isArray(result), `Expected array for kind ${kind}`);
+    }
+  });
+});
+
+describe('documentPayloadActualKeys', () => {
+  test('returns empty array for null or undefined', () => {
+    assert.deepStrictEqual(documentPayloadActualKeys(null), []);
+    assert.deepStrictEqual(documentPayloadActualKeys(undefined), []);
+  });
+
+  test('returns empty array for empty payload', () => {
+    assert.deepStrictEqual(documentPayloadActualKeys({}), []);
+  });
+
+  test('returns defined keys', () => {
+    const payload = {
+      treatmentPlan: { /* mock data */ },
+      completedWorksAct: { /* mock data */ }
+    };
+    // @ts-expect-error Mock payload
+    assert.deepStrictEqual(documentPayloadActualKeys(payload), ['treatmentPlan', 'completedWorksAct']);
+  });
+
+  test('filters out undefined values', () => {
+    const payload = {
+      treatmentPlan: { /* mock data */ },
+      completedWorksAct: undefined
+    };
+    // @ts-expect-error Mock payload
+    assert.deepStrictEqual(documentPayloadActualKeys(payload), ['treatmentPlan']);
+  });
+});
 
 describe('documentAmountSource', () => {
   test('returns expected amount source for different document kinds', () => {
