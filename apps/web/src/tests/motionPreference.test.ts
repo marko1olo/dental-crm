@@ -11,6 +11,7 @@ describe("motionPreference", () => {
 
   afterEach(() => {
 import { test, describe, beforeEach, afterEach, mock } from 'node:test';
+import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { prefersReducedMotion, motionSafeScrollBehavior, motionSafeScrollIntoView } from '../motionPreference.js';
 
@@ -30,6 +31,12 @@ describe('motionPreference', () => {
   describe("prefersReducedMotion", () => {
     it("returns false when window is undefined", () => {
     mock.restoreAll();
+  let originalWindow: any;
+
+  beforeEach(() => {
+
+  afterEach(() => {
+    global.window = originalWindow;
 
   describe('prefersReducedMotion', () => {
     test('returns false when window is undefined', () => {
@@ -39,6 +46,7 @@ describe('motionPreference', () => {
 
     it("returns false when window.matchMedia is undefined", () => {
     test('returns false when window.matchMedia is undefined', () => {
+    test('returns false when window.matchMedia is not a function', () => {
       (global as any).window = {};
       assert.strictEqual(prefersReducedMotion(), false);
     });
@@ -49,6 +57,9 @@ describe('motionPreference', () => {
           assert.strictEqual(query, "(prefers-reduced-motion: reduce)");
           return { matches: false };
         },
+    test('returns false when matchMedia matches is false', () => {
+          assert.strictEqual(query, '(prefers-reduced-motion: reduce)');
+        }
       };
       assert.strictEqual(prefersReducedMotion(), false);
     });
@@ -59,6 +70,9 @@ describe('motionPreference', () => {
           assert.strictEqual(query, "(prefers-reduced-motion: reduce)");
           return { matches: true };
         },
+    test('returns true when matchMedia matches is true', () => {
+          assert.strictEqual(query, '(prefers-reduced-motion: reduce)');
+        }
       };
       assert.strictEqual(prefersReducedMotion(), true);
     });
@@ -80,6 +94,17 @@ describe('motionPreference', () => {
 
   describe("motionSafeScrollIntoView", () => {
     it("does nothing when target is null or undefined", () => {
+  describe('motionSafeScrollBehavior', () => {
+    test('returns "smooth" when not preferring reduced motion', () => {
+        matchMedia: () => ({ matches: false })
+      assert.strictEqual(motionSafeScrollBehavior(), 'smooth');
+
+    test('returns "auto" when preferring reduced motion', () => {
+        matchMedia: () => ({ matches: true })
+      assert.strictEqual(motionSafeScrollBehavior(), 'auto');
+
+  describe('motionSafeScrollIntoView', () => {
+    test('does nothing when target is null or undefined', () => {
       // Should not throw
       motionSafeScrollIntoView(null);
       motionSafeScrollIntoView(undefined);
@@ -202,6 +227,33 @@ describe('motionPreference', () => {
         block: 'center',
         inline: 'nearest',
         behavior: 'smooth'
+    test('calls scrollIntoView with smooth behavior when reduced motion is not preferred', () => {
+        matchMedia: () => ({ matches: false })
+
+      let called = false;
+      const target = {
+        scrollIntoView: (options: ScrollIntoViewOptions) => {
+          called = true;
+          assert.deepStrictEqual(options, { behavior: 'smooth', block: 'start' });
+        }
+      } as unknown as Element;
+
+      motionSafeScrollIntoView(target, { block: 'start' });
+      assert.strictEqual(called, true);
+
+    test('calls scrollIntoView with auto behavior when reduced motion is preferred', () => {
+        matchMedia: () => ({ matches: true })
+
+      let called = false;
+      const target = {
+        scrollIntoView: (options: ScrollIntoViewOptions) => {
+          called = true;
+          assert.deepStrictEqual(options, { behavior: 'auto', inline: 'center' });
+        }
+      } as unknown as Element;
+
+      motionSafeScrollIntoView(target, { inline: 'center' });
+      assert.strictEqual(called, true);
     });
   });
 });
