@@ -393,3 +393,30 @@ describe('taxDocumentUsesPaymentSnapshot', () => {
     assert.strictEqual(taxDocumentUsesPaymentSnapshot('tax_deduction_registry'), true);
 
     assert.strictEqual(taxDocumentUsesPaymentSnapshot('treatment_plan'), false);
+
+  test('returns null if neither fiscalReceiptIssuedAt nor paidAt is present', () => {
+    const payment = {} as Payment;
+
+  test('uses fiscalReceiptIssuedAt over paidAt if both are present', () => {
+    const payment = {
+      fiscalReceiptIssuedAt: '2023-05-10T12:00:00Z',
+      paidAt: '2022-04-10T12:00:00Z',
+    } as Payment;
+
+  test('uses paidAt if fiscalReceiptIssuedAt is absent', () => {
+    const payment = {
+      paidAt: '2021-04-10T12:00:00Z',
+    } as Payment;
+
+  test('extracts year from ISO date string', () => {
+    const payment = { fiscalReceiptIssuedAt: '2023-05-10T12:00:00Z' } as Payment;
+
+  test('extracts year from YYYY-MM-DD string', () => {
+    const payment = { fiscalReceiptIssuedAt: '2024-01-01' } as Payment;
+
+  test('extracts year from non-standard Date string representation as fallback', () => {
+    const payment = { fiscalReceiptIssuedAt: 'May 10, 2023 12:00:00' } as Payment;
+    // Regex fails to find YYYY at start, so falls back to Date parsing
+
+  test('returns null for invalid date string not matching regex or Date constructor', () => {
+    const payment = { fiscalReceiptIssuedAt: 'invalid date' } as Payment;
