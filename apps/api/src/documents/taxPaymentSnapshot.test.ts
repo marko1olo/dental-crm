@@ -2,6 +2,8 @@
 import assert from 'node:assert';
 import { taxDocumentDuplicateSensitive, taxPaymentYear, taxPaymentsForIssueSnapshot } from './taxPaymentSnapshot.js';
 import type { Payment, GeneratedDocument } from '@dental/shared';
+import { test, describe } from 'node:test';
+import { taxDocumentDuplicateSensitive } from './taxPaymentSnapshot.js';
 
 describe('taxDocumentDuplicateSensitive', () => {
   test('returns true for tax_deduction_certificate', () => {
