@@ -2,7 +2,53 @@ import { test, describe, mock, afterEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
 import { parseDicomSeriesManifest, hasDicomMagic } from './imaging.js';
+import { parseDicomSeriesManifest, readFilePrefix } from './imaging.js';
 import type { ImagingSourceKind } from '@dental/shared';
+
+describe('readFilePrefix', () => {
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  test('closes file handle when readSync throws an error', () => {
+    const fakePath = 'fake-path.dcm';
+    const fakeHandle = 999;
+
+    mock.method(fs, 'statSync', () => ({ size: 100 }));
+    mock.method(fs, 'openSync', () => fakeHandle);
+    mock.method(fs, 'readSync', () => {
+      throw new Error('Simulated read error');
+    });
+    const closeSyncMock = mock.method(fs, 'closeSync', () => {});
+
+    assert.throws(
+      () => readFilePrefix(fakePath, 50),
+      { message: 'Simulated read error' }
+    );
+
+    assert.strictEqual(closeSyncMock.mock.calls.length, 1);
+    assert.strictEqual(closeSyncMock.mock.calls[0]!.arguments[0], fakeHandle);
+  });
+
+  test('returns buffer and closes handle on successful read', () => {
+    const fakePath = 'fake-path.dcm';
+    const fakeHandle = 999;
+
+    mock.method(fs, 'statSync', () => ({ size: 100 }));
+    mock.method(fs, 'openSync', () => fakeHandle);
+    mock.method(fs, 'readSync', (handle, buffer, offset, length, position) => {
+      buffer.write('hello');
+      return 5;
+    });
+    const closeSyncMock = mock.method(fs, 'closeSync', () => {});
+
+    const result = readFilePrefix(fakePath, 5);
+
+    assert.strictEqual(result.toString('utf8', 0, 5), 'hello');
+    assert.strictEqual(closeSyncMock.mock.calls.length, 1);
+    assert.strictEqual(closeSyncMock.mock.calls[0]!.arguments[0], fakeHandle);
+  });
+});
 
 describe('parseDicomSeriesManifest', () => {
   afterEach(() => {
