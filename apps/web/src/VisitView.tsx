@@ -538,8 +538,8 @@ export function VisitView(props: VisitViewProps) {
                       disabled={!hasVisitTranscriptText || isTranscriptPolishing}
                       aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
                       title={
-                        speechGatewayStatus?.polishPolicy.neuralEnabled
-                          ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
+                        speechGatewayStatus?.polishPolicy?.neuralEnabled
+                          ? `Аккуратная очистка текста: ${speechGatewayStatus?.polishPolicy?.modelName ?? "модель"}`
                           : "Локальная очистка терминов, секций и номеров зубов"
                       }
                     >

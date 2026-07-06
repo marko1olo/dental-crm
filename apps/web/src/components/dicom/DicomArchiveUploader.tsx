@@ -10,7 +10,7 @@ interface DicomArchiveUploaderProps {
 export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<string>("Drag & Drop ZIP Archive or Folder here");
+  const [status, setStatus] = useState<string>("Кликните или перетащите сюда ZIP-архив или папку");
 
   const processFile = async (file: File): Promise<string | null> => {
     return new Promise((resolve) => {
@@ -46,7 +46,7 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
   };
 
   const processZip = async (zipFile: File) => {
-    setStatus("Extracting ZIP in memory...");
+    setStatus("Распаковка ZIP в памяти...");
     const buffer = new Uint8Array(await zipFile.arrayBuffer());
     
     return new Promise<void>((resolve, reject) => {
@@ -66,10 +66,10 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
         const processEntry = async (index: number) => {
           if (index >= entries.length) {
             if (imageIds.length > 0) {
-              setStatus(`Loaded ${imageIds.length} DICOM instances.`);
+              setStatus(`Загружено ${imageIds.length} DICOM-снимков.`);
               onImagesLoaded(imageIds);
             } else {
-              setStatus("No DICOM files found in ZIP.");
+              setStatus("DICOM-файлы в ZIP-архиве не найдены.");
             }
             resolve();
             return;
@@ -80,7 +80,7 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
           processedFiles++;
           
           if (processedFiles % 10 === 0) {
-            setStatus(`Processing ZIP: ${processedFiles}/${totalFiles}`);
+            setStatus(`Обработка ZIP: ${processedFiles}/${totalFiles}`);
           }
 
           if (fileData && fileData.length > 132) {
@@ -132,7 +132,7 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
     const items = e.dataTransfer.items;
     let allFiles: File[] = [];
 
-    setStatus("Reading files from drop...");
+    setStatus("Чтение перетащенных файлов...");
 
     if (items && items.length > 0) {
       for (let i = 0; i < items.length; i++) {
@@ -186,39 +186,41 @@ export function DicomArchiveUploader({ onImagesLoaded }: DicomArchiveUploaderPro
       <input
         id="dicom-folder-input"
         type="file"
-        // @ts-ignore
-        webkitdirectory="true"
-        directory="true"
         multiple
         className="hidden"
         onChange={async (e) => {
           if (loading || !e.target.files) return;
           setLoading(true);
           const allFiles = Array.from(e.target.files);
-          setStatus(`Scanning ${allFiles.length} files...`);
-          const validImageIds: string[] = [];
-          for (let i = 0; i < allFiles.length; i++) {
-            if (i % 10 === 0) setStatus(`Scanning files: ${i}/${allFiles.length}`);
-            const f = allFiles[i];
-            if (f) {
-                const imageId = await processFile(f);
-                if (imageId) validImageIds.push(imageId);
-            }
-          }
-          if (validImageIds.length > 0) {
-            setStatus(`Loaded ${validImageIds.length} DICOM instances.`);
-            onImagesLoaded(validImageIds);
+          const firstFile = allFiles[0];
+          if (allFiles.length === 1 && firstFile && firstFile.name.toLowerCase().endsWith(".zip")) {
+            await processZip(firstFile);
           } else {
-            setStatus("No valid DICOM files found.");
+            setStatus(`Сканирование ${allFiles.length} файлов...`);
+            const validImageIds: string[] = [];
+            for (let i = 0; i < allFiles.length; i++) {
+              if (i % 10 === 0) setStatus(`Сканирование файлов: ${i}/${allFiles.length}`);
+              const f = allFiles[i];
+              if (f) {
+                  const imageId = await processFile(f);
+                  if (imageId) validImageIds.push(imageId);
+              }
+            }
+            if (validImageIds.length > 0) {
+              setStatus(`Загружено ${validImageIds.length} DICOM-снимков.`);
+              onImagesLoaded(validImageIds);
+            } else {
+              setStatus("Действительные DICOM-файлы не найдены.");
+            }
           }
           setLoading(false);
           // reset input
           e.target.value = '';
         }}
       />
-      <div className="text-neutral-400 font-medium">{status} (Кликните или перетащите папку)</div>
+      <div className="text-neutral-400 font-medium">{status}</div>
       {loading && <div className="mt-2 w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
-      <div className="text-xs text-neutral-600 mt-2">Works completely locally. No server upload.</div>
+      <div className="text-xs text-neutral-400 mt-2">Работает полностью локально. Без загрузки на сервер.</div>
     </div>
   );
 }

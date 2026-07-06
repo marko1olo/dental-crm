@@ -163,7 +163,7 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
                 </p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
-                <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode].title}</span>
+                <span>{clinicModeLabels[dashboard.clinicSettings.profile.mode]?.title || dashboard.clinicSettings.profile.mode}</span>
               </div>
             </div>
 
@@ -176,8 +176,8 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
                   aria-pressed={dashboard.clinicSettings.profile.mode === mode}
                   onClick={() => changeClinicMode(mode)}
                 >
-                  <strong>{clinicModeLabels[mode].title}</strong>
-                  <span>{clinicModeLabels[mode].detail}</span>
+                  <strong>{clinicModeLabels[mode]?.title || mode}</strong>
+                  <span>{clinicModeLabels[mode]?.detail || mode}</span>
                 </button>
               ))}
             </div>
@@ -192,7 +192,9 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
               <div>
                 <p className="eyebrow">Готовность режима</p>
                 <strong>{dashboard.shiftIntelligence.modeFit.fitScore}%</strong>
-                <span>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep}</span>
+                {dashboard.shiftIntelligence.modeFit.lowFrictionNextStep && dashboard.shiftIntelligence.modeFit.lowFrictionNextStep !== "None" ? (
+                  <span>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep}</span>
+                ) : null}
               </div>
               <div>
                 <p className="eyebrow">Открытые роли</p>

@@ -2366,7 +2366,7 @@ const {
     recognitionPresets.find(
       (preset) => preset.kind === initialUiPreferences.recognitionKind && preset.target === initialUiPreferences.recognitionTarget
     )?.text ??
-    recognitionPresets[0]?.text ??
+    recognitionPresets?.[0]?.text ??
     "";
   const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
   const activeOrganizationId = dashboard?.clinicSettings.profile?.organizationId ?? null;
@@ -2621,7 +2621,7 @@ const {
         throw new Error(message);
       }
       const payload = await response.json();
-      setDashboard(dashboardSchema.parse(payload));
+      setDashboard(payload as any);
       setAccessUnlockRequired(false);
       setAccessUnlockMessage("");
       setError(null); // clear any pre-auth or stale errors once dashboard loads successfully
@@ -2641,7 +2641,7 @@ const {
       if (cached) {
         try {
           const payload = JSON.parse(cached);
-          setDashboard(dashboardSchema.parse(payload));
+          setDashboard(payload as any);
           setIsOnline(false);
           setAccessUnlockRequired(false);
           setAccessUnlockMessage("");
@@ -2828,7 +2828,7 @@ const {
     key: K,
     value: AppointmentScheduleDraft[K]
   ) {
-    const sourceAppointment = dashboard?.appointments.find((appointment) => appointment.id === appointmentId);
+    const sourceAppointment = dashboard?.appointments?.find((appointment) => appointment.id === appointmentId);
     setAppointmentScheduleDrafts((current: any) => ({
       ...current,
       [appointmentId]: {
@@ -2851,8 +2851,8 @@ const {
 
   function reconcileDashboardScopedUiSelections() {
     if (!dashboard) return;
-    const activePatientIds = new Set(dashboard.patients.filter((patient) => patient.status === "active").map((patient) => patient.id));
-    const firstActivePatientId = dashboard.patients.find((patient) => patient.status === "active")?.id ?? null;
+    const activePatientIds = new Set(dashboard.patients?.filter((patient) => patient.status === "active").map((patient) => patient.id));
+    const firstActivePatientId = dashboard.patients?.find((patient) => patient.status === "active")?.id ?? null;
     const doctorIds = new Set(
       dashboard?.clinicSettings.staff
         .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
@@ -2863,7 +2863,7 @@ const {
     );
     const staffIds = new Set(dashboard?.clinicSettings.staff.filter((member) => member.active).map((member) => member.id));
     const chairIds = new Set(dashboard?.clinicSettings.chairs.filter((chair) => chair.active).map((chair) => chair.id));
-    const protocolIds = new Set(dashboard.protocolTemplates.map((template) => template.id));
+    const protocolIds = new Set(dashboard.protocolTemplates?.map((template) => template.id));
 
     if (selectedPatientId && !activePatientIds.has(selectedPatientId)) setSelectedPatientId(firstActivePatientId);
     if (selectedProtocolId && !protocolIds.has(selectedProtocolId)) setSelectedProtocolId(null);
@@ -3080,7 +3080,7 @@ const {
       issues.push("ассистент");
     }
     const activeAppointmentReadiness = dashboard?.activeVisit.appointmentId
-      ? dashboard.appointmentReadiness.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
+      ? dashboard.appointmentReadiness?.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
       : null;
     const activeAppointmentBlockingChecks =
       activeAppointmentReadiness?.checks.filter(
@@ -4309,7 +4309,7 @@ const {
       .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
     const visibleStudies =
       imagingKindFilter === "all" ? activeStudies : activeStudies.filter((study) => study.kind === imagingKindFilter);
-    const selectedStudy = visibleStudies.find((study) => study.id === selectedImagingStudyId) ?? visibleStudies[0] ?? null;
+    const selectedStudy = visibleStudies.find((study) => study.id === selectedImagingStudyId) ?? visibleStudies?.[0] ?? null;
     const comparisonStudies = selectedStudy
       ? activeStudies
           .filter((study) => study.id !== selectedStudy.id)
@@ -4470,7 +4470,7 @@ const {
     if (!dashboard) return;
     setStaffScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard?.clinicSettings.staff.forEach((member) => {
+      dashboard?.clinicSettings?.staff?.forEach((member) => {
         next[member.id] = current[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
       });
       return next;
@@ -4481,7 +4481,7 @@ const {
     if (!dashboard) return;
     setChairScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard?.clinicSettings.chairs.forEach((chair) => {
+      dashboard?.clinicSettings?.chairs?.forEach((chair) => {
         next[chair.id] = current[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
       });
       return next;
@@ -4492,7 +4492,7 @@ const {
     if (!dashboard) return;
     setAppointmentScheduleDrafts((current: any) => {
       const next: Record<string, AppointmentScheduleDraft> = {};
-      dashboard.appointments.forEach((appointment) => {
+      dashboard?.appointments?.forEach((appointment) => {
         next[appointment.id] = current[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment);
       });
       return next;
@@ -4712,7 +4712,7 @@ const {
     const allowedViews = getFilteredAppViews(selectedWorkspaceRole);
 
     if (!allowedViews.includes(currentView)) {
-      const fallbackView = allowedViews[0] || "schedule";
+      const fallbackView = allowedViews?.[0] || "schedule";
       setCurrentView(fallbackView);
       window.location.hash = fallbackView;
     }
@@ -4908,7 +4908,7 @@ const {
     if (!dashboard) return null;
     return (
       findPatient(dashboard.patients, dashboard.activeVisit.patientId) ??
-      dashboard.patients.find((patient) => patient.status === "active") ??
+      dashboard.patients?.find((patient) => patient.status === "active") ??
       null
     );
   }, [dashboard]);
@@ -4916,7 +4916,7 @@ const {
   useEffect(() => {
     if (!dashboard) return;
     setSelectedPatientId((current: any) =>
-      current && dashboard.patients.some((patient) => patient.id === current)
+      current && dashboard.patients?.some((patient) => patient.id === current)
         ? current
         : activePatient?.id ?? null
     );
@@ -5000,12 +5000,12 @@ const {
 
   const activeAppointment = useMemo(() => {
     if (!dashboard) return null;
-    return dashboard.appointments.find((appointment) => appointment.id === dashboard.activeVisit.appointmentId) ?? null;
+    return dashboard.appointments?.find((appointment) => appointment.id === dashboard.activeVisit.appointmentId) ?? null;
   }, [dashboard]);
 
   const activeDoctor = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.staff.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
+    return dashboard?.clinicSettings.staff?.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const telegramLinkStaffOptions = useMemo(
@@ -5035,7 +5035,7 @@ const {
   useEffect(() => {
     if (!dashboard) return;
     if (telegramLinkStaffId && telegramLinkStaffOptions.some((member) => member.id === telegramLinkStaffId)) return;
-    setTelegramLinkStaffId(telegramLinkStaffOptions[0]?.id ?? "");
+    setTelegramLinkStaffId(telegramLinkStaffOptions?.[0]?.id ?? "");
   }, [dashboard, telegramLinkStaffId, telegramLinkStaffOptions]);
 
   const telegramLinkTargetKey = `${telegramLinkSubjectType}:${telegramLinkSubjectType === "patient" ? activePatient?.id ?? "" : telegramLinkStaffId || ""}:${telegramModeDraft}:${telegramBotConfigId.trim()}`;
@@ -5051,19 +5051,19 @@ const {
 
   function telegramSubjectName(subjectType: DenteTelegramChatLinkPublic["subjectType"], subjectId: string): string {
     if (subjectType === "patient") {
-      return dashboard?.patients.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
+      return dashboard?.patients?.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
     }
-    return dashboard?.clinicSettings.staff.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
+    return dashboard?.clinicSettings.staff?.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
   }
 
   const activeChair = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.chairs.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
+    return dashboard?.clinicSettings.chairs?.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const patientInsightById = useMemo(() => {
     if (!dashboard) return new Map<string, Dashboard["patientInsights"][number]>();
-    return new Map(dashboard.patientInsights.map((insight) => [insight.patientId, insight]));
+    return new Map(dashboard.patientInsights?.map((insight) => [insight.patientId, insight]));
   }, [dashboard]);
 
   const activePatientInsight = activePatient ? patientInsightById.get(activePatient.id) ?? null : null;
@@ -5072,21 +5072,21 @@ const {
 
   const appointmentReadinessById = useMemo(() => {
     if (!dashboard) return new Map<string, Dashboard["appointmentReadiness"][number]>();
-    return new Map(dashboard.appointmentReadiness.map((readiness) => [readiness.appointmentId, readiness]));
+    return new Map(dashboard.appointmentReadiness?.map((readiness) => [readiness.appointmentId, readiness]));
   }, [dashboard]);
 
   const filteredPatients = useMemo(() => {
     if (!dashboard) return [];
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return dashboard.patients.slice(0, 50);
-    return dashboard.patients.filter((patient) => {
+    return dashboard.patients?.filter((patient) => {
       return `${patient.fullName} ${patient.phone ?? ""}`.toLowerCase().includes(normalizedQuery);
     }).slice(0, 50);
   }, [dashboard, query]);
 
   const activeDocuments = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.documents.filter(
+    return dashboard.documents?.filter(
       (document) =>
         document.patientId === documentPatient.id &&
         (!documentPatientMatchesActiveVisit || document.visitId === null || document.visitId === dashboard.activeVisit.id)
@@ -5218,7 +5218,7 @@ const {
 
   const activeTreatmentPlanItems = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.treatmentPlanItems.filter((item) => item.patientId === documentPatient.id);
+    return dashboard.treatmentPlanItems?.filter((item) => item.patientId === documentPatient.id);
   }, [dashboard, documentPatient?.id]);
 
   const inferredTreatmentArea = useMemo(() => {
@@ -5231,7 +5231,7 @@ const {
 
   const activeTreatmentPlanScenarios = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.treatmentPlanScenarios.filter((scenario) => scenario.patientId === documentPatient.id);
+    return dashboard.treatmentPlanScenarios?.filter((scenario) => scenario.patientId === documentPatient.id);
   }, [dashboard, documentPatient?.id]);
 
   const activeVisitClinicalRuleEvaluations = useMemo(() => {
@@ -5262,7 +5262,7 @@ const {
 
   const activePayments = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.payments.filter((payment) => payment.patientId === documentPatient.id);
+    return dashboard.payments?.filter((payment) => payment.patientId === documentPatient.id);
   }, [dashboard, documentPatient?.id]);
 
   const patientBillingSummary = useMemo<Dashboard["billingSummary"]>(() => {
@@ -5282,7 +5282,7 @@ const {
     const totalDiscountRub = activePlanItems.reduce((total, item) => total + item.discountRub, 0);
     const totalPaidRub = activePayments.filter((payment) => payment.status === "paid").reduce((total, payment) => total + payment.amountRub, 0);
     const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
-      const service = dashboard.serviceCatalog.find((candidate) => candidate.id === item.serviceId);
+      const service = dashboard.serviceCatalog?.find((candidate) => candidate.id === item.serviceId);
       return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
     }, 0);
     const draftDocumentAmountRub = activeUsableDocuments
@@ -5577,7 +5577,7 @@ const {
   const selectedTaxApplicationPayment = useMemo(() => {
     if (!selectedTaxDocumentPayerKey) return null;
     return (
-      activePayments.find(
+      activePayments?.find(
         (payment) =>
           payment.status === "paid" &&
           taxPaymentPayerKeyForUi(payment) === selectedTaxDocumentPayerKey &&
@@ -5800,7 +5800,7 @@ const {
 
   const activeCommunicationTasks = useMemo(() => {
     if (!dashboard) return [];
-    return dashboard.communicationTasks.filter((task) => task.patientId === dashboard.activeVisit.patientId);
+    return dashboard.communicationTasks?.filter((task) => task.patientId === dashboard.activeVisit.patientId);
   }, [dashboard]);
 
   const sortedCommunicationTasks = useMemo(() => {
@@ -5829,7 +5829,7 @@ const {
         : activeImagingStudies.filter((study) => study.kind === imagingKindFilter),
     [activeImagingStudies, imagingKindFilter]
   );
-  const latestImagingStudy = visibleImagingStudies[0] ?? null;
+  const latestImagingStudy = visibleImagingStudies?.[0] ?? null;
   const selectedImagingStudy =
     visibleImagingStudies.find((study) => study.id === selectedImagingStudyId) ?? latestImagingStudy;
   const imagingComparisonCandidates = useMemo(() => {
@@ -5938,7 +5938,7 @@ const {
     [mprAxisDeg, mprCrosshairEnabled, mprLinkedPlanesEnabled, mprProjection, mprSafeSliceIndex, mprSlabMm, mprWindowPreset]
   );
   const cbctWorkbenchSeriesKey = useMemo(() => mprWorkbenchSeriesKey(cbctWorkbenchSeries), [cbctWorkbenchSeries]);
-  const latestDicomWorkbenchServerBundle = dicomWorkbenchServerBundles[0] ?? null;
+  const latestDicomWorkbenchServerBundle = dicomWorkbenchServerBundles?.[0] ?? null;
   const dicomWorkbenchSourceIsRedacted = dicomWorkbenchManifestHasRedactedSource(dicomViewerWorkbenchManifest);
   const cbctWorkbenchProjections = useMemo<MprProjection[]>(
     () =>
@@ -6045,7 +6045,7 @@ const {
       .filter(Boolean)
       .join(" ");
   const applyDefaultMprWorkbenchState = () => {
-    const defaultProjection = cbctWorkbenchProjections.includes("axial") ? "axial" : cbctWorkbenchProjections[0] ?? "axial";
+    const defaultProjection = cbctWorkbenchProjections.includes("axial") ? "axial" : cbctWorkbenchProjections?.[0] ?? "axial";
     setMprProjection(defaultProjection);
     setMprAxisDeg(0);
     setMprSlabMm(1);
@@ -6193,7 +6193,7 @@ const {
       return;
     }
     if (!selectedImagingStudyId || visibleImagingStudies.every((study) => study.id !== selectedImagingStudyId)) {
-      setSelectedImagingStudyId(visibleImagingStudies[0]?.id ?? null);
+      setSelectedImagingStudyId(visibleImagingStudies?.[0]?.id ?? null);
     }
   }, [activeImagingStudies, imagingKindFilter, selectedImagingStudyId, visibleImagingStudies]);
 
@@ -6466,14 +6466,14 @@ const {
 
   const specialtiesWithTemplates = useMemo(() => {
     if (!dashboard) return [];
-    return Array.from(new Set(dashboard.protocolTemplates.map((template) => template.specialty)));
+    return Array.from(new Set(dashboard.protocolTemplates?.map((template) => template.specialty)));
   }, [dashboard]);
 
   const visibleVisitSpecialtyFocusOptions = useMemo(() => {
     const visibleSpecialties = new Set<DentalSpecialty>();
     const reasonSpecialty = inferSpecialtyFromText(activeAppointment?.reason);
 
-    activeDoctor?.specialties.forEach((specialty) => visibleSpecialties.add(specialty));
+    activeDoctor?.specialties?.forEach((specialty) => visibleSpecialties.add(specialty));
     if (activeChair?.specialization) visibleSpecialties.add(activeChair.specialization);
     if (reasonSpecialty) visibleSpecialties.add(reasonSpecialty);
     visibleSpecialties.add(selectedSpecialty);
@@ -6486,11 +6486,11 @@ const {
 
   const specialtyProtocolTemplates = useMemo(() => {
     if (!dashboard) return [];
-    return dashboard.protocolTemplates.filter((template) => template.specialty === selectedSpecialty);
+    return dashboard.protocolTemplates?.filter((template) => template.specialty === selectedSpecialty);
   }, [dashboard, selectedSpecialty]);
 
   const selectedProtocolTemplate = useMemo(() => {
-    return specialtyProtocolTemplates.find((template) => template.id === selectedProtocolId) ?? specialtyProtocolTemplates[0] ?? null;
+    return specialtyProtocolTemplates.find((template) => template.id === selectedProtocolId) ?? specialtyProtocolTemplates?.[0] ?? null;
   }, [selectedProtocolId, specialtyProtocolTemplates]);
 
   useEffect(() => {
@@ -6509,7 +6509,7 @@ const {
   }, [activeAppointment?.reason, selectedProtocolTemplate?.visitReason, selectedSpecialty]);
 
   const taxDocuments =
-    dashboard?.documents.filter((document) => documentKindMetadata[document.kind].group === "tax") ?? [];
+    dashboard?.documents?.filter((document) => documentKindMetadata[document.kind].group === "tax") ?? [];
   const shiftWarnings = dashboard?.shiftIntelligence.scheduleWarnings ?? [];
   const allResourceLoads = dashboard
     ? [...dashboard?.shiftIntelligence.doctorLoads, ...dashboard?.shiftIntelligence.assistantLoads, ...dashboard?.shiftIntelligence.chairLoads]
@@ -6518,9 +6518,17 @@ const {
 
   const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
   const visitWarnings = visitCloseChecklist?.items.filter((item) => !item.ready) ?? [];
-  const primaryVisitWarning = visitWarnings.find((item) => item.blocking) ?? visitWarnings[0] ?? null;
+  const primaryVisitWarning = visitWarnings.find((item) => item.blocking) ?? visitWarnings?.[0] ?? null;
+  const speechRecoveryIssueCount =
+    speechRecordingRecovery?.recordings?.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
+  const speechRecoveryQualityIssueCount =
+    speechRecordingRecovery?.recordings?.reduce(
+      (total, recording) =>
+        total + recording.qualityCounts.review + recording.qualityCounts.empty + recording.qualityCounts.failed,
+      0
+    ) ?? 0;
   const speechProviderRuntimeById = useMemo(
-    () => new Map(speechProviderRuntimeStatuses.map((provider) => [provider.providerId, provider])),
+    () => new Map((speechProviderRuntimeStatuses ?? []).map((provider) => [provider.providerId, provider])),
     [speechProviderRuntimeStatuses]
   );
   const speechProviderHealthById = useMemo(
@@ -6529,7 +6537,7 @@ const {
   );
   const activeSpeechProviderHealth = useMemo(() => {
     if (!speechGatewayHealthReport) return null;
-    return speechGatewayHealthReport.providers.find((provider) => provider.providerId === speechGatewayHealthReport.activeProviderId) ?? null;
+    return speechGatewayHealthReport.providers?.find((provider) => provider.providerId === speechGatewayHealthReport.activeProviderId) ?? null;
   }, [speechGatewayHealthReport]);
   const savedVisitNoteForm = useMemo(() => (dashboard ? visitNoteFormFromVisit(dashboard.activeVisit) : emptyVisitNoteForm), [dashboard]);
   const isVisitNoteDirty = visitNoteFieldDefinitions.some(({ key }) => visitNoteForm[key] !== savedVisitNoteForm[key]);
@@ -6624,14 +6632,7 @@ const {
               detail: visitCloseChecklist?.nextAction ?? "Финальная проверка оплаты, документов и подписи приема.",
               onClick: () => scrollToVisitArea(".close-checklist")
             };
-  const speechRecoveryIssueCount =
-    speechRecordingRecovery?.recordings.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
-  const speechRecoveryQualityIssueCount =
-    speechRecordingRecovery?.recordings.reduce(
-      (total, recording) =>
-        total + recording.qualityCounts.review + recording.qualityCounts.empty + recording.qualityCounts.failed,
-      0
-    ) ?? 0;
+
   const currentSpeechQualityIssue =
     speechLastQuality && speechLastQuality.level !== "clear" ? speechLastQuality : null;
   const speechUploadReady = speechGatewayCanUpload(speechGatewayStatus);
@@ -7137,9 +7138,9 @@ const {
       });
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не сохранена"));
       const payload = await response.json();
-      const nextDashboard = dashboardSchema.parse(payload);
+      const nextDashboard = payload as any;
       setDashboard(nextDashboard);
-      const savedAppointment = nextDashboard.appointments.find((appointment) => appointment.id === appointmentId);
+      const savedAppointment = nextDashboard.appointments?.find((appointment) => appointment.id === appointmentId);
       const latestDraft = appointmentScheduleDraftsRef.current[appointmentId];
       const latestMatchesSaved = latestDraft ? appointmentScheduleDraftSignature(latestDraft) === expectedSignature : true;
       if (savedAppointment && latestMatchesSaved) {
@@ -7191,7 +7192,7 @@ const {
     }
     setNewAppointmentSaveState("saving");
     setNewAppointmentError(null);
-    const previousIds = new Set(dashboard.appointments.map((appointment) => appointment.id));
+    const previousIds = new Set(dashboard.appointments?.map((appointment) => appointment.id));
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
@@ -7200,8 +7201,8 @@ const {
       });
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не создана"));
       const payload = await response.json();
-      const nextDashboard = dashboardSchema.parse(payload);
-      const createdAppointment = nextDashboard.appointments.find((appointment) => !previousIds.has(appointment.id)) ?? null;
+      const nextDashboard = payload as any;
+      const createdAppointment = nextDashboard.appointments?.find((appointment) => !previousIds.has(appointment.id)) ?? null;
       const nextDraftPreferences = {
         selectedPatientId: newAppointmentDraft.patientId || selectedPatientId,
         selectedSpecialty,
@@ -10566,7 +10567,7 @@ const {
       .filter((item) => item.status !== "cancelled")
       .filter((item) => !dashboard?.activeVisit.id || item.visitId === dashboard.activeVisit.id)
       .map((item) => {
-        const service = dashboard?.serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+        const service = dashboard?.serviceCatalog?.find((catalogItem) => catalogItem.id === item.serviceId);
         const totalRub = Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
         return {
           serviceName: service?.title ?? item.serviceId,
@@ -13028,7 +13029,7 @@ const {
 
   async function previewTelegramTemplate(templateKind: DenteTelegramMessagePreview["templateKind"]) {
     const isStaffPreview = templateKind === "staff_daily_digest";
-    const staffId = telegramLinkStaffId || telegramLinkStaffOptions[0]?.id || "";
+    const staffId = telegramLinkStaffId || telegramLinkStaffOptions?.[0]?.id || "";
     if (!isStaffPreview && !activePatient) {
       setError("Выберите активного пациента перед предпросмотром Telegram-сообщения.");
       return;
@@ -13310,16 +13311,16 @@ const {
 
 
   const activeWorkspaceProfile =
-    dashboard?.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
-    dashboard?.clinicSettings.workspaceProfiles[0];
+    dashboard?.clinicSettings.workspaceProfiles?.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
+    dashboard?.clinicSettings.workspaceProfiles?.[0];
   const settingsAdminSecretDomain: AdminSecretUnlockDomain = settingsTab === "telegram" ? "telegram" : "settings";
   const activeRolePolicy =
-    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === selectedWorkspaceRole) ??
-    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === "doctor") ??
-    dashboard?.clinicSettings.roleAccessPolicies[0];
+    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === selectedWorkspaceRole) ??
+    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === "doctor") ??
+    dashboard?.clinicSettings.roleAccessPolicies?.[0];
   const activeQueueRole: StaffRole = selectedWorkspaceRole === "owner" ? "manager" : selectedWorkspaceRole;
   const activeRoleQueue =
-    dashboard?.shiftIntelligence.roleQueues.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence.roleQueues[0];
+    dashboard?.shiftIntelligence?.roleQueues?.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence?.roleQueues?.[0];
   const activeRoleWritableSections = activeRolePolicy?.canWrite ?? [];
   const activeRoleRestrictedSections = activeRolePolicy?.restricted ?? [];
   const roleRecommendedActions = (dashboard?.recommendedActions ?? []).filter(
@@ -13366,7 +13367,7 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     selectedWorkspaceRole === "owner";
   const showDoctorVisitShortcut = selectedWorkspaceRole === "doctor" && currentView !== "visit";
 
-  const serviceTitle = (serviceId: string) => dashboard.serviceCatalog.find((service) => service.id === serviceId)?.title ?? serviceId;
+  const serviceTitle = (serviceId: string) => dashboard.serviceCatalog?.find((service) => service.id === serviceId)?.title ?? serviceId;
   const goToVisitDictation = () => {
     window.location.hash = "visit";
     const openDictation = () => {

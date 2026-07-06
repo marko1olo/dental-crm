@@ -5011,7 +5011,10 @@ export const imagingViewerImplantPlanSchema = z.object({
   lengthMm: z.number().positive().max(80),
   platform: z.string().min(1).max(120),
   indication: z.string().max(300),
-  selectedAt: z.string().nullable().default(null)
+  selectedAt: z.string().nullable().default(null),
+  sleeveHeightMm: z.number().positive().optional(),
+  sleeveDiameterMm: z.number().positive().optional(),
+  sleeveOffsetMm: z.number().positive().optional()
 });
 export type ImagingViewerImplantPlan = z.infer<typeof imagingViewerImplantPlanSchema>;
 

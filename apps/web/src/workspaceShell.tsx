@@ -174,7 +174,7 @@ export function WorkspaceTopbar({
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">{todayIso}</p>
+        <p className="eyebrow">{new Date(todayIso).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         <h1>{clinicName}</h1>
         <details className="workspace-role-switcher" aria-label="Рабочий режим">
           <summary>

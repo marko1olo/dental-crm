@@ -482,6 +482,18 @@ export const documents: GeneratedDocument[] = [
   }
 ];
 
+
+export function getServiceCatalogItem(serviceId: string): ServiceCatalogItem | undefined {
+  let service = serviceCatalogMap.get(serviceId);
+  if (service === undefined) {
+    service = serviceCatalog.find((catalogItem) => catalogItem.id === serviceId);
+    if (service) {
+      serviceCatalogMap.set(serviceId, service);
+    }
+  }
+  return service;
+}
+
 export const serviceCatalogMap = new Map<string, ServiceCatalogItem>();
 export const serviceCatalog: ServiceCatalogItem[] = [
   {
@@ -1113,58 +1125,19 @@ function treatmentLineTotal(item: TreatmentPlanItem): number {
 }
 
 export function buildBillingSummary(): BillingSummary {
-  let totalPlannedRub = 0;
-  let totalDiscountRub = 0;
-  let taxDeductionEligibleRub = 0;
-  let openTreatmentItems = 0;
-
-  for (let i = 0; i < treatmentPlanItems.length; i++) {
-    const item = treatmentPlanItems[i];
-    if (!item || item.status === "cancelled") continue;
-
-    const lineTotal = treatmentLineTotal(item);
-    totalPlannedRub += lineTotal;
-    totalDiscountRub += item.discountRub;
-
-    const service = serviceCatalogMap.get(item.serviceId) || serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
-    if (service?.taxDeductible) {
-      taxDeductionEligibleRub += lineTotal;
-    }
-
-    if (item.status !== "completed") {
-      openTreatmentItems += 1;
-    }
-  }
-
-  let totalPaidRub = 0;
-  const paidDocumentIds = new Set<string>();
-  for (let i = 0; i < payments.length; i++) {
-    const payment = payments[i];
-    if (!payment) continue;
-
-    if (payment.status === "paid") {
-      totalPaidRub += payment.amountRub;
-      if (payment.documentId) {
-        paidDocumentIds.add(payment.documentId);
-      }
-    }
-  }
-
-  let draftDocumentAmountRub = 0;
-  let unpaidDocuments = 0;
-  for (let i = 0; i < documents.length; i++) {
-    const document = documents[i];
-    if (!document) continue;
-
-    if (document.status === "draft") {
-      const amount = document.totalAmountRub ?? 0;
-      draftDocumentAmountRub += amount;
-
-      if (amount > 0 && !paidDocumentIds.has(document.id)) {
-        unpaidDocuments += 1;
-      }
-    }
-  }
+  const activePlanItems = treatmentPlanItems.filter((item) => item.status !== "cancelled");
+  const totalPlannedRub = activePlanItems.reduce((total, item) => total + treatmentLineTotal(item), 0);
+  const totalDiscountRub = activePlanItems.reduce((total, item) => total + item.discountRub, 0);
+  const totalPaidRub = payments
+    .filter((payment) => payment.status === "paid")
+    .reduce((total, payment) => total + payment.amountRub, 0);
+  const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
+    const service = getServiceCatalogItem(item.serviceId);
+    return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
+  }, 0);
+  const draftDocumentAmountRub = documents
+    .filter((document) => document.status === "draft")
+    .reduce((total, document) => total + (document.totalAmountRub ?? 0), 0);
 
   return {
     totalPlannedRub,
@@ -1173,8 +1146,8 @@ export function buildBillingSummary(): BillingSummary {
     totalDueRub: Math.max(0, totalPlannedRub - totalPaidRub),
     taxDeductionEligibleRub,
     draftDocumentAmountRub,
-    openTreatmentItems,
-    unpaidDocuments
+    openTreatmentItems: 0,
+    unpaidDocuments: 0
   };
 }
 
@@ -1555,13 +1528,57 @@ function buildPatientInsights(): PatientInsight[] {
     "completed_works_act"
   ];
 
+  const documentsByPatient = new Map<string, typeof documents>();
+  for (const doc of documents) {
+    if (doc.patientId === null) continue;
+    if (!documentsByPatient.has(doc.patientId)) documentsByPatient.set(doc.patientId, []);
+    documentsByPatient.get(doc.patientId)!.push(doc);
+  }
+
+  const tasksByPatient = new Map<string, typeof communicationTasks>();
+  for (const task of communicationTasks) {
+    if (isOpenCommunicationTask(task) && task.patientId !== null) {
+      if (!tasksByPatient.has(task.patientId)) tasksByPatient.set(task.patientId, []);
+      tasksByPatient.get(task.patientId)!.push(task);
+    }
+  }
+
+  const imagesByPatient = new Map<string, typeof imagingStudies>();
+  for (const image of imagingStudies) {
+    if (image.patientId === null) continue;
+    if (!imagesByPatient.has(image.patientId)) imagesByPatient.set(image.patientId, []);
+    imagesByPatient.get(image.patientId)!.push(image);
+  }
+
+  const paymentsByPatient = new Map<string, typeof payments>();
+  for (const payment of payments) {
+    if (payment.status === "paid" && payment.patientId !== null) {
+      if (!paymentsByPatient.has(payment.patientId)) paymentsByPatient.set(payment.patientId, []);
+      paymentsByPatient.get(payment.patientId)!.push(payment);
+    }
+  }
+
+  const planItemsByPatient = new Map<string, typeof treatmentPlanItems>();
+  for (const item of treatmentPlanItems) {
+    if (item.patientId === null) continue;
+    if (!planItemsByPatient.has(item.patientId)) planItemsByPatient.set(item.patientId, []);
+    planItemsByPatient.get(item.patientId)!.push(item);
+  }
+
+  const appointmentsByPatient = new Map<string, typeof appointments>();
+  for (const appointment of appointments) {
+    if (appointment.patientId === null) continue;
+    if (!appointmentsByPatient.has(appointment.patientId)) appointmentsByPatient.set(appointment.patientId, []);
+    appointmentsByPatient.get(appointment.patientId)!.push(appointment);
+  }
+
   return patients.map((patient) => {
-    const patientDocuments = documents.filter((document) => document.patientId === patient.id);
-    const patientTasks = communicationTasks.filter((task) => task.patientId === patient.id && isOpenCommunicationTask(task));
-    const patientImages = imagingStudies.filter((study) => study.patientId === patient.id);
-    const patientPayments = payments.filter((payment) => payment.patientId === patient.id && payment.status === "paid");
-    const patientPlanItems = treatmentPlanItems.filter((item) => item.patientId === patient.id);
-    const patientAppointments = appointments.filter((appointment) => appointment.patientId === patient.id);
+    const patientDocuments = documentsByPatient.get(patient.id) || [];
+    const patientTasks = tasksByPatient.get(patient.id) || [];
+    const patientImages = imagesByPatient.get(patient.id) || [];
+    const patientPayments = paymentsByPatient.get(patient.id) || [];
+    const patientPlanItems = planItemsByPatient.get(patient.id) || [];
+    const patientAppointments = appointmentsByPatient.get(patient.id) || [];
     const draftVisit = activeVisit.patientId === patient.id && activeVisit.status === "draft";
     const missingDocumentKinds = requiredDocuments.filter(
       (kind) => !patientDocuments.some((document) => document.kind === kind && document.status !== "voided")
@@ -6576,12 +6593,18 @@ function paymentReminderAlreadyCovered(outboxItemId: string): boolean {
 }
 
 function patientPaymentBalanceRub(patientId: string, organizationScope = denteTelegramBotSettings.organizationId): number {
-  const plannedRub = treatmentPlanItems
-    .filter((item) => item.organizationId === organizationScope && item.patientId === patientId && item.status !== "cancelled")
-    .reduce((total, item) => total + treatmentLineTotal(item), 0);
-  const paidRub = payments
-    .filter((payment) => payment.organizationId === organizationScope && payment.patientId === patientId && payment.status === "paid")
-    .reduce((total, payment) => total + payment.amountRub, 0);
+  const plannedRub = treatmentPlanItems.reduce((total, item) => {
+    if (item.organizationId === organizationScope && item.patientId === patientId && item.status !== "cancelled") {
+      return total + treatmentLineTotal(item);
+    }
+    return total;
+  }, 0);
+  const paidRub = payments.reduce((total, payment) => {
+    if (payment.organizationId === organizationScope && payment.patientId === patientId && payment.status === "paid") {
+      return total + payment.amountRub;
+    }
+    return total;
+  }, 0);
   return Math.max(0, plannedRub - paidRub);
 }
 
@@ -6655,7 +6678,7 @@ function buildDenteTelegramRecallItems(runtimeScope?: DenteTelegramOutboxRuntime
     if (item.organizationId !== organizationScope) return [];
     if (item.status !== "completed") return [];
 
-    const service = serviceCatalogMap.get(item.serviceId);
+    const service = getServiceCatalogItem(item.serviceId);
     if (service?.category !== "hygiene") return [];
 
     const patient = activePatientsMap.get(item.patientId);
@@ -6837,13 +6860,16 @@ function taxApplicationSlaWarning(document: GeneratedDocument): string | null {
 function buildDenteTelegramTaxDocumentRequestItems(runtimeScope?: DenteTelegramOutboxRuntimeScope): DenteTelegramOutboxItem[] {
   const runtime = resolveDenteTelegramOutboxRuntimeScope(runtimeScope);
   const organizationScope = runtime.settings.organizationId;
+  const activePatientIds = new Set(
+    patients.filter((p) => p.status === "active").map((p) => p.id)
+  );
+
   return documents.flatMap((document) => {
     if (document.organizationId !== organizationScope) return [];
     if (document.kind !== "tax_deduction_application") return [];
     if (document.status !== "issued") return [];
     if (!document.payload?.taxDeductionApplication) return [];
-    const patient = patients.find((candidate) => candidate.id === document.patientId && candidate.status === "active");
-    if (!patient) return [];
+    if (!activePatientIds.has(document.patientId)) return [];
 
     const itemId = taxDocumentRequestOutboxId(document);
     if (taxDocumentRequestAlreadySent(itemId)) return [];
@@ -8625,16 +8651,24 @@ function speechRecordingRecoveryFromChunks(recordingId: string, chunks: SpeechTr
     .slice()
     .sort((left, right) => left.chunkIndex - right.chunkIndex || left.createdAt.localeCompare(right.createdAt));
   const assembly = assembleSpeechRecordingFromChunks(recordingId, sortedChunks);
-  const statusCounts = {
-    transcribed: sortedChunks.filter((chunk) => chunk.status === "transcribed").length,
-    fallback_text: sortedChunks.filter((chunk) => chunk.status === "fallback_text").length,
-    needs_provider_key: sortedChunks.filter((chunk) => chunk.status === "needs_provider_key").length,
-    failed: sortedChunks.filter((chunk) => chunk.status === "failed").length
-  };
-  const totalDurationMs = sortedChunks.some((chunk) => chunk.durationMs !== null)
-    ? sortedChunks.reduce((total, chunk) => total + (chunk.durationMs ?? 0), 0)
-    : null;
-  const totalBytes = sortedChunks.reduce((total, chunk) => total + chunk.byteLength, 0);
+  const statusCounts = { transcribed: 0, fallback_text: 0, needs_provider_key: 0, failed: 0 };
+  let hasDuration = false;
+  let totalDurationMsSum = 0;
+  let totalBytes = 0;
+
+  for (const chunk of sortedChunks) {
+    if (chunk.status === "transcribed") statusCounts.transcribed++;
+    else if (chunk.status === "fallback_text") statusCounts.fallback_text++;
+    else if (chunk.status === "needs_provider_key") statusCounts.needs_provider_key++;
+    else if (chunk.status === "failed") statusCounts.failed++;
+
+    if (chunk.durationMs !== null) {
+      hasDuration = true;
+      totalDurationMsSum += chunk.durationMs;
+    }
+    totalBytes += chunk.byteLength;
+  }
+  const totalDurationMs = hasDuration ? totalDurationMsSum : null;
   const qualityCounts = countSpeechQualities(sortedChunks);
   const transcriptPreview = assembly.transcript.replace(/\s+/g, " ").trim().slice(0, 220);
   const recoveryState =

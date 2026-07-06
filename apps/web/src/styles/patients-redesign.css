@@ -278,3 +278,10 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+/* FIX: patient-summary-card contrast in dark mode */
+.patient-summary-card {
+  background: linear-gradient(150deg, rgba(13, 148, 136, 0.1), var(--paper-strong));
+  border: 1px solid rgba(13, 148, 136, 0.2);
+}

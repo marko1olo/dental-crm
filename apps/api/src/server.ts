@@ -10,6 +10,7 @@ import { registerCommunicationRoutes } from "./routes/communications.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
+import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
 import { registerImportRoutes } from "./routes/imports.js";
 import { registerPatientRoutes } from "./routes/patients.js";
@@ -24,6 +25,11 @@ import { registerVisitRoutes } from "./routes/visits.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerOdontogramRoutes } from "./routes/odontogram.js";
+import registerSchedulerSync from "./routes/schedulerSync.js";
+import registerHandoff from "./routes/handoff.js";
+import registerSurgicalRoutes from "./routes/surgical.js";
+import { startRecallWorker } from "./services/recallWorker.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
@@ -203,6 +209,7 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerDashboardRoutes(app);
   await registerDocumentRoutes(app);
   await registerImagingRoutes(app);
+  await registerImagingPlanningRoutes(app);
   await registerIngestionRoutes(app);
   await registerImportRoutes(app);
   await registerPatientRoutes(app);
@@ -218,11 +225,17 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerDicomwebRoutes(app);
   await registerXrayRoutes(app);
   await registerAuthRoutes(app);
+  await registerOdontogramRoutes(app);
+  await registerSchedulerSync(app);
+  await registerHandoff(app);
+  await registerSurgicalRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
+    const recallWorkerTimer = startRecallWorker();
     app.addHook("onClose", async () => {
       telegramOutboxDueWorker.stop();
+      clearInterval(recallWorkerTimer);
     });
   }
 

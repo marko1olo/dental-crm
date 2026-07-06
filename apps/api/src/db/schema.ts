@@ -475,6 +475,88 @@ export const communicationTemplates = pgTable("communication_templates", {
   isActive: boolean("is_active").notNull().default(true)
 });
 
+export const clinicalTasksStatus = pgEnum("clinical_task_status", ["pending", "in_progress", "completed", "cancelled"]);
+
+export const clinicalTasks = pgTable("clinical_tasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  treatmentPlanId: uuid("treatment_plan_id").references(() => treatmentPlans.id),
+  assignedDoctorId: uuid("assigned_doctor_id").references(() => users.id),
+  taskType: text("task_type").notNull(), // e.g. "prosthetics_handoff"
+  status: clinicalTasksStatus("status").notNull().default("pending"),
+  title: text("title").notNull(),
+  description: text("description"),
+  dueAt: timestamp("due_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+// --- Implantology & Surgical Engine ---
+
+export const implantSystemEnum = pgEnum("implant_system", ["osstem", "straumann", "nobel", "bredent", "mdi", "other"]);
+export const mischBoneClassEnum = pgEnum("misch_bone_class", ["D1", "D2", "D3", "D4"]);
+export const drillProtocolStatusEnum = pgEnum("drill_protocol_status", ["draft", "confirmed", "completed"]);
+
+export const drillProtocols = pgTable("drill_protocols", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  treatmentPlanId: uuid("treatment_plan_id").references(() => treatmentPlans.id),
+  toothFdi: integer("tooth_fdi").notNull(), // FDI tooth number e.g. 46
+  implantSystem: implantSystemEnum("implant_system").notNull().default("osstem"),
+  implantDiameterMm: real("implant_diameter_mm").notNull().default(4.0),
+  implantLengthMm: real("implant_length_mm").notNull().default(10.0),
+  mischClass: mischBoneClassEnum("misch_class").notNull().default("D2"),
+  avgHuCortical: real("avg_hu_cortical"),
+  avgHuCancellous: real("avg_hu_cancellous"),
+  avgHuApical: real("avg_hu_apical"),
+  protocolJson: text("protocol_json").notNull().default("[]"), // DrillStep[]
+  angulationDeg: real("angulation_deg"), // implant axis angle vs occlusal plane
+  status: drillProtocolStatusEnum("status").notNull().default("draft"),
+  ctStudyInstanceUid: text("ct_study_instance_uid"),
+  createdByUserId: uuid("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const doctorCommissions = pgTable("doctor_commissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  specialty: dentalSpecialty("specialty").notNull(),
+  serviceCategory: serviceCategory("service_category").notNull(),
+  commissionPct: real("commission_pct").notNull().default(30.0), // % of service revenue
+  materialCostDeductionPct: real("material_cost_deduction_pct").notNull().default(100.0), // % of material cost deducted first
+  isActive: boolean("is_active").notNull().default(true),
+  effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull().defaultNow(),
+  effectiveTo: timestamp("effective_to", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const schedulerReservationsStatusEnum = pgEnum("scheduler_reservation_status", [
+  "draft", "proposed", "confirmed", "patient_notified", "arrived", "no_show", "cancelled"
+]);
+
+export const schedulerReservations = pgTable("scheduler_reservations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  treatmentPlanId: uuid("treatment_plan_id").references(() => treatmentPlans.id),
+  treatmentPlanItemId: uuid("treatment_plan_item_id"), // references treatmentPlanItemsNew
+  appointmentId: uuid("appointment_id").references(() => appointments.id),
+  assignedDoctorId: uuid("assigned_doctor_id").references(() => users.id),
+  phase: integer("phase").notNull().default(1), // 1=Sanation, 2=Surgery, 3=Prosthetics
+  durationMinutes: integer("duration_minutes").notNull().default(60),
+  proposedStartsAt: timestamp("proposed_starts_at", { withTimezone: true }),
+  proposedEndsAt: timestamp("proposed_ends_at", { withTimezone: true }),
+  status: schedulerReservationsStatusEnum("status").notNull().default("draft"),
+  recallDueAt: timestamp("recall_due_at", { withTimezone: true }), // when prosthetic recall is due
+  recallTriggeredAt: timestamp("recall_triggered_at", { withTimezone: true }),
+  jawLocation: text("jaw_location"), // "upper" | "lower" — affects osseointegration wait
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
 export const communicationTasks = pgTable("communication_tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
@@ -840,3 +922,65 @@ export const dicomWorkbenchBundles = pgTable("dicom_workbench_bundles", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
+
+export const patientCtPlannings = pgTable("patient_ct_plannings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  studyInstanceUid: text("study_instance_uid").notNull(),
+  splinePointsJson: text("spline_points_json").notNull().default("[]"),
+  nervePointsJson: text("nerve_points_json").notNull().default("[]"),
+  implantsJson: text("implants_json").notNull().default("[]"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    patientCtPlanningsStudyIdx: index("patient_ct_plannings_study_idx").on(table.studyInstanceUid)
+  };
+});
+
+
+
+export const toothStateEnum = pgEnum('tooth_state_enum', [
+  'Caries', 'Pulpitis', 'Missing', 'Crown', 'Implant', 'Filled', 'Healthy', 'Planned_Implant'
+]);
+
+export const toothStates = pgTable('tooth_states', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  patientId: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' }),
+  toothNumber: integer('tooth_number').notNull(),
+  state: toothStateEnum('state').notNull().default('Healthy'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => {
+  return {
+    patientToothIdx: index('patient_tooth_idx').on(table.patientId, table.toothNumber)
+  }
+});
+
+export const treatmentPlanStatusEnum = pgEnum('treatment_plan_status', [
+  'Draft', 'Active', 'Approved', 'Completed', 'Rejected'
+]);
+
+export const treatmentPlans = pgTable('treatment_plans', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  patientId: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  status: treatmentPlanStatusEnum('status').notNull().default('Draft'),
+  totalPrice: numeric('total_price', { precision: 12, scale: 2 }).notNull().default('0'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const treatmentPlanItemsNew = pgTable('treatment_plan_items_new', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  planId: uuid('plan_id').notNull().references(() => treatmentPlans.id, { onDelete: 'cascade' }),
+  toothNumber: integer('tooth_number'),
+  priceId: text('price_id'),
+  quantity: integer('quantity').notNull().default(1),
+  price: numeric('price', { precision: 12, scale: 2 }).notNull().default('0'),
+  discount: numeric('discount', { precision: 12, scale: 2 }).notNull().default('0'),
+  phase: integer('phase').notNull().default(1),
+  isBundle: boolean('is_bundle').notNull().default(false),
+  commissionAmount: numeric('commission_amount', { precision: 12, scale: 2 }).notNull().default('0')
+});
+

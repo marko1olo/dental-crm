@@ -1261,7 +1261,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Фиксация номера, сроков, состава услуг, стоимости, порядка оплаты и обязательных уведомлений пациента до лечения.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -1388,7 +1388,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Финальное подтверждение фактически оказанных услуг, оплаты, чеков и претензий пациента.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -1528,7 +1528,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Предварительный расчет с составом услуг, сроком действия, исключениями и правилами изменения цены.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -1680,7 +1680,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Реквизиты, плательщик, срок оплаты и состав услуг. Счет не заменяет кассовый чек.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -1763,7 +1763,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Явный набор оплаченных платежей, данные плательщика и фискальные чеки без скрытого захвата лишних оплат.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -1905,7 +1905,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Внутренний график сроков и сумм к договору или плану лечения без подмены банковского кредита.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -1981,7 +1981,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Проверка личности, полномочий и согласия на конкретное вмешательство несовершеннолетнего.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -2073,7 +2073,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Условия контроля, гарантийный срок, обязанности пациента и признаки для срочной связи.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Работа или услуга
@@ -2151,7 +2151,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Жалоба, аллергии, лекарства, хронические заболевания и риски до приема.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Жалоба или цель визита
@@ -2249,7 +2249,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Заявитель, ИНН, документ, родство, год и способ выдачи без ручных правок в HTML.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Заявитель / налогоплательщик
@@ -2362,7 +2362,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Конкретное вмешательство, область, показание, риски, альтернативы и рекомендации без пустого шаблона.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Планируемое вмешательство
@@ -2465,7 +2465,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Приложение к согласию для конкретной процедуры: тип, зона, материалы, риски, альтернативы и послеоперационные ограничения.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -2596,7 +2596,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Клиническая логика, этапы, альтернативы, риски и контроль до отдельного согласия на вмешательство.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Повод обращения
@@ -2707,7 +2707,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Фиксирует выбранный вариант, этапы, сумму, срок действия сметы, альтернативы, риски и подтверждения пациента.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Выбранный вариант
@@ -2827,7 +2827,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Структурированная памятка для пациента и короткий текст для Telegram-бота клиники.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -3029,7 +3029,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Перед созданием: метод, препарат, зона, доза и реакция.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Метод
@@ -3110,7 +3110,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Один понятный блок назначения без догадок в документе.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
                   <label>
@@ -3153,7 +3153,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Работа, зона, материал, цвет, источник данных и срок.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
                   <label>
@@ -3196,7 +3196,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Отдельные разрешения: карта, лаборатория, консилиум, обучение, маркетинг и узнаваемая публикация.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     {typedPhotoVideoMaterialOptions.map((option) => (
@@ -3290,7 +3290,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Вид исследования, область, клинический вопрос, показание и ограничения до рентгена или КЛКТ.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   {renderClinicalToothRowsEditor()}
                   <label>
@@ -3400,7 +3400,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p className="document-payload-note">Черновик этой карты сохраняется локально для выбранного пациента и визита до изменения или выпуска документа.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -3662,7 +3662,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Только сведения из подписанной медзаписи: период, диагноз, лечение, рекомендации и получатель.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -3797,7 +3797,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Состав, период, формат, получатель, полномочия и контакт выдачи без пустых полей.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Что выдать
@@ -3915,7 +3915,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Фиксирует только факт и время приема без диагноза, лечения, снимков и стоимости.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -3993,7 +3993,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Только по конкретному уже выданному запросу пациента или представителя.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Основание выдачи
@@ -4093,7 +4093,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Оператор, цели, категории данных, передачи и отзыв согласия без пустого шаблона.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="document-payload-row">
                     <label>
@@ -4197,7 +4197,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Что предложено, почему нужно, какие риски объяснены и когда срочно обращаться.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Предложенное вмешательство
@@ -4314,7 +4314,7 @@ export function DocumentsView(props: DocumentsViewProps) {
                     <p>Сумма, действие, чек, получатель и решение ответственного.</p>
                   </div>
   <details className="document-manual-override" style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginTop: "16px" }}>
-    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--brand-700)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
+    <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--teal-dark)", userSelect: "none" }}>✏️ Ручная корректировка полей (развернуть)</summary>
     <div className="document-payload-collapsed-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                   <label>
                     Действие

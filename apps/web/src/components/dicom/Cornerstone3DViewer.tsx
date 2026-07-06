@@ -1,376 +1,431 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import * as cornerstone from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
-import { PanoramicRendererWindow } from "./PanoramicRendererWindow";
 import cornerstoneDICOMImageLoader from "@cornerstonejs/dicom-image-loader";
-import dicomParser from "dicom-parser";
-import { vec3, mat4 } from "gl-matrix";
-import { calculateImplantBoneDensity, distancePointToSpline } from "../../mprMath";
 
-export interface ImplantData {
-  id: string;
-  fdiCode: string;
-  diameter: number;
-  length: number;
-  startWorld: vec3;
-  endWorld: vec3;
-  boneDensity: { averageHU: number, classification: string };
-  distanceToNerve: number;
-}
+import { PanoramicRendererWindow } from "./PanoramicRendererWindow";
+import { ViewportOverlays } from "./ViewportOverlays";
+import { DicomToolbar } from "./DicomToolbar";
+// ShadowAnalystTerminal removed — it is a 2D radiograph tool, not for 3D CT
+import { initCornerstoneTools, setupMprToolGroup, setupVrToolGroup } from "../../utils/dicom/toolsInit";
+import { ClinicalOverlay } from "./ClinicalOverlay";
+import { BoneQualityPanel } from "./BoneQualityPanel";
+import { generateClinicalReportPdf } from "../../utils/dicom/pdfExport";
+import type { ImplantSystem } from "../../utils/dicom/boneQualityEngine";
 
 interface Cornerstone3DViewerProps {
   imageIds: string[];
+  isPreview?: boolean;
+  onClose?: () => void;
 }
 
-export function Cornerstone3DViewer({ imageIds }: Cornerstone3DViewerProps) {
+export function Cornerstone3DViewer({ imageIds, isPreview = false, onClose }: Cornerstone3DViewerProps) {
   const axialRef = useRef<HTMLDivElement>(null);
   const sagittalRef = useRef<HTMLDivElement>(null);
   const coronalRef = useRef<HTMLDivElement>(null);
+  const vrRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [maximizedViewportId, setMaximizedViewportId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [volumeId, setVolumeId] = useState<string | null>(null);
+  
+  // Panorex State
   const [showPanorex, setShowPanorex] = useState(false);
   const [splinePoints, setSplinePoints] = useState<any[]>([]);
   const [panorexThickness, setPanorexThickness] = useState<number>(0);
   const [blendMode, setBlendMode] = useState<"mip" | "average">("mip");
+  
+  // Tools & UI State
+  const [vrPreset, setVrPreset] = useState<"CT-Bone" | "CT-Soft-Tissue">("CT-Bone");
   const [activeTool, setActiveTool] = useState<string>("Crosshairs");
-  const [implants, setImplants] = useState<ImplantData[]>([]);
-  const [aiProtocolLog, setAiProtocolLog] = useState<string>("");
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [boneDensityProfile, setBoneDensityProfile] = useState<number[]>([]);
+  const [implants, setImplants] = useState<any[]>([]);
+  const [patientId, setPatientId] = useState<string>("TEST_PATIENT_123");
+  const [implantSystem, setImplantSystem] = useState<ImplantSystem>('osstem');
+  const [activeFdi, setActiveFdi] = useState<number>(46);
+  const [activeImplantDiam, setActiveImplantDiam] = useState<number>(4.0);
+  const [activeImplantLen, setActiveImplantLen] = useState<number>(10.0);
 
+  // 1. Initialize System
   useEffect(() => {
     async function init() {
-      // 1. Initialize cornerstone core
       await cornerstone.init();
-      // 2. Initialize cornerstone tools
-      await cornerstoneTools.init();
+      await initCornerstoneTools();
 
-      // 3. Initialize DICOM image loader
       cornerstoneDICOMImageLoader.init({
+        useLegacyMetadataProvider: true,
         maxWebWorkers: navigator.hardwareConcurrency ? Math.min(navigator.hardwareConcurrency, 7) : 1,
       });
 
       setIsInitialized(true);
     }
     
-    if (!isInitialized) {
-      init();
-    }
+    if (!isInitialized) init();
 
     return () => {
-      // Hardcore performance cleanup!
+      // Aggressive OOM Prevention: Purge cache and destroy all tools
+      console.log("Purging DICOM Cache...");
       cornerstone.cache.purgeCache();
     };
   }, [isInitialized]);
 
+  // 2. Load Volume and Render
   useEffect(() => {
     if (!isInitialized || !imageIds.length) return;
 
+    const renderingEngineId = "my-engine";
+    let renderingEngine = cornerstone.getRenderingEngine(renderingEngineId);
+    if (!renderingEngine) {
+      renderingEngine = new cornerstone.RenderingEngine(renderingEngineId);
+    }
+
+    const vId = "cornerstoneStreamingImageVolume:cbct-volume";
+    setVolumeId(vId);
+
+    const viewportIds = { axial: "AXIAL", sagittal: "SAGITTAL", coronal: "CORONAL", vr: "VR" };
+
+    const viewportInputArray = [
+      { viewportId: viewportIds.axial, type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC, element: axialRef.current as HTMLDivElement, defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.AXIAL, background: [0, 0, 0] } },
+      { viewportId: viewportIds.sagittal, type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC, element: sagittalRef.current as HTMLDivElement, defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.SAGITTAL, background: [0, 0, 0] } },
+      { viewportId: viewportIds.coronal, type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC, element: coronalRef.current as HTMLDivElement, defaultOptions: { orientation: cornerstone.Enums.OrientationAxis.CORONAL, background: [0, 0, 0] } },
+      { viewportId: viewportIds.vr, type: cornerstone.Enums.ViewportType.VOLUME_3D, element: vrRef.current as HTMLDivElement, defaultOptions: { background: [0, 0, 0] } },
+    ];
+
+    renderingEngine.setViewports(viewportInputArray as any);
+
     async function loadAndRender() {
-      const vId = "my-volume";
-      setVolumeId(vId);
-      const renderingEngineId = "my-engine";
+      // Load slices
+      const batchSize = 20;
+      for (let i = 0; i < imageIds.length; i += batchSize) {
+        const batch = imageIds.slice(i, i + batchSize).map((imageId) => cornerstone.imageLoader.loadAndCacheImage(imageId));
+        await Promise.all(batch);
+      }
 
-      const renderingEngine = new cornerstone.RenderingEngine(renderingEngineId);
-
-      const viewportIds = {
-        axial: "AXIAL",
-        sagittal: "SAGITTAL",
-        coronal: "CORONAL",
-      };
-
-      const viewportInputArray = [
-        {
-          viewportId: viewportIds.axial,
-          type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
-          element: axialRef.current as HTMLDivElement,
-          defaultOptions: {
-            orientation: cornerstone.Enums.OrientationAxis.AXIAL,
-            background: [0, 0, 0] as cornerstone.Types.Point3,
-          },
-        },
-        {
-          viewportId: viewportIds.sagittal,
-          type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
-          element: sagittalRef.current as HTMLDivElement,
-          defaultOptions: {
-            orientation: cornerstone.Enums.OrientationAxis.SAGITTAL,
-            background: [0, 0, 0] as cornerstone.Types.Point3,
-          },
-        },
-        {
-          viewportId: viewportIds.coronal,
-          type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
-          element: coronalRef.current as HTMLDivElement,
-          defaultOptions: {
-            orientation: cornerstone.Enums.OrientationAxis.CORONAL,
-            background: [0, 0, 0] as cornerstone.Types.Point3,
-          },
-        },
-      ];
-
-      renderingEngine.setViewports(viewportInputArray);
-
-      // Define a volume in memory
-      const volume = await cornerstone.volumeLoader.createAndCacheVolume(vId, {
-        imageIds,
+      // Sort slices by Z coordinate or instance number
+      const sortedImageIds = [...imageIds].sort((a, b) => {
+        const planeA = cornerstone.metaData.get('imagePlaneModule', a);
+        const planeB = cornerstone.metaData.get('imagePlaneModule', b);
+        if (planeA?.imagePositionPatient && planeB?.imagePositionPatient) {
+          return planeA.imagePositionPatient[2] - planeB.imagePositionPatient[2];
+        }
+        const instA = cornerstone.metaData.get('instance', a);
+        const instB = cornerstone.metaData.get('instance', b);
+        return (instA?.InstanceNumber || 0) - (instB?.InstanceNumber || 0);
       });
 
-      // Load the volume (decodes pixel data)
+      console.log(`[CT] Volume constructed with ${sortedImageIds.length} slices.`);
+
+      const volume = await cornerstone.volumeLoader.createAndCacheVolume(vId, { imageIds: sortedImageIds });
       volume.load();
 
+      // Tool setups
+      setupMprToolGroup(renderingEngineId, [viewportIds.axial, viewportIds.sagittal, viewportIds.coronal]);
+      setupVrToolGroup(renderingEngineId, viewportIds.vr);
+
+      cornerstone.eventTarget.addEventListener(cornerstone.EVENTS.IMAGE_VOLUME_MODIFIED, (e: any) => {
+        if (e.detail.volumeId === vId) {
+          renderingEngine?.renderViewports([viewportIds.axial, viewportIds.sagittal, viewportIds.coronal, viewportIds.vr]);
+        }
+      });
+
       await cornerstone.setVolumesForViewports(
-        renderingEngine,
-        [{ volumeId: vId }],
-        [viewportIds.axial, viewportIds.sagittal, viewportIds.coronal]
+        renderingEngine!,
+        [{ volumeId: vId, callback: ({ volumeActor }) => {
+           volumeActor.getProperty().getRGBTransferFunction(0).setMappingRange(-1000, 3000);
+        }}],
+        [viewportIds.axial, viewportIds.sagittal, viewportIds.coronal, viewportIds.vr]
       );
 
-      // Add crosshairs tool
-      const toolGroupId = "mpr-tool-group";
-      let toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
-      if (!toolGroup) {
-        toolGroup = cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId)!;
-      }
-      
-      cornerstoneTools.addTool(cornerstoneTools.CrosshairsTool);
-      toolGroup.addTool(cornerstoneTools.CrosshairsTool.toolName);
-      
-      // We must configure crosshairs before setting active
-      const crosshairsConfig = {
-        viewportIndicators: false,
-        autoPan: {
-          enabled: false,
-        },
-        mobile: {
-          enabled: true,
-          opacity: 1,
-          handleRadius: 6,
-        },
-      };
-      toolGroup.setToolConfiguration(cornerstoneTools.CrosshairsTool.toolName, crosshairsConfig);
-      
-      toolGroup.setToolActive(cornerstoneTools.CrosshairsTool.toolName, {
-        bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Primary }],
-      });
-
-      // Also add WindowLevel on right click
-      cornerstoneTools.addTool(cornerstoneTools.WindowLevelTool);
-      toolGroup.addTool(cornerstoneTools.WindowLevelTool.toolName);
-      toolGroup.setToolActive(cornerstoneTools.WindowLevelTool.toolName, {
-        bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Secondary }],
-      });
-      
-      // Also add Zoom on Wheel
-      cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
-      toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
-      toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
-        bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Auxiliary }],
-      });
-
-      // Advanced Dental Tools
-      cornerstoneTools.addTool(cornerstoneTools.SplineROITool);
-      toolGroup.addTool(cornerstoneTools.SplineROITool.toolName);
-
-      cornerstoneTools.addTool(cornerstoneTools.EllipticalROITool);
-      toolGroup.addTool(cornerstoneTools.EllipticalROITool.toolName);
-
-      cornerstoneTools.addTool(cornerstoneTools.ProbeTool);
-      toolGroup.addTool(cornerstoneTools.ProbeTool.toolName);
-
-      toolGroup.addViewport(viewportIds.axial, renderingEngineId);
-      toolGroup.addViewport(viewportIds.sagittal, renderingEngineId);
-      toolGroup.addViewport(viewportIds.coronal, renderingEngineId);
-
-      // Force render
-      renderingEngine.renderViewports([viewportIds.axial, viewportIds.sagittal, viewportIds.coronal]);
+      renderingEngine!.render();
     }
 
     loadAndRender();
 
+    // Resize Observer for strict grid & Fullscreen stability with throttling
+    let resizeTimer: number | null = null;
+    const resizeObserver = new ResizeObserver(() => {
+      if (resizeTimer !== null) cancelAnimationFrame(resizeTimer);
+      resizeTimer = requestAnimationFrame(() => {
+        const engine = cornerstone.getRenderingEngine(renderingEngineId);
+        if (engine) {
+          // Force sync resize and re-render
+          engine.resize(true, false);
+          engine.render();
+        }
+      });
+    });
+    
+    if (axialRef.current) resizeObserver.observe(axialRef.current);
+    if (sagittalRef.current) resizeObserver.observe(sagittalRef.current);
+    if (coronalRef.current) resizeObserver.observe(coronalRef.current);
+    if (vrRef.current) resizeObserver.observe(vrRef.current);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+
     return () => {
-      cornerstone.getRenderingEngine("my-engine")?.destroy();
-      cornerstoneTools.ToolGroupManager.destroyToolGroup("mpr-tool-group");
+      resizeObserver.disconnect();
+      renderingEngine?.destroy();
     };
   }, [isInitialized, imageIds]);
 
+  // Update VR Preset dynamically
+  useEffect(() => {
+    const engine = cornerstone.getRenderingEngine("my-engine");
+    if (!engine) return;
+    const vrViewport = engine.getViewport("VR") as cornerstone.Types.IVolumeViewport;
+    if (vrViewport && typeof vrViewport.setProperties === 'function') {
+      vrViewport.setProperties({ preset: vrPreset });
+      vrViewport.render();
+    }
+  }, [vrPreset]);
+
+  useEffect(() => {
+    // Clinical collision warnings are shown on-canvas by ClinicalOverlay (pulsating red line)
+    const handleCollision = (e: any) => {
+      console.warn('[CT] Implant collision:', e.detail.message);
+    };
+    // Divergence warnings are shown on-canvas by ClinicalOverlay (orange dashed line + angle label)
+    const handleDivergence = (e: any) => {
+      console.warn('[CT] Divergence warning:', e.detail.text);
+    };
+    // When an implant is placed — update BoneQualityPanel active tooth
+    const handleImplantPlaced = (e: any) => {
+      if (e.detail?.toothNumber) setActiveFdi(e.detail.toothNumber);
+    };
+    // Angulation warning from ClinicalOverlay
+    const handleAngulation = (e: any) => {
+      console.warn('[CT] Angulation warning:', e.detail.message);
+    };
+
+    window.addEventListener('clinical-collision', handleCollision);
+    window.addEventListener('shadow-analyst-divergence-warn', handleDivergence);
+    window.addEventListener('clinical-implant-placed', handleImplantPlaced);
+    window.addEventListener('ct-angulation-warn', handleAngulation);
+    return () => {
+      window.removeEventListener('clinical-collision', handleCollision);
+      window.removeEventListener('shadow-analyst-divergence-warn', handleDivergence);
+      window.removeEventListener('clinical-implant-placed', handleImplantPlaced);
+      window.removeEventListener('ct-angulation-warn', handleAngulation);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleGenerateReport = () => {
+      generateClinicalReportPdf({
+        patientInfo: { fullName: "Test Patient", studyId: volumeId || "N/A", date: new Date().toLocaleDateString() },
+        implants: implants,
+        containerElement: containerRef.current
+      });
+    };
+
+    const handleSavePlanning = async () => {
+      try {
+        const res = await fetch('/api/imaging/planning/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ patientId, studyInstanceUid: volumeId, splinePointsJson: JSON.stringify(splinePoints), implantsJson: JSON.stringify(implants) })
+        });
+        if (!res.ok) console.error('[CT] Failed to save planning');
+      } catch (err) {
+        console.error('[CT] API Error: Could not save planning.', err);
+      }
+    };
+
+    window.addEventListener('generate-clinical-report', handleGenerateReport);
+    window.addEventListener('save-ct-planning', handleSavePlanning);
+
+    return () => {
+      window.removeEventListener('generate-clinical-report', handleGenerateReport);
+      window.removeEventListener('save-ct-planning', handleSavePlanning);
+    };
+  }, [implants, splinePoints, volumeId, patientId]);
+
+  // Autosave
+  useEffect(() => {
+    if (!volumeId || (splinePoints.length === 0 && implants.length === 0)) return;
+    const timer = setTimeout(async () => {
+      window.dispatchEvent(new CustomEvent('save-ct-planning'));
+    }, 60000);
+    return () => clearTimeout(timer);
+  }, [splinePoints, implants, volumeId]);
+
   const handleGeneratePanorex = () => {
-    // In a real app, we'd query the cornerstoneTools state for SplineROITool annotations
-    // const state = cornerstoneTools.annotation.state.getAnnotations(cornerstoneTools.SplineROITool.toolName, element);
-    // Let's simulate we got some points
-    setSplinePoints([{ x: 100, y: 100 }, { x: 200, y: 150 }, { x: 300, y: 100 }]);
+    if (!axialRef.current) return;
+    
+    try {
+      const annotations = cornerstoneTools.annotation.state.getAnnotations(cornerstoneTools.SplineROITool.toolName, axialRef.current);
+      if (annotations && annotations.length > 0) {
+        const annotation = annotations[annotations.length - 1];
+        const rawPoints = annotation?.data?.polyline || annotation?.data?.handles?.points || ((annotation?.data as any)?.contour?.points) || [];
+        if (rawPoints.length > 0) {
+          const formattedPoints = rawPoints.map((pt: any) => {
+            if (Array.isArray(pt)) return { x: pt[0], y: pt[1], z: pt[2] };
+            return pt;
+          });
+          setSplinePoints(formattedPoints);
+          setShowPanorex(true);
+          console.log(`[CT] Generated panoramic curve with ${formattedPoints.length} points.`);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
+    console.warn('[CT] No spline drawn. Using fallback points for Panorex.');
+    setSplinePoints([{ x: 0, y: 0, z: 0 }, { x: 50, y: 50, z: 0 }]);
     setShowPanorex(true);
   };
 
   const setTool = (toolName: string) => {
-    const toolGroupId = "mpr-tool-group";
-    const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
+    const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroup("mpr-tool-group");
     if (!toolGroup) return;
     
-    // Disable previous
+    // Some tools might need setup
+    if (toolName === cornerstoneTools.LengthTool.toolName || toolName === cornerstoneTools.ProbeTool.toolName) {
+      console.log(`[CT] Activated measurement tool: ${toolName}`);
+    }
+
     toolGroup.setToolDisabled(activeTool);
-    // Enable new
     toolGroup.setToolActive(toolName, {
       bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Primary }],
     });
     setActiveTool(toolName);
   };
 
-  const simulateImplantPlacement = () => {
-    // 1. We mock the physical placing in 3D world space (DICOM coords)
-    const implantStart = vec3.fromValues(10, 20, -50);
-    const implantEnd = vec3.fromValues(10, 20, -60); // 10mm length
-    
-    // 2. We mock nerve spline
-    const nerveSpline = [
-      vec3.fromValues(10, 22, -62),
-      vec3.fromValues(12, 24, -65)
-    ];
-
-    // 3. Collision Detection Math
-    const distToNerve = distancePointToSpline(implantEnd, nerveSpline);
-    
-    // 4. Bone Density Math (Mocking scalarData since we'd normally get it from volume)
-    const classification = "D2"; 
-    const avgHu = 650;
-
-    const newImplant: ImplantData = {
-      id: Math.random().toString(36).substring(7),
-      fdiCode: "36",
-      diameter: 4.0,
-      length: 10.0,
-      startWorld: implantStart,
-      endWorld: implantEnd,
-      boneDensity: { averageHU: avgHu, classification },
-      distanceToNerve: distToNerve
-    };
-
-    setImplants([...implants, newImplant]);
-
-    // AI AUTO-PROTOCOL GENERATION
-    const logStr = `В область зуба ${newImplant.fdiCode} запланирована установка имплантата ${newImplant.diameter.toFixed(1)}x${newImplant.length.toFixed(1)} мм. Плотность кости по HU соответствует типу ${newImplant.boneDensity.classification} (${newImplant.boneDensity.averageHU} HU). Дистанция до нижнечелюстного канала ${newImplant.distanceToNerve.toFixed(1)} мм.`;
-    
-    setAiProtocolLog(logStr);
-
-    // [OBLIQUE SNAP SIMULATION] 
-    // In a full implementation, we'd do:
-    // const D = vec3.sub(implantEnd, implantStart);
-    // const N = vec3.normalize(D);
-    // renderingEngine.getViewport('SAGITTAL').setCamera({ viewUp: N });
-    // renderingEngine.render();
+  const getGridStyle = (): React.CSSProperties => {
+    if (maximizedViewportId) {
+      return { gridTemplateColumns: '1fr', gridTemplateRows: '1fr' };
+    }
+    return { gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr' };
   };
 
-  return (
-    <div style={{ width: '100%', height: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column', backgroundColor: '#0a0a0a', color: '#fff', position: 'relative', fontFamily: 'sans-serif' }}>
-      
-      {/* KICKASS GLASSMORPHISM TOOLBAR */}
-      <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', padding: '8px', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '4px', gap: '4px' }}>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.CrosshairsTool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.CrosshairsTool.toolName ? '#fff' : '#d4d4d8' }}
-            onClick={() => setTool(cornerstoneTools.CrosshairsTool.toolName)}
-          >
-            MPR (Oblique)
-          </button>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.SplineROITool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.SplineROITool.toolName ? '#fff' : '#d4d4d8' }}
-            onClick={() => setTool(cornerstoneTools.SplineROITool.toolName)}
-          >
-            Дуга (Spline)
-          </button>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === cornerstoneTools.ProbeTool.toolName ? '#2563eb' : 'transparent', color: activeTool === cornerstoneTools.ProbeTool.toolName ? '#fff' : '#d4d4d8' }}
-            onClick={() => setTool(cornerstoneTools.ProbeTool.toolName)}
-          >
-            Probe (HU)
-          </button>
-          <button 
-            style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: activeTool === 'Implant' ? '#4f46e5' : 'transparent', color: activeTool === 'Implant' ? '#fff' : '#d4d4d8' }}
-            onClick={simulateImplantPlacement}
-          >
-            Implant (+Log)
-          </button>
-        </div>
+  const containerStyle: React.CSSProperties = isPreview 
+    ? { width: '100%', height: '100%', minHeight: '400px', display: 'flex', flexDirection: 'column', backgroundColor: '#09090b', color: '#e4e4e7', overflow: 'hidden', borderRadius: '12px', border: '1px solid rgba(39, 39, 42, 0.8)' }
+    : { width: '100%', height: '100%', maxWidth: 'calc(100vw - 64px)', maxHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', backgroundColor: '#000', color: '#e4e4e7', overflow: 'hidden', borderRadius: '16px', border: '1px solid rgba(82, 82, 91, 0.5)', boxShadow: '0 25px 50px -12px rgba(0,0,0,1)' };
 
-        <div style={{ width: '1px', height: '32px', backgroundColor: 'rgba(255,255,255,0.2)', margin: '0 4px' }}></div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-          <span style={{ color: '#a3a3a3' }}>Толщина (ОПТГ):</span>
-          <input 
-            type="range" min="0" max="20" step="1" 
-            value={panorexThickness} 
-            onChange={(e) => setPanorexThickness(Number(e.target.value))}
-            style={{ width: '96px', cursor: 'pointer' }}
-          />
-          <span style={{ width: '24px', textAlign: 'right' }}>{panorexThickness}mm</span>
+  const pipWidget = (
+    <div
+      style={{
+        position: 'fixed', bottom: '24px', right: '24px', zIndex: 999999, width: '320px', borderRadius: '14px', overflow: 'hidden',
+        background: 'linear-gradient(135deg, rgba(15,15,18,0.98) 0%, rgba(9,9,11,0.98) 100%)',
+        border: '1px solid rgba(20,184,166,0.35)', boxShadow: '0 20px 60px rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', cursor: 'pointer'
+      }}
+      onClick={() => setIsMinimized(false)}
+    >
+      <div style={{ height: '3px', background: 'linear-gradient(to right, #14b8a6, #059669)' }} />
+      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ flexShrink: 0, width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(20,184,166,0.12)', border: '1px solid rgba(20,184,166,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ color: '#14b8a6', fontWeight: 900 }}>3D</span>
         </div>
-
-        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '4px', gap: '4px', marginLeft: '4px' }}>
-          <button 
-            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: panorexThickness === 0 ? 'not-allowed' : 'pointer', border: 'none', opacity: panorexThickness === 0 ? 0.5 : 1, transition: 'all 0.2s', backgroundColor: blendMode === 'mip' ? '#525252' : 'transparent', color: blendMode === 'mip' ? '#fff' : '#a3a3a3' }}
-            onClick={() => setBlendMode("mip")}
-            disabled={panorexThickness === 0}
-          >
-            MIP
-          </button>
-          <button 
-            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: panorexThickness === 0 ? 'not-allowed' : 'pointer', border: 'none', opacity: panorexThickness === 0 ? 0.5 : 1, transition: 'all 0.2s', backgroundColor: blendMode === 'average' ? '#525252' : 'transparent', color: blendMode === 'average' ? '#fff' : '#a3a3a3' }}
-            onClick={() => setBlendMode("average")}
-            disabled={panorexThickness === 0}
-          >
-            AVG
-          </button>
-        </div>
-
-        <button 
-          style={{ marginLeft: '8px', background: 'linear-gradient(to right, #2563eb, #4f46e5)', color: '#fff', padding: '8px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 'bold', border: 'none', cursor: 'pointer', boxShadow: '0 0 15px rgba(79,70,229,0.5)', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
-          onClick={handleGeneratePanorex}
-        >
-          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-          Развернуть
-        </button>
-      </div>
-
-      {showPanorex && volumeId && (
-        <PanoramicRendererWindow 
-          volumeId={volumeId} 
-          splinePoints={splinePoints} 
-          onClose={() => setShowPanorex(false)}
-          thickness={panorexThickness}
-          blendMode={blendMode}
-        />
-      )}
-
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', backgroundColor: '#262626', padding: '2px' }}>
-        <div style={{ position: 'relative', backgroundColor: '#000' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#f87171', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>AXIAL</div>
-          <div ref={axialRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
-        </div>
-        <div style={{ position: 'relative', backgroundColor: '#000' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#4ade80', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>SAGITTAL</div>
-          <div ref={sagittalRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
-        </div>
-        <div style={{ position: 'relative', backgroundColor: '#000' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#60a5fa', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.05em', zIndex: 10 }}>CORONAL</div>
-          <div ref={coronalRef} style={{ width: '100%', height: '100%' }} onContextMenu={e => e.preventDefault()} />
-        </div>
-        <div style={{ position: 'relative', backgroundColor: '#171717', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginBottom: '16px' }}>Surgical Module Logs</div>
-          
-          {aiProtocolLog && implants.length > 0 && (
-            <div style={{ width: '100%', maxWidth: '384px', padding: '16px', borderRadius: '12px', border: '1px solid', backgroundColor: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)', borderColor: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.5)', color: (implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 ? '#fecaca' : '#dcfce7' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                AI Auto-Protocol
-              </div>
-              <p style={{ fontSize: '12px', lineHeight: 1.5 }}>{aiProtocolLog}</p>
-              {(implants[implants.length-1]?.distanceToNerve ?? Infinity) < 2.0 && (
-                <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 'bold', color: '#f87171' }}>
-                  ⚠️ КРИТИЧЕСКАЯ БЛИЗОСТЬ К НЕРВУ!
-                </div>
-              )}
-            </div>
-          )}
-          
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#f4f4f5' }}>3D КТ Просмотрщик</div>
+          <div style={{ fontSize: '11px', color: '#5eead4', marginTop: '2px' }}>Нажмите чтобы развернуть</div>
         </div>
       </div>
     </div>
   );
+
+  const panorexRender = showPanorex && volumeId ? (
+    <PanoramicRendererWindow 
+      volumeId={volumeId} 
+      splinePoints={splinePoints} 
+      onClose={() => setShowPanorex(false)}
+      thickness={panorexThickness}
+      blendMode={blendMode}
+    />
+  ) : null;
+
+  const handleSetWindowLevel = (lower: number, upper: number) => {
+    const engine = cornerstone.getRenderingEngine("my-engine");
+    if (!engine) return;
+    const viewports = ["AXIAL", "SAGITTAL", "CORONAL"];
+    viewports.forEach(vpId => {
+      const vp = engine.getViewport(vpId) as any;
+      if (vp && vp.setProperties) {
+        vp.setProperties({ voiRange: { lower, upper } });
+        vp.render();
+      }
+    });
+    console.log(`[CT] Applied W/L Preset [${lower}, ${upper}]`);
+  };
+
+  const content = (
+    <div ref={containerRef} style={containerStyle}>
+      <DicomToolbar 
+        activeTool={activeTool} setTool={setTool}
+        panorexThickness={panorexThickness} setPanorexThickness={setPanorexThickness}
+        blendMode={blendMode} setBlendMode={setBlendMode}
+        onGeneratePanorex={handleGeneratePanorex}
+        onSetWindowLevel={handleSetWindowLevel}
+        isMinimized={isMinimized} setIsMinimized={setIsMinimized}
+        onClose={onClose!} isPreview={isPreview!}
+      />
+
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* GRID (Strict dimensions) */}
+        <div style={{ flex: 1, display: 'grid', gap: '2px', backgroundColor: 'rgba(39, 39, 42, 0.8)', ...getGridStyle() }}>
+          {/* AXIAL */}
+          <div style={{ position: 'relative', backgroundColor: '#000', overflow: 'hidden', display: (!maximizedViewportId || maximizedViewportId === 'AXIAL') ? 'block' : 'none', cursor: 'crosshair' }} onDoubleClick={() => setMaximizedViewportId(p => p === 'AXIAL' ? null : 'AXIAL')}>
+            <ViewportOverlays viewportType="AXIAL" orientationMarkers={{ top: 'A', bottom: 'P', left: 'R', right: 'L' }} onMaximize={() => setMaximizedViewportId(p => p === 'AXIAL' ? null : 'AXIAL')} />
+            <ClinicalOverlay viewportId="AXIAL" renderingEngineId="my-engine" />
+            <div ref={axialRef} style={{ width: '100%', height: '100%', outline: 'none' }} onContextMenu={e => e.preventDefault()} />
+          </div>
+
+          {/* SAGITTAL */}
+          <div style={{ position: 'relative', backgroundColor: '#000', overflow: 'hidden', display: (!maximizedViewportId || maximizedViewportId === 'SAGITTAL') ? 'block' : 'none', cursor: 'crosshair' }} onDoubleClick={() => setMaximizedViewportId(p => p === 'SAGITTAL' ? null : 'SAGITTAL')}>
+            <ViewportOverlays viewportType="SAGITTAL" orientationMarkers={{ top: 'S', bottom: 'I', left: 'A', right: 'P' }} onMaximize={() => setMaximizedViewportId(p => p === 'SAGITTAL' ? null : 'SAGITTAL')} />
+            <ClinicalOverlay viewportId="SAGITTAL" renderingEngineId="my-engine" />
+            <div ref={sagittalRef} style={{ width: '100%', height: '100%', outline: 'none' }} onContextMenu={e => e.preventDefault()} />
+          </div>
+
+          {/* CORONAL */}
+          <div style={{ position: 'relative', backgroundColor: '#000', overflow: 'hidden', display: (!maximizedViewportId || maximizedViewportId === 'CORONAL') ? 'block' : 'none', cursor: 'crosshair' }} onDoubleClick={() => setMaximizedViewportId(p => p === 'CORONAL' ? null : 'CORONAL')}>
+            <ViewportOverlays viewportType="CORONAL" orientationMarkers={{ top: 'S', bottom: 'I', left: 'R', right: 'L' }} onMaximize={() => setMaximizedViewportId(p => p === 'CORONAL' ? null : 'CORONAL')} />
+            <ClinicalOverlay viewportId="CORONAL" renderingEngineId="my-engine" />
+            <div ref={coronalRef} style={{ width: '100%', height: '100%', outline: 'none' }} onContextMenu={e => e.preventDefault()} />
+          </div>
+
+          {/* 3D VR */}
+          <div style={{ position: 'relative', backgroundColor: '#000', overflow: 'hidden', display: (!maximizedViewportId || maximizedViewportId === 'VR') ? 'block' : 'none', cursor: 'move' }} onDoubleClick={() => setMaximizedViewportId(p => p === 'VR' ? null : 'VR')}>
+            <ViewportOverlays viewportType="VR" vrPreset={vrPreset} onMaximize={() => setMaximizedViewportId(p => p === 'VR' ? null : 'VR')} />
+            
+            <div style={{ position: 'absolute', bottom: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 20 }}>
+              <button 
+                style={{ fontSize: '10px', fontWeight: 700, padding: '4px 12px', background: vrPreset === 'CT-Bone' ? '#f59e0b' : 'rgba(0,0,0,0.6)', color: vrPreset === 'CT-Bone' ? '#000' : '#a1a1aa', border: '1px solid', borderColor: vrPreset === 'CT-Bone' ? '#fbbf24' : '#3f3f46', borderRadius: '6px', cursor: 'pointer' }}
+                onClick={(e) => { e.stopPropagation(); setVrPreset('CT-Bone'); }}
+              >Кость/Эмаль</button>
+              <button 
+                style={{ fontSize: '10px', fontWeight: 700, padding: '4px 12px', background: vrPreset === 'CT-Soft-Tissue' ? '#f59e0b' : 'rgba(0,0,0,0.6)', color: vrPreset === 'CT-Soft-Tissue' ? '#000' : '#a1a1aa', border: '1px solid', borderColor: vrPreset === 'CT-Soft-Tissue' ? '#fbbf24' : '#3f3f46', borderRadius: '6px', cursor: 'pointer' }}
+                onClick={(e) => { e.stopPropagation(); setVrPreset('CT-Soft-Tissue'); }}
+              >Мягкие ткани</button>
+            </div>
+            
+            <div ref={vrRef} style={{ width: '100%', height: '100%', outline: 'none' }} onContextMenu={e => e.preventDefault()} />
+          </div>
+        </div>
+
+        {/* BONE QUALITY SIDEBAR */}
+        <BoneQualityPanel
+          huSamples={boneDensityProfile}
+          implantDiameterMm={activeImplantDiam}
+          implantLengthMm={activeImplantLen}
+          implantSystem={implantSystem}
+          toothFdi={activeFdi}
+          onSystemChange={setImplantSystem}
+        />
+      </div>
+    </div>
+  );
+
+  if (!isPreview && typeof document !== 'undefined') {
+    if (isMinimized) {
+      return <>{createPortal(pipWidget, document.body)}{panorexRender}</>;
+    }
+    return <>{createPortal(<div style={{ position: 'fixed', inset: 0, zIndex: 999998, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.80)', backdropFilter: 'blur(16px)', padding: '32px' }}>{content}</div>, document.body)}{panorexRender}</>;
+  }
+
+  return <>{content}{panorexRender}</>;
 }

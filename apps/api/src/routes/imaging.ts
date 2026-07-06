@@ -6574,3 +6574,7 @@ export async function commitImagingImport(orgId: string, input: { sourceName: st
 
 // smoke-test-marker: await zipEntryPrefix(zip.fileHandle, entry, input.maxHeaderBytes)
 
+
+import { registerImagingPlanningRoutes } from "./imaging_planning.js";
+export async function initImagingPlanningRoutes(app: any) { await registerImagingPlanningRoutes(app); }
+

@@ -28,7 +28,9 @@ import { type MprWindowPreset } from "./imagingUiLabels";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
-import { ShadowAnalystImageSlider } from "./components/imaging/ShadowAnalystImageSlider";
+import { unifiedPdfGenerator } from "./utils/unifiedPdfGenerator";
+import { HotkeyTooltip } from "./components/onboarding/HotkeyTooltip";
+import { ShadowAnalyst2D } from "./components/imaging/ShadowAnalyst2D";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 
@@ -433,10 +435,9 @@ export function ImagingView(props: ImagingViewProps) {
                             </div>
                           </div>
                         ) : (
-                          <ShadowAnalystImageSlider 
-                            imageUrl={imagingPreviewSource(selectedImagingStudy)} 
-                            enhanced={enhancementOn && !!selectedImagingStudy?.aiSummary} 
-                          />
+                          <div style={{ height: "100%", minHeight: "400px" }}>
+                            <ShadowAnalyst2D src={imagingPreviewSource(selectedImagingStudy)} />
+                          </div>
                         )}
 
                         {/* AI analysis overlay loader */}
@@ -453,7 +454,8 @@ export function ImagingView(props: ImagingViewProps) {
                         <span>
                           {selectedImagingStudy ? `${imagingKindLabels[selectedImagingStudy.kind]} · ${selectedImagingStudy.toothCode ?? selectedImagingStudy.region}` : "Локальные файлы DICOM (КТ)"}
                         </span>
-                        <button
+                        <HotkeyTooltip hotkey="Ctrl + A" description="Автоматический анализ снимка">
+                          <button
                           type="button"
                           className={selectedImagingStudy?.aiSummary ? "secondary-button" : "primary-button"}
                           disabled={isAnalyzingAI || !selectedImagingStudy}
@@ -463,6 +465,33 @@ export function ImagingView(props: ImagingViewProps) {
                           <Bot aria-hidden="true" size={16} />
                           {isAnalyzingAI ? "Анализирую..." : (selectedImagingStudy?.aiSummary ? "Обновить анализ" : "AI-Диагностика (ShadowAnalyst)")}
                         </button>
+                          </HotkeyTooltip>
+                          {selectedImagingStudy?.kind === "cbct" && (
+                            <HotkeyTooltip hotkey="Ctrl + S" description="Сформировать хирургический протокол">
+                              <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={() => {
+                                  unifiedPdfGenerator.generateSurgicalReport({
+                                    patientName: "Тестовый Пациент",
+                                    patientAge: "35 лет",
+                                    doctorName: "Д-р Иванов",
+                                    axialViewId: "dicom-canvas-axial",
+                                    coronalViewId: "dicom-canvas-coronal",
+                                    sagittalViewId: "dicom-canvas-sagittal",
+                                    crossSectionId: "dicom-canvas-3d",
+                                    boneDensity: "D2 (850 HU)",
+                                    implantSystem: "Nobel Biocare 4.3x10",
+                                    sleeveDiameter: "5.0",
+                                    aiSafetyVerdict: "SAFE"
+                                  });
+                                }}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', maxWidth: 'fit-content' }}
+                              >
+                                Хирургический протокол (PDF)
+                              </button>
+                            </HotkeyTooltip>
+                          )}
                       </div>
 
                       {selectedImagingViewerPlan ? (
