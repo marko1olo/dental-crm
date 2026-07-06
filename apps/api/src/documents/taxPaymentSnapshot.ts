@@ -1,4 +1,4 @@
-import type { GeneratedDocument, Payment, TaxPaymentSnapshot } from "@dental/shared";
+﻿import type { GeneratedDocument, Payment, TaxPaymentSnapshot } from "@dental/shared";
 
 const taxDocumentSnapshotKinds = new Set<GeneratedDocument["kind"]>([
   "tax_deduction_certificate",
