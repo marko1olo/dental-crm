@@ -1,6 +1,7 @@
 import { describe, it, before, after } from "node:test";
 import assert from "node:assert";
 import { patients, imagingStudies, auditEvents } from "../../telegram/legacyMocks.js";
+import { patients, imagingStudies, auditEvents } from "../../sampleData.js";
 import type { ImagingSourceKind, ImagingStudy, AuditEvent } from "@dental/shared";
 import { commitImagingImport } from "../imaging.js";
 
@@ -20,6 +21,7 @@ describe("commitImagingImport", () => {
   });
 
   it("processes valid records only and maps properties to the created study correctly", async () => {
+  it("processes valid records only and maps properties to the created study correctly", () => {
     const patient = patients[0];
     assert.ok(patient, "Expected at least one patient in sample data");
 
@@ -38,6 +40,8 @@ describe("commitImagingImport", () => {
      };
 
      const result = await commitImagingImport("mock-org", input);
+
+    const result = commitImagingImport(input);
 
     assert.strictEqual(result.preview.totalRows, 3);
     assert.strictEqual(result.importedCount, 1);
