@@ -79,13 +79,12 @@ function documentStatusBanner(document: GeneratedDocument) {
 }
 
 const unresolvedPlaceholderPatterns = [
-  "заполнить",
-  "________",
-  "указать врачом",
-  "указать по",
-  "не указана",
-  "не указан"
-].map((pattern) => repairMojibakeText(pattern));
+  "{ ",
+  " { ",
+  " {_",
+  "_} ",
+  " }"
+];
 
 export function documentHasUnresolvedPlaceholders(html: string): boolean {
   if (html.includes("[[{") || html.includes("}]]")) return true;
