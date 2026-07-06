@@ -22,7 +22,6 @@ export function CtPlanningQuickActionsPanel({
     >
       {ctPlanningQuickActions.map((action) => {
         const locked = action.requiresVolume && !canPlan;
-        // const selected = activeQuickAction?.id === action.id
         const selected = activeQuickActionId === action.id;
         return (
           <button
