@@ -1196,6 +1196,7 @@ export function loadDocumentPayloadDraftStore(organizationId: string | null | un
     }
     return { version: 1, drafts };
   } catch {
+    // Payload drafts are recovery data only; missing or invalid local storage defaults to empty.
     return emptyDocumentPayloadDraftStore();
   }
 }
