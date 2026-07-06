@@ -44,6 +44,8 @@ describe('inspectBrowserContinuity', () => {
   });
 });
 
+import { test, describe } from 'node:test';
+import { formatByteSize, formatMegabytes } from '../browserContinuity.js';
 
 describe('formatMegabytes', () => {
   test('returns "н/д" when value is null', () => {
