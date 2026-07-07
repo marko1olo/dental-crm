@@ -135,6 +135,11 @@ export const denteTelegramWebhookStatus = pgEnum("dente_telegram_webhook_status"
   "rejected"
 ]);
 export const denteTelegramOutboxSendStatus = pgEnum("dente_telegram_outbox_send_status", ["sent", "dry_run", "blocked", "failed"]);
+
+// --- INGESTION & AI SCHEMA ENUMS ---
+export const ingestionSourceType = pgEnum("ingestion_source_type", ["database", "folder", "csv", "api"]);
+export const ingestionStatus = pgEnum("ingestion_status", ["pending", "processing", "completed", "failed"]);
+
 export const documentKind = pgEnum("document_kind", [
   "paid_medical_services_contract",
   "completed_works_act",
@@ -1096,4 +1101,80 @@ export const outgoingNotifications = pgTable('outgoing_notifications', {
   sentAt: timestamp('sent_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+// --- INGESTION & BI DASHBOARD TABLES ---
+
+export const ingestionSources = pgTable('ingestion_sources', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  name: text('name').notNull(),
+  type: ingestionSourceType('type').notNull(),
+  status: ingestionStatus('status').notNull().default('pending'),
+  metadata: jsonb('metadata').$type<Record<string, any>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const ingestedPatientsMapping = pgTable('ingested_patients_mapping', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sourceId: uuid('source_id').notNull().references(() => ingestionSources.id),
+  externalId: text('external_id').notNull(),
+  localPatientId: uuid('local_patient_id').references(() => patients.id),
+  confidenceScore: numeric('confidence_score', { precision: 5, scale: 4 }), // e.g. 0.9500
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const analyticsSnapshots = pgTable('analytics_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  snapshotDate: timestamp('snapshot_date', { withTimezone: true }).notNull(),
+  metrics: jsonb('metrics').notNull().$type<Record<string, any>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const migrationTemplates = pgTable('migration_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  sourceSystemName: text('source_system_name').notNull(),
+  mappingJson: jsonb('mapping_json').notNull().$type<Record<string, string>>(),
+  isApproved: boolean('is_approved').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+// --- CLINICAL ROUTING, LAB & INSURANCE TABLES ---
+
+export const labOrderStatus = pgEnum("lab_order_status", ["draft", "sent", "in_progress", "shipped", "received", "refitting", "completed"]);
+
+export const labOrders = pgTable("lab_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  patientId: uuid("patient_id").notNull().references(() => patients.id),
+  doctorId: uuid("doctor_id").references(() => users.id),
+  secureToken: text("secure_token").notNull().unique(), // URL param for guest portal
+  toothFdi: text("tooth_fdi"),
+  material: text("material"),
+  colorVita: text("color_vita"),
+  status: labOrderStatus("status").notNull().default("draft"),
+  dueDate: timestamp("due_date", { withTimezone: true }),
+  clinicalNotes: text("clinical_notes"),
+  labComments: text("lab_comments"),
+  attachedImageUrl: text("attached_image_url"),
+  priceRub: integer("price_rub"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const insuranceContracts = pgTable("insurance_contracts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  companyName: text("company_name").notNull(),
+  policyNumberMask: text("policy_number_mask"),
+  coverageTherapyPct: real("coverage_therapy_pct").notNull().default(0), // 0 to 100
+  coverageSurgeryPct: real("coverage_surgery_pct").notNull().default(0),
+  coverageOrthoPct: real("coverage_ortho_pct").notNull().default(0),
+  coverageHygienePct: real("coverage_hygiene_pct").notNull().default(0),
+  annualLimitRub: integer("annual_limit_rub"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });

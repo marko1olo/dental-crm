@@ -170,3 +170,20 @@
   color: #fff;
   box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
 }
+
+@media (max-width: 480px) {
+  .installment-scheduler {
+    padding: 16px;
+  }
+  .scheduler-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .calculate-btn {
+    width: 100%;
+  }
+  .confirm-plan-btn {
+    width: 100%;
+  }
+}

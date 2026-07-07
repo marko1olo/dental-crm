@@ -134,3 +134,13 @@
   font-weight: 500;
   line-height: 1.4;
 }
+
+@media (max-width: 480px) {
+  .lab-orders-panel {
+    padding: 16px;
+  }
+  .lab-order-meta {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}

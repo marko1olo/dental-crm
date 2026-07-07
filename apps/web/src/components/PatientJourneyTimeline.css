@@ -188,3 +188,60 @@
     width: 32px;
   }
 }
+
+/* Zeigarnik Effect Progress Bar */
+.zeigarnik-progress-container {
+  background: rgba(39, 39, 42, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  border-radius: 4px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.progress-hint {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+/* Serial Position Effect Highlights */
+.highlight-item .timeline-content {
+  background: rgba(63, 63, 70, 0.6);
+  border-color: rgba(161, 161, 170, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transform: scale(1.02);
+  transform-origin: left center;
+}
+
+.highlight-item .marker-icon-large {
+  width: 50px;
+  height: 50px;
+  font-size: 1.5rem;
+  border-color: rgba(96, 165, 250, 0.6);
+  box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+  z-index: 3;
+}

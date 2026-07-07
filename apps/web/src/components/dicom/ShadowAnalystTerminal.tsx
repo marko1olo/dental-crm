@@ -47,7 +47,6 @@ export function ShadowAnalystTerminal({ events, boneDensityProfile = [], isExpan
         height: '100%', 
         backgroundColor: '#09090b', 
         borderLeft: '1px solid rgba(39,39,42,0.8)',
-        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
