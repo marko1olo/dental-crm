@@ -1,0 +1,48 @@
+import { MouseBindings, ToolModes } from '../../enums';
+import { type Types } from '@cornerstonejs/core';
+import type { IToolBinding, IToolGroup, SetToolBindingsType, ToolOptionsType, ToolConfiguration } from '../../types';
+import { MouseCursor } from '../../cursors';
+export default class ToolGroup {
+    id: string;
+    viewportsInfo: any[];
+    toolOptions: {};
+    currentActivePrimaryToolName: string | null;
+    prevActivePrimaryToolName: string | null;
+    restoreToolOptions: {};
+    _toolInstances: {};
+    constructor(id: string);
+    getViewportIds(): string[];
+    getViewportsInfo(): Array<Types.IViewportId>;
+    getToolInstance(toolInstanceName: string): any;
+    getToolInstances(): Record<string, unknown>;
+    hasTool(toolName: string): boolean;
+    addTool(toolName: string, configuration?: ToolConfiguration): void;
+    addToolInstance(toolName: string, parentClassName: string, configuration?: {}): void;
+    addViewport(viewportId: string, renderingEngineId?: string): void;
+    removeViewports(renderingEngineId: string, viewportId?: string): void;
+    setActiveStrategy(toolName: string, strategyName: string): void;
+    setToolMode(toolName: string, mode: ToolModes, options?: SetToolBindingsType): void;
+    setToolActive(toolName: string, toolBindingsOptions?: SetToolBindingsType): void;
+    setToolPassive(toolName: string, options?: {
+        removeAllBindings?: boolean | IToolBinding[];
+    }): void;
+    setToolEnabled(toolName: string): void;
+    setToolDisabled(toolName: string): void;
+    getToolOptions(toolName: string): ToolOptionsType;
+    getActivePrimaryMouseButtonTool(): string;
+    setViewportsCursorByToolName(toolName: string, strategyName?: string): void;
+    private _getCursor;
+    _setCursorForViewports(cursor: MouseCursor): void;
+    setToolConfiguration(toolName: string, configuration: ToolConfiguration, overwrite?: boolean): boolean;
+    getDefaultMousePrimary(): MouseBindings;
+    getDefaultPrimaryBindings(): IToolBinding[];
+    getToolConfiguration(toolName: string, configurationPath?: string): unknown;
+    getPrevActivePrimaryToolName(): string;
+    setActivePrimaryTool(toolName: string): void;
+    getCurrentActivePrimaryToolName(): string;
+    clone(newToolGroupId: any, fnToolFilter?: (toolName: string) => void): IToolGroup;
+    private _hasMousePrimaryButtonBinding;
+    private _renderViewports;
+    private _triggerToolModeChangedEvent;
+    private _findRenderingEngine;
+}

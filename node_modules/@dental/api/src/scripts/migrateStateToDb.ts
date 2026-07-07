@@ -1,0 +1,244 @@
+import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+import { eq } from "drizzle-orm";
+import * as schema from "../db/schema.js";
+
+// We will read the actual saved state, or fallback to the sample data
+import { loadPersistentState } from "../persistentState.js";
+import { hashCredential } from "../utils/cryptoHelper.js";
+
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL ?? "postgres://dental:dental@127.0.0.1:5432/dental_crm"
+});
+const db = drizzle(pool, { schema });
+
+async function clearDatabase() {
+  console.log("🧹 Clearing existing data...");
+  // Clear in reverse dependency order
+  await db.delete(schema.denteTelegramOutboxDeliveryReceipts);
+  await db.delete(schema.denteTelegramWebhookEvents);
+  await db.delete(schema.denteTelegramChatLinks);
+  await db.delete(schema.denteTelegramLinkCodes);
+  await db.delete(schema.denteTelegramBotConfigs);
+  await db.delete(schema.communicationEvents);
+  await db.delete(schema.communicationTasks);
+  await db.delete(schema.communicationTemplates);
+  await db.delete(schema.payments);
+  await db.delete(schema.clinicalRules);
+  await db.delete(schema.treatmentScenarios);
+  await db.delete(schema.treatmentItems);
+  await db.delete(schema.serviceCatalogItems);
+  await db.delete(schema.visits);
+  await db.delete(schema.appointments);
+  await db.delete(schema.patientConsents);
+  await db.delete(schema.patients);
+  await db.delete(schema.chairs);
+  await db.delete(schema.users);
+  await db.delete(schema.clinics);
+  await db.delete(schema.organizations);
+  console.log("✔ Database cleared.");
+}
+
+async function migrate() {
+  console.log("🚀 Starting DB Migration from JSON State...");
+  const state = loadPersistentState() as any;
+  if (!state) {
+    console.error("❌ Could not load JSON state.");
+    process.exit(1);
+  }
+
+  await clearDatabase();
+
+  const orgId = state.clinicProfile.organizationId;
+  const clinicLogin = process.env.CLINIC_LOGIN ?? "clinic@example.com";
+  const clinicPassword = process.env.CLINIC_PASSWORD ?? "dente2026";
+  const adminPin = process.env.ADMIN_PIN ?? "0000";
+  const staffPin = process.env.STAFF_PIN ?? "1234";
+
+  console.log(`\n🏢 Migrating Organization: ${state.clinicProfile.clinicName}`);
+  await db.insert(schema.organizations).values({
+    id: orgId,
+    name: state.clinicProfile.clinicName,
+    loginId: clinicLogin,
+    passwordHash: hashCredential(clinicPassword),
+    inn: state.clinicProfile.inn,
+    kpp: state.clinicProfile.kpp,
+    ogrn: state.clinicProfile.ogrn,
+    legalAddress: state.clinicProfile.address,
+    email: state.clinicProfile.email,
+    website: state.clinicProfile.website,
+    bankDetails: state.clinicProfile.bankDetails,
+    signatoryName: state.clinicProfile.signatoryName,
+    signatoryTitle: state.clinicProfile.signatoryTitle,
+    medicalLicenseNumber: state.clinicProfile.medicalLicenseNumber,
+    medicalLicenseIssuedAt: state.clinicProfile.medicalLicenseIssuedAt,
+    medicalLicenseIssuer: state.clinicProfile.medicalLicenseIssuer,
+  });
+
+  console.log("🏥 Migrating Clinics (Default)");
+  await db.insert(schema.clinics).values({
+    id: "e50337ad-f762-4f3b-8255-a2267576be78", // static default clinic id
+    organizationId: orgId,
+    name: "Основная клиника",
+    address: state.clinicProfile.address,
+    phone: state.clinicProfile.phone,
+    timezone: state.clinicProfile.timezone
+  });
+
+  console.log(`👥 Migrating ${state.staffMembers.length} Staff Members (Users)...`);
+  for (const staff of state.staffMembers) {
+    const isAdmin = staff.role === "owner" || staff.role === "administrator";
+    const pin = isAdmin ? adminPin : staffPin;
+    await db.insert(schema.users).values({
+      id: staff.id,
+      organizationId: orgId,
+      fullName: staff.fullName,
+      role: staff.role,
+      phone: staff.phone,
+      email: staff.email,
+      pinCodeHash: hashCredential(pin),
+      isActive: staff.active,
+      createdAt: new Date(staff.createdAt),
+    });
+  }
+
+  console.log(`🪑 Migrating ${state.chairs.length} Chairs...`);
+  for (const chair of state.chairs) {
+    await db.insert(schema.chairs).values({
+      id: chair.id,
+      organizationId: orgId,
+      clinicId: "e50337ad-f762-4f3b-8255-a2267576be78",
+      name: chair.name,
+      isActive: chair.active
+    });
+  }
+
+  console.log(`🧑‍⚕️ Migrating ${state.patients.length} Patients...`);
+  for (const patient of state.patients) {
+    await db.insert(schema.patients).values({
+      id: patient.id,
+      organizationId: orgId,
+      status: patient.status as any,
+      fullName: patient.fullName,
+      birthDate: patient.birthDate,
+      phone: patient.phone,
+      email: patient.email,
+      notes: patient.notes,
+      administrativeProfile: patient.administrativeProfile,
+      createdAt: new Date(patient.createdAt),
+      updatedAt: new Date(patient.updatedAt),
+    });
+  }
+
+  console.log(`📅 Migrating ${state.appointments.length} Appointments...`);
+  for (const appt of state.appointments) {
+    await db.insert(schema.appointments).values({
+      id: appt.id,
+      organizationId: orgId,
+      patientId: appt.patientId,
+      doctorUserId: appt.doctorUserId,
+      assistantUserId: appt.assistantUserId,
+      chairId: appt.chairId,
+      status: appt.status as any,
+      startsAt: new Date(appt.startsAt),
+      endsAt: new Date(appt.endsAt),
+      reason: appt.reason,
+      comment: appt.comment
+    });
+  }
+  
+  if (state.activeVisit) {
+    console.log(`🩺 Migrating active visit...`);
+    await db.insert(schema.visits).values({
+      id: state.activeVisit.id,
+      organizationId: orgId,
+      patientId: state.activeVisit.patientId,
+      appointmentId: state.activeVisit.appointmentId,
+      status: state.activeVisit.status as any,
+      revision: state.activeVisit.revision,
+      complaint: state.activeVisit.complaint,
+      anamnesis: state.activeVisit.anamnesis,
+      objectiveStatus: state.activeVisit.objectiveStatus,
+      diagnosis: state.activeVisit.diagnosis,
+      treatmentPlan: state.activeVisit.treatmentPlan,
+      doctorSummary: state.activeVisit.doctorSummary,
+      signedAt: state.activeVisit.signedAt ? new Date(state.activeVisit.signedAt) : null,
+      createdAt: new Date(state.activeVisit.createdAt),
+      updatedAt: new Date(state.activeVisit.updatedAt),
+    });
+  }
+
+  console.log(`📄 Migrating ${state.documents.length} Documents...`);
+  for (const doc of state.documents) {
+    await db.insert(schema.generatedDocuments).values({
+      id: doc.id,
+      organizationId: orgId,
+      patientId: doc.patientId,
+      kind: doc.kind as any,
+      status: doc.status as any,
+      payloadJson: JSON.stringify(doc.payload),
+      createdAt: new Date(doc.createdAt)
+    } as any);
+  }
+
+  console.log(`⚖️ Migrating ${state.clinicalRules.length} Clinical Rules...`);
+  for (const rule of state.clinicalRules) {
+    await db.insert(schema.clinicalRules).values({
+      id: rule.id,
+      organizationId: orgId,
+      title: rule.title,
+      category: rule.category as any,
+      specialty: rule.specialty as any,
+      action: rule.action as any,
+      severity: rule.severity as any,
+      ownerRole: rule.ownerRole,
+      triggerServiceIdsJson: JSON.stringify(rule.triggerServiceIds),
+      requiredServiceIdsJson: JSON.stringify(rule.requiredServiceIds),
+      requiresCompletedServiceIdsJson: JSON.stringify(rule.requiresCompletedServiceIds),
+      blockedServiceIdsJson: JSON.stringify(rule.blockedServiceIds),
+      condition: rule.condition,
+      warningText: rule.warningText,
+      patientText: rule.patientText,
+      isActive: rule.active,
+      createdAt: new Date(rule.createdAt),
+      updatedAt: new Date(rule.updatedAt),
+    });
+  }
+
+  console.log(`💳 Migrating ${state.payments.length} Payments...`);
+  for (const p of state.payments) {
+    await db.insert(schema.payments).values({
+      id: p.id,
+      organizationId: orgId,
+      patientId: p.patientId,
+      visitId: p.visitId,
+      documentId: p.documentId,
+      amountRub: p.amountRub,
+      method: p.method as any,
+      status: p.status as any,
+      paidAt: new Date(p.paidAt),
+      fiscalReceiptNumber: p.fiscalReceiptNumber,
+      fiscalReceiptIssuedAt: p.fiscalReceiptIssuedAt,
+      fiscalReceiptUrl: p.fiscalReceiptUrl,
+      fiscalReceipt: p.fiscalReceipt,
+      payerFullName: p.payerFullName,
+      payerInn: p.payerInn,
+      payerBirthDate: p.payerBirthDate,
+      payerIdentityDocument: p.payerIdentityDocument,
+      payerRelationship: p.payerRelationship,
+      taxDeductionCode: p.taxDeductionCode,
+      note: p.note
+    });
+  }
+
+  console.log("\n🎉 Migration completed successfully!");
+  console.log("   Make sure you have run 'npm run db:migrate' first to create the tables.\n");
+}
+
+migrate().then(() => process.exit(0)).catch(e => {
+  console.error("❌ Migration error:", e);
+  process.exit(1);
+});

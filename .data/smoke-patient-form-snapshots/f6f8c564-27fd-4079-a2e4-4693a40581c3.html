@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Анкета пациента</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Анкета пациента</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 29.06.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-05-23 10:06</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Smoke Admin, администратор клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      <tr><th>Заметка выдачи</th><td>patient_intake_questionnaire route lifecycle</td></tr>
+    </table>
+  </section>
+  
+  <h2>Анкета пациента</h2>
+      <div class="notice">
+        Анкета фиксирует сведения, сообщенные пациентом до приема. Врач использует ее как входные данные для осмотра, но не заменяет ею медицинскую запись и диагноз.
+      </div>
+      <table>
+        <tr><th>Основная жалоба или цель визита</th><td>Route smoke chief complaint before appointment</td></tr>
+        <tr><th>Аллергии и нежелательные реакции</th><td>Route smoke allergies: denied by patient</td></tr>
+        <tr><th>Постоянные препараты</th><td>Route smoke medications: none</td></tr>
+        <tr><th>Хронические заболевания</th><td>Route smoke chronic conditions: denied</td></tr>
+        <tr><th>Беременность/лактация</th><td>не применимо</td></tr>
+        <tr><th>Антикоагулянты и препараты, влияющие на кровотечение</th><td>Route smoke anticoagulants: denied</td></tr>
+        <tr><th>Инфекционные риски</th><td>Route smoke infectious risks: not reported</td></tr>
+        <tr><th>Сердечно-сосудистые, эндокринные и иные риски</th><td>Route smoke cardio and endocrine risks: check before procedure</td></tr>
+        <tr><th>Экстренный контакт</th><td>+7 900 000-00-02, route smoke contact</td></tr>
+        <tr><th>Дополнительные сведения</th><td>Route smoke patient confirms updates before each visit</td></tr>
+        <tr><th>Подтверждение пациента</th><td>пациент подтверждает достоверность сведений и обязуется сообщать об изменениях</td></tr>
+      </table>
+      <ul class="check-list"><li><span>□</span>администратор сверил ФИО, телефон и дату рождения пациента</li><li><span>□</span>врач просмотрел аллергоанамнез, лекарства, хронические заболевания и риски кровотечения до вмешательства</li><li><span>□</span>при неясном статусе беременности или системных рисках врач выбирает безопасную тактику или откладывает вмешательство</li><li><span>□</span>изменения анкеты сохраняются в карте пациента и учитываются в последующих визитах</li></ul>
+      <div class="signatures">
+    <p>Пациент/законный представитель: ____________________</p>
+    <p>Администратор/врач: ____________________</p>
+  </div>
+</body>
+</html>

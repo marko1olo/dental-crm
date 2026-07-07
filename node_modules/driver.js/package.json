@@ -1,0 +1,85 @@
+{
+  "name": "driver.js",
+  "license": "MIT",
+  "private": false,
+  "version": "1.6.0",
+  "main": "./dist/driver.js.cjs",
+  "module": "./dist/driver.js.mjs",
+  "types": "./dist/driver.js.d.ts",
+  "homepage": "https://driverjs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nilbuild/driver.js.git"
+  },
+  "author": "Kamran Ahmed <kamranahmed.se@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/nilbuild/driver.js/issues"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/driver.js.d.mts",
+        "default": "./dist/driver.js.mjs"
+      },
+      "require": {
+        "types": "./dist/driver.js.d.cts",
+        "default": "./dist/driver.js.cjs"
+      }
+    },
+    "./dist/driver.css": {
+      "import": "./dist/driver.css",
+      "require": "./dist/driver.css",
+      "default": "./dist/driver.css"
+    }
+  },
+  "files": [
+    "!tests/**/*",
+    "!docs/**/*",
+    "dist/**/*",
+    "!dist/**/*.js.map"
+  ],
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.3",
+    "@microsoft/api-extractor": "^7.58.9",
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "^26.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "jsdom": "^29.1.1",
+    "np": "^11.2.1",
+    "postcss": "^8.5.15",
+    "postcss-scss": "^4.0.9",
+    "prettier": "^3.8.4",
+    "publint": "^0.3.21",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vite-plugin-dts": "^5.0.2",
+    "vitest": "^4.1.9"
+  },
+  "keywords": [
+    "driver.js",
+    "driver",
+    "tour",
+    "guide",
+    "overlay",
+    "tooltip",
+    "walkthrough",
+    "product tour",
+    "product walkthrough",
+    "product guide",
+    "product tutorial",
+    "product demo",
+    "modal",
+    "lightbox"
+  ],
+  "scripts": {
+    "dev": "pnpm --dir playground dev",
+    "playground:install": "pnpm --dir playground install",
+    "build": "tsc && vite build && node scripts/postbuild.mjs",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint:package": "publint && attw --pack . --exclude-entrypoints ./dist/driver.css",
+    "format": "prettier . --write",
+    "release": "np --test-script test:run"
+  }
+}

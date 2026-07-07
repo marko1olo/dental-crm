@@ -23,7 +23,7 @@ function requireSourceSnippet(snippet, message) {
 requireSnippet("const abortController = new AbortController();", "protected preview fetches must be abortable");
 requireSnippet('if (currentView !== "imaging" || !dashboard?.imagingStudies.length) return [];', "preview fetch workset must stay gated to the visible imaging route");
 requireSnippet("const imagingPreviewWorkset = useMemo(() =>", "preview fetches must use a memoized visible workset");
-requireSnippet("chunk.map(async (study)", "preview fetches must not scan every dashboard image on app boot");
+requireSnippet("imagingPreviewWorkset.map(async (study)", "preview fetches must not scan every dashboard image on app boot");
 requireSnippet("if (!imagingPreviewWorkset.length)", "preview URL map must clear when the imaging route has no visible workset");
 requireSnippet("signal: abortController.signal", "fetch must use the preview AbortController signal");
 requireSnippet("abortController.abort();", "cleanup must abort in-flight preview fetches");

@@ -1,0 +1,40 @@
+import _getHash from './_getHash';
+import setNewAttributesIfValid from './setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary';
+export default function drawLine(svgDrawingHelper, annotationUID, lineUID, start, end, options = {}, dataId = '') {
+    if (isNaN(start[0]) || isNaN(start[1]) || isNaN(end[0]) || isNaN(end[1])) {
+        return;
+    }
+    const { color = 'rgb(0, 255, 0)', width = 10, lineWidth, lineDash, markerStartId = null, markerEndId = null, shadow = false, strokeOpacity = 1, textBoxLinkLineColor, } = options;
+    const strokeWidth = lineWidth || width;
+    const svgns = 'http://www.w3.org/2000/svg';
+    const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
+    const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
+    const layerId = svgDrawingHelper.svgLayerElement.id;
+    const dropShadowStyle = shadow ? `filter:url(#shadow-${layerId});` : '';
+    const attributes = {
+        x1: `${start[0]}`,
+        y1: `${start[1]}`,
+        x2: `${end[0]}`,
+        y2: `${end[1]}`,
+        stroke: textBoxLinkLineColor || color,
+        style: dropShadowStyle,
+        'stroke-width': strokeWidth,
+        'stroke-dasharray': lineDash,
+        'marker-start': markerStartId ? `url(#${markerStartId})` : '',
+        'marker-end': markerEndId ? `url(#${markerEndId})` : '',
+        'stroke-opacity': strokeOpacity,
+    };
+    if (existingLine) {
+        setAttributesIfNecessary(attributes, existingLine);
+        svgDrawingHelper.setNodeTouched(svgNodeHash);
+    }
+    else {
+        const newLine = document.createElementNS(svgns, 'line');
+        if (dataId !== '') {
+            newLine.setAttribute('data-id', dataId);
+        }
+        setNewAttributesIfValid(attributes, newLine);
+        svgDrawingHelper.appendNode(newLine, svgNodeHash);
+    }
+}

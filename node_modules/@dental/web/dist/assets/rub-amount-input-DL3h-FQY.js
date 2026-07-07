@@ -1,0 +1,1 @@
+const e="укажите сумму целыми рублями без копеек";function o(t){const n=t.replace(/[\s\u00A0]/g,"");if(!n||!/^\d+$/.test(n))return null;const u=Number(n);return Number.isSafeInteger(u)?u:null}function i(t,n="укажите сумму больше нуля",u=e){const r=o(t);return t.trim()?r===null?u:r<=0?n:null:n}function s(t,n){return t?t%n!==0:!1}export{o as n,s as r,i as v};

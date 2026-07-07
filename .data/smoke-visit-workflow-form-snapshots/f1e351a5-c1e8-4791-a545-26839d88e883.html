@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Направление на рентген/КЛКТ</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Направление на рентген/КЛКТ</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 22.06.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-05-23 10:06</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Smoke Admin, администратор клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      <tr><th>Заметка выдачи</th><td>xray_cbct_referral visit workflow route lifecycle</td></tr>
+    </table>
+  </section>
+  
+  <h2>Направление на рентген/КЛКТ</h2>
+      <div class="notice">
+        Исследование назначено врачом с конкретной клинической задачей. Результат, описание и исходные файлы должны быть привязаны к медицинской карте пациента.
+      </div>
+      <h2>Клиническая привязка направления</h2>
+      <table>
+    <tr>
+      <th>Зуб/сегмент</th>
+      <th>Поверхности</th>
+      <th>Статус</th>
+      <th>Диагноз/находка</th>
+      <th>Показание</th>
+      <th>Действие</th>
+      <th>Прогноз</th>
+      <th>Пародонт</th>
+      <th>Имплант/ортопедия</th>
+      <th>Ортодонтия</th>
+    </tr>
+    <tr><td>36 зуб</td><td>окклюзионная, дистальная</td><td>кариес</td><td>Route lifecycle кариес дентина 36 зуба</td><td>Route lifecycle восстановление функции и контроль осложнений</td><td>лечение кариеса и композитная реставрация</td><td>прогноз зависит от явки на контроль</td><td>десна без острого воспаления</td><td></td><td></td></tr>
+  </table>
+      <table>
+        <tr><th>Вид исследования</th><td>КЛКТ / КТ</td></tr>
+        <tr><th>Область</th><td>36 зуб, нижняя челюсть слева</td></tr>
+        <tr><th>Клинический вопрос</th><td>уточнить анатомию корней и положение нижнечелюстного канала</td></tr>
+        <tr><th>Показание</th><td>подготовка к хирургическому этапу</td></tr>
+        <tr><th>Срочность</th><td>планово</td></tr>
+        <tr><th>Беременность/ограничения</th><td>беременность со слов пациента отрицается</td></tr>
+        <tr><th>Комментарий по ограничениям</th><td>беременность со слов пациента отрицается, стандартная защита</td></tr>
+        <tr><th>Куда направить</th><td>DENTE Route Lifecycle Clinic</td></tr>
+        <tr><th>Срок</th><td>до 25.05.2026</td></tr>
+        <tr><th>Назначил</th><td>Route Lifecycle Doctor</td></tr>
+        <tr><th>Передача результата</th><td>описание врача-рентгенолога, исходные файлы снимков</td></tr>
+      </table>
+      <ul class="check-list"><li><span>□</span>пациенту объяснена цель исследования и связь с планом лечения</li><li><span>□</span>перед исследованием уточнены беременность, ограничения и необходимость защиты</li><li><span>□</span>результат должен быть просмотрен врачом, назначившим исследование</li><li><span>□</span>исходные файлы, снимки и описание сохраняются в карте пациента и журнале выдачи</li></ul>
+      <div class="signatures">
+    <p>Пациент: ____________________</p>
+    <p>Врач: ____________________</p>
+  </div>
+</body>
+</html>

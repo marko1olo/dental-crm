@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Справка о посещении врача-стоматолога</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Справка о посещении врача-стоматолога</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 20.06.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-05-23 10:06</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Smoke Admin, администратор клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      <tr><th>Заметка выдачи</th><td>visit_attendance_certificate visit workflow route lifecycle</td></tr>
+    </table>
+  </section>
+  
+  <h2>Справка о посещении врача-стоматолога</h2>
+    <p>Пациент находился на стоматологическом приеме в медицинской организации. Справка подтверждает только факт посещения и не раскрывает диагноз, план лечения или стоимость без отдельного законного основания.</p>
+    <table>
+      <tr><th>Пациент</th><td>Иванова Марина Сергеевна</td></tr>
+      <tr><th>Дата рождения</th><td>1988-04-21</td></tr>
+      
+      <tr><th>Время посещения</th><td>24.05.2026 10:00 - 24.05.2026 11:20</td></tr>
+      <tr><th>Цель выдачи</th><td>для предъявления по месту требования</td></tr>
+      <tr><th>Куда предъявляется</th><td>работодатель пациента</td></tr>
+      <tr><th>Дата выдачи</th><td>24.05.2026 11:30</td></tr>
+      <tr><th>Подписант</th><td>Route Lifecycle Admin, администратор клиники</td></tr>
+      <tr><th>Ограничение</th><td>не является листком нетрудоспособности и не заменяет медицинское заключение</td></tr>
+    </table>
+    <ul class="check-list"><li><span>□</span>ФИО, дата рождения и документ пациента сверены</li><li><span>□</span>указано фактическое время посещения клиники</li><li><span>□</span>диагноз, план лечения, снимки и стоимость не раскрыты</li><li><span>□</span>при необходимости клиника ставит печать по локальному порядку</li></ul>
+    <div class="signatures">
+    <p>Пациент/получатель: ____________________</p>
+    <p>администратор клиники (Route Lifecycle Admin): ____________________</p>
+  </div>
+</body>
+</html>

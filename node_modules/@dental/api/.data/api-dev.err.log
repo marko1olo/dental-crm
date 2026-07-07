@@ -1,0 +1,21 @@
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+Error [TransformError]: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:421:11)
+    at Object.spawn (node:child_process:796:9)
+    at ensureServiceIsRunning (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:2268:29)
+    at transform (C:\hades\dental-crm\apps\api\node_modules\tsx\node_modules\esbuild\lib\main.js:2168:37)
+    at file:///C:/hades/dental-crm/apps/api/node_modules/tsx/dist/index-7AaEi15b.mjs:14:2865
+    at applyTransformers (file:///C:/hades/dental-crm/apps/api/node_modules/tsx/dist/index-7AaEi15b.mjs:14:1266)
+    at transform (file:///C:/hades/dental-crm/apps/api/node_modules/tsx/dist/index-7AaEi15b.mjs:14:2812)
+    at load (file:///C:/hades/dental-crm/apps/api/node_modules/tsx/dist/esm/index.mjs?1778882748200:2:2348)
+    at async nextLoad (node:internal/modules/esm/hooks:785:22)
+    at async AsyncLoaderHooksOnLoaderHookWorker.load (node:internal/modules/esm/hooks:410:20) {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'spawn'
+}
+
+Node.js v24.13.0

@@ -1,0 +1,2 @@
+{"logTime": "0515/194936", "correlationVector":"OaYTcSweizMaXy5LrzsUGF.1","action":"SyncServerConnectionManagerRequest", "result":"SYNC_SERVER_OK", "context":{"environment":"Prod_southeastasia_prod-s01-064-apac-southeastasia", "migrationStage":"NotStarted", "server":"akswtt00000001c"}}
+{"logTime": "0515/194936", "correlationVector":"OaYTcSweizMaXy5LrzsUGF.2","action":"ProcessGetUpdates", "result":"Done", "context":{"dataType":"Encryption Keys", "deleted":"0", "process_failed_to_decrypt":"0", "process_pending_decryption":"0", "process_success":"1", "total":"1"}}

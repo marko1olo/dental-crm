@@ -1,0 +1,909 @@
+{
+  "version": 1,
+  "savedAt": "2026-06-22T03:21:29.952Z",
+  "state": {
+    "clinicProfile": {
+      "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+      "clinicName": "Стоматология, 1 кабинет",
+      "legalName": "ИП Иванова М.С.",
+      "inn": "631234567890",
+      "kpp": null,
+      "ogrn": "318631300000000",
+      "address": "Самара, ул. Демонстрационная, 12",
+      "phone": "+7 927 111-22-33",
+      "email": "clinic@example.com",
+      "website": "https://example.com",
+      "medicalLicenseNumber": "Л041-01184-63/00000000",
+      "medicalLicenseIssuedAt": "2024-01-15",
+      "medicalLicenseIssuer": "Министерство здравоохранения Самарской области",
+      "bankDetails": "р/с 40702810000000000000, БИК 043601000, банк ООО «Демо Банк»",
+      "signatoryName": "Иванова Марина Сергеевна",
+      "signatoryTitle": "индивидуальный предприниматель",
+      "mode": "one_chair",
+      "timezone": "Europe/Samara",
+      "defaultVisitMinutes": 45,
+      "scheduleDefaults": {
+        "workdayStart": "09:00",
+        "workdayEnd": "18:00",
+        "workingDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "appointmentBufferMinutes": 10
+      },
+      "networkEnabled": false,
+      "egiszEnabled": false,
+      "updatedAt": "2026-06-20T12:13:54.024Z"
+    },
+    "staffMembers": [
+      {
+        "id": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "fullName": "Иванова Марина Сергеевна",
+        "role": "doctor",
+        "specialties": [
+          "therapist",
+          "orthopedist"
+        ],
+        "phone": "+7 927 111-22-33",
+        "email": "doctor@example.com",
+        "active": true,
+        "canSignMedicalRecords": true,
+        "canManageMoney": false,
+        "canManageImports": false,
+        "color": "#0f766e",
+        "createdAt": "2026-06-20T12:13:54.024Z",
+        "updatedAt": "2026-06-20T12:13:54.024Z",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      },
+      {
+        "id": "93bca14f-a11d-4088-9b48-cb7a0fd4c9ef",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "fullName": "Кузнецова Анна",
+        "role": "administrator",
+        "specialties": [
+          "universal"
+        ],
+        "phone": "+7 927 222-10-10",
+        "email": "admin@example.com",
+        "active": true,
+        "canSignMedicalRecords": false,
+        "canManageMoney": true,
+        "canManageImports": true,
+        "color": "#b8781f",
+        "createdAt": "2026-06-20T12:13:54.024Z",
+        "updatedAt": "2026-06-20T12:13:54.024Z",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      },
+      {
+        "id": "f365da0c-7094-4f80-b52d-59b7b1254791",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "fullName": "Садыкова Эльмира",
+        "role": "assistant",
+        "specialties": [
+          "therapist",
+          "surgeon"
+        ],
+        "phone": "+7 927 900-77-10",
+        "email": null,
+        "active": true,
+        "canSignMedicalRecords": false,
+        "canManageMoney": false,
+        "canManageImports": false,
+        "color": "#a34f32",
+        "createdAt": "2026-06-20T12:13:54.024Z",
+        "updatedAt": "2026-06-20T12:13:54.024Z",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      }
+    ],
+    "chairs": [
+      {
+        "id": "b5450677-b0fc-4228-9672-56b27062783f",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "name": "Кресло 1",
+        "room": "Кабинет 1",
+        "specialization": "therapist",
+        "active": true,
+        "hasXraySensor": true,
+        "hasMicroscope": false,
+        "hasSurgeryKit": false,
+        "notes": "Основное терапевтическое кресло, RVG рядом.",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      }
+    ],
+    "appointments": [
+      {
+        "id": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": "f365da0c-7094-4f80-b52d-59b7b1254791",
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "confirmed",
+        "startsAt": "2026-05-12T09:00:00+04:00",
+        "endsAt": "2026-05-12T10:00:00+04:00",
+        "reason": "Лечение 36",
+        "comment": "Подготовить согласие и акт."
+      },
+      {
+        "id": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": "f365da0c-7094-4f80-b52d-59b7b1254791",
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "planned",
+        "startsAt": "2026-05-12T10:30:00+04:00",
+        "endsAt": "2026-05-12T11:15:00+04:00",
+        "reason": "Профгигиена",
+        "comment": "После оплаты выдать справку для вычета."
+      },
+      {
+        "id": "286c0899-f2cc-4e72-833d-a1e89036e319",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "planned",
+        "startsAt": "2026-05-12T12:00:00+04:00",
+        "endsAt": "2026-05-12T12:30:00+04:00",
+        "reason": "Первичная консультация",
+        "comment": null
+      }
+    ],
+    "patients": [
+      {
+        "id": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "status": "active",
+        "fullName": "Иванова Марина Сергеевна",
+        "birthDate": "1988-04-21",
+        "phone": "+7 927 111-22-33",
+        "email": null,
+        "notes": "Боится анестезии, предпочитает утренние приемы.",
+        "administrativeProfile": null,
+        "createdAt": "2026-06-20T12:13:54.024Z",
+        "updatedAt": "2026-06-20T12:13:54.024Z"
+      },
+      {
+        "id": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "status": "active",
+        "fullName": "Петров Алексей Николаевич",
+        "birthDate": "1979-11-03",
+        "phone": "+7 927 555-19-40",
+        "email": "petrov@example.com",
+        "notes": "Нужны документы для налогового вычета.",
+        "administrativeProfile": null,
+        "createdAt": "2026-06-20T12:13:54.024Z",
+        "updatedAt": "2026-06-20T12:13:54.024Z"
+      },
+      {
+        "id": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "status": "active",
+        "fullName": "Садыкова Эльмира Рустамовна",
+        "birthDate": null,
+        "phone": "+7 927 900-77-10",
+        "email": null,
+        "notes": null,
+        "administrativeProfile": null,
+        "createdAt": "2026-06-20T12:13:54.024Z",
+        "updatedAt": "2026-06-20T12:13:54.024Z"
+      }
+    ],
+    "documents": [
+      {
+        "id": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "paid_medical_services_contract",
+        "title": "Договор платных медицинских услуг",
+        "status": "draft",
+        "issuedAt": null,
+        "totalAmountRub": 6800
+      },
+      {
+        "id": "59b724c7-c988-45a7-91d8-1ad11a6e74c7",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "completed_works_act",
+        "title": "Акт выполненных работ",
+        "status": "draft",
+        "issuedAt": null,
+        "totalAmountRub": 6800
+      },
+      {
+        "id": "b77b8720-7ffd-453a-9db4-54637ef292a7",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "visitId": null,
+        "kind": "tax_deduction_certificate",
+        "title": "Черновик данных для справки КНД 1151156 за 2026 год",
+        "status": "draft",
+        "issuedAt": null,
+        "totalAmountRub": 4500,
+        "taxYear": 2026
+      }
+    ],
+    "clinicalRules": [
+      {
+        "id": "rule-caries-requires-image",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Снимок перед лечением глубокого кариеса",
+        "category": "imaging",
+        "specialty": "therapist",
+        "action": "add_required_service",
+        "severity": "blocker",
+        "ownerRole": "doctor",
+        "triggerServiceIds": [
+          "svc-therapy-caries"
+        ],
+        "requiredServiceIds": [
+          "svc-imaging-opg"
+        ],
+        "requiresCompletedServiceIds": [],
+        "blockedServiceIds": [],
+        "condition": "Если в плане есть терапия кариеса, должен быть снимок или подтвержденный отказ врача.",
+        "warningText": "Нельзя закрывать терапию без снимка или клинического основания для отказа.",
+        "patientText": "Снимок нужен, чтобы врач не лечил вслепую и не пропустил воспаление у корня.",
+        "active": true
+      },
+      {
+        "id": "rule-caries-requires-cofferdam",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Изоляция при терапевтическом лечении",
+        "category": "therapy",
+        "specialty": "therapist",
+        "action": "add_required_service",
+        "severity": "warning",
+        "ownerRole": "assistant",
+        "triggerServiceIds": [
+          "svc-therapy-caries"
+        ],
+        "requiredServiceIds": [
+          "svc-therapy-cofferdam"
+        ],
+        "requiresCompletedServiceIds": [],
+        "blockedServiceIds": [],
+        "condition": "Кариес, эндодонтия и адгезивные реставрации требуют сухого поля.",
+        "warningText": "Добавьте коффердам или зафиксируйте клиническую причину отказа.",
+        "patientText": "Изоляция повышает качество пломбы и снижает риск повторного лечения.",
+        "active": true
+      },
+      {
+        "id": "rule-crown-after-therapy",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Ортопедия только после закрытия активной терапии",
+        "category": "prosthetics",
+        "specialty": "orthopedist",
+        "action": "block_service",
+        "severity": "blocker",
+        "ownerRole": "doctor",
+        "triggerServiceIds": [
+          "svc-prosthetics-crown"
+        ],
+        "requiredServiceIds": [],
+        "requiresCompletedServiceIds": [
+          "svc-therapy-caries"
+        ],
+        "blockedServiceIds": [
+          "svc-prosthetics-crown"
+        ],
+        "condition": "Коронка в плане допустима только после закрытия активного очага и снимка.",
+        "warningText": "Не планируйте коронку как готовую работу, пока терапия не завершена.",
+        "patientText": "Сначала нужно убрать воспаление и восстановить основание, потом защищать зуб коронкой.",
+        "active": true
+      },
+      {
+        "id": "rule-maintenance-after-hygiene",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Recall после гигиены",
+        "category": "hygiene",
+        "specialty": "hygienist",
+        "action": "schedule_followup",
+        "severity": "info",
+        "ownerRole": "administrator",
+        "triggerServiceIds": [
+          "svc-hygiene-pro"
+        ],
+        "requiredServiceIds": [],
+        "requiresCompletedServiceIds": [],
+        "blockedServiceIds": [],
+        "condition": "После гигиены пациент должен получить повторный контакт через 6 месяцев.",
+        "warningText": "Поставьте recall-задачу, чтобы удержать профилактику и гарантийный контроль.",
+        "patientText": "Профилактический контроль дешевле повторного лечения и помогает сохранить результат.",
+        "active": true
+      }
+    ],
+    "payments": [
+      {
+        "id": "b4693e8b-1210-4fd6-ae91-0c6cc2d0a3b4",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
+        "amountRub": 3800,
+        "method": "card",
+        "status": "paid",
+        "paidAt": "2026-06-22T03:11:57.978Z",
+        "createdAt": "2026-06-22T03:11:57.978Z",
+        "fiscalReceiptNumber": null,
+        "fiscalReceiptIssuedAt": null,
+        "fiscalReceiptUrl": null,
+        "fiscalReceipt": null,
+        "clientMutationId": "payment-402dfce4-f7a0-4931-996c-f80174f461eb",
+        "payerFullName": "Иванова Марина Сергеевна",
+        "payerInn": null,
+        "payerBirthDate": "1988-04-21",
+        "payerIdentityDocument": null,
+        "payerRelationship": "пациент",
+        "taxDeductionCode": null,
+        "note": "Оплата из рабочего экрана CRM"
+      },
+      {
+        "id": "baf18e54-608e-4bc5-9f20-57df0f742795",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": "59b724c7-c988-45a7-91d8-1ad11a6e74c7",
+        "amountRub": 3000,
+        "method": "card",
+        "status": "paid",
+        "paidAt": "2026-05-12T10:05:00+04:00",
+        "createdAt": "2026-06-20T12:13:54.024Z",
+        "fiscalReceiptNumber": "FN-2026-000001",
+        "fiscalReceiptIssuedAt": "2026-05-12T10:05:00+04:00",
+        "fiscalReceiptUrl": "https://example.com/fiscal/FN-2026-000001",
+        "fiscalReceipt": {
+          "fn": "9287440300000001",
+          "fd": "123456",
+          "fpd": "9876543210",
+          "cashierName": "Администратор DENTE",
+          "receiptUrl": "https://example.com/fiscal/FN-2026-000001",
+          "operationType": "income"
+        },
+        "payerFullName": "Иванова Марина Сергеевна",
+        "payerInn": "123456789012",
+        "payerBirthDate": "1988-04-21",
+        "payerIdentityDocument": "паспорт РФ 3600 000000, выдан 01.01.2018",
+        "payerRelationship": "пациент",
+        "taxDeductionCode": "1",
+        "note": "Частичная оплата лечения 36."
+      }
+    ],
+    "communicationTasks": [
+      {
+        "id": "7195a20f-0aa8-4f0a-8d33-8db69fbb3d91",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": null,
+        "assignedRole": "assistant",
+        "channel": "telegram",
+        "intent": "post_visit_instruction",
+        "status": "queued",
+        "priority": "high",
+        "dueAt": "2026-05-12T10:20:00+04:00",
+        "title": "Отправить ссылку на памятку после приема",
+        "body": "Памятка после приема готова в защищенном портале клиники. Не включать диагноз, номера зубов, снимки и детали лечения в Telegram.",
+        "lastEventAt": null,
+        "createdAt": "2026-06-20T12:13:54.024Z"
+      },
+      {
+        "id": "31ba633f-64e3-4a50-8a10-dc3d44f81a5a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
+        "assignedRole": "administrator",
+        "channel": "sms",
+        "intent": "payment_reminder",
+        "status": "needs_call",
+        "priority": "urgent",
+        "dueAt": "2026-05-12T10:30:00+04:00",
+        "title": "Закрыть остаток оплаты и документы",
+        "body": "Связать оплату с договором/актом, затем подготовить пакет документов.",
+        "lastEventAt": null,
+        "createdAt": "2026-06-20T12:13:54.024Z"
+      },
+      {
+        "id": "16f19699-5b11-45fa-a329-5c53567b7f28",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "appointmentId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "visitId": null,
+        "documentId": "b77b8720-7ffd-453a-9db4-54637ef292a7",
+        "assignedRole": "administrator",
+        "channel": "phone",
+        "intent": "document_ready",
+        "status": "scheduled",
+        "priority": "normal",
+        "dueAt": "2026-05-12T09:30:00+04:00",
+        "title": "Предупредить о справке для вычета",
+        "body": "После оплаты выдать справку КНД 1151156 и проверить ФИО/ИНН.",
+        "lastEventAt": null,
+        "createdAt": "2026-06-20T12:13:54.024Z"
+      },
+      {
+        "id": "b896a902-665d-4b33-9851-53822a04c12a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "appointmentId": "286c0899-f2cc-4e72-833d-a1e89036e319",
+        "visitId": null,
+        "documentId": null,
+        "assignedRole": "administrator",
+        "channel": "whatsapp",
+        "intent": "appointment_confirmation",
+        "status": "queued",
+        "priority": "normal",
+        "dueAt": "2026-05-12T08:30:00+04:00",
+        "title": "Подтвердить первичную консультацию",
+        "body": "Уточнить жалобу, предупредить взять паспорт и старые снимки.",
+        "lastEventAt": null,
+        "createdAt": "2026-06-20T12:13:54.024Z"
+      },
+      {
+        "id": "d144ac6c-c570-4d0c-b6a6-dc0154130cd6",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": null,
+        "assignedRole": "doctor",
+        "channel": "in_person",
+        "intent": "imaging_review",
+        "status": "needs_call",
+        "priority": "high",
+        "dueAt": "2026-05-12T09:45:00+04:00",
+        "title": "Обсудить ОПТГ контроль",
+        "body": "Пояснить пациенту, что AI-описание не является диагнозом, врач проверяет снимок.",
+        "lastEventAt": null,
+        "createdAt": "2026-06-20T12:13:54.024Z"
+      }
+    ],
+    "communicationEvents": [
+      {
+        "id": "88ff10d9-e50a-4a67-8500-f1dfeff6b92c",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "taskId": "b896a902-665d-4b33-9851-53822a04c12a",
+        "patientId": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "actorUserId": "93bca14f-a11d-4088-9b48-cb7a0fd4c9ef",
+        "channel": "whatsapp",
+        "direction": "outbound",
+        "status": "sent",
+        "message": "Отправлено подтверждение первичной консультации.",
+        "createdAt": "2026-05-12T08:10:00+04:00"
+      }
+    ],
+    "imagingStudies": [
+      {
+        "id": "fbe3704c-9b37-4149-ae4b-e99e46d7599f",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "periapical",
+        "title": "Прицельный 36",
+        "toothCode": "36",
+        "region": "нижняя челюсть слева",
+        "capturedAt": "2026-05-12T08:42:00+04:00",
+        "sourceKind": "sensor_bridge",
+        "sourceName": "RVG-датчик",
+        "status": "available",
+        "aiSummary": "Черновик: область 36, контроль кариозной полости. Требует проверки врача.",
+        "previewUrl": "/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg",
+        "viewerUrl": "/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg"
+      },
+      {
+        "id": "b0b5961f-4d64-45a6-88e9-a77e87d7ec51",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "opg",
+        "title": "ОПТГ контроль",
+        "toothCode": null,
+        "region": "обе челюсти",
+        "capturedAt": "2026-05-10T15:20:00+04:00",
+        "sourceKind": "dicom_file",
+        "sourceName": "Импорт ОПТГ/снимков",
+        "status": "needs_review",
+        "aiSummary": "Черновик: панорамный обзор, проверить 36/46 и ретинированные восьмые зубы.",
+        "previewUrl": "/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg",
+        "viewerUrl": "/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg"
+      },
+      {
+        "id": "e0d93a8c-5f3b-49d6-bc21-0b5ab45eb6fa",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "ceph",
+        "title": "ТРГ боковая",
+        "toothCode": null,
+        "region": "профиль черепа",
+        "capturedAt": "2026-05-10T15:24:00+04:00",
+        "sourceKind": "dicom_file",
+        "sourceName": "Импорт ТРГ/снимков",
+        "status": "needs_review",
+        "aiSummary": "Черновик: телерентгенограмма добавлена для ортодонтического анализа. Разметку и вывод проверяет врач.",
+        "previewUrl": "/api/imaging/studies/e0d93a8c-5f3b-49d6-bc21-0b5ab45eb6fa/preview.svg",
+        "viewerUrl": "/api/imaging/studies/e0d93a8c-5f3b-49d6-bc21-0b5ab45eb6fa/preview.svg"
+      },
+      {
+        "id": "eb7bc26d-70df-4996-89db-ccbb910f82d0",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "visitId": null,
+        "kind": "cbct",
+        "title": "КТ имплантация 46",
+        "toothCode": "46",
+        "region": "нижняя челюсть справа",
+        "capturedAt": "2026-05-09T11:30:00+04:00",
+        "sourceKind": "pacs",
+        "sourceName": "Архив снимков клиники",
+        "status": "available",
+        "aiSummary": "Черновик: КЛКТ/КТ-серия подключена, полноценный 3D-просмотрщик будет отдельным модулем.",
+        "previewUrl": "/api/imaging/studies/eb7bc26d-70df-4996-89db-ccbb910f82d0/preview.svg",
+        "viewerUrl": "/api/imaging/studies/eb7bc26d-70df-4996-89db-ccbb910f82d0/preview.svg"
+      }
+    ],
+    "imagingViewerSessions": [
+      {
+        "id": "f1821d94-1f6d-474f-b639-a66d1de5a8b8",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "studyId": "fbe3704c-9b37-4149-ae4b-e99e46d7599f",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "state": {
+          "mode": "two_d",
+          "activeTool": "window_level",
+          "activeQuickActionId": null,
+          "windowPreset": "endo",
+          "windowCenter": null,
+          "windowWidth": null,
+          "brightness": 1,
+          "contrast": 1.08,
+          "inverted": false,
+          "rotationDeg": 0,
+          "flipHorizontal": false,
+          "zoom": 1,
+          "panX": 0,
+          "panY": 0,
+          "sliceIndex": null,
+          "projection": null,
+          "axisDeg": 0,
+          "slabMm": 1,
+          "crosshair": false,
+          "linkedPlanes": false,
+          "implantPlan": null
+        },
+        "annotations": [],
+        "clientSavedAt": "2026-06-21T21:38:54.633Z",
+        "serverSavedAt": "2026-06-21T21:38:55.987Z",
+        "createdAt": "2026-06-20T13:18:44.509Z",
+        "updatedAt": "2026-06-21T21:38:55.987Z",
+        "warnings": [
+          "Состояние просмотра сохраняется отдельно от исходного снимка; исходный снимок не изменяется.",
+          "2D-измерения требуют калибровки сенсора перед клиническим применением."
+        ]
+      }
+    ],
+    "dicomWorkbenchBundles": [],
+    "importBatches": [],
+    "auditEvents": [
+      {
+        "id": "6afceb19-64c6-4d32-9ff8-0de147de551e",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "payment",
+        "entityId": "b4693e8b-1210-4fd6-ae91-0c6cc2d0a3b4",
+        "action": "payment_recorded",
+        "reason": "Оплата 3 800 ₽ записана из рабочего экрана. Клиентская операция payment-402dfce4-f7a0-4931-996c-f80174f461eb.",
+        "createdAt": "2026-06-22T03:11:57.979Z"
+      },
+      {
+        "id": "cdac781e-6a56-4bbb-a4bd-1e2da6efc047",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_opened",
+        "reason": "Смена открыта, карта пациента доступна врачу.",
+        "createdAt": "2026-06-20T12:13:54.024Z"
+      },
+      {
+        "id": "5caa31eb-f50e-4d85-aa5e-c328d8d08229",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "document",
+        "entityId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
+        "action": "document_prepared",
+        "reason": "Договор создан как черновик перед приемом.",
+        "createdAt": "2026-06-20T12:13:54.024Z"
+      }
+    ],
+    "aiRecognitionJobs": [],
+    "speechTranscriptionChunks": [],
+    "visitDraftAutosaves": [
+      {
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "selectedSpecialty": "therapist",
+        "transcript": "Пациент жалуется на боль при накусывании. Объективно кариозная полость 36. План лечение под анестезией, реставрация.",
+        "draft": {
+          "complaint": "Периодическая боль при накусывании в области 36.",
+          "anamnesis": "Со слов пациента, боль появилась около недели назад.",
+          "objectiveStatus": "36: кариозная полость, реакция на холод кратковременная.",
+          "diagnosis": "K02.1 кариес дентина, предварительно.",
+          "treatmentPlan": "Анестезия, изоляция, препарирование, восстановление композитом.",
+          "warnings": [
+            "Серверный снимок автосохранения. Перед принятием черновика ЭМК врач все равно проверяет текст."
+          ]
+        },
+        "baseRevision": 1,
+        "clientDraftId": "visit-draft-af94df45-a669-4cae-b400-6e4f020f9120",
+        "clientSavedAt": "2026-06-22T03:21:27.959Z",
+        "serverSavedAt": "2026-06-22T03:21:29.952Z",
+        "transcriptHash": "02c86432b37b272c"
+      }
+    ],
+    "visitSaveReceipts": [],
+    "denteTelegramBotSettings": {
+      "version": 1,
+      "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+      "mode": "shared_dente_bot",
+      "botUsername": "dentecrm_bot",
+      "ownBotUsername": null,
+      "webhookBaseUrl": null,
+      "patientPortalBaseUrl": null,
+      "welcomeImageUrl": null,
+      "visualCardUrls": {
+        "mainMenu": null,
+        "appointment": null,
+        "documents": null,
+        "tax": null,
+        "billing": null,
+        "care": null,
+        "review": null,
+        "staff": null
+      },
+      "clinicReviewUrl": null,
+      "clinicMapsUrl": null,
+      "enabledFeatures": [
+        "patient_linking",
+        "appointment_reminders",
+        "appointment_confirmation",
+        "document_ready_notice",
+        "tax_document_request",
+        "post_visit_instructions",
+        "recalls",
+        "review_requests",
+        "staff_task_alerts",
+        "secure_portal_links"
+      ],
+      "patientLinkTokenTtlMinutes": 15,
+      "appointmentReminderLeadTimesHours": [
+        24
+      ],
+      "reviewRequestDelayHours": 2,
+      "postVisitCheckupDelayHoursByTopic": {
+        "extraction": 24,
+        "implantation": 24,
+        "filling_restoration": 48,
+        "endo": 48,
+        "surgery": 24,
+        "local_anesthesia": 24,
+        "hygiene": 72,
+        "prosthetics": 48,
+        "orthodontics": 72,
+        "periodontology": 72,
+        "other": 48
+      },
+      "allowVoiceIntake": false,
+      "staffEscalationChannel": null,
+      "privacyMode": "no_phi_by_default",
+      "updatedAt": "2026-06-20T12:13:54.024Z"
+    },
+    "denteTelegramLinkCodes": [],
+    "denteTelegramChatLinks": [],
+    "denteTelegramWebhookEvents": [],
+    "denteTelegramOutboxDeliveryReceipts": [],
+    "uiPreferences": null,
+    "activeVisit": {
+      "id": "af94df45-a669-4cae-b400-6e4f020f9120",
+      "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+      "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+      "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+      "status": "draft",
+      "revision": 1,
+      "complaint": "Периодическая боль при накусывании в области 36.",
+      "anamnesis": "Со слов пациента, боль появилась около недели назад.",
+      "objectiveStatus": "36: кариозная полость, реакция на холод кратковременная.",
+      "diagnosis": "K02.1 кариес дентина, предварительно.",
+      "treatmentPlan": "Анестезия, изоляция, препарирование, восстановление композитом.",
+      "doctorSummary": "AI-диктовка должна попадать сюда как черновик, не как подписанный диагноз.",
+      "createdAt": "2026-06-20T12:13:54.024Z",
+      "updatedAt": "2026-06-20T12:13:54.024Z"
+    }
+  },
+  "checksum": "a951e9cd4d40ce3b963f3d25e5515aece2fbef148b8e67500b2e811222c97027"
+}

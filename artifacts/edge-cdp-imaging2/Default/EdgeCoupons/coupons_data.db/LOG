@@ -1,0 +1,5 @@
+2026/05/15-23:47:47.440 cb9c Creating DB C:\hades\dental-crm\artifacts\edge-cdp-imaging2\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/05/15-23:47:47.541 cb9c Reusing MANIFEST C:\hades\dental-crm\artifacts\edge-cdp-imaging2\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/05/15-23:47:50.281 6a48 Level-0 table #5: started
+2026/05/15-23:47:50.287 6a48 Level-0 table #5: 682457 bytes OK
+2026/05/15-23:47:50.291 6a48 Delete type=0 #3

@@ -1,0 +1,5 @@
+{"level":30,"time":1778878209764,"pid":25300,"hostname":"Shinobu","msg":"Server listening at http://127.0.0.1:4110"}
+{"level":30,"time":1778878211876,"pid":25300,"hostname":"Shinobu","reqId":"req-1","req":{"method":"POST","url":"/api/speech/transcribe-chunk","host":"127.0.0.1:4110","remoteAddress":"127.0.0.1","remotePort":37814},"msg":"incoming request"}
+{"level":30,"time":1778878211891,"pid":25300,"hostname":"Shinobu","reqId":"req-1","res":{"statusCode":201},"responseTime":14.531499862670898,"msg":"request completed"}
+{"level":30,"time":1778878211919,"pid":25300,"hostname":"Shinobu","reqId":"req-2","req":{"method":"GET","url":"/api/speech/recordings/recovery?limit=5","host":"127.0.0.1:4110","remoteAddress":"127.0.0.1","remotePort":37814},"msg":"incoming request"}
+{"level":30,"time":1778878211921,"pid":25300,"hostname":"Shinobu","reqId":"req-2","res":{"statusCode":200},"responseTime":1.908799648284912,"msg":"request completed"}

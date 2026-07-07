@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Dental CRM">
+  <rect width="128" height="128" rx="24" fill="#0f766e"/>
+  <path d="M38 28c-10 4-16 14-15 28 1 18 11 47 23 47 7 0 7-18 18-18s11 18 18 18c12 0 22-29 23-47 1-14-5-24-15-28-8-3-16 1-26 1s-18-4-26-1z" fill="#f8f5ef"/>
+  <path d="M42 43c7 5 15 7 22 7s15-2 22-7" fill="none" stroke="#0f766e" stroke-width="7" stroke-linecap="round"/>
+</svg>

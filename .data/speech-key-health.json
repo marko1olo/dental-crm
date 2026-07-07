@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "savedAt": "2026-07-04T20:29:46.631Z",
+  "health": {
+    "google_speech:1052877dcb25": {
+      "cooldownUntil": 1782683317588,
+      "failures": 5,
+      "successes": 0,
+      "lastUsedAt": 1782682717588,
+      "lastStatusCode": 403,
+      "lastError": "403 Forbidden"
+    },
+    "google_speech:3e0ef4ad3f5a": {
+      "cooldownUntil": 1783088351438,
+      "failures": 22,
+      "successes": 1,
+      "lastUsedAt": 1783088321438,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:401c79dc50d5": {
+      "cooldownUntil": 1783088369575,
+      "failures": 76,
+      "successes": 0,
+      "lastUsedAt": 1783088339575,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:41fd51660f13": {
+      "cooldownUntil": 1782682685348,
+      "failures": 4,
+      "successes": 0,
+      "lastUsedAt": 1782682655348,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:447be2f33e37": {
+      "cooldownUntil": 1782688095332,
+      "failures": 2,
+      "successes": 0,
+      "lastUsedAt": 1782687495332,
+      "lastStatusCode": 403,
+      "lastError": "403 Forbidden"
+    },
+    "google_speech:45b27fe152ee": {
+      "cooldownUntil": 1782683318262,
+      "failures": 6,
+      "successes": 0,
+      "lastUsedAt": 1782682718262,
+      "lastStatusCode": 403,
+      "lastError": "403 Forbidden"
+    },
+    "google_speech:5cdeb7e487c0": {
+      "cooldownUntil": 1783088312181,
+      "failures": 15,
+      "successes": 4,
+      "lastUsedAt": 1783088282181,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:5e36d93cca7c": {
+      "cooldownUntil": 1783088407520,
+      "failures": 69,
+      "successes": 3,
+      "lastUsedAt": 1783088377520,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:adbbdfccf3e4": {
+      "cooldownUntil": 1782683317035,
+      "failures": 5,
+      "successes": 0,
+      "lastUsedAt": 1782682717035,
+      "lastStatusCode": 403,
+      "lastError": "403 Forbidden"
+    },
+    "google_speech:ae51880973bd": {
+      "cooldownUntil": 1782685968520,
+      "failures": 1,
+      "successes": 0,
+      "lastUsedAt": 1782685368520,
+      "lastStatusCode": 403,
+      "lastError": "403 Forbidden"
+    },
+    "google_speech:b295525f5236": {
+      "cooldownUntil": 1782683316757,
+      "failures": 6,
+      "successes": 0,
+      "lastUsedAt": 1782682716757,
+      "lastStatusCode": 401,
+      "lastError": "401 Unauthorized"
+    },
+    "google_speech:c5b553420348": {
+      "cooldownUntil": 1783088354448,
+      "failures": 91,
+      "successes": 2,
+      "lastUsedAt": 1783088324448,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:c637bdf62cb7": {
+      "cooldownUntil": 1783088348426,
+      "failures": 83,
+      "successes": 0,
+      "lastUsedAt": 1783088318426,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:c78fec9a5b53": {
+      "cooldownUntil": 1783088372584,
+      "failures": 128,
+      "successes": 0,
+      "lastUsedAt": 1783088342584,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "google_speech:cabbbd91fa65": {
+      "cooldownUntil": 1782683318347,
+      "failures": 4,
+      "successes": 0,
+      "lastUsedAt": 1782682718347,
+      "lastStatusCode": 401,
+      "lastError": "401 Unauthorized"
+    },
+    "google_speech:deee90f14804": {
+      "cooldownUntil": 1782683317303,
+      "failures": 6,
+      "successes": 0,
+      "lastUsedAt": 1782682717303,
+      "lastStatusCode": 403,
+      "lastError": "403 Forbidden"
+    },
+    "groq_whisper:28098ef6adba": {
+      "cooldownUntil": 1783088401505,
+      "failures": 34,
+      "successes": 3,
+      "lastUsedAt": 1783088371505,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "groq_whisper:3ac3d993a93f": {
+      "cooldownUntil": 1783088363547,
+      "failures": 78,
+      "successes": 2,
+      "lastUsedAt": 1783088333547,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "groq_whisper:4bda99f4f65e": {
+      "cooldownUntil": 0,
+      "failures": 1,
+      "successes": 0,
+      "lastUsedAt": 1783196986610,
+      "lastStatusCode": null,
+      "lastError": "catalog is not iterable"
+    },
+    "groq_whisper:526030f6ed48": {
+      "cooldownUntil": 1782688105174,
+      "failures": 1,
+      "successes": 0,
+      "lastUsedAt": 1782687505174,
+      "lastStatusCode": 401,
+      "lastError": "Invalid API Key"
+    },
+    "groq_whisper:5e5573f5e9ab": {
+      "cooldownUntil": 1783088398491,
+      "failures": 30,
+      "successes": 2,
+      "lastUsedAt": 1783088368491,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "groq_whisper:a98543b30147": {
+      "cooldownUntil": 1783088404508,
+      "failures": 94,
+      "successes": 3,
+      "lastUsedAt": 1783088374508,
+      "lastStatusCode": null,
+      "lastError": "fetch failed"
+    },
+    "groq_whisper:cd65f7a57886": {
+      "cooldownUntil": 1783197016628,
+      "failures": 1,
+      "successes": 0,
+      "lastUsedAt": 1783196986628,
+      "lastStatusCode": 500,
+      "lastError": "Simulated Groq Failure"
+    }
+  }
+}

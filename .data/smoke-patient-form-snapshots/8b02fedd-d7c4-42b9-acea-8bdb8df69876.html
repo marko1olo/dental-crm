@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Согласие на фото-, видео- и рентген-материалы</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    
+    /* Premium Treatment Plan PDF Styles */
+    .patient-friendly-container { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+    .patient-friendly-container h3 { color: #0f766e; margin-top: 0; font-size: 15px; border-bottom: 1px solid #ccfbf1; padding-bottom: 6px; }
+    .patient-friendly-text { color: #1f2937; font-size: 13.5px; line-height: 1.6; }
+    .patient-friendly-text p { margin: 8px 0; }
+    .patient-friendly-text ul, .patient-friendly-text ol { margin: 8px 0 8px 20px; }
+    
+    .tooth-chart-container { margin: 25px 0; padding: 15px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; }
+    .tooth-chart-title { font-size: 13px; font-weight: bold; color: #4b5563; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .tooth-chart-legend { display: flex; justify-content: center; gap: 15px; margin-top: 8px; font-size: 11px; color: #4b5563; }
+    .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .legend-treatment { background: #fee2e2; border: 1px solid #dc2626; }
+    .legend-planned { background: #e0f2fe; border: 1px solid #0284c7; }
+    .legend-watch { background: #fef3c7; border: 1px solid #d97706; }
+    .legend-completed { background: #dcfce7; border: 1px solid #16a34a; }
+    
+    .stages-timeline { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+    .stage-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; }
+    .stage-header { display: flex; justify-content: space-between; align-items: center; }
+    .stage-title { font-weight: bold; color: #1e293b; font-size: 14px; }
+    .stage-badges { display: flex; gap: 8px; align-items: center; }
+    .stage-badge { background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .stage-badge.timing { background: #e0f2fe; color: #0369a1; }
+    .stage-badge.price { background: #ccfbf1; color: #0f766e; }
+    .stage-body { margin-top: 8px; font-size: 13px; color: #334155; line-height: 1.5; }
+    
+    .hygiene-section { border-top: 2px dashed #cbd5e1; margin-top: 30px; padding-top: 20px; }
+    
+    .full-hygiene-guide { background: #fdfdfd; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; margin-top: 30px; page-break-before: always; }
+    .full-hygiene-guide h2 { font-size: 18px; color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 8px; margin-top: 0; }
+    .full-hygiene-guide h3 { font-size: 14px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-top: 20px; }
+    .hygiene-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0; }
+    .hygiene-card { padding: 16px; border-radius: 8px; border: 1px solid; font-size: 12.5px; }
+    .hygiene-card.morning { background: #fffbeb; border-color: #fef08a; color: #451a03; }
+    .hygiene-card.morning h3 { color: #b45309; border: none; margin: 0 0 10px 0; padding: 0; font-size: 13px; font-weight: bold; }
+    .hygiene-card.evening { background: #eff6ff; border-color: #bfdbfe; color: #172554; }
+    .hygiene-card.evening h3 { color: #1d4ed8; border: none; margin: 0 0 10px 0; padding: 0; font-size: 13px; font-weight: bold; }
+    .hygiene-card ol { margin: 0 0 0 16px; padding: 0; }
+    .hygiene-card li { margin-bottom: 8px; line-height: 1.4; }
+    
+    .hygiene-details { font-size: 13px; color: #334155; }
+    .hygiene-details ul { margin-left: 18px; }
+    
+    .header-qr-container { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f766e; padding-bottom: 15px; margin-bottom: 20px; }
+    .header-qr-container .clinic-info { flex: 1; }
+    .header-qr-container .qr-code-box { text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: white; margin-left: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .header-qr-container .qr-code-box svg { display: block; }
+    .header-qr-container .qr-code-label { font-size: 9px; color: #64748b; margin-top: 4px; font-weight: 600; text-transform: uppercase; }
+    
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+      .full-hygiene-guide { border: none; padding: 0; }
+      .stage-card { background: #ffffff; page-break-inside: avoid; }
+      .patient-friendly-container { background: #ffffff; border-color: #cbd5e1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Согласие на фото-, видео- и рентген-материалы</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 29.06.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-05-23 10:06</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Smoke Admin, администратор клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      <tr><th>Заметка выдачи</th><td>photo_video_consent route lifecycle</td></tr>
+    </table>
+  </section>
+  
+  <h2>Согласие на фото-, видео- и рентген-материалы</h2>
+      <div class="notice">
+        Согласие разделяет медицинское использование, передачу подрядчикам, обучение и публикацию. Публикация узнаваемых материалов не считается разрешенной по умолчанию.
+      </div>
+      <table>
+        <tr><th>Материалы</th><td>внутриротовые фото, рентген-снимки, цифровые сканы</td></tr>
+        <tr><th>Медицинская карта и контроль лечения</th><td>да, обязательно для медицинской документации</td></tr>
+        <tr><th>Передача зуботехнической лаборатории</th><td>разрешено</td></tr>
+        <tr><th>Консультация коллег / консилиум</th><td>разрешено</td></tr>
+        <tr><th>Обучение и профессиональные разборы</th><td>разрешено</td></tr>
+        <tr><th>Маркетинг клиники</th><td>не разрешено</td></tr>
+        <tr><th>Узнаваемая публикация лица/улыбки</th><td>не разрешено</td></tr>
+        <tr><th>Обезличивание</th><td>обязательно; ФИО, телефон и лишние признаки не публиковать</td></tr>
+        <tr><th>Порядок отзыва</th><td>written clinic request before non-clinical use</td></tr>
+        <tr><th>Ограничения пациента</th><td>Route smoke: clinical archive, laboratory transfer and consultation only.</td></tr>
+      </table>
+      <ul class="check-list"><li><span>□</span>использовать материалы только в отмеченных целях</li><li><span>□</span>для маркетинга и узнаваемой публикации нужна отдельная явная отметка пациента</li><li><span>□</span>после отзыва прекратить новые публикации и зафиксировать дату отзыва в карте/CRM</li><li><span>□</span>рентген, КТ и сканы остаются частью медицинской документации и не удаляются из карты без законного основания</li></ul>
+      <div class="signatures">
+    <p>Пациент/законный представитель: ____________________</p>
+    <p>Представитель клиники: ____________________</p>
+  </div>
+</body>
+</html>

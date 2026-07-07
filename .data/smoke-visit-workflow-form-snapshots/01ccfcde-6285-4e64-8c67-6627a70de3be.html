@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Информированное добровольное согласие</title>
+  <style>
+    @page { margin: 18mm 16mm; }
+    body { color: #211f1c; font: 14px/1.5 Arial, sans-serif; margin: 40px; }
+    h1 { font-size: 22px; margin: 10px 0 18px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    h3 { font-size: 14px; margin: 18px 0 6px; }
+    p { margin: 8px 0; }
+    table { border-collapse: collapse; margin: 16px 0; width: 100%; }
+    td, th { border: 1px solid #bfb7ad; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f4f0ea; width: 34%; }
+    ul { margin: 8px 0 14px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    .meta { color: #5f574f; margin-bottom: 18px; }
+    .document-status-banner { border: 2px solid #a34f32; color: #a34f32; display: inline-block; font-weight: 700; padding: 4px 8px; }
+    .status-issued { border-color: #2f7340; color: #2f7340; }
+    .status-voided { border-color: #5f574f; color: #5f574f; text-decoration: line-through; }
+    .notice { background: #fff8e6; border: 1px solid #e7c56f; border-radius: 6px; padding: 10px 12px; }
+    .check-list { list-style: none; margin-left: 0; }
+    .check-list li { align-items: baseline; display: flex; gap: 8px; }
+    .check-list span { color: #5f574f; font-weight: 700; }
+    .signatures { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin-top: 48px; }
+    .small { color: #5f574f; font-size: 12px; }
+    @media print {
+      body { margin: 0; }
+      .document-status-banner { color: #000; border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="document-status-banner status-issued">ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ</div>
+  <h1>Информированное добровольное согласие</h1>
+  <div class="meta">
+    <p>Клиника: ИП Иванова М.С.</p>
+    <p>Пациент: Иванова Марина Сергеевна</p>
+    <p>Дата рождения: 1988-04-21</p>
+    <p>Телефон: +7 927 111-22-33</p>
+    
+    
+    
+    
+    
+    
+    <p>Статус документа: выдан; дата выдачи: 27.05.2026</p>
+  </div>
+  <section class="issue-attestation">
+    <h2>Отметка о подписании и выдаче</h2>
+    <table>
+      <tr><th>Способ</th><td>бумажный экземпляр подписан</td></tr>
+      <tr><th>Дата и время подписи/выдачи</th><td>2026-05-23 10:06</td></tr>
+      <tr><th>Получатель</th><td>Иванова Марина Сергеевна, пациент</td></tr>
+      <tr><th>Сотрудник клиники</th><td>Smoke Admin, администратор клиники</td></tr>
+      <tr><th>Проверка</th><td>личность получателя проверена; HTML открыт и сверен; получатель и представитель клиники подписали экземпляр</td></tr>
+      <tr><th>Заметка выдачи</th><td>informed_consent visit workflow route lifecycle</td></tr>
+    </table>
+  </section>
+  
+  <div class="notice">
+      Информированное добровольное согласие оформляется до вмешательства. Основание: 323-ФЗ, клинические разъяснения врача и локально утвержденная форма клиники.
+      Документ фиксирует конкретное вмешательство, риски, альтернативы и подтверждения пациента.
+    </div>
+    <h2>Медицинское вмешательство</h2>
+    <table>
+      <tr><th>Планируемое вмешательство</th><td>Route lifecycle informed consent treatment for tooth 36</td></tr>
+      <tr><th>Область/зубы</th><td>36 tooth</td></tr>
+      <tr><th>Диагноз или клиническое показание</th><td>Route lifecycle deep caries and bite pain</td></tr>
+      <tr><th>Ожидаемая польза</th><td>Route lifecycle pain control and tooth function restoration</td></tr>
+      <tr><th>Анестезия</th><td>Route lifecycle local anesthesia with articaine 4%</td></tr>
+      <tr><th>Материалы, препараты и ограничения</th><td>Route lifecycle rubber dam and composite restoration by clinical indication</td></tr>
+      <tr><th>Кому можно сообщать медицинские сведения</th><td>Route lifecycle no third-party disclosure allowed</td></tr>
+      <tr><th>Врач, проводивший разъяснение</th><td>Route Lifecycle Doctor</td></tr>
+      <tr><th>Дата и время подтверждения</th><td>24.05.2026 10:02</td></tr>
+    </table>
+    <h2>Разъясненные риски</h2>
+    <ul><li>postoperative pain</li><li>swelling</li><li>allergic reaction</li><li>additional visit may be needed</li></ul>
+    <h2>Альтернативы</h2>
+    <ul><li>second opinion</li><li>postpone treatment under observation</li><li>another treatment method if clinically indicated</li></ul>
+    <h2>После вмешательства</h2>
+    <ul><li>do not eat until anesthesia ends</li><li>follow doctor instructions</li><li>contact clinic if pain or swelling increases</li></ul>
+    <h2>Подтверждения пациента</h2>
+    <ul class="check-list"><li><span>□</span>пациент получил ответы на вопросы до подписания</li><li><span>□</span>пациент понимает характер вмешательства, риски и возможные осложнения</li><li><span>□</span>пациент знает, что может отозвать согласие до начала вмешательства</li></ul>
+    <div class="signatures">
+    <p>Пациент/законный представитель: ____________________</p>
+    <p>Врач (Route Lifecycle Doctor): ____________________</p>
+  </div>
+</body>
+</html>

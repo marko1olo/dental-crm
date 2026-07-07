@@ -1,0 +1,10 @@
+import { ChangeTypes } from '../../../enums';
+import type { Annotation } from '../../../types/AnnotationTypes';
+import type { AnnotationRemovedEventDetail } from '../../../types/EventTypes';
+declare function triggerAnnotationAddedForElement(annotation: Annotation, element: HTMLDivElement): void;
+declare function triggerAnnotationAddedForFOR(annotation: Annotation): void;
+declare function triggerAnnotationRemoved(eventDetail: AnnotationRemovedEventDetail): void;
+declare function triggerAnnotationModified(annotation: Annotation, element?: HTMLDivElement, changeType?: ChangeTypes): void;
+declare function triggerAnnotationCompleted(annotation: Annotation): void;
+declare function triggerContourAnnotationCompleted(annotation: Annotation, contourHoleProcessingEnabled?: boolean): void;
+export { triggerAnnotationAddedForElement, triggerAnnotationAddedForFOR, triggerAnnotationRemoved, triggerAnnotationModified, triggerAnnotationCompleted, triggerContourAnnotationCompleted, };

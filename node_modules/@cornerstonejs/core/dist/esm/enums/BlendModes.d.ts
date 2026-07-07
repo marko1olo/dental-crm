@@ -1,0 +1,8 @@
+export declare enum BlendModes {
+    COMPOSITE,
+    MAXIMUM_INTENSITY_BLEND,
+    MINIMUM_INTENSITY_BLEND,
+    AVERAGE_INTENSITY_BLEND,
+    LABELMAP_EDGE_PROJECTION_BLEND
+}
+export default BlendModes;

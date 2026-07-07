@@ -1,0 +1,10 @@
+import type { Types } from '@cornerstonejs/core';
+export type Interval = Types.Point2;
+export type FanPair = [Types.Point2, Types.Point2];
+export type FanPairs = FanPair[];
+export declare function angleFromCenter(center: Types.Point2, point: Types.Point2): number;
+export declare function intervalFromPoints(center: Types.Point2, pair: FanPair): Types.Point2;
+export declare function mergeIntervals(intervals: Interval[]): Interval[];
+export declare function subtractIntervals(blocked: Interval[], target: Interval): Interval[];
+export declare function clipInterval(inner: Types.Point2, outerMerged: Interval[]): Interval[];
+export declare function calculateInnerFanPercentage(center: Types.Point2, outerFanPairs: FanPairs, innerFanPairs: FanPairs): number;

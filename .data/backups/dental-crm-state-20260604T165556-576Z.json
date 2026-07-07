@@ -1,0 +1,1292 @@
+{
+  "version": 1,
+  "savedAt": "2026-06-04T16:55:53.477Z",
+  "state": {
+    "clinicProfile": {
+      "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+      "clinicName": "Стоматология, 1 кабинет",
+      "legalName": "ИП Иванова М.С.",
+      "inn": "631234567890",
+      "kpp": null,
+      "ogrn": "318631300000000",
+      "address": "Самара, ул. Демонстрационная, 12",
+      "phone": "+7 927 111-22-33",
+      "email": "clinic@example.com",
+      "website": "https://example.com",
+      "medicalLicenseNumber": "Л041-01184-63/00000000",
+      "medicalLicenseIssuedAt": "2024-01-15",
+      "medicalLicenseIssuer": "Министерство здравоохранения Самарской области",
+      "bankDetails": "р/с 40702810000000000000, БИК 043601000, банк ООО «Демо Банк»",
+      "signatoryName": "Иванова Марина Сергеевна",
+      "signatoryTitle": "индивидуальный предприниматель",
+      "mode": "one_chair",
+      "timezone": "Europe/Samara",
+      "defaultVisitMinutes": 45,
+      "scheduleDefaults": {
+        "workdayStart": "09:00",
+        "workdayEnd": "18:00",
+        "workingDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "appointmentBufferMinutes": 10
+      },
+      "networkEnabled": false,
+      "egiszEnabled": false,
+      "updatedAt": "2026-06-04T16:52:45.065Z"
+    },
+    "staffMembers": [
+      {
+        "id": "20d5aea8-064d-4add-aef0-e4c493c24b2b",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "fullName": "Вася",
+        "role": "doctor",
+        "specialties": [
+          "therapist"
+        ],
+        "phone": null,
+        "email": null,
+        "active": true,
+        "canSignMedicalRecords": true,
+        "canManageMoney": false,
+        "canManageImports": false,
+        "color": "#0f766e",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ],
+        "createdAt": "2026-06-04T16:53:04.795Z",
+        "updatedAt": "2026-06-04T16:53:08.088Z"
+      },
+      {
+        "id": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "fullName": "Иванова Марина Сергеевна",
+        "role": "doctor",
+        "specialties": [
+          "therapist",
+          "orthopedist"
+        ],
+        "phone": "+7 927 111-22-33",
+        "email": "doctor@example.com",
+        "active": true,
+        "canSignMedicalRecords": true,
+        "canManageMoney": false,
+        "canManageImports": false,
+        "color": "#0f766e",
+        "createdAt": "2026-05-13T20:30:33.896Z",
+        "updatedAt": "2026-06-04T16:53:09.286Z",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      },
+      {
+        "id": "93bca14f-a11d-4088-9b48-cb7a0fd4c9ef",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "fullName": "Кузнецова Анна",
+        "role": "administrator",
+        "specialties": [
+          "universal"
+        ],
+        "phone": "+7 927 222-10-10",
+        "email": "admin@example.com",
+        "active": true,
+        "canSignMedicalRecords": false,
+        "canManageMoney": true,
+        "canManageImports": true,
+        "color": "#b8781f",
+        "createdAt": "2026-05-13T20:30:33.896Z",
+        "updatedAt": "2026-05-13T20:30:33.896Z",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      },
+      {
+        "id": "f365da0c-7094-4f80-b52d-59b7b1254791",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "fullName": "Садыкова Эльмира",
+        "role": "assistant",
+        "specialties": [
+          "therapist",
+          "surgeon"
+        ],
+        "phone": "+7 927 900-77-10",
+        "email": null,
+        "active": true,
+        "canSignMedicalRecords": false,
+        "canManageMoney": false,
+        "canManageImports": false,
+        "color": "#a34f32",
+        "createdAt": "2026-05-13T20:30:33.896Z",
+        "updatedAt": "2026-06-04T16:53:10.487Z",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      }
+    ],
+    "chairs": [
+      {
+        "id": "b5450677-b0fc-4228-9672-56b27062783f",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "name": "Кресло 1",
+        "room": "Кабинет 1",
+        "specialization": "therapist",
+        "active": true,
+        "hasXraySensor": true,
+        "hasMicroscope": false,
+        "hasSurgeryKit": false,
+        "notes": "Основное терапевтическое кресло, RVG рядом.",
+        "workingHours": [
+          {
+            "weekday": 0,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 1,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 2,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 3,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 4,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 5,
+            "enabled": true,
+            "start": "09:00",
+            "end": "18:00"
+          },
+          {
+            "weekday": 6,
+            "enabled": false,
+            "start": "09:00",
+            "end": "18:00"
+          }
+        ]
+      }
+    ],
+    "appointments": [
+      {
+        "id": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": "f365da0c-7094-4f80-b52d-59b7b1254791",
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "confirmed",
+        "startsAt": "2026-05-12T09:00:00+04:00",
+        "endsAt": "2026-05-12T10:00:00+04:00",
+        "reason": "Лечение 36",
+        "comment": "Подготовить согласие и акт."
+      },
+      {
+        "id": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": "f365da0c-7094-4f80-b52d-59b7b1254791",
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "planned",
+        "startsAt": "2026-05-12T10:30:00+04:00",
+        "endsAt": "2026-05-12T11:15:00+04:00",
+        "reason": "Профгигиена",
+        "comment": "После оплаты выдать справку для вычета."
+      },
+      {
+        "id": "286c0899-f2cc-4e72-833d-a1e89036e319",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "doctorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "assistantUserId": null,
+        "chairId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "status": "planned",
+        "startsAt": "2026-05-12T12:00:00+04:00",
+        "endsAt": "2026-05-12T12:30:00+04:00",
+        "reason": "Первичная консультация",
+        "comment": null
+      }
+    ],
+    "patients": [
+      {
+        "id": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "status": "active",
+        "fullName": "Иванова Марина Сергеевна",
+        "birthDate": "1988-04-21",
+        "phone": "+7 927 111-22-33",
+        "email": null,
+        "notes": "Боится анестезии, предпочитает утренние приемы.",
+        "createdAt": "2026-05-13T20:30:33.896Z",
+        "updatedAt": "2026-05-13T20:30:33.896Z",
+        "administrativeProfile": null
+      },
+      {
+        "id": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "status": "active",
+        "fullName": "Петров Алексей Николаевич",
+        "birthDate": "1979-11-03",
+        "phone": "+7 927 555-19-40",
+        "email": "petrov@example.com",
+        "notes": "Нужны документы для налогового вычета.",
+        "createdAt": "2026-05-13T20:30:33.896Z",
+        "updatedAt": "2026-05-13T20:30:33.896Z",
+        "administrativeProfile": null
+      },
+      {
+        "id": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "status": "active",
+        "fullName": "Садыкова Эльмира Рустамовна",
+        "birthDate": null,
+        "phone": "+7 927 900-77-10",
+        "email": null,
+        "notes": null,
+        "createdAt": "2026-05-13T20:30:33.896Z",
+        "updatedAt": "2026-05-13T20:30:33.896Z",
+        "administrativeProfile": null
+      }
+    ],
+    "documents": [
+      {
+        "id": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "paid_medical_services_contract",
+        "title": "Договор платных медицинских услуг",
+        "status": "draft",
+        "issuedAt": null,
+        "totalAmountRub": 6800
+      },
+      {
+        "id": "59b724c7-c988-45a7-91d8-1ad11a6e74c7",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "completed_works_act",
+        "title": "Акт выполненных работ",
+        "status": "draft",
+        "issuedAt": null,
+        "totalAmountRub": 6800
+      },
+      {
+        "id": "b77b8720-7ffd-453a-9db4-54637ef292a7",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "visitId": null,
+        "kind": "tax_deduction_certificate",
+        "title": "Справка для налогового вычета, КНД 1151156",
+        "status": "draft",
+        "issuedAt": null,
+        "totalAmountRub": 4500
+      }
+    ],
+    "clinicalRules": [
+      {
+        "id": "rule-caries-requires-image",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Снимок перед лечением глубокого кариеса",
+        "category": "imaging",
+        "specialty": "therapist",
+        "action": "add_required_service",
+        "severity": "blocker",
+        "ownerRole": "doctor",
+        "triggerServiceIds": [
+          "svc-therapy-caries"
+        ],
+        "requiredServiceIds": [
+          "svc-imaging-opg"
+        ],
+        "requiresCompletedServiceIds": [],
+        "blockedServiceIds": [],
+        "condition": "Если в плане есть терапия кариеса, должен быть снимок или подтвержденный отказ врача.",
+        "warningText": "Нельзя закрывать терапию без снимка или клинического основания для отказа.",
+        "patientText": "Снимок нужен, чтобы врач не лечил вслепую и не пропустил воспаление у корня.",
+        "active": true
+      },
+      {
+        "id": "rule-caries-requires-cofferdam",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Изоляция при терапевтическом лечении",
+        "category": "therapy",
+        "specialty": "therapist",
+        "action": "add_required_service",
+        "severity": "warning",
+        "ownerRole": "assistant",
+        "triggerServiceIds": [
+          "svc-therapy-caries"
+        ],
+        "requiredServiceIds": [
+          "svc-therapy-cofferdam"
+        ],
+        "requiresCompletedServiceIds": [],
+        "blockedServiceIds": [],
+        "condition": "Кариес, эндодонтия и адгезивные реставрации требуют сухого поля.",
+        "warningText": "Добавьте коффердам или зафиксируйте клиническую причину отказа.",
+        "patientText": "Изоляция повышает качество пломбы и снижает риск повторного лечения.",
+        "active": true
+      },
+      {
+        "id": "rule-crown-after-therapy",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Ортопедия только после закрытия активной терапии",
+        "category": "prosthetics",
+        "specialty": "orthopedist",
+        "action": "block_service",
+        "severity": "blocker",
+        "ownerRole": "doctor",
+        "triggerServiceIds": [
+          "svc-prosthetics-crown"
+        ],
+        "requiredServiceIds": [],
+        "requiresCompletedServiceIds": [
+          "svc-therapy-caries"
+        ],
+        "blockedServiceIds": [
+          "svc-prosthetics-crown"
+        ],
+        "condition": "Коронка в плане допустима только после закрытия активного очага и снимка.",
+        "warningText": "Не планируйте коронку как готовую работу, пока терапия не завершена.",
+        "patientText": "Сначала нужно убрать воспаление и восстановить основание, потом защищать зуб коронкой.",
+        "active": true
+      },
+      {
+        "id": "rule-maintenance-after-hygiene",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "title": "Recall после гигиены",
+        "category": "hygiene",
+        "specialty": "hygienist",
+        "action": "schedule_followup",
+        "severity": "info",
+        "ownerRole": "administrator",
+        "triggerServiceIds": [
+          "svc-hygiene-pro"
+        ],
+        "requiredServiceIds": [],
+        "requiresCompletedServiceIds": [],
+        "blockedServiceIds": [],
+        "condition": "После гигиены пациент должен получить повторный контакт через 6 месяцев.",
+        "warningText": "Поставьте recall-задачу, чтобы удержать профилактику и гарантийный контроль.",
+        "patientText": "Профилактический контроль дешевле повторного лечения и помогает сохранить результат.",
+        "active": true
+      }
+    ],
+    "payments": [
+      {
+        "id": "baf18e54-608e-4bc5-9f20-57df0f742795",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": "59b724c7-c988-45a7-91d8-1ad11a6e74c7",
+        "amountRub": 3000,
+        "method": "card",
+        "status": "paid",
+        "paidAt": "2026-05-12T10:05:00+04:00",
+        "createdAt": "2026-05-13T20:30:33.896Z",
+        "note": "Частичная оплата лечения 36."
+      }
+    ],
+    "communicationTasks": [
+      {
+        "id": "7195a20f-0aa8-4f0a-8d33-8db69fbb3d91",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": null,
+        "assignedRole": "assistant",
+        "channel": "telegram",
+        "intent": "post_visit_instruction",
+        "status": "queued",
+        "priority": "high",
+        "dueAt": "2026-05-12T10:20:00+04:00",
+        "title": "Отправить рекомендации после лечения 36",
+        "body": "Не есть 2 часа, предупредить о возможной чувствительности, контроль при боли.",
+        "lastEventAt": null,
+        "createdAt": "2026-05-13T20:30:33.896Z"
+      },
+      {
+        "id": "31ba633f-64e3-4a50-8a10-dc3d44f81a5a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
+        "assignedRole": "administrator",
+        "channel": "sms",
+        "intent": "payment_reminder",
+        "status": "needs_call",
+        "priority": "urgent",
+        "dueAt": "2026-05-12T10:30:00+04:00",
+        "title": "Закрыть остаток оплаты и документы",
+        "body": "Связать оплату с договором/актом, затем подготовить пакет документов.",
+        "lastEventAt": null,
+        "createdAt": "2026-05-13T20:30:33.896Z"
+      },
+      {
+        "id": "16f19699-5b11-45fa-a329-5c53567b7f28",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "appointmentId": "59d16574-5f6e-4cc7-9f49-2da2f126e11d",
+        "visitId": null,
+        "documentId": "b77b8720-7ffd-453a-9db4-54637ef292a7",
+        "assignedRole": "administrator",
+        "channel": "phone",
+        "intent": "document_ready",
+        "status": "scheduled",
+        "priority": "normal",
+        "dueAt": "2026-05-12T09:30:00+04:00",
+        "title": "Предупредить о справке для вычета",
+        "body": "После оплаты выдать справку КНД 1151156 и проверить ФИО/ИНН.",
+        "lastEventAt": null,
+        "createdAt": "2026-05-13T20:30:33.896Z"
+      },
+      {
+        "id": "b896a902-665d-4b33-9851-53822a04c12a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "appointmentId": "286c0899-f2cc-4e72-833d-a1e89036e319",
+        "visitId": null,
+        "documentId": null,
+        "assignedRole": "administrator",
+        "channel": "whatsapp",
+        "intent": "appointment_confirmation",
+        "status": "queued",
+        "priority": "normal",
+        "dueAt": "2026-05-12T08:30:00+04:00",
+        "title": "Подтвердить первичную консультацию",
+        "body": "Уточнить жалобу, предупредить взять паспорт и старые снимки.",
+        "lastEventAt": null,
+        "createdAt": "2026-05-13T20:30:33.896Z"
+      },
+      {
+        "id": "d144ac6c-c570-4d0c-b6a6-dc0154130cd6",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "documentId": null,
+        "assignedRole": "doctor",
+        "channel": "in_person",
+        "intent": "imaging_review",
+        "status": "needs_call",
+        "priority": "high",
+        "dueAt": "2026-05-12T09:45:00+04:00",
+        "title": "Обсудить ОПТГ контроль",
+        "body": "Пояснить пациенту, что AI-описание не является диагнозом, врач проверяет снимок.",
+        "lastEventAt": null,
+        "createdAt": "2026-05-13T20:30:33.896Z"
+      }
+    ],
+    "communicationEvents": [
+      {
+        "id": "88ff10d9-e50a-4a67-8500-f1dfeff6b92c",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "taskId": "b896a902-665d-4b33-9851-53822a04c12a",
+        "patientId": "46c7b2cb-f4db-49e8-ac4e-ad6b1ecdf1ba",
+        "actorUserId": "93bca14f-a11d-4088-9b48-cb7a0fd4c9ef",
+        "channel": "whatsapp",
+        "direction": "outbound",
+        "status": "sent",
+        "message": "Отправлено подтверждение первичной консультации.",
+        "createdAt": "2026-05-12T08:10:00+04:00"
+      }
+    ],
+    "imagingStudies": [
+      {
+        "id": "e412a7a5-b25c-43aa-adaf-368f9c1dca96",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "cbct",
+        "title": "КЛКТ / КТ",
+        "toothCode": null,
+        "region": "обе челюсти",
+        "capturedAt": "2026-06-04T16:51:41.131Z",
+        "sourceKind": "dicom_file",
+        "sourceName": "Импорт КТ/снимков",
+        "storagePath": null,
+        "dicomStudyUid": null,
+        "status": "needs_review",
+        "aiSummary": "Черновик: снимок добавлен в карту. Описание требует проверки врача.",
+        "previewUrl": "/api/imaging/studies/e412a7a5-b25c-43aa-adaf-368f9c1dca96/preview.svg",
+        "viewerUrl": "/api/imaging/studies/e412a7a5-b25c-43aa-adaf-368f9c1dca96/preview.svg"
+      },
+      {
+        "id": "fbe3704c-9b37-4149-ae4b-e99e46d7599f",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "periapical",
+        "title": "Прицельный 36",
+        "toothCode": "36",
+        "region": "нижняя челюсть слева",
+        "capturedAt": "2026-05-12T08:42:00+04:00",
+        "sourceKind": "sensor_bridge",
+        "sourceName": "RVG sensor bridge",
+        "status": "available",
+        "aiSummary": "Черновик: область 36, контроль кариозной полости. Требует проверки врача.",
+        "previewUrl": "/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg",
+        "viewerUrl": "/api/imaging/studies/fbe3704c-9b37-4149-ae4b-e99e46d7599f/preview.svg"
+      },
+      {
+        "id": "b0b5961f-4d64-45a6-88e9-a77e87d7ec51",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "kind": "opg",
+        "title": "ОПТГ контроль",
+        "toothCode": null,
+        "region": "обе челюсти",
+        "capturedAt": "2026-05-10T15:20:00+04:00",
+        "sourceKind": "dicom_file",
+        "sourceName": "OPG DICOM import",
+        "status": "needs_review",
+        "aiSummary": "Черновик: панорамный обзор, проверить 36/46 и ретинированные восьмые зубы.",
+        "previewUrl": "/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg",
+        "viewerUrl": "/api/imaging/studies/b0b5961f-4d64-45a6-88e9-a77e87d7ec51/preview.svg"
+      },
+      {
+        "id": "eb7bc26d-70df-4996-89db-ccbb910f82d0",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "patientId": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
+        "visitId": null,
+        "kind": "cbct",
+        "title": "КТ имплантация 46",
+        "toothCode": "46",
+        "region": "нижняя челюсть справа",
+        "capturedAt": "2026-05-09T11:30:00+04:00",
+        "sourceKind": "pacs",
+        "sourceName": "PACS / DICOMweb",
+        "status": "available",
+        "aiSummary": "Черновик: КТ-серия подключена, полноценный 3D viewer будет отдельным модулем.",
+        "previewUrl": "/api/imaging/studies/eb7bc26d-70df-4996-89db-ccbb910f82d0/preview.svg",
+        "viewerUrl": "/api/imaging/studies/eb7bc26d-70df-4996-89db-ccbb910f82d0/preview.svg"
+      }
+    ],
+    "imagingViewerSessions": [
+      {
+        "id": "599e4f6f-efee-4918-bfa1-94066f96d85e",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "studyId": "e412a7a5-b25c-43aa-adaf-368f9c1dca96",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "state": {
+          "mode": "mpr",
+          "activeTool": "window_level",
+          "activeQuickActionId": null,
+          "windowPreset": "bone",
+          "windowCenter": null,
+          "windowWidth": null,
+          "brightness": 0.95,
+          "contrast": 1.05,
+          "inverted": false,
+          "rotationDeg": 0,
+          "flipHorizontal": false,
+          "zoom": 1,
+          "panX": 0,
+          "panY": 0,
+          "sliceIndex": 0,
+          "projection": "axial",
+          "axisDeg": 0,
+          "slabMm": 1,
+          "crosshair": true,
+          "linkedPlanes": true,
+          "implantPlan": null
+        },
+        "annotations": [],
+        "clientSavedAt": "2026-06-04T16:52:56.944Z",
+        "serverSavedAt": "2026-06-04T16:52:57.857Z",
+        "createdAt": "2026-06-04T16:51:41.477Z",
+        "updatedAt": "2026-06-04T16:52:57.857Z",
+        "warnings": [
+          "Состояние просмотра сохраняется отдельно от исходного снимка; исходный снимок не изменяется.",
+          "Настройки КЛКТ/КТ-срезов являются навигацией врача, а не подписанным рентгенологическим заключением."
+        ]
+      }
+    ],
+    "dicomWorkbenchBundles": [],
+    "importBatches": [],
+    "auditEvents": [
+      {
+        "id": "2ff60411-24a4-465f-9311-27baa277965d",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием. Ревизия 5 -> 6. Клиентская операция b93a2a31-ff3d-4301-8c64-29a7e54f6948.",
+        "createdAt": "2026-06-04T16:55:53.477Z"
+      },
+      {
+        "id": "54e52a3d-9ea7-4e7f-b4ed-47878a1ce36c",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "chair",
+        "entityId": "b5450677-b0fc-4228-9672-56b27062783f",
+        "action": "chair_working_hours_updated",
+        "reason": "Кресло 1: рабочее расписание кабинета обновлено.",
+        "createdAt": "2026-06-04T16:53:14.349Z"
+      },
+      {
+        "id": "e5895e36-2ff3-4ab2-a85d-773ad25a028e",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "staff_member",
+        "entityId": "f365da0c-7094-4f80-b52d-59b7b1254791",
+        "action": "staff_working_hours_updated",
+        "reason": "Садыкова Эльмира: рабочее расписание обновлено.",
+        "createdAt": "2026-06-04T16:53:10.487Z"
+      },
+      {
+        "id": "7bf228ec-494c-461e-b475-615ae0a3537d",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "staff_member",
+        "entityId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "action": "staff_working_hours_updated",
+        "reason": "Иванова Марина Сергеевна: рабочее расписание обновлено.",
+        "createdAt": "2026-06-04T16:53:09.286Z"
+      },
+      {
+        "id": "9d2a7c2a-7f32-4673-9e83-2f9f884721c5",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "staff_member",
+        "entityId": "20d5aea8-064d-4add-aef0-e4c493c24b2b",
+        "action": "staff_working_hours_updated",
+        "reason": "Вася: рабочее расписание обновлено.",
+        "createdAt": "2026-06-04T16:53:08.088Z"
+      },
+      {
+        "id": "62a47dcd-ea5e-4384-9fdb-e2918d747bff",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "staff_member",
+        "entityId": "20d5aea8-064d-4add-aef0-e4c493c24b2b",
+        "action": "staff_created",
+        "reason": "Вася добавлен как doctor.",
+        "createdAt": "2026-06-04T16:53:04.796Z"
+      },
+      {
+        "id": "92710053-4ea7-44fc-a882-a84d60b4e32c",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на one_chair.",
+        "createdAt": "2026-06-04T16:52:45.065Z"
+      },
+      {
+        "id": "706a8782-5ae7-470a-adf7-6e8af8ba504f",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на small_clinic.",
+        "createdAt": "2026-06-04T16:52:43.700Z"
+      },
+      {
+        "id": "558bf0ed-eb36-4f06-9ef4-3af496f82f43",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на one_chair.",
+        "createdAt": "2026-06-04T16:52:43.120Z"
+      },
+      {
+        "id": "1607217f-ba93-44d5-b3c1-ff3fc58c589c",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на one_chair.",
+        "createdAt": "2026-06-04T16:52:42.624Z"
+      },
+      {
+        "id": "b4911a21-8ed8-4e4d-8b12-4b326821ecf1",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на solo_doctor.",
+        "createdAt": "2026-06-04T16:52:41.503Z"
+      },
+      {
+        "id": "7a9592a6-7670-4ec9-b28f-227332ca81db",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на network_clinic.",
+        "createdAt": "2026-06-04T16:52:40.880Z"
+      },
+      {
+        "id": "97db59c7-dbc9-4893-a2d7-88ccc2a3cbba",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на one_chair.",
+        "createdAt": "2026-06-04T16:52:39.850Z"
+      },
+      {
+        "id": "ea7acbc9-f12e-4f1f-8296-2a88947896d4",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на solo_doctor.",
+        "createdAt": "2026-06-04T16:52:39.306Z"
+      },
+      {
+        "id": "bfaf949f-092e-4f05-a69f-6704f84b7e9a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на network_clinic.",
+        "createdAt": "2026-06-04T16:52:38.751Z"
+      },
+      {
+        "id": "1ad5c9ed-805b-4b51-be67-f2e3a95038e7",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "clinic_profile",
+        "entityId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "action": "clinic_mode_updated",
+        "reason": "Режим клиники изменен на small_clinic.",
+        "createdAt": "2026-06-04T16:52:38.243Z"
+      },
+      {
+        "id": "710534ac-6eca-430d-8a66-c0c2c7d13896",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "imaging_study",
+        "entityId": "e412a7a5-b25c-43aa-adaf-368f9c1dca96",
+        "action": "imaging_created",
+        "reason": "КЛКТ / КТ добавлен в карту пациента.",
+        "createdAt": "2026-06-04T16:51:41.131Z"
+      },
+      {
+        "id": "6ec53c65-1092-4d15-85c4-3a01ac268882",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием. Ревизия 4 -> 5. Клиентская операция backup-smoke-20260515000105.",
+        "createdAt": "2026-05-14T20:01:05.635Z"
+      },
+      {
+        "id": "085bd48b-9cce-4566-9e8b-25dae8078d0a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием. Ревизия 3 -> 4. Клиентская операция restore-demo-20260514234137.",
+        "createdAt": "2026-05-14T19:41:37.289Z"
+      },
+      {
+        "id": "20a47166-f418-4d2d-8263-45741c55fe27",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием. Ревизия 2 -> 3. Клиентская операция smoke-20260514233123-conflict. На сервере уже была ревизия 2, сохранение пришло с ревизии 0. Правки врача приняты, конфликт отмечен в аудите.",
+        "createdAt": "2026-05-14T19:31:23.982Z"
+      },
+      {
+        "id": "91adbf22-32b1-4f0c-821c-bea0ab35d02b",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием. Ревизия 1 -> 2. Клиентская операция smoke-20260514233123.",
+        "createdAt": "2026-05-14T19:31:23.912Z"
+      },
+      {
+        "id": "fe97fc73-0744-4eff-99c9-ba78e5da3630",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием.",
+        "createdAt": "2026-05-14T19:00:54.091Z"
+      },
+      {
+        "id": "790de503-51be-4ba3-9908-bf041d5fd93f",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием.",
+        "createdAt": "2026-05-14T13:36:21.688Z"
+      },
+      {
+        "id": "7bf35771-74df-4944-bf6c-893f6c5d586e",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием.",
+        "createdAt": "2026-05-14T00:26:45.945Z"
+      },
+      {
+        "id": "f3c196d8-d47f-42cf-aff8-13543008d681",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием.",
+        "createdAt": "2026-05-14T00:25:57.812Z"
+      },
+      {
+        "id": "861fc74a-9146-4b0e-98fd-50b4c9990f5a",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_draft_accepted",
+        "reason": "Врач принял AI/диктовочный черновик в ЭМК. Подпись приема остается отдельным действием.",
+        "createdAt": "2026-05-14T00:25:24.805Z"
+      },
+      {
+        "id": "cdac781e-6a56-4bbb-a4bd-1e2da6efc047",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "visit",
+        "entityId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "action": "visit_opened",
+        "reason": "Смена открыта, карта пациента доступна врачу.",
+        "createdAt": "2026-05-13T20:30:33.896Z"
+      },
+      {
+        "id": "5caa31eb-f50e-4d85-aa5e-c328d8d08229",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": "8356141b-7cfa-4221-95f7-70f47e7344b1",
+        "entityType": "document",
+        "entityId": "f9d274b4-3730-4eaa-aeac-20bf5f2f1bc5",
+        "action": "document_prepared",
+        "reason": "Договор создан как черновик перед приемом.",
+        "createdAt": "2026-05-13T20:30:33.896Z"
+      }
+    ],
+    "aiRecognitionJobs": [],
+    "speechTranscriptionChunks": [
+      {
+        "id": "a3328cfc-f205-4c20-870e-9f60016ab63d",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "createdAt": "2026-05-15T00:25:37.570Z",
+        "recordingId": "http-assembly-smoke",
+        "chunkIndex": 2,
+        "source": "visit",
+        "patientId": null,
+        "visitId": null,
+        "providerId": "none",
+        "providerLabel": "Не настроен",
+        "mimeType": "text/plain",
+        "byteLength": 0,
+        "durationMs": null,
+        "language": "ru",
+        "transcript": "план лечение",
+        "confidence": null,
+        "status": "fallback_text",
+        "warnings": [
+          "Сохранен браузерный/локальный transcript без отправки аудио провайдеру."
+        ],
+        "clientRecordedAt": "2026-05-15T04:25:37.0082579+04:00"
+      },
+      {
+        "id": "891c473f-40e8-46aa-9bab-e2f1451efdc2",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "createdAt": "2026-05-15T00:25:37.361Z",
+        "recordingId": "http-assembly-smoke",
+        "chunkIndex": 0,
+        "source": "visit",
+        "patientId": null,
+        "visitId": null,
+        "providerId": "none",
+        "providerLabel": "Не настроен",
+        "mimeType": "text/plain",
+        "byteLength": 0,
+        "durationMs": null,
+        "language": "ru",
+        "transcript": "жалобы боль 36",
+        "confidence": null,
+        "status": "fallback_text",
+        "warnings": [
+          "Сохранен браузерный/локальный transcript без отправки аудио провайдеру."
+        ],
+        "clientRecordedAt": "2026-05-15T04:25:36.9513188+04:00"
+      },
+      {
+        "id": "fad3e129-8a97-4ce5-ba64-abf0fe0604d6",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "createdAt": "2026-05-14T21:39:32.321Z",
+        "recordingId": "smoke-http",
+        "chunkIndex": 0,
+        "source": "visit",
+        "patientId": null,
+        "visitId": null,
+        "providerId": "none",
+        "providerLabel": "Не настроен",
+        "mimeType": "audio/webm",
+        "byteLength": 0,
+        "durationMs": null,
+        "language": "ru",
+        "transcript": "Жалобы нет. Объективно без особенностей.",
+        "confidence": null,
+        "status": "fallback_text",
+        "warnings": [
+          "Сохранен браузерный/локальный transcript без отправки аудио провайдеру."
+        ],
+        "clientRecordedAt": "2026-05-15T01:39:32.1471952+04:00"
+      }
+    ],
+    "visitDraftAutosaves": [
+      {
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "selectedSpecialty": "therapist",
+        "transcript": "Пациент жалуется на боль при накусывании.\nОбъективно кариозная полость 36.\nПлан лечение под анестезией, реставрация.",
+        "draft": {
+          "complaint": "Пациент жалуется на боль при накусывании",
+          "anamnesis": "Анамнез уточнить: сроки, аллергии, препараты, хронические заболевания, беременность, антикоагулянты.",
+          "objectiveStatus": "Объективно кариозная полость 36",
+          "diagnosis": "",
+          "treatmentPlan": "План лечение под анестезией, реставрация",
+          "warnings": [
+            "Серверный снимок автосохранения. Перед принятием черновика ЭМК врач все равно проверяет текст."
+          ]
+        },
+        "baseRevision": 5,
+        "clientDraftId": "visit-draft-af94df45-a669-4cae-b400-6e4f020f9120",
+        "clientSavedAt": "2026-06-04T16:55:49.918Z",
+        "serverSavedAt": "2026-06-04T16:55:51.931Z",
+        "transcriptHash": "30fdad47b75690e8"
+      }
+    ],
+    "visitSaveReceipts": [
+      {
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "clientMutationId": "b93a2a31-ff3d-4301-8c64-29a7e54f6948",
+        "status": "accepted",
+        "serverRevision": 6,
+        "savedAt": "2026-06-04T16:55:53.477Z",
+        "warning": null
+      },
+      {
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "clientMutationId": "backup-smoke-20260515000105",
+        "status": "accepted",
+        "serverRevision": 5,
+        "savedAt": "2026-05-14T20:01:05.635Z",
+        "warning": null
+      },
+      {
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "clientMutationId": "restore-demo-20260514234137",
+        "status": "accepted",
+        "serverRevision": 4,
+        "savedAt": "2026-05-14T19:41:37.289Z",
+        "warning": null
+      },
+      {
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "clientMutationId": "smoke-20260514233123-conflict",
+        "status": "conflict_accepted",
+        "serverRevision": 3,
+        "savedAt": "2026-05-14T19:31:23.982Z",
+        "warning": "На сервере уже была ревизия 2, сохранение пришло с ревизии 0. Правки врача приняты, конфликт отмечен в аудите."
+      },
+      {
+        "visitId": "af94df45-a669-4cae-b400-6e4f020f9120",
+        "clientMutationId": "smoke-20260514233123",
+        "status": "accepted",
+        "serverRevision": 2,
+        "savedAt": "2026-05-14T19:31:23.890Z",
+        "warning": null
+      }
+    ],
+    "denteTelegramBotSettings": {
+      "version": 1,
+      "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+      "mode": "shared_dente_bot",
+      "botUsername": "dentecrm_bot",
+      "ownBotUsername": null,
+      "webhookBaseUrl": null,
+      "patientPortalBaseUrl": null,
+      "welcomeImageUrl": null,
+      "visualCardUrls": {
+        "mainMenu": null,
+        "appointment": null,
+        "documents": null,
+        "tax": null,
+        "billing": null,
+        "care": null,
+        "review": null,
+        "staff": null
+      },
+      "clinicReviewUrl": null,
+      "clinicMapsUrl": null,
+      "enabledFeatures": [
+        "patient_linking",
+        "appointment_reminders",
+        "appointment_confirmation",
+        "document_ready_notice",
+        "tax_document_request",
+        "post_visit_instructions",
+        "recalls",
+        "review_requests",
+        "staff_task_alerts",
+        "secure_portal_links"
+      ],
+      "patientLinkTokenTtlMinutes": 15,
+      "appointmentReminderLeadTimesHours": [
+        24
+      ],
+      "reviewRequestDelayHours": 2,
+      "postVisitCheckupDelayHoursByTopic": {
+        "extraction": 24,
+        "implantation": 24,
+        "filling_restoration": 48,
+        "endo": 48,
+        "surgery": 24,
+        "local_anesthesia": 24,
+        "hygiene": 72,
+        "prosthetics": 48,
+        "orthodontics": 72,
+        "periodontology": 72,
+        "other": 48
+      },
+      "allowVoiceIntake": false,
+      "staffEscalationChannel": null,
+      "privacyMode": "no_phi_by_default",
+      "updatedAt": "2026-06-04T16:51:24.339Z"
+    },
+    "denteTelegramLinkCodes": [],
+    "denteTelegramChatLinks": [],
+    "denteTelegramWebhookEvents": [],
+    "denteTelegramOutboxDeliveryReceipts": [],
+    "uiPreferences": null,
+    "activeVisit": {
+      "id": "af94df45-a669-4cae-b400-6e4f020f9120",
+      "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+      "patientId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+      "appointmentId": "b82038a1-a97f-4f67-8450-c109562f0fd8",
+      "status": "draft",
+      "revision": 6,
+      "complaint": "Пациент жалуется на боль при накусывании",
+      "anamnesis": "Анамнез уточнить: сроки, аллергии, препараты, хронические заболевания, беременность, антикоагулянты.",
+      "objectiveStatus": "Объективно кариозная полость 36",
+      "diagnosis": "",
+      "treatmentPlan": "План лечение под анестезией, реставрация",
+      "doctorSummary": "Локальный разбор диктовки: черновик собран по профилю специальности и ключевым словам; это не финальное медицинское решение. Нормализация диктовки только чистит текст и секции, не добавляет клинические факты. Фокус нормализации: терапия. Диагноз, план, противопоказания, документы и подпись подтверждает врач. Фокус приема: терапия. Распознаны зубы/сегменты: 36. Проверить зуб, диагноз K02/K04, снимок и согласие на лечение.",
+      "createdAt": "2026-05-14T00:20:24.607Z",
+      "updatedAt": "2026-06-04T16:55:53.477Z"
+    }
+  },
+  "checksum": "795444303ca8eb4653e9ab2ae8a39e8c094d8e5f2b58b7a79157ea7e4199ace4"
+}

@@ -1,0 +1,34 @@
+import { initialize as initializeHTJ2K } from './decodeHTJ2K';
+import { initialize as initializeJPEG2000 } from './decodeJPEG2000';
+import { initialize as initializeJPEGLS } from './decodeJPEGLS';
+import { initialize as initializeJPEGBaseline12Bit } from './decodeJPEGBaseline12Bit-js';
+import { initialize as initializeJPEGLossless } from './decodeJPEGLossless';
+import decodeHTJ2K from './decodeHTJ2K';
+import decodeJPEG2000 from './decodeJPEG2000';
+import decodeJPEGLS from './decodeJPEGLS';
+import decodeJPEGBaseline12Bit from './decodeJPEGBaseline12Bit-js';
+import decodeJPEGLossless from './decodeJPEGLossless';
+import decodeJPEGBaseline8Bit from './decodeJPEGBaseline8Bit';
+import decodeBigEndian from './decodeBigEndian';
+import decodeLittleEndian from './decodeLittleEndian';
+import decodeRLE from './decodeRLE';
+declare const initializers: {
+    HTJ2K: typeof initializeHTJ2K;
+    JPEG2000: typeof initializeJPEG2000;
+    JPEGLS: typeof initializeJPEGLS;
+    JPEGBaseline12Bit: typeof initializeJPEGBaseline12Bit;
+    JPEGLossless: typeof initializeJPEGLossless;
+    JPEGBaseline8Bit: () => Promise<void>;
+};
+declare const decoders: {
+    HTJ2K: typeof decodeHTJ2K;
+    JPEG2000: typeof decodeJPEG2000;
+    JPEGLS: typeof decodeJPEGLS;
+    JPEGBaseline12Bit: typeof decodeJPEGBaseline12Bit;
+    JPEGLossless: typeof decodeJPEGLossless;
+    JPEGBaseline8Bit: typeof decodeJPEGBaseline8Bit;
+    BigEndian: typeof decodeBigEndian;
+    LittleEndian: typeof decodeLittleEndian;
+    RLE: typeof decodeRLE;
+};
+export { initializers, decoders };

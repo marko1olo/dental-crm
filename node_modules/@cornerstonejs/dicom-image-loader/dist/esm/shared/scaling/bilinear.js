@@ -1,0 +1,32 @@
+export default function bilinear(src, dest) {
+    const { rows: srcRows, columns: srcColumns, data: srcData } = src;
+    const { rows, columns, data } = dest;
+    const xSrc1Off = [];
+    const xSrc2Off = [];
+    const xFrac = [];
+    for (let x = 0; x < columns; x++) {
+        const xSrc = (x * (srcColumns - 1)) / (columns - 1);
+        xSrc1Off[x] = Math.floor(xSrc);
+        xSrc2Off[x] = Math.min(xSrc1Off[x] + 1, srcColumns - 1);
+        xFrac[x] = xSrc - xSrc1Off[x];
+    }
+    for (let y = 0; y < rows; y++) {
+        const ySrc = (y * (srcRows - 1)) / (rows - 1);
+        const ySrc1Off = Math.floor(ySrc) * srcColumns;
+        const ySrc2Off = Math.min(ySrc1Off + srcColumns, (srcRows - 1) * srcColumns);
+        const yFrac = ySrc - Math.floor(ySrc);
+        const yFracInv = 1 - yFrac;
+        const yOff = y * columns;
+        for (let x = 0; x < columns; x++) {
+            const p00 = srcData[ySrc1Off + xSrc1Off[x]];
+            const p10 = srcData[ySrc1Off + xSrc2Off[x]];
+            const p01 = srcData[ySrc2Off + xSrc1Off[x]];
+            const p11 = srcData[ySrc2Off + xSrc2Off[x]];
+            const xFracInv = 1 - xFrac[x];
+            data[yOff + x] =
+                (p00 * xFracInv + p10 * xFrac[x]) * yFracInv +
+                    (p01 * xFracInv + p11 * xFrac[x]) * yFrac;
+        }
+    }
+    return data;
+}

@@ -1,0 +1,2 @@
+import type { IStackViewport, IVolumeViewport, Point3 } from '../types';
+export default function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];

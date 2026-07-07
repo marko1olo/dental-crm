@@ -1,0 +1,1 @@
+const { Client } = require('pg'); const client = new Client({ connectionString: 'postgres://postgres:postgres@localhost:5432/dente' }); client.connect().then(() => client.query('ALTER TABLE "users" ADD COLUMN "password_hash" text;')).then(() => console.log('success')).catch(console.error).finally(() => client.end());
