@@ -1,4 +1,4 @@
-import { generatePanoramicImage, type Point2D } from "./mprMath";
+import { generatePanoramicImage, type Point2D } from "./utils/math/mprMath";
 
 self.onmessage = (e: MessageEvent) => {
   const {

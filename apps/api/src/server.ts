@@ -30,6 +30,8 @@ import registerSchedulerSync from "./routes/schedulerSync.js";
 import registerHandoff from "./routes/handoff.js";
 import registerSurgicalRoutes from "./routes/surgical.js";
 import { startRecallWorker } from "./services/recallWorker.js";
+import { startNotificationWorker } from "./services/notificationWorker.js";
+import { setupWebsockets } from "./websocket.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
 import net from "node:net";
@@ -39,6 +41,7 @@ import { startWatchdog } from "./watchdog.js";
 
 loadAdditionalServerEnv();
 startWatchdog();
+startNotificationWorker();
 
 async function checkProxyPortDirectly(proxyUrlString: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -164,6 +167,8 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await app.register(cors, {
     origin: webOrigins
   });
+
+  await setupWebsockets(app);
 
   app.setErrorHandler((error, _request, reply) => {
     import("node:fs").then(m => m.appendFileSync("C:/Clinic_MVP/error.log", ((error as any)?.stack || (error as any)?.message || String(error)) + "\nCAUSE: " + ((error as any)?.cause || "") + "\n"));

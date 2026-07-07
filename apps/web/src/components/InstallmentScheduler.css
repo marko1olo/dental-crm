@@ -1,0 +1,172 @@
+.installment-scheduler {
+  background: rgba(24, 24, 27, 0.85); /* zinc-900 */
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(63, 63, 70, 0.5); /* zinc-700 */
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #e4e4e7;
+  max-width: 100%;
+}
+
+.scheduler-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(82, 82, 91, 0.3);
+  padding-bottom: 16px;
+}
+
+.scheduler-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #f4f4f5;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.total-badge {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.scheduler-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+  align-items: end;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.control-group input {
+  background: rgba(39, 39, 42, 0.6);
+  border: 1px solid rgba(82, 82, 91, 0.5);
+  color: #f4f4f5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+
+.control-group input:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.2);
+}
+
+.calculate-btn {
+  background: rgba(59, 130, 246, 0.8);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 42px;
+  transition: all 0.2s;
+}
+
+.calculate-btn:hover {
+  background: #3b82f6;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.installments-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(82, 82, 91, 0.3);
+}
+
+.installments-preview h4 {
+  margin: 0;
+  color: #d4d4d8;
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.installments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.installment-card {
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(82, 82, 91, 0.3);
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.installment-card:hover {
+  background: rgba(63, 63, 70, 0.6);
+  transform: translateY(-2px);
+}
+
+.inst-month {
+  font-size: 0.9rem;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inst-date {
+  font-size: 1.1rem;
+  color: #f4f4f5;
+  font-weight: 500;
+}
+
+.inst-amount {
+  font-family: monospace;
+  font-size: 1.25rem;
+  color: #86efac;
+  font-weight: bold;
+}
+
+.confirm-plan-btn {
+  align-self: flex-start;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: all 0.2s;
+}
+
+.confirm-plan-btn:hover {
+  background: rgba(16, 185, 129, 0.4);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}

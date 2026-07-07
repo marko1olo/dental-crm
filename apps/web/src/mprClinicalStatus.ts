@@ -1,4 +1,4 @@
-import { formatMprSliceFractionLabel } from "./mprControlMath";
+import { formatMprSliceFractionLabel } from "./utils/math/mprMath";
 
 export type MprClinicalStatus = "ready" | "active" | "pending_review";
 

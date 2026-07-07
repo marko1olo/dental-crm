@@ -1,4 +1,4 @@
-import { polylineLengthMm, distanceMm, round1, round2, clamp } from "./ctPlanningMath";
+import { polylineLengthMm, distanceMm, round1, round2, clamp } from "./utils/math/mprMath";
 import type { DicomGpuRenderPlan, DicomViewerToolStateAnnotation, DicomViewerToolStatePoint } from "@dental/shared";
 
 export type CtPlanningReconstructionStatus = "ready" | "draft" | "blocked";

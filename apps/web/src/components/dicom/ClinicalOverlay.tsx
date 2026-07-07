@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as cornerstone from '@cornerstonejs/core';
 import { ClinicalStore, checkImplantCollision } from '../../utils/dicom/clinicalImplants';
-import { drawCrownMockup, getAngulationWarning } from '../../utils/dicom/toothCrownGeometry';
+import { drawCrownMockup, getAngulationWarning } from "../../utils/math/toothGeometry";
 
 interface Props {
   viewportId: string;

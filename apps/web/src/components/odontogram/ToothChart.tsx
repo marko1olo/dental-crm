@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, Plus, Info, RefreshCw } from 'lucide-react';
-import { getToothPath, getToothConfig } from '../../utils/toothGeometry';
+import { getToothPath, getToothConfig } from "../../utils/math/toothGeometry";
 
 export type ToothState = 'Caries' | 'Pulpitis' | 'Missing' | 'Crown' | 'Implant' | 'Filled' | 'Healthy' | 'Planned_Implant';
 

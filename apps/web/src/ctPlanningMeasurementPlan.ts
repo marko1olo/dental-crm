@@ -1,6 +1,6 @@
-import { round2 } from "./ctPlanningMath";
+import { round2 } from "./utils/math/mprMath";
 import type { DicomViewerToolStateAnnotation } from "@dental/shared";
-import type { CtPlanningGeometrySummary } from "./ctPlanningGeometry";
+import type { CtPlanningGeometrySummary } from "./utils/math/toothGeometry";
 
 export type CtPlanningMeasurementPlanStatus = "ready" | "draft" | "blocked";
 

@@ -1,0 +1,190 @@
+.patient-journey-timeline {
+  background: rgba(24, 24, 27, 0.85); /* zinc-900 */
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(63, 63, 70, 0.5); /* zinc-700 */
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #e4e4e7;
+  max-width: 100%;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(82, 82, 91, 0.3);
+  padding-bottom: 16px;
+}
+
+.timeline-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #f4f4f5;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.patient-id-badge {
+  background: rgba(39, 39, 42, 0.6);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #a1a1aa;
+}
+
+.timeline-track {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 20px;
+}
+
+.timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+}
+
+.marker-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(39, 39, 42, 0.8);
+  border: 1px solid rgba(82, 82, 91, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.marker-line {
+  width: 2px;
+  flex: 1;
+  background: rgba(82, 82, 91, 0.3);
+  margin: 8px 0;
+  min-height: 40px;
+}
+
+.timeline-item:hover .marker-icon {
+  transform: scale(1.1);
+}
+
+.timeline-item.medical_alert .marker-icon {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.timeline-item.transaction .marker-icon {
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+}
+
+.timeline-item.inventory_depletion .marker-icon {
+  border-color: rgba(234, 179, 8, 0.5);
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+}
+
+.timeline-content {
+  flex: 1;
+  background: rgba(39, 39, 42, 0.3);
+  border: 1px solid rgba(82, 82, 91, 0.2);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.timeline-content:hover {
+  background: rgba(63, 63, 70, 0.5);
+  border-color: rgba(113, 113, 122, 0.4);
+  transform: translateX(4px);
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timestamp {
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  font-family: monospace;
+}
+
+.timeline-content h4 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #f4f4f5;
+  font-weight: 500;
+}
+
+.timeline-content p {
+  margin: 0;
+  color: #d4d4d8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.amount-highlight {
+  font-size: 1.2rem;
+  font-family: monospace;
+  color: #86efac;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.timeline-action-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timeline-action-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .patient-journey-timeline {
+    padding: 16px;
+  }
+  .timeline-item {
+    gap: 12px;
+  }
+  .timeline-content {
+    padding: 12px 16px;
+  }
+  .marker-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  .timeline-marker {
+    width: 32px;
+  }
+}

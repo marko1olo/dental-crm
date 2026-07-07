@@ -22,7 +22,7 @@ import {
   mprSliceIndexFromFraction,
   resolveMprKeyboardAdjustment,
   mprProjectionCompassLabels
-} from "../mprControlMath";
+} from "../utils/math/mprMath";
 import {
   buildMprClinicalChecklist,
   buildMprOperatorSummary,

@@ -1,0 +1,228 @@
+.waitlist-suggestor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(9, 9, 11, 0.75); /* zinc-950 with opacity */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(12px);
+}
+
+.waitlist-suggestor-modal {
+  background: rgba(24, 24, 27, 0.85); /* zinc-900 */
+  border: 1px solid rgba(63, 63, 70, 0.5); /* zinc-700 */
+  border-radius: 16px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  color: #e4e4e7;
+}
+
+/* Custom Scrollbar for dark theme */
+.waitlist-suggestor-modal::-webkit-scrollbar { width: 8px; }
+.waitlist-suggestor-modal::-webkit-scrollbar-track { background: transparent; }
+.waitlist-suggestor-modal::-webkit-scrollbar-thumb { background: rgba(82, 82, 91, 0.5); border-radius: 4px; }
+.waitlist-suggestor-modal::-webkit-scrollbar-thumb:hover { background: rgba(113, 113, 122, 0.8); }
+
+.waitlist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid rgba(82, 82, 91, 0.3);
+}
+
+.waitlist-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #f4f4f5;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #71717a;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+.close-btn:hover { background: rgba(63, 63, 70, 0.5); color: #f4f4f5; }
+
+.waitlist-body {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.waitlist-context {
+  margin: 0;
+  color: #a1a1aa;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+.waitlist-context strong { color: #f4f4f5; font-weight: 500; }
+
+.candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.candidate-card {
+  border: 1px solid rgba(82, 82, 91, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: rgba(39, 39, 42, 0.4);
+  transition: all 0.25s ease;
+}
+
+.candidate-card:hover {
+  background: rgba(63, 63, 70, 0.6);
+  transform: translateX(4px);
+  box-shadow: -4px 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.candidate-card.priority-high {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.1) 0%, rgba(39, 39, 42, 0.4) 100%);
+}
+.candidate-card.priority-high:hover { border-color: rgba(239, 68, 68, 0.5); }
+.candidate-card.priority-high .priority-badge { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+.candidate-card.priority-medium {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, rgba(39, 39, 42, 0.4) 100%);
+}
+.candidate-card.priority-medium .priority-badge { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+.candidate-card.priority-low {
+  border-left: 4px solid #71717a;
+}
+.candidate-card.priority-low .priority-badge { background: rgba(113, 113, 122, 0.2); color: #d4d4d8; border: 1px solid rgba(113, 113, 122, 0.4); }
+
+.candidate-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.candidate-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.candidate-header strong {
+  font-size: 1.2rem;
+  color: #f4f4f5;
+  letter-spacing: 0.02em;
+}
+
+.priority-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.candidate-info small {
+  color: #71717a;
+  font-family: monospace;
+  font-size: 1rem;
+}
+
+.treatment-summary {
+  margin: 4px 0 0 0;
+  font-size: 1rem;
+  color: #a1a1aa;
+}
+
+.preferred-times {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.time-chip {
+  background: rgba(82, 82, 91, 0.3);
+  color: #d4d4d8;
+  border: 1px solid rgba(82, 82, 91, 0.5);
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 16px;
+}
+.candidate-card.priority-high .time-chip { 
+  background: rgba(239, 68, 68, 0.1); 
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5; 
+}
+
+.candidate-actions {
+  display: flex;
+}
+
+.assign-btn {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.05em;
+}
+.assign-btn:hover { 
+  background: rgba(59, 130, 246, 0.4); 
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .waitlist-suggestor-overlay {
+    padding: 16px;
+  }
+  .waitlist-header {
+    padding: 16px;
+  }
+  .waitlist-body {
+    padding: 16px;
+  }
+  .candidate-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .candidate-actions {
+    justify-content: stretch;
+  }
+  .assign-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+  .candidate-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

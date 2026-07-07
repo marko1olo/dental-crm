@@ -86,18 +86,19 @@ export function ShadowAnalystTerminal({ events, boneDensityProfile = [], isExpan
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
           {boneDensityProfile && boneDensityProfile.length > 0 && (
-            <div style={{ padding: '12px', borderBottom: '1px solid rgba(39,39,42,0.8)', minHeight: '200px' }}>
+            <div style={{ padding: '12px', borderBottom: '1px solid rgba(39,39,42,0.8)', minHeight: '200px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                 <Activity size={12} color="#3b82f6" />
                 <span style={{ color: '#e4e4e7', fontSize: '10px', fontWeight: 600 }}>BONE DENSITY (HU)</span>
               </div>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={boneDensityProfile} layout="vertical" barSize={4} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
-                  <XAxis type="number" domain={[0, 2000]} tick={{ fill: '#71717a', fontSize: 9 }} stroke="#3f3f46" />
-                  <YAxis type="category" dataKey="depth" reversed tick={{ fill: '#71717a', fontSize: 9 }} stroke="#3f3f46" interval={4} />
-                  <Tooltip 
-                    cursor={{fill: 'rgba(255,255,255,0.05)'}}
+              <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={boneDensityProfile} layout="vertical" barSize={4} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
+                    <XAxis type="number" domain={[0, 2000]} tick={{ fill: '#71717a', fontSize: 9 }} stroke="#3f3f46" />
+                    <YAxis type="category" dataKey="depth" reversed tick={{ fill: '#71717a', fontSize: 9 }} stroke="#3f3f46" interval={4} />
+                    <Tooltip 
+                      cursor={{fill: 'rgba(255,255,255,0.05)'}}
                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', fontSize: '10px', color: '#e4e4e7' }}
                     formatter={(value: any, name: any, props: any) => [`${value} HU`, `Глубина: ${props.payload.depth} мм`]}
                   />
@@ -113,6 +114,7 @@ export function ShadowAnalystTerminal({ events, boneDensityProfile = [], isExpan
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '9px', color: '#71717a' }}>
                 <span style={{ color: '#10b981' }}>D1</span>
                 <span style={{ color: '#3b82f6' }}>D2</span>

@@ -984,3 +984,116 @@ export const treatmentPlanItemsNew = pgTable('treatment_plan_items_new', {
   commissionAmount: numeric('commission_amount', { precision: 12, scale: 2 }).notNull().default('0')
 });
 
+export const dentalLabOrders = pgTable('dental_lab_orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  clinicId: uuid('clinic_id').notNull().references(() => clinics.id),
+  patientId: uuid('patient_id').notNull().references(() => patients.id),
+  treatmentPlanItemId: uuid('treatment_plan_item_id'), // Optional link to specific estimate item
+  fdiTooth: text('fdi_tooth'), // e.g., '16'
+  workType: text('work_type').notNull().default('crown'), // crown, veneer, bridge, custom_abutment
+  material: text('material').notNull().default('zirconia'), // zirconia, emax, pfm
+  shade: text('shade'), // A1-D4
+  status: text('status').notNull().default('draft'), // draft, sent, in_progress, delivered, fitting, refitting, completed
+  sentDate: timestamp('sent_date', { withTimezone: true }),
+  plannedFittingDate: timestamp('planned_fitting_date', { withTimezone: true }),
+  deliveryDate: timestamp('delivery_date', { withTimezone: true }),
+  labCostAmount: numeric('lab_cost_amount', { precision: 12, scale: 2 }).notNull().default('0'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const patientAnamnesis = pgTable('patient_anamnesis', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  patientId: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' }).unique(),
+  allergies: jsonb('allergies').$type<string[]>(),
+  systemicDiseases: jsonb('systemic_diseases').$type<string[]>(),
+  hasCriticalAlerts: boolean('has_critical_alerts').notNull().default(false),
+  signatureData: text('signature_data'), // Base64 or URL
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const appointmentWaitlists = pgTable('appointment_waitlists', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  patientId: uuid('patient_id').notNull().references(() => patients.id),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  preferredDoctorId: uuid('preferred_doctor_id').references(() => users.id),
+  priorityLevel: text('priority_level').notNull().default('medium'), // high, medium, low
+  preferredTimeRanges: jsonb('preferred_time_ranges'), // [{day: 'monday', slot: 'morning'}]
+  status: text('status').notNull().default('active'), // active, fulfilled
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const inventoryItems = pgTable('inventory_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  name: text('name').notNull(),
+  stockQuantity: integer('stock_quantity').notNull().default(0),
+  criticalThreshold: integer('critical_threshold').notNull().default(5),
+  unitCostRub: numeric('unit_cost_rub', { precision: 12, scale: 2 }).notNull().default('0'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const procedureMaterialRules = pgTable('procedure_material_rules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  serviceId: uuid('service_id').notNull().references(() => serviceCatalogItems.id),
+  inventoryItemId: uuid('inventory_item_id').notNull().references(() => inventoryItems.id),
+  quantityToDeduct: integer('quantity_to_deduct').notNull().default(1),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const paymentInstallments = pgTable('payment_installments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  treatmentPlanId: uuid('treatment_plan_id').notNull(), // We'll assume a treatmentPlans table exists in the broader scope, or just store string
+  patientId: uuid('patient_id').notNull().references(() => patients.id),
+  amountRub: numeric('amount_rub', { precision: 12, scale: 2 }).notNull(),
+  dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
+  paidDate: timestamp('paid_date', { withTimezone: true }),
+  status: text('status').notNull().default('pending'), // pending, paid, overdue
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const documentTemplates = pgTable('document_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  title: text('title').notNull(),
+  htmlContent: text('html_content').notNull(),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+// HIPAA-grade clinical audit log — append-only, never updated or deleted
+export const clinicalAuditLogs = pgTable('clinical_audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  userId: uuid('user_id').references(() => users.id),        // actor
+  patientId: uuid('patient_id').references(() => patients.id), // subject
+  action: text('action').notNull(),                           // VIEW_CBCT, UPDATE_TOOTH_STATE, etc.
+  entityType: text('entity_type').notNull(),
+  entityId: text('entity_id').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => ({
+  orgIdx: index('clinical_audit_logs_org_idx').on(table.organizationId),
+  patientIdx: index('clinical_audit_logs_patient_idx').on(table.patientId),
+  userIdx: index('clinical_audit_logs_user_idx').on(table.userId)
+}));
+
+export const outgoingNotifications = pgTable('outgoing_notifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  patientId: uuid('patient_id').notNull().references(() => patients.id),
+  type: text('type').notNull(), // Booking_Confirmation, Reminder_24h, Overdue_Installment, Recall_Invite
+  payload: jsonb('payload').notNull(), // JSON string/object with message text
+  status: text('status').notNull().default('pending'), // pending, sent, failed
+  scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});

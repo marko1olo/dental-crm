@@ -2,7 +2,7 @@ import React, { Suspense, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "./components/GlobalToast";
 import { AlertTriangle, Bot, Check, CheckCircle2, ClipboardCheck, Mic, ShieldCheck, Sparkles } from "lucide-react";
-import { getToothPath, getToothConfig } from "./utils/toothGeometry";
+import { getToothPath, getToothConfig } from "./utils/math/toothGeometry";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
