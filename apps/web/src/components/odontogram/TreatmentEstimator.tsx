@@ -118,9 +118,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
   const phases = [1, 2, 3];
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl shadow-xl overflow-hidden">
-      <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
-        <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
+    <div className="flex flex-col h-full bg-white dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden">
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-950/50">
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
           <FileText size={18} className="text-emerald-400" />
           План лечения
         </h2>
@@ -136,9 +136,31 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {items.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-40 text-zinc-400">
-            <Calculator size={48} className="mb-4 opacity-20" />
-            <p>План пуст. Отметьте патологию на формуле.</p>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '32px 24px',
+            marginTop: '24px',
+            backgroundColor: 'var(--odontogram-surface-hover, rgba(9, 9, 11, 0.4))',
+            backdropFilter: 'blur(12px)',
+            border: '1px dashed var(--odontogram-border-strong, rgba(255, 255, 255, 0.1))',
+            borderRadius: '16px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(45,212,191,0.2) 0%, rgba(13,148,136,0.05) 100%)',
+              padding: '16px',
+              borderRadius: '50%',
+              marginBottom: '16px',
+              boxShadow: '0 0 20px rgba(45,212,191,0.1)'
+            }}>
+              <Calculator size={40} style={{ color: '#2dd4bf', opacity: 0.8 }} />
+            </div>
+            <p style={{ color: 'var(--odontogram-ink-muted, #a1a1aa)', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+              План лечения пуст. Кликните на любой зуб на схеме слева, выберите патологию, и система автоматически подберет оптимальный набор процедур из прайс-листа.
+            </p>
           </div>
         )}
 
@@ -148,7 +170,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
 
           return (
             <div key={phase} className="space-y-3">
-              <h3 className="text-sm font-semibold text-zinc-400 border-b border-zinc-800 pb-2">
+              <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 pb-2">
                 {phase === 1 && 'I. Терапия (Санация)'}
                 {phase === 2 && 'II. Хирургия и Имплантация'}
                 {phase === 3 && 'III. Ортопедия (Протезирование)'}
@@ -158,28 +180,28 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
                 {phaseItems.map((item, idx) => {
                   const globalIdx = items.indexOf(item);
                   return (
-                    <div key={globalIdx} className="flex flex-col gap-2 p-3 bg-zinc-950/50 rounded-xl border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                    <div key={globalIdx} className="flex flex-col gap-2 p-3 bg-zinc-50 dark:bg-zinc-950/50 rounded-xl border border-zinc-200 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center gap-2">
                             {item.toothNumber && (
-                              <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[10px]">
+                              <span className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-[10px]">
                                 Зуб {item.toothNumber}
                               </span>
                             )}
-                            <span className="text-sm font-medium text-zinc-200">{item.name}</span>
+                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{item.name}</span>
                           </div>
-                          <div className="text-xs text-zinc-400 mt-1">{item.price.toLocaleString('ru-RU')} ₽ x {item.quantity}</div>
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{item.price.toLocaleString('ru-RU')} ₽ x {item.quantity}</div>
                         </div>
-                        <button onClick={() => removeItem(globalIdx)} className="text-zinc-400 hover:text-red-400 p-1 rounded-md hover:bg-zinc-800">
+                        <button onClick={() => removeItem(globalIdx)} className="text-zinc-400 hover:text-red-500 dark:hover:text-red-400 p-1 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800">
                           <Trash2 size={14} />
                         </button>
                       </div>
-                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-800/30">
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800/30">
                         <select 
                           value={item.phase} 
                           onChange={e => setPhase(globalIdx, parseInt(e.target.value))}
-                          className="bg-transparent border border-zinc-800 text-xs text-zinc-400 rounded p-1 outline-none focus:border-zinc-600"
+                          className="bg-transparent border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 rounded p-1 outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
                         >
                           <option value={1}>Этап I: Терапия</option>
                           <option value={2}>Этап II: Хирургия</option>
@@ -198,10 +220,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
         })}
       </div>
 
-      <div className="p-4 bg-zinc-950 border-t border-zinc-800 flex justify-between items-center">
-        <div className="text-sm text-zinc-400">Итого к оплате:</div>
-        <div className="text-2xl font-bold text-white tracking-tight">
-          {total.toLocaleString('ru-RU')} <span className="text-zinc-400 text-lg">₽</span>
+      <div className="p-4 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+        <div className="text-sm text-zinc-500 dark:text-zinc-400">Итого к оплате:</div>
+        <div className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
+          {total.toLocaleString('ru-RU')} <span className="text-zinc-500 dark:text-zinc-400 text-lg">₽</span>
         </div>
       </div>
     </div>

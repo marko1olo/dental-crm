@@ -287,7 +287,7 @@ import {
   mprSlabBounds,
   mprSlabNudgeMm,
   resolveMprKeyboardAdjustment
-} from "./mprControlMath";
+} from "./utils/math/mprMath";
 import {
   buildMprClinicalChecklist,
   buildMprOperatorSummary,
@@ -2355,7 +2355,7 @@ const {
   const initialDocumentIssueSignatureDraft = initialDocumentIssueSignatureDraftRef.current ?? loadDocumentIssueSignatureDraft();
   const initialTelegramHandoffTarget = initialTelegramHandoffTargetRef.current;
   const initialRecognitionText =
-    recognitionPresets.find(
+    recognitionPresets?.find(
       (preset) => preset.kind === initialUiPreferences.recognitionKind && preset.target === initialUiPreferences.recognitionTarget
     )?.text ??
     recognitionPresets[0]?.text ??
@@ -2779,7 +2779,7 @@ const {
     key: K,
     value: AppointmentScheduleDraft[K]
   ) {
-    const sourceAppointment = dashboard?.appointments.find((appointment) => appointment.id === appointmentId);
+    const sourceAppointment = dashboard?.appointments?.find((appointment) => appointment.id === appointmentId);
     setAppointmentScheduleDrafts((current: any) => ({
       ...current,
       [appointmentId]: {
@@ -2803,7 +2803,7 @@ const {
   function reconcileDashboardScopedUiSelections() {
     if (!dashboard) return;
     const activePatientIds = new Set(dashboard.patients.filter((patient) => patient.status === "active").map((patient) => patient.id));
-    const firstActivePatientId = dashboard.patients.find((patient) => patient.status === "active")?.id ?? null;
+    const firstActivePatientId = dashboard.patients?.find((patient) => patient.status === "active")?.id ?? null;
     const doctorIds = new Set(
       dashboard?.clinicSettings.staff
         .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
@@ -3018,7 +3018,7 @@ const {
     if (!activeChairs.length) issues.push("кресло / кабинет");
     if (dashboard?.clinicSettings.profile?.mode !== "solo_doctor" && !activeAssistants.length) issues.push("ассистент");
     const activeAppointmentReadiness = dashboard?.activeVisit.appointmentId
-      ? dashboard.appointmentReadiness.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
+      ? dashboard.appointmentReadiness?.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
       : null;
     const activeAppointmentBlockingChecks =
       activeAppointmentReadiness?.checks.filter(
@@ -4080,7 +4080,7 @@ const {
       .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
     const visibleStudies =
       imagingKindFilter === "all" ? activeStudies : activeStudies.filter((study) => study.kind === imagingKindFilter);
-    const selectedStudy = visibleStudies.find((study) => study.id === selectedImagingStudyId) ?? visibleStudies[0] ?? null;
+    const selectedStudy = visibleStudies?.find((study) => study.id === selectedImagingStudyId) ?? visibleStudies[0] ?? null;
     const comparisonStudies = selectedStudy
       ? activeStudies
           .filter((study) => study.id !== selectedStudy.id)
@@ -4671,7 +4671,7 @@ const {
     if (!dashboard) return null;
     return (
       findPatient(dashboard.patients, dashboard.activeVisit.patientId) ??
-      dashboard.patients.find((patient) => patient.status === "active") ??
+      dashboard.patients?.find((patient) => patient.status === "active") ??
       null
     );
   }, [dashboard]);
@@ -4763,12 +4763,12 @@ const {
 
   const activeAppointment = useMemo(() => {
     if (!dashboard) return null;
-    return dashboard.appointments.find((appointment) => appointment.id === dashboard.activeVisit.appointmentId) ?? null;
+    return dashboard.appointments?.find((appointment) => appointment.id === dashboard.activeVisit.appointmentId) ?? null;
   }, [dashboard]);
 
   const activeDoctor = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.staff.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
+    return dashboard?.clinicSettings.staff?.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const telegramLinkStaffOptions = useMemo(
@@ -4814,14 +4814,14 @@ const {
 
   function telegramSubjectName(subjectType: DenteTelegramChatLinkPublic["subjectType"], subjectId: string): string {
     if (subjectType === "patient") {
-      return dashboard?.patients.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
+      return dashboard?.patients?.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
     }
-    return dashboard?.clinicSettings.staff.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
+    return dashboard?.clinicSettings.staff?.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
   }
 
   const activeChair = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.chairs.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
+    return dashboard?.clinicSettings.chairs?.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const patientInsightById = useMemo(() => {
@@ -4862,12 +4862,12 @@ const {
 
   const documentIssueConfirmation = useMemo(() => {
     if (!documentIssueConfirmationId) return null;
-    return activeDocuments.find((document) => document.id === documentIssueConfirmationId && document.status === "draft") ?? null;
+    return activeDocuments?.find((document) => document.id === documentIssueConfirmationId && document.status === "draft") ?? null;
   }, [activeDocuments, documentIssueConfirmationId]);
 
   const documentVoidConfirmation = useMemo(() => {
     if (!documentVoidConfirmationId) return null;
-    return activeDocuments.find((document) => document.id === documentVoidConfirmationId && document.status !== "voided") ?? null;
+    return activeDocuments?.find((document) => document.id === documentVoidConfirmationId && document.status !== "voided") ?? null;
   }, [activeDocuments, documentVoidConfirmationId]);
 
   const documentIssueAttestationReady = useMemo(() => {
@@ -4938,7 +4938,7 @@ const {
 
   useEffect(() => {
     if (completedActContractNumber.trim() || !selectedCompletedActContractDocumentId) return;
-    const contract = activeIssuedPaidContracts.find((document) => document.id === selectedCompletedActContractDocumentId);
+    const contract = activeIssuedPaidContracts?.find((document) => document.id === selectedCompletedActContractDocumentId);
     if (contract) setCompletedActContractNumber(completedActContractReferenceForUi(contract));
   }, [activeIssuedPaidContracts, completedActContractNumber, selectedCompletedActContractDocumentId]);
 
@@ -4961,7 +4961,7 @@ const {
       return;
     }
     if (releaseSourceRequestAutofillRef.current === selectedReleaseSourceRequestDocumentId) return;
-    const sourceDocument = issuedMedicalCopyRequestDocuments.find((document) => document.id === selectedReleaseSourceRequestDocumentId);
+    const sourceDocument = issuedMedicalCopyRequestDocuments?.find((document) => document.id === selectedReleaseSourceRequestDocumentId);
     const request = sourceDocument?.chainSummary?.medicalRecordCopyRequest;
     if (!request) return;
 
@@ -5045,7 +5045,7 @@ const {
     const totalDiscountRub = activePlanItems.reduce((total, item) => total + item.discountRub, 0);
     const totalPaidRub = activePayments.filter((payment) => payment.status === "paid").reduce((total, payment) => total + payment.amountRub, 0);
     const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
-      const service = dashboard.serviceCatalog.find((candidate) => candidate.id === item.serviceId);
+      const service = dashboard.serviceCatalog?.find((candidate) => candidate.id === item.serviceId);
       return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
     }, 0);
     const draftDocumentAmountRub = activeUsableDocuments
@@ -5105,7 +5105,7 @@ const {
     return taxDocumentPayerOptions.length === 1 ? taxDocumentPayerOptions[0]?.key ?? "" : "";
   }, [taxDocumentPayerInn, taxDocumentPayerOptions]);
   const selectedTaxDocumentPayerOption = useMemo(
-    () => taxDocumentPayerOptions.find((option) => option.key === selectedTaxDocumentPayerKey) ?? null,
+    () => taxDocumentPayerOptions?.find((option) => option.key === selectedTaxDocumentPayerKey) ?? null,
     [selectedTaxDocumentPayerKey, taxDocumentPayerOptions]
   );
   const selectedTaxDocumentPayerInn = selectedTaxDocumentPayerOption?.inn ?? "";
@@ -5169,7 +5169,7 @@ const {
       .sort((left, right) => (right.fiscalReceiptIssuedAt || right.paidAt || "").localeCompare(left.fiscalReceiptIssuedAt || left.paidAt || ""));
   }, [activePayments, dashboard?.activeVisit.id]);
   const selectedRefundCorrectionPayment = useMemo(
-    () => eligibleRefundCorrectionPayments.find((payment) => payment.id === refundSelectedPaymentId) ?? null,
+    () => eligibleRefundCorrectionPayments?.find((payment) => payment.id === refundSelectedPaymentId) ?? null,
     [eligibleRefundCorrectionPayments, refundSelectedPaymentId]
   );
   const taxPaymentSelectionPersistenceKey = useMemo(() => {
@@ -5186,7 +5186,7 @@ const {
 
   function selectRefundOriginalPayment(paymentId: string): void {
     setRefundSelectedPaymentId(paymentId);
-    const payment = eligibleRefundCorrectionPayments.find((candidate) => candidate.id === paymentId);
+    const payment = eligibleRefundCorrectionPayments?.find((candidate) => candidate.id === paymentId);
     if (!payment) return;
     setRefundOriginalFiscalReceiptNumber(payment.fiscalReceiptNumber?.trim() || "");
     const currentAmountRub = normalizeRubAmountInput(refundAmountRub);
@@ -5340,7 +5340,7 @@ const {
   const selectedTaxApplicationPayment = useMemo(() => {
     if (!selectedTaxDocumentPayerKey) return null;
     return (
-      activePayments.find(
+      activePayments?.find(
         (payment) =>
           payment.status === "paid" &&
           taxPaymentPayerKeyForUi(payment) === selectedTaxDocumentPayerKey &&
@@ -5594,7 +5594,7 @@ const {
   );
   const latestImagingStudy = visibleImagingStudies[0] ?? null;
   const selectedImagingStudy =
-    visibleImagingStudies.find((study) => study.id === selectedImagingStudyId) ?? latestImagingStudy;
+    visibleImagingStudies?.find((study) => study.id === selectedImagingStudyId) ?? latestImagingStudy;
   const imagingComparisonCandidates = useMemo(() => {
     if (!selectedImagingStudy) return [];
     return activeImagingStudies
@@ -5631,8 +5631,8 @@ const {
     }) scale(${dicomFirstFrameViewerState.zoom})`
   };
   const cbctWorkbenchSeries =
-    dicomSeriesPreview?.series.find((series) => series.mprReadiness.volumeCandidate) ??
-    dicomSeriesPreview?.series.find((series) => series.recommendedViewer === "cbct_mpr") ??
+    dicomSeriesPreview?.series?.find((series) => series.mprReadiness.volumeCandidate) ??
+    dicomSeriesPreview?.series?.find((series) => series.recommendedViewer === "cbct_mpr") ??
     null;
   const mprSliceMaxIndex = Math.max(0, (cbctWorkbenchSeries?.fileCount ?? 1) - 1);
   const mprSafeSliceIndex = clampMprSliceIndex(mprSliceIndex, mprSliceMaxIndex);
@@ -5904,7 +5904,7 @@ const {
     }
   };
   const applyNearestMprClinicalPreset = () => {
-    const preset = mprClinicalPresets.find((candidate) => candidate.title === mprNearestClinicalPreset.title);
+    const preset = mprClinicalPresets?.find((candidate) => candidate.title === mprNearestClinicalPreset.title);
     if (preset) applyMprClinicalPreset(preset);
   };
   const handleMprKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -6253,7 +6253,7 @@ const {
   }, [dashboard, selectedSpecialty]);
 
   const selectedProtocolTemplate = useMemo(() => {
-    return specialtyProtocolTemplates.find((template) => template.id === selectedProtocolId) ?? specialtyProtocolTemplates[0] ?? null;
+    return specialtyProtocolTemplates?.find((template) => template.id === selectedProtocolId) ?? specialtyProtocolTemplates[0] ?? null;
   }, [selectedProtocolId, specialtyProtocolTemplates]);
 
   useEffect(() => {
@@ -6281,7 +6281,7 @@ const {
 
   const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
   const visitWarnings = visitCloseChecklist?.items.filter((item) => !item.ready) ?? [];
-  const primaryVisitWarning = visitWarnings.find((item) => item.blocking) ?? visitWarnings[0] ?? null;
+  const primaryVisitWarning = visitWarnings?.find((item) => item.blocking) ?? visitWarnings[0] ?? null;
   const speechProviderRuntimeById = useMemo(
     () => new Map(speechProviderRuntimeStatuses.map((provider) => [provider.providerId, provider])),
     [speechProviderRuntimeStatuses]
@@ -6292,7 +6292,7 @@ const {
   );
   const activeSpeechProviderHealth = useMemo(() => {
     if (!speechGatewayHealthReport) return null;
-    return speechGatewayHealthReport.providers.find((provider) => provider.providerId === speechGatewayHealthReport.activeProviderId) ?? null;
+    return speechGatewayHealthReport.providers?.find((provider) => provider.providerId === speechGatewayHealthReport.activeProviderId) ?? null;
   }, [speechGatewayHealthReport]);
   const savedVisitNoteForm = useMemo(() => (dashboard ? visitNoteFormFromVisit(dashboard.activeVisit) : emptyVisitNoteForm), [dashboard]);
   const isVisitNoteDirty = visitNoteFieldDefinitions.some(({ key }) => visitNoteForm[key] !== savedVisitNoteForm[key]);
@@ -6388,9 +6388,9 @@ const {
               onClick: () => scrollToVisitArea(".close-checklist")
             };
   const speechRecoveryIssueCount =
-    speechRecordingRecovery?.recordings.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
+    speechRecordingRecovery?.recordings?.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
   const speechRecoveryQualityIssueCount =
-    speechRecordingRecovery?.recordings.reduce(
+    speechRecordingRecovery?.recordings?.reduce(
       (total, recording) =>
         total + recording.qualityCounts.review + recording.qualityCounts.empty + recording.qualityCounts.failed,
       0
@@ -6883,7 +6883,7 @@ const {
       const payload = await response.json();
       const nextDashboard = dashboardSchema.parse(payload);
       setDashboard(nextDashboard);
-      const savedAppointment = nextDashboard.appointments.find((appointment) => appointment.id === appointmentId);
+      const savedAppointment = nextDashboard.appointments?.find((appointment) => appointment.id === appointmentId);
       const latestDraft = appointmentScheduleDraftsRef.current[appointmentId];
       const latestMatchesSaved = latestDraft ? appointmentScheduleDraftSignature(latestDraft) === expectedSignature : true;
       if (savedAppointment && latestMatchesSaved) {
@@ -6945,7 +6945,7 @@ const {
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не создана"));
       const payload = await response.json();
       const nextDashboard = dashboardSchema.parse(payload);
-      const createdAppointment = nextDashboard.appointments.find((appointment) => !previousIds.has(appointment.id)) ?? null;
+      const createdAppointment = nextDashboard.appointments?.find((appointment) => !previousIds.has(appointment.id)) ?? null;
       const nextDraftPreferences = {
         selectedPatientId: newAppointmentDraft.patientId || selectedPatientId,
         selectedSpecialty,
@@ -8832,10 +8832,10 @@ const {
 
   function selectPreferredDicomWorkupPlan(result: DicomFolderWorkupPlanResponse) {
     return (
-      result.plans.find((plan) => plan.recommendedPath === "open_mpr") ??
-      result.plans.find((plan) => plan.recommendedPath === "downsampled_mpr") ??
-      result.plans.find((plan) => plan.series.mprReadiness.volumeCandidate) ??
-      result.plans.find((plan) => plan.recommendedPath === "external_viewer") ??
+      result.plans?.find((plan) => plan.recommendedPath === "open_mpr") ??
+      result.plans?.find((plan) => plan.recommendedPath === "downsampled_mpr") ??
+      result.plans?.find((plan) => plan.series.mprReadiness.volumeCandidate) ??
+      result.plans?.find((plan) => plan.recommendedPath === "external_viewer") ??
       result.plans[0] ??
       null
     );
@@ -9288,12 +9288,12 @@ const {
       }
       const workup = (await workupResponse.json()) as DicomFolderWorkupPlanResponse;
       const matchedPlan =
-        workup.plans.find(
+        workup.plans?.find(
           (plan) =>
             (!targetStudyUid || plan.series.studyInstanceUid === targetStudyUid) &&
             (!targetSeriesUid || plan.series.seriesInstanceUid === targetSeriesUid)
         ) ??
-        workup.plans.find((plan) => plan.series.mprReadiness.volumeCandidate) ??
+        workup.plans?.find((plan) => plan.series.mprReadiness.volumeCandidate) ??
         workup.plans[0] ??
         null;
       if (!matchedPlan) {
@@ -9526,7 +9526,7 @@ const {
 
   function preferredSpeechMimeType(): string {
     const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"];
-    return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
+    return candidates?.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
   }
 
   async function uploadSpeechBlob(blob: Blob) {
@@ -10099,7 +10099,7 @@ const {
       .filter((item) => item.status !== "cancelled")
       .filter((item) => !dashboard?.activeVisit.id || item.visitId === dashboard.activeVisit.id)
       .map((item) => {
-        const service = dashboard?.serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
+        const service = dashboard?.serviceCatalog?.find((catalogItem) => catalogItem.id === item.serviceId);
         const totalRub = Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
         return {
           serviceName: service?.title ?? item.serviceId,
@@ -10222,7 +10222,7 @@ const {
   }
 
   function installmentScheduleBaseDocumentTitleValue(): string {
-    return installmentScheduleBaseDocumentTitle.trim() || activeUsableDocuments.find((document) => document.kind === "paid_medical_services_contract")?.title || "договор или план лечения клиники";
+    return installmentScheduleBaseDocumentTitle.trim() || activeUsableDocuments?.find((document) => document.kind === "paid_medical_services_contract")?.title || "договор или план лечения клиники";
   }
 
   function installmentSchedulePayerFullNameValue(): string {
@@ -10284,7 +10284,7 @@ const {
   function warrantyLinkedActOrContractValue(): string {
     return (
       warrantyLinkedActOrContract.trim() ||
-      activeUsableDocuments.find((document) => document.kind === "completed_works_act" || document.kind === "paid_medical_services_contract")?.title ||
+      activeUsableDocuments?.find((document) => document.kind === "completed_works_act" || document.kind === "paid_medical_services_contract")?.title ||
       "акт выполненных работ или договор клиники"
     );
   }
@@ -10306,7 +10306,7 @@ const {
   }
 
   function applyPostVisitCarePreset(topic: PostVisitCareTopic, options: { force?: boolean } = {}) {
-    const topicLabel = postVisitCareTopicOptions.find((option) => option.value === topic)?.label ?? "выбранной темы";
+    const topicLabel = postVisitCareTopicOptions?.find((option) => option.value === topic)?.label ?? "выбранной темы";
     if (postVisitManualEdited && !options.force) {
       setPostVisitPresetFeedback(
         `Тема "${topicLabel}" выбрана. Текст не перезаписан, потому что есть ручные правки. Нажмите "Подставить памятку для темы", если нужно заменить поля.`
@@ -12068,7 +12068,7 @@ const {
     setIsPaymentSaving(true);
     try {
       const documentForPayment =
-        activeUsableDocuments.find(
+        activeUsableDocuments?.find(
           (document) =>
             documentKindMetadata[document.kind].group === "payment" &&
             document.kind !== "payment_refund_correction_request" &&
@@ -12753,16 +12753,16 @@ const {
 
 
   const activeWorkspaceProfile =
-    dashboard?.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
+    dashboard?.clinicSettings.workspaceProfiles?.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
     dashboard?.clinicSettings.workspaceProfiles[0];
   const settingsAdminSecretDomain: AdminSecretUnlockDomain = settingsTab === "telegram" ? "telegram" : "settings";
   const activeRolePolicy =
-    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === selectedWorkspaceRole) ??
-    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === "doctor") ??
+    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === selectedWorkspaceRole) ??
+    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === "doctor") ??
     dashboard?.clinicSettings.roleAccessPolicies[0];
   const activeQueueRole: StaffRole = selectedWorkspaceRole === "owner" ? "manager" : selectedWorkspaceRole;
   const activeRoleQueue =
-    dashboard?.shiftIntelligence.roleQueues.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence.roleQueues[0];
+    dashboard?.shiftIntelligence.roleQueues?.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence.roleQueues[0];
   const activeRoleWritableSections = activeRolePolicy?.canWrite ?? [];
   const activeRoleRestrictedSections = activeRolePolicy?.restricted ?? [];
   const roleRecommendedActions = (dashboard?.recommendedActions ?? []).filter(
@@ -12790,7 +12790,7 @@ const {
   const previousOnboardingStep = currentOnboardingIndex > 0 ? onboardingSteps[currentOnboardingIndex - 1] : null;
   const nextOnboardingStep = currentOnboardingIndex < onboardingSteps.length - 1 ? onboardingSteps[currentOnboardingIndex + 1] : null;
   const showFullOnboardingGuide = !onboardingDismissed && currentView === "settings" && settingsTab === "clinic" && onboardingGuideExpanded;
-  const selectedUiLanguageOption = uiLanguageOptions.find((option) => option.value === uiLanguage) ?? defaultUiLanguageOption;
+  const selectedUiLanguageOption = uiLanguageOptions?.find((option) => option.value === uiLanguage) ?? defaultUiLanguageOption;
   const showAdministrationTopActions =
     currentView === "settings" ||
     selectedWorkspaceRole === "administrator" ||
@@ -12798,7 +12798,7 @@ const {
     selectedWorkspaceRole === "owner";
   const showDoctorVisitShortcut = selectedWorkspaceRole === "doctor" && currentView !== "visit";
 
-  const serviceTitle = (serviceId: string) => dashboard.serviceCatalog.find((service) => service.id === serviceId)?.title ?? serviceId;
+  const serviceTitle = (serviceId: string) => dashboard.serviceCatalog?.find((service) => service.id === serviceId)?.title ?? serviceId;
   const goToVisitDictation = () => {
     window.location.hash = "visit";
     const openDictation = () => {

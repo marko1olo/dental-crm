@@ -5,7 +5,7 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.5rem;
-  background: var(--neutral-50, #f8fafc);
+  background: var(--neutral-50, var(--paper-soft));
   min-height: 100vh;
 }
 
@@ -15,11 +15,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: #ffffff;
+  background: var(--paper);
   padding: 1rem 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid var(--slate-200, #e2e8f0);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--slate-200, var(--line));
 }
 
 .patients-search-box {
@@ -42,17 +42,17 @@
   width: 100%;
   padding: 10px 12px 10px 40px;
   border: 1px solid var(--slate-300, #cbd5e1);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.95rem;
   transition: all 0.2s ease;
-  background: var(--slate-50, #f8fafc);
+  background: var(--slate-50, var(--paper-soft));
 }
 
 .patients-search-box input:focus {
-  background: #ffffff;
+  background: var(--paper);
   border-color: var(--brand-500, #3b82f6);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--shadow);
 }
 
 /* Smart Input Group */
@@ -72,17 +72,17 @@
   width: 100%;
   padding: 10px 40px 10px 16px;
   border: 1px solid var(--brand-200, #bfdbfe);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.95rem;
-  background: #ffffff;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+  background: var(--paper);
+  box-shadow: var(--shadow);
   transition: all 0.2s;
 }
 
 .smart-input-wrapper input:focus {
   border-color: var(--brand-500, #3b82f6);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--shadow);
 }
 
 /* Patient List Grid */
@@ -94,8 +94,8 @@
 }
 
 .patient-card-item {
-  background: #ffffff;
-  border: 1px solid var(--slate-200, #e2e8f0);
+  background: var(--paper);
+  border: 1px solid var(--slate-200, var(--line));
   border-radius: 12px;
   padding: 1.25rem;
   display: flex;
@@ -109,14 +109,14 @@
 
 .patient-card-item:hover {
   border-color: var(--brand-300, #93c5fd);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow);
   transform: translateY(-2px);
 }
 
 .patient-card-item.selected {
   border-color: var(--brand-500, #3b82f6);
   background: var(--brand-50, #eff6ff);
-  box-shadow: 0 0 0 1px var(--brand-500, #3b82f6);
+  box-shadow: var(--shadow);
 }
 
 .patient-card-item h3 {
@@ -148,10 +148,10 @@
 
 /* Detailed Patient Panel */
 .patient-detail-card {
-  background: #ffffff;
-  border: 1px solid var(--slate-200, #e2e8f0);
+  background: var(--paper);
+  border: 1px solid var(--slate-200, var(--line));
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  box-shadow: var(--shadow);
   overflow: hidden;
   margin-bottom: 2rem;
 }
@@ -161,8 +161,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  background: var(--slate-50, #f8fafc);
-  border-bottom: 1px solid var(--slate-200, #e2e8f0);
+  background: var(--slate-50, var(--paper-soft));
+  border-bottom: 1px solid var(--slate-200, var(--line));
 }
 
 .patient-detail-header h2 {
@@ -195,16 +195,16 @@
   width: 100%;
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--slate-300, #cbd5e1);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.95rem;
   transition: all 0.2s;
-  background: #ffffff;
+  background: var(--paper);
 }
 
 .form-field input:focus, .form-field textarea:focus {
   border-color: var(--brand-500, #3b82f6);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: var(--shadow);
 }
 
 .form-span-full {
@@ -225,21 +225,21 @@
   font-weight: 500;
   background: var(--slate-100, #f1f5f9);
   color: var(--slate-600, #475569);
-  border: 1px solid var(--slate-200, #e2e8f0);
+  border: 1px solid var(--slate-200, var(--line));
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .tag-chip:hover {
-  background: var(--slate-200, #e2e8f0);
+  background: var(--slate-200, var(--line));
   color: var(--slate-800, #1e293b);
 }
 
 /* Card Sections */
 .patient-section {
   padding: 1.5rem;
-  border-top: 1px solid var(--slate-200, #e2e8f0);
+  border-top: 1px solid var(--slate-200, var(--line));
 }
 
 .patient-section-title {
@@ -262,7 +262,7 @@
   background: var(--brand-600, #2563eb);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -271,7 +271,7 @@
 
 .btn-primary:hover:not(:disabled) {
   background: var(--brand-700, #1d4ed8);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  box-shadow: var(--shadow);
 }
 
 .btn-primary:disabled {
