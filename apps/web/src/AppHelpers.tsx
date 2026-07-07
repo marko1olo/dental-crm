@@ -280,7 +280,7 @@ import {
   mprSlabBounds,
   mprSlabNudgeMm,
   resolveMprKeyboardAdjustment
-} from "./mprControlMath";
+} from "./utils/math/mprMath";
 import {
   buildMprClinicalChecklist,
   buildMprOperatorSummary,

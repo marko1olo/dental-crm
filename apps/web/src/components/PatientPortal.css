@@ -1,0 +1,330 @@
+.portal-auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
+  color: #e4e4e7;
+}
+
+.portal-auth-card {
+  background: rgba(24, 24, 27, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(63, 63, 70, 0.5);
+  padding: 40px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.portal-auth-card h2 {
+  margin-top: 0;
+  font-weight: 300;
+  color: #f4f4f5;
+  margin-bottom: 24px;
+}
+
+.auth-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-step input {
+  background: rgba(39, 39, 42, 0.5);
+  border: 1px solid rgba(82, 82, 91, 0.5);
+  padding: 12px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.1rem;
+  text-align: center;
+  outline: none;
+}
+
+.auth-step input:focus {
+  border-color: #60a5fa;
+}
+
+.auth-step button {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.auth-step button:hover {
+  background: #2563eb;
+}
+
+.patient-portal {
+  min-height: 100vh;
+  padding: 24px;
+  background: #09090b;
+  color: #e4e4e7;
+}
+
+.portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(63, 63, 70, 0.5);
+}
+
+.portal-header h2 { margin: 0; font-weight: 300; }
+
+.logout-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.logout-btn:hover { background: rgba(239, 68, 68, 0.2); }
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.portal-card {
+  background: rgba(24, 24, 27, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(63, 63, 70, 0.5);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.portal-card h3 {
+  margin: 0 0 8px 0;
+  font-weight: 400;
+  color: #f4f4f5;
+}
+
+.visit-item {
+  background: rgba(39, 39, 42, 0.5);
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visit-item.past { opacity: 0.7; }
+
+.visit-date { font-weight: 600; color: #f4f4f5; }
+.visit-desc { color: #a1a1aa; font-size: 0.9rem; }
+
+.visit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-confirm {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.btn-cancel {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.financial-summary {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(39, 39, 42, 0.5);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.fin-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fin-stat span { font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase; }
+.fin-stat strong { font-size: 1.1rem; }
+.text-green { color: #34d399; }
+.text-orange { color: #fbbf24; }
+
+.stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(39, 39, 42, 0.3);
+  border-radius: 8px;
+  border-left: 3px solid #52525b;
+}
+
+.stage-item.completed { border-left-color: #10b981; opacity: 0.8; }
+.stage-item.pending { border-left-color: #fbbf24; }
+
+.stage-desc { color: #e4e4e7; }
+.stage-cost { font-family: monospace; color: #a1a1aa; }
+
+.doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(39, 39, 42, 0.4);
+  border-radius: 8px;
+}
+
+.doc-item span { color: #d4d4d8; font-size: 0.95rem; }
+
+.btn-download {
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 8px 16px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .financial-summary { flex-direction: column; gap: 12px; }
+}
+
+@media (max-width: 480px) {
+  .patient-portal {
+    padding: 12px;
+  }
+  .portal-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .portal-card {
+    padding: 16px;
+  }
+  .stage-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .doc-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .btn-confirm, .btn-cancel, .btn-download {
+    min-height: 44px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px; /* Prevent iOS zoom */
+  }
+}
+
+.doc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.doc-overlay-content {
+  background: #09090b;
+  border: 1px solid rgba(63, 63, 70, 0.5);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.doc-overlay-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(63, 63, 70, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doc-overlay-header h3 {
+  margin: 0;
+  font-weight: 400;
+  color: #f4f4f5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-close-btn {
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.doc-close-btn:hover {
+  color: #f4f4f5;
+}
+
+.doc-overlay-body {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(24, 24, 27, 0.5);
+}
+
+.doc-placeholder {
+  text-align: center;
+  color: #a1a1aa;
+}

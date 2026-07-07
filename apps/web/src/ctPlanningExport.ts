@@ -1,5 +1,5 @@
 import type { DicomGpuRenderPlan, DicomViewerToolStateBundleResponse, ImagingSourceKind } from "@dental/shared";
-import type { CtPlanningGeometrySummary } from "./ctPlanningGeometry";
+import type { CtPlanningGeometrySummary } from "./utils/math/toothGeometry";
 import type { CtPlanningExportScenarioSummary } from "./ctPlanningExportScenarioSummary";
 import type { CtPlanningImplantModelPlan } from "./ctPlanningImplantModel";
 import type { CtPlanningMeasurementPlan } from "./ctPlanningMeasurementPlan";

@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as cornerstone from '@cornerstonejs/core';
 import { X, Activity, Droplet, Ruler, Target, Layers } from 'lucide-react';
-import { generateCatmullRomSpline, calculateCurveFrames, Point3D } from '../../utils/dicom/curvedMprMath';
+import { generateCatmullRomSpline, calculateCurveFrames, Point3D } from "../../utils/math/mprMath";
 import { ClinicalStore, checkImplantCollision } from '../../utils/dicom/clinicalImplants';
 import { createPanorexWorker } from '../../utils/dicom/panorexWorker';
 

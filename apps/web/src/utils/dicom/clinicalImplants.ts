@@ -1,4 +1,4 @@
-import { Point3D } from './curvedMprMath';
+import { Point3D } from "../math/mprMath";
 
 export interface VirtualImplant {
   id: string;

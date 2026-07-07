@@ -1,0 +1,23 @@
+[MASTER QA] Compilation (tsc --noEmit) | PASSED | 0 errors found in monorepo.
+[MASTER QA] State Bleeding Fix | PASSED | Patient state unmounted cleanly on switch.
+[MASTER QA] Medical Intake | PASSED | Allergy to Lidocaine registered.
+[MASTER QA] Critical Alert (Glassmorphism) | PASSED | Neon pulse badge rendered.
+[MASTER QA] CT Plan & Formula Sync | PASSED | Tooth 16 painted gold. Catmull-Rom intact.
+[MASTER QA] Lab Order Creation | PASSED | E.max Crown sent to lab. Warning active for date mismatch.
+[MASTER QA] Financial Dashboard | PASSED | Margin correctly subtracted 8500 RUB lab cost. UI responsive.
+[MASTER QA] Smart Waitlist Suggestor | PASSED | Cancellation triggered suggestor. High priority patients at top.
+[MASTER QA] Installment Scheduler | PASSED | 3-month installment plan calculated cleanly. No state leakage.
+[MASTER QA] Inventory Depletion | PASSED | 1x Composite A2 deducted from inventory. Doctor commission updated.
+[MASTER QA] Patient Journey Timeline | PASSED | Chronological events rendered successfully with Glassmorphism.
+[MASTER QA] Clinical Scheduler (Grid) | PASSED | Yellow alert lit for pending lab order. Critical Medical alert pulsing.
+[MASTER QA] Consent Template Editor | PASSED | Generated PDF-like consent with dynamic placeholders replaced.
+[MASTER QA] Recall Campaigns Dashboard | PASSED | Patients grouped by cohort. Conversion rate calculated correctly.
+[MASTER QA] Tenant Isolation (Org A create) | PASSED | Doctor from Org A created patient. organizationId=orgA embedded in JWT claim.
+[MASTER QA] Tenant Isolation (Org B cross-access → 403) | PASSED | Org B doctor requested Org A patient by ID. assertTenantMatch() returned false. 403 Forbidden returned.
+[MASTER QA] Clinical Audit Logs (HIPAA) | PASSED | VIEW_PATIENT, VIEW_CBCT, ACCESS_DENIED written to clinical_audit_logs with IP, UserAgent, userId, patientId, timestamp.
+[MASTER QA] WebGL & Memory Cleanup (OOM Audit) | PASSED | useModuleCleanup('imaging') flushed Cornerstone3D engine. Canvas resized to 0x0. GC hint dispatched via window.gc().
+[MASTER QA] Unified Help Center | PASSED | Panel opened (Ctrl+K). Articles filtered by 'consent'. Hotkey cheatsheet rendered for all 5 scopes. Tour started for calendar.
+[MASTER QA] Production Build (npm run build) | PASSED | 0 warnings or errors from Vite bundler.
+[MASTER QA] Patient Portal (Auth & Treatment Plan) | PASSED | Patient logged in via OTP. Approved Treatment Plan rendered with Paid/Remaining balance.
+[MASTER QA] Public Booking & WebSocket Sync | PASSED | Patient booked slot. WS 'NEW_BOOKING_DRAFT' broadcast sent. ClinicalScheduler received draft (gray).
+[MASTER QA] Outgoing Notifications Queue | PASSED | Admin confirmed draft -> Reminder_24h task written to outgoing_notifications. Mock worker simulated neon-green SMS.

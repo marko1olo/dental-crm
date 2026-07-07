@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePatientStore, type ToothStatus } from '../store/patientStore';
-import { getToothPath, getToothConfig } from '../utils/toothGeometry';
+import { getToothPath, getToothConfig } from "../utils/math/toothGeometry";
 
 const TOOTH_NUMBERS = [
   // Upper right (18 to 11)

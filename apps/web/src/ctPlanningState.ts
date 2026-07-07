@@ -9,7 +9,7 @@ import type {
   ImagingViewerTool
 } from "@dental/shared";
 import { buildCtPlanningExportPacket, type CtPlanningExportPacket } from "./ctPlanningExport";
-import { buildCtPlanningGeometrySummary, type CtPlanningGeometrySummary } from "./ctPlanningGeometry";
+import { buildCtPlanningGeometrySummary, type CtPlanningGeometrySummary } from "./utils/math/toothGeometry";
 import { buildCtPlanningImplantModelPlan, type CtPlanningImplantModelPlan } from "./ctPlanningImplantModel";
 import { buildCtPlanningMeasurementPlan, type CtPlanningMeasurementPlan } from "./ctPlanningMeasurementPlan";
 import { buildCtPlanningReconstructionPlan, type CtPlanningReconstructionPlan } from "./ctPlanningReconstruction";

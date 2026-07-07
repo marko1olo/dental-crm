@@ -1,4 +1,4 @@
-﻿.odontogram-module {
+.odontogram-module {
   display: flex;
   gap: 24px;
   width: 100%;
@@ -115,6 +115,7 @@
   padding: 4px;
   transition: background-color 0.2s;
   border-radius: 8px;
+  flex-shrink: 0; /* Prevent squeezing on tablet */
 }
 
 .tooth-svg-wrapper:hover {
@@ -147,8 +148,20 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+  max-width: calc(100vw - 32px); /* Prevent screen overflow on mobile/tablet */
+
   z-index: 50;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 768px) {
+  .tooth-radial-menu {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999;
+  }
 }
 
 .tooth-menu-btn {

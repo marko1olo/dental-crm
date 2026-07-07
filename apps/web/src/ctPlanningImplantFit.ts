@@ -1,4 +1,4 @@
-import type { CtPlanningDistanceMeasurement, CtPlanningGeometrySummary } from "./ctPlanningGeometry";
+import type { CtPlanningDistanceMeasurement, CtPlanningGeometrySummary } from "./utils/math/toothGeometry";
 
 export type CtPlanningImplantFitStatus = "ready" | "draft" | "blocked";
 
