@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ToothChart, ToothData, ToothState } from './ToothChart';
 import { TreatmentEstimator } from './TreatmentEstimator';
 import { Check, X, Stethoscope, AlertTriangle } from 'lucide-react';
@@ -6,7 +7,8 @@ import './odontogram.css';
 
 export const OdontogramModule = ({ patientId }: { patientId: string }) => {
   const [teethData, setTeethData] = useState<ToothData[]>([]);
-  const [menuConfig, setMenuConfig] = useState<{ toothNumber: number; x: number; y: number } | null>(null);
+  const [menuConfig, setMenuConfig] = useState<{ toothNumber: number; x: number; y: number; position: 'top' | 'bottom' } | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Load states from API
   useEffect(() => {
@@ -61,50 +63,82 @@ export const OdontogramModule = ({ patientId }: { patientId: string }) => {
 
   return (
     <div className="odontogram-module">
-      <div className="odontogram-chart-area">
+      <div className="odontogram-chart-area" ref={containerRef}>
         <ToothChart 
           teethData={teethData} 
           onToothClick={(toothNumber, rect) => {
-            setMenuConfig({ toothNumber, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+            const isUpperJaw = toothNumber < 30;
+            // Use viewport coords so portal can position correctly regardless of stacking context
+            const menuW = 254;
+            const menuH = 184;
+            const gap = 12;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            let x = rect.left + rect.width / 2 - menuW / 2;
+            let y = isUpperJaw ? rect.bottom + gap : rect.top - menuH - gap;
+
+            // Clamp horizontally
+            x = Math.max(8, Math.min(x, vw - menuW - 8));
+            // Clamp vertically — flip side if no room
+            if (isUpperJaw && y + menuH > vh - 8) {
+              y = rect.top - menuH - gap;
+            } else if (!isUpperJaw && y < 8) {
+              y = rect.bottom + gap;
+            }
+            y = Math.max(8, Math.min(y, vh - menuH - 8));
+
+            setMenuConfig({ toothNumber, x, y, position: isUpperJaw ? 'bottom' : 'top' });
           }} 
         />
         
-        {/* Radial Menu Popup */}
-        {menuConfig && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setMenuConfig(null)}>
+        {/* Radial Menu via Portal — avoids backdrop-filter stacking context bug */}
+        {menuConfig && createPortal(
+          <>
+            {/* Backdrop */}
             <div 
-              className="absolute bg-zinc-900 border border-zinc-700 p-4 rounded-2xl shadow-2xl flex flex-wrap gap-2 w-64"
-              style={{ left: menuConfig.x - 128, top: menuConfig.y + 20 }}
+              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998 }} 
+              onClick={() => setMenuConfig(null)} 
+            />
+            <div 
+              className={`tooth-radial-menu caret-${menuConfig.position === 'bottom' ? 'top' : 'bottom'}`}
+              style={{ 
+                position: 'fixed',
+                left: menuConfig.x, 
+                top: menuConfig.y,
+                transform: 'none',
+                zIndex: 9999,
+              }}
               onClick={e => e.stopPropagation()}
             >
-              <h3 className="w-full text-center text-sm font-bold text-zinc-300 mb-2 border-b border-zinc-700 pb-2">
+              <div style={{ gridColumn: 'span 2', textAlign: 'center', marginBottom: '8px', color: '#f4f4f5', fontWeight: 'bold' }}>
                 Зуб {menuConfig.toothNumber}
-              </h3>
-              
-              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Caries')} className="flex-1 min-w-[45%] py-2 text-xs bg-red-500/20 text-red-400 hover:bg-red-500/40 rounded-lg transition-colors">
+              </div>
+              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Caries')} className="tooth-menu-btn caries">
                 Кариес
               </button>
-              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Pulpitis')} className="flex-1 min-w-[45%] py-2 text-xs bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 rounded-lg transition-colors">
+              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Pulpitis')} className="tooth-menu-btn">
                 Пульпит
               </button>
-              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Implant')} className="flex-1 min-w-[45%] py-2 text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/40 rounded-lg transition-colors">
+              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Implant')} className="tooth-menu-btn implant">
                 Имплантат
               </button>
-              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Crown')} className="flex-1 min-w-[45%] py-2 text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/40 rounded-lg transition-colors">
+              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Crown')} className="tooth-menu-btn crown">
                 Коронка
               </button>
-              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Missing')} className="flex-1 min-w-[45%] py-2 text-xs bg-zinc-700 text-zinc-300 hover:bg-zinc-600 rounded-lg transition-colors">
+              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Missing')} className="tooth-menu-btn missing">
                 Отсутствует
               </button>
-              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Healthy')} className="flex-1 min-w-[45%] py-2 text-xs bg-green-500/20 text-green-400 hover:bg-green-500/40 rounded-lg transition-colors">
+              <button onClick={() => updateToothState(menuConfig.toothNumber, 'Healthy')} className="tooth-menu-btn filled">
                 Здоров
               </button>
             </div>
-          </div>
+          </>,
+          document.body
         )}
       </div>
 
-      <div className="w-[450px]">
+      <div className="odontogram-treatment-area">
         <TreatmentEstimator patientId={patientId} currentTeeth={teethData} />
       </div>
     </div>

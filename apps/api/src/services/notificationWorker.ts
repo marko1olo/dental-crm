@@ -42,7 +42,7 @@ export async function processNotificationQueue() {
 
     for (const notif of pending) {
       // Mock sending logic
-      const messageText = notif.payload?.text || JSON.stringify(notif.payload);
+      const messageText = (notif.payload as Record<string, unknown>)?.text || JSON.stringify(notif.payload);
       
       console.log(`\n${colors.gray}--- [OUTGOING MESSAGE GATEWAY] ---${colors.reset}`);
       console.log(`${colors.neonBlue}TO PATIENT:${colors.reset} ${notif.patientId}`);

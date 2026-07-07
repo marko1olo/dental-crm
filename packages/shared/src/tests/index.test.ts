@@ -5,192 +5,26 @@ import {
   documentAmountSource,
   documentKindSchema,
   documentPayloadDisallowedKeys,
+  documentPayloadAllowedKeys,
+  documentPayloadActualKeys,
   buildRuleBasedVisitDraftFromTranscript,
 } from "../index.js";
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
-import { documentRequiresPaidRecord, documentAmountSource, documentKindSchema } from '../index.js';
-import {
-  documentRequiresPaidRecord,
-  documentKindSchema,
-  documentPayloadAllowedKeys,
-  documentPayloadActualKeys
-} from '../index.js';
-import { documentRequiresPaidRecord, documentKindSchema, documentPayloadDisallowedKeys } from '../index.js';
-import { documentRequiresPaidRecord, documentKindSchema, documentPayloadAllowedKeys, type DocumentKind } from '../index.js';
+import type { DocumentKind } from "../index.js";
 
-describe('documentPayloadAllowedKeys', () => {
-  test('returns expected payload keys for specific document kinds', () => {
-    assert.deepStrictEqual(documentPayloadAllowedKeys('treatment_plan'), ['treatmentPlan']);
-    assert.deepStrictEqual(documentPayloadAllowedKeys('tax_deduction_certificate'), ['taxPaymentSelection']);
-  });
-
-  test('returns an empty array for unknown document kinds', () => {
-    // @ts-expect-error Testing invalid input
-    assert.deepStrictEqual(documentPayloadAllowedKeys('unknown_kind'), []);
+// ════════════════════════════════════════════════════════════════════
+// documentAmountSource
+// ════════════════════════════════════════════════════════════════════
 
 describe("documentAmountSource", () => {
   test("returns expected amount source for different document kinds", () => {
-    // Expected 'paid'
     assert.strictEqual(documentAmountSource("completed_works_act"), "paid");
-    assert.strictEqual(
-      documentAmountSource("tax_deduction_certificate"),
-      "paid",
-    );
-
-    // Expected 'planned'
-    assert.strictEqual(
-      documentAmountSource("paid_medical_services_contract"),
-      "planned",
-    );
+    assert.strictEqual(documentAmountSource("tax_deduction_certificate"), "paid");
+    assert.strictEqual(documentAmountSource("paid_medical_services_contract"), "planned");
     assert.strictEqual(documentAmountSource("treatment_plan"), "planned");
-
-    // Expected 'none'
     assert.strictEqual(documentAmountSource("informed_consent"), "none");
-    assert.strictEqual(
-      documentAmountSource("procedure_specific_consent_packet"),
-      "none",
-    );
+    assert.strictEqual(documentAmountSource("procedure_specific_consent_packet"), "none");
     assert.strictEqual(documentAmountSource("anesthesia_consent_log"), "none");
-    assert.strictEqual(
-      documentAmountSource("prescription_medication_order"),
-      "none",
-    );
-  });
-
-  test("handles all valid document kinds without throwing and returns a valid source", () => {
-    const validSources = ["none", "planned", "paid"];
-    for (const kind of documentKindSchema.options) {
-      const result = documentPayloadAllowedKeys(kind);
-      assert.ok(Array.isArray(result), `Expected array for kind ${kind}`);
-      const result = documentAmountSource(kind);
-      assert.ok(
-        validSources.includes(result),
-        `Invalid source '${result}' for document kind '${kind}'`,
-      );
-    }
-  });
-});
-
-describe("documentRequiresPaidRecord", () => {
-  test("returns expected boolean for different document kinds", () => {
-    // Requires paid record
-    assert.strictEqual(documentRequiresPaidRecord("completed_works_act"), true);
-    assert.strictEqual(
-      documentRequiresPaidRecord("tax_deduction_certificate"),
-      true,
-    );
-    assert.strictEqual(documentRequiresPaidRecord("payment_receipt"), true);
-    assert.strictEqual(
-      documentRequiresPaidRecord("payment_refund_correction_request"),
-      true,
-    );
-    assert.strictEqual(
-      documentRequiresPaidRecord("legacy_tax_deduction_certificate"),
-      true,
-    );
-    assert.strictEqual(
-      documentRequiresPaidRecord("tax_deduction_registry"),
-      true,
-    );
-
-    // Doesn't require paid record
-    assert.strictEqual(
-      documentRequiresPaidRecord("paid_medical_services_contract"),
-      false,
-    );
-    assert.strictEqual(documentRequiresPaidRecord("treatment_plan"), false);
-    assert.strictEqual(documentRequiresPaidRecord("payment_invoice"), false);
-    assert.strictEqual(documentRequiresPaidRecord("informed_consent"), false);
-    assert.strictEqual(
-      documentRequiresPaidRecord("prescription_medication_order"),
-      false,
-    );
-    assert.strictEqual(documentRequiresPaidRecord("lab_work_order"), false);
-  });
-
-  test("handles all valid document kinds without throwing", () => {
-    for (const kind of documentKindSchema.options) {
-      const result = documentRequiresPaidRecord(kind);
-      assert.strictEqual(typeof result, "boolean");
-    }
-  });
-});
-
-describe('documentPayloadActualKeys', () => {
-  test('returns empty array for null or undefined', () => {
-    assert.deepStrictEqual(documentPayloadActualKeys(null), []);
-    assert.deepStrictEqual(documentPayloadActualKeys(undefined), []);
-  });
-
-  test('returns empty array for empty payload', () => {
-    assert.deepStrictEqual(documentPayloadActualKeys({}), []);
-  });
-
-  test('returns defined keys', () => {
-    const payload = {
-      treatmentPlan: { /* mock data */ },
-      completedWorksAct: { /* mock data */ }
-    };
-    // @ts-expect-error Mock payload
-    assert.deepStrictEqual(documentPayloadActualKeys(payload), ['treatmentPlan', 'completedWorksAct']);
-  });
-
-  test('filters out undefined values', () => {
-    const payload = {
-      treatmentPlan: { /* mock data */ },
-      completedWorksAct: undefined
-    };
-    // @ts-expect-error Mock payload
-    assert.deepStrictEqual(documentPayloadActualKeys(payload), ['treatmentPlan']);
-  });
-});
-
-describe('documentAmountSource', () => {
-  test('returns expected amount source for different document kinds', () => {
-    assert.strictEqual(documentAmountSource('completed_works_act'), 'paid');
-    assert.strictEqual(documentAmountSource('tax_deduction_certificate'), 'paid');
-    assert.strictEqual(documentAmountSource('paid_medical_services_contract'), 'planned');
-    assert.strictEqual(documentAmountSource('treatment_plan'), 'planned');
-    assert.strictEqual(documentAmountSource('informed_consent'), 'none');
-    assert.strictEqual(documentAmountSource('procedure_specific_consent_packet'), 'none');
-  });
-
-  test('handles all valid document kinds returning a valid amount source', () => {
-    for (const kind of documentKindSchema.options) {
-      const result = documentAmountSource(kind);
-      assert.ok(['none', 'planned', 'paid'].includes(result), `Invalid amount source for kind ${kind}: ${result}`);
-    }
-  });
-});
-
-describe("documentAmountSource", () => {
-  test("returns expected amount source for different document kinds", () => {
-    // Expected 'paid'
-    assert.strictEqual(documentAmountSource("completed_works_act"), "paid");
-    assert.strictEqual(
-      documentAmountSource("tax_deduction_certificate"),
-      "paid",
-    );
-
-    // Expected 'planned'
-    assert.strictEqual(
-      documentAmountSource("paid_medical_services_contract"),
-      "planned",
-    );
-    assert.strictEqual(documentAmountSource("treatment_plan"), "planned");
-
-    // Expected 'none'
-    assert.strictEqual(documentAmountSource("informed_consent"), "none");
-    assert.strictEqual(
-      documentAmountSource("procedure_specific_consent_packet"),
-      "none",
-    );
-    assert.strictEqual(documentAmountSource("anesthesia_consent_log"), "none");
-    assert.strictEqual(
-      documentAmountSource("prescription_medication_order"),
-      "none",
-    );
+    assert.strictEqual(documentAmountSource("prescription_medication_order"), "none");
   });
 
   test("handles all valid document kinds without throwing and returns a valid source", () => {
@@ -205,40 +39,26 @@ describe("documentAmountSource", () => {
   });
 });
 
+// ════════════════════════════════════════════════════════════════════
+// documentRequiresPaidRecord
+// ════════════════════════════════════════════════════════════════════
+
 describe("documentRequiresPaidRecord", () => {
   test("returns expected boolean for different document kinds", () => {
     // Requires paid record
     assert.strictEqual(documentRequiresPaidRecord("completed_works_act"), true);
-    assert.strictEqual(
-      documentRequiresPaidRecord("tax_deduction_certificate"),
-      true,
-    );
+    assert.strictEqual(documentRequiresPaidRecord("tax_deduction_certificate"), true);
     assert.strictEqual(documentRequiresPaidRecord("payment_receipt"), true);
-    assert.strictEqual(
-      documentRequiresPaidRecord("payment_refund_correction_request"),
-      true,
-    );
-    assert.strictEqual(
-      documentRequiresPaidRecord("legacy_tax_deduction_certificate"),
-      true,
-    );
-    assert.strictEqual(
-      documentRequiresPaidRecord("tax_deduction_registry"),
-      true,
-    );
+    assert.strictEqual(documentRequiresPaidRecord("payment_refund_correction_request"), true);
+    assert.strictEqual(documentRequiresPaidRecord("legacy_tax_deduction_certificate"), true);
+    assert.strictEqual(documentRequiresPaidRecord("tax_deduction_registry"), true);
 
     // Doesn't require paid record
-    assert.strictEqual(
-      documentRequiresPaidRecord("paid_medical_services_contract"),
-      false,
-    );
+    assert.strictEqual(documentRequiresPaidRecord("paid_medical_services_contract"), false);
     assert.strictEqual(documentRequiresPaidRecord("treatment_plan"), false);
     assert.strictEqual(documentRequiresPaidRecord("payment_invoice"), false);
     assert.strictEqual(documentRequiresPaidRecord("informed_consent"), false);
-    assert.strictEqual(
-      documentRequiresPaidRecord("prescription_medication_order"),
-      false,
-    );
+    assert.strictEqual(documentRequiresPaidRecord("prescription_medication_order"), false);
     assert.strictEqual(documentRequiresPaidRecord("lab_work_order"), false);
   });
 
@@ -257,43 +77,139 @@ describe("documentRequiresPaidRecord", () => {
   });
 });
 
+// ════════════════════════════════════════════════════════════════════
+// documentPayloadActualKeys
+// ════════════════════════════════════════════════════════════════════
+
+describe("documentPayloadActualKeys", () => {
+  test("returns empty array for null or undefined", () => {
+    assert.deepStrictEqual(documentPayloadActualKeys(null), []);
+    assert.deepStrictEqual(documentPayloadActualKeys(undefined), []);
+  });
+
+  test("returns empty array for empty payload", () => {
+    assert.deepStrictEqual(documentPayloadActualKeys({}), []);
+  });
+
+  test("returns defined keys", () => {
+    const payload = {
+      treatmentPlan: { /* mock data */ },
+      completedWorksAct: { /* mock data */ },
+    };
+    // @ts-expect-error Mock payload
+    assert.deepStrictEqual(documentPayloadActualKeys(payload), ["treatmentPlan", "completedWorksAct"]);
+  });
+
+  test("filters out undefined values", () => {
+    const payload = {
+      treatmentPlan: { /* mock data */ },
+      completedWorksAct: undefined,
+    };
+    // @ts-expect-error Mock payload
+    assert.deepStrictEqual(documentPayloadActualKeys(payload), ["treatmentPlan"]);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════
+// documentPayloadAllowedKeys
+// ════════════════════════════════════════════════════════════════════
+
+describe("documentPayloadAllowedKeys", () => {
+  test("returns expected payload keys for specific document kinds", () => {
+    assert.deepStrictEqual(documentPayloadAllowedKeys("paid_medical_services_contract"), ["paidMedicalServicesContract"]);
+    assert.deepStrictEqual(documentPayloadAllowedKeys("treatment_plan"), ["treatmentPlan"]);
+    assert.deepStrictEqual(documentPayloadAllowedKeys("tax_deduction_certificate"), ["taxPaymentSelection"]);
+    assert.deepStrictEqual(documentPayloadAllowedKeys("patient_intake_questionnaire"), ["patientIntakeQuestionnaire"]);
+  });
+
+  test("returns an empty array for unknown document kinds", () => {
+    assert.deepStrictEqual(documentPayloadAllowedKeys("unknown_kind" as DocumentKind), []);
+  });
+
+  test("handles all valid document kinds without throwing and returns an array", () => {
+    for (const kind of documentKindSchema.options) {
+      const result = documentPayloadAllowedKeys(kind);
+      assert.ok(Array.isArray(result), `Expected array for kind ${kind}`);
+    }
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════
+// documentPayloadDisallowedKeys
+// ════════════════════════════════════════════════════════════════════
+
+describe("documentPayloadDisallowedKeys", () => {
+  test("returns empty array for null or undefined payload", () => {
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", null), []);
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined), []);
+  });
+
+  test("returns empty array when payload is an empty object", () => {
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", {}), []);
+  });
+
+  test("returns empty array when payload only contains allowed keys", () => {
+    const payload = {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: "2023-01-01",
+        patientSignature: { mode: "paper_signed", signedAt: "2023-01-01" },
+      },
+    };
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", payload as any), []);
+  });
+
+  test("returns array of disallowed keys when payload contains keys not allowed for the given kind", () => {
+    const payload = {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: "2023-01-01",
+        patientSignature: { mode: "paper_signed", signedAt: "2023-01-01" },
+      },
+      paidMedicalServicesContract: {
+        contractNumber: "123",
+        contractDate: "2023-01-01",
+        patientSignature: { mode: "paper_signed", signedAt: "2023-01-01" },
+      },
+    };
+    assert.deepStrictEqual(
+      documentPayloadDisallowedKeys("patient_intake_questionnaire", payload as any),
+      ["paidMedicalServicesContract"],
+    );
+  });
+
+  test("ignores keys with undefined values", () => {
+    const payload = {
+      patientIntakeQuestionnaire: {
+        answers: [],
+        completedAt: "2023-01-01",
+        patientSignature: { mode: "paper_signed", signedAt: "2023-01-01" },
+      },
+      paidMedicalServicesContract: undefined,
+    };
+    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", payload as any), []);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════
+// buildRuleBasedVisitDraftFromTranscript
+// ════════════════════════════════════════════════════════════════════
+
 describe("buildRuleBasedVisitDraftFromTranscript", () => {
   test("happy path: extracts all sections perfectly from a structured transcript", () => {
     const transcript =
       "Жалобы на боль в 36 зубе при накусывании. Анамнез: зуб болит уже третий день, аллергии на медикаменты нет. Объективно: глубокая кариозная полость, перкуссия резко болезненна. Диагноз: острый верхушечный периодонтит 36 зуба. Лечение: анестезия, коффердам, экстирпация пульпы, механическая и медикаментозная обработка корневых каналов, пломбирование каналов гуттаперчей, временная пломба.";
     const draft = buildRuleBasedVisitDraftFromTranscript(transcript);
 
-    // Complaint
-    assert.strictEqual(
-      draft.complaint,
-      "на боль в 36 зубе при накусывании",
-    );
-
-    // Anamnesis
-    assert.strictEqual(
-      draft.anamnesis,
-      "зуб болит уже третий день, аллергии на медикаменты нет",
-    );
-
-    // Objective
-    assert.strictEqual(
-      draft.objectiveStatus,
-      "глубокая кариозная полость, перкуссия резко болезненна",
-    );
-
-    // Diagnosis
-    assert.strictEqual(
-      draft.diagnosis,
-      "острый верхушечный периодонтит 36 зуба",
-    );
-
-    // Treatment
+    assert.strictEqual(draft.complaint, "на боль в 36 зубе при накусывании");
+    assert.strictEqual(draft.anamnesis, "зуб болит уже третий день, аллергии на медикаменты нет");
+    assert.strictEqual(draft.objectiveStatus, "глубокая кариозная полость, перкуссия резко болезненна");
+    assert.strictEqual(draft.diagnosis, "острый верхушечный периодонтит 36 зуба");
     assert.strictEqual(
       draft.treatmentPlan,
       "анестезия, коффердам, экстирпация пульпы, механическая и медикаментозная обработка корневых каналов, пломбирование каналов гуттаперчей, временная пломба",
     );
 
-    // Quality checks
     assert.ok(draft.quality);
     assert.strictEqual(draft.quality.level, "ready");
     assert.ok(draft.quality.confidence > 0.8);
@@ -304,10 +220,7 @@ describe("buildRuleBasedVisitDraftFromTranscript", () => {
     const transcript = "Просто болит зуб";
     const draft = buildRuleBasedVisitDraftFromTranscript(transcript);
 
-    // If complaint is present, it will be the text itself since no other sections exist.
     assert.strictEqual(draft.complaint, "Просто болит зуб");
-
-    // Check fallbacks
     assert.ok(draft.anamnesis?.includes("Анамнез уточнить"));
     assert.ok(draft.objectiveStatus?.includes("Просто болит зуб"));
     assert.strictEqual(draft.diagnosis, null);
@@ -337,7 +250,7 @@ describe("buildRuleBasedVisitDraftFromTranscript", () => {
 
     assert.ok(draft.quality);
     assert.strictEqual(draft.quality.level, "needs_more_dictation");
-    assert.strictEqual(draft.quality.confidence, 0.25); // Minimum confidence
+    assert.strictEqual(draft.quality.confidence, 0.25);
   });
 
   test("specialty differences: implantologist specialty alters fallbacks", () => {
@@ -346,64 +259,7 @@ describe("buildRuleBasedVisitDraftFromTranscript", () => {
     const universalDraft = buildRuleBasedVisitDraftFromTranscript(transcript, "universal");
     const implantologistDraft = buildRuleBasedVisitDraftFromTranscript(transcript, "implantologist");
 
-    // Implantologist should have a different objective fallback
     assert.notStrictEqual(universalDraft.objectiveStatus, implantologistDraft.objectiveStatus);
     assert.ok(implantologistDraft.objectiveStatus?.includes("уточнить зону адентии"));
   });
 });
-
-describe("documentPayloadDisallowedKeys", () => {
-  test("returns empty array for null or undefined payload", () => {
-    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", null), []);
-    assert.deepStrictEqual(documentPayloadDisallowedKeys("patient_intake_questionnaire", undefined), []);
-describe('documentPayloadDisallowedKeys', () => {
-  test('returns empty array when payload is null or undefined', () => {
-    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', null), []);
-    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', undefined), []);
-
-  test('returns empty array when payload is an empty object', () => {
-    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', {}), []);
-
-  test('returns empty array when payload only contains allowed keys', () => {
-      patientIntakeQuestionnaire: {
-        answers: [],
-        completedAt: '2023-01-01',
-        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
-    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), []);
-
-  test('returns array of disallowed keys when payload contains keys not allowed for the given kind', () => {
-      patientIntakeQuestionnaire: {
-        answers: [],
-        completedAt: '2023-01-01',
-        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
-      },
-      paidMedicalServicesContract: {
-        contractNumber: '123',
-        contractDate: '2023-01-01',
-        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
-    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), ['paidMedicalServicesContract']);
-
-  test('ignores keys with undefined values', () => {
-      patientIntakeQuestionnaire: {
-        answers: [],
-        completedAt: '2023-01-01',
-        patientSignature: { mode: 'paper_signed', signedAt: '2023-01-01' }
-      },
-      paidMedicalServicesContract: undefined
-    assert.deepStrictEqual(documentPayloadDisallowedKeys('patient_intake_questionnaire', payload as any), []);
-  });
-});
-describe('documentPayloadAllowedKeys', () => {
-  test('returns expected payload keys for known document kinds', () => {
-    assert.deepStrictEqual(documentPayloadAllowedKeys('paid_medical_services_contract'), ['paidMedicalServicesContract']);
-    assert.deepStrictEqual(documentPayloadAllowedKeys('treatment_plan'), ['treatmentPlan']);
-    assert.deepStrictEqual(documentPayloadAllowedKeys('tax_deduction_certificate'), ['taxPaymentSelection']);
-    assert.deepStrictEqual(documentPayloadAllowedKeys('patient_intake_questionnaire'), ['patientIntakeQuestionnaire']);
-
-  test('returns empty array for unknown document kinds', () => {
-    // Testing invalid input
-    assert.deepStrictEqual(documentPayloadAllowedKeys('unknown_document_kind' as DocumentKind), []);
-
-  test('handles all valid document kinds without throwing and returns an array', () => {
-      const result = documentPayloadAllowedKeys(kind);
-      assert.ok(Array.isArray(result));

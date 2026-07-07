@@ -379,6 +379,7 @@ export function PatientsView(props: PatientsViewProps) {
                   {patientCoreSaveGuidance}
                 </p>
               ) : null}
+            </section>
 
               {/* Odontogram Section */}
                 <div style={{ marginTop: '24px', marginBottom: '16px' }}>
@@ -388,6 +389,7 @@ export function PatientsView(props: PatientsViewProps) {
               {/* ShadowAnalyst — AI 2D X-Ray Analyzer */}
               <VisiographAnalyzer />
 
+            <section className="patient-admin-panel" aria-label="Дополнительные настройки">
             <details className="settings-advanced-block patient-docs-collapsible">
               <summary className="settings-advanced-toggle">
                 <span className="settings-advanced-label">

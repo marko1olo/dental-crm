@@ -41,7 +41,7 @@ import { startWatchdog } from "./watchdog.js";
 
 loadAdditionalServerEnv();
 startWatchdog();
-startNotificationWorker();
+// startNotificationWorker();
 
 async function checkProxyPortDirectly(proxyUrlString: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -236,11 +236,11 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerSurgicalRoutes(app);
 
   if (options.startTelegramWorker !== false) {
-    const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
-    const recallWorkerTimer = startRecallWorker();
+    // const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
+    // const recallWorkerTimer = startRecallWorker();
     app.addHook("onClose", async () => {
-      telegramOutboxDueWorker.stop();
-      clearInterval(recallWorkerTimer);
+      // telegramOutboxDueWorker.stop();
+      // clearInterval(recallWorkerTimer);
     });
   }
 

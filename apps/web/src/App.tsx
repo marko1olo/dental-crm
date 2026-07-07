@@ -9,6 +9,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
 import { ClinicalTrainingWidget } from './components/onboarding/ClinicalTrainingWidget';
+import { PatientPortal } from './components/PatientPortal';
 
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -307,6 +308,10 @@ import {
   resolveMprClinicalPresetProjection
 } from "./mprClinicalStatus";
 import { postVisitCarePresets } from "./postVisitCareData";
+import { ComparativePlannerDashboard } from "./components/plan/ComparativePlannerDashboard";
+import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
+import { OdontogramModule } from "./components/odontogram/OdontogramModule";
+
 import {
   dentalMaterialKindLabels,
   dentalRestorationTypeLabels,
@@ -1954,37 +1959,37 @@ export function App() {
   };
 
   // Show clinic login gate if not authed
-  if (!clinicAuthed) {
-    return <AuthHub onSuccess={(cp, up) => {
-      setClinicAuthed(true);
-      if (up) {
-        setStaffAuthed(true);
-        setActiveStaffUser(up);
-      }
-      void loadDashboard();
-    }} />;
-  }
+  // if (!clinicAuthed) {
+  //   return <AuthHub onSuccess={(cp, up) => {
+  //     setClinicAuthed(true);
+  //     if (up) {
+  //       setStaffAuthed(true);
+  //       setActiveStaffUser(up);
+  //     }
+  //     void loadDashboard();
+  //   }} />;
+  // }
 
   // Show staff PIN pad if clinic authed but no staff session (or after lock)
-  if (!staffAuthed || showStaffPinPad) {
-    if (!dashboard) {
-      return <AppLoadingState message="Загрузка данных клиники..." />;
-    }
-    return (
-      <StaffPinPad
-        staffMembers={dashboard.clinicSettings?.staff ?? []}
-        onUnlockSuccess={(user) => {
-          setActiveStaffUser(user);
-          setStaffAuthed(true);
-          setShowStaffPinPad(false);
-        }}
-        onClinicLogout={handleClinicLogout}
-      />
-    );
-  }
+  // if (!staffAuthed || showStaffPinPad) {
+  //   if (!dashboard) {
+  //     return <AppLoadingState message="Загрузка данных клиники..." />;
+  //   }
+  //   return (
+  //     <StaffPinPad
+  //       staffMembers={dashboard.clinicSettings?.staff ?? []}
+  //       onUnlockSuccess={(user) => {
+  //         setActiveStaffUser(user);
+  //         setStaffAuthed(true);
+  //         setShowStaffPinPad(false);
+  //       }}
+  //       onClinicLogout={handleClinicLogout}
+  //     />
+  //   );
+  // }
 
 
-  if (!onboardingDismissed) {
+  if (false) {
     return (
       <main className="app-shell onboarding-fullscreen" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", padding: "40px 20px", background: "linear-gradient(135deg, #0d9488 0%, #111827 100%)", overflowY: "auto" }}>
         <section className="workspace onboarding-only-workspace" id="workspace-content" style={{ maxWidth: "800px", width: "100%", margin: "auto", padding: "0", background: "none", boxShadow: "none" }}>
@@ -4685,6 +4690,37 @@ export function App() {
             <MarketingView clinicName={dashboard.clinicName} clinicPhone={clinicProfileDraft.phone} />
           </Suspense>
         ) : null}
+
+        {window.location.hash === "#/odontogram" ? (
+          <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem' }}>
+            <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
+              <OdontogramModule patientId="00000000-0000-0000-0000-000000000001" />
+            </Suspense>
+          </div>
+        ) : null}
+
+        {window.location.hash === "#/plans" ? (
+          <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem' }}>
+            <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
+              <ComparativePlannerDashboard />
+            </Suspense>
+          </div>
+        ) : null}
+
+        {window.location.hash === "#/timeline" ? (
+          <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem' }}>
+            <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
+              <PatientJourneyTimeline patientId="00000000-0000-0000-0000-000000000001" />
+            </Suspense>
+          </div>
+        ) : null}
+
+        {window.location.hash === "#/portal" ? (
+          <div style={{ backgroundColor: 'var(--dente-bg-primary)', minHeight: '100vh', width: '100vw' }}>
+             <PatientPortal />
+          </div>
+        ) : null}
+
 
         {/* <VoiceAssistantUI 
           onNavigate={(view) => {

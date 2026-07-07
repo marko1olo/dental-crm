@@ -16,8 +16,12 @@ import {
   Sparkles,
   Stethoscope,
   Users,
-  Lock
+  Lock,
+  Sun,
+  Moon
 } from "lucide-react";
+
+import { useState, useEffect } from "react";
 
 export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "communications", "settings", "marketing"] as const;
 export type AppView = (typeof appViews)[number];
@@ -171,6 +175,18 @@ export function WorkspaceTopbar({
   todayIso,
   onLockSession
 }: WorkspaceTopbarProps) {
+  const [theme, setTheme] = useState(() => localStorage.getItem("dente_theme") || "dark");
+  useEffect(() => {
+    document.body.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("dente_theme", theme);
+  }, [theme]);
+  const toggleTheme = () => setTheme(prev => prev === "dark" ? "light" : "dark");
+
   return (
     <header className="topbar">
       <div>
@@ -232,6 +248,15 @@ export function WorkspaceTopbar({
           onClick={onGoToDictation}
         >
           <Mic aria-hidden="true" />
+        </button>
+        <button
+          aria-label="Переключить тему"
+          className="icon-button"
+          type="button"
+          title="Переключить тему"
+          onClick={toggleTheme}
+        >
+          {theme === "dark" ? <Sun aria-hidden="true" size={20} /> : <Moon aria-hidden="true" size={20} />}
         </button>
         {onLockSession ? (
           <button

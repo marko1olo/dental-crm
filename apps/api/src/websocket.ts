@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
+import type { WebSocket } from "ws";
 
 // Global connection pool
 const connections = new Set<WebSocket>();
@@ -9,13 +10,11 @@ export async function setupWebsockets(app: FastifyInstance) {
   await app.register(fastifyWebsocket);
 
   // Define the WS route
-  app.get("/api/ws", { websocket: true }, (connection, req) => {
-    // Cast fastify websocket wrapper to native WebSocket if needed, or just keep it
-    const ws = connection.socket;
+  app.get("/api/ws", { websocket: true } as any, (connection: any, _req: any) => {
+    const ws: WebSocket = connection.socket ?? connection;
     connections.add(ws);
 
     ws.on("message", (message: Buffer) => {
-      // In a real app, handle PING/PONG or client events
       const msgStr = message.toString();
       if (msgStr === "PING") {
         ws.send("PONG");
