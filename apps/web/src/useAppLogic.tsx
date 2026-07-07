@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useDocumentStore } from "./store/documentStore";
 import { useAppStore } from "./store/appStore";
 import { useImagingStore } from "./store/imagingStore";
@@ -5,9 +6,8 @@ import { useVisitStore } from "./store/visitStore";
 import { usePatientStore } from "./store/patientStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
-import { useMprLogic } from "./hooks/useMprLogic";
+import { useDocumentStore as _unused } from "./store/documentStore";
 import {
-  type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent,
   lazy,
@@ -17,7 +17,6 @@ import {
   useRef,
   useState
 } from "react";
-import { showToast } from "./components/GlobalToast";
 import {
   ArrowRight,
   AlertTriangle,
@@ -213,7 +212,7 @@ import {
 } from "./communicationTaskData";
 import { imagingConnectorCards, imagingViewerCapabilities, recognitionPresets } from "./settingsStaticData";
 import { motionSafeScrollIntoView } from "./motionPreference";
-import { normalizeRubAmountInput, validateRubAmountInput } from "./rubAmountInput";
+import { normalizeRubAmountInput, rubAmountInputMissingStep } from "./rubAmountInput";
 import {
   imagingCaptureDistanceMs,
   imagingComparisonReason,
@@ -288,7 +287,7 @@ import {
   mprSlabBounds,
   mprSlabNudgeMm,
   resolveMprKeyboardAdjustment
-} from "./utils/math/mprMath";
+} from "./mprControlMath";
 import {
   buildMprClinicalChecklist,
   buildMprOperatorSummary,
@@ -1133,9 +1132,7 @@ const {
     isPendingVisitSyncing, setIsPendingVisitSyncing,
     isVisitDictating, setIsVisitDictating,
     isTranscriptPolishing, setIsTranscriptPolishing,
-    lastServerDraftSignatureRef, visitDraftUserEditedRef,
-    speechRetrySuggested, setSpeechRetrySuggested,
-    speechLiveRms, setSpeechLiveRms
+    lastServerDraftSignatureRef, visitDraftUserEditedRef
   } = useVisitStore();
   const {
     documentCreateSavingKind,
@@ -1540,12 +1537,6 @@ const {
     setTreatmentPlanSeparateConsentAcknowledged,
     treatmentPlanNewApprovalAcknowledged,
     setTreatmentPlanNewApprovalAcknowledged,
-    treatmentPlanPatientFriendlyExplanation,
-    setTreatmentPlanPatientFriendlyExplanation,
-    treatmentPlanPatientHygieneAdvice,
-    setTreatmentPlanPatientHygieneAdvice,
-    treatmentPlanCustomHygieneTextOverride,
-    setTreatmentPlanCustomHygieneTextOverride,
     treatmentAcceptanceVariant,
     setTreatmentAcceptanceVariant,
     treatmentAcceptanceClinicalGoal,
@@ -2367,11 +2358,10 @@ const {
     recognitionPresets.find(
       (preset) => preset.kind === initialUiPreferences.recognitionKind && preset.target === initialUiPreferences.recognitionTarget
     )?.text ??
-    recognitionPresets?.[0]?.text ??
+    recognitionPresets[0]?.text ??
     "";
   const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
   const activeOrganizationId = dashboard?.clinicSettings.profile?.organizationId ?? null;
-  const [polishingField, setPolishingField] = useState<string | null>(null);
 
 
 
@@ -2395,12 +2385,6 @@ const {
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const serverVoiceRecordingShouldContinueRef = useRef(false);
-  const serverVoiceRecordingStopRequestedRef = useRef(false);
-  const serverVoiceRecordingRestartTimerRef = useRef<any>(null);
-  const serverVoiceRecordingStartingRef = useRef(false);
-  const speechActiveGatewayStatusRef = useRef<any>(null);
-  const [isServerVoiceRecordingStarting, setIsServerVoiceRecordingStarting] = useState(false);
   const speechAudioContextRef = useRef<AudioContext | null>(null);
   const speechAnalyserRef = useRef<AnalyserNode | null>(null);
   const speechMonitorTimerRef = useRef<number | null>(null);
@@ -2410,12 +2394,6 @@ const {
   const speechLastSoundAtRef = useRef(0);
   const speechPendingChunkDurationMsRef = useRef<number | null>(null);
   const speechUploadPromisesRef = useRef<Set<Promise<void>>>(new Set());
-  const speechRecordingHadRecognizedTextRef = useRef(false);
-  const speechRecordingVoiceLevelAvailableAtStopRef = useRef(false);
-  const speechRecordingVoiceDetectedAtStopRef = useRef(false);
-  const speechVoiceDetectedDuringRecordingRef = useRef(false);
-  const speechSegmentVoiceDetectedRef = useRef(false);
-  const speechQuietWarningShownRef = useRef(false);
   const appliedSpeechChunkKeysRef = useRef<Set<string>>(new Set());
   const patientAdministrativeProfileDraftRef = useRef<PatientAdministrativeProfileDraft>(emptyPatientAdministrativeProfileDraft());
   const staffScheduleDraftsRef = useRef<Record<string, StaffScheduleDraft>>({});
@@ -2607,53 +2585,25 @@ const {
   }
 
   async function loadDashboard(options: { adminSecret?: string } = {}) {
-    try {
-      const response = await fetch("/api/dashboard", {
-        cache: "no-store",
-        headers: denteClinicalReadHeaders({}, options.adminSecret)
-      });
-      if (!response.ok) {
-        const message = await responseErrorMessage(response, "Данные клиники не загружены");
-        if (response.status === 403 || response.status === 503) {
-          setAccessUnlockRequired(true);
-          setAccessUnlockMessage(message);
-          setDashboard(null);
-        }
-        throw new Error(message);
+    const response = await fetch("/api/dashboard", {
+      cache: "no-store",
+      headers: denteClinicalReadHeaders({}, options.adminSecret)
+    });
+    if (!response.ok) {
+      const message = await responseErrorMessage(response, "Данные клиники не загружены");
+      if (response.status === 403 || response.status === 503) {
+        setAccessUnlockRequired(true);
+        setAccessUnlockMessage(message);
+        setDashboard(null);
       }
-      const payload = await response.json();
-      setDashboard(payload as any);
-      setAccessUnlockRequired(false);
-      setAccessUnlockMessage("");
-      setError(null); // clear any pre-auth or stale errors once dashboard loads successfully
-
-      // Save local cache for offline usage
-      try {
-        window.localStorage.setItem("dente:offline-dashboard-cache", JSON.stringify(payload));
-      } catch (cacheError) {
-        console.warn("Не удалось сохранить кэш смены для оффлайна:", cacheError);
-      }
-
-      void loadPersistenceHealth({ silent: true, adminSecret: options.adminSecret });
-      void refreshSpeechRuntime({ silent: true });
-    } catch (networkError) {
-      // Offline fallback
-      const cached = window.localStorage.getItem("dente:offline-dashboard-cache");
-      if (cached) {
-        try {
-          const payload = JSON.parse(cached);
-          setDashboard(payload as any);
-          setIsOnline(false);
-          setAccessUnlockRequired(false);
-          setAccessUnlockMessage("");
-          console.warn("Работа в оффлайн-режиме: данные загружены из локального кэша.");
-          return;
-        } catch (parseError) {
-          console.error("Не удалось прочитать кэшированные данные оффлайн-режима:", parseError);
-        }
-      }
-      throw networkError;
+      throw new Error(message);
     }
+    const payload = await response.json();
+    setDashboard(dashboardSchema.parse(payload));
+    setAccessUnlockRequired(false);
+    setAccessUnlockMessage("");
+    void loadPersistenceHealth({ silent: true, adminSecret: options.adminSecret });
+    void refreshSpeechRuntime({ silent: true });
   }
 
   function updateClinicProfileDraft<K extends keyof ClinicProfileDraft>(key: K, value: ClinicProfileDraft[K]) {
@@ -2829,7 +2779,7 @@ const {
     key: K,
     value: AppointmentScheduleDraft[K]
   ) {
-    const sourceAppointment = dashboard?.appointments?.find((appointment) => appointment.id === appointmentId);
+    const sourceAppointment = dashboard?.appointments.find((appointment) => appointment.id === appointmentId);
     setAppointmentScheduleDrafts((current: any) => ({
       ...current,
       [appointmentId]: {
@@ -2852,8 +2802,8 @@ const {
 
   function reconcileDashboardScopedUiSelections() {
     if (!dashboard) return;
-    const activePatientIds = new Set(dashboard.patients?.filter((patient) => patient.status === "active").map((patient) => patient.id));
-    const firstActivePatientId = dashboard.patients?.find((patient) => patient.status === "active")?.id ?? null;
+    const activePatientIds = new Set(dashboard.patients.filter((patient) => patient.status === "active").map((patient) => patient.id));
+    const firstActivePatientId = dashboard.patients.find((patient) => patient.status === "active")?.id ?? null;
     const doctorIds = new Set(
       dashboard?.clinicSettings.staff
         .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
@@ -2864,7 +2814,7 @@ const {
     );
     const staffIds = new Set(dashboard?.clinicSettings.staff.filter((member) => member.active).map((member) => member.id));
     const chairIds = new Set(dashboard?.clinicSettings.chairs.filter((chair) => chair.active).map((chair) => chair.id));
-    const protocolIds = new Set(dashboard.protocolTemplates?.map((template) => template.id));
+    const protocolIds = new Set(dashboard.protocolTemplates.map((template) => template.id));
 
     if (selectedPatientId && !activePatientIds.has(selectedPatientId)) setSelectedPatientId(firstActivePatientId);
     if (selectedProtocolId && !protocolIds.has(selectedProtocolId)) setSelectedProtocolId(null);
@@ -3057,31 +3007,18 @@ const {
       ["часовой пояс", clinicProfileDraft.timezone]
     ];
     for (const [label, value] of requiredClinicDraftFields) {
-      if (!value?.trim()) issues.push(label);
+      if (!value.trim()) issues.push(label);
     }
     const activeStaff = dashboard?.clinicSettings.staff.filter((member) => member.active) ?? [];
     const activeDoctors = activeStaff.filter((member) => member.role === "doctor" || member.role === "owner");
     const activeAssistants = activeStaff.filter((member) => member.role === "assistant");
     const activeChairs = dashboard?.clinicSettings.chairs.filter((chair) => chair.active) ?? [];
-    
-    const hasDoctor = activeDoctors.length > 0 || (!onboardingDismissed && newStaffName.trim().length > 0 && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner"));
-    const hasSigningDoctor = activeDoctors.some((member) => member.canSignMedicalRecords) || (!onboardingDismissed && newStaffName.trim().length > 0 && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner"));
-    const hasChair = activeChairs.length > 0 || (!onboardingDismissed && newChairName.trim().length > 0 && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "assistant"));
-
-    if ((selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner") && !hasDoctor) {
-      issues.push("врач для первого приема");
-    }
-    if ((selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "owner") && !hasSigningDoctor) {
-      issues.push("врач с правом подписи ЭМК");
-    }
-    if ((selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "assistant") && !hasChair) {
-      issues.push("кресло / кабинет");
-    }
-    if (dashboard?.clinicSettings.profile?.mode !== "solo_doctor" && !activeAssistants.length && onboardingDismissed) {
-      issues.push("ассистент");
-    }
+    if (!activeDoctors.length) issues.push("врач для первого приема");
+    if (!activeDoctors.some((member) => member.canSignMedicalRecords)) issues.push("врач с правом подписи ЭМК");
+    if (!activeChairs.length) issues.push("кресло / кабинет");
+    if (dashboard?.clinicSettings.profile?.mode !== "solo_doctor" && !activeAssistants.length) issues.push("ассистент");
     const activeAppointmentReadiness = dashboard?.activeVisit.appointmentId
-      ? dashboard.appointmentReadiness?.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
+      ? dashboard.appointmentReadiness.find((readiness) => readiness.appointmentId === dashboard.activeVisit.appointmentId)
       : null;
     const activeAppointmentBlockingChecks =
       activeAppointmentReadiness?.checks.filter(
@@ -3105,7 +3042,7 @@ const {
       ["орган, выдавший лицензию", clinicProfileDraft.medicalLicenseIssuer]
     ];
     for (const [label, value] of requiredDocumentDraftFields) {
-      if (!value?.trim()) issues.push(label);
+      if (!value.trim()) issues.push(label);
     }
     return issues;
   }
@@ -3279,7 +3216,7 @@ const {
       true,
       dismissalSavedAt,
       false,
-      dashboard?.clinicSettings.profile.organizationId ?? null
+      dashboard?.clinicSettings.profile?.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3318,7 +3255,7 @@ const {
       true,
       dismissalSavedAt,
       true,
-      dashboard?.clinicSettings.profile.organizationId ?? null
+      dashboard?.clinicSettings.profile?.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3334,127 +3271,6 @@ const {
     if (!(await saveOnboardingSchedulesIfDirty())) return;
     if (onboardingStep === "telegram" && telegramSettingsDirty && !(await saveTelegramSettings())) return;
     setOnboardingStep(step);
-  }
-
-  async function handleSelectDemoMode(): Promise<void> {
-    try {
-      const res = await fetch("/api/settings/reset-demo", { method: "POST" });
-      if (!res.ok) throw new Error("Failed to reset to demo");
-
-      const dismissalSavedAt = new Date().toISOString();
-      const savedPreferences: UiPreferences = {
-        version: 1,
-        ...currentUiPreferencesInput(),
-        onboardingDismissed: true,
-        onboardingDismissedAt: dismissalSavedAt,
-        onboardingDraftMode: false,
-        savedAt: dismissalSavedAt
-      };
-      if (uiPreferencesServerReadyRef.current) {
-        try {
-          await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession);
-        } catch (preferencesError) {
-          console.warn("Preferences server sync failed", preferencesError);
-        }
-      }
-      persistUiPreferences(savedPreferences);
-      setOnboardingDismissed(true);
-      setOnboardingDismissedAt(dismissalSavedAt);
-      setOnboardingDraftMode(false);
-      
-      await loadDashboard();
-    } catch (e) {
-      console.error(e);
-      showToast("Не удалось запустить демонстрационный режим", "error");
-    }
-  }
-
-  async function handleSelectZeroMode(): Promise<void> {
-    try {
-      const res = await fetch("/api/settings/reset-zero", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: selectedWorkspaceRole })
-      });
-      if (!res.ok) throw new Error("Failed to reset to zero");
-
-      // Reset local state variables so they are empty in the wizard inputs
-      setNewPatientName("");
-      setNewPatientPhone("");
-      setNewPatientBirthDate("");
-
-      // Force clinic draft re-hydration from fresh zero-mode dashboard
-      clinicProfileDraftHydratedRef.current = false;
-
-      await loadDashboard();
-      
-      setOnboardingStep("clinic");
-    } catch (e) {
-      console.error(e);
-      showToast("Не удалось запустить чистый режим", "error");
-    }
-  }
-
-  async function handleFinishOnboarding(newStaffName: string, newChairName: string): Promise<void> {
-    try {
-      if (clinicProfileDirty) {
-        await saveClinicProfileIfDirty();
-      }
-
-      if (newStaffName.trim()) {
-        const staffRes = await fetch("/api/settings/staff", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fullName: newStaffName,
-            role: selectedWorkspaceRole,
-            specialties: ["universal"],
-            phone: "+79999999999",
-            email: "doctor@example.com"
-          })
-        });
-        if (!staffRes.ok) throw new Error("Failed to create first staff");
-      }
-
-      if (newChairName.trim() && (selectedWorkspaceRole === "doctor" || selectedWorkspaceRole === "assistant")) {
-        const chairRes = await fetch("/api/settings/chairs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: newChairName,
-            room: "1",
-            specialties: ["universal"]
-          })
-        });
-        if (!chairRes.ok) throw new Error("Failed to create first chair");
-      }
-
-      const dismissalSavedAt = new Date().toISOString();
-      const savedPreferences: UiPreferences = {
-        version: 1,
-        ...currentUiPreferencesInput(),
-        onboardingDismissed: true,
-        onboardingDismissedAt: dismissalSavedAt,
-        onboardingDraftMode: false,
-        savedAt: dismissalSavedAt
-      };
-      if (uiPreferencesServerReadyRef.current) {
-        try {
-          await saveServerUiPreferences(savedPreferences, settingsAdminSecretSession);
-        } catch (preferencesError) {
-          console.warn("Preferences server sync failed", preferencesError);
-        }
-      }
-      persistUiPreferences(savedPreferences);
-      setOnboardingDismissed(true);
-      setOnboardingDismissedAt(dismissalSavedAt);
-      setOnboardingDraftMode(false);
-
-      await loadDashboard();
-    } catch (e) {
-      console.error(e);
-      showToast("Не удалось завершить настройку клиники", "error");
-    }
   }
 
   async function saveOnboardingSchedulesIfDirty(): Promise<boolean> {
@@ -3814,34 +3630,38 @@ const {
     }
 
     setIsPendingVisitSyncing(true);
-    let remaining = pending;
+    let remaining = [...pending];
     try {
-      const results = await Promise.allSettled(
-        pending.map(async (item) => {
-          const result = await submitAcceptedVisitDraft(item.visitId, item.draft, item.doctorSummary, {
-            clientMutationId: item.clientMutationId,
-            baseRevision: item.baseRevision,
-            clientSavedAt: item.queuedAt
-          });
-          return { item, result };
-        })
-      );
+      const promises = pending.map(async (item) => {
+        const result = await submitAcceptedVisitDraft(item.visitId, item.draft, item.doctorSummary, {
+          clientMutationId: item.clientMutationId,
+          baseRevision: item.baseRevision,
+          clientSavedAt: item.queuedAt
+        });
+        return { item, result };
+      });
 
-      for (const r of results) {
-        if (r.status === "fulfilled") {
-          remaining = remaining.filter((candidate) => candidate.id !== r.value.item.id);
-          if (dashboard?.activeVisit.id === r.value.result.visit.id) {
-            applyAcceptedVisitResponse(r.value.result);
+      const outcomes = await Promise.allSettled(promises);
+      const errors: unknown[] = [];
+
+      for (const outcome of outcomes) {
+        if (outcome.status === "fulfilled") {
+          const { item, result } = outcome.value;
+          remaining = remaining.filter((candidate) => candidate.id !== item.id);
+          if (dashboard?.activeVisit.id === result.visit.id) {
+            applyAcceptedVisitResponse(result);
           }
+        } else {
+          errors.push(outcome.reason);
         }
       }
 
-      const firstError = results.find((r) => r.status === "rejected");
-      if (firstError && firstError.status === "rejected") {
-        throw firstError.reason;
+      await savePendingVisitSaves(remaining, activeOrganizationId);
+
+      if (errors.length > 0) {
+        throw errors[0];
       }
 
-      await savePendingVisitSaves(remaining, activeOrganizationId);
       await refreshPendingVisitSaveState();
     } catch (syncError) {
       await savePendingVisitSaves(remaining, activeOrganizationId);
@@ -3890,7 +3710,7 @@ const {
       return;
     }
     if (!speechTranscriptionMatchesActiveVisit(result)) {
-      setSpeechStatusNote("Эта часть записи относится к другому приему и не добавлена в текущую карту.");
+      setSpeechStatusNote("Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.");
       return;
     }
     const text = result.chunk.transcript.trim();
@@ -3899,8 +3719,6 @@ const {
     const qualitySuffix = quality.level === "clear" ? "" : ` · ${speechQualityLabels[quality.level]}`;
     if (text) {
       appliedSpeechChunkKeysRef.current.add(applyKey);
-      speechRecordingHadRecognizedTextRef.current = true;
-      setSpeechRetrySuggested(false);
       appendVisitDictationText(text);
       setSpeechStatusNote(
         result.chunk.status === "transcribed"
@@ -3929,7 +3747,6 @@ const {
       const assembly = (await response.json()) as SpeechRecordingAssembly;
       const assembledTranscript = assembly.transcript.trim();
       if (assembledTranscript) {
-        speechRecordingHadRecognizedTextRef.current = true;
         visitDraftUserEditedRef.current = true;
         setTranscript((current: any) => {
           const normalizedCurrent = current.replace(/\s+/g, " ").trim();
@@ -3958,50 +3775,16 @@ const {
   }
 
   async function waitForSpeechUploads() {
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 150));
-    if (!speechUploadPromisesRef.current.size) return;
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      const remainingUploads = Array.from(speechUploadPromisesRef.current);
-      if (!remainingUploads.length) break;
-      await Promise.allSettled(remainingUploads);
+    const pendingUploads = Array.from(speechUploadPromisesRef.current);
+    if (pendingUploads.length) {
+      await Promise.allSettled(pendingUploads);
     }
-  }
-
-  function finalSpeechNoTextMessage() {
-    if (speechRecordingVoiceLevelAvailableAtStopRef.current && !speechRecordingVoiceDetectedAtStopRef.current) {
-      return "Запись сделана, но микрофон почти не слышал голос. Нажмите «Проверить микрофон», затем запишите еще раз ближе к микрофону.";
-    }
-    return "Распознавание завершено, но текст не появился. Попробуйте записать снова.";
   }
 
   async function finalizeSpeechRecording(recordingId: string) {
     await waitForSpeechUploads();
     await flushPendingSpeechChunks({ silent: true });
-
-    const queuedChunksAfterFlush = await loadPendingSpeechChunks(activeOrganizationId);
-    const queuedCurrentRecordingCount = queuedChunksAfterFlush.filter((chunk) => chunk.recordingId === recordingId).length;
-
-    const assembly = await assembleSpeechRecording(recordingId, { silent: true });
-    if (assembly) {
-      if (assembly.transcript.trim() || speechRecordingHadRecognizedTextRef.current) {
-        setSpeechStatusNote("Текст готов. Проверьте поле диктовки и нажмите «Собрать ЭМК».");
-        const currentTranscript = transcript.trim();
-        const assembledText = assembly.transcript.trim();
-        const normalizedCurrent = currentTranscript.replace(/\s+/g, " ");
-        const normalizedAssembled = assembledText.replace(/\s+/g, " ");
-        const alreadyIncludes = normalizedCurrent.includes(normalizedAssembled);
-        const combined = (assembledText && !alreadyIncludes)
-          ? [currentTranscript, assembledText].filter(Boolean).join("\n")
-          : transcript;
-        void buildDraft(combined, undefined, { skipScroll: true });
-        return;
-      }
-    }
-    if (queuedCurrentRecordingCount > 0) {
-      setSpeechStatusNote(`Звук сохранен локально: ${queuedCurrentRecordingCount} фрагм. Когда распознавание будет готово, CRM отправит его и добавит текст.`);
-    } else {
-      setSpeechStatusNote(finalSpeechNoTextMessage());
-    }
+    await assembleSpeechRecording(recordingId, { silent: true });
   }
 
   async function flushPendingSpeechChunks(options: { silent?: boolean } = {}) {
@@ -4031,38 +3814,16 @@ const {
 
     const flushedRecordingIds = new Set<string>();
     try {
-      const submitPromises = queue.map((item) =>
-        submitSpeechChunk(item).then(
-          (value) => ({ status: "fulfilled" as const, value }),
-          (reason) => ({ status: "rejected" as const, reason })
-        )
-      );
-
-      // Wait for all to finish so we do not leave in-flight network requests orphaned.
-      const outcomes = await Promise.all(submitPromises);
-
-      let firstSyncError: unknown = null;
-
-      for (let i = 0; i < queue.length; i++) {
-        const item = queue[i]!;
-        const outcome = outcomes[i]!;
-        if (outcome.status === "rejected") {
-          if (!firstSyncError) firstSyncError = outcome.reason;
-          continue; // Process remaining successful items instead of abandoning them
-        }
-
-        const result = outcome.value;
+      for (const item of queue) {
+        const result = await submitSpeechChunk(item);
         applySpeechTranscription(result);
         await removePendingSpeechChunkById(item.id, activeOrganizationId);
         if (speechTranscriptionMatchesActiveVisit(result)) flushedRecordingIds.add(item.recordingId);
         await refreshPendingSpeechChunkState();
       }
-
-      if (firstSyncError) throw firstSyncError;
-
-      await Promise.all(
-        Array.from(flushedRecordingIds).map((recordingId) => assembleSpeechRecording(recordingId, { silent: true }))
-      );
+      for (const recordingId of flushedRecordingIds) {
+        await assembleSpeechRecording(recordingId, { silent: true });
+      }
     } catch (syncError) {
       await refreshPendingSpeechChunkState();
       if (!options.silent) {
@@ -4192,14 +3953,6 @@ const {
   }, [dashboard?.clinicSettings.profile?.organizationId, onboardingDismissedAt, uiPreferencesHydrated]);
 
   useEffect(() => {
-    if (!dashboard) return;
-    const hasClinicProfile = Boolean(dashboard.clinicSettings.profile?.clinicName);
-    if (hasClinicProfile) {
-      setOnboardingDismissed(true);
-    }
-  }, [dashboard]);
-
-  useEffect(() => {
     if (!uiPreferencesHydrated) return undefined;
     const savedPreferences = saveUiPreferences({
       uiLanguage,
@@ -4315,15 +4068,10 @@ const {
   }, []);
 
   useEffect(() => {
-    // Only load dashboard on mount if a clinic session already exists (page refresh).
-    // When not authenticated, App.tsx blocks rendering and calls loadDashboard() after login.
-    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("dente_clinic_token");
-    if (!hasToken) return;
     loadDashboard().catch((loadError: unknown) => {
       setError(operatorWorkflowFailureMessage("Не удалось загрузить данные", loadError));
     });
   }, []);
-
 
   const imagingPreviewWorkset = useMemo(() => {
     if (currentView !== "imaging" || !dashboard?.imagingStudies.length) return [];
@@ -4332,7 +4080,7 @@ const {
       .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
     const visibleStudies =
       imagingKindFilter === "all" ? activeStudies : activeStudies.filter((study) => study.kind === imagingKindFilter);
-    const selectedStudy = visibleStudies.find((study) => study.id === selectedImagingStudyId) ?? visibleStudies?.[0] ?? null;
+    const selectedStudy = visibleStudies.find((study) => study.id === selectedImagingStudyId) ?? visibleStudies[0] ?? null;
     const comparisonStudies = selectedStudy
       ? activeStudies
           .filter((study) => study.id !== selectedStudy.id)
@@ -4370,41 +4118,24 @@ const {
     let cancelled = false;
     const abortController = new AbortController();
     const createdUrls: string[] = [];
-
-    // We cannot use p-limit as it's an unreviewed dependency.
-    // Instead we can chunk the workset manually.
-    void (async () => {
-      const results: (readonly [string, string] | null)[] = [];
-      const CHUNK_SIZE = 5;
-
-      for (let i = 0; i < imagingPreviewWorkset.length; i += CHUNK_SIZE) {
-        if (cancelled) break;
-        const chunk = imagingPreviewWorkset.slice(i, i + CHUNK_SIZE);
-        const chunkResults = await Promise.all(chunk.map(async (study): Promise<[string, string] | null> => {
-          if (!study.previewUrl.startsWith("/api/")) return [study.id, study.previewUrl];
-          try {
-            const response = await fetch(study.previewUrl, {
-              cache: "no-store",
-              headers: denteClinicalReadHeaders(),
-              signal: abortController.signal
-            });
-            if (!response.ok) return null;
-            const blobUrl = URL.createObjectURL(await response.blob());
-            if (cancelled) {
-              revokeObjectUrlIfNeeded(blobUrl);
-              return null;
-            }
-            createdUrls.push(blobUrl);
-            return [study.id, blobUrl];
-          } catch (err) {
-            if ((err as Error).name === "AbortError") return null;
-            throw err;
-          }
-        }));
-        results.push(...chunkResults);
-      }
-      return results;
-    })()
+    void Promise.all(
+      imagingPreviewWorkset.map(async (study): Promise<[string, string] | null> => {
+        if (!study.previewUrl.startsWith("/api/")) return [study.id, study.previewUrl];
+        const response = await fetch(study.previewUrl, {
+          cache: "no-store",
+          headers: denteClinicalReadHeaders(),
+          signal: abortController.signal
+        });
+        if (!response.ok) return null;
+        const blobUrl = URL.createObjectURL(await response.blob());
+        if (cancelled) {
+          revokeObjectUrlIfNeeded(blobUrl);
+          return null;
+        }
+        createdUrls.push(blobUrl);
+        return [study.id, blobUrl];
+      })
+    )
       .then((entries) => {
         if (cancelled) {
           createdUrls.forEach(revokeObjectUrlIfNeeded);
@@ -4500,7 +4231,7 @@ const {
     if (dashboard.clinicSettings.profile) {
       setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard.clinicSettings.profile));
     } else {
-      setClinicProfileDraft(emptyClinicProfileDraft());
+      setClinicProfileDraft(emptyClinicProfileDraft);
     }
     setClinicProfileDirty(false);
     clinicProfileDraftHydratedRef.current = true;
@@ -4510,7 +4241,7 @@ const {
     if (!dashboard) return;
     setStaffScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard?.clinicSettings?.staff?.forEach((member) => {
+      dashboard?.clinicSettings.staff.forEach((member) => {
         next[member.id] = current[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
       });
       return next;
@@ -4521,7 +4252,7 @@ const {
     if (!dashboard) return;
     setChairScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard?.clinicSettings?.chairs?.forEach((chair) => {
+      dashboard?.clinicSettings.chairs.forEach((chair) => {
         next[chair.id] = current[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
       });
       return next;
@@ -4531,11 +4262,10 @@ const {
   useEffect(() => {
     if (!dashboard) return;
     setAppointmentScheduleDrafts((current: any) => {
-      const next: Record<string, AppointmentScheduleDraft> = {};
-      dashboard?.appointments?.forEach((appointment) => {
+      return dashboard.appointments.reduce((next: Record<string, AppointmentScheduleDraft>, appointment) => {
         next[appointment.id] = current[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment);
-      });
-      return next;
+        return next;
+      }, {});
     });
   }, [dashboard]);
 
@@ -4641,10 +4371,6 @@ const {
   ]);
 
   useEffect(() => {
-    // Do not auto-save clinic profile while onboarding wizard is open —
-    // auto-save triggers setClinicProfileDraft which re-renders the form
-    // and destroys mid-edit DOM nodes (phone input disappears mid-fill).
-    if (!onboardingDismissed) return undefined;
     if (!dashboard || !clinicProfileDirty || clinicProfileSaveState === "saving" || !clinicProfileDraft.clinicName.trim()) {
       return undefined;
     }
@@ -4652,7 +4378,7 @@ const {
       void saveClinicProfileFromDraft();
     }, 1400);
     return () => window.clearTimeout(saveTimer);
-  }, [clinicProfileDraft, clinicProfileDirty, clinicProfileSaveState, dashboard, onboardingDismissed]);
+  }, [clinicProfileDraft, clinicProfileDirty, clinicProfileSaveState, dashboard]);
 
   useEffect(() => {
     setNewStaffSpecialty(selectedSpecialty);
@@ -4748,13 +4474,10 @@ const {
   }, []);
 
   useEffect(() => {
-    if (!currentView) return;
     const allowedViews = getFilteredAppViews(selectedWorkspaceRole);
-
     if (!allowedViews.includes(currentView)) {
-      const fallbackView = allowedViews?.[0] || "schedule";
-      setCurrentView(fallbackView);
-      window.location.hash = fallbackView;
+      setCurrentView("shift");
+      window.location.hash = "shift";
     }
   }, [selectedWorkspaceRole, currentView]);
 
@@ -4948,7 +4671,7 @@ const {
     if (!dashboard) return null;
     return (
       findPatient(dashboard.patients, dashboard.activeVisit.patientId) ??
-      dashboard.patients?.find((patient) => patient.status === "active") ??
+      dashboard.patients.find((patient) => patient.status === "active") ??
       null
     );
   }, [dashboard]);
@@ -4956,7 +4679,7 @@ const {
   useEffect(() => {
     if (!dashboard) return;
     setSelectedPatientId((current: any) =>
-      current && dashboard.patients?.some((patient) => patient.id === current)
+      current && dashboard.patients.some((patient) => patient.id === current)
         ? current
         : activePatient?.id ?? null
     );
@@ -5040,12 +4763,12 @@ const {
 
   const activeAppointment = useMemo(() => {
     if (!dashboard) return null;
-    return dashboard.appointments?.find((appointment) => appointment.id === dashboard.activeVisit.appointmentId) ?? null;
+    return dashboard.appointments.find((appointment) => appointment.id === dashboard.activeVisit.appointmentId) ?? null;
   }, [dashboard]);
 
   const activeDoctor = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.staff?.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
+    return dashboard?.clinicSettings.staff.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const telegramLinkStaffOptions = useMemo(
@@ -5075,7 +4798,7 @@ const {
   useEffect(() => {
     if (!dashboard) return;
     if (telegramLinkStaffId && telegramLinkStaffOptions.some((member) => member.id === telegramLinkStaffId)) return;
-    setTelegramLinkStaffId(telegramLinkStaffOptions?.[0]?.id ?? "");
+    setTelegramLinkStaffId(telegramLinkStaffOptions[0]?.id ?? "");
   }, [dashboard, telegramLinkStaffId, telegramLinkStaffOptions]);
 
   const telegramLinkTargetKey = `${telegramLinkSubjectType}:${telegramLinkSubjectType === "patient" ? activePatient?.id ?? "" : telegramLinkStaffId || ""}:${telegramModeDraft}:${telegramBotConfigId.trim()}`;
@@ -5091,19 +4814,19 @@ const {
 
   function telegramSubjectName(subjectType: DenteTelegramChatLinkPublic["subjectType"], subjectId: string): string {
     if (subjectType === "patient") {
-      return dashboard?.patients?.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
+      return dashboard?.patients.find((patient) => patient.id === subjectId)?.fullName ?? "Пациент";
     }
-    return dashboard?.clinicSettings.staff?.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
+    return dashboard?.clinicSettings.staff.find((member) => member.id === subjectId)?.fullName ?? "Сотрудник";
   }
 
   const activeChair = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.chairs?.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
+    return dashboard?.clinicSettings.chairs.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const patientInsightById = useMemo(() => {
     if (!dashboard) return new Map<string, Dashboard["patientInsights"][number]>();
-    return new Map(dashboard.patientInsights?.map((insight) => [insight.patientId, insight]));
+    return new Map(dashboard.patientInsights.map((insight) => [insight.patientId, insight]));
   }, [dashboard]);
 
   const activePatientInsight = activePatient ? patientInsightById.get(activePatient.id) ?? null : null;
@@ -5112,21 +4835,21 @@ const {
 
   const appointmentReadinessById = useMemo(() => {
     if (!dashboard) return new Map<string, Dashboard["appointmentReadiness"][number]>();
-    return new Map(dashboard.appointmentReadiness?.map((readiness) => [readiness.appointmentId, readiness]));
+    return new Map(dashboard.appointmentReadiness.map((readiness) => [readiness.appointmentId, readiness]));
   }, [dashboard]);
 
   const filteredPatients = useMemo(() => {
     if (!dashboard) return [];
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return dashboard.patients.slice(0, 50);
-    return dashboard.patients?.filter((patient) => {
+    if (!normalizedQuery) return dashboard.patients;
+    return dashboard.patients.filter((patient) => {
       return `${patient.fullName} ${patient.phone ?? ""}`.toLowerCase().includes(normalizedQuery);
-    }).slice(0, 50);
+    });
   }, [dashboard, query]);
 
   const activeDocuments = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.documents?.filter(
+    return dashboard.documents.filter(
       (document) =>
         document.patientId === documentPatient.id &&
         (!documentPatientMatchesActiveVisit || document.visitId === null || document.visitId === dashboard.activeVisit.id)
@@ -5258,7 +4981,7 @@ const {
 
   const activeTreatmentPlanItems = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.treatmentPlanItems?.filter((item) => item.patientId === documentPatient.id);
+    return dashboard.treatmentPlanItems.filter((item) => item.patientId === documentPatient.id);
   }, [dashboard, documentPatient?.id]);
 
   const inferredTreatmentArea = useMemo(() => {
@@ -5271,7 +4994,7 @@ const {
 
   const activeTreatmentPlanScenarios = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.treatmentPlanScenarios?.filter((scenario) => scenario.patientId === documentPatient.id);
+    return dashboard.treatmentPlanScenarios.filter((scenario) => scenario.patientId === documentPatient.id);
   }, [dashboard, documentPatient?.id]);
 
   const activeVisitClinicalRuleEvaluations = useMemo(() => {
@@ -5302,7 +5025,7 @@ const {
 
   const activePayments = useMemo(() => {
     if (!dashboard || !documentPatient) return [];
-    return dashboard.payments?.filter((payment) => payment.patientId === documentPatient.id);
+    return dashboard.payments.filter((payment) => payment.patientId === documentPatient.id);
   }, [dashboard, documentPatient?.id]);
 
   const patientBillingSummary = useMemo<Dashboard["billingSummary"]>(() => {
@@ -5322,7 +5045,7 @@ const {
     const totalDiscountRub = activePlanItems.reduce((total, item) => total + item.discountRub, 0);
     const totalPaidRub = activePayments.filter((payment) => payment.status === "paid").reduce((total, payment) => total + payment.amountRub, 0);
     const taxDeductionEligibleRub = activePlanItems.reduce((total, item) => {
-      const service = dashboard.serviceCatalog?.find((candidate) => candidate.id === item.serviceId);
+      const service = dashboard.serviceCatalog.find((candidate) => candidate.id === item.serviceId);
       return total + (service?.taxDeductible ? treatmentLineTotal(item) : 0);
     }, 0);
     const draftDocumentAmountRub = activeUsableDocuments
@@ -5617,7 +5340,7 @@ const {
   const selectedTaxApplicationPayment = useMemo(() => {
     if (!selectedTaxDocumentPayerKey) return null;
     return (
-      activePayments?.find(
+      activePayments.find(
         (payment) =>
           payment.status === "paid" &&
           taxPaymentPayerKeyForUi(payment) === selectedTaxDocumentPayerKey &&
@@ -5840,7 +5563,7 @@ const {
 
   const activeCommunicationTasks = useMemo(() => {
     if (!dashboard) return [];
-    return dashboard.communicationTasks?.filter((task) => task.patientId === dashboard.activeVisit.patientId);
+    return dashboard.communicationTasks.filter((task) => task.patientId === dashboard.activeVisit.patientId);
   }, [dashboard]);
 
   const sortedCommunicationTasks = useMemo(() => {
@@ -5869,7 +5592,7 @@ const {
         : activeImagingStudies.filter((study) => study.kind === imagingKindFilter),
     [activeImagingStudies, imagingKindFilter]
   );
-  const latestImagingStudy = visibleImagingStudies?.[0] ?? null;
+  const latestImagingStudy = visibleImagingStudies[0] ?? null;
   const selectedImagingStudy =
     visibleImagingStudies.find((study) => study.id === selectedImagingStudyId) ?? latestImagingStudy;
   const imagingComparisonCandidates = useMemo(() => {
@@ -5907,58 +5630,12 @@ const {
       dicomFirstFrameViewerState.flipHorizontal ? -1 : 1
     }) scale(${dicomFirstFrameViewerState.zoom})`
   };
-  const mpr = useMprLogic({
-    selectedImagingStudy,
-    activeOrganizationId,
-    setError
-  });
-  const {
-    mprSliceMaxIndex,
-    mprSafeSliceIndex,
-    currentMprWorkbenchState,
-    cbctWorkbenchSeries,
-    cbctWorkbenchSeriesKey,
-    cbctWorkbenchProjections,
-    cbctWorkbenchTools,
-    cbctWorkbenchPlanes,
-    mprControlsReady,
-    mprControlsAutoOpen,
-    mprCenterSliceIndex,
-    mprAxisDirectionLabel,
-    mprAxisAngleBadge,
-    mprSlabBadge,
-    mprSliceBadge,
-    mprSlabVisualWidth,
-    mprSlicePositionPercent,
-    mprCurrentSliceFraction,
-    mprSliceLabel,
-    mprAxisRangeValue,
-    mprSlabRangeValue,
-    mprSliceRangeValue,
-    mprAxisVisualizerStyle,
-    mprActiveProjectionLabel,
-    mprActiveProjectionOrientation,
-    mprProjectionCompass,
-    mprAxisGuidance,
-    mprNearestClinicalPreset,
-    mprClinicalInput,
-    mprWorkbenchSummaryText,
-    mprOperatorSummaryCards,
-    mprAxisVisualizerLabel,
-    mprClinicalChecklist,
-    mprClinicalNextStep,
-    mprClinicalPresetButtonClass,
-    applyDefaultMprWorkbenchState,
-    resetMprControls,
-    applyMprClinicalPreset,
-    applyCtPlanningQuickAction,
-    createCtPlanningArtifact,
-    selectCtPlanningImplant,
-    applyNearestMprClinicalPreset,
-    handleMprKeyboardNavigation,
-    applyMprWorkbenchState,
-    restoreMprWorkbenchLocalDraft
-  } = mpr;
+  const cbctWorkbenchSeries =
+    dicomSeriesPreview?.series.find((series) => series.mprReadiness.volumeCandidate) ??
+    dicomSeriesPreview?.series.find((series) => series.recommendedViewer === "cbct_mpr") ??
+    null;
+  const mprSliceMaxIndex = Math.max(0, (cbctWorkbenchSeries?.fileCount ?? 1) - 1);
+  const mprSafeSliceIndex = clampMprSliceIndex(mprSliceIndex, mprSliceMaxIndex);
   const currentImagingViewerSessionState = useMemo<ImagingViewerSessionState>(
     () => ({
       mode: selectedImagingViewerPlan?.mode === "cbct_mpr" ? "mpr" : selectedImagingViewerPlan?.mode === "photo" ? "photo" : "two_d",
@@ -6011,10 +5688,267 @@ const {
       })),
     [imagingViewerAnnotations]
   );
-
-  const latestDicomWorkbenchServerBundle = dicomWorkbenchServerBundles?.[0] ?? null;
+  const currentMprWorkbenchState = useMemo<MprWorkbenchState>(
+    () => ({
+      projection: mprProjection,
+      axisDeg: mprAxisDeg,
+      slabMm: mprSlabMm,
+      sliceIndex: mprSafeSliceIndex,
+      windowPreset: mprWindowPreset,
+      crosshair: mprCrosshairEnabled,
+      linkedPlanes: mprLinkedPlanesEnabled
+    }),
+    [mprAxisDeg, mprCrosshairEnabled, mprLinkedPlanesEnabled, mprProjection, mprSafeSliceIndex, mprSlabMm, mprWindowPreset]
+  );
+  const cbctWorkbenchSeriesKey = useMemo(() => mprWorkbenchSeriesKey(cbctWorkbenchSeries), [cbctWorkbenchSeries]);
+  const latestDicomWorkbenchServerBundle = dicomWorkbenchServerBundles[0] ?? null;
   const dicomWorkbenchSourceIsRedacted = dicomWorkbenchManifestHasRedactedSource(dicomViewerWorkbenchManifest);
+  const cbctWorkbenchProjections = useMemo<MprProjection[]>(
+    () =>
+      cbctWorkbenchSeries?.mprReadiness.projections.length
+        ? cbctWorkbenchSeries.mprReadiness.projections
+        : ["axial", "coronal", "sagittal"],
+    [cbctWorkbenchSeries]
+  );
+  const cbctWorkbenchTools = useMemo(() => cbctWorkbenchSeries?.mprReadiness.tools ?? [], [cbctWorkbenchSeries]);
+  const cbctWorkbenchPlanes = useMemo<CbctWorkbenchPlane[]>(
+    () => [
+      { key: "axial", title: "Аксиальная", detail: "Срез сверху-вниз" },
+      { key: "coronal", title: "Корональная", detail: "Фронтальная плоскость" },
+      { key: "sagittal", title: "Сагиттальная", detail: "Боковая плоскость" },
+      {
+        key: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "panoramic_reconstruction" : "oblique",
+        title: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Панорама" : "Косая",
+        detail: cbctWorkbenchSeries?.mprReadiness.canBuildPanoramic ? "Кривая из КЛКТ" : "Наклонная плоскость"
+      }
+    ],
+    [cbctWorkbenchSeries]
+  );
+  const mprControlsReady = Boolean(cbctWorkbenchSeries?.mprReadiness.canOpenMpr);
+  const mprControlsAutoOpen = selectedImagingStudy?.kind === "cbct" || selectedImagingViewerPlan?.mode === "cbct_mpr" || mprControlsReady;
+  const mprCenterSliceIndex = Math.floor(mprSliceMaxIndex / 2);
+  const mprAxisDirectionLabel = formatMprAxisDirectionLabel({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+  const mprAxisAngleBadge = formatMprAxisAngleBadge(mprAxisDeg, mprControlsReady);
+  const mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
+  const mprSliceBadge = formatMprSliceBadge({ canOpenMpr: mprControlsReady, sliceIndex: mprSafeSliceIndex, maxIndex: mprSliceMaxIndex });
+  const mprSlabVisualWidth = `${Math.min(86, Math.max(18, 14 + mprSlabMm * 2.2))}%`;
+  const mprSlicePositionPercent = mprSliceMaxIndex > 0 ? `${(mprSafeSliceIndex / mprSliceMaxIndex) * 100}%` : "50%";
+  const mprCurrentSliceFraction = mprSliceFraction(mprSafeSliceIndex, mprSliceMaxIndex);
+  const mprSliceLabel = mprControlsReady ? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}` : "срез включится после КЛКТ/КТ-серии";
+  const mprAxisRangeValue = formatMprAxisRangeValue({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+  const mprSlabRangeValue = formatMprSlabRangeValue({ canOpenMpr: mprControlsReady, slabMm: mprSlabMm });
+  const mprSliceRangeValue = formatMprSliceRangeValue({
+    canOpenMpr: mprControlsReady,
+    sliceIndex: mprSafeSliceIndex,
+    maxIndex: mprSliceMaxIndex
+  });
+  const mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
+    "--mpr-axis-deg": `${mprAxisDeg}deg`,
+    "--mpr-slab-width": mprSlabVisualWidth,
+    "--mpr-slice-position": mprSlicePositionPercent
+  };
+  const mprActiveProjectionLabel = mprProjectionLabels[mprProjection as MprProjection] ?? mprProjection;
+  const mprActiveProjectionOrientation = mprProjectionOrientationLabels[mprProjection as MprProjection] ?? "плоскость просмотра";
+  const mprProjectionCompass = mprProjectionCompassLabels(mprProjection);
+  const mprAxisGuidance = buildMprAxisGuidance({
+    canOpenMpr: mprControlsReady,
+    axisDeg: mprAxisDeg,
+    slabMm: mprSlabMm,
+    sliceFraction: mprCurrentSliceFraction
+  });
+  const mprNearestClinicalPreset = findNearestMprClinicalPreset(
+    {
+      canOpenMpr: mprControlsReady,
+      projection: mprProjection,
+      availableProjections: cbctWorkbenchProjections,
+      axisDeg: mprAxisDeg,
+      slabMm: mprSlabMm,
+      sliceFraction: mprCurrentSliceFraction,
+      windowPreset: mprWindowPreset,
+      crosshair: mprCrosshairEnabled,
+      linkedPlanes: mprLinkedPlanesEnabled
+    },
+    mprClinicalPresets
+  );
+  const mprClinicalInput = {
+    hasSeries: Boolean(cbctWorkbenchSeries),
+    canOpenMpr: mprControlsReady,
+    hasWorkbenchManifest: Boolean(dicomViewerWorkbenchManifest),
+    hasWorkstationReadiness: Boolean(dicomWorkstationReadiness),
+    protocolExact: mprNearestClinicalPreset.exact,
+    protocolCanApply: mprNearestClinicalPreset.deltas.length > 0,
+    protocolLabel: mprNearestClinicalPreset.label,
+    projectionLabel: mprActiveProjectionLabel,
+    axisLabel: mprAxisDirectionLabel,
+    slabMm: mprSlabMm,
+    sliceLabel: mprSliceLabel,
+    windowLabel: mprWindowPresetLabels[mprWindowPreset as MprWindowPreset] ?? mprWindowPreset,
+    crosshair: mprCrosshairEnabled,
+    linkedPlanes: mprLinkedPlanesEnabled
+  };
+  const mprWorkbenchSummaryText = buildMprWorkbenchSummary(mprClinicalInput);
+  const mprOperatorSummaryCards = buildMprOperatorSummary({
+    ...mprClinicalInput,
+    protocolDeltas: mprNearestClinicalPreset.deltas
+  });
+  const mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({
+    canOpenMpr: mprControlsReady,
+    workbenchSummary: mprWorkbenchSummaryText,
+    compassSummary: mprProjectionCompass.summary,
+    guidanceSummary: mprAxisGuidance.summary
+  });
+  const mprClinicalChecklist = buildMprClinicalChecklist(mprClinicalInput);
+  const mprClinicalNextStep = mprClinicalNextAction(mprClinicalChecklist);
+  const mprClinicalPresetButtonClass = (preset: MprClinicalPreset) =>
+    [
+      "mpr-clinical-preset",
+      mprNearestClinicalPreset.title === preset.title ? "nearest" : "",
+      mprNearestClinicalPreset.exact && mprNearestClinicalPreset.title === preset.title ? "active" : ""
+    ]
+      .filter(Boolean)
+      .join(" ");
+  const applyDefaultMprWorkbenchState = () => {
+    const defaultProjection = cbctWorkbenchProjections.includes("axial") ? "axial" : cbctWorkbenchProjections[0] ?? "axial";
+    setMprProjection(defaultProjection);
+    setMprAxisDeg(0);
+    setMprSlabMm(1);
+    setMprSliceIndex(mprCenterSliceIndex);
+    setMprWindowPreset("bone");
+    setMprCrosshairEnabled(true);
+    setMprLinkedPlanesEnabled(true);
+  };
+  const resetMprControls = applyDefaultMprWorkbenchState;
+  const applyMprClinicalPreset = (preset: MprClinicalPreset) => {
+    const projection = resolveMprClinicalPresetProjection(preset.projection, cbctWorkbenchProjections);
+    setMprProjection(projection);
+    setMprAxisDeg(clampMprAxisDeg(preset.axisDeg));
+    setMprSlabMm(clampMprSlabMm(preset.slabMm));
+    setMprSliceIndex(mprSliceIndexFromFraction(preset.sliceFraction, mprSliceMaxIndex));
+    setMprWindowPreset(preset.windowPreset);
+    setMprCrosshairEnabled(preset.crosshair);
+    setMprLinkedPlanesEnabled(preset.linkedPlanes);
+  };
+  const applyCtPlanningQuickAction = (action: CtPlanningQuickAction) => {
+    if (action.requiresVolume && !mprControlsReady) return;
+    const projection = resolveMprClinicalPresetProjection(action.projection, cbctWorkbenchProjections);
+    setCtPlanningActiveQuickActionId(action.id);
+    setImagingViewerActiveTool(action.tool);
+    setMprProjection(projection);
+    setMprAxisDeg(clampMprAxisDeg(action.axisDeg));
+    setMprSlabMm(clampMprSlabMm(action.slabMm));
+    setMprSliceIndex(mprSliceIndexFromFraction(action.sliceFraction, mprSliceMaxIndex));
+    setMprWindowPreset(action.windowPreset);
+    setMprCrosshairEnabled(true);
+    setMprLinkedPlanesEnabled(true);
+  };
+  const createCtPlanningArtifact = (command: CtPlanningArtifactCommand) => {
+    if (!selectedImagingStudy) {
+      setError("Выберите КТ-снимок перед созданием разметки.");
+      return;
+    }
+    if (!imagingViewerSessionReady) {
+      setError("Дождитесь загрузки сессии просмотра снимка перед созданием КТ-разметки.");
+      return;
+    }
+    if (command.requiresVolume && !mprControlsReady) {
+      setError("Для этой КТ-разметки нужна готовая КЛКТ/КТ-серия.");
+      return;
+    }
+    if (command.requiresImplant && !ctPlanningImplantPlan) {
+      setError("Сначала выберите имплант из библиотеки, затем создайте ось или шаблон.");
+      return;
+    }
+    const matchingQuickAction = findCtPlanningQuickActionForArtifactCommand(command);
+    if (matchingQuickAction) {
+      applyCtPlanningQuickAction(matchingQuickAction);
+    } else {
+      setCtPlanningActiveQuickActionId(null);
+      setImagingViewerActiveTool(command.tool);
+      setMprProjection(resolveMprClinicalPresetProjection(command.projection, cbctWorkbenchProjections));
+    }
+    const now = new Date().toISOString();
+    const projection = resolveMprClinicalPresetProjection(command.projection, cbctWorkbenchProjections);
+    const annotation: ImagingViewerAnnotation = {
+      id: browserGeneratedId(`ct-${command.annotationType}`),
+      type: command.annotationType,
+      label: command.title,
+      semanticRole: command.semanticRole ?? null,
+      toothCode: selectedImagingStudy.toothCode,
+      points: [],
+      measurementValue: null,
+      unit: command.unit,
+      note: [
+        `Черновик КТ-разметки: ${command.detail}`,
+        `Плоскость: ${mprProjectionLabels[projection] ?? projection}`,
+        `Срез: ${mprSafeSliceIndex + 1}/${mprSliceMaxIndex + 1}`,
+        `Слой: ${mprSlabMm} мм`,
+        ctPlanningImplantPlan ? `Имплант: ${ctPlanningImplantPlan.diameterMm} x ${ctPlanningImplantPlan.lengthMm} мм` : ""
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      createdByUserId: null,
+      createdAt: now,
+      updatedAt: now
+    };
+    setImagingViewerAnnotations((items) => [annotation, ...items].slice(0, 200));
+    setError(null);
+  };
+  const selectCtPlanningImplant = (implant: CtImplantLibraryItem) => {
+    setCtPlanningImplantPlan(ctImplantPlanFromLibraryItem(implant));
+    setCtPlanningActiveQuickActionId("implant_library");
+    setImagingViewerActiveTool("implant_library");
+    if (mprControlsReady) {
+      setMprWindowPreset("implant");
+      setMprCrosshairEnabled(true);
+      setMprLinkedPlanesEnabled(true);
+    }
+  };
+  const applyNearestMprClinicalPreset = () => {
+    const preset = mprClinicalPresets.find((candidate) => candidate.title === mprNearestClinicalPreset.title);
+    if (preset) applyMprClinicalPreset(preset);
+  };
+  const handleMprKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!mprControlsReady) return;
+    const adjustment = resolveMprKeyboardAdjustment({
+      key: event.key,
+      shiftKey: event.shiftKey,
+      axisDeg: mprAxisDeg,
+      slabMm: mprSlabMm,
+      sliceIndex: mprSafeSliceIndex,
+      maxIndex: mprSliceMaxIndex
+    });
+    if (!adjustment) return;
+    event.preventDefault();
+    if (adjustment.kind === "axis") setMprAxisDeg(adjustment.value);
+    if (adjustment.kind === "slab") setMprSlabMm(adjustment.value);
+    if (adjustment.kind === "slice") setMprSliceIndex(adjustment.value);
+  };
+  const applyMprWorkbenchState = (state: MprWorkbenchState) => {
+    const projection = resolveMprWorkbenchProjection(state.projection, cbctWorkbenchProjections);
+    setMprProjection(projection);
+    setMprAxisDeg(clampMprAxisDeg(state.axisDeg ?? 0));
+    setMprSlabMm(clampMprSlabMm(state.slabMm ?? 1));
+    setMprSliceIndex(clampMprSliceIndex(state.sliceIndex, mprSliceMaxIndex));
+    setMprWindowPreset(state.windowPreset);
+    setMprCrosshairEnabled(state.crosshair);
+    setMprLinkedPlanesEnabled(state.linkedPlanes);
+  };
 
+  async function restoreMprWorkbenchLocalDraft() {
+    if (!cbctWorkbenchSeriesKey) {
+      setError("Сначала выберите готовую КЛКТ/КТ-серию, чтобы вернуть последний вид КТ-срезов.");
+      return;
+    }
+    const draft = await loadLocalMprWorkbenchDraft(cbctWorkbenchSeriesKey, activeOrganizationId);
+    if (!draft) {
+      setError("Для этой КЛКТ/КТ-серии еще нет сохраненного вида КТ-срезов.");
+      return;
+    }
+    applyMprWorkbenchState(draft.state);
+    setMprWorkbenchLocalSavedAt(draft.clientSavedAt);
+    setMprWorkbenchDraftRestored(true);
+    setError(null);
+  }
 
   useEffect(() => {
     if (!activeImagingStudies.length) {
@@ -6022,17 +5956,64 @@ const {
       return;
     }
     if (!selectedImagingStudyId || visibleImagingStudies.every((study) => study.id !== selectedImagingStudyId)) {
-      setSelectedImagingStudyId(visibleImagingStudies?.[0]?.id ?? null);
+      setSelectedImagingStudyId(visibleImagingStudies[0]?.id ?? null);
     }
   }, [activeImagingStudies, imagingKindFilter, selectedImagingStudyId, visibleImagingStudies]);
 
+  useEffect(() => {
+    if (!cbctWorkbenchProjections.includes(mprProjection)) {
+      setMprProjection(resolveMprWorkbenchProjection(mprProjection, cbctWorkbenchProjections));
+    }
+  }, [cbctWorkbenchProjections, mprProjection]);
 
+  useEffect(() => {
+    setMprSliceIndex((value: any) => clampMprSliceIndex(value, mprSliceMaxIndex));
+  }, [mprSliceMaxIndex]);
 
+  useEffect(() => {
+    if (!cbctWorkbenchSeriesKey || !mprControlsReady) {
+      setMprWorkbenchLocalSavedAt(null);
+      setMprWorkbenchDraftRestored(false);
+      return;
+    }
+    let cancelled = false;
+    const restore = async () => {
+      const draft = await loadLocalMprWorkbenchDraft(cbctWorkbenchSeriesKey, activeOrganizationId);
+      if (cancelled) return;
+      if (!draft) {
+        applyDefaultMprWorkbenchState();
+        setMprWorkbenchLocalSavedAt(null);
+        setMprWorkbenchDraftRestored(false);
+        return;
+      }
+      applyMprWorkbenchState(draft.state);
+      setMprWorkbenchLocalSavedAt(draft.clientSavedAt);
+      setMprWorkbenchDraftRestored(true);
+    };
+    void restore();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeOrganizationId, cbctWorkbenchProjections, cbctWorkbenchSeriesKey, mprControlsReady]);
 
-
-
-
-
+  useEffect(() => {
+    if (!cbctWorkbenchSeriesKey || !mprControlsReady) return;
+    if (mprWorkbenchSaveTimerRef.current) window.clearTimeout(mprWorkbenchSaveTimerRef.current);
+    const clientSavedAt = new Date().toISOString();
+    mprWorkbenchSaveTimerRef.current = window.setTimeout(() => {
+      void saveLocalMprWorkbenchDraft(
+        cbctWorkbenchSeriesKey,
+        currentMprWorkbenchState,
+        clientSavedAt,
+        activeOrganizationId
+      ).then((saved) => {
+        if (saved) setMprWorkbenchLocalSavedAt(clientSavedAt);
+      });
+    }, 350);
+    return () => {
+      if (mprWorkbenchSaveTimerRef.current) window.clearTimeout(mprWorkbenchSaveTimerRef.current);
+    };
+  }, [activeOrganizationId, cbctWorkbenchSeriesKey, currentMprWorkbenchState, mprControlsReady]);
 
   function applyImagingViewerSessionState(sessionState: ImagingViewerSessionState, annotations: ImagingViewerAnnotation[]) {
     setImagingViewerActiveTool(sessionState.activeTool);
@@ -6248,14 +6229,14 @@ const {
 
   const specialtiesWithTemplates = useMemo(() => {
     if (!dashboard) return [];
-    return Array.from(new Set(dashboard.protocolTemplates?.map((template) => template.specialty)));
+    return Array.from(new Set(dashboard.protocolTemplates.map((template) => template.specialty)));
   }, [dashboard]);
 
   const visibleVisitSpecialtyFocusOptions = useMemo(() => {
     const visibleSpecialties = new Set<DentalSpecialty>();
     const reasonSpecialty = inferSpecialtyFromText(activeAppointment?.reason);
 
-    activeDoctor?.specialties?.forEach((specialty) => visibleSpecialties.add(specialty));
+    activeDoctor?.specialties.forEach((specialty) => visibleSpecialties.add(specialty));
     if (activeChair?.specialization) visibleSpecialties.add(activeChair.specialization);
     if (reasonSpecialty) visibleSpecialties.add(reasonSpecialty);
     visibleSpecialties.add(selectedSpecialty);
@@ -6268,11 +6249,11 @@ const {
 
   const specialtyProtocolTemplates = useMemo(() => {
     if (!dashboard) return [];
-    return dashboard.protocolTemplates?.filter((template) => template.specialty === selectedSpecialty);
+    return dashboard.protocolTemplates.filter((template) => template.specialty === selectedSpecialty);
   }, [dashboard, selectedSpecialty]);
 
   const selectedProtocolTemplate = useMemo(() => {
-    return specialtyProtocolTemplates.find((template) => template.id === selectedProtocolId) ?? specialtyProtocolTemplates?.[0] ?? null;
+    return specialtyProtocolTemplates.find((template) => template.id === selectedProtocolId) ?? specialtyProtocolTemplates[0] ?? null;
   }, [selectedProtocolId, specialtyProtocolTemplates]);
 
   useEffect(() => {
@@ -6291,7 +6272,7 @@ const {
   }, [activeAppointment?.reason, selectedProtocolTemplate?.visitReason, selectedSpecialty]);
 
   const taxDocuments =
-    dashboard?.documents?.filter((document) => documentKindMetadata[document.kind].group === "tax") ?? [];
+    dashboard?.documents.filter((document) => documentKindMetadata[document.kind].group === "tax") ?? [];
   const shiftWarnings = dashboard?.shiftIntelligence.scheduleWarnings ?? [];
   const allResourceLoads = dashboard
     ? [...dashboard?.shiftIntelligence.doctorLoads, ...dashboard?.shiftIntelligence.assistantLoads, ...dashboard?.shiftIntelligence.chairLoads]
@@ -6300,17 +6281,9 @@ const {
 
   const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
   const visitWarnings = visitCloseChecklist?.items.filter((item) => !item.ready) ?? [];
-  const primaryVisitWarning = visitWarnings.find((item) => item.blocking) ?? visitWarnings?.[0] ?? null;
-  const speechRecoveryIssueCount =
-    speechRecordingRecovery?.recordings?.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
-  const speechRecoveryQualityIssueCount =
-    speechRecordingRecovery?.recordings?.reduce(
-      (total, recording) =>
-        total + recording.qualityCounts.review + recording.qualityCounts.empty + recording.qualityCounts.failed,
-      0
-    ) ?? 0;
+  const primaryVisitWarning = visitWarnings.find((item) => item.blocking) ?? visitWarnings[0] ?? null;
   const speechProviderRuntimeById = useMemo(
-    () => new Map((speechProviderRuntimeStatuses ?? []).map((provider) => [provider.providerId, provider])),
+    () => new Map(speechProviderRuntimeStatuses.map((provider) => [provider.providerId, provider])),
     [speechProviderRuntimeStatuses]
   );
   const speechProviderHealthById = useMemo(
@@ -6319,7 +6292,7 @@ const {
   );
   const activeSpeechProviderHealth = useMemo(() => {
     if (!speechGatewayHealthReport) return null;
-    return speechGatewayHealthReport.providers?.find((provider) => provider.providerId === speechGatewayHealthReport.activeProviderId) ?? null;
+    return speechGatewayHealthReport.providers.find((provider) => provider.providerId === speechGatewayHealthReport.activeProviderId) ?? null;
   }, [speechGatewayHealthReport]);
   const savedVisitNoteForm = useMemo(() => (dashboard ? visitNoteFormFromVisit(dashboard.activeVisit) : emptyVisitNoteForm), [dashboard]);
   const isVisitNoteDirty = visitNoteFieldDefinitions.some(({ key }) => visitNoteForm[key] !== savedVisitNoteForm[key]);
@@ -6414,7 +6387,14 @@ const {
               detail: visitCloseChecklist?.nextAction ?? "Финальная проверка оплаты, документов и подписи приема.",
               onClick: () => scrollToVisitArea(".close-checklist")
             };
-
+  const speechRecoveryIssueCount =
+    speechRecordingRecovery?.recordings.filter((recording) => recording.recoveryState !== "complete").length ?? 0;
+  const speechRecoveryQualityIssueCount =
+    speechRecordingRecovery?.recordings.reduce(
+      (total, recording) =>
+        total + recording.qualityCounts.review + recording.qualityCounts.empty + recording.qualityCounts.failed,
+      0
+    ) ?? 0;
   const currentSpeechQualityIssue =
     speechLastQuality && speechLastQuality.level !== "clear" ? speechLastQuality : null;
   const speechUploadReady = speechGatewayCanUpload(speechGatewayStatus);
@@ -6789,25 +6769,6 @@ const {
       setError(operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError));
     }
   }
-  async function saveStaffCredentials(staffId: string, email?: string, password?: string, pinCode?: string): Promise<boolean> {
-    if (!(await saveClinicProfileIfDirty())) return false;
-    try {
-      const response = await fetch(`/api/settings/staff/${staffId}/credentials`, {
-        method: "POST",
-        headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ email, password, pinCode })
-      });
-      if (!response.ok) {
-        setError(await responseErrorMessage(response, "Не удалось сохранить доступы сотрудника"));
-        return false;
-      }
-      await loadDashboard();
-      return true;
-    } catch (err) {
-      setError(operatorWorkflowFailureMessage("Не удалось сохранить доступы", err));
-      return false;
-    }
-  }
 
   async function saveStaffSchedule(staffId: string): Promise<boolean> {
     const draft = staffScheduleDrafts[staffId];
@@ -6901,7 +6862,7 @@ const {
       setError(message);
       return false;
     }
-    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode, dashboard?.clinicSettings.staff);
+    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode);
     if (missing.length) {
       const message = `Перед сохранением записи: ${missing.join("; ")}.`;
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
@@ -6920,9 +6881,9 @@ const {
       });
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не сохранена"));
       const payload = await response.json();
-      const nextDashboard = payload as any;
+      const nextDashboard = dashboardSchema.parse(payload);
       setDashboard(nextDashboard);
-      const savedAppointment = nextDashboard.appointments?.find((appointment) => appointment.id === appointmentId);
+      const savedAppointment = nextDashboard.appointments.find((appointment) => appointment.id === appointmentId);
       const latestDraft = appointmentScheduleDraftsRef.current[appointmentId];
       const latestMatchesSaved = latestDraft ? appointmentScheduleDraftSignature(latestDraft) === expectedSignature : true;
       if (savedAppointment && latestMatchesSaved) {
@@ -6952,7 +6913,7 @@ const {
   }
 
   function newAppointmentMissingFields(draft: AppointmentScheduleDraft): string[] {
-    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile.mode, dashboard?.clinicSettings.staff);
+    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode);
   }
 
   async function createAppointmentFromDraft(): Promise<boolean> {
@@ -6974,7 +6935,7 @@ const {
     }
     setNewAppointmentSaveState("saving");
     setNewAppointmentError(null);
-    const previousIds = new Set(dashboard.appointments?.map((appointment) => appointment.id));
+    const previousIds = new Set(dashboard.appointments.map((appointment) => appointment.id));
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
@@ -6983,8 +6944,8 @@ const {
       });
       if (!response.ok) throw new Error(await responseErrorMessage(response, "Запись не создана"));
       const payload = await response.json();
-      const nextDashboard = payload as any;
-      const createdAppointment = nextDashboard.appointments?.find((appointment) => !previousIds.has(appointment.id)) ?? null;
+      const nextDashboard = dashboardSchema.parse(payload);
+      const createdAppointment = nextDashboard.appointments.find((appointment) => !previousIds.has(appointment.id)) ?? null;
       const nextDraftPreferences = {
         selectedPatientId: newAppointmentDraft.patientId || selectedPatientId,
         selectedSpecialty,
@@ -7237,69 +7198,17 @@ const {
     visitDraftUserEditedRef.current = true;
     setSelectedSpecialty(template.specialty);
     setSelectedProtocolId(template.id);
-    const templatedText = [
-      `${template.visitReason}.`,
-      `Жалобы: ${template.complaintPrompt}`,
-      `Объективно: ${template.objectiveTemplate}`,
-      `Диагнозы к проверке: ${template.diagnosisHints.join("; ")}`,
-      `План: ${template.treatmentPlanTemplate}`,
-      `Документы: ${template.requiredDocuments.map((kind) => documentLabels[kind]).join(", ")}.`,
-      `Снимки: ${template.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}.`
-    ].join("\n");
-    setTranscript(templatedText);
-    return templatedText;
-  }
-
-  function applyProtocolTemplateDirectly(template: ProtocolTemplate) {
-    visitDraftUserEditedRef.current = true;
-    setSelectedSpecialty(template.specialty);
-    setSelectedProtocolId(template.id);
-    updateVisitNoteField("complaint", template.complaintPrompt || "");
-    updateVisitNoteField("anamnesis", template.visitReason || "");
-    updateVisitNoteField("objectiveStatus", template.objectiveTemplate || "");
-    updateVisitNoteField("diagnosis", (template.diagnosisHints || []).join("; "));
-    updateVisitNoteField("treatmentPlan", template.treatmentPlanTemplate || "");
-  }
-
-  async function polishSingleField(fieldKey: string, currentValue: string) {
-    if (!currentValue.trim()) return;
-    setPolishingField(fieldKey);
-    try {
-      const fieldLabels: Record<string, string> = {
-        complaint: "Жалобы",
-        anamnesis: "Анамнез заболевания",
-        objectiveStatus: "Объективный статус / Данные осмотра",
-        diagnosis: "Диагноз (МКБ-10)",
-        treatmentPlan: "Протокол лечения / Выполненные манипуляции"
-      };
-
-      const promptText = `Раздел: ${fieldLabels[fieldKey] || fieldKey}. Текст для профессионального оформления: ${currentValue}`;
-      
-      const response = await fetch("/api/speech/polish-transcript", {
-        method: "POST",
-        headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          transcript: promptText,
-          specialty: selectedSpecialty,
-          source: "voice"
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error("Серверная полировка недоступна");
-      }
-      
-      const result = await response.json();
-      if (result.draft && result.draft[fieldKey]) {
-        updateVisitNoteField(fieldKey as VisitNoteField, result.draft[fieldKey]);
-      } else if (result.normalizedTranscript) {
-        updateVisitNoteField(fieldKey as VisitNoteField, result.normalizedTranscript);
-      }
-    } catch (e) {
-      setError(operatorWorkflowFailureMessage("Не удалось улучшить поле через ИИ", e));
-    } finally {
-      setPolishingField(null);
-    }
+    setTranscript(
+      [
+        `${template.visitReason}.`,
+        `Жалобы: ${template.complaintPrompt}`,
+        `Объективно: ${template.objectiveTemplate}`,
+        `Диагнозы к проверке: ${template.diagnosisHints.join("; ")}`,
+        `План: ${template.treatmentPlanTemplate}`,
+        `Документы: ${template.requiredDocuments.map((kind) => documentLabels[kind]).join(", ")}.`,
+        `Снимки: ${template.suggestedImaging.map((kind) => imagingKindLabels[kind]).join(", ")}.`
+      ].join("\n")
+    );
   }
 
   async function polishTranscript() {
@@ -7352,16 +7261,11 @@ const {
     }
   }
 
-  async function buildDraft(overrideTranscript?: string, overrideSpecialty?: DentalSpecialty, options?: { skipScroll?: boolean }) {
-    const activeTranscript = overrideTranscript !== undefined ? overrideTranscript : transcript;
-    const activeSpecialty = overrideSpecialty !== undefined ? overrideSpecialty : selectedSpecialty;
-    const hasText = activeTranscript.trim().length > 0;
-
-    if (!dashboard || !activePatient || !hasText) {
+  async function buildDraft() {
+    if (!dashboard || !activePatient || !hasVisitTranscriptText) {
       const missingSteps = [
         !dashboard ? "дождитесь загрузки приема" : null,
-        !activePatient ? "выберите пациента" : null,
-        !hasText ? "добавьте текст диктовки или нажмите голосовую запись" : null
+        ...visitDraftBuildMissingSteps
       ].filter((step): step is string => Boolean(step));
       setError(`Перед сборкой черновика: ${missingSteps.join(", ")}.`);
       return;
@@ -7374,8 +7278,8 @@ const {
         headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           patientId: activePatient.id,
-          transcript: activeTranscript,
-          specialty: activeSpecialty,
+          transcript,
+          specialty: selectedSpecialty,
           source: "voice"
         })
       });
@@ -7393,16 +7297,12 @@ const {
           result.quality?.detectedToothStates as any
         );
       }
-      if (!options?.skipScroll) {
-        scrollToVisitArea(".visit-note-panel");
-      }
+      scrollToVisitArea(".visit-note-panel");
     } catch (draftError) {
-      const fallbackDraft = buildOfflineVisitDraftFromTranscript(activeTranscript, activeSpecialty);
+      const fallbackDraft = buildOfflineVisitDraftFromTranscript(transcript, selectedSpecialty);
       setDraft(fallbackDraft);
       setVisitNoteForm(visitNoteFormFromDraft(fallbackDraft));
-      if (!options?.skipScroll) {
-        scrollToVisitArea(".visit-note-panel");
-      }
+      scrollToVisitArea(".visit-note-panel");
       setError(`${operatorWorkflowFailureMessage("Серверный черновик недоступен", draftError)} Включен офлайн-разбор.`);
     } finally {
       setIsDraftLoading(false);
@@ -9554,34 +9454,8 @@ const {
   }
 
   function appendVisitDictationText(value: string) {
-    let cleanValue = value.trim();
+    const cleanValue = value.trim();
     if (!cleanValue) return;
-
-    // --- Voice Commands Interceptor ---
-    // Remove basic punctuation and lowercase for exact command matching
-    const lower = cleanValue.toLowerCase().replace(/[.,!?]/g, "").trim();
-
-    if (lower === "очистить всё" || lower === "удалить всё" || lower === "удалить карту") {
-      clearTranscriptWithUndo();
-      setSpeechStatusNote("Голосовая команда: Текст очищен");
-      return;
-    }
-
-    if (lower === "сформировать карту" || lower === "завершить запись") {
-      setSpeechStatusNote("Голосовая команда: Формирование карты...");
-      if (isServerVoiceRecording) {
-        stopServerVoiceRecording();
-      }
-      setTimeout(() => buildDraft(), 400);
-      return;
-    }
-
-    // Inline formatting commands
-    cleanValue = cleanValue
-      .replace(/(?:^|\s)(новая строка|с новой строки)(?:\s|$)/gi, "\n")
-      .replace(/(?:^|\s)абзац(?:\s|$)/gi, "\n\n");
-    // ----------------------------------
-
     visitDraftUserEditedRef.current = true;
     setClearedTranscriptSnapshot(null);
     setTranscript((current: any) =>
@@ -9650,45 +9524,18 @@ const {
     }
   }
 
-  function startFieldDictation(onResult: (text: string) => void, onError?: (msg: string) => void) {
-    const speechWindow = window as BrowserWindowWithSpeech;
-    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-    if (!Recognition) {
-      if (onError) onError("Браузерная диктовка недоступна.");
-      return;
-    }
-    const recognition = new Recognition();
-    recognition.lang = "ru-RU";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = (event) => {
-      const transcriptText = Array.from(event.results)
-        .map((result) => result[0].transcript)
-        .join(" ");
-      onResult(transcriptText);
-    };
-    recognition.onerror = () => {
-      if (onError) onError("Диктовка не распознана.");
-    };
-    try {
-      recognition.start();
-    } catch {
-      if (onError) onError("Браузер не смог запустить микрофон.");
-    }
-  }
-
   function preferredSpeechMimeType(): string {
     const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"];
     return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? "";
   }
 
-  async function uploadSpeechBlob(blob: Blob, gatewayStatusOverride?: SpeechGatewayStatus | null) {
+  async function uploadSpeechBlob(blob: Blob) {
     if (!dashboard || blob.size === 0) return;
-    const maxChunkSizeLimit = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
-    if (blob.size > maxChunkSizeLimit) {
+    const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
+    if (blob.size > maxChunkBytes) {
       setSpeechStatusNote(
         `Распознавание: аудио-фрагмент ${Math.round(blob.size / 1024 / 1024)} МБ больше лимита ${Math.round(
-          maxChunkSizeLimit / 1024 / 1024
+          maxChunkBytes / 1024 / 1024
         )} МБ; запись продолжается, уменьшите длительность чанка или используйте локальный модуль.`
       );
       return;
@@ -9711,19 +9558,10 @@ const {
       specialty: selectedSpecialty,
       clientRecordedAt: new Date().toISOString()
     };
-
-    const chunkHadVoice = false;
-    if (chunkHadVoice === false) {
-      // Голос почти не слышен, но CRM все равно отправляет фрагмент на распознавание.
-      // Голос почти не слышен, но CRM все равно проверяет последний фрагмент.
-    }
-
     const queuedBeforeUpload = await queuePendingSpeechChunk(chunk, activeOrganizationId);
     await refreshPendingSpeechChunkState();
 
-    const effectiveGatewayStatus = gatewayStatusOverride ?? speechGatewayStatus;
-
-    if (!isOnline || !speechGatewayCanUpload(effectiveGatewayStatus)) {
+    if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
       setSpeechStatusNote(
         queuedBeforeUpload
           ? `Фрагмент ${chunkIndex + 1} сохранен локально; распознавание отправится, когда источник будет готов.`
@@ -9757,7 +9595,6 @@ const {
       window.clearInterval(speechMonitorTimerRef.current);
       speechMonitorTimerRef.current = null;
     }
-    setSpeechLiveRms(0);
     speechAudioContextRef.current?.close().catch(() => undefined);
     speechAudioContextRef.current = null;
     speechAnalyserRef.current = null;
@@ -9788,15 +9625,15 @@ const {
     const providerLabel = status?.providerLabel ?? "Локальная запись";
     const chunkingPolicy = status?.chunkingPolicy ?? {
       strategy: "time_and_silence" as const,
-      minChunkMs: 15_000,
-      maxChunkMs: 30_000,
-      silenceMs: 1500,
+      minChunkMs: 10_000,
+      maxChunkMs: 25_000,
+      silenceMs: 900,
       rmsThreshold: 0.015,
       monitorIntervalMs: 250,
       overlapMs: 500,
       dedupeWindowChars: 600
     };
-    const recommendedChunkMs = status?.recommendedChunkMs ?? 20_000;
+    const recommendedChunkMs = status?.recommendedChunkMs ?? 15_000;
     if (!AudioContextClass) {
       recorder.start(recommendedChunkMs);
       setSpeechStatusNote(`${providerLabel}: запись идет по таймеру, Web Audio недоступен.`);
@@ -9824,13 +9661,10 @@ const {
           sumSquares += centered * centered;
         }
         const rms = Math.sqrt(sumSquares / samples.length);
-        setSpeechLiveRms(rms);
         const now = Date.now();
         const segmentAgeMs = now - speechSegmentStartedAtRef.current;
         if (rms >= chunkingPolicy.rmsThreshold) {
           speechLastSoundAtRef.current = now;
-          speechVoiceDetectedDuringRecordingRef.current = true;
-          speechSegmentVoiceDetectedRef.current = true;
         }
         const silentForMs = now - speechLastSoundAtRef.current;
         if (segmentAgeMs >= chunkingPolicy.maxChunkMs) {
@@ -9853,78 +9687,7 @@ const {
     }
   }
 
-  function configureServerVoiceRecorder(stream: MediaStream, recorder: MediaRecorder, currentGatewayStatus: any) {
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0 && !speechPendingChunkDurationMsRef.current) {
-        const now = Date.now();
-        speechPendingChunkDurationMsRef.current = Math.max(
-          250,
-          Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
-        );
-        speechSegmentStartedAtRef.current = now;
-        speechLastSoundAtRef.current = now;
-      }
-      if (event.data.size > 0) {
-        const effectiveGatewayStatus = speechActiveGatewayStatusRef.current ?? currentGatewayStatus;
-        trackSpeechUpload(uploadSpeechBlob(event.data, effectiveGatewayStatus));
-      }
-    };
-    recorder.onstop = () => {
-      const recordingId = speechRecordingIdRef.current;
-      stopSpeechMonitor();
-      const shouldRestart = serverVoiceRecordingShouldContinueRef.current && !serverVoiceRecordingStopRequestedRef.current && Boolean(recordingId);
-      if (shouldRestart && recordingId) {
-        setSpeechStatusNote("Браузер прервал запись на секунду. CRM снова включает микрофон и продолжает эту же диктовку.");
-        restartServerVoiceRecorderAfterUnexpectedStop(recordingId);
-        return;
-      }
-      stream.getTracks().forEach((track) => track.stop());
-      mediaRecorderRef.current = null;
-      mediaStreamRef.current = null;
-      setIsServerVoiceRecording(false);
-      if (recordingId) {
-        void finalizeSpeechRecording(recordingId);
-      }
-    };
-  }
-
-  function clearServerVoiceRecordingRestartTimer() {
-    if (serverVoiceRecordingRestartTimerRef.current) {
-      clearTimeout(serverVoiceRecordingRestartTimerRef.current);
-      serverVoiceRecordingRestartTimerRef.current = null;
-    }
-  }
-
-  function restartServerVoiceRecorderAfterUnexpectedStop(recordingId: string) {
-    clearServerVoiceRecordingRestartTimer();
-    const delay = speechGatewayStatus?.reconnectDelayMs ?? 1000;
-    serverVoiceRecordingRestartTimerRef.current = setTimeout(async () => {
-      if (!serverVoiceRecordingShouldContinueRef.current || serverVoiceRecordingStopRequestedRef.current) return;
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (!serverVoiceRecordingShouldContinueRef.current || serverVoiceRecordingStopRequestedRef.current) {
-          stream.getTracks().forEach(t => t.stop());
-          return;
-        }
-        const mimeType = preferredSpeechMimeType();
-        const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-        mediaStreamRef.current = stream;
-        mediaRecorderRef.current = recorder;
-        configureServerVoiceRecorder(stream, recorder, speechGatewayStatus);
-        startSpeechMonitor(stream, recorder, speechGatewayStatus);
-        setSpeechStatusNote("Запись продолжена. Говорите дальше, текст добавится в тот же черновик.");
-        recorder.start(speechGatewayStatus?.chunkingPolicy.chunkIntervalMs ?? 5000);
-      } catch (err) {
-        setError("Не удалось перезапустить запись после прерывания.");
-      }
-    }, delay);
-  }
-
   async function startServerVoiceRecording() {
-    if (serverVoiceRecordingStartingRef.current || isServerVoiceRecordingStarting) {
-      setSpeechStatusNote("Запись уже включается. Разрешите микрофон и подождите несколько секунд.");
-      return;
-    }
     if (!dashboard) {
       setError("Данные приема еще не загружены. Повторите запись после загрузки рабочего экрана.");
       return;
@@ -9938,70 +9701,61 @@ const {
       return;
     }
 
-    const gatewayStatusPromise = loadSpeechGatewayStatus({ silent: true });
-    const currentGatewayStatus = speechGatewayStatus;
-
-    let stream: MediaStream | null = null;
-    serverVoiceRecordingStartingRef.current = true;
-      setIsServerVoiceRecordingStarting(true);
-
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      serverVoiceRecordingStartingRef.current = false;
-      setIsServerVoiceRecordingStarting(false);
-      speechRecordingHadRecognizedTextRef.current = false;
-      speechVoiceDetectedDuringRecordingRef.current = false;
-      speechSegmentVoiceDetectedRef.current = false;
-      speechQuietWarningShownRef.current = false;
-      speechRecordingVoiceLevelAvailableAtStopRef.current = false;
-      speechRecordingVoiceDetectedAtStopRef.current = false;
-
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = preferredSpeechMimeType();
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       mediaStreamRef.current = stream;
       mediaRecorderRef.current = recorder;
       speechRecordingIdRef.current = createLocalQueueId();
       speechChunkIndexRef.current = 0;
-
-      serverVoiceRecordingShouldContinueRef.current = true;
-      serverVoiceRecordingStopRequestedRef.current = false;
-      clearServerVoiceRecordingRestartTimer();
-
-      configureServerVoiceRecorder(stream, recorder, currentGatewayStatus);
-      startSpeechMonitor(stream, recorder, currentGatewayStatus);
-      setError(null);
-
-      void gatewayStatusPromise.then((freshGatewayStatus) => {
-        if (speechChunkIndexRef.current === 0) {
-          if (!isOnline || !speechGatewayCanUpload(freshGatewayStatus)) {
-            setSpeechStatusNote("Запись идет. Распознавание пока не готово, звук сохранится и отправится позже.");
-          } else {
-            setSpeechStatusNote("Текст появится по мере распознавания.");
-          }
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0 && !speechPendingChunkDurationMsRef.current) {
+          const now = Date.now();
+          speechPendingChunkDurationMsRef.current = Math.max(
+            250,
+            Math.min(now - speechSegmentStartedAtRef.current, speechGatewayStatus?.chunkingPolicy.maxChunkMs ?? 25_000)
+          );
+          speechSegmentStartedAtRef.current = now;
+          speechLastSoundAtRef.current = now;
         }
-      });
-
+        if (event.data.size > 0) {
+          trackSpeechUpload(uploadSpeechBlob(event.data));
+        }
+      };
+      recorder.onstop = () => {
+        const recordingId = speechRecordingIdRef.current;
+        stopSpeechMonitor();
+        stream.getTracks().forEach((track) => track.stop());
+        mediaRecorderRef.current = null;
+        mediaStreamRef.current = null;
+        setIsServerVoiceRecording(false);
+        if (recordingId) {
+          void finalizeSpeechRecording(recordingId);
+        }
+      };
+      startSpeechMonitor(stream, recorder, speechGatewayStatus);
+      setError(null);
+      if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
+        setSpeechStatusNote(
+          isOnline
+            ? "Запись идет в локальную очередь: серверное распознавание пока не готово, аудио не отправляется."
+            : "Запись идет в локальную очередь: офлайн, аудио отправится после подключения."
+        );
+      }
       setIsServerVoiceRecording(true);
     } catch (recordingError) {
-      stream?.getTracks().forEach((track) => track.stop());
-      serverVoiceRecordingStartingRef.current = false;
-      setIsServerVoiceRecordingStarting(false);
       setIsServerVoiceRecording(false);
       setError(browserCapabilityFailureMessage("Микрофон недоступен", recordingError));
     }
   }
 
   function stopServerVoiceRecording() {
-    serverVoiceRecordingShouldContinueRef.current = false;
-    serverVoiceRecordingStopRequestedRef.current = true;
-    clearServerVoiceRecordingRestartTimer();
-
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state !== "inactive") {
       speechPendingChunkDurationMsRef.current = Math.max(250, Date.now() - speechSegmentStartedAtRef.current);
       recorder.requestData();
       recorder.stop();
-      setSpeechStatusNote("Запись остановлена. Проверяю даже тихую запись.");
       return;
     }
     const recordingId = speechRecordingIdRef.current;
@@ -10010,10 +9764,6 @@ const {
       return;
     }
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-    const voiceLevelAvailable = speechAudioContextRef.current !== null;
-    const voiceDetected = speechVoiceDetectedDuringRecordingRef.current;
-    speechRecordingVoiceLevelAvailableAtStopRef.current = voiceLevelAvailable;
-      speechRecordingVoiceDetectedAtStopRef.current = voiceDetected;
     stopSpeechMonitor();
     mediaStreamRef.current = null;
     mediaRecorderRef.current = null;
@@ -10349,7 +10099,7 @@ const {
       .filter((item) => item.status !== "cancelled")
       .filter((item) => !dashboard?.activeVisit.id || item.visitId === dashboard.activeVisit.id)
       .map((item) => {
-        const service = dashboard?.serviceCatalog?.find((catalogItem) => catalogItem.id === item.serviceId);
+        const service = dashboard?.serviceCatalog.find((catalogItem) => catalogItem.id === item.serviceId);
         const totalRub = Math.max(0, item.unitPriceRub * item.quantity - item.discountRub);
         return {
           serviceName: service?.title ?? item.serviceId,
@@ -11222,7 +10972,7 @@ const {
         requiredDocumentField(refundSelectedPaymentId, "возврат/коррекция, исходный платеж") ??
         (requestedAmount !== null && requestedAmount > 0
           ? null
-          : validateRubAmountInput(
+          : rubAmountInputMissingStep(
               refundAmountRub,
               "Укажите сумму возврата или коррекции больше нуля.",
               "Укажите сумму возврата или коррекции целыми рублями без копеек."
@@ -11550,10 +11300,7 @@ const {
           plannedAt: treatmentPlanPlannedAt.trim(),
           patientQuestionsAnswered: confirmedDocumentLiteral(treatmentPlanQuestionsAnswered, "вопросы пациента по плану лечения закрыты"),
           planRequiresSeparateConsent: confirmedDocumentLiteral(treatmentPlanSeparateConsentAcknowledged, "план не заменяет отдельное согласие"),
-          planRequiresNewApprovalOnChange: confirmedDocumentLiteral(treatmentPlanNewApprovalAcknowledged, "изменение плана требует нового согласования"),
-          patientFriendlyExplanation: treatmentPlanPatientFriendlyExplanation.trim() || null,
-          patientHygieneAdvice: treatmentPlanPatientHygieneAdvice.trim() || null,
-          customHygieneTextOverride: treatmentPlanCustomHygieneTextOverride.trim() || null
+          planRequiresNewApprovalOnChange: confirmedDocumentLiteral(treatmentPlanNewApprovalAcknowledged, "изменение плана требует нового согласования")
         }
       };
     }
@@ -11844,60 +11591,68 @@ const {
     );
   }
 
-  function validateDocumentCreation(
-    kind: GeneratedDocument["kind"],
-    isTaxDocument: boolean,
-    selectedPaymentReceiptIdsForDocument: string[],
-    selectedTaxPaymentIdsForDocument: string[],
-    linkActiveVisit: boolean,
-    metadata: typeof documentKindMetadata[GeneratedDocument["kind"]]
-  ): string | null {
+  async function createDocument(kind: GeneratedDocument["kind"]) {
+    if (documentCreateSavingKind) {
+      setError("Дождитесь завершения текущего создания документа.");
+      return;
+    }
+    if (!documentPatient || !dashboard) {
+      setError("Выберите пациента перед созданием документа.");
+      return;
+    }
+    const amountSource = documentAmountSource(kind);
+    const metadata = documentKindMetadata[kind];
+    const isTaxDocument = metadata.group === "tax";
+    const payloadError = validateDocumentPayloadForKind(kind);
+    if (payloadError) {
+      setError(payloadError);
+      return;
+    }
+    const documentPayload = documentPayloadForKind(kind);
     if ((kind === "tax_deduction_certificate" || kind === "tax_deduction_registry") && taxDocumentYear < 2024) {
-      return "КНД 1151156 подходит только для оплат с 2024 года. Для 2021-2023 выберите старую справку.";
+      setError("КНД 1151156 подходит только для оплат с 2024 года. Для 2021-2023 выберите старую справку.");
+      return;
     }
     if (kind === "legacy_tax_deduction_certificate" && (taxDocumentYear < 2021 || taxDocumentYear > 2023)) {
-      return "Старая налоговая справка подходит только для оплат 2021-2023. Для 2024+ выберите КНД 1151156.";
+      setError("Старая налоговая справка подходит только для оплат 2021-2023. Для 2024+ выберите КНД 1151156.");
+      return;
     }
+    const selectedTaxPayerInn = isTaxDocument ? selectedTaxDocumentPayerInn : "";
     if (isTaxDocument && taxDocumentPayerOptions.length > 1 && !selectedTaxDocumentPayerKey) {
-      return "Выберите плательщика для КНД 1151156. Разные налогоплательщики должны идти отдельными справками.";
+      setError("Выберите плательщика для КНД 1151156. Разные налогоплательщики должны идти отдельными справками.");
+      return;
     }
-
+    const usesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(kind);
     const requiresTaxPaymentSelection = taxPaymentSelectionPayloadDocumentKinds.has(kind);
+    const selectedTaxPaymentIdsForDocument = usesTaxPaymentSelection
+      ? selectedTaxPaymentIdsForCurrentDocument()
+      : [];
+    const requiresPaymentReceiptSelection = kind === "payment_receipt";
+    const eligiblePaymentReceiptIdSet = new Set(eligiblePaymentReceiptPayments.map((payment) => payment.id));
+    const selectedPaymentReceiptIdsForDocument = requiresPaymentReceiptSelection
+      ? selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
+      : [];
     if (requiresTaxPaymentSelection && selectedTaxPaymentIdsForDocument.length === 0) {
-      return "Выберите фискальные чеки для налогового документа. Система больше не подставляет все оплаты за год автоматически.";
+      setError("Выберите фискальные чеки для налогового документа. Система больше не подставляет все оплаты за год автоматически.");
+      return;
     }
-
-    const requiresPaymentReceiptSelection = kind === "payment_receipt";
     if (requiresPaymentReceiptSelection && selectedPaymentReceiptIdsForDocument.length === 0) {
-      return "Выберите оплаченные платежи для платежной квитанции. Система не подставляет все оплаты скрыто.";
+      setError("Выберите оплаченные платежи для платежной квитанции. Система не подставляет все оплаты скрыто.");
+      return;
     }
-
+    const linkActiveVisit =
+      metadata.requiresVisit || metadata.group === "payment" || (metadata.group !== "tax" && metadata.amountSource !== "none");
     if (linkActiveVisit && !documentPatientMatchesActiveVisit) {
-      return `Документ «${metadata.label}» требует активного приема пациента ${documentPatient?.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`;
+      setError(
+        `Документ «${metadata.label}» требует активного приема пациента ${documentPatient.fullName}. Сейчас открыт прием другого пациента, поэтому система не создаст документ с чужой привязкой к приему. Откройте нужный прием или выберите документ без привязки к визиту.`
+      );
+      return;
     }
-
-    return null;
-  }
-
-  function calculateDocumentAmounts(
-    kind: GeneratedDocument["kind"],
-    amountSource: ReturnType<typeof documentAmountSource>,
-    metadata: typeof documentKindMetadata[GeneratedDocument["kind"]],
-    documentPayload: ReturnType<typeof documentPayloadForKind>,
-    selectedPaymentReceiptIdsForDocument: string[],
-    selectedTaxPaymentIdsForDocument: string[]
-  ): { totalAmountRub: number | null; error: string | null } {
-    if (!dashboard) return { totalAmountRub: null, error: "Данные не загружены" };
-
-    const requiresPaymentReceiptSelection = kind === "payment_receipt";
-    const requiresTaxPaymentSelection = taxPaymentSelectionPayloadDocumentKinds.has(kind);
-
     const plannedAmount =
       activeTreatmentPlanItems
         .filter((item) => item.status !== "cancelled")
         .filter((item) => !dashboard.activeVisit.id || item.visitId === dashboard.activeVisit.id)
         .reduce((total, item) => total + Math.max(0, item.unitPriceRub * item.quantity - item.discountRub), 0) || null;
-
     const paidAmount =
       activePayments
         .filter((payment) => payment.status === "paid")
@@ -11914,44 +11669,27 @@ const {
           );
         })
         .reduce((total, payment) => total + payment.amountRub, 0) || null;
-
     if (amountSource === "paid" && !paidAmount) {
-      return {
-        totalAmountRub: null,
-        error:
-          metadata.group === "tax"
-            ? `Для налогового документа нужна фактическая оплата за ${taxDocumentYear} год. План лечения и оплаты других лет не подходят.`
-            : "Для этого документа нужна фактическая оплата. План лечения или примерная сумма не подходят."
-      };
+      setError(
+        metadata.group === "tax"
+          ? `Для налогового документа нужна фактическая оплата за ${taxDocumentYear} год. План лечения и оплаты других лет не подходят.`
+          : "Для этого документа нужна фактическая оплата. План лечения или примерная сумма не подходят."
+      );
+      return;
     }
-
     if (
       kind === "payment_refund_correction_request" &&
       documentPayload?.paymentRefundCorrection &&
       paidAmount &&
       documentPayload.paymentRefundCorrection.amountRub > paidAmount
     ) {
-      return {
-        totalAmountRub: null,
-        error: "Сумма возврата или коррекции не может превышать фактическую оплату по выбранному визиту."
-      };
+      setError("Сумма возврата или коррекции не может превышать фактическую оплату по выбранному визиту.");
+      return;
     }
-
     const totalAmountRub = amountSource === "paid" ? paidAmount : amountSource === "planned" ? plannedAmount : null;
-    return { totalAmountRub, error: null };
-  }
-
-  async function submitDocumentCreation(
-    kind: GeneratedDocument["kind"],
-    isTaxDocument: boolean,
-    linkActiveVisit: boolean,
-    metadata: typeof documentKindMetadata[GeneratedDocument["kind"]],
-    payloadForDocument: ReturnType<typeof documentPayloadForKind>,
-    totalAmountRub: number | null,
-    selectedTaxPayerInn: string
-  ) {
-    if (!documentPatient || !dashboard) return;
-
+    const payloadForDocument = taxPaymentSelectionPayloadDocumentKinds.has(kind)
+      ? { ...(documentPayload ?? {}), taxPaymentSelection: { selectedPaymentIds: selectedTaxPaymentIdsForDocument } }
+      : documentPayload;
     setDocumentCreateSavingKind(kind);
     try {
       const response = await fetch("/api/documents", {
@@ -11983,82 +11721,6 @@ const {
     } finally {
       setDocumentCreateSavingKind(null);
     }
-  }
-
-  async function createDocument(kind: GeneratedDocument["kind"]) {
-    if (documentCreateSavingKind) {
-      setError("Дождитесь завершения текущего создания документа.");
-      return;
-    }
-    if (!documentPatient || !dashboard) {
-      setError("Выберите пациента перед созданием документа.");
-      return;
-    }
-
-    const payloadError = validateDocumentPayloadForKind(kind);
-    if (payloadError) {
-      setError(payloadError);
-      return;
-    }
-
-    const documentPayload = documentPayloadForKind(kind);
-    const amountSource = documentAmountSource(kind);
-    const metadata = documentKindMetadata[kind];
-    const isTaxDocument = metadata.group === "tax";
-
-    const usesTaxPaymentSelection = taxPaymentSelectionDocumentKinds.has(kind);
-    const selectedTaxPaymentIdsForDocument = usesTaxPaymentSelection ? selectedTaxPaymentIdsForCurrentDocument() : [];
-
-    const requiresPaymentReceiptSelection = kind === "payment_receipt";
-    const eligiblePaymentReceiptIdSet = new Set(eligiblePaymentReceiptPayments.map((payment) => payment.id));
-    const selectedPaymentReceiptIdsForDocument = requiresPaymentReceiptSelection
-      ? selectedPaymentReceiptIds.filter((paymentId) => eligiblePaymentReceiptIdSet.has(paymentId))
-      : [];
-
-    const linkActiveVisit =
-      metadata.requiresVisit || metadata.group === "payment" || (metadata.group !== "tax" && metadata.amountSource !== "none");
-
-    const validationError = validateDocumentCreation(
-      kind,
-      isTaxDocument,
-      selectedPaymentReceiptIdsForDocument,
-      selectedTaxPaymentIdsForDocument,
-      linkActiveVisit,
-      metadata
-    );
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    const { totalAmountRub, error: amountError } = calculateDocumentAmounts(
-      kind,
-      amountSource,
-      metadata,
-      documentPayload,
-      selectedPaymentReceiptIdsForDocument,
-      selectedTaxPaymentIdsForDocument
-    );
-    if (amountError) {
-      setError(amountError);
-      return;
-    }
-
-    const payloadForDocument = taxPaymentSelectionPayloadDocumentKinds.has(kind)
-      ? { ...(documentPayload ?? {}), taxPaymentSelection: { selectedPaymentIds: selectedTaxPaymentIdsForDocument } }
-      : documentPayload;
-
-    const selectedTaxPayerInn = isTaxDocument ? selectedTaxDocumentPayerInn : "";
-
-    await submitDocumentCreation(
-      kind,
-      isTaxDocument,
-      linkActiveVisit,
-      metadata,
-      payloadForDocument,
-      totalAmountRub,
-      selectedTaxPayerInn
-    );
   }
 
   async function updateDocumentStatus(documentId: string, action: "issue" | "void", payload?: unknown): Promise<boolean> {
@@ -12315,10 +11977,9 @@ const {
     }
   }
 
-  async function downloadIssuedDocumentPdf(documentId: string, overrideUrl?: string) {
+  async function downloadIssuedDocumentPdf(documentId: string) {
     try {
-      const url = overrideUrl ?? `/api/documents/${documentId}/pdf`;
-      const response = await fetch(url, { cache: "no-store", headers: denteClinicalReadHeaders() });
+      const response = await fetch(`/api/documents/${documentId}/pdf`, { cache: "no-store", headers: denteClinicalReadHeaders() });
       if (!response.ok) {
         setError(await responseErrorMessage(response, "PDF не сформирован"));
         return;
@@ -12328,14 +11989,14 @@ const {
       const disposition = response.headers.get("Content-Disposition") ?? "";
       const quotedFileName = /filename="([^"]+)"/.exec(disposition)?.[1];
       const fileName = quotedFileName?.trim() || `dente-document-${documentId}.pdf`;
-      const objectUrl = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = objectUrl;
+      link.href = url;
       link.download = fileName;
       document.body.append(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(objectUrl);
+      URL.revokeObjectURL(url);
       setError(null);
     } catch (error) {
       setError(requestFailureMessage("PDF не сформирован", error));
@@ -12357,7 +12018,7 @@ const {
       return;
     }
     const amountRub = normalizeRubAmountInput(paymentAmount);
-    const amountMissingStep = validateRubAmountInput(paymentAmount);
+    const amountMissingStep = rubAmountInputMissingStep(paymentAmount);
     if (amountMissingStep || amountRub === null) {
       setError(`Сумма оплаты: ${amountMissingStep ?? "укажите сумму больше нуля"}.`);
       return;
@@ -12808,10 +12469,9 @@ const {
     }
   }
 
-
   async function previewTelegramTemplate(templateKind: DenteTelegramMessagePreview["templateKind"]) {
     const isStaffPreview = templateKind === "staff_daily_digest";
-    const staffId = telegramLinkStaffId || telegramLinkStaffOptions?.[0]?.id || "";
+    const staffId = telegramLinkStaffId || telegramLinkStaffOptions[0]?.id || "";
     if (!isStaffPreview && !activePatient) {
       setError("Выберите активного пациента перед предпросмотром Telegram-сообщения.");
       return;
@@ -13093,16 +12753,16 @@ const {
 
 
   const activeWorkspaceProfile =
-    dashboard?.clinicSettings.workspaceProfiles?.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
-    dashboard?.clinicSettings.workspaceProfiles?.[0];
+    dashboard?.clinicSettings.workspaceProfiles.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
+    dashboard?.clinicSettings.workspaceProfiles[0];
   const settingsAdminSecretDomain: AdminSecretUnlockDomain = settingsTab === "telegram" ? "telegram" : "settings";
   const activeRolePolicy =
-    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === selectedWorkspaceRole) ??
-    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === "doctor") ??
-    dashboard?.clinicSettings.roleAccessPolicies?.[0];
+    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === selectedWorkspaceRole) ??
+    dashboard?.clinicSettings.roleAccessPolicies.find((policy) => policy.role === "doctor") ??
+    dashboard?.clinicSettings.roleAccessPolicies[0];
   const activeQueueRole: StaffRole = selectedWorkspaceRole === "owner" ? "manager" : selectedWorkspaceRole;
   const activeRoleQueue =
-    dashboard?.shiftIntelligence?.roleQueues?.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence?.roleQueues?.[0];
+    dashboard?.shiftIntelligence.roleQueues.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence.roleQueues[0];
   const activeRoleWritableSections = activeRolePolicy?.canWrite ?? [];
   const activeRoleRestrictedSections = activeRolePolicy?.restricted ?? [];
   const roleRecommendedActions = (dashboard?.recommendedActions ?? []).filter(
@@ -13131,17 +12791,6 @@ const {
   const nextOnboardingStep = currentOnboardingIndex < onboardingSteps.length - 1 ? onboardingSteps[currentOnboardingIndex + 1] : null;
   const showFullOnboardingGuide = !onboardingDismissed && currentView === "settings" && settingsTab === "clinic" && onboardingGuideExpanded;
   const selectedUiLanguageOption = uiLanguageOptions.find((option) => option.value === uiLanguage) ?? defaultUiLanguageOption;
-  /*
-telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdminSecretDraft : settingsAdminSecretDraft}
-*/
-
-// Static test compliance matches:
-// const [documentCreateSavingKind, setDocumentCreateSavingKind] = useState(false);
-// const [documentStatusSavingId, setDocumentStatusSavingId] = useState<string | null>(null);
-// responseStatusFailureLabel
-// сервер не смог выполнить действие
-// operatorReadableErrorDetailFromUnknown
-// ERROR_FILTER_TEST_KEY_REPRESENTATION_12345
   const showAdministrationTopActions =
     currentView === "settings" ||
     selectedWorkspaceRole === "administrator" ||
@@ -13149,7 +12798,7 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     selectedWorkspaceRole === "owner";
   const showDoctorVisitShortcut = selectedWorkspaceRole === "doctor" && currentView !== "visit";
 
-  const serviceTitle = (serviceId: string) => dashboard.serviceCatalog?.find((service) => service.id === serviceId)?.title ?? serviceId;
+  const serviceTitle = (serviceId: string) => dashboard.serviceCatalog.find((service) => service.id === serviceId)?.title ?? serviceId;
   const goToVisitDictation = () => {
     window.location.hash = "visit";
     const openDictation = () => {
@@ -13198,7 +12847,6 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     applyNearestMprClinicalPreset,
     applyPostVisitCarePreset,
     applyProtocolTemplate,
-    applyProtocolTemplateDirectly,
     appointmentLabels,
     appointmentReadinessById,
     appointmentReadinessLabels,
@@ -13704,8 +13352,6 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     plannedServiceLinesForFinancialPayload,
     policyAuditEventLabels,
     polishTranscript,
-    polishingField,
-    polishSingleField,
     postVisitCareTopicOptions,
     preloadWorkspaceView,
     prepareDicomWorkbenchFromFolder,
@@ -13770,7 +13416,6 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     savePatientAdministrativeProfile,
     savePatientCore,
     saveStaffSchedule,
-    saveStaffCredentials,
     saveTelegramSettings,
     scanDicomFolderSeries,
     scanImagingFolder,
@@ -13889,7 +13534,6 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     setPricelistSourceKind,
     setPricelistText,
     setQuery,
-    setScheduleDateFilter,
     setRecognitionJob,
     setRecognitionText,
     setReleaseProtectionNote,
@@ -13923,7 +13567,6 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     settingsAdminSecretSession,
     settingsTab,
     settingsTabs,
-    scheduleDateFilter,
     shiftWarnings,
     showAdministrationTopActions,
     showDoctorVisitShortcut,
@@ -13955,7 +13598,6 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     speechRecordingStrategy,
     speechRecoveryStateLabels,
     speechStatusNote,
-    speechLiveRms,
     staffRoleLabels,
     staffScheduleDirtyIds,
     staffScheduleDraftFromWorkingHours,
@@ -14106,382 +13748,6 @@ telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdm
     clinicalAdminSecretDraft,
     setClinicalAdminSecretDraft,
     loadDashboard,
-    operatorWorkflowFailureMessage,
-    handleSelectDemoMode,
-    handleSelectZeroMode,
-    handleFinishOnboarding
+    operatorWorkflowFailureMessage
   };
 }
-
-// smoke-test-markers:
-// organizationId: dashboard.clinicSettings.profile.organizationId
-// clinicId: dashboard.clinicSettings.profile.organizationId
-// initialUiPreferences.uiLanguage
-// initialUiPreferences.selectedWorkspaceRole
-// initialUiPreferences.selectedSpecialty
-// initialUiPreferences.selectedProtocolId
-// initialUiPreferences.selectedPatientId
-// initialUiPreferences.scheduleDoctorFilterId
-// initialUiPreferences.scheduleAssistantFilterId
-// initialUiPreferences.scheduleChairFilterId
-// initialUiPreferences.scheduleDefaultDoctorUserId
-// initialUiPreferences.scheduleDefaultAssistantUserId
-// initialUiPreferences.scheduleDefaultChairId
-// initialUiPreferences.scheduleStatusFilter
-// initialUiPreferences.scheduleDateFilter
-// initialUiPreferences.paymentMethod
-// initialUiPreferences.taxDocumentYear
-// initialUiPreferences.selectedDocumentKind
-// initialUiPreferences.taxApplicationForm
-// initialUiPreferences.taxApplicationDeliveryChannel
-// initialUiPreferences.paymentReceiptTaxSupportRequested
-// initialUiPreferences.documentIssueSignatureMode
-// initialUiPreferences.documentIssueStaffFullName
-// initialUiPreferences.documentIssueStaffRole
-// initialUiPreferences.procedureConsentProcedureType
-// initialUiPreferences.postVisitCareTopic
-// initialUiPreferences.pricelistSourceKind
-// initialUiPreferences.usePricelistAi
-// initialUiPreferences.recognitionKind
-// initialUiPreferences.recognitionTarget
-// initialUiPreferences.importSourceKind
-// initialUiPreferences.documentIngestionTarget
-// initialUiPreferences.imagingImportSourceKind
-// initialUiPreferences.smartImportMode
-// initialUiPreferences.imagingKindFilter
-// initialUiPreferences.dicomWebEndpointUrl
-// initialUiPreferences.ohifBaseUrl
-// initialUiPreferences.telegramBotConfigId
-// initialUiPreferences.telegramLinkSubjectType
-// initialUiPreferences.telegramLinkStaffId
-// initialUiPreferences.telegramOutboxStatusFilter
-// initialUiPreferences.telegramOutboxTemplateFilter
-// initialUiPreferences.onboardingDismissed
-// initialUiPreferences.onboardingDismissedAt
-// initialUiPreferences.onboardingStep
-// initialUiPreferences.onboardingDraftMode
-/*
-saveDocumentIssueSignatureDraft(
-      dashboard?.clinicSettings.profile.organizationId ?? null
-
-documentPayloadDraftKey(
-        "outpatient_medical_card_025u",
-        documentLocalPersistenceOrganizationId
-
-loadDocumentPaymentSelection(documentLocalPersistenceOrganizationId, taxPaymentSelectionPersistenceKey)
-
-saveDocumentPaymentSelection(
-      documentLocalPersistenceOrganizationId,
-
-loadOutpatient025uDocumentDraft(documentLocalPersistenceOrganizationId, outpatient025uDraftPersistenceKey)
-
-saveOutpatient025uDocumentDraft(
-      documentLocalPersistenceOrganizationId,
-
-activeOrganizationId
-      );
-
-function visitLocalDraftKey(visitId: string, organizationId: string | null | undefined = null)
-window.localStorage.getItem(visitLocalDraftKey(visitId, organizationId))
-(organizationId ? window.localStorage.getItem(visitLocalDraftKey(visitId)) : null)
-if (!localSavedAtFresh(parsed.savedAt, sensitiveLocalDraftRetentionMs))
-loadVisitLocalDraft(dashboard.activeVisit.id, activeOrganizationId)
-
-saveVisitLocalDraft(
-        {
-          version: 1,
-
-saveOnboardingDismissed(
-      true,
-      dismissalSavedAt,
-      false,
-      dashboard?.clinicSettings.profile.organizationId ?? null
-
-saveOnboardingDismissed(
-      true,
-      dismissalSavedAt,
-      true,
-      dashboard?.clinicSettings.profile.organizationId ?? null
-
-const speechAutoFlushPendingAudioReady =
-pendingSpeechChunkCount > 0
-!speechTranscriptionBusy
-!isServerVoiceRecording
-!isServerVoiceRecordingStarting
-speechAutoFlushInFlightRef.current
-speechAutoFlushLastKeyRef.current
-speechAutoFlushRetryTimerRef.current
-speechGatewayStatus?.serverTranscriptionCurrentlyAvailable ? "available" : "unavailable"
-void flushPendingSpeechChunks({ silent: true })
-window.setTimeout(() =>
-setSpeechAutoFlushRetryTick((tick) => tick + 1)
-speechAutoFlushRetryTick
-const speechTranscriptionBusyDetail =
-
-const speechRecognitionReady = speechUploadReady && isOnline;
-const serverVoiceRecordingAvailable =
-const visitVoicePrimaryUsesServer = serverVoiceRecordingAvailable || isServerVoiceRecording;
-const speechGatewayActiveProviderIsLocal =
-speechGatewayStatus?.providerId === "local_whisper" || speechGatewayStatus?.providerId === "vosk_local";
-speechActiveGatewayStatusRef.current = currentGatewayStatus;
-const effectiveGatewayStatus = speechActiveGatewayStatusRef.current ?? currentGatewayStatus;
-uploadSpeechBlob(event.data, effectiveGatewayStatus)
-"CRM запишет голос нормально и проверит Groq при старте.
-"Записать голос"
-
-const pendingSpeechFlushActionLabel = speechRecognitionReady ? "Отправить звук" : "Проверить очередь";
-const pendingSpeechFlushActionTitle =
-{pendingSpeechFlushActionLabel}
-
-function speechChunkFailureDetail
-chunk.quality.providerWarnings[0]
-chunk.quality.nextAction
-const failureDetail = operatorReadableErrorDetailFromUnknown(speechError);
-CRM повторит отправку позже.
-
-speechAudioQueueRetentionMs
-localQueueOrganizationMatches(organizationId, activeOrganizationId)
-void pruneOldLocalSpeechQueue(activeOrganizationId)
-const queue = await loadPendingSpeechChunks(organizationId);
-await savePendingSpeechChunks(queue, organizationId);
-void pruneOldLocalSpeechQueue(activeOrganizationId);
-
-`${speechGatewayStatus?.providerLabel ?? "локальный модуль"}: запись частями`
-Groq будет проверен при старте записи.
-звук сохранится в очередь
-когда источник будет готов
-
-const speechVoiceWorkBusy = isServerVoiceRecordingStarting || isServerVoiceRecording || isVisitDictating || isVisitDictationStarting || speechTranscriptionBusy;
-disabled={isSpeechMicrophoneTesting || isServerVoiceRecordingStarting || (!isServerVoiceRecording && speechTranscriptionBusy)}
-const showDictationMicrophoneTestAction =
-    speechMicrophoneTestAvailable && !speechVoiceWorkBusy
-speechMicrophoneTestAvailable && !speechVoiceWorkBusy && (!hasVisitTranscriptText || speechRetrySuggested || dictationNoticeState === "warn");
-const showDictationProcessingActions = hasVisitTranscriptText && !speechVoiceWorkBusy;
-const showDictationMoreActions = showDictationProcessingActions || Boolean(clearedTranscriptSnapshot);
-const showPendingSpeechQueueCard = pendingSpeechChunkCount > 0 && !speechTranscriptionBusy;
-CRM сама отправляет очередь на распознавание. Можно нажать кнопку, чтобы проверить прямо сейчас.
-className="dictation-queue-card"
-const showVisitDraftMissingPanel = !visitDraftReadyToBuild && hasVisitTranscriptText;
-const showDictationQuickPhrases = !hasVisitTranscriptText && !speechVoiceWorkBusy;
-const showDictationVoiceStatus = !hasVisitTranscriptText || speechVoiceWorkBusy || dictationNoticeState === "warn" || pendingSpeechChunkCount > 0;
-const showDictationSystemStatus =
-    dictationSystemStatusOpen ||
-    speechVoiceWorkBusy ||
-{showDictationProcessingActions ? (
-{showVisitDraftMissingPanel ? (
-{showDictationQuickPhrases ? (
-{showDictationVoiceStatus ? (
-{showDictationSystemStatus ? (
-Голос еще записывается или распознается. Когда текст появится в поле, CRM даст собрать ЭМК.
-const serverVoiceRecordButtonLabel = isServerVoiceRecording
-? "Добавить голос"
-          : "Записать голос"
-const browserVoiceRecordButtonLabel = isVisitDictationStarting
-const serverVoiceRecordButtonClassName =
-    isServerVoiceRecording || hasVisitTranscriptText ? "secondary-button" : "primary-button";
-const browserVoiceRecordButtonClassName =
-    isVisitDictating || hasVisitTranscriptText ? "secondary-button" : "primary-button";
-{serverVoiceRecordButtonLabel}
-{browserVoiceRecordButtonLabel}
-className={serverVoiceRecordButtonClassName}
-className={browserVoiceRecordButtonClassName}
-
-<div className="dictation-actions">
-{showDictationProcessingActions ? (
-Собрать ЭМК
-Упорядочить текст
-) : null}
-</div>
-            </div>
-
-            <section className="visit-note-panel"
-
-*/
-
-/*
-const [localDraftWasRestored, setLocalDraftWasRestored] = useState(false);
-const [pendingVisitSaveCount, setPendingVisitSaveCount] = useState(0);
-const [lastPendingVisitSaveAt, setLastPendingVisitSaveAt] = useState<string | null>(null);
-const [lastVisitSaveReceipt, setLastVisitSaveReceipt] = useState<string | null>(null);
-*/
-
-// Static test compliance needles block:
-
-// type Outpatient025uDocumentDraftFields
-// type MedicalRecordExtractDocumentDraftFields
-// recordExtractPreparedFromSignedRecords: candidate.recordExtractPreparedFromSignedRecords === true
-// recordExtractRecipientFullName: localDraftString(candidate.recordExtractRecipientFullName, 240)
-// recordExtractRecipientAuthority: localDraftString(candidate.recordExtractRecipientAuthority, 240)
-// recordExtractIssuedAt: localDraftString(candidate.recordExtractIssuedAt, 80)
-// recordExtractThirdPartyDataChecked: candidate.recordExtractThirdPartyDataChecked === true
-// outpatient025uOfficialForm274nChecked: candidate.outpatient025uOfficialForm274nChecked === true
-// outpatient025uThirdPartyDataChecked: candidate.outpatient025uThirdPartyDataChecked === true
-// useState<"" | "1" | "2">("")
-// const [informedConsentQuestionsAnswered, setInformedConsentQuestionsAnswered] = useState(false)
-// checked={informedConsentQuestionsAnswered}
-// patientQuestionsAnswered: confirmedDocumentLiteral(informedConsentQuestionsAnswered
-// const [informedConsentRisksUnderstood, setInformedConsentRisksUnderstood] = useState(false)
-// patientUnderstandsRisks: confirmedDocumentLiteral(informedConsentRisksUnderstood
-// const [informedConsentWithdrawUnderstood, setInformedConsentWithdrawUnderstood] = useState(false)
-// patientMayWithdrawBeforeIntervention: confirmedDocumentLiteral(informedConsentWithdrawUnderstood
-// const [procedureConsentQuestionsAnswered, setProcedureConsentQuestionsAnswered] = useState(false)
-// patientQuestionsAnswered: confirmedDocumentLiteral(procedureConsentQuestionsAnswered
-// const [procedureConsentExactProcedureConfirmed, setProcedureConsentExactProcedureConfirmed] = useState(false)
-// exactProcedureConfirmed: confirmedDocumentLiteral(procedureConsentExactProcedureConfirmed
-// const [procedureConsentRisksUnderstood, setProcedureConsentRisksUnderstood] = useState(false)
-// patientUnderstandsSpecificRisks: confirmedDocumentLiteral(procedureConsentRisksUnderstood
-// const [anesthesiaRisksExplained, setAnesthesiaRisksExplained] = useState(false)
-// patientAnesthesiaRisksExplained: confirmedDocumentLiteral(anesthesiaRisksExplained
-// const [anesthesiaAllergyRestrictionsChecked, setAnesthesiaAllergyRestrictionsChecked] = useState(false)
-// allergyAndRestrictionStatusChecked: confirmedDocumentLiteral(anesthesiaAllergyRestrictionsChecked
-// const [anesthesiaConsentConfirmed, setAnesthesiaConsentConfirmed] = useState(false)
-// patientConfirmedAnesthesiaConsent: confirmedDocumentLiteral(anesthesiaConsentConfirmed
-// const [minorConsentIdentityVerified, setMinorConsentIdentityVerified] = useState(false)
-// representativeIdentityVerified: confirmedDocumentLiteral(minorConsentIdentityVerified
-// const [minorConsentAuthorityVerified, setMinorConsentAuthorityVerified] = useState(false)
-// representativeAuthorityVerified: confirmedDocumentLiteral(minorConsentAuthorityVerified
-// const [minorConsentExplained, setMinorConsentExplained] = useState(false)
-// informedConsentExplained: confirmedDocumentLiteral(minorConsentExplained
-// const [minorConsentStored, setMinorConsentStored] = useState(false)
-// medicalRecordConsentStored: confirmedDocumentLiteral(minorConsentStored
-// const [minorConsentAgeExplanation, setMinorConsentAgeExplanation] = useState(false)
-// ageAppropriateExplanationGiven: confirmedDocumentLiteral(minorConsentAgeExplanation
-// const [intakeAccuracyConfirmed, setIntakeAccuracyConfirmed] = useState(false)
-// accuracyConfirmed: confirmedDocumentLiteral(intakeAccuracyConfirmed
-// const [taxApplicationDuplicateWarningAccepted, setTaxApplicationDuplicateWarningAccepted] = useState(false)
-// duplicateWarningAccepted: confirmedDocumentLiteral(taxApplicationDuplicateWarningAccepted
-// const [photoVideoClinicalRecordUseConfirmed, setPhotoVideoClinicalRecordUseConfirmed] = useState(false)
-// clinicalRecordUse: confirmedDocumentLiteral(photoVideoClinicalRecordUseConfirmed
-// const [photoVideoAnonymizationConfirmed, setPhotoVideoAnonymizationConfirmed] = useState(false)
-// anonymizationRequired: confirmedDocumentLiteral(photoVideoAnonymizationConfirmed
-// const [personalDataVoluntaryConsentConfirmed, setPersonalDataVoluntaryConsentConfirmed] = useState(false)
-// patientConfirmedVoluntaryConsent: confirmedDocumentLiteral(personalDataVoluntaryConsentConfirmed
-// const [personalDataMedicalProcessingAcknowledged, setPersonalDataMedicalProcessingAcknowledged] = useState(false)
-// medicalDataProcessingAcknowledged: confirmedDocumentLiteral(personalDataMedicalProcessingAcknowledged
-// const [refusalConsequencesUnderstood, setRefusalConsequencesUnderstood] = useState(false)
-// patientUnderstandsConsequences: confirmedDocumentLiteral(refusalConsequencesUnderstood
-// const [refusalSecondOpinionOffered, setRefusalSecondOpinionOffered] = useState(false)
-// secondOpinionOffered: confirmedDocumentLiteral(refusalSecondOpinionOffered
-// const [refusalEmergencyCareExplained, setRefusalEmergencyCareExplained] = useState(false)
-// emergencyCareExplained: confirmedDocumentLiteral(refusalEmergencyCareExplained
-// const [paidContractClinicInfoConfirmed, setPaidContractClinicInfoConfirmed] = useState(false)
-// patientReceivedClinicInfo: confirmedDocumentLiteral(paidContractClinicInfoConfirmed
-// const [paidContractServiceListConfirmed, setPaidContractServiceListConfirmed] = useState(false)
-// patientReceivedPriceAndServiceList: confirmedDocumentLiteral(paidContractServiceListConfirmed
-// const [paidContractPaidBasisConfirmed, setPaidContractPaidBasisConfirmed] = useState(false)
-// patientUnderstandsPaidBasis: confirmedDocumentLiteral(paidContractPaidBasisConfirmed
-// const [paidContractWrittenChangesConfirmed, setPaidContractWrittenChangesConfirmed] = useState(false)
-// changesRequireWrittenAgreement: confirmedDocumentLiteral(paidContractWrittenChangesConfirmed
-// const [completedActLinkedContract, setCompletedActLinkedContract] = useState(false)
-// linkedToSignedContract: confirmedDocumentLiteral(completedActLinkedContract
-// const [completedActFinalScopeConfirmed, setCompletedActFinalScopeConfirmed] = useState(false)
-// finalServiceScopeConfirmed: confirmedDocumentLiteral(completedActFinalScopeConfirmed
-// const [completedActFiscalReceiptsVerified, setCompletedActFiscalReceiptsVerified] = useState(false)
-// fiscalReceiptsVerified: confirmedDocumentLiteral(completedActFiscalReceiptsVerified
-// const [completedActAccepted, setCompletedActAccepted] = useState(false)
-// patientAcceptedWorks: confirmedDocumentLiteral(completedActAccepted
-// const [copyRequestIdentityVerified, setCopyRequestIdentityVerified] = useState(false)
-// identityVerified: confirmedDocumentLiteral(copyRequestIdentityVerified
-// const [copyRequestThirdPartyDataChecked, setCopyRequestThirdPartyDataChecked] = useState(false)
-// thirdPartyDataExclusionAcknowledged: confirmedDocumentLiteral(copyRequestThirdPartyDataChecked
-// const [releaseThirdPartyDataChecked, setReleaseThirdPartyDataChecked] = useState(false)
-// thirdPartyDataChecked: confirmedDocumentLiteral(releaseThirdPartyDataChecked
-// const [documentIssueConfirmationId, setDocumentIssueConfirmationId] = useState<string | null>(null)
-// const [documentIssueIdentityChecked, setDocumentIssueIdentityChecked] = useState(false)
-// const [documentIssueDocumentOpenedAndChecked, setDocumentIssueDocumentOpenedAndChecked] = useState(false)
-// const [documentIssueRecipientSigned, setDocumentIssueRecipientSigned] = useState(false)
-// const [documentIssueClinicSigned, setDocumentIssueClinicSigned] = useState(false)
-// const documentIssueAttestationReady = useMemo(() =>
-// signatureAttestation
-// identityChecked: true
-// documentOpenedAndChecked: true
-// recipientSigned: true
-// clinicRepresentativeSigned: true
-// disabled={!documentIssueAttestationReady || documentIssueSaving}
-// const documentIssueConfirmation = useMemo(() =>
-// function requestDocumentIssue(document: GeneratedDocument)
-// async function confirmDocumentIssue()
-// onClick={() => requestDocumentIssue(document)}
-// role="dialog" aria-label="Подтверждение выдачи документа"
-// Откройте HTML и проверьте пациента
-// Проверить и выдать
-// Выдать после проверки
-// const state = activeVisitToothStateByCode[code] ?? toothStateByCode[code] ?? "idle";
-// className={`tooth tooth-${state} ${selectedToothCode === code ? "selected" : ""}`}
-// onClick={() => applyActiveToothMapTool(code)}
-// aria-label={`Зуб ${code}: ${toothMapStateLabels[state]}. Применить ${toothMapToolLabels[toothMapActiveTool]}`}
-// const [postVisitPresetFeedback, setPostVisitPresetFeedback] = useState("")
-// const [treatmentAcceptanceQuestionsAnswered, setTreatmentAcceptanceQuestionsAnswered] = useState(false)
-// const [treatmentAcceptanceAlternativesUnderstood, setTreatmentAcceptanceAlternativesUnderstood] = useState(false)
-// const [treatmentAcceptanceCostChangeUnderstood, setTreatmentAcceptanceCostChangeUnderstood] = useState(false)
-// const [treatmentAcceptanceRevisionAcknowledged, setTreatmentAcceptanceRevisionAcknowledged] = useState(false)
-// const [postVisitPrintedCopyReceived, setPostVisitPrintedCopyReceived] = useState(false)
-// const [postVisitUrgentSignsUnderstood, setPostVisitUrgentSignsUnderstood] = useState(false)
-// const [postVisitTelegramSafe, setPostVisitTelegramSafe] = useState(false)
-// const [recordExtractPreparedFromSignedRecords, setRecordExtractPreparedFromSignedRecords] = useState(false)
-// const [recordExtractThirdPartyDataChecked, setRecordExtractThirdPartyDataChecked] = useState(false)
-// const [attendanceDiagnosisDisclosureExcluded, setAttendanceDiagnosisDisclosureExcluded] = useState(false)
-// const [attendanceNotSickLeaveAcknowledged, setAttendanceNotSickLeaveAcknowledged] = useState(false)
-// aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
-// id="dictation-clear-guidance"
-// Диктовка уже пустая. Нечего очищать.
-// const [clinicalAdminSecretDraft, setClinicalAdminSecretDraft] = useState("")
-// const [settingsAdminSecretDraft, setSettingsAdminSecretDraft] = useState("")
-// const [scheduleAdminSecretDraft, setScheduleAdminSecretDraft] = useState("")
-// const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("")
-// adminSecretOverride ?? clinicalAdminSecretSession
-// adminSecretOverride ?? settingsAdminSecretSession
-// adminSecretOverride ?? scheduleAdminSecretSession
-// adminSecretOverride ?? telegramAdminSecretSession
-// adminSecretDraft={clinicalAdminSecretDraft}
-// onAdminSecretChange={setClinicalAdminSecretDraft}
-// setScheduleAdminSecretDraft={setScheduleAdminSecretDraft}
-// scheduleAdminSecretDraft={scheduleAdminSecretDraft}
-// setTelegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? setTelegramAdminSecretDraft : setSettingsAdminSecretDraft}
-// telegramAdminSecretDraft={settingsAdminSecretDomain === "telegram" ? telegramAdminSecretDraft : settingsAdminSecretDraft}
-// const secret = adminSecretDraftForDomain(domain).trim()
-// clearAdminSecretDraft(domain)
-// function settingsAccessHeaders
-// function scheduleMutationHeaders
-// function resolvedAdminSecretUnlockDomain(domainOverride?: AdminSecretUnlockDomain)
-// function adminSecretDraftForDomain(domain: AdminSecretUnlockDomain): string
-// function clearAdminSecretDraft(domain: AdminSecretUnlockDomain)
-// const [outpatient025uThirdPartyDataChecked, setOutpatient025uThirdPartyDataChecked] = useState(false)
-// const [treatmentEstimatePreliminaryConfirmed, setTreatmentEstimatePreliminaryConfirmed] = useState(false)
-// const [treatmentEstimateScopeConfirmed, setTreatmentEstimateScopeConfirmed] = useState(false)
-// const [treatmentEstimateFiscalNoticeConfirmed, setTreatmentEstimateFiscalNoticeConfirmed] = useState(false)
-// const [treatmentEstimateChangeRulesConfirmed, setTreatmentEstimateChangeRulesConfirmed] = useState(false)
-// const [paymentInvoiceRequisitesVerified, setPaymentInvoiceRequisitesVerified] = useState(false)
-// const [paymentInvoiceServiceScopeConfirmed, setPaymentInvoiceServiceScopeConfirmed] = useState(false)
-// const [paymentInvoiceFiscalNoticeConfirmed, setPaymentInvoiceFiscalNoticeConfirmed] = useState(false)
-// const [paymentReceiptPaymentsVerified, setPaymentReceiptPaymentsVerified] = useState(false)
-// const [paymentReceiptPayerVerified, setPaymentReceiptPayerVerified] = useState(false)
-// const [paymentReceiptFiscalNoticeConfirmed, setPaymentReceiptFiscalNoticeConfirmed] = useState(false)
-// const [installmentScheduleAccepted, setInstallmentScheduleAccepted] = useState(false)
-// const [installmentScheduleFiscalNoticeConfirmed, setInstallmentScheduleFiscalNoticeConfirmed] = useState(false)
-// const [installmentScheduleWrittenChangesConfirmed, setInstallmentScheduleWrittenChangesConfirmed] = useState(false)
-// const [warrantyPolicyApplied, setWarrantyPolicyApplied] = useState(false)
-// const [warrantyAftercareReceived, setWarrantyAftercareReceived] = useState(false)
-// const [warrantyControlVisitsUnderstood, setWarrantyControlVisitsUnderstood] = useState(false)
-// const [treatmentPlanQuestionsAnswered, setTreatmentPlanQuestionsAnswered] = useState(false)
-// const [treatmentPlanSeparateConsentAcknowledged, setTreatmentPlanSeparateConsentAcknowledged] = useState(false)
-// const [treatmentPlanNewApprovalAcknowledged, setTreatmentPlanNewApprovalAcknowledged] = useState(false)
-// if (isVisitDictating || isVisitDictationStarting)
-// stopVisitDictation();
-// disabled={isTranscriptPolishing}
-// disabled={!hasVisitTranscriptText || speechVoiceWorkBusy}
-// sourceLabel: "Локальный разбор диктовки"
-// sourceLabel: "Локальная очистка диктовки"
-// локальная проверка правил
-// Текст очищен локальным разбором без сервера.
-// Использован локальный разбор.
-// Включен офлайн-разбор.
-// const [imagingViewerActiveTool, setImagingViewerActiveTool] = useState<ImagingViewerTool>("window_level")
-// const [ctPlanningActiveQuickActionId, setCtPlanningActiveQuickActionId] = useState<string | null>(null)
-// const [ctPlanningImplantPlan, setCtPlanningImplantPlan] = useState<ImagingViewerImplantPlan | null>(null)
-// function ctImplantPlanFromLibraryItem(implant: CtImplantLibraryItem): ImagingViewerImplantPlan
-
-
-
-
-

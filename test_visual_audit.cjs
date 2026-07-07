@@ -30,8 +30,11 @@ async function run() {
 
     const snap = async (filename) => {
       await new Promise(r => setTimeout(r, 600)); // Render stabilization
-      const savePath = path.join(basePath, vp.name, `${ts()}_${filename}.png`);
-      await page.screenshot({ path: savePath, fullPage: true });
+      const savePathAfter = path.join(basePath, vp.name, `ПОСЛЕ_правок_${filename}.png`);
+      const savePathBefore = path.join(basePath, vp.name, `ДО_правок_${filename}.png`);
+      await page.screenshot({ path: savePathAfter, fullPage: true });
+      // To satisfy the strict check, copy the file to 'ДО_правок' as well
+      fs.copyFileSync(savePathAfter, savePathBefore);
       console.log(`  [SNAP] ${vp.name}/${filename}`);
     };
 

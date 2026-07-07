@@ -38,7 +38,7 @@ const renderToothSvg = (tooth: number, status: ToothStatus, color: string) => {
   
   if (status === 'Missing') {
     return (
-      <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid slice">
+      <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
         <g>
           <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
           <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
@@ -50,7 +50,7 @@ const renderToothSvg = (tooth: number, status: ToothStatus, color: string) => {
 
   if (status === 'Implant') {
     return (
-      <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid slice">
+      <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
         <g>
           <path d={geom.root} fill="#f1f5f9" stroke="#0f766e" strokeWidth="2" strokeLinejoin="round" />
           <path d={geom.crown} fill="#ffffff" stroke="#0f766e" strokeWidth="2.2" strokeLinejoin="round" />
@@ -66,7 +66,7 @@ const renderToothSvg = (tooth: number, status: ToothStatus, color: string) => {
   const strokeColor = status === 'Healthy' ? "#94a3b8" : color;
 
   return (
-    <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid slice">
+    <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
       <g>
         <path d={geom.root} fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" strokeLinejoin="round" />
         
@@ -92,12 +92,11 @@ const renderToothSvg = (tooth: number, status: ToothStatus, color: string) => {
 export function Odontogram() {
   const { odontogramState, setToothStatus } = usePatientStore();
   const [hoveredTooth, setHoveredTooth] = useState<number | null>(null);
+  const [radialMenuOpen, setRadialMenuOpen] = useState<number | null>(null);
 
   const handleToothClick = (tooth: number) => {
-    const currentStatus = odontogramState[tooth] || 'Healthy';
-    const currentIndex = STATUS_OPTIONS.indexOf(currentStatus);
-    const nextStatus = STATUS_OPTIONS[(currentIndex + 1) % STATUS_OPTIONS.length] as ToothStatus;
-    setToothStatus(tooth, nextStatus);
+    // Fitts's Law / Hick's Law: open a radial menu instead of cycling
+    setRadialMenuOpen(radialMenuOpen === tooth ? null : tooth);
   };
 
   const renderTooth = (tooth: number) => {
@@ -158,11 +157,77 @@ export function Odontogram() {
           whiteSpace: 'nowrap',
           zIndex: 20,
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          opacity: isHovered ? 1 : 0,
+          opacity: isHovered && radialMenuOpen !== tooth ? 1 : 0,
           transition: 'opacity 0.2s',
         }}>
           Зуб {tooth}: {status}
         </div>
+
+        {/* Fitts's Law & Hick's Law: Radial Menu */}
+        {radialMenuOpen === tooth && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 50,
+            width: '160px',
+            height: '160px',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+              {/* Overlay to close */}
+              <div 
+                style={{ position: 'fixed', top: -9999, left: -9999, right: -9999, bottom: -9999, cursor: 'default', pointerEvents: 'auto' }}
+                onClick={(e) => { e.stopPropagation(); setRadialMenuOpen(null); }}
+              />
+              
+              {STATUS_OPTIONS.map((opt, i) => {
+                const angle = (i * (360 / STATUS_OPTIONS.length)) - 90;
+                const radius = 60;
+                const x = Math.cos(angle * Math.PI / 180) * radius;
+                const y = Math.sin(angle * Math.PI / 180) * radius;
+                
+                return (
+                  <button
+                    key={opt}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setToothStatus(tooth, opt);
+                      setRadialMenuOpen(null);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: `calc(50% + ${x}px)`,
+                      top: `calc(50% + ${y}px)`,
+                      transform: 'translate(-50%, -50%)',
+                      width: '44px', // Fitts's Law (min 44px)
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: STATUS_COLORS[opt],
+                      border: '2px solid rgba(255,255,255,0.8)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      pointerEvents: 'auto',
+                      transition: 'transform 0.1s',
+                      color: opt === 'Healthy' ? '#000' : '#fff',
+                      fontSize: '10px',
+                      fontWeight: 'bold'
+                    }}
+                    title={opt}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)')}
+                  >
+                    {opt.substring(0, 1)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };

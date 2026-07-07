@@ -153,3 +153,21 @@
 .print-btn:hover {
   background: #10b981;
 }
+
+@media (max-width: 480px) {
+  .consent-editor {
+    padding: 16px;
+  }
+  .editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .editor-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .save-btn, .print-btn, .toggle-preview-btn {
+    width: 100%;
+  }
+}

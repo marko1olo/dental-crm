@@ -173,3 +173,21 @@
   50% { transform: scale(1.15); opacity: 0.8; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+@media (max-width: 480px) {
+  .clinical-scheduler {
+    padding: 16px;
+  }
+  .scheduler-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .date-picker {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .chair-column {
+    min-width: 280px;
+  }
+}
