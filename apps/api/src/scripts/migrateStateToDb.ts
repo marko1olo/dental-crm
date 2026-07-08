@@ -106,14 +106,16 @@ async function migrate() {
   }
 
   console.log(`🪑 Migrating ${state.chairs.length} Chairs...`);
-  for (const chair of state.chairs) {
-    await db.insert(schema.chairs).values({
-      id: chair.id,
-      organizationId: orgId,
-      clinicId: "e50337ad-f762-4f3b-8255-a2267576be78",
-      name: chair.name,
-      isActive: chair.active
-    });
+  if (state.chairs.length > 0) {
+    await db.insert(schema.chairs).values(
+      state.chairs.map((chair: any) => ({
+        id: chair.id,
+        organizationId: orgId,
+        clinicId: "e50337ad-f762-4f3b-8255-a2267576be78",
+        name: chair.name,
+        isActive: chair.active
+      }))
+    );
   }
 
   console.log(`🧑‍⚕️ Migrating ${state.patients.length} Patients...`);
