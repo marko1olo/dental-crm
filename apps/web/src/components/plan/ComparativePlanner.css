@@ -1,0 +1,698 @@
+/* C:\Clinic_MVP\dental-crm\apps\web\src\components\plan\ComparativePlanner.css */
+
+.comp-planner {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 0%, rgba(13, 148, 136, 0.05) 0%, var(--paper-soft) 100%);
+  padding: 2.5rem 2rem;
+  color: var(--ink);
+  font-family: var(--font-family, Inter, sans-serif);
+}
+
+.comp-container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.comp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.comp-title-group h1 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--teal-dark, #2dd4bf) 0%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.comp-title-group p {
+  color: var(--muted);
+  margin-top: 0.5rem;
+  font-size: 1rem;
+}
+
+.insurance-status-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow-premium);
+}
+
+.insurance-status-card svg {
+  width: 24px;
+  height: 24px;
+  transition: color 0.3s;
+}
+
+.insurance-info p:first-child {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.insurance-info p:last-child {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.insurance-toggle-btn {
+  margin-left: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.insurance-toggle-btn.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.insurance-toggle-btn.inactive {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.insurance-toggle-btn.inactive:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Grid Layout */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 2rem;
+}
+
+/* Plan Card styling */
+.plan-item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-premium);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.plan-item-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(45, 212, 191, 0.4);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(45, 212, 191, 0.1);
+}
+
+.plan-item-card.is-approved {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.plan-item-card.is-archived {
+  opacity: 0.45;
+  filter: grayscale(1);
+  pointer-events: none;
+}
+
+/* Plan Header */
+.plan-card-header {
+  padding: 1.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--line);
+}
+
+.plan-title-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.plan-title-wrapper h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+}
+
+.plan-card-header p {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-top: 0.35rem;
+}
+
+/* Plan drop-down triggers */
+.plan-actions-trigger {
+  padding: 0.5rem;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.plan-actions-trigger:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.plan-dropdown-menu {
+  position: absolute;
+  right: 1.5rem;
+  top: 4.5rem;
+  width: 200px;
+  background: rgba(18, 18, 23, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  padding: 0.5rem;
+}
+
+.plan-dropdown-menu button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  color: var(--ink);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all var(--transition-fast);
+}
+
+.plan-dropdown-menu button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.plan-dropdown-menu button.danger {
+  color: #fca5a5;
+}
+
+.plan-dropdown-menu button.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Pricing block */
+.plan-pricing-summary {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price-row.total-original {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.price-row.total-original span:last-child {
+  text-decoration: line-through;
+}
+
+.price-row.insurance-share {
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.price-row.final-due {
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line);
+}
+
+.price-row.final-due span:first-child {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.price-row.final-due .price-val {
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: #06b6d4; /* Cyan */
+  letter-spacing: -0.02em;
+}
+
+.price-row.final-due.no-insurance .price-val {
+  color: var(--ink);
+}
+
+/* Parameters spec grid */
+.specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--line);
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.75rem;
+  border-radius: 12px;
+}
+
+.spec-item span:first-child {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.spec-item span:last-child {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 0.25rem;
+}
+
+/* Services section */
+.services-section {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.services-section h3 {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.service-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all var(--transition-fast);
+}
+
+.service-tile.is-active {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.service-tile.is-inactive {
+  opacity: 0.4;
+}
+
+/* Custom indicator/switch */
+.tile-check-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: transparent;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.tile-check-indicator.checked {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #fff;
+}
+
+.tile-check-indicator:disabled {
+  cursor: not-allowed;
+}
+
+.tile-info {
+  flex-grow: 1;
+}
+
+.tile-info p:first-child {
+  font-size: 0.875rem;
+  font-weight: 550;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.tile-info p.is-crossed {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.tile-info p.price-tag {
+  font-family: monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.optional-tag {
+  margin-left: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+/* Card Actions */
+.card-bottom-actions {
+  padding: 1.5rem;
+  border-top: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.approve-plan-btn {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 14px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+  transition: all var(--transition-fast);
+}
+
+.approve-plan-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+}
+
+.reject-plan-btn {
+  width: 100%;
+  padding: 0.85rem;
+  margin-top: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  background: rgba(239, 68, 68, 0.08);
+  color: #fca5a5;
+  transition: all var(--transition-fast);
+}
+
+.reject-plan-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.status-badge-approved {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge-archived {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+}
+
+/* Light theme overrides */
+[data-theme="light"] .comp-planner {
+  background: radial-gradient(circle at 50% 0%, rgba(13, 148, 136, 0.03) 0%, var(--paper-soft) 100%);
+}
+
+[data-theme="light"] .plan-item-card:hover {
+  border-color: rgba(13, 148, 136, 0.3);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(13, 148, 136, 0.05);
+}
+
+[data-theme="light"] .spec-item {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .service-tile {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .service-tile.is-active {
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .plan-dropdown-menu {
+  background: #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+  .comp-planner {
+    padding: 1rem 0.5rem;
+  }
+  
+  .comp-header {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 1.5rem;
+  }
+
+  .comp-title-group h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .insurance-status-card {
+    justify-content: space-between;
+  }
+  
+  .plans-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* Mobile Tabs */
+  .mobile-plan-tabs {
+    display: flex;
+    background: var(--paper-soft);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    gap: 4px;
+  }
+
+  .mobile-tab-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .mobile-tab-btn.active-tab-A {
+    background: #ffffff;
+    color: #0f766e; /* teal */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .mobile-tab-btn.active-tab-B {
+    background: #ffffff;
+    color: #b45309; /* amber */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  [data-theme="dark"] .mobile-plan-tabs {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  [data-theme="dark"] .mobile-tab-btn.active-tab-A,
+  [data-theme="dark"] .mobile-tab-btn.active-tab-B {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+}
+
+/* ============================================================
+   COMPARATIVE PLANNER: PREMIUM POLISH
+   ============================================================ */
+
+/* Price ALWAYS accentuated — teal even without insurance */
+.price-row.final-due .price-val {
+  color: var(--teal-dark) !important;
+}
+
+/* Plan A: teal top accent, Plan B: amber top accent — fully opaque for visibility */
+.plan-item-card:nth-child(1) {
+  border-top: 4px solid #2dd4bf !important;
+}
+
+.plan-item-card:nth-child(2) {
+  border-top: 4px solid #f59e0b !important;
+}
+
+/* ---- Light theme: full card background ---- */
+[data-theme="light"] .plan-item-card {
+  background: #ffffff !important;
+  /* Side-specific: don't kill top accent border */
+  border-right-color: rgba(0, 0, 0, 0.07) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.07) !important;
+  border-left-color: rgba(0, 0, 0, 0.07) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .plan-item-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ---- Light theme: plan header ---- */
+[data-theme="light"] .plan-card-header {
+  background: rgba(0, 0, 0, 0.015) !important;
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* ---- Light theme: spec grid ---- */
+[data-theme="light"] .specs-grid {
+  background: rgba(13, 148, 136, 0.025) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .spec-item {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .spec-item span:first-child {
+  color: #71717a !important;
+}
+
+[data-theme="light"] .spec-item span:last-child {
+  color: #09090b !important;
+  font-weight: 800 !important;
+}
+
+/* ---- Light theme: service tiles ---- */
+[data-theme="light"] .services-section {
+  background: transparent !important;
+}
+
+[data-theme="light"] .service-tile {
+  background: #f9fafb !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .service-tile.is-active {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .tile-info p:first-child {
+  color: #09090b !important;
+}
+
+[data-theme="light"] .tile-info p.price-tag {
+  color: #52525b !important;
+}
+
+[data-theme="light"] .optional-tag {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #71717a !important;
+}
+
+/* ---- Light theme: card bottom actions ---- */
+[data-theme="light"] .card-bottom-actions {
+  background: rgba(0, 0, 0, 0.015) !important;
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* ---- Light theme: insurance card ---- */
+[data-theme="light"] .insurance-status-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .insurance-toggle-btn.inactive {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #09090b !important;
+}
+
+/* Pricing divider — more visible on light */
+[data-theme="light"] .price-row.final-due {
+  border-top-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Price accent consistent with brand on light */
+[data-theme="light"] .price-row.final-due .price-val {
+  color: #0f766e !important; /* teal-700 */
+}
