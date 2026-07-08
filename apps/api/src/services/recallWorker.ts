@@ -33,7 +33,7 @@ export function startRecallWorker(): NodeJS.Timeout {
   }, POLL_INTERVAL_MS);
 }
 
-async function processOverdueRecalls(): Promise<void> {
+export async function processOverdueRecalls(): Promise<void> {
   const now = new Date();
 
   // Find surgical reservations past osseointegration deadline with no recall triggered
@@ -63,7 +63,7 @@ async function processOverdueRecalls(): Promise<void> {
   }
 }
 
-async function createRecallTask(candidate: RecallCandidate, now: Date): Promise<void> {
+export async function createRecallTask(candidate: RecallCandidate, now: Date): Promise<void> {
   try {
     // Fetch patient name for personalized message
     const [patient] = await db
@@ -105,7 +105,7 @@ async function createRecallTask(candidate: RecallCandidate, now: Date): Promise<
   }
 }
 
-function buildPatientMessage(patientName: string, jaw: string): string {
+export function buildPatientMessage(patientName: string, jaw: string): string {
   return (
     `Уважаемый(ая) ${patientName}! ` +
     `Период приживляемости вашего имплантата на ${jaw} успешно завершён. ` +
