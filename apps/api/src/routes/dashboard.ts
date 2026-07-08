@@ -4,7 +4,13 @@ import { getDashboardFromDb } from "../db/dashboardQuery.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
 import { configuredClinicalAccessSecret } from "../accessGuard.js";
 
-const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_fallback_secret_change_me";
+const TOKEN_SECRET = () => {
+  const secret = process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret();
+  if (!secret) {
+    throw new Error("AUTH_TOKEN_SECRET environment variable is not defined");
+  }
+  return secret;
+};
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
   app.get("/api/dashboard", async (request, reply) => {
