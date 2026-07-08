@@ -66,94 +66,11 @@ function StaffCredentialsEditor({ member, saveCredentials }: { member: any, save
   );
 }
 
-export function SettingsClinicTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
-  const {
-    dashboard,
-    changeClinicMode,
-    clinicProfileDraft,
-    clinicProfileSaveState,
-    updateClinicProfileDraft,
-    saveClinicProfileFromDraft,
-    toggleClinicWorkingDay,
-    uiLanguage,
-    setUiLanguage,
-    normalizeUiLanguageInput,
-    lookupClinicPublicProfile,
-    isClinicPublicLookupLoading,
-    clinicPublicLookup,
-    applyClinicLookupSuggestion,
-    newStaffName,
-    setNewStaffName,
-    addStaffMember,
-    saveStaffCredentials,
-    newStaffReadyToCreate,
-    newStaffRole,
-    setNewStaffRole,
-    newStaffSpecialty,
-    setNewStaffSpecialty,
-    staffScheduleDrafts,
-    staffScheduleDraftFromWorkingHours,
-    staffScheduleSaveStates,
-    staffScheduleDirtyIds,
-    staffScheduleSavingId,
-    updateStaffScheduleDraft,
-    toggleStaffWorkingDay,
-    updateStaffScheduleDay,
-    saveStaffSchedule,
-    newChairName,
-    setNewChairName,
-    addChair,
-    newChairReadyToCreate,
-    newChairHasXraySensor,
-    setNewChairHasXraySensor,
-    newChairHasMicroscope,
-    setNewChairHasMicroscope,
-    newChairHasSurgeryKit,
-    setNewChairHasSurgeryKit,
-    chairScheduleDrafts,
-    chairScheduleSaveStates,
-    chairScheduleDirtyIds,
-    chairScheduleSavingId,
-    updateChairScheduleDraft,
-    toggleChairWorkingDay,
-    updateChairScheduleDay,
-    saveChairSchedule,
-    clinicPublicLookupProviderStatusLabels,
-    humanizeMigrationText,
-    clinicPublicLookupBoundaryText,
-    clinicPublicLookupSuggestionSourceLabels,
-    clinicLookupSuggestionFieldEntries,
-    clinicPublicLookupFieldLabels,
-    clinicPublicLookupWarningText,
-    clinicLookupSuggestionApplySummary,
-    legalReadinessPercent,
-    legalMissingFields,
-    weekdayOptions,
-    uiLanguageOptions,
-    clinicModeLabels,
-    staffRoleLabels,
-    specialtyLabels
-  } = props;
 
-  if (settingsTab !== "clinic") return null;
-
-  const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
-  const typedModeHints = dashboard.clinicSettings.modeHints as string[];
-  const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
-  
-  const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
-  const typedUiLanguageOptions = uiLanguageOptions as Array<{ value: string; label: string; detail: string }>;
-  const selectedUiLanguageOption = typedUiLanguageOptions.find((o) => o.value === uiLanguage) || typedUiLanguageOptions[0] || { detail: '' };
-
-  const typedClinicPublicLookupSuggestions = clinicPublicLookup?.suggestions ?? [];
-  const typedClinicPublicLookupTargets = clinicPublicLookup?.publicLookupTargets ?? [];
-  const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
-  const typedChairs = dashboard.clinicSettings.chairs as Chair[];
-  const staffCreationRoles: StaffRole[] = ["doctor", "administrator", "assistant", "manager"];
-
+function ClinicAccountSection({ props, dashboard, clinicModeLabels, typedClinicModes, typedModeHints, typedRoleQueues, changeClinicMode, staffRoleLabels }: any) {
   return (
-<section className="clinic-config" aria-label="Аккаунт клиники и команда">
-            <div className="clinic-config-head">
+    <>
+      <div className="clinic-config-head">
               <div>
                 <p className="eyebrow">Аккаунт клиники</p>
                 <h2>{dashboard.clinicSettings.profile.clinicName}</h2>
@@ -205,8 +122,13 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
                 ))}
               </div>
             </div>
+    </>
+  );
+}
 
-            <section className="clinic-legal-form" aria-label="Юридический профиль клиники">
+function ClinicLegalFormSection({ props, dashboard, clinicProfileDraft, updateClinicProfileDraft, toggleClinicWorkingDay, uiLanguage, setUiLanguage, normalizeUiLanguageInput, selectedUiLanguageOption, typedWeekdayOptions, typedUiLanguageOptions, clinicProfileSaveState, saveClinicProfileFromDraft, lookupClinicPublicProfile, isClinicPublicLookupLoading, clinicPublicLookup, clinicPublicLookupProviderStatusLabels, humanizeMigrationText, clinicPublicLookupBoundaryText, clinicPublicLookupSuggestionSourceLabels, clinicLookupSuggestionFieldEntries, clinicPublicLookupFieldLabels, clinicPublicLookupWarningText, clinicLookupSuggestionApplySummary, applyClinicLookupSuggestion, typedClinicPublicLookupSuggestions, typedClinicPublicLookupTargets, legalReadinessPercent, legalMissingFields }: any) {
+  return (
+    <section className="clinic-legal-form" aria-label="Юридический профиль клиники">
               <div className="clinic-legal-summary">
                 <div>
                   <p className="eyebrow">Настройки клиники</p>
@@ -474,10 +396,12 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
                 </div>
               ) : null}
             </section>
+  );
+}
 
-
-            <div className="clinic-config-grid">
-              <article>
+function StaffManagementSection({ props, dashboard, newStaffName, setNewStaffName, addStaffMember, newStaffReadyToCreate, newStaffRole, setNewStaffRole, staffRoleLabels, staffCreationRoles, newStaffSpecialty, setNewStaffSpecialty, specialtyLabels, typedStaffMembers, staffScheduleDrafts, staffScheduleDraftFromWorkingHours, staffScheduleSaveStates, staffScheduleDirtyIds, staffScheduleSavingId, updateStaffScheduleDraft, toggleStaffWorkingDay, typedWeekdayOptions, updateStaffScheduleDay, saveStaffSchedule, saveStaffCredentials }: any) {
+  return (
+    <article>
                 <div className="panel-heading">
                   <h3>Команда и права</h3>
                   <span className="status-pill status-arrived">{dashboard.clinicSettings.staff.length}</span>
@@ -634,8 +558,12 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
                   })}
                 </div>
               </article>
+  );
+}
 
-              <article>
+function ChairManagementSection({ props, dashboard, newChairName, setNewChairName, addChair, newChairReadyToCreate, newChairHasXraySensor, setNewChairHasXraySensor, newChairHasMicroscope, setNewChairHasMicroscope, newChairHasSurgeryKit, setNewChairHasSurgeryKit, typedChairs, chairScheduleDrafts, staffScheduleDraftFromWorkingHours, chairScheduleSaveStates, chairScheduleDirtyIds, chairScheduleSavingId, specialtyLabels, updateChairScheduleDraft, toggleChairWorkingDay, typedWeekdayOptions, updateChairScheduleDay, saveChairSchedule }: any) {
+  return (
+    <article>
                 <div className="panel-heading">
                   <h3>Кресла и кабинеты</h3>
                   <span className="status-pill status-confirmed">{dashboard.clinicSettings.chairs.length}</span>
@@ -792,7 +720,114 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
                 </div>
 
               </article>
-            </div>
-          </section>
+  );
+}
+
+export function SettingsClinicTab({ props, settingsTab }: { props: Record<string, any>, settingsTab: string }) {
+  const {
+    dashboard,
+    changeClinicMode,
+    clinicProfileDraft,
+    clinicProfileSaveState,
+    updateClinicProfileDraft,
+    saveClinicProfileFromDraft,
+    toggleClinicWorkingDay,
+    uiLanguage,
+    setUiLanguage,
+    normalizeUiLanguageInput,
+    lookupClinicPublicProfile,
+    isClinicPublicLookupLoading,
+    clinicPublicLookup,
+    applyClinicLookupSuggestion,
+    newStaffName,
+    setNewStaffName,
+    addStaffMember,
+    saveStaffCredentials,
+    newStaffReadyToCreate,
+    newStaffRole,
+    setNewStaffRole,
+    newStaffSpecialty,
+    setNewStaffSpecialty,
+    staffScheduleDrafts,
+    staffScheduleDraftFromWorkingHours,
+    staffScheduleSaveStates,
+    staffScheduleDirtyIds,
+    staffScheduleSavingId,
+    updateStaffScheduleDraft,
+    toggleStaffWorkingDay,
+    updateStaffScheduleDay,
+    saveStaffSchedule,
+    newChairName,
+    setNewChairName,
+    addChair,
+    newChairReadyToCreate,
+    newChairHasXraySensor,
+    setNewChairHasXraySensor,
+    newChairHasMicroscope,
+    setNewChairHasMicroscope,
+    newChairHasSurgeryKit,
+    setNewChairHasSurgeryKit,
+    chairScheduleDrafts,
+    chairScheduleSaveStates,
+    chairScheduleDirtyIds,
+    chairScheduleSavingId,
+    updateChairScheduleDraft,
+    toggleChairWorkingDay,
+    updateChairScheduleDay,
+    saveChairSchedule,
+    clinicPublicLookupProviderStatusLabels,
+    humanizeMigrationText,
+    clinicPublicLookupBoundaryText,
+    clinicPublicLookupSuggestionSourceLabels,
+    clinicLookupSuggestionFieldEntries,
+    clinicPublicLookupFieldLabels,
+    clinicPublicLookupWarningText,
+    clinicLookupSuggestionApplySummary,
+    legalReadinessPercent,
+    legalMissingFields,
+    weekdayOptions,
+    uiLanguageOptions,
+    clinicModeLabels,
+    staffRoleLabels,
+    specialtyLabels
+  } = props;
+
+  if (settingsTab !== "clinic") return null;
+
+const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
+  const typedModeHints = dashboard.clinicSettings.modeHints as string[];
+  const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
+
+  const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
+  const typedUiLanguageOptions = uiLanguageOptions as Array<{ value: string; label: string; detail: string }>;
+  const selectedUiLanguageOption = typedUiLanguageOptions.find((o) => o.value === uiLanguage) || typedUiLanguageOptions[0] || { detail: '' };
+
+  const typedClinicPublicLookupSuggestions = clinicPublicLookup?.suggestions ?? [];
+  const typedClinicPublicLookupTargets = clinicPublicLookup?.publicLookupTargets ?? [];
+  const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
+  const typedChairs = dashboard.clinicSettings.chairs as Chair[];
+  const staffCreationRoles: StaffRole[] = ["doctor", "administrator", "assistant", "manager"];
+
+
+  return (
+    <section className="clinic-config" aria-label="Аккаунт клиники и команда">
+      <ClinicAccountSection
+        props={props} dashboard={dashboard} clinicModeLabels={clinicModeLabels} typedClinicModes={typedClinicModes} typedModeHints={typedModeHints} typedRoleQueues={typedRoleQueues} changeClinicMode={changeClinicMode} staffRoleLabels={staffRoleLabels}
+      />
+
+      <ClinicLegalFormSection
+        props={props} dashboard={dashboard} clinicProfileDraft={clinicProfileDraft} updateClinicProfileDraft={updateClinicProfileDraft} toggleClinicWorkingDay={toggleClinicWorkingDay} uiLanguage={uiLanguage} setUiLanguage={setUiLanguage} normalizeUiLanguageInput={normalizeUiLanguageInput} selectedUiLanguageOption={selectedUiLanguageOption} typedWeekdayOptions={typedWeekdayOptions} typedUiLanguageOptions={typedUiLanguageOptions} clinicProfileSaveState={clinicProfileSaveState} saveClinicProfileFromDraft={saveClinicProfileFromDraft} lookupClinicPublicProfile={lookupClinicPublicProfile} isClinicPublicLookupLoading={isClinicPublicLookupLoading} clinicPublicLookup={clinicPublicLookup} clinicPublicLookupProviderStatusLabels={clinicPublicLookupProviderStatusLabels} humanizeMigrationText={humanizeMigrationText} clinicPublicLookupBoundaryText={clinicPublicLookupBoundaryText} clinicPublicLookupSuggestionSourceLabels={clinicPublicLookupSuggestionSourceLabels} clinicLookupSuggestionFieldEntries={clinicLookupSuggestionFieldEntries} clinicPublicLookupFieldLabels={clinicPublicLookupFieldLabels} clinicPublicLookupWarningText={clinicPublicLookupWarningText} clinicLookupSuggestionApplySummary={clinicLookupSuggestionApplySummary} applyClinicLookupSuggestion={applyClinicLookupSuggestion} typedClinicPublicLookupSuggestions={typedClinicPublicLookupSuggestions} typedClinicPublicLookupTargets={typedClinicPublicLookupTargets} legalReadinessPercent={legalReadinessPercent} legalMissingFields={legalMissingFields}
+      />
+
+      <div className="clinic-config-grid">
+        <StaffManagementSection
+          props={props} dashboard={dashboard} newStaffName={newStaffName} setNewStaffName={setNewStaffName} addStaffMember={addStaffMember} newStaffReadyToCreate={newStaffReadyToCreate} newStaffRole={newStaffRole} setNewStaffRole={setNewStaffRole} staffRoleLabels={staffRoleLabels} staffCreationRoles={staffCreationRoles} newStaffSpecialty={newStaffSpecialty} setNewStaffSpecialty={setNewStaffSpecialty} specialtyLabels={specialtyLabels} typedStaffMembers={typedStaffMembers} staffScheduleDrafts={staffScheduleDrafts} staffScheduleDraftFromWorkingHours={staffScheduleDraftFromWorkingHours} staffScheduleSaveStates={staffScheduleSaveStates} staffScheduleDirtyIds={staffScheduleDirtyIds} staffScheduleSavingId={staffScheduleSavingId} updateStaffScheduleDraft={updateStaffScheduleDraft} toggleStaffWorkingDay={toggleStaffWorkingDay} typedWeekdayOptions={typedWeekdayOptions} updateStaffScheduleDay={updateStaffScheduleDay} saveStaffSchedule={saveStaffSchedule} saveStaffCredentials={saveStaffCredentials}
+        />
+
+        <ChairManagementSection
+          props={props} dashboard={dashboard} newChairName={newChairName} setNewChairName={setNewChairName} addChair={addChair} newChairReadyToCreate={newChairReadyToCreate} newChairHasXraySensor={newChairHasXraySensor} setNewChairHasXraySensor={setNewChairHasXraySensor} newChairHasMicroscope={newChairHasMicroscope} setNewChairHasMicroscope={setNewChairHasMicroscope} newChairHasSurgeryKit={newChairHasSurgeryKit} setNewChairHasSurgeryKit={setNewChairHasSurgeryKit} typedChairs={typedChairs} chairScheduleDrafts={chairScheduleDrafts} staffScheduleDraftFromWorkingHours={staffScheduleDraftFromWorkingHours} chairScheduleSaveStates={chairScheduleSaveStates} chairScheduleDirtyIds={chairScheduleDirtyIds} chairScheduleSavingId={chairScheduleSavingId} specialtyLabels={specialtyLabels} updateChairScheduleDraft={updateChairScheduleDraft} toggleChairWorkingDay={toggleChairWorkingDay} typedWeekdayOptions={typedWeekdayOptions} updateChairScheduleDay={updateChairScheduleDay} saveChairSchedule={saveChairSchedule}
+        />
+      </div>
+    </section>
   );
 }
