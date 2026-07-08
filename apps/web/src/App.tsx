@@ -1958,37 +1958,6 @@ export function App() {
     setShowStaffPinPad(true);
   };
 
-  // Show clinic login gate if not authed
-  // if (!clinicAuthed) {
-  //   return <AuthHub onSuccess={(cp, up) => {
-  //     setClinicAuthed(true);
-  //     if (up) {
-  //       setStaffAuthed(true);
-  //       setActiveStaffUser(up);
-  //     }
-  //     void loadDashboard();
-  //   }} />;
-  // }
-
-  // Show staff PIN pad if clinic authed but no staff session (or after lock)
-  // if (!staffAuthed || showStaffPinPad) {
-  //   if (!dashboard) {
-  //     return <AppLoadingState message="Загрузка данных клиники..." />;
-  //   }
-  //   return (
-  //     <StaffPinPad
-  //       staffMembers={dashboard.clinicSettings?.staff ?? []}
-  //       onUnlockSuccess={(user) => {
-  //         setActiveStaffUser(user);
-  //         setStaffAuthed(true);
-  //         setShowStaffPinPad(false);
-  //       }}
-  //       onClinicLogout={handleClinicLogout}
-  //     />
-  //   );
-  // }
-
-
   if (false) {
     return (
       <main className="app-shell onboarding-fullscreen" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", padding: "40px 20px", background: "linear-gradient(135deg, #0d9488 0%, #111827 100%)", overflowY: "auto" }}>
