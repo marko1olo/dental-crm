@@ -139,7 +139,7 @@ function publicApiErrorMessage(error: unknown, statusCode: number): string {
   return fallbackApiErrorMessage(statusCode);
 }
 
-export async function createDenteApiApp(options: { startTelegramWorker?: boolean } = {}) {
+export async function createDenteApiApp() {
   const app = Fastify({
     logger: {
       level: process.env.NODE_ENV === "production" ? "info" : "debug"
@@ -235,14 +235,6 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerHandoff(app);
   await registerSurgicalRoutes(app);
 
-  if (options.startTelegramWorker !== false) {
-    // const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
-    // const recallWorkerTimer = startRecallWorker();
-    app.addHook("onClose", async () => {
-      // telegramOutboxDueWorker.stop();
-      // clearInterval(recallWorkerTimer);
-    });
-  }
 
   return app;
 }

@@ -11,7 +11,7 @@ test("createDenteApiApp - rejects insecure origins in production", async () => {
 
   await assert.rejects(
     async () => {
-      await createDenteApiApp({ startTelegramWorker: false });
+      await createDenteApiApp();
     },
     { message: 'Insecure WEB_ORIGIN configured: "*" is not allowed in production' }
   );
@@ -19,13 +19,13 @@ test("createDenteApiApp - rejects insecure origins in production", async () => {
   process.env.WEB_ORIGIN = "null";
   await assert.rejects(
     async () => {
-      await createDenteApiApp({ startTelegramWorker: false });
+      await createDenteApiApp();
     },
     { message: 'Insecure WEB_ORIGIN configured: "null" is not allowed in production' }
   );
 
   process.env.WEB_ORIGIN = "https://example.com";
-  const app = await createDenteApiApp({ startTelegramWorker: false });
+  const app = await createDenteApiApp();
   assert.ok(app);
   await app.close();
 
