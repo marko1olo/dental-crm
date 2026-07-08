@@ -33,12 +33,6 @@ export async function requireClinicToken(request: FastifyRequest, reply: Fastify
     return void reply.code(401).send({ error: "AuthRequired", message: "Токен не предоставлен." });
   }
 
-  // Audit script bypass
-  if (token === "audit-bypass-token" && process.env.NODE_ENV !== "production") {
-    (request as any).clinicOrganizationId = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
-    return;
-  }
-
   const payload = verifyToken(token, TOKEN_SECRET());
   if (!payload || !payload.organizationId) {
     return void reply.code(401).send({ error: "TokenExpired", message: "Токен недействителен." });

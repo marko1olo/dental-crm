@@ -8,8 +8,8 @@ const OUT_DIR = path.join(__dirname, '..', 'audit_screenshots');
 const NOW = new Date().toISOString();
 
 const LOCALSTORAGE_SEED = {
-  'dente_clinic_token': 'audit-bypass-token',
-  'dente_staff_token': 'audit-bypass-staff',
+  'dente_clinic_token': 'dummy-token',
+  'dente_staff_token': 'dummy-staff-token',
   'dental-crm:web-ui-preferences:v1': JSON.stringify({
     version: 1,
     onboardingDismissed: true,
