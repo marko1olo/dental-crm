@@ -36,7 +36,7 @@ describe('AI Routes', () => {
     process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = '1';
     delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
 
-    app = await createDenteApiApp({ startTelegramWorker: false });
+    app = await createDenteApiApp();
 
     const response = await app.inject({
       method: 'POST',
@@ -57,7 +57,7 @@ describe('AI Routes Integration', () => {
 
   beforeEach(async () => {
     process.env.DENTE_CLINICAL_ADMIN_SECRET = TEST_SECRET;
-    integrationApp = await createDenteApiApp({ startTelegramWorker: false });
+    integrationApp = await createDenteApiApp();
   });
 
   afterEach(async () => {

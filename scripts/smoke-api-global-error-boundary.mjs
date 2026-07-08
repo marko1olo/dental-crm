@@ -28,7 +28,7 @@ const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
 const { z } = requireFromApi("zod");
 const { createDenteApiApp } = await import(pathToFileURL(serverPath).href);
 
-const app = await createDenteApiApp({ startTelegramWorker: false });
+const app = await createDenteApiApp();
 
 app.post("/api/smoke/global-zod-boundary", async () =>
   z

@@ -211,7 +211,7 @@ await mkdir(screenshotDir, { recursive: true });
 const apiBootstrap = `
 import { pathToFileURL } from "node:url";
 const { createDenteApiApp } = await import(pathToFileURL(process.env.DENTAL_API_SERVER_PATH).href);
-const app = await createDenteApiApp({ startTelegramWorker: false });
+const app = await createDenteApiApp();
 await app.listen({ host: process.env.API_HOST, port: Number(process.env.API_PORT) });
 `;
 
