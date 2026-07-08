@@ -23,7 +23,8 @@ const DURATION_MAP: Record<string, number> = {
   "профгигиен": 45, "ортодонт": 60, "брекет": 90, "элайнер": 60, "кт": 15, "клкт": 15, 
   "оптг": 15, "осмотр": 30, "консультаци": 30, "слепк": 30, "коронк": 60, "примерк": 30,
   "винир": 120, "синус": 120, "швы": 15, "снятие швов": 15, "лечени": 60, "лечение": 60,
-  "терапи": 60, "отбеливани": 60, "пломб": 60
+  "терапи": 60, "отбеливани": 60, "пломб": 60, "фторировани": 30, "реставраци": 90,
+  "капп": 30, "протезировани": 120, "фиксаци": 60, "ретейнер": 45, "кюретаж": 60
 };
 
 const REASON_NAMES: Record<string, string> = {
@@ -35,7 +36,9 @@ const REASON_NAMES: Record<string, string> = {
   "консультаци": "Консультация", "слепк": "Слепки", "коронк": "Коронка", "примерк": "Примерка",
   "винир": "Виниры", "синус": "Синус-лифтинг", "швы": "Снятие швов", "снятие швов": "Снятие швов",
   "лечени": "Лечение зуба", "лечение": "Лечение зуба", "терапи": "Терапия", "отбеливани": "Отбеливание",
-  "пломб": "Установка пломбы"
+  "пломб": "Установка пломбы", "фторировани": "Фторирование", "реставраци": "Реставрация зуба",
+  "капп": "Изготовление каппы", "протезировани": "Протезирование", "фиксаци": "Фиксация ортодонтического аппарата",
+  "ретейнер": "Установка ретейнера", "кюретаж": "Кюретаж пародонтального кармана"
 };
 
 const MONTHS: Record<string, number> = {
@@ -122,7 +125,7 @@ export function smartBookingParser(
       }
     }
 
-    // Match Patients
+        // Match Patients
     for (const pat of patients) {
       const parts = pat.fullName.toLowerCase().split(' ');
       if (parts.some((p: string) => isFuzzyMatch(word, p))) {
@@ -134,10 +137,14 @@ export function smartBookingParser(
           matches = 2;
           indexes.push(i+1);
         }
-        if (["запиши", "записать", "пациент", "пациента", "ребенка", "мальчика", "девочку"].includes(prev)) score += 200;
+        if (["запиши", "записать", "пациент", "пациента", "ребенка", "мальчика", "девочку", "придет", "будет"].includes(prev)) score += 200;
         if (["отмени", "удали", "перенеси"].includes(prev)) score += 200; // Action target is usually patient
-        if (["к", "ко"].includes(prev) || ["к", "ко"].includes(prevPrev)) score -= 200; // It's a doctor
         
+        // STRIKE: if preceeded by doctor prefixes, this is almost certainly NOT a patient.
+        if (["к", "ко", "врачу", "доктору", "док", "стоматологу", "с"].includes(prev) || ["к", "ко"].includes(prevPrev)) score -= 500;
+        // If it overlaps heavily with an already strong doctor match, penalize
+        if (foundDocs.some(d => d.score > 100 && d.indexes.includes(i))) score -= 300;
+
         const existing = foundPats.find(p => p.id === pat.id);
         if (!existing || existing.score < score) {
           if (existing) foundPats.splice(foundPats.indexOf(existing), 1);
