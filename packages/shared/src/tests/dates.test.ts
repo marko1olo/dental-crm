@@ -30,4 +30,10 @@ describe('normalizeDate', () => {
     assert.strictEqual(normalizeDate('15/04/23'), '15/04/23'); // 2-digit year
     assert.strictEqual(normalizeDate('1/2'), '1/2'); // missing year
   });
+
+  test('handles edge case strings gracefully', () => {
+    assert.strictEqual(normalizeDate('   '), ''); // whitespace only
+    assert.strictEqual(normalizeDate('0/0/0000'), '0000-00-00'); // structural match but invalid dates
+    assert.strictEqual(normalizeDate('a/b/cdef'), 'a/b/cdef'); // letters instead of numbers
+  });
 });
