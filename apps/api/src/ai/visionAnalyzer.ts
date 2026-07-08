@@ -289,7 +289,7 @@ async function runCascade(
       }
 
       try {
-        console.log(`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${apiKey.slice(0, 10)}...`);
+        console.log(`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${candidate.fingerprint}`);
         const text = await callVisionModel(slot, apiKey, prompt, imageBase64, extraUserText);
 
         if (text.length >= minLength) {
@@ -302,7 +302,7 @@ async function runCascade(
         recordProviderKeyFailure(providerId as any, candidate, err);
         triedFingerprints.add(candidate.fingerprint);
 
-        console.warn(`[visionAnalyzer] ${slot.provider} key=${apiKey.slice(0, 10)}... failed: ${err.message}`);
+        console.warn(`[visionAnalyzer] ${slot.provider} key=${candidate.fingerprint} failed: ${err.message}`);
 
         // For rate-limit or auth — try next key after a safety delay to avoid spamming
         if (statusCode === 429 || statusCode === 401 || statusCode === 403) {
