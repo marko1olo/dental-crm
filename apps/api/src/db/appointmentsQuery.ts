@@ -1,6 +1,6 @@
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import type { Appointment, CreateAppointmentInput, UpdateAppointmentInput } from "@dental/shared";
 
 export async function createAppointmentInDb(organizationId: string, input: CreateAppointmentInput): Promise<Appointment> {
@@ -86,4 +86,11 @@ export async function updateAppointmentInDb(organizationId: string, appointmentI
 export async function getAppointmentByIdInDb(organizationId: string, id: string) {
   const [res] = await db.select().from(schema.appointments).where(and(eq(schema.appointments.organizationId, organizationId), eq(schema.appointments.id, id))).limit(1);
   return res || null;
+}
+
+
+export async function getAppointmentsByIdsInDb(organizationId: string, ids: readonly string[]) {
+  if (ids.length === 0) return [];
+  const res = await db.select().from(schema.appointments).where(and(eq(schema.appointments.organizationId, organizationId), inArray(schema.appointments.id, ids as string[])));
+  return res;
 }
