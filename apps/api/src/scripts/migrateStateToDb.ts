@@ -134,20 +134,26 @@ async function migrate() {
   }
 
   console.log(`📅 Migrating ${state.appointments.length} Appointments...`);
-  for (const appt of state.appointments) {
-    await db.insert(schema.appointments).values({
-      id: appt.id,
-      organizationId: orgId,
-      patientId: appt.patientId,
-      doctorUserId: appt.doctorUserId,
-      assistantUserId: appt.assistantUserId,
-      chairId: appt.chairId,
-      status: appt.status as any,
-      startsAt: new Date(appt.startsAt),
-      endsAt: new Date(appt.endsAt),
-      reason: appt.reason,
-      comment: appt.comment
-    });
+  if (state.appointments.length > 0) {
+    const CHUNK_SIZE = 1000;
+    for (let i = 0; i < state.appointments.length; i += CHUNK_SIZE) {
+      const chunk = state.appointments.slice(i, i + CHUNK_SIZE);
+      await db.insert(schema.appointments).values(
+        chunk.map((appt: any) => ({
+          id: appt.id,
+          organizationId: orgId,
+          patientId: appt.patientId,
+          doctorUserId: appt.doctorUserId,
+          assistantUserId: appt.assistantUserId,
+          chairId: appt.chairId,
+          status: appt.status as any,
+          startsAt: new Date(appt.startsAt),
+          endsAt: new Date(appt.endsAt),
+          reason: appt.reason,
+          comment: appt.comment
+        }))
+      );
+    }
   }
   
   if (state.activeVisit) {
