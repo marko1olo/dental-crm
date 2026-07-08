@@ -3,10 +3,10 @@ const { Project, SyntaxKind } = require('ts-morph');
 const { execSync } = require('child_process');
 
 const project = new Project({
-  tsConfigFilePath: 'C:/Clinic_MVP/dental-crm/apps/web/tsconfig.json'
+  tsConfigFilePath: 'apps/web/tsconfig.json'
 });
 
-const sourceFile = project.getSourceFile('C:/Clinic_MVP/dental-crm/apps/web/src/useAppLogic.tsx');
+const sourceFile = project.getSourceFile('apps/web/src/useAppLogic.tsx');
 const useAppLogicDecl = sourceFile.getFunction('useAppLogic');
 
 const statements = useAppLogicDecl.getBody().getStatements();
@@ -60,12 +60,116 @@ telegramStmts.forEach(stmt => {
   }
 });
 
+const referencedIdentifiers = new Set();
+telegramStmts.forEach(stmt => {
+  const identifiers = stmt.getDescendantsOfKind(SyntaxKind.Identifier);
+  identifiers.forEach(id => {
+    referencedIdentifiers.add(id.getText());
+  });
+});
+
+const allTelegramDeclared = new Set();
+telegramStmts.forEach(stmt => {
+    if (stmt.getKind() === SyntaxKind.VariableStatement) {
+        stmt.getDeclarations().forEach(d => {
+           allTelegramDeclared.add(d.getName());
+           if (d.getNameNode().getKind() === SyntaxKind.ObjectBindingPattern) {
+             d.getNameNode().getElements().forEach(el => allTelegramDeclared.add(el.getName()));
+           }
+        });
+    } else if (stmt.getKind() === SyntaxKind.FunctionDeclaration) {
+        allTelegramDeclared.add(stmt.getName());
+    }
+});
+
+const imports = sourceFile.getImportDeclarations();
+const generatedImports = [];
+const importedSet = new Set(['useTelegramStore']);
+
+imports.forEach(imp => {
+  const namedImports = imp.getNamedImports().map(ni => ni.getName());
+  const defaultImport = imp.getDefaultImport()?.getText();
+
+  let used = false;
+  let usedNamed = [];
+  namedImports.forEach(name => {
+    if (referencedIdentifiers.has(name) && name !== 'useTelegramStore') {
+      used = true;
+      usedNamed.push(name);
+      importedSet.add(name);
+    }
+  });
+
+  if (defaultImport && referencedIdentifiers.has(defaultImport)) {
+    used = true;
+    importedSet.add(defaultImport);
+  }
+
+  if (used) {
+    let specifier = imp.getModuleSpecifierValue();
+    if (specifier.startsWith('./')) {
+      specifier = '.' + specifier;
+    } else if (specifier.startsWith('../')) {
+      specifier = '.' + specifier;
+    }
+
+    let importStr = `import { ${usedNamed.join(', ')} } from '${specifier}';`;
+    if (defaultImport && referencedIdentifiers.has(defaultImport)) {
+        if (usedNamed.length > 0) {
+            importStr = `import ${defaultImport}, { ${usedNamed.join(', ')} } from '${specifier}';`;
+        } else {
+            importStr = `import ${defaultImport} from '${specifier}';`;
+        }
+    }
+
+    generatedImports.push(importStr);
+  }
+});
+
+// Remove useDocumentStore duplicates or react duplicates manually just in case
+const finalImports = new Set();
+generatedImports.forEach(i => {
+  if (i.includes('import { useEffect, useMemo, useRef } from \'react\';')) {
+     finalImports.add('import { useMemo, useRef } from \'react\';');
+  } else if (!finalImports.has(i)) {
+     finalImports.add(i);
+  }
+});
+const uniqueGeneratedImports = Array.from(finalImports);
+
+
+const useAppLogicLocals = new Set();
+const allStatements = useAppLogicDecl.getBody().getStatements();
+allStatements.forEach(stmt => {
+    if (stmt.getKind() === SyntaxKind.VariableStatement) {
+        stmt.getDeclarations().forEach(d => {
+            const name = d.getName();
+            useAppLogicLocals.add(name);
+            if (d.getNameNode().getKind() === SyntaxKind.ObjectBindingPattern) {
+                d.getNameNode().getElements().forEach(el => {
+                    useAppLogicLocals.add(el.getName());
+                });
+            }
+        });
+    } else if (stmt.getKind() === SyntaxKind.FunctionDeclaration) {
+        useAppLogicLocals.add(stmt.getName());
+    }
+});
+
+const requiredAppLogicProps = Array.from(referencedIdentifiers).filter(id =>
+    !allTelegramDeclared.has(id) &&
+    !importedSet.has(id) &&
+    useAppLogicLocals.has(id)
+);
+
 const newFileContent = `import { useState, useCallback, useEffect } from 'react';
 import { useTelegramStore } from '../../store/settingsStore';
-// TODO: imports
+${uniqueGeneratedImports.join('\n')}
+
 export function useTelegramLogic(appLogic: any) {
-  // Destructure needed things from appLogic if any
-  // __PLACEHOLDER__
+  const {
+    ${requiredAppLogicProps.join(',\n    ')}
+  } = appLogic;
 
   ${telegramStmts.map(s => s.getText()).join('\n\n  ')}
 
@@ -75,7 +179,7 @@ export function useTelegramLogic(appLogic: any) {
 }
 `;
 
-fs.writeFileSync('C:/Clinic_MVP/dental-crm/apps/web/src/logic/useTelegramLogic.tsx', newFileContent);
+fs.writeFileSync('apps/web/src/logic/useTelegramLogic.tsx', newFileContent);
 
 // Now remove them from useAppLogic.tsx
 telegramStmts.forEach(stmt => stmt.remove());
