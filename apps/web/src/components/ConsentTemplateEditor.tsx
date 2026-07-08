@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ConsentTemplateEditor.css';
+import DOMPurify from 'dompurify';
 
 export const ConsentTemplateEditor: React.FC = () => {
   const [content, setContent] = useState<string>('');
@@ -25,7 +26,7 @@ export const ConsentTemplateEditor: React.FC = () => {
     preview = preview.replace(/{{patient_name}}/g, '<strong class="preview-var">Иванов И.И.</strong>');
     preview = preview.replace(/{{tooth_numbers}}/g, '<strong class="preview-var">16, 17</strong>');
     preview = preview.replace(/{{total_cost}}/g, '<strong class="preview-var">45,000 ₽</strong>');
-    return { __html: preview };
+    return { __html: DOMPurify.sanitize(preview) };
   };
 
   return (
