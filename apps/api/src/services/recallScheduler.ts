@@ -1,4 +1,4 @@
-import { eq, and, lte, isNull } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db/client.js'; // assuming
 import { treatmentPlans, treatmentPlanItemsNew, patients } from '../db/schema.js';
 // import { sendTelegramMessage } from '../routes/telegram.js'; // Assuming this exists or can be stubbed
