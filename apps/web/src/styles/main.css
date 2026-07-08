@@ -12289,6 +12289,10 @@ img {
     grid-template-columns: 76px minmax(0, 1fr);
   }
 
+  .main-content {
+    padding-bottom: 76px; /* Add padding for the fixed bottom bar */
+  }
+
   .brand-mark span,
   .nav-item {
     font-size: 0;
@@ -16325,8 +16329,10 @@ input:focus, select:focus, textarea:focus {
   flex-direction: column;
   gap: 0.75rem;
   box-shadow: var(--shadow-premium) !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
   border-left: 5px solid transparent !important;
+  min-height: 160px;
+  contain: layout;
 }
 
 .appointment-card-node:hover {
@@ -16548,10 +16554,33 @@ input:focus, select:focus, textarea:focus {
 
 /* 1. Mobile: collapse timeline to single column, hide redundant outer time label */
 @media (max-width: 768px) {
+  .top-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .top-actions .primary-button {
+    width: 100%;
+    margin-top: 4px;
+    justify-content: center;
+  }
+
+  .top-actions .secondary-button {
+    font-size: 0; /* Hide text on mobile for secondary buttons in top bar */
+    padding: 0 8px;
+    min-width: unset;
+  }
+
+  .top-actions .secondary-button svg {
+    margin: 0;
+  }
+
   .timeline-node {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 0 !important;
     min-height: unset !important;
+    margin-bottom: 0.5rem !important;
   }
 
   .timeline-time {
@@ -16568,7 +16597,11 @@ input:focus, select:focus, textarea:focus {
   }
 
   .appointment-card-node {
-    padding: 0.75rem 1rem !important;
+    padding: 0.75rem 0.75rem !important; /* Tighter padding for mobile */
+  }
+
+  .appointment-card-time {
+    display: none !important; /* Hide old time display on mobile */
   }
 
   .appointment-card-body h3 {
