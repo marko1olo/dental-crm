@@ -19,13 +19,15 @@ export const ConsentTemplateEditor: React.FC = () => {
     setContent((prev) => prev + ` {{${placeholder}}} `);
   };
 
-  const getPreviewHtml = () => {
-    // Mock rendering for preview
-    let preview = content;
-    preview = preview.replace(/{{patient_name}}/g, '<strong class="preview-var">Иванов И.И.</strong>');
-    preview = preview.replace(/{{tooth_numbers}}/g, '<strong class="preview-var">16, 17</strong>');
-    preview = preview.replace(/{{total_cost}}/g, '<strong class="preview-var">45,000 ₽</strong>');
-    return { __html: preview };
+  const renderPreview = () => {
+    // Safely render content using React elements instead of dangerouslySetInnerHTML
+    const parts = content.split(/(\{\{patient_name\}\}|\{\{tooth_numbers\}\}|\{\{total_cost\}\})/g);
+    return parts.map((part, index) => {
+      if (part === '{{patient_name}}') return <strong key={index} className="preview-var">Иванов И.И.</strong>;
+      if (part === '{{tooth_numbers}}') return <strong key={index} className="preview-var">16, 17</strong>;
+      if (part === '{{total_cost}}') return <strong key={index} className="preview-var">45,000 ₽</strong>;
+      return <React.Fragment key={index}>{part}</React.Fragment>;
+    });
   };
 
   return (
@@ -58,7 +60,7 @@ export const ConsentTemplateEditor: React.FC = () => {
             placeholder="Type your consent text here..."
           />
         ) : (
-          <div className="preview-area" dangerouslySetInnerHTML={getPreviewHtml()} />
+          <div className="preview-area">{renderPreview()}</div>
         )}
       </div>
 
