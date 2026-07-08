@@ -339,25 +339,36 @@ export async function commitPatientImport(orgId: string, input: ImportPreviewReq
     const importedPatientIds: string[] = [];
     const validRows = preview.rows.filter((row) => row.status === "ready" && row.fullName);
     
-    for (const row of validRows) {
-      const [inserted] = await tx.insert(patients).values({
-        organizationId: orgId,
-        fullName: row.fullName ?? "",
-        birthDate: row.birthDate,
-        phone: row.phone,
-        notes: row.notes,
-        status: "active"
-      }).returning();
+    if (validRows.length > 0) {
+      // Chunking by 1000 to avoid Postgres parameter limits (65535 limit)
+      const chunkSize = 1000;
       
-      importedPatientIds.push(inserted!.id);
+      for (let i = 0; i < validRows.length; i += chunkSize) {
+        const chunk = validRows.slice(i, i + chunkSize);
 
-      await tx.insert(auditEvents).values({
-        organizationId: orgId,
-        entityType: "patient",
-        entityId: inserted!.id,
-        action: "patient_imported",
-        reason: `Импорт из ${input.sourceName}, строка ${row.rowNumber}.`
-      });
+        const patientValues = chunk.map((row) => ({
+          organizationId: orgId,
+          fullName: row.fullName ?? "",
+          birthDate: row.birthDate,
+          phone: row.phone,
+          notes: row.notes,
+          status: "active" as const
+        }));
+
+        const insertedPatients = await tx.insert(patients).values(patientValues).returning();
+
+        importedPatientIds.push(...insertedPatients.map(p => p.id));
+
+        const auditEventValues = chunk.map((row, index) => ({
+          organizationId: orgId,
+          entityType: "patient",
+          entityId: insertedPatients[index]!.id,
+          action: "patient_imported",
+          reason: `Импорт из ${input.sourceName}, строка ${row.rowNumber}.`
+        }));
+
+        await tx.insert(auditEvents).values(auditEventValues);
+      }
     }
 
     const [batch] = await tx.insert(importBatches).values({
