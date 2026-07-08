@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "node:crypto";
 
 // Mocking db imports to keep it simple and compileable in the backend
 interface ClinicalTask {
@@ -45,7 +45,7 @@ export class ClinicalRouter {
     // await db.insert(clinicalTasks).values({...})
     
     const newTask: ClinicalTask = {
-      id: uuidv4(),
+      id: randomUUID(),
       organizationId,
       patientId,
       taskType: nextTaskType,
