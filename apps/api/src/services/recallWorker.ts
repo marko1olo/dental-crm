@@ -10,7 +10,7 @@
 
 import { db } from '../db/client.js';
 import { schedulerReservations, clinicalTasks, patients } from '../db/schema.js';
-import { and, eq, isNull, lte } from 'drizzle-orm';
+import { and, eq, isNull, lte, inArray } from 'drizzle-orm';
 
 const POLL_INTERVAL_MS = 1000 * 60 * 15; // every 15 minutes
 
@@ -20,6 +20,7 @@ interface RecallCandidate {
   organizationId: string;
   jawLocation: string | null;
   recallDueAt: Date | null;
+  patientFullName?: string | null;
 }
 
 export function startRecallWorker(): NodeJS.Timeout {
@@ -37,15 +38,17 @@ async function processOverdueRecalls(): Promise<void> {
   const now = new Date();
 
   // Find surgical reservations past osseointegration deadline with no recall triggered
-  const overdue: RecallCandidate[] = await db
+  const overdue = await db
     .select({
       reservationId: schedulerReservations.id,
       patientId: schedulerReservations.patientId,
       organizationId: schedulerReservations.organizationId,
       jawLocation: schedulerReservations.jawLocation,
       recallDueAt: schedulerReservations.recallDueAt,
+      patientFullName: patients.fullName,
     })
     .from(schedulerReservations)
+    .leftJoin(patients, eq(schedulerReservations.patientId, patients.id))
     .where(
       and(
         eq(schedulerReservations.phase, 2), // Surgical phase
@@ -58,26 +61,12 @@ async function processOverdueRecalls(): Promise<void> {
 
   console.log(`[RecallWorker] Found ${overdue.length} overdue recall(s). Creating draft tasks.`);
 
-  for (const candidate of overdue) {
-    await createRecallTask(candidate, now);
-  }
-}
-
-async function createRecallTask(candidate: RecallCandidate, now: Date): Promise<void> {
-  try {
-    // Fetch patient name for personalized message
-    const [patient] = await db
-      .select({ fullName: patients.fullName })
-      .from(patients)
-      .where(eq(patients.id, candidate.patientId))
-      .limit(1);
-
-    const patientName = patient?.fullName ?? 'Пациент';
+  const tasksToInsert = overdue.map(candidate => {
+    const patientName = candidate.patientFullName ?? 'Пациент';
     const jaw = candidate.jawLocation === 'upper' ? 'верхней челюсти' : 'нижней челюсти';
     const months = candidate.jawLocation === 'upper' ? '5 месяцев' : '3 месяца';
 
-    // Create DRAFT clinical task for recall manager (admin must confirm before sending to patient)
-    await db.insert(clinicalTasks).values({
+    return {
       organizationId: candidate.organizationId,
       patientId: candidate.patientId,
       taskType: 'recall',
@@ -92,16 +81,26 @@ async function createRecallTask(candidate: RecallCandidate, now: Date): Promise<
         `ACTION: Запишите пациента на установку коронки / временной конструкции.`,
       ].join('\n'),
       dueAt: now,
+    };
+  });
+
+  const reservationIds = overdue.map(c => c.reservationId);
+
+  try {
+    await db.transaction(async (tx) => {
+      if (tasksToInsert.length > 0) {
+        await tx.insert(clinicalTasks).values(tasksToInsert);
+      }
+      if (reservationIds.length > 0) {
+        await tx.update(schedulerReservations)
+          .set({ recallTriggeredAt: now, status: 'patient_notified' })
+          .where(inArray(schedulerReservations.id, reservationIds));
+      }
     });
 
-    // Mark reservation as recall triggered to prevent duplicate tasks
-    await db.update(schedulerReservations)
-      .set({ recallTriggeredAt: now, status: 'patient_notified' })
-      .where(eq(schedulerReservations.id, candidate.reservationId));
-
-    console.log(`[RecallWorker] Created recall task for patient ${candidate.patientId}`);
+    console.log(`[RecallWorker] Processed ${overdue.length} overdue recall(s).`);
   } catch (err) {
-    console.error(`[RecallWorker] Failed for ${candidate.reservationId}:`, err);
+    console.error(`[RecallWorker] Bulk operation failed:`, err);
   }
 }
 
