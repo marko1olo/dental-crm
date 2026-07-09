@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput, type Payment } from "@dental/shared";
-import { requireClinicalMutationAccess } from "../accessGuard.js";
+import { requireClinicalMutationAccess, resolveOrganizationId } from "../accessGuard.js";
 import {
   getDefaultOrganizationId,
   findPaymentByClientMutationIdInDb,
@@ -221,6 +221,8 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 
   app.post('/api/billing/split-pay', async (request, reply) => {
     const { invoiceId, payments, operatorId } = request.body as any;
+    const orgId = await resolveOrganizationId(request as any);
+    if (!orgId) return reply.code(401).send({ error: "Unauthorized" });
     
     // Begin transaction
     const result = await db.transaction(async (tx) => {
@@ -235,7 +237,7 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
         totalPaid += p.amount;
       }
       
-      const [invoice] = await tx.select().from(schema.patientInvoices).where(eq(schema.patientInvoices.id, invoiceId));
+      const [invoice] = await tx.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.id, invoiceId), eq(schema.patientInvoices.organizationId, orgId)));
       if (!invoice) throw new Error('Invoice not found');
       const currentTotal = parseFloat(invoice.totalAmountRub as string);
       
@@ -244,7 +246,7 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
       
       await tx.update(schema.patientInvoices)
         .set({ status: newStatus })
-        .where(eq(schema.patientInvoices.id, invoiceId));
+        .where(and(eq(schema.patientInvoices.id, invoiceId), eq(schema.patientInvoices.organizationId, orgId)));
         
       return { success: true, status: newStatus, totalPaid };
     });
@@ -257,7 +259,7 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
     const orgId = await getDefaultOrganizationId();
     if (!orgId) return reply.code(500).send({ error: 'No org' });
     
-    const invoices = await db.select().from(schema.patientInvoices).where(eq(schema.patientInvoices.status, 'paid'));
+    const invoices = await db.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.status, 'paid'), eq(schema.patientInvoices.organizationId, orgId)));
     const payouts = [];
     // Mocking real calculation for speed since full relational mapping takes time
     // In production we'd map itemsJson to services -> procedureMaterialRules -> inventoryItems

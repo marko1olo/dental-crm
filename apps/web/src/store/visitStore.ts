@@ -86,6 +86,8 @@ export interface VisitStore {
 
   speechLiveRms: number;
   setSpeechLiveRms: (val: number | ((prev: number) => number)) => void;
+
+  reset: () => void;
 }
 
 export const useVisitStore = create<VisitStore>((set) => ({
@@ -189,4 +191,28 @@ export const useVisitStore = create<VisitStore>((set) => ({
 
   speechLiveRms: 0,
   setSpeechLiveRms: (val) => set((state) => ({ speechLiveRms: typeof val === "function" ? val(state.speechLiveRms) : val })),
+
+  reset: () => set({
+    clearedTranscriptSnapshot: null,
+    transcript: "",
+    sessionTranscript: "",
+    draft: null,
+    visitNoteForm: emptyVisitNoteForm,
+    visitToothStateByCode: {},
+    visitAiDiagnosesByCode: {},
+    lastServerDraftSavedAt: null,
+    serverDraftSyncState: "idle",
+    localDraftWasRestored: false,
+    pendingVisitSaveCount: 0,
+    lastPendingVisitSaveAt: null,
+    lastVisitSaveReceipt: null,
+    speechLastQuality: null,
+    isDraftLoading: false,
+    isDraftAccepting: false,
+    isPendingVisitSyncing: false,
+    isVisitDictating: false,
+    isTranscriptPolishing: false,
+    speechRetrySuggested: false,
+    speechLiveRms: 0
+  }),
 }));

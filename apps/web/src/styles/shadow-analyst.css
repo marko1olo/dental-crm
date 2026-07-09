@@ -466,10 +466,3 @@
   margin-top: 0.75rem;
   margin-bottom: 0.25rem;
 }
-
-
-/* FIX: patient-summary-card contrast in dark mode */
-.sa-theme .patient-summary-card {
-  background: linear-gradient(150deg, rgba(13, 148, 136, 0.1), rgba(15, 23, 42, 0.8));
-  border: 1px solid rgba(13, 148, 136, 0.2);
-}

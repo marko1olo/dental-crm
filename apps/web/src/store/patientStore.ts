@@ -53,6 +53,8 @@ export interface PatientStore {
 
   newRulePatientText: string;
   setNewRulePatientText: (val: string | ((prev: string) => string)) => void;
+
+  reset: () => void;
 }
 
 export const usePatientStore = create<PatientStore>((set) => ({
@@ -94,6 +96,22 @@ export const usePatientStore = create<PatientStore>((set) => ({
   isPatientCreating: false,
   setIsPatientCreating: (val) => set((state) => ({ isPatientCreating: typeof val === "function" ? val(state.isPatientCreating) : val })),
 
-  newRulePatientText: "Это правило снижает риск повторного лечения и объясняет пациенту необходимость этапа.",
+  newRulePatientText: "",
   setNewRulePatientText: (val) => set((state) => ({ newRulePatientText: typeof val === "function" ? val(state.newRulePatientText) : val })),
+
+  reset: () => set({
+    odontogramState: {},
+    selectedPatientId: null,
+    patientCoreDraft: emptyPatientCoreDraft(),
+    patientCoreSaveState: "idle",
+    patientCoreDirty: false,
+    patientAdministrativeProfileDraft: emptyPatientAdministrativeProfileDraft(),
+    patientAdministrativeProfileSaveState: "idle",
+    patientAdministrativeProfileDirty: false,
+    newPatientName: "",
+    newPatientPhone: "",
+    newPatientBirthDate: "",
+    isPatientCreating: false,
+    newRulePatientText: ""
+  }),
 }));

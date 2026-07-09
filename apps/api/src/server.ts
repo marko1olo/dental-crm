@@ -26,19 +26,16 @@ import { registerVisitRoutes } from "./routes/visits.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerAuthRoutes } from "./routes/auth.js";
-import { registerOdontogramRoutes } from "./routes/odontogram.js";
-import registerSchedulerSync from "./routes/schedulerSync.js";
-import registerHandoff from "./routes/handoff.js";
-import registerSurgicalRoutes from "./routes/surgical.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import registerDiaryRoutes from "./routes/diary.js";
 import registerTemplateRoutes from "./routes/templates.js";
-import { startRecallWorker } from "./services/recallWorker.js";
+import registerToothHistoryRoutes from "./routes/toothHistory.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
 import { startBiAnalyticsWorker } from "./services/biAnalyticsWorker.js";
-import { setupWebsockets } from "./websocket.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
+import { startSyncDaemon, stopSyncDaemon } from "./services/syncDaemon.js";
+import { startBackupDaemon, stopBackupDaemon } from "./services/backupWorker.js";
 import net from "node:net";
 import { ensureSshTunnel } from "./speech/tunnel.js";
 import { getProxyAgent } from "./speech/keyPool.js";
@@ -173,7 +170,6 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
     origin: webOrigins
   });
 
-  await setupWebsockets(app);
 
   app.setErrorHandler((error, _request, reply) => {
     import("node:fs").then(m => m.appendFileSync("C:/Clinic_MVP/error.log", ((error as any)?.stack || (error as any)?.message || String(error)) + "\nCAUSE: " + ((error as any)?.cause || "") + "\n"));
@@ -237,20 +233,21 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerDicomwebRoutes(app);
   await registerXrayRoutes(app);
   await registerAuthRoutes(app);
-  await registerOdontogramRoutes(app);
-  await registerSchedulerSync(app);
-  await registerHandoff(app);
   await registerEgiszRoutes(app);
   await registerDiaryRoutes(app);
   await registerTemplateRoutes(app);
+  await registerToothHistoryRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     // const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
     startBiAnalyticsWorker();
-    // const recallWorkerTimer = startRecallWorker();
+    startSyncDaemon();
+    startBackupDaemon();
     app.addHook("onClose", async () => {
       // telegramOutboxDueWorker.stop();
       // clearInterval(recallWorkerTimer);
+      stopSyncDaemon();
+      stopBackupDaemon();
     });
   }
 

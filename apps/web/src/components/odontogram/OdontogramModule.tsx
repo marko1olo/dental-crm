@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ToothChart, ToothData, ToothState } from './ToothChart';
 import { TreatmentEstimator } from './TreatmentEstimator';
-import { Check, X, Stethoscope, AlertTriangle } from 'lucide-react';
+import { ToothHistoryChronicle } from './ToothHistoryChronicle';
+import { Check, X, Stethoscope, AlertTriangle, History } from 'lucide-react';
 import './odontogram.css';
 
 export const OdontogramModule = ({ patientId }: { patientId: string }) => {
   const [teethData, setTeethData] = useState<ToothData[]>([]);
   const [menuConfig, setMenuConfig] = useState<{ toothNumber: number; x: number; y: number; position: 'top' | 'bottom'; caretOffset: number } | null>(null);
+  const [historyTooth, setHistoryTooth] = useState<number | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Load states from API
@@ -68,9 +70,8 @@ export const OdontogramModule = ({ patientId }: { patientId: string }) => {
           teethData={teethData} 
           onToothClick={(toothNumber, rect) => {
             const isUpperJaw = toothNumber < 30;
-            // Use viewport coords so portal can position correctly regardless of stacking context
             const menuW = 254;
-            const menuH = 184;
+            const menuH = 224; // slightly taller to fit history button
             const gap = 12;
             const vw = window.innerWidth;
             const vh = window.innerHeight;
@@ -139,9 +140,23 @@ export const OdontogramModule = ({ patientId }: { patientId: string }) => {
               <button onClick={() => updateToothState(menuConfig.toothNumber, 'Healthy')} className="tooth-menu-btn filled">
                 Здоров
               </button>
+              <button 
+                onClick={() => { setHistoryTooth(menuConfig.toothNumber); setMenuConfig(null); }} 
+                className="tooth-menu-btn" style={{ gridColumn: 'span 2', background: 'var(--indigo-50)', color: 'var(--indigo-600)' }}
+              >
+                <History className="w-4 h-4 inline mr-2" /> История зуба
+              </button>
             </div>
           </>,
           document.body
+        )}
+        
+        {historyTooth !== null && (
+          <ToothHistoryChronicle 
+            patientId={patientId} 
+            toothNumber={historyTooth} 
+            onClose={() => setHistoryTooth(null)} 
+          />
         )}
       </div>
 

@@ -1,8 +1,8 @@
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "./components/GlobalToast";
 import { AlertTriangle, Bot, Check, CheckCircle2, ClipboardCheck, Mic, ShieldCheck, Sparkles } from "lucide-react";
-import { getToothPath, getToothConfig } from "./utils/math/toothGeometry";
+import { getToothPath, getToothConfig } from "./utils/toothGeometry";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
@@ -128,6 +128,13 @@ export function VisitView(props: VisitViewProps) {
   const [showHints, setShowHints] = useState(false);
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
+
+  useEffect(() => {
+    return () => {
+      // Memory Optimization: Flush heavy visit states on unmount
+      useVisitStore.getState().reset();
+    };
+  }, []);
   
   const visitAiDiagnosesByCode = useVisitStore((state) => state.visitAiDiagnosesByCode);
   const [activeQuadrant, setActiveQuadrant] = React.useState<number | null>(null);
@@ -541,8 +548,8 @@ export function VisitView(props: VisitViewProps) {
                       disabled={!hasVisitTranscriptText || isTranscriptPolishing}
                       aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
                       title={
-                        speechGatewayStatus?.polishPolicy?.neuralEnabled
-                          ? `Аккуратная очистка текста: ${speechGatewayStatus?.polishPolicy?.modelName ?? "модель"}`
+                        speechGatewayStatus?.polishPolicy.neuralEnabled
+                          ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
                           : "Локальная очистка терминов, секций и номеров зубов"
                       }
                     >

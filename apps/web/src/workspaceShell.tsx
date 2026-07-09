@@ -25,6 +25,7 @@ import {
 
 import { useState, useEffect } from "react";
 import { useThemeStore } from "./store/themeStore";
+import { QrGatewayPanel } from "./components/QrGatewayPanel";
 
 export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing"] as const;
 export type AppView = (typeof appViews)[number];
@@ -36,8 +37,8 @@ export const viewLabels: Record<AppView, string> = {
   imaging: "Снимки",
   visit: "Прием",
   documents: "Документы",
-  finance: "������ � �����",
-  analytics: "BI ���������",
+  finance: "Финансы",
+  analytics: "BI Аналитика",
   communications: "Связь",
   settings: "Настройки",
   marketing: "Маркетинг/SEO"
@@ -50,8 +51,8 @@ export const viewHints: Record<AppView, string> = {
   imaging: "рентген, КЛКТ и КТ",
   visit: "прием и диктовка",
   documents: "договоры и справки",
-  finance: "������ � �����",
-  analytics: "BI ���������",
+  finance: "счета и оплаты",
+  analytics: "дашборд аналитики",
   communications: "сообщения и задачи",
   settings: "клиника, импорт и доступы",
   marketing: "продвижение и отзывы"
@@ -277,6 +278,7 @@ export function WorkspaceTopbar({
         >
           <Mic aria-hidden="true" />
         </button>
+        <QrGatewayPanel />
         <button
           aria-label="Справка / Обучение"
           className="icon-button"

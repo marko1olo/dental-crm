@@ -78,6 +78,7 @@ const ToothSVG = ({ number, state, scale, onClick }: {
   return (
     <div
       className={`tooth-svg-wrapper ${isTop ? "top" : "bottom"}`}
+      data-tooth-id={number}
       onClick={(e) => onClick(e, number)}
     >
       {isTop && <span className="tooth-number" style={{ fontSize: scale < 0.85 ? '10px' : undefined }}>{number}</span>}

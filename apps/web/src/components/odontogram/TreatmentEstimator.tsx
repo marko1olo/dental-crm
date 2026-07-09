@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ToothData, ToothState } from './ToothChart';
-import { FileText, Save, Calculator, Trash2 } from 'lucide-react';
+import { FileText, Save, Calculator, Trash2, PenTool } from 'lucide-react';
+import { SignaturePad } from '../SignaturePad';
 
 interface EstimatorProps {
   patientId: string;
@@ -24,6 +26,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
   const [total, setTotal] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [planId, setPlanId] = useState<string | null>(null);
+  const [showSignModal, setShowSignModal] = useState(false);
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
 
   // Auto-suggestions based on currentTeeth - fully synchronized
   useEffect(() => {
@@ -55,26 +59,26 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
       currentTeeth.forEach(t => {
         if (t.state === 'Caries') {
           if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_caries_01')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_caries_01', name: 'Лечение кариеса (восстановление)', quantity: 1, price: 5500, discount: 0, phase: 1 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_caries_01', name: 'Р›РµС‡РµРЅРёРµ РєР°СЂРёРµСЃР° (РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ)', quantity: 1, price: 5500, discount: 0, phase: 1 });
             changed = true;
           }
         }
         if (t.state === 'Planned_Implant' || t.state === 'Implant') {
           if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_implant_osstem')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_implant_osstem', name: 'Установка имплантата Osstem TSIII', quantity: 1, price: 35000, discount: 0, phase: 2 });
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_surgery_guide', name: 'Хирургический шаблон', quantity: 1, price: 12000, discount: 0, phase: 2 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_implant_osstem', name: 'РЈСЃС‚Р°РЅРѕРІРєР° РёРјРїР»Р°РЅС‚Р°С‚Р° Osstem TSIII', quantity: 1, price: 35000, discount: 0, phase: 2 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_surgery_guide', name: 'РҐРёСЂСѓСЂРіРёС‡РµСЃРєРёР№ С€Р°Р±Р»РѕРЅ', quantity: 1, price: 12000, discount: 0, phase: 2 });
             changed = true;
           }
         }
         if (t.state === 'Pulpitis') {
           if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_endo_pulpitis')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_endo_pulpitis', name: 'Эндодонтическое лечение (Пульпит)', quantity: 1, price: 12500, discount: 0, phase: 1 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_endo_pulpitis', name: 'Р­РЅРґРѕРґРѕРЅС‚РёС‡РµСЃРєРѕРµ Р»РµС‡РµРЅРёРµ (РџСѓР»СЊРїРёС‚)', quantity: 1, price: 12500, discount: 0, phase: 1 });
             changed = true;
           }
         }
         if (t.state === 'Crown') {
           if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_crown_zirconia')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_crown_zirconia', name: 'Коронка из диоксида циркония', quantity: 1, price: 28000, discount: 0, phase: 3 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_crown_zirconia', name: 'РљРѕСЂРѕРЅРєР° РёР· РґРёРѕРєСЃРёРґР° С†РёСЂРєРѕРЅРёСЏ', quantity: 1, price: 28000, discount: 0, phase: 3 });
             changed = true;
           }
         }
@@ -97,7 +101,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: planId,
-          name: "Комплексный план лечения (КТ)",
+          name: "РљРѕРјРїР»РµРєСЃРЅС‹Р№ РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ (РљРў)",
           items: items.map(i => ({ ...i }))
         })
       });
@@ -126,19 +130,32 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-950/50">
+      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center mb-6">
         <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
           <FileText size={18} className="text-emerald-400" />
           План лечения
         </h2>
-        <button 
-          onClick={savePlan}
-          disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-        >
-          <Save size={16} />
-          {isSaving ? 'Сохранение...' : 'Сохранить'}
-        </button>
+        <div className="flex items-center gap-2">
+          {signatureUrl && (
+            <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded">
+              ПОДПИСАНО
+            </span>
+          )}
+          <button 
+            onClick={() => setShowSignModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-sm font-medium transition-colors"
+          >
+            Подписать
+          </button>
+          <button 
+            onClick={savePlan}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            <Save size={16} />
+            {isSaving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -233,6 +250,21 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
           {total.toLocaleString('ru-RU')} <span className="text-zinc-500 dark:text-zinc-400 text-lg">₽</span>
         </div>
       </div>
+
+      {showSignModal && typeof window !== 'undefined' && createPortal(
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '800px' }}>
+            <SignaturePad 
+              onSign={(dataUrl) => {
+                setSignatureUrl(dataUrl);
+                setShowSignModal(false);
+              }}
+              onCancel={() => setShowSignModal(false)}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

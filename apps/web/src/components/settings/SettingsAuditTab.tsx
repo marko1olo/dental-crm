@@ -63,7 +63,7 @@ import {
   mprSlabBounds,
   mprSlabNudgeMm,
   resolveMprKeyboardAdjustment
-} from "../../utils/math/mprMath";
+} from "../../mprControlMath";
 import {
   buildMprClinicalChecklist,
   buildMprOperatorSummary,

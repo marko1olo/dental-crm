@@ -1,0 +1,1 @@
+const fs = require('fs'); const content = fs.readFileSync('apps/web/src/store/appStore.ts', 'utf-8'); const props = [...content.matchAll(/^  ([a-zA-Z0-9_]+): (?!.*\=>)(.*),$/gm)].map(m => '      ' + m[1] + ': ' + m[2] + ',').join('\n'); console.log('    reset: () => set({\n' + props + '\n    }),');

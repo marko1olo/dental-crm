@@ -1,7 +1,9 @@
 import { db } from "../db/client.js";
-import { visitTemplates } from "../db/schema.js";
+import { visitTemplates, organizations } from "../db/schema.js";
 
 async function seed() {
+  const [org] = await db.select().from(organizations).limit(1);
+  if (!org) throw new Error("No organization found to seed templates into.");
   const templates = [
     {
       title: "Лечение неосложненного кариеса",
@@ -46,7 +48,7 @@ async function seed() {
   ];
 
   for (const template of templates) {
-    await db.insert(visitTemplates).values(template);
+    await db.insert(visitTemplates).values({ ...template, organizationId: org.id });
   }
   console.log("Seeded 5 clinical templates.");
   process.exit(0);

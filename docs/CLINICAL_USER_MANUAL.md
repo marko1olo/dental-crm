@@ -36,3 +36,21 @@
 - **Закон Хика и Закон Фиттса**: Интерфейс избегает перегруженности (визуального паралича). Второстепенные действия в сметах спрятаны в Dropdown-меню. Интерактивная зубная формула (Одонтограмма) использует всплывающее Radial Menu (Радиальное меню) с крупными целями для клика (минимум 44px), что ускоряет заполнение медкарты на планшетах.
 - **Эффект Зейгарник**: В ленте приемов пациента (Journey Timeline) отображается интерактивный Прогресс-бар выполнения плана лечения. Незавершенность плана стимулирует пациента не прерывать лечение.
 - **Эффект Фон Ресторфф и Эффект Края**: Наиболее важные события в ленте приемов (первый визит и следующий шаг) визуально укрупнены. Критические медицинские алерты (аллергии) выделяются мягким неоновым пульсирующим свечением, привлекая внимание врача без агрессивного визуального шума (отказ от жестких рамок в пользу Glassmorphism).
+
+
+## 8. E2E Testing & Memory Leak Verification
+To ensure enterprise-grade stability, DENTE incorporates continuous E2E testing via Playwright. The automated suite, 	est_master_clinical_crm_flow.cjs, validates the following across Desktop and Mobile viewports:
+
+- **SOAP Journal Data Entry**: Tests multi-line input and state hydration.
+- **Calendar Crosshair Interaction**: Verifies autofocus and popover performance.
+- **Odontogram Multi-select**: Checks modifier key (Shift+Click) bindings.
+- **Patient Portal OTP Flow**: Asserts focus management across code cells.
+- **Tab-switching Memory Validation**: Rapidly toggles between Heavy Views (Patient, Schedule, Finance) and audits DOM count and app crash state to detect memory leaks and detached node accumulation.
+## 9. Multitenancy Security & Memory Management (The Grand Audit)
+**Data Privacy & Organization Isolation:**
+DENTE strictly enforces multi-tenant data boundaries at the ORM layer. Every backend REST and WebSocket request verifies the organizationId from the active session context against the database query (e.g. WHERE patient.organizationId = :currentOrg). This robust access-guard implementation prevents any cross-tenant data leakage. Queries are intentionally joined with parent tables (like patients) whenever the entity itself doesn't carry a direct reference, locking down data ownership with certainty.
+
+**OOM Safety Gates:**
+To run smoothly on varying hardware profiles, especially across long clinic shifts, DENTE aggressively manages memory using a two-pronged strategy:
+- **EventListener Cleanup:** Components relying on global events (window, document, WebSocket subscriptions, SpeechSynthesis events) are mandated to return cleanup un-subscribers from useEffect hooks, thereby releasing objects from V8 heap.
+- **Store Flushes:** The frontend application actively intercepts unmount cycles on heavy visualization tabs (e.g., 3D/2D Odontograms, Document Stores, Patient Journals) and invokes .reset() on Zustand stores. This explicitly severs references to bloated state arrays, guaranteeing garbage collection and preventing runaway memory allocation across patient profile swaps.

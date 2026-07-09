@@ -23,7 +23,7 @@
   background:rgba(255,255,255,.92);
   backdrop-filter:blur(20px);
   border:1px solid rgba(255,255,255,.6);
-  box-shadow: var(--shadow);
+  box-shadow:0 24px 48px -12px rgba(15,23,42,.22);
   border-radius:22px;
   padding:1.25rem 1rem;
   display:flex; flex-direction:column; gap:.55rem;
@@ -47,7 +47,7 @@
 ._ccm-h {
   margin:0 0 .15rem;
   font-size:.9rem; font-weight:700; color:#1e293b;
-  border-bottom:1px solid var(--line); padding-bottom:.55rem;
+  border-bottom:1px solid #e2e8f0; padding-bottom:.55rem;
 }
 ._ccm-label {
   font-size:.65rem; font-weight:800; letter-spacing:.06em;
@@ -58,14 +58,14 @@
 ._ccm-btn {
   width:100%; padding:.6rem .8rem;
   border-radius:10px;
-  border:1px solid var(--line);
-  background:var(--paper); color:#334155;
+  border:1px solid #e2e8f0;
+  background:#fff; color:#334155;
   font-size:.82rem; font-weight:600;
   text-align:left; cursor:pointer;
   display:flex; align-items:center; justify-content:space-between;
   transition:background .13s, border-color .13s, box-shadow .13s;
 }
-._ccm-btn:hover { background:var(--paper-soft); border-color:#cbd5e1; box-shadow: var(--shadow); }
+._ccm-btn:hover { background:#f8fafc; border-color:#cbd5e1; box-shadow:0 2px 8px rgba(15,23,42,.07); }
 ._ccm-btn.active { background:var(--ab,#f0f9ff); color:var(--af,#0369a1); border-color:var(--abr,#bae6fd); }
 ._ccm-btn[data-color="green"] { border-left:3px solid #4ade80 }
 ._ccm-btn[data-color="slate"] { border-left:3px solid #94a3b8 }
@@ -78,7 +78,7 @@
 ._ccm-btn[data-color="pink"]  { border-left:3px solid #f472b6 }
 ._ccm-warn {
   padding:.6rem .75rem; border-radius:10px;
-  background:var(--paper)beb; border:1px solid #fde68a;
+  background:#fffbeb; border:1px solid #fde68a;
   font-size:.73rem; color:#78350f;
 }
 ._ccm-code-badge {
@@ -88,19 +88,19 @@
 ._ccm-close-btn {
   width:100%; border-radius:12px; padding:.55rem;
   font-size:.8rem; font-weight:700;
-  border:1px solid #cbd5e1; background:var(--paper-soft); color:#475569;
+  border:1px solid #cbd5e1; background:#f8fafc; color:#475569;
   cursor:pointer; transition:background .13s;
 }
-._ccm-close-btn:hover { background:var(--line); }
+._ccm-close-btn:hover { background:#e2e8f0; }
 .clinical-rules-toggle {
   margin: .75rem 0;
   border-radius: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid #e2e8f0;
   overflow: hidden;
 }
 .clinical-rules-toggle > summary {
   padding: .75rem 1rem;
-  background: var(--paper-soft);
+  background: #f8fafc;
   font-size: .85rem; font-weight: 700; color: #475569;
   cursor: pointer; user-select: none; outline: none;
   list-style: none;
@@ -110,9 +110,9 @@
 .clinical-rules-toggle > summary::-webkit-details-marker { display: none; }
 /* Skeleton Loader and Pulse Animations for Dictation */
 @keyframes pulse-record {
-  0% { transform: scale(1); box-shadow: var(--shadow); }
-  70% { transform: scale(1.1); box-shadow: var(--shadow); }
-  100% { transform: scale(1); box-shadow: var(--shadow); }
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
 .recording-icon-pulse {
@@ -155,7 +155,7 @@
 
 .skeleton-wave {
   width: 8px;
-  border-radius: 12px;
+  border-radius: 4px;
   animation: skeleton-wave 1s ease-in-out infinite;
 }
 .skeleton-wave:nth-child(1) { animation-delay: 0s; }

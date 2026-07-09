@@ -6,14 +6,17 @@ import { useAppLogic } from './useAppLogic';
 import { VoiceAssistantUI } from './components/VoiceAssistantUI';
 import { Omnibar } from './components/Omnibar';
 import { CommandPalette } from './components/CommandPalette';
-import { AuthHub } from './components/auth/AuthHub';
+import { ClinicLogin } from './components/auth/ClinicLogin';
+import { UserLogin } from './components/auth/UserLogin';
+import { Register } from './components/auth/Register';
 import { StaffPinPad } from './components/auth/StaffPinPad';
 import TourEngine from './components/TourEngine';
 import HelpHUD from './components/HelpHUD';
-import { ClinicalTrainingWidget } from './components/onboarding/ClinicalTrainingWidget';
+
 import { PatientPortal } from './components/PatientPortal';
 
-import { useAppStore } from "./store/appStore";
+import { useAppStore } from './store/appStore';
+import { useDocumentStore } from './store/documentStore';
 import { useImagingStore } from "./store/imagingStore";
 import { useVisitStore } from "./store/visitStore";
 import { usePatientStore } from "./store/patientStore";
@@ -311,7 +314,7 @@ import {
 } from "./mprClinicalStatus";
 import { postVisitCarePresets } from "./postVisitCareData";
 import { ComparativePlannerDashboard } from "./components/plan/ComparativePlannerDashboard";
-import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
+
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 
 import {
@@ -936,6 +939,13 @@ import {
 } from "./AppHelpers";
 
 export function App() {
+    useEffect(() => {
+      return () => {
+        if (typeof useAppStore.getState().reset === 'function') useAppStore.getState().reset();
+        if (typeof (useDocumentStore.getState() as any).reset === 'function') (useDocumentStore.getState() as any).reset();
+      };
+    }, []);
+
   // Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
   
   const {
@@ -2327,15 +2337,7 @@ export function App() {
     );
   }
 
-  if (window.location.hash === "#/timeline") {
-    return (
-      <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem', width: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
-        <Suspense fallback={<AppLoadingState message="Р—Р°РіСЂСѓР·РєР°..." />}>
-          <PatientJourneyTimeline patientId="00000000-0000-0000-0000-000000000001" />
-        </Suspense>
-      </div>
-    );
-  }
+
 
   if (window.location.hash === "#/portal") {
     return (
@@ -3767,6 +3769,7 @@ export function App() {
               }
             >
               <PatientsView
+                dashboard={dashboard}
                 createPatient={createPatient}
                 filteredPatients={filteredPatients}
                 money={money}
@@ -4142,7 +4145,7 @@ export function App() {
                 <div className="panel analytics-panel" id="analytics" aria-busy="true">
                   <div className="panel-heading">
                     <h2>Executive BI Analytics</h2>
-                    <span className="status-pill status-planned">Загрузка</span>
+                    <span className="status-pill status-planned">пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ</span>
                   </div>
                 </div>
               }

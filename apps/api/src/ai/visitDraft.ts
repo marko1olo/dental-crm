@@ -325,8 +325,6 @@ function isToothState(state: unknown): state is ToothState {
   return typeof state === "string" && ["idle", "watch", "planned", "done", "missing", "treatment"].includes(state);
 }
 
-
-
 export async function buildVisitDraftFromTranscript(
   transcript: string,
   specialty: DentalSpecialty = "universal"

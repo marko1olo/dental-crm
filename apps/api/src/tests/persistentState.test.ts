@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import os from 'node:os';
+import crypto from 'node:crypto';
 import { savePersistentState } from '../persistentState.js';
 
 describe('savePersistentState', () => {
@@ -14,7 +15,7 @@ describe('savePersistentState', () => {
   let originalBackupDirEnv: string | undefined;
 
   beforeEach(() => {
-    tmpDir = path.join(os.tmpdir(), 'dental-test-state-' + Date.now() + Math.random());
+    tmpDir = path.join(os.tmpdir(), 'dental-test-state-' + crypto.randomUUID());
     stateFilePath = path.join(tmpDir, 'state.json');
 
     originalPersistenceEnv = process.env.DENTAL_STATE_PERSISTENCE;

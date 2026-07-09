@@ -8,17 +8,15 @@ const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAc
 
 export async function registerDashboardRoutes(app: FastifyInstance) {
   app.get("/api/dashboard", async (request, reply) => {
+    // Authenticate and get organizationId
     const clinicHeader = request.headers["x-dente-clinic-token"];
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
+    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
     
-    let orgId = "00000000-0000-0000-0000-000000000000";
+    const payload = verifyToken(clinicToken, TOKEN_SECRET());
+    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
 
-    if (clinicToken) {
-      const payload = verifyToken(clinicToken, TOKEN_SECRET());
-      if (payload && payload.organizationId) {
-        orgId = payload.organizationId as string;
-      }
-    }
+    const orgId = payload.organizationId as string;
     
     try {
       const dashboard = await getDashboardFromDb(orgId);

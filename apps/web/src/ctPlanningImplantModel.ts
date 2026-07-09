@@ -1,4 +1,4 @@
-import { polylineLengthMm, distanceMm, round1, round2, clamp } from "./utils/math/mprMath";
+import { polylineLengthMm, distanceMm, round1, round2, clamp } from "./ctPlanningMath";
 import type {
   DentalModelFileRole,
   DentalModelWorkbenchItem,
@@ -9,7 +9,7 @@ import type {
   ImagingViewerImplantPlan,
   LocalBridgeReadinessResponse
 } from "@dental/shared";
-import type { CtPlanningGeometrySummary } from "./utils/math/toothGeometry";
+import type { CtPlanningGeometrySummary } from "./ctPlanningGeometry";
 
 export type CtPlanningImplantModelStatus = "ready" | "draft" | "blocked";
 
