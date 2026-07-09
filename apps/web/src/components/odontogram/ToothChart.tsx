@@ -17,14 +17,11 @@ interface ToothChartProps {
 const TOP_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
 const BOTTOM_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
 
-// Full width of one arch at scale=1 (sum of all tooth widths + gaps)
-// Widths: teeth 1-2 = 32px, 3 = 36px, 4-5 = 44px, 6-8 = 60px, per quadrant x2
-// Per quadrant: 32+32+36+44+44+60+60+60 = 368px, x2 quadrants = 736px + 7*4px gaps per quadrant = 56px total
-const FULL_ARCH_WIDTH = 736 + 56; // ~792px
+const FULL_ARCH_WIDTH = 960; // Extra breathing room to prevent any possible subpixel flexbox overflow
 
 const getToothColors = (state: ToothState) => {
   switch (state) {
-    case 'Healthy': return { fill: 'var(--odontogram-paper)', stroke: 'var(--tooth-root-stroke)', opacity: "1" };
+    case 'Healthy': return { fill: 'var(--tooth-crown-fill)', stroke: 'var(--tooth-root-stroke)', opacity: "1" };
     case 'Caries': return { fill: '#ef4444', stroke: '#b91c1c', opacity: "1" };
     case 'Pulpitis': return { fill: '#a855f7', stroke: '#7e22ce', opacity: "1" };
     case 'Missing': return { fill: 'var(--odontogram-paper)', stroke: 'var(--tooth-root-stroke)', opacity: "0.2" };
@@ -47,13 +44,14 @@ const ToothSVG = ({ number, state, scale, onClick }: {
   const cfg = getToothConfig(number);
   const colors = getToothColors(state);
 
-  const w = Math.round(parseInt(cfg.width) * scale);
-  const h = Math.round(parseInt(cfg.height) * scale);
-  const scaledWidth = `${w}px`;
-  const scaledHeight = `${h}px`;
+  const scaledWidth = cfg.width;
+  const scaledHeight = cfg.height;
+
+  const isRightSide = (number >= 21 && number <= 28) || (number >= 31 && number <= 38);
+  const transform = `scaleX(${isRightSide ? -1 : 1})`;
 
   const renderImplant = () => (
-    <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid slice" className={colors.isPulsing ? 'animate-pulse drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]' : ''}>
+    <svg width={scaledWidth} height={scaledHeight} style={{ transform }} viewBox={`${cfg.viewX} 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="none" className={colors.isPulsing ? 'animate-pulse drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]' : ''}>
       <g>
         <path d={geom.root} fill="#27272a" stroke="#d97706" strokeWidth="2" strokeLinejoin="round" />
         <path d={geom.crown} fill="#ffffff" stroke="#d97706" strokeWidth="2.2" strokeLinejoin="round" />
@@ -65,13 +63,13 @@ const ToothSVG = ({ number, state, scale, onClick }: {
   );
 
   const renderStandard = () => (
-    <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid slice" className={colors.isPulsing ? 'animate-pulse drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]' : ''}>
+    <svg width={scaledWidth} height={scaledHeight} style={{ transform }} viewBox={`${cfg.viewX} 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="none" className={colors.isPulsing ? 'animate-pulse drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]' : ''}>
       <g>
-        <path d={geom.root} fill="var(--tooth-root-fill, #27272a)" stroke="var(--tooth-root-stroke, #52525b)" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d={geom.root} fill="var(--tooth-root-fill, #e2e8f0)" stroke="var(--tooth-root-stroke, #94a3b8)" strokeWidth="1.5" strokeLinejoin="round" />
         {geom.canals && state === 'Filled' && (
           <path d={geom.canals} fill="none" stroke="#14b8a6" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
         )}
-        <path d={geom.crown} fill={state === 'Healthy' ? 'var(--tooth-crown-fill)' : colors.fill} fillOpacity={colors.opacity} stroke={colors.stroke} strokeWidth="2.2" strokeLinejoin="round" />
+        <path d={geom.crown} fill={colors.fill} fillOpacity={colors.opacity} stroke={colors.stroke} strokeWidth="2.2" strokeLinejoin="round" />
         {geom.fissures && <path d={geom.fissures} fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="0.8" />}
       </g>
     </svg>
@@ -81,11 +79,10 @@ const ToothSVG = ({ number, state, scale, onClick }: {
     <div
       className={`tooth-svg-wrapper ${isTop ? "top" : "bottom"}`}
       onClick={(e) => onClick(e, number)}
-      style={{ padding: scale < 0.85 ? '2px' : '4px' }}
     >
-      {isTop && <span className="tooth-number" style={{ fontSize: scale < 0.85 ? '8px' : undefined }}>{number}</span>}
+      {isTop && <span className="tooth-number" style={{ fontSize: scale < 0.85 ? '10px' : undefined }}>{number}</span>}
       {state === 'Implant' || state === 'Planned_Implant' ? renderImplant() : renderStandard()}
-      {!isTop && <span className="tooth-number" style={{ fontSize: scale < 0.85 ? '8px' : undefined }}>{number}</span>}
+      {!isTop && <span className="tooth-number" style={{ fontSize: scale < 0.85 ? '10px' : undefined }}>{number}</span>}
     </div>
   );
 };
@@ -93,49 +90,46 @@ const ToothSVG = ({ number, state, scale, onClick }: {
 export const ToothChart: React.FC<ToothChartProps> = ({ teethData, onToothClick }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const archContainerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [contentWidth, setContentWidth] = useState(900);
 
   useEffect(() => {
     const updateLayout = () => {
-      if (!containerRef.current) return;
-      // On mobile: after bleed arch is viewport-wide, so use viewport width as basis
+      const archEl = archContainerRef.current;
+      const contentEl = contentRef.current;
+      if (!archEl || !contentEl) return;
+      
       const effectiveWidth = window.innerWidth < 640
-        ? window.innerWidth - 16  // 8px padding on each side inside the bleed
-        : containerRef.current.clientWidth - 32;
-      if (effectiveWidth < FULL_ARCH_WIDTH) {
-        setScale(Math.max(0.45, effectiveWidth / FULL_ARCH_WIDTH));
+        ? window.innerWidth - 16
+        : archEl.clientWidth;
+        
+      // Temporarily remove transform to measure true intrinsic width
+      const oldTransform = contentEl.style.transform;
+      contentEl.style.transform = 'none';
+      const trueWidth = contentEl.scrollWidth;
+      contentEl.style.transform = oldTransform;
+      
+      if (trueWidth > 0 && trueWidth !== contentWidth) {
+        setContentWidth(trueWidth);
+      }
+
+      if (effectiveWidth < trueWidth && trueWidth > 0) {
+        setScale(Math.max(0.65, effectiveWidth / trueWidth));
       } else {
         setScale(1);
       }
     };
 
-    const bleedArch = () => {
-      if (!archContainerRef.current) return;
-      // Only on mobile viewports
-      if (window.innerWidth >= 640) {
-        archContainerRef.current.style.marginLeft = '';
-        archContainerRef.current.style.marginRight = '';
-        archContainerRef.current.style.width = '';
-        return;
-      }
-      const rect = archContainerRef.current.getBoundingClientRect();
-      const leftBleed = rect.left; // pixels from viewport left edge
-      const rightBleed = window.innerWidth - rect.right; // pixels from viewport right edge
-      archContainerRef.current.style.marginLeft = `-${leftBleed}px`;
-      archContainerRef.current.style.marginRight = `-${rightBleed}px`;
-      archContainerRef.current.style.width = `${window.innerWidth}px`;
-    };
-
     updateLayout();
-    bleedArch();
-
     const ro = new ResizeObserver(() => {
-      updateLayout();
-      bleedArch();
+      // Use requestAnimationFrame to avoid ResizeObserver loop limit errors
+      window.requestAnimationFrame(updateLayout);
     });
-    if (containerRef.current) ro.observe(containerRef.current);
+    if (archContainerRef.current) ro.observe(archContainerRef.current);
+    if (contentRef.current) ro.observe(contentRef.current);
     return () => ro.disconnect();
-  }, []);
+  }, [contentWidth]);
 
   const handleToothClick = (e: React.MouseEvent, num: number) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -160,31 +154,49 @@ export const ToothChart: React.FC<ToothChartProps> = ({ teethData, onToothClick 
       </div>
 
       <div className="tooth-chart-arch-container" ref={archContainerRef}>
-        {/* Top Arch */}
-        <div className="tooth-chart-arch top-arch">
-          <div className="tooth-chart-quadrant left-quad">
-            {TOP_TEETH.slice(0, 8).map(num => (
-              <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-            ))}
-          </div>
-          <div className="tooth-chart-quadrant right-quad">
-            {TOP_TEETH.slice(8).map(num => (
-              <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-            ))}
-          </div>
-        </div>
+        <div style={{
+          width: `${contentWidth * scale}px`,
+          height: `${252 * scale}px`,
+          margin: '0 auto',
+          position: 'relative',
+          overflow: 'visible'
+        }}>
+          <div ref={contentRef} style={{
+            width: 'max-content',
+            height: '252px',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            position: 'absolute',
+            top: 0,
+            left: 0
+          }}>
+            {/* Top Arch */}
+            <div className="tooth-chart-arch top-arch">
+              <div className="tooth-chart-quadrant left-quad">
+                {TOP_TEETH.slice(0, 8).map(num => (
+                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
+                ))}
+              </div>
+              <div className="tooth-chart-quadrant right-quad">
+                {TOP_TEETH.slice(8).map(num => (
+                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
+                ))}
+              </div>
+            </div>
 
-        {/* Bottom Arch */}
-        <div className="tooth-chart-arch bottom-arch">
-          <div className="tooth-chart-quadrant left-quad">
-            {BOTTOM_TEETH.slice(0, 8).map(num => (
-              <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-            ))}
-          </div>
-          <div className="tooth-chart-quadrant right-quad">
-            {BOTTOM_TEETH.slice(8).map(num => (
-              <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-            ))}
+            {/* Bottom Arch */}
+            <div className="tooth-chart-arch bottom-arch">
+              <div className="tooth-chart-quadrant left-quad">
+                {BOTTOM_TEETH.slice(0, 8).map(num => (
+                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
+                ))}
+              </div>
+              <div className="tooth-chart-quadrant right-quad">
+                {BOTTOM_TEETH.slice(8).map(num => (
+                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,0 +1,85 @@
+﻿.receipt-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+}
+
+.receipt-paper {
+  background: #fff;
+  color: #000;
+  width: 320px;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 4px;
+}
+
+.receipt-header {
+  text-align: center;
+}
+
+.receipt-header h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.receipt-header p {
+  margin: 2px 0;
+  font-size: 0.9rem;
+}
+
+.receipt-divider {
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.receipt-item-row, .receipt-split-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.1rem;
+  margin: 8px 0;
+}
+
+.receipt-qr {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.receipt-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.print-btn {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 4px;
+}
+.print-btn:hover {
+  background: #333;
+}

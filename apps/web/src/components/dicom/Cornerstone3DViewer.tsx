@@ -167,6 +167,24 @@ export function Cornerstone3DViewer({ imageIds, isPreview = false, onClose }: Co
     return () => {
       resizeObserver.disconnect();
       renderingEngine?.destroy();
+      
+      // Strict WebGL context destruction and Canvas resize
+      const cleanCanvas = (ref: React.RefObject<HTMLDivElement | null>) => {
+        if (ref.current) {
+          const canvases = ref.current.querySelectorAll('canvas');
+          canvases.forEach(canvas => {
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            gl?.getExtension('WEBGL_lose_context')?.loseContext();
+            canvas.width = 0;
+            canvas.height = 0;
+          });
+        }
+      };
+      
+      cleanCanvas(axialRef);
+      cleanCanvas(sagittalRef);
+      cleanCanvas(coronalRef);
+      cleanCanvas(vrRef);
     };
   }, [isInitialized, imageIds]);
 

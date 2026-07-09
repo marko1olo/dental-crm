@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ToothData, ToothState } from './ToothChart';
-import { FileText, Save, Calculator, AlertTriangle, Plus, Trash2, ShieldCheck, HeartPulse } from 'lucide-react';
+import { FileText, Save, Calculator, Trash2 } from 'lucide-react';
 
 interface EstimatorProps {
   patientId: string;
@@ -16,6 +16,7 @@ interface PlanItem {
   price: number;
   discount: number;
   phase: number;
+  isAuto?: boolean;
 }
 
 export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, currentTeeth }) => {
@@ -24,56 +25,63 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
   const [isSaving, setIsSaving] = useState(false);
   const [planId, setPlanId] = useState<string | null>(null);
 
-  // Auto-suggestions based on currentTeeth
+  // Auto-suggestions based on currentTeeth - fully synchronized
   useEffect(() => {
-    const newItems = [...items];
-    let changed = false;
+    setItems(prevItems => {
+      let newItems = [...prevItems];
+      let changed = false;
 
-    currentTeeth.forEach(t => {
-      if (t.state === 'Caries') {
-        const existing = newItems.find(i => i.toothNumber === t.toothNumber && i.name.includes('Кариес'));
-        if (!existing) {
-          newItems.push({
-            toothNumber: t.toothNumber,
-            priceId: 'service_caries_01',
-            name: `Лечение кариеса (Световая пломба)`,
-            quantity: 1,
-            price: 5500,
-            discount: 0,
-            phase: 1
-          });
-          changed = true;
+      // 1. Remove auto-items for teeth that no longer have that state
+      const itemsToRemove: number[] = [];
+      newItems.forEach((item, idx) => {
+        if (!item.isAuto) return;
+        const tooth = currentTeeth.find(t => t.toothNumber === item.toothNumber);
+        if (!tooth) {
+          itemsToRemove.push(idx);
+          return;
         }
+        if (item.priceId === 'service_caries_01' && tooth.state !== 'Caries') itemsToRemove.push(idx);
+        if ((item.priceId === 'service_implant_osstem' || item.priceId === 'service_surgery_guide') && tooth.state !== 'Planned_Implant' && tooth.state !== 'Implant') itemsToRemove.push(idx);
+        if (item.priceId === 'service_endo_pulpitis' && tooth.state !== 'Pulpitis') itemsToRemove.push(idx);
+        if (item.priceId === 'service_crown_zirconia' && tooth.state !== 'Crown') itemsToRemove.push(idx);
+      });
+
+      if (itemsToRemove.length > 0) {
+        newItems = newItems.filter((_, i) => !itemsToRemove.includes(i));
+        changed = true;
       }
-      if (t.state === 'Planned_Implant' || t.state === 'Implant') {
-        const existing = newItems.find(i => i.toothNumber === t.toothNumber && i.name.includes('Имплантат'));
-        if (!existing) {
-          newItems.push({
-            toothNumber: t.toothNumber,
-            priceId: 'service_implant_osstem',
-            name: `Установка имплантата Osstem TSIII`,
-            quantity: 1,
-            price: 35000,
-            discount: 0,
-            phase: 2
-          });
-          newItems.push({
-            toothNumber: t.toothNumber,
-            priceId: 'service_surgery_guide',
-            name: `Хирургический шаблон`,
-            quantity: 1,
-            price: 12000,
-            discount: 0,
-            phase: 2
-          });
-          changed = true;
+
+      // 2. Add missing auto-items
+      currentTeeth.forEach(t => {
+        if (t.state === 'Caries') {
+          if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_caries_01')) {
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_caries_01', name: 'Лечение кариеса (восстановление)', quantity: 1, price: 5500, discount: 0, phase: 1 });
+            changed = true;
+          }
         }
-      }
+        if (t.state === 'Planned_Implant' || t.state === 'Implant') {
+          if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_implant_osstem')) {
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_implant_osstem', name: 'Установка имплантата Osstem TSIII', quantity: 1, price: 35000, discount: 0, phase: 2 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_surgery_guide', name: 'Хирургический шаблон', quantity: 1, price: 12000, discount: 0, phase: 2 });
+            changed = true;
+          }
+        }
+        if (t.state === 'Pulpitis') {
+          if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_endo_pulpitis')) {
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_endo_pulpitis', name: 'Эндодонтическое лечение (Пульпит)', quantity: 1, price: 12500, discount: 0, phase: 1 });
+            changed = true;
+          }
+        }
+        if (t.state === 'Crown') {
+          if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_crown_zirconia')) {
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_crown_zirconia', name: 'Коронка из диоксида циркония', quantity: 1, price: 28000, discount: 0, phase: 3 });
+            changed = true;
+          }
+        }
+      });
+
+      return changed ? newItems : prevItems;
     });
-
-    if (changed) {
-      setItems(newItems);
-    }
   }, [currentTeeth]);
 
   useEffect(() => {
@@ -114,7 +122,6 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
     setItems(n);
   };
 
-  // Group by phase
   const phases = [1, 2, 3];
 
   return (
@@ -159,7 +166,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
               <Calculator size={40} style={{ color: '#2dd4bf', opacity: 0.8 }} />
             </div>
             <p style={{ color: 'var(--odontogram-ink-muted, #a1a1aa)', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
-              План лечения пуст. Кликните на любой зуб на схеме слева, выберите патологию, и система автоматически подберет оптимальный набор процедур из прайс-листа.
+              План лечения пуст. Кликайте по зубам на зубной формуле, чтобы отмечать патологии, и услуги будут добавляться автоматически.
             </p>
           </div>
         )}
@@ -185,8 +192,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
                         <div>
                           <div className="flex items-center gap-2">
                             {item.toothNumber && (
-                              <span className="px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono text-[10px]">
-                                Зуб {item.toothNumber}
+                              <span className="px-1.5 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-[11px] font-bold shadow-sm">
+                                [{item.toothNumber}]
                               </span>
                             )}
                             <span className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{item.name}</span>
@@ -201,7 +208,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
                         <select 
                           value={item.phase} 
                           onChange={e => setPhase(globalIdx, parseInt(e.target.value))}
-                          className="bg-transparent border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 rounded p-1 outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
+                          className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-xs text-zinc-900 dark:text-zinc-100 rounded p-1 outline-none focus:border-emerald-500"
                         >
                           <option value={1}>Этап I: Терапия</option>
                           <option value={2}>Этап II: Хирургия</option>
@@ -221,7 +228,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
       </div>
 
       <div className="p-4 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-        <div className="text-sm text-zinc-500 dark:text-zinc-400">Итого к оплате:</div>
+        <div className="text-sm text-zinc-500 dark:text-zinc-400">Итого по плану:</div>
         <div className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
           {total.toLocaleString('ru-RU')} <span className="text-zinc-500 dark:text-zinc-400 text-lg">₽</span>
         </div>

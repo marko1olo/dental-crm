@@ -1,15 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { usePatientStore, type ToothStatus } from '../store/patientStore';
 import { getToothPath, getToothConfig } from "../utils/math/toothGeometry";
 
 const TOOTH_NUMBERS = [
-  // Upper right (18 to 11)
   18, 17, 16, 15, 14, 13, 12, 11,
-  // Upper left (21 to 28)
   21, 22, 23, 24, 25, 26, 27, 28,
-  // Lower right (48 to 41)
   48, 47, 46, 45, 44, 43, 42, 41,
-  // Lower left (31 to 38)
   31, 32, 33, 34, 35, 36, 37, 38
 ];
 
@@ -17,126 +13,168 @@ const UPPER_TEETH = TOOTH_NUMBERS.slice(0, 16);
 const LOWER_TEETH = TOOTH_NUMBERS.slice(16, 32);
 
 const STATUS_COLORS: Record<ToothStatus, string> = {
-  Healthy: '#ffffff',
-  Caries: '#dc2626',
-  Filling: '#0ea5e9',
-  Missing: '#94a3b8',
-  Implant: '#0f766e',
-  Crown: '#f59e0b'
+  Healthy:  '#ffffff',
+  Caries:   '#dc2626',
+  Filling:  '#0ea5e9',
+  Missing:  '#94a3b8',
+  Implant:  '#0f766e',
+  Crown:    '#f59e0b'
+};
+
+const STATUS_GLOW: Record<ToothStatus, string> = {
+  Healthy:  'rgba(148,163,184,0.4)',
+  Caries:   'rgba(220,38,38,0.5)',
+  Filling:  'rgba(14,165,233,0.5)',
+  Missing:  'rgba(148,163,184,0.3)',
+  Implant:  'rgba(15,118,110,0.5)',
+  Crown:    'rgba(245,158,11,0.5)'
 };
 
 const STATUS_OPTIONS: ToothStatus[] = ["Healthy", "Caries", "Filling", "Missing", "Implant", "Crown"];
 
-const renderToothSvg = (tooth: number, status: ToothStatus, color: string) => {
-  const isUpper = tooth >= 11 && tooth <= 28;
+const renderToothSvg = (tooth: number, status: ToothStatus, color: string, isSelected: boolean) => {
   const geom = getToothPath(tooth);
-  const cfg = getToothConfig(tooth);
-  
-  const scale = 1.0;
-  const scaledWidth = `${parseFloat(cfg.width) * scale}px`;
-  const scaledHeight = `${parseFloat(cfg.height) * scale}px`;
-  
+  const cfg  = getToothConfig(tooth);
+  const w = `${parseFloat(cfg.width)}px`;
+  const h = `${parseFloat(cfg.height)}px`;
+
   if (status === 'Missing') {
     return (
-      <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
-        <g>
-          <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
-          <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
-          <path d="M20 20L80 130M80 20L20 130" stroke="#ef4444" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
-        </g>
+      <svg width={w} height={h} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
+        <path d={geom.root}  fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+        <path d={geom.crown} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
+        <path d="M20 20L80 130M80 20L20 130" stroke="#ef4444" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
+        {isSelected && <rect x="0" y="0" width={cfg.viewWidth} height={cfg.viewHeight} fill="none" stroke="#6366f1" strokeWidth="4" rx="6" strokeDasharray="6 3" />}
       </svg>
     );
   }
 
   if (status === 'Implant') {
     return (
-      <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
-        <g>
-          <path d={geom.root} fill="#f1f5f9" stroke="#0f766e" strokeWidth="2" strokeLinejoin="round" />
-          <path d={geom.crown} fill="#ffffff" stroke="#0f766e" strokeWidth="2.2" strokeLinejoin="round" />
-          <line x1="25" y1="60" x2="75" y2="60" stroke="#0f766e" strokeWidth="2" />
-          <line x1="30" y1="80" x2="70" y2="80" stroke="#0f766e" strokeWidth="2" />
-          <line x1="35" y1="100" x2="65" y2="100" stroke="#0f766e" strokeWidth="2" />
-        </g>
+      <svg width={w} height={h} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
+        <path d={geom.root}  fill="#f1f5f9" stroke="#0f766e" strokeWidth="2"   strokeLinejoin="round" />
+        <path d={geom.crown} fill="#ffffff" stroke="#0f766e" strokeWidth="2.2" strokeLinejoin="round" />
+        <line x1="25" y1="60"  x2="75" y2="60"  stroke="#0f766e" strokeWidth="2" />
+        <line x1="30" y1="80"  x2="70" y2="80"  stroke="#0f766e" strokeWidth="2" />
+        <line x1="35" y1="100" x2="65" y2="100" stroke="#0f766e" strokeWidth="2" />
+        {isSelected && <rect x="0" y="0" width={cfg.viewWidth} height={cfg.viewHeight} fill="none" stroke="#6366f1" strokeWidth="4" rx="6" strokeDasharray="6 3" />}
       </svg>
     );
   }
 
-  const fillOpacity = status === 'Healthy' ? "1" : "0.2";
-  const strokeColor = status === 'Healthy' ? "#94a3b8" : color;
+  const fillOpacity  = status === 'Healthy' ? "1" : "0.2";
+  const strokeColor  = status === 'Healthy' ? "#94a3b8" : color;
 
   return (
-    <svg width={scaledWidth} height={scaledHeight} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
-      <g>
-        <path d={geom.root} fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" strokeLinejoin="round" />
-        
-        {geom.canals && status === 'Filling' && (
-          <path d={geom.canals} fill="none" stroke="#0ea5e9" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
-        )}
-
-        <path d={geom.crown} fill={status === 'Healthy' ? '#ffffff' : color} fillOpacity={fillOpacity} stroke={strokeColor} strokeWidth="2.2" strokeLinejoin="round" />
-        
-        {geom.fissures && <path d={geom.fissures} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.8" />}
-
-        {status === 'Caries' && (
-          <circle cx={cfg.viewWidth / 2} cy={isUpper ? 110 : 40} r="8" fill="#dc2626" opacity="0.9" />
-        )}
-        {status === 'Crown' && (
-          <path d={geom.crown} fill="#f59e0b" opacity="0.3" stroke="#f59e0b" strokeWidth="1" />
-        )}
-      </g>
+    <svg width={w} height={h} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="xMidYMid meet">
+      <path d={geom.root}   fill="#f8fafc"                               stroke="#cbd5e1"    strokeWidth="1.5"  strokeLinejoin="round" />
+      {geom.canals && status === 'Filling' && (
+        <path d={geom.canals} fill="none" stroke="#0ea5e9" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
+      )}
+      <path d={geom.crown} fill={status === 'Healthy' ? '#ffffff' : color} fillOpacity={fillOpacity} stroke={strokeColor} strokeWidth="2.2" strokeLinejoin="round" />
+      {geom.fissures && <path d={geom.fissures} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="0.8" />}
+      {status === 'Caries' && <circle cx={cfg.viewWidth / 2} cy={tooth >= 11 && tooth <= 28 ? 110 : 40} r="8" fill="#dc2626" opacity="0.9" />}
+      {status === 'Crown'  && <path d={geom.crown} fill="#f59e0b" opacity="0.3" stroke="#f59e0b" strokeWidth="1" />}
+      {isSelected && (
+        <rect
+          x="0" y="0"
+          width={cfg.viewWidth} height={cfg.viewHeight}
+          fill="rgba(99,102,241,0.12)"
+          stroke="#6366f1" strokeWidth="3.5"
+          rx="6"
+          strokeDasharray="6 3"
+        />
+      )}
     </svg>
   );
 };
 
 export function Odontogram() {
   const { odontogramState, setToothStatus } = usePatientStore();
-  const [hoveredTooth, setHoveredTooth] = useState<number | null>(null);
-  const [radialMenuOpen, setRadialMenuOpen] = useState<number | null>(null);
+  const [hoveredTooth,   setHoveredTooth]   = useState<number | null>(null);
+  const [radialMenuOpen, setRadialMenuOpen]  = useState<number | null>(null);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedTeeth,   setSelectedTeeth]   = useState<Set<number>>(new Set());
+  const [bulkMenuOpen,    setBulkMenuOpen]    = useState(false);
 
-  const handleToothClick = (tooth: number) => {
-    // Fitts's Law / Hick's Law: open a radial menu instead of cycling
-    setRadialMenuOpen(radialMenuOpen === tooth ? null : tooth);
-  };
+  const toggleTooth = useCallback((tooth: number) => {
+    setSelectedTeeth(prev => {
+      const next = new Set(prev);
+      next.has(tooth) ? next.delete(tooth) : next.add(tooth);
+      return next;
+    });
+  }, []);
+
+  const handleToothClick = useCallback((tooth: number, shiftKey: boolean) => {
+    if (multiSelectMode || shiftKey) {
+      toggleTooth(tooth);
+      // open bulk menu if ≥1 tooth selected
+      setBulkMenuOpen(false);
+      return;
+    }
+    setRadialMenuOpen(prev => prev === tooth ? null : tooth);
+  }, [multiSelectMode, toggleTooth]);
+
+  const applyBulkStatus = useCallback((status: ToothStatus) => {
+    selectedTeeth.forEach(t => setToothStatus(t, status));
+    setSelectedTeeth(new Set());
+    setBulkMenuOpen(false);
+    setMultiSelectMode(false);
+  }, [selectedTeeth, setToothStatus]);
 
   const renderTooth = (tooth: number) => {
-    const status = (odontogramState[tooth] || 'Healthy') as ToothStatus;
-    const color = STATUS_COLORS[status];
-    const isHovered = hoveredTooth === tooth;
-    const isUpper = tooth >= 11 && tooth <= 28;
+    const status    = (odontogramState[tooth] || 'Healthy') as ToothStatus;
+    const color     = STATUS_COLORS[status];
+    const isHovered  = hoveredTooth === tooth;
+    const isSelected = selectedTeeth.has(tooth);
+    const isUpper    = tooth >= 11 && tooth <= 28;
 
     return (
-      <div 
-        key={tooth} 
+      <div
+        key={tooth}
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px',
           position: 'relative',
           cursor: 'pointer',
           padding: '2px',
           borderRadius: '8px',
-          transition: 'all 0.2s',
-          background: isHovered ? '#f1f5f9' : 'transparent',
-          width: 'max-content'
+          transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+          background: isSelected
+            ? 'rgba(99,102,241,0.15)'
+            : isHovered
+            ? '#f1f5f9'
+            : 'transparent',
+          boxShadow: isSelected
+            ? `0 0 0 2px #6366f1, 0 0 12px ${STATUS_GLOW[status]}`
+            : 'none',
+          width: 'max-content',
         }}
         onMouseEnter={() => setHoveredTooth(tooth)}
         onMouseLeave={() => setHoveredTooth(null)}
-        onClick={() => handleToothClick(tooth)}
+        onClick={e => handleToothClick(tooth, e.shiftKey)}
       >
-        {isUpper && <span style={{ fontSize: '15px', fontWeight: 700, color: isHovered ? '#2563eb' : '#475569' }}>{tooth}</span>}
-        
-        {/* SVG Tooth representation */}
+        {isUpper && (
+          <span style={{ fontSize: '14px', fontWeight: 700, color: isSelected ? '#6366f1' : isHovered ? '#2563eb' : '#475569' }}>
+            {tooth}
+          </span>
+        )}
+
         <div style={{
-          transition: 'all 0.2s',
-          transform: isHovered ? 'scale(1.1) translateY(-2px)' : 'scale(1)',
-          filter: isHovered ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))',
+          transition: 'transform 0.18s, filter 0.18s',
+          transform: isHovered || isSelected ? 'scale(1.08) translateY(-2px)' : 'scale(1)',
+          filter: isHovered ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.12))' : isSelected ? `drop-shadow(0 0 6px ${STATUS_GLOW[status]})` : 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))',
         }}>
-          {renderToothSvg(tooth, status, color)}
+          {renderToothSvg(tooth, status, color, isSelected)}
         </div>
 
-        {!isUpper && <span style={{ fontSize: '15px', fontWeight: 700, color: isHovered ? '#2563eb' : '#475569' }}>{tooth}</span>}
+        {!isUpper && (
+          <span style={{ fontSize: '14px', fontWeight: 700, color: isSelected ? '#6366f1' : isHovered ? '#2563eb' : '#475569' }}>
+            {tooth}
+          </span>
+        )}
 
         {/* Tooltip */}
         <div style={{
@@ -145,81 +183,68 @@ export function Odontogram() {
           top: !isUpper ? '100%' : 'auto',
           left: '50%',
           transform: 'translateX(-50%)',
-          marginBottom: isUpper ? '12px' : '0',
-          marginTop: !isUpper ? '12px' : '0',
+          marginBottom: isUpper ? '10px' : '0',
+          marginTop: !isUpper ? '10px' : '0',
           background: '#1e293b',
           color: '#ffffff',
-          padding: '6px 10px',
-          borderRadius: '8px',
-          fontSize: '13px',
+          padding: '5px 9px',
+          borderRadius: '7px',
+          fontSize: '12px',
           fontWeight: 600,
           pointerEvents: 'none',
           whiteSpace: 'nowrap',
           zIndex: 20,
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          opacity: isHovered && radialMenuOpen !== tooth ? 1 : 0,
-          transition: 'opacity 0.2s',
+          opacity: isHovered && radialMenuOpen !== tooth && !multiSelectMode ? 1 : 0,
+          transition: 'opacity 0.15s',
         }}>
           Зуб {tooth}: {status}
         </div>
 
-        {/* Fitts's Law & Hick's Law: Radial Menu */}
-        {radialMenuOpen === tooth && (
+        {/* Single-tooth radial menu */}
+        {!multiSelectMode && radialMenuOpen === tooth && (
           <div style={{
             position: 'absolute',
-            top: '50%',
-            left: '50%',
+            top: '50%', left: '50%',
             transform: 'translate(-50%, -50%)',
             zIndex: 50,
-            width: '160px',
-            height: '160px',
+            width: '160px', height: '160px',
             pointerEvents: 'none',
           }}>
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-              {/* Overlay to close */}
-              <div 
+              <div
                 style={{ position: 'fixed', top: -9999, left: -9999, right: -9999, bottom: -9999, cursor: 'default', pointerEvents: 'auto' }}
-                onClick={(e) => { e.stopPropagation(); setRadialMenuOpen(null); }}
+                onClick={e => { e.stopPropagation(); setRadialMenuOpen(null); }}
               />
-              
               {STATUS_OPTIONS.map((opt, i) => {
-                const angle = (i * (360 / STATUS_OPTIONS.length)) - 90;
+                const angle  = (i * (360 / STATUS_OPTIONS.length)) - 90;
                 const radius = 60;
                 const x = Math.cos(angle * Math.PI / 180) * radius;
                 const y = Math.sin(angle * Math.PI / 180) * radius;
-                
                 return (
                   <button
                     key={opt}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setToothStatus(tooth, opt);
-                      setRadialMenuOpen(null);
-                    }}
+                    onClick={e => { e.stopPropagation(); setToothStatus(tooth, opt); setRadialMenuOpen(null); }}
                     style={{
                       position: 'absolute',
                       left: `calc(50% + ${x}px)`,
                       top: `calc(50% + ${y}px)`,
                       transform: 'translate(-50%, -50%)',
-                      width: '44px', // Fitts's Law (min 44px)
-                      height: '44px',
+                      width: '44px', height: '44px',
                       borderRadius: '50%',
                       background: STATUS_COLORS[opt],
-                      border: '2px solid rgba(255,255,255,0.8)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      border: '2.5px solid rgba(255,255,255,0.9)',
+                      boxShadow: `0 4px 12px ${STATUS_GLOW[opt]}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer',
                       pointerEvents: 'auto',
-                      transition: 'transform 0.1s',
+                      transition: 'transform 0.12s',
                       color: opt === 'Healthy' ? '#000' : '#fff',
-                      fontSize: '10px',
-                      fontWeight: 'bold'
+                      fontSize: '10px', fontWeight: 'bold'
                     }}
                     title={opt}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)')}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.15)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)')}
                   >
                     {opt.substring(0, 1)}
                   </button>
@@ -236,71 +261,175 @@ export function Odontogram() {
     <div style={{
       background: '#ffffff',
       borderRadius: '16px',
-      padding: '32px 24px',
+      padding: '28px 20px',
       border: '1px solid #e2e8f0',
       boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
       display: 'flex',
       flexDirection: 'column',
-      gap: '40px',
+      gap: '32px',
       width: '100%',
       overflowX: 'auto',
       marginBottom: '16px'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-         <h3 style={{ margin: 0, color: '#1e293b', fontSize: '20px', fontWeight: 700 }}>Зубная формула</h3>
-         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+
+      {/* Toolbar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '19px', fontWeight: 700 }}>Зубная формула</h3>
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Multi-select toggle */}
+          <button
+            onClick={() => {
+              setMultiSelectMode(m => !m);
+              setSelectedTeeth(new Set());
+              setBulkMenuOpen(false);
+              setRadialMenuOpen(null);
+            }}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: `1.5px solid ${multiSelectMode ? '#6366f1' : '#cbd5e1'}`,
+              background: multiSelectMode ? '#eef2ff' : '#fff',
+              color: multiSelectMode ? '#6366f1' : '#475569',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              display: 'flex', alignItems: 'center', gap: '6px'
+            }}
+          >
+            <span>{multiSelectMode ? '✓ Групповой выбор' : '☐ Групповой выбор'}</span>
+            {multiSelectMode && selectedTeeth.size > 0 && (
+              <span style={{
+                background: '#6366f1', color: '#fff',
+                borderRadius: '9999px', padding: '1px 7px',
+                fontSize: '11px', fontWeight: 800
+              }}>
+                {selectedTeeth.size}
+              </span>
+            )}
+          </button>
+
+          {/* Apply to selected */}
+          {multiSelectMode && selectedTeeth.size > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setBulkMenuOpen(m => !m)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 18px rgba(99,102,241,0.4)',
+                  transition: 'opacity 0.15s',
+                }}
+              >
+                Применить к {selectedTeeth.size} зубам ▾
+              </button>
+
+              {bulkMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '110%', right: 0,
+                  background: '#fff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.12)',
+                  zIndex: 100,
+                  minWidth: '180px',
+                  overflow: 'hidden',
+                  animation: 'popIn 0.15s ease',
+                }}>
+                  {STATUS_OPTIONS.map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => applyBulkStatus(opt)}
+                      style={{
+                        width: '100%', textAlign: 'left',
+                        padding: '9px 14px',
+                        background: 'none', border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '13px', fontWeight: 600,
+                        color: '#1e293b',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        transition: 'background 0.12s',
+                        borderBottom: '1px solid #f1f5f9',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: STATUS_COLORS[opt], border: '1px solid #94a3b8', flexShrink: 0 }} />
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {STATUS_OPTIONS.map(s => (
-               <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: '#475569' }}>
-                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: STATUS_COLORS[s], border: '1px solid #94a3b8' }} />
-                  {s}
-               </div>
+              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: STATUS_COLORS[s], border: '1px solid #94a3b8' }} />
+                {s}
+              </div>
             ))}
-         </div>
+          </div>
+        </div>
       </div>
-      
+
       {/* Dental Grid */}
-      <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '16px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 'max-content', padding: '0 16px' }}>
+      <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 'max-content', padding: '0 12px' }}>
           {/* Upper arch */}
           <div style={{
-            display: 'flex',
-            gap: '2px',
-            justifyContent: 'center',
-            position: 'relative',
-            paddingBottom: '12px',
+            display: 'flex', gap: '2px', justifyContent: 'center',
+            position: 'relative', paddingBottom: '10px',
             borderBottom: '3px solid #cbd5e1'
           }}>
-            {/* Center divider */}
-            <div style={{ position: 'absolute', left: '50%', top: '0', bottom: '-12px', width: '3px', background: '#cbd5e1', zIndex: 0 }} />
-            
-            <div style={{ display: 'flex', gap: '2px', paddingRight: '8px' }}>
+            <div style={{ position: 'absolute', left: '50%', top: '0', bottom: '-10px', width: '3px', background: '#cbd5e1', zIndex: 0 }} />
+            <div style={{ display: 'flex', gap: '2px', paddingRight: '6px' }}>
               {UPPER_TEETH.slice(0, 8).map(renderTooth)}
             </div>
-            <div style={{ display: 'flex', gap: '2px', paddingLeft: '8px' }}>
+            <div style={{ display: 'flex', gap: '2px', paddingLeft: '6px' }}>
               {UPPER_TEETH.slice(8, 16).map(renderTooth)}
             </div>
           </div>
 
           {/* Lower arch */}
           <div style={{
-            display: 'flex',
-            gap: '2px',
-            justifyContent: 'center',
-            position: 'relative',
-            paddingTop: '12px'
+            display: 'flex', gap: '2px', justifyContent: 'center',
+            position: 'relative', paddingTop: '10px'
           }}>
-            {/* Center divider */}
-            <div style={{ position: 'absolute', left: '50%', top: '-12px', bottom: '0', width: '3px', background: '#cbd5e1', zIndex: 0 }} />
-            
-            <div style={{ display: 'flex', gap: '2px', paddingRight: '8px' }}>
+            <div style={{ position: 'absolute', left: '50%', top: '-10px', bottom: '0', width: '3px', background: '#cbd5e1', zIndex: 0 }} />
+            <div style={{ display: 'flex', gap: '2px', paddingRight: '6px' }}>
               {LOWER_TEETH.slice(0, 8).map(renderTooth)}
             </div>
-            <div style={{ display: 'flex', gap: '2px', paddingLeft: '8px' }}>
+            <div style={{ display: 'flex', gap: '2px', paddingLeft: '6px' }}>
               {LOWER_TEETH.slice(8, 16).map(renderTooth)}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Hints */}
+      <div className="odontogram-hints">
+        <span><kbd>Shift</kbd> + Клик — групповой выбор</span>
+        <span className="hint-divider">|</span>
+        <span>Кнопка «Групповой выбор» — режим мультивыбора</span>
+      </div>
+
+      <style>{`
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './InstallmentScheduler.css';
 
 interface Installment {
@@ -7,102 +7,163 @@ interface Installment {
   amount: number;
 }
 
-export const InstallmentScheduler: React.FC<{ totalEstimate: number }> = ({ totalEstimate }) => {
-  const [downPayment, setDownPayment] = useState<number>(0);
-  const [months, setMonths] = useState<number>(3);
-  const [discount, setDiscount] = useState<number>(0);
-  const [installments, setInstallments] = useState<Installment[]>([]);
+function buildSchedule(total: number, downPayment: number, months: number, discount: number): Installment[] {
+  const discountedTotal = total * (1 - discount / 100);
+  const remainder = discountedTotal - downPayment;
+  if (remainder <= 0 || months <= 0) return [];
 
-  useEffect(() => {
-    // Cleanup state for State Bleeding Fix
-    setDownPayment(0);
-    setMonths(3);
-    setDiscount(0);
-    setInstallments([]);
-
-    return () => {
-      // Unmount cleanup
-      setInstallments([]);
+  const monthly = remainder / months;
+  const now = new Date();
+  return Array.from({ length: months }, (_, i) => {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() + i + 1);
+    return {
+      month: i + 1,
+      dueDate: d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' }),
+      amount: Math.round(monthly),
     };
+  });
+}
+
+export const InstallmentScheduler: React.FC<{ totalEstimate: number }> = ({ totalEstimate }) => {
+  const [downPct,   setDownPct]   = useState(0);      // 0-100 %
+  const [months,    setMonths]    = useState(6);
+  const [discount,  setDiscount]  = useState(0);
+  const [expanded,  setExpanded]  = useState(true);
+
+  // Reset when the estimate changes (new patient / plan)
+  useEffect(() => {
+    setDownPct(0);
+    setMonths(6);
+    setDiscount(0);
   }, [totalEstimate]);
 
-  const calculateInstallments = () => {
-    const discountedTotal = totalEstimate * (1 - discount / 100);
-    const remainder = discountedTotal - downPayment;
-    
-    if (remainder <= 0 || months <= 0) {
-      setInstallments([]);
-      return;
-    }
+  const downPayment  = useMemo(() => Math.round(totalEstimate * downPct / 100), [totalEstimate, downPct]);
+  const discounted   = useMemo(() => Math.round(totalEstimate * (1 - discount / 100)), [totalEstimate, discount]);
+  const remainder    = Math.max(0, discounted - downPayment);
+  const monthly      = months > 0 && remainder > 0 ? Math.round(remainder / months) : 0;
+  const schedule     = useMemo(
+    () => buildSchedule(totalEstimate, downPayment, months, discount),
+    [totalEstimate, downPayment, months, discount]
+  );
 
-    const monthlyAmount = remainder / months;
-    const schedule: Installment[] = [];
-    
-    let currentDate = new Date();
-    for (let i = 1; i <= months; i++) {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-      schedule.push({
-        month: i,
-        dueDate: currentDate.toISOString().split('T')[0] || '',
-        amount: Math.round(monthlyAmount),
-      });
-    }
-    setInstallments(schedule);
-  };
+  const handleSlider = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setDownPct(Number(e.target.value));
+  }, []);
+
+  // Thumb color track fill via CSS variable trick
+  const sliderFill = `${downPct}%`;
 
   return (
-    <div className="installment-scheduler">
-      <div className="scheduler-header">
-        <h3>Installment Calculator</h3>
-        <span className="total-badge">Total: {totalEstimate.toLocaleString()} ₽</span>
+    <div className="inst-wrap">
+      <div className="inst-header" onClick={() => setExpanded(x => !x)}>
+        <div className="inst-header-left">
+          <span className="inst-icon">💳</span>
+          <h3 className="inst-title">Калькулятор рассрочки</h3>
+          <span className="inst-total-badge">{totalEstimate.toLocaleString()} ₽</span>
+        </div>
+        <span className="inst-chevron">{expanded ? '▲' : '▼'}</span>
       </div>
 
-      <div className="scheduler-controls">
-        <div className="control-group">
-          <label>Down Payment (₽)</label>
-          <input 
-            type="number" 
-            value={downPayment} 
-            onChange={(e) => setDownPayment(Number(e.target.value))}
-            min="0"
-          />
-        </div>
-        <div className="control-group">
-          <label>Duration (Months)</label>
-          <input 
-            type="number" 
-            value={months} 
-            onChange={(e) => setMonths(Number(e.target.value))}
-            min="1" max="24"
-          />
-        </div>
-        <div className="control-group">
-          <label>Discount (%)</label>
-          <input 
-            type="number" 
-            value={discount} 
-            onChange={(e) => setDiscount(Number(e.target.value))}
-            min="0" max="100"
-          />
-        </div>
-        <button className="calculate-btn" onClick={calculateInstallments}>
-          Calculate
-        </button>
-      </div>
+      {expanded && (
+        <div className="inst-body">
 
-      {installments.length > 0 && (
-        <div className="installments-preview">
-          <h4>Payment Schedule</h4>
-          <div className="installments-grid">
-            {installments.map((inst) => (
-              <div key={inst.month} className="installment-card">
-                <div className="inst-month">Month {inst.month}</div>
-                <div className="inst-date">{inst.dueDate}</div>
-                <div className="inst-amount">{inst.amount.toLocaleString()} ₽</div>
+          {/* ── Down Payment Slider ── */}
+          <div className="inst-section">
+            <div className="inst-row-label">
+              <label className="inst-label">Первоначальный взнос</label>
+              <div className="inst-value-badge">
+                <span className="inst-pct">{downPct}%</span>
+                <span className="inst-rub">{downPayment.toLocaleString()} ₽</span>
               </div>
-            ))}
+            </div>
+
+            <div className="inst-slider-wrap">
+              <input
+                type="range"
+                min="0" max="100" step="1"
+                value={downPct}
+                onChange={handleSlider}
+                className="inst-slider"
+                style={{ '--fill': sliderFill } as React.CSSProperties}
+                aria-label="Первоначальный взнос в процентах"
+              />
+              <div className="inst-slider-labels">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+                <span>75%</span>
+                <span>100%</span>
+              </div>
+            </div>
           </div>
-          <button className="confirm-plan-btn">Save Installment Plan</button>
+
+          {/* ── Months + Discount ── */}
+          <div className="inst-controls-row">
+            <div className="inst-control">
+              <label className="inst-label">Срок рассрочки</label>
+              <div className="inst-month-stepper">
+                <button onClick={() => setMonths(m => Math.max(1, m - 1))} className="inst-step-btn">−</button>
+                <span className="inst-step-val">{months} мес.</span>
+                <button onClick={() => setMonths(m => Math.min(36, m + 1))} className="inst-step-btn">+</button>
+              </div>
+            </div>
+            <div className="inst-control">
+              <label className="inst-label">Скидка</label>
+              <div className="inst-discount-wrap">
+                <input
+                  type="number"
+                  min="0" max="50" value={discount}
+                  onChange={e => setDiscount(Math.min(50, Math.max(0, Number(e.target.value))))}
+                  className="inst-discount-input"
+                />
+                <span className="inst-discount-pct">%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Live Summary ── */}
+          <div className="inst-summary">
+            <div className="inst-summary-item">
+              <span className="inst-summary-label">Сумма со скидкой</span>
+              <span className="inst-summary-val">{discounted.toLocaleString()} ₽</span>
+            </div>
+            <div className="inst-summary-item">
+              <span className="inst-summary-label">Остаток к рассрочке</span>
+              <span className="inst-summary-val inst-summary-val--accent">{remainder.toLocaleString()} ₽</span>
+            </div>
+            <div className="inst-summary-item inst-summary-item--monthly">
+              <span className="inst-summary-label">Ежемесячный платёж</span>
+              <span className="inst-summary-val inst-summary-val--big">{monthly > 0 ? monthly.toLocaleString() + ' ₽' : '—'}</span>
+            </div>
+          </div>
+
+          {/* ── Payment Schedule ── */}
+          {schedule.length > 0 && (
+            <div className="inst-schedule">
+              <h4 className="inst-schedule-title">График платежей</h4>
+              <div className="inst-schedule-list">
+                {schedule.map((inst, idx) => (
+                  <div
+                    key={inst.month}
+                    className="inst-row"
+                    style={{ animationDelay: `${idx * 0.04}s` }}
+                  >
+                    <div className="inst-row-month">
+                      <span className="inst-month-dot" />
+                      Месяц {inst.month}
+                    </div>
+                    <div className="inst-row-date">{inst.dueDate}</div>
+                    <div className="inst-row-amount">{inst.amount.toLocaleString()} ₽</div>
+                  </div>
+                ))}
+              </div>
+
+              <button className="inst-save-btn">
+                💾 Сохранить план рассрочки
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

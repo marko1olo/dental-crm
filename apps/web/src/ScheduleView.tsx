@@ -1,5 +1,6 @@
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
+import { ClinicalScheduler } from "./components/ClinicalScheduler";
 import { useSettingsStore } from "./store/settingsStore";
 import { useScheduleStore } from "./store/scheduleStore";
 import { Plus, ShieldCheck, Bot, Mic } from "lucide-react";
@@ -442,6 +443,17 @@ export function ScheduleView(props: ScheduleViewProps) {
               useManualSelects={useManualSelects}
               setUseManualSelects={setUseManualSelects}
             />
+            
+            <ClinicalScheduler
+              appointments={sortedAppointments}
+              onSlotClick={(date, time, chairId) => {
+                const draft = newAppointmentDraft;
+                if (!draft) return;
+                // Pre-fill
+                showToast("Выбрано время " + time, "info");
+              }}
+            />
+
             <div className="schedule-timeline timeline">
               {sortedAppointments.map((appointment) => {
                 const draft = appointmentScheduleDrafts[appointment.id] || appointmentScheduleDraftFromAppointment(appointment);

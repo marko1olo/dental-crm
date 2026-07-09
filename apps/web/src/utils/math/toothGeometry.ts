@@ -497,12 +497,12 @@ export const getToothPath = (toothId: number): ToothGeometryType => {
 
 export const getToothConfig = (toothId: number) => {
   const num = toothId % 10;
-  // All teeth have 90px height (20% bigger than 75px).
-  // The widths are scaled down to crop empty viewBox space, creating dense layouts.
-  if (num <= 2) return { width: "32px", height: "90px", viewWidth: 100, viewHeight: 150 };
-  if (num === 3) return { width: "36px", height: "90px", viewWidth: 100, viewHeight: 150 };
-  if (num <= 5) return { width: "44px", height: "90px", viewWidth: 100, viewHeight: 150 };
-  return { width: "60px", height: "90px", viewWidth: 100, viewHeight: 150 };
+  // Use custom viewBox values to tightly bound the actual SVG paths, 
+  // preventing extreme horizontal distortion when scaling to container widths.
+  if (num <= 2) return { width: "36px", height: "90px", viewX: 20, viewWidth: 60, viewHeight: 150 };
+  if (num === 3) return { width: "40px", height: "90px", viewX: 15, viewWidth: 75, viewHeight: 150 };
+  if (num <= 5) return { width: "42px", height: "90px", viewX: 12.5, viewWidth: 75, viewHeight: 150 };
+  return { width: "48px", height: "90px", viewX: 0, viewWidth: 100, viewHeight: 150 };
 };
 
 /**

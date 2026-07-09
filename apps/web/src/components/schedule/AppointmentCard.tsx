@@ -88,7 +88,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
           <div className="mobile-time-badge">
             {formatTime(appointment.startsAt)} - {formatTime(appointment.endsAt)}
           </div>
-          <div className="appointment-card-header">
+          <div className="appointment-card-header" style={{ position: 'relative' }}>
             <div className="appointment-card-time">
               {formatTime(appointment.startsAt)}
               <span className="appointment-card-time-end">{formatTime(appointment.endsAt)}</span>
@@ -96,6 +96,24 @@ export function AppointmentCard(props: AppointmentCardProps) {
             <span className={`appointment-card-status status-pill status-${appointment.status}`}>
               {appointmentLabels[appointment.status]}
             </span>
+            {readiness?.state === 'ready' && (
+              <div className="lab-ready-indicator animate-pulse" title="Лабораторный заказ готов" style={{
+                position: 'absolute',
+                top: '-10px',
+                right: '-10px',
+                background: '#10b981',
+                borderRadius: '50%',
+                padding: '4px',
+                boxShadow: '0 0 10px rgba(16, 185, 129, 0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                zIndex: 10
+              }}>
+                👑
+              </div>
+            )}
             {appointmentHasOpenVisit ? <span className="handoff-lock">Открыт прием: пациент закреплен</span> : null}
           </div>
 

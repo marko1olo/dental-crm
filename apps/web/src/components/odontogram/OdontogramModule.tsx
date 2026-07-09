@@ -7,7 +7,7 @@ import './odontogram.css';
 
 export const OdontogramModule = ({ patientId }: { patientId: string }) => {
   const [teethData, setTeethData] = useState<ToothData[]>([]);
-  const [menuConfig, setMenuConfig] = useState<{ toothNumber: number; x: number; y: number; position: 'top' | 'bottom' } | null>(null);
+  const [menuConfig, setMenuConfig] = useState<{ toothNumber: number; x: number; y: number; position: 'top' | 'bottom'; caretOffset: number } | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Load states from API
@@ -79,7 +79,13 @@ export const OdontogramModule = ({ patientId }: { patientId: string }) => {
             let y = isUpperJaw ? rect.bottom + gap : rect.top - menuH - gap;
 
             // Clamp horizontally
-            x = Math.max(8, Math.min(x, vw - menuW - 8));
+            let clampedX = Math.max(8, Math.min(x, vw - menuW - 8));
+            let caretOffset = 50;
+            if (clampedX !== x) {
+              const toothCenter = rect.left + rect.width / 2;
+              caretOffset = ((toothCenter - clampedX) / menuW) * 100;
+            }
+            x = clampedX;
             // Clamp vertically — flip side if no room
             if (isUpperJaw && y + menuH > vh - 8) {
               y = rect.top - menuH - gap;
@@ -88,7 +94,7 @@ export const OdontogramModule = ({ patientId }: { patientId: string }) => {
             }
             y = Math.max(8, Math.min(y, vh - menuH - 8));
 
-            setMenuConfig({ toothNumber, x, y, position: isUpperJaw ? 'bottom' : 'top' });
+            setMenuConfig({ toothNumber, x, y, position: isUpperJaw ? 'bottom' : 'top', caretOffset });
           }} 
         />
         
@@ -108,10 +114,11 @@ export const OdontogramModule = ({ patientId }: { patientId: string }) => {
                 top: menuConfig.y,
                 transform: 'none',
                 zIndex: 9999,
-              }}
+                '--caret-offset': `${menuConfig.caretOffset}%`
+              } as React.CSSProperties}
               onClick={e => e.stopPropagation()}
             >
-              <div style={{ gridColumn: 'span 2', textAlign: 'center', marginBottom: '8px', color: '#f4f4f5', fontWeight: 'bold' }}>
+              <div style={{ gridColumn: 'span 2', textAlign: 'center', marginBottom: '8px', color: 'var(--ink)', fontWeight: 'bold' }}>
                 Зуб {menuConfig.toothNumber}
               </div>
               <button onClick={() => updateToothState(menuConfig.toothNumber, 'Caries')} className="tooth-menu-btn caries">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { User, KeyRound, Lock, AlertTriangle, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { useSettingsStore } from "../../store/settingsStore";
+import { useThemeStore } from "../../store/themeStore";
 
 interface UserProfile {
   id: string;
@@ -315,6 +317,29 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
               </button>
             </div>
           </form>
+        </section>
+        {/* Theme Settings */}
+        <section className="settings-section">
+          <div className="settings-section-header">
+            <Eye aria-hidden="true" size={20} />
+            <h3>Внешний вид</h3>
+          </div>
+          <p className="form-hint" style={{ marginBottom: 16, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+            Выберите тему оформления системы или включите автоматическое переключение от времени суток.
+          </p>
+          <div className="form-grid">
+            <label className="form-span-2">
+              Тема
+              <select
+                value={useThemeStore(s => s.themeMode)}
+                onChange={(e) => useThemeStore.getState().setThemeMode(e.target.value as "auto" | "light" | "dark")}
+              >
+                <option value="auto">Автоматически (по времени суток)</option>
+                <option value="light">Светлая тема</option>
+                <option value="dark">Тёмная тема</option>
+              </select>
+            </label>
+          </div>
         </section>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { FinanceLedger } from "./FinanceLedger";
 import { FinancePlanningOverview, ServiceCatalogStrip } from "./FinancePlanning";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
+import { formatCurrencyNumeric } from "./utils/inputSanitation";
+import { InstallmentScheduler } from "./components/InstallmentScheduler";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -188,7 +190,7 @@ export function FinanceView({
         isSaving={isPaymentSaving}
         method={paymentMethod}
         methodLabels={paymentMethodLabels}
-        onAmountChange={setPaymentAmount}
+        onAmountChange={(v) => setPaymentAmount(formatCurrencyNumeric(v))}
         onFiscalCashierNameChange={setPaymentFiscalCashierName}
         onFiscalFdChange={setPaymentFiscalFd}
         onFiscalFnChange={setPaymentFiscalFn}

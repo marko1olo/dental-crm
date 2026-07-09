@@ -88,6 +88,7 @@ export interface SettingsState {
   telegramSendingItemId: string | null;
   telegramRevokingLinkId: string | null;
 
+
 }
 
 export interface SettingsActions {
@@ -256,5 +257,5 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()((set) 
   setTelegramAdminSecretSession: (val) => set((state) => ({ telegramAdminSecretSession: typeof val === 'function' ? (val as any)(state.telegramAdminSecretSession) : val })),
   setTelegramSendingItemId: (val) => set((state) => ({ telegramSendingItemId: typeof val === 'function' ? (val as any)(state.telegramSendingItemId) : val })),
   setTelegramRevokingLinkId: (val) => set((state) => ({ telegramRevokingLinkId: typeof val === 'function' ? (val as any)(state.telegramRevokingLinkId) : val })),
-
 }));
+

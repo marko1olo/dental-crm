@@ -4,10 +4,11 @@ import Fastify from "fastify";
 import { pathToFileURL } from "node:url";
 import { ZodError } from "zod";
 import { registerAiRoutes } from "./routes/ai.js";
-import { registerBillingRoutes } from "./routes/billing.js";
+import { registerBillingRoutes, registerAdvancedBillingRoutes } from "./routes/billing.js";
 import { registerClinicalRoutes } from "./routes/clinical.js";
 import { registerCommunicationRoutes } from "./routes/communications.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
+import { registerAnalyticsRoutes } from "./routes/analytics.js";
 import { registerDocumentRoutes } from "./routes/documents.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
@@ -29,8 +30,12 @@ import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import registerSchedulerSync from "./routes/schedulerSync.js";
 import registerHandoff from "./routes/handoff.js";
 import registerSurgicalRoutes from "./routes/surgical.js";
+import registerEgiszRoutes from "./routes/egisz.js";
+import registerDiaryRoutes from "./routes/diary.js";
+import registerTemplateRoutes from "./routes/templates.js";
 import { startRecallWorker } from "./services/recallWorker.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
+import { startBiAnalyticsWorker } from "./services/biAnalyticsWorker.js";
 import { setupWebsockets } from "./websocket.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { repairMojibakeText } from "./text/repairMojibake.js";
@@ -209,9 +214,11 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
 
   await registerAiRoutes(app);
   await registerBillingRoutes(app);
+  await registerAdvancedBillingRoutes(app);
   await registerClinicalRoutes(app);
   await registerCommunicationRoutes(app);
   await registerDashboardRoutes(app);
+  registerAnalyticsRoutes(app);
   await registerDocumentRoutes(app);
   await registerImagingRoutes(app);
   await registerImagingPlanningRoutes(app);
@@ -233,10 +240,13 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerOdontogramRoutes(app);
   await registerSchedulerSync(app);
   await registerHandoff(app);
-  await registerSurgicalRoutes(app);
+  await registerEgiszRoutes(app);
+  await registerDiaryRoutes(app);
+  await registerTemplateRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     // const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
+    startBiAnalyticsWorker();
     // const recallWorkerTimer = startRecallWorker();
     app.addHook("onClose", async () => {
       // telegramOutboxDueWorker.stop();
