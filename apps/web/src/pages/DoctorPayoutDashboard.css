@@ -1,0 +1,53 @@
+﻿.payout-dashboard {
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 20px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  margin-top: 20px;
+}
+
+.payout-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--accent);
+}
+
+.payout-table-wrapper {
+  overflow-x: auto;
+}
+
+.payout-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.payout-table th, .payout-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.payout-table th {
+  background: var(--surface-hover);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.payout-table td {
+  font-size: 0.95rem;
+}
+
+.payout-table td.cost {
+  color: #ef4444;
+}
+
+.payout-table td.net {
+  color: #10b981;
+  font-weight: bold;
+}

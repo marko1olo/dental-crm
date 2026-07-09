@@ -14281,6 +14281,14 @@ input:focus, select:focus, textarea:focus {
   border-radius: 0 0 8px 8px;
   animation: accordion-open 0.2s ease both;
 }
+.theme-dark .schedule-secret-collapsible {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.theme-dark .schedule-secret-collapsible .schedule-admin-unlock {
+  background: rgba(15, 23, 42, 0.8);
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
 
 /* ================================================================
    MOBILE OVERRIDES (MUST BE DECLARED AT THE VERY END OF FILE)
@@ -16794,3 +16802,107 @@ input:focus, select:focus, textarea:focus {
   border-color: rgba(0, 0, 0, 0.07) !important;
 }
 
+
+/* Ultimate Polish & Defensive UX: Global Transitions */
+body, .panel, .sidebar, .topbar, .glass-panel, .chip, .nav-item, input, button, select, textarea {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease, box-shadow 0.3s ease;
+}
+
+/* Touch Ergonomics: Momentum Scrolling */
+.scroll-container, .panel-content, .workspace-content, .modal-content, .timeline-node-list, [style*="overflow-y: auto"] {
+  -webkit-overflow-scrolling: touch;
+}
+.actionable-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: left;
+  padding: 32px;
+  background: var(--slate-50);
+  border: 1px dashed var(--slate-200);
+  border-radius: 16px;
+  width: 100%;
+}
+.theme-dark .actionable-empty-state {
+  background: rgba(30, 41, 59, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.actionable-empty-state h4 {
+  margin: 0 0 24px 0;
+  font-size: 1.25rem;
+  color: var(--slate-800);
+  width: 100%;
+  text-align: center;
+}
+.theme-dark .actionable-empty-state h4 { color: var(--slate-100); }
+
+.onboarding-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 24px;
+}
+
+.checklist-step {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--slate-50, #f8fafc);
+  border-radius: 12px;
+  border: 1px solid var(--slate-200);
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+.theme-dark .checklist-step {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+.checklist-step.active {
+  opacity: 1;
+  border-color: var(--brand-500);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
+  transform: translateY(-2px);
+}
+.theme-dark .checklist-step.active {
+  background: rgba(30, 41, 59, 0.95);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.15);
+}
+
+.step-indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--slate-100);
+  color: var(--slate-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.checklist-step.active .step-indicator {
+  background: var(--brand-500);
+  color: white;
+}
+.theme-dark .step-indicator { background: var(--slate-700); color: var(--slate-300); }
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.step-content h5 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--slate-800);
+}
+.theme-dark .step-content h5 { color: var(--slate-100); }
+.step-content p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--slate-500);
+}
+.theme-dark .step-content p { color: var(--slate-400); }

@@ -11,7 +11,8 @@ import {
   timestamp,
   unique,
   index,
-  uuid
+  uuid,
+  varchar
 } from "drizzle-orm/pg-core";
 import type {
   DocumentIssueSignatureAttestation,
@@ -1177,4 +1178,94 @@ export const insuranceContracts = pgTable("insurance_contracts", {
   annualLimitRub: integer("annual_limit_rub"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+
+export const egiszStatusEnum = pgEnum('egisz_status_enum', [
+  'Pending', 'Sent', 'Error', 'Accepted'
+]);
+
+export const egiszLogs = pgTable('egisz_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  patientId: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' }),
+  visitId: uuid('visit_id').notNull().references(() => visits.id, { onDelete: 'cascade' }),
+  status: egiszStatusEnum('status').notNull().default('Pending'),
+  transactionId: varchar('transaction_id', { length: 255 }),
+  errorDetails: jsonb('error_details'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const visitDiaries = pgTable('visit_diaries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  visitId: uuid('visit_id').notNull().references(() => visits.id, { onDelete: 'cascade' }),
+  patientId: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' }),
+  doctorId: uuid('doctor_id').references(() => users.id, { onDelete: 'set null' }),
+  anamnesis: text('anamnesis'),
+  statusLocalis: text('status_localis'),
+  diagnosisIcd10: varchar('diagnosis_icd10', { length: 50 }),
+  diagnosisTooth: varchar('diagnosis_tooth', { length: 10 }),
+  treatmentDescription: text('treatment_description'),
+  isLocked: boolean('is_locked').notNull().default(false),
+  lockedAt: timestamp('locked_at', { withTimezone: true }),
+  lockedByUserId: uuid('locked_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const visitDiaryRevisions = pgTable('visit_diary_revisions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  diaryId: uuid('diary_id').notNull().references(() => visitDiaries.id, { onDelete: 'cascade' }),
+  previousAnamnesis: text('previous_anamnesis'),
+  previousStatusLocalis: text('previous_status_localis'),
+  previousDiagnosisIcd10: varchar('previous_diagnosis_icd10', { length: 50 }),
+  previousTreatmentDescription: text('previous_treatment_description'),
+  revisedAt: timestamp('revised_at', { withTimezone: true }).notNull().defaultNow(),
+  revisedByUserId: uuid('revised_by_user_id').references(() => users.id, { onDelete: 'set null' })
+});
+
+export const visitTemplates = pgTable('visit_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: varchar('title', { length: 255 }).notNull(),
+  category: varchar('category', { length: 255 }),
+  prefilledAnamnesis: text('prefilled_anamnesis'),
+  prefilledObjective: text('prefilled_objective'),
+  prefilledTreatment: text('prefilled_treatment'),
+  defaultIcd10: varchar('default_icd10', { length: 50 }),
+  suggestedProcedureIds: jsonb('suggested_procedure_ids')
+});
+
+
+export const biAnalyticsSnapshots = pgTable('bi_analytics_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  snapshotDate: timestamp('snapshot_date', { withTimezone: true }).notNull(),
+  cohortLtvJson: jsonb('cohort_ltv_json').notNull().default('{}'),
+  planFunnelJson: jsonb('plan_funnel_json').notNull().default('{}'),
+  chairUtilizationJson: jsonb('chair_utilization_json').notNull().default('{}'),
+  doctorProfitabilityJson: jsonb('doctor_profitability_json').notNull().default('{}'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const invoiceStatus = pgEnum('invoice_status', ['unpaid', 'partially_paid', 'paid']);
+export const ledgerPaymentMethod = pgEnum('ledger_payment_method', ['cash', 'card', 'dms', 'installment_balance']);
+
+export const patientInvoices = pgTable('patient_invoices', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id),
+  patientId: uuid('patient_id').notNull().references(() => patients.id),
+  visitId: uuid('visit_id').references(() => visits.id),
+  itemsJson: jsonb('items_json').notNull().default('[]'),
+  totalAmountRub: numeric('total_amount_rub', { precision: 12, scale: 2 }).notNull().default('0'),
+  status: invoiceStatus('status').notNull().default('unpaid'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+});
+
+export const cashLedger = pgTable('cash_ledger', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  invoiceId: uuid('invoice_id').notNull().references(() => patientInvoices.id),
+  paymentMethod: ledgerPaymentMethod('payment_method').notNull(),
+  amountRub: numeric('amount_rub', { precision: 12, scale: 2 }).notNull(),
+  operatorId: uuid('operator_id').references(() => users.id),
+  timestamp: timestamp('timestamp', { withTimezone: true }).notNull().defaultNow()
 });

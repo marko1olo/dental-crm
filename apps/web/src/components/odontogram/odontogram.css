@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --odontogram-paper: #ffffff;
   --odontogram-surface: #f8fafc;
   --odontogram-surface-hover: #f1f5f9;
@@ -20,7 +20,7 @@
   --odontogram-border: rgba(39, 39, 42, 0.8);
   --odontogram-border-subtle: rgba(39, 39, 42, 0.5);
   --odontogram-border-strong: #3f3f46;
-  --odontogram-ink: #f4f4f5;
+  --odontogram-ink: var(--ink);
   --odontogram-ink-muted: #a1a1aa;
   --odontogram-ink-subtle: #d4d4d8;
   --tooth-root-fill: #27272a;
@@ -30,7 +30,8 @@
 
 .odontogram-module {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 24px;
   width: 100%;
   height: 100%;
@@ -44,12 +45,20 @@
 }
 
 .odontogram-chart-area {
-  flex: 1;
+  flex: 2;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 24px;
   position: relative;
+}
+
+.odontogram-treatment-area {
+  flex: 1;
+  min-width: 320px;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
 }
 
 .tooth-chart-container {
@@ -65,8 +74,9 @@
   position: relative;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
   .odontogram-module {
+    flex-direction: column;
     padding: 12px 8px;
   }
   .tooth-chart-container {
@@ -86,6 +96,9 @@
     max-width: 100vw;
     overflow-x: auto;
     padding: 12px 8px;
+  }
+  .tooth-chart-arch {
+    margin: 0;
   }
 }
 
@@ -186,9 +199,10 @@
 }
 
 .tooth-number {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
   font-family: monospace;
-  color: var(--odontogram-ink-muted);
+  color: var(--odontogram-ink);
 }
 .tooth-svg-wrapper.top .tooth-number {
   margin-bottom: 4px;
@@ -208,17 +222,17 @@
 
 .tooth-radial-menu {
   position: absolute;
-  background-color: rgba(9, 9, 11, 0.90);
+  background-color: var(--odontogram-paper);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px;
-  border-radius: 12px;
+  border: 1px solid var(--odontogram-border);
+  padding: 16px;
+  border-radius: 20px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 12px;
   max-width: calc(100vw - 32px);
   z-index: 50;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.4);
 }
 
 .tooth-radial-menu::after {
@@ -232,16 +246,16 @@
 
 .tooth-radial-menu.caret-top::after {
   bottom: 100%;
-  left: 50%;
+  left: var(--caret-offset, 50%);
   transform: translateX(-50%);
-  border-bottom: 8px solid rgba(39, 39, 42, 1);
+  border-bottom: 8px solid var(--odontogram-paper);
 }
 
 .tooth-radial-menu.caret-bottom::after {
   top: 100%;
-  left: 50%;
+  left: var(--caret-offset, 50%);
   transform: translateX(-50%);
-  border-top: 8px solid rgba(39, 39, 42, 1);
+  border-top: 8px solid var(--odontogram-paper);
 }
 
 @media (max-width: 768px) {
@@ -254,44 +268,48 @@
 }
 
 .tooth-menu-btn {
-  padding: 8px 12px;
+  padding: 12px 16px;
+  min-height: 48px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.025em;
-  border-radius: 6px;
+  border-radius: 12px;
   border: 1px solid rgba(63, 63, 70, 0.3);
   cursor: pointer;
-  transition: all 0.2s;
-  background-color: rgba(24, 24, 27, 0.6);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--odontogram-surface);
   color: var(--odontogram-ink-subtle);
   white-space: nowrap;
-  min-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tooth-menu-btn:hover {
-  background-color: rgba(63, 63, 70, 0.8);
-  color: #fff;
-  transform: scale(1.02);
+  transform: scale(1.05) translateY(-2px);
+  z-index: 10;
 }
 
-.tooth-menu-btn.caries { background-color: rgba(220, 38, 38, 0.15); color: #fca5a5; border-color: rgba(220, 38, 38, 0.3); }
-.tooth-menu-btn.caries:hover { background-color: rgba(220, 38, 38, 0.25); }
+.tooth-menu-btn.caries { background-color: rgba(220, 38, 38, 0.08); color: #ef4444; border-color: rgba(220, 38, 38, 0.2); }
+.tooth-menu-btn.caries:hover { background-color: rgba(220, 38, 38, 0.2); color: #fca5a5; border-color: #ef4444; box-shadow: 0 8px 24px -6px rgba(220, 38, 38, 0.6); }
 
-.tooth-menu-btn.pulpitis { background-color: rgba(234, 88, 12, 0.15); color: #fdba74; border-color: rgba(234, 88, 12, 0.3); }
-.tooth-menu-btn.pulpitis:hover { background-color: rgba(234, 88, 12, 0.25); }
+.tooth-menu-btn.pulpitis { background-color: rgba(168, 85, 247, 0.08); color: #a855f7; border-color: rgba(168, 85, 247, 0.2); }
+.tooth-menu-btn.pulpitis:hover { background-color: rgba(168, 85, 247, 0.2); color: #d8b4fe; border-color: #a855f7; box-shadow: 0 8px 24px -6px rgba(168, 85, 247, 0.6); }
 
-.tooth-menu-btn.implant { background-color: rgba(217, 119, 6, 0.15); color: #fcd34d; border-color: rgba(217, 119, 6, 0.3); }
-.tooth-menu-btn.implant:hover { background-color: rgba(217, 119, 6, 0.25); }
+.tooth-menu-btn.implant { background-color: rgba(217, 119, 6, 0.08); color: #d97706; border-color: rgba(217, 119, 6, 0.2); }
+.tooth-menu-btn.implant:hover { background-color: rgba(217, 119, 6, 0.2); color: #fcd34d; border-color: #fbbf24; box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.6); }
 
-.tooth-menu-btn.crown { background-color: rgba(37, 99, 235, 0.15); color: #93c5fd; border-color: rgba(37, 99, 235, 0.3); }
-.tooth-menu-btn.crown:hover { background-color: rgba(37, 99, 235, 0.25); }
+.tooth-menu-btn.crown { background-color: rgba(37, 99, 235, 0.08); color: #3b82f6; border-color: rgba(37, 99, 235, 0.2); }
+.tooth-menu-btn.crown:hover { background-color: rgba(37, 99, 235, 0.2); color: #93c5fd; border-color: #3b82f6; box-shadow: 0 8px 24px -6px rgba(37, 99, 235, 0.6); }
 
-.tooth-menu-btn.missing { background-color: rgba(82, 82, 91, 0.3); color: var(--odontogram-ink-muted); border-color: rgba(82, 82, 91, 0.4); }
-.tooth-menu-btn.missing:hover { background-color: rgba(82, 82, 91, 0.4); opacity: 1; }
+.tooth-menu-btn.missing { background-color: rgba(100, 116, 139, 0.08); color: #64748b; border-color: rgba(100, 116, 139, 0.2); }
+.tooth-menu-btn.missing:hover { background-color: rgba(100, 116, 139, 0.2); color: #94a3b8; border-color: #64748b; box-shadow: 0 8px 24px -6px rgba(100, 116, 139, 0.6); }
 
-.tooth-menu-btn.healthy { background-color: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3); }
-.tooth-menu-btn.healthy:hover { background-color: rgba(16, 185, 129, 0.25); }
-/* Tailwind polyfills for TreatmentEstimator */
+.tooth-menu-btn.filled { background-color: rgba(45, 212, 191, 0.08); color: #14b8a6; border-color: rgba(45, 212, 191, 0.2); }
+.tooth-menu-btn.filled:hover { background-color: rgba(45, 212, 191, 0.2); color: #5eead4; border-color: #14b8a6; box-shadow: 0 8px 24px -6px rgba(45, 212, 191, 0.6); }/* Tailwind polyfills for TreatmentEstimator */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .items-center { align-items: center; }
@@ -373,3 +391,63 @@
 .outline-none { outline: 2px solid transparent; outline-offset: 2px; }
 .focus\:border-zinc-600:focus { border-color: #52525b; }
 .text-\[10px\] { font-size: 10px; line-height: 14px; }
+
+
+
+.odontogram-hints {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background: var(--slate-100);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--slate-600);
+  animation: slideUp 0.3s ease-out;
+}
+.theme-dark .odontogram-hints {
+  background: var(--slate-800);
+  color: var(--slate-300);
+}
+
+.odontogram-hints kbd {
+  font-family: inherit;
+  font-weight: 600;
+  background: white;
+  border: 1px solid var(--slate-300);
+  border-bottom-width: 2px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--slate-700);
+}
+.theme-dark .odontogram-hints kbd {
+  background: var(--slate-900);
+  border-color: var(--slate-700);
+  color: var(--slate-200);
+}
+
+.hint-divider {
+  color: var(--slate-300);
+}
+.theme-dark .hint-divider {
+  color: var(--slate-600);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .odontogram-hints {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hint-divider { display: none; }
+}
+
+
+

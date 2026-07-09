@@ -3,71 +3,176 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
-  color: #e4e4e7;
+  background: var(--paper-soft);
+  color: var(--ink);
+  padding: 16px;
 }
 
 .portal-auth-card {
-  background: rgba(24, 24, 27, 0.8);
+  background: var(--paper-strong);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(63, 63, 70, 0.5);
-  padding: 40px;
+  border: 1px solid var(--glass-border);
+  padding: 40px 32px;
   border-radius: 24px;
   width: 100%;
   max-width: 400px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 
-.portal-auth-card h2 {
-  margin-top: 0;
+.portal-auth-logo {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.portal-auth-title {
+  margin: 0 0 24px;
+  font-size: 1.4rem;
   font-weight: 300;
-  color: #f4f4f5;
-  margin-bottom: 24px;
+  color: var(--ink);
 }
 
 .auth-step {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: stretch;
+  gap: 14px;
+  width: 100%;
 }
 
-.auth-step input {
-  background: rgba(39, 39, 42, 0.5);
-  border: 1px solid rgba(82, 82, 91, 0.5);
-  padding: 12px;
-  border-radius: 8px;
-  color: #fff;
+.auth-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.auth-sublabel {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.auth-phone-input {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  padding: 13px 16px;
+  border-radius: 10px;
+  color: var(--ink);
   font-size: 1.1rem;
   text-align: center;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.auth-step input:focus {
-  border-color: #60a5fa;
+.auth-phone-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
 }
 
-.auth-step button {
-  background: #3b82f6;
+.auth-primary-btn {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: #fff;
   border: none;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 13px 24px;
+  border-radius: 10px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.3);
 }
 
-.auth-step button:hover {
-  background: #2563eb;
+.auth-primary-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.auth-text-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+
+.auth-text-btn:hover { color: var(--ink); }
+
+.auth-error {
+  margin: 0;
+  color: #ef4444;
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: shake 0.35s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-6px); }
+  75%       { transform: translateX(6px); }
+}
+
+/* ─── OTP Cells ─── */
+.otp-wrap {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.otp-cell {
+  width: 58px;
+  height: 64px;
+  border: 2px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  background: var(--paper, #fff);
+  color: var(--ink, #1e293b);
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  cursor: text;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+  caret-color: #6366f1;
+}
+
+.otp-cell:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+  transform: scale(1.06);
+}
+
+.otp-cell--filled {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.06);
+}
+
+@media (max-width: 380px) {
+  .otp-cell {
+    width: 48px;
+    height: 54px;
+    font-size: 1.5rem;
+    border-radius: 10px;
+  }
+  .otp-wrap { gap: 8px; }
 }
 
 .patient-portal {
   min-height: 100vh;
   padding: 24px;
-  background: #09090b;
-  color: #e4e4e7;
+  background: var(--paper-soft);
+  color: var(--ink);
 }
 
 .portal-header {
@@ -76,7 +181,7 @@
   align-items: center;
   margin-bottom: 32px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(63, 63, 70, 0.5);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .portal-header h2 { margin: 0; font-weight: 300; }
@@ -99,9 +204,9 @@
 }
 
 .portal-card {
-  background: rgba(24, 24, 27, 0.7);
+  background: var(--paper-strong);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(63, 63, 70, 0.5);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 24px;
   display: flex;
@@ -112,11 +217,11 @@
 .portal-card h3 {
   margin: 0 0 8px 0;
   font-weight: 400;
-  color: #f4f4f5;
+  color: var(--ink);
 }
 
 .visit-item {
-  background: rgba(39, 39, 42, 0.5);
+  background: var(--paper);
   padding: 16px;
   border-radius: 12px;
   display: flex;
@@ -126,8 +231,8 @@
 
 .visit-item.past { opacity: 0.7; }
 
-.visit-date { font-weight: 600; color: #f4f4f5; }
-.visit-desc { color: #a1a1aa; font-size: 0.9rem; }
+.visit-date { font-weight: 600; color: var(--ink); }
+.visit-desc { color: var(--muted); font-size: 0.9rem; }
 
 .visit-actions {
   display: flex;
@@ -158,7 +263,7 @@
 .financial-summary {
   display: flex;
   justify-content: space-between;
-  background: rgba(39, 39, 42, 0.5);
+  background: var(--paper);
   padding: 16px;
   border-radius: 12px;
 }
@@ -169,10 +274,10 @@
   gap: 4px;
 }
 
-.fin-stat span { font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase; }
+.fin-stat span { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; }
 .fin-stat strong { font-size: 1.1rem; }
-.text-green { color: #34d399; }
-.text-orange { color: #fbbf24; }
+.text-green { color: var(--green); }
+.text-orange { color: var(--amber); }
 
 .stages-list {
   display: flex;
@@ -185,27 +290,27 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: rgba(39, 39, 42, 0.3);
+  background: var(--paper);
   border-radius: 8px;
-  border-left: 3px solid #52525b;
+  border-left: 3px solid var(--line);
 }
 
-.stage-item.completed { border-left-color: #10b981; opacity: 0.8; }
-.stage-item.pending { border-left-color: #fbbf24; }
+.stage-item.completed { border-left-color: var(--green); opacity: 0.8; }
+.stage-item.pending { border-left-color: var(--amber); }
 
-.stage-desc { color: #e4e4e7; }
-.stage-cost { font-family: monospace; color: #a1a1aa; }
+.stage-desc { color: var(--ink); }
+.stage-cost { font-family: monospace; color: var(--muted); }
 
 .doc-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: rgba(39, 39, 42, 0.4);
+  background: var(--paper);
   border-radius: 8px;
 }
 
-.doc-item span { color: #d4d4d8; font-size: 0.95rem; }
+.doc-item span { color: var(--ink); font-size: 0.95rem; }
 
 .btn-download {
   background: rgba(59, 130, 246, 0.1);
@@ -268,8 +373,8 @@
 }
 
 .doc-overlay-content {
-  background: #09090b;
-  border: 1px solid rgba(63, 63, 70, 0.5);
+  background: var(--paper-soft);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   width: 100%;
   max-width: 800px;
@@ -281,7 +386,7 @@
 
 .doc-overlay-header {
   padding: 16px 24px;
-  border-bottom: 1px solid rgba(63, 63, 70, 0.5);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -290,7 +395,7 @@
 .doc-overlay-header h3 {
   margin: 0;
   font-weight: 400;
-  color: #f4f4f5;
+  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -299,7 +404,7 @@
 .doc-close-btn {
   background: transparent;
   border: none;
-  color: #a1a1aa;
+  color: var(--muted);
   font-size: 24px;
   cursor: pointer;
   padding: 8px;
@@ -311,7 +416,7 @@
 }
 
 .doc-close-btn:hover {
-  color: #f4f4f5;
+  color: var(--ink);
 }
 
 .doc-overlay-body {
@@ -321,10 +426,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(24, 24, 27, 0.5);
+  background: var(--paper-strong);
 }
 
 .doc-placeholder {
   text-align: center;
-  color: #a1a1aa;
+  color: var(--muted);
 }
+

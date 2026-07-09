@@ -206,7 +206,7 @@ export function ShiftView({
                 <div>
                   <p className="eyebrow">Фокус: {staffRoleLabels[selectedWorkspaceRole]}</p>
                   <h2>{activeRoleQueue?.title ?? activeRolePolicy?.title ?? "Рабочая очередь"}</h2>
-                  <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor[0] ?? "Открыть смену и проверить очередь"}</p>
+                  <p>{activeRoleQueue?.nextAction ?? activeRolePolicy?.requiresApprovalFor?.[0] ?? "Анализ задач завершен"}</p>
                 </div>
               </div>
               <div className="role-focus-meta flex flex-wrap gap-2 justify-start mt-2" aria-label="Доступы текущей роли">
@@ -215,7 +215,7 @@ export function ShiftView({
                 {activeRoleWritableSections.slice(0, 3).map((section: any) => (
                   <span key={section} className="bg-[var(--paper)] text-[var(--ink)] px-2 py-1 rounded-full text-xs font-bold border border-[var(--line-strong)]">пишет: {viewLabels[section]}</span>
                 ))}
-                {activeRoleRestrictedSections[0] ? <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">ограничено: {viewLabels[activeRoleRestrictedSections[0]]}</span> : null}
+                {activeRoleRestrictedSections?.[0] ? <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded-md text-xs">{activeRoleRestrictedSections[0]} недоступна</span> : <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded-md text-xs">Доступ открыт</span>}
               </div>
             </section>
 
@@ -310,7 +310,7 @@ export function ShiftView({
                       <h3>{queue.title}</h3>
                       <p>{queue.nextAction}</p>
                       <strong>{queue.openItems}</strong>
-                      <small>{queue.blockedBy[0] ?? queue.automationHint}</small>
+                      <small>{queue.blockedBy?.[0] ?? queue.automationHint}</small>
                     </article>
                   ))}
               </div>

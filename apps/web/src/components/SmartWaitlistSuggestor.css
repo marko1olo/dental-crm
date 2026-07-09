@@ -180,6 +180,7 @@
 
 .candidate-actions {
   display: flex;
+  overflow-x: auto;
 }
 
 .assign-btn {
@@ -192,6 +193,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .assign-btn:hover { 
   background: rgba(59, 130, 246, 0.4); 

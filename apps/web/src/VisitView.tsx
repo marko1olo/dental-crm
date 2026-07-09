@@ -10,6 +10,9 @@ import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { useVisitStore } from "./store/visitStore";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import { VisitDiaryEditor } from "./components/VisitDiaryEditor";
+import { OdontogramModule } from "./components/odontogram/OdontogramModule";
+import { EgiszMonitor } from "./components/EgiszMonitor";
 import "./styles/VisitView.css";
 export interface VisitViewProps {
   AlertTriangle: any;
@@ -693,7 +696,11 @@ export function VisitView(props: VisitViewProps) {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
                           const cfg = getToothConfig(Number(code));
+                          const num = Number(code);
                           const isDetected = (draft?.quality?.detectedToothCodes || []).includes(code);
+                          const isRightSide = (num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+                          const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
                           return (
                             <button
                               key={code}
@@ -703,7 +710,7 @@ export function VisitView(props: VisitViewProps) {
                               aria-label={`Зуб ${code}`}
                             >
                               <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none" }}>
-                                <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
+                                <svg width={cfg.width} height={cfg.height} viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="none" style={{ transform }} fill="none">
                                   {state === "missing" ? (
                                     <g>
                                       <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
@@ -735,7 +742,11 @@ export function VisitView(props: VisitViewProps) {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
                           const cfg = getToothConfig(Number(code));
+                          const num = Number(code);
                           const isDetected = (draft?.quality?.detectedToothCodes || []).includes(code);
+                          const isRightSide = (num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+                          const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
                           return (
                             <button
                               key={code}
@@ -745,7 +756,7 @@ export function VisitView(props: VisitViewProps) {
                               aria-label={`Зуб ${code}`}
                             >
                               <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none" }}>
-                                <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
+                                <svg width={cfg.width} height={cfg.height} viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="none" style={{ transform }} fill="none">
                                   {state === "missing" ? (
                                     <g>
                                       <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
@@ -788,7 +799,11 @@ export function VisitView(props: VisitViewProps) {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
                           const cfg = getToothConfig(Number(code));
-                          const isDetected = (draft?.quality?.detectedToothCodes || []).includes(code);
+                          const num = Number(code);
+                           const isDetected = (draft?.quality?.detectedToothCodes || []).includes(code);
+                          const isRightSide = (num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+                          const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
                           return (
                             <button
                               key={code}
@@ -798,8 +813,8 @@ export function VisitView(props: VisitViewProps) {
                               aria-label={`Зуб ${code}`}
                             >
                               <span className="tooth-code">{code}</span>
-                              <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none", transform: "scaleY(-1)" }}>
-                                <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
+                              <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none", transform: "none" }}>
+                                <svg width={cfg.width} height={cfg.height} viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="none" style={{ transform }} fill="none">
                                   {state === "missing" ? (
                                     <g>
                                       <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
@@ -830,7 +845,11 @@ export function VisitView(props: VisitViewProps) {
                           const state = toothStateByCode[code] ?? "idle";
                           const geom = getToothPath(Number(code));
                           const cfg = getToothConfig(Number(code));
+                          const num = Number(code);
                           const isDetected = (draft?.quality?.detectedToothCodes || []).includes(code);
+                          const isRightSide = (num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+                          const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
                           return (
                             <button
                               key={code}
@@ -840,8 +859,8 @@ export function VisitView(props: VisitViewProps) {
                               aria-label={`Зуб ${code}`}
                             >
                               <span className="tooth-code">{code}</span>
-                              <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none", transform: "scaleY(-1)" }}>
-                                <svg width={cfg.width} height={cfg.height} viewBox={`0 0 ${cfg.viewWidth} ${cfg.viewHeight}`} fill="none">
+                              <div className="tooth-svg-wrap" style={{ filter: isDetected ? "drop-shadow(0 0 4px #3b82f6)" : "none", transform: "none" }}>
+                                <svg width={cfg.width} height={cfg.height} viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`} preserveAspectRatio="none" style={{ transform }} fill="none">
                                   {state === "missing" ? (
                                     <g>
                                       <path d={geom.root} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="1.2" opacity="0.15" />
@@ -1013,6 +1032,21 @@ export function VisitView(props: VisitViewProps) {
                 ) : null}
               </div>
             </section>
+
+            {activePatient?.id && activeAppointment?.id && (
+              <div className="flex flex-col xl:flex-row gap-6 my-6 w-full max-w-full">
+                <div className="w-full xl:w-[45%] flex-shrink-0">
+                  <OdontogramModule patientId={activePatient.id} />
+                </div>
+                <div className="w-full xl:w-[55%] flex-grow">
+                  <VisitDiaryEditor visitId={activeAppointment.id} patientId={activePatient.id} />
+                  <div className="mt-4">
+                    <EgiszMonitor visitId={activeAppointment.id} patientId={activePatient.id} />
+                  </div>
+                </div>
+              </div>
+            )}
+
 
             <details className="protocol-library" aria-label="Шаблоны приема по специальности">
               <summary className="protocol-summary">

@@ -8,6 +8,8 @@ import { Omnibar } from './components/Omnibar';
 import { CommandPalette } from './components/CommandPalette';
 import { AuthHub } from './components/auth/AuthHub';
 import { StaffPinPad } from './components/auth/StaffPinPad';
+import TourEngine from './components/TourEngine';
+import HelpHUD from './components/HelpHUD';
 import { ClinicalTrainingWidget } from './components/onboarding/ClinicalTrainingWidget';
 import { PatientPortal } from './components/PatientPortal';
 
@@ -389,6 +391,7 @@ import {
 const ImagingView = lazy(() => import("./ImagingView").then((module) => ({ default: module.ImagingView })));
 const VisitView = lazy(() => import("./VisitView").then((module) => ({ default: module.VisitView })));
 const FinanceView = lazy(() => import("./FinanceView").then((module) => ({ default: module.FinanceView })));
+const AnalyticsDashboardView = lazy(() => import("./pages/AnalyticsDashboardView").then((module) => ({ default: module.AnalyticsDashboardView })));
 const CommunicationsView = lazy(() => import("./CommunicationsView").then((module) => ({ default: module.CommunicationsView })));
 const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ default: module.DocumentsView })));
 const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ default: module.SettingsView })));
@@ -2304,6 +2307,45 @@ export function App() {
     );
   }
 
+  if (window.location.hash === "#/odontogram") {
+    return (
+      <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem', width: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
+        <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
+          <OdontogramModule patientId="00000000-0000-0000-0000-000000000001" />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (window.location.hash === "#/plans") {
+    return (
+      <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem', width: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
+        <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
+          <ComparativePlannerDashboard />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (window.location.hash === "#/timeline") {
+    return (
+      <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem', width: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
+        <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
+          <PatientJourneyTimeline patientId="00000000-0000-0000-0000-000000000001" />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (window.location.hash === "#/portal") {
+    return (
+      <div style={{ backgroundColor: 'var(--dente-bg-primary)', width: '100vw' }}>
+         <PatientPortal />
+      </div>
+    );
+  }
+
+
   if (error && !dashboard) {
     return (
       <AppLoadingState
@@ -2325,6 +2367,8 @@ export function App() {
 
   return (
     <main className="app-shell">
+      <TourEngine />
+      <HelpHUD />
       <a className="skip-link" href="#workspace-content">
         Перейти к рабочей области
       </a>
@@ -3660,7 +3704,7 @@ export function App() {
 
 
 
-        {["schedule", "patients", "visit", "documents", "finance", "communications"].includes(currentView) ? (
+        {["schedule", "patients", "visit", "documents", "finance", "analytics", "communications"].includes(currentView) ? (
         <section className="work-grid page-grid">
           {currentView === "schedule" ? (
           <WorkspaceRouteErrorBoundary view="schedule" label={viewLabels.schedule} panelClassName="panel schedule-panel" panelId="schedule">
@@ -4091,6 +4135,23 @@ export function App() {
             </WorkspaceRouteErrorBoundary>
           ) : null}
 
+          {currentView === "analytics" ? (
+            <WorkspaceRouteErrorBoundary view="analytics" label={viewLabels.analytics} panelClassName="panel analytics-panel" panelId="analytics">
+            <Suspense
+              fallback={
+                <div className="panel analytics-panel" id="analytics" aria-busy="true">
+                  <div className="panel-heading">
+                    <h2>Executive BI Analytics</h2>
+                    <span className="status-pill status-planned">��������</span>
+                  </div>
+                </div>
+              }
+            >
+              <AnalyticsDashboardView />
+            </Suspense>
+            </WorkspaceRouteErrorBoundary>
+          ) : null}
+
           {currentView === "communications" ? (
             <WorkspaceRouteErrorBoundary view="communications" label={viewLabels.communications} panelClassName="panel communications-panel" panelId="communications">
             <Suspense
@@ -4137,7 +4198,7 @@ export function App() {
             <span>Служебные ограничения</span>
           </summary>
           <div>
-            {dashboard.complianceWarnings.map((warning) => (
+            {(dashboard.complianceWarnings ?? []).map((warning) => (
               <p key={warning}>{warning}</p>
             ))}
           </div>
@@ -4690,37 +4751,6 @@ export function App() {
             <MarketingView clinicName={dashboard.clinicName} clinicPhone={clinicProfileDraft.phone} />
           </Suspense>
         ) : null}
-
-        {window.location.hash === "#/odontogram" ? (
-          <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem' }}>
-            <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
-              <OdontogramModule patientId="00000000-0000-0000-0000-000000000001" />
-            </Suspense>
-          </div>
-        ) : null}
-
-        {window.location.hash === "#/plans" ? (
-          <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem' }}>
-            <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
-              <ComparativePlannerDashboard />
-            </Suspense>
-          </div>
-        ) : null}
-
-        {window.location.hash === "#/timeline" ? (
-          <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem' }}>
-            <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
-              <PatientJourneyTimeline patientId="00000000-0000-0000-0000-000000000001" />
-            </Suspense>
-          </div>
-        ) : null}
-
-        {window.location.hash === "#/portal" ? (
-          <div style={{ backgroundColor: 'var(--dente-bg-primary)', minHeight: '100vh', width: '100vw' }}>
-             <PatientPortal />
-          </div>
-        ) : null}
-
 
         {/* <VoiceAssistantUI 
           onNavigate={(view) => {

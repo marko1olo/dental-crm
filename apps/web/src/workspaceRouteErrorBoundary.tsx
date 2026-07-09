@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type PropsWithChildren } from "react";
 
-export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "communications" | "settings" | "visit" | "imaging" | "marketing";
+export type LazyWorkspaceView = "schedule" | "patients" | "documents" | "finance" | "analytics" | "communications" | "settings" | "visit" | "imaging" | "marketing";
 
 type WorkspaceRouteErrorBoundaryProps = PropsWithChildren<{
   label: string;
@@ -52,16 +52,24 @@ export class WorkspaceRouteErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <section className={`${this.props.panelClassName} workspace-route-error`} id={this.props.panelId} role="alert" aria-live="assertive">
-          <div className="panel-heading">
-            <h2>{this.props.label}</h2>
-            <span className="status-pill status-needs_review">не открылось</span>
+        <section className={`${this.props.panelClassName} workspace-route-error flex items-center justify-center p-8`} id={this.props.panelId} role="alert" aria-live="assertive">
+          <div className="flex flex-col items-center justify-center p-8 rounded-2xl border border-red-500/20 bg-red-500/5 backdrop-blur-md shadow-xl text-center max-w-sm">
+            <svg className="w-12 h-12 text-red-500/80 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h3 className="text-xl font-medium mb-2 opacity-90">Сбой модуля</h3>
+            <p className="text-sm opacity-70 mb-6">Не удалось загрузить этот раздел.</p>
+            <button 
+              className="px-6 py-2.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2"
+              type="button" 
+              onClick={() => this.setState({ hasError: false, detail: "" })}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Повторить
+            </button>
           </div>
-          <p>Раздел временно не открылся. Уже введенные данные не менялись.</p>
-          <small>{this.state.detail}</small>
-          <button className="secondary-button" type="button" onClick={requestDenteStaleWorkspaceRefresh}>
-            Обновить рабочее место
-          </button>
         </section>
       );
     }
