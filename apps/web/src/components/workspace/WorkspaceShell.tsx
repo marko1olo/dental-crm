@@ -9,7 +9,6 @@ import { useAppLogic } from "../../useAppLogic";
 import { VoiceAssistantUI } from "../../components/VoiceAssistantUI";
 import { Omnibar } from "../../components/Omnibar";
 import { CommandPalette } from "../../components/CommandPalette";
-import { AuthHub } from "../../components/auth/AuthHub";
 import { StaffPinPad } from "../../components/auth/StaffPinPad";
 
 import { useAppStore } from "../../store/appStore";

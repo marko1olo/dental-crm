@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './PatientJourneyTimeline.css';
+import type { Dashboard } from '@dental/shared';
 
 interface JourneyEvent {
   id: string;
@@ -12,63 +13,42 @@ interface JourneyEvent {
   actionUrl?: string;
 }
 
-export const PatientJourneyTimeline: React.FC<{ patientId: string }> = ({ patientId }) => {
+export const PatientJourneyTimeline: React.FC<{ patientId: string; dashboard?: Dashboard | null }> = ({ patientId, dashboard }) => {
   const [events, setEvents] = useState<JourneyEvent[]>([]);
 
   useEffect(() => {
-    // Cleanup state for State Bleeding Fix
-    setEvents([]);
-    
-    // Mock Data Fetching
-    const mockEvents: JourneyEvent[] = [
-      {
-        id: '1',
-        timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-        type: 'medical_alert',
-        title: 'Anamnesis Updated',
-        description: 'Critical Alert registered: Allergy to Lidocaine.',
-      },
-      {
-        id: '2',
-        timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
+    // Generate real events from appointments
+    const appointments: any[] = dashboard?.appointments || [];
+    const visitEvents: JourneyEvent[] = appointments
+      .filter(a => a.patientId === patientId)
+      .map(a => ({
+        id: a.id,
+        timestamp: a.plannedStart,
         type: 'appointment',
-        title: 'Consultation & CBCT',
-        description: 'Implant planning on FDI 16. Misch Bone Class D2.',
-        status: 'Completed',
-      },
-      {
-        id: '3',
+        title: `Прием: ${a.status === 'completed' ? 'Завершен' : a.status}`,
+        description: `Врач: ${a.doctorId} | Диагноз: ${a.diagnosis || 'Нет'}`,
+        status: a.status === 'completed' ? 'Completed' : 'Draft',
+        actionUrl: `/patients/${patientId}/visit/${a.id}`
+      }));
+    
+    // Default mock event to show journey started if no visits exist
+    if (visitEvents.length === 0) {
+      visitEvents.push({
+        id: '1',
         timestamp: new Date().toISOString(),
-        type: 'transaction',
-        title: 'Installment Down Payment',
-        description: 'Received initial payment for Orthopedic plan.',
-        amount: 25000,
-        status: 'Paid',
-      },
-      {
-        id: '4',
-        timestamp: new Date(Date.now() + 3600000).toISOString(),
-        type: 'inventory_depletion',
-        title: 'Inventory Depleted',
-        description: '1x Composite A2, 2x Articaine used. Deducted from inventory.',
-      },
-      {
-        id: '5',
-        timestamp: new Date(Date.now() + 86400000 * 3).toISOString(),
-        type: 'lab_order',
-        title: 'E.max Crown Lab Order',
-        description: 'Sent to lab. Expected delivery in 3 days.',
-        status: 'In Progress',
-        actionUrl: '/lab-orders/5',
-      },
-    ];
-    setEvents(mockEvents);
+        type: 'medical_alert',
+        title: 'Регистрация пациента',
+        description: 'Пациент добавлен в систему',
+      });
+    }
+
+    // Sort by timestamp
+    setEvents(visitEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
 
     return () => {
-      // Cleanup on unmount (State Bleeding Fix)
       setEvents([]);
     };
-  }, [patientId]);
+  }, [patientId, dashboard?.appointments]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -125,7 +105,7 @@ export const PatientJourneyTimeline: React.FC<{ patientId: string }> = ({ patien
                 <p className={isHighlight ? 'text-sm text-zinc-300' : 'text-sm text-zinc-400'}>{evt.description}</p>
                 {evt.amount && <div className="amount-highlight">+{evt.amount.toLocaleString()} ₽</div>}
                 {evt.actionUrl && (
-                  <button className="timeline-action-btn" onClick={() => console.log('Navigate', evt.actionUrl)}>
+                  <button className="timeline-action-btn" onClick={() => { window.location.hash = evt.actionUrl ?? ""; }}>
                     Подробнее &rarr;
                   </button>
                 )}

@@ -159,7 +159,7 @@ export function ScheduleView(props: ScheduleViewProps) {
     return [
       !draft.patientId ? "выберите пациента" : null,
       !draft.doctorUserId ? "выберите врача" : null,
-      dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard?.clinicSettings?.staff?.some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
+      dashboard.clinicSettings.profile.mode !== "solo_doctor" && dashboard.clinicSettings.staff.some(s => s.role === "assistant" && s.active) && !draft.assistantUserId ? "выберите ассистента" : null,
       !draft.chairId ? "выберите кресло" : null,
       !draft.startsAt.trim() ? "укажите начало приема" : null,
       draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? "проверьте дату начала приема" : null,
@@ -241,22 +241,7 @@ export function ScheduleView(props: ScheduleViewProps) {
           <div className="panel schedule-panel" id="schedule">
             <button style={{ display: 'none' }} type="button">Создать запись</button>
             <div className="panel-heading">
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <h2>Расписание приемов</h2>
-                {sortedAppointments.length > 0 ? (
-                  <span className="status-pill status-confirmed">Записей: {sortedAppointments.length}</span>
-                ) : (
-                  <span className="status-pill status-cancelled">Нет записей</span>
-                )}
-                {activeScheduleFilterCount > 0 ? (
-                  <span className="status-pill status-arrived">Фильтров: {activeScheduleFilterCount}</span>
-                ) : null}
-                {shiftWarnings.length > 0 ? (
-                  <span className="status-pill status-overdue">Предупреждений: {shiftWarnings.length}</span>
-                ) : (
-                  <span className="status-pill status-completed">Ок</span>
-                )}
-              </div>
+              <h2>Расписание приемов</h2>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <button
                   className="secondary-button"
@@ -282,7 +267,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                   <strong>{dashboard.shiftIntelligence.doctorLoads.length}</strong>
                   <p>
                     {dashboard.shiftIntelligence.doctorLoads
-                      .map((load: ResourceLoad) => `${load.title?.split(" ")[0] || "Врач"} ${load.utilizationPercent}%`)
+                      .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
                       .join(" · ")}
                   </p>
                 </article>
@@ -291,7 +276,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                   <strong>{dashboard.shiftIntelligence.assistantLoads.length}</strong>
                   <p>
                     {dashboard.shiftIntelligence.assistantLoads
-                      .map((load: ResourceLoad) => `${load.title?.split(" ")[0] || "Ассистент"} ${load.utilizationPercent}%`)
+                      .map((load: ResourceLoad) => `${load.title.split(" ")[0]} ${load.utilizationPercent}%`)
                       .join(" · ") || "не назначены"}
                   </p>
                 </article>
@@ -311,14 +296,28 @@ export function ScheduleView(props: ScheduleViewProps) {
                 </article>
               </div>
             )}
-            {showShiftAnalytics && (
-              <section
-                className="schedule-shift-summary"
-                data-testid="schedule-shift-summary"
-                aria-label="Сводка аналитики смены"
-                aria-live="polite"
-              >
-                <div className="schedule-shift-summary-grid" style={{ width: "100%" }}>
+            <section
+              className="schedule-shift-summary"
+              data-testid="schedule-shift-summary"
+              aria-label="Короткая сводка смены"
+              aria-live="polite"
+              style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}
+            >
+              {sortedAppointments.length > 0 ? (
+                <span className="status-pill status-confirmed">Записей: {sortedAppointments.length}</span>
+              ) : (
+                <span className="status-pill status-cancelled">Нет записей</span>
+              )}
+              {activeScheduleFilterCount > 0 ? (
+                <span className="status-pill status-arrived">Фильтров: {activeScheduleFilterCount}</span>
+              ) : null}
+              {shiftWarnings.length > 0 ? (
+                <span className="status-pill status-overdue">Предупреждений: {shiftWarnings.length}</span>
+              ) : (
+                <span className="status-pill status-completed">Ок</span>
+              )}
+              {showShiftAnalytics && (
+                <div className="schedule-shift-summary-grid" style={{ width: "100%", marginTop: "12px" }}>
                   {scheduleLoadSummaryCards.map((card) => (
                     <article key={card.id}>
                       <span>{card.title}</span>
@@ -327,8 +326,8 @@ export function ScheduleView(props: ScheduleViewProps) {
                     </article>
                   ))}
                 </div>
-              </section>
-            )}
+              )}
+            </section>
             <div className="schedule-filter-strip" aria-label="Сохраненные фильтры расписания" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--slate-100)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid var(--slate-200)', paddingRight: '12px', marginRight: '4px' }}>
                 <input
@@ -358,7 +357,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                     onClick={() => setScheduleDoctorFilterId(scheduleDoctorFilterId === member.id ? null : member.id)}
                     
                   >
-                    {member.fullName?.split(' ')[0] || "Сотрудник"}
+                    {member.fullName.split(' ')[0]}
                   </button>
                 ))}
               
@@ -378,7 +377,7 @@ export function ScheduleView(props: ScheduleViewProps) {
             </div>
             <details className="schedule-secret-collapsible">
               <summary>🔐 Разблокировать сохранение расписания</summary>
-              <div className="schedule-admin-unlock" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} aria-label="Доступ к сохранению расписания">
+              <div className="appointment-editor schedule-admin-unlock" aria-label="Доступ к сохранению расписания">
               {!scheduleAdminSecretSession ? (
                 <>
                   <label className="form-span-2">
@@ -468,7 +467,7 @@ export function ScheduleView(props: ScheduleViewProps) {
                 const missingSteps = [
                   !draft.patientId ? 'выберите пациента' : null,
                   !draft.doctorUserId ? 'выберите врача' : null,
-                  dashboard.clinicSettings.profile.mode !== 'solo_doctor' && dashboard?.clinicSettings?.staff?.some(s => s.role === 'assistant' && s.active) && !draft.assistantUserId ? 'выберите ассистента' : null,
+                  dashboard.clinicSettings.profile.mode !== 'solo_doctor' && dashboard.clinicSettings.staff.some(s => s.role === 'assistant' && s.active) && !draft.assistantUserId ? 'выберите ассистента' : null,
                   !draft.chairId ? 'выберите кресло' : null,
                   !draft.startsAt.trim() ? 'укажите начало приема' : null,
                   draft.startsAt.trim() && !Number.isFinite(startsAtMs) ? 'проверьте дату начала' : null,

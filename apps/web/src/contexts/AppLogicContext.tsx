@@ -5,7 +5,6 @@ import type { Dashboard } from "@dental/shared";
 // This will incrementally absorb properties from useAppLogic.tsx
 export type AppLogicContextType = {
   dashboard: Dashboard | null;
-  // TODO: Add more shared mutators and state as we extract them
 };
 
 const AppLogicContext = createContext<AppLogicContextType | null>(null);

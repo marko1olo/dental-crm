@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadAccess } from "../accessGuard.js";
+import { requireClinicalReadAccess, resolveOrganizationId } from "../accessGuard.js";
+import { eq } from "drizzle-orm";
 import {
   localBridgeReadinessResponseSchema,
   localBridgeUsePlansResponseSchema,
@@ -628,7 +629,7 @@ export async function registerSystemRoutes(app: FastifyInstance) {
 
   app.get("/api/system/persistence/export", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "persistence export"))) return;
-    const [org] = await db.select().from(organizations).limit(1);
+    const organizationId = await resolveOrganizationId(request); if (!organizationId) return reply.code(403).send({ error: 'OrganizationRequired' }); const [org] = await db.select().from(organizations).where(eq(organizations.id, organizationId)).limit(1);
     if (org) {
       await db.insert(auditEvents).values({
         organizationId: org.id,

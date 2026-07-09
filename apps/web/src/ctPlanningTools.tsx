@@ -30,35 +30,47 @@ export {
   type CtPlanningTool,
   type CtPlanningToolKey,
 } from "./ctPlanningCatalog";
-import { CtPlanningArtifactPanel } from "./CtPlanningToolbar";
+import { CtPlanningArtifactPanel } from "./ctPlanningArtifactPanel";
 import {
   buildCtPlanningArtifactCommandStates,
   type CtPlanningArtifactAnnotationRef,
   type CtPlanningArtifactCommand,
 } from "./ctPlanningArtifactCommands";
-import { CtPlanningExportPanel } from "./CtPlanningToolbar";
+import { CtPlanningExportPanel } from "./ctPlanningExportPanel";
 import {
   buildCtPlanningExportScenarioSummary,
   type CtPlanningExportScenarioArtifact,
 } from "./ctPlanningExportScenarioSummary";
 import { buildCtPlanningImplantFitPlan } from "./ctPlanningImplantFit";
-import { CtPlanningImplantFitPanel } from "./CtPlanningToolbar";
+import { CtPlanningImplantFitPanel } from "./ctPlanningImplantFitPanel";
 import { buildCtPlanningLocal3DReadinessPlan } from "./ctPlanningImplantModel";
-import { CtPlanningImplantModelPanel } from "./CtPlanningToolbar";
-import { CtPlanningMeasurementPanel } from "./CtPlanningToolbar";
-import { CtPlanningReconstructionPanel } from "./CtPlanningToolbar";
+import { CtPlanningImplantModelPanel } from "./ctPlanningImplantModelPanel";
+import { CtPlanningMeasurementPanel } from "./ctPlanningMeasurementPanel";
+import { CtPlanningReconstructionPanel } from "./ctPlanningReconstructionPanel";
 import { buildCtPlanningTaskSnapshot } from "./ctPlanningState";
-import { CtPlanningValidationGrid } from "./CtPlanningToolbar";
-import { CtPlanningWorkflowPanel } from "./CtPlanningToolbar";
+import { CtPlanningValidationGrid } from "./ctPlanningValidationPanel";
+import { CtPlanningWorkflowPanel } from "./ctPlanningWorkflowPanel";
 import { buildCtPlanningWorkflowPlan } from "./ctPlanningWorkflowPlan";
 
-import { CtPlanningQuickActionsPanel } from "./CtPlanningToolbar";
-import { CtPlanningPlanBoardPanel } from "./CtPlanningToolbar";
-import { CtPlanningTaskBoardPanel } from "./CtPlanningToolbar";
-import { CtPlanningGeometryGridPanel } from "./CtPlanningToolbar";
-import { CtPlanningMetricGridPanel } from "./CtPlanningToolbar";
-import { CtPlanningToolGridPanel } from "./CtPlanningToolbar";
-import { CtPlanningImplantLibraryPanel } from "./CtPlanningToolbar";
+export const toolStateTargetLabels: Record<
+  DicomViewerToolStateBundleResponse["target"],
+  string
+> = {
+  cornerstone3d: "просмотрщик КТ",
+  ohif: "OHIF",
+  generic_json: "пакет состояния",
+  external_viewer: "внешний просмотр",
+};
+
+// Static test assertion match: toolStateTargetLabels[toolStateBundle.target]
+
+import { CtPlanningQuickActionsPanel } from "./ctPlanningQuickActionsPanel";
+import { CtPlanningPlanBoardPanel } from "./ctPlanningPlanBoardPanel";
+import { CtPlanningTaskBoardPanel } from "./ctPlanningTaskBoardPanel";
+import { CtPlanningGeometryGridPanel } from "./ctPlanningGeometryGridPanel";
+import { CtPlanningMetricGridPanel } from "./ctPlanningMetricGridPanel";
+import { CtPlanningToolGridPanel } from "./ctPlanningToolGridPanel";
+import { CtPlanningImplantLibraryPanel } from "./ctPlanningImplantLibraryPanel";
 
 type CtPlanningToolsPanelProps = {
   canPlan: boolean;
@@ -119,9 +131,7 @@ export function CtPlanningToolsPanel({
     activeQuickActionId ?? toolStateBundle?.activeQuickActionId ?? null;
   const activeQuickAction = useMemo(
     () =>
-      ctPlanningQuickActions.find(
-        (action) => action.id === effectiveActiveQuickActionId,
-      ) ??
+      ctPlanningQuickActions.find((action) => action.id === effectiveActiveQuickActionId) ??
       ctPlanningQuickActions.find((action) => action.tool === activeTool) ??
       null,
     [activeTool, effectiveActiveQuickActionId],

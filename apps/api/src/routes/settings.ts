@@ -1,7 +1,9 @@
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+import { resolveOrganizationId } from "../accessGuard.js";
 import {
   getClinicSettingsFromDb,
   getUiPreferencesFromDb,
@@ -85,7 +87,7 @@ function hasActiveScheduleConflict(message: string): boolean {
   return message.includes("активная запись") || message.includes("активные записи");
 }
 
-export function clinicProfileMutationRejection(reply: FastifyReply, error: unknown) {
+function clinicProfileMutationRejection(reply: FastifyReply, error: unknown) {
   const message = settingsDomainMessage(error);
   if (message.includes("часовой пояс")) {
     return reply.code(409).send({
@@ -189,8 +191,13 @@ async function requireSettingsAccess(request: FastifyRequest, reply: FastifyRepl
     }
   }
 
-  // Find default organization (MVP assumes single org)
-  const [org] = await db.select().from(schema.organizations).limit(1);
+  // Find organization by token or fallback to MVP default
+  const organizationId = await resolveOrganizationId(request);
+  if (!organizationId) {
+    reply.code(403).send({ error: "OrganizationRequired", message: "Organization could not be resolved" });
+    return null;
+  }
+  const [org] = await db.select().from(schema.organizations).where(eq(schema.organizations.id, organizationId)).limit(1);
   if (!org) {
     reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
     return null;

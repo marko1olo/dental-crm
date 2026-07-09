@@ -479,6 +479,8 @@ export interface DocumentState {
   refusalSecondOpinionOffered: boolean;
   refusalEmergencyCareExplained: boolean;
 
+  reset: () => void;
+
   documentCreateSavingKind: GeneratedDocument["kind"] | null;
   setDocumentCreateSavingKind: (
     val:
@@ -5117,5 +5119,13 @@ export const useDocumentStore = create<DocumentState>(
       ...createFinancialSlice(set),
       ...createClinicalSlice(set),
       ...createMiscSlice(set),
+      reset: () => set((state) => ({
+        ...createDocumentSlice(set as any),
+        ...createTaxSlice(set as any),
+        ...createIntakeAndConsentSlice(set as any),
+        ...createFinancialSlice(set as any),
+        ...createClinicalSlice(set as any),
+        ...createMiscSlice(set as any),
+      } as unknown as Partial<DocumentState>))
     }) as DocumentState,
 );

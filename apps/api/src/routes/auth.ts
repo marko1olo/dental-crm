@@ -30,18 +30,11 @@ export async function requireClinicToken(request: FastifyRequest, reply: Fastify
   const header = request.headers["x-dente-clinic-token"];
   const token = Array.isArray(header) ? header[0] : header;
   if (!token) {
-    return void reply.code(401).send({ error: "AuthRequired", message: "Токен не предоставлен." });
+    return void reply.code(401).send({ error: "AuthRequired", message: "Необходима авторизация рабочего кабинета клиники." });
   }
-
-  // Audit script bypass
-  if (token === "audit-bypass-token" && process.env.NODE_ENV !== "production") {
-    (request as any).clinicOrganizationId = "4a3420d1-6ffb-4459-bd8f-7f7087f5e191";
-    return;
-  }
-
   const payload = verifyToken(token, TOKEN_SECRET());
   if (!payload || !payload.organizationId) {
-    return void reply.code(401).send({ error: "TokenExpired", message: "Токен недействителен." });
+    return void reply.code(401).send({ error: "TokenExpired", message: "Сессия истекла. Войдите в кабинет заново." });
   }
   (request as any).clinicOrganizationId = payload.organizationId;
 }
@@ -70,7 +63,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     if (!org) {
       // Timing-safe: delay even on missing to prevent enumeration
-      await new Promise((r) => setTimeout(r, 200 + Math.random() * 100));
+      await new Promise((r) => setTimeout(r, 200 + ((crypto.getRandomValues(new Uint32Array(1))[0] || 0) / 429496729.5)));
       return reply.code(401).send({ error: "AuthError", message: "Неверный логин или пароль клиники." });
     }
 
@@ -128,7 +121,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       .limit(1);
 
     if (!user) {
-      await new Promise((r) => setTimeout(r, 150 + Math.random() * 100));
+      await new Promise((r) => setTimeout(r, 250));
       return reply.code(404).send({ error: "UserNotFound", message: "Сотрудник не найден или заблокирован." });
     }
 
@@ -319,7 +312,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const loginEmail = email.toLowerCase().trim();
     const [user] = await db.select().from(users).where(and(eq(users.email, loginEmail), eq(users.isActive, true))).limit(1);
     if (!user || !user.passwordHash) {
-      await new Promise((r) => setTimeout(r, 200 + Math.random() * 100));
+      await new Promise((r) => setTimeout(r, 200 + ((crypto.getRandomValues(new Uint32Array(1))[0] || 0) / 429496729.5)));
       return reply.code(401).send({ error: 'AuthError', message: 'Неверный email или пароль.' });
     }
     
@@ -395,10 +388,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
 
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
-
-    if (payload.userId === "user1") {
-      return reply.send({ id: "user1", fullName: "Dr. Demo", role: "owner", email: "demo@dente.ru", organizationId: "00000000-0000-0000-0000-000000000000", isActive: true });
-    }
 
     const [user] = await db
       .select({

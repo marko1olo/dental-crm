@@ -1,0 +1,1 @@
+const fs = require('fs'); const content = fs.readFileSync('apps/web/src/store/appStore.ts', 'utf16le'); fs.writeFileSync('apps/web/src/store/appStore.ts', content.replace('setUiPreferencesSyncError: (val: any) => void;', 'setUiPreferencesSyncError: (val: any) => void;\n  reset: () => void;'), 'utf8');

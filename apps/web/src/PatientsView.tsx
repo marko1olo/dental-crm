@@ -1,14 +1,15 @@
 import { usePatientStore } from "./store/patientStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
 import type { ChangeEvent } from "react";
 import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/shared";
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
-import { OdontogramModule } from "./components/odontogram/OdontogramModule";
+import { Odontogram } from "./components/Odontogram";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
+import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
 import { formatPhoneNumber } from "./utils/inputSanitation";
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -34,6 +35,7 @@ type WeekdayOption = {
 };
 
 type PatientsViewProps = {
+  dashboard: Dashboard | null;
   createPatient: () => void | Promise<void>;
   filteredPatients: Patient[];
   money: (amountRub: number) => string;
@@ -85,6 +87,14 @@ export function PatientsView(props: PatientsViewProps) {
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
   const [showHints, setShowHints] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      // Memory Optimization: Flush heavy patient states on unmount
+      usePatientStore.getState().reset();
+    };
+  }, []);
+
   const {
     createPatient,
     filteredPatients,
@@ -379,17 +389,22 @@ export function PatientsView(props: PatientsViewProps) {
                   {patientCoreSaveGuidance}
                 </p>
               ) : null}
-            </section>
 
               {/* Odontogram Section */}
-                <div style={{ marginTop: '24px', marginBottom: '16px' }}>
-                  {selectedPatient && <OdontogramModule patientId={selectedPatient.id} />}
-                </div>
+              <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+                 <Odontogram />
+              </div>
 
               {/* ShadowAnalyst — AI 2D X-Ray Analyzer */}
               <VisiographAnalyzer />
 
-            <section className="patient-admin-panel" aria-label="Дополнительные настройки">
+              {/* Лента приемов пациента */}
+                {selectedPatientId && (
+                  <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+                    <PatientJourneyTimeline patientId={selectedPatientId} dashboard={props.dashboard} />
+                  </div>
+                )}
+
             <details className="settings-advanced-block patient-docs-collapsible">
               <summary className="settings-advanced-toggle">
                 <span className="settings-advanced-label">

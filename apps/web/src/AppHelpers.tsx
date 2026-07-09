@@ -1,4 +1,4 @@
-﻿
+
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -205,7 +205,6 @@ import {
 import { imagingConnectorCards, imagingViewerCapabilities, recognitionPresets } from "./settingsStaticData";
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { normalizeRubAmountInput, validateRubAmountInput } from "./rubAmountInput";
-import { formatTime } from "./utils/formatting";
 import {
   imagingCaptureDistanceMs,
   imagingComparisonReason,
@@ -280,7 +279,7 @@ import {
   mprSlabBounds,
   mprSlabNudgeMm,
   resolveMprKeyboardAdjustment
-} from "./utils/math/mprMath";
+} from "./mprControlMath";
 import {
   buildMprClinicalChecklist,
   buildMprOperatorSummary,
@@ -1196,7 +1195,6 @@ export function loadDocumentPayloadDraftStore(organizationId: string | null | un
     }
     return { version: 1, drafts };
   } catch {
-    // Payload drafts are recovery data only; missing or invalid local storage defaults to empty.
     return emptyDocumentPayloadDraftStore();
   }
 }
@@ -2454,6 +2452,14 @@ export const toothStateByCode: Record<string, "watch" | "planned" | "done" | "mi
   "48": "missing"
 };
 
+export function formatTime(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Samara"
+  }).format(new Date(value));
+}
+
 export function patientName(patients: Patient[], patientId: string | null) {
   if (!patientId) return "Новый пациент";
   return patients.find((patient) => patient.id === patientId)?.fullName ?? "Пациент";
@@ -2473,6 +2479,25 @@ export function minutesLabel(value: number) {
   const hours = Math.floor(value / 60);
   const minutes = value % 60;
   return minutes ? `${hours} ч ${minutes} мин` : `${hours} ч`;
+}
+
+export function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Samara"
+  }).format(new Date(value));
+}
+
+export function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    timeZone: "Europe/Samara"
+  }).format(new Date(value));
 }
 
 export type BrowserSpeechRecognition = {
@@ -2555,15 +2580,6 @@ export const emptyVisitNoteForm: VisitNoteForm = {
 };
 
 export function visitNoteFormFromVisit(visit: Dashboard["activeVisit"]): VisitNoteForm {
-  if (!visit) {
-    return {
-      complaint: "",
-      anamnesis: "",
-      objectiveStatus: "",
-      diagnosis: "",
-      treatmentPlan: ""
-    };
-  }
   return {
     complaint: visit.complaint ?? "",
     anamnesis: visit.anamnesis ?? "",
@@ -4376,7 +4392,7 @@ export function newAppointmentDraftFromDashboard(
   const endsAtLocal = addMinutesToClinicDateTimeLocal(startsAtLocal, profile.defaultVisitMinutes || 45, timezone);
   const selectedSpecialty = preferences.selectedSpecialty ?? "universal";
   const specialtyMatches = (specialties: DentalSpecialty[]) =>
-    selectedSpecialty === "universal" || specialties?.includes(selectedSpecialty) || specialties?.includes("universal");
+    selectedSpecialty === "universal" || specialties.includes(selectedSpecialty) || specialties.includes("universal");
   const savedDoctor = preferences.scheduleDefaultDoctorUserId
     ? dashboard.clinicSettings.staff.find(
         (member) =>
@@ -5895,8 +5911,7 @@ export function viewFromHash(): AppView {
   const telegramHandoffTarget = readDenteTelegramHandoffTarget();
   if (telegramHandoffTarget) return telegramHandoffTarget.view;
   const hash = window.location.hash.replace("#", "");
-  let view = hash.split("/")[0];
-  if (view === "treatment") view = "visit";
+  const view = hash.split("/")[0];
   return appViews.includes(view as AppView) ? (view as AppView) : "shift";
 }
 
@@ -5907,5 +5922,3 @@ export function settingsTabFromHash(): SettingsTab {
 }
 
 export const initialUiPreferences = {} as any;
-
-export * from "./utils/formatting";

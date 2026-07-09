@@ -25,12 +25,12 @@ function requestDenteStaleAppRefresh(): void {
 class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellErrorBoundaryState> {
   state: AppShellErrorBoundaryState = { hasError: false, detail: "" };
 
-  static getDerivedStateFromError(error: unknown): AppShellErrorBoundaryState {
-    return { hasError: true, detail: appShellErrorDetail(error) };
+  static getDerivedStateFromError(error: unknown): AppShellErrorBoundaryState & { errorStack?: string | undefined } {
+    return { hasError: true, detail: appShellErrorDetail(error), errorStack: error instanceof Error ? error.stack : String(error) };
   }
 
-  componentDidCatch(error: any, errorInfo: ErrorInfo) {
-    console.error("DENTE boot failed STACK:", error?.stack || error, errorInfo.componentStack);
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    console.error("DENTE boot failed", error, errorInfo.componentStack);
   }
 
   render() {
@@ -38,10 +38,11 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
       return (
         <main className="boot-state boot-state-error" role="alert" aria-live="assertive">
           <h1>DENTE</h1>
-          <p>Не удалось открыть оболочку клиники.</p>
+          <p>Не удалось открыть рабочее место клиники.</p>
           <small>{this.state.detail}</small>
+          <pre style={{color:'red', textAlign:'left', padding:'1rem'}}>{(this.state as any).errorStack}</pre>
           <button type="button" onClick={requestDenteStaleAppRefresh}>
-            Обновить оболочку
+            Обновить рабочее место
           </button>
         </main>
       );

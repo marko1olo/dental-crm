@@ -205,6 +205,7 @@ const initialSettingsState: SettingsState = {
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()((set) => ({
   ...initialSettingsState,
+  reset: () => set(initialSettingsState),
   setClinicMode: (val) => set((state) => ({ clinicMode: typeof val === 'function' ? (val as any)(state.clinicMode) : val })),
   setOnboardingDismissed: (val) => set((state) => ({ onboardingDismissed: typeof val === 'function' ? (val as any)(state.onboardingDismissed) : val })),
   setOnboardingDismissedAt: (val) => set((state) => ({ onboardingDismissedAt: typeof val === 'function' ? (val as any)(state.onboardingDismissedAt) : val })),

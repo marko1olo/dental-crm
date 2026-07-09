@@ -16,7 +16,7 @@ import {
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { patients, importBatches, auditEvents, organizations } from "../db/schema.js";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess, resolveOrganizationId } from "../accessGuard.js";
 
 const headerAliases: Record<string, keyof Pick<ImportPreviewRow, "fullName" | "phone" | "birthDate" | "notes">> = {
   fio: "fullName",
@@ -288,7 +288,7 @@ export async function buildPatientImportPreview(orgId: string, input: ImportPrev
 export async function registerImportRoutes(app: FastifyInstance) {
   app.post("/api/imports/patients/intake", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "patient import intake"))) return;
-    const [org] = await db.select().from(organizations).limit(1);
+    const organizationId = await resolveOrganizationId(request); if (!organizationId) return reply.code(403).send({ error: 'OrganizationRequired' }); const [org] = await db.select().from(organizations).where(eq(organizations.id, organizationId)).limit(1);
     if (!org) return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
     
     const parsed = parseImportPayload(
@@ -303,7 +303,7 @@ export async function registerImportRoutes(app: FastifyInstance) {
 
   app.post("/api/imports/patients/preview", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "patient import preview"))) return;
-    const [org] = await db.select().from(organizations).limit(1);
+    const organizationId = await resolveOrganizationId(request); if (!organizationId) return reply.code(403).send({ error: 'OrganizationRequired' }); const [org] = await db.select().from(organizations).where(eq(organizations.id, organizationId)).limit(1);
     if (!org) return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
 
     const parsed = parseImportPayload(
@@ -318,7 +318,7 @@ export async function registerImportRoutes(app: FastifyInstance) {
 
   app.post("/api/imports/patients/commit", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "patient import commit"))) return;
-    const [org] = await db.select().from(organizations).limit(1);
+    const organizationId = await resolveOrganizationId(request); if (!organizationId) return reply.code(403).send({ error: 'OrganizationRequired' }); const [org] = await db.select().from(organizations).where(eq(organizations.id, organizationId)).limit(1);
     if (!org) return reply.code(500).send({ error: "NoOrganizationFound", message: "Не найдена организация в базе данных." });
 
     const parsed = parseImportPayload(

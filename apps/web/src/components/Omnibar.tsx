@@ -128,7 +128,7 @@ export function Omnibar() {
                 />
                 <button 
                   onClick={() => setOmnibarOpen(false)}
-                  className="p-1.5 hover:bg-neutral-100 rounded-md transition-colors text-neutral-400 hover:text-neutral-400"
+                  className="p-1.5 hover:bg-neutral-100 rounded-md transition-colors text-neutral-400 hover:text-neutral-600"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -137,7 +137,7 @@ export function Omnibar() {
               {/* Results */}
               <div className="overflow-y-auto p-2" style={{ maxHeight: 'calc(60vh - 56px)' }}>
                 {filteredCommands.length === 0 ? (
-                  <div className="p-8 text-center text-neutral-400">
+                  <div className="p-8 text-center text-neutral-500">
                     Ничего не найдено
                   </div>
                 ) : (
@@ -164,7 +164,7 @@ export function Omnibar() {
                             }}
                             onMouseEnter={() => setSelectedIndex(idx)}
                           >
-                            <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? 'bg-teal-100/50 text-teal-600' : 'bg-neutral-100 text-neutral-400'}`}>
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? 'bg-teal-100/50 text-teal-600' : 'bg-neutral-100 text-neutral-500'}`}>
                               {React.cloneElement(cmd.icon as React.ReactElement<any>, { size: 16 })}
                             </div>
                             <span className="font-medium">{cmd.title}</span>
@@ -181,15 +181,15 @@ export function Omnibar() {
               </div>
               
               {/* Footer */}
-              <div className="bg-neutral-50 px-4 py-2 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
+              <div className="bg-neutral-50 px-4 py-2 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1">
-                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-400 shadow-sm">↑</kbd>
-                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-400 shadow-sm">↓</kbd>
+                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-600 shadow-sm">↑</kbd>
+                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-600 shadow-sm">↓</kbd>
                     <span>навигация</span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-400 shadow-sm">↵</kbd>
+                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-600 shadow-sm">↵</kbd>
                     <span>выбрать</span>
                   </span>
                 </div>

@@ -63,7 +63,7 @@ import {
   mprSlabBounds,
   mprSlabNudgeMm,
   resolveMprKeyboardAdjustment
-} from "../../utils/math/mprMath";
+} from "../../mprControlMath";
 import {
   buildMprClinicalChecklist,
   buildMprOperatorSummary,
@@ -593,30 +593,142 @@ const migrationHumanTextReplacements: Array<[RegExp, string]> = [
   [/\bDB\b/g, "база"],
   [/\bdump\b/gi, "резервная копия"]
 ];
-import {
-  humanizeMigrationText,
-  integrationInputLabels,
-  humanizeIntegrationInput,
-  localBridgeEndpointSummary,
-  humanizeMigrationList,
-  humanizeMigrationColumns,
-  clinicPublicLookupWarningText,
-  migrationSourceKindLabel,
-  migrationSourceDisplayName,
-  migrationHandoffEndpointLabels,
-  migrationHandoffRouteLabel,
-  shortDicomSeriesCode,
-  dicomSeriesDisplayText,
-  dicomSeriesWarningText,
-  importWarningListText,
-  patientImportRowWarningText,
-  imagingImportReadyText,
-  imagingImportRowWarningText,
-  aiRecognitionWarningLabels,
-  aiRecognitionWarningText,
-  dicomFirstFrameFileFormatLabel,
-  dicomFirstFrameImageTypeLabel
-} from "./SettingsImportsTab.types";
+const humanizeMigrationText = (value: unknown) => {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) return "";
+  const directLabel = migrationManifestColumnLabels[rawValue] ?? migrationArtifactKindLabels[rawValue];
+  if (directLabel) return directLabel;
+
+  return migrationHumanTextReplacements
+    .reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), rawValue)
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+const integrationInputLabels: Record<string, string> = {
+  CSV: "табличный файл",
+  TSV: "таблица с разделителями",
+  Excel: "таблица Excel",
+  "CSV оплат": "таблица оплат",
+  "CSV список": "табличный список",
+  "Excel услуг": "таблица услуг",
+  "SQL export через промежуточный CSV": "выгрузка базы через таблицу",
+  "zip экспорт": "архив выгрузки",
+  "документы HTML/PDF": "документы из старой системы",
+  "скан PDF": "скан документа",
+  JPG: "снимки JPG",
+  PNG: "снимки PNG",
+  TIFF: "снимки TIFF",
+  BMP: "снимки BMP"
+};
+const humanizeIntegrationInput = (value: string) => integrationInputLabels[value] ?? humanizeMigrationText(value);
+const localBridgeEndpointSummary = (bridge: LocalBridgeReadinessResponse["bridges"][number]) => {
+  if (bridge.urlRedacted) return bridge.urlRedacted;
+  if (bridge.setupSettingsCount) return `серверных настроек: ${bridge.setupSettingsCount}`;
+  return "адрес локального модуля не задан";
+};
+const humanizeMigrationList = (items: unknown[] | undefined, limit = items?.length ?? 0) =>
+  (items ?? [])
+    .slice(0, limit)
+    .map(humanizeMigrationText)
+    .filter(Boolean)
+    .join(" · ");
+const humanizeMigrationColumns = (items: unknown[] | undefined, limit = items?.length ?? 0) =>
+  (items ?? [])
+    .slice(0, limit)
+    .map((item) => clinicPublicLookupFieldLabels[String(item)] ?? migrationManifestColumnLabels[String(item)] ?? humanizeMigrationText(item))
+    .filter(Boolean)
+    .join(" · ");
+const clinicPublicLookupWarningText = (warning: string) => {
+  const text = humanizeMigrationText(warning);
+  const duplicateValue = text.match(/^Строка\s+(\d+):\s+найдено еще одно значение для ([^;]+);\s*оставлено первое\.?$/i);
+  if (duplicateValue) {
+    const lineNumber = duplicateValue[1] ?? "?";
+    const fieldKey = duplicateValue[2]?.trim() ?? "";
+    const fieldLabel = clinicPublicLookupFieldLabels[fieldKey] ?? humanizeMigrationText(fieldKey);
+    return `Строка ${lineNumber}: найдено другое значение для поля "${fieldLabel}"; оставлено первое, проверьте вручную.`;
+  }
+  return text
+    .replace(/\bDadata\b/gi, "сервис реквизитов")
+    .replace(/\bmanual public targets\b/gi, "ручная сверка")
+    .replace(/ответ\s+\d{3}/i, "ошибку связи")
+    .replace(/не подставлены автоматически/i, "не подставлены сейчас");
+};
+const migrationSourceKindLabel = (sourceKind: string) => migrationLegacySourceKindLabels[sourceKind] ?? humanizeMigrationText(sourceKind);
+const migrationSourceDisplayName = (
+  candidate: Pick<MigrationLocalSourceDiscoveryCandidate, "safeDisplayName" | "sourceKind">,
+  ordinal?: number
+) => {
+  const cleanName = humanizeMigrationText(candidate.safeDisplayName).replace(/\s+#[A-F0-9]{8,12}\b/g, "").trim();
+  const baseName = cleanName || migrationSourceKindLabel(candidate.sourceKind);
+  return typeof ordinal === "number" ? `${baseName} ${ordinal + 1}` : baseName;
+};
+const migrationHandoffEndpointLabels: Record<string, string> = {
+  "/api/imaging/dicom/folder-workup-plan": "проверка КТ-серий",
+  "/api/imaging/imports/preview": "предпросмотр списка снимков",
+  "/api/imaging/folders/scan-preview": "сканирование папки снимков",
+  "/api/ingestion/extract": "разбор файла или таблицы",
+  "/api/imports/smart/preview": "предпросмотр переноса"
+};
+const migrationHandoffRouteLabel = (handoff: MigrationLocalSourceHandoff) => {
+  const actionLabel = handoff.method === "GET" ? "открыть проверку" : "передать на проверку";
+  return `${actionLabel}: ${migrationHandoffEndpointLabels[handoff.endpoint] ?? "предпросмотр в CRM"}`;
+};
+const shortDicomSeriesCode = (value: string | null | undefined) => {
+  if (!value) return "код серии не указан";
+  const trimmed = value.trim();
+  return `код серии ${trimmed.length > 18 ? `${trimmed.slice(0, 18)}...` : trimmed}`;
+};
+const dicomSeriesDisplayText = (series: DicomSeriesPreviewGroup) =>
+  series.seriesDescription ?? series.studyDescription ?? shortDicomSeriesCode(series.seriesInstanceUid);
+const dicomSeriesWarningText = (warnings: string[]) =>
+  warnings.length ? warnings.slice(0, 3).map(humanizeMigrationText).join(", ") : "готово к просмотру";
+const importWarningListText = (warnings: string[], fallback: string, limit = 4) => {
+  if (!warnings.length) return fallback;
+  const text = warnings.slice(0, limit).map(humanizeMigrationText).filter(Boolean).join(", ");
+  return text || fallback;
+};
+const patientImportRowWarningText = (warnings: string[], notes: string | null | undefined) =>
+  importWarningListText(warnings, notes ? humanizeMigrationText(notes) : "готово к импорту");
+const imagingImportReadyText = (filePath: string | null | undefined) => {
+  const trimmed = filePath?.trim();
+  if (!trimmed) return "готово к привязке";
+  const virtualPath = trimmed.split("::").pop() ?? trimmed;
+  const safeName = virtualPath.split(/[\\/]/).filter(Boolean).pop() ?? virtualPath;
+  return `готово к привязке: ${humanizeMigrationText(safeName)}`;
+};
+const imagingImportRowWarningText = (warnings: string[], filePath: string | null | undefined) =>
+  importWarningListText(warnings, imagingImportReadyText(filePath));
+const aiRecognitionWarningLabels: Record<string, string> = {
+  "OCR/диктовка не пишет в базу напрямую: сначала preview, дубли и ручное подтверждение.":
+    "Черновик не попадет в базу без предпросмотра, проверки дублей и ручного подтверждения.",
+  "Телефон не найден уверенно, строка должна попасть в предупреждения импорта.":
+    "Телефон распознан неуверенно: проверьте строку в мастере импорта.",
+  "AI не ставит диагноз по снимку и не заменяет врача.": "Описание снимка остается черновиком: диагноз подтверждает только врач.",
+  "Для КЛКТ/КТ-серий нужен просмотрщик и метаданные, а не только текстовое описание.":
+    "Для КЛКТ/КТ-серии нужен клинический просмотр и данные серии, не только текст.",
+  "Юридические документы требуют шаблона клиники и проверки перед выдачей пациенту.":
+    "Документ можно выдавать только после проверки по шаблону клиники.",
+  "Диктовка врача остается черновиком до подтверждения.": "Диктовка остается черновиком до подтверждения врачом.",
+  "Диагноз и план лечения нельзя подписывать автоматически.": "Диагноз и план лечения подписывает врач вручную."
+};
+const aiRecognitionWarningText = (warning: string) => aiRecognitionWarningLabels[warning] ?? humanizeMigrationText(warning);
+const dicomFirstFrameFileFormatLabel = (transferSyntaxUid: string | null | undefined) => {
+  if (!transferSyntaxUid) return "формат файла не указан";
+  if (transferSyntaxUid.includes(".1.2.4.")) return "формат файла: сжатый";
+  if (transferSyntaxUid === "1.2.840.10008.1.2" || transferSyntaxUid === "1.2.840.10008.1.2.1" || transferSyntaxUid === "1.2.840.10008.1.2.2") {
+    return "формат файла: стандартный";
+  }
+  return "формат файла: проверен";
+};
+const dicomFirstFrameImageTypeLabel = (photometricInterpretation: string | null | undefined) => {
+  const normalized = photometricInterpretation?.trim().toUpperCase();
+  if (!normalized) return "тип изображения не указан";
+  if (normalized.startsWith("MONOCHROME")) return "серый снимок";
+  if (normalized === "RGB" || normalized === "YBR_FULL" || normalized === "YBR_FULL_422") return "цветной снимок";
+  return "тип изображения: особый";
+};
+
 
 export function SettingsImportsTab(props: Record<string, any>) {
   const {

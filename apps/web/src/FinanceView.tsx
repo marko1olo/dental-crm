@@ -222,6 +222,8 @@ export function FinanceView({
         taxDeductionCode={paymentTaxDeductionCode}
       />
 
+      <InstallmentScheduler totalEstimate={billingSummary?.totalDueRub || 0} />
+
       <FinanceLedger
         categoryLabels={serviceCategoryLabels}
         documents={dashboard.documents}

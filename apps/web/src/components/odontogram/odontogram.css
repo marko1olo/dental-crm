@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --odontogram-paper: #ffffff;
   --odontogram-surface: #f8fafc;
   --odontogram-surface-hover: #f1f5f9;
@@ -309,88 +309,114 @@
 .tooth-menu-btn.missing:hover { background-color: rgba(100, 116, 139, 0.2); color: #94a3b8; border-color: #64748b; box-shadow: 0 8px 24px -6px rgba(100, 116, 139, 0.6); }
 
 .tooth-menu-btn.filled { background-color: rgba(45, 212, 191, 0.08); color: #14b8a6; border-color: rgba(45, 212, 191, 0.2); }
-.tooth-menu-btn.filled:hover { background-color: rgba(45, 212, 191, 0.2); color: #5eead4; border-color: #14b8a6; box-shadow: 0 8px 24px -6px rgba(45, 212, 191, 0.6); }/* Tailwind polyfills for TreatmentEstimator */
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.justify-end { justify-content: flex-end; }
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
-.gap-6 { gap: 24px; }
-.space-y-2 > * + * { margin-top: 8px; }
-.space-y-3 > * + * { margin-top: 12px; }
-.space-y-4 > * + * { margin-top: 16px; }
-.p-2 { padding: 8px; }
-.p-3 { padding: 12px; }
-.p-4 { padding: 16px; }
-.p-6 { padding: 24px; }
-.px-1\.5 { padding-left: 6px; padding-right: 6px; }
-.py-0\.5 { padding-top: 2px; padding-bottom: 2px; }
-.pb-2 { padding-bottom: 8px; }
-.pb-4 { padding-bottom: 16px; }
-.pt-2 { padding-top: 8px; }
-.pt-4 { padding-top: 16px; }
-.w-full { width: 100%; }
-.h-full { height: 100%; }
-.max-w-4xl { max-width: 896px; }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.mt-1 { margin-top: 4px; }
-.mt-2 { margin-top: 8px; }
-.mb-1 { margin-bottom: 4px; }
-.mb-6 { margin-bottom: 24px; }
-.bg-zinc-950 { background-color: var(--odontogram-paper); }
-.bg-zinc-900 { background-color: var(--odontogram-surface-hover); }
-.bg-zinc-800 { background-color: #27272a; }
-.bg-transparent { background-color: transparent; }
-.text-zinc-100 { color: var(--odontogram-ink); }
-.text-zinc-200 { color: #e4e4e7; }
-.text-zinc-300 { color: var(--odontogram-ink-subtle); }
-.text-zinc-400 { color: var(--odontogram-ink-muted); }
-.text-white { color: #ffffff; }
-.text-red-400 { color: #f87171; }
-.text-emerald-400 { color: #34d399; }
-.border-zinc-800 { border-color: #27272a; }
-.border { border-width: 1px; border-style: solid; }
-.border-b { border-bottom-width: 1px; border-bottom-style: solid; }
-.border-t { border-top-width: 1px; border-top-style: solid; }
-.rounded { border-radius: 4px; }
-.rounded-md { border-radius: 6px; }
-.rounded-lg { border-radius: 8px; }
-.rounded-xl { border-radius: 12px; }
-.rounded-2xl { border-radius: 16px; }
-.text-xs { font-size: 12px; line-height: 16px; }
-.text-sm { font-size: 14px; line-height: 20px; }
-.text-lg { font-size: 18px; line-height: 28px; }
-.text-2xl { font-size: 24px; line-height: 32px; }
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
-.font-medium { font-weight: 500; }
-.font-mono { font-family: monospace; }
-.tracking-tight { letter-spacing: -0.025em; }
-.hover\:bg-zinc-800:hover { background-color: #27272a; }
-.hover\:text-zinc-300:hover { color: var(--odontogram-ink-subtle); }
-.hover\:text-red-400:hover { color: #f87171; }
-.hover\:border-zinc-700:hover { border-color: var(--odontogram-border-strong); }
-.transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
-.overflow-y-auto { overflow-y: auto; }
-.relative { position: relative; }
-.w-80 { width: 320px; }
-.border-l { border-left-width: 1px; border-left-style: solid; }
-.flex-1 { flex: 1 1 0%; }
-.bg-zinc-950\/50 { background-color: rgba(9, 9, 11, 0.5); }
-.border-zinc-800\/50 { border-color: rgba(39, 39, 42, 0.5); }
-.border-zinc-800\/30 { border-color: rgba(39, 39, 42, 0.3); }
-.border-zinc-800\/80 { border-color: rgba(39, 39, 42, 0.8); }
-.backdrop-blur-xl { backdrop-filter: blur(24px); }
-.backdrop-blur-md { backdrop-filter: blur(12px); }
-.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-.outline-none { outline: 2px solid transparent; outline-offset: 2px; }
-.focus\:border-zinc-600:focus { border-color: #52525b; }
-.text-\[10px\] { font-size: 10px; line-height: 14px; }
+.tooth-menu-btn.filled:hover { background-color: rgba(45, 212, 191, 0.2); color: #5eead4; border-color: #14b8a6; box-shadow: 0 8px 24px -6px rgba(45, 212, 191, 0.6); }/* Modals and Overlays */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+}
+
+.modal-content {
+  background-color: var(--odontogram-paper);
+  border: 1px solid var(--odontogram-border);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  color: var(--odontogram-ink);
+  animation: zoomIn 0.2s ease-out;
+}
+
+.modal-header {
+  padding: 24px 24px 0 24px;
+  margin-bottom: 8px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--odontogram-ink-muted);
+  margin: 0;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 0 24px 24px 24px;
+  display: flex;
+  gap: 12px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
+  text-align: center;
+}
+
+.modal-btn.secondary {
+  background-color: var(--odontogram-surface-hover);
+  color: var(--odontogram-ink);
+  border: 1px solid var(--odontogram-border);
+}
+
+.modal-btn.secondary:hover {
+  background-color: var(--odontogram-border-subtle);
+}
+
+.modal-btn.primary {
+  background-color: #4f46e5;
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+}
+
+.modal-btn.primary:hover {
+  background-color: #4338ca;
+}
+
+.modal-input {
+  width: 100%;
+  background-color: var(--odontogram-surface);
+  border: 1px solid var(--odontogram-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 24px;
+  font-family: monospace;
+  text-align: center;
+  letter-spacing: 0.5em;
+  color: var(--odontogram-ink);
+  outline: none;
+  margin-bottom: 24px;
+  box-sizing: border-box;
+}
+
+.modal-input:focus {
+  border-color: #4f46e5;
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
 
 
 
@@ -449,5 +475,155 @@
   .hint-divider { display: none; }
 }
 
+/* History Panel */
+.history-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 320px;
+  background-color: var(--odontogram-paper);
+  backdrop-filter: blur(12px);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+  border-left: 1px solid var(--odontogram-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  animation: slideInRight 0.3s ease-out;
+}
 
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--odontogram-border-subtle);
+}
+
+.history-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--odontogram-ink);
+  font-weight: 600;
+}
+
+.history-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--odontogram-ink-muted);
+  padding: 4px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-close-btn:hover {
+  background-color: var(--odontogram-surface-hover);
+  color: var(--odontogram-ink);
+}
+
+.history-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.history-loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #4f46e5;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--odontogram-ink-muted);
+  font-size: 14px;
+}
+
+.history-timeline {
+  position: relative;
+}
+
+.history-timeline::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--odontogram-border-subtle);
+}
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.timeline-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--odontogram-surface);
+  border: 1px solid var(--odontogram-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.timeline-content {
+  flex: 1;
+  background-color: var(--odontogram-surface);
+  border: 1px solid var(--odontogram-border);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.timeline-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  margin-bottom: 4px;
+}
+
+.timeline-desc {
+  font-size: 14px;
+  color: var(--odontogram-ink);
+}
+
+.timeline-author {
+  font-size: 12px;
+  color: var(--odontogram-ink-muted);
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--odontogram-border-subtle);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
