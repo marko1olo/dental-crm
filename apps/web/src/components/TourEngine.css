@@ -8,14 +8,14 @@
   pointer-events: auto;
 }
 
+/*.tour-engine-backdrop — убран блюр для кристальной четкости подсвеченных элементов */
 .tour-engine-backdrop {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .tour-engine-highlight {
@@ -29,7 +29,7 @@
 }
 
 .tour-engine-popover {
-  position: absolute;
+  position: fixed !important;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.2);

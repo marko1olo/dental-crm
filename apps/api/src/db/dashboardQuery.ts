@@ -13,7 +13,7 @@ export async function getDashboardFromDb(organizationId: string): Promise<Dashbo
   const appointments = await db.select().from(schema.appointments).where(eq(schema.appointments.organizationId, organizationId));
   const documents = await db.select().from(schema.generatedDocuments).where(eq(schema.generatedDocuments.organizationId, organizationId));
   const imagingStudies = await db.select().from(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, organizationId));
-  const chairs = await db.select().from(schema.chairs).where(eq(schema.chairs.organizationId, organizationId));
+  const chairs = await db.select().from(schema.clinicChairs).where(eq(schema.clinicChairs.organizationId, organizationId));
   const serviceCatalog = await db.select().from(schema.serviceCatalogItems).where(eq(schema.serviceCatalogItems.organizationId, organizationId));
   const clinicalRules = await db.select().from(schema.clinicalRules).where(eq(schema.clinicalRules.organizationId, organizationId));
 

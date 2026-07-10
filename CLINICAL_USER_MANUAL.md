@@ -1,55 +1,82 @@
-# DENTE Клиническое Руководство Пользователя (Offline/Hybrid)
+# Руководство пользователя для клиники (CLINICAL USER MANUAL)
 
-## Гибридная Синхронизация и Cloud Vault
-DENTE работает в режиме **Offline-First**. Ваши данные всегда сохраняются локально на компьютере клиники, обеспечивая независимость от интернета.
-- **Фоновая Синхронизация**: При появлении подключения к интернету, фоновая служба автоматически и безопасно (с шифрованием) синхронизирует локальную базу данных с Cloud Vault.
-- **Ежедневные Бэкапы**: Раз в сутки DENTE делает полный зашифрованный дамп базы данных (алгоритм AES-256) и сохраняет его в папку ackups.
+## 1. Введение
+Данное руководство описывает работу с модулями планирования имплантации, генерации смет и КЛКТ/DICOM.
 
-## QR-Шлюз (QrGateway)
-Для мгновенного доступа без паролей и ввода URL, в верхней панели DENTE доступна кнопка **QR-Доступ**.
-- **Онлайн-Запись**: Позвольте пациентам отсканировать этот QR-код на ресепшене, чтобы они могли самостоятельно записаться на прием.
-- **Личный Кабинет**: Пациент сканирует QR-код и мгновенно попадает в свой защищенный профиль, где видит историю приемов, подписанные документы и планы лечения.
+## 2. Работа с КЛКТ и кэшированием
+Для работы с тяжелыми DICOM/КЛКТ файлами используется кэширование в браузере (OPFS).
+- При загрузке томограммы она кэшируется локально.
+- **Очистка кэша**: В настройках приложения нажмите "Очистить локальный кэш" при замедлении работы. 
+- **Производительность**: Не открывайте более 3 КЛКТ-исследований одновременно во избежание переполнения VRAM.
 
-## 🔧 Настройка Резервного Копирования (AES-256)
-Администратору не нужно вручную запускать копирование. Служба `backupWorker` делает это автоматически каждый день:
-1. Зашифрованный дамп базы (`.enc`) сохраняется в директорию `backups`.
-2. Никто без ключа `CLINIC_ENCRYPTION_KEY` не сможет прочитать данные пациентов. Не теряйте этот ключ из файла конфигурации!
+## 3. Клиническое обоснование алгоритмов
+- **Расчет плотности кости (Шкала Хаунсфилда / Misch)**: Приложение анализирует радиологическую плотность. D1 (>1250 HU), D2 (850-1250 HU), D3 (350-850 HU), D4 (<350 HU). Это влияет на первичную стабильность.
+- **Подбор фрез**: Подбор фрез (Osstem, Straumann, Nobel) осуществляется на базе выбранной системы имплантации и плотности (D1-D4). Например, для D1/D2 автоматически предлагается кортикальное расширение.
+- **Оси имплантатов (Угол расхождения >15°)**: Алгоритм предупреждает о коаксиальном расхождении осей имплантатов более 15°, так как это критически снижает выживаемость конструкции (особенно при опоре на мультиюниты) и вызывает биомеханические перегрузки.
 
-## 🧪 Интеграция с Внешней Лабораторией
-Для передачи заказов в сторонние зуботехнические лаборатории:
-- В карточке пациента (модуль Наряды) нажмите **Поделиться с Лабораторией**.
-- Система сгенерирует защищенную ссылку и QR-код.
-- Лаборатория при сканировании получает доступ *только* к обезличенному слепку зубов и техническому заданию, без доступа к финансовой и личной информации пациента.
+## 4. Сметы и финансы
+Система использует модуль `ShadowAnalyst` для автоматического расчета стоимости на основе выбранного плана лечения и прайс-листа клиники. Все цены подтягиваются автоматически.
 
-## Executive BI Analytics (BI ���������)
+## 5. Универсальный Пылесос Данных (Data Ingestion & AI Mapping)
+Для переезда клиники с других CRM (Ident, Инфодент, Open Dental, Dentrix) используется модуль умного импорта.
+- **DICOM Пылесос**: При натравливании системы на директорию с КЛКТ, она автоматически парсит теги `1.2.840...` (DICOM), извлекает ФИО пациента и привязывает 3D-снимок к его электронной карте. Генерируются легкие PNG-превью.
+- **ИИ Маппинг Схем (Schema Mapper)**: Если вы загружаете базу от неизвестной CRM, система использует ИИ-маршрутизатор для автоматического сопоставления колонок (например, `fio_klienta` -> `fullName`). Вы можете проверить и утвердить связи на интерактивном холсте.
+- **Движок Дедупликации**: При загрузке тысяч пациентов система ищет дубликаты. Совпадение имен проверяется алгоритмом Левенштейна, а телефоны приводятся к стандарту E.164. Если уверенность (Confidence Score) > 85%, профили сливаются автоматически. При уверенности 65-85% вам будет показана **Панель Слияния (Merge Panel)** для ручного подтверждения.
+- **BI Dashboard Руководителя**: Все импортированные исторические данные автоматически формируют графики: когортный LTV (пожизненная ценность клиента), воронки планов лечения и тепловые карты должников.
 
-����� ������ **BI ���������** ������������� ������������� � ���������� ������� ������ �������� ��� ����������� � ������������� ���������.
+## 6. Сквозная ERP Автоматизация (Сметы, Лаборатория, ДМС)
+Мы расширили систему до уровня полноценной ERP для автоматизации работы между врачами, координаторами, пациентами и внешними агентами (лабораториями и страховыми).
+- **Сравнительный Конструктор Смет (Comparative Estimator)**: Координатор может продемонстрировать пациенту до 3 альтернативных планов лечения (например, Премиум и Стандарт) в параллельных колонках. Пациент может включать и отключать опциональные услуги чекбоксами (например, временные коронки), при этом итоговая сумма и гарантийные условия пересчитываются на лету. При утверждении одного плана, остальные архивируются.
+- **Страховое расщепление (ДМС / Copay Engine)**: При прикреплении к пациенту полиса ДМС, смета лечения автоматически разбивается на две части: "Покрывает Страховая" и "К оплате (Patient Copay)". Проценты покрытия (например, Терапия 80%) настраиваются в профиле страховой компании.
+- **Внешний Портал Лаборатории (Guest Lab Portal)**: При заказе ортопедических конструкций генерируется защищенная токеном ссылка. Зубной техник открывает её без регистрации в нашей CRM, видит параметры заказа (FDI, цвет Vita, материал) и может менять статусы (например, на "Отправлен в клинику").
+- **Клинический Маршрутизатор (Clinical Handoffs)**: Передача пациента от одного специалиста к другому (например, от терапевта к ортопеду после санации) происходит автоматически. Система генерирует задачу для консилиума со всеми необходимыми ссылками на снимки и комментариями.
 
-### �����������:
-- **��������� ������ LTV**: ������������ ����������� ������� ��������� � ������� 1, 3, 6 � 12 �������.
-- **������� ������ �������**: ������������ ��������� �� �������� ��������� (Draft) �� ������� ���������� (Completed).
-- **�������� ������**: �������� ������������� ����������������� ��������� �� ��������� � 12-������� ������� �����.
-- **�������������� ������**: ������� �������� ������������ (Leaderboard) � �������� ������ ������� (������� ����� ������������� � ������).
-
-### ������ ������ (OOM)
-��� �������������� ��������� ���������� ������� ������������� ����������� �� ������ (unmount), ����� ������������ ������������� �� ������ ������� �������.
-
-
-### 4. Billing & Doctor Payouts
-
-The **FinanceView** now includes a complete billing lifecycle management engine:
-
-- **Invoice Splitting**: Cashiers can split invoice payments across multiple methods (Cash, Card, DMS) using the *InvoiceSplitPaymentModal*.
-- **Thermal Receipts**: The system automatically generates an 80mm thermal receipt simulator displaying the patient's FDI tooth numbers and service codes, complete with a printable QR code.
-- **Doctor Payout Audits**: The **DoctorPayoutDashboard** aggregates all *paid* invoices, subtracts material costs (based on procedure rules), and computes the final doctor commission.
-- **Memory Safety**: The useBillingStore purges state upon unmount, preventing React memory leaks when navigating between patient records and the financial hub.
+## 7. Когнитивная Эргономика и Dental UX Laws
+Интерфейс DENTE спроектирован с учетом законов когнитивной психологии для снижения усталости врачей:
+- **Закон Хика и Закон Фиттса**: Интерфейс избегает перегруженности (визуального паралича). Второстепенные действия в сметах спрятаны в Dropdown-меню. Интерактивная зубная формула (Одонтограмма) использует всплывающее Radial Menu (Радиальное меню) с крупными целями для клика (минимум 44px), что ускоряет заполнение медкарты на планшетах.
+- **Эффект Зейгарник**: В ленте приемов пациента (Journey Timeline) отображается интерактивный Прогресс-бар выполнения плана лечения. Незавершенность плана стимулирует пациента не прерывать лечение.
+- **Эффект Фон Ресторфф и Эффект Края**: Наиболее важные события в ленте приемов (первый визит и следующий шаг) визуально укрупнены. Критические медицинские алерты (аллергии) выделяются мягким неоновым пульсирующим свечением, привлекая внимание врача без агрессивного визуального шума (отказ от жестких рамок в пользу Glassmorphism).
 
 
+## 8. E2E Testing & Memory Leak Verification
+To ensure enterprise-grade stability, DENTE incorporates continuous E2E testing via Playwright. The automated suite, 	est_master_clinical_crm_flow.cjs, validates the following across Desktop and Mobile viewports:
 
-### 5. Multi-Tenant Isolation & Memory Safety
+- **SOAP Journal Data Entry**: Tests multi-line input and state hydration.
+- **Calendar Crosshair Interaction**: Verifies autofocus and popover performance.
+- **Odontogram Multi-select**: Checks modifier key (Shift+Click) bindings.
+- **Patient Portal OTP Flow**: Asserts focus management across code cells.
+- **Tab-switching Memory Validation**: Rapidly toggles between Heavy Views (Patient, Schedule, Finance) and audits DOM count and app crash state to detect memory leaks and detached node accumulation.
+## 9. Multitenancy Security & Memory Management (The Grand Audit)
+**Data Privacy & Organization Isolation:**
+DENTE strictly enforces multi-tenant data boundaries at the ORM layer. Every backend REST and WebSocket request verifies the organizationId from the active session context against the database query (e.g. WHERE patient.organizationId = :currentOrg). This robust access-guard implementation prevents any cross-tenant data leakage. Queries are intentionally joined with parent tables (like patients) whenever the entity itself doesn't carry a direct reference, locking down data ownership with certainty.
 
-- **Multi-Tenant Security**: The system strictly enforces organizationId isolation across all database queries, including visit_templates, bi_analytics_snapshots, and clinical_events. Data from one clinic will never bleed into another.
-- **OOM Safety Gates (Phase 5)**: The CRM employs aggressive unmount cleanup hooks. Whenever a user navigates away from heavy interfaces like VisitView, PatientsView, or DocumentsView, the associated Zustand slices are instantly flushed. This prevents memory leaks and ensures V8 can garbage collect heavy objects like odontograms, voice dictations, and large document arrays, ensuring stability on thin clients.
-### 6. Multi-Tenant Security
+**OOM Safety Gates:**
+To run smoothly on varying hardware profiles, especially across long clinic shifts, DENTE aggressively manages memory using a two-pronged strategy:
+- **EventListener Cleanup:** Components relying on global events (window, document, WebSocket subscriptions, SpeechSynthesis events) are mandated to return cleanup un-subscribers from useEffect hooks, thereby releasing objects from V8 heap.
+- **Store Flushes:** The frontend application actively intercepts unmount cycles on heavy visualization tabs (e.g., 3D/2D Odontograms, Document Stores, Patient Journals) and invokes .reset() on Zustand stores. This explicitly severs references to bloated state arrays, guaranteeing garbage collection and preventing runaway memory allocation across patient profile swaps.
 
-All API routes are protected by mandatory organizationId query filtering to ensure strict cross-tenant data isolation. A user from Clinic A can never access Clinic B's patients, invoices, or visits, even with valid entity IDs.
+## 10. Antifragility Protocol & Graceful Degradation
+To achieve ultimate resilience under infrastructure failures, DENTE implements a complete client-side virtualization layers:
+- **Topology Adaptation (Offline Sandbox):** A built-in Topology Detector constantly polls backend readiness. If the server goes offline or returns a gateway error (502–504), all app logic seamlessly degrades to client-side IndexedDB emulation. The user continues planning treatments and charting teeth uninterrupted.
+- **Sync Transaction Queue:** In sandbox mode, mutations are captured locally. An orange status indicator `[⚡ Ожидание синхронизации: X]` appears in the header.
+- **Background Sync Daemon with Jitter:** When network connectivity is restored, the daemon batches the transactions and pushes them to the server using an exponential backoff strategy with random jitter to prevent server request spikes.
+- **Three-Way Merge Conflict Resolution:** Concurrent updates of the same patient records triggers a visual side-by-side comparison modal, prompting the clinician to resolve the conflict (Local vs. Remote) manually.
+- **UI Component Resuscitator:** An intelligent Error Boundary wrapper monitors rendering health, auto-rebuilding crashed components with a retry counter (after 1, 3, and 5 seconds) and auto-recovering lost WebGL Cornerstone3D context.
+
+## 11. Цифровые Информированные Добровольные Согласия (ИДС)
+- **Конструктор документов (ConsentBuilder):** Врач выбирает шаблон документа в карте пациента. Все клинические данные (номера зубов, ФИО пациента, диагнозы) автоматически подставляются вместо плейсхолдеров (например, `{{patient_name}}`).
+- **Сенсорный холст для подписи (SignatureCanvasPad):** Пациент расписывается прямо на экране планшета (Touch) или ПК (Mouse). Линии сглаживаются алгоритмами Безье. Подпись сохраняется как защищенный SVG-вектор и встраивается в PDF-документ при печати.
+
+## 12. Внешний Портал Лаборатории (Guest Lab Portal)
+- При заказе коронки или винира, координатор или врач генерирует уникальную гостевую ссылку для зубного техника.
+- Передав ссылку технику, клиника обеспечивает ему защищенный доступ к деталям заказа (FDI номера, материал, цвет Vita, заметки врача). Технику не нужен аккаунт в системе.
+- Когда техник меняет статус заказа (например, на "Готово" или "В работе"), это **в реальном времени (WebSockets)** отражается на экране администратора в клинике. Возле приема ортопеда загорается зеленая или мигающая желтая иконка "Лаба", предотвращая ситуации "пациент пришел, а коронка еще не приехала".
+
+## 13. P2P Онбординг через QR-Код
+- **Бесшовное сопряжение:** Если врач хочет передать экран пациенту для заполнения анкеты или подписания согласия, он нажимает "Передать управление". На экране врача появляется **QR-код**.
+- **Процесс:** Пациент сканирует QR-код со своего личного смартфона. Смартфон подключается к P2P-сессии (WebRTC/Socket) и превращается во временный пульт управления или экран для подписи, привязанный к текущей сессии врача.
+
+## 14. Шифрование и Резервное Копирование (Cloud Vault)
+- Данные пациентов, созданные в автономном режиме, не просто лежат в кэше браузера.
+- **AES-256 Cloud Vault Backup:** Весь слепок базы (Snapshot) шифруется мастер-ключом на клиенте перед отправкой в облако.
+- **Синхронизация:** При восстановлении интернет-соединения, система выполняет инкрементальную синхронизацию с использованием Last-Write-Wins. Если вы хотите сделать ручной снимок БД, перейдите в Настройки -> Синхронизация и нажмите "Создать бекап (Cloud Vault)".

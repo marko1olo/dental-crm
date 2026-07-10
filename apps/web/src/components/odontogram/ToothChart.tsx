@@ -11,11 +11,14 @@ export interface ToothData {
 
 interface ToothChartProps {
   teethData: ToothData[];
+  pediatricMode?: boolean | undefined;
   onToothClick: (toothNumber: number, rect: DOMRect) => void;
 }
 
 const TOP_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
 const BOTTOM_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+const PEDIATRIC_TOP_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
+const PEDIATRIC_BOTTOM_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
 
 const FULL_ARCH_WIDTH = 960; // Extra breathing room to prevent any possible subpixel flexbox overflow
 
@@ -88,7 +91,7 @@ const ToothSVG = ({ number, state, scale, onClick }: {
   );
 };
 
-export const ToothChart: React.FC<ToothChartProps> = ({ teethData, onToothClick }) => {
+export const ToothChart: React.FC<ToothChartProps> = ({ teethData, pediatricMode, onToothClick }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const archContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -139,6 +142,9 @@ export const ToothChart: React.FC<ToothChartProps> = ({ teethData, onToothClick 
 
   const getToothState = (num: number) => teethData.find(t => t.toothNumber === num)?.state || 'Healthy';
 
+  const topTeeth = pediatricMode ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
+  const bottomTeeth = pediatricMode ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
+
   return (
     <div className="tooth-chart-container" ref={containerRef}>
       <div className="tooth-chart-header">
@@ -171,32 +177,21 @@ export const ToothChart: React.FC<ToothChartProps> = ({ teethData, onToothClick 
             top: 0,
             left: 0
           }}>
-            {/* Top Arch */}
-            <div className="tooth-chart-arch top-arch">
-              <div className="tooth-chart-quadrant left-quad">
-                {TOP_TEETH.slice(0, 8).map(num => (
-                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-                ))}
-              </div>
-              <div className="tooth-chart-quadrant right-quad">
-                {TOP_TEETH.slice(8).map(num => (
-                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-                ))}
-              </div>
+            <div className="teeth-row top-row">
+              {topTeeth.map(num => (
+                <ToothSVG key={num} number={num} scale={scale} state={getToothState(num)} onClick={handleToothClick} />
+              ))}
+            </div>
+            
+            <div className="teeth-divider">
+              <div className="divider-line" />
+              <div className="divider-center" />
             </div>
 
-            {/* Bottom Arch */}
-            <div className="tooth-chart-arch bottom-arch">
-              <div className="tooth-chart-quadrant left-quad">
-                {BOTTOM_TEETH.slice(0, 8).map(num => (
-                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-                ))}
-              </div>
-              <div className="tooth-chart-quadrant right-quad">
-                {BOTTOM_TEETH.slice(8).map(num => (
-                  <ToothSVG key={num} number={num} state={getToothState(num)} scale={scale} onClick={handleToothClick} />
-                ))}
-              </div>
+            <div className="teeth-row bottom-row">
+              {bottomTeeth.map(num => (
+                <ToothSVG key={num} number={num} scale={scale} state={getToothState(num)} onClick={handleToothClick} />
+              ))}
             </div>
           </div>
         </div>

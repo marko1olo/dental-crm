@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireClinicalReadAccess, resolveOrganizationId } from "../accessGuard.js";
+import { requireClinicalReadAccess, requireClinicalMutationAccess, resolveOrganizationId } from "../accessGuard.js";
 import { eq } from "drizzle-orm";
 import {
   localBridgeReadinessResponseSchema,
@@ -652,5 +652,86 @@ export async function registerSystemRoutes(app: FastifyInstance) {
       .type("application/json; charset=utf-8")
       .header("Content-Disposition", `attachment; filename="dental-crm-state-${timestampForDownloadName()}.json"`)
       .send(snapshot);
+  });
+
+  app.post("/api/system/sync/run", async (request, reply) => {
+    if (!(await requireClinicalReadAccess(request, reply, "run sync"))) return;
+    const { runSyncCycle } = await import("../services/syncDaemon.js");
+    const report = await runSyncCycle();
+    return report;
+  });
+
+  app.post("/api/system/sync/push", async (request, reply) => {
+    if (!(await requireClinicalMutationAccess(request, reply, "push sync"))) return;
+    const organizationId = await resolveOrganizationId(request);
+    if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired" });
+
+    const { table, method, payload } = request.body as {
+      table: string;
+      method: string;
+      payload: any;
+    };
+
+    // Strict Tenant Isolation:
+    if (payload.organizationId && payload.organizationId !== organizationId) {
+      return reply.code(403).send({ error: "TenantViolation", message: "Cross-organization modification rejected." });
+    }
+    // Explicitly enforce the session organization ID
+    payload.organizationId = organizationId;
+
+    const { db } = await import("../db/client.js");
+    const schema = await import("../db/schema.js");
+    const { and, eq } = await import("drizzle-orm");
+
+    const dbTable = (schema as any)[table];
+    if (!dbTable) {
+      return reply.code(400).send({ error: "InvalidTable", message: `Table ${table} does not exist.` });
+    }
+
+    try {
+      // 1. Conflict Resolution (3-Way Merge / LWW verification)
+      const existing = await db
+        .select()
+        .from(dbTable)
+        .where(and(eq(dbTable.id, payload.id), eq(dbTable.organizationId, organizationId)))
+        .limit(1);
+
+      if (existing.length > 0) {
+        const localRecord = existing[0] as any;
+        const localVersion = localRecord.version || 1;
+        const remoteVersion = payload.version || 1;
+
+        if (localVersion >= remoteVersion && localRecord.updatedAt && payload.updatedAt) {
+          const localTime = new Date(localRecord.updatedAt).getTime();
+          const remoteTime = new Date(payload.updatedAt).getTime();
+
+          if (localTime > remoteTime) {
+            console.warn(`[Sync Push] Conflict detected on table ${table}, id ${payload.id}. Server version is newer.`);
+            return reply.code(409).send({
+              error: "Conflict",
+              message: "Server record has a newer version or update timestamp.",
+              remoteRecord: localRecord
+            });
+          }
+        }
+      }
+
+      // 2. Perform write
+      if (existing.length > 0) {
+        await db
+          .update(dbTable)
+          .set({ ...payload, isSynced: true, updatedAt: new Date() })
+          .where(and(eq(dbTable.id, payload.id), eq(dbTable.organizationId, organizationId)));
+      } else {
+        await db
+          .insert(dbTable)
+          .values({ ...payload, isSynced: true, updatedAt: new Date() });
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error("[Sync Push Error]", err.message);
+      return reply.code(500).send({ error: "WriteFailed", message: err.message });
+    }
   });
 }

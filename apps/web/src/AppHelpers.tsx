@@ -2579,7 +2579,10 @@ export const emptyVisitNoteForm: VisitNoteForm = {
   treatmentPlan: ""
 };
 
-export function visitNoteFormFromVisit(visit: Dashboard["activeVisit"]): VisitNoteForm {
+export function visitNoteFormFromVisit(visit: Dashboard["activeVisit"] | null | undefined): VisitNoteForm {
+  if (!visit) {
+    return { complaint: "", anamnesis: "", objectiveStatus: "", diagnosis: "", treatmentPlan: "" };
+  }
   return {
     complaint: visit.complaint ?? "",
     anamnesis: visit.anamnesis ?? "",
@@ -4377,7 +4380,7 @@ export function defaultAppointmentStartLocal(profile: ClinicProfile): string {
 }
 
 export function newAppointmentDraftFromDashboard(
-  dashboard: Dashboard,
+  dashboard: Dashboard | null | undefined,
   preferences: {
     selectedPatientId?: string | null;
     selectedSpecialty?: DentalSpecialty;
@@ -4386,15 +4389,29 @@ export function newAppointmentDraftFromDashboard(
     scheduleDefaultChairId?: string | null;
   } = {}
 ): AppointmentScheduleDraft {
-  const profile = dashboard.clinicSettings.profile;
+  const profile = dashboard?.clinicSettings?.profile;
+  if (!profile) {
+    return {
+      patientId: preferences?.selectedPatientId ?? "",
+      doctorUserId: preferences?.scheduleDefaultDoctorUserId ?? "",
+      assistantUserId: preferences?.scheduleDefaultAssistantUserId ?? "",
+      chairId: preferences?.scheduleDefaultChairId ?? "",
+      status: "planned",
+      startsAt: "",
+      endsAt: "",
+      reason: "",
+      comment: "",
+    };
+  }
   const timezone = profile.timezone || "Europe/Samara";
   const startsAtLocal = defaultAppointmentStartLocal(profile);
   const endsAtLocal = addMinutesToClinicDateTimeLocal(startsAtLocal, profile.defaultVisitMinutes || 45, timezone);
-  const selectedSpecialty = preferences.selectedSpecialty ?? "universal";
+  const selectedSpecialty = preferences?.selectedSpecialty ?? "universal";
   const specialtyMatches = (specialties: DentalSpecialty[]) =>
     selectedSpecialty === "universal" || specialties.includes(selectedSpecialty) || specialties.includes("universal");
-  const savedDoctor = preferences.scheduleDefaultDoctorUserId
-    ? dashboard.clinicSettings.staff.find(
+  const staffList = dashboard?.clinicSettings?.staff || [];
+  const savedDoctor = preferences?.scheduleDefaultDoctorUserId
+    ? staffList?.find(
         (member) =>
           member.id === preferences.scheduleDefaultDoctorUserId &&
           member.active &&
@@ -4403,30 +4420,35 @@ export function newAppointmentDraftFromDashboard(
     : null;
   const doctor =
     savedDoctor ??
-    dashboard.clinicSettings.staff.find(
+    staffList?.find(
       (member) => member.active && (member.role === "doctor" || member.role === "owner") && specialtyMatches(member.specialties)
-    ) ?? dashboard.clinicSettings.staff.find((member) => member.active && (member.role === "doctor" || member.role === "owner"));
+    ) ?? staffList?.find((member) => member.active && (member.role === "doctor" || member.role === "owner"));
+  const staffArray = dashboard?.clinicSettings?.staff || [];
   const savedAssistant =
-    profile.mode === "solo_doctor" || !preferences.scheduleDefaultAssistantUserId
+    profile.mode === "solo_doctor" || !preferences?.scheduleDefaultAssistantUserId
       ? null
-      : dashboard.clinicSettings.staff.find(
+      : staffArray?.find(
           (member) => member.id === preferences.scheduleDefaultAssistantUserId && member.active && member.role === "assistant"
         );
-  const assistant = savedAssistant ?? dashboard.clinicSettings.staff.find((member) => member.active && member.role === "assistant");
-  const savedChair = preferences.scheduleDefaultChairId
-    ? dashboard.clinicSettings.chairs.find((candidate) => candidate.id === preferences.scheduleDefaultChairId && candidate.active)
+  const assistant = savedAssistant ?? staffArray?.find((member) => member.active && member.role === "assistant");
+  
+  const chairsArray = dashboard?.clinicSettings?.chairs || [];
+  const savedChair = preferences?.scheduleDefaultChairId
+    ? chairsArray?.find((candidate) => candidate.id === preferences.scheduleDefaultChairId && candidate.active)
     : null;
   const chair =
     savedChair ??
-    dashboard.clinicSettings.chairs.find(
+    chairsArray?.find(
       (candidate) =>
         candidate.active &&
         (!candidate.specialization || selectedSpecialty === "universal" || candidate.specialization === selectedSpecialty)
-    ) ?? dashboard.clinicSettings.chairs.find((candidate) => candidate.active);
-  const selectedPatient = preferences.selectedPatientId
-    ? dashboard.patients.find((candidate) => candidate.id === preferences.selectedPatientId && candidate.status === "active")
+    ) ?? chairsArray?.find((candidate) => candidate.active);
+    
+  const patientsArray = dashboard?.patients || [];
+  const selectedPatient = preferences?.selectedPatientId
+    ? patientsArray?.find((candidate) => candidate.id === preferences.selectedPatientId && candidate.status === "active")
     : null;
-  const patient = selectedPatient ?? dashboard.patients.find((candidate) => candidate.status === "active");
+  const patient = selectedPatient ?? patientsArray?.find((candidate) => candidate.status === "active");
   return {
     patientId: patient?.id ?? "",
     doctorUserId: doctor?.id ?? "",
@@ -4524,11 +4546,11 @@ export function appointmentScheduleDateMissingSteps(draft: AppointmentScheduleDr
   ].filter((step): step is string => Boolean(step));
 }
 
-export function appointmentScheduleMissingFields(draft: AppointmentScheduleDraft, clinicMode: Dashboard["clinicSettings"]["profile"]["mode"] | null | undefined, staff: Dashboard["clinicSettings"]["staff"] | null | undefined): string[] {
+export function appointmentScheduleMissingFields(draft: AppointmentScheduleDraft, isOmniRoleMode: boolean, staff: Dashboard["clinicSettings"]["staff"] | null | undefined): string[] {
   const missing: string[] = [];
   if (!draft.patientId) missing.push("выберите пациента");
   if (!draft.doctorUserId) missing.push("выберите врача");
-  if (clinicMode !== "solo_doctor" && (staff || []).some(s => s.role === "assistant" && s.active) && !draft.assistantUserId) missing.push("выберите ассистента");
+  if (!isOmniRoleMode && (staff || []).some(s => s.role === "assistant" && s.active) && !draft.assistantUserId) missing.push("выберите ассистента");
   if (!draft.chairId) missing.push("выберите кресло");
   missing.push(...appointmentScheduleDateMissingSteps(draft));
   return missing;
@@ -4582,20 +4604,30 @@ export function emptyClinicProfileDraft(): ClinicProfileDraft {
   };
 }
 
-export function clinicProfileDraftFromProfile(profile: ClinicProfile): ClinicProfileDraft {
-  const schedule = profile.scheduleDefaults ?? {
+export function clinicProfileDraftFromProfile(profile: ClinicProfile | null | undefined): ClinicProfileDraft {
+  if (!profile) {
+    return {
+      clinicName: "", legalName: "", inn: "", kpp: "", ogrn: "", address: "", phone: "", email: "", website: "",
+      medicalLicenseNumber: "", medicalLicenseIssuedAt: "", medicalLicenseIssuer: "", bankDetails: "",
+      signatoryName: "", signatoryTitle: "", timezone: "Europe/Samara",
+      workdayStart: "09:00", workdayEnd: "18:00", workingDays: defaultWorkingDays, appointmentBufferMinutes: "10",
+      defaultVisitMinutes: "30", egiszEnabled: false
+    };
+  }
+
+  const schedule = profile?.scheduleDefaults ?? {
     workdayStart: "09:00",
     workdayEnd: "18:00",
     workingDays: defaultWorkingDays,
     appointmentBufferMinutes: 10
   };
   return {
-    clinicName: profile.clinicName ?? "",
-    legalName: profile.legalName ?? "",
-    inn: profile.inn ?? "",
-    kpp: profile.kpp ?? "",
-    ogrn: profile.ogrn ?? "",
-    address: profile.address ?? "",
+    clinicName: profile?.clinicName ?? "",
+    legalName: profile?.legalName ?? "",
+    inn: profile?.inn ?? "",
+    kpp: profile?.kpp ?? "",
+    ogrn: profile?.ogrn ?? "",
+    address: profile?.address ?? "",
     phone: profile.phone ?? "",
     email: profile.email ?? "",
     website: profile.website ?? "",
@@ -4606,12 +4638,12 @@ export function clinicProfileDraftFromProfile(profile: ClinicProfile): ClinicPro
     signatoryName: profile.signatoryName ?? "",
     signatoryTitle: profile.signatoryTitle ?? "",
     timezone: profile.timezone ?? "Europe/Samara",
-    defaultVisitMinutes: String(profile.defaultVisitMinutes ?? 45),
+    defaultVisitMinutes: String(profile?.defaultVisitMinutes ?? 45),
     workdayStart: schedule.workdayStart ?? "09:00",
     workdayEnd: schedule.workdayEnd ?? "18:00",
     workingDays: normalizeWorkingDaysDraft(schedule.workingDays),
     appointmentBufferMinutes: String(schedule.appointmentBufferMinutes ?? 10),
-    egiszEnabled: profile.egiszEnabled ?? false
+    egiszEnabled: profile?.egiszEnabled ?? false
   };
 }
 
@@ -4783,7 +4815,8 @@ export function clinicProfileDraftSignature(draft: ClinicProfileDraft): string {
   return JSON.stringify(buildClinicProfileUpdatePayload(draft));
 }
 
-export function clinicLegalMissingFields(profile: ClinicProfile): string[] {
+export function clinicLegalMissingFields(profile: ClinicProfile | null | undefined): string[] {
+  if (!profile) return ["Юр. лицо", "ИНН", "Адрес", "Телефон", "Номер лицензии", "Дата лицензии", "Кем выдана лицензия"];
   const required: Array<[string, string | null | undefined]> = [
     ["Юр. лицо", profile.legalName],
     ["ИНН", profile.inn],
@@ -4796,7 +4829,8 @@ export function clinicLegalMissingFields(profile: ClinicProfile): string[] {
   return required.filter(([, value]) => !value?.trim()).map(([label]) => label);
 }
 
-export function clinicLegalReadinessPercent(profile: ClinicProfile): number {
+export function clinicLegalReadinessPercent(profile: ClinicProfile | null | undefined): number {
+  if (!profile) return 0;
   const missing = clinicLegalMissingFields(profile).length;
   return Math.round(((7 - missing) / 7) * 100);
 }

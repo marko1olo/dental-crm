@@ -239,10 +239,17 @@ export function ScheduleView(props: ScheduleViewProps) {
 
   return (
           <div className="panel schedule-panel" id="schedule">
-            <button style={{ display: 'none' }} type="button">Создать запись</button>
             <div className="panel-heading">
               <h2>Расписание приемов</h2>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <button
+                  className="primary-button schedule-create-btn"
+                  type="button"
+                  onClick={focusNewAppointmentEditor}
+                  style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}
+                >
+                  <Plus size={14} /> + Запись
+                </button>
                 <button
                   className="secondary-button"
                   type="button"
@@ -445,6 +452,7 @@ export function ScheduleView(props: ScheduleViewProps) {
             
             <ClinicalScheduler
               appointments={sortedAppointments}
+              dashboard={dashboard}
               onSlotClick={(date, time, chairId) => {
                 const draft = newAppointmentDraft;
                 if (!draft) return;
@@ -512,24 +520,15 @@ export function ScheduleView(props: ScheduleViewProps) {
                 );
               })}
               {sortedAppointments.length === 0 ? (
-                <article className="schedule-empty-state" data-testid="schedule-empty-state" aria-label="Пустое расписание">
-                  <div>
-                    <strong>Нет записей по выбранным фильтрам</strong>
-                    <p role="status" aria-live="polite">
-                      Расписание не сломалось: выберите сегодняшний день, сбросьте фильтры или сразу откройте форму новой записи.
-                    </p>
-                  </div>
-                  <div className="schedule-empty-actions">
-                    <button className="secondary-button" type="button" onClick={() => setScheduleDateFilter(todayScheduleDate())}>
-                      Сегодня
-                    </button>
-                    <button className="text-button" type="button" onClick={resetScheduleFilters}>
-                      Сбросить фильтры
-                    </button>
-                    <button className="primary-button" type="button" onClick={focusNewAppointmentEditor}>
-                      <Plus aria-hidden="true" /> Новая запись
-                    </button>
-                  </div>
+                <article className="schedule-empty-state actionable-empty-state" data-testid="schedule-empty-state" aria-label="Пустое расписание" style={{ textAlign: 'center', padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Plus size={40} style={{ color: 'var(--muted)', marginBottom: '16px' }} />
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', color: 'var(--ink)' }}>Расписание пусто</h4>
+                  <p role="status" aria-live="polite" style={{ margin: '0 0 20px 0', fontSize: '0.95rem', color: 'var(--muted)', maxWidth: '300px' }}>
+                    Нажмите [+ Создать Запись], чтобы записать первого пациента.
+                  </p>
+                  <button className="primary-button" type="button" onClick={focusNewAppointmentEditor}>
+                    <Plus aria-hidden="true" /> Создать Запись
+                  </button>
                 </article>
               ) : null}
             </div>

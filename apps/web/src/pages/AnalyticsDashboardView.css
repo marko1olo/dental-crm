@@ -95,8 +95,12 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #71717a;
+  color: #a1a1aa;
   font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-style: italic;
 }
 
 @media (max-width: 1024px) {

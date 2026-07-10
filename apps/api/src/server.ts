@@ -1,8 +1,10 @@
 import "dotenv/config";
 import cors from "@fastify/cors";
 import Fastify from "fastify";
+import fastifyWebsocket from "@fastify/websocket";
 import { pathToFileURL } from "node:url";
 import { ZodError } from "zod";
+import { wsBroker } from "./services/websocketBroker.js";
 import { registerAiRoutes } from "./routes/ai.js";
 import { registerBillingRoutes, registerAdvancedBillingRoutes } from "./routes/billing.js";
 import { registerClinicalRoutes } from "./routes/clinical.js";
@@ -30,6 +32,8 @@ import registerEgiszRoutes from "./routes/egisz.js";
 import registerDiaryRoutes from "./routes/diary.js";
 import registerTemplateRoutes from "./routes/templates.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
+import { registerLabRoutes } from "./routes/lab.js";
+import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
 import { startBiAnalyticsWorker } from "./services/biAnalyticsWorker.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
@@ -170,6 +174,14 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
     origin: webOrigins
   });
 
+  await app.register(fastifyWebsocket, {
+    options: { maxPayload: 1048576 }
+  });
+
+  app.get("/api/ws/schedule", { websocket: true } as any, (connection: any, req: any) => {
+    wsBroker.addClient(connection);
+  });
+
 
   app.setErrorHandler((error, _request, reply) => {
     import("node:fs").then(m => m.appendFileSync("C:/Clinic_MVP/error.log", ((error as any)?.stack || (error as any)?.message || String(error)) + "\nCAUSE: " + ((error as any)?.cause || "") + "\n"));
@@ -237,6 +249,8 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerDiaryRoutes(app);
   await registerTemplateRoutes(app);
   await registerToothHistoryRoutes(app);
+  await workspaceProfileRoutes(app);
+  await registerLabRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     // const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });

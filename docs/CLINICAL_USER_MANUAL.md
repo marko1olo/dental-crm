@@ -54,3 +54,78 @@ DENTE strictly enforces multi-tenant data boundaries at the ORM layer. Every bac
 To run smoothly on varying hardware profiles, especially across long clinic shifts, DENTE aggressively manages memory using a two-pronged strategy:
 - **EventListener Cleanup:** Components relying on global events (window, document, WebSocket subscriptions, SpeechSynthesis events) are mandated to return cleanup un-subscribers from useEffect hooks, thereby releasing objects from V8 heap.
 - **Store Flushes:** The frontend application actively intercepts unmount cycles on heavy visualization tabs (e.g., 3D/2D Odontograms, Document Stores, Patient Journals) and invokes .reset() on Zustand stores. This explicitly severs references to bloated state arrays, guaranteeing garbage collection and preventing runaway memory allocation across patient profile swaps.
+
+## 10. Antifragility Protocol & Graceful Degradation
+To achieve ultimate resilience under infrastructure failures, DENTE implements a complete client-side virtualization layers:
+- **Topology Adaptation (Offline Sandbox):** A built-in Topology Detector constantly polls backend readiness. If the server goes offline or returns a gateway error (502–504), all app logic seamlessly degrades to client-side IndexedDB emulation. The user continues planning treatments and charting teeth uninterrupted.
+- **Sync Transaction Queue:** In sandbox mode, mutations are captured locally. An orange status indicator `[⚡ Ожидание синхронизации: X]` appears in the header.
+- **Background Sync Daemon with Jitter:** When network connectivity is restored, the daemon batches the transactions and pushes them to the server using an exponential backoff strategy with random jitter to prevent server request spikes.
+- **Three-Way Merge Conflict Resolution:** Concurrent updates of the same patient records triggers a visual side-by-side comparison modal, prompting the clinician to resolve the conflict (Local vs. Remote) manually.
+- **UI Component Resuscitator:** An intelligent Error Boundary wrapper monitors rendering health, auto-rebuilding crashed components with a retry counter (after 1, 3, and 5 seconds) and auto-recovering lost WebGL Cornerstone3D context.
+
+## 11. Цифровые Информированные Добровольные Согласия (ИДС)
+- **Конструктор документов (ConsentBuilder):** Врач выбирает шаблон документа в карте пациента. Все клинические данные (номера зубов, ФИО пациента, диагнозы) автоматически подставляются вместо плейсхолдеров (например, `{{patient_name}}`).
+- **Сенсорный холст для подписи (SignatureCanvasPad):** Пациент расписывается прямо на экране планшета (Touch) или ПК (Mouse). Линии сглаживаются алгоритмами Безье. Подпись сохраняется как защищенный SVG-вектор и встраивается в PDF-документ при печати.
+
+## 12. Внешний Портал Лаборатории (Guest Lab Portal)
+- При заказе коронки или винира, координатор или врач генерирует уникальную гостевую ссылку для зубного техника.
+- Передав ссылку технику, клиника обеспечивает ему защищенный доступ к деталям заказа (FDI номера, материал, цвет Vita, заметки врача). Технику не нужен аккаунт в системе.
+- Когда техник меняет статус заказа (например, на "Готово" или "В работе"), это **в реальном времени (WebSockets)** отражается на экране администратора в клинике. Возле приема ортопеда загорается зеленая или мигающая желтая иконка "Лаба", предотвращая ситуации "пациент пришел, а коронка еще не приехала".
+
+## 13. P2P Онбординг через QR-Код
+- **Бесшовное сопряжение:** Если врач хочет передать экран пациенту для заполнения анкеты или подписания согласия, он нажимает "Передать управление". На экране врача появляется **QR-код**.
+- **Процесс:** Пациент сканирует QR-код со своего личного смартфона. Смартфон подключается к P2P-сессии (WebRTC/Socket) и превращается во временный пульт управления или экран для подписи, привязанный к текущей сессии врача.
+
+## 14. Шифрование и Резервное Копирование (Cloud Vault)
+- Данные пациентов, созданные в автономном режиме, не просто лежат в кэше браузера.
+- **AES-256 Cloud Vault Backup:** Весь слепок базы (Snapshot) шифруется мастер-ключом на клиенте перед отправкой в облако.
+- **Синхронизация:** При восстановлении интернет-соединения, система выполняет инкрементальную синхронизацию с использованием Last-Write-Wins. Если вы хотите сделать ручной снимок БД, перейдите в Настройки -> Синхронизация и нажмите "Создать бекап (Cloud Vault)".
+
+---
+
+## 15. Адаптивный Профиль Рабочего Пространства (Workspace Profiler)
+
+### 15.1 Зачем это нужно
+
+DENTE одинаково хорошо работает как в кабинете одного врача без ассистента, так и в крупной сети клиник с лабораториями и ДМС. Вместо перегрузки одиночного терапевта кнопками консилиума и зуботехлабораторных заказов, система автоматически убирает ненужные разделы.
+
+### 15.2 Экспресс-Мастер Настройки (при первом входе)
+
+При первом запуске DENTE показывает Onboarding Setup Wizard. Выбор специализации одним кликом:
+
+| Пресет | Включено |
+|---|---|
+| Частный терапевт | Расписание, одонтограмма, SOAP, рассрочка |
+| Ортопедический кабинет | + Зуботехлаб |
+| Детская стоматология | + ДМС, ассистент, несколько кресел |
+| Ортодонтический кабинет | + Лаборатория, рассрочка, ДМС |
+| Хирургический центр | Все кресла, ДМС, рассрочка |
+| Имплантационный центр | Полный стек + лаборатория |
+| Сеть клиник | Enterprise + BI |
+| Своя конфигурация | 5 тумблеров вручную |
+
+### 15.3 Изменение настроек
+
+Настройки -> Аккаунт клиники -> раздел "Модули и функции рабочего пространства".
+
+API: POST /api/workspace/preset/:name | GET/POST /api/workspace/profile
+
+### 15.4 Детский режим (Pediatric Adaptivity)
+При активации детского режима:
+- Одонтограмма (ToothChart) автоматически переключается на молочный прикус (зубы 55-65, 85-75). Сетка из 32 взрослых зубов скрывается и заменяется на 20 молочных.
+- В модуле Onboarding (Мастер настройки) при выборе пресета "Детский кабинет терапевта" (Pediatric + Solo) база данных автоматически засеивается детскими шаблонами приемов.
+- Модуль TreatmentEstimator автоматически окрашивает бейджи FDI молочных зубов (номера > 50) в розовый цвет для визуального выделения детских планов лечения.
+- **Как переключиться:** Перейдите в Настройки (Settings) -> Аккаунт Клиники (Workspace) и включите тумблер "Детская стоматология (Pediatric Mode)". Изменения применятся мгновенно для всех врачей.
+
+### 15.5 Режим Omni-Role (Абсолютные Root-права)
+Для пресетов "Solo Therapist" (Частный врач) система включает режим **Omni-Role**:
+- Этот режим отключает все барьеры разграничения прав доступа. Врач получает абсолютные Root-права во всех разделах.
+- Автоматически вырезаются все требования совместного подписания карт (co-signing) ассистентами, так как врач работает один.
+- Кассовый модуль (FinanceView) позволяет закрывать инвойсы в один клик без дополнительного подтверждения и переключений на профиль администратора.
+- Интерфейс очищается от кнопок переключения ролей, оставляя чистый, сфокусированный рабочий кабинет без лишнего информационного шума.
+
+### 15.6 Динамическая сетка кресел (Dynamic Chairs)
+Система позволяет гибко настраивать количество стоматологических установок (кресел), отображаемых в Календаре (ClinicalScheduler):
+- **Solo Therapist:** По умолчанию создается ровно 1 кресло ("Главный кабинет"). Календарь автоматически переходит в одноколоночный (компактный) вид без громоздких заголовков кресел.
+- **Enterprise / Многопрофильная клиника:** В Мастере настройки можно выбрать количество кресел (от 2 до 8). База данных автоматически создаст записи в `clinic_chairs`. Календарь развернется в многоколоночный вид (Multi-Chair Grid).
+- **Как настроить:** В Настройках -> Аккаунт Клиники -> Нажмите на кастомный пресет. Появится поле ввода "Количество кресел" (от 1 до 8). Календарь мгновенно перестроится.

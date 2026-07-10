@@ -92,16 +92,12 @@ async function navigateTo(page, viewName, timeout = 3000) {
     await wait(4000);
 
     // в”Ђв”Ђв”Ђ 1. CLINICAL SOAP JOURNAL в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    console.log(`[${state.name}] в†’ SOAP Journal`);
-    await page.evaluate(() => {
-      const links = Array.from(document.querySelectorAll("a, button, [role='button']"));
-      const visitBtn = links.find(el => {
-        const t = (el.textContent || "").toLowerCase();
-        return t.includes("РїСЂРёС‘Рј") || t.includes("РїСЂРёРµРј") || t.includes("visit") || t.includes("РґРёРєС‚РѕРІРєР°");
-      });
-      if (visitBtn) visitBtn.click();
+    console.log(`[${state.name}] -> SOAP Journal`);
+    await page.evaluate(async () => {
+      window.location.hash = "visit";
+      await new Promise(r => setTimeout(r, 1000));
     });
-    await wait(2500);
+    await wait(1500);
 
     await page.evaluate(() => {
       const textareas = Array.from(document.querySelectorAll("textarea"));
@@ -121,16 +117,12 @@ async function navigateTo(page, viewName, timeout = 3000) {
     console.log(`[${state.name}] вњ“ SOAP screenshot`);
 
     // в”Ђв”Ђв”Ђ 2. CALENDAR CROSSHAIR в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    console.log(`[${state.name}] в†’ Calendar (Schedule)`);
-    await page.evaluate(() => {
-      const links = Array.from(document.querySelectorAll("a, button, [role='button'], nav a"));
-      const schedBtn = links.find(el => {
-        const t = (el.textContent || "").toLowerCase();
-        return t.includes("запис") || t.includes("schedule") || t.includes("расписани");
-      });
-      if (schedBtn) schedBtn.click();
+    console.log(`[${state.name}] -> Calendar (Schedule)`);
+    await page.evaluate(async () => {
+      window.location.hash = "schedule";
+      await new Promise(r => setTimeout(r, 1000));
     });
-    await wait(2500);
+    await wait(1500);
 
     // Hover first    try {
       await page.evaluate(() => {
@@ -159,16 +151,12 @@ async function navigateTo(page, viewName, timeout = 3000) {
     console.log(`[${state.name}] вњ“ Calendar popover (autofocus)`);
 
     // в”Ђв”Ђв”Ђ 3. ODONTOGRAM MULTI-SELECT в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    console.log(`[${state.name}] в†’ Odontogram (Patient EMK)`);
-    await page.evaluate(() => {
-      const links = Array.from(document.querySelectorAll("a, button, [role='button']"));
-      const pBtn = links.find(el => {
-        const t = (el.textContent || "").toLowerCase();
-        return t.includes("РїР°С†РёРµРЅС‚") || t.includes("patient");
-      });
-      if (pBtn) pBtn.click();
+    console.log(`[${state.name}] -> Odontogram (Patient EMK)`);
+    await page.evaluate(async () => {
+      window.location.hash = "patients";
+      await new Promise(r => setTimeout(r, 1000));
     });
-    await wait(2500);
+    await wait(1500);
 
     // Activate multi-select mode
     await page.evaluate(() => {

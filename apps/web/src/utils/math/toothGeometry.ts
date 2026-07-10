@@ -481,27 +481,28 @@ export const getToothPath = (toothId: number): ToothGeometryType => {
   const quadrant = Math.floor(toothId / 10);
   const index = toothId % 10;
 
-  if (quadrant === 1 || quadrant === 2) { 
+  if (quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6) { 
     if (index === 1) return TOOTH_GEOMETRY.UPPER_CENTRAL_INCISOR;
     if (index === 2) return TOOTH_GEOMETRY.UPPER_LATERAL_INCISOR;
     if (index === 3) return TOOTH_GEOMETRY.UPPER_CANINE;
-    if (index <= 5) return TOOTH_GEOMETRY.UPPER_PREMOLAR;
+    if (index <= 5) return (quadrant >= 5) ? TOOTH_GEOMETRY.UPPER_MOLAR : TOOTH_GEOMETRY.UPPER_PREMOLAR;
     return TOOTH_GEOMETRY.UPPER_MOLAR;
   } else { 
     if (index <= 2) return TOOTH_GEOMETRY.LOWER_INCISOR;
     if (index === 3) return TOOTH_GEOMETRY.LOWER_CANINE;
-    if (index <= 5) return TOOTH_GEOMETRY.LOWER_PREMOLAR;
+    if (index <= 5) return (quadrant >= 5) ? TOOTH_GEOMETRY.LOWER_MOLAR : TOOTH_GEOMETRY.LOWER_PREMOLAR;
     return TOOTH_GEOMETRY.LOWER_MOLAR;
   }
 };
 
 export const getToothConfig = (toothId: number) => {
   const num = toothId % 10;
+  const quadrant = Math.floor(toothId / 10);
   // Use custom viewBox values to tightly bound the actual SVG paths, 
   // preventing extreme horizontal distortion when scaling to container widths.
   if (num <= 2) return { width: "36px", height: "90px", viewX: 20, viewWidth: 60, viewHeight: 150 };
   if (num === 3) return { width: "40px", height: "90px", viewX: 15, viewWidth: 75, viewHeight: 150 };
-  if (num <= 5) return { width: "42px", height: "90px", viewX: 12.5, viewWidth: 75, viewHeight: 150 };
+  if (num <= 5 && quadrant < 5) return { width: "42px", height: "90px", viewX: 12.5, viewWidth: 75, viewHeight: 150 };
   return { width: "48px", height: "90px", viewX: 0, viewWidth: 100, viewHeight: 150 };
 };
 
@@ -517,11 +518,12 @@ export type ToothGroup = 'incisor' | 'canine' | 'premolar' | 'molar' | 'wisdom';
 /** Returns the morphological group for an FDI tooth number */
 export function getToothGroup(fdi: number): ToothGroup {
   const tooth = fdi % 10; // last digit = tooth position in quadrant
+  const quadrant = Math.floor(fdi / 10);
   if (tooth === 1 || tooth === 2) return 'incisor';
   if (tooth === 3) return 'canine';
-  if (tooth === 4 || tooth === 5) return 'premolar';
-  if (tooth === 6 || tooth === 7) return 'molar';
-  return 'wisdom';
+  if (tooth === 4 || tooth === 5) return (quadrant >= 5) ? 'molar' : 'premolar';
+  if (tooth === 8) return 'wisdom';
+  return 'molar';
 }
 
 export interface CrownProfile {

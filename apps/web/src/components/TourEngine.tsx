@@ -7,6 +7,7 @@ export type TourStep = {
   title: string;
   content: string;
   placement: 'top' | 'bottom' | 'left' | 'right';
+  view?: string;
 };
 
 export type TourConfig = {
@@ -15,26 +16,98 @@ export type TourConfig = {
 };
 
 const tours: Record<string, TourConfig> = {
+  'schedule': {
+    id: 'schedule',
+    steps: [
+      {
+        targetSelector: '.schedule-create-btn',
+        title: 'Запись на прием',
+        content: 'Используйте кнопку «+ Запись» для быстрого создания нового визита пациента в календарь.',
+        placement: 'bottom',
+        view: 'schedule'
+      },
+      {
+        targetSelector: '.clinical-scheduler',
+        title: 'Сетка календаря',
+        content: 'Здесь отображаются все запланированные приемы. Вы можете перетаскивать их для изменения времени.',
+        placement: 'top',
+        view: 'schedule'
+      }
+    ]
+  },
+  'patients': {
+    id: 'patients',
+    steps: [
+      {
+        targetSelector: 'input[placeholder*="Поиск"], .search-input',
+        title: 'Поиск пациентов',
+        content: 'Введите ФИО или номер телефона пациента для мгновенного поиска его амбулаторной карты.',
+        placement: 'bottom',
+        view: 'patients'
+      },
+      {
+        targetSelector: '.patient-admin-panel',
+        title: 'Медицинская карта (ЭМК)',
+        content: 'Вся персональная, контактная и медицинская информация о пациенте сосредоточена в этой карточке.',
+        placement: 'left',
+        view: 'patients'
+      }
+    ]
+  },
+  'tooth_chart': {
+    id: 'tooth_chart',
+    steps: [
+      {
+        targetSelector: '.odontogram-card',
+        title: 'Интерактивная зубная формула',
+        content: 'Нажмите на любой зуб, чтобы отметить кариес, пломбу или отсутствие зуба в круговом меню.',
+        placement: 'top',
+        view: 'patients'
+      },
+      {
+        targetSelector: 'button[style*="Групповой выбор"], .odontogram-card button',
+        title: 'Групповой выбор зубов',
+        content: 'Включите групповой выбор для быстрого применения одного статуса к нескольким зубам одновременно.',
+        placement: 'bottom',
+        view: 'patients'
+      }
+    ]
+  },
   'treatment_plan': {
     id: 'treatment_plan',
     steps: [
       {
-        targetSelector: '.odontogram-chart-area',
-        title: 'Шаг 1: Выбор зуба',
-        content: 'Кликните на больной зуб на 3D-схеме слева, чтобы начать работу с ним.',
-        placement: 'right'
+        targetSelector: '.odontogram-card',
+        title: 'Клиническое обследование',
+        content: 'Назначьте статус зуба на формуле (например, Caries или Crown) — это автоматически создаст план лечения.',
+        placement: 'top',
+        view: 'patients'
       },
       {
-        targetSelector: '.tooth-chart-legend',
-        title: 'Шаг 2: Легенда',
-        content: 'Цвета помогают быстро определить состояние зубов на формуле.',
-        placement: 'top'
+        targetSelector: '.odontogram-treatment-area, [className*="treatment"], .patient-admin-panel',
+        title: 'План лечения и смета',
+        content: 'Вся калькуляция стоимости услуг, группировка по фазам и печать согласий выполняются в этой зоне.',
+        placement: 'left',
+        view: 'patients'
+      }
+    ]
+  },
+  'finance': {
+    id: 'finance',
+    steps: [
+      {
+        targetSelector: '.finance-panel',
+        title: 'Финансовый учет клиники',
+        content: 'Здесь отображаются все счета пациентов, статусы оплаты и графики рассрочек.',
+        placement: 'top',
+        view: 'finance'
       },
       {
-        targetSelector: '.odontogram-treatment-area',
-        title: 'Шаг 3: Смета',
-        content: 'Сгенерированная смета появится здесь.',
-        placement: 'left'
+        targetSelector: '#payment-capture, .payment-capture-form',
+        title: 'Регистрация оплаты',
+        content: 'Используйте этот блок для приема наличной/безналичной оплаты от пациента и печати чеков.',
+        placement: 'bottom',
+        view: 'finance'
       }
     ]
   }
@@ -61,7 +134,15 @@ export default function TourEngine() {
   }, []);
 
   useEffect(() => {
-    if (!activeTour) return;
+    if (!activeTour) {
+      setTargetRect(null);
+      return;
+    }
+
+    const step = activeTour.steps[currentStepIndex];
+    if (step && step.view && window.location.hash !== `#${step.view}`) {
+      window.location.hash = step.view;
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -81,7 +162,7 @@ export default function TourEngine() {
       }
     };
 
-    const interval = setInterval(updatePosition, 500);
+    const interval = setInterval(updatePosition, 150);
     updatePosition();
     
     window.addEventListener('keydown', handleKeyDown);
@@ -163,17 +244,71 @@ export default function TourEngine() {
 }
 
 function getPopoverPosition(rect: DOMRect, placement: string): React.CSSProperties {
-  const gap = 24;
+  const gap = 16;
+  const popoverWidth = 320;
+  
+  let top = 0;
+  let left = 0;
+  let transform = '';
+
   switch (placement) {
     case 'top':
-      return { top: rect.top - gap, left: rect.left + rect.width / 2, transform: 'translate(-50%, -100%)' };
+      top = rect.top - gap;
+      left = rect.left + rect.width / 2;
+      transform = 'translate(-50%, -100%)';
+      break;
     case 'bottom':
-      return { top: rect.bottom + gap, left: rect.left + rect.width / 2, transform: 'translate(-50%, 0)' };
+      top = rect.bottom + gap;
+      left = rect.left + rect.width / 2;
+      transform = 'translate(-50%, 0)';
+      break;
     case 'left':
-      return { top: rect.top + rect.height / 2, left: rect.left - gap, transform: 'translate(-100%, -50%)' };
+      top = rect.top + rect.height / 2;
+      left = rect.left - gap;
+      transform = 'translate(-100%, -50%)';
+      break;
     case 'right':
-      return { top: rect.top + rect.height / 2, left: rect.right + gap, transform: 'translate(0, -50%)' };
+      top = rect.top + rect.height / 2;
+      left = rect.right + gap;
+      transform = 'translate(0, -50%)';
+      break;
     default:
       return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
   }
+
+  // Boundary checks
+  if (placement === 'top' || placement === 'bottom') {
+    const leftEdge = left - popoverWidth / 2;
+    const rightEdge = left + popoverWidth / 2;
+    if (leftEdge < 8) {
+      left = 8;
+      transform = `translate(0, ${placement === 'top' ? '-100%' : '0'})`;
+    } else if (rightEdge > window.innerWidth - 8) {
+      left = window.innerWidth - popoverWidth - 8;
+      transform = `translate(0, ${placement === 'top' ? '-100%' : '0'})`;
+    }
+  } else if (placement === 'left') {
+    if (rect.left - gap - popoverWidth < 8) {
+      left = rect.right + gap;
+      transform = 'translate(0, -50%)';
+    }
+  } else if (placement === 'right') {
+    if (rect.right + gap + popoverWidth > window.innerWidth - 8) {
+      left = rect.left - gap;
+      transform = 'translate(-100%, -50%)';
+    }
+  }
+
+  if (top < 8) {
+    top = 8;
+  }
+
+  return {
+    position: 'fixed',
+    top,
+    left,
+    transform,
+    width: popoverWidth,
+    maxWidth: 'calc(100vw - 16px)'
+  };
 }

@@ -26,6 +26,7 @@ import {
 import { useState, useEffect } from "react";
 import { useThemeStore } from "./store/themeStore";
 import { QrGatewayPanel } from "./components/QrGatewayPanel";
+import { useSyncStore, resolveConflictLWW } from "./lib/antifragility";
 
 export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing"] as const;
 export type AppView = (typeof appViews)[number];
@@ -165,6 +166,7 @@ interface WorkspaceTopbarProps {
   staffRoleLabels: Record<StaffRole, string>;
   todayIso: string;
   onLockSession?: () => void;
+  isOmniRoleMode?: boolean;
 }
 
 export function WorkspaceTopbar({
@@ -181,12 +183,18 @@ export function WorkspaceTopbar({
   showDoctorVisitShortcut,
   staffRoleLabels,
   todayIso,
-  onLockSession
+  onLockSession,
+  isOmniRoleMode
 }: WorkspaceTopbarProps) {
   const themeMode = useThemeStore(s => s.themeMode);
   const setThemeMode = useThemeStore(s => s.setThemeMode);
   
   const [actualTheme, setActualTheme] = useState<"light" | "dark">("dark");
+
+  const queueCount = useSyncStore(s => s.queueCount);
+  const topology = useSyncStore(s => s.topology);
+  const hasConflict = useSyncStore(s => s.hasConflict);
+  const conflictingRecord = useSyncStore(s => s.conflictingRecord);
 
   useEffect(() => {
     let active = "dark";
@@ -216,36 +224,110 @@ export function WorkspaceTopbar({
     setThemeMode(next);
   };
 
+  const formatConflictRecord = (payload: any) => {
+    if (!payload) return null;
+    const skipFields = ["id", "version", "isSynced", "organizationId", "updatedAt", "createdAt"];
+    
+    const fieldLabels: Record<string, string> = {
+      toothNumber: "Номер зуба",
+      state: "Состояние/Диагноз",
+      notes: "Клинические примечания",
+      diagnosis: "Диагноз",
+      treatmentPlanId: "План лечения ID",
+      status: "Статус",
+      complaints: "Жалобы",
+      objectively: "Объективно",
+      therapy: "Терапия",
+      amount: "Сумма",
+      paymentMethod: "Метод оплаты"
+    };
+
+    return Object.entries(payload)
+      .filter(([key]) => !skipFields.includes(key))
+      .map(([key, val]) => {
+        const label = fieldLabels[key] || key;
+        const displayVal = typeof val === "object" ? JSON.stringify(val) : String(val);
+        return (
+          <div key={key} style={{ marginBottom: '8px', fontSize: '0.88rem', borderBottom: '1px dashed var(--line)', paddingBottom: '4px' }}>
+            <strong style={{ color: 'var(--ink)' }}>{label}:</strong>{' '}
+            <span style={{ color: 'var(--muted)' }}>{displayVal}</span>
+          </div>
+        );
+      });
+  };
+
   return (
     <header className="topbar">
-      <div>
-        <p className="eyebrow">{new Date(todayIso).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      <div className="topbar-left">
+        <p className="eyebrow">
+          {todayIso && !isNaN(Date.parse(todayIso)) 
+            ? new Date(todayIso).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+            : new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
         <h1>{clinicName}</h1>
-        <details className="workspace-role-switcher" aria-label="Рабочий режим">
-          <summary>
-            <span>Роль</span>
-            <strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
-          </summary>
-          <div className="role-switcher-options">
-            {roleFocusOrder.map((role) => (
-              <button
-                className={selectedWorkspaceRole === role ? "active" : ""}
-                key={role}
-                type="button"
-                aria-pressed={selectedWorkspaceRole === role}
-                aria-label={`Рабочий режим: ${staffRoleLabels[role]}`}
-                onClick={(event) => {
-                  onRoleChange(role);
-                  event.currentTarget.closest("details")?.removeAttribute("open");
-                }}
-              >
-                {staffRoleLabels[role]}
-              </button>
-            ))}
-          </div>
-        </details>
+        {!isOmniRoleMode && (
+          <details className="workspace-role-switcher" aria-label="Роли оператора">
+            <summary>
+              <span>Роль</span>
+              <strong>{staffRoleLabels[selectedWorkspaceRole]}</strong>
+            </summary>
+            <div className="role-switcher-options">
+              {roleFocusOrder.map((role) => (
+                <button
+                  className={selectedWorkspaceRole === role ? "active" : ""}
+                  key={role}
+                  type="button"
+                  aria-pressed={selectedWorkspaceRole === role}
+                  aria-label={`Сменить роль: ${staffRoleLabels[role]}`}
+                  onClick={(event) => {
+                    onRoleChange(role);
+                    event.currentTarget.closest("details")?.removeAttribute("open");
+                  }}
+                >
+                  {staffRoleLabels[role]}
+                </button>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
+
       <div className="top-actions">
+        {topology === "sandbox" && (
+          <div className="topology-sandbox-badge" title="Работа в локальной песочнице (без сервера)" style={{
+            background: 'rgba(59, 130, 246, 0.15)',
+            border: '1px solid rgb(59, 130, 246)',
+            color: 'rgb(59, 130, 246)',
+            padding: '4px 10px',
+            borderRadius: '12px',
+            fontSize: '0.82rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            height: '24px',
+            whiteSpace: 'nowrap'
+          }}>
+            Sandbox Mode
+          </div>
+        )}
+        {queueCount > 0 && (
+          <div className="sync-queue-badge" title="Ожидание отправки данных на сервер" style={{
+            background: 'rgba(249, 115, 22, 0.15)',
+            border: '1px solid rgb(249, 115, 22)',
+            color: 'rgb(249, 115, 22)',
+            padding: '4px 10px',
+            borderRadius: '12px',
+            fontSize: '0.82rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            height: '24px',
+            whiteSpace: 'nowrap'
+          }}>
+            <span>⚡</span> Ожидание синхронизации: {queueCount}
+          </div>
+        )}
         {showAdministrationTopActions ? (
           <a
             className="icon-button"
@@ -286,8 +368,6 @@ export function WorkspaceTopbar({
           title="Справка / Обучение"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
-            // We dispatch an event so that TourEngine/HelpHUD or some generic handler can pick it up
-            // Or we just open HelpHUD:
             window.dispatchEvent(new CustomEvent('TOGGLE_HELP_HUD'));
           }}
         >
@@ -325,6 +405,73 @@ export function WorkspaceTopbar({
           <Plus aria-hidden="true" /> Запись
         </button>
       </div>
+
+      {hasConflict && conflictingRecord && (
+        <div className="conflict-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          backdropFilter: 'blur(8px)'
+        }}>
+          <div className="conflict-modal" style={{
+            background: 'var(--paper)',
+            border: '1px solid var(--border)',
+            borderRadius: '16px',
+            padding: '24px',
+            width: '90%',
+            maxWidth: '650px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <h3 style={{ marginTop: 0, color: 'var(--ink)' }}>⚡ Разрешение конфликта синхронизации</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '0.95rem' }}>
+              Обнаружены одновременные изменения записи в таблице <strong>{conflictingRecord.table}</strong>. Пожалуйста, выберите версию для сохранения.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', margin: '20px 0' }}>
+              <div style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '16px', background: 'rgba(249, 115, 22, 0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 10px 0', color: 'rgb(249, 115, 22)' }}>Локальная версия</h4>
+                  {conflictingRecord.local?.updatedAt && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '10px' }}>
+                      Изменено: {new Date(conflictingRecord.local.updatedAt).toLocaleString('ru-RU')}
+                    </div>
+                  )}
+                  <div style={{ maxHeight: '250px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {formatConflictRecord(conflictingRecord.local)}
+                  </div>
+                </div>
+                <button className="primary-button" type="button" style={{ marginTop: '16px', width: '100%' }} onClick={() => resolveConflictLWW(true)}>
+                  Использовать локальную
+                </button>
+              </div>
+              
+              <div style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '16px', background: 'rgba(59, 130, 246, 0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 10px 0', color: 'rgb(59, 130, 246)' }}>Облачная версия</h4>
+                  {conflictingRecord.remote?.updatedAt && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '10px' }}>
+                      Изменено: {new Date(conflictingRecord.remote.updatedAt).toLocaleString('ru-RU')}
+                    </div>
+                  )}
+                  <div style={{ maxHeight: '250px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {formatConflictRecord(conflictingRecord.remote)}
+                  </div>
+                </div>
+                <button className="secondary-button" type="button" style={{ marginTop: '16px', width: '100%', borderColor: 'rgb(59, 130, 246)', color: 'rgb(59, 130, 246)' }} onClick={() => resolveConflictLWW(false)}>
+                  Использовать облачную
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

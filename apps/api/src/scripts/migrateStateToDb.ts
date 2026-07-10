@@ -35,7 +35,7 @@ async function clearDatabase() {
   await db.delete(schema.appointments);
   await db.delete(schema.patientConsents);
   await db.delete(schema.patients);
-  await db.delete(schema.chairs);
+  await db.delete(schema.clinicChairs);
   await db.delete(schema.users);
   await db.delete(schema.clinics);
   await db.delete(schema.organizations);
@@ -107,7 +107,7 @@ async function migrate() {
 
   console.log(`🪑 Migrating ${state.chairs.length} Chairs...`);
   for (const chair of state.chairs) {
-    await db.insert(schema.chairs).values({
+    await db.insert(schema.clinicChairs).values({
       id: chair.id,
       organizationId: orgId,
       clinicId: "e50337ad-f762-4f3b-8255-a2267576be78",
