@@ -145,7 +145,7 @@ export function Odontogram() {
           background: isSelected
             ? 'rgba(99,102,241,0.15)'
             : isHovered
-            ? '#f1f5f9'
+            ? 'var(--paper-soft)'
             : 'transparent',
           boxShadow: isSelected
             ? `0 0 0 2px #6366f1, 0 0 12px ${STATUS_GLOW[status]}`
@@ -258,11 +258,11 @@ export function Odontogram() {
   };
 
   return (
-    <div style={{
-      background: '#ffffff',
+    <div className="odontogram-card" style={{
+      background: 'var(--paper)',
       borderRadius: '16px',
       padding: '28px 20px',
-      border: '1px solid #e2e8f0',
+      border: '1px solid var(--odontogram-border, var(--line))',
       boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
       display: 'flex',
       flexDirection: 'column',
@@ -274,7 +274,7 @@ export function Odontogram() {
 
       {/* Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <h3 style={{ margin: 0, color: '#1e293b', fontSize: '19px', fontWeight: 700 }}>Зубная формула</h3>
+        <h3 style={{ margin: 0, color: 'var(--ink)', fontSize: '19px', fontWeight: 700 }}>Зубная формула</h3>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Multi-select toggle */}
@@ -288,9 +288,9 @@ export function Odontogram() {
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
-              border: `1.5px solid ${multiSelectMode ? '#6366f1' : '#cbd5e1'}`,
-              background: multiSelectMode ? '#eef2ff' : '#fff',
-              color: multiSelectMode ? '#6366f1' : '#475569',
+              border: `1.5px solid ${multiSelectMode ? 'var(--teal)' : 'var(--line)'}`,
+              background: multiSelectMode ? 'var(--teal-soft)' : 'var(--paper)',
+              color: multiSelectMode ? 'var(--teal-dark)' : 'var(--ink)',
               fontSize: '13px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -301,7 +301,7 @@ export function Odontogram() {
             <span>{multiSelectMode ? '✓ Групповой выбор' : '☐ Групповой выбор'}</span>
             {multiSelectMode && selectedTeeth.size > 0 && (
               <span style={{
-                background: '#6366f1', color: '#fff',
+                background: 'var(--teal)', color: '#fff',
                 borderRadius: '9999px', padding: '1px 7px',
                 fontSize: '11px', fontWeight: 800
               }}>
@@ -318,13 +318,13 @@ export function Odontogram() {
                 style={{
                   padding: '6px 14px',
                   borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  background: 'linear-gradient(135deg, var(--teal-dark), var(--teal))',
                   border: 'none',
                   color: '#fff',
                   fontSize: '13px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  boxShadow: '0 0 18px rgba(99,102,241,0.4)',
+                  boxShadow: '0 0 18px var(--teal-glow)',
                   transition: 'opacity 0.15s',
                 }}
               >
@@ -335,8 +335,8 @@ export function Odontogram() {
                 <div style={{
                   position: 'absolute',
                   top: '110%', right: 0,
-                  background: '#fff',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--paper)',
+                  border: '1px solid var(--line)',
                   borderRadius: '10px',
                   boxShadow: '0 16px 40px rgba(0,0,0,0.12)',
                   zIndex: 100,
@@ -354,15 +354,15 @@ export function Odontogram() {
                         background: 'none', border: 'none',
                         cursor: 'pointer',
                         fontSize: '13px', fontWeight: 600,
-                        color: '#1e293b',
+                        color: 'var(--ink)',
                         display: 'flex', alignItems: 'center', gap: '10px',
                         transition: 'background 0.12s',
-                        borderBottom: '1px solid #f1f5f9',
+                        borderBottom: '1px solid var(--line)',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--paper-soft)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                     >
-                      <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: STATUS_COLORS[opt], border: '1px solid #94a3b8', flexShrink: 0 }} />
+                      <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: STATUS_COLORS[opt], border: '1px solid var(--muted)', flexShrink: 0 }} />
                       {opt}
                     </button>
                   ))}
@@ -374,8 +374,8 @@ export function Odontogram() {
           {/* Legend */}
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {STATUS_OPTIONS.map(s => (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: STATUS_COLORS[s], border: '1px solid #94a3b8' }} />
+              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, color: 'var(--muted)' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: STATUS_COLORS[s], border: '1px solid var(--muted)' }} />
                 {s}
               </div>
             ))}
@@ -390,9 +390,9 @@ export function Odontogram() {
           <div style={{
             display: 'flex', gap: '2px', justifyContent: 'center',
             position: 'relative', paddingBottom: '10px',
-            borderBottom: '3px solid #cbd5e1'
+            borderBottom: '3px solid var(--line)'
           }}>
-            <div style={{ position: 'absolute', left: '50%', top: '0', bottom: '-10px', width: '3px', background: '#cbd5e1', zIndex: 0 }} />
+            <div style={{ position: 'absolute', left: '50%', top: '0', bottom: '-10px', width: '3px', background: 'var(--line)', zIndex: 0 }} />
             <div style={{ display: 'flex', gap: '2px', paddingRight: '6px' }}>
               {UPPER_TEETH.slice(0, 8).map(renderTooth)}
             </div>
@@ -406,7 +406,7 @@ export function Odontogram() {
             display: 'flex', gap: '2px', justifyContent: 'center',
             position: 'relative', paddingTop: '10px'
           }}>
-            <div style={{ position: 'absolute', left: '50%', top: '-10px', bottom: '0', width: '3px', background: '#cbd5e1', zIndex: 0 }} />
+            <div style={{ position: 'absolute', left: '50%', top: '-10px', bottom: '0', width: '3px', background: 'var(--line)', zIndex: 0 }} />
             <div style={{ display: 'flex', gap: '2px', paddingRight: '6px' }}>
               {LOWER_TEETH.slice(0, 8).map(renderTooth)}
             </div>

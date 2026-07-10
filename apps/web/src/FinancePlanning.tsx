@@ -141,33 +141,14 @@ export function FinancePlanningOverview({
             </div>
           )
         ) : (
-          <article className="finance-empty-state actionable-empty-state">
-            <h4>Нет планов лечения</h4>
-            <div className="onboarding-checklist">
-              <div className="checklist-step active">
-                <div className="step-indicator">1</div>
-                <div className="step-content">
-                  <h5>Кликните на зуб на 3D-схеме</h5>
-                  <p>Выберите проблемный зуб на одонтограмме слева</p>
-                </div>
-              </div>
-              <div className="checklist-step">
-                <div className="step-indicator">2</div>
-                <div className="step-content">
-                  <h5>Выберите диагноз</h5>
-                  <p>Укажите патологию в радиальном меню</p>
-                </div>
-              </div>
-              <div className="checklist-step">
-                <div className="step-indicator">3</div>
-                <div className="step-content">
-                  <h5>Утвердите смету</h5>
-                  <p>Проверьте сгенерированный план и утвердите его</p>
-                </div>
-              </div>
-            </div>
+          <article className="finance-empty-state actionable-empty-state" style={{ textAlign: 'center', padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <ClipboardList size={40} style={{ color: 'var(--muted)', marginBottom: '16px' }} />
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', color: 'var(--ink)' }}>Смета пуста</h4>
+            <p style={{ margin: '0 0 20px 0', fontSize: '0.95rem', color: 'var(--muted)', maxWidth: '280px' }}>
+              Кликните по зубу слева на формуле, чтобы добавить первую услугу.
+            </p>
             <button className="primary-button" type="button" onClick={() => window.dispatchEvent(new CustomEvent('START_TOUR', { detail: 'treatment_plan' }))}>
-              Запустить интерактивный тур
+              Запустить тур обучения
             </button>
           </article>
         )}

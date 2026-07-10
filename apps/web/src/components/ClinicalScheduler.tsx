@@ -7,7 +7,9 @@ interface AppointmentSlot {
   patientName: string;
   type: 'therapy' | 'orthopedics' | 'consultation';
   hasCriticalAlert: boolean;
-  labStatus?: 'delivered' | 'in_progress' | 'none';
+  labStatus?: 'delivered' | 'in_progress' | 'none' | 'ready';
+  duration?: number;
+  alert?: string;
 }
 
 const TIME_SLOTS = [
@@ -16,7 +18,6 @@ const TIME_SLOTS = [
   '15:00','15:30','16:00','16:30','17:00','17:30',
 ];
 
-const CHAIRS = ['Chair 1', 'Chair 2', 'Chair 3'];
 
 const MOCK_APPOINTMENTS: Record<string, AppointmentSlot> = {
   'Chair 1-09:00': { id: '1', time: '09:00', patientName: 'Ivanov I.', type: 'therapy', hasCriticalAlert: true },
@@ -31,7 +32,7 @@ interface CrosshairState {
   colIdx: number;
 }
 
-export const ClinicalScheduler: React.FC<any> = ({ appointments, onSlotClick }) => {
+export const ClinicalScheduler: React.FC<any> = ({ appointments, dashboard, onSlotClick }) => {
   const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
   const [popoverSlot, setPopoverSlot] = useState<{ time: string; chair: string } | null>(null);
   const [patientSearch, setPatientSearch] = useState('');
@@ -58,6 +59,11 @@ export const ClinicalScheduler: React.FC<any> = ({ appointments, onSlotClick }) 
     setPopoverSlot({ time, chair });
   }, []);
 
+  const activeChairs = dashboard?.clinicSettings?.chairs?.filter((c: any) => c.active) || [];
+  const chairsCount = activeChairs.length || 1;
+  const isSingleChair = chairsCount === 1;
+  const rowStyle = { gridTemplateColumns: `60px repeat(${chairsCount}, 1fr)` };
+
   return (
     <div className="clinical-scheduler">
       <div className="scheduler-header">
@@ -68,55 +74,69 @@ export const ClinicalScheduler: React.FC<any> = ({ appointments, onSlotClick }) 
       {/* Crosshair grid */}
       <div className="scheduler-grid-wrap" onMouseLeave={handleCellLeave}>
         {/* Chair headers */}
-        <div className="sg-row sg-header-row">
-          <div className="sg-time-cell" />
-          {CHAIRS.map((chair, ci) => (
-            <div
-              key={chair}
-              className={`sg-chair-header ${crosshair && crosshair.colIdx === ci ? 'sg-col-highlight' : ''}`}
-            >
-              {chair}
-            </div>
-          ))}
-        </div>
+        {!isSingleChair && (
+          <div className="sg-row sg-header-row" style={rowStyle}>
+            <div className="sg-time-cell" />
+            {activeChairs.map((chair: any, ci: number) => (
+              <div
+                key={chair.id}
+                className={`sg-chair-header ${crosshair && crosshair.colIdx === ci ? 'sg-col-highlight' : ''}`}
+              >
+                {chair.name}
+              </div>
+            ))}
+          </div>
+        )}
 
         {TIME_SLOTS.map((time, ri) => (
-          <div key={time} className="sg-row">
+          <div key={time} className="sg-row" style={rowStyle}>
             {/* Time label */}
             <div className={`sg-time-cell ${crosshair && crosshair.rowIdx === ri ? 'sg-row-highlight-label' : ''}`}>
               {time}
             </div>
 
-            {CHAIRS.map((chair, ci) => {
-              const key = `${chair}-${time}`;
-              const appt = MOCK_APPOINTMENTS[key];
-              const isRowHighlighted = crosshair !== null && crosshair.rowIdx === ri;
-              const isColHighlighted = crosshair !== null && crosshair.colIdx === ci;
+            {activeChairs.map((chair: any, ci: number) => {
+              // Try to find a real appointment that matches chairId and time (HH:mm startsAt)
+              // Or fallback to mock for visuals
+              const realAppt = (appointments || []).find((a: any) => 
+                a.chairId === chair.id && 
+                a.startsAt && a.startsAt.includes("T" + time)
+              );
+              const key = `${chair.name}-${time}`;
+              const mockAppt = MOCK_APPOINTMENTS[key];
+              const appt = realAppt ? {
+                id: realAppt.id,
+                time: time,
+                chair: chair.name,
+                patientId: realAppt.patientId,
+                patientName: "Patient Name (DB)",
+                type: "Consultation",
+                duration: 30,
+                alert: null,
+                labStatus: null
+              } : mockAppt;
 
               return (
-                <div
-                  key={key}
-                  className={[
-                    'sg-cell',
-                    isRowHighlighted ? 'sg-row-highlight' : '',
-                    isColHighlighted ? 'sg-col-highlight' : '',
-                    appt ? `sg-cell--${appt.type}` : 'sg-cell--empty',
-                  ].join(' ')}
-                  onMouseEnter={() => handleCellEnter(ri, ci)}
-                  onClick={() => !appt && handleEmptyClick(time, chair)}
+                <div 
+                  key={chair.id} 
+                  className={`sg-cell ${!appt ? 'sg-cell--empty' : 'sg-cell--filled'} 
+                    ${crosshair && crosshair.rowIdx === ri && crosshair.colIdx === ci ? 'sg-cell-highlight' : ''}
+                    ${crosshair && (crosshair.rowIdx === ri || crosshair.colIdx === ci) ? 'sg-row-highlight' : ''}
+                  `}
+                  onMouseEnter={() => setCrosshair({ rowIdx: ri, colIdx: ci })}
+                  onClick={() => {
+                    if (!appt) handleEmptyClick(time, chair.id);
+                  }}
                 >
-                  {appt ? (
-                    <div className="sg-appt">
-                      <span className="sg-appt-name">{appt.patientName}</span>
-                      <span className="sg-appt-type">{appt.type}</span>
-                      <div className="sg-appt-indicators">
-                        {appt.hasCriticalAlert && <span className="sg-indicator alert pulse" title="Critical Alert">⚠️</span>}
-                        {appt.labStatus === 'in_progress' && <span className="sg-indicator lab-warning pulse" title="Lab in progress">📦</span>}
-                        {appt.labStatus === 'delivered' && <span className="sg-indicator lab-ready" title="Lab delivered">✅</span>}
+                  {appt && (
+                    <div className={`sg-appt-card sg-appt-${appt.type.toLowerCase()}`}>
+                      <div className="sg-appt-title">{appt.patientName}</div>
+                      <div className="sg-appt-meta">{appt.type}  {appt.duration}m</div>
+                      <div className="sg-appt-badges">
+                        {appt.alert && <span className="sg-badge sg-badge-alert">{appt.alert}</span>}
+                        {appt.labStatus === 'ready' && <span className="sg-badge sg-badge-lab"></span>}
                       </div>
                     </div>
-                  ) : (
-                    <span className="sg-cell-plus">+</span>
                   )}
                 </div>
               );

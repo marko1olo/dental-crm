@@ -1,0 +1,2 @@
+ALTER TABLE "organizations" ADD COLUMN "has_pediatric_mode" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "organizations" ADD COLUMN "is_omni_role" boolean DEFAULT false NOT NULL;

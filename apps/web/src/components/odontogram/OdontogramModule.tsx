@@ -6,7 +6,7 @@ import { ToothHistoryChronicle } from './ToothHistoryChronicle';
 import { Check, X, Stethoscope, AlertTriangle, History } from 'lucide-react';
 import './odontogram.css';
 
-export const OdontogramModule = ({ patientId }: { patientId: string }) => {
+export const OdontogramModule = ({ patientId, pediatricMode }: { patientId: string, pediatricMode?: boolean | undefined }) => {
   const [teethData, setTeethData] = useState<ToothData[]>([]);
   const [menuConfig, setMenuConfig] = useState<{ toothNumber: number; x: number; y: number; position: 'top' | 'bottom'; caretOffset: number } | null>(null);
   const [historyTooth, setHistoryTooth] = useState<number | null>(null);
@@ -68,6 +68,7 @@ export const OdontogramModule = ({ patientId }: { patientId: string }) => {
       <div className="odontogram-chart-area" ref={containerRef}>
         <ToothChart 
           teethData={teethData} 
+          pediatricMode={pediatricMode}
           onToothClick={(toothNumber, rect) => {
             const isUpperJaw = toothNumber < 30;
             const menuW = 254;

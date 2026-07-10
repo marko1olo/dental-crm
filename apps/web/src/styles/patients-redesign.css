@@ -278,3 +278,130 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ───────────────────────────────────────────────
+   DARK MODE OVERRIDES FOR PATIENTS REDESIGN
+   ─────────────────────────────────────────────── */
+[data-theme="dark"] .patients-panel {
+  background: var(--paper-soft) !important;
+}
+
+[data-theme="dark"] .patients-header {
+  background: var(--paper) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .patients-search-box input {
+  background: var(--paper-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] .patients-search-box input:focus {
+  background: var(--paper) !important;
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 3px var(--teal-soft) !important;
+}
+
+[data-theme="dark"] .smart-input-wrapper input {
+  background: var(--paper-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] .smart-input-wrapper input:focus {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 3px var(--teal-soft) !important;
+}
+
+[data-theme="dark"] .patient-card-item {
+  background: var(--paper) !important;
+  border-color: var(--line) !important;
+}
+
+[data-theme="dark"] .patient-card-item:hover {
+  border-color: var(--teal-dark) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .patient-card-item.selected {
+  border-color: var(--teal) !important;
+  background: var(--teal-soft) !important;
+  box-shadow: 0 0 0 1px var(--teal) !important;
+}
+
+[data-theme="dark"] .patient-card-item h3 {
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] .patient-card-item p {
+  color: var(--muted) !important;
+}
+
+[data-theme="dark"] .patient-detail-card {
+  background: var(--paper) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .patient-detail-header {
+  background: var(--paper-soft) !important;
+  border-bottom-color: var(--line) !important;
+}
+
+[data-theme="dark"] .patient-detail-header h2 {
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] .form-field label {
+  color: var(--muted) !important;
+}
+
+[data-theme="dark"] .form-field input, 
+[data-theme="dark"] .form-field textarea {
+  background: var(--paper-soft) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] .form-field input:focus, 
+[data-theme="dark"] .form-field textarea:focus {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 3px var(--teal-soft) !important;
+}
+
+[data-theme="dark"] .tag-chip {
+  background: var(--paper-soft) !important;
+  color: var(--muted) !important;
+  border-color: var(--line) !important;
+}
+
+[data-theme="dark"] .tag-chip:hover {
+  background: var(--paper-strong) !important;
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] .patient-section {
+  border-top-color: var(--line) !important;
+}
+
+[data-theme="dark"] .patient-section-title {
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] .odontogram-card {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-theme="dark"] .patient-admin-panel {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Переопределение сводки смены для темной темы */
+[data-theme="dark"] .schedule-shift-summary,
+.theme-dark .schedule-shift-summary {
+  background: var(--paper-soft) !important;
+  border-color: var(--line) !important;
+}
+

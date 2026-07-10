@@ -2361,8 +2361,8 @@ const {
     recognitionPresets?.[0]?.text ??
     "";
   const [imagingPreviewObjectUrls, setImagingPreviewObjectUrls] = useState<Record<string, string>>({});
-  const activeOrganizationId = dashboard?.clinicSettings.profile?.organizationId ?? null;
-
+  const activeOrganizationId = dashboard?.clinicSettings?.profile?.organizationId ?? null;
+  const isOmniRoleMode = dashboard?.clinicSettings?.profile?.isOmniRole ?? false;
 
 
 
@@ -2803,18 +2803,18 @@ const {
   function reconcileDashboardScopedUiSelections() {
     if (!dashboard) return;
     const activePatientIds = new Set((dashboard.patients || []).filter((patient) => patient.status === "active").map((patient) => patient.id));
-    const firstActivePatientId = dashboard.patients?.find((patient) => patient.status === "active")?.id ?? null;
+    const firstActivePatientId = dashboard?.patients?.find((patient) => patient.status === "active")?.id ?? null;
     const doctorIds = new Set(
-      dashboard?.clinicSettings.staff
+      dashboard?.clinicSettings?.staff
         .filter((member) => member.active && (member.role === "doctor" || member.role === "owner"))
         .map((member) => member.id)
     );
     const assistantIds = new Set(
-      (dashboard?.clinicSettings.staff || []).filter((member) => member.active && member.role === "assistant").map((member) => member.id)
+      (dashboard?.clinicSettings?.staff || []).filter((member) => member.active && member.role === "assistant").map((member) => member.id)
     );
-    const staffIds = new Set((dashboard?.clinicSettings.staff || []).filter((member) => member.active).map((member) => member.id));
-    const chairIds = new Set((dashboard?.clinicSettings.chairs || []).filter((chair) => chair.active).map((chair) => chair.id));
-    const protocolIds = new Set(dashboard.protocolTemplates.map((template) => template.id));
+    const staffIds = new Set((dashboard?.clinicSettings?.staff || []).filter((member) => member.active).map((member) => member.id));
+    const chairIds = new Set((dashboard?.clinicSettings?.chairs || []).filter((chair) => chair.active).map((chair) => chair.id));
+    const protocolIds = new Set(dashboard?.protocolTemplates?.map((template) => template.id));
 
     if (selectedPatientId && !activePatientIds.has(selectedPatientId)) setSelectedPatientId(firstActivePatientId);
     if (selectedProtocolId && !protocolIds.has(selectedProtocolId)) setSelectedProtocolId(null);
@@ -2873,14 +2873,14 @@ const {
         current
           ? {
               ...current,
-              clinicName: clinicSettings.profile?.clinicName ?? "",
+              clinicName: clinicSettings?.profile?.clinicName ?? "",
               clinicSettings
             }
           : current
       );
       const latestMatchesSaved = clinicProfileDraftSignature(clinicProfileDraftRef.current) === expectedSignature;
       if (latestMatchesSaved) {
-        setClinicProfileDraft(clinicProfileDraftFromProfile(clinicSettings.profile));
+        setClinicProfileDraft(clinicProfileDraftFromProfile(clinicSettings?.profile));
         setClinicProfileDirty(false);
       }
       setClinicProfileSaveState(latestMatchesSaved ? "saved" : "idle");
@@ -3009,14 +3009,14 @@ const {
     for (const [label, value] of requiredClinicDraftFields) {
       if (!value.trim()) issues.push(label);
     }
-    const activeStaff = (dashboard?.clinicSettings.staff || []).filter((member) => member.active) ?? [];
+    const activeStaff = (dashboard?.clinicSettings?.staff || []).filter((member) => member.active) ?? [];
     const activeDoctors = activeStaff.filter((member) => member.role === "doctor" || member.role === "owner");
     const activeAssistants = activeStaff.filter((member) => member.role === "assistant");
-    const activeChairs = (dashboard?.clinicSettings.chairs || []).filter((chair) => chair.active) ?? [];
+    const activeChairs = (dashboard?.clinicSettings?.chairs || []).filter((chair) => chair.active) ?? [];
     if (!activeDoctors.length) issues.push("РІСЂР°С‡ РґР»СЏ РїРµСЂРІРѕРіРѕ РїСЂРёРµРјР°");
     if (!activeDoctors.some((member) => member.canSignMedicalRecords)) issues.push("РІСЂР°С‡ СЃ РїСЂР°РІРѕРј РїРѕРґРїРёСЃРё Р­РњРљ");
     if (!activeChairs.length) issues.push("РєСЂРµСЃР»Рѕ / РєР°Р±РёРЅРµС‚");
-    if (dashboard?.clinicSettings.profile?.mode !== "solo_doctor" && !activeAssistants.length) issues.push("Р°СЃСЃРёСЃС‚РµРЅС‚");
+    if (dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" && !activeAssistants.length) issues.push("Р°СЃСЃРёСЃС‚РµРЅС‚");
     const activeAppointmentReadiness = dashboard?.activeVisit?.appointmentId
       ? dashboard.appointmentReadiness?.find((readiness) => readiness.appointmentId === dashboard?.activeVisit?.appointmentId)
       : null;
@@ -3216,7 +3216,7 @@ const {
       true,
       dismissalSavedAt,
       false,
-      dashboard?.clinicSettings.profile?.organizationId ?? null
+      dashboard?.clinicSettings?.profile?.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3255,7 +3255,7 @@ const {
       true,
       dismissalSavedAt,
       true,
-      dashboard?.clinicSettings.profile?.organizationId ?? null
+      dashboard?.clinicSettings?.profile?.organizationId ?? null
     );
     setOnboardingDismissed(true);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3292,7 +3292,7 @@ const {
       false,
       new Date().toISOString(),
       false,
-      dashboard?.clinicSettings.profile?.organizationId ?? null
+      dashboard?.clinicSettings?.profile?.organizationId ?? null
     );
     setOnboardingDismissed(false);
     setOnboardingDismissedAt(dismissal.savedAt);
@@ -3926,7 +3926,7 @@ const {
   }, [settingsAdminSecretSession]);
 
   useEffect(() => {
-    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim() ?? "";
+    const organizationId = dashboard?.clinicSettings?.profile?.organizationId?.trim() ?? "";
     if (!uiPreferencesHydrated || !organizationId || documentIssueSignatureHydratedOrganizationIdRef.current === organizationId) return;
     documentIssueSignatureHydratedOrganizationIdRef.current = organizationId;
     const scopedDraft = loadDocumentIssueSignatureDraft(organizationId);
@@ -3936,10 +3936,10 @@ const {
     setDocumentIssueSignatureMode(scopedDraft.mode);
     setDocumentIssueStaffFullName(scopedDraft.staffFullName);
     setDocumentIssueStaffRole(scopedDraft.staffRole);
-  }, [dashboard?.clinicSettings.profile?.organizationId, uiPreferencesHydrated]);
+  }, [dashboard?.clinicSettings?.profile?.organizationId, uiPreferencesHydrated]);
 
   useEffect(() => {
-    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim() ?? "";
+    const organizationId = dashboard?.clinicSettings?.profile?.organizationId?.trim() ?? "";
     if (!uiPreferencesHydrated || !organizationId || onboardingDismissalHydratedOrganizationIdRef.current === organizationId) return;
     onboardingDismissalHydratedOrganizationIdRef.current = organizationId;
     const scopedDismissal = loadOnboardingDismissalState(organizationId);
@@ -3950,7 +3950,7 @@ const {
     setOnboardingDismissedAt(scopedDismissal.savedAt);
     setOnboardingDraftMode(scopedDismissal.dismissed ? scopedDismissal.draftMode : false);
     if (!scopedDismissal.dismissed) setOnboardingStep("intro");
-  }, [dashboard?.clinicSettings.profile?.organizationId, onboardingDismissedAt, uiPreferencesHydrated]);
+  }, [dashboard?.clinicSettings?.profile?.organizationId, onboardingDismissedAt, uiPreferencesHydrated]);
 
   useEffect(() => {
     if (!uiPreferencesHydrated) return undefined;
@@ -4074,7 +4074,7 @@ const {
   }, []);
 
   const imagingPreviewWorkset = useMemo(() => { console.log("eval imagingPreviewWorkset", JSON.stringify(dashboard?.clinicSettings));
-    if (currentView !== "imaging" || !dashboard?.imagingStudies.length) return [];
+    if (currentView !== "imaging" || !dashboard?.imagingStudies?.length) return [];
     const activeStudies = (dashboard.imagingStudies || []).filter((study) => study.patientId === dashboard?.activeVisit?.patientId)
       .sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
     const visibleStudies =
@@ -4227,8 +4227,8 @@ const {
 
   useEffect(() => {
     if (!dashboard || clinicProfileDraftHydratedRef.current) return;
-    if (dashboard.clinicSettings.profile) {
-      setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard.clinicSettings.profile));
+    if (dashboard?.clinicSettings?.profile) {
+      setClinicProfileDraft(clinicProfileDraftFromProfile(dashboard?.clinicSettings?.profile));
     } else {
       setClinicProfileDraft(emptyClinicProfileDraft);
     }
@@ -4240,7 +4240,7 @@ const {
     if (!dashboard) return;
     setStaffScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard?.clinicSettings.staff.forEach((member) => {
+      dashboard?.clinicSettings?.staff.forEach((member) => {
         next[member.id] = current[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
       });
       return next;
@@ -4251,7 +4251,7 @@ const {
     if (!dashboard) return;
     setChairScheduleDrafts((current: any) => {
       const next: Record<string, StaffScheduleDraft> = {};
-      dashboard?.clinicSettings.chairs.forEach((chair) => {
+      dashboard?.clinicSettings?.chairs.forEach((chair) => {
         next[chair.id] = current[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
       });
       return next;
@@ -4261,7 +4261,7 @@ const {
   useEffect(() => {
     if (!dashboard) return;
     setAppointmentScheduleDrafts((current: any) => {
-      return dashboard.appointments.reduce((next: Record<string, AppointmentScheduleDraft>, appointment) => {
+      return (dashboard?.appointments ?? []).reduce((next: Record<string, AppointmentScheduleDraft>, appointment) => {
         next[appointment.id] = current[appointment.id] ?? appointmentScheduleDraftFromAppointment(appointment);
         return next;
       }, {});
@@ -4447,7 +4447,7 @@ const {
     telegramOutboxTemplateFilter,
     telegramModeDraft,
     telegramBotConfigId,
-    dashboard?.clinicSettings.profile?.organizationId
+    dashboard?.clinicSettings?.profile?.organizationId
   ]);
 
   useEffect(() => {
@@ -4657,7 +4657,7 @@ const {
         if (scheduleChairFilterId && appointment.chairId !== scheduleChairFilterId) return false;
         if (scheduleStatusFilter !== "all" && appointment.status !== scheduleStatusFilter) return false;
         if (scheduleDateFilter) {
-          const localAppointmentDate = toDateTimeLocalValue(appointment.startsAt, dashboard?.clinicSettings.profile?.timezone).slice(0, 10);
+          const localAppointmentDate = toDateTimeLocalValue(appointment.startsAt, dashboard?.clinicSettings?.profile?.timezone).slice(0, 10);
           if (localAppointmentDate !== scheduleDateFilter) return false;
         }
         return true;
@@ -4669,7 +4669,7 @@ const {
     if (!dashboard) return null;
     return (
       findPatient(dashboard.patients, dashboard?.activeVisit?.patientId) ??
-      dashboard.patients?.find((patient) => patient.status === "active") ??
+      dashboard?.patients?.find((patient) => patient.status === "active") ??
       null
     );
   }, [dashboard]);
@@ -4677,11 +4677,11 @@ const {
   useEffect(() => {
     if (!dashboard) return;
     setSelectedPatientId((current: any) =>
-      current && dashboard.patients.some((patient) => patient.id === current)
+      current && (dashboard?.patients ?? []).some((patient) => patient.id === current)
         ? current
         : activePatient?.id ?? null
     );
-  }, [activePatient?.id, dashboard?.patients.length]);
+  }, [activePatient?.id, dashboard?.patients?.length]);
 
   const selectedPatient = useMemo(() => {
     if (!dashboard) return null;
@@ -4766,11 +4766,11 @@ const {
 
   const activeDoctor = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.staff?.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
+    return dashboard?.clinicSettings?.staff?.find((member) => member.id === activeAppointment.doctorUserId && member.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const telegramLinkStaffOptions = useMemo(
-    () => (dashboard?.clinicSettings.staff || []).filter((member) => member.active) ?? [],
+    () => (dashboard?.clinicSettings?.staff || []).filter((member) => member.active) ?? [],
     [dashboard]
   );
 
@@ -4814,17 +4814,17 @@ const {
     if (subjectType === "patient") {
       return dashboard?.patients?.find((patient) => patient.id === subjectId)?.fullName ?? "РџР°С†РёРµРЅС‚";
     }
-    return dashboard?.clinicSettings.staff?.find((member) => member.id === subjectId)?.fullName ?? "РЎРѕС‚СЂСѓРґРЅРёРє";
+    return dashboard?.clinicSettings?.staff?.find((member) => member.id === subjectId)?.fullName ?? "РЎРѕС‚СЂСѓРґРЅРёРє";
   }
 
   const activeChair = useMemo(() => {
     if (!dashboard || !activeAppointment) return null;
-    return dashboard?.clinicSettings.chairs?.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
+    return dashboard?.clinicSettings?.chairs?.find((chair) => chair.id === activeAppointment.chairId && chair.active) ?? null;
   }, [activeAppointment, dashboard]);
 
   const patientInsightById = useMemo(() => {
     if (!dashboard) return new Map<string, Dashboard["patientInsights"][number]>();
-    return new Map(dashboard.patientInsights.map((insight) => [insight.patientId, insight]));
+    return new Map((dashboard?.patientInsights ?? []).map((insight) => [insight.patientId, insight]));
   }, [dashboard]);
 
   const activePatientInsight = activePatient ? patientInsightById.get(activePatient.id) ?? null : null;
@@ -4833,7 +4833,7 @@ const {
 
   const appointmentReadinessById = useMemo(() => {
     if (!dashboard) return new Map<string, Dashboard["appointmentReadiness"][number]>();
-    return new Map(dashboard.appointmentReadiness.map((readiness) => [readiness.appointmentId, readiness]));
+    return new Map((dashboard?.appointmentReadiness ?? []).map((readiness) => [readiness.appointmentId, readiness]));
   }, [dashboard]);
 
   const filteredPatients = useMemo(() => {
@@ -4914,12 +4914,12 @@ const {
 
   useEffect(() => {
     saveDocumentIssueSignatureDraft(
-      dashboard?.clinicSettings.profile?.organizationId ?? null,
+      dashboard?.clinicSettings?.profile?.organizationId ?? null,
       documentIssueSignatureMode,
       documentIssueStaffFullName,
       documentIssueStaffRole
     );
-  }, [dashboard?.clinicSettings.profile?.organizationId, documentIssueSignatureMode, documentIssueStaffFullName, documentIssueStaffRole]);
+  }, [dashboard?.clinicSettings?.profile?.organizationId, documentIssueSignatureMode, documentIssueStaffFullName, documentIssueStaffRole]);
 
   const activeIssuedPaidContracts = useMemo(() => {
     return activeDocuments
@@ -5010,13 +5010,13 @@ const {
   }, [dashboard, documentPatient?.id]);
 
   const activeVisitClinicalRuleSummary = useMemo(
-    () => clinicalRuleSummaryForUi(activeVisitClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules ?? 0),
-    [activeVisitClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules]
+    () => clinicalRuleSummaryForUi(activeVisitClinicalRuleEvaluations, dashboard?.clinicalRuleSummary?.activeRules ?? 0),
+    [activeVisitClinicalRuleEvaluations, dashboard?.clinicalRuleSummary?.activeRules]
   );
 
   const patientClinicalRuleSummary = useMemo(
-    () => clinicalRuleSummaryForUi(patientClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules ?? 0),
-    [patientClinicalRuleEvaluations, dashboard?.clinicalRuleSummary.activeRules]
+    () => clinicalRuleSummaryForUi(patientClinicalRuleEvaluations, dashboard?.clinicalRuleSummary?.activeRules ?? 0),
+    [patientClinicalRuleEvaluations, dashboard?.clinicalRuleSummary?.activeRules]
   );
 
   const activePayments = useMemo(() => {
@@ -5064,7 +5064,7 @@ const {
       unpaidDocuments
     };
   }, [activePayments, activeTreatmentPlanItems, activeUsableDocuments, dashboard, documentPatient?.id]);
-  const documentLocalPersistenceOrganizationId = dashboard?.clinicSettings.profile?.organizationId ?? null;
+  const documentLocalPersistenceOrganizationId = dashboard?.clinicSettings?.profile?.organizationId ?? null;
 
   const taxDocumentPayerOptions = useMemo(() => {
     const optionsByKey = new Map<string, { key: string; inn: string; label: string; amountRub: number; paymentCount: number }>();
@@ -6224,7 +6224,7 @@ const {
 
   const specialtiesWithTemplates = useMemo(() => {
     if (!dashboard) return [];
-    return Array.from(new Set(dashboard.protocolTemplates.map((template) => template.specialty)));
+    return Array.from(new Set(dashboard?.protocolTemplates?.map((template) => template.specialty)));
   }, [dashboard]);
 
   const visibleVisitSpecialtyFocusOptions = useMemo(() => {
@@ -6244,7 +6244,7 @@ const {
 
   const specialtyProtocolTemplates = useMemo(() => {
     if (!dashboard) return [];
-    return (dashboard.protocolTemplates || []).filter((template) => template.specialty === selectedSpecialty);
+    return (dashboard?.protocolTemplates || []).filter((template) => template.specialty === selectedSpecialty);
   }, [dashboard, selectedSpecialty]);
 
   const selectedProtocolTemplate = useMemo(() => {
@@ -6268,7 +6268,7 @@ const {
 
   const taxDocuments =
     (dashboard?.documents || []).filter((document) => documentKindMetadata[document.kind].group === "tax") ?? [];
-  const shiftWarnings = dashboard?.shiftIntelligence.scheduleWarnings ?? [];
+  const shiftWarnings = dashboard?.shiftIntelligence?.scheduleWarnings ?? [];
   const allResourceLoads = dashboard
     ? [...(dashboard?.shiftIntelligence?.doctorLoads || []), ...(dashboard?.shiftIntelligence?.assistantLoads || []), ...(dashboard?.shiftIntelligence?.chairLoads || [])]
     : [];
@@ -6710,12 +6710,12 @@ const {
         current
           ? {
               ...current,
-              clinicName: clinicSettings.profile?.clinicName ?? "",
+              clinicName: clinicSettings?.profile?.clinicName ?? "",
               clinicSettings
             }
           : current
       );
-      setClinicProfileDraft(clinicProfileDraftFromProfile(clinicSettings.profile));
+      setClinicProfileDraft(clinicProfileDraftFromProfile(clinicSettings?.profile));
       setClinicProfileDirty(false);
       setClinicProfileSaveState("saved");
       return;
@@ -6857,7 +6857,8 @@ const {
       setError(message);
       return false;
     }
-    const missing = appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode);
+    const isOmni = dashboard?.clinicSettings?.profile?.isOmniRole ?? false;
+    const missing = appointmentScheduleMissingFields(draft, isOmni, dashboard?.clinicSettings?.staff);
     if (missing.length) {
       const message = `РџРµСЂРµРґ СЃРѕС…СЂР°РЅРµРЅРёРµРј Р·Р°РїРёСЃРё: ${missing.join("; ")}.`;
       setAppointmentScheduleErrors((current) => ({ ...current, [appointmentId]: message }));
@@ -6908,7 +6909,8 @@ const {
   }
 
   function newAppointmentMissingFields(draft: AppointmentScheduleDraft): string[] {
-    return appointmentScheduleMissingFields(draft, dashboard?.clinicSettings.profile?.mode);
+    const isOmni = dashboard?.clinicSettings?.profile?.isOmniRole ?? false;
+    return appointmentScheduleMissingFields(draft, isOmni, dashboard?.clinicSettings?.staff);
   }
 
   async function createAppointmentFromDraft(): Promise<boolean> {
@@ -6930,7 +6932,7 @@ const {
     }
     setNewAppointmentSaveState("saving");
     setNewAppointmentError(null);
-    const previousIds = new Set(dashboard.appointments.map((appointment) => appointment.id));
+    const previousIds = new Set((dashboard?.appointments ?? []).map((appointment) => appointment.id));
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
@@ -10137,7 +10139,7 @@ const {
   }
 
   function paymentInvoiceBankDetailsValue(): string {
-    return paymentInvoiceBankDetails.trim() || dashboard?.clinicSettings.profile?.bankDetails?.trim() || "";
+    return paymentInvoiceBankDetails.trim() || dashboard?.clinicSettings?.profile?.bankDetails?.trim() || "";
   }
 
   function firstPaymentReceiptPayment() {
@@ -10592,9 +10594,9 @@ const {
         requiredDocumentField(paymentInvoicePaymentTerms, "СЃС‡РµС‚, СѓСЃР»РѕРІРёСЏ РѕРїР»Р°С‚С‹") ??
         requiredDocumentField(paymentInvoiceBankDetailsValue(), "СЃС‡РµС‚, СЂРµРєРІРёР·РёС‚С‹ РєР»РёРЅРёРєРё") ??
         (paymentInvoiceCashlessAllowed || paymentInvoiceCashDeskAllowed ? null : "Р’С‹Р±РµСЂРёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ СЃРїРѕСЃРѕР± РѕРїР»Р°С‚С‹.") ??
-        (paymentInvoiceRequisitesVerified ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРѕРІРµСЂРєСѓ СЂРµРєРІРёР·РёС‚РѕРІ РєР»РёРЅРёРєРё.") ??
-        (paymentInvoiceServiceScopeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ СЃРѕСЃС‚Р°РІ СѓСЃР»СѓРі СЃС‡РµС‚Р°.") ??
-        (paymentInvoiceFiscalNoticeConfirmed ? null : "РџРѕРґС‚РІРµСЂРґРёС‚Рµ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ: СЃС‡РµС‚ РЅРµ Р·Р°РјРµРЅСЏРµС‚ РєР°СЃСЃРѕРІС‹Р№ С‡РµРє.")
+        (isOmniRoleMode || paymentInvoiceRequisitesVerified ? null : "Подтвердите проверку реквизитов клиники.") ??
+        (isOmniRoleMode || paymentInvoiceServiceScopeConfirmed ? null : "Подтвердите состав услуг счета.") ??
+        (isOmniRoleMode || paymentInvoiceFiscalNoticeConfirmed ? null : "Подтвердите предупреждение: счет не заменяет кассовый чек.")
       );
     }
     if (kind === "payment_receipt") {
@@ -11807,7 +11809,7 @@ const {
       }
     } satisfies IssueDocumentInput;
     saveDocumentIssueSignatureDraft(
-      dashboard?.clinicSettings.profile?.organizationId ?? null,
+      dashboard?.clinicSettings?.profile?.organizationId ?? null,
       documentIssueSignatureMode,
       documentIssueStaffFullName,
       documentIssueStaffRole
@@ -12207,7 +12209,7 @@ const {
   }
 
   function appendTelegramRuntimeScopeParams(params: URLSearchParams): URLSearchParams {
-    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim();
+    const organizationId = dashboard?.clinicSettings?.profile?.organizationId?.trim();
     const botConfigId = telegramBotConfigId.trim();
     if (telegramModeDraft === "clinic_owned_bot" && organizationId && botConfigId) {
       params.set("organizationId", organizationId);
@@ -12239,7 +12241,7 @@ const {
   }
 
   function telegramStatusEndpoint(): string {
-    const organizationId = dashboard?.clinicSettings.profile?.organizationId?.trim();
+    const organizationId = dashboard?.clinicSettings?.profile?.organizationId?.trim();
     const botConfigId = telegramBotConfigId.trim();
     if (telegramModeDraft === "clinic_owned_bot" && organizationId && botConfigId) {
       return `/api/telegram/status/${encodeURIComponent(organizationId)}/${encodeURIComponent(botConfigId)}`;
@@ -12373,10 +12375,10 @@ const {
         method: "POST",
         headers: telegramControlPlaneHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          organizationId: dashboard?.clinicSettings.profile?.organizationId,
+          organizationId: dashboard?.clinicSettings?.profile?.organizationId,
           subjectType: telegramLinkSubjectType,
           subjectId,
-          clinicId: dashboard?.clinicSettings.profile?.organizationId,
+          clinicId: dashboard?.clinicSettings?.profile?.organizationId,
           botConfigId: telegramModeDraft === "clinic_owned_bot" ? telegramBotConfigId.trim() || undefined : undefined,
           ttlMinutes: parseTelegramLinkTtlMinutes(),
           createdByUserId: activeDoctor?.id ?? null
@@ -12748,16 +12750,16 @@ const {
 
 
   const activeWorkspaceProfile =
-    dashboard?.clinicSettings.workspaceProfiles?.find((profile) => profile.mode === dashboard?.clinicSettings.profile?.mode) ??
-    dashboard?.clinicSettings.workspaceProfiles?.[0];
+    dashboard?.clinicSettings?.workspaceProfiles?.find((profile) => profile.mode === dashboard?.clinicSettings?.profile?.mode) ??
+    dashboard?.clinicSettings?.workspaceProfiles?.[0];
   const settingsAdminSecretDomain: AdminSecretUnlockDomain = settingsTab === "telegram" ? "telegram" : "settings";
   const activeRolePolicy =
-    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === selectedWorkspaceRole) ??
-    dashboard?.clinicSettings.roleAccessPolicies?.find((policy) => policy.role === "doctor") ??
-    dashboard?.clinicSettings.roleAccessPolicies?.[0];
+    dashboard?.clinicSettings?.roleAccessPolicies?.find((policy) => policy.role === selectedWorkspaceRole) ??
+    dashboard?.clinicSettings?.roleAccessPolicies?.find((policy) => policy.role === "doctor") ??
+    dashboard?.clinicSettings?.roleAccessPolicies?.[0];
   const activeQueueRole: StaffRole = selectedWorkspaceRole === "owner" ? "manager" : selectedWorkspaceRole;
   const activeRoleQueue =
-    dashboard?.shiftIntelligence.roleQueues?.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence.roleQueues?.[0];
+    dashboard?.shiftIntelligence?.roleQueues?.find((queue) => queue.role === activeQueueRole) ?? dashboard?.shiftIntelligence?.roleQueues?.[0];
   const activeRoleWritableSections = activeRolePolicy?.canWrite ?? [];
   const activeRoleRestrictedSections = activeRolePolicy?.restricted ?? [];
   const roleRecommendedActions = (dashboard?.recommendedActions ?? []).filter(
@@ -12768,8 +12770,8 @@ const {
     (suggestion) => suggestion.ownerRole === selectedWorkspaceRole || (selectedWorkspaceRole === "owner" && suggestion.ownerRole === "manager")
   );
   const visibleScheduleSuggestions = (roleScheduleSuggestions.length ? roleScheduleSuggestions : (dashboard?.scheduleSuggestions ?? [])).slice(0, 3);
-  const legalMissingFields = dashboard ? clinicLegalMissingFields(dashboard.clinicSettings.profile) : [];
-  const legalReadinessPercent = dashboard ? clinicLegalReadinessPercent(dashboard.clinicSettings.profile) : 0;
+  const legalMissingFields = dashboard ? clinicLegalMissingFields(dashboard?.clinicSettings?.profile) : [];
+  const legalReadinessPercent = dashboard ? clinicLegalReadinessPercent(dashboard?.clinicSettings?.profile) : 0;
   const onboardingFirstAppointmentIssues = dashboard ? buildOnboardingFirstAppointmentIssues() : [];
   const onboardingDocumentReadinessIssues = dashboard ? buildOnboardingDocumentReadinessIssues() : [];
   const onboardingBlockingIssues = onboardingFirstAppointmentIssues;
@@ -13746,4 +13748,10 @@ const {
     operatorWorkflowFailureMessage
   };
 }
+
+
+
+
+
+
 

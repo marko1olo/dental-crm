@@ -2,17 +2,18 @@
    ClinicalScheduler — Crosshair Grid + Popover styles
    ────────────────────────────────────────────────────── */
 
+/* Светлая тема (по умолчанию) */
 .clinical-scheduler {
-  background: rgba(24, 24, 27, 0.92);
+  background: #ffffff;
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(63, 63, 70, 0.5);
+  border: 1px solid var(--line, #e2e8f0);
   border-radius: 16px;
-  box-shadow: var(--shadow, 0 8px 32px rgba(0,0,0,0.3));
+  box-shadow: var(--shadow, 0 8px 32px rgba(0,0,0,0.05));
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  color: #e4e4e7;
+  color: var(--ink, #1e293b);
   max-width: 100%;
   overflow: hidden;
 }
@@ -21,26 +22,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(82, 82, 91, 0.3);
+  border-bottom: 1px solid var(--line, #e2e8f0);
   padding-bottom: 16px;
 }
 
 .scheduler-header h3 {
   margin: 0;
   font-size: 1.2rem;
-  color: #f4f4f5;
-  font-weight: 400;
+  color: var(--ink, #1e293b);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .date-picker {
-  background: rgba(39, 39, 42, 0.6);
+  background: var(--paper-soft, #f8fafc);
   padding: 8px 16px;
   border-radius: 12px;
   font-size: 0.9rem;
-  border: 1px solid rgba(82, 82, 91, 0.5);
-  color: #a1a1aa;
+  border: 1px solid var(--line, #e2e8f0);
+  color: var(--muted, #64748b);
 }
 
 /* ── Grid wrap ── */
@@ -49,7 +50,7 @@
   overflow-y: auto;
   max-height: 480px;
   border-radius: 12px;
-  border: 1px solid rgba(63, 63, 70, 0.4);
+  border: 1px solid var(--line, #e2e8f0);
 }
 
 /* Each row = flex of [time label] + N chair cells */
@@ -63,8 +64,8 @@
   position: sticky;
   top: 0;
   z-index: 5;
-  background: rgba(24, 24, 27, 0.98);
-  border-bottom: 2px solid rgba(63, 63, 70, 0.6);
+  background: #ffffff;
+  border-bottom: 2px solid var(--line, #e2e8f0);
 }
 
 /* Time column */
@@ -75,9 +76,9 @@
   padding: 0 10px 0 0;
   font-family: monospace;
   font-size: 0.75rem;
-  color: #71717a;
+  color: var(--muted, #64748b);
   min-height: 44px;
-  border-right: 1px solid rgba(63, 63, 70, 0.4);
+  border-right: 1px solid var(--line, #e2e8f0);
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
 }
@@ -93,12 +94,63 @@
   text-align: center;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #a1a1aa;
+  color: var(--ink, #1e293b);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  border-right: 1px solid rgba(63, 63, 70, 0.4);
+  border-right: 1px solid var(--line, #e2e8f0);
   transition: color 0.15s, background 0.15s;
 }
+
+/* ──────────────────────────────────────────────────────
+   Темная тема (data-theme="dark" или .theme-dark)
+   ────────────────────────────────────────────────────── */
+.theme-dark .clinical-scheduler,
+[data-theme="dark"] .clinical-scheduler {
+  background: rgba(24, 24, 27, 0.92) !important;
+  border-color: rgba(63, 63, 70, 0.5) !important;
+  color: #e4e4e7 !important;
+}
+
+.theme-dark .scheduler-header,
+[data-theme="dark"] .scheduler-header {
+  border-bottom-color: rgba(82, 82, 91, 0.3) !important;
+}
+
+.theme-dark .scheduler-header h3,
+[data-theme="dark"] .scheduler-header h3 {
+  color: #f4f4f5 !important;
+}
+
+.theme-dark .date-picker,
+[data-theme="dark"] .date-picker {
+  background: rgba(39, 39, 42, 0.6) !important;
+  border-color: rgba(82, 82, 91, 0.5) !important;
+  color: #a1a1aa !important;
+}
+
+.theme-dark .scheduler-grid-wrap,
+[data-theme="dark"] .scheduler-grid-wrap {
+  border-color: rgba(63, 63, 70, 0.4) !important;
+}
+
+.theme-dark .sg-header-row,
+[data-theme="dark"] .sg-header-row {
+  background: rgba(24, 24, 27, 0.98) !important;
+  border-bottom-color: rgba(63, 63, 70, 0.6) !important;
+}
+
+.theme-dark .sg-time-cell,
+[data-theme="dark"] .sg-time-cell {
+  color: #71717a !important;
+  border-right-color: rgba(63, 63, 70, 0.4) !important;
+}
+
+.theme-dark .sg-chair-header,
+[data-theme="dark"] .sg-chair-header {
+  color: #a1a1aa !important;
+  border-right-color: rgba(63, 63, 70, 0.4) !important;
+}
+
 
 /* ── Crosshair Highlight ── */
 .sg-col-highlight {
@@ -109,8 +161,8 @@
 /* Individual cell */
 .sg-cell {
   min-height: 44px;
-  border-right: 1px solid rgba(63, 63, 70, 0.3);
-  border-bottom: 1px solid rgba(63, 63, 70, 0.2);
+  border-right: 1px solid var(--line, #e2e8f0);
+  border-bottom: 1px solid var(--line-light, #eff2f5);
   padding: 4px 6px;
   cursor: default;
   position: relative;
@@ -167,7 +219,7 @@
 .sg-appt-name {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #f4f4f5;
+  color: var(--ink, #1e293b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -175,7 +227,7 @@
 
 .sg-appt-type {
   font-size: 0.68rem;
-  color: #71717a;
+  color: var(--muted, #64748b);
   text-transform: capitalize;
 }
 
@@ -201,11 +253,11 @@
 }
 
 .sg-popover {
-  background: rgba(24, 24, 27, 0.98);
-  border: 1px solid rgba(99, 102, 241, 0.35);
+  background: #ffffff;
+  border: 1px solid var(--line, #e2e8f0);
   border-radius: 14px;
   width: 320px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.02);
   overflow: hidden;
   animation: popoverIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -220,17 +272,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(39, 39, 42, 0.8);
-  border-bottom: 1px solid rgba(63, 63, 70, 0.5);
+  background: var(--paper-soft, #f8fafc);
+  border-bottom: 1px solid var(--line, #e2e8f0);
   font-size: 0.85rem;
   font-weight: 600;
-  color: #a5b4fc;
+  color: var(--brand-600, #3b82f6);
 }
 
 .sg-popover-close {
   background: none;
   border: none;
-  color: #71717a;
+  color: var(--muted, #71717a);
   font-size: 1.4rem;
   cursor: pointer;
   line-height: 1;
@@ -238,7 +290,7 @@
   transition: color 0.15s;
 }
 
-.sg-popover-close:hover { color: #f4f4f5; }
+.sg-popover-close:hover { color: var(--ink, #1e293b); }
 
 .sg-popover-body {
   padding: 16px;
@@ -251,31 +303,31 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #71717a;
+  color: var(--muted, #71717a);
   font-weight: 600;
 }
 
 .sg-popover-search {
   width: 100%;
   box-sizing: border-box;
-  background: rgba(39, 39, 42, 0.8);
-  border: 1px solid rgba(82, 82, 91, 0.6);
+  background: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
   border-radius: 8px;
   padding: 10px 14px;
-  color: #f4f4f5;
+  color: var(--ink, #1e293b);
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .sg-popover-search:focus {
-  border-color: rgba(99, 102, 241, 0.6);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: var(--brand-500, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .sg-popover-results {
-  background: rgba(39, 39, 42, 0.6);
-  border: 1px solid rgba(63, 63, 70, 0.4);
+  background: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -284,13 +336,84 @@
   padding: 10px 14px;
   font-size: 0.85rem;
   cursor: pointer;
-  border-bottom: 1px solid rgba(63, 63, 70, 0.3);
+  border-bottom: 1px solid var(--line, #e2e8f0);
   transition: background 0.15s;
-  color: #e4e4e7;
+  color: var(--ink, #1e293b);
 }
 
 .sg-popover-result-item:last-child { border-bottom: none; }
-.sg-popover-result-item:hover { background: rgba(99, 102, 241, 0.12); color: #a5b4fc; }
+.sg-popover-result-item:hover { background: var(--brand-50, #eff6ff); color: var(--brand-600, #3b82f6); }
+
+/* ── Dark Theme Overrides for Cells and Popover ── */
+.theme-dark .sg-cell,
+[data-theme="dark"] .sg-cell {
+  border-right-color: rgba(63, 63, 70, 0.3) !important;
+  border-bottom-color: rgba(63, 63, 70, 0.2) !important;
+}
+
+.theme-dark .sg-appt-name,
+[data-theme="dark"] .sg-appt-name {
+  color: #f4f4f5 !important;
+}
+
+.theme-dark .sg-appt-type,
+[data-theme="dark"] .sg-appt-type {
+  color: #71717a !important;
+}
+
+.theme-dark .sg-popover,
+[data-theme="dark"] .sg-popover {
+  background: rgba(24, 24, 27, 0.98) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(99, 102, 241, 0.1) !important;
+}
+
+.theme-dark .sg-popover-header,
+[data-theme="dark"] .sg-popover-header {
+  background: rgba(39, 39, 42, 0.8) !important;
+  border-bottom-color: rgba(63, 63, 70, 0.5) !important;
+  color: #a5b4fc !important;
+}
+
+.theme-dark .sg-popover-close,
+[data-theme="dark"] .sg-popover-close {
+  color: #71717a !important;
+}
+
+.theme-dark .sg-popover-close:hover,
+[data-theme="dark"] .sg-popover-close:hover {
+  color: #f4f4f5 !important;
+}
+
+.theme-dark .sg-popover-label,
+[data-theme="dark"] .sg-popover-label {
+  color: #71717a !important;
+}
+
+.theme-dark .sg-popover-search,
+[data-theme="dark"] .sg-popover-search {
+  background: rgba(39, 39, 42, 0.8) !important;
+  border-color: rgba(82, 82, 91, 0.6) !important;
+  color: #f4f4f5 !important;
+}
+
+.theme-dark .sg-popover-results,
+[data-theme="dark"] .sg-popover-results {
+  background: rgba(39, 39, 42, 0.6) !important;
+  border-color: rgba(63, 63, 70, 0.4) !important;
+}
+
+.theme-dark .sg-popover-result-item,
+[data-theme="dark"] .sg-popover-result-item {
+  border-bottom-color: rgba(63, 63, 70, 0.3) !important;
+  color: #e4e4e7 !important;
+}
+
+.theme-dark .sg-popover-result-item:hover,
+[data-theme="dark"] .sg-popover-result-item:hover {
+  background: rgba(99, 102, 241, 0.12) !important;
+  color: #a5b4fc !important;
+}
 
 .sg-popover-confirm {
   width: 100%;

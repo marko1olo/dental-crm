@@ -1,6 +1,9 @@
 import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
 
 const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
+const OnboardingPreviewPage = lazy(() =>
+  import("./OnboardingPreview").then((m) => ({ default: m.OnboardingPreview }))
+);
 import { GlobalToast } from "./components/GlobalToast";
 
 
@@ -53,6 +56,10 @@ class AppShellErrorBoundary extends Component<{ children: ReactNode }, AppShellE
 }
 
 export function AppShell() {
+  // Dev-only preview route — no auth, no dashboard needed
+  const isPreview = typeof window !== "undefined" &&
+    window.location.hash === "#onboarding-preview";
+
   return (
     <AppShellErrorBoundary>
       <Suspense
@@ -63,7 +70,7 @@ export function AppShell() {
           </main>
         }
       >
-        <DentalWorkspace />
+        {isPreview ? <OnboardingPreviewPage /> : <DentalWorkspace />}
       </Suspense>
       <GlobalToast />
     </AppShellErrorBoundary>

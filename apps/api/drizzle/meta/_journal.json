@@ -218,6 +218,20 @@
       "when": 1783629652935,
       "tag": "0030_uneven_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1783633780311,
+      "tag": "0031_cute_cassandra_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1783646438914,
+      "tag": "0032_wonderful_blizzard",
+      "breakpoints": true
     }
   ]
 }

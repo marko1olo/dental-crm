@@ -1043,7 +1043,7 @@ export function VisitView(props: VisitViewProps) {
             {activePatient?.id && activeAppointment?.id && (
               <div className="flex flex-col xl:flex-row gap-6 my-6 w-full max-w-full">
                 <div className="w-full xl:w-[45%] flex-shrink-0">
-                  <OdontogramModule patientId={activePatient.id} />
+                  <OdontogramModule patientId={activePatient.id} pediatricMode={dashboard?.clinicSettings?.profile?.hasPediatricMode} />
                 </div>
                 <div className="w-full xl:w-[55%] flex-grow">
                   <VisitDiaryEditor visitId={activeAppointment.id} patientId={activePatient.id} />

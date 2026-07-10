@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { QrCode, X, Calendar, User } from "lucide-react";
+import { QrCode, X, Calendar, User, Tablet } from "lucide-react";
 import { useThemeStore } from "../store/themeStore";
 
 export function QrGatewayPanel() {
@@ -8,6 +8,14 @@ export function QrGatewayPanel() {
   const { themeMode } = useThemeStore();
   const panelRef = useRef<HTMLDivElement>(null);
   const [isDark, setIsDark] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Reactively track actual dark state any time themeMode changes or panel opens
   useEffect(() => {
@@ -41,6 +49,12 @@ export function QrGatewayPanel() {
   // Mock URLs for MVP
   const bookingUrl = "https://dente.clinic/booking?clinicId=demo";
   const loginUrl = "https://dente.clinic/portal/login?token=temp_token_8xJ2";
+  
+  const localIp = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? '192.168.1.15'
+    : window.location.hostname;
+  const portSuffix = window.location.port ? `:${window.location.port}` : '';
+  const tabletUrl = `http://${localIp}${portSuffix}`;
 
   // Inline CSS variables so this panel is 100% independent of Tailwind dark: class timing
   const panelBg = isDark
@@ -79,14 +93,34 @@ export function QrGatewayPanel() {
         <QrCode style={{ width: 18, height: 18, color: isOpen ? "#14b8a6" : "inherit" }} />
       </button>
 
+      {isOpen && isMobile && (
+        <div
+          onClick={() => setIsOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: isDark ? "rgba(0, 0, 0, 0.65)" : "rgba(15, 23, 42, 0.4)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            zIndex: 998,
+          }}
+        />
+      )}
+
       {isOpen && (
         <div style={{
-          position: "absolute",
-          right: 0,
-          top: "48px",
-          width: "300px",
+          position: isMobile ? "fixed" : "absolute",
+          right: isMobile ? "auto" : 0,
+          left: isMobile ? "50%" : "auto",
+          top: isMobile ? "50%" : "48px",
+          transform: isMobile ? "translate(-50%, -50%)" : "none",
+          width: isMobile ? "92%" : "300px",
+          maxWidth: isMobile ? "340px" : "none",
           zIndex: 999,
-          animation: "fadeInDown 0.18s ease",
+          animation: isMobile ? "zoomIn 0.2s ease" : "fadeInDown 0.18s ease",
         }}>
           <div style={{
             borderRadius: "16px",
@@ -190,6 +224,7 @@ export function QrGatewayPanel() {
               flexDirection: "column",
               alignItems: "center",
               gap: "10px",
+              borderBottom: `1px solid ${rowBorder}`,
             }}>
               <div style={{
                 display: "flex",
@@ -221,6 +256,49 @@ export function QrGatewayPanel() {
               <p style={{ fontSize: "11px", color: panelSubtext, textAlign: "center", margin: 0 }}>
                 Мгновенный доступ пациента к документам.
               </p>
+            </div>
+
+            {/* QR 3: Tablet Access */}
+            <div style={{
+              padding: "14px 16px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "10px",
+            }}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                width: "100%",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: panelText,
+              }}>
+                <Tablet style={{ width: 14, height: 14, color: "#14b8a6" }} />
+                Доступ с iPad / Планшета
+              </div>
+              <div style={{
+                padding: "10px",
+                background: "#ffffff",
+                borderRadius: "12px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                border: isDark ? "2px solid rgba(255,255,255,0.15)" : "2px solid rgba(0,0,0,0.05)",
+              }}>
+                <QRCodeSVG
+                  value={tabletUrl}
+                  size={130}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="Q"
+                />
+              </div>
+              <p style={{ fontSize: "11px", color: panelSubtext, textAlign: "center", margin: 0 }}>
+                Врач сканирует для работы с планшета.
+              </p>
+              <code style={{ fontSize: "10px", background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", padding: "2px 6px", borderRadius: "4px", color: "#14b8a6" }}>
+                {tabletUrl}
+              </code>
             </div>
 
           </div>

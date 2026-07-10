@@ -14,9 +14,38 @@ import TourEngine from './components/TourEngine';
 import HelpHUD from './components/HelpHUD';
 
 import { PatientPortal } from './components/PatientPortal';
+import { GuestLabPortal } from './GuestLabPortal';
 
 import { useAppStore } from './store/appStore';
 import { useDocumentStore } from './store/documentStore';
+import { OnboardingSetupWizard } from './components/workspace/OnboardingSetupWizard';
+import { useWorkspaceProfileStore, loadWorkspaceProfile } from './hooks/useWorkspaceProfile';
+
+function WebSocketManager() {
+  const setLabOrderStatus = useAppStore(state => state.setLabOrderStatus);
+
+  useEffect(() => {
+    const wsUrl = window.location.protocol === 'https:' 
+      ? `wss://${window.location.host}/api/ws/schedule` 
+      : `ws://${window.location.host}/api/ws/schedule`;
+      
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "LAB_ORDER_UPDATED") {
+          setLabOrderStatus(data.payload.patientId, data.payload.status);
+        }
+      } catch (e) {}
+    };
+    
+    return () => ws.close();
+  }, [setLabOrderStatus]);
+
+  return null;
+}
+
 import { useImagingStore } from "./store/imagingStore";
 import { useVisitStore } from "./store/visitStore";
 import { usePatientStore } from "./store/patientStore";
@@ -313,6 +342,7 @@ import {
   resolveMprClinicalPresetProjection
 } from "./mprClinicalStatus";
 import { postVisitCarePresets } from "./postVisitCareData";
+
 import { ComparativePlannerDashboard } from "./components/plan/ComparativePlannerDashboard";
 
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
@@ -945,6 +975,24 @@ export function App() {
         if (typeof (useDocumentStore.getState() as any).reset === 'function') (useDocumentStore.getState() as any).reset();
       };
     }, []);
+
+    const selectedPatientId = usePatientStore(s => s.selectedPatientId);
+  const workspaceProfile = useWorkspaceProfileStore();
+
+  // Load workspace feature flags once on mount
+  useEffect(() => {
+    loadWorkspaceProfile();
+  }, []);
+
+  useEffect(() => {
+      if (selectedPatientId) {
+        console.log(`[StateBleedingGuard] Patient changed to ${selectedPatientId}. Resetting clinical and billing stores`);
+        useVisitStore.getState().reset();
+        (useDocumentStore.getState() as any).reset();
+        useImagingStore.getState().reset();
+        usePatientStore.setState({ odontogramState: {} });
+      }
+    }, [selectedPatientId]);
 
   // Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
   
@@ -1904,6 +1952,15 @@ export function App() {
 
   useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
+  // Reset scroll when switching views
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const container = document.getElementById("workspace-content") || document.querySelector(".workspace");
+    if (container) {
+      container.scrollTop = 0;
+    }
+  }, [currentView]);
+
   const [resetting, setResetting] = useState(false);
 
   // --- DUAL-TIER AUTH STATE ---
@@ -2044,72 +2101,18 @@ export function App() {
 
             {/* Intro Step */}
             {onboardingStep === "intro" ? (
-              <div className="onboarding-panel" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                <div>
-                  <h3 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "8px" }}>Режим запуска приложения</h3>
-                  <p style={{ color: "#4b5563" }}>
-                    Выберите, в каком режиме вы хотите запустить CRM. Для быстрого тестирования используйте демо-режим, для реальной работы — чистый запуск.
-                  </p>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setResetting(true);
-                      await handleSelectDemoMode();
-                      setResetting(false);
-                    }}
-                    disabled={resetting}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      textAlign: "left",
-                      padding: "20px",
-                      background: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)",
-                      border: "2px solid #38bdf8",
-                      borderRadius: "12px",
-                      cursor: "pointer",
-                      transition: "transform 0.2s, box-shadow 0.2s"
-                    }}
-                  >
-                    <span style={{ fontSize: "28px", marginBottom: "12px" }}>🚀</span>
-                    <strong style={{ fontSize: "16px", color: "#0369a1", marginBottom: "6px" }}>Попробовать демо-режим</strong>
-                    <span style={{ fontSize: "13px", color: "#0c4a6e" }}>
-                      Запустить систему с готовыми демонстрационными данными (тестовые пациенты, расписание, приемы и оплаты), чтобы быстро ознакомиться с возможностями.
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setResetting(true);
-                      await handleSelectZeroMode();
-                      setResetting(false);
-                    }}
-                    disabled={resetting}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      textAlign: "left",
-                      padding: "20px",
-                      background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
-                      border: "2px solid #4ade80",
-                      borderRadius: "12px",
-                      cursor: "pointer",
-                      transition: "transform 0.2s, box-shadow 0.2s"
-                    }}
-                  >
-                    <span style={{ fontSize: "28px", marginBottom: "12px" }}>✨</span>
-                    <strong style={{ fontSize: "16px", color: "#15803d", marginBottom: "6px" }}>Начать с чистого листа</strong>
-                    <span style={{ fontSize: "13px", color: "#14532d" }}>
-                      Полностью пустая база данных для настройки клиники с нуля. Вы сможете ввести свои данные, добавить врачей и кабинеты шаг за шагом.
-                    </span>
-                  </button>
-                </div>
-              </div>
+              <OnboardingSetupWizard
+                onComplete={async () => {
+                  setResetting(true);
+                  try {
+                    await handleSelectDemoMode(); // finish onboarding UI transition
+                  } catch (e) {
+                    console.error("Failed to finish onboarding UI", e);
+                  } finally {
+                    setResetting(false);
+                  }
+                }}
+              />
             ) : null}
 
             {/* Clinic step */}
@@ -2321,7 +2324,7 @@ export function App() {
     return (
       <div style={{ backgroundColor: 'transparent', minHeight: '100vh', padding: '2rem', width: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
         <Suspense fallback={<AppLoadingState message="Загрузка..." />}>
-          <OdontogramModule patientId="00000000-0000-0000-0000-000000000001" />
+          <OdontogramModule patientId="00000000-0000-0000-0000-000000000001" pediatricMode={dashboard?.clinicSettings?.profile?.hasPediatricMode} />
         </Suspense>
       </div>
     );
@@ -2347,6 +2350,14 @@ export function App() {
     );
   }
 
+  if (window.location.hash.startsWith("#/portal/lab-order/")) {
+    return (
+      <div style={{ backgroundColor: 'var(--dente-bg-primary)', width: '100vw' }}>
+         <GuestLabPortal />
+      </div>
+    );
+  }
+
 
   if (error && !dashboard) {
     return (
@@ -2367,10 +2378,24 @@ export function App() {
     return <AppLoadingState message="Загрузка рабочей смены" />;
   }
 
+  // Show onboarding wizard on first run (after dashboard is loaded)
+  if (workspaceProfile.loaded && !workspaceProfile.onboardingCompleted) {
+    return (
+      <OnboardingSetupWizard
+        isDark={true}
+        onComplete={() => {
+          useWorkspaceProfileStore.getState().setFlag('onboardingCompleted', true);
+          loadDashboard();
+        }}
+      />
+    );
+  }
+
   return (
     <main className="app-shell">
       <TourEngine />
       <HelpHUD />
+      <WebSocketManager />
       <a className="skip-link" href="#workspace-content">
         Перейти к рабочей области
       </a>
@@ -2410,6 +2435,7 @@ export function App() {
           staffRoleLabels={staffRoleLabels}
           todayIso={dashboard.todayIso}
           onLockSession={handleLockSession}
+          isOmniRoleMode={dashboard.clinicSettings?.profile?.isOmniRole}
         />
 
         <WorkspaceContinuityStrip
@@ -2596,10 +2622,10 @@ export function App() {
                 <div className="mode-grid form-span-2" aria-label="Режим клиники">
                   {(Object.keys(clinicModeLabels) as ClinicMode[]).map((mode) => (
                     <button
-                      className={`mode-card ${dashboard.clinicSettings.profile?.mode === mode ? "active" : ""}`}
+                      className={`mode-card ${dashboard.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
                       key={mode}
                       type="button"
-                      aria-pressed={dashboard.clinicSettings.profile?.mode === mode}
+                      aria-pressed={dashboard.clinicSettings?.profile?.mode === mode}
                       onClick={() => changeClinicMode(mode)}
                     >
                       <strong>{clinicModeLabels[mode].title}</strong>
@@ -2801,7 +2827,7 @@ export function App() {
                       <p>Сразу задайте рабочие дни и часы. Изменения автосохраняются и остаются выбранными, пока вы их не поменяете.</p>
                     </div>
                     <div className="staff-list">
-                      {dashboard.clinicSettings.staff
+                      {(dashboard.clinicSettings?.staff ?? [])
                         .filter((member) => member.role === "doctor" || member.role === "assistant")
                         .map((member) => {
                           const scheduleDraft = staffScheduleDrafts[member.id] ?? staffScheduleDraftFromWorkingHours(member.workingHours ?? null);
@@ -2879,7 +2905,7 @@ export function App() {
                       <p>Кабинет может работать иначе, чем врач. Это сразу учитывается в записи и конфликтных слотах.</p>
                     </div>
                     <div className="staff-list">
-                      {dashboard.clinicSettings.chairs
+                      {(dashboard.clinicSettings?.chairs ?? [])
                         .filter((chair) => chair.active)
                         .map((chair) => {
                           const scheduleDraft = chairScheduleDrafts[chair.id] ?? staffScheduleDraftFromWorkingHours(chair.workingHours ?? null);
@@ -3395,13 +3421,13 @@ export function App() {
                 <div>
                   <h3>Проверка перед работой</h3>
                   <p>
-                    Профиль клиники: {legalReadinessPercent}%. Команда: {dashboard.clinicSettings.staff.length}. Кабинеты:{" "}
-                    {dashboard.clinicSettings.chairs.length}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
+                    Профиль клиники: {legalReadinessPercent}%. Команда: {dashboard.clinicSettings?.staff?.length ?? 0}. Кабинеты:{" "}
+                    {dashboard.clinicSettings?.chairs?.length ?? 0}. Telegram: {telegramStatus?.webhookReady ? "готов к отправке" : "нужна настройка отправки"}. Документы:{" "}
                     {documentFactoryGroups.reduce((total, group) => total + group.kinds.length, 0)} шаблонов.
                   </p>
                 </div>
                 <div className="onboarding-readiness-grid">
-                  <span>{clinicModeLabels[dashboard.clinicSettings.profile?.mode].title}</span>
+                  <span>{clinicModeLabels[dashboard.clinicSettings?.profile?.mode ?? "solo_doctor"]?.title ?? "—"}</span>
                   <span>{staffRoleLabels[selectedWorkspaceRole]}</span>
                   <span>{specialtyLabels[selectedSpecialty]}</span>
                   <span>{telegramEnabledFeaturesDraft.length} Telegram-сценариев включено</span>
@@ -4782,4 +4808,5 @@ export function App() {
     </main>
   );
 }
+
 

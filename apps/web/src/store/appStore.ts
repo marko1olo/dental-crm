@@ -12,6 +12,8 @@ interface AppStore {
   setAccessUnlockRequired: (val: any) => void;
   accessUnlockMessage: any;
   setAccessUnlockMessage: (val: any) => void;
+  labOrderStatuses: Record<string, string>;
+  setLabOrderStatus: (patientId: string, status: string) => void;
   uiLanguage: any;
   setUiLanguage: (val: any) => void;
   clinicProfileDraft: any;
@@ -230,6 +232,7 @@ export const useAppStore = create<AppStore>((set) => ({
       dashboard: null,
       accessUnlockRequired: false,
       accessUnlockMessage: "",
+      labOrderStatuses: {},
       uiLanguage: (loadUiPreferences() ?? defaultUiPreferences).uiLanguage,
       clinicProfileDraft: null,
       clinicProfileSaveState: "idle",
@@ -345,6 +348,13 @@ export const useAppStore = create<AppStore>((set) => ({
   setAccessUnlockRequired: (val) => set({ accessUnlockRequired: val }),
   accessUnlockMessage: "",
   setAccessUnlockMessage: (val) => set({ accessUnlockMessage: val }),
+  labOrderStatuses: {},
+  setLabOrderStatus: (patientId: string, status: string) => set((state: any) => ({
+    labOrderStatuses: {
+      ...state.labOrderStatuses,
+      [patientId]: status
+    }
+  })),
   uiLanguage: (loadUiPreferences() ?? defaultUiPreferences).uiLanguage,
   setUiLanguage: (val) => set({ uiLanguage: val }),
   clinicProfileDraft: null,

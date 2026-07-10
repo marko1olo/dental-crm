@@ -148,6 +148,7 @@ export interface ImagingStore {
   setIsBrowserImagingFolderPicking: (val: any | ((prev: any) => any)) => void;
   isLocalDicomOperationActive: any;
   setIsLocalDicomOperationActive: (val: any | ((prev: any) => any)) => void;
+  reset: () => void;
 }
 
 export const useImagingStore = create<ImagingStore>((set) => ({
@@ -287,4 +288,21 @@ export const useImagingStore = create<ImagingStore>((set) => ({
   setIsDicomFirstFramePreviewing: (val) => set((state) => ({ isDicomFirstFramePreviewing: typeof val === 'function' ? (val as any)(state.isDicomFirstFramePreviewing) : val })),
   setIsBrowserImagingFolderPicking: (val) => set((state) => ({ isBrowserImagingFolderPicking: typeof val === 'function' ? (val as any)(state.isBrowserImagingFolderPicking) : val })),
   setIsLocalDicomOperationActive: (val) => set((state) => ({ isLocalDicomOperationActive: typeof val === 'function' ? (val as any)(state.isLocalDicomOperationActive) : val })),
+  reset: () => set({
+    imagingImportPreview: null,
+    imagingImportCommit: null,
+    imagingFolderScan: null,
+    dicomLocalFolderDiscovery: null,
+    localImagingOrganizer: null,
+    dicomSeriesPreview: null,
+    dicomFolderSeriesScan: null,
+    dicomFolderWorkupPlan: null,
+    dicomFirstFramePreview: null,
+    selectedImagingStudyId: null,
+    imagingViewerState: defaultImagingViewerState,
+    dicomFirstFrameViewerState: defaultDicomFirstFrameViewerState,
+    imagingViewerAnnotations: [],
+    imagingViewerSession: null,
+    ctPlanningImplantPlan: null
+  })
 }));

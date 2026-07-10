@@ -965,11 +965,13 @@ import { register as registerTaxXml } from "./documents/taxXml.js";
 import { register as registerAuditFacts } from "./documents/auditFacts.js";
 import { register as registerPdf } from "./documents/pdf.js";
 import { register as registerHtml } from "./documents/html.js";
+import { register as registerSign } from "./documents/sign.js";
 
 export async function registerDocumentRoutes(app: FastifyInstance) {
   await registerCreate(app);
   await registerIssue(app);
   await registerVoid(app);
+  await registerSign(app);
   await registerTaxXml(app);
   await registerAuditFacts(app);
   await registerPdf(app);

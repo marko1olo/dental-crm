@@ -209,7 +209,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
                         <div>
                           <div className="flex items-center gap-2">
                             {item.toothNumber && (
-                              <span className="px-1.5 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-[11px] font-bold shadow-sm">
+                              <span className={`px-1.5 py-0.5 rounded-full font-mono text-[11px] font-bold shadow-sm ${item.toothNumber > 50 ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'}`}>
                                 [{item.toothNumber}]
                               </span>
                             )}

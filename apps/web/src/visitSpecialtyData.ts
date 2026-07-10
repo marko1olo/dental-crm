@@ -36,7 +36,7 @@ function firstClinicalSpecialty(specialties: DentalSpecialty[]): DentalSpecialty
 }
 
 export function inferDashboardVisitSpecialty(dashboard: Dashboard): DentalSpecialty {
-  const appointment = dashboard.appointments.find((candidate) => candidate.id === dashboard.activeVisit.appointmentId) ?? null;
+  const appointment = dashboard.appointments.find((candidate) => candidate.id === dashboard.activeVisit?.appointmentId) ?? null;
   const doctor = appointment
     ? dashboard.clinicSettings.staff.find((member) => member.id === appointment.doctorUserId && member.active) ?? null
     : null;

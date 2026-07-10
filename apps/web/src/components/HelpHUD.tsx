@@ -44,6 +44,13 @@ export default function HelpHUD() {
     };
   }, [isOpen]);
 
+  const startTour = (tourId: string) => {
+    setIsOpen(false);
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('START_TOUR', { detail: tourId }));
+    }, 150);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -78,6 +85,17 @@ export default function HelpHUD() {
                 <li key={i}>{s}</li>
               ))}
             </ul>
+          </div>
+
+          <div className="help-hud-tours" style={{ marginTop: '24px', borderTop: '1px solid var(--line)', paddingTop: '20px' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '1.05rem', color: 'var(--ink)' }}>Интерактивное обучение</h4>
+            <div className="tour-selection-grid">
+              <button className="tour-select-btn" onClick={() => startTour('schedule')}>📅 Расписание визитов</button>
+              <button className="tour-select-btn" onClick={() => startTour('patients')}>👥 Карточки пациентов</button>
+              <button className="tour-select-btn" onClick={() => startTour('tooth_chart')}>🦷 Зубная формула</button>
+              <button className="tour-select-btn" onClick={() => startTour('treatment_plan')}>📋 Планы лечения</button>
+              <button className="tour-select-btn" onClick={() => startTour('finance')}>💰 Счета и оплаты</button>
+            </div>
           </div>
         </div>
       </div>

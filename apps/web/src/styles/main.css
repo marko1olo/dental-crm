@@ -11,8 +11,9 @@
   --tooth-root-stroke: #52525b;
   
   /* Borders and lines */
-  --line: rgba(255, 255, 255, 0.1);
-  --line-strong: rgba(255, 255, 255, 0.2);
+  --line: rgba(255, 255, 255, 0.06);
+  --odontogram-border: rgba(255, 255, 255, 0.03);
+  --line-strong: rgba(255, 255, 255, 0.12);
 
   /* Vibrant Accents */
   --teal: #0d9488;
@@ -62,6 +63,7 @@
   --tooth-root-stroke: #a1a1aa;
   
   --line: rgba(0, 0, 0, 0.1);
+  --odontogram-border: var(--line);
   --line-strong: rgba(0, 0, 0, 0.2);
 
   --teal: #0d9488;
@@ -552,6 +554,11 @@ img {
 .hero-actions {
   display: flex;
   gap: 10px;
+}
+
+.top-actions button,
+.top-actions a {
+  flex-shrink: 0 !important;
 }
 
 .hero-call-guidance {
@@ -1513,27 +1520,39 @@ img {
 
 .role-focus-strip {
   align-items: center;
-  background: var(--teal-dark); color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  color: var(--paper);
+  background: linear-gradient(135deg, var(--teal-dark) 0%, rgba(20, 184, 166, 0.2) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: #fff;
   display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.86fr);
-  padding: 14px;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, auto);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.role-focus-strip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent 50%);
+  pointer-events: none;
 }
 
 .role-focus-strip > div:first-child {
-  align-items: start;
-  display: grid;
-  gap: 11px;
-  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  display: flex;
+  gap: 16px;
 }
 
 .role-focus-strip svg {
   color: var(--amber);
-  height: 24px;
-  width: 24px;
+  height: 32px;
+  width: 32px;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
 }
 
 .role-focus-strip h2,
@@ -1542,18 +1561,27 @@ img {
 }
 
 .role-focus-strip h2 {
-  color: var(--ink);
-  font-size: 20px;
-  line-height: 1.1;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .role-focus-strip p:not(.eyebrow) {
-  color: rgba(255, 255, 255, 0.76);
-  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4px;
+  font-size: 15px;
 }
 
 .role-focus-strip .eyebrow {
-  color: rgba(255, 255, 255, 0.64);
+  color: var(--teal);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  margin-bottom: 4px;
 }
 
 .role-focus-meta {
@@ -13598,9 +13626,7 @@ body {
 }
 
 .topbar h1 {
-  background: linear-gradient(135deg, var(--teal-dark), var(--teal));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--teal-dark);
   font-weight: 800;
   letter-spacing: -0.5px;
 }
@@ -13827,9 +13853,10 @@ input:focus, select:focus, textarea:focus {
     opacity: 0.8 !important;
     margin: 0 !important;
     gap: 12px !important;
+    color: var(--ink) !important;
   }
   .nav-item:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(15, 118, 110, 0.08) !important;
     opacity: 1 !important;
     transform: translateX(4px) !important;
   }
@@ -13839,6 +13866,7 @@ input:focus, select:focus, textarea:focus {
     opacity: 1 !important;
     font-weight: 600 !important;
     transform: translateX(4px) !important;
+    color: #ffffff !important;
   }
 }
 /* Mobile sidebar: bottom nav bar */
@@ -16906,3 +16934,22 @@ body, .panel, .sidebar, .topbar, .glass-panel, .chip, .nav-item, input, button, 
   color: var(--slate-500);
 }
 .theme-dark .step-content p { color: var(--slate-400); }
+
+.today-schedule-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.theme-dark .today-schedule-empty {
+  background: rgba(0, 0, 0, 0.2);
+}
+

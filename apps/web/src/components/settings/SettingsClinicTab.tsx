@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { showToast } from "../GlobalToast";
+import { WorkspaceFeaturesSelector } from "../workspace/WorkspaceFeaturesSelector";
 import type { KeyboardEvent, ChangeEvent } from "react";
 import { ShieldCheck, Plus, ExternalLink, RefreshCw, Copy, CheckCircle2, Search, CalendarDays, KeyRound } from "lucide-react";
 import { ClinicMode, StaffRole, Chair, RoleQueue, StaffMember, DentalSpecialty } from "@dental/shared";
@@ -152,6 +153,7 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
   const staffCreationRoles: StaffRole[] = ["doctor", "administrator", "assistant", "manager"];
 
   return (
+    <>
 <section className="clinic-config" aria-label="Аккаунт клиники и команда">
             <div className="clinic-config-head">
               <div>
@@ -792,5 +794,12 @@ export function SettingsClinicTab({ props, settingsTab }: { props: Record<string
               </article>
             </div>
           </section>
+
+          {/* Feature Toggles - Workspace Modules */}
+          <section id="settings-workspace-features" style={{ marginTop: 32, padding: "0 4px" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Модули и функции рабочего пространства</h3>
+            <WorkspaceFeaturesSelector />
+          </section>
+    </>
   );
 }

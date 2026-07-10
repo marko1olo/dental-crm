@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import type { ChangeEvent } from "react";
 import type { Appointment, AppointmentReadiness, Dashboard, ScheduleSuggestion } from "@dental/shared";
+import { useAppStore } from "../../store/appStore";
+import { Beaker, Clock, PackageCheck, RefreshCcw } from "lucide-react";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -64,6 +66,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
   } = props;
 
   const [chipsExpanded, setChipsExpanded] = useState(false);
+  const labOrderStatus = useAppStore(state => appointment.patientId ? state.labOrderStatuses[appointment.patientId] : undefined);
 
   const appointmentSuggestions = visibleScheduleSuggestions.filter(s => s.appointmentId === appointment.id);
   const readiness = appointmentReadinessById.get(appointment.id);
@@ -77,6 +80,29 @@ export function AppointmentCard(props: AppointmentCardProps) {
   const appointmentHandoffNoteId = `appointment-handoff-note-${appointment.id}`;
   const appointmentPatientName = patientName(dashboard.patients, appointment.patientId);
 
+  const renderLabIndicator = () => {
+    if (!labOrderStatus) return null;
+    
+    if (labOrderStatus === 'delivered') {
+      return (
+        <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-medium border border-green-200 dark:border-green-800" title="Работа доставлена из лаборатории">
+          <PackageCheck className="w-3.5 h-3.5" /> Лаба: Готово
+        </div>
+      );
+    }
+    
+    if (labOrderStatus === 'in_progress' || labOrderStatus === 'refitting') {
+      return (
+        <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-xs font-medium border border-yellow-200 dark:border-yellow-800 animate-pulse" title="Заказ в лаборатории">
+          {labOrderStatus === 'refitting' ? <RefreshCcw className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />} 
+          Лаба: В работе
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <div className="timeline-node" key={appointment.id}>
       <div className="timeline-line"></div>
@@ -88,7 +114,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
           <div className="mobile-time-badge">
             {formatTime(appointment.startsAt)} - {formatTime(appointment.endsAt)}
           </div>
-          <div className="appointment-card-header" style={{ position: 'relative' }}>
+          <div className="appointment-card-header" style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
             <div className="appointment-card-time">
               {formatTime(appointment.startsAt)}
               <span className="appointment-card-time-end">{formatTime(appointment.endsAt)}</span>
@@ -96,8 +122,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
             <span className={`appointment-card-status status-pill status-${appointment.status}`}>
               {appointmentLabels[appointment.status]}
             </span>
+            {renderLabIndicator()}
             {readiness?.state === 'ready' && (
-              <div className="lab-ready-indicator animate-pulse" title="Лабораторный заказ готов" style={{
+              <div className="lab-ready-indicator animate-pulse" title="Подготовка завершена" style={{
                 position: 'absolute',
                 top: '-10px',
                 right: '-10px',
