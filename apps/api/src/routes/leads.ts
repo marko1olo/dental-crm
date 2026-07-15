@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { crmLeads, appointments, patients, users, clinicChairs } from "../db/schema.js";
 import { requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
+import { createAppointmentInDb } from "../db/appointmentsQuery.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 const leadSchema = z.object({
@@ -116,17 +117,15 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
       const patient = resultPatient[0];
       if (!patient) throw new Error("PatientCreateFailed");
 
-      // 2. Create Appointment
-      const resultAppointment = await tx.insert(appointments).values({
-        organizationId,
+      // 2. Create Appointment via protected business logic
+      const appointment = await createAppointmentInDb(organizationId, {
         patientId: patient.id,
         doctorUserId: payload.doctorId,
         chairId: payload.chairId,
-        startsAt: new Date(payload.appointmentStart),
-        endsAt: new Date(payload.appointmentEnd),
+        startsAt: payload.appointmentStart,
+        endsAt: payload.appointmentEnd,
         status: "planned"
-      }).returning() as any;
-      const appointment = resultAppointment[0];
+      }, tx);
 
       // 3. Mark lead as booked
       await tx.update(crmLeads).set({ status: "consult_booked" }).where(and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)));
