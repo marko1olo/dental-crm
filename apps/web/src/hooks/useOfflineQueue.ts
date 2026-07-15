@@ -82,8 +82,10 @@ export function useOfflineQueue() {
             headers: item.headers,
             body: item.body
           });
-          if (res.ok || res.status >= 400) {
-            // Either succeeded or failed permanently, remove from queue
+          if (res.ok) {
+            await deleteFromQueue(item.id);
+          } else if (res.status >= 400) {
+            showToast(`Ошибка синхронизации данных (код ${res.status}). Изменения утеряны.`, "error");
             await deleteFromQueue(item.id);
           }
         } catch (e) {
