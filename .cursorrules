@@ -1,0 +1,31 @@
+# DENTE Dental CRM — Cursor & Agent Rules
+
+You are an AI coding agent working on the DENTE Dental CRM project. You MUST follow these rules to ensure stability, prevent merge conflicts in the local swarm, and match the architecture.
+
+---
+
+## 📖 MANDATORY INGESTION
+Before making any changes, you **MUST** read the modular documentation. Failing to read the docs will result in architectural violations and build failures.
+*   **Start here:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+*   **Identity & Constraints:** [AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)
+*   **System Architecture:** [ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)
+*   **Database Schema:** [DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)
+*   **Telephony & Webhooks:** [TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)
+*   **CLI & Tests:** [COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)
+*   **UI & State Management:** [UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+
+---
+
+## 🚨 CRITICAL LOCAL SWARM INSTRUCTIONS
+Multiple agents work in this directory on the same local machine in real-time.
+1.  **NO `git add .`**: Staging everything will commit unfinished code from neighboring agents. Stage files surgically: `git add apps/web/src/components/MyComponent.tsx`.
+2.  **RE-READ FILES BEFORE EDITING**: Use file viewing tools to check the live disk state of files immediately before modifying them. Neighboring agents may have edited them seconds ago.
+3.  **RUN TYPECHECKS**: You MUST run `npm run typecheck` after any TypeScript modifications. Committing code that breaks the compilation is a critical failure.
+4.  **RUN BIOME**: Keep formatting consistent. Run `npx @biomejs/biome check --write .` on modified files.
+5.  **UTF-8 ONLY**: Writing Russian text? Use the `write_to_file` tool to write files. PowerShell here-strings and inline CLI node scripts will corrupt Cyrillic characters (Mojibake).
+
+---
+
+## 🏗️ SYSTEM LOCKS
+*   **PGlite Database**: The database client connects locally to PGlite (a local filesystem-based Postgres engine in `apps/api/dente-db`). There is no network Postgres server on port 5432. Do not use connection pools or standard pg credentials.
+*   **God Context (`useAppLogic.tsx`)**: Exposes over 500 variables and functions. Any modification to its return object or deletions of exported fields will break typechecks across dozens of UI components. Be extremely surgical.

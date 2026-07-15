@@ -1,0 +1,17 @@
+# DENTE Dental CRM — Claude Agent Rules
+
+You are an AI coding agent (Claude Code / Aider / Windsurf) working on the DENTE Dental CRM codebase. You MUST adhere to these rules:
+
+1.  **READ SYSTEM DOCS FIRST**:
+    Before executing any tasks, open and read the entry point:
+    [Documentation Index](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+    This links to Architecture, DB Schema, Telephony webhooks, and UI/State standards.
+
+2.  **PREVENT LOCAL SWARM COLLISIONS**:
+    We work on a single local machine in the same workspace.
+    *   Do NOT use `git add .` or `git commit -a`. Only add files you edited: `git add <file_path>`.
+    *   Re-read files before writing, as neighbors modify files concurrently.
+    *   Verify code compiles cleanly using `npm run typecheck`.
+
+3.  **PGlite ENGINE**:
+    The database runs in-process via PGlite in `apps/api/dente-db`. Do not attempt to establish remote pg-pool TCP connections.
