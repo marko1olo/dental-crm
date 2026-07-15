@@ -683,6 +683,18 @@ export async function registerSystemRoutes(app: FastifyInstance) {
     const schema = await import("../db/schema.js");
     const { and, eq } = await import("drizzle-orm");
 
+    const allowedSyncTables = [
+      "patients",
+      "visitDiaries",
+      "toothStates",
+      "treatmentPlans",
+      "patientInvoices"
+    ];
+
+    if (!allowedSyncTables.includes(table)) {
+      return reply.code(403).send({ error: "ForbiddenTable", message: `Таблица ${table} недоступна для синхронизации.` });
+    }
+
     const dbTable = (schema as any)[table];
     if (!dbTable) {
       return reply.code(400).send({ error: "InvalidTable", message: `Table ${table} does not exist.` });

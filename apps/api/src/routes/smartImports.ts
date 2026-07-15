@@ -2211,6 +2211,18 @@ interface MigrationDiscoveryQueueItem {
   depth: number;
 }
 async function discoverLocalMigrationSources(input: MigrationLocalSourceDiscoveryRequest) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    return migrationLocalSourceDiscoveryResponseSchema.parse({
+      version: "dental-crm-migration-local-discovery-v1",
+      generatedAt: new Date().toISOString(),
+      roots: [],
+      scannedFolders: 0,
+      candidates: [],
+      warnings: ["Локальный поиск баз данных отключен в облачном режиме. Загружайте файлы через браузер или используйте локальный модуль миграции."],
+      nextAction: "Укажите путь вручную через локальный модуль миграции."
+    });
+  }
+
   const warnings = new Set<string>();
   const workstationSignals = await collectMigrationWorkstationSignals(input, warnings);
   const workstationSignalRoots = migrationRootsFromWorkstationSignals(workstationSignals);
@@ -2976,6 +2988,10 @@ function buildMigrationBridgeKit(input: {
 }
 
 function buildMigrationLocalSourceWorkup(input: MigrationLocalSourceWorkupRequest) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const routeRef = resolveMigrationSourceRoute(input.sourceRef);
   const sourceRef = routeRef.sourceRef;
   const isUrl = /^https?:\/\//i.test(sourceRef);
@@ -3502,6 +3518,10 @@ async function scanMigrationProbeDirectory(
 }
 
 async function buildMigrationLocalSourceProbe(input: MigrationLocalSourceProbeRequest) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const routeRef = resolveMigrationSourceRoute(input.sourceRef);
   const sourceRef = routeRef.sourceRef;
   const isUrl = /^https?:\/\//i.test(sourceRef);
@@ -4507,6 +4527,10 @@ function clinicLookupInputFromSmartImport(suggestion: SmartImportClinicProfileSu
 }
 
 async function buildMigrationAutopilot(orgId: string, input: MigrationAutopilotRequest) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const warnings = new Set<string>();
   const privacyWarnings = new Set<string>([
     "Автопилот сканирует только локальные источники и ограниченные заголовки; старые базы, снимки и локальные пути не отправляются в публичный поиск.",
