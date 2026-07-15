@@ -12,6 +12,8 @@ Before starting any task, read these documents to understand the architecture, d
 4. **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Mango/Zadarma Telephony webhooks, WebSocket broadcasts, Patient Portal OTP auth, and PWA setup.
 5. **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — CLI commands for building, typechecking, lints, and the full Playwright/Puppeteer smoke testing suite.
 6. **[UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — UI design policies, state management rules, and crucial constraints concerning the `useAppLogic` God Context.
+7. **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Clinical rules engine, triggers matching, prerequisite checks, and warning/blocking actions.
+8. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Payment double-posting idempotency layer and shared family wallets balance mechanics.
 
 ---
 
