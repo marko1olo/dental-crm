@@ -205,8 +205,8 @@ function normalizeStaffWorkingHours(input?: any[] | null): any[] {
   return defaults.map((fallback) => byWeekday.get(fallback.weekday) ?? fallback);
 }
 
-async function getActiveAppointments(organizationId: string) {
-  const activeApps = await db
+async function getActiveAppointments(organizationId: string, txContext: any = db) {
+  const activeApps = await txContext
     .select()
     .from(schema.appointments)
     .where(eq(schema.appointments.organizationId, organizationId));
@@ -441,7 +441,7 @@ async function assertAppointmentCanBeScheduled(
     }
   }
 
-  const activeApps = await getActiveAppointments(organizationId);
+  const activeApps = await getActiveAppointments(organizationId, tx);
   const overlapping = activeApps.find((app) => {
     if (app.id === candidate.id) return false;
     if (!scheduleBlockingStatuses.includes(app.status) || app.endsAt.getTime() < Date.now()) return false;
