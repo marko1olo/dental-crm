@@ -903,6 +903,10 @@ async function collectImagingFiles(
   options: ApiDicomScanOptions = {},
   limits: ApiDicomFolderTraversalLimits = {}
 ) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const files: string[] = [];
   const warnings: string[] = [];
   const queue = [path.resolve(root)];
@@ -2029,6 +2033,10 @@ async function buildDicomFirstFramePreview(input: {
   maxPreviewEdge: number;
   preferredFileIndex?: number | undefined;
 }, options: ApiDicomScanOptions = {}): Promise<DicomFirstFramePreviewResponse> {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles, options, {
     maxFolders: input.maxFolders,
     maxEntriesPerFolder: input.maxEntriesPerFolder
@@ -5343,6 +5351,10 @@ function shouldSkipDicomDiscoveryDirectory(directoryName: string) {
 }
 
 async function discoverLocalDicomFolders(input: DicomLocalFolderDiscoveryRequest, options: ApiDicomScanOptions = {}) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const fromManualRoot = Boolean(input.rootPaths?.length);
   const rawRoots = (input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots())
     .map((root) => path.resolve(root));
@@ -5768,6 +5780,10 @@ function buildDentalModelWorkbenchManifest(input: {
 }
 
 async function organizeLocalImagingSources(input: LocalImagingOrganizerRequest, options: ApiDicomScanOptions = {}) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const fromManualRoot = Boolean(input.rootPaths?.length);
   const rawRoots = input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots();
   const uniqueRoots = Array.from(new Set(rawRoots.map((root) => path.resolve(root))));
@@ -6028,6 +6044,10 @@ async function buildDicomFolderSeriesPreview(input: {
   maxEntriesPerFolder: number;
   maxHeaderBytes: number;
 }, options: ApiDicomScanOptions = {}) {
+  if (process.env.DENTE_ENABLE_LOCAL_MIGRATION_SCAN !== "true") {
+    throw new Error("Чтение локальной файловой системы сервера отключено в облачном режиме. Доступ запрещен.");
+  }
+
   const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles, options, {
     maxFolders: input.maxFolders,
     maxEntriesPerFolder: input.maxEntriesPerFolder
