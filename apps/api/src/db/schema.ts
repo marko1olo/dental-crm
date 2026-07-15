@@ -1341,7 +1341,7 @@ export const biAnalyticsSnapshots = pgTable('bi_analytics_snapshots', {
 });
 
 export const invoiceStatus = pgEnum('invoice_status', ['unpaid', 'partially_paid', 'paid']);
-export const ledgerPaymentMethod = pgEnum('ledger_payment_method', ['cash', 'card', 'dms', 'installment_balance']);
+export const ledgerPaymentMethod = pgEnum('ledger_payment_method', ['cash', 'card', 'dms', 'installment_balance', 'family_wallet']);
 
 export const patientInvoices = pgTable('patient_invoices', {
   id: uuid('id').primaryKey().defaultRandom(),
