@@ -4355,7 +4355,7 @@ function decryptTelegramChatTransportRef(chatTransportRef: string | null | undef
   const [version, ivRaw, tagRaw, encryptedRaw] = chatTransportRef.split(".");
   if (version !== "v1" || !ivRaw || !tagRaw || !encryptedRaw) return null;
   try {
-    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"));
+    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64url"), { authTagLength: 16 } as any);
     decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
     return Buffer.concat([decipher.update(Buffer.from(encryptedRaw, "base64url")), decipher.final()]).toString("utf8");
   } catch {
