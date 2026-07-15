@@ -165,10 +165,15 @@ export async function acceptVisitDraftInDb(organizationId: string, userId: strin
 
     // --- 3. Статус услуг 'Выполнено' & 4. Списание материалов ---
     const tItems = await tx.select().from(schema.treatmentItems).where(eq(schema.treatmentItems.visitId, visit.id));
+    
+    let totalInvoiceAmount = 0;
+
     if (tItems.length > 0) {
       await tx.update(schema.treatmentItems).set({ status: "completed" }).where(eq(schema.treatmentItems.visitId, visit.id));
       
       for (const item of tItems) {
+        totalInvoiceAmount += Number(item.priceRub) * Number(item.quantity);
+
         if (!item.serviceId) continue;
         const rules = await tx.select().from(schema.procedureMaterialRules).where(eq(schema.procedureMaterialRules.serviceId, item.serviceId));
         for (const rule of rules) {
@@ -182,18 +187,35 @@ export async function acceptVisitDraftInDb(organizationId: string, userId: strin
           }
         }
       }
+
+      // --- Выставление счета пациенту ---
+      if (totalInvoiceAmount > 0) {
+        await tx.insert(schema.patientInvoices).values({
+          organizationId,
+          patientId: visit.patientId,
+          visitId: visit.id,
+          totalAmountRub: totalInvoiceAmount.toFixed(2),
+          status: "unpaid",
+          itemsJson: JSON.stringify(tItems.map(i => ({ title: i.title, quantity: i.quantity, priceRub: i.priceRub })))
+        });
+      }
     }
 
     // --- 5. Начисление комиссии врачу ---
-    if (userId) {
-      await tx.insert(schema.doctorCommissions).values({
+    if (userId && totalInvoiceAmount > 0) {
+      const [commissionRule] = await tx.select().from(schema.doctorCommissions)
+        .where(and(eq(schema.doctorCommissions.userId, userId), eq(schema.doctorCommissions.isActive, true)))
+        .limit(1);
+      
+      const pct = commissionRule?.commissionPct ?? 30.0;
+      const commissionAmount = (totalInvoiceAmount * (pct / 100)).toFixed(2);
+
+      await tx.insert(schema.doctorPayrolls).values({
         organizationId,
-        userId: userId,
-        specialty: "universal",
-        serviceCategory: "therapy",
-        commissionPct: 30.0,
-        materialCostDeductionPct: 100.0,
-        isActive: true
+        userId,
+        visitId: visit.id,
+        amountRub: commissionAmount,
+        description: `Комиссия за прием`
       });
     }
 

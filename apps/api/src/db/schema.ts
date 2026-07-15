@@ -286,15 +286,6 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
 
-export const doctor_commissions = pgTable("doctor_commissions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-  userId: uuid("user_id").notNull().references(() => users.id),
-  specialization: text("specialization").notNull(),
-  percentage: integer("percentage"),
-  fixedRate: integer("fixed_rate"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-});
 
 export const doctor_assistants = pgTable("doctor_assistants", {
   doctorId: uuid("doctor_id").notNull().references(() => users.id),
@@ -599,6 +590,16 @@ export const drillProtocols = pgTable("drill_protocols", {
   createdByUserId: uuid("created_by_user_id").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const doctorPayrolls = pgTable("doctor_payrolls", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  visitId: uuid("visit_id").references(() => visits.id),
+  amountRub: numeric("amount_rub", { precision: 12, scale: 2 }).notNull().default("0"),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 
 export const doctorCommissions = pgTable("doctor_commissions", {
