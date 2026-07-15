@@ -4,7 +4,7 @@ import { timingSafeSecretEqual } from "./utils/timingSafeSecretEqual.js";
 import { verifyToken } from "./utils/cryptoHelper.js";
 import { eq } from "drizzle-orm";
 import { db } from "./db/client.js";
-import { organizations } from "./db/schema.js";
+import { organizations, users } from "./db/schema.js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 
 export const denteAdminSecretHeader = "x-dente-admin-secret";
@@ -37,7 +37,7 @@ export function requireAuthTokenSecret(): string {
   return secret;
 }
 
-function verifyRequestToken(token: string | undefined): Record<string, unknown> | null {
+async function verifyRequestToken(token: string | undefined): Promise<Record<string, unknown> | null> {
   if (!token) return null;
   if (process.env.NODE_ENV !== "production") {
     if (token === "fake-clinic-token" || token === "fake-staff-token") {
@@ -46,7 +46,18 @@ function verifyRequestToken(token: string | undefined): Record<string, unknown> 
   }
   const secret = configuredAuthTokenSecret();
   if (!secret) return null;
-  return verifyToken(token, secret);
+  
+  const payload = verifyToken(token, secret);
+  if (!payload) return null;
+
+  if (payload.userId) {
+    const [user] = await db.select({ isActive: users.isActive }).from(users).where(eq(users.id, payload.userId as string)).limit(1);
+    if (!user || !user.isActive) {
+      return null;
+    }
+  }
+
+  return payload;
 }
 
 function clinicalMutationsUnguardedAllowed(): boolean {
@@ -113,7 +124,7 @@ export async function resolveOrganizationId(request: FastifyRequest): Promise<st
   }
 
   if (clinicToken) {
-    const payload = verifyRequestToken(clinicToken);
+    const payload = await verifyRequestToken(clinicToken);
     if (payload?.organizationId) return payload.organizationId as string;
   }
 
@@ -123,7 +134,7 @@ export async function resolveOrganizationId(request: FastifyRequest): Promise<st
     return resolveDevelopmentDefaultOrganizationId();
   }
   if (staffToken) {
-    const payload = verifyRequestToken(staffToken);
+    const payload = await verifyRequestToken(staffToken);
     if (payload?.organizationId) return payload.organizationId as string;
   }
 
@@ -140,7 +151,7 @@ export async function resolveAuthenticatedOrganizationId(request: FastifyRequest
     return resolveDevelopmentDefaultOrganizationId();
   }
   if (clinicToken) {
-    const payload = verifyRequestToken(clinicToken);
+    const payload = await verifyRequestToken(clinicToken);
     if (payload?.organizationId) return payload.organizationId as string;
   }
 
@@ -150,7 +161,7 @@ export async function resolveAuthenticatedOrganizationId(request: FastifyRequest
     return resolveDevelopmentDefaultOrganizationId();
   }
   if (staffToken) {
-    const payload = verifyRequestToken(staffToken);
+    const payload = await verifyRequestToken(staffToken);
     if (payload?.organizationId) return payload.organizationId as string;
   }
 
@@ -177,7 +188,7 @@ export async function resolveStaffOrAdminOrganizationId(request: FastifyRequest)
   const staffHeader = request.headers["x-dente-staff-token"];
   const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
   if (staffToken) {
-    const payload = verifyRequestToken(staffToken);
+    const payload = await verifyRequestToken(staffToken);
     if (payload?.organizationId) return payload.organizationId as string;
   }
 
