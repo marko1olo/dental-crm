@@ -45,7 +45,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
       const updated = await updateLabOrderStatus(token, status);
       if (updated) {
         // Уведомляем клиентов в клинике через WebSocket
-        wsBroker.broadcast({
+        wsBroker.broadcastToOrganization(updated.organizationId, {
           type: "LAB_ORDER_UPDATED",
           payload: {
             patientId: updated.patientId,

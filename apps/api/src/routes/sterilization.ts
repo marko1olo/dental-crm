@@ -44,7 +44,7 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
       status: data.status
     }).returning();
 
-    wsBroker.broadcast({ type: "STERILIZATION_LOG_ADDED", payload: log });
+    wsBroker.broadcastToOrganization(organizationId, { type: "STERILIZATION_LOG_ADDED", payload: log });
     return log;
   });
 
@@ -70,7 +70,7 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
       .returning();
     if (!diary) return reply.code(404).send({ error: "VisitDiaryNotFound" });
 
-    wsBroker.broadcast({ type: "VISIT_DIARY_UPDATED", payload: diary });
+    wsBroker.broadcastToOrganization(organizationId, { type: "VISIT_DIARY_UPDATED", payload: diary });
     return diary;
   });
 }
