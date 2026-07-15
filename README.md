@@ -1,5 +1,8 @@
 # DENTE / Dental CRM-MIS
 
+> [!IMPORTANT]
+> **AI AGENT INSTRUCTION:** If you are an AI assistant (Cursor, Claude Code, Aider, etc.) editing this codebase, you **MUST** read the [.cursorrules](file:///C:/Clinic_MVP/dental-crm/.cursorrules) and consult the modular developer documentation at [.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) before writing any code.
+
 Working repository for DENTE, a small-clinic dental CRM/MIS intended to grow into a hosted SaaS.
 
 Current status: architecture and product discovery. HECTON-8 rules are intentionally not applied to this product.
