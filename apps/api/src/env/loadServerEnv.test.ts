@@ -1,10 +1,10 @@
-import { test, describe, afterEach, beforeEach } from 'node:test';
-import assert from 'node:assert';
-import path from 'node:path';
-import fs from 'node:fs';
-import { loadAdditionalServerEnv } from './loadServerEnv.js';
+import assert from "node:assert";
+import fs from "node:fs";
+import path from "node:path";
+import { afterEach, beforeEach, describe, test } from "node:test";
+import { loadAdditionalServerEnv } from "./loadServerEnv.js";
 
-const TEST_DIR = path.join(process.cwd(), '.test-env-dir');
+const TEST_DIR = path.join(process.cwd(), ".test-env-dir");
 
 describe('loadAdditionalServerEnv', () => {
   let originalEnv: NodeJS.ProcessEnv;

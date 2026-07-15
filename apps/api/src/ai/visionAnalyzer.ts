@@ -1,26 +1,26 @@
-import {
-  fetchWithProviderTimeout,
-  keyRetryLimit,
-  selectProviderKey,
-  recordProviderKeySuccess,
-  recordProviderKeyFailure,
-  shouldTryNextProviderKey,
-  getProviderKeyCandidates
-} from "../speech/keyPool.js";
 import sharp from "sharp";
+import {
+	fetchWithProviderTimeout,
+	getProviderKeyCandidates,
+	keyRetryLimit,
+	recordProviderKeyFailure,
+	recordProviderKeySuccess,
+	selectProviderKey,
+	shouldTryNextProviderKey,
+} from "../speech/keyPool.js";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Models & endpoints
 // ──────────────────────────────────────────────────────────────────────────────
 const GROQ_VISION_MODEL =
-  process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct";
+	process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct";
 
 const GEMINI_VISION_MODEL =
-  process.env.GEMINI_VISION_MODEL ?? "gemini-3.1-flash-lite";
+	process.env.GEMINI_VISION_MODEL ?? "gemini-3.1-flash-lite";
 
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const GEMINI_BASE_URL =
-  "https://generativelanguage.googleapis.com/v1beta/openai";
+	"https://generativelanguage.googleapis.com/v1beta/openai";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Pass-1 prompt: detailed clinical read
@@ -204,59 +204,59 @@ const PASS2_PROMPT = `Ты — главный редактор медицинс�
 type ProviderSlot = { provider: "groq" | "gemini"; model: string };
 
 async function callVisionModel(
-  slot: ProviderSlot,
-  apiKey: string,
-  prompt: string,
-  imageBase64: string,
-  extraUserText?: string,
-  timeoutMs = 40_000
+	slot: ProviderSlot,
+	apiKey: string,
+	prompt: string,
+	imageBase64: string,
+	extraUserText?: string,
+	timeoutMs = 40_000,
 ): Promise<string> {
-  const baseUrl = slot.provider === "groq" ? GROQ_BASE_URL : GEMINI_BASE_URL;
+	const baseUrl = slot.provider === "groq" ? GROQ_BASE_URL : GEMINI_BASE_URL;
 
-  const userContent: any[] = [
-    { type: "text", text: prompt },
-  ];
-  if (extraUserText) {
-    userContent.push({ type: "text", text: extraUserText });
-  }
-  userContent.push({ type: "image_url", image_url: { url: imageBase64 } });
+	const userContent: any[] = [{ type: "text", text: prompt }];
+	if (extraUserText) {
+		userContent.push({ type: "text", text: extraUserText });
+	}
+	userContent.push({ type: "image_url", image_url: { url: imageBase64 } });
 
-  const body: any = {
-    model: slot.model,
-    temperature: 0.1,
-    // Gemini via openai-compat does NOT support response_format on all models — skip it
-    ...(slot.provider === "groq" ? { response_format: { type: "json_object" } } : {}),
-    messages: [
-      { role: "user", content: userContent }
-    ]
-  };
+	const body: any = {
+		model: slot.model,
+		temperature: 0.1,
+		// Gemini via openai-compat does NOT support response_format on all models — skip it
+		...(slot.provider === "groq"
+			? { response_format: { type: "json_object" } }
+			: {}),
+		messages: [{ role: "user", content: userContent }],
+	};
 
-  const resp = await fetchWithProviderTimeout(
-    baseUrl + "/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(body)
-    },
-    timeoutMs
-  );
+	const resp = await fetchWithProviderTimeout(
+		baseUrl + "/chat/completions",
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+			body: JSON.stringify(body),
+		},
+		timeoutMs,
+	);
 
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => resp.statusText);
-    const err = new Error(`${slot.provider.toUpperCase()} ${resp.status}: ${errText}`);
-    (err as any).statusCode = resp.status;
-    throw err;
-  }
+	if (!resp.ok) {
+		const errText = await resp.text().catch(() => resp.statusText);
+		const err = new Error(
+			`${slot.provider.toUpperCase()} ${resp.status}: ${errText}`,
+		);
+		(err as any).statusCode = resp.status;
+		throw err;
+	}
 
-  const data = (await resp.json()) as any;
-  const content: string = data?.choices?.[0]?.message?.content ?? "";
-  if (!content || content.length < 20) {
-    throw new Error(`${slot.provider.toUpperCase()} returned empty content`);
-  }
-  return content;
+	const data = (await resp.json()) as any;
+	const content: string = data?.choices?.[0]?.message?.content ?? "";
+	if (!content || content.length < 20) {
+		throw new Error(`${slot.provider.toUpperCase()} returned empty content`);
+	}
+	return content;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -266,188 +266,243 @@ const GROQ_PROVIDER_ID = "groq_whisper" as const;
 const GEMINI_PROVIDER_ID = "google_speech" as const;
 
 async function runCascade(
-  slots: ProviderSlot[],
-  prompt: string,
-  imageBase64: string,
-  extraUserText?: string,
-  minLength = 80
+	slots: ProviderSlot[],
+	prompt: string,
+	imageBase64: string,
+	extraUserText?: string,
+	minLength = 80,
 ): Promise<{ text: string; slotIdx: number } | null> {
-  for (let slotIdx = 0; slotIdx < slots.length; slotIdx++) {
-    const slot = slots[slotIdx]!;
-    const providerId = slot.provider === "groq" ? GROQ_PROVIDER_ID : GEMINI_PROVIDER_ID;
-    const triedFingerprints = new Set<string>();
-    const maxAttempts = Math.max(1, keyRetryLimit(providerId));
+	for (let slotIdx = 0; slotIdx < slots.length; slotIdx++) {
+		const slot = slots[slotIdx]!;
+		const providerId =
+			slot.provider === "groq" ? GROQ_PROVIDER_ID : GEMINI_PROVIDER_ID;
+		const triedFingerprints = new Set<string>();
+		const maxAttempts = Math.max(1, keyRetryLimit(providerId));
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const candidate = selectProviderKey(providerId as any, triedFingerprints);
-      if (!candidate) break; // no more keys for this provider
+		for (let attempt = 0; attempt < maxAttempts; attempt++) {
+			const candidate = selectProviderKey(providerId as any, triedFingerprints);
+			if (!candidate) break; // no more keys for this provider
 
-      const apiKey = (candidate as any).value ?? (candidate as any).key ?? "";
-      if (!apiKey) {
-        triedFingerprints.add(candidate.fingerprint);
-        continue;
-      }
+			const apiKey = (candidate as any).value ?? (candidate as any).key ?? "";
+			if (!apiKey) {
+				triedFingerprints.add(candidate.fingerprint);
+				continue;
+			}
 
-      try {
-        console.log(`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${apiKey.slice(0, 10)}...`);
-        const text = await callVisionModel(slot, apiKey, prompt, imageBase64, extraUserText);
+			try {
+				console.log(
+					`[visionAnalyzer] Pass slot=${slotIdx} provider=${slot.provider} model=${slot.model} key=${apiKey.slice(0, 10)}...`,
+				);
+				const text = await callVisionModel(
+					slot,
+					apiKey,
+					prompt,
+					imageBase64,
+					extraUserText,
+				);
 
-        if (text.length >= minLength) {
-          recordProviderKeySuccess(providerId as any, candidate);
-          return { text, slotIdx };
-        }
-        console.warn(`[visionAnalyzer] Response too short (${text.length} chars), trying next`);
-      } catch (err: any) {
-        const statusCode: number = err?.statusCode ?? 0;
-        recordProviderKeyFailure(providerId as any, candidate, err);
-        triedFingerprints.add(candidate.fingerprint);
+				if (text.length >= minLength) {
+					recordProviderKeySuccess(providerId as any, candidate);
+					return { text, slotIdx };
+				}
+				console.warn(
+					`[visionAnalyzer] Response too short (${text.length} chars), trying next`,
+				);
+			} catch (err: any) {
+				const statusCode: number = err?.statusCode ?? 0;
+				recordProviderKeyFailure(providerId as any, candidate, err);
+				triedFingerprints.add(candidate.fingerprint);
 
-        console.warn(`[visionAnalyzer] ${slot.provider} key=${apiKey.slice(0, 10)}... failed: ${err.message}`);
+				console.warn(
+					`[visionAnalyzer] ${slot.provider} key=${apiKey.slice(0, 10)}... failed: ${err.message}`,
+				);
 
-        // For rate-limit or auth — try next key after a safety delay to avoid spamming
-        if (statusCode === 429 || statusCode === 401 || statusCode === 403) {
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          continue;
-        }
-        // For network errors — also try next key after a safety delay
-        if (!statusCode || statusCode >= 500) {
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          continue;
-        }
-        // Client errors (400, 422) — likely model/param issue, skip to next slot
-        break;
-      }
-    }
-  }
-  return null;
+				// For rate-limit or auth — try next key after a safety delay to avoid spamming
+				if (statusCode === 429 || statusCode === 401 || statusCode === 403) {
+					await new Promise((resolve) => setTimeout(resolve, 3000));
+					continue;
+				}
+				// For network errors — also try next key after a safety delay
+				if (!statusCode || statusCode >= 500) {
+					await new Promise((resolve) => setTimeout(resolve, 3000));
+					continue;
+				}
+				// Client errors (400, 422) — likely model/param issue, skip to next slot
+				break;
+			}
+		}
+	}
+	return null;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // JSON extraction helper (handles markdown fences)
 // ──────────────────────────────────────────────────────────────────────────────
 function extractJson(text: string): any {
-  // Strip <think>...</think> if present (Qwen-style)
-  const cleaned = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
+	// Strip <think>...</think> if present (Qwen-style)
+	const cleaned = text.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, "").trim();
 
-  // Try direct parse
-  try { return JSON.parse(cleaned); } catch { /* continue */ }
+	// Try direct parse
+	try {
+		return JSON.parse(cleaned);
+	} catch {
+		/* continue */
+	}
 
-  // Try to find {} block
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch { /* continue */ }
-  }
+	// Try to find {} block
+	const match = cleaned.match(/\{[\s\S]*\}/);
+	if (match) {
+		try {
+			return JSON.parse(match[0]);
+		} catch {
+			/* continue */
+		}
+	}
 
-  throw new Error("Не удалось извлечь JSON из ответа модели");
+	throw new Error("Не удалось извлечь JSON из ответа модели");
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Main export
 // ──────────────────────────────────────────────────────────────────────────────
 export async function analyzeImagingStudy(imageBase64: string): Promise<{
-  summary: string;
-  toothUpdates: Array<{
-    code: string;
-    state: string;
-    diagnosisOrFinding: string;
-    notes?: string;
-  }>;
-  _meta?: { pass1Model: string; pass2Model: string | null };
+	summary: string;
+	toothUpdates: Array<{
+		code: string;
+		state: string;
+		diagnosisOrFinding: string;
+		notes?: string;
+	}>;
+	_meta?: { pass1Model: string; pass2Model: string | null };
 }> {
-  // Check we have at least one key available
-  const groqKeys = getProviderKeyCandidates(GROQ_PROVIDER_ID as any);
-  const geminiKeys = getProviderKeyCandidates(GEMINI_PROVIDER_ID as any);
+	// Check we have at least one key available
+	const groqKeys = getProviderKeyCandidates(GROQ_PROVIDER_ID as any);
+	const geminiKeys = getProviderKeyCandidates(GEMINI_PROVIDER_ID as any);
 
-  if (!groqKeys.length && !geminiKeys.length) {
-    throw new Error("Нет доступных ключей для AI-анализа (ни Groq, ни Gemini)");
-  }
+	if (!groqKeys.length && !geminiKeys.length) {
+		throw new Error("Нет доступных ключей для AI-анализа (ни Groq, ни Gemini)");
+	}
 
-  // ── PRE-PROCESSING: CLAHE & Unsharp Mask (matches ShadowAnalyst logic) ──
-  let processedBase64 = imageBase64;
-  try {
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    const rawBuffer = Buffer.from(base64Data, "base64");
-    const enhancedBuffer = await sharp(rawBuffer)
-      .resize({ width: 1000, height: 1000, fit: "inside", withoutEnlargement: true })
-      .clahe({ width: 8, height: 8, maxSlope: 2.0 })
-      .sharpen({ sigma: 3.0 })
-      .jpeg({ quality: 85 })
-      .toBuffer();
-    processedBase64 = `data:image/jpeg;base64,${enhancedBuffer.toString("base64")}`;
-    console.log("[visionAnalyzer] Image successfully enhanced via sharp (CLAHE + Sharpen)");
-  } catch (err) {
-    console.warn("[visionAnalyzer] Image enhancement with sharp failed, falling back to original image", err);
-  }
+	// ── PRE-PROCESSING: CLAHE & Unsharp Mask (matches ShadowAnalyst logic) ──
+	let processedBase64 = imageBase64;
+	try {
+		const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+		const rawBuffer = Buffer.from(base64Data, "base64");
+		const enhancedBuffer = await sharp(rawBuffer)
+			.resize({
+				width: 1000,
+				height: 1000,
+				fit: "inside",
+				withoutEnlargement: true,
+			})
+			.clahe({ width: 8, height: 8, maxSlope: 2.0 })
+			.sharpen({ sigma: 3.0 })
+			.jpeg({ quality: 85 })
+			.toBuffer();
+		processedBase64 = `data:image/jpeg;base64,${enhancedBuffer.toString("base64")}`;
+		console.log(
+			"[visionAnalyzer] Image successfully enhanced via sharp (CLAHE + Sharpen)",
+		);
+	} catch (err) {
+		console.warn(
+			"[visionAnalyzer] Image enhancement with sharp failed, falling back to original image",
+			err,
+		);
+	}
 
-  // ── PASS 1: Primary analysis ──────────────────────────────────────────────
-  const pass1Slots: ProviderSlot[] = [
-    { provider: "groq", model: GROQ_VISION_MODEL },
-    { provider: "gemini", model: GEMINI_VISION_MODEL }
-  ];
+	// ── PASS 1: Primary analysis ──────────────────────────────────────────────
+	const pass1Slots: ProviderSlot[] = [
+		{ provider: "groq", model: GROQ_VISION_MODEL },
+		{ provider: "gemini", model: GEMINI_VISION_MODEL },
+	];
 
-  const pass1 = await runCascade(pass1Slots, PASS1_PROMPT, processedBase64, undefined, 80);
-  if (!pass1) {
-    throw new Error("Анализ не выполнен: все AI-провайдеры недоступны или вернули пустой ответ");
-  }
+	const pass1 = await runCascade(
+		pass1Slots,
+		PASS1_PROMPT,
+		processedBase64,
+		undefined,
+		80,
+	);
+	if (!pass1) {
+		throw new Error(
+			"Анализ не выполнен: все AI-провайдеры недоступны или вернули пустой ответ",
+		);
+	}
 
-  let pass1Parsed: any;
-  try {
-    pass1Parsed = extractJson(pass1.text);
-  } catch {
-    // If JSON extraction fails, return what we have as summary
-    return {
-      summary: pass1.text.slice(0, 2000),
-      toothUpdates: [],
-      _meta: { pass1Model: pass1Slots[pass1.slotIdx]!.model, pass2Model: null }
-    };
-  }
+	let pass1Parsed: any;
+	try {
+		pass1Parsed = extractJson(pass1.text);
+	} catch {
+		// If JSON extraction fails, return what we have as summary
+		return {
+			summary: pass1.text.slice(0, 2000),
+			toothUpdates: [],
+			_meta: { pass1Model: pass1Slots[pass1.slotIdx]!.model, pass2Model: null },
+		};
+	}
 
-  const pass1ModelName = pass1Slots[pass1.slotIdx]!.model;
+	const pass1ModelName = pass1Slots[pass1.slotIdx]!.model;
 
-  // ── PASS 2: Critic pass (different model from pass1 if possible) ──────────
-  // Use the other provider for critic, or cycle to the next slot
-  const pass2Slots: ProviderSlot[] = [
-    ...pass1Slots.slice(pass1.slotIdx + 1),
-    ...pass1Slots.slice(0, pass1.slotIdx + 1)
-  ];
+	// ── PASS 2: Critic pass (different model from pass1 if possible) ──────────
+	// Use the other provider for critic, or cycle to the next slot
+	const pass2Slots: ProviderSlot[] = [
+		...pass1Slots.slice(pass1.slotIdx + 1),
+		...pass1Slots.slice(0, pass1.slotIdx + 1),
+	];
 
-  const pass1Summary = typeof pass1Parsed.summary === "string" ? pass1Parsed.summary : JSON.stringify(pass1Parsed);
-  const pass2ExtraText = `Вот первичный анализ, который нужно критически проверить и улучшить:\n\n${pass1Summary}`;
+	const pass1Summary =
+		typeof pass1Parsed.summary === "string"
+			? pass1Parsed.summary
+			: JSON.stringify(pass1Parsed);
+	const pass2ExtraText = `Вот первичный анализ, который нужно критически проверить и улучшить:\n\n${pass1Summary}`;
 
-  const pass2 = await runCascade(pass2Slots, PASS2_PROMPT, processedBase64, pass2ExtraText, 100);
+	const pass2 = await runCascade(
+		pass2Slots,
+		PASS2_PROMPT,
+		processedBase64,
+		pass2ExtraText,
+		100,
+	);
 
-  let finalResult: any = pass1Parsed;
-  let pass2ModelName: string | null = null;
+	let finalResult: any = pass1Parsed;
+	let pass2ModelName: string | null = null;
 
-  if (pass2) {
-    try {
-      const pass2Parsed = extractJson(pass2.text);
-      // Merge: prefer pass2 if it has more content
-      if (
-        pass2Parsed.toothUpdates?.length >= (pass1Parsed.toothUpdates?.length ?? 0) &&
-        (pass2Parsed.summary?.length ?? 0) >= (pass1Parsed.summary?.length ?? 0) * 0.7
-      ) {
-        finalResult = pass2Parsed;
-      }
-      pass2ModelName = pass2Slots[pass2.slotIdx]?.model ?? null;
-    } catch {
-      console.warn("[visionAnalyzer] Pass 2 JSON parse failed, using Pass 1 result");
-    }
-  }
+	if (pass2) {
+		try {
+			const pass2Parsed = extractJson(pass2.text);
+			// Merge: prefer pass2 if it has more content
+			if (
+				pass2Parsed.toothUpdates?.length >=
+					(pass1Parsed.toothUpdates?.length ?? 0) &&
+				(pass2Parsed.summary?.length ?? 0) >=
+					(pass1Parsed.summary?.length ?? 0) * 0.7
+			) {
+				finalResult = pass2Parsed;
+			}
+			pass2ModelName = pass2Slots[pass2.slotIdx]?.model ?? null;
+		} catch {
+			console.warn(
+				"[visionAnalyzer] Pass 2 JSON parse failed, using Pass 1 result",
+			);
+		}
+	}
 
-  // ── Normalise output ──────────────────────────────────────────────────────
-  const toothUpdates: any[] = Array.isArray(finalResult.toothUpdates)
-    ? finalResult.toothUpdates.map((u: any) => ({
-        code: String(u.code ?? "unknown"),
-        state: String(u.state ?? "watch"),
-        diagnosisOrFinding: String(u.diagnosisOrFinding ?? ""),
-        notes: u.notes ? String(u.notes) : undefined
-      }))
-    : [];
+	// ── Normalise output ──────────────────────────────────────────────────────
+	const toothUpdates: any[] = Array.isArray(finalResult.toothUpdates)
+		? finalResult.toothUpdates.map((u: any) => ({
+				code: String(u.code ?? "unknown"),
+				state: String(u.state ?? "watch"),
+				diagnosisOrFinding: String(u.diagnosisOrFinding ?? ""),
+				notes: u.notes ? String(u.notes) : undefined,
+			}))
+		: [];
 
-  return {
-    summary: typeof finalResult.summary === "string" ? finalResult.summary : JSON.stringify(finalResult),
-    toothUpdates,
-    _meta: { pass1Model: pass1ModelName, pass2Model: pass2ModelName }
-  };
+	return {
+		summary:
+			typeof finalResult.summary === "string"
+				? finalResult.summary
+				: JSON.stringify(finalResult),
+		toothUpdates,
+		_meta: { pass1Model: pass1ModelName, pass2Model: pass2ModelName },
+	};
 }

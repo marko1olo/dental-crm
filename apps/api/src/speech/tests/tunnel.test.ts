@@ -1,10 +1,20 @@
-import { describe, test, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert";
 import child_process from "node:child_process";
-import { describe, it, beforeEach, afterEach, mock } from "node:test";
 import cp from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
+import {
+	afterEach,
+	afterEach,
+	beforeEach,
+	beforeEach,
+	describe,
+	describe,
+	it,
+	mock,
+	mock,
+	test,
+} from "node:test";
 import { ensureSshTunnel, stopSshTunnel } from "../tunnel.js";
 
 describe("ensureSshTunnel", () => {
@@ -128,9 +138,8 @@ describe("tunnel", () => {
           if (event === "error") cb();
         return serverMock;
       }),
-      listen: mock.fn(() => {
-        callCount++;
-      }),
+      listen: mock.fn(() => 
+        callCount++;),
       close: mock.fn()
     mock.method(net, "createServer", () => serverMock);
 
@@ -196,7 +205,7 @@ describe("tunnel", () => {
     process.env.SSH_KEY_PATH = "valid-key";
     process.env.SSH_HOST = "host";
 
-    let callCount = 0;
+    const callCount = 0;
     const serverMock = {
       once: mock.fn((event: string, cb: Function) => {
         if (callCount === 0) {

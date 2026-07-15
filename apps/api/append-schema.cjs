@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require("fs");
 const schemaAddition = `
 
 export const toothStateEnum = pgEnum('tooth_state_enum', [
@@ -42,5 +42,5 @@ export const treatmentPlanItemsNew = pgTable('treatment_plan_items_new', {
   phase: integer('phase').notNull().default(1)
 });
 `;
-fs.appendFileSync('src/db/schema.ts', schemaAddition);
-console.log('Schema appended successfully.');
+fs.appendFileSync("src/db/schema.ts", schemaAddition);
+console.log("Schema appended successfully.");

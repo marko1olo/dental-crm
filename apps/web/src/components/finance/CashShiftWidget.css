@@ -1,152 +1,156 @@
 .cash-shift-container {
-  background: var(--paper-strong, rgba(24, 24, 27, 0.6));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  border-radius: 24px;
-  padding: 24px;
-  border: 1px solid var(--line, rgba(255, 255, 255, 0.05));
-  color: var(--ink, inherit);
-  position: relative;
-  box-shadow: var(--shadow-premium);
+	background: var(--paper-strong, rgba(24, 24, 27, 0.6));
+	backdrop-filter: var(--glass-blur, blur(16px));
+	border-radius: 24px;
+	padding: 24px;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.05));
+	color: var(--ink, inherit);
+	position: relative;
+	box-shadow: var(--shadow-premium);
 }
 
 .cash-shift-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 24px;
 }
 
 .cash-shift-status-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .cash-shift-status-open {
-  background: rgba(16, 185, 129, 0.15);
+	background: rgba(16, 185, 129, 0.15);
 }
 
 .cash-shift-status-closed {
-  background: rgba(239, 68, 68, 0.15);
+	background: rgba(239, 68, 68, 0.15);
 }
 
 .cash-shift-btn {
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: none;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color var(--transition-fast), transform var(--transition-fast);
+	padding: 10px 20px;
+	border-radius: 12px;
+	border: none;
+	color: #fff;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	transition:
+		background-color var(--transition-fast),
+		transform var(--transition-fast);
 }
 
 .cash-shift-btn:hover {
-  transform: translateY(-1px);
+	transform: translateY(-1px);
 }
 
 .cash-shift-btn-open {
-  background: var(--red, #ef4444);
+	background: var(--red, #ef4444);
 }
 
 .cash-shift-btn-open:hover {
-  background: #dc2626;
+	background: #dc2626;
 }
 
 .cash-shift-btn-closed {
-  background: var(--teal, #0d9488);
+	background: var(--teal, #0d9488);
 }
 
 .cash-shift-btn-closed:hover {
-  background: #0f766e;
+	background: #0f766e;
 }
 
 .cash-shift-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 24px;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-bottom: 24px;
 }
 
 @media (max-width: 640px) {
-  .cash-shift-container {
-    padding: 16px;
-  }
-  .cash-shift-grid {
-    grid-template-columns: 1fr;
-  }
+	.cash-shift-container {
+		padding: 16px;
+	}
+	.cash-shift-grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 .cash-shift-card {
-  padding: 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--line, rgba(255, 255, 255, 0.05));
-  transition: border-color var(--transition-fast);
+	padding: 16px;
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.05));
+	transition: border-color var(--transition-fast);
 }
 
 .cash-shift-card:hover {
-  border-color: var(--line-strong, rgba(255, 255, 255, 0.12));
+	border-color: var(--line-strong, rgba(255, 255, 255, 0.12));
 }
 
 [data-theme="light"] .cash-shift-card {
-  background: rgba(0, 0, 0, 0.02);
+	background: rgba(0, 0, 0, 0.02);
 }
 
 .cash-shift-actions {
-  display: flex;
-  gap: 12px;
+	display: flex;
+	gap: 12px;
 }
 
 .cash-shift-actions-btn-primary {
-  flex: 1;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--teal, #0d9488);
-  background: transparent;
-  color: var(--teal, #0d9488);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-weight: 500;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+	flex: 1;
+	padding: 12px;
+	border-radius: 12px;
+	border: 1px solid var(--teal, #0d9488);
+	background: transparent;
+	color: var(--teal, #0d9488);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-weight: 500;
+	transition:
+		background-color var(--transition-fast),
+		color var(--transition-fast);
 }
 
 .cash-shift-actions-btn-primary:hover {
-  background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
 }
 
 .cash-shift-actions-btn-icon {
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
-  background: rgba(255, 255, 255, 0.02);
-  color: inherit;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color var(--transition-fast);
+	padding: 12px;
+	border-radius: 12px;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+	background: rgba(255, 255, 255, 0.02);
+	color: inherit;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color var(--transition-fast);
 }
 
 .cash-shift-actions-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.05);
+	background: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="light"] .cash-shift-actions-btn-icon {
-  border-color: rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.02);
+	border-color: rgba(0, 0, 0, 0.1);
+	background: rgba(0, 0, 0, 0.02);
 }
 
 [data-theme="light"] .cash-shift-actions-btn-icon:hover {
-  background: rgba(0, 0, 0, 0.05);
+	background: rgba(0, 0, 0, 0.05);
 }

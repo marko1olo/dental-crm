@@ -1,82 +1,123 @@
-import { useState, useCallback, useMemo } from "react";
-import { type UiPreferences } from "@dental/shared";
+import type { UiPreferences } from "@dental/shared";
+import { useCallback, useMemo, useState } from "react";
 
 export function useAuthLogic(options: {
-  persistUiPreferences: (prefs: UiPreferences) => void;
-  currentUiPreferencesInput: () => Omit<UiPreferences, "version" | "savedAt" | "onboardingDismissed" | "onboardingDismissedAt" | "onboardingDraftMode">;
-  uiPreferencesServerReadyRef: React.MutableRefObject<boolean>;
-  saveServerUiPreferences: (prefs: UiPreferences, secret: string) => Promise<void>;
-  settingsAdminSecretSession: string;
+	persistUiPreferences: (prefs: UiPreferences) => void;
+	currentUiPreferencesInput: () => Omit<
+		UiPreferences,
+		| "version"
+		| "savedAt"
+		| "onboardingDismissed"
+		| "onboardingDismissedAt"
+		| "onboardingDraftMode"
+	>;
+	uiPreferencesServerReadyRef: React.MutableRefObject<boolean>;
+	saveServerUiPreferences: (
+		prefs: UiPreferences,
+		secret: string,
+	) => Promise<void>;
+	settingsAdminSecretSession: string;
 }) {
-  const [isOnboardingDismissed, setOnboardingDismissed] = useState(false);
-  const [isOnboarding, setIsOnboarding] = useState(true);
+	const [isOnboardingDismissed, setOnboardingDismissed] = useState(false);
+	const [isOnboarding, setIsOnboarding] = useState(true);
 
-  // Clinical secrets
-  const [clinicalAdminSecretDraft, setClinicalAdminSecretDraft] = useState("");
-  const [settingsAdminSecretDraft, setSettingsAdminSecretDraft] = useState("");
-  const [scheduleAdminSecretDraft, setScheduleAdminSecretDraft] = useState("");
-  const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("");
+	// Clinical secrets
+	const [clinicalAdminSecretDraft, setClinicalAdminSecretDraft] = useState("");
+	const [settingsAdminSecretDraft, setSettingsAdminSecretDraft] = useState("");
+	const [scheduleAdminSecretDraft, setScheduleAdminSecretDraft] = useState("");
+	const [telegramAdminSecretDraft, setTelegramAdminSecretDraft] = useState("");
 
-  const [clinicalAdminSecretSession, setClinicalAdminSecretSession] = useState("");
-  const [settingsAdminSecretSession, setSettingsAdminSecretSession] = useState("");
-  const [scheduleAdminSecretSession, setScheduleAdminSecretSession] = useState("");
-  const [telegramAdminSecretSession, setTelegramAdminSecretSession] = useState("");
+	const [clinicalAdminSecretSession, setClinicalAdminSecretSession] =
+		useState("");
+	const [settingsAdminSecretSession, setSettingsAdminSecretSession] =
+		useState("");
+	const [scheduleAdminSecretSession, setScheduleAdminSecretSession] =
+		useState("");
+	const [telegramAdminSecretSession, setTelegramAdminSecretSession] =
+		useState("");
 
-  const [accessUnlockRequired, setAccessUnlockRequired] = useState(false);
-  const [accessUnlockMessage, setAccessUnlockMessage] = useState("");
+	const [accessUnlockRequired, setAccessUnlockRequired] = useState(false);
+	const [accessUnlockMessage, setAccessUnlockMessage] = useState("");
 
-  const handleSelectDemoMode = useCallback(async () => {
-    try {
-      const dismissalSavedAt = new Date().toISOString();
-      const savedPreferences: UiPreferences = {
-        version: 1,
-        ...options.currentUiPreferencesInput(),
-        onboardingDismissed: true,
-        onboardingDismissedAt: dismissalSavedAt,
-        onboardingDraftMode: false,
-        savedAt: dismissalSavedAt
-      };
-      
-      if (options.uiPreferencesServerReadyRef.current) {
-        try {
-          await options.saveServerUiPreferences(savedPreferences, options.settingsAdminSecretSession);
-        } catch (e) {
-          console.warn("Preferences server sync failed", e);
-        }
-      }
-      options.persistUiPreferences(savedPreferences);
-      setOnboardingDismissed(true);
-      setIsOnboarding(false);
-    } catch (error) {
-      console.error(error);
-    }
-  }, [options]);
+	const handleSelectDemoMode = useCallback(async () => {
+		try {
+			const dismissalSavedAt = new Date().toISOString();
+			const savedPreferences: UiPreferences = {
+				version: 1,
+				...options.currentUiPreferencesInput(),
+				onboardingDismissed: true,
+				onboardingDismissedAt: dismissalSavedAt,
+				onboardingDraftMode: false,
+				savedAt: dismissalSavedAt,
+			};
 
-  const unlockTelegramAdminSession = useCallback((domain: string) => {
-    if (domain === "all" || domain === "clinical") setClinicalAdminSecretSession(clinicalAdminSecretDraft.trim());
-    if (domain === "all" || domain === "settings") setSettingsAdminSecretSession(settingsAdminSecretDraft.trim());
-    if (domain === "all" || domain === "schedule") setScheduleAdminSecretSession(scheduleAdminSecretDraft.trim());
-    if (domain === "all" || domain === "telegram") setTelegramAdminSecretSession(telegramAdminSecretDraft.trim());
-    setAccessUnlockRequired(false);
-  }, [clinicalAdminSecretDraft, settingsAdminSecretDraft, scheduleAdminSecretDraft, telegramAdminSecretDraft]);
+			if (options.uiPreferencesServerReadyRef.current) {
+				try {
+					await options.saveServerUiPreferences(
+						savedPreferences,
+						options.settingsAdminSecretSession,
+					);
+				} catch (e) {
+					console.warn("Preferences server sync failed", e);
+				}
+			}
+			options.persistUiPreferences(savedPreferences);
+			setOnboardingDismissed(true);
+			setIsOnboarding(false);
+		} catch (error) {
+			console.error(error);
+		}
+	}, [options]);
 
-  return {
-    isOnboardingDismissed, setOnboardingDismissed,
-    isOnboarding, setIsOnboarding,
-    handleSelectDemoMode,
+	const unlockTelegramAdminSession = useCallback(
+		(domain: string) => {
+			if (domain === "all" || domain === "clinical")
+				setClinicalAdminSecretSession(clinicalAdminSecretDraft.trim());
+			if (domain === "all" || domain === "settings")
+				setSettingsAdminSecretSession(settingsAdminSecretDraft.trim());
+			if (domain === "all" || domain === "schedule")
+				setScheduleAdminSecretSession(scheduleAdminSecretDraft.trim());
+			if (domain === "all" || domain === "telegram")
+				setTelegramAdminSecretSession(telegramAdminSecretDraft.trim());
+			setAccessUnlockRequired(false);
+		},
+		[
+			clinicalAdminSecretDraft,
+			settingsAdminSecretDraft,
+			scheduleAdminSecretDraft,
+			telegramAdminSecretDraft,
+		],
+	);
 
-    clinicalAdminSecretDraft, setClinicalAdminSecretDraft,
-    settingsAdminSecretDraft, setSettingsAdminSecretDraft,
-    scheduleAdminSecretDraft, setScheduleAdminSecretDraft,
-    telegramAdminSecretDraft, setTelegramAdminSecretDraft,
+	return {
+		isOnboardingDismissed,
+		setOnboardingDismissed,
+		isOnboarding,
+		setIsOnboarding,
+		handleSelectDemoMode,
 
-    clinicalAdminSecretSession, setClinicalAdminSecretSession,
-    settingsAdminSecretSession, setSettingsAdminSecretSession,
-    scheduleAdminSecretSession, setScheduleAdminSecretSession,
-    telegramAdminSecretSession, setTelegramAdminSecretSession,
+		clinicalAdminSecretDraft,
+		setClinicalAdminSecretDraft,
+		settingsAdminSecretDraft,
+		setSettingsAdminSecretDraft,
+		scheduleAdminSecretDraft,
+		setScheduleAdminSecretDraft,
+		telegramAdminSecretDraft,
+		setTelegramAdminSecretDraft,
 
-    accessUnlockRequired, setAccessUnlockRequired,
-    accessUnlockMessage, setAccessUnlockMessage,
-    unlockTelegramAdminSession
-  };
+		clinicalAdminSecretSession,
+		setClinicalAdminSecretSession,
+		settingsAdminSecretSession,
+		setSettingsAdminSecretSession,
+		scheduleAdminSecretSession,
+		setScheduleAdminSecretSession,
+		telegramAdminSecretSession,
+		setTelegramAdminSecretSession,
+
+		accessUnlockRequired,
+		setAccessUnlockRequired,
+		accessUnlockMessage,
+		setAccessUnlockMessage,
+		unlockTelegramAdminSession,
+	};
 }

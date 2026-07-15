@@ -1,11 +1,11 @@
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
-  out: "./drizzle",
-  dialect: "postgresql",
-  driver: "pglite",
-  dbCredentials: {
-    url: "./dente-db"
-  }
+	schema: "./src/db/schema.ts",
+	out: "./drizzle",
+	dialect: "postgresql",
+	driver: "pglite",
+	dbCredentials: {
+		url: "./dente-db",
+	},
 });

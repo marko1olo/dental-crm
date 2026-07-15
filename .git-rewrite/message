@@ -1,0 +1,3 @@
+🔒 Restrict authentication bypass to explicit non-production test environments
+
+Co-authored-by: marko1olo <96879250+marko1olo@users.noreply.github.com>

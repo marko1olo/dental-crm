@@ -1,0 +1,8 @@
+tree 1d49b1b69dca4484cd7c5eac7fd192e522fb64c9
+parent 99db530511258806f05744e2a1102cdf2a05d5e8
+author google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com> 1782059806 +0000
+committer google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com> 1782059806 +0000
+
+🔒 Restrict authentication bypass to explicit non-production test environments
+
+Co-authored-by: marko1olo <96879250+marko1olo@users.noreply.github.com>

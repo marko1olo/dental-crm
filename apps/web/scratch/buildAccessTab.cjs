@@ -1,23 +1,27 @@
-const fs = require('fs');
+const fs = require("fs");
 
-const file = 'apps/web/src/SettingsView.tsx';
-let lines = fs.readFileSync(file, 'utf8').split('\n');
+const file = "apps/web/src/SettingsView.tsx";
+const lines = fs.readFileSync(file, "utf8").split("\n");
 
-const start = lines.findIndex(line => line.includes('settingsTab === "access" ? ('));
-const nextTabStart = lines.findIndex(line => line.includes('settingsTab === "telegram" ? ('));
+const start = lines.findIndex((line) =>
+	line.includes('settingsTab === "access" ? ('),
+);
+const nextTabStart = lines.findIndex((line) =>
+	line.includes('settingsTab === "telegram" ? ('),
+);
 
 if (start === -1 || nextTabStart === -1) {
-    console.error("Could not find boundaries for access tab.");
-    process.exit(1);
+	console.error("Could not find boundaries for access tab.");
+	process.exit(1);
 }
 
 // The raw JSX
-let rawTab = lines.slice(start, nextTabStart).join('\n').trim();
+let rawTab = lines.slice(start, nextTabStart).join("\n").trim();
 if (rawTab.startsWith('{settingsTab === "access" ? (')) {
-    rawTab = rawTab.replace('{settingsTab === "access" ? (', '').trim();
+	rawTab = rawTab.replace('{settingsTab === "access" ? (', "").trim();
 }
-if (rawTab.endsWith(') : null}')) {
-    rawTab = rawTab.substring(0, rawTab.length - 9).trim();
+if (rawTab.endsWith(") : null}")) {
+	rawTab = rawTab.substring(0, rawTab.length - 9).trim();
 }
 
 // Write the new component
@@ -55,20 +59,30 @@ const componentEnd = `
 }
 `;
 
-fs.writeFileSync('apps/web/src/components/settings/SettingsAccessTab.tsx', imports + componentStart + rawTab + componentEnd, 'utf8');
+fs.writeFileSync(
+	"apps/web/src/components/settings/SettingsAccessTab.tsx",
+	imports + componentStart + rawTab + componentEnd,
+	"utf8",
+);
 
 // Update SettingsView.tsx
 const importStr = `import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";`;
-const importIndex = lines.findIndex(line => line.includes('import { SettingsClinicTab }'));
-if (importIndex !== -1 && !lines.some(l => l.includes('SettingsAccessTab'))) {
-    lines.splice(importIndex + 1, 0, importStr);
+const importIndex = lines.findIndex((line) =>
+	line.includes("import { SettingsClinicTab }"),
+);
+if (importIndex !== -1 && !lines.some((l) => l.includes("SettingsAccessTab"))) {
+	lines.splice(importIndex + 1, 0, importStr);
 }
 
-const newStart = lines.findIndex(line => line.includes('settingsTab === "access" ? ('));
-const newNextTabStart = lines.findIndex(line => line.includes('settingsTab === "telegram" ? ('));
+const newStart = lines.findIndex((line) =>
+	line.includes('settingsTab === "access" ? ('),
+);
+const newNextTabStart = lines.findIndex((line) =>
+	line.includes('settingsTab === "telegram" ? ('),
+);
 
 if (newStart !== -1 && newNextTabStart !== -1) {
-    const replacement = `          <SettingsAccessTab 
+	const replacement = `          <SettingsAccessTab 
             settingsTab={settingsTab} 
             props={{
               ...props,
@@ -79,8 +93,8 @@ if (newStart !== -1 && newNextTabStart !== -1) {
               policyAuditEventLabels
             }} 
           />`;
-    
-    lines.splice(newStart, newNextTabStart - newStart, replacement);
-    fs.writeFileSync(file, lines.join('\n'), 'utf8');
-    console.log('SettingsAccessTab extracted and SettingsView.tsx updated.');
+
+	lines.splice(newStart, newNextTabStart - newStart, replacement);
+	fs.writeFileSync(file, lines.join("\n"), "utf8");
+	console.log("SettingsAccessTab extracted and SettingsView.tsx updated.");
 }

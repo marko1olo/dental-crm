@@ -1,16 +1,27 @@
-import { fetchWithProviderTimeout, getProviderKeyPoolSummary, keyRetryLimit, selectProviderKey, recordProviderKeySuccess, recordProviderKeyFailure, shouldTryNextProviderKey } from "../speech/keyPool.js";
+import {
+	fetchWithProviderTimeout,
+	getProviderKeyPoolSummary,
+	keyRetryLimit,
+	recordProviderKeyFailure,
+	recordProviderKeySuccess,
+	selectProviderKey,
+	shouldTryNextProviderKey,
+} from "../speech/keyPool.js";
 
 export type ParserContext = "schedule" | "patient" | "visit";
 
-export async function parseDictationWithLLM(transcript: string, context: ParserContext): Promise<any> {
-  const modelName = "llama-3.3-70b-versatile";
-  const baseUrl = "https://api.groq.com/openai/v1";
-  const keyProviderId = "groq_whisper"; // Assuming this key pool has Groq keys
+export async function parseDictationWithLLM(
+	transcript: string,
+	context: ParserContext,
+): Promise<any> {
+	const modelName = "llama-3.3-70b-versatile";
+	const baseUrl = "https://api.groq.com/openai/v1";
+	const keyProviderId = "groq_whisper"; // Assuming this key pool has Groq keys
 
-  let systemPrompt = "";
+	let systemPrompt = "";
 
-  if (context === "schedule") {
-    systemPrompt = `Вы — AI-ассистент администратора стоматологии. Ваша задача — извлечь данные о записи на прием из диктовки и вернуть СТРОГО в формате JSON.
+	if (context === "schedule") {
+		systemPrompt = `Вы — AI-ассистент администратора стоматологии. Ваша задача — извлечь данные о записи на прием из диктовки и вернуть СТРОГО в формате JSON.
 Формат JSON:
 {
   "patientName": "Имя пациента",
@@ -21,8 +32,8 @@ export async function parseDictationWithLLM(transcript: string, context: ParserC
   "note": "Комментарий"
 }
 Если данных для поля нет, не добавляйте его. Для вычисления даты сегодня: ${new Date().toISOString().split("T")[0]}. Время переводи в 24ч (например, в 2 часа -> 14:00).`;
-  } else if (context === "patient") {
-    systemPrompt = `Вы — AI-ассистент администратора стоматологии. Ваша задача — извлечь данные нового пациента из диктовки и вернуть СТРОГО в формате JSON.
+	} else if (context === "patient") {
+		systemPrompt = `Вы — AI-ассистент администратора стоматологии. Ваша задача — извлечь данные нового пациента из диктовки и вернуть СТРОГО в формате JSON.
 Формат JSON:
 {
   "fullName": "ФИО (с заглавной буквы)",
@@ -32,8 +43,8 @@ export async function parseDictationWithLLM(transcript: string, context: ParserC
   "email": "Электронная почта"
 }
 Если данных для поля нет, не добавляйте его.`;
-  } else if (context === "visit") {
-    systemPrompt = `Вы — AI-ассистент врача-стоматолога. Ваша задача — извлечь данные для ЭМК (электронной медицинской карты) из диктовки врача и вернуть СТРОГО в формате JSON.
+	} else if (context === "visit") {
+		systemPrompt = `Вы — AI-ассистент врача-стоматолога. Ваша задача — извлечь данные для ЭМК (электронной медицинской карты) из диктовки врача и вернуть СТРОГО в формате JSON.
 Формат JSON:
 {
   "toothUpdates": [
@@ -48,69 +59,69 @@ export async function parseDictationWithLLM(transcript: string, context: ParserC
   }
 }
 Если врач упоминает зубы, распределяй их статусы. Кариес/лечение = "treatment", удаление = "missing", наблюдение = "watch". Если данных для поля нет, не возвращайте его в JSON.`;
-  }
+	}
 
-  const requestBody = {
-    model: modelName,
-    temperature: 0.1,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt
-      },
-      {
-        role: "user",
-        content: `Текст диктовки: "${transcript}"`
-      }
-    ]
-  };
+	const requestBody = {
+		model: modelName,
+		temperature: 0.1,
+		response_format: { type: "json_object" },
+		messages: [
+			{
+				role: "system",
+				content: systemPrompt,
+			},
+			{
+				role: "user",
+				content: `Текст диктовки: "${transcript}"`,
+			},
+		],
+	};
 
-  const triedFingerprints = new Set<string>();
-  const maxAttempts = keyRetryLimit(keyProviderId);
-  
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
-    if (!keyCandidate) break;
-    triedFingerprints.add(keyCandidate.fingerprint);
-    
-    try {
-      const response = await fetchWithProviderTimeout(
-        `${baseUrl}/chat/completions`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${keyCandidate.value}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(requestBody)
-        },
-        15000
-      );
+	const triedFingerprints = new Set<string>();
+	const maxAttempts = keyRetryLimit(keyProviderId);
 
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error("LLM Error");
+	for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+		const keyCandidate = selectProviderKey(keyProviderId, triedFingerprints);
+		if (!keyCandidate) break;
+		triedFingerprints.add(keyCandidate.fingerprint);
 
-      const content = (payload as any).choices?.[0]?.message?.content;
-      if (!content) throw new Error("Empty LLM response");
+		try {
+			const response = await fetchWithProviderTimeout(
+				`${baseUrl}/chat/completions`,
+				{
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${keyCandidate.value}`,
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(requestBody),
+				},
+				15000,
+			);
 
-      let parsed: any;
-      try {
-        parsed = JSON.parse(content.trim());
-      } catch {
-        const match = content.match(/\{[\s\S]*\}/);
-        if (match) parsed = JSON.parse(match[0]);
-        else throw new Error("Invalid JSON");
-      }
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error("LLM Error");
 
-      recordProviderKeySuccess(keyProviderId, keyCandidate);
-      
-      return parsed; // Returning raw parsed JSON from LLM
-    } catch (error) {
-      recordProviderKeyFailure(keyProviderId, keyCandidate, error);
-      if (!shouldTryNextProviderKey(error)) break;
-    }
-  }
-  
-  throw new Error("Не удалось распарсить диктовку через ИИ.");
+			const content = (payload as any).choices?.[0]?.message?.content;
+			if (!content) throw new Error("Empty LLM response");
+
+			let parsed: any;
+			try {
+				parsed = JSON.parse(content.trim());
+			} catch {
+				const match = content.match(/\{[\s\S]*\}/);
+				if (match) parsed = JSON.parse(match[0]);
+				else throw new Error("Invalid JSON");
+			}
+
+			recordProviderKeySuccess(keyProviderId, keyCandidate);
+
+			return parsed; // Returning raw parsed JSON from LLM
+		} catch (error) {
+			recordProviderKeyFailure(keyProviderId, keyCandidate, error);
+			if (!shouldTryNextProviderKey(error)) break;
+		}
+	}
+
+	throw new Error("Не удалось распарсить диктовку через ИИ.");
 }

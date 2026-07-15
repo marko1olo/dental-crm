@@ -1,1 +1,18 @@
-﻿import pg from 'pg'; const { Client } = pg; const client = new Client({ connectionString: 'postgres://dental:dental@127.0.0.1:5432/dental_crm' }); client.connect().then(async () => { await client.query('ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "password_hash" text;'); await client.query('CREATE TABLE IF NOT EXISTS "user_invitations" ("id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL, "organization_id" uuid NOT NULL, "email" text NOT NULL, "role" text NOT NULL, "invite_token" text NOT NULL UNIQUE, "expires_at" timestamp with time zone NOT NULL, "status" text DEFAULT \'pending\' NOT NULL, "created_at" timestamp with time zone DEFAULT now() NOT NULL, CONSTRAINT "fk_user_invitations_org" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE);'); console.log('success'); }).catch(console.error).finally(() => client.end());
+﻿import pg from "pg";
+const { Client } = pg;
+const client = new Client({
+	connectionString: "postgres://dental:dental@127.0.0.1:5432/dental_crm",
+});
+client
+	.connect()
+	.then(async () => {
+		await client.query(
+			'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "password_hash" text;',
+		);
+		await client.query(
+			'CREATE TABLE IF NOT EXISTS "user_invitations" ("id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL, "organization_id" uuid NOT NULL, "email" text NOT NULL, "role" text NOT NULL, "invite_token" text NOT NULL UNIQUE, "expires_at" timestamp with time zone NOT NULL, "status" text DEFAULT \'pending\' NOT NULL, "created_at" timestamp with time zone DEFAULT now() NOT NULL, CONSTRAINT "fk_user_invitations_org" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE);',
+		);
+		console.log("success");
+	})
+	.catch(console.error)
+	.finally(() => client.end());

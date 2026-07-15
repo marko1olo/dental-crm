@@ -1,5 +1,5 @@
 export const createPanorexWorker = () => {
-  const workerCode = `
+	const workerCode = `
     self.onmessage = function(e) {
       const { 
         frames, 
@@ -123,6 +123,6 @@ export const createPanorexWorker = () => {
     };
   `;
 
-  const blob = new Blob([workerCode], { type: 'application/javascript' });
-  return new Worker(URL.createObjectURL(blob));
+	const blob = new Blob([workerCode], { type: "application/javascript" });
+	return new Worker(URL.createObjectURL(blob));
 };

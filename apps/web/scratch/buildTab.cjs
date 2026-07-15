@@ -1,12 +1,12 @@
-const fs = require('fs');
+const fs = require("fs");
 
-let rawTab = fs.readFileSync('apps/web/scratch/clinic_tab.tsx', 'utf8');
+let rawTab = fs.readFileSync("apps/web/scratch/clinic_tab.tsx", "utf8");
 rawTab = rawTab.trim();
 if (rawTab.startsWith('{settingsTab === "clinic" ? (')) {
-    rawTab = rawTab.replace('{settingsTab === "clinic" ? (', '').trim();
+	rawTab = rawTab.replace('{settingsTab === "clinic" ? (', "").trim();
 }
-if (rawTab.endsWith(') : null}')) {
-    rawTab = rawTab.substring(0, rawTab.length - 9).trim();
+if (rawTab.endsWith(") : null}")) {
+	rawTab = rawTab.substring(0, rawTab.length - 9).trim();
 }
 
 const imports = `import React from "react";
@@ -112,5 +112,9 @@ const componentEnd = `
 }
 `;
 
-fs.writeFileSync('apps/web/src/components/settings/SettingsClinicTab.tsx', imports + componentStart + rawTab + componentEnd, 'utf8');
-console.log('Written to SettingsClinicTab.tsx');
+fs.writeFileSync(
+	"apps/web/src/components/settings/SettingsClinicTab.tsx",
+	imports + componentStart + rawTab + componentEnd,
+	"utf8",
+);
+console.log("Written to SettingsClinicTab.tsx");

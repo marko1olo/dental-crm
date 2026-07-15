@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require("fs");
 const schemaAddition = `
 
 export const egiszStatusEnum = pgEnum('egisz_status_enum', [
@@ -41,5 +41,5 @@ export const visitTemplates = pgTable('visit_templates', {
 });
 `;
 
-fs.appendFileSync('src/db/schema.ts', schemaAddition);
-console.log('EGISZ schema appended successfully.');
+fs.appendFileSync("src/db/schema.ts", schemaAddition);
+console.log("EGISZ schema appended successfully.");

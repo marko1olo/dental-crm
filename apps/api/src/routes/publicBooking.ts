@@ -1,4 +1,4 @@
-﻿import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { db } from "../db/client.js";
@@ -78,16 +78,9 @@ export async function registerPublicBookingRoutes(app) {
 				.select({
 					id: schema.users.id,
 					fullName: schema.users.fullName,
-					specialty: schema.userSchedules.specialty,
+					specialties: schema.users.specialties,
 				})
 				.from(schema.users)
-				.leftJoin(
-					schema.userSchedules,
-					and(
-						eq(schema.userSchedules.userId, schema.users.id),
-						eq(schema.userSchedules.organizationId, clinic.organizationId),
-					),
-				)
 				.where(
 					and(
 						eq(schema.users.organizationId, clinic.organizationId),
@@ -100,7 +93,7 @@ export async function registerPublicBookingRoutes(app) {
 				doctors: doctors.map((d) => ({
 					id: d.id,
 					name: d.fullName ?? "Врач",
-					specialty: d.specialty ?? "universal",
+					specialty: Array.isArray(d.specialties) && d.specialties.length > 0 ? d.specialties[0] : "universal",
 				})),
 			});
 		},
@@ -121,21 +114,21 @@ export async function registerPublicBookingRoutes(app) {
 			endDate.setDate(endDate.getDate() + 14);
 			const filter = [
 				eq(schema.appointments.organizationId, clinic.organizationId),
-				gte(schema.appointments.startAt, today),
-				lte(schema.appointments.startAt, endDate),
+				gte(schema.appointments.startsAt, today),
+				lte(schema.appointments.startsAt, endDate),
 			];
-			if (request.query.doctorId)
+			if ((request.query as any).doctorId)
 				filter.push(
-					eq(schema.appointments.assignedDoctorId, request.query.doctorId),
+					eq(schema.appointments.doctorUserId, (request.query as any).doctorId),
 				);
 			const busySlots = await db
 				.select({
-					startAt: schema.appointments.startAt,
-					endAt: schema.appointments.endAt,
+					startAt: schema.appointments.startsAt,
+					endAt: schema.appointments.endsAt,
 				})
 				.from(schema.appointments)
 				.where(and(...filter));
-			const slots = [];
+			const slots: { date: string, time: string, available: boolean }[] = [];
 			for (let d = 0; d < 14; d++) {
 				const date = new Date(today);
 				date.setDate(date.getDate() + d);

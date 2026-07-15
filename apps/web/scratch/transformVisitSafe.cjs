@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const file = path.join(__dirname, '../src/VisitView.tsx');
-let content = fs.readFileSync(file, 'utf8');
+const fs = require("fs");
+const path = require("path");
+const file = path.join(__dirname, "../src/VisitView.tsx");
+let content = fs.readFileSync(file, "utf8");
 
 // 1. Inject applyMacro before emkTabs (line ~169)
 const macroFunc = `
@@ -34,10 +34,11 @@ const macroFunc = `
   };
 
   const emkTabs = [`;
-content = content.replace('  const emkTabs = [', macroFunc);
+content = content.replace("  const emkTabs = [", macroFunc);
 
 // 2. Add macro-chips inside dictation-quick-row (line ~330)
-const quickRowMatch = '<div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">';
+const quickRowMatch =
+	'<div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">';
 const newQuickRow = `
               <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 500, alignSelf: 'center' }}>Смарт-теги ЭМК:</span>
@@ -48,7 +49,6 @@ const newQuickRow = `
               </div>
               <div className="dictation-quick-row" aria-label="Быстрые фразы для диктовки">`;
 content = content.replace(quickRowMatch, newQuickRow);
-
 
 // 3. Compress the EMK textareas (line ~792)
 const oldEmkMatch = `<div className={\`visit-fields \${activeEmkTab !== "all" ? "single-tab-mode" : ""}\`}>
@@ -91,5 +91,5 @@ const newEmkMatch = `<div className={\`visit-fields vertical-compact-cards \${ac
               </div>`;
 content = content.replace(oldEmkMatch, newEmkMatch);
 
-fs.writeFileSync(file, content, 'utf8');
-console.log('VisitView.tsx updated safely.');
+fs.writeFileSync(file, content, "utf8");
+console.log("VisitView.tsx updated safely.");

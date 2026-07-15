@@ -1,181 +1,220 @@
-import { useState, useRef, useCallback } from 'react';
-import { useAppStore } from '../store/appStore';
-import { operatorReadableErrorDetail, denteAdminSecretRequestHeaders } from '../AppHelpers';
-import type { SpeechTranscriptionResponse, SpeechChunkUploadInput, SpeechGatewayStatus, SpeechTranscriptionSource } from '@dental/shared';
-import { showToast } from '../components/GlobalToast';
+import type {
+	SpeechChunkUploadInput,
+	SpeechGatewayStatus,
+	SpeechTranscriptionResponse,
+	SpeechTranscriptionSource,
+} from "@dental/shared";
+import { useCallback, useRef, useState } from "react";
+import {
+	denteAdminSecretRequestHeaders,
+	operatorReadableErrorDetail,
+} from "../AppHelpers";
+import { showToast } from "../components/GlobalToast";
+import { useAppStore } from "../store/appStore";
 
-type ContextType = "schedule" | "visit" | "patient" | "price" | "payment" | "general";
+type ContextType =
+	| "schedule"
+	| "visit"
+	| "patient"
+	| "price"
+	| "payment"
+	| "general";
 
 export function useShortDictation(
-  context: ContextType,
-  onResult: (text: string) => void
+	context: ContextType,
+	onResult: (text: string) => void,
 ) {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  
-  const dashboard = useAppStore((state) => state.dashboard);
-  const speechGatewayStatus = useAppStore((state) => state.speechGatewayStatus as SpeechGatewayStatus | null);
-  
-  // Note: isOnline is not in AppStore according to previous logs, we'll use navigator.onLine
-  const isOnline = navigator.onLine;
+	const [isRecording, setIsRecording] = useState(false);
+	const [isProcessing, setIsProcessing] = useState(false);
 
-  const cleanupStream = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-  }, []);
+	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+	const audioChunksRef = useRef<Blob[]>([]);
+	const streamRef = useRef<MediaStream | null>(null);
 
-  const startBrowserNative = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      showToast("Голосовой ввод не поддерживается в этом браузере.", "error");
-      return;
-    }
+	const dashboard = useAppStore((state) => state.dashboard);
+	const speechGatewayStatus = useAppStore(
+		(state) => state.speechGatewayStatus as SpeechGatewayStatus | null,
+	);
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ru-RU';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+	// Note: isOnline is not in AppStore according to previous logs, we'll use navigator.onLine
+	const isOnline = navigator.onLine;
 
-    recognition.onstart = () => setIsRecording(true);
-    
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript) onResult(transcript);
-    };
-    
-    recognition.onerror = (e: any) => {
-      if (e.error !== "no-speech") {
-        showToast("Ошибка распознавания: " + e.error, "error");
-      }
-      setIsRecording(false);
-    };
-    
-    recognition.onend = () => setIsRecording(false);
-    recognition.start();
-  }, [onResult]);
+	const cleanupStream = useCallback(() => {
+		if (streamRef.current) {
+			streamRef.current.getTracks().forEach((track) => track.stop());
+			streamRef.current = null;
+		}
+	}, []);
 
-  const sendToServer = useCallback(async (audioBlob: Blob) => {
-    setIsProcessing(true);
-    try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const result = reader.result as string | null;
-          if (result) {
-            resolve(result.split(",")[1] || "");
-          } else {
-            reject(new Error("Failed to read blob"));
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(audioBlob);
-      });
-      const audioBase64 = await base64Promise;
+	const startBrowserNative = useCallback(() => {
+		const SpeechRecognition =
+			(window as any).SpeechRecognition ||
+			(window as any).webkitSpeechRecognition;
+		if (!SpeechRecognition) {
+			showToast("Голосовой ввод не поддерживается в этом браузере.", "error");
+			return;
+		}
 
-      const source: SpeechTranscriptionSource = context === "visit" || context === "patient" ? "visit" : "document";
+		const recognition = new SpeechRecognition();
+		recognition.lang = "ru-RU";
+		recognition.continuous = false;
+		recognition.interimResults = false;
 
-      const input: SpeechChunkUploadInput = {
-        recordingId: "short_" + Date.now(),
-        chunkIndex: 0,
-        mimeType: audioBlob.type || "audio/webm",
-        audioBase64,
-        durationMs: 3000,
-        language: "ru",
-        source,
-        patientId: dashboard?.activeVisit?.patientId,
-        visitId: dashboard?.activeVisit?.id,
-        specialty: "universal",
-        clientRecordedAt: new Date().toISOString(),
-      };
+		recognition.onstart = () => setIsRecording(true);
 
-      const secret = localStorage.getItem("dente_clinical_admin_secret_session") || undefined;
-      const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }, secret);
+		recognition.onresult = (event: any) => {
+			const transcript = event.results[0][0].transcript;
+			if (transcript) onResult(transcript);
+		};
 
-      const response = await fetch("/api/speech/transcribe-chunk", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(input)
-      });
-      
-      const payload = await response.json();
-      
-      if (!response.ok || payload.chunk?.status === "failed") {
-        throw new Error(operatorReadableErrorDetail(payload.message || payload.error) || "Ошибка сервера");
-      }
+		recognition.onerror = (e: any) => {
+			if (e.error !== "no-speech") {
+				showToast("Ошибка распознавания: " + e.error, "error");
+			}
+			setIsRecording(false);
+		};
 
-      if (payload.chunk?.transcript) {
-        onResult(payload.chunk.transcript);
-      } else {
-        showToast("Не удалось распознать речь", "warning");
-      }
-    } catch (err: any) {
-      console.error("Server STT Error:", err);
-      showToast("Сбой сервера распознавания. Попробуйте еще раз.", "error");
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [context, dashboard, onResult]);
+		recognition.onend = () => setIsRecording(false);
+		recognition.start();
+	}, [onResult]);
 
-  const toggleRecording = useCallback(async () => {
-    if (isRecording) {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-        mediaRecorderRef.current.stop();
-      }
-      return;
-    }
+	const sendToServer = useCallback(
+		async (audioBlob: Blob) => {
+			setIsProcessing(true);
+			try {
+				const reader = new FileReader();
+				const base64Promise = new Promise<string>((resolve, reject) => {
+					reader.onloadend = () => {
+						const result = reader.result as string | null;
+						if (result) {
+							resolve(result.split(",")[1] || "");
+						} else {
+							reject(new Error("Failed to read blob"));
+						}
+					};
+					reader.onerror = reject;
+					reader.readAsDataURL(audioBlob);
+				});
+				const audioBase64 = await base64Promise;
 
-    if (!navigator.onLine || !speechGatewayStatus?.serverTranscriptionEnabled) {
-      startBrowserNative();
-      return;
-    }
+				const source: SpeechTranscriptionSource =
+					context === "visit" || context === "patient" ? "visit" : "document";
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+				const input: SpeechChunkUploadInput = {
+					recordingId: "short_" + Date.now(),
+					chunkIndex: 0,
+					mimeType: audioBlob.type || "audio/webm",
+					audioBase64,
+					durationMs: 3000,
+					language: "ru",
+					source,
+					patientId: dashboard?.activeVisit?.patientId,
+					visitId: dashboard?.activeVisit?.id,
+					specialty: "universal",
+					clientRecordedAt: new Date().toISOString(),
+				};
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
+				const secret =
+					localStorage.getItem("dente_clinical_admin_secret_session") ||
+					undefined;
+				const headers = denteAdminSecretRequestHeaders(
+					{ "Content-Type": "application/json" },
+					secret,
+				);
 
-      mediaRecorder.onstop = () => {
-        setIsRecording(false);
-        cleanupStream();
-        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
-        if (audioBlob.size > 0) {
-          sendToServer(audioBlob);
-        }
-      };
+				const response = await fetch("/api/speech/transcribe-chunk", {
+					method: "POST",
+					headers,
+					body: JSON.stringify(input),
+				});
 
-      mediaRecorder.start();
-      setIsRecording(true);
-      
-      setTimeout(() => {
-        if (mediaRecorder.state === "recording") {
-          mediaRecorder.stop();
-        }
-      }, 10000);
-      
-    } catch (err) {
-      console.error("Microphone access denied or error:", err);
-      startBrowserNative();
-    }
-  }, [isRecording, speechGatewayStatus, startBrowserNative, sendToServer, cleanupStream]);
+				const payload = await response.json();
 
-  return {
-    isRecording,
-    isProcessing,
-    toggleRecording
-  };
+				if (!response.ok || payload.chunk?.status === "failed") {
+					throw new Error(
+						operatorReadableErrorDetail(payload.message || payload.error) ||
+							"Ошибка сервера",
+					);
+				}
+
+				if (payload.chunk?.transcript) {
+					onResult(payload.chunk.transcript);
+				} else {
+					showToast("Не удалось распознать речь", "warning");
+				}
+			} catch (err: any) {
+				console.error("Server STT Error:", err);
+				showToast("Сбой сервера распознавания. Попробуйте еще раз.", "error");
+			} finally {
+				setIsProcessing(false);
+			}
+		},
+		[context, dashboard, onResult],
+	);
+
+	const toggleRecording = useCallback(async () => {
+		if (isRecording) {
+			if (
+				mediaRecorderRef.current &&
+				mediaRecorderRef.current.state === "recording"
+			) {
+				mediaRecorderRef.current.stop();
+			}
+			return;
+		}
+
+		if (!navigator.onLine || !speechGatewayStatus?.serverTranscriptionEnabled) {
+			startBrowserNative();
+			return;
+		}
+
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			streamRef.current = stream;
+			const mediaRecorder = new MediaRecorder(stream);
+			mediaRecorderRef.current = mediaRecorder;
+			audioChunksRef.current = [];
+
+			mediaRecorder.ondataavailable = (e) => {
+				if (e.data.size > 0) {
+					audioChunksRef.current.push(e.data);
+				}
+			};
+
+			mediaRecorder.onstop = () => {
+				setIsRecording(false);
+				cleanupStream();
+				const audioBlob = new Blob(audioChunksRef.current, {
+					type: mediaRecorder.mimeType,
+				});
+				if (audioBlob.size > 0) {
+					sendToServer(audioBlob);
+				}
+			};
+
+			mediaRecorder.start();
+			setIsRecording(true);
+
+			setTimeout(() => {
+				if (mediaRecorder.state === "recording") {
+					mediaRecorder.stop();
+				}
+			}, 10000);
+		} catch (err) {
+			console.error("Microphone access denied or error:", err);
+			startBrowserNative();
+		}
+	}, [
+		isRecording,
+		speechGatewayStatus,
+		startBrowserNative,
+		sendToServer,
+		cleanupStream,
+	]);
+
+	return {
+		isRecording,
+		isProcessing,
+		toggleRecording,
+	};
 }
-

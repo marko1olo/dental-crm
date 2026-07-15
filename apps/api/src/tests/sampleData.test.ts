@@ -1,6 +1,10 @@
-import { test, describe, beforeEach, afterEach } from 'node:test';
-import * as assert from 'node:assert';
-import { createClinicalRule, clinicalRules, auditEvents } from '../sampleData.js';
+import * as assert from "node:assert";
+import { afterEach, beforeEach, describe, test } from "node:test";
+import {
+	auditEvents,
+	clinicalRules,
+	createClinicalRule,
+} from "../sampleData.js";
 
 describe('createClinicalRule', () => {
   let originalClinicalRules: any[];

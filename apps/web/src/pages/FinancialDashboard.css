@@ -1,164 +1,181 @@
 .financial-dashboard {
-  background: rgba(24, 24, 27, 0.85); /* zinc-900 */
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(63, 63, 70, 0.5); /* zinc-700 */
-  border-radius: 16px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  color: #e4e4e7;
+	background: rgba(24, 24, 27, 0.85); /* zinc-900 */
+	backdrop-filter: blur(16px);
+	border: 1px solid rgba(63, 63, 70, 0.5); /* zinc-700 */
+	border-radius: 16px;
+	box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+	padding: 32px;
+	display: flex;
+	flex-direction: column;
+	gap: 32px;
+	color: #e4e4e7;
 }
 
 .financial-header h2 {
-  margin: 0;
-  font-size: 1.6rem;
-  color: #f4f4f5;
-  font-weight: 300;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+	margin: 0;
+	font-size: 1.6rem;
+	color: #f4f4f5;
+	font-weight: 300;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 }
 
 .metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 20px;
 }
 
 .metric-card {
-  border: 1px solid rgba(82, 82, 91, 0.3); /* zinc-600 */
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: rgba(39, 39, 42, 0.4); /* zinc-800 */
-  transition: all 0.3s ease;
-  min-width: 0;
+	border: 1px solid rgba(82, 82, 91, 0.3); /* zinc-600 */
+	border-radius: 12px;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: rgba(39, 39, 42, 0.4); /* zinc-800 */
+	transition: all 0.3s ease;
+	min-width: 0;
 }
 
 .metric-card:hover {
-  background: rgba(63, 63, 70, 0.6);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+	background: rgba(63, 63, 70, 0.6);
+	transform: translateY(-4px);
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
 .metric-card h3 {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #a1a1aa;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+	margin: 0;
+	font-size: 0.9rem;
+	color: #a1a1aa;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
 }
 
 .metric-value {
-  margin: 0;
-  font-size: 2.2rem;
-  font-weight: 200;
-  color: #f4f4f5;
-  font-family: monospace;
+	margin: 0;
+	font-size: 2.2rem;
+	font-weight: 200;
+	color: #f4f4f5;
+	font-family: monospace;
 }
 
 .metric-card small {
-  color: #71717a;
-  font-size: 0.85rem;
+	color: #71717a;
+	font-size: 0.85rem;
 }
 
 .metric-card.highlight {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
+	background: rgba(59, 130, 246, 0.1);
+	border-color: rgba(59, 130, 246, 0.3);
 }
-.metric-card.highlight h3 { color: #93c5fd; }
-.metric-card.highlight .metric-value { 
-  color: #60a5fa; 
-  text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+.metric-card.highlight h3 {
+	color: #93c5fd;
 }
-.metric-card.highlight small { color: #60a5fa; }
+.metric-card.highlight .metric-value {
+	color: #60a5fa;
+	text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+}
+.metric-card.highlight small {
+	color: #60a5fa;
+}
 .metric-card.highlight:hover {
-  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+	box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
 }
 
 .metric-card.danger {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
+	background: rgba(239, 68, 68, 0.1);
+	border-color: rgba(239, 68, 68, 0.3);
 }
-.metric-card.danger h3 { color: #fca5a5; }
-.metric-card.danger .metric-value { 
-  color: #f87171; 
-  text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);
+.metric-card.danger h3 {
+	color: #fca5a5;
 }
-.metric-card.danger small { color: #fca5a5; }
+.metric-card.danger .metric-value {
+	color: #f87171;
+	text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);
+}
+.metric-card.danger small {
+	color: #fca5a5;
+}
 .metric-card.danger:hover {
-  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2);
+	box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2);
 }
 
 .revenue-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
 }
 
 .revenue-breakdown h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #e4e4e7;
-  font-weight: 300;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+	margin: 0;
+	font-size: 1.2rem;
+	color: #e4e4e7;
+	font-weight: 300;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 }
 
 .bars-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 .bar-row {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+	display: flex;
+	align-items: center;
+	gap: 24px;
 }
 
 .bar-label {
-  width: 120px;
-  font-weight: 500;
-  color: #a1a1aa;
-  letter-spacing: 0.05em;
+	width: 120px;
+	font-weight: 500;
+	color: #a1a1aa;
+	letter-spacing: 0.05em;
 }
 
 .bar-track {
-  flex: 1;
-  background: rgba(39, 39, 42, 0.6); /* zinc-800 */
-  height: 12px;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+	flex: 1;
+	background: rgba(39, 39, 42, 0.6); /* zinc-800 */
+	height: 12px;
+	border-radius: 6px;
+	overflow: hidden;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .bar-fill {
-  height: 100%;
-  border-radius: 6px;
-  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+	height: 100%;
+	border-radius: 6px;
+	transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.bar-fill.therapy { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
-.bar-fill.orthopedics { background: #a855f7; box-shadow: 0 0 10px #a855f7; }
-.bar-fill.surgery { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+.bar-fill.therapy {
+	background: #3b82f6;
+	box-shadow: 0 0 10px #3b82f6;
+}
+.bar-fill.orthopedics {
+	background: #a855f7;
+	box-shadow: 0 0 10px #a855f7;
+}
+.bar-fill.surgery {
+	background: #ef4444;
+	box-shadow: 0 0 10px #ef4444;
+}
 
 .bar-value {
-  width: 140px;
-  text-align: right;
-  font-weight: bold;
-  color: #f4f4f5;
-  font-family: monospace;
-  font-size: 1.1rem;
+	width: 140px;
+	text-align: right;
+	font-weight: bold;
+	color: #f4f4f5;
+	font-family: monospace;
+	font-size: 1.1rem;
 }
 
 /* Prevent Recharts from overflowing container when sidebar opens */
 .chart-wrapper {
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  overflow: hidden;
+	width: 100%;
+	height: 100%;
+	min-width: 0;
+	overflow: hidden;
 }

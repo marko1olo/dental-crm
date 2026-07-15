@@ -1,10 +1,10 @@
-import { test, describe, afterEach, beforeEach } from 'node:test';
-import assert from 'node:assert';
-import path from 'node:path';
-import { rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
-import os from 'node:os';
-import crypto from 'node:crypto';
-import { savePersistentState } from '../persistentState.js';
+import assert from "node:assert";
+import crypto from "node:crypto";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, test } from "node:test";
+import { savePersistentState } from "../persistentState.js";
 
 describe('savePersistentState', () => {
   let tmpDir: string;
