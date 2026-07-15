@@ -73,21 +73,29 @@ $restoreButton.Location = New-Object System.Drawing.Point(310, 160)
 $restoreButton.BackColor = [System.Drawing.Color]::LightGoldenrodYellow
 $form.Controls.Add($restoreButton)
 
+# Vacuum Button (NEW)
+$vacuumButton = New-Object System.Windows.Forms.Button
+$vacuumButton.Text = "🧹 ОПТИМИЗИРОВАТЬ ДИСК"
+$vacuumButton.Size = New-Object System.Drawing.Size(540, 40)
+$vacuumButton.Location = New-Object System.Drawing.Point(20, 210)
+$vacuumButton.BackColor = [System.Drawing.Color]::Thistle
+$form.Controls.Add($vacuumButton)
+
 # Link Label (Local IP)
 $ipLabel = New-Object System.Windows.Forms.Label
 $ipLabel.Text = "Доступ с телефона (Wi-Fi): Сервер выключен"
 $ipLabel.ForeColor = [System.Drawing.Color]::DarkBlue
 $ipLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
 $ipLabel.AutoSize = $true
-$ipLabel.Location = New-Object System.Drawing.Point(20, 210)
+$ipLabel.Location = New-Object System.Drawing.Point(20, 260)
 $form.Controls.Add($ipLabel)
 
 # Log Box
 $logBox = New-Object System.Windows.Forms.TextBox
 $logBox.Multiline = $true
 $logBox.ScrollBars = "Vertical"
-$logBox.Size = New-Object System.Drawing.Size(540, 330)
-$logBox.Location = New-Object System.Drawing.Point(20, 240)
+$logBox.Size = New-Object System.Drawing.Size(540, 300)
+$logBox.Location = New-Object System.Drawing.Point(20, 290)
 $logBox.ReadOnly = $true
 $logBox.BackColor = [System.Drawing.Color]::Black
 $logBox.ForeColor = [System.Drawing.Color]::LimeGreen
@@ -118,7 +126,8 @@ function Get-LocalIP {
 
 function Create-DesktopShortcut {
     $WshShell = New-Object -comObject WScript.Shell
-    $Shortcut = $WshShell.CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\DENTE CRM.lnk")
+    $ShortcutPath = "$([Environment]::GetFolderPath('Desktop'))\DENTE CRM.lnk"
+    $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
     
     # Пытаемся найти Edge или Chrome для App Mode
     $browserPath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
@@ -141,6 +150,38 @@ function Create-DesktopShortcut {
     Log "Ярлык на рабочем столе создан/обновлен."
 }
 
+$global:BackupPassword = "DENTE_SECURE_BACKUP_KEY_2026"
+
+function Encrypt-File {
+    param([string]$Path, [string]$Password, [string]$OutPath)
+    $salt = [byte[]](1,2,3,4,5,6,7,8)
+    $rfc2898 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes($Password, $salt, 1000)
+    $aes = New-Object System.Security.Cryptography.AesManaged
+    $aes.Key = $rfc2898.GetBytes($aes.KeySize / 8)
+    $aes.IV = $rfc2898.GetBytes($aes.BlockSize / 8)
+    
+    $fsIn = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Open)
+    $fsOut = New-Object System.IO.FileStream($OutPath, [System.IO.FileMode]::Create)
+    $cs = New-Object System.Security.Cryptography.CryptoStream($fsOut, $aes.CreateEncryptor(), [System.Security.Cryptography.CryptoStreamMode]::Write)
+    $fsIn.CopyTo($cs)
+    $cs.Close(); $fsOut.Close(); $fsIn.Close()
+}
+
+function Decrypt-File {
+    param([string]$Path, [string]$Password, [string]$OutPath)
+    $salt = [byte[]](1,2,3,4,5,6,7,8)
+    $rfc2898 = New-Object System.Security.Cryptography.Rfc2898DeriveBytes($Password, $salt, 1000)
+    $aes = New-Object System.Security.Cryptography.AesManaged
+    $aes.Key = $rfc2898.GetBytes($aes.KeySize / 8)
+    $aes.IV = $rfc2898.GetBytes($aes.BlockSize / 8)
+    
+    $fsIn = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Open)
+    $fsOut = New-Object System.IO.FileStream($OutPath, [System.IO.FileMode]::Create)
+    $cs = New-Object System.Security.Cryptography.CryptoStream($fsIn, $aes.CreateDecryptor(), [System.Security.Cryptography.CryptoStreamMode]::Read)
+    $cs.CopyTo($fsOut)
+    $cs.Close(); $fsOut.Close(); $fsIn.Close()
+}
+
 function Setup-Firewall {
     Log "Проверка правил брандмауэра для локальной сети..."
     $ruleCheck = netsh advfirewall firewall show rule name="DENTE CRM API" | Out-String
@@ -155,6 +196,7 @@ $startButton.Add_Click({
     $startButton.Enabled = $false
     $backupButton.Enabled = $false
     $restoreButton.Enabled = $false
+    $vacuumButton.Enabled = $false
     $statusLabel.Text = "Статус: Запуск..."
     $statusLabel.ForeColor = [System.Drawing.Color]::Orange
     Log "Инициализация локального сервера..."
@@ -163,11 +205,29 @@ $startButton.Add_Click({
     Setup-Firewall
 
     # Check Node.js
-    $nodeCheck = Get-Command node -ErrorAction SilentlyContinue
-    if (-not $nodeCheck) {
-        Log "ОШИБКА: Node.js не установлен! Установите Node.js с nodejs.org."
-        $startButton.Enabled = $true
-        return
+    $nodeDir = Join-Path $PWD ".node"
+    if (-not (Test-Path "$nodeDir\node.exe")) {
+        $nodeCheck = Get-Command node -ErrorAction SilentlyContinue
+        if (-not $nodeCheck) {
+            Log "Поиск Node.js... Не найден! Устанавливаю портативную версию..."
+            $nodeZipPath = Join-Path $PWD "node.zip"
+            try {
+                Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.15.0/node-v20.15.0-win-x64.zip" -OutFile $nodeZipPath -UseBasicParsing
+                Log "Распаковка Node.js (v20.15.0)..."
+                Expand-Archive -Path $nodeZipPath -DestinationPath $PWD -Force
+                Rename-Item -Path "node-v20.15.0-win-x64" -NewName ".node"
+                Remove-Item $nodeZipPath
+            } catch {
+                Log "ОШИБКА скачивания Node.js: $_"
+                $startButton.Enabled = $true
+                return
+            }
+        }
+    }
+    
+    if (Test-Path "$nodeDir\node.exe") {
+        $env:Path = "$nodeDir;" + $env:Path
+        Log "Используется портативный Node.js из .node/"
     }
 
     # Setup PostgreSQL Portable
@@ -190,8 +250,8 @@ $startButton.Add_Click({
         }
     }
 
-    Log "Запуск PostgreSQL..."
-    $global:postgresProcess = Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "start -D `"$pgDir\data`" -l `"$pgDir\data\pg.log`" -w" -WindowStyle Hidden -PassThru
+    Log "Запуск PostgreSQL (с оптимизацией памяти: 128MB buffers, 4MB work_mem)..."
+    $global:postgresProcess = Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "start -D `"$pgDir\data`" -l `"$pgDir\data\pg.log`" -w -o `"-c shared_buffers=128MB -c work_mem=4MB`"" -WindowStyle Hidden -PassThru
 
     # Check if database exists
     $checkDb = Start-Process -FilePath "$pgDir\bin\psql.exe" -ArgumentList "-U dental -d postgres -c `"SELECT 1 FROM pg_database WHERE datname='dental_crm'`"" -Wait -NoNewWindow -PassThru
@@ -228,6 +288,7 @@ $startButton.Add_Click({
     $statusLabel.ForeColor = [System.Drawing.Color]::Green
     $stopButton.Enabled = $true
     $backupButton.Enabled = $true
+    $vacuumButton.Enabled = $true
 })
 
 $stopButton.Add_Click({
@@ -254,6 +315,7 @@ $stopButton.Add_Click({
     $startButton.Enabled = $true
     $backupButton.Enabled = $true
     $restoreButton.Enabled = $true
+    $vacuumButton.Enabled = $true
 })
 
 $backupButton.Add_Click({
@@ -274,7 +336,7 @@ $backupButton.Add_Click({
     $startedLocally = $false
     if (-not $pgIsRunning) {
         Log "Поднимаю БД для бэкапа..."
-        Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "start -D `"$pgDir\data`" -l `"$pgDir\data\pg.log`" -w" -WindowStyle Hidden -Wait
+        Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "start -D `"$pgDir\data`" -l `"$pgDir\data\pg.log`" -w -o `"-c shared_buffers=128MB -c work_mem=4MB`"" -WindowStyle Hidden -Wait
         $startedLocally = $true
     }
     
@@ -283,7 +345,15 @@ $backupButton.Add_Click({
     $p = Start-Process "cmd.exe" -ArgumentList "/c `"$pgDir\bin\pg_dump.exe`" -U dental -C --clean --if-exists dental_crm > `"$filePath`"" -Wait -NoNewWindow -PassThru
     
     if ($p.ExitCode -eq 0) {
-        Log "Бэкап УСПЕШНО сохранен: $filePath"
+        Log "Шифрование дампа (AES-256)..."
+        $encryptedPath = "$filePath.aes"
+        try {
+            Encrypt-File -Path $filePath -Password $global:BackupPassword -OutPath $encryptedPath
+            Remove-Item $filePath -Force
+            Log "Бэкап УСПЕШНО сохранен и зашифрован: $encryptedPath"
+        } catch {
+            Log "ОШИБКА шифрования: $_"
+        }
     } else {
         Log "Ошибка при создании бэкапа! Код: $($p.ExitCode)"
     }
@@ -312,7 +382,7 @@ $restoreButton.Add_Click({
     # Открываем диалог выбора файла
     $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
     $openFileDialog.InitialDirectory = $backupDir
-    $openFileDialog.Filter = "SQL Files (*.sql)|*.sql|All Files (*.*)|*.*"
+    $openFileDialog.Filter = "Encrypted SQL Files (*.sql.aes)|*.sql.aes|SQL Files (*.sql)|*.sql|All Files (*.*)|*.*"
     $openFileDialog.Title = "Выберите файл резервной копии"
     
     if ($openFileDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
@@ -320,21 +390,40 @@ $restoreButton.Add_Click({
         Log "Выбран файл: $restoreFile"
         Log "ВНИМАНИЕ: Текущая база будет затерта!"
         
+        $targetSqlFile = $restoreFile
+        $isEncrypted = $restoreFile.EndsWith(".aes")
+        
+        if ($isEncrypted) {
+            Log "Расшифровка файла (AES-256)..."
+            $targetSqlFile = $restoreFile.Replace(".aes", "")
+            try {
+                Decrypt-File -Path $restoreFile -Password $global:BackupPassword -OutPath $targetSqlFile
+            } catch {
+                Log "ОШИБКА расшифровки (неверный ключ или поврежден файл): $_"
+                return
+            }
+        }
+        
         $pgIsRunning = Get-Process -Name "postgres" -ErrorAction SilentlyContinue
         $startedLocally = $false
         if (-not $pgIsRunning) {
             Log "Поднимаю БД для восстановления..."
-            Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "start -D `"$pgDir\data`" -l `"$pgDir\data\pg.log`" -w" -WindowStyle Hidden -Wait
+            Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "start -D `"$pgDir\data`" -l `"$pgDir\data\pg.log`" -w -o `"-c shared_buffers=128MB -c work_mem=4MB`"" -WindowStyle Hidden -Wait
             $startedLocally = $true
         }
         
         Log "Восстанавливаю базу (psql)..."
-        $p = Start-Process "cmd.exe" -ArgumentList "/c `"$pgDir\bin\psql.exe`" -U dental -d postgres -f `"$restoreFile`"" -Wait -NoNewWindow -PassThru
+        $p = Start-Process "cmd.exe" -ArgumentList "/c `"$pgDir\bin\psql.exe`" -U dental -d postgres -f `"$targetSqlFile`"" -Wait -NoNewWindow -PassThru
         
         if ($p.ExitCode -eq 0) {
             Log "База данных УСПЕШНО восстановлена."
         } else {
             Log "Ошибка при восстановлении! Код: $($p.ExitCode)"
+        }
+        
+        if ($isEncrypted -and (Test-Path $targetSqlFile)) {
+            Log "Удаление временного расшифрованного файла..."
+            Remove-Item $targetSqlFile -Force
         }
         
         if ($startedLocally) {
@@ -344,6 +433,37 @@ $restoreButton.Add_Click({
         Log "Восстановление отменено пользователем."
     }
     Log "=== ВОССТАНОВЛЕНИЕ ЗАВЕРШЕНО ==="
+})
+
+$vacuumButton.Add_Click({
+    Log "=== ОПТИМИЗАЦИЯ БД (VACUUM ANALYZE) ==="
+    $pgDir = Join-Path $PWD ".postgres"
+    if (-not (Test-Path "$pgDir\bin\psql.exe")) {
+        Log "ОШИБКА: PostgreSQL не найден."
+        return
+    }
+    
+    $pgIsRunning = Get-Process -Name "postgres" -ErrorAction SilentlyContinue
+    $startedLocally = $false
+    if (-not $pgIsRunning) {
+        Log "Поднимаю БД для оптимизации..."
+        Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "start -D `"$pgDir\data`" -l `"$pgDir\data\pg.log`" -w -o `"-c shared_buffers=128MB -c work_mem=4MB`"" -WindowStyle Hidden -Wait
+        $startedLocally = $true
+    }
+    
+    Log "Запуск VACUUM ANALYZE (освобождение диска и обновление индексов)..."
+    $p = Start-Process "cmd.exe" -ArgumentList "/c `"$pgDir\bin\psql.exe`" -U dental -d dental_crm -c `"VACUUM ANALYZE;`"" -Wait -NoNewWindow -PassThru
+    
+    if ($p.ExitCode -eq 0) {
+        Log "Оптимизация базы данных УСПЕШНО завершена."
+    } else {
+        Log "Ошибка при оптимизации! Код: $($p.ExitCode)"
+    }
+    
+    if ($startedLocally) {
+        Log "Останавливаю БД..."
+        Start-Process -FilePath "$pgDir\bin\pg_ctl.exe" -ArgumentList "stop -D `"$pgDir\data`"" -Wait -NoNewWindow
+    }
 })
 
 $form.Add_FormClosing({

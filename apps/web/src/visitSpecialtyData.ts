@@ -36,15 +36,19 @@ function firstClinicalSpecialty(specialties: DentalSpecialty[]): DentalSpecialty
 }
 
 export function inferDashboardVisitSpecialty(dashboard: Dashboard): DentalSpecialty {
-  const appointment = dashboard.appointments.find((candidate) => candidate.id === dashboard.activeVisit?.appointmentId) ?? null;
+  const appointments = dashboard.appointments ?? [];
+  const staff = dashboard.clinicSettings?.staff ?? [];
+  const chairs = dashboard.clinicSettings?.chairs ?? [];
+
+  const appointment = appointments.find((candidate) => candidate.id === dashboard.activeVisit?.appointmentId) ?? null;
   const doctor = appointment
-    ? dashboard.clinicSettings.staff.find((member) => member.id === appointment.doctorUserId && member.active) ?? null
+    ? staff.find((member) => member.id === appointment.doctorUserId && member.active) ?? null
     : null;
   const chair = appointment
-    ? dashboard.clinicSettings.chairs.find((candidate) => candidate.id === appointment.chairId && candidate.active) ?? null
+    ? chairs.find((candidate) => candidate.id === appointment.chairId && candidate.active) ?? null
     : null;
   const reasonSpecialty = inferSpecialtyFromText(appointment?.reason);
 
-  if (reasonSpecialty && doctor?.specialties.includes(reasonSpecialty)) return reasonSpecialty;
+  if (reasonSpecialty && doctor?.specialties?.includes(reasonSpecialty)) return reasonSpecialty;
   return firstClinicalSpecialty(doctor?.specialties ?? []) ?? chair?.specialization ?? reasonSpecialty ?? "universal";
 }

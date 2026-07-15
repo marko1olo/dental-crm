@@ -10,7 +10,7 @@
 }
 
 .receipt-paper {
-  background: #fff;
+  background: var(--paper);
   color: #000;
   width: 320px;
   font-family: 'Courier New', Courier, monospace;

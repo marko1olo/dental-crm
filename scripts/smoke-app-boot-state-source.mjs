@@ -6,6 +6,7 @@ const appSource = [
 ].join("\n");
 const browserContinuitySource = readFileSync("apps/web/src/browserContinuity.ts", "utf8");
 const bootSource = readFileSync("apps/web/src/AppBootState.tsx", "utf8");
+const appShellSource = readFileSync("apps/web/src/AppShell.tsx", "utf8");
 const runtimeSource = `${appSource}\n${browserContinuitySource}`;
 
 const missing = [];
@@ -26,6 +27,9 @@ requireIn(appSource, 'actionLabel="Повторить загрузку"', "App b
 requireIn(appSource, "setError(null);\n          void loadDashboard().catch", "App boot retry must clear stale error and retry dashboard loading");
 requireIn(appSource, 'operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError)', "App boot retry failure must stay operator-readable");
 requireIn(appSource, '<AppLoadingState message="Загрузка рабочей смены" />', "App.tsx must delegate dashboard loading UI");
+forbidIn(appSource, 'loadDashboard().catch((loadError: unknown) => {\n      setError(operatorWorkflowFailureMessage("Не удалось загрузить данные", loadError));', "useAppLogic must not load the dashboard before auth resolves.");
+forbidIn(appSource, "return () => {\n        if (typeof useAppStore.getState().reset", "App must not reset global workspace state on React StrictMode remount.");
+forbidIn(appSource, "return () => {\n        if (typeof (useDocumentStore.getState() as any).reset", "App must not reset document state on React StrictMode remount.");
 requireIn(browserContinuitySource, "export async function inspectBrowserContinuity", "Browser continuity probes must stay in a dedicated helper chunk.");
 requireIn(browserContinuitySource, "Браузер не дает сохранить экран для работы без сети", "App browser continuity warnings must explain offline screen storage without cache jargon.");
 requireIn(browserContinuitySource, "Браузер не дает сохранить аудио для отправки позже", "App browser continuity warnings must explain offline audio storage without IndexedDB jargon.");
@@ -76,6 +80,9 @@ requireIn(bootSource, 'id="boot-unlock-guidance"', "AppBootState must render emp
 requireIn(bootSource, "Введите секрет доступа, который выдал администратор клиники.", "AppBootState must explain where the secret comes from");
 requireIn(bootSource, "disabled={!secretReady}", "AppBootState unlock button must use the readiness guard");
 requireIn(bootSource, "Секрет хранится только в памяти вкладки", "AppBootState must show session-only secret warning");
+requireIn(appShellSource, "if (!import.meta.env.PROD)", "AppShell must log boot error details only outside production.");
+forbidIn(appShellSource, "errorStack", "AppShell must not store or render stack traces in the production boot error UI.");
+forbidIn(appShellSource, "<pre", "AppShell boot error UI must not render raw stack traces.");
 
 if (missing.length > 0) {
   console.error("App boot state source smoke failed:");

@@ -139,7 +139,10 @@ export function Odontogram() {
           gap: '6px',
           position: 'relative',
           cursor: 'pointer',
-          padding: '2px',
+          padding: '4px',
+          minWidth: '44px',
+          minHeight: '44px',
+          touchAction: 'manipulation',
           borderRadius: '8px',
           transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
           background: isSelected
@@ -157,7 +160,7 @@ export function Odontogram() {
         onClick={e => handleToothClick(tooth, e.shiftKey)}
       >
         {isUpper && (
-          <span style={{ fontSize: '14px', fontWeight: 700, color: isSelected ? '#6366f1' : isHovered ? '#2563eb' : '#475569' }}>
+          <span className="tooth-number" style={{ color: isSelected ? '#6366f1' : isHovered ? '#2563eb' : undefined }}>
             {tooth}
           </span>
         )}
@@ -171,7 +174,7 @@ export function Odontogram() {
         </div>
 
         {!isUpper && (
-          <span style={{ fontSize: '14px', fontWeight: 700, color: isSelected ? '#6366f1' : isHovered ? '#2563eb' : '#475569' }}>
+          <span className="tooth-number" style={{ color: isSelected ? '#6366f1' : isHovered ? '#2563eb' : undefined }}>
             {tooth}
           </span>
         )}
@@ -203,24 +206,62 @@ export function Odontogram() {
 
         {/* Single-tooth radial menu */}
         {!multiSelectMode && radialMenuOpen === tooth && (
-          <div style={{
-            position: 'absolute',
-            top: '50%', left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 50,
-            width: '160px', height: '160px',
-            pointerEvents: 'none',
-          }}>
-            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <div 
+            style={{
+              position: 'absolute',
+              top: isUpper ? '100%' : 'auto',
+              bottom: !isUpper ? '100%' : 'auto',
+              left: '50%',
+              transform: isUpper ? 'translateX(-50%) translateY(14px)' : 'translateX(-50%) translateY(-14px)',
+              zIndex: 50,
+              width: '160px', height: '160px',
+              pointerEvents: 'auto',
+              background: 'var(--paper, #ffffff)',
+              border: '1px solid var(--odontogram-border, var(--line))',
+              borderRadius: '16px',
+              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.15)',
+              backdropFilter: 'blur(16px)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Caret */}
+            <div style={{
+              position: 'absolute',
+              top: isUpper ? '-6px' : 'auto',
+              bottom: !isUpper ? '-6px' : 'auto',
+              left: '50%',
+              transform: 'translateX(-50%) rotate(45deg)',
+              width: '12px', height: '12px',
+              background: 'var(--paper, #ffffff)',
+              borderLeft: isUpper ? '1px solid var(--odontogram-border, var(--line))' : 'none',
+              borderTop: isUpper ? '1px solid var(--odontogram-border, var(--line))' : 'none',
+              borderRight: !isUpper ? '1px solid var(--odontogram-border, var(--line))' : 'none',
+              borderBottom: !isUpper ? '1px solid var(--odontogram-border, var(--line))' : 'none',
+              zIndex: 1
+            }} />
+
+            <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 2 }}>
               <div
-                style={{ position: 'fixed', top: -9999, left: -9999, right: -9999, bottom: -9999, cursor: 'default', pointerEvents: 'auto' }}
+                style={{ position: 'fixed', top: -9999, left: -9999, right: -9999, bottom: -9999, cursor: 'default', pointerEvents: 'auto', zIndex: -1 }}
                 onClick={e => { e.stopPropagation(); setRadialMenuOpen(null); }}
               />
               {STATUS_OPTIONS.map((opt, i) => {
                 const angle  = (i * (360 / STATUS_OPTIONS.length)) - 90;
-                const radius = 60;
+                const radius = 54; // slightly smaller radius to fit inside 160px card
                 const x = Math.cos(angle * Math.PI / 180) * radius;
                 const y = Math.sin(angle * Math.PI / 180) * radius;
+                
+                // Color mapping matching active buttons
+                const btnColors: Record<ToothStatus, { bg: string, text: string, border: string }> = {
+                  Healthy: { bg: 'rgba(16, 185, 129, 0.15)', text: '#10b981', border: 'rgba(16, 185, 129, 0.3)' },
+                  Caries: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', border: 'rgba(239, 68, 68, 0.3)' },
+                  Filling: { bg: 'rgba(14, 165, 233, 0.15)', text: '#0ea5e9', border: 'rgba(14, 165, 233, 0.3)' },
+                  Missing: { bg: 'rgba(100, 116, 139, 0.2)', text: '#64748b', border: 'rgba(100, 116, 139, 0.3)' },
+                  Implant: { bg: 'rgba(234, 179, 8, 0.15)', text: '#fbbf24', border: 'rgba(234, 179, 8, 0.3)' },
+                  Crown: { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa', border: 'rgba(59, 130, 246, 0.3)' }
+                };
+                const colorScheme = btnColors[opt];
+
                 return (
                   <button
                     key={opt}
@@ -230,21 +271,27 @@ export function Odontogram() {
                       left: `calc(50% + ${x}px)`,
                       top: `calc(50% + ${y}px)`,
                       transform: 'translate(-50%, -50%)',
-                      width: '44px', height: '44px',
+                      width: '38px', height: '38px',
                       borderRadius: '50%',
-                      background: STATUS_COLORS[opt],
-                      border: '2.5px solid rgba(255,255,255,0.9)',
-                      boxShadow: `0 4px 12px ${STATUS_GLOW[opt]}`,
+                      background: colorScheme.bg,
+                      border: `1.5px solid ${colorScheme.border}`,
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer',
                       pointerEvents: 'auto',
-                      transition: 'transform 0.12s',
-                      color: opt === 'Healthy' ? '#000' : '#fff',
+                      transition: 'transform 0.12s, background 0.12s',
+                      color: colorScheme.text,
                       fontSize: '10px', fontWeight: 'bold'
                     }}
                     title={opt}
-                    onMouseEnter={e => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.15)')}
-                    onMouseLeave={e => (e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)')}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.15)';
+                      e.currentTarget.style.background = colorScheme.bg.replace('0.15', '0.3').replace('0.2', '0.4');
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)';
+                      e.currentTarget.style.background = colorScheme.bg;
+                    }}
                   >
                     {opt.substring(0, 1)}
                   </button>

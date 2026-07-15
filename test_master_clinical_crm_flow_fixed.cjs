@@ -15,6 +15,7 @@ const states = [
   { name: "PEDIATRIC_MOBILE_LIGHT",width: 390,  height: 844,  theme: "light", pediatric: true },
   { name: "PEDIATRIC_MOBILE_DARK", width: 390,  height: 844,  theme: "dark",  pediatric: true }
 ];
+const old_states = [];
 
 async function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -92,11 +93,11 @@ async function navigateTo(page, viewName, timeout = 3000) {
         }
         if (t === "dark") {
           document.documentElement.classList.add("dark");
-          document.body.setAttribute("data-theme", "dark");
+          document.documentElement.setAttribute("data-theme", "dark");
           document.body.classList.add("theme-dark");
         } else {
           document.documentElement.classList.remove("dark");
-          document.body.setAttribute("data-theme", "light");
+          document.documentElement.setAttribute("data-theme", "light");
           document.body.classList.remove("theme-dark");
         }
       };
@@ -117,6 +118,7 @@ async function navigateTo(page, viewName, timeout = 3000) {
     await page.evaluate(() => {
       const textareas = Array.from(document.querySelectorAll("textarea"));
       const ta = textareas[0];
+const old_states = [];
       if (ta) {
         const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
         if (setter) setter.call(ta, "Р В РЎСџР В Р’В°Р РЋРІР‚В Р В РЎвЂР В Р’ВµР В Р вЂ¦Р РЋРІР‚С™ Р В Р’В¶Р В Р’В°Р В Р’В»Р РЋРЎвЂњР В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В Р вЂ¦Р В Р’В° Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР вЂљР РЋРЎвЂњР РЋР вЂ№ Р В Р’В±Р В РЎвЂўР В Р’В»Р РЋР Р‰ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂ Р В Р вЂ¦Р В Р’В°Р В РЎвЂќР РЋРЎвЂњР РЋР С“Р РЋРІР‚в„–Р В Р вЂ Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В РЎвЂ.\n".repeat(10));
@@ -168,7 +170,7 @@ async function navigateTo(page, viewName, timeout = 3000) {
     // Р Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљ 3. ODONTOGRAM MULTI-SELECT Р Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљР Р†РІР‚СњР вЂљ
     console.log(`[${state.name}] -> Odontogram (Patient EMK)`);
     await page.evaluate(async () => {
-      window.location.hash = "patients";
+      window.location.hash = "odontogram";
       await new Promise(r => setTimeout(r, 1000));
     });
     await wait(1500);
@@ -228,9 +230,20 @@ async function navigateTo(page, viewName, timeout = 3000) {
       await page.screenshot({ path: path.join(OUTPUT_DIR, `Calendar_Pediatric_Solo_${state.name}.png`), fullPage: true });
 
       // 3. Odontogram - 20 Baby Teeth
-      await page.goto("http://127.0.0.1:5173/#/patients/00000000-0000-0000-0000-000000000001/emk");
-      await wait(2000);
+      await page.goto("http://127.0.0.1:5173/#/odontogram");
+      await wait(2500);
       
+      // Check the "Детский прикус" checkbox
+      await page.evaluate(() => {
+        const labels = Array.from(document.querySelectorAll("label"));
+        const pedLabel = labels.find(l => l.textContent.includes("Детский прикус"));
+        if (pedLabel) {
+          const input = pedLabel.querySelector("input");
+          if (input && !input.checked) input.click();
+        }
+      });
+      await wait(1000);
+
       // Select Baby Tooth 54
       await page.evaluate(() => {
         const tooth54 = document.querySelector('[data-tooth-id="54"]');
@@ -241,7 +254,7 @@ async function navigateTo(page, viewName, timeout = 3000) {
       // Select Caries
       await page.evaluate(() => {
         const buttons = Array.from(document.querySelectorAll("button"));
-        const cariesBtn = buttons.find(b => b.textContent.includes("РљР°СЂРёРµСЃ"));
+        const cariesBtn = buttons.find(b => b.textContent.includes("Кариес") || b.textContent.includes("РљР°СЂРёРµСЃ"));
         if (cariesBtn) cariesBtn.click();
       });
       await wait(1000);
@@ -356,6 +369,7 @@ async function navigateTo(page, viewName, timeout = 3000) {
     // Type OTP digits one by one (real keyboard interaction)
     const otpCells = await page.$$(".otp-cell");
     const digits = ["1", "2", "3", "4"];
+const old_states = [];
     for (let i = 0; i < otpCells.length; i++) {
       await otpCells[i].focus();
       await otpCells[i].type(digits[i]);
@@ -781,6 +795,7 @@ async function navigateTo(page, viewName, timeout = 3000) {
     { name: "MOBILE_LIGHT", viewport: { width: 390, height: 844 }, dark: false },
     { name: "MOBILE_DARK",  viewport: { width: 390, height: 844 }, dark: true  },
   ];
+const old_states = [];
 
   const wizBrowser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
 
@@ -849,5 +864,11 @@ async function navigateTo(page, viewName, timeout = 3000) {
   await wizBrowser.close();
 
 })();
+
+
+
+
+
+
 
 

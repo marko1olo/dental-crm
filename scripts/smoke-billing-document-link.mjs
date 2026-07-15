@@ -4,10 +4,13 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
+const smokeAuthSecret = process.env.AUTH_TOKEN_SECRET || "dente_billing_smoke_secret";
+process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
 
 const routePath = path.resolve("apps/api/dist/routes/billing.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 const billingRouteSource = readFileSync("apps/api/src/routes/billing.ts", "utf8");
 
 if (!existsSync(routePath) || !existsSync(sampleDataPath) || !existsSync(sharedPath)) {
@@ -19,6 +22,9 @@ const Fastify = requireFromApi("fastify");
 const { registerBillingRoutes } = await import(pathToFileURL(routePath).href);
 const { activeVisit, createGeneratedDocument, createPayment, documents } = await import(pathToFileURL(sampleDataPath).href);
 const { createPaymentSchema, documentKindMetadata } = await import(pathToFileURL(sharedPath).href);
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+const smokeClinicToken = signToken({ organizationId: activeVisit.organizationId, clinicName: "Smoke clinic" }, smokeAuthSecret, 60);
+const smokeStaffToken = signToken({ organizationId: activeVisit.organizationId, userId: "smoke-user", role: "administrator" }, smokeAuthSecret, 60);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -47,6 +53,11 @@ function assertBillingScopeError(response, expectedStatusCode, expectedText, lab
 }
 
 const app = Fastify({ logger: false });
+app.addHook("onRequest", (request, _reply, done) => {
+  request.headers["x-dente-clinic-token"] = smokeClinicToken;
+  request.headers["x-dente-staff-token"] = smokeStaffToken;
+  done();
+});
 await registerBillingRoutes(app);
 
 const validDocument = documents.find(

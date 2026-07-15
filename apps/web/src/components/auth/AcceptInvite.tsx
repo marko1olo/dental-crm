@@ -44,6 +44,7 @@ export function AcceptInvite({ token, onSuccess, onCancel }: AcceptInviteProps) 
 
       localStorage.setItem('dente_clinic_token', data.clinicToken);
       localStorage.setItem('dente_staff_token', data.staffToken);
+      if (data.user?.organizationId) localStorage.setItem('dente_organization_id', data.user.organizationId);
       showToast('Профиль успешно создан!', 'success');
       onSuccess({ organizationId: data.user.organizationId }, data.user);
     } catch (err: any) {

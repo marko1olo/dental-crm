@@ -1,232 +1,49 @@
 {
-  "clinicName": "DENTE Demo Clinic",
-  "todayIso": "2026-07-08",
   "clinicSettings": {
     "profile": {
-      "organizationId": "00000000-0000-0000-0000-000000000000",
       "clinicName": "DENTE Demo Clinic",
       "legalName": "DENTE LLC",
-      "inn": "1234567890",
-      "address": "Demo St 1",
-      "phone": "+79990000000",
-      "mode": "one_chair",
+      "address": "Moscow, Russia",
       "timezone": "Europe/Moscow",
-      "defaultVisitMinutes": 60,
-      "scheduleDefaults": {
-        "workdayStart": "09:00",
-        "workdayEnd": "18:00",
-        "workingDays": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6
-        ],
-        "appointmentBufferMinutes": 15
-      },
-      "networkEnabled": false,
-      "egiszEnabled": false,
-      "updatedAt": "2026-07-08T06:22:53.093Z"
+      "mode": "family"
     },
-    "integrationPresets": [],
-    "chairs": [
-      {
-        "id": "00000000-0000-0000-0000-000000000004",
-        "organizationId": "00000000-0000-0000-0000-000000000000",
-        "name": "Кабинет 1 (Терапия)",
-        "room": "101",
-        "specialization": "therapist",
-        "active": true,
-        "hasXraySensor": true,
-        "hasMicroscope": true,
-        "hasSurgeryKit": false,
-        "notes": "Терапевтический прием"
-      },
-      {
-        "id": "00000000-0000-0000-0000-000000000008",
-        "organizationId": "00000000-0000-0000-0000-000000000000",
-        "name": "Кабинет 2 (Хирургия)",
-        "room": "102",
-        "specialization": "surgeon",
-        "active": true,
-        "hasXraySensor": true,
-        "hasMicroscope": false,
-        "hasSurgeryKit": true,
-        "notes": "Хирургический прием"
-      }
-    ],
-    "workspaceProfiles": [],
-    "roleAccessPolicies": [],
-    "modeHints": [],
     "staff": [
       {
-        "id": "00000000-0000-0000-0000-000000000009",
-        "organizationId": "00000000-0000-0000-0000-000000000000",
-        "fullName": "Иванов И.И.",
-        "role": "owner",
-        "specialties": [
-          "therapist",
-          "surgeon"
-        ],
-        "phone": "+79991112233",
-        "email": "dr.ivanov@dente.ru",
+        "id": "u-123",
+        "fullName": "Dr. House",
+        "role": "doctor",
         "active": true,
-        "canSignMedicalRecords": true,
-        "canManageMoney": true,
-        "canManageImports": true,
-        "color": "#3b82f6",
-        "createdAt": "2026-07-08T06:22:53.093Z",
-        "updatedAt": "2026-07-08T06:22:53.093Z"
+        "specialties": []
       }
-    ]
-  },
-  "patients": [
-    {
-      "id": "00000000-0000-0000-0000-000000000001",
-      "organizationId": "00000000-0000-0000-0000-000000000000",
-      "fullName": "Смирнов Алексей Васильевич",
-      "status": "active",
-      "birthDate": "1980-05-15",
-      "phone": "+79991234567",
-      "email": "smirnov.alex@gmail.com",
-      "notes": "Острая аллергия на лидокаин! Только ультракаин без адреналина.",
-      "administrativeProfile": {
-        "inn": "770102030405",
-        "snils": "123-456-789 01",
-        "passport": "4508 123456"
-      },
-      "balanceRub": -5000,
-      "createdAt": "2026-07-08T06:22:53.093Z",
-      "updatedAt": "2026-07-08T06:22:53.093Z"
-    },
-    {
-      "id": "00000000-0000-0000-0000-000000000002",
-      "organizationId": "00000000-0000-0000-0000-000000000000",
-      "fullName": "Иванова Марина Игоревна",
-      "status": "active",
-      "birthDate": "1992-08-20",
-      "phone": "+79997654321",
-      "email": "ivanova.marina@mail.ru",
-      "notes": "Беременность 2 триместр.",
-      "administrativeProfile": null,
-      "balanceRub": 12500,
-      "createdAt": "2026-07-08T06:22:53.093Z",
-      "updatedAt": "2026-07-08T06:22:53.093Z"
-    }
-  ],
-  "appointments": [
-    {
-      "id": "00000000-0000-0000-0000-000000000003",
-      "organizationId": "00000000-0000-0000-0000-000000000000",
-      "patientId": "00000000-0000-0000-0000-000000000001",
-      "chairId": "00000000-0000-0000-0000-000000000004",
-      "doctorUserId": "00000000-0000-0000-0000-000000000009",
-      "startsAt": "2026-07-08T05:52:53.094Z",
-      "endsAt": "2026-07-08T07:22:53.094Z",
-      "status": "in_treatment",
-      "reason": "Лечение кариеса 4.6",
-      "comment": "Острая боль"
-    },
-    {
-      "id": "00000000-0000-0000-0000-000000000013",
-      "organizationId": "00000000-0000-0000-0000-000000000000",
-      "patientId": "00000000-0000-0000-0000-000000000002",
-      "chairId": "00000000-0000-0000-0000-000000000008",
-      "doctorUserId": "00000000-0000-0000-0000-000000000009",
-      "startsAt": "2026-07-08T07:52:53.094Z",
-      "endsAt": "2026-07-08T08:52:53.094Z",
-      "status": "planned",
-      "reason": "Установка коронки 25",
-      "comment": "Сдача протезной конструкции"
-    }
-  ],
-  "documents": [],
-  "imagingStudies": [],
-  "serviceCatalog": [],
-  "clinicalRules": [],
-  "activeVisit": {
-    "id": "00000000-0000-0000-0000-000000000002",
-    "organizationId": "00000000-0000-0000-0000-000000000000",
-    "patientId": "00000000-0000-0000-0000-000000000001",
-    "appointmentId": "00000000-0000-0000-0000-000000000003",
-    "status": "draft",
-    "revision": 1,
-    "complaint": "Острая боль при накусывании зуба 4.6",
-    "anamnesis": "Боль появилась несколько дней назад, усиливается от температурных раздражителей.",
-    "objectiveStatus": "На дистально-жевательной поверхности 4.6 глубокая кариозная полость, зондирование дна резко болезненно.",
-    "diagnosis": "К04.0 Начальный пульпит зуба 4.6",
-    "treatmentPlan": "Эндодонтическое лечение каналов 4.6, временная пломба.",
-    "doctorSummary": "Проведена анестезия Sol. Ultracaini 1.7ml. Механическая и медикаментозная обработка каналов.",
-    "createdAt": "2026-07-08T06:22:53.093Z",
-    "updatedAt": "2026-07-08T06:22:53.093Z"
-  },
-  "visitCloseChecklist": {
-    "visitId": "00000000-0000-0000-0000-000000000002",
-    "readyToSign": true,
-    "score": 100,
-    "nextAction": "sign",
-    "blockingItems": 0,
-    "items": []
+    ],
+    "chairs": [
+      {
+        "id": "chair-1",
+        "name": "Main Chair"
+      }
+    ],
+    "modeHints": [],
+    "integrationPresets": [],
+    "workspaceProfiles": [],
+    "roleAccessPolicies": []
   },
   "shiftIntelligence": {
+    "roleQueues": [],
     "modeFit": {
-      "mode": "one_chair",
-      "title": "Оптимальный режим",
-      "fitScore": 100,
-      "blockers": [],
-      "upgrades": [],
-      "lowFrictionNextStep": "ready"
+      "fitScore": 95,
+      "lowFrictionNextStep": "Отлично"
     },
     "doctorLoads": [],
     "assistantLoads": [],
-    "chairLoads": [],
-    "roleQueues": [],
-    "scheduleWarnings": []
+    "chairLoads": []
   },
-  "clinicalRuleSummary": {
-    "activeRules": 0,
-    "evaluatedRules": 0,
-    "unresolved": 0,
-    "blockers": 0,
-    "warnings": 0,
-    "requiredServices": 0,
-    "coveredRules": 0
-  },
-  "billingSummary": {
-    "totalPlannedRub": 40000,
-    "totalDiscountRub": 2200,
-    "totalPaidRub": 5000,
-    "totalDueRub": 32800,
-    "taxDeductionEligibleRub": 37800,
-    "draftDocumentAmountRub": 0,
-    "openTreatmentItems": 2,
-    "unpaidDocuments": 1
-  },
-  "communicationSummary": {
-    "openTasks": 0,
-    "urgentTasks": 0,
-    "dueToday": 0,
-    "overdue": 0,
-    "completedToday": 0,
-    "appointmentConfirmations": 0,
-    "paymentReminders": 0,
-    "postVisitInstructions": 0
-  },
-  "payments": [],
-  "auditEvents": [],
-  "complianceWarnings": [],
-  "communicationTasks": [],
-  "patientInsights": [],
-  "recommendedActions": [],
-  "appointmentReadiness": [],
-  "scheduleSuggestions": [],
   "protocolTemplates": [],
-  "treatmentPlanItems": [],
-  "treatmentPlanScenarios": [],
-  "clinicalRuleEvaluations": [],
-  "communicationTemplates": [],
-  "communicationEvents": [],
+  "speechProviders": [],
   "importBatches": [],
-  "speechProviders": []
+  "auditEvents": [],
+  "clinicalRules": [],
+  "serviceCatalog": [],
+  "appointments": [],
+  "patients": [],
+  "activeVisit": null
 }

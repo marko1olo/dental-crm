@@ -271,7 +271,7 @@ export function VisitView(props: VisitViewProps) {
 
             
             <details className="clinical-rules-toggle" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', margin: '0.75rem 0' }}>
-              <summary style={{ padding: '0.75rem 1rem', background: '#f8fafc', fontSize: '0.85rem', fontWeight: 700, color: '#475569', cursor: 'pointer', outline: 'none' }}>
+              <summary style={{ padding: '0.75rem 1rem', background: 'var(--paper)', fontSize: '0.85rem', fontWeight: 700, color: '#475569', cursor: 'pointer', outline: 'none' }}>
                 🧭 Шаги приема и статус: {visitPrimaryAction.label}
               </summary>
               <div style={{ marginTop: '1rem', padding: '0 1rem 1rem 1rem' }}>
@@ -315,7 +315,7 @@ export function VisitView(props: VisitViewProps) {
 
             <details className="visit-safety-strip-toggle" style={{ margin: '1rem 0', fontSize: '0.85rem', color: 'var(--slate-500)' }}>
               <summary style={{ cursor: 'pointer', userSelect: 'none' }}>Инженерный статус (локальное сохранение, связь с сервером)</summary>
-              <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--slate-50)', borderRadius: '8px' }}>
+              <section className="visit-safety-strip" aria-label="Сохранность черновика и диктовки" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem', padding: '1rem', background: 'var(--paper)', borderRadius: '8px' }}>
                 {visitSafetyCards.map((item: any) => (
                   <article className={`safety-${item.state}`} key={item.key} style={{ flex: '1 1 200px' }}>
                     <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</span>
@@ -421,7 +421,7 @@ export function VisitView(props: VisitViewProps) {
                   <div style={{
                     marginTop: '8px', 
                     padding: '12px', 
-                    background: '#f8fafc', 
+                    background: 'var(--paper)', 
                     color: '#64748b', 
                     borderRadius: '8px',
                     border: '1px dashed #cbd5e1',
@@ -548,7 +548,7 @@ export function VisitView(props: VisitViewProps) {
                       disabled={!hasVisitTranscriptText || isTranscriptPolishing}
                       aria-describedby={!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined}
                       title={
-                        speechGatewayStatus?.polishPolicy.neuralEnabled
+                        speechGatewayStatus?.polishPolicy?.neuralEnabled
                           ? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
                           : "Локальная очистка терминов, секций и номеров зубов"
                       }
@@ -1009,7 +1009,7 @@ export function VisitView(props: VisitViewProps) {
                         ? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
                         : lastVisitSaveReceipt
                           ? visitSaveReceiptText(lastVisitSaveReceipt)
-                          : dashboard.activeVisit.doctorSummary}
+                          : dashboard.activeVisit?.doctorSummary}
                 </p>
                 {pendingVisitSaveCount ? (
                   <button className="secondary-button" type="button" onClick={() => void flushPendingVisitSaves({ silent: false })} disabled={isPendingVisitSyncing}>

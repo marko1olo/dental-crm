@@ -340,14 +340,15 @@ export async function commitPatientImport(orgId: string, input: ImportPreviewReq
     const validRows = preview.rows.filter((row) => row.status === "ready" && row.fullName);
     
     for (const row of validRows) {
-      const [inserted] = await tx.insert(patients).values({
+      const result = await tx.insert(patients).values({
         organizationId: orgId,
         fullName: row.fullName ?? "",
         birthDate: row.birthDate,
         phone: row.phone,
         notes: row.notes,
         status: "active"
-      }).returning();
+      }).returning() as any;
+      const inserted = result[0];
       
       importedPatientIds.push(inserted!.id);
 

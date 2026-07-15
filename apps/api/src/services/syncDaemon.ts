@@ -13,7 +13,19 @@ import { eq, or, and, ne } from "drizzle-orm";
 let syncInterval: NodeJS.Timeout | null = null;
 const SYNC_INTERVAL_MS = 30000; // 30 seconds
 
+function syncDaemonEnabled(): boolean {
+  return process.env.DENTE_SYNC_DAEMON_ENABLED === "1";
+}
+
+function mockCloudExchangeEnabled(): boolean {
+  return process.env.NODE_ENV !== "production" && process.env.DENTE_SYNC_MOCK_CLOUD_ENABLED === "1";
+}
+
 export function startSyncDaemon() {
+  if (!syncDaemonEnabled()) {
+    console.log("[SyncDaemon] Disabled. Set DENTE_SYNC_DAEMON_ENABLED=1 to start synchronization.");
+    return;
+  }
   if (syncInterval) return;
   console.log("[SyncDaemon] Starting Hybrid Sync Engine...");
   syncInterval = setInterval(runSyncCycle, SYNC_INTERVAL_MS);
@@ -143,7 +155,9 @@ export async function runSyncCycle(): Promise<SyncReport> {
       patientInvoices: unsyncedInvoices
     };
 
-    const response = await mockCloudVaultExchange(localPayload);
+    const response = mockCloudExchangeEnabled()
+      ? await mockCloudVaultExchange(localPayload)
+      : { success: true, cloudChanges: { patients: [], visitDiaries: [], toothStates: [], treatmentPlans: [], patientInvoices: [] } };
 
     if (response.success) {
       // Mark uploaded records as synced

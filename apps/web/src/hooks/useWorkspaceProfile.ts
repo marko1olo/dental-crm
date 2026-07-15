@@ -19,12 +19,13 @@ export interface WorkspaceFeatureFlags {
   onboardingCompleted: boolean;
   hasPediatricMode: boolean;
   isOmniRole: boolean;
+  numberOfDoctors: number;
 }
 
 interface WorkspaceProfileStore extends WorkspaceFeatureFlags {
   loaded: boolean;
   hydrate: (flags: WorkspaceFeatureFlags) => void;
-  setFlag: (key: keyof WorkspaceFeatureFlags, value: boolean | string) => void;
+  setFlag: (key: keyof WorkspaceFeatureFlags, value: boolean | string | number) => void;
   reset: () => void;
 }
 
@@ -38,6 +39,7 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
   onboardingCompleted: false,
   hasPediatricMode: false,
   isOmniRole: false,
+  numberOfDoctors: 4,
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -70,6 +72,7 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
         hasInstallments: s.hasInstallments,
         workspacePreset: s.workspacePreset,
         onboardingCompleted: s.onboardingCompleted,
+        numberOfDoctors: s.numberOfDoctors,
       }),
     }
   )
@@ -86,7 +89,7 @@ export function useWorkspaceProfile() {
 // ──────────────────────────────────────────────────────────────────────────────
 // Utility: apply a named preset to the server and update local store
 // ──────────────────────────────────────────────────────────────────────────────
-export async function applyWorkspacePreset(presetName: string, extraData?: { numberOfChairs?: number, hasPediatricMode?: boolean }): Promise<WorkspaceFeatureFlags> {
+export async function applyWorkspacePreset(presetName: string, extraData?: { numberOfChairs?: number, numberOfDoctors?: number, hasPediatricMode?: boolean }): Promise<WorkspaceFeatureFlags> {
   const res = await fetch(`/api/workspace/preset/${presetName}`, { 
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -98,6 +101,13 @@ export async function applyWorkspacePreset(presetName: string, extraData?: { num
   
   if (extraData?.hasPediatricMode !== undefined) {
       flags.hasPediatricMode = extraData.hasPediatricMode;
+  }
+  if (extraData?.numberOfDoctors !== undefined) {
+      flags.numberOfDoctors = extraData.numberOfDoctors;
+  }
+  if (extraData?.numberOfChairs !== undefined) {
+      // In case server didn't set it from extraData or we want local override
+      flags.hasMultipleChairs = extraData.numberOfChairs > 1;
   }
   
   useWorkspaceProfileStore.getState().hydrate(flags);

@@ -3,9 +3,35 @@ import crypto from "crypto";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { organizations, users, userInvitations, auditEvents } from "../db/schema.js";
-import { configuredClinicalAccessSecret } from "../accessGuard.js";
+import { requireAuthTokenSecret, configuredAuthTokenSecret } from "../accessGuard.js";
 import { hashCredential, verifyCredential, signToken, verifyToken } from "../utils/cryptoHelper.js";
-export const TOKEN_SECRET = () => process.env.AUTH_TOKEN_SECRET ?? configuredClinicalAccessSecret() ?? "dente_fallback_secret_change_me";
+export const TOKEN_SECRET = requireAuthTokenSecret;
+
+function verifySessionToken(token: string | undefined): Record<string, unknown> | null {
+  const secret = configuredAuthTokenSecret();
+  if (!secret || !token) return null;
+  return verifyToken(token, secret);
+}
+
+function configuredRequiredAdminSetupKey(): string | null {
+  const explicitKey = process.env.ADMIN_SETUP_KEY?.trim();
+  if (explicitKey) return explicitKey;
+  if (process.env.NODE_ENV !== "production") return configuredAuthTokenSecret();
+  return null;
+}
+
+function requireAdminSetupKey(reply: FastifyReply, providedKey: unknown): boolean {
+  const adminKey = configuredRequiredAdminSetupKey();
+  if (!adminKey) {
+    reply.code(503).send({ error: "AdminSetupKeyMissing", message: "На сервере не задан ADMIN_SETUP_KEY." });
+    return false;
+  }
+  if (typeof providedKey !== "string" || providedKey !== adminKey) {
+    reply.code(403).send({ error: "Forbidden", message: "Неверный admin key." });
+    return false;
+  }
+  return true;
+}
 
 interface ClinicLoginBody {
   email?: string;
@@ -32,7 +58,7 @@ export async function requireClinicToken(request: FastifyRequest, reply: Fastify
   if (!token) {
     return void reply.code(401).send({ error: "AuthRequired", message: "Необходима авторизация рабочего кабинета клиники." });
   }
-  const payload = verifyToken(token, TOKEN_SECRET());
+  const payload = verifySessionToken(token);
   if (!payload || !payload.organizationId) {
     return void reply.code(401).send({ error: "TokenExpired", message: "Сессия истекла. Войдите в кабинет заново." });
   }
@@ -106,7 +132,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     // Verify clinic token is present so we know the org context
     const clinicHeader = request.headers["x-dente-clinic-token"];
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const clinicPayload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
+    const clinicPayload = clinicToken ? verifySessionToken(clinicToken) : null;
 
     if (!clinicPayload?.organizationId) {
       return reply.code(401).send({ error: "ClinicAuthRequired", message: "Сначала выполните вход в кабинет клиники." });
@@ -152,6 +178,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       staffToken,
       user: {
         id: user.id,
+        organizationId: orgId,
         fullName: user.fullName,
         role: user.role,
         phone: user.phone,
@@ -167,8 +194,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
 
-    const clinicPayload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const staffPayload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+    const clinicPayload = clinicToken ? verifySessionToken(clinicToken) : null;
+    const staffPayload = staffToken ? verifySessionToken(staffToken) : null;
 
     let activeUser: any = null;
     if (staffPayload?.userId && clinicPayload?.organizationId) {
@@ -191,11 +218,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // ─── Admin: Set/Reset Clinic Password ────────────────────────────────────────
   app.post("/api/auth/clinic/set-password", async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as { organizationId: string; newPassword: string; adminKey: string };
-    const adminKey = process.env.ADMIN_SETUP_KEY ?? "dente_admin_setup_key";
-
-    if (body.adminKey !== adminKey) {
-      return reply.code(403).send({ error: "Forbidden", message: "Неверный admin key." });
-    }
+    if (!requireAdminSetupKey(reply, body.adminKey)) return;
 
     const hash = hashCredential(body.newPassword);
     await db.update(organizations).set({ passwordHash: hash }).where(eq(organizations.id, body.organizationId));
@@ -206,11 +229,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // ─── Admin: Set Staff PIN ─────────────────────────────────────────────────────
   app.post("/api/auth/staff/set-pin", async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as { userId: string; newPin: string; adminKey: string };
-    const adminKey = process.env.ADMIN_SETUP_KEY ?? "dente_admin_setup_key";
-
-    if (body.adminKey !== adminKey) {
-      return reply.code(403).send({ error: "Forbidden", message: "Неверный admin key." });
-    }
+    if (!requireAdminSetupKey(reply, body.adminKey)) return;
 
     const hash = hashCredential(body.newPin);
     await db.update(users).set({ pinCodeHash: hash }).where(eq(users.id, body.userId));
@@ -321,7 +340,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [org] = await db.select({ name: organizations.name }).from(organizations).where(eq(organizations.id, user.organizationId)).limit(1);
     const clinicToken = signToken({ organizationId: user.organizationId, clinicName: org?.name ?? 'Clinic' }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
     const staffToken = signToken({ userId: user.id, fullName: user.fullName, role: user.role, organizationId: user.organizationId }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
-    return reply.send({ ok: true, clinicToken, staffToken, user: { id: user.id, fullName: user.fullName, role: user.role, email: user.email } });
+    return reply.send({ ok: true, clinicToken, staffToken, user: { id: user.id, organizationId: user.organizationId, fullName: user.fullName, role: user.role, email: user.email } });
   });
 
   // ─── SaaS Create Invite ──────────────────────────────────────────────────────
@@ -329,7 +348,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const { email, role } = (request.body as any) ?? {};
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
-    const staffPayload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+    const staffPayload = staffToken ? verifySessionToken(staffToken) : null;
     
     if (!staffPayload?.organizationId || (staffPayload.role !== 'owner' && staffPayload.role !== 'admin')) {
       return reply.code(403).send({ error: 'Forbidden', message: 'Нет прав на приглашение сотрудников.' });
@@ -378,14 +397,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [org] = await db.select({ name: organizations.name }).from(organizations).where(eq(organizations.id, user.organizationId)).limit(1);
     const clinicToken = signToken({ organizationId: user.organizationId, clinicName: org?.name ?? 'Clinic' }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
     const staffToken = signToken({ userId: user.id, fullName: user.fullName, role: user.role, organizationId: user.organizationId }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
-    return reply.send({ ok: true, clinicToken, staffToken, user: { id: user.id, fullName: user.fullName, role: user.role, email: user.email } });
+    return reply.send({ ok: true, clinicToken, staffToken, user: { id: user.id, organizationId: user.organizationId, fullName: user.fullName, role: user.role, email: user.email } });
   });
 
   // ─── SaaS User Profile: Get Current User ──────────────────────────────────────
   app.get('/api/auth/user/me', async (request: FastifyRequest, reply: FastifyReply) => {
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
-    const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+    const payload = staffToken ? verifySessionToken(staffToken) : null;
 
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
 
@@ -412,7 +431,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const { oldPassword, newPassword } = (request.body as any) ?? {};
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
-    const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+    const payload = staffToken ? verifySessionToken(staffToken) : null;
 
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
     if (!oldPassword || !newPassword) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый пароль.' });
@@ -435,7 +454,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const { oldPin, newPin } = (request.body as any) ?? {};
     const staffHeader = request.headers['x-dente-staff-token'];
     const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
-    const payload = staffToken ? verifyToken(staffToken, TOKEN_SECRET()) : null;
+    const payload = staffToken ? verifySessionToken(staffToken) : null;
 
     if (!payload?.userId) return reply.code(401).send({ error: 'AuthRequired', message: 'Требуется авторизация.' });
     if (!oldPin || !newPin) return reply.code(400).send({ error: 'ValidationError', message: 'Введите старый и новый PIN-код.' });
@@ -451,5 +470,33 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     await db.update(users).set({ pinCodeHash: newPinHash }).where(eq(users.id, user.id));
 
     return reply.send({ ok: true, message: 'PIN-код успешно изменен.' });
+  });
+
+  // ─── E2E Dev Login (ONLY for development/testing) ────────────────────────────
+  app.post('/api/auth/dev-login', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (process.env.NODE_ENV === 'production') {
+      return reply.code(403).send({ error: 'Forbidden', message: 'Dev login not available in production.' });
+    }
+    
+    // Pick the first active user and their clinic
+    const [user] = await db.select().from(users).where(eq(users.isActive, true)).limit(1);
+    if (!user) {
+      return reply.code(500).send({ error: 'NoUsers', message: 'No seed users found in the database. Please run seed script first.' });
+    }
+
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, user.organizationId)).limit(1);
+    if (!org) {
+      return reply.code(500).send({ error: 'NoOrgs', message: 'User exists but organization missing.' });
+    }
+
+    const clinicToken = signToken({ organizationId: org.id, clinicName: org.name }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
+    const staffToken = signToken({ userId: user.id, fullName: user.fullName, role: user.role, organizationId: org.id }, TOKEN_SECRET(), 60 * 60 * 24 * 7);
+    
+    return reply.send({
+      ok: true,
+      clinicToken,
+      staffToken,
+      user: { id: user.id, organizationId: org.id, fullName: user.fullName, role: user.role, email: user.email }
+    });
   });
 }

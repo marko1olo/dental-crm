@@ -34,7 +34,6 @@ import { getAppointmentByIdInDb } from "../db/appointmentsQuery.js";
 import { getVisitByIdInDb } from "../db/visitsQuery.js";
 import { getDocumentRenderContextFromDb, readIssuedDocumentSnapshot } from "../db/documentQuery.js";
 import {
-  getDefaultOrganizationId,
   getDocumentsByPatientId,
   getDocumentById,
   createGeneratedDocumentInDb,
@@ -690,8 +689,7 @@ export function releaseReceiptMatchesCopyRequest(
 }
 
 export async function findIssuedMedicalCopyRequestForRelease(document: GeneratedDocument): Promise<GeneratedDocument | null> {
-  const orgId = await getDefaultOrganizationId();
-  const allDocuments = await getDocumentsByPatientId(orgId!, document.patientId);
+  const allDocuments = await getDocumentsByPatientId(document.organizationId, document.patientId);
   const release = document.payload?.medicalDocumentReleaseReceipt;
   if (!release) return null;
   const sourceRequestDocumentId = release.sourceRequestDocumentId;
@@ -815,8 +813,7 @@ export function configuredTaxOfficeCode(): string | null {
 }
 
 export async function documentIssueChainBlockReason(document: GeneratedDocument): Promise<string | null> {
-  const orgId = await getDefaultOrganizationId();
-  const allDocuments = await getDocumentsByPatientId(orgId!, document.patientId);
+  const allDocuments = await getDocumentsByPatientId(document.organizationId, document.patientId);
   if (taxCertificateExpectedApplicationForm(document) && !(await hasIssuedTaxApplicationForCertificate(document))) {
     return "Перед выдачей налогового документа нужно выпустить заявление налогоплательщика с тем же годом, формой, ИНН, реквизитами плательщика и точным набором выбранных фискальных чеков.";
   }

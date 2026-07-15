@@ -48,9 +48,8 @@ import {
   type UpdateClinicProfileInput
 } from "@dental/shared";
 import { commitImagingImport, parseImagingManifest } from "./imaging.js";
-import { getDefaultOrganizationId } from "../db/imagingQuery.js";
 import { buildPatientImportPreview, commitPatientImport } from "./imports.js";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess, resolveOrganizationId } from "../accessGuard.js";
 
 
 const execFileAsync = promisify(execFile);
@@ -5592,8 +5591,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     return buildSmartImportPreview(orgId, input);
   });
 
@@ -5642,8 +5641,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     return buildMigrationAutopilot(orgId, input);
   });
 
@@ -5656,8 +5655,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     const plan = await buildMigrationAutopilot(orgId, input);
     const csv = buildMigrationAutopilotReportCsv(plan);
     return reply
@@ -5687,10 +5686,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     const preview = await buildSmartImportPreview(orgId, input);
     const csv = buildSmartImportReportCsv(preview);
     return reply
@@ -5708,8 +5705,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     const preview = await buildSmartImportPreview(orgId, input);
     const csv = buildSmartImportSafeHandoffReportCsv(preview);
     return reply
@@ -5727,10 +5724,8 @@ export async function registerSmartImportRoutes(app: FastifyInstance) {
     );
     if (!parsed.ok) return reply.code(400).send(parsed.response);
     const input = parsed.data;
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
-    var orgId = await getDefaultOrganizationId();
-    if (!orgId) throw new Error("No org");
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     const preview = await buildSmartImportPreview(orgId, input);
     const patientCommit =
       preview.patientPreview.totalRows > 0

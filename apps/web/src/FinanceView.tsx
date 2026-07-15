@@ -6,6 +6,7 @@ import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
 import { formatCurrencyNumeric } from "./utils/inputSanitation";
 import { InstallmentScheduler } from "./components/InstallmentScheduler";
+import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -176,6 +177,14 @@ export function FinanceView({
         summary={clinicalRuleSummary}
       />
 
+      {documentPatient?.id && (
+        <FamilyWalletPanel 
+          patientId={documentPatient.id} 
+          remainingDebtRub={billingSummary?.totalDueRub ?? 0}
+          onPaymentSuccess={() => {}} // Could refresh ledger if needed
+        />
+      )}
+
       <PaymentCapture
         remainingDebt={billingSummary?.totalDueRub}
         amount={paymentAmount}
@@ -208,6 +217,7 @@ export function FinanceView({
         onTaxDeductionCodeChange={setPaymentTaxDeductionCode}
         patientContextMessage={paymentPatientContextMessage}
         patientContextReady={paymentPatientContextReady}
+        patientId={documentPatient?.id}
         patientDefaults={{
           birthDate: documentPatient?.birthDate ?? null,
           fullName: documentPatient?.fullName ?? null,

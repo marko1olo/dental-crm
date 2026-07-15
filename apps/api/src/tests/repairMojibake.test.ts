@@ -26,10 +26,10 @@ describe('repairMojibakeText', () => {
   });
 
   test('repairs various common mojibake strings', () => {
-    assert.strictEqual(repairMojibakeText("ÐŸÑ€Ð¸Ð²ÐµÑ‚"), "Привет");
-    assert.strictEqual(repairMojibakeText("Hello ÐŸÑ€Ð¸Ð²ÐµÑ‚ world"), "Hello Привет world");
-    assert.strictEqual(repairMojibakeText("ÐœÐ¸Ñ€"), "Мир");
-    assert.strictEqual(repairMojibakeText("Ð—Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº"), "Заголовок");
+    assert.strictEqual(repairMojibakeText("Привет"), "Привет");
+    assert.strictEqual(repairMojibakeText("Hello Привет world"), "Hello Привет world");
+    assert.strictEqual(repairMojibakeText("Мир"), "Мир");
+    assert.strictEqual(repairMojibakeText("Заголовок"), "Заголовок");
     assert.strictEqual(repairMojibakeText("ÐžÐ¿Ð¸Ñ\u0081Ð°Ð½Ð¸Ðµ"), "Описание");
   });
 

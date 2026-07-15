@@ -68,7 +68,7 @@ export function ShiftView({
                       <p>{activePatient.phone ?? "телефон не указан"}</p>
                     </div>
                   </div>
-                  <div className="hero-actions">
+                  <div className="hero-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     <button className="primary-button" type="button" onClick={() => { window.location.hash = "visit"; }}>
                       <ClipboardCheck aria-hidden="true" /> Открыть прием
                     </button>
@@ -234,25 +234,27 @@ export function ShiftView({
 
               {showAnalytics && (
                 <>
+                  {dashboard?.shiftIntelligence?.modeFit && (
                   <article className="mode-fit-card">
                     <div className="mode-fit-head">
                       <Building2 aria-hidden="true" />
                       <div>
                         <p className="eyebrow">Режим клиники</p>
-                        <h2>{dashboard.shiftIntelligence.modeFit.title}</h2>
+                        <h2>{dashboard.shiftIntelligence.modeFit.title ?? "—"}</h2>
                       </div>
-                      <strong>{dashboard.shiftIntelligence.modeFit.fitScore}%</strong>
+                      <strong>{dashboard.shiftIntelligence.modeFit.fitScore ?? 0}%</strong>
                     </div>
-                    <p>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep}</p>
+                    <p>{dashboard.shiftIntelligence.modeFit.lowFrictionNextStep ?? ""}</p>
                     <div className="mode-fit-list">
-                      {(dashboard.shiftIntelligence.modeFit.blockers.length
+                      {((dashboard.shiftIntelligence.modeFit.blockers?.length
                         ? dashboard.shiftIntelligence.modeFit.blockers
                         : dashboard.shiftIntelligence.modeFit.upgrades
-                      ).map((item: any) => (
+                      ) ?? []).map((item: any) => (
                         <span key={item}>{item}</span>
                       ))}
                     </div>
                   </article>
+                  )}
 
                   <article className="mode-fit-card resource-focus-card">
                     <div className="mode-fit-head">
@@ -287,7 +289,7 @@ export function ShiftView({
 
               <div className="role-queue-header-row">
                 <h3>Задачи по ролям</h3>
-                {dashboard.shiftIntelligence.roleQueues.length > 1 && (
+                {(dashboard?.shiftIntelligence?.roleQueues?.length || 0) > 1 && (
                   <button
                     className="text-button toggle-queues-btn"
                     type="button"
@@ -299,8 +301,8 @@ export function ShiftView({
               </div>
 
               <div className="role-queue-grid">
-                {dashboard.shiftIntelligence.roleQueues
-                  .filter((q: any) => q.role === activeQueueRole || showOtherQueues)
+                {(dashboard?.shiftIntelligence?.roleQueues || [])
+                  .filter((q: any) => showOtherQueues || q.role === activeQueueRole)
                   .map((queue: any) => (
                     <article className={`role-queue-card ${queue.role === activeQueueRole ? "active" : ""}`} key={queue.role}>
                       <div>

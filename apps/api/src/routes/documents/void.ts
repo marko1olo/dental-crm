@@ -1,6 +1,6 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess, requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import {
   createDocumentSchema,
   issueDocumentSchema,
@@ -52,18 +52,14 @@ import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb,
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
   app.post("/api/documents/:id/void", async (request, reply) => {
     if (!(await requireClinicalMutationAccess(request, reply, "document void"))) return;
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org";
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "document void tenant");
+    if (!orgId) return;
     const { id } = request.params as { id: string };
     const existing = await getDocumentById(orgId, id);
     if (!existing) {

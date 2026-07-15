@@ -1,13 +1,14 @@
-import { CreditCard, UserRound, Mic, Bot } from "lucide-react";
+import { CreditCard, UserRound, Mic, Bot, Coins, Landmark, PiggyBank, ShieldAlert, Info } from "lucide-react";
 import type { PaymentMethod } from "@dental/shared";
 import { validateRubAmountInput, rubAmountInputMissingStep } from "./rubAmountInput";
 import { textToNumbers } from "./lib/stringUtils";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
+import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 
 type TaxDeductionCode = "" | "1" | "2";
 
@@ -55,9 +56,10 @@ type PaymentCaptureProps = {
   payerRelationship: string;
   taxDeductionCode: TaxDeductionCode;
   remainingDebt?: number;
+  patientId?: string | undefined;
 };
 
-const visiblePaymentMethods: PaymentMethod[] = ["cash", "card", "bank_transfer", "online"];
+const visiblePaymentMethods: PaymentMethod[] = ["cash", "card", "bank_transfer", "online", "family_wallet", "other"];
 
 const digitsOnly = (value: string, maxLength: number) => value.replace(/[^\d]/g, "").slice(0, maxLength);
 
@@ -118,9 +120,9 @@ function FiscalDetails({
   paymentMissingId
 }: FiscalDetailsProps) {
   return (
-    <details className="payment-capture-detail-section" open={fiscalDetailsOpen}>
-      <summary>Фискальный чек и кассир</summary>
-      <div className="smart-details-content">
+    <details className="payment-capture-detail-section" open={fiscalDetailsOpen} style={{ marginTop: "16px", background: "var(--surface-100)", border: "1px solid var(--border-300)", borderRadius: "8px" }}>
+      <summary style={{ padding: "16px", fontWeight: 600, cursor: "pointer", userSelect: "none" }}>Фискальный чек и кассир</summary>
+      <div className="smart-details-content" style={{ padding: "0 16px 16px 16px" }}>
         <div className="payment-capture-detail-grid">
         <div className="smart-field">
           <input
@@ -136,7 +138,7 @@ function FiscalDetails({
         </div>
         <div className="smart-field">
           <DigitsInput maxLength={32} value={fiscalFn} onChange={onFiscalFnChange} placeholder=" " />
-          <label>ФО (номер фискального накопителя)</label>
+          <label>ФИО (номер фискального накопителя)</label>
         </div>
         <div className="smart-field">
           <DigitsInput maxLength={32} value={fiscalFd} onChange={onFiscalFdChange} placeholder=" " />
@@ -155,7 +157,7 @@ function FiscalDetails({
             value={fiscalReceiptUrl}
             onChange={(event) => onFiscalReceiptUrlChange(event.target.value)}
             placeholder=" " />
-          <label>Ссылка НФД (https://...)</label>
+          <label>Ссылка на чек (https://...)</label>
         </div>
         <div className="smart-field">
           <input
@@ -220,9 +222,9 @@ function TaxPayerDetails({
   taxPayerDetailsOpen
 }: TaxPayerDetailsProps) {
   return (
-    <details className="payment-capture-detail-section" open={taxPayerDetailsOpen}>
-      <summary>Плательщик для налогового вычета</summary>
-      <div className="smart-details-content">
+    <details className="payment-capture-detail-section" open={taxPayerDetailsOpen} style={{ marginTop: "16px", background: "var(--surface-100)", border: "1px solid var(--border-300)", borderRadius: "8px" }}>
+      <summary style={{ padding: "16px", fontWeight: 600, cursor: "pointer", userSelect: "none" }}>Плательщик для налогового вычета</summary>
+      <div className="smart-details-content" style={{ padding: "0 16px 16px 16px" }}>
         <div className="payment-capture-detail-grid">
         <div className="smart-field">
           <input
@@ -305,7 +307,7 @@ function TaxPayerDetails({
             <UserRound aria-hidden="true" /> Заполнить из карточки пациента
           </button>
           {!patientTaxDefaultsAvailable ? (
-            <small id={taxDefaultsGuidanceId}>В карточке пациента нет ФИО, даты рождения, документа или ИНН для автозаполнения.</small>
+            <small id={taxDefaultsGuidanceId}>В карточке пациента нет ФИО, даты рождения, документа или ИИИНН для автозаполнения.</small>
           ) : (
             <small>Заполнит только пустые поля и не перезапишет ручные правки администратора.</small>
           )}
@@ -411,12 +413,28 @@ export function PaymentCapture({
   payerInn,
   payerRelationship,
   taxDeductionCode,
-  remainingDebt
+  remainingDebt,
+  patientId
 }: PaymentCaptureProps) {
   const [smartInputText, setSmartInputText] = useState("");
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
   const [showHints, setShowHints] = useState(false);
+  const [familyData, setFamilyData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!patientId) {
+      setFamilyData(null);
+      return;
+    }
+    fetch(`/api/finance/family/patient/${patientId}`, { headers: denteAdminSecretRequestHeaders() })
+      .then(res => {
+        if (!res.ok) throw new Error("No family");
+        return res.json();
+      })
+      .then(data => setFamilyData(data))
+      .catch(() => setFamilyData(null));
+  }, [patientId]);
   
   const handleSmartDictation = (text: string) => {
     if (!text.trim()) return;
@@ -469,19 +487,26 @@ export function PaymentCapture({
         payerIdentityDocument.trim() ||
         (payerRelationship.trim() && payerRelationship.trim() !== "пациент")
     );
+  const numericAmount = parseFloat(amount) || 0;
+  const hasFamily = !!familyData;
+  const familyBalance = familyData ? parseFloat(familyData.balance) : 0;
+  const isFamilyWalletPayment = method === "other";
+
   const paymentMissingSteps = [
     !patientContextReady ? patientContextMessage || "выберите пациента текущего приема" : null,
     amountMissingStep,
-    fiscalReceiptUrlInvalid ? "ссылка НФД должна начинаться с http:// или https://" : null,
+    fiscalReceiptUrlInvalid ? "ссылка на чек должна начинаться с http:// или https://" : null,
     payerInnInvalid ? "ИНН плательщика должен содержать 10 или 12 цифр" : null,
     taxDeductionRequested && !fiscalReceiptIssuedAt.trim() ? "для вычета укажите дату фискального чека" : null,
-    taxDeductionRequested && !fiscalFn.trim() ? "для вычета укажите ФО" : null,
+    taxDeductionRequested && !fiscalFn.trim() ? "для вычета укажите ФИО" : null,
     taxDeductionRequested && !fiscalFd.trim() ? "для вычета укажите ФД" : null,
     taxDeductionRequested && !fiscalFpd.trim() ? "для вычета укажите ФПД" : null,
     taxDeductionRequested && !payerFullName.trim() ? "для вычета укажите ФИО плательщика явно" : null,
     taxDeductionRequested && !payerBirthDate.trim() ? "для вычета укажите дату рождения плательщика" : null,
     taxDeductionRequested && !payerIdentityDocument.trim() ? "для вычета укажите документ плательщика" : null,
-    taxDeductionRequested && !payerRelationship.trim() ? "для вычета укажите родство плательщика" : null
+    taxDeductionRequested && !payerRelationship.trim() ? "для вычета укажите родство плательщика" : null,
+    isFamilyWalletPayment && !hasFamily ? "у пациента не настроен семейный аккаунт" : null,
+    isFamilyWalletPayment && hasFamily && familyBalance < numericAmount ? "недостаточно средств на семейном счете" : null
   ].filter((step): step is string => Boolean(step));
   const paymentReadyToSubmit = paymentMissingSteps.length === 0;
   const applyPatientTaxDefaults = () => {
@@ -499,110 +524,158 @@ export function PaymentCapture({
           {feedback}
         </div>
       ) : (
-        <>
-        <div className="smart-ai-booking" style={{ marginBottom: '12px', border: '1px solid var(--brand-300)', boxShadow: '0 2px 8px rgba(14, 165, 233, 0.05)', borderRadius: '12px', padding: '8px 12px', background: 'var(--paper)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bot size={18} color="var(--brand-600)" />
-          <div style={{ position: 'relative', flex: 1 }}>
-            <input
-              type="text"
-              value={smartInputText}
-              placeholder="Пример: Оплата 5000 картой, нужен налоговый вычет..."
-              onFocus={() => setShowHints(true)}
-              onBlur={() => setTimeout(() => setShowHints(false), 200)}
-              onChange={(e) => setSmartInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && smartInputText.trim()) {
-                  e.preventDefault();
-                  handleSmartDictation(smartInputText);
-                }
+        <div className="payment-capture-card payment-capture-ai-card">
+          <div className="payment-card-header">
+            <Bot size={16} className="card-header-icon-bot" />
+            <span>Голосовой & ИИ ассистент</span>
+          </div>
+          <div className="smart-ai-booking-container">
+            <Bot size={18} color="var(--brand-600)" />
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input
+                type="text"
+                value={smartInputText}
+                placeholder="Пример: Оплата 5000 картой, нужен налоговый вычет..."
+                onFocus={() => setShowHints(true)}
+                onBlur={() => setTimeout(() => setShowHints(false), 200)}
+                onChange={(e) => setSmartInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && smartInputText.trim()) {
+                    e.preventDefault();
+                    handleSmartDictation(smartInputText);
+                  }
+                }}
+                style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', fontFamily: 'inherit' }}
+              />
+              <DictationHints isVisible={showHints && !smartInputText} type="payment" />
+            </div>
+            <SmartMicrophoneButton
+              context="payment"
+              onResult={(t) => {
+                const normalized = textToNumbers(t);
+                setSmartInputText(normalized);
+                handleSmartDictation(normalized);
               }}
-              style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', fontFamily: 'inherit' }}
-            />
-            <DictationHints isVisible={showHints && !smartInputText} type="payment" />
-          </div>
-          <SmartMicrophoneButton
-            context="payment"
-            onResult={(t) => {
-              const normalized = textToNumbers(t);
-              setSmartInputText(normalized);
-              handleSmartDictation(normalized);
-            }}
-            style={{ color: "var(--brand-600)", background: "transparent", border: "none" }}
-            className="icon-button"
-          />
-        </div>
-        <div className="quick-chips-row" style={{ marginBottom: '16px', flexWrap: 'wrap' }}>
-          <button type="button" className="quick-chip quick-chip--sm" onClick={() => handleSmartDictation("5000 наличными")}>💰 5000 наличными</button>
-          <button type="button" className="quick-chip quick-chip--sm" onClick={() => handleSmartDictation("15000 по карте")}>💳 15000 картой</button>
-          <button type="button" className="quick-chip quick-chip--sm" onClick={() => handleSmartDictation("20000 сбп, вычет")}>🧾 20000 СБП + вычет</button>
-        </div>
-        {showSmartPreview && smartParsedData && (
-          <div style={{ marginBottom: '16px' }}>
-            <SmartParsePreview 
-              parsedData={smartParsedData} 
-              rawText={smartInputText}
-              type="visit"
-              isVisible={showSmartPreview}
-              onClose={() => setShowSmartPreview(false)} 
-              onApply={() => setShowSmartPreview(false)} 
-              onManual={() => setShowSmartPreview(false)} 
+              style={{ color: "var(--brand-600)", background: "transparent", border: "none" }}
+              className="icon-button"
             />
           </div>
-        )}
-        </>
+          <div className="quick-chips-row" style={{ flexWrap: 'wrap' }}>
+            <button type="button" className="quick-chip quick-chip--sm" onClick={() => handleSmartDictation("5000 наличными")}>💰 5000 наличными</button>
+            <button type="button" className="quick-chip quick-chip--sm" onClick={() => handleSmartDictation("15000 по карте")}>💳 15000 картой</button>
+            <button type="button" className="quick-chip quick-chip--sm" onClick={() => handleSmartDictation("20000 сбп, вычет")}>🧾 20000 СБП + вычет</button>
+          </div>
+          {showSmartPreview && smartParsedData && (
+            <div style={{ marginTop: '8px' }}>
+              <SmartParsePreview 
+                parsedData={smartParsedData} 
+                rawText={smartInputText}
+                type="visit"
+                isVisible={showSmartPreview}
+                onClose={() => setShowSmartPreview(false)} 
+                onApply={() => setShowSmartPreview(false)} 
+                onManual={() => setShowSmartPreview(false)} 
+              />
+            </div>
+          )}
+        </div>
       )}
-      <div className="smart-field">
-        <input
-          id="payment-amount-input"
-          inputMode="numeric"
-          autoComplete="transaction-amount"
-          pattern="[0-9\s]*"
-          aria-label="Сумма оплаты"
-          aria-invalid={paymentAmountInvalid || undefined}
-          aria-describedby={paymentAmountInvalid ? paymentMissingId : undefined}
-          value={amount}
-          onChange={(event) => onAmountChange(event.target.value)}
-          placeholder=" "
-        />
-        <label>Сумма к оплате (₽)</label>
-        {remainingDebt !== undefined && (
-          <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap", width: "max-content", maxWidth: "260px" }}>
-            {remainingDebt > 0 && (
-              <button
-                type="button"
-                className="quick-chip"
-                onClick={() => onAmountChange(String(remainingDebt))}
-              >
-                Долг: {remainingDebt} ₽
-              </button>
-            )}
-            {[1000, 2000, 3000, 5000].map((val) => (
-              <button
-                key={val}
-                type="button"
-                className="quick-chip quick-chip--sm"
-                onClick={() => onAmountChange(String(val))}
-              >
-                {val} ₽
-              </button>
-            ))}
+
+      <div className="payment-capture-card">
+        <div className="payment-card-header">
+          <Coins size={16} className="card-header-icon-coins" />
+          <span>Детали платежа</span>
+        </div>
+
+        <div className="smart-field">
+          <input
+            id="payment-amount-input"
+            inputMode="numeric"
+            autoComplete="transaction-amount"
+            pattern="[0-9\s]*"
+            aria-label="Сумма оплаты"
+            aria-invalid={paymentAmountInvalid || undefined}
+            aria-describedby={paymentAmountInvalid ? paymentMissingId : undefined}
+            value={amount}
+            onChange={(event) => onAmountChange(event.target.value)}
+            placeholder=" "
+          />
+          <label>Сумма к оплате (₽)</label>
+          {remainingDebt !== undefined && (
+            <div className="quick-chips-row" style={{ marginTop: "6px", flexWrap: "wrap" }}>
+              {remainingDebt > 0 && (
+                <button
+                  type="button"
+                  className="quick-chip"
+                  onClick={() => onAmountChange(String(remainingDebt))}
+                >
+                  Долг: {remainingDebt} ₽
+                </button>
+              )}
+              {[1000, 2000, 3000, 5000].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  className="quick-chip quick-chip--sm"
+                  onClick={() => onAmountChange(String(val))}
+                >
+                  {val} ₽
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="payment-methods-grid-container">
+          <span className="payment-methods-grid-label">Способ оплаты</span>
+          <div className="payment-methods-grid">
+            {visiblePaymentMethods.map((paymentMethod) => {
+              const getIcon = () => {
+                switch (paymentMethod) {
+                  case "cash": return <Coins size={20} />;
+                  case "card": return <CreditCard size={20} />;
+                  case "bank_transfer": return <Landmark size={20} />;
+                  case "online": return <PiggyBank size={20} />;
+                  case "family_wallet": return <UserRound size={20} />;
+                  case "other": return <UserRound size={20} />;
+                  default: return <Coins size={20} />;
+                }
+              };
+              return (
+                <button
+                  className={`payment-method-card ${method === paymentMethod ? "active" : ""}`}
+                  key={paymentMethod}
+                  type="button"
+                  aria-pressed={method === paymentMethod}
+                  onClick={() => onMethodChange(paymentMethod)}
+                >
+                  {getIcon()}
+                  <span>{methodLabels[paymentMethod]}</span>
+                </button>
+              );
+            })}
           </div>
-        )}
-      
+        </div>
       </div>
-      <div className="quick-chips-row" style={{marginBottom: "20px"}} aria-label="Способ оплаты">
-        {visiblePaymentMethods.map((paymentMethod) => (
-          <button
-            className={`quick-chip ${method === paymentMethod ? "active" : ""}`}
-            key={paymentMethod}
-            type="button"
-            aria-pressed={method === paymentMethod}
-            onClick={() => onMethodChange(paymentMethod)}
-          >
-            {methodLabels[paymentMethod]}
-          </button>
-        ))}
-      </div>
+
+      {isFamilyWalletPayment && familyData && (
+        <div className="panel family-wallet-status" style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: "linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(59, 130, 246, 0.1))", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "12px", padding: "20px", marginTop: "16px", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.05)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+             <div style={{ background: "var(--brand-500)", color: "white", padding: "10px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+               <UserRound size={24} />
+             </div>
+             <div>
+               <div style={{ fontSize: "13px", color: "var(--slate-500)", fontWeight: 500 }}>Оплата со счета</div>
+               <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-900)" }}>Семейный кошелек</div>
+             </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--surface-100)", padding: "16px", borderRadius: "8px", border: "1px solid var(--brand-200)" }}>
+             <span style={{ fontSize: "14px", color: "var(--slate-600)" }}>Доступный баланс:</span>
+             <span style={{ fontSize: "22px", fontWeight: 800, color: "var(--brand-600)" }}>{familyBalance.toLocaleString("ru-RU")} ₽</span>
+          </div>
+        </div>
+      )}
+
       <FiscalDetails
         fiscalCashierName={fiscalCashierName}
         fiscalDetailsOpen={fiscalDetailsOpen}
@@ -644,28 +717,37 @@ export function PaymentCapture({
         taxPayerDetailsOpen={taxPayerDetailsOpen}
       />
       <InstallmentCalculator totalAmount={parseFloat(amount) || 0} isOpen={false} />
+
       {!paymentReadyToSubmit ? (
-        <div className="payment-capture-missing" id={paymentMissingId} role="status" aria-live="polite">
-          <strong>Чтобы принять оплату, осталось:</strong>
-          <ul>
-            {paymentMissingSteps.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ul>
+        <div className="payment-alert-box payment-alert-warning" id={paymentMissingId} role="status" aria-live="polite">
+          <ShieldAlert size={18} className="alert-icon" />
+          <div className="alert-content">
+            <strong style={{ display: 'block', marginBottom: '4px' }}>Чтобы принять оплату, осталось:</strong>
+            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+              {paymentMissingSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       ) : null}
-      <p className="payment-capture-safeguard">
-        Каждая оплата добавляет новую строку в историю. Ошибку закрывайте возвратом или коррекцией, не повторной записью.
-      </p>
+
+      <div className="payment-alert-box payment-alert-info">
+        <Info size={16} className="alert-icon" />
+        <span className="alert-text">
+          Каждая оплата добавляет новую строку в историю. Ошибку закрывайте возвратом или коррекцией, не повторной записью.
+        </span>
+      </div>
+
       <button
-        className="primary-button"
+        className="primary-button checkout-submit-btn"
         type="button"
         onClick={onSubmit}
         aria-busy={isSaving || undefined}
         aria-describedby={!paymentReadyToSubmit ? paymentMissingId : undefined}
         disabled={isSaving || !paymentReadyToSubmit}
       >
-        <CreditCard aria-hidden="true" /> {isSaving ? "Записываэ" : "Принять оплату"}
+        <CreditCard aria-hidden="true" /> {isSaving ? "Записываю..." : "Принять оплату"}
       </button>
     </div>
   );

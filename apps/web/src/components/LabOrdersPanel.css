@@ -107,6 +107,7 @@
   text-overflow: ellipsis;
   flex-shrink: 1;
   min-width: 0;
+  max-width: 55%;
 }
 
 .status-badge.draft { background: rgba(113, 113, 122, 0.2); color: #d4d4d8; border: 1px solid rgba(113, 113, 122, 0.3); }

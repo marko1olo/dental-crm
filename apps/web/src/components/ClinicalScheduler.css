@@ -4,7 +4,7 @@
 
 /* Светлая тема (по умолчанию) */
 .clinical-scheduler {
-  background: #ffffff;
+  background: var(--paper);
   backdrop-filter: blur(16px);
   border: 1px solid var(--line, #e2e8f0);
   border-radius: 16px;
@@ -51,20 +51,30 @@
   max-height: 480px;
   border-radius: 12px;
   border: 1px solid var(--line, #e2e8f0);
+  /* Scroll shadow hint */
+  background: 
+    linear-gradient(to right, var(--paper) 30%, rgba(255,255,255,0)),
+    linear-gradient(to right, rgba(255,255,255,0), var(--paper) 70%) 0 100%,
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,0.1), rgba(0,0,0,0)),
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.1), rgba(0,0,0,0)) 0 100%;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-position: 0 0, 100%, 0 0, 100%;
+  background-attachment: local, local, scroll, scroll;
 }
 
 /* Each row = flex of [time label] + N chair cells */
 .sg-row {
   display: grid;
   grid-template-columns: 60px repeat(3, 1fr);
-  min-width: 480px;
+  min-width: 600px; /* Force scroll on mobile to avoid squished text */
 }
 
 .sg-header-row {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: #ffffff;
+  background: var(--paper);
   border-bottom: 2px solid var(--line, #e2e8f0);
 }
 
@@ -205,18 +215,29 @@
 }
 
 /* Appointment card inside cell */
-.sg-cell--therapy      { border-left: 3px solid #3b82f6; }
-.sg-cell--orthopedics  { border-left: 3px solid #eab308; }
-.sg-cell--consultation { border-left: 3px solid #10b981; }
-
-.sg-appt {
+.sg-appt-card {
+  background: var(--paper-soft, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 6px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 2px 2px 2px 4px;
+  transition: all 0.2s;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-.sg-appt-name {
+.sg-appt-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.sg-appt-therapy { border-left: 4px solid #3b82f6; }
+.sg-appt-orthopedics { border-left: 4px solid #eab308; }
+.sg-appt-consultation { border-left: 4px solid #10b981; }
+
+.sg-appt-title {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--ink, #1e293b);
@@ -225,7 +246,7 @@
   text-overflow: ellipsis;
 }
 
-.sg-appt-type {
+.sg-appt-meta {
   font-size: 0.68rem;
   color: var(--muted, #64748b);
   text-transform: capitalize;
@@ -253,7 +274,7 @@
 }
 
 .sg-popover {
-  background: #ffffff;
+  background: var(--paper);
   border: 1px solid var(--line, #e2e8f0);
   border-radius: 14px;
   width: 320px;
@@ -351,14 +372,28 @@
   border-bottom-color: rgba(63, 63, 70, 0.2) !important;
 }
 
-.theme-dark .sg-appt-name,
-[data-theme="dark"] .sg-appt-name {
+.theme-dark .sg-appt-title,
+[data-theme="dark"] .sg-appt-title {
   color: #f4f4f5 !important;
 }
 
-.theme-dark .sg-appt-type,
-[data-theme="dark"] .sg-appt-type {
-  color: #71717a !important;
+.theme-dark .sg-appt-meta,
+[data-theme="dark"] .sg-appt-meta {
+  color: #a1a1aa !important;
+}
+
+.theme-dark .sg-appt-card,
+[data-theme="dark"] .sg-appt-card {
+  background: rgba(39, 39, 42, 0.8) !important;
+  border-color: rgba(63, 63, 70, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+
+.theme-dark .sg-appt-card:hover,
+[data-theme="dark"] .sg-appt-card:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+  ring: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 .theme-dark .sg-popover,

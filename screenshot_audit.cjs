@@ -1,96 +1,83 @@
-const { chromium } = require('playwright');
-const fs = require('fs');
-const path = require('path');
+const { chromium } = require("playwright");
+const fs = require("fs");
+const path = require("path");
 
-const OUTPUT_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/ui_audit';
-if (!fs.existsSync(OUTPUT_DIR)) {
-  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-}
+const OUTPUT_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/ui_audit";
+if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/49ca46e2-a0f7-43e5-a510-f484e6e15d21";
 
-const VIEWPORTS = [
-  { name: 'PC', width: 1920, height: 1080 },
-  { name: 'Laptop', width: 1366, height: 768 },
-  { name: 'Tablet', width: 768, height: 1024 },
-  { name: 'Mobile', width: 375, height: 812 }
+const states = [
+  { name: "PC_DARK",     width: 1366, height: 900,  theme: "dark" },
+  { name: "MOBILE_DARK", width: 390,  height: 844,  theme: "dark" }
 ];
 
-const PAGES_TO_AUDIT = [
-  { name: 'Dashboard', hash: '#/dashboard' },
-  { name: 'PatientCard', hash: '#/patient/mock-patient' },
-  { name: 'Odontogram', hash: '#/odontogram' },
-  { name: 'Finance', hash: '#/finance' },
-  { name: 'PatientPortal', hash: '#/portal' }
+const VIEWS = [
+    { url: "http://127.0.0.1:5173/#", name: "Dashboard_Audit" },
+    { url: "http://127.0.0.1:5173/#schedule", name: "Schedule_Audit" },
+    { url: "http://127.0.0.1:5173/#patients", name: "Patients_Audit" },
+    { url: "http://127.0.0.1:5173/#finance", name: "Finance_Audit" },
+    { url: "http://127.0.0.1:5173/#settings", name: "Settings_Audit" }
 ];
 
-async function setupMocks(page) {
-  await page.route('**/api/**', route => {
-    const url = route.request().url();
-    if (url.includes('/patients')) {
-      route.fulfill({
-        status: 200, contentType: 'application/json',
-        body: JSON.stringify([{ id: 'mock-patient', fullName: 'Иванов Иван Иванович', phone: '+79991234567' }])
-      });
-    } else if (url.includes('/appointments') || url.includes('/schedule')) {
-      route.fulfill({
-        status: 200, contentType: 'application/json',
-        body: JSON.stringify([{ id: 'apt1', patientId: 'mock-patient', chairId: 'chair-1', start: new Date().toISOString(), end: new Date(Date.now() + 3600000).toISOString() }])
-      });
-    } else {
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
-    }
-  });
-}
+async function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ headless: true });
 
-  for (const vp of VIEWPORTS) {
+  for (const state of states) {
+    console.log(`\n--- TESTING STATE: ${state.name} ---`);
     const context = await browser.newContext({
-      viewport: { width: vp.width, height: vp.height },
-      colorScheme: 'dark'
+      viewport: { width: state.width, height: state.height },
+      colorScheme: state.theme
     });
+    const page = await context.newPage();
     
-    for (const p of PAGES_TO_AUDIT) {
-      const page = await context.newPage();
-      await setupMocks(page);
-      
-      console.log(`Navigating to ${p.name} on ${vp.name}...`);
-      await page.goto(`http://127.0.0.1:5173/`);
-      
-      await page.evaluate((hash) => { window.location.hash = hash; }, p.hash);
-      await page.waitForTimeout(3000); // Wait for render
-      
-      const filename = path.join(OUTPUT_DIR, `${p.name}_${vp.name}_Dark.png`);
-      await page.screenshot({ path: filename, fullPage: true });
-      console.log(`Saved ${filename}`);
-      
-      await page.close();
+    // MOCK API
+    await page.route(/\/api\//, async (route) => {
+        const url = route.request().url();
+        if (url.includes("/api/workspace/profile")) {
+            await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ hasAssistants: true, hasMultipleChairs: true, hasDentalLab: true, hasInsuranceCoPay: true, hasInstallments: true, workspacePreset: "enterprise", onboardingCompleted: true }) });
+        } else {
+            await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: [] }) });
+        }
+    });
+
+    await page.addInitScript((t) => {
+      localStorage.setItem("dente_theme", t);
+      localStorage.setItem("dente_theme_mode", t);
+      localStorage.setItem("dente_onboarding", JSON.stringify({ dismissed: true }));
+    }, state.theme);
+
+    // Capture main sections
+    for (const view of VIEWS) {
+        await page.goto(view.url);
+        await wait(2000);
+        let p = path.join(OUTPUT_DIR, `${view.name}_${state.name}.png`);
+        await page.screenshot({ path: p, fullPage: true });
+        fs.copyFileSync(p, path.join(BRAIN_DIR, path.basename(p)));
     }
 
-    const contextLight = await browser.newContext({
-      viewport: { width: vp.width, height: vp.height },
-      colorScheme: 'light'
-    });
-    
-    for (const p of PAGES_TO_AUDIT) {
-      const page = await contextLight.newPage();
-      await setupMocks(page);
-      
-      await page.goto(`http://127.0.0.1:5173/`);
-      await page.evaluate((hash) => { window.location.hash = hash; }, p.hash);
-      await page.waitForTimeout(3000); // Wait for render
-      
-      const filename = path.join(OUTPUT_DIR, `${p.name}_${vp.name}_Light.png`);
-      await page.screenshot({ path: filename, fullPage: true });
-      console.log(`Saved ${filename}`);
-      
-      await page.close();
+    // Capture Step 1 and 5 again
+    await page.goto("http://127.0.0.1:5173/#onboarding-preview");
+    await wait(1500);
+    let p = path.join(OUTPUT_DIR, `Onboarding_Step1_Fixed_${state.name}.png`);
+    await page.screenshot({ path: p, fullPage: true });
+    fs.copyFileSync(p, path.join(BRAIN_DIR, path.basename(p)));
+
+    for(let i=1; i<5; i++) {
+        await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll("button"));
+            const nextBtn = btns.find(b => b.textContent && b.textContent.includes("Далее"));
+            if(nextBtn) nextBtn.click();
+        });
+        await wait(200);
     }
+    p = path.join(OUTPUT_DIR, `Onboarding_Step5_Fixed_${state.name}.png`);
+    await page.screenshot({ path: p, fullPage: true });
+    fs.copyFileSync(p, path.join(BRAIN_DIR, path.basename(p)));
 
     await context.close();
-    await contextLight.close();
   }
 
   await browser.close();
-  console.log('Audit screenshots completed.');
 })();

@@ -31,17 +31,6 @@ export const PatientJourneyTimeline: React.FC<{ patientId: string; dashboard?: D
         actionUrl: `/patients/${patientId}/visit/${a.id}`
       }));
     
-    // Default mock event to show journey started if no visits exist
-    if (visitEvents.length === 0) {
-      visitEvents.push({
-        id: '1',
-        timestamp: new Date().toISOString(),
-        type: 'medical_alert',
-        title: 'Регистрация пациента',
-        description: 'Пациент добавлен в систему',
-      });
-    }
-
     // Sort by timestamp
     setEvents(visitEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
 

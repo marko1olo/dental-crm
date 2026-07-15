@@ -1,8 +1,0 @@
-const fs = require('fs');
-let t = fs.readFileSync('apps/api/src/routes/diary.ts', 'utf8');
-t = t.replace('import { requireClinicalMutationAccess } from "../accessGuard.js";', 'import { requireClinicalMutationAccess, resolveOrganizationId } from "../accessGuard.js";');
-t = t.replace('const [diary] = await db.select().from(visitDiaries).where(eq(visitDiaries.visitId, visitId));', 'const orgId = await resolveOrganizationId(req); if (!orgId) return reply.code(403).send({error: "OrgRequired"}); const [diary] = await db.select().from(visitDiaries).where(and(eq(visitDiaries.visitId, visitId), eq(visitDiaries.organizationId, orgId)));');
-t = t.replace('const [existing] = await db.select().from(visitDiaries).where(eq(visitDiaries.visitId, data.visitId));', 'const orgId = await resolveOrganizationId(req); if (!orgId) return reply.code(403).send({error: "OrgRequired"}); data.organizationId = orgId; const [existing] = await db.select().from(visitDiaries).where(and(eq(visitDiaries.visitId, data.visitId), eq(visitDiaries.organizationId, orgId)));');
-t = t.replace('await db.update(visitDiaries).set({', 'await db.update(visitDiaries).set({ organizationId: orgId,');
-t = t.replace('const plans = await db.select().from(treatmentPlans).where(eq(treatmentPlans.patientId, patientId));', 'const orgId = await resolveOrganizationId(req); if (!orgId) return reply.code(403).send({error: "OrgRequired"}); const plans = await db.select().from(treatmentPlans).where(and(eq(treatmentPlans.patientId, patientId), eq(treatmentPlans.organizationId, orgId)));');
-fs.writeFileSync('apps/api/src/routes/diary.ts', t, 'utf8');

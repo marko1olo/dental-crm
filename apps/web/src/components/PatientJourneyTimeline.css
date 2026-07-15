@@ -1,14 +1,14 @@
 .patient-journey-timeline {
-  background: rgba(24, 24, 27, 0.85); /* zinc-900 */
+  background: var(--glass-bg, rgba(24, 24, 27, 0.85));
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(63, 63, 70, 0.5); /* zinc-700 */
+  border: 1px solid var(--glass-border, rgba(63, 63, 70, 0.5));
   border-radius: 16px;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   padding: 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  color: #e4e4e7;
+  color: var(--ink, #e4e4e7);
   max-width: 100%;
 }
 
@@ -16,26 +16,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(82, 82, 91, 0.3);
+  border-bottom: 1px solid var(--line, rgba(82, 82, 91, 0.3));
   padding-bottom: 16px;
 }
 
 .timeline-header h3 {
   margin: 0;
   font-size: 1.4rem;
-  color: #f4f4f5;
+  color: var(--ink, #f4f4f5);
   font-weight: 300;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .patient-id-badge {
-  background: rgba(39, 39, 42, 0.6);
+  background: var(--paper-strong, rgba(39, 39, 42, 0.6));
+  border: 1px solid var(--glass-border, transparent);
   padding: 6px 12px;
   border-radius: 8px;
   font-family: monospace;
   font-size: 0.9rem;
-  color: #a1a1aa;
+  color: var(--muted, #a1a1aa);
 }
 
 .timeline-track {
@@ -59,22 +60,22 @@
 .marker-icon {
   width: 40px;
   height: 40px;
-  background: rgba(39, 39, 42, 0.8);
-  border: 1px solid rgba(82, 82, 91, 0.5);
+  background: var(--paper, rgba(39, 39, 42, 0.8));
+  border: 1px solid var(--glass-border, rgba(82, 82, 91, 0.5));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
   z-index: 2;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow);
   transition: all 0.3s ease;
 }
 
 .marker-line {
   width: 2px;
   flex: 1;
-  background: rgba(82, 82, 91, 0.3);
+  background: var(--line, rgba(82, 82, 91, 0.3));
   margin: 8px 0;
   min-height: 40px;
 }
@@ -100,8 +101,8 @@
 
 .timeline-content {
   flex: 1;
-  background: rgba(39, 39, 42, 0.3);
-  border: 1px solid rgba(82, 82, 91, 0.2);
+  background: var(--paper-strong, rgba(39, 39, 42, 0.3));
+  border: 1px solid var(--glass-border, rgba(82, 82, 91, 0.2));
   border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 24px;
@@ -112,8 +113,8 @@
 }
 
 .timeline-content:hover {
-  background: rgba(63, 63, 70, 0.5);
-  border-color: rgba(113, 113, 122, 0.4);
+  background: var(--paper-strong, rgba(63, 63, 70, 0.5));
+  border-color: var(--glass-border, rgba(113, 113, 122, 0.4));
   transform: translateX(4px);
 }
 
@@ -125,20 +126,20 @@
 
 .timestamp {
   font-size: 0.85rem;
-  color: #a1a1aa;
+  color: var(--muted, #a1a1aa);
   font-family: monospace;
 }
 
 .timeline-content h4 {
   margin: 0;
   font-size: 1.15rem;
-  color: #f4f4f5;
+  color: var(--ink, #f4f4f5);
   font-weight: 500;
 }
 
 .timeline-content p {
   margin: 0;
-  color: #d4d4d8;
+  color: var(--muted, #d4d4d8);
   font-size: 0.95rem;
   line-height: 1.5;
 }
@@ -191,7 +192,8 @@
 
 /* Zeigarnik Effect Progress Bar */
 .zeigarnik-progress-container {
-  background: rgba(39, 39, 42, 0.4);
+  background: var(--paper-strong, rgba(39, 39, 42, 0.4));
+  border: 1px solid var(--glass-border, transparent);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 24px;
@@ -208,7 +210,7 @@
 .progress-bar-bg {
   width: 100%;
   height: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--line, rgba(255, 255, 255, 0.1));
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -224,15 +226,15 @@
 
 .progress-hint {
   font-size: 0.8rem;
-  color: #a1a1aa;
+  color: var(--muted, #a1a1aa);
   margin: 0;
 }
 
 /* Serial Position Effect Highlights */
 .highlight-item .timeline-content {
-  background: rgba(63, 63, 70, 0.6);
+  background: var(--paper-strong, rgba(63, 63, 70, 0.6));
   border-color: rgba(161, 161, 170, 0.3);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-premium);
   transform: scale(1.02);
   transform-origin: left center;
 }

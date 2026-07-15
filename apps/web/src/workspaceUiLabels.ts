@@ -50,7 +50,7 @@ export const documentSourceStatusClassNames: Record<DocumentSourceStatus, string
 export const documentStatusLabels: Record<GeneratedDocument["status"], string> = {
   draft: "Черновик",
   issued: "Выдан",
-  voided: "Аннулирован"
+  voided: "АннулироИИван"
 };
 
 export const taxPaymentSelectionPayloadDocumentKinds = new Set<GeneratedDocument["kind"]>([
@@ -186,7 +186,8 @@ export const paymentMethodLabels: Record<PaymentMethod, string> = {
   bank_transfer: "Перевод",
   online: "Онлайн",
   insurance: "ДМС",
-  other: "Другое"
+  family_wallet: "Семейный счет",
+  other: "Иной способ"
 };
 
 export const communicationChannelLabels: Record<Dashboard["communicationTasks"][number]["channel"], string> = {
@@ -348,7 +349,7 @@ export const integrationStatusLabels: Record<IntegrationPresetStatus, string> = 
 
 export const recognitionTargetLabels: Record<AiRecognitionTarget, string> = {
   visit_note: "ЭМК",
-  patient_import: "импорт пациентов",
+  patient_import: "иИИмпорт пациентов",
   imaging_summary: "описание снимка",
   document_draft: "документ"
 };
@@ -377,12 +378,12 @@ export const speechProviderHealthLabels: Record<string, string> = {
   ready: "готов",
   degraded: "ограничен",
   setup_required: "нужна настройка",
-  planned: "запланирован",
+  planned: "запланироИИван",
   offline: "офлайн"
 };
 
 export const speechRecordingPathLabels: Record<string, string> = {
-  server_chunked: "серверное распознавание по фрагментам",
+  server_chunked: "серверное распознаИИвание по фрагментам",
   browser_live: "браузерная диктовка",
   offline_queue: "офлайн-очередь",
   local_transcript_only: "только локальный текст",
@@ -410,14 +411,14 @@ export const localBridgeStatusLabels: Record<LocalBridgeStatus, string> = {
   unreachable: "недоступен",
   blocked: "нужно действие",
   misconfigured: "ошибка настройки",
-  planned: "запланирован"
+  planned: "запланироИИван"
 };
 
 export const localBridgeUsePathLabels: Record<LocalBridgeUsePath, string> = {
   browser_local: "локально в браузере",
-  server_gateway: "серверное распознавание",
+  server_gateway: "серверное распознаИИвание",
   local_bridge: "локальный модуль ПК",
-  cloud_provider: "серверное распознавание",
+  cloud_provider: "серверное распознаИИвание",
   metadata_preview: "предпросмотр метаданных",
   external_viewer: "внешний просмотр",
   manual_review: "ручная проверка"

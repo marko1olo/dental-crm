@@ -6,9 +6,8 @@ import {
   createClinicalRuleSchema,
   updateClinicalRuleSchema
 } from "@dental/shared";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess, resolveOrganizationId } from "../accessGuard.js";
 import { evaluateClinicalRulesInDb, createClinicalRuleInDb, updateClinicalRuleInDb } from "../db/clinicalQuery.js";
-import { getDefaultOrganizationId } from "../db/pricelistQuery.js";
 
 type ClinicalPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
@@ -32,9 +31,9 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     if (!input) {
       return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleEvaluationValidationMessage });
     }
-    const orgId = await getDefaultOrganizationId();
+    const orgId = await resolveOrganizationId(request);
     if (!orgId) {
-      return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
+      return reply.code(403).send({ error: "OrganizationRequired", message: "Организация не определена" });
     }
     return clinicalRuleEvaluationResponseSchema.parse(await evaluateClinicalRulesInDb(orgId, input));
   });
@@ -45,9 +44,9 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     if (!input) {
       return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleMutationValidationMessage });
     }
-    const orgId = await getDefaultOrganizationId();
+    const orgId = await resolveOrganizationId(request);
     if (!orgId) {
-      return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
+      return reply.code(403).send({ error: "OrganizationRequired", message: "Организация не определена" });
     }
     return clinicalRuleSchema.parse(await createClinicalRuleInDb(orgId, input));
   });
@@ -60,10 +59,26 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     if (!input) {
       return reply.code(400).send({ error: "ClinicalRuleValidationError", message: clinicalRuleMutationValidationMessage });
     }
-    const orgId = await getDefaultOrganizationId();
+    const orgId = await resolveOrganizationId(request);
     if (!orgId) {
-      return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
+      return reply.code(403).send({ error: "OrganizationRequired", message: "Организация не определена" });
     }
     return clinicalRuleSchema.parse(await updateClinicalRuleInDb(orgId, input));
+  });
+
+  app.post("/api/clinical/post-op-care", async (request, reply) => {
+    if (!(await requireClinicalMutationAccess(request, reply, "trigger post op care"))) return;
+    const body = request.body as { patientId?: string; itemTitle?: string };
+    if (!body.patientId || !body.itemTitle) {
+      return reply.code(400).send({ error: "ValidationError", message: "patientId and itemTitle are required" });
+    }
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
+    
+    // Dynamically import the service to avoid circular deps if any
+    const { triggerPostOpCare } = await import("../services/postOpCareTrigger.js");
+    await triggerPostOpCare(orgId, body.patientId, body.itemTitle);
+    
+    return reply.send({ success: true });
   });
 }

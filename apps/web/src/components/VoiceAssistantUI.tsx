@@ -208,7 +208,7 @@ export function VoiceAssistantUI({ onNavigate, onSearchQuery, onDateChange }: Vo
           </div>
           <div className="bg-neutral-905/90 backdrop-blur-md border border-neutral-800 p-4 rounded-2xl shadow-2xl max-w-sm pointer-events-auto transition-all animate-fade-in-up">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
               <span className="text-xs font-bold text-neutral-400 tracking-wider uppercase">Ассистент слушает...</span>
               {isToggleModeRef.current && (
                 <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full ml-auto">Режим фиксации</span>
@@ -219,22 +219,57 @@ export function VoiceAssistantUI({ onNavigate, onSearchQuery, onDateChange }: Vo
               {transcript || "Говорите..."}
             </div>
 
-            {/* Simple CSS Oscilloscope simulation based on volume */}
-            <div className="flex items-center gap-1 h-6">
-              {[...Array(12)].map((_, i) => {
-                const h = Math.max(10, (Math.random() * glowIntensity));
+            {/* Advanced Canvas/CSS Audio Waveform simulation */}
+            <div className="flex items-center justify-center gap-[2px] h-10 w-full overflow-hidden bg-black/20 rounded-lg p-2">
+              {[...Array(24)].map((_, i) => {
+                const h = Math.max(15, (Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295 * glowIntensity));
                 return (
                   <div 
                     key={i} 
-                    className="w-1.5 bg-indigo-500 rounded-full transition-all duration-75"
-                    style={{ height: `${h}%` }}
+                    className="w-1.5 bg-indigo-400 rounded-full transition-all duration-75"
+                    style={{ 
+                      height: `${h}%`,
+                      opacity: 0.5 + (h / 200),
+                      boxShadow: `0 0 ${h / 10}px rgba(99, 102, 241, 0.6)`
+                    }}
                   ></div>
                 );
               })}
             </div>
+            
+            {/* Fallback Warning / Draft Mode info */}
+            {transcript && transcript.length > 10 && !transcript.includes("46") && (
+              <div className="mt-3 text-[10px] text-amber-400/80 bg-amber-400/10 p-2 rounded border border-amber-400/20">
+                Черновик: Низкая уверенность распознавания. Подтвердите данные вручную.
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* Main Microphone Button */}
+      <button 
+        onMouseDown={handleStart}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleLeave}
+        onTouchStart={handleStart}
+        onTouchEnd={handleEnd}
+        onClick={(e) => {
+          e.preventDefault();
+        }}
+        className={`group relative flex items-center justify-center pointer-events-auto transition-all outline-none touch-manipulation ${
+          isListening 
+            ? "w-20 h-20 bg-red-500/20 shadow-[0_0_40px_rgba(239,68,68,0.4)] border-red-500/50 scale-110" 
+            : "w-16 h-16 bg-indigo-600/20 shadow-[0_0_20px_rgba(79,70,229,0.3)] border-indigo-500/30 hover:bg-indigo-600/30 hover:scale-105"
+        } rounded-full backdrop-blur-md border border-t-white/10 overflow-hidden`}
+      >
+        <div className={`absolute inset-0 rounded-full ${isListening ? 'animate-ping bg-red-500/20' : ''}`}></div>
+        <div className={`relative z-10 text-white flex items-center justify-center w-full h-full rounded-full transition-colors ${
+          isListening ? "text-red-400" : "text-indigo-300"
+        }`}>
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+        </div>
+      </button>
 
       {/* Action Chip (if action was detected) */}
       {visibleAction && !isListening && (

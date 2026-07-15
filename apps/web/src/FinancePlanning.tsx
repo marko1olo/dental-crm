@@ -50,7 +50,7 @@ export function FinancePlanningOverview({
           <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--slate-800)' }}>Прогресс лечения</span>
           <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--brand-600)' }}>65%</span>
         </div>
-        <div style={{ background: 'var(--slate-100)', borderRadius: '12px', height: '14px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: 'var(--paper-strong)', borderRadius: '12px', height: '14px', overflow: 'hidden', position: 'relative', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ 
             background: 'linear-gradient(90deg, var(--brand-400), var(--brand-600))', 
             width: '65%', 
@@ -158,7 +158,7 @@ export function FinancePlanningOverview({
 }
 
 export function ServiceCatalogStrip({ categoryLabels, money, onGoToPrices, services }: ServiceCatalogStripProps) {
-  const visibleServices = services.slice(0, 6);
+  const visibleServices = (services || []).slice(0, 6);
 
   return (
     <div className="service-catalog-strip" aria-label="Каталог услуг">

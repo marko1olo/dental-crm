@@ -15,11 +15,11 @@ describe('repairMojibakeDeep', () => {
     // Standard string
     assert.strictEqual(repairMojibakeDeep('Hello world'), 'Hello world');
     // Mojibake string
-    assert.strictEqual(repairMojibakeDeep('ÐŸÑ€Ð¸Ð²ÐµÑ‚'), 'Привет');
+    assert.strictEqual(repairMojibakeDeep('Привет'), 'Привет');
   });
 
   test('repairs arrays deeply', () => {
-    const input = [1, 'ÐŸÑ€Ð¸Ð²ÐµÑ‚', [null, 'ÐœÐ¸Ñ€']];
+    const input = [1, 'Привет', [null, 'Мир']];
     const expected = [1, 'Привет', [null, 'Мир']];
     assert.deepStrictEqual(repairMojibakeDeep(input), expected);
   });
@@ -27,9 +27,9 @@ describe('repairMojibakeDeep', () => {
   test('repairs objects deeply', () => {
     const input = {
       id: 123,
-      name: 'ÐŸÑ€Ð¸Ð²ÐµÑ‚',
+      name: 'Привет',
       nested: {
-        value: 'ÐœÐ¸Ñ€',
+        value: 'Мир',
         flag: true
       }
     };
@@ -47,10 +47,10 @@ describe('repairMojibakeDeep', () => {
   test('repairs complex nested structures', () => {
     const input = {
       data: [
-        { title: 'Ð—Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº', count: 1 },
+        { title: 'Заголовок', count: 1 },
         { title: 'Test', count: 2 }
       ],
-      meta: 'ÐžÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ'
+      meta: 'Описание'
     };
     const expected = {
       data: [

@@ -5,7 +5,7 @@ import {
   visitDraftAutosaveRequestSchema,
   visitDraftAutosaveResponseSchema
 } from "@dental/shared";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 
 type VisitPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
@@ -62,19 +62,13 @@ function sendVisitDraftMutationError(error: unknown, reply: FastifyReply, operat
   });
 }
 
-import { verifyToken } from "../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "./auth.js";
 import { getVisitDraftAutosaveFromDb, upsertVisitDraftAutosaveInDb, acceptVisitDraftInDb } from "../db/visitsQuery.js";
 
 export async function registerVisitRoutes(app: FastifyInstance) {
   app.get("/api/visits/:visitId/draft/autosave", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
-    
+    const orgId = await requireResolvedOrganizationId(request, reply, "visit draft autosave read");
+    if (!orgId) return;
+
     const { visitId } = request.params as { visitId: string };
     // Zero UUID = placeholder for "no active visit" — return empty 200, not 404
     if (!visitId || visitId === "00000000-0000-0000-0000-000000000000") {
@@ -86,12 +80,8 @@ export async function registerVisitRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/visits/:visitId/draft/autosave", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "visit draft autosave update");
+    if (!orgId) return;
 
     const { visitId } = request.params as { visitId: string };
     const input = parseVisitPayload(
@@ -111,12 +101,8 @@ export async function registerVisitRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/visits/:visitId/draft/accept", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "visit draft accept");
+    if (!orgId) return;
 
     const { visitId } = request.params as { visitId: string };
     const input = parseVisitPayload(
@@ -128,7 +114,9 @@ export async function registerVisitRoutes(app: FastifyInstance) {
     if (!input) return;
 
     try {
-      const result = await acceptVisitDraftInDb(orgId, input);
+      const userContext = (request as any).user;
+      const userId: string | null = userContext?.id ?? null;
+      const result = await acceptVisitDraftInDb(orgId, userId, input);
       return acceptVisitDraftResponseSchema.parse(result);
     } catch (error) {
       return sendVisitDraftMutationError(error, reply, "accept");

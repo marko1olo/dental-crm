@@ -59,7 +59,7 @@
   width:100%; padding:.6rem .8rem;
   border-radius:10px;
   border:1px solid #e2e8f0;
-  background:#fff; color:#334155;
+  background: var(--paper); color:#334155;
   font-size:.82rem; font-weight:600;
   text-align:left; cursor:pointer;
   display:flex; align-items:center; justify-content:space-between;

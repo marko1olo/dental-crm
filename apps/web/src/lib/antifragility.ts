@@ -115,12 +115,18 @@ const DEFAULT_PATIENTS = [
   }
 ];
 
-export function initAntifragility() {
-  if (typeof window === "undefined") return;
-  if ((window as any).__denteAntifragilityInitialized) return;
-  (window as any).__denteAntifrapilityInitialized = true;
+function offlineSandboxEnabled(): boolean {
+  return import.meta.env.VITE_DENTE_ENABLE_OFFLINE_SANDBOX === "1" || import.meta.env.VITE_DENTE_ENABLE_OFFLINE_SANDBOX === "true";
+}
 
-  console.log("[Antifragility] Activating Graceful Degradation Engine...");
+export function initAntifragility(options: { enabled?: boolean } = {}) {
+  if (typeof window === "undefined") return;
+  const enabled = options.enabled ?? offlineSandboxEnabled();
+  if (!enabled) return;
+  if ((window as any).__denteAntifragilityInitialized) return;
+  (window as any).__denteAntifragilityInitialized = true;
+
+  console.log("[Antifragility] Activating explicit offline sandbox engine...");
 
   originalFetch = window.fetch;
 
@@ -230,7 +236,7 @@ async function handleSimulatedApiRequest(url: string, init: any, isMutating: boo
     if (isMutating) {
       const payload = JSON.parse(init.body);
       const record = {
-        id: payload.id || crypto.randomUUID(),
+        id: payload.id || Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295,
         ...payload,
         isSynced: false,
         version: (payload.version || 0) + 1,
@@ -256,7 +262,7 @@ async function handleSimulatedApiRequest(url: string, init: any, isMutating: boo
     if (isMutating) {
       const payload = JSON.parse(init.body);
       const record = {
-        id: payload.id || crypto.randomUUID(),
+        id: payload.id || Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295,
         ...payload,
         isSynced: false,
         version: (payload.version || 0) + 1,
@@ -273,7 +279,7 @@ async function handleSimulatedApiRequest(url: string, init: any, isMutating: boo
         const found = diaries.find(d => d.visitId === visitId);
         if (found) return mockJsonResponse(found);
         return mockJsonResponse({
-          id: crypto.randomUUID(),
+          id: Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295,
           visitId,
           patientId: "00000000-0000-0000-0000-000000000001",
           anamnesis: "Жалоб нет",
@@ -295,7 +301,7 @@ async function handleSimulatedApiRequest(url: string, init: any, isMutating: boo
     if (isMutating) {
       const payload = JSON.parse(init.body);
       const record = {
-        id: payload.id || crypto.randomUUID(),
+        id: payload.id || Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295,
         ...payload,
         isSynced: false,
         version: (payload.version || 0) + 1,
@@ -323,7 +329,7 @@ function mockJsonResponse(data: any, status = 200): Response {
 
 // --- SYNC QUEUE ENQUEUER ---
 async function enqueueSyncTransaction(table: string, recordId: string, method: string, payload: any) {
-  const transactionId = crypto.randomUUID();
+  const transactionId = Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295;
   const tx = {
     id: transactionId,
     table,
@@ -360,7 +366,7 @@ export async function runOfflineQueueSync() {
     const base = 1000;
     const max = 30000;
     const exponential = base * Math.pow(2, syncAttempts);
-    const jitter = Math.random() * 1000;
+    const jitter = Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295 * 1000;
     backoffDelay = Math.min(max, exponential) + jitter;
     console.log(`[Background Sync] Exponential backoff delay active: ${Math.round(backoffDelay)}ms`);
     await new Promise(r => setTimeout(r, backoffDelay));

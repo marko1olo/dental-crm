@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ToothData, ToothState } from './ToothChart';
 import { FileText, Save, Calculator, Trash2, PenTool } from 'lucide-react';
 import { SignaturePad } from '../SignaturePad';
+import { denteAdminSecretRequestHeaders } from '../../AppHelpers';
 
 interface EstimatorProps {
   patientId: string;
@@ -21,6 +22,14 @@ interface PlanItem {
   isAuto?: boolean;
 }
 
+interface SavedTreatmentPlan {
+  id: string;
+  name: string;
+  totalPrice: number;
+  patientSignature?: string | null;
+  items: PlanItem[];
+}
+
 export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, currentTeeth }) => {
   const [items, setItems] = useState<PlanItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -28,6 +37,30 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
   const [planId, setPlanId] = useState<string | null>(null);
   const [showSignModal, setShowSignModal] = useState(false);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setPlanId(null);
+    setItems([]);
+    setSignatureUrl(null);
+
+    fetch(`/api/patients/${patientId}/treatment-plans`, {
+      headers: denteAdminSecretRequestHeaders()
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        const latestPlan = data?.plans?.[0] as SavedTreatmentPlan | undefined;
+        if (!active || !latestPlan) return;
+        setPlanId(latestPlan.id);
+        setItems(Array.isArray(latestPlan.items) ? latestPlan.items : []);
+        setSignatureUrl(latestPlan.patientSignature ?? null);
+      })
+      .catch((error) => {
+        console.error("Treatment plan load failed", error);
+      });
+
+    return () => { active = false; };
+  }, [patientId]);
 
   // Auto-suggestions based on currentTeeth - fully synchronized
   useEffect(() => {
@@ -57,28 +90,29 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
 
       // 2. Add missing auto-items
       currentTeeth.forEach(t => {
+        const isBaby = t.toothNumber > 50;
         if (t.state === 'Caries') {
           if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_caries_01')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_caries_01', name: 'Р›РµС‡РµРЅРёРµ РєР°СЂРёРµСЃР° (РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ)', quantity: 1, price: 5500, discount: 0, phase: 1 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_caries_01', name: isBaby ? 'Лечение кариеса (молочный зуб)' : 'Лечение кариеса (восстановление)', quantity: 1, price: isBaby ? 4000 : 5500, discount: 0, phase: 1 });
             changed = true;
           }
         }
         if (t.state === 'Planned_Implant' || t.state === 'Implant') {
-          if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_implant_osstem')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_implant_osstem', name: 'РЈСЃС‚Р°РЅРѕРІРєР° РёРјРїР»Р°РЅС‚Р°С‚Р° Osstem TSIII', quantity: 1, price: 35000, discount: 0, phase: 2 });
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_surgery_guide', name: 'РҐРёСЂСѓСЂРіРёС‡РµСЃРєРёР№ С€Р°Р±Р»РѕРЅ', quantity: 1, price: 12000, discount: 0, phase: 2 });
+          if (!isBaby && !newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_implant_osstem')) {
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_implant_osstem', name: 'Установка имплантата Osstem TSIII', quantity: 1, price: 35000, discount: 0, phase: 2 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_surgery_guide', name: 'Хирургический шаблон', quantity: 1, price: 12000, discount: 0, phase: 2 });
             changed = true;
           }
         }
         if (t.state === 'Pulpitis') {
           if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_endo_pulpitis')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_endo_pulpitis', name: 'Р­РЅРґРѕРґРѕРЅС‚РёС‡РµСЃРєРѕРµ Р»РµС‡РµРЅРёРµ (РџСѓР»СЊРїРёС‚)', quantity: 1, price: 12500, discount: 0, phase: 1 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_endo_pulpitis', name: isBaby ? 'Эндодонтическое лечение (молочный зуб)' : 'Эндодонтическое лечение (Пульпит)', quantity: 1, price: isBaby ? 6000 : 12500, discount: 0, phase: 1 });
             changed = true;
           }
         }
         if (t.state === 'Crown') {
           if (!newItems.find(i => i.toothNumber === t.toothNumber && i.priceId === 'service_crown_zirconia')) {
-            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_crown_zirconia', name: 'РљРѕСЂРѕРЅРєР° РёР· РґРёРѕРєСЃРёРґР° С†РёСЂРєРѕРЅРёСЏ', quantity: 1, price: 28000, discount: 0, phase: 3 });
+            newItems.push({ isAuto: true, toothNumber: t.toothNumber, priceId: 'service_crown_zirconia', name: isBaby ? 'Коронка детская стандартная' : 'Коронка из диоксида циркония', quantity: 1, price: isBaby ? 5000 : 28000, discount: 0, phase: 3 });
             changed = true;
           }
         }
@@ -98,16 +132,19 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
     try {
       const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: denteAdminSecretRequestHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           id: planId,
-          name: "РљРѕРјРїР»РµРєСЃРЅС‹Р№ РїР»Р°РЅ Р»РµС‡РµРЅРёСЏ (РљРў)",
+          name: "Комплексный план лечения (КТ)",
+          patientSignature: signatureUrl,
           items: items.map(i => ({ ...i }))
         })
       });
       const data = await res.json();
       if (data.success) {
         setPlanId(data.planId);
+        if (data.plan?.items) setItems(data.plan.items);
+        if (data.plan?.patientSignature !== undefined) setSignatureUrl(data.plan.patientSignature);
       }
     } catch (e) {
       console.error(e);
@@ -129,61 +166,47 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
   const phases = [1, 2, 3];
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center mb-6">
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <FileText size={18} className="text-emerald-400" />
+    <div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
+        <h2 className="flex items-center gap-2 text-lg font-bold">
+          <FileText size={18} className="text-indigo-500 dark:text-indigo-400" />
           План лечения
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           {signatureUrl && (
-            <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded">
+            <span className="px-3 py-1 text-xs font-bold text-emerald-700 bg-emerald-100/50 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-full border border-emerald-200/50 dark:border-emerald-500/30 flex items-center">
               ПОДПИСАНО
             </span>
           )}
           <button 
             onClick={() => setShowSignModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors"
           >
+            <PenTool size={14} />
             Подписать
           </button>
           <button 
             onClick={savePlan}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            <Save size={16} />
+            <Save size={14} />
             {isSaving ? 'Сохранение...' : 'Сохранить'}
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {items.length === 0 && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '32px 24px',
-            marginTop: '24px',
-            backgroundColor: 'var(--odontogram-surface-hover, rgba(9, 9, 11, 0.4))',
-            backdropFilter: 'blur(12px)',
-            border: '1px dashed var(--odontogram-border-strong, rgba(255, 255, 255, 0.1))',
-            borderRadius: '16px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(45,212,191,0.2) 0%, rgba(13,148,136,0.05) 100%)',
-              padding: '16px',
-              borderRadius: '50%',
-              marginBottom: '16px',
-              boxShadow: '0 0 20px rgba(45,212,191,0.1)'
-            }}>
-              <Calculator size={40} style={{ color: '#2dd4bf', opacity: 0.8 }} />
+          <div className="flex flex-col items-center justify-center p-8 mx-2 my-8 rounded-2xl border border-dashed border-zinc-300/50 dark:border-zinc-700/50 bg-zinc-50/30 dark:bg-zinc-900/20 backdrop-blur-sm text-center">
+            <div className="p-5 mb-4 rounded-full bg-indigo-500/5 dark:bg-indigo-500/10 shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] dark:shadow-[0_0_30px_5px_rgba(99,102,241,0.1)] border border-indigo-500/10 dark:border-indigo-500/20">
+              <Calculator size={40} className="text-indigo-500 dark:text-indigo-400 opacity-40" />
             </div>
-            <p style={{ color: 'var(--odontogram-ink-muted, #a1a1aa)', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
-              План лечения пуст. Кликайте по зубам на зубной формуле, чтобы отмечать патологии, и услуги будут добавляться автоматически.
+            <h4 className="text-base font-bold text-slate-800 dark:text-zinc-100 mb-2">
+              План лечения пуст
+            </h4>
+            <p className="text-sm leading-relaxed text-slate-500 dark:text-zinc-400 max-w-[320px]">
+              Кликните на любой зуб на схеме слева, выберите патологию, и система автоматически подберет оптимальный набор процедур из прайс-листа
             </p>
           </div>
         )}
@@ -193,45 +216,45 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
           if (phaseItems.length === 0) return null;
 
           return (
-            <div key={phase} className="space-y-3">
-              <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+            <div key={phase} className="phase-section">
+              <h3 className="phase-title">
                 {phase === 1 && 'I. Терапия (Санация)'}
                 {phase === 2 && 'II. Хирургия и Имплантация'}
                 {phase === 3 && 'III. Ортопедия (Протезирование)'}
               </h3>
               
-              <div className="space-y-2">
+              <div className="phase-items-list">
                 {phaseItems.map((item, idx) => {
                   const globalIdx = items.indexOf(item);
                   return (
-                    <div key={globalIdx} className="flex flex-col gap-2 p-3 bg-zinc-50 dark:bg-zinc-950/50 rounded-xl border border-zinc-200 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2">
+                    <div key={globalIdx} className="plan-item-card">
+                      <div className="plan-item-row">
+                        <div className="plan-item-info">
+                          <div className="plan-item-header">
                             {item.toothNumber && (
-                              <span className={`px-1.5 py-0.5 rounded-full font-mono text-[11px] font-bold shadow-sm ${item.toothNumber > 50 ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'}`}>
+                              <span className={`tooth-badge ${item.toothNumber > 50 ? 'baby' : 'adult'}`}>
                                 [{item.toothNumber}]
                               </span>
                             )}
-                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{item.name}</span>
+                            <span className="plan-item-name">{item.name}</span>
                           </div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{item.price.toLocaleString('ru-RU')} ₽ x {item.quantity}</div>
+                          <div className="plan-item-price-quantity">{item.price.toLocaleString('ru-RU')} ₽ x {item.quantity}</div>
                         </div>
-                        <button onClick={() => removeItem(globalIdx)} className="text-zinc-400 hover:text-red-500 dark:hover:text-red-400 p-1 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800">
+                        <button onClick={() => removeItem(globalIdx)} className="btn-remove-item" title="Удалить">
                           <Trash2 size={14} />
                         </button>
                       </div>
-                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800/30">
+                      <div className="plan-item-footer">
                         <select 
                           value={item.phase} 
                           onChange={e => setPhase(globalIdx, parseInt(e.target.value))}
-                          className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-xs text-zinc-900 dark:text-zinc-100 rounded p-1 outline-none focus:border-emerald-500"
+                          className="select-phase"
                         >
                           <option value={1}>Этап I: Терапия</option>
                           <option value={2}>Этап II: Хирургия</option>
                           <option value={3}>Этап III: Ортопедия</option>
                         </select>
-                        <span className="text-sm font-bold text-emerald-400">
+                        <span className="plan-item-total-price">
                           {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
                         </span>
                       </div>
@@ -244,10 +267,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
         })}
       </div>
 
-      <div className="p-4 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-        <div className="text-sm text-zinc-500 dark:text-zinc-400">Итого по плану:</div>
-        <div className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight">
-          {total.toLocaleString('ru-RU')} <span className="text-zinc-500 dark:text-zinc-400 text-lg">₽</span>
+
+      <div className="flex justify-between items-center px-6 py-4 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/30">
+        <div className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Итого по плану:</div>
+        <div className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-baseline gap-1">
+          {total.toLocaleString('ru-RU')} <span className="text-sm font-medium text-slate-500 dark:text-zinc-500">₽</span>
         </div>
       </div>
 

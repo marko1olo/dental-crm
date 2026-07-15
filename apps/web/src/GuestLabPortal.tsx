@@ -84,7 +84,7 @@ export function GuestLabPortal() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-zinc-100/30 dark:bg-slate-950 flex items-center justify-center p-4">
         <div className="animate-spin text-primary">
           <RefreshCcw className="w-8 h-8" />
         </div>
@@ -94,9 +94,9 @@ export function GuestLabPortal() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-red-100 dark:border-red-900/30">
-          <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen bg-zinc-100/30 dark:bg-zinc-950 flex items-center justify-center p-4">
+        <div className="bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-red-100 dark:border-red-900/30">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
             <Beaker className="w-8 h-8" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Ошибка доступа</h2>
@@ -122,7 +122,7 @@ export function GuestLabPortal() {
       case 'refitting': return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800";
       case 'delivered': return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800";
       case 'completed': return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
-      default: return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700";
+      default: return "bg-zinc-100/50 text-slate-800 dark:bg-zinc-800/40 dark:text-zinc-300 border-zinc-200/50 dark:border-zinc-700/50";
     }
   };
 
@@ -137,7 +137,7 @@ export function GuestLabPortal() {
   }[order.status] || order.status;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-zinc-100/30 dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto space-y-8">
         
         {/* Header */}
@@ -153,13 +153,13 @@ export function GuestLabPortal() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md shadow-xl rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50">
           
           {/* Order Header / Status */}
-          <div className="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-6 sm:p-8 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-50/20 dark:bg-zinc-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                Заказ № {order.id.substring(0, 8).toUpperCase()}
+                Заказ № {(order.id ?? '').substring(0, 8).toUpperCase()}
               </p>
               <h2 className="text-2xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 <User className="w-6 h-6 text-slate-400" />
@@ -180,10 +180,10 @@ export function GuestLabPortal() {
                 <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" /> Технические параметры
                 </h3>
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
+                <div className="bg-zinc-100/30 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-600 dark:text-slate-400">Зуб (FDI)</span>
-                    <span className="font-semibold text-slate-900 dark:text-white text-lg px-2 py-1 bg-white dark:bg-slate-700 rounded-md shadow-sm border border-slate-200 dark:border-slate-600">{order.toothFdi || "—"}</span>
+                    <span className="font-semibold text-slate-900 dark:text-white text-lg px-2 py-1 bg-zinc-50/40 dark:bg-zinc-800/50 rounded-md shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">{order.toothFdi || "—"}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-600 dark:text-slate-400">Материал</span>
@@ -216,7 +216,7 @@ export function GuestLabPortal() {
                   <ImageIcon className="w-4 h-4" /> Приложенные снимки
                 </h3>
                 {order.attachedImageUrl ? (
-                  <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm bg-slate-100 dark:bg-slate-800">
+                  <div className="rounded-xl overflow-hidden border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm bg-zinc-100/50 dark:bg-zinc-900/40">
                     <img 
                       src={order.attachedImageUrl} 
                       alt="Клинический снимок" 
@@ -224,7 +224,7 @@ export function GuestLabPortal() {
                     />
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 h-[250px] flex flex-col items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800/30">
+                  <div className="rounded-xl border border-dashed border-zinc-300/50 dark:border-zinc-700/50 h-[250px] flex flex-col items-center justify-center text-slate-400 bg-zinc-100/30 dark:bg-zinc-900/20 backdrop-blur-sm">
                     <ImageIcon className="w-10 h-10 mb-2 opacity-50" />
                     <span className="text-sm font-medium">Нет приложенных снимков</span>
                   </div>
@@ -234,7 +234,7 @@ export function GuestLabPortal() {
           </div>
 
           {/* Actions */}
-          <div className="p-6 sm:p-8 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+          <div className="p-6 sm:p-8 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-100/30 dark:bg-zinc-900/20">
             <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Управление статусом заказа</h3>
             
             <div className="flex flex-wrap gap-3">
@@ -244,7 +244,7 @@ export function GuestLabPortal() {
                 className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
                   order.status === "in_progress" 
                     ? "bg-yellow-500 text-white ring-2 ring-yellow-500 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900" 
-                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-yellow-300 disabled:opacity-50"
+                    : "bg-zinc-50/40 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-200 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-zinc-100/30 dark:hover:bg-zinc-700/50 hover:border-yellow-300 disabled:opacity-50"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -259,7 +259,7 @@ export function GuestLabPortal() {
                 className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
                   order.status === "delivered" 
                     ? "bg-green-500 text-white ring-2 ring-green-500 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900" 
-                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-green-300 disabled:opacity-50"
+                    : "bg-zinc-50/40 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-200 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-zinc-100/30 dark:hover:bg-zinc-700/50 hover:border-green-300 disabled:opacity-50"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -274,7 +274,7 @@ export function GuestLabPortal() {
                 className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
                   order.status === "refitting" 
                     ? "bg-orange-500 text-white ring-2 ring-orange-500 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900" 
-                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-orange-300 disabled:opacity-50"
+                    : "bg-zinc-50/40 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-200 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-zinc-100/30 dark:hover:bg-zinc-700/50 hover:border-orange-300 disabled:opacity-50"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">

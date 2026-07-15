@@ -53,6 +53,7 @@ export function StaffPinPad({ staffMembers, onUnlockSuccess, onClinicLogout }: S
       }
 
       localStorage.setItem("dente_staff_token", data.staffToken);
+      if (data.user?.organizationId) localStorage.setItem("dente_organization_id", data.user.organizationId);
       showToast(`Добро пожаловать, ${data.user.fullName}!`, "success");
       onUnlockSuccess(data.user);
     } catch (err: any) {

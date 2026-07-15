@@ -33,6 +33,7 @@ export function ClinicLogin({ onLoginSuccess }: ClinicLoginProps) {
       }
 
       localStorage.setItem("dente_clinic_token", data.clinicToken);
+      if (data.clinicProfile?.organizationId) localStorage.setItem("dente_organization_id", data.clinicProfile.organizationId);
       showToast("Вход в рабочее пространство клиники успешен", "success");
       onLoginSuccess(data.clinicProfile);
     } catch (err: any) {

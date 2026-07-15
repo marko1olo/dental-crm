@@ -433,6 +433,7 @@ const PatientsView = lazy(() => import("./PatientsView").then((module) => ({ def
 const ShiftView = lazy(() => import("./ShiftView").then((module) => ({ default: module.ShiftView })));
 const PatientCockpit = lazy(() => import("./ShiftView").then((module) => ({ default: module.PatientCockpit })));
 const MarketingView = lazy(() => import("./MarketingView").then((module) => ({ default: module.MarketingView })));
+const LeadsKanbanView = lazy(() => import("./components/leads/LeadsKanbanView").then((module) => ({ default: module.LeadsKanbanView })));
 
 function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
   return Boolean(status?.serverTranscriptionCurrentlyAvailable ?? status?.serverTranscriptionEnabled);
@@ -4778,6 +4779,12 @@ export function App() {
         {currentView === "marketing" ? (
           <Suspense fallback={<AppLoadingState message="Загрузка маркетинга" />}>
             <MarketingView clinicName={dashboard.clinicName} clinicPhone={clinicProfileDraft.phone} />
+          </Suspense>
+        ) : null}
+
+        {currentView === "kanban" ? (
+          <Suspense fallback={<AppLoadingState message="Загрузка канбан доски" />}>
+            <LeadsKanbanView />
           </Suspense>
         ) : null}
 

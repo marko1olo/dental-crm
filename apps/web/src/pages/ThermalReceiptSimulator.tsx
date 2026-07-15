@@ -19,29 +19,29 @@ export function ThermalReceiptSimulator({ receiptData, onClose }: ReceiptProps) 
       <div className="receipt-paper" onClick={(e) => e.stopPropagation()}>
         <div className="receipt-header">
           <h2>{receiptData.clinicName}</h2>
-          <p>????????? ??? 123456</p>
-          <p>'???: {receiptData.doctorName}</p>
-          <p>"???: {receiptData.date}</p>
+          <p>Кассовый чек № 123456</p>
+          <p>Врач: {receiptData.doctorName}</p>
+          <p>Дата: {receiptData.date}</p>
         </div>
         <div className="receipt-divider">--------------------------------</div>
         <div className="receipt-items">
           {receiptData.items.map((item, i) => (
             <div key={i} className="receipt-item-row">
               <span className="item-name">{item.name} {item.tooth ? `(Зуб ${item.tooth})` : ''}</span>
-              <span className="item-price">{item.price.toLocaleString('ru-RU')} '?.</span>
+              <span className="item-price">{item.price.toLocaleString('ru-RU')} ₽</span>
             </div>
           ))}
         </div>
         <div className="receipt-divider">--------------------------------</div>
         <div className="receipt-totals">
           <div className="receipt-total-row">
-            <strong>?"?"?:</strong>
-            <strong>{receiptData.total.toLocaleString('ru-RU')} '?.</strong>
+            <strong>Итого:</strong>
+            <strong>{receiptData.total.toLocaleString('ru-RU')} ₽</strong>
           </div>
           {receiptData.splits.map((s, i) => (
             <div key={i} className="receipt-split-row">
               <span>{s.method.toUpperCase()}:</span>
-              <span>{s.amount.toLocaleString('ru-RU')} '?.</span>
+              <span>{s.amount.toLocaleString('ru-RU')} ₽</span>
             </div>
           ))}
         </div>
@@ -58,8 +58,8 @@ export function ThermalReceiptSimulator({ receiptData, onClose }: ReceiptProps) 
           </svg>
         </div>
         <div className="receipt-footer">
-          <p>??????? ?? ????????</p>
-          <button className="print-btn" onClick={() => window.print()}>??????????</button>
+          <p>Спасибо за оплату</p>
+          <button className="print-btn" onClick={() => window.print()}>Распечатать</button>
         </div>
       </div>
     </div>

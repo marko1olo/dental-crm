@@ -6,13 +6,25 @@ import { Beaker, Clock, PackageCheck, RefreshCcw } from "lucide-react";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
+export type AppointmentScheduleDraft = {
+  patientId: string;
+  doctorUserId: string;
+  assistantUserId: string;
+  chairId: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string;
+  comment: string;
+  status: string;
+};
+
 export type AppointmentCardProps = {
   appointment: Appointment;
   dashboard: Dashboard;
   visibleScheduleSuggestions: ScheduleSuggestion[];
   appointmentReadinessById: Map<string, AppointmentReadiness>;
   appointmentLabels: Record<Appointment["status"], string>;
-  appointmentDraft: any;
+  appointmentDraft: AppointmentScheduleDraft;
   appointmentSaveState: string;
   appointmentSaveError: string | null;
   appointmentDirty: boolean;
@@ -26,7 +38,7 @@ export type AppointmentCardProps = {
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
   openAppointmentEditor: (appointment: Appointment) => void;
   closeAppointmentEditor: (appointmentId: string) => void;
-  updateAppointmentScheduleDraft: (appointmentId: string, key: string, value: any) => void;
+  updateAppointmentScheduleDraft: (appointmentId: string, key: string, value: unknown) => void;
   saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
   normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -267,7 +279,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
                     <select
                       value={appointmentDraft.patientId || ''}
                       onChange={(e) => updateAppointmentScheduleDraft(appointment.id, 'patientId', e.target.value)}
-                      disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                      disabled={appointment.id === dashboard.activeVisit?.appointmentId}
                       className="appointment-editor-select"
                       aria-describedby={appointmentHasOpenVisit ? appointmentHandoffNoteId : undefined}
                     >
@@ -286,7 +298,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
                             type="button"
                             className={`quick-chip ${appointmentDraft.patientId === patient.id ? 'active' : ''}`}
                             onClick={() => updateAppointmentScheduleDraft(appointment.id, "patientId", patient.id)}
-                            disabled={appointment.id === dashboard.activeVisit.appointmentId}
+                            disabled={appointment.id === dashboard.activeVisit?.appointmentId}
                           >
                             {patient.fullName}
                           </button>

@@ -18,11 +18,11 @@ import { imagingAnnotations } from "../db/schema.js";
 import { listAiRecognitionJobsFromDb, createAiRecognitionJobInDb } from "../db/aiQuery.js";
 import { getPatientByIdFromDb } from "../db/patientsQuery.js";
 import { getImagingStudyById } from "../db/imagingQuery.js";
-import { getDefaultOrganizationId } from "../db/documentQuery.js";
 
 import {
   requireClinicalMutationAccess,
   requireClinicalReadAccess,
+  resolveOrganizationId,
 } from "../accessGuard.js";
 
 const aiRecognitionValidationMessage =
@@ -60,8 +60,8 @@ function sendVisitNoteDraftScopeError(
 
 export async function registerAiRoutes(app: FastifyInstance) {
   app.get("/api/ai/recognition-jobs", async (request, reply) => {
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: "No organization" });
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     if (
       !(await requireClinicalReadAccess(request, reply, "ai recognition jobs"))
     )
@@ -70,8 +70,8 @@ export async function registerAiRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/ai/recognition-jobs", async (request, reply) => {
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: "No organization" });
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     if (
       !(await requireClinicalMutationAccess(
         request,
@@ -121,8 +121,8 @@ export async function registerAiRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/ai/visit-note-draft", async (request, reply) => {
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: "No organization" });
+    const orgId = await resolveOrganizationId(request);
+    if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     if (
       !(await requireClinicalReadAccess(request, reply, "ai visit note draft"))
     )

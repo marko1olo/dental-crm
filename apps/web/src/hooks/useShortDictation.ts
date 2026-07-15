@@ -33,7 +33,7 @@ export function useShortDictation(
   const startBrowserNative = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      showToast("Голосовой ввод не поддерживается в этом браузере.", "error");
+      showToast("Р“РѕР»РѕСЃРѕРІРѕР№ РІРІРѕРґ РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ РІ СЌС‚РѕРј Р±СЂР°СѓР·РµСЂРµ.", "error");
       return;
     }
 
@@ -51,7 +51,7 @@ export function useShortDictation(
     
     recognition.onerror = (e: any) => {
       if (e.error !== "no-speech") {
-        showToast("Ошибка распознавания: " + e.error, "error");
+        showToast("РћС€РёР±РєР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ: " + e.error, "error");
       }
       setIsRecording(false);
     };
@@ -106,17 +106,17 @@ export function useShortDictation(
       const payload = await response.json();
       
       if (!response.ok || payload.chunk?.status === "failed") {
-        throw new Error(operatorReadableErrorDetail(payload.message || payload.error) || "Ошибка сервера");
+        throw new Error(operatorReadableErrorDetail(payload.message || payload.error) || "РћС€РёР±РєР° СЃРµСЂРІРµСЂР°");
       }
 
       if (payload.chunk?.transcript) {
         onResult(payload.chunk.transcript);
       } else {
-        showToast("Не удалось распознать речь", "warning");
+        showToast("РќРµ СѓРґР°Р»РѕСЃСЊ СЂР°СЃРїРѕР·РЅР°С‚СЊ СЂРµС‡СЊ", "warning");
       }
     } catch (err: any) {
       console.error("Server STT Error:", err);
-      showToast("Сбой сервера распознавания. Попробуйте еще раз.", "error");
+      showToast("РЎР±РѕР№ СЃРµСЂРІРµСЂР° СЂР°СЃРїРѕР·РЅР°РІР°РЅРёСЏ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰Рµ СЂР°Р·.", "error");
     } finally {
       setIsProcessing(false);
     }
