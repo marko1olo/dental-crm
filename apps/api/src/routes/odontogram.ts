@@ -189,60 +189,76 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
     const totalPrice = input.items.reduce((sum, item) => sum + Math.max(0, item.price * item.quantity - item.discount), 0);
     const now = new Date();
 
-    const planId = await db.transaction(async (tx) => {
-      let savedPlanId = input.id ?? null;
-      if (savedPlanId) {
-        const [existing] = await tx
-          .select({ id: treatmentPlans.id })
-          .from(treatmentPlans)
-          .where(and(eq(treatmentPlans.id, savedPlanId), eq(treatmentPlans.patientId, patientId)))
-          .limit(1);
-        if (!existing) return null;
-        await tx
-          .update(treatmentPlans)
-          .set({
-            name: input.name,
-            totalPrice: totalPrice.toString(),
-            ...(input.patientSignature !== undefined ? { patientSignature: input.patientSignature } : {}),
-            updatedAt: now,
-            isSynced: false,
-            version: sql`${treatmentPlans.version} + 1`
-          })
-          .where(and(eq(treatmentPlans.id, savedPlanId), eq(treatmentPlans.patientId, patientId)));
-        await tx.delete(treatmentPlanItemsNew).where(eq(treatmentPlanItemsNew.planId, savedPlanId));
-      } else {
-        const [created] = await tx
-          .insert(treatmentPlans)
-          .values({
-            patientId,
-            name: input.name,
-            totalPrice: totalPrice.toString(),
-            patientSignature: input.patientSignature ?? null,
-            isSynced: false,
-            version: 1,
-            updatedAt: now
-          })
-          .returning({ id: treatmentPlans.id });
-        savedPlanId = created?.id ?? null;
+    let planId: string | null = null;
+    try {
+      planId = await db.transaction(async (tx) => {
+        let savedPlanId = input.id ?? null;
+        if (savedPlanId) {
+          const [existing] = await tx
+            .select({ id: treatmentPlans.id, patientSignature: treatmentPlans.patientSignature })
+            .from(treatmentPlans)
+            .where(and(eq(treatmentPlans.id, savedPlanId), eq(treatmentPlans.patientId, patientId)))
+            .for("update")
+            .limit(1);
+          if (!existing) return null;
+
+          if (existing.patientSignature) {
+            const err = new Error("Запрещено изменять подписанный план лечения. Создайте новый.");
+            (err as any).statusCode = 409;
+            throw err;
+          }
+
+          await tx
+            .update(treatmentPlans)
+            .set({
+              name: input.name,
+              totalPrice: totalPrice.toString(),
+              ...(input.patientSignature !== undefined ? { patientSignature: input.patientSignature } : {}),
+              updatedAt: now,
+              isSynced: false,
+              version: sql`${treatmentPlans.version} + 1`
+            })
+            .where(and(eq(treatmentPlans.id, savedPlanId), eq(treatmentPlans.patientId, patientId)));
+          await tx.delete(treatmentPlanItemsNew).where(eq(treatmentPlanItemsNew.planId, savedPlanId));
+        } else {
+          const [created] = await tx
+            .insert(treatmentPlans)
+            .values({
+              patientId,
+              name: input.name,
+              totalPrice: totalPrice.toString(),
+              patientSignature: input.patientSignature ?? null,
+              isSynced: false,
+              version: 1,
+              updatedAt: now
+            })
+            .returning({ id: treatmentPlans.id });
+          savedPlanId = created?.id ?? null;
+        }
+
+        if (!savedPlanId) return null;
+
+        if (input.items.length > 0) {
+          await tx.insert(treatmentPlanItemsNew).values(input.items.map((item) => ({
+            planId: savedPlanId,
+            toothNumber: item.toothNumber ?? null,
+            priceId: item.name ? `${item.priceId}::${item.name}` : item.priceId,
+            quantity: item.quantity,
+            price: item.price.toString(),
+            discount: item.discount.toString(),
+            phase: item.phase,
+            isBundle: Boolean(item.isAuto)
+          })));
+        }
+
+        return savedPlanId;
+      });
+    } catch (err: any) {
+      if (err.statusCode) {
+        return reply.code(err.statusCode).send({ error: "TreatmentPlanValidationError", message: err.message });
       }
-
-      if (!savedPlanId) return null;
-
-      if (input.items.length > 0) {
-        await tx.insert(treatmentPlanItemsNew).values(input.items.map((item) => ({
-          planId: savedPlanId,
-          toothNumber: item.toothNumber ?? null,
-          priceId: item.name ? `${item.priceId}::${item.name}` : item.priceId,
-          quantity: item.quantity,
-          price: item.price.toString(),
-          discount: item.discount.toString(),
-          phase: item.phase,
-          isBundle: Boolean(item.isAuto)
-        })));
-      }
-
-      return savedPlanId;
-    });
+      throw err;
+    }
 
     if (!planId) return reply.code(input.id ? 404 : 500).send({ error: input.id ? "TreatmentPlanNotFound" : "TreatmentPlanSaveFailed" });
 
