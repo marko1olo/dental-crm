@@ -46,6 +46,8 @@ import {
 } from "./routes/telegram.js";
 import registerTemplateRoutes from "./routes/templates.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
+import { telephonyRoutes } from "./routes/telephony.js";
+import { portalRoutes } from "./routes/portal.js";
 import { registerVisitRoutes } from "./routes/visits.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { registerXrayRoutes } from "./routes/xray.js";
@@ -289,6 +291,8 @@ export async function createDenteApiApp(
 	await registerAiRoutes(app);
 	await registerBillingRoutes(app);
 	await registerAdvancedBillingRoutes(app);
+	await app.register(telephonyRoutes, { prefix: "/api/telephony" });
+	await app.register(portalRoutes, { prefix: "/api/portal" });
 	await registerClinicalRoutes(app);
 	await registerCommunicationRoutes(app);
 	await registerDashboardRoutes(app);

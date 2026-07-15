@@ -142,25 +142,38 @@ export const PatientPortal: React.FC = () => {
 	const [viewingDoc, setViewingDoc] = useState<string | null>(null);
 	const phoneRef = useRef<HTMLInputElement>(null);
 
-	const plan: TreatmentStage[] = [
-		{
-			id: "1",
-			description: "Консультация и КЛКТ",
-			cost: 3500,
-			status: "completed",
-		},
-		{
-			id: "2",
-			description: "E.max корона зуб 16",
-			cost: 45000,
-			status: "pending",
-		},
-	];
+	const [patientData, setPatientData] = useState<any>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const totalCost = plan.reduce((s, i) => s + i.cost, 0);
-	const paid = plan
-		.filter((i) => i.status === "completed")
-		.reduce((s, i) => s + i.cost, 0);
+	const fetchPatientData = async (token: string) => {
+		try {
+			setIsLoading(true);
+			const res = await fetch("/api/portal/me", {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (res.ok) {
+				const data = await res.json();
+				setPatientData(data);
+				setIsAuthenticated(true);
+			} else {
+				localStorage.removeItem("patient_token");
+				setIsAuthenticated(false);
+			}
+		} catch (e) {
+			console.error(e);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		const token = localStorage.getItem("patient_token");
+		if (token) fetchPatientData(token);
+		phoneRef.current?.focus();
+	}, []);
+
+	const totalCost = patientData?.plans?.reduce((s: number, i: any) => s + (i.totalAmount || 0), 0) || 0;
+	const paid = patientData?.invoices?.filter((i: any) => i.status === "paid").reduce((s: number, i: any) => s + (i.amount || 0), 0) || 0;
 	const remaining = totalCost - paid;
 
 	useEffect(() => {
@@ -173,18 +186,36 @@ export const PatientPortal: React.FC = () => {
 		};
 	}, []);
 
-	const handleSendOtp = useCallback(() => {
-		if (phone.replace(/\D/g, "").length >= 10) setStep("otp");
+	const handleSendOtp = useCallback(async () => {
+		if (phone.replace(/\D/g, "").length >= 10) {
+			setStep("otp");
+			await fetch("/api/portal/auth/send-otp", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ phone })
+			});
+		}
 	}, [phone]);
 
-	const handleOTPComplete = useCallback((code: string) => {
-		if (code === "1234") {
-			setOtpError("");
-			setIsAuthenticated(true);
-		} else {
-			setOtpError("Неверный код. Попробуйте ещё раз.");
+	const handleOTPComplete = useCallback(async (code: string) => {
+		try {
+			const res = await fetch("/api/portal/auth/verify-otp", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ phone, code })
+			});
+			const data = await res.json();
+			if (res.ok && data.token) {
+				localStorage.setItem("patient_token", data.token);
+				setOtpError("");
+				await fetchPatientData(data.token);
+			} else {
+				setOtpError(data.error || "Неверный код. Попробуйте ещё раз.");
+			}
+		} catch (e) {
+			setOtpError("Ошибка соединения.");
 		}
-	}, []);
+	}, [phone]);
 
 	if (!isAuthenticated) {
 		return (
@@ -248,19 +279,20 @@ export const PatientPortal: React.FC = () => {
 			<div className="portal-grid">
 				<section className="portal-card visits-card">
 					<h3>Мои приёмы</h3>
-					<div className="visit-item past">
-						<div className="visit-date">15 Октября 2025 — 10:00</div>
-						<div className="visit-desc">Д-р Смит — Консультация</div>
-						<span className="badge gray">Завершён</span>
-					</div>
-					<div className="visit-item upcoming">
-						<div className="visit-date">2 Ноября 2025 — 11:30</div>
-						<div className="visit-desc">Д-р Смит — Установка коронки</div>
-						<div className="visit-actions">
-							<button className="btn-confirm">Подтвердить</button>
-							<button className="btn-cancel">Отменить</button>
+					{(patientData?.visits || []).length === 0 && (
+						<p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>У вас пока нет записей.</p>
+					)}
+					{(patientData?.visits || []).map((v: any) => (
+						<div key={v.id} className={`visit-item ${v.status === 'completed' ? 'past' : 'upcoming'}`}>
+							<div className="visit-date">{new Date(v.date).toLocaleDateString("ru-RU")}</div>
+							<div className="visit-desc">{v.notes || "Консультация"}</div>
+							{v.status === 'completed' ? (
+								<span className="badge gray">Завершён</span>
+							) : (
+								<span className="badge blue">Запланирован</span>
+							)}
 						</div>
-					</div>
+					))}
 				</section>
 
 				<section className="portal-card plan-card">
@@ -282,11 +314,11 @@ export const PatientPortal: React.FC = () => {
 						</div>
 					</div>
 					<div className="stages-list">
-						{plan.map((stage) => (
+						{(patientData?.plans || []).map((stage: any) => (
 							<div key={stage.id} className={`stage-item ${stage.status}`}>
-								<span className="stage-desc">{stage.description}</span>
+								<span className="stage-desc">{stage.name || 'План лечения'}</span>
 								<span className="stage-cost">
-									{stage.cost.toLocaleString()} ₽
+									{(stage.totalAmount || 0).toLocaleString()} ₽
 								</span>
 								{stage.status === "completed" && (
 									<span className="stage-icon">✓</span>
