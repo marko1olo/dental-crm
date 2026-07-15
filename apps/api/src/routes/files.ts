@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
-import { attachments } from "../db/schema.js";
+import { attachments, patients } from "../db/schema.js";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -19,6 +19,16 @@ export async function registerFilesRoutes(app: FastifyInstance) {
     const orgId = await requireResolvedOrganizationId(request, reply);
     if (!orgId) return;
     const { patientId } = request.params as { patientId: string };
+
+    const [patient] = await db
+      .select({ id: patients.id })
+      .from(patients)
+      .where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+      .limit(1);
+
+    if (!patient) {
+      return reply.code(403).send({ error: "Forbidden", message: "Patient does not belong to this organization or does not exist." });
+    }
 
     const data = await (request as any).file();
     if (!data) {

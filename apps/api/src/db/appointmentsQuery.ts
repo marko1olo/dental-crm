@@ -241,17 +241,17 @@ async function getActiveAppointments(organizationId: string, txContext: any = db
   return activeApps;
 }
 
-async function getPatientById(patientId: string) {
-  const [patient] = await db
+async function getPatientById(organizationId: string, patientId: string, txContext: any = db) {
+  const [patient] = await txContext
     .select()
     .from(schema.patients)
-    .where(eq(schema.patients.id, patientId))
+    .where(and(eq(schema.patients.id, patientId), eq(schema.patients.organizationId, organizationId)))
     .limit(1);
 
   if (!patient && process.env.DENTAL_STATE_PERSISTENCE === "off") {
     try {
       const { patients } = await import("../sampleData.js");
-      const found = patients.find((p) => p.id === patientId);
+      const found = patients.find((p) => p.id === patientId && p.organizationId === organizationId);
       if (found) return found;
     } catch (e) {
       // Ignore
@@ -260,17 +260,17 @@ async function getPatientById(patientId: string) {
   return patient;
 }
 
-async function getStaffMemberById(staffId: string) {
-  const [user] = await db
+async function getStaffMemberById(organizationId: string, staffId: string, txContext: any = db) {
+  const [user] = await txContext
     .select()
     .from(schema.users)
-    .where(eq(schema.users.id, staffId))
+    .where(and(eq(schema.users.id, staffId), eq(schema.users.organizationId, organizationId)))
     .limit(1);
 
   if (!user && process.env.DENTAL_STATE_PERSISTENCE === "off") {
     try {
       const { staffMembers } = await import("../sampleData.js");
-      const found = staffMembers.find((s) => s.id === staffId);
+      const found = staffMembers.find((s) => s.id === staffId && s.organizationId === organizationId);
       if (found) return found;
     } catch (e) {
       // Ignore
@@ -279,17 +279,17 @@ async function getStaffMemberById(staffId: string) {
   return user;
 }
 
-async function getChairById(chairId: string) {
-  const [chair] = await db
+async function getChairById(organizationId: string, chairId: string, txContext: any = db) {
+  const [chair] = await txContext
     .select()
     .from(schema.clinicChairs)
-    .where(eq(schema.clinicChairs.id, chairId))
+    .where(and(eq(schema.clinicChairs.id, chairId), eq(schema.clinicChairs.organizationId, organizationId)))
     .limit(1);
 
   if (!chair && process.env.DENTAL_STATE_PERSISTENCE === "off") {
     try {
       const { chairs } = await import("../sampleData.js");
-      const found = chairs.find((c) => c.id === chairId);
+      const found = chairs.find((c) => c.id === chairId && c.organizationId === organizationId);
       if (found) return found;
     } catch (e) {
       // Ignore
@@ -351,7 +351,7 @@ async function assertAppointmentCanBeScheduled(
     throw new Error("Для активной будущей записи нужно выбрать ассистента");
   }
 
-  const patient = await getPatientById(candidate.patientId);
+  const patient = await getPatientById(organizationId, candidate.patientId, tx);
   if (!patient || patient.status !== "active") {
     throw new Error("Для активной будущей записи нужен активный пациент");
   }
@@ -373,7 +373,7 @@ async function assertAppointmentCanBeScheduled(
     throw new Error(`Запись вне расписания клиники: прием вне окна клиники ${workdayStart}-${workdayEnd} (${timezone})`);
   }
 
-  const doctor = await getStaffMemberById(candidate.doctorUserId);
+  const doctor = await getStaffMemberById(organizationId, candidate.doctorUserId, tx);
   if (doctor) {
     const workingHours = normalizeStaffWorkingHours(
       (() => {
@@ -396,7 +396,7 @@ async function assertAppointmentCanBeScheduled(
   }
 
   if (candidate.assistantUserId) {
-    const assistant = await getStaffMemberById(candidate.assistantUserId);
+    const assistant = await getStaffMemberById(organizationId, candidate.assistantUserId, tx);
     if (assistant) {
       const workingHours = normalizeStaffWorkingHours(
         (() => {
@@ -419,7 +419,7 @@ async function assertAppointmentCanBeScheduled(
     }
   }
 
-  const chair = await getChairById(candidate.chairId);
+  const chair = await getChairById(organizationId, candidate.chairId, tx);
   if (chair) {
     const workingHours = normalizeStaffWorkingHours(
       (() => {

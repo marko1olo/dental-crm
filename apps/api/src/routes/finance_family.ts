@@ -91,6 +91,13 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 
     const data = z.object({ name: z.string().min(1), headPatientId: z.string().uuid().optional() }).parse(req.body);
 
+    if (data.headPatientId) {
+      const [headPatient] = await db.select({ id: patients.id }).from(patients).where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId))).limit(1);
+      if (!headPatient) {
+        return reply.code(403).send({ error: "Forbidden", message: "Указанный пациент не найден в вашей клинике" });
+      }
+    }
+
     const result = await db.insert(familyGroups).values({
       organizationId,
       name: data.name,
@@ -110,6 +117,13 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 
     const { id } = req.params as { id: string };
     const data = z.object({ name: z.string().min(1).optional(), headPatientId: z.string().uuid().nullable().optional() }).parse(req.body);
+
+    if (data.headPatientId) {
+      const [headPatient] = await db.select({ id: patients.id }).from(patients).where(and(eq(patients.id, data.headPatientId), eq(patients.organizationId, organizationId))).limit(1);
+      if (!headPatient) {
+        return reply.code(403).send({ error: "Forbidden", message: "Указанный пациент не найден в вашей клинике" });
+      }
+    }
 
     const [family] = await db.update(familyGroups)
       .set(data)

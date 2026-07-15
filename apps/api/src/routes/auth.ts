@@ -382,6 +382,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const [invite] = await db.select().from(userInvitations).where(and(eq(userInvitations.inviteToken, token), eq(userInvitations.status, 'pending'))).limit(1);
     if (!invite || new Date() > invite.expiresAt) return reply.code(400).send({ error: 'InvalidToken', message: 'Приглашение недействительно или истекло.' });
     
+    const inviteEmail = invite.email.toLowerCase().trim();
+    const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, inviteEmail)).limit(1);
+    if (existingUser) {
+      return reply.code(409).send({ error: 'Conflict', message: 'Пользователь с таким email уже существует.' });
+    }
+
     const passwordHash = hashCredential(password);
     const pinCodeHash = hashCredential(pinCode);
     
@@ -389,7 +395,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       organizationId: invite.organizationId,
       fullName,
       role: invite.role,
-      email: invite.email,
+      email: inviteEmail,
       passwordHash,
       pinCodeHash,
       isActive: true

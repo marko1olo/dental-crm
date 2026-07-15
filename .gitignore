@@ -35,3 +35,9 @@ scripts/smoke-speech-key-rotation.mjs
 playwright-report/
 blob-report/
 *.tsbuildinfo
+
+.env*
+
+secrets.json
+
+keys.json

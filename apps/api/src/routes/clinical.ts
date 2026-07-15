@@ -75,6 +75,13 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
     const orgId = await resolveOrganizationId(request);
     if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
     
+    // Verify patient belongs to org
+    const { db } = await import("../db/client.js");
+    const { patients } = await import("../db/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+    const [patient] = await db.select({ id: patients.id }).from(patients).where(and(eq(patients.id, body.patientId), eq(patients.organizationId, orgId))).limit(1);
+    if (!patient) return reply.code(403).send({ error: "Forbidden", message: "Patient not found in this organization" });
+
     // Dynamically import the service to avoid circular deps if any
     const { triggerPostOpCare } = await import("../services/postOpCareTrigger.js");
     await triggerPostOpCare(orgId, body.patientId, body.itemTitle);
