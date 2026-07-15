@@ -198,6 +198,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const staffPayload = staffToken ? verifySessionToken(staffToken) : null;
 
     let activeUser: any = null;
+    let isStaffUnlocked = !!staffPayload;
     if (staffPayload?.userId && clinicPayload?.organizationId) {
       const [user] = await db
         .select({ id: users.id, fullName: users.fullName, role: users.role })
@@ -205,11 +206,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         .where(and(eq(users.id, staffPayload.userId as string), eq(users.isActive, true)))
         .limit(1);
       activeUser = user ?? null;
+      if (!activeUser) {
+        isStaffUnlocked = false;
+      }
     }
 
     return reply.send({
       clinicUnlocked: !!clinicPayload,
-      staffUnlocked: !!staffPayload,
+      staffUnlocked: isStaffUnlocked,
       organizationId: (clinicPayload?.organizationId as string) ?? null,
       activeUser
     });
