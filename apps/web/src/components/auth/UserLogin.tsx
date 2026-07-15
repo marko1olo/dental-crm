@@ -33,6 +33,8 @@ export function UserLogin({ onSuccess, onSwitchToRegister, onSwitchToClinicMode 
 
       localStorage.setItem('dente_clinic_token', data.clinicToken);
       localStorage.setItem('dente_staff_token', data.staffToken);
+      const organizationId = data.user?.organizationId ?? data.organizationId;
+      if (organizationId) localStorage.setItem('dente_organization_id', organizationId);
       showToast('Вход выполнен', 'success');
       onSuccess(
         { organizationId: data.user?.organizationId ?? data.organizationId },

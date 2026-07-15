@@ -195,7 +195,7 @@ export async function saveImagingViewerSession(organizationId: string, studyId: 
       clientSavedAt,
       serverSavedAt: now,
       updatedAt: now
-    }).where(eq(imagingViewerSessions.id, existing.id)).returning();
+    }).where(and(eq(imagingViewerSessions.id, existing.id), eq(imagingViewerSessions.organizationId, organizationId))).returning();
     if (!updated) throw new Error("Failed to update session");
 
     return {
@@ -289,7 +289,7 @@ export async function saveDicomWorkbenchBundle(organizationId: string, input: Sa
       clientSavedAt,
       serverSavedAt: now,
       updatedAt: now
-    }).where(eq(dicomWorkbenchBundles.id, existing.id)).returning();
+    }).where(and(eq(dicomWorkbenchBundles.id, existing.id), eq(dicomWorkbenchBundles.organizationId, organizationId))).returning();
     if (!updated) throw new Error("Failed to update bundle");
 
     return {

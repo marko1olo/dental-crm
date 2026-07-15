@@ -120,7 +120,7 @@
   left: 3px;
   width: 12px;
   height: 12px;
-  background: #fff;
+  background: var(--paper);
   border-radius: 50%;
   transition: transform 0.2s;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);

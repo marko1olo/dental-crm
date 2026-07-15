@@ -18,6 +18,8 @@ export function showToast(text: string, type: ToastType = 'info', duration: numb
   }
 }
 
+import { AlertCircle, CheckCircle, Info, AlertTriangle, X } from 'lucide-react';
+
 export function GlobalToast() {
   const [toast, setToast] = useState<ToastEventDetail | null>(null);
 
@@ -44,13 +46,26 @@ export function GlobalToast() {
 
   if (!toast) return null;
 
-  // Re-use sa-toast styles from ShadowAnalyst or define minimal inline/fallback
+  const bgColors = {
+    error: 'bg-rose-500/90 border-rose-500/50 text-white',
+    success: 'bg-emerald-500/90 border-emerald-500/50 text-white',
+    warning: 'bg-amber-500/90 border-amber-500/50 text-white',
+    info: 'bg-blue-500/90 border-blue-500/50 text-white'
+  };
+  
+  const iconMap = {
+    error: <AlertCircle className="w-5 h-5" />,
+    success: <CheckCircle className="w-5 h-5" />,
+    warning: <AlertTriangle className="w-5 h-5" />,
+    info: <Info className="w-5 h-5" />
+  };
+
   return (
-    <div className={`sa-toast sa-toast--${toast.type}`} style={{ zIndex: 9999, position: 'fixed', bottom: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', background: 'var(--surface-sunken, #0f172a)', color: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.1)' }}>
-      {toast.type === 'error' ? '❌' : toast.type === 'success' ? '✅' : 'ℹ️'}
-      <span>{toast.text}</span>
-      <button type="button" onClick={() => setToast(null)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', marginLeft: 'auto', fontSize: '18px', padding: '0 4px' }} aria-label="Закрыть">
-        ×
+    <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl backdrop-blur-xl border ${bgColors[toast.type]} animate-in slide-in-from-bottom-5 fade-in duration-300 max-w-sm`}>
+      {iconMap[toast.type]}
+      <span className="text-sm font-medium leading-tight">{toast.text}</span>
+      <button type="button" onClick={() => setToast(null)} className="ml-auto opacity-70 hover:opacity-100 transition-opacity" aria-label="Закрыть">
+        <X className="w-4 h-4" />
       </button>
     </div>
   );

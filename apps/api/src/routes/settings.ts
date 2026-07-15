@@ -87,7 +87,9 @@ function hasActiveScheduleConflict(message: string): boolean {
   return message.includes("активная запись") || message.includes("активные записи");
 }
 
-function clinicProfileMutationRejection(reply: FastifyReply, error: unknown) {
+function clinicProfileMutationRejection(reply: FastifyReply, error: any) {
+  console.error("DEBUG profile update error:", error?.message || error);
+  if (error?.stack) console.error(error.stack);
   const message = settingsDomainMessage(error);
   if (message.includes("часовой пояс")) {
     return reply.code(409).send({
@@ -315,7 +317,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "SettingsValidationError", message: staffWorkingHoursValidationMessage });
     }
     try {
-      await updateStaffWorkingHoursInDb(orgId, params.staffId, input);
+      await updateStaffWorkingHoursInDb(orgId, params.staffId, input.workingHours);
       const settings = await getClinicSettingsFromDb(orgId);
       const updated = settings.staff.find(s => s.id === params.staffId);
       if (!updated) throw new Error("Сотрудник не найден.");
@@ -353,7 +355,7 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "SettingsValidationError", message: chairWorkingHoursValidationMessage });
     }
     try {
-      await updateChairWorkingHoursInDb(orgId, params.chairId, input);
+      await updateChairWorkingHoursInDb(orgId, params.chairId, input.workingHours);
       const settings = await getClinicSettingsFromDb(orgId);
       const updated = settings.chairs.find(c => c.id === params.chairId);
       if (!updated) throw new Error("Кресло не найдено.");

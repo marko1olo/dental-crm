@@ -1,4 +1,5 @@
 import { usePatientStore } from "./store/patientStore";
+import { useVisitStore } from "./store/visitStore";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { SmartMicrophoneButton } from './components/SmartMicrophoneButton';
@@ -7,10 +8,11 @@ import type { Dashboard, Patient, PatientAdministrativeProfile } from "@dental/s
 import { DictationHints } from "./DictationHints";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
-import { Odontogram } from "./components/Odontogram";
+import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
 import { formatPhoneNumber } from "./utils/inputSanitation";
+import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
 type PatientAdministrativeProfileSaveState = "idle" | "saving" | "saved" | "error";
@@ -87,13 +89,41 @@ export function PatientsView(props: PatientsViewProps) {
   const [showSmartPreview, setShowSmartPreview] = useState(false);
   const [smartParsedData, setSmartParsedData] = useState<any>(null);
   const [showHints, setShowHints] = useState(false);
+  const [familyData, setFamilyData] = useState<any>(null);
 
   useEffect(() => {
+    if (!selectedPatientId) {
+      setFamilyData(null);
+      return;
+    }
+    fetch(`/api/finance/family/patient/${selectedPatientId}`, { headers: denteAdminSecretRequestHeaders() })
+      .then(res => {
+        if (!res.ok) throw new Error("No family");
+        return res.json();
+      })
+      .then(data => setFamilyData(data))
+      .catch(() => setFamilyData(null));
+  }, [selectedPatientId]);
+
+  useEffect(() => {
+    // Memory Optimization: Flush heavy patient states on unmount
     return () => {
-      // Memory Optimization: Flush heavy patient states on unmount
       usePatientStore.getState().reset();
+      useVisitStore.getState().reset();
     };
   }, []);
+
+  // Flush visit state and reset scroll when selected patient changes
+  useEffect(() => {
+    useVisitStore.getState().reset();
+    
+    // Smooth scroll reset to top of page/card to avoid CLS jump
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    const container = document.getElementById("workspace-content") || document.querySelector(".workspace") || document.querySelector(".patients-panel");
+    if (container) {
+      container.scrollTop = 0;
+    }
+  }, [selectedPatientId]);
 
   const {
     createPatient,
@@ -237,7 +267,9 @@ export function PatientsView(props: PatientsViewProps) {
           {patientCreateGuidance}
         </p>
       ) : null}
-            <div className="patient-list">
+      <div className={`patients-content-area ${selectedPatientId ? 'patient-selected' : 'no-patient-selected'}`}>
+        <aside className="patients-sidebar-column">
+          <div className="patient-list">
               {filteredPatients.map((patient) => {
                 const insight = patientInsightById.get(patient.id);
                 const patientIsSelected = selectedPatient?.id === patient.id;
@@ -277,10 +309,22 @@ export function PatientsView(props: PatientsViewProps) {
                 </article>
               ) : null}
             </div>
+        </aside>
+
+        <main className="patient-details-column">
+            {selectedPatient && (
+              <button 
+                className="mobile-back-to-list-btn" 
+                onClick={() => setSelectedPatientId(null)}
+                style={{ display: 'none', marginBottom: '16px', background: 'var(--paper)', border: '1px solid var(--line)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                ← Назад к списку пациентов
+              </button>
+            )}
             <section className="patient-admin-panel" aria-label="Административные данные активного пациента">
               <div className="panel-heading compact-heading" style={{ borderBottom: 'none', paddingBottom: '0', marginBottom: '8px' }}>
                 <div>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Карточка пациента</span>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>Карточка пациента</span>
                 </div>
                 <span className={`status-pill status-${patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error" ? "cancelled" : "confirmed"}`}>
                   {patientCoreSaveState === "saving"
@@ -336,7 +380,7 @@ export function PatientsView(props: PatientsViewProps) {
                 </label>
                 <div className="form-span-2" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--slate-700)' }}>Заметки для команды</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted)' }}>Заметки для команды</span>
                     <SmartMicrophoneButton
                       context="general"
                       onResult={(t) => {
@@ -347,10 +391,9 @@ export function PatientsView(props: PatientsViewProps) {
                   </div>
                   <textarea
                     value={patientCoreDraft.notes}
-                    onChange={(event: TextFieldChangeEvent) => updatePatientCoreDraft("notes", event.target.value)}
+                    onChange={(e) => updatePatientCoreDraft("notes", e.target.value)}
                     placeholder="важное для связи, приема и документов"
-                    rows={3}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--slate-300)', fontSize: '14px', resize: 'vertical' }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--line)', fontSize: '14px', resize: 'vertical' }}
                   />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
                     {["Очень тревожный", "Сложный пациент", "VIP", "Просит звонить заранее", "Часто отменяет", "Плохо переносит анестезию", "Должник", "Рвотный рефлекс"].map(chip => (
@@ -362,7 +405,7 @@ export function PatientsView(props: PatientsViewProps) {
                           const newVal = currentVal ? `${currentVal}, ${chip.toLowerCase()}` : chip;
                           updatePatientCoreDraft("notes", newVal);
                         }}
-                        style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--slate-100)', border: '1px solid var(--slate-200)', borderRadius: '12px', cursor: 'pointer', color: 'var(--slate-700)' }}
+                        style={{ padding: '2px 8px', fontSize: '12px', background: 'var(--paper-strong)', border: '1px solid var(--slate-200)', borderRadius: '12px', cursor: 'pointer', color: 'var(--slate-700)' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--slate-200)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--slate-100)'; }}
                       >
@@ -390,21 +433,50 @@ export function PatientsView(props: PatientsViewProps) {
                 </p>
               ) : null}
 
-              {/* Odontogram Section */}
-              <div style={{ marginTop: '24px', marginBottom: '16px' }}>
-                 <Odontogram />
-              </div>
-
-              {/* ShadowAnalyst — AI 2D X-Ray Analyzer */}
-              <VisiographAnalyzer />
-
-              {/* Лента приемов пациента */}
-                {selectedPatientId && (
-                  <div style={{ marginTop: '24px', marginBottom: '16px' }}>
-                    <PatientJourneyTimeline patientId={selectedPatientId} dashboard={props.dashboard} />
+              {/* Premium Clinical Experience (Full Width Odontogram + Grid) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', margin: '24px 0' }}>
+                <div style={{ width: '100%' }}>
+                  {selectedPatientId && (
+                    <OdontogramModule 
+                      patientId={selectedPatientId} 
+                      pediatricMode={(props.dashboard?.clinicSettings?.profile as any)?.hasPediatricMode} 
+                    />
+                  )}
+                </div>
+                
+                <div className="patient-clinical-grid" style={{ marginTop: 0, marginBottom: 0 }}>
+                  <div className="clinical-col-left">
+                    <VisiographAnalyzer />
                   </div>
-                )}
-
+                  <div className="clinical-col-right">
+                    {familyData && (
+                      <div className="panel family-wallet-panel" style={{ background: "rgba(24, 24, 27, 0.6)", backdropFilter: "blur(12px)", borderRadius: "12px", border: "1px solid rgba(63, 63, 70, 0.4)", padding: "16px", marginBottom: "20px" }}>
+                        <h3 style={{ fontSize: "14px", fontWeight: "bold", color: "#fff", display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                          👨‍👩‍👧‍👦 {familyData.name || "Семейная группа"}
+                        </h3>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(9, 9, 11, 0.4)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(63, 63, 70, 0.2)", marginBottom: "12px" }}>
+                          <span style={{ fontSize: "12px", color: "#a1a1aa" }}>Семейный баланс:</span>
+                          <span style={{ fontSize: "18px", fontWeight: "bold", color: "#0ea5e9" }}>{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                          <span style={{ fontSize: "11px", fontWeight: "bold", color: "#71717a", textTransform: "uppercase" }}>Члены семьи:</span>
+                          {familyData.members?.map((m: any) => (
+                            <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
+                              <span style={{ color: m.id === selectedPatientId ? "#0ea5e9" : "#e4e4e7", fontWeight: m.id === selectedPatientId ? "bold" : "normal" }}>
+                                {m.fullName} {m.id === selectedPatientId && " (текущий)"}
+                              </span>
+                              <span style={{ color: "#71717a" }}>{m.phone || "нет телефона"}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedPatientId && (
+                      <PatientJourneyTimeline patientId={selectedPatientId} dashboard={props.dashboard} />
+                    )}
+                  </div>
+                </div>
+              </div>
             <details className="settings-advanced-block patient-docs-collapsible">
               <summary className="settings-advanced-toggle">
                 <span className="settings-advanced-label">
@@ -417,7 +489,7 @@ export function PatientsView(props: PatientsViewProps) {
               <div className="settings-advanced-form">
                 <div className="panel-heading compact-heading patient-doc-heading" style={{ borderBottom: 'none', paddingBottom: '0', marginBottom: '8px' }}>
                   <div>
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Реквизиты для документов</span>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>Реквизиты для документов</span>
                   </div>
                   <span className={`status-pill status-${patientAdministrativeProfileSaveState === "error" || patientAdministrativeProfileValidationMessage ? "cancelled" : "confirmed"}`}>
                     {patientAdministrativeProfileSaveState === "saving"
@@ -434,8 +506,8 @@ export function PatientsView(props: PatientsViewProps) {
                 {patientAdministrativeProfileValidationMessage ? (
                   <p className="save-error patient-admin-validation">{patientAdministrativeProfileValidationMessage}</p>
                 ) : null}
-                <details className="patient-admin-details" style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--slate-700)' }}>Дополнительные документы и адреса (развернуть)</summary>
+                <details className="patient-admin-details" style={{ background: 'var(--paper-soft)', padding: '12px', borderRadius: '8px', border: '1px solid var(--line)' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--ink)' }}>Дополнительные документы и адреса (развернуть)</summary>
                   <div style={{ marginTop: '12px' }}>
                 <div className="clinic-profile-form-grid patient-admin-form-grid">
                 <label>
@@ -625,7 +697,10 @@ export function PatientsView(props: PatientsViewProps) {
               </div>
             </details>
             </section>
-          </div>
+          </main>
+        </div>
+      </div>
 
           );
 }
+

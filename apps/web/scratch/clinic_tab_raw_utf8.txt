@@ -76,7 +76,7 @@
                 </div>
               </div>
 
-              {/* === РћРЎРќРћР’РќР«Р• РџРћР›РЇ вЂ” РІСЃРµРіРґР° РІРёРґРЅС‹ === */}
+              {/* === РћРЎРќРћР’РќР«Р• РџРћР›РЇ 2 РІСЃРµРіРґР° РІРёРґРЅС‹ === */}
               <div className="clinic-profile-form-grid settings-essential-block">
                 <label>
                   РќР°Р·РІР°РЅРёРµ РєР»РёРЅРёРєРё
@@ -142,7 +142,7 @@
                 </div>
               </div>
 
-              {/* === Р”Р›РЇ Р”РћРљРЈРњР•РќРўРћР’ вЂ” collapsible === */}
+              {/* === Р”Р›РЇ Р”РћРљРЈРњР•РќРўРћР’ 2 collapsible === */}
               <details className="settings-advanced-block">
                 <summary className="settings-advanced-toggle">
                   <span className="settings-advanced-label">
@@ -204,7 +204,7 @@
                   <label className="form-span-2">
                     Р‘Р°РЅРєРѕРІСЃРєРёРµ СЂРµРєРІРёР·РёС‚С‹
                     <textarea value={clinicProfileDraft.bankDetails} onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("bankDetails", event.target.value)} />
-                    <small className="field-note">СЂ/СЃ, Р‘РРљ, Р±Р°РЅРє вЂ” РІСЃС‘ РІ РѕРґРЅРѕР№ СЃС‚СЂРѕРєРµ РёР»Рё С‡РµСЂРµР· Р·Р°РїСЏС‚СѓСЋ</small>
+                    <small className="field-note">СЂ/СЃ, Р‘РРљ, Р±Р°РЅРє 2 РІСЃС‘ РІ РѕРґРЅРѕР№ СЃС‚СЂРѕРєРµ РёР»Рё С‡РµСЂРµР· Р·Р°РїСЏС‚СѓСЋ</small>
                   </label>
                   <label>
                     Р§Р°СЃРѕРІРѕР№ РїРѕСЏСЃ

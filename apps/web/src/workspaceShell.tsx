@@ -28,13 +28,14 @@ import { useThemeStore } from "./store/themeStore";
 import { QrGatewayPanel } from "./components/QrGatewayPanel";
 import { useSyncStore, resolveConflictLWW } from "./lib/antifragility";
 
-export const appViews = ["shift", "schedule", "patients", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing"] as const;
+export const appViews = ["shift", "schedule", "patients", "leads", "imaging", "visit", "documents", "finance", "analytics", "communications", "settings", "marketing", "scanner"] as const;
 export type AppView = (typeof appViews)[number];
 
 export const viewLabels: Record<AppView, string> = {
   shift: "Смена",
   schedule: "Записи",
   patients: "Пациенты",
+  leads: "Лиды (Канбан)",
   imaging: "Снимки",
   visit: "Прием",
   documents: "Документы",
@@ -42,21 +43,24 @@ export const viewLabels: Record<AppView, string> = {
   analytics: "BI Аналитика",
   communications: "Связь",
   settings: "Настройки",
-  marketing: "Маркетинг/SEO"
+  marketing: "Маркетинг/SEO",
+  scanner: "Сканнер лотков (ЦСО)"
 };
 
 export const viewHints: Record<AppView, string> = {
   shift: "что делать сейчас",
   schedule: "очередь, врачи и кресла",
   patients: "карточки и контакты",
+  leads: "воронка продаж",
   imaging: "рентген, КЛКТ и КТ",
   visit: "прием и диктовка",
   documents: "договоры и справки",
   finance: "счета и оплаты",
   analytics: "дашборд аналитики",
   communications: "сообщения и задачи",
-  settings: "клиника, импорт и доступы",
-  marketing: "продвижение и отзывы"
+  settings: "Системные настройки, справочники, профиль",
+  marketing: "Аналитика привлечения, LTV",
+  scanner: "Стерилизация и сканирование штрих-кодов"
 };
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
@@ -64,6 +68,7 @@ type WorkspaceViewIntentHandler = (view: AppView) => void;
 function SidebarIcon({ section }: { section: AppView }) {
   if (section === "schedule") return <CalendarDays aria-hidden="true" />;
   if (section === "patients") return <Users aria-hidden="true" />;
+  if (section === "leads") return <Users aria-hidden="true" />;
   if (section === "imaging") return <ImageIcon aria-hidden="true" />;
   if (section === "visit") return <ClipboardList aria-hidden="true" />;
   if (section === "documents") return <FileText aria-hidden="true" />;
@@ -78,6 +83,7 @@ function SidebarIcon({ section }: { section: AppView }) {
 export function ActionIcon({ section }: { section: AppView }) {
   if (section === "schedule") return <CalendarClock aria-hidden="true" />;
   if (section === "patients") return <Users aria-hidden="true" />;
+  if (section === "leads") return <Users aria-hidden="true" />;
   if (section === "imaging") return <ImageIcon aria-hidden="true" />;
   if (section === "visit") return <ClipboardCheck aria-hidden="true" />;
   if (section === "documents") return <FileCheck2 aria-hidden="true" />;
@@ -96,10 +102,10 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
     return ["shift", "schedule", "patients", "imaging", "documents", "communications"];
   }
   if (role === "administrator") {
-    return ["schedule", "patients", "documents", "finance", "analytics", "communications", "settings"];
+    return ["shift", "schedule", "patients", "leads", "imaging", "documents", "communications", "finance", "analytics", "settings", "marketing"];
   }
   if (role === "manager") {
-    return ["schedule", "patients", "finance", "analytics", "communications", "settings"];
+    return ["schedule", "patients", "leads", "finance", "analytics", "communications", "settings", "marketing"];
   }
   if (role === "owner") {
     return Array.from(appViews);

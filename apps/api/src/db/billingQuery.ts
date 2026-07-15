@@ -3,6 +3,10 @@ import * as schema from "./schema.js";
 import { eq, and } from "drizzle-orm";
 import type { CreatePaymentInput, Payment } from "@dental/shared";
 
+function useSampleBillingState(): boolean {
+  return process.env.NODE_ENV !== "production" && process.env.DENTAL_STATE_PERSISTENCE === "off";
+}
+
 export async function getDefaultOrganizationId(): Promise<string | null> {
   const [org] = await db.select().from(schema.organizations).limit(1);
   return org?.id || null;
@@ -10,6 +14,11 @@ export async function getDefaultOrganizationId(): Promise<string | null> {
 
 export async function findPaymentByClientMutationIdInDb(organizationId: string, clientMutationId: string | null | undefined): Promise<Payment | null> {
   if (!clientMutationId) return null;
+  if (useSampleBillingState()) {
+    const { findPaymentByClientMutationId } = await import("../sampleData.js");
+    const payment = findPaymentByClientMutationId(clientMutationId);
+    return payment?.organizationId === organizationId ? payment : null;
+  }
   const [payment] = await db.select().from(schema.payments).where(and(eq(schema.payments.organizationId, organizationId), eq(schema.payments.clientMutationId, clientMutationId))).limit(1);
   if (!payment) return null;
   return {
@@ -39,21 +48,39 @@ export async function findPaymentByClientMutationIdInDb(organizationId: string, 
 }
 
 export async function getPatientForBilling(organizationId: string, patientId: string) {
+  if (useSampleBillingState()) {
+    const { patients } = await import("../sampleData.js");
+    return patients.find((patient) => patient.organizationId === organizationId && patient.id === patientId) ?? null;
+  }
   const [patient] = await db.select().from(schema.patients).where(and(eq(schema.patients.organizationId, organizationId), eq(schema.patients.id, patientId))).limit(1);
   return patient || null;
 }
 
 export async function getVisitForBilling(organizationId: string, visitId: string) {
+  if (useSampleBillingState()) {
+    const { findVisitById } = await import("../sampleData.js");
+    const visit = findVisitById(visitId);
+    return visit?.organizationId === organizationId ? visit : null;
+  }
   const [visit] = await db.select().from(schema.visits).where(and(eq(schema.visits.organizationId, organizationId), eq(schema.visits.id, visitId))).limit(1);
   return visit || null;
 }
 
 export async function getDocumentForBilling(organizationId: string, documentId: string) {
+  if (useSampleBillingState()) {
+    const { documents } = await import("../sampleData.js");
+    return documents.find((document) => document.organizationId === organizationId && document.id === documentId) ?? null;
+  }
   const [doc] = await db.select().from(schema.generatedDocuments).where(and(eq(schema.generatedDocuments.organizationId, organizationId), eq(schema.generatedDocuments.id, documentId))).limit(1);
   return doc || null;
 }
 
 export async function createPaymentInDb(organizationId: string, input: CreatePaymentInput): Promise<Payment> {
+  if (useSampleBillingState()) {
+    const { createPayment } = await import("../sampleData.js");
+    const payment = createPayment(input);
+    return { ...payment, organizationId };
+  }
   const [newPayment] = await db.insert(schema.payments).values({
     organizationId,
     patientId: input.patientId,

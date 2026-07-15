@@ -19,6 +19,7 @@ const documentTaxXmlSnapshotMigration = readFileSync("apps/api/drizzle/0019_docu
 const telegramVisualCardsMigration = readFileSync("apps/api/drizzle/0021_telegram_visual_cards.sql", "utf8");
 const telegramPostVisitCheckupDelaysMigration = readFileSync("apps/api/drizzle/0022_telegram_post_visit_checkup_delays.sql", "utf8");
 const telegramReviewRequestDelayMigration = readFileSync("apps/api/drizzle/0023_telegram_review_request_delay.sql", "utf8");
+const tenantScopeAddonsMigration = readFileSync("apps/api/drizzle/0034_tenant_scope_addons.sql", "utf8");
 const drizzleJournal = parseJsonFile("apps/api/drizzle/meta/_journal.json");
 const documentIssueAttestationSnapshot = parseJsonFile("apps/api/drizzle/meta/0017_snapshot.json");
 const documentVoidAttestationSnapshot = parseJsonFile("apps/api/drizzle/meta/0018_snapshot.json");
@@ -50,6 +51,11 @@ const requiredSchemaExports = [
   "visualCardUrls: jsonb(\"visual_card_urls\").$type<DenteTelegramVisualCardUrls | null>()",
   "reviewRequestDelayHours: integer(\"review_request_delay_hours\").notNull().default(2)",
   "postVisitCheckupDelayHoursJson: text(\"post_visit_checkup_delay_hours_json\")",
+  "export const toothStates",
+  "export const treatmentPlans",
+  "export const treatmentPlanItemsNew",
+  "export const familyGroups",
+  "organizationId: uuid(\"organization_id\").references(() => organizations.id)",
   "voidedAt: timestamp(\"voided_at\", { withTimezone: true })",
   "voidedByUserId: uuid(\"voided_by_user_id\").references(() => users.id)",
   "clientMutationId: text(\"client_mutation_id\").notNull().default(\"\")",
@@ -161,6 +167,16 @@ assert(
   telegramReviewRequestDelayMigration.includes('"review_request_delay_hours" integer'),
   "telegram review request delay migration must persist clinic-specific review timing"
 );
+for (const needle of [
+  'ALTER TABLE "family_groups" ADD COLUMN IF NOT EXISTS "organization_id" uuid REFERENCES "organizations"("id")',
+  'ALTER TABLE "sterilization_logs" ADD COLUMN IF NOT EXISTS "organization_id" uuid REFERENCES "organizations"("id")',
+  'ALTER TABLE "crm_leads" ADD COLUMN IF NOT EXISTS "organization_id" uuid REFERENCES "organizations"("id")',
+  'CREATE INDEX IF NOT EXISTS "family_groups_organization_idx"',
+  'CREATE INDEX IF NOT EXISTS "sterilization_logs_organization_idx"',
+  'CREATE INDEX IF NOT EXISTS "crm_leads_organization_idx"'
+]) {
+  assert(tenantScopeAddonsMigration.includes(needle), `tenant scope add-ons migration missing: ${needle}`);
+}
 
 const requiredRuntimeMigrationNeedles = [
   '"clinic_id" uuid REFERENCES "clinics"("id")',
@@ -195,7 +211,8 @@ const requiredJournalTags = [
   "0019_document_tax_xml_snapshot",
   "0021_telegram_visual_cards",
   "0022_telegram_post_visit_checkup_delays",
-  "0023_telegram_review_request_delay"
+  "0023_telegram_review_request_delay",
+  "0034_tenant_scope_addons"
 ];
 const journalTags = new Set(drizzleJournal.entries.map((entry) => entry.tag));
 
@@ -217,6 +234,7 @@ for (const pattern of forbiddenSecretPatterns) {
   assert(!pattern.test(documentIssueAttestationMigration), `document issue migration contains forbidden Telegram secret shape: ${pattern}`);
   assert(!pattern.test(documentVoidAttestationMigration), `document void migration contains forbidden Telegram secret shape: ${pattern}`);
   assert(!pattern.test(telegramVisualCardsMigration), `telegram visual cards migration contains forbidden Telegram secret shape: ${pattern}`);
+  assert(!pattern.test(tenantScopeAddonsMigration), `tenant scope add-ons migration contains forbidden Telegram secret shape: ${pattern}`);
   assert(!pattern.test(telegramReviewRequestDelayMigration), `telegram review request delay migration contains forbidden Telegram secret shape: ${pattern}`);
   assert(!pattern.test(documentTaxXmlSnapshotMigration), `document tax XML snapshot migration contains forbidden Telegram secret shape: ${pattern}`);
   assert(!pattern.test(telegramPostVisitCheckupDelaysMigration), `telegram checkup delay migration contains forbidden Telegram secret shape: ${pattern}`);

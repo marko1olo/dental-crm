@@ -4,6 +4,7 @@ import path from "node:path";
 const webSrcRoot = path.join("apps", "web", "src");
 const sourceExtensions = new Set([".css", ".js", ".jsx", ".mjs", ".ts", ".tsx"]);
 const mojibakePattern = /(?:\u00c3.|\u00c2.|\u00d0.|\u00d1.|\u00e2.|\ufffd)/g;
+const garbledQuestionPattern = /\?{4,}/g;
 
 function walkSourceFiles(root) {
   const files = [];
@@ -27,14 +28,21 @@ const sources = Object.fromEntries(sourceFiles.map((filePath) => [filePath, read
 const sourceBlob = Object.values(sources).join("\n");
 
 const mojibakeHits = [];
+const garbledQuestionHits = [];
 for (const [filePath, source] of Object.entries(sources)) {
   const hits = source.match(mojibakePattern);
   if (hits?.length) mojibakeHits.push({ filePath, hits: hits.slice(0, 5) });
+  const questionHits = source.match(garbledQuestionPattern);
+  if (questionHits?.length) garbledQuestionHits.push({ filePath, hits: questionHits.slice(0, 5) });
 }
 
 assert(
   mojibakeHits.length === 0,
   `web source contains mojibake markers: ${JSON.stringify(mojibakeHits.slice(0, 8))}`
+);
+assert(
+  garbledQuestionHits.length === 0,
+  `web source contains replacement question-mark runs: ${JSON.stringify(garbledQuestionHits.slice(0, 8))}`
 );
 
 const requiredReadableRussian = [
@@ -62,6 +70,7 @@ console.log(
       ok: true,
       checkedFiles: sourceFiles.length,
       mojibakeHits: 0,
+      garbledQuestionHits: 0,
       requiredSnippets: requiredReadableRussian.length
     },
     null,

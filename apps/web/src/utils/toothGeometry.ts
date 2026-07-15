@@ -133,7 +133,7 @@ export const TOOTH_GEOMETRY = {
   LOWER_MOLAR: {
     root: "M15 80 C8 110, 19 135, 20 145 C33 145, 35 125, 38 115 Q49 85 52 100 C55 105, 62 145, 70 150 C80 145, 85 110, 85 80 Z",
     crown: "M15 80 C5 40, 15 35, 30 25 C40 20, 48 23, 50 30 C52 23, 60 20, 70 23 C85 35, 95 30, 85 80 Q50 85 15 80",
-    fissures: "M50 30 L50 40 55 M50 55 L50 80",
+    fissures: "M50 30 L50 40 M50 55 L50 80",
     core: "M25 80 L30 55 Q50 50 70 55 L75 80 Z",
     canals: "M50 60 Q 25 70 30 140 M50 60 Q 75 70 70 145",
     apex: [{ x: 20, y: 145 }, { x: 80, y: 145 }],
@@ -166,11 +166,9 @@ export const getToothPath = (toothId: number): ToothGeometryType => {
 
 export const getToothConfig = (toothId: number): { width: string; height: string; viewWidth: number; viewHeight: number; viewX?: number } => {
   const num = toothId % 10;
-  // All teeth have 90px height (20% bigger than 75px).
-  // The widths are scaled down to crop empty viewBox space, creating dense layouts.
-  if (num <= 2) return { width: "32px", height: "90px", viewWidth: 100, viewHeight: 150 };
-  if (num === 3) return { width: "36px", height: "90px", viewWidth: 100, viewHeight: 150 };
-  if (num <= 5) return { width: "42px", height: "90px", viewWidth: 100, viewHeight: 150 };
-  if (num === 6 || num === 7) return { width: "52px", height: "90px", viewWidth: 100, viewHeight: 150 };
-  return { width: "48px", height: "90px", viewWidth: 100, viewHeight: 150 };
+  // Proportional widths scaled to exactly 96px height based on viewBox aspect ratios
+  if (num <= 2) return { width: "38px", height: "96px", viewWidth: 60, viewHeight: 150, viewX: 20 };
+  if (num === 3) return { width: "48px", height: "96px", viewWidth: 75, viewHeight: 150, viewX: 15 };
+  if (num <= 5) return { width: "48px", height: "96px", viewWidth: 75, viewHeight: 150, viewX: 12.5 };
+  return { width: "64px", height: "96px", viewWidth: 100, viewHeight: 150, viewX: 0 };
 };

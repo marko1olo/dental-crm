@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPatientSchema, patientSchema, updatePatientAdministrativeProfileSchema, updatePatientSchema } from "@dental/shared";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../accessGuard.js";
+import { requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 
 type PatientPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
@@ -100,8 +100,6 @@ function hasIncompleteRepresentativeIdentity(value: PatientRepresentativeInput):
   return !hasText(value.legalRepresentativeFullName) || !hasText(value.legalRepresentativeRelationship);
 }
 
-import { verifyToken } from "../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "./auth.js";
 import {
   getPatientsFromDb,
   createPatientInDb,
@@ -111,15 +109,9 @@ import {
 
 export async function registerPatientRoutes(app: FastifyInstance) {
   app.get("/api/patients", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
+    const orgId = await requireResolvedOrganizationId(request, reply, "patients read");
+    if (!orgId) return;
 
-    const orgId = payload.organizationId as string;
-    
     try {
       const dbPatients = await getPatientsFromDb(orgId);
       return dbPatients.map((patient) => patientSchema.parse(patient));
@@ -130,12 +122,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/patients", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "patient create");
+    if (!orgId) return;
 
     const input = parsePatientPayload(createPatientSchema, request.body);
     if (!input) {
@@ -154,12 +142,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/patients/:patientId", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "patient update");
+    if (!orgId) return;
 
     const params = request.params as { patientId?: string };
     if (!params.patientId) return sendPatientRouteValidationError(reply);
@@ -179,12 +163,8 @@ export async function registerPatientRoutes(app: FastifyInstance) {
   });
 
   app.put("/api/patients/:patientId/administrative-profile", async (request, reply) => {
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    if (!clinicToken) return reply.code(401).send({ error: "AuthRequired" });
-    const payload = verifyToken(clinicToken, TOKEN_SECRET());
-    if (!payload || !payload.organizationId) return reply.code(401).send({ error: "AuthExpired" });
-    const orgId = payload.organizationId as string;
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "patient administrative profile update");
+    if (!orgId) return;
 
     const params = request.params as { patientId?: string };
     if (!params.patientId) return sendPatientRouteValidationError(reply);

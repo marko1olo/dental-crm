@@ -64,6 +64,7 @@ export function Register({ onSuccess, onSwitchToLogin }: RegisterProps) {
 
       localStorage.setItem('dente_clinic_token', data.clinicToken);
       localStorage.setItem('dente_staff_token', data.staffToken);
+      if (data.organizationId) localStorage.setItem('dente_organization_id', data.organizationId);
       showToast('Клиника зарегистрирована!', 'success');
       onSuccess(
         { organizationId: data.organizationId },

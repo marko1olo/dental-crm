@@ -20,15 +20,14 @@ export function QrGatewayPanel() {
   // Reactively track actual dark state any time themeMode changes or panel opens
   useEffect(() => {
     function detectTheme() {
-      const bodyTheme = document.body.getAttribute("data-theme");
+      const htmlTheme = document.documentElement.getAttribute("data-theme");
       const htmlDark = document.documentElement.classList.contains("dark");
-      setIsDark(bodyTheme === "dark" || htmlDark);
+      setIsDark(htmlTheme === "dark" || htmlDark);
     }
     detectTheme();
-    // Also watch for mutations on body's data-theme
+    // Watch for mutations on html's data-theme and class
     const obs = new MutationObserver(detectTheme);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    obs.observe(document.body, { attributes: true, attributeFilter: ["data-theme"] });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme"] });
     return () => obs.disconnect();
   }, [themeMode, isOpen]);
 
@@ -69,7 +68,7 @@ export function QrGatewayPanel() {
   const btnHoverBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
 
   return (
-    <div style={{ position: "relative" }} ref={panelRef}>
+    <div style={{ position: "relative", flexShrink: 0 }} ref={panelRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{

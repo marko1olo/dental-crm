@@ -1,6 +1,6 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess, requireResolvedOrganizationId } from "../../accessGuard.js";
 import {
   createDocumentSchema,
   issueDocumentSchema,
@@ -52,8 +52,6 @@ import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb,
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
@@ -61,10 +59,8 @@ export async function register(app: FastifyInstance) {
   app.get<{ Params: { id: string }; Querystring: { download?: string } }>("/api/documents/:id/html", async (request, reply) => {
     if (!(await requireClinicalReadAccess(request, reply, "document html"))) return;
     const { id } = request.params as { id: string };
-        const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org";
+    const orgId = await requireResolvedOrganizationId(request, reply, "document html tenant");
+    if (!orgId) return;
     const document = await getDocumentById(orgId, id);
     if (!document) {
       return reply.code(404).send(apiError("Документ не найден"));

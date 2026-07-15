@@ -3,7 +3,7 @@
    ────────────────────────────────────────── */
 
 .inst-wrap {
-  background: var(--paper, #fff);
+  background: var(--paper);
   border: 1px solid rgba(99, 102, 241, 0.18);
   border-radius: 16px;
   overflow: hidden;
@@ -148,7 +148,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--paper);
   border: 2.5px solid #6366f1;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35), 0 0 0 4px rgba(99,102,241,0.1);
   cursor: grab;
@@ -165,7 +165,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--paper);
   border: 2.5px solid #6366f1;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
   cursor: grab;
@@ -246,7 +246,7 @@
   font-weight: 700;
   color: #1e293b;
   outline: none;
-  background: #fff;
+  background: var(--paper);
 }
 
 .inst-discount-pct {

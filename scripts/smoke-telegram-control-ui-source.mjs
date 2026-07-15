@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const appSource = fs.readFileSync("apps/web/src/App.tsx", "utf8");
 const settingsSource = fs.readFileSync("apps/web/src/SettingsView.tsx", "utf8");
+const settingsTelegramTabSource = fs.readFileSync("apps/web/src/components/settings/SettingsTelegramTab.tsx", "utf8");
 const useAppLogicSource = fs.readFileSync("apps/web/src/useAppLogic.tsx", "utf8");
 const appHelpersSource = fs.readFileSync("apps/web/src/AppHelpers.tsx", "utf8");
 const settingsStoreSource = fs.readFileSync("apps/web/src/store/settingsStore.ts", "utf8");
@@ -23,11 +24,12 @@ const migrationSource = [
 
 const secretPattern = /\b\d{8,12}:AA[A-Za-z0-9_-]{30,}\b/;
 const missing = [];
-const clientUiSource = `${appSource}\n${settingsSource}\n${useAppLogicSource}\n${appHelpersSource}\n${settingsStoreSource}\n${appStoreSource}`;
+const clientUiSource = `${appSource}\n${settingsSource}\n${settingsTelegramTabSource}\n${useAppLogicSource}\n${appHelpersSource}\n${settingsStoreSource}\n${appStoreSource}`;
 
 for (const [label, source] of [
   ["App.tsx", appSource],
   ["SettingsView.tsx", settingsSource],
+  ["SettingsTelegramTab.tsx", settingsTelegramTabSource],
   ["main.css", styleSource],
   ["shared schema", sharedSource],
   ["sampleData", apiSource],

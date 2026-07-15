@@ -1,6 +1,0 @@
-[Business Flow] Build & Typecheck: PASSED - tsc --noEmit completed with 100% success.
-[Business Flow] Lab Order Creation (E.max, Tooth 16): PASSED - Order sent to dental lab successfully.
-[Business Flow] Patient Intake (Allergy: Lidocaine): PASSED - Medical anamnesis updated.
-[Business Flow] Critical Alert Badge: PASSED - CRITICAL MEDICAL ALERT is visible and pulsating.
-[Business Flow] Financial Margin Calculation: PASSED - Margin correctly subtracted lab cost from total revenue.
-[Business Flow] Smart Waitlist Suggestion: PASSED - Suggested 3 high-priority patients upon cancellation.

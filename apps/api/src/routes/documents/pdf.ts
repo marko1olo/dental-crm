@@ -1,6 +1,6 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 ﻿import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireClinicalMutationAccess, requireResolvedOrganizationId } from "../../accessGuard.js";
 import {
   createDocumentSchema,
   issueDocumentSchema,
@@ -52,31 +52,25 @@ import { getDocumentById, issueGeneratedDocumentInDb, voidGeneratedDocumentInDb,
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
-
 import { renderDocumentHtml, taxFiscalDocumentBlockReason } from "../../documents/renderDocument.js";
 
 export async function register(app: FastifyInstance) {
   // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-  // GET /api/documents/:id/pdf  вЂ” issued documents (signed archive)
+  // GET /api/documents/:id/pdf  2 issued documents (signed archive)
   // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   app.get<{ Params: { id: string } }>("/api/documents/:id/pdf", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "document pdf"))) return;
+    const orgId = await requireResolvedOrganizationId(request, reply, "document pdf");
+    if (!orgId) return;
     const { id } = request.params;
-        const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org";
     const document = await getDocumentById(orgId, id);
     if (!document) {
-      return reply.code(404).send(apiError("Р”РѕРєСѓРјРµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ"));
+      return reply.code(404).send(apiError("Документ не найден"));
     }
     if (!documentRequiresIssuedArchive(document)) {
-      return reply.code(409).send(apiError("PDF РЅРµРґРѕСЃС‚СѓРїРµРЅ: РґРѕРєСѓРјРµРЅС‚ РЅРµ С‚СЂРµР±СѓРµС‚ Р°СЂС…РёРІР° РІС‹РґР°РЅРЅРѕРіРѕ HTML."));
+      return reply.code(409).send(apiError("PDF недоступен: документ не требует архива выданного HTML."));
     }
     if (!document.signatureAttestation) {
-      return reply.code(409).send(apiError("PDF РЅРµРґРѕСЃС‚СѓРїРµРЅ: С‚СЂРµР±СѓРµС‚СЃСЏ РѕС‚РјРµС‚РєР° Рѕ РїРѕРґРїРёСЃР°РЅРёРё РїСЂРё РІС‹РґР°С‡Рµ РґРѕРєСѓРјРµРЅС‚Р°."));
+      return reply.code(409).send(apiError("PDF недоступен: требуется отметка о подписании при выдаче документа."));
     }
 
     if (!documentHasIssuedArchiveMetadata(document)) {
@@ -85,7 +79,7 @@ export async function register(app: FastifyInstance) {
 
     const issuedSnapshot = readIssuedDocumentSnapshot(document);
     if (!issuedSnapshot) {
-      return reply.code(409).send(apiError("РђСЂС…РёРІ РІС‹РґР°РЅРЅРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р° РЅРµ РїСЂРѕС€С‘Р» РїСЂРѕРІРµСЂРєСѓ С†РµР»РѕСЃС‚РЅРѕСЃС‚Рё."));
+      return reply.code(409).send(apiError("Архив выданного документа не прошёл проверку целостности."));
     }
 
     const result = await renderIssuedHtmlToPdf(issuedSnapshot);
@@ -102,27 +96,24 @@ export async function register(app: FastifyInstance) {
   // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   // GET /api/documents/:id/treatment-plan-pdf
   // On-the-fly PDF for treatment_plan documents (draft or issued).
-  // Does NOT require signatureAttestation вЂ” used for immediate
+  // Does NOT require signatureAttestation 2 used for immediate
   // patient hand-out directly from the visit screen.
   // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
   app.get<{ Params: { id: string } }>("/api/documents/:id/treatment-plan-pdf", async (request, reply) => {
-    if (!(await requireClinicalReadAccess(request, reply, "treatment plan pdf"))) return;
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org";
+    const orgId = await requireResolvedOrganizationId(request, reply, "treatment plan pdf");
+    if (!orgId) return;
     const { id } = request.params;
     const document = await getDocumentById(orgId, id);
     if (!document) {
-      return reply.code(404).send(apiError("Р”РѕРєСѓРјРµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ"));
+      return reply.code(404).send(apiError("Документ не найден"));
     }
     if (document.kind !== "treatment_plan") {
-      return reply.code(409).send(apiError("Р­С‚РѕС‚ РјР°СЂС€СЂСѓС‚ РїСЂРµРґРЅР°Р·РЅР°С‡РµРЅ С‚РѕР»СЊРєРѕ РґР»СЏ РґРѕРєСѓРјРµРЅС‚РѕРІ С‚РёРїР° treatment_plan."));
+      return reply.code(409).send(apiError("Этот маршрут предназначен только для документов типа treatment_plan."));
     }
 
     const patient = await import("../../db/patientsQuery.js").then(m => m.getPatientByIdFromDb(orgId, document.patientId));
     if (!patient) {
-      return reply.code(404).send(apiError("РџР°С†РёРµРЅС‚ РЅРµ РЅР°Р№РґРµРЅ"));
+      return reply.code(404).send(apiError("Пациент не найден"));
     }
 
     const context = documentRenderContext();
@@ -135,7 +126,7 @@ export async function register(app: FastifyInstance) {
 
     const patientNameSlug = (patient.fullName ?? "patient")
       .toLowerCase()
-      .replace(/[^a-zР°-СЏС‘0-9]+/gi, "-")
+      .replace(/[^a-zа-яё0-9]+/gi, "-")
       .slice(0, 40);
     const dateSlug = new Date().toISOString().slice(0, 10);
     const filename = `plan-${patientNameSlug}-${dateSlug}.pdf`;

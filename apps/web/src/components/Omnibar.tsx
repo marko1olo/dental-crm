@@ -19,6 +19,8 @@ export function Omnibar() {
     { id: 'nav-finance', title: 'Финансы', icon: <Banknote />, category: 'Навигация', action: () => setCurrentView('finance') },
     { id: 'nav-communications', title: 'Связь', icon: <MessageSquare />, category: 'Навигация', action: () => setCurrentView('communications') },
     { id: 'nav-settings', title: 'Настройки', icon: <Settings />, category: 'Навигация', action: () => setCurrentView('settings') },
+    { id: 'nav-kanban', title: 'Воронка Лидов', icon: <Users />, category: 'Навигация', action: () => setCurrentView('kanban') },
+    { id: 'nav-marketing', title: 'Маркетинг', icon: <MessageSquare />, category: 'Навигация', action: () => setCurrentView('marketing') },
     
     { id: 'action-new-patient', title: 'Создать карточку пациента', icon: <Users />, category: 'Быстрые действия', action: () => { setCurrentView('patients'); } },
     { id: 'action-new-appointment', title: 'Новая запись на прием', icon: <Calendar />, category: 'Быстрые действия', action: () => { setCurrentView('schedule'); } },
@@ -109,16 +111,16 @@ export function Omnibar() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="relative w-full max-w-2xl bg-white shadow-2xl rounded-2xl overflow-hidden border border-neutral-200 flex flex-col"
+              className="relative w-full max-w-2xl bg-zinc-50/40 dark:bg-zinc-950/80 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden border border-neutral-200 dark:border-zinc-800/50 flex flex-col"
               style={{ maxHeight: '60vh' }}
             >
               {/* Header/Input */}
-              <div className="flex items-center px-4 border-b border-neutral-100">
+              <div className="flex items-center px-4 border-b border-neutral-100 dark:border-zinc-800/50">
                 <Search className="w-5 h-5 text-neutral-400 mr-3" />
                 <input
                   ref={inputRef}
                   type="text"
-                  className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-neutral-800 placeholder-neutral-400"
+                  className="flex-1 h-14 bg-transparent border-none outline-none text-lg text-neutral-800 dark:text-zinc-100 placeholder-neutral-400 dark:placeholder-zinc-500"
                   placeholder="Поиск по разделам или действиям..."
                   value={query}
                   onChange={(e) => {
@@ -128,7 +130,7 @@ export function Omnibar() {
                 />
                 <button 
                   onClick={() => setOmnibarOpen(false)}
-                  className="p-1.5 hover:bg-neutral-100 rounded-md transition-colors text-neutral-400 hover:text-neutral-600"
+                  className="p-1.5 hover:bg-neutral-100 dark:hover:bg-zinc-800/50 rounded-md transition-colors text-neutral-400 hover:text-neutral-600 dark:hover:text-zinc-300"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -137,7 +139,7 @@ export function Omnibar() {
               {/* Results */}
               <div className="overflow-y-auto p-2" style={{ maxHeight: 'calc(60vh - 56px)' }}>
                 {filteredCommands.length === 0 ? (
-                  <div className="p-8 text-center text-neutral-500">
+                  <div className="p-8 text-center text-neutral-500 dark:text-zinc-400">
                     Ничего не найдено
                   </div>
                 ) : (
@@ -148,15 +150,15 @@ export function Omnibar() {
                       return (
                         <React.Fragment key={cmd.id}>
                           {showCategory && (
-                            <div className="px-3 pt-3 pb-1 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                            <div className="px-3 pt-3 pb-1 text-xs font-semibold text-neutral-400 dark:text-zinc-500 uppercase tracking-wider">
                               {cmd.category}
                             </div>
                           )}
                           <div
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
                               idx === selectedIndex 
-                                ? "bg-teal-50 text-teal-700" 
-                                : "text-neutral-700 hover:bg-neutral-50"
+                                ? "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300" 
+                                : "text-neutral-700 dark:text-zinc-300 hover:bg-neutral-50 dark:hover:bg-zinc-800/50"
                             }`}
                             onClick={() => {
                               cmd.action();
@@ -164,7 +166,7 @@ export function Omnibar() {
                             }}
                             onMouseEnter={() => setSelectedIndex(idx)}
                           >
-                            <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? 'bg-teal-100/50 text-teal-600' : 'bg-neutral-100 text-neutral-500'}`}>
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? 'bg-teal-100/50 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400' : 'bg-neutral-100 dark:bg-zinc-800 text-neutral-500 dark:text-zinc-400'}`}>
                               {React.cloneElement(cmd.icon as React.ReactElement<any>, { size: 16 })}
                             </div>
                             <span className="font-medium">{cmd.title}</span>
@@ -181,15 +183,15 @@ export function Omnibar() {
               </div>
               
               {/* Footer */}
-              <div className="bg-neutral-50 px-4 py-2 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
+              <div className="bg-neutral-50 dark:bg-zinc-900/40 px-4 py-2 border-t border-neutral-100 dark:border-zinc-800/50 flex items-center justify-between text-xs text-neutral-500 dark:text-zinc-500">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1">
-                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-600 shadow-sm">↑</kbd>
-                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-600 shadow-sm">↓</kbd>
+                    <kbd className="font-sans px-1.5 py-0.5 bg-zinc-50/40 dark:bg-zinc-800 border border-neutral-200 dark:border-zinc-700 rounded text-[10px] font-semibold text-neutral-600 dark:text-zinc-300 shadow-sm">↑</kbd>
+                    <kbd className="font-sans px-1.5 py-0.5 bg-zinc-50/40 dark:bg-zinc-800 border border-neutral-200 dark:border-zinc-700 rounded text-[10px] font-semibold text-neutral-600 dark:text-zinc-300 shadow-sm">↓</kbd>
                     <span>навигация</span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="font-sans px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-semibold text-neutral-600 shadow-sm">↵</kbd>
+                    <kbd className="font-sans px-1.5 py-0.5 bg-zinc-50/40 dark:bg-zinc-800 border border-neutral-200 dark:border-zinc-700 rounded text-[10px] font-semibold text-neutral-600 dark:text-zinc-300 shadow-sm">↵</kbd>
                     <span>выбрать</span>
                   </span>
                 </div>

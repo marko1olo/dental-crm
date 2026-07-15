@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 
 interface SplitPayment {
-  method: 'cash' | 'card' | 'dms' | 'installment_balance';
+  method: 'cash' | 'card' | 'dms' | 'installment_balance' | 'family_wallet';
   amount: number;
+  familyGroupId?: string;
 }
 
 interface BillingState {

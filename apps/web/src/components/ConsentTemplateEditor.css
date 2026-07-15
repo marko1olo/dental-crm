@@ -102,7 +102,7 @@
 
 .preview-area {
   flex: 1;
-  background: #fff;
+  background: var(--paper);
   color: #18181b; /* Dark text for paper feel */
   border: 1px solid rgba(82, 82, 91, 0.5);
   padding: 24px;

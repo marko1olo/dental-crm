@@ -86,7 +86,7 @@ export const clinicalRuleAction = pgEnum("clinical_rule_action", [
   "show_warning",
   "schedule_followup"
 ]);
-export const paymentMethod = pgEnum("payment_method", ["cash", "card", "bank_transfer", "online", "insurance", "other"]);
+export const paymentMethod = pgEnum("payment_method", ["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]);
 export const paymentStatus = pgEnum("payment_status", ["planned", "paid", "refunded", "voided"]);
 export const communicationChannel = pgEnum("communication_channel", ["phone", "sms", "whatsapp", "telegram", "email", "in_person"]);
 export const communicationIntent = pgEnum("communication_intent", [
@@ -213,6 +213,12 @@ export const organizations = pgTable("organizations", {
   bankDetails: text("bank_details"),
   signatoryName: text("signatory_name"),
   signatoryTitle: text("signatory_title"),
+  specializations: jsonb("specializations"),
+  workingHours: jsonb("working_hours"),
+  currency: text("currency").default("в‚Ѕ"),
+  themeColor: text("theme_color").default("teal"),
+  logoUrl: text("logo_url"),
+  stampUrl: text("stamp_url"),
   clinicMode: text("clinic_mode").notNull().default("demo"), // demo, single, network
   clinicSchedule: jsonb("clinic_schedule"),
   isSynced: boolean("is_synced").notNull().default(false),
@@ -225,6 +231,7 @@ export const organizations = pgTable("organizations", {
   hasInstallments: boolean("has_installments").notNull().default(true),
   workspacePreset: text("workspace_preset").notNull().default("enterprise"), // solo_therapist | prosthodontist | pediatric | orthodontic | surgery_center | implant_center | family_clinic | multi_specialty | enterprise | custom
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+  requiresMigration: boolean("requires_migration").notNull().default(false),
   hasPediatricMode: boolean("has_pediatric_mode").notNull().default(false),
   isOmniRole: boolean("is_omni_role").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -243,7 +250,7 @@ export const clinics = pgTable("clinics", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 
-export const clinicChairs = pgTable("clinic_chairs", {
+export const clinicChairs = pgTable("chairs", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   clinicId: uuid("clinic_id").references(() => clinics.id),
@@ -261,16 +268,50 @@ export const users = pgTable("users", {
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   fullName: text("full_name").notNull(),
   role: text("role").notNull(),
+  specialties: jsonb("specialties"), // Array of dentalSpecialty
   phone: text("phone"),
   email: text("email"),
   passwordHash: text("password_hash"),
   pinCodeHash: text("pin_code_hash"),
   isActive: boolean("is_active").notNull().default(true),
+  canSignMedicalRecords: boolean("can_sign_medical_records").notNull().default(false),
+  canManageMoney: boolean("can_manage_money").notNull().default(false),
+  canManageImports: boolean("can_manage_imports").notNull().default(false),
+  color: text("color").notNull().default("gray"),
   uiPreferences: jsonb("ui_preferences"),
   workingHours: jsonb("working_hours"),
   isSynced: boolean("is_synced").notNull().default(false),
   version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const doctor_commissions = pgTable("doctor_commissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  specialization: text("specialization").notNull(),
+  percentage: integer("percentage"),
+  fixedRate: integer("fixed_rate"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+export const doctor_assistants = pgTable("doctor_assistants", {
+  doctorId: uuid("doctor_id").notNull().references(() => users.id),
+  assistantId: uuid("assistant_id").notNull().references(() => users.id)
+});
+
+export const cash_shifts = pgTable("cash_shifts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+  openedByUserId: uuid("opened_by_user_id").notNull().references(() => users.id),
+  openedAt: timestamp("opened_at", { withTimezone: true }).notNull().defaultNow(),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  startingBalance: integer("starting_balance").notNull(),
+  expectedClosingBalance: integer("expected_closing_balance"),
+  actualClosingBalance: integer("actual_closing_balance"),
+  status: text("status").notNull(), // Open, Closed, Discrepancy
+  discrepancyReason: text("discrepancy_reason")
 });
 
 export const userInvitations = pgTable("user_invitations", {
@@ -286,6 +327,7 @@ export const userInvitations = pgTable("user_invitations", {
 
 
 export const patients = pgTable("patients", {
+  familyGroupId: uuid("family_group_id").references(() => familyGroups.id, { onDelete: "set null" }),
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
   status: patientStatus("status").notNull().default("active"),
@@ -592,7 +634,7 @@ export const schedulerReservations = pgTable("scheduler_reservations", {
   status: schedulerReservationsStatusEnum("status").notNull().default("draft"),
   recallDueAt: timestamp("recall_due_at", { withTimezone: true }), // when prosthetic recall is due
   recallTriggeredAt: timestamp("recall_triggered_at", { withTimezone: true }),
-  jawLocation: text("jaw_location"), // "upper" | "lower" — affects osseointegration wait
+  jawLocation: text("jaw_location"), // "upper" | "lower" 2 affects osseointegration wait
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
@@ -898,7 +940,7 @@ export const imagingAnnotations = pgTable("imaging_annotations", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// 2D X-Ray (вisiograph) scans with AI analysis results, patient-scoped
+// 2D X-Ray (visiograph) scans with AI analysis results, patient-scoped
 export const xrayScans = pgTable("xray_scans", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id),
@@ -1112,7 +1154,7 @@ export const documentTemplates = pgTable('document_templates', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
-// HIPAA-grade clinical audit log — append-only, never updated or deleted
+// HIPAA-grade clinical audit log 2 append-only, never updated or deleted
 export const clinicalAuditLogs = pgTable('clinical_audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
   organizationId: uuid('organization_id').notNull().references(() => organizations.id),
@@ -1235,6 +1277,7 @@ export const egiszLogs = pgTable('egisz_logs', {
 });
 
 export const visitDiaries = pgTable('visit_diaries', {
+  instrumentTrayBarcode: varchar('instrument_tray_barcode', { length: 255 }),
   id: uuid('id').primaryKey().defaultRandom(),
   organizationId: uuid('organization_id').references(() => organizations.id, { onDelete: 'cascade' }),
   visitId: uuid('visit_id').notNull().references(() => visits.id, { onDelete: 'cascade' }),
@@ -1273,11 +1316,15 @@ export const visitTemplates = pgTable('visit_templates', {
   organizationId: uuid('organization_id').notNull().references(() => organizations.id),
   title: varchar('title', { length: 255 }).notNull(),
   category: varchar('category', { length: 255 }),
+  specialty: varchar('specialty', { length: 100 }),
   prefilledAnamnesis: text('prefilled_anamnesis'),
   prefilledObjective: text('prefilled_objective'),
   prefilledTreatment: text('prefilled_treatment'),
   defaultIcd10: varchar('default_icd10', { length: 50 }),
-  suggestedProcedureIds: jsonb('suggested_procedure_ids')
+  defaultIcd10Label: varchar('default_icd10_label', { length: 255 }),
+  suggestedProcedureIds: jsonb('suggested_procedure_ids'),
+  isBuiltIn: boolean('is_built_in').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
 
 
@@ -1317,3 +1364,37 @@ export const cashLedger = pgTable('cash_ledger', {
   operatorId: uuid('operator_id').references(() => users.id),
   timestamp: timestamp('timestamp', { withTimezone: true }).notNull().defaultNow()
 });
+
+
+export const crmLeadStatus = pgEnum("crm_lead_status", ["new", "contacted", "consult_booked", "no_answer", "trash"]);
+
+export const familyGroups = pgTable("family_groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").references(() => organizations.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  headPatientId: uuid("head_patient_id").references(() => patients.id, { onDelete: "set null" }),
+  balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default('0.00'),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const sterilizationLogs = pgTable("sterilization_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").references(() => organizations.id),
+  barcode: varchar("barcode", { length: 255 }).notNull(),
+  autoclaveId: varchar("autoclave_id", { length: 255 }).notNull(),
+  operatorId: uuid("operator_id"), // FK to users
+  status: varchar("status", { length: 50 }).notNull(), // passed, failed
+  timestamp: timestamp("timestamp").notNull().defaultNow()
+});
+
+export const crmLeads = pgTable("crm_leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").references(() => organizations.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  source: varchar("source", { length: 100 }), // Website, Instagram, Referral
+  status: crmLeadStatus("status").notNull().default("new"),
+  expectedRevenue: numeric("expected_revenue", { precision: 12, scale: 2 }),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+

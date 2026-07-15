@@ -1,1 +1,0 @@
-const fs = require('fs'); const content = fs.readFileSync('apps/web/src/store/documentStore.ts', 'utf8'); fs.writeFileSync('apps/web/src/store/documentStore.ts', content.replace('setPrintSettingsVisible: (val: boolean) => void;', 'setPrintSettingsVisible: (val: boolean) => void;\n  reset: () => void;'), 'utf8');

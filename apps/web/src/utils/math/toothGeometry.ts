@@ -474,23 +474,96 @@ export const TOOTH_GEOMETRY = {
       M: "M15 80 C5 40, 15 35, 30 25 C25 45, 20 60, 15 80 Z",
       D: "M85 80 C95 30, 85 35, 70 23 C75 45, 80 60, 85 80 Z"
     }
+  },
+
+  PEDIATRIC_UPPER_INCISOR: {
+    root: "M35 85 C33 75, 42 55, 50 45 C58 55, 67 75, 65 85 Z",
+    crown: "M35 85 C30 95, 22 125, 32 145 C40 148, 60 148, 68 145 C72 125, 75 95, 65 85 Q50 82 35 85",
+    canals: "M50 120 C 51 90, 49 70, 50 50",
+    apex: [{ x: 50, y: 45 }],
+    surfaces: {
+      V: "M35 85 C40 90, 60 90, 65 85 L68 115 Q50 120 32 115 Z",
+      O: "M32 115 Q50 120 68 115 L68 145 C60 148, 40 148, 32 145 Z",
+      M: "M35 85 C30 95, 28 125, 32 145 L42 145 L42 85 Z",
+      D: "M65 85 C70 95, 72 125, 68 145 L58 145 L58 85 Z"
+    }
+  },
+  PEDIATRIC_UPPER_CANINE: {
+    root: "M35 85 C33 70, 42 50, 50 40 C58 50, 67 70, 65 85 Z",
+    crown: "M35 85 C30 105, 15 125, 53 148 C65 135, 90 115, 65 85 Q50 80 35 85",
+    canals: "M50 125 C 51 90, 49 60, 50 45",
+    apex: [{ x: 50, y: 40 }],
+    surfaces: {
+      V: "M35 85 C40 90, 60 90, 65 85 L65 115 Q50 120 35 115 Z",
+      O: "M35 115 Q50 120 65 115 L50 148 Z",
+      M: "M35 85 C30 105, 35 125, 50 148 C45 125, 40 105, 35 85 Z",
+      D: "M65 85 C70 105, 65 125, 50 148 C55 125, 60 105, 65 85 Z"
+    }
+  },
+  PEDIATRIC_UPPER_MOLAR: {
+    root: "M45 65 C 45 50, 48 45, 50 40 C 52 45, 55 50, 58 65 Q 50 75 42 66 M20 85 C 20 70, 25 50, 30 45 C 35 55, 40 70, 42 85 M79 85 C 80 70, 75 50, 70 45 C 65 55, 60 70, 58 85 Z",
+    crown: "M20 85 C 13 105, 3 135, 38 139 C 45 139, 50 139, 50 125 C 50 135, 55 136, 62 137 C 100 135, 88 105, 92 85 Z",
+    canals: "M50 110 C 40 90, 35 70, 30 50 M50 110 C 60 90, 65 70, 70 50 M50 110 C 50 90, 50 70, 50 45",
+    apex: [{ x: 50, y: 40 }, { x: 30, y: 45 }, { x: 70, y: 45 }],
+    surfaces: {
+      V: "M20 85 C30 90, 80 90, 92 85 L92 110 Q50 115 20 110 Z",
+      O: "M20 110 Q50 115 92 110 L62 137 C50 125, 38 139, 20 130 Z",
+      M: "M20 85 C13 105, 3 135, 38 139 C30 125, 25 105, 20 85 Z",
+      D: "M92 85 C88 105, 100 135, 62 137 C75 125, 85 105, 92 85 Z"
+    }
+  },
+  PEDIATRIC_LOWER_INCISOR: {
+    root: "M40 75 C38 90, 42 110, 50 120 C58 110, 62 90, 60 75 Z",
+    crown: "M40 75 C36 60, 36 35, 40 25 C45 22, 55 22, 60 25 C64 35, 64 60, 60 75 Q50 78 40 75",
+    canals: "M50 55 C 51 75, 49 95, 50 115",
+    apex: [{ x: 50, y: 120 }],
+    surfaces: {
+      V: "M40 75 C42 70, 58 70, 60 75 L60 55 Q50 50 40 55 Z",
+      O: "M40 55 Q50 50 60 55 L60 25 C55 22, 45 22, 40 25 Z",
+      M: "M40 75 C36 60, 36 35, 40 25 C40 45, 40 65, 40 75 Z",
+      D: "M60 75 C64 60, 64 35, 60 25 C60 45, 60 65, 60 75 Z"
+    }
+  },
+  PEDIATRIC_LOWER_CANINE: {
+    root: "M35 72 C33 90, 40 110, 50 120 C60 110, 67 90, 65 72 Z",
+    crown: "M35 72 C30 55, 35 30, 50 12 C65 30, 70 55, 65 72 Q50 75 35 72",
+    canals: "M50 55 C 52 75, 48 95, 50 115",
+    apex: [{ x: 50, y: 120 }],
+    surfaces: {
+      V: "M35 72 C40 68, 60 68, 65 72 L65 45 Q50 40 35 45 Z",
+      O: "M35 45 Q50 40 65 45 L50 12 Z",
+      M: "M35 72 C30 55, 35 30, 50 12 C45 35, 40 55, 35 72 Z",
+      D: "M65 72 C70 55, 65 30, 50 12 C55 35, 60 55, 65 72 Z"
+    }
+  },
+  PEDIATRIC_LOWER_MOLAR: {
+    root: "M15 80 C15 100, 25 115, 30 120 C35 115, 35 100, 38 90 Q49 85 52 100 C55 100, 60 115, 70 120 C80 115, 85 100, 85 80 Z",
+    crown: "M15 80 C5 40, 15 35, 30 25 C40 20, 48 23, 50 30 C52 23, 60 20, 70 23 C85 35, 95 30, 85 80 Q50 85 15 80",
+    canals: "M50 60 Q 30 80 30 115 M50 60 Q 70 80 70 115",
+    apex: [{ x: 30, y: 120 }, { x: 70, y: 120 }],
+    surfaces: {
+      V: "M15 80 C20 75, 80 75, 85 80 L85 55 Q50 50 15 55 Z",
+      O: "M15 55 Q50 50 85 55 L70 23 C50 30, 30 25, 15 40 Z",
+      M: "M15 80 C5 40, 15 35, 30 25 C25 45, 20 60, 15 80 Z",
+      D: "M85 80 C95 30, 85 35, 70 23 C75 45, 80 60, 85 80 Z"
+    }
   }
 } satisfies Record<string, ToothGeometryType>;
 
 export const getToothPath = (toothId: number): ToothGeometryType => {
   const quadrant = Math.floor(toothId / 10);
   const index = toothId % 10;
+  const isPediatric = quadrant >= 5;
 
   if (quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6) { 
-    if (index === 1) return TOOTH_GEOMETRY.UPPER_CENTRAL_INCISOR;
-    if (index === 2) return TOOTH_GEOMETRY.UPPER_LATERAL_INCISOR;
-    if (index === 3) return TOOTH_GEOMETRY.UPPER_CANINE;
-    if (index <= 5) return (quadrant >= 5) ? TOOTH_GEOMETRY.UPPER_MOLAR : TOOTH_GEOMETRY.UPPER_PREMOLAR;
+    if (index === 1 || index === 2) return isPediatric ? TOOTH_GEOMETRY.PEDIATRIC_UPPER_INCISOR : (index === 1 ? TOOTH_GEOMETRY.UPPER_CENTRAL_INCISOR : TOOTH_GEOMETRY.UPPER_LATERAL_INCISOR);
+    if (index === 3) return isPediatric ? TOOTH_GEOMETRY.PEDIATRIC_UPPER_CANINE : TOOTH_GEOMETRY.UPPER_CANINE;
+    if (index <= 5) return isPediatric ? TOOTH_GEOMETRY.PEDIATRIC_UPPER_MOLAR : TOOTH_GEOMETRY.UPPER_PREMOLAR;
     return TOOTH_GEOMETRY.UPPER_MOLAR;
   } else { 
-    if (index <= 2) return TOOTH_GEOMETRY.LOWER_INCISOR;
-    if (index === 3) return TOOTH_GEOMETRY.LOWER_CANINE;
-    if (index <= 5) return (quadrant >= 5) ? TOOTH_GEOMETRY.LOWER_MOLAR : TOOTH_GEOMETRY.LOWER_PREMOLAR;
+    if (index <= 2) return isPediatric ? TOOTH_GEOMETRY.PEDIATRIC_LOWER_INCISOR : TOOTH_GEOMETRY.LOWER_INCISOR;
+    if (index === 3) return isPediatric ? TOOTH_GEOMETRY.PEDIATRIC_LOWER_CANINE : TOOTH_GEOMETRY.LOWER_CANINE;
+    if (index <= 5) return isPediatric ? TOOTH_GEOMETRY.PEDIATRIC_LOWER_MOLAR : TOOTH_GEOMETRY.LOWER_PREMOLAR;
     return TOOTH_GEOMETRY.LOWER_MOLAR;
   }
 };
@@ -498,12 +571,11 @@ export const getToothPath = (toothId: number): ToothGeometryType => {
 export const getToothConfig = (toothId: number) => {
   const num = toothId % 10;
   const quadrant = Math.floor(toothId / 10);
-  // Use custom viewBox values to tightly bound the actual SVG paths, 
-  // preventing extreme horizontal distortion when scaling to container widths.
-  if (num <= 2) return { width: "36px", height: "90px", viewX: 20, viewWidth: 60, viewHeight: 150 };
-  if (num === 3) return { width: "40px", height: "90px", viewX: 15, viewWidth: 75, viewHeight: 150 };
-  if (num <= 5 && quadrant < 5) return { width: "42px", height: "90px", viewX: 12.5, viewWidth: 75, viewHeight: 150 };
-  return { width: "48px", height: "90px", viewX: 0, viewWidth: 100, viewHeight: 150 };
+  // Proportional widths scaled to exactly 96px height based on viewBox aspect ratios
+  if (num <= 2) return { width: "38px", height: "96px", viewX: 20, viewWidth: 60, viewHeight: 150 };
+  if (num === 3) return { width: "48px", height: "96px", viewX: 15, viewWidth: 75, viewHeight: 150 };
+  if (num <= 5 && quadrant < 5) return { width: "48px", height: "96px", viewX: 12.5, viewWidth: 75, viewHeight: 150 };
+  return { width: "64px", height: "96px", viewX: 0, viewWidth: 100, viewHeight: 150 };
 };
 
 /**

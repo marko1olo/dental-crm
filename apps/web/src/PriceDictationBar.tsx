@@ -45,7 +45,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
         <div className="relative flex-1">
           <input
             type="text"
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-all placeholder:text-slate-400"
+            className="w-full pl-10 pr-4 py-2 bg-zinc-50/40 dark:bg-zinc-900/40 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-all placeholder:text-slate-400 dark:text-zinc-100"
             placeholder="Опишите услугу или надиктуйте (напр. 'Добавь удаление зуба за 5000 руб')"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}

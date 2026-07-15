@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { History, Activity, Calendar, FileText, ChevronRight, X } from 'lucide-react';
+import { denteAdminSecretRequestHeaders } from '../../AppHelpers';
 
 
 interface ToothEvent {
@@ -24,7 +25,9 @@ export function ToothHistoryChronicle({ patientId, toothNumber, onClose }: Props
     const fetchHistory = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/odontogram/tooth-history/${patientId}/${toothNumber}`);
+        const res = await fetch(`/api/odontogram/tooth-history/${patientId}/${toothNumber}`, {
+          headers: denteAdminSecretRequestHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           if (active) setEvents(data.events || []);

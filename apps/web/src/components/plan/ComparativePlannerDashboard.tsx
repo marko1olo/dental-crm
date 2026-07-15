@@ -31,53 +31,24 @@ interface InsuranceContract {
   coverageSurgeryPct: number;
 }
 
-const MOCK_PLANS: TreatmentPlan[] = [
-  {
-    id: 'plan-a',
-    title: 'План А: Премиум-Цирконий',
-    description: 'Максимальная эстетика и долговечность',
-    visitsCount: 3,
-    warrantyYears: 10,
-    durabilityScore: 'Высокая',
-    labWaitDays: 7,
-    status: 'draft',
-    items: [
-      { id: '1', name: 'Коронка из диоксида циркония (E.max)', priceRub: 45000, isOptional: false, category: 'ortho' },
-      { id: '2', name: 'Снятие оттисков (цифра)', priceRub: 5000, isOptional: false, category: 'ortho' },
-      { id: '3', name: 'Профессиональная гигиена полости рта', priceRub: 8000, isOptional: true, category: 'hygiene' },
-      { id: '4', name: 'Временная коронка (PMMA)', priceRub: 6000, isOptional: true, category: 'ortho' },
-    ],
-  },
-  {
-    id: 'plan-b',
-    title: 'План Б: Металлокерамика',
-    description: 'Надежный стандартный вариант',
-    visitsCount: 4,
-    warrantyYears: 5,
-    durabilityScore: 'Средняя',
-    labWaitDays: 10,
-    status: 'draft',
-    items: [
-      { id: '5', name: 'Металлокерамическая коронка', priceRub: 22000, isOptional: false, category: 'ortho' },
-      { id: '6', name: 'Снятие оттисков (А-силикон)', priceRub: 3000, isOptional: false, category: 'ortho' },
-      { id: '7', name: 'Терапевтическая подготовка (Эндо)', priceRub: 15000, isOptional: false, category: 'therapy' },
-      { id: '8', name: 'Временная коронка (композит)', priceRub: 4000, isOptional: true, category: 'ortho' },
-    ],
-  },
-];
-
-const MOCK_INSURANCE: InsuranceContract = {
-  id: 'ins-1',
-  companyName: 'АльфаСтрахование ДМС',
-  coverageTherapyPct: 80,
-  coverageOrthoPct: 50,
-  coverageHygienePct: 100,
-  coverageSurgeryPct: 80,
-};
-
 export const ComparativePlannerDashboard: React.FC = () => {
-  const [plans, setPlans] = useState<TreatmentPlan[]>(MOCK_PLANS);
+  const [plans, setPlans] = useState<TreatmentPlan[]>([]);
   const [insuranceActive, setInsuranceActive] = useState(false);
+  const [insuranceData, setInsuranceData] = useState<InsuranceContract | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Added fetch to purge MOCK_PLANS
+  React.useEffect(() => {
+    setIsLoading(true);
+    Promise.all([
+      fetch('/api/treatment-plans').then(r => r.ok ? r.json() : []),
+      fetch('/api/insurance/patient').then(r => r.ok ? r.json() : null)
+    ]).then(([plansData, insData]) => {
+      setPlans(Array.isArray(plansData) ? plansData : []);
+      setInsuranceData(insData);
+      setIsLoading(false);
+    }).catch(() => setIsLoading(false));
+  }, []);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeMobileTab, setActiveMobileTab] = useState<string>('plan-a');
   const [optionalToggles, setOptionalToggles] = useState<Record<string, Record<string, boolean>>>({
@@ -113,11 +84,11 @@ export const ComparativePlannerDashboard: React.FC = () => {
         total += item.priceRub;
         
         let coveragePct = 0;
-        if (insuranceActive) {
-          if (item.category === 'therapy') coveragePct = MOCK_INSURANCE.coverageTherapyPct;
-          if (item.category === 'ortho') coveragePct = MOCK_INSURANCE.coverageOrthoPct;
-          if (item.category === 'hygiene') coveragePct = MOCK_INSURANCE.coverageHygienePct;
-          if (item.category === 'surgery') coveragePct = MOCK_INSURANCE.coverageSurgeryPct;
+        if (insuranceActive && insuranceData) {
+          if (item.category === 'therapy') coveragePct = insuranceData.coverageTherapyPct;
+          if (item.category === 'ortho') coveragePct = insuranceData.coverageOrthoPct;
+          if (item.category === 'hygiene') coveragePct = insuranceData.coverageHygienePct;
+          if (item.category === 'surgery') coveragePct = insuranceData.coverageSurgeryPct;
         }
         
         const coveredAmt = (item.priceRub * coveragePct) / 100;
@@ -137,19 +108,28 @@ export const ComparativePlannerDashboard: React.FC = () => {
             <h1>Сравнительный конструктор смет</h1>
             <p>Анализ альтернативных планов лечения для пациента</p>
           </div>
-          <div className="insurance-status-card">
-            <ShieldAlert className={insuranceActive ? "text-emerald-400" : "text-zinc-500"} />
-            <div className="insurance-info">
-              <p>Полис ДМС</p>
-              <p>{MOCK_INSURANCE.companyName}</p>
+          {insuranceData ? (
+            <div className="insurance-status-card">
+              <ShieldAlert className={insuranceActive ? "text-emerald-400" : "text-zinc-500"} />
+              <div className="insurance-info">
+                <p>Полис ДМС</p>
+                <p>{insuranceData.companyName}</p>
+              </div>
+              <button
+                onClick={() => setInsuranceActive(!insuranceActive)}
+                className={`insurance-toggle-btn ${insuranceActive ? 'active' : 'inactive'}`}
+              >
+                {insuranceActive ? 'Применен' : 'Применить полис'}
+              </button>
             </div>
-            <button
-              onClick={() => setInsuranceActive(!insuranceActive)}
-              className={`insurance-toggle-btn ${insuranceActive ? 'active' : 'inactive'}`}
-            >
-              {insuranceActive ? 'Применен' : 'Применить полис'}
-            </button>
-          </div>
+          ) : (
+            <div className="insurance-status-card">
+              <ShieldAlert className="text-zinc-500" />
+              <div className="insurance-info">
+                <p>Нет полиса ДМС</p>
+              </div>
+            </div>
+          )}
         </header>
 
         {typeof window !== 'undefined' && window.innerWidth <= 768 && (

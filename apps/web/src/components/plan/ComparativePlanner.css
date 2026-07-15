@@ -497,17 +497,17 @@
 }
 
 [data-theme="light"] .service-tile {
-  background: #ffffff;
+  background: var(--paper);
   border-color: rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="light"] .service-tile.is-active {
-  background: #ffffff;
+  background: var(--paper);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 [data-theme="light"] .plan-dropdown-menu {
-  background: #ffffff;
+  background: var(--paper);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
@@ -560,13 +560,13 @@
   }
 
   .mobile-tab-btn.active-tab-A {
-    background: #ffffff;
+    background: var(--paper);
     color: var(--teal);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
 
   .mobile-tab-btn.active-tab-B {
-    background: #ffffff;
+    background: var(--paper);
     color: var(--teal); /* Both tabs should just use the brand color when active */
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
@@ -625,7 +625,7 @@
 
 /* ---- Light theme: full card background ---- */
 [data-theme="light"] .plan-item-card {
-  background: #ffffff !important;
+  background: var(--paper) !important;
   /* Side-specific: don't kill top accent border */
   border-right-color: rgba(0, 0, 0, 0.07) !important;
   border-bottom-color: rgba(0, 0, 0, 0.07) !important;
@@ -650,7 +650,7 @@
 }
 
 [data-theme="light"] .spec-item {
-  background: #ffffff !important;
+  background: var(--paper) !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
 }
@@ -675,7 +675,7 @@
 }
 
 [data-theme="light"] .service-tile.is-active {
-  background: #ffffff !important;
+  background: var(--paper) !important;
   border-color: rgba(0, 0, 0, 0.1) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }

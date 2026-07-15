@@ -812,7 +812,7 @@ export const clinicalRuleActionSchema = z.enum([
 ]);
 export type ClinicalRuleAction = z.infer<typeof clinicalRuleActionSchema>;
 
-export const paymentMethodSchema = z.enum(["cash", "card", "bank_transfer", "online", "insurance", "other"]);
+export const paymentMethodSchema = z.enum(["cash", "card", "bank_transfer", "online", "insurance", "family_wallet", "other"]);
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 
 export const paymentStatusSchema = z.enum(["planned", "paid", "refunded", "voided"]);
@@ -1378,7 +1378,13 @@ export const clinicProfileSchema = z.object({
   scheduleDefaults: clinicScheduleDefaultsSchema,
   networkEnabled: z.boolean(),
   egiszEnabled: z.boolean(),
-  updatedAt: z.string()
+  updatedAt: z.string(),
+  specializations: z.array(dentalSpecialtySchema).default([]),
+  workingHours: staffWorkingHoursSchema.nullable().optional(),
+  currency: z.string().default('₽'),
+  themeColor: z.string().default('teal'),
+  logoUrl: z.string().nullable().optional(),
+  stampUrl: z.string().nullable().optional()
 });
 export type ClinicProfile = z.infer<typeof clinicProfileSchema>;
 
@@ -2540,7 +2546,8 @@ export const appointmentSchema = z.object({
   startsAt: z.string(),
   endsAt: z.string(),
   reason: z.string().nullable(),
-  comment: z.string().nullable()
+  comment: z.string().nullable(),
+  version: z.number().int().optional()
 });
 export type Appointment = z.infer<typeof appointmentSchema>;
 
@@ -2614,7 +2621,8 @@ export const updateAppointmentSchema = z
     startsAt: z.string().trim().min(1).optional(),
     endsAt: z.string().trim().min(1).optional(),
     reason: z.string().trim().max(500).nullable().optional(),
-    comment: z.string().trim().max(1000).nullable().optional()
+    comment: z.string().trim().max(1000).nullable().optional(),
+    version: z.number().int().nonnegative().optional()
   })
   .superRefine((value, context) => {
     const startsAt = value.startsAt !== undefined ? parseStrictAppointmentDateTimeMs(value.startsAt) : null;
@@ -4144,8 +4152,8 @@ export const dashboardSchema = z.object({
   appointments: z.array(appointmentSchema),
   appointmentReadiness: z.array(appointmentReadinessSchema),
   scheduleSuggestions: z.array(scheduleSuggestionSchema),
-  activeVisit: visitSchema,
-  visitCloseChecklist: visitCloseChecklistSchema,
+  activeVisit: visitSchema.nullable(),
+  visitCloseChecklist: visitCloseChecklistSchema.nullable(),
   documents: z.array(publicGeneratedDocumentSchema),
   imagingStudies: z.array(imagingStudySchema),
   protocolTemplates: z.array(protocolTemplateSchema),
@@ -4248,7 +4256,13 @@ export const updateClinicProfileSchema = z.object({
   timezone: timeZoneSchema.optional(),
   defaultVisitMinutes: z.number().int().positive().max(480).optional(),
   scheduleDefaults: clinicScheduleDefaultsSchema.optional(),
-  egiszEnabled: z.boolean().optional()
+  egiszEnabled: z.boolean().optional(),
+  specializations: z.array(dentalSpecialtySchema).optional(),
+  workingHours: staffWorkingHoursSchema.nullable().optional(),
+  currency: z.string().max(10).optional(),
+  themeColor: z.string().max(100).optional(),
+  logoUrl: z.string().url().nullable().optional(),
+  stampUrl: z.string().url().nullable().optional()
 });
 export type UpdateClinicProfileInput = z.infer<typeof updateClinicProfileSchema>;
 
@@ -7152,7 +7166,8 @@ export const acceptVisitDraftSchema = z.object({
   doctorSummary: z.string().nullable().optional(),
   clientMutationId: z.string().min(1).max(120).nullable().optional(),
   baseRevision: z.number().int().nonnegative().nullable().optional(),
-  clientSavedAt: z.string().nullable().optional()
+  clientSavedAt: z.string().nullable().optional(),
+  instrumentTrayBarcode: z.string().nullable().optional()
 });
 export type AcceptVisitDraftInput = z.infer<typeof acceptVisitDraftSchema>;
 
@@ -8047,3 +8062,33 @@ export type MprWindowPreset = any;
 
 export * from "./utils/strings.js";
 export * from "./utils/dates.js";
+
+export const doctorCommissionSchema = z.object({
+  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
+  userId: z.string().uuid(),
+  specialization: dentalSpecialtySchema,
+  percentage: z.number().int().min(0).max(100).nullable(),
+  fixedRate: z.number().int().min(0).nullable(),
+});
+export type DoctorCommission = z.infer<typeof doctorCommissionSchema>;
+
+export const cashShiftSchema = z.object({
+  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
+  openedByUserId: z.string().uuid(),
+  openedAt: z.string(),
+  closedAt: z.string().nullable(),
+  startingBalance: z.number().int(),
+  expectedClosingBalance: z.number().int().nullable(),
+  actualClosingBalance: z.number().int().nullable(),
+  status: z.enum(["Open", "Closed", "Discrepancy"]),
+  discrepancyReason: z.string().nullable()
+});
+export type CashShift = z.infer<typeof cashShiftSchema>;
+
+export const doctorAssistantSchema = z.object({
+  doctorId: z.string().uuid(),
+  assistantId: z.string().uuid()
+});
+export type DoctorAssistant = z.infer<typeof doctorAssistantSchema>;

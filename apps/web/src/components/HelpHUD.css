@@ -19,7 +19,7 @@
 }
 
 .help-hud-container {
-  background: var(--paper, #fff);
+  background: var(--paper);
   border-radius: 16px;
   width: 90%;
   max-width: 600px;

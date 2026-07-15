@@ -228,7 +228,7 @@ export function VisiographAnalyzer() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context failed');
       ctx.drawImage(img, 0, 0, width, height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.82);
+      const compressed = canvas.toDataURL('image/webp', 0.75);
       setCurrentImageUrl(compressed);
 
       // 3. Synchronous AI analysis
@@ -257,50 +257,39 @@ export function VisiographAnalyzer() {
       }
 
       // 5. Save to DB (async, non-blocking)
-      const fakeScan: XrayScan = {
-        id: crypto.randomUUID?.() ?? `local-${Date.now()}`,
-        patientId: selectedPatientId ?? 'unknown',
-        status: 'done',
-        kind: 'periapical',
-        originalFilename: file.name,
-        aiReport: aiResult.report,
-        aiSummary: extractSummary(aiResult.report),
-        aiToothStates: aiResult.toothStates,
-        hasImage: true,
-        imageDataUri: compressed,
-        capturedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
-      setCurrentScan(fakeScan);
-
       if (selectedPatientId) {
         setIsSaving(true);
         try {
+          const formData = new FormData();
+          formData.append('patientId', selectedPatientId);
+          formData.append('kind', 'periapical');
+          formData.append('notes', 'Scanned via Visiograph');
+          
+          // Convert data URI back to Blob for upload
+          const res = await fetch(compressed);
+          const blob = await res.blob();
+          formData.append('file', blob, file.name || 'scan.jpg');
+
           const saveRes = await fetch('/api/xray/scans', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              patientId: selectedPatientId,
-              imageBase64: compressed,
-              originalFilename: file.name,
-              mimeType: file.type || 'image/jpeg',
-              kind: 'periapical',
-            }),
+            body: formData,
           });
+          
           if (saveRes.ok) {
-            const saved: XrayScan = await saveRes.json();
+            const savedScan: XrayScan = await saveRes.json();
+            setCurrentScan(savedScan);
             // Persist AI result on the saved record
-            await fetch(`/api/xray/scans/${saved.id}`, {
+            await fetch(`/api/xray/scans/${savedScan.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 aiReport: aiResult.report,
-                aiSummary: fakeScan.aiSummary,
+                aiSummary: extractSummary(aiResult.report),
                 aiToothStates: aiResult.toothStates,
                 status: 'done',
               }),
             }).catch(() => {}); // best-effort
-            setScanHistory(prev => [{ ...saved, aiReport: aiResult.report, aiToothStates: aiResult.toothStates, status: 'done' }, ...prev]);
+            setScanHistory(prev => [{ ...savedScan, aiReport: aiResult.report, aiToothStates: aiResult.toothStates, status: 'done' }, ...prev]);
           }
         } catch { /* silent — result still shown */ }
         finally { setIsSaving(false); }

@@ -2,6 +2,7 @@ import "dotenv/config";
 import cors from "@fastify/cors";
 import Fastify from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
+import fastifyMultipart from "@fastify/multipart";
 import { pathToFileURL } from "node:url";
 import { ZodError } from "zod";
 import { wsBroker } from "./services/websocketBroker.js";
@@ -25,6 +26,9 @@ import { registerSmartImportRoutes } from "./routes/smartImports.js";
 import { registerSystemRoutes } from "./routes/system.js";
 import { registerTelegramRoutes, registerTelegramWebhookRoutes, startDenteTelegramOutboxDueWorker } from "./routes/telegram.js";
 import { registerVisitRoutes } from "./routes/visits.js";
+import { registerLeadsRoutes } from "./routes/leads.js";
+import { registerSterilizationRoutes } from "./routes/sterilization.js";
+import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -32,7 +36,9 @@ import registerEgiszRoutes from "./routes/egisz.js";
 import registerDiaryRoutes from "./routes/diary.js";
 import registerTemplateRoutes from "./routes/templates.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
+import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerLabRoutes } from "./routes/lab.js";
+import { registerFilesRoutes } from "./routes/files.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
 import { startBiAnalyticsWorker } from "./services/biAnalyticsWorker.js";
@@ -178,8 +184,14 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
     options: { maxPayload: 1048576 }
   });
 
+  await app.register(fastifyMultipart, {
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+  });
+
   app.get("/api/ws/schedule", { websocket: true } as any, (connection: any, req: any) => {
-    wsBroker.addClient(connection);
+    const orgId = req.query.orgId || "default-org";
+    const patientId = req.query.patientId || undefined;
+    wsBroker.addClient(connection, orgId, patientId);
   });
 
 
@@ -242,15 +254,20 @@ export async function createDenteApiApp(options: { startTelegramWorker?: boolean
   await registerTelegramRoutes(app);
   await registerTelegramWebhookRoutes(app);
   await registerVisitRoutes(app);
+  await registerLeadsRoutes(app);
+  await registerSterilizationRoutes(app);
+  await registerFamilyFinanceRoutes(app);
   await registerDicomwebRoutes(app);
   await registerXrayRoutes(app);
   await registerAuthRoutes(app);
   await registerEgiszRoutes(app);
   await registerDiaryRoutes(app);
   await registerTemplateRoutes(app);
+  await registerOdontogramRoutes(app);
   await registerToothHistoryRoutes(app);
-  await workspaceProfileRoutes(app);
   await registerLabRoutes(app);
+  await registerFilesRoutes(app);
+  await workspaceProfileRoutes(app);
 
   if (options.startTelegramWorker !== false) {
     // const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });

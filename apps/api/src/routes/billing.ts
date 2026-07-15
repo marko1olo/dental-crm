@@ -1,8 +1,10 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePaymentInput, type Payment } from "@dental/shared";
-import { requireClinicalMutationAccess, resolveOrganizationId } from "../accessGuard.js";
+import { requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
+import { db } from "../db/client.js";
+import * as schema from "../db/schema.js";
+import { and, eq, gte, sum } from "drizzle-orm";
 import {
-  getDefaultOrganizationId,
   findPaymentByClientMutationIdInDb,
   getPatientForBilling,
   getVisitForBilling,
@@ -108,17 +110,14 @@ function paymentRetryMatchesExisting(existingPayment: Payment, input: CreatePaym
 
 export async function registerBillingRoutes(app: FastifyInstance) {
   app.post("/api/billing/payments", async (request, reply) => {
-    if (!(await requireClinicalMutationAccess(request, reply, "billing payment create"))) return;
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "billing payment create");
+    if (!orgId) return;
     const parsedInput = createPaymentSchema.safeParse(request.body);
     if (!parsedInput.success) {
       return reply.code(400).send({
         error: "BillingValidationError",
         message: paymentValidationMessage
       });
-    }
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) {
-      return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
     }
     const input: CreatePaymentInput = parsedInput.data;
     const existingPayment = await findPaymentByClientMutationIdInDb(orgId, input.clientMutationId);
@@ -195,24 +194,30 @@ export async function registerBillingRoutes(app: FastifyInstance) {
     return reply.code(201).send(paymentSchema.parse(payment));
   });
 }
-import { db } from '../db/client.js';
-import * as schema from '../db/schema.js';
-import { eq, inArray, and } from 'drizzle-orm';
 
 // New routes for Invoice and Split Payments
 export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
   app.post('/api/billing/invoice', async (request, reply) => {
-    // Basic auth check would go here
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "billing invoice create");
+    if (!orgId) return;
     const { patientId, visitId, items, totalAmount } = request.body as any;
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: 'No org' });
+    if (!patientId || totalAmount == null || Number(totalAmount) <= 0) {
+      return reply.code(400).send({ error: 'BillingValidationError', message: 'Укажите пациента и положительную сумму счета.' });
+    }
+    const patient = await getPatientForBilling(orgId, patientId);
+    if (!patient) return sendBillingPaymentScopeError(reply, 404, 'Пациент для счета не найден.');
+    if (visitId) {
+      const visit = await getVisitForBilling(orgId, visitId);
+      if (!visit) return sendBillingPaymentScopeError(reply, 404, 'Прием для счета не найден.');
+      if (visit.patientId !== patientId) return sendBillingPaymentScopeError(reply, 409, 'Прием счета относится к другому пациенту.');
+    }
 
     const [invoice] = await db.insert(schema.patientInvoices).values({
       organizationId: orgId,
       patientId,
       visitId: visitId || null,
-      itemsJson: items || [],
-      totalAmountRub: totalAmount.toString(),
+      itemsJson: Array.isArray(items) ? items : [],
+      totalAmountRub: String(totalAmount),
       status: 'unpaid'
     }).returning();
 
@@ -220,50 +225,120 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
   });
 
   app.post('/api/billing/split-pay', async (request, reply) => {
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "billing split payment");
+    if (!orgId) return;
     const { invoiceId, payments, operatorId } = request.body as any;
-    const orgId = await resolveOrganizationId(request as any);
-    if (!orgId) return reply.code(401).send({ error: "Unauthorized" });
-    
-    // Begin transaction
+    if (!invoiceId || !Array.isArray(payments) || payments.length === 0) {
+      return reply.code(400).send({ error: 'BillingValidationError', message: 'Укажите счет и хотя бы одну оплату.' });
+    }
+
     const result = await db.transaction(async (tx) => {
+      const [invoice] = await tx.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.id, invoiceId), eq(schema.patientInvoices.organizationId, orgId))).limit(1);
+      if (!invoice) throw new Error('Invoice not found');
+
       let totalPaid = 0;
       for (const p of payments) {
+        const amount = Number(p.amount);
+        if (!p.method || !Number.isFinite(amount) || amount <= 0) throw new Error('Invalid split payment');
         await tx.insert(schema.cashLedger).values({
           invoiceId,
           paymentMethod: p.method,
-          amountRub: p.amount.toString(),
+          amountRub: amount.toString(),
           operatorId: operatorId || null
         });
-        totalPaid += p.amount;
+        totalPaid += amount;
       }
-      
-      const [invoice] = await tx.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.id, invoiceId), eq(schema.patientInvoices.organizationId, orgId)));
-      if (!invoice) throw new Error('Invoice not found');
-      const currentTotal = parseFloat(invoice.totalAmountRub as string);
-      
+
+      const currentTotal = Number(invoice.totalAmountRub);
       let newStatus: 'unpaid' | 'partially_paid' | 'paid' = 'partially_paid';
       if (totalPaid >= currentTotal) newStatus = 'paid';
-      
+
       await tx.update(schema.patientInvoices)
         .set({ status: newStatus })
         .where(and(eq(schema.patientInvoices.id, invoiceId), eq(schema.patientInvoices.organizationId, orgId)));
-        
+
       return { success: true, status: newStatus, totalPaid };
     });
-    
+
     return reply.code(200).send(result);
   });
 
   app.get('/api/billing/payouts', async (request, reply) => {
-    // Return mock or calculated doctor payouts based on invoices
-    const orgId = await getDefaultOrganizationId();
-    if (!orgId) return reply.code(500).send({ error: 'No org' });
-    
+    const orgId = await requireResolvedOrganizationId(request, reply, "billing payouts read");
+    if (!orgId) return;
+
     const invoices = await db.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.status, 'paid'), eq(schema.patientInvoices.organizationId, orgId)));
-    const payouts = [];
-    // Mocking real calculation for speed since full relational mapping takes time
-    // In production we'd map itemsJson to services -> procedureMaterialRules -> inventoryItems
-    
+
     return reply.code(200).send({ payouts: invoices });
+  });
+
+  app.post('/api/finance/shift/open', async (request, reply) => {
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "finance shift open");
+    if (!orgId) return;
+    const { startingBalance, userId } = request.body as any;
+    if (!userId) return reply.code(400).send({ error: 'FinanceValidationError', message: 'Укажите сотрудника, открывающего смену.' });
+    const [operator] = await db.select({ id: schema.users.id }).from(schema.users).where(and(eq(schema.users.id, userId), eq(schema.users.organizationId, orgId))).limit(1);
+    if (!operator) return reply.code(404).send({ error: 'UserNotFound', message: 'Сотрудник кассовой смены не найден в этой организации.' });
+
+    const [shift] = await db.insert(schema.cash_shifts).values({
+      organizationId: orgId,
+      openedByUserId: userId,
+      openedAt: new Date(),
+      startingBalance: Number(startingBalance) || 0,
+      status: "Open"
+    }).returning();
+
+    return reply.code(200).send(shift);
+  });
+
+  app.post('/api/finance/shift/close', async (request, reply) => {
+    const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "finance shift close");
+    if (!orgId) return;
+    const { shiftId, actualClosingBalance, discrepancyReason } = request.body as any;
+
+    const shiftOpt = await db.select().from(schema.cash_shifts).where(and(eq(schema.cash_shifts.id, shiftId), eq(schema.cash_shifts.organizationId, orgId))).limit(1);
+    if (!shiftOpt || shiftOpt.length === 0) return reply.code(404).send({ error: 'Shift not found' });
+    const shift = shiftOpt[0];
+    if (!shift) return reply.code(404).send({ error: 'Shift not found' });
+    
+    // Calculate expected balance: startingBalance + sum of all cash payments since openedAt
+    const paymentsResult = await db.select({ total: sum(schema.payments.amountRub) })
+      .from(schema.payments)
+      .where(
+        and(
+          eq(schema.payments.organizationId, orgId),
+          eq(schema.payments.method, 'cash'),
+          eq(schema.payments.status, 'paid'),
+          gte(schema.payments.createdAt, shift.openedAt)
+        )
+      );
+    
+    const cashSales = paymentsResult[0]?.total ? Number(paymentsResult[0].total) : 0;
+    const expectedClosingBalance = shift.startingBalance + cashSales;
+    
+    const actualClosingBalanceNumber = Number(actualClosingBalance);
+    if (!Number.isFinite(actualClosingBalanceNumber)) {
+      return reply.code(400).send({ error: 'FinanceValidationError', message: 'Укажите фактический остаток кассы.' });
+    }
+
+    if (actualClosingBalanceNumber !== expectedClosingBalance && !discrepancyReason) {
+      // BLIND CLOSE: We DO NOT return expectedClosingBalance to the client to prevent fraud
+      return reply.code(400).send({ 
+        error: 'Discrepancy detected', 
+        message: 'Сумма в кассе не совпадает с расчетной. Требуется указать причину расхождения (Discrepancy Reason) перед закрытием смены.'
+      });
+    }
+    
+    const newStatus = actualClosingBalanceNumber === expectedClosingBalance ? 'Closed' : 'Discrepancy';
+
+    const [closedShift] = await db.update(schema.cash_shifts).set({
+      closedAt: new Date(),
+      expectedClosingBalance,
+      actualClosingBalance: actualClosingBalanceNumber,
+      status: newStatus,
+      discrepancyReason: discrepancyReason || null
+    }).where(and(eq(schema.cash_shifts.id, shiftId), eq(schema.cash_shifts.organizationId, orgId))).returning();
+    
+    return reply.code(200).send(closedShift);
   });
 }

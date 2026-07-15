@@ -9,13 +9,25 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
+export type AppointmentScheduleDraft = {
+  patientId: string;
+  doctorUserId: string;
+  assistantUserId: string;
+  chairId: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string;
+  comment: string;
+  status: string;
+};
+
 export type NewAppointmentFormProps = {
   dashboard: Dashboard;
   appointmentLabels: Record<Appointment["status"], string>;
-  newAppointmentDraft: any;
+  newAppointmentDraft: AppointmentScheduleDraft;
   newAppointmentSaveState: string;
   newAppointmentError: string | null;
-  updateNewAppointmentDraft: (key: string, value: any) => void;
+  updateNewAppointmentDraft: (key: string, value: unknown) => void;
   createAppointmentFromDraft: () => Promise<boolean>;
   resetNewAppointmentDraft: () => void;
   toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;

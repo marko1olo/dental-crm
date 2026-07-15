@@ -17,7 +17,7 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({ patientId, visitId }
       const res = await fetch(`/api/egisz/logs/${patientId}`);
       if (res.ok) {
         const data = await res.json();
-        const latest = data.logs.find((l: any) => l.visitId === visitId);
+        const latest = data && data.logs ? data.logs.find((l: any) => l.visitId === visitId) : null;
         if (latest) {
           setStatus(latest.status);
           setErrorDetails(latest.errorDetails?.message || null);

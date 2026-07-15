@@ -3,9 +3,9 @@ import {
   dentalPricelistAnalysisRequestSchema,
   dentalPricelistAnalysisResponseSchema
 } from "@dental/shared";
-import { requireClinicalReadAccess } from "../accessGuard.js";
+import { requireClinicalReadAccess, resolveOrganizationId } from "../accessGuard.js";
 import { analyzePricelist } from "../pricelist/analyzer.js";
-import { getDefaultOrganizationId, getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
+import { getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
 
 type PricelistPayloadSchema<T> = {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
@@ -37,9 +37,9 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
           message: pricelistValidationMessage
         });
       }
-      const orgId = await getDefaultOrganizationId();
+      const orgId = await resolveOrganizationId(request);
       if (!orgId) {
-        return reply.code(500).send({ error: "NoOrganizationFound", message: "Организация не найдена" });
+        return reply.code(403).send({ error: "OrganizationRequired", message: "Организация не определена" });
       }
       const catalog = await getServiceCatalogForOrganization(orgId);
       return dentalPricelistAnalysisResponseSchema.parse(await analyzePricelist(input, catalog));

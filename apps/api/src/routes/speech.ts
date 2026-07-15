@@ -189,7 +189,7 @@ async function handleSpeechChunks(request: FastifyRequest, reply: FastifyReply) 
   if (!recordingId) return [];
 
   const organizationId = await resolveOrganizationId(request);
-  if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "????< >??? > ??>? >?." });
+  if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "Не удалось определить клинику для голосовых данных." });
 
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
@@ -207,7 +207,7 @@ async function handleSpeechRecordingsRecovery(request: FastifyRequest, reply: Fa
   if (!(await requireClinicalReadAccess(request, reply, "speech recording recovery"))) return;
   const query = request.query as { visitId?: string; patientId?: string; limit?: string };
   const organizationId = await resolveOrganizationId(request);
-  if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "????< >??? > ??>? >?." });
+  if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "Не удалось определить клинику для голосовых данных." });
 
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
@@ -227,7 +227,7 @@ async function handleSpeechRecordingAssemble(request: FastifyRequest, reply: Fas
   const params = request.params as { recordingId: string };
   const query = request.query as { visitId?: string; patientId?: string };
   const organizationId = await resolveOrganizationId(request);
-  if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "????< >??? > ??>? >?." });
+  if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "Не удалось определить клинику для голосовых данных." });
 
   const scopeValidation = await validateSpeechClinicalScope(
     { patientId: query.patientId, visitId: query.visitId },
@@ -252,7 +252,7 @@ async function handleSpeechTranscribeChunk(request: FastifyRequest, reply: Fasti
   );
   if (!input) return;
     const organizationId = await resolveOrganizationId(request);
-    if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "????< >??? > ??>? >?." });
+    if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired", message: "Не удалось определить клинику для голосовых данных." });
 
     const scopeValidation = await validateSpeechClinicalScope(input, organizationId);
   if (!scopeValidation.ok) return sendSpeechScopeValidationError(reply, scopeValidation);

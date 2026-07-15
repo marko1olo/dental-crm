@@ -135,7 +135,7 @@
   height: 64px;
   border: 2px solid var(--line, #e2e8f0);
   border-radius: 12px;
-  background: var(--paper, #fff);
+  background: var(--paper);
   color: var(--ink, #1e293b);
   font-size: 1.8rem;
   font-weight: 800;

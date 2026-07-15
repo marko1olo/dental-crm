@@ -43,10 +43,12 @@ const documentIssueReasons = dashboard.documents
   })
   .filter(Boolean);
 const checkedStrings = collectStrings({ dashboard, renderedDocuments, documentIssueReasons });
-const mojibakeHits = checkedStrings.filter((value) => /(?:Ã.|Â.|Ð.|Ñ.|â.)/.test(value));
+const mojibakeHits = checkedStrings.filter((value) => /(?:Ã.|Â.|Ð.|Ñ.|â.|�)/.test(value));
+const garbledQuestionHits = checkedStrings.filter((value) => /\?{4,}/.test(value));
 
 assert(checkedStrings.length > 250, "encoding smoke did not inspect enough UI strings");
 assert(mojibakeHits.length === 0, `mojibake text leaked to dashboard: ${mojibakeHits.slice(0, 3).join(" | ")}`);
+assert(garbledQuestionHits.length === 0, `replacement question-mark text leaked to dashboard: ${garbledQuestionHits.slice(0, 3).join(" | ")}`);
 assert(renderedDocuments.length > 0, "encoding smoke did not render document HTML");
 assert(renderedDocuments.some((html) => html.includes("Пациент")), "document HTML was not inspected as readable Russian");
 assert(renderedDocuments.some((html) => html.includes('class="check-list"')), "document checklist HTML was not inspected");
@@ -87,7 +89,7 @@ const userFacingApiSources = [
   readFileSync("apps/api/src/routes/imaging.ts", "utf8"),
   readFileSync("apps/api/src/ingestion/documentExtractor.ts", "utf8")
 ].join("\n");
-const mojibakeSourceHits = userFacingApiSources.match(/"(?:[^"\\]|\\.)*(?:Ð|Ñ|Ã|Â|â)(?:[^"\\]|\\.)*"/g) ?? [];
+const mojibakeSourceHits = userFacingApiSources.match(/"(?:[^"\\]|\\.)*(?:Ð|Ñ|Ã|Â|â|�|\?{4,})(?:[^"\\]|\\.)*"/g) ?? [];
 assert(
   mojibakeSourceHits.length === 0,
   `mojibake source text leaked from user-facing API sources: ${mojibakeSourceHits.slice(0, 5).join(", ")}`
@@ -124,6 +126,7 @@ console.log(
     checkedStrings: checkedStrings.length,
     checkedDocumentHtml: renderedDocuments.length,
     checkedDocumentReasons: documentIssueReasons.length,
-    mojibakeHits: 0
+    mojibakeHits: 0,
+    garbledQuestionHits: 0
   })
 );

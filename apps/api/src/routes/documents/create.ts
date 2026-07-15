@@ -1,6 +1,6 @@
 import { readIssuedDocumentSnapshot } from "../../db/documentQuery.js";
 import type { FastifyInstance } from "fastify";
-import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../../accessGuard.js";
+import { requireClinicalMutationAccess, requireClinicalReadAccess, requireResolvedOrganizationId } from "../../accessGuard.js";
 import {
   createDocumentSchema,
   issueDocumentSchema,
@@ -28,8 +28,6 @@ import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import { getVisitByIdInDb } from "../../db/visitsQuery.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getTreatmentPlanItemsForPatient } from "../../db/clinicalQuery.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
-import { TOKEN_SECRET } from "../auth.js";
 
 
 import {
@@ -69,10 +67,8 @@ export async function register(app: FastifyInstance) {
       });
     }
     const input = repairMojibakeDeep(parsedInput.data);
-    const clinicHeader = request.headers["x-dente-clinic-token"];
-    const clinicToken = Array.isArray(clinicHeader) ? clinicHeader[0] : clinicHeader;
-    const payload = clinicToken ? verifyToken(clinicToken, TOKEN_SECRET()) : null;
-    const orgId = payload?.organizationId as string || "mock-org"; // fallback for tests
+    const orgId = await requireResolvedOrganizationId(request, reply, "document create tenant");
+    if (!orgId) return;
 
     const patient = await getPatientByIdFromDb(orgId, input.patientId);
     const visit = input.visitId ? await getVisitByIdInDb(orgId, input.visitId) : null;
