@@ -233,10 +233,14 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
     }
 
     const result = await db.transaction(async (tx) => {
-      const [invoice] = await tx.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.id, invoiceId), eq(schema.patientInvoices.organizationId, orgId))).limit(1);
+      const [invoice] = await tx.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.id, invoiceId), eq(schema.patientInvoices.organizationId, orgId))).for("update").limit(1);
       if (!invoice) throw new Error('Invoice not found');
 
-      let totalPaid = 0;
+      const existingLedger = await tx.select().from(schema.cashLedger).where(eq(schema.cashLedger.invoiceId, invoiceId));
+      let totalPaidBefore = 0;
+      for (const e of existingLedger) totalPaidBefore += Number(e.amountRub);
+
+      let newPaymentsSum = 0;
       for (const p of payments) {
         const amount = Number(p.amount);
         if (!p.method || !Number.isFinite(amount) || amount <= 0) throw new Error('Invalid split payment');
@@ -246,10 +250,18 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
           amountRub: amount.toString(),
           operatorId: operatorId || null
         });
-        totalPaid += amount;
+        newPaymentsSum += amount;
       }
 
+      const totalPaid = totalPaidBefore + newPaymentsSum;
       const currentTotal = Number(invoice.totalAmountRub);
+
+      if (totalPaid > currentTotal) {
+        const err = new Error('Payment exceeds invoice total');
+        (err as any).statusCode = 400;
+        throw err;
+      }
+
       let newStatus: 'unpaid' | 'partially_paid' | 'paid' = 'partially_paid';
       if (totalPaid >= currentTotal) newStatus = 'paid';
 
