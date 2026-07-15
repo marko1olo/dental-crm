@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { PhoneIncoming, X, User } from "lucide-react";
-import { useWebsocket } from "./hooks/useWebsocket";
-import { useNavigate } from "react-router-dom";
+import { useWebsocket } from "../hooks/useWebsocket";
+import { usePatientStore } from "../store/patientStore";
+import { useAppStore } from "../store/appStore";
 
 export function IncomingCallToast() {
   const [incomingCall, setIncomingCall] = useState<{
@@ -12,9 +13,11 @@ export function IncomingCallToast() {
   } | null>(null);
 
   const { lastMessage } = useWebsocket(
-    import.meta.env.VITE_WS_URL || "ws://localhost:4100/api/ws/schedule"
+    (import.meta as any).env.VITE_WS_URL || "ws://localhost:4100/api/ws/schedule"
   );
-  const navigate = useNavigate();
+  
+  const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
+  const setCurrentView = useAppStore((s) => s.setCurrentView);
 
   useEffect(() => {
     if (lastMessage?.type === "TELEPHONY_INCOMING_CALL" && lastMessage.payload) {
@@ -72,7 +75,8 @@ export function IncomingCallToast() {
       {incomingCall.patientId && (
         <button
           onClick={() => {
-            navigate(`/workspace/patients/${incomingCall.patientId}`);
+            setSelectedPatientId(incomingCall.patientId);
+            setCurrentView("patients");
             setIncomingCall(null);
           }}
           style={{

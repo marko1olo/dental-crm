@@ -13,6 +13,7 @@ import { PatientPortal } from "./components/PatientPortal";
 import TourEngine from "./components/TourEngine";
 import { VoiceAssistantUI } from "./components/VoiceAssistantUI";
 import { OnboardingSetupWizard } from "./components/workspace/OnboardingSetupWizard";
+import { IncomingCallToast } from "./components/IncomingCallToast";
 import { GuestLabPortal } from "./GuestLabPortal";
 import {
 	loadWorkspaceProfile,
@@ -468,6 +469,9 @@ const DocumentsView = lazy(() =>
 );
 const SettingsView = lazy(() =>
 	import("./SettingsView").then((module) => ({ default: module.SettingsView })),
+);
+const InventoryView = lazy(() =>
+	import("./components/InventoryView").then((module) => ({ default: module.InventoryView })),
 );
 const ScheduleView = lazy(() =>
 	import("./ScheduleView").then((module) => ({ default: module.ScheduleView })),
@@ -2718,6 +2722,9 @@ export function App() {
 								>
 									Начать работу
 								</button>
+							) : null}
+							{currentView === "inventory" ? (
+								<InventoryView organizationId={activeWorkspaceProfile.id} />
 							) : null}
 						</div>
 					</section>
@@ -6229,7 +6236,15 @@ export function App() {
 							clinicPhone={clinicProfileDraft.phone}
 						/>
 					</Suspense>
+				) : null}\n\n\t\t\t\t{currentView === "inventory" ? (
+					<Suspense
+						fallback={<AppLoadingState message="Загрузка склада" />}
+					>
+						<InventoryView organizationId={activeWorkspaceProfile.id} />
+					</Suspense>
 				) : null}
+
+				
 
 				{currentView === "kanban" ? (
 					<Suspense
@@ -6238,6 +6253,8 @@ export function App() {
 						<LeadsKanbanView />
 					</Suspense>
 				) : null}
+
+				
 
 				{/* <VoiceAssistantUI 
           onNavigate={(view) => {
@@ -6261,6 +6278,7 @@ export function App() {
           onNavigate={(view) => setCurrentView(view as any)} 
         /> */}
 			</section>
+			<IncomingCallToast />
 		</main>
 	);
 }
