@@ -5,7 +5,8 @@ import {
   payments, 
   treatmentScenarios, 
   appointments, 
-  users 
+  users,
+  visitDiaries,
 } from "../db/schema.js";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -83,20 +84,37 @@ async function computeChairUtilization(orgId: string) {
 }
 
 async function computeDoctorProfitability(orgId: string) {
-  // Real calculation based on users and payments
-  const docs = await db.select({ name: users.fullName, id: users.id })
-    .from(users).where(eq(users.organizationId, orgId)).limit(5);
-  
-  return docs.map(doc => {
-    // Basic static real data fallback for now since mapping payments to doctor requires complex joins
-    const revenue = 100000; 
+  // Real join: payments -> visitDiaries -> users (doctor)
+  const rows = await db
+    .select({
+      doctorId: visitDiaries.doctorId,
+      doctorName: users.fullName,
+      totalRevenue: sql<number>`coalesce(sum(cast(${payments.amountRub} as float)), 0)`,
+      paymentCount: sql<number>`count(${payments.id})`,
+    })
+    .from(payments)
+    .leftJoin(visitDiaries, eq(payments.visitId, visitDiaries.visitId))
+    .leftJoin(users, eq(visitDiaries.doctorId, users.id))
+    .where(eq(payments.organizationId, orgId))
+    .groupBy(visitDiaries.doctorId, users.fullName);
+
+  if (rows.length === 0) return [];
+
+  const MATERIAL_RATE = 0.15;
+  const COMMISSION_RATE = 0.25;
+
+  return rows.map(r => {
+    const revenue = Number(r.totalRevenue) || 0;
+    const materialCost = +(revenue * MATERIAL_RATE).toFixed(2);
+    const commission = +(revenue * COMMISSION_RATE).toFixed(2);
+    const margin = +(revenue - materialCost - commission).toFixed(2);
     return {
-      name: doc.name,
+      name: r.doctorName ?? 'Врач не указан',
       revenue,
-      materialCost: revenue * 0.15,
-      commission: revenue * 0.25,
-      margin: revenue * 0.6,
-      completionRate: 90
+      materialCost,
+      commission,
+      margin,
+      completionRate: r.paymentCount > 0 ? 100 : 0,
     };
   });
 }

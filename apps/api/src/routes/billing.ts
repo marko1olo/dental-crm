@@ -3,7 +3,7 @@ import { createPaymentSchema, documentKindMetadata, paymentSchema, type CreatePa
 import { requireResolvedOrganizationId, requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { and, eq, gte, sum } from "drizzle-orm";
+import { and, eq, gte, sql, sum } from "drizzle-orm";
 import {
   findPaymentByClientMutationIdInDb,
   getPatientForBilling,
@@ -273,9 +273,56 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
     const orgId = await requireResolvedOrganizationId(request, reply, "billing payouts read");
     if (!orgId) return;
 
-    const invoices = await db.select().from(schema.patientInvoices).where(and(eq(schema.patientInvoices.status, 'paid'), eq(schema.patientInvoices.organizationId, orgId)));
+    // Join invoices → visits → doctor user to resolve real doctor name
+    const rows = await db
+      .select({
+        id: schema.patientInvoices.id,
+        visitId: schema.patientInvoices.visitId,
+        totalAmountRub: schema.patientInvoices.totalAmountRub,
+        status: schema.patientInvoices.status,
+        createdAt: schema.patientInvoices.createdAt,
+        doctorId: schema.visitDiaries.doctorId,
+        doctorName: schema.users.fullName,
+      })
+      .from(schema.patientInvoices)
+      .leftJoin(
+        schema.visitDiaries,
+        eq(schema.patientInvoices.visitId, schema.visitDiaries.visitId)
+      )
+      .leftJoin(
+        schema.users,
+        eq(schema.visitDiaries.doctorId, schema.users.id)
+      )
+      .where(
+        and(
+          eq(schema.patientInvoices.status, 'paid'),
+          eq(schema.patientInvoices.organizationId, orgId)
+        )
+      )
+      .orderBy(schema.patientInvoices.createdAt);
 
-    return reply.code(200).send({ payouts: invoices });
+    const MATERIAL_COST_RATE = 0.15;
+    const COMMISSION_RATE = 0.30;
+
+    const payouts = rows.map(row => {
+      const revenue = parseFloat(String(row.totalAmountRub ?? 0));
+      const materialCost = +(revenue * MATERIAL_COST_RATE).toFixed(2);
+      const netBase = revenue - materialCost;
+      const netPayout = +(netBase * COMMISSION_RATE).toFixed(2);
+      return {
+        id: row.id,
+        visitId: row.visitId,
+        doctorId: row.doctorId ?? null,
+        doctorName: row.doctorName ?? 'Врач не указан',
+        revenue,
+        materialCost,
+        commissionRate: +(COMMISSION_RATE * 100),
+        netPayout,
+        date: row.createdAt,
+      };
+    });
+
+    return reply.code(200).send({ payouts });
   });
 
   app.post('/api/finance/shift/open', async (request, reply) => {
