@@ -1,233 +1,141 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
-import { z } from "zod";
+import { type FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
-import * as schema from "../db/schema.js";
+import { users, appointments, patients } from "../db/schema.js";
+import { eq, and, gte, lt } from "drizzle-orm";
 
-const ipRequestCounts = new Map();
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 20;
+export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
+  // 1. Get doctors for an organization
+  server.get<{ Params: { organizationId: string } }>("/:organizationId/doctors", async (request, reply) => {
+    const { organizationId } = request.params;
+    if (!organizationId) return reply.status(400).send({ error: "Missing organizationId" });
 
-function isRateLimited(ip) {
-	const now = Date.now();
-	const entry = ipRequestCounts.get(ip);
-	if (!entry || now > entry.resetAt) {
-		ipRequestCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-		return false;
-	}
-	entry.count++;
-	return entry.count > RATE_LIMIT_MAX_REQUESTS;
-}
+    const doctorsList = await db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        specialties: users.specialties
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.organizationId, organizationId),
+          eq(users.role, "doctor")
+        )
+      );
 
-const bookingRequestSchema = z.object({
-	patientName: z.string().trim().min(2).max(120),
-	patientPhone: z
-		.string()
-		.trim()
-		.regex(/^\+?[0-9\s\-()]{7,20}$/, "Неверный формат номера телефона"),
-	patientComment: z.string().trim().max(500).optional(),
-	doctorId: z.string().uuid().optional().nullable(),
-	requestedDate: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/, "Формат даты: YYYY-MM-DD"),
-	requestedTime: z
-		.string()
-		.regex(/^\d{2}:\d{2}$/, "Формат времени: HH:MM")
-		.optional()
-		.nullable(),
-	specialty: z.string().trim().max(64).optional().nullable(),
-});
+    return doctorsList;
+  });
 
-async function resolveClinicBySlug(slug) {
-	const [byId] = await db
-		.select({
-			id: schema.clinics.id,
-			organizationId: schema.clinics.organizationId,
-			name: schema.clinics.name,
-		})
-		.from(schema.clinics)
-		.where(eq(schema.clinics.id, slug))
-		.limit(1)
-		.catch(() => []);
-	if (byId) return byId;
-	const [byName] = await db
-		.select({
-			id: schema.clinics.id,
-			organizationId: schema.clinics.organizationId,
-			name: schema.clinics.name,
-		})
-		.from(schema.clinics)
-		.where(
-			sql`lower(regexp_replace(${schema.clinics.name}, '[^a-zA-Za-za-z0-9]', '-', 'g')) = ${slug.toLowerCase()}`,
-		)
-		.limit(1);
-	return byName ?? null;
-}
+  // 2. Get available slots for a doctor on a specific date (YYYY-MM-DD)
+  server.get<{ 
+    Params: { organizationId: string; doctorId: string };
+    Querystring: { date: string } 
+  }>("/:organizationId/slots/:doctorId", async (request, reply) => {
+    const { organizationId, doctorId } = request.params;
+    const { date } = request.query;
 
-export async function registerPublicBookingRoutes(app) {
-	// GET doctors
-	app.get(
-		"/api/public/booking/:clinicSlug/doctors",
-		{ config: { skipAuth: true } },
-		async (request, reply) => {
-			if (isRateLimited(request.ip ?? "unknown"))
-				return reply.code(429).send({ error: "Слишком много запросов." });
-			const clinic = await resolveClinicBySlug(request.params.clinicSlug);
-			if (!clinic) return reply.code(404).send({ error: "Клиника не найдена" });
-			const doctors = await db
-				.select({
-					id: schema.users.id,
-					fullName: schema.users.fullName,
-					specialties: schema.users.specialties,
-				})
-				.from(schema.users)
-				.where(
-					and(
-						eq(schema.users.organizationId, clinic.organizationId),
-						eq(schema.users.role, "doctor"),
-					),
-				)
-				.limit(20);
-			return reply.send({
-				clinicName: clinic.name,
-				doctors: doctors.map((d) => ({
-					id: d.id,
-					name: d.fullName ?? "Врач",
-					specialty: Array.isArray(d.specialties) && d.specialties.length > 0 ? d.specialties[0] : "universal",
-				})),
-			});
-		},
-	);
+    if (!organizationId || !doctorId || !date) {
+      return reply.status(400).send({ error: "Missing params" });
+    }
 
-	// GET slots
-	app.get(
-		"/api/public/booking/:clinicSlug/slots",
-		{ config: { skipAuth: true } },
-		async (request, reply) => {
-			if (isRateLimited(request.ip ?? "unknown"))
-				return reply.code(429).send({ error: "Слишком много запросов." });
-			const clinic = await resolveClinicBySlug(request.params.clinicSlug);
-			if (!clinic) return reply.code(404).send({ error: "Клиника не найдена" });
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
-			const endDate = new Date(today);
-			endDate.setDate(endDate.getDate() + 14);
-			const filter = [
-				eq(schema.appointments.organizationId, clinic.organizationId),
-				gte(schema.appointments.startsAt, today),
-				lte(schema.appointments.startsAt, endDate),
-			];
-			if ((request.query as any).doctorId)
-				filter.push(
-					eq(schema.appointments.doctorUserId, (request.query as any).doctorId),
-				);
-			const busySlots = await db
-				.select({
-					startAt: schema.appointments.startsAt,
-					endAt: schema.appointments.endsAt,
-				})
-				.from(schema.appointments)
-				.where(and(...filter));
-			const slots: { date: string, time: string, available: boolean }[] = [];
-			for (let d = 0; d < 14; d++) {
-				const date = new Date(today);
-				date.setDate(date.getDate() + d);
-				if (date.getDay() === 0) continue;
-				const dateStr = date.toISOString().substring(0, 10);
-				for (let h = 9; h < 18; h++) {
-					for (let m = 0; m < 60; m += 30) {
-						const slotStart = new Date(date);
-						slotStart.setHours(h, m, 0, 0);
-						const slotEnd = new Date(slotStart);
-						slotEnd.setMinutes(slotEnd.getMinutes() + 30);
-						const isBusy = busySlots.some(
-							(b) =>
-								slotStart < new Date(b.endAt) && slotEnd > new Date(b.startAt),
-						);
-						slots.push({
-							date: dateStr,
-							time: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
-							available: !isBusy,
-						});
-					}
-				}
-			}
-			return reply.send({ clinicName: clinic.name, slots });
-		},
-	);
+    const startOfDay = new Date(`${date}T00:00:00.000Z`);
+    const endOfDay = new Date(`${date}T23:59:59.999Z`);
 
-	// POST booking request
-	app.post(
-		"/api/public/booking/:clinicSlug/request",
-		{ config: { skipAuth: true } },
-		async (request, reply) => {
-			if (isRateLimited(request.ip ?? "unknown"))
-				return reply.code(429).send({ error: "Слишком много запросов." });
-			const clinic = await resolveClinicBySlug(request.params.clinicSlug);
-			if (!clinic) return reply.code(404).send({ error: "Клиника не найдена" });
-			const parsed = bookingRequestSchema.safeParse(request.body);
-			if (!parsed.success)
-				return reply.code(400).send({
-					error: "Ошибка валидации",
-					details: parsed.error.issues.map((i) => i.message),
-				});
-			const data = parsed.data;
-			const requestedDate = new Date(
-				data.requestedDate + "T" + (data.requestedTime ?? "09:00") + ":00",
-			);
-			const endAt = new Date(requestedDate);
-			endAt.setMinutes(endAt.getMinutes() + 30);
-			const [existingPatient] = await db
-				.select({ id: schema.patients.id })
-				.from(schema.patients)
-				.where(
-					and(
-						eq(schema.patients.organizationId, clinic.organizationId),
-						sql`${schema.patients.administrativeProfile}->>'phone' = ${data.patientPhone}`,
-					),
-				)
-				.limit(1);
-			let patientId = existingPatient?.id ?? null;
-			if (!patientId) {
-				const [newP] = await db
-					.insert(schema.patients)
-					.values({
-						organizationId: clinic.organizationId,
-						fullName: data.patientName,
-						status: "active",
-						administrativeProfile: {
-							phone: data.patientPhone,
-							source: "online_widget",
-						} as any,
-					})
-					.returning({ id: schema.patients.id });
-				patientId = newP?.id ?? null;
-			}
-			const notes = [
-				"Онлайн-запись с сайта",
-				data.patientComment ? `Комментарий: ${data.patientComment}` : null,
-				data.specialty ? `Специализация: ${data.specialty}` : null,
-			]
-				.filter(Boolean)
-				.join("\n");
-			const [appointment] = await db
-				.insert(schema.appointments)
-				.values({
-					organizationId: clinic.organizationId,
-					clinicId: clinic.id,
-					patientId: patientId!,
-					assignedDoctorId: data.doctorId ?? null,
-					startAt: requestedDate,
-					endAt,
-					status: "planned",
-					notes,
-				} as any)
-				.returning({ id: schema.appointments.id });
-			return reply.code(201).send({
-				success: true,
-				appointmentId: appointment?.id,
-				message: `Заявка принята! Ждём вас ${data.requestedDate} в ${data.requestedTime ?? "09:00"}. Администратор свяжется для подтверждения.`,
-			});
-		},
-	);
-}
+    // Fetch existing appointments
+    const existingApps = await db
+      .select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.organizationId, organizationId),
+          eq(appointments.doctorUserId, doctorId),
+          gte(appointments.startsAt, startOfDay),
+          lt(appointments.startsAt, endOfDay)
+        )
+      );
+
+    // Simple hourly slots from 09:00 to 18:00
+    const slots: { time: string; startsAt: string; endsAt: string }[] = [];
+    for (let hour = 9; hour < 18; hour++) {
+      const slotStart = new Date(`${date}T${hour.toString().padStart(2, '0')}:00:00.000Z`);
+      const slotEnd = new Date(`${date}T${(hour + 1).toString().padStart(2, '0')}:00:00.000Z`);
+      
+      const isTaken = existingApps.some(app => {
+        const appStart = new Date(app.startsAt).getTime();
+        const appEnd = new Date(app.endsAt).getTime();
+        return (slotStart.getTime() < appEnd && slotEnd.getTime() > appStart);
+      });
+
+      if (!isTaken) {
+        slots.push({
+          time: `${hour.toString().padStart(2, '0')}:00`,
+          startsAt: slotStart.toISOString(),
+          endsAt: slotEnd.toISOString()
+        });
+      }
+    }
+
+    return slots;
+  });
+
+  // 3. Book an appointment
+  server.post<{
+    Params: { organizationId: string };
+    Body: { doctorId: string; startsAt: string; endsAt: string; patientName: string; patientPhone: string; comment?: string }
+  }>("/:organizationId/book", async (request, reply) => {
+    const { organizationId } = request.params;
+    const { doctorId, startsAt, endsAt, patientName, patientPhone, comment } = request.body;
+
+    if (!organizationId || !doctorId || !startsAt || !patientName || !patientPhone) {
+      return reply.status(400).send({ error: "Missing required fields" });
+    }
+
+    // Find or create patient
+    let patientId;
+    const existingPatients = await db
+      .select({ id: patients.id })
+      .from(patients)
+      .where(
+        and(
+          eq(patients.organizationId, organizationId),
+          eq(patients.phone, patientPhone)
+        )
+      )
+      .limit(1);
+
+    const existingPatient = existingPatients[0];
+    if (existingPatient) {
+      patientId = existingPatient.id;
+    } else {
+      const newPatient = await db.insert(patients).values({
+        organizationId,
+        fullName: patientName,
+        phone: patientPhone,
+        status: "active"
+      }).returning({ id: patients.id });
+      
+      const createdPatient = newPatient[0];
+      if (!createdPatient) {
+        return reply.status(500).send({ error: "Failed to create patient" });
+      }
+      patientId = createdPatient.id;
+    }
+
+    // Create appointment
+    const newAppointment = await db.insert(appointments).values({
+      organizationId,
+      patientId,
+      doctorUserId: doctorId,
+      status: "planned",
+      startsAt: new Date(startsAt),
+      endsAt: new Date(endsAt),
+      comment: comment || "Запись через виджет на сайте"
+    }).returning();
+
+    const appt = newAppointment[0];
+    if (!appt) {
+      return reply.status(500).send({ error: "Failed to create appointment" });
+    }
+    return { success: true, appointment: appt };
+  });
+};
