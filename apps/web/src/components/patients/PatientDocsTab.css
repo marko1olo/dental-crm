@@ -1,0 +1,179 @@
+
+.patient-docs-container {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+}
+
+.docs-section-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+	animation: fadeIn 0.3s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.docs-section-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 16px;
+}
+
+.docs-section-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: rgba(13, 148, 136, 0.08);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.docs-section-title {
+	flex: 1;
+}
+
+.docs-section-title h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.docs-section-title p {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.docs-form-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 20px;
+}
+
+.docs-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.docs-form-group.full-width {
+	grid-column: 1 / -1;
+}
+
+.docs-form-group label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.docs-form-group input,
+.docs-form-group select {
+	width: 100%;
+	height: 44px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	padding: 0 14px;
+	font-size: 14px;
+	color: var(--ink);
+	transition: all 0.2s ease;
+}
+
+.docs-form-group input:focus,
+.docs-form-group select:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.docs-form-group input::placeholder {
+	color: var(--muted);
+	opacity: 0.6;
+}
+
+.docs-save-bar {
+	position: sticky;
+	bottom: 24px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 16px 24px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+	z-index: 10;
+	margin-top: 24px;
+}
+
+.docs-save-status {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.docs-save-status span {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.docs-save-status .status-pill {
+	font-size: 12px;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.status-pill.status-confirmed {
+	background: rgba(16, 185, 129, 0.1);
+	color: rgb(16, 185, 129);
+}
+
+.status-pill.status-cancelled {
+	background: rgba(239, 68, 68, 0.1);
+	color: rgb(239, 68, 68);
+}
+
+.weekday-toggle-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.weekday-toggle-row button {
+	padding: 8px 16px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.weekday-toggle-row button:hover {
+	background: rgba(0, 0, 0, 0.04);
+}
+
+.weekday-toggle-row button.active {
+	background: var(--teal);
+	color: white;
+	border-color: var(--teal);
+	box-shadow: 0 4px 10px rgba(13, 148, 136, 0.2);
+}
