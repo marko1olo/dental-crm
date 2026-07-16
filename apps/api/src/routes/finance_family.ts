@@ -80,7 +80,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const { search } = req.query as { search?: string };
-				const families = await db
+		const families = await db
 			.select({
 				id: familyGroups.id,
 				name: familyGroups.name,
@@ -90,7 +90,7 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 				createdAt: familyGroups.createdAt,
 				updatedAt: familyGroups.updatedAt,
 				headPatientName: patients.fullName,
-				headPatientPhone: patients.phone
+				headPatientPhone: patients.phone,
 			})
 			.from(familyGroups)
 			.leftJoin(patients, eq(familyGroups.headPatientId, patients.id))
@@ -101,10 +101,10 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 							or(
 								ilike(familyGroups.name, `%${search}%`),
 								ilike(patients.phone, `%${search}%`),
-								ilike(patients.fullName, `%${search}%`)
-							)
-					  )
-					: eq(familyGroups.organizationId, organizationId)
+								ilike(patients.fullName, `%${search}%`),
+							),
+						)
+					: eq(familyGroups.organizationId, organizationId),
 			)
 			.orderBy(desc(familyGroups.createdAt))
 			.limit(20);
@@ -401,8 +401,9 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 					.values({
 						organizationId,
 						patientId: payload.patientId,
-						amountRub: Math.round(payload.amountRub),
-						method: "family_wallet", // family_wallet
+						// Validated as an integer above; debit and record match exactly.
+						amountRub: payload.amountRub,
+						method: "family_wallet",
 						documentId: payload.documentId,
 						visitId: payload.visitId,
 						status: "paid",
