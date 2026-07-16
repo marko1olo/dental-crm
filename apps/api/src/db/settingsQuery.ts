@@ -121,6 +121,7 @@ export async function getClinicSettingsFromDb(
 		themeColor: org.themeColor || "teal",
 		logoUrl: org.logoUrl || null,
 		stampUrl: org.stampUrl || null,
+		marketingData: (org.marketingData as any) || null,
 	};
 
 	return {
@@ -275,6 +276,8 @@ export async function updateClinicProfileInDb(
 		updateData.signatoryName = input.signatoryName;
 	if (input.signatoryTitle !== undefined)
 		updateData.signatoryTitle = input.signatoryTitle;
+	if (input.marketingData !== undefined)
+		updateData.marketingData = input.marketingData;
 
 	if (
 		input.scheduleDefaults !== undefined ||

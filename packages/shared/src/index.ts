@@ -1675,6 +1675,7 @@ export const clinicProfileSchema = z.object({
 	themeColor: z.string().default("teal"),
 	logoUrl: z.string().nullable().optional(),
 	stampUrl: z.string().nullable().optional(),
+	marketingData: z.record(z.any()).nullable().optional(),
 });
 export type ClinicProfile = z.infer<typeof clinicProfileSchema>;
 
@@ -5259,6 +5260,7 @@ export const updateClinicProfileSchema = z.object({
 	themeColor: z.string().max(100).optional(),
 	logoUrl: z.string().url().nullable().optional(),
 	stampUrl: z.string().url().nullable().optional(),
+	marketingData: z.record(z.any()).nullable().optional(),
 });
 export type UpdateClinicProfileInput = z.infer<
 	typeof updateClinicProfileSchema

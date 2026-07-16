@@ -126,6 +126,7 @@ import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
+import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -264,6 +265,7 @@ type SettingsTabId =
 	| "staff"
 	| "clinic"
 	| "access"
+	| "insurance"
 	| "telegram"
 	| "messengers"
 	| "protocols"
@@ -2567,6 +2569,7 @@ export function SettingsView(props: SettingsViewProps) {
 
 				<SettingsClinicTab settingsTab={settingsTab} />
 				<SettingsAccessTab settingsTab={settingsTab} />
+				{settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
 				<SettingsMessengersTab settingsTab={settingsTab} />
 				{settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
 

@@ -302,6 +302,7 @@ export const organizations = pgTable("organizations", {
 	themeColor: text("theme_color").default("teal"),
 	logoUrl: text("logo_url"),
 	stampUrl: text("stamp_url"),
+	marketingData: jsonb("marketing_data"),
 	clinicMode: text("clinic_mode").notNull().default("demo"), // demo, single, network
 	clinicSchedule: jsonb("clinic_schedule"),
 	isSynced: boolean("is_synced").notNull().default(false),
