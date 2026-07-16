@@ -49,3 +49,33 @@ apps/api/dente-db/
 secrets.json
 
 keys.json
+
+# ---- Scratch / one-off agent scripts (never track) -------------------------
+fix*.cjs
+fix*.js
+fix*.py
+fix*.mjs
+patch_*.cjs
+patch_*.js
+scratch_*.cjs
+scratch_*.js
+script.cjs
+move_*.cjs
+take_screenshots*.cjs
+take_screenshots*.mjs
+apps/web/take_screenshots*.mjs
+apps/web/audit_capture.cjs
+test_dictation.cjs
+
+# ---- Diff / temp text dumps ------------------------------------------------
+diff_*.txt
+temp_*.txt
+
+# ---- Screenshot artifacts at repo root (use artifacts dir instead) ---------
+screenshot_*.png
+shot_*.png
+
+# ---- Python bytecode -------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
