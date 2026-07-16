@@ -18790,3 +18790,4 @@ body[data-ui-scale="large"] .appointment-card-footer button {
 	font-size: 0.95rem;
 	color: var(--muted);
 }
+@import './premium.css';
