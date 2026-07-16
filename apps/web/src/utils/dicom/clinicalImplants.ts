@@ -9,6 +9,10 @@ export interface VirtualImplant {
 	color?: string; // Hex color
 	toothFdi?: number; // FDI tooth number for crown mockup (e.g. 46)
 	system?: "osstem" | "straumann" | "nobel" | "bredent" | "mdi" | "other";
+	/** Surgical guide sleeve parameters. Defaults: 5mm height, 5mm diameter, 9mm offset */
+	sleeveHeightMm?: number;
+	sleeveDiameterMm?: number;
+	sleeveOffsetMm?: number;
 }
 
 export interface NerveCanal {

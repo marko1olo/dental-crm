@@ -24,6 +24,7 @@ import { registerDocumentRoutes } from "./routes/documents.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 import { registerFilesRoutes } from "./routes/files.js";
 import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
+import { registerInsuranceRoutes } from "./routes/insurance.js";
 import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerImportRoutes } from "./routes/imports.js";
@@ -302,6 +303,7 @@ export async function createDenteApiApp(
 	await app.register(telephonyRoutes, { prefix: "/api/telephony" });
 	await app.register(portalRoutes, { prefix: "/api/portal" });
 	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
+	await registerInsuranceRoutes(app);
 	await registerClinicalRoutes(app);
 	await registerCommunicationRoutes(app);
 	await registerDashboardRoutes(app);

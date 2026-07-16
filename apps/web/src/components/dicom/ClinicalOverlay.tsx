@@ -123,11 +123,10 @@ export function ClinicalOverlay({ viewportId, renderingEngineId }: Props) {
 					ctx.fill();
 
 					// --- Surgical Sleeve Rendering ---
-					// Assuming sleeve params: height 5mm, diameter 5mm, offset 9mm (D-factor)
-					// For MVP, we use hardcoded default if not present on implant
-					const sleeveHeight = 5;
-					const sleeveDiameter = 5;
-					const sleeveOffset = 9;
+					// Surgical sleeve: use per-implant values, falling back to clinical defaults
+					const sleeveHeight = implant.sleeveHeightMm ?? 5;
+					const sleeveDiameter = implant.sleeveDiameterMm ?? 5;
+					const sleeveOffset = implant.sleeveOffsetMm ?? 9;
 
 					// Calculate sleeve bottom center based on offset along the implant direction
 					const sleeveBottom = {
