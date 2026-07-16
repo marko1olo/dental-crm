@@ -6,20 +6,9 @@ import { DictationHints } from "../../DictationHints";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import { SmartParsePreview } from "../../SmartParsePreview";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { type AppointmentScheduleDraft } from "../../AppHelpers";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
-
-export type AppointmentScheduleDraft = {
-	patientId: string;
-	doctorUserId: string;
-	assistantUserId: string;
-	chairId: string;
-	startsAt: string;
-	endsAt: string;
-	reason: string;
-	comment: string;
-	status: string;
-};
 
 export type NewAppointmentFormProps = {
 	dashboard: Dashboard;
@@ -27,7 +16,7 @@ export type NewAppointmentFormProps = {
 	newAppointmentDraft: AppointmentScheduleDraft;
 	newAppointmentSaveState: string;
 	newAppointmentError: string | null;
-	updateNewAppointmentDraft: (key: string, value: unknown) => void;
+	updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) => void;
 	createAppointmentFromDraft: () => Promise<boolean>;
 	resetNewAppointmentDraft: () => void;
 	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;

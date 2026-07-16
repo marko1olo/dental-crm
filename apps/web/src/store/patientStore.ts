@@ -9,6 +9,7 @@ import {
 	type PatientCoreDraft,
 	type PatientCoreSaveState,
 } from "../AppHelpers";
+import { denteAdminSecretRequestHeaders } from "../AppHelpers";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
@@ -29,6 +30,23 @@ export interface PatientStore {
 		toothNumber: number | number[],
 		status: ToothStatus,
 	) => Promise<void>;
+
+	anamnesisDraft: {
+		allergies: string[];
+		systemicDiseases: string[];
+		hasCriticalAlerts: boolean;
+	};
+	setAnamnesisDraft: (
+		val:
+			| PatientStore["anamnesisDraft"]
+			| ((
+					prev: PatientStore["anamnesisDraft"],
+			  ) => PatientStore["anamnesisDraft"]),
+	) => void;
+	anamnesisSaveState: "idle" | "saving" | "saved" | "error";
+	setAnamnesisSaveState: (val: "idle" | "saving" | "saved" | "error") => void;
+	loadAnamnesis: (patientId: string) => Promise<void>;
+	saveAnamnesis: (patientId: string) => Promise<void>;
 
 	selectedPatientId: string | null;
 	setSelectedPatientId: (
@@ -100,12 +118,7 @@ export const usePatientStore = create<PatientStore>((set) => ({
 	loadOdontogram: async (patientId) => {
 		try {
 			const res = await fetch(`/api/patients/${patientId}/tooth-states`, {
-				headers: {
-					"x-dente-staff-token":
-						localStorage.getItem("dente_staff_token") || "",
-					"x-dente-clinic-token":
-						localStorage.getItem("dente_clinic_token") || "",
-				},
+				headers: denteAdminSecretRequestHeaders(),
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -155,13 +168,9 @@ export const usePatientStore = create<PatientStore>((set) => ({
 			};
 			await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
 				method: "POST",
-				headers: {
+				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
-					"x-dente-staff-token":
-						localStorage.getItem("dente_staff_token") || "",
-					"x-dente-clinic-token":
-						localStorage.getItem("dente_clinic_token") || "",
-				},
+				}),
 				body: JSON.stringify({
 					toothNumbers: teeth,
 					state: mapFrontendToBackend[status] || "Healthy",
@@ -169,6 +178,60 @@ export const usePatientStore = create<PatientStore>((set) => ({
 			});
 		} catch (e) {
 			console.error("Failed to save tooth status", e);
+		}
+	},
+
+	anamnesisDraft: {
+		allergies: [],
+		systemicDiseases: [],
+		hasCriticalAlerts: false,
+	},
+	setAnamnesisDraft: (val) =>
+		set((state) => ({
+			anamnesisDraft: typeof val === "function" ? val(state.anamnesisDraft) : val,
+		})),
+	anamnesisSaveState: "idle",
+	setAnamnesisSaveState: (val) => set({ anamnesisSaveState: val }),
+	loadAnamnesis: async (patientId) => {
+		try {
+			const res = await fetch(`/api/patients/${patientId}/anamnesis`, {
+				headers: denteAdminSecretRequestHeaders(),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				set({
+					anamnesisDraft: {
+						allergies: data.allergies || [],
+						systemicDiseases: data.systemicDiseases || [],
+						hasCriticalAlerts: data.hasCriticalAlerts || false,
+					},
+					anamnesisSaveState: "idle",
+				});
+			}
+		} catch (e) {
+			console.error("Failed to load anamnesis", e);
+		}
+	},
+	saveAnamnesis: async (patientId) => {
+		set({ anamnesisSaveState: "saving" });
+		try {
+			const draft = usePatientStore.getState().anamnesisDraft;
+			const res = await fetch(`/api/patients/${patientId}/anamnesis`, {
+				method: "PUT",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(draft),
+			});
+			if (res.ok) {
+				set({ anamnesisSaveState: "saved" });
+				setTimeout(() => set({ anamnesisSaveState: "idle" }), 3000);
+			} else {
+				set({ anamnesisSaveState: "error" });
+			}
+		} catch (e) {
+			console.error("Failed to save anamnesis", e);
+			set({ anamnesisSaveState: "error" });
 		}
 	},
 

@@ -8,20 +8,9 @@ import { Beaker, Clock, PackageCheck, RefreshCcw } from "lucide-react";
 import type { ChangeEvent } from "react";
 import React, { useState } from "react";
 import { useAppStore } from "../../store/appStore";
+import { type AppointmentScheduleDraft } from "../../AppHelpers";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
-
-export type AppointmentScheduleDraft = {
-	patientId: string;
-	doctorUserId: string;
-	assistantUserId: string;
-	chairId: string;
-	startsAt: string;
-	endsAt: string;
-	reason: string;
-	comment: string;
-	status: string;
-};
 
 export type AppointmentCardProps = {
 	appointment: Appointment;
@@ -46,10 +35,10 @@ export type AppointmentCardProps = {
 	) => string;
 	openAppointmentEditor: (appointment: Appointment) => void;
 	closeAppointmentEditor: (appointmentId: string) => void;
-	updateAppointmentScheduleDraft: (
+	updateAppointmentScheduleDraft: <K extends keyof AppointmentScheduleDraft>(
 		appointmentId: string,
-		key: string,
-		value: unknown,
+		key: K,
+		value: AppointmentScheduleDraft[K],
 	) => void;
 	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
 	normalizedAppointmentStatus: (value: unknown) => Appointment["status"];

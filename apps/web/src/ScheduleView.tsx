@@ -21,18 +21,7 @@ import { motionSafeScrollIntoView } from "./motionPreference";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
-
-type AppointmentScheduleDraft = {
-	patientId: string;
-	doctorUserId: string;
-	assistantUserId: string;
-	chairId: string;
-	status: Appointment["status"];
-	startsAt: string;
-	endsAt: string;
-	reason: string;
-	comment: string;
-};
+import { type AppointmentScheduleDraft } from "./AppHelpers";
 
 type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -625,7 +614,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 				newAppointmentDraft={newAppointmentDraft}
 				newAppointmentSaveState={newAppointmentSaveState}
 				newAppointmentError={newAppointmentError}
-				updateNewAppointmentDraft={updateNewAppointmentDraft as any}
+				updateNewAppointmentDraft={updateNewAppointmentDraft}
 				createAppointmentFromDraft={createAppointmentFromDraft}
 				resetNewAppointmentDraft={resetNewAppointmentDraft}
 				toDateTimeLocalValue={toDateTimeLocalValue}
@@ -721,9 +710,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 							patientName={patientName}
 							openAppointmentEditor={openAppointmentEditor}
 							closeAppointmentEditor={closeAppointmentEditor}
-							updateAppointmentScheduleDraft={
-								updateAppointmentScheduleDraft as any
-							}
+							updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
 							saveAppointmentSchedule={saveAppointmentSchedule}
 							normalizedAppointmentStatus={normalizedAppointmentStatus}
 							toDateTimeLocalValue={toDateTimeLocalValue}
