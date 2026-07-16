@@ -2,6 +2,7 @@ import { Calculator, FileText, PenTool, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast.js";
 import { SignaturePad } from "../SignaturePad";
@@ -42,6 +43,59 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const [planId, setPlanId] = useState<string | null>(null);
 	const [showSignModal, setShowSignModal] = useState(false);
 	const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+
+	const { dashboard } = useAppLogicContext();
+	const [activeContract, setActiveContract] = useState<any | null>(null);
+
+	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
+	const insuranceContractId = patient?.administrativeProfile?.insuranceContractId;
+
+	useEffect(() => {
+		if (!insuranceContractId) {
+			setActiveContract(null);
+			return;
+		}
+
+		fetch(`/api/insurance/contracts/${insuranceContractId}`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				setActiveContract(data);
+			})
+			.catch((err) => {
+				console.error("Failed to load active insurance contract", err);
+				setActiveContract(null);
+			});
+	}, [insuranceContractId]);
+
+	const getCoverageInfo = (item: PlanItem) => {
+		if (!activeContract) return null;
+
+		let pct = 0;
+		const nameLower = item.name.toLowerCase();
+		const isHygiene = nameLower.includes("гигиен") || nameLower.includes("чистк");
+
+		if (isHygiene) {
+			pct = activeContract.coverageHygienePct;
+		} else if (item.phase === 1) {
+			pct = activeContract.coverageTherapyPct;
+		} else if (item.phase === 2) {
+			pct = activeContract.coverageSurgeryPct;
+		} else if (item.phase === 3) {
+			pct = activeContract.coverageOrthoPct;
+		}
+
+		if (pct === 0) {
+			return { covered: false, pct: 0, label: "Вне покрытия ДМС", copayPct: 100 };
+		}
+		return {
+			covered: true,
+			pct,
+			label: `Покрытие ДМС ${pct}%`,
+			copayPct: 100 - pct,
+		};
+	};
 
 	useEffect(() => {
 		let active = true;
@@ -223,12 +277,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	}, [currentTeeth]);
 
 	useEffect(() => {
-		const t = items.reduce(
-			(acc, curr) => acc + (curr.price * curr.quantity - curr.discount),
-			0,
-		);
+		const t = items.reduce((acc, curr) => {
+			const coverage = getCoverageInfo(curr);
+			const price = coverage ? (curr.price * coverage.copayPct) / 100 : curr.price;
+			return acc + (price * curr.quantity - curr.discount);
+		}, 0);
 		setTotal(t);
-	}, [items]);
+	}, [items, activeContract]);
 
 	const savePlan = async () => {
 		setIsSaving(true);
@@ -359,8 +414,41 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 														<span className="plan-item-name">{item.name}</span>
 													</div>
 													<div className="plan-item-price-quantity">
-														{item.price.toLocaleString("ru-RU")} ₽ x{" "}
-														{item.quantity}
+														{(() => {
+															const coverage = getCoverageInfo(item);
+															if (coverage && !coverage.covered) {
+																return (
+																	<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
+																		<span>{item.price.toLocaleString("ru-RU")} ₽</span>
+																		<span className="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">Вне покрытия ДМС</span>
+																	</span>
+																);
+															}
+															if (coverage && coverage.pct < 100) {
+																const copayPrice = (item.price * coverage.copayPct) / 100;
+																return (
+																	<span className="flex items-center gap-1.5 flex-wrap">
+																		<span className="line-through text-slate-400 dark:text-zinc-500">{item.price.toLocaleString("ru-RU")} ₽</span>
+																		<span className="text-teal-500 dark:text-teal-400 font-bold">{copayPrice.toLocaleString("ru-RU")} ₽</span>
+																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">Со-оплата {coverage.copayPct}%</span>
+																	</span>
+																);
+															}
+															if (coverage && coverage.pct === 100) {
+																return (
+																	<span className="flex items-center gap-1.5 flex-wrap">
+																		<span className="line-through text-slate-400 dark:text-zinc-500">{item.price.toLocaleString("ru-RU")} ₽</span>
+																		<span className="text-teal-500 dark:text-teal-400 font-bold">0 ₽</span>
+																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">ДМС 100%</span>
+																	</span>
+																);
+															}
+															return (
+																<span>
+																	{item.price.toLocaleString("ru-RU")} ₽ x {item.quantity}
+																</span>
+															);
+														})()}
 													</div>
 												</div>
 												<button
@@ -384,7 +472,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 													<option value={3}>Этап III: Ортопедия</option>
 												</select>
 												<span className="plan-item-total-price">
-													{(item.price * item.quantity).toLocaleString("ru-RU")}{" "}
+													{(() => {
+														const coverage = getCoverageInfo(item);
+														const price = coverage ? (item.price * coverage.copayPct) / 100 : item.price;
+														return (price * item.quantity).toLocaleString("ru-RU");
+													})()}{" "}
 													₽
 												</span>
 											</div>

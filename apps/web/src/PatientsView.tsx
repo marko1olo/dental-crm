@@ -77,6 +77,7 @@ type PatientsViewProps = {
 };
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
 export function PatientsView(props: PatientsViewProps) {
 	const {
@@ -112,6 +113,18 @@ export function PatientsView(props: PatientsViewProps) {
 	const [showHints, setShowHints] = useState(false);
 	const [familyData, setFamilyData] = useState<any>(null);
 	const [patientTab, setPatientTab] = useState<"overview" | "clinical" | "docs">("overview");
+	const [insuranceContracts, setInsuranceContracts] = useState<any[]>([]);
+
+	useEffect(() => {
+		fetch("/api/insurance/contracts", {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data) => {
+				setInsuranceContracts(Array.isArray(data) ? data : []);
+			})
+			.catch((err) => console.error("Failed to load VHI contracts", err));
+	}, []);
 
 	useEffect(() => {
 		if (!selectedPatientId) {
@@ -816,6 +829,28 @@ export function PatientsView(props: PatientsViewProps) {
 													}
 													placeholder="номер при наличии"
 												/>
+											</label>
+											<label>
+												Компания ДМС
+												<select
+													value={
+														patientAdministrativeProfileDraft.insuranceContractId || ""
+													}
+													onChange={(event: SelectChangeEvent) =>
+														updatePatientAdministrativeProfileDraft(
+															"insuranceContractId",
+															event.target.value,
+														)
+													}
+													className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+												>
+													<option value="">-- Без ДМС (Частная оплата) --</option>
+													{insuranceContracts.map((c) => (
+														<option key={c.id} value={c.id}>
+															{c.companyName}
+														</option>
+													))}
+												</select>
 											</label>
 											<label>
 												СНИЛС

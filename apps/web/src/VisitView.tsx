@@ -11,6 +11,8 @@ import {
 	Sparkles,
 } from "lucide-react";
 import React, { Suspense, useEffect, useState } from "react";
+import { ClinicalRulePanel } from './ClinicalRulePanel';
+import { useAppLogicContext } from './contexts/AppLogicContext';
 import { createPortal } from "react-dom";
 import { EgiszMonitor } from "./components/EgiszMonitor";
 import { showToast } from "./components/GlobalToast";
@@ -26,123 +28,10 @@ import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/toothGeometry";
 import "./styles/VisitView.css";
-export interface VisitViewProps {
-	AlertTriangle: any;
-	Bot: any;
-	Check: any;
-	CheckCircle2: any;
-	ClinicalRulePanel: any;
-	ClipboardCheck: any;
-	Mic: any;
-	Sparkles: any;
-	acceptDraftToVisit: any;
-	activeAppointment: any;
-	activeChair: any;
-	activeDoctor: any;
-	activeImagingStudies: any;
-	activePatient: any;
-	activePatientInsight: any;
-	activeUsableDocuments: any;
-	activeVisitClinicalRuleEvaluations: any;
-	polishingField: any;
-	polishSingleField: any;
-	selectedWorkspaceRole: any;
-	activeVisitClinicalRuleSummary: any;
-	appendToTranscript: any;
-	applyProtocolTemplate: any;
-	buildDraft: any;
-	buildOfflineDraft: any;
-	clearTranscriptWithUndo: any;
-	clearedTranscriptSnapshot: any;
-	clinicalRuleActionLabels: any;
-	clinicalRuleSeverityLabels: any;
-	dashboard: any;
-	dictationQuickPhrases: any;
-	draft: any;
-	emptyDictationVoiceActionLabel: any;
-	flushPendingSpeechChunks: any;
-	flushPendingVisitSaves: any;
-	formatTime: any;
-	hasVisitTranscriptText: any;
-	imagingKindLabels: any;
-	isDraftAccepting: any;
-	isDraftLoading: any;
-	isOnline: any;
-	isPendingVisitSyncing: any;
-	isServerVoiceRecording: any;
-	isTranscriptPolishing: any;
-	isVisitDictating: any;
-	isVisitNoteDirty: any;
-	lastLocalSavedAt: any;
-	lastPendingVisitSaveAt: any;
-	lastServerDraftSavedAt: any;
-	lastVisitSaveReceipt: any;
-	localDraftWasRestored: any;
-	openVisitWarningAction: any;
-	pendingSpeechChunkCount: any;
-	pendingSpeechFlushActionLabel: any;
-	pendingSpeechFlushActionTitle: any;
-	pendingVisitSaveCount: any;
-	polishTranscript: any;
-	primaryVisitWarning: any;
-	scrollToVisitArea: any;
-	selectedProtocolTemplate: any;
-	selectedSpecialty: any;
-	serverDraftSyncState: any;
-	serviceTitle: any;
-	setClearedTranscriptSnapshot: any;
-	setSelectedProtocolId: any;
-	setSelectedSpecialty: any;
-	setTranscript: any;
-	specialtiesWithTemplates: any;
-	specialtyLabels: any;
-	specialtyProtocolTemplates: any;
-	speechGatewayActiveProviderIsLocal: any;
-	speechGatewayStatus: any;
-	speechRecognitionReady: any;
-	speechStatusNote: any;
-	speechTranscriptionBusy: any;
-	staffRoleLabels: any;
-	startServerVoiceRecording: any;
-	startVisitDictation: any;
-	stopServerVoiceRecording: any;
-	toothRows: any;
-	toothStateByCode: any;
-	transcript: any;
-	undoTranscriptClear: any;
-	updateVisitNoteField: any;
-	visibleVisitSpecialtyFocusOptions: any;
-	visitCloseChecklist: any;
-	visitDraftBuildMissingSteps: any;
-	visitDraftMissingFieldLabel: any;
-	visitDraftQualityLabels: any;
-	visitDraftReadyToBuild: any;
-	visitDraftSignalLabel: any;
-	visitDraftUserEditedRef: any;
-	visitNoteAcceptMissingSteps: any;
-	visitNoteActionLabel: any;
-	visitNoteFieldDefinitions: any;
-	visitNoteForm: any;
-	visitNoteReadyToAccept: any;
-	visitNoteStatusLabel: any;
-	visitPrimaryAction: any;
-	visitSafetyCards: any;
-	visitSaveReceiptText: any;
-	visitWarnings: any;
-	visitWorkflowSteps: any;
-	setToothState: (code: string, state: string) => void;
-}
 
-export function VisitView(props: VisitViewProps) {
+
+export function VisitView() {
 	const {
-		AlertTriangle,
-		Bot,
-		Check,
-		CheckCircle2,
-		ClinicalRulePanel,
-		ClipboardCheck,
-		Mic,
-		Sparkles,
 		acceptDraftToVisit,
 		activeAppointment,
 		activeChair,
@@ -239,7 +128,7 @@ export function VisitView(props: VisitViewProps) {
 		visitSaveReceiptText,
 		visitWarnings,
 		visitWorkflowSteps,
-	} = props;
+	} = useAppLogicContext();
 
 	const [activeEmkTab, setActiveEmkTab] = useState("all");
 	const [showHints, setShowHints] = useState(false);

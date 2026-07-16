@@ -6292,6 +6292,7 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		registrationAddress: "",
 		residentialAddress: "",
 		insurancePolicyNumber: "",
+		insuranceContractId: "",
 		snils: "",
 		legalRepresentativeFullName: "",
 		legalRepresentativeRelationship: "",
@@ -6316,6 +6317,7 @@ export function patientAdministrativeProfileDraftFromPatient(
 		registrationAddress: profile?.registrationAddress ?? "",
 		residentialAddress: profile?.residentialAddress ?? "",
 		insurancePolicyNumber: profile?.insurancePolicyNumber ?? "",
+		insuranceContractId: profile?.insuranceContractId ?? "",
 		snils: profile?.snils ?? "",
 		legalRepresentativeFullName: profile?.legalRepresentativeFullName ?? "",
 		legalRepresentativeRelationship:
@@ -6366,6 +6368,7 @@ export function buildPatientAdministrativeProfilePayload(
 		insurancePolicyNumber: nullablePatientDraftValue(
 			draft.insurancePolicyNumber,
 		),
+		insuranceContractId: nullablePatientDraftValue(draft.insuranceContractId),
 		snils: nullablePatientDraftValue(draft.snils),
 		legalRepresentativeFullName: nullablePatientDraftValue(
 			draft.legalRepresentativeFullName,

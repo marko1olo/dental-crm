@@ -2956,6 +2956,7 @@ const patientAdministrativeProfileBaseSchema = z.object({
 	registrationAddress: patientAdministrativeTextSchema,
 	residentialAddress: patientAdministrativeTextSchema,
 	insurancePolicyNumber: z.string().trim().max(120).nullable().default(null),
+	insuranceContractId: z.string().trim().uuid().nullable().optional(),
 	snils: z.string().trim().max(40).nullable().default(null),
 	legalRepresentativeFullName: z
 		.string()
