@@ -7,6 +7,8 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
+import type { ChangeEvent } from "react";
+type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
@@ -14,7 +16,21 @@ import { showToast } from "../GlobalToast";
 export function SettingsStaffTab() {
 	const props = useAppLogicContext();
 	const { dashboard, staffRoleLabels, specialtyLabels } = props;
-	const staff = dashboard?.clinicSettings?.staff || [];
+	
+	const {
+		staffScheduleDrafts,
+		staffScheduleDraftFromWorkingHours,
+		staffScheduleSaveStates,
+		staffScheduleDirtyIds,
+		staffScheduleSavingId,
+		updateStaffScheduleDraft,
+		toggleStaffWorkingDay,
+		updateStaffScheduleDay,
+		saveStaffSchedule,
+		weekdayOptions,
+	} = props;
+	const typedWeekdayOptions = weekdayOptions || [];
+const staff = dashboard?.clinicSettings?.staff || [];
 
 	const [loading, setLoading] = useState(false);
 
@@ -802,6 +818,157 @@ export function SettingsStaffTab() {
 								</button>
 							</div>
 						</form>
+
+						<div className="staff-schedule-editor" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--line-strong)' }}>
+							<h4 style={{ marginBottom: '16px' }}>Расписание сотрудника</h4>
+							{(() => {
+								const member = staff.find((m) => m.id === editingStaffId);
+								if (!member) return null;
+								
+								const scheduleDraft =
+									staffScheduleDrafts[member.id] ??
+									staffScheduleDraftFromWorkingHours(
+										member.workingHours ?? null,
+									);
+								const scheduleSaveState =
+									staffScheduleSaveStates[member.id] ?? "saved";
+								const scheduleDirty = staffScheduleDirtyIds.has(member.id);
+								const scheduleSaving =
+									staffScheduleSavingId === member.id ||
+									scheduleSaveState === "saving";
+								const scheduleSaveLabel = scheduleSaving
+									? "Автосохранение"
+									: scheduleSaveState === "error"
+										? "Не сохранено"
+										: scheduleDirty
+											? "Ждет автосохранения"
+											: "Сохранено";
+
+								return (
+									<>
+										<div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+											<label>
+												С
+												<input
+													type="time"
+													value={scheduleDraft.start}
+													onChange={(event: InputChangeEvent) =>
+														updateStaffScheduleDraft(member.id, {
+															start: event.target.value,
+														})
+													}
+												/>
+											</label>
+											<label>
+												До
+												<input
+													type="time"
+													value={scheduleDraft.end}
+													onChange={(event: InputChangeEvent) =>
+														updateStaffScheduleDraft(member.id, {
+															end: event.target.value,
+														})
+													}
+												/>
+											</label>
+										</div>
+										<div
+											className="weekday-toggle-row staff-weekday-row"
+											role="group"
+											aria-label={`Рабочие дни: ${member.fullName}`}
+											style={{ marginBottom: '16px' }}
+										>
+											{typedWeekdayOptions.map((day: any) => (
+												<button
+													className={
+														scheduleDraft.workingDays.includes(day.value)
+															? "active"
+															: ""
+													}
+													key={day.value}
+													type="button"
+													aria-pressed={scheduleDraft.workingDays.includes(
+														day.value,
+													)}
+													onClick={() =>
+														toggleStaffWorkingDay(member.id, day.value)
+													}
+												>
+													{day.label}
+												</button>
+											))}
+										</div>
+										<details className="settings-advanced-block schedule-advanced-block">
+											<summary className="settings-advanced-toggle">
+												<span className="settings-advanced-label">
+													Индивидуальные часы по дням
+												</span>
+												<span className="settings-advanced-chevron">▼</span>
+											</summary>
+											<div
+												className="staff-day-hours"
+												aria-label={`Часы по дням: ${member.fullName}`}
+											>
+												{typedWeekdayOptions
+													.filter((day) =>
+														scheduleDraft.workingDays.includes(day.value),
+													)
+													.map((day: any) => {
+														const dayHours = scheduleDraft.perDay[day.value];
+														return (
+															<div key={`hours-${member.id}-${day.value}`}>
+																<span>{day.label}</span>
+																<input
+																	aria-label={`${day.label}, начало`}
+																	type="time"
+																	value={
+																		dayHours?.start ?? scheduleDraft.start
+																	}
+																	onChange={(event: InputChangeEvent) =>
+																		updateStaffScheduleDay(
+																			member.id,
+																			day.value,
+																			{ start: event.target.value },
+																		)
+																	}
+																/>
+																<input
+																	aria-label={`${day.label}, конец`}
+																	type="time"
+																	value={dayHours?.end ?? scheduleDraft.end}
+																	onChange={(event: InputChangeEvent) =>
+																		updateStaffScheduleDay(
+																			member.id,
+																			day.value,
+																			{ end: event.target.value },
+																		)
+																	}
+																/>
+															</div>
+														);
+													})}
+											</div>
+										</details>
+										<div className="staff-schedule-actions" style={{ marginTop: '16px' }}>
+											<span
+												className={`save-state save-state-${scheduleSaveState}`}
+											>
+												{scheduleSaveLabel}
+											</span>
+											<button
+												className="secondary-button compact-button"
+												type="button"
+												onClick={() => void saveStaffSchedule(member.id)}
+												disabled={scheduleSaving}
+											>
+												{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
+											</button>
+										</div>
+									</>
+								);
+							})()}
+						</div>
+
 					</div>
 				</div>
 			)}

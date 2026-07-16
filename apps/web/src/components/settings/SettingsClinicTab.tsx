@@ -33,8 +33,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const appLogicProps = useAppLogicContext();
 	const settingsStoreProps = useSettingsStore();
 
-	const newStaffReadyToCreate =
-		(appLogicProps.newStaffName || "").trim().length > 0;
+	
 	const newChairReadyToCreate =
 		(appLogicProps.newChairName || "").trim().length > 0;
 	const adminSecretReady =
@@ -43,7 +42,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const mergedProps: Record<string, any> = {
 		...appLogicProps,
 		...settingsStoreProps,
-		newStaffReadyToCreate,
+		
 		newChairReadyToCreate,
 		adminSecretReady,
 	};
@@ -63,22 +62,22 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 		isClinicPublicLookupLoading,
 		clinicPublicLookup,
 		applyClinicLookupSuggestion,
-		newStaffName,
-		setNewStaffName,
-		addStaffMember,
-		newStaffRole,
-		setNewStaffRole,
-		newStaffSpecialty,
-		setNewStaffSpecialty,
-		staffScheduleDrafts,
+		// newStaffName,
+		// setNewStaffName,
+		// addStaffMember,
+		// newStaffRole,
+		// setNewStaffRole,
+		// newStaffSpecialty,
+		// setNewStaffSpecialty,
+		// staffScheduleDrafts,
 		staffScheduleDraftFromWorkingHours,
-		staffScheduleSaveStates,
-		staffScheduleDirtyIds,
-		staffScheduleSavingId,
-		updateStaffScheduleDraft,
-		toggleStaffWorkingDay,
-		updateStaffScheduleDay,
-		saveStaffSchedule,
+		// staffScheduleSaveStates,
+		// staffScheduleDirtyIds,
+		// staffScheduleSavingId,
+		// updateStaffScheduleDraft,
+		// toggleStaffWorkingDay,
+		// updateStaffScheduleDay,
+		// saveStaffSchedule,
 		newChairName,
 		setNewChairName,
 		addChair,
@@ -706,241 +705,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 				</section>
 
 				<div className="clinic-config-grid">
-					<article>
-						<div className="panel-heading">
-							<h3>Команда и права</h3>
-							<span className="status-pill status-arrived">
-								{dashboard.clinicSettings.staff.length}
-							</span>
-						</div>
-						<div className="quick-create">
-							<input
-								aria-label="Новый сотрудник"
-								placeholder="ФИО сотрудника"
-								value={newStaffName}
-								onChange={(event: TextInputChangeEvent) =>
-									setNewStaffName(event.target.value)
-								}
-							/>
-							<button
-								aria-label="Добавить сотрудника"
-								className="icon-button"
-								type="button"
-								onClick={() => addStaffMember(newStaffRole)}
-								disabled={!newStaffReadyToCreate}
-							>
-								<Plus aria-hidden="true" />
-							</button>
-						</div>
-						{!newStaffReadyToCreate ? (
-							<p
-								className="quick-create-guidance"
-								role="status"
-								aria-live="polite"
-							>
-								Введите ФИО сотрудника, затем выберите роль.
-							</p>
-						) : null}
-						<div className="role-picker" aria-label="Роль нового сотрудника">
-							{staffCreationRoles.map((role) => (
-								<button
-									className={newStaffRole === role ? "active" : ""}
-									key={role}
-									type="button"
-									aria-pressed={newStaffRole === role}
-									onClick={() => setNewStaffRole(role)}
-								>
-									{staffRoleLabels[role]}
-								</button>
-							))}
-						</div>
-						{newStaffRole === "doctor" || newStaffRole === "assistant" ? (
-							<div
-								className="specialty-strip staff-specialty-picker"
-								aria-label="Специальность нового сотрудника"
-							>
-								{(Object.keys(specialtyLabels) as DentalSpecialty[]).map(
-									(specialty) => (
-										<button
-											className={
-												newStaffSpecialty === specialty ? "active" : ""
-											}
-											key={specialty}
-											type="button"
-											aria-pressed={newStaffSpecialty === specialty}
-											onClick={() => setNewStaffSpecialty(specialty)}
-										>
-											{specialtyLabels[specialty]}
-										</button>
-									),
-								)}
-							</div>
-						) : null}
-
-						<div className="staff-list">
-							{typedStaffMembers.map((member) => {
-								const scheduleDraft =
-									staffScheduleDrafts[member.id] ??
-									staffScheduleDraftFromWorkingHours(
-										member.workingHours ?? null,
-									);
-								const scheduleSaveState =
-									staffScheduleSaveStates[member.id] ?? "saved";
-								const scheduleDirty = staffScheduleDirtyIds.has(member.id);
-								const scheduleSaving =
-									staffScheduleSavingId === member.id ||
-									scheduleSaveState === "saving";
-								const scheduleSaveLabel = scheduleSaving
-									? "Автосохранение"
-									: scheduleSaveState === "error"
-										? "Не сохранено"
-										: scheduleDirty
-											? "Ждет автосохранения"
-											: "Сохранено";
-								return (
-									<div className="staff-row" key={member.id}>
-										<span
-											className="staff-color-indicator"
-											style={{ background: member.color }}
-										/>
-										<div>
-											<strong>{member.fullName}</strong>
-											<p>
-												{staffRoleLabels[member.role]} ·{" "}
-												{member.specialties
-													.map((item) => specialtyLabels[item])
-													.join(", ")}
-											</p>
-										</div>
-										<small>
-											{member.canSignMedicalRecords
-												? "ЭМК"
-												: member.canManageImports
-													? "Импорт"
-													: "Доступ"}
-										</small>
-										<div className="staff-schedule-editor">
-											<label>
-												С
-												<input
-													type="time"
-													value={scheduleDraft.start}
-													onChange={(event: InputChangeEvent) =>
-														updateStaffScheduleDraft(member.id, {
-															start: event.target.value,
-														})
-													}
-												/>
-											</label>
-											<label>
-												До
-												<input
-													type="time"
-													value={scheduleDraft.end}
-													onChange={(event: InputChangeEvent) =>
-														updateStaffScheduleDraft(member.id, {
-															end: event.target.value,
-														})
-													}
-												/>
-											</label>
-											<div
-												className="weekday-toggle-row staff-weekday-row"
-												role="group"
-												aria-label={`Рабочие дни: ${member.fullName}`}
-											>
-												{typedWeekdayOptions.map((day: any) => (
-													<button
-														className={
-															scheduleDraft.workingDays.includes(day.value)
-																? "active"
-																: ""
-														}
-														key={day.value}
-														type="button"
-														aria-pressed={scheduleDraft.workingDays.includes(
-															day.value,
-														)}
-														onClick={() =>
-															toggleStaffWorkingDay(member.id, day.value)
-														}
-													>
-														{day.label}
-													</button>
-												))}
-											</div>
-											<details className="settings-advanced-block schedule-advanced-block">
-												<summary className="settings-advanced-toggle">
-													<span className="settings-advanced-label">
-														Индивидуальные часы по дням
-													</span>
-													<span className="settings-advanced-chevron">▼</span>
-												</summary>
-												<div
-													className="staff-day-hours"
-													aria-label={`Часы по дням: ${member.fullName}`}
-												>
-													{typedWeekdayOptions
-														.filter((day) =>
-															scheduleDraft.workingDays.includes(day.value),
-														)
-														.map((day: any) => {
-															const dayHours = scheduleDraft.perDay[day.value];
-															return (
-																<div key={`hours-${member.id}-${day.value}`}>
-																	<span>{day.label}</span>
-																	<input
-																		aria-label={`${day.label}, начало`}
-																		type="time"
-																		value={
-																			dayHours?.start ?? scheduleDraft.start
-																		}
-																		onChange={(event: InputChangeEvent) =>
-																			updateStaffScheduleDay(
-																				member.id,
-																				day.value,
-																				{ start: event.target.value },
-																			)
-																		}
-																	/>
-																	<input
-																		aria-label={`${day.label}, конец`}
-																		type="time"
-																		value={dayHours?.end ?? scheduleDraft.end}
-																		onChange={(event: InputChangeEvent) =>
-																			updateStaffScheduleDay(
-																				member.id,
-																				day.value,
-																				{ end: event.target.value },
-																			)
-																		}
-																	/>
-																</div>
-															);
-														})}
-												</div>
-											</details>
-											<div className="staff-schedule-actions">
-												<span
-													className={`save-state save-state-${scheduleSaveState}`}
-												>
-													{scheduleSaveLabel}
-												</span>
-												<button
-													className="secondary-button compact-button"
-													type="button"
-													onClick={() => void saveStaffSchedule(member.id)}
-													disabled={scheduleSaving}
-												>
-													{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
-												</button>
-											</div>
-										</div>
-									</div>
-								);
-							})}
-						</div>
-					</article>
+					
 
 					<article>
 						<div className="panel-heading">

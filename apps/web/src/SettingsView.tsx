@@ -1,3 +1,4 @@
+import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
 // Compliance: data-testid="dicom-first-frame-slice-presets"
 // Compliance: aria-label="Быстрые срезы снимков"
 // Compliance: previewDicomFirstFrameSlice(targetIndex)
@@ -893,9 +894,9 @@ export function SettingsView(props: SettingsViewProps) {
 		activeWorkspaceProfile,
 		addChair,
 		addStaffMember,
-		analyzePricelist,
+		// analyzePricelist,
 		applyProtocolTemplate,
-		attachPricelistImage,
+		// attachPricelistImage,
 		browserCanRequestPersistentStorage,
 		browserContinuity,
 		browserContinuityChecks,
@@ -934,7 +935,7 @@ export function SettingsView(props: SettingsViewProps) {
 		clearBrowserPickedImagingFolderPreview,
 		clearDicomWorkbenchRecovery,
 		clearLocalImagingFolderRecovery,
-		clearPricelistImage,
+		// clearPricelistImage,
 		clinicalRuleActionLabels,
 		clinicalRuleSeverityLabels,
 		clinicModeLabels,
@@ -948,8 +949,8 @@ export function SettingsView(props: SettingsViewProps) {
 		createTelegramLinkCode,
 		dashboard,
 		defaultDicomFirstFrameViewerState,
-		dentalMaterialKindLabels,
-		dentalRestorationTypeLabels,
+		// dentalMaterialKindLabels,
+		// dentalRestorationTypeLabels,
 		dicomFirstFrameImageStyle,
 		dicomFirstFramePreview,
 		dicomFirstFrameStatusLabels,
@@ -1060,7 +1061,7 @@ export function SettingsView(props: SettingsViewProps) {
 		isMigrationSourceProbeLoading,
 		isMigrationSourceWorkupLoading,
 		isPersistenceExporting,
-		isPricelistAnalyzing,
+		// isPricelistAnalyzing,
 		isRecognitionLoading,
 		isSmartImportCommitting,
 		isSmartImportLoading,
@@ -1166,19 +1167,19 @@ export function SettingsView(props: SettingsViewProps) {
 		previewImport,
 		previewSmartImport,
 		previewTelegramTemplate,
-		pricelistAnalysis,
-		pricelistImageBase64,
-		pricelistImageName,
-		pricelistImageNote,
-		pricelistItemMaterialText,
-		pricelistMaterialSummaryText,
-		pricelistWarningsText,
-		pricelistParserModeLabels,
-		pricelistRecognitionBrandGroups,
-		pricelistRecognitionServiceGroups,
-		pricelistSourceKind,
-		pricelistSourceKindLabels,
-		pricelistText,
+		// pricelistAnalysis,
+		// pricelistImageBase64,
+		// pricelistImageName,
+		// pricelistImageNote,
+		// pricelistItemMaterialText,
+		// pricelistMaterialSummaryText,
+		// pricelistWarningsText,
+		// pricelistParserModeLabels,
+		// pricelistRecognitionBrandGroups,
+		// pricelistRecognitionServiceGroups,
+		// pricelistSourceKind,
+		// pricelistSourceKindLabels,
+		// pricelistText,
 		recognitionJob,
 		recognitionKind,
 		recognitionPresets,
@@ -1267,9 +1268,9 @@ export function SettingsView(props: SettingsViewProps) {
 		setNewStaffRole,
 		setNewStaffSpecialty,
 		setOhifBaseUrl,
-		setPricelistAnalysis,
-		setPricelistSourceKind,
-		setPricelistText,
+		// setPricelistAnalysis,
+		// setPricelistSourceKind,
+		// setPricelistText,
 		setRecognitionJob,
 		setRecognitionText,
 		setSettingsTab,
@@ -1280,7 +1281,7 @@ export function SettingsView(props: SettingsViewProps) {
 		settingsTab,
 		settingsTabs,
 		setUiLanguage,
-		setUsePricelistAi,
+		// setUsePricelistAi,
 		smartImportCommit,
 		smartImportMode,
 		smartImportModeLabels,
@@ -1387,7 +1388,7 @@ export function SettingsView(props: SettingsViewProps) {
 		updateStaffScheduleDraft,
 		updateTelegramPostVisitCheckupDelayDraft,
 		updateTelegramVisualCardUrlDraft,
-		usePricelistAi,
+		// usePricelistAi,
 		visibleTelegramOutboxItems,
 		weekdayOptions,
 		workspaceScopeLabels,
@@ -1547,12 +1548,9 @@ export function SettingsView(props: SettingsViewProps) {
 		telegramInlineButtonRowsFromReplyMarkup(
 			replyMarkup,
 		) as TelegramInlineButtonRow[];
-	const typedPricelistAnalysis =
-		pricelistAnalysis as DentalPricelistAnalysisResponse | null;
-	const typedPricelistRecognitionServiceGroups =
-		pricelistRecognitionServiceGroups as StringTokenGroup[];
-	const typedPricelistRecognitionBrandGroups =
-		pricelistRecognitionBrandGroups as StringTokenGroup[];
+	
+	
+	
 	const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance";
 	const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance";
 	const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance";
@@ -1741,14 +1739,8 @@ export function SettingsView(props: SettingsViewProps) {
 		updateDicomFirstFrameViewerState((state) => ({ ...state, [key]: value }));
 	};
 	const typedMprProjection = mprProjection as MprProjection;
-	const mprAxisDirectionLabel = formatMprAxisDirectionLabel({
-		canOpenMpr: mprControlsReady,
-		axisDeg: mprAxisDeg,
-	});
-	const mprAxisAngleBadge = formatMprAxisAngleBadge(
-		mprAxisDeg,
-		mprControlsReady,
-	);
+	const mprAxisDirectionLabel = formatMprAxisDirectionLabel({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+	const mprAxisAngleBadge = formatMprAxisAngleBadge(mprAxisDeg, mprControlsReady);
 	const mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
 	const mprSliceBadge = formatMprSliceBadge({
 		canOpenMpr: mprControlsReady,
@@ -1760,21 +1752,12 @@ export function SettingsView(props: SettingsViewProps) {
 		mprSliceMaxIndex > 0
 			? `${(mprSafeSliceIndex / mprSliceMaxIndex) * 100}%`
 			: "50%";
-	const mprCurrentSliceFraction = mprSliceFraction(
-		mprSafeSliceIndex,
-		mprSliceMaxIndex,
-	);
+	const mprCurrentSliceFraction = mprSliceFraction(mprSafeSliceIndex, mprSliceMaxIndex);
 	const mprSliceLabel = mprControlsReady
 		? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}`
 		: "срез включится после КЛКТ/КТ-серии";
-	const mprAxisRangeValue = formatMprAxisRangeValue({
-		canOpenMpr: mprControlsReady,
-		axisDeg: mprAxisDeg,
-	});
-	const mprSlabRangeValue = formatMprSlabRangeValue({
-		canOpenMpr: mprControlsReady,
-		slabMm: mprSlabMm,
-	});
+	const mprAxisRangeValue = formatMprAxisRangeValue({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+	const mprSlabRangeValue = formatMprSlabRangeValue({ canOpenMpr: mprControlsReady, slabMm: mprSlabMm });
 	const mprSliceRangeValue = formatMprSliceRangeValue({
 		canOpenMpr: mprControlsReady,
 		sliceIndex: mprSafeSliceIndex,
@@ -1864,10 +1847,7 @@ export function SettingsView(props: SettingsViewProps) {
 		setMprLinkedPlanesEnabled(true);
 	};
 	const applyMprClinicalPreset = (preset: MprClinicalPreset) => {
-		const projection = resolveMprClinicalPresetProjection(
-			preset.projection,
-			typedCbctWorkbenchProjections,
-		);
+		const projection = resolveMprClinicalPresetProjection(preset.projection, typedCbctWorkbenchProjections);
 		setMprProjection(projection);
 		setMprAxisDeg(clampMprAxisDeg(preset.axisDeg));
 		setMprSlabMm(clampMprSlabMm(preset.slabMm));
@@ -1880,10 +1860,7 @@ export function SettingsView(props: SettingsViewProps) {
 	};
 	const applyCtPlanningQuickAction = (action: CtPlanningQuickAction) => {
 		if (action.requiresVolume && !mprControlsReady) return;
-		const projection = resolveMprClinicalPresetProjection(
-			action.projection,
-			typedCbctWorkbenchProjections,
-		);
+		const projection = resolveMprClinicalPresetProjection(action.projection, typedCbctWorkbenchProjections);
 		setCtPlanningActiveQuickActionId?.(action.id);
 		setImagingViewerActiveTool(action.tool);
 		setMprProjection(projection);
@@ -1908,9 +1885,7 @@ export function SettingsView(props: SettingsViewProps) {
 		);
 		if (preset) applyMprClinicalPreset(preset);
 	};
-	const handleMprKeyboardNavigation = (
-		event: KeyboardEvent<HTMLDivElement>,
-	) => {
+	const handleMprKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (!mprControlsReady) return;
 		const adjustment = resolveMprKeyboardAdjustment({
 			key: event.key,
@@ -2571,6 +2546,7 @@ export function SettingsView(props: SettingsViewProps) {
 
 				<SettingsClinicTab settingsTab={settingsTab} />
 				<SettingsAccessTab settingsTab={settingsTab} />
+				<SettingsTelegramTab settingsTab={settingsTab} />
 				{settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
 				<SettingsMessengersTab settingsTab={settingsTab} />
 				{settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
@@ -2963,272 +2939,7 @@ export function SettingsView(props: SettingsViewProps) {
 					</section>
 				) : null}
 
-				{settingsTab === "prices" ? (
-					<section
-						className="pricelist-studio"
-						aria-label="Разбор прайс-листа клиники"
-					>
-						<div className="import-copy">
-							<ReceiptText aria-hidden="true" />
-							<div>
-								<p className="eyebrow">Прайс и материалы</p>
-								<h2>
-									Прайс клиники разбирается в услуги, материалы, бренды и типы
-									реставраций
-								</h2>
-								<p>
-									Это админский инструмент, не экран врача на приеме. Он
-									превращает текст, OCR или фото прайса в черновик услуг, ничего
-									не записывает без предпросмотра и не придумывает цены.
-								</p>
-							</div>
-						</div>
-
-						<div className="pricelist-controls" aria-label="Источник прайса">
-							{(
-								Object.keys(pricelistSourceKindLabels) as PricelistSourceKind[]
-							).map((kind) => (
-								<button
-									className={`source-card ${pricelistSourceKind === kind ? "active" : ""}`}
-									key={kind}
-									type="button"
-									aria-pressed={pricelistSourceKind === kind}
-									onClick={() => {
-										setPricelistSourceKind(kind);
-										if (kind !== "photo_ocr") clearPricelistImage();
-										setPricelistAnalysis(null);
-									}}
-								>
-									<strong>{pricelistSourceKindLabels[kind]}</strong>
-									<span>
-										{kind === "photo_ocr"
-											? "текст с фото или ИИ-проверка"
-											: "локальный разбор + проверка"}
-									</span>
-								</button>
-							))}
-						</div>
-
-						<details className="pricelist-taxonomy">
-							<summary>
-								<span>Каталог распознавания</span>
-								<small>
-									Справочник для администратора. Врач на приеме это не видит.
-								</small>
-							</summary>
-							<div className="taxonomy-grid">
-								<article>
-									<strong>Виды лечения</strong>
-									{typedPricelistRecognitionServiceGroups.map((group) => (
-										<div className="taxonomy-chip-row" key={group.title}>
-											<span>{group.title}</span>
-											{group.items.map((item) => (
-												<small key={item}>{item}</small>
-											))}
-										</div>
-									))}
-								</article>
-								<article>
-									<strong>Материалы</strong>
-									<div className="taxonomy-chip-row taxonomy-chip-row-flat">
-										{(
-											Object.keys(
-												dentalMaterialKindLabels,
-											) as DentalMaterialKind[]
-										)
-											.filter((kind) => kind !== "unknown")
-											.map((kind) => (
-												<small key={kind}>
-													{dentalMaterialKindLabels[kind]}
-												</small>
-											))}
-									</div>
-								</article>
-								<article>
-									<strong>Реставрации</strong>
-									<div className="taxonomy-chip-row taxonomy-chip-row-flat">
-										{(
-											Object.keys(
-												dentalRestorationTypeLabels,
-											) as DentalRestorationType[]
-										)
-											.filter((kind) => kind !== "unknown")
-											.map((kind) => (
-												<small key={kind}>
-													{dentalRestorationTypeLabels[kind]}
-												</small>
-											))}
-									</div>
-								</article>
-								<article>
-									<strong>Бренды и линейки</strong>
-									{typedPricelistRecognitionBrandGroups.map((group) => (
-										<div className="taxonomy-chip-row" key={group.title}>
-											<span>{group.title}</span>
-											{group.items.map((item) => (
-												<small key={item}>{item}</small>
-											))}
-										</div>
-									))}
-								</article>
-							</div>
-						</details>
-
-						<div className="pricelist-workbench">
-							<PriceDictationBar
-								onPriceParsed={(service, price, category) => {
-									const newEntry = `${category ? category + " " : ""}${service} ${price} руб`;
-									setPricelistText((prev) =>
-										prev ? prev + "\n" + newEntry : newEntry,
-									);
-									setPricelistAnalysis(null);
-								}}
-							/>
-							<textarea
-								aria-label="Прайс-лист клиники"
-								value={pricelistText}
-								onChange={(event: TextInputChangeEvent) => {
-									setPricelistText(event.target.value);
-									setPricelistAnalysis(null);
-								}}
-							/>
-							<div className="pricelist-image-row">
-								<label className="pricelist-image-upload">
-									<ImageIcon aria-hidden="true" />
-									<span>{pricelistImageName ?? "Фото прайса"}</span>
-									<small>
-										{pricelistImageNote ??
-											"JPEG, PNG или WebP. Сжимается в браузере перед отправкой."}
-									</small>
-									<input
-										accept="image/jpeg,image/png,image/webp"
-										type="file"
-										onChange={(event: InputChangeEvent) =>
-											void attachPricelistImage(event.currentTarget.files?.[0])
-										}
-									/>
-								</label>
-								{pricelistImageName ? (
-									<button
-										className="secondary-button"
-										type="button"
-										onClick={clearPricelistImage}
-									>
-										Убрать фото
-									</button>
-								) : null}
-							</div>
-							<div className="import-tool-row">
-								<button
-									className={`secondary-button ${usePricelistAi ? "active" : ""}`}
-									type="button"
-									aria-pressed={usePricelistAi}
-									onClick={() => setUsePricelistAi((value: boolean) => !value)}
-								>
-									<Bot aria-hidden="true" />{" "}
-									{usePricelistAi ? "ИИ-разбор включен" : "Только локально"}
-								</button>
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={() => {
-										setPricelistSourceKind("spreadsheet_copy");
-										clearPricelistImage();
-										setPricelistText(
-											"Коронка циркониевая MultiLayer 35 000 руб\nКоронка IPS e.max 32 000 руб\nВинир керамический E.max 38 000 руб\nРеставрация композитная Filtek 9 500 руб\nЛечение канала 1 канал 6 800 руб\nИмплантация Straumann BLX 85 000 руб\nАбатмент индивидуальный циркониевый 28 000 руб\nСинус-лифтинг открытый 55 000 руб\nПрофессиональная гигиена Air Flow EMS 6 000 руб\nЭлайнеры Star Smile 160 000 руб",
-										);
-										setPricelistAnalysis(null);
-									}}
-								>
-									<Sparkles aria-hidden="true" /> Демо
-								</button>
-								<button
-									className="primary-button"
-									type="button"
-									onClick={analyzePricelist}
-									disabled={
-										isPricelistAnalyzing ||
-										(!(pricelistText || "").trim() && !pricelistImageBase64)
-									}
-								>
-									<UploadCloud aria-hidden="true" />{" "}
-									{isPricelistAnalyzing ? "Разбираю" : "Разобрать прайс"}
-								</button>
-							</div>
-						</div>
-
-						{typedPricelistAnalysis ? (
-							<div className="pricelist-result">
-								<div className="pricelist-status">
-									<strong>{typedPricelistAnalysis.items.length} позиций</strong>
-									<span>
-										{pricelistParserModeLabels[
-											typedPricelistAnalysis.parserMode
-										] ?? typedPricelistAnalysis.parserMode}
-									</span>
-									<span>
-										Нейро-проверка{" "}
-										{typedPricelistAnalysis.aiVision.used
-											? "использована"
-											: typedPricelistAnalysis.aiVision.configured
-												? "готова"
-												: "не настроена"}
-									</span>
-									<small>{typedPricelistAnalysis.aiVision.reason}</small>
-								</div>
-								<div className="pricelist-summary">
-									{typedPricelistAnalysis.summary.slice(0, 6).map((item) => (
-										<article key={`${item.category}-${item.specialty}`}>
-											<strong>{serviceCategoryLabels[item.category]}</strong>
-											<span>{specialtyLabels[item.specialty]}</span>
-											<p>
-												{item.count} поз. · {item.minPriceRub ?? "?"}-
-												{item.maxPriceRub ?? "?"} ₽
-											</p>
-											<small>{pricelistMaterialSummaryText(item)}</small>
-										</article>
-									))}
-								</div>
-								<div className="pricelist-rows">
-									{typedPricelistAnalysis.items.slice(0, 12).map((item) => (
-										<article className="pricelist-row" key={item.id}>
-											<div>
-												<strong>{item.title}</strong>
-												<span>
-													{serviceCategoryLabels[item.category]} ·{" "}
-													{specialtyLabels[item.specialty]} ·{" "}
-													{Math.round(item.confidence * 100)}%
-												</span>
-											</div>
-											<div>
-												<span>
-													{item.priceRub !== null
-														? `${item.priceRub.toLocaleString("ru-RU")} ₽`
-														: "цена ?"}
-												</span>
-												<small>{pricelistItemMaterialText(item)}</small>
-											</div>
-											<p>
-												{item.warnings.length
-													? pricelistWarningsText(item.warnings)
-													: "готово к маппингу"}
-											</p>
-										</article>
-									))}
-								</div>
-								{typedPricelistAnalysis.warnings.length ? (
-									<div className="recognition-notes">
-										{typedPricelistAnalysis.warnings.map((warning) => (
-											<span key={warning}>
-												{pricelistWarningsText([warning])}
-											</span>
-										))}
-									</div>
-								) : null}
-							</div>
-						) : null}
-					</section>
-				) : null}
+				{settingsTab === "prices" ? <SettingsPricesTab /> : null}
 
 				{settingsTab === "sources" ? (
 					<section className="connector-grid" aria-label="Интеграции снимков">
@@ -3543,8 +3254,7 @@ export function SettingsView(props: SettingsViewProps) {
 										</div>
 										<small
 											className="mpr-workbench-summary"
-											data-testid="ct-mpr-workbench-summary"
-											aria-live="polite"
+											data-testid="ct-mpr-workbench-summary" aria-live="polite"
 										>
 											{mprWorkbenchSummaryText}
 										</small>
@@ -3870,11 +3580,7 @@ export function SettingsView(props: SettingsViewProps) {
 									>
 										{mprClinicalPresets.map((preset) => {
 											const projectionFallbackNote = mprControlsReady
-												? describeMprClinicalPresetProjectionFallback(
-														preset.projection,
-														typedCbctWorkbenchProjections,
-														mprProjectionLabels,
-													)
+												? describeMprClinicalPresetProjectionFallback(preset.projection, typedCbctWorkbenchProjections, mprProjectionLabels)
 												: null;
 											return (
 												<button
@@ -4161,7 +3867,7 @@ export function SettingsView(props: SettingsViewProps) {
 												!cbctWorkbenchSeries || isDicomToolStateBuilding
 											}
 										>
-											<ClipboardCheck aria-hidden="true" />
+											{dicomLabel(dicomExecutionLaneLabels, typedDicomWorkstationReadiness.runtimeProfile.executionLane, "маршрут просмотра")} <ClipboardCheck aria-hidden="true" />
 											{isDicomToolStateBuilding
 												? "Собираю"
 												: "Экспорт состояния просмотрщика"}
@@ -4435,25 +4141,21 @@ export function SettingsView(props: SettingsViewProps) {
 												))}
 										</div>
 										<div className="dicom-cache-phase-list">
-											{typedDicomViewerWorkbenchManifest.renderCachePlan.interactionPhases
-												.slice(0, 3)
-												.map((phase) => (
-													<span key={phase.id}>
-														{phase.label}: {phase.targetFrameMs} мс / окно{" "}
-														{phase.maxResidentSlices}
-													</span>
-												))}
+											{typedDicomViewerWorkbenchManifest.renderCachePlan.interactionPhases.slice(0, 3).map((phase) => (
+												<span key={phase.id}>
+													{phase.label}: {phase.targetFrameMs} мс / окно{" "}
+													{phase.maxResidentSlices}
+												</span>
+											))}
 										</div>
 										<div className="dicom-cache-progressive-list">
-											{typedDicomViewerWorkbenchManifest.renderCachePlan.progressiveStages
-												.slice(0, 4)
-												.map((stage) => (
-													<span key={stage.id}>
-														{stage.label}: шаг {stage.decimationFactor} / заявок{" "}
-														{stage.sliceOrder.length} / окно{" "}
-														{stage.maxResidentSlices}
-													</span>
-												))}
+											{typedDicomViewerWorkbenchManifest.renderCachePlan.progressiveStages.slice(0, 4).map((stage) => (
+												<span key={stage.id}>
+													{stage.label}: шаг {stage.decimationFactor} / заявок{" "}
+													{stage.sliceOrder.length} / окно{" "}
+													{stage.maxResidentSlices}
+												</span>
+											))}
 										</div>
 									</div>
 								) : null}
@@ -4505,12 +4207,7 @@ export function SettingsView(props: SettingsViewProps) {
 											</span>
 											<small>
 												{typedDicomWorkstationReadiness.runtimeProfile.label} ·{" "}
-												{dicomLabel(
-													dicomExecutionLaneLabels,
-													typedDicomWorkstationReadiness.runtimeProfile
-														.executionLane,
-													"маршрут просмотра",
-												)}
+												{dicomLabel(dicomExecutionLaneLabels, typedDicomWorkstationReadiness.runtimeProfile.executionLane, "маршрут просмотра")}
 											</small>
 											<small>
 												{
@@ -4665,25 +4362,21 @@ export function SettingsView(props: SettingsViewProps) {
 												))}
 										</div>
 										<div className="dicom-cache-phase-list">
-											{typedDicomRenderCachePlan.interactionPhases.map(
-												(phase) => (
-													<span key={phase.id}>
-														{phase.label}: {phase.targetFrameMs} мс / окно{" "}
-														{phase.maxResidentSlices}
-													</span>
-												),
-											)}
+											{typedDicomRenderCachePlan.interactionPhases.map((phase) => (
+												<span key={phase.id}>
+													{phase.label}: {phase.targetFrameMs} мс / окно{" "}
+													{phase.maxResidentSlices}
+												</span>
+											))}
 										</div>
 										<div className="dicom-cache-progressive-list">
-											{typedDicomRenderCachePlan.progressiveStages.map(
-												(stage) => (
-													<span key={stage.id}>
-														{stage.label}: шаг {stage.decimationFactor} / заявок{" "}
-														{stage.sliceOrder.length} / окно{" "}
-														{stage.maxResidentSlices}
-													</span>
-												),
-											)}
+											{typedDicomRenderCachePlan.progressiveStages.map((stage) => (
+												<span key={stage.id}>
+													{stage.label}: шаг {stage.decimationFactor} / заявок{" "}
+													{stage.sliceOrder.length} / окно{" "}
+													{stage.maxResidentSlices}
+												</span>
+											))}
 										</div>
 									</div>
 								) : null}
