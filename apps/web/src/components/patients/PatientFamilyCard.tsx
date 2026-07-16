@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Users, Plus, Link as LinkIcon, UserPlus } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Users, Plus, Link as LinkIcon, UserPlus, Search } from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 
@@ -17,10 +17,40 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	onFamilyDataChanged,
 }) => {
 	const [isCreating, setIsCreating] = useState(false);
+	const [isLinking, setIsLinking] = useState(false);
+	
 	const [newFamilyName, setNewFamilyName] = useState("");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState<any[]>([]);
+	
 	const [loading, setLoading] = useState(false);
+	const [searchLoading, setSearchLoading] = useState(false);
 
 	if (!patientId) return null;
+
+	useEffect(() => {
+		if (isLinking && searchQuery.length >= 2) {
+			const delayFn = setTimeout(async () => {
+				setSearchLoading(true);
+				try {
+					const res = await fetch(`/api/finance/family?search=${encodeURIComponent(searchQuery)}`, {
+						headers: denteAdminSecretRequestHeaders(),
+					});
+					if (res.ok) {
+						const data = await res.json();
+						setSearchResults(data);
+					}
+				} catch (e) {
+					console.error("Family search failed", e);
+				} finally {
+					setSearchLoading(false);
+				}
+			}, 300);
+			return () => clearTimeout(delayFn);
+		} else if (isLinking && searchQuery.length < 2) {
+			setSearchResults([]);
+		}
+	}, [searchQuery, isLinking]);
 
 	const handleCreateFamily = async () => {
 		if (!newFamilyName.trim()) {
@@ -44,8 +74,6 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			
 			const family = await res.json();
 			
-			// After creating the family, we must link the patient to this family group
-			// since the API currently only sets headPatientId but not familyGroupId
 			const linkRes = await fetch(`/api/patients/${patientId}`, {
 				method: "PUT",
 				headers: {
@@ -61,6 +89,32 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			showToast("Семья успешно создана", "success");
 			setNewFamilyName("");
 			setIsCreating(false);
+			onFamilyDataChanged();
+		} catch (e: any) {
+			showToast(e.message || "Ошибка", "error");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleLinkFamily = async (familyId: string) => {
+		setLoading(true);
+		try {
+			const linkRes = await fetch(`/api/patients/${patientId}`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					familyGroupId: familyId,
+				}),
+			});
+			if (!linkRes.ok) throw new Error("Ошибка при привязке пациента к семье");
+
+			showToast("Успешно привязан к семье", "success");
+			setIsLinking(false);
+			setSearchQuery("");
 			onFamilyDataChanged();
 		} catch (e: any) {
 			showToast(e.message || "Ошибка", "error");
@@ -162,12 +216,76 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 								</button>
 							</div>
 						</div>
+					) : isLinking ? (
+						<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+							<div style={{ position: "relative" }}>
+								<Search size={14} style={{ position: "absolute", left: "10px", top: "10px", color: "var(--muted)" }} />
+								<input
+									type="text"
+									className="text-input"
+									placeholder="Поиск семьи по названию..."
+									style={{ paddingLeft: "32px", width: "100%" }}
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									autoFocus
+								/>
+							</div>
+							
+							<div style={{ maxHeight: "150px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" }}>
+								{searchLoading && <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "8px" }}>Поиск...</div>}
+								{!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
+									<div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "8px" }}>Семьи не найдены</div>
+								)}
+								{searchResults.map(f => (
+									<div 
+										key={f.id} 
+										style={{ 
+											display: "flex", 
+											justifyContent: "space-between", 
+											alignItems: "center",
+											padding: "8px",
+											background: "rgba(255,255,255,0.03)",
+											borderRadius: "6px",
+											cursor: "pointer",
+											transition: "background 0.2s"
+										}}
+										onClick={() => handleLinkFamily(f.id)}
+									>
+										<div>
+											<div style={{ fontSize: "13px", fontWeight: 500 }}>{f.name}</div>
+										</div>
+										<button 
+											className="secondary-button"
+											style={{ padding: "4px 8px", fontSize: "12px" }}
+											disabled={loading}
+										>
+											Выбрать
+										</button>
+									</div>
+								))}
+							</div>
+
+							<div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+								<button 
+									className="secondary-button" 
+									onClick={() => {
+										setIsLinking(false);
+										setSearchQuery("");
+										setSearchResults([]);
+									}}
+									disabled={loading}
+									style={{ width: "100%", padding: "8px", fontSize: "13px" }}
+								>
+									Отмена
+								</button>
+							</div>
+						</div>
 					) : (
 						<div style={{ display: "flex", gap: "8px" }}>
 							<button 
 								className="primary-button" 
 								onClick={() => {
-									setNewFamilyName(`Семья ${patientName ? patientName.split(' ')[0] : ''}`.trim());
+									setNewFamilyName(\`Семья \${patientName ? patientName.split(' ')[0] : ''}\`.trim());
 									setIsCreating(true);
 								}}
 								style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px", fontSize: "13px" }}
@@ -176,7 +294,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							</button>
 							<button 
 								className="secondary-button" 
-								onClick={() => showToast("Привязка к существующей семье пока в разработке", "info")}
+								onClick={() => setIsLinking(true)}
 								style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px", fontSize: "13px" }}
 							>
 								<LinkIcon size={14} /> Привязать

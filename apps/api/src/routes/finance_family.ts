@@ -1,4 +1,4 @@
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, ilike, isNull, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
@@ -66,6 +66,33 @@ async function familyMembersForOrganization(
 }
 
 export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
+	// GET /api/finance/family - search families
+	app.get("/api/finance/family", async (req, reply) => {
+		const organizationId = await requireResolvedOrganizationId(
+			req,
+			reply,
+			"family finance read",
+		);
+		if (!organizationId) return;
+
+		const { search } = req.query as { search?: string };
+		const whereClause = search
+			? and(
+					eq(familyGroups.organizationId, organizationId),
+					ilike(familyGroups.name, `%${search}%`)
+			  )
+			: eq(familyGroups.organizationId, organizationId);
+
+		const families = await db
+			.select()
+			.from(familyGroups)
+			.where(whereClause)
+			.orderBy(desc(familyGroups.createdAt))
+			.limit(20);
+
+		return families;
+	});
+
 	// GET /api/finance/family/:familyGroupId — fetch family group and members
 	app.get("/api/finance/family/:familyGroupId", async (req, reply) => {
 		const organizationId = await requireResolvedOrganizationId(

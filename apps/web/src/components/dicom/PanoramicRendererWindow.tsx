@@ -1,3 +1,4 @@
+import { cache } from "@cornerstonejs/core";
 import React, { useEffect, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
 
@@ -21,36 +22,69 @@ export function PanoramicRendererWindow({
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		// In a real implementation, we would extract the scalarData, origin, direction, spacing
-		// from cornerstone cache: cornerstone.cache.getVolume(volumeId)
-		// For now, we simulate the worker call to show the UI integration.
-
 		setLoading(true);
+		let worker: Worker | null = null;
 
-		// Fake processing delay
-		const timer = setTimeout(() => {
+		const volume = cache.getVolume(volumeId);
+		if (!volume || !volume.scalarData) {
+			setError("Volume not loaded in cache");
 			setLoading(false);
-			const canvas = canvasRef.current;
-			if (canvas) {
-				const ctx = canvas.getContext("2d");
-				if (ctx) {
-					// Draw a placeholder gradient representing the panoramic unwrap
-					const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-					gradient.addColorStop(0, "#222");
-					gradient.addColorStop(0.5, "#888");
-					gradient.addColorStop(1, "#222");
-					ctx.fillStyle = gradient;
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
+			return;
+		}
 
-					ctx.fillStyle = "#fff";
-					ctx.font = "20px sans-serif";
-					ctx.fillText("Panoramic Unwrap Rendered (Simulated)", 50, 100);
-					ctx.fillText(`Spline Points: ${splinePoints.length}`, 50, 140);
+		try {
+			worker = new Worker(
+				new URL("../../workers/curvedMprWorker.ts", import.meta.url),
+				{ type: "module" },
+			);
+
+			worker.onmessage = (e) => {
+				if (e.data.type === "SUCCESS") {
+					const { panorex } = e.data.payload;
+					setLoading(false);
+
+					const canvas = canvasRef.current;
+					if (canvas && panorex) {
+						// Adjust canvas dimensions to match generated image
+						canvas.width = panorex.width;
+						canvas.height = panorex.height;
+						const ctx = canvas.getContext("2d");
+						if (ctx) {
+							const imgData = new ImageData(
+								panorex.buffer,
+								panorex.width,
+								panorex.height,
+							);
+							ctx.putImageData(imgData, 0, 0);
+						}
+					}
+				} else if (e.data.type === "ERROR") {
+					setError(e.data.payload);
+					setLoading(false);
 				}
-			}
-		}, 1500);
+			};
 
-		return () => clearTimeout(timer);
+			worker.postMessage({
+				type: "GENERATE",
+				scalarData: volume.scalarData,
+				dimensions: volume.dimensions,
+				spacing: volume.spacing,
+				origin: volume.origin,
+				direction: volume.direction,
+				splinePoints,
+				panorexHeight: 100, // 100mm height
+				resolution: 0.5, // 0.5mm per pixel
+			});
+		} catch (err) {
+			setError("Failed to initialize curved MPR worker.");
+			setLoading(false);
+		}
+
+		return () => {
+			if (worker) {
+				worker.terminate();
+			}
+		};
 	}, [volumeId, splinePoints]);
 
 	return (
@@ -84,7 +118,9 @@ export function PanoramicRendererWindow({
 						</span>
 					</div>
 				)}
-				{error && <div className="text-red-500">{error}</div>}
+				{error && (
+					<div className="absolute top-10 text-red-500 font-bold">{error}</div>
+				)}
 				<canvas
 					ref={canvasRef}
 					width={800}
