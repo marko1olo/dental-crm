@@ -16,6 +16,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
 	formatShortDate,
 	minutesLabel,
@@ -59,9 +60,17 @@ export function ShiftView({
 	const [showAnalytics, setShowAnalytics] = useState(false);
 	const [showOtherQueues, setShowOtherQueues] = useState(false);
 	return (
-		<>
+		<motion.div 
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+			style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+		>
 			<section className="shift-hero" id="shift">
-				<div className="now-card">
+				<motion.div 
+					className="now-card glass-panel"
+					whileHover={{ boxShadow: "0 12px 32px rgba(0,0,0,0.08)" }}
+				>
 					<p className="eyebrow">Сейчас в работе</p>
 					{activePatient ? (
 						<>
@@ -193,10 +202,15 @@ export function ShiftView({
 							расписании.
 						</div>
 					)}
-				</div>
+				</motion.div>
 
 				{/* РАСПИСАНИЕ НА СЕГОДНЯ */}
-				<div className="today-schedule-box">
+				<motion.div 
+					className="today-schedule-box glass-panel"
+					initial={{ opacity: 0, x: 20 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 0.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+				>
 					<h3>
 						<ClipboardCheck size={16} color="var(--teal)" /> Расписание приемов
 						на сегодня
@@ -321,7 +335,7 @@ export function ShiftView({
 							Сегодня у вас нет запланированных приемов.
 						</p>
 					)}
-				</div>
+				</motion.div>
 			</section>
 
 			{/* Removed care path tracker */}
@@ -336,7 +350,13 @@ export function ShiftView({
 				}}
 			>
 				<>
-					<section className="role-focus-strip" aria-label="Фокус текущей роли">
+					<motion.section 
+						className="role-focus-strip glass-panel" 
+						aria-label="Фокус текущей роли"
+						initial={{ opacity: 0, y: 15 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+					>
 						<div>
 							<UserCheck aria-hidden="true" />
 							<div>
@@ -385,11 +405,14 @@ export function ShiftView({
 								</span>
 							)}
 						</div>
-					</section>
+					</motion.section>
 
-					<section
-						className="shift-intelligence"
+					<motion.section
+						className="shift-intelligence glass-panel"
 						aria-label="Операционный контроль смены"
+						initial={{ opacity: 0, y: 15 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
 					>
 						<div
 							className="analytics-toggle-container"
@@ -531,10 +554,10 @@ export function ShiftView({
 						</div>
 
 						{/* Removed shift warning list */}
-					</section>
+					</motion.section>
 				</>
 			</div>
-		</>
+		</motion.div>
 	);
 }
 
@@ -548,7 +571,13 @@ export function PatientCockpit({
 }: any) {
 	if (!activePatient) {
 		return (
-			<section className="patient-cockpit" aria-label="Карточка пациента">
+			<motion.section 
+				className="patient-cockpit glass-panel" 
+				aria-label="Карточка пациента"
+				initial={{ opacity: 0, scale: 0.98 }}
+				animate={{ opacity: 1, scale: 1 }}
+				transition={{ duration: 0.3 }}
+			>
 				<div className="patient-summary-card">
 					<p className="eyebrow">Карточка пациента</p>
 					<h2>Пациент не выбран</h2>
@@ -559,13 +588,19 @@ export function PatientCockpit({
 						</span>
 					</div>
 				</div>
-			</section>
+			</motion.section>
 		);
 	}
 
 	return (
 		<>
-			<section className="patient-cockpit" aria-label="Карточка пациента">
+			<motion.section 
+				className="patient-cockpit glass-panel" 
+				aria-label="Карточка пациента"
+				initial={{ opacity: 0, y: 15 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.4 }}
+			>
 				<div className="patient-summary-card">
 					<p className="eyebrow">Карточка пациента</p>
 					<h2>{activePatient.fullName}</h2>
@@ -753,8 +788,9 @@ export function PatientCockpit({
 					) : null}
 				</div>
 				<div className="patient-feature-grid">
-					<article
+					<motion.article
 						className="clickable-card glass-panel"
+						whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.06)" }}
 						onClick={() => {
 							window.location.hash = "visit";
 						}}
@@ -765,9 +801,10 @@ export function PatientCockpit({
 							<h3>ЭМК / История</h3>
 							<p className="tile-meta">Приёмы · диагнозы · зубная карта</p>
 						</div>
-					</article>
-					<article
+					</motion.article>
+					<motion.article
 						className="clickable-card glass-panel"
+						whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.06)" }}
 						onClick={() => {
 							window.location.hash = "documents";
 						}}
@@ -783,9 +820,10 @@ export function PatientCockpit({
 								по визиту
 							</p>
 						</div>
-					</article>
-					<article
+					</motion.article>
+					<motion.article
 						className="clickable-card glass-panel"
+						whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.06)" }}
 						onClick={() => {
 							window.location.hash = "finance";
 						}}
@@ -799,9 +837,10 @@ export function PatientCockpit({
 								{money(dashboard.billingSummary.totalDueRub)}
 							</p>
 						</div>
-					</article>
-					<article
+					</motion.article>
+					<motion.article
 						className="clickable-card glass-panel"
+						whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.06)" }}
 						onClick={() => {
 							window.location.hash = "communications";
 						}}
@@ -816,9 +855,10 @@ export function PatientCockpit({
 									: "задач нет"}
 							</p>
 						</div>
-					</article>
-					<article
+					</motion.article>
+					<motion.article
 						className="clickable-card glass-panel"
+						whileHover={{ y: -4, boxShadow: "0 12px 24px rgba(0,0,0,0.06)" }}
 						onClick={() => {
 							window.location.hash = "imaging";
 						}}
@@ -833,9 +873,9 @@ export function PatientCockpit({
 									: "снимков нет"}
 							</p>
 						</div>
-					</article>
+					</motion.article>
 				</div>
-			</section>
+			</motion.section>
 		</>
 	);
 }

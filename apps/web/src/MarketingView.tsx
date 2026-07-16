@@ -1,5 +1,6 @@
 import "./styles/marketing.css";
 import {
+	AlertTriangle,
 	CheckCircle2,
 	Copy,
 	Globe,

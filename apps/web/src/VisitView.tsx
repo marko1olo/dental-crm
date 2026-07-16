@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import React, { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
 import { EgiszMonitor } from "./components/EgiszMonitor";
 import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
@@ -349,7 +350,13 @@ export function VisitView(props: VisitViewProps) {
 	if (!activePatient) {
 		return (
 			<>
-				<div className="panel visit-panel" id="visit">
+				<motion.div 
+					className="panel visit-panel glass-panel" 
+					id="visit"
+					initial={{ opacity: 0, y: 15 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.4 }}
+				>
 					<div className="panel-heading">
 						<h2>Текущий прием</h2>
 					</div>
@@ -377,16 +384,21 @@ export function VisitView(props: VisitViewProps) {
 							или создайте запись в «Записях», чтобы начать приём.
 						</p>
 					</div>
-				</div>
+				</motion.div>
 			</>
 		);
 	}
 
 	return (
-		<>
-			<div className="panel visit-panel" id="visit">
-				<div className="panel-heading">
-					<h2>Текущий прием</h2>
+		<motion.div 
+			className="panel visit-panel glass-panel" 
+			id="visit"
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		>
+			<div className="panel-heading">
+				<h2>Текущий прием</h2>
 					<span className="status-pill status-in_treatment">Черновик</span>
 				</div>
 

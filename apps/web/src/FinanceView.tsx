@@ -10,6 +10,7 @@ import {
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
 import { formatCurrencyNumeric } from "./utils/inputSanitation";
+import { motion } from "framer-motion";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -156,7 +157,13 @@ export function FinanceView({
 	};
 
 	return (
-		<div className="panel finance-panel" id="finance">
+		<motion.div 
+			className="panel finance-panel glass-panel" 
+			id="finance"
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		>
 			<div className="panel-heading">
 				<div>
 					<h2>Оплаты, план лечения и вычет</h2>
@@ -270,6 +277,6 @@ export function FinanceView({
 				onGoToPrices={onGoToPrices}
 				services={dashboard.serviceCatalog}
 			/>
-		</div>
+		</motion.div>
 	);
 }
