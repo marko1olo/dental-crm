@@ -66,13 +66,13 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	const getRiskLabel = (level: string) => {
 		switch (level) {
 			case "high":
-				return "Р’С‹СЃРѕРєРёР№ СЂРёСЃРє (High)";
+				return "Высокий риск (High)";
 			case "medium":
-				return "РЎСЂРµРґРЅРёР№ СЂРёСЃРє (Medium)";
+				return "Средний риск (Medium)";
 			case "low":
-				return "РќРёР·РєРёР№ СЂРёСЃРє (Low)";
+				return "Низкий риск (Low)";
 			default:
-				return "РќРµРёР·РІРµСЃС‚РЅРѕ";
+				return "Неизвестно";
 		}
 	};
 
@@ -111,12 +111,12 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				}}
 			>
 				<BrainCircuit size={16} color="#8b5cf6" />
-				AI-РџСЂРѕРіРЅРѕР· РЅРµСЏРІРєРё
+				AI-Прогноз неявки
 			</h3>
 
 			{loading ? (
 				<div className="patients-glass-muted" style={{ fontSize: "13px" }}>
-					РђРЅР°Р»РёР· РґР°РЅРЅС‹С… РїР°С†РёРµРЅС‚Р°...
+					Анализ данных пациента...
 				</div>
 			) : riskData ? (
 				<div>
@@ -159,7 +159,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							className="patients-glass-label"
 							style={{ fontSize: "12px", opacity: 0.8 }}
 						>
-							Р¤Р°РєС‚РѕСЂС‹ СЂРёСЃРєР°:
+							Факторы риска:
 						</span>
 
 						{riskData.factors.pastCancellations > 0 && (
@@ -173,7 +173,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 								}}
 							>
 								<span style={{ fontSize: "12px", color: "#fca5a5" }}>
-									Р§Р°СЃС‚С‹Рµ РѕС‚РјРµРЅС‹ Р·Р°РїРёСЃРµР№ (
+									Частые отмены записей (
 									{riskData.factors.pastCancellations})
 								</span>
 							</div>
@@ -189,7 +189,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 								}}
 							>
 								<span style={{ fontSize: "12px", color: "#fcd34d" }}>
-									РќР°Р»РёС‡РёРµ РЅРµРѕРїР»Р°С‡РµРЅРЅС‹С… СЃС‡РµС‚РѕРІ
+									Наличие неоплаченных счетов
 								</span>
 							</div>
 						)}
@@ -206,8 +206,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 									}}
 								>
 									<span style={{ fontSize: "12px", color: "#6ee7b7" }}>
-										РћС‚СЂРёС†Р°С‚РµР»СЊРЅС‹Рµ С„Р°РєС‚РѕСЂС‹
-										РѕС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
+										Отрицательные факторы отсутствуют
 									</span>
 								</div>
 							)}
@@ -215,7 +214,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 				</div>
 			) : (
 				<div className="patients-glass-muted" style={{ fontSize: "13px" }}>
-					РќРµС‚ РґР°РЅРЅС‹С… РґР»СЏ РїСЂРѕРіРЅРѕР·Р°
+					Нет данных для прогноза
 				</div>
 			)}
 		</div>
