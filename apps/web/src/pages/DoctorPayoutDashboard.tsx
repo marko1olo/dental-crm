@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./DoctorPayoutDashboard.css";
+import { denteAdminSecretRequestHeaders } from "../AppHelpers.js";
 
 interface Payout {
 	id: string;
@@ -18,7 +19,7 @@ export function DoctorPayoutDashboard() {
 
 	useEffect(() => {
 		setIsLoading(true);
-		fetch("/api/billing/payouts")
+		fetch("/api/billing/payouts", { headers: denteAdminSecretRequestHeaders() })
 			.then((res) => {
 				if (!res.ok) throw new Error(`HTTP ${res.status}`);
 				return res.json();
