@@ -1,6 +1,15 @@
 // Centralized LLM Prompt Router
 // Groups prompts by domain to avoid spaghetti string literals and provide a robust AI Backbone.
 
+
+export const defaultPatientSchema = {
+  fullName: "ФИО в именительном падеже",
+  phone: "Телефон в формате +7 (XXX) XXX-XX-XX, если есть",
+  birthDate: "Дата рождения в формате YYYY-MM-DD, если есть",
+  passport: "Серия и номер паспорта, кем выдан, код подразделения, если есть",
+  notes: "Любые другие важные детали (аллергии, страхи, ДМС, и т.д.)"
+};
+
 export const Prompts = {
 	System: {
 		Base: `Ты — высококлассный ИИ-ассистент современной стоматологической клиники. 
@@ -10,19 +19,13 @@ export const Prompts = {
 		StrictJSON: `ВАЖНО: Ты должен вернуть СТРОГО валидный JSON. Никакого текста до или после JSON. Никаких маркдаун-оберток (\`\`\`json). Только сам объект.`,
 	},
 	Patient: {
-		ExtractDetails: (input: string) => `
+		ExtractDetails: (input: string, schema: Record<string, string> = defaultPatientSchema) => `
 Проанализируй следующий неструктурированный текст (диктовку или результаты распознавания OCR паспорта/анкеты).
 Текст: "${input}"
 
 Твоя задача — извлечь данные пациента.
 Верни JSON в формате:
-{
-  "fullName": "ФИО в именительном падеже",
-  "phone": "Телефон в формате +7 (XXX) XXX-XX-XX, если есть",
-  "birthDate": "Дата рождения в формате YYYY-MM-DD, если есть",
-  "passport": "Серия и номер паспорта, кем выдан, код подразделения, если есть",
-  "notes": "Любые другие важные детали (аллергии, страхи, ДМС, и т.д.)"
-}
+${JSON.stringify(schema, null, 2)}
 `,
 	},
 	Schedule: {
