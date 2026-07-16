@@ -299,4 +299,67 @@ export async function registerAiRoutes(app: FastifyInstance) {
 		const result = await generateMarketingReviewReply(parsedInput.data);
 		return reply.send(result);
 	});
+
+	app.post("/api/ai/predict-no-show", async (request, reply) => {
+		const orgId = await resolveOrganizationId(request);
+		if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
+		if (
+			!(await requireClinicalReadAccess(request, reply, "ai predict no show"))
+		)
+			return;
+
+		const schema = z.object({
+			patientId: z.string().uuid(),
+		});
+		
+		const parsedInput = schema.safeParse(request.body);
+		if (!parsedInput.success) {
+			return reply.code(400).send({
+				error: "PredictNoShowValidationError",
+				message: "Некорректные параметры. Необходимо patientId.",
+			});
+		}
+
+		const patientId = parsedInput.data.patientId;
+		
+		try {
+			const { sql } = await import("drizzle-orm");
+			const { appointments, patientInvoices } = await import("../db/schema.js");
+			
+			// 1. Unpaid invoices factor
+			const unpaid = await db.select({ amount: sql<number>`SUM(total_amount_rub)::int` })
+				.from(patientInvoices)
+				.where(sql`patient_id = ${patientId} AND status = 'unpaid'`);
+			
+			const debtScore = (unpaid[0]?.amount || 0) > 5000 ? 30 : 0;
+			
+			// 2. Cancellation history
+			const cancels = await db.select({ count: sql<number>`COUNT(*)::int` })
+				.from(appointments)
+				.where(sql`patient_id = ${patientId} AND status = 'canceled'`);
+				
+			const cancelScore = (cancels[0]?.count || 0) * 15;
+			
+			let riskScore = debtScore + cancelScore;
+			if (riskScore > 99) riskScore = 99;
+			
+			let riskLevel = "low";
+			if (riskScore > 40) riskLevel = "medium";
+			if (riskScore > 75) riskLevel = "high";
+			
+			return reply.send({
+				patientId,
+				riskScore,
+				riskLevel,
+				factors: {
+					hasDebt: debtScore > 0,
+					pastCancellations: cancels[0]?.count || 0
+				}
+			});
+		} catch(err: any) {
+			console.error("PredictNoShowError", err);
+			return reply.code(500).send({ error: "PredictNoShowError" });
+		}
+	});
 }
+

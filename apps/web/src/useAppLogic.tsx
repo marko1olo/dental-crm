@@ -5927,14 +5927,8 @@ export function useAppLogic(): any {
 		selectedImagingViewerPlan?.mode === "cbct_mpr" ||
 		mprControlsReady;
 	const mprCenterSliceIndex = Math.floor(mprSliceMaxIndex / 2);
-	const mprAxisDirectionLabel = formatMprAxisDirectionLabel({
-		canOpenMpr: mprControlsReady,
-		axisDeg: mprAxisDeg,
-	});
-	const mprAxisAngleBadge = formatMprAxisAngleBadge(
-		mprAxisDeg,
-		mprControlsReady,
-	);
+	const mprAxisDirectionLabel = formatMprAxisDirectionLabel({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+	const mprAxisAngleBadge = formatMprAxisAngleBadge(mprAxisDeg, mprControlsReady);
 	const mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
 	const mprSliceBadge = formatMprSliceBadge({
 		canOpenMpr: mprControlsReady,
@@ -5953,19 +5947,9 @@ export function useAppLogic(): any {
 	const mprSliceLabel = mprControlsReady
 		? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}`
 		: "срез включится после КЛКТ/КТ-серии";
-	const mprAxisRangeValue = formatMprAxisRangeValue({
-		canOpenMpr: mprControlsReady,
-		axisDeg: mprAxisDeg,
-	});
-	const mprSlabRangeValue = formatMprSlabRangeValue({
-		canOpenMpr: mprControlsReady,
-		slabMm: mprSlabMm,
-	});
-	const mprSliceRangeValue = formatMprSliceRangeValue({
-		canOpenMpr: mprControlsReady,
-		sliceIndex: mprSafeSliceIndex,
-		maxIndex: mprSliceMaxIndex,
-	});
+	const mprAxisRangeValue = formatMprAxisRangeValue({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
+	const mprSlabRangeValue = formatMprSlabRangeValue({ canOpenMpr: mprControlsReady, slabMm: mprSlabMm });
+	const mprSliceRangeValue = formatMprSliceRangeValue({ canOpenMpr: mprControlsReady, sliceIndex: mprSafeSliceIndex, maxIndex: mprSliceMaxIndex });
 	const mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
 		"--mpr-axis-deg": `${mprAxisDeg}deg`,
 		"--mpr-slab-width": mprSlabVisualWidth,
@@ -6053,10 +6037,7 @@ export function useAppLogic(): any {
 	};
 	const resetMprControls = applyDefaultMprWorkbenchState;
 	const applyMprClinicalPreset = (preset: MprClinicalPreset) => {
-		const projection = resolveMprClinicalPresetProjection(
-			preset.projection,
-			cbctWorkbenchProjections,
-		);
+		const projection = resolveMprClinicalPresetProjection(preset.projection, cbctWorkbenchProjections);
 		setMprProjection(projection);
 		setMprAxisDeg(clampMprAxisDeg(preset.axisDeg));
 		setMprSlabMm(clampMprSlabMm(preset.slabMm));
@@ -6170,9 +6151,7 @@ export function useAppLogic(): any {
 		);
 		if (preset) applyMprClinicalPreset(preset);
 	};
-	const handleMprKeyboardNavigation = (
-		event: KeyboardEvent<HTMLDivElement>,
-	) => {
+	const handleMprKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (!mprControlsReady) return;
 		const adjustment = resolveMprKeyboardAdjustment({
 			key: event.key,

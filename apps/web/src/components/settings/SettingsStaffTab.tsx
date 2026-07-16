@@ -13,7 +13,7 @@ import { showToast } from "../GlobalToast";
 
 export function SettingsStaffTab() {
 	const props = useAppLogicContext();
-	const { dashboard, staffRoleLabels } = props;
+	const { dashboard, staffRoleLabels, specialtyLabels } = props;
 	const staff = dashboard?.clinicSettings?.staff || [];
 
 	const [loading, setLoading] = useState(false);
@@ -21,6 +21,7 @@ export function SettingsStaffTab() {
 	// New staff form state
 	const [newStaffName, setNewStaffName] = useState("");
 	const [newStaffRole, setNewStaffRole] = useState("doctor");
+	const [newStaffSpecialty, setNewStaffSpecialty] = useState("universal");
 	const [newStaffEmail, setNewStaffEmail] = useState("");
 
 	// Unified Editing Modal State
@@ -37,6 +38,7 @@ export function SettingsStaffTab() {
 		pin: string;
 		password: string;
 		color: string;
+		specialties: string[];
 	}>({
 		fullName: "",
 		role: "",
@@ -49,6 +51,7 @@ export function SettingsStaffTab() {
 		pin: "",
 		password: "",
 		color: "#0d9488",
+		specialties: [],
 	});
 
 	const startEditing = (member: any) => {
@@ -65,6 +68,7 @@ export function SettingsStaffTab() {
 			pin: "",
 			password: "",
 			color: member.color || "#0d9488",
+			specialties: member.specialties || ["universal"],
 		});
 	};
 
@@ -93,6 +97,7 @@ export function SettingsStaffTab() {
 					canManageMoney:
 						newStaffRole === "administrator" || newStaffRole === "owner",
 					canManageImports: true,
+					specialties: [newStaffSpecialty],
 				}),
 			});
 			const data = await res.json();
@@ -139,6 +144,7 @@ export function SettingsStaffTab() {
 					canManageImports: editForm.canManageImports,
 					canManageMoney: editForm.canManageMoney,
 					color: editForm.color || null,
+					specialties: editForm.specialties.length > 0 ? editForm.specialties : ["universal"],
 				}),
 			});
 
@@ -333,6 +339,22 @@ export function SettingsStaffTab() {
 							</select>
 						</label>
 
+						{newStaffRole === "doctor" && (
+							<label>
+								Специализация
+								<select
+									value={newStaffSpecialty}
+									onChange={(e) => setNewStaffSpecialty(e.target.value)}
+								>
+									{Object.entries(specialtyLabels).map(([key, label]) => (
+										<option key={key} value={key}>
+											{label as string}
+										</option>
+									))}
+								</select>
+							</label>
+						)}
+
 						<label>
 							Email (логин для личного доступа)
 							<input
@@ -462,6 +484,40 @@ export function SettingsStaffTab() {
 										<option value="manager">Управляющий</option>
 									</select>
 								</label>
+
+								{editForm.role === "doctor" && (
+									<label
+										className="settings-control-label"
+										style={{
+											display: "flex",
+											flexDirection: "column",
+											gap: "6px",
+										}}
+									>
+										Специализация
+										<div className="quick-chips-row" style={{ marginTop: "4px" }}>
+											{Object.entries(specialtyLabels).map(([key, label]) => {
+												const isSelected = editForm.specialties.includes(key);
+												return (
+													<button
+														key={key}
+														type="button"
+														className={`quick-chip ${isSelected ? "selected" : ""}`}
+														onClick={() => {
+															if (isSelected) {
+																setEditForm({ ...editForm, specialties: editForm.specialties.filter((s) => s !== key) });
+															} else {
+																setEditForm({ ...editForm, specialties: [...editForm.specialties, key] });
+															}
+														}}
+													>
+														{label as string}
+													</button>
+												);
+											})}
+										</div>
+									</label>
+								)}
 
 								<label
 									className="settings-control-label"

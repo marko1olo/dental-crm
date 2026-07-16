@@ -349,11 +349,7 @@ export function buildMprClinicalChecklist(
 						? "Нажмите «Подогнать» или выберите клинический протокол ниже."
 						: "Выберите доступный протокол ниже или откройте серию с нужной плоскостью."
 				: "Сначала нужна пригодная КЛКТ/КТ-серия.",
-			status: input.canOpenMpr
-				? input.protocolExact
-					? "ready"
-					: "active"
-				: "pending_review",
+			status: input.canOpenMpr ? (input.protocolExact ? "ready" : "active") : "pending_review",
 		},
 		{
 			id: "sync",
