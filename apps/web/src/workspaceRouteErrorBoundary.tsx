@@ -35,9 +35,7 @@ function workspaceRouteErrorDetail(error: unknown): string {
 }
 
 function requestDenteStaleWorkspaceRefresh(): void {
-	navigator.serviceWorker?.controller?.postMessage({
-		type: "DENTE_CLEAR_SHELL_CACHE",
-	});
+	navigator.serviceWorker?.controller?.postMessage({ type: "DENTE_CLEAR_SHELL_CACHE" });
 	window.setTimeout(() => window.location.reload(), 50);
 }
 
@@ -96,26 +94,35 @@ export class WorkspaceRouteErrorBoundary extends Component<
 						<p className="text-sm opacity-70 mb-6">
 							Не удалось загрузить этот раздел.
 						</p>
-						<button
-							className="px-6 py-2.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2"
-							type="button"
-							onClick={() => this.setState({ hasError: false, detail: "" })}
-						>
-							<svg
-								className="w-4 h-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
+						<div className="flex gap-2">
+							<button
+								className="px-6 py-2.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2"
+								type="button"
+								onClick={() => this.setState({ hasError: false, detail: "" })}
 							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-								/>
-							</svg>
-							Повторить
-						</button>
+								<svg
+									className="w-4 h-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+									/>
+								</svg>
+								Повторить
+							</button>
+							<button
+								className="px-6 py-2.5 rounded-full bg-[#1e293b] border border-slate-700 text-slate-300 hover:bg-slate-800 transition-all duration-200"
+								type="button"
+								onClick={requestDenteStaleWorkspaceRefresh}
+							>
+								Обновить страницу
+							</button>
+						</div>
 					</div>
 				</section>
 			);

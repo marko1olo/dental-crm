@@ -1,0 +1,1 @@
+ALTER TABLE "visit_diaries" ADD COLUMN "crypto_signature_pkcs7" text;

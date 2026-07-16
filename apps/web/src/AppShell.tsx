@@ -6,9 +6,7 @@ import {
 	Suspense,
 } from "react";
 
-const DentalWorkspace = lazy(() =>
-	import("./App").then((module) => ({ default: module.App })),
-);
+const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
 const OnboardingPreviewPage = lazy(() =>
 	import("./OnboardingPreview").then((m) => ({ default: m.OnboardingPreview })),
 );
@@ -40,9 +38,7 @@ function appShellErrorDetail(error: unknown): string {
 }
 
 function requestDenteStaleAppRefresh(): void {
-	navigator.serviceWorker?.controller?.postMessage({
-		type: "DENTE_CLEAR_SHELL_CACHE",
-	});
+	navigator.serviceWorker?.controller?.postMessage({ type: "DENTE_CLEAR_SHELL_CACHE" });
 	window.setTimeout(() => window.location.reload(), 50);
 }
 

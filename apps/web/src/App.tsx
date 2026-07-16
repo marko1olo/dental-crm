@@ -368,7 +368,7 @@ import {
 	mprSliceNudgeSteps,
 	mprSlicePresetFractions,
 	resolveMprKeyboardAdjustment,
-} from "./utils/math/mprMath";
+} from "./mprControlMath";
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import {
 	inferDashboardVisitSpecialty,

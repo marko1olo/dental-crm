@@ -9,7 +9,7 @@
  *
  * See: https://developers.facebook.com/docs/whatsapp/cloud-api/guides/set-up-webhooks
  */
-import { createHash } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -52,6 +52,46 @@ const updateWhatsappConfigSchema = z.object({
 
 function maskToken(raw: string): string {
 	return createHash("sha256").update(raw).digest("hex").slice(0, 12);
+}
+
+/**
+ * Meta App Secret used to verify the `x-hub-signature-256` header on inbound
+ * webhook payloads. Stored server-side only via env (never in the DB or client
+ * bundle), mirroring the Telegram webhook-secret convention. A per-org column
+ * is intentionally avoided: the App Secret belongs to the Meta app, not the
+ * clinic, and one DENTE deployment fronts a single Meta app.
+ */
+function configuredWhatsappAppSecret(): string | null {
+	const raw = process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET;
+	const trimmed = typeof raw === "string" ? raw.trim() : "";
+	return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * Verifies Meta's `x-hub-signature-256` header: HMAC-SHA256 of the raw request
+ * body keyed by the App Secret, hex-encoded and prefixed with `sha256=`.
+ * Uses a constant-time comparison to avoid leaking the signature via timing.
+ */
+function isValidWhatsappSignature(
+	rawBody: Buffer | string,
+	signatureHeader: string | null,
+	appSecret: string,
+): boolean {
+	if (!signatureHeader || !signatureHeader.startsWith("sha256=")) return false;
+	const provided = signatureHeader.slice("sha256=".length).trim();
+	if (!/^[0-9a-f]+$/i.test(provided)) return false;
+
+	const expected = createHmac("sha256", appSecret)
+		.update(rawBody)
+		.digest("hex");
+
+	// Compare over fixed-length SHA-256 digests of both hex strings so
+	// timingSafeEqual never throws on a length mismatch.
+	const providedDigest = createHash("sha256")
+		.update(provided.toLowerCase())
+		.digest();
+	const expectedDigest = createHash("sha256").update(expected).digest();
+	return timingSafeEqual(providedDigest, expectedDigest);
 }
 
 function parseJsonSafe<T>(value: string, fallback: T): T {
