@@ -2691,7 +2691,7 @@ export function useAppLogic(): any {
 				response,
 				"Данные клиники не загружены",
 			);
-			if (response.status === 403 || response.status === 503) {
+			if (response.status === 401 || response.status === 403 || response.status === 503 || response.status === 404) {
 				setAccessUnlockRequired(true);
 				setAccessUnlockMessage(message);
 				setDashboard(null);
