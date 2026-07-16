@@ -90,7 +90,7 @@ export function Omnibar() {
 			title: "Воронка Лидов",
 			icon: <Users />,
 			category: "Навигация",
-			action: () => setCurrentView("kanban"),
+			action: () => setCurrentView("leads"),
 		},
 		{
 			id: "nav-marketing",
