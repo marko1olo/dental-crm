@@ -33,6 +33,8 @@ function getPasswordStrength(pw: string): { score: number; label: string } {
 }
 
 export function SettingsProfileTab() {
+	const themeStore = useThemeStore();
+	const uiStore = useUiStore();
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
@@ -183,15 +185,15 @@ export function SettingsProfileTab() {
 					<div className="profile-form-grid">
 						<div className="profile-form-group full-width">
 							<label>ФИО</label>
-							<input type="text" value={profile.fullName} disabled />
+							<input type="text" value={profile?.fullName || ""} disabled />
 						</div>
 						<div className="profile-form-group">
 							<label>Email</label>
-							<input type="email" value={profile.email || "Не указан"} disabled />
+							<input type="email" value={profile?.email || "Не указан"} disabled />
 						</div>
 						<div className="profile-form-group">
 							<label>Роль в системе</label>
-							<input type="text" value={staffRoleLabels?.[profile.role] ?? profile.role} disabled />
+							<input type="text" value={profile?.role ? (staffRoleLabels?.[profile.role as "admin"|"doctor"|"assistant"|"manager"] ?? profile.role) : ""} disabled />
 						</div>
 					</div>
 					<p className="profile-form-hint">
@@ -257,10 +259,10 @@ export function SettingsProfileTab() {
 									{[1, 2, 3].map((i) => (
 										<div
 											key={i}
-											className={`profile-password-bar ${strength.score >= i ? strengthClass : ""}`}
+											className={`profile-password-bar ${strength.score >= i ? "" : ""}`}
 										/>
 									))}
-									<span className="profile-password-label" style={{ color: strengthClass === 'weak' ? '#ef4444' : strengthClass === 'medium' ? '#f59e0b' : '#10b981' }}>
+									<span className="profile-password-label" style={{ color: false ? '#ef4444' : false ? '#f59e0b' : '#10b981' }}>
 										{strength.label}
 									</span>
 								</div>
@@ -372,7 +374,7 @@ export function SettingsProfileTab() {
 						<div className="profile-form-group">
 							<label>Цветовая тема</label>
 							<select
-								value={useThemeStore((s) => s.themeMode)}
+								value={themeStore.themeMode}
 								onChange={(e) =>
 									useThemeStore.getState().setThemeMode(e.target.value as "auto" | "light" | "dark")
 								}
@@ -386,7 +388,7 @@ export function SettingsProfileTab() {
 						<div className="profile-form-group">
 							<label>Масштаб интерфейса</label>
 							<select
-								value={useUiStore((s) => s.uiScale)}
+								value={uiStore.uiScale}
 								onChange={(e) =>
 									useUiStore.getState().setUiScale(e.target.value as "standard" | "large")
 								}

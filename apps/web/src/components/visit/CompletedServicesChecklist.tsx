@@ -1,6 +1,6 @@
 import React from "react";
-import { useAppLogicContext } from "../../useAppLogicContext";
-import type { VisitServiceItem } from "@dental/shared";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+
 
 export const CompletedServicesChecklist: React.FC = () => {
 	const { activeTreatmentPlanItems, visitNoteForm, setVisitNoteForm } = useAppLogicContext();

@@ -3431,6 +3431,7 @@ export function visitNoteFormFromVisit(
 			objectiveStatus: "",
 			diagnosis: "",
 			treatmentPlan: "",
+			completedServices: [],
 		};
 	}
 	return {
@@ -3439,6 +3440,7 @@ export function visitNoteFormFromVisit(
 		objectiveStatus: visit.objectiveStatus ?? "",
 		diagnosis: visit.diagnosis ?? "",
 		treatmentPlan: visit.treatmentPlan ?? "",
+		completedServices: [],
 	};
 }
 
