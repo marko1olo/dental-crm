@@ -5,6 +5,7 @@ import {
 	Check,
 	CheckCircle2,
 	ClipboardCheck,
+	FlaskConical,
 	Mic,
 	ShieldCheck,
 	Sparkles,
@@ -15,6 +16,7 @@ import { EgiszMonitor } from "./components/EgiszMonitor";
 import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
+import { LabOrdersPanel } from "./components/schedule/LabOrdersPanel";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisitDiaryEditor } from "./components/VisitDiaryEditor";
 import { DictationHints } from "./DictationHints";
@@ -2108,6 +2110,20 @@ export function VisitView(props: VisitViewProps) {
 									patientId={activePatient.id}
 								/>
 							</div>
+							<details className="mt-4 bg-slate-800/10 border border-slate-700/40 rounded-xl p-4 [&_summary::-webkit-details-marker]:hidden">
+								<summary className="flex justify-between items-center cursor-pointer select-none">
+									<div className="flex items-center gap-2">
+										<FlaskConical className="w-5 h-5 text-teal-400" />
+										<span className="font-semibold text-sm text-slate-200">
+											Ортопедия и Лаборатория (ЗТЛ)
+										</span>
+									</div>
+									<span className="text-xs text-slate-400 font-medium">Открыть</span>
+								</summary>
+								<div className="mt-4 pt-4 border-t border-slate-700/40">
+									<LabOrdersPanel patientId={activePatient.id} />
+								</div>
+							</details>
 						</div>
 					</div>
 				)}
