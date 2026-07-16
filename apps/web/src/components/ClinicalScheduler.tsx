@@ -1,18 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../AppHelpers.js";
 import { showToast } from "./GlobalToast.js";
 import "./ClinicalScheduler.css";
-
-interface AppointmentSlot {
-	id: string;
-	time: string;
-	patientName: string;
-	type: "therapy" | "orthopedics" | "consultation";
-	hasCriticalAlert: boolean;
-	labStatus?: "delivered" | "in_progress" | "none" | "ready";
-	duration?: number;
-	alert?: string;
-}
 
 interface CrosshairState {
 	rowIdx: number;
@@ -28,7 +17,6 @@ export const ClinicalScheduler: React.FC<any> = ({
 	const [isMobile, setIsMobile] = useState(false);
 	const [mobileChairId, setMobileChairId] = useState<string | null>(null);
 
-	// Patients for dropdown search
 	const [patientsList, setPatientsList] = useState<any[]>([]);
 
 	useEffect(() => {
@@ -114,12 +102,38 @@ export const ClinicalScheduler: React.FC<any> = ({
 
 	const chairsCount = displayedChairs.length;
 	const isSingleChair = chairsCount === 1;
-	const rowStyle = { gridTemplateColumns: `60px repeat(${chairsCount}, 1fr)` };
 
 	const freeDoctors =
 		dashboard?.shiftIntelligence?.doctorLoads?.filter(
 			(dl: any) => dl.utilizationPercent < 50 || dl.state === "under_utilized",
 		) || [];
+
+	// Helper to calculate grid row start and span
+	const getAppointmentGridPosition = (appt: any) => {
+		if (!appt.startsAt || !appt.endsAt) return null;
+		
+		const startsAt = new Date(appt.startsAt);
+		const endsAt = new Date(appt.endsAt);
+		
+		const startH = startsAt.getHours();
+		const startM = startsAt.getMinutes();
+		const endH = endsAt.getHours();
+		const endM = endsAt.getMinutes();
+
+		const startMinutes = startH * 60 + startM;
+		const endMinutes = endH * 60 + endM;
+		
+		const minParts = minStart.split(":").map(Number);
+		const gridStartMinutes = (minParts[0] || 9) * 60 + (minParts[1] || 0);
+
+		const offsetSlots = Math.max(0, Math.floor((startMinutes - gridStartMinutes) / 30));
+		const durationSlots = Math.max(1, Math.ceil((endMinutes - startMinutes) / 30));
+
+		return {
+			startRow: offsetSlots + 2, // +1 for CSS Grid 1-index, +1 for Header Row = +2
+			span: durationSlots
+		};
+	};
 
 	return (
 		<div className="clinical-scheduler">
@@ -161,7 +175,14 @@ export const ClinicalScheduler: React.FC<any> = ({
 										fontWeight: 500,
 										cursor: "pointer",
 									}}
-									onClick={() => onSlotClick && onSlotClick(new Date().toISOString().split("T")[0], doc.nextFreeAt || "10:00", "")}
+									onClick={() =>
+										onSlotClick &&
+										onSlotClick(
+											new Date().toISOString().split("T")[0],
+											doc.nextFreeAt || "10:00",
+											"",
+										)
+									}
 									title="Записать к врачу"
 								>
 									<span
@@ -206,67 +227,95 @@ export const ClinicalScheduler: React.FC<any> = ({
 				</div>
 			)}
 
-			{/* Crosshair grid */}
 			<div className="scheduler-grid-wrap" onMouseLeave={handleCellLeave}>
-				{/* Chair headers */}
-				{!isSingleChair && (
-					<div className="sg-row sg-header-row" style={rowStyle}>
-						<div className="sg-time-cell" />
-						{displayedChairs.map((chair: any, ci: number) => (
+				<div
+					className="sg-grid-body"
+					style={{
+						display: "grid",
+						gridTemplateColumns: `60px repeat(${chairsCount}, minmax(180px, 1fr))`,
+						gridAutoRows: "44px",
+					}}
+				>
+					{/* Headers */}
+					{!isSingleChair && (
+						<div
+							className="sg-corner"
+							style={{ gridRow: 1, gridColumn: 1 }}
+						/>
+					)}
+					{!isSingleChair &&
+						displayedChairs.map((chair: any, ci: number) => (
 							<div
 								key={chair.id}
 								className={`sg-chair-header ${crosshair && crosshair.colIdx === ci ? "sg-col-highlight" : ""}`}
+								style={{ gridRow: 1, gridColumn: ci + 2 }}
 							>
 								{chair.name}
 							</div>
 						))}
-					</div>
-				)}
 
-				{TIME_SLOTS.map((time, ri) => (
-					<div key={time} className="sg-row" style={rowStyle}>
-						{/* Time label */}
-						<div
-							className={`sg-time-cell ${crosshair && crosshair.rowIdx === ri ? "sg-row-highlight-label" : ""}`}
-						>
-							{time}
-						</div>
+					{/* Background cells (time labels and empty clickable areas) */}
+					{TIME_SLOTS.map((time, ri) => (
+						<React.Fragment key={time}>
+							<div
+								className={`sg-time-cell ${crosshair && crosshair.rowIdx === ri ? "sg-row-highlight-label" : ""}`}
+								style={{ gridRow: ri + 2, gridColumn: 1 }}
+							>
+								{time}
+							</div>
 
-						{displayedChairs.map((chair: any, ci: number) => {
-							const appt = (appointments || []).find((a: any) => {
-								if (a.chairId !== chair.id) return false;
-								if (!a.startsAt) return false;
-								const apptTime = new Date(a.startsAt);
-								const h = apptTime.getHours().toString().padStart(2, "0");
-								const m = apptTime.getMinutes().toString().padStart(2, "0");
-								return `${h}:${m}` === time;
-							});
-
-							return (
+							{displayedChairs.map((chair: any, ci: number) => (
 								<div
-									key={chair.id}
-									className={`sg-cell ${!appt ? "sg-cell--empty" : "sg-cell--filled"} 
-                    ${crosshair && crosshair.rowIdx === ri && crosshair.colIdx === ci ? "sg-cell-highlight" : ""}
-                    ${crosshair && (crosshair.rowIdx === ri || crosshair.colIdx === ci) ? "sg-row-highlight" : ""}
-                  `}
+									key={`${time}-${chair.id}`}
+									className={`sg-cell sg-cell--empty ${crosshair && crosshair.rowIdx === ri && crosshair.colIdx === ci ? "sg-cell-highlight" : ""} ${crosshair && (crosshair.rowIdx === ri || crosshair.colIdx === ci) ? "sg-row-highlight" : ""}`}
+									style={{ gridRow: ri + 2, gridColumn: ci + 2 }}
 									onMouseEnter={() => setCrosshair({ rowIdx: ri, colIdx: ci })}
-									onClick={() => {
-										if (!appt) handleEmptyClick(time, chair.id);
+									onClick={() => handleEmptyClick(time, chair.id)}
+								>
+									<div className="sg-cell-plus">+</div>
+								</div>
+							))}
+						</React.Fragment>
+					))}
+
+					{/* Appointments Overlay */}
+					{(appointments || []).map((appt: any) => {
+						const pos = getAppointmentGridPosition(appt);
+						if (!pos) return null;
+
+						const colIdx = displayedChairs.findIndex((c: any) => c.id === appt.chairId);
+						if (colIdx === -1) return null; // Not in view
+
+						return (
+							<div
+								key={appt.id}
+								className="sg-appt-card-wrapper"
+								style={{
+									gridRow: `${pos.startRow} / span ${pos.span}`,
+									gridColumn: colIdx + 2,
+								}}
+							>
+								<div
+									className={`sg-appt-card sg-appt-${appt.type || "therapy"}`}
+									onClick={(e) => {
+										// We prevent event bubbling so it doesn't trigger the background empty cell click
+										e.stopPropagation();
 									}}
 								>
-									{appt && (
-										<div className="sg-appt-card sg-appt-therapy">
-											<div className="sg-appt-title">
-												{appt.patient?.fullName || "Пациент DB"}
-											</div>
-											<div className="sg-appt-meta">{appt.status}</div>
-										</div>
-									)}
+									<div className="sg-appt-title">
+										{appt.patient?.fullName || "Пациент"}
+									</div>
+									<div className="sg-appt-meta">{appt.status}</div>
+									<div className="sg-appt-time">
+										{new Date(appt.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+										{" - "}
+										{new Date(appt.endsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+									</div>
 								</div>
-							);
-						})}
-					</div>
-				))}
+							</div>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);
