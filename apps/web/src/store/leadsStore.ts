@@ -31,7 +31,8 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 		try {
 			const res = await fetch(`${API_URL}/leads`, {
 				headers: {
-					Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+					"x-dente-staff-token": localStorage.getItem("dente_staff_token") || "",
+					"x-dente-clinic-token": localStorage.getItem("dente_clinic_token") || "",
 				},
 			});
 			if (!res.ok) throw new Error("Failed to fetch leads");
@@ -53,7 +54,8 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				method: "PATCH",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+					"x-dente-staff-token": localStorage.getItem("dente_staff_token") || "",
+					"x-dente-clinic-token": localStorage.getItem("dente_clinic_token") || "",
 				},
 				body: JSON.stringify({ status }),
 			});
@@ -72,7 +74,8 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+					"x-dente-staff-token": localStorage.getItem("dente_staff_token") || "",
+					"x-dente-clinic-token": localStorage.getItem("dente_clinic_token") || "",
 				},
 				body: JSON.stringify(leadData),
 			});
@@ -89,7 +92,8 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+					"x-dente-staff-token": localStorage.getItem("dente_staff_token") || "",
+					"x-dente-clinic-token": localStorage.getItem("dente_clinic_token") || "",
 				},
 				body: JSON.stringify(details),
 			});

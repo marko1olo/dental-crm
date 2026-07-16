@@ -41,13 +41,11 @@ export function MarketingView({
 	clinicName: string;
 	clinicPhone: string;
 }) {
-	const { auth } = useAppLogicContext();
-	const [customSeoKeys, setCustomSeoKeys] = useState(() => {
-		try {
-			const saved = localStorage.getItem("dental_crm_mkt_seo_keys");
-			if (saved) return JSON.parse(saved);
-		} catch (e) {}
-		return [
+	const { auth, dashboard, fetchDashboard } = useAppLogicContext();
+	const marketingData = dashboard?.clinicSettings?.profile?.marketingData || {};
+
+	const [customSeoKeys, setCustomSeoKeys] = useState<string[]>(() => {
+		return marketingData.customSeoKeys || [
 			"лечение кариеса",
 			"безболезненное удаление",
 			"стоматология",
@@ -56,45 +54,63 @@ export function MarketingView({
 		];
 	});
 
+	const [phone, setPhone] = useState(() => {
+		return marketingData.phone || clinicPhone || "+7 (800) 000-00-00";
+	});
+
+	const [stats, setStats] = useState<MarketingStats>(() => {
+		return marketingData.stats || DEFAULT_STATS;
+	});
+
+	useEffect(() => {
+		if (marketingData.customSeoKeys) setCustomSeoKeys(marketingData.customSeoKeys);
+		if (marketingData.stats) setStats(marketingData.stats);
+		if (marketingData.phone) setPhone(marketingData.phone);
+	}, [marketingData.customSeoKeys, marketingData.stats, marketingData.phone]);
+
+	const saveMarketingData = async (newData: any) => {
+		try {
+			const merged = {
+				customSeoKeys,
+				stats,
+				phone,
+				...newData
+			};
+			const res = await fetch("/api/settings/profile", {
+				method: "PUT",
+				headers: auth.denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({ marketingData: merged }),
+			});
+			if (res.ok) {
+				fetchDashboard?.();
+			}
+		} catch (error) {
+			console.error("[Marketing] Save error", error);
+		}
+	};
+
 	const handleAddSeoKey = (val: string) => {
 		if (!val.trim()) return;
 		const updated = [...customSeoKeys, val.trim()];
 		setCustomSeoKeys(updated);
-		localStorage.setItem("dental_crm_mkt_seo_keys", JSON.stringify(updated));
+		saveMarketingData({ customSeoKeys: updated });
 	};
 
 	const handleRemoveSeoKey = (val: string) => {
 		const updated = customSeoKeys.filter((k: string) => k !== val);
 		setCustomSeoKeys(updated);
-		localStorage.setItem("dental_crm_mkt_seo_keys", JSON.stringify(updated));
+		saveMarketingData({ customSeoKeys: updated });
 	};
-
-	const [reviewText, setReviewText] = useState("");
-	const [tone, setTone] = useState<ReviewTone>("positive");
-	const [generatedReply, setGeneratedReply] = useState("");
-	const [phone, setPhone] = useState(() => {
-		return (
-			localStorage.getItem("dental_crm_mkt_phone") ||
-			clinicPhone ||
-			"+7 (800) 000-00-00"
-		);
-	});
-
-	const [stats, setStats] = useState<MarketingStats>(() => {
-		try {
-			const saved = localStorage.getItem("dental_crm_mkt_stats");
-			if (saved) return JSON.parse(saved);
-		} catch (e) {}
-		return DEFAULT_STATS;
-	});
-
-	const [copied, setCopied] = useState(false);
-	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">("reviews");
 
 	const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const val = e.target.value;
 		setPhone(val);
-		localStorage.setItem("dental_crm_mkt_phone", val);
+	};
+
+	const handlePhoneBlur = () => {
+		saveMarketingData({ phone });
 	};
 
 	const updateStat = (
@@ -108,8 +124,14 @@ export function MarketingView({
 			[platform]: { ...stats[platform], [field]: num },
 		};
 		setStats(newStats);
-		localStorage.setItem("dental_crm_mkt_stats", JSON.stringify(newStats));
+		saveMarketingData({ stats: newStats });
 	};
+
+	const [reviewText, setReviewText] = useState("");
+	const [tone, setTone] = useState<ReviewTone>("positive");
+	const [generatedReply, setGeneratedReply] = useState("");
+	const [copied, setCopied] = useState(false);
+	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">("reviews");
 
 	const [newKeyInput, setNewKeyInput] = useState("");
 	const [isAiLoading, setIsAiLoading] = useState(false);
@@ -348,6 +370,7 @@ export function MarketingView({
 									type="tel"
 									value={phone}
 									onChange={handlePhoneChange}
+									onBlur={handlePhoneBlur}
 									placeholder="+7 (000) 000-00-00"
 								/>
 							</div>
