@@ -192,7 +192,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<input
 								type="text"
 								className="text-input"
-								placeholder="Название семьи, ФИО или телефон..."
+								placeholder="Название семьи (напр. Семья Ивановых)"
 								value={newFamilyName}
 								onChange={(e) => setNewFamilyName(e.target.value)}
 								autoFocus
@@ -223,7 +223,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 								<input
 									type="text"
 									className="text-input"
-									placeholder="Поиск семьи по названию..."
+									placeholder="Поиск семьи по названию, ФИО или телефону..."
 									style={{ paddingLeft: "32px", width: "100%" }}
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
