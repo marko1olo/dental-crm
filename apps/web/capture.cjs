@@ -35,8 +35,10 @@ async function capture() {
   // Click theme toggle
   console.log("Toggling theme to Dark...");
   await page.evaluate(() => {
-     localStorage.setItem('dente_theme_mode', 'dark');
-     document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('dente_theme', 'dark');
+    document.body.setAttribute('data-theme', 'dark');
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('theme-dark');
   });
   await page.waitForTimeout(1000);
 
@@ -53,8 +55,10 @@ async function capture() {
   // Toggle theme to Light
   console.log("Toggling theme to Light...");
   await page.evaluate(() => {
-     localStorage.setItem('dente_theme_mode', 'light');
-     document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('dente_theme', 'light');
+    document.body.setAttribute('data-theme', 'light');
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('theme-dark');
   });
   await page.waitForTimeout(1000);
 
