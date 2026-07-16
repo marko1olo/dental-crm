@@ -8,19 +8,14 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { showToast } from "../GlobalToast";
-
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
-export function SettingsAccessTab({
-	settingsTab,
-}: {
-	settingsTab: string;
-}) {
+export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 	const props = useAppLogicContext();
 	const {
 		dashboard,
@@ -113,7 +108,10 @@ export function SettingsAccessTab({
 						ассистента или администратора.
 					</p>
 				</div>
-				<form className="access-settings__invite-form" onSubmit={handleGenerateInvite}>
+				<form
+					className="access-settings__invite-form"
+					onSubmit={handleGenerateInvite}
+				>
 					<input
 						type="email"
 						placeholder="email@example.com"
@@ -133,20 +131,14 @@ export function SettingsAccessTab({
 						<option value="assistant">Ассистент</option>
 						<option value="owner">Владелец</option>
 					</select>
-					<button
-						type="submit"
-						disabled={loading}
-						className="primary-button"
-					>
+					<button type="submit" disabled={loading} className="primary-button">
 						{loading ? "Создание..." : "Сгенерировать"}
 					</button>
 				</form>
 
 				{inviteLink && (
 					<div className="access-settings__invite-result">
-						<span className="access-settings__invite-link">
-							{inviteLink}
-						</span>
+						<span className="access-settings__invite-link">{inviteLink}</span>
 						<button
 							type="button"
 							onClick={handleCopy}

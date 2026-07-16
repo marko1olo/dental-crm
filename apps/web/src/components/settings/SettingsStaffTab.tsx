@@ -7,9 +7,8 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { showToast } from "../GlobalToast";
-
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { showToast } from "../GlobalToast";
 
 export function SettingsStaffTab() {
 	const props = useAppLogicContext();
@@ -162,14 +161,16 @@ export function SettingsStaffTab() {
 								<div className="staff-grid-cell__head">
 									<div
 										className="staff-avatar"
-										style={member.color ? { backgroundColor: member.color } : undefined}
+										style={
+											member.color
+												? { backgroundColor: member.color }
+												: undefined
+										}
 									>
 										{member.fullName.charAt(0)}
 									</div>
 									<div>
-										<h5 className="staff-grid-cell__name">
-											{member.fullName}
-										</h5>
+										<h5 className="staff-grid-cell__name">{member.fullName}</h5>
 										<span className="staff-grid-cell__role">
 											{staffRoleLabels
 												? staffRoleLabels[member.role]
@@ -193,10 +194,18 @@ export function SettingsStaffTab() {
 												className="input--pin"
 												autoFocus
 											/>
-											<button type="submit" className="primary-button btn--sm" disabled={loading}>
+											<button
+												type="submit"
+												className="primary-button btn--sm"
+												disabled={loading}
+											>
 												ОК
 											</button>
-											<button type="button" className="secondary-button btn--sm" onClick={() => setEditingPinForId(null)}>
+											<button
+												type="button"
+												className="secondary-button btn--sm"
+												onClick={() => setEditingPinForId(null)}
+											>
 												Отмена
 											</button>
 										</form>
@@ -213,10 +222,18 @@ export function SettingsStaffTab() {
 												className="staff-inline-form__password"
 												autoFocus
 											/>
-											<button type="submit" className="primary-button btn--sm" disabled={loading}>
+											<button
+												type="submit"
+												className="primary-button btn--sm"
+												disabled={loading}
+											>
 												ОК
 											</button>
-											<button type="button" className="secondary-button btn--sm" onClick={() => setEditingPasswordForId(null)}>
+											<button
+												type="button"
+												className="secondary-button btn--sm"
+												onClick={() => setEditingPasswordForId(null)}
+											>
 												Отмена
 											</button>
 										</form>

@@ -120,10 +120,10 @@ import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
 import { SettingsAuditTab } from "./components/settings/SettingsAuditTab";
 import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
 import { SettingsImportsTab } from "./components/settings/SettingsImportsTab";
+import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
-import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -2556,13 +2556,9 @@ export function SettingsView(props: SettingsViewProps) {
 					</details>
 				) : null}
 
-				{settingsTab === "profile" ? (
-					<SettingsProfileTab />
-				) : null}
+				{settingsTab === "profile" ? <SettingsProfileTab /> : null}
 
-				{settingsTab === "staff" ? (
-					<SettingsStaffTab />
-				) : null}
+				{settingsTab === "staff" ? <SettingsStaffTab /> : null}
 
 				<SettingsClinicTab settingsTab={settingsTab} />
 				<SettingsAccessTab settingsTab={settingsTab} />
@@ -5288,7 +5284,7 @@ export function SettingsView(props: SettingsViewProps) {
 				) : null}
 
 				<SettingsImportsTab />
-				<SettingsAuditTab {...props} />
+				<SettingsAuditTab />
 			</div>
 		</section>
 	);

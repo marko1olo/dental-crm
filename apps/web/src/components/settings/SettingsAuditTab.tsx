@@ -1,4 +1,3 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -119,6 +118,7 @@ import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
 import { SettingsAccessTab } from "../../components/settings/SettingsAccessTab";
 import { SettingsClinicTab } from "../../components/settings/SettingsClinicTab";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -870,7 +870,8 @@ const dicomFirstFrameImageTypeLabel = (
 	return "тип изображения: особый";
 };
 
-export function SettingsAuditTab(props: Record<string, any>) {
+export function SettingsAuditTab() {
+	const props = useAppLogicContext();
 	const {
 		activePatient,
 		activeSettingsTabButtonRef,

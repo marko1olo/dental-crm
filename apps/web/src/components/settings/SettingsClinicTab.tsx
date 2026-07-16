@@ -1,5 +1,3 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { useSettingsStore } from "../../store/settingsStore";
 import type {
 	Chair,
 	ClinicMode,
@@ -21,6 +19,8 @@ import {
 } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import React, { useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsStore } from "../../store/settingsStore";
 import { showToast } from "../GlobalToast";
 import { WorkspaceFeaturesSelector } from "../workspace/WorkspaceFeaturesSelector";
 
@@ -123,17 +123,16 @@ function StaffCredentialsEditor({
 	);
 }
 
-export function SettingsClinicTab({
-	settingsTab,
-}: {
-	settingsTab: string;
-}) {
+export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const appLogicProps = useAppLogicContext();
 	const settingsStoreProps = useSettingsStore();
 
-	const newStaffReadyToCreate = (appLogicProps.newStaffName || "").trim().length > 0;
-	const newChairReadyToCreate = (appLogicProps.newChairName || "").trim().length > 0;
-	const adminSecretReady = (settingsStoreProps.telegramAdminSecretDraft || "").trim().length > 0;
+	const newStaffReadyToCreate =
+		(appLogicProps.newStaffName || "").trim().length > 0;
+	const newChairReadyToCreate =
+		(appLogicProps.newChairName || "").trim().length > 0;
+	const adminSecretReady =
+		(settingsStoreProps.telegramAdminSecretDraft || "").trim().length > 0;
 
 	const mergedProps: Record<string, any> = {
 		...appLogicProps,
@@ -895,7 +894,10 @@ export function SettingsClinicTab({
 											: "Сохранено";
 								return (
 									<div className="staff-row" key={member.id}>
-										<span className="staff-color-indicator" style={{ background: member.color }} />
+										<span
+											className="staff-color-indicator"
+											style={{ background: member.color }}
+										/>
 										<div>
 											<strong>{member.fullName}</strong>
 											<p>

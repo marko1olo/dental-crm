@@ -1,4 +1,3 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	AlertTriangle,
 	Eye,
@@ -10,6 +9,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useThemeStore } from "../../store/themeStore";
 import { useUiStore } from "../../store/uiStore";
@@ -174,7 +174,10 @@ export function SettingsProfileTab() {
 		return (
 			<div className="settings-tab-pane">
 				<div className="settings-empty-state">
-					<AlertTriangle size={32} className="settings-empty-state__error-icon" />
+					<AlertTriangle
+						size={32}
+						className="settings-empty-state__error-icon"
+					/>
 					<p className="settings-empty-state__error-text">
 						Профиль не найден. Войдите через PIN или перезайдите в систему.
 					</p>
@@ -184,14 +187,13 @@ export function SettingsProfileTab() {
 	}
 
 	// Strength class for the password bar segments
-	const strengthClass =
-		newPassword
-			? strength.score === 1
-				? "weak"
-				: strength.score === 2
-					? "medium"
-					: "strong"
-			: "";
+	const strengthClass = newPassword
+		? strength.score === 1
+			? "weak"
+			: strength.score === 2
+				? "medium"
+				: "strong"
+		: "";
 
 	return (
 		<div className="settings-tab-pane animate-fade-in-up">

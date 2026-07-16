@@ -26,11 +26,7 @@ type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type StringTokenGroup = { title: string; items: string[] };
 type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
 
-export function SettingsTelegramTab({
-	settingsTab,
-}: {
-	settingsTab: string;
-}) {
+export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 	const props = useAppLogicContext();
 	const {
 		dashboard,
