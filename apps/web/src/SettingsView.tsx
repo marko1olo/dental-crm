@@ -131,6 +131,7 @@ import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
 import { SettingsImportsTab } from "./components/settings/SettingsImportsTab";
 import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
+import { InventoryView } from "./components/InventoryView";
 import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
@@ -281,7 +282,8 @@ type SettingsTabId =
 	| "sources"
 	| "ai"
 	| "imports"
-	| "audit";
+	| "audit"
+	| "inventory";
 type SettingsTab = { id: SettingsTabId; title: string };
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
 type MigrationOperatorActionScope = "primary" | "script";
@@ -2550,6 +2552,11 @@ export function SettingsView(props: SettingsViewProps) {
 				<SettingsAccessTab settingsTab={settingsTab} />
 				<SettingsTelegramTab settingsTab={settingsTab} />
 				{settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
+				{settingsTab === "inventory" ? (
+					<InventoryView
+						organizationId={dashboard.clinicSettings.profile.organizationId}
+					/>
+				) : null}
 				<SettingsMessengersTab settingsTab={settingsTab} />
 				{settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
 

@@ -8089,6 +8089,7 @@ export const settingsTabs = [
 	{ id: "staff", title: "Сотрудники" },
 	{ id: "access", title: "Доступы" },
 	{ id: "insurance", title: "ДМС" },
+	{ id: "inventory", title: "Склад" },
 	{ id: "telegram", title: "ТГ-бот" },
 	{ id: "messengers", title: "Мессенджеры" },
 	{ id: "protocols", title: "Протоколы" },
