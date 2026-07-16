@@ -1,4 +1,5 @@
-import { Bot, Sparkles, UploadCloud } from "lucide-react";
+import { Bot, Sparkles, UploadCloud, Server, Activity, CheckCircle2, ShieldAlert, Cpu, ExternalLink } from "lucide-react";
+import "./SettingsAiTab.css";
 import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
@@ -51,359 +52,211 @@ export function SettingsAiTab() {
 	const typedRecognitionJob = recognitionJob as any;
 
 	return (
-		<section
-			className="recognition-lab"
-			aria-label="ИИ-распознавание диктовки, журнала и снимков"
-		>
-			<div className="import-copy">
-				<Bot aria-hidden="true" />
-				<div>
-					<p className="eyebrow">ИИ-распознавание</p>
-					<h2>
-						Диктовка, фото журнала и снимки становятся черновиками с проверкой
-					</h2>
-					<p>
-						Здесь проверяется контур обработки будущих нейронок: вход,
-						уверенность, предупреждения и следующий шаг. Ничего не подписывается
-						и не попадает в ЭМК без врача.
-					</p>
+		<div className="ai-studio-container animate-fade-in">
+			{/* Speech Recognition Gateway */}
+			<section className="ai-section-card">
+				<div className="ai-section-header">
+					<div className="ai-section-icon">
+						<Bot size={24} />
+					</div>
+					<div className="ai-section-title">
+						<h3>Распознавание речи (Gateway)</h3>
+						<p>Настройки локальных и облачных нейросетей для диктовки протоколов</p>
+					</div>
 				</div>
-			</div>
 
-			<div
-				className="speech-provider-panel"
-				aria-label="Контуры распознавания речи"
-			>
-				<div className="speech-provider-head">
-					<div>
-						<p className="eyebrow">Распознавание речи</p>
-						<h3>
-							Голос: быстрый черновик сейчас, усиленное распознавание после
-							подключения
-						</h3>
-					</div>
-					<span>сырой текст + черновик + аудит</span>
-				</div>
 				{speechGatewayStatus ? (
-					<div className="speech-gateway-strip">
-						<strong>{speechGatewayStatus.providerLabel}</strong>
-						<span>
-							{speechGatewayCanUpload(speechGatewayStatus)
-								? "серверное распознавание доступно"
-								: speechGatewayStatus.serverTranscriptionEnabled
-									? "нужно подключить распознавание"
-									: "серверное распознавание не активно"}
-						</span>
-						<span>
-							{
-								speechProviderSelectionLabels[
-									speechGatewayStatus.providerSelectionMode
-								]
-							}
-						</span>
-						<span>
-							отрезок записи{" "}
-							{Math.round(speechGatewayStatus.chunkingPolicy.minChunkMs / 1000)}
-							-
-							{Math.round(speechGatewayStatus.chunkingPolicy.maxChunkMs / 1000)}{" "}
-							сек. · фрагмент до{" "}
-							{Math.round(speechGatewayStatus.maxChunkBytes / 1024 / 1024)} МБ
-						</span>
-						<span>
-							повторы отсеиваются на{" "}
-							{speechGatewayStatus.chunkingPolicy.dedupeWindowChars} симв.
-						</span>
-						<span>
-							очистка текста{" "}
-							{speechGatewayStatus.polishPolicy.neuralEnabled
-								? (speechGatewayStatus.polishPolicy.modelName ?? "модель")
-								: "правила"}
-						</span>
-						<span className="speech-prompt-chip">
-							словарь{" "}
-							{speechGatewayStatus.promptPolicy.enabled
-								? speechGatewayStatus.promptPolicy.version.replace(
-										"dental-stt-",
-										"",
-									)
-								: "выключен"}
-						</span>
-						<small className="speech-gateway-hint">
-							подключено источников распознавания{" "}
-							{speechGatewayStatus.keyPool.availableKeyCount}/
-							{speechGatewayStatus.keyPool.configuredKeyCount}
-							{speechGatewayStatus.keyPool.rotationEnabled
-								? " · резервное переключение"
-								: ""}{" "}
-							· попыток {speechGatewayStatus.keyPool.maxAttemptsPerProvider} ·
-							ответ до{" "}
-							{Math.round(speechGatewayStatus.keyPool.timeoutMs / 1000)} сек. ·
-							словарь {speechGatewayStatus.promptPolicy.termCount} терминов ·
-							текст до {speechGatewayStatus.promptPolicy.maxChars} симв.{" "}
-							{speechGatewayStatus.nextSetupStep}
-						</small>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => void refreshSpeechRuntime({ silent: false })}
-						>
-							Проверить
-						</button>
-					</div>
-				) : null}
-				{speechGatewayHealthReport ? (
-					<div
-						className={`speech-health-strip speech-health-${activeSpeechProviderHealth?.healthLevel ?? "offline"}`}
-					>
-						<div>
-							<strong>Состояние распознавания</strong>
-							<span>
-								{speechGatewayHealthReport.activeProviderLabel} ·{" "}
-								{speechProviderHealthLabels[
-									activeSpeechProviderHealth?.healthLevel ?? "offline"
-								] ?? "офлайн"}
-							</span>
+					<div className="ai-gateway-status">
+						<div className={`ai-gateway-status-pill ${speechGatewayCanUpload(speechGatewayStatus) ? 'success' : 'warning'}`}>
+							<span>Статус сервера</span>
+							<strong>
+								{speechGatewayCanUpload(speechGatewayStatus) ? "Подключено" : "Не активно"}
+							</strong>
 						</div>
-						<span>
-							источники {speechGatewayHealthReport.totalAvailableKeys}/
-							{speechGatewayHealthReport.totalConfiguredKeys}
-							{speechGatewayHealthReport.totalCoolingDownKeys
-								? ` · на паузе ${speechGatewayHealthReport.totalCoolingDownKeys}`
-								: ""}
-						</span>
-						<span>
-							резерв {speechGatewayHealthReport.fallbackProviderIds.length}
-						</span>
-						<span>
-							таймаут {Math.round(speechGatewayHealthReport.timeoutMs / 1000)}{" "}
-							сек.
-						</span>
-						<span>
-							{speechGatewayHealthReport.promptEnabled
-								? "стоматологический словарь включен"
-								: "словарь выключен"}
-						</span>
-						<span>
-							{speechGatewayHealthReport.deterministicParserEnabled
-								? "офлайн-разбор включен"
-								: "локальный разбор выключен"}
-						</span>
-						<small>{speechGatewayHealthReport.nextAction}</small>
-						{speechGatewayHealthReport.warnings[0] ? (
-							<small>{speechGatewayHealthReport.warnings[0]}</small>
-						) : null}
+						<div className="ai-gateway-status-pill">
+							<span>Провайдер</span>
+							<strong>{speechGatewayStatus.providerLabel}</strong>
+						</div>
+						<div className="ai-gateway-status-pill">
+							<span>Отсев дублей</span>
+							<strong>{speechGatewayStatus.chunkingPolicy.dedupeWindowChars} симв.</strong>
+						</div>
+						<div className="ai-gateway-status-pill">
+							<span>Стоматологический словарь</span>
+							<strong>
+								{speechGatewayStatus.promptPolicy.enabled 
+									? `Включен (${speechGatewayStatus.promptPolicy.termCount} терм.)` 
+									: "Выключен"}
+							</strong>
+						</div>
+						<div className="ai-gateway-status-pill" style={{ borderRight: 'none', marginLeft: 'auto' }}>
+							<button className="secondary-button btn--sm" type="button" onClick={() => void refreshSpeechRuntime({ silent: false })}>
+								<Activity size={14} style={{ marginRight: '6px' }} /> Проверить шлюз
+							</button>
+						</div>
 					</div>
 				) : null}
-				{speechRecordingStrategy ? (
-					<div className="speech-strategy-strip">
-						<strong>
-							{speechRecordingPathLabels[
-								speechRecordingStrategy.recommendedPath
-							] ?? speechRecordingStrategy.recommendedPath}
-						</strong>
-						<span>{speechRecordingStrategy.providerLabel}</span>
-						<span>
-							фрагмент {Math.round(speechRecordingStrategy.chunkMs / 1000)} сек.
-							{speechRecordingStrategy.estimatedChunkCount
-								? ` · ~${speechRecordingStrategy.estimatedChunkCount} фрагм.`
-								: ""}
-						</span>
-						<small>{speechRecordingStrategy.reason}</small>
+
+				{speechGatewayHealthReport ? (
+					<div className="ai-gateway-status" style={{ background: 'rgba(13, 148, 136, 0.05)', borderColor: 'rgba(13, 148, 136, 0.2)' }}>
+						<div className="ai-gateway-status-pill">
+							<span>Пул ключей</span>
+							<strong>{speechGatewayHealthReport.totalAvailableKeys} из {speechGatewayHealthReport.totalConfiguredKeys}</strong>
+						</div>
+						<div className="ai-gateway-status-pill">
+							<span>Резервных каналов</span>
+							<strong>{speechGatewayHealthReport.fallbackProviderIds.length}</strong>
+						</div>
+						<div className="ai-gateway-status-pill">
+							<span>Таймаут</span>
+							<strong>{Math.round(speechGatewayHealthReport.timeoutMs / 1000)} сек.</strong>
+						</div>
+						{speechGatewayHealthReport.warnings[0] && (
+							<div className="ai-gateway-status-pill warning" style={{ flex: 1, border: 'none' }}>
+								<span>Внимание</span>
+								<strong>{speechGatewayHealthReport.warnings[0]}</strong>
+							</div>
+						)}
 					</div>
 				) : null}
-				{typedSpeechRecordingRecovery?.recordings.length ? (
-					<div className="speech-recovery-list">
-						{typedSpeechRecordingRecovery.recordings
-							.slice(0, 3)
-							.map((recording) => (
-								<article
-									className={`speech-recovery-row recovery-${recording.recoveryState}`}
-									key={recording.recordingId}
-								>
-									<div>
-										<strong>
-											{speechRecoveryStateLabels[recording.recoveryState] ??
-												recording.recoveryState}
-										</strong>
-										<span>
-											фрагментов {recording.chunkCount} · ок{" "}
-											{recording.qualityCounts.clear} · проверить{" "}
-											{recording.qualityCounts.review +
-												recording.qualityCounts.empty +
-												recording.qualityCounts.failed}
-										</span>
-									</div>
-									<p>{recording.transcriptPreview || recording.nextAction}</p>
-									<small>
-										{recording.missingChunkIndexes.length
-											? `нет фрагментов ${recording.missingChunkIndexes.join(", ")} · `
-											: ""}
-										{recording.providerLabels.join(", ") || "локально"} ·{" "}
-										{recording.nextAction}
-									</small>
-								</article>
-							))}
-					</div>
-				) : null}
-				<div className="speech-provider-list">
+
+				<h4 style={{ margin: '12px 0 4px', fontSize: '15px' }}>Доступные провайдеры</h4>
+				<div className="ai-provider-grid">
 					{typedSpeechProviders.map((provider) => {
 						const runtime = speechProviderRuntimeById.get(provider.id);
 						const health = speechProviderHealthById.get(provider.id);
 						return (
-							<article
-								className={`speech-provider-row speech-provider-${provider.status}`}
-								key={provider.id}
-							>
-								<div>
-									<strong>{provider.title}</strong>
-									<p>
-										{speechProviderStatusLabels[provider.status]} ·{" "}
-										{speechProviderModeLabels[provider.mode]}
-									</p>
+							<article className="premium-provider-card" key={provider.id}>
+								<div className="premium-provider-header">
+									<div className="premium-provider-title">
+										<h4>{provider.title}</h4>
+										<p>{speechProviderModeLabels[provider.mode]}</p>
+									</div>
+									{health && (
+										<span className={`status-pill status-${health.healthLevel === 'healthy' ? 'confirmed' : 'cancelled'}`}>
+											{speechProviderHealthLabels[health.healthLevel] ?? health.healthLevel}
+										</span>
+									)}
 								</div>
-								<div className="speech-provider-tags">
-									{provider.recommendedFor.slice(0, 3).map((item) => (
-										<span key={item}>{item}</span>
+								
+								<div className="premium-provider-tags">
+									{provider.recommendedFor.slice(0, 3).map((item: string) => (
+										<span className="premium-provider-tag" key={item}>{item}</span>
 									))}
 								</div>
-								<ul>
-									{provider.strengths.slice(0, 2).map((strength) => (
+
+								<ul className="premium-provider-strengths">
+									{provider.strengths.slice(0, 2).map((strength: string) => (
 										<li key={strength}>{strength}</li>
 									))}
 								</ul>
-								<div className="speech-provider-foot">
-									<span>{provider.costNote}</span>
-									{runtime ? (
-										<small
-											className={
-												runtime.configured
-													? "speech-runtime-ready"
-													: "speech-runtime-missing"
-											}
-										>
-											{speechProviderConnectorLabels[runtime.connector]} ·{" "}
-											{runtime.canTranscribeChunks
-												? "готов"
-												: runtime.configured
-													? "настроен"
-													: "не настроен"}
-											{runtime.connector === "local_bridge"
-												? " · работает без облака"
-												: ` · источники ${runtime.keyPool.availableKeyCount}/${runtime.keyPool.configuredKeyCount}`}
-										</small>
-									) : null}
-									{health ? (
-										<small
-											className={`speech-health-chip speech-health-chip-${health.healthLevel}`}
-										>
-											{speechProviderHealthLabels[health.healthLevel] ??
-												health.healthLevel}{" "}
-											· можно в приеме {health.safeToUseInVisit ? "да" : "нет"}
-											{health.keyPool.coolingDownKeyCount
-												? ` · источников на паузе ${health.keyPool.coolingDownKeyCount}`
-												: ""}
-										</small>
-									) : null}
-									<small>
-										{provider.setupSettingsCount
-											? `серверных настроек: ${provider.setupSettingsCount}`
-											: "без серверного секрета"}
-									</small>
-									<a
-										href={provider.sourceUrl}
-										target="_blank"
-										rel="noreferrer noopener"
-										aria-label={`Открыть документацию провайдера распознавания в новой вкладке: ${provider.title}`}
-										title={`Открыть документацию провайдера распознавания в новой вкладке: ${provider.title}`}
-									>
-										Документация
+
+								<div className="premium-provider-footer">
+									<span><strong>Лицензия:</strong> {provider.costNote}</span>
+									{runtime && (
+										<span>
+											<strong>Интеграция:</strong>
+											<span className={runtime.configured ? "speech-runtime-ready" : "speech-runtime-missing"}>
+												{runtime.canTranscribeChunks ? "✅ Готов" : runtime.configured ? "Настроен" : "Не настроен"}
+											</span>
+										</span>
+									)}
+									<a href={provider.sourceUrl} target="_blank" rel="noreferrer noopener" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+										Документация <ExternalLink size={12} />
 									</a>
 								</div>
 							</article>
 						);
 					})}
 				</div>
-			</div>
+			</section>
 
-			<div className="recognition-preset-row">
-				{typedRecognitionPresets.map((preset) => (
-					<button
-						className={`source-card ${recognitionKind === preset.kind && recognitionTarget === preset.target ? "active" : ""}`}
-						key={preset.key}
-						type="button"
-						aria-pressed={
-							recognitionKind === preset.kind &&
-							recognitionTarget === preset.target
-						}
-						onClick={() => chooseRecognitionPreset(preset)}
-					>
-						<strong>{preset.title}</strong>
-						<span>{preset.detail}</span>
-					</button>
-				))}
-			</div>
-
-			<div className="recognition-workbench">
-				<textarea
-					aria-label="Текст для AI-распознавания"
-					value={recognitionText}
-					onChange={(event: TextInputChangeEvent) => {
-						setRecognitionText(event.target.value);
-						setRecognitionJob(null);
-					}}
-				/>
-				<div className="import-tool-row">
-					<span className="recognition-target">
-						Цель: {recognitionTargetLabels[recognitionTarget]}
-					</span>
-					<button
-						className="primary-button"
-						type="button"
-						onClick={runRecognitionJob}
-						disabled={isRecognitionLoading || !recognitionInputReady}
-						aria-busy={isRecognitionLoading || undefined}
-					>
-						<Sparkles aria-hidden="true" />{" "}
-						{isRecognitionLoading ? "Готовлю черновик" : "Распознать"}
-					</button>
+			{/* AI Workbench */}
+			<section className="ai-section-card">
+				<div className="ai-section-header">
+					<div className="ai-section-icon">
+						<Cpu size={24} />
+					</div>
+					<div className="ai-section-title">
+						<h3>Лаборатория нейросетей</h3>
+						<p>Тестирование структурирования текста в медицинские карты и диагнозы</p>
+					</div>
 				</div>
-				{!recognitionInputReady ? (
-					<p className="import-empty-guidance" role="status" aria-live="polite">
-						Вставьте текст, OCR или диктовку перед распознаванием.
-					</p>
-				) : null}
-				{typedRecognitionJob ? (
-					<div className="recognition-result">
-						<span className="recognition-status" style={{ display: "none" }}>
-							{typedRecognitionJob.status === "failed"
-								? "ошибка"
-								: "распознано"}
+
+				<div className="ai-target-row">
+					{typedRecognitionPresets.map((preset) => (
+						<button
+							className={`ai-target-card ${recognitionKind === preset.kind && recognitionTarget === preset.target ? "active" : ""}`}
+							key={preset.key}
+							type="button"
+							onClick={() => chooseRecognitionPreset(preset)}
+						>
+							<strong>{preset.title}</strong>
+							<span>{preset.detail}</span>
+						</button>
+					))}
+				</div>
+
+				<div className="ai-workbench">
+					<textarea
+						className="ai-workbench-textarea"
+						placeholder="Вставьте сырой текст диктовки для проверки ИИ-ассистента..."
+						value={recognitionText}
+						onChange={(event: TextInputChangeEvent) => {
+							setRecognitionText(event.target.value);
+							setRecognitionJob(null);
+						}}
+					/>
+					<div className="ai-workbench-action">
+						<span style={{ fontSize: '13px', color: 'var(--muted)' }}>
+							Цель: <strong>{recognitionTargetLabels[recognitionTarget]}</strong>
 						</span>
-						<div>
-							<strong>
-								Уверенность {Math.round(typedRecognitionJob.confidence * 100)}%
-							</strong>
-							<span>{typedRecognitionJob.suggestedNextStep}</span>
+						<button
+							className="primary-button"
+							type="button"
+							onClick={runRecognitionJob}
+							disabled={isRecognitionLoading || !recognitionInputReady}
+						>
+							<Sparkles size={16} style={{ marginRight: '8px' }} />
+							{isRecognitionLoading ? "Генерация ответа..." : "Распознать текст"}
+						</button>
+					</div>
+				</div>
+
+				{typedRecognitionJob && (
+					<div className="ai-result-panel">
+						<div className="ai-result-panel-head">
+							<span className="ai-result-confidence">
+								<CheckCircle2 size={16} /> Уверенность: {Math.round(typedRecognitionJob.confidence * 100)}%
+							</span>
+							<span className="status-pill status-confirmed">{typedRecognitionJob.suggestedNextStep}</span>
 						</div>
-						<p>{typedRecognitionJob.resultText}</p>
-						<div className="recognition-notes">
-							{typedRecognitionJob.warnings.map((warning) => (
-								<span key={warning}>{aiRecognitionWarningText(warning)}</span>
-							))}
-						</div>
-						{typedRecognitionJob.target === "patient_import" ||
-						typedRecognitionJob.target === "visit_note" ? (
+						
+						<p className="ai-result-text">{typedRecognitionJob.resultText}</p>
+
+						{typedRecognitionJob.warnings?.length > 0 && (
+							<div className="ai-result-warnings">
+								{typedRecognitionJob.warnings.map((warning: string) => (
+									<div className="ai-result-warning-item" key={warning}>
+										<ShieldAlert size={14} /> {aiRecognitionWarningText(warning)}
+									</div>
+								))}
+							</div>
+						)}
+
+						{(typedRecognitionJob.target === "patient_import" || typedRecognitionJob.target === "visit_note") && (
 							<button
 								className="secondary-button"
+								style={{ alignSelf: 'flex-start', marginTop: '8px' }}
 								type="button"
 								onClick={sendRecognitionResultToImport}
 							>
-								<UploadCloud aria-hidden="true" /> Передать дальше
+								<UploadCloud size={16} style={{ marginRight: '8px' }} /> Передать в карту
 							</button>
-						) : null}
+						)}
 					</div>
-				) : null}
-			</div>
-		</section>
+				)}
+			</section>
+		</div>
 	);
 }
