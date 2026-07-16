@@ -924,6 +924,7 @@ import {
 	workloadStateLabels,
 } from "./workspaceUiLabels";
 import { useTelegramSettings } from "./hooks/useTelegramSettings.js";
+import { useAuthLogic } from "./hooks/domains/useAuthLogic";
 
 export function useAppLogic(): any {
 	const {
@@ -2484,172 +2485,16 @@ export function useAppLogic(): any {
 	const imagingViewerSaveTimerRef = useRef<number | null>(null);
 	const mprWorkbenchSaveTimerRef = useRef<number | null>(null);
 
-	function rememberAdminSecret(
-		secret: string,
-		domain: AdminSecretUnlockDomain,
-	) {
-		const normalized = secret.trim();
-		if (!normalized) return;
-		if (domain === "all" || domain === "clinical")
-			setClinicalAdminSecretSession(normalized);
-		if (domain === "all" || domain === "settings")
-			setSettingsAdminSecretSession(normalized);
-		if (domain === "all" || domain === "schedule")
-			setScheduleAdminSecretSession(normalized);
-		if (domain === "all" || domain === "telegram")
-			setTelegramAdminSecretSession(normalized);
-	}
-
-	function forgetAdminSecret(domain: AdminSecretUnlockDomain) {
-		if (domain === "all" || domain === "clinical")
-			setClinicalAdminSecretSession("");
-		if (domain === "all" || domain === "settings")
-			setSettingsAdminSecretSession("");
-		if (domain === "all" || domain === "schedule")
-			setScheduleAdminSecretSession("");
-		if (domain === "all" || domain === "telegram")
-			setTelegramAdminSecretSession("");
-	}
-
-	function currentAdminSecretUnlockDomain(): AdminSecretUnlockDomain {
-		if (accessUnlockRequired || !dashboard) return "all";
-		if (currentView === "schedule") return "schedule";
-		if (currentView === "settings")
-			return settingsTab === "telegram" ? "telegram" : "settings";
-		if (onboardingStep === "telegram") return "telegram";
-		return "clinical";
-	}
-
-	function resolvedAdminSecretUnlockDomain(
-		domainOverride?: AdminSecretUnlockDomain,
-	): AdminSecretUnlockDomain {
-		return domainOverride ?? currentAdminSecretUnlockDomain();
-	}
-
-	function adminSecretDraftForDomain(domain: AdminSecretUnlockDomain): string {
-		if (domain === "settings") return settingsAdminSecretDraft;
-		if (domain === "schedule") return scheduleAdminSecretDraft;
-		if (domain === "telegram") return telegramAdminSecretDraft;
-		return clinicalAdminSecretDraft;
-	}
-
-	function clearAdminSecretDraft(domain: AdminSecretUnlockDomain) {
-		if (domain === "all" || domain === "clinical")
-			setClinicalAdminSecretDraft("");
-		if (domain === "all" || domain === "settings")
-			setSettingsAdminSecretDraft("");
-		if (domain === "all" || domain === "schedule")
-			setScheduleAdminSecretDraft("");
-		if (domain === "all" || domain === "telegram")
-			setTelegramAdminSecretDraft("");
-	}
-
-	function settingsAccessHeaders(
-		extra: Record<string, string> = {},
-		adminSecretOverride?: string,
-	): Record<string, string> {
-		return denteAdminSecretRequestHeaders(
-			extra,
-			adminSecretOverride ?? settingsAdminSecretSession,
-		);
-	}
-
-	function scheduleMutationHeaders(
-		extra: Record<string, string> = {},
-		adminSecretOverride?: string,
-	): Record<string, string> {
-		return denteAdminSecretRequestHeaders(
-			extra,
-			adminSecretOverride ?? scheduleAdminSecretSession,
-		);
-	}
-
-	function denteClinicalMutationHeaders(
-		extra: Record<string, string> = {},
-		adminSecretOverride?: string,
-	): Record<string, string> {
-		return denteAdminSecretRequestHeaders(
-			extra,
-			adminSecretOverride ?? clinicalAdminSecretSession,
-		);
-	}
-
-	function denteClinicalReadHeaders(
-		extra: Record<string, string> = {},
-		adminSecretOverride?: string,
-	): Record<string, string> {
-		return denteAdminSecretRequestHeaders(
-			extra,
-			adminSecretOverride ?? clinicalAdminSecretSession,
-		);
-	}
-
-	function revokeObjectUrlIfNeeded(url: string): void {
-		if (url.startsWith("blob:")) URL.revokeObjectURL(url);
-	}
-
-	function revokeObjectUrlMap(urls: Record<string, string>): void {
-		Object.values(urls).forEach(revokeObjectUrlIfNeeded);
-	}
-
-	function unlockTelegramAdminSession(
-		domainOverride?: AdminSecretUnlockDomain,
-	) {
-		const domain = resolvedAdminSecretUnlockDomain(domainOverride);
-		const secret = adminSecretDraftForDomain(domain).trim();
-		if (!secret) {
-			setError(
-				"Введите секрет администратора клиники, если он включен в серверных настройках клиники.",
-			);
-			return;
-		}
-		rememberAdminSecret(secret, domain);
-		clearAdminSecretDraft(domain);
-		setError(null);
-		if (domain === "settings" || domain === "schedule") return;
-		if (domain === "telegram") {
-			void loadTelegramControlPlane({ adminSecret: secret });
-			return;
-		}
-		setAccessUnlockRequired(false);
-		setAccessUnlockMessage("");
-		void loadDashboard({ adminSecret: secret })
-			.then(() => {
-				if (domain === "all")
-					void loadTelegramControlPlane({ adminSecret: secret, silent: true });
-			})
-			.catch((loadError: unknown) => {
-				forgetAdminSecret(domain);
-				setError(
-					operatorWorkflowFailureMessage(
-						"Не удалось загрузить данные клиники",
-						loadError,
-					),
-				);
-			});
-	}
-
-	function lockTelegramAdminSession(domainOverride?: AdminSecretUnlockDomain) {
-		const domain = resolvedAdminSecretUnlockDomain(domainOverride);
-		forgetAdminSecret(domain);
-		clearAdminSecretDraft(domain);
-		if (domain === "settings" || domain === "schedule" || domain === "telegram")
-			return;
-		setDashboard(null);
-		void loadDashboard().catch((loadError: unknown) => {
-			setError(
-				operatorWorkflowFailureMessage(
-					"Не удалось загрузить данные клиники",
-					loadError,
-				),
-			);
-		});
-	}
+	const auth = useAuthLogic({
+		setError,
+		loadDashboard,
+		loadTelegramControlPlane: telegramSettingsModule.loadTelegramControlPlane
+	});
 
 	async function loadDashboard(options: { adminSecret?: string } = {}) {
 		const response = await fetch("/api/dashboard", {
 			cache: "no-store",
-			headers: denteClinicalReadHeaders({}, options.adminSecret),
+			headers: auth.denteClinicalReadHeaders({}, options.adminSecret),
 		});
 		if (!response.ok) {
 			const message = await responseErrorMessage(
@@ -3063,7 +2908,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(clinicProfileEndpoint, {
 				method: "PUT",
-				headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
+				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
 			});
 			if (!response.ok)
@@ -3130,7 +2975,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(`/api/patients/${selectedPatient.id}`, {
 				method: "PUT",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify(payload),
@@ -3200,7 +3045,7 @@ export function useAppLogic(): any {
 				`/api/patients/${selectedPatient.id}/administrative-profile`,
 				{
 					method: "PUT",
-					headers: denteClinicalMutationHeaders({
+					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify(
@@ -3676,7 +3521,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/system/persistence/verify", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders({}, options.adminSecret),
+				headers: auth.denteClinicalReadHeaders({}, options.adminSecret),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3703,7 +3548,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/system/persistence/verify", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3738,7 +3583,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/system/persistence/export", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3791,7 +3636,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/system/local-bridges/readiness", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3819,7 +3664,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/system/local-bridges/use-plans", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3876,7 +3721,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/speech/status", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3907,7 +3752,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/speech/gateway-health", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3937,7 +3782,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/speech/providers/runtime", {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok)
 				throw new Error(
@@ -3967,7 +3812,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/speech/recording-strategy", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -4015,7 +3860,7 @@ export function useAppLogic(): any {
 				`/api/speech/recordings/recovery?${params.toString()}`,
 				{
 					cache: "no-store",
-					headers: denteClinicalReadHeaders(),
+					headers: auth.denteClinicalReadHeaders(),
 				},
 			);
 			if (!response.ok)
@@ -4097,7 +3942,7 @@ export function useAppLogic(): any {
 			);
 		const response = await fetch(`/api/visits/${visitId}/draft/accept`, {
 			method: "POST",
-			headers: denteClinicalMutationHeaders({
+			headers: auth.denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 			}),
 			body: JSON.stringify({
@@ -4131,7 +3976,7 @@ export function useAppLogic(): any {
 		if (!visitId) return { serverDraft: null };
 		const response = await fetch(`/api/visits/${visitId}/draft/autosave`, {
 			cache: "no-store",
-			headers: denteClinicalReadHeaders(),
+			headers: auth.denteClinicalReadHeaders(),
 		});
 		if (!response.ok)
 			throw new Error(
@@ -4164,7 +4009,7 @@ export function useAppLogic(): any {
 				`/api/visits/${dashboard?.activeVisit?.id}/draft/autosave`,
 				{
 					method: "PUT",
-					headers: denteClinicalMutationHeaders({
+					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -4274,7 +4119,7 @@ export function useAppLogic(): any {
 	): Promise<SpeechTranscriptionResponse> {
 		const response = await fetch("/api/speech/transcribe-chunk", {
 			method: "POST",
-			headers: denteClinicalMutationHeaders({
+			headers: auth.denteClinicalMutationHeaders({
 				"Content-Type": "application/json",
 			}),
 			body: JSON.stringify(input),
@@ -4375,7 +4220,7 @@ export function useAppLogic(): any {
 				`/api/speech/recordings/${encodeURIComponent(recordingId)}/assemble${scopedQuery ? `?${scopedQuery}` : ""}`,
 				{
 					cache: "no-store",
-					headers: denteClinicalReadHeaders(),
+					headers: auth.denteClinicalReadHeaders(),
 				},
 			);
 			if (!response.ok)
@@ -4845,7 +4690,7 @@ export function useAppLogic(): any {
 		if (typeof window === "undefined") return undefined;
 		if (!imagingPreviewWorkset.length) {
 			setImagingPreviewObjectUrls((current) => {
-				revokeObjectUrlMap(current);
+				auth.revokeObjectUrlMap(current);
 				return {};
 			});
 			return undefined;
@@ -4861,13 +4706,13 @@ export function useAppLogic(): any {
 						return [study.id, study.previewUrl];
 					const response = await fetch(study.previewUrl, {
 						cache: "no-store",
-						headers: denteClinicalReadHeaders(),
+						headers: auth.denteClinicalReadHeaders(),
 						signal: abortController.signal,
 					});
 					if (!response.ok) return null;
 					const blobUrl = URL.createObjectURL(await response.blob());
 					if (cancelled) {
-						revokeObjectUrlIfNeeded(blobUrl);
+						auth.revokeObjectUrlIfNeeded(blobUrl);
 						return null;
 					}
 					createdUrls.push(blobUrl);
@@ -4877,7 +4722,7 @@ export function useAppLogic(): any {
 		)
 			.then((entries) => {
 				if (cancelled) {
-					createdUrls.forEach(revokeObjectUrlIfNeeded);
+					createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 					return;
 				}
 				const next = Object.fromEntries(
@@ -4886,16 +4731,16 @@ export function useAppLogic(): any {
 				const nextUrls = new Set(Object.values(next));
 				setImagingPreviewObjectUrls((current) => {
 					Object.values(current).forEach((url) => {
-						if (!nextUrls.has(url)) revokeObjectUrlIfNeeded(url);
+						if (!nextUrls.has(url)) auth.revokeObjectUrlIfNeeded(url);
 					});
 					return next;
 				});
 			})
 			.catch(() => {
-				createdUrls.forEach(revokeObjectUrlIfNeeded);
+				createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 				if (!cancelled) {
 					setImagingPreviewObjectUrls((current) => {
-						revokeObjectUrlMap(current);
+						auth.revokeObjectUrlMap(current);
 						return {};
 					});
 				}
@@ -4904,7 +4749,7 @@ export function useAppLogic(): any {
 		return () => {
 			cancelled = true;
 			abortController.abort();
-			createdUrls.forEach(revokeObjectUrlIfNeeded);
+			createdUrls.forEach(auth.revokeObjectUrlIfNeeded);
 		};
 	}, [
 		imagingPreviewSignature,
@@ -7620,7 +7465,7 @@ export function useAppLogic(): any {
 				`/api/imaging/studies/${studyId}/viewer-session`,
 				{
 					cache: "no-store",
-					headers: denteClinicalReadHeaders(),
+					headers: auth.denteClinicalReadHeaders(),
 				},
 			);
 			if (!response.ok)
@@ -7686,7 +7531,7 @@ export function useAppLogic(): any {
 				`/api/imaging/studies/${selectedImagingStudy.id}/viewer-session`,
 				{
 					method: "PUT",
-					headers: denteClinicalMutationHeaders({
+					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -8526,7 +8371,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/patients", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify(payload),
@@ -8567,7 +8412,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/settings/clinic/mode", {
 				method: "POST",
-				headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
+				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ mode }),
 			});
 			if (response.ok) {
@@ -8613,7 +8458,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/settings/staff", {
 				method: "POST",
-				headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
+				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					fullName,
 					role,
@@ -8657,7 +8502,7 @@ export function useAppLogic(): any {
 				`/api/settings/staff/${staffId}/working-hours`,
 				{
 					method: "PUT",
-					headers: settingsAccessHeaders({
+					headers: auth.settingsAccessHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -8726,7 +8571,7 @@ export function useAppLogic(): any {
 				`/api/settings/chairs/${chairId}/working-hours`,
 				{
 					method: "PUT",
-					headers: settingsAccessHeaders({
+					headers: auth.settingsAccessHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -8834,7 +8679,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(`/api/appointments/${appointmentId}`, {
 				method: "PATCH",
-				headers: scheduleMutationHeaders({
+				headers: auth.scheduleMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify(appointmentUpdateInputFromDraft(draft)),
@@ -8931,7 +8776,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/appointments", {
 				method: "POST",
-				headers: scheduleMutationHeaders({
+				headers: auth.scheduleMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify(
@@ -9002,7 +8847,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/settings/chairs", {
 				method: "POST",
-				headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
+				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					name,
 					room: name,
@@ -9051,7 +8896,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/ai/recognition-jobs", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9094,7 +8939,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/pricelist/analyze", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9166,7 +9011,7 @@ export function useAppLogic(): any {
 			const dataUrl = await readFileAsDataUrl(file);
 			const response = await fetch("/api/ingestion/extract", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9275,7 +9120,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/speech/polish-transcript", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9345,7 +9190,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/ai/visit-note-draft", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9482,7 +9327,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/patients/intake", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9537,7 +9382,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/patients/commit", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9579,7 +9424,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/preview", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9643,7 +9488,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/commit", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9681,7 +9526,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/report.csv", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9724,7 +9569,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/report.safe.csv", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -9816,7 +9661,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/migration-autopilot", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify(
@@ -9866,7 +9711,7 @@ export function useAppLogic(): any {
 				"/api/imports/smart/migration-autopilot/report.csv",
 				{
 					method: "POST",
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify(
@@ -9910,7 +9755,7 @@ export function useAppLogic(): any {
 				"/api/imports/smart/local-source-discovery",
 				{
 					method: "POST",
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -10055,7 +9900,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/local-source-workup", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -10094,7 +9939,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/local-source-probe", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -10155,7 +10000,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imports/smart/clinic-public-lookup", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify(payload),
@@ -10194,7 +10039,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imaging/imports/preview", {
 				method: "POST",
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -11177,7 +11022,7 @@ export function useAppLogic(): any {
 				{
 					method: "POST",
 					signal: controller.signal,
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -11233,7 +11078,7 @@ export function useAppLogic(): any {
 				{
 					method: "POST",
 					signal: controller.signal,
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -11289,7 +11134,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/folders/scan-preview", {
 				method: "POST",
 				signal: controller.signal,
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -11344,7 +11189,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicom/folder-series-preview", {
 				method: "POST",
 				signal: controller.signal,
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -11414,7 +11259,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicom/first-frame-preview", {
 				method: "POST",
 				signal: controller.signal,
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -11485,7 +11330,7 @@ export function useAppLogic(): any {
 		const response = await fetch("/api/imaging/dicom/folder-workup-plan", {
 			method: "POST",
 			signal: options.signal ?? null,
-			headers: denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+			headers: auth.denteClinicalReadHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({
 				folderPath,
 				recursive: true,
@@ -11609,7 +11454,7 @@ export function useAppLogic(): any {
 				{
 					method: "POST",
 					signal: controller.signal,
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -11683,7 +11528,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicom/series-preview", {
 				method: "POST",
 				signal: controller.signal,
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -11735,7 +11580,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicomweb/check", {
 				method: "POST",
 				signal: controller.signal,
-				headers: settingsAccessHeaders({ "Content-Type": "application/json" }),
+				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					endpointUrl: dicomWebEndpointUrl.trim(),
 					authMode: "reverse_proxy",
@@ -11788,7 +11633,7 @@ export function useAppLogic(): any {
 				{
 					method: "POST",
 					signal: controller.signal,
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -11857,7 +11702,7 @@ export function useAppLogic(): any {
 				{
 					method: "POST",
 					signal: controller.signal,
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -11911,7 +11756,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicom/viewer-tool-state", {
 				method: "POST",
 				signal: controller.signal,
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -11974,7 +11819,7 @@ export function useAppLogic(): any {
 			link.click();
 		} finally {
 			link.remove();
-			revokeObjectUrlIfNeeded(url);
+			auth.revokeObjectUrlIfNeeded(url);
 		}
 		setError(null);
 	}
@@ -12005,7 +11850,7 @@ export function useAppLogic(): any {
 			link.click();
 		} finally {
 			link.remove();
-			revokeObjectUrlIfNeeded(url);
+			auth.revokeObjectUrlIfNeeded(url);
 		}
 		setError(null);
 	}
@@ -12036,7 +11881,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(
 				"/api/imaging/dicom/workbench-bundles?limit=6",
-				{ headers: denteClinicalReadHeaders() },
+				{ headers: auth.denteClinicalReadHeaders() },
 			);
 			if (!response.ok) {
 				throw new Error(
@@ -12076,7 +11921,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicom/workbench-bundles", {
 				method: "POST",
 				signal: options.signal ?? null,
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -12149,7 +11994,7 @@ export function useAppLogic(): any {
 				{
 					method: "POST",
 					signal: controller.signal,
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -12195,7 +12040,7 @@ export function useAppLogic(): any {
 				{
 					method: "POST",
 					signal: controller.signal,
-					headers: denteClinicalReadHeaders({
+					headers: auth.denteClinicalReadHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -12266,7 +12111,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicom/workstation-readiness", {
 				method: "POST",
 				signal: controller.signal,
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -12320,7 +12165,7 @@ export function useAppLogic(): any {
 			const response = await fetch("/api/imaging/dicom/render-cache-plan", {
 				method: "POST",
 				signal: controller.signal,
-				headers: denteClinicalReadHeaders({
+				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -12383,7 +12228,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imaging/imports/commit", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -12889,7 +12734,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/clinical/rules", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -12946,7 +12791,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(`/api/clinical/rules/${rule.id}`, {
 				method: "PATCH",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({ active: !rule.active }),
@@ -16128,7 +15973,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/documents", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -16177,7 +16022,7 @@ export function useAppLogic(): any {
 		}
 		setDocumentStatusSavingId(documentId);
 		try {
-			const headers = denteClinicalMutationHeaders(
+			const headers = auth.denteClinicalMutationHeaders(
 				payload ? { "Content-Type": "application/json" } : {},
 			);
 			const response = await fetch(`/api/documents/${documentId}/${action}`, {
@@ -16352,7 +16197,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(`/api/documents/${documentId}/tax-xml`, {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok) {
 				setError(await responseErrorMessage(response, "XML ФНС не выгружен"));
@@ -16382,7 +16227,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(`/api/documents/${documentId}/audit-facts`, {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok) {
 				setError(
@@ -16414,7 +16259,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(issuedDocumentHtmlDownloadUrl(documentId), {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok) {
 				setError(
@@ -16472,7 +16317,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch(`/api/documents/${documentId}/pdf`, {
 				cache: "no-store",
-				headers: denteClinicalReadHeaders(),
+				headers: auth.denteClinicalReadHeaders(),
 			});
 			if (!response.ok) {
 				setError(await responseErrorMessage(response, "PDF не сформирован"));
@@ -16593,7 +16438,7 @@ export function useAppLogic(): any {
 				// Family wallet payment
 				const famRes = await fetch(
 					`/api/finance/family/patient/${documentPatient.id}`,
-					{ headers: denteClinicalReadHeaders() },
+					{ headers: auth.denteClinicalReadHeaders() },
 				);
 				if (!famRes.ok) {
 					setError("У пациента не настроен семейный аккаунт для оплаты.");
@@ -16603,7 +16448,7 @@ export function useAppLogic(): any {
 				const famData = await famRes.json();
 				response = await fetch("/api/finance/family/pay", {
 					method: "POST",
-					headers: denteClinicalMutationHeaders({
+					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -16623,7 +16468,7 @@ export function useAppLogic(): any {
 				const paymentClientMutationId = browserGeneratedId("payment");
 				response = await fetch("/api/billing/payments", {
 					method: "POST",
-					headers: denteClinicalMutationHeaders({
+					headers: auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
@@ -16755,7 +16600,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/communications/tasks/complete", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -17268,7 +17113,7 @@ export function useAppLogic(): any {
 		try {
 			const response = await fetch("/api/imaging/studies", {
 				method: "POST",
-				headers: denteClinicalMutationHeaders({
+				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
@@ -17351,12 +17196,6 @@ export function useAppLogic(): any {
 	const imagingViewerHref = (study: Dashboard["imagingStudies"][number]) =>
 		imagingPreviewObjectUrls[study.id] ?? study.viewerUrl ?? study.previewUrl;
 
-	const activeWorkspaceProfile =
-		dashboard?.clinicSettings?.workspaceProfiles?.find(
-			(profile) => profile.mode === dashboard?.clinicSettings?.profile?.mode,
-		) ?? dashboard?.clinicSettings?.workspaceProfiles?.[0];
-	const settingsAdminSecretDomain: AdminSecretUnlockDomain =
-		settingsTab === "telegram" ? "telegram" : "settings";
 	const activeRolePolicy =
 		dashboard?.clinicSettings?.roleAccessPolicies?.find(
 			(policy) => policy.role === selectedWorkspaceRole,
@@ -17462,6 +17301,7 @@ export function useAppLogic(): any {
 
 	return {
     		...telegramSettingsModule,
+    		...auth,
     		acceptDraftToVisit,
     		activeAppointment,
     		activeChair,
@@ -17487,7 +17327,6 @@ export function useAppLogic(): any {
     		activeUsableDocuments,
     		activeVisitClinicalRuleEvaluations,
     		activeVisitClinicalRuleSummary,
-    		activeWorkspaceProfile,
     		addChair,
     		addImagingViewerNoteAnnotation,
     		addMigrationDiscoveryCandidateToSmartImport,
@@ -17808,7 +17647,6 @@ export function useAppLogic(): any {
     		localImagingModelRoleLabels,
     		localImagingOrganizer,
     		localImagingOrganizerActionLabels,
-    		lockTelegramAdminSession,
     		lookupClinicPublicProfile,
     		markPostVisitManualEdited,
     		markTelegramSettingsDirty,
@@ -18214,7 +18052,6 @@ export function useAppLogic(): any {
     		setUiLanguage,
     		setUiPreferencesSyncError,
     		setUsePricelistAi,
-    		settingsAdminSecretDomain,
     		settingsAdminSecretDraft,
     		settingsAdminSecretSession,
     		settingsTab,
@@ -18349,7 +18186,6 @@ export function useAppLogic(): any {
     		uiLanguageOptions,
     		uiPreferencesSyncError,
     		undoTranscriptClear,
-    		unlockTelegramAdminSession,
     		updateAppointmentScheduleDraft,
     		updateChairScheduleDay,
     		updateChairScheduleDraft,
