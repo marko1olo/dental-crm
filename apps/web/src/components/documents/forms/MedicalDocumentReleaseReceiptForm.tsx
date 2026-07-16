@@ -1,3 +1,4 @@
+import type { MedicalDocumentReleaseChannel } from '../../../store/documentStore';
 import React from 'react';
 import { useDocumentStore } from '../../../store/documentStore';
 import { CheckCircle2, FileText } from "lucide-react";

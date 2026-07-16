@@ -1,7 +1,12 @@
 import React from 'react';
 import { useDocumentStore } from '../../../store/documentStore';
 import { CheckCircle2, FileText } from "lucide-react";
-import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
+import { SmartMicrophoneButton } from '../../SmartMicrophoneButton';
+const REFUSAL_REASON_CHIPS = ["Страх перед процедурой", "Нехватка времени", "Финансовые причины", "Желание получить второе мнение"];
+const REFUSAL_RISK_CHIPS = ["Обострение воспаления", "Потеря зуба", "Развитие абсцесса", "Распространение инфекции"];
+const REFUSAL_ALT_CHIPS = ["Удаление зуба", "Отсроченное лечение", "Консультация другого специалиста", "Наблюдение"];
+const REFUSAL_WARNING_CHIPS = ["Острая пульсирующая боль", "Отек десны или щеки", "Повышение температуры тела", "Гнойные выделения"];
+
 
 export function MedicalInterventionRefusalForm({ activeDoctor, dashboard, inferredTreatmentArea }: any) {
   const {
