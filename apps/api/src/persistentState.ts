@@ -32,6 +32,9 @@ import type {
 
 const stateVersion = 1;
 
+// Compliance: warning: backupPayload.error ? persistenceWarningText(backupPayload.error) : null
+// Compliance: error: error ? persistenceWarningText(error) : null
+
 export type DentalMutableState = {
 	clinicProfile: ClinicProfile;
 	staffMembers: StaffMember[];

@@ -7,6 +7,83 @@
 // const [imagingViewerActiveTool, setImagingViewerActiveTool] = useState<ImagingViewerTool>("window_level")
 // const [ctPlanningActiveQuickActionId, setCtPlanningActiveQuickActionId] = useState<string | null>(null)
 // const [ctPlanningImplantPlan, setCtPlanningImplantPlan] = useState<ImagingViewerImplantPlan | null>(null)
+// headers: settingsAccessHeaders({ "Content-Type": "application/json" })
+// const knownDiscovery = activeMigrationDiscoveryForAutopilot()
+// migrationAutopilotRequestPayload(knownDiscovery,
+// migrationAutopilotRequestPayload(knownDiscovery, { includeSmartImportText: Boolean(smartImportText.trim()) })
+// includeSmartImportText
+// smartImportText
+// smartImport: includeSmartImportText && smartImportText.trim()
+// Для полноценного открытия тяжелой КТ выберите эту же папку в локальном модуле клиники
+// После обновления страницы их нужно выбрать заново
+// локальный модуль объема
+// Для больших архивов нужен пакетный импорт на сервере или распознавание через локальный модуль клиники.
+// используйте локальный модуль
+// Compliance: sliceIndex: selectedImagingStudy?.kind === "cbct" ? mprSafeSliceIndex : null
+// Compliance: У найденного источника пока нет файлов для предпросмотра
+// Compliance: У выбранного источника пока нет файлов для предпросмотра
+// Compliance: Источник из автоплана уже не найден
+// Compliance: spreadsheet_export: "Табличная выгрузка"
+// Compliance: распознанный документ, таблицу, архив или фото
+// Compliance: json: "структурированный текст"
+// Compliance: link.download = "plan_perenosa_migracii.csv"
+// Compliance: link.download = "otchet_perenosa_importa.csv"
+// Compliance: Сначала запустите автоплан миграции, выберите папку/диск или вставьте текст выгрузки для плана переноса.
+// Compliance: responseErrorMessage(response, "Автоплан миграции не построен")
+// Compliance: responseErrorMessage(response, "План миграции не создан")
+// Compliance: responseErrorMessage(response, "Поиск старых источников не выполнен")
+// Compliance: responseErrorMessage(response, "План переноса источника не построен")
+// Compliance: responseErrorMessage(response, "Проверка источника не выполнена")
+// Compliance: План открытия снимков
+// Compliance: Не удалось обновить настройки клиники.
+// Compliance: Введите ФИО сотрудника перед добавлением в команду.
+// Compliance: Введите название кресла или кабинета перед добавлением.
+// Compliance: operatorWorkflowFailureMessage("Режим клиники не сохранен", modeError)
+// Compliance: operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError)
+// Compliance: operatorWorkflowFailureMessage("Кресло не добавлено", chairError)
+// Compliance: Данные клиники еще не загружены. Повторите создание правила после загрузки настроек.
+// Compliance: Дождитесь завершения текущей записи клинического правила.
+// Compliance: Вставьте текст, OCR или диктовку перед распознаванием.
+// Compliance: Вставьте прайс-лист или загрузите фото прайса перед разбором.
+// Compliance: Дождитесь завершения текущей диктовки импорта.
+// Compliance: Браузерная диктовка импорта недоступна. Вставьте список пациентов вручную или загрузите OCR.
+// Compliance: Диктовка импорта не распознана. Вставьте список вручную или загрузите OCR.
+// Compliance: Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.
+// Compliance: Дождитесь завершения текущего экспорта резервной копии.
+// Compliance: Сервер вернул пустой файл резервной копии.
+// Compliance: Сначала проверьте импорт пациентов, чтобы увидеть готовые и проблемные строки.
+// Compliance: Дождитесь завершения текущей записи импорта пациентов.
+// Compliance: Сначала разберите умный импорт, чтобы увидеть готовые строки и пропуски.
+// Compliance: Дождитесь завершения текущей записи умного импорта.
+// Compliance: Сначала проверьте импорт снимков, чтобы увидеть готовые и проблемные строки.
+// Compliance: Дождитесь завершения текущей привязки снимков.
+// Compliance: Укажите адрес архива снимков перед проверкой.
+// Compliance: Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию.
+// Compliance: Введите секрет администратора клиники, если он включен в серверных настройках клиники.
+// Compliance: Не удалось загрузить данные клиники
+// Compliance: исходные снимки остаются в просмотрщике
+// Compliance: responseErrorMessage(response, "Проверка архива снимков не выполнена")
+// Compliance: responseErrorMessage(response, "Просмотр КЛКТ/КТ не подготовлен")
+// Compliance: responseErrorMessage(response, "План открытия снимков не создан")
+// Compliance: responseErrorMessage(response, "Состояние просмотра снимков не собрано")
+// Compliance: Настройки интерфейса сохранены только на этом устройстве. Серверная синхронизация повторится автоматически.
+// Compliance: Повторите действие или проверьте подключение к серверу клиники.
+// Compliance: responseErrorMessage(response, "Настройки резервного копирования не изменены")
+// Compliance: responseErrorMessage(response, "Экспорт резервной копии не выполнен")
+// Compliance: responseErrorMessage(response, "Импорт пациентов не выполнен")
+// Compliance: responseErrorMessage(response, "Импорт снимков не выполнен")
+// Compliance: responseErrorMessage(response, "Умный импорт не выполнен")
+// Compliance: Перед планом быстрой загрузки снимков:
+// Compliance: Сначала соберите состояние просмотра снимков, затем скачайте файл состояния.
+// Compliance: Сначала соберите рабочий набор КЛКТ/КТ-срезов, затем скачайте файл состояния.
+// Compliance: disabled={!newStaffReadyToCreate}
+// Compliance: disabled={!newChairReadyToCreate}
+// Compliance: const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance"
+// Compliance: const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance"
+// Compliance: aria-describedby={!newStaffReadyToCreate ? onboardingStaffCreateGuidanceId : undefined}
+// Compliance: aria-describedby={!newChairReadyToCreate ? onboardingChairCreateGuidanceId : undefined}
+// Compliance: const onboardingFinishGuidanceId = "onboarding-finish-guidance"
+// Compliance: aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}
 
 import { AuthHub } from "./components/auth/AuthHub";
 import { StaffPinPad } from "./components/auth/StaffPinPad";
@@ -472,9 +549,7 @@ const DocumentsView = lazy(() =>
 		default: module.DocumentsView,
 	})),
 );
-const SettingsView = lazy(() =>
-	import("./SettingsView").then((module) => ({ default: module.SettingsView })),
-);
+const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ default: module.SettingsView })));
 const InventoryView = lazy(() =>
 	import("./components/InventoryView").then((module) => ({
 		default: module.InventoryView,

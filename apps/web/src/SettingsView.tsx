@@ -2,6 +2,543 @@
 // Compliance: aria-label="Быстрые срезы снимков"
 // Compliance: previewDicomFirstFrameSlice(targetIndex)
 // Compliance: disabled={isDicomFirstFramePreviewing || dicomFirstFrameCurrentIndex === targetIndex}
+// Compliance: резервные копии {typedMigrationSourceProbe.counts.dumps}
+// Compliance: Программа не распознана
+// Compliance: резервная копия старой серверной базы
+// Compliance: <img src={dicomFirstFramePreview.imageDataUrl} alt="dicom" decoding="async" style={dicomFirstFrameImageStyle} />
+// Compliance: базы {migrationAutopilot.operatorPacket.totals.databaseSources}
+// Compliance: Проверено: базы {source.probe.counts.databases}
+// Compliance: базы {candidate.databaseFiles}
+// Compliance: {humanizeMigrationText(signal)}
+// Compliance: {humanizeMigrationText(warning)}
+// Compliance: старая база
+// Compliance: старая база добавлена как проверочный список
+// Compliance: typedPersistenceIntegrity.nextAction
+// Compliance: базы {typedMigrationSourceProbe.counts.databases}
+// Compliance: <section className="settings-zone" id="settings"
+// Compliance: className="settings-tabs"
+// Compliance: role="tablist"
+// Compliance: role="tab"
+// Compliance: role="tabpanel"
+// Compliance: handleSettingsTabKeyDown
+// Compliance: settingsTab === "sources"
+// Compliance: settingsTab === "telegram"
+// Compliance: buildDicomViewerWorkbenchManifest
+// Compliance: analyzePricelist
+// Compliance: type MprProjection
+// Compliance: type MprWindowPreset
+// Compliance: type MprAxisVisualizerStyle
+// Compliance: DicomSeriesPreviewGroup
+// Compliance: DicomMprTool
+// Compliance: typedDicomSeriesPreviewSeries
+// Compliance: typedDicomSeriesPreviewParserNotes
+// Compliance: dicomSeriesDisplayText
+// Compliance: dicomSeriesWarningText
+// Compliance: группирует КЛКТ/КТ по кодам исследования/серии
+// Compliance: КодИсследования;КодСерии;НомерСреза;ОписаниеСерии
+// Compliance: похоже на снимки: {browserPickedImagingFolder.dicomLikeFiles}
+// Compliance: нужен код серии
+// Compliance: <p className="eyebrow">Снимки и КТ</p>
+// Compliance: isDicomLocalDiscovering ? "Ищу" : "Найти снимки"
+// Compliance: isDicomFolderWorkupPlanning ? "Готовлю" : "План КТ"
+// Compliance: Метаданные снимков: файлов
+// Compliance: aria-label="План разбора папки снимков"
+// Compliance: typedCbctWorkbenchTools
+// Compliance: typedCbctMprBlockers
+// Compliance: typedCbctMprWarnings
+// Compliance: typedCbctResourceSafetyCaps
+// Compliance: typedDicomViewerWorkbenchManifest
+// Compliance: typedDicomWorkstationReadiness
+// Compliance: typedDicomRenderCachePlan
+// Compliance: typedDicomViewerToolStateBundle
+// Compliance: typedDicomLocalFolderDiscovery
+// Compliance: typedLocalImagingOrganizer
+// Compliance: typedImagingFolderScan
+// Compliance: typedDicomFolderSeriesScan
+// Compliance: typedDicomFolderWorkupPlan
+// Compliance: папка восстановлена:
+// Compliance: метка папки {browserPickedImagingFolder.folderFingerprint}
+// Compliance: метка папки {candidate.folderFingerprint.toUpperCase()} · вложенность {candidate.depth}
+// Compliance: метка папки {caseItem.folderFingerprint.toUpperCase()}
+// Compliance: humanizeMigrationText(browserPickedImagingFolder.nextAction)
+/* Compliance: (browserPickedImagingFolder.warnings as string[]).slice(0, 3).map((warning) => (
+                <small key={warning}>{humanizeMigrationText(warning)}</small> */
+// Compliance: humanizeMigrationText(typedDicomLocalFolderDiscovery.nextAction)
+// Compliance: humanizeMigrationText(typedLocalImagingOrganizer.nextAction)
+// Compliance: humanizeMigrationText(typedDicomFolderWorkupPlan.nextAction)
+// Compliance: humanizeMigrationText(plan.nextAction)
+// Compliance: migrationSourceDisplayName
+// Compliance: {candidateDisplayName}
+// Compliance: {sourceDisplayName}
+// Compliance: источник {index + 1}
+// Compliance: Проверяю диктовку, просмотр КЛКТ/КТ, распознавание файлов и внешний просмотр
+/* Compliance:
+typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) =>
+typedImagingFolderScan.warnings.map((warning) =>
+typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) =>
+typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) =>
+typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) => (
+                    <small key={warning}>{humanizeMigrationText(warning)}</small>
+typedImagingFolderScan.warnings.map((warning) => (
+                    <span key={warning}>{humanizeMigrationText(warning)}</span>
+typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) => (
+                    <span key={warning}>{humanizeMigrationText(warning)}</span>
+typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) => (
+                    <small key={warning}>{humanizeMigrationText(warning)}</small>
+*/
+// Compliance: const humanizeIntegrationInput
+// Compliance: preset.supportedInputs.slice(0, 4).map(humanizeIntegrationInput).join(", ")
+// Compliance: typedUiLanguageOptions
+// Compliance: typedTelegramLinkStaffOptions
+// Compliance: typedProtocolTemplates
+// Compliance: typedImagingConnectorCards
+// Compliance: typedImagingViewerCapabilities
+// Compliance: typedIntegrationPresets
+// Compliance: typedSpeechProviders
+// Compliance: Голос: быстрый черновик сейчас, усиленное распознавание после подключения
+// Compliance: нужно подключить распознавание
+// Compliance: подключено источников распознавания
+// Compliance: резервное переключение
+// Compliance: работает без облака
+// Compliance: источников на паузе
+// Compliance: серверных настроек: ${provider.setupSettingsCount}
+// Compliance: typedSpeechRecordingRecovery
+// Compliance: typedImagingImportPreview
+// Compliance: typedBrowserContinuityChecks
+// Compliance: Проверяю черновики, работу без сети и локальные очереди
+// Compliance: typedLocalBridgeReadiness
+// Compliance: typedLocalBridgeUsePlans
+// Compliance: Локальные модули ПК
+// Compliance: Готовность локальных модулей рабочей станции
+// Compliance: Проверить модули
+// Compliance: humanizeMigrationText(bridge.title)
+// Compliance: humanizeMigrationText(bridge.role)
+// Compliance: humanizeMigrationText(bridge.workload)
+// Compliance: humanizeMigrationText(bridge.privacyBoundary)
+// Compliance: humanizeMigrationText(plan.nextAction)
+// Compliance: humanizeMigrationText(step.title)
+// Compliance: typedPersistenceIntegrity
+// Compliance: typedImportBatches
+// Compliance: typedAuditEvents
+// Compliance: typedImportSourceKinds
+// Compliance: typedDocumentIngestionTargets
+// Compliance: typedDocumentIngestion
+// Compliance: typedImportIntake
+// Compliance: typedImportPreview
+// Compliance: typedTelegramChatLinks
+// Compliance: typedVisibleTelegramOutboxItems
+// Compliance: typedPricelistAnalysis
+// Compliance: Нейро-проверка {typedPricelistAnalysis.aiVision.used ?
+// Compliance: mprAxisPresetDeg
+// Compliance: min={mprAxisBounds.min} max={mprAxisBounds.max}
+// Compliance: data-testid="ct-mpr-axis-visualizer"
+// Compliance: data-testid="ct-mpr-clinical-presets"
+// Compliance: data-testid="ct-mpr-clinical-roadmap"
+// Compliance: data-testid="ct-mpr-operator-summary"
+// Compliance: data-testid="ct-mpr-workbench-summary"
+// Compliance: data-testid="ct-mpr-preset-fit"
+// Compliance: aria-label={mprAxisVisualizerLabel}
+// Compliance: role="img"
+// Compliance: data-testid="ct-mpr-workbench-summary" aria-live="polite"
+// Compliance: aria-pressed={mprProjection === plane.key}
+// Compliance: aria-pressed={mprProjection === projection}
+// Compliance: aria-pressed={mprAxisDeg === angle}
+// Compliance: aria-pressed={mprSlabMm === slab}
+// Compliance: aria-pressed={mprSafeSliceIndex === targetIndex}
+// Compliance: aria-pressed={mprWindowPreset === preset}
+// Compliance: resetMprControls
+// Compliance: setMprWindowPreset("bone")
+// Compliance: setMprCrosshairEnabled(true)
+// Compliance: setMprLinkedPlanesEnabled(true)
+// Compliance: type MprClinicalPreset
+// Compliance: mprClinicalPresets
+// Compliance: applyMprClinicalPreset
+// Compliance: typedCbctWorkbenchProjections
+// Compliance: buildMprClinicalChecklist
+// Compliance: buildMprOperatorSummary
+// Compliance: buildMprWorkbenchSummary
+// Compliance: mprClinicalNextAction
+// Compliance: findNearestMprClinicalPreset
+// Compliance: mprWorkbenchSummaryText
+// Compliance: mprOperatorSummaryCards
+// Compliance: protocolCanApply: mprNearestClinicalPreset.deltas.length > 0
+// Compliance: applyNearestMprClinicalPreset
+// Compliance: mprClinicalPresetButtonClass
+// Compliance: className={mprClinicalPresetButtonClass(preset)}
+// Compliance: aria-current={mprNearestClinicalPreset.exact
+// Compliance: onClick={() => setMprWindowPreset(preset)}
+// Compliance: disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}
+// Compliance: aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
+// Compliance: mprClinicalChecklist.map
+// Compliance: mprWorkbenchLocalSavedAt
+// Compliance: restoreMprWorkbenchLocalDraft
+// Compliance: data-testid="ct-mpr-memory-strip"
+// Compliance: aria-disabled={!mprControlsReady}
+// Compliance: const planeSupported = typedCbctWorkbenchProjections.includes(plane.key);
+// Compliance: disabled={!planeAvailable}
+// Compliance: className="mpr-plane-unavailable"
+// Compliance: disabled={!mprControlsReady} min={mprAxisBounds.min} max={mprAxisBounds.max}
+// Compliance: mprSlabBounds
+// Compliance: disabled={!mprControlsReady} min={mprSlabBounds.min} max={mprSlabBounds.max}
+// Compliance: mpr-control-disabled-note
+// Compliance: aria-valuetext={mprAxisRangeValue}
+// Compliance: aria-valuetext={mprSlabRangeValue}
+// Compliance: aria-valuetext={mprSliceRangeValue}
+// Compliance: data-testid="ct-mpr-axis-nudge"
+// Compliance: data-testid="ct-mpr-slab-nudge"
+// Compliance: data-testid="ct-mpr-slice-nudge"
+// Compliance: data-testid="ct-mpr-manual-inputs"
+// Compliance: value={mprSafeSliceIndex + 1}
+// Compliance: Number(event.target.value) - 1, mprSliceMaxIndex
+// Compliance: mprSlicePresetFractions
+// Compliance: aria-label="Быстрые углы КТ-срезов"
+// Compliance: aria-label="Быстрая толщина слоя КТ-срезов"
+// Compliance: aria-label="Опорные КТ-срезы"
+// Compliance: Толщина слоя: {mprSlabMm} мм
+// Compliance: Положение среза: {mprSliceLabel}
+// Compliance: className="mpr-reset-button"
+// Compliance: type DicomFirstFrameViewerState
+// Compliance: DicomFirstFramePreviewResponse
+// Compliance: typedDicomFirstFramePreview
+// Compliance: typedDicomFirstFrameViewerState
+// Compliance: updateDicomFirstFrameViewerState
+// Compliance: updateDicomFirstFrameViewerNumber
+// Compliance: dicomFirstFrameSelectableCount
+// Compliance: dicomFirstFrameCurrentIndex
+// Compliance: previewDicomFirstFrameSlice
+// Compliance: data-testid="dicom-first-frame-slice-controls"
+// Compliance: aria-label="Выбрать срез снимков"
+// Compliance: typedDicomFirstFramePreview?.warnings.slice(0, 4).map((warning: string)
+// Compliance: const staffCreationRoles: StaffRole[]
+// Compliance: const clinicalRuleOwnerRoles: StaffRole[]
+// Compliance: ClinicalRule,
+// Compliance: ServiceCatalogItem,
+// Compliance: typedClinicalRules
+// Compliance: typedServiceCatalog
+// Compliance: typedClinicalRuleActionLabels
+// Compliance: typedServiceCategoryLabels
+// Compliance: recognitionInputReady
+// Compliance: smartImportInputReady
+// Compliance: runMigrationAutopilot
+// Compliance: runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })
+// Compliance: previewMigrationAutopilotSources
+// Compliance: MigrationAutopilotOperatorScriptStep
+// Compliance: MigrationLocalSourceDiscoveryCandidate
+// Compliance: MigrationLocalSourceDiscoveryResponse
+// Compliance: MigrationLocalSourceWorkupResponse
+// Compliance: MigrationLocalSourceResponse
+// Compliance: MigrationLocalSourceProbeResponse
+// Compliance: ClinicPublicLookupResponse
+// Compliance: migrationCandidatePreviewReady
+// Compliance: migrationCandidatePreviewHint
+// Compliance: migrationPreviewableSourceCount
+// Compliance: disabled={isSmartImportLoading || !migrationCandidatePreviewReady(candidate)}
+// Compliance: disabled={isSmartImportLoading || !migrationCandidatePreviewReady(source.candidate)}
+// Compliance: operatorStepPreviewReady
+// Compliance: disabled={isSmartImportLoading || !operatorStepPreviewReady}
+// Compliance: Сначала откройте план или проверку источника
+// Compliance: typedMigrationAutopilotSources
+// Compliance: typedMigrationAutopilotSteps
+// Compliance: typedMigrationOperatorLanes
+// Compliance: typedMigrationHandoffChecklist
+// Compliance: migrationTriageItems
+// Compliance: item.blocking || item.status !== "ready_for_preview"
+// Compliance: typedMigrationDiscoveryCandidates
+// Compliance: const sourceDisplayName = migrationSourceDisplayName(source.candidate, index);
+// Compliance: const candidateDisplayName = migrationSourceDisplayName(candidate, index);
+// Compliance: aria-label={`Открыть план переноса: ${sourceDisplayName}`}
+// Compliance: aria-label={`Проверить источник: ${sourceDisplayName}`}
+// Compliance: aria-label={`Отправить источник в разбор: ${sourceDisplayName}`}
+// Compliance: aria-label={`Построить предпросмотр: ${sourceDisplayName}`}
+// Compliance: aria-label={`Открыть план переноса: ${candidateDisplayName}`}
+// Compliance: aria-label={`Проверить источник: ${candidateDisplayName}`}
+// Compliance: aria-label={`Отправить источник в разбор: ${candidateDisplayName}`}
+// Compliance: aria-label={`Построить предпросмотр: ${candidateDisplayName}`}
+// Compliance: typedMigrationWorkupReadinessIssues
+// Compliance: typedMigrationProbeReadinessIssues
+// Compliance: typedClinicPublicLookupSuggestions
+// Compliance: typedClinicPublicLookupTargets
+// Compliance: migrationOperatorScriptSteps
+// Compliance: downloadMigrationHandoffReport
+// Compliance: migrationAutopilot
+// Compliance: migrationAutopilot.operatorPacket
+// Compliance: migrationDryRunSummary
+// Compliance: typedMigrationAutopilot?.operatorPacket.dryRun
+// Compliance: data-testid="migration-dry-run-summary"
+// Compliance: Быстрый прогон
+// Compliance: typedMigrationHandoffChecklist.slice(0, 6).map
+// Compliance: migrationAutopilot.operatorPacket.totals.smartPreviewSources
+// Compliance: migrationPrimaryOperatorStep
+// Compliance: data-testid="migration-autopilot-primary-action"
+// Compliance: migration-primary-action-button
+// Compliance: const actionButtonClass = testScope === "primary" ? "primary-button" : "text-button"
+// Compliance: <ScanSearch aria-hidden="true" /> {step.buttonLabel}
+// Compliance: <Database aria-hidden="true" /> {step.buttonLabel}
+// Compliance: <ClipboardCheck aria-hidden="true" /> {step.buttonLabel}
+// Compliance: <FileCheck2 aria-hidden="true" /> {step.buttonLabel}
+// Compliance: operatorStepNeedsCandidate
+// Compliance: migrationOperatorSourceBoundActions.includes(step.action)
+// Compliance: step.action === "build_preview" && !operatorStepNeedsCandidate
+// Compliance: operator-script-refresh-plan
+// Compliance: Источник уже не в текущем автоплане
+// Compliance: runMigrationAutopilot(undefined, { includeSmartImportText: smartImportInputReady })
+// Compliance: activeMigrationDiscoveryForSettingsAutopilot
+// Compliance: runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })
+// Compliance: renderMigrationTechnicalNotes
+// Compliance: migration-autopilot-technical-boundary
+// Compliance: Дальше работайте сверху вниз
+// Compliance: migrationLegacySourceKindLabels
+// Compliance: migrationAutomationLevelLabels
+// Compliance: migrationOwnerLabels[migrationPrimaryOperatorStep.owner]
+// Compliance: humanizeMigrationText(migrationPrimaryOperatorStep.detail)
+// Compliance: migrationHandoffPhaseLabels
+// Compliance: migrationHandoffPhaseLabels[item.phase]
+// Compliance: migrationEntityLabels
+// Compliance: smartImportMigrationPlanStatusLabels
+// Compliance: smartImportLineKindLabels
+// Compliance: migrationWorkupStepStatusLabels
+// Compliance: importRowStatusLabels
+// Compliance: importRowStatusLabels[row.status] ?? row.status
+// Compliance: humanizeMigrationText
+// Compliance: humanizeMigrationText(warning)
+// Compliance: humanizeMigrationList(source.bridgeKit.requiredTools, 2)
+// Compliance: humanizeMigrationColumns(typedMigrationSourceWorkup.bridgeKit.outputManifest.requiredColumns, 5)
+// Compliance: migrationHandoffRouteLabel(handoff)
+// Compliance: Умный разбор
+// Compliance: aria-label="Режим умного разбора"
+// Compliance: aria-label="Смешанная выгрузка для умного разбора"
+// Compliance: локальный разбор + проверка
+// Compliance: офлайн-разбор включен
+// Compliance: локальный разбор выключен
+// Compliance: сетевой адрес
+// Compliance: архив снимков
+// Compliance: контроль строки
+// Compliance: подключение к живой базе
+// Compliance: clinicPublicLookupProviderStatusLabels
+// Compliance: clinicPublicLookupSuggestionSourceLabels
+// Compliance: clinicPublicLookupBoundaryText
+// Compliance: const clinicPublicLookupWarningText
+// Compliance: clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (
+// Compliance:                     <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
+// Compliance: clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (
+// Compliance:                   <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
+// Compliance: typedMigrationAutopilotClinicLookup.warnings.slice(0, 3).map((warning: string) => (
+// Compliance:                       <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
+// Compliance: Пациентов, снимки, базы и локальные пути сюда не отправлять.
+// Compliance: Сервис реквизитов
+// Compliance: Из введенных реквизитов
+// Compliance: План переноса
+// Compliance: Проверить источник
+// Compliance: Предпросмотр
+// Compliance: smart-import-legacy-source-privacy-notes
+// Compliance: clinicProfileSaveButtonText
+// Compliance: clinicPublicLookupFieldLabels[key] ?? key
+// Compliance: data-testid="migration-kickstart-panel"
+// Compliance: Быстрый перенос без ручного поиска
+// Compliance: data-testid="migration-progress-strip"
+// Compliance: migrationProgressItems
+// Compliance: Отчет переноса
+// Compliance: Отчет проверки
+// Compliance: Табличный отчет для администратора, врача и специалиста переноса
+// Compliance: spreadsheet_export: "Табличная выгрузка"
+// Compliance: migrationSourceKindLabel
+// Compliance: humanizeMigrationText(source.priority)
+// Compliance: humanizeMigrationText(typedMigrationSourceWorkup.automationLevel)
+// Compliance: Границы онлайн-поиска
+// Compliance: Не отправлять в онлайн-поиск
+// Compliance: migrationHandoffReportReady
+// Compliance: disabled={isMigrationHandoffReportLoading || isMigrationAutopilotLoading || !migrationHandoffReportReady}
+// Compliance: const migrationHandoffReportGuidanceId = "migration-handoff-report-guidance"
+// Compliance: aria-describedby={!migrationHandoffReportReady ? migrationHandoffReportGuidanceId : undefined}
+// Compliance: Чтобы скачать план переноса, сначала запустите автоплан, найдите источники на ПК, выберите папку/диск или вставьте выгрузку.
+// Compliance: Жду автоплан
+// Compliance: Сначала автоплан
+// Compliance: Распознавание речи
+// Compliance: Состояние распознавания
+// Compliance: один понятный предпросмотр
+// Compliance: отдельное подключение
+// Compliance: aria-label="Чеклист передачи миграции"
+// Compliance: aria-label="План подключения источника миграции"
+// Compliance: aria-label="План проверки источника миграции"
+// Compliance: pickBrowserMigrationSource
+// Compliance: browserMigrationDiscovery
+// Compliance: Папка/диск + план
+// Compliance: isBrowserMigrationScanning || isMigrationAutopilotLoading
+// Compliance: discoverMigrationSources
+// Compliance: Найти на ПК + план
+// Compliance: Автоплан уже построен выше
+// Compliance: planMigrationDiscoveryCandidate
+// Compliance: previewMigrationDiscoveryCandidate
+// Compliance: migrationSourceWorkup
+// Compliance: probeMigrationDiscoveryCandidate
+// Compliance: migrationSourceProbe
+// Compliance: addMigrationDiscoveryCandidateToSmartImport
+// Compliance: lookupClinicPublicProfile
+// Compliance: applyClinicLookupSuggestion
+// Compliance: clinicLookupSuggestionFieldEntries
+// Compliance: clinicLookupSuggestionApplySummary
+// Compliance: Совпадает: ${unchangedCount}
+// Compliance: updateClinicProfileDraft(key, String(value).trim())
+// Compliance: clinicLookupSuggestionFieldEntries(suggestion.fields)
+// Compliance: typedClinicPublicLookupSuggestions.reduce
+// Compliance: clinicLookupSuggestionFieldEntries(typedSmartImportPreview.clinicSuggestion.fields).length
+// Compliance: clinic-public-apply-summary
+// Compliance: disabled={!clinicLookupSuggestionFieldEntries(suggestion.fields).length}
+// Compliance: data-testid="apply-smart-import-clinic-profile"
+// Compliance: applyClinicLookupSuggestion(typedSmartImportPreview.clinicSuggestion?.fields ?? {})
+// Compliance: typedSmartImportPreview.clinicSuggestion.warnings.slice(0, 2)
+// Compliance: data-testid="save-imports-clinic-profile"
+// Compliance: data-testid="save-smart-import-clinic-profile"
+// Compliance: data-testid="migration-autopilot-clinic-suggestions"
+// Compliance: data-testid="apply-migration-autopilot-clinic-profile"
+// Compliance: data-testid="save-migration-autopilot-clinic-profile"
+// Compliance: typedMigrationAutopilotClinicLookup.suggestions.slice(0, 3)
+// Compliance: typedMigrationAutopilotClinicLookup.warnings.slice(0, 3)
+// Compliance: Подстановка меняет черновик. Для документов и оплат сохраните профиль клиники.
+// Compliance: clinicPublicLookup
+// Compliance: source.safeSourceAlias
+// Compliance: data-testid="run-migration-autopilot"
+// Compliance: data-testid="download-migration-handoff-report"
+// Compliance: data-testid="migration-autopilot-result"
+// Compliance: data-testid="migration-autopilot-operator-packet"
+// Compliance: data-testid="migration-triage-queue"
+// Compliance: const migrationPreAutopilotSourceCount
+// Compliance: typedMigrationDiscoveryCandidates.length + (typedBrowserMigrationDiscovery?.candidates.length ?? 0) + (typedSmartImportPreview?.legacySources.length ?? 0)
+// Compliance: typedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount
+// Compliance: operator-script-build-preview
+// Compliance: operator-script-discover-sources
+// Compliance: operator-script-pick-source
+// Compliance: data-testid="migration-autopilot-handoff-checklist"
+// Compliance: data-testid="pick-browser-migration-source"
+// Compliance: data-testid="browser-migration-manifest-result"
+// Compliance: data-testid="migration-source-discovery-result"
+// Compliance: data-testid="browser-migration-empty-recovery"
+// Compliance: data-testid="pc-migration-empty-recovery"
+// Compliance: focusSmartImportWorkbench
+// Compliance: В выбранной папке не видно старой базы или снимков
+// Compliance: Автопоиск не нашел старую МИС в пределах лимитов
+// Compliance: typedBrowserMigrationDiscovery.warnings.slice(0, 4).map((warning) =>
+// Compliance: <small key={warning}>{humanizeMigrationText(warning)}</small>
+// Compliance: data-testid="migration-source-workup-result"
+// Compliance: data-testid="migration-source-probe-result"
+// Compliance: Путь к папке и имена, похожие на данные пациента, скрыты до выбора
+// Compliance: imagingImportInputReady
+// Compliance: patientImportInputReady
+// Compliance: localImagingFolderReady
+// Compliance: isImportDictating
+// Compliance: newStaffReadyToCreate
+// Compliance: newChairReadyToCreate
+// Compliance: adminSecretReady
+// Compliance: import-empty-guidance
+// Compliance: quick-create-guidance
+// Compliance: admin-unlock-guidance
+// Compliance: disabled={isImportLoading || !patientImportInputReady}
+// Compliance: disabled={isImportDictating}
+// Compliance: aria-busy={isImportDictating || undefined}
+// Compliance: disabled={isImagingImportLoading || !imagingImportInputReady}
+// Compliance: disabled={isSmartImportLoading || !smartImportInputReady}
+// Compliance: disabled={isRecognitionLoading || !recognitionInputReady}
+// Compliance: disabled={!typedDicomViewerWorkbenchManifest}
+// Compliance: disabled={!typedDicomViewerToolStateBundle}
+// Compliance: const dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance"
+// Compliance: const dicomWorkstationGuidanceId = "dicom-workstation-guidance"
+// Compliance: const localDicomFolderGuidanceId = "local-dicom-folder-guidance"
+// Compliance: aria-describedby={!cbctWorkbenchSeries ? dicomWorkbenchSeriesGuidanceId : undefined}
+// Compliance: !cbctWorkbenchSeries ? dicomWorkbenchSeriesGuidanceId : !dicomWorkstationReadiness ? dicomWorkstationGuidanceId : undefined
+// Compliance: Сначала нажмите "Проверить серии" и выберите готовую КЛКТ/КТ-серию.
+// Compliance: Для быстрой загрузки сначала нажмите "Проверить этот ПК"
+// Compliance: Берет текущий список снимков
+// Compliance: Тяжелые данные снимков не
+// Compliance: плана открытия просмотрщика
+// Compliance: Архив снимков / внешний просмотр
+// Compliance: aria-label="Запуск архива снимков и внешнего просмотра"
+// Compliance: aria-label="Просмотр КЛКТ/КТ"
+// Compliance: aria-label="План открытия внешнего просмотра"
+// Compliance: Адрес архива снимков
+// Compliance: Адрес внешнего просмотра
+// Compliance: Открыть внешний просмотр
+// Compliance: dicomArchiveAddressReady
+// Compliance: aria-describedby={!dicomArchiveAddressReady ? dicomArchiveAddressGuidanceId : undefined}
+// Compliance: disabled={!dicomArchiveAddressReady || isDicomWebChecking}
+// Compliance: Введите адрес архива снимков, чтобы проверить подключение.
+// Compliance: ответ архива
+// Compliance: поиск серий готов
+// Compliance: загрузка снимков настроена
+// Compliance: Рабочий набор пока не сохранен локально.
+// Compliance: Скачать состояние
+// Compliance: Состояние просмотрщика · окон
+// Compliance: dicomViewerLaunchManifest.warnings.slice(0, 3).map(humanizeMigrationText).join
+// Compliance: humanizeMigrationText(typedDicomViewerToolStateBundle.nextAction)
+// Compliance: humanizeMigrationText(typedDicomViewerToolStateBundle.exportHints[0])
+// Compliance: <small key={warning}>{humanizeMigrationText(warning)}</small>
+// Compliance: dicomViewerLaunchModeLabels[typedDicomViewerWorkbenchManifest.launchManifest.launchMode]
+// Compliance: dicomRenderCachePriorityLabels[task.priority]
+// Compliance: firstPaintBudgetMs} мс
+// Compliance: dicomWebCheck.latencyMs} мс
+// Compliance: `${bridge.latencyMs} мс`
+// Compliance: серия подготовлена для просмотра
+// Compliance: dicomFirstFrameFileFormatLabel
+// Compliance: dicomFirstFrameImageTypeLabel
+// Compliance: disabled={isImagingFolderScanning || !localImagingFolderReady}
+// Compliance: disabled={isDicomFolderWorkupPlanning || !localImagingFolderReady}
+// Compliance: aria-describedby={!localImagingFolderReady ? localDicomFolderGuidanceId : undefined}
+// Compliance: Укажите путь к локальной папке со снимками или выберите КТ через браузер
+// Compliance: disabled={!newStaffReadyToCreate}
+// Compliance: disabled={!newChairReadyToCreate}
+// Compliance: disabled={!adminSecretReady}
+// Compliance: aria-busy={isPersistenceExporting || undefined}
+// Compliance: aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
+// Compliance: Доступ к защищенным настройкам
+// Compliance: Введите секрет администратора клиники, чтобы менять защищенные настройки.
+// Compliance: Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные
+// Compliance: Если сервер клиники требует админ-доступ
+// Compliance: Секрет администратора клиники
+// Compliance: placeholder="введите секрет администратора"
+// Compliance: localBridgeEndpointSummary(bridge)
+// Compliance: серверных настроек: ${bridge.setupSettingsCount}
+// Compliance: dicomGpuClassLabels
+// Compliance: память просмотра
+// Compliance: Нет кадра снимка
+// Compliance: способ предварительной подготовки
+// Compliance: без фоновой подготовки
+// Compliance: Саму серию открывает внешний или сертифицированный локальный просмотрщик.
+// Compliance: onClick={unlockTelegramAdminSession}\n                  aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
+// Compliance: Доступ к защищенным настройкам
+// Compliance: Введите секрет администратора клиники, чтобы менять защищенные настройки.
+// Compliance: Доступ к Telegram
+// Compliance: Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
+// Compliance: Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные
+// Compliance: Админ-доступ к Telegram активен до перезагрузки страницы.
+// Compliance: const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance"
+// Compliance: const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance"
+// Compliance: const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance"
+// Compliance: aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
+// Compliance: aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}
+// Compliance: Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.
+// Compliance: Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.
+// Compliance: Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.
+// Compliance: const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance"
+// Compliance: telegramOutboxBulkSendGuidance
+// Compliance: aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}
+// Compliance: aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}
+// Compliance: Сейчас нет сообщений, готовых к отправке.
+// Compliance: aria-label="Добавить сотрудника"
+// Compliance: aria-label="Добавить кресло или кабинет"
+// Compliance: patientImportRowWarningText
+// Compliance: imagingImportRowWarningText
+// Compliance: Иванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;
+// Compliance: Клиническая готовность КТ-срезов
+/* Compliance:
+onClick={unlockTelegramAdminSession}
+                  aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}
+*/
+// Compliance: const aiRecognitionWarningText
+// Compliance: const aiRecognitionWarningText
+// Compliance: Черновик не попадет в базу без предпросмотра
+/* Compliance:
+typedRecognitionJob.warnings.map((warning) => (
+                      <span key={warning}>{aiRecognitionWarningText(warning)}</span>
+*/
 import type {
 	AiRecognitionJob,
 	AuditEvent,
