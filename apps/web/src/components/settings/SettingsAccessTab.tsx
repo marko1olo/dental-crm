@@ -1,10 +1,5 @@
-import {
-	Check,
-	Link as LinkIcon,
-	Mail,
-	ShieldCheck,
-	UserCheck,
-} from "lucide-react";
+import { Check, Link as LinkIcon, Mail, ShieldCheck, UserCheck, Key, FileSignature, Copy, Settings2 } from "lucide-react";
+import "./SettingsAccessTab.css";
 import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -84,175 +79,148 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 		?.roleAccessPolicies ?? []) as RoleAccessPolicy[];
 
 	return (
-		<section
-			className="access-settings"
-			aria-label="Доступы, рабочие профили и роли"
-		>
-			<div className="import-copy">
-				<UserCheck aria-hidden="true" />
-				<div>
-					<p className="eyebrow">Доступы</p>
-					<h2>Рабочие профили для врача, администратора, ассистента и сети</h2>
-					<p>
-						Режим клиники влияет на первый экран, видимые разделы, права записи,
-						аудит и зоны, где нужно ручное подтверждение.
-					</p>
+		<div className="access-studio-container animate-fade-in">
+			
+			{/* Инвайты */}
+			<section className="access-section-card">
+				<div className="access-section-header">
+					<div className="access-section-icon">
+						<Mail size={24} />
+					</div>
+					<div className="access-section-title">
+						<h3>Приглашение сотрудников</h3>
+						<p>Генерация защищенных ссылок для регистрации персонала клиники</p>
+					</div>
 				</div>
-			</div>
 
-			<article className="access-settings__invite-card">
-				<div className="access-settings__invite-header">
-					<h3>
-						<Mail size={18} aria-hidden="true" /> Пригласить сотрудника
-					</h3>
-					<p>
-						Сгенерируйте уникальную ссылку для регистрации нового врача,
-						ассистента или администратора.
-					</p>
-				</div>
-				<form
-					className="access-settings__invite-form"
-					onSubmit={handleGenerateInvite}
-				>
-					<input
-						type="email"
-						placeholder="email@example.com"
-						value={inviteEmail}
-						onChange={(e) => setInviteEmail(e.target.value)}
-						disabled={loading}
-						className="access-settings__invite-input"
-					/>
-					<select
-						value={inviteRole}
-						onChange={(e) => setInviteRole(e.target.value)}
-						disabled={loading}
-						className="access-settings__invite-select"
-					>
-						<option value="doctor">Врач</option>
-						<option value="admin">Администратор</option>
-						<option value="assistant">Ассистент</option>
-						<option value="owner">Владелец</option>
-					</select>
-					<button type="submit" disabled={loading} className="primary-button">
-						{loading ? "Создание..." : "Сгенерировать"}
+				<form className="access-invite-grid" onSubmit={handleGenerateInvite}>
+					<div className="access-invite-input-group">
+						<label>Email сотрудника</label>
+						<input
+							type="email"
+							placeholder="doctor@example.com"
+							value={inviteEmail}
+							onChange={(e) => setInviteEmail(e.target.value)}
+							disabled={loading}
+							className="access-invite-input"
+						/>
+					</div>
+					<div className="access-invite-input-group">
+						<label>Роль в системе</label>
+						<select
+							value={inviteRole}
+							onChange={(e) => setInviteRole(e.target.value)}
+							disabled={loading}
+							className="access-invite-select"
+						>
+							<option value="doctor">Врач</option>
+							<option value="admin">Администратор</option>
+							<option value="assistant">Ассистент</option>
+							<option value="owner">Владелец / Главврач</option>
+						</select>
+					</div>
+					<button type="submit" disabled={loading} className="primary-button" style={{ height: '44px' }}>
+						<Key size={16} style={{ marginRight: '8px' }} />
+						{loading ? "Создание..." : "Создать инвайт"}
 					</button>
 				</form>
 
 				{inviteLink && (
-					<div className="access-settings__invite-result">
-						<span className="access-settings__invite-link">{inviteLink}</span>
-						<button
-							type="button"
-							onClick={handleCopy}
-							className="secondary-button access-settings__copy-btn"
-						>
-							{copied ? (
-								<>
-									<Check size={14} /> Скопировано
-								</>
-							) : (
-								<>
-									<LinkIcon size={14} /> Копировать
-								</>
-							)}
+					<div className="access-invite-result">
+						<span className="access-invite-link">{inviteLink}</span>
+						<button type="button" onClick={handleCopy} className="secondary-button" style={{ background: 'white' }}>
+							{copied ? <><Check size={16} style={{marginRight: '6px'}} /> Скопировано</> : <><Copy size={16} style={{marginRight: '6px'}} /> Копировать</>}
 						</button>
 					</div>
 				)}
-			</article>
+			</section>
 
-			{typedActiveWorkspaceProfile ? (
-				<article className="active-workspace-card">
-					<div>
-						<span>
+			{/* Активный профиль */}
+			{typedActiveWorkspaceProfile && (
+				<section className="access-workspace-active">
+					<div className="access-workspace-active-head">
+						<div>
+							<h3>{typedActiveWorkspaceProfile.title}</h3>
+							<p>{typedActiveWorkspaceProfile.description}</p>
+						</div>
+						<span className="access-workspace-active-badge">
 							{workspaceScopeLabels[typedActiveWorkspaceProfile.scope]}
 						</span>
-						<h3>{typedActiveWorkspaceProfile.title}</h3>
-						<p>{typedActiveWorkspaceProfile.description}</p>
 					</div>
-					<div className="workspace-token-row">
-						<strong>
-							Старт: {viewLabels[typedActiveWorkspaceProfile.defaultSection]}
-						</strong>
-						{typedActiveWorkspaceProfile.primaryRoles.map((role) => (
+					<div className="access-workspace-active-roles">
+						<strong>Стартовый экран: {viewLabels[typedActiveWorkspaceProfile.defaultSection]}</strong>
+						<span style={{ margin: '0 8px', opacity: 0.5 }}>|</span>
+						{typedActiveWorkspaceProfile.primaryRoles.map((role: string) => (
 							<span key={role}>{staffRoleLabels[role]}</span>
 						))}
 					</div>
-				</article>
-			) : null}
+				</section>
+			)}
 
-			<div className="workspace-profile-grid">
-				{typedWorkspaceProfiles.map((profile) => (
-					<article
-						className={`workspace-profile-card ${profile.mode === dashboard.clinicSettings.profile.mode ? "active" : ""}`}
-						key={profile.id}
-					>
-						<div className="workspace-profile-head">
-							<span>{clinicModeLabels[profile.mode].title}</span>
-							<strong>{profile.title}</strong>
-							<p>{profile.description}</p>
-						</div>
-						<div className="workspace-token-row" aria-label="Разделы профиля">
-							{profile.visibleSections.map((section) => (
-								<span key={section}>{viewLabels[section]}</span>
-							))}
-						</div>
-						<ul>
-							{profile.automations.slice(0, 3).map((automation) => (
-								<li key={automation}>{automation}</li>
-							))}
-						</ul>
-						<small>
-							{profile.compactNavigation
-								? "Компактная навигация для телефона"
-								: "Расширенная навигация для команды"}
-						</small>
-					</article>
-				))}
-			</div>
+			{/* Политики Доступа */}
+			<section className="access-section-card">
+				<div className="access-section-header">
+					<div className="access-section-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'rgb(245, 158, 11)' }}>
+						<ShieldCheck size={24} />
+					</div>
+					<div className="access-section-title">
+						<h3>Политики и права доступа</h3>
+						<p>Настройки прав на просмотр и редактирование разделов клиники</p>
+					</div>
+				</div>
 
-			<div className="access-policy-grid">
-				{typedRoleAccessPolicies.map((policy) => (
-					<article className="access-policy-card" key={policy.role}>
-						<div className="access-policy-head">
-							<ShieldCheck aria-hidden="true" />
-							<div>
-								<span>{workspaceScopeLabels[policy.scope]}</span>
-								<h3>{policy.title}</h3>
-								<p>Первый экран: {viewLabels[policy.defaultSection]}</p>
+				<div className="access-policy-grid">
+					{typedRoleAccessPolicies.map((policy: any) => (
+						<article className="premium-policy-card" key={policy.role}>
+							<div className="premium-policy-header">
+								<div className="premium-policy-icon">
+									<UserCheck size={20} />
+								</div>
+								<div className="premium-policy-title">
+									<h4>{policy.title}</h4>
+									<span>{workspaceScopeLabels[policy.scope]}</span>
+								</div>
 							</div>
-						</div>
-						<div className="access-column-row">
-							<div>
-								<strong>Запись</strong>
-								{policy.canWrite.map((section) => (
-									<span key={section}>{viewLabels[section]}</span>
-								))}
-							</div>
-							<div>
-								<strong>Ограничено</strong>
-								{policy.restricted.length ? (
-									policy.restricted.map((section) => (
+							
+							<div className="premium-policy-cols">
+								<div className="premium-policy-col">
+									<strong>Разрешено (Запись)</strong>
+									{policy.canWrite.map((section: string) => (
 										<span key={section}>{viewLabels[section]}</span>
-									))
-								) : (
-									<span>нет</span>
-								)}
+									))}
+								</div>
+								<div className="premium-policy-col">
+									<strong>Ограничено</strong>
+									{policy.restricted.length > 0 ? (
+										policy.restricted.map((section: string) => (
+											<span key={section}>{viewLabels[section]}</span>
+										))
+									) : (
+										<span>Ограничений нет</span>
+									)}
+								</div>
 							</div>
-						</div>
-						<ul>
-							{policy.requiresApprovalFor.slice(0, 3).map((item) => (
-								<li key={item}>{item}</li>
-							))}
-						</ul>
-						<small>
-							Аудит:{" "}
-							{policy.auditEvents
-								.map((event) => policyAuditEventLabels[event] ?? event)
-								.join(", ")}
-						</small>
-					</article>
-				))}
-			</div>
-		</section>
+
+							{policy.requiresApprovalFor.length > 0 && (
+								<div>
+									<strong style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Требует подтверждения:</strong>
+									<ul className="premium-policy-requires">
+										{policy.requiresApprovalFor.slice(0, 3).map((item: string) => (
+											<li key={item}>{item}</li>
+										))}
+									</ul>
+								</div>
+							)}
+
+							<div className="premium-policy-audit">
+								<strong>Журнал аудита: </strong> 
+								{policy.auditEvents.map((event: string) => policyAuditEventLabels[event] ?? event).join(", ")}
+							</div>
+						</article>
+					))}
+				</div>
+			</section>
+
+		</div>
 	);
 }
