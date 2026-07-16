@@ -1,0 +1,444 @@
+
+.pricelist-studio-container {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+}
+
+.pricelist-section-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+	animation: fadeIn 0.3s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.pricelist-section-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 16px;
+}
+
+.pricelist-section-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: rgba(13, 148, 136, 0.08);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.pricelist-section-title {
+	flex: 1;
+}
+
+.pricelist-section-title h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.pricelist-section-title p {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+/* Source Selection */
+.pricelist-source-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+}
+
+.pricelist-source-card {
+	border: 2px solid var(--line);
+	border-radius: 12px;
+	padding: 16px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background: var(--paper);
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pricelist-source-card:hover {
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+.pricelist-source-card.active {
+	border-color: var(--teal);
+	background: rgba(13, 148, 136, 0.03);
+}
+
+.pricelist-source-card h4 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.pricelist-source-card p {
+	margin: 0;
+	font-size: 12px;
+	color: var(--muted);
+	line-height: 1.4;
+}
+
+/* Taxonomy Library */
+.pricelist-taxonomy-library {
+	background: var(--paper-soft);
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	overflow: hidden;
+}
+
+.pricelist-taxonomy-toggle {
+	width: 100%;
+	padding: 16px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.2s;
+}
+
+.pricelist-taxonomy-toggle:hover {
+	background: rgba(13, 148, 136, 0.05);
+}
+
+.pricelist-taxonomy-toggle-text h4 {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.pricelist-taxonomy-toggle-text p {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.pricelist-taxonomy-content {
+	padding: 20px;
+	border-top: 1px solid var(--line);
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 24px;
+}
+
+.pricelist-taxonomy-group h5 {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.pricelist-taxonomy-items {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pricelist-taxonomy-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+
+.pricelist-taxonomy-row-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--teal);
+	width: 100%;
+	margin-bottom: 2px;
+}
+
+.pricelist-taxonomy-chip {
+	padding: 4px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	font-size: 11px;
+	color: var(--muted);
+}
+
+/* Upload Area */
+.pricelist-upload-area {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 24px;
+	background: var(--paper-soft);
+	border: 2px dashed var(--line-strong);
+	border-radius: 12px;
+	transition: all 0.2s;
+}
+
+.pricelist-upload-area:focus-within,
+.pricelist-upload-area:hover {
+	border-color: var(--teal);
+	background: rgba(13, 148, 136, 0.02);
+}
+
+.pricelist-textarea {
+	width: 100%;
+	min-height: 120px;
+	padding: 16px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper);
+	font-family: var(--font-mono, monospace);
+	font-size: 13px;
+	line-height: 1.5;
+	resize: vertical;
+}
+
+.pricelist-textarea:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.pricelist-file-drop {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 16px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.pricelist-file-drop:hover {
+	background: rgba(13, 148, 136, 0.05);
+	border-color: rgba(13, 148, 136, 0.3);
+}
+
+.pricelist-file-drop input[type="file"] {
+	display: none;
+}
+
+.pricelist-file-icon {
+	width: 40px;
+	height: 40px;
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal);
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pricelist-file-text {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pricelist-file-text span {
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--ink);
+}
+
+.pricelist-file-text small {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.pricelist-action-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 8px;
+	padding-top: 16px;
+	border-top: 1px dashed var(--line);
+}
+
+.pricelist-action-toggles {
+	display: flex;
+	gap: 12px;
+}
+
+/* Analysis Results */
+.pricelist-results-container {
+	animation: fadeIn 0.4s ease;
+}
+
+.pricelist-stats-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: rgba(13, 148, 136, 0.05);
+	padding: 16px 20px;
+	border-radius: 12px;
+	margin-bottom: 24px;
+}
+
+.pricelist-stat-box {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pricelist-stat-box span {
+	font-size: 12px;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	font-weight: 600;
+}
+
+.pricelist-stat-box strong {
+	font-size: 20px;
+	color: var(--ink);
+}
+
+.pricelist-result-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.pricelist-summary-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pricelist-summary-card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.pricelist-summary-card-head strong {
+	font-size: 14px;
+	color: var(--ink);
+}
+
+.pricelist-summary-card-head span {
+	font-size: 11px;
+	padding: 2px 8px;
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal);
+	border-radius: 12px;
+	font-weight: 600;
+}
+
+.pricelist-summary-card p {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.pricelist-summary-card small {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.pricelist-items-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 24px;
+}
+
+.pricelist-item-row {
+	display: flex;
+	align-items: center;
+	padding: 12px 16px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	gap: 16px;
+}
+
+.pricelist-item-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.pricelist-item-info strong {
+	font-size: 14px;
+	color: var(--ink);
+}
+
+.pricelist-item-badges {
+	display: flex;
+	gap: 6px;
+}
+
+.pricelist-item-badges span {
+	font-size: 11px;
+	color: var(--muted);
+	background: var(--paper-soft);
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.pricelist-item-price {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4px;
+	min-width: 120px;
+}
+
+.pricelist-item-price span {
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.pricelist-item-price small {
+	font-size: 11px;
+	color: var(--teal);
+}
+
+.pricelist-save-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	position: sticky;
+	bottom: 24px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	z-index: 10;
+}
