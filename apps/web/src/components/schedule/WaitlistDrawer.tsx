@@ -1,5 +1,6 @@
 import { Calendar, Trash2, UserPlus, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
@@ -36,10 +37,14 @@ export function WaitlistDrawer({
 	// Form State
 	const [selectedPatientId, setSelectedPatientId] = useState("");
 	const [preferredDoctorId, setPreferredDoctorId] = useState("");
-	const [priorityLevel, setPriorityLevel] = useState<"high" | "medium" | "low">("medium");
+	const [priorityLevel, setPriorityLevel] = useState<"high" | "medium" | "low">(
+		"medium",
+	);
 
 	const staff = dashboard?.clinicSettings?.staff || [];
-	const doctors = staff.filter((s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin");
+	const doctors = staff.filter(
+		(s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin",
+	);
 	const patientsList = dashboard?.patients || [];
 
 	const fetchWaitlist = async () => {
@@ -127,8 +132,11 @@ export function WaitlistDrawer({
 		}
 
 		// Trigger click to open form if hidden
-		const formWrapper = document.querySelector<HTMLElement>(".appointment-create-wrapper");
-		const toggleBtn = formWrapper?.querySelector<HTMLButtonElement>(".text-button");
+		const formWrapper = document.querySelector<HTMLElement>(
+			".appointment-create-wrapper",
+		);
+		const toggleBtn =
+			formWrapper?.querySelector<HTMLButtonElement>(".text-button");
 		if (toggleBtn && toggleBtn.textContent?.includes("Показать все поля")) {
 			toggleBtn.click();
 		}
@@ -139,7 +147,10 @@ export function WaitlistDrawer({
 
 		// Auto-remove/fulfill waitlist item after booking or let the user complete it
 		// For MVP, letting them book is enough, they can delete the waitlist item when fulfilled
-		showToast(`Пациент ${item.patientName || ""} выбран. Укажите время записи.`, "success");
+		showToast(
+			`Пациент ${item.patientName || ""} выбран. Укажите время записи.`,
+			"success",
+		);
 	};
 
 	if (!isOpen) return null;
@@ -164,7 +175,9 @@ export function WaitlistDrawer({
 				<div className="p-6 border-b border-slate-700/60 flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Calendar className="w-5 h-5 text-teal-400" />
-						<h3 className="text-lg font-semibold tracking-wide">Лист ожидания</h3>
+						<h3 className="text-lg font-semibold tracking-wide">
+							Лист ожидания
+						</h3>
 					</div>
 					<button
 						onClick={onClose}
@@ -177,14 +190,19 @@ export function WaitlistDrawer({
 				{/* Body container */}
 				<div className="flex-1 overflow-y-auto p-6 space-y-6">
 					{/* Add to Waitlist Form */}
-					<form onSubmit={handleAdd} className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/40 space-y-4">
+					<form
+						onSubmit={handleAdd}
+						className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/40 space-y-4"
+					>
 						<h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
 							<UserPlus className="w-4 h-4 text-teal-400" />
 							Добавить в очередь
 						</h4>
-						
+
 						<div className="space-y-1">
-							<label className="text-xs text-slate-400 font-medium">Пациент *</label>
+							<label className="text-xs text-slate-400 font-medium">
+								Пациент *
+							</label>
 							<select
 								value={selectedPatientId}
 								onChange={(e) => setSelectedPatientId(e.target.value)}
@@ -201,7 +219,9 @@ export function WaitlistDrawer({
 						</div>
 
 						<div className="space-y-1">
-							<label className="text-xs text-slate-400 font-medium">Желаемый врач</label>
+							<label className="text-xs text-slate-400 font-medium">
+								Желаемый врач
+							</label>
 							<select
 								value={preferredDoctorId}
 								onChange={(e) => setPreferredDoctorId(e.target.value)}
@@ -217,7 +237,9 @@ export function WaitlistDrawer({
 						</div>
 
 						<div className="space-y-1">
-							<label className="text-xs text-slate-400 font-medium">Приоритет</label>
+							<label className="text-xs text-slate-400 font-medium">
+								Приоритет
+							</label>
 							<div className="flex gap-2">
 								{(["low", "medium", "high"] as const).map((p) => (
 									<button
@@ -255,7 +277,9 @@ export function WaitlistDrawer({
 						</h4>
 
 						{isLoading && items.length === 0 ? (
-							<div className="text-center py-8 text-slate-400 text-sm">Загрузка...</div>
+							<div className="text-center py-8 text-slate-400 text-sm">
+								Загрузка...
+							</div>
 						) : items.length === 0 ? (
 							<div className="text-center py-8 text-slate-400 text-sm border border-dashed border-slate-700/80 rounded-xl">
 								Очередь ожидания пуста
@@ -273,17 +297,23 @@ export function WaitlistDrawer({
 													{item.patientName || "Неизвестный пациент"}
 												</h5>
 												{item.patientPhone && (
-													<p className="text-xs text-slate-400 mt-0.5">{item.patientPhone}</p>
+													<p className="text-xs text-slate-400 mt-0.5">
+														{item.patientPhone}
+													</p>
 												)}
 											</div>
-											<span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${priorityColors[item.priorityLevel]}`}>
+											<span
+												className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${priorityColors[item.priorityLevel]}`}
+											>
 												{priorityLabels[item.priorityLevel]}
 											</span>
 										</div>
 
 										{item.preferredDoctorName && (
 											<div className="text-xs text-slate-400 flex gap-1">
-												<span className="font-medium text-slate-500">Врач:</span>
+												<span className="font-medium text-slate-500">
+													Врач:
+												</span>
 												<span>{item.preferredDoctorName}</span>
 											</div>
 										)}

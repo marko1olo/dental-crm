@@ -23,10 +23,10 @@ import { motion } from "framer-motion";
 import { CheckCircle2, FileText } from "lucide-react";
 import { useEffect } from "react";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { PaidMedicalServicesContractForm } from "./components/documents/forms/PaidMedicalServicesContractForm";
 import { OutpatientMedicalCard025uForm } from "./components/documents/forms/OutpatientMedicalCard025uForm";
+import { PaidMedicalServicesContractForm } from "./components/documents/forms/PaidMedicalServicesContractForm";
 import { TreatmentPlanAcceptanceForm } from "./components/documents/forms/TreatmentPlanAcceptanceForm";
+import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import {
 	type MedicalDocumentReleaseChannel,
 	useDocumentStore,
@@ -124,7 +124,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 		};
 	}, []);
 
-	const documentKindMetadata = sharedDocumentKindMetadata as Record<DocumentKind, DocumentKindMetadata>;
+	const documentKindMetadata = sharedDocumentKindMetadata as Record<
+		DocumentKind,
+		DocumentKindMetadata
+	>;
 	const documentSourceStatusLabels = sharedDocumentSourceStatusLabels as Record<
 		DocumentSourceStatus,
 		string
@@ -1237,7 +1240,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 					className="text-button"
 					type="button"
 					disabled={!activeUsableDocuments[0]}
-					aria-describedby={!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined}
+					aria-describedby={
+						!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined
+					}
 					title={
 						!activeUsableDocuments[0]
 							? "Сначала создайте или выдайте документ"
@@ -1471,11 +1476,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 					aria-label="Данные для документов с обязательными полями"
 				>
 					{selectedDocumentKind === "paid_medical_services_contract" ? (
-						<PaidMedicalServicesContractForm 
-							dashboard={dashboard} 
-							documentPatient={documentPatient} 
-							activeDoctor={activeDoctor} 
-							paidContractTotalRubValue={paidContractTotalRubValue} 
+						<PaidMedicalServicesContractForm
+							dashboard={dashboard}
+							documentPatient={documentPatient}
+							activeDoctor={activeDoctor}
+							paidContractTotalRubValue={paidContractTotalRubValue}
 						/>
 					) : null}
 
@@ -3969,11 +3974,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "treatment_plan_acceptance" ? (
-						<TreatmentPlanAcceptanceForm 
-							dashboard={dashboard} 
-							documentPatient={documentPatient} 
-							activeDoctor={activeDoctor} 
-							
+						<TreatmentPlanAcceptanceForm
+							dashboard={dashboard}
+							documentPatient={documentPatient}
+							activeDoctor={activeDoctor}
 						/>
 					) : null}
 
@@ -4811,10 +4815,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "outpatient_medical_card_025u" ? (
-						<OutpatientMedicalCard025uForm 
-							dashboard={dashboard} 
-							documentPatient={documentPatient} 
-							activeDoctor={activeDoctor} 
+						<OutpatientMedicalCard025uForm
+							dashboard={dashboard}
+							documentPatient={documentPatient}
+							activeDoctor={activeDoctor}
 						/>
 					) : null}
 
@@ -5376,7 +5380,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 										</select>
 										<small>
 											Сначала создайте и выдайте документ «Запрос на копии
-											медицинской документации». Расписка будет привязана к выбранному запросу.
+											медицинской документации». Расписка будет привязана к
+											выбранному запросу.
 										</small>
 									</label>
 									<label>
@@ -6395,7 +6400,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 							type="button"
 							disabled={!documentIssueAttestationReady || documentIssueSaving}
 							aria-busy={documentIssueSaving || undefined}
-							aria-describedby={!documentIssueAttestationReady ? documentIssueMissingGuidanceId : undefined}
+							aria-describedby={
+								!documentIssueAttestationReady
+									? documentIssueMissingGuidanceId
+									: undefined
+							}
 							onClick={() => void confirmDocumentIssue()}
 						>
 							{documentIssueSaving ? "Выдаю документ" : "Выдать после проверки"}
@@ -6577,7 +6586,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 							type="button"
 							disabled={!documentVoidReady || documentVoidSaving}
 							aria-busy={documentVoidSaving || undefined}
-							aria-describedby={!documentVoidReady ? documentVoidMissingGuidanceId : undefined}
+							aria-describedby={
+								!documentVoidReady ? documentVoidMissingGuidanceId : undefined
+							}
 							onClick={() => void confirmDocumentVoid()}
 						>
 							{documentVoidSaving
@@ -6851,14 +6862,17 @@ export function DocumentsView(props: DocumentsViewProps) {
 						? `, ${document.taxYear}`
 						: "";
 					const documentActionContext = `${documentActionLabel}: ${documentKindLabel}${documentTaxYearContext}`;
-					const documentAuditLoading = documentAuditFactsLoadingId === document.id;
+					const documentAuditLoading =
+						documentAuditFactsLoadingId === document.id;
 					const documentStatusSaving = documentStatusSavingId === document.id;
 					const documentLifecycleGuidanceId = `document-lifecycle-guidance-${document.id}`;
 					const documentLifecycleGuidance =
 						documentRowLifecycleGuidance(document);
 					const documentArchiveAvailable =
 						(document.status === "issued" || document.status === "voided") &&
-						Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
+						Boolean(
+							document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt,
+						);
 					return (
 						<article className="document-row" key={document.id}>
 							<CheckCircle2 aria-hidden="true" />

@@ -7,8 +7,8 @@ import type {
 import { Beaker, Clock, PackageCheck, RefreshCcw } from "lucide-react";
 import type { ChangeEvent } from "react";
 import React, { useState } from "react";
+import type { AppointmentScheduleDraft } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
-import { type AppointmentScheduleDraft } from "../../AppHelpers";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 

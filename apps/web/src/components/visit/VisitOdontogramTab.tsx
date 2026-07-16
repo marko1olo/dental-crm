@@ -1,8 +1,8 @@
 import React from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { EgiszMonitor } from "../EgiszMonitor";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
 import { VisitDiaryEditor } from "../VisitDiaryEditor";
-import { EgiszMonitor } from "../EgiszMonitor";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 export function VisitOdontogramTab() {
 	const { activePatient, activeAppointment, dashboard } = useAppLogicContext();

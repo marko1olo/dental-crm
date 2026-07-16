@@ -220,7 +220,8 @@ function candidateStatus(input: {
 	if (
 		input.ridgeWidthMm !== null &&
 		input.boneHeightMm !== null &&
-		input.hasTypedWidth && input.hasTypedHeight &&
+		input.hasTypedWidth &&
+		input.hasTypedHeight &&
 		input.siteEvidenceStatus === "scoped"
 	)
 		return "ready";
@@ -368,7 +369,8 @@ export function buildCtPlanningImplantFitPlan(input: {
 				? selectedCandidate.status
 				: ridgeWidthMm !== null &&
 						boneHeightMm !== null &&
-						hasTypedWidth && hasTypedHeight &&
+						hasTypedWidth &&
+						hasTypedHeight &&
 						siteEvidenceStatus === "scoped" &&
 						bestCandidate?.status === "ready"
 					? "ready"

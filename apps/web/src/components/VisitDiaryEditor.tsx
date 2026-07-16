@@ -412,9 +412,17 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				return;
 			}
 			try {
-				const base64Diary = btoa(unescape(encodeURIComponent(JSON.stringify(diary))));
-				pkcs7Signature = await signBase64WithCertificate(base64Diary, selectedCert);
-				showToast("УКЭП (ГОСТ 34.11-2012) отсоединенная подпись успешно сформирована", "success");
+				const base64Diary = btoa(
+					unescape(encodeURIComponent(JSON.stringify(diary))),
+				);
+				pkcs7Signature = await signBase64WithCertificate(
+					base64Diary,
+					selectedCert,
+				);
+				showToast(
+					"УКЭП (ГОСТ 34.11-2012) отсоединенная подпись успешно сформирована",
+					"success",
+				);
 			} catch (e) {
 				console.error(e);
 				showToast("Ошибка при подписании документа", "error");
@@ -1145,7 +1153,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 
 								{signatureType === "pin" ? (
 									<div className="space-y-1">
-										<label className="text-xs text-slate-400 font-medium">ПИН-код врача *</label>
+										<label className="text-xs text-slate-400 font-medium">
+											ПИН-код врача *
+										</label>
 										<input
 											id="diary-pin-input"
 											type="password"
@@ -1165,7 +1175,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 											<div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 p-3 rounded-lg flex items-start gap-2">
 												<AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
 												<p>
-													Плагин КриптоПро не установлен или недоступен в браузере.
+													Плагин КриптоПро не установлен или недоступен в
+													браузере.
 												</p>
 											</div>
 										) : isLoadingCerts ? (
@@ -1174,7 +1185,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 											</div>
 										) : (
 											<div className="space-y-1">
-												<label className="text-xs text-slate-400 font-medium flex block">Сертификат КриптоПро *</label>
+												<label className="text-xs text-slate-400 font-medium flex block">
+													Сертификат КриптоПро *
+												</label>
 												<select
 													value={selectedCert}
 													onChange={(e) => setSelectedCert(e.target.value)}

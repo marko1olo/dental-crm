@@ -24,6 +24,8 @@ const IMAGING_QUICK_CHIPS = [
 	"Требуется имплантация",
 ];
 
+// Compliance: <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title} decoding="async" style={imagingViewerImageStyle} />
+import type { Dashboard, GeneratedDocument } from "@dental/shared";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
@@ -34,9 +36,6 @@ import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import type { MprWindowPreset } from "./imagingUiLabels";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
-
-// Compliance: <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title} decoding="async" style={imagingViewerImageStyle} />
-import { type Dashboard, type GeneratedDocument } from "@dental/shared";
 import { type ToothState, useVisitStore } from "./store/visitStore";
 
 type ImagingViewProps = Record<string, any>;
@@ -767,11 +766,20 @@ export function ImagingView(props: ImagingViewProps) {
 													key={study.id}
 													type="button"
 													onClick={() => {
-														if (imagingKindFilter !== "all" && imagingKindFilter !== study.kind) setImagingKindFilter("all");
+														if (
+															imagingKindFilter !== "all" &&
+															imagingKindFilter !== study.kind
+														)
+															setImagingKindFilter("all");
 														setSelectedImagingStudyId(study.id);
 													}}
 												>
-													<img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
+													<img
+														src={imagingPreviewSource(study)}
+														alt=""
+														loading="lazy"
+														decoding="async"
+													/>
 													<span>
 														<strong>{imagingKindLabels[study.kind]}</strong>
 														<small>
@@ -1050,8 +1058,16 @@ export function ImagingView(props: ImagingViewProps) {
 													className="secondary-button"
 													type="button"
 													onClick={addImagingViewerNoteAnnotation}
-													aria-describedby={!imagingViewerNoteReady || !imagingViewerSessionReady ? imagingViewerNoteMissingId : undefined}
-													disabled={!imagingViewerNoteReady || !imagingViewerSessionReady}
+													aria-describedby={
+														!imagingViewerNoteReady ||
+														!imagingViewerSessionReady
+															? imagingViewerNoteMissingId
+															: undefined
+													}
+													disabled={
+														!imagingViewerNoteReady ||
+														!imagingViewerSessionReady
+													}
 												>
 													<Plus aria-hidden="true" /> Заметка
 												</button>
@@ -1060,7 +1076,11 @@ export function ImagingView(props: ImagingViewProps) {
 														className="secondary-button"
 														type="button"
 														onClick={retryImagingViewerSessionSave}
-														aria-describedby={!isOnline ? imagingViewerRetryMissingId : undefined}
+														aria-describedby={
+															!isOnline
+																? imagingViewerRetryMissingId
+																: undefined
+														}
 														disabled={!isOnline}
 													>
 														<RefreshCw aria-hidden="true" /> Повторить
@@ -1094,7 +1114,8 @@ export function ImagingView(props: ImagingViewProps) {
 													role="status"
 													aria-live="polite"
 												>
-													Повторная отправка просмотра станет доступна после подключения к сети.
+													Повторная отправка просмотра станет доступна после
+													подключения к сети.
 												</p>
 											) : null}
 										</div>
@@ -1158,7 +1179,12 @@ export function ImagingView(props: ImagingViewProps) {
 							key={study.id}
 						>
 							<div style={{ position: "relative", flexShrink: 0 }}>
-								<img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
+								<img
+									src={imagingPreviewSource(study)}
+									alt=""
+									loading="lazy"
+									decoding="async"
+								/>
 								{(study as any).aiSummary && (
 									<span
 										className="sa-ai-badge"
@@ -1271,7 +1297,8 @@ export function ImagingView(props: ImagingViewProps) {
 						<article>
 							<strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
 							<span>
-								{imagingViewerAnnotations.length} разметок; исходные снимки остаются в просмотрщике или исходной папке.
+								{imagingViewerAnnotations.length} разметок; исходные снимки
+								остаются в просмотрщике или исходной папке.
 							</span>
 						</article>
 					</div>
@@ -1320,7 +1347,10 @@ export function ImagingView(props: ImagingViewProps) {
 						localAnnotations={imagingViewerAnnotations}
 						annotationRefs={ctPlanningAnnotationRefs}
 						onCreateArtifact={createCtPlanningArtifact}
-						toolStateBundle={dicomViewerWorkbenchManifest?.toolStateBundle ?? dicomViewerToolStateBundle}
+						toolStateBundle={
+							dicomViewerWorkbenchManifest?.toolStateBundle ??
+							dicomViewerToolStateBundle
+						}
 					/>
 					<details className="clinical-mpr-advanced" open={mprControlsAutoOpen}>
 						<summary>
@@ -1333,7 +1363,9 @@ export function ImagingView(props: ImagingViewProps) {
 						<div className="clinical-mpr-grid">
 							<div className="mpr-plane-grid">
 								{cbctWorkbenchPlanes.map((plane: any) => {
-									const planeSupported = cbctWorkbenchProjections.includes(plane.key);
+									const planeSupported = cbctWorkbenchProjections.includes(
+										plane.key,
+									);
 									const planeAvailable = mprControlsReady && planeSupported;
 									const planeUnavailableReason = !mprControlsReady
 										? mprSeriesRequiredProjectionLabel
@@ -1421,7 +1453,8 @@ export function ImagingView(props: ImagingViewProps) {
 									</div>
 									<small
 										className="mpr-workbench-summary"
-										data-testid="ct-mpr-workbench-summary" aria-live="polite"
+										data-testid="ct-mpr-workbench-summary"
+										aria-live="polite"
 									>
 										{mprWorkbenchSummaryText}
 									</small>
@@ -1438,7 +1471,11 @@ export function ImagingView(props: ImagingViewProps) {
 										<button
 											type="button"
 											onClick={applyNearestMprClinicalPreset}
-											disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}
+											disabled={
+												!mprControlsReady ||
+												!mprNearestClinicalPreset.deltas.length ||
+												!mprNearestClinicalPreset.title
+											}
 											aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
 											title={`Подогнать под протокол: ${mprNearestClinicalPreset.label}`}
 										>
@@ -1642,7 +1679,14 @@ export function ImagingView(props: ImagingViewProps) {
 											step="1"
 											type="number"
 											value={mprSafeSliceIndex + 1}
-											onChange={(event) => setMprSliceIndex(clampMprSliceIndex(Number(event.target.value) - 1, mprSliceMaxIndex))}
+											onChange={(event) =>
+												setMprSliceIndex(
+													clampMprSliceIndex(
+														Number(event.target.value) - 1,
+														mprSliceMaxIndex,
+													),
+												)
+											}
 										/>
 									</label>
 								</div>
@@ -1655,7 +1699,14 @@ export function ImagingView(props: ImagingViewProps) {
 										<button
 											key={delta}
 											type="button"
-											onClick={() => setMprSliceIndex(clampMprSliceIndex(mprSafeSliceIndex + delta, mprSliceMaxIndex))}
+											onClick={() =>
+												setMprSliceIndex(
+													clampMprSliceIndex(
+														mprSafeSliceIndex + delta,
+														mprSliceMaxIndex,
+													),
+												)
+											}
 											disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
 											aria-label={`Перейти по КТ-срезам на ${formatSignedMprStep(delta, " срез")}`}
 										>
@@ -1671,7 +1722,9 @@ export function ImagingView(props: ImagingViewProps) {
 										);
 										return (
 											<button
-												className={mprSafeSliceIndex === targetIndex ? "active" : ""}
+												className={
+													mprSafeSliceIndex === targetIndex ? "active" : ""
+												}
 												key={preset.id}
 												type="button"
 												onClick={() => setMprSliceIndex(targetIndex)}
@@ -1723,7 +1776,11 @@ export function ImagingView(props: ImagingViewProps) {
 								>
 									{mprClinicalPresets.map((preset: any) => {
 										const projectionFallbackNote = mprControlsReady
-											? describeMprClinicalPresetProjectionFallback(preset.projection, cbctWorkbenchProjections, mprProjectionLabels)
+											? describeMprClinicalPresetProjectionFallback(
+													preset.projection,
+													cbctWorkbenchProjections,
+													mprProjectionLabels,
+												)
 											: null;
 										return (
 											<button
@@ -1731,7 +1788,12 @@ export function ImagingView(props: ImagingViewProps) {
 												key={preset.id}
 												type="button"
 												onClick={() => applyMprClinicalPreset(preset)}
-												aria-current={mprNearestClinicalPreset.exact && mprNearestClinicalPreset.title === preset.title ? "true" : undefined}
+												aria-current={
+													mprNearestClinicalPreset.exact &&
+													mprNearestClinicalPreset.title === preset.title
+														? "true"
+														: undefined
+												}
 												disabled={!mprControlsReady}
 											>
 												<strong>{preset.title}</strong>

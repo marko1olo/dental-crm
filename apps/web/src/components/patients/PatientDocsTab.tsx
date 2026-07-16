@@ -1,7 +1,7 @@
 import { Dashboard } from "@dental/shared";
 import { ShieldCheck } from "lucide-react";
 import type React from "react";
-import { useId, useState } from "react";
+import { useId, useState, useEffect } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import type { PatientsViewProps } from "../../PatientsView";
 import { usePatientStore } from "../../store/patientStore";
@@ -29,6 +29,17 @@ export function PatientDocsTab({ props }: { props: PatientsViewProps }) {
 	const patientAdministrativeProfileReadyToSave =
 		patientAdministrativeProfileDirty;
 	const [insuranceContracts, setInsuranceContracts] = useState<any[]>([]);
+
+	useEffect(() => {
+		fetch("/api/insurance/contracts", {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data) => {
+				setInsuranceContracts(Array.isArray(data) ? data : []);
+			})
+			.catch((err) => console.error("Failed to load VHI contracts", err));
+	}, []);
 
 	const togglePatientAdministrativeProfileWorkingDay = (day: number) => {
 		const days = patientAdministrativeProfileDraft.preferredAppointmentWeekdays;

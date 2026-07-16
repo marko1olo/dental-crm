@@ -432,7 +432,6 @@ export function WorkspaceTopbar({
 					<Plus aria-hidden="true" /> Запись
 				</button>
 			</div>
-
 		</header>
 	);
 }

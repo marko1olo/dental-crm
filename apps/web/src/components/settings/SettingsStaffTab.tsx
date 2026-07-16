@@ -8,7 +8,9 @@ import {
 } from "lucide-react";
 import type React from "react";
 import type { ChangeEvent } from "react";
+
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
+
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
@@ -16,7 +18,7 @@ import { showToast } from "../GlobalToast";
 export function SettingsStaffTab() {
 	const props = useAppLogicContext();
 	const { dashboard, staffRoleLabels, specialtyLabels } = props;
-	
+
 	const {
 		staffScheduleDrafts,
 		staffScheduleDraftFromWorkingHours,
@@ -30,7 +32,7 @@ export function SettingsStaffTab() {
 		weekdayOptions,
 	} = props;
 	const typedWeekdayOptions = weekdayOptions || [];
-const staff = dashboard?.clinicSettings?.staff || [];
+	const staff = dashboard?.clinicSettings?.staff || [];
 
 	const [loading, setLoading] = useState(false);
 
@@ -160,7 +162,10 @@ const staff = dashboard?.clinicSettings?.staff || [];
 					canManageImports: editForm.canManageImports,
 					canManageMoney: editForm.canManageMoney,
 					color: editForm.color || null,
-					specialties: editForm.specialties.length > 0 ? editForm.specialties : ["universal"],
+					specialties:
+						editForm.specialties.length > 0
+							? editForm.specialties
+							: ["universal"],
 				}),
 			});
 
@@ -511,7 +516,10 @@ const staff = dashboard?.clinicSettings?.staff || [];
 										}}
 									>
 										Специализация
-										<div className="quick-chips-row" style={{ marginTop: "4px" }}>
+										<div
+											className="quick-chips-row"
+											style={{ marginTop: "4px" }}
+										>
 											{Object.entries(specialtyLabels).map(([key, label]) => {
 												const isSelected = editForm.specialties.includes(key);
 												return (
@@ -521,9 +529,17 @@ const staff = dashboard?.clinicSettings?.staff || [];
 														className={`quick-chip ${isSelected ? "selected" : ""}`}
 														onClick={() => {
 															if (isSelected) {
-																setEditForm({ ...editForm, specialties: editForm.specialties.filter((s) => s !== key) });
+																setEditForm({
+																	...editForm,
+																	specialties: editForm.specialties.filter(
+																		(s) => s !== key,
+																	),
+																});
 															} else {
-																setEditForm({ ...editForm, specialties: [...editForm.specialties, key] });
+																setEditForm({
+																	...editForm,
+																	specialties: [...editForm.specialties, key],
+																});
 															}
 														}}
 													>
@@ -819,12 +835,19 @@ const staff = dashboard?.clinicSettings?.staff || [];
 							</div>
 						</form>
 
-						<div className="staff-schedule-editor" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--line-strong)' }}>
-							<h4 style={{ marginBottom: '16px' }}>Расписание сотрудника</h4>
+						<div
+							className="staff-schedule-editor"
+							style={{
+								marginTop: "24px",
+								paddingTop: "24px",
+								borderTop: "1px solid var(--line-strong)",
+							}}
+						>
+							<h4 style={{ marginBottom: "16px" }}>Расписание сотрудника</h4>
 							{(() => {
 								const member = staff.find((m) => m.id === editingStaffId);
 								if (!member) return null;
-								
+
 								const scheduleDraft =
 									staffScheduleDrafts[member.id] ??
 									staffScheduleDraftFromWorkingHours(
@@ -846,7 +869,13 @@ const staff = dashboard?.clinicSettings?.staff || [];
 
 								return (
 									<>
-										<div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+										<div
+											style={{
+												display: "flex",
+												gap: "16px",
+												marginBottom: "16px",
+											}}
+										>
 											<label>
 												С
 												<input
@@ -876,7 +905,7 @@ const staff = dashboard?.clinicSettings?.staff || [];
 											className="weekday-toggle-row staff-weekday-row"
 											role="group"
 											aria-label={`Рабочие дни: ${member.fullName}`}
-											style={{ marginBottom: '16px' }}
+											style={{ marginBottom: "16px" }}
 										>
 											{typedWeekdayOptions.map((day: any) => (
 												<button
@@ -921,9 +950,7 @@ const staff = dashboard?.clinicSettings?.staff || [];
 																<input
 																	aria-label={`${day.label}, начало`}
 																	type="time"
-																	value={
-																		dayHours?.start ?? scheduleDraft.start
-																	}
+																	value={dayHours?.start ?? scheduleDraft.start}
 																	onChange={(event: InputChangeEvent) =>
 																		updateStaffScheduleDay(
 																			member.id,
@@ -949,7 +976,10 @@ const staff = dashboard?.clinicSettings?.staff || [];
 													})}
 											</div>
 										</details>
-										<div className="staff-schedule-actions" style={{ marginTop: '16px' }}>
+										<div
+											className="staff-schedule-actions"
+											style={{ marginTop: "16px" }}
+										>
 											<span
 												className={`save-state save-state-${scheduleSaveState}`}
 											>
@@ -968,7 +998,6 @@ const staff = dashboard?.clinicSettings?.staff || [];
 								);
 							})()}
 						</div>
-
 					</div>
 				</div>
 			)}

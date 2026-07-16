@@ -11,16 +11,13 @@ import {
 	Sparkles,
 } from "lucide-react";
 import React, { Suspense, useEffect, useState } from "react";
-import { ClinicalRulePanel } from './ClinicalRulePanel';
-import { useAppLogicContext } from './contexts/AppLogicContext';
 import { createPortal } from "react-dom";
-
+import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { showToast } from "./components/GlobalToast";
+import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
-
-
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
@@ -29,7 +26,6 @@ import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/toothGeometry";
 import "./styles/VisitView.css";
-
 
 export function VisitView() {
 	const {
@@ -131,7 +127,9 @@ export function VisitView() {
 		visitWorkflowSteps,
 	} = useAppLogicContext();
 
-	const [activeVisitTab, setActiveVisitTab] = useState<"diary" | "odontogram" | "diagnostics" | "conclusion">("diary");
+	const [activeVisitTab, setActiveVisitTab] = useState<
+		"diary" | "odontogram" | "diagnostics" | "conclusion"
+	>("diary");
 	const [activeEmkTab, setActiveEmkTab] = useState("all");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
@@ -360,1654 +358,1763 @@ export function VisitView() {
 					</div>
 				</section>
 
-				<div style={{ display: activeVisitTab === "conclusion" ? "block" : "none" }}>
-				<details
-					className="clinical-rules-toggle"
+				<div
 					style={{
-						border: "1px solid #e2e8f0",
-						borderRadius: "12px",
-						overflow: "hidden",
-						margin: "0.75rem 0",
+						display: activeVisitTab === "conclusion" ? "block" : "none",
 					}}
 				>
-					<summary
+					<details
+						className="clinical-rules-toggle"
 						style={{
-							padding: "0.75rem 1rem",
-							background: "var(--paper)",
-							fontSize: "0.85rem",
-							fontWeight: 700,
-							color: "#475569",
-							cursor: "pointer",
-							outline: "none",
+							border: "1px solid #e2e8f0",
+							borderRadius: "12px",
+							overflow: "hidden",
+							margin: "0.75rem 0",
 						}}
 					>
-						🧭 Шаги приема и статус: {visitPrimaryAction.label}
-					</summary>
-					<div style={{ marginTop: "1rem", padding: "0 1rem 1rem 1rem" }}>
-						<section
-							className="visit-next-step"
-							data-testid="visit-next-step-panel"
-							aria-label="Следующий шаг приема"
+						<summary
+							style={{
+								padding: "0.75rem 1rem",
+								background: "var(--paper)",
+								fontSize: "0.85rem",
+								fontWeight: 700,
+								color: "#475569",
+								cursor: "pointer",
+								outline: "none",
+							}}
 						>
-							<div className="visit-next-step-main">
-								<div>
-									<p className="eyebrow">Сейчас сделать</p>
-									<h3>{visitPrimaryAction.label}</h3>
-									<p id="visit-primary-action-detail">
-										{visitPrimaryAction.detail}
-									</p>
-								</div>
-								<button
-									className="primary-button visit-primary-action"
-									type="button"
-									onClick={visitPrimaryAction.onClick}
-									disabled={visitPrimaryAction.disabled}
-									aria-describedby="visit-primary-action-detail"
-									data-testid="visit-primary-action"
-									style={{
-										padding: "16px 24px",
-										fontSize: "1.2rem",
-										fontWeight: "bold",
-										textTransform: "uppercase",
-										width: "100%",
-										justifyContent: "center",
-										borderRadius: "12px",
-									}}
-								>
-									{visitPrimaryAction.kind === "dictation" ? (
-										<Mic aria-hidden="true" />
-									) : null}
-									{visitPrimaryAction.kind === "draft" ? (
-										<Bot aria-hidden="true" />
-									) : null}
-									{visitPrimaryAction.kind === "save" ||
-									visitPrimaryAction.kind === "close" ? (
-										<Check aria-hidden="true" />
-									) : null}
-									{visitPrimaryAction.kind === "review" ? (
-										<AlertTriangle aria-hidden="true" />
-									) : null}
-									{visitPrimaryAction.label}
-								</button>
-							</div>
-							<div
-								className="visit-progress-strip"
-								data-testid="visit-progress-strip"
-								aria-label="Прогресс приема"
+							🧭 Шаги приема и статус: {visitPrimaryAction.label}
+						</summary>
+						<div style={{ marginTop: "1rem", padding: "0 1rem 1rem 1rem" }}>
+							<section
+								className="visit-next-step"
+								data-testid="visit-next-step-panel"
+								aria-label="Следующий шаг приема"
 							>
-								{visitWorkflowSteps.map((step, index) => (
-									<article
-										className={`visit-progress-step step-${step.state}`}
-										key={step.key}
+								<div className="visit-next-step-main">
+									<div>
+										<p className="eyebrow">Сейчас сделать</p>
+										<h3>{visitPrimaryAction.label}</h3>
+										<p id="visit-primary-action-detail">
+											{visitPrimaryAction.detail}
+										</p>
+									</div>
+									<button
+										className="primary-button visit-primary-action"
+										type="button"
+										onClick={visitPrimaryAction.onClick}
+										disabled={visitPrimaryAction.disabled}
+										aria-describedby="visit-primary-action-detail"
+										data-testid="visit-primary-action"
+										style={{
+											padding: "16px 24px",
+											fontSize: "1.2rem",
+											fontWeight: "bold",
+											textTransform: "uppercase",
+											width: "100%",
+											justifyContent: "center",
+											borderRadius: "12px",
+										}}
 									>
-										<span>{index + 1}</span>
-										<div>
-											<strong>{step.label}</strong>
-											<p>{step.detail}</p>
-										</div>
-									</article>
-								))}
-							</div>
-						</section>
-					</div>
-				</details>
+										{visitPrimaryAction.kind === "dictation" ? (
+											<Mic aria-hidden="true" />
+										) : null}
+										{visitPrimaryAction.kind === "draft" ? (
+											<Bot aria-hidden="true" />
+										) : null}
+										{visitPrimaryAction.kind === "save" ||
+										visitPrimaryAction.kind === "close" ? (
+											<Check aria-hidden="true" />
+										) : null}
+										{visitPrimaryAction.kind === "review" ? (
+											<AlertTriangle aria-hidden="true" />
+										) : null}
+										{visitPrimaryAction.label}
+									</button>
+								</div>
+								<div
+									className="visit-progress-strip"
+									data-testid="visit-progress-strip"
+									aria-label="Прогресс приема"
+								>
+									{visitWorkflowSteps.map((step, index) => (
+										<article
+											className={`visit-progress-step step-${step.state}`}
+											key={step.key}
+										>
+											<span>{index + 1}</span>
+											<div>
+												<strong>{step.label}</strong>
+												<p>{step.detail}</p>
+											</div>
+										</article>
+									))}
+								</div>
+							</section>
+						</div>
+					</details>
 
-				<details
-					className="visit-safety-strip-toggle"
-					style={{
-						margin: "1rem 0",
-						fontSize: "0.85rem",
-						color: "var(--slate-500)",
-					}}
-				>
-					<summary style={{ cursor: "pointer", userSelect: "none" }}>
-						Инженерный статус (локальное сохранение, связь с сервером)
-					</summary>
-					<section
-						className="visit-safety-strip"
-						aria-label="Сохранность черновика и диктовки"
+					<details
+						className="visit-safety-strip-toggle"
 						style={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: "1rem",
-							marginTop: "1rem",
-							padding: "1rem",
-							background: "var(--paper)",
-							borderRadius: "8px",
+							margin: "1rem 0",
+							fontSize: "0.85rem",
+							color: "var(--slate-500)",
 						}}
 					>
-						{visitSafetyCards.map((item: any) => (
-							<article
-								className={`safety-${item.state}`}
-								key={item.key}
-								style={{ flex: "1 1 200px" }}
-							>
-								<span
-									style={{
-										display: "block",
-										fontSize: "0.75rem",
-										textTransform: "uppercase",
-										letterSpacing: "0.05em",
-									}}
+						<summary style={{ cursor: "pointer", userSelect: "none" }}>
+							Инженерный статус (локальное сохранение, связь с сервером)
+						</summary>
+						<section
+							className="visit-safety-strip"
+							aria-label="Сохранность черновика и диктовки"
+							style={{
+								display: "flex",
+								flexWrap: "wrap",
+								gap: "1rem",
+								marginTop: "1rem",
+								padding: "1rem",
+								background: "var(--paper)",
+								borderRadius: "8px",
+							}}
+						>
+							{visitSafetyCards.map((item: any) => (
+								<article
+									className={`safety-${item.state}`}
+									key={item.key}
+									style={{ flex: "1 1 200px" }}
 								>
-									{item.label}
-								</span>
-								<strong style={{ display: "block", margin: "4px 0" }}>
-									{item.value}
-								</strong>
-								<p
-									style={{ margin: "0", fontSize: "0.8rem", lineHeight: "1.2" }}
-								>
-									{item.detail}
-								</p>
-							</article>
-						))}
-					</section>
-				</details>
-
+									<span
+										style={{
+											display: "block",
+											fontSize: "0.75rem",
+											textTransform: "uppercase",
+											letterSpacing: "0.05em",
+										}}
+									>
+										{item.label}
+									</span>
+									<strong style={{ display: "block", margin: "4px 0" }}>
+										{item.value}
+									</strong>
+									<p
+										style={{
+											margin: "0",
+											fontSize: "0.8rem",
+											lineHeight: "1.2",
+										}}
+									>
+										{item.detail}
+									</p>
+								</article>
+							))}
+						</section>
+					</details>
 				</div>
 
-
-				<div className="visit-tabs-navigation" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--line)', marginBottom: '16px', padding: '0 24px' }}>
-					<button type="button" className={activeVisitTab === 'diary' ? 'active' : ''} onClick={() => setActiveVisitTab('diary')} style={{ padding: '8px 16px', background: activeVisitTab === 'diary' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'diary' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Осмотр</button>
-					<button type="button" className={activeVisitTab === 'odontogram' ? 'active' : ''} onClick={() => setActiveVisitTab('odontogram')} style={{ padding: '8px 16px', background: activeVisitTab === 'odontogram' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'odontogram' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Зубная формула и Дневник</button>
-					<button type="button" className={activeVisitTab === 'diagnostics' ? 'active' : ''} onClick={() => setActiveVisitTab('diagnostics')} style={{ padding: '8px 16px', background: activeVisitTab === 'diagnostics' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'diagnostics' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Снимки и Анализы</button>
-					<button type="button" className={activeVisitTab === 'conclusion' ? 'active' : ''} onClick={() => setActiveVisitTab('conclusion')} style={{ padding: '8px 16px', background: activeVisitTab === 'conclusion' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'conclusion' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Заключение</button>
+				<div
+					className="visit-tabs-navigation"
+					style={{
+						display: "flex",
+						gap: "8px",
+						borderBottom: "1px solid var(--line)",
+						marginBottom: "16px",
+						padding: "0 24px",
+					}}
+				>
+					<button
+						type="button"
+						className={activeVisitTab === "diary" ? "active" : ""}
+						onClick={() => setActiveVisitTab("diary")}
+						style={{
+							padding: "8px 16px",
+							background:
+								activeVisitTab === "diary" ? "var(--teal)" : "transparent",
+							color: activeVisitTab === "diary" ? "white" : "var(--slate-600)",
+							borderRadius: "8px",
+							border: "none",
+							cursor: "pointer",
+							fontWeight: 600,
+						}}
+					>
+						Осмотр
+					</button>
+					<button
+						type="button"
+						className={activeVisitTab === "odontogram" ? "active" : ""}
+						onClick={() => setActiveVisitTab("odontogram")}
+						style={{
+							padding: "8px 16px",
+							background:
+								activeVisitTab === "odontogram" ? "var(--teal)" : "transparent",
+							color:
+								activeVisitTab === "odontogram" ? "white" : "var(--slate-600)",
+							borderRadius: "8px",
+							border: "none",
+							cursor: "pointer",
+							fontWeight: 600,
+						}}
+					>
+						Зубная формула и Дневник
+					</button>
+					<button
+						type="button"
+						className={activeVisitTab === "diagnostics" ? "active" : ""}
+						onClick={() => setActiveVisitTab("diagnostics")}
+						style={{
+							padding: "8px 16px",
+							background:
+								activeVisitTab === "diagnostics"
+									? "var(--teal)"
+									: "transparent",
+							color:
+								activeVisitTab === "diagnostics" ? "white" : "var(--slate-600)",
+							borderRadius: "8px",
+							border: "none",
+							cursor: "pointer",
+							fontWeight: 600,
+						}}
+					>
+						Снимки и Анализы
+					</button>
+					<button
+						type="button"
+						className={activeVisitTab === "conclusion" ? "active" : ""}
+						onClick={() => setActiveVisitTab("conclusion")}
+						style={{
+							padding: "8px 16px",
+							background:
+								activeVisitTab === "conclusion" ? "var(--teal)" : "transparent",
+							color:
+								activeVisitTab === "conclusion" ? "white" : "var(--slate-600)",
+							borderRadius: "8px",
+							border: "none",
+							cursor: "pointer",
+							fontWeight: 600,
+						}}
+					>
+						Заключение
+					</button>
 				</div>
 
 				<div style={{ display: activeVisitTab === "diary" ? "block" : "none" }}>
-				<section
-					className="specialty-focus-bar"
-					aria-label="Фокус специальности приема"
-				>
-					<div>
-						<p className="eyebrow">Фокус врача</p>
-						<h3>{specialtyLabels[selectedSpecialty]}</h3>
-						<p>
-							{activeDoctor?.fullName.split(" ")[0] ?? "Врач"} ·{" "}
-							{activeChair?.name ?? "кресло"}
-						</p>
-					</div>
-					<div className="specialty-focus-options">
-						{visibleVisitSpecialtyFocusOptions.map((option) => (
-							<button
-								className={
-									selectedSpecialty === option.specialty ? "active" : ""
-								}
-								type="button"
-								key={option.specialty}
-								aria-pressed={selectedSpecialty === option.specialty}
-								onClick={() => {
-									setSelectedSpecialty(option.specialty);
-									setSelectedProtocolId(null);
-								}}
-							>
-								<strong>{option.title}</strong>
-								<span>{option.hint}</span>
-							</button>
-						))}
-					</div>
-				</section>
-
-				<div className="dictation-box" style={{ position: "relative" }}>
-					{speechTranscriptionBusy && (
-						<div className="dictation-overlay-skeleton">
-							<div className="skeleton-wave"></div>
-							<div className="skeleton-wave"></div>
-							<div className="skeleton-wave"></div>
-						</div>
-					)}
-					<div className="dictation-header">
-						<Mic
-							aria-hidden="true"
-							className={isServerVoiceRecording ? "recording-icon-pulse" : ""}
-							style={{
-								color: isServerVoiceRecording ? "var(--red-500)" : undefined,
-							}}
-						/>
+					<section
+						className="specialty-focus-bar"
+						aria-label="Фокус специальности приема"
+					>
 						<div>
-							<h3
-								style={{ display: "flex", alignItems: "center", gap: "10px" }}
-							>
-								Диктовка врача
-								{speechTranscriptionBusy && (
-									<span className="transcribing-badge-pulse">
-										Обработка голоса...
-									</span>
-								)}
-							</h3>
+							<p className="eyebrow">Фокус врача</p>
+							<h3>{specialtyLabels[selectedSpecialty]}</h3>
 							<p>
-								Черновик, требует подтверждения врача.{" "}
-								<span style={{ color: "var(--slate-500)", fontSize: "0.9em" }}>
-									{serverDraftSyncState === "saving" ||
-									pendingVisitSaveCount > 0
-										? "Синхронизация..."
-										: !isOnline
-											? "Офлайн (сохранено локально)"
-											: lastServerDraftSavedAt
-												? `Сохранено ${formatTime(lastServerDraftSavedAt)}`
-												: lastLocalSavedAt
-													? `Локально сохранено ${formatTime(lastLocalSavedAt)}`
-													: "Автосохранение включено"}
-								</span>
-								{speechStatusNote ? (
-									<span
-										style={{
-											display: "inline-block",
-											marginLeft: "8px",
-											color: "var(--rust)",
-											fontSize: "0.9em",
-										}}
-									>
-										{speechStatusNote}
-									</span>
-								) : null}
+								{activeDoctor?.fullName.split(" ")[0] ?? "Врач"} ·{" "}
+								{activeChair?.name ?? "кресло"}
 							</p>
 						</div>
-					</div>
-					<div
-						className="dictation-quick-row"
-						aria-label="Быстрые фразы для диктовки"
-					>
-						{dictationQuickPhrases.map((phrase: any) => (
-							<button
-								type="button"
-								key={phrase.label}
-								onClick={() => appendToTranscript(phrase.text)}
-							>
-								{phrase.label}
-							</button>
-						))}
-					</div>
-					<div style={{ position: "relative" }}>
-						<div style={{ position: "relative", width: "100%" }}>
-							<textarea
-								aria-label="Текст диктовки"
-								value={transcript}
-								onFocus={() => setShowHints(true)}
-								onBlur={(e) => {
-									if (!e.currentTarget.contains(e.relatedTarget)) {
-										setShowHints(false);
+						<div className="specialty-focus-options">
+							{visibleVisitSpecialtyFocusOptions.map((option) => (
+								<button
+									className={
+										selectedSpecialty === option.specialty ? "active" : ""
 									}
-								}}
-								onChange={(event) => {
-									visitDraftUserEditedRef.current = true;
-									setTranscript(event.target.value);
-									if (event.target.value.trim())
-										setClearedTranscriptSnapshot(null);
-								}}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" && e.ctrlKey && transcript.trim()) {
-										e.preventDefault();
-										const orchestratorResult =
-											AiOrchestrator.processEmkDictation(transcript);
-										const parsed =
-											orchestratorResult.source === "local_algorithm"
-												? orchestratorResult.data
-												: {
-														isAiTask: true,
-														prompt: orchestratorResult.suggestedPrompt,
-													};
-										setSmartParsedData(parsed);
-										setShowSmartPreview(true);
-										setShowHints(false);
-									}
-								}}
-								placeholder="Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"
-								style={{
-									minHeight: "120px",
-									width: "100%",
-									resize: "vertical",
-								}}
-							/>
-
-							<DictationHints
-								isVisible={showHints || isServerVoiceRecording}
-								type="visit"
-							/>
-						</div>
-
-						{isServerVoiceRecording && (
-							<div
-								style={{
-									marginTop: "8px",
-									padding: "12px",
-									background: "var(--paper)",
-									color: "#64748b",
-									borderRadius: "8px",
-									border: "1px dashed #cbd5e1",
-									fontStyle: "italic",
-									fontSize: "14px",
-									display: "flex",
-									alignItems: "center",
-									gap: "12px",
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										gap: "4px",
-										height: "16px",
-										alignItems: "center",
+									type="button"
+									key={option.specialty}
+									aria-pressed={selectedSpecialty === option.specialty}
+									onClick={() => {
+										setSelectedSpecialty(option.specialty);
+										setSelectedProtocolId(null);
 									}}
 								>
-									<div
-										className="skeleton-wave"
-										style={{
-											width: "4px",
-											height: "10px",
-											background: "#ef4444",
-											borderRadius: "2px",
-											animation: "skeleton-wave 1s ease-in-out infinite",
-											animationDelay: "0s",
-										}}
-									/>
-									<div
-										className="skeleton-wave"
-										style={{
-											width: "4px",
-											height: "10px",
-											background: "#ef4444",
-											borderRadius: "2px",
-											animation: "skeleton-wave 1s ease-in-out infinite",
-											animationDelay: "0.2s",
-										}}
-									/>
-									<div
-										className="skeleton-wave"
-										style={{
-											width: "4px",
-											height: "10px",
-											background: "#ef4444",
-											borderRadius: "2px",
-											animation: "skeleton-wave 1s ease-in-out infinite",
-											animationDelay: "0.4s",
-										}}
-									/>
-								</div>
-								<span>Слушаю вас...</span>
+									<strong>{option.title}</strong>
+									<span>{option.hint}</span>
+								</button>
+							))}
+						</div>
+					</section>
+
+					<div className="dictation-box" style={{ position: "relative" }}>
+						{speechTranscriptionBusy && (
+							<div className="dictation-overlay-skeleton">
+								<div className="skeleton-wave"></div>
+								<div className="skeleton-wave"></div>
+								<div className="skeleton-wave"></div>
 							</div>
 						)}
-						<SmartParsePreview
-							isVisible={showSmartPreview}
-							parsedData={smartParsedData}
-							rawText={transcript}
-							type="visit"
-							onApply={(data: any) => {
-								if (data) {
-									if (data.toothUpdates) {
-										data.toothUpdates.forEach((t: any) =>
-											setToothState(t.code, t.state),
-										);
-									}
-									if (data.emkUpdates) {
-										Object.entries(data.emkUpdates).forEach(([k, v]) => {
-											if (v) appendToEMKField(k, v as string);
-										});
-									}
-								}
-								setShowSmartPreview(false);
-							}}
-							onManual={() => setShowSmartPreview(false)}
-							onClose={() => setShowSmartPreview(false)}
-						/>
-					</div>
-					<div
-						className="dictation-actions"
-						style={{
-							display: "flex",
-							flexWrap: "wrap",
-							gap: "10px",
-							alignItems: "center",
-						}}
-					>
-						<SmartMicrophoneButton
-							context="visit"
-							onResult={(text) => {
-								const current = transcript || "";
-								const newText = current ? `${current}\n${text}` : text;
-								setTranscript(newText);
-
-								const orchestratorResult =
-									AiOrchestrator.processEmkDictation(newText);
-								const parsed =
-									orchestratorResult.source === "local_algorithm"
-										? orchestratorResult.data
-										: {
-												isAiTask: true,
-												prompt: orchestratorResult.suggestedPrompt,
-											};
-								setSmartParsedData(parsed);
-								setShowSmartPreview(true);
-								setShowHints(false);
-							}}
-						/>
-
-						<button
-							className="primary-button"
-							type="button"
-							onClick={() => {
-								const orchestratorResult =
-									AiOrchestrator.processEmkDictation(transcript);
-								const parsed =
-									orchestratorResult.source === "local_algorithm"
-										? orchestratorResult.data
-										: {
-												isAiTask: true,
-												prompt: orchestratorResult.suggestedPrompt,
-											};
-								setSmartParsedData(parsed);
-								setShowSmartPreview(true);
-								setShowHints(false);
-							}}
-							disabled={!hasVisitTranscriptText}
-							aria-describedby={
-								!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined
-							}
-						>
-							<Check
+						<div className="dictation-header">
+							<Mic
 								aria-hidden="true"
-								style={{ width: "18px", height: "18px" }}
-							/>{" "}
-							Разобрать текст
-						</button>
-
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={buildDraft}
-							disabled={isDraftLoading || !visitDraftReadyToBuild}
-							aria-describedby={
-								!visitDraftReadyToBuild ? "visit-draft-missing" : undefined
-							}
-						>
-							<Bot
-								aria-hidden="true"
-								style={{ width: "18px", height: "18px" }}
-							/>{" "}
-							{isDraftLoading ? "Собираю" : "Собрать нейро-черновик"}
-						</button>
-
-						<div style={{ flexGrow: 1 }} />
-
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={clearTranscriptWithUndo}
-							disabled={!hasVisitTranscriptText}
-							title="Очистить текст"
-						>
-							Очистить
-						</button>
-						{clearedTranscriptSnapshot ? (
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={undoTranscriptClear}
-								title="Вернуть текст"
-							>
-								Вернуть
-							</button>
-						) : null}
-						<details
-							className="advanced-dictation-actions"
-							style={{ display: "inline-block" }}
-						>
-							<summary
+								className={isServerVoiceRecording ? "recording-icon-pulse" : ""}
 								style={{
-									cursor: "pointer",
-									fontSize: "14px",
-									color: "var(--slate-500)",
-									padding: "8px",
+									color: isServerVoiceRecording ? "var(--red-500)" : undefined,
 								}}
-							>
-								Дополнительно
-							</summary>
-							<div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-								{pendingSpeechChunkCount ? (
-									<button
-										className="secondary-button"
-										type="button"
-										onClick={() => flushPendingSpeechChunks({ silent: false })}
-										title={pendingSpeechFlushActionTitle}
-									>
-										{pendingSpeechFlushActionLabel}
-									</button>
-								) : null}
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={polishTranscript}
-									disabled={!hasVisitTranscriptText || isTranscriptPolishing}
-									aria-describedby={
-										!hasVisitTranscriptText
-											? "dictation-clear-guidance"
-											: undefined
-									}
-									title={
-										speechGatewayStatus?.polishPolicy?.neuralEnabled
-											? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
-											: "Локальная очистка терминов, секций и номеров зубов"
-									}
+							/>
+							<div>
+								<h3
+									style={{ display: "flex", alignItems: "center", gap: "10px" }}
 								>
-									<Sparkles aria-hidden="true" />{" "}
-									{isTranscriptPolishing ? "Чищу" : "Очистить текст"}
-								</button>
-							</div>
-						</details>
-
-						{!hasVisitTranscriptText ? (
-							<div
-								className="dictation-action-guidance"
-								id="dictation-clear-guidance"
-								role="status"
-								aria-live="polite"
-							>
-								В диктовке пока нет текста: нажмите «Голос», «
-								{emptyDictationVoiceActionLabel}» или впишите текст вручную.
-							</div>
-						) : null}
-						{!visitDraftReadyToBuild ? (
-							<div
-								className="visit-draft-missing"
-								id="visit-draft-missing"
-								role="status"
-								aria-live="polite"
-							>
-								<strong>Чтобы собрать черновик, осталось:</strong>
-								<ul>
-									{visitDraftBuildMissingSteps.map((step) => (
-										<li key={step}>{step}</li>
-									))}
-								</ul>
-							</div>
-						) : null}
-					</div>
-				</div>
-
-
-				<div className="tooth-map" aria-label="Зубная карта">
-					<div
-						className="tooth-map-selected"
-						style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
-					>
-						<button
-							type="button"
-							onClick={() => {
-								setActiveStamp("watch");
-								activeStampRef.current = "watch";
-							}}
-						>
-							Наблюдение
-						</button>
-					</div>
-					<div className="tooth-map-head">
-						<div>
-							<h3>Зубная карта</h3>
-							<p>
-								Нажмите зуб для смены статуса. ИИ подсвечивает зубы из диктовки.
-							</p>
-						</div>
-						<span className="tooth-fdi-badge">FDI</span>
-					</div>
-					<div className="tooth-map-legend">
-						<span className="tooth-legend-item legend-planned">В плане</span>
-						<span className="tooth-legend-item legend-treatment">Лечение</span>
-						<span className="tooth-legend-item legend-watch">Наблюдение</span>
-						<span className="tooth-legend-item legend-done">Готово</span>
-						<span className="tooth-legend-item legend-missing">Нет зуба</span>
-					</div>
-
-					{/* Панель быстрого штампа статуса зуба (Quick Stamp) */}
-					<div
-						className="tooth-stamp-bar"
-						role="toolbar"
-						aria-label="Инструменты быстрого штампа"
-					>
-						<span className="stamp-bar-title">Быстрый штамп:</span>
-						<button
-							type="button"
-							className={`stamp-btn ${activeStamp === null ? "active" : ""}`}
-							onClick={() => setActiveStamp(null)}
-						>
-							🔍 Обычный клик
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-planned ${activeStamp === "planned" ? "active" : ""}`}
-							onClick={() => setActiveStamp("planned")}
-						>
-							📝 В план
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-treatment ${activeStamp === "treatment" ? "active" : ""}`}
-							onClick={() => setActiveStamp("treatment")}
-						>
-							🔴 Лечение
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-watch ${activeStamp === "watch" ? "active" : ""}`}
-							onClick={() => setActiveStamp("watch")}
-						>
-							⚠️ Наблюдение
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-done ${activeStamp === "done" ? "active" : ""}`}
-							onClick={() => setActiveStamp("done")}
-						>
-							🟢 Готово
-						</button>
-						<button
-							type="button"
-							className={`stamp-btn stamp-missing ${activeStamp === "missing" ? "active" : ""}`}
-							onClick={() => setActiveStamp("missing")}
-						>
-							❌ Нет зуба
-						</button>
-					</div>
-
-					{/* Панель выбора квадранта (Focus Mode) */}
-					<div
-						className="tooth-quadrant-nav"
-						role="navigation"
-						aria-label="Фокус на квадрант"
-					>
-						<button
-							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === null ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(null)}
-						>
-							Вся челюсть
-						</button>
-						<button
-							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 2 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(2)}
-						>
-							ВЧ Лево (Q2)
-						</button>
-						<button
-							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 1 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(1)}
-						>
-							ВЧ Право (Q1)
-						</button>
-						<button
-							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 3 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(3)}
-						>
-							НЧ Лево (Q3)
-						</button>
-						<button
-							type="button"
-							className={`quadrant-nav-btn ${activeQuadrant === 4 ? "active" : ""}`}
-							onClick={() => setActiveQuadrant(4)}
-						>
-							НЧ Право (Q4)
-						</button>
-					</div>
-
-					{/* Зубная схема с квадрантами */}
-					<div
-						className={`tooth-arch-wrapper ${activeQuadrant !== null ? "zoom-active" : ""}`}
-					>
-						{/* Метки квадрантов — верх */}
-						{activeQuadrant === null && (
-							<div className="tooth-quadrant-labels upper-labels">
-								<span className="quadrant-label">Q1</span>
-								<span className="quadrant-label">Q2</span>
-							</div>
-						)}
-
-						{/* Верхняя челюсть */}
-						{(activeQuadrant === null ||
-							activeQuadrant === 1 ||
-							activeQuadrant === 2) && (
-							<div className="tooth-jaw upper-jaw">
-								{/* Правая половина верхней: Q1 — 18→11 */}
-								{(activeQuadrant === null || activeQuadrant === 1) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[0] || []).slice(0, 8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const num = Number(code);
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											const isRightSide =
-												(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-											const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-												>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-														}}
-													>
-														<svg
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															preserveAspectRatio="none"
-															style={{ transform }}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "#f8fafc"
-																				: state === "planned"
-																					? "#f0f9ff"
-																					: state === "treatment"
-																						? "#fff5f5"
-																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "#fff"
-																				: state === "planned"
-																					? "#e0f2fe"
-																					: state === "treatment"
-																						? "#fee2e2"
-																						: state === "watch"
-																							? "#fef3c7"
-																							: "#dcfce7"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-													<span className="tooth-code">{code}</span>
-												</button>
-											);
-										})}
-									</div>
-								)}
-								{/* Центральная линия */}
-								{activeQuadrant === null && (
-									<div className="tooth-center-line" aria-hidden="true" />
-								)}
-								{/* Левая половина верхней: Q2 — 21→28 */}
-								{(activeQuadrant === null || activeQuadrant === 2) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[0] || []).slice(8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const num = Number(code);
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											const isRightSide =
-												(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-											const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-												>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-														}}
-													>
-														<svg
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															preserveAspectRatio="none"
-															style={{ transform }}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "#f8fafc"
-																				: state === "planned"
-																					? "#f0f9ff"
-																					: state === "treatment"
-																						? "#fff5f5"
-																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "#fff"
-																				: state === "planned"
-																					? "#e0f2fe"
-																					: state === "treatment"
-																						? "#fee2e2"
-																						: state === "watch"
-																							? "#fef3c7"
-																							: "#dcfce7"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-													<span className="tooth-code">{code}</span>
-												</button>
-											);
-										})}
-									</div>
-								)}
-							</div>
-						)}
-
-						{/* Линия окклюзии */}
-						{activeQuadrant === null && (
-							<div className="tooth-occlusion-line" aria-hidden="true">
-								<span>— окклюзия —</span>
-							</div>
-						)}
-
-						{/* Нижняя челюсть */}
-						{(activeQuadrant === null ||
-							activeQuadrant === 3 ||
-							activeQuadrant === 4) && (
-							<div className="tooth-jaw lower-jaw">
-								{/* Правая нижняя Q4 — 48→41 */}
-								{(activeQuadrant === null || activeQuadrant === 4) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[1] || []).slice(0, 8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const num = Number(code);
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											const isRightSide =
-												(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-											const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-												>
-													<span className="tooth-code">{code}</span>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-															transform: "none",
-														}}
-													>
-														<svg
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															preserveAspectRatio="none"
-															style={{ transform }}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "#f8fafc"
-																				: state === "planned"
-																					? "#f0f9ff"
-																					: state === "treatment"
-																						? "#fff5f5"
-																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "#fff"
-																				: state === "planned"
-																					? "#e0f2fe"
-																					: state === "treatment"
-																						? "#fee2e2"
-																						: state === "watch"
-																							? "#fef3c7"
-																							: "#dcfce7"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-												</button>
-											);
-										})}
-									</div>
-								)}
-								{/* Центральная линия нижней */}
-								{activeQuadrant === null && (
-									<div className="tooth-center-line" aria-hidden="true" />
-								)}
-								{/* Левая нижняя Q3 — 31→38 */}
-								{(activeQuadrant === null || activeQuadrant === 3) && (
-									<div className="tooth-half tooth-row">
-										{(toothRows[1] || []).slice(8).map((code) => {
-											const state = toothStateByCode[code] ?? "idle";
-											const geom = getToothPath(Number(code));
-											const cfg = getToothConfig(Number(code));
-											const num = Number(code);
-											const isDetected = (
-												draft?.quality?.detectedToothCodes || []
-											).includes(code);
-											const isRightSide =
-												(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-											const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-											return (
-												<button
-													key={code}
-													type="button"
-													className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
-													onClick={() => handleToothClick(code, state)}
-													aria-label={`Зуб ${code}`}
-												>
-													<span className="tooth-code">{code}</span>
-													<div
-														className="tooth-svg-wrap"
-														style={{
-															filter: isDetected
-																? "drop-shadow(0 0 4px #3b82f6)"
-																: "none",
-															transform: "none",
-														}}
-													>
-														<svg
-															width={cfg.width}
-															height={cfg.height}
-															viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-															preserveAspectRatio="none"
-															style={{ transform }}
-															fill="none"
-														>
-															{state === "missing" ? (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d={geom.crown}
-																		fill="#f1f5f9"
-																		stroke="#cbd5e1"
-																		strokeWidth="1.2"
-																		opacity="0.15"
-																	/>
-																	<path
-																		d="M20 20L80 130M80 20L20 130"
-																		stroke="#ef4444"
-																		strokeWidth="5"
-																		strokeLinecap="round"
-																		opacity="0.7"
-																	/>
-																</g>
-															) : (
-																<g>
-																	<path
-																		d={geom.root}
-																		fill={
-																			state === "idle"
-																				? "#f8fafc"
-																				: state === "planned"
-																					? "#f0f9ff"
-																					: state === "treatment"
-																						? "#fff5f5"
-																						: state === "watch"
-																							? "#fffbeb"
-																							: "#f0fdf4"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#cbd5e1"
-																				: state === "planned"
-																					? "#38bdf8"
-																					: state === "treatment"
-																						? "#f87171"
-																						: state === "watch"
-																							? "#fbbf24"
-																							: "#4ade80"
-																		}
-																		strokeWidth="1.5"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.canals &&
-																		(state === "treatment" ||
-																			state === "done") && (
-																			<path
-																				d={geom.canals}
-																				fill="none"
-																				stroke={
-																					state === "done"
-																						? "#ec4899"
-																						: "#dc2626"
-																				}
-																				strokeWidth="2.5"
-																				strokeLinecap="round"
-																				opacity="0.85"
-																			/>
-																		)}
-																	<path
-																		d={geom.crown}
-																		fill={
-																			state === "idle"
-																				? "#fff"
-																				: state === "planned"
-																					? "#e0f2fe"
-																					: state === "treatment"
-																						? "#fee2e2"
-																						: state === "watch"
-																							? "#fef3c7"
-																							: "#dcfce7"
-																		}
-																		stroke={
-																			state === "idle"
-																				? "#94a3b8"
-																				: state === "planned"
-																					? "#0284c7"
-																					: state === "treatment"
-																						? "#dc2626"
-																						: state === "watch"
-																							? "#d97706"
-																							: "#166534"
-																		}
-																		strokeWidth="2.2"
-																		strokeLinejoin="round"
-																	/>
-																	{geom.fissures && (
-																		<path
-																			d={geom.fissures}
-																			fill="none"
-																			stroke="rgba(0,0,0,0.15)"
-																			strokeWidth="0.8"
-																		/>
-																	)}
-																</g>
-															)}
-														</svg>
-													</div>
-												</button>
-											);
-										})}
-									</div>
-								)}
-							</div>
-						)}
-
-						{/* Метки квадрантов — низ */}
-						{activeQuadrant === null && (
-							<div className="tooth-quadrant-labels lower-labels">
-								<span className="quadrant-label">Q4</span>
-								<span className="quadrant-label">Q3</span>
-							</div>
-						)}
-					</div>
-				</div>
-
-				<section
-					className="visit-note-panel"
-					aria-label="Черновик электронной медицинской карты"
-				>
-					<div className="visit-note-head">
-						<div>
-							<p className="eyebrow">ЭМК после диктовки</p>
-							<h3>
-								{draft
-									? "Проверьте черновик"
-									: isVisitNoteDirty
-										? "Проверьте правки"
-										: "Структура приема"}
-							</h3>
-						</div>
-						<span className={draft || isVisitNoteDirty ? "ready" : ""}>
-							{visitNoteStatusLabel}
-						</span>
-					</div>
-
-					{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
-					<div className="emk-tabs-container" role="tablist">
-						{emkTabs.map((tab) => {
-							const isFilled =
-								tab.id !== "all" &&
-								String(visitNoteForm[tab.id] ?? "").trim().length > 0;
-							return (
-								<button
-									key={tab.id}
-									type="button"
-									role="tab"
-									aria-selected={activeEmkTab === tab.id}
-									className={`emk-tab-button ${activeEmkTab === tab.id ? "active" : ""}`}
-									onClick={() => setActiveEmkTab(tab.id)}
-								>
-									{tab.label}
-									{isFilled && (
-										<span className="emk-tab-dot" title="Заполнено" />
+									Диктовка врача
+									{speechTranscriptionBusy && (
+										<span className="transcribing-badge-pulse">
+											Обработка голоса...
+										</span>
 									)}
+								</h3>
+								<p>
+									Черновик, требует подтверждения врача.{" "}
+									<span
+										style={{ color: "var(--slate-500)", fontSize: "0.9em" }}
+									>
+										{serverDraftSyncState === "saving" ||
+										pendingVisitSaveCount > 0
+											? "Синхронизация..."
+											: !isOnline
+												? "Офлайн (сохранено локально)"
+												: lastServerDraftSavedAt
+													? `Сохранено ${formatTime(lastServerDraftSavedAt)}`
+													: lastLocalSavedAt
+														? `Локально сохранено ${formatTime(lastLocalSavedAt)}`
+														: "Автосохранение включено"}
+									</span>
+									{speechStatusNote ? (
+										<span
+											style={{
+												display: "inline-block",
+												marginLeft: "8px",
+												color: "var(--rust)",
+												fontSize: "0.9em",
+											}}
+										>
+											{speechStatusNote}
+										</span>
+									) : null}
+								</p>
+							</div>
+						</div>
+						<div
+							className="dictation-quick-row"
+							aria-label="Быстрые фразы для диктовки"
+						>
+							{dictationQuickPhrases.map((phrase: any) => (
+								<button
+									type="button"
+									key={phrase.label}
+									onClick={() => appendToTranscript(phrase.text)}
+								>
+									{phrase.label}
 								</button>
-							);
-						})}
-					</div>
-
-					<div
-						className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""}`}
-					>
-						{visibleFields.map((field) => {
-							const QUICK_CHIPS: Record<string, string[]> = {
-								complaint: [
-									"Жалоб нет",
-									"Ноющие боли",
-									"Острая боль",
-									"Боль при накусывании",
-									"Реакция на холод/горячее",
-									"Застревание пищи",
-									"Эстетический дефект",
-									"Проф. осмотр",
-								],
-								anamnesis: [
-									"Ранее лечен по поводу неосложненного кариеса",
-									"Травма зуба",
-									"Хрон. заболевания отрицает",
-									"Аллергоанамнез не отягощен",
-									"Аллергия на лидокаин",
-								],
-								objectiveStatus: [
-									"Зондирование безболезненно",
-									"Перкуссия безболезненна",
-									"Слизистая оболочка бледно-розового цвета",
-									"Глубокая кариозная полость",
-									"Сообщается с полостью зуба",
-								],
-								diagnosis: [
-									"K02.1 Кариес дентина",
-									"K04.0 Острый пульпит",
-									"K04.5 Хронический апикальный периодонтит",
-									"K05.0 Острый гингивит",
-									"K08.1 Потеря зубов",
-								],
-								treatmentPlan: [
-									"Анестезия аппликационная",
-									"Анестезия инфильтрационная",
-									"Коффердам",
-									"Мех/Мед обработка",
-									"Реставрация композитом светового отверждения",
-									"Шлифовка, полировка",
-									"Удаление зуба",
-								],
-							};
-							const chips = QUICK_CHIPS[field.key] || [];
-							return (
-								<div
-									key={field.key}
-									className="emk-field-container"
+							))}
+						</div>
+						<div style={{ position: "relative" }}>
+							<div style={{ position: "relative", width: "100%" }}>
+								<textarea
+									aria-label="Текст диктовки"
+									value={transcript}
+									onFocus={() => setShowHints(true)}
+									onBlur={(e) => {
+										if (!e.currentTarget.contains(e.relatedTarget)) {
+											setShowHints(false);
+										}
+									}}
+									onChange={(event) => {
+										visitDraftUserEditedRef.current = true;
+										setTranscript(event.target.value);
+										if (event.target.value.trim())
+											setClearedTranscriptSnapshot(null);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && e.ctrlKey && transcript.trim()) {
+											e.preventDefault();
+											const orchestratorResult =
+												AiOrchestrator.processEmkDictation(transcript);
+											const parsed =
+												orchestratorResult.source === "local_algorithm"
+													? orchestratorResult.data
+													: {
+															isAiTask: true,
+															prompt: orchestratorResult.suggestedPrompt,
+														};
+											setSmartParsedData(parsed);
+											setShowSmartPreview(true);
+											setShowHints(false);
+										}
+									}}
+									placeholder="Диктуйте... (Нажмите Ctrl+Enter для предпросмотра)"
 									style={{
+										minHeight: "120px",
+										width: "100%",
+										resize: "vertical",
+									}}
+								/>
+
+								<DictationHints
+									isVisible={showHints || isServerVoiceRecording}
+									type="visit"
+								/>
+							</div>
+
+							{isServerVoiceRecording && (
+								<div
+									style={{
+										marginTop: "8px",
+										padding: "12px",
+										background: "var(--paper)",
+										color: "#64748b",
+										borderRadius: "8px",
+										border: "1px dashed #cbd5e1",
+										fontStyle: "italic",
+										fontSize: "14px",
 										display: "flex",
-										flexDirection: "column",
-										gap: "0.4rem",
+										alignItems: "center",
+										gap: "12px",
 									}}
 								>
 									<div
 										style={{
 											display: "flex",
-											justifyContent: "space-between",
+											gap: "4px",
+											height: "16px",
 											alignItems: "center",
-											width: "100%",
 										}}
 									>
-										<strong style={{ fontSize: "0.85rem", color: "#475569" }}>
-											{field.label}
-										</strong>
-										<SmartMicrophoneButton
-											context="visit"
-											sterileMode={false}
-											onResult={(text) => {
-												const curr = visitNoteForm[field.key] || "";
-												const sep = curr.length > 0 && !curr.endsWith(" ") ? " " : "";
-												updateVisitNoteField(field.key, curr + sep + text);
+										<div
+											className="skeleton-wave"
+											style={{
+												width: "4px",
+												height: "10px",
+												background: "#ef4444",
+												borderRadius: "2px",
+												animation: "skeleton-wave 1s ease-in-out infinite",
+												animationDelay: "0s",
 											}}
-											style={{ padding: "2px" }}
+										/>
+										<div
+											className="skeleton-wave"
+											style={{
+												width: "4px",
+												height: "10px",
+												background: "#ef4444",
+												borderRadius: "2px",
+												animation: "skeleton-wave 1s ease-in-out infinite",
+												animationDelay: "0.2s",
+											}}
+										/>
+										<div
+											className="skeleton-wave"
+											style={{
+												width: "4px",
+												height: "10px",
+												background: "#ef4444",
+												borderRadius: "2px",
+												animation: "skeleton-wave 1s ease-in-out infinite",
+												animationDelay: "0.4s",
+											}}
 										/>
 									</div>
-									{chips.length > 0 && (
-										<div
-											style={{
-												display: "flex",
-												flexWrap: "wrap",
-												gap: "0.3rem",
-											}}
-										>
-											{chips.map((chip) => (
-												<button
-													key={chip}
-													type="button"
-													onClick={() => {
-														const curr = visitNoteForm[field.key] || "";
-														const sep =
-															curr.length > 0 && !curr.endsWith(" ")
-																? ", "
-																: "";
-														updateVisitNoteField(field.key, curr + sep + chip);
-													}}
-													className="quick-chip"
-												>
-													+ {chip}
-												</button>
-											))}
-										</div>
-									)}
-									<textarea
-										value={visitNoteForm[field.key]}
-										onChange={(event) =>
-											updateVisitNoteField(field.key, event.target.value)
-										}
-										style={{
-											minHeight: "80px",
-											borderRadius: "8px",
-											padding: "0.6rem",
-											border: "1px solid var(--slate-300)",
-											resize: "vertical",
-											width: "100%",
-											outline: "none",
-										}}
-										onFocus={(e) =>
-											(e.target.style.borderColor = "var(--brand-400)")
-										}
-										onBlur={(e) =>
-											(e.target.style.borderColor = "var(--slate-300)")
-										}
-									/>
+									<span>Слушаю вас...</span>
 								</div>
-							);
-						})}
-					</div>
-
-					{draft?.quality ? (
-						<div
-							className={`visit-draft-quality quality-${draft.quality.level}`}
-						>
-							<div>
-								<strong>{visitDraftQualityLabels[draft.quality.level]}</strong>
-								<span>
-									{Math.round(draft.quality.confidence * 100)}% ·{" "}
-									{specialtyLabels[draft.quality.specialty]}
-								</span>
-							</div>
-							<p>{draft.quality.nextAction}</p>
-							<div className="visit-draft-signal-row">
-								{draft.quality.detectedToothCodes
-									.slice(0, 6)
-									.map((toothCode) => (
-										<span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
-									))}
-								{draft.quality.signals.slice(0, 7).map((signal) => (
-									<span key={signal}>{visitDraftSignalLabel(signal)}</span>
-								))}
-								{draft.quality.missingCriticalFields
-									.slice(0, 5)
-									.map((field) => (
-										<small key={field}>
-											проверить: {visitDraftMissingFieldLabel(field)}
-										</small>
-									))}
-							</div>
+							)}
+							<SmartParsePreview
+								isVisible={showSmartPreview}
+								parsedData={smartParsedData}
+								rawText={transcript}
+								type="visit"
+								onApply={(data: any) => {
+									if (data) {
+										if (data.toothUpdates) {
+											data.toothUpdates.forEach((t: any) =>
+												setToothState(t.code, t.state),
+											);
+										}
+										if (data.emkUpdates) {
+											Object.entries(data.emkUpdates).forEach(([k, v]) => {
+												if (v) appendToEMKField(k, v as string);
+											});
+										}
+									}
+									setShowSmartPreview(false);
+								}}
+								onManual={() => setShowSmartPreview(false)}
+								onClose={() => setShowSmartPreview(false)}
+							/>
 						</div>
-					) : null}
+						<div
+							className="dictation-actions"
+							style={{
+								display: "flex",
+								flexWrap: "wrap",
+								gap: "10px",
+								alignItems: "center",
+							}}
+						>
+							<SmartMicrophoneButton
+								context="visit"
+								onResult={(text) => {
+									const current = transcript || "";
+									const newText = current ? `${current}\n${text}` : text;
+									setTranscript(newText);
 
-					<div className="ai-draft">
-						<ShieldCheck aria-hidden="true" />
-						<p>
-							{draft
-								? draft.warnings.join(" ")
-								: isVisitNoteDirty
-									? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
-									: pendingVisitSaveCount
-										? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
-										: lastVisitSaveReceipt
-											? visitSaveReceiptText(lastVisitSaveReceipt)
-											: dashboard.activeVisit?.doctorSummary}
-						</p>
-						{pendingVisitSaveCount ? (
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => void flushPendingVisitSaves({ silent: false })}
-								disabled={isPendingVisitSyncing}
-							>
-								{isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
-							</button>
-						) : null}
-						{draft || isVisitNoteDirty ? (
+									const orchestratorResult =
+										AiOrchestrator.processEmkDictation(newText);
+									const parsed =
+										orchestratorResult.source === "local_algorithm"
+											? orchestratorResult.data
+											: {
+													isAiTask: true,
+													prompt: orchestratorResult.suggestedPrompt,
+												};
+									setSmartParsedData(parsed);
+									setShowSmartPreview(true);
+									setShowHints(false);
+								}}
+							/>
+
 							<button
 								className="primary-button"
 								type="button"
-								onClick={acceptDraftToVisit}
-								disabled={!visitNoteReadyToAccept || isDraftAccepting}
+								onClick={() => {
+									const orchestratorResult =
+										AiOrchestrator.processEmkDictation(transcript);
+									const parsed =
+										orchestratorResult.source === "local_algorithm"
+											? orchestratorResult.data
+											: {
+													isAiTask: true,
+													prompt: orchestratorResult.suggestedPrompt,
+												};
+									setSmartParsedData(parsed);
+									setShowSmartPreview(true);
+									setShowHints(false);
+								}}
+								disabled={!hasVisitTranscriptText}
 								aria-describedby={
-									!visitNoteReadyToAccept ? "visit-note-missing" : undefined
+									!hasVisitTranscriptText
+										? "dictation-clear-guidance"
+										: undefined
 								}
 							>
-								<Check aria-hidden="true" /> {visitNoteActionLabel}
+								<Check
+									aria-hidden="true"
+									style={{ width: "18px", height: "18px" }}
+								/>{" "}
+								Разобрать текст
 							</button>
-						) : null}
-						{(draft || isVisitNoteDirty) && !visitNoteReadyToAccept ? (
-							<div
-								className="visit-note-missing"
-								id="visit-note-missing"
-								role="status"
-								aria-live="polite"
-								style={{
-									marginTop: "1rem",
-									background: "var(--amber-50)",
-									padding: "1rem",
-									borderRadius: "8px",
-									border: "1px solid var(--amber-200)",
+
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={buildDraft}
+								disabled={isDraftLoading || !visitDraftReadyToBuild}
+								aria-describedby={
+									!visitDraftReadyToBuild ? "visit-draft-missing" : undefined
+								}
+							>
+								<Bot
+									aria-hidden="true"
+									style={{ width: "18px", height: "18px" }}
+								/>{" "}
+								{isDraftLoading ? "Собираю" : "Собрать нейро-черновик"}
+							</button>
+
+							<div style={{ flexGrow: 1 }} />
+
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={clearTranscriptWithUndo}
+								disabled={!hasVisitTranscriptText}
+								title="Очистить текст"
+							>
+								Очистить
+							</button>
+							{clearedTranscriptSnapshot ? (
+								<button
+									className="secondary-button"
+									type="button"
+									onClick={undoTranscriptClear}
+									title="Вернуть текст"
+								>
+									Вернуть
+								</button>
+							) : null}
+							<details
+								className="advanced-dictation-actions"
+								style={{ display: "inline-block" }}
+							>
+								<summary
+									style={{
+										cursor: "pointer",
+										fontSize: "14px",
+										color: "var(--slate-500)",
+										padding: "8px",
+									}}
+								>
+									Дополнительно
+								</summary>
+								<div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+									{pendingSpeechChunkCount ? (
+										<button
+											className="secondary-button"
+											type="button"
+											onClick={() =>
+												flushPendingSpeechChunks({ silent: false })
+											}
+											title={pendingSpeechFlushActionTitle}
+										>
+											{pendingSpeechFlushActionLabel}
+										</button>
+									) : null}
+									<button
+										className="secondary-button"
+										type="button"
+										onClick={polishTranscript}
+										disabled={!hasVisitTranscriptText || isTranscriptPolishing}
+										aria-describedby={
+											!hasVisitTranscriptText
+												? "dictation-clear-guidance"
+												: undefined
+										}
+										title={
+											speechGatewayStatus?.polishPolicy?.neuralEnabled
+												? `Аккуратная очистка текста: ${speechGatewayStatus.polishPolicy.modelName ?? "модель"}`
+												: "Локальная очистка терминов, секций и номеров зубов"
+										}
+									>
+										<Sparkles aria-hidden="true" />{" "}
+										{isTranscriptPolishing ? "Чищу" : "Очистить текст"}
+									</button>
+								</div>
+							</details>
+
+							{!hasVisitTranscriptText ? (
+								<div
+									className="dictation-action-guidance"
+									id="dictation-clear-guidance"
+									role="status"
+									aria-live="polite"
+								>
+									В диктовке пока нет текста: нажмите «Голос», «
+									{emptyDictationVoiceActionLabel}» или впишите текст вручную.
+								</div>
+							) : null}
+							{!visitDraftReadyToBuild ? (
+								<div
+									className="visit-draft-missing"
+									id="visit-draft-missing"
+									role="status"
+									aria-live="polite"
+								>
+									<strong>Чтобы собрать черновик, осталось:</strong>
+									<ul>
+										{visitDraftBuildMissingSteps.map((step) => (
+											<li key={step}>{step}</li>
+										))}
+									</ul>
+								</div>
+							) : null}
+						</div>
+					</div>
+
+					<div className="tooth-map" aria-label="Зубная карта">
+						<div
+							className="tooth-map-selected"
+							style={{
+								position: "absolute",
+								opacity: 0,
+								pointerEvents: "none",
+							}}
+						>
+							<button
+								type="button"
+								onClick={() => {
+									setActiveStamp("watch");
+									activeStampRef.current = "watch";
 								}}
 							>
-								<strong
-									style={{
-										display: "block",
-										marginBottom: "0.5rem",
-										color: "var(--amber-900)",
-									}}
-								>
-									Чтобы сохранить запись приема, осталось:
-								</strong>
-								<ul
-									style={{
-										margin: 0,
-										paddingLeft: "1.5rem",
-										color: "var(--amber-800)",
-									}}
-								>
-									{visitNoteAcceptMissingSteps.map((step) => (
-										<li key={step}>{step}</li>
+								Наблюдение
+							</button>
+						</div>
+						<div className="tooth-map-head">
+							<div>
+								<h3>Зубная карта</h3>
+								<p>
+									Нажмите зуб для смены статуса. ИИ подсвечивает зубы из
+									диктовки.
+								</p>
+							</div>
+							<span className="tooth-fdi-badge">FDI</span>
+						</div>
+						<div className="tooth-map-legend">
+							<span className="tooth-legend-item legend-planned">В плане</span>
+							<span className="tooth-legend-item legend-treatment">
+								Лечение
+							</span>
+							<span className="tooth-legend-item legend-watch">Наблюдение</span>
+							<span className="tooth-legend-item legend-done">Готово</span>
+							<span className="tooth-legend-item legend-missing">Нет зуба</span>
+						</div>
+
+						{/* Панель быстрого штампа статуса зуба (Quick Stamp) */}
+						<div
+							className="tooth-stamp-bar"
+							role="toolbar"
+							aria-label="Инструменты быстрого штампа"
+						>
+							<span className="stamp-bar-title">Быстрый штамп:</span>
+							<button
+								type="button"
+								className={`stamp-btn ${activeStamp === null ? "active" : ""}`}
+								onClick={() => setActiveStamp(null)}
+							>
+								🔍 Обычный клик
+							</button>
+							<button
+								type="button"
+								className={`stamp-btn stamp-planned ${activeStamp === "planned" ? "active" : ""}`}
+								onClick={() => setActiveStamp("planned")}
+							>
+								📝 В план
+							</button>
+							<button
+								type="button"
+								className={`stamp-btn stamp-treatment ${activeStamp === "treatment" ? "active" : ""}`}
+								onClick={() => setActiveStamp("treatment")}
+							>
+								🔴 Лечение
+							</button>
+							<button
+								type="button"
+								className={`stamp-btn stamp-watch ${activeStamp === "watch" ? "active" : ""}`}
+								onClick={() => setActiveStamp("watch")}
+							>
+								⚠️ Наблюдение
+							</button>
+							<button
+								type="button"
+								className={`stamp-btn stamp-done ${activeStamp === "done" ? "active" : ""}`}
+								onClick={() => setActiveStamp("done")}
+							>
+								🟢 Готово
+							</button>
+							<button
+								type="button"
+								className={`stamp-btn stamp-missing ${activeStamp === "missing" ? "active" : ""}`}
+								onClick={() => setActiveStamp("missing")}
+							>
+								❌ Нет зуба
+							</button>
+						</div>
+
+						{/* Панель выбора квадранта (Focus Mode) */}
+						<div
+							className="tooth-quadrant-nav"
+							role="navigation"
+							aria-label="Фокус на квадрант"
+						>
+							<button
+								type="button"
+								className={`quadrant-nav-btn ${activeQuadrant === null ? "active" : ""}`}
+								onClick={() => setActiveQuadrant(null)}
+							>
+								Вся челюсть
+							</button>
+							<button
+								type="button"
+								className={`quadrant-nav-btn ${activeQuadrant === 2 ? "active" : ""}`}
+								onClick={() => setActiveQuadrant(2)}
+							>
+								ВЧ Лево (Q2)
+							</button>
+							<button
+								type="button"
+								className={`quadrant-nav-btn ${activeQuadrant === 1 ? "active" : ""}`}
+								onClick={() => setActiveQuadrant(1)}
+							>
+								ВЧ Право (Q1)
+							</button>
+							<button
+								type="button"
+								className={`quadrant-nav-btn ${activeQuadrant === 3 ? "active" : ""}`}
+								onClick={() => setActiveQuadrant(3)}
+							>
+								НЧ Лево (Q3)
+							</button>
+							<button
+								type="button"
+								className={`quadrant-nav-btn ${activeQuadrant === 4 ? "active" : ""}`}
+								onClick={() => setActiveQuadrant(4)}
+							>
+								НЧ Право (Q4)
+							</button>
+						</div>
+
+						{/* Зубная схема с квадрантами */}
+						<div
+							className={`tooth-arch-wrapper ${activeQuadrant !== null ? "zoom-active" : ""}`}
+						>
+							{/* Метки квадрантов — верх */}
+							{activeQuadrant === null && (
+								<div className="tooth-quadrant-labels upper-labels">
+									<span className="quadrant-label">Q1</span>
+									<span className="quadrant-label">Q2</span>
+								</div>
+							)}
+
+							{/* Верхняя челюсть */}
+							{(activeQuadrant === null ||
+								activeQuadrant === 1 ||
+								activeQuadrant === 2) && (
+								<div className="tooth-jaw upper-jaw">
+									{/* Правая половина верхней: Q1 — 18→11 */}
+									{(activeQuadrant === null || activeQuadrant === 1) && (
+										<div className="tooth-half tooth-row">
+											{(toothRows[0] || []).slice(0, 8).map((code) => {
+												const state = toothStateByCode[code] ?? "idle";
+												const geom = getToothPath(Number(code));
+												const cfg = getToothConfig(Number(code));
+												const num = Number(code);
+												const isDetected = (
+													draft?.quality?.detectedToothCodes || []
+												).includes(code);
+												const isRightSide =
+													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+												const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
+												return (
+													<button
+														key={code}
+														type="button"
+														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
+														onClick={() => handleToothClick(code, state)}
+														aria-label={`Зуб ${code}`}
+													>
+														<div
+															className="tooth-svg-wrap"
+															style={{
+																filter: isDetected
+																	? "drop-shadow(0 0 4px #3b82f6)"
+																	: "none",
+															}}
+														>
+															<svg
+																width={cfg.width}
+																height={cfg.height}
+																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
+																preserveAspectRatio="none"
+																style={{ transform }}
+																fill="none"
+															>
+																{state === "missing" ? (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d={geom.crown}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d="M20 20L80 130M80 20L20 130"
+																			stroke="#ef4444"
+																			strokeWidth="5"
+																			strokeLinecap="round"
+																			opacity="0.7"
+																		/>
+																	</g>
+																) : (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill={
+																				state === "idle"
+																					? "#f8fafc"
+																					: state === "planned"
+																						? "#f0f9ff"
+																						: state === "treatment"
+																							? "#fff5f5"
+																							: state === "watch"
+																								? "#fffbeb"
+																								: "#f0fdf4"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#cbd5e1"
+																					: state === "planned"
+																						? "#38bdf8"
+																						: state === "treatment"
+																							? "#f87171"
+																							: state === "watch"
+																								? "#fbbf24"
+																								: "#4ade80"
+																			}
+																			strokeWidth="1.5"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.canals &&
+																			(state === "treatment" ||
+																				state === "done") && (
+																				<path
+																					d={geom.canals}
+																					fill="none"
+																					stroke={
+																						state === "done"
+																							? "#ec4899"
+																							: "#dc2626"
+																					}
+																					strokeWidth="2.5"
+																					strokeLinecap="round"
+																					opacity="0.85"
+																				/>
+																			)}
+																		<path
+																			d={geom.crown}
+																			fill={
+																				state === "idle"
+																					? "#fff"
+																					: state === "planned"
+																						? "#e0f2fe"
+																						: state === "treatment"
+																							? "#fee2e2"
+																							: state === "watch"
+																								? "#fef3c7"
+																								: "#dcfce7"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#94a3b8"
+																					: state === "planned"
+																						? "#0284c7"
+																						: state === "treatment"
+																							? "#dc2626"
+																							: state === "watch"
+																								? "#d97706"
+																								: "#166534"
+																			}
+																			strokeWidth="2.2"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.fissures && (
+																			<path
+																				d={geom.fissures}
+																				fill="none"
+																				stroke="rgba(0,0,0,0.15)"
+																				strokeWidth="0.8"
+																			/>
+																		)}
+																	</g>
+																)}
+															</svg>
+														</div>
+														<span className="tooth-code">{code}</span>
+													</button>
+												);
+											})}
+										</div>
+									)}
+									{/* Центральная линия */}
+									{activeQuadrant === null && (
+										<div className="tooth-center-line" aria-hidden="true" />
+									)}
+									{/* Левая половина верхней: Q2 — 21→28 */}
+									{(activeQuadrant === null || activeQuadrant === 2) && (
+										<div className="tooth-half tooth-row">
+											{(toothRows[0] || []).slice(8).map((code) => {
+												const state = toothStateByCode[code] ?? "idle";
+												const geom = getToothPath(Number(code));
+												const cfg = getToothConfig(Number(code));
+												const num = Number(code);
+												const isDetected = (
+													draft?.quality?.detectedToothCodes || []
+												).includes(code);
+												const isRightSide =
+													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+												const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
+												return (
+													<button
+														key={code}
+														type="button"
+														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
+														onClick={() => handleToothClick(code, state)}
+														aria-label={`Зуб ${code}`}
+													>
+														<div
+															className="tooth-svg-wrap"
+															style={{
+																filter: isDetected
+																	? "drop-shadow(0 0 4px #3b82f6)"
+																	: "none",
+															}}
+														>
+															<svg
+																width={cfg.width}
+																height={cfg.height}
+																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
+																preserveAspectRatio="none"
+																style={{ transform }}
+																fill="none"
+															>
+																{state === "missing" ? (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d={geom.crown}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d="M20 20L80 130M80 20L20 130"
+																			stroke="#ef4444"
+																			strokeWidth="5"
+																			strokeLinecap="round"
+																			opacity="0.7"
+																		/>
+																	</g>
+																) : (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill={
+																				state === "idle"
+																					? "#f8fafc"
+																					: state === "planned"
+																						? "#f0f9ff"
+																						: state === "treatment"
+																							? "#fff5f5"
+																							: state === "watch"
+																								? "#fffbeb"
+																								: "#f0fdf4"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#cbd5e1"
+																					: state === "planned"
+																						? "#38bdf8"
+																						: state === "treatment"
+																							? "#f87171"
+																							: state === "watch"
+																								? "#fbbf24"
+																								: "#4ade80"
+																			}
+																			strokeWidth="1.5"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.canals &&
+																			(state === "treatment" ||
+																				state === "done") && (
+																				<path
+																					d={geom.canals}
+																					fill="none"
+																					stroke={
+																						state === "done"
+																							? "#ec4899"
+																							: "#dc2626"
+																					}
+																					strokeWidth="2.5"
+																					strokeLinecap="round"
+																					opacity="0.85"
+																				/>
+																			)}
+																		<path
+																			d={geom.crown}
+																			fill={
+																				state === "idle"
+																					? "#fff"
+																					: state === "planned"
+																						? "#e0f2fe"
+																						: state === "treatment"
+																							? "#fee2e2"
+																							: state === "watch"
+																								? "#fef3c7"
+																								: "#dcfce7"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#94a3b8"
+																					: state === "planned"
+																						? "#0284c7"
+																						: state === "treatment"
+																							? "#dc2626"
+																							: state === "watch"
+																								? "#d97706"
+																								: "#166534"
+																			}
+																			strokeWidth="2.2"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.fissures && (
+																			<path
+																				d={geom.fissures}
+																				fill="none"
+																				stroke="rgba(0,0,0,0.15)"
+																				strokeWidth="0.8"
+																			/>
+																		)}
+																	</g>
+																)}
+															</svg>
+														</div>
+														<span className="tooth-code">{code}</span>
+													</button>
+												);
+											})}
+										</div>
+									)}
+								</div>
+							)}
+
+							{/* Линия окклюзии */}
+							{activeQuadrant === null && (
+								<div className="tooth-occlusion-line" aria-hidden="true">
+									<span>— окклюзия —</span>
+								</div>
+							)}
+
+							{/* Нижняя челюсть */}
+							{(activeQuadrant === null ||
+								activeQuadrant === 3 ||
+								activeQuadrant === 4) && (
+								<div className="tooth-jaw lower-jaw">
+									{/* Правая нижняя Q4 — 48→41 */}
+									{(activeQuadrant === null || activeQuadrant === 4) && (
+										<div className="tooth-half tooth-row">
+											{(toothRows[1] || []).slice(0, 8).map((code) => {
+												const state = toothStateByCode[code] ?? "idle";
+												const geom = getToothPath(Number(code));
+												const cfg = getToothConfig(Number(code));
+												const num = Number(code);
+												const isDetected = (
+													draft?.quality?.detectedToothCodes || []
+												).includes(code);
+												const isRightSide =
+													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+												const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
+												return (
+													<button
+														key={code}
+														type="button"
+														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
+														onClick={() => handleToothClick(code, state)}
+														aria-label={`Зуб ${code}`}
+													>
+														<span className="tooth-code">{code}</span>
+														<div
+															className="tooth-svg-wrap"
+															style={{
+																filter: isDetected
+																	? "drop-shadow(0 0 4px #3b82f6)"
+																	: "none",
+																transform: "none",
+															}}
+														>
+															<svg
+																width={cfg.width}
+																height={cfg.height}
+																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
+																preserveAspectRatio="none"
+																style={{ transform }}
+																fill="none"
+															>
+																{state === "missing" ? (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d={geom.crown}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d="M20 20L80 130M80 20L20 130"
+																			stroke="#ef4444"
+																			strokeWidth="5"
+																			strokeLinecap="round"
+																			opacity="0.7"
+																		/>
+																	</g>
+																) : (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill={
+																				state === "idle"
+																					? "#f8fafc"
+																					: state === "planned"
+																						? "#f0f9ff"
+																						: state === "treatment"
+																							? "#fff5f5"
+																							: state === "watch"
+																								? "#fffbeb"
+																								: "#f0fdf4"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#cbd5e1"
+																					: state === "planned"
+																						? "#38bdf8"
+																						: state === "treatment"
+																							? "#f87171"
+																							: state === "watch"
+																								? "#fbbf24"
+																								: "#4ade80"
+																			}
+																			strokeWidth="1.5"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.canals &&
+																			(state === "treatment" ||
+																				state === "done") && (
+																				<path
+																					d={geom.canals}
+																					fill="none"
+																					stroke={
+																						state === "done"
+																							? "#ec4899"
+																							: "#dc2626"
+																					}
+																					strokeWidth="2.5"
+																					strokeLinecap="round"
+																					opacity="0.85"
+																				/>
+																			)}
+																		<path
+																			d={geom.crown}
+																			fill={
+																				state === "idle"
+																					? "#fff"
+																					: state === "planned"
+																						? "#e0f2fe"
+																						: state === "treatment"
+																							? "#fee2e2"
+																							: state === "watch"
+																								? "#fef3c7"
+																								: "#dcfce7"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#94a3b8"
+																					: state === "planned"
+																						? "#0284c7"
+																						: state === "treatment"
+																							? "#dc2626"
+																							: state === "watch"
+																								? "#d97706"
+																								: "#166534"
+																			}
+																			strokeWidth="2.2"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.fissures && (
+																			<path
+																				d={geom.fissures}
+																				fill="none"
+																				stroke="rgba(0,0,0,0.15)"
+																				strokeWidth="0.8"
+																			/>
+																		)}
+																	</g>
+																)}
+															</svg>
+														</div>
+													</button>
+												);
+											})}
+										</div>
+									)}
+									{/* Центральная линия нижней */}
+									{activeQuadrant === null && (
+										<div className="tooth-center-line" aria-hidden="true" />
+									)}
+									{/* Левая нижняя Q3 — 31→38 */}
+									{(activeQuadrant === null || activeQuadrant === 3) && (
+										<div className="tooth-half tooth-row">
+											{(toothRows[1] || []).slice(8).map((code) => {
+												const state = toothStateByCode[code] ?? "idle";
+												const geom = getToothPath(Number(code));
+												const cfg = getToothConfig(Number(code));
+												const num = Number(code);
+												const isDetected = (
+													draft?.quality?.detectedToothCodes || []
+												).includes(code);
+												const isRightSide =
+													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
+												const transform = `scaleX(${isRightSide ? -1 : 1})`;
+
+												return (
+													<button
+														key={code}
+														type="button"
+														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
+														onClick={() => handleToothClick(code, state)}
+														aria-label={`Зуб ${code}`}
+													>
+														<span className="tooth-code">{code}</span>
+														<div
+															className="tooth-svg-wrap"
+															style={{
+																filter: isDetected
+																	? "drop-shadow(0 0 4px #3b82f6)"
+																	: "none",
+																transform: "none",
+															}}
+														>
+															<svg
+																width={cfg.width}
+																height={cfg.height}
+																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
+																preserveAspectRatio="none"
+																style={{ transform }}
+																fill="none"
+															>
+																{state === "missing" ? (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d={geom.crown}
+																			fill="#f1f5f9"
+																			stroke="#cbd5e1"
+																			strokeWidth="1.2"
+																			opacity="0.15"
+																		/>
+																		<path
+																			d="M20 20L80 130M80 20L20 130"
+																			stroke="#ef4444"
+																			strokeWidth="5"
+																			strokeLinecap="round"
+																			opacity="0.7"
+																		/>
+																	</g>
+																) : (
+																	<g>
+																		<path
+																			d={geom.root}
+																			fill={
+																				state === "idle"
+																					? "#f8fafc"
+																					: state === "planned"
+																						? "#f0f9ff"
+																						: state === "treatment"
+																							? "#fff5f5"
+																							: state === "watch"
+																								? "#fffbeb"
+																								: "#f0fdf4"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#cbd5e1"
+																					: state === "planned"
+																						? "#38bdf8"
+																						: state === "treatment"
+																							? "#f87171"
+																							: state === "watch"
+																								? "#fbbf24"
+																								: "#4ade80"
+																			}
+																			strokeWidth="1.5"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.canals &&
+																			(state === "treatment" ||
+																				state === "done") && (
+																				<path
+																					d={geom.canals}
+																					fill="none"
+																					stroke={
+																						state === "done"
+																							? "#ec4899"
+																							: "#dc2626"
+																					}
+																					strokeWidth="2.5"
+																					strokeLinecap="round"
+																					opacity="0.85"
+																				/>
+																			)}
+																		<path
+																			d={geom.crown}
+																			fill={
+																				state === "idle"
+																					? "#fff"
+																					: state === "planned"
+																						? "#e0f2fe"
+																						: state === "treatment"
+																							? "#fee2e2"
+																							: state === "watch"
+																								? "#fef3c7"
+																								: "#dcfce7"
+																			}
+																			stroke={
+																				state === "idle"
+																					? "#94a3b8"
+																					: state === "planned"
+																						? "#0284c7"
+																						: state === "treatment"
+																							? "#dc2626"
+																							: state === "watch"
+																								? "#d97706"
+																								: "#166534"
+																			}
+																			strokeWidth="2.2"
+																			strokeLinejoin="round"
+																		/>
+																		{geom.fissures && (
+																			<path
+																				d={geom.fissures}
+																				fill="none"
+																				stroke="rgba(0,0,0,0.15)"
+																				strokeWidth="0.8"
+																			/>
+																		)}
+																	</g>
+																)}
+															</svg>
+														</div>
+													</button>
+												);
+											})}
+										</div>
+									)}
+								</div>
+							)}
+
+							{/* Метки квадрантов — низ */}
+							{activeQuadrant === null && (
+								<div className="tooth-quadrant-labels lower-labels">
+									<span className="quadrant-label">Q4</span>
+									<span className="quadrant-label">Q3</span>
+								</div>
+							)}
+						</div>
+					</div>
+
+					<section
+						className="visit-note-panel"
+						aria-label="Черновик электронной медицинской карты"
+					>
+						<div className="visit-note-head">
+							<div>
+								<p className="eyebrow">ЭМК после диктовки</p>
+								<h3>
+									{draft
+										? "Проверьте черновик"
+										: isVisitNoteDirty
+											? "Проверьте правки"
+											: "Структура приема"}
+								</h3>
+							</div>
+							<span className={draft || isVisitNoteDirty ? "ready" : ""}>
+								{visitNoteStatusLabel}
+							</span>
+						</div>
+
+						{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
+						<div className="emk-tabs-container" role="tablist">
+							{emkTabs.map((tab) => {
+								const isFilled =
+									tab.id !== "all" &&
+									String(visitNoteForm[tab.id] ?? "").trim().length > 0;
+								return (
+									<button
+										key={tab.id}
+										type="button"
+										role="tab"
+										aria-selected={activeEmkTab === tab.id}
+										className={`emk-tab-button ${activeEmkTab === tab.id ? "active" : ""}`}
+										onClick={() => setActiveEmkTab(tab.id)}
+									>
+										{tab.label}
+										{isFilled && (
+											<span className="emk-tab-dot" title="Заполнено" />
+										)}
+									</button>
+								);
+							})}
+						</div>
+
+						<div
+							className={`visit-fields ${activeEmkTab !== "all" ? "single-tab-mode" : ""}`}
+						>
+							{visibleFields.map((field) => {
+								const QUICK_CHIPS: Record<string, string[]> = {
+									complaint: [
+										"Жалоб нет",
+										"Ноющие боли",
+										"Острая боль",
+										"Боль при накусывании",
+										"Реакция на холод/горячее",
+										"Застревание пищи",
+										"Эстетический дефект",
+										"Проф. осмотр",
+									],
+									anamnesis: [
+										"Ранее лечен по поводу неосложненного кариеса",
+										"Травма зуба",
+										"Хрон. заболевания отрицает",
+										"Аллергоанамнез не отягощен",
+										"Аллергия на лидокаин",
+									],
+									objectiveStatus: [
+										"Зондирование безболезненно",
+										"Перкуссия безболезненна",
+										"Слизистая оболочка бледно-розового цвета",
+										"Глубокая кариозная полость",
+										"Сообщается с полостью зуба",
+									],
+									diagnosis: [
+										"K02.1 Кариес дентина",
+										"K04.0 Острый пульпит",
+										"K04.5 Хронический апикальный периодонтит",
+										"K05.0 Острый гингивит",
+										"K08.1 Потеря зубов",
+									],
+									treatmentPlan: [
+										"Анестезия аппликационная",
+										"Анестезия инфильтрационная",
+										"Коффердам",
+										"Мех/Мед обработка",
+										"Реставрация композитом светового отверждения",
+										"Шлифовка, полировка",
+										"Удаление зуба",
+									],
+								};
+								const chips = QUICK_CHIPS[field.key] || [];
+								return (
+									<div
+										key={field.key}
+										className="emk-field-container"
+										style={{
+											display: "flex",
+											flexDirection: "column",
+											gap: "0.4rem",
+										}}
+									>
+										<div
+											style={{
+												display: "flex",
+												justifyContent: "space-between",
+												alignItems: "center",
+												width: "100%",
+											}}
+										>
+											<strong style={{ fontSize: "0.85rem", color: "#475569" }}>
+												{field.label}
+											</strong>
+											<SmartMicrophoneButton
+												context="visit"
+												sterileMode={false}
+												onResult={(text) => {
+													const curr = visitNoteForm[field.key] || "";
+													const sep =
+														curr.length > 0 && !curr.endsWith(" ") ? " " : "";
+													updateVisitNoteField(field.key, curr + sep + text);
+												}}
+												style={{ padding: "2px" }}
+											/>
+										</div>
+										{chips.length > 0 && (
+											<div
+												style={{
+													display: "flex",
+													flexWrap: "wrap",
+													gap: "0.3rem",
+												}}
+											>
+												{chips.map((chip) => (
+													<button
+														key={chip}
+														type="button"
+														onClick={() => {
+															const curr = visitNoteForm[field.key] || "";
+															const sep =
+																curr.length > 0 && !curr.endsWith(" ")
+																	? ", "
+																	: "";
+															updateVisitNoteField(
+																field.key,
+																curr + sep + chip,
+															);
+														}}
+														className="quick-chip"
+													>
+														+ {chip}
+													</button>
+												))}
+											</div>
+										)}
+										<textarea
+											value={visitNoteForm[field.key]}
+											onChange={(event) =>
+												updateVisitNoteField(field.key, event.target.value)
+											}
+											style={{
+												minHeight: "80px",
+												borderRadius: "8px",
+												padding: "0.6rem",
+												border: "1px solid var(--slate-300)",
+												resize: "vertical",
+												width: "100%",
+												outline: "none",
+											}}
+											onFocus={(e) =>
+												(e.target.style.borderColor = "var(--brand-400)")
+											}
+											onBlur={(e) =>
+												(e.target.style.borderColor = "var(--slate-300)")
+											}
+										/>
+									</div>
+								);
+							})}
+						</div>
+
+						{draft?.quality ? (
+							<div
+								className={`visit-draft-quality quality-${draft.quality.level}`}
+							>
+								<div>
+									<strong>
+										{visitDraftQualityLabels[draft.quality.level]}
+									</strong>
+									<span>
+										{Math.round(draft.quality.confidence * 100)}% ·{" "}
+										{specialtyLabels[draft.quality.specialty]}
+									</span>
+								</div>
+								<p>{draft.quality.nextAction}</p>
+								<div className="visit-draft-signal-row">
+									{draft.quality.detectedToothCodes
+										.slice(0, 6)
+										.map((toothCode) => (
+											<span key={`tooth-${toothCode}`}>FDI {toothCode}</span>
+										))}
+									{draft.quality.signals.slice(0, 7).map((signal) => (
+										<span key={signal}>{visitDraftSignalLabel(signal)}</span>
 									))}
-								</ul>
+									{draft.quality.missingCriticalFields
+										.slice(0, 5)
+										.map((field) => (
+											<small key={field}>
+												проверить: {visitDraftMissingFieldLabel(field)}
+											</small>
+										))}
+								</div>
 							</div>
 						) : null}
-					</div>
-				</section>
+
+						<div className="ai-draft">
+							<ShieldCheck aria-hidden="true" />
+							<p>
+								{draft
+									? draft.warnings.join(" ")
+									: isVisitNoteDirty
+										? "Правки будут сохранены в ЭМК. Подпись приема остается отдельным действием."
+										: pendingVisitSaveCount
+											? "Локальное сохранение есть. Серверная синхронизация ожидает подключения или повторной попытки."
+											: lastVisitSaveReceipt
+												? visitSaveReceiptText(lastVisitSaveReceipt)
+												: dashboard.activeVisit?.doctorSummary}
+							</p>
+							{pendingVisitSaveCount ? (
+								<button
+									className="secondary-button"
+									type="button"
+									onClick={() => void flushPendingVisitSaves({ silent: false })}
+									disabled={isPendingVisitSyncing}
+								>
+									{isPendingVisitSyncing ? "Синхронизирую" : "Синхронизировать"}
+								</button>
+							) : null}
+							{draft || isVisitNoteDirty ? (
+								<button
+									className="primary-button"
+									type="button"
+									onClick={acceptDraftToVisit}
+									disabled={!visitNoteReadyToAccept || isDraftAccepting}
+									aria-describedby={
+										!visitNoteReadyToAccept ? "visit-note-missing" : undefined
+									}
+								>
+									<Check aria-hidden="true" /> {visitNoteActionLabel}
+								</button>
+							) : null}
+							{(draft || isVisitNoteDirty) && !visitNoteReadyToAccept ? (
+								<div
+									className="visit-note-missing"
+									id="visit-note-missing"
+									role="status"
+									aria-live="polite"
+									style={{
+										marginTop: "1rem",
+										background: "var(--amber-50)",
+										padding: "1rem",
+										borderRadius: "8px",
+										border: "1px solid var(--amber-200)",
+									}}
+								>
+									<strong
+										style={{
+											display: "block",
+											marginBottom: "0.5rem",
+											color: "var(--amber-900)",
+										}}
+									>
+										Чтобы сохранить запись приема, осталось:
+									</strong>
+									<ul
+										style={{
+											margin: 0,
+											paddingLeft: "1.5rem",
+											color: "var(--amber-800)",
+										}}
+									>
+										{visitNoteAcceptMissingSteps.map((step) => (
+											<li key={step}>{step}</li>
+										))}
+									</ul>
+								</div>
+							) : null}
+						</div>
+					</section>
 				</div>
 
-
-								<div style={{ display: activeVisitTab === 'odontogram' ? 'block' : 'none' }}>
+				<div
+					style={{
+						display: activeVisitTab === "odontogram" ? "block" : "none",
+					}}
+				>
 					<VisitOdontogramTab />
 				</div>
-				<div style={{ display: activeVisitTab === 'diagnostics' ? 'block' : 'none' }}>
+				<div
+					style={{
+						display: activeVisitTab === "diagnostics" ? "block" : "none",
+					}}
+				>
 					<VisitDiagnosticsTab />
 				</div>
 

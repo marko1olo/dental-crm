@@ -49,14 +49,17 @@ export function OmnichannelInboxView() {
 				setMessages((prev) => {
 					// Avoid duplicate if sent locally
 					if (prev.some((m) => m.id === msg.id)) return prev;
-					const updated = [...prev, {
-						id: msg.id || Math.random().toString(),
-						patientId: msg.patientId,
-						message: msg.text,
-						channel: msg.channel,
-						direction: msg.direction || "inbound",
-						createdAt: msg.createdAt || new Date().toISOString(),
-					} as ChatMessage];
+					const updated = [
+						...prev,
+						{
+							id: msg.id || Math.random().toString(),
+							patientId: msg.patientId,
+							message: msg.text,
+							channel: msg.channel,
+							direction: msg.direction || "inbound",
+							createdAt: msg.createdAt || new Date().toISOString(),
+						} as ChatMessage,
+					];
 					scrollToBottom();
 					return updated;
 				});

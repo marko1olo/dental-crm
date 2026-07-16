@@ -1,5 +1,13 @@
-import { Calendar, DollarSign, FlaskConical, Link, Plus, Trash2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import {
+	Calendar,
+	DollarSign,
+	FlaskConical,
+	Link,
+	Plus,
+	Trash2,
+} from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
@@ -13,7 +21,14 @@ interface LabOrder {
 	toothFdi: string | null;
 	material: string | null;
 	colorVita: string | null;
-	status: "draft" | "sent" | "in_progress" | "shipped" | "received" | "refitting" | "completed";
+	status:
+		| "draft"
+		| "sent"
+		| "in_progress"
+		| "shipped"
+		| "received"
+		| "refitting"
+		| "completed";
 	dueDate: string | null;
 	clinicalNotes: string | null;
 	labComments: string | null;
@@ -36,14 +51,19 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const [priceRub, setPriceRub] = useState("");
 
 	const staff = dashboard?.clinicSettings?.staff || [];
-	const doctors = staff.filter((s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin");
+	const doctors = staff.filter(
+		(s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin",
+	);
 
 	const fetchOrders = async () => {
 		try {
 			setIsLoading(true);
-			const res = await fetch(`/api/clinical/lab-orders?patientId=${patientId}`, {
-				headers: auth.denteClinicalReadHeaders(),
-			});
+			const res = await fetch(
+				`/api/clinical/lab-orders?patientId=${patientId}`,
+				{
+					headers: auth.denteClinicalReadHeaders(),
+				},
+			);
 			if (res.ok) {
 				const data = await res.json();
 				setOrders(Array.isArray(data) ? data : []);
@@ -82,7 +102,10 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			});
 
 			if (res.ok) {
-				showToast("Заказ зуботехнической лаборатории (ЗТЛ) успешно создан", "success");
+				showToast(
+					"Заказ зуботехнической лаборатории (ЗТЛ) успешно создан",
+					"success",
+				);
 				setToothFdi("");
 				setDueDate("");
 				setClinicalNotes("");
@@ -144,7 +167,10 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	return (
 		<div className="space-y-4">
 			{/* Create Form */}
-			<form onSubmit={handleCreateOrder} className="bg-slate-800/20 p-4 border border-slate-700/40 rounded-xl space-y-4">
+			<form
+				onSubmit={handleCreateOrder}
+				className="bg-slate-800/20 p-4 border border-slate-700/40 rounded-xl space-y-4"
+			>
 				<h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
 					<FlaskConical className="w-4 h-4 text-teal-400" />
 					Новый наряд ЗТЛ
@@ -184,8 +210,26 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 							onChange={(e) => setColorVita(e.target.value)}
 							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
 						>
-							{["OM1", "OM2", "OM3", "A1", "A2", "A3", "A3.5", "A4", "B1", "B2", "B3", "C1", "C2", "D2", "D3"].map((v) => (
-								<option key={v} value={v}>{v}</option>
+							{[
+								"OM1",
+								"OM2",
+								"OM3",
+								"A1",
+								"A2",
+								"A3",
+								"A3.5",
+								"A4",
+								"B1",
+								"B2",
+								"B3",
+								"C1",
+								"C2",
+								"D2",
+								"D3",
+							].map((v) => (
+								<option key={v} value={v}>
+									{v}
+								</option>
 							))}
 						</select>
 					</div>
@@ -214,7 +258,9 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs text-slate-400">Клиническое примечание</label>
+						<label className="text-xs text-slate-400">
+							Клиническое примечание
+						</label>
 						<input
 							type="text"
 							placeholder="Опишите особенности прикуса, уступы..."
@@ -236,7 +282,9 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 			{/* Orders List */}
 			<div className="space-y-2">
 				{isLoading && orders.length === 0 ? (
-					<div className="text-center py-4 text-xs text-slate-400">Загрузка...</div>
+					<div className="text-center py-4 text-xs text-slate-400">
+						Загрузка...
+					</div>
 				) : orders.length === 0 ? (
 					<div className="text-center py-6 text-xs text-slate-500 border border-dashed border-slate-700/60 rounded-xl">
 						Нет активных заказов ЗТЛ
@@ -255,21 +303,35 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 										</span>
 										<span className="text-slate-400">·</span>
 										<span className="text-slate-300">
-											{order.material === "zirconia" ? "Цирконий" : order.material === "emax" ? "E.max" : "Металлокерамика"}
+											{order.material === "zirconia"
+												? "Цирконий"
+												: order.material === "emax"
+													? "E.max"
+													: "Металлокерамика"}
 										</span>
 										<span className="text-slate-400">·</span>
-										<span className="text-slate-300">Цвет: {order.colorVita || "не указ."}</span>
-										<span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide uppercase ${statusColors[order.status]}`}>
+										<span className="text-slate-300">
+											Цвет: {order.colorVita || "не указ."}
+										</span>
+										<span
+											className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide uppercase ${statusColors[order.status]}`}
+										>
 											{statusLabels[order.status]}
 										</span>
 									</div>
 									{order.clinicalNotes && (
-										<p className="text-slate-400 italic">«{order.clinicalNotes}»</p>
+										<p className="text-slate-400 italic">
+											«{order.clinicalNotes}»
+										</p>
 									)}
 									{order.dueDate && (
 										<div className="text-[11px] text-slate-400 flex items-center gap-1">
 											<Calendar className="w-3.5 h-3.5 text-teal-400/80" />
-											Срок: {new Date(order.dueDate).toLocaleDateString()} в {new Date(order.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+											Срок: {new Date(order.dueDate).toLocaleDateString()} в{" "}
+											{new Date(order.dueDate).toLocaleTimeString([], {
+												hour: "2-digit",
+												minute: "2-digit",
+											})}
 										</div>
 									)}
 								</div>

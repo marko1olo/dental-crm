@@ -48,7 +48,9 @@ export const InstallmentScheduler: React.FC<{
 	const [discount, setDiscount] = useState(0);
 	const [expanded, setExpanded] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
-	const [existingInstallments, setExistingInstallments] = useState<Installment[]>([]);
+	const [existingInstallments, setExistingInstallments] = useState<
+		Installment[]
+	>([]);
 
 	useEffect(() => {
 		if (!patientId) return;
@@ -61,10 +63,14 @@ export const InstallmentScheduler: React.FC<{
 					setExistingInstallments(
 						data.map((d: any) => ({
 							month: 0,
-							dueDate: new Date(d.dueDate).toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" }),
+							dueDate: new Date(d.dueDate).toLocaleDateString("ru-RU", {
+								day: "2-digit",
+								month: "short",
+								year: "numeric",
+							}),
 							dueDateIso: d.dueDate,
 							amount: Number(d.amountRub) / 100,
-						}))
+						})),
 					);
 				}
 			})
@@ -153,7 +159,14 @@ export const InstallmentScheduler: React.FC<{
 				<div className="inst-body">
 					{existingInstallments.length > 0 && (
 						<div className="inst-section" style={{ marginBottom: 20 }}>
-							<h4 style={{ margin: "0 0 10px 0", fontSize: 14, fontWeight: 600, color: "var(--teal)" }}>
+							<h4
+								style={{
+									margin: "0 0 10px 0",
+									fontSize: 14,
+									fontWeight: 600,
+									color: "var(--teal)",
+								}}
+							>
 								Активные платежи рассрочки
 							</h4>
 							<div className="inst-schedule-list">
@@ -164,7 +177,9 @@ export const InstallmentScheduler: React.FC<{
 											Платёж {idx + 1}
 										</div>
 										<div className="inst-row-date">{inst.dueDate}</div>
-										<div className="inst-row-amount">{inst.amount.toLocaleString()} ₽</div>
+										<div className="inst-row-amount">
+											{inst.amount.toLocaleString()} ₽
+										</div>
 									</div>
 								))}
 							</div>

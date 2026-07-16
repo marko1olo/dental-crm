@@ -453,21 +453,65 @@ import {
 const ImagingView = lazy(() =>
 	import("./ImagingView").then((module) => ({ default: module.ImagingView })),
 );
-const VisitView = lazy(() => import("./VisitView").then((module) => ({ default: module.VisitView })));
-const FinanceView = lazy(() => import("./FinanceView").then((module) => ({ default: module.FinanceView })));
-const AnalyticsDashboardView = lazy(() => import("./pages/AnalyticsDashboardView").then((module) => ({ default: module.AnalyticsDashboardView })));
-const CommunicationsView = lazy(() => import("./CommunicationsView").then((module) => ({ default: module.CommunicationsView })));
-const DocumentsView = lazy(() => import("./DocumentsView").then((module) => ({ default: module.DocumentsView })));
-const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ default: module.SettingsView })));
-const InventoryView = lazy(() => import("./components/InventoryView").then((module) => ({ default: module.InventoryView })));
-const ScheduleView = lazy(() => import("./ScheduleView").then((module) => ({ default: module.ScheduleView })));
-const PatientsView = lazy(() => import("./PatientsView").then((module) => ({ default: module.PatientsView })));
-const ShiftView = lazy(() => import("./ShiftView").then((module) => ({ default: module.ShiftView })));
-const PatientCockpit = lazy(() => import("./ShiftView").then((module) => ({ default: module.PatientCockpit })));
-const MarketingView = lazy(() => import("./MarketingView").then((module) => ({ default: module.MarketingView })));
-const LeadsKanbanView = lazy(() => import("./components/leads/LeadsKanbanView").then((module) => ({ default: module.LeadsKanbanView })));
-const OmnichannelInboxView = lazy(() => import("./components/OmnichannelInboxView").then((module) => ({ default: module.OmnichannelInboxView })));
-const ScannerView = lazy(() => import("./ScannerView").then((module) => ({ default: module.ScannerView })));
+const VisitView = lazy(() =>
+	import("./VisitView").then((module) => ({ default: module.VisitView })),
+);
+const FinanceView = lazy(() =>
+	import("./FinanceView").then((module) => ({ default: module.FinanceView })),
+);
+const AnalyticsDashboardView = lazy(() =>
+	import("./pages/AnalyticsDashboardView").then((module) => ({
+		default: module.AnalyticsDashboardView,
+	})),
+);
+const CommunicationsView = lazy(() =>
+	import("./CommunicationsView").then((module) => ({
+		default: module.CommunicationsView,
+	})),
+);
+const DocumentsView = lazy(() =>
+	import("./DocumentsView").then((module) => ({
+		default: module.DocumentsView,
+	})),
+);
+const SettingsView = lazy(() =>
+	import("./SettingsView").then((module) => ({ default: module.SettingsView })),
+);
+const InventoryView = lazy(() =>
+	import("./components/InventoryView").then((module) => ({
+		default: module.InventoryView,
+	})),
+);
+const ScheduleView = lazy(() =>
+	import("./ScheduleView").then((module) => ({ default: module.ScheduleView })),
+);
+const PatientsView = lazy(() =>
+	import("./PatientsView").then((module) => ({ default: module.PatientsView })),
+);
+const ShiftView = lazy(() =>
+	import("./ShiftView").then((module) => ({ default: module.ShiftView })),
+);
+const PatientCockpit = lazy(() =>
+	import("./ShiftView").then((module) => ({ default: module.PatientCockpit })),
+);
+const MarketingView = lazy(() =>
+	import("./MarketingView").then((module) => ({
+		default: module.MarketingView,
+	})),
+);
+const LeadsKanbanView = lazy(() =>
+	import("./components/leads/LeadsKanbanView").then((module) => ({
+		default: module.LeadsKanbanView,
+	})),
+);
+const OmnichannelInboxView = lazy(() =>
+	import("./components/OmnichannelInboxView").then((module) => ({
+		default: module.OmnichannelInboxView,
+	})),
+);
+const ScannerView = lazy(() =>
+	import("./ScannerView").then((module) => ({ default: module.ScannerView })),
+);
 
 function speechGatewayCanUpload(status: SpeechGatewayStatus | null): boolean {
 	return Boolean(
@@ -5547,12 +5591,16 @@ export function App() {
 						</Suspense>
 					) : null}
 					{currentView === "inbox" ? (
-						<Suspense fallback={<AppLoadingState message="Загрузка сообщений" />}>
+						<Suspense
+							fallback={<AppLoadingState message="Загрузка сообщений" />}
+						>
 							<OmnichannelInboxView />
 						</Suspense>
 					) : null}
 					{currentView === "scanner" ? (
-						<Suspense fallback={<AppLoadingState message="Загрузка сканера ЦСО" />}>
+						<Suspense
+							fallback={<AppLoadingState message="Загрузка сканера ЦСО" />}
+						>
 							<ScannerView />
 						</Suspense>
 					) : null}

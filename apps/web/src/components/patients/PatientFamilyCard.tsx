@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Users, Plus, Link as LinkIcon, UserPlus, Search } from "lucide-react";
+import { Link as LinkIcon, Plus, Search, UserPlus, Users } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 
@@ -18,11 +19,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 }) => {
 	const [isCreating, setIsCreating] = useState(false);
 	const [isLinking, setIsLinking] = useState(false);
-	
+
 	const [newFamilyName, setNewFamilyName] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<any[]>([]);
-	
+
 	const [loading, setLoading] = useState(false);
 	const [searchLoading, setSearchLoading] = useState(false);
 
@@ -33,9 +34,12 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			const delayFn = setTimeout(async () => {
 				setSearchLoading(true);
 				try {
-					const res = await fetch(`/api/finance/family?search=${encodeURIComponent(searchQuery)}`, {
-						headers: denteAdminSecretRequestHeaders(),
-					});
+					const res = await fetch(
+						`/api/finance/family?search=${encodeURIComponent(searchQuery)}`,
+						{
+							headers: denteAdminSecretRequestHeaders(),
+						},
+					);
 					if (res.ok) {
 						const data = await res.json();
 						setSearchResults(data);
@@ -71,9 +75,9 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				}),
 			});
 			if (!res.ok) throw new Error("Ошибка при создании семьи");
-			
+
 			const family = await res.json();
-			
+
 			const linkRes = await fetch(`/api/patients/${patientId}`, {
 				method: "PUT",
 				headers: {
@@ -135,9 +139,12 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				marginBottom: "20px",
 			}}
 		>
-			<h3 className="patients-glass-header" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+			<h3
+				className="patients-glass-header"
+				style={{ display: "flex", alignItems: "center", gap: "8px" }}
+			>
 				<Users size={16} />
-				{familyData ? (familyData.name || "Семья пациента") : "Семейный счет"}
+				{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
 			</h3>
 
 			{familyData ? (
@@ -160,9 +167,22 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						</span>
 					</div>
 					<div className="patients-flex-col-gap-8">
-						<span className="patients-glass-label" style={{ fontSize: "12px", opacity: 0.8 }}>Участники:</span>
+						<span
+							className="patients-glass-label"
+							style={{ fontSize: "12px", opacity: 0.8 }}
+						>
+							Участники:
+						</span>
 						{familyData.members?.map((m: any) => (
-							<div key={m.id} className="patients-glass-row" style={{ padding: "6px 8px", background: "rgba(255,255,255,0.02)", borderRadius: "6px" }}>
+							<div
+								key={m.id}
+								className="patients-glass-row"
+								style={{
+									padding: "6px 8px",
+									background: "rgba(255,255,255,0.02)",
+									borderRadius: "6px",
+								}}
+							>
 								<span
 									style={{
 										color: m.id === patientId ? "var(--text)" : "var(--muted)",
@@ -173,7 +193,15 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 									{m.fullName}
 								</span>
 								{m.id === familyData.headPatientId && (
-									<span style={{ fontSize: "11px", background: "rgba(59, 130, 246, 0.2)", color: "#60A5FA", padding: "2px 6px", borderRadius: "4px" }}>
+									<span
+										style={{
+											fontSize: "11px",
+											background: "rgba(59, 130, 246, 0.2)",
+											color: "#60A5FA",
+											padding: "2px 6px",
+											borderRadius: "4px",
+										}}
+									>
 										Глава
 									</span>
 								)}
@@ -183,12 +211,18 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 				</>
 			) : (
 				<div style={{ marginTop: "12px" }}>
-					<p className="patients-glass-muted" style={{ fontSize: "13px", marginBottom: "16px" }}>
-						Пациент не состоит в семейной группе. Вы можете создать новую семью или привязать его к существующей.
+					<p
+						className="patients-glass-muted"
+						style={{ fontSize: "13px", marginBottom: "16px" }}
+					>
+						Пациент не состоит в семейной группе. Вы можете создать новую семью
+						или привязать его к существующей.
 					</p>
 
 					{isCreating ? (
-						<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+						<div
+							style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+						>
 							<input
 								type="text"
 								className="text-input"
@@ -198,16 +232,16 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 								autoFocus
 							/>
 							<div style={{ display: "flex", gap: "8px" }}>
-								<button 
-									className="primary-button" 
-									onClick={handleCreateFamily} 
+								<button
+									className="primary-button"
+									onClick={handleCreateFamily}
 									disabled={loading}
 									style={{ flex: 1, padding: "8px", fontSize: "13px" }}
 								>
 									{loading ? "Создание..." : "Создать"}
 								</button>
-								<button 
-									className="secondary-button" 
+								<button
+									className="secondary-button"
 									onClick={() => setIsCreating(false)}
 									disabled={loading}
 									style={{ flex: 1, padding: "8px", fontSize: "13px" }}
@@ -217,9 +251,19 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							</div>
 						</div>
 					) : isLinking ? (
-						<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+						<div
+							style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+						>
 							<div style={{ position: "relative" }}>
-								<Search size={14} style={{ position: "absolute", left: "10px", top: "10px", color: "var(--muted)" }} />
+								<Search
+									size={14}
+									style={{
+										position: "absolute",
+										left: "10px",
+										top: "10px",
+										color: "var(--muted)",
+									}}
+								/>
 								<input
 									type="text"
 									className="text-input"
@@ -230,31 +274,63 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 									autoFocus
 								/>
 							</div>
-							
-							<div style={{ maxHeight: "150px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "4px" }}>
-								{searchLoading && <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "8px" }}>Поиск...</div>}
-								{!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
-									<div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "8px" }}>Семьи не найдены</div>
+
+							<div
+								style={{
+									maxHeight: "150px",
+									overflowY: "auto",
+									display: "flex",
+									flexDirection: "column",
+									gap: "4px",
+								}}
+							>
+								{searchLoading && (
+									<div
+										style={{
+											fontSize: "12px",
+											color: "var(--muted)",
+											textAlign: "center",
+											padding: "8px",
+										}}
+									>
+										Поиск...
+									</div>
 								)}
-								{searchResults.map(f => (
-									<div 
-										key={f.id} 
-										style={{ 
-											display: "flex", 
-											justifyContent: "space-between", 
+								{!searchLoading &&
+									searchQuery.length >= 2 &&
+									searchResults.length === 0 && (
+										<div
+											style={{
+												fontSize: "12px",
+												color: "var(--muted)",
+												textAlign: "center",
+												padding: "8px",
+											}}
+										>
+											Семьи не найдены
+										</div>
+									)}
+								{searchResults.map((f) => (
+									<div
+										key={f.id}
+										style={{
+											display: "flex",
+											justifyContent: "space-between",
 											alignItems: "center",
 											padding: "8px",
 											background: "rgba(255,255,255,0.03)",
 											borderRadius: "6px",
 											cursor: "pointer",
-											transition: "background 0.2s"
+											transition: "background 0.2s",
 										}}
 										onClick={() => handleLinkFamily(f.id)}
 									>
 										<div>
-											<div style={{ fontSize: "13px", fontWeight: 500 }}>{f.name}</div>
+											<div style={{ fontSize: "13px", fontWeight: 500 }}>
+												{f.name}
+											</div>
 										</div>
-										<button 
+										<button
 											className="secondary-button"
 											style={{ padding: "4px 8px", fontSize: "12px" }}
 											disabled={loading}
@@ -266,8 +342,8 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							</div>
 
 							<div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-								<button 
-									className="secondary-button" 
+								<button
+									className="secondary-button"
 									onClick={() => {
 										setIsLinking(false);
 										setSearchQuery("");
@@ -282,20 +358,38 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 						</div>
 					) : (
 						<div style={{ display: "flex", gap: "8px" }}>
-							<button 
-								className="primary-button" 
+							<button
+								className="primary-button"
 								onClick={() => {
-									setNewFamilyName(`Семья ${patientName ? patientName.split(' ')[0] : ''}`.trim());
+									setNewFamilyName(
+										`Семья ${patientName ? patientName.split(" ")[0] : ""}`.trim(),
+									);
 									setIsCreating(true);
 								}}
-								style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px", fontSize: "13px" }}
+								style={{
+									flex: 1,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									gap: "6px",
+									padding: "8px",
+									fontSize: "13px",
+								}}
 							>
 								<UserPlus size={14} /> Создать семью
 							</button>
-							<button 
-								className="secondary-button" 
+							<button
+								className="secondary-button"
 								onClick={() => setIsLinking(true)}
-								style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px", fontSize: "13px" }}
+								style={{
+									flex: 1,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									gap: "6px",
+									padding: "8px",
+									fontSize: "13px",
+								}}
 							>
 								<LinkIcon size={14} /> Привязать
 							</button>

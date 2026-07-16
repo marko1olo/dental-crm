@@ -1,6 +1,3 @@
-import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
-import { SettingsAiTab } from "./components/settings/SettingsAiTab";
-import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
 // Compliance: data-testid="dicom-first-frame-slice-presets"
 // Compliance: aria-label="Быстрые срезы снимков"
 // Compliance: previewDicomFirstFrameSlice(targetIndex)
@@ -123,16 +120,19 @@ import {
 	ZoomOut,
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
+import { InventoryView } from "./components/InventoryView";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
 import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
+import { SettingsAiTab } from "./components/settings/SettingsAiTab";
 import { SettingsAuditTab } from "./components/settings/SettingsAuditTab";
 import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
 import { SettingsImportsTab } from "./components/settings/SettingsImportsTab";
 import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
+import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
-import { InventoryView } from "./components/InventoryView";
 import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
+import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
 import {
@@ -290,7 +290,6 @@ type MigrationOperatorActionScope = "primary" | "script";
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
-
 
 const viewLabels = workspaceViewLabels as Record<string, string>;
 const staffCreationRoles: StaffRole[] = [
@@ -892,9 +891,9 @@ const dicomFirstFrameImageTypeLabel = (
 
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 
-
-
-export interface SettingsViewProps { activeStaffUser?: any; }
+export interface SettingsViewProps {
+	activeStaffUser?: any;
+}
 
 export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const {
@@ -1462,7 +1461,8 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		imagingConnectorCards as ImagingConnectorCard[];
 	const typedImagingViewerCapabilities =
 		imagingViewerCapabilities as ImagingViewerCapability[];
-	const typedCtPlanningImplantPlan = ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
+	const typedCtPlanningImplantPlan =
+		ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
 	const typedCtPlanningActiveQuickActionId =
 		typeof ctPlanningActiveQuickActionId === "string"
 			? ctPlanningActiveQuickActionId
@@ -1558,9 +1558,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		telegramInlineButtonRowsFromReplyMarkup(
 			replyMarkup,
 		) as TelegramInlineButtonRow[];
-	
-	
-	
+
 	const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance";
 	const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance";
 	const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance";
@@ -1749,8 +1747,14 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		updateDicomFirstFrameViewerState((state) => ({ ...state, [key]: value }));
 	};
 	const typedMprProjection = mprProjection as MprProjection;
-	const mprAxisDirectionLabel = formatMprAxisDirectionLabel({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
-	const mprAxisAngleBadge = formatMprAxisAngleBadge(mprAxisDeg, mprControlsReady);
+	const mprAxisDirectionLabel = formatMprAxisDirectionLabel({
+		canOpenMpr: mprControlsReady,
+		axisDeg: mprAxisDeg,
+	});
+	const mprAxisAngleBadge = formatMprAxisAngleBadge(
+		mprAxisDeg,
+		mprControlsReady,
+	);
 	const mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
 	const mprSliceBadge = formatMprSliceBadge({
 		canOpenMpr: mprControlsReady,
@@ -1762,12 +1766,21 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		mprSliceMaxIndex > 0
 			? `${(mprSafeSliceIndex / mprSliceMaxIndex) * 100}%`
 			: "50%";
-	const mprCurrentSliceFraction = mprSliceFraction(mprSafeSliceIndex, mprSliceMaxIndex);
+	const mprCurrentSliceFraction = mprSliceFraction(
+		mprSafeSliceIndex,
+		mprSliceMaxIndex,
+	);
 	const mprSliceLabel = mprControlsReady
 		? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}`
 		: "срез включится после КЛКТ/КТ-серии";
-	const mprAxisRangeValue = formatMprAxisRangeValue({ canOpenMpr: mprControlsReady, axisDeg: mprAxisDeg });
-	const mprSlabRangeValue = formatMprSlabRangeValue({ canOpenMpr: mprControlsReady, slabMm: mprSlabMm });
+	const mprAxisRangeValue = formatMprAxisRangeValue({
+		canOpenMpr: mprControlsReady,
+		axisDeg: mprAxisDeg,
+	});
+	const mprSlabRangeValue = formatMprSlabRangeValue({
+		canOpenMpr: mprControlsReady,
+		slabMm: mprSlabMm,
+	});
 	const mprSliceRangeValue = formatMprSliceRangeValue({
 		canOpenMpr: mprControlsReady,
 		sliceIndex: mprSafeSliceIndex,
@@ -1857,7 +1870,10 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		setMprLinkedPlanesEnabled(true);
 	};
 	const applyMprClinicalPreset = (preset: MprClinicalPreset) => {
-		const projection = resolveMprClinicalPresetProjection(preset.projection, typedCbctWorkbenchProjections);
+		const projection = resolveMprClinicalPresetProjection(
+			preset.projection,
+			typedCbctWorkbenchProjections,
+		);
 		setMprProjection(projection);
 		setMprAxisDeg(clampMprAxisDeg(preset.axisDeg));
 		setMprSlabMm(clampMprSlabMm(preset.slabMm));
@@ -1870,7 +1886,10 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	};
 	const applyCtPlanningQuickAction = (action: CtPlanningQuickAction) => {
 		if (action.requiresVolume && !mprControlsReady) return;
-		const projection = resolveMprClinicalPresetProjection(action.projection, typedCbctWorkbenchProjections);
+		const projection = resolveMprClinicalPresetProjection(
+			action.projection,
+			typedCbctWorkbenchProjections,
+		);
 		setCtPlanningActiveQuickActionId?.(action.id);
 		setImagingViewerActiveTool(action.tool);
 		setMprProjection(projection);
@@ -1895,7 +1914,9 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		);
 		if (preset) applyMprClinicalPreset(preset);
 	};
-	const handleMprKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
+	const handleMprKeyboardNavigation = (
+		event: KeyboardEvent<HTMLDivElement>,
+	) => {
 		if (!mprControlsReady) return;
 		const adjustment = resolveMprKeyboardAdjustment({
 			key: event.key,
@@ -2957,16 +2978,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				{settingsTab === "prices" ? <SettingsPricesTab /> : null}
 				{settingsTab === "sources" ? <SettingsSourcesTab /> : null}
 				{settingsTab === "ai" ? <SettingsAiTab /> : null}
-
-				
-
-				
-
-				
-
-				
-
-				
 
 				<SettingsImportsTab />
 				<SettingsAuditTab />

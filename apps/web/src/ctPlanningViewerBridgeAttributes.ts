@@ -38,12 +38,20 @@ export function buildCtPlanningViewerBridgeDataAttributes(
 		"data-viewer-launch-gate": handoff.launchGate.status,
 		"data-viewer-missing-targets": handoff.auditRecord.missingTargetCount,
 		"data-viewer-pixel-policy": handoff.launchPayload.pixelPolicy,
-		"data-viewer-runtime-lane": handoff.envelope.runtimeTruthPolicy.executionLane,
-		"data-viewer-runtime-source": handoff.envelope.runtimeTruthPolicy.sourceMode,
-		"data-viewer-hardware-quality-weight": handoff.envelope.runtimeTruthPolicy.hardwareQualityWeight,
-		"data-viewer-slice-window-cap": handoff.envelope.runtimeTruthPolicy.progressiveSliceWindowCap,
-		"data-viewer-browser-heavy-geometry": booleanAttribute(handoff.envelope.runtimeTruthPolicy.browserStoresHeavyGeometry),
-		"data-viewer-restore-valid": booleanAttribute(handoff.manifest.restoreValid),
+		"data-viewer-runtime-lane":
+			handoff.envelope.runtimeTruthPolicy.executionLane,
+		"data-viewer-runtime-source":
+			handoff.envelope.runtimeTruthPolicy.sourceMode,
+		"data-viewer-hardware-quality-weight":
+			handoff.envelope.runtimeTruthPolicy.hardwareQualityWeight,
+		"data-viewer-slice-window-cap":
+			handoff.envelope.runtimeTruthPolicy.progressiveSliceWindowCap,
+		"data-viewer-browser-heavy-geometry": booleanAttribute(
+			handoff.envelope.runtimeTruthPolicy.browserStoresHeavyGeometry,
+		),
+		"data-viewer-restore-valid": booleanAttribute(
+			handoff.manifest.restoreValid,
+		),
 		"data-viewer-restore": handoff.manifest.commandString,
 	};
 }

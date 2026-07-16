@@ -150,7 +150,9 @@ export function dicomLabel(
 	return labels[value] ?? value.replaceAll("_", " ");
 }
 
-export const mprAxisPresetDeg = [-90, -60, -45, -30, -15, 0, 15, 30, 45, 60, 90] as const;
+export const mprAxisPresetDeg = [
+	-90, -60, -45, -30, -15, 0, 15, 30, 45, 60, 90,
+] as const;
 export const mprSlabPresetMm = [1, 2, 3, 5, 10, 20] as const;
 export const mprClinicalPresets: MprClinicalPreset[] = [
 	{

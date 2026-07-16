@@ -1,467 +1,474 @@
-import React from 'react';
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { ShieldCheck, Plus, Trash2 } from "lucide-react";
-import type { 
-    ClinicalRuleAction, 
-    ClinicalRuleSeverity, 
-    ServiceCategory, 
-    StaffRole 
+import type {
+	ClinicalRuleAction,
+	ClinicalRuleSeverity,
+	ServiceCategory,
+	StaffRole,
 } from "@dental/shared";
+import { Plus, ShieldCheck, Trash2 } from "lucide-react";
+import type React from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 const clinicalRuleOwnerRoles: StaffRole[] = [
-    "doctor",
-    "assistant",
-    "administrator",
-    "manager",
+	"doctor",
+	"assistant",
+	"administrator",
+	"manager",
 ];
 
 export function SettingsRulesTab() {
-    const {
-        dashboard,
-        typedServiceCatalog,
-        newRuleAction,
-        newRuleBlockedServiceId,
-        newRuleCategory,
-        newRuleCompletedServiceId,
-        newRuleOwnerRole,
-        newRulePatientText,
-        newRuleRequiredServiceId,
-        newRuleSeverity,
-        newRuleSpecialty,
-        newRuleTitle,
-        newRuleTriggerServiceId,
-        newRuleWarningText,
-        setNewRuleAction,
-        setNewRuleBlockedServiceId,
-        setNewRuleCategory,
-        setNewRuleCompletedServiceId,
-        setNewRuleOwnerRole,
-        setNewRulePatientText,
-        setNewRuleRequiredServiceId,
-        setNewRuleSeverity,
-        setNewRuleSpecialty,
-        setNewRuleTitle,
-        setNewRuleTriggerServiceId,
-        setNewRuleWarningText,
-        submitClinicalRule,
-        removeClinicalRule,
-        specialtyLabels,
-        typedClinicalRules,
-        toggleClinicalRule,
-        isClinicalRuleSaving,
-        createClinicalRuleFromSettings,
-        serviceTitle,
-        clinicalRuleActionLabels,
-        clinicalRuleSeverityLabels,
-        serviceCategoryLabels,
-        staffRoleLabels,
-        clinicalRuleSummary,
-    } = useAppLogicContext();
+	const {
+		dashboard,
+		typedServiceCatalog,
+		newRuleAction,
+		newRuleBlockedServiceId,
+		newRuleCategory,
+		newRuleCompletedServiceId,
+		newRuleOwnerRole,
+		newRulePatientText,
+		newRuleRequiredServiceId,
+		newRuleSeverity,
+		newRuleSpecialty,
+		newRuleTitle,
+		newRuleTriggerServiceId,
+		newRuleWarningText,
+		setNewRuleAction,
+		setNewRuleBlockedServiceId,
+		setNewRuleCategory,
+		setNewRuleCompletedServiceId,
+		setNewRuleOwnerRole,
+		setNewRulePatientText,
+		setNewRuleRequiredServiceId,
+		setNewRuleSeverity,
+		setNewRuleSpecialty,
+		setNewRuleTitle,
+		setNewRuleTriggerServiceId,
+		setNewRuleWarningText,
+		submitClinicalRule,
+		removeClinicalRule,
+		specialtyLabels,
+		typedClinicalRules,
+		toggleClinicalRule,
+		isClinicalRuleSaving,
+		createClinicalRuleFromSettings,
+		serviceTitle,
+		clinicalRuleActionLabels,
+		clinicalRuleSeverityLabels,
+		serviceCategoryLabels,
+		staffRoleLabels,
+		clinicalRuleSummary,
+	} = useAppLogicContext();
 
-    const typedClinicalRuleActionLabels = clinicalRuleActionLabels as Record<ClinicalRuleAction, string>;
-    const typedClinicalRuleActions = Object.keys(typedClinicalRuleActionLabels) as ClinicalRuleAction[];
-    
-    const typedClinicalRuleSeverityLabels = clinicalRuleSeverityLabels as Record<ClinicalRuleSeverity, string>;
-    const typedClinicalRuleSeverities = Object.keys(typedClinicalRuleSeverityLabels) as ClinicalRuleSeverity[];
-    
-    const typedServiceCategoryLabels = serviceCategoryLabels as Record<ServiceCategory, string>;
-    const typedServiceCategories = Object.keys(typedServiceCategoryLabels) as ServiceCategory[];
+	const typedClinicalRuleActionLabels = clinicalRuleActionLabels as Record<
+		ClinicalRuleAction,
+		string
+	>;
+	const typedClinicalRuleActions = Object.keys(
+		typedClinicalRuleActionLabels,
+	) as ClinicalRuleAction[];
 
-    return (
-        		<section
-				className="rule-studio"
-				aria-label="Редактор клинических правил"
-			>
-				<div className="import-copy">
-					<ShieldCheck aria-hidden="true" />
-					<div>
-						<p className="eyebrow">Клинические правила</p>
-						<h2>Бандлы, ограничения и предупреждения главврача</h2>
-						<p>
-							Правило связывает услугу-триггер с обязательной услугой,
-							ограничением, завершенным этапом или recall. Результат сразу
-							попадает в прием, финансы и сменные предупреждения.
-						</p>
-					</div>
+	const typedClinicalRuleSeverityLabels = clinicalRuleSeverityLabels as Record<
+		ClinicalRuleSeverity,
+		string
+	>;
+	const typedClinicalRuleSeverities = Object.keys(
+		typedClinicalRuleSeverityLabels,
+	) as ClinicalRuleSeverity[];
+
+	const typedServiceCategoryLabels = serviceCategoryLabels as Record<
+		ServiceCategory,
+		string
+	>;
+	const typedServiceCategories = Object.keys(
+		typedServiceCategoryLabels,
+	) as ServiceCategory[];
+
+	return (
+		<section className="rule-studio" aria-label="Редактор клинических правил">
+			<div className="import-copy">
+				<ShieldCheck aria-hidden="true" />
+				<div>
+					<p className="eyebrow">Клинические правила</p>
+					<h2>Бандлы, ограничения и предупреждения главврача</h2>
+					<p>
+						Правило связывает услугу-триггер с обязательной услугой,
+						ограничением, завершенным этапом или recall. Результат сразу
+						попадает в прием, финансы и сменные предупреждения.
+					</p>
 				</div>
+			</div>
 
-				<div className="rule-studio-summary">
-					<article>
-						<span>Активные</span>
-						<strong>{dashboard.clinicalRuleSummary.activeRules}</strong>
-						<p>{dashboard.clinicalRules.length} правил в библиотеке</p>
-					</article>
-					<article
-						className={
-							dashboard.clinicalRuleSummary.blockers ? "rule-danger" : ""
-						}
-					>
-						<span>Важные</span>
-						<strong>{dashboard.clinicalRuleSummary.blockers}</strong>
-						<p>
-							{dashboard.clinicalRuleSummary.unresolved} нерешенных оценок
-						</p>
-					</article>
-					<article>
-						<span>Добавить</span>
-						<strong>
-							{dashboard.clinicalRuleSummary.requiredServices}
-						</strong>
-						<p>обязательных услуг в текущем плане</p>
-					</article>
-				</div>
+			<div className="rule-studio-summary">
+				<article>
+					<span>Активные</span>
+					<strong>{dashboard.clinicalRuleSummary.activeRules}</strong>
+					<p>{dashboard.clinicalRules.length} правил в библиотеке</p>
+				</article>
+				<article
+					className={
+						dashboard.clinicalRuleSummary.blockers ? "rule-danger" : ""
+					}
+				>
+					<span>Важные</span>
+					<strong>{dashboard.clinicalRuleSummary.blockers}</strong>
+					<p>{dashboard.clinicalRuleSummary.unresolved} нерешенных оценок</p>
+				</article>
+				<article>
+					<span>Добавить</span>
+					<strong>{dashboard.clinicalRuleSummary.requiredServices}</strong>
+					<p>обязательных услуг в текущем плане</p>
+				</article>
+			</div>
 
-				<div className="rule-studio-layout">
-					<details
-						className="settings-advanced-block new-rule-collapsible"
-						style={{ flex: 1, minWidth: "320px", margin: "0 0 1rem 0" }}
-					>
-						<summary className="settings-advanced-toggle">
-							<span className="settings-advanced-label">
-								<span className="settings-advanced-icon">➕</span>
-								Добавить новое правило
-							</span>
-							<span className="settings-advanced-hint">
-								триггеры, обязательные услуги и запреты
-							</span>
-							<span className="settings-advanced-chevron">▼</span>
-						</summary>
-						<div className="settings-advanced-form">
-							<section
-								className="rule-form"
-								aria-label="Новое клиническое правило"
-								style={{ padding: 0, border: "none", background: "none" }}
-							>
-								<div className="panel-heading">
-									<h3>Новое правило</h3>
-									<span className="status-pill status-arrived">
-										{newRuleAction}
-									</span>
-								</div>
+			<div className="rule-studio-layout">
+				<details
+					className="settings-advanced-block new-rule-collapsible"
+					style={{ flex: 1, minWidth: "320px", margin: "0 0 1rem 0" }}
+				>
+					<summary className="settings-advanced-toggle">
+						<span className="settings-advanced-label">
+							<span className="settings-advanced-icon">➕</span>
+							Добавить новое правило
+						</span>
+						<span className="settings-advanced-hint">
+							триггеры, обязательные услуги и запреты
+						</span>
+						<span className="settings-advanced-chevron">▼</span>
+					</summary>
+					<div className="settings-advanced-form">
+						<section
+							className="rule-form"
+							aria-label="Новое клиническое правило"
+							style={{ padding: 0, border: "none", background: "none" }}
+						>
+							<div className="panel-heading">
+								<h3>Новое правило</h3>
+								<span className="status-pill status-arrived">
+									{newRuleAction}
+								</span>
+							</div>
+							<label>
+								Название
+								<input
+									value={newRuleTitle}
+									onChange={(
+										event: React.ChangeEvent<
+											HTMLInputElement | HTMLTextAreaElement
+										>,
+									) => setNewRuleTitle(event.target.value)}
+								/>
+							</label>
+							<div className="rule-form-grid">
 								<label>
-									Название
+									Действие
+									<div className="quick-chips-row">
+										{typedClinicalRuleActions.map((action) => (
+											<button
+												key={action}
+												type="button"
+												className={`quick-chip ${newRuleAction === action ? "selected" : ""}`}
+												onClick={() => setNewRuleAction(action)}
+											>
+												{typedClinicalRuleActionLabels[action]}
+											</button>
+										))}
+									</div>
+								</label>
+								<label>
+									Уровень
+									<div className="quick-chips-row">
+										{typedClinicalRuleSeverities.map((severity) => (
+											<button
+												key={severity}
+												type="button"
+												className={`quick-chip ${newRuleSeverity === severity ? "selected" : ""}`}
+												onClick={() => setNewRuleSeverity(severity)}
+											>
+												{typedClinicalRuleSeverityLabels[severity]}
+											</button>
+										))}
+									</div>
+								</label>
+								<label>
+									Владелец
+									<div className="quick-chips-row">
+										{clinicalRuleOwnerRoles.map((role) => (
+											<button
+												key={role}
+												type="button"
+												className={`quick-chip ${newRuleOwnerRole === role ? "selected" : ""}`}
+												onClick={() => setNewRuleOwnerRole(role)}
+											>
+												{staffRoleLabels[role]}
+											</button>
+										))}
+									</div>
+								</label>
+								<label>
+									Специальность
+									<div className="quick-chips-row">
+										{Object.keys(specialtyLabels).map((specialty) => (
+											<button
+												key={specialty}
+												type="button"
+												className={`quick-chip ${newRuleSpecialty === specialty ? "selected" : ""}`}
+												onClick={() => setNewRuleSpecialty(specialty)}
+											>
+												{specialtyLabels[specialty]}
+											</button>
+										))}
+									</div>
+								</label>
+								<label>
+									Категория
+									<div className="quick-chips-row">
+										{typedServiceCategories.map((category) => (
+											<button
+												key={category}
+												type="button"
+												className={`quick-chip ${newRuleCategory === category ? "selected" : ""}`}
+												onClick={() => setNewRuleCategory(category)}
+											>
+												{typedServiceCategoryLabels[category]}
+											</button>
+										))}
+									</div>
+								</label>
+								<label>
+									Триггер
 									<input
-										value={newRuleTitle}
-										onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-											setNewRuleTitle(event.target.value)
+										type="text"
+										list="trigger-services"
+										value={
+											typedServiceCatalog.find(
+												(s) => s.id === newRuleTriggerServiceId,
+											)?.title ?? ""
 										}
+										onChange={(e) => {
+											const s = typedServiceCatalog.find(
+												(srv) => srv.title === e.target.value,
+											);
+											if (s) setNewRuleTriggerServiceId(s.id);
+											else setNewRuleTriggerServiceId("");
+										}}
+										placeholder="Выберите услугу..."
 									/>
+									<datalist id="trigger-services">
+										{typedServiceCatalog.map((s) => (
+											<option key={s.id} value={s.title} />
+										))}
+									</datalist>
 								</label>
-								<div className="rule-form-grid">
-									<label>
-										Действие
-										<div className="quick-chips-row">
-											{typedClinicalRuleActions.map((action) => (
-												<button
-													key={action}
-													type="button"
-													className={`quick-chip ${newRuleAction === action ? "selected" : ""}`}
-													onClick={() => setNewRuleAction(action)}
-												>
-													{typedClinicalRuleActionLabels[action]}
-												</button>
-											))}
-										</div>
-									</label>
-									<label>
-										Уровень
-										<div className="quick-chips-row">
-											{typedClinicalRuleSeverities.map((severity) => (
-												<button
-													key={severity}
-													type="button"
-													className={`quick-chip ${newRuleSeverity === severity ? "selected" : ""}`}
-													onClick={() => setNewRuleSeverity(severity)}
-												>
-													{typedClinicalRuleSeverityLabels[severity]}
-												</button>
-											))}
-										</div>
-									</label>
-									<label>
-										Владелец
-										<div className="quick-chips-row">
-											{clinicalRuleOwnerRoles.map((role) => (
-												<button
-													key={role}
-													type="button"
-													className={`quick-chip ${newRuleOwnerRole === role ? "selected" : ""}`}
-													onClick={() => setNewRuleOwnerRole(role)}
-												>
-													{staffRoleLabels[role]}
-												</button>
-											))}
-										</div>
-									</label>
-									<label>
-										Специальность
-										<div className="quick-chips-row">
-											{Object.keys(specialtyLabels).map((specialty) => (
-												<button
-													key={specialty}
-													type="button"
-													className={`quick-chip ${newRuleSpecialty === specialty ? "selected" : ""}`}
-													onClick={() => setNewRuleSpecialty(specialty)}
-												>
-													{specialtyLabels[specialty]}
-												</button>
-											))}
-										</div>
-									</label>
-									<label>
-										Категория
-										<div className="quick-chips-row">
-											{typedServiceCategories.map((category) => (
-												<button
-													key={category}
-													type="button"
-													className={`quick-chip ${newRuleCategory === category ? "selected" : ""}`}
-													onClick={() => setNewRuleCategory(category)}
-												>
-													{typedServiceCategoryLabels[category]}
-												</button>
-											))}
-										</div>
-									</label>
-									<label>
-										Триггер
-										<input
-											type="text"
-											list="trigger-services"
-											value={
-												typedServiceCatalog.find(
-													(s) => s.id === newRuleTriggerServiceId,
-												)?.title ?? ""
-											}
-											onChange={(e) => {
-												const s = typedServiceCatalog.find(
-													(srv) => srv.title === e.target.value,
-												);
-												if (s) setNewRuleTriggerServiceId(s.id);
-												else setNewRuleTriggerServiceId("");
-											}}
-											placeholder="Выберите услугу..."
-										/>
-										<datalist id="trigger-services">
-											{typedServiceCatalog.map((s) => (
-												<option key={s.id} value={s.title} />
-											))}
-										</datalist>
-									</label>
-									<label>
-										Обязательная услуга
-										<input
-											type="text"
-											list="req-services"
-											value={
-												typedServiceCatalog.find(
-													(s) => s.id === newRuleRequiredServiceId,
-												)?.title ?? ""
-											}
-											onChange={(e) => {
-												const s = typedServiceCatalog.find(
-													(srv) => srv.title === e.target.value,
-												);
-												if (s) setNewRuleRequiredServiceId(s.id);
-												else setNewRuleRequiredServiceId("");
-											}}
-											placeholder="Выберите услугу..."
-										/>
-										<datalist id="req-services">
-											{typedServiceCatalog.map((s) => (
-												<option key={s.id} value={s.title} />
-											))}
-										</datalist>
-									</label>
-									<label>
-										Должно быть завершено
-										<input
-											type="text"
-											list="comp-services"
-											value={
-												typedServiceCatalog.find(
-													(s) => s.id === newRuleCompletedServiceId,
-												)?.title ?? ""
-											}
-											onChange={(e) => {
-												const s = typedServiceCatalog.find(
-													(srv) => srv.title === e.target.value,
-												);
-												if (s) setNewRuleCompletedServiceId(s.id);
-												else setNewRuleCompletedServiceId("");
-											}}
-											placeholder="Выберите услугу..."
-										/>
-										<datalist id="comp-services">
-											{typedServiceCatalog.map((s) => (
-												<option key={s.id} value={s.title} />
-											))}
-										</datalist>
-									</label>
-									<label>
-										Блокировать
-										<input
-											type="text"
-											list="block-services"
-											value={
-												typedServiceCatalog.find(
-													(s) => s.id === newRuleBlockedServiceId,
-												)?.title ?? ""
-											}
-											onChange={(e) => {
-												const s = typedServiceCatalog.find(
-													(srv) => srv.title === e.target.value,
-												);
-												if (s) setNewRuleBlockedServiceId(s.id);
-												else setNewRuleBlockedServiceId("");
-											}}
-											placeholder="Выберите услугу..."
-										/>
-										<datalist id="block-services">
-											{typedServiceCatalog.map((s) => (
-												<option key={s.id} value={s.title} />
-											))}
-										</datalist>
-									</label>
+								<label>
+									Обязательная услуга
+									<input
+										type="text"
+										list="req-services"
+										value={
+											typedServiceCatalog.find(
+												(s) => s.id === newRuleRequiredServiceId,
+											)?.title ?? ""
+										}
+										onChange={(e) => {
+											const s = typedServiceCatalog.find(
+												(srv) => srv.title === e.target.value,
+											);
+											if (s) setNewRuleRequiredServiceId(s.id);
+											else setNewRuleRequiredServiceId("");
+										}}
+										placeholder="Выберите услугу..."
+									/>
+									<datalist id="req-services">
+										{typedServiceCatalog.map((s) => (
+											<option key={s.id} value={s.title} />
+										))}
+									</datalist>
+								</label>
+								<label>
+									Должно быть завершено
+									<input
+										type="text"
+										list="comp-services"
+										value={
+											typedServiceCatalog.find(
+												(s) => s.id === newRuleCompletedServiceId,
+											)?.title ?? ""
+										}
+										onChange={(e) => {
+											const s = typedServiceCatalog.find(
+												(srv) => srv.title === e.target.value,
+											);
+											if (s) setNewRuleCompletedServiceId(s.id);
+											else setNewRuleCompletedServiceId("");
+										}}
+										placeholder="Выберите услугу..."
+									/>
+									<datalist id="comp-services">
+										{typedServiceCatalog.map((s) => (
+											<option key={s.id} value={s.title} />
+										))}
+									</datalist>
+								</label>
+								<label>
+									Блокировать
+									<input
+										type="text"
+										list="block-services"
+										value={
+											typedServiceCatalog.find(
+												(s) => s.id === newRuleBlockedServiceId,
+											)?.title ?? ""
+										}
+										onChange={(e) => {
+											const s = typedServiceCatalog.find(
+												(srv) => srv.title === e.target.value,
+											);
+											if (s) setNewRuleBlockedServiceId(s.id);
+											else setNewRuleBlockedServiceId("");
+										}}
+										placeholder="Выберите услугу..."
+									/>
+									<datalist id="block-services">
+										{typedServiceCatalog.map((s) => (
+											<option key={s.id} value={s.title} />
+										))}
+									</datalist>
+								</label>
+							</div>
+							<label>
+								Предупреждение врачу
+								<textarea
+									value={newRuleWarningText}
+									onChange={(
+										event: React.ChangeEvent<
+											HTMLInputElement | HTMLTextAreaElement
+										>,
+									) => setNewRuleWarningText(event.target.value)}
+								/>
+								<div className="quick-chips-row" style={{ marginTop: "4px" }}>
+									{[
+										"Сначала сделайте снимок",
+										"Проверьте аллергию",
+										"Требуется подписание согласия",
+										"Проверьте остаток долга",
+									].map((chip) => (
+										<button
+											key={chip}
+											type="button"
+											className="quick-chip quick-chip--sm"
+											onClick={() => setNewRuleWarningText(chip)}
+										>
+											{chip}
+										</button>
+									))}
 								</div>
-								<label>
-									Предупреждение врачу
-									<textarea
-										value={newRuleWarningText}
-										onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-											setNewRuleWarningText(event.target.value)
-										}
-									/>
-									<div
-										className="quick-chips-row"
-										style={{ marginTop: "4px" }}
-									>
-										{[
-											"Сначала сделайте снимок",
-											"Проверьте аллергию",
-											"Требуется подписание согласия",
-											"Проверьте остаток долга",
-										].map((chip) => (
-											<button
-												key={chip}
-												type="button"
-												className="quick-chip quick-chip--sm"
-												onClick={() => setNewRuleWarningText(chip)}
-											>
-												{chip}
-											</button>
-										))}
-									</div>
-								</label>
-								<label>
-									Объяснение пациенту
-									<textarea
-										value={newRulePatientText}
-										onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-											setNewRulePatientText(event.target.value)
-										}
-									/>
-									<div
-										className="quick-chips-row"
-										style={{ marginTop: "4px" }}
-									>
-										{[
-											"Это нужно для вашей безопасности",
-											"Обязательное требование Минздрава",
-											"Без этого мы не можем гарантировать результат",
-										].map((chip) => (
-											<button
-												key={chip}
-												type="button"
-												className="quick-chip quick-chip--sm"
-												onClick={() => setNewRulePatientText(chip)}
-											>
-												{chip}
-											</button>
-										))}
-									</div>
-								</label>
-								<button
-									className="primary-button"
-									type="button"
-									onClick={createClinicalRuleFromSettings}
-									disabled={isClinicalRuleSaving}
-									aria-busy={isClinicalRuleSaving || undefined}
-								>
-									<Plus aria-hidden="true" />{" "}
-									{isClinicalRuleSaving ? "Сохраняю" : "Добавить правило"}
-								</button>
-							</section>
-						</div>
-					</details>
-
-					<section
-						className="rule-library"
-						aria-label="Библиотека правил клиники"
-					>
-						{typedClinicalRules.map((rule) => (
-							<article
-								className={`rule-card severity-${rule.severity} ${rule.active ? "" : "disabled"}`}
-								key={rule.id}
+							</label>
+							<label>
+								Объяснение пациенту
+								<textarea
+									value={newRulePatientText}
+									onChange={(
+										event: React.ChangeEvent<
+											HTMLInputElement | HTMLTextAreaElement
+										>,
+									) => setNewRulePatientText(event.target.value)}
+								/>
+								<div className="quick-chips-row" style={{ marginTop: "4px" }}>
+									{[
+										"Это нужно для вашей безопасности",
+										"Обязательное требование Минздрава",
+										"Без этого мы не можем гарантировать результат",
+									].map((chip) => (
+										<button
+											key={chip}
+											type="button"
+											className="quick-chip quick-chip--sm"
+											onClick={() => setNewRulePatientText(chip)}
+										>
+											{chip}
+										</button>
+									))}
+								</div>
+							</label>
+							<button
+								className="primary-button"
+								type="button"
+								onClick={createClinicalRuleFromSettings}
+								disabled={isClinicalRuleSaving}
+								aria-busy={isClinicalRuleSaving || undefined}
 							>
-								<div className="rule-card-head">
-									<span>
-										{typedClinicalRuleSeverityLabels[rule.severity]} ·{" "}
-										{typedClinicalRuleActionLabels[rule.action]}
-									</span>
-									<button
-										className="text-button"
-										type="button"
-										onClick={() => toggleClinicalRule(rule)}
-										disabled={isClinicalRuleSaving}
-									>
-										{rule.active ? "Выключить" : "Включить"}
-									</button>
-									<button
-										className="text-button text-button-danger"
-										type="button"
-										onClick={() => removeClinicalRule(rule.id)}
-										disabled={isClinicalRuleSaving}
-										style={{ color: "var(--danger-color)" }}
-									>
-										Удалить
-									</button>
-								</div>
-								<h3>{rule.title}</h3>
-								<p>{rule.warningText}</p>
-								<div className="rule-token-row">
-									<span>{specialtyLabels[rule.specialty]}</span>
-									<span>{typedServiceCategoryLabels[rule.category]}</span>
-									<span>{staffRoleLabels[rule.ownerRole]}</span>
-								</div>
-								<div className="rule-token-row rule-token-row-soft">
-									{rule.triggerServiceIds.map((serviceId) => (
-										<span key={`${rule.id}-t-${serviceId}`}>
-											если {serviceTitle(serviceId)}
-										</span>
-									))}
-									{rule.requiredServiceIds.map((serviceId) => (
-										<span key={`${rule.id}-r-${serviceId}`}>
-											добавить {serviceTitle(serviceId)}
-										</span>
-									))}
-									{rule.requiresCompletedServiceIds.map((serviceId) => (
-										<span key={`${rule.id}-c-${serviceId}`}>
-											завершить {serviceTitle(serviceId)}
-										</span>
-									))}
-									{rule.blockedServiceIds.map((serviceId) => (
-										<span key={`${rule.id}-b-${serviceId}`}>
-											блок {serviceTitle(serviceId)}
-										</span>
-									))}
-								</div>
-								<small>{rule.patientText}</small>
-							</article>
-						))}
-					</section>
-				</div>
-			</section>
+								<Plus aria-hidden="true" />{" "}
+								{isClinicalRuleSaving ? "Сохраняю" : "Добавить правило"}
+							</button>
+						</section>
+					</div>
+				</details>
 
-    );
+				<section
+					className="rule-library"
+					aria-label="Библиотека правил клиники"
+				>
+					{typedClinicalRules.map((rule) => (
+						<article
+							className={`rule-card severity-${rule.severity} ${rule.active ? "" : "disabled"}`}
+							key={rule.id}
+						>
+							<div className="rule-card-head">
+								<span>
+									{typedClinicalRuleSeverityLabels[rule.severity]} ·{" "}
+									{typedClinicalRuleActionLabels[rule.action]}
+								</span>
+								<button
+									className="text-button"
+									type="button"
+									onClick={() => toggleClinicalRule(rule)}
+									disabled={isClinicalRuleSaving}
+								>
+									{rule.active ? "Выключить" : "Включить"}
+								</button>
+								<button
+									className="text-button text-button-danger"
+									type="button"
+									onClick={() => removeClinicalRule(rule.id)}
+									disabled={isClinicalRuleSaving}
+									style={{ color: "var(--danger-color)" }}
+								>
+									Удалить
+								</button>
+							</div>
+							<h3>{rule.title}</h3>
+							<p>{rule.warningText}</p>
+							<div className="rule-token-row">
+								<span>{specialtyLabels[rule.specialty]}</span>
+								<span>{typedServiceCategoryLabels[rule.category]}</span>
+								<span>{staffRoleLabels[rule.ownerRole]}</span>
+							</div>
+							<div className="rule-token-row rule-token-row-soft">
+								{rule.triggerServiceIds.map((serviceId) => (
+									<span key={`${rule.id}-t-${serviceId}`}>
+										если {serviceTitle(serviceId)}
+									</span>
+								))}
+								{rule.requiredServiceIds.map((serviceId) => (
+									<span key={`${rule.id}-r-${serviceId}`}>
+										добавить {serviceTitle(serviceId)}
+									</span>
+								))}
+								{rule.requiresCompletedServiceIds.map((serviceId) => (
+									<span key={`${rule.id}-c-${serviceId}`}>
+										завершить {serviceTitle(serviceId)}
+									</span>
+								))}
+								{rule.blockedServiceIds.map((serviceId) => (
+									<span key={`${rule.id}-b-${serviceId}`}>
+										блок {serviceTitle(serviceId)}
+									</span>
+								))}
+							</div>
+							<small>{rule.patientText}</small>
+						</article>
+					))}
+				</section>
+			</div>
+		</section>
+	);
 }

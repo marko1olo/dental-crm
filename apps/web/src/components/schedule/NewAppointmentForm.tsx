@@ -2,11 +2,11 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import { Bot, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
+import type { AppointmentScheduleDraft } from "../../AppHelpers";
 import { DictationHints } from "../../DictationHints";
 import { smartBookingParser } from "../../lib/smartBookingParser";
 import { SmartParsePreview } from "../../SmartParsePreview";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { type AppointmentScheduleDraft } from "../../AppHelpers";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -16,7 +16,10 @@ export type NewAppointmentFormProps = {
 	newAppointmentDraft: AppointmentScheduleDraft;
 	newAppointmentSaveState: string;
 	newAppointmentError: string | null;
-	updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) => void;
+	updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(
+		key: K,
+		value: AppointmentScheduleDraft[K],
+	) => void;
 	createAppointmentFromDraft: () => Promise<boolean>;
 	resetNewAppointmentDraft: () => void;
 	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
@@ -244,7 +247,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					}}
 				>
 					<Bot size={18} color="var(--brand-600)" style={{ flexShrink: 0 }} />
-					<div 
+					<div
 						style={{ position: "relative", flex: 1 }}
 						onBlur={(e) => {
 							if (!e.currentTarget.contains(e.relatedTarget as Node)) {

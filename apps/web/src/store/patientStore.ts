@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import {
 	defaultUiPreferences,
+	denteAdminSecretRequestHeaders,
 	emptyPatientAdministrativeProfileDraft,
 	emptyPatientCoreDraft,
 	loadUiPreferences,
@@ -9,7 +10,6 @@ import {
 	type PatientCoreDraft,
 	type PatientCoreSaveState,
 } from "../AppHelpers";
-import { denteAdminSecretRequestHeaders } from "../AppHelpers";
 
 const initialUiPreferences = loadUiPreferences() ?? defaultUiPreferences;
 
@@ -188,7 +188,8 @@ export const usePatientStore = create<PatientStore>((set) => ({
 	},
 	setAnamnesisDraft: (val) =>
 		set((state) => ({
-			anamnesisDraft: typeof val === "function" ? val(state.anamnesisDraft) : val,
+			anamnesisDraft:
+				typeof val === "function" ? val(state.anamnesisDraft) : val,
 		})),
 	anamnesisSaveState: "idle",
 	setAnamnesisSaveState: (val) => set({ anamnesisSaveState: val }),

@@ -40,7 +40,10 @@ export function AnamnesisPanel({ patientId }: { patientId: string }) {
 					onChange={(e) =>
 						setAnamnesisDraft((prev) => ({
 							...prev,
-							allergies: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+							allergies: e.target.value
+								.split(",")
+								.map((s) => s.trim())
+								.filter(Boolean),
 						}))
 					}
 					placeholder="Например: Лидокаин, Пенициллин"
@@ -55,7 +58,10 @@ export function AnamnesisPanel({ patientId }: { patientId: string }) {
 					onChange={(e) =>
 						setAnamnesisDraft((prev) => ({
 							...prev,
-							systemicDiseases: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+							systemicDiseases: e.target.value
+								.split(",")
+								.map((s) => s.trim())
+								.filter(Boolean),
 						}))
 					}
 					placeholder="Например: Сахарный диабет, Гипертония"

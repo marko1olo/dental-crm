@@ -144,8 +144,14 @@ export function mprProjectionCompassLabels(
 	}
 }
 
-function clampRounded(value: number, min: number, max: number, fallback: number): number {
-	if (!Number.isFinite(value)) return Math.max(min, Math.min(max, Math.round(fallback)));
+function clampRounded(
+	value: number,
+	min: number,
+	max: number,
+	fallback: number,
+): number {
+	if (!Number.isFinite(value))
+		return Math.max(min, Math.min(max, Math.round(fallback)));
 	return Math.max(min, Math.min(max, Math.round(value)));
 }
 

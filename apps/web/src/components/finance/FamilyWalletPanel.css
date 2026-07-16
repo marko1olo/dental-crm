@@ -115,7 +115,9 @@
 	color: var(--text-900);
 	outline: none;
 	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-	transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+	transition:
+		border-color 0.2s ease-out,
+		box-shadow 0.2s ease-out;
 }
 
 .family-wallet-input:focus {
@@ -137,7 +139,9 @@
 	border-radius: 8px;
 	font-weight: 500;
 	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-	transition: background-color 0.2s ease-out, opacity 0.2s ease-out;
+	transition:
+		background-color 0.2s ease-out,
+		opacity 0.2s ease-out;
 	display: flex;
 	align-items: center;
 	gap: 8px;

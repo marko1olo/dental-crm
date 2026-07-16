@@ -74,7 +74,9 @@ export function SettingsProtocolsTab() {
 
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				throw new Error(data.message || "РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ С€Р°Р±Р»РѕРЅР°");
+				throw new Error(
+					data.message || "РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ С€Р°Р±Р»РѕРЅР°",
+				);
 			}
 
 			// Reload page to refresh dashboard state
@@ -88,7 +90,12 @@ export function SettingsProtocolsTab() {
 	};
 
 	const handleDelete = async (id: string) => {
-		if (!confirm("Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ СЌС‚РѕС‚ С€Р°Р±Р»РѕРЅ?")) return;
+		if (
+			!confirm(
+				"Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ СЌС‚РѕС‚ С€Р°Р±Р»РѕРЅ?",
+			)
+		)
+			return;
 		setLoading(true);
 		try {
 			const clinicToken = localStorage.getItem("dente_clinic_token");
@@ -115,8 +122,15 @@ export function SettingsProtocolsTab() {
 				<div className="import-copy">
 					<ClipboardCheck aria-hidden="true" />
 					<div>
-						<h2>{editingId ? "Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С€Р°Р±Р»РѕРЅР°" : "РќРѕРІС‹Р№ С€Р°Р±Р»РѕРЅ"}</h2>
-						<p>РќР°СЃС‚СЂРѕР№С‚Рµ РїР°СЂР°РјРµС‚СЂС‹ РєР»РёРЅРёС‡РµСЃРєРѕРіРѕ РїСЂРѕС‚РѕРєРѕР»Р°.</p>
+						<h2>
+							{editingId
+								? "Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С€Р°Р±Р»РѕРЅР°"
+								: "РќРѕРІС‹Р№ С€Р°Р±Р»РѕРЅ"}
+						</h2>
+						<p>
+							РќР°СЃС‚СЂРѕР№С‚Рµ РїР°СЂР°РјРµС‚СЂС‹ РєР»РёРЅРёС‡РµСЃРєРѕРіРѕ
+							РїСЂРѕС‚РѕРєРѕР»Р°.
+						</p>
 					</div>
 				</div>
 
@@ -144,14 +158,19 @@ export function SettingsProtocolsTab() {
 							className="dente-input"
 							value={editForm.specialty || "universal"}
 							onChange={(e) =>
-								setEditForm((prev) => ({ ...prev, specialty: e.target.value as any }))
+								setEditForm((prev) => ({
+									...prev,
+									specialty: e.target.value as any,
+								}))
 							}
 						>
-							{Object.entries(specialtyLabels as Record<string, string>).map(([key, label]) => (
-								<option key={key} value={key}>
-									{label}
-								</option>
-							))}
+							{Object.entries(specialtyLabels as Record<string, string>).map(
+								([key, label]) => (
+									<option key={key} value={key}>
+										{label}
+									</option>
+								),
+							)}
 						</select>
 					</label>
 					<label className="dente-label">
@@ -256,15 +275,23 @@ export function SettingsProtocolsTab() {
 		>
 			<div
 				className="import-copy"
-				style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "flex-start",
+				}}
 			>
 				<div style={{ display: "flex", gap: "1rem" }}>
 					<ClipboardCheck aria-hidden="true" />
 					<div>
 						<p className="eyebrow">РџСЂРѕС‚РѕРєРѕР»С‹</p>
-						<h2>РЁР°Р±Р»РѕРЅС‹ РїСЂРёРµРјР° РїРѕ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЏРј</h2>
+						<h2>
+							РЁР°Р±Р»РѕРЅС‹ РїСЂРёРµРјР° РїРѕ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЏРј
+						</h2>
 						<p>
-							РќР°СЃС‚СЂРѕР№С‚Рµ РїСЂРѕС‚РѕРєРѕР»С‹ РґР»СЏ РІР°С€РёС… РІСЂР°С‡РµР№, С‡С‚РѕР±С‹ СѓСЃРєРѕСЂРёС‚СЊ Р·Р°РїРѕР»РЅРµРЅРёе РєР°СЂС‚С‹.
+							РќР°СЃС‚СЂРѕР№С‚Рµ РїСЂРѕС‚РѕРєРѕР»С‹ РґР»СЏ РІР°С€РёС…
+							РІСЂР°С‡РµР№, С‡С‚РѕР±С‹ СѓСЃРєРѕСЂРёС‚СЊ Р·Р°РїРѕР»РЅРµРЅРёе
+							РєР°СЂС‚С‹.
 						</p>
 					</div>
 				</div>
@@ -280,7 +307,8 @@ export function SettingsProtocolsTab() {
 							<span>{specialtyLabels[template.specialty]}</span>
 							<strong>{template.title}</strong>
 							<p>
-								{template.visitReason} В· {template.defaultDurationMinutes} РјРёРЅ
+								{template.visitReason} В· {template.defaultDurationMinutes}{" "}
+								РјРёРЅ
 							</p>
 						</div>
 						<div
@@ -316,7 +344,14 @@ export function SettingsProtocolsTab() {
 							<button
 								className="danger-button"
 								type="button"
-								style={{ padding: "0.5rem", backgroundColor: "var(--dente-red-10)", color: "var(--dente-red-60)", border: "none", borderRadius: "0.5rem", cursor: "pointer" }}
+								style={{
+									padding: "0.5rem",
+									backgroundColor: "var(--dente-red-10)",
+									color: "var(--dente-red-60)",
+									border: "none",
+									borderRadius: "0.5rem",
+									cursor: "pointer",
+								}}
 								onClick={() => handleDelete(template.id)}
 								title="РЈРґР°Р»РёС‚СЊ"
 								disabled={loading}

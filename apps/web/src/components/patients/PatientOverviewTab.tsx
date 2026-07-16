@@ -36,6 +36,22 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 	const patientCoreSaveGuidanceId = "patientCoreSaveGuidanceId";
 	const [familyData, setFamilyData] = useState<any>(null);
 
+	useEffect(() => {
+		if (selectedPatientId) {
+			fetch(`/api/finance/family/patient/${selectedPatientId}`, {
+				headers: denteAdminSecretRequestHeaders(),
+			})
+				.then((res) => {
+					if (!res.ok) throw new Error("No family");
+					return res.json();
+				})
+				.then((data) => setFamilyData(data))
+				.catch(() => setFamilyData(null));
+		} else {
+			setFamilyData(null);
+		}
+	}, [selectedPatientId]);
+
 	return (
 		<>
 			<div className="panel-heading compact-heading patients-no-border-mb-8">

@@ -2,8 +2,8 @@ import { Calculator, FileText, PenTool, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast.js";
 import { SignaturePad } from "../SignaturePad";
 import { type ToothData, ToothState } from "./ToothChart";
@@ -48,7 +48,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const [activeContract, setActiveContract] = useState<any | null>(null);
 
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
-	const insuranceContractId = patient?.administrativeProfile?.insuranceContractId;
+	const insuranceContractId =
+		patient?.administrativeProfile?.insuranceContractId;
 
 	useEffect(() => {
 		if (!insuranceContractId) {
@@ -74,7 +75,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 		let pct = 0;
 		const nameLower = item.name.toLowerCase();
-		const isHygiene = nameLower.includes("гигиен") || nameLower.includes("чистк");
+		const isHygiene =
+			nameLower.includes("гигиен") || nameLower.includes("чистк");
 
 		if (isHygiene) {
 			pct = activeContract.coverageHygienePct;
@@ -87,7 +89,12 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 		}
 
 		if (pct === 0) {
-			return { covered: false, pct: 0, label: "Вне покрытия ДМС", copayPct: 100 };
+			return {
+				covered: false,
+				pct: 0,
+				label: "Вне покрытия ДМС",
+				copayPct: 100,
+			};
 		}
 		return {
 			covered: true,
@@ -279,7 +286,9 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	useEffect(() => {
 		const t = items.reduce((acc, curr) => {
 			const coverage = getCoverageInfo(curr);
-			const price = coverage ? (curr.price * coverage.copayPct) / 100 : curr.price;
+			const price = coverage
+				? (curr.price * coverage.copayPct) / 100
+				: curr.price;
 			return acc + (price * curr.quantity - curr.discount);
 		}, 0);
 		setTotal(t);
@@ -419,33 +428,51 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 															if (coverage && !coverage.covered) {
 																return (
 																	<span className="text-rose-500 font-semibold flex items-center gap-1.5 flex-wrap">
-																		<span>{item.price.toLocaleString("ru-RU")} ₽</span>
-																		<span className="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">Вне покрытия ДМС</span>
+																		<span>
+																			{item.price.toLocaleString("ru-RU")} ₽
+																		</span>
+																		<span className="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/25">
+																			Вне покрытия ДМС
+																		</span>
 																	</span>
 																);
 															}
 															if (coverage && coverage.pct < 100) {
-																const copayPrice = (item.price * coverage.copayPct) / 100;
+																const copayPrice =
+																	(item.price * coverage.copayPct) / 100;
 																return (
 																	<span className="flex items-center gap-1.5 flex-wrap">
-																		<span className="line-through text-slate-400 dark:text-zinc-500">{item.price.toLocaleString("ru-RU")} ₽</span>
-																		<span className="text-teal-500 dark:text-teal-400 font-bold">{copayPrice.toLocaleString("ru-RU")} ₽</span>
-																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">Со-оплата {coverage.copayPct}%</span>
+																		<span className="line-through text-slate-400 dark:text-zinc-500">
+																			{item.price.toLocaleString("ru-RU")} ₽
+																		</span>
+																		<span className="text-teal-500 dark:text-teal-400 font-bold">
+																			{copayPrice.toLocaleString("ru-RU")} ₽
+																		</span>
+																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
+																			Со-оплата {coverage.copayPct}%
+																		</span>
 																	</span>
 																);
 															}
 															if (coverage && coverage.pct === 100) {
 																return (
 																	<span className="flex items-center gap-1.5 flex-wrap">
-																		<span className="line-through text-slate-400 dark:text-zinc-500">{item.price.toLocaleString("ru-RU")} ₽</span>
-																		<span className="text-teal-500 dark:text-teal-400 font-bold">0 ₽</span>
-																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">ДМС 100%</span>
+																		<span className="line-through text-slate-400 dark:text-zinc-500">
+																			{item.price.toLocaleString("ru-RU")} ₽
+																		</span>
+																		<span className="text-teal-500 dark:text-teal-400 font-bold">
+																			0 ₽
+																		</span>
+																		<span className="text-[10px] bg-teal-500/10 text-teal-500 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-500/20">
+																			ДМС 100%
+																		</span>
 																	</span>
 																);
 															}
 															return (
 																<span>
-																	{item.price.toLocaleString("ru-RU")} ₽ x {item.quantity}
+																	{item.price.toLocaleString("ru-RU")} ₽ x{" "}
+																	{item.quantity}
 																</span>
 															);
 														})()}
@@ -474,10 +501,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 												<span className="plan-item-total-price">
 													{(() => {
 														const coverage = getCoverageInfo(item);
-														const price = coverage ? (item.price * coverage.copayPct) / 100 : item.price;
-														return (price * item.quantity).toLocaleString("ru-RU");
-													})()}{" "}
-													₽
+														const price = coverage
+															? (item.price * coverage.copayPct) / 100
+															: item.price;
+														return (price * item.quantity).toLocaleString(
+															"ru-RU",
+														);
+													})()} ₽
 												</span>
 											</div>
 										</div>

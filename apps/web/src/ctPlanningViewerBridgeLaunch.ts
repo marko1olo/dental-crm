@@ -35,8 +35,15 @@ export type CtPlanningViewerBridgeLaunchGate = {
 	blocker: string | null;
 };
 
-const metadataLaunchTargets: CtPlanningViewerBridgeApplyTarget[] = ["projection", "window", "slab"];
-const volumeLaunchTargets: CtPlanningViewerBridgeApplyTarget[] = ["volume", ...metadataLaunchTargets];
+const metadataLaunchTargets: CtPlanningViewerBridgeApplyTarget[] = [
+	"projection",
+	"window",
+	"slab",
+];
+const volumeLaunchTargets: CtPlanningViewerBridgeApplyTarget[] = [
+	"volume",
+	...metadataLaunchTargets,
+];
 
 export function buildCtPlanningViewerBridgeLaunchPayload(input: {
 	manifest: CtPlanningViewerBridgeManifest;
@@ -79,7 +86,11 @@ export function buildCtPlanningViewerBridgeLaunchGate(
 			? `не хватает шагов восстановления: ${missingTargets.join(",")}`
 			: null);
 	return {
-		status: blocker ? "blocked" : payload.pixelPolicy === "metadata_only_no_pixels" ? "metadata_ready" : "volume_ready",
+		status: blocker
+			? "blocked"
+			: payload.pixelPolicy === "metadata_only_no_pixels"
+				? "metadata_ready"
+				: "volume_ready",
 		canLaunch: !blocker,
 		requiredTargets,
 		missingTargets,

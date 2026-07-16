@@ -34,7 +34,6 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const appLogicProps = useAppLogicContext();
 	const settingsStoreProps = useSettingsStore();
 
-	
 	const newChairReadyToCreate =
 		(appLogicProps.newChairName || "").trim().length > 0;
 	const adminSecretReady =
@@ -43,7 +42,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const mergedProps: Record<string, any> = {
 		...appLogicProps,
 		...settingsStoreProps,
-		
+
 		newChairReadyToCreate,
 		adminSecretReady,
 	};
@@ -707,8 +706,6 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 				</section>
 
 				<div className="clinic-config-grid">
-					
-
 					<article>
 						<div className="panel-heading">
 							<h3>Кресла и кабинеты</h3>
