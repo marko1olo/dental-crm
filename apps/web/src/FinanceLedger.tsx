@@ -93,7 +93,7 @@ export function FinanceLedger({
 							{payments.length}
 						</span>
 					</div>
-					{payments.some(p => p.taxDeductionCode && p.taxDeductionCode !== "") && (
+					{payments.some(p => p.taxDeductionCode) && (
 						<button
 							className="secondary-button"
 							type="button"

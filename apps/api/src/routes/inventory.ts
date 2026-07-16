@@ -5,7 +5,11 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { inventoryItems, procedureMaterialRules } from "../db/schema.js";
+import {
+	inventoryItems,
+	procedureMaterialRules,
+	serviceCatalogItems,
+} from "../db/schema.js";
 
 export const inventoryRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -242,6 +246,20 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
+			// The service must belong to this org, otherwise another clinic's
+			// material rules (and item names/stock) would leak through the join.
+			const [service] = await db
+				.select({ id: serviceCatalogItems.id })
+				.from(serviceCatalogItems)
+				.where(
+					and(
+						eq(serviceCatalogItems.id, serviceId),
+						eq(serviceCatalogItems.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!service) return reply.status(404).send({ error: "Service not found" });
+
 			const rules = await db
 				.select({
 					id: procedureMaterialRules.id,
@@ -253,8 +271,16 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					stockQuantity: inventoryItems.stockQuantity,
 				})
 				.from(procedureMaterialRules)
-				.innerJoin(inventoryItems, eq(procedureMaterialRules.inventoryItemId, inventoryItems.id))
-				.where(eq(procedureMaterialRules.serviceId, serviceId));
+				.innerJoin(
+					inventoryItems,
+					eq(procedureMaterialRules.inventoryItemId, inventoryItems.id),
+				)
+				.where(
+					and(
+						eq(procedureMaterialRules.serviceId, serviceId),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				);
 
 			return rules;
 		},
@@ -285,6 +311,32 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		if (!serviceId || !inventoryItemId || typeof quantityToDeduct !== "number") {
 			return reply.status(400).send({ error: "Missing required fields" });
 		}
+
+		// Both the service and the inventory item must belong to this org — else a
+		// caller could wire another clinic's item into their own service rule.
+		const [service] = await db
+			.select({ id: serviceCatalogItems.id })
+			.from(serviceCatalogItems)
+			.where(
+				and(
+					eq(serviceCatalogItems.id, serviceId),
+					eq(serviceCatalogItems.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!service) return reply.status(404).send({ error: "Service not found" });
+
+		const [item] = await db
+			.select({ id: inventoryItems.id })
+			.from(inventoryItems)
+			.where(
+				and(
+					eq(inventoryItems.id, inventoryItemId),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!item) return reply.status(404).send({ error: "Item not found" });
 
 		// Check if rule already exists for this service and item
 		const [existing] = await db
@@ -337,7 +389,27 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			return reply.code(403).send({ error: "Forbidden" });
 		}
 
-		await db.delete(procedureMaterialRules).where(eq(procedureMaterialRules.id, ruleId));
+		// Confirm the rule belongs to a service owned by this org before deleting,
+		// otherwise the bare id would allow deleting another clinic's rule (IDOR).
+		const [rule] = await db
+			.select({ id: procedureMaterialRules.id })
+			.from(procedureMaterialRules)
+			.innerJoin(
+				serviceCatalogItems,
+				eq(procedureMaterialRules.serviceId, serviceCatalogItems.id),
+			)
+			.where(
+				and(
+					eq(procedureMaterialRules.id, ruleId),
+					eq(serviceCatalogItems.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (!rule) return reply.status(404).send({ error: "Rule not found" });
+
+		await db
+			.delete(procedureMaterialRules)
+			.where(eq(procedureMaterialRules.id, ruleId));
 		return { success: true };
 	});
 };

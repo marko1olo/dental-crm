@@ -13,11 +13,12 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 
 	const pendingCalls = dashboard.communicationTasks.filter(
 		(task) =>
-			task.state === "pending" ||
-			(task.state === "in_progress" &&
-				(task.kind === "recall" ||
-					task.kind === "appointment_reminder" ||
-					task.kind === "review_request")),
+			task.status === "needs_call" ||
+			task.status === "queued" ||
+			(task.status === "scheduled" &&
+				(task.intent === "recall" ||
+					task.intent === "appointment_confirmation" ||
+					task.intent === "post_visit_instruction")),
 	);
 
 	if (pendingCalls.length === 0) return null;
@@ -89,10 +90,9 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 								)}
 							</div>
 							<div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-								{task.kind === "recall" && "Пригласить на осмотр (Recall)"}
-								{task.kind === "appointment_reminder" && "Подтверждение записи"}
-								{task.kind === "review_request" && "Запрос отзыва (NPS)"}
-								{task.kind === "post_visit_checkup" && "Контроль самочувствия"}
+								{task.intent === "recall" && "Приглашение на осмотр (Recall)"}
+								{task.intent === "appointment_confirmation" && "Подтверждение записи"}
+								{task.intent === "post_visit_instruction" && "Контроль самочувствия"}
 							</div>
 							<div className="flex items-center gap-2 mt-2">
 								<a
