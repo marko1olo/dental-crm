@@ -210,40 +210,49 @@ async function seedDemoDataForPreset(
 				phone: "+79305556677",
 			},
 		];
-		for (const p of patientDefs) {
-			const [patient] = await db
+
+			if (patientDefs.length > 0) {
+				const patients = await db
 				.insert(schema.patients)
-				.values({
-					organizationId,
-					fullName: p.fullName,
-					birthDate: p.birthDate,
-					phone: p.phone,
-					isSynced: false,
-					version: 1,
-				})
+					.values(
+						patientDefs.map((p) => ({
+							organizationId,
+							fullName: p.fullName,
+							birthDate: p.birthDate,
+							phone: p.phone,
+							isSynced: false,
+							version: 1,
+						}))
+					)
 				.returning({ id: schema.patients.id });
-			if (!patient) continue;
-			// Add a visit with caries treatment plan
-			await db.insert(schema.visits).values({
-				organizationId,
-				patientId: patient.id,
-				status: "signed",
-				complaint: "Боль в нижней правой челюсти на холодное",
-				diagnosis: "Средний кариес 46 зуба",
-				treatmentPlan:
-					"Анестезия, препарирование, пломба светового отверждения (композит).",
-				doctorSummary:
-					"Проведено лечение среднего кариеса 46 зуба по протоколу.",
-			});
-			// Add an appointment
-			await db.insert(schema.appointments).values({
-				organizationId,
-				patientId: patient.id,
-				status: "planned",
-				startsAt: new Date(Date.now() + 86400000),
-				endsAt: new Date(Date.now() + 86400000 + 3600000),
-				reason: "Лечение кариеса 47 зуба",
-			});
+
+				if (patients.length > 0) {
+					// Add a visit with caries treatment plan
+					await db.insert(schema.visits).values(
+						patients.map((patient) => ({
+							organizationId,
+							patientId: patient.id,
+							status: "signed" as const,
+							complaint: "Боль в нижней правой челюсти на холодное",
+							diagnosis: "Средний кариес 46 зуба",
+							treatmentPlan:
+								"Анестезия, препарирование, пломба светового отверждения (композит).",
+							doctorSummary:
+								"Проведено лечение среднего кариеса 46 зуба по протоколу.",
+						}))
+					);
+					// Add an appointment
+					await db.insert(schema.appointments).values(
+						patients.map((patient) => ({
+							organizationId,
+							patientId: patient.id,
+							status: "planned" as const,
+							startsAt: new Date(Date.now() + 86400000),
+							endsAt: new Date(Date.now() + 86400000 + 3600000),
+							reason: "Лечение кариеса 47 зуба",
+						}))
+					);
+				}
 		}
 	}
 
@@ -260,54 +269,62 @@ async function seedDemoDataForPreset(
 				phone: "+79509876543",
 			},
 		];
-		for (const p of patientDefs) {
-			const [patient] = await db
+
+			if (patientDefs.length > 0) {
+				const patients = await db
 				.insert(schema.patients)
-				.values({
-					organizationId,
-					fullName: p.fullName,
-					birthDate: p.birthDate,
-					phone: p.phone,
-					isSynced: false,
-					version: 1,
-				})
+					.values(
+						patientDefs.map((p) => ({
+							organizationId,
+							fullName: p.fullName,
+							birthDate: p.birthDate,
+							phone: p.phone,
+							isSynced: false,
+							version: 1,
+						}))
+					)
 				.returning({ id: schema.patients.id });
-			if (!patient) continue;
-			// Add a visit with prosthetic plan
-			const [visit] = await db
-				.insert(schema.visits)
-				.values({
-					organizationId,
-					patientId: patient.id,
-					status: "draft",
-					complaint: "Отсутствует зуб, эстетический дефект",
-					diagnosis: "Частичная вторичная адентия 24 зуба",
-					treatmentPlan:
-						"Снятие слепков. Изготовление коронки из диоксида циркония на имплантате 24.",
-				})
-				.returning({ id: schema.visits.id });
 
-			// Add clinical tasks for lab orders
-			await db.insert(schema.clinicalTasks).values({
-				organizationId,
-				patientId: patient.id,
-				taskType: "dental_lab_order",
-				status: "in_progress",
-				title: "Изготовление циркониевой коронки",
-				description:
-					"Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
-				dueAt: new Date(Date.now() + 86400000 * 5),
-			});
+				if (patients.length > 0) {
+					// Add a visit with prosthetic plan
+					await db.insert(schema.visits).values(
+						patients.map((patient) => ({
+							organizationId,
+							patientId: patient.id,
+							status: "draft" as const,
+							complaint: "Отсутствует зуб, эстетический дефект",
+							diagnosis: "Частичная вторичная адентия 24 зуба",
+							treatmentPlan:
+								"Снятие слепков. Изготовление коронки из диоксида циркония на имплантате 24.",
+						}))
+					);
 
-			// Add an appointment
-			await db.insert(schema.appointments).values({
-				organizationId,
-				patientId: patient.id,
-				status: "planned",
-				startsAt: new Date(Date.now() + 86400000 * 2),
-				endsAt: new Date(Date.now() + 86400000 * 2 + 3600000),
-				reason: "Примерка каркаса",
-			});
+					// Add clinical tasks for lab orders
+					await db.insert(schema.clinicalTasks).values(
+						patients.map((patient) => ({
+							organizationId,
+							patientId: patient.id,
+							taskType: "dental_lab_order" as const,
+							status: "in_progress" as const,
+							title: "Изготовление циркониевой коронки",
+							description:
+								"Цвет A2, транслуцентный край. Отправлено в фрезерный центр.",
+							dueAt: new Date(Date.now() + 86400000 * 5),
+						}))
+					);
+
+					// Add an appointment
+					await db.insert(schema.appointments).values(
+						patients.map((patient) => ({
+							organizationId,
+							patientId: patient.id,
+							status: "planned" as const,
+							startsAt: new Date(Date.now() + 86400000 * 2),
+							endsAt: new Date(Date.now() + 86400000 * 2 + 3600000),
+							reason: "Примерка каркаса",
+						}))
+					);
+				}
 		}
 	}
 }
