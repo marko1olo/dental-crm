@@ -1,4 +1,4 @@
-import { and, eq, ne, or } from "drizzle-orm";
+import { and, eq, ne, or, inArray } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	cashLedger,
@@ -241,13 +241,21 @@ export async function runSyncCycle(): Promise<SyncReport> {
 				cloudRecords: any[],
 				detailsKey: keyof typeof report.details,
 			) => {
+				if (cloudRecords.length === 0) return;
+
+				const ids = cloudRecords.map((r: any) => r.id);
+				const localMatches = await db
+					.select()
+					.from(table)
+					.where(inArray(table.id, ids));
+
+				const localMap = new Map();
+				for (const l of localMatches) {
+					localMap.set(l.id, l);
+				}
+
 				for (const record of cloudRecords) {
-					const localMatch = await db
-						.select()
-						.from(table)
-						.where(eq(table.id, record.id))
-						.limit(1);
-					const local = localMatch[0];
+					const local = localMap.get(record.id);
 					if (!local) {
 						// New record from cloud -> Insert locally
 						await db.insert(table).values({ ...record, isSynced: true });
