@@ -258,7 +258,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					),
 				)
 				.limit(1);
-			if (!service) return reply.status(404).send({ error: "Service not found" });
+			if (!service)
+				return reply.status(404).send({ error: "Service not found" });
 
 			const rules = await db
 				.select({
@@ -308,7 +309,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		}
 
 		const { serviceId, inventoryItemId, quantityToDeduct } = request.body;
-		if (!serviceId || !inventoryItemId || typeof quantityToDeduct !== "number") {
+		if (
+			!serviceId ||
+			!inventoryItemId ||
+			typeof quantityToDeduct !== "number"
+		) {
 			return reply.status(400).send({ error: "Missing required fields" });
 		}
 
@@ -413,4 +418,3 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		return { success: true };
 	});
 };
-

@@ -3345,7 +3345,12 @@ export type VisitNoteField =
 	| "objectiveStatus"
 	| "diagnosis"
 	| "treatmentPlan";
-export type VisitNoteForm = Record<VisitNoteField, string>;
+import type { z } from 'zod';
+import type { visitServiceItemSchema } from '@dental/shared';
+
+export type VisitNoteForm = Record<VisitNoteField, string> & {
+    completedServices: z.infer<typeof visitServiceItemSchema>[];
+};
 
 export const visitNoteFieldDefinitions: Array<{
 	key: VisitNoteField;
@@ -3413,6 +3418,7 @@ export const emptyVisitNoteForm: VisitNoteForm = {
 	objectiveStatus: "",
 	diagnosis: "",
 	treatmentPlan: "",
+	completedServices: [],
 };
 
 export function visitNoteFormFromVisit(
@@ -3443,6 +3449,7 @@ export function visitNoteFormFromDraft(draft: VisitNoteDraft): VisitNoteForm {
 		objectiveStatus: draft.objectiveStatus ?? "",
 		diagnosis: draft.diagnosis ?? "",
 		treatmentPlan: draft.treatmentPlan ?? "",
+		completedServices: draft.completedServices ?? [],
 	};
 }
 
@@ -3456,6 +3463,7 @@ export function visitNoteDraftFromForm(
 		objectiveStatus: form.objectiveStatus,
 		diagnosis: form.diagnosis,
 		treatmentPlan: form.treatmentPlan,
+		completedServices: form.completedServices,
 		warnings,
 	};
 }

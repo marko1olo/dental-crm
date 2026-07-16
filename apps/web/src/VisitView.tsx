@@ -2005,6 +2005,7 @@ export function VisitView() {
 									</div>
 								);
 							})}
+							<CompletedServicesChecklist />
 						</div>
 
 						{draft?.quality ? (

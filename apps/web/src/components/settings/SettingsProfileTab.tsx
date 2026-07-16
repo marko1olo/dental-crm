@@ -401,3 +401,5 @@ export function SettingsProfileTab() {
 		</div>
 	);
 }
+
+}

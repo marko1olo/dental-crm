@@ -16,6 +16,7 @@ export type ToothState =
 export interface ToothData {
 	toothNumber: number;
 	state: ToothState;
+	surfaces?: string[] | undefined;
 }
 
 interface ToothChartProps {
@@ -82,14 +83,16 @@ const ToothSVG = ({
 	scale,
 	isSelected,
 	onClick,
+	surfaces,
 }: {
 	number: number;
 	state: ToothState;
 	scale: number;
 	isSelected?: boolean;
 	onClick: (e: React.MouseEvent, num: number) => void;
+	surfaces?: string[] | undefined;
 }) => {
-	const isTop = number < 30;
+	const isTop = number < 30 || (number >= 51 && number <= 65);
 	const geom = getToothPath(number);
 	const cfg = getToothConfig(number);
 	const colors = getToothColors(state);
@@ -204,6 +207,15 @@ const ToothSVG = ({
 						strokeWidth="0.8"
 					/>
 				)}
+				{surfaces && surfaces.length > 0 && (
+					<g transform={`translate(${cfg.viewX + cfg.viewWidth / 2 - 12}, 25)`} stroke="rgba(255,255,255,0.7)" strokeWidth="0.5">
+						<polygon points="8,8 16,8 16,16 8,16" fill={surfaces.includes("O") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
+						<polygon points="0,0 24,0 16,8 8,8" fill={surfaces.includes("B") || surfaces.includes("V") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
+						<polygon points="8,16 16,16 24,24 0,24" fill={surfaces.includes("L") || surfaces.includes("P") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
+						<polygon points="0,0 8,8 8,16 0,24" fill={surfaces.includes("M") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
+						<polygon points="24,0 24,24 16,16 16,8" fill={surfaces.includes("D") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
+					</g>
+				)}
 			</g>
 		</svg>
 	);
@@ -301,16 +313,20 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					}}
 				>
 					<div className="teeth-row top-row">
-						{topTeeth.map((num) => (
-							<ToothSVG
-								key={num}
-								number={num}
-								scale={1}
-								state={getToothState(num)}
-								isSelected={selectedTeeth.includes(num)}
-								onClick={handleToothClick}
-							/>
-						))}
+						{topTeeth.map((num) => {
+							const tData = teethData.find((t) => t.toothNumber === num);
+							return (
+								<ToothSVG
+									key={num}
+									number={num}
+									scale={1}
+									state={tData ? tData.state : "Healthy"}
+									surfaces={tData?.surfaces}
+									isSelected={selectedTeeth.includes(num)}
+									onClick={handleToothClick}
+								/>
+							);
+						})}
 					</div>
 
 					<div className="teeth-divider">
@@ -319,16 +335,20 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					</div>
 
 					<div className="teeth-row bottom-row">
-						{bottomTeeth.map((num) => (
-							<ToothSVG
-								key={num}
-								number={num}
-								scale={1}
-								state={getToothState(num)}
-								isSelected={selectedTeeth.includes(num)}
-								onClick={handleToothClick}
-							/>
-						))}
+						{bottomTeeth.map((num) => {
+							const tData = teethData.find((t) => t.toothNumber === num);
+							return (
+								<ToothSVG
+									key={num}
+									number={num}
+									scale={1}
+									state={tData ? tData.state : "Healthy"}
+									surfaces={tData?.surfaces}
+									isSelected={selectedTeeth.includes(num)}
+									onClick={handleToothClick}
+								/>
+							);
+						})}
 					</div>
 				</div>
 			</div>

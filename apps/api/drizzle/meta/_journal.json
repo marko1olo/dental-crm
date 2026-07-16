@@ -8,6 +8,13 @@
       "when": 1784227749754,
       "tag": "0000_freezing_randall_flagg",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784235987778,
+      "tag": "0001_lively_gladiator",
+      "breakpoints": true
     }
   ]
 }

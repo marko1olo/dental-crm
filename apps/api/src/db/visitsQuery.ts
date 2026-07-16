@@ -227,6 +227,24 @@ export async function acceptVisitDraftInDb(
 		}
 
 		// --- 3. Статус услуг 'Выполнено' & 4. Списание материалов ---
+		if (input.draft.completedServices && input.draft.completedServices.length > 0) {
+			await tx.delete(schema.treatmentItems).where(eq(schema.treatmentItems.visitId, visit.id));
+			await tx.insert(schema.treatmentItems).values(
+				input.draft.completedServices.map(s => ({
+					organizationId,
+					patientId: visit.patientId,
+					visitId: visit.id,
+					serviceId: s.serviceId,
+					title: s.title,
+					quantity: String(s.quantity),
+					priceRub: s.priceRub,
+					unitPriceRub: s.priceRub,
+					status: "completed" as const,
+					toothCode: s.toothCode || null,
+				}))
+			);
+		}
+
 		const tItems = await tx
 			.select()
 			.from(schema.treatmentItems)

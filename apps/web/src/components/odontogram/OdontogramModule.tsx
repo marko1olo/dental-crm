@@ -16,6 +16,83 @@ import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
 import "./odontogram.css";
 
+const SurfaceSelector = ({
+	selected,
+	onChange,
+}: {
+	selected: string[];
+	onChange: (newSelected: string[]) => void;
+}) => {
+	const toggle = (surface: string) => {
+		if (selected.includes(surface)) {
+			onChange(selected.filter((s) => s !== surface));
+		} else {
+			onChange([...selected, surface]);
+		}
+	};
+
+	return (
+		<div className="flex justify-center mb-4">
+			<svg width="100" height="100" viewBox="0 0 100 100" className="drop-shadow-md cursor-pointer group">
+				{/* Top (B/V) */}
+				<polygon
+					points="0,0 100,0 70,30 30,30"
+					fill={selected.includes("B") ? "#3b82f6" : "#27272a"}
+					stroke="#3f3f46"
+					strokeWidth="2"
+					onClick={() => toggle("B")}
+					className="hover:fill-blue-400 transition-colors duration-200"
+				/>
+				<text x="50" y="18" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">B</text>
+
+				{/* Bottom (L/P) */}
+				<polygon
+					points="30,70 70,70 100,100 0,100"
+					fill={selected.includes("L") ? "#3b82f6" : "#27272a"}
+					stroke="#3f3f46"
+					strokeWidth="2"
+					onClick={() => toggle("L")}
+					className="hover:fill-blue-400 transition-colors duration-200"
+				/>
+				<text x="50" y="90" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">L</text>
+
+				{/* Left (M) */}
+				<polygon
+					points="0,0 30,30 30,70 0,100"
+					fill={selected.includes("M") ? "#3b82f6" : "#27272a"}
+					stroke="#3f3f46"
+					strokeWidth="2"
+					onClick={() => toggle("M")}
+					className="hover:fill-blue-400 transition-colors duration-200"
+				/>
+				<text x="12" y="54" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">M</text>
+
+				{/* Right (D) */}
+				<polygon
+					points="100,0 70,30 70,70 100,100"
+					fill={selected.includes("D") ? "#3b82f6" : "#27272a"}
+					stroke="#3f3f46"
+					strokeWidth="2"
+					onClick={() => toggle("D")}
+					className="hover:fill-blue-400 transition-colors duration-200"
+				/>
+				<text x="88" y="54" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">D</text>
+
+				{/* Center (O) */}
+				<polygon
+					points="30,30 70,30 70,70 30,70"
+					fill={selected.includes("O") ? "#3b82f6" : "#27272a"}
+					stroke="#3f3f46"
+					strokeWidth="2"
+					onClick={() => toggle("O")}
+					className="hover:fill-blue-400 transition-colors duration-200"
+				/>
+				<text x="50" y="54" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">O</text>
+			</svg>
+		</div>
+	);
+};
+
 export const OdontogramModule = ({
 	patientId,
 	pediatricMode,
@@ -39,6 +116,7 @@ export const OdontogramModule = ({
 	);
 	const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
+	const [activeSurfaces, setActiveSurfaces] = useState<string[]>([]);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
 
 	const containerRef = React.useRef<HTMLDivElement>(null);
@@ -126,9 +204,12 @@ export const OdontogramModule = ({
 				const existingIdx = next.findIndex((x) => x.toothNumber === t);
 				if (existingIdx > -1) {
 					const item = next[existingIdx];
-					if (item) item.state = state;
+					if (item) {
+						item.state = state;
+						item.surfaces = activeSurfaces.length > 0 ? [...activeSurfaces] : undefined;
+					}
 				} else {
-					next.push({ toothNumber: t, state });
+					next.push({ toothNumber: t, state, surfaces: activeSurfaces.length > 0 ? [...activeSurfaces] : undefined });
 				}
 			}
 			return next;
@@ -143,8 +224,9 @@ export const OdontogramModule = ({
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 			}),
-			body: JSON.stringify({ toothNumbers, state }),
+			body: JSON.stringify({ toothNumbers, state, surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined }),
 		});
+		setActiveSurfaces([]);
 	};
 
 	const handleToothClick = (toothNumber: number, rect: DOMRect) => {
@@ -162,6 +244,18 @@ export const OdontogramModule = ({
 			if (!selectedTeeth.includes(toothNumber)) {
 				activeSelection = [toothNumber];
 				setSelectedTeeth(activeSelection);
+			}
+
+			// Pre-select surfaces for the tooth if we only selected one
+			if (activeSelection.length === 1) {
+				const existing = teethData.find((t) => t.toothNumber === activeSelection[0]);
+				if (existing && existing.surfaces) {
+					setActiveSurfaces([...existing.surfaces]);
+				} else {
+					setActiveSurfaces([]);
+				}
+			} else {
+				setActiveSurfaces([]);
 			}
 
 			const isUpperJaw =
@@ -312,6 +406,14 @@ export const OdontogramModule = ({
 										? `Выбрано: ${selectedTeeth.length} зубов`
 										: `Зуб ${menuConfig.toothNumber}`}
 								</div>
+								{selectedTeeth.length === 1 && (
+									<div className="col-span-2 mb-2">
+										<SurfaceSelector
+											selected={activeSurfaces}
+											onChange={setActiveSurfaces}
+										/>
+									</div>
+								)}
 								<button
 									onClick={() => updateToothState(selectedTeeth, "Caries")}
 									className="flex items-center justify-center p-3 rounded-xl border transition-all duration-200 font-medium tracking-wide text-xs bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"

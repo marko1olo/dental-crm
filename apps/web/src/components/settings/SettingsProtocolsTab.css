@@ -1,0 +1,137 @@
+.protocol-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+}
+
+.protocol-settings-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: 16px;
+}
+
+.protocol-settings-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	transition: all 0.2s ease;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.protocol-settings-card:hover {
+	border-color: var(--teal);
+	transform: translateY(-2px);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.protocol-settings-head {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.protocol-settings-head span {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--teal);
+}
+
+.protocol-settings-head strong {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+	margin-top: 4px;
+}
+
+.protocol-settings-head p {
+	font-size: 13px;
+	color: var(--muted);
+	margin: 0;
+}
+
+.protocol-token-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.protocol-token-row span {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-size: 11px;
+	padding: 2px 8px;
+	border-radius: 6px;
+}
+
+.protocol-token-row-soft span {
+	background: transparent;
+	border: 1px dashed var(--line);
+	color: var(--muted);
+}
+
+.protocol-settings-card ul {
+	margin: 0;
+	padding: 0 0 0 16px;
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.protocol-settings-card ul li::marker {
+	color: var(--teal);
+}
+
+.settings-form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+}
+
+.dente-label {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.dente-label span {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.dente-input {
+	padding: 10px 14px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--paper);
+	font-size: 14px;
+	color: var(--ink);
+	transition: all 0.2s;
+	width: 100%;
+}
+
+.dente-input:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.dente-alert {
+	padding: 16px;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.dente-alert-danger {
+	background: rgba(239, 68, 68, 0.1);
+	color: #ef4444;
+	border: 1px solid rgba(239, 68, 68, 0.2);
+}

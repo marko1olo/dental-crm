@@ -3,6 +3,7 @@ import { ClipboardCheck, Edit2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import "./SettingsProtocolsTab.css";
 
 export function SettingsProtocolsTab() {
 	const appLogic = useAppLogicContext();

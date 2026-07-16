@@ -268,6 +268,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			// 2. Add missing auto-items
 			currentTeeth.forEach((t) => {
 				const isBaby = t.toothNumber > 50;
+				const surfaceSuffix = t.surfaces && t.surfaces.length > 0 ? ` (Поверхности: ${t.surfaces.join(", ")})` : "";
+
 				if (t.state === "Caries") {
 					const svc = isBaby ? cariesServiceBaby : cariesServiceAdult;
 					if (
@@ -279,7 +281,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							isAuto: true,
 							toothNumber: t.toothNumber,
 							priceId: svc.id,
-							name: svc.title,
+							name: svc.title + surfaceSuffix,
 							quantity: 1,
 							price: svc.priceRub,
 							discount: 0,
@@ -331,7 +333,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							isAuto: true,
 							toothNumber: t.toothNumber,
 							priceId: svc.id,
-							name: svc.title,
+							name: svc.title + surfaceSuffix,
 							quantity: 1,
 							price: svc.priceRub,
 							discount: 0,

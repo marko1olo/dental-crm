@@ -1523,6 +1523,7 @@ export const toothStates = pgTable(
 			.references(() => patients.id, { onDelete: "cascade" }),
 		toothNumber: integer("tooth_number").notNull(),
 		state: toothStateEnum("state").notNull().default("Healthy"),
+		surfaces: text("surfaces").array(),
 		isSynced: boolean("is_synced").notNull().default(false),
 		version: integer("version").notNull().default(1),
 		updatedAt: timestamp("updated_at", { withTimezone: true })

@@ -28,6 +28,7 @@ const toothStateValues = [
 const batchToothStateSchema = z.object({
 	toothNumbers: z.array(z.number().int().min(11).max(99)).min(1).max(64),
 	state: z.enum(toothStateValues),
+	surfaces: z.array(z.string()).optional(),
 });
 
 const treatmentPlanItemSchema = z.object({
@@ -156,6 +157,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			.select({
 				toothNumber: toothStates.toothNumber,
 				state: toothStates.state,
+				surfaces: toothStates.surfaces,
 			})
 			.from(toothStates)
 			.where(eq(toothStates.patientId, patientId));
@@ -181,7 +183,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 			if (!parsed.success) {
 				return reply.code(400).send({
 					error: "ToothStateValidationError",
-					message: "Проверьте номера зубов и статус.",
+					message: "Ошибка валидации. Проверьте отправленные данные.",
 				});
 			}
 
@@ -205,6 +207,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 						patientId,
 						toothNumber,
 						state: parsed.data.state,
+						surfaces: parsed.data.surfaces || null,
 						updatedAt: now,
 						isSynced: false,
 						version: 1,
@@ -213,6 +216,7 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				.returning({
 					toothNumber: toothStates.toothNumber,
 					state: toothStates.state,
+					surfaces: toothStates.surfaces,
 				});
 
 			wsBroker.broadcastToOrganization(organizationId, {

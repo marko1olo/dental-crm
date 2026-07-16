@@ -7267,6 +7267,14 @@ export const visitNoteDraftQualitySchema = z.object({
 });
 export type VisitNoteDraftQuality = z.infer<typeof visitNoteDraftQualitySchema>;
 
+export const visitServiceItemSchema = z.object({
+	serviceId: z.string().uuid(),
+	title: z.string(),
+	quantity: z.number().min(1),
+	priceRub: z.number(),
+	toothCode: z.string().nullable().optional()
+});
+
 export const visitNoteDraftSchema = z.object({
 	complaint: z.string().nullable(),
 	anamnesis: z.string().nullable(),
@@ -7275,6 +7283,7 @@ export const visitNoteDraftSchema = z.object({
 	treatmentPlan: z.string().nullable(),
 	quality: visitNoteDraftQualitySchema.optional(),
 	warnings: z.array(z.string()),
+	completedServices: z.array(visitServiceItemSchema).optional(),
 });
 export type VisitNoteDraft = z.infer<typeof visitNoteDraftSchema>;
 
