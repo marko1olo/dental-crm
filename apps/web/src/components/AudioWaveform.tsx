@@ -3,11 +3,13 @@ import React, { useEffect, useRef } from "react";
 interface AudioWaveformProps {
 	isRecording: boolean;
 	color?: string;
+	mediaStream?: MediaStream | null;
 }
 
 export function AudioWaveform({
 	isRecording,
 	color = "var(--red-500)",
+	mediaStream,
 }: AudioWaveformProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -19,8 +21,32 @@ export function AudioWaveform({
 		if (!ctx) return;
 
 		let animationFrameId: number;
+		let audioCtx: AudioContext | null = null;
+		let analyser: AnalyserNode | null = null;
+		let dataArray: Uint8Array | null = null;
 
-		const draw = () => {
+		const initAudio = async () => {
+			if (!mediaStream) {
+				startFakeAnimation();
+				return;
+			}
+			try {
+				// @ts-ignore
+				const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+				audioCtx = new AudioContextClass();
+				const source = audioCtx.createMediaStreamSource(mediaStream);
+				analyser = audioCtx.createAnalyser();
+				analyser.fftSize = 64;
+				source.connect(analyser);
+				dataArray = new Uint8Array(analyser.frequencyBinCount);
+				drawReal();
+			} catch (e) {
+				console.warn("Real waveform failed, fallback to fake", e);
+				startFakeAnimation();
+			}
+		};
+
+		const drawBars = (heights: number[]) => {
 			const width = canvas.width;
 			const height = canvas.height;
 
@@ -33,36 +59,50 @@ export function AudioWaveform({
 			ctx.fillStyle = color;
 
 			for (let i = 0; i < barCount; i++) {
-				// Random height for fake waveform
-				const targetHeight =
-					(Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295) *
-					height *
-					0.8;
+				const targetHeight = (heights[i % heights.length] || 0.1) * height;
 				const x = i * (barWidth + barSpacing);
 				const y = (height - targetHeight) / 2;
 
 				ctx.beginPath();
-				ctx.roundRect(x, y, barWidth, targetHeight, 2);
+				ctx.roundRect(x, y, barWidth, Math.max(2, targetHeight), 2);
 				ctx.fill();
 			}
-
-			// Slower update for fake waveform to avoid seizure
-			setTimeout(() => {
-				if (isRecording) {
-					animationFrameId = requestAnimationFrame(draw);
-				}
-			}, 100);
 		};
 
-		draw();
+		const drawReal = () => {
+			if (!analyser || !dataArray || !isRecording) return;
+			analyser.getByteFrequencyData(dataArray);
+			// normalize 0-255 to 0.1-0.9
+			const heights = Array.from(dataArray).map((v) => 0.1 + (v / 255) * 0.8);
+			drawBars(heights);
+			animationFrameId = requestAnimationFrame(drawReal);
+		};
+
+		const startFakeAnimation = () => {
+			const drawFake = () => {
+				const heights = Array(15).fill(0).map(() => 0.2 + (Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295) * 0.6);
+				drawBars(heights);
+				setTimeout(() => {
+					if (isRecording) {
+						animationFrameId = requestAnimationFrame(drawFake);
+					}
+				}, 80);
+			};
+			drawFake();
+		};
+
+		initAudio();
 
 		return () => {
 			cancelAnimationFrame(animationFrameId);
+			if (audioCtx?.state !== "closed") {
+				audioCtx?.close().catch(() => {});
+			}
 			const width = canvas?.width || 0;
 			const height = canvas?.height || 0;
 			ctx?.clearRect(0, 0, width, height);
 		};
-	}, [isRecording, color]);
+	}, [isRecording, color, mediaStream]);
 
 	if (!isRecording) return null;
 

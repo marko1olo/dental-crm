@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { SignaturePad } from "../SignaturePad";
 import { type ToothData, ToothState } from "./ToothChart";
+import { showToast } from "../GlobalToast.js";
 
 interface EstimatorProps {
 	patientId: string;
@@ -250,9 +251,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				if (data.plan?.items) setItems(data.plan.items);
 				if (data.plan?.patientSignature !== undefined)
 					setSignatureUrl(data.plan.patientSignature);
+				showToast("План лечения успешно сохранен!", "success");
+			} else {
+				showToast(data.message || "Ошибка сохранения плана лечения", "error");
 			}
 		} catch (e) {
 			console.error(e);
+			showToast("Не удалось сохранить план лечения", "error");
 		} finally {
 			setIsSaving(false);
 		}
@@ -413,6 +418,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 								onSign={(dataUrl) => {
 									setSignatureUrl(dataUrl);
 									setShowSignModal(false);
+									showToast("Подпись добавлена. Нажмите 'Сохранить'.", "info");
 								}}
 								onCancel={() => setShowSignModal(false)}
 							/>

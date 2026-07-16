@@ -216,5 +216,6 @@ export function useShortDictation(
 		isRecording,
 		isProcessing,
 		toggleRecording,
+		mediaStream: streamRef.current,
 	};
 }
