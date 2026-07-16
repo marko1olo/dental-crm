@@ -9,15 +9,15 @@ async function capture() {
   const destDir = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\63103875-698a-4be4-a4a4-73961a003915";
 
   console.log("Navigating to app...");
-  await page.goto('http://127.0.0.1:5173', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:5173', { waitUntil: 'networkidle2' });
 
   // Wait a bit for everything to settle
-  await page.waitForTimeout(2000); await page.waitForSelector('.topbar', { timeout: 30000 }); await page.waitForTimeout(2000);
+  await new Promise(r => setTimeout(r, )); await page.waitForSelector('.topbar', { timeout: 30000 }); await new Promise(r => setTimeout(r, ));
 
   // 1. PC Light
   console.log("Capturing PC Light...");
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.waitForTimeout(1000);
+  await new Promise(r => setTimeout(r, ));
   await page.screenshot({ path: path.join(destDir, 'PC_Light_New.png') });
 
   // Click theme toggle (aria-label="Переключить тему" or the one with Moon/Sun)
@@ -33,7 +33,7 @@ async function capture() {
        btns[btns.length - 2]?.click();
     });
   }
-  await page.waitForTimeout(1000);
+  await new Promise(r => setTimeout(r, ));
 
   // 2. PC Dark
   console.log("Capturing PC Dark...");
@@ -42,7 +42,7 @@ async function capture() {
   // 3. Mobile Dark
   console.log("Capturing Mobile Dark...");
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.waitForTimeout(1000);
+  await new Promise(r => setTimeout(r, ));
   await page.screenshot({ path: path.join(destDir, 'Mobile_Dark_New.png') });
 
   // Toggle theme to Light
@@ -55,7 +55,7 @@ async function capture() {
        btns[btns.length - 2]?.click();
     });
   }
-  await page.waitForTimeout(1000);
+  await new Promise(r => setTimeout(r, ));
 
   // 4. Mobile Light
   console.log("Capturing Mobile Light...");

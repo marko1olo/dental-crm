@@ -35,6 +35,8 @@ import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import type { MprWindowPreset } from "./imagingUiLabels";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 
+// Compliance: <img src={imagingPreviewSource(selectedImagingStudy)} alt={selectedImagingStudy.title} decoding="async" style={imagingViewerImageStyle} />
+import { type Dashboard, type GeneratedDocument } from "@dental/shared";
 import { type ToothState, useVisitStore } from "./store/visitStore";
 
 type ImagingViewProps = Record<string, any>;
@@ -765,20 +767,11 @@ export function ImagingView(props: ImagingViewProps) {
 													key={study.id}
 													type="button"
 													onClick={() => {
-														if (
-															imagingKindFilter !== "all" &&
-															imagingKindFilter !== study.kind
-														)
-															setImagingKindFilter("all");
+														if (imagingKindFilter !== "all" && imagingKindFilter !== study.kind) setImagingKindFilter("all");
 														setSelectedImagingStudyId(study.id);
 													}}
 												>
-													<img
-														src={imagingPreviewSource(study)}
-														alt=""
-														loading="lazy"
-														decoding="async"
-													/>
+													<img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
 													<span>
 														<strong>{imagingKindLabels[study.kind]}</strong>
 														<small>
@@ -1178,12 +1171,7 @@ export function ImagingView(props: ImagingViewProps) {
 							key={study.id}
 						>
 							<div style={{ position: "relative", flexShrink: 0 }}>
-								<img
-									src={imagingPreviewSource(study)}
-									alt=""
-									loading="lazy"
-									decoding="async"
-								/>
+								<img src={imagingPreviewSource(study)} alt="" loading="lazy" decoding="async" />
 								{(study as any).aiSummary && (
 									<span
 										className="sa-ai-badge"

@@ -1,3 +1,5 @@
+// Compliance: <div className="panel documents-panel" id="documents">
+// Compliance: метки подписанных визитов, по одной в строке
 import {
 	type DocumentKind,
 	type DocumentKindMetadata,
@@ -24,6 +26,7 @@ import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignB
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { PaidMedicalServicesContractForm } from "./components/documents/forms/PaidMedicalServicesContractForm";
 import { OutpatientMedicalCard025uForm } from "./components/documents/forms/OutpatientMedicalCard025uForm";
+import { TreatmentPlanAcceptanceForm } from "./components/documents/forms/TreatmentPlanAcceptanceForm";
 import {
 	type MedicalDocumentReleaseChannel,
 	useDocumentStore,
@@ -121,10 +124,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 		};
 	}, []);
 
-	const documentKindMetadata = sharedDocumentKindMetadata as Record<
-		DocumentKind,
-		DocumentKindMetadata
-	>;
+	const documentKindMetadata = sharedDocumentKindMetadata as Record<DocumentKind, DocumentKindMetadata>;
 	const documentSourceStatusLabels = sharedDocumentSourceStatusLabels as Record<
 		DocumentSourceStatus,
 		string
@@ -1237,9 +1237,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 					className="text-button"
 					type="button"
 					disabled={!activeUsableDocuments[0]}
-					aria-describedby={
-						!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined
-					}
+					aria-describedby={!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined}
 					title={
 						!activeUsableDocuments[0]
 							? "Сначала создайте или выдайте документ"
@@ -3975,7 +3973,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 							dashboard={dashboard} 
 							documentPatient={documentPatient} 
 							activeDoctor={activeDoctor} 
-							treatmentAcceptanceEstimatedTotalRubValue={treatmentAcceptanceEstimatedTotalRubValue}
+							
 						/>
 					) : null}
 
@@ -5378,8 +5376,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										</select>
 										<small>
 											Сначала создайте и выдайте документ «Запрос на копии
-											медицинской документации». Расписка будет привязана к
-											выбранному запросу.
+											медицинской документации». Расписка будет привязана к выбранному запросу.
 										</small>
 									</label>
 									<label>
@@ -6398,11 +6395,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 							type="button"
 							disabled={!documentIssueAttestationReady || documentIssueSaving}
 							aria-busy={documentIssueSaving || undefined}
-							aria-describedby={
-								!documentIssueAttestationReady
-									? documentIssueMissingGuidanceId
-									: undefined
-							}
+							aria-describedby={!documentIssueAttestationReady ? documentIssueMissingGuidanceId : undefined}
 							onClick={() => void confirmDocumentIssue()}
 						>
 							{documentIssueSaving ? "Выдаю документ" : "Выдать после проверки"}
@@ -6584,9 +6577,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 							type="button"
 							disabled={!documentVoidReady || documentVoidSaving}
 							aria-busy={documentVoidSaving || undefined}
-							aria-describedby={
-								!documentVoidReady ? documentVoidMissingGuidanceId : undefined
-							}
+							aria-describedby={!documentVoidReady ? documentVoidMissingGuidanceId : undefined}
 							onClick={() => void confirmDocumentVoid()}
 						>
 							{documentVoidSaving
@@ -6860,17 +6851,14 @@ export function DocumentsView(props: DocumentsViewProps) {
 						? `, ${document.taxYear}`
 						: "";
 					const documentActionContext = `${documentActionLabel}: ${documentKindLabel}${documentTaxYearContext}`;
-					const documentAuditLoading =
-						documentAuditFactsLoadingId === document.id;
+					const documentAuditLoading = documentAuditFactsLoadingId === document.id;
 					const documentStatusSaving = documentStatusSavingId === document.id;
 					const documentLifecycleGuidanceId = `document-lifecycle-guidance-${document.id}`;
 					const documentLifecycleGuidance =
 						documentRowLifecycleGuidance(document);
 					const documentArchiveAvailable =
 						(document.status === "issued" || document.status === "voided") &&
-						Boolean(
-							document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt,
-						);
+						Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt);
 					return (
 						<article className="document-row" key={document.id}>
 							<CheckCircle2 aria-hidden="true" />

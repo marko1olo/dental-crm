@@ -1,19 +1,24 @@
 import React from 'react';
 import { useDocumentStore } from "../../../store/documentStore";
+import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 
 export interface TreatmentPlanAcceptanceFormProps {
     dashboard: any;
     documentPatient: any;
     activeDoctor: any;
-    treatmentAcceptanceEstimatedTotalRubValue: () => number | string | undefined;
 }
 
 export function TreatmentPlanAcceptanceForm({
     dashboard,
     documentPatient,
     activeDoctor,
-    treatmentAcceptanceEstimatedTotalRubValue,
 }: TreatmentPlanAcceptanceFormProps) {
+	const {
+		normalizedTreatmentPlanAcceptanceVariant,
+		inferredTreatmentArea,
+		renderClinicalToothRowsEditor,
+		treatmentAcceptancePlannedTotalRub,
+	} = useAppLogicContext();
 	const {
 		treatmentAcceptanceVariant,
 		setTreatmentAcceptanceVariant,
