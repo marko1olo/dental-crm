@@ -136,6 +136,93 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			let newItems = [...prevItems];
 			let changed = false;
 
+			const catalog = dashboard?.serviceCatalog || [];
+
+			// Helper to find service by category and keywords
+			const findService = (
+				category: string,
+				isBaby: boolean,
+				keywords: string[],
+			) => {
+				const candidates = catalog.filter((s) => s.category === category);
+				let best = candidates.find((s) =>
+					keywords.some((k) => s.title.toLowerCase().includes(k)),
+				);
+				if (!best && candidates.length > 0) best = candidates[0]; // fallback to any in category
+				return best;
+			};
+
+			const cariesServiceBaby = findService("therapy", true, [
+				"кариес",
+				"молочн",
+			]) || {
+				id: "service_caries_01",
+				title: "Лечение кариеса (молочный зуб)",
+				priceRub: 4000,
+			};
+			const cariesServiceAdult = findService("therapy", false, [
+				"кариес",
+				"восстановл",
+			]) || {
+				id: "service_caries_01",
+				title: "Лечение кариеса (восстановление)",
+				priceRub: 5500,
+			};
+
+			const pulpitisServiceBaby = findService("therapy", true, [
+				"пульпит",
+				"молочн",
+				"эндо",
+			]) || {
+				id: "service_endo_pulpitis",
+				title: "Эндодонтическое лечение (молочный зуб)",
+				priceRub: 6000,
+			};
+			const pulpitisServiceAdult = findService("therapy", false, [
+				"пульпит",
+				"эндо",
+			]) || {
+				id: "service_endo_pulpitis",
+				title: "Эндодонтическое лечение (Пульпит)",
+				priceRub: 12500,
+			};
+
+			const implantService = findService("surgery", false, [
+				"имплант",
+				"установка",
+			]) || {
+				id: "service_implant_osstem",
+				title: "Установка имплантата",
+				priceRub: 35000,
+			};
+			const guideService = findService("surgery", false, [
+				"шаблон",
+				"хирург",
+			]) || {
+				id: "service_surgery_guide",
+				title: "Хирургический шаблон",
+				priceRub: 12000,
+			};
+
+			const crownBaby = findService("prosthetics", true, [
+				"коронка",
+				"детск",
+				"молочн",
+			]) || {
+				id: "service_crown_zirconia",
+				title: "Коронка детская стандартная",
+				priceRub: 5000,
+			};
+			const crownAdult = findService("prosthetics", false, [
+				"коронка",
+				"циркон",
+				"керамик",
+			]) || {
+				id: "service_crown_zirconia",
+				title: "Коронка из диоксида циркония",
+				priceRub: 28000,
+			};
+
 			// 1. Remove auto-items for teeth that no longer have that state
 			const itemsToRemove: number[] = [];
 			newItems.forEach((item, idx) => {
@@ -147,22 +234,27 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					itemsToRemove.push(idx);
 					return;
 				}
-				if (item.priceId === "service_caries_01" && tooth.state !== "Caries")
+				if (
+					(item.priceId === cariesServiceBaby.id ||
+						item.priceId === cariesServiceAdult.id) &&
+					tooth.state !== "Caries"
+				)
 					itemsToRemove.push(idx);
 				if (
-					(item.priceId === "service_implant_osstem" ||
-						item.priceId === "service_surgery_guide") &&
+					(item.priceId === implantService.id ||
+						item.priceId === guideService.id) &&
 					tooth.state !== "Planned_Implant" &&
 					tooth.state !== "Implant"
 				)
 					itemsToRemove.push(idx);
 				if (
-					item.priceId === "service_endo_pulpitis" &&
+					(item.priceId === pulpitisServiceBaby.id ||
+						item.priceId === pulpitisServiceAdult.id) &&
 					tooth.state !== "Pulpitis"
 				)
 					itemsToRemove.push(idx);
 				if (
-					item.priceId === "service_crown_zirconia" &&
+					(item.priceId === crownBaby.id || item.priceId === crownAdult.id) &&
 					tooth.state !== "Crown"
 				)
 					itemsToRemove.push(idx);
@@ -177,22 +269,19 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			currentTeeth.forEach((t) => {
 				const isBaby = t.toothNumber > 50;
 				if (t.state === "Caries") {
+					const svc = isBaby ? cariesServiceBaby : cariesServiceAdult;
 					if (
 						!newItems.find(
-							(i) =>
-								i.toothNumber === t.toothNumber &&
-								i.priceId === "service_caries_01",
+							(i) => i.toothNumber === t.toothNumber && i.priceId === svc.id,
 						)
 					) {
 						newItems.push({
 							isAuto: true,
 							toothNumber: t.toothNumber,
-							priceId: "service_caries_01",
-							name: isBaby
-								? "Лечение кариеса (молочный зуб)"
-								: "Лечение кариеса (восстановление)",
+							priceId: svc.id,
+							name: svc.title,
 							quantity: 1,
-							price: isBaby ? 4000 : 5500,
+							price: svc.priceRub,
 							discount: 0,
 							phase: 1,
 						});
@@ -205,26 +294,26 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						!newItems.find(
 							(i) =>
 								i.toothNumber === t.toothNumber &&
-								i.priceId === "service_implant_osstem",
+								i.priceId === implantService.id,
 						)
 					) {
 						newItems.push({
 							isAuto: true,
 							toothNumber: t.toothNumber,
-							priceId: "service_implant_osstem",
-							name: "Установка имплантата Osstem TSIII",
+							priceId: implantService.id,
+							name: implantService.title,
 							quantity: 1,
-							price: 35000,
+							price: implantService.priceRub,
 							discount: 0,
 							phase: 2,
 						});
 						newItems.push({
 							isAuto: true,
 							toothNumber: t.toothNumber,
-							priceId: "service_surgery_guide",
-							name: "Хирургический шаблон",
+							priceId: guideService.id,
+							name: guideService.title,
 							quantity: 1,
-							price: 12000,
+							price: guideService.priceRub,
 							discount: 0,
 							phase: 2,
 						});
@@ -232,22 +321,19 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					}
 				}
 				if (t.state === "Pulpitis") {
+					const svc = isBaby ? pulpitisServiceBaby : pulpitisServiceAdult;
 					if (
 						!newItems.find(
-							(i) =>
-								i.toothNumber === t.toothNumber &&
-								i.priceId === "service_endo_pulpitis",
+							(i) => i.toothNumber === t.toothNumber && i.priceId === svc.id,
 						)
 					) {
 						newItems.push({
 							isAuto: true,
 							toothNumber: t.toothNumber,
-							priceId: "service_endo_pulpitis",
-							name: isBaby
-								? "Эндодонтическое лечение (молочный зуб)"
-								: "Эндодонтическое лечение (Пульпит)",
+							priceId: svc.id,
+							name: svc.title,
 							quantity: 1,
-							price: isBaby ? 6000 : 12500,
+							price: svc.priceRub,
 							discount: 0,
 							phase: 1,
 						});
@@ -255,22 +341,19 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					}
 				}
 				if (t.state === "Crown") {
+					const svc = isBaby ? crownBaby : crownAdult;
 					if (
 						!newItems.find(
-							(i) =>
-								i.toothNumber === t.toothNumber &&
-								i.priceId === "service_crown_zirconia",
+							(i) => i.toothNumber === t.toothNumber && i.priceId === svc.id,
 						)
 					) {
 						newItems.push({
 							isAuto: true,
 							toothNumber: t.toothNumber,
-							priceId: "service_crown_zirconia",
-							name: isBaby
-								? "Коронка детская стандартная"
-								: "Коронка из диоксида циркония",
+							priceId: svc.id,
+							name: svc.title,
 							quantity: 1,
-							price: isBaby ? 5000 : 28000,
+							price: svc.priceRub,
 							discount: 0,
 							phase: 3,
 						});
@@ -281,7 +364,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 			return changed ? newItems : prevItems;
 		});
-	}, [currentTeeth]);
+	}, [currentTeeth, dashboard?.serviceCatalog]);
 
 	useEffect(() => {
 		const t = items.reduce((acc, curr) => {

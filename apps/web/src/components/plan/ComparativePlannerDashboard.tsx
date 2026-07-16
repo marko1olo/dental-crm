@@ -64,6 +64,7 @@ interface InsuranceContract {
 
 interface DraftServiceRow {
 	key: string;
+	priceId?: string;
 	name: string;
 	price: string;
 	quantity: string;
@@ -71,6 +72,7 @@ interface DraftServiceRow {
 
 const makeDraftRow = (): DraftServiceRow => ({
 	key: Math.random().toString(36).slice(2),
+	priceId: "",
 	name: "",
 	price: "",
 	quantity: "1",
@@ -120,7 +122,7 @@ function statusCssClass(status: PlanStatus): string {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export const ComparativePlannerDashboard: React.FC = () => {
-	const { auth } = useAppLogicContext();
+	const { auth, dashboard } = useAppLogicContext();
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 
 	const [plans, setPlans] = useState<TreatmentPlan[]>([]);
@@ -301,6 +303,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		);
 
 		const items = validRows.map((r) => ({
+			priceId: r.priceId || null,
 			name: r.name.trim(),
 			price: parseFloat(r.price) || 0,
 			quantity: parseInt(r.quantity, 10) || 1,
@@ -539,15 +542,53 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 							{draftRows.map((row) => (
 								<div key={row.key} className="cpf-row cpf-row-data">
-									<input
-										className="cpf-input cpf-col-name"
-										type="text"
-										placeholder="Название услуги"
-										value={row.name}
-										onChange={(e) =>
-											updateDraftRow(row.key, "name", e.target.value)
-										}
-									/>
+									<div
+										className="cpf-col-name"
+										style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+									>
+										<select
+											className="cpf-input"
+											value={row.priceId || ""}
+											onChange={(e) => {
+												const val = e.target.value;
+												const catItem = dashboard?.serviceCatalog?.find(
+													(s) => s.id === val,
+												);
+												if (catItem) {
+													setDraftRows((prev) =>
+														prev.map((r) =>
+															r.key === row.key
+																? {
+																		...r,
+																		priceId: catItem.id,
+																		name: catItem.title,
+																		price: String(catItem.priceRub),
+																	}
+																: r,
+														),
+													);
+												} else {
+													updateDraftRow(row.key, "priceId", "");
+												}
+											}}
+										>
+											<option value="">-- Выбрать из каталога --</option>
+											{dashboard?.serviceCatalog?.map((sc) => (
+												<option key={sc.id} value={sc.id}>
+													{sc.title} ({sc.priceRub} ₽)
+												</option>
+											))}
+										</select>
+										<input
+											className="cpf-input"
+											type="text"
+											placeholder="Или введите название услуги вручную"
+											value={row.name}
+											onChange={(e) =>
+												updateDraftRow(row.key, "name", e.target.value)
+											}
+										/>
+									</div>
 									<input
 										className="cpf-input cpf-col-price"
 										type="number"

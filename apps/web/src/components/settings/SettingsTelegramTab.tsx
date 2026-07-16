@@ -1000,20 +1000,20 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 							</small>
 						</div>
 					</div>
-					<div className="telegram-feature-grid premium-feature-grid" aria-label="Функции Telegram">
+					<div className="premium-feature-grid premium-feature-grid" aria-label="Функции Telegram">
 						{typedTelegramFeatureOptions.map((feature) => (
 							<label
-								className={`telegram-feature-card ${
+								className={`premium-feature-card ${
 									typedTelegramEnabledFeaturesDraft.includes(feature)
 										? "active"
 										: ""
 								}`}
 								key={feature}
 							>
-                                <div className="telegram-feature-icon">
+                                <div className="premium-feature-icon">
                                     <Bot size={24} />
                                 </div>
-                                <div className="telegram-feature-content">
+                                <div className="premium-feature-content">
 									<h4>{telegramFeatureLabel(feature)}</h4>
 									<p>{typedTelegramFeatureHelp[feature]}</p>
                                 </div>

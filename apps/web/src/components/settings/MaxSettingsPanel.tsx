@@ -152,12 +152,15 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 
 				<div className="form-group form-group-toggle">
 					<label htmlFor="max-active">Активен</label>
-					<input
-						id="max-active"
-						type="checkbox"
-						checked={isActiveDraft}
-						onChange={(e) => setIsActiveDraft(e.target.checked)}
-					/>
+					<div className="premium-switch">
+						<input
+							id="max-active"
+							type="checkbox"
+							checked={isActiveDraft}
+							onChange={(e) => setIsActiveDraft(e.target.checked)}
+						/>
+						<span className="slider"></span>
+					</div>
 				</div>
 
 				<div className="messenger-routing-section">

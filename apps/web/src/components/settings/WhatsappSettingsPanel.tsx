@@ -1,4 +1,4 @@
-import {
+import { MessageCircle,
 	Check,
 	Copy,
 	ExternalLink,
@@ -183,50 +183,50 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 
 				<div className="form-group form-group-toggle">
 					<label htmlFor="wa-active">Активен</label>
-					<input
-						id="wa-active"
-						type="checkbox"
-						checked={isActiveDraft}
-						onChange={(e) => setIsActiveDraft(e.target.checked)}
-					/>
+					<div className="premium-switch">
+						<input
+							id="wa-active"
+							type="checkbox"
+							checked={isActiveDraft}
+							onChange={(e) => setIsActiveDraft(e.target.checked)}
+						/>
+						<span className="slider"></span>
+					</div>
 				</div>
 
-				<fieldset className="messenger-features">
-					<legend>Функции бота</legend>
-					<p className="messenger-features-hint">
-						Выберите сценарии для автоматической отправки сообщений в WhatsApp.
-					</p>
+				<div className="premium-feature-grid" aria-label="Функции WhatsApp">
 					{Object.entries(WHATSAPP_FEATURE_LABELS).map(([key, label]) => {
 						const enabled = enabledFeaturesDraft.includes(key);
 						return (
 							<label
 								key={key}
-								className="feature-toggle"
-								style={{
-									cursor: "pointer",
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									margin: "8px 0",
-								}}
+								className={`premium-feature-card ${enabled ? "active" : ""}`}
 							>
-								<input
-									type="checkbox"
-									checked={enabled}
-									onChange={() => {
-										setEnabledFeaturesDraft((current) =>
-											current.includes(key)
-												? current.filter((f) => f !== key)
-												: [...current, key],
-										);
-									}}
-									style={{ cursor: "pointer" }}
-								/>
-								{label}
+								<div className="premium-feature-icon">
+									<MessageCircle size={24} />
+								</div>
+								<div className="premium-feature-content">
+									<h4>{label}</h4>
+									<p>Автоматическая отправка</p>
+								</div>
+								<div className="premium-switch">
+									<input
+										type="checkbox"
+										checked={enabled}
+										onChange={() => {
+											setEnabledFeaturesDraft((current) =>
+												current.includes(key)
+													? current.filter((f) => f !== key)
+													: [...current, key],
+											);
+										}}
+									/>
+									<span className="slider"></span>
+								</div>
 							</label>
 						);
 					})}
-				</fieldset>
+				</div>
 
 				<div className="messenger-routing-section">
 					<h4>Роутинг входящих сообщений</h4>
