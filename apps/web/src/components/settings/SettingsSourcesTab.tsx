@@ -164,7 +164,7 @@ export function SettingsSourcesTab() {
 		setDicomWebCheck,
 		setDicomWebEndpointUrl,
 		dicomWebEndpointUrl,
-		dicomWebCheck,
+
 		humanizeIntegrationInput,
 		integrationCapabilityLabels,
 		integrationStatusLabels,
@@ -186,7 +186,8 @@ export function SettingsSourcesTab() {
 		dicomWorkbenchLocalSavedAt,
 		dicomViewerLaunchModeLabels,
 		dicomWebStatusLabels,
-		dicomWebCheck
+		dicomWebCheck,
+
 	} = props;
 
 	const typedImagingConnectorCards = imagingConnectorCards as Array<{ title: string; detail: string; source: string; }>;

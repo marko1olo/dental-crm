@@ -3,9 +3,9 @@ import type {
 	DentalRestorationType,
 	PricelistSourceKind,
 } from "@dental/shared";
-import { Bot, ImageIcon, ReceiptText, Sparkles, UploadCloud } from "lucide-react";
+import { Database, Bot, ImageIcon, ReceiptText, Sparkles, UploadCloud } from "lucide-react";
 import type { ChangeEvent } from "react";
-import React from "react";
+import React, { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { PriceDictationBar } from "../../PriceDictationBar";
 
@@ -43,6 +43,9 @@ export function SettingsPricesTab() {
 		pricelistWarningsText,
 	} = props;
 
+	const [isImporting, setIsImporting] = useState(false);
+	const [importResult, setImportResult] = useState<{ count?: number, error?: string } | null>(null);
+
 	const typedPricelistRecognitionServiceGroups =
 		pricelistRecognitionServiceGroups as Array<{
 			title: string;
@@ -54,6 +57,41 @@ export function SettingsPricesTab() {
 			items: string[];
 		}>;
 	const typedPricelistAnalysis = pricelistAnalysis as any;
+
+	const handleImportCatalog = async () => {
+		if (!typedPricelistAnalysis?.items) return;
+		setIsImporting(true);
+		setImportResult(null);
+		
+		const validItems = typedPricelistAnalysis.items.filter((item: any) => item.priceRub !== null);
+		if (validItems.length === 0) {
+			setImportResult({ error: "Нет позиций с ценой для импорта" });
+			setIsImporting(false);
+			return;
+		}
+
+		try {
+			const token = localStorage.getItem("dente_admin_secret") || localStorage.getItem("dente_clinic_token") || "";
+			const res = await fetch("/api/settings/catalog-import", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-dente-admin-secret": token,
+				},
+				body: JSON.stringify(validItems),
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || "Ошибка импорта");
+			setImportResult({ count: data.count });
+			setTimeout(() => {
+				window.location.reload();
+			}, 2000);
+		} catch (err: any) {
+			setImportResult({ error: err.message });
+		} finally {
+			setIsImporting(false);
+		}
+	};
 
 	return (
 					<section
@@ -317,6 +355,27 @@ export function SettingsPricesTab() {
 										))}
 									</div>
 								) : null}
+								<div className="pricelist-import-actions" style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 16 }}>
+									<button
+										className="primary-button"
+										type="button"
+										disabled={isImporting || typedPricelistAnalysis.items.filter((item: any) => item.priceRub !== null).length === 0}
+										onClick={handleImportCatalog}
+									>
+										<Database aria-hidden="true" size={16} style={{ marginRight: 8 }} />
+										{isImporting ? "Сохранение..." : "Сохранить в каталог клиники"}
+									</button>
+									{importResult?.count !== undefined && (
+										<span style={{ color: "var(--success-color)", fontWeight: 500 }}>
+											Успешно импортировано: {importResult.count} позиций. Обновление страницы...
+										</span>
+									)}
+									{importResult?.error && (
+										<span style={{ color: "var(--danger-color)", fontWeight: 500 }}>
+											Ошибка: {importResult.error}
+										</span>
+									)}
+								</div>
 							</div>
 						) : null}
 					</section>

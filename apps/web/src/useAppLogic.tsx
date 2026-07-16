@@ -9844,10 +9844,7 @@ export function useAppLogic(): any {
 			);
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(
-						response,
-						"План открытия снимков не создан",
-					),
+					await responseErrorMessage(response, "План открытия снимков не создан"),
 				);
 			}
 			setDicomViewerWorkbenchManifest(null);
@@ -9858,10 +9855,7 @@ export function useAppLogic(): any {
 		} catch (manifestError) {
 			if (isLocalDicomOperationAbortError(manifestError)) return;
 			setError(
-				operatorWorkflowFailureMessage(
-					"План открытия снимков не создан",
-					manifestError,
-				),
+				operatorWorkflowFailureMessage("План открытия снимков не создан", manifestError),
 			);
 		} finally {
 			finishLocalDicomOperation(controller);
@@ -9896,10 +9890,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Состояние просмотра снимков не собрано",
-					),
+					await responseErrorMessage(response, "Состояние просмотра снимков не собрано"),
 				);
 			}
 			setDicomViewerWorkbenchManifest(null);
@@ -9910,10 +9901,7 @@ export function useAppLogic(): any {
 		} catch (toolStateError) {
 			if (isLocalDicomOperationAbortError(toolStateError)) return;
 			setError(
-				operatorWorkflowFailureMessage(
-					"Состояние просмотра снимков не собрано",
-					toolStateError,
-				),
+				operatorWorkflowFailureMessage("Состояние просмотра снимков не собрано", toolStateError),
 			);
 		} finally {
 			finishLocalDicomOperation(controller);
