@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { emptyVisitNoteForm } from "../AppHelpers";
 import { useVisitStore } from "../store/visitStore";
+import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { showToast } from "./GlobalToast";
 
 // ─── ICD-10 Стоматологический справочник ────────────────────────────────────
@@ -154,6 +155,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	visitId,
 	patientId,
 }) => {
+	const { activeDoctor } = useAppLogicContext();
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [selectedTemplate, setSelectedTemplate] = useState("");
 	const [diary, setDiary] = useState<DiaryState>(EMPTY_DIARY);
@@ -356,10 +358,35 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	};
 
 	const confirmLock = async () => {
-		if (pinCode !== "1234") {
-			showToast("Неверный ПИН-код врача!", "error");
+		if (!activeDoctor) {
+			showToast("Сначала выберите врача для приема!", "error");
 			return;
 		}
+
+		try {
+			const clinicToken = localStorage.getItem("dente_clinic_token");
+			const response = await fetch("/api/auth/staff/unlock", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-dente-clinic-token": clinicToken || "",
+				},
+				body: JSON.stringify({
+					userId: activeDoctor.id,
+					pinCode: pinCode,
+				}),
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				showToast(data.message || "Неверный ПИН-код врача!", "error");
+				return;
+			}
+		} catch (e: any) {
+			showToast("Ошибка сети при проверке ПИН-кода", "error");
+			return;
+		}
+
 		setShowPinDialog(false);
 		setPinCode("");
 		await doSave(true);
@@ -1035,7 +1062,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									type="password"
 									value={pinCode}
 									onChange={(e) => setPinCode(e.target.value)}
-									placeholder="ПИН-код (1234)"
+									placeholder="Введите ПИН-код врача"
 									className="modal-input"
 									autoFocus
 									onKeyDown={(e) => {

@@ -18,6 +18,7 @@ import { parseDictationLocally } from "../ai/localDictationParser.js";
 import { personalizePostVisitRecommendations } from "../ai/postVisitPersonalize.js";
 import { personalizeTreatmentPlan } from "../ai/treatmentPlanPersonalize.js";
 import { buildVisitDraftFromTranscript } from "../ai/visitDraft.js";
+import { generateMarketingReviewReply } from "../ai/marketingReviewReply.js";
 import {
 	createAiRecognitionJobInDb,
 	listAiRecognitionJobsFromDb,
@@ -275,5 +276,27 @@ export async function registerAiRoutes(app: FastifyInstance) {
 				message: err.message || "Ншибка парсинга диктовки",
 			});
 		}
+	});
+
+	app.post("/api/ai/marketing-reply", async (request, reply) => {
+		if (
+			!(await requireClinicalReadAccess(request, reply, "marketing review ai"))
+		)
+			return;
+		const schema = z.object({
+			reviewText: z.string(),
+			tone: z.string(),
+			clinicName: z.string(),
+			seoKeys: z.array(z.string()),
+		});
+		const parsedInput = schema.safeParse(request.body);
+		if (!parsedInput.success) {
+			return reply.code(400).send({
+				error: "MarketingReviewValidationError",
+				message: "Некорректные параметры для ИИ-ответа на отзыв.",
+			});
+		}
+		const result = await generateMarketingReviewReply(parsedInput.data);
+		return reply.send(result);
 	});
 }

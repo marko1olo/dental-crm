@@ -18,6 +18,7 @@ import {
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type MarketingStats = {
 	yandex: { rating: number; reviews: number };
@@ -40,6 +41,7 @@ export function MarketingView({
 	clinicName: string;
 	clinicPhone: string;
 }) {
+	const { auth } = useAppLogicContext();
 	const [customSeoKeys, setCustomSeoKeys] = useState(() => {
 		try {
 			const saved = localStorage.getItem("dental_crm_mkt_seo_keys");
@@ -113,29 +115,38 @@ export function MarketingView({
 	const [isAiLoading, setIsAiLoading] = useState(false);
 	const [aiError, setAiError] = useState<string | null>(null);
 
-	const handleGenerate = () => {
+	const handleGenerate = async () => {
 		if (!reviewText.trim()) return;
 		setIsAiLoading(true);
 		setAiError(null);
 		setGeneratedReply("");
 
-		const orchestratorResult = AiOrchestrator.processMarketingReview(
-			reviewText,
-			tone,
-			clinicName,
-			customSeoKeys,
-		);
+		try {
+			const res = await fetch("/api/ai/marketing-reply", {
+				method: "POST",
+				headers: auth.denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					reviewText,
+					tone,
+					clinicName,
+					seoKeys: customSeoKeys,
+				}),
+			});
 
-		setTimeout(() => {
-			if (orchestratorResult.source === "llm_required") {
-				const fallbackText =
-					"Здравствуйте! Благодарим вас за обратную связь. Мы рады, что вы выбрали нашу клинику для " +
-					customSeoKeys[0] + ". Ваше доверие — это наша главная награда. \n\n" +
-					"Будем рады видеть вас снова! С уважением, команда " + clinicName + ".";
-				setGeneratedReply(fallbackText);
+			if (!res.ok) {
+				throw new Error("Не удалось сгенерировать ответ ИИ");
 			}
+
+			const data = await res.json();
+			setGeneratedReply(data.reply);
+		} catch (error: any) {
+			console.error("[Marketing AI error]", error);
+			setAiError(error.message || "Ошибка соединения");
+		} finally {
 			setIsAiLoading(false);
-		}, 1200); // slightly longer to show off the skeleton loading
+		}
 	};
 
 	const handleCopy = () => {

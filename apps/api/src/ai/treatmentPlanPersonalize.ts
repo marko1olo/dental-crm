@@ -13,9 +13,9 @@ import {
 	shouldTryNextProviderKey,
 } from "../speech/keyPool.js";
 
-type SpeechPolishProvider = "none" | "openai" | "groq" | "gemini" | "custom";
+export type SpeechPolishProvider = "none" | "openai" | "groq" | "gemini" | "custom";
 
-type AIPlanNeuralConfig = {
+export type AIPlanNeuralConfig = {
 	neuralEnabled: boolean;
 	provider: SpeechPolishProvider;
 	baseUrl: string | null;
@@ -80,7 +80,7 @@ function selectedPolishProvider(): SpeechPolishProvider {
 	return "none";
 }
 
-function baseUrlForProvider(provider: SpeechPolishProvider): string | null {
+export function baseUrlForProvider(provider: SpeechPolishProvider): string | null {
 	const explicitBaseUrl =
 		process.env.DENTAL_SPEECH_POLISH_BASE_URL?.trim().replace(/\/+$/, "");
 	if (explicitBaseUrl) return explicitBaseUrl;
@@ -95,7 +95,7 @@ function apiKeyForProvider(_provider: SpeechPolishProvider): string | null {
 	return process.env.DENTAL_SPEECH_POLISH_API_KEY?.trim() || null;
 }
 
-function keyProviderForPolishProvider(
+export function keyProviderForPolishProvider(
 	provider: SpeechPolishProvider,
 ): "openai_transcribe" | "groq_whisper" | "google_speech" | null {
 	if (provider === "openai") return "openai_transcribe";
@@ -128,7 +128,7 @@ function modelForProvider(provider: SpeechPolishProvider): string | null {
 	return null;
 }
 
-function createAIPlanNeuralConfig(): AIPlanNeuralConfig {
+export function createAIPlanNeuralConfig(): AIPlanNeuralConfig {
 	const requested = booleanFromEnv(
 		process.env.DENTAL_AI_NEURAL_DRAFT ??
 			process.env.DENTAL_SPEECH_NEURAL_POLISH ??
