@@ -117,15 +117,15 @@ const ToothSVG = ({
 			<g>
 				<path
 					d={geom.root}
-					fill="#27272a"
-					stroke="#d97706"
+					fill="var(--tooth-root-fill, #e2e8f0)"
+					stroke={colors.stroke}
 					strokeWidth="2"
 					strokeLinejoin="round"
 				/>
 				<path
 					d={geom.crown}
-					fill="#ffffff"
-					stroke="#d97706"
+					fill={colors.fill}
+					stroke={colors.stroke}
 					strokeWidth="2.2"
 					strokeLinejoin="round"
 				/>
@@ -134,7 +134,7 @@ const ToothSVG = ({
 					y1="60"
 					x2="75"
 					y2="60"
-					stroke="#d97706"
+					stroke={colors.stroke}
 					strokeWidth="2"
 				/>
 				<line
@@ -142,7 +142,7 @@ const ToothSVG = ({
 					y1="80"
 					x2="70"
 					y2="80"
-					stroke="#d97706"
+					stroke={colors.stroke}
 					strokeWidth="2"
 				/>
 				<line
@@ -150,7 +150,7 @@ const ToothSVG = ({
 					y1="100"
 					x2="65"
 					y2="100"
-					stroke="#d97706"
+					stroke={colors.stroke}
 					strokeWidth="2"
 				/>
 			</g>
