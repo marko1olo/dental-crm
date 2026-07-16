@@ -70,10 +70,21 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({ organizati
     if (!formData.name) return;
     try {
       if (editingItem) {
-        // Backend currently only has PATCH for stock. We'll simulate editing or skip it if backend lacks it, 
-        // wait, let's just show a toast if edit is not supported, or check if we can add it.
-        // For MVP, we might only be able to add. If we lack edit API, we'll tell the user.
-        showToast("Редактирование пока недоступно в API", "error");
+        const res = await fetch(`/api/inventory/${organizationId}/${editingItem.id}`, {
+          method: "PUT",
+          headers: auth.denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            name: formData.name,
+            criticalThreshold: parseInt(formData.threshold) || 5,
+          })
+        });
+        if (res.ok) {
+          showToast("Материал изменен", "success");
+          setShowModal(false);
+          fetchItems();
+        } else {
+          showToast("Ошибка изменения", "error");
+        }
       } else {
         const res = await fetch(`/api/inventory/${organizationId}`, {
           method: "POST",
@@ -91,6 +102,25 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({ organizati
         } else {
           showToast("Ошибка добавления", "error");
         }
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Системная ошибка", "error");
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (!window.confirm("Вы уверены, что хотите удалить этот материал со склада?")) return;
+    try {
+      const res = await fetch(`/api/inventory/${organizationId}/${itemId}`, {
+        method: "DELETE",
+        headers: auth.denteClinicalReadHeaders()
+      });
+      if (res.ok) {
+        showToast("Материал удален со склада", "success");
+        fetchItems();
+      } else {
+        showToast("Ошибка удаления", "error");
       }
     } catch (e) {
       console.error(e);
@@ -237,6 +267,28 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({ organizati
                   </td>
                   <td style={{ padding: "16px 20px", textAlign: "right" }}>
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                      <button 
+                        onClick={() => openEditModal(item)}
+                        style={{
+                          background: "rgba(245, 158, 11, 0.1)", color: "#d97706", border: "none",
+                          width: 32, height: 32, borderRadius: 6, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center"
+                        }}
+                        title="Редактировать материал"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteItem(item.id)}
+                        style={{
+                          background: "rgba(239, 68, 68, 0.1)", color: "var(--tomato)", border: "none",
+                          width: 32, height: 32, borderRadius: 6, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center"
+                        }}
+                        title="Удалить со склада"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                       <button 
                         onClick={() => { setAdjustingItem(item); setAdjustType("in"); setAdjustAmount(""); }}
                         style={{

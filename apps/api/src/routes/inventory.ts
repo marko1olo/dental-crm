@@ -65,4 +65,45 @@ export const inventoryRoutes: FastifyPluginAsync = async (server: FastifyInstanc
     if (!result) return reply.status(500).send({ error: "Failed to update item" });
     return result;
   });
+
+  // PUT update inventory item properties
+  server.put<{
+    Params: { organizationId: string; itemId: string };
+    Body: { name: string; criticalThreshold?: number; unitCostRub?: number }
+  }>("/:organizationId/:itemId", async (request, reply) => {
+    const { organizationId, itemId } = request.params;
+    const { name, criticalThreshold = 5, unitCostRub = 0 } = request.body;
+
+    if (!name) return reply.status(400).send({ error: "Name is required" });
+
+    const currentItem = await db.select().from(inventoryItems).where(eq(inventoryItems.id, itemId)).limit(1);
+    if (!currentItem.length) return reply.status(404).send({ error: "Item not found" });
+
+    const updated = await db.update(inventoryItems)
+      .set({
+        name,
+        criticalThreshold,
+        unitCostRub: unitCostRub.toString(),
+        updatedAt: new Date()
+      })
+      .where(eq(inventoryItems.id, itemId))
+      .returning();
+
+    const result = updated[0];
+    if (!result) return reply.status(500).send({ error: "Failed to update item" });
+    return result;
+  });
+
+  // DELETE inventory item
+  server.delete<{
+    Params: { organizationId: string; itemId: string };
+  }>("/:organizationId/:itemId", async (request, reply) => {
+    const { organizationId, itemId } = request.params;
+
+    const currentItem = await db.select().from(inventoryItems).where(eq(inventoryItems.id, itemId)).limit(1);
+    if (!currentItem.length) return reply.status(404).send({ error: "Item not found" });
+
+    await db.delete(inventoryItems).where(eq(inventoryItems.id, itemId));
+    return { success: true };
+  });
 };
