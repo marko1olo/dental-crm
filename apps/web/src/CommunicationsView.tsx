@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import type {
 	CommunicationTaskOutcome,
 	Dashboard,
@@ -324,7 +325,12 @@ export function CommunicationsView({
 	const communicationNoteDescriptionId = "communication-closing-note-guidance";
 
 	return (
-		<div className="panel communications-panel" id="communications">
+		<motion.div 
+			className="panel communications-panel glass-panel" 
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		 id="communications">
 			<div className="panel-heading">
 				<h2>Связь с пациентами</h2>
 				<button className="text-button" type="button" onClick={onGoToSchedule}>
@@ -584,6 +590,6 @@ export function CommunicationsView({
 					</section>
 				</aside>
 			</div>
-		</div>
+		</motion.div>
 	);
 }

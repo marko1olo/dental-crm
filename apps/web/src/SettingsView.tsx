@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -2401,8 +2402,12 @@ export function SettingsView(props: SettingsViewProps) {
 	};
 
 	return (
-		<section
-			className="settings-zone"
+		<motion.section 
+			className="settings-zone glass-panel" 
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		
 			id="settings"
 			aria-label="Настройки и перенос данных"
 		>
@@ -5223,7 +5228,7 @@ export function SettingsView(props: SettingsViewProps) {
 				<SettingsImportsTab />
 				<SettingsAuditTab />
 			</div>
-		</section>
+		</motion.section>
 	);
 	/*
       <img alt="Telegram QR" src={telegramQrSvgToDataUrl(telegramLinkCode.qrSvg)} loading="lazy" decoding="async" />

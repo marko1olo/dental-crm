@@ -25,6 +25,7 @@ const IMAGING_QUICK_CHIPS = [
 ];
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { showToast } from "./components/GlobalToast";
@@ -360,10 +361,13 @@ export function ImagingView(props: ImagingViewProps) {
 	};
 
 	return (
-		<section
-			className="imaging-panel"
+		<motion.section
+			className="imaging-panel glass-panel"
 			id="imaging"
 			aria-label="Снимки пациента"
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
 		>
 			<div className="imaging-copy">
 				<div>
@@ -1863,6 +1867,6 @@ export function ImagingView(props: ImagingViewProps) {
 					</div>
 				</section>
 			) : null}
-		</section>
+		</motion.section>
 	);
 }

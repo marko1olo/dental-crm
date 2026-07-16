@@ -6,6 +6,7 @@ import type {
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
@@ -210,7 +211,13 @@ export function PatientsView(props: PatientsViewProps) {
 					: null;
 
 	return (
-		<div className="patients-panel" id="patients">
+		<motion.div 
+			className="patients-panel glass-panel" 
+			id="patients"
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		>
 			<header className="patients-header">
 				<div className="patients-search-box">
 					<Search aria-hidden="true" />
@@ -1086,6 +1093,6 @@ export function PatientsView(props: PatientsViewProps) {
 					</section>
 				</main>
 			</div>
-		</div>
+		</motion.div>
 	);
 }

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import "./ScannerView.css";
@@ -69,7 +70,13 @@ export function ScannerView() {
 	};
 
 	return (
-		<div className="scanner-view-container" style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}>
+		<motion.div 
+			className="scanner-view-container glass-panel" 
+			style={{ padding: "24px", maxWidth: "800px", margin: "0 auto", marginTop: "24px" }}
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		>
 			<div className="scanner-header" style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
 				<ScanLine size={32} color="var(--teal)" />
 				<h1 className="scanner-title" style={{ fontSize: "1.75rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
@@ -153,6 +160,6 @@ export function ScannerView() {
 					</div>
 				)}
 			</div>
-		</div>
+		</motion.div>
 	);
 }

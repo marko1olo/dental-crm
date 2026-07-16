@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import {
 	type DocumentKind,
 	type DocumentKindMetadata,
@@ -1221,7 +1222,12 @@ export function DocumentsView(props: DocumentsViewProps) {
 	}
 
 	return (
-		<div className="panel documents-panel" id="documents">
+		<motion.div 
+			className="panel documents-panel glass-panel" 
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		 id="documents">
 			<div className="panel-heading">
 				<h2>Документы к закрытию</h2>
 				<button
@@ -8189,6 +8195,6 @@ export function DocumentsView(props: DocumentsViewProps) {
 					);
 				})}
 			</div>
-		</div>
+		</motion.div>
 	);
 }

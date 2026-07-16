@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import type {
 	Appointment,
 	AppointmentReadiness,
@@ -312,7 +313,12 @@ export function ScheduleView(props: ScheduleViewProps) {
 	];
 
 	return (
-		<div className="panel schedule-panel" id="schedule">
+		<motion.div 
+			className="panel schedule-panel glass-panel" 
+			initial={{ opacity: 0, y: 15 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4 }}
+		 id="schedule">
 			<div className="panel-heading">
 				<h2>Расписание приемов</h2>
 				<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -768,7 +774,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 					</article>
 				) : null}
 			</div>
-		</div>
+		</motion.div>
 	);
 }
 

@@ -390,15 +390,16 @@ export function VisitView(props: VisitViewProps) {
 	}
 
 	return (
-		<motion.div 
-			className="panel visit-panel glass-panel" 
-			id="visit"
-			initial={{ opacity: 0, y: 15 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.4 }}
-		>
-			<div className="panel-heading">
-				<h2>Текущий прием</h2>
+		<>
+			<motion.div 
+				className="panel visit-panel glass-panel" 
+				id="visit"
+				initial={{ opacity: 0, y: 15 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.4 }}
+			>
+				<div className="panel-heading">
+					<h2>Текущий прием</h2>
 					<span className="status-pill status-in_treatment">Черновик</span>
 				</div>
 
@@ -2244,7 +2245,7 @@ export function VisitView(props: VisitViewProps) {
 							))}
 					</div>
 				) : null}
-			</div>
+			</motion.div>
 
 			{/* ═══════════════════════════════════════════════════════════════
               Clinical Context Modal — открывается по клику на зуб (без штампа)
