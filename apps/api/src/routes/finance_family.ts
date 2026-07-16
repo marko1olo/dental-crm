@@ -76,17 +76,32 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const { search } = req.query as { search?: string };
-		const whereClause = search
-			? and(
-					eq(familyGroups.organizationId, organizationId),
-					ilike(familyGroups.name, `%${search}%`)
-			  )
-			: eq(familyGroups.organizationId, organizationId);
-
-		const families = await db
-			.select()
+				const families = await db
+			.select({
+				id: familyGroups.id,
+				name: familyGroups.name,
+				balance: familyGroups.balance,
+				headPatientId: familyGroups.headPatientId,
+				organizationId: familyGroups.organizationId,
+				createdAt: familyGroups.createdAt,
+				updatedAt: familyGroups.updatedAt,
+				headPatientName: patients.fullName,
+				headPatientPhone: patients.phone
+			})
 			.from(familyGroups)
-			.where(whereClause)
+			.leftJoin(patients, eq(familyGroups.headPatientId, patients.id))
+			.where(
+				search
+					? and(
+							eq(familyGroups.organizationId, organizationId),
+							or(
+								ilike(familyGroups.name, `%${search}%`),
+								ilike(patients.phone, `%${search}%`),
+								ilike(patients.fullName, `%${search}%`)
+							)
+					  )
+					: eq(familyGroups.organizationId, organizationId)
+			)
 			.orderBy(desc(familyGroups.createdAt))
 			.limit(20);
 

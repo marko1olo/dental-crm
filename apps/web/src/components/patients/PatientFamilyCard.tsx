@@ -192,7 +192,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<input
 								type="text"
 								className="text-input"
-								placeholder="Название семьи (напр. Семья Ивановых)"
+								placeholder="Название семьи, ФИО или телефон..."
 								value={newFamilyName}
 								onChange={(e) => setNewFamilyName(e.target.value)}
 								autoFocus
@@ -285,7 +285,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							<button 
 								className="primary-button" 
 								onClick={() => {
-									setNewFamilyName(\`Семья \${patientName ? patientName.split(' ')[0] : ''}\`.trim());
+									setNewFamilyName(`Семья ${patientName ? patientName.split(' ')[0] : ''}`.trim());
 									setIsCreating(true);
 								}}
 								style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px", fontSize: "13px" }}

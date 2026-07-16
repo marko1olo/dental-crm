@@ -25,8 +25,9 @@ export function PanoramicRendererWindow({
 		setLoading(true);
 		let worker: Worker | null = null;
 
-		const volume = cache.getVolume(volumeId);
-		if (!volume || !volume.scalarData) {
+		const volume = cache.getVolume(volumeId) as any;
+		const scalarData = volume?.scalarData || volume?.voxelManager?.getScalarData();
+		if (!volume || !scalarData) {
 			setError("Volume not loaded in cache");
 			setLoading(false);
 			return;
@@ -66,7 +67,7 @@ export function PanoramicRendererWindow({
 
 			worker.postMessage({
 				type: "GENERATE",
-				scalarData: volume.scalarData,
+				scalarData,
 				dimensions: volume.dimensions,
 				spacing: volume.spacing,
 				origin: volume.origin,

@@ -603,6 +603,31 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 		return reply.code(200).send(closedShift);
 	});
 
+	app.get<{ Params: { patientId: string } }>(
+		"/api/patients/:patientId/installments",
+		async (request, reply) => {
+			const orgId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+			);
+			if (!orgId) return;
+
+			const { patientId } = request.params;
+			const rows = await db
+				.select()
+				.from(schema.paymentInstallments)
+				.where(
+					and(
+						eq(schema.paymentInstallments.patientId, patientId),
+						eq(schema.paymentInstallments.status, "pending")
+					)
+				)
+				.orderBy(schema.paymentInstallments.dueDate);
+
+			return reply.code(200).send(rows);
+		}
+	);
+
 	app.post("/api/patients/:patientId/installments", async (request, reply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
 			request,

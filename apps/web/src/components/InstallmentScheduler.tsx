@@ -48,6 +48,28 @@ export const InstallmentScheduler: React.FC<{
 	const [discount, setDiscount] = useState(0);
 	const [expanded, setExpanded] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
+	const [existingInstallments, setExistingInstallments] = useState<Installment[]>([]);
+
+	useEffect(() => {
+		if (!patientId) return;
+		fetch(`/api/patients/${patientId}/installments`, {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => res.json())
+			.then((data) => {
+				if (Array.isArray(data)) {
+					setExistingInstallments(
+						data.map((d: any) => ({
+							month: 0,
+							dueDate: new Date(d.dueDate).toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" }),
+							dueDateIso: d.dueDate,
+							amount: Number(d.amountRub) / 100,
+						}))
+					);
+				}
+			})
+			.catch(console.error);
+	}, [patientId]);
 
 	// Reset when the estimate changes (new patient / plan)
 	useEffect(() => {
@@ -129,6 +151,29 @@ export const InstallmentScheduler: React.FC<{
 
 			{expanded && (
 				<div className="inst-body">
+					{existingInstallments.length > 0 && (
+						<div className="inst-section" style={{ marginBottom: 20 }}>
+							<h4 style={{ margin: "0 0 10px 0", fontSize: 14, fontWeight: 600, color: "var(--teal)" }}>
+								Активные платежи рассрочки
+							</h4>
+							<div className="inst-schedule-list">
+								{existingInstallments.map((inst, idx) => (
+									<div key={idx} className="inst-row">
+										<div className="inst-row-month">
+											<span className="inst-month-dot" />
+											Платёж {idx + 1}
+										</div>
+										<div className="inst-row-date">{inst.dueDate}</div>
+										<div className="inst-row-amount">{inst.amount.toLocaleString()} ₽</div>
+									</div>
+								))}
+							</div>
+							<p style={{ fontSize: 12, color: "var(--muted)", marginTop: 10 }}>
+								Расчет ниже создаст новый план, который заменит текущий график.
+							</p>
+						</div>
+					)}
+
 					{/* ── Down Payment Slider ── */}
 					<div className="inst-section">
 						<div className="inst-row-label">
