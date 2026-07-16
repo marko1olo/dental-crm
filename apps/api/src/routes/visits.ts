@@ -1,3 +1,4 @@
+import { saveVisitSignatureInDb } from "../db/visitsQuery.js";
 import {
 	acceptVisitDraftResponseSchema,
 	acceptVisitDraftSchema,
@@ -164,4 +165,39 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 			return sendVisitDraftMutationError(error, reply, "accept");
 		}
 	});
+
+	app.post("/api/visits/:visitId/draft/sign", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"visit sign"
+		);
+		if (!orgId) return;
+
+		const { visitId } = request.params as { visitId: string };
+		const payload = request.body as any;
+
+		if (!payload.signatureBase64 || !payload.thumbprint || !payload.signatureProvider) {
+			return reply.code(400).send({ error: "Missing signature payload data" });
+		}
+
+		try {
+			const userContext = (request as any).user;
+			const userId = userContext?.id ?? "00000000-0000-0000-0000-000000000000";
+
+			await saveVisitSignatureInDb({
+				visitId,
+				doctorId: userId,
+				patientId: payload.patientId, // Passed from frontend for linking
+				signatureBase64: payload.signatureBase64,
+				thumbprint: payload.thumbprint,
+				signatureProvider: payload.signatureProvider
+			});
+
+			return reply.send({ success: true, message: "Signed successfully" });
+		} catch (error) {
+			return reply.code(500).send({ error: "Internal error saving signature" });
+		}
+	});
+
 }

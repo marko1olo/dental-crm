@@ -172,7 +172,33 @@ export async function updatePatientAdministrativeProfileInDb(
 	} as unknown as Patient;
 }
 
-export async function getPatientAnamnesisFromDb(patientId: string) {
+// patient_anamnesis has no organizationId of its own, so ownership is enforced
+// by confirming the patient belongs to the caller's org first. Returns false when
+// the patient is not in this org (or does not exist).
+async function patientBelongsToOrganization(
+	patientId: string,
+	organizationId: string,
+): Promise<boolean> {
+	const [patient] = await db
+		.select({ id: schema.patients.id })
+		.from(schema.patients)
+		.where(
+			and(
+				eq(schema.patients.id, patientId),
+				eq(schema.patients.organizationId, organizationId),
+			),
+		)
+		.limit(1);
+	return Boolean(patient);
+}
+
+export async function getPatientAnamnesisFromDb(
+	patientId: string,
+	organizationId: string,
+) {
+	if (!(await patientBelongsToOrganization(patientId, organizationId))) {
+		return null;
+	}
 	const [anamnesis] = await db
 		.select()
 		.from(schema.patientAnamnesis)
@@ -182,12 +208,16 @@ export async function getPatientAnamnesisFromDb(patientId: string) {
 
 export async function updatePatientAnamnesisInDb(
 	patientId: string,
+	organizationId: string,
 	input: {
 		allergies?: string[];
 		systemicDiseases?: string[];
 		hasCriticalAlerts?: boolean;
 	}
 ) {
+	if (!(await patientBelongsToOrganization(patientId, organizationId))) {
+		return null;
+	}
 	const [existing] = await db
 		.select()
 		.from(schema.patientAnamnesis)

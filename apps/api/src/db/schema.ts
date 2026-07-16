@@ -2212,3 +2212,14 @@ export const protocolTemplates = pgTable("protocol_templates", {
 		.notNull()
 		.defaultNow(),
 });
+
+export const signedOutpatientCards = pgTable("signed_outpatient_cards", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	visitId: uuid("visit_id").notNull(),
+	doctorId: uuid("doctor_id").notNull(),
+	patientId: uuid("patient_id").notNull(),
+	signatureBase64: text("signature_base64").notNull(),
+	thumbprint: text("thumbprint").notNull(),
+	signatureProvider: text("signature_provider").notNull(), // "cryptopro" | "rutoken"
+	signedAt: timestamp("signed_at", { withTimezone: true }).defaultNow().notNull(),
+});

@@ -274,7 +274,10 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		if (!params.patientId) return sendPatientRouteValidationError(reply);
 
 		try {
-			const anamnesis = await getPatientAnamnesisFromDb(params.patientId);
+			const anamnesis = await getPatientAnamnesisFromDb(
+				params.patientId,
+				orgId,
+			);
 			return anamnesis || { allergies: [], systemicDiseases: [], hasCriticalAlerts: false };
 		} catch (e) {
 			console.error("[Patients] Get anamnesis error:", e);

@@ -7,6 +7,7 @@ import {
 	CheckCircle2,
 	ClipboardCheck,
 	FlaskConical,
+	Lock,
 	Mic,
 	ShieldCheck,
 	Sparkles,
@@ -14,6 +15,7 @@ import {
 import React, { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
+import { SignCardDialog } from "./components/visit/SignCardDialog";
 import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
@@ -135,6 +137,8 @@ export function VisitView() {
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
+	const [isSignDialogOpen, setIsSignDialogOpen] = useState(false);
+	const [isSigned, setIsSigned] = useState(false);
 
 	useEffect(() => {
 		return () => {
@@ -446,6 +450,34 @@ export function VisitView() {
 										) : null}
 										{visitPrimaryAction.label}
 									</button>
+
+									{isSigned ? (
+										<div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "8px", color: "var(--teal)", fontWeight: "bold" }}>
+											<Lock size={16} /> Документ подписан УКЭП
+										</div>
+									) : (
+										<button
+											className="secondary-button"
+											type="button"
+											onClick={() => setIsSignDialogOpen(true)}
+											style={{
+												marginTop: "12px",
+												padding: "16px 24px",
+												fontSize: "1rem",
+												fontWeight: "bold",
+												width: "100%",
+												justifyContent: "center",
+												borderRadius: "12px",
+												display: "flex",
+												alignItems: "center",
+												gap: "8px",
+												border: "1px solid var(--border-color)"
+											}}
+										>
+											<Lock size={18} /> Подписать ЭЦП
+										</button>
+									)}
+
 								</div>
 								<div
 									className="visit-progress-strip"

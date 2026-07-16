@@ -7,6 +7,7 @@ import type {
 import { and, eq } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+import { signedOutpatientCards } from "./schema.js";
 
 function hashTranscript(value: string): string {
 	return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -381,4 +382,33 @@ export async function getVisitByIdInDb(organizationId: string, id: string) {
 		)
 		.limit(1);
 	return res || null;
+}
+
+export async function saveVisitSignatureInDb(
+	payload: {
+		visitId: string;
+		doctorId: string;
+		patientId: string;
+		signatureBase64: string;
+		thumbprint: string;
+		signatureProvider: string;
+	}
+) {
+	await db.insert(signedOutpatientCards).values({
+		visitId: payload.visitId,
+		doctorId: payload.doctorId,
+		patientId: payload.patientId,
+		signatureBase64: payload.signatureBase64,
+		thumbprint: payload.thumbprint,
+		signatureProvider: payload.signatureProvider,
+	});
+}
+
+export async function getVisitSignatureInDb(visitId: string) {
+    const result = await db
+        .select()
+        .from(signedOutpatientCards)
+        .where(eq(signedOutpatientCards.visitId, visitId))
+        .limit(1);
+    return result[0] || null;
 }

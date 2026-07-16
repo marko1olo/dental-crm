@@ -32,10 +32,10 @@ export const PatientJourneyTimeline: React.FC<{
 			.filter((a) => a.patientId === patientId)
 			.map((a) => ({
 				id: a.id,
-				timestamp: a.plannedStart,
+				timestamp: a.startsAt,
 				type: "appointment",
 				title: `Прием: ${a.status === "completed" ? "Завершен" : a.status}`,
-				description: `Врач: ${a.doctorId} | Диагноз: ${a.diagnosis || "Нет"}`,
+				description: `Врач: ${a.doctorUserId} | Причина: ${a.reason || "Нет"}`,
 				status: a.status === "completed" ? "Completed" : "Draft",
 				actionUrl: `/patients/${patientId}/visit/${a.id}`,
 			}));
