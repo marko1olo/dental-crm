@@ -91,24 +91,23 @@ export function CommandPalette({
 	} else if (lowerQuery.startsWith("создать")) {
 		filteredItems = [
 			{
-				id: "c-pat",
-				icon: <UserPlus size={18} />,
-				label: "Создать пациента",
-				action: () => setIsOpen(false),
-				section: "Действия",
-			},
-			{
 				id: "c-app",
 				icon: <Calendar size={18} />,
-				label: "Создать запись на завтра",
-				action: () => setIsOpen(false),
+				label: "Открыть расписание",
+				action: () => {
+					onNavigate("schedule");
+					setIsOpen(false);
+				},
 				section: "Действия",
 			},
 			{
 				id: "c-doc",
 				icon: <FileText size={18} />,
-				label: "Сгенерировать ИДС",
-				action: () => setIsOpen(false),
+				label: "Документы",
+				action: () => {
+					onNavigate("documents");
+					setIsOpen(false);
+				},
 				section: "Действия",
 			},
 		];

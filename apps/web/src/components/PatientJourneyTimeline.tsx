@@ -53,6 +53,17 @@ export const PatientJourneyTimeline: React.FC<{
 		};
 	}, [patientId, dashboard?.appointments]);
 
+	// Real Zeigarnik Effect Progress Calculation
+	const planItems = dashboard?.treatmentPlanItems?.filter((i) => i.patientId === patientId) || [];
+	const activeItems = planItems.filter((i) => i.status !== "cancelled");
+	const completedItems = activeItems.filter((i) => i.status === "completed");
+	
+	const totalItemsCount = activeItems.length;
+	const completedItemsCount = completedItems.length;
+	const progressPercentage = totalItemsCount > 0 ? Math.round((completedItemsCount / totalItemsCount) * 100) : 0;
+	
+	const showProgress = totalItemsCount > 0 && progressPercentage < 100;
+
 	const getIcon = (type: string) => {
 		switch (type) {
 			case "medical_alert":
@@ -78,21 +89,23 @@ export const PatientJourneyTimeline: React.FC<{
 			</div>
 
 			{/* Эффект Зейгарник: Прогресс-бар лечения */}
-			<div className="zeigarnik-progress-container">
-				<div className="progress-header">
-					<span className="progress-title">
-						План лечения: Ортопедия (Фаза 2)
-					</span>
-					<span className="progress-percentage text-emerald-400">37%</span>
+			{showProgress && (
+				<div className="zeigarnik-progress-container">
+					<div className="progress-header">
+						<span className="progress-title">
+							План лечения: Общий прогресс
+						</span>
+						<span className="progress-percentage text-emerald-400">{progressPercentage}%</span>
+					</div>
+					<div className="progress-bar-bg">
+						<div className="progress-bar-fill" style={{ width: `${progressPercentage}%` }}></div>
+					</div>
+					<p className="progress-hint">
+						Пройдено {completedItemsCount} процедуры из {totalItemsCount}. Следующий визит приблизит вас к завершению
+						плана!
+					</p>
 				</div>
-				<div className="progress-bar-bg">
-					<div className="progress-bar-fill" style={{ width: "37%" }}></div>
-				</div>
-				<p className="progress-hint">
-					Пройдено 3 процедуры из 8. Следующий визит приблизит вас к завершению
-					плана!
-				</p>
-			</div>
+			)}
 
 			<div className="timeline-track">
 				{events.map((evt, index) => {

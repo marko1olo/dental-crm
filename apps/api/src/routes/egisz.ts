@@ -51,16 +51,46 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			return reply.code(400).send({ error: errorDetails });
 		}
 
-		// SNILS format validation (simple mock)
+function validateSnilsChecksum(snils: string): boolean {
+	if (snils.length !== 11) return false;
+	const baseNumStr = snils.slice(0, 9);
+	const checkSumStr = snils.slice(9);
+	const baseNum = Number.parseInt(baseNumStr, 10);
+	if (baseNum <= 1001998) return true; // calculation starts for SNILS > 001-001-998
+
+	let sum = 0;
+	for (let i = 0; i < 9; i++) {
+		sum += Number.parseInt(baseNumStr[i] ?? "0", 10) * (9 - i);
+	}
+
+	let checkDigit = 0;
+	if (sum < 100) {
+		checkDigit = sum;
+	} else if (sum === 100 || sum === 101) {
+		checkDigit = 0;
+	} else {
+		const remainder = sum % 101;
+		if (remainder < 100) {
+			checkDigit = remainder;
+		} else if (remainder === 100 || remainder === 101) {
+			checkDigit = 0;
+		}
+	}
+
+	return checkDigit === Number.parseInt(checkSumStr, 10);
+}
+
+// ... inside registerEgiszRoutes ...
+		// SNILS format & checksum validation
 		const snils = administrativeProfile.snils.replace(/\D/g, "");
-		if (snils.length !== 11) {
+		if (!validateSnilsChecksum(snils)) {
 			await db.insert(egiszLogs).values({
 				patientId,
 				visitId,
 				status: "Error",
-				errorDetails: { message: "Некорректный формат СНИЛС" },
+				errorDetails: { message: "Некорректный формат или контрольная сумма СНИЛС" },
 			});
-			return reply.code(400).send({ error: "Некорректный формат СНИЛС" });
+			return reply.code(400).send({ error: "Некорректный формат или контрольная сумма СНИЛС" });
 		}
 
 		// Mock success
