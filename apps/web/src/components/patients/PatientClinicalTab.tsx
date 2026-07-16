@@ -5,8 +5,6 @@ import { usePatientStore } from "../../store/patientStore";
 import { AnamnesisPanel } from "../AnamnesisPanel";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
-import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
-
 export function PatientClinicalTab({ props }: { props: PatientsViewProps }) {
 	const { selectedPatientId } = usePatientStore();
 
@@ -31,14 +29,7 @@ export function PatientClinicalTab({ props }: { props: PatientsViewProps }) {
 					<div className="clinical-col-left">
 						<VisiographAnalyzer />
 					</div>
-					<div className="clinical-col-right">
-						{selectedPatientId && (
-							<PatientJourneyTimeline
-								patientId={selectedPatientId}
-								dashboard={props.dashboard}
-							/>
-						)}
-					</div>
+					<div className="clinical-col-right"></div>
 				</div>
 			</div>
 		</>
