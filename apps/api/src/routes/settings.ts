@@ -579,4 +579,35 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 			message: "Очистка базы больше не поддерживается (используется Postgres).",
 		};
 	});
+	app.post("/api/settings/catalog-import", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		try {
+			const body = request.body as any;
+			if (!Array.isArray(body)) {
+				return reply.code(400).send({ error: "Expected an array of items" });
+			}
+			const toInsert = body.map((item: any) => ({
+				organizationId: orgId,
+				code: item.code || Math.random().toString(36).substring(2, 8).toUpperCase(),
+				title: item.title,
+				category: item.category || "other",
+				specialty: item.specialty || "universal",
+				basePriceRub: item.basePriceRub || item.priceRub || 0,
+				priceRub: item.priceRub || 0,
+				durationMinutes: item.durationMinutes || 30,
+			}));
+			
+			if (toInsert.length > 0) {
+				await db.insert(schema.serviceCatalogItems).values(toInsert);
+			}
+			return { success: true, count: toInsert.length };
+		} catch (error: any) {
+			console.error("DEBUG catalog import error:", error);
+			return reply.code(500).send({
+				error: "CatalogImportFailed",
+				message: settingsDomainMessage(error),
+			});
+		}
+	});
 }

@@ -15,6 +15,7 @@ import {
 	organizations,
 	patients,
 } from "../db/schema.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 const communicationTaskValidationMessage =
 	"Задача связи не закрыта: выберите задачу, сотрудника и корректный исход действия.";
@@ -195,6 +196,23 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 				status: "delivered", // simplified for MVP
 			})
 			.returning();
+
+		if (!newEvent) {
+			return reply.code(500).send({ error: "Failed to save message" });
+		}
+
+		// Notify the UI via WebSocket for real-time responsiveness
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "INBOX_NEW_MESSAGE",
+			payload: {
+				id: newEvent.id,
+				patientId: newEvent.patientId,
+				text: newEvent.message,
+				channel: newEvent.channel,
+				direction: "outbound",
+				createdAt: newEvent.createdAt.toISOString(),
+			},
+		});
 
 		return newEvent;
 	});

@@ -20,10 +20,12 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import {
+	communicationEvents,
 	denteWhatsappBotConfigs,
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
+import { wsBroker } from "../services/websocketBroker.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
 
 const updateWhatsappConfigSchema = z.object({
@@ -306,6 +308,83 @@ export async function registerWhatsappRoutes(
 		void processInboundEvents().catch((err) =>
 			console.error("Whatsapp ingestion error:", err),
 		);
+	});
+
+	/**
+	 * POST /api/whatsapp/send
+	 * Sends an outbound WhatsApp message to a patient.
+	 */
+	app.post("/api/whatsapp/send", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"whatsapp message send",
+		);
+		if (!orgId) return;
+
+		const bodySchema = z.object({
+			patientId: z.string().uuid(),
+			message: z.string().min(1),
+		});
+
+		const parsed = bodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Укажите ID пациента и текст сообщения.",
+			});
+		}
+
+		const { patientId, message } = parsed.data;
+
+		const [patient] = await db
+			.select()
+			.from(patients)
+			.where(eq(patients.id, patientId))
+			.limit(1);
+
+		if (!patient) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден.",
+			});
+		}
+
+		const [config] = await db
+			.select()
+			.from(denteWhatsappBotConfigs)
+			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
+			.limit(1);
+
+		if (!config || !config.isActive) {
+			return reply.code(400).send({
+				error: "WhatsappInactive",
+				message: "Интеграция WhatsApp неактивна или не настроена.",
+			});
+		}
+
+		await db.insert(communicationEvents).values({
+			organizationId: orgId,
+			patientId,
+			channel: "whatsapp",
+			direction: "outbound",
+			status: "sent",
+			message,
+		});
+
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "INBOX_NEW_MESSAGE",
+			payload: {
+				channel: "whatsapp",
+				patientId,
+				text: message,
+				direction: "outbound",
+			},
+		});
+
+		console.log(`[WhatsApp Outbox] Sent to ${patient.phone || patient.fullName}: ${message}`);
+
+		return { ok: true };
 	});
 }
 

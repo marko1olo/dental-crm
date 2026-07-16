@@ -417,6 +417,15 @@ export function SettingsRulesTab() {
 									>
 										{rule.active ? "Выключить" : "Включить"}
 									</button>
+									<button
+										className="text-button text-button-danger"
+										type="button"
+										onClick={() => removeClinicalRule(rule.id)}
+										disabled={isClinicalRuleSaving}
+										style={{ color: "var(--danger-color)" }}
+									>
+										Удалить
+									</button>
 								</div>
 								<h3>{rule.title}</h3>
 								<p>{rule.warningText}</p>

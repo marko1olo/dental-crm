@@ -49,7 +49,7 @@ export async function updateProtocolTemplateInDb(
 	organizationId: string,
 	templateId: string,
 	data: Partial<{
-		specialty: string;
+		specialty: any;
 		title: string;
 		visitReason: string;
 		defaultDurationMinutes: number;

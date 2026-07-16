@@ -12,6 +12,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { useWebsocket } from "../hooks/useWebsocket";
 import { showToast } from "./GlobalToast";
 
 interface ChatMessage {
@@ -35,6 +36,57 @@ export function OmnichannelInboxView() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeChannelFilter, setActiveChannelFilter] = useState<string>("all");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+
+	const { lastMessage } = useWebsocket(
+		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
+	);
+
+	useEffect(() => {
+		if (lastMessage?.type === "INBOX_NEW_MESSAGE") {
+			const msg = lastMessage.payload;
+			// If the active chat is this patient, append message
+			if (selectedPatientId === msg.patientId) {
+				setMessages((prev) => {
+					// Avoid duplicate if sent locally
+					if (prev.some((m) => m.id === msg.id)) return prev;
+					const updated = [...prev, {
+						id: msg.id || Math.random().toString(),
+						patientId: msg.patientId,
+						message: msg.text,
+						channel: msg.channel,
+						direction: msg.direction || "inbound",
+						createdAt: msg.createdAt || new Date().toISOString(),
+					} as ChatMessage];
+					scrollToBottom();
+					return updated;
+				});
+			}
+
+			// Update the chat list (latest message, move to top, update list)
+			setChats((prev) => {
+				const updated = [...prev];
+				const idx = updated.findIndex((c) => c.patientId === msg.patientId);
+				if (idx !== -1) {
+					const oldChat = updated[idx];
+					if (oldChat) {
+						updated[idx] = {
+							...oldChat,
+							message: msg.text,
+							createdAt: msg.createdAt || new Date().toISOString(),
+							direction: msg.direction || "inbound",
+						} as ChatMessage;
+						// Move to top
+						const [item] = updated.splice(idx, 1);
+						if (item) updated.unshift(item);
+					}
+				} else {
+					// Fetch chats to resolve new chat details/patient info dynamically
+					fetchChats();
+				}
+				return updated;
+			});
+		}
+	}, [lastMessage, selectedPatientId]);
 
 	const fetchChats = async () => {
 		try {
