@@ -349,19 +349,22 @@ export const PatientPortal: React.FC = () => {
 
 				<section className="portal-card docs-card">
 					<h3>Документы</h3>
-					<div className="doc-item">
-						<span>📄 Согласие на лечение.pdf</span>
-						<button className="btn-download">Скачать</button>
-					</div>
-					<div className="doc-item">
-						<span>🦷 Панорамный_снимок.jpg</span>
-						<button
-							className="btn-download"
-							onClick={() => setViewingDoc("Панорамный_снимок.jpg")}
-						>
-							Просмотр
-						</button>
-					</div>
+					{(patientData?.documents || []).length === 0 && (
+						<p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+							Нет выпущенных документов.
+						</p>
+					)}
+					{(patientData?.documents || []).map((doc: any) => (
+						<div key={doc.id} className="doc-item">
+							<span>📄 {doc.title}</span>
+							<button
+								className="btn-download"
+								onClick={() => setViewingDoc(doc.title)}
+							>
+								Просмотр
+							</button>
+						</div>
+					))}
 				</section>
 			</div>
 

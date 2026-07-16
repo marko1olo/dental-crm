@@ -7,6 +7,7 @@ import {
 	patients,
 	treatmentPlans,
 	visitDiaries,
+	generatedDocuments,
 } from "../db/schema.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 
@@ -131,12 +132,22 @@ export const portalRoutes: FastifyPluginAsync = async (
 			.select()
 			.from(patientInvoices)
 			.where(eq(patientInvoices.patientId, patient.id));
+		const documents = await db
+			.select()
+			.from(generatedDocuments)
+			.where(
+				and(
+					eq(generatedDocuments.patientId, patient.id),
+					eq(generatedDocuments.status, "issued"),
+				)
+			);
 
 		return {
 			patient,
 			visits,
 			plans,
 			invoices,
+			documents,
 		};
 	});
 };

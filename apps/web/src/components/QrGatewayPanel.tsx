@@ -51,9 +51,9 @@ export function QrGatewayPanel() {
 		};
 	}, [isOpen]);
 
-	// Mock URLs for MVP
-	const bookingUrl = "https://dente.clinic/booking?clinicId=demo";
-	const loginUrl = "https://dente.clinic/portal/login?token=temp_token_8xJ2";
+	const clinicId = localStorage.getItem("dente_organization_id") || "demo";
+	const bookingUrl = `https://dente.clinic/booking?clinicId=${clinicId}`;
+	const loginUrl = "https://dente.clinic/portal/login";
 
 	const localIp =
 		window.location.hostname === "localhost" ||

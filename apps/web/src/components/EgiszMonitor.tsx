@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { denteAdminSecretRequestHeaders } from "../AppHelpers";
 
 interface EgiszMonitorProps {
 	patientId: string;
@@ -25,7 +26,9 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 
 	const fetchStatus = async () => {
 		try {
-			const res = await fetch(`/api/egisz/logs/${patientId}`);
+			const res = await fetch(`/api/egisz/logs/${patientId}`, {
+				headers: denteAdminSecretRequestHeaders(),
+			});
 			if (res.ok) {
 				const data = await res.json();
 				const latest =
@@ -53,7 +56,9 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 		try {
 			const res = await fetch(`/api/egisz/send`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
 				body: JSON.stringify({ patientId, visitId }),
 			});
 			const data = await res.json();
