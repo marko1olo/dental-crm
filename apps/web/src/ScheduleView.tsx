@@ -22,6 +22,7 @@ import { SmartParsePreview } from "./SmartParsePreview";
 import { useScheduleStore } from "./store/scheduleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { type AppointmentScheduleDraft } from "./AppHelpers";
+import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 
 type AppointmentScheduleSaveState = "idle" | "saving" | "saved" | "error";
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -170,6 +171,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 		scheduleAdminSecretSession,
 	} = useSettingsStore();
 	const [showShiftAnalytics, setShowShiftAnalytics] = useState(false);
+	const [showWaitlist, setShowWaitlist] = useState(false);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 	const [useManualSelects, setUseManualSelects] = useState(false);
 
@@ -334,6 +336,21 @@ export function ScheduleView(props: ScheduleViewProps) {
 						style={{ minHeight: "30px", padding: "0 12px", fontSize: "12px" }}
 					>
 						{showShiftAnalytics ? "Скрыть аналитику" : "Показать аналитику"}
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => setShowWaitlist(true)}
+						style={{
+							minHeight: "30px",
+							padding: "0 12px",
+							fontSize: "12px",
+							display: "flex",
+							alignItems: "center",
+							gap: "4px",
+						}}
+					>
+						Лист ожидания
 					</button>
 					<button
 						className="text-button"
@@ -770,6 +787,13 @@ export function ScheduleView(props: ScheduleViewProps) {
 					</article>
 				) : null}
 			</div>
+
+			<WaitlistDrawer
+				isOpen={showWaitlist}
+				onClose={() => setShowWaitlist(false)}
+				updateNewAppointmentDraft={updateNewAppointmentDraft}
+				focusNewAppointmentEditor={focusNewAppointmentEditor}
+			/>
 		</motion.div>
 	);
 }

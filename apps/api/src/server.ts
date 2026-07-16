@@ -32,6 +32,7 @@ import { registerInsuranceRoutes } from "./routes/insurance.js";
 import { inventoryRoutes } from "./routes/inventory.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
+import { registerWaitlistRoutes } from "./routes/waitlist.js";
 import { registerMaxRoutes } from "./routes/max.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerPatientRoutes } from "./routes/patients.js";
@@ -330,6 +331,7 @@ export async function createDenteApiApp(
 	await registerMaxRoutes(app);
 	await registerVisitRoutes(app);
 	await registerLeadsRoutes(app);
+	await registerWaitlistRoutes(app);
 	await registerSterilizationRoutes(app);
 	await registerFamilyFinanceRoutes(app);
 	await registerDicomwebRoutes(app);

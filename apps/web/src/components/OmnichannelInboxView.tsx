@@ -13,6 +13,7 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useWebsocket } from "../hooks/useWebsocket";
+import { usePatientStore } from "../store/patientStore";
 import { showToast } from "./GlobalToast";
 
 interface ChatMessage {
@@ -28,9 +29,8 @@ interface ChatMessage {
 export function OmnichannelInboxView() {
 	const { auth } = useAppLogicContext();
 	const [chats, setChats] = useState<ChatMessage[]>([]);
-	const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
-		null,
-	);
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [inputText, setInputText] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
