@@ -35,11 +35,21 @@ export function SettingsAiTab() {
 		isRecognitionLoading,
 		recognitionInputReady,
 		aiRecognitionWarningText,
-		sendRecognitionResultToImport
+		sendRecognitionResultToImport,
+		speechRecoveryStateLabels,
+		speechRecordingPathLabels,
+		speechRecordingStrategy,
+		activeSpeechProviderHealth,
+		speechGatewayHealthReport,
+		refreshSpeechRuntime,
+		speechProviderSelectionLabels,
+		speechGatewayCanUpload,
+		speechGatewayStatus
 	} = props;
 
 	const typedRecognitionPresets = (recognitionPresets ?? []) as any[];
 	const typedSpeechProviders = (speechProviders ?? []) as any[];
+	const typedSpeechRecordingRecovery = props.speechRecordingRecovery as any[];
 	const typedDictationHistory = (dictationHistory ?? []) as any[];
 	const typedRecognitionJob = recognitionJob as any;
 

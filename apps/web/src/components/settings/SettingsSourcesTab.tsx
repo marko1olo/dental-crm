@@ -17,7 +17,7 @@ Gauge, ExternalLink, CheckCircle2} from "lucide-react";
 import type { ChangeEvent } from "react";
 import React from "react";
 import { CtPlanningToolsPanel } from "../../ctPlanningTools";
-import { type MprClinicalPreset } from "../../mprClinicalStatus";
+type MprClinicalPreset = import('../../mprClinicalStatus').MprClinicalPresetFitTarget;
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 type StringTokenGroup = { title: string; items: string[] };
@@ -193,7 +193,7 @@ export function SettingsSourcesTab() {
 	const typedImagingViewerCapabilities = imagingViewerCapabilities as Array<{ icon: any; title: string; detail: string; state: string; }>;
 	const typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ?? []) as Array<any>;
 	const typedDicomSeriesPreviewParserNotes = (dicomSeriesPreview?.parserNotes ?? []) as Array<string>;
-	const typedImagingViewerActiveTool = imagingViewerActiveTool as string;
+	const typedImagingViewerActiveTool = imagingViewerActiveTool as any;
 	const typedCtPlanningActiveQuickActionId = ctPlanningActiveQuickActionId as string | null;
 	const typedCtPlanningImplantPlan = ctPlanningImplantPlan as any | null;
 	const typedDicomViewerWorkbenchManifest = dicomViewerWorkbenchManifest as DicomViewerWorkbenchManifestResponse | null;
