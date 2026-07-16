@@ -291,7 +291,7 @@ type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
-type SettingsViewProps = Record<string, any>;
+
 const viewLabels = workspaceViewLabels as Record<string, string>;
 const staffCreationRoles: StaffRole[] = [
 	"doctor",
@@ -890,7 +890,13 @@ const dicomFirstFrameImageTypeLabel = (
 	return "тип изображения: особый";
 };
 
-export function SettingsView(props: SettingsViewProps) {
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+
+
+
+export interface SettingsViewProps { activeStaffUser?: any; }
+
+export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const {
 		activePatient,
 		activeSettingsTabButtonRef,
@@ -1396,7 +1402,7 @@ export function SettingsView(props: SettingsViewProps) {
 		visibleTelegramOutboxItems,
 		weekdayOptions,
 		workspaceScopeLabels,
-	} = props;
+	} = useAppLogicContext();
 	const {
 		clinicMode,
 		setClinicMode,
@@ -2427,7 +2433,7 @@ export function SettingsView(props: SettingsViewProps) {
 					{typedSettingsTabs
 						.filter((t) => {
 							if (t.id === "messengers") {
-								return props.activeStaffUser?.role !== "doctor";
+								return activeStaffUser?.role !== "doctor";
 							}
 							return ["clinic", "staff", "access"].includes(t.id);
 						})

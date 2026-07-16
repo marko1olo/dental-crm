@@ -1929,6 +1929,7 @@ export const visitDiaries = pgTable("visit_diaries", {
 	diagnosisIcd10: varchar("diagnosis_icd10", { length: 50 }),
 	diagnosisTooth: varchar("diagnosis_tooth", { length: 10 }),
 	treatmentDescription: text("treatment_description"),
+	cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
 	isLocked: boolean("is_locked").notNull().default(false),
 	lockedAt: timestamp("locked_at", { withTimezone: true }),
 	lockedByUserId: uuid("locked_by_user_id").references(() => users.id, {

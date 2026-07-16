@@ -198,6 +198,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!(await requireClinicalMutationAccess(req, reply, "lock diary")))
 			return;
 		const { id } = req.params as { id: string };
+		const { pkcs7Signature } = (req.body as { pkcs7Signature?: string }) || {};
 		const userContext = (req as any).user;
 		const userId: string | null = userContext?.id ?? null;
 		const role: string = userContext?.role ?? "assistant";
@@ -242,6 +243,7 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 						lockedByUserId: userId,
 						coSignedByUserId: userId,
 						diaryHash: diaryHash,
+						cryptoSignaturePkcs7: pkcs7Signature ?? null,
 						updatedAt: new Date(),
 					})
 					.where(

@@ -122,8 +122,7 @@ export function SettingsSourcesTab() {
 		cbctMprWarnings,
 		mprCacheModeLabels,
 		cbctResourceSafetyCaps,
-		testDicomWorkstationReadiness,
-		isDicomWorkstationReadinessTesting,
+
 		dicomWorkstationReadiness,
 		dicomLabel,
 		dicomExecutionLaneLabels,

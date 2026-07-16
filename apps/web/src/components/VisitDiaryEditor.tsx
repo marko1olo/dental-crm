@@ -21,6 +21,12 @@ import { createPortal } from "react-dom";
 import { emptyVisitNoteForm } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useVisitStore } from "../store/visitStore";
+import {
+	type CryptoProCertificate,
+	checkCryptoProPlugin,
+	getPersonalCertificates,
+	signBase64WithCertificate,
+} from "../utils/cryptoPro";
 import { showToast } from "./GlobalToast";
 
 // ─── ICD-10 Стоматологический справочник ────────────────────────────────────
