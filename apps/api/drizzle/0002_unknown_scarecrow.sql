@@ -1,0 +1,2 @@
+ALTER TABLE "generated_documents" ADD COLUMN "crypto_signature_pkcs7" text;--> statement-breakpoint
+ALTER TABLE "payments" ADD CONSTRAINT "payments_org_client_mutation_unique" UNIQUE("organization_id","client_mutation_id");

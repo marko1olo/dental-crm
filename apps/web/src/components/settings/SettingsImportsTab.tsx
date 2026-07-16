@@ -1,3 +1,4 @@
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -869,7 +870,8 @@ const dicomFirstFrameImageTypeLabel = (
 	return "тип изображения: особый";
 };
 
-export function SettingsImportsTab(props: Record<string, any>) {
+export function SettingsImportsTab() {
+	const props = useAppLogicContext();
 	const {
 		activePatient,
 		activeSettingsTabButtonRef,

@@ -1,0 +1,416 @@
+/* Messengers Settings Container */
+.messengers-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+}
+
+/* Sub-tab Bar styling */
+.messenger-channel-tabs {
+	display: flex;
+	gap: 8px;
+	border-bottom: 2px solid var(--line);
+	padding-bottom: 4px;
+	margin-bottom: 16px;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none; /* Firefox */
+}
+
+.messenger-channel-tabs::-webkit-scrollbar {
+	display: none; /* Chrome/Safari */
+}
+
+.messenger-channel-tab {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	border: none;
+	background: transparent;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--muted);
+	cursor: pointer;
+	border-radius: 8px 8px 0 0;
+	transition: all 0.2s ease;
+	position: relative;
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+
+.messenger-channel-tab:hover {
+	color: var(--ink);
+	background: rgba(13, 148, 136, 0.04);
+}
+
+.messenger-channel-tab.active {
+	color: var(--teal);
+	font-weight: 600;
+}
+
+.messenger-channel-tab.active::after {
+	content: "";
+	position: absolute;
+	bottom: -6px;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background: var(--teal);
+	border-radius: 2px;
+}
+
+/* Badges next to tab names */
+.messenger-tab-badge {
+	font-size: 10px;
+	font-weight: 800;
+	padding: 2px 6px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+.wa-badge {
+	background: rgba(37, 211, 102, 0.15);
+	color: rgb(37, 211, 102);
+}
+
+.tg-badge {
+	background: rgba(0, 136, 204, 0.15);
+	color: rgb(0, 136, 204);
+}
+
+.max-badge {
+	background: rgba(255, 69, 0, 0.15);
+	color: rgb(255, 69, 0);
+}
+
+/* Panels */
+.messenger-panel {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.messenger-panel-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 16px;
+}
+
+.messenger-panel-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 800;
+	font-size: 14px;
+	flex-shrink: 0;
+}
+
+.whatsapp-icon {
+	background: rgb(37, 211, 102);
+	color: white;
+}
+
+.max-icon {
+	background: rgb(255, 69, 0);
+	color: white;
+}
+
+.messenger-panel-title {
+	flex: 1;
+}
+
+.messenger-panel-title h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.messenger-panel-title p {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.messenger-status-badge {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.messenger-status-badge.connected {
+	background: rgba(16, 185, 129, 0.1);
+	color: rgb(16, 185, 129);
+}
+
+.messenger-status-badge.disconnected {
+	background: rgba(239, 68, 68, 0.1);
+	color: rgb(239, 68, 68);
+}
+
+.messenger-status-detail {
+	font-size: 13px;
+	color: var(--muted);
+	background: rgba(0, 0, 0, 0.02);
+	padding: 10px 14px;
+	border-radius: 8px;
+	margin: 0;
+}
+
+.webhook-url-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: rgba(0, 0, 0, 0.03);
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+}
+
+.webhook-url-code {
+	font-family: monospace;
+	font-size: 13px;
+	color: var(--ink);
+	word-break: break-all;
+	flex: 1;
+}
+
+.btn-icon {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: var(--muted);
+	padding: 6px;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.btn-icon:hover {
+	color: var(--ink);
+	background: rgba(0, 0, 0, 0.05);
+}
+
+.form-group-toggle {
+	flex-direction: row !important;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.form-group-toggle input[type="checkbox"] {
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+}
+
+.messenger-features {
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 16px;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.messenger-features legend {
+	padding: 0 8px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--muted);
+}
+
+.messenger-features-hint {
+	font-size: 12px;
+	color: var(--muted);
+	margin: 0;
+}
+
+.feature-toggle {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+.messenger-routing-section {
+	border-top: 1px solid var(--line);
+	padding-top: 20px;
+}
+
+.messenger-routing-section h4 {
+	margin: 0 0 4px 0;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.messenger-routing-hint {
+	font-size: 13px;
+	color: var(--muted);
+	margin: 0 0 16px 0;
+}
+
+.messenger-panel-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-top: 1px solid var(--line);
+	padding-top: 20px;
+	margin-top: 12px;
+}
+
+.token-set-badge {
+	font-size: 10px;
+	background: var(--teal-glow);
+	color: var(--teal);
+	padding: 2px 6px;
+	border-radius: 4px;
+	margin-left: 8px;
+	font-weight: 600;
+}
+
+.messenger-setup-guide {
+	display: flex;
+	gap: 12px;
+	background: rgba(13, 148, 136, 0.04);
+	border: 1px solid rgba(13, 148, 136, 0.15);
+	padding: 16px;
+	border-radius: 8px;
+	margin-top: 12px;
+}
+
+.messenger-setup-guide svg {
+	color: var(--teal);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.messenger-setup-guide p {
+	margin: 0;
+	font-size: 13px;
+	color: var(--muted);
+	line-height: 1.5;
+}
+
+.messenger-setup-guide a {
+	color: var(--teal);
+	text-decoration: underline;
+}
+
+.messenger-save-error {
+	color: rgb(239, 68, 68);
+	font-size: 13px;
+	margin: 8px 0 0 0;
+}
+
+/* Routing Rules Widget */
+.messenger-routing-rules {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.routing-default-row,
+.routing-rule-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.routing-default-row label {
+	width: 140px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--muted);
+}
+
+.routing-default-row select,
+.routing-rule-row select {
+	flex: 1;
+	height: 38px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	padding: 0 10px;
+	color: var(--ink);
+}
+
+.routing-arrow {
+	color: var(--muted);
+	font-weight: 700;
+}
+
+.routing-rule-remove {
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	cursor: pointer;
+	padding: 8px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+}
+
+.routing-rule-remove:hover {
+	color: rgb(239, 68, 68);
+	background: rgba(239, 68, 68, 0.08);
+}
+
+.routing-add-rule {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 38px;
+	border: 1px dashed var(--line);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--teal);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	width: 100%;
+}
+
+.routing-add-rule:hover {
+	background: rgba(13, 148, 136, 0.04);
+	border-color: var(--teal);
+}

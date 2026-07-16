@@ -5491,7 +5491,7 @@ export function SettingsView(props: SettingsViewProps) {
 					</section>
 				) : null}
 
-				<SettingsImportsTab {...props} />
+				<SettingsImportsTab />
 				<SettingsAuditTab {...props} />
 			</div>
 		</section>

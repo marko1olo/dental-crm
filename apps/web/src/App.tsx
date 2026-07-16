@@ -22,6 +22,7 @@ import {
 import { useAppStore } from "./store/appStore";
 import { useDocumentStore } from "./store/documentStore";
 import { useAppLogic } from "./useAppLogic";
+import { AppLogicProvider } from "./contexts/AppLogicContext";
 
 function WebSocketManager() {
 	const setLabOrderStatus = useAppStore((state) => state.setLabOrderStatus);
@@ -1058,6 +1059,7 @@ export function App() {
 
 	// Topbar dictation shortcut must open the visit dictation area: goToVisitDictation, scrollToVisitArea(".dictation-box")
 
+	const appLogicProps = useAppLogic();
 	const {
 		acceptDraftToVisit,
 		activeAppointment,
@@ -2010,7 +2012,7 @@ export function App() {
 		setScheduleDateFilter,
 		scheduleDateFilter,
 		handleFinishOnboarding,
-	} = useAppLogic();
+	} = appLogicProps;
 
 	useEffect(() => scheduleIdleWorkspacePreload(currentView), [currentView]);
 
@@ -2143,8 +2145,9 @@ export function App() {
 
 	if (false) {
 		return (
-			<main
-				className="app-shell onboarding-fullscreen"
+			<AppLogicProvider value={appLogicProps}>
+				<main
+					className="app-shell onboarding-fullscreen"
 				style={{
 					display: "flex",
 					flexDirection: "column",
@@ -2838,7 +2841,8 @@ export function App() {
 	}
 
 	return (
-		<main className="app-shell">
+		<AppLogicProvider value={appLogicProps}>
+			<main className="app-shell">
 			<TourEngine />
 			<HelpHUD />
 			<WebSocketManager />
@@ -6274,5 +6278,6 @@ export function App() {
 			</section>
 			<IncomingCallToast />
 		</main>
+		</AppLogicProvider>
 	);
 }
