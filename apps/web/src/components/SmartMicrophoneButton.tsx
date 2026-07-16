@@ -30,7 +30,7 @@ export function SmartMicrophoneButton({
 }: SmartMicrophoneButtonProps) {
 	const [showHints, setShowHints] = useState(false);
 
-	const { isRecording, isProcessing, toggleRecording } = useShortDictation(
+	const { isRecording, isProcessing, toggleRecording, mediaStream } = useShortDictation(
 		context,
 		onResult,
 	);
@@ -91,7 +91,7 @@ export function SmartMicrophoneButton({
 					>
 						Бесконтактная диктовка: {context}
 					</p>
-					<AudioWaveform isRecording={isRecording} color="var(--red-400)" />
+					<AudioWaveform isRecording={isRecording} color="var(--red-400)" mediaStream={mediaStream} />
 
 					<button
 						onClick={toggleRecording}
