@@ -25,12 +25,14 @@ interface Cornerstone3DViewerProps {
 	imageIds: string[];
 	isPreview?: boolean;
 	onClose?: () => void;
+	patientId?: string;
 }
 
 export function Cornerstone3DViewer({
 	imageIds,
 	isPreview = false,
 	onClose,
+	patientId: propPatientId,
 }: Cornerstone3DViewerProps) {
 	const axialRef = useRef<HTMLDivElement>(null);
 	const sagittalRef = useRef<HTMLDivElement>(null);
@@ -58,7 +60,20 @@ export function Cornerstone3DViewer({
 	const [isMinimized, setIsMinimized] = useState(false);
 	const [boneDensityProfile, setBoneDensityProfile] = useState<number[]>([]);
 	const [implants, setImplants] = useState<any[]>([]);
-	const [patientId, setPatientId] = useState<string>("TEST_PATIENT_123");
+	
+	const patientId = propPatientId || "00000000-0000-0000-0000-000000000001";
+	
+	const studyInstanceUid = (() => {
+		if (imageIds && imageIds.length > 0) {
+			const firstId = imageIds[0];
+			if (firstId) {
+				const match = firstId.match(/\/studies\/([^\/]+)/);
+				if (match) return match[1];
+			}
+		}
+		return volumeId || "cbct-volume";
+	})();
+
 	const [implantSystem, setImplantSystem] = useState<ImplantSystem>("osstem");
 	const [activeFdi, setActiveFdi] = useState<number>(46);
 	const [activeImplantDiam, setActiveImplantDiam] = useState<number>(4.0);
@@ -320,12 +335,50 @@ export function Cornerstone3DViewer({
 		};
 	}, []);
 
+	// Load existing CT planning data on mount or when studyInstanceUid/patientId changes
+	useEffect(() => {
+		if (!studyInstanceUid || !patientId) return;
+
+		const loadPlanning = async () => {
+			try {
+				const res = await fetch(
+					`/api/imaging/planning/load?studyUid=${encodeURIComponent(
+						studyInstanceUid,
+					)}&patientId=${encodeURIComponent(patientId)}`,
+				);
+				if (res.ok) {
+					const data = await res.json();
+					if (data.success && data.planning) {
+						if (data.planning.splinePointsJson) {
+							try {
+								setSplinePoints(JSON.parse(data.planning.splinePointsJson));
+							} catch (e) {
+								console.error("[CT] Failed to parse splinePointsJson", e);
+							}
+						}
+						if (data.planning.implantsJson) {
+							try {
+								setImplants(JSON.parse(data.planning.implantsJson));
+							} catch (e) {
+								console.error("[CT] Failed to parse implantsJson", e);
+							}
+						}
+					}
+				}
+			} catch (err) {
+				console.error("[CT] API Error: Could not load planning.", err);
+			}
+		};
+
+		loadPlanning();
+	}, [studyInstanceUid, patientId]);
+
 	useEffect(() => {
 		const handleGenerateReport = () => {
 			generateClinicalReportPdf({
 				patientInfo: {
 					fullName: "Test Patient",
-					studyId: volumeId || "N/A",
+					studyId: studyInstanceUid || "N/A",
 					date: new Date().toLocaleDateString(),
 				},
 				implants: implants,
@@ -340,7 +393,7 @@ export function Cornerstone3DViewer({
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						patientId,
-						studyInstanceUid: volumeId,
+						studyInstanceUid,
 						splinePointsJson: JSON.stringify(splinePoints),
 						implantsJson: JSON.stringify(implants),
 					}),
@@ -361,7 +414,7 @@ export function Cornerstone3DViewer({
 			);
 			window.removeEventListener("save-ct-planning", handleSavePlanning);
 		};
-	}, [implants, splinePoints, volumeId, patientId]);
+	}, [implants, splinePoints, studyInstanceUid, patientId]);
 
 	// Autosave
 	useEffect(() => {

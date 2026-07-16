@@ -37,10 +37,12 @@ import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import type { MprWindowPreset } from "./imagingUiLabels";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { type ToothState, useVisitStore } from "./store/visitStore";
+import { usePatientStore } from "./store/patientStore";
 
 type ImagingViewProps = Record<string, any>;
 
 export function ImagingView(props: ImagingViewProps) {
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const apiUrl = (() => {
 		const envUrl = (import.meta as any).env.VITE_API_URL;
 		if (envUrl) return envUrl.replace(/\/$/, "");
@@ -660,7 +662,14 @@ export function ImagingView(props: ImagingViewProps) {
 								style={{ position: "relative" }}
 							>
 								{localImageIds.length > 0 ? (
-									<Cornerstone3DViewer imageIds={localImageIds} />
+									<Cornerstone3DViewer
+										imageIds={localImageIds}
+										patientId={
+											selectedImagingStudy?.patientId ||
+											selectedPatientId ||
+											undefined
+										}
+									/>
 								) : selectedImagingStudy?.kind === "cbct" ? (
 									<div className="w-full h-full flex flex-col gap-4 p-4">
 										<DicomArchiveUploader onImagesLoaded={setLocalImageIds} />
@@ -669,6 +678,11 @@ export function ImagingView(props: ImagingViewProps) {
 												imageIds={[
 													`wadouri:${apiUrl}/dicomweb/studies/${selectedImagingStudy?.dicomStudyUid}/series/1/instances/1`,
 												]}
+												patientId={
+													selectedImagingStudy?.patientId ||
+													selectedPatientId ||
+													undefined
+												}
 											/>
 										</div>
 									</div>
