@@ -599,4 +599,62 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 
 		return reply.code(200).send(closedShift);
 	});
+
+	app.post("/api/patients/:patientId/installments", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"billing installment create",
+		);
+		if (!orgId) return;
+
+		const { patientId } = request.params as { patientId: string };
+		const { installments, treatmentPlanId } = request.body as any;
+
+		if (!Array.isArray(installments) || installments.length === 0) {
+			return reply.code(400).send({
+				error: "BillingValidationError",
+				message: "Передайте список платежей рассрочки.",
+			});
+		}
+
+		const patient = await getPatientForBilling(orgId, patientId);
+		if (!patient) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент для рассрочки не найден.",
+			});
+		}
+
+		// Delete existing pending installments for this patient
+		await db.transaction(async (tx) => {
+			await tx
+				.delete(schema.paymentInstallments)
+				.where(
+					and(
+						eq(schema.paymentInstallments.patientId, patientId),
+						eq(schema.paymentInstallments.status, "pending"),
+					),
+				);
+
+			// Insert new installments
+			for (const inst of installments) {
+				const amount = parseFloat(String(inst.amount));
+				const dueDate = new Date(inst.dueDate);
+				if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(dueDate.getTime())) {
+					throw new Error("Неверные параметры платежа рассрочки.");
+				}
+
+				await tx.insert(schema.paymentInstallments).values({
+					patientId,
+					treatmentPlanId: treatmentPlanId || "00000000-0000-0000-0000-000000000000",
+					amountRub: amount.toString(),
+					dueDate,
+					status: "pending",
+				});
+			}
+		});
+
+		return reply.code(200).send({ success: true });
+	});
 }

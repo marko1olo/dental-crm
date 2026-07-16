@@ -254,7 +254,10 @@ export function FinanceView({
 				taxDeductionCode={paymentTaxDeductionCode}
 			/>
 
-			<InstallmentScheduler totalEstimate={billingSummary?.totalDueRub || 0} />
+			<InstallmentScheduler
+				totalEstimate={billingSummary?.totalDueRub || 0}
+				patientId={documentPatient?.id}
+			/>
 
 			<FinanceLedger
 				categoryLabels={serviceCategoryLabels}

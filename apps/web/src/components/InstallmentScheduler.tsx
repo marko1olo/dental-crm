@@ -1,10 +1,13 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./InstallmentScheduler.css";
+import { denteAdminSecretRequestHeaders } from "../AppHelpers.js";
+import { showToast } from "./GlobalToast.js";
 
 interface Installment {
 	month: number;
 	dueDate: string;
+	dueDateIso: string;
 	amount: number;
 }
 
@@ -30,18 +33,21 @@ function buildSchedule(
 				month: "short",
 				year: "numeric",
 			}),
+			dueDateIso: d.toISOString(),
 			amount: Math.round(monthly),
 		};
 	});
 }
 
-export const InstallmentScheduler: React.FC<{ totalEstimate: number }> = ({
+export const InstallmentScheduler: React.FC<{ totalEstimate: number; patientId?: string | null | undefined }> = ({
 	totalEstimate,
+	patientId,
 }) => {
 	const [downPct, setDownPct] = useState(0); // 0-100 %
 	const [months, setMonths] = useState(6);
 	const [discount, setDiscount] = useState(0);
 	const [expanded, setExpanded] = useState(true);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Reset when the estimate changes (new patient / plan)
 	useEffect(() => {
@@ -69,6 +75,41 @@ export const InstallmentScheduler: React.FC<{ totalEstimate: number }> = ({
 	const handleSlider = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
 		setDownPct(Number(e.target.value));
 	}, []);
+
+	const saveInstallmentPlan = async () => {
+		if (!patientId) {
+			showToast("Сначала выберите пациента.", "error");
+			return;
+		}
+		if (schedule.length === 0) return;
+
+		setIsSaving(true);
+		try {
+			const res = await fetch(`/api/patients/${patientId}/installments`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					installments: schedule.map((item) => ({
+						dueDate: item.dueDateIso,
+						amount: item.amount,
+					})),
+				}),
+			});
+			if (res.ok) {
+				showToast("План рассрочки успешно сохранен!", "success");
+			} else {
+				const err = await res.json();
+				showToast(err.message || "Ошибка при сохранении рассрочки", "error");
+			}
+		} catch (err) {
+			console.error(err);
+			showToast("Не удалось сохранить план рассрочки", "error");
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
 	// Thumb color track fill via CSS variable trick
 	const sliderFill = `${downPct}%`;
@@ -207,8 +248,12 @@ export const InstallmentScheduler: React.FC<{ totalEstimate: number }> = ({
 								))}
 							</div>
 
-							<button className="inst-save-btn">
-								💾 Сохранить план рассрочки
+							<button
+								onClick={saveInstallmentPlan}
+								disabled={isSaving}
+								className="inst-save-btn"
+							>
+								💾 {isSaving ? "Сохранение..." : "Сохранить план рассрочки"}
 							</button>
 						</div>
 					)}
