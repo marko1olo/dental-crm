@@ -1,7 +1,7 @@
-import { ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { db } from "../db/client.js";
-import { patients } from "../db/schema.js";
+import { communicationEvents, patients } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 export const telephonyRoutes: FastifyPluginAsync = async (
@@ -31,12 +31,18 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			let patient: any = null;
 
 			if (rawPhone.length >= 10) {
-				// Ищем по последним 10 цифрам
+				// Ищем по последним 10 цифрам, строго в пределах этой организации,
+				// чтобы номер не сматчился с пациентом другой клиники.
 				const phoneSuffix = rawPhone.slice(-10);
 				const searchResult = await db
 					.select()
 					.from(patients)
-					.where(ilike(patients.phone, `%${phoneSuffix}%`))
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							ilike(patients.phone, `%${phoneSuffix}%`),
+						),
+					)
 					.limit(1);
 				patient = searchResult[0] || null;
 			}
@@ -47,9 +53,9 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 				payload: {
 					phone: from,
 					patientId: patient?.id || null,
-					patientName: patient
-						? `${patient.lastName || ""} ${patient.firstName || ""}`.trim()
-						: "Неизвестный номер",
+					// Схема пациента хранит единое поле fullName (нет lastName/firstName),
+					// поэтому берём его напрямую, иначе имя в тосте было бы пустым.
+					patientName: patient?.fullName?.trim() || "Неизвестный номер",
 					timestamp: new Date().toISOString(),
 				},
 			});
@@ -82,7 +88,12 @@ export const telephonyRoutes: FastifyPluginAsync = async (
 			const searchResult = await db
 				.select()
 				.from(patients)
-				.where(ilike(patients.phone, `%${phoneSuffix}%`))
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						ilike(patients.phone, `%${phoneSuffix}%`),
+					),
+				)
 				.limit(1);
 			patient = searchResult[0] || null;
 		}

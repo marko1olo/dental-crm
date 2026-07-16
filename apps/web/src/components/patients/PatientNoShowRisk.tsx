@@ -90,28 +90,22 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 	};
 
 	return (
-		<div
-			className="panel"
-			style={{
-				background: "rgba(24, 24, 27, 0.6)",
-				backdropFilter: "blur(12px)",
-				borderRadius: "12px",
-				border: "1px solid rgba(63, 63, 70, 0.4)",
-				padding: "16px",
-				marginBottom: "20px",
-			}}
-		>
+		<div className="panel" style={{ marginBottom: "20px" }}>
 			<h3
-				className="patients-glass-header"
+				className="panel-heading compact-heading"
 				style={{
 					display: "flex",
 					alignItems: "center",
 					gap: "8px",
 					marginBottom: "16px",
+					border: "none",
+					padding: 0,
 				}}
 			>
-				<BrainCircuit size={16} color="#8b5cf6" />
-				AI-Прогноз неявки
+				<BrainCircuit size={16} color="var(--brand-500)" />
+				<span style={{ fontSize: "14px", fontWeight: 600 }}>
+					AI-Прогноз неявки
+				</span>
 			</h3>
 
 			{loading ? (
@@ -126,14 +120,18 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							justifyContent: "space-between",
 							alignItems: "center",
 							marginBottom: "12px",
+							background: "var(--surface-100)",
+							padding: "12px",
+							borderRadius: "8px",
+							border: "1px solid var(--line)",
 						}}
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 							{getRiskIcon(riskData.riskLevel)}
 							<span
 								style={{
 									fontSize: "14px",
-									fontWeight: 500,
+									fontWeight: 600,
 									color: getRiskColor(riskData.riskLevel),
 								}}
 							>
@@ -142,74 +140,74 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 						</div>
 						<div
 							style={{
-								background: "rgba(139, 92, 246, 0.15)",
-								color: "#c4b5fd",
+								background: "var(--brand-100)",
+								color: "var(--brand-700)",
 								padding: "4px 8px",
 								borderRadius: "6px",
 								fontSize: "12px",
-								fontWeight: 600,
+								fontWeight: 700,
 							}}
 						>
 							Score: {riskData.riskScore}/100
 						</div>
 					</div>
 
-					<div className="patients-flex-col-gap-8">
+					<div className="patients-flex-col-gap-8" style={{ marginTop: "16px" }}>
 						<span
-							className="patients-glass-label"
-							style={{ fontSize: "12px", opacity: 0.8 }}
+							style={{
+								fontSize: "12px",
+								color: "var(--slate-500)",
+								fontWeight: 600,
+								textTransform: "uppercase",
+								letterSpacing: "0.5px",
+							}}
 						>
 							Факторы риска:
 						</span>
 
 						{riskData.factors.pastCancellations > 0 && (
 							<div
-								className="patients-glass-row"
 								style={{
-									padding: "6px 8px",
-									background: "rgba(239, 68, 68, 0.1)",
-									borderRadius: "6px",
+									padding: "10px 12px",
+									background: "rgba(239, 68, 68, 0.05)",
+									borderRadius: "8px",
 									border: "1px solid rgba(239, 68, 68, 0.2)",
 								}}
 							>
-								<span style={{ fontSize: "12px", color: "#fca5a5" }}>
-									Частые отмены записей (
-									{riskData.factors.pastCancellations})
+								<span style={{ fontSize: "13px", color: "var(--rust)", fontWeight: 500 }}>
+									Частые отмены записей ({riskData.factors.pastCancellations})
 								</span>
 							</div>
 						)}
 						{riskData.factors.hasDebt && (
 							<div
-								className="patients-glass-row"
 								style={{
-									padding: "6px 8px",
-									background: "rgba(245, 158, 11, 0.1)",
-									borderRadius: "6px",
+									padding: "10px 12px",
+									background: "rgba(245, 158, 11, 0.05)",
+									borderRadius: "8px",
 									border: "1px solid rgba(245, 158, 11, 0.2)",
 								}}
 							>
-								<span style={{ fontSize: "12px", color: "#fcd34d" }}>
+								<span style={{ fontSize: "13px", color: "#d97706", fontWeight: 500 }}>
 									Наличие неоплаченных счетов
 								</span>
 							</div>
 						)}
 
-						{!riskData.factors.hasDebt &&
-							riskData.factors.pastCancellations === 0 && (
-								<div
-									className="patients-glass-row"
-									style={{
-										padding: "6px 8px",
-										background: "rgba(16, 185, 129, 0.1)",
-										borderRadius: "6px",
-										border: "1px solid rgba(16, 185, 129, 0.2)",
-									}}
-								>
-									<span style={{ fontSize: "12px", color: "#6ee7b7" }}>
-										Отрицательные факторы отсутствуют
-									</span>
-								</div>
-							)}
+						{!riskData.factors.hasDebt && riskData.factors.pastCancellations === 0 && (
+							<div
+								style={{
+									padding: "10px 12px",
+									background: "rgba(16, 185, 129, 0.05)",
+									borderRadius: "8px",
+									border: "1px solid rgba(16, 185, 129, 0.2)",
+								}}
+							>
+								<span style={{ fontSize: "13px", color: "var(--teal)", fontWeight: 500 }}>
+									Отрицательные факторы отсутствуют
+								</span>
+							</div>
+						)}
 					</div>
 				</div>
 			) : (

@@ -1,1 +1,0 @@
-ALTER TABLE "organizations" ADD COLUMN "marketing_data" jsonb;

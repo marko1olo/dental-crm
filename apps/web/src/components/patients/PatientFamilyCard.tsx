@@ -128,23 +128,22 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	};
 
 	return (
-		<div
-			className="panel family-wallet-panel"
-			style={{
-				background: "rgba(24, 24, 27, 0.6)",
-				backdropFilter: "blur(12px)",
-				borderRadius: "12px",
-				border: "1px solid rgba(63, 63, 70, 0.4)",
-				padding: "16px",
-				marginBottom: "20px",
-			}}
-		>
+		<div className="panel" style={{ marginBottom: "20px" }}>
 			<h3
-				className="patients-glass-header"
-				style={{ display: "flex", alignItems: "center", gap: "8px" }}
+				className="panel-heading compact-heading"
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: "8px",
+					marginBottom: "16px",
+					border: "none",
+					padding: 0,
+				}}
 			>
-				<Users size={16} />
-				{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
+				<Users size={16} color="var(--brand-500)" />
+				<span style={{ fontSize: "14px", fontWeight: 600 }}>
+					{familyData ? familyData.name || "Семья пациента" : "Семейный счет"}
+				</span>
 			</h3>
 
 			{familyData ? (
@@ -154,39 +153,47 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							display: "flex",
 							justifyContent: "space-between",
 							alignItems: "center",
-							background: "rgba(9, 9, 11, 0.4)",
+							background: "var(--surface-100)",
 							padding: "12px",
 							borderRadius: "8px",
-							border: "1px solid rgba(63, 63, 70, 0.2)",
-							marginBottom: "12px",
+							border: "1px solid var(--line)",
+							marginBottom: "16px",
 						}}
 					>
-						<span className="patients-glass-muted">Баланс семьи:</span>
-						<span className="patients-glass-value" style={{ fontWeight: 600 }}>
+						<span style={{ fontSize: "13px", color: "var(--slate-500)", fontWeight: 500 }}>Баланс семьи:</span>
+						<span style={{ fontSize: "16px", fontWeight: 700, color: "var(--brand-600)" }}>
 							{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽
 						</span>
 					</div>
 					<div className="patients-flex-col-gap-8">
 						<span
-							className="patients-glass-label"
-							style={{ fontSize: "12px", opacity: 0.8 }}
+							style={{
+								fontSize: "12px",
+								color: "var(--slate-500)",
+								fontWeight: 600,
+								textTransform: "uppercase",
+								letterSpacing: "0.5px",
+							}}
 						>
 							Участники:
 						</span>
 						{familyData.members?.map((m: any) => (
 							<div
 								key={m.id}
-								className="patients-glass-row"
 								style={{
-									padding: "6px 8px",
-									background: "rgba(255,255,255,0.02)",
-									borderRadius: "6px",
+									padding: "10px 12px",
+									background: "var(--surface-100)",
+									border: "1px solid var(--line)",
+									borderRadius: "8px",
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
 								}}
 							>
 								<span
 									style={{
-										color: m.id === patientId ? "var(--text)" : "var(--muted)",
-										fontWeight: m.id === patientId ? 500 : 400,
+										color: m.id === patientId ? "var(--ink)" : "var(--slate-500)",
+										fontWeight: m.id === patientId ? 600 : 500,
 										fontSize: "13px",
 									}}
 								>
@@ -196,10 +203,11 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 									<span
 										style={{
 											fontSize: "11px",
-											background: "rgba(59, 130, 246, 0.2)",
-											color: "#60A5FA",
+											background: "var(--brand-100)",
+											color: "var(--brand-700)",
 											padding: "2px 6px",
 											borderRadius: "4px",
+											fontWeight: 600,
 										}}
 									>
 										Глава
@@ -212,8 +220,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			) : (
 				<div style={{ marginTop: "12px" }}>
 					<p
-						className="patients-glass-muted"
-						style={{ fontSize: "13px", marginBottom: "16px" }}
+						style={{ fontSize: "13px", color: "var(--slate-500)", marginBottom: "16px", lineHeight: "1.4" }}
 					>
 						Пациент не состоит в семейной группе. Вы можете создать новую семью
 						или привязать его к существующей.
@@ -317,16 +324,23 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 											display: "flex",
 											justifyContent: "space-between",
 											alignItems: "center",
-											padding: "8px",
-											background: "rgba(255,255,255,0.03)",
-											borderRadius: "6px",
+											padding: "10px",
+											background: "var(--surface-100)",
+											border: "1px solid var(--line)",
+											borderRadius: "8px",
 											cursor: "pointer",
 											transition: "background 0.2s",
+										}}
+										onMouseEnter={(e) => {
+											e.currentTarget.style.background = "var(--surface-200)";
+										}}
+										onMouseLeave={(e) => {
+											e.currentTarget.style.background = "var(--surface-100)";
 										}}
 										onClick={() => handleLinkFamily(f.id)}
 									>
 										<div>
-											<div style={{ fontSize: "13px", fontWeight: 500 }}>
+											<div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
 												{f.name}
 											</div>
 										</div>

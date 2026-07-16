@@ -112,6 +112,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			}
 
 			const loginId = email.toLowerCase().trim();
+            console.log(`[AUTH DEBUG] Attempting login with loginId='${loginId}', password='${password}'`);
 
 			// Look up organization by login ID
 			let org;

@@ -11,6 +11,7 @@ import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 import { AnamnesisPanel } from "./components/AnamnesisPanel";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
+import { ComparativePlannerDashboard } from "./components/plan/ComparativePlannerDashboard";
 import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
 import { PatientClinicalTab } from "./components/patients/PatientClinicalTab";
 import { PatientDocsTab } from "./components/patients/PatientDocsTab";
@@ -116,7 +117,7 @@ export function PatientsView(props: PatientsViewProps) {
 	const [showHints, setShowHints] = useState(false);
 	const [familyData, setFamilyData] = useState<any>(null);
 	const [patientTab, setPatientTab] = useState<
-		"overview" | "clinical" | "docs"
+		"overview" | "clinical" | "plans" | "docs"
 	>("overview");
 	const [insuranceContracts, setInsuranceContracts] = useState<any[]>([]);
 
@@ -477,6 +478,28 @@ export function PatientsView(props: PatientsViewProps) {
 								Медицина (Зубы и Снимки)
 							</button>
 							<button
+								className={`tab-btn ${patientTab === "plans" ? "active" : ""}`}
+								onClick={() => setPatientTab("plans")}
+								style={{
+									padding: "8px 16px",
+									background:
+										patientTab === "plans"
+											? "var(--brand-50)"
+											: "transparent",
+									color:
+										patientTab === "plans"
+											? "var(--brand-600)"
+											: "var(--slate-600)",
+									border: "none",
+									borderRadius: "8px",
+									fontWeight: 600,
+									cursor: "pointer",
+									transition: "all 0.2s",
+								}}
+							>
+								Сметы и Планы
+							</button>
+							<button
 								className={`tab-btn ${patientTab === "docs" ? "active" : ""}`}
 								onClick={() => setPatientTab("docs")}
 								style={{
@@ -505,6 +528,7 @@ export function PatientsView(props: PatientsViewProps) {
 					>
 						{patientTab === "overview" && <PatientOverviewTab props={props} />}
 						{patientTab === "clinical" && <PatientClinicalTab props={props} />}
+						{patientTab === "plans" && <ComparativePlannerDashboard />}
 						{patientTab === "docs" && <PatientDocsTab props={props} />}
 					</section>
 				</main>

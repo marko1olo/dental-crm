@@ -2924,15 +2924,17 @@ export function App() {
 	// Show onboarding wizard on first run (after dashboard is loaded)
 	if (workspaceProfile.loaded && !workspaceProfile.onboardingCompleted) {
 		return (
-			<OnboardingSetupWizard
-				isDark={true}
-				onComplete={() => {
-					useWorkspaceProfileStore
-						.getState()
-						.setFlag("onboardingCompleted", true);
-					loadDashboard();
-				}}
-			/>
+			<AppLogicProvider value={appLogicProps}>
+				<OnboardingSetupWizard
+					isDark={true}
+					onComplete={() => {
+						useWorkspaceProfileStore
+							.getState()
+							.setFlag("onboardingCompleted", true);
+						loadDashboard();
+					}}
+				/>
+			</AppLogicProvider>
 		);
 	}
 

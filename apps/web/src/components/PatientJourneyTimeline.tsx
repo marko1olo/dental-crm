@@ -40,9 +40,37 @@ export const PatientJourneyTimeline: React.FC<{
 				actionUrl: `/patients/${patientId}/visit/${a.id}`,
 			}));
 
+		const payments: any[] = dashboard?.payments || [];
+		const paymentEvents: JourneyEvent[] = payments
+			.filter((p) => p.patientId === patientId)
+			.map((p) => ({
+				id: p.id,
+				timestamp: p.paidAt || p.createdAt,
+				type: "transaction",
+				title: `Оплата (${p.method})`,
+				description: `Сумма: ${p.amountRub.toLocaleString("ru-RU")} ₽`,
+				amount: p.amountRub,
+				status: p.status,
+				actionUrl: `#finance`,
+			}));
+
+		const insights: any[] = dashboard?.patientInsights || [];
+		const insightEvents: JourneyEvent[] = insights
+			.filter((i) => i.patientId === patientId)
+			.map((i) => ({
+				id: i.id || Math.random().toString(),
+				timestamp: i.createdAt || new Date().toISOString(),
+				type: "medical_alert",
+				title: `Аналитика: ${i.category === "churn_risk" ? "Риск оттока" : i.category === "unscheduled_treatment" ? "Незапланированное лечение" : i.category}`,
+				description: i.reason,
+				status: i.riskLevel,
+			}));
+
+		const allEvents = [...visitEvents, ...paymentEvents, ...insightEvents];
+
 		// Sort by timestamp
 		setEvents(
-			visitEvents.sort(
+			allEvents.sort(
 				(a, b) =>
 					new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
 			),

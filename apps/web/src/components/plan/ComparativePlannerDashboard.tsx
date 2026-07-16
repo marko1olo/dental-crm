@@ -106,7 +106,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 					for (const plan of loadedPlans) {
 						if (!next[plan.id]) {
 							next[plan.id] = {};
-							for (const item of plan.items) {
+							for (const item of (plan.items || [])) {
 								// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 								if (item.isOptional) next[plan.id]![item.id] = true;
 							}
@@ -173,7 +173,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 						id: planId,
 						status: newStatus,
 						// Pass minimal update — backend handles upsert
-						items: plans.find((p) => p.id === planId)?.items ?? [],
+						items: plans.find((p) => p.id === planId)?.items || [],
 					}),
 				},
 			);
@@ -231,7 +231,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
           <table>
             <thead><tr><th>Услуга</th><th>Категория</th><th>Стоимость</th></tr></thead>
             <tbody>
-              ${plan.items
+              ${(plan.items || [])
 								.filter(
 									(item) =>
 										!item.isOptional || optionalToggles[plan.id]?.[item.id],
@@ -254,7 +254,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 	const handleExportCsv = (plan: TreatmentPlan) => {
 		const rows = [["Услуга", "Категория", "Цена (₽)", "Опция"]];
-		for (const item of plan.items) {
+		for (const item of (plan.items || [])) {
 			rows.push([
 				item.name,
 				CATEGORY_LABELS[item.category],
@@ -280,7 +280,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		let patientCopay = 0;
 		let insuranceCoverage = 0;
 
-		for (const item of plan.items) {
+		for (const item of (plan.items || [])) {
 			const isSelected =
 				!item.isOptional || optionalToggles[plan.id]?.[item.id];
 			if (!isSelected) continue;
@@ -578,7 +578,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 										{/* Services */}
 										<div className="services-section">
 											<h3>Услуги в смете</h3>
-											{plan.items.length === 0 ? (
+											{(!plan.items || plan.items.length === 0) ? (
 												<p
 													style={{
 														color: "var(--muted)",

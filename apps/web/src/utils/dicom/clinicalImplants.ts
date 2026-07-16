@@ -62,10 +62,10 @@ export const ClinicalStore = {
 				}),
 			);
 		}
-		// Hardcoded tooth 46 for e2e testing purposes and demo integration
+		// Use actual tooth FDI if available, fallback to 46 for untargeted drops
 		window.dispatchEvent(
 			new CustomEvent("clinical-implant-placed", {
-				detail: { toothNumber: 46, implantId: implant.id },
+				detail: { toothNumber: implant.toothFdi || 46, implantId: implant.id },
 			}),
 		);
 		this.notify();

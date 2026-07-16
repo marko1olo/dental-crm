@@ -5,7 +5,7 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { inventoryItems } from "../db/schema.js";
+import { inventoryItems, procedureMaterialRules } from "../db/schema.js";
 
 export const inventoryRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
@@ -225,4 +225,120 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		await db.delete(inventoryItems).where(eq(inventoryItems.id, itemId));
 		return { success: true };
 	});
+
+	// GET all procedure material rules for a specific service (authenticated)
+	server.get<{ Params: { organizationId: string; serviceId: string } }>(
+		"/:organizationId/rules/:serviceId",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"inventory rules read",
+			);
+			if (!resolvedOrgId) return;
+
+			const { organizationId, serviceId } = request.params;
+			if (resolvedOrgId !== organizationId) {
+				return reply.code(403).send({ error: "Forbidden" });
+			}
+
+			const rules = await db
+				.select({
+					id: procedureMaterialRules.id,
+					serviceId: procedureMaterialRules.serviceId,
+					inventoryItemId: procedureMaterialRules.inventoryItemId,
+					quantityToDeduct: procedureMaterialRules.quantityToDeduct,
+					createdAt: procedureMaterialRules.createdAt,
+					itemName: inventoryItems.name,
+					stockQuantity: inventoryItems.stockQuantity,
+				})
+				.from(procedureMaterialRules)
+				.innerJoin(inventoryItems, eq(procedureMaterialRules.inventoryItemId, inventoryItems.id))
+				.where(eq(procedureMaterialRules.serviceId, serviceId));
+
+			return rules;
+		},
+	);
+
+	// POST create or update a procedure material rule (staff/admin only)
+	server.post<{
+		Params: { organizationId: string };
+		Body: {
+			serviceId: string;
+			inventoryItemId: string;
+			quantityToDeduct: number;
+		};
+	}>("/:organizationId/rules", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory rules create",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const { serviceId, inventoryItemId, quantityToDeduct } = request.body;
+		if (!serviceId || !inventoryItemId || typeof quantityToDeduct !== "number") {
+			return reply.status(400).send({ error: "Missing required fields" });
+		}
+
+		// Check if rule already exists for this service and item
+		const [existing] = await db
+			.select()
+			.from(procedureMaterialRules)
+			.where(
+				and(
+					eq(procedureMaterialRules.serviceId, serviceId),
+					eq(procedureMaterialRules.inventoryItemId, inventoryItemId),
+				),
+			)
+			.limit(1);
+
+		if (existing) {
+			const [updated] = await db
+				.update(procedureMaterialRules)
+				.set({
+					quantityToDeduct: Math.max(1, quantityToDeduct),
+				})
+				.where(eq(procedureMaterialRules.id, existing.id))
+				.returning();
+			return updated;
+		}
+
+		const [newRule] = await db
+			.insert(procedureMaterialRules)
+			.values({
+				serviceId,
+				inventoryItemId,
+				quantityToDeduct: Math.max(1, quantityToDeduct),
+			})
+			.returning();
+
+		return newRule;
+	});
+
+	// DELETE a procedure material rule (admin only)
+	server.delete<{
+		Params: { organizationId: string; ruleId: string };
+	}>("/:organizationId/rules/:ruleId", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory rules delete",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId, ruleId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		await db.delete(procedureMaterialRules).where(eq(procedureMaterialRules.id, ruleId));
+		return { success: true };
+	});
 };
+

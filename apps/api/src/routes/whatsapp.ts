@@ -25,8 +25,8 @@ import {
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
-import { wsBroker } from "../services/websocketBroker.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 const updateWhatsappConfigSchema = z.object({
 	phoneNumberId: z.string().trim().max(64).nullable().optional(),
@@ -289,65 +289,128 @@ export async function registerWhatsappRoutes(
 	/**
 	 * POST /api/whatsapp/webhook
 	 * Receives inbound WhatsApp events from Meta.
-	 * Always responds 200 immediately — processes async.
+	 *
+	 * Registered in an encapsulated plugin scope so we can attach a buffer-based
+	 * JSON content-type parser that preserves the raw request bytes. Meta signs
+	 * the raw body with the App Secret (`x-hub-signature-256`), so the signature
+	 * must be checked against the exact bytes received — not a re-serialized
+	 * object. The parser is scoped here and does NOT affect any other route.
 	 */
-	app.post("/api/whatsapp/webhook", async (request, reply) => {
-		reply.code(200).send({ received: true });
+	await app.register(async (webhookScope) => {
+		webhookScope.addContentTypeParser(
+			"application/json",
+			{ parseAs: "buffer" },
+			(request, body, done) => {
+				(request as unknown as { rawBody?: Buffer }).rawBody = body as Buffer;
+				try {
+					const text = (body as Buffer).toString("utf8");
+					done(null, text.length > 0 ? JSON.parse(text) : {});
+				} catch (err) {
+					done(err as Error, undefined);
+				}
+			},
+		);
 
-		const body = request.body as Record<string, unknown>;
-		const entries = Array.isArray(body.entry) ? body.entry : [];
+		webhookScope.post("/api/whatsapp/webhook", async (request, reply) => {
+			const appSecret = configuredWhatsappAppSecret();
 
-		for (const entry of entries) {
-			const e = entry as Record<string, unknown>;
-			const changes = Array.isArray(e.changes) ? (e.changes as unknown[]) : [];
+			if (!appSecret) {
+				// Without an App Secret we cannot authenticate the sender. Refuse to
+				// ingest in production; allow (with a warning) in development so local
+				// webhook testing works without Meta credentials.
+				if (process.env.NODE_ENV === "production") {
+					return reply.code(503).send({
+						error: "WhatsappAppSecretRequired",
+						message:
+							"WHATSAPP_APP_SECRET не настроен — приём вебхуков WhatsApp отключён.",
+					});
+				}
+				console.warn(
+					"[WhatsApp] WHATSAPP_APP_SECRET не задан: подпись вебхука не проверяется (только dev).",
+				);
+			} else {
+				const rawBody =
+					(request as unknown as { rawBody?: Buffer }).rawBody ??
+					Buffer.from(
+						typeof request.body === "string"
+							? request.body
+							: JSON.stringify(request.body ?? {}),
+						"utf8",
+					);
+				const signature =
+					(request.headers["x-hub-signature-256"] as string | undefined) ??
+					null;
 
-			for (const change of changes) {
-				const c = change as Record<string, unknown>;
-				const value = c.value as Record<string, unknown> | undefined;
-				if (!value) continue;
-
-				const metadata = value.metadata as Record<string, unknown> | undefined;
-				const phoneNumberId =
-					typeof metadata?.phone_number_id === "string"
-						? metadata.phone_number_id
-						: null;
-				if (!phoneNumberId) continue;
-
-				const [orgConfig] = await db
-					.select({ organizationId: denteWhatsappBotConfigs.organizationId })
-					.from(denteWhatsappBotConfigs)
-					.where(eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId))
-					.limit(1);
-
-				if (!orgConfig) continue;
-
-				const messages = Array.isArray(value.messages)
-					? (value.messages as unknown[])
-					: [];
-
-				for (const msg of messages) {
-					const m = msg as Record<string, unknown>;
-					const fromId = typeof m.from === "string" ? m.from : "unknown";
-					const textObj = m.text as Record<string, unknown> | undefined;
-					const textBody =
-						typeof textObj?.body === "string" ? textObj.body : null;
-
-					await db.insert(messengerInboundEvents).values({
-						organizationId: orgConfig.organizationId,
-						channel: "whatsapp",
-						externalChatId: fromId,
-						messageText: textBody,
-						eventKind: "message",
-						rawPayload: m as Record<string, unknown>,
+				if (!isValidWhatsappSignature(rawBody, signature, appSecret)) {
+					return reply.code(401).send({
+						error: "WhatsappSignatureMismatch",
+						message: "Подпись вебхука WhatsApp недействительна.",
 					});
 				}
 			}
-		}
 
-		// Await or float the processor to ingest this message to the Inbox immediately
-		void processInboundEvents().catch((err) =>
-			console.error("Whatsapp ingestion error:", err),
-		);
+			// Acknowledge immediately — Meta retries on non-200. Process async below.
+			reply.code(200).send({ received: true });
+
+			const body = request.body as Record<string, unknown>;
+			const entries = Array.isArray(body.entry) ? body.entry : [];
+
+			for (const entry of entries) {
+				const e = entry as Record<string, unknown>;
+				const changes = Array.isArray(e.changes)
+					? (e.changes as unknown[])
+					: [];
+
+				for (const change of changes) {
+					const c = change as Record<string, unknown>;
+					const value = c.value as Record<string, unknown> | undefined;
+					if (!value) continue;
+
+					const metadata = value.metadata as
+						| Record<string, unknown>
+						| undefined;
+					const phoneNumberId =
+						typeof metadata?.phone_number_id === "string"
+							? metadata.phone_number_id
+							: null;
+					if (!phoneNumberId) continue;
+
+					const [orgConfig] = await db
+						.select({ organizationId: denteWhatsappBotConfigs.organizationId })
+						.from(denteWhatsappBotConfigs)
+						.where(eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId))
+						.limit(1);
+
+					if (!orgConfig) continue;
+
+					const messages = Array.isArray(value.messages)
+						? (value.messages as unknown[])
+						: [];
+
+					for (const msg of messages) {
+						const m = msg as Record<string, unknown>;
+						const fromId = typeof m.from === "string" ? m.from : "unknown";
+						const textObj = m.text as Record<string, unknown> | undefined;
+						const textBody =
+							typeof textObj?.body === "string" ? textObj.body : null;
+
+						await db.insert(messengerInboundEvents).values({
+							organizationId: orgConfig.organizationId,
+							channel: "whatsapp",
+							externalChatId: fromId,
+							messageText: textBody,
+							eventKind: "message",
+							rawPayload: m as Record<string, unknown>,
+						});
+					}
+				}
+			}
+
+			// Float the processor to ingest this message to the Inbox immediately
+			void processInboundEvents().catch((err) =>
+				console.error("Whatsapp ingestion error:", err),
+			);
+		});
 	});
 
 	/**
@@ -422,7 +485,9 @@ export async function registerWhatsappRoutes(
 			},
 		});
 
-		console.log(`[WhatsApp Outbox] Sent to ${patient.phone || patient.fullName}: ${message}`);
+		console.log(
+			`[WhatsApp Outbox] Sent to ${patient.phone || patient.fullName}: ${message}`,
+		);
 
 		return { ok: true };
 	});

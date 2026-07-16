@@ -85,28 +85,39 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 	};
 
 	return (
-		<div className="glass-panel p-4 rounded-xl flex items-center justify-between mt-4 border border-white/10 bg-black/40 backdrop-blur-md shadow-lg">
-			<div className="flex items-center gap-3">
+		<div
+			className="panel"
+			style={{
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "space-between",
+				marginTop: "16px",
+				padding: "16px",
+			}}
+		>
+			<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 				{status === "Accepted" ? (
-					<ShieldCheck className="text-emerald-400 w-6 h-6" />
+					<ShieldCheck size={24} color="var(--teal)" />
 				) : status === "Error" ? (
-					<AlertTriangle className="text-red-400 w-6 h-6" />
+					<AlertTriangle size={24} color="var(--rust)" />
 				) : (
 					<RefreshCcw
-						className={`text-blue-400 w-6 h-6 ${isLoading ? "animate-spin" : ""}`}
+						size={24}
+						color="var(--brand-500)"
+						className={isLoading ? "animate-spin" : ""}
 					/>
 				)}
 				<div>
-					<h3 className="text-sm font-semibold text-white">
+					<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>
 						Интеграция с ЕГИСЗ (РЭМД)
 					</h3>
-					<p className="text-xs text-gray-300">
+					<p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--slate-500)" }}>
 						{status === "Accepted" && transactionId ? (
-							<span className="text-emerald-300">
+							<span style={{ color: "var(--teal)" }}>
 								Успешно выгружено. Транзакция: {transactionId}
 							</span>
 						) : status === "Error" ? (
-							<span className="text-red-300">Ошибка: {errorDetails}</span>
+							<span style={{ color: "var(--rust)" }}>Ошибка: {errorDetails}</span>
 						) : (
 							"Данные приема готовы к отправке"
 						)}
@@ -114,12 +125,20 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 				</div>
 			</div>
 			<button
+				type="button"
 				onClick={handleSend}
 				disabled={isLoading || status === "Accepted"}
-				className="flex items-center gap-2 px-4 py-2 bg-blue-600/80 hover:bg-blue-500/80 text-white text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+				className={status === "Error" ? "secondary-button" : "primary-button"}
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: "8px",
+					fontSize: "12px",
+					padding: "8px 16px",
+				}}
 			>
 				{status === "Error" ? "Повторить отправку" : "Отправить в ЕГИСЗ"}
-				{status === "Accepted" && <CheckCircle2 className="w-4 h-4" />}
+				{status === "Accepted" && <CheckCircle2 size={16} />}
 			</button>
 		</div>
 	);

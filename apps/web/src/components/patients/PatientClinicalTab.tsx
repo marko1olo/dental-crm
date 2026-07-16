@@ -12,7 +12,6 @@ export function PatientClinicalTab({ props }: { props: PatientsViewProps }) {
 		<>
 			{/* Premium Clinical Experience (Full Width Odontogram + Grid) */}
 			<div className="patients-flex-col-gap-24-my">
-				{selectedPatientId && <AnamnesisPanel patientId={selectedPatientId} />}
 				<div className="patients-w-100">
 					{selectedPatientId && (
 						<OdontogramModule
@@ -29,7 +28,9 @@ export function PatientClinicalTab({ props }: { props: PatientsViewProps }) {
 					<div className="clinical-col-left">
 						<VisiographAnalyzer />
 					</div>
-					<div className="clinical-col-right"></div>
+					<div className="clinical-col-right">
+						{selectedPatientId && <AnamnesisPanel patientId={selectedPatientId} />}
+					</div>
 				</div>
 			</div>
 		</>

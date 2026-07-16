@@ -33,6 +33,8 @@ export const PublicBookingWidget: React.FC = () => {
 	const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 	const [slots, setSlots] = useState<BookingSlot[]>([]);
 	const [selectedSlot, setSelectedSlot] = useState<BookingSlot | null>(null);
+	// Bumped to force a slot re-fetch (e.g. after a 409 conflict on submit).
+	const [slotsReloadKey, setSlotsReloadKey] = useState(0);
 
 	const [patientName, setPatientName] = useState("");
 	const [patientPhone, setPatientPhone] = useState("");
@@ -101,6 +103,7 @@ export const PublicBookingWidget: React.FC = () => {
 		};
 	}, [organizationId, messageFromResponse]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: slotsReloadKey is an intentional manual re-fetch trigger (bumped after a 409 conflict), not a value read inside the effect.
 	useEffect(() => {
 		if (!organizationId || !selectedDoctorId || !selectedDate) return;
 		let cancelled = false;
@@ -138,7 +141,13 @@ export const PublicBookingWidget: React.FC = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [organizationId, selectedDoctorId, selectedDate, messageFromResponse]);
+	}, [
+		organizationId,
+		selectedDoctorId,
+		selectedDate,
+		slotsReloadKey,
+		messageFromResponse,
+	]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -162,6 +171,16 @@ export const PublicBookingWidget: React.FC = () => {
 
 			if (res.ok) {
 				setIsSuccess(true);
+			} else if (res.status === 409) {
+				// Slot was taken by someone else between selection and submit.
+				// Bounce back to slot picking with a fresh list.
+				setSelectedSlot(null);
+				setSlotsReloadKey((k) => k + 1);
+				setStep(2);
+				setSubmitError(null);
+				setLoadError(
+					"Это время только что заняли. Выберите другое свободное время.",
+				);
 			} else {
 				setSubmitError(
 					await messageFromResponse(

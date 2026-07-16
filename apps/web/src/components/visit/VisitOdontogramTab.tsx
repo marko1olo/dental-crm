@@ -10,19 +10,38 @@ export function VisitOdontogramTab() {
 	if (!activePatient?.id || !activeAppointment?.id) return null;
 
 	return (
-		<div className="flex flex-col xl:flex-row gap-6 my-6 w-full max-w-full">
-			<div className="w-full xl:w-[45%] flex-shrink-0">
+		<div
+			style={{
+				display: "flex",
+				flexWrap: "wrap",
+				gap: "24px",
+				margin: "24px 0",
+				width: "100%",
+				maxWidth: "100%",
+			}}
+		>
+			<div
+				style={{
+					flex: "1 1 45%",
+					minWidth: "300px",
+				}}
+			>
 				<OdontogramModule
 					patientId={activePatient.id}
 					pediatricMode={dashboard?.clinicSettings?.profile?.hasPediatricMode}
 				/>
 			</div>
-			<div className="w-full xl:w-[55%] flex-grow">
+			<div
+				style={{
+					flex: "1 1 50%",
+					minWidth: "300px",
+				}}
+			>
 				<VisitDiaryEditor
 					visitId={activeAppointment.id}
 					patientId={activePatient.id}
 				/>
-				<div className="mt-4">
+				<div style={{ marginTop: "16px" }}>
 					<EgiszMonitor
 						visitId={activeAppointment.id}
 						patientId={activePatient.id}

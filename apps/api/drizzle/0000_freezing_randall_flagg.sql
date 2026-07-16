@@ -32,7 +32,7 @@ CREATE TYPE "public"."ingestion_source_type" AS ENUM('database', 'folder', 'csv'
 CREATE TYPE "public"."ingestion_status" AS ENUM('pending', 'processing', 'completed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."invoice_status" AS ENUM('unpaid', 'partially_paid', 'paid');--> statement-breakpoint
 CREATE TYPE "public"."lab_order_status" AS ENUM('draft', 'sent', 'in_progress', 'shipped', 'received', 'refitting', 'completed');--> statement-breakpoint
-CREATE TYPE "public"."ledger_payment_method" AS ENUM('cash', 'card', 'dms', 'installment_balance');--> statement-breakpoint
+CREATE TYPE "public"."ledger_payment_method" AS ENUM('cash', 'card', 'dms', 'installment_balance', 'family_wallet');--> statement-breakpoint
 CREATE TYPE "public"."misch_bone_class" AS ENUM('D1', 'D2', 'D3', 'D4');--> statement-breakpoint
 CREATE TYPE "public"."patient_status" AS ENUM('active', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."payment_method" AS ENUM('cash', 'card', 'bank_transfer', 'online', 'insurance', 'family_wallet', 'other');--> statement-breakpoint
@@ -313,6 +313,20 @@ CREATE TABLE "dental_lab_orders" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "dente_max_bot_configs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"bot_id" text,
+	"token_secret_ref" text,
+	"webhook_url" text,
+	"enabled_features_json" text DEFAULT '[]' NOT NULL,
+	"staff_routing_json" text DEFAULT '{"defaultUserId":null,"rules":[]}' NOT NULL,
+	"is_active" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "dente_max_bot_configs_org_unique" UNIQUE("organization_id")
+);
+--> statement-breakpoint
 CREATE TABLE "dente_telegram_bot_configs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" uuid NOT NULL,
@@ -411,6 +425,20 @@ CREATE TABLE "dente_telegram_webhook_events" (
 	CONSTRAINT "dente_telegram_webhook_events_org_config_update_unique" UNIQUE("organization_id","bot_config_id","update_id")
 );
 --> statement-breakpoint
+CREATE TABLE "dente_whatsapp_bot_configs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"phone_number_id" text,
+	"token_secret_ref" text,
+	"webhook_verify_token" text,
+	"enabled_features_json" text DEFAULT '[]' NOT NULL,
+	"staff_routing_json" text DEFAULT '{"defaultUserId":null,"rules":[]}' NOT NULL,
+	"is_active" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "dente_whatsapp_bot_configs_org_unique" UNIQUE("organization_id")
+);
+--> statement-breakpoint
 CREATE TABLE "dicom_workbench_bundles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" uuid NOT NULL,
@@ -433,9 +461,23 @@ CREATE TABLE "doctor_commissions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
-	"specialization" text NOT NULL,
-	"percentage" integer,
-	"fixed_rate" integer,
+	"specialty" "dental_specialty" NOT NULL,
+	"service_category" "service_category" NOT NULL,
+	"commission_pct" real DEFAULT 30 NOT NULL,
+	"material_cost_deduction_pct" real DEFAULT 100 NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"effective_from" timestamp with time zone DEFAULT now() NOT NULL,
+	"effective_to" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "doctor_payrolls" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
+	"visit_id" uuid,
+	"amount_rub" numeric(12, 2) DEFAULT '0' NOT NULL,
+	"description" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -679,6 +721,19 @@ CREATE TABLE "lab_orders" (
 	CONSTRAINT "lab_orders_secure_token_unique" UNIQUE("secure_token")
 );
 --> statement-breakpoint
+CREATE TABLE "messenger_inbound_events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"channel" text NOT NULL,
+	"patient_id" uuid,
+	"external_chat_id" text NOT NULL,
+	"message_text" text,
+	"event_kind" text NOT NULL,
+	"raw_payload" jsonb,
+	"processed_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "migration_templates" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" uuid NOT NULL,
@@ -707,10 +762,11 @@ CREATE TABLE "organizations" (
 	"signatory_title" text,
 	"specializations" jsonb,
 	"working_hours" jsonb,
-	"currency" text DEFAULT 'в‚Ѕ',
+	"currency" text DEFAULT '₽',
 	"theme_color" text DEFAULT 'teal',
 	"logo_url" text,
 	"stamp_url" text,
+	"marketing_data" jsonb,
 	"clinic_mode" text DEFAULT 'demo' NOT NULL,
 	"clinic_schedule" jsonb,
 	"is_synced" boolean DEFAULT false NOT NULL,
@@ -844,7 +900,8 @@ CREATE TABLE "payments" (
 	"is_synced" boolean DEFAULT false NOT NULL,
 	"version" integer DEFAULT 1 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "payments_org_client_mutation_unique" UNIQUE("organization_id","client_mutation_id")
 );
 --> statement-breakpoint
 CREATE TABLE "procedure_material_rules" (
@@ -853,6 +910,23 @@ CREATE TABLE "procedure_material_rules" (
 	"inventory_item_id" uuid NOT NULL,
 	"quantity_to_deduct" integer DEFAULT 1 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "protocol_templates" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"specialty" "dental_specialty" NOT NULL,
+	"title" text NOT NULL,
+	"visit_reason" text NOT NULL,
+	"default_duration_minutes" integer DEFAULT 30 NOT NULL,
+	"complaint_prompt" text DEFAULT '' NOT NULL,
+	"objective_template" text DEFAULT '' NOT NULL,
+	"diagnosis_hints" jsonb DEFAULT '[]' NOT NULL,
+	"treatment_plan_template" text DEFAULT '' NOT NULL,
+	"required_documents" jsonb DEFAULT '[]' NOT NULL,
+	"suggested_imaging" jsonb DEFAULT '[]' NOT NULL,
+	"safety_warnings" jsonb DEFAULT '[]' NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "scheduler_reservations" (
@@ -1025,6 +1099,7 @@ CREATE TABLE "visit_diaries" (
 	"diagnosis_icd10" varchar(50),
 	"diagnosis_tooth" varchar(10),
 	"treatment_description" text,
+	"crypto_signature_pkcs7" text,
 	"is_locked" boolean DEFAULT false NOT NULL,
 	"locked_at" timestamp with time zone,
 	"locked_by_user_id" uuid,
@@ -1162,6 +1237,7 @@ ALTER TABLE "crm_leads" ADD CONSTRAINT "crm_leads_organization_id_organizations_
 ALTER TABLE "dental_lab_orders" ADD CONSTRAINT "dental_lab_orders_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dental_lab_orders" ADD CONSTRAINT "dental_lab_orders_clinic_id_clinics_id_fk" FOREIGN KEY ("clinic_id") REFERENCES "public"."clinics"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dental_lab_orders" ADD CONSTRAINT "dental_lab_orders_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "dente_max_bot_configs" ADD CONSTRAINT "dente_max_bot_configs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dente_telegram_bot_configs" ADD CONSTRAINT "dente_telegram_bot_configs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dente_telegram_bot_configs" ADD CONSTRAINT "dente_telegram_bot_configs_clinic_id_clinics_id_fk" FOREIGN KEY ("clinic_id") REFERENCES "public"."clinics"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dente_telegram_chat_links" ADD CONSTRAINT "dente_telegram_chat_links_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1175,10 +1251,14 @@ ALTER TABLE "dente_telegram_outbox_delivery_receipts" ADD CONSTRAINT "dente_tele
 ALTER TABLE "dente_telegram_outbox_delivery_receipts" ADD CONSTRAINT "dente_telegram_outbox_delivery_receipts_event_id_communication_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."communication_events"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dente_telegram_webhook_events" ADD CONSTRAINT "dente_telegram_webhook_events_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dente_telegram_webhook_events" ADD CONSTRAINT "dente_telegram_webhook_events_clinic_id_clinics_id_fk" FOREIGN KEY ("clinic_id") REFERENCES "public"."clinics"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "dente_whatsapp_bot_configs" ADD CONSTRAINT "dente_whatsapp_bot_configs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dicom_workbench_bundles" ADD CONSTRAINT "dicom_workbench_bundles_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dicom_workbench_bundles" ADD CONSTRAINT "dicom_workbench_bundles_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "doctor_commissions" ADD CONSTRAINT "doctor_commissions_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "doctor_commissions" ADD CONSTRAINT "doctor_commissions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "doctor_payrolls" ADD CONSTRAINT "doctor_payrolls_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "doctor_payrolls" ADD CONSTRAINT "doctor_payrolls_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "doctor_payrolls" ADD CONSTRAINT "doctor_payrolls_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "doctor_assistants" ADD CONSTRAINT "doctor_assistants_doctor_id_users_id_fk" FOREIGN KEY ("doctor_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "doctor_assistants" ADD CONSTRAINT "doctor_assistants_assistant_id_users_id_fk" FOREIGN KEY ("assistant_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "document_templates" ADD CONSTRAINT "document_templates_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1220,6 +1300,8 @@ ALTER TABLE "inventory_items" ADD CONSTRAINT "inventory_items_organization_id_or
 ALTER TABLE "lab_orders" ADD CONSTRAINT "lab_orders_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "lab_orders" ADD CONSTRAINT "lab_orders_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "lab_orders" ADD CONSTRAINT "lab_orders_doctor_id_users_id_fk" FOREIGN KEY ("doctor_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "messenger_inbound_events" ADD CONSTRAINT "messenger_inbound_events_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "messenger_inbound_events" ADD CONSTRAINT "messenger_inbound_events_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "migration_templates" ADD CONSTRAINT "migration_templates_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "outgoing_notifications" ADD CONSTRAINT "outgoing_notifications_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "outgoing_notifications" ADD CONSTRAINT "outgoing_notifications_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1239,6 +1321,7 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_patient_id_patients_id_fk" FOREI
 ALTER TABLE "payments" ADD CONSTRAINT "payments_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "procedure_material_rules" ADD CONSTRAINT "procedure_material_rules_service_id_service_catalog_items_id_fk" FOREIGN KEY ("service_id") REFERENCES "public"."service_catalog_items"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "procedure_material_rules" ADD CONSTRAINT "procedure_material_rules_inventory_item_id_inventory_items_id_fk" FOREIGN KEY ("inventory_item_id") REFERENCES "public"."inventory_items"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "protocol_templates" ADD CONSTRAINT "protocol_templates_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scheduler_reservations" ADD CONSTRAINT "scheduler_reservations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scheduler_reservations" ADD CONSTRAINT "scheduler_reservations_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scheduler_reservations" ADD CONSTRAINT "scheduler_reservations_treatment_plan_id_treatment_plans_id_fk" FOREIGN KEY ("treatment_plan_id") REFERENCES "public"."treatment_plans"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

@@ -2671,7 +2671,7 @@ export function useAppLogic(): any {
 		updateNewAppointmentDraft,
 		resetNewAppointmentDraft,
 		closeAppointmentEditor,
-		buildOnboardingFirstAppointmentIssues,
+		buildOnboardingFirstAppointmentIssues: _buildOnboardingFirstAppointmentIssues,
 		saveOnboardingSchedulesIfDirty,
 		openScheduleWarning,
 		saveStaffSchedule,
@@ -2876,6 +2876,57 @@ export function useAppLogic(): any {
 	async function saveClinicProfileIfDirty(): Promise<boolean> {
 		if (!clinicProfileDirty) return true;
 		return saveClinicProfileFromDraft();
+	}
+
+	function buildOnboardingFirstAppointmentIssues(): string[] {
+		if (!clinicProfileDraft) return [];
+		const issues: string[] = [];
+		const requiredClinicDraftFields: Array<[string, string]> = [
+			["название клиники", clinicProfileDraft.clinicName],
+			["телефон клиники", clinicProfileDraft.phone],
+			["часовой пояс", clinicProfileDraft.timezone],
+		];
+		for (const [label, value] of requiredClinicDraftFields) {
+			if (!value.trim()) issues.push(label);
+		}
+		const activeStaff =
+			(dashboard?.clinicSettings?.staff || []).filter(
+				(member) => member.active,
+			) ?? [];
+		const activeDoctors = activeStaff.filter(
+			(member) => member.role === "doctor" || member.role === "owner",
+		);
+		const activeAssistants = activeStaff.filter(
+			(member) => member.role === "assistant",
+		);
+		const activeChairs =
+			(dashboard?.clinicSettings?.chairs || []).filter(
+				(chair) => chair.active,
+			) ?? [];
+		if (!activeDoctors.length) issues.push("врач для первого приема");
+		if (!activeDoctors.some((member) => member.canSignMedicalRecords))
+			issues.push("врач с правом подписи ЭМК");
+		if (!activeChairs.length) issues.push("кресло / кабинет");
+		if (
+			dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" &&
+			!activeAssistants.length
+		)
+			issues.push("ассистент");
+		const activeAppointmentReadiness = dashboard?.activeVisit?.appointmentId
+			? dashboard.appointmentReadiness?.find(
+					(readiness) =>
+						readiness.appointmentId === dashboard?.activeVisit?.appointmentId,
+				)
+			: null;
+		const activeAppointmentBlockingChecks =
+			(activeAppointmentReadiness?.checks || []).filter(
+				(check) =>
+					(check.key === "team" || check.key === "schedule") && !check.ready,
+			) ?? [];
+		for (const check of activeAppointmentBlockingChecks) {
+			issues.push(`${check.title.toLocaleLowerCase("ru-RU")}: ${check.detail}`);
+		}
+		return issues;
 	}
 
 	function buildOnboardingDocumentReadinessIssues(): string[] {
@@ -4057,9 +4108,7 @@ export function useAppLogic(): any {
 			() => {
 				dirtyAppointmentIds.forEach(
 					(appointmentId) =>
-						void saveAppointmentSchedule(appointmentId, {
-							closeEditorOnSave: false,
-						}),
+						void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false }),
 				);
 			},
 			appointmentRetryingErrors ? 5000 : 1200,

@@ -29,7 +29,101 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 }) => {
 	const [items, setItems] = useState<InventoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const { auth } = useAppLogicContext();
+	const { auth, dashboard } = useAppLogicContext();
+
+	const [activeSubTab, setActiveSubTab] = useState<"inventory" | "rules">("inventory");
+	const [selectedServiceId, setSelectedServiceId] = useState<string>("");
+	const [rulesList, setRulesList] = useState<any[]>([]);
+	const [isLoadingRules, setIsLoadingRules] = useState(false);
+	const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string>("");
+	const [quantityToDeduct, setQuantityToDeduct] = useState<string>("1");
+
+	const fetchRules = async (serviceId: string) => {
+		if (!serviceId) {
+			setRulesList([]);
+			return;
+		}
+		try {
+			setIsLoadingRules(true);
+			const res = await fetch(`/api/inventory/${organizationId}/rules/${serviceId}`, {
+				headers: auth.denteClinicalReadHeaders(),
+			});
+			if (res.ok) {
+				const data = await res.json();
+				setRulesList(Array.isArray(data) ? data : []);
+			} else {
+				showToast("Ошибка загрузки правил", "error");
+			}
+		} catch (e) {
+			console.error(e);
+			showToast("Ошибка загрузки правил", "error");
+		} finally {
+			setIsLoadingRules(false);
+		}
+	};
+
+	useEffect(() => {
+		if (activeSubTab === "rules" && selectedServiceId) {
+			fetchRules(selectedServiceId);
+		}
+	}, [activeSubTab, selectedServiceId]);
+
+	const handleAddRule = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!selectedServiceId || !selectedInventoryItemId || !quantityToDeduct) return;
+
+		const qty = parseInt(quantityToDeduct);
+		if (isNaN(qty) || qty <= 0) {
+			showToast("Введите корректное количество", "error");
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/inventory/${organizationId}/rules`, {
+				method: "POST",
+				headers: auth.denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					serviceId: selectedServiceId,
+					inventoryItemId: selectedInventoryItemId,
+					quantityToDeduct: qty,
+				}),
+			});
+
+			if (res.ok) {
+				showToast("Правило списания сохранено", "success");
+				setSelectedInventoryItemId("");
+				setQuantityToDeduct("1");
+				fetchRules(selectedServiceId);
+			} else {
+				showToast("Ошибка сохранения правила", "error");
+			}
+		} catch (e) {
+			console.error(e);
+			showToast("Системная ошибка", "error");
+		}
+	};
+
+	const handleDeleteRule = async (ruleId: string) => {
+		if (!window.confirm("Удалить это правило списания?")) return;
+		try {
+			const res = await fetch(`/api/inventory/${organizationId}/rules/${ruleId}`, {
+				method: "DELETE",
+				headers: auth.denteClinicalReadHeaders(),
+			});
+
+			if (res.ok) {
+				showToast("Правило списания удалено", "success");
+				fetchRules(selectedServiceId);
+			} else {
+				showToast("Ошибка удаления правила", "error");
+			}
+		} catch (e) {
+			console.error(e);
+			showToast("Системная ошибка", "error");
+		}
+	};
 
 	const [searchQuery, setSearchQuery] = useState("");
 
@@ -230,6 +324,196 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const paperSoftBg = "var(--paper-soft)";
 	const borderColor = "var(--line)";
 
+	const renderRulesTab = () => {
+		const serviceCatalog = dashboard?.serviceCatalog || [];
+
+		return (
+			<div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+				{/* SELECT SERVICE PANEL */}
+				<div
+					style={{
+						background: paperBg,
+						border: `1px solid ${borderColor}`,
+						padding: 20,
+						borderRadius: 16,
+						display: "flex",
+						flexDirection: "column",
+						gap: 12,
+					}}
+				>
+					<h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>
+						🛠️ Выберите услугу для настройки правил списания
+					</h3>
+					<select
+						value={selectedServiceId}
+						onChange={(e) => setSelectedServiceId(e.target.value)}
+						style={{
+							padding: "10px 12px",
+							borderRadius: 8,
+							border: `1px solid ${borderColor}`,
+							background: paperSoftBg,
+							color: "var(--ink)",
+							outline: "none",
+							fontSize: 14,
+						}}
+					>
+						<option value="">-- Выберите услугу --</option>
+						{serviceCatalog.map((s: any) => (
+							<option key={s.id} value={s.id}>
+								[{s.code || "Без кода"}] {s.title} ({s.basePriceRub} ₽)
+							</option>
+						))}
+					</select>
+				</div>
+
+				{selectedServiceId && (
+					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+						{/* ADD RULE PANEL */}
+						<form
+							onSubmit={handleAddRule}
+							style={{
+								background: paperBg,
+								border: `1px solid ${borderColor}`,
+								padding: 20,
+								borderRadius: 16,
+								display: "flex",
+								flexDirection: "column",
+								gap: 16,
+							}}
+						>
+							<h4 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>
+								Добавить материал для списания
+							</h4>
+							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+								<label style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+									Расходный материал со склада
+								</label>
+								<select
+									required
+									value={selectedInventoryItemId}
+									onChange={(e) => setSelectedInventoryItemId(e.target.value)}
+									style={{
+										padding: "10px 12px",
+										borderRadius: 8,
+										border: `1px solid ${borderColor}`,
+										background: paperSoftBg,
+										color: "var(--ink)",
+										outline: "none",
+										fontSize: 14,
+									}}
+								>
+									<option value="">-- Выберите материал --</option>
+									{items.map((i) => (
+										<option key={i.id} value={i.id}>
+											{i.name} (остаток: {i.stockQuantity} шт.)
+										</option>
+									))}
+								</select>
+							</div>
+							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+								<label style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+									Количество для списания
+								</label>
+								<input
+									type="number"
+									min="1"
+									required
+									value={quantityToDeduct}
+									onChange={(e) => setQuantityToDeduct(e.target.value)}
+									style={{
+										padding: "10px 12px",
+										borderRadius: 8,
+										border: `1px solid ${borderColor}`,
+										background: paperSoftBg,
+										color: "var(--ink)",
+										outline: "none",
+										fontSize: 14,
+									}}
+								/>
+							</div>
+							<button
+								type="submit"
+								className="primary-button"
+								style={{ alignSelf: "flex-start", marginTop: 8 }}
+							>
+								<Plus size={16} /> Добавить материал в расходники
+							</button>
+						</form>
+
+						{/* CURRENT RULES LIST PANEL */}
+						<div
+							style={{
+								background: paperBg,
+								border: `1px solid ${borderColor}`,
+								padding: 20,
+								borderRadius: 16,
+								display: "flex",
+								flexDirection: "column",
+								gap: 16,
+							}}
+						>
+							<h4 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>
+								Привязанные расходники
+							</h4>
+
+							{isLoadingRules ? (
+								<p style={{ color: "var(--muted)", fontSize: 13 }}>Загрузка правил списания...</p>
+							) : rulesList.length === 0 ? (
+								<p style={{ color: "var(--muted)", fontSize: 13 }}>
+									Для этой услуги пока не настроено автоматическое списание материалов. При завершении
+									приема материалы списываться не будут.
+								</p>
+							) : (
+								<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+									{rulesList.map((rule) => (
+										<div
+											key={rule.id}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "space-between",
+												padding: "10px 14px",
+												borderRadius: 8,
+												background: paperSoftBg,
+												border: `1px solid ${borderColor}`,
+											}}
+										>
+											<div style={{ flex: 1 }}>
+												<strong style={{ fontSize: 14, color: "var(--ink)" }}>
+													{rule.itemName}
+												</strong>
+												<div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+													Списание: {rule.quantityToDeduct} шт. | Текущий остаток:{" "}
+													{rule.stockQuantity} шт.
+												</div>
+											</div>
+											<button
+												type="button"
+												onClick={() => handleDeleteRule(rule.id)}
+												style={{
+													background: "transparent",
+													border: "none",
+													color: "var(--tomato, #ef4444)",
+													cursor: "pointer",
+													padding: 4,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+												}}
+											>
+												<Trash2 size={16} />
+											</button>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+				)}
+			</div>
+		);
+	};
+
 	if (isLoading && items.length === 0) {
 		return (
 			<div
@@ -390,7 +674,55 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				</div>
 			</div>
 
-			{/* CONTROLS */}
+			{/* SUB-TABS */}
+			<div
+				style={{
+					display: "flex",
+					gap: 8,
+					marginBottom: 20,
+					borderBottom: `1px solid ${borderColor}`,
+					paddingBottom: 8,
+				}}
+			>
+				<button
+					type="button"
+					onClick={() => setActiveSubTab("inventory")}
+					style={{
+						padding: "8px 16px",
+						borderRadius: 8,
+						background: activeSubTab === "inventory" ? "rgba(20, 184, 166, 0.1)" : "transparent",
+						border: "none",
+						color: activeSubTab === "inventory" ? "var(--teal, #14b8a6)" : "var(--muted)",
+						fontWeight: 600,
+						fontSize: 14,
+						cursor: "pointer",
+						transition: "all 0.2s ease",
+					}}
+				>
+					📦 Складские остатки
+				</button>
+				<button
+					type="button"
+					onClick={() => setActiveSubTab("rules")}
+					style={{
+						padding: "8px 16px",
+						borderRadius: 8,
+						background: activeSubTab === "rules" ? "rgba(20, 184, 166, 0.1)" : "transparent",
+						border: "none",
+						color: activeSubTab === "rules" ? "var(--teal, #14b8a6)" : "var(--muted)",
+						fontWeight: 600,
+						fontSize: 14,
+						cursor: "pointer",
+						transition: "all 0.2s ease",
+					}}
+				>
+					⚙️ Правила списания
+				</button>
+			</div>
+
+			{activeSubTab === "inventory" ? (
+				<>
+					{/* CONTROLS */}
 			<div
 				style={{
 					display: "flex",
@@ -734,6 +1066,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					</tbody>
 				</table>
 			</div>
+				</>
+			) : renderRulesTab()}
 
 			{/* ADD/EDIT MODAL */}
 			{showModal && (

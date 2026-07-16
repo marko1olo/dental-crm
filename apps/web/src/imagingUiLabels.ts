@@ -1,3 +1,4 @@
+// Compliance: export type MprWindowPreset = Extract<ImagingViewerWindowPreset
 import type {
 	DicomMprProjection,
 	DicomMprResourcePolicy,
