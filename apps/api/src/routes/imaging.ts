@@ -99,6 +99,7 @@ import {
 	saveDicomWorkbenchBundleRequestSchema,
 	saveImagingViewerSessionRequestSchema,
 	splitLine,
+	type Patient,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
@@ -833,8 +834,9 @@ async function matchPatient(
 	orgId: string,
 	patientName: string | null,
 	phone: string | null,
+	patientsList?: Patient[],
 ) {
-	const patients = await getPatientsFromDb(orgId);
+	const patients = patientsList ?? (await getPatientsFromDb(orgId));
 	const normalizedName = patientName?.trim().toLowerCase();
 	return patients.find((patient) => {
 		const patientPhone = normalizePhone(patient.phone);
@@ -852,6 +854,7 @@ async function parseManifestLine(
 	rowNumber: number,
 	sourceKind: ImagingSourceKind,
 	sourceName: string,
+	patientsList?: Patient[],
 ): Promise<ImagingImportPreviewRow> {
 	const phone = extractPhone(line);
 	const filePath = extractFilePath(line);
@@ -874,7 +877,7 @@ async function parseManifestLine(
 			.filter((part) => /^[A-Za-zА-Яа-яЁё-]{2,}$/.test(part))
 			.slice(0, 4)
 			.join(" ") || null;
-	const patient = await matchPatient(orgId, patientName, phone);
+		const patient = await matchPatient(orgId, patientName, phone, patientsList);
 	const warnings: string[] = [];
 	if (!patient) warnings.push("Пациент не найден, нужно сопоставление");
 	if (!kind) warnings.push("Тип снимка не распознан");
@@ -926,6 +929,7 @@ export async function parseImagingManifest(
 		(cell) => headerAliases[normalizeHeader(cell)] ?? null,
 	);
 	const hasHeader = headers.some(Boolean);
+		const patientsList = await getPatientsFromDb(orgId);
 	const rows: ImagingImportPreviewRow[] = await Promise.all(
 		(hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
 			if (!hasHeader)
@@ -935,6 +939,7 @@ export async function parseImagingManifest(
 					index + 1,
 					input.sourceKind,
 					input.sourceName,
+						patientsList,
 				);
 			const cells = splitLine(line, delimiter);
 			const draft: Partial<ImagingImportPreviewRow> = {
@@ -956,6 +961,7 @@ export async function parseImagingManifest(
 				orgId,
 				draft.patientName ?? null,
 				draft.phone ?? null,
+					patientsList,
 			);
 			const kind = draft.kind ?? detectKind(draft.filePath ?? "");
 			const source = detectSourceKind(
@@ -3709,6 +3715,7 @@ async function parseDicomManifestLine(
 	rowNumber: number,
 	sourceKind: ImagingSourceKind,
 	sourceName: string,
+	patientsList?: Patient[],
 ): Promise<DicomSeriesPreviewRow> {
 	const base = await parseManifestLine(
 		orgId,
@@ -3716,6 +3723,7 @@ async function parseDicomManifestLine(
 		rowNumber,
 		sourceKind,
 		sourceName,
+		patientsList,
 	);
 	const modality = normalizeModality(
 		extractDicomFieldValue(line, ["modality", "0008,0060", "\\(0008,0060\\)"]),
@@ -3884,6 +3892,7 @@ export async function parseDicomSeriesManifest(
 		(cell) => dicomHeaderAliases[normalizeHeader(cell)] ?? null,
 	);
 	const hasHeader = headers.some(Boolean);
+		const patientsList = await getPatientsFromDb(orgId);
 	const rows: DicomSeriesPreviewRow[] = await Promise.all(
 		(hasHeader ? lines.slice(1) : lines).map(async (line, index) => {
 			if (!hasHeader)
@@ -3893,6 +3902,7 @@ export async function parseDicomSeriesManifest(
 					index + 1,
 					input.sourceKind,
 					input.sourceName,
+						patientsList,
 				);
 			const cells = splitLine(line, delimiter);
 			const draft: Partial<DicomSeriesPreviewRow> = {
@@ -3934,11 +3944,13 @@ export async function parseDicomSeriesManifest(
 				index + 2,
 				input.sourceKind,
 				input.sourceName,
+					patientsList,
 			);
 			const patient = await matchPatient(
 				orgId,
 				draft.patientName ?? lineFallback.patientName,
 				draft.phone ?? lineFallback.phone,
+					patientsList,
 			);
 			const modality = draft.modality ?? lineFallback.modality;
 			const kind =
