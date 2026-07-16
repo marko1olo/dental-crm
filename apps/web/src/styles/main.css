@@ -2,23 +2,18 @@
 
 :root,
 [data-theme="dark"] {
-	/* Deep Dark Glassmorphism Theme Base (zinc-950) */
-	--paper: #09090b; /* zinc-950 */
-	--paper-strong: rgba(
-		24,
-		24,
-		27,
-		0.6
-	); /* zinc-900 with transparency for glass */
+	/* Premium Deep Dark Glassmorphism Theme Base (Custom Onyx) */
+	--paper: #050505; /* Deeper than zinc-950, pure premium black */
+	--paper-strong: rgba(10, 10, 12, 0.75); /* Richer glass effect */
 	--paper-soft: #000000;
-	--ink: #f4f4f5; /* zinc-100 */
-	--muted: #a1a1aa; /* zinc-400 */
-	--tooth-root-fill: #27272a;
-	--tooth-root-stroke: #52525b;
+	--ink: #f8fafc; /* slate-50 for crisp text */
+	--muted: #94a3b8; /* slate-400 */
+	--tooth-root-fill: #18181b; /* zinc-900 */
+	--tooth-root-stroke: #3f3f46; /* zinc-700 */
 
 	/* Borders and lines */
-	--line: rgba(255, 255, 255, 0.06);
-	--odontogram-border: rgba(255, 255, 255, 0.03);
+	--line: rgba(255, 255, 255, 0.04);
+	--odontogram-border: rgba(255, 255, 255, 0.02);
 	--line-strong: rgba(255, 255, 255, 0.12);
 
 	/* Vibrant Accents */
@@ -40,14 +35,14 @@
 	--nav: #18181b; /* Dark sidebar */
 
 	/* Glassmorphism & Depth */
-	--glass-bg: rgba(24, 24, 27, 0.6); /* zinc-900 / 60% */
-	--glass-border: rgba(255, 255, 255, 0.08);
-	--glass-blur: blur(16px);
+	--glass-bg: rgba(10, 10, 12, 0.65); /* Richer translucent dark */
+	--glass-border: rgba(255, 255, 255, 0.06);
+	--glass-blur: blur(24px); /* Stronger blur for premium glass */
 	--shadow:
-		0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+		0 4px 6px -1px rgba(0, 0, 0, 0.7), 0 2px 4px -2px rgba(0, 0, 0, 0.7);
 	--shadow-premium:
-		0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5),
-		0 0 0 1px rgba(255, 255, 255, 0.05);
+		0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.8),
+		0 0 0 1px rgba(255, 255, 255, 0.03);
 	--shadow-hover:
 		0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5),
 		0 0 0 1px rgba(255, 255, 255, 0.1);
@@ -1026,6 +1021,40 @@ img {
 	display: grid;
 	gap: 8px;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.onboarding-source-grid span,
+.onboarding-readiness-grid span,
+.button,
+button {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	padding: 8px 16px;
+	border-radius: var(--radius-md);
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	user-select: none;
+	touch-action: manipulation;
+	position: relative;
+	overflow: hidden;
+}
+
+.button:hover,
+button:hover:not(:disabled) {
+	background: var(--line);
+	transform: translateY(-1px) scale(1.01);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.button:active,
+button:active:not(:disabled) {
+	transform: translateY(1px) scale(0.97);
+	box-shadow: none;
 }
 
 .onboarding-source-grid span,
