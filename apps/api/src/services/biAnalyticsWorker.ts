@@ -100,7 +100,7 @@ async function computeDoctorProfitability(orgId: string) {
 		.select({
 			doctorId: visitDiaries.doctorId,
 			doctorName: users.fullName,
-			totalRevenue: sql<number>`coalesce(sum(cast(${payments.amountRub} as float)), 0)`,
+			totalRevenue: sql<number>`coalesce(sum(cast(${payments.amountRub} as float) / 100), 0)`,
 			paymentCount: sql<number>`count(${payments.id})`,
 		})
 		.from(payments)
