@@ -134,7 +134,7 @@ function fileNameOf(filePath: string): string {
 	return path.basename(filePath);
 }
 
-async function rawFileHash(filePath: string): Promise<string | null> {
+export async function rawFileHash(filePath: string): Promise<string | null> {
 	if (!fs.existsSync(filePath)) return null;
 	try {
 		return createHash("sha256")

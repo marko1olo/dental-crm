@@ -1,10 +1,11 @@
 import assert from "node:assert";
 import crypto from "node:crypto";
-import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, test } from "node:test";
-import { savePersistentState } from "../persistentState.js";
+import { afterEach, beforeEach, describe, test, mock } from "node:test";
+import { savePersistentState, rawFileHash } from "../persistentState.js";
+import fsPromises from "node:fs/promises";
 
 describe('savePersistentState', () => {
   let tmpDir: string;
@@ -329,4 +330,42 @@ import * as fs from 'node:fs';
         const backupFile = backups[0]; if (backupFile) fs.writeFileSync(path.join(backupDir, backupFile), 'invalid json');
 
         assert.ok(report.warnings.some((w: string) => w.includes('не прошла проверку')));
+});
+
+describe("rawFileHash", () => {
+    let tmpDir: string;
+    let filePath: string;
+
+    beforeEach(() => {
+        tmpDir = path.join(os.tmpdir(), "dental-test-raw-hash-" + crypto.randomUUID());
+        mkdirSync(tmpDir, { recursive: true });
+        filePath = path.join(tmpDir, "test.txt");
+    });
+
+    afterEach(() => {
+        mock.restoreAll();
+        if (existsSync(tmpDir)) {
+            rmSync(tmpDir, { recursive: true, force: true });
+        }
+    });
+
+    test("returns hash when file exists", async () => {
+        const content = "hello world";
+        writeFileSync(filePath, content);
+        const hash = await rawFileHash(filePath);
+        const expected = crypto.createHash("sha256").update(content).digest("hex");
+        assert.strictEqual(hash, expected);
+    });
+
+    test("returns null when file does not exist", async () => {
+        const hash = await rawFileHash(path.join(tmpDir, "does-not-exist.txt"));
+        assert.strictEqual(hash, null);
+    });
+
+    test("returns null when fs.promises.readFile throws", async () => {
+        writeFileSync(filePath, "content");
+        mock.method(fsPromises, "readFile", async () => { throw new Error("Mock error"); });
+        const hash = await rawFileHash(filePath);
+        assert.strictEqual(hash, null);
+    });
 });
