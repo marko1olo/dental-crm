@@ -10,9 +10,9 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { useSettingsStore } from "../../store/settingsStore";
 import { useThemeStore } from "../../store/themeStore";
 import { useUiStore } from "../../store/uiStore";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { showToast } from "../GlobalToast";
 
 interface UserProfile {
@@ -40,11 +40,13 @@ function getPasswordStrength(pw: string): { score: number; label: string } {
 }
 
 export function SettingsProfileTab() {
-	const props = useAppLogicContext();
-	const { staffRoleLabels } = props;
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const { staffRoleLabels } = mergedProps;
 
 	const [profile, setProfile] = useState<UserProfile | null>(
-		props.activeStaffUser ?? null,
+		mergedProps.activeStaffUser ?? null,
 	);
 	const [profileLoading, setProfileLoading] = useState(!profile);
 

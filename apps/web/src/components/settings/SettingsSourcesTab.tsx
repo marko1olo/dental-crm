@@ -18,13 +18,13 @@ import {
 	ScanSearch,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import React from "react";
 import { CtPlanningToolsPanel } from "../../ctPlanningTools";
 
 type MprClinicalPreset =
 	import("../../mprClinicalStatus").MprClinicalPresetFitTarget;
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };
@@ -32,7 +32,9 @@ type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
 export function SettingsSourcesTab() {
-	const props = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		imagingConnectorCards,
 		imagingSourceLabels,
@@ -191,7 +193,7 @@ export function SettingsSourcesTab() {
 		dicomViewerLaunchModeLabels,
 		dicomWebStatusLabels,
 		dicomWebCheck,
-	} = props;
+	} = mergedProps;
 
 	const typedImagingConnectorCards = imagingConnectorCards as Array<{
 		title: string;
@@ -228,7 +230,7 @@ export function SettingsSourcesTab() {
 		[]) as string[];
 	const typedDicomWorkstationReadiness =
 		dicomWorkstationReadiness as DicomWorkstationReadinessResponse | null;
-	const typedDicomRenderCachePlan = props.dicomRenderCachePlan as any;
+	const typedDicomRenderCachePlan = mergedProps.dicomRenderCachePlan as any;
 	const typedIntegrationPresets = (integrationPresets ?? []) as Array<any>;
 
 	return (

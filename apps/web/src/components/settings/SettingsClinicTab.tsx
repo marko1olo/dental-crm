@@ -1,28 +1,22 @@
 import type {
 	Chair,
 	ClinicMode,
-	DentalSpecialty,
 	RoleQueue,
 	StaffMember,
 	StaffRole,
 } from "@dental/shared";
 import {
 	CalendarDays,
-	CheckCircle2,
-	Copy,
 	ExternalLink,
-	KeyRound,
 	Plus,
-	RefreshCw,
 	Search,
 	ShieldCheck,
 	Trash2,
 } from "lucide-react";
-import type { ChangeEvent, KeyboardEvent } from "react";
-import React, { useState } from "react";
+import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsStore } from "../../store/settingsStore";
-import { showToast } from "../GlobalToast";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { WorkspaceFeaturesSelector } from "../workspace/WorkspaceFeaturesSelector";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -31,7 +25,9 @@ type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type WeekdayOption = { value: number; label: string };
 
 export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
-	const appLogicProps = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const appLogicProps = Object.assign({}, appLogic, derivations) as any;
 	const settingsStoreProps = useSettingsStore();
 
 	const newChairReadyToCreate =
@@ -137,10 +133,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 		clinicPublicLookup?.suggestions ?? [];
 	const typedClinicPublicLookupTargets =
 		clinicPublicLookup?.publicLookupTargets ?? [];
-	const typedStaffMembers = (dashboard.clinicSettings?.staff ??
+	const _typedStaffMembers = (dashboard.clinicSettings?.staff ??
 		[]) as StaffMember[];
 	const typedChairs = (dashboard.clinicSettings?.chairs ?? []) as Chair[];
-	const staffCreationRoles: StaffRole[] = [
+	const _staffCreationRoles: StaffRole[] = [
 		"doctor",
 		"administrator",
 		"assistant",

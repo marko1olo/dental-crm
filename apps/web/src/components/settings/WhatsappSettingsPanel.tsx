@@ -7,7 +7,6 @@ import {
 	Wifi,
 	WifiOff,
 } from "lucide-react";
-import React from "react";
 import type { WhatsappStaffRouting } from "../../hooks/useWhatsappSettings.js";
 import { useWhatsappSettings } from "../../hooks/useWhatsappSettings.js";
 import { MessengerRoutingRules } from "./MessengerRoutingRules.js";

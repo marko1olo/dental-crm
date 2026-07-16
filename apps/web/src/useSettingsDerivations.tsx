@@ -1,3 +1,4 @@
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 // Compliance: data-testid="dicom-first-frame-slice-presets"
 // Compliance: aria-label="Быстрые срезы снимков"
 // Compliance: previewDicomFirstFrameSlice(targetIndex)
@@ -2275,6 +2276,7 @@ export function useSettingsDerivations() {
 	) as ServiceCategory[];
 
 	return {
+		...appLogic,
 		dicomArchiveAddressGuidanceId,
 		localDicomFolderGuidanceId,
 		migrationHandoffReportGuidanceId,

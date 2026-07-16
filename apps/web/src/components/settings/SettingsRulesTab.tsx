@@ -4,9 +4,10 @@ import type {
 	ServiceCategory,
 	StaffRole,
 } from "@dental/shared";
-import { Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { Plus, ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 const clinicalRuleOwnerRoles: StaffRole[] = [
 	"doctor",
@@ -16,9 +17,11 @@ const clinicalRuleOwnerRoles: StaffRole[] = [
 ];
 
 export function SettingsRulesTab() {
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		dashboard,
-		typedServiceCatalog,
 		newRuleAction,
 		newRuleBlockedServiceId,
 		newRuleCategory,
@@ -46,7 +49,6 @@ export function SettingsRulesTab() {
 		submitClinicalRule,
 		removeClinicalRule,
 		specialtyLabels,
-		typedClinicalRules,
 		toggleClinicalRule,
 		isClinicalRuleSaving,
 		createClinicalRuleFromSettings,
@@ -56,7 +58,8 @@ export function SettingsRulesTab() {
 		serviceCategoryLabels,
 		staffRoleLabels,
 		clinicalRuleSummary,
-	} = useAppLogicContext();
+	} = mergedProps;
+	const { typedServiceCatalog, typedClinicalRules } = derivations;
 
 	const typedClinicalRuleActionLabels = clinicalRuleActionLabels as Record<
 		ClinicalRuleAction,

@@ -7,7 +7,6 @@ import {
 	Wifi,
 	WifiOff,
 } from "lucide-react";
-import React from "react";
 import type { MaxStaffRouting } from "../../hooks/useMaxSettings.js";
 import { useMaxSettings } from "../../hooks/useMaxSettings.js";
 import { MessengerRoutingRules } from "./MessengerRoutingRules.js";

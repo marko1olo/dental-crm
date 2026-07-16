@@ -225,7 +225,7 @@
 }
 
 .form-group-toggle {
-	flex-direction: row !important;
+	flex-direction: row;
 	align-items: center;
 	justify-content: space-between;
 }

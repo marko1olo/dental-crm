@@ -1,8 +1,9 @@
 import { MessageCircle } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import "./SettingsMessengersTab.css";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { MaxSettingsPanel } from "./MaxSettingsPanel.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
@@ -19,7 +20,9 @@ export function SettingsMessengersTab({
 }: {
 	settingsTab: string;
 }) {
-	const props = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const props = Object.assign({}, appLogic, derivations) as any;
 	const [activeMessenger, setActiveMessenger] = useState<MessengerTabId>(
 		settingsTab === "telegram" ? "telegram" : "whatsapp",
 	);

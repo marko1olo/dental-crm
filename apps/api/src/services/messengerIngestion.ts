@@ -1,4 +1,4 @@
-import { eq, ilike, isNull } from "drizzle-orm";
+import { and, eq, ilike, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	communicationEvents,
@@ -40,7 +40,12 @@ export async function processInboundEvents(): Promise<void> {
 					const searchResult = await db
 						.select()
 						.from(patients)
-						.where(ilike(patients.phone, `%${phoneSuffix}%`))
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								ilike(patients.phone, `%${phoneSuffix}%`),
+							),
+						)
 						.limit(1);
 					resolvedPatient = searchResult[0] || null;
 				}
@@ -48,7 +53,12 @@ export async function processInboundEvents(): Promise<void> {
 				const searchResult = await db
 					.select()
 					.from(patients)
-					.where(ilike(patients.notes, `%MAX:${externalChatId}%`))
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							ilike(patients.notes, `%MAX:${externalChatId}%`),
+						),
+					)
 					.limit(1);
 				resolvedPatient = searchResult[0] || null;
 			}

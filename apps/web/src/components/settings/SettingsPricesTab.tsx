@@ -12,15 +12,18 @@ import {
 	UploadCloud,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { PriceDictationBar } from "../../PriceDictationBar";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
 export function SettingsPricesTab() {
-	const props = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		pricelistSourceKindLabels,
 		pricelistSourceKind,
@@ -48,7 +51,7 @@ export function SettingsPricesTab() {
 		pricelistMaterialSummaryText,
 		pricelistItemMaterialText,
 		pricelistWarningsText,
-	} = props;
+	} = mergedProps;
 
 	const [isImporting, setIsImporting] = useState(false);
 	const [importResult, setImportResult] = useState<{
@@ -214,9 +217,9 @@ export function SettingsPricesTab() {
 			<div className="pricelist-workbench">
 				<PriceDictationBar
 					onPriceParsed={(service, price, category) => {
-						const newEntry = `${category ? category + " " : ""}${service} ${price} руб`;
+						const newEntry = `${category ? `${category} ` : ""}${service} ${price} руб`;
 						setPricelistText((prev) =>
-							prev ? prev + "\n" + newEntry : newEntry,
+							prev ? `${prev}\n${newEntry}` : newEntry,
 						);
 						setPricelistAnalysis(null);
 					}}

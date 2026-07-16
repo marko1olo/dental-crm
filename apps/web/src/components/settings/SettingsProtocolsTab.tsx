@@ -1,17 +1,20 @@
 import type { ProtocolTemplate } from "@dental/shared";
-import { ClipboardCheck, Edit2, Plus, Trash2, X } from "lucide-react";
-import React, { useState } from "react";
+import { ClipboardCheck, Edit2, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 export function SettingsProtocolsTab() {
-	const props = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		dashboard,
 		specialtyLabels,
 		documentLabels,
 		imagingKindLabels,
 		applyProtocolTemplate,
-	} = props;
+	} = mergedProps;
 
 	const typedProtocolTemplates = (dashboard?.protocolTemplates ||
 		[]) as ProtocolTemplate[];
@@ -74,9 +77,7 @@ export function SettingsProtocolsTab() {
 
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				throw new Error(
-					data.message || "Ошибка сохранения шаблона",
-				);
+				throw new Error(data.message || "Ошибка сохранения шаблона");
 			}
 
 			// Reload page to refresh dashboard state
@@ -90,12 +91,7 @@ export function SettingsProtocolsTab() {
 	};
 
 	const handleDelete = async (id: string) => {
-		if (
-			!confirm(
-				"Вы уверены, что хотите удалить этот шаблон?",
-			)
-		)
-			return;
+		if (!confirm("Вы уверены, что хотите удалить этот шаблон?")) return;
 		setLoading(true);
 		try {
 			const clinicToken = localStorage.getItem("dente_clinic_token");
@@ -122,15 +118,8 @@ export function SettingsProtocolsTab() {
 				<div className="import-copy">
 					<ClipboardCheck aria-hidden="true" />
 					<div>
-						<h2>
-							{editingId
-								? "Редактирование шаблона"
-								: "Новый шаблон"}
-						</h2>
-						<p>
-							Настройте параметры клинического
-							протокола.
-						</p>
+						<h2>{editingId ? "Редактирование шаблона" : "Новый шаблон"}</h2>
+						<p>Настройте параметры клинического протокола.</p>
 					</div>
 				</div>
 
@@ -196,7 +185,7 @@ export function SettingsProtocolsTab() {
 							onChange={(e) =>
 								setEditForm((prev) => ({
 									...prev,
-									defaultDurationMinutes: parseInt(e.target.value) || 30,
+									defaultDurationMinutes: parseInt(e.target.value, 10) || 30,
 								}))
 							}
 						/>
@@ -285,12 +274,9 @@ export function SettingsProtocolsTab() {
 					<ClipboardCheck aria-hidden="true" />
 					<div>
 						<p className="eyebrow">Протоколы</p>
-						<h2>
-							Шаблоны приема по специальностям
-						</h2>
+						<h2>Шаблоны приема по специальностям</h2>
 						<p>
-							Настройте протоколы для ваших
-							врачей, чтобы ускорить заполнение
+							Настройте протоколы для ваших врачей, чтобы ускорить заполнение
 							карты.
 						</p>
 					</div>
@@ -307,8 +293,7 @@ export function SettingsProtocolsTab() {
 							<span>{specialtyLabels[template.specialty]}</span>
 							<strong>{template.title}</strong>
 							<p>
-								{template.visitReason} · {template.defaultDurationMinutes}{" "}
-								мин
+								{template.visitReason} · {template.defaultDurationMinutes} мин
 							</p>
 						</div>
 						<div

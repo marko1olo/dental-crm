@@ -13,7 +13,11 @@ const familyPaymentSchema = z.object({
 	organizationId: z.string().uuid().optional(),
 	patientId: z.string().uuid(),
 	familyGroupId: z.string().uuid(),
-	amountRub: z.number().positive(),
+	// The payments ledger stores whole rubles (integer column), so a family-wallet
+	// payment must be an integer too. Allowing fractional amounts here would debit
+	// the wallet by e.g. 100.50 while recording a rounded 101 — drifting the two
+	// balances apart over time.
+	amountRub: z.number().int().positive(),
 	documentId: z.string().uuid().optional(),
 	visitId: z.string().uuid().optional(),
 });

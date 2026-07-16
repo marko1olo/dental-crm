@@ -7,6 +7,7 @@ import { Edit2, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { showToast } from "../GlobalToast";
 
 interface InsuranceContract {
@@ -45,7 +46,11 @@ const defaultForm = (): ContractFormData => ({
 const clampPct = (v: string) => Math.min(100, Math.max(0, parseFloat(v) || 0));
 
 export const InsuranceContractsPanel: React.FC = () => {
-	const { auth } = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const { auth } = mergedProps;
+	const {} = derivations;
 
 	const [contracts, setContracts] = useState<InsuranceContract[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +119,7 @@ export const InsuranceContractsPanel: React.FC = () => {
 			coverageOrthoPct: clampPct(formData.coverageOrthoPct),
 			coverageHygienePct: clampPct(formData.coverageHygienePct),
 			annualLimitRub: formData.annualLimitRub
-				? parseInt(formData.annualLimitRub) || undefined
+				? parseInt(formData.annualLimitRub, 10) || undefined
 				: undefined,
 		};
 
@@ -505,7 +510,6 @@ export const InsuranceContractsPanel: React.FC = () => {
 								<input
 									type="text"
 									required
-									autoFocus
 									value={formData.companyName}
 									onChange={(e) =>
 										setFormData({ ...formData, companyName: e.target.value })

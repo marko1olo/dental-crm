@@ -2,7 +2,6 @@ import type { DenteTelegramFeature } from "@dental/shared";
 import {
 	Bot,
 	CalendarDays,
-	CheckCircle2,
 	ClipboardCheck,
 	Copy,
 	CreditCard,
@@ -17,9 +16,9 @@ import {
 	Users,
 } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
-import React from "react";
 
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
@@ -28,7 +27,9 @@ type StringTokenGroup = { title: string; items: string[] };
 type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
 
 export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
-	const props = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		dashboard,
 		createTelegramLinkCode,
@@ -170,7 +171,7 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 		SettingsClinicTab,
 		SettingsAccessTab,
 		SettingsTelegramTab,
-	} = props;
+	} = mergedProps;
 
 	if (settingsTab !== "telegram") return null;
 
@@ -188,7 +189,7 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 		return (replyMarkup.inline_keyboard ?? []) as TelegramInlineButtonRow[];
 	};
 
-	const telegramTestMessageTargets = [
+	const _telegramTestMessageTargets = [
 		{ value: "me", label: "Мне" },
 		{ value: "phone", label: "По номеру телефона" },
 	];
@@ -215,7 +216,7 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 			? "Отправка..."
 			: "";
 
-	const typedTelegramFeaturePlan = props.telegramFeaturePlan as any | null;
+	const typedTelegramFeaturePlan = mergedProps.telegramFeaturePlan as any | null;
 	return (
 		<section className="telegram-settings" aria-label="Telegram-бот клиники">
 			<div className="import-copy">

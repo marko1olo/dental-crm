@@ -8,11 +8,8 @@ import type {
 	ClinicMode,
 	ClinicPublicLookupResponse,
 	Dashboard,
-	DentalMaterialKind,
 	DentalModelWorkbenchManifest,
 	DentalPricelistAnalysisResponse,
-	DentalRestorationType,
-	DentalSpecialty,
 	DenteTelegramBotStatus,
 	DenteTelegramChatLinkPublic,
 	DenteTelegramFeature,
@@ -59,16 +56,11 @@ import type {
 	MigrationLocalSourceHandoff,
 	MigrationLocalSourceProbeResponse,
 	MigrationLocalSourceWorkupResponse,
-	MigrationLocalSourceWorkupStep,
-	MigrationProbeAdapter,
-	MigrationProbeArtifact,
 	MigrationReadinessItem,
-	PricelistSourceKind,
 	ProtocolTemplate,
 	RoleQueue,
 	ServiceCatalogItem,
 	ServiceCategory,
-	SmartImportMode,
 	SmartImportPreviewResponse,
 	SpeechProvider,
 	SpeechRecordingRecoveryList,
@@ -77,71 +69,35 @@ import type {
 	WeekdayIndex,
 } from "@dental/shared";
 import {
-	Bot,
-	CalendarDays,
-	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
-	CircleStop,
 	ClipboardCheck,
-	Copy,
-	CreditCard,
 	Database,
-	Download,
-	ExternalLink,
 	FileCheck2,
-	FileText,
-	FlipHorizontal,
-	Gauge,
 	History,
-	Image as ImageIcon,
-	Layers3,
-	Mic,
-	Plus,
-	ReceiptText,
 	RefreshCw,
-	RotateCcw,
-	RotateCw,
-	ScanSearch,
 	Search,
-	Send,
 	ShieldCheck,
 	SlidersHorizontal,
-	Sparkles,
 	UploadCloud,
 	UserCheck,
-	Users,
-	ZoomIn,
-	ZoomOut,
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import React from "react";
-import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
-import { SettingsAccessTab } from "../../components/settings/SettingsAccessTab";
-import { SettingsClinicTab } from "../../components/settings/SettingsClinicTab";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	type CtImplantLibraryItem,
-	type CtPlanningQuickAction,
-	CtPlanningToolsPanel,
+import type {
+	CtImplantLibraryItem,
+	CtPlanningQuickAction,
 } from "../../ctPlanningTools";
 import {
 	type MprClinicalPreset,
 	type MprProjection,
-	type MprWindowPreset,
-	mprAxisPresetDeg,
 	mprClinicalPresets,
 	mprProjectionOrientationLabels,
-	mprSeriesRequiredProjectionLabel,
-	mprSlabPresetMm,
-	mprUnavailableProjectionLabel,
 } from "../../imagingUiLabels";
 import { motionSafeScrollIntoView } from "../../motionPreference";
 import {
 	buildMprClinicalChecklist,
 	buildMprOperatorSummary,
 	buildMprWorkbenchSummary,
-	describeMprClinicalPresetProjectionFallback,
 	findNearestMprClinicalPreset,
 	mprClinicalNextAction,
 	resolveMprClinicalPresetProjection,
@@ -159,25 +115,18 @@ import {
 	formatMprSlabRangeValue,
 	formatMprSliceBadge,
 	formatMprSliceRangeValue,
-	formatSignedMprStep,
-	mprAxisBounds,
-	mprAxisNudgeDeg,
 	mprProjectionCompassLabels,
-	mprSlabBounds,
-	mprSlabNudgeMm,
 	mprSliceFraction,
 	mprSliceIndexFromFraction,
-	mprSliceNudgeSteps,
-	mprSlicePresetFractions,
 	resolveMprKeyboardAdjustment,
 } from "../../mprControlMath";
-import { PriceDictationBar } from "../../PriceDictationBar";
 import type {
 	ImagingConnectorCard,
 	ImagingViewerCapability,
 	RecognitionPreset,
 } from "../../settingsStaticData";
 import { useSettingsStore } from "../../store/settingsStore";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 
 type MprAxisVisualizerStyle = CSSProperties & {
@@ -211,7 +160,7 @@ type TelegramInlineButton = { text: string; target: string; kind: string };
 type TelegramInlineButtonRow = TelegramInlineButton[];
 type StringTokenGroup = { title: string; items: string[] };
 
-function formatBrowserImagingScanElapsed(
+function _formatBrowserImagingScanElapsed(
 	elapsedMs: number | null | undefined,
 ): string {
 	const safeMs =
@@ -273,14 +222,14 @@ type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
 type SettingsViewProps = Record<string, any>;
-const viewLabels = workspaceViewLabels as Record<string, string>;
-const staffCreationRoles: StaffRole[] = [
+const _viewLabels = workspaceViewLabels as Record<string, string>;
+const _staffCreationRoles: StaffRole[] = [
 	"doctor",
 	"administrator",
 	"assistant",
 	"manager",
 ];
-const clinicalRuleOwnerRoles: StaffRole[] = [
+const _clinicalRuleOwnerRoles: StaffRole[] = [
 	"doctor",
 	"assistant",
 	"administrator",
@@ -310,16 +259,16 @@ const clinicPublicLookupFieldLabels: Record<string, string> = {
 	medicalLicenseIssuer: "Кем выдана",
 	bankDetails: "Банк",
 };
-const clinicPublicLookupBoundaryText =
+const _clinicPublicLookupBoundaryText =
 	"Публичный поиск получает только реквизиты клиники: ИНН, ОГРН, КПП, название, адрес или лицензию. Пациентов, снимки, базы и локальные пути сюда не отправлять.";
-const migrationReadinessLevelLabels: Record<string, string> = {
+const _migrationReadinessLevelLabels: Record<string, string> = {
 	ready_for_preview: "можно делать предпросмотр",
 	needs_bridge: "нужно подключение",
 	needs_export: "нужна выгрузка",
 	manual_review: "ручной разбор",
 	blocked: "нужно действие",
 };
-const migrationBridgeKitKindLabels: Record<string, string> = {
+const _migrationBridgeKitKindLabels: Record<string, string> = {
 	none: "нет",
 	file_upload: "файл/таблица",
 	local_db_bridge: "подключение к копии базы",
@@ -329,7 +278,7 @@ const migrationBridgeKitKindLabels: Record<string, string> = {
 	browser_manifest_bridge: "выбранная папка/диск",
 	manual_manifest: "ручной список",
 };
-const migrationBridgeKitStatusLabels: Record<string, string> = {
+const _migrationBridgeKitStatusLabels: Record<string, string> = {
 	ready: "готово",
 	needs_admin: "нужен администратор",
 	needs_export: "нужна выгрузка",
@@ -352,47 +301,47 @@ const migrationLegacySourceKindLabels: Record<string, string> = {
 	network_share: "сетевая папка",
 	unknown_legacy_source: "неизвестный источник",
 };
-const migrationAutomationLevelLabels: Record<string, string> = {
+const _migrationAutomationLevelLabels: Record<string, string> = {
 	ready_for_preview: "готово к предпросмотру",
 	needs_file_upload: "нужен файл выгрузки",
 	needs_local_bridge: "нужно подключение",
 	manual_review: "ручной разбор",
 };
-const smartImportMigrationPlanStatusLabels: Record<string, string> = {
+const _smartImportMigrationPlanStatusLabels: Record<string, string> = {
 	ready: "готово",
 	review: "проверить",
 	manual: "ручной разбор",
 	blocked: "стоп",
 };
-const smartImportLineKindLabels: Record<string, string> = {
+const _smartImportLineKindLabels: Record<string, string> = {
 	patient: "Пациент",
 	imaging: "Снимок",
 	clinic: "Клиника",
 	legacy_source: "Источник",
 	ignored: "Пропуск",
 };
-const migrationWorkupStepStatusLabels: Record<string, string> = {
+const _migrationWorkupStepStatusLabels: Record<string, string> = {
 	ready: "готово",
 	needs_bridge: "нужно подключение",
 	manual: "ручной шаг",
 	blocked: "стоп",
 };
-const importRowStatusLabels: Record<string, string> = {
+const _importRowStatusLabels: Record<string, string> = {
 	ready: "готово",
 	warning: "проверить",
 	blocked: "исправить",
 };
-const clinicPublicLookupProviderStatusLabels: Record<string, string> = {
+const _clinicPublicLookupProviderStatusLabels: Record<string, string> = {
 	ready: "профиль найден",
 	not_configured: "онлайн-поиск не настроен",
 	error: "онлайн-поиск не ответил",
 	skipped_no_safe_query: "нужны реквизиты",
 };
-const clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
+const _clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
 	dadata: "Сервис реквизитов",
 	manual_public_targets: "Из введенных реквизитов",
 };
-const migrationEntityLabels: Record<string, string> = {
+const _migrationEntityLabels: Record<string, string> = {
 	clinic_profile: "реквизиты клиники",
 	patients: "пациенты",
 	appointments: "записи",
@@ -404,26 +353,26 @@ const migrationEntityLabels: Record<string, string> = {
 	dicom_series: "серии КЛКТ/КТ",
 	unknown: "неизвестно",
 };
-const migrationPriorityLabels: Record<string, string> = {
+const _migrationPriorityLabels: Record<string, string> = {
 	critical: "сначала",
 	high: "важно",
 	normal: "обычно",
 	low: "потом",
 };
-const migrationOwnerLabels: Record<string, string> = {
+const _migrationOwnerLabels: Record<string, string> = {
 	administrator: "администратор",
 	doctor: "врач",
 	assistant: "ассистент",
 	system: "CRM",
 };
-const migrationHandoffPhaseLabels: Record<string, string> = {
+const _migrationHandoffPhaseLabels: Record<string, string> = {
 	clinic_requisites: "реквизиты",
 	source_access: "доступ к источнику",
 	export_or_bridge: "выгрузка",
 	staging_preview: "предпросмотр",
 	doctor_control: "проверка врачом",
 };
-const migrationOperatorPacketStatusLabels: Record<string, string> = {
+const _migrationOperatorPacketStatusLabels: Record<string, string> = {
 	ready_for_preview: "можно делать предпросмотр",
 	needs_admin: "нужен администратор",
 	needs_bridge: "нужно подключение",
@@ -441,7 +390,7 @@ const migrationTriageStatusPriority: Record<string, number> = {
 	empty: 5,
 	ready_for_preview: 6,
 };
-const migrationAdapterStatusLabels: Record<string, string> = {
+const _migrationAdapterStatusLabels: Record<string, string> = {
 	built_in: "готовый способ",
 	ready: "готово",
 	needs_admin: "нужен администратор",
@@ -450,7 +399,7 @@ const migrationAdapterStatusLabels: Record<string, string> = {
 	manual: "ручная проверка",
 	blocked: "стоп",
 };
-const dicomRenderCachePriorityLabels: Record<
+const _dicomRenderCachePriorityLabels: Record<
 	DicomRenderCachePlanResponse["tasks"][number]["priority"],
 	string
 > = {
@@ -460,7 +409,7 @@ const dicomRenderCachePriorityLabels: Record<
 	background: "фоном",
 	deferred: "позже",
 };
-const localImagingModelWorkbenchTargetLabels: Record<string, string> = {
+const _localImagingModelWorkbenchTargetLabels: Record<string, string> = {
 	metadata_only: "только метаданные",
 	external_model_viewer: "внешний 3D-просмотр",
 	local_bridge: "локальный 3D-модуль",
@@ -698,7 +647,7 @@ const integrationInputLabels: Record<string, string> = {
 	TIFF: "снимки TIFF",
 	BMP: "снимки BMP",
 };
-const humanizeIntegrationInput = (value: string) =>
+const _humanizeIntegrationInput = (value: string) =>
 	integrationInputLabels[value] ?? humanizeMigrationText(value);
 const localBridgeEndpointSummary = (
 	bridge: LocalBridgeReadinessResponse["bridges"][number],
@@ -708,7 +657,7 @@ const localBridgeEndpointSummary = (
 		return `серверных настроек: ${bridge.setupSettingsCount}`;
 	return "адрес локального модуля не задан";
 };
-const humanizeMigrationList = (
+const _humanizeMigrationList = (
 	items: unknown[] | undefined,
 	limit = items?.length ?? 0,
 ) =>
@@ -717,7 +666,7 @@ const humanizeMigrationList = (
 		.map(humanizeMigrationText)
 		.filter(Boolean)
 		.join(" · ");
-const humanizeMigrationColumns = (
+const _humanizeMigrationColumns = (
 	items: unknown[] | undefined,
 	limit = items?.length ?? 0,
 ) =>
@@ -731,7 +680,7 @@ const humanizeMigrationColumns = (
 		)
 		.filter(Boolean)
 		.join(" · ");
-const clinicPublicLookupWarningText = (warning: string) => {
+const _clinicPublicLookupWarningText = (warning: string) => {
 	const text = humanizeMigrationText(warning);
 	const duplicateValue = text.match(
 		/^Строка\s+(\d+):\s+найдено еще одно значение для ([^;]+);\s*оставлено первое\.?$/i,
@@ -753,7 +702,7 @@ const clinicPublicLookupWarningText = (warning: string) => {
 const migrationSourceKindLabel = (sourceKind: string) =>
 	migrationLegacySourceKindLabels[sourceKind] ??
 	humanizeMigrationText(sourceKind);
-const migrationSourceDisplayName = (
+const _migrationSourceDisplayName = (
 	candidate: Pick<
 		MigrationLocalSourceDiscoveryCandidate,
 		"safeDisplayName" | "sourceKind"
@@ -773,7 +722,7 @@ const migrationHandoffEndpointLabels: Record<string, string> = {
 	"/api/ingestion/extract": "разбор файла или таблицы",
 	"/api/imports/smart/preview": "предпросмотр переноса",
 };
-const migrationHandoffRouteLabel = (handoff: MigrationLocalSourceHandoff) => {
+const _migrationHandoffRouteLabel = (handoff: MigrationLocalSourceHandoff) => {
 	const actionLabel =
 		handoff.method === "GET" ? "открыть проверку" : "передать на проверку";
 	return `${actionLabel}: ${migrationHandoffEndpointLabels[handoff.endpoint] ?? "предпросмотр в CRM"}`;
@@ -783,11 +732,11 @@ const shortDicomSeriesCode = (value: string | null | undefined) => {
 	const trimmed = value.trim();
 	return `код серии ${trimmed.length > 18 ? `${trimmed.slice(0, 18)}...` : trimmed}`;
 };
-const dicomSeriesDisplayText = (series: DicomSeriesPreviewGroup) =>
+const _dicomSeriesDisplayText = (series: DicomSeriesPreviewGroup) =>
 	series.seriesDescription ??
 	series.studyDescription ??
 	shortDicomSeriesCode(series.seriesInstanceUid);
-const dicomSeriesWarningText = (warnings: string[]) =>
+const _dicomSeriesWarningText = (warnings: string[]) =>
 	warnings.length
 		? warnings.slice(0, 3).map(humanizeMigrationText).join(", ")
 		: "готово к просмотру";
@@ -804,7 +753,7 @@ const importWarningListText = (
 		.join(", ");
 	return text || fallback;
 };
-const patientImportRowWarningText = (
+const _patientImportRowWarningText = (
 	warnings: string[],
 	notes: string | null | undefined,
 ) =>
@@ -820,7 +769,7 @@ const imagingImportReadyText = (filePath: string | null | undefined) => {
 		virtualPath.split(/[\\/]/).filter(Boolean).pop() ?? virtualPath;
 	return `готово к привязке: ${humanizeMigrationText(safeName)}`;
 };
-const imagingImportRowWarningText = (
+const _imagingImportRowWarningText = (
 	warnings: string[],
 	filePath: string | null | undefined,
 ) => importWarningListText(warnings, imagingImportReadyText(filePath));
@@ -840,9 +789,9 @@ const aiRecognitionWarningLabels: Record<string, string> = {
 	"Диагноз и план лечения нельзя подписывать автоматически.":
 		"Диагноз и план лечения подписывает врач вручную.",
 };
-const aiRecognitionWarningText = (warning: string) =>
+const _aiRecognitionWarningText = (warning: string) =>
 	aiRecognitionWarningLabels[warning] ?? humanizeMigrationText(warning);
-const dicomFirstFrameFileFormatLabel = (
+const _dicomFirstFrameFileFormatLabel = (
 	transferSyntaxUid: string | null | undefined,
 ) => {
 	if (!transferSyntaxUid) return "формат файла не указан";
@@ -856,7 +805,7 @@ const dicomFirstFrameFileFormatLabel = (
 	}
 	return "формат файла: проверен";
 };
-const dicomFirstFrameImageTypeLabel = (
+const _dicomFirstFrameImageTypeLabel = (
 	photometricInterpretation: string | null | undefined,
 ) => {
 	const normalized = photometricInterpretation?.trim().toUpperCase();
@@ -872,7 +821,9 @@ const dicomFirstFrameImageTypeLabel = (
 };
 
 export function SettingsAuditTab() {
-	const props = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		activePatient,
 		activeSettingsTabButtonRef,
@@ -1378,7 +1329,7 @@ export function SettingsAuditTab() {
 		visibleTelegramOutboxItems,
 		weekdayOptions,
 		workspaceScopeLabels,
-	} = props;
+	} = mergedProps;
 	const {
 		clinicMode,
 		setClinicMode,
@@ -1408,58 +1359,60 @@ export function SettingsAuditTab() {
 		setTelegramAdminSecretDraft,
 	} = useSettingsStore();
 
-	const recognitionInputReady = (recognitionText || "").trim().length > 0;
+	const _recognitionInputReady = (recognitionText || "").trim().length > 0;
 	const smartImportInputReady = (smartImportText || "").trim().length > 0;
-	const imagingImportInputReady = (imagingImportText || "").trim().length > 0;
-	const patientImportInputReady = (importText || "").trim().length > 0;
-	const localImagingFolderReady = (imagingFolderPath || "").trim().length > 0;
-	const newStaffReadyToCreate = (newStaffName || "").trim().length > 0;
-	const newChairReadyToCreate = (newChairName || "").trim().length > 0;
-	const adminSecretReady = (telegramAdminSecretDraft || "").trim().length > 0;
-	const adminSecretScopeWarning =
+	const _imagingImportInputReady = (imagingImportText || "").trim().length > 0;
+	const _patientImportInputReady = (importText || "").trim().length > 0;
+	const _localImagingFolderReady = (imagingFolderPath || "").trim().length > 0;
+	const _newStaffReadyToCreate = (newStaffName || "").trim().length > 0;
+	const _newChairReadyToCreate = (newChairName || "").trim().length > 0;
+	const _adminSecretReady = (telegramAdminSecretDraft || "").trim().length > 0;
+	const _adminSecretScopeWarning =
 		settingsTab === "telegram"
 			? "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные, если для них включены отдельные секреты."
 			: "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные, если для них включены отдельные секреты.";
-	const typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
-	const typedModeHints = dashboard.clinicSettings.modeHints as string[];
-	const typedRoleQueues = dashboard.shiftIntelligence.roleQueues as RoleQueue[];
-	const typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
-	const typedChairs = dashboard.clinicSettings.chairs as Chair[];
-	const typedWeekdayOptions = weekdayOptions as WeekdayOption[];
-	const typedUiLanguageOptions = uiLanguageOptions as Array<{
+	const _typedClinicModes = Object.keys(clinicModeLabels) as ClinicMode[];
+	const _typedModeHints = dashboard.clinicSettings.modeHints as string[];
+	const _typedRoleQueues = dashboard.shiftIntelligence
+		.roleQueues as RoleQueue[];
+	const _typedStaffMembers = dashboard.clinicSettings.staff as StaffMember[];
+	const _typedChairs = dashboard.clinicSettings.chairs as Chair[];
+	const _typedWeekdayOptions = weekdayOptions as WeekdayOption[];
+	const _typedUiLanguageOptions = uiLanguageOptions as Array<{
 		value: string;
 		label: string;
 		detail: string;
 	}>;
-	const typedTelegramLinkStaffOptions =
+	const _typedTelegramLinkStaffOptions =
 		telegramLinkStaffOptions as StaffMember[];
-	const typedProtocolTemplates =
+	const _typedProtocolTemplates =
 		dashboard.protocolTemplates as ProtocolTemplate[];
-	const typedImagingConnectorCards =
+	const _typedImagingConnectorCards =
 		imagingConnectorCards as ImagingConnectorCard[];
-	const typedImagingViewerCapabilities =
+	const _typedImagingViewerCapabilities =
 		imagingViewerCapabilities as ImagingViewerCapability[];
-	const typedCtPlanningImplantPlan =
+	const _typedCtPlanningImplantPlan =
 		ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
-	const typedCtPlanningActiveQuickActionId =
+	const _typedCtPlanningActiveQuickActionId =
 		typeof ctPlanningActiveQuickActionId === "string"
 			? ctPlanningActiveQuickActionId
 			: null;
-	const typedImagingViewerActiveTool =
+	const _typedImagingViewerActiveTool =
 		imagingViewerActiveTool as ImagingViewerTool;
-	const typedIntegrationPresets = dashboard.clinicSettings
+	const _typedIntegrationPresets = dashboard.clinicSettings
 		.integrationPresets as IntegrationPreset[];
-	const typedSpeechProviders = dashboard.speechProviders as SpeechProvider[];
-	const typedRecognitionPresets = recognitionPresets as RecognitionPreset[];
-	const typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
-	const typedSpeechRecordingRecovery =
+	const _typedSpeechProviders = dashboard.speechProviders as SpeechProvider[];
+	const _typedRecognitionPresets = recognitionPresets as RecognitionPreset[];
+	const _typedRecognitionJob = recognitionJob as AiRecognitionJob | null;
+	const _typedSpeechRecordingRecovery =
 		speechRecordingRecovery as SpeechRecordingRecoveryList | null;
 	const typedBrowserMigrationDiscovery =
 		browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
 	const typedSmartImportPreview =
 		smartImportPreview as SmartImportPreviewResponse | null;
-	const typedImagingSourceChoices = imagingSourceChoices as ImagingSourceKind[];
-	const typedImagingImportPreview =
+	const _typedImagingSourceChoices =
+		imagingSourceChoices as ImagingSourceKind[];
+	const _typedImagingImportPreview =
 		imagingImportPreview as ImagingImportPreviewResponse | null;
 	const typedBrowserContinuityChecks =
 		browserContinuityChecks as BrowserContinuityCheck[];
@@ -1479,94 +1432,94 @@ export function SettingsAuditTab() {
 		return typedAuditEvents.filter(
 			(e) =>
 				e.action.toLowerCase().includes(query) ||
-				(e.reason && e.reason.toLowerCase().includes(query)) ||
+				e.reason?.toLowerCase().includes(query) ||
 				e.entityId.toLowerCase().includes(query),
 		);
 	}, [typedAuditEvents, auditSearch]);
 
-	const typedImportSourceKinds = Object.keys(
+	const _typedImportSourceKinds = Object.keys(
 		importSourceLabels,
 	) as ImportSourceKind[];
-	const typedDocumentIngestionTargets = Object.keys(
+	const _typedDocumentIngestionTargets = Object.keys(
 		ingestionTargetLabels,
 	) as DocumentIngestionTarget[];
-	const typedDocumentIngestion =
+	const _typedDocumentIngestion =
 		documentIngestion as DocumentIngestionResponse | null;
-	const typedImportIntake = importIntake as ImportIntakeResponse | null;
-	const typedImportPreview = importPreview as ImportPreviewResponse | null;
-	const typedActiveWorkspaceProfile =
+	const _typedImportIntake = importIntake as ImportIntakeResponse | null;
+	const _typedImportPreview = importPreview as ImportPreviewResponse | null;
+	const _typedActiveWorkspaceProfile =
 		activeWorkspaceProfile as WorkspaceProfile | null;
-	const typedWorkspaceProfiles = dashboard.clinicSettings
+	const _typedWorkspaceProfiles = dashboard.clinicSettings
 		.workspaceProfiles as WorkspaceProfile[];
-	const typedRoleAccessPolicies = dashboard.clinicSettings
+	const _typedRoleAccessPolicies = dashboard.clinicSettings
 		.roleAccessPolicies as RoleAccessPolicy[];
-	const typedTelegramChatLinks =
+	const _typedTelegramChatLinks =
 		(telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
-	const typedTelegramLinkCodes =
+	const _typedTelegramLinkCodes =
 		(telegramLinkCodes as DenteTelegramLinkCodePublic[]) ?? [];
-	const typedTelegramPreview =
+	const _typedTelegramPreview =
 		telegramPreview as DenteTelegramMessagePreview | null;
 	const typedTelegramOutbox =
 		telegramOutbox as DenteTelegramOutboxResponse | null;
 	const typedVisibleTelegramOutboxItems =
 		visibleTelegramOutboxItems as DenteTelegramOutboxItem[];
-	const telegramOutboxRemainingCount = typedTelegramOutbox
+	const _telegramOutboxRemainingCount = typedTelegramOutbox
 		? Math.max(
 				0,
 				typedTelegramOutbox.filteredCount -
 					typedVisibleTelegramOutboxItems.length,
 			)
 		: hiddenTelegramOutboxItemCount;
-	const typedTelegramStatus = telegramStatus as DenteTelegramBotStatus | null;
-	const typedTelegramOutboxStatusFilterOptions =
+	const _typedTelegramStatus = telegramStatus as DenteTelegramBotStatus | null;
+	const _typedTelegramOutboxStatusFilterOptions =
 		telegramOutboxStatusFilterOptions as string[];
-	const typedTelegramOutboxTemplateFilterOptions =
+	const _typedTelegramOutboxTemplateFilterOptions =
 		telegramOutboxTemplateFilterOptions as string[];
-	const typedTelegramInlineButtonKindLabels =
+	const _typedTelegramInlineButtonKindLabels =
 		telegramInlineButtonKindLabels as Record<string, string>;
-	const typedTelegramFeaturePlan =
+	const _typedTelegramFeaturePlan =
 		telegramFeaturePlan as TelegramFeaturePlan | null;
-	const typedTelegramEnabledFeaturesDraft =
+	const _typedTelegramEnabledFeaturesDraft =
 		telegramEnabledFeaturesDraft as DenteTelegramFeature[];
-	const typedTelegramFeatureOptions =
+	const _typedTelegramFeatureOptions =
 		telegramFeatureOptions as DenteTelegramFeature[];
-	const typedTelegramFeatureHelp = telegramFeatureHelp as Record<
+	const _typedTelegramFeatureHelp = telegramFeatureHelp as Record<
 		DenteTelegramFeature,
 		string
 	>;
-	const typedTelegramPostVisitCheckupDelayFields =
+	const _typedTelegramPostVisitCheckupDelayFields =
 		telegramPostVisitCheckupDelayFields as TelegramPostVisitCheckupDelayField[];
-	const typedTelegramPostVisitCheckupDelayDrafts =
+	const _typedTelegramPostVisitCheckupDelayDrafts =
 		telegramPostVisitCheckupDelayDrafts as Record<
 			TelegramPostVisitCheckupDelayKey,
 			string
 		>;
-	const typedTelegramVisualCardFields =
+	const _typedTelegramVisualCardFields =
 		telegramVisualCardFields as TelegramVisualCardField[];
-	const getTypedTelegramInlineButtonRows = (
+	const _getTypedTelegramInlineButtonRows = (
 		replyMarkup: Record<string, unknown> | null,
 	) =>
 		telegramInlineButtonRowsFromReplyMarkup(
 			replyMarkup,
 		) as TelegramInlineButtonRow[];
-	const typedPricelistAnalysis =
+	const _typedPricelistAnalysis =
 		pricelistAnalysis as DentalPricelistAnalysisResponse | null;
-	const typedPricelistRecognitionServiceGroups =
+	const _typedPricelistRecognitionServiceGroups =
 		pricelistRecognitionServiceGroups as StringTokenGroup[];
-	const typedPricelistRecognitionBrandGroups =
+	const _typedPricelistRecognitionBrandGroups =
 		pricelistRecognitionBrandGroups as StringTokenGroup[];
-	const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance";
-	const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance";
-	const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance";
-	const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance";
-	const dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance";
-	const dicomWorkstationGuidanceId = "dicom-workstation-guidance";
-	const dicomArchiveAddressGuidanceId = "dicom-archive-address-guidance";
-	const localDicomFolderGuidanceId = "local-dicom-folder-guidance";
-	const migrationHandoffReportGuidanceId = "migration-handoff-report-guidance";
-	const dicomArchiveAddressReady =
+	const _telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance";
+	const _telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance";
+	const _telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance";
+	const _telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance";
+	const _dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance";
+	const _dicomWorkstationGuidanceId = "dicom-workstation-guidance";
+	const _dicomArchiveAddressGuidanceId = "dicom-archive-address-guidance";
+	const _localDicomFolderGuidanceId = "local-dicom-folder-guidance";
+	const _migrationHandoffReportGuidanceId = "migration-handoff-report-guidance";
+	const _dicomArchiveAddressReady =
 		(dicomWebEndpointUrl || "").trim().length > 0;
-	const telegramOutboxBulkSendGuidance = isTelegramLoading
+	const _telegramOutboxBulkSendGuidance = isTelegramLoading
 		? "Дождитесь загрузки очереди Telegram."
 		: isTelegramSendingDue || telegramSendingItemId
 			? "Дождитесь завершения текущей отправки Telegram."
@@ -1581,7 +1534,7 @@ export function SettingsAuditTab() {
 			if (value === null || typeof value === "undefined") return false;
 			return String(value).trim().length > 0;
 		});
-	const clinicLookupSuggestionApplySummary = (
+	const _clinicLookupSuggestionApplySummary = (
 		fields: Record<string, unknown>,
 	) => {
 		const entries = clinicLookupSuggestionFieldEntries(fields);
@@ -1600,12 +1553,12 @@ export function SettingsAuditTab() {
 		});
 		return `Будет подставлено полей: ${entries.length}. Новых: ${emptyCount}. Заменит текущих: ${replaceCount}. Совпадает: ${unchangedCount}.`;
 	};
-	const applyClinicLookupSuggestion = (fields: Record<string, unknown>) => {
+	const _applyClinicLookupSuggestion = (fields: Record<string, unknown>) => {
 		clinicLookupSuggestionFieldEntries(fields).forEach(([key, value]) => {
 			updateClinicProfileDraft(key, String(value).trim());
 		});
 	};
-	const clinicProfileSaveButtonText =
+	const _clinicProfileSaveButtonText =
 		clinicProfileSaveState === "saving"
 			? "Сохраняю профиль"
 			: clinicProfileSaveState === "saved"
@@ -1615,7 +1568,7 @@ export function SettingsAuditTab() {
 		migrationAutopilot as MigrationAutopilotResponse | null;
 	const typedMigrationSourceDiscovery =
 		migrationSourceDiscovery as MigrationLocalSourceDiscoveryResponse | null;
-	const activeMigrationDiscoveryForSettingsAutopilot =
+	const _activeMigrationDiscoveryForSettingsAutopilot =
 		typedMigrationSourceDiscovery ?? typedBrowserMigrationDiscovery ?? null;
 	const typedMigrationSourceWorkup =
 		migrationSourceWorkup as MigrationLocalSourceWorkupResponse | null;
@@ -1625,9 +1578,9 @@ export function SettingsAuditTab() {
 		clinicPublicLookup as ClinicPublicLookupResponse | null;
 	const typedDicomFirstFramePreview =
 		dicomFirstFramePreview as DicomFirstFramePreviewResponse | null;
-	const typedDicomFirstFrameViewerState =
+	const _typedDicomFirstFrameViewerState =
 		dicomFirstFrameViewerState as DicomFirstFrameViewerState;
-	const typedDefaultDicomFirstFrameViewerState =
+	const _typedDefaultDicomFirstFrameViewerState =
 		defaultDicomFirstFrameViewerState as DicomFirstFrameViewerState;
 	const dicomFirstFrameSelectableCount =
 		typedDicomFirstFramePreview?.selectableFileCount ?? 0;
@@ -1637,7 +1590,7 @@ export function SettingsAuditTab() {
 		0,
 		dicomFirstFrameSelectableCount - 1,
 	);
-	const dicomFirstFrameLandmarkSlices =
+	const _dicomFirstFrameLandmarkSlices =
 		dicomFirstFrameSelectableCount > 3
 			? [
 					{
@@ -1659,34 +1612,34 @@ export function SettingsAuditTab() {
 						) === index,
 				)
 			: [];
-	const dicomFirstFrameCanSelectPrevious =
+	const _dicomFirstFrameCanSelectPrevious =
 		typeof dicomFirstFrameCurrentIndex === "number" &&
 		dicomFirstFrameCurrentIndex > 0 &&
 		!isDicomFirstFramePreviewing;
-	const dicomFirstFrameCanSelectNext =
+	const _dicomFirstFrameCanSelectNext =
 		typeof dicomFirstFrameCurrentIndex === "number" &&
 		dicomFirstFrameSelectableCount > 0 &&
 		dicomFirstFrameCurrentIndex < dicomFirstFrameSelectableCount - 1 &&
 		!isDicomFirstFramePreviewing;
-	const typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ??
+	const _typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ??
 		[]) as DicomSeriesPreviewGroup[];
-	const typedDicomSeriesPreviewParserNotes = (dicomSeriesPreview?.parserNotes ??
-		[]) as string[];
+	const _typedDicomSeriesPreviewParserNotes =
+		(dicomSeriesPreview?.parserNotes ?? []) as string[];
 	const typedCbctWorkbenchSeries =
 		cbctWorkbenchSeries as DicomSeriesPreviewGroup | null;
 	const typedDicomViewerWorkbenchManifest =
 		dicomViewerWorkbenchManifest as DicomViewerWorkbenchManifestResponse | null;
 	const typedDicomWorkstationReadiness =
 		dicomWorkstationReadiness as DicomWorkstationReadinessResponse | null;
-	const typedDicomRenderCachePlan =
+	const _typedDicomRenderCachePlan =
 		dicomRenderCachePlan as DicomRenderCachePlanResponse | null;
-	const typedDicomViewerToolStateBundle =
+	const _typedDicomViewerToolStateBundle =
 		dicomViewerToolStateBundle as DicomViewerToolStateBundleResponse | null;
-	const typedDicomLocalFolderDiscovery =
+	const _typedDicomLocalFolderDiscovery =
 		dicomLocalFolderDiscovery as DicomLocalFolderDiscoveryResponse | null;
 	const typedLocalImagingOrganizer =
 		localImagingOrganizer as LocalImagingOrganizerResponse | null;
-	const activeDentalModelWorkbenchManifest: DentalModelWorkbenchManifest | null =
+	const _activeDentalModelWorkbenchManifest: DentalModelWorkbenchManifest | null =
 		typedLocalImagingOrganizer?.cases.find(
 			(caseItem) =>
 				localImagingFolderDraft?.folderFingerprint &&
@@ -1701,22 +1654,22 @@ export function SettingsAuditTab() {
 			(caseItem) => caseItem.modelWorkbenchManifest.totalModels > 0,
 		)?.modelWorkbenchManifest ??
 		null;
-	const typedImagingFolderScan =
+	const _typedImagingFolderScan =
 		imagingFolderScan as ImagingFolderScanResponse | null;
-	const typedDicomFolderSeriesScan =
+	const _typedDicomFolderSeriesScan =
 		dicomFolderSeriesScan as DicomFolderSeriesPreviewResponse | null;
-	const typedDicomFolderWorkupPlan =
+	const _typedDicomFolderWorkupPlan =
 		dicomFolderWorkupPlan as DicomFolderWorkupPlanResponse | null;
-	const typedCbctWorkbenchTools = (
+	const _typedCbctWorkbenchTools = (
 		typedCbctWorkbenchSeries?.mprReadiness.tools.length
 			? cbctWorkbenchTools
 			: ["window_level", "pan", "zoom", "external_open"]
 	) as DicomMprTool[];
-	const typedCbctMprBlockers =
+	const _typedCbctMprBlockers =
 		typedCbctWorkbenchSeries?.mprReadiness.blockers ?? [];
-	const typedCbctMprWarnings =
+	const _typedCbctMprWarnings =
 		typedCbctWorkbenchSeries?.mprReadiness.warnings ?? [];
-	const typedCbctResourceSafetyCaps =
+	const _typedCbctResourceSafetyCaps =
 		typedCbctWorkbenchSeries?.mprReadiness.resourcePolicy.safetyCaps ?? [];
 	const mprControlsReady = Boolean(
 		typedCbctWorkbenchSeries?.mprReadiness.canOpenMpr,
@@ -1735,7 +1688,7 @@ export function SettingsAuditTab() {
 		setDicomFirstFrameViewerState((state: DicomFirstFrameViewerState) =>
 			updater(state),
 		);
-	const updateDicomFirstFrameViewerNumber = (
+	const _updateDicomFirstFrameViewerNumber = (
 		key: "brightness" | "contrast",
 		event: InputChangeEvent,
 	) => {
@@ -1747,12 +1700,12 @@ export function SettingsAuditTab() {
 		canOpenMpr: mprControlsReady,
 		axisDeg: mprAxisDeg,
 	});
-	const mprAxisAngleBadge = formatMprAxisAngleBadge(
+	const _mprAxisAngleBadge = formatMprAxisAngleBadge(
 		mprAxisDeg,
 		mprControlsReady,
 	);
-	const mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
-	const mprSliceBadge = formatMprSliceBadge({
+	const _mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
+	const _mprSliceBadge = formatMprSliceBadge({
 		canOpenMpr: mprControlsReady,
 		sliceIndex: mprSafeSliceIndex,
 		maxIndex: mprSliceMaxIndex,
@@ -1769,27 +1722,27 @@ export function SettingsAuditTab() {
 	const mprSliceLabel = mprControlsReady
 		? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}`
 		: "срез включится после КЛКТ/КТ-серии";
-	const mprAxisRangeValue = formatMprAxisRangeValue({
+	const _mprAxisRangeValue = formatMprAxisRangeValue({
 		canOpenMpr: mprControlsReady,
 		axisDeg: mprAxisDeg,
 	});
-	const mprSlabRangeValue = formatMprSlabRangeValue({
+	const _mprSlabRangeValue = formatMprSlabRangeValue({
 		canOpenMpr: mprControlsReady,
 		slabMm: mprSlabMm,
 	});
-	const mprSliceRangeValue = formatMprSliceRangeValue({
+	const _mprSliceRangeValue = formatMprSliceRangeValue({
 		canOpenMpr: mprControlsReady,
 		sliceIndex: mprSafeSliceIndex,
 		maxIndex: mprSliceMaxIndex,
 	});
-	const mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
+	const _mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
 		"--mpr-axis-deg": `${mprAxisDeg}deg`,
 		"--mpr-slab-width": mprSlabVisualWidth,
 		"--mpr-slice-position": mprSlicePositionPercent,
 	};
 	const mprActiveProjectionLabel =
 		mprProjectionLabels[typedMprProjection] ?? typedMprProjection;
-	const mprActiveProjectionOrientation =
+	const _mprActiveProjectionOrientation =
 		mprProjectionOrientationLabels[typedMprProjection] ?? "плоскость просмотра";
 	const mprProjectionCompass = mprProjectionCompassLabels(typedMprProjection);
 	const mprAxisGuidance = buildMprAxisGuidance({
@@ -1829,19 +1782,19 @@ export function SettingsAuditTab() {
 		linkedPlanes: mprLinkedPlanesEnabled,
 	};
 	const mprWorkbenchSummaryText = buildMprWorkbenchSummary(mprClinicalInput);
-	const mprOperatorSummaryCards = buildMprOperatorSummary({
+	const _mprOperatorSummaryCards = buildMprOperatorSummary({
 		...mprClinicalInput,
 		protocolDeltas: mprNearestClinicalPreset.deltas,
 	});
-	const mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({
+	const _mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({
 		canOpenMpr: mprControlsReady,
 		workbenchSummary: mprWorkbenchSummaryText,
 		compassSummary: mprProjectionCompass.summary,
 		guidanceSummary: mprAxisGuidance.summary,
 	});
 	const mprClinicalChecklist = buildMprClinicalChecklist(mprClinicalInput);
-	const mprClinicalNextStep = mprClinicalNextAction(mprClinicalChecklist);
-	const mprClinicalPresetButtonClass = (preset: MprClinicalPreset) =>
+	const _mprClinicalNextStep = mprClinicalNextAction(mprClinicalChecklist);
+	const _mprClinicalPresetButtonClass = (preset: MprClinicalPreset) =>
 		[
 			"mpr-clinical-preset",
 			mprNearestClinicalPreset.title === preset.title ? "nearest" : "",
@@ -1852,7 +1805,7 @@ export function SettingsAuditTab() {
 		]
 			.filter(Boolean)
 			.join(" ");
-	const resetMprControls = () => {
+	const _resetMprControls = () => {
 		const defaultProjection =
 			typedCbctWorkbenchSeries?.mprReadiness.projections.includes("axial")
 				? "axial"
@@ -1880,7 +1833,7 @@ export function SettingsAuditTab() {
 		setMprCrosshairEnabled(preset.crosshair);
 		setMprLinkedPlanesEnabled(preset.linkedPlanes);
 	};
-	const applyCtPlanningQuickAction = (action: CtPlanningQuickAction) => {
+	const _applyCtPlanningQuickAction = (action: CtPlanningQuickAction) => {
 		if (action.requiresVolume && !mprControlsReady) return;
 		const projection = resolveMprClinicalPresetProjection(
 			action.projection,
@@ -1898,19 +1851,19 @@ export function SettingsAuditTab() {
 		setMprCrosshairEnabled(true);
 		setMprLinkedPlanesEnabled(true);
 	};
-	const selectCtPlanningImplantFromSettings = (
+	const _selectCtPlanningImplantFromSettings = (
 		implant: CtImplantLibraryItem,
 	) => {
 		setCtPlanningActiveQuickActionId?.("implant_library");
 		selectCtPlanningImplant(implant);
 	};
-	const applyNearestMprClinicalPreset = () => {
+	const _applyNearestMprClinicalPreset = () => {
 		const preset = mprClinicalPresets.find(
 			(candidate) => candidate.title === mprNearestClinicalPreset.title,
 		);
 		if (preset) applyMprClinicalPreset(preset);
 	};
-	const handleMprKeyboardNavigation = (
+	const _handleMprKeyboardNavigation = (
 		event: KeyboardEvent<HTMLDivElement>,
 	) => {
 		if (!mprControlsReady) return;
@@ -1930,18 +1883,18 @@ export function SettingsAuditTab() {
 	};
 	const typedMigrationAutopilotSources = (typedMigrationAutopilot?.sources ??
 		[]) as MigrationAutopilotSource[];
-	const typedMigrationAutopilotClinicLookup =
+	const _typedMigrationAutopilotClinicLookup =
 		typedMigrationAutopilot?.clinicLookup ?? null;
-	const typedMigrationAutopilotSteps = (typedMigrationAutopilot?.steps ??
+	const _typedMigrationAutopilotSteps = (typedMigrationAutopilot?.steps ??
 		[]) as MigrationAutopilotStep[];
-	const typedMigrationOperatorLanes = (typedMigrationAutopilot?.operatorPacket
+	const _typedMigrationOperatorLanes = (typedMigrationAutopilot?.operatorPacket
 		.lanes ?? []) as MigrationAutopilotPacketLane[];
 	const typedMigrationHandoffChecklist = (typedMigrationAutopilot
 		?.operatorPacket.handoffChecklist ??
 		[]) as MigrationAutopilotHandoffChecklistItem[];
-	const migrationDryRunSummary =
+	const _migrationDryRunSummary =
 		typedMigrationAutopilot?.operatorPacket.dryRun ?? null;
-	const migrationTriageItems = [...typedMigrationHandoffChecklist]
+	const _migrationTriageItems = [...typedMigrationHandoffChecklist]
 		.filter((item) => item.blocking || item.status !== "ready_for_preview")
 		.sort((left, right) => {
 			if (left.blocking !== right.blocking) return left.blocking ? -1 : 1;
@@ -1955,13 +1908,13 @@ export function SettingsAuditTab() {
 	const typedMigrationDiscoveryCandidates =
 		(typedMigrationSourceDiscovery?.candidates ??
 			[]) as MigrationLocalSourceDiscoveryCandidate[];
-	const typedMigrationWorkupReadinessIssues = typedMigrationSourceWorkup
+	const _typedMigrationWorkupReadinessIssues = typedMigrationSourceWorkup
 		? ([
 				...typedMigrationSourceWorkup.readiness.blockers,
 				...typedMigrationSourceWorkup.readiness.warnings,
 			] as MigrationReadinessItem[])
 		: [];
-	const typedMigrationProbeReadinessIssues = typedMigrationSourceProbe
+	const _typedMigrationProbeReadinessIssues = typedMigrationSourceProbe
 		? ([
 				...typedMigrationSourceProbe.readiness.blockers,
 				...typedMigrationSourceProbe.readiness.warnings,
@@ -1969,7 +1922,7 @@ export function SettingsAuditTab() {
 		: [];
 	const typedClinicPublicLookupSuggestions =
 		typedClinicPublicLookup?.suggestions ?? [];
-	const typedClinicPublicLookupTargets =
+	const _typedClinicPublicLookupTargets =
 		typedClinicPublicLookup?.publicLookupTargets ?? [];
 	const migrationOperatorScriptSteps =
 		typedMigrationAutopilot?.operatorPacket.operatorScript.steps ?? [];
@@ -1985,7 +1938,7 @@ export function SettingsAuditTab() {
 		) ??
 		migrationOperatorScriptSteps[0] ??
 		null;
-	const migrationPrimaryOperatorCandidate =
+	const _migrationPrimaryOperatorCandidate =
 		migrationPrimaryOperatorStep?.sourceFingerprint && typedMigrationAutopilot
 			? (typedMigrationAutopilotSources.find(
 					(source) =>
@@ -2010,7 +1963,7 @@ export function SettingsAuditTab() {
 			candidate.sourceRef.startsWith("smart-preview:")
 		);
 	};
-	const migrationCandidatePreviewHint = (
+	const _migrationCandidatePreviewHint = (
 		candidate: MigrationLocalSourceDiscoveryCandidate,
 	) =>
 		migrationCandidatePreviewReady(candidate)
@@ -2031,7 +1984,7 @@ export function SettingsAuditTab() {
 		(typedSmartImportPreview?.legacySources.length ?? 0);
 	const migrationKnownSourceCount =
 		typedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount;
-	const migrationHandoffReportReady = Boolean(
+	const _migrationHandoffReportReady = Boolean(
 		typedMigrationAutopilot ||
 			typedMigrationSourceDiscovery ||
 			typedBrowserMigrationDiscovery ||
@@ -2060,7 +2013,7 @@ export function SettingsAuditTab() {
 		migrationClinicLookupFieldCount,
 		migrationSmartClinicFieldCount,
 	);
-	const migrationProgressItems = [
+	const _migrationProgressItems = [
 		{
 			id: "source",
 			title: "Источник",
@@ -2133,7 +2086,7 @@ export function SettingsAuditTab() {
 						: "Можно добрать отдельно",
 		},
 	];
-	const focusSmartImportWorkbench = () => {
+	const _focusSmartImportWorkbench = () => {
 		setSmartImportMode("auto");
 		if (typeof window === "undefined") return;
 		window.setTimeout(() => {
@@ -2144,7 +2097,7 @@ export function SettingsAuditTab() {
 			textarea?.focus({ preventScroll: true });
 		}, 0);
 	};
-	const renderMigrationOperatorStepActions = (
+	const _renderMigrationOperatorStepActions = (
 		step: MigrationAutopilotOperatorScriptStep,
 		scriptCandidate: MigrationLocalSourceDiscoveryCandidate | null | undefined,
 		testScope: MigrationOperatorActionScope,
@@ -2299,7 +2252,7 @@ export function SettingsAuditTab() {
 			</div>
 		);
 	};
-	const renderMigrationTechnicalNotes = (
+	const _renderMigrationTechnicalNotes = (
 		title: string,
 		items: string[],
 		testId?: string,
@@ -2324,30 +2277,30 @@ export function SettingsAuditTab() {
 		ClinicalRuleAction,
 		string
 	>;
-	const typedClinicalRuleActions = Object.keys(
+	const _typedClinicalRuleActions = Object.keys(
 		typedClinicalRuleActionLabels,
 	) as ClinicalRuleAction[];
 	const typedClinicalRuleSeverityLabels = clinicalRuleSeverityLabels as Record<
 		ClinicalRuleSeverity,
 		string
 	>;
-	const typedClinicalRuleSeverities = Object.keys(
+	const _typedClinicalRuleSeverities = Object.keys(
 		typedClinicalRuleSeverityLabels,
 	) as ClinicalRuleSeverity[];
-	const typedClinicalRules = dashboard.clinicalRules as ClinicalRule[];
-	const typedServiceCatalog = dashboard.serviceCatalog as ServiceCatalogItem[];
+	const _typedClinicalRules = dashboard.clinicalRules as ClinicalRule[];
+	const _typedServiceCatalog = dashboard.serviceCatalog as ServiceCatalogItem[];
 	const typedServiceCategoryLabels = serviceCategoryLabels as Record<
 		ServiceCategory,
 		string
 	>;
-	const typedServiceCategories = Object.keys(
+	const _typedServiceCategories = Object.keys(
 		typedServiceCategoryLabels,
 	) as ServiceCategory[];
 	const typedSettingsTabs = settingsTabs as SettingsTab[];
 	const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
 	const settingsTabPanelId = (tabId: SettingsTabId) =>
 		`settings-panel-${tabId}`;
-	const activeSettingsTabPanelId = settingsTabPanelId(settingsTab);
+	const _activeSettingsTabPanelId = settingsTabPanelId(settingsTab);
 	const selectSettingsTab = (tabId: SettingsTabId) => {
 		setSettingsTab(tabId);
 		window.location.hash = `settings/${tabId}`;
@@ -2384,7 +2337,7 @@ export function SettingsAuditTab() {
 			0,
 		);
 	};
-	const renderTabButton = (tab: SettingsTab) => {
+	const _renderTabButton = (tab: SettingsTab) => {
 		const tabSelected = settingsTab === tab.id;
 		return (
 			<button

@@ -1,12 +1,11 @@
-import type { 
-	DicomRenderCachePlanResponse, 
-	MprProjection, 
-	StaffRole,
-	MigrationAutopilotOperatorScriptAction, 
-	MigrationLocalSourceDiscoveryCandidate, 
-	MigrationLocalSourceHandoff,
+import type {
+	DicomRenderCachePlanResponse,
 	DicomSeriesPreviewGroup,
-	LocalBridgeReadinessResponse
+	LocalBridgeReadinessResponse,
+	MigrationAutopilotOperatorScriptAction,
+	MigrationLocalSourceDiscoveryCandidate,
+	MigrationLocalSourceHandoff,
+	StaffRole,
 } from "@dental/shared";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 
@@ -125,10 +124,11 @@ export const clinicPublicLookupProviderStatusLabels: Record<string, string> = {
 	error: "онлайн-поиск не ответил",
 	skipped_no_safe_query: "нужны реквизиты",
 };
-export const clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
-	dadata: "Сервис реквизитов",
-	manual_public_targets: "Из введенных реквизитов",
-};
+export const clinicPublicLookupSuggestionSourceLabels: Record<string, string> =
+	{
+		dadata: "Сервис реквизитов",
+		manual_public_targets: "Из введенных реквизитов",
+	};
 export const migrationEntityLabels: Record<string, string> = {
 	clinic_profile: "реквизиты клиники",
 	patients: "пациенты",
@@ -510,7 +510,9 @@ export const migrationHandoffEndpointLabels: Record<string, string> = {
 	"/api/ingestion/extract": "разбор файла или таблицы",
 	"/api/imports/smart/preview": "предпросмотр переноса",
 };
-export const migrationHandoffRouteLabel = (handoff: MigrationLocalSourceHandoff) => {
+export const migrationHandoffRouteLabel = (
+	handoff: MigrationLocalSourceHandoff,
+) => {
 	const actionLabel =
 		handoff.method === "GET" ? "открыть проверку" : "передать на проверку";
 	return `${actionLabel}: ${migrationHandoffEndpointLabels[handoff.endpoint] ?? "предпросмотр в CRM"}`;
@@ -607,4 +609,3 @@ export const dicomFirstFrameImageTypeLabel = (
 		return "цветной снимок";
 	return "тип изображения: особый";
 };
-

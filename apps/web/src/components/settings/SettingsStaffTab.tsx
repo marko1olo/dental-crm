@@ -1,11 +1,4 @@
-import {
-	Edit2,
-	KeyRound,
-	Settings2,
-	ShieldCheck,
-	UserPlus,
-	X,
-} from "lucide-react";
+import { Settings2, ShieldCheck, UserPlus, X } from "lucide-react";
 import type React from "react";
 import type { ChangeEvent } from "react";
 
@@ -13,11 +6,14 @@ type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { showToast } from "../GlobalToast";
 
 export function SettingsStaffTab() {
-	const props = useAppLogicContext();
-	const { dashboard, staffRoleLabels, specialtyLabels } = props;
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const { dashboard, staffRoleLabels, specialtyLabels } = mergedProps;
 
 	const {
 		staffScheduleDrafts,
@@ -30,7 +26,7 @@ export function SettingsStaffTab() {
 		updateStaffScheduleDay,
 		saveStaffSchedule,
 		weekdayOptions,
-	} = props;
+	} = mergedProps;
 	const typedWeekdayOptions = weekdayOptions || [];
 	const staff = dashboard?.clinicSettings?.staff || [];
 
@@ -125,7 +121,7 @@ export function SettingsStaffTab() {
 			showToast("Сотрудник успешно добавлен", "success");
 			setNewStaffName("");
 			setNewStaffEmail("");
-			await props.loadDashboard();
+			await mergedProps.loadDashboard();
 		} catch (err: any) {
 			showToast(err.message, "error");
 		} finally {
@@ -214,7 +210,7 @@ export function SettingsStaffTab() {
 
 			showToast("Профиль сотрудника успешно обновлен", "success");
 			setEditingStaffId(null);
-			await props.loadDashboard();
+			await mergedProps.loadDashboard();
 		} catch (err: any) {
 			showToast(err.message, "error");
 		} finally {

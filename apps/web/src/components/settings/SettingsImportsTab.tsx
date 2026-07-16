@@ -1,182 +1,21 @@
 import type {
-	AiRecognitionJob,
-	AuditEvent,
-	Chair,
-	ClinicalRule,
-	ClinicalRuleAction,
-	ClinicalRuleSeverity,
-	ClinicMode,
-	ClinicPublicLookupResponse,
 	Dashboard,
-	DentalMaterialKind,
-	DentalModelWorkbenchManifest,
-	DentalPricelistAnalysisResponse,
-	DentalRestorationType,
-	DentalSpecialty,
-	DenteTelegramBotStatus,
-	DenteTelegramChatLinkPublic,
 	DenteTelegramFeature,
-	DenteTelegramLinkCodePublic,
-	DenteTelegramMessagePreview,
-	DenteTelegramOutboxItem,
-	DenteTelegramOutboxResponse,
 	DenteTelegramPostVisitCheckupDelayHoursByTopic,
 	DenteTelegramVisualCardKey,
-	DicomFirstFramePreviewResponse,
-	DicomFolderSeriesPreviewResponse,
-	DicomFolderWorkupPlanResponse,
-	DicomLocalFolderDiscoveryResponse,
-	DicomMprTool,
 	DicomRenderCachePlanResponse,
 	DicomSeriesPreviewGroup,
-	DicomViewerToolStateBundleResponse,
-	DicomViewerWorkbenchManifestResponse,
-	DicomWorkstationReadinessResponse,
-	DocumentIngestionResponse,
-	DocumentIngestionTarget,
-	ImagingFolderScanResponse,
-	ImagingImportPreviewResponse,
-	ImagingSourceKind,
-	ImagingViewerImplantPlan,
-	ImagingViewerTool,
-	ImportBatch,
-	ImportIntakeResponse,
-	ImportPreviewResponse,
-	ImportSourceKind,
-	IntegrationPreset,
 	LocalBridgeReadinessResponse,
-	LocalBridgeUsePlansResponse,
-	LocalImagingOrganizerResponse,
-	MigrationAutopilotHandoffChecklistItem,
 	MigrationAutopilotOperatorScriptAction,
-	MigrationAutopilotOperatorScriptStep,
-	MigrationAutopilotPacketLane,
-	MigrationAutopilotResponse,
-	MigrationAutopilotSource,
-	MigrationAutopilotStep,
 	MigrationLocalSourceDiscoveryCandidate,
-	MigrationLocalSourceDiscoveryResponse,
 	MigrationLocalSourceHandoff,
-	MigrationLocalSourceProbeResponse,
-	MigrationLocalSourceWorkupResponse,
-	MigrationLocalSourceWorkupStep,
-	MigrationProbeAdapter,
-	MigrationProbeArtifact,
-	MigrationReadinessItem,
-	PricelistSourceKind,
-	ProtocolTemplate,
-	RoleQueue,
-	ServiceCatalogItem,
-	ServiceCategory,
-	SmartImportMode,
-	SmartImportPreviewResponse,
-	SpeechProvider,
-	SpeechRecordingRecoveryList,
-	StaffMember,
 	StaffRole,
 	WeekdayIndex,
 } from "@dental/shared";
-import {
-	Bot,
-	CalendarDays,
-	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
-	CircleStop,
-	ClipboardCheck,
-	Copy,
-	CreditCard,
-	Database,
-	Download,
-	ExternalLink,
-	FileCheck2,
-	FileText,
-	FlipHorizontal,
-	Gauge,
-	History,
-	Image as ImageIcon,
-	Layers3,
-	Mic,
-	Plus,
-	ReceiptText,
-	RefreshCw,
-	RotateCcw,
-	RotateCw,
-	ScanSearch,
-	Search,
-	Send,
-	ShieldCheck,
-	SlidersHorizontal,
-	Sparkles,
-	UploadCloud,
-	UserCheck,
-	Users,
-	ZoomIn,
-	ZoomOut,
-} from "lucide-react";
-import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
-import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
-import { SettingsAccessTab } from "../../components/settings/SettingsAccessTab";
-import { SettingsClinicTab } from "../../components/settings/SettingsClinicTab";
+import type { ChangeEvent, CSSProperties } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import {
-	type CtImplantLibraryItem,
-	type CtPlanningQuickAction,
-	CtPlanningToolsPanel,
-} from "../../ctPlanningTools";
-import {
-	type MprClinicalPreset,
-	type MprProjection,
-	type MprWindowPreset,
-	mprAxisPresetDeg,
-	mprClinicalPresets,
-	mprProjectionOrientationLabels,
-	mprSeriesRequiredProjectionLabel,
-	mprSlabPresetMm,
-	mprUnavailableProjectionLabel,
-} from "../../imagingUiLabels";
-import { motionSafeScrollIntoView } from "../../motionPreference";
-import {
-	buildMprClinicalChecklist,
-	buildMprOperatorSummary,
-	buildMprWorkbenchSummary,
-	describeMprClinicalPresetProjectionFallback,
-	findNearestMprClinicalPreset,
-	mprClinicalNextAction,
-	resolveMprClinicalPresetProjection,
-} from "../../mprClinicalStatus";
-import {
-	buildMprAxisGuidance,
-	clampMprAxisDeg,
-	clampMprSlabMm,
-	clampMprSliceIndex,
-	formatMprAxisAngleBadge,
-	formatMprAxisDirectionLabel,
-	formatMprAxisRangeValue,
-	formatMprAxisVisualizerLabel,
-	formatMprSlabBadge,
-	formatMprSlabRangeValue,
-	formatMprSliceBadge,
-	formatMprSliceRangeValue,
-	formatSignedMprStep,
-	mprAxisBounds,
-	mprAxisNudgeDeg,
-	mprProjectionCompassLabels,
-	mprSlabBounds,
-	mprSlabNudgeMm,
-	mprSliceFraction,
-	mprSliceIndexFromFraction,
-	mprSliceNudgeSteps,
-	mprSlicePresetFractions,
-	resolveMprKeyboardAdjustment,
-} from "../../mprControlMath";
-import { PriceDictationBar } from "../../PriceDictationBar";
-import type {
-	ImagingConnectorCard,
-	ImagingViewerCapability,
-	RecognitionPreset,
-} from "../../settingsStaticData";
-import { useSettingsStore } from "../../store/settingsStore";
+import type { MprProjection } from "../../imagingUiLabels";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 
 type MprAxisVisualizerStyle = CSSProperties & {
@@ -210,7 +49,7 @@ type TelegramInlineButton = { text: string; target: string; kind: string };
 type TelegramInlineButtonRow = TelegramInlineButton[];
 type StringTokenGroup = { title: string; items: string[] };
 
-function formatBrowserImagingScanElapsed(
+function _formatBrowserImagingScanElapsed(
 	elapsedMs: number | null | undefined,
 ): string {
 	const safeMs =
@@ -272,21 +111,21 @@ type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
 type SettingsViewProps = Record<string, any>;
-const viewLabels = workspaceViewLabels as Record<string, string>;
-const staffCreationRoles: StaffRole[] = [
+const _viewLabels = workspaceViewLabels as Record<string, string>;
+const _staffCreationRoles: StaffRole[] = [
 	"doctor",
 	"administrator",
 	"assistant",
 	"manager",
 ];
-const clinicalRuleOwnerRoles: StaffRole[] = [
+const _clinicalRuleOwnerRoles: StaffRole[] = [
 	"doctor",
 	"assistant",
 	"administrator",
 	"manager",
 	"owner",
 ];
-const migrationOperatorSourceBoundActions: MigrationAutopilotOperatorScriptAction[] =
+const _migrationOperatorSourceBoundActions: MigrationAutopilotOperatorScriptAction[] =
 	[
 		"open_plan",
 		"open_probe",
@@ -309,16 +148,16 @@ const clinicPublicLookupFieldLabels: Record<string, string> = {
 	medicalLicenseIssuer: "Кем выдана",
 	bankDetails: "Банк",
 };
-const clinicPublicLookupBoundaryText =
+const _clinicPublicLookupBoundaryText =
 	"Публичный поиск получает только реквизиты клиники: ИНН, ОГРН, КПП, название, адрес или лицензию. Пациентов, снимки, базы и локальные пути сюда не отправлять.";
-const migrationReadinessLevelLabels: Record<string, string> = {
+const _migrationReadinessLevelLabels: Record<string, string> = {
 	ready_for_preview: "можно делать предпросмотр",
 	needs_bridge: "нужно подключение",
 	needs_export: "нужна выгрузка",
 	manual_review: "ручной разбор",
 	blocked: "нужно действие",
 };
-const migrationBridgeKitKindLabels: Record<string, string> = {
+const _migrationBridgeKitKindLabels: Record<string, string> = {
 	none: "нет",
 	file_upload: "файл/таблица",
 	local_db_bridge: "подключение к копии базы",
@@ -328,7 +167,7 @@ const migrationBridgeKitKindLabels: Record<string, string> = {
 	browser_manifest_bridge: "выбранная папка/диск",
 	manual_manifest: "ручной список",
 };
-const migrationBridgeKitStatusLabels: Record<string, string> = {
+const _migrationBridgeKitStatusLabels: Record<string, string> = {
 	ready: "готово",
 	needs_admin: "нужен администратор",
 	needs_export: "нужна выгрузка",
@@ -351,47 +190,47 @@ const migrationLegacySourceKindLabels: Record<string, string> = {
 	network_share: "сетевая папка",
 	unknown_legacy_source: "неизвестный источник",
 };
-const migrationAutomationLevelLabels: Record<string, string> = {
+const _migrationAutomationLevelLabels: Record<string, string> = {
 	ready_for_preview: "готово к предпросмотру",
 	needs_file_upload: "нужен файл выгрузки",
 	needs_local_bridge: "нужно подключение",
 	manual_review: "ручной разбор",
 };
-const smartImportMigrationPlanStatusLabels: Record<string, string> = {
+const _smartImportMigrationPlanStatusLabels: Record<string, string> = {
 	ready: "готово",
 	review: "проверить",
 	manual: "ручной разбор",
 	blocked: "стоп",
 };
-const smartImportLineKindLabels: Record<string, string> = {
+const _smartImportLineKindLabels: Record<string, string> = {
 	patient: "Пациент",
 	imaging: "Снимок",
 	clinic: "Клиника",
 	legacy_source: "Источник",
 	ignored: "Пропуск",
 };
-const migrationWorkupStepStatusLabels: Record<string, string> = {
+const _migrationWorkupStepStatusLabels: Record<string, string> = {
 	ready: "готово",
 	needs_bridge: "нужно подключение",
 	manual: "ручной шаг",
 	blocked: "стоп",
 };
-const importRowStatusLabels: Record<string, string> = {
+const _importRowStatusLabels: Record<string, string> = {
 	ready: "готово",
 	warning: "проверить",
 	blocked: "исправить",
 };
-const clinicPublicLookupProviderStatusLabels: Record<string, string> = {
+const _clinicPublicLookupProviderStatusLabels: Record<string, string> = {
 	ready: "профиль найден",
 	not_configured: "онлайн-поиск не настроен",
 	error: "онлайн-поиск не ответил",
 	skipped_no_safe_query: "нужны реквизиты",
 };
-const clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
+const _clinicPublicLookupSuggestionSourceLabels: Record<string, string> = {
 	dadata: "Сервис реквизитов",
 	manual_public_targets: "Из введенных реквизитов",
 };
-const migrationEntityLabels: Record<string, string> = {
+const _migrationEntityLabels: Record<string, string> = {
 	clinic_profile: "реквизиты клиники",
 	patients: "пациенты",
 	appointments: "записи",
@@ -403,26 +242,26 @@ const migrationEntityLabels: Record<string, string> = {
 	dicom_series: "серии КЛКТ/КТ",
 	unknown: "неизвестно",
 };
-const migrationPriorityLabels: Record<string, string> = {
+const _migrationPriorityLabels: Record<string, string> = {
 	critical: "сначала",
 	high: "важно",
 	normal: "обычно",
 	low: "потом",
 };
-const migrationOwnerLabels: Record<string, string> = {
+const _migrationOwnerLabels: Record<string, string> = {
 	administrator: "администратор",
 	doctor: "врач",
 	assistant: "ассистент",
 	system: "CRM",
 };
-const migrationHandoffPhaseLabels: Record<string, string> = {
+const _migrationHandoffPhaseLabels: Record<string, string> = {
 	clinic_requisites: "реквизиты",
 	source_access: "доступ к источнику",
 	export_or_bridge: "выгрузка",
 	staging_preview: "предпросмотр",
 	doctor_control: "проверка врачом",
 };
-const migrationOperatorPacketStatusLabels: Record<string, string> = {
+const _migrationOperatorPacketStatusLabels: Record<string, string> = {
 	ready_for_preview: "можно делать предпросмотр",
 	needs_admin: "нужен администратор",
 	needs_bridge: "нужно подключение",
@@ -431,7 +270,7 @@ const migrationOperatorPacketStatusLabels: Record<string, string> = {
 	blocked: "нужно действие",
 	empty: "нет источников",
 };
-const migrationTriageStatusPriority: Record<string, number> = {
+const _migrationTriageStatusPriority: Record<string, number> = {
 	blocked: 0,
 	needs_bridge: 1,
 	needs_export: 2,
@@ -440,7 +279,7 @@ const migrationTriageStatusPriority: Record<string, number> = {
 	empty: 5,
 	ready_for_preview: 6,
 };
-const migrationAdapterStatusLabels: Record<string, string> = {
+const _migrationAdapterStatusLabels: Record<string, string> = {
 	built_in: "готовый способ",
 	ready: "готово",
 	needs_admin: "нужен администратор",
@@ -449,7 +288,7 @@ const migrationAdapterStatusLabels: Record<string, string> = {
 	manual: "ручная проверка",
 	blocked: "стоп",
 };
-const dicomRenderCachePriorityLabels: Record<
+const _dicomRenderCachePriorityLabels: Record<
 	DicomRenderCachePlanResponse["tasks"][number]["priority"],
 	string
 > = {
@@ -459,7 +298,7 @@ const dicomRenderCachePriorityLabels: Record<
 	background: "фоном",
 	deferred: "позже",
 };
-const localImagingModelWorkbenchTargetLabels: Record<string, string> = {
+const _localImagingModelWorkbenchTargetLabels: Record<string, string> = {
 	metadata_only: "только метаданные",
 	external_model_viewer: "внешний 3D-просмотр",
 	local_bridge: "локальный 3D-модуль",
@@ -697,9 +536,9 @@ const integrationInputLabels: Record<string, string> = {
 	TIFF: "снимки TIFF",
 	BMP: "снимки BMP",
 };
-const humanizeIntegrationInput = (value: string) =>
+const _humanizeIntegrationInput = (value: string) =>
 	integrationInputLabels[value] ?? humanizeMigrationText(value);
-const localBridgeEndpointSummary = (
+const _localBridgeEndpointSummary = (
 	bridge: LocalBridgeReadinessResponse["bridges"][number],
 ) => {
 	if (bridge.urlRedacted) return bridge.urlRedacted;
@@ -707,7 +546,7 @@ const localBridgeEndpointSummary = (
 		return `серверных настроек: ${bridge.setupSettingsCount}`;
 	return "адрес локального модуля не задан";
 };
-const humanizeMigrationList = (
+const _humanizeMigrationList = (
 	items: unknown[] | undefined,
 	limit = items?.length ?? 0,
 ) =>
@@ -716,7 +555,7 @@ const humanizeMigrationList = (
 		.map(humanizeMigrationText)
 		.filter(Boolean)
 		.join(" · ");
-const humanizeMigrationColumns = (
+const _humanizeMigrationColumns = (
 	items: unknown[] | undefined,
 	limit = items?.length ?? 0,
 ) =>
@@ -730,7 +569,7 @@ const humanizeMigrationColumns = (
 		)
 		.filter(Boolean)
 		.join(" · ");
-const clinicPublicLookupWarningText = (warning: string) => {
+const _clinicPublicLookupWarningText = (warning: string) => {
 	const text = humanizeMigrationText(warning);
 	const duplicateValue = text.match(
 		/^Строка\s+(\d+):\s+найдено еще одно значение для ([^;]+);\s*оставлено первое\.?$/i,
@@ -752,7 +591,7 @@ const clinicPublicLookupWarningText = (warning: string) => {
 const migrationSourceKindLabel = (sourceKind: string) =>
 	migrationLegacySourceKindLabels[sourceKind] ??
 	humanizeMigrationText(sourceKind);
-const migrationSourceDisplayName = (
+const _migrationSourceDisplayName = (
 	candidate: Pick<
 		MigrationLocalSourceDiscoveryCandidate,
 		"safeDisplayName" | "sourceKind"
@@ -772,7 +611,7 @@ const migrationHandoffEndpointLabels: Record<string, string> = {
 	"/api/ingestion/extract": "разбор файла или таблицы",
 	"/api/imports/smart/preview": "предпросмотр переноса",
 };
-const migrationHandoffRouteLabel = (handoff: MigrationLocalSourceHandoff) => {
+const _migrationHandoffRouteLabel = (handoff: MigrationLocalSourceHandoff) => {
 	const actionLabel =
 		handoff.method === "GET" ? "открыть проверку" : "передать на проверку";
 	return `${actionLabel}: ${migrationHandoffEndpointLabels[handoff.endpoint] ?? "предпросмотр в CRM"}`;
@@ -782,11 +621,11 @@ const shortDicomSeriesCode = (value: string | null | undefined) => {
 	const trimmed = value.trim();
 	return `код серии ${trimmed.length > 18 ? `${trimmed.slice(0, 18)}...` : trimmed}`;
 };
-const dicomSeriesDisplayText = (series: DicomSeriesPreviewGroup) =>
+const _dicomSeriesDisplayText = (series: DicomSeriesPreviewGroup) =>
 	series.seriesDescription ??
 	series.studyDescription ??
 	shortDicomSeriesCode(series.seriesInstanceUid);
-const dicomSeriesWarningText = (warnings: string[]) =>
+const _dicomSeriesWarningText = (warnings: string[]) =>
 	warnings.length
 		? warnings.slice(0, 3).map(humanizeMigrationText).join(", ")
 		: "готово к просмотру";
@@ -803,7 +642,7 @@ const importWarningListText = (
 		.join(", ");
 	return text || fallback;
 };
-const patientImportRowWarningText = (
+const _patientImportRowWarningText = (
 	warnings: string[],
 	notes: string | null | undefined,
 ) =>
@@ -819,7 +658,7 @@ const imagingImportReadyText = (filePath: string | null | undefined) => {
 		virtualPath.split(/[\\/]/).filter(Boolean).pop() ?? virtualPath;
 	return `готово к привязке: ${humanizeMigrationText(safeName)}`;
 };
-const imagingImportRowWarningText = (
+const _imagingImportRowWarningText = (
 	warnings: string[],
 	filePath: string | null | undefined,
 ) => importWarningListText(warnings, imagingImportReadyText(filePath));
@@ -839,9 +678,9 @@ const aiRecognitionWarningLabels: Record<string, string> = {
 	"Диагноз и план лечения нельзя подписывать автоматически.":
 		"Диагноз и план лечения подписывает врач вручную.",
 };
-const aiRecognitionWarningText = (warning: string) =>
+const _aiRecognitionWarningText = (warning: string) =>
 	aiRecognitionWarningLabels[warning] ?? humanizeMigrationText(warning);
-const dicomFirstFrameFileFormatLabel = (
+const _dicomFirstFrameFileFormatLabel = (
 	transferSyntaxUid: string | null | undefined,
 ) => {
 	if (!transferSyntaxUid) return "формат файла не указан";
@@ -855,7 +694,7 @@ const dicomFirstFrameFileFormatLabel = (
 	}
 	return "формат файла: проверен";
 };
-const dicomFirstFrameImageTypeLabel = (
+const _dicomFirstFrameImageTypeLabel = (
 	photometricInterpretation: string | null | undefined,
 ) => {
 	const normalized = photometricInterpretation?.trim().toUpperCase();
@@ -875,8 +714,10 @@ import { LegacyMigrationStudio } from "./LegacyMigrationStudio";
 import { SmartImportStudio } from "./SmartImportStudio";
 
 export function SettingsImportsTab() {
-	const props = useAppLogicContext();
-	const { settingsTab } = props;
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const { settingsTab } = mergedProps;
 
 	return (
 		<>

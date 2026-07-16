@@ -1,4 +1,3 @@
-import { StaffRole } from "@dental/shared";
 import {
 	Check,
 	Link as LinkIcon,
@@ -9,6 +8,7 @@ import {
 import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { showToast } from "../GlobalToast";
 
@@ -16,7 +16,9 @@ type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
 export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
-	const props = useAppLogicContext();
+	const appLogic = useAppLogicContext();
+	const derivations = useSettingsDerivations();
+	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		dashboard,
 		activeWorkspaceProfile,
@@ -24,7 +26,7 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 		staffRoleLabels,
 		clinicModeLabels,
 		policyAuditEventLabels,
-	} = props;
+	} = mergedProps;
 	const viewLabels = workspaceViewLabels as Record<string, string>;
 
 	// Hooks MUST be called before any conditional returns (React Rules of Hooks)
