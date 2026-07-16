@@ -19,6 +19,7 @@ import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
 	createChairInDb,
+	deleteChairInDb,
 	createStaffMemberInDb,
 	getClinicSettingsFromDb,
 	getUiPreferencesFromDb,
@@ -525,6 +526,27 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 		const settings = await getClinicSettingsFromDb(orgId);
 		const created = settings.chairs.find((c) => c.name === input.name);
 		return reply.code(201).send(chairSchema.parse(created));
+	});
+
+	app.delete("/api/settings/chairs/:chairId", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const params = request.params as { chairId?: string };
+		if (!params.chairId) {
+			return reply.code(400).send({
+				error: "SettingsRouteValidationError",
+				message: "ID кресла не указан",
+			});
+		}
+		try {
+			await deleteChairInDb(orgId, params.chairId);
+			return reply.code(200).send({ success: true });
+		} catch (error: any) {
+			return reply.code(409).send({
+				error: "SettingsDeletionError",
+				message: error.message || "Ошибка при удалении кресла",
+			});
+		}
 	});
 
 	app.put(

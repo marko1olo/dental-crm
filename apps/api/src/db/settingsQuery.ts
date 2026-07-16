@@ -482,6 +482,47 @@ export async function updateChairWorkingHoursInDb(
 		);
 }
 
+export async function deleteChairInDb(organizationId: string, chairId: string) {
+	// First check if chair exists
+	const [chair] = await db
+		.select()
+		.from(schema.clinicChairs)
+		.where(
+			and(
+				eq(schema.clinicChairs.id, chairId),
+				eq(schema.clinicChairs.organizationId, organizationId),
+			),
+		)
+		.limit(1);
+
+	if (!chair) throw new Error("Кресло не найдено.");
+
+	// Check if any appointments exist for this chair
+	const activeAppointments = await db
+		.select({ id: schema.appointments.id })
+		.from(schema.appointments)
+		.where(
+			and(
+				eq(schema.appointments.chairId, chairId),
+				eq(schema.appointments.organizationId, organizationId)
+			)
+		)
+		.limit(1);
+
+	if (activeAppointments.length > 0) {
+		throw new Error("Невозможно удалить кресло, так как к нему привязаны записи пациентов.");
+	}
+
+	await db
+		.delete(schema.clinicChairs)
+		.where(
+			and(
+				eq(schema.clinicChairs.id, chairId),
+				eq(schema.clinicChairs.organizationId, organizationId),
+			),
+		);
+}
+
 // ============================================================================
 // SCHEDULE NARROWING CONFLICT VALIDATION HELPERS
 // ============================================================================

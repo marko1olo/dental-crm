@@ -1812,11 +1812,22 @@ export function VisitView() {
 											display: "flex",
 											justifyContent: "space-between",
 											alignItems: "center",
+											width: "100%",
 										}}
 									>
 										<strong style={{ fontSize: "0.85rem", color: "#475569" }}>
 											{field.label}
 										</strong>
+										<SmartMicrophoneButton
+											context="visit"
+											sterileMode={false}
+											onResult={(text) => {
+												const curr = visitNoteForm[field.key] || "";
+												const sep = curr.length > 0 && !curr.endsWith(" ") ? " " : "";
+												updateVisitNoteField(field.key, curr + sep + text);
+											}}
+											style={{ padding: "2px" }}
+										/>
 									</div>
 									{chips.length > 0 && (
 										<div
