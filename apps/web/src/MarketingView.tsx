@@ -26,12 +26,6 @@ type MarketingStats = {
 	google: { rating: number; reviews: number };
 };
 
-const DEFAULT_STATS: MarketingStats = {
-	yandex: { rating: 5.0, reviews: 142 },
-	gis2: { rating: 4.9, reviews: 89 },
-	google: { rating: 4.8, reviews: 56 },
-};
-
 type ReviewTone = "positive" | "negative" | "neutral";
 
 export function MarketingView({
@@ -48,10 +42,9 @@ export function MarketingView({
 		return (
 			marketingData.customSeoKeys || [
 				"лечение кариеса",
-				"безболезненное удаление",
-				"стоматология",
-				"профессиональная гигиена",
 				"имплантация зубов",
+				"отбеливание",
+				"детский стоматолог",
 			]
 		);
 	});
@@ -61,7 +54,13 @@ export function MarketingView({
 	});
 
 	const [stats, setStats] = useState<MarketingStats>(() => {
-		return marketingData.stats || DEFAULT_STATS;
+		return (
+			marketingData.stats || {
+				yandex: { rating: 0, reviews: 0 },
+				gis2: { rating: 0, reviews: 0 },
+				google: { rating: 0, reviews: 0 },
+			}
+		);
 	});
 
 	useEffect(() => {

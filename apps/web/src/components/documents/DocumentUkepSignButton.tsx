@@ -86,14 +86,6 @@ export function DocumentUkepSignButton({
 					base64Pdf,
 					selectedThumbprint,
 				);
-			} else if (isDevMode) {
-				// Dev fallback mode
-				await new Promise((resolve) => setTimeout(resolve, 1500));
-				signature = `MIIB_DEV_MOCK_SIGNATURE_${btoa(documentId)}_==`;
-				showToast(
-					"Использована тестовая подпись (режим разработки)",
-					"warning",
-				);
 			} else {
 				throw new Error(
 					"Подписание невозможно: отсутствует плагин или сертификат.",

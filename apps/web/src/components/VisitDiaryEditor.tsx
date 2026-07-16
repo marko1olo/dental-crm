@@ -178,13 +178,41 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	const [showPinDialog, setShowPinDialog] = useState(false);
 	const [pinCode, setPinCode] = useState("");
 	const [signatureType, setSignatureType] = useState<"pin" | "ukep">("pin");
-	const [selectedCert, setSelectedCert] = useState("cert_01");
-	const [rutokenPin, setRutokenPin] = useState("12345678");
+	const [selectedCert, setSelectedCert] = useState("");
+	const [hasPlugin, setHasPlugin] = useState<boolean | null>(null);
+	const [certificates, setCertificates] = useState<CryptoProCertificate[]>([]);
+	const [isLoadingCerts, setIsLoadingCerts] = useState(false);
+	const [isDevMode, setIsDevMode] = useState(false);
 
-	const mockCerts = [
-		{ id: "cert_01", label: "ООО 'ДЕНТЕ' - Врач Иванов И.И. (CryptoPro GOST 34.11-2012)" },
-		{ id: "cert_02", label: "ИП Петров П.П. - Рутокен ЭЦП 3.0 (ГОСТ Р 34.10-2012)" },
-	];
+	const loadCertificates = useCallback(async () => {
+		setIsLoadingCerts(true);
+		try {
+			const certs = await getPersonalCertificates();
+			setCertificates(certs);
+			if (certs.length > 0 && certs[0]) {
+				setSelectedCert(certs[0].thumbprint);
+			}
+		} catch (e) {
+			console.warn("Failed to load personal certificates:", e);
+			showToast("Не удалось загрузить список сертификатов УКЭП", "error");
+		} finally {
+			setIsLoadingCerts(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		setIsDevMode(Boolean(import.meta.env.DEV));
+		async function detectPlugin() {
+			const detected = await checkCryptoProPlugin();
+			setHasPlugin(detected);
+			if (detected) {
+				await loadCertificates();
+			}
+		}
+		if (showPinDialog && signatureType === "ukep") {
+			void detectPlugin();
+		}
+	}, [showPinDialog, signatureType, loadCertificates]);
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 	const [revisionCount, setRevisionCount] = useState(0);
 	const [attachments, setAttachments] = useState<
@@ -377,12 +405,21 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			return;
 		}
 
+		let pkcs7Signature = "";
 		if (signatureType === "ukep") {
-			if (!rutokenPin.trim()) {
-				showToast("Введите ПИН-код токена Рутокен!", "error");
+			if (!selectedCert) {
+				showToast("Выберите сертификат КриптоПро!", "error");
 				return;
 			}
-			showToast("УКЭП (ГОСТ 34.11-2012) отсоединенная подпись успешно сформирована через КриптоПро CSP", "success");
+			try {
+				const base64Diary = btoa(unescape(encodeURIComponent(JSON.stringify(diary))));
+				pkcs7Signature = await signBase64WithCertificate(base64Diary, selectedCert);
+				showToast("УКЭП (ГОСТ 34.11-2012) отсоединенная подпись успешно сформирована", "success");
+			} catch (e) {
+				console.error(e);
+				showToast("Ошибка при подписании документа", "error");
+				return;
+			}
 		} else {
 			try {
 				const clinicToken = localStorage.getItem("dente_clinic_token");
@@ -438,6 +475,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 		try {
 			const res = await fetch(`/api/diaries/${target}/lock`, {
 				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ pkcs7Signature }),
 			});
 			const json = await res.json();
 			if (res.ok) {
@@ -1122,33 +1161,34 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									</div>
 								) : (
 									<div className="space-y-3">
-										<div className="space-y-1">
-											<label className="text-xs text-slate-400 font-medium flex block">Сертификат КриптоПро *</label>
-											<select
-												value={selectedCert}
-												onChange={(e) => setSelectedCert(e.target.value)}
-												className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
-											>
-												{mockCerts.map((c) => (
-													<option key={c.id} value={c.id}>
-														{c.label}
-													</option>
-												))}
-											</select>
-										</div>
-										<div className="space-y-1">
-											<label className="text-xs text-slate-400 font-medium flex block">ПИН-код токена Рутокен *</label>
-											<input
-												type="password"
-												value={rutokenPin}
-												onChange={(e) => setRutokenPin(e.target.value)}
-												placeholder="ПИН-код (например, 12345678)"
-												className="modal-input"
-												onKeyDown={(e) => {
-													if (e.key === "Enter") confirmLock();
-												}}
-											/>
-										</div>
+										{hasPlugin === false && !isDevMode ? (
+											<div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 p-3 rounded-lg flex items-start gap-2">
+												<AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+												<p>
+													Плагин КриптоПро не установлен или недоступен в браузере.
+												</p>
+											</div>
+										) : isLoadingCerts ? (
+											<div className="text-sm text-teal-400 flex items-center gap-2">
+												Загрузка сертификатов...
+											</div>
+										) : (
+											<div className="space-y-1">
+												<label className="text-xs text-slate-400 font-medium flex block">Сертификат КриптоПро *</label>
+												<select
+													value={selectedCert}
+													onChange={(e) => setSelectedCert(e.target.value)}
+													className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+												>
+													<option value="">Выберите сертификат</option>
+													{certificates.map((c) => (
+														<option key={c.thumbprint} value={c.thumbprint}>
+															{c.subjectName} ({c.validTo})
+														</option>
+													))}
+												</select>
+											</div>
+										)}
 									</div>
 								)}
 							</div>

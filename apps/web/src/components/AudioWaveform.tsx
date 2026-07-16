@@ -27,7 +27,7 @@ export function AudioWaveform({
 
 		const initAudio = async () => {
 			if (!mediaStream) {
-				startFakeAnimation();
+				drawBars(Array(15).fill(0.1));
 				return;
 			}
 			try {
@@ -41,8 +41,8 @@ export function AudioWaveform({
 				dataArray = new Uint8Array(analyser.frequencyBinCount);
 				drawReal();
 			} catch (e) {
-				console.warn("Real waveform failed, fallback to fake", e);
-				startFakeAnimation();
+				console.warn("Real waveform failed", e);
+				drawBars(Array(15).fill(0.1));
 			}
 		};
 
@@ -76,27 +76,6 @@ export function AudioWaveform({
 			const heights = Array.from(dataArray).map((v) => 0.1 + (v / 255) * 0.8);
 			drawBars(heights);
 			animationFrameId = requestAnimationFrame(drawReal);
-		};
-
-		const startFakeAnimation = () => {
-			const drawFake = () => {
-				const heights = Array(15)
-					.fill(0)
-					.map(
-						() =>
-							0.2 +
-							(Number(crypto.getRandomValues(new Uint32Array(1))[0]) /
-								4294967295) *
-								0.6,
-					);
-				drawBars(heights);
-				setTimeout(() => {
-					if (isRecording) {
-						animationFrameId = requestAnimationFrame(drawFake);
-					}
-				}, 80);
-			};
-			drawFake();
 		};
 
 		initAudio();
