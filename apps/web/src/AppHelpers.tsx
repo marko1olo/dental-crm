@@ -6525,10 +6525,13 @@ export function clinicLegalReadinessPercent(
 
 export function isVisitNoteForm(value: unknown): value is VisitNoteForm {
 	if (!value || typeof value !== "object") return false;
-	const candidate = value as Partial<Record<VisitNoteField, unknown>>;
-	return visitNoteFieldDefinitions.every(
+	const candidate = value as Partial<Record<VisitNoteField, unknown>> & {
+		completedServices?: unknown;
+	};
+	const hasStrings = visitNoteFieldDefinitions.every(
 		({ key }) => typeof candidate[key] === "string",
 	);
+	return hasStrings && Array.isArray(candidate.completedServices);
 }
 
 export function loadVisitLocalDraft(
