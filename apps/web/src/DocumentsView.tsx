@@ -14,7 +14,7 @@ import {
 	documentKindMetadata as sharedDocumentKindMetadata,
 	documentSourceStatusLabels as sharedDocumentSourceStatusLabels,
 	type TaxDeductionApplicationDeliveryChannel,
-	type TaxDeductionApplicationForm,
+	type TaxDeductionApplicationForm as TaxDeductionApplicationFormType,
 	type TaxDeductionApplicationRelationship,
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralStudyType,
@@ -1177,7 +1177,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 			DocumentSelectOption<TaxDeductionApplicationDeliveryChannel>
 		>;
 	const typedTaxApplicationFormOptions = taxApplicationFormOptions as Array<
-		DocumentSelectOption<TaxDeductionApplicationFormUI>
+		DocumentSelectOption<TaxDeductionApplicationFormType>
 	>;
 	const typedTaxApplicationRelationshipOptions =
 		taxApplicationRelationshipOptions as Array<
@@ -1542,8 +1542,23 @@ export function DocumentsView(props: DocumentsViewProps) {
   ) : null}
 
 					{selectedDocumentKind === "tax_deduction_application" ? (
-    <TaxDeductionApplicationFormUI   normalizedTaxApplicationDeliveryChannel={normalizedTaxApplicationDeliveryChannel} normalizedTaxApplicationForm={normalizedTaxApplicationForm} normalizedTaxApplicationRelationshipSelect={normalizedTaxApplicationRelationshipSelect} taxApplicationRelationshipOptions={taxApplicationRelationshipOptions} taxApplicationFormOptions={taxApplicationFormOptions} taxApplicationDeliveryChannelOptions={taxApplicationDeliveryChannelOptions} />
-  ) : null}
+						<TaxDeductionApplicationFormComponent
+							normalizedTaxApplicationDeliveryChannel={
+								normalizedTaxApplicationDeliveryChannel
+							}
+							normalizedTaxApplicationForm={normalizedTaxApplicationForm}
+							normalizedTaxApplicationRelationshipSelect={
+								normalizedTaxApplicationRelationshipSelect
+							}
+							taxApplicationRelationshipOptions={
+								taxApplicationRelationshipOptions
+							}
+							taxApplicationFormOptions={taxApplicationFormOptions}
+							taxApplicationDeliveryChannelOptions={
+								taxApplicationDeliveryChannelOptions
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "informed_consent" ? (
     <InformedConsentForm dashboard={dashboard} activeDoctor={activeDoctor}  inferredTreatmentArea={inferredTreatmentArea} />

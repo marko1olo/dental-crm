@@ -8,6 +8,7 @@ import {
 	Printer,
 	RefreshCw,
 	ShieldAlert,
+	Trash2,
 	X,
 } from "lucide-react";
 import type React from "react";
@@ -17,24 +18,37 @@ import { usePatientStore } from "../../store/patientStore";
 import { showToast } from "../GlobalToast";
 import "./ComparativePlanner.css";
 
-interface ServiceItem {
+// ─── Backend-aligned types ──────────────────────────────────────────────────
+
+interface PlanItem {
 	id: string;
+	toothNumber?: number | null;
+	priceId?: string | null;
 	name: string;
-	priceRub: number;
-	isOptional: boolean;
-	category: "therapy" | "ortho" | "hygiene" | "surgery";
+	quantity: number;
+	price: number;
+	discount?: number | null;
+	phase?: string | null;
 }
+
+type PlanStatus =
+	| "Draft"
+	| "Active"
+	| "Approved"
+	| "Completed"
+	| "Rejected"
+	| "Archived";
 
 interface TreatmentPlan {
 	id: string;
-	title: string;
-	description: string;
-	items: ServiceItem[];
-	visitsCount: number;
-	warrantyYears: number;
-	durabilityScore: string;
-	labWaitDays: number;
-	status: "draft" | "approved" | "archived";
+	patientId?: string;
+	name: string;
+	status: PlanStatus;
+	totalPrice?: number;
+	patientSignature?: string | null;
+	createdAt?: string;
+	updatedAt?: string;
+	items: PlanItem[];
 }
 
 interface InsuranceContract {
@@ -46,12 +60,64 @@ interface InsuranceContract {
 	coverageSurgeryPct: number;
 }
 
-const CATEGORY_LABELS: Record<ServiceItem["category"], string> = {
-	therapy: "Терапия",
-	ortho: "Ортодонтия",
-	hygiene: "Гигиена",
-	surgery: "Хирургия",
-};
+// ─── Draft item row for the creation form ───────────────────────────────────
+
+interface DraftServiceRow {
+	key: string;
+	name: string;
+	price: string;
+	quantity: string;
+}
+
+const makeDraftRow = (): DraftServiceRow => ({
+	key: Math.random().toString(36).slice(2),
+	name: "",
+	price: "",
+	quantity: "1",
+});
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function calcPlanTotal(plan: TreatmentPlan): number {
+	if (!plan.items || plan.items.length === 0) return plan.totalPrice ?? 0;
+	return plan.items.reduce(
+		(acc, item) =>
+			acc + item.price * item.quantity * (1 - (item.discount ?? 0) / 100),
+		0,
+	);
+}
+
+function statusLabel(status: PlanStatus): string {
+	switch (status) {
+		case "Draft":
+			return "Черновик";
+		case "Active":
+			return "Активный";
+		case "Approved":
+			return "Утверждён";
+		case "Completed":
+			return "Завершён";
+		case "Rejected":
+			return "Отклонён";
+		case "Archived":
+			return "В архиве";
+	}
+}
+
+function statusCssClass(status: PlanStatus): string {
+	switch (status) {
+		case "Approved":
+		case "Completed":
+			return "is-approved";
+		case "Archived":
+		case "Rejected":
+			return "is-archived";
+		default:
+			return "";
+	}
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export const ComparativePlannerDashboard: React.FC = () => {
 	const { auth } = useAppLogicContext();
@@ -66,17 +132,25 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 	const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 	const [activeMobileTab, setActiveMobileTab] = useState<string>("");
-	const [optionalToggles, setOptionalToggles] = useState<
-		Record<string, Record<string, boolean>>
-	>({});
 	const [savingPlanId, setSavingPlanId] = useState<string | null>(null);
 
-	// Responsive detection — proper event listener, not inline check
+	// ── New-plan form state ──────────────────────────────────────────────────
+	const [showCreateForm, setShowCreateForm] = useState(false);
+	const [newPlanName, setNewPlanName] = useState("Комплексный план лечения");
+	const [draftRows, setDraftRows] = useState<DraftServiceRow[]>([
+		makeDraftRow(),
+	]);
+	const [isCreating, setIsCreating] = useState(false);
+	const formRef = useRef<HTMLDivElement>(null);
+
+	// Responsive detection
 	useEffect(() => {
 		const handler = () => setIsMobile(window.innerWidth <= 768);
 		window.addEventListener("resize", handler);
 		return () => window.removeEventListener("resize", handler);
 	}, []);
+
+	// ── Data loading ─────────────────────────────────────────────────────────
 
 	const fetchPlans = useCallback(async () => {
 		if (!selectedPatientId) return;
@@ -87,7 +161,6 @@ export const ComparativePlannerDashboard: React.FC = () => {
 				fetch(`/api/patients/${selectedPatientId}/treatment-plans`, {
 					headers,
 				}),
-				// Org-level insurance contracts (DMS) — pick the first active one
 				fetch(`/api/insurance/contracts`, { headers }),
 			]);
 
@@ -100,22 +173,6 @@ export const ComparativePlannerDashboard: React.FC = () => {
 						: [];
 				setPlans(loadedPlans);
 
-				// Initialize optional toggles for any new plans
-				setOptionalToggles((prev) => {
-					const next = { ...prev };
-					for (const plan of loadedPlans) {
-						if (!next[plan.id]) {
-							next[plan.id] = {};
-							for (const item of (plan.items || [])) {
-								// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-								if (item.isOptional) next[plan.id]![item.id] = true;
-							}
-						}
-					}
-					return next;
-				});
-
-				// Set first plan as active mobile tab if none selected
 				if (loadedPlans.length > 0) {
 					setActiveMobileTab((prev) =>
 						prev && loadedPlans.find((p) => p.id === prev)
@@ -129,10 +186,11 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 			if (insRes.ok) {
 				const contractsArray = await insRes.json();
-				const first = Array.isArray(contractsArray) ? contractsArray[0] : null;
+				const first = Array.isArray(contractsArray)
+					? contractsArray[0]
+					: null;
 				setInsuranceData(first ?? null);
 			}
-			// Empty contracts array or error means no DMS — UI handles gracefully
 		} catch {
 			showToast("Ошибка загрузки данных планировщика", "error");
 		} finally {
@@ -144,20 +202,11 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		fetchPlans();
 	}, [fetchPlans]);
 
-	const handleToggleOptional = (planId: string, itemId: string) => {
-		setOptionalToggles((prev) => ({
-			...prev,
-			[planId]: {
-				...prev[planId],
-				[itemId]: !prev[planId]?.[itemId],
-			},
-		}));
-	};
+	// ── Status update ─────────────────────────────────────────────────────────
 
-	/** Persist plan status change to API */
 	const updatePlanStatus = async (
 		planId: string,
-		newStatus: TreatmentPlan["status"],
+		newStatus: PlanStatus,
 	) => {
 		if (!selectedPatientId) return;
 		setSavingPlanId(planId);
@@ -172,30 +221,28 @@ export const ComparativePlannerDashboard: React.FC = () => {
 					body: JSON.stringify({
 						id: planId,
 						status: newStatus,
-						// Pass minimal update — backend handles upsert
 						items: plans.find((p) => p.id === planId)?.items || [],
 					}),
 				},
 			);
 			if (res.ok) {
-				// If approving one plan, archive all others (mutual exclusion)
 				setPlans((prev) =>
 					prev.map((p) => ({
 						...p,
 						status:
-							newStatus === "approved"
+							newStatus === "Approved"
 								? p.id === planId
-									? "approved"
-									: "archived"
+									? "Approved"
+									: "Archived"
 								: p.id === planId
 									? newStatus
 									: p.status,
 					})),
 				);
 				showToast(
-					newStatus === "approved"
+					newStatus === "Approved"
 						? "План утверждён"
-						: newStatus === "archived"
+						: newStatus === "Archived"
 							? "План отправлен в архив"
 							: "Статус плана обновлён",
 					"success",
@@ -210,13 +257,95 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		}
 	};
 
+	// ── Plan creation ─────────────────────────────────────────────────────────
+
+	const openCreateForm = () => {
+		setNewPlanName("Комплексный план лечения");
+		setDraftRows([makeDraftRow()]);
+		setShowCreateForm(true);
+		setTimeout(
+			() => formRef.current?.scrollIntoView({ behavior: "smooth" }),
+			50,
+		);
+	};
+
+	const cancelCreateForm = () => {
+		setShowCreateForm(false);
+		setDraftRows([makeDraftRow()]);
+	};
+
+	const addDraftRow = () => setDraftRows((prev) => [...prev, makeDraftRow()]);
+
+	const removeDraftRow = (key: string) =>
+		setDraftRows((prev) => prev.filter((r) => r.key !== key));
+
+	const updateDraftRow = (
+		key: string,
+		field: keyof Omit<DraftServiceRow, "key">,
+		value: string,
+	) =>
+		setDraftRows((prev) =>
+			prev.map((r) => (r.key === key ? { ...r, [field]: value } : r)),
+		);
+
+	const handleCreatePlan = async () => {
+		if (!selectedPatientId) return;
+		const trimmedName = newPlanName.trim();
+		if (!trimmedName) {
+			showToast("Введите название плана", "error");
+			return;
+		}
+
+		const validRows = draftRows.filter(
+			(r) => r.name.trim() && parseFloat(r.price) > 0,
+		);
+
+		const items = validRows.map((r) => ({
+			name: r.name.trim(),
+			price: parseFloat(r.price) || 0,
+			quantity: parseInt(r.quantity, 10) || 1,
+		}));
+
+		setIsCreating(true);
+		try {
+			const res = await fetch(
+				`/api/patients/${selectedPatientId}/treatment-plans`,
+				{
+					method: "POST",
+					headers: auth.denteClinicalReadHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({ name: trimmedName, items }),
+				},
+			);
+			if (res.ok) {
+				showToast("План создан", "success");
+				setShowCreateForm(false);
+				await fetchPlans();
+			} else {
+				const err = await res.json().catch(() => ({}));
+				showToast(
+					(err as { message?: string }).message ||
+						"Не удалось создать план",
+					"error",
+				);
+			}
+		} catch {
+			showToast("Ошибка сети при создании плана", "error");
+		} finally {
+			setIsCreating(false);
+		}
+	};
+
+	// ── Print & Export ────────────────────────────────────────────────────────
+
 	const handlePrintPlan = (plan: TreatmentPlan) => {
-		const { total } = calculateTotals(plan);
+		const total = calcPlanTotal(plan);
 		const win = window.open("", "_blank");
 		if (!win) return;
 		win.document.write(`
       <html>
-        <head><title>План лечения: ${plan.title}</title>
+        <head><title>План лечения: ${plan.name}</title>
         <style>body{font-family:sans-serif;padding:32px;max-width:800px;margin:0 auto}
           h1{font-size:20px;margin-bottom:4px}
           p{color:#555;font-size:14px;margin-bottom:20px}
@@ -226,19 +355,15 @@ export const ComparativePlannerDashboard: React.FC = () => {
           .total{font-weight:700;font-size:16px;text-align:right;margin-top:20px}
         </style></head>
         <body>
-          <h1>План лечения: ${plan.title}</h1>
-          <p>${plan.description}</p>
+          <h1>План лечения: ${plan.name}</h1>
+          <p>Статус: ${statusLabel(plan.status)}</p>
           <table>
-            <thead><tr><th>Услуга</th><th>Категория</th><th>Стоимость</th></tr></thead>
+            <thead><tr><th>Услуга</th><th>Зуб</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead>
             <tbody>
               ${(plan.items || [])
-								.filter(
-									(item) =>
-										!item.isOptional || optionalToggles[plan.id]?.[item.id],
-								)
 								.map(
 									(item) =>
-										`<tr><td>${item.name}${item.isOptional ? " (опция)" : ""}</td><td>${CATEGORY_LABELS[item.category]}</td><td>${item.priceRub.toLocaleString("ru-RU")} ₽</td></tr>`,
+										`<tr><td>${item.name}</td><td>${item.toothNumber ?? "—"}</td><td>${item.quantity}</td><td>${item.price.toLocaleString("ru-RU")} ₽</td><td>${(item.price * item.quantity).toLocaleString("ru-RU")} ₽</td></tr>`,
 								)
 								.join("")}
             </tbody>
@@ -253,13 +378,14 @@ export const ComparativePlannerDashboard: React.FC = () => {
 	};
 
 	const handleExportCsv = (plan: TreatmentPlan) => {
-		const rows = [["Услуга", "Категория", "Цена (₽)", "Опция"]];
-		for (const item of (plan.items || [])) {
+		const rows = [["Услуга", "Зуб", "Кол-во", "Цена (₽)", "Фаза"]];
+		for (const item of plan.items || []) {
 			rows.push([
 				item.name,
-				CATEGORY_LABELS[item.category],
-				String(item.priceRub),
-				item.isOptional ? "Да" : "Нет",
+				String(item.toothNumber ?? ""),
+				String(item.quantity),
+				String(item.price),
+				item.phase ?? "",
 			]);
 		}
 		const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
@@ -269,82 +395,29 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = `plan_${plan.title.replace(/\s+/g, "_")}.csv`;
+		a.download = `plan_${plan.name.replace(/\s+/g, "_")}.csv`;
 		a.click();
 		URL.revokeObjectURL(url);
 		setActiveDropdown(null);
 	};
 
-	const calculateTotals = (plan: TreatmentPlan) => {
-		let total = 0;
-		let patientCopay = 0;
-		let insuranceCoverage = 0;
+	// ─── No patient guard ─────────────────────────────────────────────────────
 
-		for (const item of (plan.items || [])) {
-			const isSelected =
-				!item.isOptional || optionalToggles[plan.id]?.[item.id];
-			if (!isSelected) continue;
-
-			total += item.priceRub;
-
-			let coveragePct = 0;
-			if (insuranceActive && insuranceData) {
-				if (item.category === "therapy")
-					coveragePct = insuranceData.coverageTherapyPct;
-				if (item.category === "ortho")
-					coveragePct = insuranceData.coverageOrthoPct;
-				if (item.category === "hygiene")
-					coveragePct = insuranceData.coverageHygienePct;
-				if (item.category === "surgery")
-					coveragePct = insuranceData.coverageSurgeryPct;
-			}
-
-			const coveredAmt = Math.round((item.priceRub * coveragePct) / 100);
-			insuranceCoverage += coveredAmt;
-			patientCopay += item.priceRub - coveredAmt;
-		}
-
-		return { total, patientCopay, insuranceCoverage };
-	};
-
-	// No patient selected
 	if (!selectedPatientId) {
 		return (
 			<div className="comp-planner">
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
-						height: "50vh",
-						gap: 12,
-						color: "var(--muted)",
-					}}
-				>
+				<div className="comp-empty-state">
 					<FileText size={48} strokeWidth={1} />
-					<p style={{ margin: 0, fontSize: 16 }}>
-						Выберите пациента, чтобы открыть сравнительный конструктор смет
-					</p>
+					<p>Выберите пациента, чтобы открыть сравнительный конструктор смет</p>
 				</div>
 			</div>
 		);
 	}
 
-	// Loading
 	if (isLoading && plans.length === 0) {
 		return (
 			<div className="comp-planner">
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						height: "50vh",
-						gap: 12,
-						color: "var(--muted)",
-					}}
-				>
+				<div className="comp-empty-state">
 					<RefreshCw size={20} className="animate-spin" />
 					Загрузка планов лечения...
 				</div>
@@ -352,15 +425,18 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		);
 	}
 
+	// ─── Main render ──────────────────────────────────────────────────────────
+
 	return (
 		<div className="comp-planner">
 			<div className="comp-container">
+				{/* ── Header ───────────────────────────────────────────────── */}
 				<header className="comp-header">
 					<div className="comp-title-group">
 						<h1>Сравнительный конструктор смет</h1>
 						<p>Анализ альтернативных планов лечения для пациента</p>
 					</div>
-					<div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+					<div className="comp-header-controls">
 						{isLoading && (
 							<RefreshCw
 								size={16}
@@ -370,6 +446,19 @@ export const ComparativePlannerDashboard: React.FC = () => {
 								}}
 							/>
 						)}
+
+						{/* New plan button */}
+						<button
+							type="button"
+							className="new-plan-btn"
+							onClick={openCreateForm}
+							disabled={showCreateForm}
+						>
+							<Plus size={16} />
+							Новый план
+						</button>
+
+						{/* Insurance DMS card */}
 						{insuranceData ? (
 							<div className="insurance-status-card">
 								<ShieldAlert
@@ -399,28 +488,152 @@ export const ComparativePlannerDashboard: React.FC = () => {
 					</div>
 				</header>
 
-				{plans.length === 0 ? (
-					<div
-						style={{
-							textAlign: "center",
-							padding: "64px 32px",
-							color: "var(--muted)",
-						}}
-					>
-						<Plus
-							size={40}
-							strokeWidth={1}
-							style={{ marginBottom: 12, opacity: 0.4 }}
-						/>
-						<p style={{ margin: 0, fontSize: 16 }}>
+				{/* ── Inline creation form ──────────────────────────────────── */}
+				{showCreateForm && (
+					<div className="create-plan-form" ref={formRef}>
+						<div className="cpf-header">
+							<h2>Новый план лечения</h2>
+							<button
+								type="button"
+								className="cpf-close-btn"
+								onClick={cancelCreateForm}
+								aria-label="Закрыть форму"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div className="cpf-field">
+							<label htmlFor="cpf-plan-name">Название плана</label>
+							<input
+								id="cpf-plan-name"
+								type="text"
+								className="cpf-input"
+								value={newPlanName}
+								onChange={(e) => setNewPlanName(e.target.value)}
+								placeholder="Комплексный план лечения"
+								maxLength={120}
+							/>
+						</div>
+
+						<div className="cpf-services-header">
+							<span className="cpf-section-label">Услуги</span>
+							<button
+								type="button"
+								className="cpf-add-row-btn"
+								onClick={addDraftRow}
+							>
+								<Plus size={14} />
+								Добавить услугу
+							</button>
+						</div>
+
+						<div className="cpf-rows">
+							{/* Column headers */}
+							<div className="cpf-row cpf-row-header">
+								<span className="cpf-col-name">Название услуги</span>
+								<span className="cpf-col-price">Цена (₽)</span>
+								<span className="cpf-col-qty">Кол-во</span>
+								<span className="cpf-col-remove" />
+							</div>
+
+							{draftRows.map((row) => (
+								<div key={row.key} className="cpf-row cpf-row-data">
+									<input
+										className="cpf-input cpf-col-name"
+										type="text"
+										placeholder="Название услуги"
+										value={row.name}
+										onChange={(e) =>
+											updateDraftRow(row.key, "name", e.target.value)
+										}
+									/>
+									<input
+										className="cpf-input cpf-col-price"
+										type="number"
+										min={0}
+										step={1}
+										placeholder="0"
+										value={row.price}
+										onChange={(e) =>
+											updateDraftRow(row.key, "price", e.target.value)
+										}
+									/>
+									<input
+										className="cpf-input cpf-col-qty"
+										type="number"
+										min={1}
+										step={1}
+										placeholder="1"
+										value={row.quantity}
+										onChange={(e) =>
+											updateDraftRow(row.key, "quantity", e.target.value)
+										}
+									/>
+									<button
+										type="button"
+										className="cpf-remove-row-btn"
+										onClick={() => removeDraftRow(row.key)}
+										disabled={draftRows.length === 1}
+										aria-label="Удалить строку"
+									>
+										<Trash2 size={14} />
+									</button>
+								</div>
+							))}
+						</div>
+
+						<div className="cpf-actions">
+							<button
+								type="button"
+								className="cpf-cancel-btn"
+								onClick={cancelCreateForm}
+								disabled={isCreating}
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								className="cpf-submit-btn"
+								onClick={handleCreatePlan}
+								disabled={isCreating}
+							>
+								{isCreating ? (
+									<RefreshCw
+										size={15}
+										style={{ animation: "spin 1s linear infinite" }}
+									/>
+								) : (
+									<Check size={15} />
+								)}
+								{isCreating ? "Создание..." : "Создать план"}
+							</button>
+						</div>
+					</div>
+				)}
+
+				{/* ── Empty state ───────────────────────────────────────────── */}
+				{plans.length === 0 && !showCreateForm ? (
+					<div className="comp-no-plans">
+						<FileText size={40} strokeWidth={1} className="comp-no-plans-icon" />
+						<p className="comp-no-plans-title">
 							У пациента пока нет планов лечения.
 						</p>
-						<p style={{ margin: "8px 0 0 0", fontSize: 13 }}>
-							Создайте план в карте лечения или одонтограмме.
+						<p className="comp-no-plans-sub">
+							Создайте первый план, нажав кнопку выше.
 						</p>
+						<button
+							type="button"
+							className="new-plan-btn"
+							onClick={openCreateForm}
+						>
+							<Plus size={16} />
+							Создать план лечения
+						</button>
 					</div>
 				) : (
 					<>
+						{/* ── Mobile tabs ──────────────────────────────────────── */}
 						{isMobile && plans.length > 1 && (
 							<div className="mobile-plan-tabs">
 								{plans.map((plan) => (
@@ -430,39 +643,62 @@ export const ComparativePlannerDashboard: React.FC = () => {
 										className={`mobile-tab-btn ${activeMobileTab === plan.id ? "active-tab-A" : ""}`}
 										onClick={() => setActiveMobileTab(plan.id)}
 									>
-										{plan.title}
+										{plan.name}
 									</button>
 								))}
 							</div>
 						)}
 
+						{/* ── Plans grid ───────────────────────────────────────── */}
 						<div className="plans-grid">
 							{plans.map((plan) => {
 								if (isMobile && plan.id !== activeMobileTab) return null;
 
-								const { total, patientCopay, insuranceCoverage } =
-									calculateTotals(plan);
-								const isApproved = plan.status === "approved";
-								const isArchived = plan.status === "archived";
+								const total = calcPlanTotal(plan);
+								const isApproved =
+									plan.status === "Approved" || plan.status === "Completed";
+								const isArchived =
+									plan.status === "Archived" || plan.status === "Rejected";
+								const isDraft =
+									plan.status === "Draft" || plan.status === "Active";
 								const isSaving = savingPlanId === plan.id;
+
+								// insurance calculation
+								let insuranceCoverage = 0;
+								let patientCopay = total;
+								if (insuranceActive && insuranceData) {
+									// Simple flat coverage on total (no per-category data in API)
+									const avgPct =
+										(insuranceData.coverageTherapyPct +
+											insuranceData.coverageOrthoPct +
+											insuranceData.coverageHygienePct +
+											insuranceData.coverageSurgeryPct) /
+										4;
+									insuranceCoverage = Math.round((total * avgPct) / 100);
+									patientCopay = total - insuranceCoverage;
+								}
 
 								return (
 									<div
 										key={plan.id}
-										className={`plan-item-card ${isApproved ? "is-approved" : ""} ${isArchived ? "is-archived" : ""}`}
+										className={`plan-item-card ${statusCssClass(plan.status)}`}
 									>
-										{/* Header */}
+										{/* Card header */}
 										<div className="plan-card-header">
 											<div className="plan-title-wrapper">
 												<div>
-													<h2>{plan.title}</h2>
-													<p>{plan.description}</p>
+													<h2>{plan.name}</h2>
+													<p className="plan-status-label">
+														{statusLabel(plan.status)}
+													</p>
 												</div>
 												<div className="relative">
 													<button
 														onClick={() =>
 															setActiveDropdown(
-																activeDropdown === plan.id ? null : plan.id,
+																activeDropdown === plan.id
+																	? null
+																	: plan.id,
 															)
 														}
 														className="plan-actions-trigger"
@@ -478,17 +714,20 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																onClick={() => setActiveDropdown(null)}
 															/>
 															<div className="plan-dropdown-menu">
-																<button onClick={() => handlePrintPlan(plan)}>
-																	<Printer className="w-4 h-4" /> Печать сметы
+																<button
+																	onClick={() => handlePrintPlan(plan)}
+																>
+																	<Printer className="w-4 h-4" /> Печать
+																	сметы
 																</button>
-																<button onClick={() => handleExportCsv(plan)}>
+																<button
+																	onClick={() => handleExportCsv(plan)}
+																>
 																	<FileText className="w-4 h-4" /> Экспорт CSV
 																</button>
 																<button
 																	onClick={() => {
-																		// Copy plan summary to clipboard
-																		const { total } = calculateTotals(plan);
-																		const text = `${plan.title}\n${plan.description}\nИтого: ${total.toLocaleString("ru-RU")} ₽`;
+																		const text = `${plan.name}\nСтатус: ${statusLabel(plan.status)}\nИтого: ${total.toLocaleString("ru-RU")} ₽`;
 																		navigator.clipboard
 																			.writeText(text)
 																			.then(() =>
@@ -508,7 +747,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																	<button
 																		className="danger"
 																		onClick={() =>
-																			updatePlanStatus(plan.id, "archived")
+																			updatePlanStatus(plan.id, "Archived")
 																		}
 																	>
 																		<Archive className="w-4 h-4" /> Архивировать
@@ -520,12 +759,15 @@ export const ComparativePlannerDashboard: React.FC = () => {
 												</div>
 											</div>
 
+											{/* Pricing summary */}
 											<div className="plan-pricing-summary">
 												{insuranceActive && insuranceCoverage > 0 ? (
 													<>
 														<div className="price-row total-original">
 															<span>Итого:</span>
-															<span>{total.toLocaleString("ru-RU")} ₽</span>
+															<span>
+																{total.toLocaleString("ru-RU")} ₽
+															</span>
 														</div>
 														<div className="price-row insurance-share">
 															<span>Покрывает ДМС:</span>
@@ -551,106 +793,59 @@ export const ComparativePlannerDashboard: React.FC = () => {
 											</div>
 										</div>
 
-										{/* Parameters */}
-										<div className="specs-grid">
-											<div className="spec-item">
-												<span>Визиты</span>
-												<span>{plan.visitsCount} посещ.</span>
-											</div>
-											<div className="spec-item">
-												<span>Гарантия</span>
-												<span>{plan.warrantyYears} лет</span>
-											</div>
-											<div className="spec-item">
-												<span>Надёжность</span>
-												<span>{plan.durabilityScore}</span>
-											</div>
-											<div className="spec-item">
-												<span>Лаборатория</span>
-												<span>
-													{plan.labWaitDays > 0
-														? `${plan.labWaitDays} дней`
-														: "Не требуется"}
-												</span>
-											</div>
-										</div>
-
-										{/* Services */}
+										{/* Services list */}
 										<div className="services-section">
 											<h3>Услуги в смете</h3>
-											{(!plan.items || plan.items.length === 0) ? (
-												<p
-													style={{
-														color: "var(--muted)",
-														fontSize: 13,
-														padding: "8px 0",
-													}}
-												>
-													Услуги не добавлены
-												</p>
+											{!plan.items || plan.items.length === 0 ? (
+												<p className="plan-no-items">Услуги не добавлены</p>
 											) : (
-												plan.items.map((item) => {
-													const isSelected =
-														!item.isOptional ||
-														optionalToggles[plan.id]?.[item.id];
-													return (
-														<div
-															key={item.id}
-															className={`service-tile ${isSelected ? "is-active" : "is-inactive"}`}
-														>
-															{item.isOptional ? (
-																<button
-																	onClick={() =>
-																		handleToggleOptional(plan.id, item.id)
-																	}
-																	disabled={plan.status !== "draft"}
-																	className={`tile-check-indicator ${isSelected ? "checked" : ""}`}
-																	title={
-																		isSelected
-																			? "Убрать опцию"
-																			: "Включить опцию"
-																	}
-																>
-																	{isSelected && <Check className="w-3 h-3" />}
-																</button>
-															) : (
-																<div className="tile-check-indicator checked">
-																	<Check className="w-3 h-3 text-white" />
-																</div>
-															)}
-															<div className="tile-info">
-																<p className={isSelected ? "" : "is-crossed"}>
-																	{item.name}
-																	{item.isOptional && (
-																		<span className="optional-tag">Опция</span>
-																	)}
-																	<span
-																		style={{
-																			fontSize: 11,
-																			color: "var(--muted)",
-																			marginLeft: 6,
-																		}}
-																	>
-																		{CATEGORY_LABELS[item.category]}
-																	</span>
-																</p>
-																<p className="price-tag">
-																	{item.priceRub.toLocaleString("ru-RU")} ₽
-																</p>
-															</div>
+												plan.items.map((item) => (
+													<div
+														key={item.id}
+														className="service-tile is-active"
+													>
+														<div className="tile-check-indicator checked">
+															<Check className="w-3 h-3 text-white" />
 														</div>
-													);
-												})
+														<div className="tile-info">
+															<p>
+																{item.name}
+																{item.toothNumber ? (
+																	<span className="optional-tag">
+																		зуб {item.toothNumber}
+																	</span>
+																) : null}
+																{item.phase ? (
+																	<span
+																		className="optional-tag"
+																		style={{ marginLeft: 4 }}
+																	>
+																		{item.phase}
+																	</span>
+																) : null}
+															</p>
+															<p className="price-tag">
+																{item.price.toLocaleString("ru-RU")} ₽
+																{item.quantity > 1
+																	? ` × ${item.quantity}`
+																	: ""}
+																{item.discount
+																	? ` (−${item.discount}%)`
+																	: ""}
+															</p>
+														</div>
+													</div>
+												))
 											)}
 										</div>
 
-										{/* Actions */}
+										{/* Card bottom actions */}
 										<div className="card-bottom-actions">
-											{plan.status === "draft" && (
+											{isDraft && (
 												<>
 													<button
 														onClick={() =>
-															updatePlanStatus(plan.id, "approved")
+															updatePlanStatus(plan.id, "Approved")
 														}
 														className="approve-plan-btn"
 														disabled={isSaving}
@@ -658,7 +853,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 														{isSaving ? (
 															<RefreshCw
 																className="w-5 h-5"
-																style={{ animation: "spin 1s linear infinite" }}
+																style={{
+																	animation: "spin 1s linear infinite",
+																}}
 															/>
 														) : (
 															<Check className="w-5 h-5" />
@@ -668,7 +865,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 													<button
 														onClick={() =>
-															updatePlanStatus(plan.id, "archived")
+															updatePlanStatus(plan.id, "Archived")
 														}
 														className="reject-plan-btn"
 														disabled={isSaving}
@@ -697,16 +894,10 @@ export const ComparativePlannerDashboard: React.FC = () => {
 														<span>В архиве</span>
 													</div>
 													<button
-														onClick={() => updatePlanStatus(plan.id, "draft")}
-														style={{
-															background: "none",
-															border: "1px solid var(--line)",
-															color: "var(--muted)",
-															padding: "6px 12px",
-															borderRadius: 8,
-															cursor: "pointer",
-															fontSize: 13,
-														}}
+														onClick={() =>
+															updatePlanStatus(plan.id, "Draft")
+														}
+														className="restore-plan-btn"
 													>
 														Восстановить
 													</button>

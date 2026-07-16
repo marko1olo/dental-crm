@@ -18792,3 +18792,58 @@ body[data-ui-scale="large"] .appointment-card-footer button {
 	font-size: 0.95rem;
 	color: var(--muted);
 }
+
+/* ─── Patient profile tab navigation ─────────────────────────────────────── */
+.patients-tabs-nav {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 20px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.patients-tabs-nav::-webkit-scrollbar {
+	display: none;
+}
+
+.patients-tab-btn {
+	position: relative;
+	padding: 9px 16px;
+	background: transparent;
+	color: var(--muted);
+	border: none;
+	border-radius: 8px 8px 0 0;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: color 0.15s, background 0.15s;
+	flex-shrink: 0;
+}
+
+.patients-tab-btn:hover {
+	color: var(--ink);
+	background: var(--hover-bg, rgba(0,0,0,0.04));
+}
+
+[data-theme="dark"] .patients-tab-btn:hover {
+	background: rgba(255,255,255,0.05);
+}
+
+.patients-tab-btn--active {
+	color: var(--brand, #0d9488);
+	font-weight: 600;
+}
+
+.patients-tab-btn--active::after {
+	content: "";
+	position: absolute;
+	bottom: -1px;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: var(--brand, #0d9488);
+	border-radius: 2px 2px 0 0;
+}
+

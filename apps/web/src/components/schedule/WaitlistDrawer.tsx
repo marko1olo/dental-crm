@@ -1,4 +1,4 @@
-import { Calendar, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, CheckCircle2, Trash2, UserPlus, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -146,7 +146,7 @@ export function WaitlistDrawer({
 		focusNewAppointmentEditor();
 
 		// Auto-remove/fulfill waitlist item after booking or let the user complete it
-		// For MVP, letting them book is enough, they can delete the waitlist item when fulfilled
+		// The user can now mark it as completed using the CheckCircle2 button, avoiding orphaned waitlist entries.
 		showToast(
 			`Пациент ${item.patientName || ""} выбран. Укажите время записи.`,
 			"success",
@@ -324,6 +324,28 @@ export function WaitlistDrawer({
 												className="flex-1 py-1.5 px-3 bg-teal-500/15 hover:bg-teal-500/25 active:bg-teal-500/35 text-teal-400 font-semibold rounded-lg text-xs transition-colors border border-teal-500/20"
 											>
 												Записать на прием
+											</button>
+											<button
+												onClick={async () => {
+													try {
+														const res = await fetch(`/api/waitlist/${item.id}`, {
+															method: "DELETE",
+															headers: auth.denteClinicalReadHeaders(),
+														});
+														if (res.ok) {
+															showToast("Заявка выполнена", "success");
+															fetchWaitlist();
+														} else {
+															showToast("Ошибка при выполнении", "error");
+														}
+													} catch (e) {
+														showToast("Системная ошибка", "error");
+													}
+												}}
+												className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-colors"
+												title="Отметить выполненным"
+											>
+												<CheckCircle2 className="w-3.5 h-3.5" />
 											</button>
 											<button
 												onClick={() => handleDelete(item.id)}

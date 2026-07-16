@@ -139,7 +139,9 @@ export const PatientPortal: React.FC = () => {
 	const [phone, setPhone] = useState("");
 	const [step, setStep] = useState<"phone" | "otp">("phone");
 	const [otpError, setOtpError] = useState("");
-	const [viewingDoc, setViewingDoc] = useState<string | null>(null);
+	const [viewingDoc, setViewingDoc] = useState<{ id: string; title: string } | null>(null);
+	const [viewingDocHtml, setViewingDocHtml] = useState<string | null>(null);
+	const [viewingDocLoading, setViewingDocLoading] = useState(false);
 	const phoneRef = useRef<HTMLInputElement>(null);
 
 	const [patientData, setPatientData] = useState<any>(null);
@@ -190,8 +192,32 @@ export const PatientPortal: React.FC = () => {
 			setPhone("");
 			setStep("phone");
 			setOtpError("");
+			setViewingDoc(null);
+			setViewingDocHtml(null);
 		};
 	}, []);
+
+	useEffect(() => {
+		if (viewingDoc) {
+			const token = localStorage.getItem("patient_token");
+			if (!token) return;
+			setViewingDocLoading(true);
+			setViewingDocHtml(null);
+			fetch(`/api/portal/documents/${viewingDoc.id}/html`, {
+				headers: { Authorization: `Bearer ${token}` },
+			})
+				.then((res) => {
+					if (res.ok) return res.text();
+					throw new Error("Не удалось загрузить документ");
+				})
+				.then((html) => setViewingDocHtml(html))
+				.catch((err) => {
+					console.error(err);
+					setViewingDocHtml("<div style='padding:20px;color:red;font-family:sans-serif;'>Ошибка загрузки документа.</div>");
+				})
+				.finally(() => setViewingDocLoading(false));
+		}
+	}, [viewingDoc]);
 
 	const handleSendOtp = useCallback(async () => {
 		if (phone.replace(/\D/g, "").length >= 10) {
@@ -359,7 +385,7 @@ export const PatientPortal: React.FC = () => {
 							<span>📄 {doc.title}</span>
 							<button
 								className="btn-download"
-								onClick={() => setViewingDoc(doc.title)}
+								onClick={() => setViewingDoc({ id: doc.id, title: doc.title })}
 							>
 								Просмотр
 							</button>
@@ -373,21 +399,31 @@ export const PatientPortal: React.FC = () => {
 					<div
 						className="doc-overlay-content"
 						onClick={(e) => e.stopPropagation()}
+						style={{ width: "90%", maxWidth: "900px", height: "90vh", display: "flex", flexDirection: "column" }}
 					>
-						<div className="doc-overlay-header">
-							<h3>{viewingDoc}</h3>
+						<div className="doc-overlay-header" style={{ padding: "16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+							<h3 style={{ margin: 0, fontSize: "1.1rem" }}>{viewingDoc.title}</h3>
 							<button
 								className="doc-close-btn"
 								onClick={() => setViewingDoc(null)}
+								style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: "var(--muted)" }}
 							>
 								×
 							</button>
 						</div>
-						<div className="doc-overlay-body">
-							<div className="doc-placeholder">
-								<span style={{ fontSize: "48px" }}>📄</span>
-								<p>Предпросмотр документа: {viewingDoc}</p>
-							</div>
+						<div className="doc-overlay-body" style={{ flex: 1, padding: 0, position: "relative" }}>
+							{viewingDocLoading && (
+								<div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "var(--muted)" }}>
+									Загрузка документа...
+								</div>
+							)}
+							{!viewingDocLoading && viewingDocHtml && (
+								<iframe
+									srcDoc={viewingDocHtml}
+									style={{ width: "100%", height: "100%", border: "none", backgroundColor: "#fff" }}
+									title={viewingDoc.title}
+								/>
+							)}
 						</div>
 					</div>
 				</div>

@@ -3,17 +3,42 @@ import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireAuthTokenSecret } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import {
+	generatedDocuments,
 	patientInvoices,
 	patients,
 	treatmentPlans,
 	visitDiaries,
-	generatedDocuments,
 } from "../db/schema.js";
+import {
+	getDocumentById,
+	readIssuedDocumentSnapshot,
+} from "../db/documentQuery.js";
 import { signToken, verifyToken } from "../utils/cryptoHelper.js";
 
 // Patient portal sessions are short-lived; the patient re-authenticates via OTP.
 const PORTAL_TOKEN_TTL_SECONDS = 60 * 60 * 12;
 const PORTAL_TOKEN_KIND = "portal";
+
+// The OTP endpoints are public and unauthenticated. Without a limit they form a
+// phone-enumeration oracle (verify-otp answers 404 vs 200 depending on whether a
+// phone belongs to a patient) and a brute-force surface. Cap requests per IP.
+const OTP_RATE_LIMIT_WINDOW_MS = 60_000;
+const OTP_RATE_LIMIT_MAX_REQUESTS = 10;
+const otpRequestCounts = new Map<string, { count: number; resetAt: number }>();
+
+function isOtpRateLimited(ip: string): boolean {
+	const now = Date.now();
+	const entry = otpRequestCounts.get(ip);
+	if (!entry || now > entry.resetAt) {
+		otpRequestCounts.set(ip, {
+			count: 1,
+			resetAt: now + OTP_RATE_LIMIT_WINDOW_MS,
+		});
+		return false;
+	}
+	entry.count++;
+	return entry.count > OTP_RATE_LIMIT_MAX_REQUESTS;
+}
 
 // MVP OTP behaviour is documented in TELEPHONY_AND_PORTAL.md: no SMS gateway is
 // wired yet, so the accepted code is a fixed value sourced from env (never
@@ -29,6 +54,9 @@ export const portalRoutes: FastifyPluginAsync = async (
 	server.post<{ Body: { phone: string } }>(
 		"/auth/send-otp",
 		async (request, reply) => {
+			if (isOtpRateLimited(request.ip ?? "unknown")) {
+				return reply.status(429).send({ error: "Слишком много запросов." });
+			}
 			const { phone } = request.body;
 			if (!phone) return reply.status(400).send({ error: "Phone is required" });
 
@@ -42,6 +70,9 @@ export const portalRoutes: FastifyPluginAsync = async (
 	server.post<{ Body: { phone: string; code: string } }>(
 		"/auth/verify-otp",
 		async (request, reply) => {
+			if (isOtpRateLimited(request.ip ?? "unknown")) {
+				return reply.status(429).send({ error: "Слишком много запросов." });
+			}
 			const { phone, code } = request.body;
 			if (typeof phone !== "string" || typeof code !== "string") {
 				return reply.status(400).send({ error: "Phone and code are required" });
@@ -139,7 +170,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				and(
 					eq(generatedDocuments.patientId, patient.id),
 					eq(generatedDocuments.status, "issued"),
-				)
+				),
 			);
 
 		return {
@@ -150,4 +181,47 @@ export const portalRoutes: FastifyPluginAsync = async (
 			documents,
 		};
 	});
+
+	// 4. View Document HTML (Protected)
+	server.get<{ Params: { documentId: string } }>(
+		"/documents/:documentId/html",
+		async (request, reply) => {
+			const authHeader = request.headers.authorization;
+			if (!authHeader?.startsWith("Bearer "))
+				return reply.status(401).send({ error: "Unauthorized" });
+
+			const token = authHeader.slice("Bearer ".length).trim();
+			if (!token) return reply.status(401).send({ error: "Unauthorized" });
+
+			const payload = verifyToken(token, requireAuthTokenSecret());
+			if (
+				!payload ||
+				payload.kind !== PORTAL_TOKEN_KIND ||
+				typeof payload.sub !== "string" ||
+				typeof payload.organizationId !== "string"
+			) {
+				return reply.status(401).send({ error: "Invalid token" });
+			}
+			const patientId = payload.sub;
+			const organizationId = payload.organizationId as string;
+
+			const document = await getDocumentById(
+				organizationId,
+				request.params.documentId,
+			);
+
+			if (!document || document.patientId !== patientId || document.status !== "issued") {
+				return reply.status(404).send({ error: "Not found" });
+			}
+
+			const issuedSnapshot = readIssuedDocumentSnapshot(document);
+			if (!issuedSnapshot) {
+				return reply
+					.status(409)
+					.send({ error: "Архивная копия документа отсутствует" });
+			}
+
+			return reply.type("text/html; charset=utf-8").send(issuedSnapshot);
+		},
+	);
 };

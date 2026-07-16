@@ -2900,16 +2900,13 @@ export function App() {
 	if (error && !dashboard) {
 		return (
 			<AppLoadingState
-				message={`Рабочий сервер недоступен: ${error}`}
+        message={`Рабочий сервер недоступен: ${error}`}
 				actionLabel="Повторить загрузку"
 				onAction={() => {
 					setError(null);
-					void loadDashboard().catch((loadError: unknown) => {
+          void loadDashboard().catch((loadError: unknown) => {
 						setError(
-							operatorWorkflowFailureMessage(
-								"Не удалось загрузить данные клиники",
-								loadError,
-							),
+							operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError)
 						);
 					});
 				}}
