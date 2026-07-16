@@ -5825,8 +5825,7 @@ export function useAppLogic(): any {
 			zoom: imagingViewerState.zoom,
 			panX: 0,
 			panY: 0,
-			sliceIndex:
-				selectedImagingStudy?.kind === "cbct" ? mprSafeSliceIndex : null,
+			sliceIndex: selectedImagingStudy?.kind === "cbct" ? mprSafeSliceIndex : null,
 			projection: selectedImagingStudy?.kind === "cbct" ? mprProjection : null,
 			axisDeg: mprAxisDeg,
 			slabMm: mprSlabMm,
@@ -6957,15 +6956,13 @@ export function useAppLogic(): any {
 		{
 			label: "Граница КТ-хранилища",
 			value:
-				browserContinuity?.browserCtOfflineStorageBoundary.mode ===
-				"metadata_only"
+				browserContinuity?.browserCtOfflineStorageBoundary.mode === "metadata_only"
 					? "метаданные"
 					: browserContinuity
 						? "ограничено"
 						: "проверка",
 			detail:
-				browserContinuity?.browserCtOfflineStorageBoundary.mode ===
-				"metadata_only"
+				browserContinuity?.browserCtOfflineStorageBoundary.mode === "metadata_only"
 					? "локально сохраняются план открытия, состояние и пометки; тяжелые данные снимков и 3D-моделей остаются во внешнем просмотре"
 					: "локальное восстановление КТ не подтверждено",
 		},

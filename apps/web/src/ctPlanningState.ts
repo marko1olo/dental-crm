@@ -353,9 +353,7 @@ export function buildCtPlanningTaskSnapshot(input: {
 			(task) => task.kind === "surgical_guide" && task.status !== "blocked",
 		) || hasCompletedAnnotation(mergedAnnotations, "surgical_guide", 2);
 	const completedArtifactCount = mergedAnnotations.filter(
-		(annotation) =>
-			annotation.points.length >=
-			minimumPointsForLocalReadiness(annotation.type),
+		(annotation) => annotation.points.length >= minimumPointsForLocalReadiness(annotation.type),
 	).length;
 	const readinessScore =
 		totalTasks > 0

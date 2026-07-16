@@ -4,6 +4,9 @@
 // const [documentCreateSavingKind, setDocumentCreateSavingKind]
 // const [documentStatusSavingId, setDocumentStatusSavingId]
 // const [postVisitPresetFeedback, setPostVisitPresetFeedback]
+// const [imagingViewerActiveTool, setImagingViewerActiveTool] = useState<ImagingViewerTool>("window_level")
+// const [ctPlanningActiveQuickActionId, setCtPlanningActiveQuickActionId] = useState<string | null>(null)
+// const [ctPlanningImplantPlan, setCtPlanningImplantPlan] = useState<ImagingViewerImplantPlan | null>(null)
 
 import { ClinicLogin } from "./components/auth/ClinicLogin";
 import { Register } from "./components/auth/Register";

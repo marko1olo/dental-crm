@@ -317,11 +317,8 @@ export function buildCtPlanningExportScenarioSummary(
 	if (!packet.activeQuickActionId) return null;
 	const counts = scenarioStatusCounts(artifacts);
 	const issues = scenarioIssues(artifacts);
-	const route =
-		activeScenarioRoutes[packet.activeQuickActionId] ?? fallbackScenarioRoute;
-	const viewer =
-		activeScenarioViewerPresets[packet.activeQuickActionId] ??
-		fallbackScenarioViewerPreset;
+	const route = activeScenarioRoutes[packet.activeQuickActionId] ?? fallbackScenarioRoute;
+	const viewer = activeScenarioViewerPresets[packet.activeQuickActionId] ?? fallbackScenarioViewerPreset;
 	const handoff = buildCtPlanningViewerBridgeHandoff({
 		commands: viewer.restoreCommands,
 		requiresVolume: viewer.requiresVolume,

@@ -133,9 +133,7 @@ export function CtPlanningToolsPanel({
 		activeQuickActionId ?? toolStateBundle?.activeQuickActionId ?? null;
 	const activeQuickAction = useMemo(
 		() =>
-			ctPlanningQuickActions.find(
-				(action) => action.id === effectiveActiveQuickActionId,
-			) ??
+			ctPlanningQuickActions.find((action) => action.id === effectiveActiveQuickActionId) ??
 			ctPlanningQuickActions.find((action) => action.tool === activeTool) ??
 			null,
 		[activeTool, effectiveActiveQuickActionId],

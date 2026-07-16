@@ -38,9 +38,7 @@ export function CtPlanningExportScenarioPanel({
 	packet,
 	artifacts = [],
 }: CtPlanningExportScenarioPanelProps) {
-	const summary =
-		packet.activeScenarioSummary ??
-		buildCtPlanningExportScenarioSummary(packet, artifacts);
+	const summary = packet.activeScenarioSummary ?? buildCtPlanningExportScenarioSummary(packet, artifacts);
 	if (!summary) return null;
 	const displayArtifacts = scenarioPanelArtifacts(summary, artifacts);
 	return (

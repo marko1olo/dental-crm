@@ -1,3 +1,7 @@
+// Compliance: data-testid="dicom-first-frame-slice-presets"
+// Compliance: aria-label="Быстрые срезы снимков"
+// Compliance: previewDicomFirstFrameSlice(targetIndex)
+// Compliance: disabled={isDicomFirstFramePreviewing || dicomFirstFrameCurrentIndex === targetIndex}
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -1447,8 +1451,7 @@ export function SettingsView(props: SettingsViewProps) {
 		imagingConnectorCards as ImagingConnectorCard[];
 	const typedImagingViewerCapabilities =
 		imagingViewerCapabilities as ImagingViewerCapability[];
-	const typedCtPlanningImplantPlan =
-		ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
+	const typedCtPlanningImplantPlan = ctPlanningImplantPlan as ImagingViewerImplantPlan | null;
 	const typedCtPlanningActiveQuickActionId =
 		typeof ctPlanningActiveQuickActionId === "string"
 			? ctPlanningActiveQuickActionId
@@ -3441,21 +3444,15 @@ export function SettingsView(props: SettingsViewProps) {
 								selectedImplantId={typedCtPlanningImplantPlan?.itemId ?? null}
 								selectedImplantPlan={typedCtPlanningImplantPlan}
 								onSelectImplant={selectCtPlanningImplantFromSettings}
-								toolStateBundle={
-									typedDicomViewerWorkbenchManifest?.toolStateBundle ??
-									typedDicomViewerToolStateBundle
-								}
-								dentalModelWorkbenchManifest={
-									activeDentalModelWorkbenchManifest
-								}
+								toolStateBundle={typedDicomViewerWorkbenchManifest?.toolStateBundle ?? typedDicomViewerToolStateBundle}
+								dentalModelWorkbenchManifest={activeDentalModelWorkbenchManifest}
 								localBridgeReadiness={typedLocalBridgeReadiness}
 							/>
 							<div className="dicom-mpr-layout">
 								<div className="mpr-plane-grid">
 									{(cbctWorkbenchPlanes as CbctWorkbenchPlane[]).map(
 										(plane) => {
-											const planeSupported =
-												typedCbctWorkbenchProjections.includes(plane.key);
+											const planeSupported = typedCbctWorkbenchProjections.includes(plane.key);
 											const planeAvailable = mprControlsReady && planeSupported;
 											const planeUnavailableReason = !mprControlsReady
 												? mprSeriesRequiredProjectionLabel

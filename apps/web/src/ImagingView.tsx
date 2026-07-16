@@ -1050,16 +1050,8 @@ export function ImagingView(props: ImagingViewProps) {
 													className="secondary-button"
 													type="button"
 													onClick={addImagingViewerNoteAnnotation}
-													aria-describedby={
-														!imagingViewerNoteReady ||
-														!imagingViewerSessionReady
-															? imagingViewerNoteMissingId
-															: undefined
-													}
-													disabled={
-														!imagingViewerNoteReady ||
-														!imagingViewerSessionReady
-													}
+													aria-describedby={!imagingViewerNoteReady || !imagingViewerSessionReady ? imagingViewerNoteMissingId : undefined}
+													disabled={!imagingViewerNoteReady || !imagingViewerSessionReady}
 												>
 													<Plus aria-hidden="true" /> Заметка
 												</button>
@@ -1068,11 +1060,7 @@ export function ImagingView(props: ImagingViewProps) {
 														className="secondary-button"
 														type="button"
 														onClick={retryImagingViewerSessionSave}
-														aria-describedby={
-															!isOnline
-																? imagingViewerRetryMissingId
-																: undefined
-														}
+														aria-describedby={!isOnline ? imagingViewerRetryMissingId : undefined}
 														disabled={!isOnline}
 													>
 														<RefreshCw aria-hidden="true" /> Повторить
@@ -1106,8 +1094,7 @@ export function ImagingView(props: ImagingViewProps) {
 													role="status"
 													aria-live="polite"
 												>
-													Повторная отправка просмотра станет доступна после
-													подключения к сети.
+													Повторная отправка просмотра станет доступна после подключения к сети.
 												</p>
 											) : null}
 										</div>
@@ -1334,10 +1321,7 @@ export function ImagingView(props: ImagingViewProps) {
 						localAnnotations={imagingViewerAnnotations}
 						annotationRefs={ctPlanningAnnotationRefs}
 						onCreateArtifact={createCtPlanningArtifact}
-						toolStateBundle={
-							dicomViewerWorkbenchManifest?.toolStateBundle ??
-							dicomViewerToolStateBundle
-						}
+						toolStateBundle={dicomViewerWorkbenchManifest?.toolStateBundle ?? dicomViewerToolStateBundle}
 					/>
 					<details className="clinical-mpr-advanced" open={mprControlsAutoOpen}>
 						<summary>
@@ -1350,9 +1334,7 @@ export function ImagingView(props: ImagingViewProps) {
 						<div className="clinical-mpr-grid">
 							<div className="mpr-plane-grid">
 								{cbctWorkbenchPlanes.map((plane: any) => {
-									const planeSupported = cbctWorkbenchProjections.includes(
-										plane.key,
-									);
+									const planeSupported = cbctWorkbenchProjections.includes(plane.key);
 									const planeAvailable = mprControlsReady && planeSupported;
 									const planeUnavailableReason = !mprControlsReady
 										? mprSeriesRequiredProjectionLabel
@@ -1458,11 +1440,7 @@ export function ImagingView(props: ImagingViewProps) {
 										<button
 											type="button"
 											onClick={applyNearestMprClinicalPreset}
-											disabled={
-												!mprControlsReady ||
-												!mprNearestClinicalPreset.deltas.length ||
-												!mprNearestClinicalPreset.title
-											}
+											disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}
 											aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}
 											title={`Подогнать под протокол: ${mprNearestClinicalPreset.label}`}
 										>
@@ -1763,11 +1741,7 @@ export function ImagingView(props: ImagingViewProps) {
 								>
 									{mprClinicalPresets.map((preset: any) => {
 										const projectionFallbackNote = mprControlsReady
-											? describeMprClinicalPresetProjectionFallback(
-													preset.projection,
-													cbctWorkbenchProjections,
-													mprProjectionLabels,
-												)
+											? describeMprClinicalPresetProjectionFallback(preset.projection, cbctWorkbenchProjections, mprProjectionLabels)
 											: null;
 										return (
 											<button
@@ -1775,12 +1749,7 @@ export function ImagingView(props: ImagingViewProps) {
 												key={preset.id}
 												type="button"
 												onClick={() => applyMprClinicalPreset(preset)}
-												aria-current={
-													mprNearestClinicalPreset.exact &&
-													mprNearestClinicalPreset.title === preset.title
-														? "true"
-														: undefined
-												}
+												aria-current={mprNearestClinicalPreset.exact && mprNearestClinicalPreset.title === preset.title ? "true" : undefined}
 												disabled={!mprControlsReady}
 											>
 												<strong>{preset.title}</strong>

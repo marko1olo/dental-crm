@@ -170,9 +170,7 @@ function metricValue(
 		return annotation.measurement.value;
 	}
 	if (annotation.type === "distance" || annotation.type === "implant_axis") {
-		return annotation.points.length >= 2
-			? polylineLengthMm(annotation.points)
-			: null;
+		return annotation.points.length >= 2 ? polylineLengthMm(annotation.points) : null;
 	}
 	if (annotation.type === "angle") return angleDeg(annotation.points);
 	if (annotation.type === "roi" || annotation.type === "area_roi")
@@ -185,9 +183,7 @@ function metricValue(
 		annotation.type === "nerve_canal" ||
 		annotation.type === "panoramic_curve"
 	) {
-		return annotation.points.length >= 3
-			? polylineLengthMm(annotation.points)
-			: null;
+		return annotation.points.length >= 3 ? polylineLengthMm(annotation.points) : null;
 	}
 	return null;
 }

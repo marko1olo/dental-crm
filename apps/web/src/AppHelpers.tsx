@@ -1993,9 +1993,7 @@ export function redactedDicomViewerToolStateBundleForDownload(
 	}));
 	clone.annotations = clone.annotations.map((annotation) => ({
 		...annotation,
-		referencedImageId: redactedDicomDownloadReferenceId(
-			annotation.referencedImageId,
-		),
+		referencedImageId: redactedDicomDownloadReferenceId(annotation.referencedImageId),
 		warnings: redactedDicomDownloadWarnings(annotation.warnings),
 	}));
 	clone.warnings = uniqueDicomDownloadWarnings([
@@ -2971,9 +2969,7 @@ export function saveLocalImagingViewerDraft(
 	}
 }
 
-export function ctImplantPlanFromLibraryItem(
-	implant: CtImplantLibraryItem,
-): ImagingViewerImplantPlan {
+export function ctImplantPlanFromLibraryItem(implant: CtImplantLibraryItem): ImagingViewerImplantPlan {
 	return {
 		itemId: implant.id,
 		system: implant.system,
