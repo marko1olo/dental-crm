@@ -1,4 +1,5 @@
-import { Settings2, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Settings2, ShieldCheck, UserPlus, X, Users, UserCog } from "lucide-react";
+import "./SettingsStaffTab.css";
 import type React from "react";
 import type { ChangeEvent } from "react";
 
@@ -219,784 +220,320 @@ export function SettingsStaffTab() {
 	};
 
 	return (
-		<section
-			className="staff-management-studio animate-fade-in"
-			aria-label="Управление персоналом"
-		>
-			<div className="import-copy">
-				<h3>Управление персоналом</h3>
-				<p>
-					Добавляйте новых врачей, ассистентов и администраторов. Управляйте
-					правами доступа, цветами в календаре, PIN-кодами и паролями.
-				</p>
-			</div>
-
-			<div className="settings-cards-grid">
-				{/* Список сотрудников */}
-				<article className="settings-card settings-card--full">
-					<div className="settings-card-header">
-						<h4>Активный персонал</h4>
+		<div className="staff-studio-container animate-fade-in">
+			{/* New Staff Creation Card */}
+			<section className="staff-section-card">
+				<div className="staff-section-header">
+					<div className="staff-section-icon">
+						<UserPlus size={24} />
 					</div>
-					<div className="staff-grid">
-						{staff.map((member: any) => (
-							<div key={member.id} className="staff-grid-cell">
-								<div className="staff-grid-cell__head">
-									<div
-										className="staff-avatar"
-										style={
-											member.color
-												? { backgroundColor: member.color }
-												: undefined
-										}
-									>
-										{member.fullName.charAt(0)}
-									</div>
-									<div>
-										<h5 className="staff-grid-cell__name">{member.fullName}</h5>
-										<span className="staff-grid-cell__role">
-											{staffRoleLabels
-												? staffRoleLabels[member.role]
-												: member.role}
-										</span>
-									</div>
-								</div>
+					<div className="staff-section-title">
+						<h3>Добавить сотрудника</h3>
+						<p>Создайте профиль для нового врача, ассистента или администратора</p>
+					</div>
+				</div>
+				<form onSubmit={handleCreateStaff} className="staff-form-grid">
+					<div className="staff-form-group">
+						<label>ФИО сотрудника</label>
+						<input
+							type="text"
+							placeholder="Иванов Иван Иванович"
+							value={newStaffName}
+							onChange={(e) => setNewStaffName(e.target.value)}
+							required
+						/>
+					</div>
 
+					<div className="staff-form-group">
+						<label>Должность</label>
+						<select
+							value={newStaffRole}
+							onChange={(e) => setNewStaffRole(e.target.value)}
+						>
+							<option value="doctor">Врач</option>
+							<option value="assistant">Ассистент</option>
+							<option value="administrator">Администратор</option>
+							<option value="manager">Управляющий</option>
+						</select>
+					</div>
+
+					{newStaffRole === "doctor" && (
+						<div className="staff-form-group full-width">
+							<label>Специализация</label>
+							<select
+								value={newStaffSpecialty}
+								onChange={(e) => setNewStaffSpecialty(e.target.value)}
+							>
+								{Object.entries(specialtyLabels).map(([key, label]) => (
+									<option key={key} value={key}>
+										{label as string}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
+
+					<div className="staff-form-group full-width">
+						<label>Email (логин для личного доступа)</label>
+						<input
+							type="email"
+							placeholder="doctor@clinic.com"
+							value={newStaffEmail}
+							onChange={(e) => setNewStaffEmail(e.target.value)}
+						/>
+					</div>
+
+					<div className="staff-form-group full-width" style={{ marginTop: '8px' }}>
+						<button
+							className="primary-button"
+							type="submit"
+							disabled={loading}
+							style={{ alignSelf: 'flex-start' }}
+						>
+							<ShieldCheck size={16} style={{ marginRight: '8px' }} /> Добавить в систему
+						</button>
+					</div>
+				</form>
+			</section>
+
+			{/* Active Staff Grid */}
+			<section className="staff-section-card">
+				<div className="staff-section-header">
+					<div className="staff-section-icon">
+						<Users size={24} />
+					</div>
+					<div className="staff-section-title">
+						<h3>Персонал клиники</h3>
+						<p>Активные сотрудники и настройки прав доступа</p>
+					</div>
+				</div>
+				
+				<div className="premium-staff-grid">
+					{staff.map((member: any) => (
+						<div key={member.id} className="premium-staff-card">
+							<div className="premium-staff-card-header">
 								<div
-									className="staff-badges-row"
-									style={{
-										display: "flex",
-										gap: "6px",
-										flexWrap: "wrap",
-										margin: "6px 0 12px 0",
-									}}
+									className="premium-staff-avatar"
+									style={
+										member.color
+											? { backgroundColor: member.color }
+											: { backgroundColor: 'var(--teal)' }
+									}
 								>
-									{member.canSignMedicalRecords && (
-										<span
-											className="status-pill status-confirmed"
-											style={{ fontSize: "11px", padding: "2px 6px" }}
-										>
-											✍️ ЭМК
-										</span>
-									)}
-									{member.canManageImports && (
-										<span
-											className="status-pill status-confirmed"
-											style={{ fontSize: "11px", padding: "2px 6px" }}
-										>
-											💿 Импорт
-										</span>
-									)}
-									{member.canManageMoney && (
-										<span
-											className="status-pill status-confirmed"
-											style={{ fontSize: "11px", padding: "2px 6px" }}
-										>
-											💰 Касса
-										</span>
-									)}
-									{member.active === false && (
-										<span
-											className="status-pill status-cancelled"
-											style={{ fontSize: "11px", padding: "2px 6px" }}
-										>
-											❌ Неактивен
-										</span>
-									)}
+									{member.fullName.charAt(0)}
 								</div>
-
-								<div className="staff-grid-cell__actions">
-									<div className="staff-grid-cell__btn-row">
-										<button
-											className="secondary-button btn--sm btn--flex"
-											onClick={() => startEditing(member)}
-											style={{
-												width: "100%",
-												justifyContent: "center",
-												gap: "6px",
-											}}
-										>
-											<Settings2 size={14} /> Настроить сотрудника
-										</button>
-									</div>
+								<div className="premium-staff-info">
+									<h4>{member.fullName}</h4>
+									<p>{staffRoleLabels ? staffRoleLabels[member.role] : member.role}</p>
 								</div>
 							</div>
-						))}
-					</div>
-				</article>
 
-				{/* Форма добавления сотрудника */}
-				<article className="settings-card">
-					<div className="settings-card-header">
-						<h4>
-							<UserPlus size={18} /> Добавить сотрудника
-						</h4>
-					</div>
-					<form onSubmit={handleCreateStaff} className="settings-card-body">
-						<label>
-							ФИО
-							<input
-								type="text"
-								placeholder="Иванов Иван Иванович"
-								value={newStaffName}
-								onChange={(e) => setNewStaffName(e.target.value)}
-								required
-							/>
-						</label>
+							<div className="premium-staff-badges">
+								{member.canSignMedicalRecords && (
+									<span className="status-pill status-confirmed">✍️ ЭМК</span>
+								)}
+								{member.canManageImports && (
+									<span className="status-pill status-confirmed">💿 Импорт</span>
+								)}
+								{member.canManageMoney && (
+									<span className="status-pill status-confirmed">💰 Касса</span>
+								)}
+								{member.active === false && (
+									<span className="status-pill status-cancelled">❌ Неактивен</span>
+								)}
+							</div>
 
-						<label>
-							Должность
-							<select
-								value={newStaffRole}
-								onChange={(e) => setNewStaffRole(e.target.value)}
-							>
-								<option value="doctor">Врач</option>
-								<option value="assistant">Ассистент</option>
-								<option value="administrator">Администратор</option>
-								<option value="manager">Управляющий</option>
-							</select>
-						</label>
-
-						{newStaffRole === "doctor" && (
-							<label>
-								Специализация
-								<select
-									value={newStaffSpecialty}
-									onChange={(e) => setNewStaffSpecialty(e.target.value)}
+							<div className="premium-staff-actions">
+								<button
+									className="secondary-button"
+									onClick={() => startEditing(member)}
 								>
-									{Object.entries(specialtyLabels).map(([key, label]) => (
-										<option key={key} value={key}>
-											{label as string}
-										</option>
-									))}
-								</select>
-							</label>
-						)}
-
-						<label>
-							Email (логин для личного доступа)
-							<input
-								type="email"
-								placeholder="doctor@clinic.com"
-								value={newStaffEmail}
-								onChange={(e) => setNewStaffEmail(e.target.value)}
-							/>
-						</label>
-
-						<div className="form-actions">
-							<button
-								className="primary-button"
-								type="submit"
-								disabled={loading}
-							>
-								<ShieldCheck size={16} /> Создать сотрудника
-							</button>
+									<Settings2 size={16} style={{ marginRight: '8px' }} />
+									Настроить профиль
+								</button>
+							</div>
 						</div>
-					</form>
-				</article>
-			</div>
+					))}
+				</div>
+			</section>
 
-			{/* Unified Editing Modal */}
+			{/* Unified Premium Editing Modal */}
 			{editingStaffId && (
-				<div
-					style={{
-						position: "fixed",
-						inset: 0,
-						zIndex: 1000,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						background: "rgba(0,0,0,0.6)",
-						backdropFilter: "blur(5px)",
-					}}
-				>
-					<div
-						className="settings-card"
-						style={{
-							width: "500px",
-							maxWidth: "90%",
-							maxHeight: "90vh",
-							overflowY: "auto",
-							padding: "24px",
-							boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
-							border: "1px solid var(--line-strong)",
-							background: "var(--paper)",
-							borderRadius: "12px",
-						}}
-					>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								marginBottom: "20px",
-								borderBottom: "1px solid var(--line)",
-								paddingBottom: "12px",
-							}}
-						>
-							<h3
-								style={{ margin: 0, fontSize: "1.25rem", color: "var(--ink)" }}
-							>
-								Редактировать профиль сотрудника
-							</h3>
-							<button
-								type="button"
-								onClick={() => setEditingStaffId(null)}
-								style={{
-									background: "none",
-									border: "none",
-									color: "var(--muted)",
-									cursor: "pointer",
-								}}
-							>
+				<div className="premium-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setEditingStaffId(null); }}>
+					<div className="premium-modal-content">
+						<div className="premium-modal-header">
+							<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+								<UserCog size={24} color="var(--teal)" />
+								<h3>Профиль сотрудника</h3>
+							</div>
+							<button className="premium-modal-close" onClick={() => setEditingStaffId(null)}>
 								<X size={20} />
 							</button>
 						</div>
 
-						<form
-							onSubmit={handleSaveEdit}
-							style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-						>
-							<label
-								className="settings-control-label"
-								style={{ display: "flex", flexDirection: "column", gap: "6px" }}
-							>
-								ФИО сотрудника
+						<div className="premium-modal-body">
+							<div className="staff-form-group full-width">
+								<label>ФИО сотрудника</label>
 								<input
 									type="text"
 									value={editForm.fullName}
-									onChange={(e) =>
-										setEditForm({ ...editForm, fullName: e.target.value })
-									}
-									className="settings-control-input"
+									onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
 									required
 								/>
-							</label>
+							</div>
 
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "1fr 1fr",
-									gap: "12px",
-								}}
-							>
-								<label
-									className="settings-control-label"
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-									}}
-								>
-									Должность
+							<div className="staff-form-grid">
+								<div className="staff-form-group">
+									<label>Должность</label>
 									<select
 										value={editForm.role}
-										onChange={(e) =>
-											setEditForm({ ...editForm, role: e.target.value })
-										}
-										className="settings-control-input"
+										onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
 									>
 										<option value="doctor">Врач</option>
 										<option value="assistant">Ассистент</option>
 										<option value="administrator">Администратор</option>
 										<option value="manager">Управляющий</option>
 									</select>
-								</label>
-
-								{editForm.role === "doctor" && (
-									<label
-										className="settings-control-label"
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											gap: "6px",
-										}}
-									>
-										Специализация
-										<div
-											className="quick-chips-row"
-											style={{ marginTop: "4px" }}
-										>
-											{Object.entries(specialtyLabels).map(([key, label]) => {
-												const isSelected = editForm.specialties.includes(key);
-												return (
-													<button
-														key={key}
-														type="button"
-														className={`quick-chip ${isSelected ? "selected" : ""}`}
-														onClick={() => {
-															if (isSelected) {
-																setEditForm({
-																	...editForm,
-																	specialties: editForm.specialties.filter(
-																		(s) => s !== key,
-																	),
-																});
-															} else {
-																setEditForm({
-																	...editForm,
-																	specialties: [...editForm.specialties, key],
-																});
-															}
-														}}
-													>
-														{label as string}
-													</button>
-												);
-											})}
-										</div>
-									</label>
-								)}
-
-								<label
-									className="settings-control-label"
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-									}}
-								>
-									Цвет в календаре
+								</div>
+								<div className="staff-form-group">
+									<label>Цвет в расписании</label>
 									<input
 										type="color"
 										value={editForm.color}
-										onChange={(e) =>
-											setEditForm({ ...editForm, color: e.target.value })
-										}
-										style={{
-											height: "40px",
-											padding: "2px",
-											width: "100%",
-											cursor: "pointer",
-											border: "1px solid var(--line)",
-										}}
+										onChange={(e) => setEditForm({ ...editForm, color: e.target.value })}
 									/>
-								</label>
+								</div>
 							</div>
 
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "1fr 1fr",
-									gap: "12px",
-								}}
-							>
-								<label
-									className="settings-control-label"
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-									}}
-								>
-									Email (Логин)
+							{editForm.role === "doctor" && (
+								<div className="staff-form-group full-width">
+									<label>Специализации</label>
+									<div className="weekday-toggle-row">
+										{Object.entries(specialtyLabels).map(([key, label]) => {
+											const isSelected = editForm.specialties.includes(key);
+											return (
+												<button
+													key={key}
+													type="button"
+													className={isSelected ? "active" : ""}
+													onClick={() => {
+														if (isSelected) {
+															setEditForm({
+																...editForm,
+																specialties: editForm.specialties.filter((s) => s !== key),
+															});
+														} else {
+															setEditForm({
+																...editForm,
+																specialties: [...editForm.specialties, key],
+															});
+														}
+													}}
+												>
+													{label as string}
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							)}
+
+							<div className="staff-form-grid">
+								<div className="staff-form-group">
+									<label>Email (Логин)</label>
 									<input
 										type="email"
 										value={editForm.email}
-										onChange={(e) =>
-											setEditForm({ ...editForm, email: e.target.value })
-										}
+										onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
 										placeholder="doctor@clinic.com"
-										className="settings-control-input"
 									/>
-								</label>
-
-								<label
-									className="settings-control-label"
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-									}}
-								>
-									Телефон
+								</div>
+								<div className="staff-form-group">
+									<label>Телефон</label>
 									<input
 										type="text"
 										value={editForm.phone}
-										onChange={(e) =>
-											setEditForm({ ...editForm, phone: e.target.value })
-										}
+										onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
 										placeholder="+7 (999) 123-45-67"
-										className="settings-control-input"
 									/>
-								</label>
+								</div>
 							</div>
 
-							<div
-								className="settings-section-title"
-								style={{
-									fontWeight: 600,
-									fontSize: "0.875rem",
-									color: "var(--ink)",
-									marginTop: "8px",
-								}}
-							>
-								Права доступа
-							</div>
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									gap: "10px",
-									padding: "10px",
-									background: "var(--light-bg, rgba(0,0,0,0.02))",
-									borderRadius: "8px",
-								}}
-							>
-								<label
-									className="settings-checkbox-label"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										cursor: "pointer",
-									}}
-								>
+							<div className="permissions-box">
+								<h4 style={{ margin: 0, fontSize: '14px', color: 'var(--ink)' }}>Права доступа</h4>
+								
+								<label className="permission-toggle">
 									<input
 										type="checkbox"
 										checked={editForm.canSignMedicalRecords}
-										onChange={(e) =>
-											setEditForm({
-												...editForm,
-												canSignMedicalRecords: e.target.checked,
-											})
-										}
+										onChange={(e) => setEditForm({ ...editForm, canSignMedicalRecords: e.target.checked })}
 									/>
-									<span style={{ fontSize: "0.875rem" }}>
-										✍️ Подписание ЭМК (медицинские карты)
-									</span>
+									<span>✍️ Подписание ЭМК (медицинские карты)</span>
 								</label>
-								<label
-									className="settings-checkbox-label"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										cursor: "pointer",
-									}}
-								>
+								
+								<label className="permission-toggle">
 									<input
 										type="checkbox"
 										checked={editForm.canManageImports}
-										onChange={(e) =>
-											setEditForm({
-												...editForm,
-												canManageImports: e.target.checked,
-											})
-										}
+										onChange={(e) => setEditForm({ ...editForm, canManageImports: e.target.checked })}
 									/>
-									<span style={{ fontSize: "0.875rem" }}>
-										💿 Управление импортом КТ / снимков
-									</span>
+									<span>💿 Управление импортом КТ / снимков</span>
 								</label>
-								<label
-									className="settings-checkbox-label"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										cursor: "pointer",
-									}}
-								>
+								
+								<label className="permission-toggle">
 									<input
 										type="checkbox"
 										checked={editForm.canManageMoney}
-										onChange={(e) =>
-											setEditForm({
-												...editForm,
-												canManageMoney: e.target.checked,
-											})
-										}
+										onChange={(e) => setEditForm({ ...editForm, canManageMoney: e.target.checked })}
 									/>
-									<span style={{ fontSize: "0.875rem" }}>
-										💰 Доступ к кассе и финансам
-									</span>
-								</label>
-							</div>
-
-							<div
-								className="settings-section-title"
-								style={{
-									fontWeight: 600,
-									fontSize: "0.875rem",
-									color: "var(--ink)",
-									marginTop: "8px",
-								}}
-							>
-								Учетные данные (Аутентификация)
-							</div>
-							<div
-								style={{
-									display: "grid",
-									gridTemplateColumns: "1fr 1fr",
-									gap: "12px",
-								}}
-							>
-								<label
-									className="settings-control-label"
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-									}}
-								>
-									Новый PIN (4 цифры)
-									<input
-										type="password"
-										value={editForm.pin}
-										onChange={(e) =>
-											setEditForm({ ...editForm, pin: e.target.value })
-										}
-										maxLength={4}
-										placeholder="Оставьте пустым"
-										className="settings-control-input"
-									/>
+									<span>💰 Доступ к кассе и финансам</span>
 								</label>
 
-								<label
-									className="settings-control-label"
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "6px",
-									}}
-								>
-									Новый пароль (от 6 симв.)
-									<input
-										type="password"
-										value={editForm.password}
-										onChange={(e) =>
-											setEditForm({ ...editForm, password: e.target.value })
-										}
-										placeholder="Оставьте пустым"
-										className="settings-control-input"
-									/>
-								</label>
-							</div>
-
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-									marginTop: "8px",
-								}}
-							>
-								<label
-									className="settings-checkbox-label"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "8px",
-										cursor: "pointer",
-									}}
-								>
+								<label className="permission-toggle" style={{ marginTop: '8px' }}>
 									<input
 										type="checkbox"
 										checked={editForm.active}
-										onChange={(e) =>
-											setEditForm({ ...editForm, active: e.target.checked })
-										}
+										onChange={(e) => setEditForm({ ...editForm, active: e.target.checked })}
 									/>
-									<span style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-										Активный сотрудник (разрешен вход в систему)
-									</span>
+									<span style={{ fontWeight: 700 }}>Сотрудник активен (имеет доступ)</span>
 								</label>
 							</div>
 
-							<div
-								className="form-actions"
-								style={{
-									display: "flex",
-									justifyContent: "flex-end",
-									gap: "12px",
-									marginTop: "16px",
-									borderTop: "1px solid var(--line)",
-									paddingTop: "16px",
-								}}
-							>
-								<button
-									type="button"
-									className="secondary-button"
-									onClick={() => setEditingStaffId(null)}
-								>
-									Отмена
-								</button>
-								<button
-									type="submit"
-									className="primary-button"
-									disabled={loading}
-								>
-									{loading ? "Сохранение..." : "Сохранить"}
-								</button>
+							<div className="staff-form-grid" style={{ marginTop: '8px' }}>
+								<div className="staff-form-group">
+									<label>Новый PIN (вход на ПК)</label>
+									<input
+										type="password"
+										value={editForm.pin}
+										onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })}
+										maxLength={4}
+										placeholder="4 цифры, пустой если не менять"
+									/>
+								</div>
+								<div className="staff-form-group">
+									<label>Новый пароль (личный)</label>
+									<input
+										type="password"
+										value={editForm.password}
+										onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+										placeholder="От 6 симв, пустой если не менять"
+									/>
+								</div>
 							</div>
-						</form>
+						</div>
 
-						<div
-							className="staff-schedule-editor"
-							style={{
-								marginTop: "24px",
-								paddingTop: "24px",
-								borderTop: "1px solid var(--line-strong)",
-							}}
-						>
-							<h4 style={{ marginBottom: "16px" }}>Расписание сотрудника</h4>
-							{(() => {
-								const member = staff.find((m) => m.id === editingStaffId);
-								if (!member) return null;
-
-								const scheduleDraft =
-									staffScheduleDrafts[member.id] ??
-									staffScheduleDraftFromWorkingHours(
-										member.workingHours ?? null,
-									);
-								const scheduleSaveState =
-									staffScheduleSaveStates[member.id] ?? "saved";
-								const scheduleDirty = staffScheduleDirtyIds.has(member.id);
-								const scheduleSaving =
-									staffScheduleSavingId === member.id ||
-									scheduleSaveState === "saving";
-								const scheduleSaveLabel = scheduleSaving
-									? "Автосохранение"
-									: scheduleSaveState === "error"
-										? "Не сохранено"
-										: scheduleDirty
-											? "Ждет автосохранения"
-											: "Сохранено";
-
-								return (
-									<>
-										<div
-											style={{
-												display: "flex",
-												gap: "16px",
-												marginBottom: "16px",
-											}}
-										>
-											<label>
-												С
-												<input
-													type="time"
-													value={scheduleDraft.start}
-													onChange={(event: InputChangeEvent) =>
-														updateStaffScheduleDraft(member.id, {
-															start: event.target.value,
-														})
-													}
-												/>
-											</label>
-											<label>
-												До
-												<input
-													type="time"
-													value={scheduleDraft.end}
-													onChange={(event: InputChangeEvent) =>
-														updateStaffScheduleDraft(member.id, {
-															end: event.target.value,
-														})
-													}
-												/>
-											</label>
-										</div>
-										<div
-											className="weekday-toggle-row staff-weekday-row"
-											role="group"
-											aria-label={`Рабочие дни: ${member.fullName}`}
-											style={{ marginBottom: "16px" }}
-										>
-											{typedWeekdayOptions.map((day: any) => (
-												<button
-													className={
-														scheduleDraft.workingDays.includes(day.value)
-															? "active"
-															: ""
-													}
-													key={day.value}
-													type="button"
-													aria-pressed={scheduleDraft.workingDays.includes(
-														day.value,
-													)}
-													onClick={() =>
-														toggleStaffWorkingDay(member.id, day.value)
-													}
-												>
-													{day.label}
-												</button>
-											))}
-										</div>
-										<details className="settings-advanced-block schedule-advanced-block">
-											<summary className="settings-advanced-toggle">
-												<span className="settings-advanced-label">
-													Индивидуальные часы по дням
-												</span>
-												<span className="settings-advanced-chevron">▼</span>
-											</summary>
-											<div
-												className="staff-day-hours"
-												aria-label={`Часы по дням: ${member.fullName}`}
-											>
-												{typedWeekdayOptions
-													.filter((day) =>
-														scheduleDraft.workingDays.includes(day.value),
-													)
-													.map((day: any) => {
-														const dayHours = scheduleDraft.perDay[day.value];
-														return (
-															<div key={`hours-${member.id}-${day.value}`}>
-																<span>{day.label}</span>
-																<input
-																	aria-label={`${day.label}, начало`}
-																	type="time"
-																	value={dayHours?.start ?? scheduleDraft.start}
-																	onChange={(event: InputChangeEvent) =>
-																		updateStaffScheduleDay(
-																			member.id,
-																			day.value,
-																			{ start: event.target.value },
-																		)
-																	}
-																/>
-																<input
-																	aria-label={`${day.label}, конец`}
-																	type="time"
-																	value={dayHours?.end ?? scheduleDraft.end}
-																	onChange={(event: InputChangeEvent) =>
-																		updateStaffScheduleDay(
-																			member.id,
-																			day.value,
-																			{ end: event.target.value },
-																		)
-																	}
-																/>
-															</div>
-														);
-													})}
-											</div>
-										</details>
-										<div
-											className="staff-schedule-actions"
-											style={{ marginTop: "16px" }}
-										>
-											<span
-												className={`save-state save-state-${scheduleSaveState}`}
-											>
-												{scheduleSaveLabel}
-											</span>
-											<button
-												className="secondary-button compact-button"
-												type="button"
-												onClick={() => void saveStaffSchedule(member.id)}
-												disabled={scheduleSaving}
-											>
-												{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
-											</button>
-										</div>
-									</>
-								);
-							})()}
+						<div className="premium-modal-footer">
+							<button className="secondary-button" onClick={() => setEditingStaffId(null)}>
+								Отмена
+							</button>
+							<button className="primary-button" onClick={handleSaveEdit} disabled={loading}>
+								<ShieldCheck size={16} style={{ marginRight: '8px' }} />
+								{loading ? "Сохраняю..." : "Сохранить профиль"}
+							</button>
 						</div>
 					</div>
 				</div>
 			)}
-		</section>
+		</div>
 	);
 }
