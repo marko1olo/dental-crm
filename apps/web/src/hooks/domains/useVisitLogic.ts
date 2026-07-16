@@ -1,149 +1,149 @@
-import { useRef, useEffect, useCallback, useMemo } from "react";
-import { useVisitStore } from "../../store/visitStore";
-import { useAppStore } from "../../store/appStore";
 import {
-    AcceptVisitDraftResponse,
-    SpeechTranscriptionResponse,
-    SpeechTranscriptPolishResponse,
-    SpeechChunkUploadInput,
-    SpeechGatewayStatus,
-    LocalBridgeReadinessResponse,
-    SpeechGatewayHealthReport,
-    SpeechProviderRuntimeStatus,
-    SpeechRecordingStrategy,
-    SpeechRecordingRecoveryList,
-    VisitDraftAutosaveResponse,
-    DentalSpecialty,
-    SpeechRecordingAssembly,
-    buildRuleBasedVisitDraftFromTranscript,
-    normalizeDentalSpeechTranscript,
-    VisitNoteDraft
+	type AcceptVisitDraftResponse,
+	buildRuleBasedVisitDraftFromTranscript,
+	type DentalSpecialty,
+	LocalBridgeReadinessResponse,
+	normalizeDentalSpeechTranscript,
+	type SpeechChunkUploadInput,
+	type SpeechGatewayHealthReport,
+	type SpeechGatewayStatus,
+	type SpeechProviderRuntimeStatus,
+	type SpeechRecordingAssembly,
+	type SpeechRecordingRecoveryList,
+	type SpeechRecordingStrategy,
+	type SpeechTranscriptionResponse,
+	type SpeechTranscriptPolishResponse,
+	type VisitDraftAutosaveResponse,
+	type VisitNoteDraft,
 } from "@dental/shared";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
-    operatorWorkflowFailureMessage,
-    responseErrorMessage,
-    VisitNoteField,
-    BrowserWindowWithSpeech,
-    queuePendingVisitSave,
-    queuePendingSpeechChunk,
-    removePendingSpeechChunkById,
-    operatorReadableErrorDetailFromUnknown,
-    blobToBase64,
-    createLocalQueueId,
-    visitNoteDraftFromForm,
-    acceptedVisitSaveFailureIsRetryable,
-    visitNoteFormFromVisit,
-    appendSpeechTextWithoutDuplicateTail,
-    speechGatewayCanUpload,
-    loadPendingVisitSaves,
-    latestPendingVisitSaveAt,
-    loadPendingSpeechChunks,
-    VisitNoteForm,
-    savePendingVisitSaves,
-    operatorReadableErrorDetail,
-    responseStatusFailureLabel,
-    speechQualityLabels,
-    buildOfflineVisitDraftFromTranscript,
-    emptyVisitNoteForm,
-    visitNoteFieldDefinitions,
-    visitNoteFormFromDraft,
-    WorkflowResponseError
+	acceptedVisitSaveFailureIsRetryable,
+	appendSpeechTextWithoutDuplicateTail,
+	type BrowserWindowWithSpeech,
+	blobToBase64,
+	buildOfflineVisitDraftFromTranscript,
+	createLocalQueueId,
+	emptyVisitNoteForm,
+	latestPendingVisitSaveAt,
+	loadPendingSpeechChunks,
+	loadPendingVisitSaves,
+	operatorReadableErrorDetail,
+	operatorReadableErrorDetailFromUnknown,
+	operatorWorkflowFailureMessage,
+	queuePendingSpeechChunk,
+	queuePendingVisitSave,
+	removePendingSpeechChunkById,
+	responseErrorMessage,
+	responseStatusFailureLabel,
+	savePendingVisitSaves,
+	speechGatewayCanUpload,
+	speechQualityLabels,
+	type VisitNoteField,
+	type VisitNoteForm,
+	visitNoteDraftFromForm,
+	visitNoteFieldDefinitions,
+	visitNoteFormFromDraft,
+	visitNoteFormFromVisit,
+	WorkflowResponseError,
 } from "../../AppHelpers";
 import { motionSafeScrollIntoView } from "../../motionPreference";
+import { useAppStore } from "../../store/appStore";
+import { useVisitStore } from "../../store/visitStore";
 
 export function useVisitLogic({
-    dashboard,
-    query,
-    setError,
-    auth,
-    setDashboard,
-    setQuery,
-    selectedPatientId,
-    documentPatient,
-    activePatient,
-    activeAppointment,
-    activeDoctor,
-    activeChair,
-    paymentPatientContextReady,
-    paymentPatientContextMessage,
-    loadDashboard,
-    clinicProfileDraft,
-    patientCoreDraft,
-    documentPatientMatchesActiveVisit,
-    activeOrganizationId,
-    importSourceKind,
-    setImportSourceKind,
-    importText,
-    setImportText,
-    setImportPreview,
-    setImportCommit
+	dashboard,
+	query,
+	setError,
+	auth,
+	setDashboard,
+	setQuery,
+	selectedPatientId,
+	documentPatient,
+	activePatient,
+	activeAppointment,
+	activeDoctor,
+	activeChair,
+	paymentPatientContextReady,
+	paymentPatientContextMessage,
+	loadDashboard,
+	clinicProfileDraft,
+	patientCoreDraft,
+	documentPatientMatchesActiveVisit,
+	activeOrganizationId,
+	importSourceKind,
+	setImportSourceKind,
+	importText,
+	setImportText,
+	setImportPreview,
+	setImportCommit,
 }: any) {
-    const visitStore = useVisitStore();
-    const appStore = useAppStore();
+	const visitStore = useVisitStore();
+	const appStore = useAppStore();
 
-    const {
-        selectedSpecialty,
-        setSelectedSpecialty,
-        selectedProtocolId,
-        setSelectedProtocolId,
-        clearedTranscriptSnapshot,
-        setClearedTranscriptSnapshot,
-        transcript,
-        setTranscript,
-        draft,
-        setDraft,
-        visitNoteForm,
-        setVisitNoteForm,
-        visitToothStateByCode,
-        setToothState,
-        applyAiToothCodes,
-        lastServerDraftSavedAt,
-        setLastServerDraftSavedAt,
-        serverDraftSyncState,
-        setServerDraftSyncState,
-        localDraftWasRestored,
-        setLocalDraftWasRestored,
-        pendingVisitSaveCount,
-        setPendingVisitSaveCount,
-        lastPendingVisitSaveAt,
-        setLastPendingVisitSaveAt,
-        lastVisitSaveReceipt,
-        setLastVisitSaveReceipt,
-        speechLastQuality,
-        setSpeechLastQuality,
-        isDraftLoading,
-        setIsDraftLoading,
-        isDraftAccepting,
-        setIsDraftAccepting,
-        isPendingVisitSyncing,
-        setIsPendingVisitSyncing,
-        isVisitDictating,
-        setIsVisitDictating,
-        isTranscriptPolishing,
-        setIsTranscriptPolishing,
-        lastServerDraftSignatureRef,
-        visitDraftUserEditedRef,
-    } = visitStore;
+	const {
+		selectedSpecialty,
+		setSelectedSpecialty,
+		selectedProtocolId,
+		setSelectedProtocolId,
+		clearedTranscriptSnapshot,
+		setClearedTranscriptSnapshot,
+		transcript,
+		setTranscript,
+		draft,
+		setDraft,
+		visitNoteForm,
+		setVisitNoteForm,
+		visitToothStateByCode,
+		setToothState,
+		applyAiToothCodes,
+		lastServerDraftSavedAt,
+		setLastServerDraftSavedAt,
+		serverDraftSyncState,
+		setServerDraftSyncState,
+		localDraftWasRestored,
+		setLocalDraftWasRestored,
+		pendingVisitSaveCount,
+		setPendingVisitSaveCount,
+		lastPendingVisitSaveAt,
+		setLastPendingVisitSaveAt,
+		lastVisitSaveReceipt,
+		setLastVisitSaveReceipt,
+		speechLastQuality,
+		setSpeechLastQuality,
+		isDraftLoading,
+		setIsDraftLoading,
+		isDraftAccepting,
+		setIsDraftAccepting,
+		isPendingVisitSyncing,
+		setIsPendingVisitSyncing,
+		isVisitDictating,
+		setIsVisitDictating,
+		isTranscriptPolishing,
+		setIsTranscriptPolishing,
+		lastServerDraftSignatureRef,
+		visitDraftUserEditedRef,
+	} = visitStore;
 
-    const {
-        isOnline,
-        speechGatewayHealthReport,
-        setSpeechGatewayHealthReport,
-        speechGatewayStatus,
-        setSpeechGatewayStatus,
-        speechProviderRuntimeStatuses,
-        setSpeechProviderRuntimeStatuses,
-        speechRecordingStrategy,
-        setSpeechRecordingStrategy,
-        speechRecordingRecovery,
-        setSpeechRecordingRecovery,
-        pendingSpeechChunkCount,
-        setPendingSpeechChunkCount,
-        speechStatusNote,
-        setSpeechStatusNote,
-        isImportDictating,
-        setIsImportDictating
-    } = appStore;
+	const {
+		isOnline,
+		speechGatewayHealthReport,
+		setSpeechGatewayHealthReport,
+		speechGatewayStatus,
+		setSpeechGatewayStatus,
+		speechProviderRuntimeStatuses,
+		setSpeechProviderRuntimeStatuses,
+		speechRecordingStrategy,
+		setSpeechRecordingStrategy,
+		speechRecordingRecovery,
+		setSpeechRecordingRecovery,
+		pendingSpeechChunkCount,
+		setPendingSpeechChunkCount,
+		speechStatusNote,
+		setSpeechStatusNote,
+		isImportDictating,
+		setIsImportDictating,
+	} = appStore;
 
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 	const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -159,8 +159,12 @@ export function useVisitLogic({
 	const appliedSpeechChunkKeysRef = useRef<Set<string>>(new Set());
 
 	const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
-	const visitWarnings = visitCloseChecklist?.items.filter((item: any) => !item.ready) ?? [];
-	const primaryVisitWarning = visitWarnings?.find((item: any) => item.blocking) ?? visitWarnings[0] ?? null;
+	const visitWarnings =
+		visitCloseChecklist?.items.filter((item: any) => !item.ready) ?? [];
+	const primaryVisitWarning =
+		visitWarnings?.find((item: any) => item.blocking) ??
+		visitWarnings[0] ??
+		null;
 	const speechProviderRuntimeById = useMemo(
 		() =>
 			new Map(
@@ -234,7 +238,7 @@ export function useVisitLogic({
 			: "сохранено";
 	const visitHasSavedNote = hasVisitNoteFormText && !draft && !isVisitNoteDirty;
 
-async function loadSpeechGatewayStatus(
+	async function loadSpeechGatewayStatus(
 		options: { silent?: boolean } = {},
 	): Promise<SpeechGatewayStatus | null> {
 		try {
@@ -265,7 +269,7 @@ async function loadSpeechGatewayStatus(
 		}
 	}
 
-async function loadSpeechGatewayHealthReport(
+	async function loadSpeechGatewayHealthReport(
 		options: { silent?: boolean } = {},
 	) {
 		try {
@@ -295,7 +299,7 @@ async function loadSpeechGatewayHealthReport(
 		}
 	}
 
-async function loadSpeechProviderRuntimeStatuses(
+	async function loadSpeechProviderRuntimeStatuses(
 		options: { silent?: boolean } = {},
 	) {
 		try {
@@ -325,7 +329,7 @@ async function loadSpeechProviderRuntimeStatuses(
 		}
 	}
 
-async function loadSpeechRecordingStrategy(
+	async function loadSpeechRecordingStrategy(
 		options: { silent?: boolean } = {},
 	) {
 		try {
@@ -364,7 +368,7 @@ async function loadSpeechRecordingStrategy(
 		}
 	}
 
-async function loadSpeechRecordingRecovery(
+	async function loadSpeechRecordingRecovery(
 		options: { silent?: boolean } = {},
 	) {
 		try {
@@ -404,7 +408,7 @@ async function loadSpeechRecordingRecovery(
 		}
 	}
 
-async function refreshSpeechRuntime(options: { silent?: boolean } = {}) {
+	async function refreshSpeechRuntime(options: { silent?: boolean } = {}) {
 		await Promise.all([
 			loadSpeechGatewayStatus(options),
 			loadSpeechGatewayHealthReport(options),
@@ -414,19 +418,19 @@ async function refreshSpeechRuntime(options: { silent?: boolean } = {}) {
 		]);
 	}
 
-async function refreshPendingVisitSaveState() {
+	async function refreshPendingVisitSaveState() {
 		const pending = await loadPendingVisitSaves(activeOrganizationId);
 		setPendingVisitSaveCount(pending.length);
 		setLastPendingVisitSaveAt(latestPendingVisitSaveAt(pending));
 	}
 
-async function refreshPendingSpeechChunkState() {
+	async function refreshPendingSpeechChunkState() {
 		setPendingSpeechChunkCount(
 			(await loadPendingSpeechChunks(activeOrganizationId)).length,
 		);
 	}
 
-function applyAcceptedVisitResponse(result: AcceptVisitDraftResponse) {
+	function applyAcceptedVisitResponse(result: AcceptVisitDraftResponse) {
 		setDashboard((current) =>
 			current
 				? {
@@ -444,7 +448,7 @@ function applyAcceptedVisitResponse(result: AcceptVisitDraftResponse) {
 		}
 	}
 
-async function submitAcceptedVisitDraft(
+	async function submitAcceptedVisitDraft(
 		visitId: string | null | undefined,
 		draftToAccept: VisitNoteDraft,
 		doctorSummary: string | null,
@@ -481,7 +485,7 @@ async function submitAcceptedVisitDraft(
 		return (await response.json()) as AcceptVisitDraftResponse;
 	}
 
-function visitDraftSignature(
+	function visitDraftSignature(
 		nextTranscript: string,
 		nextSpecialty: DentalSpecialty,
 		nextForm: VisitNoteForm,
@@ -489,7 +493,7 @@ function visitDraftSignature(
 		return JSON.stringify([nextTranscript, nextSpecialty, nextForm]);
 	}
 
-async function loadServerVisitDraft(
+	async function loadServerVisitDraft(
 		visitId: string | null | undefined,
 	): Promise<VisitDraftAutosaveResponse> {
 		if (!visitId) return { serverDraft: null };
@@ -504,7 +508,7 @@ async function loadServerVisitDraft(
 		return (await response.json()) as VisitDraftAutosaveResponse;
 	}
 
-async function syncVisitDraftAutosave(
+	async function syncVisitDraftAutosave(
 		clientSavedAt: string,
 		options: { silent?: boolean } = {},
 	) {
@@ -570,7 +574,7 @@ async function syncVisitDraftAutosave(
 		}
 	}
 
-async function flushPendingVisitSaves(options: { silent?: boolean } = {}) {
+	async function flushPendingVisitSaves(options: { silent?: boolean } = {}) {
 		if (isPendingVisitSyncing) return;
 		const pending = await loadPendingVisitSaves(activeOrganizationId);
 		if (!pending.length) {
@@ -633,7 +637,7 @@ async function flushPendingVisitSaves(options: { silent?: boolean } = {}) {
 		}
 	}
 
-async function submitSpeechChunk(
+	async function submitSpeechChunk(
 		input: SpeechChunkUploadInput,
 	): Promise<SpeechTranscriptionResponse> {
 		const response = await fetch("/api/speech/transcribe-chunk", {
@@ -670,11 +674,11 @@ async function submitSpeechChunk(
 		return payload;
 	}
 
-function speechChunkApplyKey(result: SpeechTranscriptionResponse): string {
+	function speechChunkApplyKey(result: SpeechTranscriptionResponse): string {
 		return `${result.chunk.recordingId}:${result.chunk.chunkIndex}`;
 	}
 
-function speechTranscriptionMatchesActiveVisit(
+	function speechTranscriptionMatchesActiveVisit(
 		result: SpeechTranscriptionResponse,
 	): boolean {
 		if (
@@ -686,7 +690,7 @@ function speechTranscriptionMatchesActiveVisit(
 		return result.chunk.visitId === dashboard?.activeVisit?.id;
 	}
 
-function applySpeechTranscription(result: SpeechTranscriptionResponse) {
+	function applySpeechTranscription(result: SpeechTranscriptionResponse) {
 		setSpeechGatewayStatus(result.gateway);
 		void loadSpeechRecordingRecovery({ silent: true });
 		const applyKey = speechChunkApplyKey(result);
@@ -724,7 +728,7 @@ function applySpeechTranscription(result: SpeechTranscriptionResponse) {
 		);
 	}
 
-async function assembleSpeechRecording(
+	async function assembleSpeechRecording(
 		recordingId: string,
 		options: { silent?: boolean } = {},
 	) {
@@ -795,27 +799,27 @@ async function assembleSpeechRecording(
 		}
 	}
 
-function trackSpeechUpload(upload: Promise<void>) {
+	function trackSpeechUpload(upload: Promise<void>) {
 		speechUploadPromisesRef.current.add(upload);
 		upload
 			.finally(() => speechUploadPromisesRef.current.delete(upload))
 			.catch(() => undefined);
 	}
 
-async function waitForSpeechUploads() {
+	async function waitForSpeechUploads() {
 		const pendingUploads = Array.from(speechUploadPromisesRef.current);
 		if (pendingUploads.length) {
 			await Promise.allSettled(pendingUploads);
 		}
 	}
 
-async function finalizeSpeechRecording(recordingId: string) {
+	async function finalizeSpeechRecording(recordingId: string) {
 		await waitForSpeechUploads();
 		await flushPendingSpeechChunks({ silent: true });
 		await assembleSpeechRecording(recordingId, { silent: true });
 	}
 
-async function flushPendingSpeechChunks(options: { silent?: boolean } = {}) {
+	async function flushPendingSpeechChunks(options: { silent?: boolean } = {}) {
 		const queue = await loadPendingSpeechChunks(activeOrganizationId);
 		if (!queue.length) {
 			await refreshPendingSpeechChunkState();
@@ -873,7 +877,7 @@ async function flushPendingSpeechChunks(options: { silent?: boolean } = {}) {
 		}
 	}
 
-function scrollToVisitArea(selector: string) {
+	function scrollToVisitArea(selector: string) {
 		window.location.hash = "visit";
 		window.requestAnimationFrame(() => {
 			motionSafeScrollIntoView(document.querySelector(selector), {
@@ -882,7 +886,7 @@ function scrollToVisitArea(selector: string) {
 		});
 	}
 
-function appendToTranscript(text: string) {
+	function appendToTranscript(text: string) {
 		visitDraftUserEditedRef.current = true;
 		setClearedTranscriptSnapshot(null);
 		setTranscript((current: any) =>
@@ -894,12 +898,12 @@ function appendToTranscript(text: string) {
 		);
 	}
 
-function updateVisitNoteField(field: VisitNoteField, value: string) {
+	function updateVisitNoteField(field: VisitNoteField, value: string) {
 		visitDraftUserEditedRef.current = true;
 		setVisitNoteForm((current) => ({ ...current, [field]: value }));
 	}
 
-function buildOfflineDraft() {
+	function buildOfflineDraft() {
 		if (!hasVisitTranscriptText) {
 			setError("Добавьте текст диктовки перед локальным разбором.");
 			return;
@@ -914,7 +918,7 @@ function buildOfflineDraft() {
 		scrollToVisitArea(".visit-note-panel");
 	}
 
-function openVisitWarningAction() {
+	function openVisitWarningAction() {
 		if (!primaryVisitWarning) {
 			scrollToVisitArea(".close-checklist");
 			return;
@@ -940,7 +944,7 @@ function openVisitWarningAction() {
 		window.location.hash = primaryVisitWarning.section;
 	}
 
-async function polishTranscript() {
+	async function polishTranscript() {
 		if (!hasVisitTranscriptText) {
 			setError(
 				"Перед очисткой диктовки: добавьте текст диктовки или нажмите голосовую запись.",
@@ -1008,7 +1012,7 @@ async function polishTranscript() {
 		}
 	}
 
-async function buildDraft() {
+	async function buildDraft() {
 		if (!dashboard || !activePatient || !hasVisitTranscriptText) {
 			const missingSteps = [
 				!dashboard ? "дождитесь загрузки приема" : null,
@@ -1068,7 +1072,7 @@ async function buildDraft() {
 		}
 	}
 
-async function acceptDraftToVisit() {
+	async function acceptDraftToVisit() {
 		if (!dashboard?.activeVisit?.id) {
 			setError("Откройте или создайте прием перед сохранением ЭМК.");
 			return;
@@ -1148,7 +1152,7 @@ async function acceptDraftToVisit() {
 		}
 	}
 
-function appendVisitDictationText(value: string) {
+	function appendVisitDictationText(value: string) {
 		const cleanValue = value.trim();
 		if (!cleanValue) return;
 		visitDraftUserEditedRef.current = true;
@@ -1163,7 +1167,7 @@ function appendVisitDictationText(value: string) {
 		setDraft(null);
 	}
 
-function clearTranscriptWithUndo() {
+	function clearTranscriptWithUndo() {
 		const previousTranscript = transcript;
 		if (!previousTranscript.trim()) {
 			setSpeechStatusNote("Диктовка уже пустая. Нечего очищать.");
@@ -1177,7 +1181,7 @@ function clearTranscriptWithUndo() {
 		);
 	}
 
-function undoTranscriptClear() {
+	function undoTranscriptClear() {
 		if (!clearedTranscriptSnapshot) {
 			setSpeechStatusNote("Нет очищенной диктовки для восстановления.");
 			return;
@@ -1188,7 +1192,7 @@ function undoTranscriptClear() {
 		setSpeechStatusNote("Диктовка восстановлена из локального черновика.");
 	}
 
-function startVisitDictation() {
+	function startVisitDictation() {
 		if (isVisitDictating) {
 			setError("Дождитесь завершения текущей браузерной диктовки.");
 			return;
@@ -1232,7 +1236,7 @@ function startVisitDictation() {
 		}
 	}
 
-function preferredSpeechMimeType(): string {
+	function preferredSpeechMimeType(): string {
 		const candidates = [
 			"audio/webm;codecs=opus",
 			"audio/webm",
@@ -1245,7 +1249,7 @@ function preferredSpeechMimeType(): string {
 		);
 	}
 
-async function uploadSpeechBlob(blob: Blob) {
+	async function uploadSpeechBlob(blob: Blob) {
 		if (!dashboard || blob.size === 0) return;
 		const maxChunkBytes = speechGatewayStatus?.maxChunkBytes ?? 6_000_000;
 		if (blob.size > maxChunkBytes) {
@@ -1318,7 +1322,7 @@ async function uploadSpeechBlob(blob: Blob) {
 		}
 	}
 
-function stopSpeechMonitor() {
+	function stopSpeechMonitor() {
 		if (speechMonitorTimerRef.current !== null) {
 			window.clearInterval(speechMonitorTimerRef.current);
 			speechMonitorTimerRef.current = null;
@@ -1328,7 +1332,7 @@ function stopSpeechMonitor() {
 		speechAnalyserRef.current = null;
 	}
 
-function requestSpeechChunk(reason: "silence" | "max_time" | "manual") {
+	function requestSpeechChunk(reason: "silence" | "max_time" | "manual") {
 		const recorder = mediaRecorderRef.current;
 		if (!recorder || recorder.state !== "recording") return;
 		try {
@@ -1358,7 +1362,7 @@ function requestSpeechChunk(reason: "silence" | "max_time" | "manual") {
 		}
 	}
 
-function startSpeechMonitor(
+	function startSpeechMonitor(
 		stream: MediaStream,
 		recorder: MediaRecorder,
 		status: SpeechGatewayStatus | null,
@@ -1441,7 +1445,7 @@ function startSpeechMonitor(
 		}
 	}
 
-function startImportDictation() {
+	function startImportDictation() {
 		if (isImportDictating) {
 			setError("Дождитесь завершения текущей диктовки импорта.");
 			return;
@@ -1493,86 +1497,86 @@ function startImportDictation() {
 		}
 	}
 
-    return {
-        ...visitStore,
-        isOnline,
-        speechGatewayHealthReport,
-        speechGatewayStatus,
-        speechProviderRuntimeStatuses,
-        speechRecordingStrategy,
-        speechRecordingRecovery,
-        pendingSpeechChunkCount,
-        speechStatusNote,
-        isImportDictating,
-        mediaRecorderRef,
-        mediaStreamRef,
-        speechAudioContextRef,
-        speechAnalyserRef,
-        speechMonitorTimerRef,
-        speechRecordingIdRef,
-        speechChunkIndexRef,
-        speechSegmentStartedAtRef,
-        speechLastSoundAtRef,
-        speechPendingChunkDurationMsRef,
-        speechUploadPromisesRef,
-        appliedSpeechChunkKeysRef,
-        visitCloseChecklist,
-        visitWarnings,
-        primaryVisitWarning,
-        speechProviderRuntimeById,
-        speechProviderHealthById,
-        activeSpeechProviderHealth,
-        savedVisitNoteForm,
-        isVisitNoteDirty,
-        hasVisitNoteFormText,
-        hasVisitTranscriptText,
-        visitDraftBuildMissingSteps,
-        visitDraftReadyToBuild,
-        visitNoteAcceptMissingSteps,
-        visitNoteReadyToAccept,
-        visitNoteActionLabel,
-        visitNoteStatusLabel,
-        visitHasSavedNote,
-        loadSpeechGatewayStatus,
-        loadSpeechGatewayHealthReport,
-        loadSpeechProviderRuntimeStatuses,
-        loadSpeechRecordingStrategy,
-        loadSpeechRecordingRecovery,
-        refreshSpeechRuntime,
-        refreshPendingVisitSaveState,
-        refreshPendingSpeechChunkState,
-        applyAcceptedVisitResponse,
-        submitAcceptedVisitDraft,
-        visitDraftSignature,
-        loadServerVisitDraft,
-        syncVisitDraftAutosave,
-        flushPendingVisitSaves,
-        submitSpeechChunk,
-        speechChunkApplyKey,
-        speechTranscriptionMatchesActiveVisit,
-        applySpeechTranscription,
-        assembleSpeechRecording,
-        trackSpeechUpload,
-        waitForSpeechUploads,
-        finalizeSpeechRecording,
-        flushPendingSpeechChunks,
-        scrollToVisitArea,
-        appendToTranscript,
-        updateVisitNoteField,
-        buildOfflineDraft,
-        openVisitWarningAction,
-        polishTranscript,
-        buildDraft,
-        acceptDraftToVisit,
-        appendVisitDictationText,
-        clearTranscriptWithUndo,
-        undoTranscriptClear,
-        startVisitDictation,
-        preferredSpeechMimeType,
-        uploadSpeechBlob,
-        stopSpeechMonitor,
-        requestSpeechChunk,
-        startSpeechMonitor,
-        startImportDictation
-    };
+	return {
+		...visitStore,
+		isOnline,
+		speechGatewayHealthReport,
+		speechGatewayStatus,
+		speechProviderRuntimeStatuses,
+		speechRecordingStrategy,
+		speechRecordingRecovery,
+		pendingSpeechChunkCount,
+		speechStatusNote,
+		isImportDictating,
+		mediaRecorderRef,
+		mediaStreamRef,
+		speechAudioContextRef,
+		speechAnalyserRef,
+		speechMonitorTimerRef,
+		speechRecordingIdRef,
+		speechChunkIndexRef,
+		speechSegmentStartedAtRef,
+		speechLastSoundAtRef,
+		speechPendingChunkDurationMsRef,
+		speechUploadPromisesRef,
+		appliedSpeechChunkKeysRef,
+		visitCloseChecklist,
+		visitWarnings,
+		primaryVisitWarning,
+		speechProviderRuntimeById,
+		speechProviderHealthById,
+		activeSpeechProviderHealth,
+		savedVisitNoteForm,
+		isVisitNoteDirty,
+		hasVisitNoteFormText,
+		hasVisitTranscriptText,
+		visitDraftBuildMissingSteps,
+		visitDraftReadyToBuild,
+		visitNoteAcceptMissingSteps,
+		visitNoteReadyToAccept,
+		visitNoteActionLabel,
+		visitNoteStatusLabel,
+		visitHasSavedNote,
+		loadSpeechGatewayStatus,
+		loadSpeechGatewayHealthReport,
+		loadSpeechProviderRuntimeStatuses,
+		loadSpeechRecordingStrategy,
+		loadSpeechRecordingRecovery,
+		refreshSpeechRuntime,
+		refreshPendingVisitSaveState,
+		refreshPendingSpeechChunkState,
+		applyAcceptedVisitResponse,
+		submitAcceptedVisitDraft,
+		visitDraftSignature,
+		loadServerVisitDraft,
+		syncVisitDraftAutosave,
+		flushPendingVisitSaves,
+		submitSpeechChunk,
+		speechChunkApplyKey,
+		speechTranscriptionMatchesActiveVisit,
+		applySpeechTranscription,
+		assembleSpeechRecording,
+		trackSpeechUpload,
+		waitForSpeechUploads,
+		finalizeSpeechRecording,
+		flushPendingSpeechChunks,
+		scrollToVisitArea,
+		appendToTranscript,
+		updateVisitNoteField,
+		buildOfflineDraft,
+		openVisitWarningAction,
+		polishTranscript,
+		buildDraft,
+		acceptDraftToVisit,
+		appendVisitDictationText,
+		clearTranscriptWithUndo,
+		undoTranscriptClear,
+		startVisitDictation,
+		preferredSpeechMimeType,
+		uploadSpeechBlob,
+		stopSpeechMonitor,
+		requestSpeechChunk,
+		startSpeechMonitor,
+		startImportDictation,
+	};
 }

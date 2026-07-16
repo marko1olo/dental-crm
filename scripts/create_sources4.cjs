@@ -1,6 +1,6 @@
-const fs = require('fs');
+const fs = require("fs");
 
-const block = fs.readFileSync('scripts/extracted_block.tsx', 'utf8');
+const block = fs.readFileSync("scripts/extracted_block.tsx", "utf8");
 
 const result = `import { Database, ImageDown, Cloud, Network, Bot, AlertTriangle, CheckCircle2, ChevronRight, Play, RefreshCw, Layers, MonitorSmartphone, X, FileBox, Link, Settings2, Trash2, FolderSearch, Search, Stethoscope, BriefcaseMedical, ScanSearch, FileText, Layers3 } from 'lucide-react';
 import type { SettingsViewProps } from '../../SettingsView';
@@ -39,5 +39,8 @@ export function SettingsSourcesTab({ props, settingsTab }: { props: SettingsView
 }
 `;
 
-fs.writeFileSync('apps/web/src/components/settings/SettingsSourcesTab.tsx', result);
-console.log('SettingsSourcesTab.tsx updated successfully (round 4)');
+fs.writeFileSync(
+	"apps/web/src/components/settings/SettingsSourcesTab.tsx",
+	result,
+);
+console.log("SettingsSourcesTab.tsx updated successfully (round 4)");

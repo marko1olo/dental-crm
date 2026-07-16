@@ -39,10 +39,10 @@ function buildSchedule(
 	});
 }
 
-export const InstallmentScheduler: React.FC<{ totalEstimate: number; patientId?: string | null | undefined }> = ({
-	totalEstimate,
-	patientId,
-}) => {
+export const InstallmentScheduler: React.FC<{
+	totalEstimate: number;
+	patientId?: string | null | undefined;
+}> = ({ totalEstimate, patientId }) => {
 	const [downPct, setDownPct] = useState(0); // 0-100 %
 	const [months, setMonths] = useState(6);
 	const [discount, setDiscount] = useState(0);

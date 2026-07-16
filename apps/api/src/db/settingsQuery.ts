@@ -339,7 +339,7 @@ export async function updateStaffMemberInDb(
 		canManageMoney: boolean | undefined;
 		canManageImports: boolean | undefined;
 		color: string | undefined;
-	}>
+	}>,
 ) {
 	await db
 		.update(schema.users)

@@ -39,22 +39,29 @@
 	position: relative;
 	overflow: hidden;
 	transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-	box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
 .marketing-stat-card::before {
-	content: '';
+	content: "";
 	position: absolute;
-	top: 0; left: 0; right: 0; bottom: 0;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
 	opacity: 0;
 	transition: opacity 0.3s ease;
-	background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.1),
+		rgba(255, 255, 255, 0)
+	);
 	pointer-events: none;
 }
 
 .marketing-stat-card:hover {
 	transform: translateY(-4px);
-	box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
 	border-color: var(--line-strong);
 }
 
@@ -180,7 +187,7 @@
 	border: 1px solid var(--line);
 	border-radius: 16px;
 	padding: 24px;
-	box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
 .marketing-form-grid {
@@ -373,7 +380,7 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .seo-key-chip-remove {
@@ -427,7 +434,7 @@
 	font-size: 14px;
 	font-weight: 600;
 	padding: 8px 16px;
-	box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .formula-arrow {
@@ -448,18 +455,31 @@
 
 .ai-skeleton-line {
 	height: 16px;
-	background: linear-gradient(90deg, var(--line) 25%, var(--line-strong) 50%, var(--line) 75%);
+	background: linear-gradient(
+		90deg,
+		var(--line) 25%,
+		var(--line-strong) 50%,
+		var(--line) 75%
+	);
 	background-size: 200% 100%;
 	animation: skeletonLoading 1.5s infinite;
 	border-radius: 4px;
 }
 
-.ai-skeleton-line.short { width: 60%; }
-.ai-skeleton-line.medium { width: 85%; }
+.ai-skeleton-line.short {
+	width: 60%;
+}
+.ai-skeleton-line.medium {
+	width: 85%;
+}
 
 @keyframes skeletonLoading {
-	0% { background-position: 200% 0; }
-	100% { background-position: -200% 0; }
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
 }
 
 .marketing-panel label {

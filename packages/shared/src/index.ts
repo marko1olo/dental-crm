@@ -2154,14 +2154,26 @@ const createClinicalRuleBaseSchema = z.object({
 	action: clinicalRuleActionSchema,
 	severity: clinicalRuleSeveritySchema,
 	ownerRole: staffRoleSchema,
-	triggerServiceIds: z.array(clinicalRuleServiceIdSchema).min(1).max(80).transform((arr) => Array.from(new Set(arr))),
-	requiredServiceIds: z.array(clinicalRuleServiceIdSchema).max(80).default([]).transform((arr) => Array.from(new Set(arr))),
+	triggerServiceIds: z
+		.array(clinicalRuleServiceIdSchema)
+		.min(1)
+		.max(80)
+		.transform((arr) => Array.from(new Set(arr))),
+	requiredServiceIds: z
+		.array(clinicalRuleServiceIdSchema)
+		.max(80)
+		.default([])
+		.transform((arr) => Array.from(new Set(arr))),
 	requiresCompletedServiceIds: z
 		.array(clinicalRuleServiceIdSchema)
 		.max(80)
 		.default([])
 		.transform((arr) => Array.from(new Set(arr))),
-	blockedServiceIds: z.array(clinicalRuleServiceIdSchema).max(80).default([]).transform((arr) => Array.from(new Set(arr))),
+	blockedServiceIds: z
+		.array(clinicalRuleServiceIdSchema)
+		.max(80)
+		.default([])
+		.transform((arr) => Array.from(new Set(arr))),
 	condition: z.string().trim().max(500).nullable().optional(),
 	warningText: z.string().trim().min(1).max(700),
 	patientText: z.string().trim().min(1).max(700),
@@ -2207,19 +2219,23 @@ export const updateClinicalRuleSchema = createClinicalRuleBaseSchema
 				context.addIssue({
 					code: z.ZodIssueCode.custom,
 					path: ["requiredServiceIds"],
-					message: "Для правила добавления услуги укажите хотя бы одну обязательную услугу.",
+					message:
+						"Для правила добавления услуги укажите хотя бы одну обязательную услугу.",
 				});
 			}
 		}
 		if (input.action === "block_service") {
 			if (
-				(input.blockedServiceIds && input.blockedServiceIds.length === 0) &&
-				(input.requiresCompletedServiceIds && input.requiresCompletedServiceIds.length === 0)
+				input.blockedServiceIds &&
+				input.blockedServiceIds.length === 0 &&
+				input.requiresCompletedServiceIds &&
+				input.requiresCompletedServiceIds.length === 0
 			) {
 				context.addIssue({
 					code: z.ZodIssueCode.custom,
 					path: ["blockedServiceIds"],
-					message: "Для блокирующего правила укажите блокируемую услугу или требуемую завершенную услугу.",
+					message:
+						"Для блокирующего правила укажите блокируемую услугу или требуемую завершенную услугу.",
 				});
 			}
 		}

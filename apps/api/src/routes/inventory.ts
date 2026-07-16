@@ -80,7 +80,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.returning();
 
 		const created = newItem[0];
-		if (!created) return reply.status(500).send({ error: "Failed to create item" });
+		if (!created)
+			return reply.status(500).send({ error: "Failed to create item" });
 		return created;
 	});
 
@@ -133,7 +134,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			)
 			.returning();
 
-		if (!updated) return reply.status(500).send({ error: "Failed to update item" });
+		if (!updated)
+			return reply.status(500).send({ error: "Failed to update item" });
 		return updated;
 	});
 
@@ -187,7 +189,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			)
 			.returning();
 
-		if (!updated) return reply.status(500).send({ error: "Failed to update item" });
+		if (!updated)
+			return reply.status(500).send({ error: "Failed to update item" });
 		return updated;
 	});
 

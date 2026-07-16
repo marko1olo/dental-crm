@@ -1,4 +1,3 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -119,6 +118,7 @@ import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
 import { SettingsAccessTab } from "../../components/settings/SettingsAccessTab";
 import { SettingsClinicTab } from "../../components/settings/SettingsClinicTab";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -870,10 +870,9 @@ const dicomFirstFrameImageTypeLabel = (
 	return "тип изображения: особый";
 };
 
-
-import { SmartImportStudio } from "./SmartImportStudio";
 import { ImagingImportStudio } from "./ImagingImportStudio";
 import { LegacyMigrationStudio } from "./LegacyMigrationStudio";
+import { SmartImportStudio } from "./SmartImportStudio";
 
 export function SettingsImportsTab() {
 	const props = useAppLogicContext();
@@ -882,7 +881,9 @@ export function SettingsImportsTab() {
 	return (
 		<>
 			{settingsTab === "imports" ? <SmartImportStudio /> : null}
-			{["imports", "sources"].includes(settingsTab) ? <ImagingImportStudio /> : null}
+			{["imports", "sources"].includes(settingsTab) ? (
+				<ImagingImportStudio />
+			) : null}
 			{settingsTab === "imports" ? <LegacyMigrationStudio /> : null}
 		</>
 	);

@@ -39,7 +39,9 @@ export function OnboardingPreview() {
 	return (
 		<OnboardingSetupWizard
 			isDark={isDark}
-			onComplete={() => { /* preview only – no action on complete */ }}
+			onComplete={() => {
+				/* preview only – no action on complete */
+			}}
 		/>
 	);
 }

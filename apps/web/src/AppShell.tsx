@@ -13,7 +13,9 @@ const OnboardingPreviewPage = lazy(() =>
 	import("./OnboardingPreview").then((m) => ({ default: m.OnboardingPreview })),
 );
 const PublicBookingWidgetPage = lazy(() =>
-	import("./pages/PublicBookingWidget").then((m) => ({ default: m.PublicBookingWidget })),
+	import("./pages/PublicBookingWidget").then((m) => ({
+		default: m.PublicBookingWidget,
+	})),
 );
 
 import { GlobalToast } from "./components/GlobalToast";

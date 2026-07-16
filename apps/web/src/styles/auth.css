@@ -5,7 +5,8 @@
 	--auth-overlay-bg: rgba(244, 244, 245, 0.8);
 	--auth-modal-bg: rgba(255, 255, 255, 0.75);
 	--auth-modal-border: rgba(9, 9, 11, 0.08);
-	--auth-modal-shadow: 0 24px 48px rgba(9, 9, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	--auth-modal-shadow:
+		0 24px 48px rgba(9, 9, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 	--auth-text-primary: #09090b;
 	--auth-text-secondary: #71717a;
 	--auth-logo-bg: rgba(79, 70, 229, 0.08);
@@ -32,7 +33,8 @@
 	--auth-overlay-bg: rgba(10, 10, 10, 0.85);
 	--auth-modal-bg: rgba(20, 20, 20, 0.5);
 	--auth-modal-border: rgba(255, 255, 255, 0.1);
-	--auth-modal-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	--auth-modal-shadow:
+		0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	--auth-text-primary: #ffffff;
 	--auth-text-secondary: #9ca3af;
 	--auth-logo-bg: rgba(79, 70, 229, 0.1);
@@ -59,7 +61,8 @@
 		--auth-overlay-bg: rgba(10, 10, 10, 0.85);
 		--auth-modal-bg: rgba(20, 20, 20, 0.5);
 		--auth-modal-border: rgba(255, 255, 255, 0.1);
-		--auth-modal-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		--auth-modal-shadow:
+			0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 		--auth-text-primary: #ffffff;
 		--auth-text-secondary: #9ca3af;
 		--auth-logo-bg: rgba(79, 70, 229, 0.1);

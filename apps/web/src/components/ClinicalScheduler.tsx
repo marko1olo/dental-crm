@@ -25,14 +25,8 @@ export const ClinicalScheduler: React.FC<any> = ({
 	onSlotClick,
 }) => {
 	const [crosshair, setCrosshair] = useState<CrosshairState | null>(null);
-	const [popoverSlot, setPopoverSlot] = useState<{
-		time: string;
-		chair: string;
-	} | null>(null);
-	const [patientSearch, setPatientSearch] = useState("");
 	const [isMobile, setIsMobile] = useState(false);
 	const [mobileChairId, setMobileChairId] = useState<string | null>(null);
-	const searchRef = useRef<HTMLInputElement>(null);
 
 	// Patients for dropdown search
 	const [patientsList, setPatientsList] = useState<any[]>([]);
@@ -51,78 +45,20 @@ export const ClinicalScheduler: React.FC<any> = ({
 		return () => window.removeEventListener("resize", checkMobile);
 	}, []);
 
-	useEffect(() => {
-		if (popoverSlot && searchRef.current) {
-			requestAnimationFrame(() => searchRef.current?.focus());
-		}
-	}, [popoverSlot]);
-
 	const handleCellLeave = useCallback(() => {
 		setCrosshair(null);
 	}, []);
 
-	const handleEmptyClick = useCallback((time: string, chair: string) => {
-		setPatientSearch("");
-		setPopoverSlot({ time, chair });
-	}, []);
-
-	const handleCreateAppointment = async (patientId: string) => {
-		if (!popoverSlot) return;
-
-		// Parse time
-		const today = new Date();
-		const dateStr = today.toISOString().split("T")[0];
-		const startsAt = new Date(
-			`${dateStr}T${popoverSlot.time}:00`,
-		).toISOString();
-
-		// Add 1 hour duration
-		const endsAt = new Date(
-			new Date(startsAt).getTime() + 3600000,
-		).toISOString();
-
-		// Default doctor is the first doctor in staff
-		const staff = dashboard?.clinicSettings?.staff || [];
-		const firstDoctor = staff.find(
-			(s: any) => s.role === "doctor" || s.role === "Врач",
-		);
-
-		try {
-			const res = await fetch("/api/appointments", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					patientId,
-					chairId: popoverSlot.chair,
-					doctorUserId: firstDoctor?.id,
-					startsAt,
-					endsAt,
-					status: "planned",
-				}),
-			});
-
-			if (!res.ok) {
-				if (res.status === 409) {
-					showToast(
-						"Этот слот только что был занят другим администратором. Выберите другое время.",
-						"error",
-					);
-				} else {
-					showToast(`Ошибка сервера: ${res.status}`, "error");
-				}
-				return;
+	const handleEmptyClick = useCallback(
+		(time: string, chair: string) => {
+			if (onSlotClick) {
+				const today = new Date();
+				const dateStr = today.toISOString().split("T")[0];
+				onSlotClick(dateStr, time, chair);
 			}
-
-			showToast("Запись успешно создана!", "success");
-			setPopoverSlot(null);
-			// Let websocket or parent component refresh data
-		} catch (e) {
-			console.error(e);
-			showToast("Ошибка при создании записи", "error");
-		}
-	};
+		},
+		[onSlotClick],
+	);
 
 	const workingHours = dashboard?.clinicSettings?.profile?.workingHours || [];
 	let minStart = "09:00";
@@ -179,15 +115,6 @@ export const ClinicalScheduler: React.FC<any> = ({
 	const chairsCount = displayedChairs.length;
 	const isSingleChair = chairsCount === 1;
 	const rowStyle = { gridTemplateColumns: `60px repeat(${chairsCount}, 1fr)` };
-
-	const searchResults =
-		patientSearch.length > 0
-			? patientsList.filter(
-					(p) =>
-						p.fullName?.toLowerCase().includes(patientSearch.toLowerCase()) ||
-						p.phone?.includes(patientSearch),
-				)
-			: [];
 
 	return (
 		<div className="clinical-scheduler">
@@ -282,65 +209,6 @@ export const ClinicalScheduler: React.FC<any> = ({
 					</div>
 				))}
 			</div>
-
-			{/* Quick-Book Popover */}
-			{popoverSlot && (
-				<div
-					className="sg-popover-backdrop"
-					onClick={() => setPopoverSlot(null)}
-				>
-					<div className="sg-popover" onClick={(e) => e.stopPropagation()}>
-						<div className="sg-popover-header">
-							<span>
-								Новая запись —{" "}
-								{
-									displayedChairs.find((c: any) => c.id === popoverSlot.chair)
-										?.name
-								}
-								, {popoverSlot.time}
-							</span>
-							<button
-								className="sg-popover-close"
-								onClick={() => setPopoverSlot(null)}
-							>
-								✕
-							</button>
-						</div>
-						<div className="sg-popover-body">
-							<label className="sg-popover-label">Поиск пациента</label>
-							<input
-								ref={searchRef}
-								className="sg-popover-search"
-								type="text"
-								placeholder="ФИО или телефон..."
-								value={patientSearch}
-								onChange={(e) => setPatientSearch(e.target.value)}
-							/>
-							{patientSearch.length > 0 && searchResults.length > 0 && (
-								<div className="sg-popover-results">
-									{searchResults.map((p) => (
-										<div
-											key={p.id}
-											className="sg-popover-result-item"
-											onClick={() => handleCreateAppointment(p.id)}
-										>
-											{p.fullName} ({p.phone})
-										</div>
-									))}
-								</div>
-							)}
-							{patientSearch.length > 0 && searchResults.length === 0 && (
-								<div
-									className="sg-popover-results"
-									style={{ padding: "10px", color: "#888" }}
-								>
-									Не найдено.
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-			)}
 		</div>
 	);
 };

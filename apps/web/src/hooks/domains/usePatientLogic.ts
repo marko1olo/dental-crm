@@ -1,44 +1,42 @@
-import { useMemo, useEffect, useRef } from "react";
-import { usePatientStore } from "../../store/patientStore";
-import {
-    findPatient,
-    patientCoreDraftFromPatient,
-    patientAdministrativeProfileDraftFromPatient,
-    patientAdministrativeProfileDraftIssue,
-    patientAdministrativeProfileDraftSignature,
-    buildPatientAdministrativeProfilePayload,
-    buildPatientCorePayload,
-    patientCoreDraftSignature,
-    operatorWorkflowFailureMessage,
-    responseErrorMessage,
-    nullablePatientDraftValue
-} from "../../AppHelpers";
-import type { Patient, Dashboard } from "@dental/shared";
+import type { Dashboard, Patient } from "@dental/shared";
+import { useEffect, useMemo, useRef } from "react";
 import type {
-    PatientCoreDraft,
-    PatientAdministrativeProfileDraft,
+	PatientAdministrativeProfileDraft,
+	PatientCoreDraft,
 } from "../../AppHelpers";
 import {
-    emptyPatientCoreDraft,
-    emptyPatientAdministrativeProfileDraft,
+	buildPatientAdministrativeProfilePayload,
+	buildPatientCorePayload,
+	emptyPatientAdministrativeProfileDraft,
+	emptyPatientCoreDraft,
+	findPatient,
+	nullablePatientDraftValue,
+	operatorWorkflowFailureMessage,
+	patientAdministrativeProfileDraftFromPatient,
+	patientAdministrativeProfileDraftIssue,
+	patientAdministrativeProfileDraftSignature,
+	patientCoreDraftFromPatient,
+	patientCoreDraftSignature,
+	responseErrorMessage,
 } from "../../AppHelpers";
+import { usePatientStore } from "../../store/patientStore";
 
 export function usePatientLogic({
-    dashboard,
-    query,
-    setPaymentFeedback,
-    setPaymentPayerFullName,
-    setPaymentPayerInn,
-    setPaymentPayerBirthDate,
-    setPaymentPayerIdentityDocument,
-    setPaymentPayerRelationship,
-    setPaymentTaxDeductionCode,
-    setError,
-    auth,
-    setDashboard,
-    setQuery
+	dashboard,
+	query,
+	setPaymentFeedback,
+	setPaymentPayerFullName,
+	setPaymentPayerInn,
+	setPaymentPayerBirthDate,
+	setPaymentPayerIdentityDocument,
+	setPaymentPayerRelationship,
+	setPaymentTaxDeductionCode,
+	setError,
+	auth,
+	setDashboard,
+	setQuery,
 }: any) {
-const {
+	const {
 		selectedPatientId,
 		patientCoreDraft,
 		patientCoreSaveState,
@@ -65,14 +63,14 @@ const {
 		setNewRulePatientText,
 	} = usePatientStore();
 
-const patientCoreDraftRef = useRef<PatientCoreDraft>(emptyPatientCoreDraft());
+	const patientCoreDraftRef = useRef<PatientCoreDraft>(emptyPatientCoreDraft());
 
-const patientAdministrativeProfileDraftRef =
+	const patientAdministrativeProfileDraftRef =
 		useRef<PatientAdministrativeProfileDraft>(
 			emptyPatientAdministrativeProfileDraft(),
 		);
 
-const activePatient = useMemo(() => {
+	const activePatient = useMemo(() => {
 		if (!dashboard) return null;
 		return (
 			findPatient(dashboard.patients, dashboard?.activeVisit?.patientId) ??
@@ -81,7 +79,7 @@ const activePatient = useMemo(() => {
 		);
 	}, [dashboard]);
 
-const selectedPatient = useMemo(() => {
+	const selectedPatient = useMemo(() => {
 		if (!dashboard) return null;
 		return (
 			(selectedPatientId
@@ -90,29 +88,29 @@ const selectedPatient = useMemo(() => {
 		);
 	}, [activePatient, dashboard, selectedPatientId]);
 
-const documentPatient = selectedPatient ?? activePatient;
+	const documentPatient = selectedPatient ?? activePatient;
 
-const documentPatientMatchesActiveVisit = Boolean(
+	const documentPatientMatchesActiveVisit = Boolean(
 		documentPatient && dashboard?.activeVisit?.patientId === documentPatient.id,
 	);
 
-const paymentPatientContextReady = Boolean(
+	const paymentPatientContextReady = Boolean(
 		documentPatient && documentPatientMatchesActiveVisit,
 	);
 
-const paymentPatientContextMessage = !documentPatient
+	const paymentPatientContextMessage = !documentPatient
 		? "Выберите пациента текущего приема перед записью оплаты."
 		: !documentPatientMatchesActiveVisit
 			? `Сейчас выбран пациент ${documentPatient.fullName}, но активный прием открыт для другого пациента. Переключите активный прием перед записью оплаты.`
 			: "";
 
-const patientAdministrativeProfileValidationMessage = useMemo(
+	const patientAdministrativeProfileValidationMessage = useMemo(
 		() =>
 			patientAdministrativeProfileDraftIssue(patientAdministrativeProfileDraft),
 		[patientAdministrativeProfileDraft],
 	);
 
-const patientInsightById = useMemo(() => {
+	const patientInsightById = useMemo(() => {
 		if (!dashboard)
 			return new Map<string, Dashboard["patientInsights"][number]>();
 		return new Map(
@@ -123,16 +121,16 @@ const patientInsightById = useMemo(() => {
 		);
 	}, [dashboard]);
 
-const activePatientInsight = activePatient
+	const activePatientInsight = activePatient
 		? (patientInsightById.get(activePatient.id) ?? null)
 		: null;
 
-const activePatientCallablePhone =
+	const activePatientCallablePhone =
 		activePatient?.phone?.trim().replace(/[^\d+]/g, "") ?? "";
 
-const activePatientHasCallablePhone = activePatientCallablePhone.length >= 5;
+	const activePatientHasCallablePhone = activePatientCallablePhone.length >= 5;
 
-const filteredPatients = useMemo(() => {
+	const filteredPatients = useMemo(() => {
 		if (!dashboard) return [];
 		const normalizedQuery = query.trim().toLowerCase();
 		if (!normalizedQuery) return dashboard.patients;
@@ -143,7 +141,7 @@ const filteredPatients = useMemo(() => {
 		});
 	}, [dashboard, query]);
 
-useEffect(() => {
+	useEffect(() => {
 		if (!dashboard) return;
 		setSelectedPatientId((current: any) =>
 			current &&
@@ -153,7 +151,7 @@ useEffect(() => {
 		);
 	}, [activePatient?.id, dashboard?.patients?.length]);
 
-useEffect(() => {
+	useEffect(() => {
 		setPaymentFeedback("");
 		setPaymentPayerFullName("");
 		setPaymentPayerInn("");
@@ -163,13 +161,13 @@ useEffect(() => {
 		setPaymentTaxDeductionCode("");
 	}, [documentPatient?.id]);
 
-useEffect(() => {
+	useEffect(() => {
 		setPatientCoreDraft(patientCoreDraftFromPatient(selectedPatient));
 		setPatientCoreSaveState("idle");
 		setPatientCoreDirty(false);
 	}, [selectedPatient?.id, selectedPatient?.updatedAt]);
 
-useEffect(() => {
+	useEffect(() => {
 		setPatientAdministrativeProfileDraft(
 			patientAdministrativeProfileDraftFromPatient(selectedPatient),
 		);
@@ -177,11 +175,11 @@ useEffect(() => {
 		setPatientAdministrativeProfileDirty(false);
 	}, [selectedPatient?.id, selectedPatient?.updatedAt]);
 
-useEffect(() => {
+	useEffect(() => {
 		patientCoreDraftRef.current = patientCoreDraft;
 	}, [patientCoreDraft]);
 
-useEffect(() => {
+	useEffect(() => {
 		if (
 			!selectedPatient ||
 			!patientAdministrativeProfileDirty ||
@@ -202,7 +200,7 @@ useEffect(() => {
 		patientAdministrativeProfileValidationMessage,
 	]);
 
-function updatePatientCoreDraft<K extends keyof PatientCoreDraft>(
+	function updatePatientCoreDraft<K extends keyof PatientCoreDraft>(
 		key: K,
 		value: PatientCoreDraft[K],
 	) {
@@ -211,7 +209,7 @@ function updatePatientCoreDraft<K extends keyof PatientCoreDraft>(
 		setPatientCoreSaveState("idle");
 	}
 
-function updatePatientAdministrativeProfileDraft<
+	function updatePatientAdministrativeProfileDraft<
 		K extends keyof PatientAdministrativeProfileDraft,
 	>(key: K, value: PatientAdministrativeProfileDraft[K]) {
 		setPatientAdministrativeProfileDraft((current: any) => ({
@@ -222,7 +220,7 @@ function updatePatientAdministrativeProfileDraft<
 		setPatientAdministrativeProfileSaveState("idle");
 	}
 
-async function savePatientCore(): Promise<boolean> {
+	async function savePatientCore(): Promise<boolean> {
 		if (patientCoreSaveState === "saving") {
 			setError("Дождитесь завершения сохранения карточки пациента.");
 			return false;
@@ -289,7 +287,7 @@ async function savePatientCore(): Promise<boolean> {
 		}
 	}
 
-async function savePatientAdministrativeProfile() {
+	async function savePatientAdministrativeProfile() {
 		if (patientAdministrativeProfileSaveState === "saving") {
 			setError("Дождитесь завершения сохранения реквизитов пациента.");
 			return false;
@@ -365,7 +363,7 @@ async function savePatientAdministrativeProfile() {
 		}
 	}
 
-async function createPatient() {
+	async function createPatient() {
 		if (isPatientCreating) {
 			setError("Дождитесь завершения создания карточки пациента.");
 			return;
@@ -420,50 +418,49 @@ async function createPatient() {
 		}
 	}
 
-
-    return {
-        patientCoreDraftRef,
-        patientAdministrativeProfileDraftRef,
-        selectedPatientId,
-        patientCoreDraft,
-        patientCoreSaveState,
-        patientCoreDirty,
-        patientAdministrativeProfileDraft,
-        patientAdministrativeProfileSaveState,
-        patientAdministrativeProfileDirty,
-        newPatientName,
-        newPatientPhone,
-        newPatientBirthDate,
-        isPatientCreating,
-        newRulePatientText,
-        setSelectedPatientId,
-        setPatientCoreDraft,
-        setPatientCoreSaveState,
-        setPatientCoreDirty,
-        setPatientAdministrativeProfileDraft,
-        setPatientAdministrativeProfileSaveState,
-        setPatientAdministrativeProfileDirty,
-        setNewPatientName,
-        setNewPatientPhone,
-        setNewPatientBirthDate,
-        setIsPatientCreating,
-        setNewRulePatientText,
-        activePatient,
-        selectedPatient,
-        documentPatient,
-        documentPatientMatchesActiveVisit,
-        paymentPatientContextReady,
-        paymentPatientContextMessage,
-        patientAdministrativeProfileValidationMessage,
-        patientInsightById,
-        activePatientInsight,
-        activePatientCallablePhone,
-        activePatientHasCallablePhone,
-        filteredPatients,
-        updatePatientCoreDraft,
-        updatePatientAdministrativeProfileDraft,
-        savePatientCore,
-        savePatientAdministrativeProfile,
-        createPatient
-    };
+	return {
+		patientCoreDraftRef,
+		patientAdministrativeProfileDraftRef,
+		selectedPatientId,
+		patientCoreDraft,
+		patientCoreSaveState,
+		patientCoreDirty,
+		patientAdministrativeProfileDraft,
+		patientAdministrativeProfileSaveState,
+		patientAdministrativeProfileDirty,
+		newPatientName,
+		newPatientPhone,
+		newPatientBirthDate,
+		isPatientCreating,
+		newRulePatientText,
+		setSelectedPatientId,
+		setPatientCoreDraft,
+		setPatientCoreSaveState,
+		setPatientCoreDirty,
+		setPatientAdministrativeProfileDraft,
+		setPatientAdministrativeProfileSaveState,
+		setPatientAdministrativeProfileDirty,
+		setNewPatientName,
+		setNewPatientPhone,
+		setNewPatientBirthDate,
+		setIsPatientCreating,
+		setNewRulePatientText,
+		activePatient,
+		selectedPatient,
+		documentPatient,
+		documentPatientMatchesActiveVisit,
+		paymentPatientContextReady,
+		paymentPatientContextMessage,
+		patientAdministrativeProfileValidationMessage,
+		patientInsightById,
+		activePatientInsight,
+		activePatientCallablePhone,
+		activePatientHasCallablePhone,
+		filteredPatients,
+		updatePatientCoreDraft,
+		updatePatientAdministrativeProfileDraft,
+		savePatientCore,
+		savePatientAdministrativeProfile,
+		createPatient,
+	};
 }

@@ -1,4 +1,5 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
+import { motion } from "framer-motion";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 import { InstallmentScheduler } from "./components/InstallmentScheduler";
@@ -10,7 +11,6 @@ import {
 import { motionSafeScrollIntoView } from "./motionPreference";
 import { PaymentCapture } from "./PaymentCapture";
 import { formatCurrencyNumeric } from "./utils/inputSanitation";
-import { motion } from "framer-motion";
 
 type ClinicalRuleEvaluation = Dashboard["clinicalRuleEvaluations"][number];
 type Payment = Dashboard["payments"][number];
@@ -157,8 +157,8 @@ export function FinanceView({
 	};
 
 	return (
-		<motion.div 
-			className="panel finance-panel glass-panel" 
+		<motion.div
+			className="panel finance-panel glass-panel"
 			id="finance"
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}

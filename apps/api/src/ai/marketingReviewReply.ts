@@ -1,11 +1,4 @@
 import {
-	AIPlanNeuralConfig,
-	SpeechPolishProvider,
-	baseUrlForProvider,
-	createAIPlanNeuralConfig,
-	keyProviderForPolishProvider,
-} from "./treatmentPlanPersonalize.js";
-import {
 	fetchWithProviderTimeout,
 	keyRetryLimit,
 	numberFromEnv,
@@ -15,7 +8,13 @@ import {
 	selectProviderKey,
 	shouldTryNextProviderKey,
 } from "../speech/keyPool.js";
-
+import {
+	type AIPlanNeuralConfig,
+	baseUrlForProvider,
+	createAIPlanNeuralConfig,
+	keyProviderForPolishProvider,
+	type SpeechPolishProvider,
+} from "./treatmentPlanPersonalize.js";
 
 interface OpenAiErrorResponse {
 	error?: { message?: string };
@@ -34,8 +33,6 @@ export interface MarketingReviewPayload {
 export interface MarketingReviewResult {
 	reply: string;
 }
-
-
 
 function buildSystemPrompt(payload: MarketingReviewPayload): string {
 	return `Вы — опытный PR-менеджер и администратор стоматологической клиники "${payload.clinicName}".
@@ -141,7 +138,7 @@ export async function generateMarketingReviewReply(
 	payload: MarketingReviewPayload,
 ): Promise<MarketingReviewResult> {
 	const config = createAIPlanNeuralConfig();
-	
+
 	const generateFallback = () => {
 		const keyword = payload.seoKeys[0] || "услуги нашей клиники";
 		if (payload.tone === "negative") {

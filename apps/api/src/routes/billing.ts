@@ -450,7 +450,10 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 			const revenue = parseFloat(String(row.totalAmountRub ?? 0));
 			const materialCost = +(revenue * MATERIAL_COST_RATE).toFixed(2);
 			const netBase = revenue - materialCost;
-			const docCommissionPct = row.commissionPct != null ? parseFloat(String(row.commissionPct)) : 30.0;
+			const docCommissionPct =
+				row.commissionPct != null
+					? parseFloat(String(row.commissionPct))
+					: 30.0;
 			const commissionRate = docCommissionPct / 100;
 			const netPayout = +(netBase * commissionRate).toFixed(2);
 			return {
@@ -641,13 +644,18 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 			for (const inst of installments) {
 				const amount = parseFloat(String(inst.amount));
 				const dueDate = new Date(inst.dueDate);
-				if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(dueDate.getTime())) {
+				if (
+					!Number.isFinite(amount) ||
+					amount <= 0 ||
+					!Number.isFinite(dueDate.getTime())
+				) {
 					throw new Error("Неверные параметры платежа рассрочки.");
 				}
 
 				await tx.insert(schema.paymentInstallments).values({
 					patientId,
-					treatmentPlanId: treatmentPlanId || "00000000-0000-0000-0000-000000000000",
+					treatmentPlanId:
+						treatmentPlanId || "00000000-0000-0000-0000-000000000000",
 					amountRub: amount.toString(),
 					dueDate,
 					status: "pending",

@@ -1,8 +1,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { drizzle } from "drizzle-orm/pglite";
 import { electricSync } from "@electric-sql/pglite-sync";
+import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "./schema.js";
 import "dotenv/config";
 

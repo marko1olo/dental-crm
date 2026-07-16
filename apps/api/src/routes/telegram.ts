@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { requireNonDoctorAccess } from "../accessGuard.js";
 import {
 	createDenteTelegramLinkCodeSchema,
 	type DenteTelegramBotSettings,
@@ -31,6 +30,7 @@ import {
 	updateDenteTelegramBotSettingsSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { requireNonDoctorAccess } from "../accessGuard.js";
 import type {
 	BuildDenteTelegramChatLinkListOptions,
 	BuildDenteTelegramLinkCodeListOptions,

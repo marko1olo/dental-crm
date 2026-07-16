@@ -227,7 +227,6 @@ interface AppStore {
 
 export const useAppStore = create<AppStore>((set) => ({
 	reset: () => {
-
 		set({
 			isOmnibarOpen: false,
 			uiPreferencesHydrated: false,

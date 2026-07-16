@@ -23,6 +23,12 @@ export type ToothStatus =
 export interface PatientStore {
 	odontogramState: Record<number, ToothStatus>;
 	setToothStatus: (toothNumber: number, status: ToothStatus) => void;
+	loadOdontogram: (patientId: string) => Promise<void>;
+	saveToothStatus: (
+		patientId: string,
+		toothNumber: number | number[],
+		status: ToothStatus,
+	) => Promise<void>;
 
 	selectedPatientId: string | null;
 	setSelectedPatientId: (
@@ -91,6 +97,80 @@ export const usePatientStore = create<PatientStore>((set) => ({
 		set((state) => ({
 			odontogramState: { ...state.odontogramState, [toothNumber]: status },
 		})),
+	loadOdontogram: async (patientId) => {
+		try {
+			const res = await fetch(`/api/patients/${patientId}/tooth-states`, {
+				headers: {
+					"x-dente-staff-token":
+						localStorage.getItem("dente_staff_token") || "",
+					"x-dente-clinic-token":
+						localStorage.getItem("dente_clinic_token") || "",
+				},
+			});
+			if (res.ok) {
+				const data = await res.json();
+				const newState: Record<number, ToothStatus> = {};
+				const mapBackendToFrontend: Record<string, ToothStatus> = {
+					Healthy: "Healthy",
+					Caries: "Caries",
+					Filled: "Filling",
+					Missing: "Missing",
+					Implant: "Implant",
+					Crown: "Crown",
+					Pulpitis: "Caries",
+					Planned_Implant: "Implant",
+				};
+				for (const item of data) {
+					if (item.toothNumber && item.state) {
+						newState[item.toothNumber] =
+							mapBackendToFrontend[item.state] || "Healthy";
+					}
+				}
+				set({ odontogramState: newState });
+			}
+		} catch (e) {
+			console.error("Failed to load odontogram", e);
+		}
+	},
+	saveToothStatus: async (patientId, toothNumber, status) => {
+		const teeth = Array.isArray(toothNumber) ? toothNumber : [toothNumber];
+
+		// Optimistic update
+		set((state) => {
+			const nextOdontogram = { ...state.odontogramState };
+			for (const t of teeth) {
+				nextOdontogram[t] = status;
+			}
+			return { odontogramState: nextOdontogram };
+		});
+
+		try {
+			const mapFrontendToBackend: Record<ToothStatus, string> = {
+				Healthy: "Healthy",
+				Caries: "Caries",
+				Filling: "Filled",
+				Missing: "Missing",
+				Implant: "Implant",
+				Crown: "Crown",
+			};
+			await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-dente-staff-token":
+						localStorage.getItem("dente_staff_token") || "",
+					"x-dente-clinic-token":
+						localStorage.getItem("dente_clinic_token") || "",
+				},
+				body: JSON.stringify({
+					toothNumbers: teeth,
+					state: mapFrontendToBackend[status] || "Healthy",
+				}),
+			});
+		} catch (e) {
+			console.error("Failed to save tooth status", e);
+		}
+	},
 
 	selectedPatientId: initialUiPreferences.selectedPatientId ?? null,
 	setSelectedPatientId: (val) =>

@@ -1,13 +1,19 @@
-﻿(function() {
-  var scriptTag = document.currentScript || document.querySelector('script[src*="dente-booking.js"]');
-  var clinicSlug = scriptTag ? scriptTag.getAttribute('data-clinic-slug') : null;
-  var apiUrl = scriptTag ? scriptTag.getAttribute('data-api-url') : 'http://127.0.0.1:3000';
-  if (!clinicSlug) {
-    console.error('DENTE Booking Widget: missing data-clinic-slug attribute.');
-    return;
-  }
-  var style = document.createElement('style');
-  style.innerHTML = `
+﻿(() => {
+	var scriptTag =
+		document.currentScript ||
+		document.querySelector('script[src*="dente-booking.js"]');
+	var clinicSlug = scriptTag
+		? scriptTag.getAttribute("data-clinic-slug")
+		: null;
+	var apiUrl = scriptTag
+		? scriptTag.getAttribute("data-api-url")
+		: "http://127.0.0.1:3000";
+	if (!clinicSlug) {
+		console.error("DENTE Booking Widget: missing data-clinic-slug attribute.");
+		return;
+	}
+	var style = document.createElement("style");
+	style.innerHTML = `
     #dente-booking-btn {
       position: fixed; bottom: 20px; right: 20px; background: #4f46e5; color: white;
       border: none; border-radius: 50px; padding: 14px 24px; font-size: 16px;
@@ -32,9 +38,9 @@
     .dente-submit:disabled { background: #999; cursor: not-allowed; }
     #dente-booking-success { display: none; text-align: center; color: #10b981; }
   `;
-  document.head.appendChild(style);
-  var container = document.createElement('div');
-  container.innerHTML = `
+	document.head.appendChild(style);
+	var container = document.createElement("div");
+	container.innerHTML = `
     <button id="dente-booking-btn">Записаться онлайн</button>
     <div id="dente-booking-modal">
       <div class="dente-modal-content">
@@ -53,27 +59,47 @@
       </div>
     </div>
   `;
-  document.body.appendChild(container);
-  var btn = document.getElementById('dente-booking-btn');
-  var modal = document.getElementById('dente-booking-modal');
-  var close = document.querySelector('.dente-close');
-  var submitBtn = document.getElementById('dente-submit-btn');
-  btn.onclick = function() { modal.style.display = 'flex'; };
-  close.onclick = function() { modal.style.display = 'none'; };
-  window.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-  submitBtn.onclick = function() {
-    var name = document.getElementById('dente-name').value;
-    var phone = document.getElementById('dente-phone').value;
-    var date = document.getElementById('dente-date').value;
-    if (!name || !phone || !date) return alert("Заполните все поля");
-    submitBtn.disabled = true; submitBtn.innerText = 'Отправка...';
-    fetch(apiUrl + '/api/public/booking/' + clinicSlug + '/request', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ patientName: name, patientPhone: phone, requestedDate: date })
-    }).then(r => r.json()).then(d => {
-      if (d.error) throw new Error(d.error);
-      document.getElementById('dente-booking-form').style.display = 'none';
-      document.getElementById('dente-booking-success').style.display = 'block';
-    }).catch(e => { alert("Ошибка: " + e.message); submitBtn.disabled = false; submitBtn.innerText = 'Отправить заявку'; });
-  };
+	document.body.appendChild(container);
+	var btn = document.getElementById("dente-booking-btn");
+	var modal = document.getElementById("dente-booking-modal");
+	var close = document.querySelector(".dente-close");
+	var submitBtn = document.getElementById("dente-submit-btn");
+	btn.onclick = () => {
+		modal.style.display = "flex";
+	};
+	close.onclick = () => {
+		modal.style.display = "none";
+	};
+	window.onclick = (e) => {
+		if (e.target === modal) modal.style.display = "none";
+	};
+	submitBtn.onclick = () => {
+		var name = document.getElementById("dente-name").value;
+		var phone = document.getElementById("dente-phone").value;
+		var date = document.getElementById("dente-date").value;
+		if (!name || !phone || !date) return alert("Заполните все поля");
+		submitBtn.disabled = true;
+		submitBtn.innerText = "Отправка...";
+		fetch(apiUrl + "/api/public/booking/" + clinicSlug + "/request", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				patientName: name,
+				patientPhone: phone,
+				requestedDate: date,
+			}),
+		})
+			.then((r) => r.json())
+			.then((d) => {
+				if (d.error) throw new Error(d.error);
+				document.getElementById("dente-booking-form").style.display = "none";
+				document.getElementById("dente-booking-success").style.display =
+					"block";
+			})
+			.catch((e) => {
+				alert("Ошибка: " + e.message);
+				submitBtn.disabled = false;
+				submitBtn.innerText = "Отправить заявку";
+			});
+	};
 })();

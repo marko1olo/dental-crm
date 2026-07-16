@@ -2,7 +2,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import { sql } from "drizzle-orm";
-import { db, client } from "../db/client.js";
+import { client, db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
 // We will read the actual saved state, or fallback to the sample data

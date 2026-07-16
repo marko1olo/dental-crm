@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import type {
 	Appointment,
 	AppointmentReadiness,
@@ -7,6 +6,7 @@ import type {
 	ScheduleSuggestion,
 	StaffRole,
 } from "@dental/shared";
+import { motion } from "framer-motion";
 import { Bot, Mic, Plus, ShieldCheck } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -313,12 +313,13 @@ export function ScheduleView(props: ScheduleViewProps) {
 	];
 
 	return (
-		<motion.div 
-			className="panel schedule-panel glass-panel" 
+		<motion.div
+			className="panel schedule-panel glass-panel"
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4 }}
-		 id="schedule">
+			id="schedule"
+		>
 			<div className="panel-heading">
 				<h2>Расписание приемов</h2>
 				<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -637,10 +638,18 @@ export function ScheduleView(props: ScheduleViewProps) {
 				appointments={sortedAppointments}
 				dashboard={dashboard}
 				onSlotClick={(date, time, chairId) => {
-					const draft = newAppointmentDraft;
-					if (!draft) return;
-					// Pre-fill
-					showToast("Выбрано время " + time, "info");
+					const localTimeStr = `${date}T${time}:00`;
+					const startsAtIso = new Date(localTimeStr).toISOString();
+					const endsAtIso = new Date(
+						new Date(localTimeStr).getTime() + 3600000,
+					).toISOString();
+
+					updateNewAppointmentDraft("startsAt", startsAtIso);
+					updateNewAppointmentDraft("endsAt", endsAtIso);
+					updateNewAppointmentDraft("chairId", chairId);
+
+					focusNewAppointmentEditor();
+					showToast("Слот выбран, заполните форму", "info");
 				}}
 			/>
 

@@ -13,8 +13,8 @@ export function SettingsProtocolsTab() {
 		applyProtocolTemplate,
 	} = props;
 
-	const typedProtocolTemplates =
-		(dashboard?.protocolTemplates || []) as ProtocolTemplate[];
+	const typedProtocolTemplates = (dashboard?.protocolTemplates ||
+		[]) as ProtocolTemplate[];
 
 	return (
 		<section
@@ -27,8 +27,8 @@ export function SettingsProtocolsTab() {
 					<p className="eyebrow">Протоколы</p>
 					<h2>Шаблоны приема по специальностям</h2>
 					<p>
-						Терапия, ортопедия, хирургия, ортодонтия, пародонтология,
-						гигиена, детский прием, имплантация и рентген.
+						Терапия, ортопедия, хирургия, ортодонтия, пародонтология, гигиена,
+						детский прием, имплантация и рентген.
 					</p>
 				</div>
 			</div>
@@ -40,8 +40,7 @@ export function SettingsProtocolsTab() {
 							<span>{specialtyLabels[template.specialty]}</span>
 							<strong>{template.title}</strong>
 							<p>
-								{template.visitReason} · {template.defaultDurationMinutes}{" "}
-								мин
+								{template.visitReason} · {template.defaultDurationMinutes} мин
 							</p>
 						</div>
 						<div

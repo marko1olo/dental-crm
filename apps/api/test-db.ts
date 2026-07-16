@@ -1,4 +1,5 @@
 ﻿import pg from "pg";
+
 const { Client } = pg;
 const client = new Client({
 	connectionString: "postgres://dental:dental@127.0.0.1:5432/dental_crm",

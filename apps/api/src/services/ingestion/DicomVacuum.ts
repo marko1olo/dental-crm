@@ -54,7 +54,11 @@ export class DicomVacuum {
 		filepath: string,
 		outputPath: string,
 	): Promise<string> {
-		console.log("[Dicom Vacuum] Extracting central frame from", filepath, "...");
+		console.log(
+			"[Dicom Vacuum] Extracting central frame from",
+			filepath,
+			"...",
+		);
 		// Simulated path output
 		return `${outputPath}/preview_${Date.now()}.png`;
 	}

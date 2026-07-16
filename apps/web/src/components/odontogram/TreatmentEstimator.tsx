@@ -3,9 +3,9 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { showToast } from "../GlobalToast.js";
 import { SignaturePad } from "../SignaturePad";
 import { type ToothData, ToothState } from "./ToothChart";
-import { showToast } from "../GlobalToast.js";
 
 interface EstimatorProps {
 	patientId: string;

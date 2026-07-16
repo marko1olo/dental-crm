@@ -1,5 +1,5 @@
 export function inputHelpersExpression(body) {
-  return `(() => {
+	return `(() => {
     const setFieldValue = (element, value) => {
       const prototype = element instanceof HTMLTextAreaElement
         ? HTMLTextAreaElement.prototype

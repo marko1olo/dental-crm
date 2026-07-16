@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
 import type {
 	CommunicationTaskOutcome,
 	Dashboard,
 	GeneratedDocument,
 	StaffRole,
 } from "@dental/shared";
+import { motion } from "framer-motion";
 import {
 	CheckCircle2,
 	FileText,
@@ -325,12 +325,13 @@ export function CommunicationsView({
 	const communicationNoteDescriptionId = "communication-closing-note-guidance";
 
 	return (
-		<motion.div 
-			className="panel communications-panel glass-panel" 
+		<motion.div
+			className="panel communications-panel glass-panel"
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4 }}
-		 id="communications">
+			id="communications"
+		>
 			<div className="panel-heading">
 				<h2>Связь с пациентами</h2>
 				<button className="text-button" type="button" onClick={onGoToSchedule}>

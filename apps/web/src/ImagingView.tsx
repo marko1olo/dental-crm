@@ -24,8 +24,8 @@ const IMAGING_QUICK_CHIPS = [
 	"Требуется имплантация",
 ];
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Cornerstone3DViewer } from "./components/dicom/Cornerstone3DViewer";
 import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { showToast } from "./components/GlobalToast";
@@ -283,8 +283,9 @@ export function ImagingView(props: ImagingViewProps) {
 					if (res.ok) {
 						const data = await res.json();
 						selectedImagingStudy.aiSummary = data.analysisResult.summary;
-						selectedImagingStudy.aiToothUpdates = data.analysisResult.toothUpdates;
-						
+						selectedImagingStudy.aiToothUpdates =
+							data.analysisResult.toothUpdates;
+
 						// Apply to tooth formula
 						if (data.analysisResult?.toothUpdates?.length > 0) {
 							const detectedCodes: string[] = [];
@@ -326,7 +327,9 @@ export function ImagingView(props: ImagingViewProps) {
 						setEnhancementOn(true);
 						summaryText = data.analysisResult.summary;
 					} else {
-						throw new Error("Не удалось получить автоматическое описание снимка");
+						throw new Error(
+							"Не удалось получить автоматическое описание снимка",
+						);
 					}
 				} else {
 					summaryText = selectedImagingStudy.aiSummary;
@@ -335,13 +338,13 @@ export function ImagingView(props: ImagingViewProps) {
 
 			// 2. Fallback if no backend AI available
 			if (!summaryText) {
-				summaryText = "Описание недоступно. Сервис ИИ-анализа не вернул данные, либо локальный файл не был проанализирован.";
+				summaryText =
+					"Описание недоступно. Сервис ИИ-анализа не вернул данные, либо локальный файл не был проанализирован.";
 			}
 
 			setImagingViewerNote(summaryText);
 			showToast("ИИ-анализ снимка завершён", "success");
 			setIsAnalyzingNoteAI(false);
-
 		} catch (e: any) {
 			showToast("Ошибка ИИ: " + e.message, "error");
 			setIsAnalyzingNoteAI(false);
@@ -987,7 +990,11 @@ export function ImagingView(props: ImagingViewProps) {
 													/>
 													<button
 														type="button"
-														title={isAnalyzingNoteAI ? "Анализирую снимок..." : "Сгенерировать описание с помощью ИИ"}
+														title={
+															isAnalyzingNoteAI
+																? "Анализирую снимок..."
+																: "Сгенерировать описание с помощью ИИ"
+														}
 														onClick={handleGenerateNoteAI}
 														disabled={isAnalyzingNoteAI}
 														style={{
@@ -999,13 +1006,16 @@ export function ImagingView(props: ImagingViewProps) {
 															display: "flex",
 															alignItems: "center",
 															justifyContent: "center",
-															color: isAnalyzingNoteAI ? "var(--muted)" : "var(--brand-500)",
+															color: isAnalyzingNoteAI
+																? "var(--muted)"
+																: "var(--brand-500)",
 															padding: "4px",
 															borderRadius: "50%",
 														}}
 														onMouseEnter={(e) => {
 															if (!isAnalyzingNoteAI) {
-																e.currentTarget.style.background = "var(--brand-50)";
+																e.currentTarget.style.background =
+																	"var(--brand-50)";
 															}
 														}}
 														onMouseLeave={(e) => {
@@ -1013,7 +1023,10 @@ export function ImagingView(props: ImagingViewProps) {
 														}}
 													>
 														{isAnalyzingNoteAI ? (
-															<RefreshCw size={16} style={{ animation: "spin 1s linear infinite" }} />
+															<RefreshCw
+																size={16}
+																style={{ animation: "spin 1s linear infinite" }}
+															/>
 														) : (
 															<Bot size={16} />
 														)}

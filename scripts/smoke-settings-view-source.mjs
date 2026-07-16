@@ -1,1300 +1,6112 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
-import { existsSync } from "node:fs";
-const appSource = 
-  readFileSync("apps/web/src/App.tsx", "utf8") + "\n" +
-  readFileSync("apps/web/src/useAppLogic.tsx", "utf8") + "\n" +
-  (existsSync("apps/web/src/AppHelpers.tsx") ? readFileSync("apps/web/src/AppHelpers.tsx", "utf8") : "") + "\n" +
-  (existsSync("apps/web/src/VisitView.tsx") ? readFileSync("apps/web/src/VisitView.tsx", "utf8") : "") + "\n" +
-  (existsSync("apps/web/src/ImagingView.tsx") ? readFileSync("apps/web/src/ImagingView.tsx", "utf8") : "");
+const appSource =
+	readFileSync("apps/web/src/App.tsx", "utf8") +
+	"\n" +
+	readFileSync("apps/web/src/useAppLogic.tsx", "utf8") +
+	"\n" +
+	(existsSync("apps/web/src/AppHelpers.tsx")
+		? readFileSync("apps/web/src/AppHelpers.tsx", "utf8")
+		: "") +
+	"\n" +
+	(existsSync("apps/web/src/VisitView.tsx")
+		? readFileSync("apps/web/src/VisitView.tsx", "utf8")
+		: "") +
+	"\n" +
+	(existsSync("apps/web/src/ImagingView.tsx")
+		? readFileSync("apps/web/src/ImagingView.tsx", "utf8")
+		: "");
 const settingsSource = readFileSync("apps/web/src/SettingsView.tsx", "utf8");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
-const mprClinicalSource = readFileSync("apps/web/src/mprClinicalStatus.ts", "utf8");
-const mprControlMathSource = readFileSync("apps/web/src/mprControlMath.ts", "utf8");
-const workspaceUiLabelsSource = readFileSync("apps/web/src/workspaceUiLabels.ts", "utf8");
-const imagingUiLabelsSource = readFileSync("apps/web/src/imagingUiLabels.ts", "utf8");
-const systemRoutesSource = readFileSync("apps/api/src/routes/system.ts", "utf8");
-const persistentStateSource = readFileSync("apps/api/src/persistentState.ts", "utf8");
-const settingsStaticDataSource = readFileSync("apps/web/src/settingsStaticData.tsx", "utf8");
+const mprClinicalSource = readFileSync(
+	"apps/web/src/mprClinicalStatus.ts",
+	"utf8",
+);
+const mprControlMathSource = readFileSync(
+	"apps/web/src/mprControlMath.ts",
+	"utf8",
+);
+const workspaceUiLabelsSource = readFileSync(
+	"apps/web/src/workspaceUiLabels.ts",
+	"utf8",
+);
+const imagingUiLabelsSource = readFileSync(
+	"apps/web/src/imagingUiLabels.ts",
+	"utf8",
+);
+const systemRoutesSource = readFileSync(
+	"apps/api/src/routes/system.ts",
+	"utf8",
+);
+const persistentStateSource = readFileSync(
+	"apps/api/src/persistentState.ts",
+	"utf8",
+);
+const settingsStaticDataSource = readFileSync(
+	"apps/web/src/settingsStaticData.tsx",
+	"utf8",
+);
 const sharedSource = readFileSync("packages/shared/src/index.ts", "utf8");
 const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 const accessGuardSource = readFileSync("apps/api/src/accessGuard.ts", "utf8");
-const scheduleRoutesSource = readFileSync("apps/api/src/routes/schedule.ts", "utf8");
-const settingsRoutesSource = readFileSync("apps/api/src/routes/settings.ts", "utf8");
-const imagingRoutesSource = readFileSync("apps/api/src/routes/imaging.ts", "utf8");
-const telegramRoutesSource = readFileSync("apps/api/src/routes/telegram.ts", "utf8");
+const scheduleRoutesSource = readFileSync(
+	"apps/api/src/routes/schedule.ts",
+	"utf8",
+);
+const settingsRoutesSource = readFileSync(
+	"apps/api/src/routes/settings.ts",
+	"utf8",
+);
+const imagingRoutesSource = readFileSync(
+	"apps/api/src/routes/imaging.ts",
+	"utf8",
+);
+const telegramRoutesSource = readFileSync(
+	"apps/api/src/routes/telegram.ts",
+	"utf8",
+);
 
 function requireIn(source, needle, message) {
-  if (!source.includes(needle)) throw new Error(message);
+	if (!source.includes(needle)) throw new Error(message);
 }
 
 function forbidIn(source, needle, message) {
-  if (source.includes(needle)) throw new Error(message);
+	if (source.includes(needle)) throw new Error(message);
 }
 
 function requirePattern(source, pattern, message) {
-  if (!pattern.test(source)) throw new Error(message);
+	if (!pattern.test(source)) throw new Error(message);
 }
 
-requireIn(appSource, 'headers: settingsAccessHeaders({ "Content-Type": "application/json" })', "DICOMweb archive check must use the Settings admin secret boundary.");
-requireIn(imagingRoutesSource, "requireDicomWebSettingsAccess", "DICOMweb archive check route must use a Settings-owned admin guard.");
-requireIn(imagingRoutesSource, "DicomWebSettingsAdminSecretRequired", "DICOMweb archive check must return a stable settings-domain admin error.");
+requireIn(
+	appSource,
+	'headers: settingsAccessHeaders({ "Content-Type": "application/json" })',
+	"DICOMweb archive check must use the Settings admin secret boundary.",
+);
+requireIn(
+	imagingRoutesSource,
+	"requireDicomWebSettingsAccess",
+	"DICOMweb archive check route must use a Settings-owned admin guard.",
+);
+requireIn(
+	imagingRoutesSource,
+	"DicomWebSettingsAdminSecretRequired",
+	"DICOMweb archive check must return a stable settings-domain admin error.",
+);
 
-requireIn(appSource, 'lazy(() => import("./SettingsView")', "App.tsx must lazy-load SettingsView.");
-requireIn(appSource, "<SettingsView", "App.tsx must render the lazy settings boundary.");
-requireIn(appSource, "responseStatusFailureLabel", "App API failures must use readable operator status labels.");
-requireIn(appSource, "сервер не смог выполнить действие", "App API failure fallback must not expose raw API status jargon.");
-forbidIn(appSource, "API ${", "App user-facing request failures must not expose raw API status templates.");
-const rawSetErrorMessagePattern =
-  /setError\([^\n]*(?:instanceof Error \? [^\n]*\.message|\.message)|const message = [^\n]* instanceof Error \? [^\n]*\.message|set[A-Za-z]+Error\([^\n]*\.message/;
-if (rawSetErrorMessagePattern.test(appSource)) {
-  throw new Error("App user-facing errors must not pass raw exception messages into visible error state.");
-}
-requireIn(appSource, "operatorReadableErrorDetailFromUnknown", "App user-facing status notes must filter exception details through one helper.");
-requireIn(appSource, "[A-Z][A-Z0-9_]{5,}", "App operator error filter must hide raw server setting/env keys from visible errors.");
-forbidIn(appSource, "continuityError.message", "Browser continuity status must not expose raw exception messages.");
-forbidIn(appSource, "speechHealthError.message", "Speech health status must not expose raw exception messages.");
-forbidIn(appSource, "speechRuntimeError.message", "Speech provider status must not expose raw exception messages.");
-forbidIn(appSource, "speechStrategyError.message", "Speech strategy status must not expose raw exception messages.");
-forbidIn(appSource, "speechRecoveryError.message", "Speech recovery status must not expose raw exception messages.");
-forbidIn(appSource, "draftError.message", "Visit draft fallback must not expose raw exception messages.");
-forbidIn(appSource, "acceptError.message", "Visit save fallback must not expose raw exception messages.");
-forbidIn(appSource, "speechError.message", "Speech chunk status must not expose raw exception messages.");
-requireIn(appSource, "runMigrationAutopilot(discovery)", "Browser migration source selection must immediately build a migration autopilot plan.");
-requireIn(appSource, "runMigrationAutopilot(result)", "Local PC migration source discovery must immediately build a migration autopilot plan.");
-requireIn(appSource, "activeMigrationDiscoveryForAutopilot", "Migration report/autopilot reruns must use the current visible discovery, not only browser-local folders.");
-requireIn(appSource, "migrationSourceDiscovery ?? browserMigrationDiscovery", "Current PC discovery must take precedence over stale browser-local migration manifests.");
-requireIn(appSource, "const knownDiscovery = activeMigrationDiscoveryForAutopilot()", "Migration handoff report must capture the same source set the admin is viewing.");
-requireIn(appSource, "migrationAutopilotRequestPayload(knownDiscovery,", "Migration handoff report must follow the captured visible source set.");
-requireIn(appSource, "migrationAutopilotRequestPayload(knownDiscovery, { includeSmartImportText: Boolean(smartImportText.trim()) })", "Migration handoff report must include current pasted text/OCR even when discovered sources already exist.");
-requireIn(appSource, "includeSmartImportText", "Migration autopilot payload must be able to include pasted text/Excel/OCR sources.");
-requireIn(appSource, "smartImport: includeSmartImportText && smartImportText.trim()", "Migration autopilot must send pasted smart-import text only when the text route asks for it.");
-requireIn(settingsSource, 'firebird_database: "старая серверная база программы"', "Settings migration source labels must explain server database sources in clinic language.");
-requireIn(settingsSource, 'access_database: "старая настольная база"', "Settings migration source labels must explain desktop database sources in clinic language.");
-requireIn(settingsSource, 'sqlite_database: "локальная база программы"', "Settings migration source labels must explain local database sources in clinic language.");
-requireIn(settingsSource, 'sql_dump: "резервная копия старой базы"', "Settings migration source labels must explain backup sources in clinic language.");
-forbidIn(settingsSource, 'firebird_database: "Firebird/InterBase база"', "Settings migration source labels must not expose database engine names.");
-forbidIn(settingsSource, 'sqlite_database: "SQLite база"', "Settings migration source labels must not expose SQLite as user-facing copy.");
-forbidIn(settingsSource, 'sql_dump: "SQL-выгрузка или резервная копия"', "Settings migration source labels must not expose SQL as user-facing copy.");
-requireIn(settingsSource, "резервные копии {typedMigrationSourceProbe.counts.dumps}", "Settings migration probe inventory must not expose dump jargon.");
-requireIn(settingsSource, "Программа не распознана", "Settings migration probe must describe unknown vendor programs in clinic language.");
-requireIn(settingsSource, "резервная копия старой серверной базы", "Settings smart-import example must describe legacy backups in clinic language.");
-forbidIn(settingsSource, "Firebird резервная копия", "Settings smart-import example must not expose database engine names.");
-requireIn(settingsSource, "базы {migrationAutopilot.operatorPacket.totals.databaseSources}", "Settings migration autopilot totals must not expose DB abbreviations.");
-requireIn(settingsSource, "Проверено: базы {source.probe.counts.databases}", "Settings migration source cards must not expose DB abbreviations.");
-requireIn(settingsSource, "базы {candidate.databaseFiles}", "Settings migration discovery cards must not expose DB abbreviations.");
-requireIn(settingsSource, "{humanizeMigrationText(signal)}", "Settings document ingestion signals must be humanized before display.");
-requireIn(settingsSource, "{humanizeMigrationText(warning)}", "Settings document ingestion warnings must be humanized before display.");
-requireIn(settingsSource, "старая база", "Settings document ingestion humanizer must understand old database signals.");
-requireIn(settingsSource, "старая база добавлена как проверочный список", "Settings document ingestion humanizer must translate legacy staging warnings.");
-requireIn(settingsSource, "typedPersistenceIntegrity.nextAction", "Settings persistence integrity must render the server next action.");
-requireIn(persistentStateSource, "Файл состояния и последние резервные копии читаются.", "Persistence integrity success action must be operator-readable Russian.");
-requireIn(persistentStateSource, "Проверьте предупреждения перед импортом, миграцией или обновлением.", "Persistence integrity warning action must be operator-readable Russian.");
-requireIn(systemRoutesSource, "Файл состояния не читается.", "Persistence export failures must not expose English state-file jargon.");
-forbidIn(persistentStateSource, "State file and recent backups are readable", "Persistence integrity success action must not expose English backend wording.");
-forbidIn(persistentStateSource, "Review warnings before import", "Persistence integrity warning action must not expose English backend wording.");
-forbidIn(systemRoutesSource, "State file is not readable", "Persistence export failures must not expose English backend wording.");
-requireIn(appSource, 'legacy_dump: "резервная копия старой базы"', "Document ingestion labels must not expose backup/dump jargon.");
-requireIn(appSource, 'legacy_database: "старая база"', "Document ingestion labels must explain old DB files without abbreviations.");
-requireIn(appSource, "Локальная папка снимков #", "Local imaging folder fallback must be readable for admins.");
-requireIn(imagingRoutesSource, "Одна папка в разделе", "Local imaging scan warnings must be operator-readable Russian.");
-requireIn(imagingRoutesSource, "Органайзер продолжил проверку остальных папок", "Local imaging organizer must explain partial read failures.");
-requireIn(imagingRoutesSource, 'safeLocalImagingAlias("Кейс снимков"', "Local imaging organizer safe aliases must be clinic-readable.");
-requireIn(settingsSource, "базы {typedMigrationSourceProbe.counts.databases}", "Settings migration probe inventory must not expose DB abbreviations.");
-forbidIn(appSource, "Local imaging folder #", "Local imaging folder fallback must not expose English wording.");
-forbidIn(imagingRoutesSource, "Cannot read one discovery folder", "Local imaging discovery warnings must not expose English backend wording.");
-forbidIn(imagingRoutesSource, "Cannot read one organizer folder", "Local imaging organizer warnings must not expose English backend wording.");
-forbidIn(imagingRoutesSource, 'safeLocalImagingAlias("Local imaging case"', "Local imaging organizer aliases must not expose English backend wording.");
-forbidIn(settingsSource, "SQL backup/dump", "Settings migration source labels must not expose backup/dump jargon.");
-forbidIn(settingsSource, "· dump {", "Settings migration probe inventory must not expose dump jargon.");
-forbidIn(settingsSource, "Вендор не распознан", "Settings migration probe must not expose vendor jargon.");
-forbidIn(settingsSource, "Firebird backup", "Settings smart-import example must not expose backup jargon.");
-forbidIn(settingsSource, "БД {migrationAutopilot.operatorPacket.totals.databaseSources}", "Settings migration autopilot totals must not expose DB abbreviations.");
-forbidIn(settingsSource, "Проверено: БД", "Settings migration source cards must not expose DB abbreviations.");
-forbidIn(settingsSource, "· БД {candidate.databaseFiles}", "Settings migration discovery cards must not expose DB abbreviations.");
-forbidIn(settingsSource, "typedDocumentIngestion.quality.signals.slice(0, 10).map((signal) => (\n                          <span key={signal}>{signal}</span>", "Settings document ingestion signals must not render raw parser ids.");
-forbidIn(settingsSource, "typedDocumentIngestion.warnings.map((warning) => (\n                      <span key={warning}>{warning}</span>", "Settings document ingestion warnings must not render raw parser ids.");
-forbidIn(appSource, 'legacy_dump: "backup / dump"', "Document ingestion labels must not expose backup/dump jargon.");
-forbidIn(appSource, 'legacy_database: "старая БД"', "Document ingestion labels must not expose DB abbreviations.");
-requireIn(appSource, 'className="settings-zone"', "Settings route fallback must preserve settings shell styling.");
-requireIn(appSource, 'aria-busy="true"', "Settings route fallback must expose loading state.");
-forbidIn(appSource, 'className="settings-tabs"', "App.tsx must not inline settings tabs.");
-forbidIn(appSource, 'className="connector-grid"', "App.tsx must not inline heavy settings source integrations.");
-forbidIn(appSource, 'className="telegram-settings"', "App.tsx must not inline Telegram control UI.");
-
-requireIn(settingsSource, "export function SettingsView", "SettingsView must export the route component.");
-requirePattern(
-  settingsSource,
-  /<img\s+alt="[^"]*Telegram[^"]*"\s+src=\{telegramQrSvgToDataUrl\(telegramLinkCode\.qrSvg\)\}\s+loading="lazy"\s+decoding="async"\s+\/>/,
-  "Settings Telegram QR image must lazy-load and decode asynchronously."
-);
-requirePattern(
-  settingsSource,
-  /<img\s+src=\{typedTelegramPreview\.photoUrl\}\s+alt="[^"]*Telegram[^"]*"\s+loading="lazy"\s+decoding="async"\s+\/>/,
-  "Settings Telegram visual-card preview image must lazy-load and decode asynchronously."
-);
-requirePattern(
-  settingsSource,
-  /<img\s+src=\{item\.photoUrl\}\s+alt="[^"]+"\s+loading="lazy"\s+decoding="async"\s+\/>/,
-  "Settings Telegram outbox images must lazy-load and decode asynchronously."
-);
-requirePattern(
-  settingsSource,
-  /<img\s+src=\{dicomFirstFramePreview\.imageDataUrl\}\s+alt="[^"]+"\s+decoding="async"\s+style=\{dicomFirstFrameImageStyle\}\s+\/>/,
-  "Settings first-frame DICOM preview must decode asynchronously without lazy-loading the active clinical preview."
-);
-requireIn(settingsSource, '<section className="settings-zone" id="settings"', "SettingsView must own settings shell.");
-requireIn(settingsSource, 'className="settings-tabs"', "SettingsView must own settings navigation.");
-requireIn(settingsSource, 'role="tablist"', "Settings navigation must expose tablist semantics.");
-requireIn(settingsSource, 'role="tab"', "Settings navigation buttons must expose tab semantics.");
-requireIn(settingsSource, 'role="tabpanel"', "Settings active section must expose tabpanel semantics.");
-requireIn(settingsSource, "handleSettingsTabKeyDown", "Settings navigation must support keyboard tab switching.");
-requireIn(cssSource, ".settings-tab-panel", "Settings tab panel layout must be styled explicitly.");
-requireIn(settingsSource, 'settingsTab === "sources"', "SettingsView must preserve source integrations section.");
-requireIn(settingsSource, 'settingsTab === "telegram"', "SettingsView must preserve Telegram control section.");
-requireIn(settingsSource, "buildDicomViewerWorkbenchManifest", "SettingsView must preserve DICOM workbench actions.");
-requireIn(settingsSource, "analyzePricelist", "SettingsView must preserve pricelist analyzer action.");
-requireIn(settingsSource, "type MprProjection", "SettingsView must import the shared DICOM MPR projection type.");
-requireIn(settingsSource, "type MprWindowPreset", "SettingsView must import the shared imaging window preset type.");
-requireIn(imagingUiLabelsSource, "export type MprProjection = DicomMprProjection;", "Imaging UI labels must use the shared DICOM MPR projection contract.");
-requireIn(imagingUiLabelsSource, "export type MprWindowPreset = Extract<ImagingViewerWindowPreset", "Imaging UI labels must use the shared imaging window preset contract.");
-requireIn(settingsSource, "type MprAxisVisualizerStyle", "SettingsView must type the CT MPR axis visualizer CSS variables.");
-requireIn(settingsSource, "DicomSeriesPreviewGroup", "SettingsView must type DICOM series preview rows.");
-requireIn(settingsSource, "DicomMprTool", "SettingsView must type DICOM MPR tool rows.");
-requireIn(settingsSource, "typedDicomSeriesPreviewSeries", "SettingsView must render DICOM series through typed rows.");
-requireIn(settingsSource, "typedDicomSeriesPreviewParserNotes", "SettingsView must render DICOM parser notes through typed rows.");
-requireIn(settingsSource, "dicomSeriesDisplayText", "SettingsView DICOM series rows must hide raw UID fallback behind readable code wording.");
-requireIn(settingsSource, "dicomSeriesWarningText", "SettingsView DICOM series warnings must be humanized before display.");
-requireIn(settingsSource, "группирует КЛКТ/КТ по кодам исследования/серии", "SettingsView DICOM series copy must not expose UID jargon.");
-requireIn(settingsSource, "КодИсследования;КодСерии;НомерСреза;ОписаниеСерии", "SettingsView DICOM sample headers must be readable for operators.");
-requireIn(settingsSource, "похоже на снимки: {browserPickedImagingFolder.dicomLikeFiles}", "Browser-picked imaging stats must not expose DICOM-like jargon.");
-requireIn(settingsSource, "нужен код серии", "DICOM archive status must not expose UID jargon.");
-requireIn(settingsSource, '<p className="eyebrow">Снимки и КТ</p>', "Settings imaging import section must use clinic-readable CT wording.");
-requireIn(settingsSource, 'isDicomLocalDiscovering ? "Ищу" : "Найти снимки"', "Local imaging discovery action must not expose DICOM as the visible command.");
-requireIn(settingsSource, 'isDicomFolderWorkupPlanning ? "Готовлю" : "План КТ"', "Local imaging workup action must not expose DICOM as the visible plan label.");
-requireIn(settingsSource, "Метаданные снимков: файлов", "Local imaging metadata summary must not expose DICOM headers.");
-requireIn(settingsSource, 'aria-label="План разбора папки снимков"', "Local imaging workup result aria label must not expose DICOM folder jargon.");
-requireIn(imagingRoutesSource, "Коды исследования/серии не найдены", "DICOM parser warnings must not expose Study/Series UID jargon.");
-requireIn(imagingRoutesSource, "кодисследования", "DICOM parser must accept readable Russian study-code headers.");
-requireIn(imagingRoutesSource, "кодсерии", "DICOM parser must accept readable Russian series-code headers.");
-requireIn(imagingRoutesSource, "Проверка архива снимков не завершилась", "DICOM archive warnings must not expose QIDO jargon.");
-requireIn(imagingRoutesSource, "Проверка загрузки снимков здесь не выполняется", "DICOM archive warnings must not expose STOW jargon.");
-requireIn(imagingRoutesSource, "настройте корни поиска снимков в серверных настройках", "Local imaging discovery guidance must not expose DICOM as the required operator concept.");
-forbidIn(settingsSource, "по UID исследования/серии", "SettingsView DICOM series copy must not expose UID jargon.");
-forbidIn(settingsSource, "UID серии не указан", "SettingsView DICOM series fallback must not expose UID jargon.");
-forbidIn(settingsSource, "нужен UID серии", "SettingsView DICOM archive status must not expose UID jargon.");
-forbidIn(settingsSource, "DICOM-похожих:", "SettingsView browser-picked imaging stats must not expose DICOM-like jargon.");
-forbidIn(settingsSource, "StudyInstanceUID;SeriesInstanceUID;InstanceNumber;SeriesDescription", "SettingsView DICOM sample headers must not expose raw DICOM tags.");
-forbidIn(settingsSource, "Серии DICOM", "SettingsView DICOM series action must use operator wording.");
-forbidIn(settingsSource, "<p className=\"eyebrow\">Снимки и DICOM</p>", "Settings imaging import section must not lead with DICOM.");
-forbidIn(settingsSource, "Найти DICOM", "Local imaging discovery command must not expose DICOM.");
-forbidIn(settingsSource, "План DICOM", "Local imaging workup command must not expose DICOM.");
-forbidIn(settingsSource, "Заголовки DICOM", "Local imaging metadata summary must not expose DICOM headers.");
-forbidIn(settingsSource, 'aria-label="План разбора DICOM папки"', "Local imaging workup result aria label must not expose DICOM folder jargon.");
-forbidIn(imagingRoutesSource, "Нет Study/Series UID", "DICOM parser warnings must not expose Study/Series UID jargon.");
-forbidIn(imagingRoutesSource, "Study/Series UID не найден", "DICOM parser warnings must not expose Study/Series UID jargon.");
-forbidIn(imagingRoutesSource, "Предпросмотр серий DICOM группирует StudyInstanceUID/SeriesInstanceUID", "DICOM parser notes must not expose raw DICOM tags.");
-forbidIn(imagingRoutesSource, "Проверка QIDO не удалась", "DICOM archive warnings must not expose QIDO jargon.");
-forbidIn(imagingRoutesSource, "STOW-RS upload", "DICOM archive warnings must not expose STOW jargon.");
-forbidIn(imagingRoutesSource, "DICOM-похожих файлов", "Local DICOM discovery reasons must not expose DICOM-like jargon.");
-forbidIn(imagingRoutesSource, "настройте корни поиска DICOM в серверных настройках", "Local imaging discovery guidance must not expose DICOM as the required operator concept.");
-forbidIn(imagingRoutesSource, "Для предпросмотра первого кадра не найдены прямые DICOM/IMA-файлы.", "First-frame preview errors must not expose DICOM file jargon.");
-forbidIn(imagingRoutesSource, "DICOM-файл не удалось декодировать", "First-frame preview errors must not expose DICOM file jargon.");
-requireIn(settingsSource, "typedCbctWorkbenchTools", "SettingsView must render CBCT MPR tools through typed rows.");
-requireIn(settingsSource, "typedCbctMprBlockers", "SettingsView must render CBCT MPR blockers through typed rows.");
-requireIn(settingsSource, "typedCbctMprWarnings", "SettingsView must render CBCT MPR warnings through typed rows.");
-requireIn(settingsSource, "typedCbctResourceSafetyCaps", "SettingsView must render CBCT MPR resource caps through typed rows.");
-requireIn(settingsSource, "typedDicomViewerWorkbenchManifest", "SettingsView must render DICOM workbench bundle rows through typed data.");
-requireIn(settingsSource, "typedDicomWorkstationReadiness", "SettingsView must render DICOM workstation checks through typed data.");
-requireIn(settingsSource, "typedDicomRenderCachePlan", "SettingsView must render DICOM cache tasks through typed data.");
-requireIn(settingsSource, "typedDicomViewerToolStateBundle", "SettingsView must render DICOM tool-state warnings through typed data.");
-requireIn(settingsSource, "typedDicomLocalFolderDiscovery", "SettingsView must render DICOM folder discovery candidates through typed data.");
-requireIn(settingsSource, "typedLocalImagingOrganizer", "SettingsView must render local imaging organizer cases through typed data.");
-requireIn(settingsSource, "typedImagingFolderScan", "SettingsView must render imaging scan warnings through typed data.");
-requireIn(settingsSource, "typedDicomFolderSeriesScan", "SettingsView must render DICOM folder scan warnings through typed data.");
-requireIn(settingsSource, "typedDicomFolderWorkupPlan", "SettingsView must render DICOM workup plans through typed data.");
-requireIn(settingsSource, "папка восстановлена:", "SettingsView local imaging recovery must describe restored folders in operator wording.");
-requireIn(settingsSource, "метка папки {browserPickedImagingFolder.folderFingerprint}", "SettingsView browser-picked imaging folders must use operator wording for folder references.");
-requireIn(settingsSource, "метка папки {candidate.folderFingerprint.toUpperCase()} · вложенность {candidate.depth}", "SettingsView DICOM discovery candidates must use operator wording for folder references and nesting.");
-requireIn(settingsSource, "метка папки {caseItem.folderFingerprint.toUpperCase()}", "SettingsView local imaging organizer cases must use operator wording for folder references.");
-requireIn(settingsSource, "humanizeMigrationText(browserPickedImagingFolder.nextAction)", "SettingsView browser-picked imaging folder next action must be humanized before display.");
-requireIn(settingsSource, "(browserPickedImagingFolder.warnings as string[]).slice(0, 3).map((warning) => (\n                <small key={warning}>{humanizeMigrationText(warning)}</small>", "SettingsView browser-picked imaging folder warnings must be humanized before display.");
-requireIn(settingsSource, "humanizeMigrationText(typedDicomLocalFolderDiscovery.nextAction)", "SettingsView local imaging discovery next action must be humanized before display.");
-requireIn(settingsSource, "humanizeMigrationText(typedLocalImagingOrganizer.nextAction)", "SettingsView local imaging organizer next action must be humanized before display.");
-requireIn(settingsSource, "humanizeMigrationText(typedDicomFolderWorkupPlan.nextAction)", "SettingsView local CT folder workup next action must be humanized before display.");
-requireIn(settingsSource, "humanizeMigrationText(plan.nextAction)", "SettingsView local CT folder workup plan rows must be humanized before display.");
-forbidIn(settingsSource, "код папки", "SettingsView local imaging sections must not expose folder code jargon.");
-forbidIn(settingsSource, " · номер {candidate.sourceFingerprint.toUpperCase()}", "SettingsView migration source cards must not expose source number jargon.");
-forbidIn(settingsSource, " · номер{\" \"}", "SettingsView migration source headers must not expose source number jargon.");
-requireIn(settingsSource, "migrationSourceDisplayName", "SettingsView migration source cards must strip internal source hashes from visible names.");
-requireIn(settingsSource, "{candidateDisplayName}", "SettingsView discovered migration cards must use operator-facing source names.");
-requireIn(settingsSource, "{sourceDisplayName}", "SettingsView autopilot migration cards must use operator-facing source names.");
-requireIn(settingsSource, "источник {index + 1}", "SettingsView migration source cards must show a simple ordinal instead of an internal hash.");
-forbidIn(settingsSource, " · метка {candidate.sourceFingerprint.toUpperCase()}", "SettingsView discovered migration cards must not expose internal source hashes.");
-forbidIn(settingsSource, " · метка {source.candidate.sourceFingerprint.toUpperCase()}", "SettingsView autopilot migration cards must not expose internal source hashes.");
-forbidIn(settingsSource, "{typedMigrationSourceWorkup.sourceFingerprint.toUpperCase()}", "SettingsView migration workup header must not expose internal source hashes.");
-forbidIn(settingsSource, "{typedMigrationSourceProbe.sourceFingerprint.toUpperCase()}", "SettingsView migration probe header must not expose internal source hashes.");
-requireIn(appSource, "Для тяжелой КТ откройте эту же папку в локальном модуле клиники", "Browser-picked CT folder preview must explain heavy CT recovery without handler jargon.");
-requireIn(appSource, "Для полноценного открытия тяжелой КТ выберите эту же папку в локальном модуле клиники", "Browser-picked CT folder warning must explain browser limits in clinic wording.");
-requireIn(appSource, "После обновления страницы их нужно выбрать заново", "Browser file fallback must explain persistence limits without descriptor jargon.");
-requireIn(appSource, "локальный модуль объема", "Clinical CT viewer fallback must use local-module wording instead of volume handler jargon.");
-requireIn(appSource, "Для больших архивов нужен пакетный импорт на сервере или распознавание через локальный модуль клиники.", "Oversized document import errors must explain the recovery route without OCR-handler jargon.");
-requireIn(settingsSource, "Проверяю диктовку, просмотр КЛКТ/КТ, распознавание файлов и внешний просмотр", "Local module readiness copy must use clinic-readable module wording.");
-forbidIn(settingsSource, "Проверяю диктовку, просмотр КЛКТ/КТ, распознавание файлов и внешний просмотрщик", "Local module readiness copy must not expose viewer-person jargon.");
-forbidIn(appSource, "серверного или локального обработчика", "Browser-picked CT folder warning must not expose handler jargon.");
-forbidIn(appSource, "серверный или локальный обработчик", "Browser-picked CT folder preview must not expose handler jargon.");
-forbidIn(appSource, "файловые дескрипторы", "Browser file fallback must not expose descriptor jargon.");
-forbidIn(appSource, "обработчик объема", "Clinical CT viewer fallback must not expose volume-handler jargon.");
-forbidIn(appSource, "OCR-обработчик", "Oversized document import errors must not expose OCR-handler jargon.");
-forbidIn(settingsSource, "КЛКТ/КТ-обработчик", "Local module readiness copy must not expose handler jargon.");
-forbidIn(settingsSource, "локальное восстановление -", "SettingsView local imaging recovery must not use machine-style recovery wording.");
-forbidIn(settingsSource, "локальный ID", "SettingsView local imaging sections must not expose local ID jargon.");
-forbidIn(settingsSource, " · глубина {candidate.depth}", "SettingsView DICOM discovery must not expose raw depth wording.");
-requireIn(settingsSource, "typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) =>", "SettingsView local imaging organizer warnings must render through typed rows.");
-requireIn(settingsSource, "typedImagingFolderScan.warnings.map((warning) =>", "SettingsView imaging folder warnings must render through typed rows.");
-requireIn(settingsSource, "typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) =>", "SettingsView DICOM folder scan warnings must render through typed rows.");
-requireIn(settingsSource, "typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) =>", "SettingsView DICOM workup warnings must render through typed rows.");
-requireIn(settingsSource, "typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{humanizeMigrationText(warning)}</small>", "SettingsView local imaging organizer warnings must be humanized before display.");
-requireIn(settingsSource, "typedImagingFolderScan.warnings.map((warning) => (\n                    <span key={warning}>{humanizeMigrationText(warning)}</span>", "SettingsView imaging folder warnings must be humanized before display.");
-requireIn(settingsSource, "typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) => (\n                    <span key={warning}>{humanizeMigrationText(warning)}</span>", "SettingsView DICOM folder scan warnings must be humanized before display.");
-requireIn(settingsSource, "typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{humanizeMigrationText(warning)}</small>", "SettingsView DICOM workup warnings must be humanized before display.");
-forbidIn(settingsSource, "dicomSeriesPreview.series.slice(0, 6).map((series: any)", "SettingsView DICOM series rows must not use any.");
-forbidIn(settingsSource, "dicomSeriesPreview.parserNotes.map((note: any)", "SettingsView DICOM parser notes must not use any.");
-forbidIn(settingsSource, "cbctWorkbenchTools : [\"window_level\", \"pan\", \"zoom\", \"external_open\"]).map((tool: any)", "SettingsView CBCT MPR tools must not use any.");
-forbidIn(settingsSource, "mprReadiness.blockers.map((blocker: any)", "SettingsView CBCT MPR blockers must not use any.");
-forbidIn(settingsSource, "mprReadiness.warnings.map((warning: any)", "SettingsView CBCT MPR warnings must not use any.");
-forbidIn(settingsSource, "resourcePolicy.safetyCaps.slice(0, 4).map((cap: any)", "SettingsView CBCT MPR safety caps must not use any.");
-forbidIn(settingsSource, "dicomViewerWorkbenchManifest.renderCachePlan.tasks.slice(0, 4).map((task: any)", "SettingsView DICOM workbench cache task rows must not use any.");
-forbidIn(settingsSource, "dicomWorkstationReadiness.checks.map((check: any)", "SettingsView DICOM workstation checks must not use any.");
-forbidIn(settingsSource, "dicomRenderCachePlan.tasks.slice(0, 5).map((task: any)", "SettingsView DICOM render cache task rows must not use any.");
-forbidIn(settingsSource, "dicomViewerToolStateBundle.warnings.slice(0, 3).map((warning: any)", "SettingsView DICOM tool-state warnings must not use any.");
-forbidIn(settingsSource, "dicomLocalFolderDiscovery.candidates.slice(0, 6).map((candidate: any)", "SettingsView DICOM discovery candidates must not use any.");
-forbidIn(settingsSource, "localImagingOrganizer.cases.slice(0, 6).map((caseItem: any)", "SettingsView local imaging organizer cases must not use any.");
-forbidIn(settingsSource, "caseItem.modelCandidates.slice(0, 3).map((model: any)", "SettingsView local imaging model candidates must not use any.");
-forbidIn(settingsSource, "imagingFolderScan.warnings.map((warning: any)", "SettingsView imaging folder warnings must not use any.");
-forbidIn(settingsSource, "dicomFolderSeriesScan.warnings.slice(0, 5).map((warning: any)", "SettingsView DICOM folder warnings must not use any.");
-forbidIn(settingsSource, "dicomFolderWorkupPlan.plans.slice(0, 4).map((plan: any)", "SettingsView DICOM workup plans must not use any.");
-forbidIn(settingsSource, "dicomFolderWorkupPlan.warnings.slice(0, 4).map((warning: any)", "SettingsView DICOM workup warnings must not use any.");
-forbidIn(settingsSource, "typedImagingFolderScan.warnings.map((warning) => (\n                    <span key={warning}>{warning}</span>", "SettingsView imaging folder warnings must not render raw backend wording.");
-forbidIn(settingsSource, "typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{warning}</small>", "SettingsView local imaging organizer warnings must not render raw backend wording.");
-forbidIn(settingsSource, "typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) => (\n                    <span key={warning}>{warning}</span>", "SettingsView DICOM folder warnings must not render raw backend wording.");
-forbidIn(settingsSource, "typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{warning}</small>", "SettingsView DICOM workup warnings must not render raw backend wording.");
-forbidIn(settingsSource, "telegramLinkCodes.filter((code: any)", "SettingsView Telegram link code counts must not use any.");
-forbidIn(settingsSource, "telegramLinkCodes.map((code: any)", "SettingsView Telegram link code rows must not use any.");
-forbidIn(settingsSource, "telegramFeaturePlan?.patientSafeActions ?? []).slice(0, 6).map((action: any)", "SettingsView Telegram feature plan actions must not use any.");
-forbidIn(settingsSource, "telegramFeaturePlan?.blockedByDefault ?? []).slice(0, 6).map((item: any)", "SettingsView Telegram feature plan blockers must not use any.");
-forbidIn(settingsSource, "telegramPostVisitCheckupDelayFields.map((field: any)", "SettingsView Telegram checkup delay fields must not use any.");
-forbidIn(settingsSource, "telegramFeatureOptions.map((feature: any)", "SettingsView Telegram feature toggles must not use any.");
-forbidIn(settingsSource, "telegramVisualCardFields.map((field: any)", "SettingsView Telegram visual card fields must not use any.");
-forbidIn(settingsSource, "setTelegramEnabledFeaturesDraft((current: any)", "SettingsView Telegram voice toggle must not erase feature typing.");
-forbidIn(settingsSource, "activeWorkspaceProfile.primaryRoles.map((role: any)", "SettingsView active workspace profile roles must not use any.");
-forbidIn(settingsSource, "dashboard.clinicSettings.workspaceProfiles.map((profile: any)", "SettingsView workspace profiles must not use any.");
-forbidIn(settingsSource, "dashboard.clinicSettings.roleAccessPolicies.map((policy: any)", "SettingsView access policies must not use any.");
-forbidIn(settingsSource, "telegramChatLinks.filter((link: any)", "SettingsView Telegram chat link counts must not use any.");
-forbidIn(settingsSource, "telegramChatLinks.map((link: any)", "SettingsView Telegram chat link rows must not use any.");
-forbidIn(settingsSource, "telegramPreview.warnings.map((warning: any)", "SettingsView Telegram preview warnings must not use any.");
-forbidIn(settingsSource, "visibleTelegramOutboxItems.map((item: any)", "SettingsView Telegram outbox rows must not use any.");
-forbidIn(settingsSource, "pricelistRecognitionServiceGroups.map((group: any)", "SettingsView pricelist service taxonomy groups must not use any.");
-forbidIn(settingsSource, "pricelistRecognitionBrandGroups.map((group: any)", "SettingsView pricelist brand taxonomy groups must not use any.");
-forbidIn(settingsSource, "pricelistAnalysis.summary.slice(0, 6).map((item: any)", "SettingsView pricelist summaries must not use any.");
-forbidIn(settingsSource, "pricelistAnalysis.items.slice(0, 12).map((item: any)", "SettingsView pricelist rows must not use any.");
-forbidIn(settingsSource, "(Object.keys(clinicModeLabels) as ClinicMode[]).map((mode: any)", "SettingsView clinic mode cards must not use any.");
-forbidIn(settingsSource, "dashboard.clinicSettings.modeHints.map((hint: any)", "SettingsView clinic mode hints must not use any.");
-forbidIn(settingsSource, "dashboard.shiftIntelligence.roleQueues.map((queue: any)", "SettingsView role queues must not use any.");
-forbidIn(settingsSource, "dashboard.clinicSettings.staff.map((member: any)", "SettingsView staff rows must not use any.");
-forbidIn(settingsSource, "dashboard.clinicSettings.chairs.map((chair: any)", "SettingsView chair rows must not use any.");
-forbidIn(settingsSource, "weekdayOptions.map((day: any)", "SettingsView weekday controls must not use any.");
-forbidIn(settingsSource, "setNewChairHasXraySensor((value: any)", "SettingsView chair equipment toggle must not erase boolean typing.");
-forbidIn(settingsSource, "setNewChairHasMicroscope((value: any)", "SettingsView chair equipment toggle must not erase boolean typing.");
-forbidIn(settingsSource, "setNewChairHasSurgeryKit((value: any)", "SettingsView chair equipment toggle must not erase boolean typing.");
-forbidIn(settingsSource, "telegramLinkStaffOptions.map((member: any)", "SettingsView Telegram staff choices must not use any.");
-forbidIn(settingsSource, "dashboard.protocolTemplates.map((template: any)", "SettingsView protocol templates must not use any.");
-forbidIn(settingsSource, "imagingConnectorCards.map((connector: any)", "SettingsView imaging connector cards must not use any.");
-forbidIn(settingsSource, "imagingViewerCapabilities.map((capability: any)", "SettingsView DICOM capability cards must not use any.");
-requireIn(settingsSource, "const humanizeIntegrationInput", "SettingsView must translate integration input formats for non-technical admins.");
-requireIn(settingsSource, "preset.supportedInputs.slice(0, 4).map(humanizeIntegrationInput).join(\", \")", "SettingsView must not render raw integration input formats.");
-forbidIn(settingsSource, "dashboard.clinicSettings.integrationPresets.map((preset: any)", "SettingsView integration presets must not use any.");
-forbidIn(settingsSource, "preset.supportedInputs.slice(0, 4).join(\", \")", "SettingsView must not render raw integration input formats.");
-forbidIn(settingsSource, "dashboard.speechProviders.map((provider: any)", "SettingsView speech providers must not use any.");
-forbidIn(settingsSource, "recognitionPresets.map((preset: any)", "SettingsView recognition presets must not use any.");
-requireIn(settingsSource, "const aiRecognitionWarningText", "SettingsView AI recognition warnings must use a UI-owned readable formatter.");
-requireIn(settingsSource, "Черновик не попадет в базу без предпросмотра", "SettingsView AI recognition warnings must translate OCR/preview backend wording.");
-requireIn(settingsSource, "typedRecognitionJob.warnings.map((warning) => (\n                      <span key={warning}>{aiRecognitionWarningText(warning)}</span>", "SettingsView recognition warnings must not expose raw backend wording.");
-forbidIn(settingsSource, "recognitionJob.warnings.map((warning: any)", "SettingsView recognition warnings must not use any.");
-forbidIn(settingsSource, "typedRecognitionJob.warnings.map((warning) => (\n                      <span key={warning}>{warning}</span>", "SettingsView recognition warnings must not render raw backend wording.");
-forbidIn(settingsSource, "(Object.keys(smartImportModeLabels) as SmartImportMode[]).map((mode: any)", "SettingsView smart import modes must not use any.");
-forbidIn(settingsSource, "browserMigrationDiscovery.candidates.reduce((sum: number, candidate: any)", "SettingsView browser migration totals must not use any.");
-forbidIn(settingsSource, "browserMigrationDiscovery.candidates.slice(0, 6).map((candidate: any)", "SettingsView browser migration candidates must not use any.");
-forbidIn(settingsSource, "smartImportPreview.lineClassifications.filter((row: any)", "SettingsView smart import ignored count must not use any.");
-forbidIn(settingsSource, "smartImportPreview.migrationPlan.steps.map((step: any)", "SettingsView smart import migration steps must not use any.");
-forbidIn(settingsSource, "smartImportPreview.legacySources.map((source: any", "SettingsView smart import legacy sources must not use any.");
-forbidIn(settingsSource, "smartImportPreview.publicLookupTargets.map((target: any)", "SettingsView smart import public lookup targets must not use any.");
-forbidIn(settingsSource, "smartImportPreview.lineClassifications.map((row: any)", "SettingsView smart import line classifications must not use any.");
-forbidIn(settingsSource, "imagingSourceChoices.map((kind: any)", "SettingsView imaging source choices must not use any.");
-forbidIn(settingsSource, "typedBrowserMigrationDiscovery.totalFiles", "SettingsView must not read a browser migration totalFiles field that is not in the API contract.");
-forbidIn(settingsSource, "speechRecordingRecovery.recordings.slice(0, 3).map((recording: any)", "SettingsView speech recovery rows must not use any.");
-forbidIn(settingsSource, "imagingImportPreview.rows.map((row: any)", "SettingsView imaging import preview rows must not use any.");
-forbidIn(settingsSource, "browserContinuityChecks.map((check: any)", "SettingsView browser continuity checks must not use any.");
-forbidIn(settingsSource, "(localBridgeReadiness?.bridges ?? []).map((bridge: any)", "SettingsView local bridge readiness rows must not use any.");
-forbidIn(settingsSource, "bridge.warnings.slice(0, 2).map((warning: any)", "SettingsView local bridge warnings must not use any.");
-forbidIn(settingsSource, "localBridgeUsePlans.plans.map((plan: any)", "SettingsView local bridge use plans must not use any.");
-forbidIn(settingsSource, "plan.steps.slice(0, 2).map((step: any)", "SettingsView local bridge plan steps must not use any.");
-forbidIn(settingsSource, "plan.warnings.slice(0, 1).map((warning: any)", "SettingsView local bridge plan warnings must not use any.");
-forbidIn(settingsSource, "persistenceIntegrity.backups.slice(0, 6).map((backup: any)", "SettingsView persistence backups must not use any.");
-forbidIn(settingsSource, "dashboard.importBatches.map((batch: any)", "SettingsView import batch history must not use any.");
-forbidIn(settingsSource, "dashboard.auditEvents.map((event: any)", "SettingsView audit events must not use any.");
-forbidIn(settingsSource, "(Object.keys(importSourceLabels) as ImportSourceKind[]).map((kind: any)", "SettingsView import source choices must not use any.");
-forbidIn(settingsSource, "(Object.keys(ingestionTargetLabels) as DocumentIngestionTarget[]).map((target: any)", "SettingsView document ingestion targets must not use any.");
-forbidIn(settingsSource, "documentIngestion.quality.signals.slice(0, 10).map((signal: any)", "SettingsView document ingestion quality signals must not use any.");
-forbidIn(settingsSource, "documentIngestion.extractedFiles.slice(0, 8).map((file: any)", "SettingsView document ingestion extracted files must not use any.");
-forbidIn(settingsSource, "documentIngestion.routes.slice(0, 4).map((route: any)", "SettingsView document ingestion routes must not use any.");
-forbidIn(settingsSource, "documentIngestion.warnings.map((warning: any)", "SettingsView document ingestion warnings must not use any.");
-forbidIn(settingsSource, "importIntake.recognitionNotes.map((note: any)", "SettingsView import intake notes must not use any.");
-forbidIn(settingsSource, "importPreview.rows.map((row: any)", "SettingsView patient import preview rows must not use any.");
-requireIn(settingsSource, "typedTelegramLinkCodes", "SettingsView Telegram link code rows must use typed local data.");
-requireIn(settingsSource, "typedTelegramFeaturePlan", "SettingsView Telegram feature plan rows must use typed local data.");
-requireIn(settingsSource, "typedTelegramPostVisitCheckupDelayFields", "SettingsView Telegram checkup rows must use typed local data.");
-requireIn(settingsSource, "typedTelegramVisualCardFields", "SettingsView Telegram visual card rows must use typed local data.");
-requireIn(settingsSource, "typedWorkspaceProfiles", "SettingsView workspace profiles must use typed local data.");
-requireIn(settingsSource, "typedRoleAccessPolicies", "SettingsView access policies must use typed local data.");
-requireIn(settingsSource, "typedClinicModes", "SettingsView clinic mode rows must use typed local data.");
-requireIn(settingsSource, "typedModeHints", "SettingsView clinic mode hints must use typed local data.");
-requireIn(settingsSource, "typedRoleQueues", "SettingsView role queues must use typed local data.");
-requireIn(settingsSource, "typedStaffMembers", "SettingsView staff rows must use typed local data.");
-requireIn(settingsSource, "typedChairs", "SettingsView chair rows must use typed local data.");
-requireIn(settingsSource, "typedWeekdayOptions", "SettingsView weekday controls must use typed local data.");
-requireIn(settingsSource, "typedUiLanguageOptions", "SettingsView UI language choices must use typed local data.");
-requireIn(settingsSource, "typedTelegramLinkStaffOptions", "SettingsView Telegram staff choices must use typed local data.");
-requireIn(settingsSource, "typedProtocolTemplates", "SettingsView protocol templates must use typed local data.");
-requireIn(settingsSource, "typedImagingConnectorCards", "SettingsView imaging connector cards must use typed local data.");
-requireIn(settingsSource, "typedImagingViewerCapabilities", "SettingsView DICOM capability cards must use typed local data.");
-requireIn(settingsSource, "typedIntegrationPresets", "SettingsView integration presets must use typed local data.");
-requireIn(settingsSource, "typedSpeechProviders", "SettingsView speech providers must use typed local data.");
-requireIn(settingsSource, "Голос: быстрый черновик сейчас, усиленное распознавание после подключения", "SettingsView speech heading must use operator-readable wording.");
-requireIn(settingsSource, "нужно подключить распознавание", "SettingsView speech setup state must not expose key jargon.");
-requireIn(settingsSource, "подключено источников распознавания", "SettingsView speech gateway status must use source wording instead of key jargon.");
-requireIn(settingsSource, "резервное переключение", "SettingsView speech gateway status must explain rotation in operator wording.");
-requireIn(settingsSource, "работает без облака", "SettingsView local speech runtime must explain local mode without cloud-key jargon.");
-requireIn(settingsSource, "источников на паузе", "SettingsView speech health must not call provider slots raw keys.");
-requireIn(settingsSource, "серверных настроек: ${provider.setupSettingsCount}", "SettingsView speech providers must summarize server settings instead of listing env var names.");
-requireIn(sharedSource, "setupSettingsCount: z.number().int().nonnegative()", "Speech provider contract must expose a count of setup settings, not raw server setting names.");
-requireIn(sampleDataSource, "setupSettingsCount:", "Speech provider catalog must expose setup setting counts.");
-forbidIn(sampleDataSource, "envVars:", "Speech provider catalog must not send raw env var names to the browser.");
-forbidIn(sharedSource, "envVars: z.array(z.string())", "Speech provider contract must not expose raw env var names to the browser.");
-forbidIn(settingsSource, "Голос: браузер сейчас, серверное распознавание через ключи, офлайн позже", "SettingsView speech heading must not expose key jargon.");
-forbidIn(settingsSource, "серверное распознавание ждет ключ/подключение", "SettingsView speech setup state must not expose key jargon.");
-forbidIn(settingsSource, "ключи {speechGatewayStatus.keyPool.availableKeyCount}", "SettingsView speech gateway status must not expose raw key count wording.");
-forbidIn(settingsSource, " · ротация", "SettingsView speech gateway status must not expose rotation jargon.");
-forbidIn(settingsSource, " · таймаут", "SettingsView speech gateway status must not expose timeout jargon.");
-forbidIn(settingsSource, " · без облачного ключа", "SettingsView local speech runtime must not expose cloud-key jargon.");
-forbidIn(settingsSource, "ключей на паузе", "SettingsView speech health must not call provider slots raw keys.");
-forbidIn(settingsSource, "provider.envVars.join", "SettingsView speech providers must not list env var names in the UI.");
-forbidIn(settingsSource, "provider.envVars.length", "SettingsView speech providers must not receive raw env var names just to count settings.");
-requireIn(settingsSource, "typedRecognitionPresets", "SettingsView recognition presets must use typed local data.");
-requireIn(settingsSource, "typedRecognitionJob", "SettingsView recognition result must use the shared AI job contract.");
-requireIn(settingsSource, "typedBrowserMigrationDiscovery", "SettingsView browser migration discovery must use the shared API contract.");
-requireIn(settingsSource, "typedSmartImportPreview", "SettingsView smart import preview must use the shared API contract.");
-requireIn(settingsSource, "typedImagingSourceChoices", "SettingsView imaging source choices must use typed local data.");
-requireIn(settingsSource, "typedSpeechRecordingRecovery", "SettingsView speech recovery rows must use the shared API contract.");
-requireIn(settingsSource, "typedImagingImportPreview", "SettingsView imaging import preview must use the shared API contract.");
-requireIn(settingsSource, "typedBrowserContinuityChecks", "SettingsView browser continuity checks must use typed local data.");
-requireIn(settingsSource, "Проверяю черновики, работу без сети и локальные очереди", "Settings audit browser continuity loading copy must not expose PWA jargon.");
-forbidIn(settingsSource, "PWA-оболочку", "Settings audit browser continuity copy must not expose PWA jargon.");
-requireIn(settingsSource, "typedLocalBridgeReadiness", "SettingsView local bridge readiness must use the shared API contract.");
-requireIn(settingsSource, "typedLocalBridgeUsePlans", "SettingsView local bridge use plans must use the shared API contract.");
-requireIn(settingsSource, "Локальные модули ПК", "SettingsView local workstation helpers must use operator-readable module wording.");
-requireIn(settingsSource, "Готовность локальных модулей рабочей станции", "SettingsView local workstation helper grid must not expose bridge jargon.");
-requireIn(settingsSource, "Проверить модули", "SettingsView local workstation helper action must not expose bridge jargon.");
-requireIn(settingsSource, "humanizeMigrationText(bridge.title)", "SettingsView local helper titles must not expose raw backend bridge wording.");
-requireIn(settingsSource, "humanizeMigrationText(bridge.role)", "SettingsView local helper roles must not expose raw backend bridge wording.");
-requireIn(settingsSource, "humanizeMigrationText(bridge.workload)", "SettingsView local helper workload must not expose raw backend bridge wording.");
-requireIn(settingsSource, "humanizeMigrationText(bridge.privacyBoundary)", "SettingsView local helper boundaries must not expose raw backend bridge wording.");
-requireIn(settingsSource, "humanizeMigrationText(plan.nextAction)", "SettingsView local helper plans must not expose raw backend bridge wording.");
-requireIn(settingsSource, "humanizeMigrationText(step.title)", "SettingsView local helper plan steps must not expose raw backend bridge wording.");
-forbidIn(settingsSource, "<h3>Локальные мосты ПК</h3>", "SettingsView local workstation helper title must not expose bridge jargon.");
-forbidIn(settingsSource, "Проверить мосты", "SettingsView local workstation helper action must not expose bridge jargon.");
-requireIn(workspaceUiLabelsSource, "локальный модуль ПК", "App local helper path labels must use module wording.");
-requireIn(appSource, "Готовность локального модуля не проверена", "App local helper errors must use module wording.");
-requireIn(appSource, "используйте локальный модуль", "App speech upload guidance must not call local workstation helpers bridges.");
-forbidIn(appSource, "используйте локальный мост", "App speech upload guidance must not expose bridge jargon.");
-requireIn(settingsSource, "typedPersistenceIntegrity", "SettingsView persistence integrity rows must use typed local data.");
-requireIn(settingsSource, "typedImportBatches", "SettingsView import history must use the shared API contract.");
-requireIn(settingsSource, "typedAuditEvents", "SettingsView audit rows must use the shared API contract.");
-requireIn(settingsSource, "typedImportSourceKinds", "SettingsView import source choices must use typed local data.");
-requireIn(settingsSource, "typedDocumentIngestionTargets", "SettingsView document ingestion targets must use typed local data.");
-requireIn(settingsSource, "typedDocumentIngestion", "SettingsView document ingestion response must use the shared API contract.");
-requireIn(settingsSource, "typedImportIntake", "SettingsView import intake response must use the shared API contract.");
-requireIn(settingsSource, "typedImportPreview", "SettingsView patient import preview must use the shared API contract.");
-requireIn(settingsSource, "typedTelegramChatLinks", "SettingsView Telegram chat links must use typed local data.");
-requireIn(settingsSource, "typedVisibleTelegramOutboxItems", "SettingsView Telegram outbox rows must use typed local data.");
-requireIn(settingsSource, "typedPricelistAnalysis", "SettingsView pricelist analysis must use typed local data.");
-requireIn(settingsSource, "Нейро-проверка {typedPricelistAnalysis.aiVision.used ?", "SettingsView pricelist AI status must use operator-readable wording.");
-forbidIn(settingsSource, "Groq {typedPricelistAnalysis.aiVision", "SettingsView pricelist AI status must not expose provider branding.");
-requireIn(settingsSource, "mprAxisPresetDeg", "SettingsView CT MPR controls must include quick axis presets.");
-requireIn(settingsSource, "mprAxisBounds", "SettingsView CT MPR angle slider must use shared axis bounds.");
-requirePattern(settingsSource, /min=\{mprAxisBounds\.min\}\s+max=\{mprAxisBounds\.max\}/, "SettingsView CT MPR angle slider must not hardcode a narrow range.");
-forbidIn(settingsSource, 'min="-45" max="45"', "SettingsView CT MPR angle slider must not stay limited to -45..45.");
-requireIn(settingsSource, "mprSlabPresetMm", "SettingsView CT MPR controls must include quick slab presets.");
-requireIn(settingsSource, "mprAxisNudgeDeg", "SettingsView CT MPR controls must include fine axis nudges.");
-requireIn(settingsSource, "mprSlabNudgeMm", "SettingsView CT MPR controls must include fine slab nudges.");
-requireIn(settingsSource, "clampMprAxisDeg", "SettingsView CT MPR angle updates must stay inside supported bounds.");
-requireIn(settingsSource, "clampMprSlabMm", "SettingsView CT MPR slab updates must stay inside supported bounds.");
-requireIn(settingsSource, "mprSliceIndex", "SettingsView CT MPR controls must track the selected stack slice.");
-requireIn(settingsSource, "mprSliceNudgeSteps", "SettingsView CT MPR controls must include fine slice nudges.");
-requireIn(settingsSource, "clampMprSliceIndex", "SettingsView CT MPR slice updates must stay inside series bounds.");
-requireIn(appSource, 'sliceIndex: selectedImagingStudy?.kind === "cbct" ? mprSafeSliceIndex : null', "App CT MPR viewer state must export the clamped selected slice index.");
-forbidIn(appSource, 'sliceIndex: selectedImagingStudy?.kind === "cbct" ? mprSliceIndex : null', "App CT MPR viewer state must not export an unclamped slice index.");
-requireIn(settingsSource, "mprProjectionOrientationLabels", "SettingsView CT MPR visualizer must explain projection orientation.");
-requireIn(settingsSource, 'data-testid="ct-mpr-axis-visualizer"', "SettingsView CT MPR must render an axis visualizer.");
-requireIn(settingsSource, "mprAxisVisualizerStyle", "SettingsView CT MPR visualizer must bind axis angle and slab width to CSS.");
-requireIn(settingsSource, "mprAxisDirectionLabel", "SettingsView CT MPR visualizer must show readable axis direction.");
-requireIn(settingsSource, "mprActiveProjectionOrientation", "SettingsView CT MPR visualizer must show active projection orientation.");
-requireIn(mprControlMathSource, "formatMprAxisVisualizerLabel", "SettingsView CT MPR visualizer label must come from shared MPR control math.");
-requireIn(settingsSource, "const mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({", "SettingsView CT MPR visualizer must compute a dynamic accessible label.");
-requireIn(settingsSource, "aria-label={mprAxisVisualizerLabel}", "SettingsView CT MPR visualizer must announce current projection, axis, slab, and slice.");
-requireIn(settingsSource, 'role="img"', "SettingsView CT MPR axis visualizer must expose itself as one image-like orientation map.");
-requireIn(settingsSource, 'data-testid="ct-mpr-workbench-summary" aria-live="polite"', "SettingsView CT MPR summary must announce control changes politely.");
-requireIn(settingsSource, "aria-pressed={mprProjection === plane.key}", "SettingsView CT MPR plane buttons must expose selected state without relying on color.");
-requireIn(settingsSource, "aria-pressed={mprProjection === projection}", "SettingsView CT MPR projection buttons must expose selected state without relying on color.");
-requireIn(settingsSource, "aria-pressed={mprAxisDeg === angle}", "SettingsView CT MPR angle presets must expose selected state.");
-requireIn(settingsSource, "aria-pressed={mprSlabMm === slab}", "SettingsView CT MPR slab presets must expose selected state.");
-requireIn(settingsSource, "aria-pressed={mprSafeSliceIndex === targetIndex}", "SettingsView CT MPR slice landmarks must expose selected state.");
-requireIn(settingsSource, "aria-pressed={mprWindowPreset === preset}", "SettingsView CT MPR window presets must expose selected state.");
-requireIn(settingsSource, "resetMprControls", "SettingsView CT MPR controls must have one-click reset.");
-requireIn(settingsSource, "setMprWindowPreset(\"bone\")", "SettingsView CT MPR reset must restore the standard bone window.");
-requireIn(settingsSource, "setMprCrosshairEnabled(true)", "SettingsView CT MPR reset must restore the crosshair.");
-requireIn(settingsSource, "setMprLinkedPlanesEnabled(true)", "SettingsView CT MPR reset must restore linked planes.");
-requireIn(settingsSource, "type MprClinicalPreset", "SettingsView CT MPR clinical presets must be typed.");
-requireIn(settingsSource, "mprClinicalPresets", "SettingsView CT MPR must expose clinical presets.");
-requireIn(settingsSource, "applyMprClinicalPreset", "SettingsView CT MPR clinical presets must apply projection, angle, slab, window, and linked-plane state.");
-requireIn(settingsSource, "typedCbctWorkbenchProjections", "SettingsView CT MPR projection readiness must avoid repeated casts.");
-requireIn(settingsSource, 'data-testid="ct-mpr-clinical-presets"', "SettingsView CT MPR clinical presets must be test-tagged.");
-requireIn(settingsSource, "buildMprClinicalChecklist", "SettingsView CT MPR must compute a readable clinical readiness roadmap.");
-requireIn(settingsSource, "buildMprOperatorSummary", "SettingsView CT MPR must compute a compact operator summary.");
-requireIn(settingsSource, "buildMprWorkbenchSummary", "SettingsView CT MPR must compute one compact readable workbench summary.");
-requireIn(settingsSource, "mprClinicalNextAction", "SettingsView CT MPR must expose the next safe operator action.");
-requireIn(settingsSource, "findNearestMprClinicalPreset", "SettingsView CT MPR must compute the nearest clinical protocol from current controls.");
-requireIn(settingsSource, "mprWorkbenchSummaryText", "SettingsView CT MPR must render the current projection, axis, slab, window, and sync state as one glanceable summary.");
-requireIn(settingsSource, "mprOperatorSummaryCards", "SettingsView CT MPR must render shared operator summary cards.");
-requireIn(settingsSource, "protocolCanApply: mprNearestClinicalPreset.deltas.length > 0", "SettingsView CT MPR roadmap must know when the nearest protocol has a real one-click adjustment.");
-requireIn(settingsSource, "applyNearestMprClinicalPreset", "SettingsView CT MPR nearest-protocol indicator must have a one-click apply route.");
-requireIn(settingsSource, "mprClinicalPresetButtonClass", "SettingsView CT MPR preset buttons must expose nearest/exact protocol state.");
-requireIn(settingsSource, "className={mprClinicalPresetButtonClass(preset)}", "SettingsView CT MPR preset buttons must render protocol fit classes.");
-requireIn(settingsSource, 'aria-current={mprNearestClinicalPreset.exact', "SettingsView CT MPR exact preset must be announced as current.");
-requireIn(settingsSource, "onClick={() => setMprWindowPreset(preset)}", "SettingsView CT MPR window presets must still be user-selectable when a series is ready.");
-requireIn(settingsSource, 'data-testid="ct-mpr-clinical-roadmap"', "SettingsView CT MPR roadmap must be test-tagged.");
-requireIn(settingsSource, 'data-testid="ct-mpr-operator-summary"', "SettingsView CT MPR operator summary must be test-tagged.");
-requireIn(settingsSource, 'data-testid="ct-mpr-workbench-summary"', "SettingsView CT MPR workbench summary must be test-tagged.");
-requireIn(settingsSource, 'data-testid="ct-mpr-preset-fit"', "SettingsView CT MPR nearest-protocol indicator must be test-tagged.");
-requireIn(settingsSource, "disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}", "SettingsView CT MPR nearest-protocol apply action must disable when unsafe or there is nothing to apply.");
-requireIn(settingsSource, "aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}", "SettingsView CT MPR nearest-protocol apply action must name the target clinical protocol.");
-requireIn(settingsSource, "mprClinicalChecklist.map", "SettingsView CT MPR roadmap must render each readiness step.");
-requireIn(mprClinicalSource, 'id: "series"', "CT MPR roadmap must start with series readiness.");
-requireIn(mprClinicalSource, 'id: "orientation"', "CT MPR roadmap must cover plane and slab setup.");
-requireIn(mprClinicalSource, 'id: "sync"', "CT MPR roadmap must cover linked axes and crosshair state.");
-requireIn(mprClinicalSource, 'id: "viewer"', "CT MPR roadmap must cover viewer workbench readiness.");
-requireIn(mprClinicalSource, "type MprOperatorSummaryCard", "CT MPR operator summary must have a typed card contract.");
-requireIn(mprClinicalSource, "buildMprOperatorSummary", "CT MPR operator summary must live in the shared clinical MPR module.");
-requireIn(cssSource, ".mpr-operator-summary", "CT MPR operator summary must have a dedicated responsive layout.");
-requireIn(mprClinicalSource, "scoreMprClinicalPresetFit", "CT MPR nearest-protocol matching must use one stable scoring function.");
-requireIn(mprClinicalSource, "describeMprClinicalPresetDelta", "CT MPR nearest-protocol matching must explain the required adjustment.");
-requireIn(mprClinicalSource, "exact: deltas.length === 0 && !projectionFallback", "CT MPR fallback projection must not be treated as an exact clinical protocol.");
-requireIn(mprClinicalSource, "настройки совпадают с безопасной заменой, но исходная плоскость недоступна", "CT MPR fallback projection must explain that it is a safe substitute, not an exact protocol.");
-requireIn(mprClinicalSource, "protocolCanApply: boolean", "CT MPR roadmap must separate an adjustable protocol mismatch from an unavailable clinical plane.");
-requireIn(mprClinicalSource, "Выберите доступный протокол ниже или откройте серию с нужной плоскостью.", "CT MPR fallback roadmap must not tell doctors to apply a no-op adjustment.");
-requireIn(mprClinicalSource, "buildMprWorkbenchSummary", "CT MPR summary must live in the shared clinical MPR module.");
-requireIn(mprClinicalSource, "плоскости связаны", "CT MPR summary must include linked-plane state.");
-requireIn(mprClinicalSource, "КЛКТ/КТ-серия готова к просмотру срезов.", "CT MPR helper copy must use Russian CT terminology.");
-requireIn(mprClinicalSource, "КТ-срезы: выберите готовую КЛКТ/КТ-серию.", "CT MPR summary must not start with a bare MPR acronym.");
-forbidIn(mprClinicalSource, "MPR: выберите", "CT MPR summary must not start with a bare MPR acronym.");
-forbidIn(mprClinicalSource, "CT/CBCT", "CT MPR helper copy must not expose mixed English CT/CBCT terminology.");
-forbidIn(mprClinicalSource, "slab под клиническую задачу", "CT MPR helper copy must not expose slab jargon.");
-requireIn(mprControlMathSource, "mprSlicePresetFractions", "CT MPR control math must own landmark slice presets.");
-requireIn(mprControlMathSource, "mprSliceIndexFromFraction", "CT MPR control math must own slice percent-to-index conversion.");
-requireIn(cssSource, ".mpr-clinical-preset.nearest", "SettingsView CT MPR nearest preset must be visually marked.");
-requireIn(cssSource, ".mpr-clinical-preset.active", "SettingsView CT MPR exact preset must be visually marked.");
-requireIn(cssSource, ".mpr-axis-facts .mpr-workbench-summary", "SettingsView CT MPR workbench summary must be styled.");
-requireIn(cssSource, ".mpr-axis-facts .mpr-preset-fit button", "SettingsView CT MPR nearest-protocol apply action must be styled.");
-requireIn(cssSource, ".mpr-axis-facts .mpr-preset-fit button:disabled", "SettingsView CT MPR nearest-protocol apply action must have a disabled state.");
-requireIn(imagingUiLabelsSource, "sinus_opg", "SettingsView CT MPR presets must include a sinus/panoramic route.");
-requireIn(appSource, "type MprWorkbenchLocalDraft", "App must persist a typed CT MPR local workbench draft.");
-requireIn(appSource, "mprWorkbenchSeriesKey", "App must key CT MPR local drafts by selected DICOM series.");
-requireIn(appSource, "loadLocalMprWorkbenchDraft", "App must restore the last CT MPR workbench view.");
-requireIn(appSource, "saveLocalMprWorkbenchDraft", "App must save the last CT MPR workbench view.");
-requireIn(settingsSource, "mprWorkbenchLocalSavedAt", "SettingsView CT MPR must show saved-view state.");
-requireIn(settingsSource, "restoreMprWorkbenchLocalDraft", "SettingsView CT MPR must expose manual restore for the last view.");
-requireIn(settingsSource, 'data-testid="ct-mpr-memory-strip"', "SettingsView CT MPR saved-view strip must be test-tagged.");
-requireIn(settingsSource, "mprControlsReady", "SettingsView CT MPR controls must have a selected-series readiness guard.");
-requireIn(settingsSource, 'aria-disabled={!mprControlsReady}', "SettingsView CT MPR axis visualizer must expose disabled readiness.");
-requireIn(settingsSource, "const planeSupported = typedCbctWorkbenchProjections.includes(plane.key);", "SettingsView CT MPR plane buttons must detect projections unavailable for the selected series.");
-requireIn(settingsSource, "disabled={!planeAvailable}", "SettingsView CT MPR plane buttons must wait for a ready series through a named availability guard.");
-requireIn(settingsSource, 'className="mpr-plane-unavailable"', "SettingsView CT MPR disabled plane buttons must explain why they are disabled.");
-requireIn(cssSource, ".mpr-plane .mpr-plane-unavailable", "SettingsView CT MPR disabled plane reason must be styled.");
-requirePattern(settingsSource, /disabled=\{!mprControlsReady\}\s+min=\{mprAxisBounds\.min\}\s+max=\{mprAxisBounds\.max\}/, "SettingsView CT MPR angle slider must wait for a ready series and use shared bounds.");
-requireIn(settingsSource, "aria-valuetext={mprAxisRangeValue}", "SettingsView CT MPR angle slider must announce readable axis value text.");
-requireIn(settingsSource, "mprSlabBounds", "SettingsView CT MPR slab fields must use the same shared bounds as the clamp helper.");
-requirePattern(settingsSource, /disabled=\{!mprControlsReady\}\s+min=\{mprSlabBounds\.min\}\s+max=\{mprSlabBounds\.max\}/, "SettingsView CT MPR slab slider must wait for a ready series and use shared bounds.");
-requireIn(settingsSource, "aria-valuetext={mprSlabRangeValue}", "SettingsView CT MPR slab slider must announce readable slab value text.");
-requireIn(settingsSource, "aria-valuetext={mprSliceRangeValue}", "SettingsView CT MPR slice slider must announce readable slice value text.");
-requireIn(settingsSource, "mpr-control-disabled-note", "SettingsView CT MPR must explain disabled controls.");
-requireIn(settingsSource, 'data-testid="ct-mpr-axis-nudge"', "SettingsView CT MPR controls must expose fine angle buttons.");
-requireIn(settingsSource, 'data-testid="ct-mpr-slab-nudge"', "SettingsView CT MPR controls must expose fine slab buttons.");
-requireIn(settingsSource, 'data-testid="ct-mpr-slice-nudge"', "SettingsView CT MPR controls must expose fine slice buttons.");
-requireIn(settingsSource, 'data-testid="ct-mpr-manual-inputs"', "SettingsView CT MPR controls must expose exact numeric inputs for angle, slab, and slice.");
-requireIn(settingsSource, "value={mprSafeSliceIndex + 1}", "SettingsView CT MPR exact slice input must show one-based clamped slice numbers.");
-forbidIn(settingsSource, "value={mprSliceIndex + 1}", "SettingsView CT MPR exact slice input must not show an unclamped slice number.");
-requireIn(settingsSource, "Number(event.target.value) - 1, mprSliceMaxIndex", "SettingsView CT MPR exact slice input must convert one-based UI values back to zero-based state.");
-requireIn(cssSource, ".mpr-manual-grid", "SettingsView CT MPR exact numeric inputs must be styled.");
-requireIn(settingsSource, "mprSlicePresetFractions", "SettingsView CT MPR controls must include 25/50/75 percent slice presets.");
-requireIn(settingsSource, "mprSliceIndexFromFraction", "SettingsView CT MPR slice presets must be computed through one clamp helper.");
-requireIn(settingsSource, 'aria-label="Быстрые углы КТ-срезов"', "SettingsView CT MPR controls must expose quick angle buttons.");
-requireIn(settingsSource, 'aria-label="Быстрая толщина слоя КТ-срезов"', "SettingsView CT MPR controls must expose quick slab buttons.");
-requireIn(settingsSource, 'aria-label="Опорные КТ-срезы"', "SettingsView CT MPR controls must expose quick landmark slice buttons.");
-requireIn(settingsSource, "Толщина слоя: {mprSlabMm} мм", "SettingsView CT MPR slab control must use doctor-readable Russian copy.");
-requireIn(settingsSource, "Положение среза: {mprSliceLabel}", "SettingsView CT MPR slice control must use doctor-readable Russian copy.");
-forbidIn(settingsSource, "Slab:", "SettingsView CT MPR must not expose English slab jargon in the visible control label.");
-forbidIn(settingsSource, "slab и связанные плоскости", "SettingsView CT MPR disabled guidance must not expose slab jargon.");
-requireIn(settingsSource, 'className="mpr-reset-button"', "SettingsView CT MPR must expose a styled reset action.");
-requireIn(settingsSource, "type DicomFirstFrameViewerState", "SettingsView must keep first-frame DICOM viewer controls typed.");
-requireIn(settingsSource, "DicomFirstFramePreviewResponse", "SettingsView must type first-frame DICOM preview responses.");
-requireIn(settingsSource, "typedDicomFirstFramePreview", "SettingsView first-frame DICOM preview must not render stack facts from any.");
-requireIn(settingsSource, "typedDicomFirstFrameViewerState", "SettingsView first-frame DICOM controls must not render from any-typed state.");
-requireIn(settingsSource, "updateDicomFirstFrameViewerState", "SettingsView first-frame DICOM buttons must update through a typed helper.");
-requireIn(settingsSource, "updateDicomFirstFrameViewerNumber", "SettingsView first-frame DICOM sliders must update through a typed helper.");
-requireIn(settingsSource, "dicomFirstFrameSelectableCount", "SettingsView first-frame DICOM preview must expose stack size.");
-requireIn(settingsSource, "dicomFirstFrameCurrentIndex", "SettingsView first-frame DICOM preview must expose current slice index.");
-requireIn(settingsSource, "previewDicomFirstFrameSlice", "SettingsView first-frame DICOM preview must be able to request another slice.");
-requireIn(settingsSource, 'data-testid="dicom-first-frame-slice-controls"', "SettingsView first-frame DICOM preview must render slice navigation controls.");
-requireIn(settingsSource, 'aria-label="Выбрать срез снимков"', "SettingsView first-frame DICOM slider must be accessible.");
-requireIn(settingsSource, "typedDicomFirstFramePreview?.warnings.slice(0, 4).map((warning: string)", "SettingsView first-frame warnings must render through typed rows.");
-forbidIn(settingsSource, "setDicomFirstFrameViewerState((state: any)", "SettingsView first-frame DICOM viewer state updates must not use any.");
-forbidIn(settingsSource, "onChange={(event: any) =>\n                              setDicomFirstFrameViewerState", "SettingsView first-frame DICOM sliders must not use any-typed events.");
-forbidIn(settingsSource, "dicomFirstFramePreview.warnings.slice(0, 4).map((warning: any)", "SettingsView first-frame warnings must not use any.");
-requireIn(appSource, "type DicomFirstFramePreviewRequestContext", "App must remember the local first-frame preview request context without exposing paths in the API response.");
-requireIn(appSource, "type DicomFirstFramePreviewOptions", "App must type first-frame preview slice options.");
-requireIn(appSource, "preferredFileIndex", "App must send a preferred DICOM file index for slice navigation.");
-requireIn(appSource, "previewDicomFirstFrameSlice", "App must expose first-frame DICOM slice navigation.");
-requireIn(appSource, "resetViewer: false", "Changing first-frame DICOM slices must preserve viewer transform controls.");
-requireIn(settingsSource, "const staffCreationRoles: StaffRole[]", "SettingsView must keep staff role creation typed.");
-requireIn(settingsSource, "const clinicalRuleOwnerRoles: StaffRole[]", "SettingsView must keep clinical rule owners typed.");
-requireIn(settingsSource, "ClinicalRule,", "SettingsView must import the shared clinical rule contract.");
-requireIn(settingsSource, "ServiceCatalogItem,", "SettingsView must import the shared service catalog item contract.");
-requireIn(settingsSource, "typedClinicalRules", "SettingsView clinical rule library must not render from untyped dashboard props.");
-requireIn(settingsSource, "typedServiceCatalog", "SettingsView clinical rule selects must not render services from untyped dashboard props.");
-requireIn(settingsSource, "typedClinicalRuleActionLabels", "SettingsView clinical rule actions must use typed labels.");
-requireIn(settingsSource, "typedServiceCategoryLabels", "SettingsView clinical rule categories must use typed labels.");
-forbidIn(settingsSource, "dashboard.clinicalRules.map((rule: any)", "SettingsView clinical rule library must not use any-typed rule rows.");
-forbidIn(settingsSource, "dashboard.serviceCatalog.map((service: any)", "SettingsView clinical rule service selects must not use any-typed service rows.");
-forbidIn(settingsSource, "newRuleAction} onChange={(event: any)", "SettingsView clinical rule action select must use SelectChangeEvent.");
-forbidIn(settingsSource, "newRuleSeverity} onChange={(event: any)", "SettingsView clinical rule severity select must use SelectChangeEvent.");
-forbidIn(settingsSource, "newRuleCategory} onChange={(event: any)", "SettingsView clinical rule category select must use SelectChangeEvent.");
-forbidIn(settingsSource, "(serviceId: any)", "SettingsView clinical rule service tags must not use any-typed ids.");
-requireIn(settingsSource, "recognitionInputReady", "SettingsView must guard empty AI recognition input.");
-requireIn(settingsSource, "smartImportInputReady", "SettingsView must guard empty smart import input.");
-requireIn(settingsSource, "runMigrationAutopilot", "SettingsView must expose one-click migration autopilot.");
 requireIn(
-  settingsSource,
-  "runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })",
-  "Text/Excel/OCR migration autopilot must force pasted smart-import text into the plan without discarding visible source discovery."
+	appSource,
+	'lazy(() => import("./SettingsView")',
+	"App.tsx must lazy-load SettingsView.",
 );
-requireIn(settingsSource, "previewMigrationAutopilotSources", "SettingsView must let the operator script build smart preview from autopilot sources.");
-requireIn(settingsSource, "MigrationAutopilotOperatorScriptStep", "SettingsView must type migration operator script steps.");
-requireIn(settingsSource, "MigrationLocalSourceDiscoveryCandidate", "SettingsView must type migration operator source candidates.");
-requireIn(settingsSource, "MigrationLocalSourceDiscoveryResponse", "SettingsView must type migration discovery responses.");
-requireIn(settingsSource, "MigrationLocalSourceWorkupResponse", "SettingsView must type migration workup responses.");
-requireIn(settingsSource, "MigrationLocalSourceProbeResponse", "SettingsView must type migration probe responses.");
-requireIn(settingsSource, "ClinicPublicLookupResponse", "SettingsView must type clinic public lookup responses.");
-requireIn(settingsSource, "migrationCandidatePreviewReady", "SettingsView must distinguish real preview-ready migration sources from folder/profile hints.");
-requireIn(settingsSource, "migrationCandidatePreviewHint", "SettingsView must explain disabled migration preview buttons in operator language.");
-requireIn(settingsSource, "migrationPreviewableSourceCount", "Migration progress must count only sources that can actually build a preview.");
-requireIn(settingsSource, "disabled={isSmartImportLoading || !migrationCandidatePreviewReady(candidate)}", "Discovery source preview buttons must stay disabled until a source has files for preview.");
-requireIn(settingsSource, "disabled={isSmartImportLoading || !migrationCandidatePreviewReady(source.candidate)}", "Autopilot source preview buttons must stay disabled until a source has files for preview.");
-requireIn(settingsSource, "operatorStepPreviewReady", "Operator build-preview steps must not advertise a working action for empty generic migration containers.");
-requireIn(settingsSource, "disabled={isSmartImportLoading || !operatorStepPreviewReady}", "Operator build-preview buttons must stay disabled until at least one source can preview.");
-requireIn(settingsSource, "Сначала откройте план или проверку источника", "Disabled preview buttons must tell admins the next useful action.");
-requireIn(appSource, "migrationCandidateCanPreview", "App preview handlers must guard source previews even when UI state is stale.");
-requireIn(appSource, "У найденного источника пока нет файлов для предпросмотра", "Direct source preview calls must fail visibly for empty generic migration containers.");
-requireIn(appSource, "У выбранного источника пока нет файлов для предпросмотра", "Autopilot source preview calls must fail visibly for selected empty generic migration containers.");
-forbidIn(settingsSource, "staging preview", "Migration source hints must not expose staging-preview jargon to operators.");
-forbidIn(settingsSource, "файлов для preview", "Migration source hints must use Russian preview wording.");
-forbidIn(appSource, "файлов для preview", "Migration source errors must use Russian preview wording.");
-requireIn(settingsSource, "typedMigrationAutopilotSources", "SettingsView must not render autopilot sources from untyped props.");
-requireIn(settingsSource, "typedMigrationAutopilotSteps", "SettingsView must not render autopilot steps from untyped props.");
-requireIn(settingsSource, "typedMigrationOperatorLanes", "SettingsView must not render operator lanes from untyped props.");
-requireIn(settingsSource, "typedMigrationHandoffChecklist", "SettingsView must not render handoff checklist rows from untyped props.");
-requireIn(settingsSource, "migrationTriageItems", "SettingsView must derive a short migration triage queue from the typed handoff checklist.");
-requireIn(settingsSource, 'item.blocking || item.status !== "ready_for_preview"', "Migration triage must hide already-ready checklist noise for non-technical operators.");
-requireIn(settingsSource, "typedMigrationDiscoveryCandidates", "SettingsView must not render source discovery rows from untyped props.");
-requireIn(settingsSource, "const sourceDisplayName = migrationSourceDisplayName(source.candidate, index);", "Autopilot source cards must compute one operator-facing source name for repeated actions.");
-requireIn(settingsSource, "const candidateDisplayName = migrationSourceDisplayName(candidate, index);", "Discovery source cards must compute one operator-facing source name for repeated actions.");
-requireIn(settingsSource, "aria-label={`Открыть план переноса: ${sourceDisplayName}`}", "Autopilot source plan buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "aria-label={`Проверить источник: ${sourceDisplayName}`}", "Autopilot source probe buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "aria-label={`Отправить источник в разбор: ${sourceDisplayName}`}", "Autopilot source parser buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "aria-label={`Построить предпросмотр: ${sourceDisplayName}`}", "Autopilot source preview buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "aria-label={`Открыть план переноса: ${candidateDisplayName}`}", "Discovered source plan buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "aria-label={`Проверить источник: ${candidateDisplayName}`}", "Discovered source probe buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "aria-label={`Отправить источник в разбор: ${candidateDisplayName}`}", "Discovered source parser buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "aria-label={`Построить предпросмотр: ${candidateDisplayName}`}", "Discovered source preview buttons must name the exact source for assistive tech.");
-requireIn(settingsSource, "typedMigrationWorkupReadinessIssues", "SettingsView must not render workup readiness rows through any.");
-requireIn(settingsSource, "typedMigrationProbeReadinessIssues", "SettingsView must not render probe readiness rows through any.");
-requireIn(settingsSource, "typedClinicPublicLookupSuggestions", "SettingsView must not render clinic lookup suggestions through any.");
-requireIn(settingsSource, "typedClinicPublicLookupTargets", "SettingsView must not render clinic lookup targets through any.");
-requireIn(settingsSource, "migrationOperatorScriptSteps", "SettingsView must not search operator steps through any-typed optional chains.");
-requireIn(appSource, "Источник из автоплана уже не найден", "Autopilot preview actions must fail visibly instead of previewing the wrong source set.");
-requireIn(settingsSource, "downloadMigrationHandoffReport", "SettingsView must expose migration handoff CSV download.");
-requireIn(settingsSource, "migrationAutopilot", "SettingsView must render migration autopilot results.");
-requireIn(settingsSource, "migrationAutopilot.operatorPacket", "SettingsView must render the migration operator packet.");
-requireIn(settingsSource, "migrationDryRunSummary", "SettingsView must render the migration dry-run summary from the typed operator packet.");
-requireIn(settingsSource, "typedMigrationAutopilot?.operatorPacket.dryRun", "SettingsView must use the dry-run migration contract.");
-requireIn(settingsSource, "data-testid=\"migration-dry-run-summary\"", "SettingsView must test-tag the migration dry-run summary.");
-requireIn(settingsSource, "Быстрый прогон", "SettingsView must show dry-run migration effort in operator language.");
-requireIn(settingsSource, "typedMigrationHandoffChecklist.slice(0, 6).map", "SettingsView must render the migration handoff checklist through the typed contract.");
-requireIn(settingsSource, "migrationAutopilot.operatorPacket.totals.smartPreviewSources", "SettingsView must show how many migration sources came from pasted text/OCR.");
-requireIn(settingsSource, "migrationPrimaryOperatorStep", "SettingsView must lift the best migration operator step into a primary action.");
-requireIn(settingsSource, "data-testid=\"migration-autopilot-primary-action\"", "SettingsView must test-tag the primary migration action.");
-requireIn(settingsSource, "migration-primary-action-button", "SettingsView must wire the primary migration action to a real button.");
-requireIn(settingsSource, 'const actionButtonClass = testScope === "primary" ? "primary-button" : "text-button"', "Primary migration operator actions must render as visually primary buttons.");
-requireIn(settingsSource, '<ScanSearch aria-hidden="true" /> {step.buttonLabel}', "Migration operator search/probe actions must use a recognizable icon.");
-requireIn(settingsSource, '<Database aria-hidden="true" /> {step.buttonLabel}', "Migration operator folder-pick actions must use a recognizable icon.");
-requireIn(settingsSource, '<ClipboardCheck aria-hidden="true" /> {step.buttonLabel}', "Migration operator plan actions must use a recognizable icon.");
-requireIn(settingsSource, '<FileCheck2 aria-hidden="true" /> {step.buttonLabel}', "Migration operator preview/export actions must use a recognizable icon.");
-requireIn(settingsSource, "operatorStepNeedsCandidate", "Operator script source-bound steps must detect stale missing candidates.");
-requireIn(settingsSource, "migrationOperatorSourceBoundActions.includes(step.action)", "Operator script preview steps must detect stale missing candidates through the typed source-bound action list.");
-requireIn(settingsSource, 'step.action === "build_preview" && !operatorStepNeedsCandidate', "Stale preview steps must refresh the plan instead of showing a guaranteed failing preview button.");
-requireIn(settingsSource, "operator-script-refresh-plan", "Operator script must offer a refresh action when a source-bound step lost its candidate.");
-requireIn(settingsSource, "Источник уже не в текущем автоплане", "Operator script must explain stale source-bound actions instead of hiding the button.");
 requireIn(
-  settingsSource,
-  "runMigrationAutopilot(undefined, { includeSmartImportText: smartImportInputReady })",
-  "Stale operator script actions must rebuild the migration autoplan with current pasted text/OCR when present."
+	appSource,
+	"<SettingsView",
+	"App.tsx must render the lazy settings boundary.",
 );
-requireIn(settingsSource, "activeMigrationDiscoveryForSettingsAutopilot", "SettingsView must keep the visible migration discovery when rerunning autopilot from the parser card.");
 requireIn(
-  settingsSource,
-  "runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })",
-  "Parser-card autopilot must combine current discovered sources with pasted text/OCR instead of dropping one side."
+	appSource,
+	"responseStatusFailureLabel",
+	"App API failures must use readable operator status labels.",
+);
+requireIn(
+	appSource,
+	"сервер не смог выполнить действие",
+	"App API failure fallback must not expose raw API status jargon.",
 );
 forbidIn(
-  settingsSource,
-  "smartImportInputReady ? runMigrationAutopilot(null, { includeSmartImportText: true }) : runMigrationAutopilot()",
-  "Parser-card autopilot must not discard the current PC/browser source discovery when pasted text is present."
+	appSource,
+	"API ${",
+	"App user-facing request failures must not expose raw API status templates.",
 );
-requireIn(settingsSource, "renderMigrationTechnicalNotes", "SettingsView must move migration guardrail notes out of the main operator path.");
-requireIn(settingsSource, "migration-autopilot-technical-boundary", "SettingsView must keep lookup guardrails in a compact technical details block.");
-requireIn(settingsSource, "Дальше работайте сверху вниз", "SettingsView must prioritize workflow guidance over warning copy in the autoplan header.");
-requireIn(settingsSource, "migrationLegacySourceKindLabels", "SettingsView must render legacy source kinds as human labels.");
-requireIn(settingsSource, "migrationAutomationLevelLabels", "SettingsView must render migration automation levels as human labels.");
-requireIn(settingsSource, "migrationOwnerLabels[migrationPrimaryOperatorStep.owner]", "Primary migration action must show human operator labels.");
-requireIn(settingsSource, "humanizeMigrationText(migrationPrimaryOperatorStep.detail)", "Primary migration action must humanize backend detail text.");
-requireIn(settingsSource, "migrationHandoffPhaseLabels", "SettingsView must render migration handoff phases as human labels.");
-requireIn(settingsSource, "migrationHandoffPhaseLabels[item.phase]", "Migration handoff checklist must not expose raw phase keys.");
-requireIn(settingsSource, "migrationEntityLabels", "SettingsView must render extractable migration entities as human labels.");
-requireIn(settingsSource, "smartImportMigrationPlanStatusLabels", "SettingsView must render smart import migration plan step statuses as human labels.");
-requireIn(settingsSource, "smartImportLineKindLabels", "SettingsView must render smart import line kinds as human labels.");
-requireIn(settingsSource, "migrationWorkupStepStatusLabels", "SettingsView must render migration workup step statuses as human labels.");
-requireIn(settingsSource, "importRowStatusLabels", "SettingsView must render patient, imaging, and DICOM row statuses as human labels.");
-requireIn(settingsSource, "importRowStatusLabels[row.status] ?? row.status", "SettingsView must show import row status labels on row cards.");
-requireIn(settingsSource, "humanizeMigrationText", "SettingsView must humanize backend migration route text before rendering.");
-requireIn(settingsSource, "humanizeMigrationText(warning)", "Migration source warnings must be humanized before rendering.");
-requireIn(settingsSource, "humanizeMigrationList(source.bridgeKit.requiredTools, 2)", "Migration source cards must not render raw bridge tool names.");
-requireIn(settingsSource, "humanizeMigrationColumns(typedMigrationSourceWorkup.bridgeKit.outputManifest.requiredColumns, 5)", "Migration workup manifests must show readable column names.");
-requireIn(settingsSource, "migrationHandoffRouteLabel(handoff)", "Migration workup handoffs must not render raw API methods and endpoints.");
-requireIn(settingsSource, "Умный разбор", "Settings smart import entry point must use clinic-readable wording instead of parser jargon.");
-requireIn(settingsSource, 'aria-label="Режим умного разбора"', "Settings smart import mode group must not expose parser jargon.");
-requireIn(settingsSource, 'aria-label="Смешанная выгрузка для умного разбора"', "Settings smart import textarea must not expose parser jargon.");
-requireIn(settingsSource, "локальный разбор + проверка", "Settings pricelist local mode must use clinic-readable wording.");
-requireIn(settingsSource, "офлайн-разбор включен", "Settings speech gateway status must use clinic-readable wording.");
-requireIn(settingsSource, "локальный разбор выключен", "Settings speech gateway disabled status must use clinic-readable wording.");
-forbidIn(settingsSource, "Умный парсер", "Settings smart import entry point must not expose parser jargon.");
-forbidIn(settingsSource, "Режим умного парсера", "Settings smart import mode group must not expose parser jargon.");
-forbidIn(settingsSource, "Смешанная выгрузка для умного парсера", "Settings smart import textarea must not expose parser jargon.");
-forbidIn(settingsSource, "локальный парсер + проверка", "Settings pricelist local mode must not expose parser jargon.");
-forbidIn(settingsSource, "офлайн-парсер включен", "Settings speech gateway status must not expose parser jargon.");
-forbidIn(settingsSource, "парсер выключен", "Settings speech gateway disabled status must not expose parser jargon.");
-requireIn(settingsSource, "сетевой адрес", "Migration humanizer must call endpoints a network address, not API jargon.");
-requireIn(settingsSource, "архив снимков", "Migration humanizer must translate DICOMweb/PACS wording into operator language.");
-requireIn(settingsSource, "контроль строки", "Migration manifests must translate source_row_hash into an operator-readable label.");
-requireIn(settingsSource, "подключение к живой базе", "Migration manifests must translate live DB connection fields before rendering.");
-forbidIn(settingsSource, "точка API", "SettingsView must not expose API endpoint jargon in migration copy.");
-forbidIn(settingsSource, "{handoff.method} {handoff.endpoint}", "Migration handoff rows must hide raw API method and endpoint details.");
-forbidIn(settingsSource, "renderMigrationOperatorStepActions = (step: any", "Migration operator actions must not accept any-typed steps.");
-forbidIn(settingsSource, "operatorScript?.steps.find((step: any)", "Migration primary operator step selection must not use any-typed steps.");
-forbidIn(settingsSource, "operatorScript.steps.slice(0, 7).map((step: any)", "Migration operator script rows must not use any-typed steps.");
-forbidIn(settingsSource, "migrationAutopilot.sources.find((source: any)", "Migration operator candidate lookup must not use any-typed sources.");
-forbidIn(settingsSource, "migrationAutopilot.sources.slice(0, 6).map((source: any)", "Migration autopilot source cards must not use any-typed sources.");
-forbidIn(settingsSource, "migrationAutopilot.operatorPacket.lanes.slice(0, 5).map((lane: any)", "Migration operator lanes must not use any-typed rows.");
-forbidIn(settingsSource, "migrationAutopilot.operatorPacket.handoffChecklist.slice(0, 6).map((item: any)", "Migration handoff checklist must not use any-typed rows.");
-forbidIn(settingsSource, "migrationAutopilot.steps.slice(0, 6).map((step: any)", "Migration autopilot summary steps must not use any-typed rows.");
-forbidIn(settingsSource, "source.readiness?.blockers.slice(0, 2).map((item: any)", "Migration source readiness blockers must not use any-typed rows.");
-forbidIn(settingsSource, "source.probe?.adapters.slice(0, 2).map((adapter: any)", "Migration source probe adapters must not use any-typed rows.");
-forbidIn(settingsSource, "migrationSourceDiscovery.candidates.slice(0, 9).map((candidate: any)", "Migration discovery cards must not use any-typed candidates.");
-forbidIn(settingsSource, "[...migrationSourceWorkup.readiness.blockers, ...migrationSourceWorkup.readiness.warnings].slice(0, 3).map((item: any)", "Migration workup readiness rows must not use any.");
-forbidIn(settingsSource, "migrationSourceWorkup.handoffs.slice(0, 3).map((handoff: any)", "Migration workup handoffs must not use any.");
-forbidIn(settingsSource, "migrationSourceWorkup.steps.map((step: any)", "Migration workup steps must not use any.");
-forbidIn(settingsSource, "[...migrationSourceProbe.readiness.blockers, ...migrationSourceProbe.readiness.warnings].slice(0, 3).map((item: any)", "Migration probe readiness rows must not use any.");
-forbidIn(settingsSource, "migrationSourceProbe.adapters.slice(0, 4).map((adapter: any)", "Migration probe adapters must not use any.");
-forbidIn(settingsSource, "migrationSourceProbe.artifactSamples.slice(0, 8).map((artifact: any)", "Migration probe artifacts must not use any.");
-forbidIn(settingsSource, "clinicPublicLookup.suggestions.slice(0, 4).map((suggestion: any", "Clinic lookup profile suggestions must not use any.");
-forbidIn(settingsSource, "clinicPublicLookup.suggestions.slice(0, 3).map((suggestion: any", "Clinic lookup import suggestions must not use any.");
-forbidIn(settingsSource, "clinicPublicLookup.publicLookupTargets.map((target: any)", "Clinic lookup public targets must not use any.");
-requireIn(settingsSource, "clinicPublicLookupProviderStatusLabels", "Clinic lookup provider states must render as human labels.");
-requireIn(settingsSource, "clinicPublicLookupSuggestionSourceLabels", "Clinic lookup suggestion sources must render as human labels.");
-requireIn(settingsSource, "clinicPublicLookupBoundaryText", "Clinic lookup UI must show a visible public-search boundary.");
-requireIn(settingsSource, "const clinicPublicLookupWarningText", "Clinic lookup warnings must use a UI-owned readable formatter.");
-requireIn(settingsSource, "clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (\n                    <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>", "Clinic profile lookup warnings must not render raw backend wording.");
-requireIn(settingsSource, "clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (\n                  <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>", "Import-side clinic lookup warnings must not render raw backend wording.");
-requireIn(settingsSource, "typedMigrationAutopilotClinicLookup.warnings.slice(0, 3).map((warning: string) => (\n                      <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>", "Migration autopilot clinic lookup warnings must not render raw backend wording.");
-requireIn(settingsSource, "Пациентов, снимки, базы и локальные пути сюда не отправлять.", "Clinic lookup boundary must explicitly forbid patient/imaging/local-path data.");
-requireIn(cssSource, ".clinic-public-boundary", "Clinic lookup boundary must be styled.");
-requireIn(settingsSource, "Сервис реквизитов", "Clinic lookup provider brand must render as a human requisites service label.");
-requireIn(settingsSource, "Из введенных реквизитов", "Manual clinic lookup fallback must not expose raw manual_public_targets source text.");
-forbidIn(settingsSource, 'dadata: "DaData"', "Clinic lookup suggestion source must not expose provider brand as the primary operator label.");
-forbidIn(settingsSource, "suggestion.warnings.slice(0, 2).map((warning: string) => (\n                            <small key={warning}>{warning}</small>", "Clinic lookup suggestion warnings must not render raw backend wording.");
-forbidIn(settingsSource, "clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (\n                    <small key={warning}>{warning}</small>", "Clinic profile lookup warnings must not render raw backend wording.");
-forbidIn(settingsSource, "clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (\n                  <small key={warning}>{warning}</small>", "Import-side clinic lookup warnings must not render raw backend wording.");
-forbidIn(settingsSource, "typedSmartImportPreview.clinicSuggestion.warnings.slice(0, 2).map((warning: string) => (\n                        <small key={warning}>{warning}</small>", "Smart import clinic suggestion warnings must not render raw backend wording.");
-requireIn(settingsSource, "План переноса", "SettingsView must use human migration action labels instead of short technical buttons.");
-requireIn(settingsSource, "Проверить источник", "SettingsView must label probe actions as source checks.");
-requireIn(settingsSource, "Предпросмотр", "SettingsView must label preview actions in Russian.");
-requireIn(settingsSource, "smart-import-legacy-source-privacy-notes", "SettingsView must keep smart import source privacy copy in technical details.");
-requireIn(settingsSource, "clinicPublicLookupFieldLabels[key] ?? key", "SettingsView must render smart import clinic suggestion fields as human labels.");
-requireIn(settingsSource, "data-testid=\"migration-kickstart-panel\"", "SettingsView must put the main migration entrypoints before the text workbench.");
-requireIn(settingsSource, "Быстрый перенос без ручного поиска", "Migration kickstart must tell admins which route to start with.");
-requireIn(settingsSource, "data-testid=\"migration-progress-strip\"", "Migration kickstart must show source/plan/preview/requisites readiness.");
-requireIn(settingsSource, "migrationProgressItems", "Migration readiness strip must be derived from current migration state.");
-requireIn(settingsSource, "Отчет переноса", "Migration reports must be labeled for the clinic transfer workflow, not only IT.");
-requireIn(settingsSource, "Отчет проверки", "Smart import diagnostic report must use clinic-readable wording instead of CSV-first wording.");
-requireIn(settingsSource, "План переноса", "Migration handoff download must be labeled for admin/doctor/operator transfer work, not only IT.");
-requireIn(settingsSource, "Табличный отчет для администратора, врача и специалиста переноса", "Migration report tooltip must make the role audience explicit without CSV-first wording.");
-forbidIn(settingsSource, "CSV-отчет", "SettingsView must not label migration reports as CSV-first actions.");
-forbidIn(settingsSource, "CSV-список пациентов", "SettingsView migration humanizer must not turn internal manifests into CSV-first wording.");
-forbidIn(settingsSource, 'spreadsheet_export: "Excel/таблица"', "SettingsView migration spreadsheet label must not mix raw extension and table wording.");
-requireIn(settingsSource, 'spreadsheet_export: "Табличная выгрузка"', "SettingsView migration spreadsheet label must be operator-readable.");
-forbidIn(appSource, 'spreadsheet_export: "Excel/XLSX выгрузка"', "App migration spreadsheet label must not expose XLSX jargon.");
-requireIn(appSource, 'spreadsheet_export: "Табличная выгрузка"', "App migration spreadsheet label must be operator-readable.");
-forbidIn(appSource, "PDF, XLSX, DOCX, ZIP или фото", "Onboarding document route copy must not expose raw extension soup.");
-requireIn(appSource, "распознанный документ, таблицу, архив или фото", "Onboarding document route copy must use operator-readable file categories.");
-forbidIn(settingsSource, "ZIP, PDF, DOCX, XLSX, CSV, TXT, HTML, RTF", "Document ingestion heading must not expose raw extension soup as the primary label.");
-forbidIn(settingsSource, "ZIP/XML-извлекатель", "Document ingestion help must not expose implementation extractor jargon.");
-forbidIn(appSource, "перед CSV-отчетом", "Smart import empty-report guard must not use CSV-first wording.");
-forbidIn(appSource, 'csv: "таблица CSV"', "Detected document type labels must not expose CSV-first wording.");
-forbidIn(appSource, 'json: "JSON"', "Detected document type labels must not expose JSON as an operator-facing type.");
-forbidIn(appSource, 'xml: "XML"', "Detected document type labels must not expose XML as an operator-facing type.");
-forbidIn(appSource, 'zip: "ZIP-архив"', "Detected document type labels must use archive wording instead of ZIP-first wording.");
-requireIn(appSource, 'json: "структурированный текст"', "Detected structured file labels must use human wording.");
-requireIn(settingsSource, "migrationSourceKindLabel", "Migration source kind fallbacks must be humanized instead of rendered as raw enum keys.");
-requireIn(settingsSource, "humanizeMigrationText(source.priority)", "Migration source priority fallback must be human-readable.");
-requireIn(settingsSource, "humanizeMigrationText(typedMigrationSourceWorkup.automationLevel)", "Migration workup automation fallback must be human-readable.");
-requireIn(settingsSource, "Границы онлайн-поиска", "Migration lookup guardrails must use Russian operator wording.");
-requireIn(settingsSource, "Не отправлять в онлайн-поиск", "Migration lookup blocked fields must use Russian operator wording.");
-requireIn(appSource, 'link.download = "plan_perenosa_migracii.csv"', "Migration plan download name must not expose handoff/internal jargon.");
-requireIn(appSource, 'link.download = "otchet_perenosa_importa.csv"', "Smart import transfer report download name must not expose handoff/internal jargon.");
-requireIn(settingsSource, "migrationHandoffReportReady", "Migration handoff download must require an autoplan, discovered source, browser manifest, or pasted text.");
-requireIn(settingsSource, "disabled={isMigrationHandoffReportLoading || isMigrationAutopilotLoading || !migrationHandoffReportReady}", "Migration handoff download must wait for an in-flight autoplan and stay disabled without migration context.");
-requireIn(settingsSource, 'const migrationHandoffReportGuidanceId = "migration-handoff-report-guidance"', "Migration handoff report guidance must use a stable id.");
-requireIn(settingsSource, "aria-describedby={!migrationHandoffReportReady ? migrationHandoffReportGuidanceId : undefined}", "Migration handoff download must point to disabled-state guidance.");
-requireIn(settingsSource, "Чтобы скачать план переноса, сначала запустите автоплан, найдите источники на ПК, выберите папку/диск или вставьте выгрузку.", "Migration handoff report guidance must explain the fastest recovery paths.");
-requireIn(settingsSource, "Жду автоплан", "Migration handoff download must explain when it is waiting for autoplan.");
-requireIn(settingsSource, "Сначала автоплан", "Migration handoff download must tell admins what is missing before a transfer plan.");
-requireIn(appSource, "Сначала запустите автоплан миграции, выберите папку/диск или вставьте текст выгрузки для плана переноса.", "Migration handoff download must guard direct calls without migration context.");
-requireIn(appSource, 'responseErrorMessage(response, "Автоплан миграции не построен")', "Migration autopilot failures must surface backend details without raw API-only copy.");
-requireIn(appSource, 'responseErrorMessage(response, "План миграции не создан")', "Migration plan download failures must surface backend details without handoff jargon.");
-requireIn(appSource, 'responseErrorMessage(response, "Поиск старых источников не выполнен")', "Migration PC discovery failures must surface backend details without raw API-only copy.");
-requireIn(appSource, 'responseErrorMessage(response, "План переноса источника не построен")', "Migration source workup failures must use operator-readable wording.");
-requireIn(appSource, 'responseErrorMessage(response, "Проверка источника не выполнена")', "Migration source probe failures must use operator-readable wording.");
-forbidIn(appSource, "Handoff-отчет миграции", "Migration errors must not expose handoff jargon.");
-forbidIn(appSource, 'link.download = "migration_autopilot_handoff.csv"', "Migration plan download filename must not expose handoff jargon.");
-forbidIn(appSource, 'link.download = "smart_import_safe_handoff.csv"', "Smart import transfer report filename must not expose handoff jargon.");
-forbidIn(settingsSource, "Технические границы lookup", "Migration lookup guardrail title must not expose English lookup jargon.");
-forbidIn(settingsSource, "Онлайн lookup", "Migration lookup allowed fields copy must not expose English lookup jargon.");
-forbidIn(settingsSource, "Не использовать для lookup", "Migration lookup forbidden fields copy must not expose English lookup jargon.");
-forbidIn(settingsSource, "?? source.priority", "Migration source cards must not render raw priority enum fallbacks.");
-forbidIn(settingsSource, "?? source.bridgeKit.kind", "Migration source cards must not render raw bridge kind enum fallbacks.");
-forbidIn(settingsSource, "?? typedMigrationSourceWorkup.automationLevel", "Migration workup must not render raw automation enum fallbacks.");
-requireIn(settingsSource, "Распознавание речи", "Speech settings must use human wording instead of STT headings.");
-requireIn(settingsSource, "Состояние распознавания", "Speech status must avoid STT jargon.");
-requireIn(settingsSource, "один понятный предпросмотр", "Migration sources copy must prioritize usability over safety jargon.");
-requireIn(settingsSource, "отдельное подключение", "Integration source copy must avoid connector jargon.");
-requireIn(settingsSource, 'aria-label="Чеклист передачи миграции"', "Migration handoff checklist aria label must be operator-readable.");
-requireIn(settingsSource, 'aria-label="План подключения источника миграции"', "Migration source workup aria label must not expose bridge-kit jargon.");
-requireIn(settingsSource, 'aria-label="План проверки источника миграции"', "Migration source probe aria label must not expose bridge-kit jargon.");
-requireIn(workspaceUiLabelsSource, 'planned_connector: "подключение позже"', "Integration status labels must not expose connector jargon.");
-forbidIn(settingsSource, "Safe CSV", "SettingsView must not expose safe CSV jargon in the import toolbar.");
-forbidIn(settingsSource, "Handoff CSV", "SettingsView must not expose handoff CSV jargon in the import toolbar.");
-forbidIn(settingsSource, "Handoff checklist миграции", "Migration checklist aria label must not expose handoff jargon.");
-forbidIn(settingsSource, "Bridge kit", "Migration workup/probe aria labels must not expose bridge-kit jargon.");
-forbidIn(settingsSource, "где потребуется отдельный коннектор", "Integration source copy must avoid connector jargon.");
-forbidIn(settingsSource, "STT-контур", "SettingsView must not expose STT contour jargon.");
-forbidIn(settingsSource, "Состояние STT", "SettingsView must not expose STT status jargon.");
-forbidIn(settingsSource, "серверный STT", "SettingsView must not expose server STT jargon.");
-requireIn(settingsSource, "pickBrowserMigrationSource", "SettingsView must expose browser-local legacy source manifest selection.");
-requireIn(settingsSource, "browserMigrationDiscovery", "SettingsView must render browser-local migration manifest results.");
-requireIn(settingsSource, "Папка/диск + план", "SettingsView must label browser migration selection as a one-step folder-to-plan action.");
-requireIn(settingsSource, "isBrowserMigrationScanning || isMigrationAutopilotLoading", "Browser migration folder-to-plan action must stay disabled while either scan or autoplan is active.");
-requireIn(settingsSource, "discoverMigrationSources", "SettingsView must expose local migration source discovery.");
-requireIn(settingsSource, "Найти на ПК + план", "SettingsView must label PC discovery as a one-step discovery-to-plan action.");
-requireIn(settingsSource, "migrationSourceDiscovery", "SettingsView must render local migration source discovery results.");
-requireIn(settingsSource, "Автоплан уже построен выше", "SettingsView must not tell admins to build a plan after the autoplan already exists.");
-requireIn(settingsSource, "planMigrationDiscoveryCandidate", "SettingsView must build a safe workup plan for discovered migration sources.");
-requireIn(settingsSource, "previewMigrationDiscoveryCandidate", "SettingsView must let admins preview a discovered migration source in one click.");
-requireIn(settingsSource, "migrationSourceWorkup", "SettingsView must render migration source workup results.");
-requireIn(settingsSource, "probeMigrationDiscoveryCandidate", "SettingsView must run read-only probes for discovered migration sources.");
-requireIn(settingsSource, "migrationSourceProbe", "SettingsView must render migration source probe results.");
-requireIn(settingsSource, "addMigrationDiscoveryCandidateToSmartImport", "SettingsView must let admins send discovered sources to smart import.");
-requireIn(settingsSource, "lookupClinicPublicProfile", "SettingsView must expose public clinic-profile lookup.");
-requireIn(settingsSource, "applyClinicLookupSuggestion", "SettingsView must let admins apply clinic lookup suggestions into the profile draft.");
-requireIn(settingsSource, "clinicLookupSuggestionFieldEntries", "Clinic lookup suggestions must filter applicable profile fields before applying.");
-requireIn(settingsSource, "clinicLookupSuggestionApplySummary", "Clinic lookup suggestions must explain what will be applied before admins click.");
-requireIn(settingsSource, "Совпадает: ${unchangedCount}", "Clinic lookup suggestions must distinguish unchanged values from destructive replacements.");
-requireIn(settingsSource, "updateClinicProfileDraft(key, String(value).trim())", "Clinic lookup apply must trim public-source values before writing profile draft.");
-requireIn(settingsSource, "clinicLookupSuggestionFieldEntries(suggestion.fields)", "Clinic lookup rendered fields must match the actually applicable fields.");
-requireIn(settingsSource, "typedClinicPublicLookupSuggestions.reduce", "Migration progress must count the best applicable public clinic suggestion, not just the first raw result.");
-requireIn(settingsSource, "clinicLookupSuggestionFieldEntries(typedSmartImportPreview.clinicSuggestion.fields).length", "Migration progress must count only smart-import clinic fields that can actually apply to the profile.");
-requireIn(settingsSource, "clinic-public-apply-summary", "Clinic lookup suggestions must render an apply summary in the UI.");
-requireIn(settingsSource, "disabled={!clinicLookupSuggestionFieldEntries(suggestion.fields).length}", "Clinic lookup apply buttons must be disabled when no profile fields are applicable.");
-requireIn(settingsSource, 'data-testid="apply-smart-import-clinic-profile"', "Smart import clinic profile suggestions must be directly applicable to the clinic profile draft.");
-requireIn(settingsSource, "applyClinicLookupSuggestion(typedSmartImportPreview.clinicSuggestion?.fields ?? {})", "Smart import clinic suggestions must use the same filtered apply path as public lookup suggestions and survive stale click state.");
-requireIn(settingsSource, "typedSmartImportPreview.clinicSuggestion.warnings.slice(0, 2)", "Smart import clinic suggestion warnings must be visible before applying fields.");
-requireIn(cssSource, ".import-row .clinic-public-apply-summary", "Smart import clinic apply summary must be readable inside import rows.");
-requireIn(settingsSource, "clinicProfileSaveButtonText", "Import-side clinic suggestions must reuse the live clinic profile save state.");
-requireIn(settingsSource, 'data-testid="save-imports-clinic-profile"', "Public lookup results on the import tab must let admins save the clinic profile without switching tabs.");
-requireIn(settingsSource, 'data-testid="save-smart-import-clinic-profile"', "Smart import clinic suggestions must let admins save the profile after applying fields.");
-requireIn(settingsSource, 'data-testid="migration-autopilot-clinic-suggestions"', "Migration autopilot clinic lookup suggestions must be visible inside the autoplan.");
-requireIn(settingsSource, 'data-testid="apply-migration-autopilot-clinic-profile"', "Migration autopilot clinic lookup suggestions must be directly applicable to the clinic profile draft.");
-requireIn(settingsSource, 'data-testid="save-migration-autopilot-clinic-profile"', "Migration autopilot clinic lookup suggestions must let admins save the profile without switching tabs.");
-requireIn(settingsSource, "typedMigrationAutopilotClinicLookup.suggestions.slice(0, 3)", "Migration autopilot clinic suggestions must render from the autopilot lookup result.");
-requireIn(settingsSource, "typedMigrationAutopilotClinicLookup.warnings.slice(0, 3)", "Migration autopilot clinic lookup warnings must be visible near the suggestions.");
-requireIn(settingsSource, "Подстановка меняет черновик. Для документов и оплат сохраните профиль клиники.", "Smart import clinic profile save guidance must explain the draft/save boundary.");
-requireIn(cssSource, ".clinic-public-save-row", "Clinic profile save actions inside lookup/import cards must be styled.");
-requireIn(cssSource, ".migration-dry-run-summary", "Migration dry-run effort summary must be styled.");
-requireIn(cssSource, ".text-button svg", "Text action buttons with icons must size icons consistently.");
-requireIn(settingsSource, "clinicPublicLookup", "SettingsView must render public clinic lookup results.");
-requireIn(settingsSource, "source.safeSourceAlias", "SettingsView must show safe legacy source aliases instead of raw sourceRef paths.");
-requireIn(settingsSource, "data-testid=\"run-migration-autopilot\"", "SettingsView must test-tag the migration autopilot action.");
-requireIn(settingsSource, "data-testid=\"download-migration-handoff-report\"", "SettingsView must test-tag the migration handoff CSV action.");
-requireIn(settingsSource, "data-testid=\"migration-autopilot-result\"", "SettingsView must test-tag migration autopilot results.");
-requireIn(settingsSource, "data-testid=\"migration-autopilot-operator-packet\"", "SettingsView must test-tag migration operator packet results.");
-requireIn(settingsSource, "data-testid=\"migration-triage-queue\"", "SettingsView must expose the short migration triage queue for admins.");
-requireIn(settingsSource, "const migrationPreAutopilotSourceCount", "Migration progress must aggregate source counts before autopilot exists.");
-requireIn(settingsSource, "typedMigrationDiscoveryCandidates.length + (typedBrowserMigrationDiscovery?.candidates.length ?? 0) + (typedSmartImportPreview?.legacySources.length ?? 0)", "Migration progress must not hide browser or smart-import sources behind a boolean fallback.");
-requireIn(settingsSource, "typedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount", "Migration progress must prefer the server-deduplicated autopilot source count after autopilot exists.");
-requireIn(settingsSource, "operator-script-build-preview", "SettingsView must test-tag the operator script preview action.");
-requireIn(settingsSource, "operator-script-discover-sources", "SettingsView must test-tag the operator script PC discovery action.");
-requireIn(settingsSource, "operator-script-pick-source", "SettingsView must test-tag the operator script folder picker action.");
-requireIn(settingsSource, "data-testid=\"migration-autopilot-handoff-checklist\"", "SettingsView must test-tag migration handoff checklist results.");
-requireIn(settingsSource, "data-testid=\"pick-browser-migration-source\"", "SettingsView must test-tag browser migration source picker.");
-requireIn(settingsSource, "data-testid=\"browser-migration-manifest-result\"", "SettingsView must test-tag browser migration manifest results.");
-requireIn(settingsSource, "data-testid=\"migration-source-discovery-result\"", "SettingsView must test-tag migration discovery results.");
-requireIn(settingsSource, "data-testid=\"browser-migration-empty-recovery\"", "Browser migration empty result must offer recovery actions.");
-requireIn(settingsSource, "data-testid=\"pc-migration-empty-recovery\"", "PC migration empty result must offer recovery actions.");
-requireIn(settingsSource, "focusSmartImportWorkbench", "Migration empty recovery must focus the pasted text/OCR workbench.");
-requireIn(settingsSource, "В выбранной папке не видно старой базы или снимков", "Browser migration empty result must explain the next folder choice.");
-requireIn(settingsSource, "Автопоиск не нашел старую МИС в пределах лимитов", "PC migration empty result must explain the next route.");
-requireIn(settingsSource, "typedBrowserMigrationDiscovery.warnings.slice(0, 4).map((warning) =>", "Browser migration warnings must be rendered through the source contract.");
-requireIn(settingsSource, "<small key={warning}>{humanizeMigrationText(warning)}</small>", "Browser migration warnings must not expose raw manifest/bridge wording to admins.");
-requireIn(appSource, "Браузерный список ограничен", "Browser-selected migration source warnings must use operator-readable wording.");
-forbidIn(appSource, "Браузерный manifest", "Browser-selected migration source warnings must not expose manifest jargon.");
-forbidIn(appSource, "migration bridge для полного автопоиска", "Browser-selected migration source recovery must not expose bridge jargon.");
-requireIn(settingsSource, "data-testid=\"migration-source-workup-result\"", "SettingsView must test-tag migration workup results.");
-requireIn(settingsSource, "data-testid=\"migration-source-probe-result\"", "SettingsView must test-tag migration probe results.");
-requireIn(settingsSource, "Путь к папке и имена, похожие на данные пациента, скрыты до выбора", "SettingsView must avoid exposing raw local paths in discovery cards.");
-requireIn(settingsSource, "imagingImportInputReady", "SettingsView must guard empty imaging import input.");
-requireIn(settingsSource, "patientImportInputReady", "SettingsView must guard empty patient import input.");
-requireIn(settingsSource, "localImagingFolderReady", "SettingsView must guard local DICOM folder actions before a folder path exists.");
-requireIn(settingsSource, "isImportDictating", "SettingsView must expose patient import dictation busy state.");
-requireIn(settingsSource, "newStaffReadyToCreate", "SettingsView must guard empty staff creation.");
-requireIn(settingsSource, "newChairReadyToCreate", "SettingsView must guard empty chair creation.");
-requireIn(settingsSource, "adminSecretReady", "SettingsView must guard empty admin unlock secret.");
-requireIn(settingsSource, "import-empty-guidance", "SettingsView must explain why import actions are blocked.");
-requireIn(settingsSource, "quick-create-guidance", "SettingsView must explain why quick creation is blocked.");
-requireIn(settingsSource, "admin-unlock-guidance", "SettingsView must explain why admin unlock is blocked.");
-requireIn(settingsSource, "disabled={isImportLoading || !patientImportInputReady}", "Patient import preview must be disabled when input is empty.");
-requireIn(settingsSource, "disabled={isImportDictating}", "Patient import dictation must be disabled while recognition is active.");
-requireIn(settingsSource, "aria-busy={isImportDictating || undefined}", "Patient import dictation must expose busy state.");
-requireIn(settingsSource, "disabled={isImagingImportLoading || !imagingImportInputReady}", "Imaging import preview must be disabled when input is empty.");
-requireIn(settingsSource, "disabled={isSmartImportLoading || !smartImportInputReady}", "Smart import preview must be disabled when input is empty.");
-requireIn(settingsSource, "disabled={isRecognitionLoading || !recognitionInputReady}", "AI recognition must be disabled when input is empty.");
-requireIn(settingsSource, "disabled={!typedDicomViewerWorkbenchManifest}", "DICOM workbench JSON download must be disabled until a manifest exists.");
-requireIn(settingsSource, "disabled={!typedDicomViewerToolStateBundle}", "DICOM tool-state JSON download must be disabled until a tool-state bundle exists.");
-requireIn(settingsSource, 'const dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance"', "DICOM workbench series guidance must use a stable id.");
-requireIn(settingsSource, 'const dicomWorkstationGuidanceId = "dicom-workstation-guidance"', "DICOM workstation guidance must use a stable id.");
-requireIn(settingsSource, 'const localDicomFolderGuidanceId = "local-dicom-folder-guidance"', "Local DICOM folder guidance must use a stable id.");
-requireIn(settingsSource, "aria-describedby={!cbctWorkbenchSeries ? dicomWorkbenchSeriesGuidanceId : undefined}", "DICOM workbench buttons must point to missing-series guidance.");
-requireIn(settingsSource, "!cbctWorkbenchSeries ? dicomWorkbenchSeriesGuidanceId : !dicomWorkstationReadiness ? dicomWorkstationGuidanceId : undefined", "DICOM render-cache button must point to missing workstation guidance.");
-requireIn(settingsSource, "Сначала нажмите \"Проверить серии\" и выберите готовую КЛКТ/КТ-серию.", "DICOM workbench guidance must explain the first required step.");
-requireIn(settingsSource, "Для быстрой загрузки сначала нажмите \"Проверить этот ПК\"", "DICOM workstation guidance must explain the workstation check.");
-requireIn(settingsSource, "Берет текущий список снимков", "DICOM series preview copy must not expose manifest jargon.");
-requireIn(settingsSource, "Тяжелые данные снимков не", "DICOM series preview copy must not expose raw pixel wording.");
-requireIn(settingsSource, "плана открытия просмотрщика", "DICOM launch copy must explain the action without manifest jargon.");
-requireIn(settingsSource, "Архив снимков / внешний просмотр", "DICOM launch heading must be operator-readable, not protocol-first.");
-requireIn(settingsSource, 'aria-label="Запуск архива снимков и внешнего просмотра"', "DICOM launch panel aria label must not expose DICOMweb jargon.");
-requireIn(settingsSource, 'aria-label="Просмотр КЛКТ/КТ"', "DICOM workbench result aria label must not expose bundle jargon.");
-requireIn(settingsSource, 'aria-label="План открытия внешнего просмотра"', "DICOM launch result aria label must not expose manifest jargon.");
-requireIn(settingsSource, "Адрес архива снимков", "DICOM archive URL field must use operator-readable wording.");
-requireIn(settingsSource, "Адрес внешнего просмотра", "External viewer URL field must use operator-readable wording.");
-requireIn(settingsSource, "Открыть внешний просмотр", "External viewer launch action must not expose OHIF jargon.");
-requireIn(settingsSource, "dicomArchiveAddressReady", "DICOM archive check button must have a named address readiness guard.");
-requireIn(settingsSource, 'aria-describedby={!dicomArchiveAddressReady ? dicomArchiveAddressGuidanceId : undefined}', "DICOM archive check button must point to missing-address guidance.");
-requireIn(settingsSource, "disabled={!dicomArchiveAddressReady || isDicomWebChecking}", "DICOM archive check button must not fire when the archive address is empty.");
-requireIn(settingsSource, "Введите адрес архива снимков, чтобы проверить подключение.", "DICOM archive missing-address guidance must be visible and readable.");
-requireIn(settingsSource, "ответ архива", "DICOMweb status must not expose raw HTTP jargon.");
-requireIn(settingsSource, "поиск серий готов", "DICOMweb status must not expose QIDO jargon.");
-requireIn(settingsSource, "загрузка снимков настроена", "DICOMweb status must not expose STOW jargon.");
-requireIn(settingsSource, "Рабочий набор пока не сохранен локально.", "DICOM workbench copy must not expose bundle jargon.");
-requireIn(settingsSource, "Скачать состояние", "DICOM state downloads must use human wording instead of raw JSON labels.");
-requireIn(settingsSource, "Состояние просмотрщика · окон", "DICOM tool-state result must not expose raw viewer target ids.");
-requireIn(settingsSource, "dicomViewerLaunchManifest.warnings.slice(0, 3).map(humanizeMigrationText).join", "DICOM launch warnings must not expose raw backend wording.");
-requireIn(settingsSource, "humanizeMigrationText(typedDicomViewerToolStateBundle.nextAction)", "DICOM tool-state next action must not expose raw backend wording.");
-requireIn(settingsSource, "humanizeMigrationText(typedDicomViewerToolStateBundle.exportHints[0])", "DICOM tool-state export hints must not expose raw backend wording.");
-requireIn(settingsSource, "<small key={warning}>{humanizeMigrationText(warning)}</small>", "DICOM tool-state warnings must not expose raw backend wording.");
-requireIn(settingsSource, "dicomViewerLaunchModeLabels[typedDicomViewerWorkbenchManifest.launchManifest.launchMode]", "DICOM workbench result must translate launch mode enums.");
-requireIn(settingsSource, "dicomRenderCachePriorityLabels[task.priority]", "DICOM cache tasks must translate priority enums.");
-requireIn(settingsSource, "firstPaintBudgetMs} мс", "DICOM cache timing must use Russian millisecond units.");
-requireIn(settingsSource, "dicomWebCheck.latencyMs} мс", "DICOM archive latency must use Russian millisecond units.");
-requireIn(settingsSource, "`${bridge.latencyMs} мс`", "Local helper latency must use Russian millisecond units.");
-requireIn(settingsSource, "серия подготовлена для просмотра", "DICOM launch result must not expose raw volume ids.");
-forbidIn(settingsSource, "Админская проверка коннектора и манифеста просмотра", "DICOM launch copy must not expose connector/manifest jargon.");
-forbidIn(settingsSource, "DICOMweb / OHIF передача", "DICOM launch heading must not lead with protocol jargon.");
-forbidIn(settingsSource, "Архив снимков / внешний просмотрщик", "DICOM launch heading must not expose viewer-person jargon.");
-forbidIn(settingsSource, 'aria-label="Запуск архива снимков и внешнего просмотрщика"', "DICOM launch panel aria label must not expose viewer-person jargon.");
-forbidIn(settingsSource, 'aria-label="План открытия внешнего просмотрщика"', "DICOM launch result aria label must not expose viewer-person jargon.");
-forbidIn(settingsSource, "Адрес внешнего просмотрщика", "External viewer URL field must not expose viewer-person jargon.");
-forbidIn(settingsSource, "Открыть внешний просмотрщик", "External viewer launch action must not expose viewer-person jargon.");
-forbidIn(settingsSource, "Открыть во внешнем просмотрщике", "External viewer launch action must not expose viewer-person jargon.");
-forbidIn(settingsSource, "Корень DICOMweb", "DICOM archive input must not expose DICOMweb root jargon.");
-forbidIn(settingsSource, "Корень OHIF", "External viewer input must not expose OHIF root jargon.");
-forbidIn(settingsSource, "Открыть в OHIF", "External viewer launch action must not expose OHIF jargon.");
-forbidIn(settingsSource, "QIDO-поиск", "DICOMweb status must not expose QIDO jargon.");
-forbidIn(settingsSource, "STOW настроен", "DICOMweb status must not expose STOW jargon.");
-forbidIn(settingsSource, "WADO-серия", "DICOMweb status must not expose WADO jargon.");
-forbidIn(settingsSource, "нет HTTP", "DICOMweb status must not expose raw HTTP jargon.");
-forbidIn(settingsSource, "OHIF, Cornerstone", "DICOM advanced copy must not expose viewer implementation jargon.");
-forbidIn(settingsSource, "Пиксельные данные", "DICOM series preview copy must not expose raw pixel wording.");
-forbidIn(settingsSource, 'aria-label="Пакет рабочего места DICOM CT"', "DICOM workbench result aria label must not expose package jargon.");
-forbidIn(settingsSource, "JSON, ничего не записывает", "Pricelist explanation must not expose JSON as the main operator concept.");
-forbidIn(settingsSource, "Скачать JSON", "Settings actions must not expose JSON as the user-facing action.");
-forbidIn(settingsSource, "Сформированный bundle пока не сохранен локально.", "DICOM workbench copy must not expose bundle jargon.");
-forbidIn(settingsSource, "<span>воркеры</span>", "DICOM render cache must say worker threads in Russian.");
-forbidIn(settingsSource, "{typedDicomViewerWorkbenchManifest.launchManifest.launchMode} ·", "DICOM workbench result must not render raw launch mode enums.");
-forbidIn(settingsSource, "{task.priority}: {task.label}", "DICOM cache tasks must not render raw priority enums.");
-forbidIn(settingsSource, "firstPaintBudgetMs} ms", "DICOM cache timing must not use English millisecond units.");
-forbidIn(settingsSource, "dicomWebCheck.latencyMs} ms", "DICOM archive latency must not use English millisecond units.");
-forbidIn(settingsSource, "`${bridge.latencyMs} ms`", "Local helper latency must not use English millisecond units.");
-forbidIn(settingsSource, "cornerstoneVolumeId ??", "DICOM launch result must not expose raw volume ids.");
-requireIn(appSource, "План открытия снимков", "DICOM launch handler errors must use human wording.");
-requireIn(imagingUiLabelsSource, "local_manifest: \"локальный план открытия\"", "DICOM launch mode labels must not expose manifest jargon.");
-requireIn(imagingUiLabelsSource, 'dicomweb_url: "внешний просмотр"', "DICOM launch labels must use external viewing wording.");
-requireIn(imagingUiLabelsSource, 'external_handoff: "внешний просмотр"', "DICOM handoff labels must use external viewing wording.");
-requireIn(imagingUiLabelsSource, 'external_dicom: "внешний просмотр"', "DICOM series viewer labels must use external viewing wording.");
-requireIn(imagingUiLabelsSource, 'external_viewer: "внешний просмотр"', "DICOM texture strategy labels must use external viewing wording.");
-requireIn(imagingUiLabelsSource, 'blocked: "нужно действие"', "DICOM launch blocked label must be operator-readable.");
-forbidIn(imagingUiLabelsSource, "внешний просмотрщик", "Imaging UI labels must not expose viewer-person jargon.");
-forbidIn(imagingUiLabelsSource, "заблокировано", "Imaging UI labels must not expose raw blocked wording.");
-requireIn(imagingUiLabelsSource, "balanced_mpr: \"рабочие КТ-срезы\"", "DICOM quality labels must cover the current shared render-plan contract.");
-forbidIn(imagingUiLabelsSource, "balanced_mpr: \"рабочий MPR\"", "DICOM quality labels must not expose a bare MPR label.");
-forbidIn(imagingUiLabelsSource, "balanced_mpr: \"рабочие MPR-срезы\"", "DICOM quality labels must not expose a bare MPR label.");
-requireIn(imagingUiLabelsSource, "stack_2d_textures: \"срезы по одному\"", "DICOM loading labels must cover the current shared render-plan contract.");
-requireIn(imagingUiLabelsSource, "pass: \"Готово\"", "DICOM readiness checks must not show English OK in the UI.");
-forbidIn(imagingUiLabelsSource, "pass: \"OK\"", "DICOM readiness checks must not show English OK in the UI.");
-requireIn(settingsSource, "dicomFirstFrameFileFormatLabel", "First-frame preview must translate transfer syntax into operator-readable file format.");
-requireIn(settingsSource, "dicomFirstFrameImageTypeLabel", "First-frame preview must translate photometric data into operator-readable image type.");
-requireIn(imagingRoutesSource, "Формат файла снимка не поддерживается быстрым предпросмотром.", "First-frame preview warnings must not expose transfer-syntax wording.");
-requireIn(imagingRoutesSource, "Размер кадра не указан или слишком велик для быстрого предпросмотра.", "First-frame preview warnings must not expose Rows/Columns jargon.");
-requireIn(imagingRoutesSource, "Откройте локальный план серии через обработчик перед загрузкой тяжелых данных.", "DICOM local launch action must not expose pixel-volume jargon.");
-requireIn(imagingRoutesSource, "Браузер сообщает слишком маленький лимит для объемного просмотра.", "CT render-plan warnings must explain browser limits without texture jargon.");
-requireIn(imagingRoutesSource, "Подготовить первое окно объема", "CT render cache task labels must not expose GPU-window jargon.");
-requireIn(imagingRoutesSource, "Для диагностического 3D-просмотра в браузере нужна поддержка современной браузерной графики.", "CT workstation warnings must not expose WebGL2 jargon.");
-forbidIn(settingsSource, "синтаксис передачи не указан", "First-frame preview must not expose transfer syntax jargon.");
-forbidIn(settingsSource, "фотометрия не указана", "First-frame preview must not expose photometric jargon.");
-forbidIn(settingsSource, "стратегия текстур", "CT render plan labels must not expose texture strategy jargon.");
-forbidIn(imagingRoutesSource, "Transfer syntax", "First-frame preview warnings must not expose transfer-syntax jargon.");
-forbidIn(imagingRoutesSource, "Rows/Columns", "First-frame preview warnings must not expose raw image geometry tags.");
-forbidIn(imagingRoutesSource, "BitsAllocated", "First-frame preview warnings must not expose raw pixel-depth tags.");
-forbidIn(imagingRoutesSource, "3D-текстур", "CT render-plan warnings must not expose texture implementation jargon.");
-forbidIn(imagingRoutesSource, "GPU-окно", "CT render cache task labels must not expose GPU-window jargon.");
-forbidIn(imagingRoutesSource, "GPU-текстуру", "CT render-plan actions must not expose GPU texture jargon.");
-forbidIn(imagingRoutesSource, "WebGL2", "CT workstation warnings must not expose WebGL2 jargon.");
-forbidIn(imagingRoutesSource, "декодированием пикселей", "CT render cache actions must not expose pixel decoding jargon.");
-forbidIn(imagingRoutesSource, "неограниченные копии пикселей", "CT cache policy must not expose raw pixel-copy jargon.");
-forbidIn(imagingRoutesSource, "исходные пиксели", "CT tool reasons must not expose raw pixel wording.");
-forbidIn(imagingRoutesSource, "пиксели объема", "CT local launch warnings must not expose pixel-volume jargon.");
-forbidIn(imagingRoutesSource, "secondary capture", "First-frame preview actions must not expose DICOM modality jargon.");
-forbidIn(imagingRoutesSource, "axial/coronal/sagittal", "CT render-plan actions must use Russian plane names.");
-requireIn(settingsStaticDataSource, 'title: "КЛКТ / КТ серии"', "Settings imaging capability card must use dentist-readable КЛКТ / КТ wording.");
-requireIn(settingsStaticDataSource, "серии КЛКТ", "Settings imaging connector copy must not expose CBCT as the primary visible wording.");
-requireIn(settingsStaticDataSource, "Локальный модуль забирает снимок", "Settings imaging connector copy must not expose bridge jargon.");
-forbidIn(settingsStaticDataSource, 'title: "CBCT / CT серии"', "Settings imaging capability card must not expose mixed English CBCT / CT wording.");
-forbidIn(settingsStaticDataSource, "серии CBCT", "Settings imaging connector copy must not expose CBCT as the primary visible wording.");
-forbidIn(settingsStaticDataSource, "Локальный bridge", "Settings imaging connector copy must not expose bridge jargon.");
-forbidIn(appSource, "Манифест просмотра DICOM", "DICOM launch handler errors must not expose manifest jargon.");
-requireIn(appSource, 'responseErrorMessage(response, "Проверка архива снимков не выполнена")', "DICOMweb check failures must surface backend details without raw API-only copy.");
-requireIn(appSource, 'responseErrorMessage(response, "Просмотр КЛКТ/КТ не подготовлен")', "DICOM workbench failures must surface backend details without raw API-only copy.");
-requireIn(appSource, 'responseErrorMessage(response, "План открытия снимков не создан")', "DICOM launch failures must surface backend details without raw API-only copy.");
-requireIn(appSource, 'responseErrorMessage(response, "Состояние просмотра снимков не собрано")', "DICOM viewer-state failures must use operator-readable wording.");
-requireIn(appSource, "Настройки интерфейса сохранены только на этом устройстве. Серверная синхронизация повторится автоматически.", "UI preference sync errors must be readable without raw browser/server details.");
-requireIn(appSource, "Повторите действие или проверьте подключение к серверу клиники.", "Generic request failures must give an operator action instead of raw exception text.");
-requireIn(imagingRoutesSource, "Проверка архива снимков не завершилась; проверьте адрес архива и доступ с сервера клиники.", "DICOMweb probe warnings must hide raw network exceptions and tell the admin what to check.");
-forbidIn(appSource, "Рабочее место DICOM не подготовлено", "DICOM workbench failures must not expose workbench jargon.");
-forbidIn(appSource, "План открытия DICOM не создан", "DICOM launch failures must not expose DICOM manifest jargon.");
-forbidIn(appSource, "Состояние просмотрщика DICOM не собрано", "DICOM viewer-state failures must not expose viewer implementation jargon.");
-forbidIn(appSource, "const detail = error instanceof Error && error.message", "App-level request errors must not append raw exception details to user-facing messages.");
-forbidIn(imagingRoutesSource, "Проверка поиска серий не удалась: ${error.message}", "DICOMweb probe warnings must not expose raw fetch exception text.");
-forbidIn(appSource, "Проверка DICOMweb: API", "DICOMweb failures must not expose raw API-only copy.");
-forbidIn(appSource, "Просмотр КЛКТ/КТ: API", "DICOM workbench failures must not expose raw API-only copy.");
-forbidIn(appSource, "План открытия снимков: API", "DICOM launch failures must not expose raw API-only copy.");
-forbidIn(appSource, "Состояние инструментов DICOM: API", "DICOM viewer-state failures must not expose raw API-only copy.");
-requireIn(settingsSource, "disabled={isImagingFolderScanning || !localImagingFolderReady}", "Local imaging scan buttons must not silently no-op without a folder path.");
-requireIn(settingsSource, "disabled={isDicomFolderWorkupPlanning || !localImagingFolderReady}", "DICOM workup plan button must not silently no-op without a folder path.");
-requireIn(settingsSource, "aria-describedby={!localImagingFolderReady ? localDicomFolderGuidanceId : undefined}", "Local DICOM actions must point to missing-folder guidance.");
-requireIn(settingsSource, "Укажите путь к локальной папке со снимками или выберите КТ через браузер", "Local DICOM first-slice guidance must explain missing folder path.");
-requireIn(appSource, "Укажите путь к папке снимков перед сканированием.", "Local imaging scan handler must fail visibly without a folder path.");
-requireIn(appSource, "Укажите путь к локальной папке со снимками перед чтением метаданных.", "DICOM metadata handler must fail visibly without a folder path.");
-requireIn(appSource, "Укажите путь к локальной папке со снимками перед предпросмотром первого среза.", "DICOM first-slice handler must fail visibly without a folder path.");
-requireIn(appSource, "Укажите путь к локальной папке со снимками перед подготовкой плана.", "DICOM workup handler must fail visibly without a folder path.");
-requireIn(appSource, "Укажите путь к локальной папке со снимками перед подготовкой КТ-просмотра.", "DICOM workbench preparation handler must fail visibly without a folder path.");
-requireIn(settingsSource, "disabled={!newStaffReadyToCreate}", "Staff quick-create must be disabled until a name is entered.");
-requireIn(settingsSource, "disabled={!newChairReadyToCreate}", "Chair quick-create must be disabled until a name is entered.");
-requireIn(settingsSource, "disabled={!adminSecretReady}", "Admin unlock must be disabled until a secret is entered.");
-requireIn(settingsSource, "aria-busy={isPersistenceExporting || undefined}", "Persistence export button must expose busy state.");
-requireIn(settingsSource, 'aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}', "Settings admin unlock input must point to missing-secret guidance.");
-requireIn(settingsSource, "Доступ к защищенным настройкам", "Settings tabs must expose a settings-domain admin unlock panel outside Telegram.");
-requireIn(settingsSource, "Введите секрет администратора клиники, чтобы менять защищенные настройки.", "Settings-domain admin unlock guidance must not imply Telegram access.");
-requireIn(settingsSource, "Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные", "Settings admin unlock must state the settings-only access boundary.");
-requireIn(settingsSource, "Если сервер клиники требует админ-доступ", "Settings admin unlock must explain protected settings without env names.");
-requireIn(settingsSource, "Секрет администратора клиники", "Settings admin unlock label must be operator-readable.");
-requireIn(settingsSource, 'placeholder="введите секрет администратора"', "Settings admin unlock placeholder must not expose the raw header name.");
-requireIn(settingsSource, "localBridgeEndpointSummary(bridge)", "Local bridge readiness must hide raw env names behind a readable summary.");
-requireIn(settingsSource, "серверных настроек: ${bridge.setupSettingsCount}", "Local bridge summary must collapse server setting names into a count.");
-requireIn(sharedSource, "acceptedSettingsCount: z.number().int().nonnegative()", "Speech runtime contract must expose accepted server setting count, not raw env names.");
-requireIn(sharedSource, "missingSettingsCount: z.number().int().nonnegative()", "Speech runtime contract must expose missing server setting count, not raw env names.");
-requireIn(sharedSource, "setupSettingsCount: z.number().int().nonnegative()", "Local module readiness contract must expose setup setting count, not raw env names.");
-forbidIn(sharedSource, "acceptedEnvVars: z.array(z.string())", "Runtime/readiness API contracts must not expose raw env names to the browser.");
-forbidIn(sharedSource, "missingEnvVars: z.array(z.string())", "Runtime/readiness API contracts must not expose missing raw env names to the browser.");
-requireIn(accessGuardSource, "Нужен действующий секрет администратора клиники для изменения защищенных данных.", "Clinical mutation guard must return operator-readable admin-secret copy.");
-requireIn(accessGuardSource, "Нужен действующий секрет администратора клиники для просмотра защищенных данных.", "Clinical read guard must return operator-readable admin-secret copy.");
-requireIn(scheduleRoutesSource, "Для изменения расписания нужен действующий секрет администратора клиники.", "Schedule guard must return operator-readable admin-secret copy.");
-requireIn(settingsRoutesSource, "Для изменения настроек клиники нужен действующий секрет администратора клиники.", "Settings guard must return operator-readable admin-secret copy.");
-requireIn(telegramRoutesSource, "Для управления Telegram нужен действующий секрет администратора клиники.", "Telegram guard must return operator-readable admin-secret copy.");
-forbidIn(accessGuardSource, "A valid x-dente-admin-secret", "Clinical guards must not expose the raw header name in response messages.");
-forbidIn(accessGuardSource, "is required for protected Dental CRM", "Clinical guards must not expose English internal contract copy.");
-forbidIn(scheduleRoutesSource, "нужен действующий x-dente-admin-secret", "Schedule guard must not expose the raw header name in response messages.");
-forbidIn(settingsRoutesSource, "нужен действующий x-dente-admin-secret", "Settings guard must not expose the raw header name in response messages.");
-forbidIn(telegramRoutesSource, "нужен действующий x-dente-admin-secret", "Telegram guard must not expose the raw header name in response messages.");
-requireIn(systemRoutesSource, "Запустите локальный модуль Whisper.cpp и укажите его адрес в серверных настройках.", "Local bridge setup hints must use operator-readable server-settings wording.");
-requireIn(systemRoutesSource, "Локальный обработчик КЛКТ/КТ", "Local DICOM bridge title must use dentist-readable КЛКТ wording.");
-requireIn(systemRoutesSource, "подготовка КЛКТ/КТ-срезов и быстрая загрузка просмотра", "Local DICOM module role must not expose pixel decoding jargon.");
-requireIn(systemRoutesSource, "тяжелые данные КЛКТ/КТ остаются", "Local DICOM privacy copy must avoid raw pixel wording.");
-requireIn(systemRoutesSource, "старые базы, резервные копии, табличные выгрузки и списки ссылок на снимки", "Local migration helper workload must not expose raw database engine lists as the primary wording.");
-requireIn(systemRoutesSource, "Локальный модуль ответил кодом", "Local helper readiness warnings must not expose HTTP jargon.");
-requireIn(systemRoutesSource, 'title: "OCR документов и сканов"', "Local OCR plan title must avoid PDF-first wording.");
-requireIn(systemRoutesSource, "Исправьте адрес локального модуля в серверных настройках.", "Local bridge misconfiguration next action must not expose env names.");
-requireIn(systemRoutesSource, "localBridgeUrlWarning(error)", "Local bridge URL validation must translate exceptions before exposing readiness warnings.");
-requireIn(systemRoutesSource, "localBridgeProbeWarning(error)", "Local bridge probe failures must translate network exceptions before exposing readiness warnings.");
-requireIn(systemRoutesSource, "Адрес локального модуля не читается. Проверьте URL в серверных настройках.", "Local bridge malformed URL warnings must use operator-readable wording.");
-requireIn(systemRoutesSource, "Проверка локального модуля не завершилась; проверьте, что служба запущена и доступна с сервера клиники.", "Local bridge network failures must use operator-readable wording.");
-forbidIn(systemRoutesSource, "warnings: [error instanceof Error ? error.message", "Local bridge URL warnings must not expose raw exception text.");
-forbidIn(systemRoutesSource, "warnings.push(error instanceof Error ? error.message", "Local bridge probe warnings must not expose raw exception text.");
-forbidIn(systemRoutesSource, "Invalid URL", "Local bridge readiness must not expose raw URL parser text.");
-requireIn(persistentStateSource, "type PersistedPayloadReadError", "Persistence read failures must use bounded internal diagnostics.");
-requireIn(persistentStateSource, "function persistenceWarningText", "Persistence integrity warnings must be translated before API exposure.");
-requireIn(persistentStateSource, "warning: backupPayload.error ? persistenceWarningText(backupPayload.error) : null", "Backup integrity warnings must not expose raw parse errors.");
-requireIn(persistentStateSource, "error: error ? persistenceWarningText(error) : null", "Persistence export errors must not expose raw parser text.");
-forbidIn(persistentStateSource, 'error instanceof Error ? error.message : "state_file_parse_failed"', "Persistence integrity report must not expose raw JSON parser errors.");
-forbidIn(persistentStateSource, '"state_file_parse_failed"', "Persistence integrity report must not expose parser diagnostic tokens.");
-requireIn(systemRoutesSource, 'title: "Просмотр КЛКТ / КТ-срезов"', "Local bridge use plan must use dentist-readable КЛКТ wording.");
-requireIn(systemRoutesSource, "Готового локального модуля нет", "Local bridge use plan summary must use operator-readable local module wording.");
-requireIn(systemRoutesSource, "Локальный обработчик сможет раскрывать папки исследования/архивы", "Imaging import local module plan must not expose DICOMDIR jargon.");
-requireIn(systemRoutesSource, "Встроенный извлекатель обрабатывает документы, архивы и таблицы до OCR.", "Local document plan must not expose raw document extension soup.");
-requireIn(systemRoutesSource, "Предпросмотр папки, архива или списка снимков", "Local CT plan must describe archives without ZIP-first wording.");
-requireIn(systemRoutesSource, "обычные архивы; неподдержанные архивы", "Local imaging import plan must not expose ZIP as the operator concept.");
-requireIn(systemRoutesSource, "серверное распознавание изображений для админских OCR/фото-задач", "Local OCR plan must describe the capability instead of the provider brand.");
-requireIn(systemRoutesSource, "Серверное распознавание изображений классифицирует", "Price photo plan must describe clinical image recognition instead of the provider brand.");
-requireIn(systemRoutesSource, "серверный модуль распознавания изображений", "Price photo warning must describe the missing capability instead of the provider brand.");
-requireIn(settingsSource, "dicomGpuClassLabels", "Settings CT workstation UI must translate raw graphics class ids.");
-requireIn(settingsSource, "память просмотра", "Settings CT workstation UI must avoid GPU budget jargon.");
-requireIn(settingsSource, "Нет кадра снимка", "First-frame preview must avoid pixel-frame wording.");
-requireIn(appSource, "исходные снимки остаются в просмотрщике", "Clinical CT viewer summary must avoid raw pixel wording.");
-requireIn(settingsStaticDataSource, "Нужен отдельный просмотрщик: серии КЛКТ/КТ, срезы, архив снимков и предварительная подготовка.", "Settings capabilities must explain CT preparation without MPR/cache jargon.");
-requireIn(settingsSource, "способ предварительной подготовки", "Settings CT preparation guidance must not expose cache strategy wording.");
-requireIn(settingsSource, "без фоновой подготовки", "Settings persistence status must avoid cache jargon.");
-requireIn(settingsSource, "Саму серию открывает внешний или сертифицированный локальный просмотрщик.", "Settings CT helper note must avoid raw pixel wording.");
-requireIn(workspaceUiLabelsSource, 'open_mpr: "открыть КТ-срезы"', "Workspace CT route labels must not expose a bare MPR acronym.");
-requireIn(workspaceUiLabelsSource, 'downsampled_mpr: "быстрые КТ-срезы"', "Workspace CT fallback route labels must use dentist-readable CT wording.");
-requireIn(workspaceUiLabelsSource, 'external_viewer: "внешний просмотр"', "Workspace external-viewer labels must use external viewing wording.");
-requireIn(workspaceUiLabelsSource, 'blocked: "нужно действие"', "Workspace blocked labels must be operator-readable.");
-requireIn(sampleDataSource, "исходный снимок не изменяется", "Server viewer session warnings must avoid raw pixel wording.");
-requireIn(sampleDataSource, "режим ${dicomRenderTextureStrategyAuditLabels[manifest.renderCachePlan.textureStrategy]}", "DICOM workbench audit reason must use readable render-plan labels.");
-forbidIn(systemRoutesSource, "Локальный STT-мост", "Local bridge use plan must not expose STT bridge jargon.");
-forbidIn(systemRoutesSource, "Просмотр CBCT / MPR", "Local bridge use plan must not expose CBCT as the primary visible wording.");
-forbidIn(systemRoutesSource, "DICOM-мост", "Local bridge use plan must not expose bridge jargon.");
-forbidIn(systemRoutesSource, "OCR-мост", "Local bridge use plan must not expose bridge jargon.");
-forbidIn(systemRoutesSource, "Firebird/InterBase, Access, SQLite, SQL Server, 1C export", "Local migration helper workload must not expose raw database engine lists.");
-forbidIn(systemRoutesSource, "Проверка доступности вернула HTTP", "Local helper readiness warnings must not expose HTTP jargon.");
-forbidIn(systemRoutesSource, 'title: "OCR документов и PDF"', "Local OCR plan title must not expose PDF-first wording.");
-forbidIn(systemRoutesSource, "декодирование пикселей", "Local DICOM module role must not expose pixel decoding jargon.");
-forbidIn(systemRoutesSource, "пиксели КЛКТ", "Local DICOM module privacy copy must not expose raw pixel wording.");
-forbidIn(systemRoutesSource, "диагностические пиксели", "External viewer privacy copy must not expose raw pixel wording.");
-forbidIn(systemRoutesSource, "сырых пикселей", "Local bridge plans must not expose raw pixel wording.");
-forbidIn(systemRoutesSource, "реальных пикселей", "External viewer action must not expose raw pixel wording.");
-forbidIn(systemRoutesSource, "DICOMDIR/архивы", "Imaging import plan must not expose DICOMDIR jargon.");
-forbidIn(systemRoutesSource, "DICOM/IMA-заголовки", "Imaging import plan must not expose DICOM/IMA jargon.");
-forbidIn(systemRoutesSource, "текстовые PDF, ZIP, DOCX, XLSX, ODT/ODS", "Local document plan must not expose raw extension soup.");
-forbidIn(systemRoutesSource, "папки, ZIP или списка снимков", "Local CT plan must not expose ZIP-first wording.");
-forbidIn(systemRoutesSource, "обычные записи ZIP", "Local imaging import plan must not expose ZIP record jargon.");
-forbidIn(systemRoutesSource, "prototype JSON state export", "System export audit copy must not expose prototype JSON jargon.");
-forbidIn(systemRoutesSource, "кэша КЛКТ", "Local bridge copy must not expose cache jargon as the operator action.");
-forbidIn(systemRoutesSource, "Groq Vision для админских", "Local OCR plan must not expose provider branding in operator text.");
-forbidIn(systemRoutesSource, "Groq vision классифицирует", "Price photo plan must not expose provider branding in operator text.");
-forbidIn(systemRoutesSource, "пока не настроен Groq vision", "Price photo warning must not expose provider branding in operator text.");
-forbidIn(systemRoutesSource, "настройте Groq или локальный OCR", "Price photo next action must not expose provider branding in operator text.");
-forbidIn(settingsSource, "бюджет GPU", "Settings CT workstation UI must not expose GPU budget jargon.");
-forbidIn(settingsSource, "Нет пиксельного кадра", "First-frame preview must not expose pixel-frame wording.");
-forbidIn(settingsSource, "сырые пиксели снимка", "Settings migration humanizer must not expose raw pixel wording.");
-forbidIn(appSource, "пиксели остаются в просмотрщике", "Clinical CT viewer summary must not expose raw pixel wording.");
-forbidIn(settingsStaticDataSource, "MPR, срезы, архив снимков и кэш", "Settings capabilities must not expose MPR/cache jargon.");
-forbidIn(settingsSource, "стратегию кэша", "Settings CT preparation guidance must not expose cache strategy wording.");
-forbidIn(settingsSource, "без кэширования", "Settings persistence status must not expose cache jargon.");
-forbidIn(settingsSource, "Пиксели открывает", "Settings CT helper note must not expose raw pixel wording.");
-forbidIn(workspaceUiLabelsSource, 'open_mpr: "открыть MPR"', "Workspace CT route labels must not expose a bare MPR acronym.");
-forbidIn(workspaceUiLabelsSource, 'downsampled_mpr: "MPR с пониженным разрешением"', "Workspace CT fallback route labels must not expose bare MPR wording.");
-forbidIn(workspaceUiLabelsSource, "внешний просмотрщик", "Workspace UI labels must not expose viewer-person jargon.");
-forbidIn(workspaceUiLabelsSource, "заблокирован", "Workspace UI labels must not expose raw blocked wording.");
-forbidIn(sampleDataSource, "пиксели не изменяются", "Server viewer session warnings must not expose raw pixel wording.");
-forbidIn(sampleDataSource, "стратегия ${manifest.renderCachePlan.textureStrategy}", "DICOM workbench audit reason must not expose raw render-plan ids.");
-forbidIn(sampleDataSource, "пиксели снимков не сохранялись", "DICOM workbench audit reason must not expose raw pixel wording.");
-forbidIn(systemRoutesSource, "задайте DENTAL_", "Local bridge setup hints must not expose env variable names in operator text.");
-forbidIn(systemRoutesSource, "переменных ${definition.acceptedEnvVars.join", "Local bridge misconfiguration next action must not expose env names.");
-forbidIn(settingsSource, "DENTE_SETTINGS_ADMIN_SECRET или DENTE_TELEGRAM_ADMIN_SECRET", "Settings admin unlock must not expose server env names.");
-forbidIn(settingsSource, 'placeholder="x-dente-admin-secret"', "Settings admin unlock must not expose the raw header name.");
-forbidIn(settingsSource, "bridge.acceptedEnvVars[0]", "Local bridge readiness must not render raw env var names.");
-forbidIn(settingsSource, "bridge.acceptedEnvVars.length", "Local bridge readiness must not receive raw env names just to count settings.");
-requireIn(appSource, "Введите секрет администратора клиники, если он включен в серверных настройках клиники.", "App admin unlock errors must use operator-readable clinic wording.");
-requireIn(appSource, "Не удалось загрузить данные клиники", "App dashboard reload errors must not expose product/internal wording.");
-forbidIn(appSource, "секрет админ-доступа DENTE", "App admin unlock errors must not expose product/internal wording.");
-forbidIn(appSource, "Не удалось загрузить данные DENTE", "App dashboard reload errors must not expose product/internal wording.");
+const rawSetErrorMessagePattern =
+	/setError\([^\n]*(?:instanceof Error \? [^\n]*\.message|\.message)|const message = [^\n]* instanceof Error \? [^\n]*\.message|set[A-Za-z]+Error\([^\n]*\.message/;
+if (rawSetErrorMessagePattern.test(appSource)) {
+	throw new Error(
+		"App user-facing errors must not pass raw exception messages into visible error state.",
+	);
+}
 requireIn(
-  settingsSource,
-  'onClick={unlockTelegramAdminSession}\n                  aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}',
-  "Settings admin unlock button must point to missing-secret guidance."
+	appSource,
+	"operatorReadableErrorDetailFromUnknown",
+	"App user-facing status notes must filter exception details through one helper.",
 );
-requireIn(settingsSource, "Доступ к защищенным настройкам", "Settings tabs must keep a protected-settings unlock panel outside Telegram.");
-requireIn(settingsSource, "Введите секрет администратора клиники, чтобы менять защищенные настройки.", "Settings admin unlock guidance must explain why the settings secret is needed.");
-requireIn(settingsSource, "Доступ к Telegram", "Telegram tab must label its admin unlock as Telegram-only.");
-requireIn(settingsSource, "Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.", "Telegram admin unlock guidance must explain why the Telegram secret is needed.");
-requireIn(settingsSource, "Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные", "Telegram admin unlock must state the Telegram-only access boundary.");
-requireIn(settingsSource, "Админ-доступ к Telegram активен до перезагрузки страницы.", "Telegram admin unlocked state must not imply general settings access.");
-forbidIn(settingsSource, "Доступ к настройкам и Telegram", "Telegram admin unlock panel must not imply settings-domain access.");
-forbidIn(settingsSource, "Введите секрет администратора клиники, чтобы менять защищенные настройки и Telegram.", "Telegram admin unlock guidance must not imply settings-domain access.");
-forbidIn(settingsSource, "Админ-доступ к настройкам клиники разблокирован до перезагрузки страницы.", "Telegram unlocked state must not imply general settings access.");
-requireIn(settingsSource, 'const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance"', "Telegram patient preview guidance must use a stable id.");
-requireIn(settingsSource, 'const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance"', "Telegram staff preview guidance must use a stable id.");
-requireIn(settingsSource, 'const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance"', "Telegram loading preview guidance must use a stable id.");
-requireIn(settingsSource, "aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}", "Telegram patient preview buttons must point to disabled-state guidance.");
-requireIn(settingsSource, "aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}", "Telegram staff preview button must point to disabled-state guidance.");
-requireIn(settingsSource, "Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.", "Telegram preview guidance must explain missing active patient.");
-requireIn(settingsSource, "Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.", "Telegram preview guidance must explain missing staff target.");
-requireIn(settingsSource, "Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.", "Telegram preview guidance must explain loading state.");
-requireIn(settingsSource, 'const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance"', "Telegram outbox send guidance must use a stable id.");
-requireIn(settingsSource, "telegramOutboxBulkSendGuidance", "Telegram outbox bulk send must compute readable disabled-state guidance.");
-requireIn(settingsSource, "aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}", "Telegram outbox bulk send button must expose busy state.");
-requireIn(settingsSource, "aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}", "Telegram outbox bulk send button must point to guidance when disabled.");
-requireIn(settingsSource, "Сейчас нет сообщений, готовых к отправке.", "Telegram outbox guidance must explain empty due queue.");
-requireIn(cssSource, ".telegram-preview-guidance", "Telegram preview guidance must be styled.");
-requireIn(cssSource, ".telegram-outbox-guidance", "Telegram outbox guidance must be styled.");
-requireIn(cssSource, ".dicom-action-guidance", "DICOM action guidance must be styled.");
-requireIn(cssSource, ".local-dicom-guidance", "Local DICOM folder guidance must be styled.");
-requireIn(cssSource, ".mpr-axis-visualizer", "CT MPR axis visualizer must be styled.");
-requireIn(cssSource, ".mpr-axis-visualizer.disabled", "CT MPR disabled axis visualizer must be styled.");
+requireIn(
+	appSource,
+	"[A-Z][A-Z0-9_]{5,}",
+	"App operator error filter must hide raw server setting/env keys from visible errors.",
+);
+forbidIn(
+	appSource,
+	"continuityError.message",
+	"Browser continuity status must not expose raw exception messages.",
+);
+forbidIn(
+	appSource,
+	"speechHealthError.message",
+	"Speech health status must not expose raw exception messages.",
+);
+forbidIn(
+	appSource,
+	"speechRuntimeError.message",
+	"Speech provider status must not expose raw exception messages.",
+);
+forbidIn(
+	appSource,
+	"speechStrategyError.message",
+	"Speech strategy status must not expose raw exception messages.",
+);
+forbidIn(
+	appSource,
+	"speechRecoveryError.message",
+	"Speech recovery status must not expose raw exception messages.",
+);
+forbidIn(
+	appSource,
+	"draftError.message",
+	"Visit draft fallback must not expose raw exception messages.",
+);
+forbidIn(
+	appSource,
+	"acceptError.message",
+	"Visit save fallback must not expose raw exception messages.",
+);
+forbidIn(
+	appSource,
+	"speechError.message",
+	"Speech chunk status must not expose raw exception messages.",
+);
+requireIn(
+	appSource,
+	"runMigrationAutopilot(discovery)",
+	"Browser migration source selection must immediately build a migration autopilot plan.",
+);
+requireIn(
+	appSource,
+	"runMigrationAutopilot(result)",
+	"Local PC migration source discovery must immediately build a migration autopilot plan.",
+);
+requireIn(
+	appSource,
+	"activeMigrationDiscoveryForAutopilot",
+	"Migration report/autopilot reruns must use the current visible discovery, not only browser-local folders.",
+);
+requireIn(
+	appSource,
+	"migrationSourceDiscovery ?? browserMigrationDiscovery",
+	"Current PC discovery must take precedence over stale browser-local migration manifests.",
+);
+requireIn(
+	appSource,
+	"const knownDiscovery = activeMigrationDiscoveryForAutopilot()",
+	"Migration handoff report must capture the same source set the admin is viewing.",
+);
+requireIn(
+	appSource,
+	"migrationAutopilotRequestPayload(knownDiscovery,",
+	"Migration handoff report must follow the captured visible source set.",
+);
+requireIn(
+	appSource,
+	"migrationAutopilotRequestPayload(knownDiscovery, { includeSmartImportText: Boolean(smartImportText.trim()) })",
+	"Migration handoff report must include current pasted text/OCR even when discovered sources already exist.",
+);
+requireIn(
+	appSource,
+	"includeSmartImportText",
+	"Migration autopilot payload must be able to include pasted text/Excel/OCR sources.",
+);
+requireIn(
+	appSource,
+	"smartImport: includeSmartImportText && smartImportText.trim()",
+	"Migration autopilot must send pasted smart-import text only when the text route asks for it.",
+);
+requireIn(
+	settingsSource,
+	'firebird_database: "старая серверная база программы"',
+	"Settings migration source labels must explain server database sources in clinic language.",
+);
+requireIn(
+	settingsSource,
+	'access_database: "старая настольная база"',
+	"Settings migration source labels must explain desktop database sources in clinic language.",
+);
+requireIn(
+	settingsSource,
+	'sqlite_database: "локальная база программы"',
+	"Settings migration source labels must explain local database sources in clinic language.",
+);
+requireIn(
+	settingsSource,
+	'sql_dump: "резервная копия старой базы"',
+	"Settings migration source labels must explain backup sources in clinic language.",
+);
+forbidIn(
+	settingsSource,
+	'firebird_database: "Firebird/InterBase база"',
+	"Settings migration source labels must not expose database engine names.",
+);
+forbidIn(
+	settingsSource,
+	'sqlite_database: "SQLite база"',
+	"Settings migration source labels must not expose SQLite as user-facing copy.",
+);
+forbidIn(
+	settingsSource,
+	'sql_dump: "SQL-выгрузка или резервная копия"',
+	"Settings migration source labels must not expose SQL as user-facing copy.",
+);
+requireIn(
+	settingsSource,
+	"резервные копии {typedMigrationSourceProbe.counts.dumps}",
+	"Settings migration probe inventory must not expose dump jargon.",
+);
+requireIn(
+	settingsSource,
+	"Программа не распознана",
+	"Settings migration probe must describe unknown vendor programs in clinic language.",
+);
+requireIn(
+	settingsSource,
+	"резервная копия старой серверной базы",
+	"Settings smart-import example must describe legacy backups in clinic language.",
+);
+forbidIn(
+	settingsSource,
+	"Firebird резервная копия",
+	"Settings smart-import example must not expose database engine names.",
+);
+requireIn(
+	settingsSource,
+	"базы {migrationAutopilot.operatorPacket.totals.databaseSources}",
+	"Settings migration autopilot totals must not expose DB abbreviations.",
+);
+requireIn(
+	settingsSource,
+	"Проверено: базы {source.probe.counts.databases}",
+	"Settings migration source cards must not expose DB abbreviations.",
+);
+requireIn(
+	settingsSource,
+	"базы {candidate.databaseFiles}",
+	"Settings migration discovery cards must not expose DB abbreviations.",
+);
+requireIn(
+	settingsSource,
+	"{humanizeMigrationText(signal)}",
+	"Settings document ingestion signals must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"{humanizeMigrationText(warning)}",
+	"Settings document ingestion warnings must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"старая база",
+	"Settings document ingestion humanizer must understand old database signals.",
+);
+requireIn(
+	settingsSource,
+	"старая база добавлена как проверочный список",
+	"Settings document ingestion humanizer must translate legacy staging warnings.",
+);
+requireIn(
+	settingsSource,
+	"typedPersistenceIntegrity.nextAction",
+	"Settings persistence integrity must render the server next action.",
+);
+requireIn(
+	persistentStateSource,
+	"Файл состояния и последние резервные копии читаются.",
+	"Persistence integrity success action must be operator-readable Russian.",
+);
+requireIn(
+	persistentStateSource,
+	"Проверьте предупреждения перед импортом, миграцией или обновлением.",
+	"Persistence integrity warning action must be operator-readable Russian.",
+);
+requireIn(
+	systemRoutesSource,
+	"Файл состояния не читается.",
+	"Persistence export failures must not expose English state-file jargon.",
+);
+forbidIn(
+	persistentStateSource,
+	"State file and recent backups are readable",
+	"Persistence integrity success action must not expose English backend wording.",
+);
+forbidIn(
+	persistentStateSource,
+	"Review warnings before import",
+	"Persistence integrity warning action must not expose English backend wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"State file is not readable",
+	"Persistence export failures must not expose English backend wording.",
+);
+requireIn(
+	appSource,
+	'legacy_dump: "резервная копия старой базы"',
+	"Document ingestion labels must not expose backup/dump jargon.",
+);
+requireIn(
+	appSource,
+	'legacy_database: "старая база"',
+	"Document ingestion labels must explain old DB files without abbreviations.",
+);
+requireIn(
+	appSource,
+	"Локальная папка снимков #",
+	"Local imaging folder fallback must be readable for admins.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Одна папка в разделе",
+	"Local imaging scan warnings must be operator-readable Russian.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Органайзер продолжил проверку остальных папок",
+	"Local imaging organizer must explain partial read failures.",
+);
+requireIn(
+	imagingRoutesSource,
+	'safeLocalImagingAlias("Кейс снимков"',
+	"Local imaging organizer safe aliases must be clinic-readable.",
+);
+requireIn(
+	settingsSource,
+	"базы {typedMigrationSourceProbe.counts.databases}",
+	"Settings migration probe inventory must not expose DB abbreviations.",
+);
+forbidIn(
+	appSource,
+	"Local imaging folder #",
+	"Local imaging folder fallback must not expose English wording.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Cannot read one discovery folder",
+	"Local imaging discovery warnings must not expose English backend wording.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Cannot read one organizer folder",
+	"Local imaging organizer warnings must not expose English backend wording.",
+);
+forbidIn(
+	imagingRoutesSource,
+	'safeLocalImagingAlias("Local imaging case"',
+	"Local imaging organizer aliases must not expose English backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"SQL backup/dump",
+	"Settings migration source labels must not expose backup/dump jargon.",
+);
+forbidIn(
+	settingsSource,
+	"· dump {",
+	"Settings migration probe inventory must not expose dump jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Вендор не распознан",
+	"Settings migration probe must not expose vendor jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Firebird backup",
+	"Settings smart-import example must not expose backup jargon.",
+);
+forbidIn(
+	settingsSource,
+	"БД {migrationAutopilot.operatorPacket.totals.databaseSources}",
+	"Settings migration autopilot totals must not expose DB abbreviations.",
+);
+forbidIn(
+	settingsSource,
+	"Проверено: БД",
+	"Settings migration source cards must not expose DB abbreviations.",
+);
+forbidIn(
+	settingsSource,
+	"· БД {candidate.databaseFiles}",
+	"Settings migration discovery cards must not expose DB abbreviations.",
+);
+forbidIn(
+	settingsSource,
+	"typedDocumentIngestion.quality.signals.slice(0, 10).map((signal) => (\n                          <span key={signal}>{signal}</span>",
+	"Settings document ingestion signals must not render raw parser ids.",
+);
+forbidIn(
+	settingsSource,
+	"typedDocumentIngestion.warnings.map((warning) => (\n                      <span key={warning}>{warning}</span>",
+	"Settings document ingestion warnings must not render raw parser ids.",
+);
+forbidIn(
+	appSource,
+	'legacy_dump: "backup / dump"',
+	"Document ingestion labels must not expose backup/dump jargon.",
+);
+forbidIn(
+	appSource,
+	'legacy_database: "старая БД"',
+	"Document ingestion labels must not expose DB abbreviations.",
+);
+requireIn(
+	appSource,
+	'className="settings-zone"',
+	"Settings route fallback must preserve settings shell styling.",
+);
+requireIn(
+	appSource,
+	'aria-busy="true"',
+	"Settings route fallback must expose loading state.",
+);
+forbidIn(
+	appSource,
+	'className="settings-tabs"',
+	"App.tsx must not inline settings tabs.",
+);
+forbidIn(
+	appSource,
+	'className="connector-grid"',
+	"App.tsx must not inline heavy settings source integrations.",
+);
+forbidIn(
+	appSource,
+	'className="telegram-settings"',
+	"App.tsx must not inline Telegram control UI.",
+);
+
+requireIn(
+	settingsSource,
+	"export function SettingsView",
+	"SettingsView must export the route component.",
+);
+requirePattern(
+	settingsSource,
+	/<img\s+alt="[^"]*Telegram[^"]*"\s+src=\{telegramQrSvgToDataUrl\(telegramLinkCode\.qrSvg\)\}\s+loading="lazy"\s+decoding="async"\s+\/>/,
+	"Settings Telegram QR image must lazy-load and decode asynchronously.",
+);
+requirePattern(
+	settingsSource,
+	/<img\s+src=\{typedTelegramPreview\.photoUrl\}\s+alt="[^"]*Telegram[^"]*"\s+loading="lazy"\s+decoding="async"\s+\/>/,
+	"Settings Telegram visual-card preview image must lazy-load and decode asynchronously.",
+);
+requirePattern(
+	settingsSource,
+	/<img\s+src=\{item\.photoUrl\}\s+alt="[^"]+"\s+loading="lazy"\s+decoding="async"\s+\/>/,
+	"Settings Telegram outbox images must lazy-load and decode asynchronously.",
+);
+requirePattern(
+	settingsSource,
+	/<img\s+src=\{dicomFirstFramePreview\.imageDataUrl\}\s+alt="[^"]+"\s+decoding="async"\s+style=\{dicomFirstFrameImageStyle\}\s+\/>/,
+	"Settings first-frame DICOM preview must decode asynchronously without lazy-loading the active clinical preview.",
+);
+requireIn(
+	settingsSource,
+	'<section className="settings-zone" id="settings"',
+	"SettingsView must own settings shell.",
+);
+requireIn(
+	settingsSource,
+	'className="settings-tabs"',
+	"SettingsView must own settings navigation.",
+);
+requireIn(
+	settingsSource,
+	'role="tablist"',
+	"Settings navigation must expose tablist semantics.",
+);
+requireIn(
+	settingsSource,
+	'role="tab"',
+	"Settings navigation buttons must expose tab semantics.",
+);
+requireIn(
+	settingsSource,
+	'role="tabpanel"',
+	"Settings active section must expose tabpanel semantics.",
+);
+requireIn(
+	settingsSource,
+	"handleSettingsTabKeyDown",
+	"Settings navigation must support keyboard tab switching.",
+);
+requireIn(
+	cssSource,
+	".settings-tab-panel",
+	"Settings tab panel layout must be styled explicitly.",
+);
+requireIn(
+	settingsSource,
+	'settingsTab === "sources"',
+	"SettingsView must preserve source integrations section.",
+);
+requireIn(
+	settingsSource,
+	'settingsTab === "telegram"',
+	"SettingsView must preserve Telegram control section.",
+);
+requireIn(
+	settingsSource,
+	"buildDicomViewerWorkbenchManifest",
+	"SettingsView must preserve DICOM workbench actions.",
+);
+requireIn(
+	settingsSource,
+	"analyzePricelist",
+	"SettingsView must preserve pricelist analyzer action.",
+);
+requireIn(
+	settingsSource,
+	"type MprProjection",
+	"SettingsView must import the shared DICOM MPR projection type.",
+);
+requireIn(
+	settingsSource,
+	"type MprWindowPreset",
+	"SettingsView must import the shared imaging window preset type.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	"export type MprProjection = DicomMprProjection;",
+	"Imaging UI labels must use the shared DICOM MPR projection contract.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	"export type MprWindowPreset = Extract<ImagingViewerWindowPreset",
+	"Imaging UI labels must use the shared imaging window preset contract.",
+);
+requireIn(
+	settingsSource,
+	"type MprAxisVisualizerStyle",
+	"SettingsView must type the CT MPR axis visualizer CSS variables.",
+);
+requireIn(
+	settingsSource,
+	"DicomSeriesPreviewGroup",
+	"SettingsView must type DICOM series preview rows.",
+);
+requireIn(
+	settingsSource,
+	"DicomMprTool",
+	"SettingsView must type DICOM MPR tool rows.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomSeriesPreviewSeries",
+	"SettingsView must render DICOM series through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomSeriesPreviewParserNotes",
+	"SettingsView must render DICOM parser notes through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"dicomSeriesDisplayText",
+	"SettingsView DICOM series rows must hide raw UID fallback behind readable code wording.",
+);
+requireIn(
+	settingsSource,
+	"dicomSeriesWarningText",
+	"SettingsView DICOM series warnings must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"группирует КЛКТ/КТ по кодам исследования/серии",
+	"SettingsView DICOM series copy must not expose UID jargon.",
+);
+requireIn(
+	settingsSource,
+	"КодИсследования;КодСерии;НомерСреза;ОписаниеСерии",
+	"SettingsView DICOM sample headers must be readable for operators.",
+);
+requireIn(
+	settingsSource,
+	"похоже на снимки: {browserPickedImagingFolder.dicomLikeFiles}",
+	"Browser-picked imaging stats must not expose DICOM-like jargon.",
+);
+requireIn(
+	settingsSource,
+	"нужен код серии",
+	"DICOM archive status must not expose UID jargon.",
+);
+requireIn(
+	settingsSource,
+	'<p className="eyebrow">Снимки и КТ</p>',
+	"Settings imaging import section must use clinic-readable CT wording.",
+);
+requireIn(
+	settingsSource,
+	'isDicomLocalDiscovering ? "Ищу" : "Найти снимки"',
+	"Local imaging discovery action must not expose DICOM as the visible command.",
+);
+requireIn(
+	settingsSource,
+	'isDicomFolderWorkupPlanning ? "Готовлю" : "План КТ"',
+	"Local imaging workup action must not expose DICOM as the visible plan label.",
+);
+requireIn(
+	settingsSource,
+	"Метаданные снимков: файлов",
+	"Local imaging metadata summary must not expose DICOM headers.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="План разбора папки снимков"',
+	"Local imaging workup result aria label must not expose DICOM folder jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Коды исследования/серии не найдены",
+	"DICOM parser warnings must not expose Study/Series UID jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"кодисследования",
+	"DICOM parser must accept readable Russian study-code headers.",
+);
+requireIn(
+	imagingRoutesSource,
+	"кодсерии",
+	"DICOM parser must accept readable Russian series-code headers.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Проверка архива снимков не завершилась",
+	"DICOM archive warnings must not expose QIDO jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Проверка загрузки снимков здесь не выполняется",
+	"DICOM archive warnings must not expose STOW jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"настройте корни поиска снимков в серверных настройках",
+	"Local imaging discovery guidance must not expose DICOM as the required operator concept.",
+);
+forbidIn(
+	settingsSource,
+	"по UID исследования/серии",
+	"SettingsView DICOM series copy must not expose UID jargon.",
+);
+forbidIn(
+	settingsSource,
+	"UID серии не указан",
+	"SettingsView DICOM series fallback must not expose UID jargon.",
+);
+forbidIn(
+	settingsSource,
+	"нужен UID серии",
+	"SettingsView DICOM archive status must not expose UID jargon.",
+);
+forbidIn(
+	settingsSource,
+	"DICOM-похожих:",
+	"SettingsView browser-picked imaging stats must not expose DICOM-like jargon.",
+);
+forbidIn(
+	settingsSource,
+	"StudyInstanceUID;SeriesInstanceUID;InstanceNumber;SeriesDescription",
+	"SettingsView DICOM sample headers must not expose raw DICOM tags.",
+);
+forbidIn(
+	settingsSource,
+	"Серии DICOM",
+	"SettingsView DICOM series action must use operator wording.",
+);
+forbidIn(
+	settingsSource,
+	'<p className="eyebrow">Снимки и DICOM</p>',
+	"Settings imaging import section must not lead with DICOM.",
+);
+forbidIn(
+	settingsSource,
+	"Найти DICOM",
+	"Local imaging discovery command must not expose DICOM.",
+);
+forbidIn(
+	settingsSource,
+	"План DICOM",
+	"Local imaging workup command must not expose DICOM.",
+);
+forbidIn(
+	settingsSource,
+	"Заголовки DICOM",
+	"Local imaging metadata summary must not expose DICOM headers.",
+);
+forbidIn(
+	settingsSource,
+	'aria-label="План разбора DICOM папки"',
+	"Local imaging workup result aria label must not expose DICOM folder jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Нет Study/Series UID",
+	"DICOM parser warnings must not expose Study/Series UID jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Study/Series UID не найден",
+	"DICOM parser warnings must not expose Study/Series UID jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Предпросмотр серий DICOM группирует StudyInstanceUID/SeriesInstanceUID",
+	"DICOM parser notes must not expose raw DICOM tags.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Проверка QIDO не удалась",
+	"DICOM archive warnings must not expose QIDO jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"STOW-RS upload",
+	"DICOM archive warnings must not expose STOW jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"DICOM-похожих файлов",
+	"Local DICOM discovery reasons must not expose DICOM-like jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"настройте корни поиска DICOM в серверных настройках",
+	"Local imaging discovery guidance must not expose DICOM as the required operator concept.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Для предпросмотра первого кадра не найдены прямые DICOM/IMA-файлы.",
+	"First-frame preview errors must not expose DICOM file jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"DICOM-файл не удалось декодировать",
+	"First-frame preview errors must not expose DICOM file jargon.",
+);
+requireIn(
+	settingsSource,
+	"typedCbctWorkbenchTools",
+	"SettingsView must render CBCT MPR tools through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedCbctMprBlockers",
+	"SettingsView must render CBCT MPR blockers through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedCbctMprWarnings",
+	"SettingsView must render CBCT MPR warnings through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedCbctResourceSafetyCaps",
+	"SettingsView must render CBCT MPR resource caps through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomViewerWorkbenchManifest",
+	"SettingsView must render DICOM workbench bundle rows through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomWorkstationReadiness",
+	"SettingsView must render DICOM workstation checks through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomRenderCachePlan",
+	"SettingsView must render DICOM cache tasks through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomViewerToolStateBundle",
+	"SettingsView must render DICOM tool-state warnings through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomLocalFolderDiscovery",
+	"SettingsView must render DICOM folder discovery candidates through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedLocalImagingOrganizer",
+	"SettingsView must render local imaging organizer cases through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedImagingFolderScan",
+	"SettingsView must render imaging scan warnings through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFolderSeriesScan",
+	"SettingsView must render DICOM folder scan warnings through typed data.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFolderWorkupPlan",
+	"SettingsView must render DICOM workup plans through typed data.",
+);
+requireIn(
+	settingsSource,
+	"папка восстановлена:",
+	"SettingsView local imaging recovery must describe restored folders in operator wording.",
+);
+requireIn(
+	settingsSource,
+	"метка папки {browserPickedImagingFolder.folderFingerprint}",
+	"SettingsView browser-picked imaging folders must use operator wording for folder references.",
+);
+requireIn(
+	settingsSource,
+	"метка папки {candidate.folderFingerprint.toUpperCase()} · вложенность {candidate.depth}",
+	"SettingsView DICOM discovery candidates must use operator wording for folder references and nesting.",
+);
+requireIn(
+	settingsSource,
+	"метка папки {caseItem.folderFingerprint.toUpperCase()}",
+	"SettingsView local imaging organizer cases must use operator wording for folder references.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(browserPickedImagingFolder.nextAction)",
+	"SettingsView browser-picked imaging folder next action must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"(browserPickedImagingFolder.warnings as string[]).slice(0, 3).map((warning) => (\n                <small key={warning}>{humanizeMigrationText(warning)}</small>",
+	"SettingsView browser-picked imaging folder warnings must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(typedDicomLocalFolderDiscovery.nextAction)",
+	"SettingsView local imaging discovery next action must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(typedLocalImagingOrganizer.nextAction)",
+	"SettingsView local imaging organizer next action must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(typedDicomFolderWorkupPlan.nextAction)",
+	"SettingsView local CT folder workup next action must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(plan.nextAction)",
+	"SettingsView local CT folder workup plan rows must be humanized before display.",
+);
+forbidIn(
+	settingsSource,
+	"код папки",
+	"SettingsView local imaging sections must not expose folder code jargon.",
+);
+forbidIn(
+	settingsSource,
+	" · номер {candidate.sourceFingerprint.toUpperCase()}",
+	"SettingsView migration source cards must not expose source number jargon.",
+);
+forbidIn(
+	settingsSource,
+	' · номер{" "}',
+	"SettingsView migration source headers must not expose source number jargon.",
+);
+requireIn(
+	settingsSource,
+	"migrationSourceDisplayName",
+	"SettingsView migration source cards must strip internal source hashes from visible names.",
+);
+requireIn(
+	settingsSource,
+	"{candidateDisplayName}",
+	"SettingsView discovered migration cards must use operator-facing source names.",
+);
+requireIn(
+	settingsSource,
+	"{sourceDisplayName}",
+	"SettingsView autopilot migration cards must use operator-facing source names.",
+);
+requireIn(
+	settingsSource,
+	"источник {index + 1}",
+	"SettingsView migration source cards must show a simple ordinal instead of an internal hash.",
+);
+forbidIn(
+	settingsSource,
+	" · метка {candidate.sourceFingerprint.toUpperCase()}",
+	"SettingsView discovered migration cards must not expose internal source hashes.",
+);
+forbidIn(
+	settingsSource,
+	" · метка {source.candidate.sourceFingerprint.toUpperCase()}",
+	"SettingsView autopilot migration cards must not expose internal source hashes.",
+);
+forbidIn(
+	settingsSource,
+	"{typedMigrationSourceWorkup.sourceFingerprint.toUpperCase()}",
+	"SettingsView migration workup header must not expose internal source hashes.",
+);
+forbidIn(
+	settingsSource,
+	"{typedMigrationSourceProbe.sourceFingerprint.toUpperCase()}",
+	"SettingsView migration probe header must not expose internal source hashes.",
+);
+requireIn(
+	appSource,
+	"Для тяжелой КТ откройте эту же папку в локальном модуле клиники",
+	"Browser-picked CT folder preview must explain heavy CT recovery without handler jargon.",
+);
+requireIn(
+	appSource,
+	"Для полноценного открытия тяжелой КТ выберите эту же папку в локальном модуле клиники",
+	"Browser-picked CT folder warning must explain browser limits in clinic wording.",
+);
+requireIn(
+	appSource,
+	"После обновления страницы их нужно выбрать заново",
+	"Browser file fallback must explain persistence limits without descriptor jargon.",
+);
+requireIn(
+	appSource,
+	"локальный модуль объема",
+	"Clinical CT viewer fallback must use local-module wording instead of volume handler jargon.",
+);
+requireIn(
+	appSource,
+	"Для больших архивов нужен пакетный импорт на сервере или распознавание через локальный модуль клиники.",
+	"Oversized document import errors must explain the recovery route without OCR-handler jargon.",
+);
+requireIn(
+	settingsSource,
+	"Проверяю диктовку, просмотр КЛКТ/КТ, распознавание файлов и внешний просмотр",
+	"Local module readiness copy must use clinic-readable module wording.",
+);
+forbidIn(
+	settingsSource,
+	"Проверяю диктовку, просмотр КЛКТ/КТ, распознавание файлов и внешний просмотрщик",
+	"Local module readiness copy must not expose viewer-person jargon.",
+);
+forbidIn(
+	appSource,
+	"серверного или локального обработчика",
+	"Browser-picked CT folder warning must not expose handler jargon.",
+);
+forbidIn(
+	appSource,
+	"серверный или локальный обработчик",
+	"Browser-picked CT folder preview must not expose handler jargon.",
+);
+forbidIn(
+	appSource,
+	"файловые дескрипторы",
+	"Browser file fallback must not expose descriptor jargon.",
+);
+forbidIn(
+	appSource,
+	"обработчик объема",
+	"Clinical CT viewer fallback must not expose volume-handler jargon.",
+);
+forbidIn(
+	appSource,
+	"OCR-обработчик",
+	"Oversized document import errors must not expose OCR-handler jargon.",
+);
+forbidIn(
+	settingsSource,
+	"КЛКТ/КТ-обработчик",
+	"Local module readiness copy must not expose handler jargon.",
+);
+forbidIn(
+	settingsSource,
+	"локальное восстановление -",
+	"SettingsView local imaging recovery must not use machine-style recovery wording.",
+);
+forbidIn(
+	settingsSource,
+	"локальный ID",
+	"SettingsView local imaging sections must not expose local ID jargon.",
+);
+forbidIn(
+	settingsSource,
+	" · глубина {candidate.depth}",
+	"SettingsView DICOM discovery must not expose raw depth wording.",
+);
+requireIn(
+	settingsSource,
+	"typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) =>",
+	"SettingsView local imaging organizer warnings must render through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedImagingFolderScan.warnings.map((warning) =>",
+	"SettingsView imaging folder warnings must render through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) =>",
+	"SettingsView DICOM folder scan warnings must render through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) =>",
+	"SettingsView DICOM workup warnings must render through typed rows.",
+);
+requireIn(
+	settingsSource,
+	"typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{humanizeMigrationText(warning)}</small>",
+	"SettingsView local imaging organizer warnings must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"typedImagingFolderScan.warnings.map((warning) => (\n                    <span key={warning}>{humanizeMigrationText(warning)}</span>",
+	"SettingsView imaging folder warnings must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) => (\n                    <span key={warning}>{humanizeMigrationText(warning)}</span>",
+	"SettingsView DICOM folder scan warnings must be humanized before display.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{humanizeMigrationText(warning)}</small>",
+	"SettingsView DICOM workup warnings must be humanized before display.",
+);
+forbidIn(
+	settingsSource,
+	"dicomSeriesPreview.series.slice(0, 6).map((series: any)",
+	"SettingsView DICOM series rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomSeriesPreview.parserNotes.map((note: any)",
+	"SettingsView DICOM parser notes must not use any.",
+);
+forbidIn(
+	settingsSource,
+	'cbctWorkbenchTools : ["window_level", "pan", "zoom", "external_open"]).map((tool: any)',
+	"SettingsView CBCT MPR tools must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"mprReadiness.blockers.map((blocker: any)",
+	"SettingsView CBCT MPR blockers must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"mprReadiness.warnings.map((warning: any)",
+	"SettingsView CBCT MPR warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"resourcePolicy.safetyCaps.slice(0, 4).map((cap: any)",
+	"SettingsView CBCT MPR safety caps must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomViewerWorkbenchManifest.renderCachePlan.tasks.slice(0, 4).map((task: any)",
+	"SettingsView DICOM workbench cache task rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomWorkstationReadiness.checks.map((check: any)",
+	"SettingsView DICOM workstation checks must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomRenderCachePlan.tasks.slice(0, 5).map((task: any)",
+	"SettingsView DICOM render cache task rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomViewerToolStateBundle.warnings.slice(0, 3).map((warning: any)",
+	"SettingsView DICOM tool-state warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomLocalFolderDiscovery.candidates.slice(0, 6).map((candidate: any)",
+	"SettingsView DICOM discovery candidates must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"localImagingOrganizer.cases.slice(0, 6).map((caseItem: any)",
+	"SettingsView local imaging organizer cases must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"caseItem.modelCandidates.slice(0, 3).map((model: any)",
+	"SettingsView local imaging model candidates must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"imagingFolderScan.warnings.map((warning: any)",
+	"SettingsView imaging folder warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomFolderSeriesScan.warnings.slice(0, 5).map((warning: any)",
+	"SettingsView DICOM folder warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomFolderWorkupPlan.plans.slice(0, 4).map((plan: any)",
+	"SettingsView DICOM workup plans must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dicomFolderWorkupPlan.warnings.slice(0, 4).map((warning: any)",
+	"SettingsView DICOM workup warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"typedImagingFolderScan.warnings.map((warning) => (\n                    <span key={warning}>{warning}</span>",
+	"SettingsView imaging folder warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{warning}</small>",
+	"SettingsView local imaging organizer warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) => (\n                    <span key={warning}>{warning}</span>",
+	"SettingsView DICOM folder warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) => (\n                    <small key={warning}>{warning}</small>",
+	"SettingsView DICOM workup warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"telegramLinkCodes.filter((code: any)",
+	"SettingsView Telegram link code counts must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramLinkCodes.map((code: any)",
+	"SettingsView Telegram link code rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramFeaturePlan?.patientSafeActions ?? []).slice(0, 6).map((action: any)",
+	"SettingsView Telegram feature plan actions must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramFeaturePlan?.blockedByDefault ?? []).slice(0, 6).map((item: any)",
+	"SettingsView Telegram feature plan blockers must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramPostVisitCheckupDelayFields.map((field: any)",
+	"SettingsView Telegram checkup delay fields must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramFeatureOptions.map((feature: any)",
+	"SettingsView Telegram feature toggles must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramVisualCardFields.map((field: any)",
+	"SettingsView Telegram visual card fields must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"setTelegramEnabledFeaturesDraft((current: any)",
+	"SettingsView Telegram voice toggle must not erase feature typing.",
+);
+forbidIn(
+	settingsSource,
+	"activeWorkspaceProfile.primaryRoles.map((role: any)",
+	"SettingsView active workspace profile roles must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.clinicSettings.workspaceProfiles.map((profile: any)",
+	"SettingsView workspace profiles must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.clinicSettings.roleAccessPolicies.map((policy: any)",
+	"SettingsView access policies must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramChatLinks.filter((link: any)",
+	"SettingsView Telegram chat link counts must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramChatLinks.map((link: any)",
+	"SettingsView Telegram chat link rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"telegramPreview.warnings.map((warning: any)",
+	"SettingsView Telegram preview warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"visibleTelegramOutboxItems.map((item: any)",
+	"SettingsView Telegram outbox rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"pricelistRecognitionServiceGroups.map((group: any)",
+	"SettingsView pricelist service taxonomy groups must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"pricelistRecognitionBrandGroups.map((group: any)",
+	"SettingsView pricelist brand taxonomy groups must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"pricelistAnalysis.summary.slice(0, 6).map((item: any)",
+	"SettingsView pricelist summaries must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"pricelistAnalysis.items.slice(0, 12).map((item: any)",
+	"SettingsView pricelist rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"(Object.keys(clinicModeLabels) as ClinicMode[]).map((mode: any)",
+	"SettingsView clinic mode cards must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.clinicSettings.modeHints.map((hint: any)",
+	"SettingsView clinic mode hints must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.shiftIntelligence.roleQueues.map((queue: any)",
+	"SettingsView role queues must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.clinicSettings.staff.map((member: any)",
+	"SettingsView staff rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.clinicSettings.chairs.map((chair: any)",
+	"SettingsView chair rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"weekdayOptions.map((day: any)",
+	"SettingsView weekday controls must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"setNewChairHasXraySensor((value: any)",
+	"SettingsView chair equipment toggle must not erase boolean typing.",
+);
+forbidIn(
+	settingsSource,
+	"setNewChairHasMicroscope((value: any)",
+	"SettingsView chair equipment toggle must not erase boolean typing.",
+);
+forbidIn(
+	settingsSource,
+	"setNewChairHasSurgeryKit((value: any)",
+	"SettingsView chair equipment toggle must not erase boolean typing.",
+);
+forbidIn(
+	settingsSource,
+	"telegramLinkStaffOptions.map((member: any)",
+	"SettingsView Telegram staff choices must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.protocolTemplates.map((template: any)",
+	"SettingsView protocol templates must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"imagingConnectorCards.map((connector: any)",
+	"SettingsView imaging connector cards must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"imagingViewerCapabilities.map((capability: any)",
+	"SettingsView DICOM capability cards must not use any.",
+);
+requireIn(
+	settingsSource,
+	"const humanizeIntegrationInput",
+	"SettingsView must translate integration input formats for non-technical admins.",
+);
+requireIn(
+	settingsSource,
+	'preset.supportedInputs.slice(0, 4).map(humanizeIntegrationInput).join(", ")',
+	"SettingsView must not render raw integration input formats.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.clinicSettings.integrationPresets.map((preset: any)",
+	"SettingsView integration presets must not use any.",
+);
+forbidIn(
+	settingsSource,
+	'preset.supportedInputs.slice(0, 4).join(", ")',
+	"SettingsView must not render raw integration input formats.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.speechProviders.map((provider: any)",
+	"SettingsView speech providers must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"recognitionPresets.map((preset: any)",
+	"SettingsView recognition presets must not use any.",
+);
+requireIn(
+	settingsSource,
+	"const aiRecognitionWarningText",
+	"SettingsView AI recognition warnings must use a UI-owned readable formatter.",
+);
+requireIn(
+	settingsSource,
+	"Черновик не попадет в базу без предпросмотра",
+	"SettingsView AI recognition warnings must translate OCR/preview backend wording.",
+);
+requireIn(
+	settingsSource,
+	"typedRecognitionJob.warnings.map((warning) => (\n                      <span key={warning}>{aiRecognitionWarningText(warning)}</span>",
+	"SettingsView recognition warnings must not expose raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"recognitionJob.warnings.map((warning: any)",
+	"SettingsView recognition warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"typedRecognitionJob.warnings.map((warning) => (\n                      <span key={warning}>{warning}</span>",
+	"SettingsView recognition warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"(Object.keys(smartImportModeLabels) as SmartImportMode[]).map((mode: any)",
+	"SettingsView smart import modes must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"browserMigrationDiscovery.candidates.reduce((sum: number, candidate: any)",
+	"SettingsView browser migration totals must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"browserMigrationDiscovery.candidates.slice(0, 6).map((candidate: any)",
+	"SettingsView browser migration candidates must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"smartImportPreview.lineClassifications.filter((row: any)",
+	"SettingsView smart import ignored count must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"smartImportPreview.migrationPlan.steps.map((step: any)",
+	"SettingsView smart import migration steps must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"smartImportPreview.legacySources.map((source: any",
+	"SettingsView smart import legacy sources must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"smartImportPreview.publicLookupTargets.map((target: any)",
+	"SettingsView smart import public lookup targets must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"smartImportPreview.lineClassifications.map((row: any)",
+	"SettingsView smart import line classifications must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"imagingSourceChoices.map((kind: any)",
+	"SettingsView imaging source choices must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"typedBrowserMigrationDiscovery.totalFiles",
+	"SettingsView must not read a browser migration totalFiles field that is not in the API contract.",
+);
+forbidIn(
+	settingsSource,
+	"speechRecordingRecovery.recordings.slice(0, 3).map((recording: any)",
+	"SettingsView speech recovery rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"imagingImportPreview.rows.map((row: any)",
+	"SettingsView imaging import preview rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"browserContinuityChecks.map((check: any)",
+	"SettingsView browser continuity checks must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"(localBridgeReadiness?.bridges ?? []).map((bridge: any)",
+	"SettingsView local bridge readiness rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"bridge.warnings.slice(0, 2).map((warning: any)",
+	"SettingsView local bridge warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"localBridgeUsePlans.plans.map((plan: any)",
+	"SettingsView local bridge use plans must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"plan.steps.slice(0, 2).map((step: any)",
+	"SettingsView local bridge plan steps must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"plan.warnings.slice(0, 1).map((warning: any)",
+	"SettingsView local bridge plan warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"persistenceIntegrity.backups.slice(0, 6).map((backup: any)",
+	"SettingsView persistence backups must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.importBatches.map((batch: any)",
+	"SettingsView import batch history must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.auditEvents.map((event: any)",
+	"SettingsView audit events must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"(Object.keys(importSourceLabels) as ImportSourceKind[]).map((kind: any)",
+	"SettingsView import source choices must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"(Object.keys(ingestionTargetLabels) as DocumentIngestionTarget[]).map((target: any)",
+	"SettingsView document ingestion targets must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"documentIngestion.quality.signals.slice(0, 10).map((signal: any)",
+	"SettingsView document ingestion quality signals must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"documentIngestion.extractedFiles.slice(0, 8).map((file: any)",
+	"SettingsView document ingestion extracted files must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"documentIngestion.routes.slice(0, 4).map((route: any)",
+	"SettingsView document ingestion routes must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"documentIngestion.warnings.map((warning: any)",
+	"SettingsView document ingestion warnings must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"importIntake.recognitionNotes.map((note: any)",
+	"SettingsView import intake notes must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"importPreview.rows.map((row: any)",
+	"SettingsView patient import preview rows must not use any.",
+);
+requireIn(
+	settingsSource,
+	"typedTelegramLinkCodes",
+	"SettingsView Telegram link code rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedTelegramFeaturePlan",
+	"SettingsView Telegram feature plan rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedTelegramPostVisitCheckupDelayFields",
+	"SettingsView Telegram checkup rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedTelegramVisualCardFields",
+	"SettingsView Telegram visual card rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedWorkspaceProfiles",
+	"SettingsView workspace profiles must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedRoleAccessPolicies",
+	"SettingsView access policies must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedClinicModes",
+	"SettingsView clinic mode rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedModeHints",
+	"SettingsView clinic mode hints must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedRoleQueues",
+	"SettingsView role queues must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedStaffMembers",
+	"SettingsView staff rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedChairs",
+	"SettingsView chair rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedWeekdayOptions",
+	"SettingsView weekday controls must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedUiLanguageOptions",
+	"SettingsView UI language choices must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedTelegramLinkStaffOptions",
+	"SettingsView Telegram staff choices must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedProtocolTemplates",
+	"SettingsView protocol templates must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedImagingConnectorCards",
+	"SettingsView imaging connector cards must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedImagingViewerCapabilities",
+	"SettingsView DICOM capability cards must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedIntegrationPresets",
+	"SettingsView integration presets must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedSpeechProviders",
+	"SettingsView speech providers must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"Голос: быстрый черновик сейчас, усиленное распознавание после подключения",
+	"SettingsView speech heading must use operator-readable wording.",
+);
+requireIn(
+	settingsSource,
+	"нужно подключить распознавание",
+	"SettingsView speech setup state must not expose key jargon.",
+);
+requireIn(
+	settingsSource,
+	"подключено источников распознавания",
+	"SettingsView speech gateway status must use source wording instead of key jargon.",
+);
+requireIn(
+	settingsSource,
+	"резервное переключение",
+	"SettingsView speech gateway status must explain rotation in operator wording.",
+);
+requireIn(
+	settingsSource,
+	"работает без облака",
+	"SettingsView local speech runtime must explain local mode without cloud-key jargon.",
+);
+requireIn(
+	settingsSource,
+	"источников на паузе",
+	"SettingsView speech health must not call provider slots raw keys.",
+);
+requireIn(
+	settingsSource,
+	"серверных настроек: ${provider.setupSettingsCount}",
+	"SettingsView speech providers must summarize server settings instead of listing env var names.",
+);
+requireIn(
+	sharedSource,
+	"setupSettingsCount: z.number().int().nonnegative()",
+	"Speech provider contract must expose a count of setup settings, not raw server setting names.",
+);
+requireIn(
+	sampleDataSource,
+	"setupSettingsCount:",
+	"Speech provider catalog must expose setup setting counts.",
+);
+forbidIn(
+	sampleDataSource,
+	"envVars:",
+	"Speech provider catalog must not send raw env var names to the browser.",
+);
+forbidIn(
+	sharedSource,
+	"envVars: z.array(z.string())",
+	"Speech provider contract must not expose raw env var names to the browser.",
+);
+forbidIn(
+	settingsSource,
+	"Голос: браузер сейчас, серверное распознавание через ключи, офлайн позже",
+	"SettingsView speech heading must not expose key jargon.",
+);
+forbidIn(
+	settingsSource,
+	"серверное распознавание ждет ключ/подключение",
+	"SettingsView speech setup state must not expose key jargon.",
+);
+forbidIn(
+	settingsSource,
+	"ключи {speechGatewayStatus.keyPool.availableKeyCount}",
+	"SettingsView speech gateway status must not expose raw key count wording.",
+);
+forbidIn(
+	settingsSource,
+	" · ротация",
+	"SettingsView speech gateway status must not expose rotation jargon.",
+);
+forbidIn(
+	settingsSource,
+	" · таймаут",
+	"SettingsView speech gateway status must not expose timeout jargon.",
+);
+forbidIn(
+	settingsSource,
+	" · без облачного ключа",
+	"SettingsView local speech runtime must not expose cloud-key jargon.",
+);
+forbidIn(
+	settingsSource,
+	"ключей на паузе",
+	"SettingsView speech health must not call provider slots raw keys.",
+);
+forbidIn(
+	settingsSource,
+	"provider.envVars.join",
+	"SettingsView speech providers must not list env var names in the UI.",
+);
+forbidIn(
+	settingsSource,
+	"provider.envVars.length",
+	"SettingsView speech providers must not receive raw env var names just to count settings.",
+);
+requireIn(
+	settingsSource,
+	"typedRecognitionPresets",
+	"SettingsView recognition presets must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedRecognitionJob",
+	"SettingsView recognition result must use the shared AI job contract.",
+);
+requireIn(
+	settingsSource,
+	"typedBrowserMigrationDiscovery",
+	"SettingsView browser migration discovery must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedSmartImportPreview",
+	"SettingsView smart import preview must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedImagingSourceChoices",
+	"SettingsView imaging source choices must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedSpeechRecordingRecovery",
+	"SettingsView speech recovery rows must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedImagingImportPreview",
+	"SettingsView imaging import preview must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedBrowserContinuityChecks",
+	"SettingsView browser continuity checks must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"Проверяю черновики, работу без сети и локальные очереди",
+	"Settings audit browser continuity loading copy must not expose PWA jargon.",
+);
+forbidIn(
+	settingsSource,
+	"PWA-оболочку",
+	"Settings audit browser continuity copy must not expose PWA jargon.",
+);
+requireIn(
+	settingsSource,
+	"typedLocalBridgeReadiness",
+	"SettingsView local bridge readiness must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedLocalBridgeUsePlans",
+	"SettingsView local bridge use plans must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"Локальные модули ПК",
+	"SettingsView local workstation helpers must use operator-readable module wording.",
+);
+requireIn(
+	settingsSource,
+	"Готовность локальных модулей рабочей станции",
+	"SettingsView local workstation helper grid must not expose bridge jargon.",
+);
+requireIn(
+	settingsSource,
+	"Проверить модули",
+	"SettingsView local workstation helper action must not expose bridge jargon.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(bridge.title)",
+	"SettingsView local helper titles must not expose raw backend bridge wording.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(bridge.role)",
+	"SettingsView local helper roles must not expose raw backend bridge wording.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(bridge.workload)",
+	"SettingsView local helper workload must not expose raw backend bridge wording.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(bridge.privacyBoundary)",
+	"SettingsView local helper boundaries must not expose raw backend bridge wording.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(plan.nextAction)",
+	"SettingsView local helper plans must not expose raw backend bridge wording.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(step.title)",
+	"SettingsView local helper plan steps must not expose raw backend bridge wording.",
+);
+forbidIn(
+	settingsSource,
+	"<h3>Локальные мосты ПК</h3>",
+	"SettingsView local workstation helper title must not expose bridge jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Проверить мосты",
+	"SettingsView local workstation helper action must not expose bridge jargon.",
+);
+requireIn(
+	workspaceUiLabelsSource,
+	"локальный модуль ПК",
+	"App local helper path labels must use module wording.",
+);
+requireIn(
+	appSource,
+	"Готовность локального модуля не проверена",
+	"App local helper errors must use module wording.",
+);
+requireIn(
+	appSource,
+	"используйте локальный модуль",
+	"App speech upload guidance must not call local workstation helpers bridges.",
+);
+forbidIn(
+	appSource,
+	"используйте локальный мост",
+	"App speech upload guidance must not expose bridge jargon.",
+);
+requireIn(
+	settingsSource,
+	"typedPersistenceIntegrity",
+	"SettingsView persistence integrity rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedImportBatches",
+	"SettingsView import history must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedAuditEvents",
+	"SettingsView audit rows must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedImportSourceKinds",
+	"SettingsView import source choices must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedDocumentIngestionTargets",
+	"SettingsView document ingestion targets must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedDocumentIngestion",
+	"SettingsView document ingestion response must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedImportIntake",
+	"SettingsView import intake response must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedImportPreview",
+	"SettingsView patient import preview must use the shared API contract.",
+);
+requireIn(
+	settingsSource,
+	"typedTelegramChatLinks",
+	"SettingsView Telegram chat links must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedVisibleTelegramOutboxItems",
+	"SettingsView Telegram outbox rows must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"typedPricelistAnalysis",
+	"SettingsView pricelist analysis must use typed local data.",
+);
+requireIn(
+	settingsSource,
+	"Нейро-проверка {typedPricelistAnalysis.aiVision.used ?",
+	"SettingsView pricelist AI status must use operator-readable wording.",
+);
+forbidIn(
+	settingsSource,
+	"Groq {typedPricelistAnalysis.aiVision",
+	"SettingsView pricelist AI status must not expose provider branding.",
+);
+requireIn(
+	settingsSource,
+	"mprAxisPresetDeg",
+	"SettingsView CT MPR controls must include quick axis presets.",
+);
+requireIn(
+	settingsSource,
+	"mprAxisBounds",
+	"SettingsView CT MPR angle slider must use shared axis bounds.",
+);
+requirePattern(
+	settingsSource,
+	/min=\{mprAxisBounds\.min\}\s+max=\{mprAxisBounds\.max\}/,
+	"SettingsView CT MPR angle slider must not hardcode a narrow range.",
+);
+forbidIn(
+	settingsSource,
+	'min="-45" max="45"',
+	"SettingsView CT MPR angle slider must not stay limited to -45..45.",
+);
+requireIn(
+	settingsSource,
+	"mprSlabPresetMm",
+	"SettingsView CT MPR controls must include quick slab presets.",
+);
+requireIn(
+	settingsSource,
+	"mprAxisNudgeDeg",
+	"SettingsView CT MPR controls must include fine axis nudges.",
+);
+requireIn(
+	settingsSource,
+	"mprSlabNudgeMm",
+	"SettingsView CT MPR controls must include fine slab nudges.",
+);
+requireIn(
+	settingsSource,
+	"clampMprAxisDeg",
+	"SettingsView CT MPR angle updates must stay inside supported bounds.",
+);
+requireIn(
+	settingsSource,
+	"clampMprSlabMm",
+	"SettingsView CT MPR slab updates must stay inside supported bounds.",
+);
+requireIn(
+	settingsSource,
+	"mprSliceIndex",
+	"SettingsView CT MPR controls must track the selected stack slice.",
+);
+requireIn(
+	settingsSource,
+	"mprSliceNudgeSteps",
+	"SettingsView CT MPR controls must include fine slice nudges.",
+);
+requireIn(
+	settingsSource,
+	"clampMprSliceIndex",
+	"SettingsView CT MPR slice updates must stay inside series bounds.",
+);
+requireIn(
+	appSource,
+	'sliceIndex: selectedImagingStudy?.kind === "cbct" ? mprSafeSliceIndex : null',
+	"App CT MPR viewer state must export the clamped selected slice index.",
+);
+forbidIn(
+	appSource,
+	'sliceIndex: selectedImagingStudy?.kind === "cbct" ? mprSliceIndex : null',
+	"App CT MPR viewer state must not export an unclamped slice index.",
+);
+requireIn(
+	settingsSource,
+	"mprProjectionOrientationLabels",
+	"SettingsView CT MPR visualizer must explain projection orientation.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-axis-visualizer"',
+	"SettingsView CT MPR must render an axis visualizer.",
+);
+requireIn(
+	settingsSource,
+	"mprAxisVisualizerStyle",
+	"SettingsView CT MPR visualizer must bind axis angle and slab width to CSS.",
+);
+requireIn(
+	settingsSource,
+	"mprAxisDirectionLabel",
+	"SettingsView CT MPR visualizer must show readable axis direction.",
+);
+requireIn(
+	settingsSource,
+	"mprActiveProjectionOrientation",
+	"SettingsView CT MPR visualizer must show active projection orientation.",
+);
+requireIn(
+	mprControlMathSource,
+	"formatMprAxisVisualizerLabel",
+	"SettingsView CT MPR visualizer label must come from shared MPR control math.",
+);
+requireIn(
+	settingsSource,
+	"const mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({",
+	"SettingsView CT MPR visualizer must compute a dynamic accessible label.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={mprAxisVisualizerLabel}",
+	"SettingsView CT MPR visualizer must announce current projection, axis, slab, and slice.",
+);
+requireIn(
+	settingsSource,
+	'role="img"',
+	"SettingsView CT MPR axis visualizer must expose itself as one image-like orientation map.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-workbench-summary" aria-live="polite"',
+	"SettingsView CT MPR summary must announce control changes politely.",
+);
+requireIn(
+	settingsSource,
+	"aria-pressed={mprProjection === plane.key}",
+	"SettingsView CT MPR plane buttons must expose selected state without relying on color.",
+);
+requireIn(
+	settingsSource,
+	"aria-pressed={mprProjection === projection}",
+	"SettingsView CT MPR projection buttons must expose selected state without relying on color.",
+);
+requireIn(
+	settingsSource,
+	"aria-pressed={mprAxisDeg === angle}",
+	"SettingsView CT MPR angle presets must expose selected state.",
+);
+requireIn(
+	settingsSource,
+	"aria-pressed={mprSlabMm === slab}",
+	"SettingsView CT MPR slab presets must expose selected state.",
+);
+requireIn(
+	settingsSource,
+	"aria-pressed={mprSafeSliceIndex === targetIndex}",
+	"SettingsView CT MPR slice landmarks must expose selected state.",
+);
+requireIn(
+	settingsSource,
+	"aria-pressed={mprWindowPreset === preset}",
+	"SettingsView CT MPR window presets must expose selected state.",
+);
+requireIn(
+	settingsSource,
+	"resetMprControls",
+	"SettingsView CT MPR controls must have one-click reset.",
+);
+requireIn(
+	settingsSource,
+	'setMprWindowPreset("bone")',
+	"SettingsView CT MPR reset must restore the standard bone window.",
+);
+requireIn(
+	settingsSource,
+	"setMprCrosshairEnabled(true)",
+	"SettingsView CT MPR reset must restore the crosshair.",
+);
+requireIn(
+	settingsSource,
+	"setMprLinkedPlanesEnabled(true)",
+	"SettingsView CT MPR reset must restore linked planes.",
+);
+requireIn(
+	settingsSource,
+	"type MprClinicalPreset",
+	"SettingsView CT MPR clinical presets must be typed.",
+);
+requireIn(
+	settingsSource,
+	"mprClinicalPresets",
+	"SettingsView CT MPR must expose clinical presets.",
+);
+requireIn(
+	settingsSource,
+	"applyMprClinicalPreset",
+	"SettingsView CT MPR clinical presets must apply projection, angle, slab, window, and linked-plane state.",
+);
+requireIn(
+	settingsSource,
+	"typedCbctWorkbenchProjections",
+	"SettingsView CT MPR projection readiness must avoid repeated casts.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-clinical-presets"',
+	"SettingsView CT MPR clinical presets must be test-tagged.",
+);
+requireIn(
+	settingsSource,
+	"buildMprClinicalChecklist",
+	"SettingsView CT MPR must compute a readable clinical readiness roadmap.",
+);
+requireIn(
+	settingsSource,
+	"buildMprOperatorSummary",
+	"SettingsView CT MPR must compute a compact operator summary.",
+);
+requireIn(
+	settingsSource,
+	"buildMprWorkbenchSummary",
+	"SettingsView CT MPR must compute one compact readable workbench summary.",
+);
+requireIn(
+	settingsSource,
+	"mprClinicalNextAction",
+	"SettingsView CT MPR must expose the next safe operator action.",
+);
+requireIn(
+	settingsSource,
+	"findNearestMprClinicalPreset",
+	"SettingsView CT MPR must compute the nearest clinical protocol from current controls.",
+);
+requireIn(
+	settingsSource,
+	"mprWorkbenchSummaryText",
+	"SettingsView CT MPR must render the current projection, axis, slab, window, and sync state as one glanceable summary.",
+);
+requireIn(
+	settingsSource,
+	"mprOperatorSummaryCards",
+	"SettingsView CT MPR must render shared operator summary cards.",
+);
+requireIn(
+	settingsSource,
+	"protocolCanApply: mprNearestClinicalPreset.deltas.length > 0",
+	"SettingsView CT MPR roadmap must know when the nearest protocol has a real one-click adjustment.",
+);
+requireIn(
+	settingsSource,
+	"applyNearestMprClinicalPreset",
+	"SettingsView CT MPR nearest-protocol indicator must have a one-click apply route.",
+);
+requireIn(
+	settingsSource,
+	"mprClinicalPresetButtonClass",
+	"SettingsView CT MPR preset buttons must expose nearest/exact protocol state.",
+);
+requireIn(
+	settingsSource,
+	"className={mprClinicalPresetButtonClass(preset)}",
+	"SettingsView CT MPR preset buttons must render protocol fit classes.",
+);
+requireIn(
+	settingsSource,
+	"aria-current={mprNearestClinicalPreset.exact",
+	"SettingsView CT MPR exact preset must be announced as current.",
+);
+requireIn(
+	settingsSource,
+	"onClick={() => setMprWindowPreset(preset)}",
+	"SettingsView CT MPR window presets must still be user-selectable when a series is ready.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-clinical-roadmap"',
+	"SettingsView CT MPR roadmap must be test-tagged.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-operator-summary"',
+	"SettingsView CT MPR operator summary must be test-tagged.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-workbench-summary"',
+	"SettingsView CT MPR workbench summary must be test-tagged.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-preset-fit"',
+	"SettingsView CT MPR nearest-protocol indicator must be test-tagged.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!mprControlsReady || !mprNearestClinicalPreset.deltas.length || !mprNearestClinicalPreset.title}",
+	"SettingsView CT MPR nearest-protocol apply action must disable when unsafe or there is nothing to apply.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Подогнать КТ-срезы под ближайший клинический протокол: ${mprNearestClinicalPreset.label}`}",
+	"SettingsView CT MPR nearest-protocol apply action must name the target clinical protocol.",
+);
+requireIn(
+	settingsSource,
+	"mprClinicalChecklist.map",
+	"SettingsView CT MPR roadmap must render each readiness step.",
+);
+requireIn(
+	mprClinicalSource,
+	'id: "series"',
+	"CT MPR roadmap must start with series readiness.",
+);
+requireIn(
+	mprClinicalSource,
+	'id: "orientation"',
+	"CT MPR roadmap must cover plane and slab setup.",
+);
+requireIn(
+	mprClinicalSource,
+	'id: "sync"',
+	"CT MPR roadmap must cover linked axes and crosshair state.",
+);
+requireIn(
+	mprClinicalSource,
+	'id: "viewer"',
+	"CT MPR roadmap must cover viewer workbench readiness.",
+);
+requireIn(
+	mprClinicalSource,
+	"type MprOperatorSummaryCard",
+	"CT MPR operator summary must have a typed card contract.",
+);
+requireIn(
+	mprClinicalSource,
+	"buildMprOperatorSummary",
+	"CT MPR operator summary must live in the shared clinical MPR module.",
+);
+requireIn(
+	cssSource,
+	".mpr-operator-summary",
+	"CT MPR operator summary must have a dedicated responsive layout.",
+);
+requireIn(
+	mprClinicalSource,
+	"scoreMprClinicalPresetFit",
+	"CT MPR nearest-protocol matching must use one stable scoring function.",
+);
+requireIn(
+	mprClinicalSource,
+	"describeMprClinicalPresetDelta",
+	"CT MPR nearest-protocol matching must explain the required adjustment.",
+);
+requireIn(
+	mprClinicalSource,
+	"exact: deltas.length === 0 && !projectionFallback",
+	"CT MPR fallback projection must not be treated as an exact clinical protocol.",
+);
+requireIn(
+	mprClinicalSource,
+	"настройки совпадают с безопасной заменой, но исходная плоскость недоступна",
+	"CT MPR fallback projection must explain that it is a safe substitute, not an exact protocol.",
+);
+requireIn(
+	mprClinicalSource,
+	"protocolCanApply: boolean",
+	"CT MPR roadmap must separate an adjustable protocol mismatch from an unavailable clinical plane.",
+);
+requireIn(
+	mprClinicalSource,
+	"Выберите доступный протокол ниже или откройте серию с нужной плоскостью.",
+	"CT MPR fallback roadmap must not tell doctors to apply a no-op adjustment.",
+);
+requireIn(
+	mprClinicalSource,
+	"buildMprWorkbenchSummary",
+	"CT MPR summary must live in the shared clinical MPR module.",
+);
+requireIn(
+	mprClinicalSource,
+	"плоскости связаны",
+	"CT MPR summary must include linked-plane state.",
+);
+requireIn(
+	mprClinicalSource,
+	"КЛКТ/КТ-серия готова к просмотру срезов.",
+	"CT MPR helper copy must use Russian CT terminology.",
+);
+requireIn(
+	mprClinicalSource,
+	"КТ-срезы: выберите готовую КЛКТ/КТ-серию.",
+	"CT MPR summary must not start with a bare MPR acronym.",
+);
+forbidIn(
+	mprClinicalSource,
+	"MPR: выберите",
+	"CT MPR summary must not start with a bare MPR acronym.",
+);
+forbidIn(
+	mprClinicalSource,
+	"CT/CBCT",
+	"CT MPR helper copy must not expose mixed English CT/CBCT terminology.",
+);
+forbidIn(
+	mprClinicalSource,
+	"slab под клиническую задачу",
+	"CT MPR helper copy must not expose slab jargon.",
+);
+requireIn(
+	mprControlMathSource,
+	"mprSlicePresetFractions",
+	"CT MPR control math must own landmark slice presets.",
+);
+requireIn(
+	mprControlMathSource,
+	"mprSliceIndexFromFraction",
+	"CT MPR control math must own slice percent-to-index conversion.",
+);
+requireIn(
+	cssSource,
+	".mpr-clinical-preset.nearest",
+	"SettingsView CT MPR nearest preset must be visually marked.",
+);
+requireIn(
+	cssSource,
+	".mpr-clinical-preset.active",
+	"SettingsView CT MPR exact preset must be visually marked.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-facts .mpr-workbench-summary",
+	"SettingsView CT MPR workbench summary must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-facts .mpr-preset-fit button",
+	"SettingsView CT MPR nearest-protocol apply action must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-facts .mpr-preset-fit button:disabled",
+	"SettingsView CT MPR nearest-protocol apply action must have a disabled state.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	"sinus_opg",
+	"SettingsView CT MPR presets must include a sinus/panoramic route.",
+);
+requireIn(
+	appSource,
+	"type MprWorkbenchLocalDraft",
+	"App must persist a typed CT MPR local workbench draft.",
+);
+requireIn(
+	appSource,
+	"mprWorkbenchSeriesKey",
+	"App must key CT MPR local drafts by selected DICOM series.",
+);
+requireIn(
+	appSource,
+	"loadLocalMprWorkbenchDraft",
+	"App must restore the last CT MPR workbench view.",
+);
+requireIn(
+	appSource,
+	"saveLocalMprWorkbenchDraft",
+	"App must save the last CT MPR workbench view.",
+);
+requireIn(
+	settingsSource,
+	"mprWorkbenchLocalSavedAt",
+	"SettingsView CT MPR must show saved-view state.",
+);
+requireIn(
+	settingsSource,
+	"restoreMprWorkbenchLocalDraft",
+	"SettingsView CT MPR must expose manual restore for the last view.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-memory-strip"',
+	"SettingsView CT MPR saved-view strip must be test-tagged.",
+);
+requireIn(
+	settingsSource,
+	"mprControlsReady",
+	"SettingsView CT MPR controls must have a selected-series readiness guard.",
+);
+requireIn(
+	settingsSource,
+	"aria-disabled={!mprControlsReady}",
+	"SettingsView CT MPR axis visualizer must expose disabled readiness.",
+);
+requireIn(
+	settingsSource,
+	"const planeSupported = typedCbctWorkbenchProjections.includes(plane.key);",
+	"SettingsView CT MPR plane buttons must detect projections unavailable for the selected series.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!planeAvailable}",
+	"SettingsView CT MPR plane buttons must wait for a ready series through a named availability guard.",
+);
+requireIn(
+	settingsSource,
+	'className="mpr-plane-unavailable"',
+	"SettingsView CT MPR disabled plane buttons must explain why they are disabled.",
+);
+requireIn(
+	cssSource,
+	".mpr-plane .mpr-plane-unavailable",
+	"SettingsView CT MPR disabled plane reason must be styled.",
+);
+requirePattern(
+	settingsSource,
+	/disabled=\{!mprControlsReady\}\s+min=\{mprAxisBounds\.min\}\s+max=\{mprAxisBounds\.max\}/,
+	"SettingsView CT MPR angle slider must wait for a ready series and use shared bounds.",
+);
+requireIn(
+	settingsSource,
+	"aria-valuetext={mprAxisRangeValue}",
+	"SettingsView CT MPR angle slider must announce readable axis value text.",
+);
+requireIn(
+	settingsSource,
+	"mprSlabBounds",
+	"SettingsView CT MPR slab fields must use the same shared bounds as the clamp helper.",
+);
+requirePattern(
+	settingsSource,
+	/disabled=\{!mprControlsReady\}\s+min=\{mprSlabBounds\.min\}\s+max=\{mprSlabBounds\.max\}/,
+	"SettingsView CT MPR slab slider must wait for a ready series and use shared bounds.",
+);
+requireIn(
+	settingsSource,
+	"aria-valuetext={mprSlabRangeValue}",
+	"SettingsView CT MPR slab slider must announce readable slab value text.",
+);
+requireIn(
+	settingsSource,
+	"aria-valuetext={mprSliceRangeValue}",
+	"SettingsView CT MPR slice slider must announce readable slice value text.",
+);
+requireIn(
+	settingsSource,
+	"mpr-control-disabled-note",
+	"SettingsView CT MPR must explain disabled controls.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-axis-nudge"',
+	"SettingsView CT MPR controls must expose fine angle buttons.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-slab-nudge"',
+	"SettingsView CT MPR controls must expose fine slab buttons.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-slice-nudge"',
+	"SettingsView CT MPR controls must expose fine slice buttons.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="ct-mpr-manual-inputs"',
+	"SettingsView CT MPR controls must expose exact numeric inputs for angle, slab, and slice.",
+);
+requireIn(
+	settingsSource,
+	"value={mprSafeSliceIndex + 1}",
+	"SettingsView CT MPR exact slice input must show one-based clamped slice numbers.",
+);
+forbidIn(
+	settingsSource,
+	"value={mprSliceIndex + 1}",
+	"SettingsView CT MPR exact slice input must not show an unclamped slice number.",
+);
+requireIn(
+	settingsSource,
+	"Number(event.target.value) - 1, mprSliceMaxIndex",
+	"SettingsView CT MPR exact slice input must convert one-based UI values back to zero-based state.",
+);
+requireIn(
+	cssSource,
+	".mpr-manual-grid",
+	"SettingsView CT MPR exact numeric inputs must be styled.",
+);
+requireIn(
+	settingsSource,
+	"mprSlicePresetFractions",
+	"SettingsView CT MPR controls must include 25/50/75 percent slice presets.",
+);
+requireIn(
+	settingsSource,
+	"mprSliceIndexFromFraction",
+	"SettingsView CT MPR slice presets must be computed through one clamp helper.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Быстрые углы КТ-срезов"',
+	"SettingsView CT MPR controls must expose quick angle buttons.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Быстрая толщина слоя КТ-срезов"',
+	"SettingsView CT MPR controls must expose quick slab buttons.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Опорные КТ-срезы"',
+	"SettingsView CT MPR controls must expose quick landmark slice buttons.",
+);
+requireIn(
+	settingsSource,
+	"Толщина слоя: {mprSlabMm} мм",
+	"SettingsView CT MPR slab control must use doctor-readable Russian copy.",
+);
+requireIn(
+	settingsSource,
+	"Положение среза: {mprSliceLabel}",
+	"SettingsView CT MPR slice control must use doctor-readable Russian copy.",
+);
+forbidIn(
+	settingsSource,
+	"Slab:",
+	"SettingsView CT MPR must not expose English slab jargon in the visible control label.",
+);
+forbidIn(
+	settingsSource,
+	"slab и связанные плоскости",
+	"SettingsView CT MPR disabled guidance must not expose slab jargon.",
+);
+requireIn(
+	settingsSource,
+	'className="mpr-reset-button"',
+	"SettingsView CT MPR must expose a styled reset action.",
+);
+requireIn(
+	settingsSource,
+	"type DicomFirstFrameViewerState",
+	"SettingsView must keep first-frame DICOM viewer controls typed.",
+);
+requireIn(
+	settingsSource,
+	"DicomFirstFramePreviewResponse",
+	"SettingsView must type first-frame DICOM preview responses.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFirstFramePreview",
+	"SettingsView first-frame DICOM preview must not render stack facts from any.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFirstFrameViewerState",
+	"SettingsView first-frame DICOM controls must not render from any-typed state.",
+);
+requireIn(
+	settingsSource,
+	"updateDicomFirstFrameViewerState",
+	"SettingsView first-frame DICOM buttons must update through a typed helper.",
+);
+requireIn(
+	settingsSource,
+	"updateDicomFirstFrameViewerNumber",
+	"SettingsView first-frame DICOM sliders must update through a typed helper.",
+);
+requireIn(
+	settingsSource,
+	"dicomFirstFrameSelectableCount",
+	"SettingsView first-frame DICOM preview must expose stack size.",
+);
+requireIn(
+	settingsSource,
+	"dicomFirstFrameCurrentIndex",
+	"SettingsView first-frame DICOM preview must expose current slice index.",
+);
+requireIn(
+	settingsSource,
+	"previewDicomFirstFrameSlice",
+	"SettingsView first-frame DICOM preview must be able to request another slice.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="dicom-first-frame-slice-controls"',
+	"SettingsView first-frame DICOM preview must render slice navigation controls.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Выбрать срез снимков"',
+	"SettingsView first-frame DICOM slider must be accessible.",
+);
+requireIn(
+	settingsSource,
+	"typedDicomFirstFramePreview?.warnings.slice(0, 4).map((warning: string)",
+	"SettingsView first-frame warnings must render through typed rows.",
+);
+forbidIn(
+	settingsSource,
+	"setDicomFirstFrameViewerState((state: any)",
+	"SettingsView first-frame DICOM viewer state updates must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"onChange={(event: any) =>\n                              setDicomFirstFrameViewerState",
+	"SettingsView first-frame DICOM sliders must not use any-typed events.",
+);
+forbidIn(
+	settingsSource,
+	"dicomFirstFramePreview.warnings.slice(0, 4).map((warning: any)",
+	"SettingsView first-frame warnings must not use any.",
+);
+requireIn(
+	appSource,
+	"type DicomFirstFramePreviewRequestContext",
+	"App must remember the local first-frame preview request context without exposing paths in the API response.",
+);
+requireIn(
+	appSource,
+	"type DicomFirstFramePreviewOptions",
+	"App must type first-frame preview slice options.",
+);
+requireIn(
+	appSource,
+	"preferredFileIndex",
+	"App must send a preferred DICOM file index for slice navigation.",
+);
+requireIn(
+	appSource,
+	"previewDicomFirstFrameSlice",
+	"App must expose first-frame DICOM slice navigation.",
+);
+requireIn(
+	appSource,
+	"resetViewer: false",
+	"Changing first-frame DICOM slices must preserve viewer transform controls.",
+);
+requireIn(
+	settingsSource,
+	"const staffCreationRoles: StaffRole[]",
+	"SettingsView must keep staff role creation typed.",
+);
+requireIn(
+	settingsSource,
+	"const clinicalRuleOwnerRoles: StaffRole[]",
+	"SettingsView must keep clinical rule owners typed.",
+);
+requireIn(
+	settingsSource,
+	"ClinicalRule,",
+	"SettingsView must import the shared clinical rule contract.",
+);
+requireIn(
+	settingsSource,
+	"ServiceCatalogItem,",
+	"SettingsView must import the shared service catalog item contract.",
+);
+requireIn(
+	settingsSource,
+	"typedClinicalRules",
+	"SettingsView clinical rule library must not render from untyped dashboard props.",
+);
+requireIn(
+	settingsSource,
+	"typedServiceCatalog",
+	"SettingsView clinical rule selects must not render services from untyped dashboard props.",
+);
+requireIn(
+	settingsSource,
+	"typedClinicalRuleActionLabels",
+	"SettingsView clinical rule actions must use typed labels.",
+);
+requireIn(
+	settingsSource,
+	"typedServiceCategoryLabels",
+	"SettingsView clinical rule categories must use typed labels.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.clinicalRules.map((rule: any)",
+	"SettingsView clinical rule library must not use any-typed rule rows.",
+);
+forbidIn(
+	settingsSource,
+	"dashboard.serviceCatalog.map((service: any)",
+	"SettingsView clinical rule service selects must not use any-typed service rows.",
+);
+forbidIn(
+	settingsSource,
+	"newRuleAction} onChange={(event: any)",
+	"SettingsView clinical rule action select must use SelectChangeEvent.",
+);
+forbidIn(
+	settingsSource,
+	"newRuleSeverity} onChange={(event: any)",
+	"SettingsView clinical rule severity select must use SelectChangeEvent.",
+);
+forbidIn(
+	settingsSource,
+	"newRuleCategory} onChange={(event: any)",
+	"SettingsView clinical rule category select must use SelectChangeEvent.",
+);
+forbidIn(
+	settingsSource,
+	"(serviceId: any)",
+	"SettingsView clinical rule service tags must not use any-typed ids.",
+);
+requireIn(
+	settingsSource,
+	"recognitionInputReady",
+	"SettingsView must guard empty AI recognition input.",
+);
+requireIn(
+	settingsSource,
+	"smartImportInputReady",
+	"SettingsView must guard empty smart import input.",
+);
+requireIn(
+	settingsSource,
+	"runMigrationAutopilot",
+	"SettingsView must expose one-click migration autopilot.",
+);
+requireIn(
+	settingsSource,
+	"runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })",
+	"Text/Excel/OCR migration autopilot must force pasted smart-import text into the plan without discarding visible source discovery.",
+);
+requireIn(
+	settingsSource,
+	"previewMigrationAutopilotSources",
+	"SettingsView must let the operator script build smart preview from autopilot sources.",
+);
+requireIn(
+	settingsSource,
+	"MigrationAutopilotOperatorScriptStep",
+	"SettingsView must type migration operator script steps.",
+);
+requireIn(
+	settingsSource,
+	"MigrationLocalSourceDiscoveryCandidate",
+	"SettingsView must type migration operator source candidates.",
+);
+requireIn(
+	settingsSource,
+	"MigrationLocalSourceDiscoveryResponse",
+	"SettingsView must type migration discovery responses.",
+);
+requireIn(
+	settingsSource,
+	"MigrationLocalSourceWorkupResponse",
+	"SettingsView must type migration workup responses.",
+);
+requireIn(
+	settingsSource,
+	"MigrationLocalSourceProbeResponse",
+	"SettingsView must type migration probe responses.",
+);
+requireIn(
+	settingsSource,
+	"ClinicPublicLookupResponse",
+	"SettingsView must type clinic public lookup responses.",
+);
+requireIn(
+	settingsSource,
+	"migrationCandidatePreviewReady",
+	"SettingsView must distinguish real preview-ready migration sources from folder/profile hints.",
+);
+requireIn(
+	settingsSource,
+	"migrationCandidatePreviewHint",
+	"SettingsView must explain disabled migration preview buttons in operator language.",
+);
+requireIn(
+	settingsSource,
+	"migrationPreviewableSourceCount",
+	"Migration progress must count only sources that can actually build a preview.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isSmartImportLoading || !migrationCandidatePreviewReady(candidate)}",
+	"Discovery source preview buttons must stay disabled until a source has files for preview.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isSmartImportLoading || !migrationCandidatePreviewReady(source.candidate)}",
+	"Autopilot source preview buttons must stay disabled until a source has files for preview.",
+);
+requireIn(
+	settingsSource,
+	"operatorStepPreviewReady",
+	"Operator build-preview steps must not advertise a working action for empty generic migration containers.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isSmartImportLoading || !operatorStepPreviewReady}",
+	"Operator build-preview buttons must stay disabled until at least one source can preview.",
+);
+requireIn(
+	settingsSource,
+	"Сначала откройте план или проверку источника",
+	"Disabled preview buttons must tell admins the next useful action.",
+);
+requireIn(
+	appSource,
+	"migrationCandidateCanPreview",
+	"App preview handlers must guard source previews even when UI state is stale.",
+);
+requireIn(
+	appSource,
+	"У найденного источника пока нет файлов для предпросмотра",
+	"Direct source preview calls must fail visibly for empty generic migration containers.",
+);
+requireIn(
+	appSource,
+	"У выбранного источника пока нет файлов для предпросмотра",
+	"Autopilot source preview calls must fail visibly for selected empty generic migration containers.",
+);
+forbidIn(
+	settingsSource,
+	"staging preview",
+	"Migration source hints must not expose staging-preview jargon to operators.",
+);
+forbidIn(
+	settingsSource,
+	"файлов для preview",
+	"Migration source hints must use Russian preview wording.",
+);
+forbidIn(
+	appSource,
+	"файлов для preview",
+	"Migration source errors must use Russian preview wording.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationAutopilotSources",
+	"SettingsView must not render autopilot sources from untyped props.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationAutopilotSteps",
+	"SettingsView must not render autopilot steps from untyped props.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationOperatorLanes",
+	"SettingsView must not render operator lanes from untyped props.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationHandoffChecklist",
+	"SettingsView must not render handoff checklist rows from untyped props.",
+);
+requireIn(
+	settingsSource,
+	"migrationTriageItems",
+	"SettingsView must derive a short migration triage queue from the typed handoff checklist.",
+);
+requireIn(
+	settingsSource,
+	'item.blocking || item.status !== "ready_for_preview"',
+	"Migration triage must hide already-ready checklist noise for non-technical operators.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationDiscoveryCandidates",
+	"SettingsView must not render source discovery rows from untyped props.",
+);
+requireIn(
+	settingsSource,
+	"const sourceDisplayName = migrationSourceDisplayName(source.candidate, index);",
+	"Autopilot source cards must compute one operator-facing source name for repeated actions.",
+);
+requireIn(
+	settingsSource,
+	"const candidateDisplayName = migrationSourceDisplayName(candidate, index);",
+	"Discovery source cards must compute one operator-facing source name for repeated actions.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Открыть план переноса: ${sourceDisplayName}`}",
+	"Autopilot source plan buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Проверить источник: ${sourceDisplayName}`}",
+	"Autopilot source probe buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Отправить источник в разбор: ${sourceDisplayName}`}",
+	"Autopilot source parser buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Построить предпросмотр: ${sourceDisplayName}`}",
+	"Autopilot source preview buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Открыть план переноса: ${candidateDisplayName}`}",
+	"Discovered source plan buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Проверить источник: ${candidateDisplayName}`}",
+	"Discovered source probe buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Отправить источник в разбор: ${candidateDisplayName}`}",
+	"Discovered source parser buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"aria-label={`Построить предпросмотр: ${candidateDisplayName}`}",
+	"Discovered source preview buttons must name the exact source for assistive tech.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationWorkupReadinessIssues",
+	"SettingsView must not render workup readiness rows through any.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationProbeReadinessIssues",
+	"SettingsView must not render probe readiness rows through any.",
+);
+requireIn(
+	settingsSource,
+	"typedClinicPublicLookupSuggestions",
+	"SettingsView must not render clinic lookup suggestions through any.",
+);
+requireIn(
+	settingsSource,
+	"typedClinicPublicLookupTargets",
+	"SettingsView must not render clinic lookup targets through any.",
+);
+requireIn(
+	settingsSource,
+	"migrationOperatorScriptSteps",
+	"SettingsView must not search operator steps through any-typed optional chains.",
+);
+requireIn(
+	appSource,
+	"Источник из автоплана уже не найден",
+	"Autopilot preview actions must fail visibly instead of previewing the wrong source set.",
+);
+requireIn(
+	settingsSource,
+	"downloadMigrationHandoffReport",
+	"SettingsView must expose migration handoff CSV download.",
+);
+requireIn(
+	settingsSource,
+	"migrationAutopilot",
+	"SettingsView must render migration autopilot results.",
+);
+requireIn(
+	settingsSource,
+	"migrationAutopilot.operatorPacket",
+	"SettingsView must render the migration operator packet.",
+);
+requireIn(
+	settingsSource,
+	"migrationDryRunSummary",
+	"SettingsView must render the migration dry-run summary from the typed operator packet.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationAutopilot?.operatorPacket.dryRun",
+	"SettingsView must use the dry-run migration contract.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-dry-run-summary"',
+	"SettingsView must test-tag the migration dry-run summary.",
+);
+requireIn(
+	settingsSource,
+	"Быстрый прогон",
+	"SettingsView must show dry-run migration effort in operator language.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationHandoffChecklist.slice(0, 6).map",
+	"SettingsView must render the migration handoff checklist through the typed contract.",
+);
+requireIn(
+	settingsSource,
+	"migrationAutopilot.operatorPacket.totals.smartPreviewSources",
+	"SettingsView must show how many migration sources came from pasted text/OCR.",
+);
+requireIn(
+	settingsSource,
+	"migrationPrimaryOperatorStep",
+	"SettingsView must lift the best migration operator step into a primary action.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-autopilot-primary-action"',
+	"SettingsView must test-tag the primary migration action.",
+);
+requireIn(
+	settingsSource,
+	"migration-primary-action-button",
+	"SettingsView must wire the primary migration action to a real button.",
+);
+requireIn(
+	settingsSource,
+	'const actionButtonClass = testScope === "primary" ? "primary-button" : "text-button"',
+	"Primary migration operator actions must render as visually primary buttons.",
+);
+requireIn(
+	settingsSource,
+	'<ScanSearch aria-hidden="true" /> {step.buttonLabel}',
+	"Migration operator search/probe actions must use a recognizable icon.",
+);
+requireIn(
+	settingsSource,
+	'<Database aria-hidden="true" /> {step.buttonLabel}',
+	"Migration operator folder-pick actions must use a recognizable icon.",
+);
+requireIn(
+	settingsSource,
+	'<ClipboardCheck aria-hidden="true" /> {step.buttonLabel}',
+	"Migration operator plan actions must use a recognizable icon.",
+);
+requireIn(
+	settingsSource,
+	'<FileCheck2 aria-hidden="true" /> {step.buttonLabel}',
+	"Migration operator preview/export actions must use a recognizable icon.",
+);
+requireIn(
+	settingsSource,
+	"operatorStepNeedsCandidate",
+	"Operator script source-bound steps must detect stale missing candidates.",
+);
+requireIn(
+	settingsSource,
+	"migrationOperatorSourceBoundActions.includes(step.action)",
+	"Operator script preview steps must detect stale missing candidates through the typed source-bound action list.",
+);
+requireIn(
+	settingsSource,
+	'step.action === "build_preview" && !operatorStepNeedsCandidate',
+	"Stale preview steps must refresh the plan instead of showing a guaranteed failing preview button.",
+);
+requireIn(
+	settingsSource,
+	"operator-script-refresh-plan",
+	"Operator script must offer a refresh action when a source-bound step lost its candidate.",
+);
+requireIn(
+	settingsSource,
+	"Источник уже не в текущем автоплане",
+	"Operator script must explain stale source-bound actions instead of hiding the button.",
+);
+requireIn(
+	settingsSource,
+	"runMigrationAutopilot(undefined, { includeSmartImportText: smartImportInputReady })",
+	"Stale operator script actions must rebuild the migration autoplan with current pasted text/OCR when present.",
+);
+requireIn(
+	settingsSource,
+	"activeMigrationDiscoveryForSettingsAutopilot",
+	"SettingsView must keep the visible migration discovery when rerunning autopilot from the parser card.",
+);
+requireIn(
+	settingsSource,
+	"runMigrationAutopilot(activeMigrationDiscoveryForSettingsAutopilot, { includeSmartImportText: smartImportInputReady })",
+	"Parser-card autopilot must combine current discovered sources with pasted text/OCR instead of dropping one side.",
+);
+forbidIn(
+	settingsSource,
+	"smartImportInputReady ? runMigrationAutopilot(null, { includeSmartImportText: true }) : runMigrationAutopilot()",
+	"Parser-card autopilot must not discard the current PC/browser source discovery when pasted text is present.",
+);
+requireIn(
+	settingsSource,
+	"renderMigrationTechnicalNotes",
+	"SettingsView must move migration guardrail notes out of the main operator path.",
+);
+requireIn(
+	settingsSource,
+	"migration-autopilot-technical-boundary",
+	"SettingsView must keep lookup guardrails in a compact technical details block.",
+);
+requireIn(
+	settingsSource,
+	"Дальше работайте сверху вниз",
+	"SettingsView must prioritize workflow guidance over warning copy in the autoplan header.",
+);
+requireIn(
+	settingsSource,
+	"migrationLegacySourceKindLabels",
+	"SettingsView must render legacy source kinds as human labels.",
+);
+requireIn(
+	settingsSource,
+	"migrationAutomationLevelLabels",
+	"SettingsView must render migration automation levels as human labels.",
+);
+requireIn(
+	settingsSource,
+	"migrationOwnerLabels[migrationPrimaryOperatorStep.owner]",
+	"Primary migration action must show human operator labels.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(migrationPrimaryOperatorStep.detail)",
+	"Primary migration action must humanize backend detail text.",
+);
+requireIn(
+	settingsSource,
+	"migrationHandoffPhaseLabels",
+	"SettingsView must render migration handoff phases as human labels.",
+);
+requireIn(
+	settingsSource,
+	"migrationHandoffPhaseLabels[item.phase]",
+	"Migration handoff checklist must not expose raw phase keys.",
+);
+requireIn(
+	settingsSource,
+	"migrationEntityLabels",
+	"SettingsView must render extractable migration entities as human labels.",
+);
+requireIn(
+	settingsSource,
+	"smartImportMigrationPlanStatusLabels",
+	"SettingsView must render smart import migration plan step statuses as human labels.",
+);
+requireIn(
+	settingsSource,
+	"smartImportLineKindLabels",
+	"SettingsView must render smart import line kinds as human labels.",
+);
+requireIn(
+	settingsSource,
+	"migrationWorkupStepStatusLabels",
+	"SettingsView must render migration workup step statuses as human labels.",
+);
+requireIn(
+	settingsSource,
+	"importRowStatusLabels",
+	"SettingsView must render patient, imaging, and DICOM row statuses as human labels.",
+);
+requireIn(
+	settingsSource,
+	"importRowStatusLabels[row.status] ?? row.status",
+	"SettingsView must show import row status labels on row cards.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText",
+	"SettingsView must humanize backend migration route text before rendering.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(warning)",
+	"Migration source warnings must be humanized before rendering.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationList(source.bridgeKit.requiredTools, 2)",
+	"Migration source cards must not render raw bridge tool names.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationColumns(typedMigrationSourceWorkup.bridgeKit.outputManifest.requiredColumns, 5)",
+	"Migration workup manifests must show readable column names.",
+);
+requireIn(
+	settingsSource,
+	"migrationHandoffRouteLabel(handoff)",
+	"Migration workup handoffs must not render raw API methods and endpoints.",
+);
+requireIn(
+	settingsSource,
+	"Умный разбор",
+	"Settings smart import entry point must use clinic-readable wording instead of parser jargon.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Режим умного разбора"',
+	"Settings smart import mode group must not expose parser jargon.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Смешанная выгрузка для умного разбора"',
+	"Settings smart import textarea must not expose parser jargon.",
+);
+requireIn(
+	settingsSource,
+	"локальный разбор + проверка",
+	"Settings pricelist local mode must use clinic-readable wording.",
+);
+requireIn(
+	settingsSource,
+	"офлайн-разбор включен",
+	"Settings speech gateway status must use clinic-readable wording.",
+);
+requireIn(
+	settingsSource,
+	"локальный разбор выключен",
+	"Settings speech gateway disabled status must use clinic-readable wording.",
+);
+forbidIn(
+	settingsSource,
+	"Умный парсер",
+	"Settings smart import entry point must not expose parser jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Режим умного парсера",
+	"Settings smart import mode group must not expose parser jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Смешанная выгрузка для умного парсера",
+	"Settings smart import textarea must not expose parser jargon.",
+);
+forbidIn(
+	settingsSource,
+	"локальный парсер + проверка",
+	"Settings pricelist local mode must not expose parser jargon.",
+);
+forbidIn(
+	settingsSource,
+	"офлайн-парсер включен",
+	"Settings speech gateway status must not expose parser jargon.",
+);
+forbidIn(
+	settingsSource,
+	"парсер выключен",
+	"Settings speech gateway disabled status must not expose parser jargon.",
+);
+requireIn(
+	settingsSource,
+	"сетевой адрес",
+	"Migration humanizer must call endpoints a network address, not API jargon.",
+);
+requireIn(
+	settingsSource,
+	"архив снимков",
+	"Migration humanizer must translate DICOMweb/PACS wording into operator language.",
+);
+requireIn(
+	settingsSource,
+	"контроль строки",
+	"Migration manifests must translate source_row_hash into an operator-readable label.",
+);
+requireIn(
+	settingsSource,
+	"подключение к живой базе",
+	"Migration manifests must translate live DB connection fields before rendering.",
+);
+forbidIn(
+	settingsSource,
+	"точка API",
+	"SettingsView must not expose API endpoint jargon in migration copy.",
+);
+forbidIn(
+	settingsSource,
+	"{handoff.method} {handoff.endpoint}",
+	"Migration handoff rows must hide raw API method and endpoint details.",
+);
+forbidIn(
+	settingsSource,
+	"renderMigrationOperatorStepActions = (step: any",
+	"Migration operator actions must not accept any-typed steps.",
+);
+forbidIn(
+	settingsSource,
+	"operatorScript?.steps.find((step: any)",
+	"Migration primary operator step selection must not use any-typed steps.",
+);
+forbidIn(
+	settingsSource,
+	"operatorScript.steps.slice(0, 7).map((step: any)",
+	"Migration operator script rows must not use any-typed steps.",
+);
+forbidIn(
+	settingsSource,
+	"migrationAutopilot.sources.find((source: any)",
+	"Migration operator candidate lookup must not use any-typed sources.",
+);
+forbidIn(
+	settingsSource,
+	"migrationAutopilot.sources.slice(0, 6).map((source: any)",
+	"Migration autopilot source cards must not use any-typed sources.",
+);
+forbidIn(
+	settingsSource,
+	"migrationAutopilot.operatorPacket.lanes.slice(0, 5).map((lane: any)",
+	"Migration operator lanes must not use any-typed rows.",
+);
+forbidIn(
+	settingsSource,
+	"migrationAutopilot.operatorPacket.handoffChecklist.slice(0, 6).map((item: any)",
+	"Migration handoff checklist must not use any-typed rows.",
+);
+forbidIn(
+	settingsSource,
+	"migrationAutopilot.steps.slice(0, 6).map((step: any)",
+	"Migration autopilot summary steps must not use any-typed rows.",
+);
+forbidIn(
+	settingsSource,
+	"source.readiness?.blockers.slice(0, 2).map((item: any)",
+	"Migration source readiness blockers must not use any-typed rows.",
+);
+forbidIn(
+	settingsSource,
+	"source.probe?.adapters.slice(0, 2).map((adapter: any)",
+	"Migration source probe adapters must not use any-typed rows.",
+);
+forbidIn(
+	settingsSource,
+	"migrationSourceDiscovery.candidates.slice(0, 9).map((candidate: any)",
+	"Migration discovery cards must not use any-typed candidates.",
+);
+forbidIn(
+	settingsSource,
+	"[...migrationSourceWorkup.readiness.blockers, ...migrationSourceWorkup.readiness.warnings].slice(0, 3).map((item: any)",
+	"Migration workup readiness rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"migrationSourceWorkup.handoffs.slice(0, 3).map((handoff: any)",
+	"Migration workup handoffs must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"migrationSourceWorkup.steps.map((step: any)",
+	"Migration workup steps must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"[...migrationSourceProbe.readiness.blockers, ...migrationSourceProbe.readiness.warnings].slice(0, 3).map((item: any)",
+	"Migration probe readiness rows must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"migrationSourceProbe.adapters.slice(0, 4).map((adapter: any)",
+	"Migration probe adapters must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"migrationSourceProbe.artifactSamples.slice(0, 8).map((artifact: any)",
+	"Migration probe artifacts must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"clinicPublicLookup.suggestions.slice(0, 4).map((suggestion: any",
+	"Clinic lookup profile suggestions must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"clinicPublicLookup.suggestions.slice(0, 3).map((suggestion: any",
+	"Clinic lookup import suggestions must not use any.",
+);
+forbidIn(
+	settingsSource,
+	"clinicPublicLookup.publicLookupTargets.map((target: any)",
+	"Clinic lookup public targets must not use any.",
+);
+requireIn(
+	settingsSource,
+	"clinicPublicLookupProviderStatusLabels",
+	"Clinic lookup provider states must render as human labels.",
+);
+requireIn(
+	settingsSource,
+	"clinicPublicLookupSuggestionSourceLabels",
+	"Clinic lookup suggestion sources must render as human labels.",
+);
+requireIn(
+	settingsSource,
+	"clinicPublicLookupBoundaryText",
+	"Clinic lookup UI must show a visible public-search boundary.",
+);
+requireIn(
+	settingsSource,
+	"const clinicPublicLookupWarningText",
+	"Clinic lookup warnings must use a UI-owned readable formatter.",
+);
+requireIn(
+	settingsSource,
+	"clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (\n                    <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>",
+	"Clinic profile lookup warnings must not render raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (\n                  <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>",
+	"Import-side clinic lookup warnings must not render raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationAutopilotClinicLookup.warnings.slice(0, 3).map((warning: string) => (\n                      <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>",
+	"Migration autopilot clinic lookup warnings must not render raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"Пациентов, снимки, базы и локальные пути сюда не отправлять.",
+	"Clinic lookup boundary must explicitly forbid patient/imaging/local-path data.",
+);
+requireIn(
+	cssSource,
+	".clinic-public-boundary",
+	"Clinic lookup boundary must be styled.",
+);
+requireIn(
+	settingsSource,
+	"Сервис реквизитов",
+	"Clinic lookup provider brand must render as a human requisites service label.",
+);
+requireIn(
+	settingsSource,
+	"Из введенных реквизитов",
+	"Manual clinic lookup fallback must not expose raw manual_public_targets source text.",
+);
+forbidIn(
+	settingsSource,
+	'dadata: "DaData"',
+	"Clinic lookup suggestion source must not expose provider brand as the primary operator label.",
+);
+forbidIn(
+	settingsSource,
+	"suggestion.warnings.slice(0, 2).map((warning: string) => (\n                            <small key={warning}>{warning}</small>",
+	"Clinic lookup suggestion warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (\n                    <small key={warning}>{warning}</small>",
+	"Clinic profile lookup warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (\n                  <small key={warning}>{warning}</small>",
+	"Import-side clinic lookup warnings must not render raw backend wording.",
+);
+forbidIn(
+	settingsSource,
+	"typedSmartImportPreview.clinicSuggestion.warnings.slice(0, 2).map((warning: string) => (\n                        <small key={warning}>{warning}</small>",
+	"Smart import clinic suggestion warnings must not render raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"План переноса",
+	"SettingsView must use human migration action labels instead of short technical buttons.",
+);
+requireIn(
+	settingsSource,
+	"Проверить источник",
+	"SettingsView must label probe actions as source checks.",
+);
+requireIn(
+	settingsSource,
+	"Предпросмотр",
+	"SettingsView must label preview actions in Russian.",
+);
+requireIn(
+	settingsSource,
+	"smart-import-legacy-source-privacy-notes",
+	"SettingsView must keep smart import source privacy copy in technical details.",
+);
+requireIn(
+	settingsSource,
+	"clinicPublicLookupFieldLabels[key] ?? key",
+	"SettingsView must render smart import clinic suggestion fields as human labels.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-kickstart-panel"',
+	"SettingsView must put the main migration entrypoints before the text workbench.",
+);
+requireIn(
+	settingsSource,
+	"Быстрый перенос без ручного поиска",
+	"Migration kickstart must tell admins which route to start with.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-progress-strip"',
+	"Migration kickstart must show source/plan/preview/requisites readiness.",
+);
+requireIn(
+	settingsSource,
+	"migrationProgressItems",
+	"Migration readiness strip must be derived from current migration state.",
+);
+requireIn(
+	settingsSource,
+	"Отчет переноса",
+	"Migration reports must be labeled for the clinic transfer workflow, not only IT.",
+);
+requireIn(
+	settingsSource,
+	"Отчет проверки",
+	"Smart import diagnostic report must use clinic-readable wording instead of CSV-first wording.",
+);
+requireIn(
+	settingsSource,
+	"План переноса",
+	"Migration handoff download must be labeled for admin/doctor/operator transfer work, not only IT.",
+);
+requireIn(
+	settingsSource,
+	"Табличный отчет для администратора, врача и специалиста переноса",
+	"Migration report tooltip must make the role audience explicit without CSV-first wording.",
+);
+forbidIn(
+	settingsSource,
+	"CSV-отчет",
+	"SettingsView must not label migration reports as CSV-first actions.",
+);
+forbidIn(
+	settingsSource,
+	"CSV-список пациентов",
+	"SettingsView migration humanizer must not turn internal manifests into CSV-first wording.",
+);
+forbidIn(
+	settingsSource,
+	'spreadsheet_export: "Excel/таблица"',
+	"SettingsView migration spreadsheet label must not mix raw extension and table wording.",
+);
+requireIn(
+	settingsSource,
+	'spreadsheet_export: "Табличная выгрузка"',
+	"SettingsView migration spreadsheet label must be operator-readable.",
+);
+forbidIn(
+	appSource,
+	'spreadsheet_export: "Excel/XLSX выгрузка"',
+	"App migration spreadsheet label must not expose XLSX jargon.",
+);
+requireIn(
+	appSource,
+	'spreadsheet_export: "Табличная выгрузка"',
+	"App migration spreadsheet label must be operator-readable.",
+);
+forbidIn(
+	appSource,
+	"PDF, XLSX, DOCX, ZIP или фото",
+	"Onboarding document route copy must not expose raw extension soup.",
+);
+requireIn(
+	appSource,
+	"распознанный документ, таблицу, архив или фото",
+	"Onboarding document route copy must use operator-readable file categories.",
+);
+forbidIn(
+	settingsSource,
+	"ZIP, PDF, DOCX, XLSX, CSV, TXT, HTML, RTF",
+	"Document ingestion heading must not expose raw extension soup as the primary label.",
+);
+forbidIn(
+	settingsSource,
+	"ZIP/XML-извлекатель",
+	"Document ingestion help must not expose implementation extractor jargon.",
+);
+forbidIn(
+	appSource,
+	"перед CSV-отчетом",
+	"Smart import empty-report guard must not use CSV-first wording.",
+);
+forbidIn(
+	appSource,
+	'csv: "таблица CSV"',
+	"Detected document type labels must not expose CSV-first wording.",
+);
+forbidIn(
+	appSource,
+	'json: "JSON"',
+	"Detected document type labels must not expose JSON as an operator-facing type.",
+);
+forbidIn(
+	appSource,
+	'xml: "XML"',
+	"Detected document type labels must not expose XML as an operator-facing type.",
+);
+forbidIn(
+	appSource,
+	'zip: "ZIP-архив"',
+	"Detected document type labels must use archive wording instead of ZIP-first wording.",
+);
+requireIn(
+	appSource,
+	'json: "структурированный текст"',
+	"Detected structured file labels must use human wording.",
+);
+requireIn(
+	settingsSource,
+	"migrationSourceKindLabel",
+	"Migration source kind fallbacks must be humanized instead of rendered as raw enum keys.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(source.priority)",
+	"Migration source priority fallback must be human-readable.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(typedMigrationSourceWorkup.automationLevel)",
+	"Migration workup automation fallback must be human-readable.",
+);
+requireIn(
+	settingsSource,
+	"Границы онлайн-поиска",
+	"Migration lookup guardrails must use Russian operator wording.",
+);
+requireIn(
+	settingsSource,
+	"Не отправлять в онлайн-поиск",
+	"Migration lookup blocked fields must use Russian operator wording.",
+);
+requireIn(
+	appSource,
+	'link.download = "plan_perenosa_migracii.csv"',
+	"Migration plan download name must not expose handoff/internal jargon.",
+);
+requireIn(
+	appSource,
+	'link.download = "otchet_perenosa_importa.csv"',
+	"Smart import transfer report download name must not expose handoff/internal jargon.",
+);
+requireIn(
+	settingsSource,
+	"migrationHandoffReportReady",
+	"Migration handoff download must require an autoplan, discovered source, browser manifest, or pasted text.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isMigrationHandoffReportLoading || isMigrationAutopilotLoading || !migrationHandoffReportReady}",
+	"Migration handoff download must wait for an in-flight autoplan and stay disabled without migration context.",
+);
+requireIn(
+	settingsSource,
+	'const migrationHandoffReportGuidanceId = "migration-handoff-report-guidance"',
+	"Migration handoff report guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	"aria-describedby={!migrationHandoffReportReady ? migrationHandoffReportGuidanceId : undefined}",
+	"Migration handoff download must point to disabled-state guidance.",
+);
+requireIn(
+	settingsSource,
+	"Чтобы скачать план переноса, сначала запустите автоплан, найдите источники на ПК, выберите папку/диск или вставьте выгрузку.",
+	"Migration handoff report guidance must explain the fastest recovery paths.",
+);
+requireIn(
+	settingsSource,
+	"Жду автоплан",
+	"Migration handoff download must explain when it is waiting for autoplan.",
+);
+requireIn(
+	settingsSource,
+	"Сначала автоплан",
+	"Migration handoff download must tell admins what is missing before a transfer plan.",
+);
+requireIn(
+	appSource,
+	"Сначала запустите автоплан миграции, выберите папку/диск или вставьте текст выгрузки для плана переноса.",
+	"Migration handoff download must guard direct calls without migration context.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "Автоплан миграции не построен")',
+	"Migration autopilot failures must surface backend details without raw API-only copy.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "План миграции не создан")',
+	"Migration plan download failures must surface backend details without handoff jargon.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "Поиск старых источников не выполнен")',
+	"Migration PC discovery failures must surface backend details without raw API-only copy.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "План переноса источника не построен")',
+	"Migration source workup failures must use operator-readable wording.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "Проверка источника не выполнена")',
+	"Migration source probe failures must use operator-readable wording.",
+);
+forbidIn(
+	appSource,
+	"Handoff-отчет миграции",
+	"Migration errors must not expose handoff jargon.",
+);
+forbidIn(
+	appSource,
+	'link.download = "migration_autopilot_handoff.csv"',
+	"Migration plan download filename must not expose handoff jargon.",
+);
+forbidIn(
+	appSource,
+	'link.download = "smart_import_safe_handoff.csv"',
+	"Smart import transfer report filename must not expose handoff jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Технические границы lookup",
+	"Migration lookup guardrail title must not expose English lookup jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Онлайн lookup",
+	"Migration lookup allowed fields copy must not expose English lookup jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Не использовать для lookup",
+	"Migration lookup forbidden fields copy must not expose English lookup jargon.",
+);
+forbidIn(
+	settingsSource,
+	"?? source.priority",
+	"Migration source cards must not render raw priority enum fallbacks.",
+);
+forbidIn(
+	settingsSource,
+	"?? source.bridgeKit.kind",
+	"Migration source cards must not render raw bridge kind enum fallbacks.",
+);
+forbidIn(
+	settingsSource,
+	"?? typedMigrationSourceWorkup.automationLevel",
+	"Migration workup must not render raw automation enum fallbacks.",
+);
+requireIn(
+	settingsSource,
+	"Распознавание речи",
+	"Speech settings must use human wording instead of STT headings.",
+);
+requireIn(
+	settingsSource,
+	"Состояние распознавания",
+	"Speech status must avoid STT jargon.",
+);
+requireIn(
+	settingsSource,
+	"один понятный предпросмотр",
+	"Migration sources copy must prioritize usability over safety jargon.",
+);
+requireIn(
+	settingsSource,
+	"отдельное подключение",
+	"Integration source copy must avoid connector jargon.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Чеклист передачи миграции"',
+	"Migration handoff checklist aria label must be operator-readable.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="План подключения источника миграции"',
+	"Migration source workup aria label must not expose bridge-kit jargon.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="План проверки источника миграции"',
+	"Migration source probe aria label must not expose bridge-kit jargon.",
+);
+requireIn(
+	workspaceUiLabelsSource,
+	'planned_connector: "подключение позже"',
+	"Integration status labels must not expose connector jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Safe CSV",
+	"SettingsView must not expose safe CSV jargon in the import toolbar.",
+);
+forbidIn(
+	settingsSource,
+	"Handoff CSV",
+	"SettingsView must not expose handoff CSV jargon in the import toolbar.",
+);
+forbidIn(
+	settingsSource,
+	"Handoff checklist миграции",
+	"Migration checklist aria label must not expose handoff jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Bridge kit",
+	"Migration workup/probe aria labels must not expose bridge-kit jargon.",
+);
+forbidIn(
+	settingsSource,
+	"где потребуется отдельный коннектор",
+	"Integration source copy must avoid connector jargon.",
+);
+forbidIn(
+	settingsSource,
+	"STT-контур",
+	"SettingsView must not expose STT contour jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Состояние STT",
+	"SettingsView must not expose STT status jargon.",
+);
+forbidIn(
+	settingsSource,
+	"серверный STT",
+	"SettingsView must not expose server STT jargon.",
+);
+requireIn(
+	settingsSource,
+	"pickBrowserMigrationSource",
+	"SettingsView must expose browser-local legacy source manifest selection.",
+);
+requireIn(
+	settingsSource,
+	"browserMigrationDiscovery",
+	"SettingsView must render browser-local migration manifest results.",
+);
+requireIn(
+	settingsSource,
+	"Папка/диск + план",
+	"SettingsView must label browser migration selection as a one-step folder-to-plan action.",
+);
+requireIn(
+	settingsSource,
+	"isBrowserMigrationScanning || isMigrationAutopilotLoading",
+	"Browser migration folder-to-plan action must stay disabled while either scan or autoplan is active.",
+);
+requireIn(
+	settingsSource,
+	"discoverMigrationSources",
+	"SettingsView must expose local migration source discovery.",
+);
+requireIn(
+	settingsSource,
+	"Найти на ПК + план",
+	"SettingsView must label PC discovery as a one-step discovery-to-plan action.",
+);
+requireIn(
+	settingsSource,
+	"migrationSourceDiscovery",
+	"SettingsView must render local migration source discovery results.",
+);
+requireIn(
+	settingsSource,
+	"Автоплан уже построен выше",
+	"SettingsView must not tell admins to build a plan after the autoplan already exists.",
+);
+requireIn(
+	settingsSource,
+	"planMigrationDiscoveryCandidate",
+	"SettingsView must build a safe workup plan for discovered migration sources.",
+);
+requireIn(
+	settingsSource,
+	"previewMigrationDiscoveryCandidate",
+	"SettingsView must let admins preview a discovered migration source in one click.",
+);
+requireIn(
+	settingsSource,
+	"migrationSourceWorkup",
+	"SettingsView must render migration source workup results.",
+);
+requireIn(
+	settingsSource,
+	"probeMigrationDiscoveryCandidate",
+	"SettingsView must run read-only probes for discovered migration sources.",
+);
+requireIn(
+	settingsSource,
+	"migrationSourceProbe",
+	"SettingsView must render migration source probe results.",
+);
+requireIn(
+	settingsSource,
+	"addMigrationDiscoveryCandidateToSmartImport",
+	"SettingsView must let admins send discovered sources to smart import.",
+);
+requireIn(
+	settingsSource,
+	"lookupClinicPublicProfile",
+	"SettingsView must expose public clinic-profile lookup.",
+);
+requireIn(
+	settingsSource,
+	"applyClinicLookupSuggestion",
+	"SettingsView must let admins apply clinic lookup suggestions into the profile draft.",
+);
+requireIn(
+	settingsSource,
+	"clinicLookupSuggestionFieldEntries",
+	"Clinic lookup suggestions must filter applicable profile fields before applying.",
+);
+requireIn(
+	settingsSource,
+	"clinicLookupSuggestionApplySummary",
+	"Clinic lookup suggestions must explain what will be applied before admins click.",
+);
+requireIn(
+	settingsSource,
+	"Совпадает: ${unchangedCount}",
+	"Clinic lookup suggestions must distinguish unchanged values from destructive replacements.",
+);
+requireIn(
+	settingsSource,
+	"updateClinicProfileDraft(key, String(value).trim())",
+	"Clinic lookup apply must trim public-source values before writing profile draft.",
+);
+requireIn(
+	settingsSource,
+	"clinicLookupSuggestionFieldEntries(suggestion.fields)",
+	"Clinic lookup rendered fields must match the actually applicable fields.",
+);
+requireIn(
+	settingsSource,
+	"typedClinicPublicLookupSuggestions.reduce",
+	"Migration progress must count the best applicable public clinic suggestion, not just the first raw result.",
+);
+requireIn(
+	settingsSource,
+	"clinicLookupSuggestionFieldEntries(typedSmartImportPreview.clinicSuggestion.fields).length",
+	"Migration progress must count only smart-import clinic fields that can actually apply to the profile.",
+);
+requireIn(
+	settingsSource,
+	"clinic-public-apply-summary",
+	"Clinic lookup suggestions must render an apply summary in the UI.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!clinicLookupSuggestionFieldEntries(suggestion.fields).length}",
+	"Clinic lookup apply buttons must be disabled when no profile fields are applicable.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="apply-smart-import-clinic-profile"',
+	"Smart import clinic profile suggestions must be directly applicable to the clinic profile draft.",
+);
+requireIn(
+	settingsSource,
+	"applyClinicLookupSuggestion(typedSmartImportPreview.clinicSuggestion?.fields ?? {})",
+	"Smart import clinic suggestions must use the same filtered apply path as public lookup suggestions and survive stale click state.",
+);
+requireIn(
+	settingsSource,
+	"typedSmartImportPreview.clinicSuggestion.warnings.slice(0, 2)",
+	"Smart import clinic suggestion warnings must be visible before applying fields.",
+);
+requireIn(
+	cssSource,
+	".import-row .clinic-public-apply-summary",
+	"Smart import clinic apply summary must be readable inside import rows.",
+);
+requireIn(
+	settingsSource,
+	"clinicProfileSaveButtonText",
+	"Import-side clinic suggestions must reuse the live clinic profile save state.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="save-imports-clinic-profile"',
+	"Public lookup results on the import tab must let admins save the clinic profile without switching tabs.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="save-smart-import-clinic-profile"',
+	"Smart import clinic suggestions must let admins save the profile after applying fields.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-autopilot-clinic-suggestions"',
+	"Migration autopilot clinic lookup suggestions must be visible inside the autoplan.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="apply-migration-autopilot-clinic-profile"',
+	"Migration autopilot clinic lookup suggestions must be directly applicable to the clinic profile draft.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="save-migration-autopilot-clinic-profile"',
+	"Migration autopilot clinic lookup suggestions must let admins save the profile without switching tabs.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationAutopilotClinicLookup.suggestions.slice(0, 3)",
+	"Migration autopilot clinic suggestions must render from the autopilot lookup result.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationAutopilotClinicLookup.warnings.slice(0, 3)",
+	"Migration autopilot clinic lookup warnings must be visible near the suggestions.",
+);
+requireIn(
+	settingsSource,
+	"Подстановка меняет черновик. Для документов и оплат сохраните профиль клиники.",
+	"Smart import clinic profile save guidance must explain the draft/save boundary.",
+);
+requireIn(
+	cssSource,
+	".clinic-public-save-row",
+	"Clinic profile save actions inside lookup/import cards must be styled.",
+);
+requireIn(
+	cssSource,
+	".migration-dry-run-summary",
+	"Migration dry-run effort summary must be styled.",
+);
+requireIn(
+	cssSource,
+	".text-button svg",
+	"Text action buttons with icons must size icons consistently.",
+);
+requireIn(
+	settingsSource,
+	"clinicPublicLookup",
+	"SettingsView must render public clinic lookup results.",
+);
+requireIn(
+	settingsSource,
+	"source.safeSourceAlias",
+	"SettingsView must show safe legacy source aliases instead of raw sourceRef paths.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="run-migration-autopilot"',
+	"SettingsView must test-tag the migration autopilot action.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="download-migration-handoff-report"',
+	"SettingsView must test-tag the migration handoff CSV action.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-autopilot-result"',
+	"SettingsView must test-tag migration autopilot results.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-autopilot-operator-packet"',
+	"SettingsView must test-tag migration operator packet results.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-triage-queue"',
+	"SettingsView must expose the short migration triage queue for admins.",
+);
+requireIn(
+	settingsSource,
+	"const migrationPreAutopilotSourceCount",
+	"Migration progress must aggregate source counts before autopilot exists.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationDiscoveryCandidates.length + (typedBrowserMigrationDiscovery?.candidates.length ?? 0) + (typedSmartImportPreview?.legacySources.length ?? 0)",
+	"Migration progress must not hide browser or smart-import sources behind a boolean fallback.",
+);
+requireIn(
+	settingsSource,
+	"typedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount",
+	"Migration progress must prefer the server-deduplicated autopilot source count after autopilot exists.",
+);
+requireIn(
+	settingsSource,
+	"operator-script-build-preview",
+	"SettingsView must test-tag the operator script preview action.",
+);
+requireIn(
+	settingsSource,
+	"operator-script-discover-sources",
+	"SettingsView must test-tag the operator script PC discovery action.",
+);
+requireIn(
+	settingsSource,
+	"operator-script-pick-source",
+	"SettingsView must test-tag the operator script folder picker action.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-autopilot-handoff-checklist"',
+	"SettingsView must test-tag migration handoff checklist results.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="pick-browser-migration-source"',
+	"SettingsView must test-tag browser migration source picker.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="browser-migration-manifest-result"',
+	"SettingsView must test-tag browser migration manifest results.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-source-discovery-result"',
+	"SettingsView must test-tag migration discovery results.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="browser-migration-empty-recovery"',
+	"Browser migration empty result must offer recovery actions.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="pc-migration-empty-recovery"',
+	"PC migration empty result must offer recovery actions.",
+);
+requireIn(
+	settingsSource,
+	"focusSmartImportWorkbench",
+	"Migration empty recovery must focus the pasted text/OCR workbench.",
+);
+requireIn(
+	settingsSource,
+	"В выбранной папке не видно старой базы или снимков",
+	"Browser migration empty result must explain the next folder choice.",
+);
+requireIn(
+	settingsSource,
+	"Автопоиск не нашел старую МИС в пределах лимитов",
+	"PC migration empty result must explain the next route.",
+);
+requireIn(
+	settingsSource,
+	"typedBrowserMigrationDiscovery.warnings.slice(0, 4).map((warning) =>",
+	"Browser migration warnings must be rendered through the source contract.",
+);
+requireIn(
+	settingsSource,
+	"<small key={warning}>{humanizeMigrationText(warning)}</small>",
+	"Browser migration warnings must not expose raw manifest/bridge wording to admins.",
+);
+requireIn(
+	appSource,
+	"Браузерный список ограничен",
+	"Browser-selected migration source warnings must use operator-readable wording.",
+);
+forbidIn(
+	appSource,
+	"Браузерный manifest",
+	"Browser-selected migration source warnings must not expose manifest jargon.",
+);
+forbidIn(
+	appSource,
+	"migration bridge для полного автопоиска",
+	"Browser-selected migration source recovery must not expose bridge jargon.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-source-workup-result"',
+	"SettingsView must test-tag migration workup results.",
+);
+requireIn(
+	settingsSource,
+	'data-testid="migration-source-probe-result"',
+	"SettingsView must test-tag migration probe results.",
+);
+requireIn(
+	settingsSource,
+	"Путь к папке и имена, похожие на данные пациента, скрыты до выбора",
+	"SettingsView must avoid exposing raw local paths in discovery cards.",
+);
+requireIn(
+	settingsSource,
+	"imagingImportInputReady",
+	"SettingsView must guard empty imaging import input.",
+);
+requireIn(
+	settingsSource,
+	"patientImportInputReady",
+	"SettingsView must guard empty patient import input.",
+);
+requireIn(
+	settingsSource,
+	"localImagingFolderReady",
+	"SettingsView must guard local DICOM folder actions before a folder path exists.",
+);
+requireIn(
+	settingsSource,
+	"isImportDictating",
+	"SettingsView must expose patient import dictation busy state.",
+);
+requireIn(
+	settingsSource,
+	"newStaffReadyToCreate",
+	"SettingsView must guard empty staff creation.",
+);
+requireIn(
+	settingsSource,
+	"newChairReadyToCreate",
+	"SettingsView must guard empty chair creation.",
+);
+requireIn(
+	settingsSource,
+	"adminSecretReady",
+	"SettingsView must guard empty admin unlock secret.",
+);
+requireIn(
+	settingsSource,
+	"import-empty-guidance",
+	"SettingsView must explain why import actions are blocked.",
+);
+requireIn(
+	settingsSource,
+	"quick-create-guidance",
+	"SettingsView must explain why quick creation is blocked.",
+);
+requireIn(
+	settingsSource,
+	"admin-unlock-guidance",
+	"SettingsView must explain why admin unlock is blocked.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isImportLoading || !patientImportInputReady}",
+	"Patient import preview must be disabled when input is empty.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isImportDictating}",
+	"Patient import dictation must be disabled while recognition is active.",
+);
+requireIn(
+	settingsSource,
+	"aria-busy={isImportDictating || undefined}",
+	"Patient import dictation must expose busy state.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isImagingImportLoading || !imagingImportInputReady}",
+	"Imaging import preview must be disabled when input is empty.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isSmartImportLoading || !smartImportInputReady}",
+	"Smart import preview must be disabled when input is empty.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isRecognitionLoading || !recognitionInputReady}",
+	"AI recognition must be disabled when input is empty.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!typedDicomViewerWorkbenchManifest}",
+	"DICOM workbench JSON download must be disabled until a manifest exists.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!typedDicomViewerToolStateBundle}",
+	"DICOM tool-state JSON download must be disabled until a tool-state bundle exists.",
+);
+requireIn(
+	settingsSource,
+	'const dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance"',
+	"DICOM workbench series guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	'const dicomWorkstationGuidanceId = "dicom-workstation-guidance"',
+	"DICOM workstation guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	'const localDicomFolderGuidanceId = "local-dicom-folder-guidance"',
+	"Local DICOM folder guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	"aria-describedby={!cbctWorkbenchSeries ? dicomWorkbenchSeriesGuidanceId : undefined}",
+	"DICOM workbench buttons must point to missing-series guidance.",
+);
+requireIn(
+	settingsSource,
+	"!cbctWorkbenchSeries ? dicomWorkbenchSeriesGuidanceId : !dicomWorkstationReadiness ? dicomWorkstationGuidanceId : undefined",
+	"DICOM render-cache button must point to missing workstation guidance.",
+);
+requireIn(
+	settingsSource,
+	'Сначала нажмите "Проверить серии" и выберите готовую КЛКТ/КТ-серию.',
+	"DICOM workbench guidance must explain the first required step.",
+);
+requireIn(
+	settingsSource,
+	'Для быстрой загрузки сначала нажмите "Проверить этот ПК"',
+	"DICOM workstation guidance must explain the workstation check.",
+);
+requireIn(
+	settingsSource,
+	"Берет текущий список снимков",
+	"DICOM series preview copy must not expose manifest jargon.",
+);
+requireIn(
+	settingsSource,
+	"Тяжелые данные снимков не",
+	"DICOM series preview copy must not expose raw pixel wording.",
+);
+requireIn(
+	settingsSource,
+	"плана открытия просмотрщика",
+	"DICOM launch copy must explain the action without manifest jargon.",
+);
+requireIn(
+	settingsSource,
+	"Архив снимков / внешний просмотр",
+	"DICOM launch heading must be operator-readable, not protocol-first.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Запуск архива снимков и внешнего просмотра"',
+	"DICOM launch panel aria label must not expose DICOMweb jargon.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Просмотр КЛКТ/КТ"',
+	"DICOM workbench result aria label must not expose bundle jargon.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="План открытия внешнего просмотра"',
+	"DICOM launch result aria label must not expose manifest jargon.",
+);
+requireIn(
+	settingsSource,
+	"Адрес архива снимков",
+	"DICOM archive URL field must use operator-readable wording.",
+);
+requireIn(
+	settingsSource,
+	"Адрес внешнего просмотра",
+	"External viewer URL field must use operator-readable wording.",
+);
+requireIn(
+	settingsSource,
+	"Открыть внешний просмотр",
+	"External viewer launch action must not expose OHIF jargon.",
+);
+requireIn(
+	settingsSource,
+	"dicomArchiveAddressReady",
+	"DICOM archive check button must have a named address readiness guard.",
+);
+requireIn(
+	settingsSource,
+	"aria-describedby={!dicomArchiveAddressReady ? dicomArchiveAddressGuidanceId : undefined}",
+	"DICOM archive check button must point to missing-address guidance.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!dicomArchiveAddressReady || isDicomWebChecking}",
+	"DICOM archive check button must not fire when the archive address is empty.",
+);
+requireIn(
+	settingsSource,
+	"Введите адрес архива снимков, чтобы проверить подключение.",
+	"DICOM archive missing-address guidance must be visible and readable.",
+);
+requireIn(
+	settingsSource,
+	"ответ архива",
+	"DICOMweb status must not expose raw HTTP jargon.",
+);
+requireIn(
+	settingsSource,
+	"поиск серий готов",
+	"DICOMweb status must not expose QIDO jargon.",
+);
+requireIn(
+	settingsSource,
+	"загрузка снимков настроена",
+	"DICOMweb status must not expose STOW jargon.",
+);
+requireIn(
+	settingsSource,
+	"Рабочий набор пока не сохранен локально.",
+	"DICOM workbench copy must not expose bundle jargon.",
+);
+requireIn(
+	settingsSource,
+	"Скачать состояние",
+	"DICOM state downloads must use human wording instead of raw JSON labels.",
+);
+requireIn(
+	settingsSource,
+	"Состояние просмотрщика · окон",
+	"DICOM tool-state result must not expose raw viewer target ids.",
+);
+requireIn(
+	settingsSource,
+	"dicomViewerLaunchManifest.warnings.slice(0, 3).map(humanizeMigrationText).join",
+	"DICOM launch warnings must not expose raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(typedDicomViewerToolStateBundle.nextAction)",
+	"DICOM tool-state next action must not expose raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"humanizeMigrationText(typedDicomViewerToolStateBundle.exportHints[0])",
+	"DICOM tool-state export hints must not expose raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"<small key={warning}>{humanizeMigrationText(warning)}</small>",
+	"DICOM tool-state warnings must not expose raw backend wording.",
+);
+requireIn(
+	settingsSource,
+	"dicomViewerLaunchModeLabels[typedDicomViewerWorkbenchManifest.launchManifest.launchMode]",
+	"DICOM workbench result must translate launch mode enums.",
+);
+requireIn(
+	settingsSource,
+	"dicomRenderCachePriorityLabels[task.priority]",
+	"DICOM cache tasks must translate priority enums.",
+);
+requireIn(
+	settingsSource,
+	"firstPaintBudgetMs} мс",
+	"DICOM cache timing must use Russian millisecond units.",
+);
+requireIn(
+	settingsSource,
+	"dicomWebCheck.latencyMs} мс",
+	"DICOM archive latency must use Russian millisecond units.",
+);
+requireIn(
+	settingsSource,
+	"`${bridge.latencyMs} мс`",
+	"Local helper latency must use Russian millisecond units.",
+);
+requireIn(
+	settingsSource,
+	"серия подготовлена для просмотра",
+	"DICOM launch result must not expose raw volume ids.",
+);
+forbidIn(
+	settingsSource,
+	"Админская проверка коннектора и манифеста просмотра",
+	"DICOM launch copy must not expose connector/manifest jargon.",
+);
+forbidIn(
+	settingsSource,
+	"DICOMweb / OHIF передача",
+	"DICOM launch heading must not lead with protocol jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Архив снимков / внешний просмотрщик",
+	"DICOM launch heading must not expose viewer-person jargon.",
+);
+forbidIn(
+	settingsSource,
+	'aria-label="Запуск архива снимков и внешнего просмотрщика"',
+	"DICOM launch panel aria label must not expose viewer-person jargon.",
+);
+forbidIn(
+	settingsSource,
+	'aria-label="План открытия внешнего просмотрщика"',
+	"DICOM launch result aria label must not expose viewer-person jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Адрес внешнего просмотрщика",
+	"External viewer URL field must not expose viewer-person jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Открыть внешний просмотрщик",
+	"External viewer launch action must not expose viewer-person jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Открыть во внешнем просмотрщике",
+	"External viewer launch action must not expose viewer-person jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Корень DICOMweb",
+	"DICOM archive input must not expose DICOMweb root jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Корень OHIF",
+	"External viewer input must not expose OHIF root jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Открыть в OHIF",
+	"External viewer launch action must not expose OHIF jargon.",
+);
+forbidIn(
+	settingsSource,
+	"QIDO-поиск",
+	"DICOMweb status must not expose QIDO jargon.",
+);
+forbidIn(
+	settingsSource,
+	"STOW настроен",
+	"DICOMweb status must not expose STOW jargon.",
+);
+forbidIn(
+	settingsSource,
+	"WADO-серия",
+	"DICOMweb status must not expose WADO jargon.",
+);
+forbidIn(
+	settingsSource,
+	"нет HTTP",
+	"DICOMweb status must not expose raw HTTP jargon.",
+);
+forbidIn(
+	settingsSource,
+	"OHIF, Cornerstone",
+	"DICOM advanced copy must not expose viewer implementation jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Пиксельные данные",
+	"DICOM series preview copy must not expose raw pixel wording.",
+);
+forbidIn(
+	settingsSource,
+	'aria-label="Пакет рабочего места DICOM CT"',
+	"DICOM workbench result aria label must not expose package jargon.",
+);
+forbidIn(
+	settingsSource,
+	"JSON, ничего не записывает",
+	"Pricelist explanation must not expose JSON as the main operator concept.",
+);
+forbidIn(
+	settingsSource,
+	"Скачать JSON",
+	"Settings actions must not expose JSON as the user-facing action.",
+);
+forbidIn(
+	settingsSource,
+	"Сформированный bundle пока не сохранен локально.",
+	"DICOM workbench copy must not expose bundle jargon.",
+);
+forbidIn(
+	settingsSource,
+	"<span>воркеры</span>",
+	"DICOM render cache must say worker threads in Russian.",
+);
+forbidIn(
+	settingsSource,
+	"{typedDicomViewerWorkbenchManifest.launchManifest.launchMode} ·",
+	"DICOM workbench result must not render raw launch mode enums.",
+);
+forbidIn(
+	settingsSource,
+	"{task.priority}: {task.label}",
+	"DICOM cache tasks must not render raw priority enums.",
+);
+forbidIn(
+	settingsSource,
+	"firstPaintBudgetMs} ms",
+	"DICOM cache timing must not use English millisecond units.",
+);
+forbidIn(
+	settingsSource,
+	"dicomWebCheck.latencyMs} ms",
+	"DICOM archive latency must not use English millisecond units.",
+);
+forbidIn(
+	settingsSource,
+	"`${bridge.latencyMs} ms`",
+	"Local helper latency must not use English millisecond units.",
+);
+forbidIn(
+	settingsSource,
+	"cornerstoneVolumeId ??",
+	"DICOM launch result must not expose raw volume ids.",
+);
+requireIn(
+	appSource,
+	"План открытия снимков",
+	"DICOM launch handler errors must use human wording.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'local_manifest: "локальный план открытия"',
+	"DICOM launch mode labels must not expose manifest jargon.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'dicomweb_url: "внешний просмотр"',
+	"DICOM launch labels must use external viewing wording.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'external_handoff: "внешний просмотр"',
+	"DICOM handoff labels must use external viewing wording.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'external_dicom: "внешний просмотр"',
+	"DICOM series viewer labels must use external viewing wording.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'external_viewer: "внешний просмотр"',
+	"DICOM texture strategy labels must use external viewing wording.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'blocked: "нужно действие"',
+	"DICOM launch blocked label must be operator-readable.",
+);
+forbidIn(
+	imagingUiLabelsSource,
+	"внешний просмотрщик",
+	"Imaging UI labels must not expose viewer-person jargon.",
+);
+forbidIn(
+	imagingUiLabelsSource,
+	"заблокировано",
+	"Imaging UI labels must not expose raw blocked wording.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'balanced_mpr: "рабочие КТ-срезы"',
+	"DICOM quality labels must cover the current shared render-plan contract.",
+);
+forbidIn(
+	imagingUiLabelsSource,
+	'balanced_mpr: "рабочий MPR"',
+	"DICOM quality labels must not expose a bare MPR label.",
+);
+forbidIn(
+	imagingUiLabelsSource,
+	'balanced_mpr: "рабочие MPR-срезы"',
+	"DICOM quality labels must not expose a bare MPR label.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'stack_2d_textures: "срезы по одному"',
+	"DICOM loading labels must cover the current shared render-plan contract.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'pass: "Готово"',
+	"DICOM readiness checks must not show English OK in the UI.",
+);
+forbidIn(
+	imagingUiLabelsSource,
+	'pass: "OK"',
+	"DICOM readiness checks must not show English OK in the UI.",
+);
+requireIn(
+	settingsSource,
+	"dicomFirstFrameFileFormatLabel",
+	"First-frame preview must translate transfer syntax into operator-readable file format.",
+);
+requireIn(
+	settingsSource,
+	"dicomFirstFrameImageTypeLabel",
+	"First-frame preview must translate photometric data into operator-readable image type.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Формат файла снимка не поддерживается быстрым предпросмотром.",
+	"First-frame preview warnings must not expose transfer-syntax wording.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Размер кадра не указан или слишком велик для быстрого предпросмотра.",
+	"First-frame preview warnings must not expose Rows/Columns jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Откройте локальный план серии через обработчик перед загрузкой тяжелых данных.",
+	"DICOM local launch action must not expose pixel-volume jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Браузер сообщает слишком маленький лимит для объемного просмотра.",
+	"CT render-plan warnings must explain browser limits without texture jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Подготовить первое окно объема",
+	"CT render cache task labels must not expose GPU-window jargon.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Для диагностического 3D-просмотра в браузере нужна поддержка современной браузерной графики.",
+	"CT workstation warnings must not expose WebGL2 jargon.",
+);
+forbidIn(
+	settingsSource,
+	"синтаксис передачи не указан",
+	"First-frame preview must not expose transfer syntax jargon.",
+);
+forbidIn(
+	settingsSource,
+	"фотометрия не указана",
+	"First-frame preview must not expose photometric jargon.",
+);
+forbidIn(
+	settingsSource,
+	"стратегия текстур",
+	"CT render plan labels must not expose texture strategy jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Transfer syntax",
+	"First-frame preview warnings must not expose transfer-syntax jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Rows/Columns",
+	"First-frame preview warnings must not expose raw image geometry tags.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"BitsAllocated",
+	"First-frame preview warnings must not expose raw pixel-depth tags.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"3D-текстур",
+	"CT render-plan warnings must not expose texture implementation jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"GPU-окно",
+	"CT render cache task labels must not expose GPU-window jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"GPU-текстуру",
+	"CT render-plan actions must not expose GPU texture jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"WebGL2",
+	"CT workstation warnings must not expose WebGL2 jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"декодированием пикселей",
+	"CT render cache actions must not expose pixel decoding jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"неограниченные копии пикселей",
+	"CT cache policy must not expose raw pixel-copy jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"исходные пиксели",
+	"CT tool reasons must not expose raw pixel wording.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"пиксели объема",
+	"CT local launch warnings must not expose pixel-volume jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"secondary capture",
+	"First-frame preview actions must not expose DICOM modality jargon.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"axial/coronal/sagittal",
+	"CT render-plan actions must use Russian plane names.",
+);
+requireIn(
+	settingsStaticDataSource,
+	'title: "КЛКТ / КТ серии"',
+	"Settings imaging capability card must use dentist-readable КЛКТ / КТ wording.",
+);
+requireIn(
+	settingsStaticDataSource,
+	"серии КЛКТ",
+	"Settings imaging connector copy must not expose CBCT as the primary visible wording.",
+);
+requireIn(
+	settingsStaticDataSource,
+	"Локальный модуль забирает снимок",
+	"Settings imaging connector copy must not expose bridge jargon.",
+);
+forbidIn(
+	settingsStaticDataSource,
+	'title: "CBCT / CT серии"',
+	"Settings imaging capability card must not expose mixed English CBCT / CT wording.",
+);
+forbidIn(
+	settingsStaticDataSource,
+	"серии CBCT",
+	"Settings imaging connector copy must not expose CBCT as the primary visible wording.",
+);
+forbidIn(
+	settingsStaticDataSource,
+	"Локальный bridge",
+	"Settings imaging connector copy must not expose bridge jargon.",
+);
+forbidIn(
+	appSource,
+	"Манифест просмотра DICOM",
+	"DICOM launch handler errors must not expose manifest jargon.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "Проверка архива снимков не выполнена")',
+	"DICOMweb check failures must surface backend details without raw API-only copy.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "Просмотр КЛКТ/КТ не подготовлен")',
+	"DICOM workbench failures must surface backend details without raw API-only copy.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "План открытия снимков не создан")',
+	"DICOM launch failures must surface backend details without raw API-only copy.",
+);
+requireIn(
+	appSource,
+	'responseErrorMessage(response, "Состояние просмотра снимков не собрано")',
+	"DICOM viewer-state failures must use operator-readable wording.",
+);
+requireIn(
+	appSource,
+	"Настройки интерфейса сохранены только на этом устройстве. Серверная синхронизация повторится автоматически.",
+	"UI preference sync errors must be readable without raw browser/server details.",
+);
+requireIn(
+	appSource,
+	"Повторите действие или проверьте подключение к серверу клиники.",
+	"Generic request failures must give an operator action instead of raw exception text.",
+);
+requireIn(
+	imagingRoutesSource,
+	"Проверка архива снимков не завершилась; проверьте адрес архива и доступ с сервера клиники.",
+	"DICOMweb probe warnings must hide raw network exceptions and tell the admin what to check.",
+);
+forbidIn(
+	appSource,
+	"Рабочее место DICOM не подготовлено",
+	"DICOM workbench failures must not expose workbench jargon.",
+);
+forbidIn(
+	appSource,
+	"План открытия DICOM не создан",
+	"DICOM launch failures must not expose DICOM manifest jargon.",
+);
+forbidIn(
+	appSource,
+	"Состояние просмотрщика DICOM не собрано",
+	"DICOM viewer-state failures must not expose viewer implementation jargon.",
+);
+forbidIn(
+	appSource,
+	"const detail = error instanceof Error && error.message",
+	"App-level request errors must not append raw exception details to user-facing messages.",
+);
+forbidIn(
+	imagingRoutesSource,
+	"Проверка поиска серий не удалась: ${error.message}",
+	"DICOMweb probe warnings must not expose raw fetch exception text.",
+);
+forbidIn(
+	appSource,
+	"Проверка DICOMweb: API",
+	"DICOMweb failures must not expose raw API-only copy.",
+);
+forbidIn(
+	appSource,
+	"Просмотр КЛКТ/КТ: API",
+	"DICOM workbench failures must not expose raw API-only copy.",
+);
+forbidIn(
+	appSource,
+	"План открытия снимков: API",
+	"DICOM launch failures must not expose raw API-only copy.",
+);
+forbidIn(
+	appSource,
+	"Состояние инструментов DICOM: API",
+	"DICOM viewer-state failures must not expose raw API-only copy.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isImagingFolderScanning || !localImagingFolderReady}",
+	"Local imaging scan buttons must not silently no-op without a folder path.",
+);
+requireIn(
+	settingsSource,
+	"disabled={isDicomFolderWorkupPlanning || !localImagingFolderReady}",
+	"DICOM workup plan button must not silently no-op without a folder path.",
+);
+requireIn(
+	settingsSource,
+	"aria-describedby={!localImagingFolderReady ? localDicomFolderGuidanceId : undefined}",
+	"Local DICOM actions must point to missing-folder guidance.",
+);
+requireIn(
+	settingsSource,
+	"Укажите путь к локальной папке со снимками или выберите КТ через браузер",
+	"Local DICOM first-slice guidance must explain missing folder path.",
+);
+requireIn(
+	appSource,
+	"Укажите путь к папке снимков перед сканированием.",
+	"Local imaging scan handler must fail visibly without a folder path.",
+);
+requireIn(
+	appSource,
+	"Укажите путь к локальной папке со снимками перед чтением метаданных.",
+	"DICOM metadata handler must fail visibly without a folder path.",
+);
+requireIn(
+	appSource,
+	"Укажите путь к локальной папке со снимками перед предпросмотром первого среза.",
+	"DICOM first-slice handler must fail visibly without a folder path.",
+);
+requireIn(
+	appSource,
+	"Укажите путь к локальной папке со снимками перед подготовкой плана.",
+	"DICOM workup handler must fail visibly without a folder path.",
+);
+requireIn(
+	appSource,
+	"Укажите путь к локальной папке со снимками перед подготовкой КТ-просмотра.",
+	"DICOM workbench preparation handler must fail visibly without a folder path.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!newStaffReadyToCreate}",
+	"Staff quick-create must be disabled until a name is entered.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!newChairReadyToCreate}",
+	"Chair quick-create must be disabled until a name is entered.",
+);
+requireIn(
+	settingsSource,
+	"disabled={!adminSecretReady}",
+	"Admin unlock must be disabled until a secret is entered.",
+);
+requireIn(
+	settingsSource,
+	"aria-busy={isPersistenceExporting || undefined}",
+	"Persistence export button must expose busy state.",
+);
+requireIn(
+	settingsSource,
+	'aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}',
+	"Settings admin unlock input must point to missing-secret guidance.",
+);
+requireIn(
+	settingsSource,
+	"Доступ к защищенным настройкам",
+	"Settings tabs must expose a settings-domain admin unlock panel outside Telegram.",
+);
+requireIn(
+	settingsSource,
+	"Введите секрет администратора клиники, чтобы менять защищенные настройки.",
+	"Settings-domain admin unlock guidance must not imply Telegram access.",
+);
+requireIn(
+	settingsSource,
+	"Этот секрет относится только к настройкам клиники. Он не разблокирует расписание, Telegram или клинические данные",
+	"Settings admin unlock must state the settings-only access boundary.",
+);
+requireIn(
+	settingsSource,
+	"Если сервер клиники требует админ-доступ",
+	"Settings admin unlock must explain protected settings without env names.",
+);
+requireIn(
+	settingsSource,
+	"Секрет администратора клиники",
+	"Settings admin unlock label must be operator-readable.",
+);
+requireIn(
+	settingsSource,
+	'placeholder="введите секрет администратора"',
+	"Settings admin unlock placeholder must not expose the raw header name.",
+);
+requireIn(
+	settingsSource,
+	"localBridgeEndpointSummary(bridge)",
+	"Local bridge readiness must hide raw env names behind a readable summary.",
+);
+requireIn(
+	settingsSource,
+	"серверных настроек: ${bridge.setupSettingsCount}",
+	"Local bridge summary must collapse server setting names into a count.",
+);
+requireIn(
+	sharedSource,
+	"acceptedSettingsCount: z.number().int().nonnegative()",
+	"Speech runtime contract must expose accepted server setting count, not raw env names.",
+);
+requireIn(
+	sharedSource,
+	"missingSettingsCount: z.number().int().nonnegative()",
+	"Speech runtime contract must expose missing server setting count, not raw env names.",
+);
+requireIn(
+	sharedSource,
+	"setupSettingsCount: z.number().int().nonnegative()",
+	"Local module readiness contract must expose setup setting count, not raw env names.",
+);
+forbidIn(
+	sharedSource,
+	"acceptedEnvVars: z.array(z.string())",
+	"Runtime/readiness API contracts must not expose raw env names to the browser.",
+);
+forbidIn(
+	sharedSource,
+	"missingEnvVars: z.array(z.string())",
+	"Runtime/readiness API contracts must not expose missing raw env names to the browser.",
+);
+requireIn(
+	accessGuardSource,
+	"Нужен действующий секрет администратора клиники для изменения защищенных данных.",
+	"Clinical mutation guard must return operator-readable admin-secret copy.",
+);
+requireIn(
+	accessGuardSource,
+	"Нужен действующий секрет администратора клиники для просмотра защищенных данных.",
+	"Clinical read guard must return operator-readable admin-secret copy.",
+);
+requireIn(
+	scheduleRoutesSource,
+	"Для изменения расписания нужен действующий секрет администратора клиники.",
+	"Schedule guard must return operator-readable admin-secret copy.",
+);
+requireIn(
+	settingsRoutesSource,
+	"Для изменения настроек клиники нужен действующий секрет администратора клиники.",
+	"Settings guard must return operator-readable admin-secret copy.",
+);
+requireIn(
+	telegramRoutesSource,
+	"Для управления Telegram нужен действующий секрет администратора клиники.",
+	"Telegram guard must return operator-readable admin-secret copy.",
+);
+forbidIn(
+	accessGuardSource,
+	"A valid x-dente-admin-secret",
+	"Clinical guards must not expose the raw header name in response messages.",
+);
+forbidIn(
+	accessGuardSource,
+	"is required for protected Dental CRM",
+	"Clinical guards must not expose English internal contract copy.",
+);
+forbidIn(
+	scheduleRoutesSource,
+	"нужен действующий x-dente-admin-secret",
+	"Schedule guard must not expose the raw header name in response messages.",
+);
+forbidIn(
+	settingsRoutesSource,
+	"нужен действующий x-dente-admin-secret",
+	"Settings guard must not expose the raw header name in response messages.",
+);
+forbidIn(
+	telegramRoutesSource,
+	"нужен действующий x-dente-admin-secret",
+	"Telegram guard must not expose the raw header name in response messages.",
+);
+requireIn(
+	systemRoutesSource,
+	"Запустите локальный модуль Whisper.cpp и укажите его адрес в серверных настройках.",
+	"Local bridge setup hints must use operator-readable server-settings wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"Локальный обработчик КЛКТ/КТ",
+	"Local DICOM bridge title must use dentist-readable КЛКТ wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"подготовка КЛКТ/КТ-срезов и быстрая загрузка просмотра",
+	"Local DICOM module role must not expose pixel decoding jargon.",
+);
+requireIn(
+	systemRoutesSource,
+	"тяжелые данные КЛКТ/КТ остаются",
+	"Local DICOM privacy copy must avoid raw pixel wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"старые базы, резервные копии, табличные выгрузки и списки ссылок на снимки",
+	"Local migration helper workload must not expose raw database engine lists as the primary wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"Локальный модуль ответил кодом",
+	"Local helper readiness warnings must not expose HTTP jargon.",
+);
+requireIn(
+	systemRoutesSource,
+	'title: "OCR документов и сканов"',
+	"Local OCR plan title must avoid PDF-first wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"Исправьте адрес локального модуля в серверных настройках.",
+	"Local bridge misconfiguration next action must not expose env names.",
+);
+requireIn(
+	systemRoutesSource,
+	"localBridgeUrlWarning(error)",
+	"Local bridge URL validation must translate exceptions before exposing readiness warnings.",
+);
+requireIn(
+	systemRoutesSource,
+	"localBridgeProbeWarning(error)",
+	"Local bridge probe failures must translate network exceptions before exposing readiness warnings.",
+);
+requireIn(
+	systemRoutesSource,
+	"Адрес локального модуля не читается. Проверьте URL в серверных настройках.",
+	"Local bridge malformed URL warnings must use operator-readable wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"Проверка локального модуля не завершилась; проверьте, что служба запущена и доступна с сервера клиники.",
+	"Local bridge network failures must use operator-readable wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"warnings: [error instanceof Error ? error.message",
+	"Local bridge URL warnings must not expose raw exception text.",
+);
+forbidIn(
+	systemRoutesSource,
+	"warnings.push(error instanceof Error ? error.message",
+	"Local bridge probe warnings must not expose raw exception text.",
+);
+forbidIn(
+	systemRoutesSource,
+	"Invalid URL",
+	"Local bridge readiness must not expose raw URL parser text.",
+);
+requireIn(
+	persistentStateSource,
+	"type PersistedPayloadReadError",
+	"Persistence read failures must use bounded internal diagnostics.",
+);
+requireIn(
+	persistentStateSource,
+	"function persistenceWarningText",
+	"Persistence integrity warnings must be translated before API exposure.",
+);
+requireIn(
+	persistentStateSource,
+	"warning: backupPayload.error ? persistenceWarningText(backupPayload.error) : null",
+	"Backup integrity warnings must not expose raw parse errors.",
+);
+requireIn(
+	persistentStateSource,
+	"error: error ? persistenceWarningText(error) : null",
+	"Persistence export errors must not expose raw parser text.",
+);
+forbidIn(
+	persistentStateSource,
+	'error instanceof Error ? error.message : "state_file_parse_failed"',
+	"Persistence integrity report must not expose raw JSON parser errors.",
+);
+forbidIn(
+	persistentStateSource,
+	'"state_file_parse_failed"',
+	"Persistence integrity report must not expose parser diagnostic tokens.",
+);
+requireIn(
+	systemRoutesSource,
+	'title: "Просмотр КЛКТ / КТ-срезов"',
+	"Local bridge use plan must use dentist-readable КЛКТ wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"Готового локального модуля нет",
+	"Local bridge use plan summary must use operator-readable local module wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"Локальный обработчик сможет раскрывать папки исследования/архивы",
+	"Imaging import local module plan must not expose DICOMDIR jargon.",
+);
+requireIn(
+	systemRoutesSource,
+	"Встроенный извлекатель обрабатывает документы, архивы и таблицы до OCR.",
+	"Local document plan must not expose raw document extension soup.",
+);
+requireIn(
+	systemRoutesSource,
+	"Предпросмотр папки, архива или списка снимков",
+	"Local CT plan must describe archives without ZIP-first wording.",
+);
+requireIn(
+	systemRoutesSource,
+	"обычные архивы; неподдержанные архивы",
+	"Local imaging import plan must not expose ZIP as the operator concept.",
+);
+requireIn(
+	systemRoutesSource,
+	"серверное распознавание изображений для админских OCR/фото-задач",
+	"Local OCR plan must describe the capability instead of the provider brand.",
+);
+requireIn(
+	systemRoutesSource,
+	"Серверное распознавание изображений классифицирует",
+	"Price photo plan must describe clinical image recognition instead of the provider brand.",
+);
+requireIn(
+	systemRoutesSource,
+	"серверный модуль распознавания изображений",
+	"Price photo warning must describe the missing capability instead of the provider brand.",
+);
+requireIn(
+	settingsSource,
+	"dicomGpuClassLabels",
+	"Settings CT workstation UI must translate raw graphics class ids.",
+);
+requireIn(
+	settingsSource,
+	"память просмотра",
+	"Settings CT workstation UI must avoid GPU budget jargon.",
+);
+requireIn(
+	settingsSource,
+	"Нет кадра снимка",
+	"First-frame preview must avoid pixel-frame wording.",
+);
+requireIn(
+	appSource,
+	"исходные снимки остаются в просмотрщике",
+	"Clinical CT viewer summary must avoid raw pixel wording.",
+);
+requireIn(
+	settingsStaticDataSource,
+	"Нужен отдельный просмотрщик: серии КЛКТ/КТ, срезы, архив снимков и предварительная подготовка.",
+	"Settings capabilities must explain CT preparation without MPR/cache jargon.",
+);
+requireIn(
+	settingsSource,
+	"способ предварительной подготовки",
+	"Settings CT preparation guidance must not expose cache strategy wording.",
+);
+requireIn(
+	settingsSource,
+	"без фоновой подготовки",
+	"Settings persistence status must avoid cache jargon.",
+);
+requireIn(
+	settingsSource,
+	"Саму серию открывает внешний или сертифицированный локальный просмотрщик.",
+	"Settings CT helper note must avoid raw pixel wording.",
+);
+requireIn(
+	workspaceUiLabelsSource,
+	'open_mpr: "открыть КТ-срезы"',
+	"Workspace CT route labels must not expose a bare MPR acronym.",
+);
+requireIn(
+	workspaceUiLabelsSource,
+	'downsampled_mpr: "быстрые КТ-срезы"',
+	"Workspace CT fallback route labels must use dentist-readable CT wording.",
+);
+requireIn(
+	workspaceUiLabelsSource,
+	'external_viewer: "внешний просмотр"',
+	"Workspace external-viewer labels must use external viewing wording.",
+);
+requireIn(
+	workspaceUiLabelsSource,
+	'blocked: "нужно действие"',
+	"Workspace blocked labels must be operator-readable.",
+);
+requireIn(
+	sampleDataSource,
+	"исходный снимок не изменяется",
+	"Server viewer session warnings must avoid raw pixel wording.",
+);
+requireIn(
+	sampleDataSource,
+	"режим ${dicomRenderTextureStrategyAuditLabels[manifest.renderCachePlan.textureStrategy]}",
+	"DICOM workbench audit reason must use readable render-plan labels.",
+);
+forbidIn(
+	systemRoutesSource,
+	"Локальный STT-мост",
+	"Local bridge use plan must not expose STT bridge jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"Просмотр CBCT / MPR",
+	"Local bridge use plan must not expose CBCT as the primary visible wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"DICOM-мост",
+	"Local bridge use plan must not expose bridge jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"OCR-мост",
+	"Local bridge use plan must not expose bridge jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"Firebird/InterBase, Access, SQLite, SQL Server, 1C export",
+	"Local migration helper workload must not expose raw database engine lists.",
+);
+forbidIn(
+	systemRoutesSource,
+	"Проверка доступности вернула HTTP",
+	"Local helper readiness warnings must not expose HTTP jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	'title: "OCR документов и PDF"',
+	"Local OCR plan title must not expose PDF-first wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"декодирование пикселей",
+	"Local DICOM module role must not expose pixel decoding jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"пиксели КЛКТ",
+	"Local DICOM module privacy copy must not expose raw pixel wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"диагностические пиксели",
+	"External viewer privacy copy must not expose raw pixel wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"сырых пикселей",
+	"Local bridge plans must not expose raw pixel wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"реальных пикселей",
+	"External viewer action must not expose raw pixel wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"DICOMDIR/архивы",
+	"Imaging import plan must not expose DICOMDIR jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"DICOM/IMA-заголовки",
+	"Imaging import plan must not expose DICOM/IMA jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"текстовые PDF, ZIP, DOCX, XLSX, ODT/ODS",
+	"Local document plan must not expose raw extension soup.",
+);
+forbidIn(
+	systemRoutesSource,
+	"папки, ZIP или списка снимков",
+	"Local CT plan must not expose ZIP-first wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"обычные записи ZIP",
+	"Local imaging import plan must not expose ZIP record jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"prototype JSON state export",
+	"System export audit copy must not expose prototype JSON jargon.",
+);
+forbidIn(
+	systemRoutesSource,
+	"кэша КЛКТ",
+	"Local bridge copy must not expose cache jargon as the operator action.",
+);
+forbidIn(
+	systemRoutesSource,
+	"Groq Vision для админских",
+	"Local OCR plan must not expose provider branding in operator text.",
+);
+forbidIn(
+	systemRoutesSource,
+	"Groq vision классифицирует",
+	"Price photo plan must not expose provider branding in operator text.",
+);
+forbidIn(
+	systemRoutesSource,
+	"пока не настроен Groq vision",
+	"Price photo warning must not expose provider branding in operator text.",
+);
+forbidIn(
+	systemRoutesSource,
+	"настройте Groq или локальный OCR",
+	"Price photo next action must not expose provider branding in operator text.",
+);
+forbidIn(
+	settingsSource,
+	"бюджет GPU",
+	"Settings CT workstation UI must not expose GPU budget jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Нет пиксельного кадра",
+	"First-frame preview must not expose pixel-frame wording.",
+);
+forbidIn(
+	settingsSource,
+	"сырые пиксели снимка",
+	"Settings migration humanizer must not expose raw pixel wording.",
+);
+forbidIn(
+	appSource,
+	"пиксели остаются в просмотрщике",
+	"Clinical CT viewer summary must not expose raw pixel wording.",
+);
+forbidIn(
+	settingsStaticDataSource,
+	"MPR, срезы, архив снимков и кэш",
+	"Settings capabilities must not expose MPR/cache jargon.",
+);
+forbidIn(
+	settingsSource,
+	"стратегию кэша",
+	"Settings CT preparation guidance must not expose cache strategy wording.",
+);
+forbidIn(
+	settingsSource,
+	"без кэширования",
+	"Settings persistence status must not expose cache jargon.",
+);
+forbidIn(
+	settingsSource,
+	"Пиксели открывает",
+	"Settings CT helper note must not expose raw pixel wording.",
+);
+forbidIn(
+	workspaceUiLabelsSource,
+	'open_mpr: "открыть MPR"',
+	"Workspace CT route labels must not expose a bare MPR acronym.",
+);
+forbidIn(
+	workspaceUiLabelsSource,
+	'downsampled_mpr: "MPR с пониженным разрешением"',
+	"Workspace CT fallback route labels must not expose bare MPR wording.",
+);
+forbidIn(
+	workspaceUiLabelsSource,
+	"внешний просмотрщик",
+	"Workspace UI labels must not expose viewer-person jargon.",
+);
+forbidIn(
+	workspaceUiLabelsSource,
+	"заблокирован",
+	"Workspace UI labels must not expose raw blocked wording.",
+);
+forbidIn(
+	sampleDataSource,
+	"пиксели не изменяются",
+	"Server viewer session warnings must not expose raw pixel wording.",
+);
+forbidIn(
+	sampleDataSource,
+	"стратегия ${manifest.renderCachePlan.textureStrategy}",
+	"DICOM workbench audit reason must not expose raw render-plan ids.",
+);
+forbidIn(
+	sampleDataSource,
+	"пиксели снимков не сохранялись",
+	"DICOM workbench audit reason must not expose raw pixel wording.",
+);
+forbidIn(
+	systemRoutesSource,
+	"задайте DENTAL_",
+	"Local bridge setup hints must not expose env variable names in operator text.",
+);
+forbidIn(
+	systemRoutesSource,
+	"переменных ${definition.acceptedEnvVars.join",
+	"Local bridge misconfiguration next action must not expose env names.",
+);
+forbidIn(
+	settingsSource,
+	"DENTE_SETTINGS_ADMIN_SECRET или DENTE_TELEGRAM_ADMIN_SECRET",
+	"Settings admin unlock must not expose server env names.",
+);
+forbidIn(
+	settingsSource,
+	'placeholder="x-dente-admin-secret"',
+	"Settings admin unlock must not expose the raw header name.",
+);
+forbidIn(
+	settingsSource,
+	"bridge.acceptedEnvVars[0]",
+	"Local bridge readiness must not render raw env var names.",
+);
+forbidIn(
+	settingsSource,
+	"bridge.acceptedEnvVars.length",
+	"Local bridge readiness must not receive raw env names just to count settings.",
+);
+requireIn(
+	appSource,
+	"Введите секрет администратора клиники, если он включен в серверных настройках клиники.",
+	"App admin unlock errors must use operator-readable clinic wording.",
+);
+requireIn(
+	appSource,
+	"Не удалось загрузить данные клиники",
+	"App dashboard reload errors must not expose product/internal wording.",
+);
+forbidIn(
+	appSource,
+	"секрет админ-доступа DENTE",
+	"App admin unlock errors must not expose product/internal wording.",
+);
+forbidIn(
+	appSource,
+	"Не удалось загрузить данные DENTE",
+	"App dashboard reload errors must not expose product/internal wording.",
+);
+requireIn(
+	settingsSource,
+	'onClick={unlockTelegramAdminSession}\n                  aria-describedby={!adminSecretReady ? "settings-admin-unlock-guidance" : undefined}',
+	"Settings admin unlock button must point to missing-secret guidance.",
+);
+requireIn(
+	settingsSource,
+	"Доступ к защищенным настройкам",
+	"Settings tabs must keep a protected-settings unlock panel outside Telegram.",
+);
+requireIn(
+	settingsSource,
+	"Введите секрет администратора клиники, чтобы менять защищенные настройки.",
+	"Settings admin unlock guidance must explain why the settings secret is needed.",
+);
+requireIn(
+	settingsSource,
+	"Доступ к Telegram",
+	"Telegram tab must label its admin unlock as Telegram-only.",
+);
+requireIn(
+	settingsSource,
+	"Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.",
+	"Telegram admin unlock guidance must explain why the Telegram secret is needed.",
+);
+requireIn(
+	settingsSource,
+	"Этот секрет относится только к Telegram. Он не разблокирует настройки клиники, расписание или клинические данные",
+	"Telegram admin unlock must state the Telegram-only access boundary.",
+);
+requireIn(
+	settingsSource,
+	"Админ-доступ к Telegram активен до перезагрузки страницы.",
+	"Telegram admin unlocked state must not imply general settings access.",
+);
+forbidIn(
+	settingsSource,
+	"Доступ к настройкам и Telegram",
+	"Telegram admin unlock panel must not imply settings-domain access.",
+);
+forbidIn(
+	settingsSource,
+	"Введите секрет администратора клиники, чтобы менять защищенные настройки и Telegram.",
+	"Telegram admin unlock guidance must not imply settings-domain access.",
+);
+forbidIn(
+	settingsSource,
+	"Админ-доступ к настройкам клиники разблокирован до перезагрузки страницы.",
+	"Telegram unlocked state must not imply general settings access.",
+);
+requireIn(
+	settingsSource,
+	'const telegramPreviewPatientGuidanceId = "telegram-preview-patient-guidance"',
+	"Telegram patient preview guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	'const telegramPreviewStaffGuidanceId = "telegram-preview-staff-guidance"',
+	"Telegram staff preview guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	'const telegramPreviewLoadingGuidanceId = "telegram-preview-loading-guidance"',
+	"Telegram loading preview guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	"aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}",
+	"Telegram patient preview buttons must point to disabled-state guidance.",
+);
+requireIn(
+	settingsSource,
+	"aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}",
+	"Telegram staff preview button must point to disabled-state guidance.",
+);
+requireIn(
+	settingsSource,
+	"Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.",
+	"Telegram preview guidance must explain missing active patient.",
+);
+requireIn(
+	settingsSource,
+	"Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.",
+	"Telegram preview guidance must explain missing staff target.",
+);
+requireIn(
+	settingsSource,
+	"Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.",
+	"Telegram preview guidance must explain loading state.",
+);
+requireIn(
+	settingsSource,
+	'const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance"',
+	"Telegram outbox send guidance must use a stable id.",
+);
+requireIn(
+	settingsSource,
+	"telegramOutboxBulkSendGuidance",
+	"Telegram outbox bulk send must compute readable disabled-state guidance.",
+);
+requireIn(
+	settingsSource,
+	"aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}",
+	"Telegram outbox bulk send button must expose busy state.",
+);
+requireIn(
+	settingsSource,
+	"aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}",
+	"Telegram outbox bulk send button must point to guidance when disabled.",
+);
+requireIn(
+	settingsSource,
+	"Сейчас нет сообщений, готовых к отправке.",
+	"Telegram outbox guidance must explain empty due queue.",
+);
+requireIn(
+	cssSource,
+	".telegram-preview-guidance",
+	"Telegram preview guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".telegram-outbox-guidance",
+	"Telegram outbox guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".dicom-action-guidance",
+	"DICOM action guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".local-dicom-guidance",
+	"Local DICOM folder guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-visualizer",
+	"CT MPR axis visualizer must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-visualizer.disabled",
+	"CT MPR disabled axis visualizer must be styled.",
+);
 requireIn(cssSource, ".mpr-axis-board", "CT MPR axis compass must be styled.");
-requireIn(cssSource, ".mpr-axis-slab", "CT MPR slab thickness must be visualized.");
-requireIn(cssSource, ".mpr-axis-slice-marker", "CT MPR axis visualizer must show the selected slice position.");
+requireIn(
+	cssSource,
+	".mpr-axis-slab",
+	"CT MPR slab thickness must be visualized.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-slice-marker",
+	"CT MPR axis visualizer must show the selected slice position.",
+);
 requireIn(cssSource, ".mpr-preset-row", "CT MPR quick presets must be styled.");
-requireIn(cssSource, ".mpr-stepper-row", "CT MPR fine stepper buttons must be styled.");
-requirePattern(cssSource, /\.mpr-preset-row button \{[\s\S]*overflow-wrap: anywhere;/, "CT MPR preset buttons must not overflow on narrow screens.");
-requirePattern(cssSource, /\.mpr-stepper-row button \{[\s\S]*overflow-wrap: anywhere;/, "CT MPR fine step buttons must not overflow on narrow screens.");
-requirePattern(cssSource, /@media \(max-width: 560px\) \{[\s\S]*\.mpr-stepper-row \{\s+grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/, "CT MPR fine step buttons must become wider on narrow phones.");
-requireIn(cssSource, ".mpr-memory-strip", "CT MPR saved-view strip must be styled.");
-requireIn(cssSource, ".mpr-memory-strip button:disabled", "CT MPR saved-view restore disabled state must be styled.");
-requireIn(cssSource, ".mpr-clinical-preset-grid", "CT MPR clinical presets must be styled.");
-requireIn(cssSource, ".mpr-clinical-preset:disabled", "CT MPR clinical preset disabled state must be styled.");
-requireIn(cssSource, ".mpr-clinical-roadmap", "CT MPR roadmap must have a distinct readable layout.");
-requireIn(cssSource, ".mpr-clinical-step.status-active", "CT MPR roadmap must visually separate active next steps.");
-requireIn(cssSource, ".mpr-axis-facts .mpr-preset-fit", "CT MPR nearest-protocol indicator must be styled.");
-requireIn(cssSource, ".mpr-axis-facts .mpr-preset-fit.exact", "CT MPR exact preset match must be visually distinct.");
-requireIn(cssSource, ".mpr-control-disabled-note", "CT MPR disabled guidance must be styled.");
-requireIn(cssSource, ".dicom-first-frame-slice-controls", "First-frame DICOM slice navigation must be styled.");
-requireIn(cssSource, ".migration-empty-recovery", "Migration empty recovery must be styled.");
-requireIn(cssSource, ".migration-triage-queue", "Migration triage queue must have a distinct readable layout.");
-requireIn(cssSource, ".migration-triage-item.status-blocked", "Migration triage must visually separate hard blockers from routine work.");
-requireIn(cssSource, ".migration-source-card-actions > span", "Manual/doctor migration steps rendered as spans must align with icon button actions.");
-requireIn(settingsSource, 'aria-label="Добавить сотрудника"', "Staff icon quick-create must have an accessible label.");
-requireIn(settingsSource, 'aria-label="Добавить кресло или кабинет"', "Chair icon quick-create must have an accessible label.");
-requireIn(appSource, "Введите ФИО сотрудника перед добавлением в команду.", "Staff creation handler must fail visibly if called without a name.");
-requireIn(appSource, "Введите название кресла или кабинета перед добавлением.", "Chair creation handler must fail visibly if called without a name.");
-requireIn(appSource, 'operatorWorkflowFailureMessage("Режим клиники не сохранен", modeError)', "Clinic mode change must catch network failures through the readable operator helper.");
-requireIn(appSource, 'operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError)', "Staff creation must catch network failures through the readable operator helper.");
-requireIn(appSource, 'operatorWorkflowFailureMessage("Кресло не добавлено", chairError)', "Chair creation must catch network failures through the readable operator helper.");
-requireIn(appSource, "Данные клиники еще не загружены. Повторите создание правила после загрузки настроек.", "Clinical rule creation must fail visibly while dashboard data is missing.");
-requireIn(appSource, "Дождитесь завершения текущей записи клинического правила.", "Clinical rule actions must explain duplicate submit attempts.");
-requireIn(appSource, "Вставьте текст, OCR или диктовку перед распознаванием.", "AI recognition handler must fail visibly when invoked without input.");
-requireIn(appSource, "Вставьте прайс-лист или загрузите фото прайса перед разбором.", "Pricelist analyzer handler must fail visibly when invoked without input.");
-requireIn(appSource, "Дождитесь завершения текущей диктовки импорта.", "Patient import dictation must guard duplicate starts.");
-requireIn(appSource, "Браузерная диктовка импорта недоступна. Вставьте список пациентов вручную или загрузите OCR.", "Patient import dictation must explain unsupported browsers.");
-requireIn(appSource, "Диктовка импорта не распознана. Вставьте список вручную или загрузите OCR.", "Patient import dictation must fail visibly on recognition errors.");
-requireIn(appSource, "Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.", "Patient import dictation must fail visibly when the microphone cannot start.");
-requireIn(appSource, "Дождитесь завершения текущего экспорта резервной копии.", "Persistence export must explain duplicate export attempts.");
-requireIn(appSource, "Сервер вернул пустой файл резервной копии.", "Persistence export must reject empty backup files.");
-requireIn(appSource, "Сначала проверьте импорт пациентов, чтобы увидеть готовые и проблемные строки.", "Patient import commit must require preview before writing.");
-requireIn(appSource, "Дождитесь завершения текущей записи импорта пациентов.", "Patient import commit must explain duplicate submit attempts.");
-requireIn(settingsSource, "patientImportRowWarningText", "Patient import row warnings must use a UI-owned readable formatter.");
-requireIn(settingsSource, "imagingImportRowWarningText", "Imaging import row warnings must use a UI-owned readable formatter.");
-forbidIn(settingsSource, 'row.warnings.length ? row.warnings.join(", ") : row.notes', "Patient import rows must not render raw joined warning arrays.");
-forbidIn(settingsSource, 'row.warnings.length ? row.warnings.join(", ") : row.filePath', "Imaging import rows must not render raw joined warning arrays or full file paths as the ready fallback.");
-requireIn(appSource, "Сначала разберите умный импорт, чтобы увидеть готовые строки и пропуски.", "Smart import commit must require preview before writing.");
-requireIn(appSource, "Дождитесь завершения текущей записи умного импорта.", "Smart import commit must explain duplicate submit attempts.");
-requireIn(appSource, "Сначала проверьте импорт снимков, чтобы увидеть готовые и проблемные строки.", "Imaging import commit must require preview before writing.");
-requireIn(appSource, "Дождитесь завершения текущей привязки снимков.", "Imaging import commit must explain duplicate submit attempts.");
-requireIn(appSource, "Укажите адрес архива снимков перед проверкой.", "DICOMweb check handler must fail visibly without endpoint.");
-requireIn(appSource, "Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию.", "DICOM workbench handlers must fail visibly without a selected series.");
-requireIn(settingsSource, "Иванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;", "Settings DICOM sample must use clinic-readable КЛКТ modality.");
-forbidIn(settingsSource, ";CBCT;1.2.643", "Settings DICOM sample must not teach admins to paste English CBCT labels.");
-forbidIn(settingsSource, "D:\\\\\\\\CBCT\\\\\\\\", "Settings DICOM sample must not use English CBCT folder labels.");
-requireIn(appSource, "Перед планом быстрой загрузки снимков:", "DICOM cache plan handler must explain missing prerequisites.");
-requireIn(appSource, "Сначала соберите состояние просмотра снимков, затем скачайте файл состояния.", "DICOM tool-state download handler must fail visibly before export is ready.");
-requireIn(appSource, "Сначала соберите рабочий набор КЛКТ/КТ-срезов, затем скачайте файл состояния.", "DICOM workbench download handler must fail visibly before manifest is ready.");
-requireIn(settingsSource, "Клиническая готовность КТ-срезов", "CT MPR UI must use Russian CT wording in visible labels.");
-requireIn(imagingUiLabelsSource, "cbct_mpr: \"КЛКТ/КТ-срезы\"", "Shared imaging plan labels must not expose CBCT as the visible route name.");
-forbidIn(imagingUiLabelsSource, 'MPR: "MPR"', "Shared imaging plan labels must not expose a bare MPR tool label.");
-forbidIn(settingsSource, "готовую CT/CBCT-серию", "Settings CT MPR guidance must not expose mixed English CT/CBCT terminology.");
-forbidIn(appSource, "затем скачайте JSON", "DICOM download guards must not expose JSON jargon as the user-facing action.");
-requireIn(appSource, "disabled={!newStaffReadyToCreate}", "Onboarding staff creation must be disabled until a name is entered.");
-requireIn(appSource, "disabled={!newChairReadyToCreate}", "Onboarding chair creation must be disabled until a name is entered.");
-requireIn(appSource, 'const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance"', "Onboarding staff creation guidance must have a stable id.");
-requireIn(appSource, 'const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance"', "Onboarding chair creation guidance must have a stable id.");
-requireIn(appSource, "aria-describedby={!newStaffReadyToCreate ? onboardingStaffCreateGuidanceId : undefined}", "Onboarding staff creation button must point to guidance.");
-requireIn(appSource, "aria-describedby={!newChairReadyToCreate ? onboardingChairCreateGuidanceId : undefined}", "Onboarding chair creation button must point to guidance.");
-requireIn(appSource, 'const onboardingFinishGuidanceId = "onboarding-finish-guidance"', "Onboarding finish guidance must have a stable id.");
-requireIn(appSource, "aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}", "Onboarding finish controls must point to blocker guidance.");
-requireIn(cssSource, ".import-empty-guidance", "Import empty-state guidance must be styled.");
-requireIn(cssSource, ".quick-create-guidance", "Quick-create empty-state guidance must be styled.");
-requireIn(cssSource, ".admin-unlock-guidance", "Admin unlock empty-state guidance must be styled.");
-requireIn(cssSource, ".onboarding-action-guidance", "Onboarding action guidance must be styled.");
-forbidIn(settingsSource, "type MprProjection = any", "SettingsView must not weaken MPR projection typing.");
-forbidIn(settingsSource, "type MprWindowPreset = any", "SettingsView must not weaken MPR window preset typing.");
-forbidIn(settingsSource, "StaffRole[]).map((role: any", "SettingsView must not erase StaffRole while rendering role choices.");
+requireIn(
+	cssSource,
+	".mpr-stepper-row",
+	"CT MPR fine stepper buttons must be styled.",
+);
+requirePattern(
+	cssSource,
+	/\.mpr-preset-row button \{[\s\S]*overflow-wrap: anywhere;/,
+	"CT MPR preset buttons must not overflow on narrow screens.",
+);
+requirePattern(
+	cssSource,
+	/\.mpr-stepper-row button \{[\s\S]*overflow-wrap: anywhere;/,
+	"CT MPR fine step buttons must not overflow on narrow screens.",
+);
+requirePattern(
+	cssSource,
+	/@media \(max-width: 560px\) \{[\s\S]*\.mpr-stepper-row \{\s+grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/,
+	"CT MPR fine step buttons must become wider on narrow phones.",
+);
+requireIn(
+	cssSource,
+	".mpr-memory-strip",
+	"CT MPR saved-view strip must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-memory-strip button:disabled",
+	"CT MPR saved-view restore disabled state must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-clinical-preset-grid",
+	"CT MPR clinical presets must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-clinical-preset:disabled",
+	"CT MPR clinical preset disabled state must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-clinical-roadmap",
+	"CT MPR roadmap must have a distinct readable layout.",
+);
+requireIn(
+	cssSource,
+	".mpr-clinical-step.status-active",
+	"CT MPR roadmap must visually separate active next steps.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-facts .mpr-preset-fit",
+	"CT MPR nearest-protocol indicator must be styled.",
+);
+requireIn(
+	cssSource,
+	".mpr-axis-facts .mpr-preset-fit.exact",
+	"CT MPR exact preset match must be visually distinct.",
+);
+requireIn(
+	cssSource,
+	".mpr-control-disabled-note",
+	"CT MPR disabled guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".dicom-first-frame-slice-controls",
+	"First-frame DICOM slice navigation must be styled.",
+);
+requireIn(
+	cssSource,
+	".migration-empty-recovery",
+	"Migration empty recovery must be styled.",
+);
+requireIn(
+	cssSource,
+	".migration-triage-queue",
+	"Migration triage queue must have a distinct readable layout.",
+);
+requireIn(
+	cssSource,
+	".migration-triage-item.status-blocked",
+	"Migration triage must visually separate hard blockers from routine work.",
+);
+requireIn(
+	cssSource,
+	".migration-source-card-actions > span",
+	"Manual/doctor migration steps rendered as spans must align with icon button actions.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Добавить сотрудника"',
+	"Staff icon quick-create must have an accessible label.",
+);
+requireIn(
+	settingsSource,
+	'aria-label="Добавить кресло или кабинет"',
+	"Chair icon quick-create must have an accessible label.",
+);
+requireIn(
+	appSource,
+	"Введите ФИО сотрудника перед добавлением в команду.",
+	"Staff creation handler must fail visibly if called without a name.",
+);
+requireIn(
+	appSource,
+	"Введите название кресла или кабинета перед добавлением.",
+	"Chair creation handler must fail visibly if called without a name.",
+);
+requireIn(
+	appSource,
+	'operatorWorkflowFailureMessage("Режим клиники не сохранен", modeError)',
+	"Clinic mode change must catch network failures through the readable operator helper.",
+);
+requireIn(
+	appSource,
+	'operatorWorkflowFailureMessage("Сотрудник не добавлен", staffError)',
+	"Staff creation must catch network failures through the readable operator helper.",
+);
+requireIn(
+	appSource,
+	'operatorWorkflowFailureMessage("Кресло не добавлено", chairError)',
+	"Chair creation must catch network failures through the readable operator helper.",
+);
+requireIn(
+	appSource,
+	"Данные клиники еще не загружены. Повторите создание правила после загрузки настроек.",
+	"Clinical rule creation must fail visibly while dashboard data is missing.",
+);
+requireIn(
+	appSource,
+	"Дождитесь завершения текущей записи клинического правила.",
+	"Clinical rule actions must explain duplicate submit attempts.",
+);
+requireIn(
+	appSource,
+	"Вставьте текст, OCR или диктовку перед распознаванием.",
+	"AI recognition handler must fail visibly when invoked without input.",
+);
+requireIn(
+	appSource,
+	"Вставьте прайс-лист или загрузите фото прайса перед разбором.",
+	"Pricelist analyzer handler must fail visibly when invoked without input.",
+);
+requireIn(
+	appSource,
+	"Дождитесь завершения текущей диктовки импорта.",
+	"Patient import dictation must guard duplicate starts.",
+);
+requireIn(
+	appSource,
+	"Браузерная диктовка импорта недоступна. Вставьте список пациентов вручную или загрузите OCR.",
+	"Patient import dictation must explain unsupported browsers.",
+);
+requireIn(
+	appSource,
+	"Диктовка импорта не распознана. Вставьте список вручную или загрузите OCR.",
+	"Patient import dictation must fail visibly on recognition errors.",
+);
+requireIn(
+	appSource,
+	"Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.",
+	"Patient import dictation must fail visibly when the microphone cannot start.",
+);
+requireIn(
+	appSource,
+	"Дождитесь завершения текущего экспорта резервной копии.",
+	"Persistence export must explain duplicate export attempts.",
+);
+requireIn(
+	appSource,
+	"Сервер вернул пустой файл резервной копии.",
+	"Persistence export must reject empty backup files.",
+);
+requireIn(
+	appSource,
+	"Сначала проверьте импорт пациентов, чтобы увидеть готовые и проблемные строки.",
+	"Patient import commit must require preview before writing.",
+);
+requireIn(
+	appSource,
+	"Дождитесь завершения текущей записи импорта пациентов.",
+	"Patient import commit must explain duplicate submit attempts.",
+);
+requireIn(
+	settingsSource,
+	"patientImportRowWarningText",
+	"Patient import row warnings must use a UI-owned readable formatter.",
+);
+requireIn(
+	settingsSource,
+	"imagingImportRowWarningText",
+	"Imaging import row warnings must use a UI-owned readable formatter.",
+);
+forbidIn(
+	settingsSource,
+	'row.warnings.length ? row.warnings.join(", ") : row.notes',
+	"Patient import rows must not render raw joined warning arrays.",
+);
+forbidIn(
+	settingsSource,
+	'row.warnings.length ? row.warnings.join(", ") : row.filePath',
+	"Imaging import rows must not render raw joined warning arrays or full file paths as the ready fallback.",
+);
+requireIn(
+	appSource,
+	"Сначала разберите умный импорт, чтобы увидеть готовые строки и пропуски.",
+	"Smart import commit must require preview before writing.",
+);
+requireIn(
+	appSource,
+	"Дождитесь завершения текущей записи умного импорта.",
+	"Smart import commit must explain duplicate submit attempts.",
+);
+requireIn(
+	appSource,
+	"Сначала проверьте импорт снимков, чтобы увидеть готовые и проблемные строки.",
+	"Imaging import commit must require preview before writing.",
+);
+requireIn(
+	appSource,
+	"Дождитесь завершения текущей привязки снимков.",
+	"Imaging import commit must explain duplicate submit attempts.",
+);
+requireIn(
+	appSource,
+	"Укажите адрес архива снимков перед проверкой.",
+	"DICOMweb check handler must fail visibly without endpoint.",
+);
+requireIn(
+	appSource,
+	"Сначала проверьте серии снимков и выберите готовую КЛКТ/КТ-серию.",
+	"DICOM workbench handlers must fail visibly without a selected series.",
+);
+requireIn(
+	settingsSource,
+	"Иванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;",
+	"Settings DICOM sample must use clinic-readable КЛКТ modality.",
+);
+forbidIn(
+	settingsSource,
+	";CBCT;1.2.643",
+	"Settings DICOM sample must not teach admins to paste English CBCT labels.",
+);
+forbidIn(
+	settingsSource,
+	"D:\\\\\\\\CBCT\\\\\\\\",
+	"Settings DICOM sample must not use English CBCT folder labels.",
+);
+requireIn(
+	appSource,
+	"Перед планом быстрой загрузки снимков:",
+	"DICOM cache plan handler must explain missing prerequisites.",
+);
+requireIn(
+	appSource,
+	"Сначала соберите состояние просмотра снимков, затем скачайте файл состояния.",
+	"DICOM tool-state download handler must fail visibly before export is ready.",
+);
+requireIn(
+	appSource,
+	"Сначала соберите рабочий набор КЛКТ/КТ-срезов, затем скачайте файл состояния.",
+	"DICOM workbench download handler must fail visibly before manifest is ready.",
+);
+requireIn(
+	settingsSource,
+	"Клиническая готовность КТ-срезов",
+	"CT MPR UI must use Russian CT wording in visible labels.",
+);
+requireIn(
+	imagingUiLabelsSource,
+	'cbct_mpr: "КЛКТ/КТ-срезы"',
+	"Shared imaging plan labels must not expose CBCT as the visible route name.",
+);
+forbidIn(
+	imagingUiLabelsSource,
+	'MPR: "MPR"',
+	"Shared imaging plan labels must not expose a bare MPR tool label.",
+);
+forbidIn(
+	settingsSource,
+	"готовую CT/CBCT-серию",
+	"Settings CT MPR guidance must not expose mixed English CT/CBCT terminology.",
+);
+forbidIn(
+	appSource,
+	"затем скачайте JSON",
+	"DICOM download guards must not expose JSON jargon as the user-facing action.",
+);
+requireIn(
+	appSource,
+	"disabled={!newStaffReadyToCreate}",
+	"Onboarding staff creation must be disabled until a name is entered.",
+);
+requireIn(
+	appSource,
+	"disabled={!newChairReadyToCreate}",
+	"Onboarding chair creation must be disabled until a name is entered.",
+);
+requireIn(
+	appSource,
+	'const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance"',
+	"Onboarding staff creation guidance must have a stable id.",
+);
+requireIn(
+	appSource,
+	'const onboardingChairCreateGuidanceId = "onboarding-chair-create-guidance"',
+	"Onboarding chair creation guidance must have a stable id.",
+);
+requireIn(
+	appSource,
+	"aria-describedby={!newStaffReadyToCreate ? onboardingStaffCreateGuidanceId : undefined}",
+	"Onboarding staff creation button must point to guidance.",
+);
+requireIn(
+	appSource,
+	"aria-describedby={!newChairReadyToCreate ? onboardingChairCreateGuidanceId : undefined}",
+	"Onboarding chair creation button must point to guidance.",
+);
+requireIn(
+	appSource,
+	'const onboardingFinishGuidanceId = "onboarding-finish-guidance"',
+	"Onboarding finish guidance must have a stable id.",
+);
+requireIn(
+	appSource,
+	"aria-describedby={!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined}",
+	"Onboarding finish controls must point to blocker guidance.",
+);
+requireIn(
+	cssSource,
+	".import-empty-guidance",
+	"Import empty-state guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".quick-create-guidance",
+	"Quick-create empty-state guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".admin-unlock-guidance",
+	"Admin unlock empty-state guidance must be styled.",
+);
+requireIn(
+	cssSource,
+	".onboarding-action-guidance",
+	"Onboarding action guidance must be styled.",
+);
+forbidIn(
+	settingsSource,
+	"type MprProjection = any",
+	"SettingsView must not weaken MPR projection typing.",
+);
+forbidIn(
+	settingsSource,
+	"type MprWindowPreset = any",
+	"SettingsView must not weaken MPR window preset typing.",
+);
+forbidIn(
+	settingsSource,
+	"StaffRole[]).map((role: any",
+	"SettingsView must not erase StaffRole while rendering role choices.",
+);
 
 console.log(
-  JSON.stringify(
-    {
-      ok: true,
-      settingsViewLazy: true,
-      appSettingsSectionsRemoved: true,
-      integrationsPreserved: true,
-      importEmptyGuards: true,
-      patientImportDictationGuarded: true,
-      quickCreateGuards: true
-    },
-    null,
-    2
-  )
+	JSON.stringify(
+		{
+			ok: true,
+			settingsViewLazy: true,
+			appSettingsSectionsRemoved: true,
+			integrationsPreserved: true,
+			importEmptyGuards: true,
+			patientImportDictationGuarded: true,
+			quickCreateGuards: true,
+		},
+		null,
+		2,
+	),
 );

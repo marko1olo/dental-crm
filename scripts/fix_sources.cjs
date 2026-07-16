@@ -1,11 +1,11 @@
-const fs = require('fs');
+const fs = require("fs");
 
-let block = fs.readFileSync('scripts/extracted_block.tsx', 'utf8');
+let block = fs.readFileSync("scripts/extracted_block.tsx", "utf8");
 
 // Strip the beginning
-block = block.replace(/^\{settingsTab === "sources" \? \(\n?/, '');
+block = block.replace(/^\{settingsTab === "sources" \? \(\n?/, "");
 // Strip the end
-block = block.replace(/\n?\s*\) : null\}\s*$/, '');
+block = block.replace(/\n?\s*\) : null\}\s*$/, "");
 
 // Now we have some mid-sections like:
 //           ) : null}
@@ -13,7 +13,7 @@ block = block.replace(/\n?\s*\) : null\}\s*$/, '');
 //           {settingsTab === "sources" ? (
 // OR
 //           {settingsTab === "sources" && typedDicomViewerToolStateBundle ? (
-block = block.replace(/\) : null\}\s*\{settingsTab === "sources" \? \(/g, '\n');
+block = block.replace(/\) : null\}\s*\{settingsTab === "sources" \? \(/g, "\n");
 
 // For other variations like && typedDicomViewerToolStateBundle
 // We can just wrap the whole thing inside <> and evaluate it safely?
@@ -26,7 +26,10 @@ block = block.replace(/\) : null\}\s*\{settingsTab === "sources" \? \(/g, '\n');
 // and replaces it with:
 // {  ? ( -- wait, if we just use JSX correctly.
 
-// If we put the block as-is into eturn (<>{block}</>); it's invalid JSX.
+// If we put the block as-is into
+eturn(<>{block}</>);
+it;
+'s invalid JSX.
 // But if we wrap the WHOLE block in { and }?
 // Wait, the original was:
 // {settingsTab === "sources" ? ( ... ) : null}

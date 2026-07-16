@@ -127,7 +127,7 @@ describe("tunnel", () => {
     process.env.SSH_KEY_PATH = "valid-key";
     process.env.SSH_HOST = "host";
 
-    let callCount = 0;
+    const callCount = 0;
     const serverMock = {
       once: mock.fn((event: string, cb: Function) => {
         if (callCount === 0) {

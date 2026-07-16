@@ -1,96 +1,95 @@
-import { useScheduleStore } from "../../store/scheduleStore";
 import type {
-    ScheduleWarning,
-    Appointment,
-    StaffWorkingHours
+	Appointment,
+	ScheduleWarning,
+	StaffWorkingHours,
 } from "@dental/shared";
-
 import {
-    StaffScheduleDraft,
-    defaultStaffScheduleDraft,
-    normalizeWorkingDaysDraft,
-    AppointmentScheduleDraft,
-    appointmentScheduleDraftFromAppointment,
-    newAppointmentDraftFromDashboard,
-    staffScheduleDraftSignature,
-    staffWorkingHoursFromDraft,
-    appointmentScheduleMissingFields,
-    appointmentScheduleDraftSignature,
-    appointmentUpdateInputFromDraft,
-    appointmentCreateInputFromDraft,
-    operatorWorkflowFailureMessage,
-    responseErrorMessage
+	type AppointmentScheduleDraft,
+	appointmentCreateInputFromDraft,
+	appointmentScheduleDraftFromAppointment,
+	appointmentScheduleDraftSignature,
+	appointmentScheduleMissingFields,
+	appointmentUpdateInputFromDraft,
+	defaultStaffScheduleDraft,
+	newAppointmentDraftFromDashboard,
+	normalizeWorkingDaysDraft,
+	operatorWorkflowFailureMessage,
+	responseErrorMessage,
+	type StaffScheduleDraft,
+	staffScheduleDraftSignature,
+	staffWorkingHoursFromDraft,
 } from "../../AppHelpers";
+import { useScheduleStore } from "../../store/scheduleStore";
 
 export function useScheduleLogic({
-    dashboard,
-    query,
-    setError,
-    auth,
-    setDashboard,
-    setQuery,
-    selectedPatientId,
-    setEditingAppointmentId,
-    newAppointmentDraftUserEditedRef,
-    setSelectedPatientId,
-    setNewAppointmentError,
-    clinicProfileDraft,
-    setSettingsTab,
-    staffScheduleDraftsRef,
-    chairScheduleDraftsRef,
-    appointmentScheduleDraftsRef,
-    loadDashboard,
-    selectedSpecialty
+	dashboard,
+	query,
+	setError,
+	auth,
+	setDashboard,
+	setQuery,
+	selectedPatientId,
+	setEditingAppointmentId,
+	newAppointmentDraftUserEditedRef,
+	setSelectedPatientId,
+	setNewAppointmentError,
+	clinicProfileDraft,
+	setSettingsTab,
+	staffScheduleDraftsRef,
+	chairScheduleDraftsRef,
+	appointmentScheduleDraftsRef,
+	loadDashboard,
+	selectedSpecialty,
 }: any) {
-    const scheduleStore = useScheduleStore();
-    const {
-        scheduleDoctorFilterId,
-        setScheduleDoctorFilterId,
-        scheduleAssistantFilterId,
-        setScheduleAssistantFilterId,
-        scheduleChairFilterId,
-        setScheduleChairFilterId,
-        scheduleDefaultDoctorUserId,
-        setScheduleDefaultDoctorUserId,
-        scheduleDefaultAssistantUserId,
-        setScheduleDefaultAssistantUserId,
-        scheduleDefaultChairId,
-        setScheduleDefaultChairId,
-        scheduleStatusFilter,
-        setScheduleStatusFilter,
-        scheduleDateFilter,
-        setScheduleDateFilter,
-        staffScheduleDrafts,
-        setStaffScheduleDrafts,
-        staffScheduleSavingId,
-        setStaffScheduleSavingId,
-        staffScheduleDirtyIds,
-        setStaffScheduleDirtyIds,
-        staffScheduleSaveStates,
-        setStaffScheduleSaveStates,
-        chairScheduleDrafts,
-        setChairScheduleDrafts,
-        chairScheduleSavingId,
-        setChairScheduleSavingId,
-        chairScheduleDirtyIds,
-        setChairScheduleDirtyIds,
-        chairScheduleSaveStates,
-        setChairScheduleSaveStates,
-        appointmentScheduleDrafts,
-        setAppointmentScheduleDrafts,
-        appointmentScheduleDirtyIds,
-        setAppointmentScheduleDirtyIds,
-        appointmentScheduleSaveStates,
-        setAppointmentScheduleSaveStates,
-        appointmentScheduleErrors,
-        setAppointmentScheduleErrors,
-        newAppointmentDraft,
-        setNewAppointmentDraft,
-        newAppointmentSaveState,
-        setNewAppointmentSaveState,
-    } = scheduleStore;
+	const scheduleStore = useScheduleStore();
+	const {
+		scheduleDoctorFilterId,
+		setScheduleDoctorFilterId,
+		scheduleAssistantFilterId,
+		setScheduleAssistantFilterId,
+		scheduleChairFilterId,
+		setScheduleChairFilterId,
+		scheduleDefaultDoctorUserId,
+		setScheduleDefaultDoctorUserId,
+		scheduleDefaultAssistantUserId,
+		setScheduleDefaultAssistantUserId,
+		scheduleDefaultChairId,
+		setScheduleDefaultChairId,
+		scheduleStatusFilter,
+		setScheduleStatusFilter,
+		scheduleDateFilter,
+		setScheduleDateFilter,
+		staffScheduleDrafts,
+		setStaffScheduleDrafts,
+		staffScheduleSavingId,
+		setStaffScheduleSavingId,
+		staffScheduleDirtyIds,
+		setStaffScheduleDirtyIds,
+		staffScheduleSaveStates,
+		setStaffScheduleSaveStates,
+		chairScheduleDrafts,
+		setChairScheduleDrafts,
+		chairScheduleSavingId,
+		setChairScheduleSavingId,
+		chairScheduleDirtyIds,
+		setChairScheduleDirtyIds,
+		chairScheduleSaveStates,
+		setChairScheduleSaveStates,
+		appointmentScheduleDrafts,
+		setAppointmentScheduleDrafts,
+		appointmentScheduleDirtyIds,
+		setAppointmentScheduleDirtyIds,
+		appointmentScheduleSaveStates,
+		setAppointmentScheduleSaveStates,
+		appointmentScheduleErrors,
+		setAppointmentScheduleErrors,
+		newAppointmentDraft,
+		setNewAppointmentDraft,
+		newAppointmentSaveState,
+		setNewAppointmentSaveState,
+	} = scheduleStore;
 
-function markStaffScheduleDirty(staffId: string) {
+	function markStaffScheduleDirty(staffId: string) {
 		setStaffScheduleDirtyIds((current) => {
 			const next = new Set(current);
 			next.add(staffId);
@@ -102,7 +101,7 @@ function markStaffScheduleDirty(staffId: string) {
 		}));
 	}
 
-function markChairScheduleDirty(chairId: string) {
+	function markChairScheduleDirty(chairId: string) {
 		setChairScheduleDirtyIds((current) => {
 			const next = new Set(current);
 			next.add(chairId);
@@ -114,7 +113,7 @@ function markChairScheduleDirty(chairId: string) {
 		}));
 	}
 
-function updateStaffScheduleDraft(
+	function updateStaffScheduleDraft(
 		staffId: string,
 		patch: Partial<StaffScheduleDraft>,
 	) {
@@ -152,7 +151,7 @@ function updateStaffScheduleDraft(
 		markStaffScheduleDirty(staffId);
 	}
 
-function updateChairScheduleDraft(
+	function updateChairScheduleDraft(
 		chairId: string,
 		patch: Partial<StaffScheduleDraft>,
 	) {
@@ -190,7 +189,7 @@ function updateChairScheduleDraft(
 		markChairScheduleDirty(chairId);
 	}
 
-function updateStaffScheduleDay(
+	function updateStaffScheduleDay(
 		staffId: string,
 		weekday: number,
 		patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>,
@@ -210,7 +209,7 @@ function updateStaffScheduleDay(
 		markStaffScheduleDirty(staffId);
 	}
 
-function updateChairScheduleDay(
+	function updateChairScheduleDay(
 		chairId: string,
 		weekday: number,
 		patch: Partial<Pick<StaffWorkingHours[number], "start" | "end">>,
@@ -230,7 +229,7 @@ function updateChairScheduleDay(
 		markChairScheduleDirty(chairId);
 	}
 
-function openAppointmentEditor(appointment: Appointment) {
+	function openAppointmentEditor(appointment: Appointment) {
 		setEditingAppointmentId(appointment.id);
 		setAppointmentScheduleDrafts((current: any) => ({
 			...current,
@@ -248,7 +247,7 @@ function openAppointmentEditor(appointment: Appointment) {
 		}));
 	}
 
-function markAppointmentScheduleDirty(appointmentId: string) {
+	function markAppointmentScheduleDirty(appointmentId: string) {
 		setAppointmentScheduleDirtyIds((current) => {
 			const next = new Set(current);
 			next.add(appointmentId);
@@ -264,7 +263,7 @@ function markAppointmentScheduleDirty(appointmentId: string) {
 		}));
 	}
 
-function updateAppointmentScheduleDraft<
+	function updateAppointmentScheduleDraft<
 		K extends keyof AppointmentScheduleDraft,
 	>(appointmentId: string, key: K, value: AppointmentScheduleDraft[K]) {
 		const sourceAppointment = dashboard?.appointments?.find(
@@ -283,7 +282,7 @@ function updateAppointmentScheduleDraft<
 		markAppointmentScheduleDirty(appointmentId);
 	}
 
-function newAppointmentPreferenceDefaults() {
+	function newAppointmentPreferenceDefaults() {
 		return {
 			selectedPatientId,
 			selectedSpecialty,
@@ -293,7 +292,7 @@ function newAppointmentPreferenceDefaults() {
 		};
 	}
 
-function updateNewAppointmentDraft<K extends keyof AppointmentScheduleDraft>(
+	function updateNewAppointmentDraft<K extends keyof AppointmentScheduleDraft>(
 		key: K,
 		value: AppointmentScheduleDraft[K],
 	) {
@@ -311,7 +310,7 @@ function updateNewAppointmentDraft<K extends keyof AppointmentScheduleDraft>(
 		setNewAppointmentError(null);
 	}
 
-function resetNewAppointmentDraft() {
+	function resetNewAppointmentDraft() {
 		if (!dashboard) return;
 		newAppointmentDraftUserEditedRef.current = false;
 		setNewAppointmentDraft(
@@ -324,7 +323,7 @@ function resetNewAppointmentDraft() {
 		setNewAppointmentError(null);
 	}
 
-function closeAppointmentEditor(appointmentId: string) {
+	function closeAppointmentEditor(appointmentId: string) {
 		setEditingAppointmentId((current) =>
 			current === appointmentId ? null : current,
 		);
@@ -338,7 +337,7 @@ function closeAppointmentEditor(appointmentId: string) {
 		}));
 	}
 
-function buildOnboardingFirstAppointmentIssues(): string[] {
+	function buildOnboardingFirstAppointmentIssues(): string[] {
 		if (!clinicProfileDraft) return [];
 		const issues: string[] = [];
 		const requiredClinicDraftFields: Array<[string, string]> = [
@@ -389,7 +388,7 @@ function buildOnboardingFirstAppointmentIssues(): string[] {
 		return issues;
 	}
 
-async function saveOnboardingSchedulesIfDirty(): Promise<boolean> {
+	async function saveOnboardingSchedulesIfDirty(): Promise<boolean> {
 		if (!dashboard) return true;
 		const dirtyStaffIds = Array.from(staffScheduleDirtyIds).filter(
 			(staffId: string) => staffScheduleSaveStates[staffId] !== "saving",
@@ -407,7 +406,7 @@ async function saveOnboardingSchedulesIfDirty(): Promise<boolean> {
 		return true;
 	}
 
-function openScheduleWarning(warning: ScheduleWarning) {
+	function openScheduleWarning(warning: ScheduleWarning) {
 		if (warning.actionLabel.toLowerCase().includes("связ")) {
 			window.location.hash = "communications";
 			return;
@@ -432,7 +431,7 @@ function openScheduleWarning(warning: ScheduleWarning) {
 		window.location.hash = "visit";
 	}
 
-async function saveStaffSchedule(staffId: string): Promise<boolean> {
+	async function saveStaffSchedule(staffId: string): Promise<boolean> {
 		const draft = staffScheduleDrafts[staffId];
 		if (!draft) return false;
 		const expectedSignature = staffScheduleDraftSignature(draft);
@@ -501,7 +500,7 @@ async function saveStaffSchedule(staffId: string): Promise<boolean> {
 		}
 	}
 
-async function saveChairSchedule(chairId: string): Promise<boolean> {
+	async function saveChairSchedule(chairId: string): Promise<boolean> {
 		const draft = chairScheduleDrafts[chairId];
 		if (!draft) return false;
 		const expectedSignature = staffScheduleDraftSignature(draft);
@@ -570,7 +569,7 @@ async function saveChairSchedule(chairId: string): Promise<boolean> {
 		}
 	}
 
-async function saveAppointmentSchedule(
+	async function saveAppointmentSchedule(
 		appointmentId: string,
 		options: { closeEditorOnSave?: boolean } = {},
 	): Promise<boolean> {
@@ -682,7 +681,7 @@ async function saveAppointmentSchedule(
 		}
 	}
 
-function newAppointmentMissingFields(
+	function newAppointmentMissingFields(
 		draft: AppointmentScheduleDraft,
 	): string[] {
 		const isOmni = dashboard?.clinicSettings?.profile?.isOmniRole ?? false;
@@ -693,7 +692,7 @@ function newAppointmentMissingFields(
 		);
 	}
 
-async function createAppointmentFromDraft(): Promise<boolean> {
+	async function createAppointmentFromDraft(): Promise<boolean> {
 		if (!dashboard) {
 			setError(
 				"Данные клиники еще не загружены. Повторите создание записи после загрузки рабочего экрана.",
@@ -781,28 +780,28 @@ async function createAppointmentFromDraft(): Promise<boolean> {
 		}
 	}
 
-    return {
-        ...scheduleStore,
-        markStaffScheduleDirty,
-        markChairScheduleDirty,
-        updateStaffScheduleDraft,
-        updateChairScheduleDraft,
-        updateStaffScheduleDay,
-        updateChairScheduleDay,
-        openAppointmentEditor,
-        markAppointmentScheduleDirty,
-        updateAppointmentScheduleDraft,
-        newAppointmentPreferenceDefaults,
-        updateNewAppointmentDraft,
-        resetNewAppointmentDraft,
-        closeAppointmentEditor,
-        buildOnboardingFirstAppointmentIssues,
-        saveOnboardingSchedulesIfDirty,
-        openScheduleWarning,
-        saveStaffSchedule,
-        saveChairSchedule,
-        saveAppointmentSchedule,
-        newAppointmentMissingFields,
-        createAppointmentFromDraft
-    };
+	return {
+		...scheduleStore,
+		markStaffScheduleDirty,
+		markChairScheduleDirty,
+		updateStaffScheduleDraft,
+		updateChairScheduleDraft,
+		updateStaffScheduleDay,
+		updateChairScheduleDay,
+		openAppointmentEditor,
+		markAppointmentScheduleDirty,
+		updateAppointmentScheduleDraft,
+		newAppointmentPreferenceDefaults,
+		updateNewAppointmentDraft,
+		resetNewAppointmentDraft,
+		closeAppointmentEditor,
+		buildOnboardingFirstAppointmentIssues,
+		saveOnboardingSchedulesIfDirty,
+		openScheduleWarning,
+		saveStaffSchedule,
+		saveChairSchedule,
+		saveAppointmentSchedule,
+		newAppointmentMissingFields,
+		createAppointmentFromDraft,
+	};
 }

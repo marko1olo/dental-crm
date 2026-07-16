@@ -431,7 +431,6 @@ export const OdontogramModule = ({
 									`AI: Зубы обновлены: ${data.toothUpdates.map((t: any) => t.code).join(", ")}`,
 								);
 							} else {
-
 							}
 						}
 					} catch (e) {

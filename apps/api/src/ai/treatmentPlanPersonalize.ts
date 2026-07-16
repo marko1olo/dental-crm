@@ -13,7 +13,12 @@ import {
 	shouldTryNextProviderKey,
 } from "../speech/keyPool.js";
 
-export type SpeechPolishProvider = "none" | "openai" | "groq" | "gemini" | "custom";
+export type SpeechPolishProvider =
+	| "none"
+	| "openai"
+	| "groq"
+	| "gemini"
+	| "custom";
 
 export type AIPlanNeuralConfig = {
 	neuralEnabled: boolean;
@@ -80,7 +85,9 @@ function selectedPolishProvider(): SpeechPolishProvider {
 	return "none";
 }
 
-export function baseUrlForProvider(provider: SpeechPolishProvider): string | null {
+export function baseUrlForProvider(
+	provider: SpeechPolishProvider,
+): string | null {
 	const explicitBaseUrl =
 		process.env.DENTAL_SPEECH_POLISH_BASE_URL?.trim().replace(/\/+$/, "");
 	if (explicitBaseUrl) return explicitBaseUrl;

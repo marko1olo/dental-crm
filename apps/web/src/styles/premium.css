@@ -3,160 +3,209 @@
  * Glassmorphism, dynamic gradients, micro-animations
  */
 
-:root, [data-theme="dark"] {
-  --bg-app: #030305;
-  --glass-panel: rgba(20, 20, 25, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  --teal-glow: 0 0 20px rgba(45, 212, 191, 0.4);
-  --active-item-bg: linear-gradient(135deg, rgba(45,212,191,0.2), rgba(13,148,136,0.05));
-  --active-item-border: rgba(45, 212, 191, 0.5);
-  
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  
-  --mesh-bg-1: radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.15) 0px, transparent 50%);
-  --mesh-bg-2: radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+:root,
+[data-theme="dark"] {
+	--bg-app: #030305;
+	--glass-panel: rgba(20, 20, 25, 0.55);
+	--glass-border: rgba(255, 255, 255, 0.08);
+	--glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+	--teal-glow: 0 0 20px rgba(45, 212, 191, 0.4);
+	--active-item-bg: linear-gradient(
+		135deg,
+		rgba(45, 212, 191, 0.2),
+		rgba(13, 148, 136, 0.05)
+	);
+	--active-item-border: rgba(45, 212, 191, 0.5);
+
+	--text-primary: #ffffff;
+	--text-secondary: #94a3b8;
+
+	--mesh-bg-1: radial-gradient(
+		at 0% 0%,
+		rgba(13, 148, 136, 0.15) 0px,
+		transparent 50%
+	);
+	--mesh-bg-2: radial-gradient(
+		at 100% 100%,
+		rgba(59, 130, 246, 0.1) 0px,
+		transparent 50%
+	);
 }
 
 [data-theme="light"] {
-  --bg-app: #f4f4f6;
-  --glass-panel: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 1);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --teal-glow: 0 0 20px rgba(13, 148, 136, 0.2);
-  --active-item-bg: linear-gradient(135deg, rgba(13,148,136,0.1), rgba(15,118,110,0.02));
-  --active-item-border: rgba(13, 148, 136, 0.5);
-  
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
+	--bg-app: #f4f4f6;
+	--glass-panel: rgba(255, 255, 255, 0.7);
+	--glass-border: rgba(255, 255, 255, 1);
+	--glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+	--teal-glow: 0 0 20px rgba(13, 148, 136, 0.2);
+	--active-item-bg: linear-gradient(
+		135deg,
+		rgba(13, 148, 136, 0.1),
+		rgba(15, 118, 110, 0.02)
+	);
+	--active-item-border: rgba(13, 148, 136, 0.5);
 
-  --mesh-bg-1: radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.1) 0px, transparent 50%);
-  --mesh-bg-2: radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+	--text-primary: #0f172a;
+	--text-secondary: #64748b;
+
+	--mesh-bg-1: radial-gradient(
+		at 0% 0%,
+		rgba(13, 148, 136, 0.1) 0px,
+		transparent 50%
+	);
+	--mesh-bg-2: radial-gradient(
+		at 100% 100%,
+		rgba(59, 130, 246, 0.05) 0px,
+		transparent 50%
+	);
 }
 
 /* Base Body Background with Mesh Gradients */
 body {
-  background-color: var(--bg-app) !important;
-  background-image: var(--mesh-bg-1), var(--mesh-bg-2) !important;
-  background-attachment: fixed !important;
-  color: var(--text-primary) !important;
+	background-color: var(--bg-app) !important;
+	background-image: var(--mesh-bg-1), var(--mesh-bg-2) !important;
+	background-attachment: fixed !important;
+	color: var(--text-primary) !important;
 }
 
 /* Sidebar Redesign - Glassmorphism */
-.sidebar, .app-shell .sidebar {
-  background: var(--glass-panel) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border-right: 1px solid var(--glass-border) !important;
-  box-shadow: var(--glass-shadow) !important;
+.sidebar,
+.app-shell .sidebar {
+	background: var(--glass-panel) !important;
+	backdrop-filter: blur(24px) saturate(180%) !important;
+	-webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+	border-right: 1px solid var(--glass-border) !important;
+	box-shadow: var(--glass-shadow) !important;
 }
 
 /* Sidebar Nav Items Redesign */
 .nav-item {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-  color: var(--text-secondary) !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+	color: var(--text-secondary) !important;
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
-  transform: translateX(4px) !important;
-  border: 1px solid var(--glass-border) !important;
-  color: var(--text-primary) !important;
+	background: rgba(255, 255, 255, 0.05) !important;
+	transform: translateX(4px) !important;
+	border: 1px solid var(--glass-border) !important;
+	color: var(--text-primary) !important;
 }
 
 .nav-item.active {
-  background: var(--active-item-bg) !important;
-  border: 1px solid var(--active-item-border) !important;
-  box-shadow: var(--teal-glow) !important;
-  color: var(--text-primary) !important;
-  transform: scale(1.02) !important;
+	background: var(--active-item-bg) !important;
+	border: 1px solid var(--active-item-border) !important;
+	box-shadow: var(--teal-glow) !important;
+	color: var(--text-primary) !important;
+	transform: scale(1.02) !important;
 }
 
 .nav-item.active .nav-copy small,
 .nav-item:hover .nav-copy small {
-  color: var(--text-primary) !important;
-  opacity: 0.9 !important;
+	color: var(--text-primary) !important;
+	opacity: 0.9 !important;
 }
 
 .nav-copy small {
-  color: var(--text-secondary) !important;
+	color: var(--text-secondary) !important;
 }
 
 /* Cards & Panels */
-.onboarding-shell, .boot-unlock-form, .app-notice, .workspace-continuity-strip {
-  background: var(--glass-panel) !important;
-  backdrop-filter: blur(16px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  border: 1px solid var(--glass-border) !important;
-  box-shadow: var(--glass-shadow) !important;
-  border-radius: 16px !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+.onboarding-shell,
+.boot-unlock-form,
+.app-notice,
+.workspace-continuity-strip {
+	background: var(--glass-panel) !important;
+	backdrop-filter: blur(16px) saturate(180%) !important;
+	-webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+	border: 1px solid var(--glass-border) !important;
+	box-shadow: var(--glass-shadow) !important;
+	border-radius: 16px !important;
+	transition:
+		transform 0.3s ease,
+		box-shadow 0.3s ease !important;
 }
 
 .onboarding-shell:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3) !important;
+	transform: translateY(-2px) !important;
+	box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3) !important;
 }
 
 [data-theme="light"] .onboarding-shell:hover {
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1) !important;
+	box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1) !important;
 }
 
 /* Glowing Primary Buttons */
-button.primary, .btn-primary, [class*="button"]:not(.icon-button):not(.nav-item) {
-  /* Using generic selectors for buttons as a baseline. Need to refine based on specific app classes if they get overriden */
+button.primary,
+.btn-primary,
+[class*="button"]:not(.icon-button):not(.nav-item) {
+	/* Using generic selectors for buttons as a baseline. Need to refine based on specific app classes if they get overriden */
 }
 
 /* Remove clunky active left border */
 .nav-item.active::before {
-  display: none !important;
+	display: none !important;
 }
 
 /* Mobile Bottom Nav Fixes */
 @media (max-width: 860px) {
-  .sidebar, .app-shell .sidebar {
-    border-right: none !important;
-    border-top: 1px solid var(--glass-border) !important;
-    border-radius: 20px 20px 0 0 !important;
-    padding-bottom: env(safe-area-inset-bottom) !important;
-  }
-  
-  .nav-item {
-    min-height: auto !important;
-    padding: 8px 4px !important;
-  }
-  
-  .nav-item.active {
-    transform: translateY(-2px) !important;
-    border-bottom: 2px solid var(--active-item-border) !important;
-  }
-  
-  .nav-item .nav-copy {
-    display: none !important; /* Hide subtext on mobile to save space */
-  }
-  
-  .nav-label {
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 60px !important; /* Force truncation if needed */
-  }
+	.sidebar,
+	.app-shell .sidebar {
+		border-right: none !important;
+		border-top: 1px solid var(--glass-border) !important;
+		border-radius: 20px 20px 0 0 !important;
+		padding-bottom: env(safe-area-inset-bottom) !important;
+	}
+
+	.nav-item {
+		min-height: auto !important;
+		padding: 8px 4px !important;
+	}
+
+	.nav-item.active {
+		transform: translateY(-2px) !important;
+		border-bottom: 2px solid var(--active-item-border) !important;
+	}
+
+	.nav-item .nav-copy {
+		display: none !important; /* Hide subtext on mobile to save space */
+	}
+
+	.nav-label {
+		font-size: 11px !important;
+		font-weight: 600 !important;
+		white-space: nowrap !important;
+		overflow: hidden !important;
+		text-overflow: ellipsis !important;
+		max-width: 60px !important; /* Force truncation if needed */
+	}
 }
 
-.mode-fit-card, .role-queue-card, .patient-summary-card, .patient-insight-panel, .glass-panel, .card, article {
-  background: var(--glass-panel) !important;
-  backdrop-filter: blur(16px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  border: 1px solid var(--glass-border) !important;
-  box-shadow: var(--glass-shadow) !important;
-  border-radius: 16px !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+.mode-fit-card,
+.role-queue-card,
+.patient-summary-card,
+.patient-insight-panel,
+.glass-panel,
+.card,
+article {
+	background: var(--glass-panel) !important;
+	backdrop-filter: blur(16px) saturate(180%) !important;
+	-webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+	border: 1px solid var(--glass-border) !important;
+	box-shadow: var(--glass-shadow) !important;
+	border-radius: 16px !important;
+	transition:
+		transform 0.3s ease,
+		box-shadow 0.3s ease !important;
 }
-.nav-item.active { color: #fff !important; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-.nav-item.active .nav-label { color: #fff !important; }
-.nav-item.active svg { color: #fff !important; }
+.nav-item.active {
+	color: #fff !important;
+	text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+.nav-item.active .nav-label {
+	color: #fff !important;
+}
+.nav-item.active svg {
+	color: #fff !important;
+}

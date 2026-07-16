@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import {
 	AlertTriangle,
 	Bot,
@@ -10,7 +11,6 @@ import {
 } from "lucide-react";
 import React, { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
 import { EgiszMonitor } from "./components/EgiszMonitor";
 import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
@@ -350,8 +350,8 @@ export function VisitView(props: VisitViewProps) {
 	if (!activePatient) {
 		return (
 			<>
-				<motion.div 
-					className="panel visit-panel glass-panel" 
+				<motion.div
+					className="panel visit-panel glass-panel"
 					id="visit"
 					initial={{ opacity: 0, y: 15 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -391,8 +391,8 @@ export function VisitView(props: VisitViewProps) {
 
 	return (
 		<>
-			<motion.div 
-				className="panel visit-panel glass-panel" 
+			<motion.div
+				className="panel visit-panel glass-panel"
 				id="visit"
 				initial={{ opacity: 0, y: 15 }}
 				animate={{ opacity: 1, y: 0 }}
@@ -436,17 +436,33 @@ export function VisitView(props: VisitViewProps) {
 							className="primary-button"
 							type="button"
 							onClick={() => scrollToVisitArea(".dictation-box")}
-							style={{ padding: "16px 24px", fontSize: "16px", fontWeight: "bold", textTransform: "uppercase", borderRadius: "12px" }}
+							style={{
+								padding: "16px 24px",
+								fontSize: "16px",
+								fontWeight: "bold",
+								textTransform: "uppercase",
+								borderRadius: "12px",
+							}}
 						>
-							<Mic aria-hidden="true" style={{marginRight: "8px"}} /> ДИКТОВКА
+							<Mic aria-hidden="true" style={{ marginRight: "8px" }} /> ДИКТОВКА
 						</button>
 						<button
 							className="secondary-button"
 							type="button"
 							onClick={openVisitWarningAction}
-							style={{ padding: "16px 24px", fontSize: "16px", fontWeight: "bold", textTransform: "uppercase", borderRadius: "12px" }}
+							style={{
+								padding: "16px 24px",
+								fontSize: "16px",
+								fontWeight: "bold",
+								textTransform: "uppercase",
+								borderRadius: "12px",
+							}}
 						>
-							<AlertTriangle aria-hidden="true" style={{marginRight: "8px"}} /> РИСКИ
+							<AlertTriangle
+								aria-hidden="true"
+								style={{ marginRight: "8px" }}
+							/>{" "}
+							РИСКИ
 						</button>
 					</div>
 				</section>
@@ -494,7 +510,15 @@ export function VisitView(props: VisitViewProps) {
 									disabled={visitPrimaryAction.disabled}
 									aria-describedby="visit-primary-action-detail"
 									data-testid="visit-primary-action"
-									style={{ padding: "16px 24px", fontSize: "1.2rem", fontWeight: "bold", textTransform: "uppercase", width: "100%", justifyContent: "center", borderRadius: "12px" }}
+									style={{
+										padding: "16px 24px",
+										fontSize: "1.2rem",
+										fontWeight: "bold",
+										textTransform: "uppercase",
+										width: "100%",
+										justifyContent: "center",
+										borderRadius: "12px",
+									}}
 								>
 									{visitPrimaryAction.kind === "dictation" ? (
 										<Mic aria-hidden="true" />

@@ -29,7 +29,6 @@ type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type WeekdayOption = { value: number; label: string };
 
-
 export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const appLogicProps = useAppLogicContext();
 	const settingsStoreProps = useSettingsStore();
@@ -937,7 +936,6 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 												</button>
 											</div>
 										</div>
-
 									</div>
 								);
 							})}

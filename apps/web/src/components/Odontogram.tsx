@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { type ToothStatus, usePatientStore } from "../store/patientStore";
 import { getToothConfig, getToothPath } from "../utils/math/toothGeometry";
 
@@ -236,7 +236,20 @@ const renderToothSvg = (
 };
 
 export function Odontogram() {
-	const { odontogramState, setToothStatus } = usePatientStore();
+	const {
+		odontogramState,
+		setToothStatus,
+		loadOdontogram,
+		saveToothStatus,
+		selectedPatientId,
+	} = usePatientStore();
+
+	useEffect(() => {
+		if (selectedPatientId) {
+			void loadOdontogram(selectedPatientId);
+		}
+	}, [selectedPatientId, loadOdontogram]);
+
 	const [hoveredTooth, setHoveredTooth] = useState<number | null>(null);
 	const [radialMenuOpen, setRadialMenuOpen] = useState<number | null>(null);
 	const [multiSelectMode, setMultiSelectMode] = useState(false);
@@ -266,12 +279,20 @@ export function Odontogram() {
 
 	const applyBulkStatus = useCallback(
 		(status: ToothStatus) => {
-			selectedTeeth.forEach((t) => setToothStatus(t, status));
+			if (selectedPatientId && selectedTeeth.size > 0) {
+				void saveToothStatus(
+					selectedPatientId,
+					Array.from(selectedTeeth),
+					status,
+				);
+			} else {
+				selectedTeeth.forEach((t) => setToothStatus(t, status));
+			}
 			setSelectedTeeth(new Set());
 			setBulkMenuOpen(false);
 			setMultiSelectMode(false);
 		},
-		[selectedTeeth, setToothStatus],
+		[selectedTeeth, setToothStatus, saveToothStatus, selectedPatientId],
 	);
 
 	const renderTooth = (tooth: number) => {
@@ -501,7 +522,11 @@ export function Odontogram() {
 										key={opt}
 										onClick={(e) => {
 											e.stopPropagation();
-											setToothStatus(tooth, opt);
+											if (selectedPatientId) {
+												void saveToothStatus(selectedPatientId, tooth, opt);
+											} else {
+												setToothStatus(tooth, opt);
+											}
 											setRadialMenuOpen(null);
 										}}
 										style={{

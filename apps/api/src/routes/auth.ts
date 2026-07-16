@@ -212,7 +212,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			const orgId = clinicPayload.organizationId as string;
 
-
 			const [user] = await db
 				.select()
 				.from(users)
@@ -224,7 +223,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					),
 				)
 				.limit(1);
-
 
 			if (!user) {
 				await new Promise((r) => setTimeout(r, 250));
@@ -905,7 +903,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 			let [user] = await db
 				.select()
 				.from(users)
-				.where(and(eq(users.isActive, true), eq(users.email, "admin@example.com")))
+				.where(
+					and(eq(users.isActive, true), eq(users.email, "admin@example.com")),
+				)
 				.limit(1);
 			if (!user) {
 				[user] = await db

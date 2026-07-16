@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import {
 	Activity,
 	Box,
@@ -8,7 +9,6 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import "./ScannerView.css";
@@ -148,10 +148,18 @@ export function ScannerView() {
 							margin: 0,
 						}}
 					>
-						Наведите сканер на штрих-код лотка с инструментами или введите вручную.
+						Наведите сканер на штрих-код лотка с инструментами или введите
+						вручную.
 					</p>
 
-					<div style={{ display: "flex", gap: "16px", width: "100%", maxWidth: "400px" }}>
+					<div
+						style={{
+							display: "flex",
+							gap: "16px",
+							width: "100%",
+							maxWidth: "400px",
+						}}
+					>
 						<select
 							value={autoclaveId}
 							onChange={(e) => setAutoclaveId(e.target.value)}
@@ -220,8 +228,7 @@ export function ScannerView() {
 							borderRadius: "12px",
 							fontSize: "1.1rem",
 							fontWeight: 600,
-							cursor:
-								isScanning || !barcode.trim() ? "not-allowed" : "pointer",
+							cursor: isScanning || !barcode.trim() ? "not-allowed" : "pointer",
 							opacity: isScanning || !barcode.trim() ? 0.6 : 1,
 						}}
 					>

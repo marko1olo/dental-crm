@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlertTriangle,
 	Building2,
@@ -16,7 +17,6 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
 	formatShortDate,
 	minutesLabel,
@@ -60,14 +60,14 @@ export function ShiftView({
 	const [showAnalytics, setShowAnalytics] = useState(false);
 	const [showOtherQueues, setShowOtherQueues] = useState(false);
 	return (
-		<motion.div 
+		<motion.div
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
 			style={{ display: "flex", flexDirection: "column", gap: "16px" }}
 		>
 			<section className="shift-hero" id="shift">
-				<motion.div 
+				<motion.div
 					className="now-card glass-panel"
 					whileHover={{ boxShadow: "0 12px 32px rgba(0,0,0,0.08)" }}
 				>
@@ -205,7 +205,7 @@ export function ShiftView({
 				</motion.div>
 
 				{/* РАСПИСАНИЕ НА СЕГОДНЯ */}
-				<motion.div 
+				<motion.div
 					className="today-schedule-box glass-panel"
 					initial={{ opacity: 0, x: 20 }}
 					animate={{ opacity: 1, x: 0 }}
@@ -350,8 +350,8 @@ export function ShiftView({
 				}}
 			>
 				<>
-					<motion.section 
-						className="role-focus-strip glass-panel" 
+					<motion.section
+						className="role-focus-strip glass-panel"
 						aria-label="Фокус текущей роли"
 						initial={{ opacity: 0, y: 15 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -571,8 +571,8 @@ export function PatientCockpit({
 }: any) {
 	if (!activePatient) {
 		return (
-			<motion.section 
-				className="patient-cockpit glass-panel" 
+			<motion.section
+				className="patient-cockpit glass-panel"
 				aria-label="Карточка пациента"
 				initial={{ opacity: 0, scale: 0.98 }}
 				animate={{ opacity: 1, scale: 1 }}
@@ -594,8 +594,8 @@ export function PatientCockpit({
 
 	return (
 		<>
-			<motion.section 
-				className="patient-cockpit glass-panel" 
+			<motion.section
+				className="patient-cockpit glass-panel"
 				aria-label="Карточка пациента"
 				initial={{ opacity: 0, y: 15 }}
 				animate={{ opacity: 1, y: 0 }}

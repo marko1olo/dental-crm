@@ -10,10 +10,11 @@ import {
 	ShieldAlert,
 	X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { showToast } from "../GlobalToast";
 import { usePatientStore } from "../../store/patientStore";
+import { showToast } from "../GlobalToast";
 import "./ComparativePlanner.css";
 
 interface ServiceItem {
@@ -58,7 +59,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 	const [plans, setPlans] = useState<TreatmentPlan[]>([]);
 	const [insuranceActive, setInsuranceActive] = useState(false);
-	const [insuranceData, setInsuranceData] = useState<InsuranceContract | null>(null);
+	const [insuranceData, setInsuranceData] = useState<InsuranceContract | null>(
+		null,
+	);
 	const [isLoading, setIsLoading] = useState(false);
 	const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 	const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -81,10 +84,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		try {
 			const headers = auth.denteClinicalReadHeaders();
 			const [plansRes, insRes] = await Promise.all([
-				fetch(
-					`/api/patients/${selectedPatientId}/treatment-plans`,
-					{ headers },
-				),
+				fetch(`/api/patients/${selectedPatientId}/treatment-plans`, {
+					headers,
+				}),
 				// Org-level insurance contracts (DMS) — pick the first active one
 				fetch(`/api/insurance/contracts`, { headers }),
 			]);
@@ -94,8 +96,8 @@ export const ComparativePlannerDashboard: React.FC = () => {
 				const loadedPlans: TreatmentPlan[] = Array.isArray(data?.plans)
 					? data.plans
 					: Array.isArray(data)
-					? data
-					: [];
+						? data
+						: [];
 				setPlans(loadedPlans);
 
 				// Initialize optional toggles for any new plans
@@ -116,7 +118,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 				// Set first plan as active mobile tab if none selected
 				if (loadedPlans.length > 0) {
 					setActiveMobileTab((prev) =>
-						prev && loadedPlans.find((p) => p.id === prev) ? prev : loadedPlans[0]!.id,
+						prev && loadedPlans.find((p) => p.id === prev)
+							? prev
+							: loadedPlans[0]!.id,
 					);
 				}
 			} else {
@@ -162,7 +166,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 				`/api/patients/${selectedPatientId}/treatment-plans`,
 				{
 					method: "POST",
-					headers: auth.denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+					headers: auth.denteClinicalReadHeaders({
+						"Content-Type": "application/json",
+					}),
 					body: JSON.stringify({
 						id: planId,
 						status: newStatus,
@@ -182,16 +188,16 @@ export const ComparativePlannerDashboard: React.FC = () => {
 									? "approved"
 									: "archived"
 								: p.id === planId
-								? newStatus
-								: p.status,
+									? newStatus
+									: p.status,
 					})),
 				);
 				showToast(
 					newStatus === "approved"
 						? "План утверждён"
 						: newStatus === "archived"
-						? "План отправлен в архив"
-						: "Статус плана обновлён",
+							? "План отправлен в архив"
+							: "Статус плана обновлён",
 					"success",
 				);
 			} else {
@@ -257,7 +263,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 			]);
 		}
 		const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-		const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+		const blob = new Blob(["\uFEFF" + csv], {
+			type: "text/csv;charset=utf-8;",
+		});
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
@@ -273,17 +281,22 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		let insuranceCoverage = 0;
 
 		for (const item of plan.items) {
-			const isSelected = !item.isOptional || optionalToggles[plan.id]?.[item.id];
+			const isSelected =
+				!item.isOptional || optionalToggles[plan.id]?.[item.id];
 			if (!isSelected) continue;
 
 			total += item.priceRub;
 
 			let coveragePct = 0;
 			if (insuranceActive && insuranceData) {
-				if (item.category === "therapy") coveragePct = insuranceData.coverageTherapyPct;
-				if (item.category === "ortho") coveragePct = insuranceData.coverageOrthoPct;
-				if (item.category === "hygiene") coveragePct = insuranceData.coverageHygienePct;
-				if (item.category === "surgery") coveragePct = insuranceData.coverageSurgeryPct;
+				if (item.category === "therapy")
+					coveragePct = insuranceData.coverageTherapyPct;
+				if (item.category === "ortho")
+					coveragePct = insuranceData.coverageOrthoPct;
+				if (item.category === "hygiene")
+					coveragePct = insuranceData.coverageHygienePct;
+				if (item.category === "surgery")
+					coveragePct = insuranceData.coverageSurgeryPct;
 			}
 
 			const coveredAmt = Math.round((item.priceRub * coveragePct) / 100);
@@ -351,13 +364,18 @@ export const ComparativePlannerDashboard: React.FC = () => {
 						{isLoading && (
 							<RefreshCw
 								size={16}
-								style={{ color: "var(--muted)", animation: "spin 1s linear infinite" }}
+								style={{
+									color: "var(--muted)",
+									animation: "spin 1s linear infinite",
+								}}
 							/>
 						)}
 						{insuranceData ? (
 							<div className="insurance-status-card">
 								<ShieldAlert
-									className={insuranceActive ? "text-emerald-400" : "text-zinc-500"}
+									className={
+										insuranceActive ? "text-emerald-400" : "text-zinc-500"
+									}
 								/>
 								<div className="insurance-info">
 									<p>Полис ДМС</p>
@@ -389,7 +407,11 @@ export const ComparativePlannerDashboard: React.FC = () => {
 							color: "var(--muted)",
 						}}
 					>
-						<Plus size={40} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.4 }} />
+						<Plus
+							size={40}
+							strokeWidth={1}
+							style={{ marginBottom: 12, opacity: 0.4 }}
+						/>
 						<p style={{ margin: 0, fontSize: 16 }}>
 							У пациента пока нет планов лечения.
 						</p>
@@ -470,12 +492,16 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																		navigator.clipboard
 																			.writeText(text)
 																			.then(() =>
-																				showToast("Скопировано в буфер", "success"),
+																				showToast(
+																					"Скопировано в буфер",
+																					"success",
+																				),
 																			);
 																		setActiveDropdown(null);
 																	}}
 																>
-																	<Download className="w-4 h-4" /> Копировать итог
+																	<Download className="w-4 h-4" /> Копировать
+																	итог
 																</button>
 																<div className="border-t border-zinc-800 my-1" />
 																{!isArchived && (
@@ -553,7 +579,13 @@ export const ComparativePlannerDashboard: React.FC = () => {
 										<div className="services-section">
 											<h3>Услуги в смете</h3>
 											{plan.items.length === 0 ? (
-												<p style={{ color: "var(--muted)", fontSize: 13, padding: "8px 0" }}>
+												<p
+													style={{
+														color: "var(--muted)",
+														fontSize: 13,
+														padding: "8px 0",
+													}}
+												>
 													Услуги не добавлены
 												</p>
 											) : (
@@ -574,7 +606,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																	disabled={plan.status !== "draft"}
 																	className={`tile-check-indicator ${isSelected ? "checked" : ""}`}
 																	title={
-																		isSelected ? "Убрать опцию" : "Включить опцию"
+																		isSelected
+																			? "Убрать опцию"
+																			: "Включить опцию"
 																	}
 																>
 																	{isSelected && <Check className="w-3 h-3" />}
@@ -615,7 +649,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 											{plan.status === "draft" && (
 												<>
 													<button
-														onClick={() => updatePlanStatus(plan.id, "approved")}
+														onClick={() =>
+															updatePlanStatus(plan.id, "approved")
+														}
 														className="approve-plan-btn"
 														disabled={isSaving}
 													>
@@ -631,7 +667,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 													</button>
 
 													<button
-														onClick={() => updatePlanStatus(plan.id, "archived")}
+														onClick={() =>
+															updatePlanStatus(plan.id, "archived")
+														}
 														className="reject-plan-btn"
 														disabled={isSaving}
 													>

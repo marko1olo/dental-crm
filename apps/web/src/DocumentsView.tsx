@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import {
 	type DocumentKind,
 	type DocumentKindMetadata,
@@ -18,14 +17,15 @@ import {
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralStudyType,
 } from "@dental/shared";
+import { motion } from "framer-motion";
 import { CheckCircle2, FileText } from "lucide-react";
 import { useEffect } from "react";
+import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import {
 	type MedicalDocumentReleaseChannel,
 	useDocumentStore,
 } from "./store/documentStore";
-import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 
 type DocumentSelectOption<T extends string> = { value: T; label: string };
 type TaxDocumentPayerOption = {
@@ -1222,12 +1222,13 @@ export function DocumentsView(props: DocumentsViewProps) {
 	}
 
 	return (
-		<motion.div 
-			className="panel documents-panel glass-panel" 
+		<motion.div
+			className="panel documents-panel glass-panel"
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4 }}
-		 id="documents">
+			id="documents"
+		>
 			<div className="panel-heading">
 				<h2>Документы к закрытию</h2>
 				<button
@@ -1478,18 +1479,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									оплаты и обязательных уведомлений пациента до лечения.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Номер договора
@@ -1572,10 +1566,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											}
 											rows={2}
 										/>
-										<div
-											className="quick-chips-row"
-											
-										>
+										<div className="quick-chips-row">
 											{[
 												"Кариес",
 												"Пульпит",
@@ -1767,18 +1758,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									чеков и претензий пациента.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Номер акта
@@ -1936,10 +1920,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											placeholder="оставьте пустым, если замечаний нет"
 											rows={3}
 										/>
-										<div
-											className="quick-chips-row"
-											
-										>
+										<div className="quick-chips-row">
 											{[
 												"Без замечаний",
 												"Претензий не имею",
@@ -2012,18 +1993,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									исключениями и правилами изменения цены.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Номер сметы
@@ -2082,10 +2056,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											placeholder={treatmentEstimateTreatmentBasisValue()}
 											rows={3}
 										/>
-										<div
-											className="quick-chips-row"
-											
-										>
+										<div className="quick-chips-row">
 											{[
 												"Кариес дентина",
 												"Острый пульпит",
@@ -2156,10 +2127,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											}
 											rows={4}
 										/>
-										<div
-											className="quick-chips-row"
-											
-										>
+										<div className="quick-chips-row">
 											{[
 												"Рентгенологические снимки",
 												"Анестезия",
@@ -2197,10 +2165,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											}
 											rows={3}
 										/>
-										<div
-											className="quick-chips-row"
-											
-										>
+										<div className="quick-chips-row">
 											{[
 												"100% предоплата",
 												"Оплата по факту",
@@ -2315,18 +2280,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									заменяет кассовый чек.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Номер счета
@@ -2514,18 +2472,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									фискальные чеки без скрытого захвата лишних оплат.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Номер квитанции
@@ -2800,18 +2751,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									без подмены банковского кредита.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Номер графика
@@ -2989,18 +2933,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									вмешательство несовершеннолетнего.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Представитель
@@ -3218,18 +3155,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									признаки для срочной связи.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Работа или услуга
 										<textarea
@@ -3399,18 +3329,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									до приема.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Жалоба или цель визита
 										<textarea
@@ -3551,18 +3474,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									ручных правок в HTML.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Заявитель / налогоплательщик
 										<input
@@ -3735,18 +3651,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									альтернативы и рекомендации без пустого шаблона.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Планируемое вмешательство
 										<textarea
@@ -3928,18 +3837,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									ограничения.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Блок процедуры
@@ -4148,18 +4050,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									отдельного согласия на вмешательство.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Повод обращения
 										<textarea
@@ -4352,18 +4247,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									сметы, альтернативы, риски и подтверждения пациента.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Выбранный вариант
 										<select
@@ -4594,18 +4482,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									Telegram-бота клиники.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Блок
@@ -4847,18 +4728,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 								<h3>Журнал анестезии</h3>
 								<p>Перед созданием: метод, препарат, зона, доза и реакция.</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Метод
 										<input
@@ -4990,18 +4864,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 								<h3>Назначение препаратов</h3>
 								<p>Один понятный блок назначения без догадок в документе.</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									{renderClinicalToothRowsEditor()}
 									<label>
 										Препарат
@@ -5072,18 +4939,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 								<h3>Заявка в лабораторию</h3>
 								<p>Работа, зона, материал, цвет, источник данных и срок.</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									{renderClinicalToothRowsEditor()}
 									<label>
 										Вид работы
@@ -5156,18 +5016,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									маркетинг и узнаваемая публикация.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										{typedPhotoVideoMaterialOptions.map((option) => (
 											<label
@@ -5298,18 +5151,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									ограничения до рентгена или КЛКТ.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									{renderClinicalToothRowsEditor()}
 									<label>
 										Вид исследования
@@ -5473,18 +5319,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									пациента и визита до изменения или выпуска документа.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Номер карты
@@ -5941,18 +5780,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									лечение, рекомендации и получатель.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Период с
@@ -6032,9 +5864,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											}
 											rows={2}
 										/>
-										<div
-											className="quick-chips-row document-chips-wrap"
-										>
+										<div className="quick-chips-row document-chips-wrap">
 											{EXTRACT_DIAGNOSIS_CHIPS.map((chip) => (
 												<button
 													key={chip}
@@ -6161,18 +5991,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									выдачи без пустых полей.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Что выдать
 										<textarea
@@ -6356,18 +6179,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									снимков и стоимости.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Начало приема
@@ -6487,18 +6303,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									представителя.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Основание выдачи
 										<select
@@ -6661,18 +6470,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									без пустого шаблона.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<div className="document-payload-row">
 										<label>
 											Оператор
@@ -6838,18 +6640,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									срочно обращаться.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Предложенное вмешательство
 										<input
@@ -6878,15 +6673,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 											rows={2}
 										/>
 									</label>
-									<div
-										className="document-column-gap-4"
-									>
-										<div
-											className="document-flex-between"
-										>
-											<span
-												className="document-sub-heading"
-											>
+									<div className="document-column-gap-4">
+										<div className="document-flex-between">
+											<span className="document-sub-heading">
 												Причина отказа со слов пациента
 											</span>
 											<SmartMicrophoneButton
@@ -6908,9 +6697,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											rows={2}
 											className="document-mt-0"
 										/>
-										<div
-											className="quick-chips-row document-flex-wrap"
-										>
+										<div className="quick-chips-row document-flex-wrap">
 											{REFUSAL_REASON_CHIPS.map((chip) => (
 												<button
 													key={chip}
@@ -6929,15 +6716,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 											))}
 										</div>
 									</div>
-									<div
-										className="document-column-gap-4"
-									>
-										<div
-											className="document-flex-between"
-										>
-											<span
-												className="document-sub-heading"
-											>
+									<div className="document-column-gap-4">
+										<div className="document-flex-between">
+											<span className="document-sub-heading">
 												Разъясненные риски
 											</span>
 											<SmartMicrophoneButton
@@ -6959,9 +6740,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											rows={3}
 											className="document-mt-0"
 										/>
-										<div
-											className="quick-chips-row document-flex-wrap"
-										>
+										<div className="quick-chips-row document-flex-wrap">
 											{REFUSAL_RISK_CHIPS.map((chip) => (
 												<button
 													key={chip}
@@ -6980,15 +6759,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 											))}
 										</div>
 									</div>
-									<div
-										className="document-column-gap-4"
-									>
-										<div
-											className="document-flex-between"
-										>
-											<span
-												className="document-sub-heading"
-											>
+									<div className="document-column-gap-4">
+										<div className="document-flex-between">
+											<span className="document-sub-heading">
 												Предложенные альтернативы
 											</span>
 											<SmartMicrophoneButton
@@ -7010,9 +6783,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											rows={3}
 											className="document-mt-0"
 										/>
-										<div
-											className="quick-chips-row document-flex-wrap"
-										>
+										<div className="quick-chips-row document-flex-wrap">
 											{REFUSAL_ALT_CHIPS.map((chip) => (
 												<button
 													key={chip}
@@ -7031,15 +6802,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 											))}
 										</div>
 									</div>
-									<div
-										className="document-column-gap-4"
-									>
-										<div
-											className="document-flex-between"
-										>
-											<span
-												className="document-sub-heading"
-											>
+									<div className="document-column-gap-4">
+										<div className="document-flex-between">
+											<span className="document-sub-heading">
 												Тревожные признаки
 											</span>
 											<SmartMicrophoneButton
@@ -7061,9 +6826,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											rows={3}
 											className="document-mt-0"
 										/>
-										<div
-											className="quick-chips-row document-flex-wrap"
-										>
+										<div className="quick-chips-row document-flex-wrap">
 											{REFUSAL_WARNING_CHIPS.map((chip) => (
 												<button
 													key={chip}
@@ -7149,18 +6912,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 									Сумма, действие, чек, получатель и решение ответственного.
 								</p>
 							</div>
-							<details
-								className="document-manual-override"
-								
-							>
-								<summary className="document-summary-toggle"
-								>
+							<details className="document-manual-override">
+								<summary className="document-summary-toggle">
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
-								<div
-									className="document-payload-collapsed-content"
-									
-								>
+								<div className="document-payload-collapsed-content">
 									<label>
 										Действие
 										<select
@@ -7328,9 +7084,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 				</section>
 
-				<div
-					className="document-factory-selected-kind document-mt-16"
-				>
+				<div className="document-factory-selected-kind document-mt-16">
 					<button
 						className="primary-button"
 						type="button"
@@ -7937,7 +7691,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 							documentAuditFacts.status !== "voided" ? (
 								<DocumentUkepSignButton
 									documentId={documentAuditFacts.documentId}
-									onSuccess={() => loadDocumentAuditFacts(documentAuditFacts.documentId)}
+									onSuccess={() =>
+										loadDocumentAuditFacts(documentAuditFacts.documentId)
+									}
 								/>
 							) : null}
 							{documentAuditFacts.cryptoSignaturePkcs7 ? (

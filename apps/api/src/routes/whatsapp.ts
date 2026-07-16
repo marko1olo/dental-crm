@@ -14,9 +14,9 @@ import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
+	requireNonDoctorAccess,
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
-	requireNonDoctorAccess,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import {
@@ -142,9 +142,8 @@ export async function registerWhatsappRoutes(
 			.limit(1);
 
 		if (existing) {
-			const updateValues: Partial<
-				typeof denteWhatsappBotConfigs.$inferInsert
-			> = { updatedAt: now };
+			const updateValues: Partial<typeof denteWhatsappBotConfigs.$inferInsert> =
+				{ updatedAt: now };
 
 			if (input.phoneNumberId !== undefined)
 				updateValues.phoneNumberId = input.phoneNumberId;
@@ -158,8 +157,7 @@ export async function registerWhatsappRoutes(
 				);
 			if (input.staffRouting !== undefined)
 				updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
-			if (input.isActive !== undefined)
-				updateValues.isActive = input.isActive;
+			if (input.isActive !== undefined) updateValues.isActive = input.isActive;
 
 			await db
 				.update(denteWhatsappBotConfigs)
@@ -169,9 +167,7 @@ export async function registerWhatsappRoutes(
 			await db.insert(denteWhatsappBotConfigs).values({
 				organizationId: orgId,
 				phoneNumberId: input.phoneNumberId ?? null,
-				tokenSecretRef: input.accessToken
-					? maskToken(input.accessToken)
-					: null,
+				tokenSecretRef: input.accessToken ? maskToken(input.accessToken) : null,
 				webhookVerifyToken: input.webhookVerifyToken ?? null,
 				enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
 				staffRoutingJson: JSON.stringify(
@@ -206,8 +202,7 @@ export async function registerWhatsappRoutes(
 			return {
 				channel: "whatsapp",
 				connected: false,
-				detail:
-					"WhatsApp не настроен: нужны Phone Number ID и Access Token.",
+				detail: "WhatsApp не настроен: нужны Phone Number ID и Access Token.",
 			};
 		}
 
@@ -262,18 +257,14 @@ export async function registerWhatsappRoutes(
 
 		for (const entry of entries) {
 			const e = entry as Record<string, unknown>;
-			const changes = Array.isArray(e.changes)
-				? (e.changes as unknown[])
-				: [];
+			const changes = Array.isArray(e.changes) ? (e.changes as unknown[]) : [];
 
 			for (const change of changes) {
 				const c = change as Record<string, unknown>;
 				const value = c.value as Record<string, unknown> | undefined;
 				if (!value) continue;
 
-				const metadata = value.metadata as
-					| Record<string, unknown>
-					| undefined;
+				const metadata = value.metadata as Record<string, unknown> | undefined;
 				const phoneNumberId =
 					typeof metadata?.phone_number_id === "string"
 						? metadata.phone_number_id
@@ -283,9 +274,7 @@ export async function registerWhatsappRoutes(
 				const [orgConfig] = await db
 					.select({ organizationId: denteWhatsappBotConfigs.organizationId })
 					.from(denteWhatsappBotConfigs)
-					.where(
-						eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId),
-					)
+					.where(eq(denteWhatsappBotConfigs.phoneNumberId, phoneNumberId))
 					.limit(1);
 
 				if (!orgConfig) continue;
@@ -296,8 +285,7 @@ export async function registerWhatsappRoutes(
 
 				for (const msg of messages) {
 					const m = msg as Record<string, unknown>;
-					const fromId =
-						typeof m.from === "string" ? m.from : "unknown";
+					const fromId = typeof m.from === "string" ? m.from : "unknown";
 					const textObj = m.text as Record<string, unknown> | undefined;
 					const textBody =
 						typeof textObj?.body === "string" ? textObj.body : null;
@@ -315,7 +303,9 @@ export async function registerWhatsappRoutes(
 		}
 
 		// Await or float the processor to ingest this message to the Inbox immediately
-		void processInboundEvents().catch((err) => console.error("Whatsapp ingestion error:", err));
+		void processInboundEvents().catch((err) =>
+			console.error("Whatsapp ingestion error:", err),
+		);
 	});
 }
 

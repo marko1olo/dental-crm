@@ -16,12 +16,10 @@ app.post(
 			.where(eq(organizations.loginId, loginId))
 			.limit(1);
 		if (existingOrg)
-			return reply
-				.code(409)
-				.send({
-					error: "Conflict",
-					message: "Организация с таким логином уже существует.",
-				});
+			return reply.code(409).send({
+				error: "Conflict",
+				message: "Организация с таким логином уже существует.",
+			});
 
 		const [existingUser] = await db
 			.select({ id: users.id })
@@ -29,12 +27,10 @@ app.post(
 			.where(eq(users.email, loginId))
 			.limit(1);
 		if (existingUser)
-			return reply
-				.code(409)
-				.send({
-					error: "Conflict",
-					message: "Пользователь с таким email уже существует.",
-				});
+			return reply.code(409).send({
+				error: "Conflict",
+				message: "Пользователь с таким email уже существует.",
+			});
 
 		const passwordHash = hashCredential(password);
 		const pinCodeHash = hashCredential("0000"); // Default PIN for owner
@@ -66,14 +62,12 @@ app.post(
 			TOKEN_SECRET(),
 			60 * 60 * 24 * 7,
 		);
-		return reply
-			.code(201)
-			.send({
-				ok: true,
-				staffToken: token,
-				organizationId: org.id,
-				userId: user.id,
-			});
+		return reply.code(201).send({
+			ok: true,
+			staffToken: token,
+			organizationId: org.id,
+			userId: user.id,
+		});
 	},
 );
 
@@ -145,12 +139,10 @@ app.post(
 			!staffPayload?.organizationId ||
 			(staffPayload.role !== "owner" && staffPayload.role !== "admin")
 		) {
-			return reply
-				.code(403)
-				.send({
-					error: "Forbidden",
-					message: "Нет прав на приглашение сотрудников.",
-				});
+			return reply.code(403).send({
+				error: "Forbidden",
+				message: "Нет прав на приглашение сотрудников.",
+			});
 		}
 		if (!email || !role)
 			return reply
@@ -169,7 +161,10 @@ app.post(
 			status: "pending",
 		});
 
-		return reply.send({ ok: true, inviteLink: `/auth/accept-invite?token=${tokenUuid}` });
+		return reply.send({
+			ok: true,
+			inviteLink: `/auth/accept-invite?token=${tokenUuid}`,
+		});
 	},
 );
 
@@ -194,12 +189,10 @@ app.post(
 			)
 			.limit(1);
 		if (!invite || new Date() > invite.expiresAt)
-			return reply
-				.code(400)
-				.send({
-					error: "InvalidToken",
-					message: "Приглашение недействительно или истекло.",
-				});
+			return reply.code(400).send({
+				error: "InvalidToken",
+				message: "Приглашение недействительно или истекло.",
+			});
 
 		const passwordHash = hashCredential(password);
 		const pinCodeHash = hashCredential(pinCode);

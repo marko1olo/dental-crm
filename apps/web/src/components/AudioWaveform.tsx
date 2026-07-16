@@ -31,8 +31,8 @@ export function AudioWaveform({
 				return;
 			}
 			try {
-				// @ts-ignore
-				const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+				const AudioContextClass =
+					window.AudioContext || (window as any).webkitAudioContext;
 				audioCtx = new AudioContextClass();
 				const source = audioCtx.createMediaStreamSource(mediaStream);
 				analyser = audioCtx.createAnalyser();
@@ -80,7 +80,15 @@ export function AudioWaveform({
 
 		const startFakeAnimation = () => {
 			const drawFake = () => {
-				const heights = Array(15).fill(0).map(() => 0.2 + (Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295) * 0.6);
+				const heights = Array(15)
+					.fill(0)
+					.map(
+						() =>
+							0.2 +
+							(Number(crypto.getRandomValues(new Uint32Array(1))[0]) /
+								4294967295) *
+								0.6,
+					);
 				drawBars(heights);
 				setTimeout(() => {
 					if (isRecording) {

@@ -1,6 +1,8 @@
 import type { StaffRole } from "@dental/shared";
 import {
+	Banknote,
 	BarChart3,
+	Barcode,
 	CalendarClock,
 	CalendarDays,
 	ClipboardCheck,
@@ -12,21 +14,19 @@ import {
 	HelpCircle,
 	Image as ImageIcon,
 	Lock,
+	Megaphone,
 	MessageSquare,
 	Mic,
-	Package,
 	Moon,
+	Package,
+	PhoneCall,
 	Plus,
 	ReceiptText,
+	Settings,
 	Sparkles,
 	Stethoscope,
 	Sun,
 	Users,
-	Banknote,
-	PhoneCall,
-	Settings,
-	Megaphone,
-	Barcode,
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -402,7 +402,9 @@ export function WorkspaceTopbar({
 					className="network-indicator-badge"
 					title={isOnline ? "Сеть доступна" : "Нет подключения"}
 					style={{
-						background: isOnline ? "rgba(34, 197, 94, 0.15)" : "rgba(239, 68, 68, 0.15)",
+						background: isOnline
+							? "rgba(34, 197, 94, 0.15)"
+							: "rgba(239, 68, 68, 0.15)",
 						border: `1px solid ${isOnline ? "rgb(34, 197, 94)" : "rgb(239, 68, 68)"}`,
 						color: isOnline ? "rgb(34, 197, 94)" : "rgb(239, 68, 68)",
 						padding: "4px 10px",

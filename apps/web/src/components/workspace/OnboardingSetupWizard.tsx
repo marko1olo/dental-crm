@@ -22,11 +22,11 @@ import {
 	Wrench,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	applyWorkspacePreset,
 	saveWorkspaceFlags,
 } from "../../hooks/useWorkspaceProfile";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 // --- Types ---
 type ThemeColor = "teal" | "blue" | "purple" | "rose";
@@ -1565,9 +1565,9 @@ export function OnboardingSetupWizard({
 											const res = await fetch("/api/system/analyze-legacy-db", {
 												method: "POST",
 												headers: auth.denteClinicalMutationHeaders({
-													"Content-Type": "application/json"
+													"Content-Type": "application/json",
 												}),
-												body: JSON.stringify({})
+												body: JSON.stringify({}),
 											});
 											if (!res.ok) throw new Error("Migration analysis failed");
 											await res.json();

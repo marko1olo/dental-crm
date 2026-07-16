@@ -105,7 +105,12 @@ async function seedPglite() {
 			await db
 				.update(schema.users)
 				.set({ pinCodeHash, passwordHash: userPasswordHash, isActive: true })
-				.where(and(eq(schema.users.id, staff.id), eq(schema.users.organizationId, DEMO_ORG_ID)));
+				.where(
+					and(
+						eq(schema.users.id, staff.id),
+						eq(schema.users.organizationId, DEMO_ORG_ID),
+					),
+				);
 			console.log(`  ✅ User updated: ${staff.fullName} (${staff.role})`);
 		} else {
 			await db.insert(schema.users).values({
@@ -119,7 +124,9 @@ async function seedPglite() {
 				passwordHash: userPasswordHash,
 				isActive: true,
 			});
-			console.log(`  ✅ User created: ${staff.fullName} (${staff.role}) [PIN: ${pin}]`);
+			console.log(
+				`  ✅ User created: ${staff.fullName} (${staff.role}) [PIN: ${pin}]`,
+			);
 		}
 	}
 

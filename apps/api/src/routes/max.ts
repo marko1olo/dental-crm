@@ -12,9 +12,9 @@ import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
+	requireNonDoctorAccess,
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
-	requireNonDoctorAccess,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import {
@@ -137,8 +137,9 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			.limit(1);
 
 		if (existing) {
-			const updateValues: Partial<typeof denteMaxBotConfigs.$inferInsert> =
-				{ updatedAt: now };
+			const updateValues: Partial<typeof denteMaxBotConfigs.$inferInsert> = {
+				updatedAt: now,
+			};
 
 			if (input.botId !== undefined) updateValues.botId = input.botId;
 			if (input.apiToken)
@@ -151,8 +152,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				);
 			if (input.staffRouting !== undefined)
 				updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
-			if (input.isActive !== undefined)
-				updateValues.isActive = input.isActive;
+			if (input.isActive !== undefined) updateValues.isActive = input.isActive;
 
 			await db
 				.update(denteMaxBotConfigs)
@@ -234,8 +234,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		const chat = payload.chat as Record<string, unknown> | undefined;
 		const textValue = payload.text;
 		const text = typeof textValue === "string" ? textValue : null;
-		const chatId =
-			typeof chat?.chatId === "string" ? chat.chatId : "unknown";
+		const chatId = typeof chat?.chatId === "string" ? chat.chatId : "unknown";
 
 		// Identify org by bot ID passed in header or query param
 		const botIdRaw =
@@ -263,7 +262,9 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		});
 
 		// Await or float the processor to ingest this message to the Inbox immediately
-		void processInboundEvents().catch((err) => console.error("MAX ingestion error:", err));
+		void processInboundEvents().catch((err) =>
+			console.error("MAX ingestion error:", err),
+		);
 	});
 }
 

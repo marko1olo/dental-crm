@@ -53,7 +53,7 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 	return (
 		<div className="flex flex-col gap-2 mb-4 relative z-10">
 			<div className="flex items-center gap-2">
-				<div 
+				<div
 					className="relative flex-1"
 					onBlur={(e) => {
 						if (!e.currentTarget.contains(e.relatedTarget as Node)) {

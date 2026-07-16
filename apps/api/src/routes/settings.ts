@@ -26,8 +26,8 @@ import {
 	updateChairWorkingHoursInDb,
 	updateClinicModeInDb,
 	updateClinicProfileInDb,
-	updateStaffMemberInDb,
 	updateStaffCredentialsInDb,
+	updateStaffMemberInDb,
 	updateStaffWorkingHoursInDb,
 } from "../db/settingsQuery.js";
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
@@ -378,33 +378,27 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 		},
 	);
 
-	app.put(
-		"/api/settings/staff/:staffId",
-		async (request, reply) => {
-			const orgId = await requireSettingsAccess(request, reply);
-			if (!orgId) return;
-			const params = request.params as { staffId?: string };
-			if (!params.staffId) {
-				return reply.code(400).send({ error: "Missing staff ID" });
-			}
-			const input = parseSettingsPayload(
-				updateStaffMemberSchema,
-				request.body,
-			);
-			if (!input) {
-				return reply.code(400).send({
-					error: "SettingsValidationError",
-					message: "Некорректный формат данных сотрудника",
-				});
-			}
-			try {
-				await updateStaffMemberInDb(orgId, params.staffId, input);
-				return reply.code(200).send({ ok: true });
-			} catch (error) {
-				return clinicProfileMutationRejection(reply, error);
-			}
-		},
-	);
+	app.put("/api/settings/staff/:staffId", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const params = request.params as { staffId?: string };
+		if (!params.staffId) {
+			return reply.code(400).send({ error: "Missing staff ID" });
+		}
+		const input = parseSettingsPayload(updateStaffMemberSchema, request.body);
+		if (!input) {
+			return reply.code(400).send({
+				error: "SettingsValidationError",
+				message: "Некорректный формат данных сотрудника",
+			});
+		}
+		try {
+			await updateStaffMemberInDb(orgId, params.staffId, input);
+			return reply.code(200).send({ ok: true });
+		} catch (error) {
+			return clinicProfileMutationRejection(reply, error);
+		}
+	});
 
 	app.put(
 		"/api/settings/staff/:staffId/working-hours",

@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -77,6 +76,7 @@ import type {
 	StaffRole,
 	WeekdayIndex,
 } from "@dental/shared";
+import { motion } from "framer-motion";
 import {
 	Bot,
 	CalendarDays,
@@ -117,6 +117,7 @@ import {
 } from "lucide-react";
 import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
 import { SettingsAccessTab } from "./components/settings/SettingsAccessTab";
 import { SettingsAuditTab } from "./components/settings/SettingsAuditTab";
 import { SettingsClinicTab } from "./components/settings/SettingsClinicTab";
@@ -126,7 +127,6 @@ import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
-import { InsuranceContractsPanel } from "./components/settings/InsuranceContractsPanel";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -2404,12 +2404,11 @@ export function SettingsView(props: SettingsViewProps) {
 	};
 
 	return (
-		<motion.section 
-			className="settings-zone glass-panel" 
+		<motion.section
+			className="settings-zone glass-panel"
 			initial={{ opacity: 0, y: 15 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4 }}
-		
 			id="settings"
 			aria-label="Настройки и перенос данных"
 		>

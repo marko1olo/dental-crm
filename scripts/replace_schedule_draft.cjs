@@ -1,14 +1,18 @@
-const fs = require('fs');
+const fs = require("fs");
 
-const path = 'C:\\Clinic_MVP\\dental-crm\\apps\\web\\src\\ScheduleView.tsx';
-let content = fs.readFileSync(path, 'utf8');
+const path = "C:\\Clinic_MVP\\dental-crm\\apps\\web\\src\\ScheduleView.tsx";
+let content = fs.readFileSync(path, "utf8");
 
 // 1. Add import statement
-const importStr = 'import { AppointmentDraftEditor } from "./components/schedule/AppointmentDraftEditor";\n';
-if (!content.includes('AppointmentDraftEditor')) {
-  const lastImportIndex = content.lastIndexOf('import ');
-  const nextNewline = content.indexOf('\n', lastImportIndex);
-  content = content.slice(0, nextNewline + 1) + importStr + content.slice(nextNewline + 1);
+const importStr =
+	'import { AppointmentDraftEditor } from "./components/schedule/AppointmentDraftEditor";\n';
+if (!content.includes("AppointmentDraftEditor")) {
+	const lastImportIndex = content.lastIndexOf("import ");
+	const nextNewline = content.indexOf("\n", lastImportIndex);
+	content =
+		content.slice(0, nextNewline + 1) +
+		importStr +
+		content.slice(nextNewline + 1);
 }
 
 // 2. Replace the block
@@ -19,8 +23,8 @@ const startIndex = content.indexOf(startStr);
 const endIndex = content.indexOf(endStr);
 
 if (startIndex === -1 || endIndex === -1) {
-  console.log('Block not found!');
-  process.exit(1);
+	console.log("Block not found!");
+	process.exit(1);
 }
 
 // We need to keep the indentation
@@ -49,7 +53,8 @@ const replacement = `            <AppointmentDraftEditor
               fromDateTimeLocalValue={fromDateTimeLocalValue}
             />\n            `;
 
-const newContent = content.slice(0, startIndex) + replacement + content.slice(endIndex);
+const newContent =
+	content.slice(0, startIndex) + replacement + content.slice(endIndex);
 
-fs.writeFileSync(path, newContent, 'utf8');
-console.log('Successfully replaced the block.');
+fs.writeFileSync(path, newContent, "utf8");
+console.log("Successfully replaced the block.");

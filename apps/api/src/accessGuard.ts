@@ -385,4 +385,3 @@ export async function requireNonDoctorAccess(
 	}
 	return true;
 }
-

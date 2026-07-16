@@ -149,7 +149,7 @@ export const PatientPortal: React.FC = () => {
 		try {
 			setIsLoading(true);
 			const res = await fetch("/api/portal/me", {
-				headers: { Authorization: `Bearer ${token}` }
+				headers: { Authorization: `Bearer ${token}` },
 			});
 			if (res.ok) {
 				const data = await res.json();
@@ -172,8 +172,15 @@ export const PatientPortal: React.FC = () => {
 		phoneRef.current?.focus();
 	}, []);
 
-	const totalCost = patientData?.plans?.reduce((s: number, i: any) => s + (i.totalAmount || 0), 0) || 0;
-	const paid = patientData?.invoices?.filter((i: any) => i.status === "paid").reduce((s: number, i: any) => s + (i.amount || 0), 0) || 0;
+	const totalCost =
+		patientData?.plans?.reduce(
+			(s: number, i: any) => s + (i.totalAmount || 0),
+			0,
+		) || 0;
+	const paid =
+		patientData?.invoices
+			?.filter((i: any) => i.status === "paid")
+			.reduce((s: number, i: any) => s + (i.amount || 0), 0) || 0;
 	const remaining = totalCost - paid;
 
 	useEffect(() => {
@@ -192,30 +199,33 @@ export const PatientPortal: React.FC = () => {
 			await fetch("/api/portal/auth/send-otp", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ phone })
+				body: JSON.stringify({ phone }),
 			});
 		}
 	}, [phone]);
 
-	const handleOTPComplete = useCallback(async (code: string) => {
-		try {
-			const res = await fetch("/api/portal/auth/verify-otp", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ phone, code })
-			});
-			const data = await res.json();
-			if (res.ok && data.token) {
-				localStorage.setItem("patient_token", data.token);
-				setOtpError("");
-				await fetchPatientData(data.token);
-			} else {
-				setOtpError(data.error || "Неверный код. Попробуйте ещё раз.");
+	const handleOTPComplete = useCallback(
+		async (code: string) => {
+			try {
+				const res = await fetch("/api/portal/auth/verify-otp", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ phone, code }),
+				});
+				const data = await res.json();
+				if (res.ok && data.token) {
+					localStorage.setItem("patient_token", data.token);
+					setOtpError("");
+					await fetchPatientData(data.token);
+				} else {
+					setOtpError(data.error || "Неверный код. Попробуйте ещё раз.");
+				}
+			} catch (e) {
+				setOtpError("Ошибка соединения.");
 			}
-		} catch (e) {
-			setOtpError("Ошибка соединения.");
-		}
-	}, [phone]);
+		},
+		[phone],
+	);
 
 	if (!isAuthenticated) {
 		return (
@@ -280,13 +290,20 @@ export const PatientPortal: React.FC = () => {
 				<section className="portal-card visits-card">
 					<h3>Мои приёмы</h3>
 					{(patientData?.visits || []).length === 0 && (
-						<p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>У вас пока нет записей.</p>
+						<p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+							У вас пока нет записей.
+						</p>
 					)}
 					{(patientData?.visits || []).map((v: any) => (
-						<div key={v.id} className={`visit-item ${v.status === 'completed' ? 'past' : 'upcoming'}`}>
-							<div className="visit-date">{new Date(v.date).toLocaleDateString("ru-RU")}</div>
+						<div
+							key={v.id}
+							className={`visit-item ${v.status === "completed" ? "past" : "upcoming"}`}
+						>
+							<div className="visit-date">
+								{new Date(v.date).toLocaleDateString("ru-RU")}
+							</div>
 							<div className="visit-desc">{v.notes || "Консультация"}</div>
-							{v.status === 'completed' ? (
+							{v.status === "completed" ? (
 								<span className="badge gray">Завершён</span>
 							) : (
 								<span className="badge blue">Запланирован</span>
@@ -316,7 +333,9 @@ export const PatientPortal: React.FC = () => {
 					<div className="stages-list">
 						{(patientData?.plans || []).map((stage: any) => (
 							<div key={stage.id} className={`stage-item ${stage.status}`}>
-								<span className="stage-desc">{stage.name || 'План лечения'}</span>
+								<span className="stage-desc">
+									{stage.name || "План лечения"}
+								</span>
 								<span className="stage-cost">
 									{(stage.totalAmount || 0).toLocaleString()} ₽
 								</span>

@@ -115,7 +115,8 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			})
 			.returning();
 
-		if (!created) return reply.code(500).send({ error: "Failed to create contract" });
+		if (!created)
+			return reply.code(500).send({ error: "Failed to create contract" });
 		return reply.code(201).send(created);
 	});
 
@@ -192,7 +193,8 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			.where(eq(insuranceContracts.id, contractId))
 			.returning();
 
-		if (!updated) return reply.code(500).send({ error: "Failed to update contract" });
+		if (!updated)
+			return reply.code(500).send({ error: "Failed to update contract" });
 		return updated;
 	});
 

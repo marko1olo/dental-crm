@@ -56,7 +56,8 @@ export function FinancePlanningOverview({
 	const completedItems = activeItems.filter((i) => i.status === "completed");
 	const totalCount = activeItems.length;
 	const completedCount = completedItems.length;
-	const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+	const percent =
+		totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 	const remaining = totalCount - completedCount;
 
 	return (
@@ -64,12 +65,8 @@ export function FinancePlanningOverview({
 			{totalCount > 0 && percent < 100 && (
 				<div className="treatment-progress-container">
 					<div className="treatment-progress-header">
-						<span className="treatment-progress-title">
-							Прогресс лечения
-						</span>
-						<span className="treatment-progress-percent">
-							{percent}%
-						</span>
+						<span className="treatment-progress-title">Прогресс лечения</span>
+						<span className="treatment-progress-percent">{percent}%</span>
 					</div>
 					<div className="treatment-progress-bar-bg">
 						<div
@@ -78,8 +75,9 @@ export function FinancePlanningOverview({
 						/>
 					</div>
 					<p className="treatment-progress-hint">
-						<ClipboardList size={14} /> Осталось {remaining} {ruCount(remaining, ["этап", "этапа", "этапов"])} до завершения плана.
-						Отличная динамика!
+						<ClipboardList size={14} /> Осталось {remaining}{" "}
+						{ruCount(remaining, ["этап", "этапа", "этапов"])} до завершения
+						плана. Отличная динамика!
 					</p>
 				</div>
 			)}
@@ -203,9 +201,7 @@ export function FinancePlanningOverview({
 				) : (
 					<article className="finance-empty-state actionable-empty-state">
 						<ClipboardList size={40} className="finance-empty-state-icon" />
-						<h4 className="finance-empty-state-title">
-							Смета пуста
-						</h4>
+						<h4 className="finance-empty-state-title">Смета пуста</h4>
 						<p className="finance-empty-state-desc">
 							Кликните по зубу слева на формуле, чтобы добавить первую услугу.
 						</p>

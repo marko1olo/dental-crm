@@ -1,41 +1,46 @@
-import { AdminSecretUnlockDomain, denteAdminSecretRequestHeaders, operatorWorkflowFailureMessage, WorkflowResponseError } from "../../AppHelpers";
-import { useSettingsStore } from "../../store/settingsStore";
+import {
+	type AdminSecretUnlockDomain,
+	denteAdminSecretRequestHeaders,
+	operatorWorkflowFailureMessage,
+	WorkflowResponseError,
+} from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
+import { useSettingsStore } from "../../store/settingsStore";
 
 export function useAuthLogic({
-    setError,
-    loadDashboard,
-    loadTelegramControlPlane
+	setError,
+	loadDashboard,
+	loadTelegramControlPlane,
 }: any) {
-    const {
-        dashboard,
-        currentView,
-        settingsTab,
-        accessUnlockRequired,
-        setAccessUnlockRequired,
-        setAccessUnlockMessage,
-        setDashboard
-    } = useAppStore();
+	const {
+		dashboard,
+		currentView,
+		settingsTab,
+		accessUnlockRequired,
+		setAccessUnlockRequired,
+		setAccessUnlockMessage,
+		setDashboard,
+	} = useAppStore();
 
-    const {
-        onboardingStep,
-        clinicalAdminSecretDraft,
-        setClinicalAdminSecretDraft,
-        settingsAdminSecretDraft,
-        setSettingsAdminSecretDraft,
-        scheduleAdminSecretDraft,
-        setScheduleAdminSecretDraft,
-        telegramAdminSecretDraft,
-        setTelegramAdminSecretDraft,
-        clinicalAdminSecretSession,
-        setClinicalAdminSecretSession,
-        settingsAdminSecretSession,
-        setSettingsAdminSecretSession,
-        scheduleAdminSecretSession,
-        setScheduleAdminSecretSession,
-        telegramAdminSecretSession,
-        setTelegramAdminSecretSession,
-    } = useSettingsStore();
+	const {
+		onboardingStep,
+		clinicalAdminSecretDraft,
+		setClinicalAdminSecretDraft,
+		settingsAdminSecretDraft,
+		setSettingsAdminSecretDraft,
+		scheduleAdminSecretDraft,
+		setScheduleAdminSecretDraft,
+		telegramAdminSecretDraft,
+		setTelegramAdminSecretDraft,
+		clinicalAdminSecretSession,
+		setClinicalAdminSecretSession,
+		settingsAdminSecretSession,
+		setSettingsAdminSecretSession,
+		scheduleAdminSecretSession,
+		setScheduleAdminSecretSession,
+		telegramAdminSecretSession,
+		setTelegramAdminSecretSession,
+	} = useSettingsStore();
 
 	function rememberAdminSecret(
 		secret: string,
@@ -206,22 +211,22 @@ export function useAuthLogic({
 	const settingsAdminSecretDomain: AdminSecretUnlockDomain =
 		settingsTab === "telegram" ? "telegram" : "settings";
 
-    return {
-        activeWorkspaceProfile,
-        settingsAdminSecretDomain,
-        rememberAdminSecret,
-        forgetAdminSecret,
-        currentAdminSecretUnlockDomain,
-        resolvedAdminSecretUnlockDomain,
-        adminSecretDraftForDomain,
-        clearAdminSecretDraft,
-        settingsAccessHeaders,
-        scheduleMutationHeaders,
-        denteClinicalMutationHeaders,
-        denteClinicalReadHeaders,
-        unlockTelegramAdminSession,
-        lockTelegramAdminSession,
-        revokeObjectUrlIfNeeded,
-        revokeObjectUrlMap,
-    };
+	return {
+		activeWorkspaceProfile,
+		settingsAdminSecretDomain,
+		rememberAdminSecret,
+		forgetAdminSecret,
+		currentAdminSecretUnlockDomain,
+		resolvedAdminSecretUnlockDomain,
+		adminSecretDraftForDomain,
+		clearAdminSecretDraft,
+		settingsAccessHeaders,
+		scheduleMutationHeaders,
+		denteClinicalMutationHeaders,
+		denteClinicalReadHeaders,
+		unlockTelegramAdminSession,
+		lockTelegramAdminSession,
+		revokeObjectUrlIfNeeded,
+		revokeObjectUrlMap,
+	};
 }

@@ -171,9 +171,7 @@ export function Cornerstone3DViewer({
 				return (instA?.InstanceNumber || 0) - (instB?.InstanceNumber || 0);
 			});
 
-			_ctLog(
-				`[CT] Volume constructed with ${sortedImageIds.length} slices.`,
-			);
+			_ctLog(`[CT] Volume constructed with ${sortedImageIds.length} slices.`);
 
 			const volume = await cornerstone.volumeLoader.createAndCacheVolume(vId, {
 				imageIds: sortedImageIds,

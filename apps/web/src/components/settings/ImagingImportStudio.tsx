@@ -1,4 +1,3 @@
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -119,6 +118,7 @@ import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
 import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
 import { SettingsAccessTab } from "../../components/settings/SettingsAccessTab";
 import { SettingsClinicTab } from "../../components/settings/SettingsClinicTab";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -869,7 +869,6 @@ const dicomFirstFrameImageTypeLabel = (
 		return "цветной снимок";
 	return "тип изображения: особый";
 };
-
 
 export function ImagingImportStudio() {
 	const props = useAppLogicContext();
@@ -2395,1269 +2394,1183 @@ export function ImagingImportStudio() {
 		);
 	};
 
-
 	return (
-				<section
-					className="import-studio imaging-import-studio"
-					aria-label="Импорт снимков из внешних систем"
-				>
-					<div className="import-copy">
-						<ImageIcon aria-hidden="true" />
-						<div>
-							<p className="eyebrow">Снимки и КТ</p>
-							<h2>Снимки сначала проходят предпросмотр</h2>
-							<p>
-								Для RVG, ОПТГ, ТРГ, КТ, архивов снимков и папок обмена: вставь
-								экспорт, таблицу, список файлов или текст из старой программы.
-								Система сопоставит пациента, тип снимка, зуб, дату и путь к
-								файлу до записи в карту.
-							</p>
-						</div>
-					</div>
+		<section
+			className="import-studio imaging-import-studio"
+			aria-label="Импорт снимков из внешних систем"
+		>
+			<div className="import-copy">
+				<ImageIcon aria-hidden="true" />
+				<div>
+					<p className="eyebrow">Снимки и КТ</p>
+					<h2>Снимки сначала проходят предпросмотр</h2>
+					<p>
+						Для RVG, ОПТГ, ТРГ, КТ, архивов снимков и папок обмена: вставь
+						экспорт, таблицу, список файлов или текст из старой программы.
+						Система сопоставит пациента, тип снимка, зуб, дату и путь к файлу до
+						записи в карту.
+					</p>
+				</div>
+			</div>
 
-					<div
-						className="import-source-grid imaging-source-grid"
-						aria-label="Источник снимков"
+			<div
+				className="import-source-grid imaging-source-grid"
+				aria-label="Источник снимков"
+			>
+				{typedImagingSourceChoices.map((kind) => (
+					<button
+						className={`source-card ${imagingImportSourceKind === kind ? "active" : ""}`}
+						type="button"
+						key={kind}
+						aria-pressed={imagingImportSourceKind === kind}
+						onClick={() => {
+							setImagingImportSourceKind(kind);
+							setImagingImportPreview(null);
+							setImagingImportCommit(null);
+						}}
 					>
-						{typedImagingSourceChoices.map((kind) => (
-							<button
-								className={`source-card ${imagingImportSourceKind === kind ? "active" : ""}`}
-								type="button"
-								key={kind}
-								aria-pressed={imagingImportSourceKind === kind}
-								onClick={() => {
-									setImagingImportSourceKind(kind);
-									setImagingImportPreview(null);
-									setImagingImportCommit(null);
-								}}
-							>
-								<strong>{imagingSourceLabels[kind]}</strong>
-								<span>{imagingSourceDetails[kind]}</span>
-							</button>
-						))}
-					</div>
+						<strong>{imagingSourceLabels[kind]}</strong>
+						<span>{imagingSourceDetails[kind]}</span>
+					</button>
+				))}
+			</div>
 
-					<div className="import-workbench">
-						<div className="folder-scan-row">
-							<label>
-								Папка обмена на сервере
-								<input
-									data-testid="imaging-folder-path-input"
-									value={imagingFolderPath}
-									onChange={(event: TextInputChangeEvent) => {
-										const nextFolderPath = event.target.value;
-										setImagingFolderPath(nextFolderPath);
-										if (
-											nextFolderPath.trim() !==
-											localImagingFolderDraft?.folderPath
-										) {
-											stageLocalImagingFolderRecovery(nextFolderPath, {
-												origin: "manual",
-											});
-										}
-										setImagingFolderScan(null);
-										setDicomFolderSeriesScan(null);
-										setDicomFolderWorkupPlan(null);
-										setDicomFirstFramePreview(null);
-										setDicomLocalFolderDiscovery(null);
-										setLocalImagingOrganizer(null);
-									}}
-									onBlur={(event: TextInputChangeEvent) => {
-										rememberLocalImagingFolder(event.target.value, {
-											origin: "manual",
-										});
-									}}
-									placeholder="C:\Images или D:\OPG"
-								/>
-							</label>
-							<input
-								ref={browserDirectoryInputRef}
-								data-testid="browser-local-imaging-folder-input"
-								type="file"
-								multiple
-								className="visually-hidden"
-								onChange={(event: InputChangeEvent) =>
-									void handleBrowserDirectoryInputChange(event.target.files)
+			<div className="import-workbench">
+				<div className="folder-scan-row">
+					<label>
+						Папка обмена на сервере
+						<input
+							data-testid="imaging-folder-path-input"
+							value={imagingFolderPath}
+							onChange={(event: TextInputChangeEvent) => {
+								const nextFolderPath = event.target.value;
+								setImagingFolderPath(nextFolderPath);
+								if (
+									nextFolderPath.trim() !== localImagingFolderDraft?.folderPath
+								) {
+									stageLocalImagingFolderRecovery(nextFolderPath, {
+										origin: "manual",
+									});
 								}
-							/>
-							<input
-								ref={browserImagingFilesInputRef}
-								data-testid="browser-local-imaging-files-input"
-								type="file"
-								multiple
-								className="visually-hidden"
-								accept={browserImagingFileInputAccept}
-								onChange={(event: InputChangeEvent) =>
-									void handleBrowserDirectoryInputChange(event.target.files)
-								}
-							/>
-							<button
-								className="secondary-button"
-								type="button"
-								data-testid="browser-pick-local-imaging-folder"
-								onClick={() => void pickBrowserImagingFolder()}
-								disabled={isBrowserImagingFolderPicking}
-								title={
-									browserDirectoryPickerAvailable
-										? "Выбрать локальную папку КТ или снимков в браузере"
-										: "Использовать запасной выбор файлов браузера для локальных снимков"
-								}
-							>
-								<UploadCloud aria-hidden="true" />{" "}
-								{isBrowserImagingFolderPicking ? "Сканирую" : "Папка КТ"}
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								data-testid="browser-pick-local-imaging-files"
-								onClick={pickBrowserImagingFiles}
-								disabled={isBrowserImagingFolderPicking}
-								title="Выбрать отдельные DICOM, RVG, JPG/PNG/TIFF, ZIP/RAR/7z или 3D-файлы"
-							>
-								<FileText aria-hidden="true" /> Файлы
-							</button>
-							{isBrowserImagingFolderPicking && browserImagingScanProgress ? (
-								<button
-									className="secondary-button browser-scan-stop-button"
-									type="button"
-									data-testid="browser-cancel-local-imaging-folder-scan"
-									onClick={cancelBrowserImagingFolderScan}
-								>
-									<CircleStop aria-hidden="true" /> Остановить
-								</button>
-							) : null}
-							{isLocalDicomOperationActive ? (
-								<button
-									className="secondary-button browser-scan-stop-button"
-									type="button"
-									data-testid="cancel-local-dicom-operation"
-									onClick={cancelLocalDicomOperation}
-								>
-									<CircleStop aria-hidden="true" /> Остановить КТ
-								</button>
-							) : null}
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={scanImagingFolder}
-								aria-describedby={
-									!localImagingFolderReady
-										? localDicomFolderGuidanceId
-										: undefined
-								}
-								disabled={isImagingFolderScanning || !localImagingFolderReady}
-							>
-								<Search aria-hidden="true" />{" "}
-								{isImagingFolderScanning ? "Сканирую" : "Сканировать папку"}
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								data-testid="find-local-dicom-folders"
-								onClick={() => void discoverDicomFolders()}
-								disabled={isDicomLocalDiscovering}
-							>
-								<ScanSearch aria-hidden="true" />{" "}
-								{isDicomLocalDiscovering ? "Ищу" : "Найти снимки"}
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								data-testid="organize-local-imaging-sources"
-								onClick={() => void organizeLocalImagingSources()}
-								disabled={isLocalImagingOrganizing}
-							>
-								<Database aria-hidden="true" />{" "}
-								{isLocalImagingOrganizing ? "Организую" : "Организовать КТ/3D"}
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={scanDicomFolderSeries}
-								aria-describedby={
-									!localImagingFolderReady
-										? localDicomFolderGuidanceId
-										: undefined
-								}
-								disabled={isImagingFolderScanning || !localImagingFolderReady}
-							>
-								<Layers3 aria-hidden="true" />{" "}
-								{isImagingFolderScanning
-									? "Читаю снимки"
-									: "Метаданные снимков"}
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => void buildDicomFolderWorkupPlan()}
-								aria-describedby={
-									!localImagingFolderReady
-										? localDicomFolderGuidanceId
-										: undefined
-								}
-								disabled={
-									isDicomFolderWorkupPlanning || !localImagingFolderReady
-								}
-							>
-								<Gauge aria-hidden="true" />{" "}
-								{isDicomFolderWorkupPlanning ? "Готовлю" : "План КТ"}
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								data-testid="preview-dicom-first-frame"
-								onClick={() => void previewDicomFirstFrame()}
-								aria-describedby={
-									!localImagingFolderReady
-										? localDicomFolderGuidanceId
-										: undefined
-								}
-								disabled={
-									isDicomFirstFramePreviewing || !localImagingFolderReady
-								}
-							>
-								<ImageIcon aria-hidden="true" />{" "}
-								{isDicomFirstFramePreviewing ? "Открываю" : "Первый срез"}
-							</button>
-						</div>
-						{!localImagingFolderReady ? (
-							<p
-								className="dicom-action-guidance local-dicom-guidance"
-								id={localDicomFolderGuidanceId}
-								role="status"
-								aria-live="polite"
-							>
-								Укажите путь к локальной папке со снимками или выберите КТ через
-								браузер, чтобы открыть первый срез.
-							</p>
-						) : null}
-						{browserImagingScanProgress ? (
-							<div
-								className={`browser-imaging-scan-progress ${browserImagingScanProgress.phase}`}
-								data-testid="browser-imaging-scan-progress"
-								role="status"
-								aria-live="polite"
-							>
-								<div className="browser-picked-folder-head">
-									<div>
-										<strong>
-											{browserImagingScanProgress.phase === "cancelled"
-												? "Сканирование остановлено"
-												: browserImagingScanProgress.phase === "done"
-													? "Папка проверена"
-													: "Браузер проверяет КТ/3D"}
-										</strong>
-										<span>
-											{browserImagingScanProgress.currentItem ??
-												"Интерфейс остается доступным: обработка идет короткими порциями."}
-										</span>
-									</div>
-									{browserImagingScanProgress.phase === "scanning" ? (
-										<button
-											className="text-button"
-											type="button"
-											data-testid="browser-cancel-local-imaging-folder-scan-inline"
-											onClick={cancelBrowserImagingFolderScan}
-										>
-											Остановить
-										</button>
-									) : null}
-								</div>
-								<div className="browser-picked-folder-stats">
-									<span>
-										файлов: {browserImagingScanProgress.scannedFiles}/
-										{browserImagingScanProgress.fileLimit}
-									</span>
-									<span>
-										папок: {browserImagingScanProgress.scannedFolders}/
-										{browserImagingScanProgress.folderLimit}
-									</span>
-									<span>
-										похоже на снимки:{" "}
-										{browserImagingScanProgress.dicomLikeFiles}
-									</span>
-									<span>
-										3D-моделей: {browserImagingScanProgress.modelFiles}
-									</span>
-									<span>
-										архивов: {browserImagingScanProgress.archiveFiles}
-									</span>
-									<span>
-										{formatByteSize(browserImagingScanProgress.totalBytes)}
-									</span>
-									<span>
-										сигнатур: до {browserImagingScanProgress.magicReadLimit}
-									</span>
-									<span>
-										шагов: {browserImagingScanProgress.processedUnits}
-									</span>
-									<span>
-										время:{" "}
-										{formatBrowserImagingScanElapsed(
-											browserImagingScanProgress.elapsedMs,
-										)}
-									</span>
-								</div>
-								<small>
-									Начато {formatTime(browserImagingScanProgress.startedAt)} ·
-									обновлено {formatTime(browserImagingScanProgress.updatedAt)}
-								</small>
+								setImagingFolderScan(null);
+								setDicomFolderSeriesScan(null);
+								setDicomFolderWorkupPlan(null);
+								setDicomFirstFramePreview(null);
+								setDicomLocalFolderDiscovery(null);
+								setLocalImagingOrganizer(null);
+							}}
+							onBlur={(event: TextInputChangeEvent) => {
+								rememberLocalImagingFolder(event.target.value, {
+									origin: "manual",
+								});
+							}}
+							placeholder="C:\Images или D:\OPG"
+						/>
+					</label>
+					<input
+						ref={browserDirectoryInputRef}
+						data-testid="browser-local-imaging-folder-input"
+						type="file"
+						multiple
+						className="visually-hidden"
+						onChange={(event: InputChangeEvent) =>
+							void handleBrowserDirectoryInputChange(event.target.files)
+						}
+					/>
+					<input
+						ref={browserImagingFilesInputRef}
+						data-testid="browser-local-imaging-files-input"
+						type="file"
+						multiple
+						className="visually-hidden"
+						accept={browserImagingFileInputAccept}
+						onChange={(event: InputChangeEvent) =>
+							void handleBrowserDirectoryInputChange(event.target.files)
+						}
+					/>
+					<button
+						className="secondary-button"
+						type="button"
+						data-testid="browser-pick-local-imaging-folder"
+						onClick={() => void pickBrowserImagingFolder()}
+						disabled={isBrowserImagingFolderPicking}
+						title={
+							browserDirectoryPickerAvailable
+								? "Выбрать локальную папку КТ или снимков в браузере"
+								: "Использовать запасной выбор файлов браузера для локальных снимков"
+						}
+					>
+						<UploadCloud aria-hidden="true" />{" "}
+						{isBrowserImagingFolderPicking ? "Сканирую" : "Папка КТ"}
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						data-testid="browser-pick-local-imaging-files"
+						onClick={pickBrowserImagingFiles}
+						disabled={isBrowserImagingFolderPicking}
+						title="Выбрать отдельные DICOM, RVG, JPG/PNG/TIFF, ZIP/RAR/7z или 3D-файлы"
+					>
+						<FileText aria-hidden="true" /> Файлы
+					</button>
+					{isBrowserImagingFolderPicking && browserImagingScanProgress ? (
+						<button
+							className="secondary-button browser-scan-stop-button"
+							type="button"
+							data-testid="browser-cancel-local-imaging-folder-scan"
+							onClick={cancelBrowserImagingFolderScan}
+						>
+							<CircleStop aria-hidden="true" /> Остановить
+						</button>
+					) : null}
+					{isLocalDicomOperationActive ? (
+						<button
+							className="secondary-button browser-scan-stop-button"
+							type="button"
+							data-testid="cancel-local-dicom-operation"
+							onClick={cancelLocalDicomOperation}
+						>
+							<CircleStop aria-hidden="true" /> Остановить КТ
+						</button>
+					) : null}
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={scanImagingFolder}
+						aria-describedby={
+							!localImagingFolderReady ? localDicomFolderGuidanceId : undefined
+						}
+						disabled={isImagingFolderScanning || !localImagingFolderReady}
+					>
+						<Search aria-hidden="true" />{" "}
+						{isImagingFolderScanning ? "Сканирую" : "Сканировать папку"}
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						data-testid="find-local-dicom-folders"
+						onClick={() => void discoverDicomFolders()}
+						disabled={isDicomLocalDiscovering}
+					>
+						<ScanSearch aria-hidden="true" />{" "}
+						{isDicomLocalDiscovering ? "Ищу" : "Найти снимки"}
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						data-testid="organize-local-imaging-sources"
+						onClick={() => void organizeLocalImagingSources()}
+						disabled={isLocalImagingOrganizing}
+					>
+						<Database aria-hidden="true" />{" "}
+						{isLocalImagingOrganizing ? "Организую" : "Организовать КТ/3D"}
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={scanDicomFolderSeries}
+						aria-describedby={
+							!localImagingFolderReady ? localDicomFolderGuidanceId : undefined
+						}
+						disabled={isImagingFolderScanning || !localImagingFolderReady}
+					>
+						<Layers3 aria-hidden="true" />{" "}
+						{isImagingFolderScanning ? "Читаю снимки" : "Метаданные снимков"}
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => void buildDicomFolderWorkupPlan()}
+						aria-describedby={
+							!localImagingFolderReady ? localDicomFolderGuidanceId : undefined
+						}
+						disabled={isDicomFolderWorkupPlanning || !localImagingFolderReady}
+					>
+						<Gauge aria-hidden="true" />{" "}
+						{isDicomFolderWorkupPlanning ? "Готовлю" : "План КТ"}
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						data-testid="preview-dicom-first-frame"
+						onClick={() => void previewDicomFirstFrame()}
+						aria-describedby={
+							!localImagingFolderReady ? localDicomFolderGuidanceId : undefined
+						}
+						disabled={isDicomFirstFramePreviewing || !localImagingFolderReady}
+					>
+						<ImageIcon aria-hidden="true" />{" "}
+						{isDicomFirstFramePreviewing ? "Открываю" : "Первый срез"}
+					</button>
+				</div>
+				{!localImagingFolderReady ? (
+					<p
+						className="dicom-action-guidance local-dicom-guidance"
+						id={localDicomFolderGuidanceId}
+						role="status"
+						aria-live="polite"
+					>
+						Укажите путь к локальной папке со снимками или выберите КТ через
+						браузер, чтобы открыть первый срез.
+					</p>
+				) : null}
+				{browserImagingScanProgress ? (
+					<div
+						className={`browser-imaging-scan-progress ${browserImagingScanProgress.phase}`}
+						data-testid="browser-imaging-scan-progress"
+						role="status"
+						aria-live="polite"
+					>
+						<div className="browser-picked-folder-head">
+							<div>
+								<strong>
+									{browserImagingScanProgress.phase === "cancelled"
+										? "Сканирование остановлено"
+										: browserImagingScanProgress.phase === "done"
+											? "Папка проверена"
+											: "Браузер проверяет КТ/3D"}
+								</strong>
+								<span>
+									{browserImagingScanProgress.currentItem ??
+										"Интерфейс остается доступным: обработка идет короткими порциями."}
+								</span>
 							</div>
-						) : null}
-						{localImagingFolderDraft ? (
-							<div
-								className="local-imaging-folder-recovery"
-								data-testid="local-imaging-folder-recovery"
-							>
-								<div>
-									<strong>{localImagingFolderDraft.safeDisplayName}</strong>
-									<span>
-										папка восстановлена:{" "}
-										{humanizeMigrationText(localImagingFolderDraft.sourceLabel)}{" "}
-										· сохранено {formatTime(localImagingFolderDraft.savedAt)}
-									</span>
-								</div>
+							{browserImagingScanProgress.phase === "scanning" ? (
 								<button
 									className="text-button"
 									type="button"
-									onClick={clearLocalImagingFolderRecovery}
+									data-testid="browser-cancel-local-imaging-folder-scan-inline"
+									onClick={cancelBrowserImagingFolderScan}
 								>
-									Очистить
+									Остановить
 								</button>
+							) : null}
+						</div>
+						<div className="browser-picked-folder-stats">
+							<span>
+								файлов: {browserImagingScanProgress.scannedFiles}/
+								{browserImagingScanProgress.fileLimit}
+							</span>
+							<span>
+								папок: {browserImagingScanProgress.scannedFolders}/
+								{browserImagingScanProgress.folderLimit}
+							</span>
+							<span>
+								похоже на снимки: {browserImagingScanProgress.dicomLikeFiles}
+							</span>
+							<span>3D-моделей: {browserImagingScanProgress.modelFiles}</span>
+							<span>архивов: {browserImagingScanProgress.archiveFiles}</span>
+							<span>
+								{formatByteSize(browserImagingScanProgress.totalBytes)}
+							</span>
+							<span>
+								сигнатур: до {browserImagingScanProgress.magicReadLimit}
+							</span>
+							<span>шагов: {browserImagingScanProgress.processedUnits}</span>
+							<span>
+								время:{" "}
+								{formatBrowserImagingScanElapsed(
+									browserImagingScanProgress.elapsedMs,
+								)}
+							</span>
+						</div>
+						<small>
+							Начато {formatTime(browserImagingScanProgress.startedAt)} ·
+							обновлено {formatTime(browserImagingScanProgress.updatedAt)}
+						</small>
+					</div>
+				) : null}
+				{localImagingFolderDraft ? (
+					<div
+						className="local-imaging-folder-recovery"
+						data-testid="local-imaging-folder-recovery"
+					>
+						<div>
+							<strong>{localImagingFolderDraft.safeDisplayName}</strong>
+							<span>
+								папка восстановлена:{" "}
+								{humanizeMigrationText(localImagingFolderDraft.sourceLabel)} ·
+								сохранено {formatTime(localImagingFolderDraft.savedAt)}
+							</span>
+						</div>
+						<button
+							className="text-button"
+							type="button"
+							onClick={clearLocalImagingFolderRecovery}
+						>
+							Очистить
+						</button>
+					</div>
+				) : null}
+				{browserPickedImagingFolder ? (
+					<div
+						className="browser-picked-folder-result"
+						data-testid="browser-picked-imaging-folder-result"
+						aria-label="Предпросмотр локальной папки снимков браузера"
+					>
+						<div className="browser-picked-folder-head">
+							<div>
+								<strong>{browserPickedImagingFolder.safeDisplayName}</strong>
+								<span>
+									{humanizeMigrationText(
+										browserPickedImagingFolder.sourceLabel,
+									)}{" "}
+									· метка папки {browserPickedImagingFolder.folderFingerprint} ·{" "}
+									{formatTime(browserPickedImagingFolder.createdAt)}
+								</span>
 							</div>
-						) : null}
-						{browserPickedImagingFolder ? (
-							<div
-								className="browser-picked-folder-result"
-								data-testid="browser-picked-imaging-folder-result"
-								aria-label="Предпросмотр локальной папки снимков браузера"
+							<button
+								className="text-button"
+								type="button"
+								onClick={clearBrowserPickedImagingFolderPreview}
 							>
-								<div className="browser-picked-folder-head">
-									<div>
-										<strong>
-											{browserPickedImagingFolder.safeDisplayName}
-										</strong>
+								Очистить
+							</button>
+						</div>
+						<div className="browser-picked-folder-stats">
+							<span>файлов: {browserPickedImagingFolder.scannedFiles}</span>
+							<span>папок: {browserPickedImagingFolder.scannedFolders}</span>
+							<span>
+								похоже на снимки: {browserPickedImagingFolder.dicomLikeFiles}
+							</span>
+							<span>архивов: {browserPickedImagingFolder.archiveFiles}</span>
+							<span>3D-моделей: {browserPickedImagingFolder.modelFiles}</span>
+							<span>
+								{formatByteSize(browserPickedImagingFolder.totalBytes)}
+							</span>
+						</div>
+						<p>
+							{humanizeMigrationText(browserPickedImagingFolder.nextAction)}
+						</p>
+						{(browserPickedImagingFolder.warnings as string[])
+							.slice(0, 3)
+							.map((warning) => (
+								<small key={warning}>{humanizeMigrationText(warning)}</small>
+							))}
+					</div>
+				) : null}
+				{typedDicomLocalFolderDiscovery ? (
+					<div
+						className="dicom-discovery-result"
+						data-testid="local-dicom-discovery-result"
+						aria-label="Поиск локальной папки снимков"
+					>
+						<div className="dicom-discovery-head">
+							<strong>
+								Найдено кандидатов:{" "}
+								{typedDicomLocalFolderDiscovery.candidates.length} /
+								просканировано папок:{" "}
+								{typedDicomLocalFolderDiscovery.scannedFolders}
+							</strong>
+							<span>
+								{humanizeMigrationText(
+									typedDicomLocalFolderDiscovery.nextAction,
+								)}
+							</span>
+						</div>
+						<div className="dicom-discovery-grid">
+							{typedDicomLocalFolderDiscovery.candidates
+								.slice(0, 6)
+								.map((candidate) => (
+									<article key={candidate.folderPath}>
+										<strong>{candidate.safeDisplayName}</strong>
 										<span>
-											{humanizeMigrationText(
-												browserPickedImagingFolder.sourceLabel,
-											)}{" "}
-											· метка папки{" "}
-											{browserPickedImagingFolder.folderFingerprint} ·{" "}
-											{formatTime(browserPickedImagingFolder.createdAt)}
+											{humanizeMigrationText(candidate.sourceLabel)} · метка
+											папки {candidate.folderFingerprint.toUpperCase()} ·
+											вложенность {candidate.depth}
+										</span>
+										<span>
+											Путь к папке и имена, похожие на данные пациента, скрыты
+											до выбора
+										</span>
+										<small>
+											{Math.round(candidate.confidence * 100)}% / снимков{" "}
+											{candidate.dicomLikeFiles} / архивов{" "}
+											{candidate.archivesFound}
+										</small>
+										<button
+											className="text-button"
+											type="button"
+											onClick={() => {
+												rememberLocalImagingFolder(candidate.folderPath, {
+													safeDisplayName: candidate.safeDisplayName,
+													sourceLabel: candidate.sourceLabel,
+													sourceKind: candidate.sourceKind,
+													folderFingerprint: candidate.folderFingerprint,
+													origin: "discovery",
+												});
+												setDicomFolderSeriesScan(null);
+												setDicomFolderWorkupPlan(null);
+												setDicomFirstFramePreview(null);
+												setImagingFolderScan(null);
+												setLocalImagingOrganizer(null);
+											}}
+										>
+											Выбрать папку
+										</button>
+										<button
+											className="text-button"
+											type="button"
+											data-testid="prepare-dicom-discovery-workbench"
+											disabled={
+												isDicomFolderWorkupPlanning || isDicomWorkbenchBuilding
+											}
+											onClick={() =>
+												void prepareDicomWorkbenchFromFolder(
+													candidate.folderPath,
+													"dicom_discovery_quick_workbench",
+													{
+														safeDisplayName: candidate.safeDisplayName,
+														sourceLabel: candidate.sourceLabel,
+														sourceKind: candidate.sourceKind,
+														folderFingerprint: candidate.folderFingerprint,
+														origin: "discovery",
+													},
+												)
+											}
+										>
+											Подготовить КТ
+										</button>
+										<button
+											className="text-button"
+											type="button"
+											data-testid="preview-dicom-discovery-first-frame"
+											disabled={isDicomFirstFramePreviewing}
+											onClick={() => {
+												rememberLocalImagingFolder(candidate.folderPath, {
+													safeDisplayName: candidate.safeDisplayName,
+													sourceLabel: candidate.sourceLabel,
+													sourceKind: candidate.sourceKind,
+													folderFingerprint: candidate.folderFingerprint,
+													origin: "discovery",
+												});
+												void previewDicomFirstFrame(candidate.folderPath, {
+													safeDisplayName: candidate.safeDisplayName,
+													sourceLabel: candidate.sourceLabel,
+													sourceKind: candidate.sourceKind,
+													folderFingerprint: candidate.folderFingerprint,
+													origin: "discovery",
+												});
+											}}
+										>
+											Первый срез
+										</button>
+									</article>
+								))}
+						</div>
+						{typedDicomLocalFolderDiscovery.warnings
+							.slice(0, 4)
+							.map((warning) => (
+								<small key={warning}>{humanizeMigrationText(warning)}</small>
+							))}
+					</div>
+				) : null}
+				{typedLocalImagingOrganizer ? (
+					<div
+						className="local-imaging-organizer-result"
+						data-testid="local-imaging-organizer-result"
+						aria-label="Органайзер локальных снимков"
+					>
+						<div className="dicom-discovery-head">
+							<strong>
+								Органайзер: кейсов {typedLocalImagingOrganizer.cases.length} /
+								просканировано папок {typedLocalImagingOrganizer.scannedFolders}
+							</strong>
+							<span>
+								{humanizeMigrationText(typedLocalImagingOrganizer.nextAction)}
+							</span>
+						</div>
+						<div className="local-imaging-case-grid">
+							{typedLocalImagingOrganizer.cases.slice(0, 6).map((caseItem) => (
+								<article
+									className={`local-imaging-case local-action-${caseItem.recommendedAction}`}
+									key={caseItem.id}
+								>
+									<div>
+										<strong>{caseItem.safeDisplayName}</strong>
+										<span>
+											{humanizeMigrationText(caseItem.sourceLabel)} · метка
+											папки {caseItem.folderFingerprint.toUpperCase()}
+										</span>
+										<span>
+											Путь к папке и имена, похожие на данные пациента, скрыты
+											до выбора
 										</span>
 									</div>
+									<div className="local-imaging-case-metrics">
+										<span>
+											{Math.round(caseItem.combinedConfidence * 100)}%
+										</span>
+										<span>{caseItem.dicomLikeFiles} снимков</span>
+										<span>{caseItem.modelFiles} 3D</span>
+										<span>архивов: {caseItem.archiveFiles}</span>
+									</div>
+									<small>
+										{
+											localImagingOrganizerActionLabels[
+												caseItem.recommendedAction
+											]
+										}
+									</small>
+									{caseItem.modelCandidates.length ? (
+										<div className="local-imaging-model-list">
+											{caseItem.modelCandidates.slice(0, 3).map((model) => (
+												<span key={`${caseItem.id}-${model.filePath}`}>
+													{model.format.toUpperCase()} ·{" "}
+													{localImagingModelRoleLabels[model.role] ??
+														model.role}{" "}
+													· {Math.round(model.confidence * 100)}%
+												</span>
+											))}
+										</div>
+									) : null}
+									{caseItem.modelWorkbenchManifest.totalModels > 0 ? (
+										<div className="local-imaging-model-workbench">
+											<strong>
+												{localImagingModelWorkbenchTargetLabels[
+													caseItem.modelWorkbenchManifest.recommendedTarget
+												] ??
+													caseItem.modelWorkbenchManifest
+														.recommendedTarget}{" "}
+												· КТ-поверхностей{" "}
+												{caseItem.modelWorkbenchManifest.ctSurfaceModels} · до{" "}
+												{caseItem.modelWorkbenchManifest.largestModelMb} МБ
+											</strong>
+											{caseItem.modelWorkbenchManifest.items
+												.slice(0, 3)
+												.map((item) => (
+													<span
+														key={`${caseItem.id}-workbench-${item.fileName}`}
+													>
+														{localImagingModelRoleLabels[item.role] ??
+															item.role}
+														:{" "}
+														{localImagingModelWorkbenchTargetLabels[
+															item.loadTarget
+														] ?? item.loadTarget}{" "}
+														· {item.sizeMb} МБ
+													</span>
+												))}
+											<small>
+												{caseItem.modelWorkbenchManifest.nextAction}
+											</small>
+										</div>
+									) : null}
 									<button
 										className="text-button"
 										type="button"
-										onClick={clearBrowserPickedImagingFolderPreview}
+										onClick={() => {
+											rememberLocalImagingFolder(caseItem.folderPath, {
+												safeDisplayName: caseItem.safeDisplayName,
+												sourceLabel: caseItem.sourceLabel,
+												sourceKind: caseItem.sourceKind,
+												folderFingerprint: caseItem.folderFingerprint,
+												origin: "organizer",
+											});
+											setDicomFolderSeriesScan(null);
+											setDicomFolderWorkupPlan(null);
+											setDicomFirstFramePreview(null);
+											setImagingFolderScan(null);
+											setDicomLocalFolderDiscovery(null);
+										}}
 									>
-										Очистить
+										Выбрать папку
+									</button>
+									{caseItem.recommendedAction !== "review_3d_models" ? (
+										<button
+											className="text-button"
+											type="button"
+											data-testid="prepare-local-dicom-workbench"
+											disabled={
+												isDicomFolderWorkupPlanning || isDicomWorkbenchBuilding
+											}
+											onClick={() =>
+												void prepareDicomWorkbenchFromFolder(
+													caseItem.folderPath,
+													"local_organizer_quick_workbench",
+													{
+														safeDisplayName: caseItem.safeDisplayName,
+														sourceLabel: caseItem.sourceLabel,
+														sourceKind: caseItem.sourceKind,
+														folderFingerprint: caseItem.folderFingerprint,
+														origin: "organizer",
+													},
+												)
+											}
+										>
+											Подготовить КТ
+										</button>
+									) : null}
+									{caseItem.dicomLikeFiles > 0 ? (
+										<button
+											className="text-button"
+											type="button"
+											data-testid="preview-local-dicom-first-frame"
+											disabled={isDicomFirstFramePreviewing}
+											onClick={() => {
+												rememberLocalImagingFolder(caseItem.folderPath, {
+													safeDisplayName: caseItem.safeDisplayName,
+													sourceLabel: caseItem.sourceLabel,
+													sourceKind: caseItem.sourceKind,
+													folderFingerprint: caseItem.folderFingerprint,
+													origin: "organizer",
+												});
+												void previewDicomFirstFrame(caseItem.folderPath, {
+													safeDisplayName: caseItem.safeDisplayName,
+													sourceLabel: caseItem.sourceLabel,
+													sourceKind: caseItem.sourceKind,
+													folderFingerprint: caseItem.folderFingerprint,
+													origin: "organizer",
+												});
+											}}
+										>
+											Первый срез
+										</button>
+									) : null}
+								</article>
+							))}
+						</div>
+						{typedLocalImagingOrganizer.warnings.slice(0, 4).map((warning) => (
+							<small key={warning}>{humanizeMigrationText(warning)}</small>
+						))}
+					</div>
+				) : null}
+				{typedImagingFolderScan ? (
+					<div className="recognition-notes">
+						<span>
+							Найдено файлов: {typedImagingFolderScan.filesFound}. В
+							предпросмотре: {typedImagingFolderScan.preview.totalRows}.
+						</span>
+						{typedImagingFolderScan.warnings.map((warning) => (
+							<span key={warning}>{humanizeMigrationText(warning)}</span>
+						))}
+					</div>
+				) : null}
+				{typedDicomFolderSeriesScan ? (
+					<div className="recognition-notes">
+						<span>
+							Метаданные снимков: файлов {typedDicomFolderSeriesScan.filesFound}
+							, прочитано {typedDicomFolderSeriesScan.filesParsed}, строк
+							метаданных {typedDicomFolderSeriesScan.metadataRows}, серий{" "}
+							{typedDicomFolderSeriesScan.preview.totalSeries}.
+						</span>
+						{typedDicomFolderSeriesScan.warnings.slice(0, 5).map((warning) => (
+							<span key={warning}>{humanizeMigrationText(warning)}</span>
+						))}
+					</div>
+				) : null}
+				{typedDicomFolderWorkupPlan ? (
+					<div
+						className="dicom-folder-workup-result"
+						aria-label="План разбора папки снимков"
+					>
+						<div className="dicom-folder-workup-head">
+							<strong>
+								План: серий {typedDicomFolderWorkupPlan.selectedSeriesCount} /
+								файлов {typedDicomFolderWorkupPlan.folder.filesParsed}
+							</strong>
+							<span>
+								{humanizeMigrationText(typedDicomFolderWorkupPlan.nextAction)}
+							</span>
+						</div>
+						<div className="dicom-folder-workup-plans">
+							{typedDicomFolderWorkupPlan.plans.slice(0, 4).map((plan) => (
+								<article
+									className={`workup-${plan.recommendedPath}`}
+									key={plan.series.id}
+								>
+									<strong>
+										{dicomFolderWorkupPathLabels[plan.recommendedPath]}
+									</strong>
+									<span>
+										{plan.series.modality ?? "тип не указан"} / файлов{" "}
+										{plan.series.fileCount} / готовность{" "}
+										{plan.readiness.readinessScore}%
+									</span>
+									<small>
+										{dicomLabel(
+											dicomTextureStrategyLabels,
+											plan.renderCachePlan.textureStrategy,
+											"план загрузки",
+										)}{" "}
+										/ первый показ {plan.renderCachePlan.firstPaintBudgetMs} мс
+										/ память {plan.renderCachePlan.gpuMemoryBudgetMb} МБ
+									</small>
+									<small>{humanizeMigrationText(plan.nextAction)}</small>
+								</article>
+							))}
+						</div>
+						{typedDicomFolderWorkupPlan.warnings.slice(0, 4).map((warning) => (
+							<small key={warning}>{humanizeMigrationText(warning)}</small>
+						))}
+					</div>
+				) : null}
+				{dicomFirstFramePreview ? (
+					<div
+						className={`dicom-first-frame-preview preview-${dicomFirstFramePreview.status}`}
+						data-testid="dicom-first-frame-preview-result"
+						aria-label="Предпросмотр первого среза снимков"
+					>
+						<div className="dicom-first-frame-head">
+							<div>
+								<strong>
+									Первый срез: только ориентация, не диагностика:{" "}
+									{dicomFirstFrameStatusLabels[dicomFirstFramePreview.status] ??
+										dicomFirstFramePreview.status}
+								</strong>
+								<span>
+									{dicomFirstFramePreview.sourceWidth &&
+									dicomFirstFramePreview.sourceHeight
+										? `${dicomFirstFramePreview.sourceWidth}x${dicomFirstFramePreview.sourceHeight}`
+										: "Нет кадра снимка"}{" "}
+									/{" "}
+									{dicomFirstFrameFileFormatLabel(
+										dicomFirstFramePreview.transferSyntaxUid,
+									)}
+								</span>
+							</div>
+							<small>{dicomFirstFramePreview.nextAction}</small>
+						</div>
+						{dicomFirstFramePreview.imageDataUrl ? (
+							<>
+								<div
+									className="dicom-first-frame-tools"
+									aria-label="Инструменты предпросмотра первого среза"
+								>
+									<button
+										className="viewer-tool-button"
+										type="button"
+										title="Повернуть влево"
+										aria-label="Повернуть первый срез влево"
+										onClick={() =>
+											updateDicomFirstFrameViewerState((state) => ({
+												...state,
+												rotationDeg: state.rotationDeg - 90,
+											}))
+										}
+									>
+										<RotateCcw aria-hidden="true" />
+									</button>
+									<button
+										className="viewer-tool-button"
+										type="button"
+										title="Повернуть вправо"
+										aria-label="Повернуть первый срез вправо"
+										onClick={() =>
+											updateDicomFirstFrameViewerState((state) => ({
+												...state,
+												rotationDeg: state.rotationDeg + 90,
+											}))
+										}
+									>
+										<RotateCw aria-hidden="true" />
+									</button>
+									<button
+										className={`viewer-tool-button ${typedDicomFirstFrameViewerState.flipHorizontal ? "active" : ""}`}
+										type="button"
+										title="Отразить"
+										aria-label="Отразить первый срез"
+										aria-pressed={
+											typedDicomFirstFrameViewerState.flipHorizontal
+										}
+										onClick={() =>
+											updateDicomFirstFrameViewerState((state) => ({
+												...state,
+												flipHorizontal: !state.flipHorizontal,
+											}))
+										}
+									>
+										<FlipHorizontal aria-hidden="true" />
+									</button>
+									<button
+										className={`viewer-tool-button ${typedDicomFirstFrameViewerState.inverted ? "active" : ""}`}
+										type="button"
+										title="Инвертировать"
+										aria-label="Инвертировать первый срез"
+										aria-pressed={typedDicomFirstFrameViewerState.inverted}
+										onClick={() =>
+											updateDicomFirstFrameViewerState((state) => ({
+												...state,
+												inverted: !state.inverted,
+											}))
+										}
+									>
+										+/-
+									</button>
+									<button
+										className="viewer-tool-button"
+										type="button"
+										title="Уменьшить"
+										aria-label="Уменьшить первый срез"
+										onClick={() =>
+											updateDicomFirstFrameViewerState((state) => ({
+												...state,
+												zoom: Math.max(0.7, state.zoom - 0.1),
+											}))
+										}
+									>
+										<ZoomOut aria-hidden="true" />
+									</button>
+									<button
+										className="viewer-tool-button"
+										type="button"
+										title="Увеличить"
+										aria-label="Увеличить первый срез"
+										onClick={() =>
+											updateDicomFirstFrameViewerState((state) => ({
+												...state,
+												zoom: Math.min(2.2, state.zoom + 0.1),
+											}))
+										}
+									>
+										<ZoomIn aria-hidden="true" />
+									</button>
+									<button
+										className="viewer-tool-button"
+										type="button"
+										title="Сбросить"
+										aria-label="Сбросить инструменты первого среза"
+										onClick={() =>
+											setDicomFirstFrameViewerState(
+												typedDefaultDicomFirstFrameViewerState,
+											)
+										}
+									>
+										<RefreshCw aria-hidden="true" />
 									</button>
 								</div>
-								<div className="browser-picked-folder-stats">
-									<span>файлов: {browserPickedImagingFolder.scannedFiles}</span>
-									<span>
-										папок: {browserPickedImagingFolder.scannedFolders}
-									</span>
-									<span>
-										похоже на снимки:{" "}
-										{browserPickedImagingFolder.dicomLikeFiles}
-									</span>
-									<span>
-										архивов: {browserPickedImagingFolder.archiveFiles}
-									</span>
-									<span>
-										3D-моделей: {browserPickedImagingFolder.modelFiles}
-									</span>
-									<span>
-										{formatByteSize(browserPickedImagingFolder.totalBytes)}
-									</span>
-								</div>
-								<p>
-									{humanizeMigrationText(browserPickedImagingFolder.nextAction)}
-								</p>
-								{(browserPickedImagingFolder.warnings as string[])
-									.slice(0, 3)
-									.map((warning) => (
-										<small key={warning}>
-											{humanizeMigrationText(warning)}
-										</small>
-									))}
-							</div>
-						) : null}
-						{typedDicomLocalFolderDiscovery ? (
-							<div
-								className="dicom-discovery-result"
-								data-testid="local-dicom-discovery-result"
-								aria-label="Поиск локальной папки снимков"
-							>
-								<div className="dicom-discovery-head">
-									<strong>
-										Найдено кандидатов:{" "}
-										{typedDicomLocalFolderDiscovery.candidates.length} /
-										просканировано папок:{" "}
-										{typedDicomLocalFolderDiscovery.scannedFolders}
-									</strong>
-									<span>
-										{humanizeMigrationText(
-											typedDicomLocalFolderDiscovery.nextAction,
-										)}
-									</span>
-								</div>
-								<div className="dicom-discovery-grid">
-									{typedDicomLocalFolderDiscovery.candidates
-										.slice(0, 6)
-										.map((candidate) => (
-											<article key={candidate.folderPath}>
-												<strong>{candidate.safeDisplayName}</strong>
-												<span>
-													{humanizeMigrationText(candidate.sourceLabel)} · метка
-													папки {candidate.folderFingerprint.toUpperCase()} ·
-													вложенность {candidate.depth}
-												</span>
-												<span>
-													Путь к папке и имена, похожие на данные пациента,
-													скрыты до выбора
-												</span>
-												<small>
-													{Math.round(candidate.confidence * 100)}% / снимков{" "}
-													{candidate.dicomLikeFiles} / архивов{" "}
-													{candidate.archivesFound}
-												</small>
-												<button
-													className="text-button"
-													type="button"
-													onClick={() => {
-														rememberLocalImagingFolder(candidate.folderPath, {
-															safeDisplayName: candidate.safeDisplayName,
-															sourceLabel: candidate.sourceLabel,
-															sourceKind: candidate.sourceKind,
-															folderFingerprint: candidate.folderFingerprint,
-															origin: "discovery",
-														});
-														setDicomFolderSeriesScan(null);
-														setDicomFolderWorkupPlan(null);
-														setDicomFirstFramePreview(null);
-														setImagingFolderScan(null);
-														setLocalImagingOrganizer(null);
-													}}
-												>
-													Выбрать папку
-												</button>
-												<button
-													className="text-button"
-													type="button"
-													data-testid="prepare-dicom-discovery-workbench"
-													disabled={
-														isDicomFolderWorkupPlanning ||
-														isDicomWorkbenchBuilding
-													}
-													onClick={() =>
-														void prepareDicomWorkbenchFromFolder(
-															candidate.folderPath,
-															"dicom_discovery_quick_workbench",
-															{
-																safeDisplayName: candidate.safeDisplayName,
-																sourceLabel: candidate.sourceLabel,
-																sourceKind: candidate.sourceKind,
-																folderFingerprint: candidate.folderFingerprint,
-																origin: "discovery",
-															},
-														)
-													}
-												>
-													Подготовить КТ
-												</button>
-												<button
-													className="text-button"
-													type="button"
-													data-testid="preview-dicom-discovery-first-frame"
-													disabled={isDicomFirstFramePreviewing}
-													onClick={() => {
-														rememberLocalImagingFolder(candidate.folderPath, {
-															safeDisplayName: candidate.safeDisplayName,
-															sourceLabel: candidate.sourceLabel,
-															sourceKind: candidate.sourceKind,
-															folderFingerprint: candidate.folderFingerprint,
-															origin: "discovery",
-														});
-														void previewDicomFirstFrame(candidate.folderPath, {
-															safeDisplayName: candidate.safeDisplayName,
-															sourceLabel: candidate.sourceLabel,
-															sourceKind: candidate.sourceKind,
-															folderFingerprint: candidate.folderFingerprint,
-															origin: "discovery",
-														});
-													}}
-												>
-													Первый срез
-												</button>
-											</article>
-										))}
-								</div>
-								{typedDicomLocalFolderDiscovery.warnings
-									.slice(0, 4)
-									.map((warning) => (
-										<small key={warning}>
-											{humanizeMigrationText(warning)}
-										</small>
-									))}
-							</div>
-						) : null}
-						{typedLocalImagingOrganizer ? (
-							<div
-								className="local-imaging-organizer-result"
-								data-testid="local-imaging-organizer-result"
-								aria-label="Органайзер локальных снимков"
-							>
-								<div className="dicom-discovery-head">
-									<strong>
-										Органайзер: кейсов {typedLocalImagingOrganizer.cases.length}{" "}
-										/ просканировано папок{" "}
-										{typedLocalImagingOrganizer.scannedFolders}
-									</strong>
-									<span>
-										{humanizeMigrationText(
-											typedLocalImagingOrganizer.nextAction,
-										)}
-									</span>
-								</div>
-								<div className="local-imaging-case-grid">
-									{typedLocalImagingOrganizer.cases
-										.slice(0, 6)
-										.map((caseItem) => (
-											<article
-												className={`local-imaging-case local-action-${caseItem.recommendedAction}`}
-												key={caseItem.id}
-											>
-												<div>
-													<strong>{caseItem.safeDisplayName}</strong>
-													<span>
-														{humanizeMigrationText(caseItem.sourceLabel)} ·
-														метка папки{" "}
-														{caseItem.folderFingerprint.toUpperCase()}
-													</span>
-													<span>
-														Путь к папке и имена, похожие на данные пациента,
-														скрыты до выбора
-													</span>
-												</div>
-												<div className="local-imaging-case-metrics">
-													<span>
-														{Math.round(caseItem.combinedConfidence * 100)}%
-													</span>
-													<span>{caseItem.dicomLikeFiles} снимков</span>
-													<span>{caseItem.modelFiles} 3D</span>
-													<span>архивов: {caseItem.archiveFiles}</span>
-												</div>
-												<small>
-													{
-														localImagingOrganizerActionLabels[
-															caseItem.recommendedAction
-														]
-													}
-												</small>
-												{caseItem.modelCandidates.length ? (
-													<div className="local-imaging-model-list">
-														{caseItem.modelCandidates
-															.slice(0, 3)
-															.map((model) => (
-																<span key={`${caseItem.id}-${model.filePath}`}>
-																	{model.format.toUpperCase()} ·{" "}
-																	{localImagingModelRoleLabels[model.role] ??
-																		model.role}{" "}
-																	· {Math.round(model.confidence * 100)}%
-																</span>
-															))}
-													</div>
-												) : null}
-												{caseItem.modelWorkbenchManifest.totalModels > 0 ? (
-													<div className="local-imaging-model-workbench">
-														<strong>
-															{localImagingModelWorkbenchTargetLabels[
-																caseItem.modelWorkbenchManifest
-																	.recommendedTarget
-															] ??
-																caseItem.modelWorkbenchManifest
-																	.recommendedTarget}{" "}
-															· КТ-поверхностей{" "}
-															{caseItem.modelWorkbenchManifest.ctSurfaceModels}{" "}
-															· до{" "}
-															{caseItem.modelWorkbenchManifest.largestModelMb}{" "}
-															МБ
-														</strong>
-														{caseItem.modelWorkbenchManifest.items
-															.slice(0, 3)
-															.map((item) => (
-																<span
-																	key={`${caseItem.id}-workbench-${item.fileName}`}
-																>
-																	{localImagingModelRoleLabels[item.role] ??
-																		item.role}
-																	:{" "}
-																	{localImagingModelWorkbenchTargetLabels[
-																		item.loadTarget
-																	] ?? item.loadTarget}{" "}
-																	· {item.sizeMb} МБ
-																</span>
-															))}
-														<small>
-															{caseItem.modelWorkbenchManifest.nextAction}
-														</small>
-													</div>
-												) : null}
-												<button
-													className="text-button"
-													type="button"
-													onClick={() => {
-														rememberLocalImagingFolder(caseItem.folderPath, {
-															safeDisplayName: caseItem.safeDisplayName,
-															sourceLabel: caseItem.sourceLabel,
-															sourceKind: caseItem.sourceKind,
-															folderFingerprint: caseItem.folderFingerprint,
-															origin: "organizer",
-														});
-														setDicomFolderSeriesScan(null);
-														setDicomFolderWorkupPlan(null);
-														setDicomFirstFramePreview(null);
-														setImagingFolderScan(null);
-														setDicomLocalFolderDiscovery(null);
-													}}
-												>
-													Выбрать папку
-												</button>
-												{caseItem.recommendedAction !== "review_3d_models" ? (
-													<button
-														className="text-button"
-														type="button"
-														data-testid="prepare-local-dicom-workbench"
-														disabled={
-															isDicomFolderWorkupPlanning ||
-															isDicomWorkbenchBuilding
-														}
-														onClick={() =>
-															void prepareDicomWorkbenchFromFolder(
-																caseItem.folderPath,
-																"local_organizer_quick_workbench",
-																{
-																	safeDisplayName: caseItem.safeDisplayName,
-																	sourceLabel: caseItem.sourceLabel,
-																	sourceKind: caseItem.sourceKind,
-																	folderFingerprint: caseItem.folderFingerprint,
-																	origin: "organizer",
-																},
-															)
-														}
-													>
-														Подготовить КТ
-													</button>
-												) : null}
-												{caseItem.dicomLikeFiles > 0 ? (
-													<button
-														className="text-button"
-														type="button"
-														data-testid="preview-local-dicom-first-frame"
-														disabled={isDicomFirstFramePreviewing}
-														onClick={() => {
-															rememberLocalImagingFolder(caseItem.folderPath, {
-																safeDisplayName: caseItem.safeDisplayName,
-																sourceLabel: caseItem.sourceLabel,
-																sourceKind: caseItem.sourceKind,
-																folderFingerprint: caseItem.folderFingerprint,
-																origin: "organizer",
-															});
-															void previewDicomFirstFrame(caseItem.folderPath, {
-																safeDisplayName: caseItem.safeDisplayName,
-																sourceLabel: caseItem.sourceLabel,
-																sourceKind: caseItem.sourceKind,
-																folderFingerprint: caseItem.folderFingerprint,
-																origin: "organizer",
-															});
-														}}
-													>
-														Первый срез
-													</button>
-												) : null}
-											</article>
-										))}
-								</div>
-								{typedLocalImagingOrganizer.warnings
-									.slice(0, 4)
-									.map((warning) => (
-										<small key={warning}>
-											{humanizeMigrationText(warning)}
-										</small>
-									))}
-							</div>
-						) : null}
-						{typedImagingFolderScan ? (
-							<div className="recognition-notes">
-								<span>
-									Найдено файлов: {typedImagingFolderScan.filesFound}. В
-									предпросмотре: {typedImagingFolderScan.preview.totalRows}.
-								</span>
-								{typedImagingFolderScan.warnings.map((warning) => (
-									<span key={warning}>{humanizeMigrationText(warning)}</span>
-								))}
-							</div>
-						) : null}
-						{typedDicomFolderSeriesScan ? (
-							<div className="recognition-notes">
-								<span>
-									Метаданные снимков: файлов{" "}
-									{typedDicomFolderSeriesScan.filesFound}, прочитано{" "}
-									{typedDicomFolderSeriesScan.filesParsed}, строк метаданных{" "}
-									{typedDicomFolderSeriesScan.metadataRows}, серий{" "}
-									{typedDicomFolderSeriesScan.preview.totalSeries}.
-								</span>
-								{typedDicomFolderSeriesScan.warnings
-									.slice(0, 5)
-									.map((warning) => (
-										<span key={warning}>{humanizeMigrationText(warning)}</span>
-									))}
-							</div>
-						) : null}
-						{typedDicomFolderWorkupPlan ? (
-							<div
-								className="dicom-folder-workup-result"
-								aria-label="План разбора папки снимков"
-							>
-								<div className="dicom-folder-workup-head">
-									<strong>
-										План: серий {typedDicomFolderWorkupPlan.selectedSeriesCount}{" "}
-										/ файлов {typedDicomFolderWorkupPlan.folder.filesParsed}
-									</strong>
-									<span>
-										{humanizeMigrationText(
-											typedDicomFolderWorkupPlan.nextAction,
-										)}
-									</span>
-								</div>
-								<div className="dicom-folder-workup-plans">
-									{typedDicomFolderWorkupPlan.plans.slice(0, 4).map((plan) => (
-										<article
-											className={`workup-${plan.recommendedPath}`}
-											key={plan.series.id}
+								{dicomFirstFrameSelectableCount > 1 &&
+								typeof dicomFirstFrameCurrentIndex === "number" ? (
+									<div
+										className="dicom-first-frame-slice-controls"
+										data-testid="dicom-first-frame-slice-controls"
+									>
+										<button
+											className="viewer-tool-button"
+											type="button"
+											title="Предыдущий срез"
+											aria-label="Показать предыдущий срез снимков"
+											disabled={!dicomFirstFrameCanSelectPrevious}
+											onClick={() =>
+												previewDicomFirstFrameSlice(
+													dicomFirstFrameCurrentIndex - 1,
+												)
+											}
 										>
-											<strong>
-												{dicomFolderWorkupPathLabels[plan.recommendedPath]}
-											</strong>
+											<ChevronLeft aria-hidden="true" />
+										</button>
+										<label>
 											<span>
-												{plan.series.modality ?? "тип не указан"} / файлов{" "}
-												{plan.series.fileCount} / готовность{" "}
-												{plan.readiness.readinessScore}%
+												Срез {dicomFirstFrameCurrentIndex + 1} /{" "}
+												{dicomFirstFrameSelectableCount}
 											</span>
-											<small>
-												{dicomLabel(
-													dicomTextureStrategyLabels,
-													plan.renderCachePlan.textureStrategy,
-													"план загрузки",
-												)}{" "}
-												/ первый показ {plan.renderCachePlan.firstPaintBudgetMs}{" "}
-												мс / память {plan.renderCachePlan.gpuMemoryBudgetMb} МБ
-											</small>
-											<small>{humanizeMigrationText(plan.nextAction)}</small>
-										</article>
-									))}
-								</div>
-								{typedDicomFolderWorkupPlan.warnings
-									.slice(0, 4)
-									.map((warning) => (
-										<small key={warning}>
-											{humanizeMigrationText(warning)}
-										</small>
-									))}
-							</div>
-						) : null}
-						{dicomFirstFramePreview ? (
-							<div
-								className={`dicom-first-frame-preview preview-${dicomFirstFramePreview.status}`}
-								data-testid="dicom-first-frame-preview-result"
-								aria-label="Предпросмотр первого среза снимков"
-							>
-								<div className="dicom-first-frame-head">
-									<div>
-										<strong>
-											Первый срез: только ориентация, не диагностика:{" "}
-											{dicomFirstFrameStatusLabels[
-												dicomFirstFramePreview.status
-											] ?? dicomFirstFramePreview.status}
-										</strong>
-										<span>
-											{dicomFirstFramePreview.sourceWidth &&
-											dicomFirstFramePreview.sourceHeight
-												? `${dicomFirstFramePreview.sourceWidth}x${dicomFirstFramePreview.sourceHeight}`
-												: "Нет кадра снимка"}{" "}
-											/{" "}
-											{dicomFirstFrameFileFormatLabel(
-												dicomFirstFramePreview.transferSyntaxUid,
-											)}
-										</span>
-									</div>
-									<small>{dicomFirstFramePreview.nextAction}</small>
-								</div>
-								{dicomFirstFramePreview.imageDataUrl ? (
-									<>
-										<div
-											className="dicom-first-frame-tools"
-											aria-label="Инструменты предпросмотра первого среза"
-										>
-											<button
-												className="viewer-tool-button"
-												type="button"
-												title="Повернуть влево"
-												aria-label="Повернуть первый срез влево"
-												onClick={() =>
-													updateDicomFirstFrameViewerState((state) => ({
-														...state,
-														rotationDeg: state.rotationDeg - 90,
-													}))
-												}
-											>
-												<RotateCcw aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button"
-												type="button"
-												title="Повернуть вправо"
-												aria-label="Повернуть первый срез вправо"
-												onClick={() =>
-													updateDicomFirstFrameViewerState((state) => ({
-														...state,
-														rotationDeg: state.rotationDeg + 90,
-													}))
-												}
-											>
-												<RotateCw aria-hidden="true" />
-											</button>
-											<button
-												className={`viewer-tool-button ${typedDicomFirstFrameViewerState.flipHorizontal ? "active" : ""}`}
-												type="button"
-												title="Отразить"
-												aria-label="Отразить первый срез"
-												aria-pressed={
-													typedDicomFirstFrameViewerState.flipHorizontal
-												}
-												onClick={() =>
-													updateDicomFirstFrameViewerState((state) => ({
-														...state,
-														flipHorizontal: !state.flipHorizontal,
-													}))
-												}
-											>
-												<FlipHorizontal aria-hidden="true" />
-											</button>
-											<button
-												className={`viewer-tool-button ${typedDicomFirstFrameViewerState.inverted ? "active" : ""}`}
-												type="button"
-												title="Инвертировать"
-												aria-label="Инвертировать первый срез"
-												aria-pressed={typedDicomFirstFrameViewerState.inverted}
-												onClick={() =>
-													updateDicomFirstFrameViewerState((state) => ({
-														...state,
-														inverted: !state.inverted,
-													}))
-												}
-											>
-												+/-
-											</button>
-											<button
-												className="viewer-tool-button"
-												type="button"
-												title="Уменьшить"
-												aria-label="Уменьшить первый срез"
-												onClick={() =>
-													updateDicomFirstFrameViewerState((state) => ({
-														...state,
-														zoom: Math.max(0.7, state.zoom - 0.1),
-													}))
-												}
-											>
-												<ZoomOut aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button"
-												type="button"
-												title="Увеличить"
-												aria-label="Увеличить первый срез"
-												onClick={() =>
-													updateDicomFirstFrameViewerState((state) => ({
-														...state,
-														zoom: Math.min(2.2, state.zoom + 0.1),
-													}))
-												}
-											>
-												<ZoomIn aria-hidden="true" />
-											</button>
-											<button
-												className="viewer-tool-button"
-												type="button"
-												title="Сбросить"
-												aria-label="Сбросить инструменты первого среза"
-												onClick={() =>
-													setDicomFirstFrameViewerState(
-														typedDefaultDicomFirstFrameViewerState,
+											<input
+												aria-label="Выбрать срез снимков"
+												type="range"
+												min="0"
+												max={dicomFirstFrameSliceMaxIndex}
+												step="1"
+												value={dicomFirstFrameCurrentIndex}
+												disabled={isDicomFirstFramePreviewing}
+												onChange={(event: InputChangeEvent) =>
+													previewDicomFirstFrameSlice(
+														Number(event.target.value),
 													)
 												}
-											>
-												<RefreshCw aria-hidden="true" />
-											</button>
-										</div>
-										{dicomFirstFrameSelectableCount > 1 &&
-										typeof dicomFirstFrameCurrentIndex === "number" ? (
+											/>
+										</label>
+										<button
+											className="viewer-tool-button"
+											type="button"
+											title="Следующий срез"
+											aria-label="Показать следующий срез снимков"
+											disabled={!dicomFirstFrameCanSelectNext}
+											onClick={() =>
+												previewDicomFirstFrameSlice(
+													dicomFirstFrameCurrentIndex + 1,
+												)
+											}
+										>
+											<ChevronRight aria-hidden="true" />
+										</button>
+										{dicomFirstFrameLandmarkSlices.length ? (
 											<div
-												className="dicom-first-frame-slice-controls"
-												data-testid="dicom-first-frame-slice-controls"
+												className="dicom-first-frame-slice-presets"
+												data-testid="dicom-first-frame-slice-presets"
+												aria-label="Быстрые срезы снимков"
 											>
-												<button
-													className="viewer-tool-button"
-													type="button"
-													title="Предыдущий срез"
-													aria-label="Показать предыдущий срез снимков"
-													disabled={!dicomFirstFrameCanSelectPrevious}
-													onClick={() =>
-														previewDicomFirstFrameSlice(
-															dicomFirstFrameCurrentIndex - 1,
-														)
-													}
-												>
-													<ChevronLeft aria-hidden="true" />
-												</button>
-												<label>
-													<span>
-														Срез {dicomFirstFrameCurrentIndex + 1} /{" "}
-														{dicomFirstFrameSelectableCount}
-													</span>
-													<input
-														aria-label="Выбрать срез снимков"
-														type="range"
-														min="0"
-														max={dicomFirstFrameSliceMaxIndex}
-														step="1"
-														value={dicomFirstFrameCurrentIndex}
-														disabled={isDicomFirstFramePreviewing}
-														onChange={(event: InputChangeEvent) =>
-															previewDicomFirstFrameSlice(
-																Number(event.target.value),
-															)
-														}
-													/>
-												</label>
-												<button
-													className="viewer-tool-button"
-													type="button"
-													title="Следующий срез"
-													aria-label="Показать следующий срез снимков"
-													disabled={!dicomFirstFrameCanSelectNext}
-													onClick={() =>
-														previewDicomFirstFrameSlice(
-															dicomFirstFrameCurrentIndex + 1,
-														)
-													}
-												>
-													<ChevronRight aria-hidden="true" />
-												</button>
-												{dicomFirstFrameLandmarkSlices.length ? (
-													<div
-														className="dicom-first-frame-slice-presets"
-														data-testid="dicom-first-frame-slice-presets"
-														aria-label="Быстрые срезы снимков"
-													>
-														{dicomFirstFrameLandmarkSlices.map(
-															({ label, targetIndex }) => (
-																<button
-																	className={
-																		dicomFirstFrameCurrentIndex === targetIndex
-																			? "active"
-																			: ""
-																	}
-																	type="button"
-																	key={`${label}-${targetIndex}`}
-																	title={`Показать ${label}: срез ${targetIndex + 1}`}
-																	aria-label={`Показать опорный срез снимков ${label}: ${targetIndex + 1} из ${dicomFirstFrameSelectableCount}`}
-																	disabled={
-																		isDicomFirstFramePreviewing ||
-																		dicomFirstFrameCurrentIndex === targetIndex
-																	}
-																	onClick={() =>
-																		previewDicomFirstFrameSlice(targetIndex)
-																	}
-																>
-																	{label}
-																	<small>{targetIndex + 1}</small>
-																</button>
-															),
-														)}
-													</div>
-												) : null}
+												{dicomFirstFrameLandmarkSlices.map(
+													({ label, targetIndex }) => (
+														<button
+															className={
+																dicomFirstFrameCurrentIndex === targetIndex
+																	? "active"
+																	: ""
+															}
+															type="button"
+															key={`${label}-${targetIndex}`}
+															title={`Показать ${label}: срез ${targetIndex + 1}`}
+															aria-label={`Показать опорный срез снимков ${label}: ${targetIndex + 1} из ${dicomFirstFrameSelectableCount}`}
+															disabled={
+																isDicomFirstFramePreviewing ||
+																dicomFirstFrameCurrentIndex === targetIndex
+															}
+															onClick={() =>
+																previewDicomFirstFrameSlice(targetIndex)
+															}
+														>
+															{label}
+															<small>{targetIndex + 1}</small>
+														</button>
+													),
+												)}
 											</div>
 										) : null}
-										<div className="dicom-first-frame-sliders">
-											<label>
-												Яркость
-												<input
-													min="0.65"
-													max="1.6"
-													step="0.05"
-													type="range"
-													value={typedDicomFirstFrameViewerState.brightness}
-													onChange={(event) =>
-														updateDicomFirstFrameViewerNumber(
-															"brightness",
-															event,
-														)
-													}
-												/>
-											</label>
-											<label>
-												Контраст
-												<input
-													min="0.75"
-													max="1.8"
-													step="0.05"
-													type="range"
-													value={typedDicomFirstFrameViewerState.contrast}
-													onChange={(event) =>
-														updateDicomFirstFrameViewerNumber("contrast", event)
-													}
-												/>
-											</label>
-										</div>
-										<div className="dicom-first-frame-image-wrap">
-											<img
-												src={dicomFirstFramePreview.imageDataUrl}
-												alt="Предпросмотр ориентации первого среза снимков"
-												decoding="async"
-												style={dicomFirstFrameImageStyle}
-											/>
-										</div>
-									</>
+									</div>
 								) : null}
-								<div className="dicom-first-frame-facts">
-									<span>
-										{dicomFirstFrameImageTypeLabel(
-											dicomFirstFramePreview.photometricInterpretation,
-										)}
-									</span>
-									<span>
-										{dicomFirstFramePreview.bitsAllocated
-											? `глубина ${dicomFirstFramePreview.bitsAllocated} бит`
-											: "глубина не указана"}
-									</span>
-									<span>
-										исходная яркость: центр{" "}
-										{Math.round(dicomFirstFramePreview.windowCenter ?? 0)} /
-										диапазон{" "}
-										{Math.round(dicomFirstFramePreview.windowWidth ?? 0)}
-									</span>
-									{typeof dicomFirstFrameCurrentIndex === "number" &&
-									dicomFirstFrameSelectableCount > 0 ? (
-										<span>
-											срез {dicomFirstFrameCurrentIndex + 1}/
-											{dicomFirstFrameSelectableCount}
-										</span>
-									) : null}
-									<span>не сохранено</span>
-									<span>только инструменты предпросмотра</span>
+								<div className="dicom-first-frame-sliders">
+									<label>
+										Яркость
+										<input
+											min="0.65"
+											max="1.6"
+											step="0.05"
+											type="range"
+											value={typedDicomFirstFrameViewerState.brightness}
+											onChange={(event) =>
+												updateDicomFirstFrameViewerNumber("brightness", event)
+											}
+										/>
+									</label>
+									<label>
+										Контраст
+										<input
+											min="0.75"
+											max="1.8"
+											step="0.05"
+											type="range"
+											value={typedDicomFirstFrameViewerState.contrast}
+											onChange={(event) =>
+												updateDicomFirstFrameViewerNumber("contrast", event)
+											}
+										/>
+									</label>
 								</div>
-								{typedDicomFirstFramePreview?.warnings
-									.slice(0, 4)
-									.map((warning: string) => (
-										<small key={warning}>{warning}</small>
-									))}
-							</div>
+								<div className="dicom-first-frame-image-wrap">
+									<img
+										src={dicomFirstFramePreview.imageDataUrl}
+										alt="Предпросмотр ориентации первого среза снимков"
+										decoding="async"
+										style={dicomFirstFrameImageStyle}
+									/>
+								</div>
+							</>
 						) : null}
-						<textarea
-							aria-label="Данные импорта снимков"
-							value={imagingImportText}
-							onChange={(event: TextInputChangeEvent) => {
-								setImagingImportText(event.target.value);
-								setImagingImportPreview(null);
-								setImagingImportCommit(null);
-								setDicomSeriesPreview(null);
-								setDicomFolderSeriesScan(null);
-								setDicomFolderWorkupPlan(null);
-							}}
-						/>
-						<div className="import-tool-row">
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => {
-									setImagingImportSourceKind("dicom_file");
-									setImagingImportText(
-										"Пациент;Телефон;Модальность;КодИсследования;КодСерии;НомерСреза;ОписаниеСерии;Дата;Путь\nИванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;1.2.643.5.1.20260512.1;1.2.643.5.1.20260512.1.3;1;КТ нижней челюсти;12.05.2026;D:\\\\KLKT\\\\ivanova_2026_05_12\\\\IMG0001.dcm\nИванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;1.2.643.5.1.20260512.1;1.2.643.5.1.20260512.1.3;2;КТ нижней челюсти;12.05.2026;D:\\\\KLKT\\\\ivanova_2026_05_12\\\\IMG0002.dcm\nИванова Марина Сергеевна;+7 927 111-22-33;ТРГ;1.2.643.5.1.20260510.7;1.2.643.5.1.20260510.7.1;1;боковая ТРГ;10.05.2026;D:\\\\CEPH\\\\ivanova_ceph.ima\nПетров Алексей Николаевич;+7 927 555-19-40;ОПТГ;1.2.643.5.1.20260510.9;1.2.643.5.1.20260510.9.1;1;панорамный снимок;10.05.2026;D:\\\\OPG\\\\petrov_opg.png",
-									);
-									setImagingImportPreview(null);
-									setImagingImportCommit(null);
-									setDicomSeriesPreview(null);
-									setDicomFolderSeriesScan(null);
-									setDicomFolderWorkupPlan(null);
-								}}
-							>
-								<FileCheck2 aria-hidden="true" /> Пример КТ/ОПТГ/ТРГ
-							</button>
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={() => void previewDicomSeries()}
-								disabled={
-									isDicomSeriesPreviewLoading || !imagingImportInputReady
-								}
-							>
-								<Layers3 aria-hidden="true" />{" "}
-								{isDicomSeriesPreviewLoading ? "Группирую" : "Проверить серии"}
-							</button>
-							<button
-								className="primary-button"
-								type="button"
-								onClick={previewImagingImport}
-								disabled={isImagingImportLoading || !imagingImportInputReady}
-								aria-busy={isImagingImportLoading || undefined}
-							>
-								<UploadCloud aria-hidden="true" />{" "}
-								{isImagingImportLoading ? "Проверяю" : "Проверить снимки"}
-							</button>
-						</div>
-						{!imagingImportInputReady ? (
-							<p
-								className="import-empty-guidance"
-								role="status"
-								aria-live="polite"
-							>
-								Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ
-								перед проверкой.
-							</p>
-						) : null}
-					</div>
-
-					{dicomSeriesPreview ? (
-						<div className="dicom-series-result">
-							<div className="dicom-series-stats">
-								<span>{dicomSeriesPreview.totalRows} файлов</span>
-								<span>{dicomSeriesPreview.totalSeries} серий</span>
-								<span>{dicomSeriesPreview.readySeries} готово</span>
-								<span>{dicomSeriesPreview.warningSeries} предупреждения</span>
-								<span>{dicomSeriesPreview.blockedSeries} нужно действие</span>
-							</div>
-							<div className="dicom-series-list">
-								{typedDicomSeriesPreviewSeries.slice(0, 6).map((series) => (
-									<article
-										className={`dicom-series-row dicom-series-${series.status}`}
-										key={series.id}
-									>
-										<div>
-											<strong>{series.patientName ?? "Пациент ?"}</strong>
-											<span>
-												{series.kind
-													? imagingKindLabels[series.kind]
-													: "тип не указан"}{" "}
-												· {series.modality ?? "модальность не указана"} ·{" "}
-												{series.fileCount} файлов
-											</span>
-										</div>
-										<div>
-											<span>
-												{importRowStatusLabels[series.status] ?? series.status}{" "}
-												· {dicomSeriesViewerLabels[series.recommendedViewer]}
-											</span>
-											<small>
-												{series.mprReadiness.recommendedLayout} ·{" "}
-												{series.mprReadiness.canOpenMpr
-													? "предпросмотр КТ-срезов готов"
-													: series.mprReadiness.nextAction}
-											</small>
-											<small className="dicom-series-resource">
-												{
-													mprLoadStrategyLabels[
-														series.mprReadiness.resourcePolicy.loadStrategy
-													]
-												}{" "}
-												/ {series.mprReadiness.resourcePolicy.estimatedMemoryMb}{" "}
-												МБ /{" "}
-												{
-													mprResourceTierLabels[
-														series.mprReadiness.resourcePolicy.requiredTier
-													]
-												}
-											</small>
-											<small>{dicomSeriesDisplayText(series)}</small>
-										</div>
-										<p>{dicomSeriesWarningText(series.warnings)}</p>
-									</article>
-								))}
-							</div>
-						</div>
-					) : null}
-
-					{typedImagingImportPreview ? (
-						<div className="import-preview">
-							<div className="import-stats">
-								<span>{typedImagingImportPreview.totalRows} строк</span>
-								<span>{typedImagingImportPreview.readyRows} готово</span>
-								<span>
-									{typedImagingImportPreview.warningRows} предупреждения
-								</span>
-								<span>
-									{typedImagingImportPreview.blockedRows} к исправлению
-								</span>
-							</div>
-							<div className="import-actions">
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={commitImagingImport}
-									disabled={
-										isImagingImportCommitting ||
-										!imagingImportInputReady ||
-										typedImagingImportPreview.readyRows === 0
-									}
-									aria-busy={isImagingImportCommitting || undefined}
-								>
-									<CheckCircle2 aria-hidden="true" />{" "}
-									{isImagingImportCommitting
-										? "Записываю"
-										: "Привязать готовые"}
-								</button>
-								{imagingImportCommit ? (
-									<span>
-										Привязано: {imagingImportCommit.importedCount}. Пропущено:{" "}
-										{imagingImportCommit.skippedCount}.
-									</span>
-								) : (
-									<span>
-										В карту попадут только строки с найденным пациентом, типом
-										снимка и путем к файлу.
-									</span>
+						<div className="dicom-first-frame-facts">
+							<span>
+								{dicomFirstFrameImageTypeLabel(
+									dicomFirstFramePreview.photometricInterpretation,
 								)}
-							</div>
-							<div className="import-rows">
-								{typedImagingImportPreview.rows.map((row) => (
-									<article
-										className={`import-row import-${row.status}`}
-										key={row.rowNumber}
-									>
-										<strong>
-											{row.patientName ?? `Строка ${row.rowNumber}`}
-										</strong>
-										<span>
-											{importRowStatusLabels[row.status] ?? row.status}
-										</span>
-										<span>
-											{row.kind ? imagingKindLabels[row.kind] : "тип не найден"}
-										</span>
-										<span>
-											{row.toothCode ?? row.region ?? "область не найдена"}
-										</span>
-										<p>
-											{imagingImportRowWarningText(row.warnings, row.filePath)}
-										</p>
-									</article>
-								))}
-							</div>
+							</span>
+							<span>
+								{dicomFirstFramePreview.bitsAllocated
+									? `глубина ${dicomFirstFramePreview.bitsAllocated} бит`
+									: "глубина не указана"}
+							</span>
+							<span>
+								исходная яркость: центр{" "}
+								{Math.round(dicomFirstFramePreview.windowCenter ?? 0)} /
+								диапазон {Math.round(dicomFirstFramePreview.windowWidth ?? 0)}
+							</span>
+							{typeof dicomFirstFrameCurrentIndex === "number" &&
+							dicomFirstFrameSelectableCount > 0 ? (
+								<span>
+									срез {dicomFirstFrameCurrentIndex + 1}/
+									{dicomFirstFrameSelectableCount}
+								</span>
+							) : null}
+							<span>не сохранено</span>
+							<span>только инструменты предпросмотра</span>
 						</div>
-					) : null}
-				</section>
+						{typedDicomFirstFramePreview?.warnings
+							.slice(0, 4)
+							.map((warning: string) => (
+								<small key={warning}>{warning}</small>
+							))}
+					</div>
+				) : null}
+				<textarea
+					aria-label="Данные импорта снимков"
+					value={imagingImportText}
+					onChange={(event: TextInputChangeEvent) => {
+						setImagingImportText(event.target.value);
+						setImagingImportPreview(null);
+						setImagingImportCommit(null);
+						setDicomSeriesPreview(null);
+						setDicomFolderSeriesScan(null);
+						setDicomFolderWorkupPlan(null);
+					}}
+				/>
+				<div className="import-tool-row">
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => {
+							setImagingImportSourceKind("dicom_file");
+							setImagingImportText(
+								"Пациент;Телефон;Модальность;КодИсследования;КодСерии;НомерСреза;ОписаниеСерии;Дата;Путь\nИванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;1.2.643.5.1.20260512.1;1.2.643.5.1.20260512.1.3;1;КТ нижней челюсти;12.05.2026;D:\\\\KLKT\\\\ivanova_2026_05_12\\\\IMG0001.dcm\nИванова Марина Сергеевна;+7 927 111-22-33;КЛКТ;1.2.643.5.1.20260512.1;1.2.643.5.1.20260512.1.3;2;КТ нижней челюсти;12.05.2026;D:\\\\KLKT\\\\ivanova_2026_05_12\\\\IMG0002.dcm\nИванова Марина Сергеевна;+7 927 111-22-33;ТРГ;1.2.643.5.1.20260510.7;1.2.643.5.1.20260510.7.1;1;боковая ТРГ;10.05.2026;D:\\\\CEPH\\\\ivanova_ceph.ima\nПетров Алексей Николаевич;+7 927 555-19-40;ОПТГ;1.2.643.5.1.20260510.9;1.2.643.5.1.20260510.9.1;1;панорамный снимок;10.05.2026;D:\\\\OPG\\\\petrov_opg.png",
+							);
+							setImagingImportPreview(null);
+							setImagingImportCommit(null);
+							setDicomSeriesPreview(null);
+							setDicomFolderSeriesScan(null);
+							setDicomFolderWorkupPlan(null);
+						}}
+					>
+						<FileCheck2 aria-hidden="true" /> Пример КТ/ОПТГ/ТРГ
+					</button>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => void previewDicomSeries()}
+						disabled={isDicomSeriesPreviewLoading || !imagingImportInputReady}
+					>
+						<Layers3 aria-hidden="true" />{" "}
+						{isDicomSeriesPreviewLoading ? "Группирую" : "Проверить серии"}
+					</button>
+					<button
+						className="primary-button"
+						type="button"
+						onClick={previewImagingImport}
+						disabled={isImagingImportLoading || !imagingImportInputReady}
+						aria-busy={isImagingImportLoading || undefined}
+					>
+						<UploadCloud aria-hidden="true" />{" "}
+						{isImagingImportLoading ? "Проверяю" : "Проверить снимки"}
+					</button>
+				</div>
+				{!imagingImportInputReady ? (
+					<p className="import-empty-guidance" role="status" aria-live="polite">
+						Вставьте строки со снимками или выберите пример КТ/ОПТГ/ТРГ перед
+						проверкой.
+					</p>
+				) : null}
+			</div>
+
+			{dicomSeriesPreview ? (
+				<div className="dicom-series-result">
+					<div className="dicom-series-stats">
+						<span>{dicomSeriesPreview.totalRows} файлов</span>
+						<span>{dicomSeriesPreview.totalSeries} серий</span>
+						<span>{dicomSeriesPreview.readySeries} готово</span>
+						<span>{dicomSeriesPreview.warningSeries} предупреждения</span>
+						<span>{dicomSeriesPreview.blockedSeries} нужно действие</span>
+					</div>
+					<div className="dicom-series-list">
+						{typedDicomSeriesPreviewSeries.slice(0, 6).map((series) => (
+							<article
+								className={`dicom-series-row dicom-series-${series.status}`}
+								key={series.id}
+							>
+								<div>
+									<strong>{series.patientName ?? "Пациент ?"}</strong>
+									<span>
+										{series.kind
+											? imagingKindLabels[series.kind]
+											: "тип не указан"}{" "}
+										· {series.modality ?? "модальность не указана"} ·{" "}
+										{series.fileCount} файлов
+									</span>
+								</div>
+								<div>
+									<span>
+										{importRowStatusLabels[series.status] ?? series.status} ·{" "}
+										{dicomSeriesViewerLabels[series.recommendedViewer]}
+									</span>
+									<small>
+										{series.mprReadiness.recommendedLayout} ·{" "}
+										{series.mprReadiness.canOpenMpr
+											? "предпросмотр КТ-срезов готов"
+											: series.mprReadiness.nextAction}
+									</small>
+									<small className="dicom-series-resource">
+										{
+											mprLoadStrategyLabels[
+												series.mprReadiness.resourcePolicy.loadStrategy
+											]
+										}{" "}
+										/ {series.mprReadiness.resourcePolicy.estimatedMemoryMb} МБ
+										/{" "}
+										{
+											mprResourceTierLabels[
+												series.mprReadiness.resourcePolicy.requiredTier
+											]
+										}
+									</small>
+									<small>{dicomSeriesDisplayText(series)}</small>
+								</div>
+								<p>{dicomSeriesWarningText(series.warnings)}</p>
+							</article>
+						))}
+					</div>
+				</div>
+			) : null}
+
+			{typedImagingImportPreview ? (
+				<div className="import-preview">
+					<div className="import-stats">
+						<span>{typedImagingImportPreview.totalRows} строк</span>
+						<span>{typedImagingImportPreview.readyRows} готово</span>
+						<span>{typedImagingImportPreview.warningRows} предупреждения</span>
+						<span>{typedImagingImportPreview.blockedRows} к исправлению</span>
+					</div>
+					<div className="import-actions">
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={commitImagingImport}
+							disabled={
+								isImagingImportCommitting ||
+								!imagingImportInputReady ||
+								typedImagingImportPreview.readyRows === 0
+							}
+							aria-busy={isImagingImportCommitting || undefined}
+						>
+							<CheckCircle2 aria-hidden="true" />{" "}
+							{isImagingImportCommitting ? "Записываю" : "Привязать готовые"}
+						</button>
+						{imagingImportCommit ? (
+							<span>
+								Привязано: {imagingImportCommit.importedCount}. Пропущено:{" "}
+								{imagingImportCommit.skippedCount}.
+							</span>
+						) : (
+							<span>
+								В карту попадут только строки с найденным пациентом, типом
+								снимка и путем к файлу.
+							</span>
+						)}
+					</div>
+					<div className="import-rows">
+						{typedImagingImportPreview.rows.map((row) => (
+							<article
+								className={`import-row import-${row.status}`}
+								key={row.rowNumber}
+							>
+								<strong>{row.patientName ?? `Строка ${row.rowNumber}`}</strong>
+								<span>{importRowStatusLabels[row.status] ?? row.status}</span>
+								<span>
+									{row.kind ? imagingKindLabels[row.kind] : "тип не найден"}
+								</span>
+								<span>
+									{row.toothCode ?? row.region ?? "область не найдена"}
+								</span>
+								<p>{imagingImportRowWarningText(row.warnings, row.filePath)}</p>
+							</article>
+						))}
+					</div>
+				</div>
+			) : null}
+		</section>
 	);
 }

@@ -1,10 +1,10 @@
 import {
 	Edit2,
 	KeyRound,
+	Settings2,
 	ShieldCheck,
 	UserPlus,
 	X,
-	Settings2,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -98,7 +98,7 @@ export function SettingsStaffTab() {
 			const data = await res.json();
 			if (!res.ok)
 				throw new Error(data.message || "Ошибка добавления сотрудника");
-			
+
 			showToast("Сотрудник успешно добавлен", "success");
 			setNewStaffName("");
 			setNewStaffEmail("");
@@ -167,14 +167,17 @@ export function SettingsStaffTab() {
 					credsPayload.password = editForm.password;
 				}
 
-				const credsRes = await fetch(`/api/settings/staff/${editingStaffId}/credentials`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"x-dente-clinic-token": clinicToken || "",
+				const credsRes = await fetch(
+					`/api/settings/staff/${editingStaffId}/credentials`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"x-dente-clinic-token": clinicToken || "",
+						},
+						body: JSON.stringify(credsPayload),
 					},
-					body: JSON.stringify(credsPayload),
-				});
+				);
 
 				if (!credsRes.ok) {
 					const data = await credsRes.json();
@@ -200,8 +203,8 @@ export function SettingsStaffTab() {
 			<div className="import-copy">
 				<h3>Управление персоналом</h3>
 				<p>
-					Добавляйте новых врачей, ассистентов и администраторов. Управляйте правами
-					доступа, цветами в календаре, PIN-кодами и паролями.
+					Добавляйте новых врачей, ассистентов и администраторов. Управляйте
+					правами доступа, цветами в календаре, PIN-кодами и паролями.
 				</p>
 			</div>
 
@@ -235,18 +238,46 @@ export function SettingsStaffTab() {
 									</div>
 								</div>
 
-								<div className="staff-badges-row" style={{ display: "flex", gap: "6px", flexWrap: "wrap", margin: "6px 0 12px 0" }}>
+								<div
+									className="staff-badges-row"
+									style={{
+										display: "flex",
+										gap: "6px",
+										flexWrap: "wrap",
+										margin: "6px 0 12px 0",
+									}}
+								>
 									{member.canSignMedicalRecords && (
-										<span className="status-pill status-confirmed" style={{ fontSize: "11px", padding: "2px 6px" }}>✍️ ЭМК</span>
+										<span
+											className="status-pill status-confirmed"
+											style={{ fontSize: "11px", padding: "2px 6px" }}
+										>
+											✍️ ЭМК
+										</span>
 									)}
 									{member.canManageImports && (
-										<span className="status-pill status-confirmed" style={{ fontSize: "11px", padding: "2px 6px" }}>💿 Импорт</span>
+										<span
+											className="status-pill status-confirmed"
+											style={{ fontSize: "11px", padding: "2px 6px" }}
+										>
+											💿 Импорт
+										</span>
 									)}
 									{member.canManageMoney && (
-										<span className="status-pill status-confirmed" style={{ fontSize: "11px", padding: "2px 6px" }}>💰 Касса</span>
+										<span
+											className="status-pill status-confirmed"
+											style={{ fontSize: "11px", padding: "2px 6px" }}
+										>
+											💰 Касса
+										</span>
 									)}
 									{member.active === false && (
-										<span className="status-pill status-cancelled" style={{ fontSize: "11px", padding: "2px 6px" }}>❌ Неактивен</span>
+										<span
+											className="status-pill status-cancelled"
+											style={{ fontSize: "11px", padding: "2px 6px" }}
+										>
+											❌ Неактивен
+										</span>
 									)}
 								</div>
 
@@ -255,7 +286,11 @@ export function SettingsStaffTab() {
 										<button
 											className="secondary-button btn--sm btn--flex"
 											onClick={() => startEditing(member)}
-											style={{ width: "100%", justifyContent: "center", gap: "6px" }}
+											style={{
+												width: "100%",
+												justifyContent: "center",
+												gap: "6px",
+											}}
 										>
 											<Settings2 size={14} /> Настроить сотрудника
 										</button>
@@ -359,7 +394,9 @@ export function SettingsStaffTab() {
 								paddingBottom: "12px",
 							}}
 						>
-							<h3 style={{ margin: 0, fontSize: "1.25rem", color: "var(--ink)" }}>
+							<h3
+								style={{ margin: 0, fontSize: "1.25rem", color: "var(--ink)" }}
+							>
 								Редактировать профиль сотрудника
 							</h3>
 							<button
@@ -376,24 +413,47 @@ export function SettingsStaffTab() {
 							</button>
 						</div>
 
-						<form onSubmit={handleSaveEdit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-							<label className="settings-control-label" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+						<form
+							onSubmit={handleSaveEdit}
+							style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+						>
+							<label
+								className="settings-control-label"
+								style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+							>
 								ФИО сотрудника
 								<input
 									type="text"
 									value={editForm.fullName}
-									onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+									onChange={(e) =>
+										setEditForm({ ...editForm, fullName: e.target.value })
+									}
 									className="settings-control-input"
 									required
 								/>
 							</label>
 
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-								<label className="settings-control-label" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+							<div
+								style={{
+									display: "grid",
+									gridTemplateColumns: "1fr 1fr",
+									gap: "12px",
+								}}
+							>
+								<label
+									className="settings-control-label"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: "6px",
+									}}
+								>
 									Должность
 									<select
 										value={editForm.role}
-										onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+										onChange={(e) =>
+											setEditForm({ ...editForm, role: e.target.value })
+										}
 										className="settings-control-input"
 									>
 										<option value="doctor">Врач</option>
@@ -403,111 +463,273 @@ export function SettingsStaffTab() {
 									</select>
 								</label>
 
-								<label className="settings-control-label" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+								<label
+									className="settings-control-label"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: "6px",
+									}}
+								>
 									Цвет в календаре
 									<input
 										type="color"
 										value={editForm.color}
-										onChange={(e) => setEditForm({ ...editForm, color: e.target.value })}
-										style={{ height: "40px", padding: "2px", width: "100%", cursor: "pointer", border: "1px solid var(--line)" }}
+										onChange={(e) =>
+											setEditForm({ ...editForm, color: e.target.value })
+										}
+										style={{
+											height: "40px",
+											padding: "2px",
+											width: "100%",
+											cursor: "pointer",
+											border: "1px solid var(--line)",
+										}}
 									/>
 								</label>
 							</div>
 
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-								<label className="settings-control-label" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+							<div
+								style={{
+									display: "grid",
+									gridTemplateColumns: "1fr 1fr",
+									gap: "12px",
+								}}
+							>
+								<label
+									className="settings-control-label"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: "6px",
+									}}
+								>
 									Email (Логин)
 									<input
 										type="email"
 										value={editForm.email}
-										onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+										onChange={(e) =>
+											setEditForm({ ...editForm, email: e.target.value })
+										}
 										placeholder="doctor@clinic.com"
 										className="settings-control-input"
 									/>
 								</label>
 
-								<label className="settings-control-label" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+								<label
+									className="settings-control-label"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: "6px",
+									}}
+								>
 									Телефон
 									<input
 										type="text"
 										value={editForm.phone}
-										onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+										onChange={(e) =>
+											setEditForm({ ...editForm, phone: e.target.value })
+										}
 										placeholder="+7 (999) 123-45-67"
 										className="settings-control-input"
 									/>
 								</label>
 							</div>
 
-							<div className="settings-section-title" style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)", marginTop: "8px" }}>
+							<div
+								className="settings-section-title"
+								style={{
+									fontWeight: 600,
+									fontSize: "0.875rem",
+									color: "var(--ink)",
+									marginTop: "8px",
+								}}
+							>
 								Права доступа
 							</div>
-							<div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px", background: "var(--light-bg, rgba(0,0,0,0.02))", borderRadius: "8px" }}>
-								<label className="settings-checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+							<div
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									gap: "10px",
+									padding: "10px",
+									background: "var(--light-bg, rgba(0,0,0,0.02))",
+									borderRadius: "8px",
+								}}
+							>
+								<label
+									className="settings-checkbox-label"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										cursor: "pointer",
+									}}
+								>
 									<input
 										type="checkbox"
 										checked={editForm.canSignMedicalRecords}
-										onChange={(e) => setEditForm({ ...editForm, canSignMedicalRecords: e.target.checked })}
+										onChange={(e) =>
+											setEditForm({
+												...editForm,
+												canSignMedicalRecords: e.target.checked,
+											})
+										}
 									/>
-									<span style={{ fontSize: "0.875rem" }}>✍️ Подписание ЭМК (медицинские карты)</span>
+									<span style={{ fontSize: "0.875rem" }}>
+										✍️ Подписание ЭМК (медицинские карты)
+									</span>
 								</label>
-								<label className="settings-checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+								<label
+									className="settings-checkbox-label"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										cursor: "pointer",
+									}}
+								>
 									<input
 										type="checkbox"
 										checked={editForm.canManageImports}
-										onChange={(e) => setEditForm({ ...editForm, canManageImports: e.target.checked })}
+										onChange={(e) =>
+											setEditForm({
+												...editForm,
+												canManageImports: e.target.checked,
+											})
+										}
 									/>
-									<span style={{ fontSize: "0.875rem" }}>💿 Управление импортом КТ / снимков</span>
+									<span style={{ fontSize: "0.875rem" }}>
+										💿 Управление импортом КТ / снимков
+									</span>
 								</label>
-								<label className="settings-checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+								<label
+									className="settings-checkbox-label"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										cursor: "pointer",
+									}}
+								>
 									<input
 										type="checkbox"
 										checked={editForm.canManageMoney}
-										onChange={(e) => setEditForm({ ...editForm, canManageMoney: e.target.checked })}
+										onChange={(e) =>
+											setEditForm({
+												...editForm,
+												canManageMoney: e.target.checked,
+											})
+										}
 									/>
-									<span style={{ fontSize: "0.875rem" }}>💰 Доступ к кассе и финансам</span>
+									<span style={{ fontSize: "0.875rem" }}>
+										💰 Доступ к кассе и финансам
+									</span>
 								</label>
 							</div>
 
-							<div className="settings-section-title" style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)", marginTop: "8px" }}>
+							<div
+								className="settings-section-title"
+								style={{
+									fontWeight: 600,
+									fontSize: "0.875rem",
+									color: "var(--ink)",
+									marginTop: "8px",
+								}}
+							>
 								Учетные данные (Аутентификация)
 							</div>
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-								<label className="settings-control-label" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+							<div
+								style={{
+									display: "grid",
+									gridTemplateColumns: "1fr 1fr",
+									gap: "12px",
+								}}
+							>
+								<label
+									className="settings-control-label"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: "6px",
+									}}
+								>
 									Новый PIN (4 цифры)
 									<input
 										type="password"
 										value={editForm.pin}
-										onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })}
+										onChange={(e) =>
+											setEditForm({ ...editForm, pin: e.target.value })
+										}
 										maxLength={4}
 										placeholder="Оставьте пустым"
 										className="settings-control-input"
 									/>
 								</label>
 
-								<label className="settings-control-label" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+								<label
+									className="settings-control-label"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: "6px",
+									}}
+								>
 									Новый пароль (от 6 симв.)
 									<input
 										type="password"
 										value={editForm.password}
-										onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+										onChange={(e) =>
+											setEditForm({ ...editForm, password: e.target.value })
+										}
 										placeholder="Оставьте пустым"
 										className="settings-control-input"
 									/>
 								</label>
 							</div>
 
-							<div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
-								<label className="settings-checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									marginTop: "8px",
+								}}
+							>
+								<label
+									className="settings-checkbox-label"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										cursor: "pointer",
+									}}
+								>
 									<input
 										type="checkbox"
 										checked={editForm.active}
-										onChange={(e) => setEditForm({ ...editForm, active: e.target.checked })}
+										onChange={(e) =>
+											setEditForm({ ...editForm, active: e.target.checked })
+										}
 									/>
-									<span style={{ fontSize: "0.875rem", fontWeight: 600 }}>Активный сотрудник (разрешен вход в систему)</span>
+									<span style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+										Активный сотрудник (разрешен вход в систему)
+									</span>
 								</label>
 							</div>
 
-							<div className="form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "16px", borderTop: "1px solid var(--line)", paddingTop: "16px" }}>
+							<div
+								className="form-actions"
+								style={{
+									display: "flex",
+									justifyContent: "flex-end",
+									gap: "12px",
+									marginTop: "16px",
+									borderTop: "1px solid var(--line)",
+									paddingTop: "16px",
+								}}
+							>
 								<button
 									type="button"
 									className="secondary-button"

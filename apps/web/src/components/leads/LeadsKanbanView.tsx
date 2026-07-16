@@ -1,26 +1,26 @@
+import { AnimatePresence, motion } from "framer-motion";
 import {
 	Calendar,
 	CalendarClock,
 	ChevronRight,
+	DollarSign,
+	Edit2,
+	Filter,
 	Globe,
 	Handshake,
 	Phone,
 	Plus,
+	Search,
 	Trash2,
 	X,
-	Search,
-	Filter,
-	DollarSign,
-	Edit2
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { useThemeStore } from "../../store/themeStore";
 import { showToast } from "../GlobalToast";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 const COLUMNS: {
 	id: Lead["status"];
@@ -61,7 +61,14 @@ const COLUMNS: {
 ];
 
 export function LeadsKanbanView() {
-	const { leads, fetchLeads, updateLeadStatus, updateLeadDetails, addLead, isLoading } = useLeadsStore();
+	const {
+		leads,
+		fetchLeads,
+		updateLeadStatus,
+		updateLeadDetails,
+		addLead,
+		isLoading,
+	} = useLeadsStore();
 	const { auth } = useAppLogicContext();
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
@@ -83,7 +90,12 @@ export function LeadsKanbanView() {
 	// Edit/Add Modal State
 	const [isEditOpen, setIsEditOpen] = useState(false);
 	const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
-	const [editForm, setEditForm] = useState<Partial<Lead>>({ name: "", phone: "", source: "", expectedRevenue: "" });
+	const [editForm, setEditForm] = useState<Partial<Lead>>({
+		name: "",
+		phone: "",
+		source: "",
+		expectedRevenue: "",
+	});
 
 	const { lastMessage } = useWebsocket(
 		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
@@ -175,7 +187,9 @@ export function LeadsKanbanView() {
 		try {
 			const res = await fetch(`/api/leads/${convertingLeadId}/convert`, {
 				method: "POST",
-				headers: auth.denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+				headers: auth.denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
 				body: JSON.stringify({
 					appointmentStart: startDateTime.toISOString(),
 					appointmentEnd: endDateTime.toISOString(),
@@ -201,7 +215,12 @@ export function LeadsKanbanView() {
 	const openEditModal = (lead?: Lead) => {
 		if (lead) {
 			setEditingLeadId(lead.id);
-			setEditForm({ name: lead.name, phone: lead.phone || "", source: lead.source || "", expectedRevenue: lead.expectedRevenue || "" });
+			setEditForm({
+				name: lead.name,
+				phone: lead.phone || "",
+				source: lead.source || "",
+				expectedRevenue: lead.expectedRevenue || "",
+			});
 		} else {
 			setEditingLeadId("new");
 			setEditForm({ name: "", phone: "", source: "", expectedRevenue: "" });
@@ -216,7 +235,9 @@ export function LeadsKanbanView() {
 				name: editForm.name || "Без имени",
 				phone: editForm.phone || "",
 				source: editForm.source || "",
-				expectedRevenue: editForm.expectedRevenue ? String(editForm.expectedRevenue) : ""
+				expectedRevenue: editForm.expectedRevenue
+					? String(editForm.expectedRevenue)
+					: "",
 			};
 
 			if (editingLeadId === "new") {
@@ -235,7 +256,8 @@ export function LeadsKanbanView() {
 	const filteredLeads = useMemo(() => {
 		return leads.filter((l) => {
 			const q = searchQuery.toLowerCase();
-			const matchesSearch = !q || l.name?.toLowerCase().includes(q) || l.phone?.includes(q);
+			const matchesSearch =
+				!q || l.name?.toLowerCase().includes(q) || l.phone?.includes(q);
 			const matchesSource = !sourceFilter || l.source === sourceFilter;
 			return matchesSearch && matchesSource;
 		});
@@ -243,7 +265,9 @@ export function LeadsKanbanView() {
 
 	const uniqueSources = useMemo(() => {
 		const s = new Set<string>();
-		leads.forEach(l => { if (l.source) s.add(l.source); });
+		leads.forEach((l) => {
+			if (l.source) s.add(l.source);
+		});
 		return Array.from(s);
 	}, [leads]);
 
@@ -290,7 +314,7 @@ export function LeadsKanbanView() {
 					justifyContent: "space-between",
 					marginBottom: 24,
 					flexWrap: "wrap",
-					gap: 16
+					gap: 16,
 				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -322,10 +346,14 @@ export function LeadsKanbanView() {
 						<Plus size={16} /> Новый лид
 					</button>
 				</div>
-				
+
 				<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
 					<div style={{ position: "relative" }}>
-						<Search size={16} color="var(--muted)" style={{ position: "absolute", left: 10, top: 10 }} />
+						<Search
+							size={16}
+							color="var(--muted)"
+							style={{ position: "absolute", left: 10, top: 10 }}
+						/>
 						<input
 							type="text"
 							placeholder="Поиск по имени или телефону..."
@@ -337,12 +365,16 @@ export function LeadsKanbanView() {
 								border: `1px solid ${borderColor}`,
 								background: colBg,
 								color: "var(--ink)",
-								minWidth: 240
+								minWidth: 240,
 							}}
 						/>
 					</div>
 					<div style={{ position: "relative" }}>
-						<Filter size={16} color="var(--muted)" style={{ position: "absolute", left: 10, top: 10 }} />
+						<Filter
+							size={16}
+							color="var(--muted)"
+							style={{ position: "absolute", left: 10, top: 10 }}
+						/>
 						<select
 							value={sourceFilter}
 							onChange={(e) => setSourceFilter(e.target.value)}
@@ -353,11 +385,15 @@ export function LeadsKanbanView() {
 								background: colBg,
 								color: "var(--ink)",
 								appearance: "none",
-								minWidth: 140
+								minWidth: 140,
 							}}
 						>
 							<option value="">Все источники</option>
-							{uniqueSources.map(s => <option key={s} value={s}>{s}</option>)}
+							{uniqueSources.map((s) => (
+								<option key={s} value={s}>
+									{s}
+								</option>
+							))}
 						</select>
 					</div>
 				</div>
@@ -375,7 +411,10 @@ export function LeadsKanbanView() {
 			>
 				{COLUMNS.map((col) => {
 					const columnLeads = filteredLeads.filter((l) => l.status === col.id);
-					const columnRevenue = columnLeads.reduce((acc, l) => acc + (Number(l.expectedRevenue) || 0), 0);
+					const columnRevenue = columnLeads.reduce(
+						(acc, l) => acc + (Number(l.expectedRevenue) || 0),
+						0,
+					);
 
 					return (
 						<div
@@ -403,8 +442,20 @@ export function LeadsKanbanView() {
 									borderBottom: `1px solid ${borderColor}`,
 								}}
 							>
-								<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "space-between",
+									}}
+								>
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "8px",
+										}}
+									>
 										<div
 											style={{
 												width: 32,
@@ -444,8 +495,18 @@ export function LeadsKanbanView() {
 									</span>
 								</div>
 								{columnRevenue > 0 && (
-									<div style={{ fontSize: 13, color: "var(--teal)", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-										<DollarSign size={14} /> {columnRevenue.toLocaleString("ru-RU")} ₽
+									<div
+										style={{
+											fontSize: 13,
+											color: "var(--teal)",
+											fontWeight: 500,
+											display: "flex",
+											alignItems: "center",
+											gap: 4,
+										}}
+									>
+										<DollarSign size={14} />{" "}
+										{columnRevenue.toLocaleString("ru-RU")} ₽
 									</div>
 								)}
 							</div>
@@ -478,10 +539,16 @@ export function LeadsKanbanView() {
 												border: `1px solid ${borderColor}`,
 												boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
 												opacity: draggedLeadId === lead.id ? 0.5 : 1,
-												transform: draggedLeadId === lead.id ? "scale(0.98)" : "scale(1)",
+												transform:
+													draggedLeadId === lead.id
+														? "scale(0.98)"
+														: "scale(1)",
 												transition: "box-shadow 0.2s",
 											}}
-											whileHover={{ y: -2, boxShadow: "0 8px 16px rgba(0,0,0,0.08)" }}
+											whileHover={{
+												y: -2,
+												boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
+											}}
 										>
 											<div
 												style={{
@@ -491,10 +558,22 @@ export function LeadsKanbanView() {
 													marginBottom: "8px",
 												}}
 											>
-												<strong style={{ fontSize: 15, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+												<strong
+													style={{
+														fontSize: 15,
+														color: "var(--ink)",
+														display: "flex",
+														alignItems: "center",
+														gap: 6,
+													}}
+												>
 													{lead.name}
 												</strong>
-												<Edit2 size={14} color="var(--muted)" style={{ opacity: 0.5 }} />
+												<Edit2
+													size={14}
+													color="var(--muted)"
+													style={{ opacity: 0.5 }}
+												/>
 											</div>
 
 											{lead.phone && (
@@ -535,7 +614,9 @@ export function LeadsKanbanView() {
 													>
 														<Globe size={10} /> {lead.source}
 													</div>
-												) : <div />}
+												) : (
+													<div />
+												)}
 												{lead.expectedRevenue ? (
 													<div
 														style={{
@@ -805,8 +886,10 @@ export function LeadsKanbanView() {
 									gap: 8,
 								}}
 							>
-								<Edit2 size={20} color="var(--teal)" /> 
-								{editingLeadId === "new" ? "Добавить лида" : "Редактировать лида"}
+								<Edit2 size={20} color="var(--teal)" />
+								{editingLeadId === "new"
+									? "Добавить лида"
+									: "Редактировать лида"}
 							</h3>
 							<button
 								onClick={() => setIsEditOpen(false)}
@@ -832,7 +915,9 @@ export function LeadsKanbanView() {
 								<input
 									type="text"
 									value={editForm.name}
-									onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+									onChange={(e) =>
+										setEditForm({ ...editForm, name: e.target.value })
+									}
 									placeholder="Иван Иванов"
 									style={{
 										padding: 10,
@@ -852,7 +937,9 @@ export function LeadsKanbanView() {
 								<input
 									type="tel"
 									value={editForm.phone}
-									onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+									onChange={(e) =>
+										setEditForm({ ...editForm, phone: e.target.value })
+									}
 									placeholder="+7 (999) 123-45-67"
 									style={{
 										padding: 10,
@@ -871,7 +958,9 @@ export function LeadsKanbanView() {
 								<input
 									type="text"
 									value={editForm.source}
-									onChange={(e) => setEditForm({ ...editForm, source: e.target.value })}
+									onChange={(e) =>
+										setEditForm({ ...editForm, source: e.target.value })
+									}
 									placeholder="Instagram, Сайт, Рекомендация..."
 									style={{
 										padding: 10,
@@ -890,7 +979,12 @@ export function LeadsKanbanView() {
 								<input
 									type="text"
 									value={editForm.expectedRevenue}
-									onChange={(e) => setEditForm({ ...editForm, expectedRevenue: e.target.value })}
+									onChange={(e) =>
+										setEditForm({
+											...editForm,
+											expectedRevenue: e.target.value,
+										})
+									}
 									placeholder="15000"
 									style={{
 										padding: 10,

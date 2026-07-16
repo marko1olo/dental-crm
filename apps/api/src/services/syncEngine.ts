@@ -1,4 +1,4 @@
-import { PGlite } from "@electric-sql/pglite";
+import type { PGlite } from "@electric-sql/pglite";
 import { electricSync } from "@electric-sql/pglite-sync";
 import { db } from "../db/client.js";
 import { organizations } from "../db/schema.js";
@@ -11,7 +11,7 @@ export async function startSyncEngine(pgliteClient: PGlite) {
 	if (isSyncing) return;
 
 	const electricUrl = process.env.ELECTRIC_SYNC_URL;
-	
+
 	if (!electricUrl) {
 		console.log(
 			"[SyncEngine] ⚠️ ELECTRIC_SYNC_URL is not defined. Running in Local-Only Isolated Mode.",
@@ -22,23 +22,33 @@ export async function startSyncEngine(pgliteClient: PGlite) {
 		return;
 	}
 
-	console.log("[SyncEngine] 🟢 Starting Commercial CRDT Sync via ElectricSQL...");
+	console.log(
+		"[SyncEngine] 🟢 Starting Commercial CRDT Sync via ElectricSQL...",
+	);
 
 	try {
-		const allOrgs = await db.select({ id: organizations.id }).from(organizations);
+		const allOrgs = await db
+			.select({ id: organizations.id })
+			.from(organizations);
 		const orgIds = allOrgs.map((o) => o.id);
-		
+
 		if (orgIds.length === 0) {
-			console.log("[SyncEngine] ⚠️ No local organizations found. Delaying sync until an organization is created.");
+			console.log(
+				"[SyncEngine] ⚠️ No local organizations found. Delaying sync until an organization is created.",
+			);
 			return;
 		}
-		
+
 		const orgFilterList = orgIds.map((id) => `'${id}'`).join(",");
 		const orgWhereClause = `"organization_id" IN (${orgFilterList})`;
 
-		console.log(`[SyncEngine] 🟢 Starting Commercial CRDT Sync for orgs: ${orgIds.join(", ")}`);
+		console.log(
+			`[SyncEngine] 🟢 Starting Commercial CRDT Sync for orgs: ${orgIds.join(", ")}`,
+		);
 
-		const baseUrl = electricUrl.endsWith("/v1/shape") ? electricUrl : `${electricUrl}/v1/shape`;
+		const baseUrl = electricUrl.endsWith("/v1/shape")
+			? electricUrl
+			: `${electricUrl}/v1/shape`;
 
 		const buildShape = (tableName: string) => ({
 			shape: {
@@ -67,7 +77,9 @@ export async function startSyncEngine(pgliteClient: PGlite) {
 			},
 			key: "dente-sync",
 			onInitialSync: () => {
-				console.log("[SyncEngine] ✅ Sync Engine initialized and connected to Global DB.");
+				console.log(
+					"[SyncEngine] ✅ Sync Engine initialized and connected to Global DB.",
+				);
 			},
 			onError: (err: any) => {
 				console.error("[SyncEngine] ❌ Sync error:", err.message || err);
@@ -83,7 +95,7 @@ export async function startSyncEngine(pgliteClient: PGlite) {
 export async function stopSyncEngine() {
 	if (!isSyncing) return;
 	console.log("[SyncEngine] 🛑 Stopping Sync Engine...");
-	
+
 	if (syncPlugin && typeof syncPlugin.unsubscribe === "function") {
 		try {
 			syncPlugin.unsubscribe();

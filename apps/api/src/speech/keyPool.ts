@@ -88,7 +88,9 @@ export function getProxyAgent(): Dispatcher | null {
 			}
 		} catch (err) {
 			console.error(
-				"[Proxy Agent] Failed to initialize ProxyAgent for", proxyUrl, ":",
+				"[Proxy Agent] Failed to initialize ProxyAgent for",
+				proxyUrl,
+				":",
 				err,
 			);
 		}
@@ -662,7 +664,9 @@ export async function fetchWithProviderTimeout(
 
 		if (isNetworkError && !dispatcher) {
 			console.log(
-				"[Speech Fetch] Direct connection failed", error.message, "Attempting SOCKS5 SSH Tunnel fallback...",
+				"[Speech Fetch] Direct connection failed",
+				error.message,
+				"Attempting SOCKS5 SSH Tunnel fallback...",
 			);
 			const tunnelActive = await ensureSshTunnel();
 			if (tunnelActive) {

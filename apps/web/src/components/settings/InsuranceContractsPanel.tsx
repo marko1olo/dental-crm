@@ -2,14 +2,10 @@
  * InsuranceContractsPanel — manages DMS (voluntary medical insurance) contracts
  * for the organization. Lives in the Settings → ДМС tab.
  */
-import React, { useCallback, useEffect, useState } from "react";
-import {
-	Edit2,
-	Plus,
-	ShieldCheck,
-	Trash2,
-	X,
-} from "lucide-react";
+
+import { Edit2, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
@@ -46,8 +42,7 @@ const defaultForm = (): ContractFormData => ({
 	annualLimitRub: "",
 });
 
-const clampPct = (v: string) =>
-	Math.min(100, Math.max(0, parseFloat(v) || 0));
+const clampPct = (v: string) => Math.min(100, Math.max(0, parseFloat(v) || 0));
 
 export const InsuranceContractsPanel: React.FC = () => {
 	const { auth } = useAppLogicContext();
@@ -55,7 +50,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 	const [contracts, setContracts] = useState<InsuranceContract[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [showModal, setShowModal] = useState(false);
-	const [editingContract, setEditingContract] = useState<InsuranceContract | null>(null);
+	const [editingContract, setEditingContract] =
+		useState<InsuranceContract | null>(null);
 	const [formData, setFormData] = useState<ContractFormData>(defaultForm());
 
 	const paperBg = "var(--paper)";
@@ -100,7 +96,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 			coverageSurgeryPct: String(contract.coverageSurgeryPct),
 			coverageOrthoPct: String(contract.coverageOrthoPct),
 			coverageHygienePct: String(contract.coverageHygienePct),
-			annualLimitRub: contract.annualLimitRub != null ? String(contract.annualLimitRub) : "",
+			annualLimitRub:
+				contract.annualLimitRub != null ? String(contract.annualLimitRub) : "",
 		});
 		setShowModal(true);
 	};
@@ -126,19 +123,26 @@ export const InsuranceContractsPanel: React.FC = () => {
 			if (editingContract) {
 				res = await fetch(`/api/insurance/contracts/${editingContract.id}`, {
 					method: "PUT",
-					headers: auth.denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+					headers: auth.denteClinicalReadHeaders({
+						"Content-Type": "application/json",
+					}),
 					body: JSON.stringify(payload),
 				});
 			} else {
 				res = await fetch("/api/insurance/contracts", {
 					method: "POST",
-					headers: auth.denteClinicalReadHeaders({ "Content-Type": "application/json" }),
+					headers: auth.denteClinicalReadHeaders({
+						"Content-Type": "application/json",
+					}),
 					body: JSON.stringify(payload),
 				});
 			}
 
 			if (res.ok) {
-				showToast(editingContract ? "Договор обновлён" : "Договор добавлен", "success");
+				showToast(
+					editingContract ? "Договор обновлён" : "Договор добавлен",
+					"success",
+				);
 				setShowModal(false);
 				fetchContracts();
 			} else {
@@ -211,7 +215,9 @@ export const InsuranceContractsPanel: React.FC = () => {
 						<ShieldCheck size={22} color="var(--teal)" />
 						Договоры ДМС
 					</h2>
-					<p style={{ margin: "6px 0 0 0", color: "var(--muted)", fontSize: 14 }}>
+					<p
+						style={{ margin: "6px 0 0 0", color: "var(--muted)", fontSize: 14 }}
+					>
 						Страховые компании и покрытие по категориям услуг. Используются в
 						Сравнительном конструкторе смет.
 					</p>
@@ -307,8 +313,8 @@ export const InsuranceContractsPanel: React.FC = () => {
 												color: "var(--muted)",
 											}}
 										>
-											Годовой лимит: {contract.annualLimitRub.toLocaleString("ru-RU")}{" "}
-											₽
+											Годовой лимит:{" "}
+											{contract.annualLimitRub.toLocaleString("ru-RU")} ₽
 										</p>
 									)}
 								</div>
@@ -374,7 +380,13 @@ export const InsuranceContractsPanel: React.FC = () => {
 											padding: "10px 14px",
 										}}
 									>
-										<div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
+										<div
+											style={{
+												fontSize: 11,
+												color: "var(--muted)",
+												marginBottom: 4,
+											}}
+										>
 											{label}
 										</div>
 										<div
@@ -458,7 +470,9 @@ export const InsuranceContractsPanel: React.FC = () => {
 									color: "var(--ink)",
 								}}
 							>
-								{editingContract ? "Редактировать договор" : "Добавить договор ДМС"}
+								{editingContract
+									? "Редактировать договор"
+									: "Добавить договор ДМС"}
 							</h2>
 							<button
 								onClick={() => setShowModal(false)}
@@ -479,7 +493,13 @@ export const InsuranceContractsPanel: React.FC = () => {
 						>
 							{/* Company name */}
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+								<label
+									style={{
+										fontSize: 13,
+										color: "var(--muted)",
+										fontWeight: 500,
+									}}
+								>
 									Страховая компания *
 								</label>
 								<input
@@ -504,7 +524,13 @@ export const InsuranceContractsPanel: React.FC = () => {
 
 							{/* Policy mask */}
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+								<label
+									style={{
+										fontSize: 13,
+										color: "var(--muted)",
+										fontWeight: 500,
+									}}
+								>
 									Маска номера полиса (опционально)
 								</label>
 								<input
@@ -550,7 +576,11 @@ export const InsuranceContractsPanel: React.FC = () => {
 									{coverageCategories.map(({ label, key }) => (
 										<div
 											key={key}
-											style={{ display: "flex", flexDirection: "column", gap: 5 }}
+											style={{
+												display: "flex",
+												flexDirection: "column",
+												gap: 5,
+											}}
 										>
 											<label
 												style={{
@@ -598,7 +628,13 @@ export const InsuranceContractsPanel: React.FC = () => {
 
 							{/* Annual limit */}
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+								<label
+									style={{
+										fontSize: 13,
+										color: "var(--muted)",
+										fontWeight: 500,
+									}}
+								>
 									Годовой лимит (₽, опционально)
 								</label>
 								<input

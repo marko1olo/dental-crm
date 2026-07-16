@@ -1,16 +1,17 @@
-import React, { useEffect, useState, useMemo } from "react";
 import {
-	Plus,
-	Package,
 	AlertTriangle,
 	ArrowDownToLine,
 	ArrowUpFromLine,
-	Search,
 	Edit2,
-	X,
+	Package,
+	Plus,
+	Search,
 	Trash2,
 	TrendingUp,
+	X,
 } from "lucide-react";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { showToast } from "./GlobalToast";
 
@@ -42,7 +43,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	});
 
 	// Adjust Modal
-	const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);
+	const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(
+		null,
+	);
 	const [adjustAmount, setAdjustAmount] = useState("");
 	const [adjustType, setAdjustType] = useState<"in" | "out">("in");
 
@@ -144,7 +147,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	};
 
 	const handleDeleteItem = async (itemId: string, name: string) => {
-		if (!window.confirm(`Удалить «${name}» со склада? Это действие необратимо.`))
+		if (
+			!window.confirm(`Удалить «${name}» со склада? Это действие необратимо.`)
+		)
 			return;
 		try {
 			const res = await fetch(`/api/inventory/${organizationId}/${itemId}`, {
@@ -280,7 +285,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					>
 						<Package color="var(--teal)" size={28} /> Склад материалов
 					</h1>
-					<p style={{ color: "var(--muted)", margin: "4px 0 0 0", fontSize: 14 }}>
+					<p
+						style={{ color: "var(--muted)", margin: "4px 0 0 0", fontSize: 14 }}
+					>
 						Учёт расходников, приход и списание
 					</p>
 				</div>
@@ -394,7 +401,14 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 					flexWrap: "wrap",
 				}}
 			>
-				<div style={{ position: "relative", minWidth: 260, flex: 1, maxWidth: 360 }}>
+				<div
+					style={{
+						position: "relative",
+						minWidth: 260,
+						flex: 1,
+						maxWidth: 360,
+					}}
+				>
 					<Search
 						size={16}
 						color="var(--muted)"
@@ -438,10 +452,19 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				}}
 			>
 				<table
-					style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}
+					style={{
+						width: "100%",
+						borderCollapse: "collapse",
+						textAlign: "left",
+					}}
 				>
 					<thead
-						style={{ position: "sticky", top: 0, background: paperSoftBg, zIndex: 10 }}
+						style={{
+							position: "sticky",
+							top: 0,
+							background: paperSoftBg,
+							zIndex: 10,
+						}}
 					>
 						<tr>
 							<th
@@ -517,7 +540,11 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							<tr>
 								<td
 									colSpan={5}
-									style={{ padding: 48, textAlign: "center", color: "var(--muted)" }}
+									style={{
+										padding: 48,
+										textAlign: "center",
+										color: "var(--muted)",
+									}}
 								>
 									{searchQuery
 										? "Материалы не найдены по запросу"
@@ -537,8 +564,20 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 											transition: "background 0.15s",
 										}}
 									>
-										<td style={{ padding: "14px 20px", color: "var(--ink)", fontWeight: 500 }}>
-											<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+										<td
+											style={{
+												padding: "14px 20px",
+												color: "var(--ink)",
+												fontWeight: 500,
+											}}
+										>
+											<div
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: 8,
+												}}
+											>
 												{isLowStock && (
 													<AlertTriangle size={15} color="var(--tomato)" />
 												)}
@@ -588,7 +627,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 													)}
 												</div>
 											) : (
-												<span style={{ color: "var(--muted)", fontStyle: "italic" }}>
+												<span
+													style={{ color: "var(--muted)", fontStyle: "italic" }}
+												>
 													—
 												</span>
 											)}
@@ -720,20 +761,47 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
 						}}
 					>
-						<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-							<h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								marginBottom: 20,
+							}}
+						>
+							<h2
+								style={{
+									margin: 0,
+									fontSize: 18,
+									fontWeight: 600,
+									color: "var(--ink)",
+								}}
+							>
 								{editingItem ? "Редактировать материал" : "Добавить материал"}
 							</h2>
 							<button
 								onClick={() => setShowModal(false)}
-								style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}
+								style={{
+									background: "none",
+									border: "none",
+									color: "var(--muted)",
+									cursor: "pointer",
+								}}
 							>
 								<X size={20} />
 							</button>
 						</div>
-						<form onSubmit={handleSaveItem} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+						<form
+							onSubmit={handleSaveItem}
+							style={{ display: "flex", flexDirection: "column", gap: 16 }}
+						>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+								<label
+									style={{
+										fontSize: 13,
+										color: "var(--muted)",
+										fontWeight: 500,
+									}}
+								>
 									Наименование *
 								</label>
 								<input
@@ -741,7 +809,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									required
 									autoFocus
 									value={formData.name}
-									onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+									onChange={(e) =>
+										setFormData({ ...formData, name: e.target.value })
+									}
 									style={{
 										padding: "10px 14px",
 										borderRadius: 8,
@@ -754,8 +824,21 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								/>
 							</div>
 							<div style={{ display: "flex", gap: 12 }}>
-								<div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-									<label style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+								<div
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: 6,
+										flex: 1,
+									}}
+								>
+									<label
+										style={{
+											fontSize: 13,
+											color: "var(--muted)",
+											fontWeight: 500,
+										}}
+									>
 										Минимальный остаток (шт)
 									</label>
 									<input
@@ -763,7 +846,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										min="0"
 										required
 										value={formData.threshold}
-										onChange={(e) => setFormData({ ...formData, threshold: e.target.value })}
+										onChange={(e) =>
+											setFormData({ ...formData, threshold: e.target.value })
+										}
 										style={{
 											padding: "10px 14px",
 											borderRadius: 8,
@@ -774,8 +859,21 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										}}
 									/>
 								</div>
-								<div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-									<label style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+								<div
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: 6,
+										flex: 1,
+									}}
+								>
+									<label
+										style={{
+											fontSize: 13,
+											color: "var(--muted)",
+											fontWeight: 500,
+										}}
+									>
 										Цена за единицу (₽)
 									</label>
 									<input
@@ -822,7 +920,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						alignItems: "center",
 						justifyContent: "center",
 					}}
-					onClick={(e) => e.target === e.currentTarget && setAdjustingItem(null)}
+					onClick={(e) =>
+						e.target === e.currentTarget && setAdjustingItem(null)
+					}
 				>
 					<div
 						style={{
@@ -835,24 +935,61 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							boxShadow: "0 24px 48px rgba(0,0,0,0.25)",
 						}}
 					>
-						<div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-							<h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								marginBottom: 16,
+							}}
+						>
+							<h2
+								style={{
+									margin: 0,
+									fontSize: 18,
+									fontWeight: 600,
+									color: "var(--ink)",
+								}}
+							>
 								{adjustType === "in" ? "Приход на склад" : "Списание со склада"}
 							</h2>
 							<button
 								onClick={() => setAdjustingItem(null)}
-								style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}
+								style={{
+									background: "none",
+									border: "none",
+									color: "var(--muted)",
+									cursor: "pointer",
+								}}
 							>
 								<X size={20} />
 							</button>
 						</div>
-						<p style={{ margin: "0 0 4px 0", color: "var(--muted)", fontSize: 13 }}>
+						<p
+							style={{
+								margin: "0 0 4px 0",
+								color: "var(--muted)",
+								fontSize: 13,
+							}}
+						>
 							Материал
 						</p>
-						<p style={{ margin: "0 0 20px 0", color: "var(--teal)", fontWeight: 600, fontSize: 15 }}>
+						<p
+							style={{
+								margin: "0 0 20px 0",
+								color: "var(--teal)",
+								fontWeight: 600,
+								fontSize: 15,
+							}}
+						>
 							{adjustingItem.name}
 						</p>
-						<p style={{ margin: "0 0 16px 0", color: "var(--muted)", fontSize: 13 }}>
+						<p
+							style={{
+								margin: "0 0 16px 0",
+								color: "var(--muted)",
+								fontSize: 13,
+							}}
+						>
 							Текущий остаток:{" "}
 							<strong style={{ color: "var(--ink)" }}>
 								{adjustingItem.stockQuantity} шт.
@@ -905,9 +1042,18 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							))}
 						</div>
 
-						<form onSubmit={handleAdjustStock} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+						<form
+							onSubmit={handleAdjustStock}
+							style={{ display: "flex", flexDirection: "column", gap: 16 }}
+						>
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-								<label style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>
+								<label
+									style={{
+										fontSize: 13,
+										color: "var(--muted)",
+										fontWeight: 500,
+									}}
+								>
 									Количество (шт.)
 								</label>
 								<input
@@ -931,13 +1077,21 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								/>
 							</div>
 							{adjustAmount && !isNaN(parseInt(adjustAmount)) && (
-								<p style={{ margin: 0, textAlign: "center", color: "var(--muted)", fontSize: 13 }}>
+								<p
+									style={{
+										margin: 0,
+										textAlign: "center",
+										color: "var(--muted)",
+										fontSize: 13,
+									}}
+								>
 									Будет:{" "}
 									<strong style={{ color: "var(--ink)" }}>
 										{Math.max(
 											0,
 											adjustingItem.stockQuantity +
-												(adjustType === "in" ? 1 : -1) * (parseInt(adjustAmount) || 0),
+												(adjustType === "in" ? 1 : -1) *
+													(parseInt(adjustAmount) || 0),
 										)}{" "}
 										шт.
 									</strong>
