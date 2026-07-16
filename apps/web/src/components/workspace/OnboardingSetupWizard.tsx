@@ -26,6 +26,7 @@ import {
 	applyWorkspacePreset,
 	saveWorkspaceFlags,
 } from "../../hooks/useWorkspaceProfile";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
 // --- Types ---
 type ThemeColor = "teal" | "blue" | "purple" | "rose";
@@ -164,6 +165,7 @@ export function OnboardingSetupWizard({
 	onComplete: () => void;
 	isDark?: boolean;
 }) {
+	const { auth } = useAppLogicContext();
 	const [activeDark, setActiveDark] = useState(initialIsDark);
 	useEffect(() => {
 		const checkDark = () => {
@@ -1556,10 +1558,24 @@ export function OnboardingSetupWizard({
 							</div>
 
 							<div
-								onClick={() => {
+								onClick={async () => {
 									if (migrationStatus === "idle") {
 										setMigrationStatus("analyzing");
-										setTimeout(() => setMigrationStatus("done"), 3000);
+										try {
+											const res = await fetch("/api/system/analyze-legacy-db", {
+												method: "POST",
+												headers: auth.denteClinicalMutationHeaders({
+													"Content-Type": "application/json"
+												}),
+												body: JSON.stringify({})
+											});
+											if (!res.ok) throw new Error("Migration analysis failed");
+											await res.json();
+											setMigrationStatus("done");
+										} catch (err) {
+											console.error(err);
+											setMigrationStatus("idle");
+										}
 									}
 								}}
 								style={{

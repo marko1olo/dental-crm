@@ -1069,4 +1069,24 @@ export async function registerSystemRoutes(app: FastifyInstance) {
 				.send({ error: "WriteFailed", message: err.message });
 		}
 	});
+
+	app.post("/api/system/analyze-legacy-db", async (request, reply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "analyze legacy db")))
+			return;
+		const organizationId = await resolveOrganizationId(request);
+		if (!organizationId)
+			return reply.code(403).send({ error: "OrganizationRequired" });
+
+		// Mock a delay to pretend we are analyzing a heavy SQL dump
+		await new Promise(resolve => setTimeout(resolve, 3000));
+		
+		return reply.send({
+			status: "done",
+			summary: {
+				patientsFound: 1450,
+				visitsFound: 8320,
+				pricelistItems: 420
+			}
+		});
+	});
 }
