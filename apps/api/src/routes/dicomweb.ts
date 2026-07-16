@@ -12,29 +12,30 @@ export async function registerDicomwebRoutes(app: FastifyInstance) {
 		async (request, reply) => {
 			const { instanceUid } = request.params as any;
 
-			// In a real application, we would find the instance in DB
-			// const instance = await db.query.imagingInstances.findFirst({
-			//   where: eq(imagingInstances.dicomSopInstanceUid, instanceUid)
-			// });
-
-			// For local MVP / Development, we'll try to serve a test DICOM file
-			const fallbackPath = path.resolve(
-				process.cwd(),
-				"../../.data/dicom/test.dcm",
-			);
-
 			try {
-				const buffer = await fs.readFile(fallbackPath);
+				const instance = await db.query.imagingInstances.findFirst({
+					where: eq(imagingInstances.dicomSopInstanceUid, instanceUid),
+				});
+
+				let targetPath: string;
+
+				if (instance && instance.storagePath) {
+					targetPath = path.resolve(process.cwd(), instance.storagePath);
+				} else {
+					// Fallback for development if the instance is not in the database
+					targetPath = path.resolve(process.cwd(), "../../.data/dicom/test.dcm");
+				}
+
+				const buffer = await fs.readFile(targetPath);
 				reply.header("Content-Type", "application/dicom");
 				reply.header("Content-Length", buffer.length);
 				// Browsers may need CORS for cornerstone loader
 				reply.header("Access-Control-Allow-Origin", "*");
 				return reply.send(buffer);
 			} catch (e) {
-				app.log.error(`DICOM file not found at ${fallbackPath}`);
+				app.log.error(`DICOM file not found for instance ${instanceUid}: ${e}`);
 				reply.status(404).send({
-					error:
-						"DICOM file not found. Ensure .data/dicom/test.dcm exists for MVP.",
+					error: "DICOM file not found.",
 				});
 			}
 		},

@@ -1,8 +1,14 @@
-import type { DicomRenderCachePlanResponse, MprProjection, StaffRole } from "@dental/shared";
-import type { MigrationAutopilotOperatorScriptAction, MigrationLocalSourceDiscoveryCandidate, MigrationLocalSourceHandoff } from "../../AppHelpers";
-import type { DicomSeriesPreviewGroup } from "../imaging/VisiographAnalyzer";
-import type { LocalBridgeReadinessResponse } from "./LegacyMigrationStudio";
-import { workspaceViewLabels } from "../../settingsStaticData";
+import type { 
+	DicomRenderCachePlanResponse, 
+	MprProjection, 
+	StaffRole,
+	MigrationAutopilotOperatorScriptAction, 
+	MigrationLocalSourceDiscoveryCandidate, 
+	MigrationLocalSourceHandoff,
+	DicomSeriesPreviewGroup,
+	LocalBridgeReadinessResponse
+} from "@dental/shared";
+import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 
 export const viewLabels = workspaceViewLabels as Record<string, string>;
 export const staffCreationRoles: StaffRole[] = [

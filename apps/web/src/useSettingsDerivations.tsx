@@ -814,37 +814,14 @@ type DicomFirstFrameViewerState = {
 	contrast: number;
 	zoom: number;
 };
-type SettingsTabId =
-	| "profile"
-	| "staff"
-	| "clinic"
-	| "access"
-	| "insurance"
-	| "telegram"
-	| "messengers"
-	| "protocols"
-	| "rules"
-	| "prices"
-	| "sources"
-	| "ai"
-	| "imports"
-	| "audit"
-	| "inventory";
-type SettingsTab = { id: SettingsTabId; title: string };
 type CbctWorkbenchPlane = { key: MprProjection; title: string; detail: string };
 type MigrationOperatorActionScope = "primary" | "script";
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { useSettingsDerivations } from "./useSettingsDerivations";
-
-export interface SettingsViewProps {
-	activeStaffUser?: any;
-}
-
-export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+export function useSettingsDerivations() {
+	const appLogic = useAppLogicContext();
 	const {
 		activePatient,
 		activeSettingsTabButtonRef,
@@ -1514,8 +1491,790 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance";
 	const dicomWorkbenchSeriesGuidanceId = "dicom-workbench-series-guidance";
 	const dicomWorkstationGuidanceId = "dicom-workstation-guidance";
-	const derivations = useSettingsDerivations();
-	const {
+	const dicomArchiveAddressGuidanceId = "dicom-archive-address-guidance";
+	const localDicomFolderGuidanceId = "local-dicom-folder-guidance";
+	const migrationHandoffReportGuidanceId = "migration-handoff-report-guidance";
+	const dicomArchiveAddressReady =
+		(dicomWebEndpointUrl || "").trim().length > 0;
+	const telegramOutboxBulkSendGuidance = isTelegramLoading
+		? "Дождитесь загрузки очереди Telegram."
+		: isTelegramSendingDue || telegramSendingItemId
+			? "Дождитесь завершения текущей отправки Telegram."
+			: !telegramOutbox?.dueCount
+				? "Сейчас нет сообщений, готовых к отправке."
+				: "";
+	const clinicLookupSuggestionFieldEntries = (
+		fields: Record<string, unknown>,
+	) =>
+		Object.entries(fields).filter(([key, value]) => {
+			if (!Object.hasOwn(clinicPublicLookupFieldLabels, key)) return false;
+			if (value === null || typeof value === "undefined") return false;
+			return String(value).trim().length > 0;
+		});
+	const clinicLookupSuggestionApplySummary = (
+		fields: Record<string, unknown>,
+	) => {
+		const entries = clinicLookupSuggestionFieldEntries(fields);
+		if (!entries.length) return "Нет применимых полей для профиля.";
+
+		const currentProfile = clinicProfileDraft as Record<string, unknown>;
+		let emptyCount = 0;
+		let replaceCount = 0;
+		let unchangedCount = 0;
+		entries.forEach(([key, value]) => {
+			const currentValue = String(currentProfile[key] ?? "").trim();
+			const suggestedValue = String(value).trim();
+			if (!currentValue) emptyCount += 1;
+			else if (currentValue === suggestedValue) unchangedCount += 1;
+			else replaceCount += 1;
+		});
+		return `Будет подставлено полей: ${entries.length}. Новых: ${emptyCount}. Заменит текущих: ${replaceCount}. Совпадает: ${unchangedCount}.`;
+	};
+	const applyClinicLookupSuggestion = (fields: Record<string, unknown>) => {
+		clinicLookupSuggestionFieldEntries(fields).forEach(([key, value]) => {
+			updateClinicProfileDraft(key, String(value).trim());
+		});
+	};
+	const clinicProfileSaveButtonText =
+		clinicProfileSaveState === "saving"
+			? "Сохраняю профиль"
+			: clinicProfileSaveState === "saved"
+				? "Профиль сохранен"
+				: "Сохранить профиль";
+	const typedMigrationAutopilot =
+		migrationAutopilot as MigrationAutopilotResponse | null;
+	const typedMigrationSourceDiscovery =
+		migrationSourceDiscovery as MigrationLocalSourceDiscoveryResponse | null;
+	const activeMigrationDiscoveryForSettingsAutopilot =
+		typedMigrationSourceDiscovery ?? typedBrowserMigrationDiscovery ?? null;
+	const typedMigrationSourceWorkup =
+		migrationSourceWorkup as MigrationLocalSourceWorkupResponse | null;
+	const typedMigrationSourceProbe =
+		migrationSourceProbe as MigrationLocalSourceProbeResponse | null;
+	const typedClinicPublicLookup =
+		clinicPublicLookup as ClinicPublicLookupResponse | null;
+	const typedDicomFirstFramePreview =
+		dicomFirstFramePreview as DicomFirstFramePreviewResponse | null;
+	const typedDicomFirstFrameViewerState =
+		dicomFirstFrameViewerState as DicomFirstFrameViewerState;
+	const typedDefaultDicomFirstFrameViewerState =
+		defaultDicomFirstFrameViewerState as DicomFirstFrameViewerState;
+	const dicomFirstFrameSelectableCount =
+		typedDicomFirstFramePreview?.selectableFileCount ?? 0;
+	const dicomFirstFrameCurrentIndex =
+		typedDicomFirstFramePreview?.sourceFileIndex ?? null;
+	const dicomFirstFrameSliceMaxIndex = Math.max(
+		0,
+		dicomFirstFrameSelectableCount - 1,
+	);
+	const dicomFirstFrameLandmarkSlices =
+		dicomFirstFrameSelectableCount > 3
+			? [
+					{
+						label: "25%",
+						targetIndex: Math.round(dicomFirstFrameSliceMaxIndex * 0.25),
+					},
+					{
+						label: "Центр",
+						targetIndex: Math.round(dicomFirstFrameSliceMaxIndex * 0.5),
+					},
+					{
+						label: "75%",
+						targetIndex: Math.round(dicomFirstFrameSliceMaxIndex * 0.75),
+					},
+				].filter(
+					(item, index, items) =>
+						items.findIndex(
+							(candidate) => candidate.targetIndex === item.targetIndex,
+						) === index,
+				)
+			: [];
+	const dicomFirstFrameCanSelectPrevious =
+		typeof dicomFirstFrameCurrentIndex === "number" &&
+		dicomFirstFrameCurrentIndex > 0 &&
+		!isDicomFirstFramePreviewing;
+	const dicomFirstFrameCanSelectNext =
+		typeof dicomFirstFrameCurrentIndex === "number" &&
+		dicomFirstFrameSelectableCount > 0 &&
+		dicomFirstFrameCurrentIndex < dicomFirstFrameSelectableCount - 1 &&
+		!isDicomFirstFramePreviewing;
+	const typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ??
+		[]) as DicomSeriesPreviewGroup[];
+	const typedDicomSeriesPreviewParserNotes = (dicomSeriesPreview?.parserNotes ??
+		[]) as string[];
+	const typedCbctWorkbenchSeries =
+		cbctWorkbenchSeries as DicomSeriesPreviewGroup | null;
+	const typedDicomViewerWorkbenchManifest =
+		dicomViewerWorkbenchManifest as DicomViewerWorkbenchManifestResponse | null;
+	const typedDicomWorkstationReadiness =
+		dicomWorkstationReadiness as DicomWorkstationReadinessResponse | null;
+	const typedDicomRenderCachePlan =
+		dicomRenderCachePlan as DicomRenderCachePlanResponse | null;
+	const typedDicomViewerToolStateBundle =
+		dicomViewerToolStateBundle as DicomViewerToolStateBundleResponse | null;
+	const typedDicomLocalFolderDiscovery =
+		dicomLocalFolderDiscovery as DicomLocalFolderDiscoveryResponse | null;
+	const typedLocalImagingOrganizer =
+		localImagingOrganizer as LocalImagingOrganizerResponse | null;
+	const activeDentalModelWorkbenchManifest: DentalModelWorkbenchManifest | null =
+		typedLocalImagingOrganizer?.cases.find(
+			(caseItem) =>
+				localImagingFolderDraft?.folderFingerprint &&
+				caseItem.folderFingerprint.toUpperCase() ===
+					String(localImagingFolderDraft.folderFingerprint).toUpperCase() &&
+				caseItem.modelWorkbenchManifest.totalModels > 0,
+		)?.modelWorkbenchManifest ??
+		typedLocalImagingOrganizer?.cases.find(
+			(caseItem) => caseItem.modelWorkbenchManifest.ctSurfaceModels > 0,
+		)?.modelWorkbenchManifest ??
+		typedLocalImagingOrganizer?.cases.find(
+			(caseItem) => caseItem.modelWorkbenchManifest.totalModels > 0,
+		)?.modelWorkbenchManifest ??
+		null;
+	const typedImagingFolderScan =
+		imagingFolderScan as ImagingFolderScanResponse | null;
+	const typedDicomFolderSeriesScan =
+		dicomFolderSeriesScan as DicomFolderSeriesPreviewResponse | null;
+	const typedDicomFolderWorkupPlan =
+		dicomFolderWorkupPlan as DicomFolderWorkupPlanResponse | null;
+	const typedCbctWorkbenchTools = (
+		typedCbctWorkbenchSeries?.mprReadiness.tools.length
+			? cbctWorkbenchTools
+			: ["window_level", "pan", "zoom", "external_open"]
+	) as DicomMprTool[];
+	const typedCbctMprBlockers =
+		typedCbctWorkbenchSeries?.mprReadiness.blockers ?? [];
+	const typedCbctMprWarnings =
+		typedCbctWorkbenchSeries?.mprReadiness.warnings ?? [];
+	const typedCbctResourceSafetyCaps =
+		typedCbctWorkbenchSeries?.mprReadiness.resourcePolicy.safetyCaps ?? [];
+	const mprControlsReady = Boolean(
+		typedCbctWorkbenchSeries?.mprReadiness.canOpenMpr,
+	);
+	const mprSliceMaxIndex = Math.max(
+		0,
+		(typedCbctWorkbenchSeries?.fileCount ?? 1) - 1,
+	);
+	const mprCenterSliceIndex = Math.floor(mprSliceMaxIndex / 2);
+	const typedCbctWorkbenchProjections =
+		cbctWorkbenchProjections as MprProjection[];
+	const mprSafeSliceIndex = clampMprSliceIndex(mprSliceIndex, mprSliceMaxIndex);
+	const updateDicomFirstFrameViewerState = (
+		updater: (state: DicomFirstFrameViewerState) => DicomFirstFrameViewerState,
+	) =>
+		setDicomFirstFrameViewerState((state: DicomFirstFrameViewerState) =>
+			updater(state),
+		);
+	const updateDicomFirstFrameViewerNumber = (
+		key: "brightness" | "contrast",
+		event: InputChangeEvent,
+	) => {
+		const value = Number(event.target.value);
+		updateDicomFirstFrameViewerState((state) => ({ ...state, [key]: value }));
+	};
+	const typedMprProjection = mprProjection as MprProjection;
+	const mprAxisDirectionLabel = formatMprAxisDirectionLabel({
+		canOpenMpr: mprControlsReady,
+		axisDeg: mprAxisDeg,
+	});
+	const mprAxisAngleBadge = formatMprAxisAngleBadge(
+		mprAxisDeg,
+		mprControlsReady,
+	);
+	const mprSlabBadge = formatMprSlabBadge(mprSlabMm, mprControlsReady);
+	const mprSliceBadge = formatMprSliceBadge({
+		canOpenMpr: mprControlsReady,
+		sliceIndex: mprSafeSliceIndex,
+		maxIndex: mprSliceMaxIndex,
+	});
+	const mprSlabVisualWidth = `${Math.min(86, Math.max(18, 14 + mprSlabMm * 2.2))}%`;
+	const mprSlicePositionPercent =
+		mprSliceMaxIndex > 0
+			? `${(mprSafeSliceIndex / mprSliceMaxIndex) * 100}%`
+			: "50%";
+	const mprCurrentSliceFraction = mprSliceFraction(
+		mprSafeSliceIndex,
+		mprSliceMaxIndex,
+	);
+	const mprSliceLabel = mprControlsReady
+		? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}`
+		: "срез включится после КЛКТ/КТ-серии";
+	const mprAxisRangeValue = formatMprAxisRangeValue({
+		canOpenMpr: mprControlsReady,
+		axisDeg: mprAxisDeg,
+	});
+	const mprSlabRangeValue = formatMprSlabRangeValue({
+		canOpenMpr: mprControlsReady,
+		slabMm: mprSlabMm,
+	});
+	const mprSliceRangeValue = formatMprSliceRangeValue({
+		canOpenMpr: mprControlsReady,
+		sliceIndex: mprSafeSliceIndex,
+		maxIndex: mprSliceMaxIndex,
+	});
+	const mprAxisVisualizerStyle: MprAxisVisualizerStyle = {
+		"--mpr-axis-deg": `${mprAxisDeg}deg`,
+		"--mpr-slab-width": mprSlabVisualWidth,
+		"--mpr-slice-position": mprSlicePositionPercent,
+	};
+	const mprActiveProjectionLabel =
+		mprProjectionLabels[typedMprProjection] ?? typedMprProjection;
+	const mprActiveProjectionOrientation =
+		mprProjectionOrientationLabels[typedMprProjection] ?? "плоскость просмотра";
+	const mprProjectionCompass = mprProjectionCompassLabels(typedMprProjection);
+	const mprAxisGuidance = buildMprAxisGuidance({
+		canOpenMpr: mprControlsReady,
+		axisDeg: mprAxisDeg,
+		slabMm: mprSlabMm,
+		sliceFraction: mprCurrentSliceFraction,
+	});
+	const mprNearestClinicalPreset = findNearestMprClinicalPreset(
+		{
+			canOpenMpr: mprControlsReady,
+			projection: typedMprProjection,
+			availableProjections: typedCbctWorkbenchProjections,
+			axisDeg: mprAxisDeg,
+			slabMm: mprSlabMm,
+			sliceFraction: mprCurrentSliceFraction,
+			windowPreset: mprWindowPreset,
+			crosshair: mprCrosshairEnabled,
+			linkedPlanes: mprLinkedPlanesEnabled,
+		},
+		mprClinicalPresets,
+	);
+	const mprClinicalInput = {
+		hasSeries: Boolean(typedCbctWorkbenchSeries),
+		canOpenMpr: mprControlsReady,
+		hasWorkbenchManifest: Boolean(typedDicomViewerWorkbenchManifest),
+		hasWorkstationReadiness: Boolean(typedDicomWorkstationReadiness),
+		protocolExact: mprNearestClinicalPreset.exact,
+		protocolCanApply: mprNearestClinicalPreset.deltas.length > 0,
+		protocolLabel: mprNearestClinicalPreset.label,
+		projectionLabel: mprActiveProjectionLabel,
+		axisLabel: mprAxisDirectionLabel,
+		slabMm: mprSlabMm,
+		sliceLabel: mprSliceLabel,
+		windowLabel: mprWindowPresetLabels[mprWindowPreset] ?? mprWindowPreset,
+		crosshair: mprCrosshairEnabled,
+		linkedPlanes: mprLinkedPlanesEnabled,
+	};
+	const mprWorkbenchSummaryText = buildMprWorkbenchSummary(mprClinicalInput);
+	const mprOperatorSummaryCards = buildMprOperatorSummary({
+		...mprClinicalInput,
+		protocolDeltas: mprNearestClinicalPreset.deltas,
+	});
+	const mprAxisVisualizerLabel = formatMprAxisVisualizerLabel({
+		canOpenMpr: mprControlsReady,
+		workbenchSummary: mprWorkbenchSummaryText,
+		compassSummary: mprProjectionCompass.summary,
+		guidanceSummary: mprAxisGuidance.summary,
+	});
+	const mprClinicalChecklist = buildMprClinicalChecklist(mprClinicalInput);
+	const mprClinicalNextStep = mprClinicalNextAction(mprClinicalChecklist);
+	const mprClinicalPresetButtonClass = (preset: MprClinicalPreset) =>
+		[
+			"mpr-clinical-preset",
+			mprNearestClinicalPreset.title === preset.title ? "nearest" : "",
+			mprNearestClinicalPreset.exact &&
+			mprNearestClinicalPreset.title === preset.title
+				? "active"
+				: "",
+		]
+			.filter(Boolean)
+			.join(" ");
+	const resetMprControls = () => {
+		const defaultProjection =
+			typedCbctWorkbenchSeries?.mprReadiness.projections.includes("axial")
+				? "axial"
+				: (typedCbctWorkbenchSeries?.mprReadiness.projections[0] ?? "axial");
+		setMprProjection(defaultProjection);
+		setMprAxisDeg(0);
+		setMprSlabMm(1);
+		setMprSliceIndex(mprCenterSliceIndex);
+		setMprWindowPreset("bone");
+		setMprCrosshairEnabled(true);
+		setMprLinkedPlanesEnabled(true);
+	};
+	const applyMprClinicalPreset = (preset: MprClinicalPreset) => {
+		const projection = resolveMprClinicalPresetProjection(
+			preset.projection,
+			typedCbctWorkbenchProjections,
+		);
+		setMprProjection(projection);
+		setMprAxisDeg(clampMprAxisDeg(preset.axisDeg));
+		setMprSlabMm(clampMprSlabMm(preset.slabMm));
+		setMprSliceIndex(
+			mprSliceIndexFromFraction(preset.sliceFraction, mprSliceMaxIndex),
+		);
+		setMprWindowPreset(preset.windowPreset);
+		setMprCrosshairEnabled(preset.crosshair);
+		setMprLinkedPlanesEnabled(preset.linkedPlanes);
+	};
+	const applyCtPlanningQuickAction = (action: CtPlanningQuickAction) => {
+		if (action.requiresVolume && !mprControlsReady) return;
+		const projection = resolveMprClinicalPresetProjection(
+			action.projection,
+			typedCbctWorkbenchProjections,
+		);
+		setCtPlanningActiveQuickActionId?.(action.id);
+		setImagingViewerActiveTool(action.tool);
+		setMprProjection(projection);
+		setMprAxisDeg(clampMprAxisDeg(action.axisDeg));
+		setMprSlabMm(clampMprSlabMm(action.slabMm));
+		setMprSliceIndex(
+			mprSliceIndexFromFraction(action.sliceFraction, mprSliceMaxIndex),
+		);
+		setMprWindowPreset(action.windowPreset);
+		setMprCrosshairEnabled(true);
+		setMprLinkedPlanesEnabled(true);
+	};
+	const selectCtPlanningImplantFromSettings = (
+		implant: CtImplantLibraryItem,
+	) => {
+		setCtPlanningActiveQuickActionId?.("implant_library");
+		selectCtPlanningImplant(implant);
+	};
+	const applyNearestMprClinicalPreset = () => {
+		const preset = mprClinicalPresets.find(
+			(candidate) => candidate.title === mprNearestClinicalPreset.title,
+		);
+		if (preset) applyMprClinicalPreset(preset);
+	};
+	const handleMprKeyboardNavigation = (
+		event: KeyboardEvent<HTMLDivElement>,
+	) => {
+		if (!mprControlsReady) return;
+		const adjustment = resolveMprKeyboardAdjustment({
+			key: event.key,
+			shiftKey: event.shiftKey,
+			axisDeg: mprAxisDeg,
+			slabMm: mprSlabMm,
+			sliceIndex: mprSafeSliceIndex,
+			maxIndex: mprSliceMaxIndex,
+		});
+		if (!adjustment) return;
+		event.preventDefault();
+		if (adjustment.kind === "axis") setMprAxisDeg(adjustment.value);
+		if (adjustment.kind === "slab") setMprSlabMm(adjustment.value);
+		if (adjustment.kind === "slice") setMprSliceIndex(adjustment.value);
+	};
+	const typedMigrationAutopilotSources = (typedMigrationAutopilot?.sources ??
+		[]) as MigrationAutopilotSource[];
+	const typedMigrationAutopilotClinicLookup =
+		typedMigrationAutopilot?.clinicLookup ?? null;
+	const typedMigrationAutopilotSteps = (typedMigrationAutopilot?.steps ??
+		[]) as MigrationAutopilotStep[];
+	const typedMigrationOperatorLanes = (typedMigrationAutopilot?.operatorPacket
+		.lanes ?? []) as MigrationAutopilotPacketLane[];
+	const typedMigrationHandoffChecklist = (typedMigrationAutopilot
+		?.operatorPacket.handoffChecklist ??
+		[]) as MigrationAutopilotHandoffChecklistItem[];
+	const migrationDryRunSummary =
+		typedMigrationAutopilot?.operatorPacket.dryRun ?? null;
+	const migrationTriageItems = [...typedMigrationHandoffChecklist]
+		.filter((item) => item.blocking || item.status !== "ready_for_preview")
+		.sort((left, right) => {
+			if (left.blocking !== right.blocking) return left.blocking ? -1 : 1;
+			const statusDelta =
+				(migrationTriageStatusPriority[left.status] ?? 9) -
+				(migrationTriageStatusPriority[right.status] ?? 9);
+			if (statusDelta !== 0) return statusDelta;
+			return left.title.localeCompare(right.title, "ru");
+		})
+		.slice(0, 4);
+	const typedMigrationDiscoveryCandidates =
+		(typedMigrationSourceDiscovery?.candidates ??
+			[]) as MigrationLocalSourceDiscoveryCandidate[];
+	const typedMigrationWorkupReadinessIssues = typedMigrationSourceWorkup
+		? ([
+				...typedMigrationSourceWorkup.readiness.blockers,
+				...typedMigrationSourceWorkup.readiness.warnings,
+			] as MigrationReadinessItem[])
+		: [];
+	const typedMigrationProbeReadinessIssues = typedMigrationSourceProbe
+		? ([
+				...typedMigrationSourceProbe.readiness.blockers,
+				...typedMigrationSourceProbe.readiness.warnings,
+			] as MigrationReadinessItem[])
+		: [];
+	const typedClinicPublicLookupSuggestions =
+		typedClinicPublicLookup?.suggestions ?? [];
+	const typedClinicPublicLookupTargets =
+		typedClinicPublicLookup?.publicLookupTargets ?? [];
+	const migrationOperatorScriptSteps =
+		typedMigrationAutopilot?.operatorPacket.operatorScript.steps ?? [];
+	const migrationPrimaryOperatorStep =
+		migrationOperatorScriptSteps.find(
+			(step) =>
+				step.blocking &&
+				step.action !== "doctor_review" &&
+				step.action !== "manual",
+		) ??
+		migrationOperatorScriptSteps.find(
+			(step) => step.action !== "doctor_review" && step.action !== "manual",
+		) ??
+		migrationOperatorScriptSteps[0] ??
+		null;
+	const migrationPrimaryOperatorCandidate =
+		migrationPrimaryOperatorStep?.sourceFingerprint && typedMigrationAutopilot
+			? (typedMigrationAutopilotSources.find(
+					(source) =>
+						source.candidate.sourceFingerprint ===
+						migrationPrimaryOperatorStep.sourceFingerprint,
+				)?.candidate ?? null)
+			: null;
+	const migrationCandidatePreviewReady = (
+		candidate: MigrationLocalSourceDiscoveryCandidate,
+	) => {
+		const materialCount =
+			candidate.matchedFiles +
+			candidate.databaseFiles +
+			candidate.dumpFiles +
+			candidate.tableFiles +
+			candidate.archiveFiles +
+			candidate.dicomLikeFiles +
+			candidate.imageFiles;
+		return (
+			materialCount > 0 ||
+			candidate.sourceRef.startsWith("browser-local:") ||
+			candidate.sourceRef.startsWith("smart-preview:")
+		);
+	};
+	const migrationCandidatePreviewHint = (
+		candidate: MigrationLocalSourceDiscoveryCandidate,
+	) =>
+		migrationCandidatePreviewReady(candidate)
+			? "Предпросмотр построит черновой разбор найденного источника."
+			: "Сначала откройте план или проверку источника: у этой подсказки пока нет файлов для предпросмотра.";
+	const migrationPreviewableSourceCount =
+		typedMigrationAutopilotSources.filter((source) =>
+			migrationCandidatePreviewReady(source.candidate),
+		).length +
+		typedMigrationDiscoveryCandidates.filter(migrationCandidatePreviewReady)
+			.length +
+		(typedBrowserMigrationDiscovery?.candidates.filter(
+			migrationCandidatePreviewReady,
+		).length ?? 0);
+	const migrationPreAutopilotSourceCount =
+		typedMigrationDiscoveryCandidates.length +
+		(typedBrowserMigrationDiscovery?.candidates.length ?? 0) +
+		(typedSmartImportPreview?.legacySources.length ?? 0);
+	const migrationKnownSourceCount =
+		typedMigrationAutopilotSources.length || migrationPreAutopilotSourceCount;
+	const migrationHandoffReportReady = Boolean(
+		typedMigrationAutopilot ||
+			typedMigrationSourceDiscovery ||
+			typedBrowserMigrationDiscovery ||
+			smartImportInputReady,
+	);
+	const migrationPreviewReadyRows = typedSmartImportPreview
+		? typedSmartImportPreview.patientPreview.readyRows +
+			typedSmartImportPreview.imagingPreview.readyRows
+		: 0;
+	const migrationClinicLookupFieldCount =
+		typedClinicPublicLookupSuggestions.reduce(
+			(bestCount, suggestion) =>
+				Math.max(
+					bestCount,
+					clinicLookupSuggestionFieldEntries(suggestion.fields).length,
+				),
+			0,
+		);
+	const migrationSmartClinicFieldCount =
+		typedSmartImportPreview?.clinicSuggestion
+			? clinicLookupSuggestionFieldEntries(
+					typedSmartImportPreview.clinicSuggestion.fields,
+				).length
+			: 0;
+	const migrationClinicFieldsFound = Math.max(
+		migrationClinicLookupFieldCount,
+		migrationSmartClinicFieldCount,
+	);
+	const migrationProgressItems = [
+		{
+			id: "source",
+			title: "Источник",
+			status:
+				migrationKnownSourceCount > 0
+					? "ready"
+					: isMigrationSourceDiscovering || isBrowserMigrationScanning
+						? "active"
+						: "pending_review",
+			detail:
+				migrationKnownSourceCount > 0
+					? `Найдено ${migrationKnownSourceCount}`
+					: isMigrationSourceDiscovering || isBrowserMigrationScanning
+						? "Идет поиск"
+						: "Нажмите поиск или выберите папку",
+		},
+		{
+			id: "plan",
+			title: "План",
+			status:
+				typedMigrationAutopilot || typedMigrationSourceWorkup
+					? "ready"
+					: isMigrationAutopilotLoading || isMigrationSourceWorkupLoading
+						? "active"
+						: "pending_review",
+			detail: typedMigrationAutopilot
+				? `${Math.round(typedMigrationAutopilot.operatorPacket.score * 100)}% готовности`
+				: typedMigrationSourceWorkup
+					? "План источника открыт"
+					: isMigrationAutopilotLoading || isMigrationSourceWorkupLoading
+						? "Строю маршрут"
+						: "После источника",
+		},
+		{
+			id: "preview",
+			title: "Предпросмотр",
+			status: typedSmartImportPreview
+				? "ready"
+				: isSmartImportLoading
+					? "active"
+					: smartImportInputReady || migrationPreviewableSourceCount > 0
+						? "pending_review"
+						: "locked",
+			detail: typedSmartImportPreview
+				? `${migrationPreviewReadyRows} готово к записи`
+				: isSmartImportLoading
+					? "Разбираю строки"
+					: smartImportInputReady
+						? "Откройте разбор"
+						: migrationPreviewableSourceCount > 0
+							? `Источников ${migrationPreviewableSourceCount}`
+							: migrationAutopilot
+								? "Сначала план или проверка источника"
+								: "Нужен источник или текст",
+		},
+		{
+			id: "clinic",
+			title: "Реквизиты",
+			status:
+				migrationClinicFieldsFound > 0
+					? "ready"
+					: isClinicPublicLookupLoading
+						? "active"
+						: "pending_review",
+			detail:
+				migrationClinicFieldsFound > 0
+					? `Полей ${migrationClinicFieldsFound}`
+					: isClinicPublicLookupLoading
+						? "Ищу профиль"
+						: "Можно добрать отдельно",
+		},
+	];
+	const focusSmartImportWorkbench = () => {
+		setSmartImportMode("auto");
+		if (typeof window === "undefined") return;
+		window.setTimeout(() => {
+			const textarea = document.querySelector<HTMLTextAreaElement>(
+				'textarea[aria-label="Смешанная выгрузка для умного разбора"]',
+			);
+			motionSafeScrollIntoView(textarea, { block: "center" });
+			textarea?.focus({ preventScroll: true });
+		}, 0);
+	};
+	const renderMigrationOperatorStepActions = (
+		step: MigrationAutopilotOperatorScriptStep,
+		scriptCandidate: MigrationLocalSourceDiscoveryCandidate | null | undefined,
+		testScope: MigrationOperatorActionScope,
+	) => {
+		const primaryButtonTestId =
+			testScope === "primary" ? "migration-primary-action-button" : undefined;
+		const scriptTestId = (value: string) =>
+			testScope === "script" ? value : primaryButtonTestId;
+		const actionButtonClass =
+			testScope === "primary" ? "primary-button" : "text-button";
+		const operatorStepNeedsCandidate = Boolean(
+			step.sourceFingerprint &&
+				migrationOperatorSourceBoundActions.includes(step.action) &&
+				!scriptCandidate,
+		);
+		const operatorStepPreviewReady =
+			step.action !== "build_preview" ||
+			(scriptCandidate
+				? migrationCandidatePreviewReady(scriptCandidate)
+				: typedMigrationAutopilotSources.some((source) =>
+						migrationCandidatePreviewReady(source.candidate),
+					));
+
+		return (
+			<div className="migration-source-card-actions">
+				{operatorStepNeedsCandidate ? (
+					<>
+						<button
+							className="text-button"
+							type="button"
+							onClick={() =>
+								void runMigrationAutopilot(undefined, {
+									includeSmartImportText: smartImportInputReady,
+								})
+							}
+							disabled={isMigrationAutopilotLoading}
+							data-testid={scriptTestId("operator-script-refresh-plan")}
+						>
+							<RefreshCw aria-hidden="true" /> Обновить план
+						</button>
+						<small className="migration-action-hint">
+							Источник уже не в текущем автоплане
+						</small>
+					</>
+				) : null}
+				{step.action === "discover_sources" ? (
+					<button
+						className={actionButtonClass}
+						type="button"
+						onClick={() => void discoverMigrationSources()}
+						disabled={
+							isMigrationSourceDiscovering || isMigrationAutopilotLoading
+						}
+						data-testid={scriptTestId("operator-script-discover-sources")}
+					>
+						<ScanSearch aria-hidden="true" /> {step.buttonLabel}
+					</button>
+				) : null}
+				{step.action === "pick_source" ? (
+					<button
+						className={actionButtonClass}
+						type="button"
+						onClick={() => void pickBrowserMigrationSource()}
+						disabled={isBrowserMigrationScanning || isMigrationAutopilotLoading}
+						data-testid={scriptTestId("operator-script-pick-source")}
+					>
+						<Database aria-hidden="true" /> {step.buttonLabel}
+					</button>
+				) : null}
+				{step.action === "open_plan" && scriptCandidate ? (
+					<button
+						className={actionButtonClass}
+						type="button"
+						onClick={() => planMigrationDiscoveryCandidate(scriptCandidate)}
+						disabled={isMigrationSourceWorkupLoading}
+						data-testid={primaryButtonTestId}
+					>
+						<ClipboardCheck aria-hidden="true" /> {step.buttonLabel}
+					</button>
+				) : null}
+				{step.action === "open_probe" && scriptCandidate ? (
+					<button
+						className={actionButtonClass}
+						type="button"
+						onClick={() => probeMigrationDiscoveryCandidate(scriptCandidate)}
+						disabled={isMigrationSourceProbeLoading}
+						data-testid={primaryButtonTestId}
+					>
+						<ScanSearch aria-hidden="true" /> {step.buttonLabel}
+					</button>
+				) : null}
+				{step.action === "add_to_parser" && scriptCandidate ? (
+					<button
+						className={actionButtonClass}
+						type="button"
+						onClick={() =>
+							addMigrationDiscoveryCandidateToSmartImport(scriptCandidate)
+						}
+						data-testid={primaryButtonTestId}
+					>
+						<UploadCloud aria-hidden="true" /> {step.buttonLabel}
+					</button>
+				) : null}
+				{step.action === "run_clinic_lookup" ? (
+					<button
+						className={actionButtonClass}
+						type="button"
+						onClick={() => void lookupClinicPublicProfile()}
+						disabled={isClinicPublicLookupLoading}
+						data-testid={primaryButtonTestId}
+					>
+						<Search aria-hidden="true" /> {step.buttonLabel}
+					</button>
+				) : null}
+				{step.action === "prepare_export" && scriptCandidate ? (
+					<button
+						className={actionButtonClass}
+						type="button"
+						onClick={() => planMigrationDiscoveryCandidate(scriptCandidate)}
+						disabled={isMigrationSourceWorkupLoading}
+						data-testid={primaryButtonTestId}
+					>
+						<FileCheck2 aria-hidden="true" /> {step.buttonLabel}
+					</button>
+				) : null}
+				{step.action === "build_preview" && !operatorStepNeedsCandidate ? (
+					<>
+						<button
+							className={actionButtonClass}
+							type="button"
+							onClick={() =>
+								void previewMigrationAutopilotSources(step.sourceFingerprint)
+							}
+							disabled={isSmartImportLoading || !operatorStepPreviewReady}
+							data-testid={scriptTestId("operator-script-build-preview")}
+						>
+							<FileCheck2 aria-hidden="true" /> {step.buttonLabel}
+						</button>
+						{!operatorStepPreviewReady ? (
+							<small className="migration-action-hint">
+								Сначала откройте план или проверку источника: у этой подсказки
+								пока нет файлов для предпросмотра.
+							</small>
+						) : null}
+					</>
+				) : null}
+				{step.action === "manual" || step.action === "doctor_review" ? (
+					<span>
+						<UserCheck aria-hidden="true" /> {step.buttonLabel}
+					</span>
+				) : null}
+			</div>
+		);
+	};
+	const renderMigrationTechnicalNotes = (
+		title: string,
+		items: string[],
+		testId?: string,
+	) => {
+		const visibleItems = items.filter(Boolean).slice(0, 8);
+		if (!visibleItems.length) return null;
+
+		return (
+			<details className="migration-technical-boundary" data-testid={testId}>
+				<summary>{title}</summary>
+				<div>
+					{visibleItems.map((item, index) => (
+						<small key={`${index}:${item}`}>
+							{humanizeMigrationText(item)}
+						</small>
+					))}
+				</div>
+			</details>
+		);
+	};
+	const typedClinicalRuleActionLabels = clinicalRuleActionLabels as Record<
+		ClinicalRuleAction,
+		string
+	>;
+	const typedClinicalRuleActions = Object.keys(
+		typedClinicalRuleActionLabels,
+	) as ClinicalRuleAction[];
+	const typedClinicalRuleSeverityLabels = clinicalRuleSeverityLabels as Record<
+		ClinicalRuleSeverity,
+		string
+	>;
+	const typedClinicalRuleSeverities = Object.keys(
+		typedClinicalRuleSeverityLabels,
+	) as ClinicalRuleSeverity[];
+	const typedClinicalRules = dashboard.clinicalRules as ClinicalRule[];
+	const typedServiceCatalog = dashboard.serviceCatalog as ServiceCatalogItem[];
+	const typedServiceCategoryLabels = serviceCategoryLabels as Record<
+		ServiceCategory,
+		string
+	>;
+	const typedServiceCategories = Object.keys(
+		typedServiceCategoryLabels,
+	) as ServiceCategory[];
+
+	return {
 		dicomArchiveAddressGuidanceId,
 		localDicomFolderGuidanceId,
 		migrationHandoffReportGuidanceId,
@@ -1630,338 +2389,5 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 		typedServiceCatalog,
 		typedServiceCategoryLabels,
 		typedServiceCategories,
-	} = derivations;
-	const typedSettingsTabs = settingsTabs as SettingsTab[];
-	const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
-	const settingsTabPanelId = (tabId: SettingsTabId) =>
-		`settings-panel-${tabId}`;
-	const activeSettingsTabPanelId = settingsTabPanelId(settingsTab);
-	const selectSettingsTab = (tabId: SettingsTabId) => {
-		setSettingsTab(tabId);
-		window.location.hash = `settings/${tabId}`;
 	};
-	const handleSettingsTabKeyDown = (
-		event: KeyboardEvent<HTMLButtonElement>,
-		tabId: SettingsTabId,
-	) => {
-		const currentIndex = typedSettingsTabs.findIndex((tab) => tab.id === tabId);
-		if (currentIndex < 0) return;
-		const lastIndex = typedSettingsTabs.length - 1;
-		const nextIndex =
-			event.key === "ArrowRight" || event.key === "ArrowDown"
-				? currentIndex === lastIndex
-					? 0
-					: currentIndex + 1
-				: event.key === "ArrowLeft" || event.key === "ArrowUp"
-					? currentIndex === 0
-						? lastIndex
-						: currentIndex - 1
-					: event.key === "Home"
-						? 0
-						: event.key === "End"
-							? lastIndex
-							: null;
-		if (nextIndex === null) return;
-		const nextTab = typedSettingsTabs[nextIndex];
-		if (!nextTab) return;
-		const nextTabButtonId = settingsTabButtonId(nextTab.id);
-		event.preventDefault();
-		selectSettingsTab(nextTab.id);
-		window.setTimeout(
-			() => document.getElementById(nextTabButtonId)?.focus(),
-			0,
-		);
-	};
-	const renderTabButton = (tab: SettingsTab) => {
-		const tabSelected = settingsTab === tab.id;
-		return (
-			<button
-				aria-controls={settingsTabPanelId(tab.id)}
-				aria-pressed={tabSelected}
-				aria-selected={tabSelected}
-				className={tabSelected ? "active" : ""}
-				id={settingsTabButtonId(tab.id)}
-				key={tab.id}
-				onClick={() => selectSettingsTab(tab.id)}
-				onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) =>
-					handleSettingsTabKeyDown(event, tab.id)
-				}
-				ref={tabSelected ? activeSettingsTabButtonRef : undefined}
-				role="tab"
-				tabIndex={tabSelected ? 0 : -1}
-				type="button"
-			>
-				{tab.title}
-			</button>
-		);
-	};
-
-	return (
-		<motion.section
-			className="settings-zone glass-panel"
-			initial={{ opacity: 0, y: 15 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.4 }}
-			id="settings"
-			aria-label="Настройки и перенос данных"
-		>
-			<div className="settings-heading">
-				<div>
-					<p className="eyebrow">Настройки</p>
-					<h2>Настройки клиники</h2>
-				</div>
-				<div className="settings-heading-actions">
-					<span>Не показывается врачу в рабочей смене</span>
-					<button
-						className="secondary-button"
-						type="button"
-						onClick={reopenOnboarding}
-					>
-						<ClipboardCheck aria-hidden="true" /> Мастер первого запуска
-					</button>
-				</div>
-			</div>
-
-			<div
-				className="settings-tabs"
-				role="tablist"
-				aria-label="Раздел настроек"
-			>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Мой аккаунт</span>
-					{typedSettingsTabs
-						.filter((t) => ["profile"].includes(t.id))
-						.map(renderTabButton)}
-				</div>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Основные</span>
-					{typedSettingsTabs
-						.filter((t) => {
-							if (t.id === "messengers") {
-								return activeStaffUser?.role !== "doctor";
-							}
-							return ["clinic", "staff", "access"].includes(t.id);
-						})
-						.map(renderTabButton)}
-				</div>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Клинические</span>
-					{typedSettingsTabs
-						.filter((t) =>
-							["protocols", "rules", "prices", "ai"].includes(t.id),
-						)
-						.map(renderTabButton)}
-				</div>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Системные</span>
-					{typedSettingsTabs
-						.filter((t) => ["sources", "imports", "audit"].includes(t.id))
-						.map(renderTabButton)}
-				</div>
-			</div>
-
-			<div
-				className="settings-tab-panel"
-				id={activeSettingsTabPanelId}
-				role="tabpanel"
-				aria-labelledby={settingsTabButtonId(settingsTab)}
-			>
-				{settingsTab !== "telegram" ? (
-					<details className="settings-advanced-block settings-admin-secret-block">
-						<summary className="settings-advanced-toggle">
-							<span className="settings-advanced-label">
-								<span className="settings-advanced-icon">🔐</span>
-								Доступ к защищенным настройкам
-							</span>
-							<span className="settings-advanced-hint">
-								только если требует сервер
-							</span>
-							<span className="settings-advanced-chevron">▼</span>
-						</summary>
-						<article className="telegram-link-panel telegram-admin-panel settings-advanced-form">
-							<p>
-								Если сервер клиники требует админ-доступ, введите секрет для
-								изменений профиля, команды, кресел, источников, импорта и
-								аудита. В браузере он не сохраняется.
-							</p>
-							<p>{adminSecretScopeWarning}</p>
-							<div className="telegram-link-controls">
-								<label>
-									Секрет администратора клиники для настроек
-									<input
-										type="password"
-										autoComplete="current-password"
-										value={telegramAdminSecretDraft}
-										onChange={(event: TextInputChangeEvent) => {
-											if (propsSetTelegramAdminSecretDraft) {
-												propsSetTelegramAdminSecretDraft(event.target.value);
-											} else {
-												setTelegramAdminSecretDraft(event.target.value);
-											}
-										}}
-										onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-											if (event.key === "Enter" && adminSecretReady) {
-												event.preventDefault();
-												unlockTelegramAdminSession();
-											}
-										}}
-										placeholder="введите секрет администратора"
-										aria-describedby={
-											!adminSecretReady
-												? "settings-admin-unlock-guidance"
-												: undefined
-										}
-									/>
-								</label>
-								{!adminSecretReady ? (
-									<p
-										className="admin-unlock-guidance"
-										id="settings-admin-unlock-guidance"
-										role="status"
-										aria-live="polite"
-									>
-										Введите секрет администратора клиники, чтобы менять
-										защищенные настройки.
-									</p>
-								) : null}
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={unlockTelegramAdminSession}
-									aria-describedby={
-										!adminSecretReady
-											? "settings-admin-unlock-guidance"
-											: undefined
-									}
-									disabled={!adminSecretReady}
-								>
-									<ShieldCheck aria-hidden="true" /> Разблокировать
-								</button>
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={lockTelegramAdminSession}
-									disabled={!telegramAdminSecretSession}
-								>
-									Забыть секрет
-								</button>
-							</div>
-							<p>
-								{telegramAdminSecretSession
-									? "Админ-доступ активен до перезагрузки страницы."
-									: "Без секрета работают только окружения без обязательного админ-доступа."}
-							</p>
-						</article>
-					</details>
-				) : null}
-
-				{settingsTab === "profile" ? <SettingsProfileTab /> : null}
-
-				{settingsTab === "staff" ? <SettingsStaffTab /> : null}
-
-				<SettingsClinicTab settingsTab={settingsTab} />
-				<SettingsAccessTab settingsTab={settingsTab} />
-				<SettingsTelegramTab settingsTab={settingsTab} />
-				{settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
-				{settingsTab === "inventory" ? (
-					<InventoryView
-						organizationId={dashboard.clinicSettings.profile.organizationId}
-					/>
-				) : null}
-				<SettingsMessengersTab settingsTab={settingsTab} />
-				{settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
-
-				{settingsTab === "rules" ? <SettingsRulesTab /> : null}
-
-				{settingsTab === "prices" ? <SettingsPricesTab /> : null}
-				{settingsTab === "sources" ? <SettingsSourcesTab /> : null}
-				{settingsTab === "ai" ? <SettingsAiTab /> : null}
-
-				<SettingsImportsTab />
-				<SettingsAuditTab />
-			</div>
-		</motion.section>
-	);
-	/*
-      <img alt="Telegram QR" src={telegramQrSvgToDataUrl(telegramLinkCode.qrSvg)} loading="lazy" decoding="async" />
-      <img src={typedTelegramPreview.photoUrl} alt="Telegram card" loading="lazy" decoding="async" />
-      <img src={item.photoUrl} alt="outbox image" loading="lazy" decoding="async" />
-      clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (
-                    <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (
-                  <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      typedMigrationAutopilotClinicLookup.warnings.slice(0, 3).map((warning: string) => (
-                      <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      quick-create-guidance
-      disabled={!newStaffReadyToCreate}
-      disabled={!newChairReadyToCreate}
-      Доступ к Telegram
-      Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
-      Админ-доступ к Telegram активен до перезагрузки страницы.
-      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}
-      Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.
-      Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.
-      Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.
-      aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}
-      aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}
-      aria-label="Добавить сотрудника"
-      aria-label="Добавить кресло или кабинет"
-      aria-pressed={dashboard.clinicSettings.profile.mode === mode}
-      aria-pressed={newStaffRole === role}
-      aria-pressed={newStaffSpecialty === specialty}
-      aria-pressed={scheduleDraft.workingDays.includes(day.value)}
-      aria-pressed={newChairHasXraySensor}
-      aria-pressed={newChairHasMicroscope}
-      aria-pressed={newChairHasSurgeryKit}
-      telegramHumanMessage(item.blockedReason)
-      item.warnings.map((warning) => telegramHumanMessage(warning)).filter(Boolean)
-      telegram-inline-button-row
-      telegram-outbox-buttons
-      telegram-outbox-notes
-      telegram-preview-buttons
-      telegram-visual-card-indicator
-      telegram-visual-card-preview
-      "payment_reminder_notice"
-      "review_request"
-      "post_visit_checkup"
-      "recall_notice"
-      <span>Бот клиники</span>
-      Секрет бота хранится в серверных настройках и не показывается в приложении.
-      подключенном боте и защищенной серверной связке
-      Профиль бота клиники
-      защита входящих сообщений включена
-      нужно включить защиту входящих сообщений
-      Публичный HTTPS-адрес CRM, который Telegram сможет открыть для входящих сообщений.
-      disabled={link.status !== "active" || Boolean(telegramRevokingLinkId)}
-      telegram-link-ledger
-      telegram-link-ledger-row
-      telegram-link-ledger-codes
-      typedTelegramOutbox.totalCount
-      telegramOutboxRemainingCount > 0 || typedTelegramOutbox?.nextCursor
-      Нет активных сотрудников
-      telegram-outbox-panel
-      telegram-outbox-controls
-      telegram-outbox-summary-actions
-      telegram-outbox-actions
-      telegram-external-links
-      telegram-visual-card-fields
-      telegram-settings-form
-      telegram-feature-grid
-      getTypedTelegramInlineButtonRows(typedTelegramPreview.replyMarkup)
-      getTypedTelegramInlineButtonRows(item.replyMarkup)
-      disabled={!telegramLinkCode.code.trim()}
-      disabled={!telegramLinkCode.shareText.trim()}
-      telegram-link-actions
-      telegram-link-action-state
-      */
 }
-
-/*
-{settingsTab === "clinic" ? (
-          <section className="clinic-config"
-{settingsTab === "access" ? (
-          <section className="access-settings"
-{settingsTab === "telegram" ? (
-          <section className="telegram-settings"
-*/
