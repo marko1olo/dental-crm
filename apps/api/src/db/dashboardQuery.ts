@@ -2,6 +2,7 @@ import type { Dashboard } from "@dental/shared";
 import { desc, eq } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
+import { protocolTemplates as sampleProtocolTemplates } from "../sampleData.js";
 
 const validClinicModes = new Set([
 	"solo_doctor",
@@ -341,6 +342,16 @@ export async function getDashboardFromDb(
 	if (scheduleDefaults.workingDays.length === 0)
 		scheduleDefaults.workingDays = [1, 2, 3, 4, 5];
 
+	const rawProtocolTemplates = await db
+		.select()
+		.from(schema.protocolTemplates)
+		.where(eq(schema.protocolTemplates.organizationId, organizationId));
+
+	const finalProtocolTemplates =
+		rawProtocolTemplates.length > 0
+			? rawProtocolTemplates
+			: sampleProtocolTemplates.filter((pt) => true);
+
 	const dashboard = {
 		clinicName: org.name,
 		todayIso: new Date().toISOString().split("T")[0],
@@ -498,7 +509,7 @@ export async function getDashboardFromDb(
 			roleQueues: [],
 			scheduleWarnings: [],
 		},
-		protocolTemplates: [],
+		protocolTemplates: finalProtocolTemplates as any,
 		treatmentPlanItems: treatmentItems.map((item) => ({
 			id: item.id,
 			organizationId: item.organizationId,

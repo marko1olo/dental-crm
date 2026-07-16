@@ -5118,9 +5118,7 @@ function detectDicomClientRuntimeSurface(
 	client: DicomWorkstationReadinessRequest["client"],
 ): DicomClientRuntimeProfile["surface"] {
 	if (client.runtimeSurfaceHint === "desktop_app") {
-		return hasExplicitDicomDesktopBridge(client)
-			? "desktop_app"
-			: "desktop_web";
+		return hasExplicitDicomDesktopBridge(client) ? "desktop_app" : "desktop_web";
 	}
 	if (
 		client.runtimeSurfaceHint === "mobile_web" ||

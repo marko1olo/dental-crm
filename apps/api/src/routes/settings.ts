@@ -30,6 +30,12 @@ import {
 	updateStaffMemberInDb,
 	updateStaffWorkingHoursInDb,
 } from "../db/settingsQuery.js";
+import {
+	getProtocolTemplatesFromDb,
+	createProtocolTemplateInDb,
+	updateProtocolTemplateInDb,
+	deleteProtocolTemplateInDb,
+} from "../db/settingsProtocolsQuery.js";
 import { repairMojibakeDeep } from "../text/repairMojibake.js";
 import { hashCredential } from "../utils/cryptoHelper.js";
 import { timingSafeSecretEqual } from "../utils/timingSafeSecretEqual.js";
@@ -252,6 +258,73 @@ async function requireSettingsAccess(
 }
 
 export async function registerSettingsRoutes(app: FastifyInstance) {
+	app.get("/api/settings/protocols", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		try {
+			const templates = await getProtocolTemplatesFromDb(orgId);
+			return templates;
+		} catch (error: any) {
+			console.error("DEBUG protocols fetch error:", error);
+			return reply.code(500).send({
+				error: "ProtocolFetchFailed",
+				message: settingsDomainMessage(error),
+			});
+		}
+	});
+
+	app.post("/api/settings/protocols", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		try {
+			const body = request.body as any;
+			const created = await createProtocolTemplateInDb(orgId, body);
+			return created;
+		} catch (error: any) {
+			console.error("DEBUG protocols create error:", error);
+			return reply.code(400).send({
+				error: "ProtocolCreateFailed",
+				message: settingsDomainMessage(error),
+			});
+		}
+	});
+
+	app.put("/api/settings/protocols/:id", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		try {
+			const params = request.params as { id: string };
+			const body = request.body as any;
+			const updated = await updateProtocolTemplateInDb(orgId, params.id, body);
+			if (!updated) {
+				return reply.code(404).send({ error: "NotFound" });
+			}
+			return updated;
+		} catch (error: any) {
+			console.error("DEBUG protocols update error:", error);
+			return reply.code(400).send({
+				error: "ProtocolUpdateFailed",
+				message: settingsDomainMessage(error),
+			});
+		}
+	});
+
+	app.delete("/api/settings/protocols/:id", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		try {
+			const params = request.params as { id: string };
+			await deleteProtocolTemplateInDb(orgId, params.id);
+			return { success: true };
+		} catch (error: any) {
+			console.error("DEBUG protocols delete error:", error);
+			return reply.code(400).send({
+				error: "ProtocolDeleteFailed",
+				message: settingsDomainMessage(error),
+			});
+		}
+	});
+
 	app.get("/api/settings/clinic", async (request, reply) => {
 		const orgId = await requireSettingsAccess(request, reply);
 		if (!orgId) return;

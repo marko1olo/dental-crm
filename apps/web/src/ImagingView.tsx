@@ -1271,8 +1271,7 @@ export function ImagingView(props: ImagingViewProps) {
 						<article>
 							<strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
 							<span>
-								{imagingViewerAnnotations.length} разметок; исходные снимки
-								остаются в просмотрщике или исходной папке.
+								{imagingViewerAnnotations.length} разметок; исходные снимки остаются в просмотрщике или исходной папке.
 							</span>
 						</article>
 					</div>
@@ -1422,8 +1421,7 @@ export function ImagingView(props: ImagingViewProps) {
 									</div>
 									<small
 										className="mpr-workbench-summary"
-										data-testid="ct-mpr-workbench-summary"
-										aria-live="polite"
+										data-testid="ct-mpr-workbench-summary" aria-live="polite"
 									>
 										{mprWorkbenchSummaryText}
 									</small>
@@ -1644,14 +1642,7 @@ export function ImagingView(props: ImagingViewProps) {
 											step="1"
 											type="number"
 											value={mprSafeSliceIndex + 1}
-											onChange={(event) =>
-												setMprSliceIndex(
-													clampMprSliceIndex(
-														Number(event.target.value) - 1,
-														mprSliceMaxIndex,
-													),
-												)
-											}
+											onChange={(event) => setMprSliceIndex(clampMprSliceIndex(Number(event.target.value) - 1, mprSliceMaxIndex))}
 										/>
 									</label>
 								</div>
@@ -1664,14 +1655,7 @@ export function ImagingView(props: ImagingViewProps) {
 										<button
 											key={delta}
 											type="button"
-											onClick={() =>
-												setMprSliceIndex(
-													clampMprSliceIndex(
-														mprSafeSliceIndex + delta,
-														mprSliceMaxIndex,
-													),
-												)
-											}
+											onClick={() => setMprSliceIndex(clampMprSliceIndex(mprSafeSliceIndex + delta, mprSliceMaxIndex))}
 											disabled={!mprControlsReady || mprSliceMaxIndex <= 0}
 											aria-label={`Перейти по КТ-срезам на ${formatSignedMprStep(delta, " срез")}`}
 										>
@@ -1687,9 +1671,7 @@ export function ImagingView(props: ImagingViewProps) {
 										);
 										return (
 											<button
-												className={
-													mprSafeSliceIndex === targetIndex ? "active" : ""
-												}
+												className={mprSafeSliceIndex === targetIndex ? "active" : ""}
 												key={preset.id}
 												type="button"
 												onClick={() => setMprSliceIndex(targetIndex)}

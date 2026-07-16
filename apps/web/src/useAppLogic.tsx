@@ -5940,10 +5940,7 @@ export function useAppLogic(): any {
 		mprSliceMaxIndex > 0
 			? `${(mprSafeSliceIndex / mprSliceMaxIndex) * 100}%`
 			: "50%";
-	const mprCurrentSliceFraction = mprSliceFraction(
-		mprSafeSliceIndex,
-		mprSliceMaxIndex,
-	);
+	const mprCurrentSliceFraction = mprSliceFraction(mprSafeSliceIndex, mprSliceMaxIndex);
 	const mprSliceLabel = mprControlsReady
 		? `срез ${mprSafeSliceIndex + 1} из ${mprSliceMaxIndex + 1}`
 		: "срез включится после КЛКТ/КТ-серии";
@@ -6041,9 +6038,7 @@ export function useAppLogic(): any {
 		setMprProjection(projection);
 		setMprAxisDeg(clampMprAxisDeg(preset.axisDeg));
 		setMprSlabMm(clampMprSlabMm(preset.slabMm));
-		setMprSliceIndex(
-			mprSliceIndexFromFraction(preset.sliceFraction, mprSliceMaxIndex),
-		);
+		setMprSliceIndex(mprSliceIndexFromFraction(preset.sliceFraction, mprSliceMaxIndex));
 		setMprWindowPreset(preset.windowPreset);
 		setMprCrosshairEnabled(preset.crosshair);
 		setMprLinkedPlanesEnabled(preset.linkedPlanes);
@@ -6059,9 +6054,7 @@ export function useAppLogic(): any {
 		setMprProjection(projection);
 		setMprAxisDeg(clampMprAxisDeg(action.axisDeg));
 		setMprSlabMm(clampMprSlabMm(action.slabMm));
-		setMprSliceIndex(
-			mprSliceIndexFromFraction(action.sliceFraction, mprSliceMaxIndex),
-		);
+		setMprSliceIndex(mprSliceIndexFromFraction(action.sliceFraction, mprSliceMaxIndex));
 		setMprWindowPreset(action.windowPreset);
 		setMprCrosshairEnabled(true);
 		setMprLinkedPlanesEnabled(true);
@@ -6168,10 +6161,7 @@ export function useAppLogic(): any {
 		if (adjustment.kind === "slice") setMprSliceIndex(adjustment.value);
 	};
 	const applyMprWorkbenchState = (state: MprWorkbenchState) => {
-		const projection = resolveMprWorkbenchProjection(
-			state.projection,
-			cbctWorkbenchProjections,
-		);
+		const projection = resolveMprWorkbenchProjection(state.projection, cbctWorkbenchProjections);
 		setMprProjection(projection);
 		setMprAxisDeg(clampMprAxisDeg(state.axisDeg ?? 0));
 		setMprSlabMm(clampMprSlabMm(state.slabMm ?? 1));
@@ -6224,9 +6214,7 @@ export function useAppLogic(): any {
 
 	useEffect(() => {
 		if (!cbctWorkbenchProjections.includes(mprProjection)) {
-			setMprProjection(
-				resolveMprWorkbenchProjection(mprProjection, cbctWorkbenchProjections),
-			);
+			setMprProjection(resolveMprWorkbenchProjection(mprProjection, cbctWorkbenchProjections));
 		}
 	}, [cbctWorkbenchProjections, mprProjection]);
 
@@ -6251,7 +6239,7 @@ export function useAppLogic(): any {
 			if (cancelled) return;
 			if (!draft) {
 				applyDefaultMprWorkbenchState();
-				setMprWorkbenchLocalSavedAt(null);
+        setMprWorkbenchLocalSavedAt(null);
 				setMprWorkbenchDraftRestored(false);
 				return;
 			}
@@ -6311,12 +6299,7 @@ export function useAppLogic(): any {
 			contrast: sessionState.contrast,
 			zoom: sessionState.zoom,
 		});
-		setMprProjection(
-			resolveMprWorkbenchProjection(
-				sessionState.projection,
-				cbctWorkbenchProjections,
-			),
-		);
+		setMprProjection(resolveMprWorkbenchProjection(sessionState.projection, cbctWorkbenchProjections));
 		setMprAxisDeg(clampMprAxisDeg(sessionState.axisDeg ?? 0));
 		setMprSlabMm(clampMprSlabMm(sessionState.slabMm ?? 1));
 		setMprSliceIndex(
@@ -9432,10 +9415,7 @@ export function useAppLogic(): any {
 		} catch (previewError) {
 			if (isLocalDicomOperationAbortError(previewError)) return;
 			setError(
-				operatorWorkflowFailureMessage(
-					"Первый срез снимков не показан",
-					previewError,
-				),
+				operatorWorkflowFailureMessage("Первый срез снимков не показан", previewError),
 			);
 		} finally {
 			finishLocalDicomOperation(controller);
@@ -9650,10 +9630,7 @@ export function useAppLogic(): any {
 		} catch (workbenchError) {
 			if (isLocalDicomOperationAbortError(workbenchError)) return;
 			setError(
-				operatorWorkflowFailureMessage(
-					"Просмотр КЛКТ/КТ не подготовлен",
-					workbenchError,
-				),
+				operatorWorkflowFailureMessage("Просмотр КЛКТ/КТ не подготовлен", workbenchError),
 			);
 		} finally {
 			finishLocalDicomOperation(controller);
@@ -10235,10 +10212,7 @@ export function useAppLogic(): any {
 		} catch (reconnectError) {
 			if (isLocalDicomOperationAbortError(reconnectError)) return;
 			setError(
-				operatorWorkflowFailureMessage(
-					"Источник снимков не переподключен",
-					reconnectError,
-				),
+				operatorWorkflowFailureMessage("Источник снимков не переподключен", reconnectError),
 			);
 		} finally {
 			finishLocalDicomOperation(controller);
@@ -10339,10 +10313,7 @@ export function useAppLogic(): any {
 		} catch (cachePlanError) {
 			if (isLocalDicomOperationAbortError(cachePlanError)) return;
 			setError(
-				operatorWorkflowFailureMessage(
-					"План быстрой загрузки снимков не построен",
-					cachePlanError,
-				),
+				operatorWorkflowFailureMessage("План быстрой загрузки снимков не построен", cachePlanError),
 			);
 		} finally {
 			finishLocalDicomOperation(controller);

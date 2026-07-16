@@ -2189,3 +2189,24 @@ export const messengerInboundEvents = pgTable("messenger_inbound_events", {
 		.notNull()
 		.defaultNow(),
 });
+
+export const protocolTemplates = pgTable("protocol_templates", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id")
+		.notNull()
+		.references(() => organizations.id),
+	specialty: dentalSpecialty("specialty").notNull(),
+	title: text("title").notNull(),
+	visitReason: text("visit_reason").notNull(),
+	defaultDurationMinutes: integer("default_duration_minutes").notNull().default(30),
+	complaintPrompt: text("complaint_prompt").notNull().default(""),
+	objectiveTemplate: text("objective_template").notNull().default(""),
+	diagnosisHints: jsonb("diagnosis_hints").notNull().default("[]"),
+	treatmentPlanTemplate: text("treatment_plan_template").notNull().default(""),
+	requiredDocuments: jsonb("required_documents").notNull().default("[]"),
+	suggestedImaging: jsonb("suggested_imaging").notNull().default("[]"),
+	safetyWarnings: jsonb("safety_warnings").notNull().default("[]"),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
