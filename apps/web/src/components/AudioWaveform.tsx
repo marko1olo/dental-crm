@@ -71,7 +71,7 @@ export function AudioWaveform({
 
 		const drawReal = () => {
 			if (!analyser || !dataArray || !isRecording) return;
-			analyser.getByteFrequencyData(dataArray);
+			analyser.getByteFrequencyData(dataArray as any);
 			// normalize 0-255 to 0.1-0.9
 			const heights = Array.from(dataArray).map((v) => 0.1 + (v / 255) * 0.8);
 			drawBars(heights);
