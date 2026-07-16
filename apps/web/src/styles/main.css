@@ -80,7 +80,7 @@
 
 
 [data-theme="light"] {
-	--paper: theme("colors.zinc.50");
+	--paper: #fafafa;
 	--paper-strong: rgba(255, 255, 255, 0.9);
 	--paper-soft: #f4f4f5;
 	--ink: #09090b;
@@ -107,7 +107,7 @@
 	--green: #059669;
 	--green-soft: rgba(5, 150, 105, 0.15);
 
-	--nav: theme("colors.zinc.50");
+	--nav: #fafafa;
 
 	--glass-bg: rgba(255, 255, 255, 0.7);
 	--glass-border: rgba(0, 0, 0, 0.08);
@@ -14807,15 +14807,32 @@ textarea:focus {
 		justify-content: center !important;
 		align-items: center !important;
 		min-height: 52px !important;
-		font-size: 10px !important;
-		line-height: 1.1 !important;
 		text-align: center !important;
 		opacity: 0.75 !important;
 		transform: none !important;
+		overflow: hidden !important;
 		transition:
 			background 0.15s ease,
 			opacity 0.15s ease !important;
+	}
+	.nav-copy {
+		width: 100% !important;
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: center !important;
+	}
+	.nav-copy small {
+		display: none !important;
+	}
+	.nav-copy strong {
+		font-size: 10px !important;
+		line-height: 1.1 !important;
 		font-weight: 500 !important;
+		display: block !important;
+		width: 100% !important;
+		white-space: nowrap !important;
+		overflow: hidden !important;
+		text-overflow: ellipsis !important;
 	}
 	.nav-item svg {
 		height: 18px !important;

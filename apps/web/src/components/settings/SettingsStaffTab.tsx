@@ -9,11 +9,10 @@ import type React from "react";
 import { useState } from "react";
 import { showToast } from "../GlobalToast";
 
-interface SettingsStaffTabProps {
-	props: Record<string, any>;
-}
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 
-export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
+export function SettingsStaffTab() {
+	const props = useAppLogicContext();
 	const { dashboard, staffRoleLabels } = props;
 	const staff = dashboard?.clinicSettings?.staff || [];
 

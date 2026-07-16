@@ -1,4 +1,5 @@
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useSettingsStore } from "../../store/settingsStore";
 import type {
 	Chair,
 	ClinicMode,
@@ -123,12 +124,25 @@ function StaffCredentialsEditor({
 }
 
 export function SettingsClinicTab({
-	props,
 	settingsTab,
 }: {
-	props: Record<string, any>;
 	settingsTab: string;
 }) {
+	const appLogicProps = useAppLogicContext();
+	const settingsStoreProps = useSettingsStore();
+
+	const newStaffReadyToCreate = (appLogicProps.newStaffName || "").trim().length > 0;
+	const newChairReadyToCreate = (appLogicProps.newChairName || "").trim().length > 0;
+	const adminSecretReady = (settingsStoreProps.telegramAdminSecretDraft || "").trim().length > 0;
+
+	const mergedProps: Record<string, any> = {
+		...appLogicProps,
+		...settingsStoreProps,
+		newStaffReadyToCreate,
+		newChairReadyToCreate,
+		adminSecretReady,
+	};
+
 	const {
 		dashboard,
 		changeClinicMode,
@@ -148,7 +162,6 @@ export function SettingsClinicTab({
 		setNewStaffName,
 		addStaffMember,
 		saveStaffCredentials,
-		newStaffReadyToCreate,
 		newStaffRole,
 		setNewStaffRole,
 		newStaffSpecialty,
@@ -165,7 +178,6 @@ export function SettingsClinicTab({
 		newChairName,
 		setNewChairName,
 		addChair,
-		newChairReadyToCreate,
 		newChairHasXraySensor,
 		setNewChairHasXraySensor,
 		newChairHasMicroscope,
@@ -195,7 +207,7 @@ export function SettingsClinicTab({
 		clinicModeLabels,
 		staffRoleLabels,
 		specialtyLabels,
-	} = props;
+	} = mergedProps;
 
 	if (settingsTab !== "clinic") return null;
 	if (!dashboard) return null;
@@ -1020,7 +1032,7 @@ export function SettingsClinicTab({
 										<StaffCredentialsEditor
 											member={member}
 											saveCredentials={
-												props.saveStaffCredentials || saveStaffCredentials
+												mergedProps.saveStaffCredentials || saveStaffCredentials
 											}
 										/>
 									</div>

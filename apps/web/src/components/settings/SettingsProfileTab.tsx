@@ -1,3 +1,4 @@
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	AlertTriangle,
 	Eye,
@@ -38,7 +39,8 @@ function getPasswordStrength(pw: string): { score: number; label: string } {
 	return { score: 3, label: "Надёжный" };
 }
 
-export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
+export function SettingsProfileTab() {
+	const props = useAppLogicContext();
 	const { staffRoleLabels } = props;
 
 	const [profile, setProfile] = useState<UserProfile | null>(

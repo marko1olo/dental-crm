@@ -11,16 +11,17 @@ import { useState } from "react";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { showToast } from "../GlobalToast";
 
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+
 type WorkspaceProfile = any;
 type RoleAccessPolicy = any;
 
 export function SettingsAccessTab({
-	props,
 	settingsTab,
 }: {
-	props: Record<string, any>;
 	settingsTab: string;
 }) {
+	const props = useAppLogicContext();
 	const {
 		dashboard,
 		activeWorkspaceProfile,

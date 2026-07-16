@@ -18,6 +18,8 @@ import {
 import type { ChangeEvent, KeyboardEvent } from "react";
 import React from "react";
 
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
@@ -25,12 +27,11 @@ type StringTokenGroup = { title: string; items: string[] };
 type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
 
 export function SettingsTelegramTab({
-	props,
 	settingsTab,
 }: {
-	props: Record<string, any>;
 	settingsTab: string;
 }) {
+	const props = useAppLogicContext();
 	const {
 		dashboard,
 		createTelegramLinkCode,

@@ -5,6 +5,8 @@ import { MaxSettingsPanel } from "./MaxSettingsPanel.js";
 import { SettingsTelegramTab } from "./SettingsTelegramTab.js";
 import { WhatsappSettingsPanel } from "./WhatsappSettingsPanel.js";
 
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+
 interface StaffOption {
   id: string;
   fullName: string;
@@ -13,12 +15,11 @@ interface StaffOption {
 type MessengerTabId = "telegram" | "whatsapp" | "max";
 
 export function SettingsMessengersTab({
-  props,
   settingsTab,
 }: {
-  props: Record<string, unknown>;
   settingsTab: string;
 }) {
+  const props = useAppLogicContext();
   const [activeMessenger, setActiveMessenger] = useState<MessengerTabId>(
     settingsTab === "telegram" ? "telegram" : "whatsapp"
   );
@@ -114,7 +115,6 @@ export function SettingsMessengersTab({
       >
         <SettingsTelegramTab
           settingsTab="telegram"
-          props={props}
         />
       </div>
 
