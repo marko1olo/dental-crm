@@ -135,21 +135,37 @@ export async function computeBiAnalyticsSnapshots() {
 		const orgs = await db.select().from(organizations);
 		if (!orgs.length) return;
 
-		for (const org of orgs) {
-			const cohortLtvJson = await computeCohortLtv(org.id);
-			const planFunnelJson = await computePlanFunnel(org.id);
-			const chairUtilizationJson = await computeChairUtilization(org.id);
-			const doctorProfitabilityJson = await computeDoctorProfitability(org.id);
+		const snapshotDate = new Date();
+		const snapshots = await Promise.all(
+			orgs.map(async (org) => {
+				const [
+					cohortLtvJson,
+					planFunnelJson,
+					chairUtilizationJson,
+					doctorProfitabilityJson,
+				] = await Promise.all([
+					computeCohortLtv(org.id),
+					computePlanFunnel(org.id),
+					computeChairUtilization(org.id),
+					computeDoctorProfitability(org.id),
+				]);
 
-			await db.insert(biAnalyticsSnapshots).values({
-				organizationId: org.id,
-				snapshotDate: new Date(),
-				cohortLtvJson,
-				planFunnelJson,
-				chairUtilizationJson,
-				doctorProfitabilityJson,
-			});
-			console.log(`[BI Worker] Snapshot generated for org ${org.id}`);
+				return {
+					organizationId: org.id,
+					snapshotDate,
+					cohortLtvJson,
+					planFunnelJson,
+					chairUtilizationJson,
+					doctorProfitabilityJson,
+				};
+			}),
+		);
+
+		if (snapshots.length > 0) {
+			await db.insert(biAnalyticsSnapshots).values(snapshots);
+			for (const org of orgs) {
+				console.log(`[BI Worker] Snapshot generated for org ${org.id}`);
+			}
 		}
 	} catch (err) {
 		console.error("[BI Worker] Error generating snapshots:", err);
