@@ -111,6 +111,7 @@ export function PatientsView(props: PatientsViewProps) {
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [familyData, setFamilyData] = useState<any>(null);
+	const [patientTab, setPatientTab] = useState<"overview" | "clinical" | "docs">("overview");
 
 	useEffect(() => {
 		if (!selectedPatientId) {
@@ -401,10 +402,21 @@ export function PatientsView(props: PatientsViewProps) {
 							← Назад к списку пациентов
 						</button>
 					)}
+
+					{selectedPatient && (
+						<div className="patients-tabs-nav" style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
+							<button className={`tab-btn ${patientTab === 'overview' ? 'active' : ''}`} onClick={() => setPatientTab('overview')} style={{ padding: '8px 16px', background: patientTab === 'overview' ? 'var(--brand-50)' : 'transparent', color: patientTab === 'overview' ? 'var(--brand-600)' : 'var(--slate-600)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>Обзор профиля</button>
+							<button className={`tab-btn ${patientTab === 'clinical' ? 'active' : ''}`} onClick={() => setPatientTab('clinical')} style={{ padding: '8px 16px', background: patientTab === 'clinical' ? 'var(--brand-50)' : 'transparent', color: patientTab === 'clinical' ? 'var(--brand-600)' : 'var(--slate-600)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>Медицина (Зубы и Снимки)</button>
+							<button className={`tab-btn ${patientTab === 'docs' ? 'active' : ''}`} onClick={() => setPatientTab('docs')} style={{ padding: '8px 16px', background: patientTab === 'docs' ? 'var(--brand-50)' : 'transparent', color: patientTab === 'docs' ? 'var(--brand-600)' : 'var(--slate-600)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>Документы и Реквизиты</button>
+						</div>
+					)}
+
 					<section
 						className="patient-admin-panel"
 						aria-label="Административные данные активного пациента"
 					>
+						{patientTab === "overview" && (
+						<>
 						<div className="panel-heading compact-heading patients-no-border-mb-8">
 							<div>
 								<span
@@ -595,6 +607,39 @@ export function PatientsView(props: PatientsViewProps) {
 							</p>
 						) : null}
 
+						
+						<div className="patient-clinical-grid patients-my-0" style={{ marginTop: '16px' }}>
+							<div className="clinical-col-left" style={{ flex: 1 }}>
+								<PatientFamilyCard 
+																		patientId={selectedPatientId} 
+																		patientName={selectedPatient?.fullName || null}
+																		familyData={familyData} 
+																		onFamilyDataChanged={() => {
+																			if (selectedPatientId) {
+																				fetch(`/api/finance/family/patient/${selectedPatientId}`, {
+																					headers: denteAdminSecretRequestHeaders(),
+																				})
+																				.then((res) => {
+																					if (!res.ok) throw new Error("No family");
+																					return res.json();
+																				})
+																				.then((data) => setFamilyData(data))
+																				.catch(() => setFamilyData(null));
+																			}
+																		}} 
+																	/>
+																	{selectedPatientId && (
+																		<PatientJourneyTimeline
+																			patientId={selectedPatientId}
+																			dashboard={props.dashboard}
+																		/>
+																	)}
+							</div>
+						</div>
+						</>
+						)}
+						{patientTab === "clinical" && (
+						<>
 						{/* Premium Clinical Experience (Full Width Odontogram + Grid) */}
 						<div className="patients-flex-col-gap-24-my">
 							{selectedPatientId && (
@@ -618,33 +663,14 @@ export function PatientsView(props: PatientsViewProps) {
 								</div>
 								<div className="clinical-col-right">
 									
-									<PatientFamilyCard 
-										patientId={selectedPatientId} 
-										patientName={selectedPatient?.fullName || null}
-										familyData={familyData} 
-										onFamilyDataChanged={() => {
-											if (selectedPatientId) {
-												fetch(`/api/finance/family/patient/${selectedPatientId}`, {
-													headers: denteAdminSecretRequestHeaders(),
-												})
-												.then((res) => {
-													if (!res.ok) throw new Error("No family");
-													return res.json();
-												})
-												.then((data) => setFamilyData(data))
-												.catch(() => setFamilyData(null));
-											}
-										}} 
-									/>
-									{selectedPatientId && (
-										<PatientJourneyTimeline
-											patientId={selectedPatientId}
-											dashboard={props.dashboard}
-										/>
-									)}
+									
 								</div>
 							</div>
 						</div>
+						</>
+						)}
+						{patientTab === "docs" && (
+						<>
 						<details className="settings-advanced-block patient-docs-collapsible">
 							<summary className="settings-advanced-toggle">
 								<span className="settings-advanced-label">
@@ -1023,6 +1049,8 @@ export function PatientsView(props: PatientsViewProps) {
 								) : null}
 							</div>
 						</details>
+						</>
+						)}
 					</section>
 				</main>
 			</div>
