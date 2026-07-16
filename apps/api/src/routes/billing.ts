@@ -421,6 +421,7 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 				createdAt: schema.patientInvoices.createdAt,
 				doctorId: schema.visitDiaries.doctorId,
 				doctorName: schema.users.fullName,
+				commissionPct: schema.doctorCommissions.commissionPct,
 			})
 			.from(schema.patientInvoices)
 			.leftJoin(
@@ -428,6 +429,13 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 				eq(schema.patientInvoices.visitId, schema.visitDiaries.visitId),
 			)
 			.leftJoin(schema.users, eq(schema.visitDiaries.doctorId, schema.users.id))
+			.leftJoin(
+				schema.doctorCommissions,
+				and(
+					eq(schema.doctorCommissions.userId, schema.visitDiaries.doctorId),
+					eq(schema.doctorCommissions.isActive, true),
+				),
+			)
 			.where(
 				and(
 					eq(schema.patientInvoices.status, "paid"),
@@ -437,13 +445,14 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 			.orderBy(schema.patientInvoices.createdAt);
 
 		const MATERIAL_COST_RATE = 0.15;
-		const COMMISSION_RATE = 0.3;
 
 		const payouts = rows.map((row) => {
 			const revenue = parseFloat(String(row.totalAmountRub ?? 0));
 			const materialCost = +(revenue * MATERIAL_COST_RATE).toFixed(2);
 			const netBase = revenue - materialCost;
-			const netPayout = +(netBase * COMMISSION_RATE).toFixed(2);
+			const docCommissionPct = row.commissionPct != null ? parseFloat(String(row.commissionPct)) : 30.0;
+			const commissionRate = docCommissionPct / 100;
+			const netPayout = +(netBase * commissionRate).toFixed(2);
 			return {
 				id: row.id,
 				visitId: row.visitId,
@@ -451,7 +460,7 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 				doctorName: row.doctorName ?? "Врач не указан",
 				revenue,
 				materialCost,
-				commissionRate: +(COMMISSION_RATE * 100),
+				commissionRate: docCommissionPct,
 				netPayout,
 				date: row.createdAt,
 			};
