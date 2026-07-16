@@ -291,17 +291,30 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 					}
 				}
 
-				// 2. Insert Commission (stub calculation)
+				// 2. Insert Commission if not exists
 				if (userId) {
-					await tx.insert(doctorCommissions).values({
-						organizationId: orgId,
-						userId: userId,
-						specialty: "universal",
-						serviceCategory: "therapy",
-						commissionPct: 30.0,
-						materialCostDeductionPct: 100.0,
-						isActive: true,
-					});
+					const [existingCommission] = await tx
+						.select()
+						.from(doctorCommissions)
+						.where(
+							and(
+								eq(doctorCommissions.userId, userId),
+								eq(doctorCommissions.organizationId, orgId),
+							),
+						)
+						.limit(1);
+
+					if (!existingCommission) {
+						await tx.insert(doctorCommissions).values({
+							organizationId: orgId,
+							userId: userId,
+							specialty: "universal",
+							serviceCategory: "therapy",
+							commissionPct: 30.0,
+							materialCostDeductionPct: 100.0,
+							isActive: true,
+						});
+					}
 				}
 
 				// 3. Clinical Audit Log
