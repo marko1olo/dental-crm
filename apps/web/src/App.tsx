@@ -8,10 +8,8 @@
 // const [ctPlanningActiveQuickActionId, setCtPlanningActiveQuickActionId] = useState<string | null>(null)
 // const [ctPlanningImplantPlan, setCtPlanningImplantPlan] = useState<ImagingViewerImplantPlan | null>(null)
 
-import { ClinicLogin } from "./components/auth/ClinicLogin";
-import { Register } from "./components/auth/Register";
+import { AuthHub } from "./components/auth/AuthHub";
 import { StaffPinPad } from "./components/auth/StaffPinPad";
-import { UserLogin } from "./components/auth/UserLogin";
 import { CommandPalette } from "./components/CommandPalette";
 import HelpHUD from "./components/HelpHUD";
 import { IncomingCallToast } from "./components/IncomingCallToast";
@@ -2130,34 +2128,34 @@ export function App() {
 	};
 
 	// Show clinic login gate if not authed
-	// if (!clinicAuthed) {
-	//   return <AuthHub onSuccess={(cp, up) => {
-	//     setClinicAuthed(true);
-	//     if (up) {
-	//       setStaffAuthed(true);
-	//       setActiveStaffUser(up);
-	//     }
-	//     void loadDashboard();
-	//   }} />;
-	// }
+	if (!clinicAuthed) {
+	  return <AuthHub onSuccess={(cp, up) => {
+	    setClinicAuthed(true);
+	    if (up) {
+	      setStaffAuthed(true);
+	      setActiveStaffUser(up);
+	    }
+	    void loadDashboard();
+	  }} />;
+	}
 
 	// Show staff PIN pad if clinic authed but no staff session (or after lock)
-	// if (!staffAuthed || showStaffPinPad) {
-	//   if (!dashboard) {
-	//     return <AppLoadingState message="Загрузка данных клиники..." />;
-	//   }
-	//   return (
-	//     <StaffPinPad
-	//       staffMembers={dashboard.clinicSettings?.staff ?? []}
-	//       onUnlockSuccess={(user) => {
-	//         setActiveStaffUser(user);
-	//         setStaffAuthed(true);
-	//         setShowStaffPinPad(false);
-	//       }}
-	//       onClinicLogout={handleClinicLogout}
-	//     />
-	//   );
-	// }
+	if (!staffAuthed || showStaffPinPad) {
+	  if (!dashboard) {
+	    return <AppLoadingState message="Загрузка данных клиники..." />;
+	  }
+	  return (
+	    <StaffPinPad
+	      staffMembers={dashboard.clinicSettings?.staff ?? []}
+	      onUnlockSuccess={(user) => {
+	        setActiveStaffUser(user);
+	        setStaffAuthed(true);
+	        setShowStaffPinPad(false);
+	      }}
+	      onClinicLogout={handleClinicLogout}
+	    />
+	  );
+	}
 
 	if (false) {
 		return (
