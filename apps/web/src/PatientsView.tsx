@@ -16,6 +16,7 @@ import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { SmartParsePreview } from "./SmartParsePreview";
+import { PatientFamilyCard } from "./components/patients/PatientFamilyCard";
 import { usePatientStore } from "./store/patientStore";
 import { useVisitStore } from "./store/visitStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
@@ -616,72 +617,25 @@ export function PatientsView(props: PatientsViewProps) {
 									<VisiographAnalyzer />
 								</div>
 								<div className="clinical-col-right">
-									{familyData && (
-										<div
-											className="panel family-wallet-panel"
-											style={{
-												background: "rgba(24, 24, 27, 0.6)",
-												backdropFilter: "blur(12px)",
-												borderRadius: "12px",
-												border: "1px solid rgba(63, 63, 70, 0.4)",
-												padding: "16px",
-												marginBottom: "20px",
-											}}
-										>
-											<h3 className="patients-glass-header">
-												👨‍👩‍👧‍👦 {familyData.name || "Семейная группа"}
-											</h3>
-											<div
-												style={{
-													display: "flex",
-													justifyContent: "space-between",
-													alignItems: "center",
-													background: "rgba(9, 9, 11, 0.4)",
-													padding: "12px",
-													borderRadius: "8px",
-													border: "1px solid rgba(63, 63, 70, 0.2)",
-													marginBottom: "12px",
-												}}
-											>
-												<span className="patients-glass-muted">
-													Семейный баланс:
-												</span>
-												<span className="patients-glass-value">
-													{parseFloat(familyData.balance).toLocaleString(
-														"ru-RU",
-													)}{" "}
-													₽
-												</span>
-											</div>
-											<div className="patients-flex-col-gap-8">
-												<span className="patients-glass-label">
-													Члены семьи:
-												</span>
-												{familyData.members?.map((m: any) => (
-													<div key={m.id} className="patients-glass-row">
-														<span
-															style={{
-																color:
-																	m.id === selectedPatientId
-																		? "#0ea5e9"
-																		: "#e4e4e7",
-																fontWeight:
-																	m.id === selectedPatientId
-																		? "bold"
-																		: "normal",
-															}}
-														>
-															{m.fullName}{" "}
-															{m.id === selectedPatientId && " (текущий)"}
-														</span>
-														<span className="patients-glass-dim">
-															{m.phone || "нет телефона"}
-														</span>
-													</div>
-												))}
-											</div>
-										</div>
-									)}
+									
+									<PatientFamilyCard 
+										patientId={selectedPatientId} 
+										patientName={selectedPatient?.fullName || null}
+										familyData={familyData} 
+										onFamilyDataChanged={() => {
+											if (selectedPatientId) {
+												fetch(`/api/finance/family/patient/${selectedPatientId}`, {
+													headers: denteAdminSecretRequestHeaders(),
+												})
+												.then((res) => {
+													if (!res.ok) throw new Error("No family");
+													return res.json();
+												})
+												.then((data) => setFamilyData(data))
+												.catch(() => setFamilyData(null));
+											}
+										}} 
+									/>
 									{selectedPatientId && (
 										<PatientJourneyTimeline
 											patientId={selectedPatientId}
