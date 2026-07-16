@@ -2726,6 +2726,7 @@ export function App() {
 					</section>
 				</section>
 			</main>
+			</AppLogicProvider>
 		);
 	}
 

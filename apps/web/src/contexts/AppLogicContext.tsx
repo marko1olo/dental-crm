@@ -4,9 +4,7 @@ import { createContext, useContext } from "react";
 
 // Define the shape of our global AppLogic context
 // This will incrementally absorb properties from useAppLogic.tsx
-export type AppLogicContextType = Record<string, any> & {
-	dashboard: Dashboard | null;
-};
+export type AppLogicContextType = Record<string, any>;
 
 const AppLogicContext = createContext<AppLogicContextType | null>(null);
 
