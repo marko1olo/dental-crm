@@ -170,3 +170,49 @@ export async function updatePatientAdministrativeProfileInDb(
 		updatedAt: updated.updatedAt.toISOString(),
 	} as unknown as Patient;
 }
+
+export async function getPatientAnamnesisFromDb(patientId: string) {
+	const [anamnesis] = await db
+		.select()
+		.from(schema.patientAnamnesis)
+		.where(eq(schema.patientAnamnesis.patientId, patientId));
+	return anamnesis || null;
+}
+
+export async function updatePatientAnamnesisInDb(
+	patientId: string,
+	input: {
+		allergies?: string[];
+		systemicDiseases?: string[];
+		hasCriticalAlerts?: boolean;
+	}
+) {
+	const [existing] = await db
+		.select()
+		.from(schema.patientAnamnesis)
+		.where(eq(schema.patientAnamnesis.patientId, patientId));
+
+	if (existing) {
+		const [updated] = await db
+			.update(schema.patientAnamnesis)
+			.set({
+				allergies: input.allergies ?? existing.allergies,
+				systemicDiseases: input.systemicDiseases ?? existing.systemicDiseases,
+				hasCriticalAlerts: input.hasCriticalAlerts ?? existing.hasCriticalAlerts,
+			})
+			.where(eq(schema.patientAnamnesis.patientId, patientId))
+			.returning();
+		return updated;
+	} else {
+		const [created] = await db
+			.insert(schema.patientAnamnesis)
+			.values({
+				patientId,
+				allergies: input.allergies ?? [],
+				systemicDiseases: input.systemicDiseases ?? [],
+				hasCriticalAlerts: input.hasCriticalAlerts ?? false,
+			})
+			.returning();
+		return created;
+	}
+}

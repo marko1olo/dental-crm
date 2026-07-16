@@ -147,6 +147,8 @@ import {
 	getPatientsFromDb,
 	updatePatientAdministrativeProfileInDb,
 	updatePatientInDb,
+	getPatientAnamnesisFromDb,
+	updatePatientAnamnesisInDb,
 } from "../db/patientsQuery.js";
 
 export async function registerPatientRoutes(app: FastifyInstance) {
@@ -259,4 +261,49 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			}
 		},
 	);
+
+	app.get("/api/patients/:patientId/anamnesis", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"patient anamnesis read",
+		);
+		if (!orgId) return;
+
+		const params = request.params as { patientId?: string };
+		if (!params.patientId) return sendPatientRouteValidationError(reply);
+
+		try {
+			const anamnesis = await getPatientAnamnesisFromDb(params.patientId);
+			return anamnesis || { allergies: [], systemicDiseases: [], hasCriticalAlerts: false };
+		} catch (e) {
+			console.error("[Patients] Get anamnesis error:", e);
+			return sendPatientNotFound(reply);
+		}
+	});
+
+	app.put("/api/patients/:patientId/anamnesis", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"patient anamnesis update",
+		);
+		if (!orgId) return;
+
+		const params = request.params as { patientId?: string };
+		if (!params.patientId) return sendPatientRouteValidationError(reply);
+
+		try {
+			const input = request.body as any; // Allow relaxed parsing for now
+			const updated = await updatePatientAnamnesisInDb(params.patientId, {
+				allergies: Array.isArray(input?.allergies) ? input.allergies : undefined,
+				systemicDiseases: Array.isArray(input?.systemicDiseases) ? input.systemicDiseases : undefined,
+				hasCriticalAlerts: typeof input?.hasCriticalAlerts === 'boolean' ? input.hasCriticalAlerts : undefined,
+			});
+			return updated;
+		} catch (e) {
+			console.error("[Patients] Update anamnesis error:", e);
+			return sendPatientNotFound(reply);
+		}
+	});
 }
