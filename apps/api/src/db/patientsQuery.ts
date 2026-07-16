@@ -105,6 +105,7 @@ export async function updatePatientInDb(
 			phone: input.phone,
 			email: input.email,
 			notes: input.notes,
+			familyGroupId: input.familyGroupId !== undefined ? input.familyGroupId : undefined,
 			status: input.status,
 			updatedAt: new Date(),
 		})

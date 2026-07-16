@@ -5193,6 +5193,7 @@ export const updatePatientSchema = z.object({
 	phone: patientPhoneInputSchema,
 	email: z.string().trim().email().nullable().optional(),
 	notes: z.string().trim().max(1000).nullable().optional(),
+	familyGroupId: z.string().uuid().nullable().optional(),
 });
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;
 
