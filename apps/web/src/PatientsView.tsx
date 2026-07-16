@@ -243,7 +243,11 @@ export function PatientsView(props: PatientsViewProps) {
 								setNewPatientName(event.target.value); // Sync for normal usage
 							}}
 							onFocus={() => setShowHints(true)}
-							onBlur={() => setTimeout(() => setShowHints(false), 200)}
+							onBlur={(e) => {
+								if (!e.currentTarget.contains(e.relatedTarget)) {
+									setShowHints(false);
+								}
+							}}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" && smartInputText.trim()) {
 									e.preventDefault();

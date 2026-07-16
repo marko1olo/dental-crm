@@ -830,7 +830,11 @@ export function PaymentCapture({
 								value={smartInputText}
 								placeholder="Пример: Оплата 5000 картой, нужен налоговый вычет..."
 								onFocus={() => setShowHints(true)}
-								onBlur={() => setTimeout(() => setShowHints(false), 200)}
+								onBlur={(e) => {
+									if (!e.currentTarget.contains(e.relatedTarget)) {
+										setShowHints(false);
+									}
+								}}
 								onChange={(e) => setSmartInputText(e.target.value)}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" && smartInputText.trim()) {

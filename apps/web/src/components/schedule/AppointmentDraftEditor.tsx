@@ -82,7 +82,11 @@ export function AppointmentDraftEditor(props: AppointmentDraftEditorProps) {
               value={smartInputText}
               placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
               onFocus={() => setShowHints(true)}
-              onBlur={() => setTimeout(() => setShowHints(false), 200)}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) {
+                  setShowHints(false);
+                }
+              }}
               onChange={(e) => setSmartInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && smartInputText.trim()) {

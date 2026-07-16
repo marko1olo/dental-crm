@@ -696,7 +696,11 @@ export function VisitView(props: VisitViewProps) {
 								aria-label="Текст диктовки"
 								value={transcript}
 								onFocus={() => setShowHints(true)}
-								onBlur={() => setTimeout(() => setShowHints(false), 200)}
+								onBlur={(e) => {
+									if (!e.currentTarget.contains(e.relatedTarget)) {
+										setShowHints(false);
+									}
+								}}
 								onChange={(event) => {
 									visitDraftUserEditedRef.current = true;
 									setTranscript(event.target.value);

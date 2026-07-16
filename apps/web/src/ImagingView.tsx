@@ -333,26 +333,14 @@ export function ImagingView(props: ImagingViewProps) {
 				}
 			}
 
-			// 2. Fallback / local simulation if viewing local files or as fallback
+			// 2. Fallback if no backend AI available
 			if (!summaryText) {
-				const lowerInput = imagingViewerNote.toLowerCase();
-				if (lowerInput.includes("кариес")) {
-					summaryText = "КЛКТ: Выявлена деструкция эмали и дентина на аппроксимальных поверхностях зубов 16, 25. Зуб 46 — глубокий кариес дентина, пульпарная камера закрыта.";
-				} else if (lowerInput.includes("периодонтит") || lowerInput.includes("кист")) {
-					summaryText = "КЛКТ: В области апекса корня зуба 36 визуализируется очаг разрежения костной ткани с четкими контурами (кистогранулема) d ~ 4.5 мм. Корневые каналы обтурированы частично.";
-				} else if (lowerInput.includes("имплант")) {
-					summaryText = "КЛКТ: Планирование дентальной имплантации в области отсутствующего зуба 46. Высота альвеолярного гребня 11.2 мм, ширина 6.4 мм. Костная плотность достаточная.";
-				} else {
-					summaryText = "КЛКТ исследование: зубы 16, 17, 26 - кариес дентина; зуб 36 - хронический периодонтит, корни обтурированы частично. В области зуба 46 - признаки деструкции костной ткани.";
-				}
+				summaryText = "Описание недоступно. Сервис ИИ-анализа не вернул данные, либо локальный файл не был проанализирован.";
 			}
 
-			// Simulate AI typing delay
-			setTimeout(() => {
-				setImagingViewerNote(summaryText);
-				showToast("ИИ-описание снимка сгенерировано", "success");
-				setIsAnalyzingNoteAI(false);
-			}, 900);
+			setImagingViewerNote(summaryText);
+			showToast("ИИ-анализ снимка завершён", "success");
+			setIsAnalyzingNoteAI(false);
 
 		} catch (e: any) {
 			showToast("Ошибка ИИ: " + e.message, "error");
