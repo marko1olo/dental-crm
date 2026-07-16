@@ -67,7 +67,6 @@ export function useVisitLogic({
     paymentPatientContextReady,
     paymentPatientContextMessage,
     loadDashboard,
-    setVisitWarning,
     clinicProfileDraft,
     patientCoreDraft,
     documentPatientMatchesActiveVisit,
