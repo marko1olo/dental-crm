@@ -1091,6 +1091,7 @@ export function App() {
 		addImagingViewerNoteAnnotation,
 		addMigrationDiscoveryCandidateToSmartImport,
 		addStaffMember,
+		updateStaffMember,
 		analyzePricelist,
 		appendToTranscript,
 		applyCtPlanningQuickAction,
@@ -5619,6 +5620,7 @@ export function App() {
 								activeWorkspaceProfile={activeWorkspaceProfile}
 								addChair={addChair}
 								addStaffMember={addStaffMember}
+								updateStaffMember={updateStaffMember}
 								analyzePricelist={analyzePricelist}
 								applyProtocolTemplate={applyProtocolTemplate}
 								attachPricelistImage={attachPricelistImage}

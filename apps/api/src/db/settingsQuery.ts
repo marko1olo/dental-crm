@@ -7,7 +7,7 @@ import type {
 	UiPreferences,
 	UpdateClinicProfileInput,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
 
@@ -320,6 +320,33 @@ export async function createStaffMemberInDb(
 		isActive: true,
 		workingHours: input.workingHours,
 	});
+}
+
+export async function updateStaffMemberInDb(
+	organizationId: string,
+	staffId: string,
+	updates: Partial<{
+		fullName: string | undefined;
+		role: string | undefined;
+		specialties: string[] | undefined;
+		phone: string | null | undefined;
+		email: string | null | undefined;
+		active: boolean | undefined;
+		canSignMedicalRecords: boolean | undefined;
+		canManageMoney: boolean | undefined;
+		canManageImports: boolean | undefined;
+		color: string | undefined;
+	}>
+) {
+	await db
+		.update(schema.users)
+		.set({ ...updates, updatedAt: sql`now()` })
+		.where(
+			and(
+				eq(schema.users.id, staffId),
+				eq(schema.users.organizationId, organizationId),
+			),
+		);
 }
 
 export async function updateStaffWorkingHoursInDb(

@@ -7842,6 +7842,23 @@ export function useAppLogic(): any {
 		}
 	}
 
+	async function updateStaffMember(staffId: string, updates: any) {
+		try {
+			const response = await fetch(`/api/settings/staff/${staffId}`, {
+				method: "PUT",
+				headers: auth.settingsAccessHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify(updates),
+			});
+			if (!response.ok) {
+				setError(await responseErrorMessage(response, "Не удалось обновить профиль сотрудника"));
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError(operatorWorkflowFailureMessage("Не удалось обновить профиль сотрудника", error));
+		}
+	}
+
 	async function addStaffMember(role: StaffRole) {
 		const fullName = newStaffName.trim();
 		if (!fullName) {
@@ -14309,6 +14326,7 @@ export function useAppLogic(): any {
     		addImagingViewerNoteAnnotation,
     		addMigrationDiscoveryCandidateToSmartImport,
     		addStaffMember,
+    		updateStaffMember,
     		analyzePricelist,
     		appendToTranscript,
     		applyCtPlanningQuickAction,
