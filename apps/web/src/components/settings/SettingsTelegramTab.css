@@ -13,8 +13,8 @@
 }
 
 .telegram-status-grid article {
-  background: var(--surface-0);
-  border: 1px solid var(--border-subtle);
+  background: var(--paper);
+  border: 1px solid var(--line);
   border-radius: 1rem;
   padding: 1.5rem;
   display: flex;
@@ -27,12 +27,12 @@
 .telegram-status-grid article:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-  border-color: var(--brand-300);
+  border-color: var(--teal);
 }
 
 .telegram-status-grid article span {
   font-size: 0.875rem;
-  color: var(--slate-500);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
@@ -40,13 +40,13 @@
 
 .telegram-status-grid article strong {
   font-size: 1.5rem;
-  color: var(--slate-900);
+  color: var(--ink);
   line-height: 1.2;
 }
 
 .telegram-status-grid article p {
   font-size: 0.875rem;
-  color: var(--slate-600);
+  color: var(--muted);
   margin: 0;
   line-height: 1.4;
 }

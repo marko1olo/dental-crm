@@ -1,12 +1,5 @@
-import {
-	AlertTriangle,
-	Eye,
-	EyeOff,
-	KeyRound,
-	Lock,
-	ShieldCheck,
-	User,
-} from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, KeyRound, Lock, ShieldCheck, User, Palette } from "lucide-react";
+import "./SettingsProfileTab.css";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -163,95 +156,65 @@ export function SettingsProfileTab() {
 
 	if (profileLoading) {
 		return (
-			<div className="settings-tab-pane">
-				<div className="settings-empty-state">
-					<div className="spinner spinner--sm" />
-					<p className="settings-empty-state__hint">Загрузка профиля...</p>
+		<div className="profile-studio-container animate-fade-in">
+			<div className="import-copy" style={{ marginBottom: '0' }}>
+				<User aria-hidden="true" />
+				<div>
+					<p className="eyebrow">Мой профиль</p>
+					<h2 id="tabpanel-profile-title">Настройки аккаунта</h2>
+					<p>Личные данные, пароль и PIN-код для входа в систему, а также предпочтения интерфейса.</p>
 				</div>
 			</div>
-		);
-	}
 
-	if (!profile) {
-		return (
-			<div className="settings-tab-pane">
-				<div className="settings-empty-state">
-					<AlertTriangle
-						size={32}
-						className="settings-empty-state__error-icon"
-					/>
-					<p className="settings-empty-state__error-text">
-						Профиль не найден. Войдите через PIN или перезайдите в систему.
-					</p>
-				</div>
-			</div>
-		);
-	}
-
-	// Strength class for the password bar segments
-	const strengthClass = newPassword
-		? strength.score === 1
-			? "weak"
-			: strength.score === 2
-				? "medium"
-				: "strong"
-		: "";
-
-	return (
-		<div className="settings-tab-pane animate-fade-in-up">
-			<div className="settings-header">
-				<h2 id="tabpanel-profile-title">Мой профиль</h2>
-				<p>Личные данные, пароль и PIN-код для входа в систему.</p>
-			</div>
-
-			<div className="settings-profile-layout">
+			<div className="profile-form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+				
 				{/* Personal data */}
-				<section className="settings-section">
-					<div className="settings-section-header">
-						<User aria-hidden="true" size={20} />
-						<h3>Личные данные</h3>
+				<section className="profile-section-card">
+					<div className="profile-section-header">
+						<div className="profile-section-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'rgb(59, 130, 246)' }}>
+							<User size={24} />
+						</div>
+						<div className="profile-section-title">
+							<h3>Личные данные</h3>
+							<p>Ваша базовая информация в системе клиники</p>
+						</div>
 					</div>
-					<div className="form-grid">
-						<label className="form-span-2">
-							ФИО
+					
+					<div className="profile-form-grid">
+						<div className="profile-form-group full-width">
+							<label>ФИО</label>
 							<input type="text" value={profile.fullName} disabled />
-						</label>
-						<label className="form-span-1">
-							Email
-							<input
-								type="email"
-								value={profile.email || "Не указан"}
-								disabled
-							/>
-						</label>
-						<label className="form-span-1">
-							Роль
-							<input
-								type="text"
-								value={staffRoleLabels?.[profile.role] ?? profile.role}
-								disabled
-							/>
-						</label>
+						</div>
+						<div className="profile-form-group">
+							<label>Email</label>
+							<input type="email" value={profile.email || "Не указан"} disabled />
+						</div>
+						<div className="profile-form-group">
+							<label>Роль в системе</label>
+							<input type="text" value={staffRoleLabels?.[profile.role] ?? profile.role} disabled />
+						</div>
 					</div>
-					<p className="form-hint settings-profile-hint">
-						Изменить ФИО или Email может только владелец клиники в разделе
-						«Клиника → Сотрудники».
+					<p className="profile-form-hint">
+						Изменить ФИО или Email может только владелец клиники в разделе «Клиника → Персонал».
 					</p>
 				</section>
 
 				{/* Password */}
-				<section className="settings-section">
-					<div className="settings-section-header">
-						<KeyRound aria-hidden="true" size={20} />
-						<h3>Смена пароля</h3>
+				<section className="profile-section-card">
+					<div className="profile-section-header">
+						<div className="profile-section-icon">
+							<KeyRound size={24} />
+						</div>
+						<div className="profile-section-title">
+							<h3>Смена пароля</h3>
+							<p>Пароль используется для входа в систему с личных устройств по email</p>
+						</div>
 					</div>
-					<p className="form-hint settings-section-hint">
-						Пароль используется для входа в систему с личных устройств по email.
-					</p>
-					<form onSubmit={handleUpdatePassword} className="form-grid">
-						<label className="form-span-2">
-							Текущий пароль
-							<div className="input-with-toggle">
+					
+					<form onSubmit={handleUpdatePassword} className="profile-form-grid">
+						<div className="profile-form-group full-width">
+							<label>Текущий пароль</label>
+							<div className="profile-input-with-toggle">
 								<input
 									type={showOldPw ? "text" : "password"}
 									value={oldPassword}
@@ -262,16 +225,17 @@ export function SettingsProfileTab() {
 								<button
 									type="button"
 									onClick={() => setShowOldPw((v) => !v)}
-									className="input-toggle-btn"
+									className="profile-input-toggle-btn"
 									aria-label={showOldPw ? "Скрыть пароль" : "Показать пароль"}
 								>
 									{showOldPw ? <EyeOff size={16} /> : <Eye size={16} />}
 								</button>
 							</div>
-						</label>
-						<label className="form-span-1">
-							Новый пароль
-							<div className="input-with-toggle">
+						</div>
+						
+						<div className="profile-form-group">
+							<label>Новый пароль</label>
+							<div className="profile-input-with-toggle">
 								<input
 									type={showNewPw ? "text" : "password"}
 									value={newPassword}
@@ -282,66 +246,66 @@ export function SettingsProfileTab() {
 								<button
 									type="button"
 									onClick={() => setShowNewPw((v) => !v)}
-									className="input-toggle-btn"
+									className="profile-input-toggle-btn"
 									aria-label={showNewPw ? "Скрыть пароль" : "Показать пароль"}
 								>
 									{showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
 								</button>
 							</div>
 							{newPassword && (
-								<div className="password-strength">
+								<div className="profile-password-strength">
 									{[1, 2, 3].map((i) => (
 										<div
 											key={i}
-											className={`password-strength__bar ${strength.score >= i ? `password-strength__bar--${strengthClass}` : ""}`}
+											className={`profile-password-bar ${strength.score >= i ? strengthClass : ""}`}
 										/>
 									))}
-									<span className="password-strength__label">
+									<span className="profile-password-label" style={{ color: strengthClass === 'weak' ? '#ef4444' : strengthClass === 'medium' ? '#f59e0b' : '#10b981' }}>
 										{strength.label}
 									</span>
 								</div>
 							)}
-						</label>
-						<label className="form-span-1">
-							Подтвердите пароль
+						</div>
+						
+						<div className="profile-form-group">
+							<label>Подтвердите пароль</label>
 							<input
 								type="password"
 								value={confirmPassword}
 								onChange={(e) => setConfirmPassword(e.target.value)}
 								placeholder="••••••••"
 								disabled={passwordLoading}
-								className={passwordMismatch ? "input--error" : ""}
+								className={passwordMismatch ? "profile-input-error" : ""}
 							/>
 							{passwordMismatch && (
-								<span className="input-error-hint">Пароли не совпадают</span>
+								<span className="profile-error-hint"><AlertTriangle size={12}/> Пароли не совпадают</span>
 							)}
-						</label>
-						<div className="form-actions form-span-2">
-							<button
-								className="primary-button"
-								type="submit"
-								disabled={passwordLoading}
-							>
-								<ShieldCheck size={15} />{" "}
-								{passwordLoading ? "Сохранение..." : "Сохранить пароль"}
+						</div>
+						
+						<div className="profile-form-group full-width" style={{ marginTop: '8px' }}>
+							<button className="primary-button" type="submit" disabled={passwordLoading} style={{ alignSelf: 'flex-start' }}>
+								<ShieldCheck size={16} style={{ marginRight: '8px' }} />
+								{passwordLoading ? "Сохранение..." : "Сохранить новый пароль"}
 							</button>
 						</div>
 					</form>
 				</section>
 
 				{/* PIN */}
-				<section className="settings-section">
-					<div className="settings-section-header">
-						<Lock aria-hidden="true" size={20} />
-						<h3>Смена PIN-кода</h3>
+				<section className="profile-section-card">
+					<div className="profile-section-header">
+						<div className="profile-section-icon" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'rgb(139, 92, 246)' }}>
+							<Lock size={24} />
+						</div>
+						<div className="profile-section-title">
+							<h3>Смена PIN-кода</h3>
+							<p>PIN (4 цифры) используется для быстрого входа на общих компьютерах клиники</p>
+						</div>
 					</div>
-					<p className="form-hint settings-section-hint">
-						PIN (4 цифры) используется для быстрого входа на общем компьютере
-						клиники.
-					</p>
-					<form onSubmit={handleUpdatePin} className="form-grid">
-						<label className="form-span-2">
-							Текущий PIN
+					
+					<form onSubmit={handleUpdatePin} className="profile-form-grid">
+						<div className="profile-form-group full-width">
+							<label>Текущий PIN-код</label>
 							<input
 								type="password"
 								value={oldPin}
@@ -349,11 +313,12 @@ export function SettingsProfileTab() {
 								placeholder="••••"
 								maxLength={4}
 								disabled={pinLoading}
-								className="input--pin"
+								style={{ letterSpacing: '8px', fontSize: '18px', fontWeight: 'bold', fontFamily: 'monospace' }}
 							/>
-						</label>
-						<label className="form-span-1">
-							Новый PIN
+						</div>
+						
+						<div className="profile-form-group">
+							<label>Новый PIN-код</label>
 							<input
 								type="password"
 								value={newPin}
@@ -361,33 +326,30 @@ export function SettingsProfileTab() {
 								placeholder="••••"
 								maxLength={4}
 								disabled={pinLoading}
-								className="input--pin"
+								style={{ letterSpacing: '8px', fontSize: '18px', fontWeight: 'bold', fontFamily: 'monospace' }}
 							/>
-						</label>
-						<label className="form-span-1">
-							Подтверждение
+						</div>
+						
+						<div className="profile-form-group">
+							<label>Подтвердите PIN-код</label>
 							<input
 								type="password"
 								value={confirmPin}
-								onChange={(e) =>
-									setConfirmPin(e.target.value.replace(/\D/g, ""))
-								}
+								onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
 								placeholder="••••"
 								maxLength={4}
 								disabled={pinLoading}
-								className={`input--pin${confirmPin && newPin !== confirmPin ? " input--error" : ""}`}
+								className={confirmPin && newPin !== confirmPin ? "profile-input-error" : ""}
+								style={{ letterSpacing: '8px', fontSize: '18px', fontWeight: 'bold', fontFamily: 'monospace' }}
 							/>
 							{confirmPin && newPin !== confirmPin && (
-								<span className="input-error-hint">PIN-коды не совпадают</span>
+								<span className="profile-error-hint"><AlertTriangle size={12}/> PIN-коды не совпадают</span>
 							)}
-						</label>
-						<div className="form-actions form-span-2">
-							<button
-								className="primary-button"
-								type="submit"
-								disabled={pinLoading}
-							>
-								<ShieldCheck size={15} />{" "}
+						</div>
+						
+						<div className="profile-form-group full-width" style={{ marginTop: '8px' }}>
+							<button className="primary-button" type="submit" disabled={pinLoading} style={{ alignSelf: 'flex-start' }}>
+								<ShieldCheck size={16} style={{ marginRight: '8px' }} />
 								{pinLoading ? "Сохранение..." : "Сохранить PIN-код"}
 							</button>
 						</div>
@@ -395,45 +357,44 @@ export function SettingsProfileTab() {
 				</section>
 
 				{/* Theme Settings */}
-				<section className="settings-section">
-					<div className="settings-section-header">
-						<Eye aria-hidden="true" size={20} />
-						<h3>Внешний вид</h3>
+				<section className="profile-section-card">
+					<div className="profile-section-header">
+						<div className="profile-section-icon" style={{ background: 'rgba(236, 72, 153, 0.1)', color: 'rgb(236, 72, 153)' }}>
+							<Palette size={24} />
+						</div>
+						<div className="profile-section-title">
+							<h3>Внешний вид и Масштаб</h3>
+							<p>Настройки оформления интерфейса конкретно для вашего аккаунта</p>
+						</div>
 					</div>
-					<p className="form-hint settings-section-hint">
-						Выберите тему оформления системы или включите автоматическое
-						переключение от времени суток.
-					</p>
-					<div className="form-grid">
-						<label className="form-span-1">
-							Тема
+					
+					<div className="profile-form-grid">
+						<div className="profile-form-group">
+							<label>Цветовая тема</label>
 							<select
 								value={useThemeStore((s) => s.themeMode)}
 								onChange={(e) =>
-									useThemeStore
-										.getState()
-										.setThemeMode(e.target.value as "auto" | "light" | "dark")
+									useThemeStore.getState().setThemeMode(e.target.value as "auto" | "light" | "dark")
 								}
 							>
-								<option value="auto">Автоматически (по времени суток)</option>
+								<option value="auto">Автоматически (по системе)</option>
 								<option value="light">Светлая тема</option>
 								<option value="dark">Тёмная тема</option>
 							</select>
-						</label>
-						<label className="form-span-1">
-							Размер интерфейса (Масштаб)
+						</div>
+						
+						<div className="profile-form-group">
+							<label>Масштаб интерфейса</label>
 							<select
 								value={useUiStore((s) => s.uiScale)}
 								onChange={(e) =>
-									useUiStore
-										.getState()
-										.setUiScale(e.target.value as "standard" | "large")
+									useUiStore.getState().setUiScale(e.target.value as "standard" | "large")
 								}
 							>
-								<option value="standard">Стандартный (Компактный)</option>
-								<option value="large">Крупный (Бабушкин UX)</option>
+								<option value="standard">Компактный (Стандарт)</option>
+								<option value="large">Крупный (Для слабовидящих)</option>
 							</select>
-						</label>
+						</div>
 					</div>
 				</section>
 			</div>
