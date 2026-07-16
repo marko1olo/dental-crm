@@ -10,6 +10,7 @@ import { formatPhoneNumber } from "../../utils/inputSanitation";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { PatientFamilyCard } from "./PatientFamilyCard";
+import { PatientNoShowRisk } from "./PatientNoShowRisk";
 
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
@@ -266,6 +267,9 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 							dashboard={props.dashboard}
 						/>
 					)}
+				</div>
+				<div className="clinical-col-right" style={{ flex: 1 }}>
+					{selectedPatientId && <PatientNoShowRisk patientId={selectedPatientId} />}
 				</div>
 			</div>
 		</>
