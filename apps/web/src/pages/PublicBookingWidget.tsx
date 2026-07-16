@@ -21,24 +21,90 @@ export const PublicBookingWidget: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Pulls the human-readable error the API returns ({ error } / { message }),
+  // falling back to a status-specific message so the patient never faces a
+  // silent dead-end (e.g. 429 rate limit, 400 validation from the booking API).
+  const messageFromResponse = async (
+    res: Response,
+    fallback: string,
+  ): Promise<string> => {
+    if (res.status === 429)
+      return "Слишком много запросов. Подождите минуту и попробуйте снова.";
+    try {
+      const data = await res.json();
+      const detail = Array.isArray(data?.details) ? data.details[0] : null;
+      return data?.message || data?.error || detail || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   useEffect(() => {
     if (!organizationId) return;
+    let cancelled = false;
+    setDoctorsLoading(true);
+    setLoadError(null);
     fetch(`/api/public/booking/${organizationId}/doctors`)
-      .then(res => res.json())
+      .then(async res => {
+        if (!res.ok)
+          throw new Error(
+            await messageFromResponse(res, "Не удалось загрузить список врачей."),
+          );
+        return res.json();
+      })
       .then(data => {
+        if (cancelled) return;
         if (Array.isArray(data)) setDoctors(data);
       })
-      .catch(console.error);
+      .catch(err => {
+        if (cancelled) return;
+        setLoadError(
+          err instanceof Error ? err.message : "Не удалось загрузить список врачей.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setDoctorsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [organizationId]);
 
   useEffect(() => {
     if (!organizationId || !selectedDoctorId || !selectedDate) return;
+    let cancelled = false;
+    setSlotsLoading(true);
+    setLoadError(null);
     fetch(`/api/public/booking/${organizationId}/slots/${selectedDoctorId}?date=${selectedDate}`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setSlots(data);
+      .then(async res => {
+        if (!res.ok)
+          throw new Error(
+            await messageFromResponse(res, "Не удалось загрузить свободное время."),
+          );
+        return res.json();
       })
-      .catch(console.error);
+      .then(data => {
+        if (cancelled) return;
+        setSlots(Array.isArray(data) ? data : []);
+      })
+      .catch(err => {
+        if (cancelled) return;
+        setSlots([]);
+        setLoadError(
+          err instanceof Error ? err.message : "Не удалось загрузить свободное время.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [organizationId, selectedDoctorId, selectedDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +112,7 @@ export const PublicBookingWidget: React.FC = () => {
     if (!selectedDoctorId || !selectedSlot) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       const res = await fetch(`/api/public/booking/${organizationId}/book`, {
         method: "POST",
@@ -59,12 +126,21 @@ export const PublicBookingWidget: React.FC = () => {
           comment
         })
       });
-      
+
       if (res.ok) {
         setIsSuccess(true);
+      } else {
+        setSubmitError(
+          await messageFromResponse(
+            res,
+            "Не удалось записаться. Попробуйте ещё раз или позвоните в клинику.",
+          ),
+        );
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setSubmitError(
+        "Нет связи с клиникой. Проверьте интернет и попробуйте снова.",
+      );
     } finally {
       setIsSubmitting(false);
     }

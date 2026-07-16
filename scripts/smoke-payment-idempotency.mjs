@@ -4,10 +4,13 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 process.env.DENTAL_STATE_PERSISTENCE = "off";
+const smokeAuthSecret = process.env.AUTH_TOKEN_SECRET || "dente_payment_idempotency_smoke_secret";
+process.env.AUTH_TOKEN_SECRET = smokeAuthSecret;
 
 const routePath = path.resolve("apps/api/dist/routes/billing.js");
 const sampleDataPath = path.resolve("apps/api/dist/sampleData.js");
 const sharedPath = path.resolve("packages/shared/dist/index.js");
+const cryptoHelperPath = path.resolve("apps/api/dist/utils/cryptoHelper.js");
 const billingRouteSource = readFileSync("apps/api/src/routes/billing.ts", "utf8");
 const sampleDataSource = readFileSync("apps/api/src/sampleData.ts", "utf8");
 const sharedSource = readFileSync("packages/shared/src/index.ts", "utf8");
@@ -26,8 +29,8 @@ assert(sampleDataSource.includes("findPaymentByClientMutationId"), "payment stat
 assert(sampleDataSource.includes("payment.clientMutationId === normalizedClientMutationId"), "payment lookup must match stored clientMutationId");
 assert(sampleDataSource.includes("const clientMutationId = input.clientMutationId?.trim() || null"), "payment creation must normalize clientMutationId before storage");
 assert(sampleDataSource.includes("clientMutationId,"), "payment creation must persist normalized clientMutationId");
-assert(billingRouteSource.includes("findPaymentByClientMutationId(input.clientMutationId)"), "billing route must check clientMutationId before appending payment");
-assert(billingRouteSource.includes("existingPayment.patientId !== input.patientId"), "duplicate operation ids must stay scoped to the same patient");
+assert(billingRouteSource.includes("findPaymentByClientMutationIdInDb(") && billingRouteSource.includes("input.clientMutationId"), "billing route must check clientMutationId before appending payment");
+assert(billingRouteSource.includes("existingPayment.patientId !== paymentInput.patientId"), "duplicate operation ids must stay scoped to the same patient");
 assert(billingRouteSource.includes("reply.code(200).send(paymentSchema.parse(existingPayment))"), "duplicate payment retry must return the existing payment");
 
 const requireFromApi = createRequire(path.resolve("apps/api/package.json"));
@@ -35,8 +38,22 @@ const Fastify = requireFromApi("fastify");
 const { registerBillingRoutes } = await import(pathToFileURL(routePath).href);
 const { activeVisit, documents, patients, payments } = await import(pathToFileURL(sampleDataPath).href);
 const { documentKindMetadata } = await import(pathToFileURL(sharedPath).href);
+const { signToken } = await import(pathToFileURL(cryptoHelperPath).href);
+
+// Billing mutations require a staff session. Sign a short-lived staff token with
+// no userId so verifyRequestToken resolves the org without a DB user lookup
+// (this smoke runs against in-memory sample state, not the PGlite database).
+const smokeStaffToken = signToken(
+  { organizationId: activeVisit.organizationId, role: "administrator" },
+  smokeAuthSecret,
+  60
+);
 
 const app = Fastify({ logger: false });
+app.addHook("onRequest", (request, _reply, done) => {
+  request.headers["x-dente-staff-token"] = smokeStaffToken;
+  done();
+});
 await registerBillingRoutes(app);
 
 const validDocument = documents.find(
@@ -81,18 +98,20 @@ assert(retryPayment.id === firstPayment.id, "duplicate retry must return the ori
 assert(retryPayment.amountRub === firstPayment.amountRub, "duplicate retry must return the original amount");
 assert(payments.length === initialPaymentCount + 1, "duplicate retry must not append a second ledger row");
 
+// A retry that reuses the clientMutationId but changes the payload (amount, etc.)
+// must be rejected with 409, not silently resolved. Returning the original
+// payment would mask a client bug or a mutation-id collision. This matches the
+// route (billing.ts) and BILLING_AND_FINANCE.md ("Mismatches: 409 Conflict").
 const changedPayloadRetryResponse = await app.inject({
   method: "POST",
   url: "/api/billing/payments",
   payload: {
     ...payload,
     amountRub: 9876,
-    note: "changed retry must not append"
+    note: "changed retry must be rejected"
   }
 });
-assert(changedPayloadRetryResponse.statusCode === 200, "changed retry with same clientMutationId must return existing payment");
-assert(changedPayloadRetryResponse.json().id === firstPayment.id, "changed retry must keep the original payment id");
-assert(changedPayloadRetryResponse.json().amountRub === 1234, "changed retry must keep the original amount");
+assert(changedPayloadRetryResponse.statusCode === 409, `changed retry with same clientMutationId must return 409: ${changedPayloadRetryResponse.statusCode} ${changedPayloadRetryResponse.body}`);
 assert(payments.length === initialPaymentCount + 1, "changed retry must not append a second ledger row");
 
 const otherPatient = patients.find((patient) => patient.id !== activeVisit.patientId);
