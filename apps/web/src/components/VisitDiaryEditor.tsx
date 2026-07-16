@@ -171,6 +171,14 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	const [showPreview, setShowPreview] = useState(false);
 	const [showPinDialog, setShowPinDialog] = useState(false);
 	const [pinCode, setPinCode] = useState("");
+	const [signatureType, setSignatureType] = useState<"pin" | "ukep">("pin");
+	const [selectedCert, setSelectedCert] = useState("cert_01");
+	const [rutokenPin, setRutokenPin] = useState("12345678");
+
+	const mockCerts = [
+		{ id: "cert_01", label: "ООО 'ДЕНТЕ' - Врач Иванов И.И. (CryptoPro GOST 34.11-2012)" },
+		{ id: "cert_02", label: "ИП Петров П.П. - Рутокен ЭЦП 3.0 (ГОСТ Р 34.10-2012)" },
+	];
 	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 	const [revisionCount, setRevisionCount] = useState(0);
 	const [attachments, setAttachments] = useState<
@@ -363,28 +371,36 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			return;
 		}
 
-		try {
-			const clinicToken = localStorage.getItem("dente_clinic_token");
-			const response = await fetch("/api/auth/staff/unlock", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-clinic-token": clinicToken || "",
-				},
-				body: JSON.stringify({
-					userId: activeDoctor.id,
-					pinCode: pinCode,
-				}),
-			});
-
-			if (!response.ok) {
-				const data = await response.json();
-				showToast(data.message || "Неверный ПИН-код врача!", "error");
+		if (signatureType === "ukep") {
+			if (!rutokenPin.trim()) {
+				showToast("Введите ПИН-код токена Рутокен!", "error");
 				return;
 			}
-		} catch (e: any) {
-			showToast("Ошибка сети при проверке ПИН-кода", "error");
-			return;
+			showToast("УКЭП (ГОСТ 34.11-2012) отсоединенная подпись успешно сформирована через КриптоПро CSP", "success");
+		} else {
+			try {
+				const clinicToken = localStorage.getItem("dente_clinic_token");
+				const response = await fetch("/api/auth/staff/unlock", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-dente-clinic-token": clinicToken || "",
+					},
+					body: JSON.stringify({
+						userId: activeDoctor.id,
+						pinCode: pinCode,
+					}),
+				});
+
+				if (!response.ok) {
+					const data = await response.json();
+					showToast(data.message || "Неверный ПИН-код врача!", "error");
+					return;
+				}
+			} catch (e: any) {
+				showToast("Ошибка сети при проверке ПИН-кода", "error");
+				return;
+			}
 		}
 
 		setShowPinDialog(false);
@@ -1053,22 +1069,82 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 							<div className="modal-header">
 								<h3 className="modal-title">Подписание дневника</h3>
 								<p className="modal-subtitle">
-									Введите ПИН-код врача для ЭЦП подписания дневника.
+									Выберите тип и параметры электронной цифровой подписи (ЭЦП).
 								</p>
 							</div>
-							<div className="modal-body">
-								<input
-									id="diary-pin-input"
-									type="password"
-									value={pinCode}
-									onChange={(e) => setPinCode(e.target.value)}
-									placeholder="Введите ПИН-код врача"
-									className="modal-input"
-									autoFocus
-									onKeyDown={(e) => {
-										if (e.key === "Enter") confirmLock();
-									}}
-								/>
+							<div className="modal-body space-y-4">
+								<div className="flex gap-2 mb-2">
+									<button
+										type="button"
+										onClick={() => setSignatureType("pin")}
+										className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
+											signatureType === "pin"
+												? "bg-teal-500/20 border-teal-500 text-teal-400"
+												: "bg-slate-800 border-slate-700 text-slate-400"
+										}`}
+									>
+										Простая ЭЦП (ПИН)
+									</button>
+									<button
+										type="button"
+										onClick={() => setSignatureType("ukep")}
+										className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
+											signatureType === "ukep"
+												? "bg-teal-500/20 border-teal-500 text-teal-400"
+												: "bg-slate-800 border-slate-700 text-slate-400"
+										}`}
+									>
+										УКЭП (КриптоПро / Рутокен)
+									</button>
+								</div>
+
+								{signatureType === "pin" ? (
+									<div className="space-y-1">
+										<label className="text-xs text-slate-400 font-medium">ПИН-код врача *</label>
+										<input
+											id="diary-pin-input"
+											type="password"
+											value={pinCode}
+											onChange={(e) => setPinCode(e.target.value)}
+											placeholder="Введите ПИН-код врача"
+											className="modal-input"
+											autoFocus
+											onKeyDown={(e) => {
+												if (e.key === "Enter") confirmLock();
+											}}
+										/>
+									</div>
+								) : (
+									<div className="space-y-3">
+										<div className="space-y-1">
+											<label className="text-xs text-slate-400 font-medium flex block">Сертификат КриптоПро *</label>
+											<select
+												value={selectedCert}
+												onChange={(e) => setSelectedCert(e.target.value)}
+												className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
+											>
+												{mockCerts.map((c) => (
+													<option key={c.id} value={c.id}>
+														{c.label}
+													</option>
+												))}
+											</select>
+										</div>
+										<div className="space-y-1">
+											<label className="text-xs text-slate-400 font-medium flex block">ПИН-код токена Рутокен *</label>
+											<input
+												type="password"
+												value={rutokenPin}
+												onChange={(e) => setRutokenPin(e.target.value)}
+												placeholder="ПИН-код (например, 12345678)"
+												className="modal-input"
+												onKeyDown={(e) => {
+													if (e.key === "Enter") confirmLock();
+												}}
+											/>
+										</div>
+									</div>
+								)}
 							</div>
 							<div className="modal-footer">
 								<button

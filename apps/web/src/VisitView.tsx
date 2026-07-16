@@ -14,13 +14,14 @@ import React, { Suspense, useEffect, useState } from "react";
 import { ClinicalRulePanel } from './ClinicalRulePanel';
 import { useAppLogicContext } from './contexts/AppLogicContext';
 import { createPortal } from "react-dom";
-import { EgiszMonitor } from "./components/EgiszMonitor";
+
 import { showToast } from "./components/GlobalToast";
-import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
-import { OdontogramModule } from "./components/odontogram/OdontogramModule";
-import { LabOrdersPanel } from "./components/schedule/LabOrdersPanel";
+import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
+import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+
+
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { VisitDiaryEditor } from "./components/VisitDiaryEditor";
+
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { parseVisitDictationLocal } from "./lib/smartVisitParser";
@@ -130,6 +131,7 @@ export function VisitView() {
 		visitWorkflowSteps,
 	} = useAppLogicContext();
 
+	const [activeVisitTab, setActiveVisitTab] = useState<"diary" | "odontogram" | "diagnostics" | "conclusion">("diary");
 	const [activeEmkTab, setActiveEmkTab] = useState("all");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
@@ -358,6 +360,7 @@ export function VisitView() {
 					</div>
 				</section>
 
+				<div style={{ display: activeVisitTab === "conclusion" ? "block" : "none" }}>
 				<details
 					className="clinical-rules-toggle"
 					style={{
@@ -502,6 +505,17 @@ export function VisitView() {
 					</section>
 				</details>
 
+				</div>
+
+
+				<div className="visit-tabs-navigation" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--line)', marginBottom: '16px', padding: '0 24px' }}>
+					<button type="button" className={activeVisitTab === 'diary' ? 'active' : ''} onClick={() => setActiveVisitTab('diary')} style={{ padding: '8px 16px', background: activeVisitTab === 'diary' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'diary' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Осмотр</button>
+					<button type="button" className={activeVisitTab === 'odontogram' ? 'active' : ''} onClick={() => setActiveVisitTab('odontogram')} style={{ padding: '8px 16px', background: activeVisitTab === 'odontogram' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'odontogram' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Зубная формула и Дневник</button>
+					<button type="button" className={activeVisitTab === 'diagnostics' ? 'active' : ''} onClick={() => setActiveVisitTab('diagnostics')} style={{ padding: '8px 16px', background: activeVisitTab === 'diagnostics' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'diagnostics' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Снимки и Анализы</button>
+					<button type="button" className={activeVisitTab === 'conclusion' ? 'active' : ''} onClick={() => setActiveVisitTab('conclusion')} style={{ padding: '8px 16px', background: activeVisitTab === 'conclusion' ? 'var(--teal)' : 'transparent', color: activeVisitTab === 'conclusion' ? 'white' : 'var(--slate-600)', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Заключение</button>
+				</div>
+
+				<div style={{ display: activeVisitTab === "diary" ? "block" : "none" }}>
 				<section
 					className="specialty-focus-bar"
 					aria-label="Фокус специальности приема"
@@ -911,7 +925,6 @@ export function VisitView() {
 					</div>
 				</div>
 
-				<VisiographAnalyzer />
 
 				<div className="tooth-map" aria-label="Зубная карта">
 					<div
@@ -1988,45 +2001,15 @@ export function VisitView() {
 						) : null}
 					</div>
 				</section>
+				</div>
 
-				{activePatient?.id && activeAppointment?.id && (
-					<div className="flex flex-col xl:flex-row gap-6 my-6 w-full max-w-full">
-						<div className="w-full xl:w-[45%] flex-shrink-0">
-							<OdontogramModule
-								patientId={activePatient.id}
-								pediatricMode={
-									dashboard?.clinicSettings?.profile?.hasPediatricMode
-								}
-							/>
-						</div>
-						<div className="w-full xl:w-[55%] flex-grow">
-							<VisitDiaryEditor
-								visitId={activeAppointment.id}
-								patientId={activePatient.id}
-							/>
-							<div className="mt-4">
-								<EgiszMonitor
-									visitId={activeAppointment.id}
-									patientId={activePatient.id}
-								/>
-							</div>
-							<details className="mt-4 bg-slate-800/10 border border-slate-700/40 rounded-xl p-4 [&_summary::-webkit-details-marker]:hidden">
-								<summary className="flex justify-between items-center cursor-pointer select-none">
-									<div className="flex items-center gap-2">
-										<FlaskConical className="w-5 h-5 text-teal-400" />
-										<span className="font-semibold text-sm text-slate-200">
-											Ортопедия и Лаборатория (ЗТЛ)
-										</span>
-									</div>
-									<span className="text-xs text-slate-400 font-medium">Открыть</span>
-								</summary>
-								<div className="mt-4 pt-4 border-t border-slate-700/40">
-									<LabOrdersPanel patientId={activePatient.id} />
-								</div>
-							</details>
-						</div>
-					</div>
-				)}
+
+								<div style={{ display: activeVisitTab === 'odontogram' ? 'block' : 'none' }}>
+					<VisitOdontogramTab />
+				</div>
+				<div style={{ display: activeVisitTab === 'diagnostics' ? 'block' : 'none' }}>
+					<VisitDiagnosticsTab />
+				</div>
 
 				<details
 					className="protocol-library"
