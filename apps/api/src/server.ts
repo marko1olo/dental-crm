@@ -46,7 +46,6 @@ import { registerSystemRoutes } from "./routes/system.js";
 import {
 	registerTelegramRoutes,
 	registerTelegramWebhookRoutes,
-	startDenteTelegramOutboxDueWorker,
 } from "./routes/telegram.js";
 import { telephonyRoutes } from "./routes/telephony.js";
 import registerTemplateRoutes from "./routes/templates.js";
@@ -61,7 +60,6 @@ import {
 	stopBackupDaemon,
 } from "./services/backupWorker.js";
 import { startBiAnalyticsWorker } from "./services/biAnalyticsWorker.js";
-import { startNotificationWorker } from "./services/notificationWorker.js";
 import { startSyncEngine, stopSyncEngine } from "./services/syncEngine.js";
 import { wsBroker } from "./services/websocketBroker.js";
 import { getProxyAgent } from "./speech/keyPool.js";
@@ -71,7 +69,6 @@ import { startWatchdog } from "./watchdog.js";
 
 loadAdditionalServerEnv();
 startWatchdog();
-// startNotificationWorker();
 
 async function checkProxyPortDirectly(
 	proxyUrlString: string,
@@ -343,13 +340,10 @@ export async function createDenteApiApp(
 	await workspaceProfileRoutes(app);
 
 	if (options.startTelegramWorker !== false) {
-		// const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
 		startBiAnalyticsWorker();
 		startSyncEngine(db.$client as any); // assuming db exposes pglite
 		startBackupDaemon();
 		app.addHook("onClose", async () => {
-			// telegramOutboxDueWorker.stop();
-			// clearInterval(recallWorkerTimer);
 			stopSyncEngine();
 			stopBackupDaemon();
 		});
