@@ -34,7 +34,7 @@ import { InstallmentPaymentScheduleForm } from "./components/documents/forms/Ins
 import { MinorLegalRepresentativeConsentForm } from "./components/documents/forms/MinorLegalRepresentativeConsentForm";
 import { WarrantyServiceMemoForm } from "./components/documents/forms/WarrantyServiceMemoForm";
 import { PatientIntakeQuestionnaireForm } from "./components/documents/forms/PatientIntakeQuestionnaireForm";
-import { TaxDeductionApplicationForm as TaxDeductionApplicationForm } from "./components/documents/forms/TaxDeductionApplicationForm";
+import { TaxDeductionApplicationForm as TaxDeductionApplicationFormComponent } from "./components/documents/forms/TaxDeductionApplicationForm";
 import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
 import { ProcedureSpecificConsentPacketForm } from "./components/documents/forms/ProcedureSpecificConsentPacketForm";
 import { TreatmentPlanForm } from "./components/documents/forms/TreatmentPlanForm";

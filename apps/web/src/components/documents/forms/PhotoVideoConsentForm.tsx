@@ -3,7 +3,7 @@ import { useDocumentStore } from '../../../store/documentStore';
 import { CheckCircle2, FileText } from "lucide-react";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 
-export function PhotoVideoConsentForm(props: any) {
+export function PhotoVideoConsentForm({ typedPhotoVideoMaterialOptions, togglePhotoVideoMaterial, activePatient }: any) {
   const {
     photoVideoLabTransferAllowed,
     setPhotoVideoLabTransferAllowed,
