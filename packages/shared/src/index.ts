@@ -5274,6 +5274,20 @@ export const createStaffMemberSchema = z.object({
 });
 export type CreateStaffMemberInput = z.infer<typeof createStaffMemberSchema>;
 
+export const updateStaffMemberSchema = z.object({
+	fullName: z.string().trim().min(2).max(120).optional(),
+	role: staffRoleSchema.optional(),
+	specialties: z.array(dentalSpecialtySchema).optional(),
+	phone: z.string().trim().max(40).nullable().optional(),
+	email: z.string().trim().email().max(240).nullable().optional(),
+	active: z.boolean().optional(),
+	canSignMedicalRecords: z.boolean().optional(),
+	canManageMoney: z.boolean().optional(),
+	canManageImports: z.boolean().optional(),
+	color: z.string().optional(),
+});
+export type UpdateStaffMemberInput = z.infer<typeof updateStaffMemberSchema>;
+
 export const updateStaffWorkingHoursSchema = z.object({
 	workingHours: staffWorkingHoursSchema,
 });

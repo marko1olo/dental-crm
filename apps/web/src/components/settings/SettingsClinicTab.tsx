@@ -29,166 +29,6 @@ type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 type WeekdayOption = { value: number; label: string };
 
-function StaffSettingsEditor({
-	member,
-	saveCredentials,
-	updateStaffMember,
-}: {
-	member: any;
-	saveCredentials: (
-		staffId: string,
-		email?: string,
-		password?: string,
-		pin?: string,
-	) => Promise<boolean>;
-	updateStaffMember?: (
-		staffId: string,
-		updates: any
-	) => Promise<void>;
-}) {
-	const [isOpen, setIsOpen] = useState(false);
-	const [email, setEmail] = useState(member.email || "");
-	const [password, setPassword] = useState("");
-	const [pin, setPin] = useState("");
-	const [fullName, setFullName] = useState(member.fullName || "");
-	const [canSignMedicalRecords, setCanSignMedicalRecords] = useState(
-		member.canSignMedicalRecords || false
-	);
-	const [canManageImports, setCanManageImports] = useState(
-		member.canManageImports || false
-	);
-	const [canManageMoney, setCanManageMoney] = useState(
-		member.canManageMoney || false
-	);
-	const [saving, setSaving] = useState(false);
-
-	const handleSave = async () => {
-		setSaving(true);
-		
-		// Update profile/permissions
-		if (updateStaffMember) {
-			await updateStaffMember(member.id, {
-				fullName,
-				canSignMedicalRecords,
-				canManageImports,
-				canManageMoney,
-			});
-		}
-
-		// Update credentials if they are provided
-		if (email !== member.email || password || pin) {
-			const success = await saveCredentials(member.id, email, password, pin);
-			if (success) {
-				setPassword("");
-				setPin("");
-			}
-		}
-
-		setSaving(false);
-		showToast("Профиль сотрудника обновлен", "success");
-		setIsOpen(false);
-	};
-
-	return (
-		<div className="staff-credentials-editor">
-			<button
-				type="button"
-				onClick={() => setIsOpen(!isOpen)}
-				className="secondary-button compact-button credentials-toggle-btn"
-			>
-				<KeyRound size={14} />
-				Настройки профиля
-			</button>
-
-			{isOpen && (
-				<div className="credentials-editor-fields">
-					<label className="settings-control-label">
-						ФИО сотрудника
-						<input
-							type="text"
-							value={fullName}
-							onChange={(e) => setFullName(e.target.value)}
-							className="settings-control-input"
-						/>
-					</label>
-					
-					<div className="settings-section-title">Права доступа</div>
-					<div className="settings-control-row">
-						<label className="settings-checkbox-label">
-							<input
-								type="checkbox"
-								checked={canSignMedicalRecords}
-								onChange={(e) => setCanSignMedicalRecords(e.target.checked)}
-							/>
-							<span>Подписание ЭМК</span>
-						</label>
-						<label className="settings-checkbox-label">
-							<input
-								type="checkbox"
-								checked={canManageImports}
-								onChange={(e) => setCanManageImports(e.target.checked)}
-							/>
-							<span>Управление импортом КТ</span>
-						</label>
-						<label className="settings-checkbox-label">
-							<input
-								type="checkbox"
-								checked={canManageMoney}
-								onChange={(e) => setCanManageMoney(e.target.checked)}
-							/>
-							<span>Касса и финансы</span>
-						</label>
-					</div>
-
-					<div className="settings-section-title">Аутентификация</div>
-					<label className="settings-control-label">
-						Email (Логин)
-						<input
-							type="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							placeholder="email@example.com"
-							className="settings-control-input"
-						/>
-					</label>
-					<div className="settings-control-row">
-						<label className="settings-control-label">
-							Новый пароль
-							<input
-								type="password"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								placeholder="Оставьте пустым, чтобы не менять"
-								className="settings-control-input"
-							/>
-						</label>
-						<label className="settings-control-label">
-							Новый PIN (4 цифры)
-							<input
-								type="password"
-								value={pin}
-								onChange={(e) => setPin(e.target.value)}
-								maxLength={4}
-								placeholder="0000"
-								className="settings-control-input"
-							/>
-						</label>
-					</div>
-					<div className="credentials-editor-actions">
-						<button
-							type="button"
-							onClick={handleSave}
-							disabled={saving}
-							className="primary-button compact-button"
-						>
-							{saving ? "Сохраняю..." : "Сохранить профиль"}
-						</button>
-					</div>
-				</div>
-			)}
-		</div>
-	);
-}
 
 export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	const appLogicProps = useAppLogicContext();
@@ -227,7 +67,6 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 		newStaffName,
 		setNewStaffName,
 		addStaffMember,
-		saveStaffCredentials,
 		newStaffRole,
 		setNewStaffRole,
 		newStaffSpecialty,
@@ -1098,13 +937,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 												</button>
 											</div>
 										</div>
-										<StaffSettingsEditor
-											member={member}
-											saveCredentials={
-												mergedProps.saveStaffCredentials || saveStaffCredentials
-											}
-											updateStaffMember={mergedProps.updateStaffMember}
-										/>
+
 									</div>
 								);
 							})}
