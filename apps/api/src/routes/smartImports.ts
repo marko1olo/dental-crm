@@ -2597,7 +2597,7 @@ async function readWindowsMigrationWorkstationSignalValues(
 		}>;
 	const rxPattern =
 		"sidexis|sirona|romexis|planmeca|vatech|ezdent|carestream|kodak|morita|idixel|i-dixel|veraview|newtom|new tom|nnt|myray|cefla|owandy|quickvision|quick vision|dexis|kavo|ka vo|gendex|acteon|sopro|sopix|pspix|x-mind|x mind|ondemand|invivo|cliniview|dbswin|vistasoft|digora|soredex|trophy|visiodent|mediadent|vixwin|sopro|schick|dtx|3shape|medit|exocad|firebird|interbase|sqlite|mssql|sql|dbf|dbase|foxpro|clipper|paradox|1cv8|1c|cliniccards|dental|stomatology|opendental|open dental|dentrix|eaglesoft|patterson|infoclinica|infodent|dentasoft|clinic365|sycret|secret dent|adenta|dentcrm24|clientix|klientix|medods|dentaltap|istom|qstoma|macdent|stombox|medangel|medialog|arnica|ident|stomx|dicom|pacs|rvg|xray|cbct|opg";
-	if (!/^[a-zA-Z0-9_| -]+$/.test(rxPattern)) {
+	if (!/^[a-zA-Z0-9_ \-]+(\|[a-zA-Z0-9_ \-]+)*$/.test(rxPattern)) {
 		throw new Error("Invalid characters in migration rxPattern");
 	}
 	const script = [
