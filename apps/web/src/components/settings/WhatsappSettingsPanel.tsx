@@ -47,6 +47,8 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
     setWebhookVerifyTokenDraft,
     isActiveDraft,
     setIsActiveDraft,
+    enabledFeaturesDraft,
+    setEnabledFeaturesDraft,
     staffRoutingDraft,
     setStaffRoutingDraft,
     save,
@@ -61,10 +63,15 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
     void navigator.clipboard.writeText(webhookUrl);
   };
 
+  const featuresChanged =
+    enabledFeaturesDraft.length !== (settings?.enabledFeatures?.length ?? 0) ||
+    enabledFeaturesDraft.some((f) => !(settings?.enabledFeatures ?? []).includes(f));
+
   const dirty =
     phoneNumberIdDraft !== (settings?.phoneNumberId ?? "") ||
     webhookVerifyTokenDraft !== (settings?.webhookVerifyToken ?? "") ||
     isActiveDraft !== (settings?.isActive ?? false) ||
+    featuresChanged ||
     accessTokenDraft.trim() !== "";
 
   return (
@@ -184,13 +191,24 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
         <fieldset className="messenger-features">
           <legend>Функции бота</legend>
           <p className="messenger-features-hint">
-            Настройка функций будет доступна после подключения.
+            Выберите сценарии для автоматической отправки сообщений в WhatsApp.
           </p>
           {Object.entries(WHATSAPP_FEATURE_LABELS).map(([key, label]) => {
-            const enabled = settings?.enabledFeatures.includes(key) ?? false;
+            const enabled = enabledFeaturesDraft.includes(key);
             return (
-              <label key={key} className="feature-toggle">
-                <input type="checkbox" checked={enabled} readOnly />
+              <label key={key} className="feature-toggle" style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", margin: "8px 0" }}>
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  onChange={() => {
+                    setEnabledFeaturesDraft((current) =>
+                      current.includes(key)
+                        ? current.filter((f) => f !== key)
+                        : [...current, key]
+                    );
+                  }}
+                  style={{ cursor: "pointer" }}
+                />
                 {label}
               </label>
             );

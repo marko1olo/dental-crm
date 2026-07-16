@@ -11,6 +11,7 @@ import {
 	FileCheck2,
 	Image as ImageIcon,
 	RefreshCw,
+	Save,
 	Send,
 	ShieldCheck,
 	Users,
@@ -1108,7 +1109,7 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 							onClick={() => void saveTelegramSettings()}
 							disabled={isTelegramSettingsSaving}
 						>
-							<ExternalLink aria-hidden="true" />{" "}
+							<Save aria-hidden="true" size={16} />{" "}
 							{isTelegramSettingsSaving ? "..." : "Сохранить"}
 						</button>
 					</div>

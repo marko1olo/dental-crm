@@ -43,6 +43,7 @@ export function useWhatsappSettings() {
   const [accessTokenDraft, setAccessTokenDraft] = useState("");
   const [webhookVerifyTokenDraft, setWebhookVerifyTokenDraft] = useState("");
   const [isActiveDraft, setIsActiveDraft] = useState(false);
+  const [enabledFeaturesDraft, setEnabledFeaturesDraft] = useState<string[]>([]);
   const [staffRoutingDraft, setStaffRoutingDraft] =
     useState<WhatsappStaffRouting>({ defaultUserId: null, rules: [] });
 
@@ -58,6 +59,7 @@ export function useWhatsappSettings() {
         setPhoneNumberIdDraft(data.phoneNumberId ?? "");
         setWebhookVerifyTokenDraft(data.webhookVerifyToken ?? "");
         setIsActiveDraft(data.isActive);
+        setEnabledFeaturesDraft(data.enabledFeatures ?? []);
         setStaffRoutingDraft(data.staffRouting);
       } else if (res.status !== 404) {
         console.error("Failed to load WhatsApp settings", res.status);
@@ -95,6 +97,7 @@ export function useWhatsappSettings() {
         phoneNumberId: phoneNumberIdDraft.trim() || null,
         webhookVerifyToken: webhookVerifyTokenDraft.trim() || null,
         isActive: isActiveDraft,
+        enabledFeatures: enabledFeaturesDraft,
         staffRouting: staffRoutingDraft,
       };
       if (accessTokenDraft.trim()) {
@@ -128,6 +131,7 @@ export function useWhatsappSettings() {
     accessTokenDraft,
     webhookVerifyTokenDraft,
     isActiveDraft,
+    enabledFeaturesDraft,
     staffRoutingDraft,
     load,
     checkStatus,
@@ -147,6 +151,8 @@ export function useWhatsappSettings() {
     setWebhookVerifyTokenDraft,
     isActiveDraft,
     setIsActiveDraft,
+    enabledFeaturesDraft,
+    setEnabledFeaturesDraft,
     staffRoutingDraft,
     setStaffRoutingDraft,
     save,
