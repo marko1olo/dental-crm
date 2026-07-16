@@ -26,8 +26,8 @@ export function SettingsProtocolsTab() {
 		setEditingId(null);
 		setEditForm({
 			specialty: "universal",
-			title: "РќРѕРІС‹Р№ С€Р°Р±Р»РѕРЅ",
-			visitReason: "РџРµСЂРІРёС‡РЅС‹Р№ РїСЂРёРµРј",
+			title: "Новый шаблон",
+			visitReason: "Первичный прием",
 			defaultDurationMinutes: 30,
 			complaintPrompt: "",
 			objectiveTemplate: "",
@@ -75,7 +75,7 @@ export function SettingsProtocolsTab() {
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
 				throw new Error(
-					data.message || "РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ С€Р°Р±Р»РѕРЅР°",
+					data.message || "Ошибка сохранения шаблона",
 				);
 			}
 
@@ -83,7 +83,7 @@ export function SettingsProtocolsTab() {
 			window.location.reload();
 		} catch (err: any) {
 			console.error(err);
-			setError(err.message || "РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°");
+			setError(err.message || "Неизвестная ошибка");
 		} finally {
 			setLoading(false);
 		}
@@ -92,7 +92,7 @@ export function SettingsProtocolsTab() {
 	const handleDelete = async (id: string) => {
 		if (
 			!confirm(
-				"Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ СЌС‚РѕС‚ С€Р°Р±Р»РѕРЅ?",
+				"Вы уверены, что хотите удалить этот шаблон?",
 			)
 		)
 			return;
@@ -107,7 +107,7 @@ export function SettingsProtocolsTab() {
 			});
 
 			if (!res.ok) {
-				throw new Error("РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ");
+				throw new Error("Ошибка удаления");
 			}
 			window.location.reload();
 		} catch (err: any) {
@@ -124,12 +124,12 @@ export function SettingsProtocolsTab() {
 					<div>
 						<h2>
 							{editingId
-								? "Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С€Р°Р±Р»РѕРЅР°"
-								: "РќРѕРІС‹Р№ С€Р°Р±Р»РѕРЅ"}
+								? "Редактирование шаблона"
+								: "Новый шаблон"}
 						</h2>
 						<p>
-							РќР°СЃС‚СЂРѕР№С‚Рµ РїР°СЂР°РјРµС‚СЂС‹ РєР»РёРЅРёС‡РµСЃРєРѕРіРѕ
-							РїСЂРѕС‚РѕРєРѕР»Р°.
+							Настройте параметры клинического
+							протокола.
 						</p>
 					</div>
 				</div>
@@ -142,7 +142,7 @@ export function SettingsProtocolsTab() {
 
 				<div className="settings-form-grid" style={{ marginTop: "1.5rem" }}>
 					<label className="dente-label">
-						<span>РќР°Р·РІР°РЅРёРµ</span>
+						<span>Название</span>
 						<input
 							type="text"
 							className="dente-input"
@@ -153,7 +153,7 @@ export function SettingsProtocolsTab() {
 						/>
 					</label>
 					<label className="dente-label">
-						<span>РЎРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЊ</span>
+						<span>Специальность</span>
 						<select
 							className="dente-input"
 							value={editForm.specialty || "universal"}
@@ -174,7 +174,7 @@ export function SettingsProtocolsTab() {
 						</select>
 					</label>
 					<label className="dente-label">
-						<span>РџСЂРёС‡РёРЅР° РІРёР·РёС‚Р° (РїРѕ-СѓРјРѕР»С‡Р°РЅРёСЋ)</span>
+						<span>Причина визита (по-умолчанию)</span>
 						<input
 							type="text"
 							className="dente-input"
@@ -188,7 +188,7 @@ export function SettingsProtocolsTab() {
 						/>
 					</label>
 					<label className="dente-label">
-						<span>Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ (РјРёРЅ)</span>
+						<span>Длительность (мин)</span>
 						<input
 							type="number"
 							className="dente-input"
@@ -205,7 +205,7 @@ export function SettingsProtocolsTab() {
 
 				<div style={{ marginTop: "1rem" }}>
 					<label className="dente-label">
-						<span>РЁР°Р±Р»РѕРЅ Р¶Р°Р»РѕР± (РїРѕРґСЃРєР°Р·РєР°)</span>
+						<span>Шаблон жалоб (подсказка)</span>
 						<textarea
 							className="dente-input"
 							rows={3}
@@ -219,7 +219,7 @@ export function SettingsProtocolsTab() {
 						/>
 					</label>
 					<label className="dente-label" style={{ marginTop: "1rem" }}>
-						<span>РЁР°Р±Р»РѕРЅ РѕР±СЉРµРєС‚РёРІРЅРѕРіРѕ СЃС‚Р°С‚СѓСЃР°</span>
+						<span>Шаблон объективного статуса</span>
 						<textarea
 							className="dente-input"
 							rows={3}
@@ -233,7 +233,7 @@ export function SettingsProtocolsTab() {
 						/>
 					</label>
 					<label className="dente-label" style={{ marginTop: "1rem" }}>
-						<span>РЁР°Р±Р»РѕРЅ РїР»Р°РЅР° Р»РµС‡РµРЅРёСЏ</span>
+						<span>Шаблон плана лечения</span>
 						<textarea
 							className="dente-input"
 							rows={3}
@@ -254,14 +254,14 @@ export function SettingsProtocolsTab() {
 						onClick={handleSave}
 						disabled={loading}
 					>
-						{loading ? "РЎРѕС…СЂР°РЅРµРЅРёРµ..." : "РЎРѕС…СЂР°РЅРёС‚СЊ"}
+						{loading ? "Сохранение..." : "Сохранить"}
 					</button>
 					<button
 						className="secondary-button"
 						onClick={handleCancel}
 						disabled={loading}
 					>
-						РћС‚РјРµРЅР°
+						Отмена
 					</button>
 				</div>
 			</section>
@@ -271,7 +271,7 @@ export function SettingsProtocolsTab() {
 	return (
 		<section
 			className="protocol-settings animate-fade-in"
-			aria-label="Р‘РёР±Р»РёРѕС‚РµРєР° РєР»РёРЅРёС‡РµСЃРєРёС… РїСЂРѕС‚РѕРєРѕР»РѕРІ"
+			aria-label="Библиотека клинических протоколов"
 		>
 			<div
 				className="import-copy"
@@ -284,19 +284,19 @@ export function SettingsProtocolsTab() {
 				<div style={{ display: "flex", gap: "1rem" }}>
 					<ClipboardCheck aria-hidden="true" />
 					<div>
-						<p className="eyebrow">РџСЂРѕС‚РѕРєРѕР»С‹</p>
+						<p className="eyebrow">Протоколы</p>
 						<h2>
-							РЁР°Р±Р»РѕРЅС‹ РїСЂРёРµРјР° РїРѕ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЏРј
+							Шаблоны приема по специальностям
 						</h2>
 						<p>
-							РќР°СЃС‚СЂРѕР№С‚Рµ РїСЂРѕС‚РѕРєРѕР»С‹ РґР»СЏ РІР°С€РёС…
-							РІСЂР°С‡РµР№, С‡С‚РѕР±С‹ СѓСЃРєРѕСЂРёС‚СЊ Р·Р°РїРѕР»РЅРµРЅРёе
-							РєР°СЂС‚С‹.
+							Настройте протоколы для ваших
+							врачей, чтобы ускорить заполнение
+							карты.
 						</p>
 					</div>
 				</div>
 				<button className="primary-button" onClick={handleCreateNew}>
-					<Plus size={16} /> Р”РѕР±Р°РІРёС‚СЊ С€Р°Р±Р»РѕРЅ
+					<Plus size={16} /> Добавить шаблон
 				</button>
 			</div>
 
@@ -307,13 +307,13 @@ export function SettingsProtocolsTab() {
 							<span>{specialtyLabels[template.specialty]}</span>
 							<strong>{template.title}</strong>
 							<p>
-								{template.visitReason} В· {template.defaultDurationMinutes}{" "}
-								РјРёРЅ
+								{template.visitReason} · {template.defaultDurationMinutes}{" "}
+								мин
 							</p>
 						</div>
 						<div
 							className="protocol-token-row"
-							aria-label="Р”РѕРєСѓРјРµРЅС‚С‹ РїСЂРѕС‚РѕРєРѕР»Р°"
+							aria-label="Документы протокола"
 						>
 							{template.requiredDocuments.map((kind) => (
 								<span key={kind}>{documentLabels[kind]}</span>
@@ -321,7 +321,7 @@ export function SettingsProtocolsTab() {
 						</div>
 						<div
 							className="protocol-token-row protocol-token-row-soft"
-							aria-label="РЎРЅРёРјРєРё РїСЂРѕС‚РѕРєРѕР»Р°"
+							aria-label="Снимки протокола"
 						>
 							{template.suggestedImaging.map((kind) => (
 								<span key={kind}>{imagingKindLabels[kind]}</span>
@@ -337,7 +337,7 @@ export function SettingsProtocolsTab() {
 								className="secondary-button"
 								type="button"
 								onClick={() => handleEdit(template)}
-								title="Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ"
+								title="Редактировать"
 							>
 								<Edit2 size={16} />
 							</button>
@@ -353,7 +353,7 @@ export function SettingsProtocolsTab() {
 									cursor: "pointer",
 								}}
 								onClick={() => handleDelete(template.id)}
-								title="РЈРґР°Р»РёС‚СЊ"
+								title="Удалить"
 								disabled={loading}
 							>
 								<Trash2 size={16} />

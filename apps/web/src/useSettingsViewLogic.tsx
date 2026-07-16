@@ -669,7 +669,7 @@ import { SettingsMessengersTab } from "./components/settings/SettingsMessengersT
 import { SettingsPricesTab } from "./components/settings/SettingsPricesTab";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsProtocolsTab } from "./components/settings/SettingsProtocolsTab";
-import { clinicPublicLookupFieldLabels, migrationTriageStatusPriority, migrationOperatorSourceBoundActions, humanizeMigrationText, clinicalRuleOwnerRoles, clinicPublicLookupWarningText } from "./components/settings/SettingsViewHelpers";
+
 import { SettingsRulesTab } from "./components/settings/SettingsRulesTab";
 import { SettingsSourcesTab } from "./components/settings/SettingsSourcesTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
@@ -836,7 +836,11 @@ export interface SettingsViewProps {
 	activeStaffUser?: any;
 }
 
-export function SettingsView({ activeStaffUser }: SettingsViewProps) {
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+
+
+export function useSettingsViewLogic() {
+  const appLogic = useAppLogicContext();
 	const {
 		activePatient,
 		activeSettingsTabButtonRef,
@@ -2288,337 +2292,191 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 	const typedServiceCategories = Object.keys(
 		typedServiceCategoryLabels,
 	) as ServiceCategory[];
-	const typedSettingsTabs = settingsTabs as SettingsTab[];
-	const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
-	const settingsTabPanelId = (tabId: SettingsTabId) =>
-		`settings-panel-${tabId}`;
-	const activeSettingsTabPanelId = settingsTabPanelId(settingsTab);
-	const selectSettingsTab = (tabId: SettingsTabId) => {
-		setSettingsTab(tabId);
-		window.location.hash = `settings/${tabId}`;
-	};
-	const handleSettingsTabKeyDown = (
-		event: KeyboardEvent<HTMLButtonElement>,
-		tabId: SettingsTabId,
-	) => {
-		const currentIndex = typedSettingsTabs.findIndex((tab) => tab.id === tabId);
-		if (currentIndex < 0) return;
-		const lastIndex = typedSettingsTabs.length - 1;
-		const nextIndex =
-			event.key === "ArrowRight" || event.key === "ArrowDown"
-				? currentIndex === lastIndex
-					? 0
-					: currentIndex + 1
-				: event.key === "ArrowLeft" || event.key === "ArrowUp"
-					? currentIndex === 0
-						? lastIndex
-						: currentIndex - 1
-					: event.key === "Home"
-						? 0
-						: event.key === "End"
-							? lastIndex
-							: null;
-		if (nextIndex === null) return;
-		const nextTab = typedSettingsTabs[nextIndex];
-		if (!nextTab) return;
-		const nextTabButtonId = settingsTabButtonId(nextTab.id);
-		event.preventDefault();
-		selectSettingsTab(nextTab.id);
-		window.setTimeout(
-			() => document.getElementById(nextTabButtonId)?.focus(),
-			0,
-		);
-	};
-	const renderTabButton = (tab: SettingsTab) => {
-		const tabSelected = settingsTab === tab.id;
-		return (
-			<button
-				aria-controls={settingsTabPanelId(tab.id)}
-				aria-pressed={tabSelected}
-				aria-selected={tabSelected}
-				className={tabSelected ? "active" : ""}
-				id={settingsTabButtonId(tab.id)}
-				key={tab.id}
-				onClick={() => selectSettingsTab(tab.id)}
-				onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) =>
-					handleSettingsTabKeyDown(event, tab.id)
-				}
-				ref={tabSelected ? activeSettingsTabButtonRef : undefined}
-				role="tab"
-				tabIndex={tabSelected ? 0 : -1}
-				type="button"
-			>
-				{tab.title}
-			</button>
-		);
-	};
 
-	return (
-		<motion.section
-			className="settings-zone glass-panel"
-			initial={{ opacity: 0, y: 15 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.4 }}
-			id="settings"
-			aria-label="Настройки и перенос данных"
-		>
-			<div className="settings-heading">
-				<div>
-					<p className="eyebrow">Настройки</p>
-					<h2>Настройки клиники</h2>
-				</div>
-				<div className="settings-heading-actions">
-					<span>Не показывается врачу в рабочей смене</span>
-					<button
-						className="secondary-button"
-						type="button"
-						onClick={reopenOnboarding}
-					>
-						<ClipboardCheck aria-hidden="true" /> Мастер первого запуска
-					</button>
-				</div>
-			</div>
-
-			<div
-				className="settings-tabs"
-				role="tablist"
-				aria-label="Раздел настроек"
-			>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Мой аккаунт</span>
-					{typedSettingsTabs
-						.filter((t) => ["profile"].includes(t.id))
-						.map(renderTabButton)}
-				</div>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Основные</span>
-					{typedSettingsTabs
-						.filter((t) => {
-							if (t.id === "messengers") {
-								return activeStaffUser?.role !== "doctor";
-							}
-							return ["clinic", "staff", "access"].includes(t.id);
-						})
-						.map(renderTabButton)}
-				</div>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Клинические</span>
-					{typedSettingsTabs
-						.filter((t) =>
-							["protocols", "rules", "prices", "ai"].includes(t.id),
-						)
-						.map(renderTabButton)}
-				</div>
-				<div className="settings-tabs-group">
-					<span className="settings-tabs-group-header">Системные</span>
-					{typedSettingsTabs
-						.filter((t) => ["sources", "imports", "audit"].includes(t.id))
-						.map(renderTabButton)}
-				</div>
-			</div>
-
-			<div
-				className="settings-tab-panel"
-				id={activeSettingsTabPanelId}
-				role="tabpanel"
-				aria-labelledby={settingsTabButtonId(settingsTab)}
-			>
-				{settingsTab !== "telegram" ? (
-					<details className="settings-advanced-block settings-admin-secret-block">
-						<summary className="settings-advanced-toggle">
-							<span className="settings-advanced-label">
-								<span className="settings-advanced-icon">🔐</span>
-								Доступ к защищенным настройкам
-							</span>
-							<span className="settings-advanced-hint">
-								только если требует сервер
-							</span>
-							<span className="settings-advanced-chevron">▼</span>
-						</summary>
-						<article className="telegram-link-panel telegram-admin-panel settings-advanced-form">
-							<p>
-								Если сервер клиники требует админ-доступ, введите секрет для
-								изменений профиля, команды, кресел, источников, импорта и
-								аудита. В браузере он не сохраняется.
-							</p>
-							<p>{adminSecretScopeWarning}</p>
-							<div className="telegram-link-controls">
-								<label>
-									Секрет администратора клиники для настроек
-									<input
-										type="password"
-										autoComplete="current-password"
-										value={telegramAdminSecretDraft}
-										onChange={(event: TextInputChangeEvent) => {
-											if (propsSetTelegramAdminSecretDraft) {
-												propsSetTelegramAdminSecretDraft(event.target.value);
-											} else {
-												setTelegramAdminSecretDraft(event.target.value);
-											}
-										}}
-										onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-											if (event.key === "Enter" && adminSecretReady) {
-												event.preventDefault();
-												unlockTelegramAdminSession();
-											}
-										}}
-										placeholder="введите секрет администратора"
-										aria-describedby={
-											!adminSecretReady
-												? "settings-admin-unlock-guidance"
-												: undefined
-										}
-									/>
-								</label>
-								{!adminSecretReady ? (
-									<p
-										className="admin-unlock-guidance"
-										id="settings-admin-unlock-guidance"
-										role="status"
-										aria-live="polite"
-									>
-										Введите секрет администратора клиники, чтобы менять
-										защищенные настройки.
-									</p>
-								) : null}
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={unlockTelegramAdminSession}
-									aria-describedby={
-										!adminSecretReady
-											? "settings-admin-unlock-guidance"
-											: undefined
-									}
-									disabled={!adminSecretReady}
-								>
-									<ShieldCheck aria-hidden="true" /> Разблокировать
-								</button>
-								<button
-									className="secondary-button"
-									type="button"
-									onClick={lockTelegramAdminSession}
-									disabled={!telegramAdminSecretSession}
-								>
-									Забыть секрет
-								</button>
-							</div>
-							<p>
-								{telegramAdminSecretSession
-									? "Админ-доступ активен до перезагрузки страницы."
-									: "Без секрета работают только окружения без обязательного админ-доступа."}
-							</p>
-						</article>
-					</details>
-				) : null}
-
-				{settingsTab === "profile" ? <SettingsProfileTab /> : null}
-
-				{settingsTab === "staff" ? <SettingsStaffTab /> : null}
-
-				<SettingsClinicTab settingsTab={settingsTab} />
-				<SettingsAccessTab settingsTab={settingsTab} />
-				<SettingsTelegramTab settingsTab={settingsTab} />
-				{settingsTab === "insurance" ? <InsuranceContractsPanel /> : null}
-				{settingsTab === "inventory" ? (
-					<InventoryView
-						organizationId={dashboard.clinicSettings.profile.organizationId}
-					/>
-				) : null}
-				<SettingsMessengersTab settingsTab={settingsTab} />
-				{settingsTab === "protocols" ? <SettingsProtocolsTab /> : null}
-
-				{settingsTab === "rules" ? <SettingsRulesTab /> : null}
-
-				{settingsTab === "prices" ? <SettingsPricesTab /> : null}
-				{settingsTab === "sources" ? <SettingsSourcesTab /> : null}
-				{settingsTab === "ai" ? <SettingsAiTab /> : null}
-
-				<SettingsImportsTab />
-				<SettingsAuditTab />
-			</div>
-		</motion.section>
-	);
-	/*
-      <img alt="Telegram QR" src={telegramQrSvgToDataUrl(telegramLinkCode.qrSvg)} loading="lazy" decoding="async" />
-      <img src={typedTelegramPreview.photoUrl} alt="Telegram card" loading="lazy" decoding="async" />
-      <img src={item.photoUrl} alt="outbox image" loading="lazy" decoding="async" />
-      clinicPublicLookup.warnings.slice(0, 4).map((warning: string) => (
-                    <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      clinicPublicLookup.warnings.slice(0, 3).map((warning: string) => (
-                  <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      typedMigrationAutopilotClinicLookup.warnings.slice(0, 3).map((warning: string) => (
-                      <small key={warning}>{clinicPublicLookupWarningText(warning)}</small>
-      quick-create-guidance
-      disabled={!newStaffReadyToCreate}
-      disabled={!newChairReadyToCreate}
-      Доступ к Telegram
-      Введите секрет администратора клиники, чтобы менять Telegram-настройки и отправки.
-      Админ-доступ к Telegram активен до перезагрузки страницы.
-      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !activePatient ? telegramPreviewPatientGuidanceId : undefined}
-      aria-describedby={isTelegramLoading ? telegramPreviewLoadingGuidanceId : !typedTelegramLinkStaffOptions.length ? telegramPreviewStaffGuidanceId : undefined}
-      Выберите активного пациента, чтобы собрать пациентские Telegram-сценарии.
-      Добавьте сотрудника в настройках команды, чтобы собрать сводку сотруднику.
-      Дождитесь загрузки Telegram-панели, чтобы собрать предпросмотр.
-      aria-busy={isTelegramSendingDue || Boolean(telegramSendingItemId) || undefined}
-      aria-describedby={telegramOutboxBulkSendGuidance ? telegramOutboxSendGuidanceId : undefined}
-      aria-label="Добавить сотрудника"
-      aria-label="Добавить кресло или кабинет"
-      aria-pressed={dashboard.clinicSettings.profile.mode === mode}
-      aria-pressed={newStaffRole === role}
-      aria-pressed={newStaffSpecialty === specialty}
-      aria-pressed={scheduleDraft.workingDays.includes(day.value)}
-      aria-pressed={newChairHasXraySensor}
-      aria-pressed={newChairHasMicroscope}
-      aria-pressed={newChairHasSurgeryKit}
-      telegramHumanMessage(item.blockedReason)
-      item.warnings.map((warning) => telegramHumanMessage(warning)).filter(Boolean)
-      telegram-inline-button-row
-      telegram-outbox-buttons
-      telegram-outbox-notes
-      telegram-preview-buttons
-      telegram-visual-card-indicator
-      telegram-visual-card-preview
-      "payment_reminder_notice"
-      "review_request"
-      "post_visit_checkup"
-      "recall_notice"
-      <span>Бот клиники</span>
-      Секрет бота хранится в серверных настройках и не показывается в приложении.
-      подключенном боте и защищенной серверной связке
-      Профиль бота клиники
-      защита входящих сообщений включена
-      нужно включить защиту входящих сообщений
-      Публичный HTTPS-адрес CRM, который Telegram сможет открыть для входящих сообщений.
-      disabled={link.status !== "active" || Boolean(telegramRevokingLinkId)}
-      telegram-link-ledger
-      telegram-link-ledger-row
-      telegram-link-ledger-codes
-      typedTelegramOutbox.totalCount
-      telegramOutboxRemainingCount > 0 || typedTelegramOutbox?.nextCursor
-      Нет активных сотрудников
-      telegram-outbox-panel
-      telegram-outbox-controls
-      telegram-outbox-summary-actions
-      telegram-outbox-actions
-      telegram-external-links
-      telegram-visual-card-fields
-      telegram-settings-form
-      telegram-feature-grid
-      getTypedTelegramInlineButtonRows(typedTelegramPreview.replyMarkup)
-      getTypedTelegramInlineButtonRows(item.replyMarkup)
-      disabled={!telegramLinkCode.code.trim()}
-      disabled={!telegramLinkCode.shareText.trim()}
-      telegram-link-actions
-      telegram-link-action-state
-      */
+  return {
+    
+    recognitionInputReady,
+    smartImportInputReady,
+    imagingImportInputReady,
+    patientImportInputReady,
+    localImagingFolderReady,
+    newStaffReadyToCreate,
+    newChairReadyToCreate,
+    adminSecretReady,
+    adminSecretScopeWarning,
+    typedClinicModes,
+    typedModeHints,
+    typedRoleQueues,
+    typedStaffMembers,
+    typedChairs,
+    typedWeekdayOptions,
+    typedUiLanguageOptions,
+    typedTelegramLinkStaffOptions,
+    typedImagingConnectorCards,
+    typedImagingViewerCapabilities,
+    typedCtPlanningImplantPlan,
+    typedCtPlanningActiveQuickActionId,
+    typedImagingViewerActiveTool,
+    typedIntegrationPresets,
+    typedSpeechProviders,
+    typedRecognitionPresets,
+    typedRecognitionJob,
+    typedSpeechRecordingRecovery,
+    typedBrowserMigrationDiscovery,
+    typedSmartImportPreview,
+    typedImagingSourceChoices,
+    typedImagingImportPreview,
+    typedBrowserContinuityChecks,
+    typedLocalBridgeReadiness,
+    typedLocalBridgeUsePlans,
+    typedPersistenceIntegrity,
+    typedImportBatches,
+    typedAuditEvents,
+    typedImportSourceKinds,
+    typedDocumentIngestionTargets,
+    typedDocumentIngestion,
+    typedImportIntake,
+    typedImportPreview,
+    typedActiveWorkspaceProfile,
+    typedWorkspaceProfiles,
+    typedRoleAccessPolicies,
+    typedTelegramChatLinks,
+    typedTelegramLinkCodes,
+    typedTelegramPreview,
+    typedTelegramOutbox,
+    typedVisibleTelegramOutboxItems,
+    telegramOutboxRemainingCount,
+    typedTelegramStatus,
+    typedTelegramOutboxStatusFilterOptions,
+    typedTelegramOutboxTemplateFilterOptions,
+    typedTelegramInlineButtonKindLabels,
+    typedTelegramFeaturePlan,
+    typedTelegramEnabledFeaturesDraft,
+    typedTelegramFeatureOptions,
+    typedTelegramFeatureHelp,
+    typedTelegramPostVisitCheckupDelayFields,
+    typedTelegramPostVisitCheckupDelayDrafts,
+    typedTelegramVisualCardFields,
+    getTypedTelegramInlineButtonRows,
+    telegramPreviewPatientGuidanceId,
+    telegramPreviewStaffGuidanceId,
+    telegramPreviewLoadingGuidanceId,
+    telegramOutboxSendGuidanceId,
+    dicomWorkbenchSeriesGuidanceId,
+    dicomWorkstationGuidanceId,
+    dicomArchiveAddressGuidanceId,
+    localDicomFolderGuidanceId,
+    migrationHandoffReportGuidanceId,
+    dicomArchiveAddressReady,
+    telegramOutboxBulkSendGuidance,
+    clinicLookupSuggestionFieldEntries,
+    clinicLookupSuggestionApplySummary,
+    applyClinicLookupSuggestion,
+    clinicProfileSaveButtonText,
+    typedMigrationAutopilot,
+    typedMigrationSourceDiscovery,
+    activeMigrationDiscoveryForSettingsAutopilot,
+    typedMigrationSourceWorkup,
+    typedMigrationSourceProbe,
+    typedClinicPublicLookup,
+    typedDicomFirstFramePreview,
+    typedDicomFirstFrameViewerState,
+    typedDefaultDicomFirstFrameViewerState,
+    dicomFirstFrameSelectableCount,
+    dicomFirstFrameCurrentIndex,
+    dicomFirstFrameSliceMaxIndex,
+    dicomFirstFrameLandmarkSlices,
+    dicomFirstFrameCanSelectPrevious,
+    dicomFirstFrameCanSelectNext,
+    typedDicomSeriesPreviewSeries,
+    typedDicomSeriesPreviewParserNotes,
+    typedCbctWorkbenchSeries,
+    typedDicomViewerWorkbenchManifest,
+    typedDicomWorkstationReadiness,
+    typedDicomRenderCachePlan,
+    typedDicomViewerToolStateBundle,
+    typedDicomLocalFolderDiscovery,
+    typedLocalImagingOrganizer,
+    typedImagingFolderScan,
+    typedDicomFolderSeriesScan,
+    typedDicomFolderWorkupPlan,
+    typedCbctWorkbenchTools,
+    typedCbctMprBlockers,
+    typedCbctMprWarnings,
+    typedCbctResourceSafetyCaps,
+    mprControlsReady,
+    mprSliceMaxIndex,
+    mprCenterSliceIndex,
+    typedCbctWorkbenchProjections,
+    mprSafeSliceIndex,
+    updateDicomFirstFrameViewerState,
+    updateDicomFirstFrameViewerNumber,
+    typedMprProjection,
+    mprAxisDirectionLabel,
+    mprAxisAngleBadge,
+    mprSlabBadge,
+    mprSliceBadge,
+    mprSlabVisualWidth,
+    mprSlicePositionPercent,
+    mprCurrentSliceFraction,
+    mprSliceLabel,
+    mprAxisRangeValue,
+    mprSlabRangeValue,
+    mprSliceRangeValue,
+    mprActiveProjectionLabel,
+    mprActiveProjectionOrientation,
+    mprProjectionCompass,
+    mprAxisGuidance,
+    mprNearestClinicalPreset,
+    mprClinicalInput,
+    mprWorkbenchSummaryText,
+    mprOperatorSummaryCards,
+    mprAxisVisualizerLabel,
+    mprClinicalChecklist,
+    mprClinicalNextStep,
+    mprClinicalPresetButtonClass,
+    resetMprControls,
+    applyMprClinicalPreset,
+    applyCtPlanningQuickAction,
+    selectCtPlanningImplantFromSettings,
+    applyNearestMprClinicalPreset,
+    handleMprKeyboardNavigation,
+    typedMigrationAutopilotSources,
+    typedMigrationAutopilotClinicLookup,
+    typedMigrationAutopilotSteps,
+    typedMigrationOperatorLanes,
+    typedMigrationHandoffChecklist,
+    migrationDryRunSummary,
+    migrationTriageItems,
+    typedMigrationDiscoveryCandidates,
+    typedMigrationWorkupReadinessIssues,
+    typedMigrationProbeReadinessIssues,
+    typedClinicPublicLookupSuggestions,
+    typedClinicPublicLookupTargets,
+    migrationOperatorScriptSteps,
+    migrationPrimaryOperatorStep,
+    migrationPrimaryOperatorCandidate,
+    migrationCandidatePreviewReady,
+    migrationCandidatePreviewHint,
+    migrationPreviewableSourceCount,
+    migrationPreAutopilotSourceCount,
+    migrationKnownSourceCount,
+    migrationHandoffReportReady,
+    migrationPreviewReadyRows,
+    migrationClinicLookupFieldCount,
+    migrationSmartClinicFieldCount,
+    migrationClinicFieldsFound,
+    migrationProgressItems,
+    focusSmartImportWorkbench,
+    renderMigrationOperatorStepActions,
+    renderMigrationTechnicalNotes,
+    typedClinicalRuleActionLabels,
+    typedClinicalRuleActions,
+    typedClinicalRuleSeverityLabels,
+    typedClinicalRuleSeverities,
+    typedClinicalRules,
+    typedServiceCatalog,
+    typedServiceCategoryLabels,
+    typedServiceCategories
+  };
 }
-
-/*
-{settingsTab === "clinic" ? (
-          <section className="clinic-config"
-{settingsTab === "access" ? (
-          <section className="access-settings"
-{settingsTab === "telegram" ? (
-          <section className="telegram-settings"
-*/

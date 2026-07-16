@@ -49,11 +49,18 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const [dueDate, setDueDate] = useState("");
 	const [clinicalNotes, setClinicalNotes] = useState("");
 	const [priceRub, setPriceRub] = useState("");
+	const [doctorId, setDoctorId] = useState("");
 
 	const staff = dashboard?.clinicSettings?.staff || [];
 	const doctors = staff.filter(
 		(s: any) => s.role === "doctor" || s.role === "Врач" || s.role === "admin",
 	);
+
+	useEffect(() => {
+		if (doctors.length > 0 && !doctorId) {
+			setDoctorId(doctors[0].id);
+		}
+	}, [doctors, doctorId]);
 
 	const fetchOrders = async () => {
 		try {
@@ -91,7 +98,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 				}),
 				body: JSON.stringify({
 					patientId,
-					doctorId: doctors[0]?.id || null, // default to first doctor or null
+					doctorId: doctorId || null,
 					toothFdi: toothFdi || null,
 					material,
 					colorVita,
@@ -246,7 +253,23 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 					</div>
 				</div>
 
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+					<div className="space-y-1">
+						<label className="text-xs text-slate-400">Лечащий врач</label>
+						<select
+							value={doctorId}
+							onChange={(e) => setDoctorId(e.target.value)}
+							className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-teal-500"
+						>
+							<option value="">Не указан</option>
+							{doctors.map((doc: any) => (
+								<option key={doc.id} value={doc.id}>
+									{doc.fullName}
+								</option>
+							))}
+						</select>
+					</div>
+
 					<div className="space-y-1">
 						<label className="text-xs text-slate-400">Срок готовности</label>
 						<input
