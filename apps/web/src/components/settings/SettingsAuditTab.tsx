@@ -1,3 +1,4 @@
+import React from "react";
 import type {
 	AiRecognitionJob,
 	AuditEvent,
@@ -1470,6 +1471,19 @@ export function SettingsAuditTab() {
 		persistenceIntegrity as PersistenceIntegrityReport | null;
 	const typedImportBatches = dashboard.importBatches as ImportBatch[];
 	const typedAuditEvents = dashboard.auditEvents as AuditEvent[];
+	
+	const [auditSearch, setAuditSearch] = React.useState("");
+	const filteredAuditEvents = React.useMemo(() => {
+		if (!auditSearch.trim()) return typedAuditEvents;
+		const query = auditSearch.toLowerCase();
+		return typedAuditEvents.filter(
+			(e) =>
+				e.action.toLowerCase().includes(query) ||
+				(e.reason && e.reason.toLowerCase().includes(query)) ||
+				e.entityId.toLowerCase().includes(query)
+		);
+	}, [typedAuditEvents, auditSearch]);
+
 	const typedImportSourceKinds = Object.keys(
 		importSourceLabels,
 	) as ImportSourceKind[];
@@ -2186,7 +2200,7 @@ export function SettingsAuditTab() {
 						}
 						data-testid={scriptTestId("operator-script-discover-sources")}
 					>
-						<ScanSearch aria-hidden="true" /> {step.buttonLabel}
+						<Search aria-hidden="true" /> {step.buttonLabel}
 					</button>
 				) : null}
 				{step.action === "pick_source" ? (
@@ -2219,7 +2233,7 @@ export function SettingsAuditTab() {
 						disabled={isMigrationSourceProbeLoading}
 						data-testid={primaryButtonTestId}
 					>
-						<ScanSearch aria-hidden="true" /> {step.buttonLabel}
+						<Search aria-hidden="true" /> {step.buttonLabel}
 					</button>
 				) : null}
 				{step.action === "add_to_parser" && scriptCandidate ? (
@@ -2721,26 +2735,56 @@ export function SettingsAuditTab() {
 					</div>
 
 					<div className="panel audit-panel">
-						<div className="panel-heading">
-							<h2>Аудит действий</h2>
-							<ShieldCheck aria-hidden="true" />
+						<div className="panel-heading" style={{ flexDirection: "column", alignItems: "flex-start", gap: "1rem" }}>
+							<div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+								<h2>Аудит действий</h2>
+								<ShieldCheck aria-hidden="true" />
+							</div>
+							<div className="search-bar" style={{ display: "flex", width: "100%", alignItems: "center", gap: "0.5rem", background: "var(--color-bg-secondary)", padding: "0.5rem 1rem", borderRadius: "0.5rem" }}>
+								<Search size={16} style={{ color: "var(--color-text-tertiary)" }} />
+								<input
+									type="text"
+									placeholder="Поиск по действию, причине или ID объекта..."
+									value={auditSearch}
+									onChange={(e) => setAuditSearch(e.target.value)}
+									style={{ flex: 1, border: "none", background: "transparent", outline: "none", color: "var(--color-text-primary)" }}
+								/>
+							</div>
 						</div>
-						<div className="ops-list">
-							{typedAuditEvents.map((event) => (
-								<article className="ops-row" key={event.id}>
-									<ShieldCheck aria-hidden="true" />
-									<div>
-										<h3>
-											{event.reason ? "Системное событие" : "Запись аудита"}
-										</h3>
-										<p>
-											{event.reason ??
-												"Служебная запись без публичного описания"}
+						<div className="ops-list" style={{ maxHeight: "600px", overflowY: "auto" }}>
+							{filteredAuditEvents.length > 0 ? filteredAuditEvents.map((event) => (
+								<article className="ops-row" key={event.id} style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-start", padding: "1rem", borderBottom: "1px solid var(--color-border-subtle)" }}>
+									<div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1 }}>
+										<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+											<span style={{ 
+												padding: "0.15rem 0.5rem", 
+												background: event.action.includes("delete") || event.action.includes("remove") ? "var(--color-danger-transparent)" : "var(--color-accent-transparent)", 
+												color: event.action.includes("delete") || event.action.includes("remove") ? "var(--color-danger)" : "var(--color-accent)", 
+												borderRadius: "1rem", 
+												fontSize: "0.75rem", 
+												fontWeight: 600,
+												textTransform: "uppercase",
+												letterSpacing: "0.02em"
+											}}>
+												{event.action}
+											</span>
+											<span style={{ fontSize: "0.8rem", color: "var(--color-text-tertiary)", fontFamily: "monospace" }}>
+												#{event.entityId}
+											</span>
+										</div>
+										<p style={{ margin: "0.5rem 0 0", color: "var(--color-text-secondary)", fontSize: "0.9rem", lineHeight: "1.4" }}>
+											{event.reason ?? "Служебная запись без публичного описания"}
 										</p>
 									</div>
-									<span>{formatDateTime(event.createdAt)}</span>
+									<span style={{ fontSize: "0.85rem", color: "var(--color-text-tertiary)", whiteSpace: "nowrap" }}>
+										{formatDateTime(event.createdAt)}
+									</span>
 								</article>
-							))}
+							)) : (
+								<div style={{ padding: "2rem", textAlign: "center", color: "var(--color-text-tertiary)" }}>
+									События не найдены
+								</div>
+							)}
 						</div>
 					</div>
 				</section>
