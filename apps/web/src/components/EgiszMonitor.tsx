@@ -37,7 +37,14 @@ export const EgiszMonitor: React.FC<EgiszMonitorProps> = ({
 						: null;
 				if (latest) {
 					setStatus(latest.status);
-					setErrorDetails(latest.errorDetails?.message || null);
+					const err = latest.errorDetails;
+					setErrorDetails(
+						err
+							? typeof err === "string"
+								? err
+								: err.message || "Неизвестная ошибка"
+							: null,
+					);
 					setTransactionId(latest.transactionId);
 				}
 			}

@@ -37,7 +37,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 		const missingFields: string[] = [];
 		if (!administrativeProfile?.snils) missingFields.push("СНИЛС");
 		if (!administrativeProfile?.identityDocument) missingFields.push("Паспорт");
-		if (!administrativeProfile?.insurancePolicy)
+		if (!administrativeProfile?.insurancePolicy && !administrativeProfile?.insurancePolicyNumber)
 			missingFields.push("Полис ОМС");
 
 		if (missingFields.length > 0) {

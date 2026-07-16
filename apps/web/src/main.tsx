@@ -4,15 +4,6 @@ import { AppShell } from "./AppShell";
 import "./styles/main.css";
 import "./styles/shadow-analyst.css";
 import "./styles/patients-redesign.css";
-import { initAntifragility } from "./lib/antifragility";
-
-// Offline API sandbox is an explicit demo/dev mode. Normal runs must surface backend/auth failures.
-if (
-	import.meta.env.VITE_DENTE_ENABLE_OFFLINE_SANDBOX === "1" ||
-	import.meta.env.VITE_DENTE_ENABLE_OFFLINE_SANDBOX === "true"
-) {
-	initAntifragility({ enabled: true });
-}
 
 createRoot(document.getElementById("root")!).render(
 	<React.StrictMode>

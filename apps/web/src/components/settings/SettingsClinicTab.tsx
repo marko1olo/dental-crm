@@ -16,6 +16,7 @@ import {
 	RefreshCw,
 	Search,
 	ShieldCheck,
+	Trash2,
 } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import React, { useState } from "react";
@@ -110,6 +111,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 		clinicModeLabels,
 		staffRoleLabels,
 		specialtyLabels,
+		deleteChair,
 	} = mergedProps;
 
 	if (settingsTab !== "clinic") return null;
@@ -934,6 +936,14 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 													disabled={scheduleSaving}
 												>
 													{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
+												</button>
+												<button
+													className="btn-icon"
+													type="button"
+													title="Удалить кресло"
+													onClick={() => deleteChair(chair.id)}
+												>
+													<Trash2 />
 												</button>
 											</div>
 										</div>

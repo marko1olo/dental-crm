@@ -7217,6 +7217,29 @@ export function useAppLogic(): any {
 		}
 	}
 
+	async function deleteChair(chairId: string) {
+		if (!confirm("Вы уверены, что хотите удалить это кресло/кабинет?")) {
+			return;
+		}
+		
+		try {
+			const response = await fetch(`/api/settings/chairs/${chairId}`, {
+				method: "DELETE",
+				headers: auth.settingsAccessHeaders(),
+			});
+			
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				setError(errorData.message || "Не удалось удалить кресло. Возможно, к нему привязаны приёмы.");
+				return;
+			}
+			
+			await loadDashboard();
+		} catch (error) {
+			setError(operatorWorkflowFailureMessage("Ошибка при удалении кресла", error));
+		}
+	}
+
 	function chooseRecognitionPreset(
 		preset: (typeof recognitionPresets)[number],
 	) {
@@ -13020,6 +13043,7 @@ export function useAppLogic(): any {
 		activeVisitClinicalRuleEvaluations,
 		activeVisitClinicalRuleSummary,
 		addChair,
+		deleteChair,
 		addImagingViewerNoteAnnotation,
 		addMigrationDiscoveryCandidateToSmartImport,
 		addStaffMember,

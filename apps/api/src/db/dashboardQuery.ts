@@ -171,6 +171,166 @@ function parseStringArrayWithWarning(
 	);
 }
 
+function buildAppointmentReadiness(
+	appointments: any[],
+	patients: any[],
+	users: any[],
+	chairs: any[],
+	documents: any[],
+	imagingStudies: any[],
+	paidByPatient: Map<string, number>,
+	plannedByPatient: Map<string, number>,
+	clinicMode: string,
+) {
+	const patientsById = new Map(patients.map((p) => [p.id, p]));
+	const activeStaffById = new Map(users.map((m) => [m.id, m]));
+	const activeChairsById = new Map(chairs.map((c) => [c.id, c]));
+
+	const documentsByPatientId = new Map<string, any[]>();
+	for (const doc of documents) {
+		if (doc.status !== "voided") {
+			if (!documentsByPatientId.has(doc.patientId)) {
+				documentsByPatientId.set(doc.patientId, []);
+			}
+			documentsByPatientId.get(doc.patientId)!.push(doc);
+		}
+	}
+
+	const imagesByPatientId = new Map<string, any[]>();
+	for (const study of imagingStudies) {
+		if (!imagesByPatientId.has(study.patientId)) {
+			imagesByPatientId.set(study.patientId, []);
+		}
+		imagesByPatientId.get(study.patientId)!.push(study);
+	}
+
+	return appointments.map((appointment) => {
+		const patientId = appointment.patientId || "";
+		const doctorUserId = appointment.doctorUserId || "";
+		const chairId = appointment.chairId || "";
+
+		const patient = patientsById.get(patientId);
+		const doctor = activeStaffById.get(doctorUserId);
+		const assistant = appointment.assistantUserId
+			? (activeStaffById.get(appointment.assistantUserId) ?? null)
+			: null;
+
+		const chair = activeChairsById.get(chairId);
+		const patientDocuments = documentsByPatientId.get(patientId) ?? [];
+		const patientImages = imagesByPatientId.get(patientId) ?? [];
+
+		const totalPlanned = plannedByPatient.get(patientId) ?? 0;
+		const totalPaid = paidByPatient.get(patientId) ?? 0;
+		const balanceDue = Math.max(0, totalPlanned - totalPaid);
+
+		const hasContract = patientDocuments.some(
+			(d) => d.kind === "paid_medical_services_contract",
+		);
+		const hasConsent = patientDocuments.some(
+			(d) => d.kind === "informed_consent",
+		);
+		const hasImageForTreatment = patientImages.some(
+			(study) => study.status !== "failed",
+		);
+		const hasImageReviewBlocker = patientImages.some(
+			(study) => study.status === "needs_review",
+		);
+		const hasBalance = balanceDue > 0;
+
+		const assistantRequired = clinicMode !== "solo_doctor";
+
+		const checks = [
+			{
+				key: "patient",
+				title: "Пациент",
+				ready: Boolean(patient),
+				detail: patient ? "карточка найдена" : "нет карточки пациента",
+			},
+			{
+				key: "team",
+				title: "Команда",
+				ready: Boolean(doctor && chair && (!assistantRequired || assistant)),
+				detail: `${doctor ? "врач назначен" : "нет врача"} · ${chair ? chair.name : "нет кресла"} · ${
+					assistant
+						? "ассистент назначен"
+						: assistantRequired
+							? "ассистент не назначен"
+							: "ассистент не требуется"
+				}`,
+			},
+			{
+				key: "schedule",
+				title: "Расписание",
+				ready: true,
+				detail: "согласовано",
+			},
+			{
+				key: "contracts",
+				title: "Договоры",
+				ready: hasContract && hasConsent,
+				detail:
+					hasContract && hasConsent
+						? "договор и ИДС подписаны"
+						: !hasContract && !hasConsent
+							? "нет договора и ИДС"
+							: !hasContract
+								? "нет договора"
+								: "нет ИДС",
+			},
+			{
+				key: "imaging",
+				title: "Диагностика",
+				ready: hasImageForTreatment && !hasImageReviewBlocker,
+				detail:
+					hasImageForTreatment && !hasImageReviewBlocker
+						? "снимки загружены"
+						: hasImageReviewBlocker
+							? "снимки требуют описания"
+							: "нет снимков/КТ",
+			},
+			{
+				key: "finance",
+				title: "Оплата",
+				ready: !hasBalance,
+				detail: hasBalance ? `долг ${balanceDue} ₽` : "оплачено полностью",
+			},
+		];
+
+		const readyCount = checks.filter((c) => c.ready).length;
+		const score = Math.round((readyCount / checks.length) * 100);
+
+		// Determine the traffic light state
+		let state: "ready" | "needs_attention" | "blocked" = "ready";
+		if (hasBalance || !hasContract || !hasConsent || !hasImageForTreatment) {
+			state = "needs_attention";
+		}
+		if (!patient || !doctor || !chair || (assistantRequired && !assistant)) {
+			state = "blocked";
+		}
+
+		let nextAction = "Все готово к приему";
+		if (state === "blocked") {
+			nextAction = "Назначьте команду и время";
+		} else if (!hasContract || !hasConsent) {
+			nextAction = "Подпишите договор и ИДС";
+		} else if (!hasImageForTreatment) {
+			nextAction = "Сделайте прицельный снимок или КТ";
+		} else if (hasBalance) {
+			nextAction = "Оплатите остаток за лечение";
+		}
+
+		return {
+			appointmentId: appointment.id,
+			score,
+			state,
+			nextAction,
+			ownerUserId: doctorUserId,
+			ownerRole: "doctor" as const,
+			checks,
+		};
+	});
+}
+
 function normalizeImportStatus(
 	value: string,
 ): Dashboard["importBatches"][number]["status"] {
@@ -457,7 +617,17 @@ export async function getDashboardFromDb(
 			reason: appointment.reason,
 			comment: appointment.comment,
 		})),
-		appointmentReadiness: [],
+		appointmentReadiness: buildAppointmentReadiness(
+			appointments,
+			patients,
+			users,
+			chairs,
+			documents,
+			imagingStudies,
+			paidByPatient,
+			plannedByPatient,
+			mode,
+		),
 		scheduleSuggestions: [],
 		activeVisit: activeVisit
 			? {
