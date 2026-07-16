@@ -161,21 +161,35 @@ export function VisitView() {
 		"filling" | "crown" | "implant" | null
 	>(null);
 
-	const THERAPY_MATERIALS = [
-		{ id: "Estelite", label: "Estelite Asteria (Tokuyama, JP)" },
-		{ id: "Filtek", label: "3M Filtek Supreme (US)" },
-		{ id: "SDR", label: "SDR Bulk-fill (Dentsply, DE)" },
-	];
-	const ORTHO_MATERIALS = [
-		{ id: "Zirconia", label: "Диоксид циркония" },
-		{ id: "E-max", label: "Прессованная керамика E-max" },
-		{ id: "PFM", label: "Металлокерамика (CoCr)" },
-	];
-	const IMPLANT_SYSTEMS = [
-		{ id: "Straumann", label: "Straumann SLActive (CH)" },
-		{ id: "Osstem", label: "Osstem TSIII (KR)" },
-		{ id: "Nobel", label: "Nobel Biocare Active (SE)" },
-	];
+	const THERAPY_MATERIALS = React.useMemo(() => {
+		const services = dashboard?.serviceCatalog?.filter(s => s.category === "therapy") || [];
+		if (services.length > 0) return services.map(s => ({ id: s.id, label: s.title }));
+		return [
+			{ id: "Estelite", label: "Estelite Asteria (Tokuyama, JP)" },
+			{ id: "Filtek", label: "3M Filtek Supreme (US)" },
+			{ id: "SDR", label: "SDR Bulk-fill (Dentsply, DE)" },
+		];
+	}, [dashboard?.serviceCatalog]);
+
+	const ORTHO_MATERIALS = React.useMemo(() => {
+		const services = dashboard?.serviceCatalog?.filter(s => s.category === "prosthetics") || [];
+		if (services.length > 0) return services.map(s => ({ id: s.id, label: s.title }));
+		return [
+			{ id: "Zirconia", label: "Диоксид циркония" },
+			{ id: "E-max", label: "Прессованная керамика E-max" },
+			{ id: "PFM", label: "Металлокерамика (CoCr)" },
+		];
+	}, [dashboard?.serviceCatalog]);
+
+	const IMPLANT_SYSTEMS = React.useMemo(() => {
+		const services = dashboard?.serviceCatalog?.filter(s => s.category === "surgery" && s.title.toLowerCase().includes("имплант")) || [];
+		if (services.length > 0) return services.map(s => ({ id: s.id, label: s.title }));
+		return [
+			{ id: "Straumann", label: "Straumann SLActive (CH)" },
+			{ id: "Osstem", label: "Osstem TSIII (KR)" },
+			{ id: "Nobel", label: "Nobel Biocare Active (SE)" },
+		];
+	}, [dashboard?.serviceCatalog]);
 
 	const appendToEMKField = (fieldKey: string, text: string) => {
 		const currentVal = (visitNoteForm as any)[fieldKey] || "";

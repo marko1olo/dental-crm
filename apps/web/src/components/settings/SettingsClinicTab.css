@@ -1,0 +1,284 @@
+
+.clinic-studio-container {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	width: 100%;
+}
+
+.clinic-section-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+	animation: fadeIn 0.3s ease;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.clinic-section-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 16px;
+}
+
+.clinic-section-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: rgba(13, 148, 136, 0.08);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.clinic-section-title {
+	flex: 1;
+}
+
+.clinic-section-title h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.clinic-section-title p {
+	margin: 4px 0 0 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.clinic-form-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 20px;
+}
+
+.clinic-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.clinic-form-group.full-width {
+	grid-column: 1 / -1;
+}
+
+.clinic-form-group label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--muted);
+}
+
+.clinic-form-group input,
+.clinic-form-group select,
+.clinic-form-group textarea {
+	width: 100%;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	padding: 0 14px;
+	font-size: 14px;
+	color: var(--ink);
+	transition: all 0.2s ease;
+}
+
+.clinic-form-group input,
+.clinic-form-group select {
+	height: 44px;
+}
+
+.clinic-form-group textarea {
+	padding: 12px 14px;
+	min-height: 80px;
+	resize: vertical;
+}
+
+.clinic-form-group input:focus,
+.clinic-form-group select:focus,
+.clinic-form-group textarea:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.clinic-form-group input::placeholder,
+.clinic-form-group textarea::placeholder {
+	color: var(--muted);
+	opacity: 0.6;
+}
+
+.clinic-field-note {
+	font-size: 12px;
+	color: var(--muted);
+	margin-top: 4px;
+}
+
+/* Chair Grid */
+.premium-chair-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: 20px;
+}
+
+.premium-chair-card {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	transition: all 0.2s ease;
+}
+
+.premium-chair-card:hover {
+	border-color: var(--teal);
+	box-shadow: 0 4px 20px rgba(13, 148, 136, 0.08);
+}
+
+.premium-chair-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.premium-chair-title {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.premium-chair-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: rgba(13, 148, 136, 0.08);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.premium-chair-title h4 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.premium-chair-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.premium-chair-actions {
+	display: flex;
+	justify-content: flex-end;
+	border-top: 1px solid var(--line);
+	padding-top: 16px;
+}
+
+/* Chair Quick Create */
+.chair-quick-create {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--paper-soft);
+	padding: 20px;
+	border-radius: 12px;
+	border: 1px dashed var(--line-strong);
+}
+
+.chair-quick-create-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.chair-quick-create-row input {
+	flex: 1;
+	height: 44px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	padding: 0 14px;
+	font-size: 14px;
+}
+
+.chair-quick-create-row button {
+	height: 44px;
+	padding: 0 20px;
+}
+
+.chair-equipment-picker {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.chair-equipment-picker button {
+	padding: 6px 12px;
+	border-radius: 20px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.chair-equipment-picker button.active {
+	background: rgba(13, 148, 136, 0.1);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+/* Mode selector */
+.clinic-mode-selector {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+}
+
+.clinic-mode-card {
+	border: 2px solid var(--line);
+	border-radius: 12px;
+	padding: 16px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background: var(--paper);
+	text-align: left;
+}
+
+.clinic-mode-card:hover {
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+.clinic-mode-card.active {
+	border-color: var(--teal);
+	background: rgba(13, 148, 136, 0.03);
+}
+
+.clinic-mode-card h4 {
+	margin: 0 0 4px 0;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.clinic-mode-card p {
+	margin: 0;
+	font-size: 12px;
+	color: var(--muted);
+}

@@ -16,6 +16,7 @@ import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
+import { ObzvonStickyList } from "./components/schedule/ObzvonStickyList";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 import { DictationHints } from "./DictationHints";
 import { smartBookingParser } from "./lib/smartBookingParser";
@@ -794,6 +795,8 @@ export function ScheduleView(props: ScheduleViewProps) {
 				updateNewAppointmentDraft={updateNewAppointmentDraft}
 				focusNewAppointmentEditor={focusNewAppointmentEditor}
 			/>
+
+			<ObzvonStickyList dashboard={dashboard} />
 		</motion.div>
 	);
 }

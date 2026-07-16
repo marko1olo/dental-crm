@@ -116,10 +116,69 @@ export const ClinicalScheduler: React.FC<any> = ({
 	const isSingleChair = chairsCount === 1;
 	const rowStyle = { gridTemplateColumns: `60px repeat(${chairsCount}, 1fr)` };
 
+	const freeDoctors =
+		dashboard?.shiftIntelligence?.doctorLoads?.filter(
+			(dl: any) => dl.utilizationPercent < 50 || dl.state === "under_utilized",
+		) || [];
+
 	return (
 		<div className="clinical-scheduler">
 			<div className="scheduler-header">
-				<h3>Ежедневное расписание</h3>
+				<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+					<h3>Ежедневное расписание</h3>
+					{freeDoctors.length > 0 && (
+						<div
+							className="free-doctors-locator"
+							style={{
+								display: "flex",
+								gap: "8px",
+								alignItems: "center",
+								marginLeft: "8px",
+							}}
+						>
+							<span
+								style={{
+									fontSize: "12px",
+									color: "var(--text-secondary)",
+									fontWeight: 500,
+								}}
+							>
+								Свободные окна:
+							</span>
+							{freeDoctors.map((doc: any) => (
+								<div
+									key={doc.id}
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "4px",
+										background: "rgba(16, 185, 129, 0.1)",
+										border: "1px solid rgba(16, 185, 129, 0.2)",
+										color: "var(--ink)",
+										padding: "4px 8px",
+										borderRadius: "16px",
+										fontSize: "12px",
+										fontWeight: 500,
+										cursor: "pointer",
+									}}
+									onClick={() => onSlotClick && onSlotClick(new Date().toISOString().split("T")[0], doc.nextFreeAt || "10:00", "")}
+									title="Записать к врачу"
+								>
+									<span
+										style={{
+											width: "6px",
+											height: "6px",
+											borderRadius: "50%",
+											background: "#10b981",
+											boxShadow: "0 0 6px rgba(16, 185, 129, 0.6)",
+										}}
+									/>
+									{doc.title.split(" ")[0]} ({doc.utilizationPercent}%)
+								</div>
+							))}
+						</div>
+					)}
+				</div>
 				<div className="date-picker">Сегодня</div>
 			</div>
 

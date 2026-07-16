@@ -5,14 +5,8 @@ import type {
 	StaffMember,
 	StaffRole,
 } from "@dental/shared";
-import {
-	CalendarDays,
-	ExternalLink,
-	Plus,
-	Search,
-	ShieldCheck,
-	Trash2,
-} from "lucide-react";
+import { CalendarDays, ExternalLink, Plus, Search, ShieldCheck, Trash2, Building2, Store, Clock, Calendar } from "lucide-react";
+import "./SettingsClinicTab.css";
 import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsStore } from "../../store/settingsStore";
@@ -144,820 +138,405 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 	];
 
 	return (
-		<>
-			<section className="clinic-config" aria-label="Аккаунт клиники и команда">
-				<div className="clinic-config-head">
-					<div>
-						<p className="eyebrow">Аккаунт клиники</p>
-						<h2>
-							{dashboard.clinicSettings?.profile?.clinicName ?? "Не указано"}
-						</h2>
-						<p>
-							{dashboard.clinicSettings?.profile?.legalName ?? "Не указано"} ·{" "}
-							{dashboard.clinicSettings?.profile?.address ?? "Не указано"} ·{" "}
-							{dashboard.clinicSettings?.profile?.timezone ?? "Europe/Moscow"}
-						</p>
+		<div className="clinic-studio-container animate-fade-in">
+			{/* Режим клиники */}
+			<section className="clinic-section-card" aria-label="Режим продукта">
+				<div className="clinic-section-header">
+					<div className="clinic-section-icon">
+						<Store size={24} />
+					</div>
+					<div className="clinic-section-title">
+						<h3>Режим работы продукта</h3>
+						<p>Настройте Dental CRM под специфику вашей клиники</p>
 					</div>
 					<div className="clinic-mode-status">
-						<span>
-							{
-								clinicModeLabels[
-									dashboard.clinicSettings?.profile?.mode ?? "family"
-								]?.title
-							}
+						<span className="status-pill status-confirmed">
+							Готовность: {dashboard.shiftIntelligence?.modeFit?.fitScore ?? 0}%
 						</span>
 					</div>
 				</div>
 
-				<div className="mode-grid" aria-label="Режим продукта">
+				<div className="clinic-mode-selector">
 					{typedClinicModes.map((mode) => (
 						<button
-							className={`mode-card ${dashboard.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
+							className={`clinic-mode-card ${dashboard.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
 							key={mode}
 							type="button"
 							aria-pressed={dashboard.clinicSettings?.profile?.mode === mode}
 							onClick={() => changeClinicMode(mode)}
 						>
-							<strong>{clinicModeLabels[mode]?.title ?? mode}</strong>
-							<span>{clinicModeLabels[mode]?.detail ?? ""}</span>
+							<h4>{clinicModeLabels[mode]?.title ?? mode}</h4>
+							<p>{clinicModeLabels[mode]?.detail ?? ""}</p>
 						</button>
 					))}
 				</div>
+			</section>
 
-				<div className="clinic-hints">
-					{typedModeHints.map((hint) => (
-						<span key={hint}>{hint}</span>
-					))}
-				</div>
-
-				<div className="mode-readiness">
-					<div>
-						<p className="eyebrow">Готовность режима</p>
-						<strong>
-							{dashboard.shiftIntelligence?.modeFit?.fitScore ?? 0}%
-						</strong>
-						<span>
-							{dashboard.shiftIntelligence?.modeFit?.lowFrictionNextStep ?? ""}
+			{/* Профиль клиники */}
+			<section className="clinic-section-card" aria-label="Юридический профиль клиники">
+				<div className="clinic-section-header">
+					<div className="clinic-section-icon">
+						<Building2 size={24} />
+					</div>
+					<div className="clinic-section-title">
+						<h3>Профиль и реквизиты</h3>
+						<p>Основные данные, контакты и информация для документов</p>
+					</div>
+					<div className="clinic-mode-status">
+						<span className={`status-pill ${legalMissingFields.length === 0 ? "status-confirmed" : "status-cancelled"}`}>
+							{legalMissingFields.length === 0 ? "100% Заполнено" : `Не заполнено: ${legalMissingFields.length}`}
 						</span>
 					</div>
-					<div>
-						<p className="eyebrow">Открытые роли</p>
-						{typedRoleQueues.map((queue) => (
-							<span key={queue.role}>
-								{staffRoleLabels[queue.role] ?? queue.role}: {queue.openItems}
-							</span>
-						))}
-					</div>
 				</div>
 
-				<section
-					className="clinic-legal-form"
-					aria-label="Юридический профиль клиники"
-				>
-					<div className="clinic-legal-summary">
-						<div>
-							<p className="eyebrow">Настройки клиники</p>
-							<h3>Основные данные и профиль для документов</h3>
-						</div>
-						<div className="legal-readiness-badge">
-							<strong>{legalReadinessPercent}%</strong>
-							<span>
-								{legalMissingFields.length
-									? `Не заполнено: ${legalMissingFields.join(", ")}`
-									: "Минимум заполнен"}
-							</span>
+				<div className="clinic-form-grid">
+					<div className="clinic-form-group">
+						<label>Название клиники (для расписания)</label>
+						<input
+							value={clinicProfileDraft?.clinicName ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("clinicName", event.target.value)}
+							placeholder="Стоматология Улыбка"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Юридическое лицо (для договоров)</label>
+						<input
+							value={clinicProfileDraft?.legalName ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("legalName", event.target.value)}
+							placeholder="ООО «Стоматология»"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>ИНН</label>
+						<div style={{ display: 'flex', gap: '8px' }}>
+							<input
+								inputMode="numeric"
+								value={clinicProfileDraft?.inn ?? ""}
+								onChange={(event: InputChangeEvent) =>
+									updateClinicProfileDraft("inn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))
+								}
+								placeholder="ИНН"
+							/>
+							<button
+								className="secondary-button"
+								type="button"
+								style={{ padding: '0 12px' }}
+								onClick={() => void lookupClinicPublicProfile()}
+								disabled={isClinicPublicLookupLoading || !(clinicProfileDraft?.inn)}
+								title="Заполнить реквизиты по ИНН"
+							>
+								{isClinicPublicLookupLoading ? "..." : <Search size={18} />}
+							</button>
 						</div>
 					</div>
+					<div className="clinic-form-group">
+						<label>КПП</label>
+						<input
+							inputMode="numeric"
+							value={clinicProfileDraft?.kpp ?? ""}
+							onChange={(event: InputChangeEvent) =>
+								updateClinicProfileDraft("kpp", event.target.value.replace(/[^\d]/g, "").slice(0, 9))
+							}
+							placeholder="Для ИП оставить пустым"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>ОГРН / ОГРНИП</label>
+						<input
+							inputMode="numeric"
+							value={clinicProfileDraft?.ogrn ?? ""}
+							onChange={(event: InputChangeEvent) =>
+								updateClinicProfileDraft("ogrn", event.target.value.replace(/[^\d]/g, "").slice(0, 15))
+							}
+							placeholder="ОГРН"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Юридический адрес</label>
+						<input
+							value={clinicProfileDraft?.address ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("address", event.target.value)}
+							placeholder="г. Москва, ул. Примерная, д. 1"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Телефон для пациентов</label>
+						<input
+							value={clinicProfileDraft?.phone ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("phone", event.target.value)}
+							placeholder="+7 (999) 123-45-67"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Email</label>
+						<input
+							value={clinicProfileDraft?.email ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("email", event.target.value)}
+							placeholder="info@clinic.ru"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Номер лицензии</label>
+						<input
+							value={clinicProfileDraft?.medicalLicenseNumber ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseNumber", event.target.value)}
+							placeholder="ЛО-12-34-567890"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Дата лицензии</label>
+						<input
+							value={clinicProfileDraft?.medicalLicenseIssuedAt ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuedAt", event.target.value)}
+							placeholder="01.01.2023"
+						/>
+					</div>
+					<div className="clinic-form-group full-width">
+						<label>Кем выдана лицензия</label>
+						<input
+							value={clinicProfileDraft?.medicalLicenseIssuer ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuer", event.target.value)}
+							placeholder="Департамент здравоохранения г. Москвы"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Подписант (ФИО)</label>
+						<input
+							value={clinicProfileDraft?.signatoryName ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryName", event.target.value)}
+							placeholder="Иванов Иван Иванович"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Должность подписанта (в род. падеже)</label>
+						<input
+							value={clinicProfileDraft?.signatoryTitle ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryTitle", event.target.value)}
+							placeholder="генерального директора"
+						/>
+					</div>
+					<div className="clinic-form-group full-width">
+						<label>Банковские реквизиты</label>
+						<textarea
+							value={clinicProfileDraft?.bankDetails ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("bankDetails", event.target.value)}
+							placeholder="р/с 40702810..., БИК 044525225, ПАО СБЕРБАНК"
+						/>
+					</div>
 
-					{/* === ОСНОВНЫЕ ПОЛЯ — всегда видны === */}
-					<div className="clinic-profile-form-grid settings-essential-block">
-						<label>
-							Название клиники
-							<input
-								value={clinicProfileDraft?.clinicName ?? ""}
-								onChange={(event: TextInputChangeEvent) =>
-									updateClinicProfileDraft("clinicName", event.target.value)
-								}
-							/>
-						</label>
-						<label>
-							Телефон
-							<input
-								value={clinicProfileDraft?.phone ?? ""}
-								onChange={(event: TextInputChangeEvent) =>
-									updateClinicProfileDraft("phone", event.target.value)
-								}
-							/>
-						</label>
-						<label className="form-span-2">
-							Адрес
-							<input
-								value={clinicProfileDraft?.address ?? ""}
-								onChange={(event: TextInputChangeEvent) =>
-									updateClinicProfileDraft("address", event.target.value)
-								}
-							/>
-						</label>
-						<div className="form-span-2">
-							<span className="field-label settings-section-title">
-								Режим работы клиники
-							</span>
-							<div className="settings-segmented-group">
-								{[
-									{
-										value: "solo_doctor",
-										label: "Частный кабинет (без ассистента)",
-									},
-									{
-										value: "small_clinic",
-										label: "Стандартный (с ассистентами)",
-									},
-								].map((option) => (
-									<button
-										key={option.value}
-										type="button"
-										className={`settings-segmented-btn ${(clinicProfileDraft?.mode ?? "") === option.value ? "active" : ""}`}
-										onClick={() =>
-											updateClinicProfileDraft("mode", option.value)
-										}
-									>
-										{option.label}
-									</button>
-								))}
-							</div>
-						</div>
-						<label>
-							Начало смены
-							<input
-								type="time"
-								value={clinicProfileDraft?.workdayStart ?? ""}
-								onChange={(event: InputChangeEvent) =>
-									updateClinicProfileDraft("workdayStart", event.target.value)
-								}
-							/>
-						</label>
-						<label>
-							Конец смены
-							<input
-								type="time"
-								value={clinicProfileDraft?.workdayEnd ?? ""}
-								onChange={(event: InputChangeEvent) =>
-									updateClinicProfileDraft("workdayEnd", event.target.value)
-								}
-							/>
-						</label>
-						<div
-							className="weekday-toggle-row form-span-2"
-							role="group"
-							aria-label="Рабочие дни клиники"
+					<div className="clinic-form-group">
+						<label>Часовой пояс</label>
+						<input
+							value={clinicProfileDraft?.timezone ?? ""}
+							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("timezone", event.target.value)}
+							placeholder="Europe/Moscow"
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Язык интерфейса</label>
+						<select
+							value={uiLanguage}
+							onChange={(event: SelectChangeEvent) => setUiLanguage(normalizeUiLanguageInput(event.target.value))}
 						>
-							<span>Рабочие дни</span>
-							{typedWeekdayOptions.map((day: any) => (
-								<button
-									className={
-										(clinicProfileDraft?.workingDays ?? []).includes(day.value)
-											? "active"
-											: ""
-									}
-									key={day.value}
-									type="button"
-									aria-pressed={(
-										clinicProfileDraft?.workingDays ?? []
-									).includes(day.value)}
-									onClick={() => toggleClinicWorkingDay(day.value)}
-								>
-									{day.label}
-								</button>
+							{typedUiLanguageOptions.map((option) => (
+								<option key={option.value} value={option.value}>
+									{option.label}
+								</option>
 							))}
-						</div>
+						</select>
 					</div>
+				</div>
 
-					{/* === ДЛЯ ДОКУМЕНТОВ — collapsible === */}
-					<details className="settings-advanced-block">
-						<summary className="settings-advanced-toggle">
-							<span className="settings-advanced-label">
-								<span className="settings-advanced-icon">📋</span>
-								Для договоров и налоговых документов
-							</span>
-							<span className="settings-advanced-hint">
-								ИНН, лицензия, банк, подписант
-							</span>
-							<span className="settings-advanced-chevron">▼</span>
-						</summary>
-						<div className="clinic-profile-form-grid settings-advanced-form">
-							<label>
-								Юридическое лицо
-								<input
-									value={clinicProfileDraft?.legalName ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft("legalName", event.target.value)
-									}
-								/>
-								<small className="field-note">
-									ИП Иванова М.С. или ООО «Клиника»
-								</small>
-							</label>
-							<label>
-								ИНН
-								<input
-									inputMode="numeric"
-									value={clinicProfileDraft?.inn ?? ""}
-									onChange={(event: InputChangeEvent) =>
-										updateClinicProfileDraft(
-											"inn",
-											event.target.value.replace(/[^\d]/g, "").slice(0, 12),
-										)
-									}
-								/>
-							</label>
-							<label>
-								КПП
-								<input
-									inputMode="numeric"
-									value={clinicProfileDraft?.kpp ?? ""}
-									onChange={(event: InputChangeEvent) =>
-										updateClinicProfileDraft(
-											"kpp",
-											event.target.value.replace(/[^\d]/g, "").slice(0, 9),
-										)
-									}
-								/>
-								<small className="field-note">
-									Только для ООО / АО. ИП оставить пустым.
-								</small>
-							</label>
-							<label>
-								ОГРН / ОГРНИП
-								<input
-									inputMode="numeric"
-									value={clinicProfileDraft?.ogrn ?? ""}
-									onChange={(event: InputChangeEvent) =>
-										updateClinicProfileDraft(
-											"ogrn",
-											event.target.value.replace(/[^\d]/g, "").slice(0, 15),
-										)
-									}
-								/>
-							</label>
-							<label>
-								Email
-								<input
-									value={clinicProfileDraft?.email ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft("email", event.target.value)
-									}
-								/>
-							</label>
-							<label>
-								Сайт
-								<input
-									value={clinicProfileDraft?.website ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft("website", event.target.value)
-									}
-								/>
-							</label>
-							<label>
-								Номер лицензии
-								<input
-									value={clinicProfileDraft?.medicalLicenseNumber ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft(
-											"medicalLicenseNumber",
-											event.target.value,
-										)
-									}
-								/>
-							</label>
-							<label>
-								Дата лицензии
-								<input
-									value={clinicProfileDraft?.medicalLicenseIssuedAt ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft(
-											"medicalLicenseIssuedAt",
-											event.target.value,
-										)
-									}
-								/>
-							</label>
-							<label className="form-span-2">
-								Кем выдана лицензия
-								<input
-									value={clinicProfileDraft?.medicalLicenseIssuer ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft(
-											"medicalLicenseIssuer",
-											event.target.value,
-										)
-									}
-								/>
-							</label>
-							<label>
-								Подписант
-								<input
-									value={clinicProfileDraft?.signatoryName ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft(
-											"signatoryName",
-											event.target.value,
-										)
-									}
-								/>
-								<small className="field-note">
-									ФИО того, кто подписывает договоры
-								</small>
-							</label>
-							<label>
-								Должность подписанта
-								<input
-									value={clinicProfileDraft?.signatoryTitle ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft(
-											"signatoryTitle",
-											event.target.value,
-										)
-									}
-								/>
-								<small className="field-note">
-									Например: индивидуальный предприниматель
-								</small>
-							</label>
-							<label className="form-span-2">
-								Банковские реквизиты
-								<textarea
-									value={clinicProfileDraft?.bankDetails ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft("bankDetails", event.target.value)
-									}
-								/>
-								<small className="field-note">
-									р/с, БИК, банк — всё в одной строке или через запятую
-								</small>
-							</label>
-							<label>
-								Часовой пояс
-								<input
-									value={clinicProfileDraft?.timezone ?? ""}
-									onChange={(event: TextInputChangeEvent) =>
-										updateClinicProfileDraft("timezone", event.target.value)
-									}
-								/>
-								<small className="field-note">Например: Europe/Moscow</small>
-							</label>
-							<label>
-								Язык интерфейса
-								<select
-									value={uiLanguage}
-									onChange={(event: SelectChangeEvent) =>
-										setUiLanguage(normalizeUiLanguageInput(event.target.value))
-									}
-								>
-									{typedUiLanguageOptions.map((option) => (
-										<option key={option.value} value={option.value}>
-											{option.label}
-										</option>
-									))}
-								</select>
-								<small className="field-note">
-									{selectedUiLanguageOption?.detail ?? ""}
-								</small>
-							</label>
-							<label>
-								Минут на визит
-								<input
-									inputMode="numeric"
-									value={clinicProfileDraft?.defaultVisitMinutes ?? ""}
-									onChange={(event: InputChangeEvent) =>
-										updateClinicProfileDraft(
-											"defaultVisitMinutes",
-											event.target.value.replace(/[^\d]/g, "").slice(0, 3),
-										)
-									}
-								/>
-							</label>
-							<label>
-								Буфер между записями, мин
-								<input
-									inputMode="numeric"
-									value={clinicProfileDraft?.appointmentBufferMinutes ?? ""}
-									onChange={(event: InputChangeEvent) =>
-										updateClinicProfileDraft(
-											"appointmentBufferMinutes",
-											event.target.value.replace(/[^\d]/g, "").slice(0, 3),
-										)
-									}
-								/>
-							</label>
-							<label className="checkbox-line form-span-2">
-								<input
-									checked={clinicProfileDraft?.egiszEnabled ?? false}
-									type="checkbox"
-									className="toggle-switch"
-									onChange={(event: InputChangeEvent) =>
-										updateClinicProfileDraft(
-											"egiszEnabled",
-											event.target.checked,
-										)
-									}
-								/>
-								ЕГИСЗ-адаптер включен
-								<small className="field-note">
-									Нужен только при подключении к федеральной системе ЕГИСЗ
-								</small>
-							</label>
-						</div>
-					</details>
+				<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--line)', paddingTop: '20px', marginTop: '12px' }}>
+					<span className={`save-state save-state-${clinicProfileSaveState}`}>
+						{clinicProfileSaveState === "saved"
+							? "✓ Все изменения сохранены"
+							: clinicProfileSaveState === "error"
+								? "⚠ Проверьте правильность полей"
+								: "✏️ Есть несохраненные изменения"}
+					</span>
+					<button
+						className="primary-button"
+						type="button"
+						onClick={() => void saveClinicProfileFromDraft()}
+						disabled={clinicProfileSaveState === "saving"}
+					>
+						<ShieldCheck size={16} style={{ marginRight: '8px' }} />
+						{clinicProfileSaveState === "saving" ? "Сохраняю…" : "Сохранить профиль клиники"}
+					</button>
+				</div>
+			</section>
 
-					<div className="clinic-profile-actions">
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => void lookupClinicPublicProfile()}
-							disabled={isClinicPublicLookupLoading}
-						>
-							<Search aria-hidden="true" />{" "}
-							{isClinicPublicLookupLoading
-								? "Ищу реквизиты…"
-								: "Найти реквизиты по ИНН"}
-						</button>
-						<button
-							className="primary-button"
-							type="button"
-							onClick={() => void saveClinicProfileFromDraft()}
-							disabled={clinicProfileSaveState === "saving"}
-						>
-							<ShieldCheck aria-hidden="true" />{" "}
-							{clinicProfileSaveState === "saving" ? "Сохраняю…" : "Сохранить"}
-						</button>
-						<span className={`save-state save-state-${clinicProfileSaveState}`}>
-							{clinicProfileSaveState === "saved"
-								? "Сохранено"
-								: clinicProfileSaveState === "error"
-									? "Проверьте поля"
-									: "Изменения не выдаются в документах до сохранения"}
-						</span>
+			{/* График работы */}
+			<section className="clinic-section-card" aria-label="График работы">
+				<div className="clinic-section-header">
+					<div className="clinic-section-icon">
+						<Clock size={24} />
 					</div>
+					<div className="clinic-section-title">
+						<h3>График работы клиники</h3>
+						<p>Настройки времени и параметров записи по умолчанию</p>
+					</div>
+				</div>
 
-					{clinicPublicLookup ? (
-						<div
-							className="clinic-public-lookup-result"
-							data-testid="clinic-public-lookup-result"
-							aria-label="Публичный поиск реквизитов клиники"
-						>
-							<div className="dicom-discovery-head">
-								<strong>
-									Публичный поиск:{" "}
-									{clinicPublicLookupProviderStatusLabels[
-										clinicPublicLookup.providerStatus
-									] ??
-										humanizeMigrationText(
-											clinicPublicLookup.providerStatus,
-										)}{" "}
-									· запрос {clinicPublicLookup.safeQuery || "не сформирован"}
-								</strong>
-								<span>
-									{humanizeMigrationText(clinicPublicLookup.nextAction)}
-								</span>
-							</div>
-							<small className="clinic-public-boundary">
-								{clinicPublicLookupBoundaryText}
-							</small>
-							{clinicPublicLookup.suggestions.length ? (
-								<div className="clinic-public-suggestions">
-									{typedClinicPublicLookupSuggestions
-										.slice(0, 4)
-										.map((suggestion, index) => (
-											<article key={`${suggestion.source}-${index}`}>
-												<strong>
-													{clinicPublicLookupSuggestionSourceLabels[
-														suggestion.source
-													] ?? humanizeMigrationText(suggestion.source)}{" "}
-													· {Math.round(suggestion.confidence * 100)}%
-												</strong>
-												<p>
-													{clinicLookupSuggestionFieldEntries(suggestion.fields)
-														.map(
-															([key, value]) =>
-																`${clinicPublicLookupFieldLabels[key] ?? key}: ${String(value).trim()}`,
-														)
-														.join(" · ")}
-												</p>
-												{suggestion.warnings
-													.slice(0, 2)
-													.map((warning: string) => (
-														<small key={warning}>
-															{clinicPublicLookupWarningText(warning)}
-														</small>
-													))}
-												<small className="clinic-public-apply-summary">
-													{clinicLookupSuggestionApplySummary(
-														suggestion.fields,
-													)}
-												</small>
-												<button
-													className="text-button"
-													type="button"
-													disabled={
-														!clinicLookupSuggestionFieldEntries(
-															suggestion.fields,
-														).length
-													}
-													onClick={() =>
-														applyClinicLookupSuggestion(suggestion.fields)
-													}
-												>
-													Подставить в профиль
-												</button>
-											</article>
-										))}
-								</div>
-							) : null}
-							{clinicPublicLookup.publicLookupTargets.length ? (
-								<div className="clinic-public-targets">
-									{typedClinicPublicLookupTargets.map((target) => (
-										<a
-											className="secondary-button"
-											href={target.url}
-											key={`${target.kind}:${target.title}`}
-											target="_blank"
-											rel="noreferrer noopener"
-											aria-label={`Открыть публичный источник реквизитов в новой вкладке: ${target.title}`}
-											title={`Открыть публичный источник реквизитов в новой вкладке: ${target.title}`}
-										>
-											<ExternalLink aria-hidden="true" /> {target.title}
-										</a>
-									))}
-								</div>
-							) : null}
-							{clinicPublicLookup.warnings
-								.slice(0, 4)
-								.map((warning: string) => (
-									<small key={warning}>
-										{clinicPublicLookupWarningText(warning)}
-									</small>
-								))}
-						</div>
-					) : null}
-				</section>
-
-				<div className="clinic-config-grid">
-					<article>
-						<div className="panel-heading">
-							<h3>Кресла и кабинеты</h3>
-							<span className="status-pill status-confirmed">
-								{dashboard.clinicSettings.chairs.length}
-							</span>
-						</div>
-						<div className="quick-create">
-							<input
-								aria-label="Новое кресло"
-								placeholder="Кресло / кабинет"
-								value={newChairName}
-								onChange={(event: TextInputChangeEvent) =>
-									setNewChairName(event.target.value)
-								}
-							/>
-							<button
-								aria-label="Добавить кресло или кабинет"
-								className="icon-button"
-								type="button"
-								onClick={addChair}
-								disabled={!newChairReadyToCreate}
-							>
-								<Plus aria-hidden="true" />
-							</button>
-						</div>
-						{!newChairReadyToCreate ? (
-							<p
-								className="quick-create-guidance"
-								role="status"
-								aria-live="polite"
-							>
-								Введите понятное название кресла или кабинета.
-							</p>
-						) : null}
-						<div
-							className="role-picker equipment-picker"
-							aria-label="Оборудование кресла"
-						>
-							<button
-								className={newChairHasXraySensor ? "active" : ""}
-								type="button"
-								aria-pressed={newChairHasXraySensor}
-								onClick={() =>
-									setNewChairHasXraySensor((value: boolean) => !value)
-								}
-							>
-								RVG
-							</button>
-							<button
-								className={newChairHasMicroscope ? "active" : ""}
-								type="button"
-								aria-pressed={newChairHasMicroscope}
-								onClick={() =>
-									setNewChairHasMicroscope((value: boolean) => !value)
-								}
-							>
-								Микроскоп
-							</button>
-							<button
-								className={newChairHasSurgeryKit ? "active" : ""}
-								type="button"
-								aria-pressed={newChairHasSurgeryKit}
-								onClick={() =>
-									setNewChairHasSurgeryKit((value: boolean) => !value)
-								}
-							>
-								Хирургия
-							</button>
-						</div>
-						<div className="staff-list">
-							{typedChairs.map((chair) => {
-								const scheduleDraft =
-									chairScheduleDrafts[chair.id] ??
-									staffScheduleDraftFromWorkingHours(
-										chair.workingHours ?? null,
-									);
-								const scheduleSaveState =
-									chairScheduleSaveStates[chair.id] ?? "saved";
-								const scheduleDirty = chairScheduleDirtyIds.has(chair.id);
-								const scheduleSaving =
-									chairScheduleSavingId === chair.id ||
-									scheduleSaveState === "saving";
-								const scheduleSaveLabel = scheduleSaving
-									? "Автосохранение"
-									: scheduleSaveState === "error"
-										? "Не сохранено"
-										: scheduleDirty
-											? "Ждет автосохранения"
-											: "Сохранено";
+				<div className="clinic-form-grid">
+					<div className="clinic-form-group">
+						<label>Начало смены</label>
+						<input
+							type="time"
+							value={clinicProfileDraft?.workdayStart ?? ""}
+							onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayStart", event.target.value)}
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Конец смены</label>
+						<input
+							type="time"
+							value={clinicProfileDraft?.workdayEnd ?? ""}
+							onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayEnd", event.target.value)}
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Длительность визита по умолчанию (мин)</label>
+						<input
+							inputMode="numeric"
+							value={clinicProfileDraft?.defaultVisitMinutes ?? ""}
+							onChange={(event: InputChangeEvent) =>
+								updateClinicProfileDraft("defaultVisitMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))
+							}
+						/>
+					</div>
+					<div className="clinic-form-group">
+						<label>Буфер между записями (мин)</label>
+						<input
+							inputMode="numeric"
+							value={clinicProfileDraft?.appointmentBufferMinutes ?? ""}
+							onChange={(event: InputChangeEvent) =>
+								updateClinicProfileDraft("appointmentBufferMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))
+							}
+						/>
+					</div>
+					<div className="clinic-form-group full-width">
+						<label>Рабочие дни клиники</label>
+						<div className="weekday-toggle-row">
+							{typedWeekdayOptions.map((day: any) => {
+								const isWorking = (clinicProfileDraft?.workingDays ?? []).includes(day.value);
 								return (
-									<div className="staff-row" key={chair.id}>
-										<CalendarDays aria-hidden="true" />
-										<div>
-											<strong>{chair.name}</strong>
-											<p>
-												{chair.room ?? "кабинет не указан"} ·{" "}
-												{chair.specialization
-													? specialtyLabels[chair.specialization]
-													: "универсально"}
-											</p>
-										</div>
-										<small>
-											{chair.hasXraySensor
-												? "RVG"
-												: chair.hasMicroscope
-													? "Микроскоп"
-													: chair.hasSurgeryKit
-														? "Хирургия"
-														: "База"}
-										</small>
-										<div className="staff-schedule-editor">
-											<label>
-												С
-												<input
-													type="time"
-													value={scheduleDraft.start}
-													onChange={(event: InputChangeEvent) =>
-														updateChairScheduleDraft(chair.id, {
-															start: event.target.value,
-														})
-													}
-												/>
-											</label>
-											<label>
-												До
-												<input
-													type="time"
-													value={scheduleDraft.end}
-													onChange={(event: InputChangeEvent) =>
-														updateChairScheduleDraft(chair.id, {
-															end: event.target.value,
-														})
-													}
-												/>
-											</label>
-											<div
-												className="weekday-toggle-row staff-weekday-row"
-												role="group"
-												aria-label={`Рабочие дни кресла: ${chair.name}`}
-											>
-												{typedWeekdayOptions.map((day: any) => (
-													<button
-														className={
-															scheduleDraft.workingDays.includes(day.value)
-																? "active"
-																: ""
-														}
-														key={day.value}
-														type="button"
-														aria-pressed={scheduleDraft.workingDays.includes(
-															day.value,
-														)}
-														onClick={() =>
-															toggleChairWorkingDay(chair.id, day.value)
-														}
-													>
-														{day.label}
-													</button>
-												))}
-											</div>
-											<details className="settings-advanced-block schedule-advanced-block">
-												<summary className="settings-advanced-toggle">
-													<span className="settings-advanced-label">
-														Индивидуальные часы по дням
-													</span>
-													<span className="settings-advanced-chevron">▼</span>
-												</summary>
-												<div
-													className="staff-day-hours"
-													aria-label={`Часы по дням кресла: ${chair.name}`}
-												>
-													{typedWeekdayOptions
-														.filter((day) =>
-															scheduleDraft.workingDays.includes(day.value),
-														)
-														.map((day: any) => {
-															const dayHours = scheduleDraft.perDay[day.value];
-															return (
-																<div
-																	key={`chair-hours-${chair.id}-${day.value}`}
-																>
-																	<span>{day.label}</span>
-																	<input
-																		aria-label={`${day.label}, начало кресла`}
-																		type="time"
-																		value={
-																			dayHours?.start ?? scheduleDraft.start
-																		}
-																		onChange={(event: InputChangeEvent) =>
-																			updateChairScheduleDay(
-																				chair.id,
-																				day.value,
-																				{ start: event.target.value },
-																			)
-																		}
-																	/>
-																	<input
-																		aria-label={`${day.label}, конец кресла`}
-																		type="time"
-																		value={dayHours?.end ?? scheduleDraft.end}
-																		onChange={(event: InputChangeEvent) =>
-																			updateChairScheduleDay(
-																				chair.id,
-																				day.value,
-																				{ end: event.target.value },
-																			)
-																		}
-																	/>
-																</div>
-															);
-														})}
-												</div>
-											</details>
-											<div className="staff-schedule-actions">
-												<span
-													className={`save-state save-state-${scheduleSaveState}`}
-												>
-													{scheduleSaveLabel}
-												</span>
-												<button
-													className="secondary-button compact-button"
-													type="button"
-													onClick={() => void saveChairSchedule(chair.id)}
-													disabled={scheduleSaving}
-												>
-													{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
-												</button>
-												<button
-													className="btn-icon"
-													type="button"
-													title="Удалить кресло"
-													onClick={() => deleteChair(chair.id)}
-												>
-													<Trash2 />
-												</button>
-											</div>
-										</div>
-									</div>
+									<button
+										key={day.value}
+										type="button"
+										className={isWorking ? "active" : ""}
+										aria-pressed={isWorking}
+										onClick={() => toggleClinicWorkingDay(day.value)}
+									>
+										{day.label}
+									</button>
 								);
 							})}
 						</div>
-					</article>
+					</div>
 				</div>
 			</section>
 
-			{/* Feature Toggles - Workspace Modules */}
-			<section
-				id="settings-workspace-features"
-				className="settings-workspace-features-section"
-			>
-				<h3 className="settings-workspace-features-title">
-					Модули и функции рабочего пространства
-				</h3>
-				<WorkspaceFeaturesSelector />
+			{/* Кресла и кабинеты */}
+			<section className="clinic-section-card" aria-label="Кресла и кабинеты">
+				<div className="clinic-section-header">
+					<div className="clinic-section-icon">
+						<Calendar size={24} />
+					</div>
+					<div className="clinic-section-title">
+						<h3>Кресла и кабинеты</h3>
+						<p>Добавьте кресла и укажите доступное в них оборудование</p>
+					</div>
+					<div className="clinic-mode-status">
+						<span className="status-pill status-confirmed">
+							Кресел: {dashboard.clinicSettings.chairs.length}
+						</span>
+					</div>
+				</div>
+
+				<div className="chair-quick-create">
+					<div className="chair-quick-create-row">
+						<input
+							aria-label="Новое кресло"
+							placeholder="Название (например: Кабинет 1)"
+							value={newChairName}
+							onChange={(event: TextInputChangeEvent) => setNewChairName(event.target.value)}
+						/>
+						<button
+							aria-label="Добавить кресло"
+							className="primary-button"
+							type="button"
+							onClick={addChair}
+							disabled={!newChairReadyToCreate}
+						>
+							<Plus size={18} style={{ marginRight: '6px' }} /> Добавить
+						</button>
+					</div>
+					<div className="chair-equipment-picker">
+						<span style={{ fontSize: '13px', color: 'var(--muted)', alignSelf: 'center', marginRight: '8px' }}>Оборудование:</span>
+						<button
+							className={newChairHasXraySensor ? "active" : ""}
+							type="button"
+							onClick={() => setNewChairHasXraySensor((v: boolean) => !v)}
+						>
+							RVG (Визиограф)
+						</button>
+						<button
+							className={newChairHasMicroscope ? "active" : ""}
+							type="button"
+							onClick={() => setNewChairHasMicroscope((v: boolean) => !v)}
+						>
+							Микроскоп
+						</button>
+						<button
+							className={newChairHasSurgeryKit ? "active" : ""}
+							type="button"
+							onClick={() => setNewChairHasSurgeryKit((v: boolean) => !v)}
+						>
+							Хирургия
+						</button>
+					</div>
+				</div>
+
+				<div className="premium-chair-grid">
+					{typedChairs.map((chair) => (
+						<div className="premium-chair-card" key={chair.id}>
+							<div className="premium-chair-header">
+								<div className="premium-chair-title">
+									<div className="premium-chair-icon">
+										<CalendarDays size={20} />
+									</div>
+									<h4>{chair.name}</h4>
+								</div>
+								<button
+									className="icon-button"
+									style={{ color: 'var(--danger-color)' }}
+									onClick={() => deleteChair(chair.id)}
+									title="Удалить кресло"
+								>
+									<Trash2 size={16} />
+								</button>
+							</div>
+
+							<div className="premium-chair-badges">
+								{chair.hasXraySensor && (
+									<span className="status-pill status-neutral">☢️ Визиограф</span>
+								)}
+								{chair.hasMicroscope && (
+									<span className="status-pill status-neutral">🔬 Микроскоп</span>
+								)}
+								{chair.hasSurgeryKit && (
+									<span className="status-pill status-neutral">🔪 Хирургия</span>
+								)}
+								{!chair.hasXraySensor && !chair.hasMicroscope && !chair.hasSurgeryKit && (
+									<span className="status-pill status-cancelled">Базовое</span>
+								)}
+							</div>
+						</div>
+					))}
+				</div>
 			</section>
-		</>
+		</div>
 	);
 }

@@ -153,6 +153,8 @@ export function WaitlistDrawer({
 		);
 	};
 
+	const [isMinimized, setIsMinimized] = useState(false);
+
 	if (!isOpen) return null;
 
 	const priorityColors = {
@@ -167,6 +169,20 @@ export function WaitlistDrawer({
 		low: "Низкий",
 	};
 
+	if (isMinimized) {
+		return (
+			<div className="fixed bottom-4 right-4 z-50">
+				<button
+					onClick={() => setIsMinimized(false)}
+					className="bg-[#1e293b] border border-slate-600 shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-slate-800 transition-colors"
+				>
+					<Calendar className="w-5 h-5 text-teal-400" />
+					<span className="text-slate-100 font-medium">Лист ожидания (Свернут)</span>
+				</button>
+			</div>
+		);
+	}
+
 	return (
 		<div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm">
 			<div className="absolute inset-0" onClick={onClose} />
@@ -179,12 +195,21 @@ export function WaitlistDrawer({
 							Лист ожидания
 						</h3>
 					</div>
-					<button
-						onClick={onClose}
-						className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
-					>
-						<X className="w-5 h-5" />
-					</button>
+					<div className="flex items-center gap-1">
+						<button
+							onClick={() => setIsMinimized(true)}
+							className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+							title="Свернуть окно"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+						</button>
+						<button
+							onClick={onClose}
+							className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+						>
+							<X className="w-5 h-5" />
+						</button>
+					</div>
 				</div>
 
 				{/* Body container */}

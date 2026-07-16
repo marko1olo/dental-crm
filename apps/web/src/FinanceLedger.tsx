@@ -1,5 +1,5 @@
 import type { Dashboard } from "@dental/shared";
-import { ClipboardList, CreditCard } from "lucide-react";
+import { ClipboardList, CreditCard, FileText } from "lucide-react";
 
 type TreatmentPlanItem = Dashboard["treatmentPlanItems"][number];
 type Payment = Dashboard["payments"][number];
@@ -86,11 +86,30 @@ export function FinanceLedger({
 			</section>
 
 			<section className="finance-list" aria-label="История оплат">
-				<div className="panel-heading">
-					<h3>Платежи</h3>
-					<span className="status-pill status-confirmed">
-						{payments.length}
-					</span>
+				<div className="panel-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+						<h3 style={{ margin: 0 }}>Платежи</h3>
+						<span className="status-pill status-confirmed">
+							{payments.length}
+						</span>
+					</div>
+					{payments.some(p => p.taxDeductionCode && p.taxDeductionCode !== "") && (
+						<button
+							className="secondary-button"
+							type="button"
+							title="Сгенерировать справку ИФНС для налогового вычета"
+							onClick={() => {
+								// Mock PDF generation
+								const link = document.createElement("a");
+								link.href = "data:application/pdf;base64,JVBERi0xLjcKCjEgMCBvYmog...";
+								link.download = `Spravka_IFNS_${new Date().getFullYear()}.pdf`;
+								link.click();
+							}}
+							style={{ padding: '4px 8px', fontSize: '0.85rem' }}
+						>
+							<FileText size={14} style={{ marginRight: '4px' }} /> Справка ИФНС
+						</button>
+					)}
 				</div>
 				{payments.length ? (
 					payments.map((payment) => (

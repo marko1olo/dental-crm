@@ -13,15 +13,19 @@ const waitlistSchema = z.object({
 	patientId: z.string().uuid(),
 	preferredDoctorId: z.string().uuid().nullable().optional(),
 	priorityLevel: z.enum(["high", "medium", "low"]).default("medium"),
-	preferredTimeRanges: z.array(
-		z.object({
-			day: z.string(),
-			slot: z.string(),
-		})
-	).optional(),
+	preferredTimeRanges: z
+		.array(
+			z.object({
+				day: z.string(),
+				slot: z.string(),
+			}),
+		)
+		.optional(),
 });
 
-export async function registerWaitlistRoutes(app: FastifyInstance): Promise<void> {
+export async function registerWaitlistRoutes(
+	app: FastifyInstance,
+): Promise<void> {
 	/**
 	 * GET /api/waitlist
 	 * Returns active waitlist entries with patient details.
@@ -83,11 +87,18 @@ export async function registerWaitlistRoutes(app: FastifyInstance): Promise<void
 
 		const data = parsed.data;
 
-		// Verify patient exists
+		// Verify the patient exists AND belongs to this organization. Without the
+		// org scope, org A could waitlist org B's patient, leaking that patient's
+		// name/phone into org A's waitlist via the GET join.
 		const [patient] = await db
 			.select()
 			.from(patients)
-			.where(eq(patients.id, data.patientId))
+			.where(
+				and(
+					eq(patients.id, data.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
 			.limit(1);
 
 		if (!patient) {
@@ -95,6 +106,26 @@ export async function registerWaitlistRoutes(app: FastifyInstance): Promise<void
 				error: "PatientNotFound",
 				message: "Пациент не найден.",
 			});
+		}
+
+		// If a preferred doctor is named, it must be a doctor of this organization.
+		if (data.preferredDoctorId) {
+			const [doctor] = await db
+				.select({ id: users.id })
+				.from(users)
+				.where(
+					and(
+						eq(users.id, data.preferredDoctorId),
+						eq(users.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (!doctor) {
+				return reply.code(404).send({
+					error: "DoctorNotFound",
+					message: "Выбранный врач не найден в вашей клинике.",
+				});
+			}
 		}
 
 		const [newItem] = await db
@@ -145,12 +176,14 @@ export async function registerWaitlistRoutes(app: FastifyInstance): Promise<void
 		const updateSchema = z.object({
 			preferredDoctorId: z.string().uuid().nullable().optional(),
 			priorityLevel: z.enum(["high", "medium", "low"]).optional(),
-			preferredTimeRanges: z.array(
-				z.object({
-					day: z.string(),
-					slot: z.string(),
-				})
-			).optional(),
+			preferredTimeRanges: z
+				.array(
+					z.object({
+						day: z.string(),
+						slot: z.string(),
+					}),
+				)
+				.optional(),
 			status: z.enum(["active", "fulfilled"]).optional(),
 		});
 
