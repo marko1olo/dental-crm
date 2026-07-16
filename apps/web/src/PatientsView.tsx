@@ -1,6 +1,3 @@
-import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
-import { PatientClinicalTab } from "./components/patients/PatientClinicalTab";
-import { PatientDocsTab } from "./components/patients/PatientDocsTab";
 import type {
 	Dashboard,
 	Patient,
@@ -11,15 +8,18 @@ import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "./AppHelpers";
+import { AnamnesisPanel } from "./components/AnamnesisPanel";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
 import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
-import { AnamnesisPanel } from "./components/AnamnesisPanel";
+import { PatientClinicalTab } from "./components/patients/PatientClinicalTab";
+import { PatientDocsTab } from "./components/patients/PatientDocsTab";
+import { PatientFamilyCard } from "./components/patients/PatientFamilyCard";
+import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { DictationHints } from "./DictationHints";
 import { parsePatientDictationLocal } from "./lib/smartPatientParser";
 import { SmartParsePreview } from "./SmartParsePreview";
-import { PatientFamilyCard } from "./components/patients/PatientFamilyCard";
 import { usePatientStore } from "./store/patientStore";
 import { useVisitStore } from "./store/visitStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
@@ -115,7 +115,9 @@ export function PatientsView(props: PatientsViewProps) {
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [familyData, setFamilyData] = useState<any>(null);
-	const [patientTab, setPatientTab] = useState<"overview" | "clinical" | "docs">("overview");
+	const [patientTab, setPatientTab] = useState<
+		"overview" | "clinical" | "docs"
+	>("overview");
 	const [insuranceContracts, setInsuranceContracts] = useState<any[]>([]);
 
 	useEffect(() => {
@@ -420,10 +422,80 @@ export function PatientsView(props: PatientsViewProps) {
 					)}
 
 					{selectedPatient && (
-						<div className="patients-tabs-nav" style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
-							<button className={`tab-btn ${patientTab === 'overview' ? 'active' : ''}`} onClick={() => setPatientTab('overview')} style={{ padding: '8px 16px', background: patientTab === 'overview' ? 'var(--brand-50)' : 'transparent', color: patientTab === 'overview' ? 'var(--brand-600)' : 'var(--slate-600)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>Обзор профиля</button>
-							<button className={`tab-btn ${patientTab === 'clinical' ? 'active' : ''}`} onClick={() => setPatientTab('clinical')} style={{ padding: '8px 16px', background: patientTab === 'clinical' ? 'var(--brand-50)' : 'transparent', color: patientTab === 'clinical' ? 'var(--brand-600)' : 'var(--slate-600)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>Медицина (Зубы и Снимки)</button>
-							<button className={`tab-btn ${patientTab === 'docs' ? 'active' : ''}`} onClick={() => setPatientTab('docs')} style={{ padding: '8px 16px', background: patientTab === 'docs' ? 'var(--brand-50)' : 'transparent', color: patientTab === 'docs' ? 'var(--brand-600)' : 'var(--slate-600)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>Документы и Реквизиты</button>
+						<div
+							className="patients-tabs-nav"
+							style={{
+								display: "flex",
+								gap: "8px",
+								marginBottom: "24px",
+								borderBottom: "1px solid var(--line)",
+								paddingBottom: "12px",
+							}}
+						>
+							<button
+								className={`tab-btn ${patientTab === "overview" ? "active" : ""}`}
+								onClick={() => setPatientTab("overview")}
+								style={{
+									padding: "8px 16px",
+									background:
+										patientTab === "overview"
+											? "var(--brand-50)"
+											: "transparent",
+									color:
+										patientTab === "overview"
+											? "var(--brand-600)"
+											: "var(--slate-600)",
+									border: "none",
+									borderRadius: "8px",
+									fontWeight: 600,
+									cursor: "pointer",
+									transition: "all 0.2s",
+								}}
+							>
+								Обзор профиля
+							</button>
+							<button
+								className={`tab-btn ${patientTab === "clinical" ? "active" : ""}`}
+								onClick={() => setPatientTab("clinical")}
+								style={{
+									padding: "8px 16px",
+									background:
+										patientTab === "clinical"
+											? "var(--brand-50)"
+											: "transparent",
+									color:
+										patientTab === "clinical"
+											? "var(--brand-600)"
+											: "var(--slate-600)",
+									border: "none",
+									borderRadius: "8px",
+									fontWeight: 600,
+									cursor: "pointer",
+									transition: "all 0.2s",
+								}}
+							>
+								Медицина (Зубы и Снимки)
+							</button>
+							<button
+								className={`tab-btn ${patientTab === "docs" ? "active" : ""}`}
+								onClick={() => setPatientTab("docs")}
+								style={{
+									padding: "8px 16px",
+									background:
+										patientTab === "docs" ? "var(--brand-50)" : "transparent",
+									color:
+										patientTab === "docs"
+											? "var(--brand-600)"
+											: "var(--slate-600)",
+									border: "none",
+									borderRadius: "8px",
+									fontWeight: 600,
+									cursor: "pointer",
+									transition: "all 0.2s",
+								}}
+							>
+								Документы и Реквизиты
+							</button>
 						</div>
 					)}
 
@@ -432,8 +504,8 @@ export function PatientsView(props: PatientsViewProps) {
 						aria-label="Административные данные активного пациента"
 					>
 						{patientTab === "overview" && <PatientOverviewTab props={props} />}
-{patientTab === "clinical" && <PatientClinicalTab props={props} />}
-{patientTab === "docs" && <PatientDocsTab props={props} />}
+						{patientTab === "clinical" && <PatientClinicalTab props={props} />}
+						{patientTab === "docs" && <PatientDocsTab props={props} />}
 					</section>
 				</main>
 			</div>

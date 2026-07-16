@@ -1,250 +1,257 @@
+import { Dashboard } from "@dental/shared";
 import { motion } from "framer-motion";
 import { UserCheck } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import type { PatientsViewProps } from "../../PatientsView";
 import { usePatientStore } from "../../store/patientStore";
-import { Dashboard } from "@dental/shared";
+import { formatPhoneNumber } from "../../utils/inputSanitation";
+import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { PatientFamilyCard } from "./PatientFamilyCard";
-import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
-import { formatPhoneNumber } from "../../utils/inputSanitation";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { PatientsViewProps } from "../../PatientsView";
 
-type TextFieldChangeEvent = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+type TextFieldChangeEvent = React.ChangeEvent<
+	HTMLInputElement | HTMLTextAreaElement
+>;
 
 export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
-    const {
-        selectedPatientId,
-        patientCoreDraft, patientCoreSaveState, patientCoreDirty,
-        patientAdministrativeProfileSaveState, patientAdministrativeProfileDirty
-    } = usePatientStore();
-    const { savePatientCore, updatePatientCoreDraft, selectedPatient } = props;
-    const patientCoreReadyToSave = patientCoreDraft.fullName.trim().length > 0 && patientCoreDirty;
-    const patientCoreSaveGuidance = patientCoreSaveState === "error" ? "Ошибка сохранения" : patientCoreSaveState === "saved" ? "Сохранено" : null;
-    const patientCoreSaveGuidanceId = "patientCoreSaveGuidanceId";
-    const [familyData, setFamilyData] = useState<any>(null);
+	const {
+		selectedPatientId,
+		patientCoreDraft,
+		patientCoreSaveState,
+		patientCoreDirty,
+		patientAdministrativeProfileSaveState,
+		patientAdministrativeProfileDirty,
+	} = usePatientStore();
+	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = props;
+	const patientCoreReadyToSave =
+		patientCoreDraft.fullName.trim().length > 0 && patientCoreDirty;
+	const patientCoreSaveGuidance =
+		patientCoreSaveState === "error"
+			? "Ошибка сохранения"
+			: patientCoreSaveState === "saved"
+				? "Сохранено"
+				: null;
+	const patientCoreSaveGuidanceId = "patientCoreSaveGuidanceId";
+	const [familyData, setFamilyData] = useState<any>(null);
 
-    return (
-        <>
-						<div className="panel-heading compact-heading patients-no-border-mb-8">
-							<div>
-								<span
-									style={{
-										fontSize: "14px",
-										fontWeight: 600,
-										color: "var(--ink)",
-									}}
-								>
-									Карточка пациента
-								</span>
-							</div>
-							<span
-								className={`status-pill status-${patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error" ? "cancelled" : "confirmed"}`}
-							>
-								{patientCoreSaveState === "saving"
-									? "сохранение"
-									: patientAdministrativeProfileSaveState === "saving"
-										? "сохранение"
-										: patientCoreSaveState === "error" ||
-												patientAdministrativeProfileSaveState === "error"
-											? "ошибка"
-											: patientCoreDirty || patientAdministrativeProfileDirty
-												? "Ждет сохранения"
-												: "сохранено"}
-							</span>
-						</div>
-						<div
-							className="clinic-profile-form-grid patient-core-form-grid"
+	return (
+		<>
+			<div className="panel-heading compact-heading patients-no-border-mb-8">
+				<div>
+					<span
+						style={{
+							fontSize: "14px",
+							fontWeight: 600,
+							color: "var(--ink)",
+						}}
+					>
+						Карточка пациента
+					</span>
+				</div>
+				<span
+					className={`status-pill status-${patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error" ? "cancelled" : "confirmed"}`}
+				>
+					{patientCoreSaveState === "saving"
+						? "сохранение"
+						: patientAdministrativeProfileSaveState === "saving"
+							? "сохранение"
+							: patientCoreSaveState === "error" ||
+									patientAdministrativeProfileSaveState === "error"
+								? "ошибка"
+								: patientCoreDirty || patientAdministrativeProfileDirty
+									? "Ждет сохранения"
+									: "сохранено"}
+				</span>
+			</div>
+			<div
+				className="clinic-profile-form-grid patient-core-form-grid"
+				style={{
+					gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+				}}
+			>
+				<label className="form-span-2">
+					ФИО пациента
+					<input
+						autoComplete="name"
+						value={patientCoreDraft.fullName}
+						onChange={(event: TextFieldChangeEvent) =>
+							updatePatientCoreDraft("fullName", event.target.value)
+						}
+						placeholder="Фамилия Имя Отчество"
+					/>
+				</label>
+				<label>
+					Дата рождения
+					<input
+						type="date"
+						autoComplete="bday"
+						value={patientCoreDraft.birthDate}
+						onChange={(event: TextFieldChangeEvent) =>
+							updatePatientCoreDraft("birthDate", event.target.value)
+						}
+					/>
+				</label>
+				<label>
+					Телефон
+					<input
+						type="tel"
+						inputMode="tel"
+						autoComplete="tel"
+						value={patientCoreDraft.phone}
+						onChange={(event: TextFieldChangeEvent) =>
+							updatePatientCoreDraft(
+								"phone",
+								formatPhoneNumber(event.target.value),
+							)
+						}
+						placeholder="+7..."
+					/>
+				</label>
+				<label>
+					Email
+					<input
+						type="email"
+						autoComplete="email"
+						value={patientCoreDraft.email}
+						onChange={(event: TextFieldChangeEvent) =>
+							updatePatientCoreDraft("email", event.target.value)
+						}
+						placeholder="patient@example.ru"
+					/>
+				</label>
+				<div className="form-span-2 patients-flex-col-gap-4">
+					<div className="patients-flex-between">
+						<span
 							style={{
-								gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+								fontSize: "13px",
+								fontWeight: 600,
+								color: "var(--muted)",
 							}}
 						>
-							<label className="form-span-2">
-								ФИО пациента
-								<input
-									autoComplete="name"
-									value={patientCoreDraft.fullName}
-									onChange={(event: TextFieldChangeEvent) =>
-										updatePatientCoreDraft("fullName", event.target.value)
-									}
-									placeholder="Фамилия Имя Отчество"
-								/>
-							</label>
-							<label>
-								Дата рождения
-								<input
-									type="date"
-									autoComplete="bday"
-									value={patientCoreDraft.birthDate}
-									onChange={(event: TextFieldChangeEvent) =>
-										updatePatientCoreDraft("birthDate", event.target.value)
-									}
-								/>
-							</label>
-							<label>
-								Телефон
-								<input
-									type="tel"
-									inputMode="tel"
-									autoComplete="tel"
-									value={patientCoreDraft.phone}
-									onChange={(event: TextFieldChangeEvent) =>
-										updatePatientCoreDraft(
-											"phone",
-											formatPhoneNumber(event.target.value),
-										)
-									}
-									placeholder="+7..."
-								/>
-							</label>
-							<label>
-								Email
-								<input
-									type="email"
-									autoComplete="email"
-									value={patientCoreDraft.email}
-									onChange={(event: TextFieldChangeEvent) =>
-										updatePatientCoreDraft("email", event.target.value)
-									}
-									placeholder="patient@example.ru"
-								/>
-							</label>
-							<div className="form-span-2 patients-flex-col-gap-4">
-								<div className="patients-flex-between">
-									<span
-										style={{
-											fontSize: "13px",
-											fontWeight: 600,
-											color: "var(--muted)",
-										}}
-									>
-										Заметки для команды
-									</span>
-									<SmartMicrophoneButton
-										context="general"
-										onResult={(t) => {
-											const prev = patientCoreDraft.notes || "";
-											updatePatientCoreDraft(
-												"notes",
-												prev ? `${prev}, ${t}` : t,
-											);
-										}}
-									/>
-								</div>
-								<textarea
-									value={patientCoreDraft.notes}
-									onChange={(e) =>
-										updatePatientCoreDraft("notes", e.target.value)
-									}
-									placeholder="важное для связи, приема и документов"
-									style={{
-										width: "100%",
-										padding: "8px 12px",
-										borderRadius: "8px",
-										border: "1px solid var(--line)",
-										fontSize: "14px",
-										resize: "vertical",
-									}}
-								/>
-								<div className="patients-chips-row">
-									{[
-										"Очень тревожный",
-										"Сложный пациент",
-										"VIP",
-										"Просит звонить заранее",
-										"Часто отменяет",
-										"Плохо переносит анестезию",
-										"Должник",
-										"Рвотный рефлекс",
-									].map((chip) => (
-										<button
-											key={chip}
-											type="button"
-											onClick={() => {
-												const currentVal = patientCoreDraft.notes.trim();
-												const newVal = currentVal
-													? `${currentVal}, ${chip.toLowerCase()}`
-													: chip;
-												updatePatientCoreDraft("notes", newVal);
-											}}
-											style={{
-												padding: "2px 8px",
-												fontSize: "12px",
-												background: "var(--paper-strong)",
-												border: "1px solid var(--slate-200)",
-												borderRadius: "12px",
-												cursor: "pointer",
-												color: "var(--slate-700)",
-											}}
-											onMouseEnter={(e) => {
-												e.currentTarget.style.background = "var(--slate-200)";
-											}}
-											onMouseLeave={(e) => {
-												e.currentTarget.style.background = "var(--slate-100)";
-											}}
-										>
-											+ {chip}
-										</button>
-									))}
-								</div>
-							</div>
-						</div>
-						<div className="patient-admin-actions patients-mt-16-flex">
+							Заметки для команды
+						</span>
+						<SmartMicrophoneButton
+							context="general"
+							onResult={(t) => {
+								const prev = patientCoreDraft.notes || "";
+								updatePatientCoreDraft("notes", prev ? `${prev}, ${t}` : t);
+							}}
+						/>
+					</div>
+					<textarea
+						value={patientCoreDraft.notes}
+						onChange={(e) => updatePatientCoreDraft("notes", e.target.value)}
+						placeholder="важное для связи, приема и документов"
+						style={{
+							width: "100%",
+							padding: "8px 12px",
+							borderRadius: "8px",
+							border: "1px solid var(--line)",
+							fontSize: "14px",
+							resize: "vertical",
+						}}
+					/>
+					<div className="patients-chips-row">
+						{[
+							"Очень тревожный",
+							"Сложный пациент",
+							"VIP",
+							"Просит звонить заранее",
+							"Часто отменяет",
+							"Плохо переносит анестезию",
+							"Должник",
+							"Рвотный рефлекс",
+						].map((chip) => (
 							<button
-								className="primary-button"
+								key={chip}
 								type="button"
-								onClick={savePatientCore}
-								aria-busy={patientCoreSaveState === "saving" || undefined}
-								aria-describedby={
-									patientCoreSaveGuidance
-										? patientCoreSaveGuidanceId
-										: undefined
-								}
-								disabled={!patientCoreReadyToSave}
+								onClick={() => {
+									const currentVal = patientCoreDraft.notes.trim();
+									const newVal = currentVal
+										? `${currentVal}, ${chip.toLowerCase()}`
+										: chip;
+									updatePatientCoreDraft("notes", newVal);
+								}}
+								style={{
+									padding: "2px 8px",
+									fontSize: "12px",
+									background: "var(--paper-strong)",
+									border: "1px solid var(--slate-200)",
+									borderRadius: "12px",
+									cursor: "pointer",
+									color: "var(--slate-700)",
+								}}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.background = "var(--slate-200)";
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.background = "var(--slate-100)";
+								}}
 							>
-								<UserCheck aria-hidden="true" /> Сохранить карточку
+								+ {chip}
 							</button>
-						</div>
-						{patientCoreSaveGuidance ? (
-							<p
-								className="patient-save-guidance"
-								id={patientCoreSaveGuidanceId}
-								role="status"
-								aria-live="polite"
-							>
-								{patientCoreSaveGuidance}
-							</p>
-						) : null}
+						))}
+					</div>
+				</div>
+			</div>
+			<div className="patient-admin-actions patients-mt-16-flex">
+				<button
+					className="primary-button"
+					type="button"
+					onClick={savePatientCore}
+					aria-busy={patientCoreSaveState === "saving" || undefined}
+					aria-describedby={
+						patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined
+					}
+					disabled={!patientCoreReadyToSave}
+				>
+					<UserCheck aria-hidden="true" /> Сохранить карточку
+				</button>
+			</div>
+			{patientCoreSaveGuidance ? (
+				<p
+					className="patient-save-guidance"
+					id={patientCoreSaveGuidanceId}
+					role="status"
+					aria-live="polite"
+				>
+					{patientCoreSaveGuidance}
+				</p>
+			) : null}
 
-						
-						<div className="patient-clinical-grid patients-my-0" style={{ marginTop: '16px' }}>
-							<div className="clinical-col-left" style={{ flex: 1 }}>
-								<PatientFamilyCard 
-																		patientId={selectedPatientId} 
-																		patientName={selectedPatient?.fullName || null}
-																		familyData={familyData} 
-																		onFamilyDataChanged={() => {
-																			if (selectedPatientId) {
-																				fetch(`/api/finance/family/patient/${selectedPatientId}`, {
-																					headers: denteAdminSecretRequestHeaders(),
-																				})
-																				.then((res) => {
-																					if (!res.ok) throw new Error("No family");
-																					return res.json();
-																				})
-																				.then((data) => setFamilyData(data))
-																				.catch(() => setFamilyData(null));
-																			}
-																		}} 
-																	/>
-																	{selectedPatientId && (
-																		<PatientJourneyTimeline
-																			patientId={selectedPatientId}
-																			dashboard={props.dashboard}
-																		/>
-																	)}
-							</div>
-						</div>
-						</>
-    );
+			<div
+				className="patient-clinical-grid patients-my-0"
+				style={{ marginTop: "16px" }}
+			>
+				<div className="clinical-col-left" style={{ flex: 1 }}>
+					<PatientFamilyCard
+						patientId={selectedPatientId}
+						patientName={selectedPatient?.fullName || null}
+						familyData={familyData}
+						onFamilyDataChanged={() => {
+							if (selectedPatientId) {
+								fetch(`/api/finance/family/patient/${selectedPatientId}`, {
+									headers: denteAdminSecretRequestHeaders(),
+								})
+									.then((res) => {
+										if (!res.ok) throw new Error("No family");
+										return res.json();
+									})
+									.then((data) => setFamilyData(data))
+									.catch(() => setFamilyData(null));
+							}
+						}}
+					/>
+					{selectedPatientId && (
+						<PatientJourneyTimeline
+							patientId={selectedPatientId}
+							dashboard={props.dashboard}
+						/>
+					)}
+				</div>
+			</div>
+		</>
+	);
 }
