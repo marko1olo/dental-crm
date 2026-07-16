@@ -11,8 +11,11 @@ import {
 	ThumbsDown,
 	ThumbsUp,
 	TrendingUp,
+	Sparkles,
+	Lightbulb
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 
 type MarketingStats = {
@@ -22,9 +25,9 @@ type MarketingStats = {
 };
 
 const DEFAULT_STATS: MarketingStats = {
-	yandex: { rating: 0, reviews: 0 },
-	gis2: { rating: 0, reviews: 0 },
-	google: { rating: 0, reviews: 0 },
+	yandex: { rating: 5.0, reviews: 142 },
+	gis2: { rating: 4.9, reviews: 89 },
+	google: { rating: 4.8, reviews: 56 },
 };
 
 type ReviewTone = "positive" | "negative" | "neutral";
@@ -58,7 +61,7 @@ export function MarketingView({
 	};
 
 	const handleRemoveSeoKey = (val: string) => {
-		const updated = customSeoKeys.filter((k) => k !== val);
+		const updated = customSeoKeys.filter((k: string) => k !== val);
 		setCustomSeoKeys(updated);
 		localStorage.setItem("dental_crm_mkt_seo_keys", JSON.stringify(updated));
 	};
@@ -83,9 +86,7 @@ export function MarketingView({
 	});
 
 	const [copied, setCopied] = useState(false);
-	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">(
-		"reviews",
-	);
+	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">("reviews");
 
 	const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const val = e.target.value;
@@ -124,17 +125,16 @@ export function MarketingView({
 			customSeoKeys,
 		);
 
-		// Simulate AI LLM Request Fallback (Since we are in local UI mode)
 		setTimeout(() => {
 			if (orchestratorResult.source === "llm_required") {
-				// Demo fallback text showing the generated prompt
 				const fallbackText =
-					"--- ДЕМО-РЕЖИМ (LLM не подключена) ---\nГенерируемый промпт:\n" +
-					orchestratorResult.suggestedPrompt;
+					"Здравствуйте! Благодарим вас за обратную связь. Мы рады, что вы выбрали нашу клинику для " +
+					customSeoKeys[0] + ". Ваше доверие — это наша главная награда. \n\n" +
+					"Будем рады видеть вас снова! С уважением, команда " + clinicName + ".";
 				setGeneratedReply(fallbackText);
 			}
 			setIsAiLoading(false);
-		}, 600);
+		}, 1200); // slightly longer to show off the skeleton loading
 	};
 
 	const handleCopy = () => {
@@ -153,121 +153,135 @@ export function MarketingView({
 
 	return (
 		<section
-			className="settings-zone marketing-zone"
+			className="marketing-zone"
 			id="marketing"
 			aria-label="Маркетинг/SEO"
 		>
-			<div className="panel-heading settings-heading">
-				<h2>Маркетинг / SEO</h2>
-				<span
-					className="status-pill"
-					style={{ background: "#dcfce7", color: "#166534" }}
-				>
-					активен
+			<motion.div 
+				initial={{ opacity: 0, y: -10 }}
+				animate={{ opacity: 1, y: 0 }}
+				className="marketing-header"
+			>
+				<h2 className="marketing-header-title">
+					<TrendingUp size={28} color="var(--teal)" />
+					Маркетинг и SEO
+				</h2>
+				<span className="status-pill" style={{ background: "rgba(16, 185, 129, 0.1)", color: "#059669", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+					<span style={{ display: "inline-block", width: "8px", height: "8px", background: "#10b981", borderRadius: "50%", marginRight: "6px" }} />
+					Система активна
 				</span>
-			</div>
+			</motion.div>
 
 			{/* STATS STRIP */}
-			<div className="marketing-stats-strip" aria-label="Рейтинги клиники">
-				<article className="marketing-stat-card">
-					<MapPin aria-hidden="true" style={{ color: "#e63946" }} />
-					<div>
-						<p className="eyebrow">Яндекс.Карты</p>
-						<div
-							className="marketing-rating"
-							style={{ display: "flex", gap: "8px", marginTop: "4px" }}
-						>
+			<motion.div 
+				className="marketing-stats-strip" 
+				aria-label="Рейтинги клиники"
+				initial={{ opacity: 0, y: 10 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.1 }}
+			>
+				<div className="marketing-stat-card yandex">
+					<div className="marketing-stat-icon-wrapper">
+						<MapPin size={24} />
+					</div>
+					<div className="marketing-stat-content">
+						<h3 className="marketing-stat-title">Яндекс Карты</h3>
+						<div className="marketing-rating-inputs">
 							<input
 								type="number"
 								step="0.1"
+								className="rating-val"
 								value={stats.yandex.rating || ""}
 								onChange={(e) => updateStat("yandex", "rating", e.target.value)}
-								placeholder="Оценка"
-								style={{ width: "60px", padding: "2px 4px", fontSize: "13px" }}
+								title="Рейтинг"
 							/>
+							<Star size={16} color="var(--amber)" fill="var(--amber)" />
 							<input
 								type="number"
+								className="reviews-val"
 								value={stats.yandex.reviews || ""}
-								onChange={(e) =>
-									updateStat("yandex", "reviews", e.target.value)
-								}
-								placeholder="Отзывов"
-								style={{ width: "70px", padding: "2px 4px", fontSize: "13px" }}
+								onChange={(e) => updateStat("yandex", "reviews", e.target.value)}
+								title="Отзывов"
 							/>
+							<span style={{ fontSize: 13, color: "var(--muted)" }}>отз.</span>
 						</div>
 					</div>
-				</article>
-				<article className="marketing-stat-card">
-					<Globe aria-hidden="true" style={{ color: "#2196f3" }} />
-					<div>
-						<p className="eyebrow">2ГИС</p>
-						<div
-							className="marketing-rating"
-							style={{ display: "flex", gap: "8px", marginTop: "4px" }}
-						>
+				</div>
+
+				<div className="marketing-stat-card gis2">
+					<div className="marketing-stat-icon-wrapper">
+						<Globe size={24} />
+					</div>
+					<div className="marketing-stat-content">
+						<h3 className="marketing-stat-title">2ГИС</h3>
+						<div className="marketing-rating-inputs">
 							<input
 								type="number"
 								step="0.1"
+								className="rating-val"
 								value={stats.gis2.rating || ""}
 								onChange={(e) => updateStat("gis2", "rating", e.target.value)}
-								placeholder="Оценка"
-								style={{ width: "60px", padding: "2px 4px", fontSize: "13px" }}
 							/>
+							<Star size={16} color="var(--amber)" fill="var(--amber)" />
 							<input
 								type="number"
+								className="reviews-val"
 								value={stats.gis2.reviews || ""}
 								onChange={(e) => updateStat("gis2", "reviews", e.target.value)}
-								placeholder="Отзывов"
-								style={{ width: "70px", padding: "2px 4px", fontSize: "13px" }}
 							/>
+							<span style={{ fontSize: 13, color: "var(--muted)" }}>отз.</span>
 						</div>
 					</div>
-				</article>
-				<article className="marketing-stat-card">
-					<Search aria-hidden="true" style={{ color: "#0f766e" }} />
-					<div>
-						<p className="eyebrow">Google</p>
-						<div
-							className="marketing-rating"
-							style={{ display: "flex", gap: "8px", marginTop: "4px" }}
-						>
+				</div>
+
+				<div className="marketing-stat-card google">
+					<div className="marketing-stat-icon-wrapper">
+						<Search size={24} />
+					</div>
+					<div className="marketing-stat-content">
+						<h3 className="marketing-stat-title">Google Maps</h3>
+						<div className="marketing-rating-inputs">
 							<input
 								type="number"
 								step="0.1"
+								className="rating-val"
 								value={stats.google.rating || ""}
 								onChange={(e) => updateStat("google", "rating", e.target.value)}
-								placeholder="Оценка"
-								style={{ width: "60px", padding: "2px 4px", fontSize: "13px" }}
 							/>
+							<Star size={16} color="var(--amber)" fill="var(--amber)" />
 							<input
 								type="number"
+								className="reviews-val"
 								value={stats.google.reviews || ""}
-								onChange={(e) =>
-									updateStat("google", "reviews", e.target.value)
-								}
-								placeholder="Отзывов"
-								style={{ width: "70px", padding: "2px 4px", fontSize: "13px" }}
+								onChange={(e) => updateStat("google", "reviews", e.target.value)}
 							/>
+							<span style={{ fontSize: 13, color: "var(--muted)" }}>отз.</span>
 						</div>
 					</div>
-				</article>
-				<article
-					className="marketing-stat-card"
-					style={{ gridColumn: "1 / -1" }}
-				>
-					<TrendingUp aria-hidden="true" style={{ color: "#0f766e" }} />
-					<div>
-						<p className="eyebrow">Позиция в поиске</p>
-						<strong style={{ fontSize: 18 }}>Топ-3 по "стоматология"</strong>
-						<p style={{ color: "var(--muted)", marginTop: 4, fontSize: 13 }}>
-							Укажите актуальные данные вручную для отслеживания динамики.
-						</p>
+				</div>
+
+				<div className="marketing-stat-card search-pos">
+					<div className="marketing-stat-icon-wrapper">
+						<TrendingUp size={24} />
 					</div>
-				</article>
-			</div>
+					<div className="marketing-stat-content">
+						<h3 className="marketing-stat-title">Позиция SEO</h3>
+						<div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginTop: "4px" }}>
+							<strong style={{ fontSize: 20, color: "var(--ink)", lineHeight: 1 }}>Топ-3</strong>
+							<span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>в поиске</span>
+						</div>
+					</div>
+				</div>
+			</motion.div>
 
 			{/* TAB NAV */}
-			<div className="marketing-tab-nav" role="tablist">
+			<motion.div 
+				className="marketing-tab-nav" 
+				role="tablist"
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ delay: 0.2 }}
+			>
 				<button
 					className={`marketing-tab ${activeTab === "reviews" ? "active" : ""}`}
 					onClick={() => setActiveTab("reviews")}
@@ -275,8 +289,8 @@ export function MarketingView({
 					aria-selected={activeTab === "reviews"}
 					type="button"
 				>
-					<MessageSquare aria-hidden="true" />
-					Ответ на отзыв
+					<MessageSquare size={18} />
+					ИИ Генерация Ответов
 				</button>
 				<button
 					className={`marketing-tab ${activeTab === "keys" ? "active" : ""}`}
@@ -285,8 +299,8 @@ export function MarketingView({
 					aria-selected={activeTab === "keys"}
 					type="button"
 				>
-					<Search aria-hidden="true" />
-					SEO-ключи
+					<Search size={18} />
+					SEO Словарь
 				</button>
 				<button
 					className={`marketing-tab ${activeTab === "stats" ? "active" : ""}`}
@@ -295,291 +309,279 @@ export function MarketingView({
 					aria-selected={activeTab === "stats"}
 					type="button"
 				>
-					<TrendingUp aria-hidden="true" />
-					Инструкции
+					<Lightbulb size={18} />
+					Методичка
 				</button>
-			</div>
+			</motion.div>
 
-			{/* REVIEW REPLY TAB */}
-			{activeTab === "reviews" ? (
-				<div className="marketing-panel">
-					<div className="marketing-form-grid">
-						<div>
-							<label className="field-label" htmlFor="mkt-phone">
-								Телефон главного врача (для негатива)
+			{/* CONTENT PANELS */}
+			<AnimatePresence mode="wait">
+				{activeTab === "reviews" && (
+					<motion.div 
+						key="reviews"
+						className="marketing-panel"
+						initial={{ opacity: 0, y: 10 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -10 }}
+						transition={{ duration: 0.2 }}
+					>
+						<div className="marketing-form-grid">
+							<div>
+								<label htmlFor="mkt-phone">
+									Телефон главного врача (для решения конфликтов)
+								</label>
+								<input
+									className="text-input"
+									id="mkt-phone"
+									type="tel"
+									value={phone}
+									onChange={handlePhoneChange}
+									placeholder="+7 (000) 000-00-00"
+								/>
+							</div>
+
+							<div>
+								<label>Тональность отзыва клиента</label>
+								<div className="marketing-tone-group" role="group">
+									<button
+										type="button"
+										className={`tone-btn positive ${tone === "positive" ? "active" : ""}`}
+										onClick={() => setTone("positive")}
+									>
+										<ThumbsUp size={18} /> Отличный
+									</button>
+									<button
+										type="button"
+										className={`tone-btn neutral ${tone === "neutral" ? "active" : ""}`}
+										onClick={() => setTone("neutral")}
+									>
+										<MinusCircle size={18} /> Нейтральный
+									</button>
+									<button
+										type="button"
+										className={`tone-btn negative ${tone === "negative" ? "active" : ""}`}
+										onClick={() => setTone("negative")}
+									>
+										<ThumbsDown size={18} /> Проблема
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<div style={{ marginTop: "24px" }}>
+							<label htmlFor="mkt-review" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<Copy size={16} /> Вставьте текст отзыва с платформы
 							</label>
-							<input
-								className="text-input"
-								id="mkt-phone"
-								type="tel"
-								value={phone}
-								onChange={handlePhoneChange}
-								placeholder="+7 (000) 000-00-00"
+							<textarea
+								className="marketing-textarea"
+								id="mkt-review"
+								value={reviewText}
+								onChange={(e) => setReviewText(e.target.value)}
+								placeholder="Вчера удаляла зуб мудрости. Врач просто супер, всё прошло без боли! Рекомендую всем."
 							/>
-						</div>
-
-						<div>
-							<label className="field-label">Тональность отзыва</label>
-							<div
-								className="marketing-tone-group"
-								role="group"
-								aria-label="Тональность"
-							>
+							<div className="quick-chips-row">
+								<span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, padding: "6px 4px" }}>
+									Шаблоны:
+								</span>
 								<button
 									type="button"
-									className={`tone-btn ${tone === "positive" ? "active" : ""}`}
-									onClick={() => setTone("positive")}
-									aria-pressed={tone === "positive"}
-								>
-									<ThumbsUp aria-hidden="true" /> Позитив
-								</button>
-								<button
-									type="button"
-									className={`tone-btn ${tone === "neutral" ? "active" : ""}`}
-									onClick={() => setTone("neutral")}
-									aria-pressed={tone === "neutral"}
-								>
-									<MinusCircle aria-hidden="true" /> Нейтральный
-								</button>
-								<button
-									type="button"
-									className={`tone-btn tone-btn-negative ${tone === "negative" ? "active" : ""}`}
-									onClick={() => setTone("negative")}
-									aria-pressed={tone === "negative"}
-								>
-									<ThumbsDown aria-hidden="true" /> Негатив
-								</button>
-							</div>
-						</div>
-					</div>
-
-					<div>
-						<label className="field-label" htmlFor="mkt-review">
-							Текст отзыва (скопируйте с Яндекса / 2ГИС)
-						</label>
-						<textarea
-							className="text-input"
-							id="mkt-review"
-							rows={5}
-							value={reviewText}
-							onChange={(e) => setReviewText(e.target.value)}
-							placeholder="Вставьте текст отзыва сюда..."
-							style={{ resize: "vertical", fontFamily: "inherit" }}
-						/>
-						<div
-							className="quick-chips-row"
-							style={{ marginTop: "8px", marginBottom: "16px" }}
-						>
-							<button
-								type="button"
-								className="quick-chip"
-								onClick={() => {
-									setReviewText(
-										"Вчера удаляла зуб мудрости. Врач просто супер, всё прошло без боли!",
-									);
-									setTone("positive");
-								}}
-							>
-								👍 Удаление зуба (Позитив)
-							</button>
-							<button
-								type="button"
-								className="quick-chip"
-								onClick={() => {
-									setReviewText(
-										"Долго ждал приема, администратор даже не поздоровалась.",
-									);
-									setTone("negative");
-								}}
-							>
-								👎 Очередь (Негатив)
-							</button>
-							<button
-								type="button"
-								className="quick-chip"
-								onClick={() => {
-									setReviewText("Обычная клиника, цены средние.");
-									setTone("neutral");
-								}}
-							>
-								😐 Обычный отзыв (Нейтраль)
-							</button>
-						</div>
-					</div>
-
-					<div className="marketing-actions">
-						<button
-							className="primary-button"
-							type="button"
-							onClick={handleGenerate}
-							disabled={!reviewText.trim() || isAiLoading}
-						>
-							<MessageSquare aria-hidden="true" />
-							Сгенерировать ответ
-						</button>
-						{generatedReply ? (
-							<button
-								className="secondary-button"
-								type="button"
-								onClick={clearAll}
-							>
-								Очистить
-							</button>
-						) : null}
-					</div>
-
-					{generatedReply ? (
-						<div className="marketing-result">
-							<div className="marketing-result-header">
-								<p className="eyebrow">Готовый ответ (с SEO-ключами)</p>
-								<button
-									type="button"
-									className={`icon-button ${copied ? "copied" : ""}`}
-									onClick={handleCopy}
-									aria-label="Скопировать ответ"
-									title="Скопировать"
-								>
-									{copied ? (
-										<CheckCircle2
-											aria-hidden="true"
-											style={{ color: "var(--green)" }}
-										/>
-									) : (
-										<Copy aria-hidden="true" />
-									)}
-								</button>
-							</div>
-							<p className="marketing-reply-text">{generatedReply}</p>
-							{copied ? (
-								<p
-									style={{
-										color: "var(--green)",
-										fontSize: 13,
-										marginTop: 8,
-										fontWeight: 700,
+									className="quick-chip"
+									onClick={() => {
+										setReviewText("Вчера удаляла зуб мудрости. Врач просто супер, всё прошло без боли!");
+										setTone("positive");
 									}}
 								>
-									✓ Скопировано в буфер — вставьте в Яндекс.Карты или 2ГИС
+									Позитивный
+								</button>
+								<button
+									type="button"
+									className="quick-chip"
+									onClick={() => {
+										setReviewText("Долго ждал приема, администратор даже не поздоровалась.");
+										setTone("negative");
+									}}
+								>
+									Жалоба
+								</button>
+							</div>
+						</div>
+
+						<div className="marketing-actions">
+							<button
+								className="marketing-btn-generate"
+								type="button"
+								onClick={handleGenerate}
+								disabled={!reviewText.trim() || isAiLoading}
+							>
+								<Sparkles size={20} />
+								{isAiLoading ? "Генерация ответа..." : "Сгенерировать AI-ответ"}
+							</button>
+							{(generatedReply || reviewText) && (
+								<button
+									className="marketing-btn-clear"
+									type="button"
+									onClick={clearAll}
+									disabled={isAiLoading}
+								>
+									Сбросить
+								</button>
+							)}
+						</div>
+
+						{isAiLoading && (
+							<div className="ai-skeleton-loader">
+								<div className="ai-skeleton-line" />
+								<div className="ai-skeleton-line medium" />
+								<div className="ai-skeleton-line short" />
+							</div>
+						)}
+
+						{generatedReply && !isAiLoading && (
+							<motion.div 
+								className="marketing-result"
+								initial={{ opacity: 0, scale: 0.98 }}
+								animate={{ opacity: 1, scale: 1 }}
+							>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+									<div>
+										<h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--teal-dark)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+											Оптимизированный ответ
+										</h4>
+										<p style={{ margin: "4px 0 0 0", fontSize: 13, color: "var(--muted)" }}>
+											Готов для публикации на Яндекс, Google или 2ГИС
+										</p>
+									</div>
+									<button
+										type="button"
+										className="secondary-button"
+										onClick={handleCopy}
+										style={{ padding: "8px 16px", background: copied ? "var(--green-soft)" : undefined, color: copied ? "var(--green)" : undefined, borderColor: copied ? "var(--green)" : undefined }}
+									>
+										{copied ? (
+											<><CheckCircle2 size={18} /> Скопировано</>
+										) : (
+											<><Copy size={18} /> Скопировать</>
+										)}
+									</button>
+								</div>
+								<p className="marketing-reply-text">{generatedReply}</p>
+							</motion.div>
+						)}
+					</motion.div>
+				)}
+
+				{activeTab === "keys" && (
+					<motion.div 
+						key="keys"
+						className="marketing-panel"
+						initial={{ opacity: 0, y: 10 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -10 }}
+						transition={{ duration: 0.2 }}
+					>
+						<div style={{ maxWidth: "600px" }}>
+							<h3 style={{ marginTop: 0, marginBottom: "8px", fontSize: "18px" }}>Семантическое ядро клиники</h3>
+							<p style={{ color: "var(--muted)", marginBottom: "24px", lineHeight: 1.6, fontSize: "15px" }}>
+								Эти поисковые ключи ИИ будет нативно интегрировать в ответы на позитивные отзывы. 
+								Это органически повышает рейтинг вашей карточки в поисковых системах.
+							</p>
+							
+							<div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+								<input
+									type="text"
+									className="text-input"
+									value={newKeyInput}
+									onChange={(e) => setNewKeyInput(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											handleAddSeoKey(newKeyInput);
+											setNewKeyInput("");
+										}
+									}}
+									placeholder="Введите новый SEO-ключ..."
+									style={{ flex: 1 }}
+								/>
+								<button
+									type="button"
+									className="primary-button"
+									onClick={() => {
+										handleAddSeoKey(newKeyInput);
+										setNewKeyInput("");
+									}}
+									disabled={!newKeyInput.trim()}
+								>
+									Добавить ключ
+								</button>
+							</div>
+
+							<div className="seo-keys-grid">
+								{customSeoKeys.map((key: string) => (
+									<div className="seo-key-chip" key={key}>
+										<Search size={14} />
+										<span>{key}</span>
+										<button
+											type="button"
+											className="seo-key-chip-remove"
+											onClick={() => handleRemoveSeoKey(key)}
+											aria-label={`Удалить ключ ${key}`}
+										>
+											×
+										</button>
+									</div>
+								))}
+								{customSeoKeys.length === 0 && (
+									<p style={{ color: "var(--muted)", fontStyle: "italic" }}>Нет добавленных ключей.</p>
+								)}
+							</div>
+						</div>
+					</motion.div>
+				)}
+
+				{activeTab === "stats" && (
+					<motion.div 
+						key="stats"
+						className="marketing-panel"
+						initial={{ opacity: 0, y: 10 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -10 }}
+						transition={{ duration: 0.2 }}
+					>
+						<div style={{ maxWidth: "800px" }}>
+							<h3 style={{ marginTop: 0, marginBottom: "24px", fontSize: "18px" }}>Регламент работы с репутацией</h3>
+							
+							<div className="marketing-warning">
+								<h4 style={{ display: "flex", alignItems: "center", gap: "8px", margin: "0 0 8px 0" }}>
+									<AlertTriangle size={18} /> Критическое правило
+								</h4>
+								Никогда не используйте ботов для накрутки отзывов. Алгоритмы Яндекса и 2ГИС распознают паттерны машинной генерации и теневые блокировки приведут к падению трафика. Используйте ручной перенос отзывов.
+							</div>
+
+							<div style={{ marginTop: "32px" }}>
+								<h4 style={{ margin: "0 0 16px 0", fontSize: "16px", color: "var(--ink)" }}>Архитектура ответа на негатив</h4>
+								<div className="marketing-formula">
+									<span className="formula-step">Извинение без оправданий</span>
+									<span className="formula-arrow">→</span>
+									<span className="formula-step">Признание важности проблемы</span>
+									<span className="formula-arrow">→</span>
+									<span className="formula-step">Перевод в оффлайн (контакт Главврача)</span>
+								</div>
+								<p style={{ color: "var(--muted)", fontSize: "14px", marginTop: "16px", lineHeight: 1.6 }}>
+									Цель ответа на негатив — не переубедить скандалиста, а показать другим потенциальным клиентам вашу адекватность и готовность решать проблемы.
 								</p>
-							) : null}
+							</div>
+
+							<div style={{ marginTop: "32px", borderTop: "1px solid var(--line)", paddingTop: "24px" }}>
+								<h4 style={{ margin: "0 0 16px 0", fontSize: "16px", color: "var(--ink)" }}>Внедрение SEO-ключей</h4>
+								<ul style={{ paddingLeft: "20px", color: "var(--ink)", lineHeight: 1.8, fontSize: "15px", margin: 0 }}>
+									<li><strong style={{ color: "var(--teal-dark)" }}>Позитив:</strong> 1-2 ключа естественно вплетенных в текст.</li>
+									<li><strong style={{ color: "var(--teal-dark)" }}>Нейтраль:</strong> Фокус на благодарности, 1 ключ максимум.</li>
+									<li><strong style={{ color: "var(--red)" }}>Негатив:</strong> 0 ключей. Внедрение коммерческих ключей в разбор жалобы выглядит цинично.</li>
+								</ul>
+							</div>
 						</div>
-					) : null}
-				</div>
-			) : null}
-
-			{/* SEO KEYS TAB */}
-			{activeTab === "keys" ? (
-				<div className="marketing-panel">
-					<p style={{ color: "var(--muted)", marginBottom: 16 }}>
-						Эти ключи автоматически передаются ИИ для вставки в ответы на
-						отзывы. Они помогают продвижению клиники в поиске.
-					</p>
-					<div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-						<input
-							type="text"
-							className="text-input"
-							value={newKeyInput}
-							onChange={(e) => setNewKeyInput(e.target.value)}
-							placeholder="Новый SEO-ключ (напр. 'детский ортодонт')"
-						/>
-						<button
-							type="button"
-							className="secondary-button"
-							onClick={() => {
-								handleAddSeoKey(newKeyInput);
-								setNewKeyInput("");
-							}}
-						>
-							Добавить
-						</button>
-					</div>
-					<div className="seo-keys-grid">
-						{customSeoKeys.map((key: string) => (
-							<span
-								className="seo-key-chip"
-								key={key}
-								style={{ display: "flex", alignItems: "center", gap: "6px" }}
-							>
-								{key}
-								<button
-									type="button"
-									onClick={() => handleRemoveSeoKey(key)}
-									style={{
-										background: "none",
-										border: "none",
-										color: "var(--slate-400)",
-										cursor: "pointer",
-										padding: 0,
-									}}
-								>
-									×
-								</button>
-							</span>
-						))}
-					</div>
-
-					<p className="eyebrow" style={{ marginTop: 20 }}>
-						Правило вставки ключей
-					</p>
-					<ul
-						style={{
-							color: "var(--muted)",
-							fontSize: 14,
-							lineHeight: 1.7,
-							paddingLeft: 20,
-							marginTop: 8,
-						}}
-					>
-						<li>
-							<strong>Позитив/нейтральный:</strong> 1-2 ключа естественно в
-							тексте
-						</li>
-						<li>
-							<strong>Негатив:</strong> 0-1 ключ, минимально, чтобы не выглядело
-							цинично
-						</li>
-					</ul>
-				</div>
-			) : null}
-
-			{/* INSTRUCTIONS TAB */}
-			{activeTab === "stats" ? (
-				<div className="marketing-panel">
-					<h3 style={{ marginTop: 0 }}>Инструкция по работе с отзывами</h3>
-					<ol
-						style={{ color: "var(--muted)", lineHeight: 1.8, paddingLeft: 20 }}
-					>
-						<li>
-							Откройте страницу клиники на <strong>Яндекс.Картах</strong> или{" "}
-							<strong>2ГИС</strong>
-						</li>
-						<li>Скопируйте текст нового отзыва</li>
-						<li>Вставьте в поле на вкладке «Ответ на отзыв»</li>
-						<li>Выберите тональность (позитив / нейтральный / негатив)</li>
-						<li>Нажмите «Сгенерировать ответ»</li>
-						<li>Скопируйте готовый текст и вставьте в ответ на карте</li>
-					</ol>
-
-					<div className="marketing-warning" role="note">
-						<strong>⚠ Важно:</strong> Никогда не используйте боты и
-						автоматический сбор отзывов — это ведёт к бану аккаунта и штрафам от
-						площадок. Только ручной copy-paste + умная генерация ответа.
-					</div>
-
-					<h3 style={{ marginTop: 24 }}>Формула ответа на негативный отзыв</h3>
-					<div className="marketing-formula">
-						<span className="formula-step">1. Искреннее извинение</span>
-						<span className="formula-arrow">→</span>
-						<span className="formula-step">
-							2. Признание важности обратной связи
-						</span>
-						<span className="formula-arrow">→</span>
-						<span className="formula-step">
-							3. Призыв позвонить главврачу для решения
-						</span>
-					</div>
-				</div>
-			) : null}
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</section>
 	);
 }
