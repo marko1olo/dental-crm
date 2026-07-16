@@ -226,7 +226,8 @@ interface AppStore {
 }
 
 export const useAppStore = create<AppStore>((set) => ({
-	reset: () =>
+	reset: () => {
+
 		set({
 			isOmnibarOpen: false,
 			uiPreferencesHydrated: false,
@@ -349,16 +350,18 @@ export const useAppStore = create<AppStore>((set) => ({
 			isTelegramChatLinksLoadingMore: false,
 			error: null,
 			uiPreferencesSyncError: null,
-		}),
+		});
+	},
 	isOmnibarOpen: false,
 	setOmnibarOpen: (val) => set({ isOmnibarOpen: val }),
 	uiPreferencesHydrated: false,
 	setUiPreferencesHydrated: (val) => set({ uiPreferencesHydrated: val }),
 	dashboard: null,
 	setDashboard: (val) =>
-		set((state) => ({
-			dashboard: typeof val === "function" ? val(state.dashboard) : val,
-		})),
+		set((state) => {
+			const nextVal = typeof val === "function" ? val(state.dashboard) : val;
+			return { dashboard: nextVal };
+		}),
 	accessUnlockRequired: false,
 	setAccessUnlockRequired: (val) => set({ accessUnlockRequired: val }),
 	accessUnlockMessage: "",
@@ -610,3 +613,7 @@ export const useAppStore = create<AppStore>((set) => ({
 	uiPreferencesSyncError: null,
 	setUiPreferencesSyncError: (val) => set({ uiPreferencesSyncError: val }),
 }));
+
+if (typeof window !== "undefined") {
+	(window as any).__useAppStore = useAppStore;
+}

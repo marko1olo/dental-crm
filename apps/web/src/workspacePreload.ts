@@ -10,6 +10,14 @@ const workspaceViewPreloaders: Partial<
 	communications: () => import("./CommunicationsView"),
 	settings: () => import("./SettingsView"),
 	marketing: () => import("./MarketingView"),
+	shift: () => import("./ShiftView"),
+	leads: () => import("./components/leads/LeadsKanbanView"),
+	imaging: () => import("./ImagingView"),
+	visit: () => import("./VisitView"),
+	analytics: () => import("./pages/AnalyticsDashboardView"),
+	inventory: () => import("./components/InventoryView"),
+	scanner: () => import("./ScannerView"),
+	inbox: () => import("./components/OmnichannelInboxView"),
 };
 
 const idleWorkspacePreloadPlan: Partial<Record<AppView, AppView[]>> = {
@@ -74,7 +82,9 @@ export function scheduleIdleWorkspacePreload(
 	if (!preloadViews.length) return undefined;
 	const idleWindow = window as IdlePreloadWindow;
 	const preloadLikelyRoutes = () => {
-		preloadViews.forEach((view) => preloadWorkspaceView(view, "idle"));
+		preloadViews.forEach((view) => {
+			preloadWorkspaceView(view, "idle");
+		});
 	};
 	if (idleWindow.requestIdleCallback) {
 		const idleHandle = idleWindow.requestIdleCallback(preloadLikelyRoutes, {

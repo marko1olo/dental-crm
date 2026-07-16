@@ -298,7 +298,7 @@ export const organizations = pgTable("organizations", {
 	signatoryTitle: text("signatory_title"),
 	specializations: jsonb("specializations"),
 	workingHours: jsonb("working_hours"),
-	currency: text("currency").default("в‚Ѕ"),
+	currency: text("currency").default("₽"),
 	themeColor: text("theme_color").default("teal"),
 	logoUrl: text("logo_url"),
 	stampUrl: text("stamp_url"),
@@ -647,41 +647,56 @@ export const clinicalRules = pgTable("clinical_rules", {
 		.defaultNow(),
 });
 
-export const payments = pgTable("payments", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	organizationId: uuid("organization_id")
-		.notNull()
-		.references(() => organizations.id),
-	patientId: uuid("patient_id")
-		.notNull()
-		.references(() => patients.id),
-	visitId: uuid("visit_id").references(() => visits.id),
-	documentId: uuid("document_id"),
-	clientMutationId: text("client_mutation_id"),
-	amountRub: integer("amount_rub").notNull(),
-	method: paymentMethod("method").notNull().default("card"),
-	status: paymentStatus("status").notNull().default("paid"),
-	paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
-	fiscalReceiptNumber: text("fiscal_receipt_number"),
-	fiscalReceiptIssuedAt: text("fiscal_receipt_issued_at"),
-	fiscalReceiptUrl: text("fiscal_receipt_url"),
-	fiscalReceipt: jsonb("fiscal_receipt").$type<FiscalReceiptDetails | null>(),
-	payerFullName: text("payer_full_name"),
-	payerInn: text("payer_inn"),
-	payerBirthDate: text("payer_birth_date"),
-	payerIdentityDocument: text("payer_identity_document"),
-	payerRelationship: text("payer_relationship"),
-	taxDeductionCode: text("tax_deduction_code"),
-	note: text("note"),
-	isSynced: boolean("is_synced").notNull().default(false),
-	version: integer("version").notNull().default(1),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
+export const payments = pgTable(
+	"payments",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id),
+		visitId: uuid("visit_id").references(() => visits.id),
+		documentId: uuid("document_id"),
+		clientMutationId: text("client_mutation_id"),
+		amountRub: integer("amount_rub").notNull(),
+		method: paymentMethod("method").notNull().default("card"),
+		status: paymentStatus("status").notNull().default("paid"),
+		paidAt: timestamp("paid_at", { withTimezone: true }).notNull().defaultNow(),
+		fiscalReceiptNumber: text("fiscal_receipt_number"),
+		fiscalReceiptIssuedAt: text("fiscal_receipt_issued_at"),
+		fiscalReceiptUrl: text("fiscal_receipt_url"),
+		fiscalReceipt: jsonb("fiscal_receipt").$type<FiscalReceiptDetails | null>(),
+		payerFullName: text("payer_full_name"),
+		payerInn: text("payer_inn"),
+		payerBirthDate: text("payer_birth_date"),
+		payerIdentityDocument: text("payer_identity_document"),
+		payerRelationship: text("payer_relationship"),
+		taxDeductionCode: text("tax_deduction_code"),
+		note: text("note"),
+		isSynced: boolean("is_synced").notNull().default(false),
+		version: integer("version").notNull().default(1),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => {
+		return {
+			// Enforce payment idempotency at the DB level so concurrent retries with the
+			// same clientMutationId cannot double-insert (the app-level check in
+			// billing.ts has an await gap between lookup and insert). NULL mutation ids
+			// stay distinct under Postgres unique semantics, so legacy/manual payments
+			// without an id are unaffected.
+			paymentsOrgClientMutationUnique: unique(
+				"payments_org_client_mutation_unique",
+			).on(table.organizationId, table.clientMutationId),
+		};
+	},
+);
 
 export const generatedDocuments = pgTable(
 	"generated_documents",
@@ -711,6 +726,7 @@ export const generatedDocuments = pgTable(
 			"signature_attestation",
 		).$type<DocumentIssueSignatureAttestation | null>(),
 		signatureSvg: text("signature_svg"),
+		cryptoSignaturePkcs7: text("crypto_signature_pkcs7"),
 		voidAttestation: jsonb(
 			"void_attestation",
 		).$type<DocumentVoidAttestation | null>(),
@@ -2078,4 +2094,97 @@ export const crmLeads = pgTable("crm_leads", {
 	status: crmLeadStatus("status").notNull().default("new"),
 	expectedRevenue: numeric("expected_revenue", { precision: 12, scale: 2 }),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ──────────────────────────────────────────────────────────────────
+// MESSENGER CHANNEL: WhatsApp + MAX bot configuration tables
+// ──────────────────────────────────────────────────────────────────
+
+export const denteWhatsappBotConfigs = pgTable(
+	"dente_whatsapp_bot_configs",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		// Meta Business Cloud API phone number identifier
+		phoneNumberId: text("phone_number_id"),
+		// SHA-256 masked secret ref — raw token never stored
+		tokenSecretRef: text("token_secret_ref"),
+		// Verify token for Meta webhook handshake
+		webhookVerifyToken: text("webhook_verify_token"),
+		// JSON array of enabled feature strings
+		enabledFeaturesJson: text("enabled_features_json").notNull().default("[]"),
+		// JSON: { defaultUserId: string|null, rules: [{intent, assignToUserId}] }
+		staffRoutingJson: text("staff_routing_json")
+			.notNull()
+			.default('{"defaultUserId":null,"rules":[]}'),
+		isActive: boolean("is_active").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		denteWhatsappBotConfigOrgUnique: unique(
+			"dente_whatsapp_bot_configs_org_unique",
+		).on(table.organizationId),
+	}),
+);
+
+export const denteMaxBotConfigs = pgTable(
+	"dente_max_bot_configs",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		// MAX bot identifier from business.max.ru
+		botId: text("bot_id"),
+		// SHA-256 masked secret ref — raw API token never stored
+		tokenSecretRef: text("token_secret_ref"),
+		// Registered webhook URL at MAX platform
+		webhookUrl: text("webhook_url"),
+		// JSON array of enabled feature strings
+		enabledFeaturesJson: text("enabled_features_json").notNull().default("[]"),
+		// JSON: { defaultUserId: string|null, rules: [{intent, assignToUserId}] }
+		staffRoutingJson: text("staff_routing_json")
+			.notNull()
+			.default('{"defaultUserId":null,"rules":[]}'),
+		isActive: boolean("is_active").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		denteMaxBotConfigOrgUnique: unique("dente_max_bot_configs_org_unique").on(
+			table.organizationId,
+		),
+	}),
+);
+
+// Unified inbound event log for all messenger channels
+export const messengerInboundEvents = pgTable("messenger_inbound_events", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id")
+		.notNull()
+		.references(() => organizations.id),
+	// 'telegram' | 'whatsapp' | 'max'
+	channel: text("channel").notNull(),
+	patientId: uuid("patient_id").references(() => patients.id),
+	// External chat ID from the messenger platform
+	externalChatId: text("external_chat_id").notNull(),
+	messageText: text("message_text"),
+	// 'message' | 'callback' | 'voice' | 'link_request' | 'status'
+	eventKind: text("event_kind").notNull(),
+	rawPayload: jsonb("raw_payload"),
+	processedAt: timestamp("processed_at", { withTimezone: true }),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
 });

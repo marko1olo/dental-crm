@@ -53,4 +53,67 @@ export const telephonyRoutes: FastifyPluginAsync = async (server: FastifyInstanc
     // Возвращаем 200 OK чтобы АТС поняла, что хук принят
     return { success: true };
   });
+
+  // Webhook для SMS (Android App SMS Forwarder)
+  server.post<{
+    Params: { organizationId: string };
+    Body: {
+      from: string;
+      message: string;
+    };
+  }>("/:organizationId/sms/webhook", async (request, reply) => {
+    const { organizationId } = request.params;
+    const { from, message } = request.body;
+
+    if (!from || !message) {
+      return reply.status(400).send({ error: "Missing 'from' or 'message'" });
+    }
+
+    const rawPhone = from.replace(/\D/g, "");
+    let patient: any = null;
+
+    if (rawPhone.length >= 10) {
+      const phoneSuffix = rawPhone.slice(-10);
+      const searchResult = await db.select()
+        .from(patients)
+        .where(ilike(patients.phone, `%${phoneSuffix}%`))
+        .limit(1);
+      patient = searchResult[0] || null;
+    }
+
+    if (!patient) {
+      // Создаем лида, если пришла SMS с неизвестного номера
+      const insertedPatients = (await db.insert(patients).values({
+        organizationId,
+        fullName: `SMS User ${from}`,
+        phone: from,
+        notes: `Лид из SMS`,
+        status: "active"
+      }).returning()) as any;
+      patient = insertedPatients[0];
+    }
+
+    // Сохраняем входящее SMS в Inbox
+    const { communicationEvents } = await import("../db/schema.js");
+    await db.insert(communicationEvents).values({
+      organizationId,
+      patientId: patient.id,
+      channel: "sms",
+      direction: "inbound",
+      status: "delivered",
+      message,
+    });
+
+    // Броадкастим в Omnichannel Inbox
+    wsBroker.broadcastToOrganization(organizationId, {
+      type: "INBOX_NEW_MESSAGE",
+      payload: {
+        channel: "sms",
+        patientId: patient.id,
+        text: message
+      }
+    });
+
+    return { success: true };
+  });
 };

@@ -6,6 +6,7 @@ import fastifyMultipart from "@fastify/multipart";
 import fastifyWebsocket from "@fastify/websocket";
 import Fastify from "fastify";
 import { ZodError } from "zod";
+import { db } from "./db/client.js";
 import { loadAdditionalServerEnv } from "./env/loadServerEnv.js";
 import { registerAiRoutes } from "./routes/ai.js";
 import { registerAnalyticsRoutes } from "./routes/analytics.js";
@@ -27,10 +28,13 @@ import { registerImagingRoutes } from "./routes/imaging.js";
 import { registerImagingPlanningRoutes } from "./routes/imaging_planning.js";
 import { registerImportRoutes } from "./routes/imports.js";
 import { registerIngestionRoutes } from "./routes/ingestion.js";
+import { inventoryRoutes } from "./routes/inventory.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
+import { registerMaxRoutes } from "./routes/max.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import { registerPatientRoutes } from "./routes/patients.js";
+import { portalRoutes } from "./routes/portal.js";
 import { registerPricelistRoutes } from "./routes/pricelist.js";
 import { registerPublicBookingRoutes } from "./routes/publicBooking.js";
 import { registerScheduleRoutes } from "./routes/schedule.js";
@@ -44,11 +48,12 @@ import {
 	registerTelegramWebhookRoutes,
 	startDenteTelegramOutboxDueWorker,
 } from "./routes/telegram.js";
+import { telephonyRoutes } from "./routes/telephony.js";
 import registerTemplateRoutes from "./routes/templates.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
-import { telephonyRoutes } from "./routes/telephony.js";
-import { portalRoutes } from "./routes/portal.js";
 import { registerVisitRoutes } from "./routes/visits.js";
+import { registerVkRoutes } from "./routes/vk.js";
+import { registerWhatsappRoutes } from "./routes/whatsapp.js";
 import { workspaceProfileRoutes } from "./routes/workspaceProfile.js";
 import { registerXrayRoutes } from "./routes/xray.js";
 import {
@@ -57,7 +62,7 @@ import {
 } from "./services/backupWorker.js";
 import { startBiAnalyticsWorker } from "./services/biAnalyticsWorker.js";
 import { startNotificationWorker } from "./services/notificationWorker.js";
-import { startSyncDaemon, stopSyncDaemon } from "./services/syncDaemon.js";
+import { startSyncEngine, stopSyncEngine } from "./services/syncEngine.js";
 import { wsBroker } from "./services/websocketBroker.js";
 import { getProxyAgent } from "./speech/keyPool.js";
 import { ensureSshTunnel } from "./speech/tunnel.js";
@@ -241,15 +246,18 @@ export async function createDenteApiApp(
 	);
 
 	app.setErrorHandler((error, _request, reply) => {
-		import("node:fs").then((m) =>
-			m.appendFileSync(
-				"C:/Clinic_MVP/error.log",
-				((error as any)?.stack || (error as any)?.message || String(error)) +
-					"\nCAUSE: " +
-					((error as any)?.cause || "") +
-					"\n",
-			),
-		);
+		const logPath = process.env.ERROR_LOG_PATH;
+		if (logPath) {
+			import("node:fs").then((m) =>
+				m.appendFileSync(
+					logPath,
+					((error as any)?.stack || (error as any)?.message || String(error)) +
+						"\nCAUSE: " +
+						((error as any)?.cause || "") +
+						"\n",
+				),
+			);
+		}
 		if (isZodValidationError(error)) {
 			reply.status(400).send({
 				error: "ValidationError",
@@ -293,6 +301,7 @@ export async function createDenteApiApp(
 	await registerAdvancedBillingRoutes(app);
 	await app.register(telephonyRoutes, { prefix: "/api/telephony" });
 	await app.register(portalRoutes, { prefix: "/api/portal" });
+	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
 	await registerClinicalRoutes(app);
 	await registerCommunicationRoutes(app);
 	await registerDashboardRoutes(app);
@@ -306,12 +315,17 @@ export async function createDenteApiApp(
 	await registerPricelistRoutes(app);
 	await registerScheduleRoutes(app);
 	await registerSettingsRoutes(app);
-	await registerPublicBookingRoutes(app);
+	await app.register(registerPublicBookingRoutes, {
+		prefix: "/api/public/booking",
+	});
+	await registerVkRoutes(app);
 	await registerSpeechRoutes(app);
 	await registerSmartImportRoutes(app);
 	await registerSystemRoutes(app);
 	await registerTelegramRoutes(app);
 	await registerTelegramWebhookRoutes(app);
+	await registerWhatsappRoutes(app);
+	await registerMaxRoutes(app);
 	await registerVisitRoutes(app);
 	await registerLeadsRoutes(app);
 	await registerSterilizationRoutes(app);
@@ -331,12 +345,12 @@ export async function createDenteApiApp(
 	if (options.startTelegramWorker !== false) {
 		// const telegramOutboxDueWorker = startDenteTelegramOutboxDueWorker({ logger: app.log });
 		startBiAnalyticsWorker();
-		startSyncDaemon();
+		startSyncEngine(db.$client as any); // assuming db exposes pglite
 		startBackupDaemon();
 		app.addHook("onClose", async () => {
 			// telegramOutboxDueWorker.stop();
 			// clearInterval(recallWorkerTimer);
-			stopSyncDaemon();
+			stopSyncEngine();
 			stopBackupDaemon();
 		});
 	}

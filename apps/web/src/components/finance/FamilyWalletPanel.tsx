@@ -1,6 +1,6 @@
 import { Activity, ArrowRight, ShieldCheck, Users, Wallet } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useCountUp } from "../../hooks/useCountUp";
 import { useWebsocket } from "../../hooks/useWebsocket";
@@ -35,7 +35,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 	const [isPaying, setIsPaying] = useState(false);
 	const [amount, setAmount] = useState<number>(remainingDebtRub || 0);
 
-	const fetchFamily = async () => {
+	const fetchFamily = useCallback(async () => {
 		try {
 			const res = await fetch(`/api/finance/family/patient/${patientId}`, {
 				headers: denteAdminSecretRequestHeaders(),
@@ -52,23 +52,30 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [patientId]);
 
 	useEffect(() => {
 		if (patientId) fetchFamily();
-	}, [patientId]);
+	}, [patientId, fetchFamily]);
 
 	// Sync balance with WS
-	const { lastMessage } = useWebsocket("ws://localhost:4100/ws");
+	const wsUrl = (() => {
+		const wsHost = (import.meta as any).env.VITE_WS_URL;
+		if (wsHost) return wsHost;
+		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+		return `${protocol}//${window.location.host}/api/ws/schedule`;
+	})();
+	const { lastMessage } = useWebsocket(wsUrl);
 	useEffect(() => {
-		if (lastMessage?.type === "FAMILY_BALANCE_UPDATED" && family) {
-			if (lastMessage.payload.familyGroupId === family.id) {
-				setFamily((prev) =>
-					prev ? { ...prev, balance: lastMessage.payload.balance } : null,
-				);
-			}
+		if (lastMessage?.type === "FAMILY_BALANCE_UPDATED" && lastMessage.payload) {
+			setFamily((prev) => {
+				if (prev && lastMessage.payload.familyGroupId === prev.id) {
+					return { ...prev, balance: lastMessage.payload.balance };
+				}
+				return prev;
+			});
 		}
-	}, [lastMessage, family?.id]);
+	}, [lastMessage]);
 
 	const balanceVal = Number(family?.balance || 0);
 	const animatedBalance = useCountUp(balanceVal, 1000);
@@ -156,10 +163,14 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 
 			<div className="mt-6 flex flex-col sm:flex-row gap-4">
 				<div className="flex-1 space-y-2">
-					<label className="text-xs uppercase tracking-wider dark:text-zinc-400 text-zinc-500 font-semibold">
+					<label
+						htmlFor="family-withdraw-amount"
+						className="text-xs uppercase tracking-wider dark:text-zinc-400 text-zinc-500 font-semibold"
+					>
 						Сумма списания (₽)
 					</label>
 					<input
+						id="family-withdraw-amount"
 						type="number"
 						className="w-full dark:bg-zinc-900 bg-zinc-50 border dark:border-zinc-500 border-zinc-300 rounded-lg p-3 dark:text-white text-zinc-900 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all"
 						value={amount || ""}
@@ -171,6 +182,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 				</div>
 				<div className="flex items-end">
 					<button
+						type="button"
 						onClick={handlePay}
 						disabled={isPaying || balanceVal < amount || amount <= 0}
 						className="h-[46px] px-6 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg font-medium shadow-lg transition-colors flex items-center gap-2"

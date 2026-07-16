@@ -10,6 +10,18 @@ function useSampleBillingState(): boolean {
 	);
 }
 
+// PostgreSQL / PGlite unique-constraint violation SQLSTATE.
+const PG_UNIQUE_VIOLATION = "23505";
+
+function isUniqueViolation(error: unknown): boolean {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		"code" in error &&
+		(error as { code?: unknown }).code === PG_UNIQUE_VIOLATION
+	);
+}
+
 export async function getDefaultOrganizationId(): Promise<string | null> {
 	const [org] = await db.select().from(schema.organizations).limit(1);
 	return org?.id || null;
@@ -146,30 +158,46 @@ export async function createPaymentInDb(
 		const payment = createPayment(input);
 		return { ...payment, organizationId };
 	}
-	const [newPayment] = await db
-		.insert(schema.payments)
-		.values({
-			organizationId,
-			patientId: input.patientId,
-			visitId: input.visitId || null,
-			documentId: input.documentId || null,
-			amountRub: input.amountRub,
-			method: input.method,
-			fiscalReceiptNumber: input.fiscalReceiptNumber || null,
-			fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
-			fiscalReceiptUrl: input.fiscalReceiptUrl || null,
-			fiscalReceipt: input.fiscalReceipt || null,
-			clientMutationId: input.clientMutationId || null,
-			payerFullName: input.payerFullName || null,
-			payerInn: input.payerInn || null,
-			payerBirthDate: input.payerBirthDate || null,
-			payerIdentityDocument: input.payerIdentityDocument || null,
-			payerRelationship: input.payerRelationship || null,
-			taxDeductionCode: input.taxDeductionCode || null,
-			note: input.note || null,
-			status: "paid",
-		})
-		.returning();
+	let newPayment: typeof schema.payments.$inferSelect | undefined;
+	try {
+		[newPayment] = await db
+			.insert(schema.payments)
+			.values({
+				organizationId,
+				patientId: input.patientId,
+				visitId: input.visitId || null,
+				documentId: input.documentId || null,
+				amountRub: input.amountRub,
+				method: input.method,
+				fiscalReceiptNumber: input.fiscalReceiptNumber || null,
+				fiscalReceiptIssuedAt: input.fiscalReceiptIssuedAt || null,
+				fiscalReceiptUrl: input.fiscalReceiptUrl || null,
+				fiscalReceipt: input.fiscalReceipt || null,
+				clientMutationId: input.clientMutationId || null,
+				payerFullName: input.payerFullName || null,
+				payerInn: input.payerInn || null,
+				payerBirthDate: input.payerBirthDate || null,
+				payerIdentityDocument: input.payerIdentityDocument || null,
+				payerRelationship: input.payerRelationship || null,
+				taxDeductionCode: input.taxDeductionCode || null,
+				note: input.note || null,
+				status: "paid",
+			})
+			.returning();
+	} catch (error) {
+		// Concurrent request with the same clientMutationId won the race and the
+		// (organization_id, client_mutation_id) unique index rejected this insert.
+		// Resolve idempotently by returning the row the winner already committed
+		// instead of surfacing a 500 (double-billing guard, see BILLING_AND_FINANCE.md).
+		if (isUniqueViolation(error) && input.clientMutationId) {
+			const existing = await findPaymentByClientMutationIdInDb(
+				organizationId,
+				input.clientMutationId,
+			);
+			if (existing) return existing;
+		}
+		throw error;
+	}
 
 	if (!newPayment) {
 		throw new Error("Failed to create payment");

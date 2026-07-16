@@ -212,6 +212,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
 			const orgId = clinicPayload.organizationId as string;
 
+
 			const [user] = await db
 				.select()
 				.from(users)
@@ -223,6 +224,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 					),
 				)
 				.limit(1);
+
 
 			if (!user) {
 				await new Promise((r) => setTimeout(r, 250));
@@ -899,12 +901,19 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 				});
 			}
 
-			// Pick the first active user and their clinic
-			const [user] = await db
+			// Try to pick the admin user first for full access, fallback to first active user
+			let [user] = await db
 				.select()
 				.from(users)
-				.where(eq(users.isActive, true))
+				.where(and(eq(users.isActive, true), eq(users.email, "admin@example.com")))
 				.limit(1);
+			if (!user) {
+				[user] = await db
+					.select()
+					.from(users)
+					.where(eq(users.isActive, true))
+					.limit(1);
+			}
 			if (!user) {
 				return reply.code(500).send({
 					error: "NoUsers",

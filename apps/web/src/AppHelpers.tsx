@@ -8090,6 +8090,7 @@ export const settingsTabs = [
 	{ id: "staff", title: "Сотрудники" },
 	{ id: "access", title: "Доступы" },
 	{ id: "telegram", title: "ТГ-бот" },
+	{ id: "messengers", title: "Мессенджеры" },
 	{ id: "protocols", title: "Протоколы" },
 	{ id: "rules", title: "Правила" },
 	{ id: "prices", title: "Прайс" },

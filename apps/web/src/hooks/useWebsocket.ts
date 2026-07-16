@@ -18,7 +18,6 @@ export function useWebsocket(url: string) {
 
 		ws.current.onopen = () => {
 			setIsConnected(true);
-			console.log(`[WS] Connected to ${url}`);
 		};
 
 		ws.current.onmessage = (event) => {
@@ -26,19 +25,17 @@ export function useWebsocket(url: string) {
 			try {
 				const data: WebSocketMessage = JSON.parse(event.data);
 				setLastMessage(data);
-			} catch (e) {
-				console.warn("[WS] Failed to parse message:", event.data);
+			} catch {
+				// Silently ignore non-JSON frames
 			}
 		};
 
 		ws.current.onclose = () => {
 			setIsConnected(false);
-			console.log(`[WS] Disconnected from ${url}. Reconnecting in 3s...`);
 			reconnectTimeout.current = setTimeout(connect, 3000);
 		};
 
-		ws.current.onerror = (error) => {
-			console.error("[WS] Error:", error);
+		ws.current.onerror = () => {
 			ws.current?.close();
 		};
 	}, [url]);
@@ -65,9 +62,8 @@ export function useWebsocket(url: string) {
 	const sendMessage = useCallback((type: string, payload: any) => {
 		if (ws.current?.readyState === WebSocket.OPEN) {
 			ws.current.send(JSON.stringify({ type, payload }));
-		} else {
-			console.warn("[WS] Cannot send message, socket not open");
 		}
+		// Silently drop message if socket not open — callers should handle reconnect state via isConnected
 	}, []);
 
 	return { isConnected, lastMessage, sendMessage };

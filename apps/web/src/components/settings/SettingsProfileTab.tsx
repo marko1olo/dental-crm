@@ -11,6 +11,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useSettingsStore } from "../../store/settingsStore";
 import { useThemeStore } from "../../store/themeStore";
+import { useUiStore } from "../../store/uiStore";
 import { showToast } from "../GlobalToast";
 
 interface UserProfile {
@@ -160,20 +161,8 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 		return (
 			<div className="settings-tab-pane">
 				<div className="settings-empty-state">
-					<div
-						className="spinner"
-						style={{
-							width: 32,
-							height: 32,
-							border: "2px solid rgba(255,255,255,0.1)",
-							borderTopColor: "#818cf8",
-							borderRadius: "50%",
-							animation: "spin 0.8s linear infinite",
-						}}
-					/>
-					<p style={{ color: "var(--slate-400, #94a3b8)", marginTop: 12 }}>
-						Загрузка профиля...
-					</p>
+					<div className="spinner spinner--sm" />
+					<p className="settings-empty-state__hint">Загрузка профиля...</p>
 				</div>
 			</div>
 		);
@@ -183,8 +172,8 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 		return (
 			<div className="settings-tab-pane">
 				<div className="settings-empty-state">
-					<AlertTriangle size={32} color="#f87171" />
-					<p style={{ color: "#f87171", marginTop: 8 }}>
+					<AlertTriangle size={32} className="settings-empty-state__error-icon" />
+					<p className="settings-empty-state__error-text">
 						Профиль не найден. Войдите через PIN или перезайдите в систему.
 					</p>
 				</div>
@@ -192,13 +181,15 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 		);
 	}
 
-	const strengthClass = newPassword
-		? strength.score === 1
-			? "weak"
-			: strength.score === 2
-				? "medium"
-				: "strong"
-		: "";
+	// Strength class for the password bar segments
+	const strengthClass =
+		newPassword
+			? strength.score === 1
+				? "weak"
+				: strength.score === 2
+					? "medium"
+					: "strong"
+			: "";
 
 	return (
 		<div className="settings-tab-pane animate-fade-in-up">
@@ -207,14 +198,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 				<p>Личные данные, пароль и PIN-код для входа в систему.</p>
 			</div>
 
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					gap: "2rem",
-					maxWidth: "600px",
-				}}
-			>
+			<div className="settings-profile-layout">
 				{/* Personal data */}
 				<section className="settings-section">
 					<div className="settings-section-header">
@@ -243,14 +227,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 							/>
 						</label>
 					</div>
-					<p
-						className="form-hint"
-						style={{
-							marginTop: 10,
-							fontSize: 12,
-							color: "rgba(255,255,255,0.4)",
-						}}
-					>
+					<p className="form-hint settings-profile-hint">
 						Изменить ФИО или Email может только владелец клиники в разделе
 						«Клиника → Сотрудники».
 					</p>
@@ -262,42 +239,25 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 						<KeyRound aria-hidden="true" size={20} />
 						<h3>Смена пароля</h3>
 					</div>
-					<p
-						className="form-hint"
-						style={{
-							marginBottom: 16,
-							fontSize: 12,
-							color: "rgba(255,255,255,0.5)",
-						}}
-					>
+					<p className="form-hint settings-section-hint">
 						Пароль используется для входа в систему с личных устройств по email.
 					</p>
 					<form onSubmit={handleUpdatePassword} className="form-grid">
 						<label className="form-span-2">
 							Текущий пароль
-							<div style={{ position: "relative" }}>
+							<div className="input-with-toggle">
 								<input
 									type={showOldPw ? "text" : "password"}
 									value={oldPassword}
 									onChange={(e) => setOldPassword(e.target.value)}
 									placeholder="••••••••"
 									disabled={passwordLoading}
-									style={{ paddingRight: 44, width: "100%" }}
 								/>
 								<button
 									type="button"
 									onClick={() => setShowOldPw((v) => !v)}
-									style={{
-										position: "absolute",
-										right: 12,
-										top: "50%",
-										transform: "translateY(-50%)",
-										background: "none",
-										border: "none",
-										color: "rgba(255,255,255,0.4)",
-										cursor: "pointer",
-										display: "flex",
-									}}
+									className="input-toggle-btn"
+									aria-label={showOldPw ? "Скрыть пароль" : "Показать пароль"}
 								>
 									{showOldPw ? <EyeOff size={16} /> : <Eye size={16} />}
 								</button>
@@ -305,69 +265,32 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 						</label>
 						<label className="form-span-1">
 							Новый пароль
-							<div style={{ position: "relative" }}>
+							<div className="input-with-toggle">
 								<input
 									type={showNewPw ? "text" : "password"}
 									value={newPassword}
 									onChange={(e) => setNewPassword(e.target.value)}
 									placeholder="Мин. 8 символов"
 									disabled={passwordLoading}
-									style={{ paddingRight: 44, width: "100%" }}
 								/>
 								<button
 									type="button"
 									onClick={() => setShowNewPw((v) => !v)}
-									style={{
-										position: "absolute",
-										right: 12,
-										top: "50%",
-										transform: "translateY(-50%)",
-										background: "none",
-										border: "none",
-										color: "rgba(255,255,255,0.4)",
-										cursor: "pointer",
-										display: "flex",
-									}}
+									className="input-toggle-btn"
+									aria-label={showNewPw ? "Скрыть пароль" : "Показать пароль"}
 								>
 									{showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
 								</button>
 							</div>
 							{newPassword && (
-								<div
-									style={{
-										display: "flex",
-										gap: 4,
-										marginTop: 6,
-										alignItems: "center",
-									}}
-								>
+								<div className="password-strength">
 									{[1, 2, 3].map((i) => (
 										<div
 											key={i}
-											style={{
-												height: 3,
-												flex: 1,
-												borderRadius: 2,
-												background:
-													strength.score >= i
-														? strength.score === 1
-															? "#ef4444"
-															: strength.score === 2
-																? "#f59e0b"
-																: "#10b981"
-														: "rgba(255,255,255,0.08)",
-												transition: "background 0.3s",
-											}}
+											className={`password-strength__bar ${strength.score >= i ? `password-strength__bar--${strengthClass}` : ""}`}
 										/>
 									))}
-									<span
-										style={{
-											fontSize: 10,
-											color: "rgba(255,255,255,0.4)",
-											minWidth: 45,
-											textAlign: "right",
-										}}
-									>
+									<span className="password-strength__label">
 										{strength.label}
 									</span>
 								</div>
@@ -381,12 +304,10 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								onChange={(e) => setConfirmPassword(e.target.value)}
 								placeholder="••••••••"
 								disabled={passwordLoading}
-								style={passwordMismatch ? { borderColor: "#f87171" } : {}}
+								className={passwordMismatch ? "input--error" : ""}
 							/>
 							{passwordMismatch && (
-								<span style={{ fontSize: 10, color: "#f87171", marginTop: 4 }}>
-									Пароли не совпадают
-								</span>
+								<span className="input-error-hint">Пароли не совпадают</span>
 							)}
 						</label>
 						<div className="form-actions form-span-2">
@@ -408,14 +329,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 						<Lock aria-hidden="true" size={20} />
 						<h3>Смена PIN-кода</h3>
 					</div>
-					<p
-						className="form-hint"
-						style={{
-							marginBottom: 16,
-							fontSize: 12,
-							color: "rgba(255,255,255,0.5)",
-						}}
-					>
+					<p className="form-hint settings-section-hint">
 						PIN (4 цифры) используется для быстрого входа на общем компьютере
 						клиники.
 					</p>
@@ -429,12 +343,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								placeholder="••••"
 								maxLength={4}
 								disabled={pinLoading}
-								style={{
-									letterSpacing: "6px",
-									textAlign: "center",
-									fontSize: 18,
-									maxWidth: 120,
-								}}
+								className="input--pin"
 							/>
 						</label>
 						<label className="form-span-1">
@@ -446,11 +355,7 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								placeholder="••••"
 								maxLength={4}
 								disabled={pinLoading}
-								style={{
-									letterSpacing: "6px",
-									textAlign: "center",
-									fontSize: 18,
-								}}
+								className="input--pin"
 							/>
 						</label>
 						<label className="form-span-1">
@@ -464,25 +369,10 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								placeholder="••••"
 								maxLength={4}
 								disabled={pinLoading}
-								style={
-									confirmPin && newPin !== confirmPin
-										? {
-												letterSpacing: "6px",
-												textAlign: "center",
-												fontSize: 18,
-												borderColor: "#f87171",
-											}
-										: {
-												letterSpacing: "6px",
-												textAlign: "center",
-												fontSize: 18,
-											}
-								}
+								className={`input--pin${confirmPin && newPin !== confirmPin ? " input--error" : ""}`}
 							/>
 							{confirmPin && newPin !== confirmPin && (
-								<span style={{ fontSize: 10, color: "#f87171", marginTop: 4 }}>
-									PIN-коды не совпадают
-								</span>
+								<span className="input-error-hint">PIN-коды не совпадают</span>
 							)}
 						</label>
 						<div className="form-actions form-span-2">
@@ -497,25 +387,19 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 						</div>
 					</form>
 				</section>
+
 				{/* Theme Settings */}
 				<section className="settings-section">
 					<div className="settings-section-header">
 						<Eye aria-hidden="true" size={20} />
 						<h3>Внешний вид</h3>
 					</div>
-					<p
-						className="form-hint"
-						style={{
-							marginBottom: 16,
-							fontSize: 12,
-							color: "rgba(255,255,255,0.5)",
-						}}
-					>
+					<p className="form-hint settings-section-hint">
 						Выберите тему оформления системы или включите автоматическое
 						переключение от времени суток.
 					</p>
 					<div className="form-grid">
-						<label className="form-span-2">
+						<label className="form-span-1">
 							Тема
 							<select
 								value={useThemeStore((s) => s.themeMode)}
@@ -528,6 +412,20 @@ export function SettingsProfileTab({ props }: SettingsProfileTabProps) {
 								<option value="auto">Автоматически (по времени суток)</option>
 								<option value="light">Светлая тема</option>
 								<option value="dark">Тёмная тема</option>
+							</select>
+						</label>
+						<label className="form-span-1">
+							Размер интерфейса (Масштаб)
+							<select
+								value={useUiStore((s) => s.uiScale)}
+								onChange={(e) =>
+									useUiStore
+										.getState()
+										.setUiScale(e.target.value as "standard" | "large")
+								}
+							>
+								<option value="standard">Стандартный (Компактный)</option>
+								<option value="large">Крупный (Бабушкин UX)</option>
 							</select>
 						</label>
 					</div>

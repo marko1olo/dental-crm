@@ -429,7 +429,7 @@ function TaxPayerDetails({
 						</button>
 						{!patientTaxDefaultsAvailable ? (
 							<small id={taxDefaultsGuidanceId}>
-								В карточке пациента нет ФИО, даты рождения, документа или ИИИНН
+								В карточке пациента нет ФИО, даты рождения, документа или ИНН
 								для автозаполнения.
 							</small>
 						) : (

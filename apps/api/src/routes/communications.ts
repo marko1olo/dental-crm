@@ -2,7 +2,7 @@ import {
 	communicationTaskSchema,
 	completeCommunicationTaskSchema,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireClinicalMutationAccess,
@@ -13,6 +13,7 @@ import {
 	communicationEvents,
 	communicationTasks,
 	organizations,
+patients,
 } from "../db/schema.js";
 
 const communicationTaskValidationMessage =
@@ -114,4 +115,73 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 			throw error;
 		}
 	});
+
+	app.get("/api/communications/inbox", async (request, reply) => {
+		const organizationId = await resolveOrganizationId(request);
+		if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired" });
+
+		// Fetch all events, ordered by latest
+		const allEvents = await db
+			.select({
+				id: communicationEvents.id,
+				patientId: communicationEvents.patientId,
+				message: communicationEvents.message,
+				channel: communicationEvents.channel,
+				direction: communicationEvents.direction,
+				createdAt: communicationEvents.createdAt,
+				patientName: patients.fullName
+			})
+			.from(communicationEvents)
+			.leftJoin(patients, eq(patients.id, communicationEvents.patientId))
+			.where(eq(communicationEvents.organizationId, organizationId))
+			.orderBy(desc(communicationEvents.createdAt));
+
+		// Group by patientId to get the latest message per chat
+		const inboxMap = new Map();
+		for (const event of allEvents) {
+			if (!inboxMap.has(event.patientId)) {
+				inboxMap.set(event.patientId, event);
+			}
+		}
+
+		return Array.from(inboxMap.values());
+	});
+
+	app.get<{ Params: { patientId: string } }>("/api/communications/inbox/:patientId", async (request, reply) => {
+		const organizationId = await resolveOrganizationId(request);
+		if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired" });
+
+		const events = await db
+			.select()
+			.from(communicationEvents)
+			.where(
+				and(
+					eq(communicationEvents.organizationId, organizationId),
+					eq(communicationEvents.patientId, request.params.patientId)
+				)
+			)
+			.orderBy(communicationEvents.createdAt);
+
+		return events;
+	});
+
+	app.post<{ Params: { patientId: string }; Body: { message: string, channel: any } }>("/api/communications/inbox/:patientId/send", async (request, reply) => {
+		const organizationId = await resolveOrganizationId(request);
+		if (!organizationId) return reply.code(403).send({ error: "OrganizationRequired" });
+
+		const { message, channel } = request.body;
+		if (!message || !channel) return reply.code(400).send({ error: "Message and channel are required" });
+
+		const [newEvent] = await db.insert(communicationEvents).values({
+			organizationId,
+			patientId: request.params.patientId,
+			message,
+			channel,
+			direction: "outbound",
+			status: "delivered", // simplified for MVP
+		}).returning();
+
+		return newEvent;
+	});
+
 }

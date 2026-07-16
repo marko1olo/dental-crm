@@ -71,7 +71,7 @@ export function LeadsKanbanView() {
 	const [appointmentTime, setAppointmentTime] = useState("10:00");
 
 	const { lastMessage } = useWebsocket(
-		import.meta.env.VITE_WS_URL || "ws://localhost:4100/api/ws/schedule",
+		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
 	);
 
 	useEffect(() => {

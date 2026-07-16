@@ -18,6 +18,9 @@ import { DicomToolbar } from "./DicomToolbar";
 import { PanoramicRendererWindow } from "./PanoramicRendererWindow";
 import { ViewportOverlays } from "./ViewportOverlays";
 
+// DEV-only CT viewer trace (stripped in production builds)
+const _ctLog = import.meta.env.DEV ? console.log.bind(console) : () => {};
+
 interface Cornerstone3DViewerProps {
 	imageIds: string[];
 	isPreview?: boolean;
@@ -81,7 +84,7 @@ export function Cornerstone3DViewer({
 
 		return () => {
 			// Aggressive OOM Prevention: Purge cache and destroy all tools
-			console.log("Purging DICOM Cache...");
+			_ctLog("Purging DICOM Cache...");
 			cornerstone.cache.purgeCache();
 		};
 	}, [isInitialized]);
@@ -168,7 +171,7 @@ export function Cornerstone3DViewer({
 				return (instA?.InstanceNumber || 0) - (instB?.InstanceNumber || 0);
 			});
 
-			console.log(
+			_ctLog(
 				`[CT] Volume constructed with ${sortedImageIds.length} slices.`,
 			);
 
@@ -394,7 +397,7 @@ export function Cornerstone3DViewer({
 					});
 					setSplinePoints(formattedPoints);
 					setShowPanorex(true);
-					console.log(
+					_ctLog(
 						`[CT] Generated panoramic curve with ${formattedPoints.length} points.`,
 					);
 					return;
@@ -422,7 +425,7 @@ export function Cornerstone3DViewer({
 			toolName === cornerstoneTools.LengthTool.toolName ||
 			toolName === cornerstoneTools.ProbeTool.toolName
 		) {
-			console.log(`[CT] Activated measurement tool: ${toolName}`);
+			_ctLog(`[CT] Activated measurement tool: ${toolName}`);
 		}
 
 		toolGroup.setToolDisabled(activeTool);
@@ -549,7 +552,7 @@ export function Cornerstone3DViewer({
 				vp.render();
 			}
 		});
-		console.log(`[CT] Applied W/L Preset [${lower}, ${upper}]`);
+		_ctLog(`[CT] Applied W/L Preset [${lower}, ${upper}]`);
 	};
 
 	const content = (

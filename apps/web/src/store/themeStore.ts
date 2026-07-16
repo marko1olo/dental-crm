@@ -23,3 +23,7 @@ export const useThemeStore = create<ThemeState>((set) => ({
 					| "dark") || "auto",
 		}),
 }));
+
+if (typeof window !== "undefined") {
+	(window as any).__useThemeStore = useThemeStore;
+}

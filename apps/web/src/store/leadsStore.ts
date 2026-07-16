@@ -19,7 +19,7 @@ interface LeadsState {
 	wsUpdate: (lead: Lead) => void;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4100/api";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4100/api";
 
 export const useLeadsStore = create<LeadsState>((set, get) => ({
 	leads: [],

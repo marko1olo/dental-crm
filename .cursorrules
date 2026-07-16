@@ -29,3 +29,8 @@ Multiple agents work in this directory on the same local machine in real-time.
 ## 🏗️ SYSTEM LOCKS
 *   **PGlite Database**: The database client connects locally to PGlite (a local filesystem-based Postgres engine in `apps/api/dente-db`). There is no network Postgres server on port 5432. Do not use connection pools or standard pg credentials.
 *   **God Context (`useAppLogic.tsx`)**: Exposes over 500 variables and functions. Any modification to its return object or deletions of exported fields will break typechecks across dozens of UI components. Be extremely surgical.
+*   **STRICT ANTI-HARDCODE**: Banned hardcoding config values, ports, endpoints, database credentials, or magic strings. Use TypeScript interfaces, `.env` files, or configs.
+*   **READ FULL FILES BEFORE EDITING**: You MUST read targeted files in full before applying changes. Do not append quick-fix wrappers or loose patches at the end of files. Keep modules clean and modular.
+*   **DESIGN ADAPTABILITY**: UI modifications must support multi-language (no hardcoded JSX text, layout supports expansion), multi-theme (dark/light/system, no static hex colors), and multi-scale (relative units `rem`/`em`, fluid responsive layouts).
+
+

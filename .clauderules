@@ -15,3 +15,10 @@ You are an AI coding agent (Claude Code / Aider / Windsurf) working on the DENTE
 
 3.  **PGlite ENGINE**:
     The database runs in-process via PGlite in `apps/api/dente-db`. Do not attempt to establish remote pg-pool TCP connections.
+
+4.  **STRICT ANTI-HARDCODE & FILE READ PROTOCOL**:
+    *   Hardcoding configuration, ports, database credentials, or API endpoints is strictly banned. Use TypeScript interfaces, `.env` files, or configurations.
+    *   Read targeted files in their entirety before editing them. Do not write quick-fixes or loose wrappers at the end of files. Keep code clean and modular.
+    *   Proactively support design adaptability: multi-language (i18n, word expansion formatting), multi-theme (dark/light/system, token styling), and multi-scale (relative units `rem`/`em`/`%`, fluid responsive breakpoints).
+
+

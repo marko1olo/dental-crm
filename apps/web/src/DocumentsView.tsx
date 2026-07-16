@@ -24,6 +24,7 @@ import {
 	type MedicalDocumentReleaseChannel,
 	useDocumentStore,
 } from "./store/documentStore";
+import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
 
 type DocumentSelectOption<T extends string> = { value: T; label: string };
 type TaxDocumentPayerOption = {
@@ -1473,32 +1474,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -1584,7 +1568,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										/>
 										<div
 											className="quick-chips-row"
-											style={{ marginTop: "6px", flexWrap: "wrap" }}
+											
 										>
 											{[
 												"Кариес",
@@ -1779,32 +1763,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -1965,7 +1932,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										/>
 										<div
 											className="quick-chips-row"
-											style={{ marginTop: "6px", flexWrap: "wrap" }}
+											
 										>
 											{[
 												"Без замечаний",
@@ -2041,32 +2008,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -2128,7 +2078,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										/>
 										<div
 											className="quick-chips-row"
-											style={{ marginTop: "6px", flexWrap: "wrap" }}
+											
 										>
 											{[
 												"Кариес дентина",
@@ -2202,7 +2152,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										/>
 										<div
 											className="quick-chips-row"
-											style={{ marginTop: "6px", flexWrap: "wrap" }}
+											
 										>
 											{[
 												"Рентгенологические снимки",
@@ -2243,7 +2193,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										/>
 										<div
 											className="quick-chips-row"
-											style={{ marginTop: "6px", flexWrap: "wrap" }}
+											
 										>
 											{[
 												"100% предоплата",
@@ -2361,32 +2311,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -2577,32 +2510,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -2880,32 +2796,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -3086,32 +2985,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -3332,32 +3214,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Работа или услуга
@@ -3530,32 +3395,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Жалоба или цель визита
@@ -3699,32 +3547,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Заявитель / налогоплательщик
@@ -3900,32 +3731,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Планируемое вмешательство
@@ -4110,32 +3924,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -4347,32 +4144,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Повод обращения
@@ -4568,32 +4348,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Выбранный вариант
@@ -4827,32 +4590,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -5097,32 +4843,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Метод
@@ -5257,32 +4986,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									{renderClinicalToothRowsEditor()}
 									<label>
@@ -5356,32 +5068,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									{renderClinicalToothRowsEditor()}
 									<label>
@@ -5457,32 +5152,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										{typedPhotoVideoMaterialOptions.map((option) => (
@@ -5616,32 +5294,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									{renderClinicalToothRowsEditor()}
 									<label>
@@ -5808,32 +5469,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -6293,32 +5937,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -6400,8 +6027,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 											rows={2}
 										/>
 										<div
-											className="quick-chips-row"
-											style={{ flexWrap: "wrap", marginTop: "4px" }}
+											className="quick-chips-row document-chips-wrap"
 										>
 											{EXTRACT_DIAGNOSIS_CHIPS.map((chip) => (
 												<button
@@ -6531,32 +6157,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Что выдать
@@ -6743,32 +6352,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -6891,32 +6483,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Основание выдачи
@@ -7082,32 +6657,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<div className="document-payload-row">
 										<label>
@@ -7276,32 +6834,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Предложенное вмешательство
@@ -7332,25 +6873,13 @@ export function DocumentsView(props: DocumentsViewProps) {
 										/>
 									</label>
 									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											gap: "4px",
-										}}
+										className="document-column-gap-4"
 									>
 										<div
-											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "center",
-											}}
+											className="document-flex-between"
 										>
 											<span
-												style={{
-													fontSize: "13px",
-													fontWeight: 600,
-													color: "var(--slate-700)",
-												}}
+												className="document-sub-heading"
 											>
 												Причина отказа со слов пациента
 											</span>
@@ -7371,11 +6900,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 												setRefusalPatientReason(event.target.value)
 											}
 											rows={2}
-											style={{ marginTop: "0" }}
+											className="document-mt-0"
 										/>
 										<div
-											className="quick-chips-row"
-											style={{ flexWrap: "wrap" }}
+											className="quick-chips-row document-flex-wrap"
 										>
 											{REFUSAL_REASON_CHIPS.map((chip) => (
 												<button
@@ -7396,25 +6924,13 @@ export function DocumentsView(props: DocumentsViewProps) {
 										</div>
 									</div>
 									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											gap: "4px",
-										}}
+										className="document-column-gap-4"
 									>
 										<div
-											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "center",
-											}}
+											className="document-flex-between"
 										>
 											<span
-												style={{
-													fontSize: "13px",
-													fontWeight: 600,
-													color: "var(--slate-700)",
-												}}
+												className="document-sub-heading"
 											>
 												Разъясненные риски
 											</span>
@@ -7435,11 +6951,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 												setRefusalExplainedRisks(event.target.value)
 											}
 											rows={3}
-											style={{ marginTop: "0" }}
+											className="document-mt-0"
 										/>
 										<div
-											className="quick-chips-row"
-											style={{ flexWrap: "wrap" }}
+											className="quick-chips-row document-flex-wrap"
 										>
 											{REFUSAL_RISK_CHIPS.map((chip) => (
 												<button
@@ -7460,25 +6975,13 @@ export function DocumentsView(props: DocumentsViewProps) {
 										</div>
 									</div>
 									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											gap: "4px",
-										}}
+										className="document-column-gap-4"
 									>
 										<div
-											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "center",
-											}}
+											className="document-flex-between"
 										>
 											<span
-												style={{
-													fontSize: "13px",
-													fontWeight: 600,
-													color: "var(--slate-700)",
-												}}
+												className="document-sub-heading"
 											>
 												Предложенные альтернативы
 											</span>
@@ -7499,11 +7002,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 												setRefusalAlternatives(event.target.value)
 											}
 											rows={3}
-											style={{ marginTop: "0" }}
+											className="document-mt-0"
 										/>
 										<div
-											className="quick-chips-row"
-											style={{ flexWrap: "wrap" }}
+											className="quick-chips-row document-flex-wrap"
 										>
 											{REFUSAL_ALT_CHIPS.map((chip) => (
 												<button
@@ -7524,25 +7026,13 @@ export function DocumentsView(props: DocumentsViewProps) {
 										</div>
 									</div>
 									<div
-										style={{
-											display: "flex",
-											flexDirection: "column",
-											gap: "4px",
-										}}
+										className="document-column-gap-4"
 									>
 										<div
-											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "center",
-											}}
+											className="document-flex-between"
 										>
 											<span
-												style={{
-													fontSize: "13px",
-													fontWeight: 600,
-													color: "var(--slate-700)",
-												}}
+												className="document-sub-heading"
 											>
 												Тревожные признаки
 											</span>
@@ -7563,11 +7053,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 												setRefusalUrgentWarningSigns(event.target.value)
 											}
 											rows={3}
-											style={{ marginTop: "0" }}
+											className="document-mt-0"
 										/>
 										<div
-											className="quick-chips-row"
-											style={{ flexWrap: "wrap" }}
+											className="quick-chips-row document-flex-wrap"
 										>
 											{REFUSAL_WARNING_CHIPS.map((chip) => (
 												<button
@@ -7656,32 +7145,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 							</div>
 							<details
 								className="document-manual-override"
-								style={{
-									background: "var(--paper)",
-									padding: "12px 16px",
-									borderRadius: "8px",
-									border: "1px solid #e2e8f0",
-									marginTop: "16px",
-								}}
+								
 							>
-								<summary
-									style={{
-										cursor: "pointer",
-										fontWeight: 600,
-										color: "var(--brand-700)",
-										userSelect: "none",
-									}}
+								<summary className="document-summary-toggle"
 								>
 									✏️ Ручная корректировка полей (развернуть)
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "16px",
-									}}
+									
 								>
 									<label>
 										Действие
@@ -7851,8 +7323,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 				</section>
 
 				<div
-					className="document-factory-selected-kind"
-					style={{ marginTop: "16px" }}
+					className="document-factory-selected-kind document-mt-16"
 				>
 					<button
 						className="primary-button"
@@ -8454,6 +7925,20 @@ export function DocumentsView(props: DocumentsViewProps) {
 									? `${documentAuditFacts.signatureAttestation.recipientFullName} · ${documentAuditFacts.signatureAttestation.staffFullName}`
 									: "PDF и файл ФНС заблокированы до фиксации получения"}
 							</small>
+							{documentAuditFacts.signatureAttestation?.mode ===
+								"qualified_electronic_signature" &&
+							!documentAuditFacts.cryptoSignaturePkcs7 &&
+							documentAuditFacts.status !== "voided" ? (
+								<DocumentUkepSignButton
+									documentId={documentAuditFacts.documentId}
+									onSuccess={() => loadDocumentAuditFacts(documentAuditFacts.documentId)}
+								/>
+							) : null}
+							{documentAuditFacts.cryptoSignaturePkcs7 ? (
+								<small style={{ color: "var(--dente-color-green)" }}>
+									УКЭП (КриптоПро) прикреплен
+								</small>
+							) : null}
 						</div>
 						{documentAuditFacts.voidAttestation ? (
 							<div>

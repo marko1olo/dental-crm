@@ -84,7 +84,15 @@ app.setErrorHandler((error, _request, reply) => {
 });
 await registerClinicalRoutes(app);
 
-const headers = { "x-dente-admin-secret": "synthetic-clinical-secret" };
+const { db } = await import(pathToFileURL(path.resolve("apps/api/dist/db/client.js")).href);
+const { organizations } = await import(pathToFileURL(path.resolve("apps/api/dist/db/schema.js")).href);
+const [org] = await db.select().from(organizations).limit(1);
+const orgId = org ? org.id : "00000000-0000-0000-0000-000000000001";
+
+const headers = {
+  "x-dente-admin-secret": "synthetic-clinical-secret",
+  "x-dente-organization-id": orgId
+};
 const invalidCreate = await app.inject({
   method: "POST",
   url: "/api/clinical/rules",
@@ -105,6 +113,7 @@ const createResponse = await app.inject({
     patientText: "  API patient text  "
   }
 });
+console.log("Create response status:", createResponse.statusCode, "payload:", createResponse.payload);
 assert(createResponse.statusCode === 200, `valid clinical rule create failed: ${createResponse.statusCode}`);
 const created = createResponse.json();
 assert(created.title === "API trimmed rule", "API create must store trimmed clinical rule title");

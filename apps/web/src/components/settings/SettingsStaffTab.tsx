@@ -59,7 +59,6 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 					canManageMoney:
 						newStaffRole === "administrator" || newStaffRole === "owner",
 					canManageImports: true,
-					color: "#3b82f6",
 				}),
 			});
 			const data = await res.json();
@@ -154,59 +153,25 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 
 			<div className="settings-cards-grid">
 				{/* Список сотрудников */}
-				<article className="settings-card" style={{ gridColumn: "1 / -1" }}>
+				<article className="settings-card settings-card--full">
 					<div className="settings-card-header">
 						<h4>Активный персонал</h4>
 					</div>
-					<div
-						className="staff-grid"
-						style={{
-							display: "grid",
-							gap: "12px",
-							gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-						}}
-					>
+					<div className="staff-grid">
 						{staff.map((member: any) => (
-							<div
-								key={member.id}
-								className="staff-grid-cell"
-								style={{
-									border: "1px solid rgba(255,255,255,0.1)",
-									borderRadius: "8px",
-									padding: "16px",
-									minHeight: "140px",
-									display: "flex",
-									flexDirection: "column",
-								}}
-							>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "12px",
-										marginBottom: "12px",
-									}}
-								>
+							<div key={member.id} className="staff-grid-cell">
+								<div className="staff-grid-cell__head">
 									<div
-										style={{
-											width: 40,
-											height: 40,
-											borderRadius: "50%",
-											backgroundColor: member.color || "#3b82f6",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											fontWeight: "bold",
-											fontSize: 18,
-										}}
+										className="staff-avatar"
+										style={member.color ? { backgroundColor: member.color } : undefined}
 									>
 										{member.fullName.charAt(0)}
 									</div>
 									<div>
-										<h5 style={{ margin: 0, fontSize: 15 }}>
+										<h5 className="staff-grid-cell__name">
 											{member.fullName}
 										</h5>
-										<span style={{ fontSize: 12, opacity: 0.7 }}>
+										<span className="staff-grid-cell__role">
 											{staffRoleLabels
 												? staffRoleLabels[member.role]
 												: member.role}
@@ -214,20 +179,11 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 									</div>
 								</div>
 
-								<div
-									style={{
-										marginTop: "auto",
-										borderTop: "1px solid rgba(255,255,255,0.05)",
-										paddingTop: "12px",
-										display: "flex",
-										flexDirection: "column",
-										gap: "8px",
-									}}
-								>
+								<div className="staff-grid-cell__actions">
 									{editingPinForId === member.id ? (
 										<form
 											onSubmit={(e) => handleUpdatePin(e, member.id)}
-											style={{ display: "flex", gap: "8px" }}
+											className="staff-inline-form"
 										>
 											<input
 												type="password"
@@ -235,85 +191,55 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 												placeholder="PIN"
 												value={newPin}
 												onChange={(e) => setNewPin(e.target.value)}
-												style={{ width: "80px", textAlign: "center" }}
+												className="input--pin"
 												autoFocus
 											/>
-											<button
-												type="submit"
-												className="primary-button"
-												disabled={loading}
-												style={{ padding: "4px 12px" }}
-											>
+											<button type="submit" className="primary-button btn--sm" disabled={loading}>
 												ОК
 											</button>
-											<button
-												type="button"
-												className="secondary-button"
-												onClick={() => setEditingPinForId(null)}
-												style={{ padding: "4px 12px" }}
-											>
+											<button type="button" className="secondary-button btn--sm" onClick={() => setEditingPinForId(null)}>
 												Отмена
 											</button>
 										</form>
 									) : editingPasswordForId === member.id ? (
 										<form
 											onSubmit={(e) => handleUpdatePassword(e, member.id)}
-											style={{ display: "flex", gap: "8px" }}
+											className="staff-inline-form"
 										>
 											<input
 												type="password"
 												placeholder="Пароль"
 												value={newPassword}
 												onChange={(e) => setNewPassword(e.target.value)}
-												style={{ width: "100%", padding: "4px 8px" }}
+												className="staff-inline-form__password"
 												autoFocus
 											/>
-											<button
-												type="submit"
-												className="primary-button"
-												disabled={loading}
-												style={{ padding: "4px 12px" }}
-											>
+											<button type="submit" className="primary-button btn--sm" disabled={loading}>
 												ОК
 											</button>
-											<button
-												type="button"
-												className="secondary-button"
-												onClick={() => setEditingPasswordForId(null)}
-												style={{ padding: "4px 12px" }}
-											>
+											<button type="button" className="secondary-button btn--sm" onClick={() => setEditingPasswordForId(null)}>
 												Отмена
 											</button>
 										</form>
 									) : (
-										<div style={{ display: "flex", gap: "8px" }}>
+										<div className="staff-grid-cell__btn-row">
 											<button
-												className="secondary-button"
+												className="secondary-button btn--sm btn--flex"
 												onClick={() => {
 													setEditingPinForId(member.id);
 													setEditingPasswordForId(null);
 													setNewPin("");
-												}}
-												style={{
-													flex: 1,
-													justifyContent: "center",
-													padding: "4px 8px",
 												}}
 												title="Назначить PIN-код для планшета"
 											>
 												<KeyRound size={14} /> PIN
 											</button>
 											<button
-												className="secondary-button"
+												className="secondary-button btn--sm btn--flex"
 												onClick={() => {
 													setEditingPasswordForId(member.id);
 													setEditingPinForId(null);
 													setNewPassword("");
-												}}
-												style={{
-													flex: 1,
-													justifyContent: "center",
-													padding: "4px 8px",
 												}}
 												title="Назначить пароль для входа"
 											>

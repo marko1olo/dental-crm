@@ -255,6 +255,7 @@ type SettingsTabId =
 	| "clinic"
 	| "access"
 	| "telegram"
+	| "messengers"
 	| "protocols"
 	| "rules"
 	| "prices"
@@ -1484,9 +1485,9 @@ export function SettingsImportsTab(props: Record<string, any>) {
 	const typedRoleAccessPolicies = dashboard.clinicSettings
 		.roleAccessPolicies as RoleAccessPolicy[];
 	const typedTelegramChatLinks =
-		telegramChatLinks as DenteTelegramChatLinkPublic[];
+		(telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
 	const typedTelegramLinkCodes =
-		telegramLinkCodes as DenteTelegramLinkCodePublic[];
+		(telegramLinkCodes as DenteTelegramLinkCodePublic[]) ?? [];
 	const typedTelegramPreview =
 		telegramPreview as DenteTelegramMessagePreview | null;
 	const typedTelegramOutbox =
@@ -4503,13 +4504,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								data-testid="browser-local-imaging-folder-input"
 								type="file"
 								multiple
-								style={{
-									position: "absolute",
-									opacity: 0,
-									width: "1px",
-									height: "1px",
-									pointerEvents: "none",
-								}}
+								className="visually-hidden"
 								onChange={(event: InputChangeEvent) =>
 									void handleBrowserDirectoryInputChange(event.target.files)
 								}
@@ -4519,13 +4514,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 								data-testid="browser-local-imaging-files-input"
 								type="file"
 								multiple
-								style={{
-									position: "absolute",
-									opacity: 0,
-									width: "1px",
-									height: "1px",
-									pointerEvents: "none",
-								}}
+								className="visually-hidden"
 								accept={browserImagingFileInputAccept}
 								onChange={(event: InputChangeEvent) =>
 									void handleBrowserDirectoryInputChange(event.target.files)
@@ -5884,10 +5873,7 @@ export function SettingsImportsTab(props: Record<string, any>) {
 						<div className="import-tool-row">
 							<SmartMicrophoneButton
 								context="general"
-								style={{
-									color: "var(--slate-500)",
-									borderColor: "var(--slate-300)",
-								}}
+								className="microphone-import-btn"
 								onResult={(text) => {
 									setImportText((current: string) =>
 										current ? `${current}\n${text}` : text,

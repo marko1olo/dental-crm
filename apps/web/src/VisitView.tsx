@@ -423,15 +423,17 @@ export function VisitView(props: VisitViewProps) {
 							className="primary-button"
 							type="button"
 							onClick={() => scrollToVisitArea(".dictation-box")}
+							style={{ padding: "16px 24px", fontSize: "16px", fontWeight: "bold", textTransform: "uppercase", borderRadius: "12px" }}
 						>
-							<Mic aria-hidden="true" /> Диктовка
+							<Mic aria-hidden="true" style={{marginRight: "8px"}} /> ДИКТОВКА
 						</button>
 						<button
 							className="secondary-button"
 							type="button"
 							onClick={openVisitWarningAction}
+							style={{ padding: "16px 24px", fontSize: "16px", fontWeight: "bold", textTransform: "uppercase", borderRadius: "12px" }}
 						>
-							<AlertTriangle aria-hidden="true" /> Риски
+							<AlertTriangle aria-hidden="true" style={{marginRight: "8px"}} /> РИСКИ
 						</button>
 					</div>
 				</section>
@@ -479,6 +481,7 @@ export function VisitView(props: VisitViewProps) {
 									disabled={visitPrimaryAction.disabled}
 									aria-describedby="visit-primary-action-detail"
 									data-testid="visit-primary-action"
+									style={{ padding: "16px 24px", fontSize: "1.2rem", fontWeight: "bold", textTransform: "uppercase", width: "100%", justifyContent: "center", borderRadius: "12px" }}
 								>
 									{visitPrimaryAction.kind === "dictation" ? (
 										<Mic aria-hidden="true" />
@@ -832,17 +835,11 @@ export function VisitView(props: VisitViewProps) {
 								setShowSmartPreview(true);
 								setShowHints(false);
 							}}
-							style={{
-								padding: "12px 16px",
-								fontSize: "15px",
-								justifyContent: "center",
-							}}
 						/>
 
 						<button
 							className="primary-button"
 							type="button"
-							style={{ padding: "12px 16px", fontSize: "15px" }}
 							onClick={() => {
 								const orchestratorResult =
 									AiOrchestrator.processEmkDictation(transcript);
@@ -872,7 +869,6 @@ export function VisitView(props: VisitViewProps) {
 						<button
 							className="secondary-button"
 							type="button"
-							style={{ padding: "12px 16px", fontSize: "15px" }}
 							onClick={buildDraft}
 							disabled={isDraftLoading || !visitDraftReadyToBuild}
 							aria-describedby={

@@ -1,4 +1,5 @@
-﻿import { createHash } from "node:crypto";
+import { createHash } from "node:crypto";
+import { requireNonDoctorAccess } from "../accessGuard.js";
 import {
 	createDenteTelegramLinkCodeSchema,
 	type DenteTelegramBotSettings,
@@ -1709,6 +1710,9 @@ async function requireTelegramControlPlaneAccess(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
+	const allowed = await requireNonDoctorAccess(request, reply);
+	if (!allowed) return;
+
 	const adminSecret = configuredTelegramAdminSecret();
 	if (!adminSecret) {
 		if (isExplicitlyUnguardedControlPlaneAllowed()) {

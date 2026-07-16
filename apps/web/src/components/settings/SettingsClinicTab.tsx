@@ -58,21 +58,11 @@ function StaffCredentialsEditor({
 	};
 
 	return (
-		<div
-			className="staff-credentials-editor"
-			style={{
-				marginTop: 12,
-				padding: "12px",
-				background: "rgba(0,0,0,0.02)",
-				borderRadius: 6,
-				border: "1px solid var(--slate-200, #e2e8f0)",
-			}}
-		>
+		<div className="staff-credentials-editor">
 			<button
 				type="button"
 				onClick={() => setIsOpen(!isOpen)}
-				className="secondary-button compact-button"
-				style={{ display: "flex", gap: 6, alignItems: "center" }}
+				className="secondary-button compact-button credentials-toggle-btn"
 			>
 				<KeyRound size={14} />
 				{member.email
@@ -81,36 +71,29 @@ function StaffCredentialsEditor({
 			</button>
 
 			{isOpen && (
-				<div
-					style={{
-						marginTop: 12,
-						display: "flex",
-						flexDirection: "column",
-						gap: 8,
-					}}
-				>
-					<label style={{ fontSize: 12 }}>
+				<div className="credentials-editor-fields">
+					<label className="settings-control-label">
 						Email (Логин)
 						<input
 							type="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							placeholder="email@example.com"
-							style={{ width: "100%", marginTop: 4 }}
+							className="settings-control-input"
 						/>
 					</label>
-					<div style={{ display: "flex", gap: 12 }}>
-						<label style={{ fontSize: 12, flex: 1 }}>
+					<div className="settings-control-row">
+						<label className="settings-control-label">
 							Новый пароль
 							<input
 								type="password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 								placeholder="Оставьте пустым, чтобы не менять"
-								style={{ width: "100%", marginTop: 4 }}
+								className="settings-control-input"
 							/>
 						</label>
-						<label style={{ fontSize: 12, flex: 1 }}>
+						<label className="settings-control-label">
 							Новый PIN (4 цифры)
 							<input
 								type="password"
@@ -118,17 +101,11 @@ function StaffCredentialsEditor({
 								onChange={(e) => setPin(e.target.value)}
 								maxLength={4}
 								placeholder="0000"
-								style={{ width: "100%", marginTop: 4 }}
+								className="settings-control-input"
 							/>
 						</label>
 					</div>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "flex-end",
-							marginTop: 4,
-						}}
-					>
+					<div className="credentials-editor-actions">
 						<button
 							type="button"
 							onClick={handleSave}
@@ -268,14 +245,7 @@ export function SettingsClinicTab({
 							{dashboard.clinicSettings?.profile?.timezone ?? "Europe/Moscow"}
 						</p>
 					</div>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: "8px",
-							alignItems: "flex-end",
-						}}
-					>
+					<div className="clinic-mode-status">
 						<span>
 							{
 								clinicModeLabels[
@@ -376,19 +346,10 @@ export function SettingsClinicTab({
 							/>
 						</label>
 						<div className="form-span-2">
-							<span
-								className="field-label"
-								style={{
-									fontSize: "14px",
-									fontWeight: 600,
-									color: "var(--slate-700)",
-									display: "block",
-									marginBottom: "8px",
-								}}
-							>
+							<span className="field-label settings-section-title">
 								Режим работы клиники
 							</span>
-							<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+							<div className="settings-segmented-group">
 								{[
 									{
 										value: "solo_doctor",
@@ -402,26 +363,10 @@ export function SettingsClinicTab({
 									<button
 										key={option.value}
 										type="button"
-										className={`quick-chip ${(clinicProfileDraft?.mode ?? "") === option.value ? "active" : ""}`}
+										className={`settings-segmented-btn ${(clinicProfileDraft?.mode ?? "") === option.value ? "active" : ""}`}
 										onClick={() =>
 											updateClinicProfileDraft("mode", option.value)
 										}
-										style={{
-											background:
-												(clinicProfileDraft?.mode ?? "") === option.value
-													? "var(--brand-500)"
-													: "var(--slate-100)",
-											color:
-												(clinicProfileDraft?.mode ?? "") === option.value
-													? "#fff"
-													: "var(--slate-700)",
-											padding: "8px 16px",
-											borderRadius: "20px",
-											border: "none",
-											cursor: "pointer",
-											fontSize: "14px",
-											fontWeight: 500,
-										}}
 									>
 										{option.label}
 									</button>
@@ -937,7 +882,7 @@ export function SettingsClinicTab({
 											: "Сохранено";
 								return (
 									<div className="staff-row" key={member.id}>
-										<span style={{ background: member.color }} />
+										<span className="staff-color-indicator" style={{ background: member.color }} />
 										<div>
 											<strong>{member.fullName}</strong>
 											<p>
@@ -1324,9 +1269,9 @@ export function SettingsClinicTab({
 			{/* Feature Toggles - Workspace Modules */}
 			<section
 				id="settings-workspace-features"
-				style={{ marginTop: 32, padding: "0 4px" }}
+				className="settings-workspace-features-section"
 			>
-				<h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
+				<h3 className="settings-workspace-features-title">
 					Модули и функции рабочего пространства
 				</h3>
 				<WorkspaceFeaturesSelector />

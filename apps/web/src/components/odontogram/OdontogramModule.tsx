@@ -44,7 +44,7 @@ export const OdontogramModule = ({
 	const containerRef = React.useRef<HTMLDivElement>(null);
 
 	const { lastMessage } = useWebsocket(
-		import.meta.env.VITE_WS_URL || "ws://localhost:4100/api/ws/schedule",
+		import.meta.env.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
 	);
 	useEffect(() => {
 		if (
@@ -431,7 +431,7 @@ export const OdontogramModule = ({
 									`AI: Зубы обновлены: ${data.toothUpdates.map((t: any) => t.code).join(", ")}`,
 								);
 							} else {
-								console.log("No specific action from AI:", data);
+
 							}
 						}
 					} catch (e) {

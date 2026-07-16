@@ -1281,6 +1281,7 @@ export async function buildDocumentAuditFacts(
 		issuedAt: document.issuedAt,
 		issuedByUserId: document.issuedByUserId ?? null,
 		signatureAttestation: document.signatureAttestation ?? null,
+		cryptoSignaturePkcs7: document.cryptoSignaturePkcs7 ?? null,
 		voidAttestation: document.voidAttestation ?? null,
 		releaseJournalEntry: document.releaseJournalEntry ?? null,
 		generatedAt: new Date().toISOString(),
@@ -1325,6 +1326,7 @@ import { register as registerHtml } from "./documents/html.js";
 import { register as registerIssue } from "./documents/issue.js";
 import { register as registerPdf } from "./documents/pdf.js";
 import { register as registerSign } from "./documents/sign.js";
+import { register as registerSignUkep } from "./documents/signUkep.js";
 import { register as registerTaxXml } from "./documents/taxXml.js";
 import { register as registerVoid } from "./documents/void.js";
 
@@ -1333,6 +1335,7 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
 	await registerIssue(app);
 	await registerVoid(app);
 	await registerSign(app);
+	await registerSignUkep(app);
 	await registerTaxXml(app);
 	await registerAuditFacts(app);
 	await registerPdf(app);

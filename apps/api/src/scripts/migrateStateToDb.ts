@@ -2,7 +2,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import { sql } from "drizzle-orm";
-import { db } from "../db/client.js";
+import { db, client } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
 // We will read the actual saved state, or fallback to the sample data
@@ -237,8 +237,14 @@ async function migrate() {
 }
 
 migrate()
-	.then(() => process.exit(0))
-	.catch((e) => {
+	.then(async () => {
+		await client.close();
+		process.exit(0);
+	})
+	.catch(async (e) => {
 		console.error("❌ Migration error:", e);
+		try {
+			await client.close();
+		} catch {}
 		process.exit(1);
 	});

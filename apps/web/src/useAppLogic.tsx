@@ -1,5 +1,3 @@
-
-
 import {
 	type AcceptVisitDraftResponse,
 	type AiJobKind,
@@ -925,6 +923,7 @@ import {
 	warningSeverityLabels,
 	workloadStateLabels,
 } from "./workspaceUiLabels";
+import { useTelegramSettings } from "./hooks/useTelegramSettings.js";
 
 export function useAppLogic(): any {
 	const {
@@ -2368,7 +2367,31 @@ export function useAppLogic(): any {
 		telegramRevokingLinkId,
 		setTelegramRevokingLinkId,
 	} = useSettingsStore();
-
+    const telegramSettingsModule = useTelegramSettings({
+        apiFetch: null,
+        setError,
+        settingsAdminSecretSession: settingsAdminSecretSession || undefined,
+        loadDashboard
+    });
+    const { 
+            markTelegramSettingsDirty,
+            updateTelegramVisualCardUrlDraft,
+            toggleTelegramFeature,
+            parseTelegramLinkTtlMinutes,
+            parseTelegramReminderLeadTimesHours,
+            parseTelegramReviewRequestDelayHours,
+            parseTelegramPostVisitCheckupDelayHours,
+            normalizeTelegramPostVisitCheckupDelayDrafts,
+            updateTelegramPostVisitCheckupDelayDraft,
+            telegramFeatureLabel,
+            saveTelegramSettings,
+            telegramControlPlaneHeaders,
+            loadTelegramControlPlane,
+            telegramStatusEndpoint,
+            telegramOutboxRequestParams,
+            telegramLinkCodeLedgerRequestParams,
+            telegramChatLinkLedgerRequestParams 
+        } = telegramSettingsModule;
 	const activeSettingsTabButtonRef = useRef<HTMLButtonElement | null>(null);
 	const initialTelegramHandoffTargetRef =
 		useRef<DenteTelegramHandoffTarget | null>(readDenteTelegramHandoffTarget());
@@ -2461,106 +2484,6 @@ export function useAppLogic(): any {
 	const imagingViewerSaveTimerRef = useRef<number | null>(null);
 	const mprWorkbenchSaveTimerRef = useRef<number | null>(null);
 
-	function markTelegramSettingsDirty() {
-		setTelegramSettingsDirty(true);
-		setTelegramSettingsSaveState("idle");
-		setTelegramSettingsSaveError(null);
-	}
-
-	function updateTelegramVisualCardUrlDraft(
-		key: DenteTelegramVisualCardKey,
-		value: string,
-	) {
-		setTelegramVisualCardUrlDrafts((current) => ({
-			...current,
-			[key]: value.trim() ? value : null,
-		}));
-		markTelegramSettingsDirty();
-	}
-
-	function toggleTelegramFeature(feature: DenteTelegramFeature) {
-		setTelegramEnabledFeaturesDraft((current) =>
-			current.includes(feature)
-				? current.filter((item) => item !== feature)
-				: [...current, feature],
-		);
-		if (
-			feature === "voice_note_intake" &&
-			!telegramEnabledFeaturesDraft.includes(feature)
-		) {
-			setTelegramAllowVoiceIntakeDraft(true);
-		}
-		markTelegramSettingsDirty();
-	}
-
-	function parseTelegramLinkTtlMinutes() {
-		const parsed = Number.parseInt(telegramTokenTtlDraft, 10);
-		if (!Number.isFinite(parsed)) return 15;
-		return Math.min(1440, Math.max(5, parsed));
-	}
-
-	function parseTelegramReminderLeadTimesHours(): number[] {
-		const values = telegramReminderLeadTimesDraft
-			.split(/[,\s;]+/)
-			.map((item) => Number.parseInt(item, 10))
-			.filter((item) => Number.isFinite(item) && item >= 1 && item <= 168);
-		const unique = [...new Set(values)]
-			.sort((left, right) => right - left)
-			.slice(0, 6);
-		return unique.length ? unique : [24];
-	}
-
-	function parseTelegramReviewRequestDelayHours(): number {
-		const parsed = Number.parseInt(telegramReviewRequestDelayDraft, 10);
-		if (!Number.isFinite(parsed)) return 2;
-		return Math.min(720, Math.max(1, parsed));
-	}
-
-	function parseTelegramPostVisitCheckupDelayHours(): DenteTelegramPostVisitCheckupDelayHoursByTopic {
-		const values = { ...defaultTelegramPostVisitCheckupDelayHoursByTopic };
-		for (const field of telegramPostVisitCheckupDelayFields) {
-			const parsed = Number.parseInt(
-				telegramPostVisitCheckupDelayDrafts[field.key],
-				10,
-			);
-			values[field.key] = Number.isFinite(parsed)
-				? Math.max(1, Math.min(720, parsed))
-				: defaultTelegramPostVisitCheckupDelayHoursByTopic[field.key];
-		}
-		return values;
-	}
-
-	function normalizeTelegramPostVisitCheckupDelayDrafts(
-		values: DenteTelegramPostVisitCheckupDelayHoursByTopic,
-	): TelegramPostVisitCheckupDelayDrafts {
-		const normalized = { ...defaultTelegramPostVisitCheckupDelayDrafts };
-		for (const field of telegramPostVisitCheckupDelayFields) {
-			normalized[field.key] = String(
-				values[field.key] ??
-					defaultTelegramPostVisitCheckupDelayDrafts[field.key],
-			);
-		}
-		return normalized;
-	}
-
-	function updateTelegramPostVisitCheckupDelayDraft(
-		key: TelegramPostVisitCheckupDelayKey,
-		value: string,
-	) {
-		setTelegramPostVisitCheckupDelayDrafts((current) => ({
-			...current,
-			[key]: value,
-		}));
-		markTelegramSettingsDirty();
-	}
-
-	function telegramFeatureLabel(value: DenteTelegramFeature | string) {
-		return (
-			telegramFeatureLabels[value as DenteTelegramFeature] ??
-			telegramHumanMessage(value)
-		);
-	}
-
 	function rememberAdminSecret(
 		secret: string,
 		domain: AdminSecretUnlockDomain,
@@ -2619,16 +2542,6 @@ export function useAppLogic(): any {
 			setScheduleAdminSecretDraft("");
 		if (domain === "all" || domain === "telegram")
 			setTelegramAdminSecretDraft("");
-	}
-
-	function telegramControlPlaneHeaders(
-		extra: Record<string, string> = {},
-		adminSecretOverride?: string,
-	): Record<string, string> {
-		return denteAdminSecretRequestHeaders(
-			extra,
-			adminSecretOverride ?? telegramAdminSecretSession,
-		);
 	}
 
 	function settingsAccessHeaders(
@@ -3142,7 +3055,7 @@ export function useAppLogic(): any {
 		const payload = buildClinicProfileUpdatePayload(clinicProfileDraft);
 		const expectedSignature = clinicProfileDraftSignature(clinicProfileDraft);
 		if (!payload.clinicName?.trim()) {
-			setError("Укажите рабочее назИвание клиники.");
+			setError("Укажите рабочее название клиники.");
 			setClinicProfileSaveState("error");
 			return false;
 		}
@@ -3343,7 +3256,7 @@ export function useAppLogic(): any {
 		if (!clinicProfileDraft) return [];
 		const issues: string[] = [];
 		const requiredClinicDraftFields: Array<[string, string]> = [
-			["назИвание клиники", clinicProfileDraft.clinicName],
+			["название клиники", clinicProfileDraft.clinicName],
 			["телефон клиники", clinicProfileDraft.phone],
 			["часовой пояс", clinicProfileDraft.timezone],
 		];
@@ -3394,8 +3307,8 @@ export function useAppLogic(): any {
 		if (!clinicProfileDraft) return [];
 		const issues: string[] = [];
 		const requiredDocumentDraftFields: Array<[string, string]> = [
-			["юридическое наименоИвание", clinicProfileDraft.legalName],
-			["ИИНН", clinicProfileDraft.inn],
+			["юридическое наименование", clinicProfileDraft.legalName],
+			["ИНН", clinicProfileDraft.inn],
 			["адрес", clinicProfileDraft.address],
 			["номер медицинской лицензии", clinicProfileDraft.medicalLicenseNumber],
 			["дата медицинской лицензии", clinicProfileDraft.medicalLicenseIssuedAt],
@@ -3445,7 +3358,7 @@ export function useAppLogic(): any {
 		}
 		if (
 			issues.some((issue) =>
-				["назИвание клиники", "телефон клиники", "часовой пояс"].includes(
+				["название клиники", "телефон клиники", "часовой пояс"].includes(
 					issue,
 				),
 			)
@@ -3456,8 +3369,8 @@ export function useAppLogic(): any {
 		if (
 			issues.some((issue) =>
 				[
-					"юридическое наименоИвание",
-					"ИИНН",
+					"юридическое наименование",
+					"ИНН",
 					"адрес",
 					"номер медицинской лицензии",
 					"дата медицинской лицензии",
@@ -3969,7 +3882,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Состояние распознаИвания недоступно",
+						"Состояние распознавания недоступно",
 					),
 				);
 			const status = (await response.json()) as SpeechGatewayStatus;
@@ -3979,7 +3892,7 @@ export function useAppLogic(): any {
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
-						"Шлюз распознаИвания речи недоступен",
+						"Шлюз распознавания речи недоступен",
 						speechError,
 					),
 				);
@@ -4000,7 +3913,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Проверка распознаИвания недоступна",
+						"Проверка распознавания недоступна",
 					),
 				);
 			setSpeechGatewayHealthReport(
@@ -4010,7 +3923,7 @@ export function useAppLogic(): any {
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
-						"Проверка распознаИвания недоступна",
+						"Проверка распознавания недоступна",
 						speechHealthError,
 					),
 				);
@@ -4030,7 +3943,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Провайдеры распознаИвания недоступны",
+						"Провайдеры распознавания недоступны",
 					),
 				);
 			setSpeechProviderRuntimeStatuses(
@@ -4040,7 +3953,7 @@ export function useAppLogic(): any {
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
-						"Провайдер распознаИвания недоступен",
+						"Провайдер распознавания недоступен",
 						speechRuntimeError,
 					),
 				);
@@ -4069,7 +3982,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Стратегия распознаИвания недоступна",
+						"Стратегия распознавания недоступна",
 					),
 				);
 			setSpeechRecordingStrategy(
@@ -4079,7 +3992,7 @@ export function useAppLogic(): any {
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
-						"Стратегия распознаИвания недоступна",
+						"Стратегия распознавания недоступна",
 						speechStrategyError,
 					),
 				);
@@ -4375,7 +4288,7 @@ export function useAppLogic(): any {
 			!payload.chunk.transcript.trim()
 		) {
 			throw new Error(
-				"Серверное распознаИвание сейчас недоступно; аудио осталось в локальной очереди.",
+				"Серверное распознавание сейчас недоступно; аудио осталось в локальной очереди.",
 			);
 		}
 		if (!response.ok) {
@@ -4421,7 +4334,7 @@ export function useAppLogic(): any {
 		}
 		if (!speechTranscriptionMatchesActiveVisit(result)) {
 			setSpeechStatusNote(
-				"Фрагмент распознаИвания относится к другому приему и не добавлен в текущую карту.",
+				"Фрагмент распознавания относится к другому приему и не добавлен в текущую карту.",
 			);
 			return;
 		}
@@ -4469,7 +4382,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Запись распознаИвания не собрана",
+						"Запись распознавания не собрана",
 					),
 				);
 			const assembly = (await response.json()) as SpeechRecordingAssembly;
@@ -4509,7 +4422,7 @@ export function useAppLogic(): any {
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
-						"Не удалось собрать запись распознаИвания",
+						"Не удалось собрать запись распознавания",
 						assemblyError,
 					),
 				);
@@ -4549,7 +4462,7 @@ export function useAppLogic(): any {
 			await refreshPendingSpeechChunkState();
 			if (!options.silent) {
 				setSpeechStatusNote(
-					`Очередь распознаИвания сохранена локально: ${queue.length} фрагм., отправка после подключения.`,
+					`Очередь распознавания сохранена локально: ${queue.length} фрагм., отправка после подключения.`,
 				);
 			}
 			return;
@@ -4564,7 +4477,7 @@ export function useAppLogic(): any {
 			await refreshPendingSpeechChunkState();
 			if (!options.silent) {
 				setSpeechStatusNote(
-					`Очередь распознаИвания сохранена: ${queue.length} фрагм. Серверное распознаИвание еще не готово, аудио не удалено.`,
+					`Очередь распознавания сохранена: ${queue.length} фрагм. Серверное распознавание еще не готово, аудио не удалено.`,
 				);
 			}
 			return;
@@ -4588,7 +4501,7 @@ export function useAppLogic(): any {
 			if (!options.silent) {
 				setError(
 					operatorWorkflowFailureMessage(
-						"Очередь распознаИвания пока не отправлена",
+						"Очередь распознавания пока не отправлена",
 						syncError,
 					),
 				);
@@ -6305,8 +6218,8 @@ export function useAppLogic(): any {
 				key: payerKey,
 				inn: payerInn,
 				label: payerInn
-					? `${payerName} В· ИИНН ${payerInn}${payerRelationship ? ` В· ${payerRelationship}` : ""}`
-					: `${payerName} В· документ ${payerIdentity || "без ИИНН"}${payerRelationship ? ` В· ${payerRelationship}` : ""}`,
+					? `${payerName} В· ИНН ${payerInn}${payerRelationship ? ` В· ${payerRelationship}` : ""}`
+					: `${payerName} В· документ ${payerIdentity || "без ИНН"}${payerRelationship ? ` В· ${payerRelationship}` : ""}`,
 				amountRub: payment.amountRub,
 				paymentCount: 1,
 			});
@@ -7426,7 +7339,7 @@ export function useAppLogic(): any {
 		}
 		if (command.requiresImplant && !ctPlanningImplantPlan) {
 			setError(
-				"Сначала выберите иИмплант из библиотеки, затем создайте ось или шаблон.",
+				"Сначала выберите имплант из библиотеки, затем создайте ось или шаблон.",
 			);
 			return;
 		}
@@ -7464,7 +7377,7 @@ export function useAppLogic(): any {
 				`Срез: ${mprSafeSliceIndex + 1}/${mprSliceMaxIndex + 1}`,
 				`Слой: ${mprSlabMm} мм`,
 				ctPlanningImplantPlan
-					? `ИИмплант: ${ctPlanningImplantPlan.diameterMm} x ${ctPlanningImplantPlan.lengthMm} мм`
+					? `Имплант: ${ctPlanningImplantPlan.diameterMm} x ${ctPlanningImplantPlan.lengthMm} мм`
 					: "",
 			]
 				.filter(Boolean)
@@ -8249,8 +8162,8 @@ export function useAppLogic(): any {
 		? "Отправить звук"
 		: "Проверить очередь";
 	const pendingSpeechFlushActionTitle = speechRecognitionReady
-		? "Отправить сохраненные аудиофрагменты на распознаИвание."
-		: "Проверить готовность распознаИвания. Аудио останется в локальной очереди, пока иИсточник недоступен.";
+		? "Отправить сохраненные аудиофрагменты на распознавание."
+		: "Проверить готовность распознавания. Аудио останется в локальной очереди, пока источник недоступен.";
 	const speechSafetyValue = pendingSpeechChunkCount
 		? `${pendingSpeechChunkCount} аудио`
 		: currentSpeechQualityIssue
@@ -8258,7 +8171,7 @@ export function useAppLogic(): any {
 			: speechRecognitionReady
 				? speechGatewayActiveProviderIsLocal
 					? "локальный модуль готов"
-					: "распознаИвание готово"
+					: "распознавание готово"
 				: "очередь локально";
 	const speechSafetyDetail = pendingSpeechChunkCount
 		? "аудио сохранено и уйдет позже"
@@ -8267,8 +8180,8 @@ export function useAppLogic(): any {
 			: speechRecognitionReady
 				? speechGatewayActiveProviderIsLocal
 					? `${speechGatewayStatus?.providerLabel ?? "локальный модуль"}, фрагменты уходят в локальный модуль`
-					: `${speechGatewayStatus?.providerLabel ?? "распознаИвание"}, звук отправляется частями`
-				: "аудио хранится локально до готового иИсточника";
+					: `${speechGatewayStatus?.providerLabel ?? "распознавание"}, звук отправляется частями`
+				: "аудио хранится локально до готового источника";
 	const speechSafetyState =
 		pendingSpeechChunkCount ||
 		currentSpeechQualityIssue ||
@@ -8490,7 +8403,7 @@ export function useAppLogic(): any {
 					? "чисто"
 					: "скоро",
 			detail: speechRecoveryQualityIssueCount
-				? `${speechRecoveryQualityIssueCount} фрагм. распознаИвания на проверку`
+				? `${speechRecoveryQualityIssueCount} фрагм. распознавания на проверку`
 				: speechRecoveryIssueCount
 					? `${speechRecoveryIssueCount} запись требует внимания`
 					: "потерь диктовки не видно",
@@ -9082,7 +8995,7 @@ export function useAppLogic(): any {
 	async function addChair() {
 		const name = newChairName.trim();
 		if (!name) {
-			setError("Введите назИвание кресла или кабинета перед добавлением.");
+			setError("Введите название кресла или кабинета перед добавлением.");
 			return;
 		}
 		if (!(await saveClinicProfileIfDirty())) return;
@@ -9131,7 +9044,7 @@ export function useAppLogic(): any {
 
 	async function runRecognitionJob() {
 		if (!recognitionText.trim()) {
-			setError("Вставьте текст, OCR или диктовку перед распознаИванием.");
+			setError("Вставьте текст, OCR или диктовку перед распознаванием.");
 			return;
 		}
 		setIsRecognitionLoading(true);
@@ -9244,7 +9157,7 @@ export function useAppLogic(): any {
 		if (!file) return;
 		if (file.size > 8 * 1024 * 1024) {
 			setError(
-				"Файл больше 8 МБ. Для больших архивов нужен пакетный иИмпорт на сервере или распознаИвание через локальный модуль клиники.",
+				"Файл больше 8 МБ. Для больших архивов нужен пакетный импорт на сервере или распознавание через локальный модуль клиники.",
 			);
 			return;
 		}
@@ -9295,7 +9208,7 @@ export function useAppLogic(): any {
 					setPricelistImageMimeType(prepared.mimeType);
 					setPricelistImageName(file.name);
 					setPricelistImageNote(
-						`${prepared.note} Получено через общий иИмпорт файлов.`,
+						`${prepared.note} Получено через общий импорт файлов.`,
 					);
 					setPricelistSourceKind("photo_ocr");
 					setUsePricelistAi(true);
@@ -9410,7 +9323,7 @@ export function useAppLogic(): any {
 			setSpeechStatusNote("Текст очищен локальным разбором без сервера.");
 			if (polishError instanceof Error) {
 				setError(
-					`${operatorWorkflowFailureMessage("Серверная очистка недоступна", polishError)} ИспользоИван локальный разбор.`,
+					`${operatorWorkflowFailureMessage("Серверная очистка недоступна", polishError)} Использован локальный разбор.`,
 				);
 			}
 		} finally {
@@ -9561,7 +9474,7 @@ export function useAppLogic(): any {
 	async function previewImport() {
 		if (!importText.trim()) {
 			setError(
-				"Вставьте список пациентов, OCR журнала или надиктуйте иИмпорт перед проверкой.",
+				"Вставьте список пациентов, OCR журнала или надиктуйте импорт перед проверкой.",
 			);
 			return;
 		}
@@ -9580,7 +9493,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "ИИмпорт не проверен"),
+					await responseErrorMessage(response, "Импорт не проверен"),
 				);
 			}
 			const result = (await response.json()) as ImportIntakeResponse;
@@ -9590,7 +9503,7 @@ export function useAppLogic(): any {
 			setImportCommit(null);
 		} catch (importError) {
 			setError(
-				operatorWorkflowFailureMessage("ИИмпорт не проверен", importError),
+				operatorWorkflowFailureMessage("Импорт не проверен", importError),
 			);
 		} finally {
 			setIsImportLoading(false);
@@ -9599,24 +9512,24 @@ export function useAppLogic(): any {
 
 	async function commitImport() {
 		if (isImportCommitting) {
-			setError("Дождитесь завершения текущей записи иИмпорта пациентов.");
+			setError("Дождитесь завершения текущей записи импорта пациентов.");
 			return;
 		}
 		if (!importText.trim()) {
 			setError(
-				"Вставьте список пациентов, OCR журнала или надиктуйте иИмпорт перед записью.",
+				"Вставьте список пациентов, OCR журнала или надиктуйте импорт перед записью.",
 			);
 			return;
 		}
 		if (!importPreview) {
 			setError(
-				"Сначала проверьте иИмпорт пациентов, чтобы увидеть готовые и проблемные строки.",
+				"Сначала проверьте импорт пациентов, чтобы увидеть готовые и проблемные строки.",
 			);
 			return;
 		}
 		if (importPreview.readyRows === 0) {
 			setError(
-				"В иИмпорте пациентов нет готовых строк. ИИсправьте предупреждения и повторите проверку.",
+				"В импорте пациентов нет готовых строк. Исправьте предупреждения и повторите проверку.",
 			);
 			return;
 		}
@@ -9635,7 +9548,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "ИИмпорт не записан"),
+					await responseErrorMessage(response, "Импорт не записан"),
 				);
 			}
 			const result = (await response.json()) as ImportCommitResponse;
@@ -9644,7 +9557,7 @@ export function useAppLogic(): any {
 			await loadDashboard();
 		} catch (importError) {
 			setError(
-				operatorWorkflowFailureMessage("ИИмпорт не записан", importError),
+				operatorWorkflowFailureMessage("Импорт не записан", importError),
 			);
 		} finally {
 			setIsImportCommitting(false);
@@ -9677,7 +9590,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "Умный иИмпорт не проверен"),
+					await responseErrorMessage(response, "Умный импорт не проверен"),
 				);
 			}
 			setSmartImportPreview(
@@ -9687,7 +9600,7 @@ export function useAppLogic(): any {
 		} catch (importError) {
 			setError(
 				operatorWorkflowFailureMessage(
-					"Умный иИмпорт не проверен",
+					"Умный импорт не проверен",
 					importError,
 				),
 			);
@@ -9702,7 +9615,7 @@ export function useAppLogic(): any {
 
 	async function commitSmartImport() {
 		if (isSmartImportCommitting) {
-			setError("Дождитесь завершения текущей записи умного иИмпорта.");
+			setError("Дождитесь завершения текущей записи умного импорта.");
 			return;
 		}
 		if (!smartImportText.trim()) {
@@ -9713,7 +9626,7 @@ export function useAppLogic(): any {
 		}
 		if (!smartImportPreview) {
 			setError(
-				"Сначала разберите умный иИмпорт, чтобы увидеть готовые строки и пропуски.",
+				"Сначала разберите умный импорт, чтобы увидеть готовые строки и пропуски.",
 			);
 			return;
 		}
@@ -9722,7 +9635,7 @@ export function useAppLogic(): any {
 			smartImportPreview.imagingPreview.readyRows === 0
 		) {
 			setError(
-				"В умном иИмпорте нет готовых пациентов или снимков. ИИсправьте строки и повторите разбор.",
+				"В умном импорте нет готовых пациентов или снимков. Исправьте строки и повторите разбор.",
 			);
 			return;
 		}
@@ -9741,7 +9654,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "Умный иИмпорт не записан"),
+					await responseErrorMessage(response, "Умный импорт не записан"),
 				);
 			}
 			const result = (await response.json()) as SmartImportCommitResponse;
@@ -9750,7 +9663,7 @@ export function useAppLogic(): any {
 			await loadDashboard();
 		} catch (importError) {
 			setError(
-				operatorWorkflowFailureMessage("Умный иИмпорт не записан", importError),
+				operatorWorkflowFailureMessage("Умный импорт не записан", importError),
 			);
 		} finally {
 			setIsSmartImportCommitting(false);
@@ -9779,7 +9692,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "Отчет иИмпорта не создан"),
+					await responseErrorMessage(response, "Отчет импорта не создан"),
 				);
 			}
 			const blob = await response.blob();
@@ -9793,7 +9706,7 @@ export function useAppLogic(): any {
 			URL.revokeObjectURL(url);
 		} catch (reportError) {
 			setError(
-				operatorWorkflowFailureMessage("Отчет иИмпорта не создан", reportError),
+				operatorWorkflowFailureMessage("Отчет импорта не создан", reportError),
 			);
 		} finally {
 			setIsSmartReportLoading(false);
@@ -9824,7 +9737,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Отчет переноса по иИмпорту не создан",
+						"Отчет переноса по импорту не создан",
 					),
 				);
 			}
@@ -9840,7 +9753,7 @@ export function useAppLogic(): any {
 		} catch (reportError) {
 			setError(
 				operatorWorkflowFailureMessage(
-					"Отчет переноса по иИмпорту не создан",
+					"Отчет переноса по импорту не создан",
 					reportError,
 				),
 			);
@@ -10012,7 +9925,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Поиск старых иИсточников не выполнен",
+						"Поиск старых источников не выполнен",
 					),
 				);
 			}
@@ -10023,7 +9936,7 @@ export function useAppLogic(): any {
 		} catch (discoveryError) {
 			setError(
 				operatorWorkflowFailureMessage(
-					"Поиск старых иИсточников не выполнен",
+					"Поиск старых источников не выполнен",
 					discoveryError,
 				),
 			);
@@ -10066,13 +9979,13 @@ export function useAppLogic(): any {
 	) {
 		if (!migrationCandidateCanPreview(candidate)) {
 			setError(
-				"У найденного иИсточника пока нет файлов для предпросмотра. Откройте план переноса или проверку иИсточника.",
+				"У найденного источника пока нет файлов для предпросмотра. Откройте план переноса или проверку источника.",
 			);
 			return;
 		}
 		if (!candidate.smartImportLine.trim()) {
 			setError(
-				"У найденного иИсточника нет строки для умного предпросмотра. Откройте план или повторите поиск.",
+				"У найденного источника нет строки для умного предпросмотра. Откройте план или повторите поиск.",
 			);
 			return;
 		}
@@ -10093,7 +10006,7 @@ export function useAppLogic(): any {
 			: [];
 		if (sourceFingerprint && !selectedSources.length) {
 			setError(
-				"ИИсточник из автоплана уже не найден. Обновите автоплан или выберите иИсточник из текущего списка.",
+				"Источник из автоплана уже не найден. Обновите автоплан или выберите источник из текущего списка.",
 			);
 			return;
 		}
@@ -10108,7 +10021,7 @@ export function useAppLogic(): any {
 				);
 		if (selectedSources.length && !previewSources.length) {
 			setError(
-				"У выбранного иИсточника пока нет файлов для предпросмотра. Откройте план переноса или проверку иИсточника.",
+				"У выбранного источника пока нет файлов для предпросмотра. Откройте план переноса или проверку источника.",
 			);
 			return;
 		}
@@ -10155,7 +10068,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"План переноса иИсточника не построен",
+						"План переноса источника не построен",
 					),
 				);
 			}
@@ -10165,7 +10078,7 @@ export function useAppLogic(): any {
 		} catch (workupError) {
 			setError(
 				operatorWorkflowFailureMessage(
-					"План переноса иИсточника не построен",
+					"План переноса источника не построен",
 					workupError,
 				),
 			);
@@ -10199,7 +10112,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Проверка иИсточника не выполнена",
+						"Проверка источника не выполнена",
 					),
 				);
 			}
@@ -10209,7 +10122,7 @@ export function useAppLogic(): any {
 		} catch (probeError) {
 			setError(
 				operatorWorkflowFailureMessage(
-					"Проверка иИсточника не выполнена",
+					"Проверка источника не выполнена",
 					probeError,
 				),
 			);
@@ -10234,7 +10147,7 @@ export function useAppLogic(): any {
 			)
 		) {
 			setError(
-				"Для поиска реквизитов клиники укажите ИИНН, ОГРН, назИвание, адрес или номер лицензии.",
+				"Для поиска реквизитов клиники укажите ИНН, ОГРН, название, адрес или номер лицензии.",
 			);
 			return;
 		}
@@ -10292,7 +10205,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "ИИмпорт снимков не проверен"),
+					await responseErrorMessage(response, "Импорт снимков не проверен"),
 				);
 			}
 			setImagingImportPreview(
@@ -10303,7 +10216,7 @@ export function useAppLogic(): any {
 		} catch (importError) {
 			setError(
 				operatorWorkflowFailureMessage(
-					"ИИмпорт снимков не проверен",
+					"Импорт снимков не проверен",
 					importError,
 				),
 			);
@@ -11038,7 +10951,7 @@ export function useAppLogic(): any {
 						inspectedDirectoryEntries > browserImagingScanDirectoryEntryLimit
 					) {
 						stats.warnings.push(
-							`Браузерное сканироИвание ограничило одну папку ${browserImagingScanDirectoryEntryLimit} элементами для отзывчивости интерфейса.`,
+							`Браузерное сканирование ограничило одну папку ${browserImagingScanDirectoryEntryLimit} элементами для отзывчивости интерфейса.`,
 						);
 						break;
 					}
@@ -11086,12 +10999,12 @@ export function useAppLogic(): any {
 
 		if (stats.scannedFiles >= browserImagingScanFileLimit) {
 			stats.warnings.push(
-				`Браузерное сканироИвание ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`,
+				`Браузерное сканирование ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`,
 			);
 		}
 		if (stats.scannedFolders >= browserImagingScanFolderLimit) {
 			stats.warnings.push(
-				`Браузерное сканироИвание ограничено ${browserImagingScanFolderLimit} папками для отзывчивости интерфейса.`,
+				`Браузерное сканирование ограничено ${browserImagingScanFolderLimit} папками для отзывчивости интерфейса.`,
 			);
 		}
 		stats.warnings.push(
@@ -11174,7 +11087,7 @@ export function useAppLogic(): any {
 
 		if (selectedFileCount > browserImagingScanFileLimit) {
 			stats.warnings.push(
-				`Браузерное сканироИвание ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`,
+				`Браузерное сканирование ограничено ${browserImagingScanFileLimit} файлами для отзывчивости интерфейса.`,
 			);
 		}
 		stats.warnings.push(
@@ -11366,7 +11279,7 @@ export function useAppLogic(): any {
 	async function scanImagingFolder() {
 		const folderPath = imagingFolderPath.trim();
 		if (!folderPath) {
-			setError("Укажите путь к папке снимков перед сканироИванием.");
+			setError("Укажите путь к папке снимков перед сканированием.");
 			return;
 		}
 		rememberLocalImagingFolder(folderPath, { origin: "manual" });
@@ -11389,7 +11302,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						response,
-						"Папка снимков не просканироИвана",
+						"Папка снимков не просканирована",
 					),
 				);
 			}
@@ -11406,7 +11319,7 @@ export function useAppLogic(): any {
 			if (isLocalDicomOperationAbortError(scanError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
-					"Папка снимков не просканироИвана",
+					"Папка снимков не просканирована",
 					scanError,
 				),
 			);
@@ -12252,7 +12165,7 @@ export function useAppLogic(): any {
 				throw new Error(
 					await responseErrorMessage(
 						workupResponse,
-						"ИИсточник снимков не переподключен",
+						"Источник снимков не переподключен",
 					),
 				);
 			}
@@ -12329,7 +12242,7 @@ export function useAppLogic(): any {
 			if (isLocalDicomOperationAbortError(reconnectError)) return;
 			setError(
 				operatorWorkflowFailureMessage(
-					"ИИсточник снимков не переподключен",
+					"Источник снимков не переподключен",
 					reconnectError,
 				),
 			);
@@ -12456,13 +12369,13 @@ export function useAppLogic(): any {
 		}
 		if (!imagingImportPreview) {
 			setError(
-				"Сначала проверьте иИмпорт снимков, чтобы увидеть готовые и проблемные строки.",
+				"Сначала проверьте импорт снимков, чтобы увидеть готовые и проблемные строки.",
 			);
 			return;
 		}
 		if (imagingImportPreview.readyRows === 0) {
 			setError(
-				"В иИмпорте снимков нет готовых строк. ИИсправьте предупреждения и повторите проверку.",
+				"В импорте снимков нет готовых строк. Исправьте предупреждения и повторите проверку.",
 			);
 			return;
 		}
@@ -12481,7 +12394,7 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "ИИмпорт снимков не записан"),
+					await responseErrorMessage(response, "Импорт снимков не записан"),
 				);
 			}
 			const result = (await response.json()) as ImagingImportCommitResponse;
@@ -12635,7 +12548,7 @@ export function useAppLogic(): any {
 		if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
 			setSpeechStatusNote(
 				queuedBeforeUpload
-					? `Фрагмент ${chunkIndex + 1} сохранен локально; распознаИвание отправится, когда иИсточник будет готов.`
+					? `Фрагмент ${chunkIndex + 1} сохранен локально; распознавание отправится, когда источник будет готов.`
 					: `Фрагмент ${chunkIndex + 1} не сохранен: локальная очередь недоступна.`,
 			);
 			return;
@@ -12859,7 +12772,7 @@ export function useAppLogic(): any {
 			if (!isOnline || !speechGatewayCanUpload(speechGatewayStatus)) {
 				setSpeechStatusNote(
 					isOnline
-						? "Запись идет в локальную очередь: серверное распознаИвание пока не готово, аудио не отправляется."
+						? "Запись идет в локальную очередь: серверное распознавание пока не готово, аудио не отправляется."
 						: "Запись идет в локальную очередь: офлайн, аудио отправится после подключения.",
 				);
 			}
@@ -12900,7 +12813,7 @@ export function useAppLogic(): any {
 
 	function startImportDictation() {
 		if (isImportDictating) {
-			setError("Дождитесь завершения текущей диктовки иИмпорта.");
+			setError("Дождитесь завершения текущей диктовки импорта.");
 			return;
 		}
 		const speechWindow = window as BrowserWindowWithSpeech;
@@ -12910,10 +12823,10 @@ export function useAppLogic(): any {
 			setImportSourceKind("voice_dictation");
 			setImportText(
 				(current) =>
-					`${current}\n\nДиктовка недоступна в этом браузере. Вставь распознанный текст сюда: ИИИванов ИИван, телефон +7 900 000-00-00, дата рождения 01.01.1980.`,
+					`${current}\n\nДиктовка недоступна в этом браузере. Вставь распознанный текст сюда: Иванов Иван, телефон +7 900 000-00-00, дата рождения 01.01.1980.`,
 			);
 			setError(
-				"Браузерная диктовка иИмпорта недоступна. Вставьте список пациентов вручную или загрузите OCR.",
+				"Браузерная диктовка импорта недоступна. Вставьте список пациентов вручную или загрузите OCR.",
 			);
 			return;
 		}
@@ -12934,7 +12847,7 @@ export function useAppLogic(): any {
 			setImportSourceKind("voice_dictation");
 			setIsImportDictating(false);
 			setError(
-				"Диктовка иИмпорта не распознана. Вставьте список вручную или загрузите OCR.",
+				"Диктовка импорта не распознана. Вставьте список вручную или загрузите OCR.",
 			);
 		};
 		recognition.onend = () => setIsImportDictating(false);
@@ -12945,7 +12858,7 @@ export function useAppLogic(): any {
 		} catch {
 			setIsImportDictating(false);
 			setError(
-				"Браузер не смог запустить микрофон для иИмпорта. Вставьте список пациентов вручную или загрузите файл.",
+				"Браузер не смог запустить микрофон для импорта. Вставьте список пациентов вручную или загрузите файл.",
 			);
 		}
 	}
@@ -12967,7 +12880,7 @@ export function useAppLogic(): any {
 			!newRulePatientText.trim()
 		) {
 			setError(
-				"Клиническое правило должно иметь назИвание, предупреждение и объяснение для пациента.",
+				"Клиническое правило должно иметь название, предупреждение и объяснение для пациента.",
 			);
 			return;
 		}
@@ -13222,7 +13135,7 @@ export function useAppLogic(): any {
 			dashboard?.activeVisit?.treatmentPlan?.trim() ||
 			procedureConsentProcedureName.trim() ||
 			treatmentAcceptanceClinicalGoal.trim() ||
-			"согласоИванное стоматологическое лечение";
+			"согласованное стоматологическое лечение";
 
 		return documentTextLines(clinicalToothRowsText).map((line, index) => {
 			const [
@@ -13615,7 +13528,7 @@ export function useAppLogic(): any {
 		return (
 			minorConsentInterventionScope.trim() ||
 			dashboard?.activeVisit?.treatmentPlan?.trim() ||
-			"стоматологическое вмешательство по согласоИванному плану"
+			"стоматологическое вмешательство по согласованному плану"
 		);
 	}
 
@@ -13979,7 +13892,7 @@ export function useAppLogic(): any {
 				) ??
 				requiredDocumentField(
 					paidContractCareReasonValue(),
-					"договор, осноИвание обращения",
+					"договор, основание обращения",
 				) ??
 				requiredDocumentField(
 					paidContractServiceScopeValue(),
@@ -14088,7 +14001,7 @@ export function useAppLogic(): any {
 				) ??
 				requiredDocumentField(
 					treatmentEstimateTreatmentBasisValue(),
-					"смета, осноИвание лечения",
+					"смета, основание лечения",
 				) ??
 				(serviceLines.length
 					? null
@@ -14199,7 +14112,7 @@ export function useAppLogic(): any {
 						(paymentReceiptPayerInnValue().replace(/\D+/g, "").length === 12 ||
 						paymentReceiptPayerIdentityDocumentValue().trim()
 							? null
-							: "Для налоговой квитанции укажите 12-значный ИИНН плательщика или документ плательщика."))
+							: "Для налоговой квитанции укажите 12-значный ИНН плательщика или документ плательщика."))
 					: null) ??
 				requiredDocumentField(
 					paymentReceiptPurpose,
@@ -14236,7 +14149,7 @@ export function useAppLogic(): any {
 				requiredDocumentField(installmentScheduleDate, "график, дата") ??
 				requiredDocumentField(
 					installmentScheduleBaseDocumentTitleValue(),
-					"график, осноИвание",
+					"график, основание",
 				) ??
 				requiredDocumentField(
 					installmentSchedulePayerFullNameValue(),
@@ -14290,7 +14203,7 @@ export function useAppLogic(): any {
 				) ??
 				requiredDocumentField(
 					minorRepresentativeAuthorityDocument,
-					"представитель, осноИвание полномочий",
+					"представитель, основание полномочий",
 				) ??
 				requiredDocumentField(
 					minorConsentPatientFullNameValue(),
@@ -14427,17 +14340,17 @@ export function useAppLogic(): any {
 				(taxApplicationForm === "legacy_2021_2023" &&
 				normalizedInn.length !== 10 &&
 				normalizedInn.length !== 12
-					? "Для старой налоговой справки укажите 10- или 12-значный ИИНН заявителя."
+					? "Для старой налоговой справки укажите 10- или 12-значный ИНН заявителя."
 					: null) ??
 				(normalizedInn &&
 				normalizedInn.length !== 10 &&
 				normalizedInn.length !== 12
-					? "ИИНН заявителя должен содержать 10 или 12 цифр."
+					? "ИНН заявителя должен содержать 10 или 12 цифр."
 					: null) ??
 				(taxApplicationForm === "knd_1151156" &&
 				normalizedInn &&
 				normalizedInn.length !== 12
-					? "Для КНД 1151156 ИИНН физического лица должен быть 12-значным. Если ИИНН нет, оставьте поле пустым и заполните документ заявителя."
+					? "Для КНД 1151156 ИНН физического лица должен быть 12-значным. Если ИНН нет, оставьте поле пустым и заполните документ заявителя."
 					: null) ??
 				(isDateInputValue(taxApplicationTaxpayerBirthDate)
 					? null
@@ -14474,36 +14387,36 @@ export function useAppLogic(): any {
 			return (
 				requiredDocumentField(
 					informedConsentIntervention,
-					"информироИванное согласие, вмешательство",
+					"информированное согласие, вмешательство",
 				) ??
 				requiredDocumentField(
 					effectiveArea,
-					"информироИванное согласие, область или зубы",
+					"информированное согласие, область или зубы",
 				) ??
 				requiredDocumentField(
 					effectiveIndication,
-					"информироИванное согласие, диагноз или показание",
+					"информированное согласие, диагноз или показание",
 				) ??
 				requiredDocumentField(
 					informedConsentExpectedBenefit,
-					"информироИванное согласие, ожидаемая польза",
+					"информированное согласие, ожидаемая польза",
 				) ??
 				(documentTextLines(informedConsentRisks).length
 					? null
-					: "Добавьте разъясненные риски для информироИванного согласия.") ??
+					: "Добавьте разъясненные риски для информированного согласия.") ??
 				(documentTextLines(informedConsentAlternatives).length
 					? null
-					: "Добавьте альтернативы лечения для информироИванного согласия.") ??
+					: "Добавьте альтернативы лечения для информированного согласия.") ??
 				(documentTextLines(informedConsentAftercare).length
 					? null
-					: "Добавьте рекомендации после вмешательства для информироИванного согласия.") ??
+					: "Добавьте рекомендации после вмешательства для информированного согласия.") ??
 				requiredDocumentField(
 					effectiveDoctor,
-					"информироИванное согласие, врач",
+					"информированное согласие, врач",
 				) ??
 				requiredDocumentField(
 					informedConsentConfirmedAt,
-					"информироИванное согласие, дата подтверждения",
+					"информированное согласие, дата подтверждения",
 				) ??
 				(informedConsentQuestionsAnswered
 					? null
@@ -14577,7 +14490,7 @@ export function useAppLogic(): any {
 				) ??
 				requiredDocumentField(
 					treatmentPlanDiagnosisSummaryValue(),
-					"план лечения, диагноз или клиническое осноИвание",
+					"план лечения, диагноз или клиническое основание",
 				) ??
 				requiredDocumentField(
 					treatmentPlanTeethOrAreaValue(),
@@ -14622,42 +14535,42 @@ export function useAppLogic(): any {
 					: "Подтвердите, что план не заменяет отдельное согласие.") ??
 				(treatmentPlanNewApprovalAcknowledged
 					? null
-					: "Подтвердите, что изменение плана требует нового согласоИвания.")
+					: "Подтвердите, что изменение плана требует нового согласования.")
 			);
 		}
 		if (kind === "treatment_plan_acceptance") {
 			return (
 				requiredDocumentField(
 					treatmentAcceptanceClinicalGoal,
-					"согласоИвание плана, клиническая цель",
+					"согласование плана, клиническая цель",
 				) ??
 				requiredDocumentField(
 					treatmentAcceptanceDiagnosisSummary.trim() ||
 						dashboard?.activeVisit?.diagnosis ||
 						dashboard?.activeVisit?.complaint ||
 						"",
-					"согласоИвание плана, диагноз или осноИвание",
+					"согласование плана, диагноз или основание",
 				) ??
 				requiredDocumentField(
 					treatmentAcceptanceTeethOrArea.trim() || inferredTreatmentArea || "",
-					"согласоИвание плана, зубы или область",
+					"согласование плана, зубы или область",
 				) ??
 				(clinicalToothRowsValue().length
 					? null
 					: "Добавьте клинические строки по зубам или сегментам.") ??
 				(treatmentAcceptanceStageRows().length
 					? null
-					: "Добавьте этапы согласоИванного плана лечения.") ??
+					: "Добавьте этапы согласованного плана лечения.") ??
 				(treatmentAcceptanceTotalRubValue() > 0
 					? null
-					: "Укажите ориентировочную стоимость согласоИванного плана.") ??
+					: "Укажите ориентировочную стоимость согласованного плана.") ??
 				requiredDocumentField(
 					treatmentAcceptanceEstimateValidUntil,
-					"согласоИвание плана, срок действия сметы",
+					"согласование плана, срок действия сметы",
 				) ??
 				requiredDocumentField(
 					treatmentAcceptancePaymentTerms,
-					"согласоИвание плана, условия оплаты",
+					"согласование плана, условия оплаты",
 				) ??
 				(documentTextLines(treatmentAcceptanceRejectedAlternatives).length
 					? null
@@ -14667,17 +14580,17 @@ export function useAppLogic(): any {
 					: "Добавьте риски и ограничения плана.") ??
 				requiredDocumentField(
 					treatmentAcceptanceWarrantyTerms,
-					"согласоИвание плана, гарантия и контроль",
+					"согласование плана, гарантия и контроль",
 				) ??
 				requiredDocumentField(
 					treatmentAcceptanceDoctorFullName.trim() ||
 						activeDoctor?.fullName ||
 						"",
-					"согласоИвание плана, врач",
+					"согласование плана, врач",
 				) ??
 				requiredDocumentField(
 					treatmentAcceptanceAcceptedAt,
-					"согласоИвание плана, дата",
+					"согласование плана, дата",
 				) ??
 				(treatmentAcceptanceQuestionsAnswered
 					? null
@@ -14690,7 +14603,7 @@ export function useAppLogic(): any {
 					: "Подтвердите, что пациент понимает возможность изменения стоимости.") ??
 				(treatmentAcceptanceRevisionAcknowledged
 					? null
-					: "Подтвердите, что существенное изменение плана требует нового согласоИвания.")
+					: "Подтвердите, что существенное изменение плана требует нового согласования.")
 			);
 		}
 		if (kind === "post_visit_recommendations") {
@@ -14806,7 +14719,7 @@ export function useAppLogic(): any {
 				requiredDocumentField(labTeethOrArea, "лаборатория, зубы или зона") ??
 				requiredDocumentField(labMaterial, "лаборатория, материал") ??
 				requiredDocumentField(labShade, "лаборатория, цвет") ??
-				requiredDocumentField(labSource, "лаборатория, иИсточник данных") ??
+				requiredDocumentField(labSource, "лаборатория, источник данных") ??
 				requiredDocumentField(labDeadline, "лаборатория, срок")
 			);
 		}
@@ -14820,7 +14733,7 @@ export function useAppLogic(): any {
 					: "Подтвердите, что фото, видео и снимки вносятся в медицинскую карту пациента.") ??
 				(photoVideoAnonymizationConfirmed
 					? null
-					: "Подтвердите, что внешнее использоИвание возможно только после обезличиИвания, кроме отдельно разрешенной узнаваемой публикации.") ??
+					: "Подтвердите, что внешнее использование возможно только после обезличивания, кроме отдельно разрешенной узнаваемой публикации.") ??
 				requiredDocumentField(
 					photoVideoRevocationChannel,
 					"фото/видео, порядок отзыва согласия",
@@ -14878,7 +14791,7 @@ export function useAppLogic(): any {
 				) ??
 				(outpatient025uSourceVisitIdsValue().length
 					? null
-					: "Добавьте иИсточник подписанной медицинской записи для карты 025/у.") ??
+					: "Добавьте источник подписанной медицинской записи для карты 025/у.") ??
 				requiredDocumentField(
 					documentPatient?.fullName ?? "",
 					"карта 025/у, пациент",
@@ -14928,7 +14841,7 @@ export function useAppLogic(): any {
 				requiredDocumentField(recordExtractPeriodEnd, "выписка, период по") ??
 				(sourceVisitIds.length || dashboard?.activeVisit?.id
 					? null
-					: "Добавьте иИсточник медицинской записи для выписки.") ??
+					: "Добавьте источник медицинской записи для выписки.") ??
 				requiredDocumentField(
 					recordExtractComplaintAndAnamnesisValue(),
 					"выписка, жалобы и анамнез",
@@ -14964,7 +14877,7 @@ export function useAppLogic(): any {
 				) ??
 				requiredDocumentField(
 					recordExtractRecipientAuthority,
-					"выписка, осноИвание выдачи",
+					"выписка, основание выдачи",
 				) ??
 				requiredDocumentField(recordExtractIssuedAt, "выписка, дата") ??
 				(recordExtractPreparedFromSignedRecords
@@ -14992,7 +14905,7 @@ export function useAppLogic(): any {
 				) ??
 				requiredDocumentField(
 					copyRequestRecipientAuthority,
-					"запрос копий, осноИвание полномочий",
+					"запрос копий, основание полномочий",
 				) ??
 				requiredDocumentField(
 					copyRequestRequestedAt,
@@ -15060,7 +14973,7 @@ export function useAppLogic(): any {
 				) ??
 				requiredDocumentField(
 					releaseRecipientAuthority,
-					"выдача документов, осноИвание полномочий",
+					"выдача документов, основание полномочий",
 				) ??
 				(documentTextLines(releaseDocumentTypes).length
 					? null
@@ -15092,7 +15005,7 @@ export function useAppLogic(): any {
 							"Укажите сумму возврата или коррекции больше нуля.",
 							"Укажите сумму возврата или коррекции целыми рублями без копеек.",
 						)) ??
-				requiredDocumentField(refundReason, "возврат/коррекция, осноИвание") ??
+				requiredDocumentField(refundReason, "возврат/коррекция, основание") ??
 				requiredDocumentField(
 					refundRecipientFullName,
 					"возврат/коррекция, получатель",
@@ -15120,7 +15033,7 @@ export function useAppLogic(): any {
 				requiredDocumentField(operatorName, "ПДн, оператор клиники") ??
 				(operatorInn.length === 10 || operatorInn.length === 12
 					? null
-					: "ИИНН оператора ПДн должен содержать 10 или 12 цифр.") ??
+					: "ИНН оператора ПДн должен содержать 10 или 12 цифр.") ??
 				requiredDocumentField(
 					clinicProfileDraft.address,
 					"ПДн, адрес оператора",
@@ -15442,7 +15355,7 @@ export function useAppLogic(): any {
 					),
 					informedConsentExplained: confirmedDocumentLiteral(
 						minorConsentExplained,
-						"информироИванное согласие разъяснено",
+						"информированное согласие разъяснено",
 					),
 					medicalRecordConsentStored: confirmedDocumentLiteral(
 						minorConsentStored,
@@ -15555,11 +15468,11 @@ export function useAppLogic(): any {
 					consentConfirmedAt: informedConsentConfirmedAt.trim(),
 					patientQuestionsAnswered: confirmedDocumentLiteral(
 						informedConsentQuestionsAnswered,
-						"вопросы пациента по информироИванному согласию закрыты",
+						"вопросы пациента по информированному согласию закрыты",
 					),
 					patientUnderstandsRisks: confirmedDocumentLiteral(
 						informedConsentRisksUnderstood,
-						"риски информироИванного согласия понятны",
+						"риски информированного согласия понятны",
 					),
 					patientMayWithdrawBeforeIntervention: confirmedDocumentLiteral(
 						informedConsentWithdrawUnderstood,
@@ -15637,7 +15550,7 @@ export function useAppLogic(): any {
 					),
 					planRequiresNewApprovalOnChange: confirmedDocumentLiteral(
 						treatmentPlanNewApprovalAcknowledged,
-						"изменение плана требует нового согласоИвания",
+						"изменение плана требует нового согласования",
 					),
 				},
 			};
@@ -15673,7 +15586,7 @@ export function useAppLogic(): any {
 					acceptedAt: treatmentAcceptanceAcceptedAt.trim(),
 					patientQuestionsAnswered: confirmedDocumentLiteral(
 						treatmentAcceptanceQuestionsAnswered,
-						"вопросы пациента по согласоИванию плана закрыты",
+						"вопросы пациента по согласованию плана закрыты",
 					),
 					patientUnderstandsAlternatives: confirmedDocumentLiteral(
 						treatmentAcceptanceAlternativesUnderstood,
@@ -15685,7 +15598,7 @@ export function useAppLogic(): any {
 					),
 					revisionRequiresNewApproval: confirmedDocumentLiteral(
 						treatmentAcceptanceRevisionAcknowledged,
-						"пересмотр плана требует нового согласоИвания",
+						"пересмотр плана требует нового согласования",
 					),
 				},
 			};
@@ -15800,7 +15713,7 @@ export function useAppLogic(): any {
 				photoVideoConsent: {
 					clinicalRecordUse: confirmedDocumentLiteral(
 						photoVideoClinicalRecordUseConfirmed,
-						"использоИвание фото, видео и снимков в медицинской карте подтверждено",
+						"использование фото, видео и снимков в медицинской карте подтверждено",
 					),
 					labTransferAllowed: photoVideoLabTransferAllowed,
 					colleagueConsultationAllowed: photoVideoColleagueConsultationAllowed,
@@ -15811,7 +15724,7 @@ export function useAppLogic(): any {
 					materials: photoVideoMaterials,
 					anonymizationRequired: confirmedDocumentLiteral(
 						photoVideoAnonymizationConfirmed,
-						"обезличиИвание внешнего использоИвания подтверждено",
+						"обезличивание внешнего использования подтверждено",
 					),
 					revocationChannel: photoVideoRevocationChannel.trim(),
 					scopeNotes: photoVideoScopeNotes.trim() || null,
@@ -16039,7 +15952,7 @@ export function useAppLogic(): any {
 				/>
 				<small>
 					Формат строки: зуб/сегмент | поверхности | статус | диагноз/находка |
-					показание | действие | прогноз | пародонт | иИмплант/ортопедия |
+					показание | действие | прогноз | пародонт | имплант/ортопедия |
 					ортодонтия
 				</small>
 			</label>
@@ -16378,7 +16291,7 @@ export function useAppLogic(): any {
 
 	function requestDocumentVoid(document: GeneratedDocument) {
 		if (document.status === "voided") {
-			setError("Документ уже аннулироИван.");
+			setError("Документ уже аннулирован.");
 			return;
 		}
 		setDocumentVoidReasonCode(
@@ -16406,12 +16319,12 @@ export function useAppLogic(): any {
 	async function confirmDocumentVoid() {
 		const documentId = documentVoidConfirmation?.id;
 		if (!documentId) {
-			setError("Выберите документ для аннулироИвания.");
+			setError("Выберите документ для аннулирования.");
 			return;
 		}
 		if (!documentVoidReady) {
 			setError(
-				"Перед аннулироИванием укажите причину, ответственного сотрудника, сохранение архива и проверку статуса.",
+				"Перед аннулированием укажите причину, ответственного сотрудника, сохранение архива и проверку статуса.",
 			);
 			return;
 		}
@@ -16562,7 +16475,7 @@ export function useAppLogic(): any {
 				headers: denteClinicalReadHeaders(),
 			});
 			if (!response.ok) {
-				setError(await responseErrorMessage(response, "PDF не сформироИван"));
+				setError(await responseErrorMessage(response, "PDF не сформирован"));
 				return;
 			}
 
@@ -16581,7 +16494,7 @@ export function useAppLogic(): any {
 			URL.revokeObjectURL(url);
 			setError(null);
 		} catch (error) {
-			setError(requestFailureMessage("PDF не сформироИван", error));
+			setError(requestFailureMessage("PDF не сформирован", error));
 		}
 	}
 
@@ -16662,7 +16575,7 @@ export function useAppLogic(): any {
 			? explicitPayerInn
 			: explicitPayerInn || administrativePayerInn;
 		if (normalizedPayerInn && !/^\d{10}$|^\d{12}$/.test(normalizedPayerInn)) {
-			setError("ИИНН плательщика должен содержать 10 или 12 цифр");
+			setError("ИНН плательщика должен содержать 10 или 12 цифр");
 			return;
 		}
 		setIsPaymentSaving(true);
@@ -16871,20 +16784,6 @@ export function useAppLogic(): any {
 		}
 	}
 
-	function telegramOutboxRequestParams(
-		cursor?: string | null,
-	): URLSearchParams {
-		const params = new URLSearchParams();
-		params.set("limit", "80");
-		if (cursor) params.set("cursor", cursor);
-		if (telegramOutboxStatusFilter !== "all")
-			params.set("status", telegramOutboxStatusFilter);
-		if (telegramOutboxTemplateFilter !== "all")
-			params.set("templateKind", telegramOutboxTemplateFilter);
-		appendTelegramRuntimeScopeParams(params);
-		return params;
-	}
-
 	function appendTelegramRuntimeScopeParams(
 		params: URLSearchParams,
 	): URLSearchParams {
@@ -16906,125 +16805,6 @@ export function useAppLogic(): any {
 		const params = appendTelegramRuntimeScopeParams(new URLSearchParams());
 		const query = params.toString();
 		return query ? `?${query}` : "";
-	}
-
-	function telegramLinkCodeLedgerRequestParams(
-		cursor?: string | null,
-	): URLSearchParams {
-		const params = new URLSearchParams();
-		params.set("limit", "8");
-		if (cursor) params.set("cursor", cursor);
-		appendTelegramRuntimeScopeParams(params);
-		return params;
-	}
-
-	function telegramChatLinkLedgerRequestParams(
-		cursor?: string | null,
-	): URLSearchParams {
-		const params = new URLSearchParams();
-		params.set("limit", "8");
-		if (cursor) params.set("cursor", cursor);
-		appendTelegramRuntimeScopeParams(params);
-		return params;
-	}
-
-	function telegramStatusEndpoint(): string {
-		const organizationId =
-			dashboard?.clinicSettings?.profile?.organizationId?.trim();
-		const botConfigId = telegramBotConfigId.trim();
-		if (
-			telegramModeDraft === "clinic_owned_bot" &&
-			organizationId &&
-			botConfigId
-		) {
-			return `/api/telegram/status/${encodeURIComponent(organizationId)}/${encodeURIComponent(botConfigId)}`;
-		}
-		return "/api/telegram/status";
-	}
-
-	async function loadTelegramControlPlane(
-		options: { silent?: boolean; adminSecret?: string } = {},
-	) {
-		if (!options.silent) setIsTelegramLoading(true);
-		try {
-			const headers = telegramControlPlaneHeaders({}, options.adminSecret);
-			const outboxParams = telegramOutboxRequestParams();
-			const linkCodeParams = telegramLinkCodeLedgerRequestParams();
-			const chatLinkParams = telegramChatLinkLedgerRequestParams();
-			const [
-				statusResponse,
-				featurePlanResponse,
-				outboxResponse,
-				linkCodesResponse,
-				chatLinksResponse,
-			] = await Promise.all([
-				fetch(telegramStatusEndpoint(), { cache: "no-store", headers }),
-				fetch("/api/telegram/feature-plan", { cache: "no-store", headers }),
-				fetch(`/api/telegram/outbox?${outboxParams.toString()}`, {
-					cache: "no-store",
-					headers,
-				}),
-				fetch(`/api/telegram/link-codes?${linkCodeParams.toString()}`, {
-					cache: "no-store",
-					headers,
-				}),
-				fetch(`/api/telegram/chat-links?${chatLinkParams.toString()}`, {
-					cache: "no-store",
-					headers,
-				}),
-			]);
-			if (!statusResponse.ok)
-				throw new Error(
-					await responseErrorMessage(statusResponse, "Статус Telegram"),
-				);
-			if (!featurePlanResponse.ok)
-				throw new Error(
-					await responseErrorMessage(featurePlanResponse, "План Telegram"),
-				);
-			if (!outboxResponse.ok)
-				throw new Error(
-					await responseErrorMessage(outboxResponse, "Очередь Telegram"),
-				);
-			if (!linkCodesResponse.ok)
-				throw new Error(
-					await responseErrorMessage(linkCodesResponse, "Коды Telegram"),
-				);
-			if (!chatLinksResponse.ok)
-				throw new Error(
-					await responseErrorMessage(
-						chatLinksResponse,
-						"Связанные Telegram-чаты",
-					),
-				);
-			setTelegramStatus(
-				(await statusResponse.json()) as DenteTelegramBotStatus,
-			);
-			setTelegramFeaturePlan(
-				(await featurePlanResponse.json()) as TelegramFeaturePlan,
-			);
-			setTelegramOutbox(
-				(await outboxResponse.json()) as DenteTelegramOutboxResponse,
-			);
-			const nextLinkCodeLedger =
-				(await linkCodesResponse.json()) as DenteTelegramLinkCodeListResponse;
-			const nextChatLinkLedger =
-				(await chatLinksResponse.json()) as DenteTelegramChatLinkListResponse;
-			setTelegramLinkCodeLedger(nextLinkCodeLedger);
-			setTelegramChatLinkLedger(nextChatLinkLedger);
-			setTelegramLinkCodes(nextLinkCodeLedger.linkCodes);
-			setTelegramChatLinks(nextChatLinkLedger.chatLinks);
-		} catch (telegramError) {
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Панель управления Telegram недоступна",
-						telegramError,
-					),
-				);
-			}
-		} finally {
-			if (!options.silent) setIsTelegramLoading(false);
-		}
 	}
 
 	async function loadMoreTelegramOutbox() {
@@ -17237,12 +17017,12 @@ export function useAppLogic(): any {
 				document.execCommand("copy");
 				document.body.removeChild(area);
 			}
-			setTelegramLinkActionState(`${label} скопироИван`);
+			setTelegramLinkActionState(`${label} скопирован`);
 			setError(null);
 		} catch {
 			setTelegramLinkActionState(null);
 			setError(
-				`${label} не скопироИван. Откройте ссылку или выделите код вручную.`,
+				`${label} не скопирован. Откройте ссылку или выделите код вручную.`,
 			);
 		}
 	}
@@ -17359,179 +17139,6 @@ export function useAppLogic(): any {
 		}
 	}
 
-	async function saveTelegramSettings(
-		options: { silent?: boolean } = {},
-	): Promise<boolean> {
-		if (telegramPrivacyModeDraft === "consented_phi_templates") {
-			const message =
-				"Чувствительные Telegram-шаблоны заблокироИваны до отдельного согласия пациента, аудита и серверной политики PHI.";
-			setTelegramSettingsSaveState("error");
-			setTelegramSettingsSaveError(message);
-			if (!options.silent) setError(message);
-			return false;
-		}
-		const patientLinkTokenTtlMinutes = parseTelegramLinkTtlMinutes();
-		if (String(patientLinkTokenTtlMinutes) !== telegramTokenTtlDraft) {
-			setTelegramTokenTtlDraft(String(patientLinkTokenTtlMinutes));
-		}
-		const appointmentReminderLeadTimesHours =
-			parseTelegramReminderLeadTimesHours();
-		const normalizedReminderLeadTimes =
-			appointmentReminderLeadTimesHours.join(", ");
-		if (normalizedReminderLeadTimes !== telegramReminderLeadTimesDraft) {
-			setTelegramReminderLeadTimesDraft(normalizedReminderLeadTimes);
-		}
-		const reviewRequestDelayHours = parseTelegramReviewRequestDelayHours();
-		if (String(reviewRequestDelayHours) !== telegramReviewRequestDelayDraft) {
-			setTelegramReviewRequestDelayDraft(String(reviewRequestDelayHours));
-		}
-		const postVisitCheckupDelayHoursByTopic =
-			parseTelegramPostVisitCheckupDelayHours();
-		const normalizedPostVisitCheckupDelayDrafts =
-			normalizeTelegramPostVisitCheckupDelayDrafts(
-				postVisitCheckupDelayHoursByTopic,
-			);
-		if (
-			JSON.stringify(normalizedPostVisitCheckupDelayDrafts) !==
-			JSON.stringify(telegramPostVisitCheckupDelayDrafts)
-		) {
-			setTelegramPostVisitCheckupDelayDrafts(
-				normalizedPostVisitCheckupDelayDrafts,
-			);
-		}
-		let botUsername: string | null;
-		let ownBotUsername: string | null;
-		let webhookBaseUrl: string | null;
-		let patientPortalBaseUrl: string | null;
-		let welcomeImageUrl: string | null;
-		let visualCardUrls: DenteTelegramVisualCardUrls;
-		let clinicReviewUrl: string | null;
-		let clinicMapsUrl: string | null;
-		try {
-			botUsername = normalizeTelegramBotUsernameDraft(
-				"Общий бот",
-				telegramBotUsernameDraft,
-			);
-			ownBotUsername = normalizeTelegramBotUsernameDraft(
-				"Бот клиники",
-				telegramOwnBotUsernameDraft,
-			);
-			webhookBaseUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Адрес приема сообщений Telegram",
-				telegramWebhookBaseUrlDraft,
-			);
-			patientPortalBaseUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Портал пациента",
-				telegramPatientPortalBaseUrlDraft,
-			);
-			welcomeImageUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Картинка приветствия",
-				telegramWelcomeImageUrlDraft,
-			);
-			visualCardUrls = normalizeTelegramVisualCardUrlDraftsForSave(
-				telegramVisualCardUrlDrafts,
-			);
-			clinicReviewUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Ссылка на отзыв",
-				telegramReviewUrlDraft,
-			);
-			clinicMapsUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Ссылка на карту",
-				telegramMapsUrlDraft,
-			);
-		} catch (urlError) {
-			const message =
-				operatorReadableErrorDetailFromUnknown(urlError) ??
-				"Проверьте Telegram-настройки перед сохранением.";
-			setTelegramSettingsSaveState("error");
-			setTelegramSettingsSaveError(message);
-			if (!options.silent) setError(message);
-			return false;
-		}
-		if (
-			(botUsername ?? "") !== telegramBotUsernameDraft.trim().replace(/^@/, "")
-		)
-			setTelegramBotUsernameDraft(botUsername ?? "");
-		if (
-			(ownBotUsername ?? "") !==
-			telegramOwnBotUsernameDraft.trim().replace(/^@/, "")
-		) {
-			setTelegramOwnBotUsernameDraft(ownBotUsername ?? "");
-		}
-		if ((webhookBaseUrl ?? "") !== telegramWebhookBaseUrlDraft.trim())
-			setTelegramWebhookBaseUrlDraft(webhookBaseUrl ?? "");
-		if (
-			(patientPortalBaseUrl ?? "") !== telegramPatientPortalBaseUrlDraft.trim()
-		)
-			setTelegramPatientPortalBaseUrlDraft(patientPortalBaseUrl ?? "");
-		if ((welcomeImageUrl ?? "") !== telegramWelcomeImageUrlDraft.trim())
-			setTelegramWelcomeImageUrlDraft(welcomeImageUrl ?? "");
-		if (
-			JSON.stringify(visualCardUrls) !==
-			JSON.stringify(telegramVisualCardUrlDrafts)
-		)
-			setTelegramVisualCardUrlDrafts(visualCardUrls);
-		if ((clinicReviewUrl ?? "") !== telegramReviewUrlDraft.trim())
-			setTelegramReviewUrlDraft(clinicReviewUrl ?? "");
-		if ((clinicMapsUrl ?? "") !== telegramMapsUrlDraft.trim())
-			setTelegramMapsUrlDraft(clinicMapsUrl ?? "");
-		setIsTelegramSettingsSaving(true);
-		setTelegramSettingsSaveState("saving");
-		setTelegramSettingsSaveError(null);
-		try {
-			const response = await fetch("/api/settings/telegram", {
-				method: "PUT",
-				headers: telegramControlPlaneHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					mode: telegramModeDraft,
-					botUsername,
-					ownBotUsername,
-					webhookBaseUrl,
-					patientPortalBaseUrl,
-					welcomeImageUrl,
-					visualCardUrls,
-					clinicReviewUrl,
-					clinicMapsUrl,
-					enabledFeatures: telegramEnabledFeaturesDraft,
-					patientLinkTokenTtlMinutes,
-					appointmentReminderLeadTimesHours,
-					reviewRequestDelayHours,
-					postVisitCheckupDelayHoursByTopic,
-					allowVoiceIntake: telegramAllowVoiceIntakeDraft,
-					staffEscalationChannel:
-						telegramStaffEscalationChannelDraft.trim() || null,
-					privacyMode: telegramPrivacyModeDraft,
-				}),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Настройки Telegram не сохранены",
-					),
-				);
-			setTelegramStatus((await response.json()) as DenteTelegramBotStatus);
-			setTelegramSettingsDirty(false);
-			setTelegramSettingsSaveState("saved");
-			await loadTelegramControlPlane({ silent: true });
-			setError(null);
-			return true;
-		} catch (telegramError) {
-			const message = operatorWorkflowFailureMessage(
-				"Настройки Telegram не сохранены",
-				telegramError,
-			);
-			setTelegramSettingsSaveState("error");
-			setTelegramSettingsSaveError(message);
-			if (!options.silent) setError(message);
-			return false;
-		} finally {
-			setIsTelegramSettingsSaving(false);
-		}
-	}
-
 	async function sendTelegramOutboxItem(itemId: string) {
 		if (telegramSendingItemId || isTelegramSendingDue) {
 			setError("Дождитесь завершения текущей отправки Telegram.");
@@ -17570,7 +17177,7 @@ export function useAppLogic(): any {
 					: "";
 				const reason = telegramHumanMessage(result.blockedReason) || warning;
 				setError(
-					`Отправка Telegram заблокироИвана${reason ? `: ${reason}` : ""}`,
+					`Отправка Telegram заблокирована${reason ? `: ${reason}` : ""}`,
 				);
 				await loadTelegramControlPlane({ silent: true });
 				return;
@@ -17650,7 +17257,7 @@ export function useAppLogic(): any {
 		}
 		const titles: Record<ImagingStudyKind, string> = {
 			periapical: "Прицельный 36",
-			bitewing: "ИИнтерпроксимальный контроль",
+			bitewing: "Интерпроксимальный контроль",
 			opg: "ОПТГ",
 			ceph: "ТРГ боковая",
 			cbct: "КЛКТ / КТ",
@@ -17682,7 +17289,7 @@ export function useAppLogic(): any {
 							: "sensor_bridge",
 					sourceName:
 						kind === "cbct" || kind === "opg" || kind === "ceph"
-							? "ИИмпорт КТ/снимков"
+							? "Импорт КТ/снимков"
 							: "Локальный RVG-датчик",
 					aiSummary:
 						"Черновик: снимок добавлен в карту. Описание требует проверки врача.",
@@ -17854,944 +17461,945 @@ export function useAppLogic(): any {
 	};
 
 	return {
-		acceptDraftToVisit,
-		activeAppointment,
-		activeChair,
-		activeCommunicationTasks,
-		activeDoctor,
-		activeDocuments,
-		activeImagingStudies,
-		activeIssuedPaidContracts,
-		activePatient,
-		activePatientCallablePhone,
-		activePatientHasCallablePhone,
-		activePatientInsight,
-		activePayments,
-		activeQueueRole,
-		activeRolePolicy,
-		activeRoleQueue,
-		activeRoleRestrictedSections,
-		activeRoleWritableSections,
-		activeSettingsTabButtonRef,
-		activeSpeechProviderHealth,
-		activeTreatmentPlanItems,
-		activeTreatmentPlanScenarios,
-		activeUsableDocuments,
-		activeVisitClinicalRuleEvaluations,
-		activeVisitClinicalRuleSummary,
-		activeWorkspaceProfile,
-		addChair,
-		addImagingViewerNoteAnnotation,
-		addMigrationDiscoveryCandidateToSmartImport,
-		addStaffMember,
-		analyzePricelist,
-		appendToTranscript,
-		applyCtPlanningQuickAction,
-		applyMprClinicalPreset,
-		applyNearestMprClinicalPreset,
-		applyPostVisitCarePreset,
-		applyProtocolTemplate,
-		appointmentLabels,
-		appointmentReadinessById,
-		appointmentReadinessLabels,
-		appointmentScheduleDraftFromAppointment,
-		attachPricelistImage,
-		browserCanRequestPersistentStorage,
-		browserContinuity,
-		browserContinuityChecks,
-		browserContinuityCritical,
-		browserContinuityState,
-		browserContinuityValue,
-		browserDirectoryInputRef,
-		browserDirectoryPickerAvailable,
-		browserImagingScanProgress,
-		browserMigrationDiscovery,
-		browserMigrationInputRef,
-		browserMigrationScanProgress,
-		browserPickedImagingFolder,
-		buildDicomFolderWorkupPlan,
-		buildDicomRenderCachePlan,
-		buildDicomViewerLaunchManifest,
-		buildDicomViewerToolStateBundle,
-		buildDicomViewerWorkbenchManifest,
-		buildDraft,
-		buildOfflineDraft,
-		canRetryImagingViewerSave,
-		cancelBrowserImagingFolderScan,
-		cancelBrowserMigrationScan,
-		cancelLocalDicomOperation,
-		cbctWorkbenchPlanes,
-		cbctWorkbenchProjections,
-		cbctWorkbenchSeries,
-		cbctWorkbenchTools,
-		chairScheduleDirtyIds,
-		chairScheduleDrafts,
-		chairScheduleSaveStates,
-		chairScheduleSavingId,
-		changeClinicMode,
-		changePostVisitCareTopic,
-		checkDicomWebConnector,
-		checkDicomWorkstationReadiness,
-		chooseRecognitionPreset,
-		clampMprAxisDeg,
-		clampMprSlabMm,
-		clampMprSliceIndex,
-		clearBrowserPickedImagingFolderPreview,
-		clearDicomWorkbenchRecovery,
-		clearLocalImagingFolderRecovery,
-		clearPricelistImage,
-		clearTranscriptWithUndo,
-		clearedTranscriptSnapshot,
-		clinicModeLabels,
-		clinicProfileDraft,
-		clinicProfileSaveState,
-		clinicPublicLookup,
-		clinicalRuleActionLabels,
-		clinicalRuleSeverityLabels,
-		closeAppointmentEditor,
-		commitImagingImport,
-		commitImport,
-		commitSmartImport,
-		communicationChannelLabels,
-		communicationDocumentTaskActionLabels,
-		communicationIntentLabels,
-		communicationNote,
-		communicationPriorityLabels,
-		communicationSavingTaskId,
-		communicationStatusLabels,
-		compactDocumentText,
-		completeCommunicationTask,
-		completedActContractReferenceForUi,
-		completedActFiscalReceiptLines,
-		completedActPaidRubValue,
-		confirmDocumentIssue,
-		confirmDocumentVoid,
-		continueOnboardingInDraftMode,
-		copyTelegramTextToClipboard,
-		createAppointmentFromDraft,
-		createClinicalRuleFromSettings,
-		createCtPlanningArtifact,
-		createDocument,
-		createImagingStudy,
-		createPatient,
-		createTelegramLinkCode,
-		ctPlanningActiveQuickActionId,
-		ctPlanningAnnotationRefs,
-		ctPlanningImplantPlan,
-		currentOnboardingIndex,
-		currentView,
-		dashboard,
-		defaultDicomFirstFrameViewerState,
-		defaultImagingViewerState,
-		dentalMaterialKindLabels,
-		dentalRestorationTypeLabels,
-		describeMprClinicalPresetProjectionFallback,
-		dicomDiagnosticPixelPolicyLabels,
-		dicomExecutionLaneLabels,
-		dicomFirstFrameImageStyle,
-		dicomFirstFramePreview,
-		dicomFirstFrameStatusLabels,
-		dicomFirstFrameViewerState,
-		dicomFolderSeriesScan,
-		dicomFolderWorkupPathLabels,
-		dicomFolderWorkupPlan,
-		dicomGpuClassLabels,
-		dicomLabel,
-		dicomLocalFolderDiscovery,
-		dicomQualityModeLabels,
-		dicomReadinessCheckLabels,
-		dicomRenderCachePlan,
-		dicomRenderMemoryBudgetClassLabels,
-		dicomRuntimeTierLabels,
-		dicomSeriesPreview,
-		dicomSeriesViewerLabels,
-		dicomTextureStrategyLabels,
-		dicomViewerLaunchManifest,
-		dicomViewerLaunchModeLabels,
-		dicomViewerToolStateBundle,
-		dicomViewerWorkbenchManifest,
-		dicomWebCheck,
-		dicomWebEndpointUrl,
-		dicomWebStatusLabels,
-		dicomWorkbenchLocalSavedAt,
-		dicomWorkbenchServerBundle,
-		dicomWorkbenchSourceIsRedacted,
-		dicomWorkstationReadiness,
-		dictationQuickPhrases,
-		discoverDicomFolders,
-		discoverMigrationSources,
-		dismissOnboarding,
-		documentActionLabels,
-		documentDetectedKindLabel,
-		documentFactoryGroups,
-		documentIngestion,
-		documentIngestionQualityLabels,
-		documentIngestionTarget,
-		documentIssueAttestationReady,
-		documentIssueConfirmation,
-		documentIssueSignatureModeLabels,
-		documentKindsForCommunicationTask,
-		documentLabels,
-		documentPatient,
-		documentSourceStatusClassNames,
-		documentStatusLabels,
-		documentVoidConfirmation,
-		documentVoidReady,
-		documentVoidReasonLabels,
-		downloadDicomViewerToolStateBundle,
-		downloadDicomWorkbenchManifest,
-		downloadIssuedDocumentHtml,
-		downloadIssuedDocumentPdf,
-		downloadMigrationHandoffReport,
-		downloadPersistenceExport,
-		downloadSmartImportReport,
-		downloadSmartImportSafeHandoffReport,
-		downloadTaxDocumentXml,
-		downloadTelegramQrSvg,
-		draft,
-		editingAppointmentId,
-		eligiblePaymentReceiptPayments,
-		eligibleRefundCorrectionPayments,
-		eligibleTaxPayments,
-		emptyDictationVoiceActionLabel,
-		error,
-		filteredPatients,
-		filteredTelegramOutboxItems,
-		flushPendingSpeechChunks,
-		flushPendingVisitSaves,
-		formatByteSize,
-		formatDateTime,
-		formatMegabytes,
-		formatShortDate,
-		formatSignedMprStep,
-		formatTime,
-		fromDateTimeLocalValue,
-		goToVisitDictation,
-		handleBrowserDirectoryInputChange,
-		handleBrowserMigrationInputChange,
-		handleMprKeyboardNavigation,
-		hasVisitTranscriptText,
-		hiddenTelegramOutboxItemCount,
-		imagingComparisonCandidates,
-		imagingConnectorCards,
-		imagingCreateSavingKind,
-		imagingFolderPath,
-		imagingFolderScan,
-		imagingImportCommit,
-		imagingImportPreview,
-		imagingImportSourceKind,
-		imagingImportText,
-		imagingKindFilter,
-		imagingKindLabels,
-		imagingKindOptions,
-		imagingPreviewSource,
-		imagingSourceChoices,
-		imagingSourceDetails,
-		imagingSourceLabels,
-		imagingViewerActiveTool,
-		imagingViewerAnnotations,
-		imagingViewerCapabilities,
-		imagingViewerHref,
-		imagingViewerImageStyle,
-		imagingViewerNote,
-		imagingViewerNoteMissingId,
-		imagingViewerNoteReady,
-		imagingViewerRetryMissingId,
-		imagingViewerSaveDetail,
-		imagingViewerSaveState,
-		imagingViewerSaveTitle,
-		imagingViewerSessionReady,
-		imagingViewerState,
-		imagingViewerToolLabels,
-		importCommit,
-		importIntake,
-		importPreview,
-		importSourceKind,
-		importSourceLabels,
-		importText,
-		inferredTreatmentArea,
-		ingestImportFile,
-		ingestionTargetLabels,
-		installmentScheduleBaseDocumentTitleValue,
-		installmentScheduleInstallmentRows,
-		installmentSchedulePrepaidRubValue,
-		installmentScheduleRemainingRubValue,
-		installmentScheduleTotalRubValue,
-		integrationCapabilityLabels,
-		integrationCategoryLabels,
-		integrationStatusLabels,
-		isBrowserImagingFolderPicking,
-		isBrowserMigrationScanning,
-		isClinicPublicLookupLoading,
-		isClinicalRuleSaving,
-		isDicomFirstFramePreviewing,
-		isDicomFolderWorkupPlanning,
-		isDicomLocalDiscovering,
-		isDicomManifestBuilding,
-		isDicomRenderCachePlanning,
-		isDicomSeriesPreviewLoading,
-		isDicomToolStateBuilding,
-		isDicomWebChecking,
-		isDicomWorkbenchBuilding,
-		isDicomWorkbenchReconnecting,
-		isDicomWorkbenchServerSaving,
-		isDicomWorkstationChecking,
-		isDraftAccepting,
-		isDraftLoading,
-		isImagingFolderScanning,
-		isImagingImportCommitting,
-		isImagingImportLoading,
-		isImportCommitting,
-		isImportDictating,
-		isImportLoading,
-		isLocalDicomOperationActive,
-		isLocalImagingOrganizing,
-		isMigrationAutopilotLoading,
-		isMigrationHandoffReportLoading,
-		isMigrationSourceDiscovering,
-		isMigrationSourceProbeLoading,
-		isMigrationSourceWorkupLoading,
-		isOnline,
-		isPaymentSaving,
-		isPendingVisitSyncing,
-		isPersistenceExporting,
-		isPricelistAnalyzing,
-		isRecognitionLoading,
-		isServerVoiceRecording,
-		isSmartImportCommitting,
-		isSmartImportLoading,
-		isSmartReportLoading,
-		isSmartSafeReportLoading,
-		isTelegramChatLinksLoadingMore,
-		isTelegramLinkCodesLoadingMore,
-		isTelegramLinkCreating,
-		isTelegramLoading,
-		isTelegramOutboxItemDueForUi,
-		isTelegramOutboxLoadingMore,
-		isTelegramSendingDue,
-		isTelegramSettingsSaving,
-		isTranscriptPolishing,
-		isVisitDictating,
-		isVisitNoteDirty,
-		issuedMedicalCopyRequestDocuments,
-		lastLocalSavedAt,
-		lastPendingVisitSaveAt,
-		lastServerDraftSavedAt,
-		lastVisitSaveReceipt,
-		latestDicomWorkbenchServerBundle,
-		legalMissingFields,
-		legalReadinessPercent,
-		loadDocumentAuditFacts,
-		loadLocalBridgeUsePlans,
-		loadMoreTelegramChatLinks,
-		loadMoreTelegramLinkCodes,
-		loadMoreTelegramOutbox,
-		loadPersistenceHealth,
-		loadPersistenceIntegrity,
-		loadTelegramControlPlane,
-		localBridgeReadiness,
-		localBridgeStatusLabels,
-		localBridgeStatusState,
-		localBridgeStatusValue,
-		localBridgeUsePathLabels,
-		localBridgeUsePlans,
-		localDraftWasRestored,
-		localImagingFolderDraft,
-		localImagingModelRoleLabels,
-		localImagingOrganizer,
-		localImagingOrganizerActionLabels,
-		lockTelegramAdminSession,
-		lookupClinicPublicProfile,
-		markPostVisitManualEdited,
-		markTelegramSettingsDirty,
-		medicalDocumentReleaseChannelLabels,
-		migrationAutopilot,
-		migrationSourceDiscovery,
-		migrationSourceProbe,
-		migrationSourceWorkup,
-		minorConsentDiagnosisOrIndicationValue,
-		minorConsentInterventionScopeValue,
-		minorConsentPatientBirthDateValue,
-		minorConsentPatientFullNameValue,
-		minorRepresentativeFullNameValue,
-		minorRepresentativeIdentityDocumentValue,
-		minorRepresentativePhoneValue,
-		minorRepresentativeRelationshipValue,
-		money,
-		mostLoadedResource,
-		moveOnboardingTo,
-		mprActiveProjectionLabel,
-		mprActiveProjectionOrientation,
-		mprAxisAngleBadge,
-		mprAxisBounds,
-		mprAxisDeg,
-		mprAxisDirectionLabel,
-		mprAxisGuidance,
-		mprAxisNudgeDeg,
-		mprAxisPresetDeg,
-		mprAxisRangeValue,
-		mprAxisVisualizerLabel,
-		mprAxisVisualizerStyle,
-		mprCacheModeLabels,
-		mprClinicalChecklist,
-		mprClinicalNextStep,
-		mprClinicalPresetButtonClass,
-		mprClinicalPresets,
-		mprControlsAutoOpen,
-		mprControlsReady,
-		mprCrosshairEnabled,
-		mprLinkedPlanesEnabled,
-		mprLoadStrategyLabels,
-		mprNearestClinicalPreset,
-		mprOperatorSummaryCards,
-		mprProjection,
-		mprProjectionCompass,
-		mprProjectionLabels,
-		mprResourceTierLabels,
-		mprSafeSliceIndex,
-		mprSeriesRequiredProjectionLabel,
-		mprSlabBadge,
-		mprSlabBounds,
-		mprSlabMm,
-		mprSlabNudgeMm,
-		mprSlabPresetMm,
-		mprSlabRangeValue,
-		mprSliceBadge,
-		mprSliceIndex,
-		mprSliceIndexFromFraction,
-		mprSliceLabel,
-		mprSliceMaxIndex,
-		mprSliceNudgeSteps,
-		mprSlicePresetFractions,
-		mprSliceRangeValue,
-		mprToolLabels,
-		mprUnavailableProjectionLabel,
-		mprWindowPreset,
-		mprWindowPresetLabels,
-		mprWorkbenchDraftRestored,
-		mprWorkbenchLocalSavedAt,
-		mprWorkbenchSummaryText,
-		newAppointmentError,
-		newChairHasMicroscope,
-		newChairHasSurgeryKit,
-		newChairHasXraySensor,
-		newChairName,
-		newChairReadyToCreate,
-		newRuleAction,
-		newRuleBlockedServiceId,
-		newRuleCategory,
-		newRuleCompletedServiceId,
-		newRuleOwnerRole,
-		newRuleRequiredServiceId,
-		newRuleSeverity,
-		newRuleSpecialty,
-		newRuleTitle,
-		newRuleTriggerServiceId,
-		newRuleWarningText,
-		newStaffName,
-		newStaffReadyToCreate,
-		newStaffRole,
-		newStaffSpecialty,
-		nextOnboardingStep,
-		normalizeOptionalWorkingDaysDraft,
-		normalizeUiLanguageInput,
-		normalizedAppointmentStatus,
-		normalizedAppointmentStatusFilter,
-		normalizedClinicalRuleAction,
-		normalizedClinicalRuleSeverity,
-		normalizedDentalSpecialty,
-		normalizedDocumentIssueSignatureMode,
-		normalizedDocumentKind,
-		normalizedDocumentVoidReasonCode,
-		normalizedMedicalDocumentReleaseChannel,
-		normalizedOutpatient025uDemographicCode,
-		normalizedPatientIntakePregnancyStatus,
-		normalizedPaymentRefundCorrectionAction,
-		normalizedPaymentRefundCorrectionMethod,
-		normalizedPostVisitCareTopic,
-		normalizedProcedureSpecificConsentProcedure,
-		normalizedServiceCategory,
-		normalizedStaffRole,
-		normalizedTaxApplicationDeliveryChannel,
-		normalizedTaxApplicationForm,
-		normalizedTaxApplicationRelationshipSelect,
-		normalizedTelegramBotMode,
-		normalizedTelegramLinkSubjectType,
-		normalizedTelegramOutboxStatusFilter,
-		normalizedTelegramOutboxTemplateFilter,
-		normalizedTelegramPrivacyMode,
-		normalizedTreatmentPlanAcceptanceVariant,
-		normalizedXrayPregnancyStatus,
-		normalizedXrayPriority,
-		normalizedXrayStudyType,
-		ohifBaseUrl,
-		onboardingBlockingIssues,
-		onboardingChairCreateGuidanceId,
-		onboardingDismissed,
-		onboardingDocumentReadinessIssues,
-		onboardingDocumentsReady,
-		onboardingDraftMode,
-		onboardingFinishGuidanceId,
-		onboardingReadyToFinish,
-		onboardingStaffCreateGuidanceId,
-		onboardingStep,
-		onboardingSteps,
-		onboardingTelegramRecommendations,
-		onboardingTelegramVisualCardKeys,
-		openAppointmentEditor,
-		openCommunicationTaskDocumentWorkflow,
-		openIssuedDocumentHtml,
-		openOnboardingGuide,
-		openScheduleWarning,
-		openVisitWarningAction,
-		organizeLocalImagingSources,
-		outpatient025uMedicalCardNumberValue,
-		paidContractTotalRubValue,
-		patientAdministrativeProfileValidationMessage,
-		patientBillingSummary,
-		patientClinicalRuleEvaluations,
-		patientClinicalRuleSummary,
-		patientInsightById,
-		patientInsightRiskLabels,
-		patientIntakePregnancyStatusOptions,
-		patientName,
-		paymentAmount,
-		paymentFeedback,
-		paymentFiscalCashierName,
-		paymentFiscalFd,
-		paymentFiscalFn,
-		paymentFiscalFpd,
-		paymentFiscalReceiptIssuedAt,
-		paymentFiscalReceiptLabelForUi,
-		paymentFiscalReceiptNumber,
-		paymentFiscalReceiptUrl,
-		paymentInvoiceTotalRubValue,
-		paymentMethod,
-		paymentMethodLabels,
-		paymentPatientContextMessage,
-		paymentPatientContextReady,
-		paymentPayerBirthDate,
-		paymentPayerFullName,
-		paymentPayerIdentityDocument,
-		paymentPayerInn,
-		paymentPayerRelationship,
-		paymentReceiptFiscalReceiptLines,
-		paymentReceiptIssuedByValue,
-		paymentReceiptPayerBirthDateValue,
-		paymentReceiptPayerFullNameValue,
-		paymentReceiptPayerIdentityDocumentValue,
-		paymentReceiptPayerInnValue,
-		paymentReceiptPayerRelationshipValue,
-		paymentTaxDeductionCode,
-		pendingSpeechChunkCount,
-		pendingSpeechFlushActionLabel,
-		pendingSpeechFlushActionTitle,
-		pendingVisitSaveCount,
-		persistenceHealth,
-		persistenceIntegrity,
-		photoVideoMaterialOptions,
-		pickBrowserImagingFolder,
-		pickBrowserMigrationSource,
-		planMigrationDiscoveryCandidate,
-		plannedServiceLinesForFinancialPayload,
-		policyAuditEventLabels,
-		polishTranscript,
-		postVisitCareTopicOptions,
-		preloadWorkspaceView,
-		prepareDicomWorkbenchFromFolder,
-		previewDicomFirstFrame,
-		previewDicomFirstFrameSlice,
-		previewDicomSeries,
-		previewImagingImport,
-		previewImport,
-		previewMigrationAutopilotSources,
-		previewMigrationDiscoveryCandidate,
-		previewSmartImport,
-		previewTelegramTemplate,
-		previousOnboardingStep,
-		pricelistAnalysis,
-		pricelistImageBase64,
-		pricelistImageName,
-		pricelistImageNote,
-		pricelistItemMaterialText,
-		pricelistMaterialSummaryText,
-		pricelistParserModeLabels,
-		pricelistRecognitionBrandGroups,
-		pricelistRecognitionServiceGroups,
-		pricelistSourceKind,
-		pricelistSourceKindLabels,
-		pricelistText,
-		pricelistWarningsText,
-		primaryVisitWarning,
-		probeMigrationDiscoveryCandidate,
-		procedureSpecificConsentProcedureOptions,
-		query,
-		recognitionJob,
-		recognitionKind,
-		recognitionPresets,
-		recognitionTarget,
-		recognitionTargetLabels,
-		recognitionText,
-		recommendedActionPriorityLabels,
-		reconnectDicomWorkbenchFromCurrentFolder,
-		recordPayment,
-		refreshBrowserContinuity,
-		refreshSpeechRuntime,
-		releaseProtectionNote,
-		rememberLocalImagingFolder,
-		renderClinicalToothRowsEditor,
-		reopenOnboarding,
-		requestBrowserStoragePersistence,
-		requestDocumentIssue,
-		requestDocumentVoid,
-		resetMprControls,
-		resetNewAppointmentDraft,
-		restoreDicomWorkbenchServerBundle,
-		restoreMprWorkbenchLocalDraft,
-		retryImagingViewerSessionSave,
-		revokeTelegramChatLink,
-		roleFocusOrder,
-		runMigrationAutopilot,
-		runRecognitionJob,
-		saveAppointmentSchedule,
-		saveChairSchedule,
-		saveClinicProfileFromDraft,
-		saveDicomWorkbenchBundleToServer,
-		savePatientAdministrativeProfile,
-		savePatientCore,
-		saveStaffSchedule,
-		saveTelegramSettings,
-		scanDicomFolderSeries,
-		scanImagingFolder,
-		scenarioPriorityLabels,
-		scenarioStrategyLabels,
-		scheduleAdminSecretDraft,
-		scheduleAdminSecretSession,
-		scrollToVisitArea,
-		selectAllEligibleTaxPaymentsForCurrentDocument,
-		selectCtPlanningImplant,
-		selectRefundOriginalPayment,
-		selectedCompletedActContractDocumentId,
-		selectedDocumentMetadata,
-		selectedDocumentUsesTaxPaymentSelection,
-		selectedEligibleTaxPayments,
-		selectedImagingStudy,
-		selectedImagingViewerPlan,
-		selectedPatient,
-		selectedPaymentReceiptIdSet,
-		selectedPaymentReceiptPayments,
-		selectedPaymentReceiptTotalRub,
-		selectedProtocolTemplate,
-		selectedRefundCorrectionPayment,
-		selectedReleaseSourceRequestDocumentId,
-		selectedSpecialty,
-		selectedTaxDocumentPayerKey,
-		selectedTaxPaymentIdSet,
-		selectedTaxPaymentTotalRub,
-		selectedUiLanguageOption,
-		selectedWorkspaceRole,
-		sendDueTelegramOutbox,
-		sendRecognitionResultToImport,
-		sendTelegramOutboxItem,
-		serverDraftSyncState,
-		serviceCategoryLabels,
-		serviceTitle,
-		setClearedTranscriptSnapshot,
-		setCommunicationNote,
-		setCtPlanningActiveQuickActionId,
-		setCtPlanningImplantPlan,
-		setCurrentView,
-		setDicomFirstFramePreview,
-		setDicomFirstFrameViewerState,
-		setDicomFolderSeriesScan,
-		setDicomFolderWorkupPlan,
-		setDicomLocalFolderDiscovery,
-		setDicomRenderCachePlan,
-		setDicomSeriesPreview,
-		setDicomViewerLaunchManifest,
-		setDicomViewerToolStateBundle,
-		setDicomViewerWorkbenchManifest,
-		setDicomWebCheck,
-		setDicomWebEndpointUrl,
-		setDicomWorkbenchLocalSavedAt,
-		setDicomWorkstationReadiness,
-		setDocumentIngestionTarget,
-		setError,
-		setImagingFolderPath,
-		setImagingFolderScan,
-		setImagingImportCommit,
-		setImagingImportPreview,
-		setImagingImportSourceKind,
-		setImagingImportText,
-		setImagingKindFilter,
-		setImagingViewerActiveTool,
-		setImagingViewerNote,
-		setImagingViewerState,
-		setImportCommit,
-		setImportIntake,
-		setImportPreview,
-		setImportSourceKind,
-		setImportText,
-		setLocalImagingOrganizer,
-		setMprAxisDeg,
-		setMprCrosshairEnabled,
-		setMprLinkedPlanesEnabled,
-		setMprProjection,
-		setMprSlabMm,
-		setMprSliceIndex,
-		setMprWindowPreset,
-		setNewChairHasMicroscope,
-		setNewChairHasSurgeryKit,
-		setNewChairHasXraySensor,
-		setNewChairName,
-		setNewRuleAction,
-		setNewRuleBlockedServiceId,
-		setNewRuleCategory,
-		setNewRuleCompletedServiceId,
-		setNewRuleOwnerRole,
-		setNewRuleRequiredServiceId,
-		setNewRuleSeverity,
-		setNewRuleSpecialty,
-		setNewRuleTitle,
-		setNewRuleTriggerServiceId,
-		setNewRuleWarningText,
-		setNewStaffName,
-		setNewStaffRole,
-		setNewStaffSpecialty,
-		setOhifBaseUrl,
-		setPaymentAmount,
-		setPaymentFiscalCashierName,
-		setPaymentFiscalFd,
-		setPaymentFiscalFn,
-		setPaymentFiscalFpd,
-		setPaymentFiscalReceiptIssuedAt,
-		setPaymentFiscalReceiptNumber,
-		setPaymentFiscalReceiptUrl,
-		setPaymentMethod,
-		setPaymentPayerBirthDate,
-		setPaymentPayerFullName,
-		setPaymentPayerIdentityDocument,
-		setPaymentPayerInn,
-		setPaymentPayerRelationship,
-		setPaymentTaxDeductionCode,
-		setPricelistAnalysis,
-		setPricelistSourceKind,
-		setPricelistText,
-		setQuery,
-		setRecognitionJob,
-		setRecognitionText,
-		setReleaseProtectionNote,
-		setSelectedImagingStudyId,
-		setSelectedProtocolId,
-		setSelectedSpecialty,
-		setSelectedWorkspaceRole,
-		setSettingsAdminSecretDraft,
-		setSettingsTab,
-		setSmartImportCommit,
-		setSmartImportMode,
-		setSmartImportPreview,
-		setSmartImportText,
-		setTelegramAdminSecretDraft,
-		setTelegramBotUsernameDraft,
-		setTelegramHandoffNotice,
-		setTelegramMapsUrlDraft,
-		setTelegramPatientPortalBaseUrlDraft,
-		setTelegramPrivacyModeDraft,
-		setTelegramReminderLeadTimesDraft,
-		setTelegramReviewRequestDelayDraft,
-		setTelegramReviewUrlDraft,
-		setTelegramTokenTtlDraft,
-		setTelegramWelcomeImageUrlDraft,
-		setTranscript,
-		setUiLanguage,
-		setUiPreferencesSyncError,
-		setUsePricelistAi,
-		settingsAdminSecretDomain,
-		settingsAdminSecretDraft,
-		settingsAdminSecretSession,
-		settingsTab,
-		settingsTabs,
-		shiftWarnings,
-		showAdministrationTopActions,
-		showDoctorVisitShortcut,
-		showFullOnboardingGuide,
-		smartImportCommit,
-		smartImportMode,
-		smartImportModeLabels,
-		smartImportPreview,
-		smartImportText,
-		sortedAppointments,
-		sortedCommunicationTasks,
-		specialtiesWithTemplates,
-		specialtyLabels,
-		specialtyProtocolTemplates,
-		speechGatewayActiveProviderIsLocal,
-		speechGatewayCanUpload,
-		speechGatewayHealthReport,
-		speechGatewayStatus,
-		speechProviderConnectorLabels,
-		speechProviderHealthById,
-		speechProviderHealthLabels,
-		speechProviderModeLabels,
-		speechProviderRuntimeById,
-		speechProviderSelectionLabels,
-		speechProviderStatusLabels,
-		speechRecognitionReady,
-		speechRecordingPathLabels,
-		speechRecordingRecovery,
-		speechRecordingStrategy,
-		speechRecoveryStateLabels,
-		speechStatusNote,
-		staffRoleLabels,
-		staffScheduleDirtyIds,
-		staffScheduleDraftFromWorkingHours,
-		staffScheduleDrafts,
-		staffScheduleSaveStates,
-		staffScheduleSavingId,
-		stageLocalImagingFolderRecovery,
-		startImportDictation,
-		startServerVoiceRecording,
-		startVisitDictation,
-		stopServerVoiceRecording,
-		structuredPayloadDocumentKinds,
-		taxApplicationDeliveryChannelOptions,
-		taxApplicationFormOptions,
-		taxApplicationRelationshipOptions,
-		taxDocumentPayerOptions,
-		telegramAdminSecretDraft,
-		telegramAdminSecretSession,
-		telegramAllowVoiceIntakeDraft,
-		telegramBotConfigId,
-		telegramBotUsernameDraft,
-		telegramChatLinkLedger,
-		telegramChatLinks,
-		telegramClassificationLabels,
-		telegramDeliveryStatusLabels,
-		telegramEnabledFeaturesDraft,
-		telegramFeatureHelp,
-		telegramFeatureLabel,
-		telegramFeatureOptions,
-		telegramFeaturePlan,
-		telegramHandoffNotice,
-		telegramHumanMessage,
-		telegramInlineButtonKindLabels,
-		telegramInlineButtonRowsFromReplyMarkup,
-		telegramLinkActionState,
-		telegramLinkCode,
-		telegramLinkCodeLedger,
-		telegramLinkCodeStatusLabels,
-		telegramLinkCodes,
-		telegramLinkStaffId,
-		telegramLinkStaffOptions,
-		telegramLinkSubjectType,
-		telegramMapsUrlDraft,
-		telegramModeDraft,
-		telegramModeHints,
-		telegramModeLabels,
-		telegramOutbox,
-		telegramOutboxStatusFilter,
-		telegramOutboxStatusFilterLabels,
-		telegramOutboxStatusFilterOptions,
-		telegramOutboxTemplateFilter,
-		telegramOutboxTemplateFilterLabels,
-		telegramOutboxTemplateFilterOptions,
-		telegramOwnBotUsernameDraft,
-		telegramPatientPortalBaseUrlDraft,
-		telegramPostVisitCheckupDelayDrafts,
-		telegramPostVisitCheckupDelayFields,
-		telegramPreview,
-		telegramPrivacyModeDraft,
-		telegramPrivacyModeHints,
-		telegramPrivacyModeLabels,
-		telegramQrSvgToDataUrl,
-		telegramReminderLeadTimesDraft,
-		telegramReviewRequestDelayDraft,
-		telegramReviewUrlDraft,
-		telegramRevokingLinkId,
-		telegramSendingItemId,
-		telegramSettingsDirty,
-		telegramSettingsSaveError,
-		telegramSettingsSaveState,
-		telegramStaffEscalationChannelDraft,
-		telegramStatus,
-		telegramSubjectName,
-		telegramTemplateLabels,
-		telegramTokenTtlDraft,
-		telegramVisualCardFields,
-		telegramVisualCardUrlDrafts,
-		telegramWebhookBaseUrlDraft,
-		telegramWelcomeImageUrlDraft,
-		toDateTimeLocalValue,
-		toggleChairWorkingDay,
-		toggleClinicWorkingDay,
-		toggleClinicalRule,
-		togglePhotoVideoMaterial,
-		toggleStaffWorkingDay,
-		toggleTelegramFeature,
-		toothRows,
-		toothStateByCode: visitToothStateByCode,
-		setToothState,
-		transcript,
-		treatmentAcceptancePlannedTotalRub,
-		treatmentEstimatePatientOrPayerFullNameValue,
-		treatmentEstimateTotalRubValue,
-		treatmentEstimateTreatmentBasisValue,
-		treatmentStatusLabels,
-		uiLanguage,
-		uiLanguageOptions,
-		uiPreferencesSyncError,
-		undoTranscriptClear,
-		unlockTelegramAdminSession,
-		updateAppointmentScheduleDraft,
-		updateChairScheduleDay,
-		updateChairScheduleDraft,
-		updateClinicProfileDraft,
-		updateNewAppointmentDraft,
-		updatePatientAdministrativeProfileDraft,
-		updatePatientCoreDraft,
-		updateStaffScheduleDay,
-		updateStaffScheduleDraft,
-		updateTelegramPostVisitCheckupDelayDraft,
-		updateTelegramVisualCardUrlDraft,
-		updateVisitNoteField,
-		usePricelistAi,
-		viewLabels,
-		visibleImagingStudies,
-		visibleRecommendedActions,
-		visibleScheduleSuggestions,
-		visibleTelegramOutboxItems,
-		visibleVisitSpecialtyFocusOptions,
-		visitCloseChecklist,
-		visitDraftBuildMissingSteps,
-		visitDraftMissingFieldLabel,
-		visitDraftQualityLabels,
-		visitDraftReadyToBuild,
-		visitDraftSignalLabel,
-		visitDraftUserEditedRef,
-		visitNoteAcceptMissingSteps,
-		visitNoteActionLabel,
-		visitNoteFieldDefinitions,
-		visitNoteForm,
-		visitNoteReadyToAccept,
-		visitNoteStatusLabel,
-		visitPrimaryAction,
-		visitSafetyCards,
-		visitSaveReceiptText,
-		visitWarnings,
-		visitWorkflowSteps,
-		warningSeverityLabels,
-		warrantyLinkedActOrContractValue,
-		warrantyServiceOrWorkNameValue,
-		warrantyTeethOrAreaValue,
-		weekdayOptions,
-		workspaceScopeLabels,
-		xrayPregnancyStatusOptions,
-		xrayStudyTypeOptions,
-		accessUnlockRequired,
-		accessUnlockMessage,
-		clinicalAdminSecretDraft,
-		setClinicalAdminSecretDraft,
-		loadDashboard,
-		operatorWorkflowFailureMessage,
-	};
+    		...telegramSettingsModule,
+    		acceptDraftToVisit,
+    		activeAppointment,
+    		activeChair,
+    		activeCommunicationTasks,
+    		activeDoctor,
+    		activeDocuments,
+    		activeImagingStudies,
+    		activeIssuedPaidContracts,
+    		activePatient,
+    		activePatientCallablePhone,
+    		activePatientHasCallablePhone,
+    		activePatientInsight,
+    		activePayments,
+    		activeQueueRole,
+    		activeRolePolicy,
+    		activeRoleQueue,
+    		activeRoleRestrictedSections,
+    		activeRoleWritableSections,
+    		activeSettingsTabButtonRef,
+    		activeSpeechProviderHealth,
+    		activeTreatmentPlanItems,
+    		activeTreatmentPlanScenarios,
+    		activeUsableDocuments,
+    		activeVisitClinicalRuleEvaluations,
+    		activeVisitClinicalRuleSummary,
+    		activeWorkspaceProfile,
+    		addChair,
+    		addImagingViewerNoteAnnotation,
+    		addMigrationDiscoveryCandidateToSmartImport,
+    		addStaffMember,
+    		analyzePricelist,
+    		appendToTranscript,
+    		applyCtPlanningQuickAction,
+    		applyMprClinicalPreset,
+    		applyNearestMprClinicalPreset,
+    		applyPostVisitCarePreset,
+    		applyProtocolTemplate,
+    		appointmentLabels,
+    		appointmentReadinessById,
+    		appointmentReadinessLabels,
+    		appointmentScheduleDraftFromAppointment,
+    		attachPricelistImage,
+    		browserCanRequestPersistentStorage,
+    		browserContinuity,
+    		browserContinuityChecks,
+    		browserContinuityCritical,
+    		browserContinuityState,
+    		browserContinuityValue,
+    		browserDirectoryInputRef,
+    		browserDirectoryPickerAvailable,
+    		browserImagingScanProgress,
+    		browserMigrationDiscovery,
+    		browserMigrationInputRef,
+    		browserMigrationScanProgress,
+    		browserPickedImagingFolder,
+    		buildDicomFolderWorkupPlan,
+    		buildDicomRenderCachePlan,
+    		buildDicomViewerLaunchManifest,
+    		buildDicomViewerToolStateBundle,
+    		buildDicomViewerWorkbenchManifest,
+    		buildDraft,
+    		buildOfflineDraft,
+    		canRetryImagingViewerSave,
+    		cancelBrowserImagingFolderScan,
+    		cancelBrowserMigrationScan,
+    		cancelLocalDicomOperation,
+    		cbctWorkbenchPlanes,
+    		cbctWorkbenchProjections,
+    		cbctWorkbenchSeries,
+    		cbctWorkbenchTools,
+    		chairScheduleDirtyIds,
+    		chairScheduleDrafts,
+    		chairScheduleSaveStates,
+    		chairScheduleSavingId,
+    		changeClinicMode,
+    		changePostVisitCareTopic,
+    		checkDicomWebConnector,
+    		checkDicomWorkstationReadiness,
+    		chooseRecognitionPreset,
+    		clampMprAxisDeg,
+    		clampMprSlabMm,
+    		clampMprSliceIndex,
+    		clearBrowserPickedImagingFolderPreview,
+    		clearDicomWorkbenchRecovery,
+    		clearLocalImagingFolderRecovery,
+    		clearPricelistImage,
+    		clearTranscriptWithUndo,
+    		clearedTranscriptSnapshot,
+    		clinicModeLabels,
+    		clinicProfileDraft,
+    		clinicProfileSaveState,
+    		clinicPublicLookup,
+    		clinicalRuleActionLabels,
+    		clinicalRuleSeverityLabels,
+    		closeAppointmentEditor,
+    		commitImagingImport,
+    		commitImport,
+    		commitSmartImport,
+    		communicationChannelLabels,
+    		communicationDocumentTaskActionLabels,
+    		communicationIntentLabels,
+    		communicationNote,
+    		communicationPriorityLabels,
+    		communicationSavingTaskId,
+    		communicationStatusLabels,
+    		compactDocumentText,
+    		completeCommunicationTask,
+    		completedActContractReferenceForUi,
+    		completedActFiscalReceiptLines,
+    		completedActPaidRubValue,
+    		confirmDocumentIssue,
+    		confirmDocumentVoid,
+    		continueOnboardingInDraftMode,
+    		copyTelegramTextToClipboard,
+    		createAppointmentFromDraft,
+    		createClinicalRuleFromSettings,
+    		createCtPlanningArtifact,
+    		createDocument,
+    		createImagingStudy,
+    		createPatient,
+    		createTelegramLinkCode,
+    		ctPlanningActiveQuickActionId,
+    		ctPlanningAnnotationRefs,
+    		ctPlanningImplantPlan,
+    		currentOnboardingIndex,
+    		currentView,
+    		dashboard,
+    		defaultDicomFirstFrameViewerState,
+    		defaultImagingViewerState,
+    		dentalMaterialKindLabels,
+    		dentalRestorationTypeLabels,
+    		describeMprClinicalPresetProjectionFallback,
+    		dicomDiagnosticPixelPolicyLabels,
+    		dicomExecutionLaneLabels,
+    		dicomFirstFrameImageStyle,
+    		dicomFirstFramePreview,
+    		dicomFirstFrameStatusLabels,
+    		dicomFirstFrameViewerState,
+    		dicomFolderSeriesScan,
+    		dicomFolderWorkupPathLabels,
+    		dicomFolderWorkupPlan,
+    		dicomGpuClassLabels,
+    		dicomLabel,
+    		dicomLocalFolderDiscovery,
+    		dicomQualityModeLabels,
+    		dicomReadinessCheckLabels,
+    		dicomRenderCachePlan,
+    		dicomRenderMemoryBudgetClassLabels,
+    		dicomRuntimeTierLabels,
+    		dicomSeriesPreview,
+    		dicomSeriesViewerLabels,
+    		dicomTextureStrategyLabels,
+    		dicomViewerLaunchManifest,
+    		dicomViewerLaunchModeLabels,
+    		dicomViewerToolStateBundle,
+    		dicomViewerWorkbenchManifest,
+    		dicomWebCheck,
+    		dicomWebEndpointUrl,
+    		dicomWebStatusLabels,
+    		dicomWorkbenchLocalSavedAt,
+    		dicomWorkbenchServerBundle,
+    		dicomWorkbenchSourceIsRedacted,
+    		dicomWorkstationReadiness,
+    		dictationQuickPhrases,
+    		discoverDicomFolders,
+    		discoverMigrationSources,
+    		dismissOnboarding,
+    		documentActionLabels,
+    		documentDetectedKindLabel,
+    		documentFactoryGroups,
+    		documentIngestion,
+    		documentIngestionQualityLabels,
+    		documentIngestionTarget,
+    		documentIssueAttestationReady,
+    		documentIssueConfirmation,
+    		documentIssueSignatureModeLabels,
+    		documentKindsForCommunicationTask,
+    		documentLabels,
+    		documentPatient,
+    		documentSourceStatusClassNames,
+    		documentStatusLabels,
+    		documentVoidConfirmation,
+    		documentVoidReady,
+    		documentVoidReasonLabels,
+    		downloadDicomViewerToolStateBundle,
+    		downloadDicomWorkbenchManifest,
+    		downloadIssuedDocumentHtml,
+    		downloadIssuedDocumentPdf,
+    		downloadMigrationHandoffReport,
+    		downloadPersistenceExport,
+    		downloadSmartImportReport,
+    		downloadSmartImportSafeHandoffReport,
+    		downloadTaxDocumentXml,
+    		downloadTelegramQrSvg,
+    		draft,
+    		editingAppointmentId,
+    		eligiblePaymentReceiptPayments,
+    		eligibleRefundCorrectionPayments,
+    		eligibleTaxPayments,
+    		emptyDictationVoiceActionLabel,
+    		error,
+    		filteredPatients,
+    		filteredTelegramOutboxItems,
+    		flushPendingSpeechChunks,
+    		flushPendingVisitSaves,
+    		formatByteSize,
+    		formatDateTime,
+    		formatMegabytes,
+    		formatShortDate,
+    		formatSignedMprStep,
+    		formatTime,
+    		fromDateTimeLocalValue,
+    		goToVisitDictation,
+    		handleBrowserDirectoryInputChange,
+    		handleBrowserMigrationInputChange,
+    		handleMprKeyboardNavigation,
+    		hasVisitTranscriptText,
+    		hiddenTelegramOutboxItemCount,
+    		imagingComparisonCandidates,
+    		imagingConnectorCards,
+    		imagingCreateSavingKind,
+    		imagingFolderPath,
+    		imagingFolderScan,
+    		imagingImportCommit,
+    		imagingImportPreview,
+    		imagingImportSourceKind,
+    		imagingImportText,
+    		imagingKindFilter,
+    		imagingKindLabels,
+    		imagingKindOptions,
+    		imagingPreviewSource,
+    		imagingSourceChoices,
+    		imagingSourceDetails,
+    		imagingSourceLabels,
+    		imagingViewerActiveTool,
+    		imagingViewerAnnotations,
+    		imagingViewerCapabilities,
+    		imagingViewerHref,
+    		imagingViewerImageStyle,
+    		imagingViewerNote,
+    		imagingViewerNoteMissingId,
+    		imagingViewerNoteReady,
+    		imagingViewerRetryMissingId,
+    		imagingViewerSaveDetail,
+    		imagingViewerSaveState,
+    		imagingViewerSaveTitle,
+    		imagingViewerSessionReady,
+    		imagingViewerState,
+    		imagingViewerToolLabels,
+    		importCommit,
+    		importIntake,
+    		importPreview,
+    		importSourceKind,
+    		importSourceLabels,
+    		importText,
+    		inferredTreatmentArea,
+    		ingestImportFile,
+    		ingestionTargetLabels,
+    		installmentScheduleBaseDocumentTitleValue,
+    		installmentScheduleInstallmentRows,
+    		installmentSchedulePrepaidRubValue,
+    		installmentScheduleRemainingRubValue,
+    		installmentScheduleTotalRubValue,
+    		integrationCapabilityLabels,
+    		integrationCategoryLabels,
+    		integrationStatusLabels,
+    		isBrowserImagingFolderPicking,
+    		isBrowserMigrationScanning,
+    		isClinicPublicLookupLoading,
+    		isClinicalRuleSaving,
+    		isDicomFirstFramePreviewing,
+    		isDicomFolderWorkupPlanning,
+    		isDicomLocalDiscovering,
+    		isDicomManifestBuilding,
+    		isDicomRenderCachePlanning,
+    		isDicomSeriesPreviewLoading,
+    		isDicomToolStateBuilding,
+    		isDicomWebChecking,
+    		isDicomWorkbenchBuilding,
+    		isDicomWorkbenchReconnecting,
+    		isDicomWorkbenchServerSaving,
+    		isDicomWorkstationChecking,
+    		isDraftAccepting,
+    		isDraftLoading,
+    		isImagingFolderScanning,
+    		isImagingImportCommitting,
+    		isImagingImportLoading,
+    		isImportCommitting,
+    		isImportDictating,
+    		isImportLoading,
+    		isLocalDicomOperationActive,
+    		isLocalImagingOrganizing,
+    		isMigrationAutopilotLoading,
+    		isMigrationHandoffReportLoading,
+    		isMigrationSourceDiscovering,
+    		isMigrationSourceProbeLoading,
+    		isMigrationSourceWorkupLoading,
+    		isOnline,
+    		isPaymentSaving,
+    		isPendingVisitSyncing,
+    		isPersistenceExporting,
+    		isPricelistAnalyzing,
+    		isRecognitionLoading,
+    		isServerVoiceRecording,
+    		isSmartImportCommitting,
+    		isSmartImportLoading,
+    		isSmartReportLoading,
+    		isSmartSafeReportLoading,
+    		isTelegramChatLinksLoadingMore,
+    		isTelegramLinkCodesLoadingMore,
+    		isTelegramLinkCreating,
+    		isTelegramLoading,
+    		isTelegramOutboxItemDueForUi,
+    		isTelegramOutboxLoadingMore,
+    		isTelegramSendingDue,
+    		isTelegramSettingsSaving,
+    		isTranscriptPolishing,
+    		isVisitDictating,
+    		isVisitNoteDirty,
+    		issuedMedicalCopyRequestDocuments,
+    		lastLocalSavedAt,
+    		lastPendingVisitSaveAt,
+    		lastServerDraftSavedAt,
+    		lastVisitSaveReceipt,
+    		latestDicomWorkbenchServerBundle,
+    		legalMissingFields,
+    		legalReadinessPercent,
+    		loadDocumentAuditFacts,
+    		loadLocalBridgeUsePlans,
+    		loadMoreTelegramChatLinks,
+    		loadMoreTelegramLinkCodes,
+    		loadMoreTelegramOutbox,
+    		loadPersistenceHealth,
+    		loadPersistenceIntegrity,
+    		loadTelegramControlPlane,
+    		localBridgeReadiness,
+    		localBridgeStatusLabels,
+    		localBridgeStatusState,
+    		localBridgeStatusValue,
+    		localBridgeUsePathLabels,
+    		localBridgeUsePlans,
+    		localDraftWasRestored,
+    		localImagingFolderDraft,
+    		localImagingModelRoleLabels,
+    		localImagingOrganizer,
+    		localImagingOrganizerActionLabels,
+    		lockTelegramAdminSession,
+    		lookupClinicPublicProfile,
+    		markPostVisitManualEdited,
+    		markTelegramSettingsDirty,
+    		medicalDocumentReleaseChannelLabels,
+    		migrationAutopilot,
+    		migrationSourceDiscovery,
+    		migrationSourceProbe,
+    		migrationSourceWorkup,
+    		minorConsentDiagnosisOrIndicationValue,
+    		minorConsentInterventionScopeValue,
+    		minorConsentPatientBirthDateValue,
+    		minorConsentPatientFullNameValue,
+    		minorRepresentativeFullNameValue,
+    		minorRepresentativeIdentityDocumentValue,
+    		minorRepresentativePhoneValue,
+    		minorRepresentativeRelationshipValue,
+    		money,
+    		mostLoadedResource,
+    		moveOnboardingTo,
+    		mprActiveProjectionLabel,
+    		mprActiveProjectionOrientation,
+    		mprAxisAngleBadge,
+    		mprAxisBounds,
+    		mprAxisDeg,
+    		mprAxisDirectionLabel,
+    		mprAxisGuidance,
+    		mprAxisNudgeDeg,
+    		mprAxisPresetDeg,
+    		mprAxisRangeValue,
+    		mprAxisVisualizerLabel,
+    		mprAxisVisualizerStyle,
+    		mprCacheModeLabels,
+    		mprClinicalChecklist,
+    		mprClinicalNextStep,
+    		mprClinicalPresetButtonClass,
+    		mprClinicalPresets,
+    		mprControlsAutoOpen,
+    		mprControlsReady,
+    		mprCrosshairEnabled,
+    		mprLinkedPlanesEnabled,
+    		mprLoadStrategyLabels,
+    		mprNearestClinicalPreset,
+    		mprOperatorSummaryCards,
+    		mprProjection,
+    		mprProjectionCompass,
+    		mprProjectionLabels,
+    		mprResourceTierLabels,
+    		mprSafeSliceIndex,
+    		mprSeriesRequiredProjectionLabel,
+    		mprSlabBadge,
+    		mprSlabBounds,
+    		mprSlabMm,
+    		mprSlabNudgeMm,
+    		mprSlabPresetMm,
+    		mprSlabRangeValue,
+    		mprSliceBadge,
+    		mprSliceIndex,
+    		mprSliceIndexFromFraction,
+    		mprSliceLabel,
+    		mprSliceMaxIndex,
+    		mprSliceNudgeSteps,
+    		mprSlicePresetFractions,
+    		mprSliceRangeValue,
+    		mprToolLabels,
+    		mprUnavailableProjectionLabel,
+    		mprWindowPreset,
+    		mprWindowPresetLabels,
+    		mprWorkbenchDraftRestored,
+    		mprWorkbenchLocalSavedAt,
+    		mprWorkbenchSummaryText,
+    		newAppointmentError,
+    		newChairHasMicroscope,
+    		newChairHasSurgeryKit,
+    		newChairHasXraySensor,
+    		newChairName,
+    		newChairReadyToCreate,
+    		newRuleAction,
+    		newRuleBlockedServiceId,
+    		newRuleCategory,
+    		newRuleCompletedServiceId,
+    		newRuleOwnerRole,
+    		newRuleRequiredServiceId,
+    		newRuleSeverity,
+    		newRuleSpecialty,
+    		newRuleTitle,
+    		newRuleTriggerServiceId,
+    		newRuleWarningText,
+    		newStaffName,
+    		newStaffReadyToCreate,
+    		newStaffRole,
+    		newStaffSpecialty,
+    		nextOnboardingStep,
+    		normalizeOptionalWorkingDaysDraft,
+    		normalizeUiLanguageInput,
+    		normalizedAppointmentStatus,
+    		normalizedAppointmentStatusFilter,
+    		normalizedClinicalRuleAction,
+    		normalizedClinicalRuleSeverity,
+    		normalizedDentalSpecialty,
+    		normalizedDocumentIssueSignatureMode,
+    		normalizedDocumentKind,
+    		normalizedDocumentVoidReasonCode,
+    		normalizedMedicalDocumentReleaseChannel,
+    		normalizedOutpatient025uDemographicCode,
+    		normalizedPatientIntakePregnancyStatus,
+    		normalizedPaymentRefundCorrectionAction,
+    		normalizedPaymentRefundCorrectionMethod,
+    		normalizedPostVisitCareTopic,
+    		normalizedProcedureSpecificConsentProcedure,
+    		normalizedServiceCategory,
+    		normalizedStaffRole,
+    		normalizedTaxApplicationDeliveryChannel,
+    		normalizedTaxApplicationForm,
+    		normalizedTaxApplicationRelationshipSelect,
+    		normalizedTelegramBotMode,
+    		normalizedTelegramLinkSubjectType,
+    		normalizedTelegramOutboxStatusFilter,
+    		normalizedTelegramOutboxTemplateFilter,
+    		normalizedTelegramPrivacyMode,
+    		normalizedTreatmentPlanAcceptanceVariant,
+    		normalizedXrayPregnancyStatus,
+    		normalizedXrayPriority,
+    		normalizedXrayStudyType,
+    		ohifBaseUrl,
+    		onboardingBlockingIssues,
+    		onboardingChairCreateGuidanceId,
+    		onboardingDismissed,
+    		onboardingDocumentReadinessIssues,
+    		onboardingDocumentsReady,
+    		onboardingDraftMode,
+    		onboardingFinishGuidanceId,
+    		onboardingReadyToFinish,
+    		onboardingStaffCreateGuidanceId,
+    		onboardingStep,
+    		onboardingSteps,
+    		onboardingTelegramRecommendations,
+    		onboardingTelegramVisualCardKeys,
+    		openAppointmentEditor,
+    		openCommunicationTaskDocumentWorkflow,
+    		openIssuedDocumentHtml,
+    		openOnboardingGuide,
+    		openScheduleWarning,
+    		openVisitWarningAction,
+    		organizeLocalImagingSources,
+    		outpatient025uMedicalCardNumberValue,
+    		paidContractTotalRubValue,
+    		patientAdministrativeProfileValidationMessage,
+    		patientBillingSummary,
+    		patientClinicalRuleEvaluations,
+    		patientClinicalRuleSummary,
+    		patientInsightById,
+    		patientInsightRiskLabels,
+    		patientIntakePregnancyStatusOptions,
+    		patientName,
+    		paymentAmount,
+    		paymentFeedback,
+    		paymentFiscalCashierName,
+    		paymentFiscalFd,
+    		paymentFiscalFn,
+    		paymentFiscalFpd,
+    		paymentFiscalReceiptIssuedAt,
+    		paymentFiscalReceiptLabelForUi,
+    		paymentFiscalReceiptNumber,
+    		paymentFiscalReceiptUrl,
+    		paymentInvoiceTotalRubValue,
+    		paymentMethod,
+    		paymentMethodLabels,
+    		paymentPatientContextMessage,
+    		paymentPatientContextReady,
+    		paymentPayerBirthDate,
+    		paymentPayerFullName,
+    		paymentPayerIdentityDocument,
+    		paymentPayerInn,
+    		paymentPayerRelationship,
+    		paymentReceiptFiscalReceiptLines,
+    		paymentReceiptIssuedByValue,
+    		paymentReceiptPayerBirthDateValue,
+    		paymentReceiptPayerFullNameValue,
+    		paymentReceiptPayerIdentityDocumentValue,
+    		paymentReceiptPayerInnValue,
+    		paymentReceiptPayerRelationshipValue,
+    		paymentTaxDeductionCode,
+    		pendingSpeechChunkCount,
+    		pendingSpeechFlushActionLabel,
+    		pendingSpeechFlushActionTitle,
+    		pendingVisitSaveCount,
+    		persistenceHealth,
+    		persistenceIntegrity,
+    		photoVideoMaterialOptions,
+    		pickBrowserImagingFolder,
+    		pickBrowserMigrationSource,
+    		planMigrationDiscoveryCandidate,
+    		plannedServiceLinesForFinancialPayload,
+    		policyAuditEventLabels,
+    		polishTranscript,
+    		postVisitCareTopicOptions,
+    		preloadWorkspaceView,
+    		prepareDicomWorkbenchFromFolder,
+    		previewDicomFirstFrame,
+    		previewDicomFirstFrameSlice,
+    		previewDicomSeries,
+    		previewImagingImport,
+    		previewImport,
+    		previewMigrationAutopilotSources,
+    		previewMigrationDiscoveryCandidate,
+    		previewSmartImport,
+    		previewTelegramTemplate,
+    		previousOnboardingStep,
+    		pricelistAnalysis,
+    		pricelistImageBase64,
+    		pricelistImageName,
+    		pricelistImageNote,
+    		pricelistItemMaterialText,
+    		pricelistMaterialSummaryText,
+    		pricelistParserModeLabels,
+    		pricelistRecognitionBrandGroups,
+    		pricelistRecognitionServiceGroups,
+    		pricelistSourceKind,
+    		pricelistSourceKindLabels,
+    		pricelistText,
+    		pricelistWarningsText,
+    		primaryVisitWarning,
+    		probeMigrationDiscoveryCandidate,
+    		procedureSpecificConsentProcedureOptions,
+    		query,
+    		recognitionJob,
+    		recognitionKind,
+    		recognitionPresets,
+    		recognitionTarget,
+    		recognitionTargetLabels,
+    		recognitionText,
+    		recommendedActionPriorityLabels,
+    		reconnectDicomWorkbenchFromCurrentFolder,
+    		recordPayment,
+    		refreshBrowserContinuity,
+    		refreshSpeechRuntime,
+    		releaseProtectionNote,
+    		rememberLocalImagingFolder,
+    		renderClinicalToothRowsEditor,
+    		reopenOnboarding,
+    		requestBrowserStoragePersistence,
+    		requestDocumentIssue,
+    		requestDocumentVoid,
+    		resetMprControls,
+    		resetNewAppointmentDraft,
+    		restoreDicomWorkbenchServerBundle,
+    		restoreMprWorkbenchLocalDraft,
+    		retryImagingViewerSessionSave,
+    		revokeTelegramChatLink,
+    		roleFocusOrder,
+    		runMigrationAutopilot,
+    		runRecognitionJob,
+    		saveAppointmentSchedule,
+    		saveChairSchedule,
+    		saveClinicProfileFromDraft,
+    		saveDicomWorkbenchBundleToServer,
+    		savePatientAdministrativeProfile,
+    		savePatientCore,
+    		saveStaffSchedule,
+    		saveTelegramSettings,
+    		scanDicomFolderSeries,
+    		scanImagingFolder,
+    		scenarioPriorityLabels,
+    		scenarioStrategyLabels,
+    		scheduleAdminSecretDraft,
+    		scheduleAdminSecretSession,
+    		scrollToVisitArea,
+    		selectAllEligibleTaxPaymentsForCurrentDocument,
+    		selectCtPlanningImplant,
+    		selectRefundOriginalPayment,
+    		selectedCompletedActContractDocumentId,
+    		selectedDocumentMetadata,
+    		selectedDocumentUsesTaxPaymentSelection,
+    		selectedEligibleTaxPayments,
+    		selectedImagingStudy,
+    		selectedImagingViewerPlan,
+    		selectedPatient,
+    		selectedPaymentReceiptIdSet,
+    		selectedPaymentReceiptPayments,
+    		selectedPaymentReceiptTotalRub,
+    		selectedProtocolTemplate,
+    		selectedRefundCorrectionPayment,
+    		selectedReleaseSourceRequestDocumentId,
+    		selectedSpecialty,
+    		selectedTaxDocumentPayerKey,
+    		selectedTaxPaymentIdSet,
+    		selectedTaxPaymentTotalRub,
+    		selectedUiLanguageOption,
+    		selectedWorkspaceRole,
+    		sendDueTelegramOutbox,
+    		sendRecognitionResultToImport,
+    		sendTelegramOutboxItem,
+    		serverDraftSyncState,
+    		serviceCategoryLabels,
+    		serviceTitle,
+    		setClearedTranscriptSnapshot,
+    		setCommunicationNote,
+    		setCtPlanningActiveQuickActionId,
+    		setCtPlanningImplantPlan,
+    		setCurrentView,
+    		setDicomFirstFramePreview,
+    		setDicomFirstFrameViewerState,
+    		setDicomFolderSeriesScan,
+    		setDicomFolderWorkupPlan,
+    		setDicomLocalFolderDiscovery,
+    		setDicomRenderCachePlan,
+    		setDicomSeriesPreview,
+    		setDicomViewerLaunchManifest,
+    		setDicomViewerToolStateBundle,
+    		setDicomViewerWorkbenchManifest,
+    		setDicomWebCheck,
+    		setDicomWebEndpointUrl,
+    		setDicomWorkbenchLocalSavedAt,
+    		setDicomWorkstationReadiness,
+    		setDocumentIngestionTarget,
+    		setError,
+    		setImagingFolderPath,
+    		setImagingFolderScan,
+    		setImagingImportCommit,
+    		setImagingImportPreview,
+    		setImagingImportSourceKind,
+    		setImagingImportText,
+    		setImagingKindFilter,
+    		setImagingViewerActiveTool,
+    		setImagingViewerNote,
+    		setImagingViewerState,
+    		setImportCommit,
+    		setImportIntake,
+    		setImportPreview,
+    		setImportSourceKind,
+    		setImportText,
+    		setLocalImagingOrganizer,
+    		setMprAxisDeg,
+    		setMprCrosshairEnabled,
+    		setMprLinkedPlanesEnabled,
+    		setMprProjection,
+    		setMprSlabMm,
+    		setMprSliceIndex,
+    		setMprWindowPreset,
+    		setNewChairHasMicroscope,
+    		setNewChairHasSurgeryKit,
+    		setNewChairHasXraySensor,
+    		setNewChairName,
+    		setNewRuleAction,
+    		setNewRuleBlockedServiceId,
+    		setNewRuleCategory,
+    		setNewRuleCompletedServiceId,
+    		setNewRuleOwnerRole,
+    		setNewRuleRequiredServiceId,
+    		setNewRuleSeverity,
+    		setNewRuleSpecialty,
+    		setNewRuleTitle,
+    		setNewRuleTriggerServiceId,
+    		setNewRuleWarningText,
+    		setNewStaffName,
+    		setNewStaffRole,
+    		setNewStaffSpecialty,
+    		setOhifBaseUrl,
+    		setPaymentAmount,
+    		setPaymentFiscalCashierName,
+    		setPaymentFiscalFd,
+    		setPaymentFiscalFn,
+    		setPaymentFiscalFpd,
+    		setPaymentFiscalReceiptIssuedAt,
+    		setPaymentFiscalReceiptNumber,
+    		setPaymentFiscalReceiptUrl,
+    		setPaymentMethod,
+    		setPaymentPayerBirthDate,
+    		setPaymentPayerFullName,
+    		setPaymentPayerIdentityDocument,
+    		setPaymentPayerInn,
+    		setPaymentPayerRelationship,
+    		setPaymentTaxDeductionCode,
+    		setPricelistAnalysis,
+    		setPricelistSourceKind,
+    		setPricelistText,
+    		setQuery,
+    		setRecognitionJob,
+    		setRecognitionText,
+    		setReleaseProtectionNote,
+    		setSelectedImagingStudyId,
+    		setSelectedProtocolId,
+    		setSelectedSpecialty,
+    		setSelectedWorkspaceRole,
+    		setSettingsAdminSecretDraft,
+    		setSettingsTab,
+    		setSmartImportCommit,
+    		setSmartImportMode,
+    		setSmartImportPreview,
+    		setSmartImportText,
+    		setTelegramAdminSecretDraft,
+    		setTelegramBotUsernameDraft,
+    		setTelegramHandoffNotice,
+    		setTelegramMapsUrlDraft,
+    		setTelegramPatientPortalBaseUrlDraft,
+    		setTelegramPrivacyModeDraft,
+    		setTelegramReminderLeadTimesDraft,
+    		setTelegramReviewRequestDelayDraft,
+    		setTelegramReviewUrlDraft,
+    		setTelegramTokenTtlDraft,
+    		setTelegramWelcomeImageUrlDraft,
+    		setTranscript,
+    		setUiLanguage,
+    		setUiPreferencesSyncError,
+    		setUsePricelistAi,
+    		settingsAdminSecretDomain,
+    		settingsAdminSecretDraft,
+    		settingsAdminSecretSession,
+    		settingsTab,
+    		settingsTabs,
+    		shiftWarnings,
+    		showAdministrationTopActions,
+    		showDoctorVisitShortcut,
+    		showFullOnboardingGuide,
+    		smartImportCommit,
+    		smartImportMode,
+    		smartImportModeLabels,
+    		smartImportPreview,
+    		smartImportText,
+    		sortedAppointments,
+    		sortedCommunicationTasks,
+    		specialtiesWithTemplates,
+    		specialtyLabels,
+    		specialtyProtocolTemplates,
+    		speechGatewayActiveProviderIsLocal,
+    		speechGatewayCanUpload,
+    		speechGatewayHealthReport,
+    		speechGatewayStatus,
+    		speechProviderConnectorLabels,
+    		speechProviderHealthById,
+    		speechProviderHealthLabels,
+    		speechProviderModeLabels,
+    		speechProviderRuntimeById,
+    		speechProviderSelectionLabels,
+    		speechProviderStatusLabels,
+    		speechRecognitionReady,
+    		speechRecordingPathLabels,
+    		speechRecordingRecovery,
+    		speechRecordingStrategy,
+    		speechRecoveryStateLabels,
+    		speechStatusNote,
+    		staffRoleLabels,
+    		staffScheduleDirtyIds,
+    		staffScheduleDraftFromWorkingHours,
+    		staffScheduleDrafts,
+    		staffScheduleSaveStates,
+    		staffScheduleSavingId,
+    		stageLocalImagingFolderRecovery,
+    		startImportDictation,
+    		startServerVoiceRecording,
+    		startVisitDictation,
+    		stopServerVoiceRecording,
+    		structuredPayloadDocumentKinds,
+    		taxApplicationDeliveryChannelOptions,
+    		taxApplicationFormOptions,
+    		taxApplicationRelationshipOptions,
+    		taxDocumentPayerOptions,
+    		telegramAdminSecretDraft,
+    		telegramAdminSecretSession,
+    		telegramAllowVoiceIntakeDraft,
+    		telegramBotConfigId,
+    		telegramBotUsernameDraft,
+    		telegramChatLinkLedger,
+    		telegramChatLinks,
+    		telegramClassificationLabels,
+    		telegramDeliveryStatusLabels,
+    		telegramEnabledFeaturesDraft,
+    		telegramFeatureHelp,
+    		telegramFeatureLabel,
+    		telegramFeatureOptions,
+    		telegramFeaturePlan,
+    		telegramHandoffNotice,
+    		telegramHumanMessage,
+    		telegramInlineButtonKindLabels,
+    		telegramInlineButtonRowsFromReplyMarkup,
+    		telegramLinkActionState,
+    		telegramLinkCode,
+    		telegramLinkCodeLedger,
+    		telegramLinkCodeStatusLabels,
+    		telegramLinkCodes,
+    		telegramLinkStaffId,
+    		telegramLinkStaffOptions,
+    		telegramLinkSubjectType,
+    		telegramMapsUrlDraft,
+    		telegramModeDraft,
+    		telegramModeHints,
+    		telegramModeLabels,
+    		telegramOutbox,
+    		telegramOutboxStatusFilter,
+    		telegramOutboxStatusFilterLabels,
+    		telegramOutboxStatusFilterOptions,
+    		telegramOutboxTemplateFilter,
+    		telegramOutboxTemplateFilterLabels,
+    		telegramOutboxTemplateFilterOptions,
+    		telegramOwnBotUsernameDraft,
+    		telegramPatientPortalBaseUrlDraft,
+    		telegramPostVisitCheckupDelayDrafts,
+    		telegramPostVisitCheckupDelayFields,
+    		telegramPreview,
+    		telegramPrivacyModeDraft,
+    		telegramPrivacyModeHints,
+    		telegramPrivacyModeLabels,
+    		telegramQrSvgToDataUrl,
+    		telegramReminderLeadTimesDraft,
+    		telegramReviewRequestDelayDraft,
+    		telegramReviewUrlDraft,
+    		telegramRevokingLinkId,
+    		telegramSendingItemId,
+    		telegramSettingsDirty,
+    		telegramSettingsSaveError,
+    		telegramSettingsSaveState,
+    		telegramStaffEscalationChannelDraft,
+    		telegramStatus,
+    		telegramSubjectName,
+    		telegramTemplateLabels,
+    		telegramTokenTtlDraft,
+    		telegramVisualCardFields,
+    		telegramVisualCardUrlDrafts,
+    		telegramWebhookBaseUrlDraft,
+    		telegramWelcomeImageUrlDraft,
+    		toDateTimeLocalValue,
+    		toggleChairWorkingDay,
+    		toggleClinicWorkingDay,
+    		toggleClinicalRule,
+    		togglePhotoVideoMaterial,
+    		toggleStaffWorkingDay,
+    		toggleTelegramFeature,
+    		toothRows,
+    		toothStateByCode: visitToothStateByCode,
+    		setToothState,
+    		transcript,
+    		treatmentAcceptancePlannedTotalRub,
+    		treatmentEstimatePatientOrPayerFullNameValue,
+    		treatmentEstimateTotalRubValue,
+    		treatmentEstimateTreatmentBasisValue,
+    		treatmentStatusLabels,
+    		uiLanguage,
+    		uiLanguageOptions,
+    		uiPreferencesSyncError,
+    		undoTranscriptClear,
+    		unlockTelegramAdminSession,
+    		updateAppointmentScheduleDraft,
+    		updateChairScheduleDay,
+    		updateChairScheduleDraft,
+    		updateClinicProfileDraft,
+    		updateNewAppointmentDraft,
+    		updatePatientAdministrativeProfileDraft,
+    		updatePatientCoreDraft,
+    		updateStaffScheduleDay,
+    		updateStaffScheduleDraft,
+    		updateTelegramPostVisitCheckupDelayDraft,
+    		updateTelegramVisualCardUrlDraft,
+    		updateVisitNoteField,
+    		usePricelistAi,
+    		viewLabels,
+    		visibleImagingStudies,
+    		visibleRecommendedActions,
+    		visibleScheduleSuggestions,
+    		visibleTelegramOutboxItems,
+    		visibleVisitSpecialtyFocusOptions,
+    		visitCloseChecklist,
+    		visitDraftBuildMissingSteps,
+    		visitDraftMissingFieldLabel,
+    		visitDraftQualityLabels,
+    		visitDraftReadyToBuild,
+    		visitDraftSignalLabel,
+    		visitDraftUserEditedRef,
+    		visitNoteAcceptMissingSteps,
+    		visitNoteActionLabel,
+    		visitNoteFieldDefinitions,
+    		visitNoteForm,
+    		visitNoteReadyToAccept,
+    		visitNoteStatusLabel,
+    		visitPrimaryAction,
+    		visitSafetyCards,
+    		visitSaveReceiptText,
+    		visitWarnings,
+    		visitWorkflowSteps,
+    		warningSeverityLabels,
+    		warrantyLinkedActOrContractValue,
+    		warrantyServiceOrWorkNameValue,
+    		warrantyTeethOrAreaValue,
+    		weekdayOptions,
+    		workspaceScopeLabels,
+    		xrayPregnancyStatusOptions,
+    		xrayStudyTypeOptions,
+    		accessUnlockRequired,
+    		accessUnlockMessage,
+    		clinicalAdminSecretDraft,
+    		setClinicalAdminSecretDraft,
+    		loadDashboard,
+    		operatorWorkflowFailureMessage,
+    	};
 }

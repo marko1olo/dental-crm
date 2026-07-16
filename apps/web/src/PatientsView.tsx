@@ -393,12 +393,7 @@ export function PatientsView(props: PatientsViewProps) {
 						aria-label="Административные данные активного пациента"
 					>
 						<div
-							className="panel-heading compact-heading"
-							style={{
-								borderBottom: "none",
-								paddingBottom: "0",
-								marginBottom: "8px",
-							}}
+							className="panel-heading compact-heading patients-no-border-mb-8"
 						>
 							<div>
 								<span
@@ -483,15 +478,10 @@ export function PatientsView(props: PatientsViewProps) {
 								/>
 							</label>
 							<div
-								className="form-span-2"
-								style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+								className="form-span-2 patients-flex-col-gap-4"
 							>
 								<div
-									style={{
-										display: "flex",
-										justifyContent: "space-between",
-										alignItems: "center",
-									}}
+									className="patients-flex-between"
 								>
 									<span
 										style={{
@@ -529,12 +519,7 @@ export function PatientsView(props: PatientsViewProps) {
 									}}
 								/>
 								<div
-									style={{
-										display: "flex",
-										flexWrap: "wrap",
-										gap: "6px",
-										marginTop: "2px",
-									}}
+									className="patients-chips-row"
 								>
 									{[
 										"Очень тревожный",
@@ -579,12 +564,7 @@ export function PatientsView(props: PatientsViewProps) {
 							</div>
 						</div>
 						<div
-							className="patient-admin-actions"
-							style={{
-								marginTop: "16px",
-								display: "flex",
-								justifyContent: "flex-start",
-							}}
+							className="patient-admin-actions patients-mt-16-flex"
 						>
 							<button
 								className="primary-button"
@@ -614,14 +594,9 @@ export function PatientsView(props: PatientsViewProps) {
 
 						{/* Premium Clinical Experience (Full Width Odontogram + Grid) */}
 						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "24px",
-								margin: "24px 0",
-							}}
+							className="patients-flex-col-gap-24-my"
 						>
-							<div style={{ width: "100%" }}>
+							<div className="patients-w-100">
 								{selectedPatientId && (
 									<OdontogramModule
 										patientId={selectedPatientId}
@@ -634,8 +609,7 @@ export function PatientsView(props: PatientsViewProps) {
 							</div>
 
 							<div
-								className="patient-clinical-grid"
-								style={{ marginTop: 0, marginBottom: 0 }}
+								className="patient-clinical-grid patients-my-0"
 							>
 								<div className="clinical-col-left">
 									<VisiographAnalyzer />
@@ -654,15 +628,7 @@ export function PatientsView(props: PatientsViewProps) {
 											}}
 										>
 											<h3
-												style={{
-													fontSize: "14px",
-													fontWeight: "bold",
-													color: "#fff",
-													display: "flex",
-													alignItems: "center",
-													gap: "8px",
-													marginBottom: "12px",
-												}}
+												className="patients-glass-header"
 											>
 												👨‍👩‍👧‍👦 {familyData.name || "Семейная группа"}
 											</h3>
@@ -678,15 +644,11 @@ export function PatientsView(props: PatientsViewProps) {
 													marginBottom: "12px",
 												}}
 											>
-												<span style={{ fontSize: "12px", color: "#a1a1aa" }}>
+												<span className="patients-glass-muted">
 													Семейный баланс:
 												</span>
 												<span
-													style={{
-														fontSize: "18px",
-														fontWeight: "bold",
-														color: "#0ea5e9",
-													}}
+													className="patients-glass-value"
 												>
 													{parseFloat(familyData.balance).toLocaleString(
 														"ru-RU",
@@ -695,31 +657,17 @@ export function PatientsView(props: PatientsViewProps) {
 												</span>
 											</div>
 											<div
-												style={{
-													display: "flex",
-													flexDirection: "column",
-													gap: "8px",
-												}}
+												className="patients-flex-col-gap-8"
 											>
 												<span
-													style={{
-														fontSize: "11px",
-														fontWeight: "bold",
-														color: "#71717a",
-														textTransform: "uppercase",
-													}}
+													className="patients-glass-label"
 												>
 													Члены семьи:
 												</span>
 												{familyData.members?.map((m: any) => (
 													<div
 														key={m.id}
-														style={{
-															display: "flex",
-															justifyContent: "space-between",
-															alignItems: "center",
-															fontSize: "12px",
-														}}
+														className="patients-glass-row"
 													>
 														<span
 															style={{
@@ -736,7 +684,7 @@ export function PatientsView(props: PatientsViewProps) {
 															{m.fullName}{" "}
 															{m.id === selectedPatientId && " (текущий)"}
 														</span>
-														<span style={{ color: "#71717a" }}>
+														<span className="patients-glass-dim">
 															{m.phone || "нет телефона"}
 														</span>
 													</div>
@@ -766,12 +714,7 @@ export function PatientsView(props: PatientsViewProps) {
 							</summary>
 							<div className="settings-advanced-form">
 								<div
-									className="panel-heading compact-heading patient-doc-heading"
-									style={{
-										borderBottom: "none",
-										paddingBottom: "0",
-										marginBottom: "8px",
-									}}
+									className="panel-heading compact-heading patient-doc-heading patients-no-border-mb-8"
 								>
 									<div>
 										<span
@@ -822,7 +765,7 @@ export function PatientsView(props: PatientsViewProps) {
 									>
 										Дополнительные документы и адреса (развернуть)
 									</summary>
-									<div style={{ marginTop: "12px" }}>
+									<div className="patients-mt-12">
 										<div className="clinic-profile-form-grid patient-admin-form-grid">
 											<label>
 												Документ пациента
@@ -1108,12 +1051,7 @@ export function PatientsView(props: PatientsViewProps) {
 									</div>
 								</details>
 								<div
-									className="patient-admin-actions"
-									style={{
-										marginTop: "16px",
-										display: "flex",
-										justifyContent: "flex-start",
-									}}
+									className="patient-admin-actions patients-mt-16-flex"
 								>
 									<button
 										className="primary-button"

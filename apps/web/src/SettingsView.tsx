@@ -123,6 +123,7 @@ import { SettingsImportsTab } from "./components/settings/SettingsImportsTab";
 import { SettingsProfileTab } from "./components/settings/SettingsProfileTab";
 import { SettingsStaffTab } from "./components/settings/SettingsStaffTab";
 import { SettingsTelegramTab } from "./components/settings/SettingsTelegramTab";
+import { SettingsMessengersTab } from "./components/settings/SettingsMessengersTab";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,
@@ -262,6 +263,7 @@ type SettingsTabId =
 	| "clinic"
 	| "access"
 	| "telegram"
+	| "messengers"
 	| "protocols"
 	| "rules"
 	| "prices"
@@ -1491,9 +1493,9 @@ export function SettingsView(props: SettingsViewProps) {
 	const typedRoleAccessPolicies = dashboard.clinicSettings
 		.roleAccessPolicies as RoleAccessPolicy[];
 	const typedTelegramChatLinks =
-		telegramChatLinks as DenteTelegramChatLinkPublic[];
+		(telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
 	const typedTelegramLinkCodes =
-		telegramLinkCodes as DenteTelegramLinkCodePublic[];
+		(telegramLinkCodes as DenteTelegramLinkCodePublic[]) ?? [];
 	const typedTelegramPreview =
 		telegramPreview as DenteTelegramMessagePreview | null;
 	const typedTelegramOutbox =
@@ -2435,9 +2437,12 @@ export function SettingsView(props: SettingsViewProps) {
 				<div className="settings-tabs-group">
 					<span className="settings-tabs-group-header">Основные</span>
 					{typedSettingsTabs
-						.filter((t) =>
-							["clinic", "staff", "access", "telegram"].includes(t.id),
-						)
+						.filter((t) => {
+							if (t.id === "messengers") {
+								return props.activeStaffUser?.role !== "doctor";
+							}
+							return ["clinic", "staff", "access"].includes(t.id);
+						})
 						.map(renderTabButton)}
 				</div>
 				<div className="settings-tabs-group">
@@ -2489,10 +2494,6 @@ export function SettingsView(props: SettingsViewProps) {
 										autoComplete="current-password"
 										value={telegramAdminSecretDraft}
 										onChange={(event: TextInputChangeEvent) => {
-											console.log(
-												"SMOKE TEST DEBUG: SettingsView password input onChange called with value length =",
-												event.target.value.length,
-											);
 											if (propsSetTelegramAdminSecretDraft) {
 												propsSetTelegramAdminSecretDraft(event.target.value);
 											} else {
@@ -2674,7 +2675,7 @@ export function SettingsView(props: SettingsViewProps) {
 						policyAuditEventLabels,
 					}}
 				/>
-				<SettingsTelegramTab
+				<SettingsMessengersTab
 					settingsTab={settingsTab}
 					props={{
 						...props,

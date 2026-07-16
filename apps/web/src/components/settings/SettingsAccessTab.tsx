@@ -102,68 +102,30 @@ export function SettingsAccessTab({
 				</div>
 			</div>
 
-			<article
-				className="active-workspace-card"
-				style={{
-					marginTop: "24px",
-					backgroundColor: "rgba(255, 255, 255, 0.03)",
-					border: "1px solid rgba(255,255,255,0.1)",
-				}}
-			>
-				<div style={{ marginBottom: "16px" }}>
-					<h3
-						style={{
-							fontSize: "18px",
-							color: "#fff",
-							display: "flex",
-							alignItems: "center",
-							gap: "8px",
-						}}
-					>
-						<Mail size={18} /> Пригласить сотрудника
+			<article className="access-settings__invite-card">
+				<div className="access-settings__invite-header">
+					<h3>
+						<Mail size={18} aria-hidden="true" /> Пригласить сотрудника
 					</h3>
-					<p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px" }}>
+					<p>
 						Сгенерируйте уникальную ссылку для регистрации нового врача,
 						ассистента или администратора.
 					</p>
 				</div>
-				<form
-					onSubmit={handleGenerateInvite}
-					style={{
-						display: "flex",
-						gap: "12px",
-						alignItems: "center",
-						flexWrap: "wrap",
-					}}
-				>
+				<form className="access-settings__invite-form" onSubmit={handleGenerateInvite}>
 					<input
 						type="email"
 						placeholder="email@example.com"
 						value={inviteEmail}
 						onChange={(e) => setInviteEmail(e.target.value)}
 						disabled={loading}
-						style={{
-							padding: "8px 12px",
-							borderRadius: "6px",
-							background: "rgba(0,0,0,0.2)",
-							border: "1px solid rgba(255,255,255,0.1)",
-							color: "#fff",
-							flex: "1",
-							minWidth: "200px",
-						}}
+						className="access-settings__invite-input"
 					/>
 					<select
 						value={inviteRole}
 						onChange={(e) => setInviteRole(e.target.value)}
 						disabled={loading}
-						style={{
-							padding: "8px 12px",
-							borderRadius: "6px",
-							background: "rgba(0,0,0,0.2)",
-							border: "1px solid rgba(255,255,255,0.1)",
-							color: "#fff",
-							minWidth: "150px",
-						}}
+						className="access-settings__invite-select"
 					>
 						<option value="doctor">Врач</option>
 						<option value="admin">Администратор</option>
@@ -173,57 +135,21 @@ export function SettingsAccessTab({
 					<button
 						type="submit"
 						disabled={loading}
-						style={{
-							padding: "8px 16px",
-							borderRadius: "6px",
-							background: "#3b82f6",
-							color: "#fff",
-							border: "none",
-							cursor: "pointer",
-							fontWeight: 500,
-						}}
+						className="primary-button"
 					>
 						{loading ? "Создание..." : "Сгенерировать"}
 					</button>
 				</form>
 
 				{inviteLink && (
-					<div
-						style={{
-							marginTop: "16px",
-							padding: "12px",
-							background: "rgba(59, 130, 246, 0.1)",
-							border: "1px dashed rgba(59, 130, 246, 0.5)",
-							borderRadius: "6px",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between",
-						}}
-					>
-						<span
-							style={{
-								color: "#93c5fd",
-								fontFamily: "monospace",
-								wordBreak: "break-all",
-								fontSize: "13px",
-							}}
-						>
+					<div className="access-settings__invite-result">
+						<span className="access-settings__invite-link">
 							{inviteLink}
 						</span>
 						<button
+							type="button"
 							onClick={handleCopy}
-							style={{
-								marginLeft: "12px",
-								padding: "6px 12px",
-								background: "rgba(255,255,255,0.1)",
-								border: "none",
-								borderRadius: "4px",
-								color: "#fff",
-								cursor: "pointer",
-								display: "flex",
-								alignItems: "center",
-								gap: "6px",
-							}}
+							className="secondary-button access-settings__copy-btn"
 						>
 							{copied ? (
 								<>

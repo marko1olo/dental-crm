@@ -49,79 +49,26 @@ export function FinancePlanningOverview({
 	strategyLabels,
 }: FinancePlanningOverviewProps) {
 	const [showScenarios, setShowScenarios] = useState(false);
+	const percent = 65;
 
 	return (
 		<>
-			<div
-				className="treatment-progress-container"
-				style={{
-					marginBottom: "24px",
-					padding: "16px",
-					background: "var(--paper)",
-					borderRadius: "16px",
-					boxShadow: "var(--shadow-sm)",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						marginBottom: "12px",
-						flexWrap: "wrap",
-						gap: "8px",
-					}}
-				>
-					<span
-						style={{
-							fontWeight: 700,
-							fontSize: "0.95rem",
-							color: "var(--slate-800)",
-						}}
-					>
+			<div className="treatment-progress-container">
+				<div className="treatment-progress-header">
+					<span className="treatment-progress-title">
 						Прогресс лечения
 					</span>
-					<span
-						style={{
-							fontWeight: 800,
-							fontSize: "1.1rem",
-							color: "var(--brand-600)",
-						}}
-					>
-						65%
+					<span className="treatment-progress-percent">
+						{percent}%
 					</span>
 				</div>
-				<div
-					style={{
-						background: "var(--paper-strong)",
-						borderRadius: "12px",
-						height: "14px",
-						overflow: "hidden",
-						position: "relative",
-						boxShadow: "inset 0 1px 3px rgba(0,0,0,0.05)",
-					}}
-				>
+				<div className="treatment-progress-bar-bg">
 					<div
-						style={{
-							background:
-								"linear-gradient(90deg, var(--brand-400), var(--brand-600))",
-							width: "65%",
-							height: "100%",
-							borderRadius: "12px",
-							transition: "width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-						}}
+						className="treatment-progress-bar-fill"
+						style={{ width: `${percent}%` }}
 					/>
 				</div>
-				<p
-					style={{
-						fontSize: "0.85rem",
-						color: "var(--slate-500)",
-						marginTop: "10px",
-						display: "flex",
-						alignItems: "center",
-						gap: "6px",
-					}}
-				>
+				<p className="treatment-progress-hint">
 					<ClipboardList size={14} /> Осталось 3 этапа до завершения плана.
 					Отличная динамика!
 				</p>
@@ -169,15 +116,8 @@ export function FinancePlanningOverview({
 			</div>
 
 			<section className="plan-scenarios" aria-label="Варианты плана лечения">
-				<div
-					className="panel-heading"
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+				<div className="panel-heading">
+					<div className="panel-heading-group">
 						<h3>Варианты плана</h3>
 						<span className="status-pill status-confirmed">
 							{scenarios.length}
@@ -186,8 +126,7 @@ export function FinancePlanningOverview({
 					{scenarios.length > 0 && (
 						<button
 							type="button"
-							className="text-button"
-							style={{ display: "flex", alignItems: "center", gap: "4px" }}
+							className="text-button panel-heading-action"
 							onClick={() => setShowScenarios(!showScenarios)}
 						>
 							{showScenarios ? (
@@ -252,37 +191,12 @@ export function FinancePlanningOverview({
 						</div>
 					)
 				) : (
-					<article
-						className="finance-empty-state actionable-empty-state"
-						style={{
-							textAlign: "center",
-							padding: "32px 20px",
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-						}}
-					>
-						<ClipboardList
-							size={40}
-							style={{ color: "var(--muted)", marginBottom: "16px" }}
-						/>
-						<h4
-							style={{
-								margin: "0 0 8px 0",
-								fontSize: "1.1rem",
-								color: "var(--ink)",
-							}}
-						>
+					<article className="finance-empty-state actionable-empty-state">
+						<ClipboardList size={40} className="finance-empty-state-icon" />
+						<h4 className="finance-empty-state-title">
 							Смета пуста
 						</h4>
-						<p
-							style={{
-								margin: "0 0 20px 0",
-								fontSize: "0.95rem",
-								color: "var(--muted)",
-								maxWidth: "280px",
-							}}
-						>
+						<p className="finance-empty-state-desc">
 							Кликните по зубу слева на формуле, чтобы добавить первую услугу.
 						</p>
 						<button

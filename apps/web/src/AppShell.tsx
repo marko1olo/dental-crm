@@ -12,6 +12,9 @@ const DentalWorkspace = lazy(() =>
 const OnboardingPreviewPage = lazy(() =>
 	import("./OnboardingPreview").then((m) => ({ default: m.OnboardingPreview })),
 );
+const PublicBookingWidgetPage = lazy(() =>
+	import("./pages/PublicBookingWidget").then((m) => ({ default: m.PublicBookingWidget })),
+);
 
 import { GlobalToast } from "./components/GlobalToast";
 import { useOfflineQueue } from "./hooks/useOfflineQueue";
@@ -85,6 +88,10 @@ export function AppShell() {
 		typeof window !== "undefined" &&
 		window.location.hash === "#onboarding-preview";
 
+	const isBookingWidget =
+		typeof window !== "undefined" &&
+		window.location.hash.startsWith("#booking-widget");
+
 	return (
 		<AppShellErrorBoundary>
 			<Suspense
@@ -95,7 +102,13 @@ export function AppShell() {
 					</main>
 				}
 			>
-				{isPreview ? <OnboardingPreviewPage /> : <DentalWorkspace />}
+				{isBookingWidget ? (
+					<PublicBookingWidgetPage />
+				) : isPreview ? (
+					<OnboardingPreviewPage />
+				) : (
+					<DentalWorkspace />
+				)}
 			</Suspense>
 			<GlobalToast />
 			<OfflineQueueManager />

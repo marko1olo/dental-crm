@@ -121,3 +121,24 @@ Use these exclusively. Blind terminal navigation is banned.
 - Backend: Fastify, TypeScript, Drizzle ORM, PostgreSQL
 - Auth: JWT + staff PIN
 - Тесты: Playwright (headless Chromium)
+
+## [STRICT DEVELOPMENT & ANTI-HARDCODE DOCTRINE]
+
+1. **STRICT ANTI-HARDCODE PROTOCOL**:
+   Hardcoding config values, ports, database connection details, third-party API keys, environment settings, or magic strings is strictly forbidden. 
+   - All parameters must be configurable via `.env` or configurations.
+   - Use TypeScript interfaces (`interface`) and dependency decoupling.
+   
+2. **MANDATORY FULL-FILE COMPREHENSION**:
+   Before editing any file, you MUST read it in its entirety to understand the data flow, structure, and imports. Appending unstructured quick-fix patches to the bottom of the file is a critical compliance failure.
+   
+3. **MONOLITH PREVENTION**:
+   Keep code modular. Decompose large structures into reusable parts. Maintain clean architectural patterns.
+   
+4. **DESIGN ADAPTABILITY MANDATE**:
+   All UI modifications must follow structural design requirements:
+   - *Multi-Language (i18n)*: Do not hardcode UI text. Extract strings to locale files. Ensure layout blocks (buttons, table headers) have flexible flex/grid wrapping to prevent overlapping for longer words (e.g., Russian translation expansion).
+   - *Multi-Theme*: Support Light, Dark, and System theme selections. Utilize Tailwind semantic coloring (such as `dark:` selectors or CSS theme variables); never hardcode specific colors.
+   - *Multi-Scale*: Layouts must behave fluidly under different resolutions, high DPI screens, and browser zooming. Use relative metrics (`rem`, `em`, `%`) and responsive breakpoint modifiers.
+
+

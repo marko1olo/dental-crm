@@ -513,6 +513,7 @@ CREATE TABLE "generated_documents" (
 	"tax_xml_snapshot" jsonb,
 	"signature_attestation" jsonb,
 	"signature_svg" text,
+	"crypto_signature_pkcs7" text,
 	"void_attestation" jsonb,
 	"release_journal_entry" jsonb,
 	"issued_at" timestamp with time zone,

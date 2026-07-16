@@ -15,12 +15,13 @@ Before starting any task, read these documents to understand the architecture, d
 7. **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Clinical rules engine, triggers matching, prerequisite checks, and warning/blocking actions.
 8. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Payment double-posting idempotency layer and shared family wallets balance mechanics.
 9. **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — HTML-to-PDF rendering, Edge/Chrome headless spawning, and SHA-256 integrity document signing.
+10. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Config schemas, API routes, hooks, UI panels, and setup rules for WhatsApp Cloud API & VK MAX bots.
 
 ---
 
 ## 🚨 Critical Architecture Rules
 
 *   **Zero-Mocks Policy:** Never write mock API responses or UI placeholders. Everything must be fully typed and integrated with database client queries.
-*   **The God-Context Constraint:** `useAppLogic.tsx` (~13,000 lines) is a centralized state manager exposing a massive context object. **Do not modify its return block or delete variables without updating all dependent UI files**, as it will immediately break the typecheck of 50+ files.
+*   **The God-Context Constraint:** `useAppLogic.tsx` (~18,800 lines) is a centralized state manager exposing a massive context object. **Do not modify its return block or delete variables without updating all dependent UI files**, as it will immediately break the typecheck of 50+ files.
 *   **UTF-8 Encoding (Mojibake Prevention):** All Russian text in code/JSON must be written strictly using UTF-8. Never use PowerShell here-strings or `node -e` in CLI for Russian strings.
 *   **Local Swarm Rules:** Neighboring agents work concurrently in this same folder. Use specific git adds (`git add apps/web/src/...`) instead of global `git add .` to avoid committing dirty unsaved work from neighboring sessions.

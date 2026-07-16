@@ -14,6 +14,7 @@ import {
 	Lock,
 	MessageSquare,
 	Mic,
+	Package,
 	Moon,
 	Plus,
 	ReceiptText,
@@ -21,6 +22,11 @@ import {
 	Stethoscope,
 	Sun,
 	Users,
+	Banknote,
+	PhoneCall,
+	Settings,
+	Megaphone,
+	Barcode,
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -39,9 +45,11 @@ export const appViews = [
 	"finance",
 	"analytics",
 	"communications",
+	"inbox",
 	"settings",
 	"marketing",
 	"scanner",
+	"inventory",
 ] as const;
 export type AppView = (typeof appViews)[number];
 
@@ -54,11 +62,13 @@ export const viewLabels: Record<AppView, string> = {
 	visit: "Прием",
 	documents: "Документы",
 	finance: "Финансы",
-	analytics: "BI Аналитика",
+	analytics: "Аналитика",
 	communications: "Связь",
+	inbox: "Чаты",
 	settings: "Настройки",
 	marketing: "Маркетинг/SEO",
 	scanner: "Сканнер лотков (ЦСО)",
+	inventory: "Склад",
 };
 
 export const viewHints: Record<AppView, string> = {
@@ -69,12 +79,14 @@ export const viewHints: Record<AppView, string> = {
 	imaging: "рентген, КЛКТ и КТ",
 	visit: "прием и диктовка",
 	documents: "договоры и справки",
-	finance: "счета и оплаты",
-	analytics: "дашборд аналитики",
+	finance: "Счета, акты и платежи",
+	analytics: "BI дашборды и отчеты",
 	communications: "сообщения и задачи",
+	inbox: "Единый мессенджер (WhatsApp/TG)",
 	settings: "Системные настройки, справочники, профиль",
 	marketing: "Аналитика привлечения, LTV",
 	scanner: "Стерилизация и сканирование штрих-кодов",
+	inventory: "Остатки и расходники",
 };
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
@@ -86,11 +98,14 @@ function SidebarIcon({ section }: { section: AppView }) {
 	if (section === "imaging") return <ImageIcon aria-hidden="true" />;
 	if (section === "visit") return <ClipboardList aria-hidden="true" />;
 	if (section === "documents") return <FileText aria-hidden="true" />;
-	if (section === "finance") return <CreditCard aria-hidden="true" />;
+	if (section === "finance") return <Banknote aria-hidden="true" />;
 	if (section === "analytics") return <BarChart3 aria-hidden="true" />;
-	if (section === "communications") return <MessageSquare aria-hidden="true" />;
-	if (section === "settings") return <Database aria-hidden="true" />;
-	if (section === "marketing") return <Sparkles aria-hidden="true" />;
+	if (section === "communications") return <PhoneCall aria-hidden="true" />;
+	if (section === "inbox") return <MessageSquare aria-hidden="true" />;
+	if (section === "settings") return <Settings aria-hidden="true" />;
+	if (section === "marketing") return <Megaphone aria-hidden="true" />;
+	if (section === "scanner") return <Barcode aria-hidden="true" />;
+	if (section === "inventory") return <Package aria-hidden="true" />;
 	return <Sparkles aria-hidden="true" />;
 }
 
@@ -105,6 +120,7 @@ export function ActionIcon({ section }: { section: AppView }) {
 	if (section === "analytics") return <BarChart3 aria-hidden="true" />;
 	if (section === "communications") return <MessageSquare aria-hidden="true" />;
 	if (section === "settings") return <Database aria-hidden="true" />;
+	if (section === "inventory") return <Package aria-hidden="true" />;
 	return <Sparkles aria-hidden="true" />;
 }
 
@@ -143,6 +159,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"analytics",
 			"settings",
 			"marketing",
+			"inventory",
 		];
 	}
 	if (role === "manager") {
@@ -251,6 +268,7 @@ export function WorkspaceTopbar({
 	const topology = useSyncStore((s) => s.topology);
 	const hasConflict = useSyncStore((s) => s.hasConflict);
 	const conflictingRecord = useSyncStore((s) => s.conflictingRecord);
+	const isOnline = useSyncStore((s) => s.isOnline);
 
 	useEffect(() => {
 		let active = "dark";
@@ -380,6 +398,25 @@ export function WorkspaceTopbar({
 			</div>
 
 			<div className="top-actions">
+				<div
+					className="network-indicator-badge"
+					title={isOnline ? "Сеть доступна" : "Нет подключения"}
+					style={{
+						background: isOnline ? "rgba(34, 197, 94, 0.15)" : "rgba(239, 68, 68, 0.15)",
+						border: `1px solid ${isOnline ? "rgb(34, 197, 94)" : "rgb(239, 68, 68)"}`,
+						color: isOnline ? "rgb(34, 197, 94)" : "rgb(239, 68, 68)",
+						padding: "4px 10px",
+						borderRadius: "12px",
+						fontSize: "0.82rem",
+						fontWeight: "bold",
+						display: "flex",
+						alignItems: "center",
+						height: "24px",
+						whiteSpace: "nowrap",
+					}}
+				>
+					{isOnline ? "Онлайн" : "Офлайн"}
+				</div>
 				{topology === "sandbox" && (
 					<div
 						className="topology-sandbox-badge"

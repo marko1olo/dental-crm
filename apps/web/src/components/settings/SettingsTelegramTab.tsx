@@ -116,14 +116,14 @@ export function SettingsTelegramTab({
 		telegramLinkActionState,
 		telegramQrSvgToDataUrl,
 		telegramChatLinkLedger,
-		typedTelegramChatLinks,
+		typedTelegramChatLinks = [],
 		telegramSubjectName,
 		revokeTelegramChatLink,
 		telegramRevokingLinkId,
 		loadMoreTelegramChatLinks,
 		isTelegramChatLinksLoadingMore,
 		telegramLinkCodeLedger,
-		typedTelegramLinkCodes,
+		typedTelegramLinkCodes = [],
 		telegramLinkCodeStatusLabels,
 		loadMoreTelegramLinkCodes,
 		isTelegramLinkCodesLoadingMore,
@@ -207,9 +207,9 @@ export function SettingsTelegramTab({
 		: 0;
 	const typedTelegramStatus = telegramStatus as any | null;
 	const typedTelegramOutboxStatusFilterOptions =
-		telegramOutboxStatusFilterOptions as string[];
+		(telegramOutboxStatusFilterOptions as string[]) ?? [];
 	const typedTelegramOutboxTemplateFilterOptions =
-		telegramOutboxTemplateFilterOptions as string[];
+		(telegramOutboxTemplateFilterOptions as string[]) ?? [];
 	const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance";
 	const telegramOutboxBulkSendGuidance = isTelegramLoading
 		? "Загрузка..."
@@ -394,7 +394,7 @@ export function SettingsTelegramTab({
 							>
 								Кого подключаем
 							</span>
-							<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+							<div className="settings-segmented-group">
 								{[
 									{ value: "patient", label: "Активный пациент" },
 									{ value: "staff", label: "Сотрудник клиники" },
@@ -707,16 +707,7 @@ export function SettingsTelegramTab({
 					</div>
 					<div className="telegram-settings-form">
 						<div className="settings-field">
-							<span
-								className="field-label"
-								style={{
-									fontSize: "14px",
-									fontWeight: 600,
-									color: "var(--slate-700)",
-									display: "block",
-									marginBottom: "8px",
-								}}
-							>
+							<span className="field-label settings-section-title">
 								Режим бота
 							</span>
 							<div
@@ -940,16 +931,7 @@ export function SettingsTelegramTab({
 							/>
 						</label>
 						<div className="settings-field">
-							<span
-								className="field-label"
-								style={{
-									fontSize: "14px",
-									fontWeight: 600,
-									color: "var(--slate-700)",
-									display: "block",
-									marginBottom: "8px",
-								}}
-							>
+							<span className="field-label settings-section-title">
 								Приватность
 							</span>
 							<div

@@ -7,10 +7,12 @@ export type LazyWorkspaceView =
 	| "finance"
 	| "analytics"
 	| "communications"
+	| "inbox"
 	| "settings"
 	| "visit"
 	| "imaging"
-	| "marketing";
+	| "marketing"
+	| "scanner";
 
 type WorkspaceRouteErrorBoundaryProps = PropsWithChildren<{
 	label: string;

@@ -22,7 +22,7 @@ export class DicomVacuum {
 	static async scanDirectory(
 		dirPath: string,
 	): Promise<{ filepath: string; metadata: DicomMetadata }[]> {
-		console.log(`[Dicom Vacuum] Scanning directory: ${dirPath}`);
+		console.log("[Dicom Vacuum] Scanning directory:", dirPath);
 		const results: { filepath: string; metadata: DicomMetadata }[] = [];
 
 		// Simulate finding a DICOM file in the directory
@@ -54,7 +54,7 @@ export class DicomVacuum {
 		filepath: string,
 		outputPath: string,
 	): Promise<string> {
-		console.log(`[Dicom Vacuum] Extracting central frame from ${filepath}...`);
+		console.log("[Dicom Vacuum] Extracting central frame from", filepath, "...");
 		// Simulated path output
 		return `${outputPath}/preview_${Date.now()}.png`;
 	}

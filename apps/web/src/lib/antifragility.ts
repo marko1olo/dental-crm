@@ -1,4 +1,6 @@
 import { create } from "zustand";
+// DEV-only sync engine trace (stripped in production builds)
+const _devLog = import.meta.env.DEV ? console.log.bind(console) : () => {};
 
 // --- ZUSTAND SYNC STORE ---
 export interface SyncState {
@@ -137,7 +139,7 @@ export function initAntifragility(options: { enabled?: boolean } = {}) {
 	if ((window as any).__denteAntifragilityInitialized) return;
 	(window as any).__denteAntifragilityInitialized = true;
 
-	console.log("[Antifragility] Activating explicit offline sandbox engine...");
+	_devLog("[Antifragility] Activating explicit offline sandbox engine...");
 
 	originalFetch = window.fetch;
 
@@ -201,12 +203,12 @@ export function initAntifragility(options: { enabled?: boolean } = {}) {
 
 	// Listen to browser network changes
 	window.addEventListener("online", () => {
-		console.log("[Antifragility] Browser reports ONLINE.");
+		_devLog("[Antifragility] Browser reports ONLINE.");
 		void verifyBackendConnectivity();
 	});
 
 	window.addEventListener("offline", () => {
-		console.log("[Antifragility] Browser reports OFFLINE.");
+		_devLog("[Antifragility] Browser reports OFFLINE.");
 		setOfflineMode(true);
 	});
 
@@ -224,7 +226,7 @@ export function setOfflineMode(offline: boolean) {
 	offlineMode = offline;
 	useSyncStore.getState().setIsOnline(!offline);
 	useSyncStore.getState().setTopology(offline ? "sandbox" : "cloud");
-	console.log(
+	_devLog(
 		`[Antifragility] Topology updated: offlineMode=${offlineMode}, mode=${useSyncStore.getState().topology}`,
 	);
 }
@@ -234,7 +236,7 @@ async function verifyBackendConnectivity() {
 		const res = await originalFetch("/api/auth/user/me", { method: "GET" });
 		if (res.status === 200) {
 			setOfflineMode(false);
-			console.log(
+			_devLog(
 				"[Antifragility] Connected to backend server successfully. Triggering sync...",
 			);
 			void runOfflineQueueSync();
@@ -252,7 +254,7 @@ async function handleSimulatedApiRequest(
 	init: any,
 	isMutating: boolean,
 ): Promise<Response> {
-	console.log(
+	_devLog(
 		`[Antifragility Simulator] Intercepted ${init?.method || "GET"} -> ${url}`,
 	);
 
@@ -404,7 +406,7 @@ async function enqueueSyncTransaction(
 	await idbPut("sync_queue", tx);
 	const queue = await idbGetAll("sync_queue");
 	useSyncStore.getState().setQueueCount(queue.length);
-	console.log(
+	_devLog(
 		`[Antifragility Queue] Transaction enqueued: id=${transactionId}, queueCount=${queue.length}`,
 	);
 }
@@ -423,7 +425,7 @@ export async function runOfflineQueueSync() {
 	}
 
 	syncInProgress = true;
-	console.log(
+	_devLog(
 		`[Background Sync] Attempting to sync ${queue.length} transactions...`,
 	);
 
@@ -437,7 +439,7 @@ export async function runOfflineQueueSync() {
 			(Number(crypto.getRandomValues(new Uint32Array(1))[0]) / 4294967295) *
 			1000;
 		backoffDelay = Math.min(max, exponential) + jitter;
-		console.log(
+		_devLog(
 			`[Background Sync] Exponential backoff delay active: ${Math.round(backoffDelay)}ms`,
 		);
 		await new Promise((r) => setTimeout(r, backoffDelay));
@@ -483,7 +485,7 @@ export async function runOfflineQueueSync() {
 			if (res.ok) {
 				// Success -> delete from queue
 				await idbDelete("sync_queue", tx.id);
-				console.log(
+				_devLog(
 					`[Background Sync] Successfully synced transaction: id=${tx.id}`,
 				);
 			} else {
@@ -562,7 +564,7 @@ export async function resolveConflictLWW(localWin: boolean) {
 	useSyncStore.getState().setHasConflict(false);
 	const updatedQueue = await idbGetAll("sync_queue");
 	useSyncStore.getState().setQueueCount(updatedQueue.length);
-	console.log(
+	_devLog(
 		`[Antifragility Conflict] Conflict resolved. localWin=${localWin}, remainingQueue=${updatedQueue.length}`,
 	);
 }

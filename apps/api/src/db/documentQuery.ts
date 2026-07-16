@@ -74,6 +74,7 @@ function mapDocument(
 		taxXmlSourceSnapshot: record.taxXmlSourceSnapshot as any,
 		taxXmlSnapshot: record.taxXmlSnapshot as any,
 		signatureAttestation: record.signatureAttestation as any,
+		cryptoSignaturePkcs7: record.cryptoSignaturePkcs7,
 		voidAttestation: record.voidAttestation as any,
 		releaseJournalEntry: record.releaseJournalEntry as any,
 		issuedAt: record.issuedAt?.toISOString() ?? null,

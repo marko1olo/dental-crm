@@ -18,18 +18,38 @@ The project is structured as an npm workspaces monorepo:
 
 The backend is built with **Fastify** and uses **Drizzle ORM** for PostgreSQL interaction.
 
-### 🔌 Proxy & Tunnel Configuration (`apps/api/src/server.ts`)
-*   During startup, `setupProxyAndTunnels()` tries to configure an SSH SOCKS5 tunnel on port `1080`.
-*   If successful, it directs HTTP traffic through `socks5://127.0.0.1:1080` (used for secure, remote AI processing endpoints).
-*   If the configured proxy is offline, the server deletes proxy environment variables to fall back to a direct connection.
+### 🔌 Proxy & SSH Tunnel Gating (`apps/api/src/server.ts`)
+To handle secure connections to external AI APIs (like speech-to-text models), the server sets up connection routing:
+*   During boot, `setupProxyAndTunnels()` checks for local SSH keys. If found, it establishes an SSH SOCKS5 tunnel on port `1080` using `ensureSshTunnel()`.
+*   If the tunnel starts, the server sets `process.env.HTTPS_PROXY = "socks5://127.0.0.1:1080"`.
+*   If the proxy is marked offline by `checkProxyPortDirectly()`, the environment variables are automatically removed to force direct fallback connections.
 
 ### 🌐 WebSocket Broker (`apps/api/src/services/websocketBroker.ts`)
-The server exposes a websocket endpoint `/api/ws/schedule`.
-*   Clients establish websocket connections passing `orgId` (organization) and optional `patientId`.
-*   The `wsBroker` maps connections and handles real-time updates.
-*   Methods:
-    *   `broadcastToOrganization(organizationId, message)` — Sends to all active clinic admins.
-    *   `broadcastToPatient(organizationId, patientId, message)` — Sends to a specific patient portal.
+The server runs an in-memory client dispatcher for real-time events.
+*   Endpoint: `/api/ws/schedule?orgId=<orgId>&patientId=<patientId>`
+*   Active client connections are mapped to their specific `organizationId` and `patientId` scopes.
+*   **Active Broadcast Messages:**
+    *   `TELEPHONY_INCOMING_CALL` — Pushed to all users of an organization.
+    *   `LAB_ORDER_UPDATED` — Pushed when a dental laboratory updates order statuses.
+    *   `SCHEDULE_APPOINTMENT_CHANGE` — Dispatched when appointment cards are created/moved.
+
+---
+
+## 🎙️ Speech Gating & AI Gateway (`apps/api/src/speech`)
+
+DENTE integrates automated voice dictation for dental visits. 
+
+### 1. Key Pool Rotation (`keyPool.ts`)
+To balance Groq/OpenAI/Yandex STT calls, the gateway manages a list of API keys:
+*   Keys are checked dynamically at runtime.
+*   If a request fails (e.g. Rate Limit / 429), `recordProviderKeyFailure()` registers it and rotates the pool to next valid key.
+*   If requests succeed, `recordProviderKeySuccess()` boosts key priority weight.
+
+### 2. Hallucination Guardrails (`gateway.ts`)
+Whisper-class models frequently generate phantom words during silent pauses or low hums. The gateway intercepts STT output and compares it against `HALLUCINATION_BLACKLIST`:
+*   *Blacklisted Phrases:* "Продолжение следует", "Спасибо за просмотр", "To be continued", "DimaTorzok", etc.
+*   *Repetition Loops:* Catches repeating syllables or word chains using regex `^(.{1,60})\1{4,}$`.
+*   If a hallucination is detected, it is discarded rather than parsed into the patient records.
 
 ---
 
@@ -38,27 +58,11 @@ The server exposes a websocket endpoint `/api/ws/schedule`.
 The frontend is a Single Page Application (SPA) built with React 18 and Vite.
 
 ### 🧠 App State Management
-*   **Zustand** is used for smaller global settings stores (e.g., `settingsStore.ts`).
-*   **God Context (`useAppLogic.tsx`)**: Most application-wide states (active patient, schedule view configurations, clinical logs) are gathered in the `useAppLogic` hook and shared via React Context (`AppLogicContext`).
-*   **WS Connection**: `useWebsocket.ts` hooks into the backend ws broker and updates component states dynamically.
+*   **Zustand** is used for isolated UI states:
+    *   `appStore.ts` — Handles current active view (`currentView`), omnibar, dashboard caching.
+    *   `patientStore.ts` — Manages selected patient ID, odontogram teeth conditions.
+    *   `visitStore.ts` — Tracks active visit logs and revisions.
+*   **God Context (`useAppLogic.tsx`)**: Most legacy states (schedule filters, clinical logs) are gathered in the `useAppLogic` hook and shared via React Context (`AppLogicContext`).
 
 ### ⚡ View Preloading (`apps/web/src/workspacePreload.ts`)
 To prevent route-change lags in the custom UI shell, all core views (Schedule, Patients, Documents, Finance, Communications, Settings) are imported at app initialization.
-
----
-
-## 🔄 Core Data Flow: Real-Time Event Dispatch
-
-```mermaid
-sequenceDiagram
-    participant External as External Service (e.g. Telephony ATS)
-    participant API as Fastify Server (/api/telephony)
-    participant WS as WebSocket Broker (wsBroker)
-    participant Web as React Web Client (IncomingCallToast)
-    
-    External->>API: HTTP POST /api/telephony/:orgId/webhook (ringing)
-    API->>API: DB Lookup for Patient phone suffix
-    API->>WS: wsBroker.broadcastToOrganization(orgId, TELEPHONY_INCOMING_CALL)
-    WS->>Web: WebSocket message sent to active connections
-    Web->>Web: Set state & display IncomingCallToast UI
-```

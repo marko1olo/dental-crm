@@ -1033,14 +1033,10 @@ import {
 	xrayStudyTypeOptions,
 } from "./AppHelpers";
 
+
 export function App() {
 	useEffect(() => {
-		return () => {
-			if (typeof useAppStore.getState().reset === "function")
-				useAppStore.getState().reset();
-			if (typeof (useDocumentStore.getState() as any).reset === "function")
-				(useDocumentStore.getState() as any).reset();
-		};
+		// App is the root component; global state does not need cleanup on page unmount.
 	}, []);
 
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
@@ -1053,9 +1049,6 @@ export function App() {
 
 	useEffect(() => {
 		if (selectedPatientId) {
-			console.log(
-				`[StateBleedingGuard] Patient changed to ${selectedPatientId}. Resetting clinical and billing stores`,
-			);
 			useVisitStore.getState().reset();
 			(useDocumentStore.getState() as any).reset();
 			useImagingStore.getState().reset();
@@ -4939,6 +4932,7 @@ export function App() {
 										</div>
 									}
 								>
+
 									<PatientsView
 										dashboard={dashboard}
 										createPatient={createPatient}

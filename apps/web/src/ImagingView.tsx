@@ -38,6 +38,15 @@ import { type ToothState, useVisitStore } from "./store/visitStore";
 type ImagingViewProps = Record<string, any>;
 
 export function ImagingView(props: ImagingViewProps) {
+	const apiUrl = (() => {
+		const envUrl = (import.meta as any).env.VITE_API_URL;
+		if (envUrl) return envUrl.replace(/\/$/, "");
+		if (window.location.port === "5173" || window.location.port === "5174") {
+			return `${window.location.protocol}//${window.location.hostname}:4100/api`;
+		}
+		return `${window.location.origin}/api`;
+	})();
+
 	const {
 		activeAppointment,
 		activeImagingStudies,
@@ -565,7 +574,7 @@ export function ImagingView(props: ImagingViewProps) {
 										<div className="opacity-50 pointer-events-none w-full flex-1">
 											<Cornerstone3DViewer
 												imageIds={[
-													`wadouri:http://localhost:3000/api/dicomweb/studies/${selectedImagingStudy?.dicomStudyUid}/series/1/instances/1`,
+													`wadouri:${apiUrl}/dicomweb/studies/${selectedImagingStudy?.dicomStudyUid}/series/1/instances/1`,
 												]}
 											/>
 										</div>

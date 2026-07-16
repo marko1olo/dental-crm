@@ -1,54 +1,83 @@
 # 📞 Telephony Webhook & Patient Portal
 
-This document explains the Telephony integration (Mango/Zadarma ATS webhooks) and the Patient Portal auth/UI pipeline.
+This document details the Telephony integration (Mango/Zadarma ATS webhooks), WebSocket message contracts, and the Patient Portal auth/UI pipeline.
 
 ---
 
 ## 📞 IP Telephony Webhook
 
-The telephony system alerts clinic admins of incoming calls via a WebSocket push.
+The telephony integration links an incoming phone call to a patient card and notifies clinic administrators in real-time.
 
 ### 1. Webhook Endpoint (`apps/api/src/routes/telephony.ts`)
 *   **Path:** `POST /api/telephony/:organizationId/webhook`
-*   **Payload Shape:**
-    ```json
-    {
-      "event": "ringing",
-      "from": "+79991234567",
-      "to": "+78005553535",
-      "call_id": "mango_call_993"
+*   **Body Payload Schema:**
+    ```typescript
+    interface TelephonyWebhookBody {
+      event: "ringing" | "answered" | "ended";
+      from: string;       // Caller phone number (e.g. "+79991234567")
+      to: string;         // Target clinic phone number
+      call_id?: string;   // Unique call session identifier
     }
     ```
-*   **Engine Logic:**
-    1.  Extracts digits from `from` caller number.
-    2.  If length >= 10, queries the `patients` database using `ilike(patients.phone, '%${last10Digits}%')`.
-    3.  Dispatches WebSocket event to `wsBroker.broadcastToOrganization(organizationId, ...)` with type `TELEPHONY_INCOMING_CALL`.
+*   **Ringing Event Pipeline:**
+    1.  Clears non-digit characters from the `from` phone number: `from.replace(/\D/g, "")`.
+    2.  If the processed number is at least 10 digits long, queries Drizzle for a patient matching the last 10 digits:
+        ```typescript
+        const phoneSuffix = rawPhone.slice(-10);
+        const match = await db.select().from(patients)
+          .where(ilike(patients.phone, `%${phoneSuffix}%`))
+          .limit(1);
+        ```
+    3.  If a patient is found, grabs their ID and formats their name: `LastName FirstName`.
+    4.  Dispatches a WebSocket notification using `wsBroker` (see contract below).
+    5.  Returns `{ success: true }` to Mango/Zadarma to acknowledge the webhook.
 
-### 2. Frontend Toast (`apps/web/src/components/IncomingCallToast.tsx`)
-*   Listens to websocket messages at `ws://localhost:4100/api/ws/schedule`.
-*   When a `TELEPHONY_INCOMING_CALL` message arrives, displays a floating toast at the bottom-right corner.
-*   **Auto-hide:** Fades out after 30 seconds.
-*   **Deep Link:** If a matching `patientId` exists, displays a button "Открыть карту пациента" which navigates to `/workspace/patients/:patientId`.
+### 2. WebSocket Broadcast Event (`TELEPHONY_INCOMING_CALL`)
+When a webhook triggers, the server broadcasts this JSON structure to all websocket connections active under `organizationId`:
+```json
+{
+  "type": "TELEPHONY_INCOMING_CALL",
+  "payload": {
+    "phone": "+79991234567",
+    "patientId": "uuid-patient-id-or-null",
+    "patientName": "Иванов Иван" (or "Неизвестный номер"),
+    "timestamp": "2026-07-15T11:22:00Z"
+  }
+}
+```
+
+### 3. Frontend Toast (`apps/web/src/components/IncomingCallToast.tsx`)
+*   Instantiated globally inside `App.tsx` layout structure.
+*   Connects to `ws://localhost:4100/api/ws/schedule?orgId=<orgId>` via `useWebsocket.ts`.
+*   Listens for the `TELEPHONY_INCOMING_CALL` websocket type.
+*   Displays a floating emerald card in the bottom-right corner.
+*   **Swarm Routing:** Uses Zustand state setters `setSelectedPatientId` from `patientStore` and `setCurrentView("patients")` from `appStore` to switch panels and display the correct patient card instantly without `react-router-dom` navigation paths.
 
 ---
 
-## 🚪 Patient Portal
+## 🚪 Patient Portal & Stateless Auth
 
-The patient portal allows patients to check invoices, treatment stages, and visits.
+The Patient Portal allows clinic clients to login and access invoices, treatment stages, and clinical visit history.
 
-### 1. APIs (`apps/api/src/routes/portal.ts`)
-*   `POST /api/portal/auth/send-otp`
-    *   Initiates login.
-    *   *MVP Limitation:* Always succeeds and outputs sample OTP message.
-*   `POST /api/portal/auth/verify-otp`
-    *   Verifies the passcode (must be exactly `0000`).
-    *   Finds matching patient using the last 10 digits of the phone number.
-    *   Generates a JWT-like Base64 token: `Buffer.from("DENTE_TOKEN:" + patient.id).toString("base64")`.
-*   `GET /api/portal/me`
-    *   Requires `Authorization: Bearer <base64Token>` header.
-    *   Decodes the token to fetch patient profile, visit diaries, treatment plans, and invoices.
+### 1. Stateless Authentication Pipeline (`apps/api/src/routes/portal.ts`)
+*   **OTP Initiation (`POST /api/portal/auth/send-otp`):**
+    *   Accepts `{ phone: string }`.
+    *   *MVP Mode:* Bypasses SMS gateways and directly responds with `{ success: true, message: "OTP sent" }`. The code is always `0000`.
+*   **OTP Verification (`POST /api/portal/auth/verify-otp`):**
+    *   Accepts `{ phone: string, code: string }`.
+    *   Enforces code `0000`.
+    *   Sanitizes and checks phone suffix against the database.
+    *   **JWT-less Base64 Token:** If verified, issues a stateless base64 session token containing the patient ID:
+        ```typescript
+        const token = Buffer.from(`DENTE_TOKEN:${patient.id}`).toString("base64");
+        ```
+*   **Protected Data Retrieval (`GET /api/portal/me`):**
+    *   Decodes `Authorization: Bearer <base64Token>`.
+    *   Extracts patient ID: `decodedStr.replace("DENTE_TOKEN:", "")`.
+    *   Queries `visitDiaries`, `treatmentPlans`, and `patientInvoices` for that patient.
 
-### 2. Frontend Component (`apps/web/src/components/PatientPortal.tsx`)
-*   A standalone layout for patients.
-*   Uses `OTPInput` component to handle 4-digit code typing (advances active focus automatically, handles pasting numbers, backspaces).
-*   Retrieves patient clinical data from `/api/portal/me` and renders invoices, treatment plans, and stages.
+### 2. Frontend OTP Input (`apps/web/src/components/PatientPortal.tsx`)
+*   Implements `OTPInput` component using an array of inputs `digits` (length 4).
+*   Auto-advances focus to next digit element on input.
+*   Supports backspace key jumps (clearing previous inputs and shifting focus back).
+*   Handles clipboard paste events safely parsing only numerical digits.

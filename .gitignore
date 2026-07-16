@@ -36,6 +36,14 @@ playwright-report/
 blob-report/
 *.tsbuildinfo
 
+# PGlite database is a regenerable artifact (rebuilt via `npm run db:reset-seed`
+# from .data/dental-crm-state.json). Never track its raw Postgres page files.
+dente-db/
+apps/api/dente-db/
+
+# Git internal leftover from a prior history rewrite; must never be tracked.
+.git-rewrite/
+
 .env*
 
 secrets.json

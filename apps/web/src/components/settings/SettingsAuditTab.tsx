@@ -255,6 +255,7 @@ type SettingsTabId =
 	| "clinic"
 	| "access"
 	| "telegram"
+	| "messengers"
 	| "protocols"
 	| "rules"
 	| "prices"
@@ -1484,9 +1485,9 @@ export function SettingsAuditTab(props: Record<string, any>) {
 	const typedRoleAccessPolicies = dashboard.clinicSettings
 		.roleAccessPolicies as RoleAccessPolicy[];
 	const typedTelegramChatLinks =
-		telegramChatLinks as DenteTelegramChatLinkPublic[];
+		(telegramChatLinks as DenteTelegramChatLinkPublic[]) ?? [];
 	const typedTelegramLinkCodes =
-		telegramLinkCodes as DenteTelegramLinkCodePublic[];
+		(telegramLinkCodes as DenteTelegramLinkCodePublic[]) ?? [];
 	const typedTelegramPreview =
 		telegramPreview as DenteTelegramMessagePreview | null;
 	const typedTelegramOutbox =

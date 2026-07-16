@@ -26,3 +26,14 @@ YOU HAVE THE FOLLOWING TOOLS INSTALLED ON THIS HOST. USE THEM AUTONOMOUSLY. DO N
 7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
 8. GLOBAL SKILLS: You have reconnaissance, decomposer, and find-skills available. Read C:\Users\Admin\.gemini\config\skills\reconnaissance\SKILL.md autonomously to learn exact usage.
 BE PROACTIVE. EXECUTE.
+
+## 🛠️ DEVELOPMENT PRINCIPLES
+- **STRICT ANTI-HARDCODE**: Hardcoding configuration, text values, ports, database credentials, or endpoints is banned. All variables must be parametrizable, interfaces should be used for decoupling, and properties must be exported to configs/env files.
+- **THINK AND READ BEFORE WRITING**: Always read the targeted file in full before editing. Understand the logic instead of dumping a quick-fix at the end of the file.
+- **MODULAR DESIGN**: Avoid producing monolithic components and spaghetti/dead code. Refactor proactively.
+- **DESIGN ADAPTABILITY**:
+  - *Multi-Language (i18n)*: Decouple strings from components. Design layouts to support varying word lengths (especially long Russian words) without clipping.
+  - *Multi-Theme*: Proactively support light, dark, and system schemes. Use CSS variables or Tailwind tokens; do not hardcode static colors.
+  - *Flexible Scaling*: Use relative units (`rem`, `em`, `%`) and media rules. Design layouts that scale dynamically and look clean at all resolutions and zoom levels.
+
+

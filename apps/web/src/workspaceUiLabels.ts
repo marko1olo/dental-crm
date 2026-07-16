@@ -60,7 +60,7 @@ export const documentStatusLabels: Record<GeneratedDocument["status"], string> =
 	{
 		draft: "Черновик",
 		issued: "Выдан",
-		voided: "АннулироИИван",
+		voided: "Аннулирован",
 	};
 
 export const taxPaymentSelectionPayloadDocumentKinds = new Set<
@@ -431,7 +431,7 @@ export const integrationStatusLabels: Record<IntegrationPresetStatus, string> =
 
 export const recognitionTargetLabels: Record<AiRecognitionTarget, string> = {
 	visit_note: "ЭМК",
-	patient_import: "иИИмпорт пациентов",
+	patient_import: "Импорт пациентов",
 	imaging_summary: "описание снимка",
 	document_draft: "документ",
 };
@@ -467,12 +467,12 @@ export const speechProviderHealthLabels: Record<string, string> = {
 	ready: "готов",
 	degraded: "ограничен",
 	setup_required: "нужна настройка",
-	planned: "запланироИИван",
+	planned: "запланирован",
 	offline: "офлайн",
 };
 
 export const speechRecordingPathLabels: Record<string, string> = {
-	server_chunked: "серверное распознаИИвание по фрагментам",
+	server_chunked: "серверное распознавание по фрагментам",
 	browser_live: "браузерная диктовка",
 	offline_queue: "офлайн-очередь",
 	local_transcript_only: "только локальный текст",
@@ -503,14 +503,14 @@ export const localBridgeStatusLabels: Record<LocalBridgeStatus, string> = {
 	unreachable: "недоступен",
 	blocked: "нужно действие",
 	misconfigured: "ошибка настройки",
-	planned: "запланироИИван",
+	planned: "запланирован",
 };
 
 export const localBridgeUsePathLabels: Record<LocalBridgeUsePath, string> = {
 	browser_local: "локально в браузере",
-	server_gateway: "серверное распознаИИвание",
+	server_gateway: "серверное распознавание",
 	local_bridge: "локальный модуль ПК",
-	cloud_provider: "серверное распознаИИвание",
+	cloud_provider: "серверное распознавание",
 	metadata_preview: "предпросмотр метаданных",
 	external_viewer: "внешний просмотр",
 	manual_review: "ручная проверка",

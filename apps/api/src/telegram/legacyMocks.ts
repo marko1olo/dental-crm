@@ -11208,10 +11208,7 @@ function uniqueStrings(values: string[]): string[] {
 type SpeechQualityCounts = SpeechRecordingAssembly["qualityCounts"];
 
 function countSpeechWords(text: string): number {
-	return (
-		text.match(/[A-Za-zА-Яа-яЁё0-9]+(?:[-'][A-Za-zА-Яа-яЁё0-9]+)*/g)?.length ??
-		0
-	);
+	return text.match(/[A-Za-zА-Яа-яЁё0-9]+/g)?.length ?? 0;
 }
 
 function speechChunkQuality(

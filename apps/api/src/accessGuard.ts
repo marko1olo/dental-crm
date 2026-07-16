@@ -366,3 +366,23 @@ export async function requireClinicalReadAccess(
 	});
 	return false;
 }
+
+export async function requireNonDoctorAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Promise<boolean> {
+	const staffHeader = request.headers["x-dente-staff-token"];
+	const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
+	if (staffToken) {
+		const payload = await verifyRequestToken(staffToken);
+		if (payload?.role === "doctor") {
+			reply.code(403).send({
+				error: "Forbidden",
+				message: "Доступ к разделу мессенджеров запрещен для роли 'Врач'.",
+			});
+			return false;
+		}
+	}
+	return true;
+}
+
