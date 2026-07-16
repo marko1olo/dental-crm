@@ -185,6 +185,7 @@ export function FinanceView({
 				priorityLabels={scenarioPriorityLabels}
 				scenarios={activeTreatmentPlanScenarios}
 				strategyLabels={scenarioStrategyLabels}
+				treatmentItems={activeTreatmentPlanItems}
 			/>
 
 			<ClinicalRulePanel
