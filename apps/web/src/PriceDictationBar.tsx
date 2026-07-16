@@ -53,7 +53,14 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 	return (
 		<div className="flex flex-col gap-2 mb-4 relative z-10">
 			<div className="flex items-center gap-2">
-				<div className="relative flex-1">
+				<div 
+					className="relative flex-1"
+					onBlur={(e) => {
+						if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+							setShowHints(false);
+						}
+					}}
+				>
 					<input
 						type="text"
 						className="w-full pl-10 pr-4 py-2 bg-zinc-50/40 dark:bg-zinc-900/40 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-all placeholder:text-slate-400 dark:text-zinc-100"
@@ -63,7 +70,6 @@ export function PriceDictationBar({ onPriceParsed }: PriceDictationBarProps) {
 						onFocus={() => {
 							if (!showPreview) setShowHints(true);
 						}}
-						onBlur={() => setTimeout(() => setShowHints(false), 200)}
 						onKeyDown={(e) => {
 							if (e.key === "Enter") handleParse(inputText);
 						}}

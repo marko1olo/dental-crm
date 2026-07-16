@@ -255,13 +255,19 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					}}
 				>
 					<Bot size={18} color="var(--brand-600)" style={{ flexShrink: 0 }} />
-					<div style={{ position: "relative", flex: 1 }}>
+					<div 
+						style={{ position: "relative", flex: 1 }}
+						onBlur={(e) => {
+							if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+								setShowHints(false);
+							}
+						}}
+					>
 						<input
 							type="text"
 							value={smartInputText}
 							placeholder="Например: Петров на чистку завтра в 12:30 (Нажмите Enter)"
 							onFocus={() => setShowHints(true)}
-							onBlur={() => setTimeout(() => setShowHints(false), 200)}
 							onChange={(e) => setSmartInputText(e.target.value)}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" && smartInputText.trim()) {
