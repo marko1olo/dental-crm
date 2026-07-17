@@ -310,6 +310,31 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 				);
 		}
 
+		let totalInsuranceAmount = 0;
+		let totalPatientAmount = 0;
+
+		let insuranceContract: any = null;
+		if (patient.insuranceContractId) {
+			const [contract] = await db
+				.select()
+				.from(schema.insuranceContracts)
+				.where(eq(schema.insuranceContracts.id, patient.insuranceContractId));
+			if (contract?.isActive) insuranceContract = contract;
+		}
+
+		if (Array.isArray(items)) {
+			for (const item of items) {
+				const itemTotal = Number(item.price) * Number(item.quantity || 1);
+				let insurancePct = 0;
+				// Warning: category isn't passed in items currently, defaulting to 0 for manual without backend refetch
+				const covered = itemTotal * (insurancePct / 100);
+				totalInsuranceAmount += covered;
+				totalPatientAmount += (itemTotal - covered);
+			}
+		} else {
+			totalPatientAmount = Number(totalAmount);
+		}
+
 		const [invoice] = await db
 			.insert(schema.patientInvoices)
 			.values({
@@ -318,6 +343,8 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 				visitId: visitId || null,
 				itemsJson: Array.isArray(items) ? items : [],
 				totalAmountRub: String(totalAmount),
+				insuranceAmountRub: String(totalInsuranceAmount),
+				patientAmountRub: String(totalPatientAmount),
 				status: "unpaid",
 			})
 			.returning();

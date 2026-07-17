@@ -1876,6 +1876,29 @@ export const serviceCatalogItemSchema = z.object({
 	active: z.boolean(),
 });
 export type ServiceCatalogItem = z.infer<typeof serviceCatalogItemSchema>;
+export const createServiceCatalogItemSchema = z.object({
+	title: z.string().min(1),
+	category: serviceCategorySchema,
+	specialty: dentalSpecialtySchema,
+	basePriceRub: z.number().int().nonnegative(),
+	durationMinutes: z.number().int().positive(),
+	taxDeductible: z.boolean(),
+	code: z.string().optional()
+});
+export type CreateServiceCatalogItemInput = z.infer<typeof createServiceCatalogItemSchema>;
+
+export const updateServiceCatalogItemSchema = z.object({
+	title: z.string().min(1).optional(),
+	category: serviceCategorySchema.optional(),
+	specialty: dentalSpecialtySchema.optional(),
+	basePriceRub: z.number().int().nonnegative().optional(),
+	durationMinutes: z.number().int().positive().optional(),
+	taxDeductible: z.boolean().optional(),
+	active: z.boolean().optional(),
+	code: z.string().optional()
+});
+export type UpdateServiceCatalogItemInput = z.infer<typeof updateServiceCatalogItemSchema>;
+
 
 export const pricelistSourceKindSchema = z.enum([
 	"text",
@@ -3018,6 +3041,8 @@ export const patientSchema = z.object({
 	phone: z.string().nullable(),
 	email: z.string().email().nullable(),
 	notes: z.string().nullable(),
+	insuranceContractId: z.string().uuid().nullable().optional(),
+	insurancePolicyNumber: z.string().nullable().optional(),
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.default(null),
@@ -5182,6 +5207,8 @@ export const createPatientSchema = z.object({
 	phone: patientPhoneInputSchema,
 	email: z.string().trim().email().nullable().optional(),
 	notes: z.string().trim().max(1000).nullable().optional(),
+	insuranceContractId: z.string().uuid().nullable().optional(),
+	insurancePolicyNumber: z.string().trim().max(255).nullable().optional(),
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.optional(),
@@ -5194,6 +5221,8 @@ export const updatePatientSchema = z.object({
 	phone: patientPhoneInputSchema,
 	email: z.string().trim().email().nullable().optional(),
 	notes: z.string().trim().max(1000).nullable().optional(),
+	insuranceContractId: z.string().uuid().nullable().optional(),
+	insurancePolicyNumber: z.string().trim().max(255).nullable().optional(),
 	familyGroupId: z.string().uuid().nullable().optional(),
 });
 export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;

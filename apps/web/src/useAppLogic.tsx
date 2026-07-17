@@ -7199,6 +7199,62 @@ export function useAppLogic(): any {
 		}
 	}
 
+	
+
+	async function createServiceCatalogItem(data: any) {
+		try {
+			const response = await fetch("/api/settings/catalog", {
+				method: "POST",
+				headers: auth.settingsAccessHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(data),
+			});
+			if (!response.ok) {
+				setError(await responseErrorMessage(response, "Не удалось создать услугу"));
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError("Сетевая ошибка при создании услуги");
+		}
+	}
+
+	async function updateServiceCatalogItem(serviceId: string, updates: any) {
+		try {
+			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
+				method: "PUT",
+				headers: auth.settingsAccessHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(updates),
+			});
+			if (!response.ok) {
+				setError(await responseErrorMessage(response, "Не удалось обновить услугу"));
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError("Сетевая ошибка при обновлении услуги");
+		}
+	}
+
+	async function deleteServiceCatalogItem(serviceId: string) {
+		try {
+			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
+				method: "DELETE",
+				headers: auth.settingsAccessHeaders(),
+			});
+			if (!response.ok) {
+				setError(await responseErrorMessage(response, "Не удалось удалить услугу"));
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError("Сетевая ошибка при удалении услуги");
+		}
+	}
+
 	async function updateStaffMember(staffId: string, updates: any) {
 		try {
 			const response = await fetch(`/api/settings/staff/${staffId}`, {
@@ -13173,6 +13229,9 @@ export function useAppLogic(): any {
 		addMigrationDiscoveryCandidateToSmartImport,
 		addStaffMember,
 		updateStaffMember,
+		createServiceCatalogItem,
+		updateServiceCatalogItem,
+		deleteServiceCatalogItem,
 		analyzePricelist,
 		appendToTranscript,
 		applyCtPlanningQuickAction,

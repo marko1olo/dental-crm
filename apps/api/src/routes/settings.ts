@@ -11,8 +11,10 @@ import {
 	updateClinicProfileSchema,
 	updateStaffMemberSchema,
 	updateStaffWorkingHoursSchema,
+	createServiceCatalogItemSchema,
+	updateServiceCatalogItemSchema,
 } from "@dental/shared";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { resolveOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
@@ -630,6 +632,99 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 				error: "CatalogImportFailed",
 				message: settingsDomainMessage(error),
 			});
+		}
+	});
+
+	// --- Service Catalog CRUD ---
+	app.post("/api/settings/catalog", async (request, reply) => {
+		const organizationId = await resolveOrganizationId(request);
+		if (!organizationId) return;
+
+		const input = parseSettingsPayload(createServiceCatalogItemSchema, request.body) as any;
+		if (!input) return reply.code(400).send({ error: "Invalid payload" });
+
+		const result = await db.insert(schema.serviceCatalogItems).values({
+			organizationId,
+			title: input.title,
+			code: input.code || "",
+			category: input.category,
+			specialty: input.specialty,
+			basePriceRub: input.basePriceRub,
+			priceRub: input.basePriceRub, // For simplicity in this CRM logic, price matches basePrice
+			durationMinutes: input.durationMinutes,
+			taxDeductible: input.taxDeductible,
+			isActive: true,
+		}).returning();
+
+		return reply.send({ success: true, item: result[0] });
+	});
+
+	app.put("/api/settings/catalog/:serviceId", async (request, reply) => {
+		const organizationId = await resolveOrganizationId(request);
+		if (!organizationId) return;
+		
+		const { serviceId } = request.params as { serviceId: string };
+		const input = parseSettingsPayload(updateServiceCatalogItemSchema, request.body) as any;
+		if (!input) return reply.code(400).send({ error: "Invalid payload" });
+
+		const updateData: any = {};
+		if (input.title !== undefined) updateData.title = input.title;
+		if (input.code !== undefined) updateData.code = input.code;
+		if (input.category !== undefined) updateData.category = input.category;
+		if (input.specialty !== undefined) updateData.specialty = input.specialty;
+		if (input.basePriceRub !== undefined) {
+			updateData.basePriceRub = input.basePriceRub;
+			updateData.priceRub = input.basePriceRub;
+		}
+		if (input.durationMinutes !== undefined) updateData.durationMinutes = input.durationMinutes;
+		if (input.taxDeductible !== undefined) updateData.taxDeductible = input.taxDeductible;
+		if (input.active !== undefined) updateData.isActive = input.active;
+
+		if (Object.keys(updateData).length === 0) {
+			return reply.send({ success: true });
+		}
+
+		const result = await db.update(schema.serviceCatalogItems)
+			.set(updateData)
+			.where(
+				and(
+					eq(schema.serviceCatalogItems.id, serviceId),
+					eq(schema.serviceCatalogItems.organizationId, organizationId)
+				)
+			)
+			.returning();
+
+		return reply.send({ success: true, item: result[0] });
+	});
+
+	app.delete("/api/settings/catalog/:serviceId", async (request, reply) => {
+		const organizationId = await resolveOrganizationId(request);
+		if (!organizationId) return;
+		
+		const { serviceId } = request.params as { serviceId: string };
+		
+		// Attempt to delete. Will fail automatically with FK constraint if used in invoices/treatments
+		try {
+			await db.delete(schema.serviceCatalogItems)
+				.where(
+					and(
+						eq(schema.serviceCatalogItems.id, serviceId),
+						eq(schema.serviceCatalogItems.organizationId, organizationId)
+					)
+				);
+			return reply.send({ success: true });
+		} catch (error: any) {
+			console.error("Delete catalog item error", error);
+			// Fallback: Soft delete if FK constraint fails
+			await db.update(schema.serviceCatalogItems)
+				.set({ isActive: false })
+				.where(
+					and(
+						eq(schema.serviceCatalogItems.id, serviceId),
+						eq(schema.serviceCatalogItems.organizationId, organizationId)
+					)
+				);
+			return reply.send({ success: true, softDeleted: true });
 		}
 	});
 }

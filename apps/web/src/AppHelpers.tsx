@@ -6338,8 +6338,8 @@ export function patientAdministrativeProfileDraftFromPatient(
 		taxpayerInn: profile?.taxpayerInn ?? "",
 		registrationAddress: profile?.registrationAddress ?? "",
 		residentialAddress: profile?.residentialAddress ?? "",
-		insurancePolicyNumber: profile?.insurancePolicyNumber ?? "",
-		insuranceContractId: profile?.insuranceContractId ?? "",
+		insurancePolicyNumber: patient?.insurancePolicyNumber ?? profile?.insurancePolicyNumber ?? "",
+		insuranceContractId: patient?.insuranceContractId ?? profile?.insuranceContractId ?? "",
 		snils: profile?.snils ?? "",
 		legalRepresentativeFullName: profile?.legalRepresentativeFullName ?? "",
 		legalRepresentativeRelationship:

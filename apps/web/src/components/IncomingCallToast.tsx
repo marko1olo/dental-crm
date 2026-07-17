@@ -45,7 +45,7 @@ export function IncomingCallToast() {
 		? dashboard?.patients?.find((p: any) => p.id === incomingCall.patientId)
 		: null;
 
-	const hasDms = Boolean(patient?.administrativeProfile?.insuranceContractId);
+	const hasDms = Boolean(patient?.insuranceContractId || patient?.administrativeProfile?.insuranceContractId);
 	const hasNotes = Boolean(patient?.notes?.trim());
 	const noShowRisk = patient?.noShowRisk;
 

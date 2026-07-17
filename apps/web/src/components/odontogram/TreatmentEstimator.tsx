@@ -49,7 +49,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
 	const insuranceContractId =
-		patient?.administrativeProfile?.insuranceContractId;
+		patient?.insuranceContractId || patient?.administrativeProfile?.insuranceContractId;
 
 	useEffect(() => {
 		if (!insuranceContractId) {

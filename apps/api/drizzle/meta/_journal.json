@@ -22,6 +22,13 @@
       "when": 1784270107841,
       "tag": "0002_aromatic_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784270478835,
+      "tag": "0003_loving_grey_gargoyle",
+      "breakpoints": true
     }
   ]
 }

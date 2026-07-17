@@ -447,6 +447,10 @@ export const patients = pgTable("patients", {
 	phone: text("phone"),
 	email: text("email"),
 	notes: text("notes"),
+	insuranceContractId: uuid("insurance_contract_id").references(() => insuranceContracts.id, {
+		onDelete: "set null",
+	}),
+	insurancePolicyNumber: text("insurance_policy_number"),
 	administrativeProfile: jsonb(
 		"administrative_profile",
 	).$type<PatientAdministrativeProfile | null>(),
@@ -2051,6 +2055,10 @@ export const patientInvoices = pgTable("patient_invoices", {
 	visitId: uuid("visit_id").references(() => visits.id),
 	itemsJson: jsonb("items_json").notNull().default("[]"),
 	totalAmountRub: numeric("total_amount_rub", { precision: 12, scale: 2 })
+		.notNull()
+		.default("0"),
+	insuranceAmountRub: numeric("insurance_amount_rub", { precision: 12, scale: 2 }).default("0"),
+	patientAmountRub: numeric("patient_amount_rub", { precision: 12, scale: 2 })
 		.notNull()
 		.default("0"),
 	status: invoiceStatus("status").notNull().default("unpaid"),

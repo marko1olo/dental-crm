@@ -70,6 +70,8 @@ export async function createPatientInDb(
 			phone: input.phone,
 			email: input.email,
 			notes: input.notes,
+			insuranceContractId: input.insuranceContractId,
+			insurancePolicyNumber: input.insurancePolicyNumber,
 		})
 		.returning()) as any;
 	const created = result[0];
@@ -105,6 +107,8 @@ export async function updatePatientInDb(
 			phone: input.phone,
 			email: input.email,
 			notes: input.notes,
+			insuranceContractId: input.insuranceContractId,
+			insurancePolicyNumber: input.insurancePolicyNumber,
 			familyGroupId:
 				input.familyGroupId !== undefined ? input.familyGroupId : undefined,
 			status: input.status,
@@ -145,6 +149,8 @@ export async function updatePatientAdministrativeProfileInDb(
 		.update(schema.patients)
 		.set({
 			administrativeProfile: input,
+			insuranceContractId: input.insuranceContractId || null,
+			insurancePolicyNumber: input.insurancePolicyNumber || null,
 			updatedAt: new Date(),
 		})
 		.where(
