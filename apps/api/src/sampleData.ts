@@ -305,6 +305,13 @@ workspacePreset: 'enterprise',
 onboardingCompleted: false,
 hasPediatricMode: false,
 isOmniRole: false,
+hasPayrollModule: true,
+hasMarketingModule: true,
+hasAnalyticsModule: true,
+hasInventoryModule: true,
+aiEnableTreatmentPlan: true,
+aiEnableRecommendations: true,
+aiEnableDocuments: true,
 };
 
 export const staffMembers: StaffMember[] = [

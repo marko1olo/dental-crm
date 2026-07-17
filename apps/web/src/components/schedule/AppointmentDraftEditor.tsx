@@ -1,6 +1,7 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import { Bot, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
+import { useWorkspaceProfileStore } from "../../hooks/useWorkspaceProfile";
 import { SmartMicrophoneButton } from "../../components/SmartMicrophoneButton";
 import { DictationHints } from "../../DictationHints";
 import { smartBookingParser } from "../../lib/smartBookingParser";
@@ -73,6 +74,7 @@ export function AppointmentDraftEditor(props: AppointmentDraftEditorProps) {
 		toDateTimeLocalValue,
 		fromDateTimeLocalValue,
 	} = props;
+	const workspaceFlags = useWorkspaceProfileStore();
 
 	return (
 		<div className="appointment-create-wrapper" aria-label="Создание записи">
@@ -416,18 +418,20 @@ export function AppointmentDraftEditor(props: AppointmentDraftEditorProps) {
 								marginTop: "6px",
 							}}
 						>
-							{[
-								"Кариес",
-								"Пульпит",
-								"Удаление",
-								"Осмотр",
-								"Профгигиена",
-								"Консультация",
-								"Брекеты",
-								"Коронка",
-								"КЛКТ",
-								"Имплантация",
-							].map((chip) => (
+									{[
+										"Кариес",
+										"Пульпит",
+										"Удаление",
+										"Осмотр",
+										"Профгигиена",
+										"Консультация",
+										workspaceFlags.hasOrthodontics && "Брекеты",
+										workspaceFlags.hasDentalLab && "Коронка",
+										"КЛКТ",
+										"Имплантация",
+									]
+										.filter((chip): chip is string => Boolean(chip))
+										.map((chip) => (
 								<button
 									key={chip}
 									type="button"

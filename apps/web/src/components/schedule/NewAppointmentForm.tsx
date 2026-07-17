@@ -671,11 +671,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								"Осмотр",
 								"Профгигиена",
 								"Консультация",
-								"Брекеты",
-								"Коронка",
+								workspaceFlags.hasOrthodontics && "Брекеты",
+								workspaceFlags.hasDentalLab && "Коронка",
 								"КЛКТ",
 								"Имплантация",
-							].map((chip) => (
+							]
+								.filter((chip): chip is string => Boolean(chip))
+								.map((chip) => (
 								<button
 									key={chip}
 									type="button"

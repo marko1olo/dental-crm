@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../AppHelpers.js";
 import { showToast } from "./GlobalToast.js";
 import "./ClinicalScheduler.css";
+import { useWorkspaceProfileStore } from "../hooks/useWorkspaceProfile";
 
 interface CrosshairState {
 	rowIdx: number;
@@ -88,10 +89,13 @@ export const ClinicalScheduler: React.FC<any> = ({
 		}
 	}, [isMobile, activeChairs, mobileChairId]);
 
+	const workspaceFlags = useWorkspaceProfileStore();
 	const displayedChairs =
-		isMobile && mobileChairId
-			? activeChairs.filter((c: any) => c.id === mobileChairId)
-			: activeChairs;
+		!workspaceFlags.hasMultipleChairs && activeChairs.length > 0
+			? [activeChairs[0]]
+			: isMobile && mobileChairId
+				? activeChairs.filter((c: any) => c.id === mobileChairId)
+				: activeChairs;
 
 	const chairsCount = displayedChairs.length;
 	const isSingleChair = chairsCount === 1;

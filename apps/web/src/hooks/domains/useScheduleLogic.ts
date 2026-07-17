@@ -20,6 +20,7 @@ import {
 	staffWorkingHoursFromDraft,
 } from "../../AppHelpers";
 import { useScheduleStore } from "../../store/scheduleStore";
+import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
 
 export function useScheduleLogic({
 	dashboard,
@@ -282,13 +283,22 @@ export function useScheduleLogic({
 		markAppointmentScheduleDirty(appointmentId);
 	}
 
+	const workspaceProfile = useWorkspaceProfileStore();
+
 	function newAppointmentPreferenceDefaults() {
+		let defaultChairId = scheduleDefaultChairId;
+		if (!workspaceProfile.hasMultipleChairs && dashboard?.clinicSettings?.chairs) {
+			const activeChairs = dashboard.clinicSettings.chairs.filter((c: any) => c.active);
+			if (activeChairs.length > 0) {
+				defaultChairId = activeChairs[0].id;
+			}
+		}
 		return {
 			selectedPatientId,
 			selectedSpecialty,
 			scheduleDefaultDoctorUserId,
 			scheduleDefaultAssistantUserId,
-			scheduleDefaultChairId,
+			scheduleDefaultChairId: defaultChairId,
 		};
 	}
 

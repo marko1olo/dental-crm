@@ -9,6 +9,7 @@ import type { ChangeEvent } from "react";
 import React, { useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
+import { useWorkspaceProfileStore } from "../../hooks/useWorkspaceProfile";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -78,6 +79,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		activeVisitLockedAppointmentStatuses,
 	} = props;
 
+	const workspaceFlags = useWorkspaceProfileStore();
 	const [chipsExpanded, setChipsExpanded] = useState(false);
 	const labOrderStatus = useAppStore((state) =>
 		appointment.patientId
@@ -120,7 +122,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 				className="absolute bottom-2 right-2 flex items-center gap-1.5 z-10"
 				aria-label="Светофоры статуса"
 			>
-				{labOrderStatus &&
+				{workspaceFlags.hasDentalLab && labOrderStatus &&
 					(labOrderStatus === "in_progress" ||
 						labOrderStatus === "refitting") && (
 						<div
@@ -128,7 +130,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							title="Лаборатория: В работе"
 						/>
 					)}
-				{labOrderStatus === "delivered" && (
+				{workspaceFlags.hasDentalLab && labOrderStatus === "delivered" && (
 					<div
 						className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
 						title="Лаборатория: Работа доставлена"
@@ -613,11 +615,13 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										"Осмотр",
 										"Профгигиена",
 										"Консультация",
-										"Брекеты",
-										"Коронка",
+										workspaceFlags.hasOrthodontics && "Брекеты",
+										workspaceFlags.hasDentalLab && "Коронка",
 										"КЛКТ",
 										"Имплантация",
-									].map((chip) => (
+									]
+										.filter((chip): chip is string => Boolean(chip))
+										.map((chip) => (
 										<button
 											key={chip}
 											type="button"

@@ -645,6 +645,85 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 					))}
 				</div>
 			</section>
+
+			<section className="clinic-section-card" style={{ marginTop: "24px" }}>
+				<div className="clinic-section-header">
+					<div
+						className="clinic-section-icon"
+						style={{
+							background: "rgba(168, 85, 247, 0.1)",
+							color: "rgb(168, 85, 247)",
+						}}
+					>
+						<Building2 size={24} />
+					</div>
+					<div className="clinic-section-title">
+						<h3>Экран входа устройства</h3>
+						<p>Настройка живого арт-фона для этого устройства</p>
+					</div>
+				</div>
+				<div className="clinic-form-grid" style={{ gridTemplateColumns: "1fr" }}>
+					<AuthArtSettingsBlock />
+				</div>
+			</section>
+		</div>
+	);
+}
+
+function AuthArtSettingsBlock() {
+	const React = require("react");
+	const [settings, setSettings] = React.useState(() => {
+		try {
+			const saved = localStorage.getItem("dente_auth_art_settings");
+			if (saved) return JSON.parse(saved);
+		} catch (e) {}
+		return { enabled: true, pack: "nature", dynamicByTimeOfDay: true };
+	});
+
+	const saveSettings = (newSettings: any) => {
+		setSettings(newSettings);
+		localStorage.setItem("dente_auth_art_settings", JSON.stringify(newSettings));
+	};
+
+	return (
+		<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+			<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+				<label className="switch">
+					<input
+						type="checkbox"
+						checked={settings.enabled}
+						onChange={(e) => saveSettings({ ...settings, enabled: e.target.checked })}
+					/>
+					<span className="slider round"></span>
+				</label>
+				<label style={{ fontSize: "14px", fontWeight: 500 }}>Показывать арт-фон на экране входа</label>
+			</div>
+			<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+				<label className="switch">
+					<input
+						type="checkbox"
+						checked={settings.dynamicByTimeOfDay}
+						onChange={(e) => saveSettings({ ...settings, dynamicByTimeOfDay: e.target.checked })}
+						disabled={!settings.enabled}
+					/>
+					<span className="slider round"></span>
+				</label>
+				<label style={{ fontSize: "14px", fontWeight: 500, opacity: settings.enabled ? 1 : 0.5 }}>Менять фон по времени суток</label>
+			</div>
+			<div className="clinic-form-group">
+				<label style={{ opacity: settings.enabled ? 1 : 0.5 }}>Коллекция артов</label>
+				<select
+					value={settings.pack}
+					onChange={(e) => saveSettings({ ...settings, pack: e.target.value })}
+					disabled={!settings.enabled}
+					style={{ maxWidth: "300px" }}
+				>
+					<option value="nature">Природа (Nature)</option>
+					<option value="abstract">Абстракция (Abstract)</option>
+					<option value="dental-epic">Эпичная стоматология (Dental Epic)</option>
+					<option value="anime">Аниме (Опционально)</option>
+				</select>
+			</div>
 		</div>
 	);
 }

@@ -30,7 +30,7 @@ export function VisitOdontogramTab() {
 			>
 				<OdontogramModule
 					patientId={activePatient.id}
-					pediatricMode={dashboard?.clinicSettings?.profile?.hasPediatricMode}
+					pediatricMode={workspaceFlags.hasPediatricMode || (dashboard?.clinicSettings?.profile?.hasPediatricMode ?? false)}
 				/>
 			</div>
 			<div
