@@ -144,11 +144,11 @@ function hasIncompleteRepresentativeIdentity(
 
 import {
 	createPatientInDb,
+	getPatientAnamnesisFromDb,
 	getPatientsFromDb,
 	updatePatientAdministrativeProfileInDb,
-	updatePatientInDb,
-	getPatientAnamnesisFromDb,
 	updatePatientAnamnesisInDb,
+	updatePatientInDb,
 } from "../db/patientsQuery.js";
 
 export async function registerPatientRoutes(app: FastifyInstance) {
@@ -278,7 +278,13 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				params.patientId,
 				orgId,
 			);
-			return anamnesis || { allergies: [], systemicDiseases: [], hasCriticalAlerts: false };
+			return (
+				anamnesis || {
+					allergies: [],
+					systemicDiseases: [],
+					hasCriticalAlerts: false,
+				}
+			);
 		} catch (e) {
 			console.error("[Patients] Get anamnesis error:", e);
 			return sendPatientNotFound(reply);
@@ -298,11 +304,24 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 
 		try {
 			const input = request.body as any; // Allow relaxed parsing for now
-			const updated = await updatePatientAnamnesisInDb(params.patientId, {
-				allergies: Array.isArray(input?.allergies) ? input.allergies : undefined,
-				systemicDiseases: Array.isArray(input?.systemicDiseases) ? input.systemicDiseases : undefined,
-				hasCriticalAlerts: typeof input?.hasCriticalAlerts === 'boolean' ? input.hasCriticalAlerts : undefined,
-			});
+			const updated = await updatePatientAnamnesisInDb(
+				params.patientId,
+				orgId,
+				{
+					allergies: Array.isArray(input?.allergies)
+						? input.allergies
+						: undefined,
+					systemicDiseases: Array.isArray(input?.systemicDiseases)
+						? input.systemicDiseases
+						: undefined,
+					hasCriticalAlerts:
+						typeof input?.hasCriticalAlerts === "boolean"
+							? input.hasCriticalAlerts
+							: undefined,
+				},
+			);
+			// null => patient is not in this org; don't silently no-op cross-org writes.
+			if (!updated) return sendPatientNotFound(reply);
 			return updated;
 		} catch (e) {
 			console.error("[Patients] Update anamnesis error:", e);

@@ -6,7 +6,7 @@ import {
 	resolveOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
-import { egiszLogs, patients } from "../db/schema.js";
+import { egiszLogs, patients, organizations, users, visitDiaries } from "../db/schema.js";
 
 const egiszPayloadSchema = z.object({
 	patientId: z.string().uuid(),
@@ -97,16 +97,89 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				.send({ error: "Некорректный формат или контрольная сумма СНИЛС" });
 		}
 
-		// Mock success
-		const transactionId = `EGISZ-${Date.now()}`;
-		await db.insert(egiszLogs).values({
-			patientId,
-			visitId,
-			status: "Accepted",
-			transactionId,
-		});
+		// Fetch dependencies: organization, visit diary, doctor
+		const [org] = await db
+			.select()
+			.from(organizations)
+			.where(eq(organizations.id, orgId));
+			
+		if (!org) {
+			return reply.code(400).send({ error: "Организация не найдена" });
+		}
+			
+		const [diary] = await db
+			.select()
+			.from(visitDiaries)
+			.where(and(eq(visitDiaries.visitId, visitId), eq(visitDiaries.organizationId, orgId)));
+			
+		if (!diary) {
+			return reply.code(400).send({ error: "Не найден дневник приема для отправки в ЕГИСЗ" });
+		}
+		
+		let doctorName: { first: string; last: string; middle?: string } = { first: "Врач", last: "Неизвестен" };
+		if (diary.doctorId) {
+			const [doc] = await db.select().from(users).where(eq(users.id, diary.doctorId));
+			if (doc) {
+				const parts = doc.fullName.split(" ");
+				doctorName = { 
+					last: parts[0] || "Врач", 
+					first: parts[1] || "Неизвестен", 
+					middle: parts.slice(2).join(" ") 
+				};
+			}
+		}
 
-		return reply.send({ success: true, transactionId });
+		// Import the CDA Generator (dynamically to avoid top level issues if needed, or static)
+		const { generateDentalCdaXml } = await import("../services/egiszCdaGenerator.js");
+		
+		const pNameParts = patient.fullName.split(" ");
+		const documentId = `EGISZ-${Date.now()}`;
+		
+		try {
+			const cdaXml = generateDentalCdaXml({
+				patientId: patient.id,
+				patientName: {
+					last: pNameParts[0] || "Пациент",
+					first: pNameParts[1] || "Неизвестен",
+					middle: pNameParts.slice(2).join(" ")
+				},
+				patientSnils: snils,
+				patientBirthDate: patient.dateOfBirth,
+				patientGender: patient.gender as any,
+				clinicOid: (org.specializations as any)?.egiszOid || "1.2.643.5.1.13.13.12.2.1", // standard stub OID for tests
+				clinicName: org.name,
+				doctorName,
+				doctorSnils: "00000000000", // Would come from doctor profile
+				icd10Code: diary.diagnosisIcd10 || "K02.1",
+				diagnosisText: "Кариес дентина", // Usually joined from a dictionary
+				anamnesis: diary.anamnesis || "",
+				treatmentDescription: diary.treatmentDescription || "",
+				visitDate: new Date(),
+				documentId
+			});
+
+			// In a real integration, here we would send 'cdaXml' to the EGISZ / REMD endpoint via SOAP/REST
+			// const egiszResponse = await fetch("https://egisz.rosminzdrav.ru/remd/...", { method: "POST", body: cdaXml });
+			
+			// Log success (with generated XML saved in errorDetails temporarily for debugging/download)
+			await db.insert(egiszLogs).values({
+				patientId,
+				visitId,
+				status: "Accepted",
+				transactionId: documentId,
+				errorDetails: { xmlPreview: cdaXml.substring(0, 500) + "..." }
+			});
+
+			return reply.send({ success: true, transactionId: documentId });
+		} catch (e: any) {
+			await db.insert(egiszLogs).values({
+				patientId,
+				visitId,
+				status: "Error",
+				errorDetails: { message: e.message || "Ошибка генерации CDA XML" },
+			});
+			return reply.code(500).send({ error: "Ошибка генерации CDA XML" });
+		}
 	});
 
 	app.get("/api/egisz/logs/:patientId", async (req, reply) => {

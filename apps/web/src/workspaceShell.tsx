@@ -49,6 +49,7 @@ export const appViews = [
 	"marketing",
 	"scanner",
 	"inventory",
+	"payroll",
 ] as const;
 export type AppView = (typeof appViews)[number];
 
@@ -68,6 +69,7 @@ export const viewLabels: Record<AppView, string> = {
 	marketing: "Маркетинг/SEO",
 	scanner: "Сканнер лотков (ЦСО)",
 	inventory: "Склад",
+	payroll: "Зарплата",
 };
 
 export const viewHints: Record<AppView, string> = {
@@ -86,6 +88,7 @@ export const viewHints: Record<AppView, string> = {
 	marketing: "Аналитика привлечения, LTV",
 	scanner: "Стерилизация и сканирование штрих-кодов",
 	inventory: "Остатки и расходники",
+	payroll: "Расчет комиссий врачей",
 };
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
@@ -105,6 +108,7 @@ function SidebarIcon({ section }: { section: AppView }) {
 	if (section === "marketing") return <Megaphone aria-hidden="true" />;
 	if (section === "scanner") return <Barcode aria-hidden="true" />;
 	if (section === "inventory") return <Package aria-hidden="true" />;
+	if (section === "payroll") return <ReceiptText aria-hidden="true" />;
 	return <Sparkles aria-hidden="true" />;
 }
 
@@ -120,6 +124,7 @@ export function ActionIcon({ section }: { section: AppView }) {
 	if (section === "communications") return <MessageSquare aria-hidden="true" />;
 	if (section === "settings") return <Database aria-hidden="true" />;
 	if (section === "inventory") return <Package aria-hidden="true" />;
+	if (section === "payroll") return <ReceiptText aria-hidden="true" />;
 	return <Sparkles aria-hidden="true" />;
 }
 
@@ -159,6 +164,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"settings",
 			"marketing",
 			"inventory",
+		"payroll",
 		];
 	}
 	if (role === "manager") {
@@ -171,6 +177,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"communications",
 			"settings",
 			"marketing",
+		"payroll",
 		];
 	}
 	if (role === "owner") {

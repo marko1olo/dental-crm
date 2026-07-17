@@ -105,7 +105,8 @@ export async function updatePatientInDb(
 			phone: input.phone,
 			email: input.email,
 			notes: input.notes,
-			familyGroupId: input.familyGroupId !== undefined ? input.familyGroupId : undefined,
+			familyGroupId:
+				input.familyGroupId !== undefined ? input.familyGroupId : undefined,
 			status: input.status,
 			updatedAt: new Date(),
 		})
@@ -213,7 +214,7 @@ export async function updatePatientAnamnesisInDb(
 		allergies?: string[];
 		systemicDiseases?: string[];
 		hasCriticalAlerts?: boolean;
-	}
+	},
 ) {
 	if (!(await patientBelongsToOrganization(patientId, organizationId))) {
 		return null;
@@ -229,7 +230,8 @@ export async function updatePatientAnamnesisInDb(
 			.set({
 				allergies: input.allergies ?? existing.allergies,
 				systemicDiseases: input.systemicDiseases ?? existing.systemicDiseases,
-				hasCriticalAlerts: input.hasCriticalAlerts ?? existing.hasCriticalAlerts,
+				hasCriticalAlerts:
+					input.hasCriticalAlerts ?? existing.hasCriticalAlerts,
 			})
 			.where(eq(schema.patientAnamnesis.patientId, patientId))
 			.returning();

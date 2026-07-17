@@ -924,7 +924,7 @@ export function getAngulationWarning(dirZ: number): {
 		return {
 			angleDeg,
 			isWarning: true,
-			message: `Предупреждение: Избыточный наклон имплантата (${angleDeg.toFixed(1)}°). Риск деструкции кости из-за несимметричной нагрузки на абатмент!`,
+			message: `Внимание: угол наклона оси имплантата слишком велик (${angleDeg.toFixed(1)}°). Рекомендуется скорректировать позицию или использовать угловой абатмент!`,
 		};
 	}
 	return { angleDeg, isWarning: false };

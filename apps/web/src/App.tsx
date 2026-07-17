@@ -534,6 +534,9 @@ const VisitView = lazy(() =>
 const FinanceView = lazy(() =>
 	import("./FinanceView").then((module) => ({ default: module.FinanceView })),
 );
+const PayrollView = lazy(() =>
+	import("./PayrollView").then((module) => ({ default: module.PayrollView })),
+);
 const AnalyticsDashboardView = lazy(() =>
 	import("./pages/AnalyticsDashboardView").then((module) => ({
 		default: module.AnalyticsDashboardView,
@@ -2817,6 +2820,11 @@ export function App() {
 								{currentView === "inventory" ? (
 									<InventoryView organizationId={activeWorkspaceProfile.id} />
 								) : null}
+					{currentView === "payroll" ? (
+						<Suspense fallback={<AppLoadingState message="Загрузка модуля зарплат" />}>
+							<PayrollView />
+						</Suspense>
+					) : null}
 							</div>
 						</section>
 					</section>
