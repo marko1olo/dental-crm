@@ -140,6 +140,20 @@ export function VisitView() {
 	const [isSignDialogOpen, setIsSignDialogOpen] = useState(false);
 	const [isSigned, setIsSigned] = useState(false);
 
+	// ZTL Form State
+	const [ztlLab, setZtlLab] = useState("");
+	const [ztlWorkType, setZtlWorkType] = useState("");
+	const [ztlTeeth, setZtlTeeth] = useState("");
+	const [ztlImpression, setZtlImpression] = useState("");
+	const [ztlColor, setZtlColor] = useState("");
+	const [ztlComment, setZtlComment] = useState("");
+
+	// Gnathology State
+	const [gnathOcclusion, setGnathOcclusion] = useState("");
+	const [gnathShift, setGnathShift] = useState("");
+	const [gnathTmj, setGnathTmj] = useState("");
+	const [gnathOpening, setGnathOpening] = useState("45");
+	const [gnathStatus, setGnathStatus] = useState("");
 	useEffect(() => {
 		return () => {
 			// Memory Optimization: Flush heavy visit states on unmount
@@ -310,7 +324,7 @@ export function VisitView() {
 			>
 				<div className="panel-heading">
 					<h2>Текущий прием</h2>
-					<span className="status-pill status-in_treatment">Черновик</span>
+					<span className="status-pill status-in_treatment">{visitNoteStatusLabel || "Черновик"}</span>
 				</div>
 
 				<section className="visit-focus-bar" aria-label="Быстрый фокус приема">
@@ -1029,24 +1043,7 @@ export function VisitView() {
 					</div>
 
 					<div className="tooth-map" aria-label="Зубная карта">
-						<div
-							className="tooth-map-selected"
-							style={{
-								position: "absolute",
-								opacity: 0,
-								pointerEvents: "none",
-							}}
-						>
-							<button
-								type="button"
-								onClick={() => {
-									setActiveStamp("watch");
-									activeStampRef.current = "watch";
-								}}
-							>
-								Наблюдение
-							</button>
-						</div>
+
 						<div className="tooth-map-head">
 							<div>
 								<h3>Зубная карта</h3>
@@ -2258,49 +2255,63 @@ export function VisitView() {
 						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Лаборатория / Техник
-								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option>-- Выберите лабораторию --</option>
-									<option>ZTL "Сириус" (CAD/CAM)</option>
-									<option>Иванов А.В. (Керамика)</option>
-									<option>Дентал-Лаб 3D</option>
+								<select value={ztlLab} onChange={(e) => setZtlLab(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option value="">-- Выберите лабораторию --</option>
+									<option value="ZTL Сириус">ZTL "Сириус" (CAD/CAM)</option>
+									<option value="Иванов А.В.">Иванов А.В. (Керамика)</option>
+									<option value="Дентал-Лаб 3D">Дентал-Лаб 3D</option>
 								</select>
 							</label>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Тип работы
-								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option>Коронка диоксид циркония (Prettau)</option>
-									<option>Винир E-Max</option>
-									<option>Абатмент индивидуальный (Ti)</option>
-									<option>Вкладка культевая</option>
-									<option>Элайнеры (набор)</option>
+								<select value={ztlWorkType} onChange={(e) => setZtlWorkType(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option value="">-- Выберите тип работы --</option>
+									<option value="Коронка ZrO2">Коронка диоксид циркония (Prettau)</option>
+									<option value="Винир E-Max">Винир E-Max</option>
+									<option value="Абатмент индив">Абатмент индивидуальный (Ti)</option>
+									<option value="Вкладка">Вкладка культевая</option>
+									<option value="Элайнеры">Элайнеры (набор)</option>
 								</select>
 							</label>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Зубы / Сегмент
-								<input type="text" placeholder="Напр: 1.1, 1.2" style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
+								<input value={ztlTeeth} onChange={(e) => setZtlTeeth(e.target.value)} type="text" placeholder="Напр: 1.1, 1.2" style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
 							</label>
 						</div>
 						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Оттиски
-								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option>Силикон (А-силикон)</option>
-									<option>Силикон (С-силикон)</option>
-									<option>Полиэфир (Impregum)</option>
-									<option>Цифровой скан (STL)</option>
+								<select value={ztlImpression} onChange={(e) => setZtlImpression(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option value="">-- Выберите оттиск --</option>
+									<option value="Силикон (А)">Силикон (А-силикон)</option>
+									<option value="Силикон (С)">Силикон (С-силикон)</option>
+									<option value="Полиэфир">Полиэфир (Impregum)</option>
+									<option value="Скан (STL)">Цифровой скан (STL)</option>
 								</select>
 							</label>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Цвет (VITA)
-								<input type="text" placeholder="A1, Bleach 1..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
+								<input value={ztlColor} onChange={(e) => setZtlColor(e.target.value)} type="text" placeholder="A1, Bleach 1..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
 							</label>
 						</div>
 						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 							Комментарий для техника
-							<textarea rows={2} placeholder="Особенности уступа, форма, прозрачность режущего края..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
+							<textarea value={ztlComment} onChange={(e) => setZtlComment(e.target.value)} rows={2} placeholder="Особенности уступа, форма, прозрачность режущего края..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
 						</label>
 						<div style={{ display: "flex", gap: "8px" }}>
-							<button type="button" className="primary-button" style={{ display: "flex", gap: "8px", alignItems: "center" }} onClick={() => showToast("Заказ-наряд сформирован и отправлен в лабораторию", "success")}>
+							<button type="button" className="primary-button" style={{ display: "flex", gap: "8px", alignItems: "center" }} onClick={() => {
+								if (!ztlLab || !ztlWorkType) {
+									showToast("Выберите лабораторию и тип работы", "warning");
+									return;
+								}
+								showToast(`Заказ-наряд "${ztlWorkType}" сформирован для ${ztlLab}`, "success");
+								setZtlLab("");
+								setZtlWorkType("");
+								setZtlTeeth("");
+								setZtlImpression("");
+								setZtlColor("");
+								setZtlComment("");
+							}}>
 								<FlaskConical size={16} /> Создать наряд
 							</button>
 						</div>
@@ -2315,41 +2326,44 @@ export function VisitView() {
 						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Тип окклюзии
-								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option>I класс (нейтральная)</option>
-									<option>II класс, 1 подкласс</option>
-									<option>II класс, 2 подкласс</option>
-									<option>III класс (мезиальная)</option>
-									<option>Открытый прикус</option>
-									<option>Глубокий прикус</option>
+								<select value={gnathOcclusion} onChange={(e) => setGnathOcclusion(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option value="">-- Выберите --</option>
+									<option value="I класс">I класс (нейтральная)</option>
+									<option value="II класс, 1">II класс, 1 подкласс</option>
+									<option value="II класс, 2">II класс, 2 подкласс</option>
+									<option value="III класс">III класс (мезиальная)</option>
+									<option value="Открытый прикус">Открытый прикус</option>
+									<option value="Глубокий прикус">Глубокий прикус</option>
 								</select>
 							</label>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Смещение челюсти
-								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option>Нет смещения</option>
-									<option>Латеродевиация вправо</option>
-									<option>Латеродевиация влево</option>
-									<option>Ретрузия</option>
+								<select value={gnathShift} onChange={(e) => setGnathShift(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option value="">-- Выберите --</option>
+									<option value="Нет">Нет смещения</option>
+									<option value="Вправо">Латеродевиация вправо</option>
+									<option value="Влево">Латеродевиация влево</option>
+									<option value="Ретрузия">Ретрузия</option>
 								</select>
 							</label>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Состояние ВНЧС
-								<select style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option>Безболезненно, шумов нет</option>
-									<option>Щелчок справа</option>
-									<option>Щелчок слева</option>
-									<option>Крепитация</option>
+								<select value={gnathTmj} onChange={(e) => setGnathTmj(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
+									<option value="">-- Выберите --</option>
+									<option value="Норма">Безболезненно, шумов нет</option>
+									<option value="Щелчок справа">Щелчок справа</option>
+									<option value="Щелчок слева">Щелчок слева</option>
+									<option value="Крепитация">Крепитация</option>
 								</select>
 							</label>
 							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 								Амплитуда открывания рта
-								<input type="number" placeholder="мм" defaultValue={45} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
+								<input value={gnathOpening} onChange={(e) => setGnathOpening(e.target.value)} type="number" placeholder="мм" style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
 							</label>
 						</div>
 						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
 							Остеопатический статус (постура)
-							<textarea rows={2} placeholder="Положение головы, асимметрия надплечий, перекос таза..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
+							<textarea value={gnathStatus} onChange={(e) => setGnathStatus(e.target.value)} rows={2} placeholder="Положение головы, асимметрия надплечий, перекос таза..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
 						</label>
 					</div>
 				</details>
@@ -2385,7 +2399,16 @@ export function VisitView() {
 									key={task.id}
 									type="button"
 									onClick={() => {
-										window.location.hash = task.section;
+										const section = task.section.replace("#", "");
+										if (["diary", "odontogram", "diagnostics", "conclusion"].includes(section)) {
+											setActiveVisitTab(section as any);
+										} else if (section === "dictation" || section === "emk" || section === "smart-preview") {
+											setActiveVisitTab("diary");
+										}
+										setTimeout(() => {
+											const el = document.getElementById(section);
+											if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+										}, 50);
 									}}
 								>
 									<CheckCircle2 aria-hidden="true" />
@@ -2844,6 +2867,18 @@ export function VisitView() {
 						document.body,
 					);
 				})()}
+
+			<SignCardDialog
+				isOpen={isSignDialogOpen}
+				onClose={() => setIsSignDialogOpen(false)}
+				visitId={dashboard?.activeVisit?.id || "draft"}
+				patientId={activePatient.id}
+				diaryContent={visitNoteForm.objectiveStatus + "\n" + visitNoteForm.treatmentPlan}
+				onSigned={(signatureData) => {
+					setIsSigned(true);
+					showToast("Прием подписан", "success");
+				}}
+			/>
 		</>
 	);
 }
