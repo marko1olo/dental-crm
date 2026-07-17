@@ -7,6 +7,7 @@ import {
 import { db } from "../db/client.js";
 import {
 	inventoryItems,
+	inventoryTransactions,
 	procedureMaterialRules,
 	serviceCatalogItems,
 } from "../db/schema.js";
@@ -125,7 +126,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 		if (!item) return reply.status(404).send({ error: "Item not found" });
 
 		// Clamp to 0: cannot have negative stock
-		const newStock = Math.max(0, item.stockQuantity + adjustment);
+		const actualAdjustment = Math.max(-item.stockQuantity, adjustment);
+		const newStock = item.stockQuantity + actualAdjustment;
 
 		const [updated] = await db
 			.update(inventoryItems)
@@ -137,6 +139,19 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				),
 			)
 			.returning();
+			
+		// Log the transaction
+		if (updated && actualAdjustment !== 0) {
+			const userContext = (request as any).user;
+			await db.insert(inventoryTransactions).values({
+				organizationId,
+				inventoryItemId: itemId,
+				quantityChanged: actualAdjustment,
+				unitCostRub: updated.unitCostRub,
+				transactionType: "manual_adjust",
+				userId: userContext?.id ?? null,
+			});
+		}
 
 		if (!updated)
 			return reply.status(500).send({ error: "Failed to update item" });

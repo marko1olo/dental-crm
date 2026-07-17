@@ -157,7 +157,7 @@ export function PayrollView() {
 							<th>Врач</th>
 							<th style={{ textAlign: "right" }}>Приемов</th>
 							<th style={{ textAlign: "right" }}>Выручка</th>
-							<th style={{ textAlign: "right" }}>Материалы (15%)</th>
+							<th style={{ textAlign: "right" }}>Фактические материалы</th>
 							<th style={{ textAlign: "center" }}>Ставка</th>
 							<th style={{ textAlign: "right" }}>К выплате</th>
 						</tr>

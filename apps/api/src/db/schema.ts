@@ -1690,6 +1690,26 @@ export const procedureMaterialRules = pgTable("procedure_material_rules", {
 		.defaultNow(),
 });
 
+export const inventoryTransactions = pgTable("inventory_transactions", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id")
+		.notNull()
+		.references(() => organizations.id),
+	visitId: uuid("visit_id")
+		.references(() => visits.id),
+	inventoryItemId: uuid("inventory_item_id")
+		.notNull()
+		.references(() => inventoryItems.id),
+	quantityChanged: integer("quantity_changed").notNull(),
+	unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }).notNull(),
+	transactionType: text("transaction_type").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	userId: uuid("user_id")
+		.references(() => users.id),
+});
+
 export const paymentInstallments = pgTable("payment_installments", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	treatmentPlanId: uuid("treatment_plan_id").notNull(), // We'll assume a treatmentPlans table exists in the broader scope, or just store string

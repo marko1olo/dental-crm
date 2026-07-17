@@ -12,6 +12,7 @@ import {
 	clinicalAuditLogs,
 	doctorCommissions,
 	inventoryItems,
+	inventoryTransactions,
 	procedureMaterialRules,
 	treatmentItems,
 	visitDiaries,
@@ -287,6 +288,16 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 										.update(inventoryItems)
 										.set({ stockQuantity: inv.stockQuantity - qtyToDeduct })
 										.where(eq(inventoryItems.id, inv.id));
+
+									await tx.insert(inventoryTransactions).values({
+										organizationId: orgId,
+										visitId: existing.visitId,
+										inventoryItemId: inv.id,
+										quantityChanged: -qtyToDeduct,
+										unitCostRub: inv.unitCostRub,
+										transactionType: "auto_deduct",
+										userId: userId,
+									});
 								}
 							}
 						}

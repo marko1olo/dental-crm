@@ -444,11 +444,37 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 			)
 			.orderBy(schema.patientInvoices.createdAt);
 
-		const MATERIAL_COST_RATE = 0.15;
+		const visitIds = rows.map((r) => r.visitId).filter(Boolean) as string[];
+		let materialCostsByVisit: Record<string, number> = {};
+
+		if (visitIds.length > 0) {
+			const { inArray } = await import("drizzle-orm");
+			const txs = await db
+				.select({
+					visitId: schema.inventoryTransactions.visitId,
+					quantityChanged: schema.inventoryTransactions.quantityChanged,
+					unitCostRub: schema.inventoryTransactions.unitCostRub,
+				})
+				.from(schema.inventoryTransactions)
+				.where(
+					and(
+						inArray(schema.inventoryTransactions.visitId, visitIds),
+						eq(schema.inventoryTransactions.organizationId, orgId),
+					)
+				);
+
+			for (const t of txs) {
+				if (!t.visitId) continue;
+				// deductions are negative quantityChanged, so Math.abs gives the consumed amount
+				const cost = Math.abs(t.quantityChanged) * parseFloat(String(t.unitCostRub));
+				materialCostsByVisit[t.visitId] = (materialCostsByVisit[t.visitId] || 0) + cost;
+			}
+		}
 
 		const payouts = rows.map((row) => {
 			const revenue = parseFloat(String(row.totalAmountRub ?? 0));
-			const materialCost = +(revenue * MATERIAL_COST_RATE).toFixed(2);
+			const realMaterialCost = row.visitId ? (materialCostsByVisit[row.visitId] || 0) : 0;
+			const materialCost = +(realMaterialCost).toFixed(2);
 			const netBase = revenue - materialCost;
 			const docCommissionPct =
 				row.commissionPct != null
