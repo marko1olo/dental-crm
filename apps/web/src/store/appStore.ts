@@ -84,6 +84,8 @@ interface AppStore {
 	setPricelistSourceKind: (val: any) => void;
 	usePricelistAi: any;
 	setUsePricelistAi: (val: any) => void;
+	odontogramUseSurfaces: any;
+	setOdontogramUseSurfaces: (val: any) => void;
 	pricelistAnalysis: any;
 	setPricelistAnalysis: (val: any) => void;
 	pricelistImageBase64: any;
@@ -276,6 +278,8 @@ export const useAppStore = create<AppStore>((set) => ({
 				.pricelistSourceKind,
 			usePricelistAi: (loadUiPreferences() ?? defaultUiPreferences)
 				.usePricelistAi,
+			odontogramUseSurfaces: (loadUiPreferences() ?? defaultUiPreferences)
+				.odontogramUseSurfaces,
 			pricelistAnalysis: null,
 			pricelistImageBase64: null,
 			pricelistImageMimeType: "image/jpeg",
@@ -454,6 +458,8 @@ export const useAppStore = create<AppStore>((set) => ({
 	setPricelistSourceKind: (val) => set({ pricelistSourceKind: val }),
 	usePricelistAi: (loadUiPreferences() ?? defaultUiPreferences).usePricelistAi,
 	setUsePricelistAi: (val) => set({ usePricelistAi: val }),
+	odontogramUseSurfaces: (loadUiPreferences() ?? defaultUiPreferences).odontogramUseSurfaces,
+	setOdontogramUseSurfaces: (val) => set({ odontogramUseSurfaces: val }),
 	pricelistAnalysis: null,
 	setPricelistAnalysis: (val) => set({ pricelistAnalysis: val }),
 	pricelistImageBase64: null,

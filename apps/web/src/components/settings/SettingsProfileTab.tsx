@@ -397,6 +397,26 @@ export function SettingsProfileTab() {
 								<option value="large">Крупный (Для слабовидящих)</option>
 							</select>
 						</div>
+
+						<div className="profile-form-group full-width">
+							<label>Интерактивная зубная формула</label>
+							<div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+								<label className="switch">
+									<input 
+										type="checkbox" 
+										checked={appLogic.odontogramUseSurfaces ?? false}
+										onChange={(e) => {
+											appLogic.setOdontogramUseSurfaces(e.target.checked);
+											appLogic.updateUiPreferences({ odontogramUseSurfaces: e.target.checked });
+										}} 
+									/>
+									<span className="slider round"></span>
+								</label>
+								<span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+									Включить выбор конкретных поверхностей зуба (O, M, D, V, L) при клике
+								</span>
+							</div>
+						</div>
 					</div>
 				</section>
 			</div>

@@ -15,6 +15,7 @@ import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import "./odontogram.css";
 
 const SurfaceSelector = ({
@@ -101,6 +102,7 @@ export const OdontogramModule = ({
 	patientId: string;
 	pediatricMode?: boolean | undefined;
 }) => {
+	const { odontogramUseSurfaces } = useAppLogicContext();
 	const [teethData, setTeethData] = useState<ToothData[]>([]);
 	const [menuConfig, setMenuConfig] = useState<{
 		toothNumber: number;
@@ -251,6 +253,11 @@ export const OdontogramModule = ({
 			let activeSelection = selectedTeeth;
 			let currentSurfaces = activeSurfaces;
 
+			// If surfaces are disabled, ignore surface clicks entirely
+			if (!odontogramUseSurfaces) {
+				surface = undefined;
+			}
+
 			// If we clicked on an unselected tooth while having a selection, clear it
 			if (!selectedTeeth.includes(toothNumber)) {
 				activeSelection = [toothNumber];
@@ -353,6 +360,7 @@ export const OdontogramModule = ({
 					pediatricMode={isPediatricMode}
 					selectedTeeth={selectedTeeth}
 					onToothClick={handleToothClick}
+					useSurfaces={odontogramUseSurfaces}
 				/>
 
 				{/* Radial Menu via Portal — avoids backdrop-filter stack */}

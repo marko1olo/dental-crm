@@ -9735,6 +9735,7 @@ export const uiPreferencesSchema = z.object({
 	onboardingDismissedAt: z.string().nullable().default(null),
 	onboardingStep: onboardingStepSchema.default("intro"),
 	onboardingDraftMode: z.boolean().default(false),
+	odontogramUseSurfaces: z.boolean().default(false),
 	savedAt: z.string().default(""),
 });
 export type UiPreferences = z.infer<typeof uiPreferencesSchema>;
