@@ -60,8 +60,10 @@ export function SignCardDialog({ isOpen, onClose, visitId, patientId, diaryConte
 
 		setLoading(true);
 		try {
+			const certInfo = certificates.find(c => c.thumbprint === selectedThumbprint);
+			const deviceId = certInfo?.deviceId;
 			// Generating document hash and communicating with crypto provider
-			const { signatureBase64, provider } = await signatureService.signData(selectedThumbprint, diaryContent, pinCode);
+			const { signatureBase64, provider } = await signatureService.signData(selectedThumbprint, diaryContent, pinCode, deviceId);
 			
 			// Submit to API
 			const staffToken = localStorage.getItem("dente_staff_token");

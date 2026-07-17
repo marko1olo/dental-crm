@@ -1,109 +1,160 @@
-import { getUserCertificates, createDetachedSignature, isValidSystemSetup } from "crypto-pro";
+import { getPersonalCertificates, signBase64WithCertificate, checkCryptoProPlugin } from "../utils/cryptoPro";
+import { getRutokenCertificates, signDataWithRutoken, checkRutokenPlugin } from "../utils/rutoken";
 
 export interface CertificateInfo {
-	thumbprint: string;
+	thumbprint: string; // For rutoken, this will be the cert id
 	name: string;
 	issuer: string;
 	validFrom: string;
 	validTo: string;
 	provider: "cryptopro" | "rutoken";
+	deviceId?: number; // Only for Rutoken
 }
 
 export class DigitalSignatureService {
-	private isMockMode: boolean = false;
+	private isCryptoProMockMode: boolean = false;
+	private isRutokenMockMode: boolean = false;
 
 	constructor() {
 		this.init();
 	}
 
 	private async init() {
+		// CryptoPro Initialization
 		try {
-			const isValid = await isValidSystemSetup();
-			if (!isValid) {
-				this.isMockMode = true;
-				console.warn("[CryptoPro] System setup invalid. Using MOCK mode.");
+			const cpPlugin = await checkCryptoProPlugin();
+			if (!cpPlugin) {
+				this.isCryptoProMockMode = true;
+				console.warn("[CryptoPro] Plugin not found. Using MOCK mode.");
 			}
 		} catch (e) {
-			this.isMockMode = true;
-			console.warn("[CryptoPro] Plugin not found. Using MOCK mode.", e);
+			this.isCryptoProMockMode = true;
+		}
+
+		// Rutoken Initialization
+		try {
+			const rtPlugin = await checkRutokenPlugin();
+			if (!rtPlugin) {
+				this.isRutokenMockMode = true;
+				console.warn("[Rutoken] Plugin not found. Using MOCK mode.");
+			}
+		} catch (e) {
+			this.isRutokenMockMode = true;
 		}
 	}
 
 	async getCertificates(): Promise<CertificateInfo[]> {
-		if (this.isMockMode) {
-			return this.getMockCertificates();
+		let allCerts: CertificateInfo[] = [];
+
+		// CryptoPro Certificates
+		if (this.isCryptoProMockMode) {
+			allCerts.push(this.getMockCryptoProCertificate());
+		} else {
+			try {
+				const cpCerts = await getPersonalCertificates();
+				allCerts.push(
+					...cpCerts.map((c) => ({
+						thumbprint: c.thumbprint,
+						name: c.subjectName,
+						issuer: c.issuerName,
+						validFrom: c.validFrom,
+						validTo: c.validTo,
+						provider: "cryptopro" as const,
+					}))
+				);
+			} catch (error) {
+				console.error("Failed to fetch CryptoPro certificates:", error);
+				allCerts.push(this.getMockCryptoProCertificate());
+			}
 		}
 
-		try {
-			const certs = await getUserCertificates();
-			return certs.map((cert) => ({
-				thumbprint: cert.thumbprint,
-				name: cert.subjectName || cert.name,
-				issuer: cert.issuerName,
-				validFrom: cert.validFrom,
-				validTo: cert.validTo,
-				provider: "cryptopro",
-			}));
-		} catch (error) {
-			console.error("Failed to fetch real certificates:", error);
-			// Fallback to mock if real fetch fails
-			return this.getMockCertificates();
+		// Rutoken Certificates
+		if (this.isRutokenMockMode) {
+			allCerts.push(this.getMockRutokenCertificate());
+		} else {
+			try {
+				const rtCerts = await getRutokenCertificates();
+				allCerts.push(
+					...rtCerts.map((c) => ({
+						thumbprint: c.id, // We use the ID as the thumbprint reference for Rutoken
+						name: c.subjectName,
+						issuer: c.issuerName,
+						validFrom: c.validFrom,
+						validTo: c.validTo,
+						provider: "rutoken" as const,
+						deviceId: c.deviceId,
+					}))
+				);
+				
+				// If no real rutoken devices are connected but the plugin works, 
+				// we might still want to add a mock to show the UI works during testing.
+				if (rtCerts.length === 0) {
+					console.warn("[Rutoken] No devices found. Adding mock certificate.");
+					allCerts.push(this.getMockRutokenCertificate());
+				}
+			} catch (error) {
+				console.error("Failed to fetch Rutoken certificates:", error);
+				allCerts.push(this.getMockRutokenCertificate());
+			}
 		}
+
+		return allCerts;
 	}
 
-	async signData(thumbprint: string, data: string, pin?: string): Promise<{ signatureBase64: string; provider: string }> {
-		if (this.isMockMode) {
-			return this.mockSignData(thumbprint, data);
-		}
+	async signData(thumbprint: string, data: string, pin?: string, deviceId?: number): Promise<{ signatureBase64: string; provider: string }> {
+		const isRutoken = thumbprint.includes("RUTOKEN_MOCK") || deviceId !== undefined || (thumbprint.length < 20); // Basic heuristic if deviceId wasn't passed directly but we know it's rutoken
+		const provider = isRutoken ? "rutoken" : "cryptopro";
 
-		try {
-			// Real Detached Signature using GOST
-			const signatureBase64 = await createDetachedSignature(thumbprint, data);
-			return {
-				signatureBase64,
-				provider: "cryptopro",
-			};
-		} catch (error) {
-			console.error("Failed to sign data:", error);
-			throw new Error("Failed to sign data using CryptoPro plugin: " + (error as Error).message);
+		if (provider === "rutoken") {
+			if (this.isRutokenMockMode || thumbprint === "RUTOKEN_MOCK_ID") {
+				return this.mockSignData(thumbprint, data, "rutoken");
+			}
+			if (deviceId === undefined) throw new Error("Device ID is required for Rutoken signing");
+			if (!pin) throw new Error("PIN code is required for Rutoken signing");
+			
+			const signatureBase64 = await signDataWithRutoken(deviceId, thumbprint, data, pin);
+			return { signatureBase64, provider: "rutoken" };
+		} else {
+			if (this.isCryptoProMockMode || thumbprint === "CRYPTOPRO_MOCK_THUMBPRINT") {
+				return this.mockSignData(thumbprint, data, "cryptopro");
+			}
+			
+			const base64Data = btoa(unescape(encodeURIComponent(data)));
+			const signatureBase64 = await signBase64WithCertificate(base64Data, thumbprint);
+			return { signatureBase64, provider: "cryptopro" };
 		}
 	}
 
 	// --- Mock Implementation Details ---
 
-	private async getMockCertificates(): Promise<CertificateInfo[]> {
-		return [
-			{
-				thumbprint: "F2C99D8B...[MOCK]...A4E88",
-				name: "Иванов Иван Иванович (Врач-стоматолог)",
-				issuer: "ООО УЦ Тензор",
-				validFrom: "2025-01-01",
-				validTo: "2026-01-01",
-				provider: "cryptopro",
-			},
-			{
-				thumbprint: "D5E11F4A...[MOCK]...C2B99",
-				name: "Рутокен ЭЦП 3.0 (Аппаратный)",
-				issuer: "АО Актив-Софт",
-				validFrom: "2024-05-10",
-				validTo: "2027-05-10",
-				provider: "rutoken",
-			},
-		];
+	private getMockCryptoProCertificate(): CertificateInfo {
+		return {
+			thumbprint: "CRYPTOPRO_MOCK_THUMBPRINT",
+			name: "Иванов Иван Иванович (КриптоПро - Эмулятор)",
+			issuer: "ООО УЦ Тензор",
+			validFrom: "01.01.2025",
+			validTo: "01.01.2026",
+			provider: "cryptopro",
+		};
 	}
 
-	private async mockSignData(thumbprint: string, data: string): Promise<{ signatureBase64: string; provider: string }> {
+	private getMockRutokenCertificate(): CertificateInfo {
+		return {
+			thumbprint: "RUTOKEN_MOCK_ID",
+			name: "Рутокен ЭЦП 3.0 (Аппаратный - Эмулятор)",
+			issuer: "АО Актив-Софт",
+			validFrom: "10.05.2024",
+			validTo: "10.05.2027",
+			provider: "rutoken",
+			deviceId: 0,
+		};
+	}
+
+	private async mockSignData(thumbprint: string, data: string, provider: string): Promise<{ signatureBase64: string; provider: string }> {
 		await new Promise((resolve) => setTimeout(resolve, 800));
-		
 		const mockHash = btoa(unescape(encodeURIComponent(data))).substring(0, 32);
 		const signatureBase64 = `MIIB[MOCK_PKCS7_DETACHED_SIGNATURE_${mockHash}_${thumbprint}]==`;
-		
-		const provider = thumbprint.includes("D5E11F4A") ? "rutoken" : "cryptopro";
-
-		return {
-			signatureBase64,
-			provider,
-		};
+		return { signatureBase64, provider };
 	}
 }
 
