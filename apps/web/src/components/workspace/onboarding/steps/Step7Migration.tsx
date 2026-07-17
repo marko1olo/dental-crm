@@ -9,9 +9,80 @@ export function Step7Migration({
 	isDark,
 }: any) {
 	const { auth } = useAppLogicContext();
+	const fileInputRef = React.useRef<HTMLInputElement>(null);
+	const [detectedSummary, setDetectedSummary] = React.useState<any>(null);
+	const [isDragging, setIsDragging] = React.useState(false);
+
+	const handleUpload = async (file: File) => {
+		if (migrationStatus === "done" || migrationStatus === "analyzing") return;
+		setMigrationStatus("analyzing");
+		try {
+			const base64 = await new Promise<string>((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = () => {
+					const result = reader.result as string;
+					resolve(result.split(",")[1] || "");
+				};
+				reader.onerror = reject;
+				reader.readAsDataURL(file);
+			});
+
+			const res = await fetch("/api/system/analyze-legacy-db", {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					fileName: file.name,
+					fileBase64: base64,
+				}),
+			});
+			if (!res.ok) throw new Error("Migration analysis failed");
+			const data = await res.json();
+			setDetectedSummary({
+				detectedKind: data.detectedKind || "Ident",
+				patientsFound: data.summary?.patientsFound || 0,
+				visitsFound: data.summary?.visitsFound || 0,
+				pricelistItems: data.summary?.pricelistItems || 0,
+			});
+			setMigrationStatus("done");
+		} catch (err) {
+			console.error(err);
+			setMigrationStatus("idle");
+		}
+	};
+
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsDragging(true);
+	};
+
+	const handleDragLeave = () => {
+		setIsDragging(false);
+	};
+
+	const handleDrop = async (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsDragging(false);
+		const file = e.dataTransfer.files?.[0];
+		if (file) {
+			await handleUpload(file);
+		}
+	};
 
 	return (
 		<div style={{ textAlign: "center", width: "100%" }}>
+			<input
+				type="file"
+				ref={fileInputRef}
+				style={{ display: "none" }}
+				onChange={async (e) => {
+					const file = e.target.files?.[0];
+					if (file) {
+						await handleUpload(file);
+					}
+				}}
+			/>
 			<div style={{ textAlign: "center", marginBottom: 24 }}>
 				<p
 					style={{
@@ -30,41 +101,31 @@ export function Step7Migration({
 			</div>
 
 			<div
-				onClick={async () => {
+				onClick={() => {
 					if (migrationStatus === "idle") {
-						setMigrationStatus("analyzing");
-						try {
-							const res = await fetch("/api/system/analyze-legacy-db", {
-								method: "POST",
-								headers: auth.denteClinicalMutationHeaders({
-									"Content-Type": "application/json",
-								}),
-								body: JSON.stringify({}),
-							});
-							if (!res.ok) throw new Error("Migration analysis failed");
-							await res.json();
-							setMigrationStatus("done");
-						} catch (err) {
-							console.error(err);
-							setMigrationStatus("idle");
-						}
+						fileInputRef.current?.click();
 					}
 				}}
+				onDragOver={handleDragOver}
+				onDragLeave={handleDragLeave}
+				onDrop={handleDrop}
 				style={{
 					height: 200,
-					border: `3px dashed ${migrationStatus === "done" ? "#10b981" : accentColor}`,
+					border: `3px dashed ${migrationStatus === "done" ? "#10b981" : isDragging ? "var(--teal)" : accentColor}`,
 					borderRadius: 24,
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",
 					justifyContent: "center",
-					cursor: "pointer",
+					cursor: migrationStatus === "idle" ? "pointer" : "default",
 					background:
 						migrationStatus === "done"
 							? "rgba(16, 185, 129, 0.05)"
-							: isDark
-								? "rgba(255,255,255,0.02)"
-								: "rgba(0,0,0,0.02)",
+							: isDragging
+								? "rgba(0, 128, 128, 0.1)"
+								: isDark
+									? "rgba(255,255,255,0.02)"
+									: "rgba(0,0,0,0.02)",
 					transition: "all 0.3s",
 					position: "relative",
 					overflow: "hidden",
@@ -81,10 +142,10 @@ export function Step7Migration({
 								padding: "0 16px",
 							}}
 						>
-							Бросьте бэкап Ident / Infodent сюда
+							Перетащите бэкап Ident / Infodent сюда или кликните
 						</span>
 						<span style={{ fontSize: 14, color: "#888", marginTop: 8 }}>
-							CSV, SQL, Firebird
+							CSV, SQL, Firebird, 1C
 						</span>
 					</>
 				)}
@@ -97,7 +158,7 @@ export function Step7Migration({
 								bottom: 0,
 								left: 0,
 								height: "100%",
-								width: "60%",
+								width: "100%",
 								background: `${accentColor}22`,
 								transition: "width 3s linear",
 							}}
@@ -134,7 +195,7 @@ export function Step7Migration({
 								padding: "0 16px",
 							}}
 						>
-							Распознана база Ident. Найдено 4,521 пациентов.
+							Распознана база {detectedSummary?.detectedKind || "Ident"}. Найдено {detectedSummary?.patientsFound || 0} пациентов.
 						</span>
 					</>
 				)}
@@ -181,7 +242,7 @@ export function Step7Migration({
 								textAlign: "center",
 							}}
 						>
-							IDENT: patient_name
+							{(detectedSummary?.detectedKind || "IDENT").toUpperCase()}: patient_name
 						</div>
 						<ChevronRight size={16} color="#888" />
 						<div
@@ -205,7 +266,7 @@ export function Step7Migration({
 								textAlign: "center",
 							}}
 						>
-							IDENT: debt_balance
+							{(detectedSummary?.detectedKind || "IDENT").toUpperCase()}: debt_balance
 						</div>
 						<ChevronRight size={16} color="#888" />
 						<div
