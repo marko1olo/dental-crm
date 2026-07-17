@@ -23,14 +23,16 @@ export function AnalyticsDashboardView() {
 	const { denteClinicalReadHeaders } = useAppLogicContext();
 	const [data, setData] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
+	const [dateRange, setDateRange] = useState<string>("all");
 
 	useEffect(() => {
 		if (!isActive) return;
 
 		let mounted = true;
 		const fetchData = async () => {
+			setLoading(true);
 			try {
-				const res = await fetch("/api/analytics/dashboard", {
+				const res = await fetch(`/api/analytics/dashboard?range=${dateRange}`, {
 					headers: denteClinicalReadHeaders(),
 				});
 				if (!res.ok) throw new Error("Failed to fetch analytics");
@@ -53,7 +55,7 @@ export function AnalyticsDashboardView() {
 			mounted = false;
 			clearInterval(interval);
 		};
-	}, [isActive]);
+	}, [isActive, dateRange]);
 
 	if (!isActive) {
 		// OOM protection: completely unmount charts when not active
@@ -64,7 +66,7 @@ export function AnalyticsDashboardView() {
 		return (
 			<div className="analytics-dashboard">
 				<div className="analytics-empty-state">
-					Loading Executive Analytics...
+					Загрузка аналитики...
 				</div>
 			</div>
 		);
@@ -78,17 +80,34 @@ export function AnalyticsDashboardView() {
 	} = data;
 
 	return (
-		<div className="analytics-dashboard" aria-label="Executive BI Dashboard">
-			<header className="analytics-header">
-				<h2>Executive Analytics</h2>
+		<div className="analytics-dashboard" aria-label="Аналитика клиники">
+			<header className="analytics-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+				<h2>Аналитика клиники</h2>
+				<select 
+					value={dateRange}
+					onChange={(e) => setDateRange(e.target.value)}
+					style={{
+						padding: "6px 12px",
+						borderRadius: "8px",
+						backgroundColor: "var(--bg-elevated, #18181b)",
+						color: "var(--fg-primary, #e4e4e7)",
+						border: "1px solid var(--border, #27272a)",
+						outline: "none",
+						fontSize: "14px"
+					}}
+				>
+					<option value="all">За всё время</option>
+					<option value="last_month">Последний месяц</option>
+					<option value="last_3_months">Последние 3 месяца</option>
+					<option value="this_year">Текущий год</option>
+				</select>
 			</header>
 
 			<div className="analytics-grid">
 				{/* Widget 1: Cohort LTV */}
 				<article className="glass-widget">
 					<h3>
-						<TrendingUp className="w-5 h-5 text-dente-teal" /> Cohort LTV
-						(Revenue)
+						<TrendingUp className="w-5 h-5 text-dente-teal" /> Выручка по когортам (LTV)
 					</h3>
 					<div className="widget-chart-container">
 						{cohortLtvJson && cohortLtvJson.length > 0 ? (
@@ -150,6 +169,7 @@ export function AnalyticsDashboardView() {
 									<Legend />
 									<Area
 										type="monotone"
+										name="Первый месяц"
 										dataKey="Month 1"
 										stroke="#14b8a6"
 										fillOpacity={1}
@@ -157,6 +177,7 @@ export function AnalyticsDashboardView() {
 									/>
 									<Area
 										type="monotone"
+										name="За год"
 										dataKey="Month 12"
 										stroke="#8b5cf6"
 										fillOpacity={1}
@@ -165,7 +186,7 @@ export function AnalyticsDashboardView() {
 								</AreaChart>
 							</ResponsiveContainer>
 						) : (
-							<div className="analytics-empty-state">No LTV data available</div>
+							<div className="analytics-empty-state">Нет данных о когортах</div>
 						)}
 					</div>
 				</article>
@@ -173,7 +194,7 @@ export function AnalyticsDashboardView() {
 				{/* Widget 2: Plan Funnel */}
 				<article className="glass-widget">
 					<h3>
-						<BarChart3 className="w-5 h-5 text-sky-500" /> Treatment Plan Funnel
+						<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка планов лечения
 					</h3>
 					<div className="widget-chart-container">
 						{planFunnelJson && planFunnelJson.length > 0 ? (
@@ -211,12 +232,12 @@ export function AnalyticsDashboardView() {
 										}}
 										itemStyle={{ color: "#e4e4e7" }}
 									/>
-									<Bar dataKey="value" barSize={32} radius={[0, 4, 4, 0]} />
+									<Bar dataKey="value" name="Количество" barSize={32} radius={[0, 4, 4, 0]} />
 								</ComposedChart>
 							</ResponsiveContainer>
 						) : (
 							<div className="analytics-empty-state">
-								No Funnel data available
+								Нет данных по воронке
 							</div>
 						)}
 					</div>
@@ -225,7 +246,7 @@ export function AnalyticsDashboardView() {
 				{/* Widget 3: Chair Utilization */}
 				<article className="glass-widget">
 					<h3>
-						<Activity className="w-5 h-5 text-emerald-500" /> Chair Utilization
+						<Activity className="w-5 h-5 text-emerald-500" /> Загруженность кресел
 					</h3>
 					<div className="widget-chart-container">
 						{chairUtilizationJson && chairUtilizationJson.length > 0 ? (
@@ -261,13 +282,13 @@ export function AnalyticsDashboardView() {
 											borderRadius: "8px",
 										}}
 										itemStyle={{ color: "#e4e4e7" }}
-										formatter={(value: any) => `${value}%`}
+										formatter={(value: any) => `${value} приемов`}
 									/>
 								</RadialBarChart>
 							</ResponsiveContainer>
 						) : (
 							<div className="analytics-empty-state">
-								No Utilization data available
+								Нет данных по загруженности
 							</div>
 						)}
 					</div>
@@ -276,17 +297,17 @@ export function AnalyticsDashboardView() {
 				{/* Widget 4: Doctor Profitability Leaderboard */}
 				<article className="glass-widget">
 					<h3>
-						<Users className="w-5 h-5 text-purple-500" /> Doctor Profitability
+						<Users className="w-5 h-5 text-purple-500" /> Эффективность врачей
 					</h3>
 					<div className="widget-chart-container" style={{ overflowY: "auto" }}>
 						{doctorProfitabilityJson && doctorProfitabilityJson.length > 0 ? (
 							<table className="analytics-leaderboard-table">
 								<thead>
 									<tr>
-										<th>Doctor</th>
-										<th>Revenue (₽)</th>
-										<th>Net Margin (₽)</th>
-										<th>Completion %</th>
+										<th>Врач</th>
+										<th>Выручка (₽)</th>
+										<th>Прибыль (₽)</th>
+										<th>Успешность %</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -304,7 +325,7 @@ export function AnalyticsDashboardView() {
 							</table>
 						) : (
 							<div className="analytics-empty-state">
-								No Leaderboard data available
+								Нет данных по врачам
 							</div>
 						)}
 					</div>

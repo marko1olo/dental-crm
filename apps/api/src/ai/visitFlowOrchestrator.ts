@@ -46,18 +46,18 @@ function extractPlanPayload(
 	}
 
 	return {
-		clinicalReason: draft.complaint || "Обращение пациента",
-		diagnosisSummary: draft.diagnosis || "Диагноз в стадии уточнения",
-		teethOrArea: "Полость рта",
+		clinicalReason: draft.complaint || "Не указано",
+		diagnosisSummary: draft.diagnosis || "Не указано",
+		teethOrArea: "Не указано",
 		clinicalToothRows: [],
-		treatmentGoals: ["Восстановление функции и эстетики"],
+		treatmentGoals: [],
 		plannedStages,
 		estimatedTotalRub: plannedStages.reduce((sum, stage) => sum + (stage.estimatedAmountRub || 0), 0),
-		alternatives: ["Отсутствие лечения", "Альтернативные методы (см. карту)"],
-		risksAndLimitations: ["Стандартные риски медицинского вмешательства"],
-		prognosisAndLimits: "Прогноз благоприятный при соблюдении рекомендаций",
-		controlPlan: "Профилактический осмотр через 6 месяцев",
-		doctorFullName: request.doctorFullName || "Лечащий врач", // This could be passed in request if needed
+		alternatives: [],
+		risksAndLimitations: [],
+		prognosisAndLimits: null,
+		controlPlan: null,
+		doctorFullName: request.doctorFullName || null, // No fallback to "Лечащий врач"
 		plannedAt: new Date().toISOString(),
 		patientQuestionsAnswered: true,
 		planRequiresSeparateConsent: true,
@@ -104,7 +104,7 @@ function extractRecommendationsPayload(
 		procedureName,
 		toothOrArea: "Полость рта",
 		performedAt: new Date().toISOString(),
-		doctorFullName: request.doctorFullName || "Лечащий врач",
+		doctorFullName: request.doctorFullName || null,
 		allowedAfter: ["Через 2 часа после окончания действия анестезии"],
 		temporaryRestrictions: ["Ограничить физические нагрузки", "Не греть область вмешательства"],
 		medicationAndRinsePlan: ["По назначению врача"],
@@ -217,7 +217,18 @@ export async function runVisitFlow(
 			result.documents.status = "running";
 			const suggestedDocs: string[] = [];
 			if (request.completedServices && request.completedServices.length > 0) {
-				suggestedDocs.push("ИДС на медицинское вмешательство");
+				const titles = request.completedServices.map(s => s.title.toLowerCase());
+				if (titles.some(t => t.includes("удал"))) {
+					suggestedDocs.push("procedure_specific_consent");
+					suggestedDocs.push("post_visit_recommendations");
+				} else if (titles.some(t => t.includes("имплант"))) {
+					suggestedDocs.push("procedure_specific_consent");
+					suggestedDocs.push("post_visit_recommendations");
+				} else if (titles.some(t => t.includes("кариес") || t.includes("пломб"))) {
+					suggestedDocs.push("informed_consent");
+				} else {
+					suggestedDocs.push("informed_consent");
+				}
 			}
 			result.documents.data = { suggestions: suggestedDocs };
 			result.documents.status = "success";
