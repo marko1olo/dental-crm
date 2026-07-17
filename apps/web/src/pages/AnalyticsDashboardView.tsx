@@ -16,9 +16,11 @@ import {
 	YAxis,
 } from "recharts";
 import { useIsActiveTab } from "../hooks/useIsActiveTab";
+import { useAppLogicContext } from "../contexts/AppLogicContext";
 
 export function AnalyticsDashboardView() {
 	const isActive = useIsActiveTab("analytics");
+	const { denteClinicalReadHeaders } = useAppLogicContext();
 	const [data, setData] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -28,7 +30,9 @@ export function AnalyticsDashboardView() {
 		let mounted = true;
 		const fetchData = async () => {
 			try {
-				const res = await fetch("/api/analytics/dashboard");
+				const res = await fetch("/api/analytics/dashboard", {
+					headers: denteClinicalReadHeaders(),
+				});
 				if (!res.ok) throw new Error("Failed to fetch analytics");
 				const json = await res.json();
 				if (mounted && json.success) {

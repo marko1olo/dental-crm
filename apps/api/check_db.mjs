@@ -5,10 +5,8 @@ async function run() {
   const dbPath = path.resolve("./dente-db");
   const pg = new PGlite(dbPath);
   await pg.waitReady;
-  const res = await pg.query("SELECT id FROM organizations;");
-  console.log("Organizations:", res.rows);
-  const users = await pg.query("SELECT id, role, is_active FROM users;");
-  console.log("Users:", users.rows);
+  const res = await pg.query("SELECT id, name, onboarding_completed FROM organizations;");
+  console.log("Organizations in DB:", res.rows);
 }
 
 run().catch(console.error);

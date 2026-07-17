@@ -14,6 +14,7 @@ import {
 	Stethoscope,
 	Users,
 	XCircle,
+	Blocks,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -41,6 +42,9 @@ interface FeatureToggleDef {
 		| "hasReclamations"
 		| "hasPediatricMode"
 		| "hasInventoryModule"
+		| "aiEnableTreatmentPlan"
+		| "aiEnableRecommendations"
+		| "aiEnableDocuments"
 	>;
 	label: string;
 	description: string;
@@ -147,6 +151,27 @@ const FEATURE_TOGGLES: FeatureToggleDef[] = [
 		description: "Учет расходных материалов, контроль остатков и планирование закупок.",
 		icon: <LayoutGrid size={20} />,
 		color: "hsl(220 80% 50%)",
+	},
+	{
+		key: "aiEnableTreatmentPlan",
+		label: "AI: Генерация планов лечения",
+		description: "Нейросеть автоматически формирует персонализированный план лечения на основе диктовки.",
+		icon: <Blocks size={20} />,
+		color: "hsl(280 80% 65%)",
+	},
+	{
+		key: "aiEnableRecommendations",
+		label: "AI: Выдача рекомендаций",
+		description: "Нейросеть автоматически подбирает и персонализирует рекомендации после приёма.",
+		icon: <Blocks size={20} />,
+		color: "hsl(280 80% 65%)",
+	},
+	{
+		key: "aiEnableDocuments",
+		label: "AI: Подбор ИДС и документов",
+		description: "Нейросеть автоматически предлагает необходимые юридические документы для подписания.",
+		icon: <Blocks size={20} />,
+		color: "hsl(280 80% 65%)",
 	},
 ];
 

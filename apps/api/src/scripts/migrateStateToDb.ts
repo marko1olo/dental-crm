@@ -204,6 +204,18 @@ async function migrate() {
 		});
 	}
 
+	console.log("📋 Seeding dummy treatment plans for analytics...");
+	const treatmentPlanStatusOptions = ["Draft", "Active", "Completed"];
+	for (let i = 0; i < state.patients.length; i++) {
+		const patient = state.patients[i];
+		await db.insert(schema.treatmentPlans).values({
+			patientId: patient.id,
+			name: `План лечения для ${patient.fullName}`,
+			status: treatmentPlanStatusOptions[i % treatmentPlanStatusOptions.length] as any,
+			totalPrice: "150000.00",
+		});
+	}
+
 	console.log(`💳 Migrating ${state.payments.length} Payments...`);
 	for (const p of state.payments) {
 		await db.insert(schema.payments).values({

@@ -49,6 +49,7 @@ import {
 	WorkflowResponseError,
 } from "../../AppHelpers";
 import { motionSafeScrollIntoView } from "../../motionPreference";
+import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
 
@@ -1027,6 +1028,8 @@ export function useVisitLogic({
 		visitDraftUserEditedRef.current = true;
 		setIsDraftLoading(true);
 		try {
+			const { aiEnableTreatmentPlan, aiEnableRecommendations, aiEnableDocuments } = useWorkspaceProfileStore.getState();
+
 			const response = await fetch("/api/ai/visit-flow", {
 				method: "POST",
 				headers: auth.denteClinicalReadHeaders({
@@ -1041,6 +1044,11 @@ export function useVisitLogic({
 					doctorFullName: activeDoctor?.fullName ?? undefined,
 					planPayload: null, // extracted inside flow
 					recommendationsPayload: null,
+					orchestratorConfig: {
+						enablePlan: aiEnableTreatmentPlan,
+						enableRecommendations: aiEnableRecommendations,
+						enableDocuments: aiEnableDocuments,
+					}
 				}),
 			});
 			if (!response.ok) {

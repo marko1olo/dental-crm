@@ -21,6 +21,8 @@ import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { SignCardDialog } from "./components/visit/SignCardDialog";
 import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { VisitHeader } from "./components/visit/VisitHeader";
+import { VisitPrimaryActions } from "./components/visit/VisitPrimaryActions";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
@@ -329,193 +331,14 @@ export function VisitView() {
 					<span className="status-pill status-in_treatment">{visitNoteStatusLabel || "Черновик"}</span>
 				</div>
 
-				<section className="visit-focus-bar" aria-label="Быстрый фокус приема">
-					<div className="visit-focus-patient">
-						<div className="avatar">{activePatient.fullName.slice(0, 1)}</div>
-						<div>
-							<p className="eyebrow">Пациент сейчас</p>
-							<h3>{activePatient.fullName}</h3>
-							<p>
-								{activeAppointment?.reason ?? "прием"} ·{" "}
-								{activePatient.phone ?? "телефон не указан"}
-							</p>
-						</div>
-					</div>
-					<div className="visit-focus-status">
-						<span className={visitWarnings.length ? "" : "ready"}>
-							{visitWarnings.length
-								? `${visitWarnings.length} предупр.`
-								: "спокойно"}
-						</span>
-						<strong>{primaryVisitWarning?.title ?? "Можно вести прием"}</strong>
-						<p>
-							{visitCloseChecklist
-								? `${visitCloseChecklist.score}% готовности`
-								: "статус закрытия не рассчитан"}{" "}
-							· предупреждения не останавливают прием ·{" "}
-							{activeImagingStudies.length} снимка ·{" "}
-							{activeUsableDocuments.length} документа
-						</p>
-					</div>
-					<div className="visit-focus-actions">
-						<button
-							className="primary-button"
-							type="button"
-							onClick={() => scrollToVisitArea(".dictation-box")}
-							style={{
-								padding: "16px 24px",
-								fontSize: "16px",
-								fontWeight: "bold",
-								textTransform: "uppercase",
-								borderRadius: "12px",
-							}}
-						>
-							<Mic aria-hidden="true" style={{ marginRight: "8px" }} /> ДИКТОВКА
-						</button>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={openVisitWarningAction}
-							style={{
-								padding: "16px 24px",
-								fontSize: "16px",
-								fontWeight: "bold",
-								textTransform: "uppercase",
-								borderRadius: "12px",
-							}}
-						>
-							<AlertTriangle
-								aria-hidden="true"
-								style={{ marginRight: "8px" }}
-							/>{" "}
-							РИСКИ
-						</button>
-					</div>
-				</section>
+				<VisitHeader />
 
 				<div
 					style={{
 						display: activeVisitTab === "conclusion" ? "block" : "none",
 					}}
 				>
-					<details
-						className="clinical-rules-toggle"
-						style={{
-							border: "1px solid #e2e8f0",
-							borderRadius: "12px",
-							overflow: "hidden",
-							margin: "0.75rem 0",
-						}}
-					>
-						<summary
-							style={{
-								padding: "0.75rem 1rem",
-								background: "var(--paper)",
-								fontSize: "0.85rem",
-								fontWeight: 700,
-								color: "#475569",
-								cursor: "pointer",
-								outline: "none",
-							}}
-						>
-							🧭 Шаги приема и статус: {visitPrimaryAction.label}
-						</summary>
-						<div style={{ marginTop: "1rem", padding: "0 1rem 1rem 1rem" }}>
-							<section
-								className="visit-next-step"
-								data-testid="visit-next-step-panel"
-								aria-label="Следующий шаг приема"
-							>
-								<div className="visit-next-step-main">
-									<div>
-										<p className="eyebrow">Сейчас сделать</p>
-										<h3>{visitPrimaryAction.label}</h3>
-										<p id="visit-primary-action-detail">
-											{visitPrimaryAction.detail}
-										</p>
-									</div>
-									<button
-										className="primary-button visit-primary-action"
-										type="button"
-										onClick={visitPrimaryAction.onClick}
-										disabled={visitPrimaryAction.disabled}
-										aria-describedby="visit-primary-action-detail"
-										data-testid="visit-primary-action"
-										style={{
-											padding: "16px 24px",
-											fontSize: "1.2rem",
-											fontWeight: "bold",
-											textTransform: "uppercase",
-											width: "100%",
-											justifyContent: "center",
-											borderRadius: "12px",
-										}}
-									>
-										{visitPrimaryAction.kind === "dictation" ? (
-											<Mic aria-hidden="true" />
-										) : null}
-										{visitPrimaryAction.kind === "draft" ? (
-											<Bot aria-hidden="true" />
-										) : null}
-										{visitPrimaryAction.kind === "save" ||
-										visitPrimaryAction.kind === "close" ? (
-											<Check aria-hidden="true" />
-										) : null}
-										{visitPrimaryAction.kind === "review" ? (
-											<AlertTriangle aria-hidden="true" />
-										) : null}
-										{visitPrimaryAction.label}
-									</button>
-
-									{isSigned ? (
-										<div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "8px", color: "var(--teal)", fontWeight: "bold" }}>
-											<Lock size={16} /> Документ подписан УКЭП
-										</div>
-									) : (
-										<button
-											className="secondary-button"
-											type="button"
-											onClick={() => setIsSignDialogOpen(true)}
-											style={{
-												marginTop: "12px",
-												padding: "16px 24px",
-												fontSize: "1rem",
-												fontWeight: "bold",
-												width: "100%",
-												justifyContent: "center",
-												borderRadius: "12px",
-												display: "flex",
-												alignItems: "center",
-												gap: "8px",
-												border: "1px solid var(--border-color)"
-											}}
-										>
-											<Lock size={18} /> Подписать ЭЦП
-										</button>
-									)}
-
-								</div>
-								<div
-									className="visit-progress-strip"
-									data-testid="visit-progress-strip"
-									aria-label="Прогресс приема"
-								>
-									{visitWorkflowSteps.map((step, index) => (
-										<article
-											className={`visit-progress-step step-${step.state}`}
-											key={step.key}
-										>
-											<span>{index + 1}</span>
-											<div>
-												<strong>{step.label}</strong>
-												<p>{step.detail}</p>
-											</div>
-										</article>
-									))}
-								</div>
-							</section>
-						</div>
-					</details>
+					<VisitPrimaryActions isSignDialogOpen={isSignDialogOpen} setIsSignDialogOpen={setIsSignDialogOpen} isSigned={isSigned} />
 
 					<details
 						className="visit-safety-strip-toggle"

@@ -27,6 +27,9 @@ export interface WorkspaceFeatureFlags {
 	hasMarketingModule: boolean;
 	hasAnalyticsModule: boolean;
 	hasInventoryModule: boolean;
+	aiEnableTreatmentPlan: boolean;
+	aiEnableRecommendations: boolean;
+	aiEnableDocuments: boolean;
 }
 
 interface WorkspaceProfileStore extends WorkspaceFeatureFlags {
@@ -57,6 +60,9 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	hasMarketingModule: true,
 	hasAnalyticsModule: true,
 	hasInventoryModule: true,
+	aiEnableTreatmentPlan: true,
+	aiEnableRecommendations: true,
+	aiEnableDocuments: true,
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -96,6 +102,9 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				hasMarketingModule: s.hasMarketingModule,
 				hasAnalyticsModule: s.hasAnalyticsModule,
 				hasInventoryModule: s.hasInventoryModule,
+				aiEnableTreatmentPlan: s.aiEnableTreatmentPlan,
+				aiEnableRecommendations: s.aiEnableRecommendations,
+				aiEnableDocuments: s.aiEnableDocuments,
 			}),
 		},
 	),
