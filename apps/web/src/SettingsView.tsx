@@ -330,6 +330,7 @@ type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import { useSettingsDerivations } from "./useSettingsDerivations";
 
 export interface SettingsViewProps {
@@ -1123,7 +1124,14 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
     typedServiceCategoryLabels,
     typedServiceCategories,
   } = derivations;
-  const typedSettingsTabs = settingsTabs as SettingsTab[];
+  const flags = useWorkspaceProfile();
+  let typedSettingsTabs = settingsTabs as SettingsTab[];
+  if (!flags.hasMarketingModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "marketing");
+  if (!flags.hasAnalyticsModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "reporting");
+  if (!flags.hasInventoryModule) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "inventory");
+  if (!flags.hasBpmWorkflows) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "bpmn");
+  if (!flags.hasClinicalRules) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "rules");
+  if (!flags.hasInsuranceCoPay) typedSettingsTabs = typedSettingsTabs.filter(t => t.id !== "insurance");
   const settingsTabButtonId = (tabId: SettingsTabId) => `settings-tab-${tabId}`;
   const settingsTabPanelId = (tabId: SettingsTabId) =>
     `settings-panel-${tabId}`;

@@ -117,6 +117,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 		}
 		
 		let doctorName: { first: string; last: string; middle?: string } = { first: "Врач", last: "Неизвестен" };
+		let doctorSnils: string | null = null;
 		if (diary.doctorId) {
 			const [doc] = await db.select().from(users).where(eq(users.id, diary.doctorId));
 			if (doc) {
@@ -126,6 +127,7 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					first: parts[1] || "Неизвестен", 
 					middle: parts.slice(2).join(" ") 
 				};
+				doctorSnils = doc.snils || null;
 			}
 		}
 
@@ -136,6 +138,15 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 		const documentId = `EGISZ-${Date.now()}`;
 		
 		try {
+			if (!doctorSnils) {
+				throw new Error("Не указан СНИЛС врача в профиле. Отправка в ЕГИСЗ невозможна.");
+			}
+
+			const clinicOid = (org.specializations as any)?.egiszOid;
+			if (!clinicOid) {
+				throw new Error("Не указан OID клиники в настройках. Отправка в ЕГИСЗ невозможна.");
+			}
+
 			const cdaXml = generateDentalCdaXml({
 				patientId: patient.id,
 				patientName: {
@@ -146,12 +157,12 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				patientSnils: snils,
 				patientBirthDate: patient.dateOfBirth,
 				patientGender: patient.gender as any,
-				clinicOid: (org.specializations as any)?.egiszOid || "1.2.643.5.1.13.13.12.2.1", // standard stub OID for tests
+				clinicOid,
 				clinicName: org.name,
 				doctorName,
-				doctorSnils: "00000000000", // Would come from doctor profile
+				doctorSnils,
 				icd10Code: diary.diagnosisIcd10 || "K02.1",
-				diagnosisText: "Кариес дентина", // Usually joined from a dictionary
+				diagnosisText: diary.diagnosisText || diary.diagnosisIcd10 || "Диагноз не указан",
 				anamnesis: diary.anamnesis || "",
 				treatmentDescription: diary.treatmentDescription || "",
 				visitDate: new Date(),

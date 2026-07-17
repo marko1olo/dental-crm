@@ -1688,6 +1688,21 @@ export const clinicProfileSchema = z.object({
 	onboardingCompleted: z.boolean().default(false),
 	hasPediatricMode: z.boolean().default(false),
 	isOmniRole: z.boolean().default(false),
+	hasAssistants: z.boolean().default(true),
+	hasMultipleChairs: z.boolean().default(true),
+	hasDentalLab: z.boolean().default(true),
+	hasInsuranceCoPay: z.boolean().default(true),
+	hasInstallments: z.boolean().default(true),
+	hasOrthodontics: z.boolean().default(true),
+	hasTasks: z.boolean().default(true),
+	hasReclamations: z.boolean().default(true),
+	hasPayrollModule: z.boolean().default(true),
+	hasMarketingModule: z.boolean().default(true),
+	hasAnalyticsModule: z.boolean().default(true),
+	hasInventoryModule: z.boolean().default(true),
+	aiEnableTreatmentPlan: z.boolean().default(true),
+	aiEnableRecommendations: z.boolean().default(true),
+	aiEnableDocuments: z.boolean().default(true),
 });
 export type ClinicProfile = z.infer<typeof clinicProfileSchema>;
 

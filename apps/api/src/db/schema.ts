@@ -398,6 +398,7 @@ export const users = pgTable("users", {
 	specialties: jsonb("specialties"), // Array of dentalSpecialty
 	phone: text("phone"),
 	email: text("email"),
+	snils: text("snils"),
 	passwordHash: text("password_hash"),
 	pinCodeHash: text("pin_code_hash"),
 	isActive: boolean("is_active").notNull().default(true),
@@ -2004,6 +2005,7 @@ export const visitDiaries = pgTable("visit_diaries", {
 	anamnesis: text("anamnesis"),
 	statusLocalis: text("status_localis"),
 	diagnosisIcd10: varchar("diagnosis_icd10", { length: 50 }),
+	diagnosisText: text("diagnosis_text"),
 	diagnosisTooth: varchar("diagnosis_tooth", { length: 10 }),
 	treatmentDescription: text("treatment_description"),
 	complications: text("complications"),

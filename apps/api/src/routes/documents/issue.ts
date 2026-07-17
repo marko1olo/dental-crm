@@ -201,6 +201,7 @@ export async function register(app: FastifyInstance) {
 		);
 		const document = await issueGeneratedDocumentInDb(orgId, id, {
 			issuedAt,
+			issuedByUserId: (request as any).user?.id || null,
 			releaseJournalEntry,
 			snapshotHtml: issuedHtml,
 			signatureAttestation,

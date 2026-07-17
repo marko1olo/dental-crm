@@ -185,6 +185,7 @@ export async function issueGeneratedDocumentInDb(
 	documentId: string,
 	options: {
 		issuedAt?: string;
+		issuedByUserId?: string | null;
 		releaseJournalEntry?: DocumentReleaseJournalEntry | null;
 		snapshotHtml?: string;
 		signatureAttestation?: DocumentIssueSignatureAttestation;
@@ -215,7 +216,7 @@ export async function issueGeneratedDocumentInDb(
 		.set({
 			status: "issued",
 			issuedAt: options.issuedAt ? new Date(options.issuedAt) : new Date(),
-			issuedByUserId: "doctor", // usually from request, hardcoded in sampleData for now
+			issuedByUserId: options.issuedByUserId || null,
 			releaseJournalEntry: options.releaseJournalEntry || null,
 			signatureAttestation: options.signatureAttestation || null,
 			taxPaymentSnapshotJson: options.taxPaymentSnapshot
