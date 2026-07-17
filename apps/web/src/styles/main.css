@@ -1442,21 +1442,27 @@ button:active:not(:disabled) {
 }
 
 .now-card {
-	background:
-		linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(163, 79, 50, 0.08)),
-		var(--paper-strong);
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	box-shadow: var(--shadow);
-	display: grid;
-	gap: 18px;
-	padding: 18px;
+	background: linear-gradient(
+		135deg,
+		rgba(15, 118, 110, 0.12),
+		rgba(15, 118, 110, 0.03)
+	);
+	background-color: var(--paper);
+	border: 1px solid rgba(15, 118, 110, 0.15);
+	border-radius: 16px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 24px;
 }
 
 .patient-hero {
 	align-items: center;
 	display: flex;
-	gap: 14px;
+	gap: 16px;
 }
 
 .avatar {
@@ -14509,10 +14515,11 @@ body {
 .sidebar .nav-item.active {
 	background: linear-gradient(
 		90deg,
-		rgba(13, 148, 136, 0.85),
-		rgba(13, 148, 136, 0.4)
+		rgba(13, 148, 136, 0.15),
+		rgba(13, 148, 136, 0.02)
 	);
-	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+	box-shadow: inset 3px 0 0 var(--teal);
+	color: var(--teal-light, #5eead4);
 }
 
 /* Topbar & Header Enhancements */
@@ -14524,17 +14531,24 @@ body {
 }
 
 .topbar h1 {
-	color: var(--teal-dark);
-	font-weight: 800;
-	letter-spacing: -0.5px;
+	color: var(--ink);
+	font-weight: 700;
+	letter-spacing: -0.3px;
 }
 
 /* Clean Panels with Soft Shadows */
 .panel {
-	background: var(--paper);
-	border: 1px solid var(--line);
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.03),
+		rgba(255, 255, 255, 0.01)
+	);
+	background-color: var(--paper);
+	border: 1px solid rgba(255, 255, 255, 0.08);
 	border-radius: 16px;
-	box-shadow: var(--shadow-premium);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
 	transition:
 		transform var(--transition-smooth),
 		box-shadow var(--transition-smooth);
@@ -15377,14 +15391,16 @@ textarea:focus {
 	gap: 16px;
 	background: linear-gradient(
 		135deg,
-		rgba(217, 119, 6, 0.08),
-		rgba(251, 191, 36, 0.03)
+		rgba(245, 158, 11, 0.15),
+		rgba(245, 158, 11, 0.05)
 	);
-	border: 1px dashed rgba(217, 119, 6, 0.4);
+	border: 1px solid rgba(245, 158, 11, 0.3);
 	border-radius: 12px;
 	padding: 14px 20px;
 	margin: 16px 24px 8px;
-	box-shadow: 0 4px 12px rgba(217, 119, 6, 0.03);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
 }
 
 .default-clinic-banner .banner-content {
@@ -15402,12 +15418,12 @@ textarea:focus {
 .default-clinic-banner p {
 	margin: 0;
 	font-size: 14px;
-	color: #78350f;
+	color: var(--ink);
 	line-height: 1.5;
 }
 
 .default-clinic-banner p strong {
-	color: #b45309;
+	color: #f59e0b;
 }
 
 .default-clinic-banner .banner-btn {
@@ -15415,16 +15431,19 @@ textarea:focus {
 	padding: 8px 16px !important;
 	min-height: auto !important;
 	height: 36px !important;
-	background: #d97706 !important;
-	color: white !important;
-	border-color: #d97706 !important;
+	background: #f59e0b !important;
+	color: #fff !important;
+	border: none !important;
+	border-radius: 8px !important;
 	flex-shrink: 0;
+	box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+	font-weight: 600 !important;
 }
 
 .default-clinic-banner .banner-btn:hover {
-	background: #b45309 !important;
-	border-color: #b45309 !important;
-	box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25) !important;
+	background: #d97706 !important;
+	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+	transform: translateY(-1px) !important;
 }
 
 @media (max-width: 860px) {

@@ -39,30 +39,36 @@ export async function registerVkRoutes(server: FastifyInstance) {
 					.values({
 						organizationId,
 						fullName: `VK User ${vkId}`,
-						notes: `Лид из ВКонтакте. VK:${vkId}`,
+						notes: `Создан автоматически из ВКонтакте. VK:${vkId}`,
 						status: "active",
 					})
 					.returning()) as any;
 				patient = insertedPatients[0];
 			}
 
-			await db.insert(communicationEvents).values({
+			const [newEvent] = await db.insert(communicationEvents).values({
 				organizationId,
 				patientId: patient.id,
-				channel: "telegram" as any, // using telegram channel for MVP since vk is not in enum
+				channel: "vk", 
 				direction: "inbound",
 				status: "delivered",
-				message: `[ВК] ${text}`,
-			});
+				message: text,
+			}).returning();
 
-			wsBroker.broadcastToOrganization(organizationId, {
-				type: "INBOX_NEW_MESSAGE",
-				payload: {
-					channel: "vk",
-					patientId: patient.id,
-					text,
-				},
-			});
+			if (newEvent) {
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "INBOX_NEW_MESSAGE",
+					payload: {
+						id: newEvent.id,
+						channel: "vk",
+						patientId: patient.id,
+						patientName: patient.fullName,
+						text,
+						direction: "inbound",
+						createdAt: newEvent.createdAt.toISOString()
+					},
+				});
+			}
 		}
 
 		return "ok"; // VK requires exact string "ok" to acknowledge message_new

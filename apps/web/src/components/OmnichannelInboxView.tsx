@@ -36,12 +36,14 @@ function getChannelLabel(channel: string) {
 	if (channel === "whatsapp") return "WhatsApp";
 	if (channel === "telegram") return "Telegram";
 	if (channel === "sms") return "SMS";
+	if (channel === "vk") return "VKontakte";
 	return channel;
 }
 
 function getChannelColor(channel: string) {
 	if (channel === "whatsapp") return "#25D366";
 	if (channel === "telegram") return "#0088cc";
+	if (channel === "vk") return "#0077FF";
 	return "var(--muted)";
 }
 
@@ -49,6 +51,7 @@ function getChannelLetter(channel: string) {
 	if (channel === "whatsapp") return "W";
 	if (channel === "telegram") return "T";
 	if (channel === "sms") return "S";
+	if (channel === "vk") return "V";
 	return channel.charAt(0).toUpperCase();
 }
 

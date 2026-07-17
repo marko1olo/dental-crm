@@ -242,7 +242,6 @@ export function WorkspaceSidebar({
 							<SidebarIcon section={view} />
 							<span className="nav-copy">
 								<span className="nav-label">{viewLabels[view]}</span>
-								<small>{viewHints[view]}</small>
 							</span>
 						</a>
 					) : null,

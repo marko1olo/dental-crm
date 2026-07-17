@@ -111,6 +111,7 @@ export const communicationChannel = pgEnum("communication_channel", [
 	"whatsapp",
 	"telegram",
 	"email",
+	"vk",
 	"in_person",
 ]);
 export const communicationIntent = pgEnum("communication_intent", [
