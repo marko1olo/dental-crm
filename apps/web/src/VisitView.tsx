@@ -17,6 +17,8 @@ import {
 import React, { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
+import { VisitClinicalRuleWarnings } from "./visit/VisitClinicalRuleWarnings";
+import { VisitFlowProgress } from "./visit/VisitFlowProgress";
 import { SignCardDialog } from "./components/visit/SignCardDialog";
 import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
@@ -27,6 +29,9 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { parseVisitDictationLocal } from "./lib/smartVisitParser";
+import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
+import { VisitAIProgressCard } from "./components/visit/VisitAIProgressCard";
+import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/toothGeometry";
@@ -1842,65 +1847,8 @@ export function VisitView() {
 								{visitNoteStatusLabel}
 							</span>
 						</div>
-
 						{visitFlowResult && (
-							<div style={{
-								background: "#f8fafc",
-								border: "1px solid #e2e8f0",
-								borderRadius: "8px",
-								padding: "1rem",
-								marginBottom: "1rem",
-								display: "flex",
-								flexDirection: "column",
-								gap: "0.5rem"
-							}}>
-								<h4 style={{ margin: 0, fontSize: "0.95rem", color: "#334155" }}>Прогресс ИИ-ассистента</h4>
-								<div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.85rem" }}>
-									<div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-										<span style={{ 
-											width: "8px", height: "8px", borderRadius: "50%", 
-											background: visitFlowResult.draft.status === "success" ? "#10b981" : visitFlowResult.draft.status === "running" ? "#3b82f6" : visitFlowResult.draft.status === "error" ? "#ef4444" : "#94a3b8" 
-										}} />
-										1. Распознавание: {visitFlowResult.draft.status} {visitFlowResult.draft.message && `(${visitFlowResult.draft.message})`}
-									</div>
-									<div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-										<span style={{ 
-											width: "8px", height: "8px", borderRadius: "50%", 
-											background: visitFlowResult.plan.status === "success" ? "#10b981" : visitFlowResult.plan.status === "running" ? "#3b82f6" : visitFlowResult.plan.status === "error" ? "#ef4444" : visitFlowResult.plan.status === "skipped" ? "#f59e0b" : "#94a3b8" 
-										}} />
-										2. План лечения: {visitFlowResult.plan.status}
-									</div>
-									<div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-										<span style={{ 
-											width: "8px", height: "8px", borderRadius: "50%", 
-											background: visitFlowResult.recommendations.status === "success" ? "#10b981" : visitFlowResult.recommendations.status === "running" ? "#3b82f6" : visitFlowResult.recommendations.status === "error" ? "#ef4444" : visitFlowResult.recommendations.status === "skipped" ? "#f59e0b" : "#94a3b8" 
-										}} />
-										3. Рекомендации: {visitFlowResult.recommendations.status}
-									</div>
-									<div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-										<span style={{ 
-											width: "8px", height: "8px", borderRadius: "50%", 
-											background: visitFlowResult.documents.status === "success" ? "#10b981" : visitFlowResult.documents.status === "running" ? "#3b82f6" : visitFlowResult.documents.status === "error" ? "#ef4444" : visitFlowResult.documents.status === "skipped" ? "#f59e0b" : "#94a3b8" 
-										}} />
-										4. Документы: {visitFlowResult.documents.status}
-									</div>
-								</div>
-								{visitFlowResult.plan.data?.patientFriendlyExplanation && (
-									<div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "#fff", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
-										<strong>Объяснение для пациента:</strong> {visitFlowResult.plan.data.patientFriendlyExplanation}
-									</div>
-								)}
-								{visitFlowResult.recommendations.data?.telegramSummary && (
-									<div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "#fff", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
-										<strong>Памятка в Telegram:</strong> {visitFlowResult.recommendations.data.telegramSummary}
-									</div>
-								)}
-								{visitFlowResult.documents.data?.suggestions && visitFlowResult.documents.data.suggestions.length > 0 && (
-									<div style={{ marginTop: "0.5rem", padding: "0.5rem", background: "#fff", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
-										<strong>Необходимые документы:</strong> {visitFlowResult.documents.data.suggestions.join(", ")}
-									</div>
-								)}
-							</div>
+							<VisitAIProgressCard visitFlowResult={visitFlowResult} />
 						)}
 
 						{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
