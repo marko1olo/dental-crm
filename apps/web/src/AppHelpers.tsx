@@ -3676,6 +3676,7 @@ export type UiPreferences = {
 	postVisitCareTopic: PostVisitCareTopic;
 	pricelistSourceKind: PricelistSourceKind;
 	usePricelistAi: boolean;
+	odontogramUseSurfaces: boolean;
 	recognitionKind: AiJobKind;
 	recognitionTarget: AiRecognitionTarget;
 	importSourceKind: ImportSourceKind;
@@ -4617,6 +4618,7 @@ export const defaultUiPreferences: UiPreferences = {
 	onboardingDismissedAt: null,
 	onboardingStep: "intro",
 	onboardingDraftMode: false,
+	odontogramUseSurfaces: false,
 	savedAt: "",
 };
 
@@ -5201,6 +5203,12 @@ export function normalizeUiPreferencesPayload(
 			source,
 			"usePricelistAi",
 			defaultUiPreferences.usePricelistAi,
+			isBooleanPreference,
+		),
+		odontogramUseSurfaces: pickUiPreference(
+			source,
+			"odontogramUseSurfaces",
+			defaultUiPreferences.odontogramUseSurfaces,
 			isBooleanPreference,
 		),
 		recognitionKind: pickUiPreference(

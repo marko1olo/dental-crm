@@ -16,14 +16,15 @@ export type ToothState =
 export interface ToothData {
 	toothNumber: number;
 	state: ToothState;
-	surfaces?: string[] | undefined;
+	surfaces?: string[];
 }
 
-interface ToothChartProps {
+export interface ToothChartProps {
 	teethData: ToothData[];
-	pediatricMode?: boolean | undefined;
+	pediatricMode?: boolean;
 	selectedTeeth?: number[];
-	onToothClick: (toothNumber: number, rect: DOMRect) => void;
+	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
+	useSurfaces?: boolean | undefined;
 }
 
 const TOP_TEETH = [
@@ -84,13 +85,15 @@ const ToothSVG = ({
 	isSelected,
 	onClick,
 	surfaces,
+	useSurfaces,
 }: {
 	number: number;
 	state: ToothState;
 	scale: number;
 	isSelected?: boolean;
-	onClick: (e: React.MouseEvent, num: number) => void;
+	onClick: (e: React.MouseEvent, num: number, surface?: string) => void;
 	surfaces?: string[] | undefined;
+	useSurfaces?: boolean | undefined;
 }) => {
 	const isTop = number < 30 || (number >= 51 && number <= 65);
 	const geom = getToothPath(number);
@@ -207,13 +210,51 @@ const ToothSVG = ({
 						strokeWidth="0.8"
 					/>
 				)}
-				{surfaces && surfaces.length > 0 && (
+				
+				
+				{/* Interactive Surfaces */}
+				{useSurfaces && (
 					<g transform={`translate(${cfg.viewX + cfg.viewWidth / 2 - 12}, 25)`} stroke="rgba(255,255,255,0.7)" strokeWidth="0.5">
-						<polygon points="8,8 16,8 16,16 8,16" fill={surfaces.includes("O") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
-						<polygon points="0,0 24,0 16,8 8,8" fill={surfaces.includes("B") || surfaces.includes("V") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
-						<polygon points="8,16 16,16 24,24 0,24" fill={surfaces.includes("L") || surfaces.includes("P") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
-						<polygon points="0,0 8,8 8,16 0,24" fill={surfaces.includes("M") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
-						<polygon points="24,0 24,24 16,16 16,8" fill={surfaces.includes("D") ? "#ef4444" : "rgba(0,0,0,0.4)"} />
+					<polygon 
+						points="8,8 16,8 16,16 8,16" 
+						fill={surfaces?.includes("O") ? "#ef4444" : "transparent"} 
+						style={{ cursor: "pointer", transition: "fill 0.2s" }}
+						onMouseEnter={(e) => { if(!surfaces?.includes("O")) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
+						onMouseLeave={(e) => { if(!surfaces?.includes("O")) e.currentTarget.style.fill = "transparent" }}
+						onClick={(e) => { e.stopPropagation(); onClick(e, number, "O"); }}
+					/>
+					<polygon 
+						points="0,0 24,0 16,8 8,8" 
+						fill={surfaces?.includes("V") || surfaces?.includes("B") ? "#ef4444" : "transparent"} 
+						style={{ cursor: "pointer", transition: "fill 0.2s" }}
+						onMouseEnter={(e) => { if(!(surfaces?.includes("V") || surfaces?.includes("B"))) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
+						onMouseLeave={(e) => { if(!(surfaces?.includes("V") || surfaces?.includes("B"))) e.currentTarget.style.fill = "transparent" }}
+						onClick={(e) => { e.stopPropagation(); onClick(e, number, isTop ? "V" : "V"); }}
+					/>
+					<polygon 
+						points="8,16 16,16 24,24 0,24" 
+						fill={surfaces?.includes("L") || surfaces?.includes("P") ? "#ef4444" : "transparent"} 
+						style={{ cursor: "pointer", transition: "fill 0.2s" }}
+						onMouseEnter={(e) => { if(!(surfaces?.includes("L") || surfaces?.includes("P"))) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
+						onMouseLeave={(e) => { if(!(surfaces?.includes("L") || surfaces?.includes("P"))) e.currentTarget.style.fill = "transparent" }}
+						onClick={(e) => { e.stopPropagation(); onClick(e, number, isTop ? "P" : "L"); }}
+					/>
+					<polygon 
+						points="0,0 8,8 8,16 0,24" 
+						fill={surfaces?.includes("M") ? "#ef4444" : "transparent"} 
+						style={{ cursor: "pointer", transition: "fill 0.2s" }}
+						onMouseEnter={(e) => { if(!surfaces?.includes("M")) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
+						onMouseLeave={(e) => { if(!surfaces?.includes("M")) e.currentTarget.style.fill = "transparent" }}
+						onClick={(e) => { e.stopPropagation(); onClick(e, number, "M"); }}
+					/>
+					<polygon 
+						points="24,0 24,24 16,16 16,8" 
+						fill={surfaces?.includes("D") ? "#ef4444" : "transparent"} 
+						style={{ cursor: "pointer", transition: "fill 0.2s" }}
+						onMouseEnter={(e) => { if(!surfaces?.includes("D")) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
+						onMouseLeave={(e) => { if(!surfaces?.includes("D")) e.currentTarget.style.fill = "transparent" }}
+						onClick={(e) => { e.stopPropagation(); onClick(e, number, "D"); }}
+					/>
 					</g>
 				)}
 			</g>
@@ -264,13 +305,14 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	pediatricMode,
 	selectedTeeth = [],
 	onToothClick,
+	useSurfaces,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const archContainerRef = useRef<HTMLDivElement>(null);
 
-	const handleToothClick = (e: React.MouseEvent, num: number) => {
+	const handleToothClick = (e: React.MouseEvent, num: number, surface?: string) => {
 		const rect = e.currentTarget.getBoundingClientRect();
-		onToothClick(num, rect);
+		onToothClick(num, rect, surface);
 	};
 
 	const getToothState = (num: number) =>
@@ -284,7 +326,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			<div className="tooth-chart-header">
 				<h2 className="tooth-chart-title">
 					<Settings size={18} className="text-zinc-400" />
-					Зубная Формула (FDI)
+					Зубная формула (FDI)
 				</h2>
 				<div className="tooth-chart-legend">
 					<span className="tooth-chart-legend-item">
@@ -292,14 +334,14 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					</span>
 					<span className="tooth-chart-legend-item">
 						<div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>{" "}
-						Имплантат
+						Имплант
 					</span>
 					<span className="tooth-chart-legend-item">
 						<div className="w-2.5 h-2.5 rounded-full bg-blue-400"></div> Коронка
 					</span>
 					<span className="tooth-chart-legend-item">
 						<div className="w-2.5 h-2.5 rounded-full bg-yellow-300 animate-pulse shadow-[0_0_5px_#fde047]"></div>{" "}
-						План КТ
+						План
 					</span>
 				</div>
 			</div>
@@ -322,6 +364,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 									scale={1}
 									state={tData ? tData.state : "Healthy"}
 									surfaces={tData?.surfaces}
+									useSurfaces={useSurfaces}
 									isSelected={selectedTeeth.includes(num)}
 									onClick={handleToothClick}
 								/>
@@ -344,6 +387,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 									scale={1}
 									state={tData ? tData.state : "Healthy"}
 									surfaces={tData?.surfaces}
+									useSurfaces={useSurfaces}
 									isSelected={selectedTeeth.includes(num)}
 									onClick={handleToothClick}
 								/>

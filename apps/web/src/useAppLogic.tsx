@@ -2018,6 +2018,8 @@ export function useAppLogic(): any {
 		setPricelistSourceKind,
 		usePricelistAi,
 		setUsePricelistAi,
+		odontogramUseSurfaces,
+		setOdontogramUseSurfaces,
 		pricelistAnalysis,
 		setPricelistAnalysis,
 		pricelistImageBase64,
@@ -3055,6 +3057,7 @@ export function useAppLogic(): any {
 			postVisitCareTopic,
 			pricelistSourceKind,
 			usePricelistAi,
+			odontogramUseSurfaces,
 			recognitionKind,
 			recognitionTarget,
 			importSourceKind,
@@ -3511,6 +3514,7 @@ export function useAppLogic(): any {
 		setPostVisitCareTopic(preferences.postVisitCareTopic);
 		setPricelistSourceKind(preferences.pricelistSourceKind);
 		setUsePricelistAi(preferences.usePricelistAi);
+		setOdontogramUseSurfaces(preferences.odontogramUseSurfaces ?? false);
 		setRecognitionKind(preferences.recognitionKind);
 		setRecognitionTarget(preferences.recognitionTarget);
 		setImportSourceKind(preferences.importSourceKind);
@@ -3670,6 +3674,7 @@ export function useAppLogic(): any {
 			postVisitCareTopic,
 			pricelistSourceKind,
 			usePricelistAi,
+			odontogramUseSurfaces,
 			recognitionKind,
 			recognitionTarget,
 			importSourceKind,
@@ -3724,6 +3729,7 @@ export function useAppLogic(): any {
 		postVisitCareTopic,
 		pricelistSourceKind,
 		usePricelistAi,
+		odontogramUseSurfaces,
 		recognitionKind,
 		recognitionTarget,
 		importSourceKind,
@@ -13888,6 +13894,7 @@ export function useAppLogic(): any {
 		setUiLanguage,
 		setUiPreferencesSyncError,
 		setUsePricelistAi,
+		setOdontogramUseSurfaces,
 		settingsAdminSecretDraft,
 		settingsAdminSecretSession,
 		settingsTab,
@@ -14035,6 +14042,7 @@ export function useAppLogic(): any {
 		updateTelegramVisualCardUrlDraft,
 		updateVisitNoteField,
 		usePricelistAi,
+		odontogramUseSurfaces,
 		viewLabels,
 		visibleImagingStudies,
 		visibleRecommendedActions,

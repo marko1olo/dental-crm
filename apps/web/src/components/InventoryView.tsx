@@ -22,6 +22,10 @@ interface InventoryItem {
 	criticalThreshold: number;
 	unitCostRub: string;
 	updatedAt: string;
+	sku?: string;
+	barcode?: string;
+	expirationDate?: string;
+	lotNumber?: string;
 }
 
 export const InventoryView: React.FC<{ organizationId: string }> = ({
@@ -30,6 +34,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 	const [items, setItems] = useState<InventoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const { auth, dashboard } = useAppLogicContext();
+
+	// Barcode Scanner State
+	const [scannedBarcode, setScannedBarcode] = useState<string>("");
+	const [isScannerActive, setIsScannerActive] = useState(false);
 
 	const [activeSubTab, setActiveSubTab] = useState<"inventory" | "rules">("inventory");
 	const [selectedServiceId, setSelectedServiceId] = useState<string>("");
@@ -67,6 +75,50 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 			fetchRules(selectedServiceId);
 		}
 	}, [activeSubTab, selectedServiceId]);
+
+	// --- Global Barcode Scanner Listener (Hardware Emulation) ---
+	useEffect(() => {
+		let barcodeBuffer = "";
+		let lastKeyTime = 0;
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Ignore if user is typing in an input or textarea
+			const target = e.target as HTMLElement;
+			if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+			const currentTime = Date.now();
+			// Barcode scanners type very fast (usually < 30ms per character).
+			// If more than 100ms passed since last key, reset the buffer.
+			if (currentTime - lastKeyTime > 100) {
+				barcodeBuffer = "";
+			}
+			lastKeyTime = currentTime;
+
+			if (e.key === "Enter") {
+				if (barcodeBuffer.length > 3) {
+					// Likely a barcode scan
+					console.log("[Scanner] Barcode read:", barcodeBuffer);
+					setScannedBarcode(barcodeBuffer);
+					setIsScannerActive(true);
+					showToast(`Отсканирован код: ${barcodeBuffer}`, "success");
+					
+					// Optional: Auto-filter the list or open the "Add" modal for this item
+					const found = items.find(i => i.barcode === barcodeBuffer);
+					if (found) {
+						showToast(`Найден товар: ${found.name}`, "info");
+					} else {
+						showToast("Неизвестный товар. Добавьте его в базу.", "warning");
+					}
+				}
+				barcodeBuffer = "";
+			} else if (e.key.length === 1) {
+				barcodeBuffer += e.key;
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [items]);
 
 	const handleAddRule = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -860,6 +912,32 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									borderBottom: `1px solid ${borderColor}`,
 									textTransform: "uppercase",
 									letterSpacing: 0.5,
+								}}
+							>
+								Партия / Срок
+							</th>
+							<th
+								style={{
+									padding: "14px 20px",
+									fontSize: 12,
+									color: "var(--muted)",
+									fontWeight: 600,
+									borderBottom: `1px solid ${borderColor}`,
+									textTransform: "uppercase",
+									letterSpacing: 0.5,
+								}}
+							>
+								Штрихкод
+							</th>
+							<th
+								style={{
+									padding: "14px 20px",
+									fontSize: 12,
+									color: "var(--muted)",
+									fontWeight: 600,
+									borderBottom: `1px solid ${borderColor}`,
+									textTransform: "uppercase",
+									letterSpacing: 0.5,
 									textAlign: "right",
 								}}
 							>
@@ -964,6 +1042,42 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 												>
 													—
 												</span>
+											)}
+										</td>
+										<td
+											style={{
+												padding: "14px 20px",
+												color: "var(--muted)",
+												fontSize: 14,
+											}}
+										>
+											{item.expirationDate ? (
+												<div style={{ display: "flex", flexDirection: "column" }}>
+													<span style={{ 
+														color: new Date(item.expirationDate) < new Date(Date.now() + 30*24*60*60*1000) ? "var(--tomato)" : "var(--ink)",
+														fontWeight: new Date(item.expirationDate) < new Date(Date.now() + 30*24*60*60*1000) ? 600 : 400
+													}}>
+														Годен до: {new Date(item.expirationDate).toLocaleDateString("ru-RU")}
+													</span>
+													{item.lotNumber && <span style={{ fontSize: 12 }}>Партия: {item.lotNumber}</span>}
+												</div>
+											) : (
+												<span style={{ fontStyle: "italic", opacity: 0.5 }}>Не указан</span>
+											)}
+										</td>
+										<td
+											style={{
+												padding: "14px 20px",
+												color: "var(--muted)",
+												fontSize: 14,
+											}}
+										>
+											{item.barcode ? (
+												<span style={{ fontFamily: "monospace", background: "rgba(0,0,0,0.05)", padding: "2px 6px", borderRadius: 4 }}>
+													{item.barcode}
+												</span>
+											) : (
+												<span style={{ fontStyle: "italic", opacity: 0.5 }}>Нет</span>
 											)}
 										</td>
 										<td style={{ padding: "14px 20px", textAlign: "right" }}>
