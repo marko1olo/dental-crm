@@ -160,8 +160,22 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							marginBottom: "16px",
 						}}
 					>
-						<span style={{ fontSize: "13px", color: "var(--slate-500)", fontWeight: 500 }}>Баланс семьи:</span>
-						<span style={{ fontSize: "16px", fontWeight: 700, color: "var(--brand-600)" }}>
+						<span
+							style={{
+								fontSize: "13px",
+								color: "var(--slate-500)",
+								fontWeight: 500,
+							}}
+						>
+							Баланс семьи:
+						</span>
+						<span
+							style={{
+								fontSize: "16px",
+								fontWeight: 700,
+								color: "var(--brand-600)",
+							}}
+						>
 							{parseFloat(familyData.balance).toLocaleString("ru-RU")} ₽
 						</span>
 					</div>
@@ -192,7 +206,8 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 							>
 								<span
 									style={{
-										color: m.id === patientId ? "var(--ink)" : "var(--slate-500)",
+										color:
+											m.id === patientId ? "var(--ink)" : "var(--slate-500)",
 										fontWeight: m.id === patientId ? 600 : 500,
 										fontSize: "13px",
 									}}
@@ -220,7 +235,12 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 			) : (
 				<div style={{ marginTop: "12px" }}>
 					<p
-						style={{ fontSize: "13px", color: "var(--slate-500)", marginBottom: "16px", lineHeight: "1.4" }}
+						style={{
+							fontSize: "13px",
+							color: "var(--slate-500)",
+							marginBottom: "16px",
+							lineHeight: "1.4",
+						}}
 					>
 						Пациент не состоит в семейной группе. Вы можете создать новую семью
 						или привязать его к существующей.
@@ -340,7 +360,13 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 										onClick={() => handleLinkFamily(f.id)}
 									>
 										<div>
-											<div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
+											<div
+												style={{
+													fontSize: "13px",
+													fontWeight: 600,
+													color: "var(--ink)",
+												}}
+											>
 												{f.name}
 											</div>
 										</div>

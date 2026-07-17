@@ -49,7 +49,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
 	const insuranceContractId =
-		patient?.insuranceContractId || patient?.administrativeProfile?.insuranceContractId;
+		patient?.insuranceContractId ||
+		patient?.administrativeProfile?.insuranceContractId;
 
 	useEffect(() => {
 		if (!insuranceContractId) {
@@ -268,7 +269,10 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			// 2. Add missing auto-items
 			currentTeeth.forEach((t) => {
 				const isBaby = t.toothNumber > 50;
-				const surfaceSuffix = t.surfaces && t.surfaces.length > 0 ? ` (Поверхности: ${t.surfaces.join(", ")})` : "";
+				const surfaceSuffix =
+					t.surfaces && t.surfaces.length > 0
+						? ` (Поверхности: ${t.surfaces.join(", ")})`
+						: "";
 
 				if (t.state === "Caries") {
 					const svc = isBaby ? cariesServiceBaby : cariesServiceAdult;

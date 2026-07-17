@@ -210,51 +210,107 @@ const ToothSVG = ({
 						strokeWidth="0.8"
 					/>
 				)}
-				
-				
+
 				{/* Interactive Surfaces */}
 				{useSurfaces && (
-					<g transform={`translate(${cfg.viewX + cfg.viewWidth / 2 - 12}, 25)`} stroke="rgba(255,255,255,0.7)" strokeWidth="0.5">
-					<polygon 
-						points="8,8 16,8 16,16 8,16" 
-						fill={surfaces?.includes("O") ? "#ef4444" : "transparent"} 
-						style={{ cursor: "pointer", transition: "fill 0.2s" }}
-						onMouseEnter={(e) => { if(!surfaces?.includes("O")) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
-						onMouseLeave={(e) => { if(!surfaces?.includes("O")) e.currentTarget.style.fill = "transparent" }}
-						onClick={(e) => { e.stopPropagation(); onClick(e, number, "O"); }}
-					/>
-					<polygon 
-						points="0,0 24,0 16,8 8,8" 
-						fill={surfaces?.includes("V") || surfaces?.includes("B") ? "#ef4444" : "transparent"} 
-						style={{ cursor: "pointer", transition: "fill 0.2s" }}
-						onMouseEnter={(e) => { if(!(surfaces?.includes("V") || surfaces?.includes("B"))) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
-						onMouseLeave={(e) => { if(!(surfaces?.includes("V") || surfaces?.includes("B"))) e.currentTarget.style.fill = "transparent" }}
-						onClick={(e) => { e.stopPropagation(); onClick(e, number, isTop ? "V" : "V"); }}
-					/>
-					<polygon 
-						points="8,16 16,16 24,24 0,24" 
-						fill={surfaces?.includes("L") || surfaces?.includes("P") ? "#ef4444" : "transparent"} 
-						style={{ cursor: "pointer", transition: "fill 0.2s" }}
-						onMouseEnter={(e) => { if(!(surfaces?.includes("L") || surfaces?.includes("P"))) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
-						onMouseLeave={(e) => { if(!(surfaces?.includes("L") || surfaces?.includes("P"))) e.currentTarget.style.fill = "transparent" }}
-						onClick={(e) => { e.stopPropagation(); onClick(e, number, isTop ? "P" : "L"); }}
-					/>
-					<polygon 
-						points="0,0 8,8 8,16 0,24" 
-						fill={surfaces?.includes("M") ? "#ef4444" : "transparent"} 
-						style={{ cursor: "pointer", transition: "fill 0.2s" }}
-						onMouseEnter={(e) => { if(!surfaces?.includes("M")) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
-						onMouseLeave={(e) => { if(!surfaces?.includes("M")) e.currentTarget.style.fill = "transparent" }}
-						onClick={(e) => { e.stopPropagation(); onClick(e, number, "M"); }}
-					/>
-					<polygon 
-						points="24,0 24,24 16,16 16,8" 
-						fill={surfaces?.includes("D") ? "#ef4444" : "transparent"} 
-						style={{ cursor: "pointer", transition: "fill 0.2s" }}
-						onMouseEnter={(e) => { if(!surfaces?.includes("D")) e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)" }}
-						onMouseLeave={(e) => { if(!surfaces?.includes("D")) e.currentTarget.style.fill = "transparent" }}
-						onClick={(e) => { e.stopPropagation(); onClick(e, number, "D"); }}
-					/>
+					<g
+						transform={`translate(${cfg.viewX + cfg.viewWidth / 2 - 12}, 25)`}
+						stroke="rgba(255,255,255,0.7)"
+						strokeWidth="0.5"
+					>
+						<polygon
+							points="8,8 16,8 16,16 8,16"
+							fill={surfaces?.includes("O") ? "#ef4444" : "transparent"}
+							style={{ cursor: "pointer", transition: "fill 0.2s" }}
+							onMouseEnter={(e) => {
+								if (!surfaces?.includes("O"))
+									e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)";
+							}}
+							onMouseLeave={(e) => {
+								if (!surfaces?.includes("O"))
+									e.currentTarget.style.fill = "transparent";
+							}}
+							onClick={(e) => {
+								e.stopPropagation();
+								onClick(e, number, "O");
+							}}
+						/>
+						<polygon
+							points="0,0 24,0 16,8 8,8"
+							fill={
+								surfaces?.includes("V") || surfaces?.includes("B")
+									? "#ef4444"
+									: "transparent"
+							}
+							style={{ cursor: "pointer", transition: "fill 0.2s" }}
+							onMouseEnter={(e) => {
+								if (!(surfaces?.includes("V") || surfaces?.includes("B")))
+									e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)";
+							}}
+							onMouseLeave={(e) => {
+								if (!(surfaces?.includes("V") || surfaces?.includes("B")))
+									e.currentTarget.style.fill = "transparent";
+							}}
+							onClick={(e) => {
+								e.stopPropagation();
+								onClick(e, number, isTop ? "V" : "V");
+							}}
+						/>
+						<polygon
+							points="8,16 16,16 24,24 0,24"
+							fill={
+								surfaces?.includes("L") || surfaces?.includes("P")
+									? "#ef4444"
+									: "transparent"
+							}
+							style={{ cursor: "pointer", transition: "fill 0.2s" }}
+							onMouseEnter={(e) => {
+								if (!(surfaces?.includes("L") || surfaces?.includes("P")))
+									e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)";
+							}}
+							onMouseLeave={(e) => {
+								if (!(surfaces?.includes("L") || surfaces?.includes("P")))
+									e.currentTarget.style.fill = "transparent";
+							}}
+							onClick={(e) => {
+								e.stopPropagation();
+								onClick(e, number, isTop ? "P" : "L");
+							}}
+						/>
+						<polygon
+							points="0,0 8,8 8,16 0,24"
+							fill={surfaces?.includes("M") ? "#ef4444" : "transparent"}
+							style={{ cursor: "pointer", transition: "fill 0.2s" }}
+							onMouseEnter={(e) => {
+								if (!surfaces?.includes("M"))
+									e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)";
+							}}
+							onMouseLeave={(e) => {
+								if (!surfaces?.includes("M"))
+									e.currentTarget.style.fill = "transparent";
+							}}
+							onClick={(e) => {
+								e.stopPropagation();
+								onClick(e, number, "M");
+							}}
+						/>
+						<polygon
+							points="24,0 24,24 16,16 16,8"
+							fill={surfaces?.includes("D") ? "#ef4444" : "transparent"}
+							style={{ cursor: "pointer", transition: "fill 0.2s" }}
+							onMouseEnter={(e) => {
+								if (!surfaces?.includes("D"))
+									e.currentTarget.style.fill = "rgba(239, 68, 68, 0.3)";
+							}}
+							onMouseLeave={(e) => {
+								if (!surfaces?.includes("D"))
+									e.currentTarget.style.fill = "transparent";
+							}}
+							onClick={(e) => {
+								e.stopPropagation();
+								onClick(e, number, "D");
+							}}
+						/>
 					</g>
 				)}
 			</g>
@@ -310,7 +366,11 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	const containerRef = useRef<HTMLDivElement>(null);
 	const archContainerRef = useRef<HTMLDivElement>(null);
 
-	const handleToothClick = (e: React.MouseEvent, num: number, surface?: string) => {
+	const handleToothClick = (
+		e: React.MouseEvent,
+		num: number,
+		surface?: string,
+	) => {
 		const rect = e.currentTarget.getBoundingClientRect();
 		onToothClick(num, rect, surface);
 	};

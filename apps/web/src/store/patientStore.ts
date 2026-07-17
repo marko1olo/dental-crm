@@ -123,7 +123,7 @@ export const usePatientStore = create<PatientStore>((set) => ({
 			pendingPlanSuggestions: [...state.pendingPlanSuggestions, item],
 		})),
 	clearPendingPlanSuggestions: () => set({ pendingPlanSuggestions: [] }),
-	
+
 	odontogramState: {},
 	setToothStatus: (toothNumber, status) =>
 		set((state) => ({

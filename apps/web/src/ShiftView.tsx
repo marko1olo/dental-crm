@@ -23,34 +23,34 @@ import {
 	money,
 	patientInsightRiskLabels,
 } from "./AppHelpers";
-import { ActionIcon } from "./workspaceShell";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { ActionIcon } from "./workspaceShell";
 import { workloadStateLabels } from "./workspaceUiLabels";
 
 export function ShiftView() {
 	const {
-	activePatient,
-	activePatientHasCallablePhone,
-	activePatientCallablePhone,
-	visibleRecommendedActions,
-	recommendedActionPriorityLabels,
-	staffRoleLabels,
-	selectedWorkspaceRole,
-	activeRoleQueue,
-	activeRolePolicy,
-	activeRoleWritableSections,
-	viewLabels,
-	activeRoleRestrictedSections,
-	dashboard,
-	activeQueueRole,
-	shiftWarnings,
-	warningSeverityLabels,
-	openScheduleWarning,
-	setError,
-	mostLoadedResource,
-	setSelectedPatientId,
-	activeDoctor,
-} = useAppLogicContext();
+		activePatient,
+		activePatientHasCallablePhone,
+		activePatientCallablePhone,
+		visibleRecommendedActions,
+		recommendedActionPriorityLabels,
+		staffRoleLabels,
+		selectedWorkspaceRole,
+		activeRoleQueue,
+		activeRolePolicy,
+		activeRoleWritableSections,
+		viewLabels,
+		activeRoleRestrictedSections,
+		dashboard,
+		activeQueueRole,
+		shiftWarnings,
+		warningSeverityLabels,
+		openScheduleWarning,
+		setError,
+		mostLoadedResource,
+		setSelectedPatientId,
+		activeDoctor,
+	} = useAppLogicContext();
 	const doctorTodayAppointments = useMemo(() => {
 		if (!dashboard || !dashboard.appointments || !activeDoctor) return [];
 		return dashboard.appointments
@@ -565,13 +565,13 @@ export function ShiftView() {
 
 export function PatientCockpit() {
 	const {
-	activePatient,
-	activePatientInsight,
-	dashboard,
-	activeCommunicationTasks,
-	activeImagingStudies,
-	activeUsableDocuments,
-} = useAppLogicContext();
+		activePatient,
+		activePatientInsight,
+		dashboard,
+		activeCommunicationTasks,
+		activeImagingStudies,
+		activeUsableDocuments,
+	} = useAppLogicContext();
 	if (!activePatient) {
 		return (
 			<motion.section

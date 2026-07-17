@@ -1,4 +1,3 @@
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 // Compliance: data-testid="dicom-first-frame-slice-presets"
 // Compliance: aria-label="Быстрые срезы снимков"
 // Compliance: previewDicomFirstFrameSlice(targetIndex)
@@ -682,6 +681,7 @@ import {
 	migrationOperatorSourceBoundActions,
 	migrationTriageStatusPriority,
 } from "./components/settings/SettingsViewHelpers";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import {
 	type CtImplantLibraryItem,
 	type CtPlanningQuickAction,

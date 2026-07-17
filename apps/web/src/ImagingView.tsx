@@ -33,13 +33,12 @@ import { DicomArchiveUploader } from "./components/dicom/DicomArchiveUploader";
 import { showToast } from "./components/GlobalToast";
 import { ShadowAnalystImageSlider } from "./components/imaging/ShadowAnalystImageSlider";
 import { ShadowAnalystReport } from "./components/imaging/ShadowAnalystReport";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { CtPlanningToolsPanel } from "./ctPlanningTools";
 import type { MprWindowPreset } from "./imagingUiLabels";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { type ToothState, useVisitStore } from "./store/visitStore";
 import { usePatientStore } from "./store/patientStore";
-
+import { type ToothState, useVisitStore } from "./store/visitStore";
 
 export function ImagingView() {
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
@@ -185,9 +184,9 @@ export function ImagingView() {
 
 	const localFilesInputRef = useRef<HTMLInputElement | null>(null);
 	const browserImagingFilesInputRef = localFilesInputRef;
-	const pickBrowserImagingFiles = (() => {
-			browserImagingFilesInputRef.current?.click();
-		});
+	const pickBrowserImagingFiles = () => {
+		browserImagingFilesInputRef.current?.click();
+	};
 
 	const [localImageIds, setLocalImageIds] = useState<string[]>([]);
 	const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
@@ -684,18 +683,68 @@ export function ImagingView() {
 											/>
 											{isDiagnocatActive && (
 												<div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-													<div className="w-full h-full relative" style={{ maxWidth: '400px', maxHeight: '400px' }}>
-														<svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-															<path d="M 10 50 Q 50 10 90 50 Q 50 90 10 50" fill="none" stroke="#a855f7" strokeWidth="0.5" strokeDasharray="2,2" className="animate-pulse" />
-															<circle cx="20" cy="50" r="2" fill="none" stroke="#a855f7" strokeWidth="0.5" />
-															<circle cx="80" cy="50" r="2" fill="none" stroke="#a855f7" strokeWidth="0.5" />
-															<circle cx="50" cy="25" r="2" fill="none" stroke="#a855f7" strokeWidth="0.5" />
-															<circle cx="50" cy="75" r="2" fill="none" stroke="#a855f7" strokeWidth="0.5" />
+													<div
+														className="w-full h-full relative"
+														style={{ maxWidth: "400px", maxHeight: "400px" }}
+													>
+														<svg
+															className="absolute inset-0 w-full h-full"
+															viewBox="0 0 100 100"
+															preserveAspectRatio="none"
+														>
+															<path
+																d="M 10 50 Q 50 10 90 50 Q 50 90 10 50"
+																fill="none"
+																stroke="#a855f7"
+																strokeWidth="0.5"
+																strokeDasharray="2,2"
+																className="animate-pulse"
+															/>
+															<circle
+																cx="20"
+																cy="50"
+																r="2"
+																fill="none"
+																stroke="#a855f7"
+																strokeWidth="0.5"
+															/>
+															<circle
+																cx="80"
+																cy="50"
+																r="2"
+																fill="none"
+																stroke="#a855f7"
+																strokeWidth="0.5"
+															/>
+															<circle
+																cx="50"
+																cy="25"
+																r="2"
+																fill="none"
+																stroke="#a855f7"
+																strokeWidth="0.5"
+															/>
+															<circle
+																cx="50"
+																cy="75"
+																r="2"
+																fill="none"
+																stroke="#a855f7"
+																strokeWidth="0.5"
+															/>
 														</svg>
-														<div className="absolute top-[20%] left-[45%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">11: Кариес дентина (95%)</div>
-														<div className="absolute top-[25%] left-[65%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">22: Здоров</div>
-														<div className="absolute top-[70%] left-[30%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">46: Убыль кости 3мм</div>
-														<div className="absolute top-[65%] left-[60%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">36: Периодонтит</div>
+														<div className="absolute top-[20%] left-[45%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">
+															11: Кариес дентина (95%)
+														</div>
+														<div className="absolute top-[25%] left-[65%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">
+															22: Здоров
+														</div>
+														<div className="absolute top-[70%] left-[30%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">
+															46: Убыль кости 3мм
+														</div>
+														<div className="absolute top-[65%] left-[60%] bg-purple-600/80 text-white text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(168,85,247,0.8)] border border-purple-400">
+															36: Периодонтит
+														</div>
 													</div>
 												</div>
 											)}
@@ -1282,20 +1331,30 @@ export function ImagingView() {
 						</div>
 						<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
 							<button
-								className={`secondary-button ${isDiagnocatActive ? 'active' : ''}`}
+								className={`secondary-button ${isDiagnocatActive ? "active" : ""}`}
 								type="button"
 								onClick={() => setIsDiagnocatActive(!isDiagnocatActive)}
 								aria-label="Включить AI-сегментацию Diagnocat"
 								title="Diagnocat AI: разметка зубов и костной ткани"
 								style={{
-									background: isDiagnocatActive ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
-									borderColor: isDiagnocatActive ? '#a855f7' : 'var(--line)',
-									color: isDiagnocatActive ? '#a855f7' : 'inherit',
-									boxShadow: isDiagnocatActive ? '0 0 10px rgba(168, 85, 247, 0.3)' : 'none',
-									transition: 'all 0.2s ease',
+									background: isDiagnocatActive
+										? "rgba(168, 85, 247, 0.15)"
+										: "transparent",
+									borderColor: isDiagnocatActive ? "#a855f7" : "var(--line)",
+									color: isDiagnocatActive ? "#a855f7" : "inherit",
+									boxShadow: isDiagnocatActive
+										? "0 0 10px rgba(168, 85, 247, 0.3)"
+										: "none",
+									transition: "all 0.2s ease",
 								}}
 							>
-								<span className={isDiagnocatActive ? "animate-pulse" : ""} style={{ marginRight: '4px' }}>✦</span> Diagnocat
+								<span
+									className={isDiagnocatActive ? "animate-pulse" : ""}
+									style={{ marginRight: "4px" }}
+								>
+									✦
+								</span>{" "}
+								Diagnocat
 							</button>
 							<a
 								className="secondary-button"

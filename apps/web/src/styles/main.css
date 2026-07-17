@@ -18818,17 +18818,19 @@ body[data-ui-scale="large"] .appointment-card-footer button {
 	font-weight: 500;
 	cursor: pointer;
 	white-space: nowrap;
-	transition: color 0.15s, background 0.15s;
+	transition:
+		color 0.15s,
+		background 0.15s;
 	flex-shrink: 0;
 }
 
 .patients-tab-btn:hover {
 	color: var(--ink);
-	background: var(--hover-bg, rgba(0,0,0,0.04));
+	background: var(--hover-bg, rgba(0, 0, 0, 0.04));
 }
 
 [data-theme="dark"] .patients-tab-btn:hover {
-	background: rgba(255,255,255,0.05);
+	background: rgba(255, 255, 255, 0.05);
 }
 
 .patients-tab-btn--active {
@@ -18859,7 +18861,7 @@ html.theme-accessibility {
 	--sidebar: #ffffff;
 	--sidebar-ink: #000000;
 	--sidebar-line: #000000;
-	
+
 	/* Scale up typography base */
 	font-size: 1.25rem !important;
 }
@@ -18889,4 +18891,3 @@ html.theme-accessibility * {
 		border-color: #ffffff !important;
 	}
 }
-

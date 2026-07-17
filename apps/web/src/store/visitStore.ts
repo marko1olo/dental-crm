@@ -2,8 +2,8 @@ import type {
 	AcceptVisitDraftResponse,
 	DentalSpecialty,
 	SpeechTranscriptionResponse,
-	VisitNoteDraft,
 	VisitFlowResult,
+	VisitNoteDraft,
 } from "@dental/shared";
 import { create } from "zustand";
 import {
@@ -212,7 +212,8 @@ export const useVisitStore = create<VisitStore>((set) => ({
 	visitFlowResult: null,
 	setVisitFlowResult: (val) =>
 		set((state) => ({
-			visitFlowResult: typeof val === "function" ? val(state.visitFlowResult) : val,
+			visitFlowResult:
+				typeof val === "function" ? val(state.visitFlowResult) : val,
 		})),
 
 	visitNoteForm: emptyVisitNoteForm,

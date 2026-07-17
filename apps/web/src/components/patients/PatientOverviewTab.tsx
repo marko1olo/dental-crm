@@ -4,24 +4,25 @@ import { UserCheck } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import type { PatientsViewProps } from "../../PatientsView";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 import { usePatientStore } from "../../store/patientStore";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { PatientFamilyCard } from "./PatientFamilyCard";
-import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
+import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
-import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
+import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
-import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
+import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
 >;
 
-export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
+export function PatientOverviewTab() {
+	const appLogic = useAppLogicContext();
 	const {
 		selectedPatientId,
 		patientCoreDraft,
@@ -31,7 +32,9 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 		patientAdministrativeProfileDirty,
 	} = usePatientStore();
 	const workspaceFlags = useWorkspaceProfile();
-	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = props;
+	const dashboard = appLogic.dashboard;
+	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = appLogic;
+
 	const patientCoreReadyToSave =
 		patientCoreDraft.fullName.trim().length > 0 && patientCoreDirty;
 	const patientCoreSaveGuidance =
@@ -74,7 +77,7 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 						}}
 					>
 						Карточка пациента
-						{props.dashboard?.activeVisit?.patientId === selectedPatientId && (
+						{dashboard?.activeVisit?.patientId === selectedPatientId && (
 							<span
 								title="Пациент сейчас находится в клинике (Активный приём)"
 								style={{
@@ -88,7 +91,9 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 							/>
 						)}
 					</span>
-					{selectedPatientId && <PatientLoyaltyHeader patientId={selectedPatientId} />}
+					{selectedPatientId && (
+						<PatientLoyaltyHeader patientId={selectedPatientId} />
+					)}
 				</div>
 				<span
 					className={`status-pill status-${patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error" ? "cancelled" : "confirmed"}`}
@@ -286,24 +291,27 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 							}
 						}}
 					/>
+
 					{selectedPatientId && (
 						<PatientJourneyTimeline
 							patientId={selectedPatientId}
-							dashboard={props.dashboard}
+							dashboard={dashboard}
 						/>
 					)}
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>
-					{selectedPatientId && <PatientNoShowRisk patientId={selectedPatientId} />}
-					
+					{selectedPatientId && (
+						<PatientNoShowRisk patientId={selectedPatientId} />
+					)}
+
 					{selectedPatientId && workspaceFlags.hasOrthodontics && (
 						<OrthodonticProgressWidget patientId={selectedPatientId} />
 					)}
-					
+
 					{selectedPatientId && workspaceFlags.hasReclamations && (
 						<PatientReclamationsWidget patientId={selectedPatientId} />
 					)}
-					
+
 					{selectedPatientId && workspaceFlags.hasTasks && (
 						<PatientTaskTicketsWidget patientId={selectedPatientId} />
 					)}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
@@ -24,11 +24,14 @@ export function useInventoryLogic(organizationId: string) {
 	const [scannedBarcode, setScannedBarcode] = useState<string>("");
 	const [isScannerActive, setIsScannerActive] = useState(false);
 
-	const [activeSubTab, setActiveSubTab] = useState<"inventory" | "rules">("inventory");
+	const [activeSubTab, setActiveSubTab] = useState<"inventory" | "rules">(
+		"inventory",
+	);
 	const [selectedServiceId, setSelectedServiceId] = useState<string>("");
 	const [rulesList, setRulesList] = useState<any[]>([]);
 	const [isLoadingRules, setIsLoadingRules] = useState(false);
-	const [selectedInventoryItemId, setSelectedInventoryItemId] = useState<string>("");
+	const [selectedInventoryItemId, setSelectedInventoryItemId] =
+		useState<string>("");
 	const [quantityToDeduct, setQuantityToDeduct] = useState<string>("1");
 
 	const fetchRules = async (serviceId: string) => {
@@ -38,9 +41,12 @@ export function useInventoryLogic(organizationId: string) {
 		}
 		try {
 			setIsLoadingRules(true);
-			const res = await fetch(`/api/inventory/${organizationId}/rules/${serviceId}`, {
-				headers: auth.denteClinicalReadHeaders(),
-			});
+			const res = await fetch(
+				`/api/inventory/${organizationId}/rules/${serviceId}`,
+				{
+					headers: auth.denteClinicalReadHeaders(),
+				},
+			);
 			if (res.ok) {
 				const data = await res.json();
 				setRulesList(Array.isArray(data) ? data : []);
@@ -86,15 +92,23 @@ export function useInventoryLogic(organizationId: string) {
 					setScannedBarcode(barcodeBuffer);
 					setIsScannerActive(true);
 					showToast(`Отсканирован код: ${barcodeBuffer}`, "success");
-					
+
 					// Optional: Auto-filter the list or open the "Add" modal for this item
-					const found = items.find((i) => i.barcode === barcodeBuffer || i.sku === barcodeBuffer);
+					const found = items.find(
+						(i) => i.barcode === barcodeBuffer || i.sku === barcodeBuffer,
+					);
 					if (found) {
 						showToast(`Найден товар: ${found.name}`, "info");
 						setSearchQuery(barcodeBuffer);
 					} else {
 						showToast("Неизвестный товар. Добавьте его в базу.", "warning");
-						setFormData({ name: "", threshold: "5", unitCostRub: "0", sku: "", barcode: barcodeBuffer });
+						setFormData({
+							name: "",
+							threshold: "5",
+							unitCostRub: "0",
+							sku: "",
+							barcode: barcodeBuffer,
+						});
 						setEditingItem(null);
 						setShowModal(true);
 					}
@@ -111,7 +125,8 @@ export function useInventoryLogic(organizationId: string) {
 
 	const handleAddRule = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!selectedServiceId || !selectedInventoryItemId || !quantityToDeduct) return;
+		if (!selectedServiceId || !selectedInventoryItemId || !quantityToDeduct)
+			return;
 
 		const qty = parseInt(quantityToDeduct);
 		if (isNaN(qty) || qty <= 0) {
@@ -154,10 +169,13 @@ export function useInventoryLogic(organizationId: string) {
 			onConfirm: async () => {
 				setConfirmDialog(null);
 				try {
-					const res = await fetch(`/api/inventory/${organizationId}/rules/${ruleId}`, {
-						method: "DELETE",
-						headers: auth.denteClinicalReadHeaders(),
-					});
+					const res = await fetch(
+						`/api/inventory/${organizationId}/rules/${ruleId}`,
+						{
+							method: "DELETE",
+							headers: auth.denteClinicalReadHeaders(),
+						},
+					);
 
 					if (res.ok) {
 						showToast("Правило списания удалено", "success");
@@ -169,7 +187,7 @@ export function useInventoryLogic(organizationId: string) {
 					console.error(e);
 					showToast("Системная ошибка", "error");
 				}
-			}
+			},
 		});
 	};
 
@@ -229,7 +247,13 @@ export function useInventoryLogic(organizationId: string) {
 
 	const openAddModal = () => {
 		setEditingItem(null);
-		setFormData({ name: "", threshold: "5", unitCostRub: "0", sku: "", barcode: "" });
+		setFormData({
+			name: "",
+			threshold: "5",
+			unitCostRub: "0",
+			sku: "",
+			barcode: "",
+		});
 		setShowModal(true);
 	};
 
@@ -312,10 +336,13 @@ export function useInventoryLogic(organizationId: string) {
 			onConfirm: async () => {
 				setConfirmDialog(null);
 				try {
-					const res = await fetch(`/api/inventory/${organizationId}/${itemId}`, {
-						method: "DELETE",
-						headers: auth.denteClinicalReadHeaders(),
-					});
+					const res = await fetch(
+						`/api/inventory/${organizationId}/${itemId}`,
+						{
+							method: "DELETE",
+							headers: auth.denteClinicalReadHeaders(),
+						},
+					);
 					if (res.ok) {
 						showToast("Материал удалён со склада", "success");
 						fetchItems();
@@ -326,7 +353,7 @@ export function useInventoryLogic(organizationId: string) {
 					console.error(e);
 					showToast("Системная ошибка", "error");
 				}
-			}
+			},
 		});
 	};
 
@@ -388,17 +415,51 @@ export function useInventoryLogic(organizationId: string) {
 	);
 	const totalItems = items.length;
 
-	
-
-    return {
-        items, isLoading, auth, dashboard, scannedBarcode, isScannerActive,
-        activeSubTab, setActiveSubTab, selectedServiceId, setSelectedServiceId,
-        rulesList, isLoadingRules, selectedInventoryItemId, setSelectedInventoryItemId,
-        quantityToDeduct, setQuantityToDeduct, fetchRules, handleAddRule, handleDeleteRule,
-        searchQuery, setSearchQuery, showModal, setShowModal, editingItem, setEditingItem,
-        formData, setFormData, confirmDialog, setConfirmDialog, adjustingItem, setAdjustingItem,
-        adjustAmount, setAdjustAmount, adjustType, setAdjustType,
-        fetchItems, openAddModal, openEditModal, handleSaveItem, handleDeleteItem, handleAdjustStock,
-        filteredItems, totalValue, lowStockCount, totalItems
-    };
+	return {
+		items,
+		isLoading,
+		auth,
+		dashboard,
+		scannedBarcode,
+		isScannerActive,
+		activeSubTab,
+		setActiveSubTab,
+		selectedServiceId,
+		setSelectedServiceId,
+		rulesList,
+		isLoadingRules,
+		selectedInventoryItemId,
+		setSelectedInventoryItemId,
+		quantityToDeduct,
+		setQuantityToDeduct,
+		fetchRules,
+		handleAddRule,
+		handleDeleteRule,
+		searchQuery,
+		setSearchQuery,
+		showModal,
+		setShowModal,
+		editingItem,
+		setEditingItem,
+		formData,
+		setFormData,
+		confirmDialog,
+		setConfirmDialog,
+		adjustingItem,
+		setAdjustingItem,
+		adjustAmount,
+		setAdjustAmount,
+		adjustType,
+		setAdjustType,
+		fetchItems,
+		openAddModal,
+		openEditModal,
+		handleSaveItem,
+		handleDeleteItem,
+		handleAdjustStock,
+		filteredItems,
+		totalValue,
+		lowStockCount,
+		totalItems,
+	};
 }

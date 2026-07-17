@@ -1,11 +1,11 @@
-import { useState, type ChangeEvent } from "react";
 import { Plus, Search } from "lucide-react";
-import { usePatientStore } from "../../store/patientStore";
-import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { type ChangeEvent, useState } from "react";
 import { DictationHints } from "../../DictationHints";
-import { SmartParsePreview } from "../../SmartParsePreview";
 import { parsePatientDictationLocal } from "../../lib/smartPatientParser";
+import { SmartParsePreview } from "../../SmartParsePreview";
+import { usePatientStore } from "../../store/patientStore";
 import { formatPhoneNumber } from "../../utils/inputSanitation";
+import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 
 export type PatientsSearchHeaderProps = {
 	query: string;

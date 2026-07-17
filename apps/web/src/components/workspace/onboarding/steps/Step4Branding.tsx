@@ -1,6 +1,6 @@
 import React from "react";
 import { THEME_COLORS } from "../ui/SharedOnboardingUI";
-import { ThemeColor } from "../useOnboardingLogic";
+import type { ThemeColor } from "../useOnboardingLogic";
 
 export function Step4Branding({ theme, setTheme, isDark }: any) {
 	return (
@@ -24,7 +24,8 @@ export function Step4Branding({ theme, setTheme, isDark }: any) {
 								borderRadius: 32,
 								background: color,
 								cursor: "pointer",
-								border: theme === k ? `4px solid white` : `4px solid transparent`,
+								border:
+									theme === k ? `4px solid white` : `4px solid transparent`,
 								outline: theme === k ? `2px solid ${color}` : "none",
 							}}
 						/>

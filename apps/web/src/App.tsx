@@ -1,3 +1,4 @@
+import { AppRouter } from "./AppRouter";
 // Static test compliance matches:
 // outcome,
 // setSelectedPatientId(patient.id)
@@ -398,31 +399,6 @@ import {
 	mprClinicalNextAction,
 	resolveMprClinicalPresetProjection,
 } from "./mprClinicalStatus";
-import { postVisitCarePresets } from "./postVisitCareData";
-import {
-	dentalMaterialKindLabels,
-	dentalRestorationTypeLabels,
-	pricelistItemMaterialText,
-	pricelistMaterialSummaryText,
-	pricelistRecognitionBrandGroups,
-	pricelistRecognitionServiceGroups,
-	pricelistSourceKindLabels,
-	pricelistWarningsText,
-} from "./pricelistUiMeta";
-import {
-	normalizeRubAmountInput,
-	validateRubAmountInput,
-} from "./rubAmountInput";
-import {
-	imagingConnectorCards,
-	imagingViewerCapabilities,
-	recognitionPresets,
-} from "./settingsStaticData";
-import { useImagingStore } from "./store/imagingStore";
-import { usePatientStore } from "./store/patientStore";
-import { useScheduleStore } from "./store/scheduleStore";
-import { useSettingsStore } from "./store/settingsStore";
-import { useVisitStore } from "./store/visitStore";
 import {
 	buildMprAxisGuidance,
 	clampMprAxisDeg,
@@ -448,6 +424,31 @@ import {
 	mprSlicePresetFractions,
 	resolveMprKeyboardAdjustment,
 } from "./mprControlMath";
+import { postVisitCarePresets } from "./postVisitCareData";
+import {
+	dentalMaterialKindLabels,
+	dentalRestorationTypeLabels,
+	pricelistItemMaterialText,
+	pricelistMaterialSummaryText,
+	pricelistRecognitionBrandGroups,
+	pricelistRecognitionServiceGroups,
+	pricelistSourceKindLabels,
+	pricelistWarningsText,
+} from "./pricelistUiMeta";
+import {
+	normalizeRubAmountInput,
+	validateRubAmountInput,
+} from "./rubAmountInput";
+import {
+	imagingConnectorCards,
+	imagingViewerCapabilities,
+	recognitionPresets,
+} from "./settingsStaticData";
+import { useImagingStore } from "./store/imagingStore";
+import { usePatientStore } from "./store/patientStore";
+import { useScheduleStore } from "./store/scheduleStore";
+import { useSettingsStore } from "./store/settingsStore";
+import { useVisitStore } from "./store/visitStore";
 import { specialtyQuickPhraseLibrary } from "./visitDictationData";
 import {
 	inferDashboardVisitSpecialty,
@@ -554,7 +555,9 @@ const DocumentsView = lazy(() =>
 		default: module.DocumentsView,
 	})),
 );
-const SettingsView = lazy(() => import("./SettingsView").then((module) => ({ default: module.SettingsView })));
+const SettingsView = lazy(() =>
+	import("./SettingsView").then((module) => ({ default: module.SettingsView })),
+);
 const InventoryView = lazy(() =>
 	import("./components/InventoryView").then((module) => ({
 		default: module.InventoryView,
@@ -2211,14 +2214,18 @@ export function App() {
 
 	// Show clinic login gate if not authed
 	if (!clinicAuthed) {
-	  return <AuthHub onSuccess={(cp, up) => {
-	    setClinicAuthed(true);
-	    if (up) {
-	      setStaffAuthed(true);
-	      setActiveStaffUser(up);
-	    }
-	    void loadDashboard();
-	  }} />;
+		return (
+			<AuthHub
+				onSuccess={(cp, up) => {
+					setClinicAuthed(true);
+					if (up) {
+						setStaffAuthed(true);
+						setActiveStaffUser(up);
+					}
+					void loadDashboard();
+				}}
+			/>
+		);
 	}
 
 	if (accessUnlockRequired && !dashboard) {
@@ -2234,23 +2241,21 @@ export function App() {
 
 	// Show staff PIN pad if clinic authed but no staff session (or after lock)
 	if (!staffAuthed || showStaffPinPad) {
-	  if (!dashboard) {
-	    return <AppLoadingState message="Загрузка данных клиники..." />;
-	  }
-	  return (
-	    <StaffPinPad
-	      staffMembers={dashboard.clinicSettings?.staff ?? []}
-	      onUnlockSuccess={(user) => {
-	        setActiveStaffUser(user);
-	        setStaffAuthed(true);
-	        setShowStaffPinPad(false);
-	      }}
-	      onClinicLogout={handleClinicLogout}
-	    />
-	  );
+		if (!dashboard) {
+			return <AppLoadingState message="Загрузка данных клиники..." />;
+		}
+		return (
+			<StaffPinPad
+				staffMembers={dashboard.clinicSettings?.staff ?? []}
+				onUnlockSuccess={(user) => {
+					setActiveStaffUser(user);
+					setStaffAuthed(true);
+					setShowStaffPinPad(false);
+				}}
+				onClinicLogout={handleClinicLogout}
+			/>
+		);
 	}
-
-
 
 	if (window.location.hash === "#/odontogram") {
 		return (
@@ -2316,13 +2321,16 @@ export function App() {
 	if (error && !dashboard) {
 		return (
 			<AppLoadingState
-        message={`Рабочий сервер недоступен: ${error}`}
+				message={`Рабочий сервер недоступен: ${error}`}
 				actionLabel="Повторить загрузку"
 				onAction={() => {
 					setError(null);
-          void loadDashboard().catch((loadError: unknown) => {
+					void loadDashboard().catch((loadError: unknown) => {
 						setError(
-							operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", loadError)
+							operatorWorkflowFailureMessage(
+								"Не удалось загрузить данные клиники",
+								loadError,
+							),
 						);
 					});
 				}}
@@ -2411,7 +2419,11 @@ export function App() {
 						staffRoleLabels={staffRoleLabels}
 						todayIso={dashboard.todayIso}
 						onLockSession={handleLockSession}
-						activeTasksCount={dashboard?.communicationTasks?.filter((t: any) => t.status === "open").length || 0}
+						activeTasksCount={
+							dashboard?.communicationTasks?.filter(
+								(t: any) => t.status === "open",
+							).length || 0
+						}
 						isOmniRoleMode={dashboard.clinicSettings?.profile?.isOmniRole}
 						onQuickConsult={handleQuickConsult}
 						isQuickConsultLoading={isQuickConsultLoading}
@@ -2480,750 +2492,8 @@ export function App() {
 						</section>
 					) : null}
 					<WorkspaceOnboardingNoticeBars />
-					{currentView === "shift" ? (
-						<ShiftView />
-					) : null}
-					{["shift", "patients"].includes(currentView) ? (
-						<PatientCockpit />
-					) : null}
-					{currentView === "imaging" ? (
-						<WorkspaceRouteErrorBoundary
-							view="imaging"
-							label={viewLabels.imaging}
-							panelClassName="panel imaging-panel"
-							panelId="imaging"
-						>
-							<Suspense
-								fallback={
-									<div
-										className="panel imaging-panel"
-										id="imaging"
-										aria-busy="true"
-									>
-										<div className="panel-heading">
-											<h2>Снимки пациента</h2>
-											<span className="status-pill status-planned">
-												загрузка
-											</span>
-										</div>
-									</div>
-								}
-							>
-								<ImagingView />
-							</Suspense>
-						</WorkspaceRouteErrorBoundary>
-					) : null}
-					{[
-						"schedule",
-						"patients",
-						"visit",
-						"documents",
-						"finance",
-						"analytics",
-						"communications",
-					].includes(currentView) ? (
-						<section className="work-grid page-grid">
-							{currentView === "schedule" ? (
-								<WorkspaceRouteErrorBoundary
-									view="schedule"
-									label={viewLabels.schedule}
-									panelClassName="panel schedule-panel"
-									panelId="schedule"
-								>
-									<Suspense
-										fallback={
-											<div
-												className="panel schedule-panel"
-												id="schedule"
-												aria-busy="true"
-											>
-												<div className="panel-heading">
-													<h2>Расписание</h2>
-													<span className="status-pill status-planned">
-														загрузка
-													</span>
-												</div>
-											</div>
-										}
-									>
-										<ScheduleView
-											appointmentLabels={appointmentLabels}
-											appointmentReadinessById={appointmentReadinessById}
-											appointmentReadinessLabels={appointmentReadinessLabels}
-											appointmentScheduleDraftFromAppointment={
-												appointmentScheduleDraftFromAppointment
-											}
-											closeAppointmentEditor={closeAppointmentEditor}
-											createAppointmentFromDraft={createAppointmentFromDraft}
-											dashboard={dashboard}
-											editingAppointmentId={editingAppointmentId}
-											formatTime={formatTime}
-											fromDateTimeLocalValue={fromDateTimeLocalValue}
-											lockScheduleAdminSession={() =>
-												lockTelegramAdminSession("schedule")
-											}
-											newAppointmentError={newAppointmentError}
-											normalizedAppointmentStatus={normalizedAppointmentStatus}
-											normalizedAppointmentStatusFilter={
-												normalizedAppointmentStatusFilter
-											}
-											openAppointmentEditor={openAppointmentEditor}
-											patientName={patientName}
-											recommendedActionPriorityLabels={
-												recommendedActionPriorityLabels
-											}
-											resetNewAppointmentDraft={resetNewAppointmentDraft}
-											saveAppointmentSchedule={saveAppointmentSchedule}
-											shiftWarnings={shiftWarnings}
-											sortedAppointments={sortedAppointments}
-											staffRoleLabels={staffRoleLabels}
-											scheduleAdminSecretDraft={scheduleAdminSecretDraft}
-											scheduleAdminSecretSession={scheduleAdminSecretSession}
-											toDateTimeLocalValue={toDateTimeLocalValue}
-											unlockScheduleAdminSession={() =>
-												unlockTelegramAdminSession("schedule")
-											}
-											updateAppointmentScheduleDraft={
-												updateAppointmentScheduleDraft
-											}
-											updateNewAppointmentDraft={updateNewAppointmentDraft}
-											visibleScheduleSuggestions={visibleScheduleSuggestions}
-										/>
-									</Suspense>
-								</WorkspaceRouteErrorBoundary>
-							) : null}
+					<AppRouter />
 
-							{currentView === "patients" ? (
-								<WorkspaceRouteErrorBoundary
-									view="patients"
-									label={viewLabels.patients}
-									panelClassName="panel patients-panel"
-									panelId="patients"
-								>
-									<Suspense
-										fallback={
-											<div
-												className="panel patients-panel"
-												id="patients"
-												aria-busy="true"
-											>
-												<div className="panel-heading">
-													<h2>Быстрый поиск</h2>
-													<span className="status-pill status-planned">
-														загрузка
-													</span>
-												</div>
-											</div>
-										}
-									>
-										<PatientsView
-											dashboard={dashboard}
-											createPatient={createPatient}
-											filteredPatients={filteredPatients}
-											money={money}
-											normalizeOptionalWorkingDaysDraft={
-												normalizeOptionalWorkingDaysDraft
-											}
-											patientAdministrativeProfileValidationMessage={
-												patientAdministrativeProfileValidationMessage
-											}
-											patientInsightById={patientInsightById}
-											patientInsightRiskLabels={patientInsightRiskLabels}
-											query={query}
-											savePatientAdministrativeProfile={
-												savePatientAdministrativeProfile
-											}
-											savePatientCore={savePatientCore}
-											selectedPatient={selectedPatient}
-											setQuery={setQuery}
-											updatePatientAdministrativeProfileDraft={
-												updatePatientAdministrativeProfileDraft
-											}
-											updatePatientCoreDraft={updatePatientCoreDraft}
-											weekdayOptions={weekdayOptions}
-										/>
-									</Suspense>
-								</WorkspaceRouteErrorBoundary>
-							) : null}
-
-							{currentView === "visit" ? (
-								<WorkspaceRouteErrorBoundary
-									view="visit"
-									label={viewLabels.visit}
-									panelClassName="panel visit-panel"
-									panelId="visit"
-								>
-									<Suspense
-										fallback={
-											<div
-												className="panel visit-panel"
-												id="visit"
-												aria-busy="true"
-											>
-												<div className="panel-heading">
-													<h2>Текущий прием</h2>
-													<span className="status-pill status-planned">
-														загрузка
-													</span>
-												</div>
-											</div>
-										}
-									>
-										<VisitView />
-									</Suspense>
-								</WorkspaceRouteErrorBoundary>
-							) : null}
-
-							{currentView === "documents" ? (
-								<WorkspaceRouteErrorBoundary
-									view="documents"
-									label={viewLabels.documents}
-									panelClassName="panel documents-panel"
-									panelId="documents"
-								>
-									<Suspense
-										fallback={
-											<div
-												className="panel documents-panel"
-												id="documents"
-												aria-busy="true"
-											>
-												<div className="panel-heading">
-													<h2>Документы и согласия</h2>
-													<span className="status-pill status-planned">
-														загрузка
-													</span>
-												</div>
-											</div>
-										}
-									>
-										<DocumentsView
-											activeAppointment={activeAppointment}
-											activeDoctor={activeDoctor}
-											activeDocuments={activeDocuments}
-											activeIssuedPaidContracts={activeIssuedPaidContracts}
-											activePatient={activePatient}
-											activeUsableDocuments={activeUsableDocuments}
-											applyPostVisitCarePreset={applyPostVisitCarePreset}
-											changePostVisitCareTopic={changePostVisitCareTopic}
-											clinicProfileDraft={clinicProfileDraft}
-											compactDocumentText={compactDocumentText}
-											completedActContractReferenceForUi={
-												completedActContractReferenceForUi
-											}
-											completedActFiscalReceiptLines={
-												completedActFiscalReceiptLines
-											}
-											completedActPaidRubValue={completedActPaidRubValue}
-											confirmDocumentIssue={confirmDocumentIssue}
-											confirmDocumentVoid={confirmDocumentVoid}
-											createDocument={createDocument}
-											dashboard={dashboard}
-											documentActionLabels={documentActionLabels}
-											documentIssueAttestationReady={
-												documentIssueAttestationReady
-											}
-											documentIssueConfirmation={documentIssueConfirmation}
-											documentIssueSignatureModeLabels={
-												documentIssueSignatureModeLabels
-											}
-											documentLabels={documentLabels}
-											documentPatient={documentPatient}
-											documentSourceStatusClassNames={
-												documentSourceStatusClassNames
-											}
-											documentStatusLabels={documentStatusLabels}
-											documentVoidConfirmation={documentVoidConfirmation}
-											documentVoidReady={documentVoidReady}
-											documentVoidReasonLabels={documentVoidReasonLabels}
-											downloadIssuedDocumentHtml={downloadIssuedDocumentHtml}
-											downloadIssuedDocumentPdf={downloadIssuedDocumentPdf}
-											downloadTaxDocumentXml={downloadTaxDocumentXml}
-											eligiblePaymentReceiptPayments={
-												eligiblePaymentReceiptPayments
-											}
-											eligibleRefundCorrectionPayments={
-												eligibleRefundCorrectionPayments
-											}
-											eligibleTaxPayments={eligibleTaxPayments}
-											formatDateTime={formatDateTime}
-											formatShortDate={formatShortDate}
-											inferredTreatmentArea={inferredTreatmentArea}
-											installmentScheduleBaseDocumentTitleValue={
-												installmentScheduleBaseDocumentTitleValue
-											}
-											installmentScheduleInstallmentRows={
-												installmentScheduleInstallmentRows
-											}
-											installmentSchedulePrepaidRubValue={
-												installmentSchedulePrepaidRubValue
-											}
-											installmentScheduleRemainingRubValue={
-												installmentScheduleRemainingRubValue
-											}
-											installmentScheduleTotalRubValue={
-												installmentScheduleTotalRubValue
-											}
-											issuedMedicalCopyRequestDocuments={
-												issuedMedicalCopyRequestDocuments
-											}
-											loadDocumentAuditFacts={loadDocumentAuditFacts}
-											markPostVisitManualEdited={markPostVisitManualEdited}
-											medicalDocumentReleaseChannelLabels={
-												medicalDocumentReleaseChannelLabels
-											}
-											minorConsentDiagnosisOrIndicationValue={
-												minorConsentDiagnosisOrIndicationValue
-											}
-											minorConsentInterventionScopeValue={
-												minorConsentInterventionScopeValue
-											}
-											minorConsentPatientBirthDateValue={
-												minorConsentPatientBirthDateValue
-											}
-											minorConsentPatientFullNameValue={
-												minorConsentPatientFullNameValue
-											}
-											minorRepresentativeFullNameValue={
-												minorRepresentativeFullNameValue
-											}
-											minorRepresentativeIdentityDocumentValue={
-												minorRepresentativeIdentityDocumentValue
-											}
-											minorRepresentativePhoneValue={
-												minorRepresentativePhoneValue
-											}
-											minorRepresentativeRelationshipValue={
-												minorRepresentativeRelationshipValue
-											}
-											money={money}
-											normalizedDocumentIssueSignatureMode={
-												normalizedDocumentIssueSignatureMode
-											}
-											normalizedDocumentKind={normalizedDocumentKind}
-											normalizedDocumentVoidReasonCode={
-												normalizedDocumentVoidReasonCode
-											}
-											normalizedMedicalDocumentReleaseChannel={
-												normalizedMedicalDocumentReleaseChannel
-											}
-											normalizedOutpatient025uDemographicCode={
-												normalizedOutpatient025uDemographicCode
-											}
-											normalizedPatientIntakePregnancyStatus={
-												normalizedPatientIntakePregnancyStatus
-											}
-											normalizedPaymentRefundCorrectionAction={
-												normalizedPaymentRefundCorrectionAction
-											}
-											normalizedPaymentRefundCorrectionMethod={
-												normalizedPaymentRefundCorrectionMethod
-											}
-											normalizedPostVisitCareTopic={
-												normalizedPostVisitCareTopic
-											}
-											normalizedProcedureSpecificConsentProcedure={
-												normalizedProcedureSpecificConsentProcedure
-											}
-											normalizedTaxApplicationDeliveryChannel={
-												normalizedTaxApplicationDeliveryChannel
-											}
-											normalizedTaxApplicationForm={
-												normalizedTaxApplicationForm
-											}
-											normalizedTaxApplicationRelationshipSelect={
-												normalizedTaxApplicationRelationshipSelect
-											}
-											normalizedTreatmentPlanAcceptanceVariant={
-												normalizedTreatmentPlanAcceptanceVariant
-											}
-											normalizedXrayPregnancyStatus={
-												normalizedXrayPregnancyStatus
-											}
-											normalizedXrayPriority={normalizedXrayPriority}
-											normalizedXrayStudyType={normalizedXrayStudyType}
-											openIssuedDocumentHtml={openIssuedDocumentHtml}
-											outpatient025uMedicalCardNumberValue={
-												outpatient025uMedicalCardNumberValue
-											}
-											paidContractTotalRubValue={paidContractTotalRubValue}
-											patientIntakePregnancyStatusOptions={
-												patientIntakePregnancyStatusOptions
-											}
-											patientName={patientName}
-											paymentFiscalReceiptLabelForUi={
-												paymentFiscalReceiptLabelForUi
-											}
-											paymentInvoiceTotalRubValue={paymentInvoiceTotalRubValue}
-											paymentReceiptFiscalReceiptLines={
-												paymentReceiptFiscalReceiptLines
-											}
-											paymentReceiptIssuedByValue={paymentReceiptIssuedByValue}
-											paymentReceiptPayerBirthDateValue={
-												paymentReceiptPayerBirthDateValue
-											}
-											paymentReceiptPayerFullNameValue={
-												paymentReceiptPayerFullNameValue
-											}
-											paymentReceiptPayerIdentityDocumentValue={
-												paymentReceiptPayerIdentityDocumentValue
-											}
-											paymentReceiptPayerInnValue={paymentReceiptPayerInnValue}
-											paymentReceiptPayerRelationshipValue={
-												paymentReceiptPayerRelationshipValue
-											}
-											photoVideoMaterialOptions={photoVideoMaterialOptions}
-											plannedServiceLinesForFinancialPayload={
-												plannedServiceLinesForFinancialPayload
-											}
-											postVisitCareTopicOptions={postVisitCareTopicOptions}
-											procedureSpecificConsentProcedureOptions={
-												procedureSpecificConsentProcedureOptions
-											}
-											releaseProtectionNote={releaseProtectionNote}
-											renderClinicalToothRowsEditor={
-												renderClinicalToothRowsEditor
-											}
-											requestDocumentIssue={requestDocumentIssue}
-											requestDocumentVoid={requestDocumentVoid}
-											selectAllEligibleTaxPaymentsForCurrentDocument={
-												selectAllEligibleTaxPaymentsForCurrentDocument
-											}
-											selectedCompletedActContractDocumentId={
-												selectedCompletedActContractDocumentId
-											}
-											selectedDocumentMetadata={selectedDocumentMetadata}
-											selectedDocumentUsesTaxPaymentSelection={
-												selectedDocumentUsesTaxPaymentSelection
-											}
-											selectedEligibleTaxPayments={selectedEligibleTaxPayments}
-											selectedPaymentReceiptIdSet={selectedPaymentReceiptIdSet}
-											selectedPaymentReceiptPayments={
-												selectedPaymentReceiptPayments
-											}
-											selectedPaymentReceiptTotalRub={
-												selectedPaymentReceiptTotalRub
-											}
-											selectedRefundCorrectionPayment={
-												selectedRefundCorrectionPayment
-											}
-											selectedReleaseSourceRequestDocumentId={
-												selectedReleaseSourceRequestDocumentId
-											}
-											selectedTaxDocumentPayerKey={selectedTaxDocumentPayerKey}
-											selectedTaxPaymentIdSet={selectedTaxPaymentIdSet}
-											selectedTaxPaymentTotalRub={selectedTaxPaymentTotalRub}
-											selectRefundOriginalPayment={selectRefundOriginalPayment}
-											setReleaseProtectionNote={setReleaseProtectionNote}
-											structuredPayloadDocumentKinds={
-												structuredPayloadDocumentKinds
-											}
-											taxApplicationDeliveryChannelOptions={
-												taxApplicationDeliveryChannelOptions
-											}
-											taxApplicationFormOptions={taxApplicationFormOptions}
-											taxApplicationRelationshipOptions={
-												taxApplicationRelationshipOptions
-											}
-											taxDocumentPayerOptions={taxDocumentPayerOptions}
-											togglePhotoVideoMaterial={togglePhotoVideoMaterial}
-											treatmentAcceptancePlannedTotalRub={
-												treatmentAcceptancePlannedTotalRub
-											}
-											treatmentEstimatePatientOrPayerFullNameValue={
-												treatmentEstimatePatientOrPayerFullNameValue
-											}
-											treatmentEstimateTotalRubValue={
-												treatmentEstimateTotalRubValue
-											}
-											treatmentEstimateTreatmentBasisValue={
-												treatmentEstimateTreatmentBasisValue
-											}
-											warrantyLinkedActOrContractValue={
-												warrantyLinkedActOrContractValue
-											}
-											warrantyServiceOrWorkNameValue={
-												warrantyServiceOrWorkNameValue
-											}
-											warrantyTeethOrAreaValue={warrantyTeethOrAreaValue}
-											xrayPregnancyStatusOptions={xrayPregnancyStatusOptions}
-											xrayStudyTypeOptions={xrayStudyTypeOptions}
-										/>
-									</Suspense>
-								</WorkspaceRouteErrorBoundary>
-							) : null}
-
-							{currentView === "finance" ? (
-								<WorkspaceRouteErrorBoundary
-									view="finance"
-									label={viewLabels.finance}
-									panelClassName="panel finance-panel"
-									panelId="finance"
-								>
-									<Suspense
-										fallback={
-											<div
-												className="panel finance-panel"
-												id="finance"
-												aria-busy="true"
-											>
-												<div className="panel-heading">
-													<h2>Оплаты, план лечения и вычет</h2>
-													<span className="status-pill status-planned">
-														загрузка
-													</span>
-												</div>
-											</div>
-										}
-									>
-										<FinanceView
-											activePayments={activePayments}
-											activeTreatmentPlanItems={activeTreatmentPlanItems}
-											activeTreatmentPlanScenarios={
-												activeTreatmentPlanScenarios
-											}
-											billingSummary={patientBillingSummary}
-											clinicalRuleEvaluations={patientClinicalRuleEvaluations}
-											clinicalRuleActionLabels={clinicalRuleActionLabels}
-											clinicalRuleSeverityLabels={clinicalRuleSeverityLabels}
-											clinicalRuleSummary={patientClinicalRuleSummary}
-											dashboard={dashboard}
-											documentPatient={documentPatient}
-											formatDateTime={formatDateTime}
-											isPaymentSaving={isPaymentSaving}
-											money={money}
-											onCreateDocument={createDocument}
-											onGoToDocuments={() => {
-												window.location.hash = "documents";
-											}}
-											onGoToPrices={() => {
-												setSettingsTab("prices");
-												window.location.hash = "settings/prices";
-											}}
-											onGoToVisit={() => {
-												window.location.hash = "visit";
-											}}
-											onRecordPayment={recordPayment}
-											onFamilyWalletPayment={() => loadDashboard()}
-											paymentAmount={paymentAmount}
-											paymentFeedback={paymentFeedback}
-											paymentFiscalCashierName={paymentFiscalCashierName}
-											paymentFiscalFd={paymentFiscalFd}
-											paymentFiscalFn={paymentFiscalFn}
-											paymentFiscalFpd={paymentFiscalFpd}
-											paymentFiscalReceiptIssuedAt={
-												paymentFiscalReceiptIssuedAt
-											}
-											paymentFiscalReceiptLabel={paymentFiscalReceiptLabelForUi}
-											paymentFiscalReceiptNumber={paymentFiscalReceiptNumber}
-											paymentFiscalReceiptUrl={paymentFiscalReceiptUrl}
-											paymentMethod={paymentMethod}
-											paymentMethodLabels={paymentMethodLabels}
-											paymentPatientContextMessage={
-												paymentPatientContextMessage
-											}
-											paymentPatientContextReady={paymentPatientContextReady}
-											paymentPayerBirthDate={paymentPayerBirthDate}
-											paymentPayerFullName={paymentPayerFullName}
-											paymentPayerIdentityDocument={
-												paymentPayerIdentityDocument
-											}
-											paymentPayerInn={paymentPayerInn}
-											paymentPayerRelationship={paymentPayerRelationship}
-											paymentTaxDeductionCode={paymentTaxDeductionCode}
-											scenarioPriorityLabels={scenarioPriorityLabels}
-											scenarioStrategyLabels={scenarioStrategyLabels}
-											serviceCategoryLabels={serviceCategoryLabels}
-											serviceTitle={serviceTitle}
-											setPaymentAmount={setPaymentAmount}
-											setPaymentFiscalCashierName={setPaymentFiscalCashierName}
-											setPaymentFiscalFd={setPaymentFiscalFd}
-											setPaymentFiscalFn={setPaymentFiscalFn}
-											setPaymentFiscalFpd={setPaymentFiscalFpd}
-											setPaymentFiscalReceiptIssuedAt={
-												setPaymentFiscalReceiptIssuedAt
-											}
-											setPaymentFiscalReceiptNumber={
-												setPaymentFiscalReceiptNumber
-											}
-											setPaymentFiscalReceiptUrl={setPaymentFiscalReceiptUrl}
-											setPaymentMethod={setPaymentMethod}
-											setPaymentPayerBirthDate={setPaymentPayerBirthDate}
-											setPaymentPayerFullName={setPaymentPayerFullName}
-											setPaymentPayerIdentityDocument={
-												setPaymentPayerIdentityDocument
-											}
-											setPaymentPayerInn={setPaymentPayerInn}
-											setPaymentPayerRelationship={setPaymentPayerRelationship}
-											setPaymentTaxDeductionCode={setPaymentTaxDeductionCode}
-											staffRoleLabels={staffRoleLabels}
-											treatmentStatusLabels={treatmentStatusLabels}
-										/>
-									</Suspense>
-								</WorkspaceRouteErrorBoundary>
-							) : null}
-
-							{currentView === "analytics" ? (
-								<WorkspaceRouteErrorBoundary
-									view="analytics"
-									label={viewLabels.analytics}
-									panelClassName="panel analytics-panel"
-									panelId="analytics"
-								>
-									<Suspense
-										fallback={
-											<div
-												className="panel analytics-panel"
-												id="analytics"
-												aria-busy="true"
-											>
-												<div className="panel-heading">
-													<h2>Executive BI Analytics</h2>
-													<span className="status-pill status-planned">
-														Загрузка...
-													</span>
-												</div>
-											</div>
-										}
-									>
-										<AnalyticsDashboardView />
-									</Suspense>
-								</WorkspaceRouteErrorBoundary>
-							) : null}
-
-							{currentView === "communications" ? (
-								<WorkspaceRouteErrorBoundary
-									view="communications"
-									label={viewLabels.communications}
-									panelClassName="panel communications-panel"
-									panelId="communications"
-								>
-									<Suspense
-										fallback={
-											<div
-												className="panel communications-panel"
-												id="communications"
-												aria-busy="true"
-											>
-												<div className="panel-heading">
-													<h2>Связь с пациентами</h2>
-													<span className="status-pill status-planned">
-														загрузка
-													</span>
-												</div>
-											</div>
-										}
-									>
-										<CommunicationsView
-											communicationChannelLabels={communicationChannelLabels}
-											communicationDocumentTaskActionLabels={
-												communicationDocumentTaskActionLabels
-											}
-											communicationIntentLabels={communicationIntentLabels}
-											communicationNote={communicationNote}
-											communicationPriorityLabels={communicationPriorityLabels}
-											communicationStatusLabels={communicationStatusLabels}
-											completeCommunicationTask={completeCommunicationTask}
-											dashboard={dashboard}
-											documentKindsForCommunicationTask={
-												documentKindsForCommunicationTask
-											}
-											documentLabels={documentLabels}
-											formatDateTime={formatDateTime}
-											communicationSavingTaskId={communicationSavingTaskId}
-											onCommunicationNoteChange={setCommunicationNote}
-											onGoToSchedule={() => {
-												window.location.hash = "schedule";
-											}}
-											openCommunicationTaskDocumentWorkflow={
-												openCommunicationTaskDocumentWorkflow
-											}
-											sortedCommunicationTasks={sortedCommunicationTasks}
-											staffRoleLabels={staffRoleLabels}
-										/>
-									</Suspense>
-								</WorkspaceRouteErrorBoundary>
-							) : null}
-						</section>
-					) : null}
-					{["documents", "finance", "communications", "settings"].includes(
-						currentView,
-					) ? (
-						<details className="compliance-bar" aria-label="Контроль">
-							<summary>
-								<ShieldCheck aria-hidden="true" />
-								<span>Служебные ограничения</span>
-							</summary>
-							<div>
-								{(dashboard.complianceWarnings ?? []).map((warning) => (
-									<p key={warning}>{warning}</p>
-								))}
-							</div>
-						</details>
-					) : null}
-					{currentView === "settings" ? (
-						<WorkspaceRouteErrorBoundary
-							view="settings"
-							label={viewLabels.settings}
-							panelClassName="settings-zone"
-							panelId="settings"
-						>
-							<Suspense
-								fallback={
-									<section
-										className="settings-zone"
-										id="settings"
-										aria-busy="true"
-									>
-										<div className="panel-heading settings-heading">
-											<h2>Настройки</h2>
-											<span className="status-pill status-planned">
-												загрузка
-											</span>
-										</div>
-									</section>
-								}
-							>
-								<SettingsView activeStaffUser={activeStaffUser} />
-							</Suspense>
-						</WorkspaceRouteErrorBoundary>
-					) : null}
-					{currentView === "marketing" ? (
-						<Suspense
-							fallback={<AppLoadingState message="Загрузка маркетинга" />}
-						>
-							<MarketingView
-								clinicName={dashboard.clinicName}
-								clinicPhone={clinicProfileDraft.phone}
-							/>
-						</Suspense>
-					) : null}
-					{currentView === "inventory" ? (
-						<Suspense fallback={<AppLoadingState message="Загрузка склада" />}>
-							<InventoryView organizationId={activeWorkspaceProfile.id} />
-						</Suspense>
-					) : null}
-					{currentView === "leads" ? (
-						<Suspense
-							fallback={<AppLoadingState message="Загрузка канбан доски" />}
-						>
-							<LeadsKanbanView />
-						</Suspense>
-					) : null}
-					{currentView === "inbox" ? (
-						<Suspense
-							fallback={<AppLoadingState message="Загрузка сообщений" />}
-						>
-							<OmnichannelInboxView />
-						</Suspense>
-					) : null}
-					{currentView === "scanner" ? (
-						<Suspense
-							fallback={<AppLoadingState message="Загрузка сканера ЦСО" />}
-						>
-							<ScannerView />
-						</Suspense>
-					) : null}
 					{/* <VoiceAssistantUI 
           onNavigate={(view) => {
             setCurrentView(view);

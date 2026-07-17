@@ -217,7 +217,9 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 			? "Отправка..."
 			: "";
 
-	const typedTelegramFeaturePlan = mergedProps.telegramFeaturePlan as any | null;
+	const typedTelegramFeaturePlan = mergedProps.telegramFeaturePlan as
+		| any
+		| null;
 	return (
 		<section className="telegram-settings" aria-label="Telegram-бот клиники">
 			<div className="import-copy">
@@ -235,7 +237,10 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 
 			<div className="telegram-status-grid">
 				<article>
-					<span><Bot size={16} style={{display:"inline", marginRight: "4px"}} /> Бот</span>
+					<span>
+						<Bot size={16} style={{ display: "inline", marginRight: "4px" }} />{" "}
+						Бот
+					</span>
 					<strong>
 						{typedTelegramStatus?.botUsername
 							? `@${typedTelegramStatus.botUsername.replace(/^@/, "")}`
@@ -248,7 +253,13 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 					</p>
 				</article>
 				<article>
-					<span><ShieldCheck size={16} style={{display:"inline", marginRight: "4px"}} /> Бот клиники</span>
+					<span>
+						<ShieldCheck
+							size={16}
+							style={{ display: "inline", marginRight: "4px" }}
+						/>{" "}
+						Бот клиники
+					</span>
 					<strong>
 						{typedTelegramStatus?.tokenConfigured
 							? "подключен"
@@ -260,7 +271,13 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 					</p>
 				</article>
 				<article>
-					<span><RefreshCw size={16} style={{display:"inline", marginRight: "4px"}} /> Прием сообщений</span>
+					<span>
+						<RefreshCw
+							size={16}
+							style={{ display: "inline", marginRight: "4px" }}
+						/>{" "}
+						Прием сообщений
+					</span>
 					<strong>
 						{typedTelegramStatus?.webhookReady ? "готов" : "проверить"}
 					</strong>
@@ -271,7 +288,13 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 					</p>
 				</article>
 				<article>
-					<span><Users size={16} style={{display:"inline", marginRight: "4px"}} /> Связки</span>
+					<span>
+						<Users
+							size={16}
+							style={{ display: "inline", marginRight: "4px" }}
+						/>{" "}
+						Связки
+					</span>
 					<strong>{typedTelegramStatus?.activeChatLinkCount ?? 0}</strong>
 					<p>
 						{typedTelegramStatus?.pendingLinkCodeCount ?? 0} кодов ожидают
@@ -1000,7 +1023,10 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 							</small>
 						</div>
 					</div>
-					<div className="premium-feature-grid premium-feature-grid" aria-label="Функции Telegram">
+					<div
+						className="premium-feature-grid premium-feature-grid"
+						aria-label="Функции Telegram"
+					>
 						{typedTelegramFeatureOptions.map((feature) => (
 							<label
 								className={`premium-feature-card ${
@@ -1010,21 +1036,23 @@ export function SettingsTelegramTab({ settingsTab }: { settingsTab: string }) {
 								}`}
 								key={feature}
 							>
-                                <div className="premium-feature-icon">
-                                    <Bot size={24} />
-                                </div>
-                                <div className="premium-feature-content">
+								<div className="premium-feature-icon">
+									<Bot size={24} />
+								</div>
+								<div className="premium-feature-content">
 									<h4>{telegramFeatureLabel(feature)}</h4>
 									<p>{typedTelegramFeatureHelp[feature]}</p>
-                                </div>
-                                <div className="premium-switch">
-                                    <input
-                                        type="checkbox"
-                                        checked={typedTelegramEnabledFeaturesDraft.includes(feature)}
-                                        onChange={() => toggleTelegramFeature(feature)}
-                                    />
-                                    <span className="slider"></span>
-                                </div>
+								</div>
+								<div className="premium-switch">
+									<input
+										type="checkbox"
+										checked={typedTelegramEnabledFeaturesDraft.includes(
+											feature,
+										)}
+										onChange={() => toggleTelegramFeature(feature)}
+									/>
+									<span className="slider"></span>
+								</div>
 							</label>
 						))}
 					</div>

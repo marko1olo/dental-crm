@@ -104,7 +104,7 @@ function extractRecommendationsPayload(
 		procedureName,
 		toothOrArea: "Полость рта",
 		performedAt: new Date().toISOString(),
-		doctorFullName: request.doctorFullName || null,
+		doctorFullName: request.doctorFullName || "Врач клиники",
 		allowedAfter: ["Через 2 часа после окончания действия анестезии"],
 		temporaryRestrictions: ["Ограничить физические нагрузки", "Не греть область вмешательства"],
 		medicationAndRinsePlan: ["По назначению врача"],

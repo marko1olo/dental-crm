@@ -16,10 +16,11 @@ import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { AppointmentCard } from "./components/schedule/AppointmentCard";
 import { NewAppointmentForm } from "./components/schedule/NewAppointmentForm";
+import { ObzvonStickyList } from "./components/schedule/ObzvonStickyList";
 import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
 import { ScheduleShiftSummary } from "./components/schedule/ScheduleShiftSummary";
-import { ObzvonStickyList } from "./components/schedule/ObzvonStickyList";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { DictationHints } from "./DictationHints";
 import { smartBookingParser } from "./lib/smartBookingParser";
 import { motionSafeScrollIntoView } from "./motionPreference";
@@ -36,63 +37,7 @@ const activeVisitLockedAppointmentStatuses = new Set<Appointment["status"]>([
 	"no_show",
 ]);
 
-type ScheduleViewProps = {
-	appointmentLabels: Record<Appointment["status"], string>;
-	appointmentReadinessById: Map<string, AppointmentReadiness>;
-	appointmentReadinessLabels: Record<AppointmentReadiness["state"], string>;
-	appointmentScheduleDraftFromAppointment: (
-		appointment: Appointment,
-	) => AppointmentScheduleDraft;
-	closeAppointmentEditor: (appointmentId: string) => void;
-	createAppointmentFromDraft: () => Promise<boolean>;
-	dashboard: Dashboard;
-	editingAppointmentId: string | null;
-	formatTime: (value: string) => string;
-	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	lockScheduleAdminSession: () => void;
-	newAppointmentError: string | null;
-	normalizedAppointmentStatus: (
-		value: unknown,
-		fallback?: Appointment["status"],
-	) => Appointment["status"];
-	normalizedAppointmentStatusFilter: (
-		value: unknown,
-	) => Appointment["status"] | "all";
-	openAppointmentEditor: (appointment: Appointment) => void;
-	patientName: (
-		patients: Dashboard["patients"],
-		patientId: string | null,
-	) => string;
-	recommendedActionPriorityLabels: Record<
-		ScheduleSuggestion["priority"],
-		string
-	>;
-	resetNewAppointmentDraft: () => void;
-	saveAppointmentSchedule: (
-		appointmentId: string,
-		options?: { closeEditorOnSave?: boolean },
-	) => Promise<boolean>;
-
-	shiftWarnings: Dashboard["shiftIntelligence"]["scheduleWarnings"];
-	sortedAppointments: Appointment[];
-	staffRoleLabels: Record<StaffRole, string>;
-	scheduleAdminSecretDraft: string;
-	scheduleAdminSecretSession: string;
-	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-	unlockScheduleAdminSession: () => void;
-	updateAppointmentScheduleDraft: <K extends keyof AppointmentScheduleDraft>(
-		appointmentId: string,
-		key: K,
-		value: AppointmentScheduleDraft[K],
-	) => void;
-	updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(
-		key: K,
-		value: AppointmentScheduleDraft[K],
-	) => void;
-	visibleScheduleSuggestions: ScheduleSuggestion[];
-};
-
-export function ScheduleView(props: ScheduleViewProps) {
+export function ScheduleView() {
 	const {
 		scheduleDoctorFilterId,
 		scheduleAssistantFilterId,
@@ -150,7 +95,6 @@ export function ScheduleView(props: ScheduleViewProps) {
 		editingAppointmentId,
 		formatTime,
 		fromDateTimeLocalValue,
-		lockScheduleAdminSession,
 		newAppointmentError,
 		normalizedAppointmentStatus,
 		normalizedAppointmentStatusFilter,
@@ -167,7 +111,9 @@ export function ScheduleView(props: ScheduleViewProps) {
 		updateAppointmentScheduleDraft,
 		updateNewAppointmentDraft,
 		visibleScheduleSuggestions,
-	} = props;
+		lockTelegramAdminSession,
+	} = useAppLogicContext();
+	const lockScheduleAdminSession = () => lockTelegramAdminSession("schedule");
 	const {
 		setScheduleAdminSecretDraft,
 		scheduleAdminSecretDraft,
@@ -240,8 +186,7 @@ export function ScheduleView(props: ScheduleViewProps) {
 			});
 		});
 	};
-	
-	
+
 	return (
 		<motion.div
 			className="panel schedule-panel glass-panel"
@@ -313,7 +258,8 @@ export function ScheduleView(props: ScheduleViewProps) {
 				showFreeDoctorsOnly={showFreeDoctorsOnly}
 				setShowFreeDoctorsOnly={setShowFreeDoctorsOnly}
 				resetScheduleFilters={resetScheduleFilters}
-			/>			<details className="schedule-secret-collapsible">
+			/>{" "}
+			<details className="schedule-secret-collapsible">
 				<summary>🔐 Разблокировать сохранение расписания</summary>
 				<div
 					className="appointment-editor schedule-admin-unlock"
@@ -398,7 +344,6 @@ export function ScheduleView(props: ScheduleViewProps) {
 					)}
 				</div>
 			</details>
-
 			<NewAppointmentForm
 				dashboard={dashboard}
 				appointmentLabels={appointmentLabels}
@@ -413,7 +358,6 @@ export function ScheduleView(props: ScheduleViewProps) {
 				useManualSelects={useManualSelects}
 				setUseManualSelects={setUseManualSelects}
 			/>
-
 			<ClinicalScheduler
 				appointments={sortedAppointments}
 				dashboard={dashboard}
@@ -450,11 +394,13 @@ export function ScheduleView(props: ScheduleViewProps) {
 						updateNewAppointmentDraft("chairId", chairId);
 
 						focusNewAppointmentEditor();
-						showToast(`Пациент ${item.patientName || ""} перенесен из листа ожидания. Завершите запись.`, "success");
+						showToast(
+							`Пациент ${item.patientName || ""} перенесен из листа ожидания. Завершите запись.`,
+							"success",
+						);
 					}
 				}}
 			/>
-
 			<div className="schedule-timeline timeline">
 				{sortedAppointments.map((appointment) => {
 					const draft =
@@ -583,14 +529,12 @@ export function ScheduleView(props: ScheduleViewProps) {
 					</article>
 				) : null}
 			</div>
-
 			<WaitlistDrawer
 				isOpen={showWaitlist}
 				onClose={() => setShowWaitlist(false)}
 				updateNewAppointmentDraft={updateNewAppointmentDraft}
 				focusNewAppointmentEditor={focusNewAppointmentEditor}
 			/>
-
 			<ObzvonStickyList dashboard={dashboard} />
 		</motion.div>
 	);

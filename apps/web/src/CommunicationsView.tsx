@@ -15,40 +15,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
 type CommunicationEvent = Dashboard["communicationEvents"][number];
-
-type CommunicationsViewProps = {
-	communicationChannelLabels: Record<CommunicationTask["channel"], string>;
-	communicationDocumentTaskActionLabels: Partial<
-		Record<GeneratedDocument["kind"], string>
-	>;
-	communicationIntentLabels: Record<CommunicationTask["intent"], string>;
-	communicationNote: string;
-	communicationPriorityLabels: Record<CommunicationTask["priority"], string>;
-	communicationSavingTaskId: string | null;
-	communicationStatusLabels: Record<CommunicationTask["status"], string>;
-	completeCommunicationTask: (
-		taskId: string,
-		outcome: CommunicationTaskOutcome,
-	) => void | Promise<void>;
-	dashboard: Dashboard;
-	documentKindsForCommunicationTask: (
-		task: CommunicationTask,
-	) => readonly GeneratedDocument["kind"][];
-	documentLabels: Record<GeneratedDocument["kind"], string>;
-	formatDateTime: (value: string) => string;
-	onCommunicationNoteChange: (value: string) => void;
-	onGoToSchedule: () => void;
-	openCommunicationTaskDocumentWorkflow: (
-		task: CommunicationTask,
-		kind: GeneratedDocument["kind"],
-	) => void;
-	sortedCommunicationTasks: CommunicationTask[];
-	staffRoleLabels: Record<StaffRole, string>;
-};
 
 function ruCount(value: number, forms: [string, string, string]): string {
 	const absolute = Math.abs(value);
@@ -302,25 +273,29 @@ function CommunicationEventRow({
 	);
 }
 
-export function CommunicationsView({
-	communicationChannelLabels,
-	communicationDocumentTaskActionLabels,
-	communicationIntentLabels,
-	communicationNote,
-	communicationPriorityLabels,
-	communicationSavingTaskId,
-	communicationStatusLabels,
-	completeCommunicationTask,
-	dashboard,
-	documentKindsForCommunicationTask,
-	documentLabels,
-	formatDateTime,
-	onCommunicationNoteChange,
-	onGoToSchedule,
-	openCommunicationTaskDocumentWorkflow,
-	sortedCommunicationTasks,
-	staffRoleLabels,
-}: CommunicationsViewProps) {
+export function CommunicationsView() {
+	const {
+		communicationChannelLabels,
+		communicationDocumentTaskActionLabels,
+		communicationIntentLabels,
+		communicationNote,
+		communicationPriorityLabels,
+		communicationSavingTaskId,
+		communicationStatusLabels,
+		completeCommunicationTask,
+		dashboard,
+		documentKindsForCommunicationTask,
+		documentLabels,
+		formatDateTime,
+		setCommunicationNote,
+		openCommunicationTaskDocumentWorkflow,
+		sortedCommunicationTasks,
+		staffRoleLabels,
+	} = useAppLogicContext();
+	const onCommunicationNoteChange = setCommunicationNote;
+	const onGoToSchedule = () => {
+		window.location.hash = "schedule";
+	};
 	const communicationNoteInputId = "communication-closing-note";
 	const communicationNoteDescriptionId = "communication-closing-note-guidance";
 

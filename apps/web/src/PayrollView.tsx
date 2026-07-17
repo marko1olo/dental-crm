@@ -1,19 +1,19 @@
-import { useMemo, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-import { AppLoadingState } from "./AppBootState";
+import { AnimatePresence, motion } from "framer-motion";
 import {
 	Banknote,
-	ReceiptText,
-	Users,
-	Stethoscope,
-	Search,
+	Calendar,
 	ChevronDown,
 	ChevronRight,
-	Calendar,
-	TrendingUp,
 	Download,
+	ReceiptText,
+	Search,
+	Stethoscope,
+	TrendingUp,
+	Users,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AppLoadingState } from "./AppBootState";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type Payout = {
 	id: string;
@@ -149,10 +149,7 @@ export function PayrollView() {
 		(sum, p) => sum + p.materialCost,
 		0,
 	);
-	const totalPayroll = filteredPayouts.reduce(
-		(sum, p) => sum + p.netPayout,
-		0,
-	);
+	const totalPayroll = filteredPayouts.reduce((sum, p) => sum + p.netPayout, 0);
 	const clinicProfit = totalRevenue - totalMaterialCost - totalPayroll;
 
 	// Group by doctor
@@ -231,9 +228,7 @@ export function PayrollView() {
 			<div className="panel-heading">
 				<div>
 					<h2>Зарплаты и комиссии</h2>
-					<p className="finance-scope-label">
-						Расчет заработной платы врачей
-					</p>
+					<p className="finance-scope-label">Расчет заработной платы врачей</p>
 				</div>
 				<button
 					type="button"
@@ -283,11 +278,8 @@ export function PayrollView() {
 							borderRadius: "6px",
 							border: "1px solid var(--line)",
 							background:
-								selectedMonth === "all"
-									? "var(--brand-500)"
-									: "var(--paper)",
-							color:
-								selectedMonth === "all" ? "#fff" : "var(--ink)",
+								selectedMonth === "all" ? "var(--brand-500)" : "var(--paper)",
+							color: selectedMonth === "all" ? "#fff" : "var(--ink)",
 							cursor: "pointer",
 							fontWeight: selectedMonth === "all" ? 700 : 400,
 							transition: "all 0.15s",
@@ -306,11 +298,8 @@ export function PayrollView() {
 								borderRadius: "6px",
 								border: "1px solid var(--line)",
 								background:
-									selectedMonth === m
-										? "var(--brand-500)"
-										: "var(--paper)",
-								color:
-									selectedMonth === m ? "#fff" : "var(--ink)",
+									selectedMonth === m ? "var(--brand-500)" : "var(--paper)",
+								color: selectedMonth === m ? "#fff" : "var(--ink)",
 								cursor: "pointer",
 								fontWeight: selectedMonth === m ? 700 : 400,
 								transition: "all 0.15s",
@@ -501,8 +490,7 @@ export function PayrollView() {
 								marginTop: "4px",
 							}}
 						>
-							Маржа:{" "}
-							{Math.round((clinicProfit / totalRevenue) * 100)}%
+							Маржа: {Math.round((clinicProfit / totalRevenue) * 100)}%
 						</div>
 					)}
 				</div>
@@ -576,16 +564,12 @@ export function PayrollView() {
 													"rgba(255,255,255,0.03)";
 											}}
 											onMouseLeave={(e) => {
-												e.currentTarget.style.background =
-													"transparent";
+												e.currentTarget.style.background = "transparent";
 											}}
 										>
 											<td style={{ width: "30px", textAlign: "center" }}>
 												{isExpanded ? (
-													<ChevronDown
-														size={14}
-														color="var(--brand-500)"
-													/>
+													<ChevronDown size={14} color="var(--brand-500)" />
 												) : (
 													<ChevronRight
 														size={14}
@@ -601,13 +585,8 @@ export function PayrollView() {
 														gap: "0.5rem",
 													}}
 												>
-													<Stethoscope
-														size={16}
-														color="var(--color-primary)"
-													/>
-													<span
-														style={{ fontWeight: 500 }}
-													>
+													<Stethoscope size={16} color="var(--color-primary)" />
+													<span style={{ fontWeight: 500 }}>
 														{doctor.doctorName}
 													</span>
 												</div>
@@ -626,10 +605,7 @@ export function PayrollView() {
 													fontWeight: 500,
 												}}
 											>
-												{doctor.totalRevenue.toLocaleString(
-													"ru-RU",
-												)}{" "}
-												₽
+												{doctor.totalRevenue.toLocaleString("ru-RU")} ₽
 											</td>
 											<td
 												style={{
@@ -637,11 +613,7 @@ export function PayrollView() {
 													color: "var(--color-danger)",
 												}}
 											>
-												-
-												{doctor.totalMaterialCost.toLocaleString(
-													"ru-RU",
-												)}{" "}
-												₽
+												-{doctor.totalMaterialCost.toLocaleString("ru-RU")} ₽
 											</td>
 											<td style={{ textAlign: "center" }}>
 												<div
@@ -649,8 +621,7 @@ export function PayrollView() {
 														display: "inline-flex",
 														alignItems: "center",
 														gap: "0.25rem",
-														background:
-															"rgba(var(--color-primary-rgb), 0.1)",
+														background: "rgba(var(--color-primary-rgb), 0.1)",
 														color: "var(--color-primary)",
 														padding: "0.25rem 0.5rem",
 														borderRadius: "4px",
@@ -669,19 +640,13 @@ export function PayrollView() {
 													fontSize: "1.1rem",
 												}}
 											>
-												{doctor.totalNetPayout.toLocaleString(
-													"ru-RU",
-												)}{" "}
-												₽
+												{doctor.totalNetPayout.toLocaleString("ru-RU")} ₽
 											</td>
 										</tr>
 										<AnimatePresence>
 											{isExpanded && (
 												<tr key={`${dId}-detail`}>
-													<td
-														colSpan={7}
-														style={{ padding: 0 }}
-													>
+													<td colSpan={7} style={{ padding: 0 }}>
 														<motion.div
 															initial={{
 																height: 0,
@@ -704,40 +669,30 @@ export function PayrollView() {
 														>
 															<div
 																style={{
-																	padding:
-																		"8px 16px 12px 48px",
+																	padding: "8px 16px 12px 48px",
 																	background:
 																		"rgba(var(--color-primary-rgb), 0.02)",
-																	borderTop:
-																		"1px solid var(--line)",
-																	borderBottom:
-																		"1px solid var(--line)",
+																	borderTop: "1px solid var(--line)",
+																	borderBottom: "1px solid var(--line)",
 																}}
 															>
 																<div
 																	style={{
-																		fontSize:
-																			"11px",
+																		fontSize: "11px",
 																		fontWeight: 600,
 																		color: "var(--foreground-muted)",
-																		textTransform:
-																			"uppercase",
-																		letterSpacing:
-																			"0.5px",
-																		marginBottom:
-																			"8px",
+																		textTransform: "uppercase",
+																		letterSpacing: "0.5px",
+																		marginBottom: "8px",
 																	}}
 																>
-																	Детализация
-																	начислений
+																	Детализация начислений
 																</div>
 																<table
 																	style={{
 																		width: "100%",
-																		fontSize:
-																			"13px",
-																		borderCollapse:
-																			"collapse",
+																		fontSize: "13px",
+																		borderCollapse: "collapse",
 																	}}
 																>
 																	<thead>
@@ -748,10 +703,8 @@ export function PayrollView() {
 																		>
 																			<th
 																				style={{
-																					textAlign:
-																						"left",
-																					padding:
-																						"4px 8px",
+																					textAlign: "left",
+																					padding: "4px 8px",
 																					fontWeight: 500,
 																				}}
 																			>
@@ -759,10 +712,8 @@ export function PayrollView() {
 																			</th>
 																			<th
 																				style={{
-																					textAlign:
-																						"right",
-																					padding:
-																						"4px 8px",
+																					textAlign: "right",
+																					padding: "4px 8px",
 																					fontWeight: 500,
 																				}}
 																			>
@@ -770,10 +721,8 @@ export function PayrollView() {
 																			</th>
 																			<th
 																				style={{
-																					textAlign:
-																						"right",
-																					padding:
-																						"4px 8px",
+																					textAlign: "right",
+																					padding: "4px 8px",
 																					fontWeight: 500,
 																				}}
 																			>
@@ -781,10 +730,8 @@ export function PayrollView() {
 																			</th>
 																			<th
 																				style={{
-																					textAlign:
-																						"right",
-																					padding:
-																						"4px 8px",
+																					textAlign: "right",
+																					padding: "4px 8px",
 																					fontWeight: 500,
 																				}}
 																			>
@@ -795,86 +742,62 @@ export function PayrollView() {
 																	<tbody>
 																		{doctor.payouts
 																			.sort(
-																				(
-																					a,
-																					b,
-																				) =>
-																					new Date(
-																						b.date,
-																					).getTime() -
-																					new Date(
-																						a.date,
-																					).getTime(),
+																				(a, b) =>
+																					new Date(b.date).getTime() -
+																					new Date(a.date).getTime(),
 																			)
-																			.map(
-																				(
-																					p,
-																				) => (
-																					<tr
-																						key={
-																							p.id
-																						}
+																			.map((p) => (
+																				<tr
+																					key={p.id}
+																					style={{
+																						borderTop:
+																							"1px solid rgba(255,255,255,0.03)",
+																					}}
+																				>
+																					<td
 																						style={{
-																							borderTop:
-																								"1px solid rgba(255,255,255,0.03)",
+																							padding: "4px 8px",
 																						}}
 																					>
-																						<td
-																							style={{
-																								padding:
-																									"4px 8px",
-																							}}
-																						>
-																							{formatDate(
-																								p.date,
-																							)}
-																						</td>
-																						<td
-																							style={{
-																								textAlign:
-																									"right",
-																								padding:
-																									"4px 8px",
-																							}}
-																						>
-																							{p.revenue.toLocaleString(
-																								"ru-RU",
-																							)}{" "}
-																							₽
-																						</td>
-																						<td
-																							style={{
-																								textAlign:
-																									"right",
-																								padding:
-																									"4px 8px",
-																								color: "var(--color-danger)",
-																							}}
-																						>
-																							-
-																							{p.materialCost.toLocaleString(
-																								"ru-RU",
-																							)}{" "}
-																							₽
-																						</td>
-																						<td
-																							style={{
-																								textAlign:
-																									"right",
-																								padding:
-																									"4px 8px",
-																								fontWeight: 600,
-																								color: "var(--color-success)",
-																							}}
-																						>
-																							{p.netPayout.toLocaleString(
-																								"ru-RU",
-																							)}{" "}
-																							₽
-																						</td>
-																					</tr>
-																				),
-																			)}
+																						{formatDate(p.date)}
+																					</td>
+																					<td
+																						style={{
+																							textAlign: "right",
+																							padding: "4px 8px",
+																						}}
+																					>
+																						{p.revenue.toLocaleString("ru-RU")}{" "}
+																						₽
+																					</td>
+																					<td
+																						style={{
+																							textAlign: "right",
+																							padding: "4px 8px",
+																							color: "var(--color-danger)",
+																						}}
+																					>
+																						-
+																						{p.materialCost.toLocaleString(
+																							"ru-RU",
+																						)}{" "}
+																						₽
+																					</td>
+																					<td
+																						style={{
+																							textAlign: "right",
+																							padding: "4px 8px",
+																							fontWeight: 600,
+																							color: "var(--color-success)",
+																						}}
+																					>
+																						{p.netPayout.toLocaleString(
+																							"ru-RU",
+																						)}{" "}
+																						₽
+																					</td>
+																				</tr>
+																			))}
 																	</tbody>
 																</table>
 															</div>
@@ -909,9 +832,8 @@ export function PayrollView() {
 				<br />
 				Формула: <code>(Выручка - Материалы) × Процент комиссии</code>.
 				<br />
-				Базовая стоимость материалов (по умолчанию 15%) автоматически
-				вычитается до начисления комиссии врачу, защищая маржинальность
-				клиники.
+				Базовая стоимость материалов (по умолчанию 15%) автоматически вычитается
+				до начисления комиссии врачу, защищая маржинальность клиники.
 				<br />
 				Нажмите на строку врача, чтобы увидеть детализацию по каждому визиту.
 			</div>

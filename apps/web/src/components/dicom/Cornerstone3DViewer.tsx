@@ -60,14 +60,14 @@ export function Cornerstone3DViewer({
 	const [isMinimized, setIsMinimized] = useState(false);
 	const [boneDensityProfile, setBoneDensityProfile] = useState<number[]>([]);
 	const [implants, setImplants] = useState<any[]>([]);
-	
+
 	const patientId = propPatientId || "00000000-0000-0000-0000-000000000001";
-	
+
 	const studyInstanceUid = (() => {
 		if (imageIds && imageIds.length > 0) {
 			const firstId = imageIds[0];
 			if (firstId) {
-				const match = firstId.match(/\/studies\/([^\/]+)/);
+				const match = firstId.match(/\/studies\/([^/]+)/);
 				if (match) return match[1];
 			}
 		}

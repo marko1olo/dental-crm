@@ -1,4 +1,14 @@
-import { Bot, Sparkles, UploadCloud, Server, Activity, CheckCircle2, ShieldAlert, Cpu, ExternalLink } from "lucide-react";
+import {
+	Activity,
+	Bot,
+	CheckCircle2,
+	Cpu,
+	ExternalLink,
+	Server,
+	ShieldAlert,
+	Sparkles,
+	UploadCloud,
+} from "lucide-react";
 import "./SettingsAiTab.css";
 import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -47,7 +57,8 @@ export function SettingsAiTab() {
 
 	const typedRecognitionPresets = (recognitionPresets ?? []) as any[];
 	const typedSpeechProviders = (speechProviders ?? []) as any[];
-	const typedSpeechRecordingRecovery = mergedProps.speechRecordingRecovery as any;
+	const typedSpeechRecordingRecovery =
+		mergedProps.speechRecordingRecovery as any;
 	const _typedDictationHistory = (dictationHistory ?? []) as any[];
 	const typedRecognitionJob = recognitionJob as any;
 
@@ -61,16 +72,22 @@ export function SettingsAiTab() {
 					</div>
 					<div className="ai-section-title">
 						<h3>Распознавание речи (Gateway)</h3>
-						<p>Настройки локальных и облачных нейросетей для диктовки протоколов</p>
+						<p>
+							Настройки локальных и облачных нейросетей для диктовки протоколов
+						</p>
 					</div>
 				</div>
 
 				{speechGatewayStatus ? (
 					<div className="ai-gateway-status">
-						<div className={`ai-gateway-status-pill ${speechGatewayCanUpload(speechGatewayStatus) ? 'success' : 'warning'}`}>
+						<div
+							className={`ai-gateway-status-pill ${speechGatewayCanUpload(speechGatewayStatus) ? "success" : "warning"}`}
+						>
 							<span>Статус сервера</span>
 							<strong>
-								{speechGatewayCanUpload(speechGatewayStatus) ? "Подключено" : "Не активно"}
+								{speechGatewayCanUpload(speechGatewayStatus)
+									? "Подключено"
+									: "Не активно"}
 							</strong>
 						</div>
 						<div className="ai-gateway-status-pill">
@@ -79,40 +96,66 @@ export function SettingsAiTab() {
 						</div>
 						<div className="ai-gateway-status-pill">
 							<span>Отсев дублей</span>
-							<strong>{speechGatewayStatus.chunkingPolicy.dedupeWindowChars} симв.</strong>
+							<strong>
+								{speechGatewayStatus.chunkingPolicy.dedupeWindowChars} симв.
+							</strong>
 						</div>
 						<div className="ai-gateway-status-pill">
 							<span>Стоматологический словарь</span>
 							<strong>
-								{speechGatewayStatus.promptPolicy.enabled 
-									? `Включен (${speechGatewayStatus.promptPolicy.termCount} терм.)` 
+								{speechGatewayStatus.promptPolicy.enabled
+									? `Включен (${speechGatewayStatus.promptPolicy.termCount} терм.)`
 									: "Выключен"}
 							</strong>
 						</div>
-						<div className="ai-gateway-status-pill" style={{ borderRight: 'none', marginLeft: 'auto' }}>
-							<button className="secondary-button btn--sm" type="button" onClick={() => void refreshSpeechRuntime({ silent: false })}>
-								<Activity size={14} style={{ marginRight: '6px' }} /> Проверить шлюз
+						<div
+							className="ai-gateway-status-pill"
+							style={{ borderRight: "none", marginLeft: "auto" }}
+						>
+							<button
+								className="secondary-button btn--sm"
+								type="button"
+								onClick={() => void refreshSpeechRuntime({ silent: false })}
+							>
+								<Activity size={14} style={{ marginRight: "6px" }} /> Проверить
+								шлюз
 							</button>
 						</div>
 					</div>
 				) : null}
 
 				{speechGatewayHealthReport ? (
-					<div className="ai-gateway-status" style={{ background: 'rgba(13, 148, 136, 0.05)', borderColor: 'rgba(13, 148, 136, 0.2)' }}>
+					<div
+						className="ai-gateway-status"
+						style={{
+							background: "rgba(13, 148, 136, 0.05)",
+							borderColor: "rgba(13, 148, 136, 0.2)",
+						}}
+					>
 						<div className="ai-gateway-status-pill">
 							<span>Пул ключей</span>
-							<strong>{speechGatewayHealthReport.totalAvailableKeys} из {speechGatewayHealthReport.totalConfiguredKeys}</strong>
+							<strong>
+								{speechGatewayHealthReport.totalAvailableKeys} из{" "}
+								{speechGatewayHealthReport.totalConfiguredKeys}
+							</strong>
 						</div>
 						<div className="ai-gateway-status-pill">
 							<span>Резервных каналов</span>
-							<strong>{speechGatewayHealthReport.fallbackProviderIds.length}</strong>
+							<strong>
+								{speechGatewayHealthReport.fallbackProviderIds.length}
+							</strong>
 						</div>
 						<div className="ai-gateway-status-pill">
 							<span>Таймаут</span>
-							<strong>{Math.round(speechGatewayHealthReport.timeoutMs / 1000)} сек.</strong>
+							<strong>
+								{Math.round(speechGatewayHealthReport.timeoutMs / 1000)} сек.
+							</strong>
 						</div>
 						{speechGatewayHealthReport.warnings[0] && (
-							<div className="ai-gateway-status-pill warning" style={{ flex: 1, border: 'none' }}>
+							<div
+								className="ai-gateway-status-pill warning"
+								style={{ flex: 1, border: "none" }}
+							>
 								<span>Внимание</span>
 								<strong>{speechGatewayHealthReport.warnings[0]}</strong>
 							</div>
@@ -120,7 +163,9 @@ export function SettingsAiTab() {
 					</div>
 				) : null}
 
-				<h4 style={{ margin: '12px 0 4px', fontSize: '15px' }}>Доступные провайдеры</h4>
+				<h4 style={{ margin: "12px 0 4px", fontSize: "15px" }}>
+					Доступные провайдеры
+				</h4>
 				<div className="ai-provider-grid">
 					{typedSpeechProviders.map((provider) => {
 						const runtime = speechProviderRuntimeById.get(provider.id);
@@ -133,15 +178,20 @@ export function SettingsAiTab() {
 										<p>{speechProviderModeLabels[provider.mode]}</p>
 									</div>
 									{health && (
-										<span className={`status-pill status-${health.healthLevel === 'healthy' ? 'confirmed' : 'cancelled'}`}>
-											{speechProviderHealthLabels[health.healthLevel] ?? health.healthLevel}
+										<span
+											className={`status-pill status-${health.healthLevel === "healthy" ? "confirmed" : "cancelled"}`}
+										>
+											{speechProviderHealthLabels[health.healthLevel] ??
+												health.healthLevel}
 										</span>
 									)}
 								</div>
-								
+
 								<div className="premium-provider-tags">
 									{provider.recommendedFor.slice(0, 3).map((item: string) => (
-										<span className="premium-provider-tag" key={item}>{item}</span>
+										<span className="premium-provider-tag" key={item}>
+											{item}
+										</span>
 									))}
 								</div>
 
@@ -152,16 +202,39 @@ export function SettingsAiTab() {
 								</ul>
 
 								<div className="premium-provider-footer">
-									<span><strong>Лицензия:</strong> {provider.costNote}</span>
+									<span>
+										<strong>Лицензия:</strong> {provider.costNote}
+									</span>
 									{runtime && (
 										<span>
 											<strong>Интеграция:</strong>
-											<span className={runtime.configured ? "speech-runtime-ready" : "speech-runtime-missing"}>
-												{runtime.canTranscribeChunks ? "✅ Готов" : runtime.configured ? "Настроен" : "Не настроен"}
+											<span
+												className={
+													runtime.configured
+														? "speech-runtime-ready"
+														: "speech-runtime-missing"
+												}
+											>
+												{runtime.canTranscribeChunks
+													? "✅ Готов"
+													: runtime.configured
+														? "Настроен"
+														: "Не настроен"}
 											</span>
 										</span>
 									)}
-									<a href={provider.sourceUrl} target="_blank" rel="noreferrer noopener" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+									<a
+										href={provider.sourceUrl}
+										target="_blank"
+										rel="noreferrer noopener"
+										style={{
+											fontSize: "12px",
+											display: "flex",
+											alignItems: "center",
+											gap: "4px",
+											marginTop: "4px",
+										}}
+									>
 										Документация <ExternalLink size={12} />
 									</a>
 								</div>
@@ -179,7 +252,10 @@ export function SettingsAiTab() {
 					</div>
 					<div className="ai-section-title">
 						<h3>Лаборатория нейросетей</h3>
-						<p>Тестирование структурирования текста в медицинские карты и диагнозы</p>
+						<p>
+							Тестирование структурирования текста в медицинские карты и
+							диагнозы
+						</p>
 					</div>
 				</div>
 
@@ -208,8 +284,9 @@ export function SettingsAiTab() {
 						}}
 					/>
 					<div className="ai-workbench-action">
-						<span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-							Цель: <strong>{recognitionTargetLabels[recognitionTarget]}</strong>
+						<span style={{ fontSize: "13px", color: "var(--muted)" }}>
+							Цель:{" "}
+							<strong>{recognitionTargetLabels[recognitionTarget]}</strong>
 						</span>
 						<button
 							className="primary-button"
@@ -217,8 +294,10 @@ export function SettingsAiTab() {
 							onClick={runRecognitionJob}
 							disabled={isRecognitionLoading || !recognitionInputReady}
 						>
-							<Sparkles size={16} style={{ marginRight: '8px' }} />
-							{isRecognitionLoading ? "Генерация ответа..." : "Распознать текст"}
+							<Sparkles size={16} style={{ marginRight: "8px" }} />
+							{isRecognitionLoading
+								? "Генерация ответа..."
+								: "Распознать текст"}
 						</button>
 					</div>
 				</div>
@@ -227,31 +306,37 @@ export function SettingsAiTab() {
 					<div className="ai-result-panel">
 						<div className="ai-result-panel-head">
 							<span className="ai-result-confidence">
-								<CheckCircle2 size={16} /> Уверенность: {Math.round(typedRecognitionJob.confidence * 100)}%
+								<CheckCircle2 size={16} /> Уверенность:{" "}
+								{Math.round(typedRecognitionJob.confidence * 100)}%
 							</span>
-							<span className="status-pill status-confirmed">{typedRecognitionJob.suggestedNextStep}</span>
+							<span className="status-pill status-confirmed">
+								{typedRecognitionJob.suggestedNextStep}
+							</span>
 						</div>
-						
+
 						<p className="ai-result-text">{typedRecognitionJob.resultText}</p>
 
 						{typedRecognitionJob.warnings?.length > 0 && (
 							<div className="ai-result-warnings">
 								{typedRecognitionJob.warnings.map((warning: string) => (
 									<div className="ai-result-warning-item" key={warning}>
-										<ShieldAlert size={14} /> {aiRecognitionWarningText(warning)}
+										<ShieldAlert size={14} />{" "}
+										{aiRecognitionWarningText(warning)}
 									</div>
 								))}
 							</div>
 						)}
 
-						{(typedRecognitionJob.target === "patient_import" || typedRecognitionJob.target === "visit_note") && (
+						{(typedRecognitionJob.target === "patient_import" ||
+							typedRecognitionJob.target === "visit_note") && (
 							<button
 								className="secondary-button"
-								style={{ alignSelf: 'flex-start', marginTop: '8px' }}
+								style={{ alignSelf: "flex-start", marginTop: "8px" }}
 								type="button"
 								onClick={sendRecognitionResultToImport}
 							>
-								<UploadCloud size={16} style={{ marginRight: '8px' }} /> Передать в карту
+								<UploadCloud size={16} style={{ marginRight: "8px" }} />{" "}
+								Передать в карту
 							</button>
 						)}
 					</div>

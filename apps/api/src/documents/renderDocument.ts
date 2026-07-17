@@ -2262,9 +2262,9 @@ function treatmentPlan(document: GeneratedDocument) {
       ${row("Диагноз / клиническое основание", payload.diagnosisSummary)}
       ${row("Зубы / область", payload.teethOrArea)}
       ${row("Ориентировочная стоимость", rub(payload.estimatedTotalRub))}
-      ${row("Прогноз и ограничения", payload.prognosisAndLimits)}
-      ${row("Контрольный план", payload.controlPlan)}
-      ${row("Врач", payload.doctorFullName)}
+      ${row("Прогноз и ограничения", payload.prognosisAndLimits || "Не указано")}
+      ${row("Контрольный план", payload.controlPlan || "Не указано")}
+      ${row("Врач", payload.doctorFullName || "Врач клиники")}
       ${row("Дата подготовки плана", payload.plannedAt)}
     </table>
     <h2>Клиническая детализация по зубам и сегментам</h2>

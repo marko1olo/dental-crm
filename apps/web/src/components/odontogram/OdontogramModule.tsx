@@ -8,15 +8,15 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWebsocket } from "../../hooks/useWebsocket";
+import { usePatientStore } from "../../store/patientStore";
+import { showToast } from "../GlobalToast";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import { TreatmentEstimator } from "./TreatmentEstimator";
 import { VoiceDictationOverlay } from "./VoiceDictationOverlay";
-import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { usePatientStore } from "../../store/patientStore";
 import "./odontogram.css";
 
 const SurfaceSelector = ({
@@ -36,7 +36,12 @@ const SurfaceSelector = ({
 
 	return (
 		<div className="flex justify-center mb-4">
-			<svg width="100" height="100" viewBox="0 0 100 100" className="drop-shadow-md cursor-pointer group">
+			<svg
+				width="100"
+				height="100"
+				viewBox="0 0 100 100"
+				className="drop-shadow-md cursor-pointer group"
+			>
 				{/* Top (B/V) */}
 				<polygon
 					points="0,0 100,0 70,30 30,30"
@@ -46,7 +51,17 @@ const SurfaceSelector = ({
 					onClick={() => toggle("B")}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
-				<text x="50" y="18" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">B</text>
+				<text
+					x="50"
+					y="18"
+					fill="white"
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					B
+				</text>
 
 				{/* Bottom (L/P) */}
 				<polygon
@@ -57,7 +72,17 @@ const SurfaceSelector = ({
 					onClick={() => toggle("L")}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
-				<text x="50" y="90" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">L</text>
+				<text
+					x="50"
+					y="90"
+					fill="white"
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					L
+				</text>
 
 				{/* Left (M) */}
 				<polygon
@@ -68,7 +93,17 @@ const SurfaceSelector = ({
 					onClick={() => toggle("M")}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
-				<text x="12" y="54" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">M</text>
+				<text
+					x="12"
+					y="54"
+					fill="white"
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					M
+				</text>
 
 				{/* Right (D) */}
 				<polygon
@@ -79,7 +114,17 @@ const SurfaceSelector = ({
 					onClick={() => toggle("D")}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
-				<text x="88" y="54" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">D</text>
+				<text
+					x="88"
+					y="54"
+					fill="white"
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					D
+				</text>
 
 				{/* Center (O) */}
 				<polygon
@@ -90,7 +135,17 @@ const SurfaceSelector = ({
 					onClick={() => toggle("O")}
 					className="hover:fill-blue-400 transition-colors duration-200"
 				/>
-				<text x="50" y="54" fill="white" fontSize="12" fontWeight="bold" textAnchor="middle" pointerEvents="none">O</text>
+				<text
+					x="50"
+					y="54"
+					fill="white"
+					fontSize="12"
+					fontWeight="bold"
+					textAnchor="middle"
+					pointerEvents="none"
+				>
+					O
+				</text>
 			</svg>
 		</div>
 	);
@@ -236,18 +291,28 @@ export const OdontogramModule = ({
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 			}),
-			body: JSON.stringify({ toothNumbers, state, surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined }),
+			body: JSON.stringify({
+				toothNumbers,
+				state,
+				surfaces: activeSurfaces.length > 0 ? activeSurfaces : undefined,
+			}),
 		});
-		
+
 		// Push suggestion to global state for ComparativePlannerDashboard
 		const { addPendingPlanSuggestion } = usePatientStore.getState();
 		for (const t of toothNumbers) {
-			if (state === "Caries" || state === "Pulpitis" || state === "Planned_Implant" || state === "Missing" || state === "Crown") {
+			if (
+				state === "Caries" ||
+				state === "Pulpitis" ||
+				state === "Planned_Implant" ||
+				state === "Missing" ||
+				state === "Crown"
+			) {
 				addPendingPlanSuggestion({
 					toothNumber: t,
 					state,
 					surfaces: activeSurfaces.length > 0 ? [...activeSurfaces] : undefined,
-					suggestedAt: new Date().toISOString()
+					suggestedAt: new Date().toISOString(),
 				});
 			}
 		}
@@ -255,7 +320,11 @@ export const OdontogramModule = ({
 		setActiveSurfaces([]);
 	};
 
-	const handleToothClick = (toothNumber: number, rect: DOMRect, surface?: string) => {
+	const handleToothClick = (
+		toothNumber: number,
+		rect: DOMRect,
+		surface?: string,
+	) => {
 		if (isMultiSelectMode) {
 			// Toggle selection, don't open menu yet
 			setSelectedTeeth((prev) =>
@@ -279,7 +348,9 @@ export const OdontogramModule = ({
 				setSelectedTeeth(activeSelection);
 
 				// Pre-select existing surfaces for the newly selected tooth
-				const existing = teethData.find((t) => t.toothNumber === activeSelection[0]);
+				const existing = teethData.find(
+					(t) => t.toothNumber === activeSelection[0],
+				);
 				if (existing && existing.surfaces) {
 					currentSurfaces = [...existing.surfaces];
 				} else {
@@ -576,7 +647,7 @@ export const OdontogramModule = ({
 								});
 								showToast(
 									`AI: Зубы обновлены: ${data.toothUpdates.map((t: any) => t.code).join(", ")}`,
-									"success"
+									"success",
 								);
 							} else {
 								showToast("AI: Команда не распознана", "warning");

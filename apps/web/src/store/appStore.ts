@@ -458,7 +458,8 @@ export const useAppStore = create<AppStore>((set) => ({
 	setPricelistSourceKind: (val) => set({ pricelistSourceKind: val }),
 	usePricelistAi: (loadUiPreferences() ?? defaultUiPreferences).usePricelistAi,
 	setUsePricelistAi: (val) => set({ usePricelistAi: val }),
-	odontogramUseSurfaces: (loadUiPreferences() ?? defaultUiPreferences).odontogramUseSurfaces,
+	odontogramUseSurfaces: (loadUiPreferences() ?? defaultUiPreferences)
+		.odontogramUseSurfaces,
 	setOdontogramUseSurfaces: (val) => set({ odontogramUseSurfaces: val }),
 	pricelistAnalysis: null,
 	setPricelistAnalysis: (val) => set({ pricelistAnalysis: val }),

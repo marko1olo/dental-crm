@@ -1,11 +1,12 @@
 import { Dashboard } from "@dental/shared";
 import React from "react";
-import type { PatientsViewProps } from "../../PatientsView";
+import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientStore } from "../../store/patientStore";
 import { AnamnesisPanel } from "../AnamnesisPanel";
 import { VisiographAnalyzer } from "../imaging/VisiographAnalyzer";
 import { OdontogramModule } from "../odontogram/OdontogramModule";
-export function PatientClinicalTab({ props }: { props: PatientsViewProps }) {
+export function PatientClinicalTab() {
+	const appLogic = useAppLogicContext();
 	const { selectedPatientId } = usePatientStore();
 
 	return (
@@ -17,7 +18,7 @@ export function PatientClinicalTab({ props }: { props: PatientsViewProps }) {
 						<OdontogramModule
 							patientId={selectedPatientId}
 							pediatricMode={Boolean(
-								(props.dashboard?.clinicSettings?.profile as any)
+								(appLogic.dashboard?.clinicSettings?.profile as any)
 									?.hasPediatricMode,
 							)}
 						/>
@@ -29,7 +30,9 @@ export function PatientClinicalTab({ props }: { props: PatientsViewProps }) {
 						<VisiographAnalyzer />
 					</div>
 					<div className="clinical-col-right">
-						{selectedPatientId && <AnamnesisPanel patientId={selectedPatientId} />}
+						{selectedPatientId && (
+							<AnamnesisPanel patientId={selectedPatientId} />
+						)}
 					</div>
 				</div>
 			</div>

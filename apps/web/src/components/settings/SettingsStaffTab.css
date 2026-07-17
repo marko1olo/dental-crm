@@ -31,7 +31,7 @@
 
 .staff-tab-btn:hover {
 	color: var(--ink);
-	background: rgba(0,0,0,0.02);
+	background: rgba(0, 0, 0, 0.02);
 }
 
 .staff-tab-btn.active {
@@ -133,7 +133,7 @@
 	gap: 12px;
 	padding: 16px;
 	border-bottom: 1px solid var(--line);
-	background: rgba(0,0,0,0.01);
+	background: rgba(0, 0, 0, 0.01);
 }
 
 .staff-avatar {
@@ -213,14 +213,26 @@
 	font-weight: 500;
 }
 
-.perm-tag.doctor { background: rgba(59, 130, 246, 0.1); color: rgb(37, 99, 235); }
-.perm-tag.admin { background: rgba(16, 185, 129, 0.1); color: rgb(5, 150, 105); }
-.perm-tag.manager { background: rgba(139, 92, 246, 0.1); color: rgb(109, 40, 217); }
-.perm-tag.danger { background: rgba(239, 68, 68, 0.1); color: rgb(220, 38, 38); }
+.perm-tag.doctor {
+	background: rgba(59, 130, 246, 0.1);
+	color: rgb(37, 99, 235);
+}
+.perm-tag.admin {
+	background: rgba(16, 185, 129, 0.1);
+	color: rgb(5, 150, 105);
+}
+.perm-tag.manager {
+	background: rgba(139, 92, 246, 0.1);
+	color: rgb(109, 40, 217);
+}
+.perm-tag.danger {
+	background: rgba(239, 68, 68, 0.1);
+	color: rgb(220, 38, 38);
+}
 
 .staff-card-footer {
 	padding: 12px 16px;
-	background: rgba(0,0,0,0.01);
+	background: rgba(0, 0, 0, 0.01);
 	border-top: 1px solid var(--line);
 	display: flex;
 	justify-content: flex-end;
@@ -234,7 +246,7 @@
 	justify-content: center;
 	padding: 48px;
 	color: var(--muted);
-	background: rgba(0,0,0,0.02);
+	background: rgba(0, 0, 0, 0.02);
 	border-radius: 12px;
 	border: 1px dashed var(--line);
 }

@@ -35,7 +35,9 @@ function workspaceRouteErrorDetail(error: unknown): string {
 }
 
 function requestDenteStaleWorkspaceRefresh(): void {
-	navigator.serviceWorker?.controller?.postMessage({ type: "DENTE_CLEAR_SHELL_CACHE" });
+	navigator.serviceWorker?.controller?.postMessage({
+		type: "DENTE_CLEAR_SHELL_CACHE",
+	});
 	window.setTimeout(() => window.location.reload(), 50);
 }
 

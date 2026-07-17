@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { emptyVisitNoteForm } from "../AppHelpers";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../lib/icd10";
 import { useVisitStore } from "../store/visitStore";
 import {
 	type CryptoProCertificate,
@@ -29,12 +30,10 @@ import {
 } from "../utils/cryptoPro";
 import { showToast } from "./GlobalToast";
 import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
-import { CryptoProSigner } from "./visit/CryptoProSigner";
-import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
-import { VisitDiaryPhotoUpload } from "./VisitDiaryPhotoUpload";
 import { useVisitDiaryLogic } from "./useVisitDiaryLogic";
-
-import { ICD10_DICTIONARY, ICD_GROUP_COLORS, getIcdColor } from "../lib/icd10";
+import { VisitDiaryPhotoUpload } from "./VisitDiaryPhotoUpload";
+import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
+import { CryptoProSigner } from "./visit/CryptoProSigner";
 
 interface DiaryState {
 	anamnesis: string;
@@ -79,11 +78,28 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	patientId,
 }) => {
 	const {
-		diary, setDiary, diaryId, isLocked, lockedAt, diaryHash,
-		lastSavedAt, revisionCount, isSaving, showScanner, setShowScanner,
-		trayBarcode, setTrayBarcode, showIcdDropdown, setShowIcdDropdown,
-		icdSearch, setIcdSearch, showPreview, setShowPreview,
-		doSave, doLock, icdRef
+		diary,
+		setDiary,
+		diaryId,
+		isLocked,
+		lockedAt,
+		diaryHash,
+		lastSavedAt,
+		revisionCount,
+		isSaving,
+		showScanner,
+		setShowScanner,
+		trayBarcode,
+		setTrayBarcode,
+		showIcdDropdown,
+		setShowIcdDropdown,
+		icdSearch,
+		setIcdSearch,
+		showPreview,
+		setShowPreview,
+		doSave,
+		doLock,
+		icdRef,
 	} = useVisitDiaryLogic(visitId, patientId);
 
 	// ── ICD-10 select
@@ -100,10 +116,11 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			i.group.toLowerCase().includes(icdSearch.toLowerCase()),
 	).slice(0, 12);
 
-	
-	
-	
-	const handleAutoResize = (e: React.ChangeEvent<HTMLTextAreaElement> | React.FocusEvent<HTMLTextAreaElement>) => {
+	const handleAutoResize = (
+		e:
+			| React.ChangeEvent<HTMLTextAreaElement>
+			| React.FocusEvent<HTMLTextAreaElement>,
+	) => {
 		e.target.style.height = "auto";
 		e.target.style.height = e.target.scrollHeight + "px";
 	};
@@ -269,21 +286,21 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					</div>
 				) : (
 					<VisitDiaryTemplateSelector
-					isLocked={isLocked}
-					onSelectTemplate={(tmpl: any) => {
-						setDiary((prev) => ({
-							...prev,
-							anamnesis: tmpl.prefilledAnamnesis || prev.anamnesis,
-							statusLocalis: tmpl.prefilledObjective || prev.statusLocalis,
-							treatmentDescription:
-								tmpl.prefilledTreatment || prev.treatmentDescription,
-							diagnosisIcd10: tmpl.defaultIcd10 || prev.diagnosisIcd10,
-						}));
-						if (tmpl.defaultIcd10) {
-							setIcdSearch(tmpl.defaultIcd10);
-						}
-					}}
-				/>
+						isLocked={isLocked}
+						onSelectTemplate={(tmpl: any) => {
+							setDiary((prev) => ({
+								...prev,
+								anamnesis: tmpl.prefilledAnamnesis || prev.anamnesis,
+								statusLocalis: tmpl.prefilledObjective || prev.statusLocalis,
+								treatmentDescription:
+									tmpl.prefilledTreatment || prev.treatmentDescription,
+								diagnosisIcd10: tmpl.defaultIcd10 || prev.diagnosisIcd10,
+							}));
+							if (tmpl.defaultIcd10) {
+								setIcdSearch(tmpl.defaultIcd10);
+							}
+						}}
+					/>
 				)}
 			</div>
 
@@ -341,7 +358,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									onResult={(text) =>
 										setDiary((p) => ({
 											...p,
-											statusLocalis: p.statusLocalis ? p.statusLocalis + " " + text : text,
+											statusLocalis: p.statusLocalis
+												? p.statusLocalis + " " + text
+												: text,
 										}))
 									}
 								/>
@@ -479,7 +498,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 									onResult={(text) =>
 										setDiary((p) => ({
 											...p,
-											treatmentDescription: p.treatmentDescription ? p.treatmentDescription + " " + text : text,
+											treatmentDescription: p.treatmentDescription
+												? p.treatmentDescription + " " + text
+												: text,
 										}))
 									}
 								/>
@@ -536,10 +557,10 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				</div>
 
 				{/* Attachments (Photos) */}
-				<VisitDiaryPhotoUpload 
-					visitId={visitId} 
-					diaryId={diaryId} 
-					isLocked={isLocked} 
+				<VisitDiaryPhotoUpload
+					visitId={visitId}
+					diaryId={diaryId}
+					isLocked={isLocked}
 				/>
 			</div>
 
@@ -568,7 +589,9 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						diaryHash={diaryHash}
 						isLocked={isLocked}
 						lockedAt={lockedAt}
-						onLock={async (thumbprint, signature) => { await doLock(thumbprint, signature); }}
+						onLock={async (thumbprint, signature) => {
+							await doLock(thumbprint, signature);
+						}}
 					/>
 				</div>
 			) : (
@@ -671,8 +694,6 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			{showPreview &&
 				typeof window !== "undefined" &&
 				createPortal(PrintPreviewContent, document.body)}
-
-
 		</div>
 	);
 };

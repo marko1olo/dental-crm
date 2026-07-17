@@ -1,5 +1,13 @@
-import { getPersonalCertificates, signBase64WithCertificate, checkCryptoProPlugin } from "../utils/cryptoPro";
-import { getRutokenCertificates, signDataWithRutoken, checkRutokenPlugin } from "../utils/rutoken";
+import {
+	checkCryptoProPlugin,
+	getPersonalCertificates,
+	signBase64WithCertificate,
+} from "../utils/cryptoPro";
+import {
+	checkRutokenPlugin,
+	getRutokenCertificates,
+	signDataWithRutoken,
+} from "../utils/rutoken";
 
 export interface CertificateInfo {
 	thumbprint: string; // For rutoken, this will be the cert id
@@ -42,7 +50,7 @@ export class DigitalSignatureService {
 	}
 
 	async getCertificates(): Promise<CertificateInfo[]> {
-		let allCerts: CertificateInfo[] = [];
+		const allCerts: CertificateInfo[] = [];
 
 		// CryptoPro Certificates
 		if (this.isCryptoProAvailable) {
@@ -56,7 +64,7 @@ export class DigitalSignatureService {
 						validFrom: c.validFrom,
 						validTo: c.validTo,
 						provider: "cryptopro" as const,
-					}))
+					})),
 				);
 			} catch (error) {
 				console.error("Failed to fetch CryptoPro certificates:", error);
@@ -76,7 +84,7 @@ export class DigitalSignatureService {
 						validTo: c.validTo,
 						provider: "rutoken" as const,
 						deviceId: c.deviceId,
-					}))
+					})),
 				);
 			} catch (error) {
 				console.error("Failed to fetch Rutoken certificates:", error);
@@ -86,22 +94,38 @@ export class DigitalSignatureService {
 		return allCerts;
 	}
 
-	async signData(thumbprint: string, data: string, pin?: string, deviceId?: number): Promise<{ signatureBase64: string; provider: string }> {
-		const isRutoken = deviceId !== undefined || (thumbprint.length < 20); // Basic heuristic if deviceId wasn't passed directly but we know it's rutoken
+	async signData(
+		thumbprint: string,
+		data: string,
+		pin?: string,
+		deviceId?: number,
+	): Promise<{ signatureBase64: string; provider: string }> {
+		const isRutoken = deviceId !== undefined || thumbprint.length < 20; // Basic heuristic if deviceId wasn't passed directly but we know it's rutoken
 		const provider = isRutoken ? "rutoken" : "cryptopro";
 
 		if (provider === "rutoken") {
-			if (!this.isRutokenAvailable) throw new Error("Rutoken plugin is not available.");
-			if (deviceId === undefined) throw new Error("Device ID is required for Rutoken signing");
+			if (!this.isRutokenAvailable)
+				throw new Error("Rutoken plugin is not available.");
+			if (deviceId === undefined)
+				throw new Error("Device ID is required for Rutoken signing");
 			if (!pin) throw new Error("PIN code is required for Rutoken signing");
-			
-			const signatureBase64 = await signDataWithRutoken(deviceId, thumbprint, data, pin);
+
+			const signatureBase64 = await signDataWithRutoken(
+				deviceId,
+				thumbprint,
+				data,
+				pin,
+			);
 			return { signatureBase64, provider: "rutoken" };
 		} else {
-			if (!this.isCryptoProAvailable) throw new Error("CryptoPro plugin is not available.");
-			
+			if (!this.isCryptoProAvailable)
+				throw new Error("CryptoPro plugin is not available.");
+
 			const base64Data = btoa(unescape(encodeURIComponent(data)));
-			const signatureBase64 = await signBase64WithCertificate(base64Data, thumbprint);
+			const signatureBase64 = await signBase64WithCertificate(
+				base64Data,
+				thumbprint,
+			);
 			return { signatureBase64, provider: "cryptopro" };
 		}
 	}

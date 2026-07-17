@@ -1,4 +1,3 @@
-
 import type {
 	DicomViewerWorkbenchManifestResponse,
 	DicomWorkstationReadinessResponse,
@@ -31,6 +30,7 @@ type StringTokenGroup = { title: string; items: string[] };
 type CbctWorkbenchPlane = { key: string; title: string; detail: string };
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 type InputChangeEvent = ChangeEvent<HTMLInputElement>;
+
 import { SourcesConnectorGrid } from "./sources/SourcesConnectorGrid";
 import { SourcesDicomCapability } from "./sources/SourcesDicomCapability";
 import { SourcesIntegrationPresets } from "./sources/SourcesIntegrationPresets";

@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useVisitStore } from "../store/visitStore";
 import { useAppLogic } from "../useAppLogic";
 import { showToast } from "./GlobalToast";
-import { useVisitStore } from "../store/visitStore";
 
 export interface DiaryState {
 	anamnesis: string;
@@ -121,7 +121,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		return () => document.removeEventListener("mousedown", handler);
 	}, []);
 
-		// ── Save
+	// ── Save
 	const doSave = useCallback(
 		async (silent = false) => {
 			if (isLocked) return;
@@ -162,15 +162,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				setIsSaving(false);
 			}
 		},
-		[
-			activeDoctor,
-			diary,
-			isLocked,
-			patientId,
-			showToast,
-			trayBarcode,
-			visitId,
-		],
+		[activeDoctor, diary, isLocked, patientId, showToast, trayBarcode, visitId],
 	);
 
 	// ── Autosave
@@ -200,7 +192,10 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				});
 				if (!linkRes.ok) {
 					const err = await linkRes.json();
-					showToast(`Ошибка стерилизации: ${err.error || "Неизвестный штрихкод"}`, "error");
+					showToast(
+						`Ошибка стерилизации: ${err.error || "Неизвестный штрихкод"}`,
+						"error",
+					);
 					return;
 				}
 			} catch (e) {

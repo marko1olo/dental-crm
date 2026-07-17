@@ -2674,7 +2674,8 @@ export function useAppLogic(): any {
 		updateNewAppointmentDraft,
 		resetNewAppointmentDraft,
 		closeAppointmentEditor,
-		buildOnboardingFirstAppointmentIssues: _buildOnboardingFirstAppointmentIssues,
+		buildOnboardingFirstAppointmentIssues:
+			_buildOnboardingFirstAppointmentIssues,
 		saveOnboardingSchedulesIfDirty,
 		openScheduleWarning,
 		saveStaffSchedule,
@@ -2694,7 +2695,12 @@ export function useAppLogic(): any {
 				response,
 				"Данные клиники не загружены",
 			);
-			if (response.status === 401 || response.status === 403 || response.status === 503 || response.status === 404) {
+			if (
+				response.status === 401 ||
+				response.status === 403 ||
+				response.status === 503 ||
+				response.status === 404
+			) {
 				setAccessUnlockRequired(true);
 				setAccessUnlockMessage(message);
 				setDashboard(null);
@@ -4115,7 +4121,9 @@ export function useAppLogic(): any {
 			() => {
 				dirtyAppointmentIds.forEach(
 					(appointmentId) =>
-						void saveAppointmentSchedule(appointmentId, { closeEditorOnSave: false }),
+						void saveAppointmentSchedule(appointmentId, {
+							closeEditorOnSave: false,
+						}),
 				);
 			},
 			appointmentRetryingErrors ? 5000 : 1200,
@@ -4987,18 +4995,35 @@ export function useAppLogic(): any {
 				),
 		).length;
 		let insuranceCoverageRub = 0;
-		if (documentPatient?.insuranceContractId || documentPatient?.administrativeProfile?.insuranceContractId) {
-			const contractId = documentPatient.insuranceContractId || documentPatient.administrativeProfile?.insuranceContractId;
-			const contract = dashboard?.insuranceContracts?.find((c: any) => c.id === contractId);
+		if (
+			documentPatient?.insuranceContractId ||
+			documentPatient?.administrativeProfile?.insuranceContractId
+		) {
+			const contractId =
+				documentPatient.insuranceContractId ||
+				documentPatient.administrativeProfile?.insuranceContractId;
+			const contract = dashboard?.insuranceContracts?.find(
+				(c: any) => c.id === contractId,
+			);
 			if (contract && contract.isActive) {
 				for (const item of activePlanItems) {
-					const service = dashboard.serviceCatalog?.find((s: any) => s.id === item.serviceId);
+					const service = dashboard.serviceCatalog?.find(
+						(s: any) => s.id === item.serviceId,
+					);
 					const category = service?.category || "other";
 					let pct = 0;
-					if (category === "therapy" || category === "consultation" || category === "periodontology") pct = contract.coverageTherapyPct || 0;
-					else if (category === "surgery") pct = contract.coverageSurgeryPct || 0;
-					else if (category === "orthodontics" || category === "prosthetics") pct = contract.coverageOrthoPct || 0;
-					else if (category === "hygiene") pct = contract.coverageHygienePct || 0;
+					if (
+						category === "therapy" ||
+						category === "consultation" ||
+						category === "periodontology"
+					)
+						pct = contract.coverageTherapyPct || 0;
+					else if (category === "surgery")
+						pct = contract.coverageSurgeryPct || 0;
+					else if (category === "orthodontics" || category === "prosthetics")
+						pct = contract.coverageOrthoPct || 0;
+					else if (category === "hygiene")
+						pct = contract.coverageHygienePct || 0;
 
 					insuranceCoverageRub += treatmentLineTotal(item) * (pct / 100);
 				}
@@ -5009,7 +5034,10 @@ export function useAppLogic(): any {
 			totalPlannedRub,
 			totalDiscountRub,
 			totalPaidRub,
-			totalDueRub: Math.max(0, totalPlannedRub - insuranceCoverageRub - totalPaidRub),
+			totalDueRub: Math.max(
+				0,
+				totalPlannedRub - insuranceCoverageRub - totalPaidRub,
+			),
 			taxDeductionEligibleRub,
 			draftDocumentAmountRub,
 			openTreatmentItems: activePlanItems.filter(
@@ -7214,7 +7242,10 @@ export function useAppLogic(): any {
 						useWorkspaceProfileStore.getState().hydrate(updatedFlags);
 					}
 				} catch (profileError) {
-					console.error("Failed to sync workspace profile flags after mode change:", profileError);
+					console.error(
+						"Failed to sync workspace profile flags after mode change:",
+						profileError,
+					);
 				}
 				return;
 			}
@@ -7232,8 +7263,6 @@ export function useAppLogic(): any {
 		}
 	}
 
-	
-
 	async function createServiceCatalogItem(data: any) {
 		try {
 			const response = await fetch("/api/settings/catalog", {
@@ -7244,7 +7273,9 @@ export function useAppLogic(): any {
 				body: JSON.stringify(data),
 			});
 			if (!response.ok) {
-				setError(await responseErrorMessage(response, "Не удалось создать услугу"));
+				setError(
+					await responseErrorMessage(response, "Не удалось создать услугу"),
+				);
 				return;
 			}
 			await loadDashboard();
@@ -7263,7 +7294,9 @@ export function useAppLogic(): any {
 				body: JSON.stringify(updates),
 			});
 			if (!response.ok) {
-				setError(await responseErrorMessage(response, "Не удалось обновить услугу"));
+				setError(
+					await responseErrorMessage(response, "Не удалось обновить услугу"),
+				);
 				return;
 			}
 			await loadDashboard();
@@ -7279,7 +7312,9 @@ export function useAppLogic(): any {
 				headers: auth.settingsAccessHeaders(),
 			});
 			if (!response.ok) {
-				setError(await responseErrorMessage(response, "Не удалось удалить услугу"));
+				setError(
+					await responseErrorMessage(response, "Не удалось удалить услугу"),
+				);
 				return;
 			}
 			await loadDashboard();
@@ -7288,7 +7323,6 @@ export function useAppLogic(): any {
 		}
 	}
 
-	
 	async function createStaffMember(data: any) {
 		try {
 			const response = await fetch("/api/settings/staff", {
@@ -7299,7 +7333,12 @@ export function useAppLogic(): any {
 				body: JSON.stringify(data),
 			});
 			if (!response.ok) {
-				setError(await responseErrorMessage(response, "Не удалось добавить сотрудника"));
+				setError(
+					await responseErrorMessage(
+						response,
+						"Не удалось добавить сотрудника",
+					),
+				);
 				return;
 			}
 			await loadDashboard();
@@ -10802,7 +10841,7 @@ export function useAppLogic(): any {
 		}
 	}
 
-		async function removeClinicalRule(ruleId: string) {
+	async function removeClinicalRule(ruleId: string) {
 		if (!dashboard) return;
 		if (isClinicalRuleSaving) return;
 		setIsClinicalRuleSaving(true);
@@ -10813,26 +10852,20 @@ export function useAppLogic(): any {
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Правило не удалено",
-					),
+					await responseErrorMessage(response, "Правило не удалено"),
 				);
 			}
 			await loadDashboard();
 		} catch (ruleError) {
 			setError(
-				operatorWorkflowFailureMessage(
-					"Не удалось удалить правило",
-					ruleError,
-				),
+				operatorWorkflowFailureMessage("Не удалось удалить правило", ruleError),
 			);
 		} finally {
 			setIsClinicalRuleSaving(false);
 		}
 	}
 
-async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
+	async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
 		if (isClinicalRuleSaving) {
 			setError("Дождитесь завершения текущей записи клинического правила.");
 			return;
@@ -13283,7 +13316,10 @@ async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
 				setError(`Быстрый приём: ${msg}`);
 				return;
 			}
-			const { patientId } = (await response.json()) as { patientId: string; appointmentId: string };
+			const { patientId } = (await response.json()) as {
+				patientId: string;
+				appointmentId: string;
+			};
 			// Select the patient and navigate to visit
 			setSelectedPatientId(patientId);
 			await loadDashboard();

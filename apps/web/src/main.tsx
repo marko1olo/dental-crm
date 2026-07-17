@@ -69,7 +69,10 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
 		window.sessionStorage.removeItem(DENTE_SW_RELOAD_MARKER);
 	}
 
-	navigator.serviceWorker.addEventListener("controllerchange", reloadOnceAfterServiceWorkerControllerChange);
+	navigator.serviceWorker.addEventListener(
+		"controllerchange",
+		reloadOnceAfterServiceWorkerControllerChange,
+	);
 
 	window.addEventListener("load", () => {
 		navigator.serviceWorker

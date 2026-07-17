@@ -1,6 +1,7 @@
-import type { Dashboard, CommunicationTask } from "@dental/shared";
-import { PhoneCall, Check, X, Bell } from "lucide-react";
-import React, { useState } from "react";
+import type { CommunicationTask, Dashboard } from "@dental/shared";
+import { Bell, Check, PhoneCall, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 interface ObzvonStickyListProps {
 	dashboard: Dashboard;
@@ -47,7 +48,8 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 		<div
 			className="fixed bottom-4 left-4 z-40 w-80 bg-white dark:bg-[#1a1a1c] border border-gray-200 dark:border-[#2a2a2c] rounded-xl shadow-2xl flex flex-col max-h-[60vh] overflow-hidden"
 			style={{
-				boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
+				boxShadow:
+					"0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
 			}}
 		>
 			<div className="flex items-center justify-between p-3 border-b border-gray-100 dark:border-[#2a2a2c] bg-gray-50 dark:bg-[#202022]">
@@ -70,7 +72,8 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 					const patient = dashboard.patients.find(
 						(p) => p.id === task.patientId,
 					);
-					const isUrgent = task.priority === "urgent" || task.priority === "high";
+					const isUrgent =
+						task.priority === "urgent" || task.priority === "high";
 
 					return (
 						<div
@@ -83,7 +86,8 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 						>
 							<div className="flex items-start justify-between mb-1">
 								<span className="font-medium text-gray-900 dark:text-gray-100">
-									{patient?.fullName.split(" ").slice(0, 2).join(" ") || "Пациент DB"}
+									{patient?.fullName.split(" ").slice(0, 2).join(" ") ||
+										"Пациент DB"}
 								</span>
 								{isUrgent && (
 									<Bell size={14} className="text-red-500 animate-pulse" />
@@ -91,8 +95,10 @@ export const ObzvonStickyList: React.FC<ObzvonStickyListProps> = ({
 							</div>
 							<div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
 								{task.intent === "recall" && "Приглашение на осмотр (Recall)"}
-								{task.intent === "appointment_confirmation" && "Подтверждение записи"}
-								{task.intent === "post_visit_instruction" && "Контроль самочувствия"}
+								{task.intent === "appointment_confirmation" &&
+									"Подтверждение записи"}
+								{task.intent === "post_visit_instruction" &&
+									"Контроль самочувствия"}
 							</div>
 							<div className="flex items-center gap-2 mt-2">
 								<a

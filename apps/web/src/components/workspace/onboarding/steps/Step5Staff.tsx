@@ -1,7 +1,7 @@
-import React from "react";
 import { User } from "lucide-react";
+import React from "react";
 import { SPECIALIZATIONS } from "../ui/SharedOnboardingUI";
-import { StaffEntry } from "../useOnboardingLogic";
+import type { StaffEntry } from "../useOnboardingLogic";
 
 export function Step5Staff({
 	staff,
@@ -50,7 +50,9 @@ export function Step5Staff({
 							gap: 16,
 							padding: "20px 16px",
 							borderRadius: 16,
-							background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
+							background: isDark
+								? "rgba(255,255,255,0.03)"
+								: "rgba(0,0,0,0.02)",
 							border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
 						}}
 					>
@@ -76,7 +78,9 @@ export function Step5Staff({
 									onChange={(e) =>
 										setStaff((prev: any) =>
 											prev.map((item: any, idx: number) =>
-												idx === i ? { ...item, fullName: e.target.value } : item,
+												idx === i
+													? { ...item, fullName: e.target.value }
+													: item,
 											),
 										)
 									}
@@ -330,7 +334,9 @@ export function Step5Staff({
 									>
 										<option value="">Без жесткой привязки...</option>
 										{staff
-											.filter((s: StaffEntry) => s.role === "Врач" && s.fullName)
+											.filter(
+												(s: StaffEntry) => s.role === "Врач" && s.fullName,
+											)
 											.map((doc: StaffEntry) => (
 												<option key={doc.id} value={doc.id}>
 													{doc.fullName}

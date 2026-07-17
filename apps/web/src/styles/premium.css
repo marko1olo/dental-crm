@@ -8,7 +8,8 @@
 	--bg-app: #030305;
 	--glass-panel: rgba(15, 15, 20, 0.45);
 	--glass-border: rgba(255, 255, 255, 0.05);
-	--glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	--glass-shadow:
+		0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	--glass-blur: blur(40px);
 	--teal-glow: 0 0 30px rgba(45, 212, 191, 0.25);
 	--active-item-bg: linear-gradient(
@@ -42,7 +43,8 @@
 	--bg-app: #f4f4f6;
 	--glass-panel: rgba(255, 255, 255, 0.65);
 	--glass-border: rgba(255, 255, 255, 0.9);
-	--glass-shadow: 0 16px 40px rgba(31, 38, 135, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+	--glass-shadow:
+		0 16px 40px rgba(31, 38, 135, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
 	--glass-blur: blur(30px);
 	--teal-glow: 0 0 30px rgba(13, 148, 136, 0.15);
 	--active-item-bg: linear-gradient(
@@ -75,7 +77,8 @@
 /* Base Body Background with Mesh Gradients */
 body {
 	background-color: var(--bg-app) !important;
-	background-image: var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3) !important;
+	background-image:
+		var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3) !important;
 	background-attachment: fixed !important;
 	color: var(--text-primary) !important;
 }
@@ -214,5 +217,7 @@ article {
 .patient-summary-card:hover,
 .card:hover,
 .glass-panel:hover {
-	box-shadow: var(--glass-shadow), 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+	box-shadow:
+		var(--glass-shadow),
+		0 12px 30px rgba(0, 0, 0, 0.15) !important;
 }

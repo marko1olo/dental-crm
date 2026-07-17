@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export type ThemeColor = "teal" | "blue" | "purple" | "rose";
 
@@ -16,7 +16,10 @@ export interface StaffEntry {
 
 const LS_KEY = "dente-onboarding-draft-v1";
 
-export function useOnboardingLogic(onComplete: () => void, initialIsDark: boolean = true) {
+export function useOnboardingLogic(
+	onComplete: () => void,
+	initialIsDark: boolean = true,
+) {
 	const [activeDark, setActiveDark] = useState(initialIsDark);
 	useEffect(() => {
 		const checkDark = () => {
@@ -33,7 +36,7 @@ export function useOnboardingLogic(onComplete: () => void, initialIsDark: boolea
 		});
 		return () => observer.disconnect();
 	}, [initialIsDark]);
-	
+
 	const isDark = activeDark;
 
 	const [savedData, setSavedData] = useState<any>(() => {

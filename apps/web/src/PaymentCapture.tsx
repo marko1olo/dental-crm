@@ -445,7 +445,6 @@ function TaxPayerDetails({
 	);
 }
 
-
 export function PaymentCapture({
 	amount,
 	feedback,

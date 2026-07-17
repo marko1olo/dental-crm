@@ -15,8 +15,8 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { useIsActiveTab } from "../hooks/useIsActiveTab";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
+import { useIsActiveTab } from "../hooks/useIsActiveTab";
 
 export function AnalyticsDashboardView() {
 	const isActive = useIsActiveTab("analytics");
@@ -65,9 +65,7 @@ export function AnalyticsDashboardView() {
 	if (loading || !data) {
 		return (
 			<div className="analytics-dashboard">
-				<div className="analytics-empty-state">
-					Загрузка аналитики...
-				</div>
+				<div className="analytics-empty-state">Загрузка аналитики...</div>
 			</div>
 		);
 	}
@@ -81,9 +79,16 @@ export function AnalyticsDashboardView() {
 
 	return (
 		<div className="analytics-dashboard" aria-label="Аналитика клиники">
-			<header className="analytics-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+			<header
+				className="analytics-header"
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+				}}
+			>
 				<h2>Аналитика клиники</h2>
-				<select 
+				<select
 					value={dateRange}
 					onChange={(e) => setDateRange(e.target.value)}
 					style={{
@@ -93,7 +98,7 @@ export function AnalyticsDashboardView() {
 						color: "var(--fg-primary, #e4e4e7)",
 						border: "1px solid var(--border, #27272a)",
 						outline: "none",
-						fontSize: "14px"
+						fontSize: "14px",
 					}}
 				>
 					<option value="all">За всё время</option>
@@ -107,7 +112,8 @@ export function AnalyticsDashboardView() {
 				{/* Widget 1: Cohort LTV */}
 				<article className="glass-widget">
 					<h3>
-						<TrendingUp className="w-5 h-5 text-dente-teal" /> Выручка по когортам (LTV)
+						<TrendingUp className="w-5 h-5 text-dente-teal" /> Выручка по
+						когортам (LTV)
 					</h3>
 					<div className="widget-chart-container">
 						{cohortLtvJson && cohortLtvJson.length > 0 ? (
@@ -194,7 +200,8 @@ export function AnalyticsDashboardView() {
 				{/* Widget 2: Plan Funnel */}
 				<article className="glass-widget">
 					<h3>
-						<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка планов лечения
+						<BarChart3 className="w-5 h-5 text-sky-500" /> Воронка планов
+						лечения
 					</h3>
 					<div className="widget-chart-container">
 						{planFunnelJson && planFunnelJson.length > 0 ? (
@@ -232,13 +239,16 @@ export function AnalyticsDashboardView() {
 										}}
 										itemStyle={{ color: "#e4e4e7" }}
 									/>
-									<Bar dataKey="value" name="Количество" barSize={32} radius={[0, 4, 4, 0]} />
+									<Bar
+										dataKey="value"
+										name="Количество"
+										barSize={32}
+										radius={[0, 4, 4, 0]}
+									/>
 								</ComposedChart>
 							</ResponsiveContainer>
 						) : (
-							<div className="analytics-empty-state">
-								Нет данных по воронке
-							</div>
+							<div className="analytics-empty-state">Нет данных по воронке</div>
 						)}
 					</div>
 				</article>
@@ -246,7 +256,8 @@ export function AnalyticsDashboardView() {
 				{/* Widget 3: Chair Utilization */}
 				<article className="glass-widget">
 					<h3>
-						<Activity className="w-5 h-5 text-emerald-500" /> Загруженность кресел
+						<Activity className="w-5 h-5 text-emerald-500" /> Загруженность
+						кресел
 					</h3>
 					<div className="widget-chart-container">
 						{chairUtilizationJson && chairUtilizationJson.length > 0 ? (
@@ -324,9 +335,7 @@ export function AnalyticsDashboardView() {
 								</tbody>
 							</table>
 						) : (
-							<div className="analytics-empty-state">
-								Нет данных по врачам
-							</div>
+							<div className="analytics-empty-state">Нет данных по врачам</div>
 						)}
 					</div>
 				</article>

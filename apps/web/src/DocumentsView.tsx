@@ -23,35 +23,36 @@ import { motion } from "framer-motion";
 import { CheckCircle2, FileText } from "lucide-react";
 import { useEffect } from "react";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
+import { AnesthesiaConsentLogForm } from "./components/documents/forms/AnesthesiaConsentLogForm";
+import { CompletedWorksActForm } from "./components/documents/forms/CompletedWorksActForm";
+import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
+import { InstallmentPaymentScheduleForm } from "./components/documents/forms/InstallmentPaymentScheduleForm";
+import { LabWorkOrderForm } from "./components/documents/forms/LabWorkOrderForm";
+import { MedicalDocumentReleaseReceiptForm } from "./components/documents/forms/MedicalDocumentReleaseReceiptForm";
+import { MedicalInterventionRefusalForm } from "./components/documents/forms/MedicalInterventionRefusalForm";
+import { MedicalRecordCopyRequestForm } from "./components/documents/forms/MedicalRecordCopyRequestForm";
+import { MedicalRecordExtractForm } from "./components/documents/forms/MedicalRecordExtractForm";
+import { MinorLegalRepresentativeConsentForm } from "./components/documents/forms/MinorLegalRepresentativeConsentForm";
 import { OutpatientMedicalCard025uForm } from "./components/documents/forms/OutpatientMedicalCard025uForm";
 import { PaidMedicalServicesContractForm } from "./components/documents/forms/PaidMedicalServicesContractForm";
-import { TreatmentPlanAcceptanceForm } from "./components/documents/forms/TreatmentPlanAcceptanceForm";
-import { CompletedWorksActForm } from "./components/documents/forms/CompletedWorksActForm";
-import { TreatmentCostEstimateForm } from "./components/documents/forms/TreatmentCostEstimateForm";
+import { PatientIntakeQuestionnaireForm } from "./components/documents/forms/PatientIntakeQuestionnaireForm";
 import { PaymentInvoiceForm } from "./components/documents/forms/PaymentInvoiceForm";
 import { PaymentReceiptForm } from "./components/documents/forms/PaymentReceiptForm";
-import { InstallmentPaymentScheduleForm } from "./components/documents/forms/InstallmentPaymentScheduleForm";
-import { MinorLegalRepresentativeConsentForm } from "./components/documents/forms/MinorLegalRepresentativeConsentForm";
-import { WarrantyServiceMemoForm } from "./components/documents/forms/WarrantyServiceMemoForm";
-import { PatientIntakeQuestionnaireForm } from "./components/documents/forms/PatientIntakeQuestionnaireForm";
-import { TaxDeductionApplicationForm as TaxDeductionApplicationFormComponent } from "./components/documents/forms/TaxDeductionApplicationForm";
-import { InformedConsentForm } from "./components/documents/forms/InformedConsentForm";
-import { ProcedureSpecificConsentPacketForm } from "./components/documents/forms/ProcedureSpecificConsentPacketForm";
-import { TreatmentPlanForm } from "./components/documents/forms/TreatmentPlanForm";
-import { PostVisitRecommendationsForm } from "./components/documents/forms/PostVisitRecommendationsForm";
-import { AnesthesiaConsentLogForm } from "./components/documents/forms/AnesthesiaConsentLogForm";
-import { PrescriptionMedicationOrderForm } from "./components/documents/forms/PrescriptionMedicationOrderForm";
-import { LabWorkOrderForm } from "./components/documents/forms/LabWorkOrderForm";
-import { PhotoVideoConsentForm } from "./components/documents/forms/PhotoVideoConsentForm";
-import { XrayCbctReferralForm } from "./components/documents/forms/XrayCbctReferralForm";
-import { MedicalRecordExtractForm } from "./components/documents/forms/MedicalRecordExtractForm";
-import { MedicalRecordCopyRequestForm } from "./components/documents/forms/MedicalRecordCopyRequestForm";
-import { VisitAttendanceCertificateForm } from "./components/documents/forms/VisitAttendanceCertificateForm";
-import { MedicalDocumentReleaseReceiptForm } from "./components/documents/forms/MedicalDocumentReleaseReceiptForm";
-import { PersonalDataProcessingConsentForm } from "./components/documents/forms/PersonalDataProcessingConsentForm";
-import { MedicalInterventionRefusalForm } from "./components/documents/forms/MedicalInterventionRefusalForm";
 import { PaymentRefundCorrectionRequestForm } from "./components/documents/forms/PaymentRefundCorrectionRequestForm";
+import { PersonalDataProcessingConsentForm } from "./components/documents/forms/PersonalDataProcessingConsentForm";
+import { PhotoVideoConsentForm } from "./components/documents/forms/PhotoVideoConsentForm";
+import { PostVisitRecommendationsForm } from "./components/documents/forms/PostVisitRecommendationsForm";
+import { PrescriptionMedicationOrderForm } from "./components/documents/forms/PrescriptionMedicationOrderForm";
+import { ProcedureSpecificConsentPacketForm } from "./components/documents/forms/ProcedureSpecificConsentPacketForm";
+import { TaxDeductionApplicationForm as TaxDeductionApplicationFormComponent } from "./components/documents/forms/TaxDeductionApplicationForm";
+import { TreatmentCostEstimateForm } from "./components/documents/forms/TreatmentCostEstimateForm";
+import { TreatmentPlanAcceptanceForm } from "./components/documents/forms/TreatmentPlanAcceptanceForm";
+import { TreatmentPlanForm } from "./components/documents/forms/TreatmentPlanForm";
+import { VisitAttendanceCertificateForm } from "./components/documents/forms/VisitAttendanceCertificateForm";
+import { WarrantyServiceMemoForm } from "./components/documents/forms/WarrantyServiceMemoForm";
+import { XrayCbctReferralForm } from "./components/documents/forms/XrayCbctReferralForm";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import {
 	type MedicalDocumentReleaseChannel,
 	useDocumentStore,
@@ -74,8 +75,6 @@ type MedicalCopyRequestSourceDocument = GeneratedDocument & {
 		} | null;
 	} | null;
 };
-
-type DocumentsViewProps = Record<string, any>;
 
 const EXTRACT_DIAGNOSIS_CHIPS = [
 	"Кариес",
@@ -141,7 +140,7 @@ function humanizeDocumentAuditText(value: string): string {
 		.replace(/\bXML\b/g, "электронный файл");
 }
 
-export function DocumentsView(props: DocumentsViewProps) {
+export function DocumentsView() {
 	useEffect(() => {
 		return () => {
 			// Memory Optimization: Flush heavy document states on unmount
@@ -282,7 +281,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 		warrantyTeethOrAreaValue,
 		xrayPregnancyStatusOptions,
 		xrayStudyTypeOptions,
-	} = props;
+	} = useAppLogicContext();
 	const {
 		attendanceDiagnosisDisclosureExcluded,
 		attendanceEndedAt,
@@ -1510,36 +1509,137 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "completed_works_act" ? (
-    <CompletedWorksActForm dashboard={dashboard} activeDoctor={activeDoctor}  treatmentAcceptancePlannedTotalRub={treatmentAcceptancePlannedTotalRub}  typedActiveIssuedPaidContracts={typedActiveIssuedPaidContracts} />
-  ) : null}
+						<CompletedWorksActForm
+							dashboard={dashboard}
+							activeDoctor={activeDoctor}
+							treatmentAcceptancePlannedTotalRub={
+								treatmentAcceptancePlannedTotalRub
+							}
+							typedActiveIssuedPaidContracts={typedActiveIssuedPaidContracts}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "treatment_cost_estimate" ? (
-    <TreatmentCostEstimateForm activeDoctor={activeDoctor} money={money}  plannedServiceLinesForFinancialPayload={plannedServiceLinesForFinancialPayload} treatmentEstimatePatientOrPayerFullNameValue={treatmentEstimatePatientOrPayerFullNameValue} treatmentEstimateTotalRubValue={treatmentEstimateTotalRubValue} treatmentEstimateTreatmentBasisValue={treatmentEstimateTreatmentBasisValue} />
-  ) : null}
+						<TreatmentCostEstimateForm
+							activeDoctor={activeDoctor}
+							money={money}
+							plannedServiceLinesForFinancialPayload={
+								plannedServiceLinesForFinancialPayload
+							}
+							treatmentEstimatePatientOrPayerFullNameValue={
+								treatmentEstimatePatientOrPayerFullNameValue
+							}
+							treatmentEstimateTotalRubValue={treatmentEstimateTotalRubValue}
+							treatmentEstimateTreatmentBasisValue={
+								treatmentEstimateTreatmentBasisValue
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "payment_invoice" ? (
-    <PaymentInvoiceForm dashboard={dashboard} documentPatient={documentPatient} money={money}  plannedServiceLinesForFinancialPayload={plannedServiceLinesForFinancialPayload}  paymentInvoiceTotalRubValue={paymentInvoiceTotalRubValue} />
-  ) : null}
+						<PaymentInvoiceForm
+							dashboard={dashboard}
+							documentPatient={documentPatient}
+							money={money}
+							plannedServiceLinesForFinancialPayload={
+								plannedServiceLinesForFinancialPayload
+							}
+							paymentInvoiceTotalRubValue={paymentInvoiceTotalRubValue}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "payment_receipt" ? (
-    <PaymentReceiptForm money={money}  paymentFiscalReceiptLabelForUi={paymentFiscalReceiptLabelForUi} paymentReceiptFiscalReceiptLines={paymentReceiptFiscalReceiptLines} paymentReceiptIssuedByValue={paymentReceiptIssuedByValue} paymentReceiptPayerBirthDateValue={paymentReceiptPayerBirthDateValue} paymentReceiptPayerFullNameValue={paymentReceiptPayerFullNameValue} paymentReceiptPayerIdentityDocumentValue={paymentReceiptPayerIdentityDocumentValue} paymentReceiptPayerInnValue={paymentReceiptPayerInnValue} paymentReceiptPayerRelationshipValue={paymentReceiptPayerRelationshipValue} selectedPaymentReceiptIdSet={selectedPaymentReceiptIdSet} selectedPaymentReceiptPayments={selectedPaymentReceiptPayments} selectedPaymentReceiptTotalRub={selectedPaymentReceiptTotalRub} eligiblePaymentReceiptPayments={eligiblePaymentReceiptPayments}  typedEligiblePaymentReceiptPayments={typedEligiblePaymentReceiptPayments} />
-  ) : null}
+						<PaymentReceiptForm
+							money={money}
+							paymentFiscalReceiptLabelForUi={paymentFiscalReceiptLabelForUi}
+							paymentReceiptFiscalReceiptLines={
+								paymentReceiptFiscalReceiptLines
+							}
+							paymentReceiptIssuedByValue={paymentReceiptIssuedByValue}
+							paymentReceiptPayerBirthDateValue={
+								paymentReceiptPayerBirthDateValue
+							}
+							paymentReceiptPayerFullNameValue={
+								paymentReceiptPayerFullNameValue
+							}
+							paymentReceiptPayerIdentityDocumentValue={
+								paymentReceiptPayerIdentityDocumentValue
+							}
+							paymentReceiptPayerInnValue={paymentReceiptPayerInnValue}
+							paymentReceiptPayerRelationshipValue={
+								paymentReceiptPayerRelationshipValue
+							}
+							selectedPaymentReceiptIdSet={selectedPaymentReceiptIdSet}
+							selectedPaymentReceiptPayments={selectedPaymentReceiptPayments}
+							selectedPaymentReceiptTotalRub={selectedPaymentReceiptTotalRub}
+							eligiblePaymentReceiptPayments={eligiblePaymentReceiptPayments}
+							typedEligiblePaymentReceiptPayments={
+								typedEligiblePaymentReceiptPayments
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "installment_payment_schedule" ? (
-    <InstallmentPaymentScheduleForm documentPatient={documentPatient} activeDoctor={activeDoctor} money={money} />
-  ) : null}
+						<InstallmentPaymentScheduleForm
+							documentPatient={documentPatient}
+							activeDoctor={activeDoctor}
+							money={money}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "minor_legal_representative_consent" ? (
-    <MinorLegalRepresentativeConsentForm activeDoctor={activeDoctor}  minorConsentDiagnosisOrIndicationValue={minorConsentDiagnosisOrIndicationValue} minorConsentInterventionScopeValue={minorConsentInterventionScopeValue} minorConsentPatientBirthDateValue={minorConsentPatientBirthDateValue} minorConsentPatientFullNameValue={minorConsentPatientFullNameValue} minorRepresentativeFullNameValue={minorRepresentativeFullNameValue} minorRepresentativeIdentityDocumentValue={minorRepresentativeIdentityDocumentValue} minorRepresentativePhoneValue={minorRepresentativePhoneValue} minorRepresentativeRelationshipValue={minorRepresentativeRelationshipValue} />
-  ) : null}
+						<MinorLegalRepresentativeConsentForm
+							activeDoctor={activeDoctor}
+							minorConsentDiagnosisOrIndicationValue={
+								minorConsentDiagnosisOrIndicationValue
+							}
+							minorConsentInterventionScopeValue={
+								minorConsentInterventionScopeValue
+							}
+							minorConsentPatientBirthDateValue={
+								minorConsentPatientBirthDateValue
+							}
+							minorConsentPatientFullNameValue={
+								minorConsentPatientFullNameValue
+							}
+							minorRepresentativeFullNameValue={
+								minorRepresentativeFullNameValue
+							}
+							minorRepresentativeIdentityDocumentValue={
+								minorRepresentativeIdentityDocumentValue
+							}
+							minorRepresentativePhoneValue={minorRepresentativePhoneValue}
+							minorRepresentativeRelationshipValue={
+								minorRepresentativeRelationshipValue
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "warranty_service_memo" ? (
-    <WarrantyServiceMemoForm activeDoctor={activeDoctor}  warrantyLinkedActOrContractValue={warrantyLinkedActOrContractValue} warrantyServiceOrWorkNameValue={warrantyServiceOrWorkNameValue} warrantyTeethOrAreaValue={warrantyTeethOrAreaValue} />
-  ) : null}
+						<WarrantyServiceMemoForm
+							activeDoctor={activeDoctor}
+							warrantyLinkedActOrContractValue={
+								warrantyLinkedActOrContractValue
+							}
+							warrantyServiceOrWorkNameValue={warrantyServiceOrWorkNameValue}
+							warrantyTeethOrAreaValue={warrantyTeethOrAreaValue}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "patient_intake_questionnaire" ? (
-    <PatientIntakeQuestionnaireForm dashboard={dashboard}  normalizedPatientIntakePregnancyStatus={normalizedPatientIntakePregnancyStatus} patientIntakePregnancyStatusOptions={patientIntakePregnancyStatusOptions}  typedPatientIntakePregnancyStatusOptions={typedPatientIntakePregnancyStatusOptions} />
-  ) : null}
+						<PatientIntakeQuestionnaireForm
+							dashboard={dashboard}
+							normalizedPatientIntakePregnancyStatus={
+								normalizedPatientIntakePregnancyStatus
+							}
+							patientIntakePregnancyStatusOptions={
+								patientIntakePregnancyStatusOptions
+							}
+							typedPatientIntakePregnancyStatusOptions={
+								typedPatientIntakePregnancyStatusOptions
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "tax_deduction_application" ? (
 						<TaxDeductionApplicationFormComponent
@@ -1561,16 +1661,39 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "informed_consent" ? (
-    <InformedConsentForm dashboard={dashboard} activeDoctor={activeDoctor}  inferredTreatmentArea={inferredTreatmentArea} />
-  ) : null}
+						<InformedConsentForm
+							dashboard={dashboard}
+							activeDoctor={activeDoctor}
+							inferredTreatmentArea={inferredTreatmentArea}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "procedure_specific_consent_packet" ? (
-    <ProcedureSpecificConsentPacketForm dashboard={dashboard} activeDoctor={activeDoctor}  inferredTreatmentArea={inferredTreatmentArea} normalizedProcedureSpecificConsentProcedure={normalizedProcedureSpecificConsentProcedure} renderClinicalToothRowsEditor={renderClinicalToothRowsEditor} typedProcedureSpecificConsentProcedureOptions={typedProcedureSpecificConsentProcedureOptions} />
-  ) : null}
+						<ProcedureSpecificConsentPacketForm
+							dashboard={dashboard}
+							activeDoctor={activeDoctor}
+							inferredTreatmentArea={inferredTreatmentArea}
+							normalizedProcedureSpecificConsentProcedure={
+								normalizedProcedureSpecificConsentProcedure
+							}
+							renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
+							typedProcedureSpecificConsentProcedureOptions={
+								typedProcedureSpecificConsentProcedureOptions
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "treatment_plan" ? (
-    <TreatmentPlanForm dashboard={dashboard} activeDoctor={activeDoctor}  inferredTreatmentArea={inferredTreatmentArea} renderClinicalToothRowsEditor={renderClinicalToothRowsEditor} treatmentAcceptancePlannedTotalRub={treatmentAcceptancePlannedTotalRub} />
-  ) : null}
+						<TreatmentPlanForm
+							dashboard={dashboard}
+							activeDoctor={activeDoctor}
+							inferredTreatmentArea={inferredTreatmentArea}
+							renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
+							treatmentAcceptancePlannedTotalRub={
+								treatmentAcceptancePlannedTotalRub
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "treatment_plan_acceptance" ? (
 						<TreatmentPlanAcceptanceForm
@@ -1581,28 +1704,58 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "post_visit_recommendations" ? (
-    <PostVisitRecommendationsForm dashboard={dashboard} activeDoctor={activeDoctor}  inferredTreatmentArea={inferredTreatmentArea}  normalizedPostVisitCareTopic={normalizedPostVisitCareTopic} postVisitCareTopicOptions={postVisitCareTopicOptions} applyPostVisitCarePreset={applyPostVisitCarePreset} changePostVisitCareTopic={changePostVisitCareTopic} markPostVisitManualEdited={markPostVisitManualEdited}  typedPostVisitCareTopicOptions={typedPostVisitCareTopicOptions} />
-  ) : null}
+						<PostVisitRecommendationsForm
+							dashboard={dashboard}
+							activeDoctor={activeDoctor}
+							inferredTreatmentArea={inferredTreatmentArea}
+							normalizedPostVisitCareTopic={normalizedPostVisitCareTopic}
+							postVisitCareTopicOptions={postVisitCareTopicOptions}
+							applyPostVisitCarePreset={applyPostVisitCarePreset}
+							changePostVisitCareTopic={changePostVisitCareTopic}
+							markPostVisitManualEdited={markPostVisitManualEdited}
+							typedPostVisitCareTopicOptions={typedPostVisitCareTopicOptions}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "anesthesia_consent_log" ? (
-    <AnesthesiaConsentLogForm   inferredTreatmentArea={inferredTreatmentArea} />
-  ) : null}
+						<AnesthesiaConsentLogForm
+							inferredTreatmentArea={inferredTreatmentArea}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "prescription_medication_order" ? (
-    <PrescriptionMedicationOrderForm   renderClinicalToothRowsEditor={renderClinicalToothRowsEditor} />
-  ) : null}
+						<PrescriptionMedicationOrderForm
+							renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "lab_work_order" ? (
-    <LabWorkOrderForm   inferredTreatmentArea={inferredTreatmentArea} renderClinicalToothRowsEditor={renderClinicalToothRowsEditor} />
-  ) : null}
+						<LabWorkOrderForm
+							inferredTreatmentArea={inferredTreatmentArea}
+							renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "photo_video_consent" ? (
-    <PhotoVideoConsentForm   togglePhotoVideoMaterial={togglePhotoVideoMaterial} photoVideoMaterialOptions={photoVideoMaterialOptions}  typedPhotoVideoMaterialOptions={typedPhotoVideoMaterialOptions} />
-  ) : null}
+						<PhotoVideoConsentForm
+							togglePhotoVideoMaterial={togglePhotoVideoMaterial}
+							photoVideoMaterialOptions={photoVideoMaterialOptions}
+							typedPhotoVideoMaterialOptions={typedPhotoVideoMaterialOptions}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "xray_cbct_referral" ? (
-    <XrayCbctReferralForm activeDoctor={activeDoctor}  inferredTreatmentArea={inferredTreatmentArea} normalizedXrayPregnancyStatus={normalizedXrayPregnancyStatus} normalizedXrayPriority={normalizedXrayPriority} normalizedXrayStudyType={normalizedXrayStudyType} renderClinicalToothRowsEditor={renderClinicalToothRowsEditor} typedXrayStudyTypeOptions={typedXrayStudyTypeOptions} typedXrayPregnancyStatusOptions={typedXrayPregnancyStatusOptions} />
-  ) : null}
+						<XrayCbctReferralForm
+							activeDoctor={activeDoctor}
+							inferredTreatmentArea={inferredTreatmentArea}
+							normalizedXrayPregnancyStatus={normalizedXrayPregnancyStatus}
+							normalizedXrayPriority={normalizedXrayPriority}
+							normalizedXrayStudyType={normalizedXrayStudyType}
+							renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
+							typedXrayStudyTypeOptions={typedXrayStudyTypeOptions}
+							typedXrayPregnancyStatusOptions={typedXrayPregnancyStatusOptions}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "outpatient_medical_card_025u" ? (
 						<OutpatientMedicalCard025uForm
@@ -1613,32 +1766,79 @@ export function DocumentsView(props: DocumentsViewProps) {
 					) : null}
 
 					{selectedDocumentKind === "medical_record_extract" ? (
-    <MedicalRecordExtractForm dashboard={dashboard} documentPatient={documentPatient} activeDoctor={activeDoctor}  renderClinicalToothRowsEditor={renderClinicalToothRowsEditor} />
-  ) : null}
+						<MedicalRecordExtractForm
+							dashboard={dashboard}
+							documentPatient={documentPatient}
+							activeDoctor={activeDoctor}
+							renderClinicalToothRowsEditor={renderClinicalToothRowsEditor}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "medical_record_copy_request" ? (
-    <MedicalRecordCopyRequestForm documentPatient={documentPatient}  normalizedMedicalDocumentReleaseChannel={normalizedMedicalDocumentReleaseChannel} medicalDocumentReleaseChannelLabels={medicalDocumentReleaseChannelLabels} />
-  ) : null}
+						<MedicalRecordCopyRequestForm
+							documentPatient={documentPatient}
+							normalizedMedicalDocumentReleaseChannel={
+								normalizedMedicalDocumentReleaseChannel
+							}
+							medicalDocumentReleaseChannelLabels={
+								medicalDocumentReleaseChannelLabels
+							}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "visit_attendance_certificate" ? (
-    <VisitAttendanceCertificateForm activeDoctor={activeDoctor} formatDateTime={formatDateTime}  activeAppointment={activeAppointment} />
-  ) : null}
+						<VisitAttendanceCertificateForm
+							activeDoctor={activeDoctor}
+							formatDateTime={formatDateTime}
+							activeAppointment={activeAppointment}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "medical_document_release_receipt" ? (
-    <MedicalDocumentReleaseReceiptForm documentPatient={documentPatient}  typedIssuedMedicalCopyRequestDocuments={typedIssuedMedicalCopyRequestDocuments} releaseSourceRequestOptionLabel={releaseSourceRequestOptionLabel} />
-  ) : null}
+						<MedicalDocumentReleaseReceiptForm
+							documentPatient={documentPatient}
+							typedIssuedMedicalCopyRequestDocuments={
+								typedIssuedMedicalCopyRequestDocuments
+							}
+							releaseSourceRequestOptionLabel={releaseSourceRequestOptionLabel}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "personal_data_processing_consent" ? (
-    <PersonalDataProcessingConsentForm   clinicProfileDraft={clinicProfileDraft} />
-  ) : null}
+						<PersonalDataProcessingConsentForm
+							clinicProfileDraft={clinicProfileDraft}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "medical_intervention_refusal" ? (
-    <MedicalInterventionRefusalForm dashboard={dashboard} activeDoctor={activeDoctor}  inferredTreatmentArea={inferredTreatmentArea} />
-  ) : null}
+						<MedicalInterventionRefusalForm
+							dashboard={dashboard}
+							activeDoctor={activeDoctor}
+							inferredTreatmentArea={inferredTreatmentArea}
+						/>
+					) : null}
 
 					{selectedDocumentKind === "payment_refund_correction_request" ? (
-    <PaymentRefundCorrectionRequestForm money={money}  activePatient={activePatient}  normalizedPaymentRefundCorrectionAction={normalizedPaymentRefundCorrectionAction} normalizedPaymentRefundCorrectionMethod={normalizedPaymentRefundCorrectionMethod} paymentFiscalReceiptLabelForUi={paymentFiscalReceiptLabelForUi} selectedRefundCorrectionPayment={selectedRefundCorrectionPayment} selectRefundOriginalPayment={selectRefundOriginalPayment} eligibleRefundCorrectionPayments={eligibleRefundCorrectionPayments}  typedEligibleRefundCorrectionPayments={typedEligibleRefundCorrectionPayments} />
-  ) : null}
+						<PaymentRefundCorrectionRequestForm
+							money={money}
+							activePatient={activePatient}
+							normalizedPaymentRefundCorrectionAction={
+								normalizedPaymentRefundCorrectionAction
+							}
+							normalizedPaymentRefundCorrectionMethod={
+								normalizedPaymentRefundCorrectionMethod
+							}
+							paymentFiscalReceiptLabelForUi={paymentFiscalReceiptLabelForUi}
+							selectedRefundCorrectionPayment={selectedRefundCorrectionPayment}
+							selectRefundOriginalPayment={selectRefundOriginalPayment}
+							eligibleRefundCorrectionPayments={
+								eligibleRefundCorrectionPayments
+							}
+							typedEligibleRefundCorrectionPayments={
+								typedEligibleRefundCorrectionPayments
+							}
+						/>
+					) : null}
 				</section>
 
 				<div className="document-factory-selected-kind document-mt-16">

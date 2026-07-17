@@ -104,10 +104,10 @@ export const ClinicalScheduler: React.FC<any> = ({
 	// Helper to calculate grid row start and span
 	const getAppointmentGridPosition = (appt: any) => {
 		if (!appt.startsAt || !appt.endsAt) return null;
-		
+
 		const startsAt = new Date(appt.startsAt);
 		const endsAt = new Date(appt.endsAt);
-		
+
 		const startH = startsAt.getHours();
 		const startM = startsAt.getMinutes();
 		const endH = endsAt.getHours();
@@ -115,16 +115,22 @@ export const ClinicalScheduler: React.FC<any> = ({
 
 		const startMinutes = startH * 60 + startM;
 		const endMinutes = endH * 60 + endM;
-		
+
 		const minParts = minStart.split(":").map(Number);
 		const gridStartMinutes = (minParts[0] || 9) * 60 + (minParts[1] || 0);
 
-		const offsetSlots = Math.max(0, Math.floor((startMinutes - gridStartMinutes) / 30));
-		const durationSlots = Math.max(1, Math.ceil((endMinutes - startMinutes) / 30));
+		const offsetSlots = Math.max(
+			0,
+			Math.floor((startMinutes - gridStartMinutes) / 30),
+		);
+		const durationSlots = Math.max(
+			1,
+			Math.ceil((endMinutes - startMinutes) / 30),
+		);
 
 		return {
 			startRow: offsetSlots + 2, // +1 for CSS Grid 1-index, +1 for Header Row = +2
-			span: durationSlots
+			span: durationSlots,
 		};
 	};
 
@@ -231,10 +237,7 @@ export const ClinicalScheduler: React.FC<any> = ({
 				>
 					{/* Headers */}
 					{!isSingleChair && (
-						<div
-							className="sg-corner"
-							style={{ gridRow: 1, gridColumn: 1 }}
-						/>
+						<div className="sg-corner" style={{ gridRow: 1, gridColumn: 1 }} />
 					)}
 					{!isSingleChair &&
 						displayedChairs.map((chair: any, ci: number) => (
@@ -275,12 +278,13 @@ export const ClinicalScheduler: React.FC<any> = ({
 										if (onSlotDrop) {
 											const today = new Date().toISOString().split("T")[0];
 											try {
-												const dataStr = e.dataTransfer.getData("application/json");
+												const dataStr =
+													e.dataTransfer.getData("application/json");
 												if (dataStr) {
 													const data = JSON.parse(dataStr);
 													onSlotDrop(today, time, chair.id, data);
 												}
-											} catch(err) {
+											} catch (err) {
 												console.error("Drop failed", err);
 											}
 										}
@@ -297,14 +301,20 @@ export const ClinicalScheduler: React.FC<any> = ({
 						const pos = getAppointmentGridPosition(appt);
 						if (!pos) return null;
 
-						const colIdx = displayedChairs.findIndex((c: any) => c.id === appt.chairId);
+						const colIdx = displayedChairs.findIndex(
+							(c: any) => c.id === appt.chairId,
+						);
 						if (colIdx === -1) return null; // Not in view
 
 						// Resolve patient from dashboard
-						const patient = dashboard?.patients?.find((p: any) => p.id === appt.patientId);
-						
+						const patient = dashboard?.patients?.find(
+							(p: any) => p.id === appt.patientId,
+						);
+
 						// Resolve readiness from dashboard
-						const readiness = dashboard?.appointmentReadiness?.find((r: any) => r.appointmentId === appt.id);
+						const readiness = dashboard?.appointmentReadiness?.find(
+							(r: any) => r.appointmentId === appt.id,
+						);
 
 						return (
 							<div
@@ -321,28 +331,43 @@ export const ClinicalScheduler: React.FC<any> = ({
 										e.stopPropagation();
 										if (onAppointmentClick) onAppointmentClick(appt);
 									}}
-									style={{ position: 'relative' }}
+									style={{ position: "relative" }}
 								>
 									<div className="sg-appt-title">
 										{patient?.fullName || "Неизвестный пациент"}
 									</div>
 									<div className="sg-appt-meta">{appt.status}</div>
 									<div className="sg-appt-time">
-										{new Date(appt.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+										{new Date(appt.startsAt).toLocaleTimeString([], {
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
 										{" - "}
-										{new Date(appt.endsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+										{new Date(appt.endsAt).toLocaleTimeString([], {
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
 									</div>
-									
+
 									{/* Status Lights (Светофоры) */}
 									<div className="sg-appt-status-lights">
 										{readiness?.state === "ready" && (
-											<span className="sg-status-dot green" title={readiness.nextAction} />
+											<span
+												className="sg-status-dot green"
+												title={readiness.nextAction}
+											/>
 										)}
 										{readiness?.state === "needs_attention" && (
-											<span className="sg-status-dot yellow" title={readiness.nextAction} />
+											<span
+												className="sg-status-dot yellow"
+												title={readiness.nextAction}
+											/>
 										)}
 										{readiness?.state === "blocked" && (
-											<span className="sg-status-dot red" title={readiness.nextAction} />
+											<span
+												className="sg-status-dot red"
+												title={readiness.nextAction}
+											/>
 										)}
 									</div>
 								</div>

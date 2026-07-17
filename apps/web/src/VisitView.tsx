@@ -1,6 +1,3 @@
-import { LabOrdersPanel } from "./components/schedule/LabOrdersPanel";
-import { CompletedServicesChecklist } from "./components/visit/CompletedServicesChecklist";
-import { GnathologyForm } from "./components/visit/GnathologyForm";
 import { motion } from "framer-motion";
 import {
 	AlertTriangle,
@@ -17,30 +14,32 @@ import {
 import React, { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
-
-import { SignCardDialog } from "./components/visit/SignCardDialog";
 import { showToast } from "./components/GlobalToast";
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { VisitHeader } from "./components/visit/VisitHeader";
-import { VisitDictation } from "./components/visit/VisitDictation";
-import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
-import { VisitSafetyStrip } from "./components/visit/VisitSafetyStrip";
-import { VisitPrimaryActions } from "./components/visit/VisitPrimaryActions";
-import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
-import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
-
-import { DictationHints } from "./DictationHints";
-import { AiOrchestrator } from "./lib/aiOrchestrator";
-import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
+import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { LabOrdersPanel } from "./components/schedule/LabOrdersPanel";
+import { CompletedServicesChecklist } from "./components/visit/CompletedServicesChecklist";
+import { GnathologyForm } from "./components/visit/GnathologyForm";
+import { SignCardDialog } from "./components/visit/SignCardDialog";
+import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
+import { VisitDictation } from "./components/visit/VisitDictation";
 import { VisitFlowProgress } from "./components/visit/VisitFlowProgress";
+import { VisitHeader } from "./components/visit/VisitHeader";
+import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
+import { VisitPrimaryActions } from "./components/visit/VisitPrimaryActions";
+import { VisitSafetyStrip } from "./components/visit/VisitSafetyStrip";
+import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
+import { DictationHints } from "./DictationHints";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
+import { AiOrchestrator } from "./lib/aiOrchestrator";
+import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
 import { getToothConfig, getToothPath } from "./utils/toothGeometry";
 import "./styles/VisitView.css";
+import { VisitToothMap } from "./components/visit/VisitToothMap";
 
 export function VisitView() {
 	const workspaceFlags = useWorkspaceProfile();
@@ -162,7 +161,6 @@ export function VisitView() {
 	const [ztlColor, setZtlColor] = useState("");
 	const [ztlComment, setZtlComment] = useState("");
 
-
 	useEffect(() => {
 		return () => {
 			// Memory Optimization: Flush heavy visit states on unmount
@@ -190,8 +188,10 @@ export function VisitView() {
 	>(null);
 
 	const THERAPY_MATERIALS = React.useMemo(() => {
-		const services = dashboard?.serviceCatalog?.filter(s => s.category === "therapy") || [];
-		if (services.length > 0) return services.map(s => ({ id: s.id, label: s.title }));
+		const services =
+			dashboard?.serviceCatalog?.filter((s) => s.category === "therapy") || [];
+		if (services.length > 0)
+			return services.map((s) => ({ id: s.id, label: s.title }));
 		return [
 			{ id: "Estelite", label: "Estelite Asteria (Tokuyama, JP)" },
 			{ id: "Filtek", label: "3M Filtek Supreme (US)" },
@@ -200,8 +200,11 @@ export function VisitView() {
 	}, [dashboard?.serviceCatalog]);
 
 	const ORTHO_MATERIALS = React.useMemo(() => {
-		const services = dashboard?.serviceCatalog?.filter(s => s.category === "prosthetics") || [];
-		if (services.length > 0) return services.map(s => ({ id: s.id, label: s.title }));
+		const services =
+			dashboard?.serviceCatalog?.filter((s) => s.category === "prosthetics") ||
+			[];
+		if (services.length > 0)
+			return services.map((s) => ({ id: s.id, label: s.title }));
 		return [
 			{ id: "Zirconia", label: "Диоксид циркония" },
 			{ id: "E-max", label: "Прессованная керамика E-max" },
@@ -210,8 +213,13 @@ export function VisitView() {
 	}, [dashboard?.serviceCatalog]);
 
 	const IMPLANT_SYSTEMS = React.useMemo(() => {
-		const services = dashboard?.serviceCatalog?.filter(s => s.category === "surgery" && s.title.toLowerCase().includes("имплант")) || [];
-		if (services.length > 0) return services.map(s => ({ id: s.id, label: s.title }));
+		const services =
+			dashboard?.serviceCatalog?.filter(
+				(s) =>
+					s.category === "surgery" && s.title.toLowerCase().includes("имплант"),
+			) || [];
+		if (services.length > 0)
+			return services.map((s) => ({ id: s.id, label: s.title }));
 		return [
 			{ id: "Straumann", label: "Straumann SLActive (CH)" },
 			{ id: "Osstem", label: "Osstem TSIII (KR)" },
@@ -333,7 +341,9 @@ export function VisitView() {
 			>
 				<div className="panel-heading">
 					<h2>Текущий прием</h2>
-					<span className="status-pill status-in_treatment">{visitNoteStatusLabel || "Черновик"}</span>
+					<span className="status-pill status-in_treatment">
+						{visitNoteStatusLabel || "Черновик"}
+					</span>
 				</div>
 
 				<VisitHeader />
@@ -343,7 +353,11 @@ export function VisitView() {
 						display: activeVisitTab === "conclusion" ? "block" : "none",
 					}}
 				>
-					<VisitPrimaryActions isSignDialogOpen={isSignDialogOpen} setIsSignDialogOpen={setIsSignDialogOpen} isSigned={isSigned} />
+					<VisitPrimaryActions
+						isSignDialogOpen={isSignDialogOpen}
+						setIsSignDialogOpen={setIsSignDialogOpen}
+						isSigned={isSigned}
+					/>
 
 					{workspaceFlags.hasEngineeringStatus && <VisitSafetyStrip />}
 				</div>
@@ -356,14 +370,14 @@ export function VisitView() {
 						borderBottom: "1px solid var(--glass-border)",
 						marginBottom: "24px",
 						padding: "0 24px",
-						position: "relative"
+						position: "relative",
 					}}
 				>
 					{[
 						{ id: "diary", label: "Осмотр" },
 						{ id: "odontogram", label: "Зубная формула и Дневник" },
 						{ id: "diagnostics", label: "Снимки и Анализы" },
-						{ id: "conclusion", label: "Заключение" }
+						{ id: "conclusion", label: "Заключение" },
 					].map((tab) => (
 						<button
 							key={tab.id}
@@ -376,9 +390,12 @@ export function VisitView() {
 								border: "none",
 								cursor: "pointer",
 								fontWeight: activeVisitTab === tab.id ? 700 : 500,
-								color: activeVisitTab === tab.id ? "var(--text-primary)" : "var(--text-secondary)",
+								color:
+									activeVisitTab === tab.id
+										? "var(--text-primary)"
+										: "var(--text-secondary)",
 								position: "relative",
-								transition: "color 0.2s"
+								transition: "color 0.2s",
 							}}
 						>
 							{tab.label}
@@ -393,7 +410,7 @@ export function VisitView() {
 										height: 3,
 										background: "var(--teal)",
 										borderRadius: "3px 3px 0 0",
-										boxShadow: "0 0 10px rgba(13, 148, 136, 0.5)"
+										boxShadow: "0 0 10px rgba(13, 148, 136, 0.5)",
 									}}
 								/>
 							)}
@@ -406,788 +423,15 @@ export function VisitView() {
 
 					<VisitDictation />
 
-					<div className="tooth-map" aria-label="Зубная карта">
-
-						<div className="tooth-map-head">
-							<div>
-								<h3>Зубная карта</h3>
-								<p>
-									Нажмите зуб для смены статуса. ИИ подсвечивает зубы из
-									диктовки.
-								</p>
-							</div>
-							<span className="tooth-fdi-badge">FDI</span>
-						</div>
-						<div className="tooth-map-legend">
-							<span className="tooth-legend-item legend-planned">В плане</span>
-							<span className="tooth-legend-item legend-treatment">
-								Лечение
-							</span>
-							<span className="tooth-legend-item legend-watch">Наблюдение</span>
-							<span className="tooth-legend-item legend-done">Готово</span>
-							<span className="tooth-legend-item legend-missing">Нет зуба</span>
-						</div>
-
-						{/* Панель быстрого штампа статуса зуба (Quick Stamp) */}
-						<div
-							className="tooth-stamp-bar"
-							role="toolbar"
-							aria-label="Инструменты быстрого штампа"
-						>
-							<span className="stamp-bar-title">Быстрый штамп:</span>
-							<button
-								type="button"
-								className={`stamp-btn ${activeStamp === null ? "active" : ""}`}
-								onClick={() => setActiveStamp(null)}
-							>
-								🔍 Обычный клик
-							</button>
-							<button
-								type="button"
-								className={`stamp-btn stamp-planned ${activeStamp === "planned" ? "active" : ""}`}
-								onClick={() => setActiveStamp("planned")}
-							>
-								📝 В план
-							</button>
-							<button
-								type="button"
-								className={`stamp-btn stamp-treatment ${activeStamp === "treatment" ? "active" : ""}`}
-								onClick={() => setActiveStamp("treatment")}
-							>
-								🔴 Лечение
-							</button>
-							<button
-								type="button"
-								className={`stamp-btn stamp-watch ${activeStamp === "watch" ? "active" : ""}`}
-								onClick={() => setActiveStamp("watch")}
-							>
-								⚠️ Наблюдение
-							</button>
-							<button
-								type="button"
-								className={`stamp-btn stamp-done ${activeStamp === "done" ? "active" : ""}`}
-								onClick={() => setActiveStamp("done")}
-							>
-								🟢 Готово
-							</button>
-							<button
-								type="button"
-								className={`stamp-btn stamp-missing ${activeStamp === "missing" ? "active" : ""}`}
-								onClick={() => setActiveStamp("missing")}
-							>
-								❌ Нет зуба
-							</button>
-						</div>
-
-						{/* Панель выбора квадранта (Focus Mode) */}
-						<div
-							className="tooth-quadrant-nav"
-							role="navigation"
-							aria-label="Фокус на квадрант"
-						>
-							<button
-								type="button"
-								className={`quadrant-nav-btn ${activeQuadrant === null ? "active" : ""}`}
-								onClick={() => setActiveQuadrant(null)}
-							>
-								Вся челюсть
-							</button>
-							<button
-								type="button"
-								className={`quadrant-nav-btn ${activeQuadrant === 2 ? "active" : ""}`}
-								onClick={() => setActiveQuadrant(2)}
-							>
-								ВЧ Лево (Q2)
-							</button>
-							<button
-								type="button"
-								className={`quadrant-nav-btn ${activeQuadrant === 1 ? "active" : ""}`}
-								onClick={() => setActiveQuadrant(1)}
-							>
-								ВЧ Право (Q1)
-							</button>
-							<button
-								type="button"
-								className={`quadrant-nav-btn ${activeQuadrant === 3 ? "active" : ""}`}
-								onClick={() => setActiveQuadrant(3)}
-							>
-								НЧ Лево (Q3)
-							</button>
-							<button
-								type="button"
-								className={`quadrant-nav-btn ${activeQuadrant === 4 ? "active" : ""}`}
-								onClick={() => setActiveQuadrant(4)}
-							>
-								НЧ Право (Q4)
-							</button>
-						</div>
-
-						{/* Зубная схема с квадрантами */}
-						<div
-							className={`tooth-arch-wrapper ${activeQuadrant !== null ? "zoom-active" : ""}`}
-						>
-							{/* Метки квадрантов — верх */}
-							{activeQuadrant === null && (
-								<div className="tooth-quadrant-labels upper-labels">
-									<span className="quadrant-label">Q1</span>
-									<span className="quadrant-label">Q2</span>
-								</div>
-							)}
-
-							{/* Верхняя челюсть */}
-							{(activeQuadrant === null ||
-								activeQuadrant === 1 ||
-								activeQuadrant === 2) && (
-								<div className="tooth-jaw upper-jaw">
-									{/* Правая половина верхней: Q1 — 18→11 */}
-									{(activeQuadrant === null || activeQuadrant === 1) && (
-										<div className="tooth-half tooth-row">
-											{(toothRows[0] || []).slice(0, 8).map((code) => {
-												const state = toothStateByCode[code] ?? "idle";
-												const geom = getToothPath(Number(code));
-												const cfg = getToothConfig(Number(code));
-												const num = Number(code);
-												const isDetected = (
-													draft?.quality?.detectedToothCodes || []
-												).includes(code);
-												const isRightSide =
-													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-												const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-												return (
-													<button
-														key={code}
-														type="button"
-														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
-														onClick={() => handleToothClick(code, state)}
-														aria-label={`Зуб ${code}`}
-													>
-														<div
-															className="tooth-svg-wrap"
-															style={{
-																filter: isDetected
-																	? "drop-shadow(0 0 4px #3b82f6)"
-																	: "none",
-															}}
-														>
-															<svg
-																width={cfg.width}
-																height={cfg.height}
-																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-																preserveAspectRatio="none"
-																style={{ transform }}
-																fill="none"
-															>
-																{state === "missing" ? (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d={geom.crown}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d="M20 20L80 130M80 20L20 130"
-																			stroke="#ef4444"
-																			strokeWidth="5"
-																			strokeLinecap="round"
-																			opacity="0.7"
-																		/>
-																	</g>
-																) : (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill={
-																				state === "idle"
-																					? "#f8fafc"
-																					: state === "planned"
-																						? "#f0f9ff"
-																						: state === "treatment"
-																							? "#fff5f5"
-																							: state === "watch"
-																								? "#fffbeb"
-																								: "#f0fdf4"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#cbd5e1"
-																					: state === "planned"
-																						? "#38bdf8"
-																						: state === "treatment"
-																							? "#f87171"
-																							: state === "watch"
-																								? "#fbbf24"
-																								: "#4ade80"
-																			}
-																			strokeWidth="1.5"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.canals &&
-																			(state === "treatment" ||
-																				state === "done") && (
-																				<path
-																					d={geom.canals}
-																					fill="none"
-																					stroke={
-																						state === "done"
-																							? "#ec4899"
-																							: "#dc2626"
-																					}
-																					strokeWidth="2.5"
-																					strokeLinecap="round"
-																					opacity="0.85"
-																				/>
-																			)}
-																		<path
-																			d={geom.crown}
-																			fill={
-																				state === "idle"
-																					? "#fff"
-																					: state === "planned"
-																						? "#e0f2fe"
-																						: state === "treatment"
-																							? "#fee2e2"
-																							: state === "watch"
-																								? "#fef3c7"
-																								: "#dcfce7"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#94a3b8"
-																					: state === "planned"
-																						? "#0284c7"
-																						: state === "treatment"
-																							? "#dc2626"
-																							: state === "watch"
-																								? "#d97706"
-																								: "#166534"
-																			}
-																			strokeWidth="2.2"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.fissures && (
-																			<path
-																				d={geom.fissures}
-																				fill="none"
-																				stroke="rgba(0,0,0,0.15)"
-																				strokeWidth="0.8"
-																			/>
-																		)}
-																	</g>
-																)}
-															</svg>
-														</div>
-														<span className="tooth-code">{code}</span>
-													</button>
-												);
-											})}
-										</div>
-									)}
-									{/* Центральная линия */}
-									{activeQuadrant === null && (
-										<div className="tooth-center-line" aria-hidden="true" />
-									)}
-									{/* Левая половина верхней: Q2 — 21→28 */}
-									{(activeQuadrant === null || activeQuadrant === 2) && (
-										<div className="tooth-half tooth-row">
-											{(toothRows[0] || []).slice(8).map((code) => {
-												const state = toothStateByCode[code] ?? "idle";
-												const geom = getToothPath(Number(code));
-												const cfg = getToothConfig(Number(code));
-												const num = Number(code);
-												const isDetected = (
-													draft?.quality?.detectedToothCodes || []
-												).includes(code);
-												const isRightSide =
-													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-												const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-												return (
-													<button
-														key={code}
-														type="button"
-														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""}`}
-														onClick={() => handleToothClick(code, state)}
-														aria-label={`Зуб ${code}`}
-													>
-														<div
-															className="tooth-svg-wrap"
-															style={{
-																filter: isDetected
-																	? "drop-shadow(0 0 4px #3b82f6)"
-																	: "none",
-															}}
-														>
-															<svg
-																width={cfg.width}
-																height={cfg.height}
-																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-																preserveAspectRatio="none"
-																style={{ transform }}
-																fill="none"
-															>
-																{state === "missing" ? (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d={geom.crown}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d="M20 20L80 130M80 20L20 130"
-																			stroke="#ef4444"
-																			strokeWidth="5"
-																			strokeLinecap="round"
-																			opacity="0.7"
-																		/>
-																	</g>
-																) : (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill={
-																				state === "idle"
-																					? "#f8fafc"
-																					: state === "planned"
-																						? "#f0f9ff"
-																						: state === "treatment"
-																							? "#fff5f5"
-																							: state === "watch"
-																								? "#fffbeb"
-																								: "#f0fdf4"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#cbd5e1"
-																					: state === "planned"
-																						? "#38bdf8"
-																						: state === "treatment"
-																							? "#f87171"
-																							: state === "watch"
-																								? "#fbbf24"
-																								: "#4ade80"
-																			}
-																			strokeWidth="1.5"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.canals &&
-																			(state === "treatment" ||
-																				state === "done") && (
-																				<path
-																					d={geom.canals}
-																					fill="none"
-																					stroke={
-																						state === "done"
-																							? "#ec4899"
-																							: "#dc2626"
-																					}
-																					strokeWidth="2.5"
-																					strokeLinecap="round"
-																					opacity="0.85"
-																				/>
-																			)}
-																		<path
-																			d={geom.crown}
-																			fill={
-																				state === "idle"
-																					? "#fff"
-																					: state === "planned"
-																						? "#e0f2fe"
-																						: state === "treatment"
-																							? "#fee2e2"
-																							: state === "watch"
-																								? "#fef3c7"
-																								: "#dcfce7"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#94a3b8"
-																					: state === "planned"
-																						? "#0284c7"
-																						: state === "treatment"
-																							? "#dc2626"
-																							: state === "watch"
-																								? "#d97706"
-																								: "#166534"
-																			}
-																			strokeWidth="2.2"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.fissures && (
-																			<path
-																				d={geom.fissures}
-																				fill="none"
-																				stroke="rgba(0,0,0,0.15)"
-																				strokeWidth="0.8"
-																			/>
-																		)}
-																	</g>
-																)}
-															</svg>
-														</div>
-														<span className="tooth-code">{code}</span>
-													</button>
-												);
-											})}
-										</div>
-									)}
-								</div>
-							)}
-
-							{/* Линия окклюзии */}
-							{activeQuadrant === null && (
-								<div className="tooth-occlusion-line" aria-hidden="true">
-									<span>— окклюзия —</span>
-								</div>
-							)}
-
-							{/* Нижняя челюсть */}
-							{(activeQuadrant === null ||
-								activeQuadrant === 3 ||
-								activeQuadrant === 4) && (
-								<div className="tooth-jaw lower-jaw">
-									{/* Правая нижняя Q4 — 48→41 */}
-									{(activeQuadrant === null || activeQuadrant === 4) && (
-										<div className="tooth-half tooth-row">
-											{(toothRows[1] || []).slice(0, 8).map((code) => {
-												const state = toothStateByCode[code] ?? "idle";
-												const geom = getToothPath(Number(code));
-												const cfg = getToothConfig(Number(code));
-												const num = Number(code);
-												const isDetected = (
-													draft?.quality?.detectedToothCodes || []
-												).includes(code);
-												const isRightSide =
-													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-												const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-												return (
-													<button
-														key={code}
-														type="button"
-														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
-														onClick={() => handleToothClick(code, state)}
-														aria-label={`Зуб ${code}`}
-													>
-														<span className="tooth-code">{code}</span>
-														<div
-															className="tooth-svg-wrap"
-															style={{
-																filter: isDetected
-																	? "drop-shadow(0 0 4px #3b82f6)"
-																	: "none",
-																transform: "none",
-															}}
-														>
-															<svg
-																width={cfg.width}
-																height={cfg.height}
-																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-																preserveAspectRatio="none"
-																style={{ transform }}
-																fill="none"
-															>
-																{state === "missing" ? (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d={geom.crown}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d="M20 20L80 130M80 20L20 130"
-																			stroke="#ef4444"
-																			strokeWidth="5"
-																			strokeLinecap="round"
-																			opacity="0.7"
-																		/>
-																	</g>
-																) : (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill={
-																				state === "idle"
-																					? "#f8fafc"
-																					: state === "planned"
-																						? "#f0f9ff"
-																						: state === "treatment"
-																							? "#fff5f5"
-																							: state === "watch"
-																								? "#fffbeb"
-																								: "#f0fdf4"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#cbd5e1"
-																					: state === "planned"
-																						? "#38bdf8"
-																						: state === "treatment"
-																							? "#f87171"
-																							: state === "watch"
-																								? "#fbbf24"
-																								: "#4ade80"
-																			}
-																			strokeWidth="1.5"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.canals &&
-																			(state === "treatment" ||
-																				state === "done") && (
-																				<path
-																					d={geom.canals}
-																					fill="none"
-																					stroke={
-																						state === "done"
-																							? "#ec4899"
-																							: "#dc2626"
-																					}
-																					strokeWidth="2.5"
-																					strokeLinecap="round"
-																					opacity="0.85"
-																				/>
-																			)}
-																		<path
-																			d={geom.crown}
-																			fill={
-																				state === "idle"
-																					? "#fff"
-																					: state === "planned"
-																						? "#e0f2fe"
-																						: state === "treatment"
-																							? "#fee2e2"
-																							: state === "watch"
-																								? "#fef3c7"
-																								: "#dcfce7"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#94a3b8"
-																					: state === "planned"
-																						? "#0284c7"
-																						: state === "treatment"
-																							? "#dc2626"
-																							: state === "watch"
-																								? "#d97706"
-																								: "#166534"
-																			}
-																			strokeWidth="2.2"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.fissures && (
-																			<path
-																				d={geom.fissures}
-																				fill="none"
-																				stroke="rgba(0,0,0,0.15)"
-																				strokeWidth="0.8"
-																			/>
-																		)}
-																	</g>
-																)}
-															</svg>
-														</div>
-													</button>
-												);
-											})}
-										</div>
-									)}
-									{/* Центральная линия нижней */}
-									{activeQuadrant === null && (
-										<div className="tooth-center-line" aria-hidden="true" />
-									)}
-									{/* Левая нижняя Q3 — 31→38 */}
-									{(activeQuadrant === null || activeQuadrant === 3) && (
-										<div className="tooth-half tooth-row">
-											{(toothRows[1] || []).slice(8).map((code) => {
-												const state = toothStateByCode[code] ?? "idle";
-												const geom = getToothPath(Number(code));
-												const cfg = getToothConfig(Number(code));
-												const num = Number(code);
-												const isDetected = (
-													draft?.quality?.detectedToothCodes || []
-												).includes(code);
-												const isRightSide =
-													(num >= 21 && num <= 28) || (num >= 31 && num <= 38);
-												const transform = `scaleX(${isRightSide ? -1 : 1})`;
-
-												return (
-													<button
-														key={code}
-														type="button"
-														className={`tooth tooth-${state}${state !== "idle" ? " selected" : ""}${isDetected ? " tooth-ai-detected" : ""} tooth-lower`}
-														onClick={() => handleToothClick(code, state)}
-														aria-label={`Зуб ${code}`}
-													>
-														<span className="tooth-code">{code}</span>
-														<div
-															className="tooth-svg-wrap"
-															style={{
-																filter: isDetected
-																	? "drop-shadow(0 0 4px #3b82f6)"
-																	: "none",
-																transform: "none",
-															}}
-														>
-															<svg
-																width={cfg.width}
-																height={cfg.height}
-																viewBox={`${cfg.viewX ?? 0} 0 ${cfg.viewWidth} ${cfg.viewHeight}`}
-																preserveAspectRatio="none"
-																style={{ transform }}
-																fill="none"
-															>
-																{state === "missing" ? (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d={geom.crown}
-																			fill="#f1f5f9"
-																			stroke="#cbd5e1"
-																			strokeWidth="1.2"
-																			opacity="0.15"
-																		/>
-																		<path
-																			d="M20 20L80 130M80 20L20 130"
-																			stroke="#ef4444"
-																			strokeWidth="5"
-																			strokeLinecap="round"
-																			opacity="0.7"
-																		/>
-																	</g>
-																) : (
-																	<g>
-																		<path
-																			d={geom.root}
-																			fill={
-																				state === "idle"
-																					? "#f8fafc"
-																					: state === "planned"
-																						? "#f0f9ff"
-																						: state === "treatment"
-																							? "#fff5f5"
-																							: state === "watch"
-																								? "#fffbeb"
-																								: "#f0fdf4"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#cbd5e1"
-																					: state === "planned"
-																						? "#38bdf8"
-																						: state === "treatment"
-																							? "#f87171"
-																							: state === "watch"
-																								? "#fbbf24"
-																								: "#4ade80"
-																			}
-																			strokeWidth="1.5"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.canals &&
-																			(state === "treatment" ||
-																				state === "done") && (
-																				<path
-																					d={geom.canals}
-																					fill="none"
-																					stroke={
-																						state === "done"
-																							? "#ec4899"
-																							: "#dc2626"
-																					}
-																					strokeWidth="2.5"
-																					strokeLinecap="round"
-																					opacity="0.85"
-																				/>
-																			)}
-																		<path
-																			d={geom.crown}
-																			fill={
-																				state === "idle"
-																					? "#fff"
-																					: state === "planned"
-																						? "#e0f2fe"
-																						: state === "treatment"
-																							? "#fee2e2"
-																							: state === "watch"
-																								? "#fef3c7"
-																								: "#dcfce7"
-																			}
-																			stroke={
-																				state === "idle"
-																					? "#94a3b8"
-																					: state === "planned"
-																						? "#0284c7"
-																						: state === "treatment"
-																							? "#dc2626"
-																							: state === "watch"
-																								? "#d97706"
-																								: "#166534"
-																			}
-																			strokeWidth="2.2"
-																			strokeLinejoin="round"
-																		/>
-																		{geom.fissures && (
-																			<path
-																				d={geom.fissures}
-																				fill="none"
-																				stroke="rgba(0,0,0,0.15)"
-																				strokeWidth="0.8"
-																			/>
-																		)}
-																	</g>
-																)}
-															</svg>
-														</div>
-													</button>
-												);
-											})}
-										</div>
-									)}
-								</div>
-							)}
-
-							{/* Метки квадрантов — низ */}
-							{activeQuadrant === null && (
-								<div className="tooth-quadrant-labels lower-labels">
-									<span className="quadrant-label">Q4</span>
-									<span className="quadrant-label">Q3</span>
-								</div>
-							)}
-						</div>
-					</div>
+					<VisitToothMap
+						activeStamp={activeStamp as any}
+						setActiveStamp={setActiveStamp as any}
+						activeQuadrant={activeQuadrant}
+						setActiveQuadrant={setActiveQuadrant}
+						pediatricMode={
+							dashboard?.clinicSettings?.profile?.hasPediatricMode ?? false
+						}
+					/>
 
 					<section
 						className="visit-note-panel"
@@ -1208,9 +452,7 @@ export function VisitView() {
 								{visitNoteStatusLabel}
 							</span>
 						</div>
-						{visitFlowResult && (
-							<VisitFlowProgress result={visitFlowResult} />
-						)}
+						{visitFlowResult && <VisitFlowProgress result={visitFlowResult} />}
 
 						{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}
 						<div className="emk-tabs-container" role="tablist">
@@ -1616,17 +858,13 @@ export function VisitView() {
 				)}
 
 				{activePatient?.id && workspaceFlags.hasDentalLab && (
-					<LabOrdersPanel
-						patientId={activePatient.id}
-					/>
+					<LabOrdersPanel patientId={activePatient.id} />
 				)}
-
 
 				<GnathologyForm
 					visitId={dashboard?.activeVisit?.id ?? null}
 					patientId={activePatient?.id ?? null}
 				/>
-
 
 				{visitCloseChecklist ? (
 					<div
@@ -1660,14 +898,29 @@ export function VisitView() {
 									type="button"
 									onClick={() => {
 										const section = task.section.replace("#", "");
-										if (["diary", "odontogram", "diagnostics", "conclusion"].includes(section)) {
+										if (
+											[
+												"diary",
+												"odontogram",
+												"diagnostics",
+												"conclusion",
+											].includes(section)
+										) {
 											setActiveVisitTab(section as any);
-										} else if (section === "dictation" || section === "emk" || section === "smart-preview") {
+										} else if (
+											section === "dictation" ||
+											section === "emk" ||
+											section === "smart-preview"
+										) {
 											setActiveVisitTab("diary");
 										}
 										setTimeout(() => {
 											const el = document.getElementById(section);
-											if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+											if (el)
+												el.scrollIntoView({
+													behavior: "smooth",
+													block: "start",
+												});
 										}, 50);
 									}}
 								>
@@ -2133,7 +1386,9 @@ export function VisitView() {
 				onClose={() => setIsSignDialogOpen(false)}
 				visitId={dashboard?.activeVisit?.id || "draft"}
 				patientId={activePatient.id}
-				diaryContent={visitNoteForm.objectiveStatus + "\n" + visitNoteForm.treatmentPlan}
+				diaryContent={
+					visitNoteForm.objectiveStatus + "\n" + visitNoteForm.treatmentPlan
+				}
 				onSigned={(signatureData) => {
 					setIsSigned(true);
 					showToast("Прием подписан", "success");

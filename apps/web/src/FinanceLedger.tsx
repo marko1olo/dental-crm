@@ -88,22 +88,29 @@ export function FinanceLedger({
 			</section>
 
 			<section className="finance-list" aria-label="История оплат">
-				<div className="panel-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-					<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+				<div
+					className="panel-heading"
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+					}}
+				>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 						<h3 style={{ margin: 0 }}>Платежи</h3>
 						<span className="status-pill status-confirmed">
 							{payments.length}
 						</span>
 					</div>
-					{payments.some(p => p.taxDeductionCode) && (
+					{payments.some((p) => p.taxDeductionCode) && (
 						<button
 							className="secondary-button"
 							type="button"
 							title="Сгенерировать справку ИФНС для налогового вычета"
 							onClick={() => onCreateDocument?.("tax_deduction_certificate")}
-							style={{ padding: '4px 8px', fontSize: '0.85rem' }}
+							style={{ padding: "4px 8px", fontSize: "0.85rem" }}
 						>
-							<FileText size={14} style={{ marginRight: '4px' }} /> Справка ИФНС
+							<FileText size={14} style={{ marginRight: "4px" }} /> Справка ИФНС
 						</button>
 					)}
 				</div>

@@ -1,5 +1,5 @@
 import { Clipboard } from "lucide-react";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 interface Template {
 	id: string;
@@ -22,7 +22,7 @@ export function VisitDiaryTemplateSelector({
 }: VisitDiaryTemplateSelectorProps) {
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [selectedTemplate, setSelectedTemplate] = useState("");
-	
+
 	const loadTemplates = useCallback(async () => {
 		try {
 			const res = await fetch("/api/templates", {

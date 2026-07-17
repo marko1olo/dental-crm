@@ -7,7 +7,9 @@ import {
 	useEffect,
 } from "react";
 
-const DentalWorkspace = lazy(() => import("./App").then((module) => ({ default: module.App })));
+const DentalWorkspace = lazy(() =>
+	import("./App").then((module) => ({ default: module.App })),
+);
 const OnboardingPreviewPage = lazy(() =>
 	import("./OnboardingPreview").then((m) => ({ default: m.OnboardingPreview })),
 );
@@ -23,7 +25,8 @@ import { useOfflineQueue } from "./hooks/useOfflineQueue";
 function useHighContrastTheme() {
 	useEffect(() => {
 		const handleStorage = () => {
-			const isHighContrast = localStorage.getItem("dente_high_contrast") === "true";
+			const isHighContrast =
+				localStorage.getItem("dente_high_contrast") === "true";
 			if (isHighContrast) {
 				document.documentElement.classList.add("theme-accessibility");
 			} else {
@@ -61,7 +64,9 @@ function appShellErrorDetail(error: unknown): string {
 }
 
 function requestDenteStaleAppRefresh(): void {
-	navigator.serviceWorker?.controller?.postMessage({ type: "DENTE_CLEAR_SHELL_CACHE" });
+	navigator.serviceWorker?.controller?.postMessage({
+		type: "DENTE_CLEAR_SHELL_CACHE",
+	});
 	window.setTimeout(() => window.location.reload(), 50);
 }
 

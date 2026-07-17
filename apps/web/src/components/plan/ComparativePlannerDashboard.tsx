@@ -125,8 +125,12 @@ function statusCssClass(status: PlanStatus): string {
 export const ComparativePlannerDashboard: React.FC = () => {
 	const { auth, dashboard } = useAppLogicContext();
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
-	const pendingPlanSuggestions = usePatientStore((s) => s.pendingPlanSuggestions);
-	const clearPendingPlanSuggestions = usePatientStore((s) => s.clearPendingPlanSuggestions);
+	const pendingPlanSuggestions = usePatientStore(
+		(s) => s.pendingPlanSuggestions,
+	);
+	const clearPendingPlanSuggestions = usePatientStore(
+		(s) => s.clearPendingPlanSuggestions,
+	);
 
 	const [plans, setPlans] = useState<TreatmentPlan[]>([]);
 	const [insuranceActive, setInsuranceActive] = useState(false);
@@ -191,9 +195,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 			if (insRes.ok) {
 				const contractsArray = await insRes.json();
-				const first = Array.isArray(contractsArray)
-					? contractsArray[0]
-					: null;
+				const first = Array.isArray(contractsArray) ? contractsArray[0] : null;
 				setInsuranceData(first ?? null);
 			}
 		} catch {
@@ -209,10 +211,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 	// ── Status update ─────────────────────────────────────────────────────────
 
-	const updatePlanStatus = async (
-		planId: string,
-		newStatus: PlanStatus,
-	) => {
+	const updatePlanStatus = async (planId: string, newStatus: PlanStatus) => {
 		if (!selectedPatientId) return;
 		setSavingPlanId(planId);
 		try {
@@ -262,27 +261,38 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		}
 	};
 
-	const updatePlanItemStatus = async (planId: string, itemId: string, newStatus: "Proposed" | "In_Progress" | "Completed") => {
+	const updatePlanItemStatus = async (
+		planId: string,
+		itemId: string,
+		newStatus: "Proposed" | "In_Progress" | "Completed",
+	) => {
 		if (!selectedPatientId) return;
-		const plan = plans.find(p => p.id === planId);
+		const plan = plans.find((p) => p.id === planId);
 		if (!plan) return;
 
-		const newItems = plan.items.map(i => i.id === itemId ? { ...i, status: newStatus } : i);
+		const newItems = plan.items.map((i) =>
+			i.id === itemId ? { ...i, status: newStatus } : i,
+		);
 		setSavingPlanId(planId);
 		try {
-			const res = await fetch(`/api/patients/${selectedPatientId}/treatment-plans`, {
-				method: "POST",
-				headers: auth.denteClinicalReadHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					id: planId,
-					status: plan.status,
-					items: newItems,
-				}),
-			});
+			const res = await fetch(
+				`/api/patients/${selectedPatientId}/treatment-plans`,
+				{
+					method: "POST",
+					headers: auth.denteClinicalReadHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						id: planId,
+						status: plan.status,
+						items: newItems,
+					}),
+				},
+			);
 			if (res.ok) {
-				setPlans(prev => prev.map(p => p.id === planId ? { ...p, items: newItems } : p));
+				setPlans((prev) =>
+					prev.map((p) => (p.id === planId ? { ...p, items: newItems } : p)),
+				);
 				showToast("Статус услуги обновлён", "success");
 			} else {
 				showToast("Не удалось обновить статус услуги", "error");
@@ -308,36 +318,62 @@ export const ComparativePlannerDashboard: React.FC = () => {
 
 	const importSuggestions = () => {
 		if (pendingPlanSuggestions.length === 0) return;
-		
+
 		const catalog = dashboard?.serviceCatalog || [];
-		const findService = (category: string, isBaby: boolean, keywords: string[]) => {
+		const findService = (
+			category: string,
+			isBaby: boolean,
+			keywords: string[],
+		) => {
 			const candidates = catalog.filter((s: any) => s.category === category);
-			let best = candidates.find((s: any) => keywords.some((k) => s.title.toLowerCase().includes(k)));
+			let best = candidates.find((s: any) =>
+				keywords.some((k) => s.title.toLowerCase().includes(k)),
+			);
 			if (!best && candidates.length > 0) best = candidates[0];
 			return best;
 		};
 
-		const newRows: DraftServiceRow[] = pendingPlanSuggestions.map(sug => {
+		const newRows: DraftServiceRow[] = pendingPlanSuggestions.map((sug) => {
 			const isBaby = sug.toothNumber > 50;
 			let service: any = null;
 			if (sug.state === "Caries") {
-				service = findService("therapy", isBaby, ["кариес"]) || { id: "service_caries", title: "Лечение кариеса", priceRub: 4000 };
+				service = findService("therapy", isBaby, ["кариес"]) || {
+					id: "service_caries",
+					title: "Лечение кариеса",
+					priceRub: 4000,
+				};
 			} else if (sug.state === "Pulpitis") {
-				service = findService("therapy", isBaby, ["пульпит", "эндо"]) || { id: "service_pulpitis", title: "Лечение пульпита", priceRub: 8000 };
+				service = findService("therapy", isBaby, ["пульпит", "эндо"]) || {
+					id: "service_pulpitis",
+					title: "Лечение пульпита",
+					priceRub: 8000,
+				};
 			} else if (sug.state === "Planned_Implant" || sug.state === "Implant") {
-				service = findService("surgery", false, ["имплант", "установка"]) || { id: "service_implant", title: "Установка имплантата", priceRub: 35000 };
+				service = findService("surgery", false, ["имплант", "установка"]) || {
+					id: "service_implant",
+					title: "Установка имплантата",
+					priceRub: 35000,
+				};
 			} else if (sug.state === "Crown") {
-				service = findService("prosthetics", isBaby, ["коронка"]) || { id: "service_crown", title: "Коронка", priceRub: 15000 };
+				service = findService("prosthetics", isBaby, ["коронка"]) || {
+					id: "service_crown",
+					title: "Коронка",
+					priceRub: 15000,
+				};
 			} else if (sug.state === "Missing") {
-				service = findService("surgery", false, ["имплант"]) || { id: "service_implant", title: "Установка имплантата", priceRub: 35000 };
+				service = findService("surgery", false, ["имплант"]) || {
+					id: "service_implant",
+					title: "Установка имплантата",
+					priceRub: 35000,
+				};
 			}
-			
+
 			return {
 				key: Math.random().toString(36).slice(2),
 				priceId: service?.id || "",
 				name: `[Зуб ${sug.toothNumber}] ${service?.title || "Процедура"}`,
 				price: service?.priceRub?.toString() || "0",
-				quantity: "1"
+				quantity: "1",
 			};
 		});
 
@@ -345,7 +381,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 		setDraftRows(newRows);
 		setShowCreateForm(true);
 		clearPendingPlanSuggestions();
-		
+
 		setTimeout(
 			() => formRef.current?.scrollIntoView({ behavior: "smooth" }),
 			50,
@@ -409,8 +445,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 			} else {
 				const err = await res.json().catch(() => ({}));
 				showToast(
-					(err as { message?: string }).message ||
-						"Не удалось создать план",
+					(err as { message?: string }).message || "Не удалось создать план",
 					"error",
 				);
 			}
@@ -536,7 +571,10 @@ export const ComparativePlannerDashboard: React.FC = () => {
 							<button
 								type="button"
 								className="new-plan-btn"
-								style={{ background: "var(--teal-500)", borderColor: "var(--teal-600)" }}
+								style={{
+									background: "var(--teal-500)",
+									borderColor: "var(--teal-600)",
+								}}
 								onClick={importSuggestions}
 							>
 								<Plus size={16} />
@@ -638,7 +676,11 @@ export const ComparativePlannerDashboard: React.FC = () => {
 								<div key={row.key} className="cpf-row cpf-row-data">
 									<div
 										className="cpf-col-name"
-										style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+										style={{
+											display: "flex",
+											flexDirection: "column",
+											gap: "4px",
+										}}
 									>
 										<select
 											className="cpf-input"
@@ -750,7 +792,11 @@ export const ComparativePlannerDashboard: React.FC = () => {
 				{/* ── Empty state ───────────────────────────────────────────── */}
 				{plans.length === 0 && !showCreateForm ? (
 					<div className="comp-no-plans">
-						<FileText size={40} strokeWidth={1} className="comp-no-plans-icon" />
+						<FileText
+							size={40}
+							strokeWidth={1}
+							className="comp-no-plans-icon"
+						/>
 						<p className="comp-no-plans-title">
 							У пациента пока нет планов лечения.
 						</p>
@@ -831,9 +877,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 													<button
 														onClick={() =>
 															setActiveDropdown(
-																activeDropdown === plan.id
-																	? null
-																	: plan.id,
+																activeDropdown === plan.id ? null : plan.id,
 															)
 														}
 														className="plan-actions-trigger"
@@ -849,15 +893,10 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																onClick={() => setActiveDropdown(null)}
 															/>
 															<div className="plan-dropdown-menu">
-																<button
-																	onClick={() => handlePrintPlan(plan)}
-																>
-																	<Printer className="w-4 h-4" /> Печать
-																	сметы
+																<button onClick={() => handlePrintPlan(plan)}>
+																	<Printer className="w-4 h-4" /> Печать сметы
 																</button>
-																<button
-																	onClick={() => handleExportCsv(plan)}
-																>
+																<button onClick={() => handleExportCsv(plan)}>
 																	<FileText className="w-4 h-4" /> Экспорт CSV
 																</button>
 																<button
@@ -900,9 +939,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 													<>
 														<div className="price-row total-original">
 															<span>Итого:</span>
-															<span>
-																{total.toLocaleString("ru-RU")} ₽
-															</span>
+															<span>{total.toLocaleString("ru-RU")} ₽</span>
 														</div>
 														<div className="price-row insurance-share">
 															<span>Покрывает ДМС:</span>
@@ -937,87 +974,144 @@ export const ComparativePlannerDashboard: React.FC = () => {
 												plan.items.map((item) => {
 													let coveragePct = 0;
 													if (insuranceActive && insuranceData) {
-														const service = (dashboard?.serviceCatalog || []).find((s: any) => s.id === item.priceId || s.title === item.name);
+														const service = (
+															dashboard?.serviceCatalog || []
+														).find(
+															(s: any) =>
+																s.id === item.priceId || s.title === item.name,
+														);
 														if (service) {
 															switch (service.category) {
-																case "therapy": coveragePct = insuranceData.coverageTherapyPct; break;
-																case "ortho": coveragePct = insuranceData.coverageOrthoPct; break;
-																case "hygiene": coveragePct = insuranceData.coverageHygienePct; break;
-																case "surgery": coveragePct = insuranceData.coverageSurgeryPct; break;
-																default: coveragePct = 0;
+																case "therapy":
+																	coveragePct =
+																		insuranceData.coverageTherapyPct;
+																	break;
+																case "ortho":
+																	coveragePct = insuranceData.coverageOrthoPct;
+																	break;
+																case "hygiene":
+																	coveragePct =
+																		insuranceData.coverageHygienePct;
+																	break;
+																case "surgery":
+																	coveragePct =
+																		insuranceData.coverageSurgeryPct;
+																	break;
+																default:
+																	coveragePct = 0;
 															}
 														}
 													}
-													const isExcluded = insuranceActive && insuranceData && coveragePct === 0;
+													const isExcluded =
+														insuranceActive &&
+														insuranceData &&
+														coveragePct === 0;
 
 													return (
-													<div
-														key={item.id}
-														className="service-tile is-active"
-													>
-														<div className="tile-check-indicator checked">
-															<Check className="w-3 h-3 text-white" />
-														</div>
-														<div className="tile-info">
-															<p>
-																{item.name}
-																{item.toothNumber ? (
-																	<span className="optional-tag">
-																		зуб {item.toothNumber}
-																	</span>
-																) : null}
-																{item.phase ? (
-																	<span
-																		className="optional-tag"
-																		style={{ marginLeft: 4 }}
-																	>
-																		{item.phase}
-																	</span>
-																) : null}
-															</p>
-															<p className="price-tag" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-																{isExcluded && (
-																	<span title="Услуга не входит в программу ДМС пациента" style={{ color: "var(--amber-500)", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
-																		<ShieldAlert size={14} /> Вне покрытия ДМС
-																	</span>
-																)}
-																<span>
-																	{item.price.toLocaleString("ru-RU")} ₽
-																	{item.quantity > 1
-																		? ` × ${item.quantity}`
-																		: ""}
-																	{item.discount
-																		? ` (−${item.discount}%)`
-																		: ""}
-																</span>
-															</p>
-														</div>
-														{plan.status !== "Draft" && plan.status !== "Archived" && plan.status !== "Rejected" && (
-															<div className="tile-actions" style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
-																<select
-																	value={item.status || "Proposed"}
-																	onChange={(e) => updatePlanItemStatus(plan.id, item.id, e.target.value as any)}
-																	onClick={(e) => e.stopPropagation()}
+														<div
+															key={item.id}
+															className="service-tile is-active"
+														>
+															<div className="tile-check-indicator checked">
+																<Check className="w-3 h-3 text-white" />
+															</div>
+															<div className="tile-info">
+																<p>
+																	{item.name}
+																	{item.toothNumber ? (
+																		<span className="optional-tag">
+																			зуб {item.toothNumber}
+																		</span>
+																	) : null}
+																	{item.phase ? (
+																		<span
+																			className="optional-tag"
+																			style={{ marginLeft: 4 }}
+																		>
+																			{item.phase}
+																		</span>
+																	) : null}
+																</p>
+																<p
+																	className="price-tag"
 																	style={{
-																		padding: "4px 8px",
-																		fontSize: "12px",
-																		borderRadius: "6px",
-																		background: "var(--paper)",
-																		border: "1px solid var(--line)",
-																		color: "var(--ink)",
-																		outline: "none"
+																		display: "flex",
+																		alignItems: "center",
+																		gap: "6px",
 																	}}
 																>
-																	<option value="Proposed">Предложено</option>
-																	<option value="In_Progress">В процессе</option>
-																	<option value="Completed">Завершено</option>
-																</select>
+																	{isExcluded && (
+																		<span
+																			title="Услуга не входит в программу ДМС пациента"
+																			style={{
+																				color: "var(--amber-500)",
+																				fontSize: "12px",
+																				display: "flex",
+																				alignItems: "center",
+																				gap: "4px",
+																			}}
+																		>
+																			<ShieldAlert size={14} /> Вне покрытия ДМС
+																		</span>
+																	)}
+																	<span>
+																		{item.price.toLocaleString("ru-RU")} ₽
+																		{item.quantity > 1
+																			? ` × ${item.quantity}`
+																			: ""}
+																		{item.discount
+																			? ` (−${item.discount}%)`
+																			: ""}
+																	</span>
+																</p>
 															</div>
-														)}
-													</div>
-												);
-											})
-										)}
+															{plan.status !== "Draft" &&
+																plan.status !== "Archived" &&
+																plan.status !== "Rejected" && (
+																	<div
+																		className="tile-actions"
+																		style={{
+																			marginLeft: "auto",
+																			display: "flex",
+																			alignItems: "center",
+																		}}
+																	>
+																		<select
+																			value={item.status || "Proposed"}
+																			onChange={(e) =>
+																				updatePlanItemStatus(
+																					plan.id,
+																					item.id,
+																					e.target.value as any,
+																				)
+																			}
+																			onClick={(e) => e.stopPropagation()}
+																			style={{
+																				padding: "4px 8px",
+																				fontSize: "12px",
+																				borderRadius: "6px",
+																				background: "var(--paper)",
+																				border: "1px solid var(--line)",
+																				color: "var(--ink)",
+																				outline: "none",
+																			}}
+																		>
+																			<option value="Proposed">
+																				Предложено
+																			</option>
+																			<option value="In_Progress">
+																				В процессе
+																			</option>
+																			<option value="Completed">
+																				Завершено
+																			</option>
+																		</select>
+																	</div>
+																)}
+														</div>
+													);
+												})
+											)}
 										</div>
 
 										{/* Card bottom actions */}
@@ -1075,9 +1169,7 @@ export const ComparativePlannerDashboard: React.FC = () => {
 														<span>В архиве</span>
 													</div>
 													<button
-														onClick={() =>
-															updatePlanStatus(plan.id, "Draft")
-														}
+														onClick={() => updatePlanStatus(plan.id, "Draft")}
 														className="restore-plan-btn"
 													>
 														Восстановить

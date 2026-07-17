@@ -1,6 +1,6 @@
-import React from "react";
 import { Check } from "lucide-react";
-import { SPECIALIZATIONS, GlassCard } from "../ui/SharedOnboardingUI";
+import React from "react";
+import { GlassCard, SPECIALIZATIONS } from "../ui/SharedOnboardingUI";
 
 export function Step1Specializations({
 	specs,

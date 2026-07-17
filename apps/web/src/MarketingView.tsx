@@ -17,9 +17,9 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
-import { showToast } from "./components/GlobalToast";
 
 type MarketingStats = {
 	yandex: { rating: number; reviews: number };
@@ -66,27 +66,48 @@ export function MarketingView({
 
 	// NPS State
 	const [npsScore, setNpsScore] = useState(() => marketingData.npsScore ?? 9.2);
-	const [npsEnabled, setNpsEnabled] = useState(() => marketingData.npsEnabled ?? true);
-	const [npsSendDelay, setNpsSendDelay] = useState(() => marketingData.npsSendDelay ?? 24);
-	const [npsMessageTemplate, setNpsMessageTemplate] = useState(() => marketingData.npsMessageTemplate ?? `Здравствуйте! Спасибо, что посетили "${clinicName}". Оцените, пожалуйста, качество приема по 10-балльной шкале, ответив на это СМС. Это займет всего секунду, а нам поможет стать лучше!`);
+	const [npsEnabled, setNpsEnabled] = useState(
+		() => marketingData.npsEnabled ?? true,
+	);
+	const [npsSendDelay, setNpsSendDelay] = useState(
+		() => marketingData.npsSendDelay ?? 24,
+	);
+	const [npsMessageTemplate, setNpsMessageTemplate] = useState(
+		() =>
+			marketingData.npsMessageTemplate ??
+			`Здравствуйте! Спасибо, что посетили "${clinicName}". Оцените, пожалуйста, качество приема по 10-балльной шкале, ответив на это СМС. Это займет всего секунду, а нам поможет стать лучше!`,
+	);
 
 	// Referral State
-	const [refReward, setRefReward] = useState(() => marketingData.refReward ?? "1000");
-	const [refEnabled, setRefEnabled] = useState(() => marketingData.refEnabled ?? true);
-	const [refNewDiscount, setRefNewDiscount] = useState(() => marketingData.refNewDiscount ?? "10");
+	const [refReward, setRefReward] = useState(
+		() => marketingData.refReward ?? "1000",
+	);
+	const [refEnabled, setRefEnabled] = useState(
+		() => marketingData.refEnabled ?? true,
+	);
+	const [refNewDiscount, setRefNewDiscount] = useState(
+		() => marketingData.refNewDiscount ?? "10",
+	);
 
 	useEffect(() => {
 		if (marketingData.customSeoKeys)
 			setCustomSeoKeys(marketingData.customSeoKeys);
 		if (marketingData.stats) setStats(marketingData.stats);
 		if (marketingData.phone) setPhone(marketingData.phone);
-		if (marketingData.npsScore !== undefined) setNpsScore(marketingData.npsScore);
-		if (marketingData.npsEnabled !== undefined) setNpsEnabled(marketingData.npsEnabled);
-		if (marketingData.npsSendDelay !== undefined) setNpsSendDelay(marketingData.npsSendDelay);
-		if (marketingData.npsMessageTemplate !== undefined) setNpsMessageTemplate(marketingData.npsMessageTemplate);
-		if (marketingData.refReward !== undefined) setRefReward(marketingData.refReward);
-		if (marketingData.refEnabled !== undefined) setRefEnabled(marketingData.refEnabled);
-		if (marketingData.refNewDiscount !== undefined) setRefNewDiscount(marketingData.refNewDiscount);
+		if (marketingData.npsScore !== undefined)
+			setNpsScore(marketingData.npsScore);
+		if (marketingData.npsEnabled !== undefined)
+			setNpsEnabled(marketingData.npsEnabled);
+		if (marketingData.npsSendDelay !== undefined)
+			setNpsSendDelay(marketingData.npsSendDelay);
+		if (marketingData.npsMessageTemplate !== undefined)
+			setNpsMessageTemplate(marketingData.npsMessageTemplate);
+		if (marketingData.refReward !== undefined)
+			setRefReward(marketingData.refReward);
+		if (marketingData.refEnabled !== undefined)
+			setRefEnabled(marketingData.refEnabled);
+		if (marketingData.refNewDiscount !== undefined)
+			setRefNewDiscount(marketingData.refNewDiscount);
 	}, [
 		marketingData.customSeoKeys,
 		marketingData.stats,
@@ -97,7 +118,7 @@ export function MarketingView({
 		marketingData.npsMessageTemplate,
 		marketingData.refReward,
 		marketingData.refEnabled,
-		marketingData.refNewDiscount
+		marketingData.refNewDiscount,
 	]);
 
 	const saveMarketingData = async (newData: any) => {
@@ -170,9 +191,9 @@ export function MarketingView({
 	const [tone, setTone] = useState<ReviewTone>("positive");
 	const [generatedReply, setGeneratedReply] = useState("");
 	const [copied, setCopied] = useState(false);
-	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys" | "nps" | "referrals">(
-		"reviews",
-	);
+	const [activeTab, setActiveTab] = useState<
+		"reviews" | "stats" | "keys" | "nps" | "referrals"
+	>("reviews");
 
 	const [newKeyInput, setNewKeyInput] = useState("");
 	const [isAiLoading, setIsAiLoading] = useState(false);
@@ -391,7 +412,12 @@ export function MarketingView({
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ delay: 0.2 }}
-				style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}
+				style={{
+					display: "flex",
+					gap: "8px",
+					overflowX: "auto",
+					paddingBottom: "4px",
+				}}
 			>
 				<button
 					className={`marketing-tab ${activeTab === "reviews" ? "active" : ""}`}
@@ -856,69 +882,155 @@ export function MarketingView({
 						transition={{ duration: 0.2 }}
 					>
 						<div style={{ maxWidth: "800px" }}>
-							<h3 style={{ marginTop: 0, marginBottom: "24px", fontSize: "18px" }}>
+							<h3
+								style={{ marginTop: 0, marginBottom: "24px", fontSize: "18px" }}
+							>
 								Система оценки качества (NPS)
 							</h3>
-							
-							<div style={{ display: "flex", gap: "24px", marginBottom: "32px", flexWrap: "wrap" }}>
-								<div className="marketing-stat-card" style={{ flex: "1 1 200px" }}>
+
+							<div
+								style={{
+									display: "flex",
+									gap: "24px",
+									marginBottom: "32px",
+									flexWrap: "wrap",
+								}}
+							>
+								<div
+									className="marketing-stat-card"
+									style={{ flex: "1 1 200px" }}
+								>
 									<div className="marketing-stat-icon-wrapper">
 										<Star size={24} />
 									</div>
 									<div className="marketing-stat-content">
 										<h3 className="marketing-stat-title">Ваш NPS</h3>
-										<strong style={{ fontSize: 24, color: "var(--teal)", lineHeight: 1, marginTop: 4 }}>
+										<strong
+											style={{
+												fontSize: 24,
+												color: "var(--teal)",
+												lineHeight: 1,
+												marginTop: 4,
+											}}
+										>
 											{npsScore}
 										</strong>
 									</div>
 								</div>
-								
-								<div style={{ flex: "2 1 300px", display: "flex", flexDirection: "column", gap: "16px", background: "var(--paper-soft)", padding: "16px", borderRadius: "12px", border: "1px solid var(--line)" }}>
-									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+
+								<div
+									style={{
+										flex: "2 1 300px",
+										display: "flex",
+										flexDirection: "column",
+										gap: "16px",
+										background: "var(--paper-soft)",
+										padding: "16px",
+										borderRadius: "12px",
+										border: "1px solid var(--line)",
+									}}
+								>
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+										}}
+									>
 										<div>
-											<strong style={{ display: "block", fontSize: 15, color: "var(--ink)" }}>Авто-опросы пациентов</strong>
-											<span style={{ fontSize: 13, color: "var(--muted)" }}>Отправлять SMS с просьбой оценить прием</span>
+											<strong
+												style={{
+													display: "block",
+													fontSize: 15,
+													color: "var(--ink)",
+												}}
+											>
+												Авто-опросы пациентов
+											</strong>
+											<span style={{ fontSize: 13, color: "var(--muted)" }}>
+												Отправлять SMS с просьбой оценить прием
+											</span>
 										</div>
 										<label className="theme-switch" style={{ margin: 0 }}>
-											<input 
-												type="checkbox" 
-												checked={npsEnabled} 
-												onChange={(e) => setNpsEnabled(e.target.checked)} 
+											<input
+												type="checkbox"
+												checked={npsEnabled}
+												onChange={(e) => setNpsEnabled(e.target.checked)}
 											/>
 											<span className="slider round"></span>
 										</label>
 									</div>
-									
-									<div style={{ opacity: npsEnabled ? 1 : 0.5, pointerEvents: npsEnabled ? "auto" : "none", transition: "opacity 0.2s" }}>
-										<label style={{ display: "block", fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>
+
+									<div
+										style={{
+											opacity: npsEnabled ? 1 : 0.5,
+											pointerEvents: npsEnabled ? "auto" : "none",
+											transition: "opacity 0.2s",
+										}}
+									>
+										<label
+											style={{
+												display: "block",
+												fontSize: 13,
+												color: "var(--muted)",
+												marginBottom: 8,
+											}}
+										>
 											Задержка перед отправкой (часы)
 										</label>
-										<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-											<input 
-												type="range" 
-												min="1" 
-												max="72" 
-												value={npsSendDelay} 
-												onChange={(e) => setNpsSendDelay(parseInt(e.target.value))} 
+										<div
+											style={{ display: "flex", alignItems: "center", gap: 12 }}
+										>
+											<input
+												type="range"
+												min="1"
+												max="72"
+												value={npsSendDelay}
+												onChange={(e) =>
+													setNpsSendDelay(parseInt(e.target.value))
+												}
 												style={{ flex: 1, accentColor: "var(--teal)" }}
 											/>
-											<strong style={{ color: "var(--ink)", width: 40 }}>{npsSendDelay} ч</strong>
+											<strong style={{ color: "var(--ink)", width: 40 }}>
+												{npsSendDelay} ч
+											</strong>
 										</div>
 									</div>
 								</div>
 							</div>
 
-							<h4 style={{ margin: "0 0 16px 0", fontSize: "16px", color: "var(--ink)" }}>
+							<h4
+								style={{
+									margin: "0 0 16px 0",
+									fontSize: "16px",
+									color: "var(--ink)",
+								}}
+							>
 								Шаблон сообщения
 							</h4>
-							<textarea 
+							<textarea
 								className="marketing-textarea"
 								value={npsMessageTemplate}
 								onChange={(e) => setNpsMessageTemplate(e.target.value)}
 								rows={4}
 							/>
-							<div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
-								<button className="primary-button" onClick={() => saveMarketingData({ npsEnabled, npsSendDelay, npsMessageTemplate })}>
+							<div
+								style={{
+									marginTop: "16px",
+									display: "flex",
+									justifyContent: "flex-end",
+								}}
+							>
+								<button
+									className="primary-button"
+									onClick={() =>
+										saveMarketingData({
+											npsEnabled,
+											npsSendDelay,
+											npsMessageTemplate,
+										})
+									}
+								>
 									Сохранить настройки NPS
 								</button>
 							</div>
@@ -936,68 +1048,136 @@ export function MarketingView({
 						transition={{ duration: 0.2 }}
 					>
 						<div style={{ maxWidth: "800px" }}>
-							<h3 style={{ marginTop: 0, marginBottom: "8px", fontSize: "18px" }}>
+							<h3
+								style={{ marginTop: 0, marginBottom: "8px", fontSize: "18px" }}
+							>
 								Реферальная Программа
 							</h3>
-							<p style={{ color: "var(--muted)", marginBottom: "24px", lineHeight: 1.6, fontSize: "15px" }}>
-								Стимулируйте пациентов рекомендовать вашу клинику друзьям и близким в обмен на бонусы.
+							<p
+								style={{
+									color: "var(--muted)",
+									marginBottom: "24px",
+									lineHeight: 1.6,
+									fontSize: "15px",
+								}}
+							>
+								Стимулируйте пациентов рекомендовать вашу клинику друзьям и
+								близким в обмен на бонусы.
 							</p>
 
-							<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--paper-soft)", padding: "16px 20px", borderRadius: "12px", border: "1px solid var(--line)", marginBottom: "24px" }}>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									background: "var(--paper-soft)",
+									padding: "16px 20px",
+									borderRadius: "12px",
+									border: "1px solid var(--line)",
+									marginBottom: "24px",
+								}}
+							>
 								<div>
-									<strong style={{ display: "block", fontSize: 15, color: "var(--ink)" }}>Статус программы</strong>
-									<span style={{ fontSize: 13, color: "var(--muted)" }}>Начисление бонусов за приглашенных</span>
+									<strong
+										style={{
+											display: "block",
+											fontSize: 15,
+											color: "var(--ink)",
+										}}
+									>
+										Статус программы
+									</strong>
+									<span style={{ fontSize: 13, color: "var(--muted)" }}>
+										Начисление бонусов за приглашенных
+									</span>
 								</div>
 								<label className="theme-switch" style={{ margin: 0 }}>
-									<input 
-										type="checkbox" 
-										checked={refEnabled} 
-										onChange={(e) => setRefEnabled(e.target.checked)} 
+									<input
+										type="checkbox"
+										checked={refEnabled}
+										onChange={(e) => setRefEnabled(e.target.checked)}
 									/>
 									<span className="slider round"></span>
 								</label>
 							</div>
 
-							<div style={{ opacity: refEnabled ? 1 : 0.5, pointerEvents: refEnabled ? "auto" : "none", transition: "opacity 0.2s" }}>
-								<div className="marketing-form-grid" style={{ marginBottom: "24px" }}>
+							<div
+								style={{
+									opacity: refEnabled ? 1 : 0.5,
+									pointerEvents: refEnabled ? "auto" : "none",
+									transition: "opacity 0.2s",
+								}}
+							>
+								<div
+									className="marketing-form-grid"
+									style={{ marginBottom: "24px" }}
+								>
 									<div>
 										<label>Бонус приглашающему (₽)</label>
-										<input 
-											type="number" 
-											className="text-input" 
-											value={refReward} 
-											onChange={(e) => setRefReward(e.target.value)} 
+										<input
+											type="number"
+											className="text-input"
+											value={refReward}
+											onChange={(e) => setRefReward(e.target.value)}
 										/>
 									</div>
 									<div>
 										<label>Скидка новому пациенту (%)</label>
-										<input 
-											type="number" 
-											className="text-input" 
+										<input
+											type="number"
+											className="text-input"
 											value={refNewDiscount}
 											onChange={(e) => setRefNewDiscount(e.target.value)}
 										/>
 									</div>
 								</div>
 
-								<h4 style={{ margin: "0 0 16px 0", fontSize: "16px", color: "var(--ink)" }}>
+								<h4
+									style={{
+										margin: "0 0 16px 0",
+										fontSize: "16px",
+										color: "var(--ink)",
+									}}
+								>
 									Сгенерированная ссылка для пациентов
 								</h4>
 								<div style={{ display: "flex", gap: "12px" }}>
-									<input 
-										type="text" 
-										className="text-input" 
-										value={`https://dente.app/ref/${auth.currentOrganizationId()}/P8X1A`} 
-										readOnly 
-										style={{ flex: 1, background: "var(--paper-soft)", color: "var(--teal)" }}
+									<input
+										type="text"
+										className="text-input"
+										value={`https://dente.app/ref/${auth.currentOrganizationId()}/P8X1A`}
+										readOnly
+										style={{
+											flex: 1,
+											background: "var(--paper-soft)",
+											color: "var(--teal)",
+										}}
 									/>
-									<button className="secondary-button" onClick={() => showToast("Ссылка скопирована", "success")}>
+									<button
+										className="secondary-button"
+										onClick={() => showToast("Ссылка скопирована", "success")}
+									>
 										<Copy size={16} /> Копировать
 									</button>
 								</div>
-								
-								<div style={{ marginTop: "32px", display: "flex", justifyContent: "flex-end" }}>
-									<button className="primary-button" onClick={() => saveMarketingData({ refEnabled, refReward, refNewDiscount })}>
+
+								<div
+									style={{
+										marginTop: "32px",
+										display: "flex",
+										justifyContent: "flex-end",
+									}}
+								>
+									<button
+										className="primary-button"
+										onClick={() =>
+											saveMarketingData({
+												refEnabled,
+												refReward,
+												refNewDiscount,
+											})
+										}
+									>
 										Применить условия рефералки
 									</button>
 								</div>

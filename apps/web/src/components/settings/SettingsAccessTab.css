@@ -1,4 +1,3 @@
-
 .access-studio-container {
 	display: flex;
 	flex-direction: column;
@@ -76,7 +75,8 @@
 	color: var(--ink);
 }
 
-.access-invite-input, .access-invite-select {
+.access-invite-input,
+.access-invite-select {
 	padding: 12px 16px;
 	border: 1px solid var(--line);
 	border-radius: 8px;
@@ -86,7 +86,8 @@
 	transition: all 0.2s;
 }
 
-.access-invite-input:focus, .access-invite-select:focus {
+.access-invite-input:focus,
+.access-invite-select:focus {
 	outline: none;
 	border-color: var(--teal);
 	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);

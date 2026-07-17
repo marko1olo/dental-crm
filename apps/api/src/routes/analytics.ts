@@ -104,7 +104,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 			// 3. Chair Utilization (using appointments and clinicChairs)
 			const chairUtilWhere = [eq(appointments.organizationId, orgId)];
 			if (startDate) {
-				chairUtilWhere.push(gte(appointments.scheduledStart, startDate));
+				chairUtilWhere.push(gte(appointments.startsAt, startDate));
 			}
 
 			const chairUtilRes = await db

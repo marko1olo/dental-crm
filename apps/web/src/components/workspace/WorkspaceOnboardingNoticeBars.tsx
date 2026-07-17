@@ -31,13 +31,13 @@ export function WorkspaceOnboardingNoticeBars() {
 					<div>
 						<strong>Можно начать прием без мастера</strong>
 						<span>
-							Документы предупредят о реквизитах позже. Сейчас важнее
-							открыть пациента, диктовку и расписание.
+							Документы предупредят о реквизитах позже. Сейчас важнее открыть
+							пациента, диктовку и расписание.
 						</span>
 					</div>
 					<span className="onboarding-compact-score">
-						{currentOnboardingIndex + 1}/{onboardingSteps.length} ·
-						документы {legalReadinessPercent}%
+						{currentOnboardingIndex + 1}/{onboardingSteps.length} · документы{" "}
+						{legalReadinessPercent}%
 					</span>
 					<button
 						className="primary-button"
@@ -66,8 +66,8 @@ export function WorkspaceOnboardingNoticeBars() {
 					<div>
 						<strong>Первичная настройка не завершена</strong>
 						<span>
-							Можно работать в черновике, но перед выдачей документов
-							заполните: {onboardingBlockingIssues.join(", ")}.
+							Можно работать в черновике, но перед выдачей документов заполните:{" "}
+							{onboardingBlockingIssues.join(", ")}.
 						</span>
 					</div>
 					<button

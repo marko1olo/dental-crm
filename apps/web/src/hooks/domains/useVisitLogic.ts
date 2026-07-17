@@ -14,8 +14,8 @@ import {
 	type SpeechTranscriptionResponse,
 	type SpeechTranscriptPolishResponse,
 	type VisitDraftAutosaveResponse,
-	type VisitNoteDraft,
 	type VisitFlowResult,
+	type VisitNoteDraft,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
@@ -49,9 +49,9 @@ import {
 	WorkflowResponseError,
 } from "../../AppHelpers";
 import { motionSafeScrollIntoView } from "../../motionPreference";
-import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
+import { useWorkspaceProfileStore } from "../useWorkspaceProfile";
 
 export function useVisitLogic({
 	dashboard,
@@ -1028,7 +1028,11 @@ export function useVisitLogic({
 		visitDraftUserEditedRef.current = true;
 		setIsDraftLoading(true);
 		try {
-			const { aiEnableTreatmentPlan, aiEnableRecommendations, aiEnableDocuments } = useWorkspaceProfileStore.getState();
+			const {
+				aiEnableTreatmentPlan,
+				aiEnableRecommendations,
+				aiEnableDocuments,
+			} = useWorkspaceProfileStore.getState();
 
 			const response = await fetch("/api/ai/visit-flow", {
 				method: "POST",
@@ -1048,17 +1052,20 @@ export function useVisitLogic({
 						enablePlan: aiEnableTreatmentPlan,
 						enableRecommendations: aiEnableRecommendations,
 						enableDocuments: aiEnableDocuments,
-					}
+					},
 				}),
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "Серверный поток визита недоступен"),
+					await responseErrorMessage(
+						response,
+						"Серверный поток визита недоступен",
+					),
 				);
 			}
 			const result = (await response.json()) as VisitFlowResult;
 			setVisitFlowResult(result);
-			
+
 			if (result.draft.data) {
 				setDraft(result.draft.data);
 				setVisitNoteForm(visitNoteFormFromDraft(result.draft.data));

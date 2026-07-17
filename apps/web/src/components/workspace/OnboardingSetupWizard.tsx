@@ -1,7 +1,12 @@
+import {
+	ChevronLeft,
+	ChevronRight,
+	ListTodo,
+	Loader2,
+	Play,
+	Sparkles,
+} from "lucide-react";
 import React from "react";
-import { ChevronLeft, ChevronRight, ListTodo, Loader2, Play, Sparkles } from "lucide-react";
-import { useOnboardingLogic } from "./onboarding/useOnboardingLogic";
-import { THEME_COLORS } from "./onboarding/ui/SharedOnboardingUI";
 import { Step1Specializations } from "./onboarding/steps/Step1Specializations";
 import { Step2Infrastructure } from "./onboarding/steps/Step2Infrastructure";
 import { Step3Modules } from "./onboarding/steps/Step3Modules";
@@ -9,6 +14,8 @@ import { Step4Branding } from "./onboarding/steps/Step4Branding";
 import { Step5Staff } from "./onboarding/steps/Step5Staff";
 import { Step6Legal } from "./onboarding/steps/Step6Legal";
 import { Step7Migration } from "./onboarding/steps/Step7Migration";
+import { THEME_COLORS } from "./onboarding/ui/SharedOnboardingUI";
+import { useOnboardingLogic } from "./onboarding/useOnboardingLogic";
 
 export function OnboardingSetupWizard({
 	onComplete,
@@ -18,7 +25,7 @@ export function OnboardingSetupWizard({
 	isDark?: boolean;
 }) {
 	const logic = useOnboardingLogic(onComplete, initialIsDark);
-	
+
 	const bg = logic.isDark
 		? `radial-gradient(ellipse at 50% 0%, hsl(240 30% 15%), hsl(230 25% 8%) 80%)`
 		: `radial-gradient(ellipse at 50% 0%, hsl(210 60% 95%), hsl(220 40% 88%) 80%)`;
@@ -135,67 +142,67 @@ export function OnboardingSetupWizard({
 					}}
 				>
 					{logic.step === 1 && (
-						<Step1Specializations 
-							specs={logic.specs} 
-							toggleSpec={logic.toggleSpec} 
-							setSpecs={logic.setSpecs} 
-							accentColor={accentColor} 
-							isDark={logic.isDark} 
-							textColor={textColor} 
+						<Step1Specializations
+							specs={logic.specs}
+							toggleSpec={logic.toggleSpec}
+							setSpecs={logic.setSpecs}
+							accentColor={accentColor}
+							isDark={logic.isDark}
+							textColor={textColor}
 						/>
 					)}
 					{logic.step === 2 && (
-						<Step2Infrastructure 
-							chairs={logic.chairs} 
-							setChairs={logic.setChairs} 
-							workHours={logic.workHours} 
-							setWorkHours={logic.setWorkHours} 
-							accentColor={accentColor} 
-							isDark={logic.isDark} 
+						<Step2Infrastructure
+							chairs={logic.chairs}
+							setChairs={logic.setChairs}
+							workHours={logic.workHours}
+							setWorkHours={logic.setWorkHours}
+							accentColor={accentColor}
+							isDark={logic.isDark}
 						/>
 					)}
 					{logic.step === 3 && (
-						<Step3Modules 
-							modules={logic.modules} 
-							toggleModule={logic.toggleModule} 
-							accentColor={accentColor} 
-							isDark={logic.isDark} 
+						<Step3Modules
+							modules={logic.modules}
+							toggleModule={logic.toggleModule}
+							accentColor={accentColor}
+							isDark={logic.isDark}
 						/>
 					)}
 					{logic.step === 4 && (
-						<Step4Branding 
-							theme={logic.theme} 
-							setTheme={logic.setTheme} 
-							isDark={logic.isDark} 
+						<Step4Branding
+							theme={logic.theme}
+							setTheme={logic.setTheme}
+							isDark={logic.isDark}
 						/>
 					)}
 					{logic.step === 5 && (
-						<Step5Staff 
-							staff={logic.staff} 
-							setStaff={logic.setStaff} 
-							specs={logic.specs} 
-							accentColor={accentColor} 
-							isDark={logic.isDark} 
-							textColor={textColor} 
+						<Step5Staff
+							staff={logic.staff}
+							setStaff={logic.setStaff}
+							specs={logic.specs}
+							accentColor={accentColor}
+							isDark={logic.isDark}
+							textColor={textColor}
 						/>
 					)}
 					{logic.step === 6 && (
-						<Step6Legal 
-							legal={logic.legal} 
-							setLegal={logic.setLegal} 
-							logoUploaded={logic.logoUploaded} 
-							setLogoUploaded={logic.setLogoUploaded} 
-							accentColor={accentColor} 
-							isDark={logic.isDark} 
-							textColor={textColor} 
+						<Step6Legal
+							legal={logic.legal}
+							setLegal={logic.setLegal}
+							logoUploaded={logic.logoUploaded}
+							setLogoUploaded={logic.setLogoUploaded}
+							accentColor={accentColor}
+							isDark={logic.isDark}
+							textColor={textColor}
 						/>
 					)}
 					{logic.step === 7 && (
-						<Step7Migration 
-							migrationStatus={logic.migrationStatus} 
-							setMigrationStatus={logic.setMigrationStatus} 
-							accentColor={accentColor} 
-							isDark={logic.isDark} 
+						<Step7Migration
+							migrationStatus={logic.migrationStatus}
+							setMigrationStatus={logic.setMigrationStatus}
+							accentColor={accentColor}
+							isDark={logic.isDark}
 						/>
 					)}
 
@@ -225,21 +232,37 @@ export function OnboardingSetupWizard({
 							Назад
 						</button>
 						<button
-							onClick={() => (logic.step < 7 ? logic.setStep(logic.step + 1) : logic.handleLaunch())}
-							disabled={logic.launching || (logic.step === 1 && logic.specs.length === 0)}
+							onClick={() =>
+								logic.step < 7
+									? logic.setStep(logic.step + 1)
+									: logic.handleLaunch()
+							}
+							disabled={
+								logic.launching ||
+								(logic.step === 1 && logic.specs.length === 0)
+							}
 							style={{
 								display: "flex",
 								alignItems: "center",
 								gap: 8,
 								padding: "12px 32px",
 								borderRadius: 12,
-								background: logic.step === 1 && logic.specs.length === 0 ? "gray" : accentColor,
+								background:
+									logic.step === 1 && logic.specs.length === 0
+										? "gray"
+										: accentColor,
 								color: "#fff",
 								border: "none",
-								cursor: logic.step === 1 && logic.specs.length === 0 ? "not-allowed" : "pointer",
+								cursor:
+									logic.step === 1 && logic.specs.length === 0
+										? "not-allowed"
+										: "pointer",
 								fontWeight: 600,
 								fontSize: 16,
-								boxShadow: logic.step === 1 && logic.specs.length === 0 ? "none" : `0 4px 12px ${accentColor}66`,
+								boxShadow:
+									logic.step === 1 && logic.specs.length === 0
+										? "none"
+										: `0 4px 12px ${accentColor}66`,
 							}}
 						>
 							{logic.launching ? (
@@ -259,7 +282,9 @@ export function OnboardingSetupWizard({
 				<div
 					style={{
 						flex: "0 1 300px",
-						background: logic.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+						background: logic.isDark
+							? "rgba(255,255,255,0.03)"
+							: "rgba(0,0,0,0.03)",
 						padding: 24,
 						borderRadius: 24,
 						backdropFilter: "blur(20px)",
@@ -288,7 +313,9 @@ export function OnboardingSetupWizard({
 					>
 						<div style={{ display: "flex", justifyContent: "space-between" }}>
 							<span>Направления:</span>{" "}
-							<span style={{ fontWeight: 600 }}>{logic.specs.length} выбр.</span>
+							<span style={{ fontWeight: 600 }}>
+								{logic.specs.length} выбр.
+							</span>
 						</div>
 						<div style={{ display: "flex", justifyContent: "space-between" }}>
 							<span>Кресел:</span>{" "}
@@ -313,7 +340,9 @@ export function OnboardingSetupWizard({
 						{logic.migrationStatus === "done" && (
 							<div style={{ display: "flex", justifyContent: "space-between" }}>
 								<span>База:</span>{" "}
-								<span style={{ fontWeight: 600, color: "#10b981" }}>4521 пац.</span>
+								<span style={{ fontWeight: 600, color: "#10b981" }}>
+									4521 пац.
+								</span>
 							</div>
 						)}
 					</div>

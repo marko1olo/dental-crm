@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { showToast } from "../GlobalToast";
 
 interface GnathologyData {
@@ -134,7 +135,11 @@ export function GnathologyForm({ visitId, patientId }: GnathologyFormProps) {
 						}}
 					>
 						Тип окклюзии
-						<select value={occlusion} onChange={(e) => setOcclusion(e.target.value)} style={selectStyle}>
+						<select
+							value={occlusion}
+							onChange={(e) => setOcclusion(e.target.value)}
+							style={selectStyle}
+						>
 							<option value="">-- Выберите --</option>
 							<option value="I класс">I класс (нейтральная)</option>
 							<option value="II класс, 1">II класс, 1 подкласс</option>
@@ -157,7 +162,11 @@ export function GnathologyForm({ visitId, patientId }: GnathologyFormProps) {
 						}}
 					>
 						Смещение челюсти
-						<select value={shift} onChange={(e) => setShift(e.target.value)} style={selectStyle}>
+						<select
+							value={shift}
+							onChange={(e) => setShift(e.target.value)}
+							style={selectStyle}
+						>
 							<option value="">-- Выберите --</option>
 							<option value="Нет">Нет смещения</option>
 							<option value="Вправо">Латеродевиация вправо</option>
@@ -178,15 +187,25 @@ export function GnathologyForm({ visitId, patientId }: GnathologyFormProps) {
 						}}
 					>
 						Состояние ВНЧС
-						<select value={tmj} onChange={(e) => setTmj(e.target.value)} style={selectStyle}>
+						<select
+							value={tmj}
+							onChange={(e) => setTmj(e.target.value)}
+							style={selectStyle}
+						>
 							<option value="">-- Выберите --</option>
 							<option value="Норма">Безболезненно, шумов нет</option>
 							<option value="Щелчок справа">Щелчок справа</option>
 							<option value="Щелчок слева">Щелчок слева</option>
-							<option value="Щелчок с обеих сторон">Щелчок с обеих сторон</option>
+							<option value="Щелчок с обеих сторон">
+								Щелчок с обеих сторон
+							</option>
 							<option value="Крепитация">Крепитация</option>
-							<option value="Болезненность при пальпации">Болезненность при пальпации</option>
-							<option value="Ограничение открывания">Ограничение открывания</option>
+							<option value="Болезненность при пальпации">
+								Болезненность при пальпации
+							</option>
+							<option value="Ограничение открывания">
+								Ограничение открывания
+							</option>
 						</select>
 					</label>
 

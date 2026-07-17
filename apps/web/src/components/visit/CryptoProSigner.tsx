@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Lock, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
-import { signatureService, type CertificateInfo } from "../../lib/cryptopro";
+import { AlertTriangle, CheckCircle2, Lock, ShieldCheck } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { type CertificateInfo, signatureService } from "../../lib/cryptopro";
 
 interface CryptoProSignerProps {
 	diaryHash: string | null;
@@ -47,9 +48,16 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 			}
 			try {
 				// Use Rutoken if deviceId exists (rutoken heuristic is inside signatureService)
-				const certInfo = certificates.find(c => c.thumbprint === selectedCert);
-				const { signatureBase64 } = await signatureService.signData(selectedCert, diaryHash, pinCode, certInfo?.deviceId);
-				
+				const certInfo = certificates.find(
+					(c) => c.thumbprint === selectedCert,
+				);
+				const { signatureBase64 } = await signatureService.signData(
+					selectedCert,
+					diaryHash,
+					pinCode,
+					certInfo?.deviceId,
+				);
+
 				await onLock(selectedCert, signatureBase64);
 				setShowPinDialog(false);
 			} catch (err: any) {
@@ -96,7 +104,7 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 				<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
 					<div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden">
 						<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-orange-500"></div>
-						
+
 						<h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
 							<ShieldCheck className="w-6 h-6 text-rose-500" />
 							Подписание дневника
@@ -143,7 +151,9 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 									maxLength={4}
 									className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-[1em] focus:ring-2 focus:ring-rose-500 focus:outline-none"
 									value={pinCode}
-									onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ""))}
+									onChange={(e) =>
+										setPinCode(e.target.value.replace(/\D/g, ""))
+									}
 									placeholder="••••"
 								/>
 							</div>
@@ -166,7 +176,8 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 										) : (
 											certificates.map((c) => (
 												<option key={c.thumbprint} value={c.thumbprint}>
-													{c.name} (до {new Date(c.validTo).toLocaleDateString()})
+													{c.name} (до{" "}
+													{new Date(c.validTo).toLocaleDateString()})
 												</option>
 											))
 										)}

@@ -34,7 +34,9 @@ export function Step2Infrastructure({
 					borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
 				}}
 			>
-				<h4 style={{ marginBottom: 24, fontSize: 18 }}>График работы клиники</h4>
+				<h4 style={{ marginBottom: 24, fontSize: 18 }}>
+					График работы клиники
+				</h4>
 				<SliderControl
 					label="Открытие"
 					min={6}

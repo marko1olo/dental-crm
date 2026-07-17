@@ -1,3 +1,4 @@
+import type { AuditEvent } from "@dental/shared";
 import {
 	Database,
 	History,
@@ -7,7 +8,6 @@ import {
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import type { AuditEvent } from "@dental/shared";
 
 function formatTime(isoString: string | null | undefined): string {
 	if (!isoString) return "Н/Д";
@@ -56,11 +56,12 @@ export function SettingsAuditTab() {
 				(e) =>
 					e.action.toLowerCase().includes(q) ||
 					e.entityId.toLowerCase().includes(q) ||
-					e.reason?.toLowerCase().includes(q)
+					e.reason?.toLowerCase().includes(q),
 			);
 		}
 		return filtered.sort(
-			(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+			(a, b) =>
+				new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 		);
 	}, [auditEvents, auditSearch]);
 
@@ -84,7 +85,10 @@ export function SettingsAuditTab() {
 	const typedPersistenceIntegrity = persistenceHealth as any;
 
 	return (
-		<section className="settings-panel animate-fade-in settings-audit-tab" style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+		<section
+			className="settings-panel animate-fade-in settings-audit-tab"
+			style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
+		>
 			<div className="panel continuity-panel">
 				<div className="panel-heading">
 					<h2>Сохранность данных в браузере</h2>
@@ -141,7 +145,10 @@ export function SettingsAuditTab() {
 								<SlidersHorizontal aria-hidden="true" />
 								<div>
 									<h3>{bridge.localBridgeEndpointSummary}</h3>
-									<p>Граница: {bridge.privacyBoundary} | Задержка: {bridge.latencyMs}мс</p>
+									<p>
+										Граница: {bridge.privacyBoundary} | Задержка:{" "}
+										{bridge.latencyMs}мс
+									</p>
 								</div>
 								<span>{bridge.warning ? "Внимание" : "Норма"}</span>
 							</article>
@@ -154,7 +161,9 @@ export function SettingsAuditTab() {
 									<SlidersHorizontal aria-hidden="true" />
 									<div>
 										<h3>Сценарий: {plan.scenario}</h3>
-										<p>Блокировка врача: {plan.doctorBlocking ? "Да" : "Нет"}</p>
+										<p>
+											Блокировка врача: {plan.doctorBlocking ? "Да" : "Нет"}
+										</p>
 									</div>
 									<span>Надежность: {plan.confidence * 100}%</span>
 								</article>
@@ -183,18 +192,36 @@ export function SettingsAuditTab() {
 								<History aria-hidden="true" />
 								<div>
 									<h3>
-										{typedPersistenceIntegrity.ok ? "База данных цела" : "База данных повреждена"}
+										{typedPersistenceIntegrity.ok
+											? "База данных цела"
+											: "База данных повреждена"}
 									</h3>
 									<p>{typedPersistenceIntegrity.nextAction}</p>
 								</div>
-								<span>{formatDateTime(typedPersistenceIntegrity.checkedAt)}</span>
+								<span>
+									{formatDateTime(typedPersistenceIntegrity.checkedAt)}
+								</span>
 							</article>
 							<div className="backup-check-grid">
-								{(typedPersistenceIntegrity.backups || []).slice(0, 6).map((backup: any) => (
-									<span key={backup.fileName} style={{ display: "block", margin: "4px 0", fontSize: "0.85rem", color: "var(--color-text-secondary)" }}>
-										{backup.readable && backup.checksumVerified !== false ? "✅" : "❌"} {Math.round(backup.sizeBytes / 1024)} КБ — {backup.fileName}
-									</span>
-								))}
+								{(typedPersistenceIntegrity.backups || [])
+									.slice(0, 6)
+									.map((backup: any) => (
+										<span
+											key={backup.fileName}
+											style={{
+												display: "block",
+												margin: "4px 0",
+												fontSize: "0.85rem",
+												color: "var(--color-text-secondary)",
+											}}
+										>
+											{backup.readable && backup.checksumVerified !== false
+												? "✅"
+												: "❌"}{" "}
+											{Math.round(backup.sizeBytes / 1024)} КБ —{" "}
+											{backup.fileName}
+										</span>
+									))}
 							</div>
 						</>
 					) : (
@@ -221,10 +248,13 @@ export function SettingsAuditTab() {
 								<div>
 									<h3>{batch.sourceName}</h3>
 									<p>
-										{batch.importedRows} строк | {batch.skippedRows} пропущено | {formatDateTime(batch.createdAt)}
+										{batch.importedRows} строк | {batch.skippedRows} пропущено |{" "}
+										{formatDateTime(batch.createdAt)}
 									</p>
 								</div>
-								<span>{batch.status === "completed" ? "Завершено" : "В процессе"}</span>
+								<span>
+									{batch.status === "completed" ? "Завершено" : "В процессе"}
+								</span>
 							</article>
 						))
 					) : (
@@ -237,55 +267,148 @@ export function SettingsAuditTab() {
 			</div>
 
 			<div className="panel audit-panel">
-				<div className="panel-heading" style={{ flexDirection: "column", alignItems: "flex-start", gap: "1rem" }}>
-					<div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+				<div
+					className="panel-heading"
+					style={{
+						flexDirection: "column",
+						alignItems: "flex-start",
+						gap: "1rem",
+					}}
+				>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							width: "100%",
+							alignItems: "center",
+						}}
+					>
 						<h2>Аудит событий</h2>
 						<ShieldCheck aria-hidden="true" />
 					</div>
-					<div className="search-bar" style={{ display: "flex", width: "100%", alignItems: "center", gap: "0.5rem", background: "var(--color-bg-secondary)", padding: "0.5rem 1rem", borderRadius: "0.5rem" }}>
+					<div
+						className="search-bar"
+						style={{
+							display: "flex",
+							width: "100%",
+							alignItems: "center",
+							gap: "0.5rem",
+							background: "var(--color-bg-secondary)",
+							padding: "0.5rem 1rem",
+							borderRadius: "0.5rem",
+						}}
+					>
 						<Search size={16} style={{ color: "var(--color-text-tertiary)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по действию, причине или ID сущности..."
 							value={auditSearch}
 							onChange={(e) => setAuditSearch(e.target.value)}
-							style={{ flex: 1, border: "none", background: "transparent", outline: "none", color: "var(--color-text-primary)" }}
+							style={{
+								flex: 1,
+								border: "none",
+								background: "transparent",
+								outline: "none",
+								color: "var(--color-text-primary)",
+							}}
 						/>
 					</div>
 				</div>
-				<div className="ops-list" style={{ maxHeight: "600px", overflowY: "auto" }}>
+				<div
+					className="ops-list"
+					style={{ maxHeight: "600px", overflowY: "auto" }}
+				>
 					{filteredAuditEvents.length > 0 ? (
 						filteredAuditEvents.map((event: any) => (
-							<article className="ops-row" key={event.id} style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-start", padding: "1rem", borderBottom: "1px solid var(--color-border-subtle)" }}>
-								<div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1 }}>
-									<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-										<span style={{
-											padding: "0.15rem 0.5rem",
-											background: (event.action || "").includes("delete") || (event.action || "").includes("remove") ? "var(--color-danger-transparent)" : "var(--color-accent-transparent)",
-											color: (event.action || "").includes("delete") || (event.action || "").includes("remove") ? "var(--color-danger)" : "var(--color-accent)",
-											borderRadius: "1rem",
-											fontSize: "0.75rem",
-											fontWeight: 600,
-											textTransform: "uppercase",
-											letterSpacing: "0.02em"
-										}}>
+							<article
+								className="ops-row"
+								key={event.id}
+								style={{
+									display: "flex",
+									flexWrap: "wrap",
+									gap: "1rem",
+									alignItems: "flex-start",
+									padding: "1rem",
+									borderBottom: "1px solid var(--color-border-subtle)",
+								}}
+							>
+								<div
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										gap: "0.25rem",
+										flex: 1,
+									}}
+								>
+									<div
+										style={{
+											display: "flex",
+											gap: "0.5rem",
+											alignItems: "center",
+										}}
+									>
+										<span
+											style={{
+												padding: "0.15rem 0.5rem",
+												background:
+													(event.action || "").includes("delete") ||
+													(event.action || "").includes("remove")
+														? "var(--color-danger-transparent)"
+														: "var(--color-accent-transparent)",
+												color:
+													(event.action || "").includes("delete") ||
+													(event.action || "").includes("remove")
+														? "var(--color-danger)"
+														: "var(--color-accent)",
+												borderRadius: "1rem",
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												textTransform: "uppercase",
+												letterSpacing: "0.02em",
+											}}
+										>
 											{event.action}
 										</span>
-										<span style={{ fontSize: "0.8rem", color: "var(--color-text-tertiary)", fontFamily: "monospace" }}>
+										<span
+											style={{
+												fontSize: "0.8rem",
+												color: "var(--color-text-tertiary)",
+												fontFamily: "monospace",
+											}}
+										>
 											#{event.entityId}
 										</span>
 									</div>
-									<p style={{ margin: "0.5rem 0 0", color: "var(--color-text-secondary)", fontSize: "0.9rem", lineHeight: "1.4" }}>
+									<p
+										style={{
+											margin: "0.5rem 0 0",
+											color: "var(--color-text-secondary)",
+											fontSize: "0.9rem",
+											lineHeight: "1.4",
+										}}
+									>
 										{event.reason ?? "Причина не задокументирована системой"}
 									</p>
 								</div>
-								<span style={{ fontSize: "0.85rem", color: "var(--color-text-tertiary)", whiteSpace: "nowrap" }}>
+								<span
+									style={{
+										fontSize: "0.85rem",
+										color: "var(--color-text-tertiary)",
+										whiteSpace: "nowrap",
+									}}
+								>
 									{formatDateTime(event.createdAt)}
 								</span>
 							</article>
 						))
 					) : (
-						<div style={{ padding: "2rem", textAlign: "center", color: "var(--color-text-tertiary)" }}>
+						<div
+							style={{
+								padding: "2rem",
+								textAlign: "center",
+								color: "var(--color-text-tertiary)",
+							}}
+						>
 							События не найдены
 						</div>
 					)}

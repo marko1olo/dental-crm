@@ -5,7 +5,18 @@ import type {
 	StaffMember,
 	StaffRole,
 } from "@dental/shared";
-import { CalendarDays, ExternalLink, Plus, Search, ShieldCheck, Trash2, Building2, Store, Clock, Calendar } from "lucide-react";
+import {
+	Building2,
+	Calendar,
+	CalendarDays,
+	Clock,
+	ExternalLink,
+	Plus,
+	Search,
+	ShieldCheck,
+	Store,
+	Trash2,
+} from "lucide-react";
 import "./SettingsClinicTab.css";
 import type { ChangeEvent } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -173,7 +184,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 			</section>
 
 			{/* Профиль клиники */}
-			<section className="clinic-section-card" aria-label="Юридический профиль клиники">
+			<section
+				className="clinic-section-card"
+				aria-label="Юридический профиль клиники"
+			>
 				<div className="clinic-section-header">
 					<div className="clinic-section-icon">
 						<Building2 size={24} />
@@ -183,8 +197,12 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<p>Основные данные, контакты и информация для документов</p>
 					</div>
 					<div className="clinic-mode-status">
-						<span className={`status-pill ${legalMissingFields.length === 0 ? "status-confirmed" : "status-cancelled"}`}>
-							{legalMissingFields.length === 0 ? "100% Заполнено" : `Не заполнено: ${legalMissingFields.length}`}
+						<span
+							className={`status-pill ${legalMissingFields.length === 0 ? "status-confirmed" : "status-cancelled"}`}
+						>
+							{legalMissingFields.length === 0
+								? "100% Заполнено"
+								: `Не заполнено: ${legalMissingFields.length}`}
 						</span>
 					</div>
 				</div>
@@ -194,7 +212,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Название клиники (для расписания)</label>
 						<input
 							value={clinicProfileDraft?.clinicName ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("clinicName", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("clinicName", event.target.value)
+							}
 							placeholder="Стоматология Улыбка"
 						/>
 					</div>
@@ -202,27 +222,34 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Юридическое лицо (для договоров)</label>
 						<input
 							value={clinicProfileDraft?.legalName ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("legalName", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("legalName", event.target.value)
+							}
 							placeholder="ООО «Стоматология»"
 						/>
 					</div>
 					<div className="clinic-form-group">
 						<label>ИНН</label>
-						<div style={{ display: 'flex', gap: '8px' }}>
+						<div style={{ display: "flex", gap: "8px" }}>
 							<input
 								inputMode="numeric"
 								value={clinicProfileDraft?.inn ?? ""}
 								onChange={(event: InputChangeEvent) =>
-									updateClinicProfileDraft("inn", event.target.value.replace(/[^\d]/g, "").slice(0, 12))
+									updateClinicProfileDraft(
+										"inn",
+										event.target.value.replace(/[^\d]/g, "").slice(0, 12),
+									)
 								}
 								placeholder="ИНН"
 							/>
 							<button
 								className="secondary-button"
 								type="button"
-								style={{ padding: '0 12px' }}
+								style={{ padding: "0 12px" }}
 								onClick={() => void lookupClinicPublicProfile()}
-								disabled={isClinicPublicLookupLoading || !(clinicProfileDraft?.inn)}
+								disabled={
+									isClinicPublicLookupLoading || !clinicProfileDraft?.inn
+								}
 								title="Заполнить реквизиты по ИНН"
 							>
 								{isClinicPublicLookupLoading ? "..." : <Search size={18} />}
@@ -235,7 +262,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 							inputMode="numeric"
 							value={clinicProfileDraft?.kpp ?? ""}
 							onChange={(event: InputChangeEvent) =>
-								updateClinicProfileDraft("kpp", event.target.value.replace(/[^\d]/g, "").slice(0, 9))
+								updateClinicProfileDraft(
+									"kpp",
+									event.target.value.replace(/[^\d]/g, "").slice(0, 9),
+								)
 							}
 							placeholder="Для ИП оставить пустым"
 						/>
@@ -246,7 +276,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 							inputMode="numeric"
 							value={clinicProfileDraft?.ogrn ?? ""}
 							onChange={(event: InputChangeEvent) =>
-								updateClinicProfileDraft("ogrn", event.target.value.replace(/[^\d]/g, "").slice(0, 15))
+								updateClinicProfileDraft(
+									"ogrn",
+									event.target.value.replace(/[^\d]/g, "").slice(0, 15),
+								)
 							}
 							placeholder="ОГРН"
 						/>
@@ -255,7 +288,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Юридический адрес</label>
 						<input
 							value={clinicProfileDraft?.address ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("address", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("address", event.target.value)
+							}
 							placeholder="г. Москва, ул. Примерная, д. 1"
 						/>
 					</div>
@@ -263,7 +298,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Телефон для пациентов</label>
 						<input
 							value={clinicProfileDraft?.phone ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("phone", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("phone", event.target.value)
+							}
 							placeholder="+7 (999) 123-45-67"
 						/>
 					</div>
@@ -271,7 +308,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Email</label>
 						<input
 							value={clinicProfileDraft?.email ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("email", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("email", event.target.value)
+							}
 							placeholder="info@clinic.ru"
 						/>
 					</div>
@@ -279,7 +318,12 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Номер лицензии</label>
 						<input
 							value={clinicProfileDraft?.medicalLicenseNumber ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseNumber", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft(
+									"medicalLicenseNumber",
+									event.target.value,
+								)
+							}
 							placeholder="ЛО-12-34-567890"
 						/>
 					</div>
@@ -287,7 +331,12 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Дата лицензии</label>
 						<input
 							value={clinicProfileDraft?.medicalLicenseIssuedAt ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuedAt", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft(
+									"medicalLicenseIssuedAt",
+									event.target.value,
+								)
+							}
 							placeholder="01.01.2023"
 						/>
 					</div>
@@ -295,7 +344,12 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Кем выдана лицензия</label>
 						<input
 							value={clinicProfileDraft?.medicalLicenseIssuer ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("medicalLicenseIssuer", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft(
+									"medicalLicenseIssuer",
+									event.target.value,
+								)
+							}
 							placeholder="Департамент здравоохранения г. Москвы"
 						/>
 					</div>
@@ -303,7 +357,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Подписант (ФИО)</label>
 						<input
 							value={clinicProfileDraft?.signatoryName ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryName", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("signatoryName", event.target.value)
+							}
 							placeholder="Иванов Иван Иванович"
 						/>
 					</div>
@@ -311,7 +367,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Должность подписанта (в род. падеже)</label>
 						<input
 							value={clinicProfileDraft?.signatoryTitle ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("signatoryTitle", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("signatoryTitle", event.target.value)
+							}
 							placeholder="генерального директора"
 						/>
 					</div>
@@ -319,7 +377,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Банковские реквизиты</label>
 						<textarea
 							value={clinicProfileDraft?.bankDetails ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("bankDetails", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("bankDetails", event.target.value)
+							}
 							placeholder="р/с 40702810..., БИК 044525225, ПАО СБЕРБАНК"
 						/>
 					</div>
@@ -328,7 +388,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Часовой пояс</label>
 						<input
 							value={clinicProfileDraft?.timezone ?? ""}
-							onChange={(event: TextInputChangeEvent) => updateClinicProfileDraft("timezone", event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								updateClinicProfileDraft("timezone", event.target.value)
+							}
 							placeholder="Europe/Moscow"
 						/>
 					</div>
@@ -336,7 +398,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Язык интерфейса</label>
 						<select
 							value={uiLanguage}
-							onChange={(event: SelectChangeEvent) => setUiLanguage(normalizeUiLanguageInput(event.target.value))}
+							onChange={(event: SelectChangeEvent) =>
+								setUiLanguage(normalizeUiLanguageInput(event.target.value))
+							}
 						>
 							{typedUiLanguageOptions.map((option) => (
 								<option key={option.value} value={option.value}>
@@ -347,7 +411,16 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 					</div>
 				</div>
 
-				<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--line)', paddingTop: '20px', marginTop: '12px' }}>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						borderTop: "1px solid var(--line)",
+						paddingTop: "20px",
+						marginTop: "12px",
+					}}
+				>
 					<span className={`save-state save-state-${clinicProfileSaveState}`}>
 						{clinicProfileSaveState === "saved"
 							? "✓ Все изменения сохранены"
@@ -361,8 +434,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						onClick={() => void saveClinicProfileFromDraft()}
 						disabled={clinicProfileSaveState === "saving"}
 					>
-						<ShieldCheck size={16} style={{ marginRight: '8px' }} />
-						{clinicProfileSaveState === "saving" ? "Сохраняю…" : "Сохранить профиль клиники"}
+						<ShieldCheck size={16} style={{ marginRight: "8px" }} />
+						{clinicProfileSaveState === "saving"
+							? "Сохраняю…"
+							: "Сохранить профиль клиники"}
 					</button>
 				</div>
 			</section>
@@ -385,7 +460,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<input
 							type="time"
 							value={clinicProfileDraft?.workdayStart ?? ""}
-							onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayStart", event.target.value)}
+							onChange={(event: InputChangeEvent) =>
+								updateClinicProfileDraft("workdayStart", event.target.value)
+							}
 						/>
 					</div>
 					<div className="clinic-form-group">
@@ -393,7 +470,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<input
 							type="time"
 							value={clinicProfileDraft?.workdayEnd ?? ""}
-							onChange={(event: InputChangeEvent) => updateClinicProfileDraft("workdayEnd", event.target.value)}
+							onChange={(event: InputChangeEvent) =>
+								updateClinicProfileDraft("workdayEnd", event.target.value)
+							}
 						/>
 					</div>
 					<div className="clinic-form-group">
@@ -402,7 +481,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 							inputMode="numeric"
 							value={clinicProfileDraft?.defaultVisitMinutes ?? ""}
 							onChange={(event: InputChangeEvent) =>
-								updateClinicProfileDraft("defaultVisitMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))
+								updateClinicProfileDraft(
+									"defaultVisitMinutes",
+									event.target.value.replace(/[^\d]/g, "").slice(0, 3),
+								)
 							}
 						/>
 					</div>
@@ -412,7 +494,10 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 							inputMode="numeric"
 							value={clinicProfileDraft?.appointmentBufferMinutes ?? ""}
 							onChange={(event: InputChangeEvent) =>
-								updateClinicProfileDraft("appointmentBufferMinutes", event.target.value.replace(/[^\d]/g, "").slice(0, 3))
+								updateClinicProfileDraft(
+									"appointmentBufferMinutes",
+									event.target.value.replace(/[^\d]/g, "").slice(0, 3),
+								)
 							}
 						/>
 					</div>
@@ -420,7 +505,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 						<label>Рабочие дни клиники</label>
 						<div className="weekday-toggle-row">
 							{typedWeekdayOptions.map((day: any) => {
-								const isWorking = (clinicProfileDraft?.workingDays ?? []).includes(day.value);
+								const isWorking = (
+									clinicProfileDraft?.workingDays ?? []
+								).includes(day.value);
 								return (
 									<button
 										key={day.value}
@@ -461,7 +548,9 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 							aria-label="Новое кресло"
 							placeholder="Название (например: Кабинет 1)"
 							value={newChairName}
-							onChange={(event: TextInputChangeEvent) => setNewChairName(event.target.value)}
+							onChange={(event: TextInputChangeEvent) =>
+								setNewChairName(event.target.value)
+							}
 						/>
 						<button
 							aria-label="Добавить кресло"
@@ -470,11 +559,20 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 							onClick={addChair}
 							disabled={!newChairReadyToCreate}
 						>
-							<Plus size={18} style={{ marginRight: '6px' }} /> Добавить
+							<Plus size={18} style={{ marginRight: "6px" }} /> Добавить
 						</button>
 					</div>
 					<div className="chair-equipment-picker">
-						<span style={{ fontSize: '13px', color: 'var(--muted)', alignSelf: 'center', marginRight: '8px' }}>Оборудование:</span>
+						<span
+							style={{
+								fontSize: "13px",
+								color: "var(--muted)",
+								alignSelf: "center",
+								marginRight: "8px",
+							}}
+						>
+							Оборудование:
+						</span>
 						<button
 							className={newChairHasXraySensor ? "active" : ""}
 							type="button"
@@ -511,7 +609,7 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 								</div>
 								<button
 									className="icon-button"
-									style={{ color: 'var(--danger-color)' }}
+									style={{ color: "var(--danger-color)" }}
 									onClick={() => deleteChair(chair.id)}
 									title="Удалить кресло"
 								>
@@ -521,17 +619,27 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 
 							<div className="premium-chair-badges">
 								{chair.hasXraySensor && (
-									<span className="status-pill status-neutral">☢️ Визиограф</span>
+									<span className="status-pill status-neutral">
+										☢️ Визиограф
+									</span>
 								)}
 								{chair.hasMicroscope && (
-									<span className="status-pill status-neutral">🔬 Микроскоп</span>
+									<span className="status-pill status-neutral">
+										🔬 Микроскоп
+									</span>
 								)}
 								{chair.hasSurgeryKit && (
-									<span className="status-pill status-neutral">🔪 Хирургия</span>
+									<span className="status-pill status-neutral">
+										🔪 Хирургия
+									</span>
 								)}
-								{!chair.hasXraySensor && !chair.hasMicroscope && !chair.hasSurgeryKit && (
-									<span className="status-pill status-cancelled">Базовое</span>
-								)}
+								{!chair.hasXraySensor &&
+									!chair.hasMicroscope &&
+									!chair.hasSurgeryKit && (
+										<span className="status-pill status-cancelled">
+											Базовое
+										</span>
+									)}
 							</div>
 						</div>
 					))}

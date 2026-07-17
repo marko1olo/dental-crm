@@ -1,5 +1,5 @@
+import type { Appointment, Dashboard } from "@dental/shared";
 import type { ChangeEvent } from "react";
-import type { Dashboard, Appointment } from "@dental/shared";
 import { useScheduleStore } from "../../store/scheduleStore";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -99,34 +99,53 @@ export function ScheduleFilterStrip({
 			>
 				Все записи
 			</button>
-			
+
 			<button
 				type="button"
 				className={`quick-chip ${showFreeDoctorsOnly ? "active" : ""}`}
 				onClick={() => setShowFreeDoctorsOnly(!showFreeDoctorsOnly)}
-				style={showFreeDoctorsOnly ? { backgroundColor: "var(--emerald-50)", color: "var(--emerald-700)", border: "1px solid var(--emerald-200)" } : {}}
+				style={
+					showFreeDoctorsOnly
+						? {
+								backgroundColor: "var(--emerald-50)",
+								color: "var(--emerald-700)",
+								border: "1px solid var(--emerald-200)",
+							}
+						: {}
+				}
 			>
 				🔍 Свободные врачи
 			</button>
 
 			{dashboard.clinicSettings.profile.mode !== "solo_doctor" &&
 				doctorsToRender.map((member) => (
-						<button
-							key={member.id}
-							type="button"
-							className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""}`}
-							onClick={() =>
-								setScheduleDoctorFilterId(
-									scheduleDoctorFilterId === member.id ? null : member.id,
-								)
-							}
-						>
-							{member.fullName.split(" ")[0]}
-							{freeDoctorIds.includes(member.id) && (
-								<span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#10b981", marginLeft: "6px", verticalAlign: "middle" }} title="Свободен" />
-							)}
-						</button>
-					))}
+					<button
+						key={member.id}
+						type="button"
+						className={`quick-chip ${scheduleDoctorFilterId === member.id ? "active" : ""}`}
+						onClick={() =>
+							setScheduleDoctorFilterId(
+								scheduleDoctorFilterId === member.id ? null : member.id,
+							)
+						}
+					>
+						{member.fullName.split(" ")[0]}
+						{freeDoctorIds.includes(member.id) && (
+							<span
+								style={{
+									display: "inline-block",
+									width: "6px",
+									height: "6px",
+									borderRadius: "50%",
+									background: "#10b981",
+									marginLeft: "6px",
+									verticalAlign: "middle",
+								}}
+								title="Свободен"
+							/>
+						)}
+					</button>
+				))}
 
 			{dashboard.clinicSettings.chairs
 				.filter((chair) => chair.active)
@@ -145,6 +164,5 @@ export function ScheduleFilterStrip({
 					</button>
 				))}
 		</div>
-
 	);
 }

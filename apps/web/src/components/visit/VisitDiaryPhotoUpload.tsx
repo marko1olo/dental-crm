@@ -1,5 +1,6 @@
-import React, { useState } from "react";
 import { Camera, Paperclip } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 interface Attachment {
 	id: string;
@@ -29,11 +30,11 @@ export const VisitDiaryPhotoUpload: React.FC<VisitDiaryPhotoUploadProps> = ({
 
 		try {
 			setIsUploading(true);
-			
+
 			// Resize image on client to save DB space
 			const img = new Image();
 			const objectUrl = URL.createObjectURL(file);
-			
+
 			await new Promise((resolve, reject) => {
 				img.onload = resolve;
 				img.onerror = reject;
@@ -65,7 +66,7 @@ export const VisitDiaryPhotoUpload: React.FC<VisitDiaryPhotoUploadProps> = ({
 			const compressedBlob = await new Promise<Blob | null>((resolve) =>
 				canvas.toBlob(resolve, "image/jpeg", 0.7),
 			);
-			
+
 			URL.revokeObjectURL(objectUrl);
 
 			if (compressedBlob) {

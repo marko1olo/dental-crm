@@ -1,6 +1,12 @@
+import {
+	Baby,
+	BrainCircuit,
+	Scissors,
+	Stethoscope,
+	Wrench,
+} from "lucide-react";
 import React from "react";
-import { Baby, BrainCircuit, Scissors, Stethoscope, Wrench } from "lucide-react";
-import { ThemeColor } from "../useOnboardingLogic";
+import type { ThemeColor } from "../useOnboardingLogic";
 
 export const THEME_COLORS: Record<ThemeColor, string> = {
 	teal: "hsl(175, 80%, 40%)",
@@ -42,7 +48,13 @@ export const SPECIALIZATIONS = [
 	},
 ];
 
-export function GlassCard({ children, selected, onClick, accentColor, isDark }: any) {
+export function GlassCard({
+	children,
+	selected,
+	onClick,
+	accentColor,
+	isDark,
+}: any) {
 	return (
 		<div
 			onClick={onClick}

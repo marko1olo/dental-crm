@@ -177,7 +177,9 @@ export function WaitlistDrawer({
 					className="bg-[#1e293b] border border-slate-600 shadow-xl rounded-lg p-3 flex items-center gap-3 hover:bg-slate-800 transition-colors"
 				>
 					<Calendar className="w-5 h-5 text-teal-400" />
-					<span className="text-slate-100 font-medium">Лист ожидания (Свернут)</span>
+					<span className="text-slate-100 font-medium">
+						Лист ожидания (Свернут)
+					</span>
 				</button>
 			</div>
 		);
@@ -201,7 +203,19 @@ export function WaitlistDrawer({
 							className="p-1 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
 							title="Свернуть окно"
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<line x1="5" y1="12" x2="19" y2="12"></line>
+							</svg>
 						</button>
 						<button
 							onClick={onClose}
@@ -316,7 +330,10 @@ export function WaitlistDrawer({
 										key={item.id}
 										draggable
 										onDragStart={(e) => {
-											e.dataTransfer.setData("application/json", JSON.stringify({ type: "waitlist_item", item }));
+											e.dataTransfer.setData(
+												"application/json",
+												JSON.stringify({ type: "waitlist_item", item }),
+											);
 											e.dataTransfer.effectAllowed = "copy";
 										}}
 										className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 flex flex-col gap-3 hover:border-teal-500/50 cursor-grab active:cursor-grabbing transition-colors"
@@ -358,10 +375,13 @@ export function WaitlistDrawer({
 											<button
 												onClick={async () => {
 													try {
-														const res = await fetch(`/api/waitlist/${item.id}`, {
-															method: "DELETE",
-															headers: auth.denteClinicalReadHeaders(),
-														});
+														const res = await fetch(
+															`/api/waitlist/${item.id}`,
+															{
+																method: "DELETE",
+																headers: auth.denteClinicalReadHeaders(),
+															},
+														);
 														if (res.ok) {
 															showToast("Заявка выполнена", "success");
 															fetchWaitlist();

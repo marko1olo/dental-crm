@@ -26,7 +26,10 @@ export function ClinicalRulePanel({
 }: ClinicalRulePanelProps) {
 	const unresolved = evaluations.filter((evaluation) => !evaluation.resolved);
 	const sourceEvaluations = unresolved.length ? unresolved : evaluations;
-	const visibleEvaluations = sourceEvaluations.slice(0, context === "visit" ? 1 : 4);
+	const visibleEvaluations = sourceEvaluations.slice(
+		0,
+		context === "visit" ? 1 : 4,
+	);
 	const emptyMessage =
 		context === "visit"
 			? "Активных клинических предупреждений нет. Можно продолжать прием."

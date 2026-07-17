@@ -1,5 +1,6 @@
 import { Camera, Paperclip, Search } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { showToast } from "./GlobalToast";
 
 interface Attachment {

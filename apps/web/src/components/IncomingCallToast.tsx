@@ -1,4 +1,12 @@
-import { AlertTriangle, BookOpen, CheckSquare, PhoneIncoming, ShieldAlert, User, X } from "lucide-react";
+import {
+	AlertTriangle,
+	BookOpen,
+	CheckSquare,
+	PhoneIncoming,
+	ShieldAlert,
+	User,
+	X,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { useWebsocket } from "../hooks/useWebsocket";
@@ -45,7 +53,10 @@ export function IncomingCallToast() {
 		? dashboard?.patients?.find((p: any) => p.id === incomingCall.patientId)
 		: null;
 
-	const hasDms = Boolean(patient?.insuranceContractId || patient?.administrativeProfile?.insuranceContractId);
+	const hasDms = Boolean(
+		patient?.insuranceContractId ||
+			patient?.administrativeProfile?.insuranceContractId,
+	);
 	const hasNotes = Boolean(patient?.notes?.trim());
 	const noShowRisk = patient?.noShowRisk;
 
@@ -55,7 +66,9 @@ export function IncomingCallToast() {
 			<div className="flex items-start justify-between">
 				<div className="flex items-center gap-2 text-teal-400">
 					<PhoneIncoming size={18} className="animate-pulse" />
-					<span className="text-xs font-bold uppercase tracking-wider">Входящий звонок</span>
+					<span className="text-xs font-bold uppercase tracking-wider">
+						Входящий звонок
+					</span>
 				</div>
 				<button
 					onClick={() => setIncomingCall(null)}
@@ -74,7 +87,9 @@ export function IncomingCallToast() {
 				<div className="flex items-center gap-1.5 text-sm text-slate-400">
 					<User size={14} className="text-slate-500" />
 					<span className="font-semibold text-slate-300">
-						{incomingCall.patientId ? incomingCall.patientName : "Неизвестный номер"}
+						{incomingCall.patientId
+							? incomingCall.patientName
+							: "Неизвестный номер"}
 					</span>
 				</div>
 			</div>
@@ -89,21 +104,27 @@ export function IncomingCallToast() {
 				<ul className="space-y-1.5 text-slate-300 list-none pl-0">
 					<li className="flex items-start gap-1">
 						<span className="text-teal-500 font-bold">•</span>
-						<span>Уточните причину обращения (острая боль, осмотр, плановое лечение)</span>
+						<span>
+							Уточните причину обращения (острая боль, осмотр, плановое лечение)
+						</span>
 					</li>
-					
+
 					{/* Dynamic Alerts */}
 					{!incomingCall.patientId && (
 						<li className="flex items-start gap-1 text-amber-400 bg-amber-500/10 p-1.5 rounded border border-amber-500/20 mt-1">
 							<AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
-							<span>Новый пациент. Предложите акцию на первичную консультацию!</span>
+							<span>
+								Новый пациент. Предложите акцию на первичную консультацию!
+							</span>
 						</li>
 					)}
 
 					{incomingCall.patientId && !hasDms && (
 						<li className="flex items-start gap-1 text-teal-400">
 							<span className="text-teal-500 font-bold">•</span>
-							<span>Уточните наличие полиса ДМС (клиника работает со страховыми)</span>
+							<span>
+								Уточните наличие полиса ДМС (клиника работает со страховыми)
+							</span>
 						</li>
 					)}
 
@@ -116,7 +137,9 @@ export function IncomingCallToast() {
 
 					{incomingCall.patientId && hasNotes && (
 						<li className="flex items-start gap-1 text-slate-300 italic border-t border-slate-700/40 pt-1.5 mt-1.5">
-							<span className="font-semibold text-slate-400 not-italic">Заметка:</span>
+							<span className="font-semibold text-slate-400 not-italic">
+								Заметка:
+							</span>
 							<span>"{patient.notes}"</span>
 						</li>
 					)}
@@ -142,7 +165,10 @@ export function IncomingCallToast() {
 							// Open new patient form or patient view
 							setCurrentView("patients");
 							setIncomingCall(null);
-							showToast("Добавьте нового пациента с номером " + incomingCall.phone, "info");
+							showToast(
+								"Добавьте нового пациента с номером " + incomingCall.phone,
+								"info",
+							);
 						}}
 						className="flex-1 rounded-lg bg-teal-500 hover:bg-teal-600 active:bg-teal-700 px-3 py-2 text-xs font-bold text-[#1e293b] text-center transition-colors shadow-md shadow-teal-500/10"
 					>
@@ -153,4 +179,3 @@ export function IncomingCallToast() {
 		</div>
 	);
 }
-

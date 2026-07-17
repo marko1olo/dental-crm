@@ -30,10 +30,12 @@ import {
 	UserPlus,
 	Users,
 } from "lucide-react";
-
-import { useWorkspaceProfile, WorkspaceFeatureFlags } from "./hooks/useWorkspaceProfile";
 import { useEffect, useState } from "react";
 import { QrGatewayPanel } from "./components/QrGatewayPanel";
+import {
+	useWorkspaceProfile,
+	type WorkspaceFeatureFlags,
+} from "./hooks/useWorkspaceProfile";
 import { useThemeStore } from "./store/themeStore";
 
 export const appViews = [
@@ -167,7 +169,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"settings",
 			"marketing",
 			"inventory",
-		"payroll",
+			"payroll",
 		];
 	}
 	if (role === "manager") {
@@ -180,7 +182,7 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"communications",
 			"settings",
 			"marketing",
-		"payroll",
+			"payroll",
 		];
 	}
 	if (role === "owner") {
@@ -189,12 +191,19 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 	return ["schedule", "patients"];
 }
 
-export function filterViewsByFlags(views: AppView[], flags: WorkspaceFeatureFlags): AppView[] {
+export function filterViewsByFlags(
+	views: AppView[],
+	flags: WorkspaceFeatureFlags,
+): AppView[] {
 	let filtered = [...views];
-	if (!flags.hasPayrollModule) filtered = filtered.filter((v) => v !== "payroll");
-	if (!flags.hasMarketingModule) filtered = filtered.filter((v) => v !== "marketing");
-	if (!flags.hasAnalyticsModule) filtered = filtered.filter((v) => v !== "analytics");
-	if (!flags.hasInventoryModule) filtered = filtered.filter((v) => v !== "inventory");
+	if (!flags.hasPayrollModule)
+		filtered = filtered.filter((v) => v !== "payroll");
+	if (!flags.hasMarketingModule)
+		filtered = filtered.filter((v) => v !== "marketing");
+	if (!flags.hasAnalyticsModule)
+		filtered = filtered.filter((v) => v !== "analytics");
+	if (!flags.hasInventoryModule)
+		filtered = filtered.filter((v) => v !== "inventory");
 	return filtered;
 }
 
@@ -400,7 +409,7 @@ export function WorkspaceTopbar({
 						<ClipboardCheck aria-hidden="true" /> Прием
 					</button>
 				) : null}
-				
+
 				{useWorkspaceProfile().hasTasks && (
 					<button
 						aria-label="Задачи"
@@ -412,18 +421,20 @@ export function WorkspaceTopbar({
 					>
 						<ClipboardList aria-hidden="true" size={20} />
 						{activeTasksCount && activeTasksCount > 0 ? (
-							<span style={{
-								position: "absolute",
-								top: "-4px",
-								right: "-4px",
-								background: "var(--amber)",
-								color: "#fff",
-								fontSize: "10px",
-								fontWeight: "bold",
-								padding: "2px 4px",
-								borderRadius: "10px",
-								lineHeight: 1
-							}}>
+							<span
+								style={{
+									position: "absolute",
+									top: "-4px",
+									right: "-4px",
+									background: "var(--amber)",
+									color: "#fff",
+									fontSize: "10px",
+									fontWeight: "bold",
+									padding: "2px 4px",
+									borderRadius: "10px",
+									lineHeight: 1,
+								}}
+							>
 								✓ {activeTasksCount}
 							</span>
 						) : null}

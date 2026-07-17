@@ -1,4 +1,9 @@
-import type { Dashboard, Appointment, ResourceLoad, ScheduleWarning } from "@dental/shared";
+import type {
+	Appointment,
+	Dashboard,
+	ResourceLoad,
+	ScheduleWarning,
+} from "@dental/shared";
 import { useScheduleStore } from "../../store/scheduleStore";
 
 export type ScheduleShiftSummaryProps = {

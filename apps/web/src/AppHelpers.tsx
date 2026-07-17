@@ -3345,11 +3345,12 @@ export type VisitNoteField =
 	| "objectiveStatus"
 	| "diagnosis"
 	| "treatmentPlan";
-import type { z } from 'zod';
-import type { visitServiceItemSchema } from '@dental/shared';
+
+import type { visitServiceItemSchema } from "@dental/shared";
+import type { z } from "zod";
 
 export type VisitNoteForm = Record<VisitNoteField, string> & {
-    completedServices: z.infer<typeof visitServiceItemSchema>[];
+	completedServices: z.infer<typeof visitServiceItemSchema>[];
 };
 
 export const visitNoteFieldDefinitions: Array<{
@@ -6346,8 +6347,10 @@ export function patientAdministrativeProfileDraftFromPatient(
 		taxpayerInn: profile?.taxpayerInn ?? "",
 		registrationAddress: profile?.registrationAddress ?? "",
 		residentialAddress: profile?.residentialAddress ?? "",
-		insurancePolicyNumber: patient?.insurancePolicyNumber ?? profile?.insurancePolicyNumber ?? "",
-		insuranceContractId: patient?.insuranceContractId ?? profile?.insuranceContractId ?? "",
+		insurancePolicyNumber:
+			patient?.insurancePolicyNumber ?? profile?.insurancePolicyNumber ?? "",
+		insuranceContractId:
+			patient?.insuranceContractId ?? profile?.insuranceContractId ?? "",
 		snils: profile?.snils ?? "",
 		legalRepresentativeFullName: profile?.legalRepresentativeFullName ?? "",
 		legalRepresentativeRelationship:
@@ -6382,7 +6385,9 @@ export function buildPatientCorePayload(
 		email: nullablePatientDraftValue(draft.email),
 		notes: nullablePatientDraftValue(draft.notes),
 		insuranceContractId: nullablePatientDraftValue(draft.insuranceContractId),
-		insurancePolicyNumber: nullablePatientDraftValue(draft.insurancePolicyNumber),
+		insurancePolicyNumber: nullablePatientDraftValue(
+			draft.insurancePolicyNumber,
+		),
 	};
 }
 

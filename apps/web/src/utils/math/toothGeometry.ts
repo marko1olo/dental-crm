@@ -837,7 +837,7 @@ export function drawCrownMockup(
 
 	// Anatomically specific crown drawing
 	ctx.beginPath();
-	
+
 	if (group === "incisor") {
 		// Shovel-shaped incisor
 		ctx.moveTo(-cervW, 0); // cervical left
@@ -863,17 +863,24 @@ export function drawCrownMockup(
 	} else {
 		// Molar (wide with multiple cusps)
 		ctx.moveTo(-cervW, 0);
-		ctx.bezierCurveTo(-hw * 1.1, -h * 0.2, -hw * 1.1, -h * 0.8, -hw * 0.8, -h * 0.95);
+		ctx.bezierCurveTo(
+			-hw * 1.1,
+			-h * 0.2,
+			-hw * 1.1,
+			-h * 0.8,
+			-hw * 0.8,
+			-h * 0.95,
+		);
 		// Three/Four cusps represented schematically
 		ctx.quadraticCurveTo(-hw * 0.5, -h * 1.05, -hw * 0.3, -h * 0.85);
 		ctx.quadraticCurveTo(0, -h * 1.0, hw * 0.3, -h * 0.85);
 		ctx.quadraticCurveTo(hw * 0.5, -h * 1.05, hw * 0.8, -h * 0.95);
 		ctx.bezierCurveTo(hw * 1.1, -h * 0.8, hw * 1.1, -h * 0.2, cervW, 0);
 	}
-	
+
 	// Close cervical margin
 	ctx.quadraticCurveTo(0, h * 0.1, -cervW, 0);
-	
+
 	ctx.fill();
 	ctx.stroke();
 

@@ -1,5 +1,5 @@
+import { Check, UploadCloud } from "lucide-react";
 import React from "react";
-import { UploadCloud, Check } from "lucide-react";
 
 export function Step6Legal({
 	legal,

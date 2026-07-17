@@ -1,236 +1,255 @@
 .sign-dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease-out;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 1000;
+	animation: fadeIn 0.2s ease-out;
 }
 
 .sign-dialog-content {
-    background: var(--bg-primary, #1e2128);
-    border: 1px solid var(--border-color, #2d3139);
-    border-radius: 12px;
-    width: 100%;
-    max-width: 460px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	background: var(--bg-primary, #1e2128);
+	border: 1px solid var(--border-color, #2d3139);
+	border-radius: 12px;
+	width: 100%;
+	max-width: 460px;
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sign-dialog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-color, #2d3139);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20px 24px;
+	border-bottom: 1px solid var(--border-color, #2d3139);
 }
 
 .sign-dialog-title-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 }
 
 .sign-dialog-icon {
-    color: var(--accent-primary, #10b981);
+	color: var(--accent-primary, #10b981);
 }
 
 .sign-dialog-header h2 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary, #f3f4f6);
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: var(--text-primary, #f3f4f6);
 }
 
 .sign-dialog-close {
-    background: transparent;
-    border: none;
-    color: var(--text-muted, #9ca3af);
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    transition: color 0.2s;
+	background: transparent;
+	border: none;
+	color: var(--text-muted, #9ca3af);
+	font-size: 1.5rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: color 0.2s;
 }
 
 .sign-dialog-close:hover {
-    color: var(--text-primary, #f3f4f6);
+	color: var(--text-primary, #f3f4f6);
 }
 
 .sign-dialog-tabs {
-    display: flex;
-    padding: 0 24px;
-    border-bottom: 1px solid var(--border-color, #2d3139);
-    background: var(--bg-secondary, #181a20);
+	display: flex;
+	padding: 0 24px;
+	border-bottom: 1px solid var(--border-color, #2d3139);
+	background: var(--bg-secondary, #181a20);
 }
 
 .sign-tab {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px 0;
-    background: transparent;
-    border: none;
-    color: var(--text-muted, #9ca3af);
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    position: relative;
-    transition: color 0.2s;
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 16px 0;
+	background: transparent;
+	border: none;
+	color: var(--text-muted, #9ca3af);
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	position: relative;
+	transition: color 0.2s;
 }
 
 .sign-tab:hover {
-    color: var(--text-primary, #f3f4f6);
+	color: var(--text-primary, #f3f4f6);
 }
 
 .sign-tab.active {
-    color: var(--accent-primary, #10b981);
+	color: var(--accent-primary, #10b981);
 }
 
 .sign-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--accent-primary, #10b981);
-    border-radius: 2px 2px 0 0;
+	content: "";
+	position: absolute;
+	bottom: -1px;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: var(--accent-primary, #10b981);
+	border-radius: 2px 2px 0 0;
 }
 
 .sign-dialog-body {
-    padding: 24px;
-    min-height: 200px;
+	padding: 24px;
+	min-height: 200px;
 }
 
 .sign-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 .sign-form label {
-    font-size: 0.85rem;
-    color: var(--text-muted, #9ca3af);
-    font-weight: 500;
+	font-size: 0.85rem;
+	color: var(--text-muted, #9ca3af);
+	font-weight: 500;
 }
 
-.sign-cert-select, .sign-pin-group input {
-    width: 100%;
-    background: var(--bg-tertiary, #111216);
-    border: 1px solid var(--border-color, #2d3139);
-    color: var(--text-primary, #f3f4f6);
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: border-color 0.2s;
-    outline: none;
+.sign-cert-select,
+.sign-pin-group input {
+	width: 100%;
+	background: var(--bg-tertiary, #111216);
+	border: 1px solid var(--border-color, #2d3139);
+	color: var(--text-primary, #f3f4f6);
+	padding: 12px;
+	border-radius: 8px;
+	font-size: 0.95rem;
+	transition: border-color 0.2s;
+	outline: none;
 }
 
-.sign-cert-select:focus, .sign-pin-group input:focus {
-    border-color: var(--accent-primary, #10b981);
+.sign-cert-select:focus,
+.sign-pin-group input:focus {
+	border-color: var(--accent-primary, #10b981);
 }
 
 .sign-pin-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 .sign-preview-hint {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-    padding: 12px;
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--accent-primary, #10b981);
-    border-radius: 8px;
-    font-size: 0.85rem;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 12px;
+	padding: 12px;
+	background: rgba(16, 185, 129, 0.1);
+	color: var(--accent-primary, #10b981);
+	border-radius: 8px;
+	font-size: 0.85rem;
 }
 
-.sign-loading-state, .sign-empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--text-muted, #9ca3af);
-    text-align: center;
-    gap: 12px;
+.sign-loading-state,
+.sign-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	color: var(--text-muted, #9ca3af);
+	text-align: center;
+	gap: 12px;
 }
 
 .sign-empty-state p {
-    margin: 0;
-    color: var(--text-primary, #f3f4f6);
-    font-weight: 500;
+	margin: 0;
+	color: var(--text-primary, #f3f4f6);
+	font-weight: 500;
 }
 
 .sign-empty-state span {
-    font-size: 0.85rem;
+	font-size: 0.85rem;
 }
 
 .spinning-icon {
-    animation: spin 1s linear infinite;
+	animation: spin 1s linear infinite;
 }
 
 .sign-dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 20px 24px;
-    background: var(--bg-secondary, #181a20);
-    border-top: 1px solid var(--border-color, #2d3139);
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 20px 24px;
+	background: var(--bg-secondary, #181a20);
+	border-top: 1px solid var(--border-color, #2d3139);
 }
 
 .sign-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--accent-primary, #10b981);
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--accent-primary, #10b981);
+	color: #fff;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 8px;
+	font-weight: 500;
+	cursor: pointer;
+	transition:
+		opacity 0.2s,
+		transform 0.1s;
 }
 
 .sign-action-btn:hover:not(:disabled) {
-    opacity: 0.9;
+	opacity: 0.9;
 }
 
 .sign-action-btn:active:not(:disabled) {
-    transform: scale(0.98);
+	transform: scale(0.98);
 }
 
 .sign-action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
 }

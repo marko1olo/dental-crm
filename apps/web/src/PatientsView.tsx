@@ -3,7 +3,7 @@ import type {
 	Patient,
 	PatientAdministrativeProfile,
 } from "@dental/shared";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Plus, Search, ShieldCheck, UserCheck } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
@@ -11,14 +11,15 @@ import { denteAdminSecretRequestHeaders } from "./AppHelpers";
 import { AnamnesisPanel } from "./components/AnamnesisPanel";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { OdontogramModule } from "./components/odontogram/OdontogramModule";
-import { ComparativePlannerDashboard } from "./components/plan/ComparativePlannerDashboard";
 import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
 import { PatientClinicalTab } from "./components/patients/PatientClinicalTab";
 import { PatientDocsTab } from "./components/patients/PatientDocsTab";
 import { PatientFamilyCard } from "./components/patients/PatientFamilyCard";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
-import { PatientsSidebar } from "./components/patients/PatientsSidebar";
 import { PatientsSearchHeader } from "./components/patients/PatientsSearchHeader";
+import { PatientsSidebar } from "./components/patients/PatientsSidebar";
+import { ComparativePlannerDashboard } from "./components/plan/ComparativePlannerDashboard";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { usePatientStore } from "./store/patientStore";
 import { useVisitStore } from "./store/visitStore";
 
@@ -52,35 +53,8 @@ type WeekdayOption = {
 	value: number;
 };
 
-export type PatientsViewProps = {
-	dashboard: Dashboard | null;
-	createPatient: () => void | Promise<void>;
-	filteredPatients: Patient[];
-	money: (amountRub: number) => string;
-	normalizeOptionalWorkingDaysDraft: (days: number[]) => number[];
-	patientAdministrativeProfileValidationMessage: string | null;
-	patientInsightById: Map<string, PatientInsight>;
-	patientInsightRiskLabels: Record<PatientInsight["riskLevel"], string>;
-	query: string;
-	savePatientAdministrativeProfile: () => void | Promise<void | boolean>;
-	savePatientCore: () => void | Promise<void | boolean>;
-	selectedPatient: Patient | null | undefined;
-	setQuery: (value: string) => void;
-	updatePatientAdministrativeProfileDraft: (
-		field: keyof PatientAdministrativeProfileDraft,
-		value: string | number[],
-	) => void;
-	updatePatientCoreDraft: (
-		field: keyof PatientCoreDraft,
-		value: string,
-	) => void;
-	weekdayOptions: WeekdayOption[];
-};
-
-type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
-type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
-
-export function PatientsView(props: PatientsViewProps) {
+export function PatientsView() {
+	const appLogic = useAppLogicContext();
 	const {
 		selectedPatientId,
 		patientCoreDraft,
@@ -108,7 +82,6 @@ export function PatientsView(props: PatientsViewProps) {
 		setNewRulePatientText,
 	} = usePatientStore();
 
-	
 	const [familyData, setFamilyData] = useState<any>(null);
 	const [patientTab, setPatientTab] = useState<
 		"overview" | "clinical" | "plans" | "docs"
@@ -166,6 +139,7 @@ export function PatientsView(props: PatientsViewProps) {
 	}, [selectedPatientId]);
 
 	const {
+		dashboard,
 		createPatient,
 		filteredPatients,
 		money,
@@ -181,9 +155,8 @@ export function PatientsView(props: PatientsViewProps) {
 		updatePatientAdministrativeProfileDraft,
 		updatePatientCoreDraft,
 		weekdayOptions,
-	} = props;
+	} = appLogic;
 
-	
 	const patientCoreNameMissing = patientCoreDraft.fullName.trim().length === 0;
 	const patientCoreReadyToSave =
 		Boolean(selectedPatient) &&
@@ -322,9 +295,7 @@ export function PatientsView(props: PatientsViewProps) {
 								style={{
 									padding: "8px 16px",
 									background:
-										patientTab === "plans"
-											? "var(--brand-50)"
-											: "transparent",
+										patientTab === "plans" ? "var(--brand-50)" : "transparent",
 									color:
 										patientTab === "plans"
 											? "var(--brand-600)"
@@ -365,10 +336,10 @@ export function PatientsView(props: PatientsViewProps) {
 						className="patient-admin-panel"
 						aria-label="Административные данные активного пациента"
 					>
-						{patientTab === "overview" && <PatientOverviewTab props={props} />}
-						{patientTab === "clinical" && <PatientClinicalTab props={props} />}
+						{patientTab === "overview" && <PatientOverviewTab />}
+						{patientTab === "clinical" && <PatientClinicalTab />}
 						{patientTab === "plans" && <ComparativePlannerDashboard />}
-						{patientTab === "docs" && <PatientDocsTab props={props} />}
+						{patientTab === "docs" && <PatientDocsTab />}
 					</section>
 				</main>
 			</div>

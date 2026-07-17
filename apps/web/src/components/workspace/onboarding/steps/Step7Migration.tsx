@@ -1,5 +1,11 @@
+import {
+	BrainCircuit,
+	Check,
+	ChevronRight,
+	DownloadCloud,
+	Loader2,
+} from "lucide-react";
 import React from "react";
-import { BrainCircuit, Check, ChevronRight, DownloadCloud, Loader2 } from "lucide-react";
 import { useAppLogicContext } from "../../../../contexts/AppLogicContext";
 
 export function Step7Migration({
@@ -195,7 +201,8 @@ export function Step7Migration({
 								padding: "0 16px",
 							}}
 						>
-							Распознана база {detectedSummary?.detectedKind || "Ident"}. Найдено {detectedSummary?.patientsFound || 0} пациентов.
+							Распознана база {detectedSummary?.detectedKind || "Ident"}.
+							Найдено {detectedSummary?.patientsFound || 0} пациентов.
 						</span>
 					</>
 				)}
@@ -242,7 +249,8 @@ export function Step7Migration({
 								textAlign: "center",
 							}}
 						>
-							{(detectedSummary?.detectedKind || "IDENT").toUpperCase()}: patient_name
+							{(detectedSummary?.detectedKind || "IDENT").toUpperCase()}:
+							patient_name
 						</div>
 						<ChevronRight size={16} color="#888" />
 						<div
@@ -266,7 +274,8 @@ export function Step7Migration({
 								textAlign: "center",
 							}}
 						>
-							{(detectedSummary?.detectedKind || "IDENT").toUpperCase()}: debt_balance
+							{(detectedSummary?.detectedKind || "IDENT").toUpperCase()}:
+							debt_balance
 						</div>
 						<ChevronRight size={16} color="#888" />
 						<div

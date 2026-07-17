@@ -1,4 +1,14 @@
-import { Check, Link as LinkIcon, Mail, ShieldCheck, UserCheck, Key, FileSignature, Copy, Settings2 } from "lucide-react";
+import {
+	Check,
+	Copy,
+	FileSignature,
+	Key,
+	Link as LinkIcon,
+	Mail,
+	Settings2,
+	ShieldCheck,
+	UserCheck,
+} from "lucide-react";
 import "./SettingsAccessTab.css";
 import type React from "react";
 import { useState } from "react";
@@ -80,7 +90,6 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 
 	return (
 		<div className="access-studio-container animate-fade-in">
-			
 			{/* Инвайты */}
 			<section className="access-section-card">
 				<div className="access-section-header">
@@ -119,8 +128,13 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 							<option value="owner">Владелец / Главврач</option>
 						</select>
 					</div>
-					<button type="submit" disabled={loading} className="primary-button" style={{ height: '44px' }}>
-						<Key size={16} style={{ marginRight: '8px' }} />
+					<button
+						type="submit"
+						disabled={loading}
+						className="primary-button"
+						style={{ height: "44px" }}
+					>
+						<Key size={16} style={{ marginRight: "8px" }} />
 						{loading ? "Создание..." : "Создать инвайт"}
 					</button>
 				</form>
@@ -128,8 +142,21 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 				{inviteLink && (
 					<div className="access-invite-result">
 						<span className="access-invite-link">{inviteLink}</span>
-						<button type="button" onClick={handleCopy} className="secondary-button" style={{ background: 'white' }}>
-							{copied ? <><Check size={16} style={{marginRight: '6px'}} /> Скопировано</> : <><Copy size={16} style={{marginRight: '6px'}} /> Копировать</>}
+						<button
+							type="button"
+							onClick={handleCopy}
+							className="secondary-button"
+							style={{ background: "white" }}
+						>
+							{copied ? (
+								<>
+									<Check size={16} style={{ marginRight: "6px" }} /> Скопировано
+								</>
+							) : (
+								<>
+									<Copy size={16} style={{ marginRight: "6px" }} /> Копировать
+								</>
+							)}
 						</button>
 					</div>
 				)}
@@ -148,8 +175,11 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 						</span>
 					</div>
 					<div className="access-workspace-active-roles">
-						<strong>Стартовый экран: {viewLabels[typedActiveWorkspaceProfile.defaultSection]}</strong>
-						<span style={{ margin: '0 8px', opacity: 0.5 }}>|</span>
+						<strong>
+							Стартовый экран:{" "}
+							{viewLabels[typedActiveWorkspaceProfile.defaultSection]}
+						</strong>
+						<span style={{ margin: "0 8px", opacity: 0.5 }}>|</span>
 						{typedActiveWorkspaceProfile.primaryRoles.map((role: string) => (
 							<span key={role}>{staffRoleLabels[role]}</span>
 						))}
@@ -160,7 +190,13 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 			{/* Политики Доступа */}
 			<section className="access-section-card">
 				<div className="access-section-header">
-					<div className="access-section-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'rgb(245, 158, 11)' }}>
+					<div
+						className="access-section-icon"
+						style={{
+							background: "rgba(245, 158, 11, 0.1)",
+							color: "rgb(245, 158, 11)",
+						}}
+					>
 						<ShieldCheck size={24} />
 					</div>
 					<div className="access-section-title">
@@ -181,7 +217,7 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 									<span>{workspaceScopeLabels[policy.scope]}</span>
 								</div>
 							</div>
-							
+
 							<div className="premium-policy-cols">
 								<div className="premium-policy-col">
 									<strong>Разрешено (Запись)</strong>
@@ -203,24 +239,37 @@ export function SettingsAccessTab({ settingsTab }: { settingsTab: string }) {
 
 							{policy.requiresApprovalFor.length > 0 && (
 								<div>
-									<strong style={{ fontSize: '13px', display: 'block', marginBottom: '8px' }}>Требует подтверждения:</strong>
+									<strong
+										style={{
+											fontSize: "13px",
+											display: "block",
+											marginBottom: "8px",
+										}}
+									>
+										Требует подтверждения:
+									</strong>
 									<ul className="premium-policy-requires">
-										{policy.requiresApprovalFor.slice(0, 3).map((item: string) => (
-											<li key={item}>{item}</li>
-										))}
+										{policy.requiresApprovalFor
+											.slice(0, 3)
+											.map((item: string) => (
+												<li key={item}>{item}</li>
+											))}
 									</ul>
 								</div>
 							)}
 
 							<div className="premium-policy-audit">
-								<strong>Журнал аудита: </strong> 
-								{policy.auditEvents.map((event: string) => policyAuditEventLabels[event] ?? event).join(", ")}
+								<strong>Журнал аудита: </strong>
+								{policy.auditEvents
+									.map(
+										(event: string) => policyAuditEventLabels[event] ?? event,
+									)
+									.join(", ")}
 							</div>
 						</article>
 					))}
 				</div>
 			</section>
-
 		</div>
 	);
 }

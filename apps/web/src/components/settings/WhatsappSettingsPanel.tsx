@@ -1,7 +1,8 @@
-import { MessageCircle,
+import {
 	Check,
 	Copy,
 	ExternalLink,
+	MessageCircle,
 	RefreshCw,
 	Shield,
 	Wifi,

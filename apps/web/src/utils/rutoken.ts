@@ -35,7 +35,7 @@ export async function checkRutokenPlugin(): Promise<boolean> {
 			await window.rutoken.ready;
 			const isExtensionInstalled = await window.rutoken.isExtensionInstalled();
 			if (!isExtensionInstalled) return false;
-			
+
 			const isPluginInstalled = await window.rutoken.isPluginInstalled();
 			if (!isPluginInstalled) return false;
 
@@ -43,7 +43,7 @@ export async function checkRutokenPlugin(): Promise<boolean> {
 			window.rutokenPluginLoaded = true;
 			return true;
 		}
-		
+
 		return false;
 	} catch (e) {
 		console.warn("Rutoken plugin check failed:", e);
@@ -71,14 +71,33 @@ export async function getRutokenCertificates(): Promise<RutokenCertificate[]> {
 
 		for (const deviceId of devices) {
 			// Get certificates for user category
-			const deviceCerts = await plugin.enumerateCertificates(deviceId, plugin.CERT_CATEGORY_USER);
-			
+			const deviceCerts = await plugin.enumerateCertificates(
+				deviceId,
+				plugin.CERT_CATEGORY_USER,
+			);
+
 			for (const certId of deviceCerts) {
-				const subjectName = await plugin.getCertificateInfo(deviceId, certId, plugin.CERT_INFO_SUBJECT);
-				const issuerName = await plugin.getCertificateInfo(deviceId, certId, plugin.CERT_INFO_ISSUER);
-				const validFrom = await plugin.getCertificateInfo(deviceId, certId, plugin.CERT_INFO_NOT_VALID_BEFORE);
-				const validTo = await plugin.getCertificateInfo(deviceId, certId, plugin.CERT_INFO_NOT_VALID_AFTER);
-				
+				const subjectName = await plugin.getCertificateInfo(
+					deviceId,
+					certId,
+					plugin.CERT_INFO_SUBJECT,
+				);
+				const issuerName = await plugin.getCertificateInfo(
+					deviceId,
+					certId,
+					plugin.CERT_INFO_ISSUER,
+				);
+				const validFrom = await plugin.getCertificateInfo(
+					deviceId,
+					certId,
+					plugin.CERT_INFO_NOT_VALID_BEFORE,
+				);
+				const validTo = await plugin.getCertificateInfo(
+					deviceId,
+					certId,
+					plugin.CERT_INFO_NOT_VALID_AFTER,
+				);
+
 				certs.push({
 					subjectName: parseCommonName(subjectName),
 					issuerName: parseCommonName(issuerName),
@@ -104,7 +123,7 @@ export async function signDataWithRutoken(
 	deviceId: number,
 	certId: string,
 	data: string,
-	pin: string
+	pin: string,
 ): Promise<string> {
 	const hasPlugin = await checkRutokenPlugin();
 	if (!hasPlugin) {
@@ -119,8 +138,12 @@ export async function signDataWithRutoken(
 
 		// Calculate hash (GOST 34.11-2012 256)
 		// We first need to convert string to hex or base64 as required by the plugin
-		const hashHex = await plugin.digest(deviceId, plugin.HASH_TYPE_GOST3411_12_256, data);
-		
+		const hashHex = await plugin.digest(
+			deviceId,
+			plugin.HASH_TYPE_GOST3411_12_256,
+			data,
+		);
+
 		// Sign the hash (Detached signature)
 		const signatureHex = await plugin.sign(deviceId, certId, hashHex, false, {
 			detached: true,
@@ -140,12 +163,12 @@ export async function signDataWithRutoken(
 		} catch (e) {
 			// ignore logout errors on failure
 		}
-		
+
 		// Common error codes mapped to user-friendly messages
 		if (error.message && error.message.includes("PIN")) {
 			throw new Error("Неверный PIN-код устройства.");
 		}
-		
+
 		throw new Error(`Ошибка подписания Рутокеном: ${error.message || error}`);
 	}
 }
@@ -159,5 +182,10 @@ function parseCommonName(dnInfo: string): string {
 function hexToBase64(hexstring: string): string {
 	const matches = hexstring.match(/\w{2}/g);
 	if (!matches) return "";
-	return btoa(String.fromCharCode.apply(null, matches.map(a => parseInt(a, 16))));
+	return btoa(
+		String.fromCharCode.apply(
+			null,
+			matches.map((a) => parseInt(a, 16)),
+		),
+	);
 }
