@@ -5466,6 +5466,7 @@ export function App() {
 												window.location.hash = "visit";
 											}}
 											onRecordPayment={recordPayment}
+											onFamilyWalletPayment={() => loadDashboard()}
 											paymentAmount={paymentAmount}
 											paymentFeedback={paymentFeedback}
 											paymentFiscalCashierName={paymentFiscalCashierName}

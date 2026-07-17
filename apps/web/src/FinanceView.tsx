@@ -84,6 +84,9 @@ type FinanceViewProps = {
 	staffRoleLabels: Record<ClinicalRuleEvaluation["ownerRole"], string>;
 	treatmentStatusLabels: Record<TreatmentPlanItem["status"], string>;
 	onCreateDocument?: (kind: string) => void;
+	// Called after a successful family-wallet withdrawal so the patient's
+	// outstanding-debt figure and payment ledger refresh instead of going stale.
+	onFamilyWalletPayment?: () => void | Promise<void>;
 };
 
 export function FinanceView({
@@ -146,6 +149,7 @@ export function FinanceView({
 	setPaymentTaxDeductionCode,
 	staffRoleLabels,
 	treatmentStatusLabels,
+	onFamilyWalletPayment,
 }: FinanceViewProps) {
 	const focusPaymentCapture = () => {
 		const amountInput = document.getElementById(
@@ -204,7 +208,7 @@ export function FinanceView({
 				<FamilyWalletPanel
 					patientId={documentPatient.id}
 					remainingDebtRub={billingSummary?.totalDueRub ?? 0}
-					onPaymentSuccess={() => {}} // Could refresh ledger if needed
+					onPaymentSuccess={onFamilyWalletPayment}
 				/>
 			)}
 

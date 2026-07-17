@@ -23,7 +23,7 @@ interface FamilyGroup {
 interface FamilyWalletPanelProps {
 	patientId: string;
 	remainingDebtRub: number;
-	onPaymentSuccess?: () => void;
+	onPaymentSuccess?: (() => void | Promise<void>) | undefined;
 }
 
 export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
