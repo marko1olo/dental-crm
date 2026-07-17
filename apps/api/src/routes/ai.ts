@@ -5,6 +5,8 @@ import {
 	treatmentPlanPayloadSchema,
 	visitNoteDraftRequestSchema,
 	visitNoteDraftSchema,
+	visitFlowRequestSchema,
+	visitFlowResultSchema,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
@@ -19,6 +21,7 @@ import { generateMarketingReviewReply } from "../ai/marketingReviewReply.js";
 import { personalizePostVisitRecommendations } from "../ai/postVisitPersonalize.js";
 import { personalizeTreatmentPlan } from "../ai/treatmentPlanPersonalize.js";
 import { buildVisitDraftFromTranscript } from "../ai/visitDraft.js";
+import { runVisitFlow } from "../ai/visitFlowOrchestrator.js";
 import {
 	createAiRecognitionJobInDb,
 	listAiRecognitionJobsFromDb,
@@ -159,6 +162,32 @@ export async function registerAiRoutes(app: FastifyInstance) {
 		return visitNoteDraftSchema.parse(
 			await buildVisitDraftFromTranscript(input.transcript, input.specialty),
 		);
+	});
+
+	app.post("/api/ai/visit-flow", async (request, reply) => {
+		const orgId = await resolveOrganizationId(request);
+		if (!orgId) return reply.code(403).send({ error: "OrganizationRequired" });
+		if (!(await requireClinicalReadAccess(request, reply, "ai visit flow"))) return;
+
+		const parsedInput = visitFlowRequestSchema.safeParse(request.body);
+		if (!parsedInput.success) {
+			return reply.code(400).send({
+				error: "VisitFlowValidationError",
+				message: visitNoteDraftValidationMessage,
+			});
+		}
+		
+		const input = parsedInput.data;
+		const patient = await getPatientByIdFromDb(orgId, input.patientId);
+		if (!patient) {
+			return sendVisitNoteDraftScopeError(
+				reply,
+				404,
+				aiRecognitionPatientMissingMessage,
+			);
+		}
+
+		return visitFlowResultSchema.parse(await runVisitFlow(input));
 	});
 
 	app.post("/api/ai/treatment-plan-personalize", async (request, reply) => {

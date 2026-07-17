@@ -15,6 +15,7 @@ import {
 	type SpeechTranscriptPolishResponse,
 	type VisitDraftAutosaveResponse,
 	type VisitNoteDraft,
+	type VisitFlowResult,
 } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
@@ -92,6 +93,8 @@ export function useVisitLogic({
 		setTranscript,
 		draft,
 		setDraft,
+		visitFlowResult,
+		setVisitFlowResult,
 		visitNoteForm,
 		setVisitNoteForm,
 		visitToothStateByCode,
@@ -1024,7 +1027,7 @@ export function useVisitLogic({
 		visitDraftUserEditedRef.current = true;
 		setIsDraftLoading(true);
 		try {
-			const response = await fetch("/api/ai/visit-note-draft", {
+			const response = await fetch("/api/ai/visit-flow", {
 				method: "POST",
 				headers: auth.denteClinicalReadHeaders({
 					"Content-Type": "application/json",
@@ -1034,26 +1037,33 @@ export function useVisitLogic({
 					transcript,
 					specialty: selectedSpecialty,
 					source: "voice",
+					completedServices: dashboard?.activeVisit?.completedServices ?? [],
+					planPayload: null, // extracted inside flow
+					recommendationsPayload: null,
 				}),
 			});
 			if (!response.ok) {
 				throw new Error(
-					await responseErrorMessage(response, "Серверный черновик недоступен"),
+					await responseErrorMessage(response, "Серверный поток визита недоступен"),
 				);
 			}
-			const result = (await response.json()) as VisitNoteDraft;
-			setDraft(result);
-			setVisitNoteForm(visitNoteFormFromDraft(result));
-			// Auto-update tooth map from AI-detected tooth codes
-			if (
-				result.quality?.detectedToothCodes?.length ||
-				result.quality?.detectedToothStates
-			) {
-				applyAiToothCodes(
-					result.quality?.detectedToothCodes || [],
-					"planned",
-					result.quality?.detectedToothStates as any,
-				);
+			const result = (await response.json()) as VisitFlowResult;
+			setVisitFlowResult(result);
+			
+			if (result.draft.data) {
+				setDraft(result.draft.data);
+				setVisitNoteForm(visitNoteFormFromDraft(result.draft.data));
+				// Auto-update tooth map from AI-detected tooth codes
+				if (
+					result.draft.data.quality?.detectedToothCodes?.length ||
+					result.draft.data.quality?.detectedToothStates
+				) {
+					applyAiToothCodes(
+						result.draft.data.quality?.detectedToothCodes || [],
+						"planned",
+						result.draft.data.quality?.detectedToothStates as any,
+					);
+				}
 			}
 			scrollToVisitArea(".visit-note-panel");
 		} catch (draftError) {
@@ -1530,6 +1540,7 @@ export function useVisitLogic({
 		isVisitNoteDirty,
 		hasVisitNoteFormText,
 		hasVisitTranscriptText,
+		visitFlowResult,
 		visitDraftBuildMissingSteps,
 		visitDraftReadyToBuild,
 		visitNoteAcceptMissingSteps,

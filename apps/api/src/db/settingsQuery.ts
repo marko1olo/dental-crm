@@ -235,6 +235,73 @@ export async function updateClinicModeInDb(
 		.where(eq(schema.organizations.id, organizationId))
 		.limit(1);
 
+	let modeFlags: any = {};
+	if (mode === "solo_doctor") {
+		modeFlags = {
+			hasAssistants: false,
+			hasMultipleChairs: false,
+			hasDentalLab: false,
+			hasInsuranceCoPay: false,
+			hasInstallments: false,
+			hasOrthodontics: false,
+			hasTasks: true,
+			hasReclamations: false,
+			hasPayrollModule: false,
+			hasMarketingModule: false,
+			hasAnalyticsModule: false,
+			hasInventoryModule: false,
+			workspacePreset: "solo_therapist",
+		};
+	} else if (mode === "one_chair") {
+		modeFlags = {
+			hasAssistants: true,
+			hasMultipleChairs: false,
+			hasDentalLab: false,
+			hasInsuranceCoPay: false,
+			hasInstallments: true,
+			hasOrthodontics: true,
+			hasTasks: true,
+			hasReclamations: true,
+			hasPayrollModule: false,
+			hasMarketingModule: false,
+			hasAnalyticsModule: false,
+			hasInventoryModule: true,
+			workspacePreset: "prosthodontist",
+		};
+	} else if (mode === "small_clinic") {
+		modeFlags = {
+			hasAssistants: true,
+			hasMultipleChairs: true,
+			hasDentalLab: true,
+			hasInsuranceCoPay: true,
+			hasInstallments: true,
+			hasOrthodontics: true,
+			hasTasks: true,
+			hasReclamations: true,
+			hasPayrollModule: true,
+			hasMarketingModule: false,
+			hasAnalyticsModule: true,
+			hasInventoryModule: true,
+			workspacePreset: "family_clinic",
+		};
+	} else if (mode === "network_clinic") {
+		modeFlags = {
+			hasAssistants: true,
+			hasMultipleChairs: true,
+			hasDentalLab: true,
+			hasInsuranceCoPay: true,
+			hasInstallments: true,
+			hasOrthodontics: true,
+			hasTasks: true,
+			hasReclamations: true,
+			hasPayrollModule: true,
+			hasMarketingModule: true,
+			hasAnalyticsModule: true,
+			hasInventoryModule: true,
+			workspacePreset: "enterprise",
+		};
+	}
+
 	if (org) {
 		const currentMode = org.clinicMode;
 		const currentSchedule = (org.clinicSchedule as any) || {};
@@ -252,7 +319,10 @@ export async function updateClinicModeInDb(
 		const isUsingPreset =
 			savedDuration === undefined || savedDuration === currentModePreset;
 
-		const updateData: any = { clinicMode: mode };
+		const updateData: any = {
+			clinicMode: mode,
+			...modeFlags,
+		};
 		if (isUsingPreset) {
 			updateData.clinicSchedule = {
 				...currentSchedule,
@@ -267,7 +337,10 @@ export async function updateClinicModeInDb(
 	} else {
 		await db
 			.update(schema.organizations)
-			.set({ clinicMode: mode })
+			.set({
+				clinicMode: mode,
+				...modeFlags,
+			})
 			.where(eq(schema.organizations.id, organizationId));
 	}
 }

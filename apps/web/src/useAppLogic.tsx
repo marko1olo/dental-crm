@@ -746,6 +746,7 @@ import { usePatientLogic } from "./hooks/domains/usePatientLogic";
 import { useScheduleLogic } from "./hooks/domains/useScheduleLogic";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { useTelegramSettings } from "./hooks/useTelegramSettings.js";
+import { useWorkspaceProfileStore } from "./hooks/useWorkspaceProfile";
 import {
 	type ImagingStudyRow,
 	imagingCaptureDistanceMs,
@@ -7204,6 +7205,17 @@ export function useAppLogic(): any {
 				);
 				setClinicProfileDirty(false);
 				setClinicProfileSaveState("saved");
+
+				// Refetch workspace profile so that sidebar tabs reflect the updated ClinicMode flags immediately
+				try {
+					const profileRes = await fetch("/api/workspace/profile");
+					if (profileRes.ok) {
+						const updatedFlags = await profileRes.json();
+						useWorkspaceProfileStore.getState().hydrate(updatedFlags);
+					}
+				} catch (profileError) {
+					console.error("Failed to sync workspace profile flags after mode change:", profileError);
+				}
 				return;
 			}
 			if (!response.ok) {

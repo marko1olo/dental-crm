@@ -10684,3 +10684,42 @@ export const messengerConnectionStatusSchema = z.object({
 export type MessengerConnectionStatus = z.infer<
 	typeof messengerConnectionStatusSchema
 >;
+
+export const visitFlowStepStatusSchema = z.enum(["pending", "running", "success", "error", "skipped"]);
+export type VisitFlowStepStatus = z.infer<typeof visitFlowStepStatusSchema>;
+
+export const visitFlowResultSchema = z.object({
+	draft: z.object({
+		status: visitFlowStepStatusSchema,
+		message: z.string().nullable(),
+		data: visitNoteDraftSchema.nullable()
+	}),
+	plan: z.object({
+		status: visitFlowStepStatusSchema,
+		message: z.string().nullable(),
+		data: treatmentPlanPayloadSchema.nullable()
+	}),
+	recommendations: z.object({
+		status: visitFlowStepStatusSchema,
+		message: z.string().nullable(),
+		data: postVisitRecommendationsPayloadSchema.nullable()
+	}),
+	documents: z.object({
+		status: visitFlowStepStatusSchema,
+		message: z.string().nullable(),
+		data: z.any().nullable()
+	}),
+	overallStatus: z.enum(["success", "partial", "error"])
+});
+export type VisitFlowResult = z.infer<typeof visitFlowResultSchema>;
+
+export const visitFlowRequestSchema = z.object({
+	patientId: z.string().uuid(),
+	transcript: z.string().trim().min(1).max(80_000),
+	specialty: dentalSpecialtySchema.default("universal"),
+	source: z.enum(["voice", "typed", "image"]).default("voice"),
+	completedServices: z.array(visitServiceItemSchema).optional(),
+	planPayload: treatmentPlanPayloadSchema.optional().nullable(),
+	recommendationsPayload: postVisitRecommendationsPayloadSchema.optional().nullable(),
+});
+export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;

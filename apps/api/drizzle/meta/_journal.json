@@ -50,6 +50,13 @@
       "when": 1784279850573,
       "tag": "0006_nostalgic_maverick",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784311055495,
+      "tag": "0007_add_module_flags",
+      "breakpoints": true
     }
   ]
 }

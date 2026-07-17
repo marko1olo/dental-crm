@@ -316,6 +316,10 @@ export const organizations = pgTable("organizations", {
 	hasOrthodontics: boolean("has_orthodontics").notNull().default(true),
 	hasTasks: boolean("has_tasks").notNull().default(true),
 	hasReclamations: boolean("has_reclamations").notNull().default(true),
+	hasPayrollModule: boolean("has_payroll_module").notNull().default(true),
+	hasMarketingModule: boolean("has_marketing_module").notNull().default(true),
+	hasAnalyticsModule: boolean("has_analytics_module").notNull().default(true),
+	hasInventoryModule: boolean("has_inventory_module").notNull().default(true),
 	workspacePreset: text("workspace_preset").notNull().default("enterprise"), // solo_therapist | prosthodontist | pediatric | orthodontic | surgery_center | implant_center | family_clinic | multi_specialty | enterprise | custom
 	onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
 	requiresMigration: boolean("requires_migration").notNull().default(false),

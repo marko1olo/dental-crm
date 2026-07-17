@@ -2219,6 +2219,17 @@ export function App() {
 	  }} />;
 	}
 
+	if (accessUnlockRequired && !dashboard) {
+		return (
+			<AppUnlockState
+				accessMessage={accessUnlockMessage}
+				adminSecretDraft={clinicalAdminSecretDraft}
+				onAdminSecretChange={setClinicalAdminSecretDraft}
+				onUnlock={() => unlockTelegramAdminSession("all")}
+			/>
+		);
+	}
+
 	// Show staff PIN pad if clinic authed but no staff session (or after lock)
 	if (!staffAuthed || showStaffPinPad) {
 	  if (!dashboard) {
@@ -2835,16 +2846,6 @@ export function App() {
 		);
 	}
 
-	if (accessUnlockRequired && !dashboard) {
-		return (
-			<AppUnlockState
-				accessMessage={accessUnlockMessage}
-				adminSecretDraft={clinicalAdminSecretDraft}
-				onAdminSecretChange={setClinicalAdminSecretDraft}
-				onUnlock={() => unlockTelegramAdminSession("all")}
-			/>
-		);
-	}
 
 	if (window.location.hash === "#/odontogram") {
 		return (
