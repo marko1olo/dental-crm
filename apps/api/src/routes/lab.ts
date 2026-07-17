@@ -120,10 +120,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				.select({ id: users.id })
 				.from(users)
 				.where(
-					and(
-						eq(users.id, data.doctorId),
-						eq(users.organizationId, orgId),
-					),
+					and(eq(users.id, data.doctorId), eq(users.organizationId, orgId)),
 				)
 				.limit(1);
 			if (!doctor) {
@@ -192,7 +189,17 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			dueDate: z.string().optional().nullable(),
 			clinicalNotes: z.string().optional().nullable(),
 			priceRub: z.number().optional().nullable(),
-			status: z.enum(["draft", "sent", "in_progress", "shipped", "received", "refitting", "completed"]).optional(),
+			status: z
+				.enum([
+					"draft",
+					"sent",
+					"in_progress",
+					"shipped",
+					"received",
+					"refitting",
+					"completed",
+				])
+				.optional(),
 			labComments: z.string().optional().nullable(),
 			attachedImageUrl: z.string().optional().nullable(),
 		});
@@ -214,12 +221,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
 				updatedAt: new Date(),
 			})
-			.where(
-				and(
-					eq(labOrders.id, id),
-					eq(labOrders.organizationId, orgId),
-				),
-			)
+			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
 			.returning();
 
 		if (!updated) {
@@ -258,12 +260,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const [deleted] = await db
 			.delete(labOrders)
-			.where(
-				and(
-					eq(labOrders.id, id),
-					eq(labOrders.organizationId, orgId),
-				),
-			)
+			.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
 			.returning();
 
 		if (!deleted) {

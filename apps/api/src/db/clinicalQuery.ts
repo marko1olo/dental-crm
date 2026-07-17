@@ -272,3 +272,7 @@ export async function getTreatmentPlanItemsForPatient(
 			),
 		);
 }
+
+export async function deleteClinicalRuleInDb(organizationId: string, id: string): Promise<void> {
+	await db.delete(schema.clinicalRules).where(and(eq(schema.clinicalRules.id, id), eq(schema.clinicalRules.organizationId, organizationId)));
+}

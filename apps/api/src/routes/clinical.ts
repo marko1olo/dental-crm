@@ -15,6 +15,7 @@ import {
 	createClinicalRuleInDb,
 	evaluateClinicalRulesInDb,
 	updateClinicalRuleInDb,
+	deleteClinicalRuleInDb,
 } from "../db/clinicalQuery.js";
 
 type ClinicalPayloadSchema<T> = {
@@ -127,7 +128,16 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 		return clinicalRuleSchema.parse(await updateClinicalRuleInDb(orgId, input));
 	});
 
-	app.post("/api/clinical/post-op-care", async (request, reply) => {
+		app.delete("/api/clinical/rules/:ruleId", async (request, reply) => {
+		if (!(await requireClinicalMutationAccess(request, reply, "clinical rule delete"))) return;
+		const params = request.params as { ruleId: string };
+		const orgId = await resolveOrganizationId(request);
+		if (!orgId) return reply.code(403).send({ error: "OrganizationRequired", message: "Организация не определена" });
+		await deleteClinicalRuleInDb(orgId, params.ruleId);
+		return reply.send({ success: true });
+	});
+
+app.post("/api/clinical/post-op-care", async (request, reply) => {
 		if (
 			!(await requireClinicalMutationAccess(
 				request,

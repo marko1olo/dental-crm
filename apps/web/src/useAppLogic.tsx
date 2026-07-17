@@ -10789,7 +10789,37 @@ export function useAppLogic(): any {
 		}
 	}
 
-	async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
+		async function removeClinicalRule(ruleId: string) {
+		if (!dashboard) return;
+		if (isClinicalRuleSaving) return;
+		setIsClinicalRuleSaving(true);
+		try {
+			const response = await fetch(`/api/clinical/rules/${ruleId}`, {
+				method: "DELETE",
+				headers: auth.denteClinicalMutationHeaders(),
+			});
+			if (!response.ok) {
+				throw new Error(
+					await responseErrorMessage(
+						response,
+						"Правило не удалено",
+					),
+				);
+			}
+			await loadDashboard();
+		} catch (ruleError) {
+			setError(
+				operatorWorkflowFailureMessage(
+					"Не удалось удалить правило",
+					ruleError,
+				),
+			);
+		} finally {
+			setIsClinicalRuleSaving(false);
+		}
+	}
+
+async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
 		if (isClinicalRuleSaving) {
 			setError("Дождитесь завершения текущей записи клинического правила.");
 			return;
@@ -14113,6 +14143,7 @@ export function useAppLogic(): any {
 		toggleChairWorkingDay,
 		toggleClinicWorkingDay,
 		toggleClinicalRule,
+		removeClinicalRule,
 		togglePhotoVideoMaterial,
 		toggleStaffWorkingDay,
 		toggleTelegramFeature,
