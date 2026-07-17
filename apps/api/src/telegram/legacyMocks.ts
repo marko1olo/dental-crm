@@ -293,6 +293,18 @@ export const clinicProfile: ClinicProfile = {
 	themeColor: "teal",
 	logoUrl: null,
 	stampUrl: null,
+hasAssistants: true,
+hasMultipleChairs: true,
+hasDentalLab: true,
+hasInsuranceCoPay: true,
+hasInstallments: true,
+hasOrthodontics: true,
+hasTasks: true,
+hasReclamations: true,
+workspacePreset: 'enterprise',
+onboardingCompleted: false,
+hasPediatricMode: false,
+isOmniRole: false,
 };
 
 export const staffMembers: StaffMember[] = [

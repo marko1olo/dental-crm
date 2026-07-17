@@ -11,7 +11,7 @@ import {
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { patientReclamations, taskTickets, patients } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 type PatientPayloadSchema<T> = {
 	safeParse: (
@@ -369,6 +369,45 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		}
 	});
 
+	app.put("/api/patients/:patientId/reclamations/:reclamationId", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "update reclamation");
+		if (!orgId) return;
+		const { patientId, reclamationId } = request.params as { patientId: string, reclamationId: string };
+		const { status, proposedAction } = request.body as any;
+		try {
+			const updateData: any = {};
+			if (status !== undefined) updateData.status = status;
+			if (proposedAction !== undefined) updateData.proposedAction = proposedAction;
+			if (status === "resolved") updateData.resolvedAt = new Date();
+
+			const [reclamation] = await db.update(patientReclamations)
+				.set(updateData)
+				.where(and(eq(patientReclamations.id, reclamationId), eq(patientReclamations.patientId, patientId)))
+				.returning();
+			if (!reclamation) return reply.code(404).send({ error: "NotFound" });
+			return reclamation;
+		} catch (e) {
+			console.error("Reclamations PUT error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
+		}
+	});
+
+	app.delete("/api/patients/:patientId/reclamations/:reclamationId", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "delete reclamation");
+		if (!orgId) return;
+		const { patientId, reclamationId } = request.params as { patientId: string, reclamationId: string };
+		try {
+			const [reclamation] = await db.delete(patientReclamations)
+				.where(and(eq(patientReclamations.id, reclamationId), eq(patientReclamations.patientId, patientId)))
+				.returning();
+			if (!reclamation) return reply.code(404).send({ error: "NotFound" });
+			return { success: true };
+		} catch (e) {
+			console.error("Reclamations DELETE error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
+		}
+	});
+
 	app.get("/api/patients/:patientId/tickets", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "read tickets");
 		if (!orgId) return;
@@ -403,6 +442,47 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			return ticket;
 		} catch (e) {
 			console.error("Task Tickets POST error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
+		}
+	});
+
+	app.put("/api/patients/:patientId/tickets/:ticketId", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "update ticket");
+		if (!orgId) return;
+		const { patientId, ticketId } = request.params as { patientId: string, ticketId: string };
+		const { assignedToId, title, description, priority, status } = request.body as any;
+		try {
+			const updateData: any = { updatedAt: new Date() };
+			if (assignedToId !== undefined) updateData.assignedToId = assignedToId;
+			if (title !== undefined) updateData.title = title;
+			if (description !== undefined) updateData.description = description;
+			if (priority !== undefined) updateData.priority = priority;
+			if (status !== undefined) updateData.status = status;
+
+			const [ticket] = await db.update(taskTickets)
+				.set(updateData)
+				.where(and(eq(taskTickets.id, ticketId), eq(taskTickets.patientId, patientId)))
+				.returning();
+			if (!ticket) return reply.code(404).send({ error: "NotFound" });
+			return ticket;
+		} catch (e) {
+			console.error("Task Tickets PUT error:", e);
+			return reply.code(500).send({ error: "DatabaseError" });
+		}
+	});
+
+	app.delete("/api/patients/:patientId/tickets/:ticketId", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "delete ticket");
+		if (!orgId) return;
+		const { patientId, ticketId } = request.params as { patientId: string, ticketId: string };
+		try {
+			const [ticket] = await db.delete(taskTickets)
+				.where(and(eq(taskTickets.id, ticketId), eq(taskTickets.patientId, patientId)))
+				.returning();
+			if (!ticket) return reply.code(404).send({ error: "NotFound" });
+			return { success: true };
+		} catch (e) {
+			console.error("Task Tickets DELETE error:", e);
 			return reply.code(500).send({ error: "DatabaseError" });
 		}
 	});

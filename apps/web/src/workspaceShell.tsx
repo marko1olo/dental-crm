@@ -13,6 +13,7 @@ import {
 	FileText,
 	HelpCircle,
 	Image as ImageIcon,
+	LayoutDashboard,
 	Lock,
 	Megaphone,
 	MessageSquare,
@@ -26,9 +27,11 @@ import {
 	Sparkles,
 	Stethoscope,
 	Sun,
+	UserPlus,
 	Users,
 } from "lucide-react";
 
+import { useWorkspaceProfile, WorkspaceFeatureFlags } from "./hooks/useWorkspaceProfile";
 import { useEffect, useState } from "react";
 import { QrGatewayPanel } from "./components/QrGatewayPanel";
 import { useThemeStore } from "./store/themeStore";
@@ -186,6 +189,14 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 	return ["schedule", "patients"];
 }
 
+export function filterViewsByFlags(views: AppView[], flags: WorkspaceFeatureFlags): AppView[] {
+	let filtered = [...views];
+	if (!flags.hasPayrollModule) filtered = filtered.filter((v) => v !== "payroll");
+	if (!flags.hasMarketingModule) filtered = filtered.filter((v) => v !== "marketing");
+	if (!flags.hasAnalyticsModule) filtered = filtered.filter((v) => v !== "analytics");
+	return filtered;
+}
+
 export function WorkspaceSidebar({
 	currentView,
 	onViewIntent,
@@ -195,7 +206,8 @@ export function WorkspaceSidebar({
 	onViewIntent?: WorkspaceViewIntentHandler;
 	role: StaffRole;
 }) {
-	const allowedViews = getFilteredAppViews(role);
+	const flags = useWorkspaceProfile();
+	const allowedViews = filterViewsByFlags(getFilteredAppViews(role), flags);
 
 	return (
 		<aside className="sidebar" aria-label="Навигация">

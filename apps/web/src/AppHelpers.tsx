@@ -4203,10 +4203,11 @@ export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
 export type PatientAdministrativeProfileDraft = {
 	[K in Exclude<
 		keyof PatientAdministrativeProfile,
-		"preferredAppointmentWeekdays"
+		"preferredAppointmentWeekdays" | "orthodonticProgress"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
+	orthodonticProgress: PatientAdministrativeProfile["orthodonticProgress"];
 };
 export type PatientAdministrativeProfileSaveState =
 	| "idle"
@@ -6332,6 +6333,7 @@ export function emptyPatientAdministrativeProfileDraft(): PatientAdministrativeP
 		preferredAppointmentEnd: "",
 		preferredAppointmentNote: "",
 		dataProcessingBasisNote: "",
+		orthodonticProgress: null,
 	};
 }
 
@@ -6361,6 +6363,7 @@ export function patientAdministrativeProfileDraftFromPatient(
 		preferredAppointmentEnd: profile?.preferredAppointmentEnd ?? "",
 		preferredAppointmentNote: profile?.preferredAppointmentNote ?? "",
 		dataProcessingBasisNote: profile?.dataProcessingBasisNote ?? "",
+		orthodonticProgress: profile?.orthodonticProgress ?? null,
 	};
 }
 
@@ -6428,6 +6431,7 @@ export function buildPatientAdministrativeProfilePayload(
 		dataProcessingBasisNote: nullablePatientDraftValue(
 			draft.dataProcessingBasisNote,
 		),
+		orthodonticProgress: draft.orthodonticProgress,
 	};
 }
 

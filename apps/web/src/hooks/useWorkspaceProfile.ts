@@ -15,11 +15,17 @@ export interface WorkspaceFeatureFlags {
 	hasDentalLab: boolean;
 	hasInsuranceCoPay: boolean;
 	hasInstallments: boolean;
+	hasOrthodontics: boolean;
+	hasTasks: boolean;
+	hasReclamations: boolean;
 	workspacePreset: string;
 	onboardingCompleted: boolean;
 	hasPediatricMode: boolean;
 	isOmniRole: boolean;
 	numberOfDoctors: number;
+	hasPayrollModule: boolean;
+	hasMarketingModule: boolean;
+	hasAnalyticsModule: boolean;
 }
 
 interface WorkspaceProfileStore extends WorkspaceFeatureFlags {
@@ -38,11 +44,17 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	hasDentalLab: true,
 	hasInsuranceCoPay: true,
 	hasInstallments: true,
+	hasOrthodontics: true,
+	hasTasks: true,
+	hasReclamations: true,
 	workspacePreset: "enterprise",
 	onboardingCompleted: false,
 	hasPediatricMode: false,
 	isOmniRole: false,
 	numberOfDoctors: 4,
+	hasPayrollModule: true,
+	hasMarketingModule: true,
+	hasAnalyticsModule: true,
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -72,9 +84,15 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				hasDentalLab: s.hasDentalLab,
 				hasInsuranceCoPay: s.hasInsuranceCoPay,
 				hasInstallments: s.hasInstallments,
+				hasOrthodontics: s.hasOrthodontics,
+				hasTasks: s.hasTasks,
+				hasReclamations: s.hasReclamations,
 				workspacePreset: s.workspacePreset,
 				onboardingCompleted: s.onboardingCompleted,
 				numberOfDoctors: s.numberOfDoctors,
+				hasPayrollModule: s.hasPayrollModule,
+				hasMarketingModule: s.hasMarketingModule,
+				hasAnalyticsModule: s.hasAnalyticsModule,
 			}),
 		},
 	),

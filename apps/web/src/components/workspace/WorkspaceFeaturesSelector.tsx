@@ -33,6 +33,12 @@ interface FeatureToggleDef {
 		| "hasDentalLab"
 		| "hasInsuranceCoPay"
 		| "hasInstallments"
+		| "hasPayrollModule"
+		| "hasMarketingModule"
+		| "hasAnalyticsModule"
+		| "hasOrthodontics"
+		| "hasTasks"
+		| "hasReclamations"
 	>;
 	label: string;
 	description: string;
@@ -80,6 +86,51 @@ const FEATURE_TOGGLES: FeatureToggleDef[] = [
 			"Отключите, если не предлагаете рассрочку — из сметы удалится калькулятор и слайдер ежемесячных платежей.",
 		icon: <CreditCard size={20} />,
 		color: "hsl(340 75% 60%)",
+	},
+	{
+		key: "hasPayrollModule",
+		label: "Модуль «Зарплаты и комиссии»",
+		description:
+			"Отключите, если вы работаете один или считаете зарплаты в другой программе.",
+		icon: <LayoutGrid size={20} />,
+		color: "hsl(140 70% 45%)",
+	},
+	{
+		key: "hasMarketingModule",
+		label: "Модуль «Маркетинг»",
+		description:
+			"Отключите, если не ведете рекламные кампании и не используете воронку конверсий.",
+		icon: <Users size={20} />,
+		color: "hsl(35 90% 55%)",
+	},
+	{
+		key: "hasAnalyticsModule",
+		label: "Модуль «Аналитика»",
+		description:
+			"Отключите для максимального упрощения интерфейса, если вам не нужны сложные отчеты.",
+		icon: <LayoutGrid size={20} />,
+		color: "hsl(280 80% 65%)",
+	},
+	{
+		key: "hasOrthodontics",
+		label: "Ортодонтия (Трекер элайнеров)",
+		description: "Включает виджет ортодонтического лечения и ведение плана брекетов в картах пациентов.",
+		icon: <ShieldPlus size={20} />,
+		color: "hsl(200 80% 50%)",
+	},
+	{
+		key: "hasTasks",
+		label: "Задачи по пациентам",
+		description: "Включает функционал поручений (тикетов) для администраторов и врачей прямо в карточке.",
+		icon: <CheckCircle2 size={20} />,
+		color: "hsl(100 70% 45%)",
+	},
+	{
+		key: "hasReclamations",
+		label: "Рекламации и осложнения",
+		description: "Включает модуль фиксации жалоб, осложнений и гарантийных случаев.",
+		icon: <XCircle size={20} />,
+		color: "hsl(350 80% 60%)",
 	},
 ];
 

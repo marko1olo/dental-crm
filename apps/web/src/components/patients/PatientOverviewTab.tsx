@@ -12,8 +12,10 @@ import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { PatientFamilyCard } from "./PatientFamilyCard";
 import { PatientNoShowRisk } from "./PatientNoShowRisk";
 import { OrthodonticProgressWidget } from "./OrthodonticProgressWidget";
+import { PatientLoyaltyHeader } from "./PatientLoyaltyHeader";
 import { PatientTaskTicketsWidget } from "./PatientTaskTicketsWidget";
 import { PatientReclamationsWidget } from "./PatientReclamationsWidget";
+import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 
 type TextFieldChangeEvent = React.ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
@@ -28,6 +30,7 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 		patientAdministrativeProfileSaveState,
 		patientAdministrativeProfileDirty,
 	} = usePatientStore();
+	const workspaceFlags = useWorkspaceProfile();
 	const { savePatientCore, updatePatientCoreDraft, selectedPatient } = props;
 	const patientCoreReadyToSave =
 		patientCoreDraft.fullName.trim().length > 0 && patientCoreDirty;
@@ -59,7 +62,7 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 	return (
 		<>
 			<div className="panel-heading compact-heading patients-no-border-mb-8">
-				<div>
+				<div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
 					<span
 						style={{
 							fontSize: "14px",
@@ -69,6 +72,7 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 					>
 						Карточка пациента
 					</span>
+					{selectedPatientId && <PatientLoyaltyHeader patientId={selectedPatientId} />}
 				</div>
 				<span
 					className={`status-pill status-${patientCoreSaveState === "error" || patientAdministrativeProfileSaveState === "error" ? "cancelled" : "confirmed"}`}
@@ -275,9 +279,18 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 				</div>
 				<div className="clinical-col-right" style={{ flex: 1 }}>
 					{selectedPatientId && <PatientNoShowRisk patientId={selectedPatientId} />}
-					{selectedPatientId && <OrthodonticProgressWidget patientId={selectedPatientId} />}
-					{selectedPatientId && <PatientReclamationsWidget patientId={selectedPatientId} />}
-					{selectedPatientId && <PatientTaskTicketsWidget patientId={selectedPatientId} />}
+					
+					{selectedPatientId && workspaceFlags.hasOrthodontics && (
+						<OrthodonticProgressWidget patientId={selectedPatientId} />
+					)}
+					
+					{selectedPatientId && workspaceFlags.hasReclamations && (
+						<PatientReclamationsWidget patientId={selectedPatientId} />
+					)}
+					
+					{selectedPatientId && workspaceFlags.hasTasks && (
+						<PatientTaskTicketsWidget patientId={selectedPatientId} />
+					)}
 				</div>
 			</div>
 		</>
