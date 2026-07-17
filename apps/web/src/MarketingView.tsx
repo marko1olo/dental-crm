@@ -133,13 +133,22 @@ export function MarketingView({
 	const [tone, setTone] = useState<ReviewTone>("positive");
 	const [generatedReply, setGeneratedReply] = useState("");
 	const [copied, setCopied] = useState(false);
-	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys">(
+	const [activeTab, setActiveTab] = useState<"reviews" | "stats" | "keys" | "nps" | "referrals">(
 		"reviews",
 	);
 
 	const [newKeyInput, setNewKeyInput] = useState("");
 	const [isAiLoading, setIsAiLoading] = useState(false);
 	const [aiError, setAiError] = useState<string | null>(null);
+
+	// NPS State
+	const [npsScore, setNpsScore] = useState(9.2);
+	const [npsEnabled, setNpsEnabled] = useState(true);
+	const [npsSendDelay, setNpsSendDelay] = useState(24);
+
+	// Referral State
+	const [refReward, setRefReward] = useState("1000");
+	const [refEnabled, setRefEnabled] = useState(true);
 
 	const handleGenerate = async () => {
 		if (!reviewText.trim()) return;
@@ -354,6 +363,7 @@ export function MarketingView({
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				transition={{ delay: 0.2 }}
+				style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}
 			>
 				<button
 					className={`marketing-tab ${activeTab === "reviews" ? "active" : ""}`}
@@ -363,7 +373,7 @@ export function MarketingView({
 					type="button"
 				>
 					<MessageSquare size={18} />
-					ИИ Генерация Ответов
+					ИИ Ответы
 				</button>
 				<button
 					className={`marketing-tab ${activeTab === "keys" ? "active" : ""}`}
@@ -373,7 +383,27 @@ export function MarketingView({
 					type="button"
 				>
 					<Search size={18} />
-					SEO Словарь
+					SEO Ключи
+				</button>
+				<button
+					className={`marketing-tab ${activeTab === "nps" ? "active" : ""}`}
+					onClick={() => setActiveTab("nps")}
+					role="tab"
+					aria-selected={activeTab === "nps"}
+					type="button"
+				>
+					<Star size={18} />
+					NPS Опросы
+				</button>
+				<button
+					className={`marketing-tab ${activeTab === "referrals" ? "active" : ""}`}
+					onClick={() => setActiveTab("referrals")}
+					role="tab"
+					aria-selected={activeTab === "referrals"}
+					type="button"
+				>
+					<Globe size={18} />
+					Реферальная Программа
 				</button>
 				<button
 					className={`marketing-tab ${activeTab === "stats" ? "active" : ""}`}

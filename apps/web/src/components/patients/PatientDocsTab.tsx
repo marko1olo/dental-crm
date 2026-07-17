@@ -294,45 +294,18 @@ export function PatientDocsTab({ props }: { props: PatientsViewProps }) {
 				</div>
 			</section>
 
-			{/* Insurance & Legal */}
+			{/* Personal Data & Consent (152-ФЗ) */}
 			<section className="docs-section-card">
 				<div className="docs-section-header">
 					<div className="docs-section-icon">
-						<Briefcase size={24} />
+						<ShieldCheck size={24} />
 					</div>
 					<div className="docs-section-title">
-						<h3>Страхование и Контракты</h3>
-						<p>Данные ДМС и основания для обработки персональных данных</p>
+						<h3>Персональные данные и согласия</h3>
+						<p>Основания обработки ПДн по 152-ФЗ</p>
 					</div>
 				</div>
 				<div className="docs-form-grid">
-					<div className="docs-form-group">
-						<label>Компания ДМС</label>
-						<select
-							value={patientAdministrativeProfileDraft.insuranceContractId || ""}
-							onChange={(event: SelectChangeEvent) =>
-								updatePatientAdministrativeProfileDraft("insuranceContractId", event.target.value)
-							}
-						>
-							<option value="">-- Без ДМС (Частная оплата) --</option>
-							{insuranceContracts.map((c) => (
-								<option key={c.id} value={c.id}>
-									{c.companyName}
-								</option>
-							))}
-						</select>
-					</div>
-					<div className="docs-form-group">
-						<label>Номер полиса ДМС</label>
-						<input
-							autoComplete="off"
-							value={patientAdministrativeProfileDraft.insurancePolicyNumber || ""}
-							onChange={(event: TextFieldChangeEvent) =>
-								updatePatientAdministrativeProfileDraft("insurancePolicyNumber", event.target.value)
-							}
-							placeholder="номер при наличии"
-						/>
-					</div>
 					<div className="docs-form-group full-width">
 						<label>Основание обработки ПДн</label>
 						<input
@@ -341,7 +314,7 @@ export function PatientDocsTab({ props }: { props: PatientsViewProps }) {
 							onChange={(event: TextFieldChangeEvent) =>
 								updatePatientAdministrativeProfileDraft("dataProcessingBasisNote", event.target.value)
 							}
-							placeholder="согласие пациента, договор, закон"
+							placeholder="согласие пациента, договор на мед. услуги, 323-ФЗ"
 						/>
 					</div>
 				</div>

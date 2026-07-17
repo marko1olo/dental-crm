@@ -187,9 +187,11 @@ export function PatientOverviewTab({ props }: { props: PatientsViewProps }) {
 								type="button"
 								onClick={() => {
 									const currentVal = patientCoreDraft.notes.trim();
+									const chipLower = chip.toLowerCase();
+									if (currentVal.toLowerCase().includes(chipLower)) return;
 									const newVal = currentVal
-										? `${currentVal}, ${chip.toLowerCase()}`
-										: chip;
+										? `${currentVal}, ${chipLower}`
+										: chipLower;
 									updatePatientCoreDraft("notes", newVal);
 								}}
 								style={{
