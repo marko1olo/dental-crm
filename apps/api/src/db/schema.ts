@@ -536,6 +536,23 @@ export const visits = pgTable(
 	},
 );
 
+export const visitGnathology = pgTable("visit_gnathology", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	visitId: uuid("visit_id")
+		.references(() => visits.id, { onDelete: "cascade" })
+		.notNull(),
+	patientId: uuid("patient_id")
+		.references(() => patients.id, { onDelete: "cascade" })
+		.notNull(),
+	occlusionType: text("occlusion_type"),
+	jawShift: text("jaw_shift"),
+	tmjState: text("tmj_state"),
+	mouthOpeningMm: integer("mouth_opening_mm"),
+	osteopathicStatus: text("osteopathic_status"),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const serviceCatalogItems = pgTable("service_catalog_items", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	organizationId: uuid("organization_id")
@@ -2255,3 +2272,17 @@ export const signedOutpatientCards = pgTable("signed_outpatient_cards", {
 	signatureProvider: text("signature_provider").notNull(), // "cryptopro" | "rutoken"
 	signedAt: timestamp("signed_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const patientOrthoTrackers = pgTable("patient_ortho_trackers", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
+	patientId: uuid("patient_id").notNull().references(() => patients.id, { onDelete: "cascade" }),
+	currentAligner: integer("current_aligner").notNull().default(1),
+	totalAligners: integer("total_aligners").notNull().default(40),
+	startDate: text("start_date").notNull(),
+	status: text("status").notNull().default("active"),
+	notes: text("notes"),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+

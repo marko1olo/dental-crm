@@ -2969,6 +2969,12 @@ const patientAdministrativeTextSchema = z
 	.nullable()
 	.default(null);
 
+const orthodonticProgressSchema = z.object({
+	currentAligner: z.number().int().min(1).default(1),
+	totalAligners: z.number().int().min(1).default(40),
+	startDate: z.string().default(() => new Date().toISOString().split("T")[0] || ""),
+});
+
 const patientAdministrativeProfileBaseSchema = z.object({
 	identityDocument: z.string().trim().max(240).nullable().default(null),
 	taxpayerInn: z
@@ -3012,6 +3018,7 @@ const patientAdministrativeProfileBaseSchema = z.object({
 	preferredAppointmentEnd: clockTimeSchema.nullable().default(null),
 	preferredAppointmentNote: patientAdministrativeTextSchema,
 	dataProcessingBasisNote: patientAdministrativeTextSchema,
+	orthodonticProgress: orthodonticProgressSchema.nullable().default(null),
 });
 
 export const patientAdministrativeProfileSchema =

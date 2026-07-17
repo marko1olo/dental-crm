@@ -155,6 +155,26 @@ export function VisitView() {
 	const [gnathOpening, setGnathOpening] = useState("45");
 	const [gnathStatus, setGnathStatus] = useState("");
 	useEffect(() => {
+		if (dashboard?.activeVisit?.id && activePatient?.id) {
+			const staffToken = localStorage.getItem("dente_staff_token");
+			fetch(`/api/visits/${dashboard.activeVisit.id}/gnathology`, {
+				headers: { Authorization: `Bearer ${staffToken}` },
+			})
+				.then((r) => r.json())
+				.then((data) => {
+					if (data && !data.error) {
+						setGnathOcclusion(data.occlusionType || "");
+						setGnathShift(data.jawShift || "");
+						setGnathTmj(data.tmjState || "");
+						setGnathOpening(data.mouthOpeningMm ? String(data.mouthOpeningMm) : "45");
+						setGnathStatus(data.osteopathicStatus || "");
+					}
+				})
+				.catch(console.error);
+		}
+	}, [dashboard?.activeVisit?.id, activePatient?.id]);
+
+	useEffect(() => {
 		return () => {
 			// Memory Optimization: Flush heavy visit states on unmount
 			useVisitStore.getState().reset();
@@ -2299,22 +2319,84 @@ export function VisitView() {
 							<textarea value={ztlComment} onChange={(e) => setZtlComment(e.target.value)} rows={2} placeholder="Особенности уступа, форма, прозрачность режущего края..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
 						</label>
 						<div style={{ display: "flex", gap: "8px" }}>
-							<button type="button" className="primary-button" style={{ display: "flex", gap: "8px", alignItems: "center" }} onClick={() => {
+							<button type="button" className="primary-button" style={{ display: "flex", gap: "8px", alignItems: "center" }} onClick={async () => {
 								if (!ztlLab || !ztlWorkType) {
 									showToast("Выберите лабораторию и тип работы", "warning");
 									return;
 								}
-								showToast(`Заказ-наряд "${ztlWorkType}" сформирован для ${ztlLab}`, "success");
-								setZtlLab("");
-								setZtlWorkType("");
-								setZtlTeeth("");
-								setZtlImpression("");
-								setZtlColor("");
-								setZtlComment("");
+								try {
+									const staffToken = localStorage.getItem("dente_staff_token");
+									const res = await fetch("/api/clinical/lab-orders", {
+										method: "POST",
+										headers: {
+											"Content-Type": "application/json",
+											Authorization: `Bearer ${staffToken}`,
+										},
+										body: JSON.stringify({
+											patientId: activePatient?.id,
+											doctorId: activeDoctor?.id,
+											toothFdi: ztlTeeth,
+											material: ztlWorkType,
+											colorVita: ztlColor,
+											clinicalNotes: `Лаборатория: ${ztlLab}\nОттиски: ${ztlImpression}\nКомментарий: ${ztlComment}`
+										})
+									});
+									if (!res.ok) throw new Error("Ошибка при создании наряда");
+									
+									showToast(`Заказ-наряд "${ztlWorkType}" сформирован для ${ztlLab}`, "success");
+									setZtlLab("");
+									setZtlWorkType("");
+									setZtlTeeth("");
+									setZtlImpression("");
+									setZtlColor("");
+									setZtlComment("");
+								} catch (err: any) {
+									showToast(`Ошибка: ${err.message}`, "error");
+								}
 							}}>
 								<FlaskConical size={16} /> Создать наряд
 							</button>
 						</div>
+						
+						{dashboard?.labOrders && dashboard.labOrders.filter((o: any) => o.patientId === activePatient?.id).length > 0 && (
+							<div style={{ marginTop: "16px", borderTop: "1px solid var(--slate-200)", paddingTop: "16px" }}>
+								<h4 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>Текущие заказ-наряды</h4>
+								<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+									{dashboard.labOrders.filter((o: any) => o.patientId === activePatient?.id).map((order: any) => (
+										<div key={order.id} style={{ padding: "12px", background: "var(--slate-50)", borderRadius: "8px", border: "1px solid var(--slate-200)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+											<div>
+												<div style={{ fontWeight: 500, fontSize: "14px" }}>{order.material} (Зубы: {order.toothFdi || "Все"})</div>
+												<div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Статус: {order.status === "draft" ? "Черновик" : order.status === "sent" ? "Отправлен" : order.status === "in_progress" ? "В работе" : "Доставлен"}</div>
+											</div>
+											{order.status !== "delivered" && (
+												<button type="button" className="text-button" style={{ fontSize: "12px" }} onClick={async () => {
+													try {
+														const staffToken = localStorage.getItem("dente_staff_token");
+														const updatePayload = {
+															...order,
+															status: "delivered",
+															patientId: order.patientId, // ensures UUID
+														};
+														const res = await fetch(`/api/clinical/lab-orders/${order.id}`, {
+															method: "PUT",
+															headers: {
+																"Content-Type": "application/json",
+																Authorization: `Bearer ${staffToken}`,
+															},
+															body: JSON.stringify(updatePayload)
+														});
+														if (!res.ok) throw new Error("Не удалось обновить статус");
+														showToast("Статус заказа обновлен", "success");
+													} catch (err: any) {
+														showToast(`Ошибка: ${err.message}`, "error");
+													}
+												}}>Отметить доставленным</button>
+											)}
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 					</div>
 				</details>
 
@@ -2365,6 +2447,40 @@ export function VisitView() {
 							Остеопатический статус (постура)
 							<textarea value={gnathStatus} onChange={(e) => setGnathStatus(e.target.value)} rows={2} placeholder="Положение головы, асимметрия надплечий, перекос таза..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
 						</label>
+						<div style={{ display: "flex", justifyContent: "flex-end" }}>
+							<button type="button" className="primary-button" style={{ padding: "8px 16px" }} onClick={async () => {
+								try {
+									const staffToken = localStorage.getItem("dente_staff_token");
+									const visitId = dashboard?.activeVisit?.id;
+									if (!visitId) {
+										showToast("Визит не активен", "warning");
+										return;
+									}
+									const res = await fetch(`/api/visits/${visitId}/gnathology`, {
+										method: "PUT",
+										headers: {
+											"Content-Type": "application/json",
+											Authorization: `Bearer ${staffToken}`,
+										},
+										body: JSON.stringify({
+											patientId: activePatient?.id,
+											occlusionType: gnathOcclusion,
+											jawShift: gnathShift,
+											tmjState: gnathTmj,
+											mouthOpeningMm: gnathOpening ? Number(gnathOpening) : null,
+											osteopathicStatus: gnathStatus,
+										}),
+									});
+									if (!res.ok) throw new Error("Ошибка при сохранении");
+									showToast("Данные гнатологии сохранены", "success");
+								} catch (err) {
+									console.error(err);
+									showToast("Ошибка сохранения", "error");
+								}
+							}}>
+								Сохранить данные
+							</button>
+						</div>
 					</div>
 				</details>
 

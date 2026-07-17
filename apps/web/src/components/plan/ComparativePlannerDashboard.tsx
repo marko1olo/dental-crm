@@ -934,7 +934,23 @@ export const ComparativePlannerDashboard: React.FC = () => {
 											{!plan.items || plan.items.length === 0 ? (
 												<p className="plan-no-items">Услуги не добавлены</p>
 											) : (
-												plan.items.map((item) => (
+												plan.items.map((item) => {
+													let coveragePct = 0;
+													if (insuranceActive && insuranceData) {
+														const service = (dashboard?.serviceCatalog || []).find((s: any) => s.id === item.priceId || s.title === item.name);
+														if (service) {
+															switch (service.category) {
+																case "therapy": coveragePct = insuranceData.coverageTherapyPct; break;
+																case "ortho": coveragePct = insuranceData.coverageOrthoPct; break;
+																case "hygiene": coveragePct = insuranceData.coverageHygienePct; break;
+																case "surgery": coveragePct = insuranceData.coverageSurgeryPct; break;
+																default: coveragePct = 0;
+															}
+														}
+													}
+													const isExcluded = insuranceActive && insuranceData && coveragePct === 0;
+
+													return (
 													<div
 														key={item.id}
 														className="service-tile is-active"
@@ -959,14 +975,21 @@ export const ComparativePlannerDashboard: React.FC = () => {
 																	</span>
 																) : null}
 															</p>
-															<p className="price-tag">
-																{item.price.toLocaleString("ru-RU")} ₽
-																{item.quantity > 1
-																	? ` × ${item.quantity}`
-																	: ""}
-																{item.discount
-																	? ` (−${item.discount}%)`
-																	: ""}
+															<p className="price-tag" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+																{isExcluded && (
+																	<span title="Услуга не входит в программу ДМС пациента" style={{ color: "var(--amber-500)", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
+																		<ShieldAlert size={14} /> Вне покрытия ДМС
+																	</span>
+																)}
+																<span>
+																	{item.price.toLocaleString("ru-RU")} ₽
+																	{item.quantity > 1
+																		? ` × ${item.quantity}`
+																		: ""}
+																	{item.discount
+																		? ` (−${item.discount}%)`
+																		: ""}
+																</span>
 															</p>
 														</div>
 														{plan.status !== "Draft" && plan.status !== "Archived" && plan.status !== "Rejected" && (
@@ -992,8 +1015,9 @@ export const ComparativePlannerDashboard: React.FC = () => {
 															</div>
 														)}
 													</div>
-												))
-											)}
+												);
+											})
+										)}
 										</div>
 
 										{/* Card bottom actions */}

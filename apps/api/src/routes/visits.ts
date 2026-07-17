@@ -90,6 +90,8 @@ import {
 	acceptVisitDraftInDb,
 	getVisitDraftAutosaveFromDb,
 	upsertVisitDraftAutosaveInDb,
+	getVisitGnathologyFromDb,
+	upsertVisitGnathologyInDb,
 } from "../db/visitsQuery.js";
 
 export async function registerVisitRoutes(app: FastifyInstance) {
@@ -197,6 +199,43 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 			return reply.send({ success: true, message: "Signed successfully" });
 		} catch (error) {
 			return reply.code(500).send({ error: "Internal error saving signature" });
+		}
+	});
+	app.get("/api/visits/:visitId/gnathology", async (request, reply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "read gnathology");
+		if (!orgId) return;
+
+		const { visitId } = request.params as { visitId: string };
+		try {
+			const gnathology = await getVisitGnathologyFromDb(visitId);
+			return reply.send(gnathology || {});
+		} catch (error) {
+			return reply.code(500).send({ error: "Internal error reading gnathology" });
+		}
+	});
+
+	app.put("/api/visits/:visitId/gnathology", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "update gnathology");
+		if (!orgId) return;
+
+		const { visitId } = request.params as { visitId: string };
+		const payload = request.body as any;
+
+		if (!payload.patientId) {
+			return reply.code(400).send({ error: "Missing patientId" });
+		}
+
+		try {
+			await upsertVisitGnathologyInDb(visitId, payload.patientId, {
+				occlusionType: payload.occlusionType,
+				jawShift: payload.jawShift,
+				tmjState: payload.tmjState,
+				mouthOpeningMm: payload.mouthOpeningMm ? Number(payload.mouthOpeningMm) : null,
+				osteopathicStatus: payload.osteopathicStatus,
+			});
+			return reply.send({ success: true });
+		} catch (error) {
+			return reply.code(500).send({ error: "Internal error saving gnathology" });
 		}
 	});
 

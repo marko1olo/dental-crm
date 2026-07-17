@@ -7,7 +7,7 @@ import type {
 import { and, eq } from "drizzle-orm";
 import { db } from "./client.js";
 import * as schema from "./schema.js";
-import { signedOutpatientCards } from "./schema.js";
+import { signedOutpatientCards, visitGnathology } from "./schema.js";
 
 function hashTranscript(value: string): string {
 	return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -450,4 +450,49 @@ export async function getVisitSignatureInDb(visitId: string) {
         .where(eq(signedOutpatientCards.visitId, visitId))
         .limit(1);
     return result[0] || null;
+}
+
+export async function getVisitGnathologyFromDb(visitId: string) {
+	const result = await db
+		.select()
+		.from(visitGnathology)
+		.where(eq(visitGnathology.visitId, visitId))
+		.limit(1);
+	return result[0] || null;
+}
+
+export async function upsertVisitGnathologyInDb(
+	visitId: string,
+	patientId: string,
+	data: {
+		occlusionType?: string;
+		jawShift?: string;
+		tmjState?: string;
+		mouthOpeningMm?: number;
+		osteopathicStatus?: string;
+	}
+) {
+	const [existing] = await db
+		.select()
+		.from(visitGnathology)
+		.where(eq(visitGnathology.visitId, visitId))
+		.limit(1);
+
+	if (existing) {
+		await db
+			.update(visitGnathology)
+			.set({
+				...data,
+				updatedAt: new Date(),
+			})
+			.where(eq(visitGnathology.id, existing.id));
+	} else {
+		await db.insert(visitGnathology).values({
+			visitId,
+			patientId,
+			...data,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
+	}
 }

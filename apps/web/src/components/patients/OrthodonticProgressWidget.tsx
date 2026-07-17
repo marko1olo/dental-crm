@@ -5,9 +5,9 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 
 interface OrthoData {
-	current: number;
-	total: number;
-	start: string;
+	currentAligner: number;
+	totalAligners: number;
+	startDate: string;
 }
 
 const getTodayString = (): string => {
@@ -15,33 +15,28 @@ const getTodayString = (): string => {
 	return parts[0] || "";
 };
 
-function parseOrthoNotes(notesText: string | null | undefined): { cleanNotes: string; ortho: OrthoData | null } {
+function parseLegacyOrthoNotes(notesText: string | null | undefined): { cleanNotes: string; legacyOrtho: OrthoData | null } {
 	const text = notesText || "";
 	const separator = "\n\n===ORTHO===\n";
 	const parts = text.split(separator);
 	
 	if (parts.length < 2) {
-		return { cleanNotes: text, ortho: null };
+		return { cleanNotes: text, legacyOrtho: null };
 	}
 	
 	try {
 		const orthoData = JSON.parse(parts[1] || "{}");
 		return {
 			cleanNotes: parts[0] || "",
-			ortho: {
-				current: Number(orthoData.current) || 1,
-				total: Number(orthoData.total) || 40,
-				start: orthoData.start || getTodayString()
+			legacyOrtho: {
+				currentAligner: Number(orthoData.current) || 1,
+				totalAligners: Number(orthoData.total) || 40,
+				startDate: orthoData.start || getTodayString()
 			}
 		};
 	} catch (e) {
-		return { cleanNotes: text, ortho: null };
+		return { cleanNotes: text, legacyOrtho: null };
 	}
-}
-
-function serializeOrthoNotes(cleanNotes: string, ortho: OrthoData | null): string {
-	if (!ortho) return cleanNotes;
-	return `${cleanNotes.trim()}\n\n===ORTHO===\n${JSON.stringify(ortho)}`;
 }
 
 export function OrthodonticProgressWidget({ patientId }: { patientId: string }) {
@@ -52,18 +47,23 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
 	if (!patient) return null;
 
-	const { cleanNotes, ortho } = parseOrthoNotes(patient.notes);
+	// Backwards compatibility migration logic: 
+	// If the new structured DB field is missing, fallback to parsing legacy notes.
+	const orthoFromProfile = patient.administrativeProfile?.orthodonticProgress;
+	const { cleanNotes, legacyOrtho } = parseLegacyOrthoNotes(patient.notes);
+	
+	const ortho: OrthoData | null = orthoFromProfile || legacyOrtho || null;
 
 	// Form states
-	const [formCurrent, setFormCurrent] = useState(ortho?.current ?? 1);
-	const [formTotal, setFormTotal] = useState(ortho?.total ?? 40);
-	const [formStart, setFormStart] = useState(ortho?.start ?? getTodayString());
+	const [formCurrent, setFormCurrent] = useState(ortho?.currentAligner ?? 1);
+	const [formTotal, setFormTotal] = useState(ortho?.totalAligners ?? 40);
+	const [formStart, setFormStart] = useState(ortho?.startDate ?? getTodayString());
 
 	// Reset form states if patient changes or edits are cancelled
 	const handleStartEdit = () => {
-		setFormCurrent(ortho?.current ?? 1);
-		setFormTotal(ortho?.total ?? 40);
-		setFormStart(ortho?.start ?? getTodayString());
+		setFormCurrent(ortho?.currentAligner ?? 1);
+		setFormTotal(ortho?.totalAligners ?? 40);
+		setFormStart(ortho?.startDate ?? getTodayString());
 		setIsEditing(true);
 	};
 
@@ -77,23 +77,39 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 		setSaving(true);
 		try {
 			const updatedOrtho: OrthoData = {
-				current: formCurrent,
-				total: formTotal,
-				start: formStart
+				currentAligner: formCurrent,
+				totalAligners: formTotal,
+				startDate: formStart
 			};
-			const updatedNotes = serializeOrthoNotes(cleanNotes, updatedOrtho);
 
-			const res = await fetch(`/api/patients/${patientId}`, {
+			const adminProfile = patient.administrativeProfile || {};
+			
+			// Migrate: First, update administrative profile with proper structured data
+			const resAdmin = await fetch(`/api/patients/${patientId}/administrative-profile`, {
 				method: "PUT",
 				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					notes: updatedNotes,
+					...adminProfile,
+					orthodonticProgress: updatedOrtho
 				}),
 			});
 
-			if (!res.ok) throw new Error("Failed to save patient notes");
+			if (!resAdmin.ok) throw new Error("Failed to save patient administrative profile");
+
+			// Migrate: Clean up the legacy stringified JSON from notes if it exists
+			if (legacyOrtho) {
+				await fetch(`/api/patients/${patientId}`, {
+					method: "PUT",
+					headers: auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						notes: cleanNotes,
+					}),
+				});
+			}
 
 			showToast("Ортодонтический этап обновлен", "success");
 			setIsEditing(false);
@@ -111,18 +127,32 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 		}
 		setSaving(true);
 		try {
-			const updatedNotes = serializeOrthoNotes(cleanNotes, null);
-			const res = await fetch(`/api/patients/${patientId}`, {
+			const adminProfile = patient.administrativeProfile || {};
+			
+			const resAdmin = await fetch(`/api/patients/${patientId}/administrative-profile`, {
 				method: "PUT",
 				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify({
-					notes: updatedNotes,
+					...adminProfile,
+					orthodonticProgress: null
 				}),
 			});
 
-			if (!res.ok) throw new Error("Failed to clear patient notes");
+			if (!resAdmin.ok) throw new Error("Failed to clear patient administrative profile");
+
+			if (legacyOrtho) {
+				await fetch(`/api/patients/${patientId}`, {
+					method: "PUT",
+					headers: auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						notes: cleanNotes,
+					}),
+				});
+			}
 
 			showToast("Трекер ортодонтии удален", "success");
 			setIsEditing(false);
@@ -136,8 +166,8 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 
 	// Derived metrics
 	const hasActiveTracker = ortho !== null;
-	const currentAligner = ortho?.current ?? 1;
-	const totalAligners = ortho?.total ?? 40;
+	const currentAligner = ortho?.currentAligner ?? 1;
+	const totalAligners = ortho?.totalAligners ?? 40;
 	const weeksRemaining = Math.max(0, totalAligners - currentAligner);
 	const progressPercent = Math.round((currentAligner / totalAligners) * 100);
 
@@ -157,11 +187,12 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
 			style={{
-				background: "var(--slate-800)",
-				borderRadius: "12px",
-				padding: "16px",
-				border: "1px solid var(--slate-700)",
+				background: "var(--paper)",
+				borderRadius: "16px",
+				padding: "20px",
+				border: "1px solid var(--line)",
 				marginTop: "16px",
+				boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
 			}}
 		>
 			<AnimatePresence mode="wait">
@@ -172,21 +203,21 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 						initial={{ opacity: 0, x: -10 }}
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0, x: 10 }}
-						style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+						style={{ display: "flex", flexDirection: "column", gap: "12px" }}
 					>
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-							<span style={{ fontSize: "13px", fontWeight: 600, color: "white" }}>Настройка трекера</span>
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+							<span style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>Настройка трекера (глубокий JSONB)</span>
 							<button 
 								type="button" 
 								onClick={() => setIsEditing(false)} 
-								style={{ background: "none", border: "none", color: "var(--slate-400)", cursor: "pointer", padding: 0 }}
+								style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 0 }}
 							>
-								<X size={16} />
+								<X size={18} />
 							</button>
 						</div>
 
-						<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px", color: "var(--slate-400)" }}>
+						<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+							<label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "var(--muted)" }}>
 								Текущая каппа
 								<input
 									type="number"
@@ -195,16 +226,16 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 									value={formCurrent}
 									onChange={(e) => setFormCurrent(Math.max(1, Number(e.target.value)))}
 									style={{
-										padding: "6px 10px",
-										borderRadius: "6px",
-										background: "var(--slate-900)",
-										border: "1px solid var(--slate-700)",
-										color: "white",
-										fontSize: "13px"
+										padding: "8px 12px",
+										borderRadius: "8px",
+										background: "var(--paper-soft)",
+										border: "1px solid var(--line)",
+										color: "var(--ink)",
+										fontSize: "14px"
 									}}
 								/>
 							</label>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px", color: "var(--slate-400)" }}>
+							<label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "var(--muted)" }}>
 								Всего капп
 								<input
 									type="number"
@@ -212,63 +243,71 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 									value={formTotal}
 									onChange={(e) => setFormTotal(Math.max(1, Number(e.target.value)))}
 									style={{
-										padding: "6px 10px",
-										borderRadius: "6px",
-										background: "var(--slate-900)",
-										border: "1px solid var(--slate-700)",
-										color: "white",
-										fontSize: "13px"
+										padding: "8px 12px",
+										borderRadius: "8px",
+										background: "var(--paper-soft)",
+										border: "1px solid var(--line)",
+										color: "var(--ink)",
+										fontSize: "14px"
 									}}
 								/>
 							</label>
 						</div>
 
-						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px", color: "var(--slate-400)" }}>
+						<label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "var(--muted)" }}>
 							Дата начала
 							<input
 								type="date"
 								value={formStart}
 								onChange={(e) => setFormStart(e.target.value)}
 								style={{
-									padding: "6px 10px",
-									borderRadius: "6px",
-									background: "var(--slate-900)",
-									border: "1px solid var(--slate-700)",
-									color: "white",
-									fontSize: "13px",
+									padding: "8px 12px",
+									borderRadius: "8px",
+									background: "var(--paper-soft)",
+									border: "1px solid var(--line)",
+									color: "var(--ink)",
+									fontSize: "14px",
 									width: "100%"
 								}}
 							/>
 						</label>
 
-						<div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+						<div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
 							<button
 								type="submit"
 								disabled={saving}
 								className="primary-button"
 								style={{
 									flex: 1,
+									background: "var(--teal)",
+									color: "white",
+									borderRadius: "8px",
+									padding: "10px",
+									border: "none",
+									fontWeight: 600,
 									display: "flex",
-									alignItems: "center",
 									justifyContent: "center",
-									gap: "6px",
-									padding: "6px 12px",
-									fontSize: "12px"
+									alignItems: "center",
+									gap: "8px",
+									cursor: "pointer"
 								}}
 							>
-								<Save size={14} /> {saving ? "Сохранение..." : "Сохранить"}
+								{saving ? "Сохранение..." : <><Save size={16} /> Сохранить</>}
 							</button>
 							{hasActiveTracker && (
 								<button
 									type="button"
 									disabled={saving}
 									onClick={handleResetWidget}
-									className="secondary-button"
 									style={{
-										padding: "6px 12px",
-										fontSize: "12px",
-										borderColor: "var(--red-500)",
-										color: "#f87171"
+										background: "rgba(239, 68, 68, 0.1)",
+										color: "var(--red)",
+										borderRadius: "8px",
+										padding: "10px 16px",
+										border: "1px solid rgba(239, 68, 68, 0.2)",
+										fontWeight: 600,
+										cursor: "pointer",
+										transition: "all 0.2s"
 									}}
 								>
 									Удалить
@@ -284,78 +323,136 @@ export function OrthodonticProgressWidget({ patientId }: { patientId: string }) 
 						exit={{ opacity: 0, x: -10 }}
 					>
 						{!hasActiveTracker ? (
-							<div style={{ textAlign: "center", padding: "10px 0" }}>
-								<div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", color: "var(--slate-100)", marginBottom: "8px" }}>
-									<Smile size={18} style={{ color: "#a78bfa" }} />
-									<span style={{ fontSize: "13px", fontWeight: 600 }}>Ортодонтический трекер</span>
+							<div 
+								style={{ 
+									display: "flex", 
+									flexDirection: "column", 
+									alignItems: "center", 
+									gap: "12px",
+									padding: "16px 0"
+								}}
+							>
+								<div 
+									style={{ 
+										width: 48, 
+										height: 48, 
+										borderRadius: "50%", 
+										background: "var(--paper-soft)", 
+										display: "flex", 
+										alignItems: "center", 
+										justifyContent: "center",
+										color: "var(--muted)",
+										border: "1px solid var(--line)"
+									}}
+								>
+									<Smile size={24} />
 								</div>
-								<p style={{ fontSize: "11px", color: "var(--slate-400)", marginBottom: "12px" }}>
-									Трекер позволяет следить за этапами смены элайнеров/капп пациента.
+								<p style={{ margin: 0, fontSize: "14px", color: "var(--muted)", textAlign: "center" }}>
+									Ортодонтическое лечение не запущено.
 								</p>
 								<button
-									type="button"
 									onClick={handleStartEdit}
 									style={{
-										background: "#8b5cf6",
-										border: "none",
-										color: "white",
-										borderRadius: "6px",
-										padding: "6px 12px",
-										fontSize: "12px",
+										marginTop: "8px",
+										background: "transparent",
+										border: "1px solid var(--teal)",
+										color: "var(--teal)",
+										padding: "8px 16px",
+										borderRadius: "8px",
+										fontSize: "13px",
 										fontWeight: 600,
 										cursor: "pointer",
-										transition: "background 0.2s"
+										transition: "all 0.2s ease"
 									}}
-									onMouseEnter={(e) => e.currentTarget.style.background = "#7c3aed"}
-									onMouseLeave={(e) => e.currentTarget.style.background = "#8b5cf6"}
 								>
-									+ Подключить трекер
+									Добавить орто-трекер (JSONB)
 								</button>
 							</div>
 						) : (
-							<>
-								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-									<div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--slate-100)" }}>
-										<Smile size={18} style={{ color: "#a78bfa" }} />
-										<h3 style={{ fontSize: "14px", fontWeight: 600, margin: 0 }}>Ортодонтия: Элайнеры</h3>
+							<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+										<div 
+											style={{ 
+												width: 40, 
+												height: 40, 
+												borderRadius: "10px", 
+												background: "var(--teal-light)", 
+												display: "flex", 
+												alignItems: "center", 
+												justifyContent: "center",
+												color: "var(--teal-dark)"
+											}}
+										>
+											<Smile size={20} />
+										</div>
+										<div>
+											<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "var(--ink)" }}>
+												Элайнеры
+											</h4>
+											<span style={{ fontSize: "12px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "4px" }}>
+												<Calendar size={12} /> с {formatDate(ortho.startDate)}
+											</span>
+										</div>
 									</div>
-									<span style={{ fontSize: "12px", color: "var(--slate-400)", fontWeight: 500 }}>
-										Осталось {weeksRemaining} нед.
-									</span>
-								</div>
-								
-								<div style={{ marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-									<span style={{ fontSize: "24px", fontWeight: 700, color: "white", lineHeight: 1 }}>
-										Каппа {currentAligner} <span style={{ fontSize: "14px", fontWeight: 500, color: "var(--slate-400)" }}>из {totalAligners}</span>
-									</span>
-									<span style={{ fontSize: "13px", fontWeight: 600, color: "#a78bfa" }}>
-										{progressPercent}%
-									</span>
-								</div>
-
-								<div style={{ height: "6px", background: "var(--slate-900)", borderRadius: "4px", overflow: "hidden" }}>
-									<div 
-										style={{ 
-											height: "100%", 
-											width: `${progressPercent}%`, 
-											background: "linear-gradient(90deg, #8b5cf6, #c084fc)",
-											borderRadius: "4px",
-											transition: "width 0.5s ease-out"
-										}} 
-									/>
-								</div>
-
-								<div style={{ display: "flex", justifyContent: "space-between", marginTop: "12px", fontSize: "12px" }}>
-									<span style={{ color: "var(--slate-400)" }}>Начало: {formatDate(ortho.start)}</span>
 									<button 
-										type="button" 
 										onClick={handleStartEdit}
-										style={{ background: "none", border: "none", color: "#a78bfa", fontSize: "12px", fontWeight: 600, cursor: "pointer", padding: 0 }}
+										style={{ 
+											background: "var(--paper-soft)", 
+											border: "1px solid var(--line)", 
+											color: "var(--ink)", 
+											padding: "6px 12px", 
+											borderRadius: "6px", 
+											fontSize: "12px",
+											fontWeight: 600,
+											cursor: "pointer"
+										}}
 									>
-										Обновить этап →
+										Изменить
 									</button>
 								</div>
-							</>
+
+								<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+										<span style={{ fontSize: "28px", fontWeight: 700, color: "var(--ink)", lineHeight: 1 }}>
+											{currentAligner} <span style={{ fontSize: "16px", fontWeight: 500, color: "var(--muted)" }}>/ {totalAligners}</span>
+										</span>
+										<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--teal)" }}>
+											{progressPercent}%
+										</span>
+									</div>
+									
+									<div 
+										style={{ 
+											height: "8px", 
+											background: "var(--paper-soft)", 
+											borderRadius: "4px", 
+											overflow: "hidden" 
+										}}
+									>
+										<motion.div 
+											initial={{ width: 0 }}
+											animate={{ width: `${progressPercent}%` }}
+											transition={{ duration: 1, ease: "easeOut" }}
+											style={{ 
+												height: "100%", 
+												background: "var(--teal)", 
+												borderRadius: "4px" 
+											}}
+										/>
+									</div>
+								</div>
+
+								{weeksRemaining > 0 ? (
+									<p style={{ margin: 0, fontSize: "13px", color: "var(--muted)" }}>
+										Осталось примерно <strong style={{ color: "var(--ink)" }}>{weeksRemaining}</strong> капп до завершения этапа.
+									</p>
+								) : (
+									<p style={{ margin: 0, fontSize: "13px", color: "var(--green)" }}>
+										🎉 Все каппы пройдены! Запланируйте контрольный осмотр.
+									</p>
+								)}
+							</div>
 						)}
 					</motion.div>
 				)}

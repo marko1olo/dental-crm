@@ -43,6 +43,13 @@
       "when": 1784274565449,
       "tag": "0005_known_psylocke",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784279850573,
+      "tag": "0006_nostalgic_maverick",
+      "breakpoints": true
     }
   ]
 }
