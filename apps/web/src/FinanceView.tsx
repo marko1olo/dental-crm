@@ -4,6 +4,7 @@ import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 import { InstallmentScheduler } from "./components/InstallmentScheduler";
 import { FinanceLedger } from "./FinanceLedger";
+import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
 import {
 	FinancePlanningOverview,
 	ServiceCatalogStrip,
@@ -151,6 +152,8 @@ export function FinanceView({
 	treatmentStatusLabels,
 	onFamilyWalletPayment,
 }: FinanceViewProps) {
+	const workspaceFlags = useWorkspaceProfile();
+
 	const focusPaymentCapture = () => {
 		const amountInput = document.getElementById(
 			"payment-amount-input",
@@ -261,10 +264,12 @@ export function FinanceView({
 				taxDeductionCode={paymentTaxDeductionCode}
 			/>
 
-			<InstallmentScheduler
-				totalEstimate={billingSummary?.totalDueRub || 0}
-				patientId={documentPatient?.id}
-			/>
+			{workspaceFlags.hasInstallments && (
+				<InstallmentScheduler
+					totalEstimate={billingSummary?.totalDueRub || 0}
+					patientId={documentPatient?.id}
+				/>
+			)}
 
 			<FinanceLedger
 				categoryLabels={serviceCategoryLabels}

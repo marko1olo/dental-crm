@@ -1,11 +1,12 @@
-import { and, eq, isNull, lte } from "drizzle-orm";
-import { db } from "../db/client.js"; // assuming
+import { and, eq } from "drizzle-orm";
+import { db } from "../db/client.js";
 import {
 	patients,
+	communicationTasks,
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../db/schema.js";
-// import { sendTelegramMessage } from '../routes/telegram.js'; // Assuming this exists or can be stubbed
+import { randomUUID } from "node:crypto";
 
 export class RecallScheduler {
 	/**
@@ -17,19 +18,17 @@ export class RecallScheduler {
 
 		// Find treatment plan items in Phase 2 (Surgery) that are completed,
 		// but Phase 3 (Prosthetics) hasn't started yet.
-		// In a real DB, we'd check completion dates and status. For MVP:
-		// We check items added X months ago.
-
-		// Example query: select items from plan where phase=2 and date < (now - 3 months)
-		const threeMonthsAgo = new Date();
-		threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+		// For Osteointegration, we need to check items where phase = 2.
+		// A better robust check would use the actual completion date of the item, 
+		// but for MVP we use updatedAt.
 
 		const readyForCrown = await db
 			.select({
 				patientId: treatmentPlans.patientId,
 				planName: treatmentPlans.name,
+				planId: treatmentPlans.id,
 				toothNumber: treatmentPlanItemsNew.toothNumber,
-				itemDate: treatmentPlans.updatedAt, // simplification for MVP
+				itemDate: treatmentPlans.updatedAt,
 			})
 			.from(treatmentPlanItemsNew)
 			.innerJoin(
@@ -38,11 +37,10 @@ export class RecallScheduler {
 			)
 			.where(
 				and(
-					eq(treatmentPlanItemsNew.phase, 2), // Surgery phase
-					// lte(treatmentPlans.updatedAt, threeMonthsAgo) // Mock time delay
-				),
+					eq(treatmentPlanItemsNew.phase, 2) // Surgery phase
+				)
 			)
-			.limit(50); // Batch processing
+			.limit(100);
 
 		for (const item of readyForCrown) {
 			if (!item.toothNumber) continue;
@@ -51,6 +49,7 @@ export class RecallScheduler {
 			// Upper jaw: 11-18, 21-28
 			// Lower jaw: 31-38, 41-48
 			const isUpperJaw = item.toothNumber < 30;
+			// 6 months for upper jaw, 3 months for lower jaw
 			const healingMonths = isUpperJaw ? 6 : 3;
 
 			const healingDate = new Date(item.itemDate);
@@ -81,22 +80,30 @@ export class RecallScheduler {
 		const patient = patientRecord[0];
 		if (!patient) return;
 
-		// 2. Generate Notification Message
-		const message = `Уважаемый(ая) ${patient.fullName}! Период приживляемости вашего имплантата на зубе ${toothNumber} успешно завершен. Пора записаться на установку коронки для завершения лечения по плану "${planName}"!`;
+		const message = `Уважаемый(ая) ${patient.fullName}! Период приживляемости имплантата на зубе ${toothNumber} завершен. Пора продолжить лечение по плану "${planName}"!`;
 
 		console.log(
 			`[RecallScheduler] Triggering recall for ${patientId}: ${message}`,
 		);
 
-		// 3. Send via Telegram (mock/stub if sendTelegramMessage fails)
+		// 3. Instead of only a fake Telegram message, we create a CRM Task for the admins!
 		try {
-			const chat = (patient.administrativeProfile as any)?.telegramChatId;
-			if (chat) {
-				// await sendTelegramMessage(chat, message);
-				console.log(`[RecallScheduler] SMS/TG sent to ${chat}`);
-			}
+			await db.insert(communicationTasks).values({
+				id: randomUUID(),
+				organizationId: patient.organizationId,
+				patientId: patientId,
+				assignedRole: "admin",
+				channel: "whatsapp",
+				intent: "recall",
+				status: "queued",
+				priority: "high",
+				dueAt: new Date(Date.now() + 86400000), // due in 1 day
+				title: `Пригласить пациента на 3-й этап (зуб ${toothNumber})`,
+				body: `Пациент: ${patient.fullName}. Прошло необходимое время приживления. План: ${planName}.`,
+			});
+			console.log(`[RecallScheduler] Task created for admin to recall ${patient.fullName}`);
 		} catch (e) {
-			console.error("[RecallScheduler] Failed to send notification", e);
+			console.error("[RecallScheduler] Failed to create CRM task", e);
 		}
 	}
 }

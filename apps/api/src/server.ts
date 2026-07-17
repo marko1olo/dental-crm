@@ -1,3 +1,4 @@
+import { RecallScheduler } from "./services/recallScheduler.js";
 import "dotenv/config";
 import net from "node:net";
 import { pathToFileURL } from "node:url";
@@ -351,9 +352,13 @@ export async function createDenteApiApp(
 		startBiAnalyticsWorker();
 		startSyncEngine(db.$client as any); // assuming db exposes pglite
 		startBackupDaemon();
+		const recallWorkerTimer = setInterval(() => {
+			RecallScheduler.processOsteointegrationRecalls().catch(console.error);
+		}, 1000 * 60 * 60 * 24); // Run once a day
+		RecallScheduler.processOsteointegrationRecalls().catch(console.error); // Run once on startup
 		app.addHook("onClose", async () => {
 			// telegramOutboxDueWorker.stop();
-			// clearInterval(recallWorkerTimer);
+			clearInterval(recallWorkerTimer);
 			stopSyncEngine();
 			stopBackupDaemon();
 		});

@@ -93,6 +93,9 @@ import {
 	getVisitGnathologyFromDb,
 	upsertVisitGnathologyInDb,
 } from "../db/visitsQuery.js";
+import { createPatientInDb } from "../db/patientsQuery.js";
+import { appointments } from "../db/schema.js";
+import { db } from "../db/client.js";
 
 export async function registerVisitRoutes(app: FastifyInstance) {
 	app.get("/api/visits/:visitId/draft/autosave", async (request, reply) => {
@@ -165,6 +168,56 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 			return acceptVisitDraftResponseSchema.parse(result);
 		} catch (error) {
 			return sendVisitDraftMutationError(error, reply, "accept");
+		}
+	});
+
+	app.post("/api/visits/quick", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"quick consult"
+		);
+		if (!orgId) return;
+
+		try {
+			const userContext = (request as any).user;
+			const userId: string | null = userContext?.id ?? null;
+
+			// Fallback to a zero-UUID or just null if your DB requires a valid user
+			// Ideally, doctorUserId should be userId
+			const finalDoctorId = userId || "00000000-0000-0000-0000-000000000000";
+
+			const uniqueSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+			const patient = await createPatientInDb(orgId, {
+				fullName: `Быстрый прием (${uniqueSuffix})`,
+				birthDate: null,
+				phone: null,
+			});
+
+			const startsAt = new Date();
+			const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
+
+			const [appointment] = await db.insert(appointments).values({
+				organizationId: orgId,
+				patientId: patient.id,
+				doctorUserId: finalDoctorId,
+				status: "in_treatment",
+				startsAt,
+				endsAt,
+				reason: "Быстрый прием (без паспорта)",
+			}).returning();
+
+			if (!appointment) {
+				return reply.code(500).send({ error: "Failed to create appointment" });
+			}
+
+			return reply.code(201).send({
+				patientId: patient.id,
+				appointmentId: appointment.id,
+			});
+		} catch (error) {
+			console.error("[QuickConsult] Error:", error);
+			return reply.code(500).send({ error: "QuickConsultFailed" });
 		}
 	});
 
