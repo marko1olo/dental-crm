@@ -17,13 +17,10 @@ import { PatientClinicalTab } from "./components/patients/PatientClinicalTab";
 import { PatientDocsTab } from "./components/patients/PatientDocsTab";
 import { PatientFamilyCard } from "./components/patients/PatientFamilyCard";
 import { PatientOverviewTab } from "./components/patients/PatientOverviewTab";
-import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { DictationHints } from "./DictationHints";
-import { parsePatientDictationLocal } from "./lib/smartPatientParser";
-import { SmartParsePreview } from "./SmartParsePreview";
+import { PatientsSidebar } from "./components/patients/PatientsSidebar";
+import { PatientsSearchHeader } from "./components/patients/PatientsSearchHeader";
 import { usePatientStore } from "./store/patientStore";
 import { useVisitStore } from "./store/visitStore";
-import { formatPhoneNumber } from "./utils/inputSanitation";
 
 type PatientInsight = Dashboard["patientInsights"][number];
 type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
@@ -111,10 +108,7 @@ export function PatientsView(props: PatientsViewProps) {
 		setNewRulePatientText,
 	} = usePatientStore();
 
-	const [smartInputText, setSmartInputText] = useState("");
-	const [showSmartPreview, setShowSmartPreview] = useState(false);
-	const [smartParsedData, setSmartParsedData] = useState<any>(null);
-	const [showHints, setShowHints] = useState(false);
+	
 	const [familyData, setFamilyData] = useState<any>(null);
 	const [patientTab, setPatientTab] = useState<
 		"overview" | "clinical" | "plans" | "docs"
@@ -189,17 +183,7 @@ export function PatientsView(props: PatientsViewProps) {
 		weekdayOptions,
 	} = props;
 
-	const patientNameReady = newPatientName.trim().length > 0;
-	const patientCreatePhoneIssue =
-		newPatientPhone.trim().length > 0 &&
-		newPatientPhone.replace(/\D/g, "").length < 5;
-	const patientCreateReady =
-		patientNameReady && !patientCreatePhoneIssue && !isPatientCreating;
-	const patientCreateGuidance = !patientNameReady
-		? "Укажите ФИО пациента. Телефон и дату рождения можно добавить позже."
-		: patientCreatePhoneIssue
-			? "Телефон пациента слишком короткий. Исправьте номер или очистите поле."
-			: null;
+	
 	const patientCoreNameMissing = patientCoreDraft.fullName.trim().length === 0;
 	const patientCoreReadyToSave =
 		Boolean(selectedPatient) &&
@@ -240,174 +224,22 @@ export function PatientsView(props: PatientsViewProps) {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4 }}
 		>
-			<header className="patients-header">
-				<div className="patients-search-box">
-					<Search aria-hidden="true" />
-					<input
-						aria-label="Поиск пациента"
-						type="search"
-						autoComplete="off"
-						value={query}
-						onChange={(event: TextFieldChangeEvent) =>
-							setQuery(event.target.value)
-						}
-						placeholder="Поиск пациента: ФИО или телефон"
-					/>
-				</div>
-				<div className="smart-create-group">
-					<div className="smart-input-wrapper">
-						<input
-							aria-label="ФИО или 'Иванов 89001234567 12.05.1990'"
-							autoComplete="name"
-							value={smartInputText}
-							onChange={(event: TextFieldChangeEvent) => {
-								setSmartInputText(event.target.value);
-								setNewPatientName(event.target.value); // Sync for normal usage
-							}}
-							onFocus={() => setShowHints(true)}
-							onBlur={(e) => {
-								if (!e.currentTarget.contains(e.relatedTarget)) {
-									setShowHints(false);
-								}
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" && smartInputText.trim()) {
-									e.preventDefault();
-									const parsed = parsePatientDictationLocal(smartInputText);
-									setSmartParsedData(parsed);
-									setShowSmartPreview(true);
-									setShowHints(false);
-								}
-							}}
-							placeholder="Умный ввод: ФИО Телефон Дата (Enter)"
-						/>
-						<SmartMicrophoneButton
-							context="patient"
-							onResult={(text) => {
-								setSmartInputText(text);
-								const parsed = parsePatientDictationLocal(text);
-								setSmartParsedData(parsed);
-								setShowSmartPreview(true);
-								setShowHints(false);
-							}}
-							style={{
-								position: "absolute",
-								right: "4px",
-								top: "50%",
-								transform: "translateY(-50%)",
-							}}
-						/>
-						<DictationHints isVisible={showHints} type="patient" />
-						<SmartParsePreview
-							isVisible={showSmartPreview}
-							parsedData={smartParsedData}
-							rawText={smartInputText}
-							type="patient"
-							onApply={(data: Record<string, string | undefined>) => {
-								if (data) {
-									setNewPatientName(data.fullName || smartInputText);
-									if (data.phone)
-										setNewPatientPhone(formatPhoneNumber(data.phone));
-									if (data.birthDate) setNewPatientBirthDate(data.birthDate);
-									if (data.notes) updatePatientCoreDraft("notes", data.notes);
-								}
-								setShowSmartPreview(false);
-								setSmartInputText(data?.fullName || "");
-							}}
-							onManual={() => setShowSmartPreview(false)}
-							onClose={() => setShowSmartPreview(false)}
-						/>
-					</div>
-					<button
-						className="btn-primary"
-						type="button"
-						title="Создать пациента"
-						onClick={createPatient}
-						aria-describedby={
-							patientCreateGuidance ? "patient-create-guidance" : undefined
-						}
-						disabled={!patientCreateReady}
-						aria-busy={isPatientCreating || undefined}
-					>
-						<Plus aria-hidden="true" size={18} /> Создать
-					</button>
-				</div>
-			</header>
-
-			{patientCreateGuidance ? (
-				<p
-					className="quick-create-guidance"
-					id="patient-create-guidance"
-					role="status"
-					aria-live="polite"
-				>
-					{patientCreateGuidance}
-				</p>
-			) : null}
+			<PatientsSearchHeader
+				query={query}
+				setQuery={setQuery}
+				createPatient={createPatient}
+				updatePatientCoreDraft={updatePatientCoreDraft}
+			/>
 			<div
 				className={`patients-content-area ${selectedPatientId ? "patient-selected" : "no-patient-selected"}`}
 			>
-				<aside className="patients-sidebar-column">
-					<div className="patient-list">
-						<AnimatePresence mode="popLayout">
-						{filteredPatients.map((patient) => {
-							const insight = patientInsightById.get(patient.id);
-							const patientIsSelected = selectedPatient?.id === patient.id;
-							return (
-								<motion.article
-									layout
-									initial={{ opacity: 0, y: 10 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, scale: 0.95 }}
-									transition={{ type: "spring", stiffness: 300, damping: 25 }}
-									className={`patient-row ${insight ? `risk-${insight.riskLevel}` : ""} ${patientIsSelected ? "selected" : ""}`}
-									key={patient.id}
-								>
-									<div>
-										<h3>{patient.fullName}</h3>
-										<p>{patient.phone ?? "телефон не указан"}</p>
-										{insight ? (
-											<div className="patient-row-meta">
-												<span>
-													{patientInsightRiskLabels[insight.riskLevel]}
-												</span>
-												<strong className="patient-next-action">
-													{insight.nextBestAction}
-												</strong>
-												{insight.balanceDueRub ? (
-													<span>{money(insight.balanceDueRub)}</span>
-												) : null}
-											</div>
-										) : null}
-									</div>
-									<button
-										aria-label={`Открыть карточку пациента: ${patient.fullName}`}
-										aria-pressed={patientIsSelected}
-										className="round-link"
-										type="button"
-										title={`Открыть карточку пациента: ${patient.fullName}`}
-										onClick={() => setSelectedPatientId(patient.id)}
-									>
-										<ArrowRight aria-hidden="true" />
-									</button>
-								</motion.article>
-							);
-						})}
-						</AnimatePresence>
-						{filteredPatients.length === 0 ? (
-							<article className="patient-empty-state">
-								<Search aria-hidden="true" />
-								<div>
-									<strong>Пациент не найден</strong>
-									<p>
-										Проверьте ФИО или телефон. Если это новый пациент, заполните
-										строку выше и нажмите «Создать».
-									</p>
-								</div>
-							</article>
-						) : null}
-					</div>
-				</aside>
+				<PatientsSidebar
+					filteredPatients={filteredPatients}
+					patientInsightById={patientInsightById}
+					selectedPatient={selectedPatient}
+					patientInsightRiskLabels={patientInsightRiskLabels}
+					money={money}
+				/>
 
 				<main className="patient-details-column">
 					{selectedPatient && (
