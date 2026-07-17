@@ -172,20 +172,6 @@ export function SettingsClinicTab({ settingsTab }: { settingsTab: string }) {
 				</div>
 			</section>
 
-			{/* Модули и возможности */}
-			<section className="clinic-section-card" aria-label="Модули и возможности">
-				<div className="clinic-section-header">
-					<div className="clinic-section-icon">
-						<Store size={24} />
-					</div>
-					<div className="clinic-section-title">
-						<h3>Модули и возможности</h3>
-						<p>Настройте функциональность CRM под ваши потребности</p>
-					</div>
-				</div>
-				<WorkspaceFeaturesSelector />
-			</section>
-
 			{/* Профиль клиники */}
 			<section className="clinic-section-card" aria-label="Юридический профиль клиники">
 				<div className="clinic-section-header">

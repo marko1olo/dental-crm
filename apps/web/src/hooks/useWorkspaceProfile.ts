@@ -26,6 +26,7 @@ export interface WorkspaceFeatureFlags {
 	hasPayrollModule: boolean;
 	hasMarketingModule: boolean;
 	hasAnalyticsModule: boolean;
+	hasInventoryModule: boolean;
 }
 
 interface WorkspaceProfileStore extends WorkspaceFeatureFlags {
@@ -55,6 +56,7 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	hasPayrollModule: true,
 	hasMarketingModule: true,
 	hasAnalyticsModule: true,
+	hasInventoryModule: true,
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -93,6 +95,7 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				hasPayrollModule: s.hasPayrollModule,
 				hasMarketingModule: s.hasMarketingModule,
 				hasAnalyticsModule: s.hasAnalyticsModule,
+				hasInventoryModule: s.hasInventoryModule,
 			}),
 		},
 	),

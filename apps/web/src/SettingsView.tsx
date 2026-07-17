@@ -1878,6 +1878,7 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
 				{settingsTab === "prices" ? <SettingsPricesTab /> : null}
 				{settingsTab === "sources" ? <SettingsSourcesTab /> : null}
 				{settingsTab === "ai" ? <SettingsAiTab /> : null}
+				{settingsTab === "modules" ? <SettingsModulesTab /> : null}
 
 				<SettingsImportsTab />
 				<SettingsAuditTab />

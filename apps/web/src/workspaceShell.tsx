@@ -194,6 +194,7 @@ export function filterViewsByFlags(views: AppView[], flags: WorkspaceFeatureFlag
 	if (!flags.hasPayrollModule) filtered = filtered.filter((v) => v !== "payroll");
 	if (!flags.hasMarketingModule) filtered = filtered.filter((v) => v !== "marketing");
 	if (!flags.hasAnalyticsModule) filtered = filtered.filter((v) => v !== "analytics");
+	if (!flags.hasInventoryModule) filtered = filtered.filter((v) => v !== "inventory");
 	return filtered;
 }
 

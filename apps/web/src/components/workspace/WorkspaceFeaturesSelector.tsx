@@ -39,6 +39,8 @@ interface FeatureToggleDef {
 		| "hasOrthodontics"
 		| "hasTasks"
 		| "hasReclamations"
+		| "hasPediatricMode"
+		| "hasInventoryModule"
 	>;
 	label: string;
 	description: string;
@@ -131,6 +133,20 @@ const FEATURE_TOGGLES: FeatureToggleDef[] = [
 		description: "Включает модуль фиксации жалоб, осложнений и гарантийных случаев.",
 		icon: <XCircle size={20} />,
 		color: "hsl(350 80% 60%)",
+	},
+	{
+		key: "hasPediatricMode",
+		label: "Детский прием",
+		description: "Включает детскую зубную формулу (молочные зубы) и специальные детские протоколы.",
+		icon: <CheckCircle2 size={20} />,
+		color: "hsl(320 70% 60%)",
+	},
+	{
+		key: "hasInventoryModule",
+		label: "Складской учет (Inventory)",
+		description: "Учет расходных материалов, контроль остатков и планирование закупок.",
+		icon: <LayoutGrid size={20} />,
+		color: "hsl(220 80% 50%)",
 	},
 ];
 
