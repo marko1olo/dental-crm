@@ -141,14 +141,53 @@ export async function applyWorkspacePreset(
 		hasPediatricMode?: boolean;
 	},
 ): Promise<WorkspaceFeatureFlags> {
-	const res = await fetch(`/api/workspace/preset/${presetName}`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(extraData || {}),
-	});
-	if (!res.ok) throw new Error(`Failed to apply preset: ${presetName}`);
-	const body = await res.json();
-	const flags = body.flags as WorkspaceFeatureFlags;
+	let flags: WorkspaceFeatureFlags;
+	
+	try {
+		const res = await fetch(`/api/workspace/preset/${presetName}`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(extraData || {}),
+		});
+		if (!res.ok) throw new Error(`Failed to apply preset: ${presetName}`);
+		const body = await res.json();
+		flags = body.flags as WorkspaceFeatureFlags;
+	} catch (error) {
+		console.warn("Failed to fetch preset from server, using local fallback:", error);
+		// Local fallback for offline/MVP mode
+		const baseFlags = { ...useWorkspaceProfileStore.getState() };
+		
+		if (presetName === "solo") {
+			baseFlags.hasAssistants = false;
+			baseFlags.hasMultipleChairs = false;
+			baseFlags.hasPayrollModule = false;
+			baseFlags.hasMarketingModule = false;
+			baseFlags.hasAnalyticsModule = false;
+			baseFlags.hasTasks = false;
+			baseFlags.numberOfDoctors = 1;
+		} else if (presetName === "clinic") {
+			baseFlags.hasAssistants = true;
+			baseFlags.hasMultipleChairs = true;
+			baseFlags.hasPayrollModule = true;
+			baseFlags.hasMarketingModule = true;
+			baseFlags.hasAnalyticsModule = true;
+			baseFlags.hasTasks = true;
+			baseFlags.numberOfDoctors = 4;
+		} else if (presetName === "enterprise") {
+			baseFlags.hasAssistants = true;
+			baseFlags.hasMultipleChairs = true;
+			baseFlags.hasDentalLab = true;
+			baseFlags.hasPayrollModule = true;
+			baseFlags.hasMarketingModule = true;
+			baseFlags.hasAnalyticsModule = true;
+			baseFlags.hasTasks = true;
+			baseFlags.hasOrthodontics = true;
+			baseFlags.numberOfDoctors = 10;
+		}
+		
+		baseFlags.workspacePreset = presetName;
+		flags = baseFlags;
+	}
 
 	if (extraData?.hasPediatricMode !== undefined) {
 		flags.hasPediatricMode = extraData.hasPediatricMode;
@@ -171,15 +210,20 @@ export async function applyWorkspacePreset(
 export async function saveWorkspaceFlags(
 	partial: Partial<WorkspaceFeatureFlags>,
 ): Promise<void> {
-	await fetch("/api/workspace/profile", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(partial),
-	});
-	// Update local store
+	try {
+		await fetch("/api/workspace/profile", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(partial),
+		});
+	} catch (error) {
+		console.warn("Failed to sync workspace flags with server, updating locally only:", error);
+	}
+	
+	// Update local store regardless of server response for MVP offline capability
 	const store = useWorkspaceProfileStore.getState();
 	for (const [k, v] of Object.entries(partial)) {
-		store.setFlag(k as keyof WorkspaceFeatureFlags, v as boolean | string);
+		store.setFlag(k as keyof WorkspaceFeatureFlags, v as boolean | string | number);
 	}
 }
 

@@ -217,7 +217,7 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				.slice(-6) // Last 6 months for readability
 				.map(([key, { m1, m12 }]) => {
 					const [, monthStr] = key.split("-");
-					const monthIdx = parseInt(monthStr, 10) - 1;
+					const monthIdx = monthStr ? parseInt(monthStr, 10) - 1 : 0;
 					const label = RU_MONTHS[monthIdx] ?? key;
 					const avg = (arr: number[]) =>
 						arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
