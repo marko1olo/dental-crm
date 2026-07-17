@@ -30,6 +30,9 @@ import {
 import { showToast } from "./GlobalToast";
 import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
 import { CryptoProSigner } from "./visit/CryptoProSigner";
+import { VisitDiaryTemplateSelector } from "./VisitDiaryTemplateSelector";
+import { VisitDiaryPhotoUpload } from "./VisitDiaryPhotoUpload";
+import { useVisitDiaryLogic } from "./useVisitDiaryLogic";
 
 import { ICD10_DICTIONARY, ICD_GROUP_COLORS, getIcdColor } from "../lib/icd10";
 
@@ -75,227 +78,13 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	visitId,
 	patientId,
 }) => {
-	const { activeDoctor } = useAppLogicContext();
-	const [templates, setTemplates] = useState<Template[]>([]);
-	const [selectedTemplate, setSelectedTemplate] = useState("");
-	const [diary, setDiary] = useState<DiaryState>(EMPTY_DIARY);
-	const [diaryId, setDiaryId] = useState<string | null>(null);
-	const [isLocked, setIsLocked] = useState(false);
-	const [lockedAt, setLockedAt] = useState<string | null>(null);
-	const [diaryHash, setDiaryHash] = useState<string | null>(null);
-	const [isSaving, setIsSaving] = useState(false);
-	const [showScanner, setShowScanner] = useState(false);
-	const [trayBarcode, setTrayBarcode] = useState<string | null>(null);
-	const [showIcdDropdown, setShowIcdDropdown] = useState(false);
-	const [icdSearch, setIcdSearch] = useState("");
-	const [showPreview, setShowPreview] = useState(false);
-	const [showPinDialog, setShowPinDialog] = useState(false);
-	const [pinCode, setPinCode] = useState("");
-	const [signatureType, setSignatureType] = useState<"pin" | "ukep">("pin");
-	const [selectedCert, setSelectedCert] = useState("");
-	const [hasPlugin, setHasPlugin] = useState<boolean | null>(null);
-	const [certificates, setCertificates] = useState<CryptoProCertificate[]>([]);
-	const [isLoadingCerts, setIsLoadingCerts] = useState(false);
-	const [isDevMode, setIsDevMode] = useState(false);
-
-	const loadCertificates = useCallback(async () => {
-		setIsLoadingCerts(true);
-		try {
-			const certs = await getPersonalCertificates();
-			setCertificates(certs);
-			if (certs.length > 0 && certs[0]) {
-				setSelectedCert(certs[0].thumbprint);
-			}
-		} catch (e) {
-			console.warn("Failed to load personal certificates:", e);
-			showToast("Не удалось загрузить список сертификатов УКЭП", "error");
-		} finally {
-			setIsLoadingCerts(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		setIsDevMode(Boolean(import.meta.env.DEV));
-		async function detectPlugin() {
-			const detected = await checkCryptoProPlugin();
-			setHasPlugin(detected);
-			if (detected) {
-				await loadCertificates();
-			}
-		}
-		if (showPinDialog && signatureType === "ukep") {
-			void detectPlugin();
-		}
-	}, [showPinDialog, signatureType, loadCertificates]);
-	const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-	const [revisionCount, setRevisionCount] = useState(0);
-	const [attachments, setAttachments] = useState<
-		{ id: string; url: string; name: string }[]
-	>([]);
-	const [isUploading, setIsUploading] = useState(false);
-
-	const icdRef = useRef<HTMLDivElement>(null);
-	const autosaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-	// ── Auto-resize textareas
-	const autoResize = (el: HTMLTextAreaElement) => {
-		el.style.height = "auto";
-		el.style.height = `${el.scrollHeight}px`;
-	};
-	const handleAutoResize = (
-		e:
-			| React.ChangeEvent<HTMLTextAreaElement>
-			| React.FocusEvent<HTMLTextAreaElement>,
-	) => autoResize(e.target);
-
-	// ── Cleanup & load on visitId change
-	useEffect(() => {
-		let alive = true;
-
-		setDiary(EMPTY_DIARY);
-		setSelectedTemplate("");
-		setIcdSearch("");
-		setShowPreview(false);
-		setIsLocked(false);
-		setDiaryId(null);
-		setLockedAt(null);
-		setDiaryHash(null);
-		setLastSavedAt(null);
-		setRevisionCount(0);
-
-		Promise.all([
-			fetch("/api/templates").then((r) => r.json()),
-			fetch(`/api/diaries/visit/${visitId}`).then((r) => r.json()),
-		])
-			.then(([tmplData, diaryData]) => {
-				if (!alive) return;
-				setTemplates(tmplData.templates ?? []);
-				if (diaryData.diary) {
-					const d = diaryData.diary;
-					setDiary({
-						anamnesis: d.anamnesis ?? "",
-						statusLocalis: d.statusLocalis ?? "",
-						diagnosisIcd10: d.diagnosisIcd10 ?? "",
-						diagnosisTooth: d.diagnosisTooth ?? "",
-						treatmentDescription: d.treatmentDescription ?? "",
-						complications: d.complications ?? "",
-						comorbidities: d.comorbidities ?? "",
-					});
-					if (d.instrumentTrayBarcode) setTrayBarcode(d.instrumentTrayBarcode);
-					setIsLocked(d.isLocked ?? false);
-					setDiaryId(d.id ?? null);
-					setLockedAt(d.lockedAt ?? null);
-					setDiaryHash(d.diaryHash ?? null);
-					if (d.diagnosisIcd10) setIcdSearch(d.diagnosisIcd10);
-					if (d.id) {
-						fetch(`/api/diaries/${d.id}/revisions`)
-							.then((r) => r.json())
-							.then((rd) => {
-								if (alive) setRevisionCount(rd.revisions?.length ?? 0);
-							})
-							.catch(() => {});
-					}
-
-					const clinicToken = localStorage.getItem("dente_clinic_token");
-					// Fetch attachments if supported
-					fetch(`/api/files/visits/${visitId}/attachments`, {
-						headers: {
-							"x-dente-clinic-token": clinicToken || "",
-						}
-					})
-						.then((r) => r.json())
-						.then((res) => {
-							if (alive && res.files) setAttachments(res.files);
-						})
-						.catch(() => {});
-				}
-			})
-			.catch(console.error);
-
-		return () => {
-			alive = false;
-			setDiary(EMPTY_DIARY);
-			setSelectedTemplate("");
-			setIcdSearch("");
-			setShowPreview(false);
-			if (autosaveRef.current) clearInterval(autosaveRef.current);
-			useVisitStore.getState().setVisitNoteForm(emptyVisitNoteForm);
-			useVisitStore.getState().setDraft(null);
-		};
-	}, [visitId]);
-
-	// ── Resize textareas after state update
-	useEffect(() => {
-		document
-			.querySelectorAll<HTMLTextAreaElement>(".auto-resize-ta")
-			.forEach(autoResize);
-	}, [diary, isLocked]);
-
-	// ── Click outside ICD dropdown
-	useEffect(() => {
-		const handler = (e: MouseEvent) => {
-			if (icdRef.current && !icdRef.current.contains(e.target as Node))
-				setShowIcdDropdown(false);
-		};
-		document.addEventListener("mousedown", handler);
-		return () => document.removeEventListener("mousedown", handler);
-	}, []);
-
-	// ── Autosave every 30s when unlocked
-	const doSave = useCallback(
-		async (silent = false) => {
-			if (isLocked) return;
-			setIsSaving(true);
-			try {
-				const res = await fetch("/api/diaries", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						visitId,
-						patientId,
-						instrumentTrayBarcode: trayBarcode,
-						...diary,
-					}),
-				});
-				const json = await res.json();
-				if (json.id && !diaryId) setDiaryId(json.id);
-				setLastSavedAt(new Date());
-				if (!silent) showToast("Дневник сохранён", "success");
-			} catch {
-				if (!silent) showToast("Ошибка сохранения", "error");
-			} finally {
-				setIsSaving(false);
-			}
-		},
-		[isLocked, visitId, patientId, diary, diaryId],
-	);
-
-	useEffect(() => {
-		if (!isLocked) {
-			autosaveRef.current = setInterval(() => doSave(true), 30_000);
-		}
-		return () => {
-			if (autosaveRef.current) clearInterval(autosaveRef.current);
-		};
-	}, [isLocked, doSave]);
-
-	// ── Template application
-	const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		const tId = e.target.value;
-		setSelectedTemplate(tId);
-		const t = templates.find((x) => x.id === tId);
-		if (t && !isLocked) {
-			setDiary((prev) => ({
-				...prev,
-				anamnesis: t.prefilledAnamnesis ?? "",
-				statusLocalis: t.prefilledObjective ?? "",
-				diagnosisIcd10: t.defaultIcd10 ?? "",
-				treatmentDescription: t.prefilledTreatment ?? "",
-			}));
-			if (t.defaultIcd10) setIcdSearch(t.defaultIcd10);
-			showToast(`Шаблон «${t.title}» применён`, "success");
-		}
-	};
+	const {
+		diary, setDiary, diaryId, isLocked, lockedAt, diaryHash,
+		lastSavedAt, revisionCount, isSaving, showScanner, setShowScanner,
+		trayBarcode, setTrayBarcode, showIcdDropdown, setShowIcdDropdown,
+		icdSearch, setIcdSearch, showPreview, setShowPreview,
+		doSave, doLock, icdRef
+	} = useVisitDiaryLogic(visitId, patientId);
 
 	// ── ICD-10 select
 	const handleIcdSelect = (code: string) => {
@@ -311,136 +100,13 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 			i.group.toLowerCase().includes(icdSearch.toLowerCase()),
 	).slice(0, 12);
 
-	// ── Lock (Sign & Seal)
 	
-
-		const doLock = async (certThumbprint: string, pkcs7Signature: string) => {
-		if (!activeDoctor) {
-			showToast("Сначала выберите врача для приема!", "error");
-			return;
-		}
-
-		await doSave(true);
-
-		if (trayBarcode) {
-			try {
-				const linkRes = await fetch("/api/sterilization/link", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ visitId, barcode: trayBarcode }),
-				});
-				if (!linkRes.ok) {
-					const err = await linkRes.json();
-					showToast(`Ошибка стерилизации: ${err.error || "Неизвестный штрихкод"}`, "error");
-					return;
-				}
-			} catch (e) {
-				showToast("Сетевая ошибка проверки штрихкода", "error");
-				return;
-			}
-		}
-
-		const target = diaryId ?? visitId;
-		try {
-			const res = await fetch(`/api/diaries/${target}/lock`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ pkcs7Signature }),
-			});
-			const json = await res.json();
-			if (res.ok) {
-				setIsLocked(true);
-				setLockedAt(new Date().toISOString());
-				setDiaryHash(json.hash ?? null);
-				showToast("Дневник подписан и заблокирован (ЭЦП врача).", "success");
-			} else if (res.status === 409) {
-				setIsLocked(true);
-				showToast("Дневник уже был подписан ранее.", "info");
-			} else {
-				showToast(`Ошибка: ${json.error ?? "неизвестная"}`, "error");
-			}
-		} catch {
-			showToast("Ошибка сети при подписании", "error");
-		}
+	
+	
+	const handleAutoResize = (e: React.ChangeEvent<HTMLTextAreaElement> | React.FocusEvent<HTMLTextAreaElement>) => {
+		e.target.style.height = "auto";
+		e.target.style.height = e.target.scrollHeight + "px";
 	};
-
-	// ── WebP Compression & Upload
-	const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file || !diaryId) return;
-
-		setIsUploading(true);
-		try {
-			const img = new Image();
-			const objectUrl = URL.createObjectURL(file);
-
-			await new Promise((resolve, reject) => {
-				img.onload = resolve;
-				img.onerror = reject;
-				img.src = objectUrl;
-			});
-
-			const canvas = document.createElement("canvas");
-			let width = img.width;
-			let height = img.height;
-
-			const MAX_SIZE = 1200;
-			if (width > height && width > MAX_SIZE) {
-				height *= MAX_SIZE / width;
-				width = MAX_SIZE;
-			} else if (height > MAX_SIZE) {
-				width *= MAX_SIZE / height;
-				height = MAX_SIZE;
-			}
-
-			canvas.width = width;
-			canvas.height = height;
-			const ctx = canvas.getContext("2d");
-			ctx?.drawImage(img, 0, 0, width, height);
-
-			const compressedBlob = await new Promise<Blob | null>((resolve) =>
-				canvas.toBlob(resolve, "image/webp", 0.8),
-			);
-			URL.revokeObjectURL(objectUrl);
-
-			if (!compressedBlob) throw new Error("Compression failed");
-
-			const formData = new FormData();
-			formData.append("file", compressedBlob, "photo.webp");
-			formData.append("entityType", "diary");
-			formData.append("entityId", diaryId);
-
-			const clinicToken = localStorage.getItem("dente_clinic_token");
-
-			const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
-				method: "POST",
-				headers: {
-					"x-dente-clinic-token": clinicToken || "",
-				},
-				body: formData,
-			});
-			if (!res.ok) throw new Error("Upload failed");
-
-			const data = await res.json();
-			setAttachments((prev) => [...prev, data.file]);
-			showToast("Фото сжато в WebP и загружено", "success");
-		} catch (err: any) {
-			showToast(`Ошибка загрузки: ${err.message}`, "error");
-		} finally {
-			setIsUploading(false);
-			e.target.value = "";
-		}
-	};
-
-	// ── Category groups for template dropdown
-	const templatesByCategory = templates.reduce<Record<string, Template[]>>(
-		(acc, t) => {
-			const cat = t.category ?? "Прочее";
-			(acc[cat] ??= []).push(t);
-			return acc;
-		},
-		{},
-	);
 
 	// ── Print preview content
 	const icdEntry = ICD10_DICTIONARY.find(
@@ -602,28 +268,22 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						</span>
 					</div>
 				) : (
-					<div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-						<div className="relative w-full sm:w-60">
-							<Clipboard className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500 pointer-events-none" />
-							<select
-								id="diary-template-select"
-								value={selectedTemplate}
-								onChange={handleTemplateChange}
-								className="w-full pl-9 pr-3 py-2 bg-zinc-900 border border-zinc-700/60 text-zinc-200 text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 outline-none appearance-none"
-							>
-								<option value="">— Клинический шаблон —</option>
-								{Object.entries(templatesByCategory).map(([cat, tpls]) => (
-									<optgroup key={cat} label={cat}>
-										{tpls.map((t) => (
-											<option key={t.id} value={t.id}>
-												{t.title}
-											</option>
-										))}
-									</optgroup>
-								))}
-							</select>
-						</div>
-					</div>
+					<VisitDiaryTemplateSelector
+					isLocked={isLocked}
+					onSelectTemplate={(tmpl: any) => {
+						setDiary((prev) => ({
+							...prev,
+							anamnesis: tmpl.prefilledAnamnesis || prev.anamnesis,
+							statusLocalis: tmpl.prefilledObjective || prev.statusLocalis,
+							treatmentDescription:
+								tmpl.prefilledTreatment || prev.treatmentDescription,
+							diagnosisIcd10: tmpl.defaultIcd10 || prev.diagnosisIcd10,
+						}));
+						if (tmpl.defaultIcd10) {
+							setIcdSearch(tmpl.defaultIcd10);
+						}
+					}}
+				/>
 				)}
 			</div>
 
@@ -876,55 +536,11 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				</div>
 
 				{/* Attachments (Photos) */}
-				<div className="space-y-1.5 lg:col-span-2">
-					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center justify-between">
-						<span className="flex items-center gap-1.5">
-							<Camera className="w-3 h-3 text-rose-400" /> Вложения (Фотографии)
-						</span>
-						{!isLocked && diaryId && (
-							<label className="cursor-pointer text-xs flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-lg transition-colors border border-zinc-700">
-								<Paperclip className="w-3 h-3" />
-								{isUploading ? "Сжатие..." : "Прикрепить фото"}
-								<input
-									type="file"
-									accept="image/*"
-									className="hidden"
-									onChange={handlePhotoUpload}
-									disabled={isUploading || isLocked}
-								/>
-							</label>
-						)}
-					</label>
-					{attachments.length > 0 ? (
-						<div className="flex gap-3 overflow-x-auto pb-2">
-							{attachments.map((att) => (
-								<div key={att.id} className="relative group shrink-0">
-									<img
-										src={att.url}
-										alt={att.name}
-										className="h-20 w-20 object-cover rounded-lg border border-zinc-700 shadow-sm"
-									/>
-									<a
-										href={att.url}
-										target="_blank"
-										rel="noreferrer"
-										className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center"
-									>
-										<Search className="w-5 h-5 text-white" />
-									</a>
-								</div>
-							))}
-						</div>
-					) : (
-						<div className="w-full bg-zinc-900/60 border border-zinc-800 border-dashed rounded-xl p-4 text-sm text-zinc-500 text-center">
-							{diaryId
-								? isLocked
-									? "Нет прикрепленных фото."
-									: "Нажмите «Прикрепить фото», чтобы добавить снимки лечения."
-								: "Сначала сохраните дневник, чтобы прикрепить фото."}
-						</div>
-					)}
-				</div>
+				<VisitDiaryPhotoUpload 
+					visitId={visitId} 
+					diaryId={diaryId} 
+					isLocked={isLocked} 
+				/>
 			</div>
 
 			{/* ── Actions Footer ── */}
