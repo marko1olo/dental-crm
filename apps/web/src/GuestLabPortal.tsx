@@ -116,7 +116,7 @@ export function GuestLabPortal() {
 				return <Clock className="w-5 h-5 text-yellow-500" />;
 			case "refitting":
 				return <RefreshCcw className="w-5 h-5 text-orange-500" />;
-			case "delivered":
+			case "shipped":
 				return <PackageCheck className="w-5 h-5 text-green-500" />;
 			case "completed":
 				return <CheckCircle2 className="w-5 h-5 text-emerald-600" />;
@@ -131,7 +131,7 @@ export function GuestLabPortal() {
 				return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
 			case "refitting":
 				return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800";
-			case "delivered":
+			case "shipped":
 				return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800";
 			case "completed":
 				return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
@@ -145,8 +145,8 @@ export function GuestLabPortal() {
 			draft: "Черновик",
 			sent: "Отправлен",
 			in_progress: "В работе",
-			shipped: "Отгружен",
-			delivered: "Доставлен в клинику",
+			shipped: "Работа готова, отправлена в клинику",
+			received: "Получен клиникой",
 			refitting: "На переделке",
 			completed: "Завершен",
 		}[order.status] || order.status;
@@ -289,10 +289,10 @@ export function GuestLabPortal() {
 							</button>
 
 							<button
-								onClick={() => updateStatus("delivered")}
-								disabled={isUpdating || order.status === "delivered"}
+								onClick={() => updateStatus("shipped")}
+								disabled={isUpdating || order.status === "shipped"}
 								className={`flex-1 sm:flex-none px-6 py-3 rounded-xl font-medium transition-all shadow-sm ${
-									order.status === "delivered"
+									order.status === "shipped"
 										? "bg-green-500 text-white ring-2 ring-green-500 ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900"
 										: "bg-zinc-50/40 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-200 border border-zinc-200/50 dark:border-zinc-700/50 hover:bg-zinc-100/30 dark:hover:bg-zinc-700/50 hover:border-green-300 disabled:opacity-50"
 								}`}
