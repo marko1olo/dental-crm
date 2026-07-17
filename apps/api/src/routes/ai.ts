@@ -323,38 +323,78 @@ export async function registerAiRoutes(app: FastifyInstance) {
 		const patientId = parsedInput.data.patientId;
 		
 		try {
-			const { sql } = await import("drizzle-orm");
-			const { appointments, patientInvoices } = await import("../db/schema.js");
-			
-			// 1. Unpaid invoices factor
-			const unpaid = await db.select({ amount: sql<number>`SUM(total_amount_rub)::int` })
-				.from(patientInvoices)
-				.where(sql`patient_id = ${patientId} AND status = 'unpaid'`);
-			
-			const debtScore = (unpaid[0]?.amount || 0) > 5000 ? 30 : 0;
-			
-			// 2. Cancellation history
-			const cancels = await db.select({ count: sql<number>`COUNT(*)::int` })
-				.from(appointments)
-				.where(sql`patient_id = ${patientId} AND status = 'canceled'`);
-				
-			const cancelScore = (cancels[0]?.count || 0) * 15;
-			
-			let riskScore = debtScore + cancelScore;
-			if (riskScore > 99) riskScore = 99;
-			
+			const { sql, and, eq, lt } = await import("drizzle-orm");
+			const { appointments, patientInvoices, visits, treatmentItems } = await import("../db/schema.js");
+
+			// Run all queries in parallel for speed
+			const [unpaidResult, cancelResult, noShowResult, visitResult, completedResult, openResult] = await Promise.all([
+				// 1. Debt factor
+				db.select({ amount: sql<number>`COALESCE(SUM(total_amount_rub::numeric), 0)::int` })
+					.from(patientInvoices)
+					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId} AND status = 'unpaid'`),
+
+				// 2. Cancellation history
+				db.select({ count: sql<number>`COUNT(*)::int` })
+					.from(appointments)
+					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId} AND status = 'canceled'`),
+
+				// 3. No-show history
+				db.select({ count: sql<number>`COUNT(*)::int` })
+					.from(appointments)
+					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId} AND status = 'no_show'`),
+
+				// 4. Total visits (loyalty signal — more visits = more reliable)
+				db.select({ count: sql<number>`COUNT(*)::int` })
+					.from(visits)
+					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId}`),
+
+				// 5. Completed treatment items (plan adherence)
+				db.select({ count: sql<number>`COUNT(*)::int` })
+					.from(treatmentItems)
+					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId} AND status = 'completed'`),
+
+				// 6. Open (pending) treatment items
+				db.select({ count: sql<number>`COUNT(*)::int` })
+					.from(treatmentItems)
+					.where(sql`organization_id = ${orgId} AND patient_id = ${patientId} AND status != 'completed' AND status != 'cancelled'`),
+			]);
+
+			const totalDebt = unpaidResult[0]?.amount || 0;
+			const cancels = cancelResult[0]?.count || 0;
+			const noShows = noShowResult[0]?.count || 0;
+			const totalVisits = visitResult[0]?.count || 0;
+			const completedItems = completedResult[0]?.count || 0;
+			const openItems = openResult[0]?.count || 0;
+
+			// Score calculation (0-100)
+			const debtScore = totalDebt > 10000 ? 35 : totalDebt > 5000 ? 20 : totalDebt > 1000 ? 10 : 0;
+			const cancelScore = Math.min(cancels * 12, 30);
+			const noShowScore = Math.min(noShows * 20, 40);
+			// Loyalty discount: long-term patients are lower risk
+			const loyaltyDiscount = totalVisits > 10 ? 15 : totalVisits > 5 ? 8 : totalVisits > 2 ? 4 : 0;
+			// Treatment gap risk: many open items that haven't been completed
+			const gapRisk = openItems > 3 && completedItems === 0 ? 10 : 0;
+
+			let riskScore = debtScore + cancelScore + noShowScore + gapRisk - loyaltyDiscount;
+			riskScore = Math.max(0, Math.min(99, riskScore));
+
 			let riskLevel = "low";
 			if (riskScore > 40) riskLevel = "medium";
-			if (riskScore > 75) riskLevel = "high";
-			
+			if (riskScore > 70) riskLevel = "high";
+
 			return reply.send({
 				patientId,
 				riskScore,
 				riskLevel,
 				factors: {
-					hasDebt: debtScore > 0,
-					pastCancellations: cancels[0]?.count || 0
-				}
+					hasDebt: totalDebt > 0,
+					totalDebtRub: totalDebt,
+					pastCancellations: cancels,
+					pastNoShows: noShows,
+					totalVisits,
+					completedTreatmentItems: completedItems,
+					openTreatmentItems: openItems,
+				},
 			});
 		} catch(err: any) {
 			console.error("PredictNoShowError", err);

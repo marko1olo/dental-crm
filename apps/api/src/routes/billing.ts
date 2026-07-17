@@ -324,9 +324,19 @@ export async function registerAdvancedBillingRoutes(app: FastifyInstance) {
 
 		if (Array.isArray(items)) {
 			for (const item of items) {
-				const itemTotal = Number(item.price) * Number(item.quantity || 1);
+				const itemTotal = Number(item.price || item.priceRub || 0) * Number(item.quantity || 1);
 				let insurancePct = 0;
-				// Warning: category isn't passed in items currently, defaulting to 0 for manual without backend refetch
+				if (insuranceContract && item.serviceId) {
+					const [svc] = await db
+						.select({ category: schema.serviceCatalogItems.category })
+						.from(schema.serviceCatalogItems)
+						.where(eq(schema.serviceCatalogItems.id, item.serviceId));
+					const cat = svc?.category || "other";
+					if (cat === "therapy" || cat === "consultation" || cat === "periodontology") insurancePct = insuranceContract.coverageTherapyPct;
+					else if (cat === "surgery") insurancePct = insuranceContract.coverageSurgeryPct;
+					else if (cat === "orthodontics" || cat === "prosthetics") insurancePct = insuranceContract.coverageOrthoPct;
+					else if (cat === "hygiene") insurancePct = insuranceContract.coverageHygienePct;
+				}
 				const covered = itemTotal * (insurancePct / 100);
 				totalInsuranceAmount += covered;
 				totalPatientAmount += (itemTotal - covered);

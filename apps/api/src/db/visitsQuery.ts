@@ -314,9 +314,9 @@ export async function acceptVisitDraftInDb(
 
 				let insurancePct = 0;
 				if (insuranceContract) {
-					if (category === "therapy") insurancePct = insuranceContract.coverageTherapyPct;
+					if (category === "therapy" || category === "consultation" || category === "periodontology") insurancePct = insuranceContract.coverageTherapyPct;
 					else if (category === "surgery") insurancePct = insuranceContract.coverageSurgeryPct;
-					else if (category === "ortho") insurancePct = insuranceContract.coverageOrthoPct;
+					else if (category === "orthodontics" || category === "prosthetics") insurancePct = insuranceContract.coverageOrthoPct;
 					else if (category === "hygiene") insurancePct = insuranceContract.coverageHygienePct;
 				}
 				const covered = itemTotal * (insurancePct / 100);

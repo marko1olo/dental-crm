@@ -4993,9 +4993,9 @@ export function useAppLogic(): any {
 					const service = dashboard.serviceCatalog?.find((s: any) => s.id === item.serviceId);
 					const category = service?.category || "other";
 					let pct = 0;
-					if (category === "therapy") pct = contract.coverageTherapyPct || 0;
+					if (category === "therapy" || category === "consultation" || category === "periodontology") pct = contract.coverageTherapyPct || 0;
 					else if (category === "surgery") pct = contract.coverageSurgeryPct || 0;
-					else if (category === "ortho") pct = contract.coverageOrthoPct || 0;
+					else if (category === "orthodontics" || category === "prosthetics") pct = contract.coverageOrthoPct || 0;
 					else if (category === "hygiene") pct = contract.coverageHygienePct || 0;
 
 					insuranceCoverageRub += treatmentLineTotal(item) * (pct / 100);

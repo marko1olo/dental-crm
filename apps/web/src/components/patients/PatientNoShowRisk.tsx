@@ -89,6 +89,9 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 		}
 	};
 
+	const formatRub = (n: number) =>
+		n.toLocaleString("ru-RU") + " ₽";
+
 	return (
 		<div className="panel" style={{ marginBottom: "20px" }}>
 			<h3
@@ -165,44 +168,48 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({
 							Факторы риска:
 						</span>
 
-						{riskData.factors.pastCancellations > 0 && (
-							<div
-								style={{
-									padding: "10px 12px",
-									background: "rgba(239, 68, 68, 0.05)",
-									borderRadius: "8px",
-									border: "1px solid rgba(239, 68, 68, 0.2)",
-								}}
-							>
+						{riskData.factors.pastNoShows > 0 && (
+							<div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.07)", borderRadius: "8px", border: "1px solid rgba(239,68,68,0.2)" }}>
 								<span style={{ fontSize: "13px", color: "var(--rust)", fontWeight: 500 }}>
-									Частые отмены записей ({riskData.factors.pastCancellations})
-								</span>
-							</div>
-						)}
-						{riskData.factors.hasDebt && (
-							<div
-								style={{
-									padding: "10px 12px",
-									background: "rgba(245, 158, 11, 0.05)",
-									borderRadius: "8px",
-									border: "1px solid rgba(245, 158, 11, 0.2)",
-								}}
-							>
-								<span style={{ fontSize: "13px", color: "#d97706", fontWeight: 500 }}>
-									Наличие неоплаченных счетов
+									Неявки без предупреждения: {riskData.factors.pastNoShows}
 								</span>
 							</div>
 						)}
 
-						{!riskData.factors.hasDebt && riskData.factors.pastCancellations === 0 && (
-							<div
-								style={{
-									padding: "10px 12px",
-									background: "rgba(16, 185, 129, 0.05)",
-									borderRadius: "8px",
-									border: "1px solid rgba(16, 185, 129, 0.2)",
-								}}
-							>
+						{riskData.factors.pastCancellations > 0 && (
+							<div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.05)", borderRadius: "8px", border: "1px solid rgba(239,68,68,0.15)" }}>
+								<span style={{ fontSize: "13px", color: "var(--rust)", fontWeight: 500 }}>
+									Отмены записей: {riskData.factors.pastCancellations}
+								</span>
+							</div>
+						)}
+
+						{riskData.factors.hasDebt && (
+							<div style={{ padding: "10px 12px", background: "rgba(245,158,11,0.05)", borderRadius: "8px", border: "1px solid rgba(245,158,11,0.2)" }}>
+								<span style={{ fontSize: "13px", color: "#d97706", fontWeight: 500 }}>
+									Задолженность: {formatRub(riskData.factors.totalDebtRub || 0)}
+								</span>
+							</div>
+						)}
+
+						{(riskData.factors.openTreatmentItems || 0) > 3 && (riskData.factors.completedTreatmentItems || 0) === 0 && (
+							<div style={{ padding: "10px 12px", background: "rgba(245,158,11,0.05)", borderRadius: "8px", border: "1px solid rgba(245,158,11,0.15)" }}>
+								<span style={{ fontSize: "13px", color: "#d97706", fontWeight: 500 }}>
+									Много незакрытых позиций плана ({riskData.factors.openTreatmentItems})
+								</span>
+							</div>
+						)}
+
+						{(riskData.factors.totalVisits || 0) > 5 && (
+							<div style={{ padding: "10px 12px", background: "rgba(16,185,129,0.05)", borderRadius: "8px", border: "1px solid rgba(16,185,129,0.15)" }}>
+								<span style={{ fontSize: "13px", color: "var(--teal)", fontWeight: 500 }}>
+									Лояльный пациент: {riskData.factors.totalVisits} визитов
+								</span>
+							</div>
+						)}
+
+						{!riskData.factors.hasDebt && riskData.factors.pastCancellations === 0 && (riskData.factors.pastNoShows || 0) === 0 && (
+							<div style={{ padding: "10px 12px", background: "rgba(16,185,129,0.05)", borderRadius: "8px", border: "1px solid rgba(16,185,129,0.2)" }}>
 								<span style={{ fontSize: "13px", color: "var(--teal)", fontWeight: 500 }}>
 									Отрицательные факторы отсутствуют
 								</span>
