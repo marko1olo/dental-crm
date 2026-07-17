@@ -209,16 +209,7 @@ export const useVisitStore = create<VisitStore>((set) => ({
 			draft: typeof val === "function" ? val(state.draft) : val,
 		})),
 
-	visitFlowResult: {
-		overallStatus: "partial",
-		draft: { status: "success", message: "100%" },
-		plan: { status: "success", data: {
-			patientFriendlyExplanation: "У вас кариес на зубе 1.4, требуется лечение.",
-			treatments: []
-		} },
-		recommendations: { status: "error", message: "Network timeout" },
-		documents: { status: "success", data: { suggestions: ["Согласие на эндодонтию", "Анкета здоровья"] } }
-	},
+	visitFlowResult: null,
 	setVisitFlowResult: (val) =>
 		set((state) => ({
 			visitFlowResult: typeof val === "function" ? val(state.visitFlowResult) : val,

@@ -30,7 +30,7 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult }> = ({ resul
 					Ассистент обработки приема
 				</h4>
 				<span className={`vfp-badge status-${result.overallStatus}`}>
-					{result.overallStatus === "running" ? "В процессе..." : result.overallStatus === "success" ? "Готово" : result.overallStatus === "partial" ? "Частично" : "Ошибка"}
+					{result.overallStatus === "success" ? "Готово" : result.overallStatus === "partial" ? "Частично" : "Ошибка"}
 				</span>
 			</div>
 			
@@ -49,23 +49,27 @@ export const VisitFlowProgress: React.FC<{ result: VisitFlowResult }> = ({ resul
 			</div>
 
 			<div className="vfp-outputs">
-				{result.plan.data?.patientFriendlyExplanation && (
+				{result.plan.data?.diagnosisSummary && (
 					<div className="vfp-output-card">
-						<strong>План для пациента:</strong>
-						<p>{result.plan.data.patientFriendlyExplanation}</p>
+						<strong>Диагноз (пациенту):</strong>
+						<p>{result.plan.data.diagnosisSummary}</p>
 					</div>
 				)}
-				{result.recommendations.data?.telegramSummary && (
+				{result.recommendations.data?.procedureName && (
 					<div className="vfp-output-card">
-						<strong>Telegram-памятка:</strong>
-						<p>{result.recommendations.data.telegramSummary}</p>
+						<strong>Рекомендации после: {result.recommendations.data.procedureName}</strong>
+						{result.recommendations.data.temporaryRestrictions && result.recommendations.data.temporaryRestrictions.length > 0 && (
+							<ul style={{ margin: "0.5rem 0", paddingLeft: "1.2rem" }}>
+								{result.recommendations.data.temporaryRestrictions.map((r, i) => <li key={i}>{r}</li>)}
+							</ul>
+						)}
 					</div>
 				)}
-				{result.documents.data?.suggestions && result.documents.data.suggestions.length > 0 && (
+				{result.documents.data?.suggestions && Array.isArray(result.documents.data.suggestions) && result.documents.data.suggestions.length > 0 && (
 					<div className="vfp-output-card">
 						<strong>Предложенные документы:</strong>
 						<div className="vfp-tags">
-							{result.documents.data.suggestions.map((s, i) => (
+							{result.documents.data.suggestions.map((s: string, i: number) => (
 								<span key={i} className="vfp-tag">{s}</span>
 							))}
 						</div>

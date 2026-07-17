@@ -17,8 +17,7 @@ import {
 import React, { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
-import { VisitClinicalRuleWarnings } from "./visit/VisitClinicalRuleWarnings";
-import { VisitFlowProgress } from "./visit/VisitFlowProgress";
+
 import { SignCardDialog } from "./components/visit/SignCardDialog";
 import { showToast } from "./components/GlobalToast";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
@@ -30,7 +29,7 @@ import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { parseVisitDictationLocal } from "./lib/smartVisitParser";
 import { PatientJourneyTimeline } from "./components/PatientJourneyTimeline";
-import { VisitAIProgressCard } from "./components/visit/VisitAIProgressCard";
+import { VisitFlowProgress } from "./components/visit/VisitFlowProgress";
 import { useVisitLogic } from "./hooks/domains/useVisitLogic";
 import { SmartParsePreview } from "./SmartParsePreview";
 import { useVisitStore } from "./store/visitStore";
@@ -1848,7 +1847,7 @@ export function VisitView() {
 							</span>
 						</div>
 						{visitFlowResult && (
-							<VisitAIProgressCard visitFlowResult={visitFlowResult} />
+							<VisitFlowProgress result={visitFlowResult} />
 						)}
 
 						{/* Красивые вкладки (EMK Tabs) для уменьшения перегруженности */}

@@ -10721,5 +10721,10 @@ export const visitFlowRequestSchema = z.object({
 	completedServices: z.array(visitServiceItemSchema).optional(),
 	planPayload: treatmentPlanPayloadSchema.optional().nullable(),
 	recommendationsPayload: postVisitRecommendationsPayloadSchema.optional().nullable(),
+	orchestratorConfig: z.object({
+		enablePlan: z.boolean().default(true),
+		enableRecommendations: z.boolean().default(true),
+		enableDocuments: z.boolean().default(true),
+	}).optional(),
 });
 export type VisitFlowRequest = z.infer<typeof visitFlowRequestSchema>;

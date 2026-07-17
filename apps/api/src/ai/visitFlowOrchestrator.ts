@@ -148,6 +148,11 @@ export async function runVisitFlow(
 
 	// Wait before steps 2 and 3 so they run concurrently
 	const planPromise = (async () => {
+		if (request.orchestratorConfig?.enablePlan === false) {
+			result.plan.status = "skipped";
+			result.plan.message = "Отключено в настройках клиники";
+			return;
+		}
 		try {
 			result.plan.status = "running";
 			const payload = extractPlanPayload(draftData, request);
@@ -159,8 +164,7 @@ export async function runVisitFlow(
 			const personalized = await personalizeTreatmentPlan(payload);
 			result.plan.data = {
 				...payload,
-				patientFriendlyExplanation: personalized.patientFriendlyExplanation,
-				patientHygieneAdvice: personalized.patientHygieneAdvice,
+				...personalized,
 			};
 			result.plan.status = "success";
 		} catch (error) {
@@ -171,6 +175,11 @@ export async function runVisitFlow(
 	})();
 
 	const recommendationsPromise = (async () => {
+		if (request.orchestratorConfig?.enableRecommendations === false) {
+			result.recommendations.status = "skipped";
+			result.recommendations.message = "Отключено в настройках клиники";
+			return;
+		}
 		try {
 			result.recommendations.status = "running";
 			const payload = extractRecommendationsPayload(draftData, request);
@@ -194,6 +203,11 @@ export async function runVisitFlow(
 
 	// Step 4: Documents (Deterministic)
 	const documentsPromise = (async () => {
+		if (request.orchestratorConfig?.enableDocuments === false) {
+			result.documents.status = "skipped";
+			result.documents.message = "Отключено в настройках клиники";
+			return;
+		}
 		try {
 			result.documents.status = "running";
 			const suggestedDocs: string[] = [];
