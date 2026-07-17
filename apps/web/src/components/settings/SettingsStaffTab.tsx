@@ -1,10 +1,6 @@
-import { Settings2, ShieldCheck, UserPlus, X, Users, UserCog } from "lucide-react";
+import { ShieldCheck, UserPlus, X, Users, UserCog, CalendarClock, Mail, Phone, Lock, Hash } from "lucide-react";
 import "./SettingsStaffTab.css";
 import type React from "react";
-import type { ChangeEvent } from "react";
-
-type InputChangeEvent = ChangeEvent<HTMLInputElement>;
-
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
@@ -14,32 +10,25 @@ export function SettingsStaffTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
-	const { dashboard, staffRoleLabels, specialtyLabels } = mergedProps;
 
 	const {
+		dashboard,
+		staffRoleLabels,
+		specialtyLabels,
 		staffScheduleDrafts,
-		staffScheduleDraftFromWorkingHours,
-		staffScheduleSaveStates,
 		staffScheduleDirtyIds,
 		staffScheduleSavingId,
 		updateStaffScheduleDraft,
 		toggleStaffWorkingDay,
-		updateStaffScheduleDay,
 		saveStaffSchedule,
 		weekdayOptions,
 	} = mergedProps;
+
 	const typedWeekdayOptions = weekdayOptions || [];
 	const staff = dashboard?.clinicSettings?.staff || [];
 
+	const [activeTab, setActiveTab] = useState<"staff_list" | "staff_schedule">("staff_list");
 	const [loading, setLoading] = useState(false);
-
-	// New staff form state
-	const [newStaffName, setNewStaffName] = useState("");
-	const [newStaffRole, setNewStaffRole] = useState("doctor");
-	const [newStaffSpecialty, setNewStaffSpecialty] = useState("universal");
-	const [newStaffEmail, setNewStaffEmail] = useState("");
-
-	// Unified Editing Modal State
 	const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
 	const [editForm, setEditForm] = useState<{
 		fullName: string;
@@ -56,17 +45,17 @@ export function SettingsStaffTab() {
 		specialties: string[];
 	}>({
 		fullName: "",
-		role: "",
+		role: "doctor",
 		email: "",
 		phone: "",
 		active: true,
-		canSignMedicalRecords: false,
+		canSignMedicalRecords: true,
 		canManageImports: false,
 		canManageMoney: false,
 		pin: "",
 		password: "",
 		color: "#0d9488",
-		specialties: [],
+		specialties: ["universal"],
 	});
 
 	const startEditing = (member: any) => {
@@ -87,133 +76,53 @@ export function SettingsStaffTab() {
 		});
 	};
 
-	const handleCreateStaff = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!newStaffName.trim()) {
-			showToast("Укажите ФИО сотрудника", "warning");
-			return;
-		}
-
-		setLoading(true);
-		try {
-			const clinicToken = localStorage.getItem("dente_clinic_token");
-			const res = await fetch("/api/settings/staff", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-clinic-token": clinicToken || "",
-				},
-				body: JSON.stringify({
-					fullName: newStaffName,
-					role: newStaffRole,
-					email: newStaffEmail || null,
-					active: true,
-					canSignMedicalRecords: newStaffRole === "doctor",
-					canManageMoney:
-						newStaffRole === "administrator" || newStaffRole === "owner",
-					canManageImports: true,
-					specialties: [newStaffSpecialty],
-				}),
-			});
-			const data = await res.json();
-			if (!res.ok)
-				throw new Error(data.message || "Ошибка добавления сотрудника");
-
-			showToast("Сотрудник успешно добавлен", "success");
-			setNewStaffName("");
-			setNewStaffEmail("");
-			await mergedProps.loadDashboard();
-		} catch (err: any) {
-			showToast(err.message, "error");
-		} finally {
-			setLoading(false);
-		}
+	const startCreating = () => {
+		setEditingStaffId("new");
+		setEditForm({
+			fullName: "", role: "doctor", email: "", phone: "",
+			active: true, canSignMedicalRecords: true, canManageImports: false,
+			canManageMoney: false, pin: "", password: "", color: "#0d9488", specialties: ["universal"],
+		});
 	};
 
-	const handleSaveEdit = async (e: React.FormEvent) => {
+	const handleSaveStaff = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!editingStaffId) return;
 		if (!editForm.fullName.trim()) {
 			showToast("ФИО сотрудника не может быть пустым", "warning");
 			return;
 		}
-
 		setLoading(true);
 		try {
 			const clinicToken = localStorage.getItem("dente_clinic_token");
+			const payload = {
+				fullName: editForm.fullName,
+				role: editForm.role,
+				email: editForm.email || null,
+				phone: editForm.phone || null,
+				active: editForm.active,
+				canSignMedicalRecords: editForm.role === "doctor" ? editForm.canSignMedicalRecords : false,
+				canManageMoney: ["administrator", "owner", "manager"].includes(editForm.role) ? editForm.canManageMoney : false,
+				canManageImports: ["administrator", "owner", "manager"].includes(editForm.role) ? editForm.canManageImports : false,
+				color: editForm.color,
+				specialties: editForm.specialties,
+				...(editForm.password ? { password: editForm.password } : {}),
+				...(editForm.pin ? { pin: editForm.pin } : {}),
+			};
 
-			// 1. Update basic profile and permissions
-			const profileRes = await fetch(`/api/settings/staff/${editingStaffId}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-clinic-token": clinicToken || "",
-				},
-				body: JSON.stringify({
-					fullName: editForm.fullName,
-					role: editForm.role,
-					email: editForm.email || null,
-					phone: editForm.phone || null,
-					active: editForm.active,
-					canSignMedicalRecords: editForm.canSignMedicalRecords,
-					canManageImports: editForm.canManageImports,
-					canManageMoney: editForm.canManageMoney,
-					color: editForm.color || null,
-					specialties:
-						editForm.specialties.length > 0
-							? editForm.specialties
-							: ["universal"],
-				}),
+			const url = editingStaffId === "new" ? "/api/settings/staff" : "/api/settings/staff/" + editingStaffId;
+			const method = editingStaffId === "new" ? "POST" : "PUT";
+			const res = await fetch(url, {
+				method,
+				headers: { "Content-Type": "application/json", "x-dente-clinic-token": clinicToken || "" },
+				body: JSON.stringify(payload),
 			});
-
-			if (!profileRes.ok) {
-				const data = await profileRes.json();
-				throw new Error(data.message || "Ошибка обновления профиля сотрудника");
-			}
-
-			// 2. Update credentials if PIN or Password was typed
-			if (editForm.pin || editForm.password) {
-				const credsPayload: any = {};
-				if (editForm.pin) {
-					if (editForm.pin.length !== 4 || !/^\d+$/.test(editForm.pin)) {
-						showToast("PIN-код должен состоять из 4 цифр", "warning");
-						setLoading(false);
-						return;
-					}
-					credsPayload.pinCode = editForm.pin;
-				}
-				if (editForm.password) {
-					if (editForm.password.length < 6) {
-						showToast("Пароль должен быть не менее 6 символов", "warning");
-						setLoading(false);
-						return;
-					}
-					credsPayload.password = editForm.password;
-				}
-
-				const credsRes = await fetch(
-					`/api/settings/staff/${editingStaffId}/credentials`,
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"x-dente-clinic-token": clinicToken || "",
-						},
-						body: JSON.stringify(credsPayload),
-					},
-				);
-
-				if (!credsRes.ok) {
-					const data = await credsRes.json();
-					throw new Error(data.message || "Ошибка обновления учетных данных");
-				}
-			}
-
-			showToast("Профиль сотрудника успешно обновлен", "success");
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || "Ошибка сохранения");
+			showToast(editingStaffId === "new" ? "Сотрудник добавлен" : "Профиль обновлен", "success");
 			setEditingStaffId(null);
 			await mergedProps.loadDashboard();
 		} catch (err: any) {
-			showToast(err.message, "error");
+			showToast(err.message || "Произошла ошибка", "error");
 		} finally {
 			setLoading(false);
 		}
@@ -221,168 +130,203 @@ export function SettingsStaffTab() {
 
 	return (
 		<div className="staff-studio-container animate-fade-in">
-			{/* New Staff Creation Card */}
-			<section className="staff-section-card">
-				<div className="staff-section-header">
-					<div className="staff-section-icon">
-						<UserPlus size={24} />
-					</div>
-					<div className="staff-section-title">
-						<h3>Добавить сотрудника</h3>
-						<p>Создайте профиль для нового врача, ассистента или администратора</p>
-					</div>
-				</div>
-				<form onSubmit={handleCreateStaff} className="staff-form-grid">
-					<div className="staff-form-group">
-						<label>ФИО сотрудника</label>
-						<input
-							type="text"
-							placeholder="Иванов Иван Иванович"
-							value={newStaffName}
-							onChange={(e) => setNewStaffName(e.target.value)}
-							required
-						/>
-					</div>
+			<div className="staff-tabs-header">
+				<button
+					className={"staff-tab-btn" + (activeTab === "staff_list" ? " active" : "")}
+					onClick={() => setActiveTab("staff_list")}
+				>
+					<Users size={18} />
+					<span>Сотрудники и Доступы</span>
+				</button>
+				<button
+					className={"staff-tab-btn" + (activeTab === "staff_schedule" ? " active" : "")}
+					onClick={() => setActiveTab("staff_schedule")}
+				>
+					<CalendarClock size={18} />
+					<span>Графики работы</span>
+				</button>
+			</div>
 
-					<div className="staff-form-group">
-						<label>Должность</label>
-						<select
-							value={newStaffRole}
-							onChange={(e) => setNewStaffRole(e.target.value)}
-						>
-							<option value="doctor">Врач</option>
-							<option value="assistant">Ассистент</option>
-							<option value="administrator">Администратор</option>
-							<option value="manager">Управляющий</option>
-						</select>
-					</div>
-
-					{newStaffRole === "doctor" && (
-						<div className="staff-form-group full-width">
-							<label>Специализация</label>
-							<select
-								value={newStaffSpecialty}
-								onChange={(e) => setNewStaffSpecialty(e.target.value)}
-							>
-								{Object.entries(specialtyLabels).map(([key, label]) => (
-									<option key={key} value={key}>
-										{label as string}
-									</option>
-								))}
-							</select>
+			{activeTab === "staff_list" && (
+				<section className="staff-section-card">
+					<div className="staff-section-header">
+						<div className="staff-section-icon">
+							<UserCog size={24} />
 						</div>
-					)}
-
-					<div className="staff-form-group full-width">
-						<label>Email (логин для личного доступа)</label>
-						<input
-							type="email"
-							placeholder="doctor@clinic.com"
-							value={newStaffEmail}
-							onChange={(e) => setNewStaffEmail(e.target.value)}
-						/>
+						<div className="staff-section-title">
+							<h3>Штат клиники</h3>
+							<p>Управление профилями врачей, ассистентов и администраторов</p>
+						</div>
+						<div className="staff-header-actions">
+							<button className="primary-button" onClick={startCreating}>
+								<UserPlus size={18} /> Добавить сотрудника
+							</button>
+						</div>
 					</div>
 
-					<div className="staff-form-group full-width" style={{ marginTop: '8px' }}>
-						<button
-							className="primary-button"
-							type="submit"
-							disabled={loading}
-							style={{ alignSelf: 'flex-start' }}
-						>
-							<ShieldCheck size={16} style={{ marginRight: '8px' }} /> Добавить в систему
-						</button>
-					</div>
-				</form>
-			</section>
-
-			{/* Active Staff Grid */}
-			<section className="staff-section-card">
-				<div className="staff-section-header">
-					<div className="staff-section-icon">
-						<Users size={24} />
-					</div>
-					<div className="staff-section-title">
-						<h3>Персонал клиники</h3>
-						<p>Активные сотрудники и настройки прав доступа</p>
-					</div>
-				</div>
-				
-				<div className="premium-staff-grid">
-					{staff.map((member: any) => (
-						<div key={member.id} className="premium-staff-card">
-							<div className="premium-staff-card-header">
-								<div
-									className="premium-staff-avatar"
-									style={
-										member.color
-											? { backgroundColor: member.color }
-											: { backgroundColor: 'var(--teal)' }
-									}
-								>
-									{member.fullName.charAt(0)}
+					<div className="staff-members-grid">
+						{staff.map((member: any) => (
+							<div className={"staff-card" + (!member.active ? " inactive" : "")} key={member.id}>
+								<div className="staff-card-header">
+									<div className="staff-avatar" style={{ backgroundColor: member.color || "var(--teal)" }}>
+										{member.fullName.charAt(0).toUpperCase()}
+									</div>
+									<div className="staff-info-primary">
+										<h4>{member.fullName}</h4>
+										<span className="staff-role-badge">{staffRoleLabels[member.role] || member.role}</span>
+									</div>
 								</div>
-								<div className="premium-staff-info">
-									<h4>{member.fullName}</h4>
-									<p>{staffRoleLabels ? staffRoleLabels[member.role] : member.role}</p>
+
+								<div className="staff-card-body">
+									<div className="staff-detail-row">
+										<Mail size={14} /> <span>{member.email || "—"}</span>
+									</div>
+									<div className="staff-detail-row">
+										<Phone size={14} /> <span>{member.phone || "—"}</span>
+									</div>
+									<div className="staff-permissions-tags">
+										{member.canSignMedicalRecords && <span className="perm-tag doctor">Мед. записи</span>}
+										{member.canManageMoney && <span className="perm-tag admin">Финансы</span>}
+										{member.canManageImports && <span className="perm-tag manager">Настройки</span>}
+										{!member.active && <span className="perm-tag danger">Доступ закрыт</span>}
+									</div>
+								</div>
+
+								<div className="staff-card-footer">
+									<button className="secondary-button compact" onClick={() => startEditing(member)}>
+										Настроить профиль
+									</button>
 								</div>
 							</div>
-
-							<div className="premium-staff-badges">
-								{member.canSignMedicalRecords && (
-									<span className="status-pill status-confirmed">✍️ ЭМК</span>
-								)}
-								{member.canManageImports && (
-									<span className="status-pill status-confirmed">💿 Импорт</span>
-								)}
-								{member.canManageMoney && (
-									<span className="status-pill status-confirmed">💰 Касса</span>
-								)}
-								{member.active === false && (
-									<span className="status-pill status-cancelled">❌ Неактивен</span>
-								)}
-							</div>
-
-							<div className="premium-staff-actions">
-								<button
-									className="secondary-button"
-									onClick={() => startEditing(member)}
-								>
-									<Settings2 size={16} style={{ marginRight: '8px' }} />
-									Настроить профиль
+						))}
+						{staff.length === 0 && (
+							<div className="empty-staff-state">
+								<Users size={48} color="var(--border)" />
+								<p>В клинике пока нет сотрудников</p>
+								<button className="primary-button" style={{ marginTop: '16px' }} onClick={startCreating}>
+									<UserPlus size={18} /> Добавить первого сотрудника
 								</button>
 							</div>
-						</div>
-					))}
-				</div>
-			</section>
+						)}
+					</div>
+				</section>
+			)}
 
-			{/* Unified Premium Editing Modal */}
+			{activeTab === "staff_schedule" && (
+				<section className="staff-section-card">
+					<div className="staff-section-header">
+						<div className="staff-section-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--orange, #f59e0b)' }}>
+							<CalendarClock size={24} />
+						</div>
+						<div className="staff-section-title">
+							<h3>Шаблоны графиков работы</h3>
+							<p>Настройте регулярные часы приема для каждого сотрудника</p>
+						</div>
+					</div>
+
+					<div className="staff-schedules-list">
+						{staff.filter((m: any) => m.active !== false).map((member: any) => {
+							const draft = staffScheduleDrafts?.[member.id];
+							if (!draft) return null;
+							const isDirty = staffScheduleDirtyIds?.has(member.id);
+							const isSaving = staffScheduleSavingId === member.id;
+
+							return (
+								<div className="schedule-member-row" key={member.id}>
+									<div className="schedule-member-info">
+										<div className="staff-avatar small" style={{ backgroundColor: member.color || "var(--teal)" }}>
+											{member.fullName.charAt(0).toUpperCase()}
+										</div>
+										<div>
+											<strong>{member.fullName}</strong>
+											<span>{staffRoleLabels?.[member.role] || member.role}</span>
+										</div>
+									</div>
+
+									<div className="schedule-days-grid">
+										{typedWeekdayOptions.map((wd: any) => {
+											const dayDraft = draft[wd.key];
+											if (!dayDraft) return null;
+											return (
+												<div className={"schedule-day-box" + (dayDraft.working ? " working" : " off")} key={wd.key}>
+													<div className="day-header">
+														<label className="checkbox-label">
+															<input
+																type="checkbox"
+																checked={dayDraft.working}
+																onChange={() => toggleStaffWorkingDay(member.id, wd.key)}
+															/>
+															<strong>{wd.shortLabel}</strong>
+														</label>
+													</div>
+													{dayDraft.working && (
+														<div className="day-hours">
+															<input
+																type="time"
+																value={dayDraft.start}
+																onChange={(e) => updateStaffScheduleDraft(member.id, wd.key, "start", e.target.value)}
+															/>
+															<span>-</span>
+															<input
+																type="time"
+																value={dayDraft.end}
+																onChange={(e) => updateStaffScheduleDraft(member.id, wd.key, "end", e.target.value)}
+															/>
+														</div>
+													)}
+												</div>
+											);
+										})}
+									</div>
+
+									<div className="schedule-actions">
+										<button
+											className="primary-button compact"
+											disabled={!isDirty || isSaving}
+											onClick={() => saveStaffSchedule(member.id)}
+										>
+											{isSaving ? "Сохранение..." : "Сохранить"}
+										</button>
+									</div>
+								</div>
+							);
+						})}
+						{staff.filter((m: any) => m.active !== false).length === 0 && (
+							<div className="empty-staff-state">
+								<CalendarClock size={48} color="var(--border)" />
+								<p>Нет активных сотрудников для настройки графика</p>
+							</div>
+						)}
+					</div>
+				</section>
+			)}
+
 			{editingStaffId && (
 				<div className="premium-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setEditingStaffId(null); }}>
-					<div className="premium-modal-content">
+					<div className="premium-modal-content" style={{ maxWidth: '650px' }}>
 						<div className="premium-modal-header">
 							<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 								<UserCog size={24} color="var(--teal)" />
-								<h3>Профиль сотрудника</h3>
+								<h3>{editingStaffId === "new" ? "Новый сотрудник" : "Профиль сотрудника"}</h3>
 							</div>
 							<button className="premium-modal-close" onClick={() => setEditingStaffId(null)}>
 								<X size={20} />
 							</button>
 						</div>
 
-						<div className="premium-modal-body">
-							<div className="staff-form-group full-width">
-								<label>ФИО сотрудника</label>
-								<input
-									type="text"
-									value={editForm.fullName}
-									onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-									required
-								/>
-							</div>
-
+						<form onSubmit={handleSaveStaff} className="premium-modal-body">
 							<div className="staff-form-grid">
+								<div className="staff-form-group full-width">
+									<label>ФИО сотрудника</label>
+									<input
+										type="text"
+										value={editForm.fullName}
+										onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+										required
+										placeholder="Иванов Иван Иванович"
+									/>
+								</div>
+
 								<div className="staff-form-group">
 									<label>Должность</label>
 									<select
@@ -393,144 +337,129 @@ export function SettingsStaffTab() {
 										<option value="assistant">Ассистент</option>
 										<option value="administrator">Администратор</option>
 										<option value="manager">Управляющий</option>
+										<option value="owner">Владелец</option>
 									</select>
 								</div>
-								<div className="staff-form-group">
-									<label>Цвет в расписании</label>
-									<input
-										type="color"
-										value={editForm.color}
-										onChange={(e) => setEditForm({ ...editForm, color: e.target.value })}
-									/>
-								</div>
-							</div>
 
-							{editForm.role === "doctor" && (
-								<div className="staff-form-group full-width">
-									<label>Специализации</label>
-									<div className="weekday-toggle-row">
-										{Object.entries(specialtyLabels).map(([key, label]) => {
-											const isSelected = editForm.specialties.includes(key);
-											return (
-												<button
-													key={key}
-													type="button"
-													className={isSelected ? "active" : ""}
-													onClick={() => {
-														if (isSelected) {
-															setEditForm({
-																...editForm,
-																specialties: editForm.specialties.filter((s) => s !== key),
-															});
-														} else {
-															setEditForm({
-																...editForm,
-																specialties: [...editForm.specialties, key],
-															});
-														}
-													}}
-												>
-													{label as string}
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							)}
-
-							<div className="staff-form-grid">
 								<div className="staff-form-group">
-									<label>Email (Логин)</label>
+									<label>Специализация</label>
+									<select
+										value={editForm.specialties[0] || "universal"}
+										onChange={(e) => setEditForm({ ...editForm, specialties: [e.target.value] })}
+										disabled={editForm.role !== "doctor"}
+									>
+										{Object.entries(specialtyLabels || {}).map(([key, label]) => (
+											<option key={key} value={key}>{label as string}</option>
+										))}
+									</select>
+								</div>
+
+								<div className="staff-form-group">
+									<label><Mail size={14} /> Email (логин)</label>
 									<input
 										type="email"
 										value={editForm.email}
 										onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-										placeholder="doctor@clinic.com"
+										placeholder="mail@clinic.com"
 									/>
 								</div>
+
 								<div className="staff-form-group">
-									<label>Телефон</label>
+									<label><Phone size={14} /> Телефон</label>
 									<input
 										type="text"
 										value={editForm.phone}
 										onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-										placeholder="+7 (999) 123-45-67"
+										placeholder="+7 (999) 000-00-00"
+									/>
+								</div>
+
+								<div className="staff-form-group">
+									<label><Lock size={14} /> Пароль для входа</label>
+									<input
+										type="password"
+										value={editForm.password}
+										onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+										placeholder={editingStaffId === "new" ? "Введите пароль" : "Оставьте пустым — не изменится"}
+									/>
+								</div>
+
+								<div className="staff-form-group">
+									<label><Hash size={14} /> Пин-код (планшет)</label>
+									<input
+										type="text"
+										maxLength={4}
+										value={editForm.pin}
+										onChange={(e) => setEditForm({ ...editForm, pin: e.target.value.replace(/[^0-9]/g, "") })}
+										placeholder="4 цифры, например 1234"
 									/>
 								</div>
 							</div>
 
-							<div className="permissions-box">
-								<h4 style={{ margin: 0, fontSize: '14px', color: 'var(--ink)' }}>Права доступа</h4>
-								
-								<label className="permission-toggle">
-									<input
-										type="checkbox"
-										checked={editForm.canSignMedicalRecords}
-										onChange={(e) => setEditForm({ ...editForm, canSignMedicalRecords: e.target.checked })}
-									/>
-									<span>✍️ Подписание ЭМК (медицинские карты)</span>
-								</label>
-								
-								<label className="permission-toggle">
-									<input
-										type="checkbox"
-										checked={editForm.canManageImports}
-										onChange={(e) => setEditForm({ ...editForm, canManageImports: e.target.checked })}
-									/>
-									<span>💿 Управление импортом КТ / снимков</span>
-								</label>
-								
-								<label className="permission-toggle">
-									<input
-										type="checkbox"
-										checked={editForm.canManageMoney}
-										onChange={(e) => setEditForm({ ...editForm, canManageMoney: e.target.checked })}
-									/>
-									<span>💰 Доступ к кассе и финансам</span>
-								</label>
+							<div className="staff-form-divider">Права доступа</div>
 
-								<label className="permission-toggle" style={{ marginTop: '8px' }}>
+							<div className="permissions-box">
+								<label className="permission-toggle">
 									<input
 										type="checkbox"
 										checked={editForm.active}
 										onChange={(e) => setEditForm({ ...editForm, active: e.target.checked })}
 									/>
-									<span style={{ fontWeight: 700 }}>Сотрудник активен (имеет доступ)</span>
+									<div>
+										<strong>Доступ к системе (Активен)</strong>
+										<span>Если выключить — сотрудник не сможет войти в систему</span>
+									</div>
 								</label>
+
+								{editForm.role === "doctor" && (
+									<label className="permission-toggle">
+										<input
+											type="checkbox"
+											checked={editForm.canSignMedicalRecords}
+											onChange={(e) => setEditForm({ ...editForm, canSignMedicalRecords: e.target.checked })}
+										/>
+										<div>
+											<strong>Подписание мед. документации</strong>
+											<span>Право создавать и подписывать дневники приемов</span>
+										</div>
+									</label>
+								)}
+
+								{["administrator", "manager", "owner"].includes(editForm.role) && (
+									<>
+										<label className="permission-toggle">
+											<input
+												type="checkbox"
+												checked={editForm.canManageMoney}
+												onChange={(e) => setEditForm({ ...editForm, canManageMoney: e.target.checked })}
+											/>
+											<div>
+												<strong>Доступ к кассе и финансам</strong>
+												<span>Проведение платежей, просмотр финансовых отчетов</span>
+											</div>
+										</label>
+										<label className="permission-toggle">
+											<input
+												type="checkbox"
+												checked={editForm.canManageImports}
+												onChange={(e) => setEditForm({ ...editForm, canManageImports: e.target.checked })}
+											/>
+											<div>
+												<strong>Настройки и импорт данных</strong>
+												<span>Доступ к системным настройкам, прайсам, шаблонам</span>
+											</div>
+										</label>
+									</>
+								)}
 							</div>
 
-							<div className="staff-form-grid" style={{ marginTop: '8px' }}>
-								<div className="staff-form-group">
-									<label>Новый PIN (вход на ПК)</label>
-									<input
-										type="password"
-										value={editForm.pin}
-										onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })}
-										maxLength={4}
-										placeholder="4 цифры, пустой если не менять"
-									/>
-								</div>
-								<div className="staff-form-group">
-									<label>Новый пароль (личный)</label>
-									<input
-										type="password"
-										value={editForm.password}
-										onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-										placeholder="От 6 симв, пустой если не менять"
-									/>
-								</div>
+							<div className="premium-modal-footer">
+								<button type="button" className="secondary-button" onClick={() => setEditingStaffId(null)}>Отмена</button>
+								<button type="submit" className="primary-button" disabled={loading}>
+									{loading ? "Сохранение..." : <><ShieldCheck size={16} /> Сохранить профиль</>}
+								</button>
 							</div>
-						</div>
-
-						<div className="premium-modal-footer">
-							<button className="secondary-button" onClick={() => setEditingStaffId(null)}>
-								Отмена
-							</button>
-							<button className="primary-button" onClick={handleSaveEdit} disabled={loading}>
-								<ShieldCheck size={16} style={{ marginRight: '8px' }} />
-								{loading ? "Сохраняю..." : "Сохранить профиль"}
-							</button>
-						</div>
+						</form>
 					</div>
 				</div>
 			)}

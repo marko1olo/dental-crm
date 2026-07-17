@@ -93,11 +93,18 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 		const data = parsed.data;
 
-		// Verify patient exists
+		// Verify the patient exists AND belongs to this org — without the scope,
+		// org A could create a lab order against org B's patient (and leak that
+		// patient's name back via the GET join).
 		const [patient] = await db
-			.select()
+			.select({ id: patients.id })
 			.from(patients)
-			.where(eq(patients.id, data.patientId))
+			.where(
+				and(
+					eq(patients.id, data.patientId),
+					eq(patients.organizationId, orgId),
+				),
+			)
 			.limit(1);
 
 		if (!patient) {
@@ -105,6 +112,26 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				error: "PatientNotFound",
 				message: "Пациент не найден.",
 			});
+		}
+
+		// If a doctor is named, it must be a member of this org.
+		if (data.doctorId) {
+			const [doctor] = await db
+				.select({ id: users.id })
+				.from(users)
+				.where(
+					and(
+						eq(users.id, data.doctorId),
+						eq(users.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (!doctor) {
+				return reply.code(404).send({
+					error: "DoctorNotFound",
+					message: "Врач не найден в вашей клинике.",
+				});
+			}
 		}
 
 		const secureToken = crypto.randomUUID();
@@ -277,10 +304,25 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 	app.post("/api/portal/lab-order/:token/status", async (request, reply) => {
 		const { token } = request.params as { token: string };
-		const { status } = request.body as { status: string };
 
-		if (!token || !status)
+		// This endpoint is public (token-only, no auth), so the status must be
+		// validated against the set a technician is allowed to set. The clinic-only
+		// states (draft/sent) are intentionally excluded, and arbitrary strings are
+		// rejected — previously any string was written straight to the column.
+		const parsedBody = z
+			.object({
+				status: z.enum([
+					"in_progress",
+					"shipped",
+					"received",
+					"refitting",
+					"completed",
+				]),
+			})
+			.safeParse(request.body);
+		if (!token || !parsedBody.success)
 			return reply.code(400).send({ error: "InvalidRequest" });
+		const { status } = parsedBody.data;
 
 		try {
 			const order = await getLabOrderByToken(token);

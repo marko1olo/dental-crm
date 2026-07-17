@@ -121,6 +121,13 @@ export function FinancePlanningOverview({
 					<strong>{money(billingSummary.taxDeductionEligibleRub)}</strong>
 					<p>медицинские услуги, пригодные для справки</p>
 				</article>
+				{((billingSummary as any).insuranceCoverageRub ?? 0) > 0 && (
+					<article className="finance-insurance">
+						<span>Покрытие ДМС</span>
+						<strong>{money((billingSummary as any).insuranceCoverageRub ?? 0)}</strong>
+						<p>страховая часть по контракту</p>
+					</article>
+				)}
 			</div>
 
 			<section className="plan-scenarios" aria-label="Варианты плана лечения">

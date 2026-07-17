@@ -412,6 +412,10 @@ export async function getDashboardFromDb(
 		.from(schema.auditEvents)
 		.where(eq(schema.auditEvents.organizationId, organizationId))
 		.orderBy(desc(schema.auditEvents.createdAt));
+	const activeInsuranceContracts = await db
+		.select()
+		.from(schema.insuranceContracts)
+		.where(eq(schema.insuranceContracts.organizationId, organizationId));
 
 	const activeVisit =
 		visits.find((visit) => visit.status === "draft") ?? visits[0] ?? null;
@@ -785,6 +789,7 @@ export async function getDashboardFromDb(
 			draftDocumentAmountRub,
 			openTreatmentItems,
 			unpaidDocuments,
+			insuranceCoverageRub: 0,
 		},
 		communicationTemplates: [],
 		communicationTasks: [],
@@ -823,6 +828,19 @@ export async function getDashboardFromDb(
 			createdAt: iso(event.createdAt),
 		})),
 		complianceWarnings: warnings,
+		insuranceContracts: activeInsuranceContracts.map((c) => ({
+			id: c.id,
+			organizationId: c.organizationId,
+			companyName: c.companyName,
+			policyNumberMask: c.policyNumberMask,
+			coverageTherapyPct: c.coverageTherapyPct,
+			coverageSurgeryPct: c.coverageSurgeryPct,
+			coverageOrthoPct: c.coverageOrthoPct,
+			coverageHygienePct: c.coverageHygienePct,
+			annualLimitRub: c.annualLimitRub,
+			isActive: c.isActive,
+			createdAt: iso(c.createdAt),
+		})),
 		documents: documents.map((document) => ({
 			id: document.id,
 			organizationId: document.organizationId,

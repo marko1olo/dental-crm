@@ -4984,17 +4984,37 @@ export function useAppLogic(): any {
 						payment.status === "paid" && payment.documentId === document.id,
 				),
 		).length;
+		let insuranceCoverageRub = 0;
+		if (documentPatient?.insuranceContractId || documentPatient?.administrativeProfile?.insuranceContractId) {
+			const contractId = documentPatient.insuranceContractId || documentPatient.administrativeProfile?.insuranceContractId;
+			const contract = dashboard?.insuranceContracts?.find((c: any) => c.id === contractId);
+			if (contract && contract.isActive) {
+				for (const item of activePlanItems) {
+					const service = dashboard.serviceCatalog?.find((s: any) => s.id === item.serviceId);
+					const category = service?.category || "other";
+					let pct = 0;
+					if (category === "therapy") pct = contract.coverageTherapyPct || 0;
+					else if (category === "surgery") pct = contract.coverageSurgeryPct || 0;
+					else if (category === "ortho") pct = contract.coverageOrthoPct || 0;
+					else if (category === "hygiene") pct = contract.coverageHygienePct || 0;
+
+					insuranceCoverageRub += treatmentLineTotal(item) * (pct / 100);
+				}
+			}
+		}
+
 		return {
 			totalPlannedRub,
 			totalDiscountRub,
 			totalPaidRub,
-			totalDueRub: Math.max(0, totalPlannedRub - totalPaidRub),
+			totalDueRub: Math.max(0, totalPlannedRub - insuranceCoverageRub - totalPaidRub),
 			taxDeductionEligibleRub,
 			draftDocumentAmountRub,
 			openTreatmentItems: activePlanItems.filter(
 				(item) => item.status !== "completed",
 			).length,
 			unpaidDocuments,
+			insuranceCoverageRub,
 		};
 	}, [
 		activePayments,
@@ -7252,6 +7272,26 @@ export function useAppLogic(): any {
 			await loadDashboard();
 		} catch (error) {
 			setError("Сетевая ошибка при удалении услуги");
+		}
+	}
+
+	
+	async function createStaffMember(data: any) {
+		try {
+			const response = await fetch("/api/settings/staff", {
+				method: "POST",
+				headers: auth.settingsAccessHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(data),
+			});
+			if (!response.ok) {
+				setError(await responseErrorMessage(response, "Не удалось добавить сотрудника"));
+				return;
+			}
+			await loadDashboard();
+		} catch (error) {
+			setError("Сетевая ошибка при добавлении сотрудника");
 		}
 	}
 
@@ -13228,6 +13268,7 @@ export function useAppLogic(): any {
 		addImagingViewerNoteAnnotation,
 		addMigrationDiscoveryCandidateToSmartImport,
 		addStaffMember,
+		createStaffMember,
 		updateStaffMember,
 		createServiceCatalogItem,
 		updateServiceCatalogItem,

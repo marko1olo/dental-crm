@@ -2338,6 +2338,7 @@ export const billingSummarySchema = z.object({
 	draftDocumentAmountRub: z.number().int().nonnegative(),
 	openTreatmentItems: z.number().int().nonnegative(),
 	unpaidDocuments: z.number().int().nonnegative(),
+	insuranceCoverageRub: z.number().int().nonnegative().default(0),
 });
 export type BillingSummary = z.infer<typeof billingSummarySchema>;
 
@@ -5166,6 +5167,21 @@ export const auditEventSchema = z.object({
 });
 export type AuditEvent = z.infer<typeof auditEventSchema>;
 
+export const insuranceContractSchema = z.object({
+	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
+	companyName: z.string(),
+	policyNumberMask: z.string().nullable().optional(),
+	coverageTherapyPct: z.number().default(0),
+	coverageSurgeryPct: z.number().default(0),
+	coverageOrthoPct: z.number().default(0),
+	coverageHygienePct: z.number().default(0),
+	annualLimitRub: z.number().nullable().optional(),
+	isActive: z.boolean().default(true),
+	createdAt: z.string(),
+});
+export type InsuranceContract = z.infer<typeof insuranceContractSchema>;
+
 export const dashboardSchema = z.object({
 	clinicName: z.string(),
 	todayIso: z.string(),
@@ -5198,6 +5214,7 @@ export const dashboardSchema = z.object({
 	speechProviders: z.array(speechProviderSchema),
 	auditEvents: z.array(auditEventSchema),
 	complianceWarnings: z.array(z.string()),
+	insuranceContracts: z.array(insuranceContractSchema).default([]),
 });
 export type Dashboard = z.infer<typeof dashboardSchema>;
 
