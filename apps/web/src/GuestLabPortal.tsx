@@ -9,6 +9,7 @@ import {
 	User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { showToast } from "./components/GlobalToast";
 
 interface LabOrderData {
 	id: string;
@@ -74,9 +75,10 @@ export function GuestLabPortal() {
 			const data = await res.json();
 			if (data.success) {
 				setOrder({ ...order, status: data.status });
+				showToast("Статус успешно обновлен", "success");
 			}
 		} catch (e: any) {
-			alert(e.message);
+			showToast(e.message, "error");
 		} finally {
 			setIsUpdating(false);
 		}

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useWebsocket } from "../../hooks/useWebsocket";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
@@ -206,10 +207,18 @@ export const OdontogramModule = ({
 					const item = next[existingIdx];
 					if (item) {
 						item.state = state;
-						item.surfaces = activeSurfaces.length > 0 ? [...activeSurfaces] : undefined;
+						if (activeSurfaces.length > 0) {
+							item.surfaces = [...activeSurfaces];
+						} else {
+							delete item.surfaces;
+						}
 					}
 				} else {
-					next.push({ toothNumber: t, state, surfaces: activeSurfaces.length > 0 ? [...activeSurfaces] : undefined });
+					const newItem: ToothData = { toothNumber: t, state };
+					if (activeSurfaces.length > 0) {
+						newItem.surfaces = [...activeSurfaces];
+					}
+					next.push(newItem);
 				}
 			}
 			return next;
@@ -229,7 +238,7 @@ export const OdontogramModule = ({
 		setActiveSurfaces([]);
 	};
 
-	const handleToothClick = (toothNumber: number, rect: DOMRect) => {
+	const handleToothClick = (toothNumber: number, rect: DOMRect, surface?: string) => {
 		if (isMultiSelectMode) {
 			// Toggle selection, don't open menu yet
 			setSelectedTeeth((prev) =>
@@ -239,24 +248,37 @@ export const OdontogramModule = ({
 			);
 			setMenuConfig(null);
 		} else {
-			// If we clicked on an unselected tooth while having a selection, clear it
 			let activeSelection = selectedTeeth;
+			let currentSurfaces = activeSurfaces;
+
+			// If we clicked on an unselected tooth while having a selection, clear it
 			if (!selectedTeeth.includes(toothNumber)) {
 				activeSelection = [toothNumber];
 				setSelectedTeeth(activeSelection);
-			}
 
-			// Pre-select surfaces for the tooth if we only selected one
-			if (activeSelection.length === 1) {
+				// Pre-select existing surfaces for the newly selected tooth
 				const existing = teethData.find((t) => t.toothNumber === activeSelection[0]);
 				if (existing && existing.surfaces) {
-					setActiveSurfaces([...existing.surfaces]);
+					currentSurfaces = [...existing.surfaces];
 				} else {
-					setActiveSurfaces([]);
+					currentSurfaces = [];
 				}
-			} else {
-				setActiveSurfaces([]);
 			}
+
+			// If a specific surface was clicked, toggle it
+			if (surface && activeSelection.length === 1) {
+				if (currentSurfaces.includes(surface)) {
+					currentSurfaces = currentSurfaces.filter((s) => s !== surface);
+				} else {
+					currentSurfaces = [...currentSurfaces, surface];
+				}
+			}
+
+			if (activeSelection.length !== 1) {
+				currentSurfaces = [];
+			}
+
+			setActiveSurfaces(currentSurfaces);
 
 			const isUpperJaw =
 				toothNumber < 30 || (toothNumber >= 51 && toothNumber <= 65);
@@ -520,7 +542,7 @@ export const OdontogramModule = ({
 							if (data && data.action === "update_tooth" && data.payload) {
 								const { code, state } = data.payload;
 								updateToothState([parseInt(code)], state || "caries");
-								alert(`AI: Зуб ${code} обновлен (${state})`);
+								showToast(`AI: Зуб ${code} обновлен (${state})`, "success");
 							} else if (
 								data &&
 								data.toothUpdates &&
@@ -529,14 +551,19 @@ export const OdontogramModule = ({
 								data.toothUpdates.forEach((tu: any) => {
 									updateToothState([parseInt(tu.code)], tu.state);
 								});
-								alert(
+								showToast(
 									`AI: Зубы обновлены: ${data.toothUpdates.map((t: any) => t.code).join(", ")}`,
+									"success"
 								);
 							} else {
+								showToast("AI: Команда не распознана", "warning");
 							}
+						} else {
+							showToast("Ошибка при обращении к серверу ИИ", "error");
 						}
 					} catch (e) {
 						console.error("Dictation parse failed", e);
+						showToast("Не удалось обработать голосовую команду", "error");
 					}
 				}}
 			/>

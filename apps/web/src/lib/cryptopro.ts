@@ -1,7 +1,4 @@
-/**
- * Interface for CryptoPro and Rutoken hardware/software integration.
- * Wraps browser plugins and falls back to Mock provider for development environments.
- */
+import { getUserCertificates, createDetachedSignature, isValidSystemSetup } from "crypto-pro";
 
 export interface CertificateInfo {
 	thumbprint: string;
@@ -16,11 +13,19 @@ export class DigitalSignatureService {
 	private isMockMode: boolean = false;
 
 	constructor() {
-		// In a real environment, we'd check window.cryptoPro or window.rutoken.
-		// For development, we'll force mock mode if the plugin isn't detected.
-		if (typeof (window as any).cryptoPro === "undefined" && typeof (window as any).rutoken === "undefined") {
+		this.init();
+	}
+
+	private async init() {
+		try {
+			const isValid = await isValidSystemSetup();
+			if (!isValid) {
+				this.isMockMode = true;
+				console.warn("[CryptoPro] System setup invalid. Using MOCK mode.");
+			}
+		} catch (e) {
 			this.isMockMode = true;
-			console.log("[CryptoPro] Running in MOCK mode (plugins not found).");
+			console.warn("[CryptoPro] Plugin not found. Using MOCK mode.", e);
 		}
 	}
 
@@ -28,17 +33,40 @@ export class DigitalSignatureService {
 		if (this.isMockMode) {
 			return this.getMockCertificates();
 		}
-		// Real implementation would invoke cadesplugin / rutoken SDK here
-		return [];
+
+		try {
+			const certs = await getUserCertificates();
+			return certs.map((cert) => ({
+				thumbprint: cert.thumbprint,
+				name: cert.subjectName || cert.name,
+				issuer: cert.issuerName,
+				validFrom: cert.validFrom,
+				validTo: cert.validTo,
+				provider: "cryptopro",
+			}));
+		} catch (error) {
+			console.error("Failed to fetch real certificates:", error);
+			// Fallback to mock if real fetch fails
+			return this.getMockCertificates();
+		}
 	}
 
 	async signData(thumbprint: string, data: string, pin?: string): Promise<{ signatureBase64: string; provider: string }> {
 		if (this.isMockMode) {
 			return this.mockSignData(thumbprint, data);
 		}
-		
-		// Real implementation would hash the data (GOST) and call createDetachedSignature
-		throw new Error("Plugin integration missing");
+
+		try {
+			// Real Detached Signature using GOST
+			const signatureBase64 = await createDetachedSignature(thumbprint, data);
+			return {
+				signatureBase64,
+				provider: "cryptopro",
+			};
+		} catch (error) {
+			console.error("Failed to sign data:", error);
+			throw new Error("Failed to sign data using CryptoPro plugin: " + (error as Error).message);
+		}
 	}
 
 	// --- Mock Implementation Details ---
@@ -65,7 +93,6 @@ export class DigitalSignatureService {
 	}
 
 	private async mockSignData(thumbprint: string, data: string): Promise<{ signatureBase64: string; provider: string }> {
-		// Simulate network / processing delay
 		await new Promise((resolve) => setTimeout(resolve, 800));
 		
 		const mockHash = btoa(unescape(encodeURIComponent(data))).substring(0, 32);

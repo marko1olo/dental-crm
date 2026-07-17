@@ -3,6 +3,7 @@ import { ClipboardCheck, Edit2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../useSettingsDerivations";
+import { showToast } from "../GlobalToast";
 import "./SettingsProtocolsTab.css";
 
 export function SettingsProtocolsTab() {
@@ -108,7 +109,7 @@ export function SettingsProtocolsTab() {
 			}
 			window.location.reload();
 		} catch (err: any) {
-			alert(err.message);
+			showToast(err.message, "error");
 			setLoading(false);
 		}
 	};
