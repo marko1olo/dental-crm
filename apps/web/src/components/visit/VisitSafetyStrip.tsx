@@ -1,8 +1,14 @@
 import React from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { useWorkspaceProfileStore } from "../../hooks/useWorkspaceProfile";
 
 export function VisitSafetyStrip() {
 	const { visitSafetyCards } = useAppLogicContext();
+	const hasEngineeringStatus = useWorkspaceProfileStore((s) => s.hasEngineeringStatus);
+
+	if (!hasEngineeringStatus) {
+		return null;
+	}
 
 	return (
 		<details

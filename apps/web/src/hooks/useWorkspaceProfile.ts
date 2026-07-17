@@ -30,6 +30,8 @@ export interface WorkspaceFeatureFlags {
 	aiEnableTreatmentPlan: boolean;
 	aiEnableRecommendations: boolean;
 	aiEnableDocuments: boolean;
+	hasEngineeringStatus: boolean;
+	hasClinicalRules: boolean;
 }
 
 interface WorkspaceProfileStore extends WorkspaceFeatureFlags {
@@ -63,6 +65,8 @@ const DEFAULT_FLAGS: WorkspaceFeatureFlags = {
 	aiEnableTreatmentPlan: true,
 	aiEnableRecommendations: true,
 	aiEnableDocuments: true,
+	hasEngineeringStatus: false,
+	hasClinicalRules: false,
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -105,6 +109,8 @@ export const useWorkspaceProfileStore = create<WorkspaceProfileStore>()(
 				aiEnableTreatmentPlan: s.aiEnableTreatmentPlan,
 				aiEnableRecommendations: s.aiEnableRecommendations,
 				aiEnableDocuments: s.aiEnableDocuments,
+				hasEngineeringStatus: s.hasEngineeringStatus,
+				hasClinicalRules: s.hasClinicalRules,
 			}),
 		},
 	),

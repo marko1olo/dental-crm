@@ -2,6 +2,7 @@ import React from "react";
 import { Bot, Check, AlertTriangle, Mic, Lock } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { ClinicalRulePanel } from "../../ClinicalRulePanel";
+import { useWorkspaceProfileStore } from "../../hooks/useWorkspaceProfile";
 
 export function VisitPrimaryActions({ isSignDialogOpen, setIsSignDialogOpen, isSigned }: any) {
 	const {
@@ -15,6 +16,12 @@ export function VisitPrimaryActions({ isSignDialogOpen, setIsSignDialogOpen, isS
 		staffRoleLabels,
 		activeVisitClinicalRuleSummary,
 	} = useAppLogicContext();
+
+	const hasClinicalRules = useWorkspaceProfileStore((s) => s.hasClinicalRules);
+
+	if (!hasClinicalRules) {
+		return null;
+	}
 
 	return (
 		<details className="clinical-rules-toggle">

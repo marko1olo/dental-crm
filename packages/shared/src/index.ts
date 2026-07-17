@@ -4461,7 +4461,7 @@ export const treatmentPlanPayloadSchema = z.object({
 	diagnosisSummary: z.string().trim().min(1).max(700),
 	teethOrArea: z.string().trim().min(1).max(240),
 	clinicalToothRows: clinicalToothRowsSchema,
-	treatmentGoals: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
+	treatmentGoals: z.array(z.string().trim().max(300)).max(12),
 	plannedStages: z
 		.array(
 			z.object({
@@ -4480,14 +4480,13 @@ export const treatmentPlanPayloadSchema = z.object({
 		.min(1)
 		.max(24),
 	estimatedTotalRub: z.number().int().nonnegative(),
-	alternatives: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
+	alternatives: z.array(z.string().trim().max(300)).max(12),
 	risksAndLimitations: z
-		.array(z.string().trim().min(1).max(300))
-		.min(1)
+		.array(z.string().trim().max(300))
 		.max(16),
-	prognosisAndLimits: z.string().trim().min(1).max(900),
-	controlPlan: z.string().trim().min(1).max(700),
-	doctorFullName: z.string().trim().min(1).max(240),
+	prognosisAndLimits: z.string().trim().max(900).nullable().optional(),
+	controlPlan: z.string().trim().max(700).nullable().optional(),
+	doctorFullName: z.string().trim().max(240).nullable().optional(),
 	plannedAt: documentDateLikeStringSchema,
 	patientQuestionsAnswered: z.literal(true),
 	planRequiresSeparateConsent: z.literal(true),

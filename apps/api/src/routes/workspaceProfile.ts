@@ -32,6 +32,9 @@ export interface WorkspaceFeatureFlags {
 	hasMarketingModule: boolean;
 	hasAnalyticsModule: boolean;
 	hasInventoryModule: boolean;
+	aiEnableTreatmentPlan: boolean;
+	aiEnableRecommendations: boolean;
+	aiEnableDocuments: boolean;
 }
 
 export type PresetName =
@@ -70,6 +73,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: false,
 		hasAnalyticsModule: false,
 		hasInventoryModule: false,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	prosthodontist: {
 		hasAssistants: true,
@@ -88,6 +94,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: false,
 		hasAnalyticsModule: false,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	pediatric: {
 		hasAssistants: true,
@@ -106,6 +115,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: true,
 		hasAnalyticsModule: true,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	orthodontic: {
 		hasAssistants: true,
@@ -124,6 +136,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: false,
 		hasAnalyticsModule: true,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	surgery_center: {
 		hasAssistants: true,
@@ -142,6 +157,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: true,
 		hasAnalyticsModule: true,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	implant_center: {
 		hasAssistants: true,
@@ -160,6 +178,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: true,
 		hasAnalyticsModule: true,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	family_clinic: {
 		hasAssistants: true,
@@ -178,6 +199,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: true,
 		hasAnalyticsModule: true,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	multi_specialty: {
 		hasAssistants: true,
@@ -196,6 +220,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: true,
 		hasAnalyticsModule: true,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 	enterprise: {
 		hasAssistants: true,
@@ -214,6 +241,9 @@ export const WORKSPACE_PRESETS: Record<
 		hasMarketingModule: true,
 		hasAnalyticsModule: true,
 		hasInventoryModule: true,
+		aiEnableTreatmentPlan: true,
+		aiEnableRecommendations: true,
+		aiEnableDocuments: true,
 	},
 };
 
@@ -409,6 +439,9 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 				hasMarketingModule: schema.organizations.hasMarketingModule,
 				hasAnalyticsModule: schema.organizations.hasAnalyticsModule,
 				hasInventoryModule: schema.organizations.hasInventoryModule,
+				aiEnableTreatmentPlan: schema.organizations.aiEnableTreatmentPlan,
+				aiEnableRecommendations: schema.organizations.aiEnableRecommendations,
+				aiEnableDocuments: schema.organizations.aiEnableDocuments,
 			})
 			.from(schema.organizations)
 			.where(eq(schema.organizations.id, organizationId))
@@ -455,6 +488,9 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 				hasMarketingModule,
 				hasAnalyticsModule,
 				hasInventoryModule,
+				aiEnableTreatmentPlan,
+				aiEnableRecommendations,
+				aiEnableDocuments,
 			} = req.body ?? {};
 			await db
 				.update(schema.organizations)
@@ -473,6 +509,9 @@ export async function workspaceProfileRoutes(fastify: FastifyInstance) {
 					...(hasMarketingModule !== undefined && { hasMarketingModule }),
 					...(hasAnalyticsModule !== undefined && { hasAnalyticsModule }),
 					...(hasInventoryModule !== undefined && { hasInventoryModule }),
+					...(aiEnableTreatmentPlan !== undefined && { aiEnableTreatmentPlan }),
+					...(aiEnableRecommendations !== undefined && { aiEnableRecommendations }),
+					...(aiEnableDocuments !== undefined && { aiEnableDocuments }),
 					workspacePreset: "custom",
 					updatedAt: new Date(),
 				})
@@ -556,6 +595,9 @@ hasPediatricMode: payload.specs?.includes("pediatrics") || false,
 						hasMarketingModule: false,
 						hasAnalyticsModule: (payload.chairs || 1) > 1,
 						hasInventoryModule: true,
+						aiEnableTreatmentPlan: payload.modules?.aiTreatmentPlan ?? true,
+						aiEnableRecommendations: payload.modules?.aiRecommendations ?? true,
+						aiEnableDocuments: payload.modules?.aiDocuments ?? true,
 						workingHours: [
 							{
 								day: "monday",

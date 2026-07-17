@@ -15,6 +15,8 @@ import {
 	Users,
 	XCircle,
 	Blocks,
+	Server,
+	Activity,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -45,6 +47,8 @@ interface FeatureToggleDef {
 		| "aiEnableTreatmentPlan"
 		| "aiEnableRecommendations"
 		| "aiEnableDocuments"
+		| "hasEngineeringStatus"
+		| "hasClinicalRules"
 	>;
 	label: string;
 	description: string;
@@ -172,6 +176,20 @@ const FEATURE_TOGGLES: FeatureToggleDef[] = [
 		description: "Нейросеть автоматически предлагает необходимые юридические документы для подписания.",
 		icon: <Blocks size={20} />,
 		color: "hsl(280 80% 65%)",
+	},
+	{
+		key: "hasEngineeringStatus",
+		label: "Инженерный статус (Отладка)",
+		description: "Отображает полоску статуса синхронизации черновиков и техническую отладку. Отключите для частного кабинета, чтобы не перегружать интерфейс.",
+		icon: <Server size={20} />,
+		color: "hsl(215 16% 47%)",
+	},
+	{
+		key: "hasClinicalRules",
+		label: "Клинические правила и протоколы",
+		description: "Сложная система валидации приёма и стандартов лечения. Отключите, если у вас частная практика без жестких регламентов.",
+		icon: <Activity size={20} />,
+		color: "hsl(348 83% 47%)",
 	},
 ];
 

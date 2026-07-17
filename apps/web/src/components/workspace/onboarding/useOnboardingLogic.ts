@@ -66,6 +66,9 @@ export function useOnboardingLogic(onComplete: () => void, initialIsDark: boolea
 			dms: false,
 			installments: true,
 			egisz: false,
+			aiTreatmentPlan: true,
+			aiRecommendations: true,
+			aiDocuments: true,
 		},
 	);
 	const toggleModule = (k: keyof typeof modules) =>

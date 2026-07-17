@@ -320,6 +320,9 @@ export const organizations = pgTable("organizations", {
 	hasMarketingModule: boolean("has_marketing_module").notNull().default(true),
 	hasAnalyticsModule: boolean("has_analytics_module").notNull().default(true),
 	hasInventoryModule: boolean("has_inventory_module").notNull().default(true),
+	aiEnableTreatmentPlan: boolean("ai_enable_treatment_plan").notNull().default(true),
+	aiEnableRecommendations: boolean("ai_enable_recommendations").notNull().default(true),
+	aiEnableDocuments: boolean("ai_enable_documents").notNull().default(true),
 	workspacePreset: text("workspace_preset").notNull().default("enterprise"), // solo_therapist | prosthodontist | pediatric | orthodontic | surgery_center | implant_center | family_clinic | multi_specialty | enterprise | custom
 	onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
 	requiresMigration: boolean("requires_migration").notNull().default(false),
