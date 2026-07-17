@@ -321,11 +321,13 @@ function buildAppointmentReadiness(
 
 		return {
 			appointmentId: appointment.id,
+			patientId: patientId || null,
 			score,
 			state,
 			nextAction,
 			ownerUserId: doctorUserId,
 			ownerRole: "doctor" as const,
+			blockers: checks.filter((c) => !c.ready).map((c) => c.title),
 			checks,
 		};
 	});
@@ -419,6 +421,15 @@ export async function getDashboardFromDb(
 
 	const activeVisit =
 		visits.find((visit) => visit.status === "draft") ?? visits[0] ?? null;
+
+	let activeVisitDiary: any = null;
+	if (activeVisit) {
+		const [diary] = await db
+			.select()
+			.from(schema.visitDiaries)
+			.where(eq(schema.visitDiaries.visitId, activeVisit.id));
+		activeVisitDiary = diary ?? null;
+	}
 
 	const paidPayments = payments.filter((payment) => payment.status === "paid");
 	const totalPaidRub = paidPayments.reduce(
@@ -649,6 +660,11 @@ export async function getDashboardFromDb(
 					doctorSummary: activeVisit.doctorSummary,
 					createdAt: iso(activeVisit.createdAt),
 					updatedAt: iso(activeVisit.updatedAt),
+					diary: activeVisitDiary ? {
+						id: activeVisitDiary.id,
+						complications: activeVisitDiary.complications,
+						comorbidities: activeVisitDiary.comorbidities,
+					} : null,
 				}
 			: null,
 		visitCloseChecklist: activeVisit

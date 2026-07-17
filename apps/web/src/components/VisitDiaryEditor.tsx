@@ -129,6 +129,8 @@ interface DiaryState {
 	diagnosisIcd10: string;
 	diagnosisTooth: string;
 	treatmentDescription: string;
+	complications: string;
+	comorbidities: string;
 }
 
 const EMPTY_DIARY: DiaryState = {
@@ -137,6 +139,8 @@ const EMPTY_DIARY: DiaryState = {
 	diagnosisIcd10: "",
 	diagnosisTooth: "",
 	treatmentDescription: "",
+	complications: "",
+	comorbidities: "",
 };
 
 interface Template {
@@ -264,6 +268,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						diagnosisIcd10: d.diagnosisIcd10 ?? "",
 						diagnosisTooth: d.diagnosisTooth ?? "",
 						treatmentDescription: d.treatmentDescription ?? "",
+						complications: d.complications ?? "",
+						comorbidities: d.comorbidities ?? "",
 					});
 					if (d.instrumentTrayBarcode) setTrayBarcode(d.instrumentTrayBarcode);
 					setIsLocked(d.isLocked ?? false);
@@ -928,6 +934,40 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 						onFocus={handleAutoResize}
 						placeholder="Анестезия, проведённые манипуляции, рекомендации..."
 					/>
+				</div>
+
+				{/* Complications & Comorbidities */}
+				<div className="space-y-1.5 lg:col-span-2">
+					<label className="text-xs tracking-widest uppercase text-zinc-400 font-semibold flex items-center gap-1.5">
+						<AlertTriangle className="w-3 h-3 text-rose-400" />
+						Осложнения и сопутствующие заболевания
+					</label>
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+						<textarea
+							disabled={isLocked}
+							style={{ minHeight: "72px", overflowY: "hidden" }}
+							className="auto-resize-ta w-full bg-zinc-900/60 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 focus:ring-1 focus:ring-rose-500/50 outline-none disabled:opacity-50 resize-none transition-all"
+							value={diary.complications}
+							onChange={(e) => {
+								handleAutoResize(e);
+								setDiary((p) => ({ ...p, complications: e.target.value }));
+							}}
+							onFocus={handleAutoResize}
+							placeholder="Осложнения лечения..."
+						/>
+						<textarea
+							disabled={isLocked}
+							style={{ minHeight: "72px", overflowY: "hidden" }}
+							className="auto-resize-ta w-full bg-zinc-900/60 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-200 focus:ring-1 focus:ring-rose-500/50 outline-none disabled:opacity-50 resize-none transition-all"
+							value={diary.comorbidities}
+							onChange={(e) => {
+								handleAutoResize(e);
+								setDiary((p) => ({ ...p, comorbidities: e.target.value }));
+							}}
+							onFocus={handleAutoResize}
+							placeholder="Сопутствующие заболевания (если есть)..."
+						/>
+					</div>
 				</div>
 
 				{/* Attachments (Photos) */}

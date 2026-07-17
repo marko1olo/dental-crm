@@ -4949,6 +4949,7 @@ export function useAppLogic(): any {
 				draftDocumentAmountRub: 0,
 				openTreatmentItems: 0,
 				unpaidDocuments: 0,
+				insuranceCoverageRub: 0,
 			};
 		const activePlanItems = activeTreatmentPlanItems.filter(
 			(item) => item.status !== "cancelled",
@@ -11681,8 +11682,8 @@ async function toggleClinicalRule(rule: Dashboard["clinicalRules"][number]) {
 					objectiveData: recordExtractObjectiveStatusValue(),
 					primaryDiagnosis: recordExtractDiagnosisValue(),
 					primaryDiagnosisIcd10: null,
-					complications: null,
-					comorbidities: null,
+					complications: dashboard?.activeVisit?.diary?.complications ?? null,
+					comorbidities: dashboard?.activeVisit?.diary?.comorbidities ?? null,
 					externalCause: null,
 					healthGroup: null,
 					dispensaryObservation: null,

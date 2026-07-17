@@ -4195,6 +4195,8 @@ export type PatientCoreDraft = {
 	phone: string;
 	email: string;
 	notes: string;
+	insuranceContractId: string;
+	insurancePolicyNumber: string;
 };
 export type PatientCoreSaveState = "idle" | "saving" | "saved" | "error";
 
@@ -6292,6 +6294,8 @@ export function emptyPatientCoreDraft(): PatientCoreDraft {
 		phone: "",
 		email: "",
 		notes: "",
+		insuranceContractId: "",
+		insurancePolicyNumber: "",
 	};
 }
 
@@ -6304,6 +6308,8 @@ export function patientCoreDraftFromPatient(
 		phone: patient?.phone ?? "",
 		email: patient?.email ?? "",
 		notes: patient?.notes ?? "",
+		insuranceContractId: patient?.insuranceContractId ?? "",
+		insurancePolicyNumber: patient?.insurancePolicyNumber ?? "",
 	};
 }
 
@@ -6372,6 +6378,8 @@ export function buildPatientCorePayload(
 		phone: nullablePatientDraftValue(draft.phone),
 		email: nullablePatientDraftValue(draft.email),
 		notes: nullablePatientDraftValue(draft.notes),
+		insuranceContractId: nullablePatientDraftValue(draft.insuranceContractId),
+		insurancePolicyNumber: nullablePatientDraftValue(draft.insurancePolicyNumber),
 	};
 }
 

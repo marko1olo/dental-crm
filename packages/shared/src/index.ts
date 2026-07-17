@@ -3326,6 +3326,11 @@ export const visitSchema = z.object({
 	doctorSummary: z.string().nullable(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
+	diary: z.object({
+		id: z.string().uuid(),
+		complications: z.string().nullable(),
+		comorbidities: z.string().nullable(),
+	}).nullable().optional(),
 });
 export type Visit = z.infer<typeof visitSchema>;
 

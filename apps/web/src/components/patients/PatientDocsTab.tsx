@@ -212,6 +212,51 @@ export function PatientDocsTab({ props }: { props: PatientsViewProps }) {
 				</div>
 			</section>
 
+			{/* Insurance (DMS / VHI) */}
+			<section className="docs-section-card">
+				<div className="docs-section-header">
+					<div className="docs-section-icon">
+						<Briefcase size={24} />
+					</div>
+					<div className="docs-section-title">
+						<h3>Страхование (ДМС)</h3>
+						<p>Договор со страховой и номер полиса пациента</p>
+					</div>
+				</div>
+				<div className="docs-form-grid">
+					<div className="docs-form-group">
+						<label>Страховая компания (Договор)</label>
+						<select
+							value={patientAdministrativeProfileDraft.insuranceContractId || ""}
+							onChange={(event: SelectChangeEvent) => {
+								updatePatientAdministrativeProfileDraft("insuranceContractId", event.target.value);
+								if (!event.target.value) {
+									updatePatientAdministrativeProfileDraft("insurancePolicyNumber", "");
+								}
+							}}
+							style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--line)" }}
+						>
+							<option value="">-- Без страховки (Наличный расчет) --</option>
+							{insuranceContracts.filter((c: any) => c.isActive).map((c: any) => (
+								<option key={c.id} value={c.id}>{c.insuranceCompanyName} (договор {c.contractNumber})</option>
+							))}
+						</select>
+					</div>
+					<div className="docs-form-group">
+						<label>Номер полиса ДМС</label>
+						<input
+							autoComplete="off"
+							value={patientAdministrativeProfileDraft.insurancePolicyNumber || ""}
+							onChange={(event: TextFieldChangeEvent) =>
+								updatePatientAdministrativeProfileDraft("insurancePolicyNumber", event.target.value)
+							}
+							placeholder="Например, номер с карточки ДМС"
+							disabled={!patientAdministrativeProfileDraft.insuranceContractId}
+						/>
+					</div>
+				</div>
+			</section>
+
 			{/* Address */}
 			<section className="docs-section-card">
 				<div className="docs-section-header">

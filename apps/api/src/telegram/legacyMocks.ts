@@ -1256,6 +1256,7 @@ export function buildBillingSummary(): BillingSummary {
 		draftDocumentAmountRub,
 		openTreatmentItems: 0,
 		unpaidDocuments: 0,
+		insuranceCoverageRub: 0,
 	};
 }
 
@@ -10198,6 +10199,7 @@ export function buildDashboard(): Dashboard {
 		clinicName: repairMojibakeText(clinicProfile.clinicName),
 		todayIso: "2026-05-12",
 		clinicSettings: buildClinicSettings(),
+		insuranceContracts: [],
 		shiftIntelligence: repairMojibakeDeep(buildShiftIntelligence()),
 		patients: repairMojibakeDeep(patients),
 		patientInsights: repairMojibakeDeep(patientInsights),

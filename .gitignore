@@ -79,3 +79,4 @@ shot_*.png
 __pycache__/
 *.pyc
 *.pyo
+.postgres/
