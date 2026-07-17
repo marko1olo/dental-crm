@@ -589,18 +589,100 @@ export async function registerSettingsRoutes(app: FastifyInstance) {
 		},
 	);
 
+	// --- BPMN Workflows ---
+	app.get("/api/clinic/workflows", async (request, reply) => {
+		const orgId = await resolveOrganizationId(request);
+		if (!orgId) return reply.code(401).send({ error: "Unauthorized" });
+		const wfs = await db.select().from(schema.clinicWorkflows).where(eq(schema.clinicWorkflows.organizationId, orgId));
+		return { workflows: wfs };
+	});
+
+	app.post("/api/clinic/workflows", async (request, reply) => {
+		const orgId = await resolveOrganizationId(request);
+		if (!orgId) return reply.code(401).send({ error: "Unauthorized" });
+		const body = request.body as any;
+		if (!body.name || !body.trigger) return reply.code(400).send({ error: "Missing name or trigger" });
+		
+		const [wf] = await db.insert(schema.clinicWorkflows).values({
+			organizationId: orgId,
+			name: body.name,
+			trigger: body.trigger,
+			active: body.active || false,
+		}).returning();
+		return reply.code(201).send({ workflow: wf });
+	});
+
+	app.post("/api/clinic/workflows/:id/toggle", async (request, reply) => {
+		const orgId = await resolveOrganizationId(request);
+		if (!orgId) return reply.code(401).send({ error: "Unauthorized" });
+		const { id } = request.params as { id: string };
+		const { active } = request.body as { active: boolean };
+		
+		await db.update(schema.clinicWorkflows)
+			.set({ active, updatedAt: new Date() })
+			.where(and(eq(schema.clinicWorkflows.id, id), eq(schema.clinicWorkflows.organizationId, orgId)));
+		return { success: true };
+	});
+
+	app.delete("/api/clinic/workflows/:id", async (request, reply) => {
+		const orgId = await resolveOrganizationId(request);
+		if (!orgId) return reply.code(401).send({ error: "Unauthorized" });
+		const { id } = request.params as { id: string };
+		
+		await db.delete(schema.clinicWorkflows)
+			.where(and(eq(schema.clinicWorkflows.id, id), eq(schema.clinicWorkflows.organizationId, orgId)));
+		return { success: true };
+	});
+
+	// --- Marketing Settings ---
+	app.post("/api/clinic/marketing-settings", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const body = request.body;
+		await db.update(schema.clinics)
+			.set({ marketingSettings: body })
+			.where(eq(schema.clinics.organizationId, orgId));
+		return { success: true };
+	});
+
+	// --- Reporting Settings ---
+	app.post("/api/clinic/reporting-settings", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const body = request.body;
+		await db.update(schema.clinics)
+			.set({ reportingSettings: body })
+			.where(eq(schema.clinics.organizationId, orgId));
+		return { success: true };
+	});
+
+	app.post("/api/reporting/token/generate", async (request, reply) => {
+		const orgId = await requireSettingsAccess(request, reply);
+		if (!orgId) return;
+		const token = "DENTE-" + require("crypto").randomBytes(16).toString("hex");
+		
+		const [clinic] = await db.select({ reportingSettings: schema.clinics.reportingSettings }).from(schema.clinics).where(eq(schema.clinics.organizationId, orgId));
+		const settings = (clinic?.reportingSettings || {}) as any;
+		settings.apiToken = token;
+		
+		await db.update(schema.clinics)
+			.set({ reportingSettings: settings })
+			.where(eq(schema.clinics.organizationId, orgId));
+			
+		return { token };
+	});
+
 	app.post("/api/settings/reset-demo", async (request, reply) => {
 		return {
 			success: true,
-			message:
-				"Демонстрационный режим больше не поддерживается (используется Postgres).",
+			message: "Сброс демо-данных заблокирован в целях безопасности (Postgres).",
 		};
 	});
 
 	app.post("/api/settings/reset-zero", async (request, reply) => {
 		return {
 			success: true,
-			message: "Очистка базы больше не поддерживается (используется Postgres).",
+			message: "Полный сброс базы заблокирован в целях безопасности (Postgres).",
 		};
 	});
 	app.post("/api/settings/catalog-import", async (request, reply) => {

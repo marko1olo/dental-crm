@@ -57,6 +57,13 @@
       "when": 1784311055495,
       "tag": "0007_add_module_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784320145514,
+      "tag": "0008_add_settings",
+      "breakpoints": true
     }
   ]
 }
