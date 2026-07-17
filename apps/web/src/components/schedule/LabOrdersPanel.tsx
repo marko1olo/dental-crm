@@ -40,9 +40,7 @@ interface LabOrder {
 
 export function LabOrdersPanel({ patientId }: { patientId: string }) {
 	const { auth, dashboard } = useAppLogicContext();
-	const liveStatus = useAppStore(
-		(state) => state.labOrderStatuses[patientId],
-	);
+	const liveStatus = useAppStore((state) => state.labOrderStatuses[patientId]);
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -158,10 +156,7 @@ export function LabOrdersPanel({ patientId }: { patientId: string }) {
 		}
 	};
 
-	const handleStatusChange = async (
-		id: string,
-		status: LabOrder["status"],
-	) => {
+	const handleStatusChange = async (id: string, status: LabOrder["status"]) => {
 		// Optimistic: reflect the new status immediately, roll back on failure.
 		const previous = orders;
 		setOrders((current) =>
