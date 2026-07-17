@@ -1,3 +1,4 @@
+import { LabOrdersPanel } from "./components/schedule/LabOrdersPanel";
 import { CompletedServicesChecklist } from "./components/visit/CompletedServicesChecklist";
 import { GnathologyForm } from "./components/visit/GnathologyForm";
 import { motion } from "framer-motion";
@@ -2242,139 +2243,11 @@ export function VisitView() {
 					</div>
 				</details>
 
-				<details className="ztl-toggle" style={{ marginTop: "8px", border: "1px solid var(--slate-200)", borderRadius: "8px", padding: "12px", background: "white" }}>
-					<summary style={{ fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
-						🦷 Ортопедия и Лаборатория (ЗТЛ)
-						{dashboard?.labOrders?.filter((o: any) => o.patientId === activePatient.id && o.status !== "delivered").length ? " 🔵 (В работе)" : ""}
-					</summary>
-					<div className="ztl-content" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
-						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Лаборатория / Техник
-								<select value={ztlLab} onChange={(e) => setZtlLab(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option value="">-- Выберите лабораторию --</option>
-									<option value="ZTL Сириус">ZTL "Сириус" (CAD/CAM)</option>
-									<option value="Иванов А.В.">Иванов А.В. (Керамика)</option>
-									<option value="Дентал-Лаб 3D">Дентал-Лаб 3D</option>
-								</select>
-							</label>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Тип работы
-								<select value={ztlWorkType} onChange={(e) => setZtlWorkType(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option value="">-- Выберите тип работы --</option>
-									<option value="Коронка ZrO2">Коронка диоксид циркония (Prettau)</option>
-									<option value="Винир E-Max">Винир E-Max</option>
-									<option value="Абатмент индив">Абатмент индивидуальный (Ti)</option>
-									<option value="Вкладка">Вкладка культевая</option>
-									<option value="Элайнеры">Элайнеры (набор)</option>
-								</select>
-							</label>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Зубы / Сегмент
-								<input value={ztlTeeth} onChange={(e) => setZtlTeeth(e.target.value)} type="text" placeholder="Напр: 1.1, 1.2" style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
-							</label>
-						</div>
-						<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Оттиски
-								<select value={ztlImpression} onChange={(e) => setZtlImpression(e.target.value)} style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }}>
-									<option value="">-- Выберите оттиск --</option>
-									<option value="Силикон (А)">Силикон (А-силикон)</option>
-									<option value="Силикон (С)">Силикон (С-силикон)</option>
-									<option value="Полиэфир">Полиэфир (Impregum)</option>
-									<option value="Скан (STL)">Цифровой скан (STL)</option>
-								</select>
-							</label>
-							<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-								Цвет (VITA)
-								<input value={ztlColor} onChange={(e) => setZtlColor(e.target.value)} type="text" placeholder="A1, Bleach 1..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px" }} />
-							</label>
-						</div>
-						<label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", fontWeight: 500 }}>
-							Комментарий для техника
-							<textarea value={ztlComment} onChange={(e) => setZtlComment(e.target.value)} rows={2} placeholder="Особенности уступа, форма, прозрачность режущего края..." style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--slate-200)", fontSize: "14px", resize: "vertical" }} />
-						</label>
-						<div style={{ display: "flex", gap: "8px" }}>
-							<button type="button" className="primary-button" style={{ display: "flex", gap: "8px", alignItems: "center" }} onClick={async () => {
-								if (!ztlLab || !ztlWorkType) {
-									showToast("Выберите лабораторию и тип работы", "warning");
-									return;
-								}
-								try {
-									const staffToken = localStorage.getItem("dente_staff_token");
-									const res = await fetch("/api/clinical/lab-orders", {
-										method: "POST",
-										headers: {
-											"Content-Type": "application/json",
-											Authorization: `Bearer ${staffToken}`,
-										},
-										body: JSON.stringify({
-											patientId: activePatient?.id,
-											doctorId: activeDoctor?.id,
-											toothFdi: ztlTeeth,
-											material: ztlWorkType,
-											colorVita: ztlColor,
-											clinicalNotes: `Лаборатория: ${ztlLab}\nОттиски: ${ztlImpression}\nКомментарий: ${ztlComment}`
-										})
-									});
-									if (!res.ok) throw new Error("Ошибка при создании наряда");
-									
-									showToast(`Заказ-наряд "${ztlWorkType}" сформирован для ${ztlLab}`, "success");
-									setZtlLab("");
-									setZtlWorkType("");
-									setZtlTeeth("");
-									setZtlImpression("");
-									setZtlColor("");
-									setZtlComment("");
-								} catch (err: any) {
-									showToast(`Ошибка: ${err.message}`, "error");
-								}
-							}}>
-								<FlaskConical size={16} /> Создать наряд
-							</button>
-						</div>
-						
-						{dashboard?.labOrders && dashboard.labOrders.filter((o: any) => o.patientId === activePatient?.id).length > 0 && (
-							<div style={{ marginTop: "16px", borderTop: "1px solid var(--slate-200)", paddingTop: "16px" }}>
-								<h4 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>Текущие заказ-наряды</h4>
-								<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-									{dashboard.labOrders.filter((o: any) => o.patientId === activePatient?.id).map((order: any) => (
-										<div key={order.id} style={{ padding: "12px", background: "var(--slate-50)", borderRadius: "8px", border: "1px solid var(--slate-200)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-											<div>
-												<div style={{ fontWeight: 500, fontSize: "14px" }}>{order.material} (Зубы: {order.toothFdi || "Все"})</div>
-												<div style={{ fontSize: "12px", color: "var(--slate-500)" }}>Статус: {order.status === "draft" ? "Черновик" : order.status === "sent" ? "Отправлен" : order.status === "in_progress" ? "В работе" : "Доставлен"}</div>
-											</div>
-											{order.status !== "delivered" && (
-												<button type="button" className="text-button" style={{ fontSize: "12px" }} onClick={async () => {
-													try {
-														const staffToken = localStorage.getItem("dente_staff_token");
-														const updatePayload = {
-															...order,
-															status: "delivered",
-															patientId: order.patientId, // ensures UUID
-														};
-														const res = await fetch(`/api/clinical/lab-orders/${order.id}`, {
-															method: "PUT",
-															headers: {
-																"Content-Type": "application/json",
-																Authorization: `Bearer ${staffToken}`,
-															},
-															body: JSON.stringify(updatePayload)
-														});
-														if (!res.ok) throw new Error("Не удалось обновить статус");
-														showToast("Статус заказа обновлен", "success");
-													} catch (err: any) {
-														showToast(`Ошибка: ${err.message}`, "error");
-													}
-												}}>Отметить доставленным</button>
-											)}
-										</div>
-									))}
-								</div>
-							</div>
-						)}
-					</div>
-				</details>
+				{activePatient?.id && (
+					<LabOrdersPanel
+						patientId={activePatient.id}
+					/>
+				)}
 
 
 				<GnathologyForm

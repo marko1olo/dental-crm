@@ -29,100 +29,9 @@ import {
 } from "../utils/cryptoPro";
 import { showToast } from "./GlobalToast";
 import { SmartMicrophoneButton } from "./SmartMicrophoneButton";
+import { CryptoProSigner } from "./visit/CryptoProSigner";
 
-// ─── ICD-10 Стоматологический справочник ────────────────────────────────────
-const ICD10_DICTIONARY = [
-	// Кариес K02
-	{ code: "K02.0", label: "Кариес эмали", group: "Кариес" },
-	{ code: "K02.1", label: "Кариес дентина", group: "Кариес" },
-	{ code: "K02.2", label: "Кариес цемента", group: "Кариес" },
-	{ code: "K02.3", label: "Приостановившийся кариес", group: "Кариес" },
-	{ code: "K02.8", label: "Другой уточнённый кариес", group: "Кариес" },
-	// Болезни пульпы K04
-	{ code: "K04.0", label: "Пульпит", group: "Пульпа" },
-	{ code: "K04.01", label: "Начальный (гиперемия) пульпит", group: "Пульпа" },
-	{ code: "K04.1", label: "Некроз пульпы", group: "Пульпа" },
-	{ code: "K04.2", label: "Дегенерация пульпы", group: "Пульпа" },
-	{ code: "K04.3", label: "Патологическая резорбция корня", group: "Пульпа" },
-	{
-		code: "K04.4",
-		label: "Острый апикальный периодонтит",
-		group: "Периапикал",
-	},
-	{
-		code: "K04.5",
-		label: "Хронический апикальный периодонтит",
-		group: "Периапикал",
-	},
-	{
-		code: "K04.6",
-		label: "Периапикальный абсцесс со свищом",
-		group: "Периапикал",
-	},
-	{
-		code: "K04.7",
-		label: "Периапикальный абсцесс без свища",
-		group: "Периапикал",
-	},
-	{ code: "K04.8", label: "Корневая киста", group: "Периапикал" },
-	// Гингивит / Пародонт K05
-	{ code: "K05.0", label: "Острый гингивит", group: "Пародонт" },
-	{ code: "K05.1", label: "Хронический гингивит", group: "Пародонт" },
-	{ code: "K05.2", label: "Острый пародонтит", group: "Пародонт" },
-	{ code: "K05.3", label: "Хронический пародонтит", group: "Пародонт" },
-	{ code: "K05.4", label: "Пародонтоз", group: "Пародонт" },
-	// Болезни зубов K03
-	{ code: "K03.0", label: "Повышенное стирание зубов", group: "Другое" },
-	{ code: "K03.2", label: "Эрозия зубов", group: "Другое" },
-	{ code: "K03.3", label: "Патологическая резорбция", group: "Другое" },
-	// Аномалии K07
-	{ code: "K07.3", label: "Аномалии положения зубов", group: "Ортодонтия" },
-	{
-		code: "K07.4",
-		label: "Аномалии прикуса неуточнённые",
-		group: "Ортодонтия",
-	},
-	// Ретинированный зуб
-	{ code: "K01.1", label: "Ретинированный зуб", group: "Хирургия" },
-	// Потеря зубов K08
-	{ code: "K08.1", label: "Потеря зуба / Удаление зуба", group: "Хирургия" },
-	{ code: "K08.2", label: "Атрофия альвеолярного отростка", group: "Хирургия" },
-	// Профилактика / Консультация Z
-	{
-		code: "Z01.2",
-		label: "Стоматологическое обследование",
-		group: "Консультация",
-	},
-	{
-		code: "Z29.8",
-		label: "Профилактика кариеса (герметики, фторирование)",
-		group: "Консультация",
-	},
-	{
-		code: "Z51.8",
-		label: "Ортопедическое/плановое лечение",
-		group: "Консультация",
-	},
-];
-
-const ICD_GROUP_COLORS: Record<string, string> = {
-	Кариес: "bg-red-500/10 text-red-400 border-red-500/25",
-	Пульпа: "bg-amber-500/10 text-amber-400 border-amber-500/25",
-	Периапикал: "bg-orange-500/10 text-orange-400 border-orange-500/25",
-	Пародонт: "bg-purple-500/10 text-purple-400 border-purple-500/25",
-	Ортодонтия: "bg-blue-500/10 text-blue-400 border-blue-500/25",
-	Хирургия: "bg-rose-500/10 text-rose-400 border-rose-500/25",
-	Другое: "bg-zinc-500/10 text-zinc-400 border-zinc-500/25",
-	Консультация: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
-};
-
-function getIcdColor(code: string): string {
-	const entry = ICD10_DICTIONARY.find((i) => i.code === code);
-	return (
-		ICD_GROUP_COLORS[entry?.group ?? "Другое"] ??
-		"bg-zinc-500/10 text-zinc-400 border-zinc-500/25"
-	);
-}
+import { ICD10_DICTIONARY, ICD_GROUP_COLORS, getIcdColor } from "../lib/icd10";
 
 interface DiaryState {
 	anamnesis: string;
@@ -403,71 +312,14 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 	).slice(0, 12);
 
 	// ── Lock (Sign & Seal)
-	const handleLock = () => {
-		if (!diary.diagnosisIcd10) {
-			showToast("Укажите диагноз МКБ-10 перед подписанием!", "error");
-			return;
-		}
-		setShowPinDialog(true);
-	};
+	
 
-	const confirmLock = async () => {
+		const doLock = async (certThumbprint: string, pkcs7Signature: string) => {
 		if (!activeDoctor) {
 			showToast("Сначала выберите врача для приема!", "error");
 			return;
 		}
 
-		let pkcs7Signature = "";
-		if (signatureType === "ukep") {
-			if (!selectedCert) {
-				showToast("Выберите сертификат КриптоПро!", "error");
-				return;
-			}
-			try {
-				const base64Diary = btoa(
-					unescape(encodeURIComponent(JSON.stringify(diary))),
-				);
-				pkcs7Signature = await signBase64WithCertificate(
-					base64Diary,
-					selectedCert,
-				);
-				showToast(
-					"УКЭП (ГОСТ 34.11-2012) отсоединенная подпись успешно сформирована",
-					"success",
-				);
-			} catch (e) {
-				console.error(e);
-				showToast("Ошибка при подписании документа", "error");
-				return;
-			}
-		} else {
-			try {
-				const clinicToken = localStorage.getItem("dente_clinic_token");
-				const response = await fetch("/api/auth/staff/unlock", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"x-dente-clinic-token": clinicToken || "",
-					},
-					body: JSON.stringify({
-						userId: activeDoctor.id,
-						pinCode: pinCode,
-					}),
-				});
-
-				if (!response.ok) {
-					const data = await response.json();
-					showToast(data.message || "Неверный ПИН-код врача!", "error");
-					return;
-				}
-			} catch (e: any) {
-				showToast("Ошибка сети при проверке ПИН-кода", "error");
-				return;
-			}
-		}
-
-		setShowPinDialog(false);
-		setPinCode("");
 		await doSave(true);
 
 		if (trayBarcode) {
@@ -479,11 +331,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				});
 				if (!linkRes.ok) {
 					const err = await linkRes.json();
-					showToast(
-						`Ошибка стерилизации: ${err.error || "Неизвестный штрихкод"}`,
-						"error",
-					);
-					return; // Stop lock if barcode is invalid
+					showToast(`Ошибка стерилизации: ${err.error || "Неизвестный штрихкод"}`, "error");
+					return;
 				}
 			} catch (e) {
 				showToast("Сетевая ошибка проверки штрихкода", "error");
@@ -1099,15 +948,12 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 					>
 						{isSaving ? "Сохраняю..." : "Сохранить черновик"}
 					</button>
-					<button
-						id="diary-sign-btn"
-						onClick={handleLock}
-						disabled={isSaving}
-						className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(16,185,129,0.5)]"
-					>
-						<CheckCircle2 className="w-4 h-4" />
-						ЗАВЕРШИТЬ И ПОДПИСАТЬ
-					</button>
+					<CryptoProSigner
+						diaryHash={diaryHash}
+						isLocked={isLocked}
+						lockedAt={lockedAt}
+						onLock={async (thumbprint, signature) => { await doLock(thumbprint, signature); }}
+					/>
 				</div>
 			) : (
 				<div className="border-t border-zinc-800/60 pt-4 flex items-center gap-3 text-xs text-zinc-500">
@@ -1210,119 +1056,7 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = ({
 				typeof window !== "undefined" &&
 				createPortal(PrintPreviewContent, document.body)}
 
-			{showPinDialog &&
-				typeof window !== "undefined" &&
-				createPortal(
-					<div className="modal-overlay">
-						<div className="modal-content">
-							<div className="modal-header">
-								<h3 className="modal-title">Подписание дневника</h3>
-								<p className="modal-subtitle">
-									Выберите тип и параметры электронной цифровой подписи (ЭЦП).
-								</p>
-							</div>
-							<div className="modal-body space-y-4">
-								<div className="flex gap-2 mb-2">
-									<button
-										type="button"
-										onClick={() => setSignatureType("pin")}
-										className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
-											signatureType === "pin"
-												? "bg-teal-500/20 border-teal-500 text-teal-400"
-												: "bg-slate-800 border-slate-700 text-slate-400"
-										}`}
-									>
-										Простая ЭЦП (ПИН)
-									</button>
-									<button
-										type="button"
-										onClick={() => setSignatureType("ukep")}
-										className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
-											signatureType === "ukep"
-												? "bg-teal-500/20 border-teal-500 text-teal-400"
-												: "bg-slate-800 border-slate-700 text-slate-400"
-										}`}
-									>
-										УКЭП (КриптоПро / Рутокен)
-									</button>
-								</div>
 
-								{signatureType === "pin" ? (
-									<div className="space-y-1">
-										<label className="text-xs text-slate-400 font-medium">
-											ПИН-код врача *
-										</label>
-										<input
-											id="diary-pin-input"
-											type="password"
-											value={pinCode}
-											onChange={(e) => setPinCode(e.target.value)}
-											placeholder="Введите ПИН-код врача"
-											className="modal-input"
-											autoFocus
-											onKeyDown={(e) => {
-												if (e.key === "Enter") confirmLock();
-											}}
-										/>
-									</div>
-								) : (
-									<div className="space-y-3">
-										{hasPlugin === false && !isDevMode ? (
-											<div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 p-3 rounded-lg flex items-start gap-2">
-												<AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-												<p>
-													Плагин КриптоПро не установлен или недоступен в
-													браузере.
-												</p>
-											</div>
-										) : isLoadingCerts ? (
-											<div className="text-sm text-teal-400 flex items-center gap-2">
-												Загрузка сертификатов...
-											</div>
-										) : (
-											<div className="space-y-1">
-												<label className="text-xs text-slate-400 font-medium flex block">
-													Сертификат КриптоПро *
-												</label>
-												<select
-													value={selectedCert}
-													onChange={(e) => setSelectedCert(e.target.value)}
-													className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-2 text-sm text-slate-100 focus:outline-none focus:border-teal-500"
-												>
-													<option value="">Выберите сертификат</option>
-													{certificates.map((c) => (
-														<option key={c.thumbprint} value={c.thumbprint}>
-															{c.subjectName} ({c.validTo})
-														</option>
-													))}
-												</select>
-											</div>
-										)}
-									</div>
-								)}
-							</div>
-							<div className="modal-footer">
-								<button
-									onClick={() => {
-										setShowPinDialog(false);
-										setPinCode("");
-									}}
-									className="modal-btn secondary"
-								>
-									Отмена
-								</button>
-								<button
-									id="diary-pin-confirm"
-									onClick={confirmLock}
-									className="modal-btn primary"
-								>
-									Подтвердить
-								</button>
-							</div>
-						</div>
-					</div>,
-					document.body,
-				)}
 		</div>
 	);
 };
