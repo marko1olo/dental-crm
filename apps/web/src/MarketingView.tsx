@@ -64,12 +64,41 @@ export function MarketingView({
 		);
 	});
 
+	// NPS State
+	const [npsScore, setNpsScore] = useState(() => marketingData.npsScore ?? 9.2);
+	const [npsEnabled, setNpsEnabled] = useState(() => marketingData.npsEnabled ?? true);
+	const [npsSendDelay, setNpsSendDelay] = useState(() => marketingData.npsSendDelay ?? 24);
+	const [npsMessageTemplate, setNpsMessageTemplate] = useState(() => marketingData.npsMessageTemplate ?? `Здравствуйте! Спасибо, что посетили "${clinicName}". Оцените, пожалуйста, качество приема по 10-балльной шкале, ответив на это СМС. Это займет всего секунду, а нам поможет стать лучше!`);
+
+	// Referral State
+	const [refReward, setRefReward] = useState(() => marketingData.refReward ?? "1000");
+	const [refEnabled, setRefEnabled] = useState(() => marketingData.refEnabled ?? true);
+	const [refNewDiscount, setRefNewDiscount] = useState(() => marketingData.refNewDiscount ?? "10");
+
 	useEffect(() => {
 		if (marketingData.customSeoKeys)
 			setCustomSeoKeys(marketingData.customSeoKeys);
 		if (marketingData.stats) setStats(marketingData.stats);
 		if (marketingData.phone) setPhone(marketingData.phone);
-	}, [marketingData.customSeoKeys, marketingData.stats, marketingData.phone]);
+		if (marketingData.npsScore !== undefined) setNpsScore(marketingData.npsScore);
+		if (marketingData.npsEnabled !== undefined) setNpsEnabled(marketingData.npsEnabled);
+		if (marketingData.npsSendDelay !== undefined) setNpsSendDelay(marketingData.npsSendDelay);
+		if (marketingData.npsMessageTemplate !== undefined) setNpsMessageTemplate(marketingData.npsMessageTemplate);
+		if (marketingData.refReward !== undefined) setRefReward(marketingData.refReward);
+		if (marketingData.refEnabled !== undefined) setRefEnabled(marketingData.refEnabled);
+		if (marketingData.refNewDiscount !== undefined) setRefNewDiscount(marketingData.refNewDiscount);
+	}, [
+		marketingData.customSeoKeys,
+		marketingData.stats,
+		marketingData.phone,
+		marketingData.npsScore,
+		marketingData.npsEnabled,
+		marketingData.npsSendDelay,
+		marketingData.npsMessageTemplate,
+		marketingData.refReward,
+		marketingData.refEnabled,
+		marketingData.refNewDiscount
+	]);
 
 	const saveMarketingData = async (newData: any) => {
 		try {
@@ -77,6 +106,13 @@ export function MarketingView({
 				customSeoKeys,
 				stats,
 				phone,
+				npsScore,
+				npsEnabled,
+				npsSendDelay,
+				npsMessageTemplate,
+				refReward,
+				refEnabled,
+				refNewDiscount,
 				...newData,
 			};
 			const res = await fetch("/api/settings/profile", {
@@ -141,15 +177,6 @@ export function MarketingView({
 	const [newKeyInput, setNewKeyInput] = useState("");
 	const [isAiLoading, setIsAiLoading] = useState(false);
 	const [aiError, setAiError] = useState<string | null>(null);
-
-	// NPS State
-	const [npsScore, setNpsScore] = useState(9.2);
-	const [npsEnabled, setNpsEnabled] = useState(true);
-	const [npsSendDelay, setNpsSendDelay] = useState(24);
-
-	// Referral State
-	const [refReward, setRefReward] = useState("1000");
-	const [refEnabled, setRefEnabled] = useState(true);
 
 	const handleGenerate = async () => {
 		if (!reviewText.trim()) return;
@@ -886,11 +913,12 @@ export function MarketingView({
 							</h4>
 							<textarea 
 								className="marketing-textarea"
-								defaultValue={`Здравствуйте! Спасибо, что посетили "${clinicName}". Оцените, пожалуйста, качество приема по 10-балльной шкале, ответив на это СМС. Это займет всего секунду, а нам поможет стать лучше!`}
+								value={npsMessageTemplate}
+								onChange={(e) => setNpsMessageTemplate(e.target.value)}
 								rows={4}
 							/>
 							<div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
-								<button className="primary-button">
+								<button className="primary-button" onClick={() => saveMarketingData({ npsEnabled, npsSendDelay, npsMessageTemplate })}>
 									Сохранить настройки NPS
 								</button>
 							</div>
@@ -946,7 +974,8 @@ export function MarketingView({
 										<input 
 											type="number" 
 											className="text-input" 
-											defaultValue="10" 
+											value={refNewDiscount}
+											onChange={(e) => setRefNewDiscount(e.target.value)}
 										/>
 									</div>
 								</div>
@@ -958,7 +987,7 @@ export function MarketingView({
 									<input 
 										type="text" 
 										className="text-input" 
-										value="https://dente.app/ref/clinic-id/P8X1A" 
+										value={`https://dente.app/ref/${auth.currentOrganizationId()}/P8X1A`} 
 										readOnly 
 										style={{ flex: 1, background: "var(--paper-soft)", color: "var(--teal)" }}
 									/>
@@ -968,7 +997,7 @@ export function MarketingView({
 								</div>
 								
 								<div style={{ marginTop: "32px", display: "flex", justifyContent: "flex-end" }}>
-									<button className="primary-button">
+									<button className="primary-button" onClick={() => saveMarketingData({ refEnabled, refReward, refNewDiscount })}>
 										Применить условия рефералки
 									</button>
 								</div>
